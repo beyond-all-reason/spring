@@ -204,6 +204,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitTarget);
 	REGISTER_LUA_CFUNC(SetUnitMidAndAimPos);
 	REGISTER_LUA_CFUNC(SetUnitRadiusAndHeight);
+	REGISTER_LUA_CFUNC(SetUnitBuildeeRadius);
 
 	REGISTER_LUA_CFUNC(SetUnitCollisionVolumeData);
 	REGISTER_LUA_CFUNC(SetUnitPieceCollisionVolumeData);
@@ -3277,6 +3278,27 @@ int LuaSyncedCtrl::SetUnitRadiusAndHeight(lua_State* L)
 	lua_pushboolean(L, true);
 	return 1;
 }
+
+
+/***
+ * @function Spring.SetUnitBuildeeRadius
+ * Sets the unit's radius for when targeted by build, repair, reclaim-type commands.
+ * @number unitID
+ * @number build radius for when targeted by build, repair, reclaim-type commands.
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitBuildeeRadius(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->buildeeRadius = std::max(0.0f, luaL_checkfloat(L, 2));
+
+	return 0;
+}
+
 
 /*** Changes the pieces hierarchy of a unit by attaching a piece to a new parent.
  *
@@ -6413,6 +6435,9 @@ int LuaSyncedCtrl::UnitAttach(lua_State* L)
 	CUnit* transportee = ParseUnit(L, __func__, 2);
 
 	if (transportee == nullptr)
+		return 0;
+
+	if (transporter == transportee)
 		return 0;
 
 	int piece = luaL_checkint(L, 3) - 1;

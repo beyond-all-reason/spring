@@ -72,6 +72,7 @@ UnitDef::UnitDef()
 	, makesMetal(0.0f)
 	, energyMake(0.0f)
 	, buildTime(0.0f)
+	, buildeeBuildRadius(-1.f)
 	, extractsMetal(0.0f)
 	, extractRange(0.0f)
 	, windGenerator(0.0f)
@@ -318,6 +319,8 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	buildTime = udTable.GetFloat("buildTime", 100.0f);
 	if (buildTime <= 0.0f)
 		throw content_error (unitName + ".buildTime <= 0");
+
+	buildeeBuildRadius = udTable.GetFloat("buildeeBuildRadius", -1.f);
 
 	mass = std::clamp(udTable.GetFloat("mass", metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
 	crushResistance = udTable.GetFloat("crushResistance", mass);

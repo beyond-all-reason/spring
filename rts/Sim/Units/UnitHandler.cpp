@@ -18,6 +18,7 @@
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/Systems/GeneralMoveSystem.h"
 #include "Sim/MoveTypes/Systems/GroundMoveSystem.h"
+#include "Sim/MoveTypes/Systems/UnitTrapCheckSystem.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Weapons/Weapon.h"
 #include "System/EventHandler.h"
@@ -87,6 +88,7 @@ CUnit* CUnitHandler::NewUnit(const UnitDef* ud)
 void CUnitHandler::Init() {
 	GroundMoveSystem::Init();
 	GeneralMoveSystem::Init();
+	UnitTrapCheckSystem::Init();
 
 	static_assert(sizeof(CBuilder) >= sizeof(CUnit             ), "");
 	static_assert(sizeof(CBuilder) >= sizeof(CBuilding         ), "");
@@ -243,6 +245,7 @@ bool CUnitHandler::GarbageCollectUnit(unsigned int id)
 
 void CUnitHandler::QueueDeleteUnits()
 {
+	ZoneScoped;
 	// gather up dead units
 	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
 		QueueDeleteUnit(activeUnits[activeUpdateUnit]);
@@ -317,10 +320,12 @@ void CUnitHandler::UpdateUnitMoveTypes()
 
 	GroundMoveSystem::Update();
 	GeneralMoveSystem::Update();
+	UnitTrapCheckSystem::Update();
 }
 
 void CUnitHandler::UpdateUnitLosStates()
 {
+	ZoneScoped;
 	for (CUnit* unit: activeUnits) {
 		for (int at = 0; at < teamHandler.ActiveAllyTeams(); ++at) {
 			unit->UpdateLosStatus(at);

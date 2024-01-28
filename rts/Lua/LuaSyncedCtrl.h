@@ -113,6 +113,7 @@ class LuaSyncedCtrl
 		static int SetUnitTarget(lua_State* L);
 		static int SetUnitMidAndAimPos(lua_State* L);
 		static int SetUnitRadiusAndHeight(lua_State* L);
+		static int SetUnitBuildeeRadius(lua_State* L);
 		static int SetUnitCollisionVolumeData(lua_State* L);
 		static int SetUnitPieceCollisionVolumeData(lua_State* L);
 		static int SetUnitPieceVisible(lua_State* L);

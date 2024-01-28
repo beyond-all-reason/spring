@@ -1287,6 +1287,8 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	// units - so check that all nearby mobile units have correctly accurate positions up to date.
 	if (synced)
 	{
+		assert(!ThreadPool::inMultiThreadedSection);
+
 		// buffer should be the maximum distance given by the movetype using the formula:
 		// maxspeed * modInfo.unitQuadPositionUpdateRate + half footStep + 1
 		// +1 on end is a safety buffer against rounding issues with square placement.

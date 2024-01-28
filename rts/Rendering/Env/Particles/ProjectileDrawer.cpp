@@ -763,6 +763,7 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 	{
 		{
+			ZoneScopedN("ProjectileDrawer::ModelProjectiles");
 			ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
 			unitDrawer->SetupOpaqueDrawing(false);
 
@@ -777,19 +778,25 @@ void CProjectileDrawer::Draw(bool drawReflection, bool drawRefraction) {
 
 		// note: model-less projectiles are NOT drawn by this call but
 		// only z-sorted (if the projectiles indicate they want to be)
-		DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
-
+		{
+			ZoneScopedN("ProjectileDrawer::ModellessProjectiles");
+			DrawProjectilesSet(modellessProjectiles, drawReflection, drawRefraction);
+		}
 		if (wantDrawOrder)
 			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileDrawOrderSortingPredicate);
 		else
 			std::sort(sortedProjectiles.begin(), sortedProjectiles.end(), CProjectileSortingPredicate);
-
-		for (auto p : sortedProjectiles) {
-			p->Draw();
+		{
+			ZoneScopedN("ProjectileDrawer::DrawSortedProjectiles");
+			for (auto p : sortedProjectiles) {
+				p->Draw();
+			}
 		}
-
-		for (auto p : unsortedProjectiles) {
-			p->Draw();
+		{
+			ZoneScopedN("ProjectileDrawer::DrawUnsortedProjectiles");
+			for (auto p : unsortedProjectiles) {
+				p->Draw();
+			}
 		}
 	}
 

@@ -875,7 +875,7 @@ public:
 			clientNet->Send(CBaseNetProtocol::Get().SendAIStateChanged(gu->myPlayerNum, skirmishAIId, SKIRMAISTATE_RELOADING));
 		}
 
-		LOG("Skirmish AI controlling team %i is beeing %sed ...", teamToKillId, actionName.c_str());
+		LOG("Skirmish AI controlling team %i is being %sed ...", teamToKillId, actionName.c_str());
 
 		return true;
 	}
@@ -966,7 +966,7 @@ public:
 			return WrongSyntax();
 		}
 		if (skirmishAIHandler.GetLocalSkirmishAIInCreation(teamToControlId) != nullptr) {
-			LOG_L(L_WARNING, "Team to control: there is already an AI beeing created for team: %i", teamToControlId);
+			LOG_L(L_WARNING, "Team to control: there is already an AI being created for team: %i", teamToControlId);
 			return WrongSyntax();
 		}
 
@@ -1233,7 +1233,9 @@ public:
 class GroupActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GroupActionExecutor() : IUnsyncedActionExecutor("Group", "Manage control groups", false, {
-			{"<n>", "Select group <n>"},
+			{"<n>", "Select group <n>, also focuses on second call (deprecated)"},
+			{"select <n>", "Select group <n>"},
+			{"focus <n>", "Focus camera on group <n>"},
 			{"set <n>", "Set current selected units as group <n>"},
 			{"add <n>", "Add current selected units to group <n>"},
 			{"unset", "Deassign control group for currently selected units"},
@@ -3605,6 +3607,11 @@ public:
 				LOG("Dumping projectile textures");
 				projectileDrawer->textureAtlas->DumpTexture("TextureAtlas");
 				projectileDrawer->groundFXAtlas->DumpTexture("GroundFXAtlas");
+			}),
+			ArgTuple(hashString("3do"), false, []() {
+				LOG("Dumping 3do atlas textures");
+				glSaveTexture(textureHandler3DO.GetAtlasTex1ID(), "3doTex1.png");
+				glSaveTexture(textureHandler3DO.GetAtlasTex2ID(), "3doTex2.png");
 			}),
 		};
 

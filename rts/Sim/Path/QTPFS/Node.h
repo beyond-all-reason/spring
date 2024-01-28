@@ -137,7 +137,7 @@ namespace QTPFS {
 	private:
 		bool UpdateMoveCost(
 			const UpdateThreadData* threadData,
-			const NodeLayer& nl,
+			NodeLayer& nl,
 			const SRectangle& r,
 			unsigned int& numNewBinSquares,
 			unsigned int& numDifBinSquares,

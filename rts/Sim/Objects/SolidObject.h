@@ -67,7 +67,7 @@ public:
 	CR_DECLARE_DERIVED(CSolidObject)
 
 
-	virtual const SolidObjectDef* GetDef() const = 0;
+	virtual const SolidObjectDef* GetDef() const { return nullptr; };
 
 	enum PhysicalState {
 		// NOTE:
@@ -178,7 +178,7 @@ public:
 	void UpdateDirVectors(const float3& uDir);
 
 	CMatrix44f ComposeMatrix(const float3& p) const { return (CMatrix44f(p, -rightdir, updir, frontdir)); }
-	virtual CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const = 0;
+	virtual CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const { return CMatrix44f(); };
 
 	const CollisionVolume* GetCollisionVolume(const LocalModelPiece* lmp) const {
 		if (lmp == nullptr)

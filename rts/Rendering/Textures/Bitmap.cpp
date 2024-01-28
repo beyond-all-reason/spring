@@ -52,13 +52,13 @@ public:
 	virtual size_t AllocIdxRaw(size_t size) = 0;
 
 	uint8_t* Alloc(size_t size) {
-		std::lock_guard<spring::mutex> lck(bmpMutex);
+		std::scoped_lock lck(bmpMutex);
 		return (AllocRaw(size));
 	}
 	virtual uint8_t* AllocRaw(size_t size) = 0;
 
 	void Free(uint8_t* mem, size_t size) {
-		std::lock_guard<spring::mutex> lck(bmpMutex);
+		std::scoped_lock lck(bmpMutex);
 		FreeRaw(mem, size);
 	}
 	virtual void FreeRaw(uint8_t* mem, size_t size) = 0;
@@ -198,7 +198,7 @@ public:
 		if (size <= Size())
 			return;
 
-		std::lock_guard<spring::mutex> lck(bmpMutex);
+		std::scoped_lock lck(bmpMutex);
 
 		if (memArray.empty()) {
 			freeList.reserve(32);
@@ -219,7 +219,7 @@ public:
 		if (freeList.empty())
 			return false;
 
-		std::lock_guard<spring::mutex> lck(bmpMutex);
+		std::scoped_lock lck(bmpMutex);
 		return (DefragRaw());
 	}
 
@@ -1206,7 +1206,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 
 	{
-		std::lock_guard<spring::mutex> lck(ITexMemPool::texMemPool->GetMutex());
+		std::scoped_lock lck(ITexMemPool::texMemPool->GetMutex());
 
 		// do not preserve the image origin since IL does not
 		// vertically flip DDS images by default, unlike nv_dds
@@ -1353,7 +1353,7 @@ bool CBitmap::LoadGrayscale(const std::string& filename)
 	}
 
 	{
-		std::lock_guard<spring::mutex> lck(ITexMemPool::texMemPool->GetMutex());
+		std::scoped_lock lck(ITexMemPool::texMemPool->GetMutex());
 
 		ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
 		ilEnable(IL_ORIGIN_SET);
@@ -1387,7 +1387,7 @@ bool CBitmap::LoadGrayscale(const std::string& filename)
 }
 
 
-bool CBitmap::Save(const std::string& filename, bool opaque, bool logged, unsigned quality) const
+bool CBitmap::Save(const std::string& filename, bool dontSaveAlpha, bool logged, unsigned quality) const
 {
 	if (compressed) {
 		#ifndef HEADLESS
@@ -1400,27 +1400,11 @@ bool CBitmap::Save(const std::string& filename, bool opaque, bool logged, unsign
 	if (GetMemSize() == 0)
 		return false;
 
+	// operator= acquires ITexMemPool's mutex internally
+	CBitmap flippedCopy = *this;
+	flippedCopy.ReverseYAxis();
 
-	std::lock_guard<spring::mutex> lck(ITexMemPool::texMemPool->GetMutex());
-
-	const uint8_t* mem = GetRawMem();
-	      uint8_t* buf = ITexMemPool::texMemPool->AllocRaw(xsize * ysize * 4);
-
-	/* HACK Flip the image so it saves the right way up.
-		(Fiddling with ilOriginFunc didn't do anything?)
-		Duplicated with ReverseYAxis. */
-	for (int y = 0; y < ysize; ++y) {
-		for (int x = 0; x < xsize; ++x) {
-			const int bi = 4 * (x + (xsize * ((ysize - 1) - y)));
-			const int mi = 4 * (x + (xsize * (              y)));
-
-			for (int ch = 0; ch < 3; ++ch) {
-				buf[bi + ch] = (ch < channels) ? mem[mi + ch] : 0xFF;
-			}
-
-			buf[bi + 3] = (!opaque && channels == 4) ? mem[mi + 3] : 0xFF;
-		}
-	}
+	std::unique_lock lck(ITexMemPool::texMemPool->GetMutex());
 
 	// clear any previous errors
 	while (ilGetError() != IL_NO_ERROR);
@@ -1434,13 +1418,20 @@ bool CBitmap::Save(const std::string& filename, bool opaque, bool logged, unsign
 	ILuint imageID = 0;
 	ilGenImages(1, &imageID);
 	ilBindImage(imageID);
-	ilTexImage(xsize, ysize, 1, 4, IL_RGBA, IL_UNSIGNED_BYTE, buf);
+
+	static constexpr ILuint Channels2Formats[] = {
+		0,
+		IL_LUMINANCE,
+		IL_LUMINANCE_ALPHA,
+		IL_RGB,
+		IL_RGBA
+	};
+
+	ilTexImage(xsize, ysize, 1, channels, Channels2Formats[channels], dataType, flippedCopy.GetRawMem());
 	assert(ilGetError() == IL_NO_ERROR);
 
-	ITexMemPool::texMemPool->FreeRaw(buf, xsize * ysize * 4);
-
-	if (opaque) {
-		ilConvertImage(IL_RGB, IL_UNSIGNED_BYTE);
+	if (dontSaveAlpha && (channels == 2 || channels == 4)) {
+		ilConvertImage(Channels2Formats[channels - 1], dataType);
 		assert(ilGetError() == IL_NO_ERROR);
 	}
 
@@ -1453,48 +1444,16 @@ bool CBitmap::Save(const std::string& filename, bool opaque, bool logged, unsign
 	if (logged)
 		LOG("[CBitmap::%s] saving \"%s\" to \"%s\" (IL_VERSION=%d IL_UNICODE=%d)", __func__, filename.c_str(), fsFullPath.c_str(), IL_VERSION, sizeof(ILchar) != 1);
 
-	if (sizeof(void*) >= 4) {
-		#if 0
-		// NOTE: all Windows buildbot libIL's crash in ilSaveF (!)
-		std::vector<ILchar> ilFullPath(fsFullPath.begin(), fsFullPath.end());
+	const ILchar* p = (sizeof(ILchar) != 1)?
+		reinterpret_cast<const ILchar*>(ilFullPath.data()):
+		reinterpret_cast<const ILchar*>(fsFullPath.data());
 
-		// null-terminate; vectors are not strings
-		ilFullPath.push_back(0);
-
-		// IL might be unicode-aware in which case it uses wchar_t{*} strings
-		// should not even be necessary because ASCII and UTFx are compatible
-		switch (sizeof(ILchar)) {
-			case (sizeof( char  )): {                                                                                                     } break;
-			case (sizeof(wchar_t)): { std::mbstowcs(reinterpret_cast<wchar_t*>(ilFullPath.data()), fsFullPath.data(), fsFullPath.size()); } break;
-			default: { assert(false); } break;
-		}
-		#endif
-
-		const ILchar* p = (sizeof(ILchar) != 1)?
-			reinterpret_cast<const ILchar*>(ilFullPath.data()):
-			reinterpret_cast<const ILchar*>(fsFullPath.data());
-
-		switch (int(fsImageExt[0])) {
-			case 'b': case 'B': { success = ilSave(IL_BMP, p); } break;
-			case 'j': case 'J': { success = ilSave(IL_JPG, p); } break;
-			case 'p': case 'P': { success = ilSave(IL_PNG, p); } break;
-			case 't': case 'T': { success = ilSave(IL_TGA, p); } break;
-			case 'd': case 'D': { success = ilSave(IL_DDS, p); } break;
-		}
-	} else {
-		FILE* file = fopen(fsFullPath.c_str(), "wb");
-
-		if (file != nullptr) {
-			switch (int(fsImageExt[0])) {
-				case 'b': case 'B': { success = ilSaveF(IL_BMP, file); } break;
-				case 'j': case 'J': { success = ilSaveF(IL_JPG, file); } break;
-				case 'p': case 'P': { success = ilSaveF(IL_PNG, file); } break;
-				case 't': case 'T': { success = ilSaveF(IL_TGA, file); } break;
-				case 'd': case 'D': { success = ilSaveF(IL_DDS, file); } break;
-			}
-
-			fclose(file);
-		}
+	switch (int(fsImageExt[0])) {
+		case 'b': case 'B': { success = ilSave(IL_BMP, p); } break;
+		case 'j': case 'J': { success = ilSave(IL_JPG, p); } break;
+		case 'p': case 'P': { success = ilSave(IL_PNG, p); } break;
+		case 't': case 'T': { success = ilSave(IL_TGA, p); } break;
+		case 'd': case 'D': { success = ilSave(IL_DDS, p); } break;
 	}
 
 	if (logged) {
@@ -1507,6 +1466,9 @@ bool CBitmap::Save(const std::string& filename, bool opaque, bool logged, unsign
 
 	ilDeleteImages(1, &imageID);
 	ilDisable(IL_ORIGIN_SET);
+
+	lck.unlock(); //unlock explicitly because Free(flippedCopy) is locking the same mutex
+
 	return success;
 }
 
@@ -1543,7 +1505,7 @@ bool CBitmap::SaveFloat(std::string const& filename) const
 	if (GetMemSize() == 0 || channels != 4)
 		return false;
 
-	std::lock_guard<spring::mutex> lck(ITexMemPool::texMemPool->GetMutex());
+	std::scoped_lock lck(ITexMemPool::texMemPool->GetMutex());
 
 	// seems IL_ORIGIN_SET only works in ilLoad and not in ilTexImage nor in ilSaveImage
 	// so we need to flip the image ourselves

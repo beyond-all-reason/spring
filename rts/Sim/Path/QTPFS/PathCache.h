@@ -24,6 +24,7 @@ namespace QTPFS {
 
 		struct DirtyPathDetail {
 			entt::entity pathEntity;
+			int autoRepathTrigger;
 			bool clearSharing;
 			bool clearPath;
 		};

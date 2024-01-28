@@ -776,6 +776,11 @@ int LuaUtils::PushModelPath(lua_State* L, const SolidObjectDef* def)
 
 int LuaUtils::PushModelTable(lua_State* L, const SolidObjectDef* def) {
 
+	/* Note, the line below loads the model if it isn't already
+	 * preloaded, which can be slow. This is also why this subtable
+	 * doesn't contain things like model type and path that are
+	 * known without loading it - otherwise devs would sometimes
+	 * access it in the slower way without realizing it */
 	const S3DModel* model = def->LoadModel();
 
 	lua_newtable(L);

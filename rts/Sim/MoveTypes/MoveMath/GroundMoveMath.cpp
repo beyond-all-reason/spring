@@ -39,8 +39,8 @@ float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slop
 	if (slope > moveDef.maxSlope)
 		return speedMod;
 
-	// is this square below our maxWaterDepth and are we going further downhill?
-	if ((dirSlopeMod <= 0.0f) && (-height > moveDef.depth))
+	// is this square below our maxWaterDepth?
+	if ((-height) > moveDef.depth)
 		return speedMod;
 
 	// slope-mod (speedMod is not increased or decreased by downhill slopes)

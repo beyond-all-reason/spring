@@ -144,6 +144,11 @@ bool LuaInterCall::PushEntriesUnsynced(lua_State* L)
 	return true;
 }
 
+bool LuaInterCall::PushEntriesLuaUI(lua_State* L)
+{
+	PushCallHandler(L, LUA_UI,    "LuaUI");
+	return true;
+}
 
 /******************************************************************************/
 /******************************************************************************/

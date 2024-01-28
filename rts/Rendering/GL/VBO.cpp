@@ -18,7 +18,7 @@
 
 //CONFIG(bool, UseVBO).defaultValue(true).safemodeValue(false);
 CONFIG(bool, UseVBO).deprecated(true);
-CONFIG(bool, UsePBO).defaultValue(true).safemodeValue(false).headlessValue(false);
+CONFIG(bool, UsePBO).deprecated(true);
 
 
 /**
@@ -400,10 +400,10 @@ GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 			#endif
 			} break;
 		case GL_READ_WRITE:
-			access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | mapUnsyncedBit;
+			access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
 			break;
 		case GL_READ_ONLY:
-			access = GL_MAP_READ_BIT | mapUnsyncedBit;
+			access = GL_MAP_READ_BIT;
 			break;
 		default: break;
 	}

@@ -291,6 +291,8 @@ bool QTPFS::QTNode::CanSplit(unsigned int depth, bool forced) const {
 	return true;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 	if (!CanSplit(depth, forced))
@@ -316,14 +318,29 @@ bool QTPFS::QTNode::Split(NodeLayer& nl, unsigned int depth, bool forced) {
 	neighbours.clear();
 	// netpoints.clear();
 
+	if (AllSquaresImpassable()) {
+		nl.DecreaseClosedNodeCounter();
+	} else {
+		nl.DecreaseOpenNodeCounter();
+	}
+
 	nl.SetNumLeafNodes(nl.GetNumLeafNodes() + (4 - 1));
 	assert(!IsLeaf());
 	return true;
 }
 
+#pragma GCC pop_options
+
 bool QTPFS::QTNode::Merge(NodeLayer& nl) {
-	if (IsLeaf())
+	if (IsLeaf()) {
+		if (AllSquaresImpassable()) {
+			nl.DecreaseClosedNodeCounter();
+		} else {
+			nl.DecreaseOpenNodeCounter();
+		}
+
 		return false;
+	}
 
 	neighbours.clear();
 	// netpoints.clear();
@@ -428,6 +445,8 @@ bool QTPFS::QTNode::Merge(NodeLayer& nl) {
 #endif
 
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int depth, const UpdateThreadData* threadData) {
 	unsigned int numNewBinSquares = 0; // nr. of squares in <r> that changed bin after deformation
@@ -477,9 +496,12 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 	}
 }
 
+#pragma GCC pop_options
+
+
 bool QTPFS::QTNode::UpdateMoveCost(
 	const UpdateThreadData* threadData,
-	const NodeLayer& nl,
+	NodeLayer& nl,
 	const SRectangle& r,
 	unsigned int& numNewBinSquares,
 	unsigned int& numDifBinSquares,
@@ -559,6 +581,12 @@ bool QTPFS::QTNode::UpdateMoveCost(
 		} else {
 			moveCostAvg = QTPFS_POSITIVE_INFINITY;
 		}
+	}
+
+	if (AllSquaresImpassable()) {
+		nl.IncreaseClosedNodeCounter();
+	} else {
+		nl.IncreaseOpenNodeCounter();
 	}
 
 	// Impassable squares don't impact search performance, but the larger they are the bigger the

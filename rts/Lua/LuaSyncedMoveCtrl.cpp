@@ -614,9 +614,9 @@ int LuaSyncedMoveCtrl::SetMoveDef(lua_State* L)
 	assert(unit->moveType != nullptr);
 
 	// parse a MoveDef by number *or* by string (mutually exclusive)
-	if (lua_isnumber(L, 2))
+	if (lua_israwnumber(L, 2))
 		moveDef = moveDefHandler.GetMoveDefByPathType(std::clamp(luaL_checkint(L, 2), 0, int(moveDefHandler.GetNumMoveDefs()) - 1));
-	if (lua_isstring(L, 2))
+	if (lua_israwstring(L, 2))
 		moveDef = moveDefHandler.GetMoveDefByName(lua_tostring(L, 2));
 
 	if (moveDef == nullptr) {

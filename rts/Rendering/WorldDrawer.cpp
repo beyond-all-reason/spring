@@ -209,9 +209,10 @@ void CWorldDrawer::Update(bool newSimFrame)
 	LuaObjectDrawer::Update(numUpdates == 0);
 	readMap->UpdateDraw(numUpdates == 0);
 
-	if (globalRendering->drawGround)
+	if (globalRendering->drawGround) {
+		ZoneScopedN("GroundDrawer::Update");
 		(readMap->GetGroundDrawer())->Update();
-
+	}
 	// XXX: done in CGame, needs to get updated even when !doDrawWorld
 	// (it updates unitdrawpos which is used for maximized minimap too)
 	// unitDrawer->Update();
@@ -269,12 +270,6 @@ void CWorldDrawer::GenerateIBLTextures() const
 		SCOPED_TIMER("Draw::World::UpdateShadingTex");
 		readMap->UpdateShadingTexture();
 	}
-
-	if (FBO::IsSupported())
-		FBO::Unbind();
-
-	// restore the normal active camera's VP
-	camera->LoadViewport();
 }
 
 void CWorldDrawer::ResetMVPMatrices() const
@@ -398,7 +393,10 @@ void CWorldDrawer::DrawAlphaObjects() const
 		SCOPED_TIMER("Draw::World::Water");
 
 		const auto& water = IWater::GetWater();
-		water->UpdateWater(game);
+		{
+			ZoneScopedN("Draw::World::Water::UpdateWater");
+			water->UpdateWater(game);
+		}
 		water->Draw();
 		eventHandler.DrawWaterPost();
 	}

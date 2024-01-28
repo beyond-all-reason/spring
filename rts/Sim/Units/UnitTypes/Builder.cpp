@@ -366,7 +366,7 @@ bool CBuilder::UpdateReclaim(const Command& fCommand)
 	// and reset curReclaim to null (which would crash CreateNanoParticle)
 	CSolidObject* curReclaimee = curReclaim;
 
-	if (curReclaimee == nullptr || f3SqDist(curReclaimee->pos, pos) >= Square(buildDistance + curReclaimee->radius) || !inBuildStance)
+	if (curReclaimee == nullptr || f3SqDist(curReclaimee->pos, pos) >= Square(buildDistance + curReclaimee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
@@ -388,7 +388,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 	CBuilderCAI* cai = static_cast<CBuilderCAI*>(commandAI);
 	CFeature* curResurrectee = curResurrect;
 
-	if (curResurrectee == nullptr || f3SqDist(curResurrectee->pos, pos) >= Square(buildDistance + curResurrectee->radius) || !inBuildStance)
+	if (curResurrectee == nullptr || f3SqDist(curResurrectee->pos, pos) >= Square(buildDistance + curResurrectee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
@@ -476,7 +476,7 @@ bool CBuilder::UpdateCapture(const Command& fCommand)
 {
 	CUnit* curCapturee = curCapture;
 
-	if (curCapturee == nullptr || f3SqDist(curCapturee->pos, pos) >= Square(buildDistance + curCapturee->radius) || !inBuildStance)
+	if (curCapturee == nullptr || f3SqDist(curCapturee->pos, pos) >= Square(buildDistance + curCapturee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {

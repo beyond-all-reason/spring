@@ -299,7 +299,21 @@ void glSaveTexture(const GLuint textureID, const char* filename, int level)
 	GLenum dataType = params.isDepth ? GL_FLOAT : GL_UNSIGNED_BYTE;
 
 	bmp.Alloc(params.sizeX, params.sizeY, params.chNum, dataType);
-	glGetTexImage(GL_TEXTURE_2D, level, extFormat, dataType, bmp.GetRawMem());
+
+	{
+		GLint ra = CBitmap::ExtFmtToChannels(extFormat);
+		GLint ca;
+		glGetIntegerv(GL_PACK_ALIGNMENT, &ca);
+
+		if (ra != ca)
+			glPixelStorei(GL_PACK_ALIGNMENT, (ra == 4) ? 4 : 1);
+
+		auto texBind = GL::TexBind(GL_TEXTURE_2D, textureID);
+		glGetTexImage(GL_TEXTURE_2D, level, extFormat, dataType, bmp.GetRawMem());
+
+		if (ra != ca)
+			glPixelStorei(GL_PACK_ALIGNMENT, ca);
+	}
 
 	if (params.isDepth) {
 		//doesn't work, TODO: fix

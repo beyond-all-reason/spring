@@ -208,7 +208,7 @@ protected:
 		TextureType texType;
 
 		std::vector<std::string> names;
-		std::vector<char> mem;
+		std::vector<uint8_t> mem;
 	};
 
 	std::string name;

@@ -195,17 +195,25 @@ public:
 	/// Point at which a region is considered bad for raw path tracing.
 	float pfRawMoveSpeedThreshold;
 
-	/// Increase the strength of distance to the goal when considering the next optimal quad to
-	/// check during QTPFS path searching. The base strength is considered for the quad with least move cost, which
-	/// gives a weak pull. Increase the strength to encourage the QTPFS to more strongly favour
-	/// checking quads nearer the goal rather than on the current shortest path - which may be
-	/// going in the wrong direction. Be careful though, if it is too strong then the pathing
-	/// system will likely produce poor paths that tend to hug walls and obstacles instead of
-	/// cutting past them on approach.
-	/// The increase strength is measured against the difference between the min move cost
-	/// and the mean of all quad move costs. Typically a value near 0 is best.
-	/// 0.0 = no increase, 1.0 = increase to the mean move cost, 2.0 increase to max move cost.
-	float pfHcostMult;
+	/// Limits how many nodes the QTPFS pathing system is permitted to search. A smaller number
+	/// improves CPU performance, but a larger number will resolve longer paths better, without
+	/// needing to refresh the path.
+	int qtMaxNodesSearched;
+
+	/// Limits how many nodes the QTPFS pathing system is permitted to search, like
+	/// qtMaxNodesSearched, except that it calculated based off a relative to walkable nodes
+	/// in the map. The larger of this and qtMaxNodesSearched will be used.
+	float qtMaxNodesSearchedRelativeToMapOpenNodes;
+
+	/// Minimum size, in elmos, an incomplete path has to be to allow the path to be refreshed.
+	/// Once the path is smaller than this distance then the system assumes the path cannot be
+	/// improved further. A larger number reduces CPU usage, but also increses the chance that
+	/// a unit will become trapped in a complex terrain/base setup even if there's a route that
+	/// would bring the unit nearer to the goal.
+	float qtRefreshPathMinDist;
+
+	/// Enable to reduce CPU usage, but also reduce quality of resultant paths.
+	bool qtLowerQualityPaths;
 
 	float pfRawDistMult;
 	float pfUpdateRateScale;

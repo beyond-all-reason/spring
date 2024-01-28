@@ -422,7 +422,7 @@ bool CCobThread::Tick()
 			} break;
 			case SLEEP: {
 				r1 = PopDataStack();
-				wakeTime = cobEngine->GetCurrentTime() + r1;
+				wakeTime = cobEngine->GetCurrTime() + r1;
 				state = Sleep;
 
 				cobEngine->ScheduleThread(this);

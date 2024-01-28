@@ -45,7 +45,7 @@ PCMemPool pcMemPool;
 // PEMemPool peMemPool;
 
 static const std::string GetPathCacheDir() {
-	return (FileSystem::GetCacheDir() + "/paths/");
+	return (FileSystem::GetCacheDir() + FileSystemAbstraction::GetNativePathSeparator() + "paths" + FileSystemAbstraction::GetNativePathSeparator());
 }
 
 static const std::string GetCacheFileName(const std::string& fileHashCode, const std::string& peFileName, const std::string& mapFileName) {

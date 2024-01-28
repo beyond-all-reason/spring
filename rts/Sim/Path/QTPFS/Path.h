@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "PathDefines.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
 #include "System/float3.h"
@@ -52,6 +53,9 @@ namespace QTPFS {
 			boundingBoxMins = other.boundingBoxMins;
 			boundingBoxMaxs = other.boundingBoxMaxs;
 
+			repathAtPointIndex = other.repathAtPointIndex;
+			goalPosition = other.goalPosition;
+
 			owner = other.owner;
 			searchTime = other.searchTime;
 			return *this;
@@ -79,6 +83,9 @@ namespace QTPFS {
 			boundingBoxMins = other.boundingBoxMins;
 			boundingBoxMaxs = other.boundingBoxMaxs;
 
+			repathAtPointIndex = other.repathAtPointIndex;
+			goalPosition = other.goalPosition;
+
 			owner = other.owner;
 			searchTime = other.searchTime;
 
@@ -94,16 +101,16 @@ namespace QTPFS {
 		unsigned int GetNextPointIndex() const { return nextPointIndex; }
 		unsigned int GetNumPathUpdates() const { return numPathUpdates; }
 
-		void SetHash(std::uint64_t hash) { this->hash = hash; }
-		void SetVirtualHash(std::uint64_t virtualHash) { this->virtualHash = virtualHash; }
+		void SetHash(PathHashType hash) { this->hash = hash; }
+		void SetVirtualHash(PathHashType virtualHash) { this->virtualHash = virtualHash; }
 		void SetRadius(float radius) { this->radius = radius; }
 		void SetSynced(bool synced) { this->synced = synced; }
 		void SetHasFullPath(bool fullPath) { this->haveFullPath = fullPath; }
 		void SetHasPartialPath(bool partialPath) { this->havePartialPath = partialPath; }
 
 		float GetRadius() const { return radius; }
-		std::uint64_t GetHash() const { return hash; }
-		std::uint64_t GetVirtualHash() const { return virtualHash; }
+		PathHashType GetHash() const { return hash; }
+		PathHashType GetVirtualHash() const { return virtualHash; }
 		bool IsSynced() const { return synced; }
 		bool IsFullPath() const { return haveFullPath; }
 		bool IsPartialPath() const { return havePartialPath; }
@@ -112,7 +119,10 @@ namespace QTPFS {
 			boundingBoxMins.x = 1e6f; boundingBoxMaxs.x = -1e6f;
 			boundingBoxMins.z = 1e6f; boundingBoxMaxs.z = -1e6f;
 
-			for (unsigned int n = 0; n < points.size(); n++) {
+			const unsigned int begin = (nextPointIndex >= 2U) ? nextPointIndex - 2U : 0U;
+			const unsigned int end = (repathAtPointIndex > 0U) ? repathAtPointIndex + 1U : points.size();
+
+			for (unsigned int n = begin; n < end; n++) {
 				boundingBoxMins.x = std::min(boundingBoxMins.x, points[n].x);
 				boundingBoxMins.z = std::min(boundingBoxMins.z, points[n].z);
 				boundingBoxMaxs.x = std::max(boundingBoxMaxs.x, points[n].x);
@@ -174,6 +184,7 @@ namespace QTPFS {
 			unsigned int start = std::min(index, NumPoints() - 1), end = NumPoints() - 1;
 			for (unsigned int i = start; i < end; ++i) { points[i] = points[i+1]; }
 			points.pop_back();
+			if (index < repathAtPointIndex) repathAtPointIndex--;
 		}
 
 		void SetNode(unsigned int i, uint32_t nodeId, float2&& netpoint, int pointIdx) {
@@ -237,23 +248,33 @@ namespace QTPFS {
 
 		spring_time GetSearchTime() const { return searchTime; }
 
+		// Incomplete paths need to be rebuilt from time to time as the owner makes progress.
+		unsigned int GetRepathTriggerIndex() const { return repathAtPointIndex; }
+		void SetRepathTriggerIndex(unsigned int index) { repathAtPointIndex = index; }
+
+		void ClearGetRepathTriggerIndex() { repathAtPointIndex = 0; }
+
+		float3 GetGoalPosition() const { return goalPosition; }
+		void SetGoalPosition(float3 point) { goalPosition = point; }
+
 	private:
 		unsigned int pathID = 0;
 		int pathType = 0;
 
 		unsigned int nextPointIndex = 0; // index of the next waypoint to be visited
+		unsigned int repathAtPointIndex = 0; // minimum index of the waypoint to trigger a repath.
 		unsigned int numPathUpdates = 0; // number of times this path was invalidated
 
 		// Identifies the layer, target quad and source quad for a search query so that similar
 		// searches can be combined.
-		std::uint64_t hash = -1;
+		PathHashType hash = BAD_HASH;
 
 		// Similar to hash, but the target quad and source quad numbers may not relate to actual
 		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
 		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
 		// start and/or end in different, but close, quads. This is used to handle partially-
 		// shared path searches.
-		std::uint64_t virtualHash = -1;
+		PathHashType virtualHash = BAD_HASH;
 		float radius = 0.f;
 		bool synced = true;
 		bool haveFullPath = true;
@@ -266,6 +287,9 @@ namespace QTPFS {
 		// corners of the bounding-box containing all our points
 		float3 boundingBoxMins;
 		float3 boundingBoxMaxs;
+
+		// Used for incomplete paths to allow repathing attempts to the real goal.
+		float3 goalPosition;
 
 		// object that requested this path (NULL if none)
 		const CSolidObject* owner = nullptr;

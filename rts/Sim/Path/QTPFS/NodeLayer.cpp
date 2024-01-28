@@ -24,9 +24,11 @@ inline int __bsfd (int mask)
 #include "Node.h"
 
 #include "Map/MapInfo.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
+#include "Sim/Objects/SolidObject.h"
 #include "System/SpringMath.h"
 
 #include <tracy/Tracy.hpp>
@@ -85,10 +87,18 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	const SRectangle& r = threadData.areaUpdated;
 	const MoveDef* md = threadData.moveDef;
 
-	CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits);
-
 	auto &blockRect = threadData.areaMaxBlockBits;
 	auto &blockBits = threadData.maxBlockBits;
+
+	int tempNum = gs->GetMtTempNum(threadData.threadId);
+
+	MoveTypes::CheckCollisionQuery virtualObject(md);
+	MoveDefs::CollisionQueryStateTrack queryState;
+	const bool isSubmersible = (md->isSubmarine ||
+							   (md->followGround && md->depth > md->height));
+	if (!isSubmersible) {
+		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits, threadData.threadId);
+	}
 
 	auto rangeIsBlocked = [&blockRect, &blockBits](const MoveDef& md, int chmx, int chmz){
 		const int xmin = (chmx - md.xsizeh) - blockRect.x1;
@@ -110,6 +120,24 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 		return ret;
 	};
 
+	// Collisions around above/below water units is messy in the engine and trying to pass flags
+	// down through the multiple function calls will make it even messier. Creating a querying
+	// based on a virtual object, which can then be moved per query may be the simplest approach.
+	// We can't flood fill collision data like normal because the squares that collide can change
+	// as the unit's centre square's height changes.
+	auto submersibleRangeIsBlocked = [this, &virtualObject, &queryState, &tempNum, &threadData](const MoveDef& md, int chmx, int chmz){
+		const int xmin = (chmx - md.xsizeh);
+		const int zmin = (chmz - md.zsizeh);
+		const int xmax = (chmx + md.xsizeh);
+		const int zmax = (chmz + md.zsizeh);
+
+		md.UpdateCheckCollisionQuery(virtualObject, queryState, {chmx, chmz});
+		if (queryState.refreshCollisionCache)
+			tempNum = gs->GetMtTempNum(threadData.threadId);
+		
+		return CMoveMath::RangeIsBlockedHashedMt(xmin, xmax, zmin, zmax, &virtualObject, tempNum, threadData.threadId);
+	};
+
 	// divide speed-modifiers into bins
 	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
 		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
@@ -118,10 +146,11 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			const unsigned int recIdx = hmz * xsize + hmx;
 
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
-			const int chmx = std::clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
-			const int chmz = std::clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
-			const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
-			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
+			const int chmx = std::clamp(int(hmx), md->xsizeh, mapDims.mapxm1 + (-md->xsizeh));
+			const int chmz = std::clamp(int(hmz), md->zsizeh, mapDims.mapym1 + (-md->zsizeh));
+
+			int maxBlockBit = (!isSubmersible) ? rangeIsBlocked(*md, chmx, chmz)
+											  : submersibleRangeIsBlocked(*md, chmx, chmz);
 
 			// NOTE:
 			//   movetype code checks ONLY the *CENTER* square of a unit's footprint
@@ -137,9 +166,13 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			//   
 			// const int maxBlockBit = (luBlockBits == NULL)? CMoveMath::SquareIsBlocked(*md, hmx, hmz, NULL): (*luBlockBits)[recIdx];
 
+			float newAbsSpeedMod = 0.f;
+
 			#define NL QTPFS::NodeLayer
-			const float tmpAbsSpeedMod = std::clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
-			const float newAbsSpeedMod = tmpAbsSpeedMod * ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0);
+			if ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0) {
+				const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
+				newAbsSpeedMod = std::clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
+			}
 			const float newRelSpeedMod = std::clamp((newAbsSpeedMod - NL::MIN_SPEEDMOD_VALUE) / (NL::MAX_SPEEDMOD_VALUE - NL::MIN_SPEEDMOD_VALUE), 0.0f, 1.0f);
 			#undef NL
 

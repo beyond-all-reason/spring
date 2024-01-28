@@ -1098,8 +1098,8 @@ void CLuaHandle::UnitTaken(const CUnit* unit, int oldTeam, int newTeam)
  * @function UnitGiven
  * @number unitID
  * @number unitDefID
- * @number oldTeam
  * @number newTeam
+ * @number oldTeam 
  */
 void CLuaHandle::UnitGiven(const CUnit* unit, int oldTeam, int newTeam)
 {

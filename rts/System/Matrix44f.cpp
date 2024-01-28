@@ -365,19 +365,17 @@ bool CMatrix44f::operator==(const CMatrix44f& rhs) const
 	if (this == &rhs)
 		return true;
 
-#if 0
-	return (std::memcmp(this, &rhs, sizeof(CMatrix44f)) == 0);
-#else
-	static constexpr uint16_t BINEQ = 0xFFFF;
+	static constexpr int BINEQ = 0xF;
 
 	for (size_t i = 0; i < 4; ++i) {
-		const __m128i l = _mm_load_si128(reinterpret_cast<const __m128i*>(&    md[i][0]));
-		const __m128i r = _mm_load_si128(reinterpret_cast<const __m128i*>(&rhs.md[i][0]));
-		if (static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi32(l, r))) != BINEQ)
+		const __m128 l = _mm_load_ps(&    md[i][0]);
+		const __m128 r = _mm_load_ps(&rhs.md[i][0]);
+		const __m128 c = _mm_cmpeq_ps(l, r);
+		const int cm = _mm_movemask_ps(c);
+		if (cm != BINEQ)
 			return false;
 	}
 	return true;
-#endif
 }
 
 CMatrix44f CMatrix44f::operator* (const CMatrix44f& m2) const
