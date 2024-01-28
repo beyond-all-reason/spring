@@ -187,9 +187,10 @@ struct BackendData {
 	bool debuggerAttached = false;
 	int winX = 1;
 	int winY = 1;
-	lua_State* ls;
+	lua_State* ls = nullptr;
 
 	Rml::UniquePtr<PassThroughPlugin> plugin;
+	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
 	CtxMutex contextMutex;
 };
 
@@ -240,8 +241,21 @@ bool RmlGui::InitializeLua(lua_State* lua_state)
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(AddContext, RemoveContext);
 	Rml::RegisterPlugin(data->plugin.get());
 
-	Rml::SolLua::SolLuaPlugin* slp = Rml::SolLua::Initialise(&lua);
-	data->system_interface.SetTranslationTable(&slp->translationTable);
+	data->luaPlugin = Rml::SolLua::Initialise(&lua);
+	data->system_interface.SetTranslationTable(&data->luaPlugin->translationTable);
+	return true;
+}
+
+bool RmlGui::RemoveLua()
+{
+	if (!RmlInitialized() || !data->ls) {
+		return false;
+	}
+	data->luaPlugin->RemoveLuaItems();
+	Update();
+	Rml::UnregisterPlugin(data->plugin.get());
+	Rml::UnregisterPlugin(data->luaPlugin);
+
 	return true;
 }
 
