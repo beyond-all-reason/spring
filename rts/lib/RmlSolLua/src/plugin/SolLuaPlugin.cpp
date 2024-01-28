@@ -1,8 +1,11 @@
 ﻿#include <RmlSolLua/SolLuaPlugin.h>
 
+#include "RmlUi/Core/Context.h"
 #include "SolLuaInstancer.h"
+#include <RmlUi/Core.h>
 
 #include "bind/bind.h"
+#include <algorithm>
 
 
 namespace Rml::SolLua
@@ -19,7 +22,32 @@ namespace Rml::SolLua
 
     int SolLuaPlugin::GetEventClasses()
     {
-        return EVT_BASIC;
+        return EVT_BASIC | EVT_DOCUMENT;
+    }
+
+    void SolLuaPlugin::OnContextCreate(Context* context) {
+        luaContexts.emplace_back(context);
+    }
+
+    void SolLuaPlugin::OnContextDestroy(Context* context) {
+        luaContexts.erase(std::remove(luaContexts.begin(), luaContexts.end(), context), luaContexts.end());
+    }
+
+    void SolLuaPlugin::OnDocumentLoad(ElementDocument* document) {
+        luaDocuments.emplace_back(document);
+    }
+
+    void SolLuaPlugin::OnDocumentUnload(ElementDocument* document) {
+        luaDocuments.erase(std::remove(luaDocuments.begin(), luaDocuments.end(), document), luaDocuments.end());
+    }
+
+    void SolLuaPlugin::RemoveLuaItems(){
+        for(auto d: luaDocuments) {
+            d->Close();
+        }
+        for(auto c: luaContexts) {
+            Rml::RemoveContext(c->GetName());
+        }
     }
 
     void SolLuaPlugin::OnInitialise()
