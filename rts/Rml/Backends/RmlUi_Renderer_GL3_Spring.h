@@ -76,6 +76,9 @@ public:
 	void SetTransform(const Rml::Matrix4f* transform) override;
 
 	// Can be passed to RenderGeometry() to enable texture rendering without changing the bound texture.
+	// Can used as the output of a TextureCallback to signal that this texture is externally managed.
+	//   In that case, you will need to keep a reference to the texture
+	//   you want and bind it before rendering the geometry.
 	static const Rml::TextureHandle TextureEnableWithoutBinding = Rml::TextureHandle(-1);
 
 private:

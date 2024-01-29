@@ -64,8 +64,6 @@ namespace RmlGui
         /// Returns the element's inherent size.
         bool GetIntrinsicDimensions(Rml::Vector2f& dimensions, float& ratio) override;
 
-        static inline std::unordered_set<Rml::TextureHandle> texturesToNotDelete{};
-
     protected:
         /// Renders the image.
         void OnRender() override;
@@ -98,7 +96,12 @@ namespace RmlGui
         void UpdateRect();
 
         // The texture this element is rendering from.
+    	// The Texture Handle of this should always be
+    	// RenderInterface_GL3_Spring::TextureEnableWithoutBinding (aka Rml::TextureHandle(-1))
         Rml::Texture texture;
+
+    	// Handle to the externally provided texture to be used
+    	Rml::TextureHandle luaTextureHandle;
 
         // True if we need to refetch the texture's source from the element's attributes.
         bool texture_dirty;
