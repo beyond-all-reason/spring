@@ -612,12 +612,9 @@ void RenderInterface_GL3_Spring::SetScissorRegion(int x, int y, int width, int h
 	}
 }
 
-// Restore packing
-#pragma pack()
-
 bool RenderInterface_GL3_Spring::LoadTexture(Rml::TextureHandle& texture_handle,
                                       Rml::Vector2i& texture_dimensions,
-                                      const Rml::String& source) override
+                                      const Rml::String& source)
 {
 	CBitmap bmp;
 	if (!bmp.Load(source)) {
