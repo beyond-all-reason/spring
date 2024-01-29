@@ -41,9 +41,9 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "Rml/RmlInputReceiver.h"
 #include "RmlUi_Backend.h"
-#include "RmlUi_Renderer_GL3.h"
+#include "RmlUi_Renderer_GL3_Spring.h"
 #include "RmlUi_SystemInterface.h"
-#include "System/FileSystem/FileHandler.h"
+#include "RmlUi_VFSFileInterface.h"
 #include "System/Input/InputHandler.h"
 
 using CtxMutex = std::recursive_mutex;
@@ -52,84 +52,7 @@ using CtxLockGuard = std::lock_guard<CtxMutex>;
 void createContext(const std::string& name);
 bool removeContext(const std::string& name);
 
-class RenderInterface_GL3_SDL : public RenderInterface_GL3
-{
-public:
-	RenderInterface_GL3_SDL()
-	{
-	}
-
-	bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions,
-	                 const Rml::String& source) override
-	{
-		CBitmap bmp;
-		if (!bmp.Load(source)) {
-			return false;
-		}
-		texture_dimensions.x = bmp.xsize;
-		texture_dimensions.y = bmp.ysize;
-		texture_handle = bmp.CreateTexture();
-		return texture_handle != 0;
-	}
-};
-
-class VFSFileInterface : public Rml::FileInterface
-{
-public:
-	VFSFileInterface()
-	{
-	}
-
-	Rml::FileHandle Open(const Rml::String& path)
-	{
-		// LOG_L(L_FATAL, "[SpringApp::%s]OPENING: %s %d", __func__, path.c_str(),
-		// CLuaHandle::GetDevMode());
-		const std::string mode = SPRING_VFS_RAW_FIRST;
-		CFileHandler* fh = new CFileHandler(path, mode);
-		if (!fh->FileExists()) {
-			delete fh;
-			return (Rml::FileHandle) nullptr;
-		}
-		return (Rml::FileHandle)fh;
-	}
-
-	void Close(Rml::FileHandle file)
-	{
-		((CFileHandler*)file)->Close();
-		delete (CFileHandler*)file;
-	}
-
-	size_t Read(void* buffer, size_t size, Rml::FileHandle file)
-	{
-		return ((CFileHandler*)file)->Read(buffer, size);
-	}
-
-	bool Seek(Rml::FileHandle file, long offset, int origin)
-	{
-		std::ios_base::seekdir seekdir;
-		switch (origin) {
-			case SEEK_CUR:
-				seekdir = std::ios_base::cur;
-				break;
-			case SEEK_END:
-				seekdir = std::ios_base::end;
-				break;
-			case SEEK_SET:
-			default:
-				seekdir = std::ios_base::beg;
-				break;
-		}
-		((CFileHandler*)file)->Seek(offset, seekdir);
-		// TODO: need to detect seek failure and then return false?
-		return true;
-	}
-
-	size_t Tell(Rml::FileHandle file)
-	{
-		return ((CFileHandler*)file)->GetPos();
-	};
-};
-
+/// Passes through RML events to the function pointers given in the constructor
 class PassThroughPlugin : public Rml::Plugin
 {
 	void (*onContextCreate)(Rml::Context*);
@@ -170,7 +93,7 @@ public:
 struct BackendData {
 	RmlSystemInterface system_interface;
 #ifndef HEADLESS
-	RenderInterface_GL3_SDL render_interface;
+	RenderInterface_GL3_Spring render_interface;
 #else
 	RenderInterface_Headless render_interface;
 #endif
@@ -228,6 +151,10 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
 	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
 	data->initialized = true;
+
+	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
+	Rml::RegisterPlugin(data->plugin.get());
+
 	return true;
 }
 
@@ -238,9 +165,6 @@ bool RmlGui::InitializeLua(lua_State* lua_state)
 	}
 	sol::state_view lua(lua_state);
 	data->ls = lua_state;
-	data->plugin = Rml::MakeUnique<PassThroughPlugin>(AddContext, RemoveContext);
-	Rml::RegisterPlugin(data->plugin.get());
-
 	data->luaPlugin = Rml::SolLua::Initialise(&lua);
 	data->system_interface.SetTranslationTable(&data->luaPlugin->translationTable);
 	return true;
@@ -253,7 +177,6 @@ bool RmlGui::RemoveLua()
 	}
 	data->luaPlugin->RemoveLuaItems();
 	Update();
-	Rml::UnregisterPlugin(data->plugin.get());
 	Rml::UnregisterPlugin(data->luaPlugin);
 
 	return true;
@@ -264,7 +187,9 @@ void RmlGui::Shutdown()
 	if (!RmlInitialized()) {
 		return;
 	}
-	data->initialized = false;
+
+	Rml::UnregisterPlugin(data->plugin.get());
+	data.reset();
 
 	// removes all contexts
 	Rml::Shutdown();
@@ -331,14 +256,14 @@ CInputReceiver* RmlGui::GetInputReceiver()
 	return &data->inputReceiver;
 }
 
-void RmlGui::AddContext(Rml::Context* context)
+void RmlGui::OnContextCreate(Rml::Context* context)
 {
 	CtxLockGuard lock(data->contextMutex);
 	context->SetDimensions({data->winX, data->winY});
 	data->contexts.push_back(context);
 }
 
-void RmlGui::RemoveContext(Rml::Context* context)
+void RmlGui::OnContextDestroy(Rml::Context* context)
 {
 	CtxLockGuard lock(data->contextMutex);
 	data->contexts.erase(std::ranges::find(data->contexts, context));
