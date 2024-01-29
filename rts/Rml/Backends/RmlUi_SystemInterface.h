@@ -34,7 +34,6 @@
 
 #include <RmlUi/Core/Input.h>
 
-#include "Game/UI/MouseHandler.h"
 #include <RmlSolLua/TranslationTable.h>
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
