@@ -160,17 +160,22 @@ namespace Rml::SolLua
 	/// Binds the Rml::Context class to Lua.
 	/// </summary>
 	/// <param name="lua">The Lua state to bind into.</param>
-	void bind_context(sol::state_view &lua)
+	void bind_context(sol::state_view &lua, SolLuaPlugin* slp)
 	{
 		lua.new_usertype<Rml::Context>(
 				"Context", sol::no_constructor,
 				// M
 				"AddEventListener", &Rml::Context::AddEventListener,
-				"CreateDocument", [](Rml::Context &self)
-				{ return self.CreateDocument(); },
-				"LoadDocument", [](Rml::Context &self, const Rml::String &document, sol::object w, sol::this_environment e, sol::this_state s)
+				"CreateDocument", [slp](Rml::Context &self)
+				{
+					auto doc = self.CreateDocument();
+					slp->AddDocumentTracking(doc);
+					return doc;
+					},
+				"LoadDocument", [slp](Rml::Context &self, const Rml::String &document, sol::object w, sol::this_environment e, sol::this_state s)
 				{
 				auto doc = self.LoadDocument(document);
+				slp->AddDocumentTracking(doc);
 				if (doc == nullptr) {
 					return (SolLuaDocument*) nullptr;
 				}

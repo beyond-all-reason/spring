@@ -191,7 +191,7 @@ namespace Rml::SolLua
 
 	// Called from RmlSolLua.cpp
 	void bind_color(sol::state_view& lua);
-	void bind_context(sol::state_view& lua);
+	void bind_context(sol::state_view& lua, SolLuaPlugin *slp);
 	void bind_datamodel(sol::state_view& lua);
 	void bind_document(sol::state_view& lua);
 	void bind_element(sol::state_view& lua);

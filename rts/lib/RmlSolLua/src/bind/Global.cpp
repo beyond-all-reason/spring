@@ -7,14 +7,6 @@ namespace Rml::SolLua
 
 	namespace functions
 	{
-		auto createContext(const Rml::String& name)
-		{
-			// Janky, but less jank than before at least
-			// context will be resized right away
-			// send {0, 0} in for now to avoid triggering a resize event
-			return Rml::CreateContext(name, {0, 0});
-		}
-
 		auto getContext()
 		{
 			std::function<Rml::Context* (int)> result = [](int idx) { return Rml::GetContext(idx); };
@@ -63,7 +55,13 @@ namespace Rml::SolLua
 
 		auto g = lua.new_usertype<rmlui>("rmlui",
 			// M
-			"CreateContext", functions::createContext,
+			"CreateContext", [slp](const Rml::String& name) {
+				// context will be resized right away by other code
+				// send {0, 0} in to avoid triggering a pointless resize event in the Rml code
+				auto context = Rml::CreateContext(name, {0, 0});
+				slp->AddContextTracking(context);
+				return context;
+			},
 			"RemoveContext", sol::resolve<bool (const Rml::String&)>(&Rml::RemoveContext),
 			"LoadFontFace", sol::overload(
 				&functions::loadFontFace1,

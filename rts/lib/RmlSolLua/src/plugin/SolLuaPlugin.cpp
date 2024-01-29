@@ -25,7 +25,7 @@ namespace Rml::SolLua
         return EVT_BASIC | EVT_DOCUMENT;
     }
 
-    void SolLuaPlugin::OnContextCreate(Context* context) {
+    void SolLuaPlugin::AddContextTracking(Context* context) {
         luaContexts.emplace_back(context);
     }
 
@@ -33,7 +33,7 @@ namespace Rml::SolLua
         luaContexts.erase(std::remove(luaContexts.begin(), luaContexts.end(), context), luaContexts.end());
     }
 
-    void SolLuaPlugin::OnDocumentLoad(ElementDocument* document) {
+    void SolLuaPlugin::AddDocumentTracking(ElementDocument* document) {
         luaDocuments.emplace_back(document);
     }
 
