@@ -28,20 +28,20 @@
  *
  */
 
-#ifndef RMLUI_BACKENDS_RENDERER_GL3_H
-#define RMLUI_BACKENDS_RENDERER_GL3_H
+#ifndef RMLUI_BACKENDS_RENDERER_GL3_SPRING_H
+#define RMLUI_BACKENDS_RENDERER_GL3_SPRING_H
 
 #include <RmlUi/Core/RenderInterface.h>
 #include <RmlUi/Core/Types.h>
 
 namespace Gfx {
-struct ShadersData;
+	struct ShadersData;
 }
 
-class RenderInterface_GL3 : public Rml::RenderInterface {
+class RenderInterface_GL3_Spring : public Rml::RenderInterface {
 public:
-	RenderInterface_GL3();
-	~RenderInterface_GL3();
+	RenderInterface_GL3_Spring();
+	~RenderInterface_GL3_Spring();
 
 	// Returns true if the renderer was successfully constructed.
 	explicit operator bool() const { return static_cast<bool>(shaders); }
@@ -127,18 +127,5 @@ private:
 	};
 	GLStateBackup glstate_backup = {};
 };
-
-/**
-    Helper functions for the OpenGL 3 renderer.
- */
-namespace RmlGL3 {
-
-// Loads OpenGL functions. Optionally, the out message describes the loaded GL version or an error message on failure.
-bool Initialize(Rml::String* out_message = nullptr);
-
-// Unloads OpenGL functions.
-void Shutdown();
-
-} // namespace RmlGL3
 
 #endif
