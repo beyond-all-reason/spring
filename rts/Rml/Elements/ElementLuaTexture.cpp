@@ -5,7 +5,8 @@
 //
 
 /*
- * This source file is based on the ElementLuaTexture.cpp file of RmlUi, the HTML/CSS Interface Middleware
+ * This source file is based on the ElementLuaTexture.cpp file of RmlUi, the HTML/CSS Interface
+ * Middleware
  *
  * For the latest information, see http://github.com/mikke89/RmlUi
  *
@@ -36,259 +37,256 @@
 
 #include "Lua/LuaOpenGLUtils.h"
 #include "Rml/Backends/RmlUi_Backend.h"
+#include "Rml/Backends/RmlUi_Renderer_GL3_Spring.h"
+#include "Rendering/GL/myGL.h"
+
 #include "RmlUi/Core/ComputedValues.h"
 #include "RmlUi/Core/ElementUtilities.h"
 #include "RmlUi/Core/GeometryUtilities.h"
 #include "RmlUi/Core/PropertyIdSet.h"
-
-#include <unordered_set>
+#include "RmlUi/Source/Core/TextureResource.h"
 
 namespace RmlGui
 {
-    ElementLuaTexture::ElementLuaTexture(const Rml::String& tag) :
-        Element(tag), dimensions(-1, -1), rect_source(RectSource::None)
-    {
-        dimensions_scale = 1.0f;
-        geometry_dirty = false;
-        texture_dirty = true;
-    }
+ElementLuaTexture::ElementLuaTexture(const Rml::String& tag)
+	: Element(tag)
+	, dimensions(-1, -1)
+	, rect_source(RectSource::None)
+{
+	dimensions_scale = 1.0f;
+	geometry_dirty = false;
+	texture_dirty = true;
+	luaTextureHandle = 0;
+}
 
-    ElementLuaTexture::~ElementLuaTexture() = default;
+ElementLuaTexture::~ElementLuaTexture() = default;
 
-    bool ElementLuaTexture::GetIntrinsicDimensions(Rml::Vector2f& _dimensions, float& _ratio)
-    {
-        // Check if we need to reload the texture.
-        if (texture_dirty)
-            LoadTexture();
+bool ElementLuaTexture::GetIntrinsicDimensions(Rml::Vector2f& _dimensions, float& _ratio)
+{
+	// Check if we need to reload the texture.
+	if (texture_dirty)
+		LoadTexture();
 
-        // Calculate the x dimension.
-        if (HasAttribute("width"))
-            dimensions.x = GetAttribute<float>("width", -1);
-        else if (rect_source == RectSource::None)
-            dimensions.x = (float)texture.GetDimensions().x;
-        else
-            dimensions.x = rect.Width();
+	// Calculate the x dimension.
+	if (HasAttribute("width"))
+		dimensions.x = GetAttribute<float>("width", -1);
+	else if (rect_source == RectSource::None)
+		dimensions.x = (float)texture.GetDimensions().x;
+	else
+		dimensions.x = rect.Width();
 
-        // Calculate the y dimension.
-        if (HasAttribute("height"))
-            dimensions.y = GetAttribute<float>("height", -1);
-        else if (rect_source == RectSource::None)
-            dimensions.y = (float)texture.GetDimensions().y;
-        else
-            dimensions.y = rect.Height();
+	// Calculate the y dimension.
+	if (HasAttribute("height"))
+		dimensions.y = GetAttribute<float>("height", -1);
+	else if (rect_source == RectSource::None)
+		dimensions.y = (float)texture.GetDimensions().y;
+	else
+		dimensions.y = rect.Height();
 
-        dimensions *= dimensions_scale;
+	dimensions *= dimensions_scale;
 
-        // Return the calculated dimensions. If this changes the size of the element, it will result in
-        // a call to 'onresize' below which will regenerate the geometry.
-        _dimensions = dimensions;
-        _ratio = dimensions.x / dimensions.y;
+	// Return the calculated dimensions. If this changes the size of the element, it will result in
+	// a call to 'onresize' below which will regenerate the geometry.
+	_dimensions = dimensions;
+	_ratio = dimensions.x / dimensions.y;
 
-        return true;
-    }
+	return true;
+}
 
-    void ElementLuaTexture::OnRender()
-    {
-        // Regenerate the geometry if required (this will be set if 'rect' changes but does not result in a resize).
-        if (geometry_dirty)
-            GenerateGeometry();
+void ElementLuaTexture::OnRender()
+{
+	glBindTexture(GL_TEXTURE_2D, luaTextureHandle);
+	// Regenerate the geometry if required (this will be set if 'rect' changes but does not result
+	// in a resize).
+	if (geometry_dirty)
+		GenerateGeometry();
 
-        // Render the geometry beginning at this element's content region.
-        geometry.Render(GetAbsoluteOffset(Rml::BoxArea::Content).Round());
-    }
+	// Render the geometry beginning at this element's content region.
+	geometry.Render(GetAbsoluteOffset(Rml::BoxArea::Content).Round());
+}
 
-    void ElementLuaTexture::OnAttributeChange(const Rml::ElementAttributes& changed_attributes)
-    {
-        // Call through to the base element's OnAttributeChange().
-        Element::OnAttributeChange(changed_attributes);
+void ElementLuaTexture::OnAttributeChange(const Rml::ElementAttributes& changed_attributes)
+{
+	// Call through to the base element's OnAttributeChange().
+	Element::OnAttributeChange(changed_attributes);
 
-        bool dirty_layout = false;
+	bool dirty_layout = false;
 
-        // Check for a changed 'src' attribute. If this changes, the old texture handle is released,
-        // forcing a reload when the layout is regenerated.
-        if (changed_attributes.find("src") != changed_attributes.end())
-        {
-            texture_dirty = true;
-            dirty_layout = true;
-        }
+	// Check for a changed 'src' attribute. If this changes, the old texture handle is released,
+	// forcing a reload when the layout is regenerated.
+	if (changed_attributes.find("src") != changed_attributes.end()) {
+		texture_dirty = true;
+		dirty_layout = true;
+	}
 
-        // Check for a changed 'width' attribute. If this changes, a layout is forced which will
-        // recalculate the dimensions.
-        if (changed_attributes.find("width") != changed_attributes.end()
-            || changed_attributes.find("height") !=changed_attributes.end())
-        {
-            dirty_layout = true;
-        }
+	// Check for a changed 'width' attribute. If this changes, a layout is forced which will
+	// recalculate the dimensions.
+	if (changed_attributes.find("width") != changed_attributes.end() ||
+	    changed_attributes.find("height") != changed_attributes.end()) {
+		dirty_layout = true;
+	}
 
-        // Check for a change to the 'rect' attribute. If this changes, the coordinates are
-        // recomputed and a layout forced. If a sprite is set to source, then that will override any attribute.
-        if (changed_attributes.find("rect") != changed_attributes.end())
-        {
-            UpdateRect();
+	// Check for a change to the 'rect' attribute. If this changes, the coordinates are
+	// recomputed and a layout forced. If a sprite is set to source, then that will override any
+	// attribute.
+	if (changed_attributes.find("rect") != changed_attributes.end()) {
+		UpdateRect();
 
-            // Rectangle has changed; this will most likely result in a size change, so we need to force a layout.
-            dirty_layout = true;
-        }
+		// Rectangle has changed; this will most likely result in a size change, so we need to force
+		// a layout.
+		dirty_layout = true;
+	}
 
-        if (dirty_layout)
-            DirtyLayout();
-    }
+	if (dirty_layout)
+		DirtyLayout();
+}
 
-    void ElementLuaTexture::OnPropertyChange(const Rml::PropertyIdSet& changed_properties)
-    {
-        Element::OnPropertyChange(changed_properties);
+void ElementLuaTexture::OnPropertyChange(const Rml::PropertyIdSet& changed_properties)
+{
+	Element::OnPropertyChange(changed_properties);
 
-        if (changed_properties.Contains(Rml::PropertyId::ImageColor) || changed_properties.Contains(Rml::PropertyId::Opacity))
-        {
-            GenerateGeometry();
-        }
-    }
+	if (changed_properties.Contains(Rml::PropertyId::ImageColor) ||
+	    changed_properties.Contains(Rml::PropertyId::Opacity)) {
+		GenerateGeometry();
+	}
+}
 
-    void ElementLuaTexture::OnChildAdd(Element* child)
-    {
-        // Load the texture once we have attached to the document so that it can immediately be found during the call to `Rml::GetTextureSourceList`. The
-        // texture won't actually be loaded from the backend before it is shown. However, only do this if we have an active context so that the dp-ratio
-        // can be retrieved. If there is no context now the texture loading will be deferred until the next layout update.
-        if (child == this && texture_dirty && GetContext())
-        {
-            LoadTexture();
-        }
-    }
+void ElementLuaTexture::OnChildAdd(Element* child)
+{
+	// Load the texture once we have attached to the document so that it can immediately be found
+	// during the call to `Rml::GetTextureSourceList`. The texture won't actually be loaded from the
+	// backend before it is shown. However, only do this if we have an active context so that the
+	// dp-ratio can be retrieved. If there is no context now the texture loading will be deferred
+	// until the next layout update.
+	if (child == this && texture_dirty && GetContext()) {
+		LoadTexture();
+	}
+}
 
-    void ElementLuaTexture::OnResize()
-    {
-        GenerateGeometry();
-    }
+void ElementLuaTexture::OnResize()
+{
+	GenerateGeometry();
+}
 
-    void ElementLuaTexture::OnDpRatioChange()
-    {
-        texture_dirty = true;
-        DirtyLayout();
-    }
+void ElementLuaTexture::OnDpRatioChange()
+{
+	texture_dirty = true;
+	DirtyLayout();
+}
 
-    void ElementLuaTexture::GenerateGeometry()
-    {
-        // Release the old geometry before specifying the new vertices.
-        geometry.Release(true);
+void ElementLuaTexture::GenerateGeometry()
+{
+	// Release the old geometry before specifying the new vertices.
+	geometry.Release(true);
 
-        Rml::Vector<Rml::Vertex>& vertices = geometry.GetVertices();
-        Rml::Vector<int>& indices = geometry.GetIndices();
+	Rml::Vector<Rml::Vertex>& vertices = geometry.GetVertices();
+	Rml::Vector<int>& indices = geometry.GetIndices();
 
-        vertices.resize(4);
-        indices.resize(6);
+	vertices.resize(4);
+	indices.resize(6);
 
-        // Generate the texture coordinates.
-        Rml::Vector2f texcoords[2];
-        if (rect_source != RectSource::None)
-        {
-            const auto texture_dimensions = Rml::Vector2f(Rml::Math::Max(texture.GetDimensions(), Rml::Vector2i(1)));
-            texcoords[0] = rect.TopLeft() / texture_dimensions;
-            texcoords[1] = rect.BottomRight() / texture_dimensions;
-        }
-        else
-        {
-            texcoords[0] = Rml::Vector2f(0, 0);
-            texcoords[1] = Rml::Vector2f(1, 1);
-        }
+	// Generate the texture coordinates.
+	Rml::Vector2f texcoords[2];
+	if (rect_source != RectSource::None) {
+		const auto texture_dimensions =
+			Rml::Vector2f(Rml::Math::Max(texture.GetDimensions(), Rml::Vector2i(1)));
+		texcoords[0] = rect.TopLeft() / texture_dimensions;
+		texcoords[1] = rect.BottomRight() / texture_dimensions;
+	} else {
+		texcoords[0] = Rml::Vector2f(0, 0);
+		texcoords[1] = Rml::Vector2f(1, 1);
+	}
 
-        const Rml::ComputedValues& computed = GetComputedValues();
+	const Rml::ComputedValues& computed = GetComputedValues();
 
-        float opacity = computed.opacity();
-        Rml::Colourb quad_colour = computed.image_color();
-        quad_colour.alpha = (Rml::byte)(opacity * (float)quad_colour.alpha);
+	float opacity = computed.opacity();
+	Rml::Colourb quad_colour = computed.image_color();
+	quad_colour.alpha = (Rml::byte)(opacity * (float)quad_colour.alpha);
 
-        Rml::Vector2f quad_size = GetBox().GetSize(Rml::BoxArea::Content).Round();
+	Rml::Vector2f quad_size = GetBox().GetSize(Rml::BoxArea::Content).Round();
 
-        Rml::GeometryUtilities::GenerateQuad(
-            &vertices[0], &indices[0],
-            Rml::Vector2f(0, 0), quad_size, quad_colour,
-            texcoords[0], texcoords[1]
-        );
+	Rml::GeometryUtilities::GenerateQuad(&vertices[0], &indices[0], Rml::Vector2f(0, 0), quad_size,
+	                                     quad_colour, texcoords[0], texcoords[1]);
 
-        geometry_dirty = false;
-    }
+	geometry_dirty = false;
+}
 
-    bool ElementLuaTexture::LoadTexture()
-    {
-        texture_dirty = false;
-        geometry_dirty = true;
-        dimensions_scale = 1.0f;
+bool ElementLuaTexture::LoadTexture()
+{
+	texture_dirty = false;
+	geometry_dirty = true;
+	dimensions_scale = 1.0f;
 
-        const float dp_ratio = Rml::ElementUtilities::GetDensityIndependentPixelRatio(this);
+	const float dp_ratio = Rml::ElementUtilities::GetDensityIndependentPixelRatio(this);
 
-        const auto source_name = GetAttribute<Rml::String>("src", "");
-        if (source_name.empty())
-        {
-            texture = Rml::Texture();
-            rect_source = RectSource::None;
-            return false;
-        }
+	const auto source_name = GetAttribute<Rml::String>("src", "");
+	if (source_name.empty()) {
+		texture = Rml::Texture();
+		rect_source = RectSource::None;
+		return false;
+	}
 
-        const Rml::TextureCallback callback = [](
-            const auto _, const Rml::String& name, Rml::TextureHandle& out_handle, Rml::Vector2i& out_dimensions
-        ) -> bool
-        {
-            LuaMatTexture texUnit;
-            if (!LuaOpenGLUtils::ParseTextureImage(RmlGui::GetLuaState(), texUnit, name))
-                return false;
+	const Rml::TextureCallback callback = [this](const auto _renderInterface, const Rml::String& name,
+	                                             Rml::TextureHandle& out_handle,
+	                                             Rml::Vector2i& out_dimensions) mutable -> bool {
+		LuaMatTexture texUnit;
+		if (!LuaOpenGLUtils::ParseTextureImage(RmlGui::GetLuaState(), texUnit, name)) {
+			luaTextureHandle = 0;
+			return false;
+		}
 
-            out_handle = texUnit.GetTextureID();
-            texturesToNotDelete.insert(out_handle);
+		// Don't give Rml handles to external textures
+		out_handle = RenderInterface_GL3_Spring::TextureEnableWithoutBinding;
+		luaTextureHandle = texUnit.GetTextureID();
 
-            const auto [width, height, _z] = texUnit.GetSize();
-            out_dimensions.x = width;
-            out_dimensions.y = height;
+		const auto [width, height, _z] = texUnit.GetSize();
+		out_dimensions.x = width;
+		out_dimensions.y = height;
 
-            return true;
-        };
+		return true;
+	};
 
+	texture.Set(source_name, callback);
 
-        texture.Set(source_name, callback);
+	dimensions_scale = dp_ratio;
 
-        dimensions_scale = dp_ratio;
+	// Set the texture onto our geometry object.
+	geometry.SetTexture(&texture);
 
-        // Set the texture onto our geometry object.
-        geometry.SetTexture(&texture);
+	return true;
+}
 
-        return true;
-    }
+void ElementLuaTexture::UpdateRect()
+{
+	bool valid_rect = false;
 
-    void ElementLuaTexture::UpdateRect()
-    {
-        bool valid_rect = false;
+	if (const auto rect_string = GetAttribute<Rml::String>("rect", ""); !rect_string.empty()) {
+		Rml::StringList coords_list;
+		Rml::StringUtilities::ExpandString(coords_list, rect_string, ' ');
 
-        if (const auto rect_string = GetAttribute<Rml::String>("rect", ""); !rect_string.empty())
-        {
-            Rml::StringList coords_list;
-            Rml::StringUtilities::ExpandString(coords_list, rect_string, ' ');
+		if (coords_list.size() != 4) {
+			Rml::Log::Message(Rml::Log::LT_WARNING,
+			                  "Element '%s' has an invalid 'rect' attribute; rect requires 4 "
+			                  "space-separated values, found %zu.",
+			                  GetAddress().c_str(), coords_list.size());
+		} else {
+			const Rml::Vector2f position = {Rml::FromString(coords_list[0], 0.f),
+			                                Rml::FromString(coords_list[1], 0.f)};
+			const Rml::Vector2f size = {Rml::FromString(coords_list[2], 0.f),
+			                            Rml::FromString(coords_list[3], 0.f)};
+			rect = Rml::Rectanglef::FromPositionSize(position, size);
 
-            if (coords_list.size() != 4)
-            {
-                Rml::Log::Message(
-                    Rml::Log::LT_WARNING,
-                    "Element '%s' has an invalid 'rect' attribute; rect requires 4 space-separated values, found %zu.",
-                    GetAddress().c_str(), coords_list.size()
-                );
-            }
-            else
-            {
-                const Rml::Vector2f position = {
-                    Rml::FromString(coords_list[0], 0.f), Rml::FromString(coords_list[1], 0.f)
-                };
-                const Rml::Vector2f size = {Rml::FromString(coords_list[2], 0.f), Rml::FromString(coords_list[3], 0.f)};
-                rect = Rml::Rectanglef::FromPositionSize(position, size);
+			// We have new, valid coordinates; force the geometry to be regenerated.
+			valid_rect = true;
+			geometry_dirty = true;
+			rect_source = RectSource::Attribute;
+		}
+	}
 
-                // We have new, valid coordinates; force the geometry to be regenerated.
-                valid_rect = true;
-                geometry_dirty = true;
-                rect_source = RectSource::Attribute;
-            }
-        }
+	if (!valid_rect) {
+		rect = {};
+		rect_source = RectSource::None;
+	}
+}
 
-        if (!valid_rect)
-        {
-            rect = {};
-            rect_source = RectSource::None;
-        }
-    }
-} // namespace RmlGui
+}  // namespace RmlGui

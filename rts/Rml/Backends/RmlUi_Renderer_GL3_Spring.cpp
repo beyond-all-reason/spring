@@ -657,6 +657,10 @@ bool RenderInterface_GL3_Spring::GenerateTexture(Rml::TextureHandle& texture_han
 
 void RenderInterface_GL3_Spring::ReleaseTexture(Rml::TextureHandle texture_handle)
 {
+	// Something was using a texture loaded/managed outside of Rml. Do nothing.
+	if (texture_handle == TextureEnableWithoutBinding)
+		return;
+
 	glDeleteTextures(1, (GLuint*)&texture_handle);
 }
 
