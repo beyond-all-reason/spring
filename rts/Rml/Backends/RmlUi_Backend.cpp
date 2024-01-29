@@ -157,7 +157,7 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
     data->initialized = true;
 
     data->element_lua_texture = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
-    Rml::Factory::RegisterElementInstancer("texture", data->element_lua_texture.get());
+    Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture.get());
 
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());
