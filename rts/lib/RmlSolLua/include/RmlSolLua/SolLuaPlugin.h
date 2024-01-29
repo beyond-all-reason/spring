@@ -26,6 +26,8 @@ namespace Rml::SolLua
         SolLuaPlugin(sol::state_view lua_state, const Rml::String& lua_environment_identifier);
 
         void RemoveLuaItems();
+        void AddContextTracking(Context* context);
+        void AddDocumentTracking(ElementDocument* document);
 
         TranslationTable translationTable;
     private:
@@ -34,9 +36,7 @@ namespace Rml::SolLua
         void OnInitialise() override;
         void OnShutdown() override;
 
-        void OnContextCreate(Context* context) override;
         void OnContextDestroy(Context* context) override;
-        void OnDocumentLoad(ElementDocument* document) override;
         void OnDocumentUnload(ElementDocument* document) override;
 
         std::unique_ptr<SolLuaDocumentElementInstancer> document_element_instancer;
