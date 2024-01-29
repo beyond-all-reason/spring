@@ -36,7 +36,7 @@ namespace Rml::SolLua
     void RegisterLua(sol::state_view* state, SolLuaPlugin* slp)
     {
         bind_color(*state);
-        bind_context(*state);
+        bind_context(*state, slp);
         bind_datamodel(*state);
         bind_element(*state);
         bind_element_derived(*state);
