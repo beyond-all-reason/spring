@@ -69,8 +69,8 @@ namespace RmlGui
 	void Update();
 	void RenderFrame();
 
-	void AddContext(Rml::Context* context);
-	void RemoveContext(Rml::Context* context);
+	void OnContextCreate(Rml::Context* context);
+	void OnContextDestroy(Rml::Context* context);
 
 	void BeginFrame();
 	void PresentFrame();
