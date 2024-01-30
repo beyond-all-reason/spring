@@ -152,12 +152,12 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 
 	Rml::Initialise();
 
-    Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
-    data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
-    data->initialized = true;
+	Rml::LoadFontFace("fonts/FreeSansBold.otf", true);
+	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
+	data->initialized = true;
 
-    data->element_lua_texture = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
-    Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture.get());
+	data->element_lua_texture = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
+	Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture.get());
 
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());
