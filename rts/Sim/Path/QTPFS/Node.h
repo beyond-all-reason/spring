@@ -248,7 +248,7 @@ namespace QTPFS {
 		int xmin = 0;
 		int zmin = 0;
 		int xmax = 0;
-		int zmax = 0; 
+		int zmax = 0;
 	};
 }
 

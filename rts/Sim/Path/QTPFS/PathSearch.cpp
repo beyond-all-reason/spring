@@ -108,6 +108,7 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	searchThreadData->Init(nodeLayer->GetMaxNodesAlloced(), nodeLayer->GetNumOpenNodes() + 2);
 
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
+	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
 	INode* srcNode = nodeLayer->GetNode(fwd.srcPoint.x / SQUARE_SIZE, fwd.srcPoint.z / SQUARE_SIZE);
 	INode* tgtNode = nodeLayer->GetNode(fwd.tgtPoint.x / SQUARE_SIZE, fwd.tgtPoint.z / SQUARE_SIZE);
@@ -133,8 +134,6 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 
 	fwd.srcSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_FORWARD].InsertINode(srcNode->GetIndex());
 	fwd.tgtSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_FORWARD].InsertINodeIfNotPresent(tgtNode->GetIndex());
-
-	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
 	// note src and tgt are swapped when searching backwards.
 	bwd.srcSearchNode = &searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD].InsertINode(tgtNode->GetIndex());
@@ -406,6 +405,18 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		}
 	};
 
+	if (badGoal) {
+		// Move the reverse search start point to the closest point to the goalPos.
+		auto* curNode = nodeLayer->GetPoolNode(bwd.srcSearchNode->GetIndex());
+		float2 tmpPoint
+			{ float(curNode->xmid() * SQUARE_SIZE)
+			, float(curNode->zmid() * SQUARE_SIZE)};
+
+		bwd.srcSearchNode->SetNeighborEdgeTransitionPoint(tmpPoint);
+		bwd.srcPoint = FindNearestPointOnNodeToGoal(*bwd.srcSearchNode, goalPos);
+		bwd.srcSearchNode->SetNeighborEdgeTransitionPoint({bwd.srcPoint.x, bwd.srcPoint.z});
+	}
+
 	assert(fwd.srcSearchNode != nullptr);
 
 	while (continueSearching) {
@@ -609,8 +620,8 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		// Final position needs to be the closest point on the last quad to the goal.
 		fwd.tgtPoint = FindNearestPointOnNodeToGoal(*fwd.tgtSearchNode, goalPos);
 	} else if (badGoal) {
-		// Starting nodw for the reverse search is the nearest node to the goalPos.
-		fwd.tgtPoint = FindNearestPointOnNodeToGoal(*bwd.srcSearchNode, goalPos);
+		// reverse source point has already been setup as the closest point to the goalPos.
+		fwd.tgtPoint = bwd.srcPoint;
 	} else if (useFwdPathOnly) {
 		fwd.tgtPoint = FindNearestPointOnNodeToGoal(*fwd.tgtSearchNode, goalPos);
 	}
