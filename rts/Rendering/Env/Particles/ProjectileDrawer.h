@@ -175,6 +175,8 @@ private:
 	int wantSoften = 0;
 
 	bool wantDrawOrder = true;
+
+	ScopedDepthBufferCopy sdbc{ false };
 };
 
 extern CProjectileDrawer* projectileDrawer;

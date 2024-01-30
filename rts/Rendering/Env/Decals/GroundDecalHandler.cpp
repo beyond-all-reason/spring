@@ -16,7 +16,6 @@
 #include "Map/SMF/SMFGroundDrawer.h"
 #include "Map/HeightMapTexture.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/DepthBufferCopy.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/ISky.h"
@@ -64,6 +63,8 @@ CGroundDecalHandler::CGroundDecalHandler()
 	, decalsUpdateList{ }
 	, smfDrawer { nullptr }
 	, lastProcessedGameFrame{ std::numeric_limits<int>::lowest() }
+	, highQuality{ configHandler->GetBool("HighQualityDecals") && (globalRendering->msaaLevel > 0) }
+	, sdbc{ highQuality }
 {
 	if (!GetDrawDecals())
 		return;
@@ -72,8 +73,6 @@ CGroundDecalHandler::CGroundDecalHandler()
 	CExplosionCreator::AddExplosionListener(this);
 
 	configHandler->NotifyOnChange(this, { "HighQualityDecals" });
-	highQuality = configHandler->GetBool("HighQualityDecals") && (globalRendering->msaaLevel > 0);
-	depthBufferCopy->AddConsumer(highQuality, this);	
 
 	smfDrawer = dynamic_cast<CSMFGroundDrawer*>(readMap->GetGroundDrawer());
 
@@ -92,9 +91,6 @@ CGroundDecalHandler::~CGroundDecalHandler()
 	CExplosionCreator::RemoveExplosionListener(this);
 	eventHandler.RemoveClient(this);
 	configHandler->RemoveObserver(this);
-
-	depthBufferCopy->DelConsumer(highQuality, this);
-
 
 	shaderHandler->ReleaseProgramObjects("[GroundDecalHandler]");
 	decalShader = nullptr;
@@ -1284,8 +1280,7 @@ void CGroundDecalHandler::ConfigNotify(const std::string& key, const std::string
 		return;
 
 	if (bool newHQ = configHandler->GetBool("HighQualityDecals") && (globalRendering->msaaLevel > 0); highQuality != newHQ) {
-		depthBufferCopy->DelConsumer(highQuality, this);
-		depthBufferCopy->AddConsumer(      newHQ, this);
+		sdbc = ScopedDepthBufferCopy(newHQ);
 		highQuality = newHQ;
 		ReloadDecalShaders();
 	}

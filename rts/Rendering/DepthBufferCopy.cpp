@@ -19,8 +19,8 @@ DepthBufferCopy::DepthBufferCopy()
 
 DepthBufferCopy::~DepthBufferCopy()
 {
-	assert(references[false].empty());
-	assert(references[true ].empty());
+	assert(consumersCount[false] == 0);
+	assert(consumersCount[true ] == 0);
 
 	eventHandler.RemoveClient(this);
 	autoLinkedEvents.clear();
@@ -36,29 +36,26 @@ void DepthBufferCopy::Kill()
 	depthBufferCopy = nullptr;
 }
 
-void DepthBufferCopy::AddConsumer(bool ms, const void* p)
+void DepthBufferCopy::AddConsumer(bool ms)
 {
-	if (references[ms].empty())
+	if (consumersCount[ms] == 0)
 		CreateTextureAndFBO(ms);
 
-	references[ms].emplace(reinterpret_cast<uintptr_t>(p));
+	consumersCount[ms]++;
 }
 
-void DepthBufferCopy::DelConsumer(bool ms, const void* p)
+void DepthBufferCopy::DelConsumer(bool ms)
 {
-	if (auto it = references[ms].find(reinterpret_cast<uintptr_t>(p)); it != references[ms].end())
-		references[ms].erase(it);
+	consumersCount[ms]--;
 
-	if (!references[ms].empty())
-		return;
-
-	DestroyTextureAndFBO(ms);
+	if (consumersCount[ms] == 0)
+		DestroyTextureAndFBO(ms);
 }
 
 void DepthBufferCopy::ViewResize()
 {
 	for (size_t ms = 0; ms < depthFBOs.size(); ++ms) {
-		if (references[ms].empty())
+		if (consumersCount[ms] == 0)
 			continue;
 
 		RecreateTextureAndFBO(static_cast<bool>(ms));
@@ -83,10 +80,10 @@ void DepthBufferCopy::MakeDepthBufferCopy() const
 		FBO::Blit(-1, depthFBOs[ms]->GetId(), srcScreenRect, dstScreenRect, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	}
 	*/
-	if (!references[true ].empty())
+	if (consumersCount[true ] > 0)
 		FBO::Blit(      -1, depthFBOs[true ]->GetId(), srcScreenRect, dstScreenRect, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
-	if (!references[false].empty()) {
+	if (consumersCount[false] > 0) {
 		const auto srcFboID = depthFBOs[true] ? depthFBOs[true]->GetId() : -1;
 		FBO::Blit(srcFboID, depthFBOs[false]->GetId(), srcScreenRect, dstScreenRect, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	}

@@ -13,6 +13,7 @@
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
+#include "Rendering/DepthBufferCopy.h"
 #include "Rendering/Textures/TextureRenderAtlas.h"
 #include "System/EventClient.h"
 #include "System/UnorderedMap.hpp"
@@ -184,6 +185,7 @@ private:
 
 	int lastProcessedGameFrame;
 	bool highQuality = false;
+	ScopedDepthBufferCopy sdbc;
 
 	static constexpr uint32_t TRACKS_UPDATE_RATE = 4u;
 };

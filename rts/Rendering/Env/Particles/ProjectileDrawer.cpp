@@ -8,7 +8,6 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/LoadScreen.h"
 #include "Lua/LuaParser.h"
-#include "Rendering/DepthBufferCopy.h"
 #include "Rendering/GroundFlash.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
@@ -270,8 +269,6 @@ void CProjectileDrawer::Init() {
 
 	LoadWeaponTextures();
 
-	depthBufferCopy->AddConsumer(false, this);
-
 	{
 		fsShadowShader = shaderHandler->CreateProgramObject("[ProjectileDrawer::VFS]", "FX Shader shadow");
 
@@ -350,8 +347,6 @@ void CProjectileDrawer::Kill() {
 	shaderHandler->ReleaseProgramObjects("[ProjectileDrawer::VFS]");
 	fxShaders = { nullptr };
 	fsShadowShader = nullptr;
-
-	depthBufferCopy->DelConsumer(false, this);
 
 	configHandler->Set("SoftParticles", wantSoften);
 }

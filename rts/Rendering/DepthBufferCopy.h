@@ -9,16 +9,16 @@
 
 class FBO;
 
+struct ScopedDepthBufferCopy;
+
 class DepthBufferCopy : public CEventClient {
 public:
+	friend struct ScopedDepthBufferCopy;
 	DepthBufferCopy();
 	~DepthBufferCopy() override;
 
 	static void Init();
 	static void Kill();
-
-	void AddConsumer(bool ms, const void* p);
-	void DelConsumer(bool ms, const void* p);
 
 	bool WantsEvent(const std::string& eventName) override {
 		return
@@ -32,6 +32,10 @@ public:
 	void MakeDepthBufferCopy() const;
 	uint32_t GetDepthBufferTexture(bool ms) const { return depthTextures[ms]; }
 private:
+	// to be accessed with ScopedDepthBufferCopy
+	void AddConsumer(bool ms);
+	void DelConsumer(bool ms);
+private:
 	void DestroyTextureAndFBO(bool ms);
 	void CreateTextureAndFBO(bool ms);
 	void RecreateTextureAndFBO(bool ms) {
@@ -39,9 +43,31 @@ private:
 		CreateTextureAndFBO(ms);
 	}
 
-	std::array<spring::unordered_set<uintptr_t>, 2> references = {};
+	std::array<uint32_t, 2> consumersCount = {};
 	std::array<uint32_t, 2> depthTextures = {};
 	std::array<std::unique_ptr<FBO>, 2> depthFBOs = {};
 };
 
 extern std::unique_ptr<DepthBufferCopy> depthBufferCopy;
+
+struct ScopedDepthBufferCopy {
+	ScopedDepthBufferCopy(bool ms)
+		: multisampled(ms)
+	{
+		depthBufferCopy->AddConsumer(multisampled);
+	}
+	ScopedDepthBufferCopy(const ScopedDepthBufferCopy&) = delete;
+	ScopedDepthBufferCopy& operator = (const ScopedDepthBufferCopy&) = delete;
+
+	ScopedDepthBufferCopy(ScopedDepthBufferCopy&& other) noexcept { *this = std::move(other); }
+	ScopedDepthBufferCopy& operator = (ScopedDepthBufferCopy&& other) noexcept {
+		std::swap(multisampled, other.multisampled);
+		return *this;
+	}
+
+	~ScopedDepthBufferCopy()
+	{
+		depthBufferCopy->DelConsumer(multisampled);
+	}
+	bool multisampled;
+};
