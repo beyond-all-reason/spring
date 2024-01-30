@@ -6,10 +6,6 @@
 #include <iostream>
 #include <chrono>
 
-// Include before other headers that define a bunch of macros that break stuff.
-#include <RmlUi/Core.h>
-#include <Rml/Backends/RmlUi_Backend.h>
-
 #include <SDL.h>
 #include <System/GflagsExt.h>
 
@@ -105,6 +101,8 @@
 #include "Game/UnsyncedGameCommands.h"
 #include "Game/SyncedGameCommands.h"
 #include "lib/luasocket/src/restrictions.h"
+
+
 
 CONFIG(unsigned, SetCoreAffinity).defaultValue(0).safemodeValue(1).description("Defines a bitmask indicating which CPU cores the main-thread should use.");
 CONFIG(unsigned, TextureMemPoolSize).defaultValue(512).minimumValue(0).description("Set to 0 to disable, otherwise specify a predefined memory to serve Bitmap allocation requests");
@@ -219,6 +217,7 @@ SpringApp::~SpringApp()
 	spring_clock::PopTickRate();
 }
 
+
 /**
  * @brief Initializes the SpringApp instance
  * @return whether initialization was successful
@@ -282,8 +281,6 @@ bool SpringApp::Init()
 	// GUIs
 	#ifndef HEADLESS
 	agui::gui = new agui::Gui();
-
-
 	#endif
 	keyCodes.Reset();
 	scanCodes.Reset();
@@ -295,8 +292,6 @@ bool SpringApp::Init()
 	// Lua socket restrictions
 	CLuaSocketRestrictions::InitStatic();
 	LuaVFSDownload::Init();
-
-
 
 	// Create CGameSetup and CPreGame objects
 	Startup();

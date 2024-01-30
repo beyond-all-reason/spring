@@ -26,7 +26,6 @@
 #include "Rendering/GlobalRendering.h"
 #include "System/MainDefines.h"
 #include "System/SafeUtil.h"
-#include <Rml/Backends/RmlUi_Backend.h>
 
 #include <functional>
 
