@@ -24,7 +24,6 @@ list(APPEND FILES
 	features/treetype.lua
 	EngineOptions.lua
 	gamedata/unitdefs.lua
-	gamedata/explosion_alias.lua
 	gamedata/unitdefs_post.lua
 	gamedata/armordefs.lua
 	gamedata/explosions.lua
