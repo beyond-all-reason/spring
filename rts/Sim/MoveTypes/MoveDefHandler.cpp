@@ -295,17 +295,19 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 		defaultHeight >>= 1;
 	}
 
-	int defaultWaterline = std::numeric_limits<int>::max();
-	if (isSubmarine) {
-		defaultWaterline = xsize * SQUARE_SIZE; 
-	} else if (speedModClass == MoveDef::Ship) {
-		defaultWaterline = 1;
-	} else if (speedModClass == MoveDef::Hover) {
-		defaultWaterline = 0;
+	if (this->FloatOnWater()) {
+		int defaultWaterline = 0;
+		if (isSubmarine) {
+			defaultWaterline = xsize * SQUARE_SIZE; 
+		} else if (speedModClass == MoveDef::Ship) {
+			defaultWaterline = 1;
+		}
+		waterline = std::abs(moveDefTable.GetInt("waterline", defaultWaterline));
+	} else {
+		waterline = std::numeric_limits<int>::max();
 	}
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
-	waterline = std::abs(moveDefTable.GetInt("waterline", defaultWaterline));
 }
 
 bool MoveDef::DoRawSearch(
