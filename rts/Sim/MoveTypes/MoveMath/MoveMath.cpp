@@ -520,9 +520,9 @@ void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObje
 	spring::unordered_map<CSolidObject*, CMoveMath::BlockType>& blockMap = blockMaps[thread];
 	blockMap.clear();
 
-	results.resize(areaToSample.GetArea(), 0);
+	results.clear();
+	results.reserve(areaToSample.GetArea());
 
-	int curIndex = 0;
 	for (int z = areaToSample.z1; z < areaToSample.z2; ++z) {
 		const int zOffset = z * mapDims.mapx;
 
@@ -543,8 +543,7 @@ void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObje
 				if ((ret & BLOCK_STRUCTURE) != 0)
 					break;
 			}
-
-			results[curIndex++] = ret;
+			results.emplace_back(ret);
 		}
 	}
 }
