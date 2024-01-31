@@ -9,6 +9,7 @@
 #include "UnitDefHandler.h"
 #include "UnitDef.h"
 #include "Lua/LuaParser.h"
+#include "Sim/Features/FeatureDefHandler.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
@@ -222,3 +223,16 @@ void CUnitDefHandler::SetNoCost(bool value)
 	}
 }
 
+void CUnitDefHandler::SanitizeCorpseNames()
+{
+	for (size_t i = 1; i < unitDefsVector.size(); i++) {
+		UnitDef& ud = unitDefsVector[i];
+
+		if (ud.wreckName != "") {
+			const FeatureDef* wreckFeatureDef = featureDefHandler->GetFeatureDef(ud.wreckName); 
+			if (wreckFeatureDef == nullptr) {
+				ud.wreckName = "";
+			}
+		}
+	}
+}
