@@ -255,23 +255,26 @@ YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 	if (blockMap == nullptr)
 		return YARDMAP_OPEN;
 
-	const int2 hSize{footprint.x >> 1, footprint.y >> 1};
+	const int2 hFootprint{footprint.x >> 1, footprint.y >> 1};
+	const int2 hSize{ xsize >> 1, zsize >> 1};
+
 	const int2 gPos2
-			{ int(gpos.x + 0.01f) / SQUARE_SIZE
-			, int(gpos.z + 0.01f) / SQUARE_SIZE};
+			{ int(gpos.x / SQUARE_SIZE)
+			, int(gpos.z / SQUARE_SIZE)};
 	const int2 diff = gPos2 - (mapPos + hSize);
-	constexpr int2 dirs[] = { {0,1}, {1,0}, {0,-1}, {-1,0}, {0,1} };
+
+	constexpr int2 rotationDirs[] = { {0,1}, {1,0}, {0,-1}, {-1,0}, {0,1} };
+	const int2 front = rotationDirs[buildFacing];
+	const int2 right = rotationDirs[buildFacing+1];
 
 	// corrections needed because the rotation is off centre.
-	constexpr int2 corrections[] = { {0,0}, {-1,0}, {-1,-1}, {0,-1} };
+	constexpr int2 rotationCorrections[] = { {0,0}, {-1,0}, {-1,-1}, {0,-1} };
+	const int2 adjust = rotationCorrections[buildFacing];
 
-	const int2 front = dirs[buildFacing];
-	const int2 right = dirs[buildFacing+1];
-	const int2 adjust = corrections[buildFacing];
-
+	// Translate from map-space to yardmap-space
 	// negative result overflows to super high number
-	const uint32_t by = (front.x*diff.x) + (front.y*diff.y) + hSize.y + adjust.y;
-	const uint32_t bx = (right.x*diff.x) + (right.y*diff.y) + hSize.x + adjust.x;
+	const uint32_t by = (front.x*diff.x) + (front.y*diff.y) + hFootprint.y + adjust.y;
+	const uint32_t bx = (right.x*diff.x) + (right.y*diff.y) + hFootprint.x + adjust.x;
 
 	if ((bx >= footprint.x) || (by >= footprint.y))
 		return YARDMAP_OPEN;
