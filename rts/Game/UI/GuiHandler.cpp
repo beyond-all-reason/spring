@@ -175,6 +175,7 @@ bool CGuiHandler::EnableLuaUI(bool enableCommand)
 		}
 	}
 
+	// TODO: Move to own console command?
 	RmlGui::Reload();
 	CLuaUI::ReloadHandler();
 
