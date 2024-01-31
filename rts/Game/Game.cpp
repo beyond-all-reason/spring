@@ -831,6 +831,7 @@ void CGame::LoadInterface()
 		GameSetupDrawer::Disable();
 		GameSetupDrawer::Enable();
 	}
+
 	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext(), globalRendering->winSizeX, globalRendering->winSizeY);
 }
 
