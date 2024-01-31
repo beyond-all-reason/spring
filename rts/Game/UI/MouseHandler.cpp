@@ -283,7 +283,8 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 		playerHandler.Player(gu->myPlayerNum)->currentStats.mousePixels += movedPixels;
 
 	/* Only want to give a mouse event to RmlUI if the mouse isn't currently performing a drag.
-	 * Otherwise box selections get stuck when the mouse goes over an Rml element. */
+	 * Otherwise box selections get stuck when the mouse goes over an Rml element.
+	 * Flags that ButtonPressed() checks are not set when clicking on Rml element. */
 	if (!ButtonPressed() && RmlGui::ProcessMouseMove(x, lasty, dx, dy, activeButtonIdx)) {
 		return;
 	}
