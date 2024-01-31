@@ -128,8 +128,6 @@
 #include "System/TimeProfiler.h"
 #include "System/LoadLock.h"
 
-#include <RmlUi/Core.h>
-
 
 #undef CreateDirectory
 

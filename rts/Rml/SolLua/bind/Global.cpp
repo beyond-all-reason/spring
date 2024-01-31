@@ -1,5 +1,6 @@
 #include "bind.h"
 #include "../plugin//SolLuaPlugin.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 
 
 namespace Rml::SolLua
@@ -45,15 +46,10 @@ namespace Rml::SolLua
 		}
 	}
 
-	#define _ENUM(N) t[#N] = Rml::Input::KI_##N
-
-	void bind_global(sol::state_view& lua, SolLuaPlugin* slp)
+	void bind_global(sol::table& namespace_table, SolLuaPlugin* slp)
 	{
-
-		struct rmlui {};
 		auto translationTable = &slp->translationTable;
-
-		auto g = lua.new_usertype<rmlui>("rmlui",
+		namespace_table.set(
 			// M
 			"CreateContext", [slp](const Rml::String& name) {
 				// context will be resized right away by other code
@@ -78,225 +74,229 @@ namespace Rml::SolLua
 			"ClearTranslations", [translationTable](sol::this_state s) {
 				return translationTable->clear();
 			},
+			"SetMouseCursorAlias", &RmlGui::SetMouseCursorAlias,
 
 			// G
 			"contexts", sol::readonly_property(&getIndexedTable<Rml::Context, &functions::getContext, &functions::getMaxContexts>),
 			//--
 			"version", sol::readonly_property(&Rml::GetVersion)
 		);
-		g.set("key_identifier", sol::readonly_property([](sol::this_state l) {
+
+		namespace_table.set("key_identifier", sol::readonly_property([](sol::this_state l) {
 			sol::state_view lua(l);
 			sol::table t = lua.create_table();
-			_ENUM(UNKNOWN);
-			_ENUM(SPACE);
-			_ENUM(0);
-			_ENUM(1);
-			_ENUM(2);
-			_ENUM(3);
-			_ENUM(4);
-			_ENUM(5);
-			_ENUM(6);
-			_ENUM(7);
-			_ENUM(8);
-			_ENUM(9);
-			_ENUM(A);
-			_ENUM(B);
-			_ENUM(C);
-			_ENUM(D);
-			_ENUM(E);
-			_ENUM(F);
-			_ENUM(G);
-			_ENUM(H);
-			_ENUM(I);
-			_ENUM(J);
-			_ENUM(K);
-			_ENUM(L);
-			_ENUM(M);
-			_ENUM(N);
-			_ENUM(O);
-			_ENUM(P);
-			_ENUM(Q);
-			_ENUM(R);
-			_ENUM(S);
-			_ENUM(T);
-			_ENUM(U);
-			_ENUM(V);
-			_ENUM(W);
-			_ENUM(X);
-			_ENUM(Y);
-			_ENUM(Z);
-			_ENUM(OEM_1);
-			_ENUM(OEM_PLUS);
-			_ENUM(OEM_COMMA);
-			_ENUM(OEM_MINUS);
-			_ENUM(OEM_PERIOD);
-			_ENUM(OEM_2);
-			_ENUM(OEM_3);
-			_ENUM(OEM_4);
-			_ENUM(OEM_5);
-			_ENUM(OEM_6);
-			_ENUM(OEM_7);
-			_ENUM(OEM_8);
-			_ENUM(OEM_102);
-			_ENUM(NUMPAD0);
-			_ENUM(NUMPAD1);
-			_ENUM(NUMPAD2);
-			_ENUM(NUMPAD3);
-			_ENUM(NUMPAD4);
-			_ENUM(NUMPAD5);
-			_ENUM(NUMPAD6);
-			_ENUM(NUMPAD7);
-			_ENUM(NUMPAD8);
-			_ENUM(NUMPAD9);
-			_ENUM(NUMPADENTER);
-			_ENUM(MULTIPLY);
-			_ENUM(ADD);
-			_ENUM(SEPARATOR);
-			_ENUM(SUBTRACT);
-			_ENUM(DECIMAL);
-			_ENUM(DIVIDE);
-			_ENUM(OEM_NEC_EQUAL);
-			_ENUM(BACK);
-			_ENUM(TAB);
-			_ENUM(CLEAR);
-			_ENUM(RETURN);
-			_ENUM(PAUSE);
-			_ENUM(CAPITAL);
-			_ENUM(KANA);
-			_ENUM(HANGUL);
-			_ENUM(JUNJA);
-			_ENUM(FINAL);
-			_ENUM(HANJA);
-			_ENUM(KANJI);
-			_ENUM(ESCAPE);
-			_ENUM(CONVERT);
-			_ENUM(NONCONVERT);
-			_ENUM(ACCEPT);
-			_ENUM(MODECHANGE);
-			_ENUM(PRIOR);
-			_ENUM(NEXT);
-			_ENUM(END);
-			_ENUM(HOME);
-			_ENUM(LEFT);
-			_ENUM(UP);
-			_ENUM(RIGHT);
-			_ENUM(DOWN);
-			_ENUM(SELECT);
-			_ENUM(PRINT);
-			_ENUM(EXECUTE);
-			_ENUM(SNAPSHOT);
-			_ENUM(INSERT);
-			_ENUM(DELETE);
-			_ENUM(HELP);
-			_ENUM(LWIN);
-			_ENUM(RWIN);
-			_ENUM(APPS);
-			_ENUM(POWER);
-			_ENUM(SLEEP);
-			_ENUM(WAKE);
-			_ENUM(F1);
-			_ENUM(F2);
-			_ENUM(F3);
-			_ENUM(F4);
-			_ENUM(F5);
-			_ENUM(F6);
-			_ENUM(F7);
-			_ENUM(F8);
-			_ENUM(F9);
-			_ENUM(F10);
-			_ENUM(F11);
-			_ENUM(F12);
-			_ENUM(F13);
-			_ENUM(F14);
-			_ENUM(F15);
-			_ENUM(F16);
-			_ENUM(F17);
-			_ENUM(F18);
-			_ENUM(F19);
-			_ENUM(F20);
-			_ENUM(F21);
-			_ENUM(F22);
-			_ENUM(F23);
-			_ENUM(F24);
-			_ENUM(NUMLOCK);
-			_ENUM(SCROLL);
-			_ENUM(OEM_FJ_JISHO);
-			_ENUM(OEM_FJ_MASSHOU);
-			_ENUM(OEM_FJ_TOUROKU);
-			_ENUM(OEM_FJ_LOYA);
-			_ENUM(OEM_FJ_ROYA);
-			_ENUM(LSHIFT);
-			_ENUM(RSHIFT);
-			_ENUM(LCONTROL);
-			_ENUM(RCONTROL);
-			_ENUM(LMENU);
-			_ENUM(RMENU);
-			_ENUM(BROWSER_BACK);
-			_ENUM(BROWSER_FORWARD);
-			_ENUM(BROWSER_REFRESH);
-			_ENUM(BROWSER_STOP);
-			_ENUM(BROWSER_SEARCH);
-			_ENUM(BROWSER_FAVORITES);
-			_ENUM(BROWSER_HOME);
-			_ENUM(VOLUME_MUTE);
-			_ENUM(VOLUME_DOWN);
-			_ENUM(VOLUME_UP);
-			_ENUM(MEDIA_NEXT_TRACK);
-			_ENUM(MEDIA_PREV_TRACK);
-			_ENUM(MEDIA_STOP);
-			_ENUM(MEDIA_PLAY_PAUSE);
-			_ENUM(LAUNCH_MAIL);
-			_ENUM(LAUNCH_MEDIA_SELECT);
-			_ENUM(LAUNCH_APP1);
-			_ENUM(LAUNCH_APP2);
-			_ENUM(OEM_AX);
-			_ENUM(ICO_HELP);
-			_ENUM(ICO_00);
-			_ENUM(PROCESSKEY);
-			_ENUM(ICO_CLEAR);
-			_ENUM(ATTN);
-			_ENUM(CRSEL);
-			_ENUM(EXSEL);
-			_ENUM(EREOF);
-			_ENUM(PLAY);
-			_ENUM(ZOOM);
-			_ENUM(PA1);
-			_ENUM(OEM_CLEAR);
+
+			#define KEY_ENUM(N) t[#N] = Rml::Input::KI_##N
+			KEY_ENUM(UNKNOWN);
+			KEY_ENUM(SPACE);
+			KEY_ENUM(0);
+			KEY_ENUM(1);
+			KEY_ENUM(2);
+			KEY_ENUM(3);
+			KEY_ENUM(4);
+			KEY_ENUM(5);
+			KEY_ENUM(6);
+			KEY_ENUM(7);
+			KEY_ENUM(8);
+			KEY_ENUM(9);
+			KEY_ENUM(A);
+			KEY_ENUM(B);
+			KEY_ENUM(C);
+			KEY_ENUM(D);
+			KEY_ENUM(E);
+			KEY_ENUM(F);
+			KEY_ENUM(G);
+			KEY_ENUM(H);
+			KEY_ENUM(I);
+			KEY_ENUM(J);
+			KEY_ENUM(K);
+			KEY_ENUM(L);
+			KEY_ENUM(M);
+			KEY_ENUM(N);
+			KEY_ENUM(O);
+			KEY_ENUM(P);
+			KEY_ENUM(Q);
+			KEY_ENUM(R);
+			KEY_ENUM(S);
+			KEY_ENUM(T);
+			KEY_ENUM(U);
+			KEY_ENUM(V);
+			KEY_ENUM(W);
+			KEY_ENUM(X);
+			KEY_ENUM(Y);
+			KEY_ENUM(Z);
+			KEY_ENUM(OEM_1);
+			KEY_ENUM(OEM_PLUS);
+			KEY_ENUM(OEM_COMMA);
+			KEY_ENUM(OEM_MINUS);
+			KEY_ENUM(OEM_PERIOD);
+			KEY_ENUM(OEM_2);
+			KEY_ENUM(OEM_3);
+			KEY_ENUM(OEM_4);
+			KEY_ENUM(OEM_5);
+			KEY_ENUM(OEM_6);
+			KEY_ENUM(OEM_7);
+			KEY_ENUM(OEM_8);
+			KEY_ENUM(OEM_102);
+			KEY_ENUM(NUMPAD0);
+			KEY_ENUM(NUMPAD1);
+			KEY_ENUM(NUMPAD2);
+			KEY_ENUM(NUMPAD3);
+			KEY_ENUM(NUMPAD4);
+			KEY_ENUM(NUMPAD5);
+			KEY_ENUM(NUMPAD6);
+			KEY_ENUM(NUMPAD7);
+			KEY_ENUM(NUMPAD8);
+			KEY_ENUM(NUMPAD9);
+			KEY_ENUM(NUMPADENTER);
+			KEY_ENUM(MULTIPLY);
+			KEY_ENUM(ADD);
+			KEY_ENUM(SEPARATOR);
+			KEY_ENUM(SUBTRACT);
+			KEY_ENUM(DECIMAL);
+			KEY_ENUM(DIVIDE);
+			KEY_ENUM(OEM_NEC_EQUAL);
+			KEY_ENUM(BACK);
+			KEY_ENUM(TAB);
+			KEY_ENUM(CLEAR);
+			KEY_ENUM(RETURN);
+			KEY_ENUM(PAUSE);
+			KEY_ENUM(CAPITAL);
+			KEY_ENUM(KANA);
+			KEY_ENUM(HANGUL);
+			KEY_ENUM(JUNJA);
+			KEY_ENUM(FINAL);
+			KEY_ENUM(HANJA);
+			KEY_ENUM(KANJI);
+			KEY_ENUM(ESCAPE);
+			KEY_ENUM(CONVERT);
+			KEY_ENUM(NONCONVERT);
+			KEY_ENUM(ACCEPT);
+			KEY_ENUM(MODECHANGE);
+			KEY_ENUM(PRIOR);
+			KEY_ENUM(NEXT);
+			KEY_ENUM(END);
+			KEY_ENUM(HOME);
+			KEY_ENUM(LEFT);
+			KEY_ENUM(UP);
+			KEY_ENUM(RIGHT);
+			KEY_ENUM(DOWN);
+			KEY_ENUM(SELECT);
+			KEY_ENUM(PRINT);
+			KEY_ENUM(EXECUTE);
+			KEY_ENUM(SNAPSHOT);
+			KEY_ENUM(INSERT);
+			KEY_ENUM(DELETE);
+			KEY_ENUM(HELP);
+			KEY_ENUM(LWIN);
+			KEY_ENUM(RWIN);
+			KEY_ENUM(APPS);
+			KEY_ENUM(POWER);
+			KEY_ENUM(SLEEP);
+			KEY_ENUM(WAKE);
+			KEY_ENUM(F1);
+			KEY_ENUM(F2);
+			KEY_ENUM(F3);
+			KEY_ENUM(F4);
+			KEY_ENUM(F5);
+			KEY_ENUM(F6);
+			KEY_ENUM(F7);
+			KEY_ENUM(F8);
+			KEY_ENUM(F9);
+			KEY_ENUM(F10);
+			KEY_ENUM(F11);
+			KEY_ENUM(F12);
+			KEY_ENUM(F13);
+			KEY_ENUM(F14);
+			KEY_ENUM(F15);
+			KEY_ENUM(F16);
+			KEY_ENUM(F17);
+			KEY_ENUM(F18);
+			KEY_ENUM(F19);
+			KEY_ENUM(F20);
+			KEY_ENUM(F21);
+			KEY_ENUM(F22);
+			KEY_ENUM(F23);
+			KEY_ENUM(F24);
+			KEY_ENUM(NUMLOCK);
+			KEY_ENUM(SCROLL);
+			KEY_ENUM(OEM_FJ_JISHO);
+			KEY_ENUM(OEM_FJ_MASSHOU);
+			KEY_ENUM(OEM_FJ_TOUROKU);
+			KEY_ENUM(OEM_FJ_LOYA);
+			KEY_ENUM(OEM_FJ_ROYA);
+			KEY_ENUM(LSHIFT);
+			KEY_ENUM(RSHIFT);
+			KEY_ENUM(LCONTROL);
+			KEY_ENUM(RCONTROL);
+			KEY_ENUM(LMENU);
+			KEY_ENUM(RMENU);
+			KEY_ENUM(BROWSER_BACK);
+			KEY_ENUM(BROWSER_FORWARD);
+			KEY_ENUM(BROWSER_REFRESH);
+			KEY_ENUM(BROWSER_STOP);
+			KEY_ENUM(BROWSER_SEARCH);
+			KEY_ENUM(BROWSER_FAVORITES);
+			KEY_ENUM(BROWSER_HOME);
+			KEY_ENUM(VOLUME_MUTE);
+			KEY_ENUM(VOLUME_DOWN);
+			KEY_ENUM(VOLUME_UP);
+			KEY_ENUM(MEDIA_NEXT_TRACK);
+			KEY_ENUM(MEDIA_PREV_TRACK);
+			KEY_ENUM(MEDIA_STOP);
+			KEY_ENUM(MEDIA_PLAY_PAUSE);
+			KEY_ENUM(LAUNCH_MAIL);
+			KEY_ENUM(LAUNCH_MEDIA_SELECT);
+			KEY_ENUM(LAUNCH_APP1);
+			KEY_ENUM(LAUNCH_APP2);
+			KEY_ENUM(OEM_AX);
+			KEY_ENUM(ICO_HELP);
+			KEY_ENUM(ICO_00);
+			KEY_ENUM(PROCESSKEY);
+			KEY_ENUM(ICO_CLEAR);
+			KEY_ENUM(ATTN);
+			KEY_ENUM(CRSEL);
+			KEY_ENUM(EXSEL);
+			KEY_ENUM(EREOF);
+			KEY_ENUM(PLAY);
+			KEY_ENUM(ZOOM);
+			KEY_ENUM(PA1);
+			KEY_ENUM(OEM_CLEAR);
+			#undef KEY_ENUM
+
 			return t;
 		}));
 
-		g.set("key_modifier", sol::readonly_property([](sol::this_state l) {
+		namespace_table.set("key_modifier", sol::readonly_property([](sol::this_state l) {
 			sol::state_view lua(l);
-			return sol::table::create_with(lua.lua_state(),
-				 "CTRL", Rml::Input::KM_CTRL ,
-				 "SHIFT", Rml::Input::KM_SHIFT ,
-				 "ALT", Rml::Input::KM_ALT ,
-				 "META", Rml::Input::KM_META ,
-				 "CAPSLOCK", Rml::Input::KM_CAPSLOCK ,
-				 "NUMLOCK", Rml::Input::KM_NUMLOCK ,
+			return lua.create_table_with(
+				 "CTRL", Rml::Input::KM_CTRL,
+				 "SHIFT", Rml::Input::KM_SHIFT,
+				 "ALT", Rml::Input::KM_ALT,
+				 "META", Rml::Input::KM_META,
+				 "CAPSLOCK", Rml::Input::KM_CAPSLOCK,
+				 "NUMLOCK", Rml::Input::KM_NUMLOCK,
 				 "SCROLLLOCK", Rml::Input::KM_SCROLLLOCK
 			);
 		}));
 
-		g.set("font_weight", sol::readonly_property([](sol::this_state l) {
+		namespace_table.set("font_weight", sol::readonly_property([](sol::this_state l) {
 			sol::state_view lua(l);
-			return sol::table::create_with(lua.lua_state(),
+			return lua.create_table_with(
 				"Auto", Rml::Style::FontWeight::Auto,
 				"Normal", Rml::Style::FontWeight::Normal,
 				"Bold", Rml::Style::FontWeight::Bold
 			);
 		}));
 
-		g.set("default_action_phase", sol::readonly_property([](sol::this_state l) {
+		namespace_table.set("default_action_phase", sol::readonly_property([](sol::this_state l) {
 			sol::state_view lua(l);
-			return sol::table::create_with(lua.lua_state(),
+			return lua.create_table_with(
 				"None", Rml::DefaultActionPhase::None,
 				"Target", Rml::DefaultActionPhase::Target,
 				"TargetAndBubble", Rml::DefaultActionPhase::TargetAndBubble
 			);
 		}));
 	}
-
-	#undef _ENUM
 
 } // end namespace Rml::SolLua

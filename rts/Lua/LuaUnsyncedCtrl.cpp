@@ -49,7 +49,6 @@
 #include "Rendering/Env/WaterRendering.h"
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
-#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"

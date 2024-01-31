@@ -29,7 +29,6 @@
  *
  */
 
-#include "Rml/Rml_MathTypes_Conversions.h"
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/Profiling.h>
 #include <RmlUi/Debugger.h>
@@ -38,8 +37,8 @@
 #include <tracy/Tracy.hpp>
 
 #include "Lua/LuaUI.h"
+#include "Rendering/Textures/Bitmap.h"
 #include "Rml/Components/ElementLuaTexture.h"
-#include "Rml/Components/DecoratorLuaRender.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
 #include "RmlUi_Backend.h"
@@ -117,7 +116,6 @@ struct BackendData {
 	CtxMutex contextMutex;
 	Rml::UniquePtr<PassThroughPlugin> plugin;
     Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
-	Rml::UniquePtr<RmlGui::DecoratorLuaRenderInstancer> decorator_lua_render_instancer;
 };
 
 static Rml::UniquePtr<BackendData> data;
@@ -158,38 +156,8 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 	data->element_lua_texture_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
 	Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture_instancer.get());
 
-	data->decorator_lua_render_instancer = Rml::MakeUnique<RmlGui::DecoratorLuaRenderInstancer>();
-	Rml::Factory::RegisterDecoratorInstancer("lua-render", data->decorator_lua_render_instancer.get());
-
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());
-
-	return true;
-}
-
-bool RmlGui::InitializeLua(lua_State* lua_state)
-{
-	if (!RmlInitialized()) {
-		return false;
-	}
-	sol::state_view lua(lua_state);
-	data->ls = lua_state;
-	data->luaPlugin = Rml::SolLua::Initialise(&lua, "rmlDocumentId");
-	data->system_interface.SetTranslationTable(&data->luaPlugin->translationTable);
-	return true;
-}
-
-bool RmlGui::RemoveLua()
-{
-	if (!RmlInitialized() || !data->ls) {
-		return false;
-	}
-	data->luaPlugin->RemoveLuaItems();
-	Update();
-	Rml::UnregisterPlugin(data->luaPlugin);
-	data->system_interface.SetTranslationTable(nullptr);
-	data->luaPlugin = nullptr;
-	data->ls = nullptr;
 
 	return true;
 }
@@ -332,7 +300,7 @@ bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventMouseMove(context, x, y);
+		result |= !RmlSDLRecoil::EventMouseMove(context, x, y);
 	}
 	data->inputReceiver.setActive(result);
 	return result;
@@ -348,7 +316,7 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		bool handled = !RmlSDLSpring::EventMousePress(context, x, y, button);
+		bool handled = !RmlSDLRecoil::EventMousePress(context, x, y, button);
 		result |= handled;
 		if (!handled) {
 			Rml::Element* el = context->GetFocusElement();
@@ -371,7 +339,7 @@ bool RmlGui::ProcessMouseRelease(int x, int y, int button)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventMouseRelease(context, x, y, button);
+		result |= !RmlSDLRecoil::EventMouseRelease(context, x, y, button);
 	}
 	data->inputReceiver.setActive(result);
 	return result;
@@ -387,7 +355,7 @@ bool RmlGui::ProcessMouseWheel(float delta)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventMouseWheel(context, delta);
+		result |= !RmlSDLRecoil::EventMouseWheel(context, delta);
 	}
 	data->inputReceiver.setActive(result);
 	return result;
@@ -403,8 +371,8 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		auto kc = RmlSDLSpring::ConvertKey(keyCode);
-		result |= !RmlSDLSpring::EventKeyDown(context, kc);
+		auto kc = RmlSDLRecoil::ConvertKey(keyCode);
+		result |= !RmlSDLRecoil::EventKeyDown(context, kc);
 	}
 	return result;
 }
@@ -416,7 +384,7 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventKeyUp(context, RmlSDLSpring::ConvertKey(keyCode));
+		result |= !RmlSDLRecoil::EventKeyUp(context, RmlSDLRecoil::ConvertKey(keyCode));
 	}
 	return result;
 }
@@ -428,7 +396,7 @@ bool RmlGui::ProcessTextInput(const std::string& text)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventTextInput(context, text);
+		result |= !RmlSDLRecoil::EventTextInput(context, text);
 	}
 	return result;
 }
@@ -445,7 +413,7 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 					data->winY = dimensions.y;
 				} break;
 			}
-			RmlSDLSpring::InputEventHandler(context, event);
+			RmlSDLRecoil::InputEventHandler(context, event);
 		} break;
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEBUTTONDOWN:
@@ -456,10 +424,10 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 		case SDL_TEXTINPUT:
 			break;  // handled elsewhere
 		default: {
-			RmlSDLSpring::InputEventHandler(context, event);
+			RmlSDLRecoil::InputEventHandler(context, event);
 		} break;
 	}
-	// these events are not captured, and should continue propogating
+	// these events are not captured, and should continue propagating
 	return false;
 }
 
