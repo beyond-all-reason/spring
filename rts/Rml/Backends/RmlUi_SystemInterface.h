@@ -72,7 +72,7 @@ private:
 };
 
 // not named "Rml" or "RmlSDL" to avoid name collision with the original Rml lib files
-namespace RmlSDLSpring
+namespace RmlSDLRecoil
 {
 
 	// Applies input on the context based on the given SDL event.
@@ -95,5 +95,5 @@ namespace RmlSDLSpring
 	// Returns the active RmlUi key modifier state.
 	int GetKeyModifierState();
 
-}  // namespace RmlSDLSpring
+}  // namespace RmlSDLRecoil
 #endif  // RMLUI_SYSTEMINTERFACE_H

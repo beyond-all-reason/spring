@@ -86,7 +86,7 @@ bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& mess
 
 void RmlSystemInterface::SetMouseCursor(const Rml::String& cursor_name)
 {
-	mouseCursor = cursor_name;
+	mouseCursor = mouseCursorAliases.contains(cursor_name) ? mouseCursorAliases[cursor_name] : cursor_name;
 }
 
 const Rml::String& RmlSystemInterface::GetMouseCursor()
@@ -112,7 +112,7 @@ void RmlSystemInterface::GetClipboardText(Rml::String& text)
 	SDL_free(raw_text);
 }
 
-bool RmlSDLSpring::EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key)
+bool RmlSDLRecoil::EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key)
 {
 	bool result = context->ProcessKeyDown(key, GetKeyModifierState());
 	if (key == Rml::Input::KI_RETURN || key == Rml::Input::KI_NUMPADENTER)
@@ -120,37 +120,37 @@ bool RmlSDLSpring::EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier
 	return result;
 }
 
-bool RmlSDLSpring::EventKeyUp(Rml::Context* context, Rml::Input::KeyIdentifier key)
+bool RmlSDLRecoil::EventKeyUp(Rml::Context* context, Rml::Input::KeyIdentifier key)
 {
 	return context->ProcessKeyUp(key, GetKeyModifierState());
 }
 
-bool RmlSDLSpring::EventTextInput(Rml::Context* context, const std::string& text)
+bool RmlSDLRecoil::EventTextInput(Rml::Context* context, const std::string& text)
 {
 	return context->ProcessTextInput(Rml::String(text));
 }
 
-bool RmlSDLSpring::EventMouseMove(Rml::Context* context, Sint32 x, Sint32 y)
+bool RmlSDLRecoil::EventMouseMove(Rml::Context* context, Sint32 x, Sint32 y)
 {
 	return context->ProcessMouseMove(x, y, GetKeyModifierState());
 }
 
-bool RmlSDLSpring::EventMousePress(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button)
+bool RmlSDLRecoil::EventMousePress(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button)
 {
 	return context->ProcessMouseButtonDown(ConvertMouseButton(button), GetKeyModifierState());
 };
 
-bool RmlSDLSpring::EventMouseRelease(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button)
+bool RmlSDLRecoil::EventMouseRelease(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button)
 {
 	return context->ProcessMouseButtonUp(ConvertMouseButton(button), GetKeyModifierState());
 };
 
-bool RmlSDLSpring::EventMouseWheel(Rml::Context* context, float delta)
+bool RmlSDLRecoil::EventMouseWheel(Rml::Context* context, float delta)
 {
 	return context->ProcessMouseWheel(-delta, GetKeyModifierState());
 };
 
-bool RmlSDLSpring::InputEventHandler(Rml::Context* context, const SDL_Event& ev)
+bool RmlSDLRecoil::InputEventHandler(Rml::Context* context, const SDL_Event& ev)
 {
 	bool result = true;
 
@@ -200,7 +200,7 @@ bool RmlSDLSpring::InputEventHandler(Rml::Context* context, const SDL_Event& ev)
 	return result;
 }
 
-Rml::Input::KeyIdentifier RmlSDLSpring::ConvertKey(int sdlkey)
+Rml::Input::KeyIdentifier RmlSDLRecoil::ConvertKey(int sdlkey)
 {
 	// clang-format off
     switch (sdlkey)
@@ -325,7 +325,7 @@ Rml::Input::KeyIdentifier RmlSDLSpring::ConvertKey(int sdlkey)
 	return Rml::Input::KI_UNKNOWN;
 }
 
-int RmlSDLSpring::ConvertMouseButton(int button)
+int RmlSDLRecoil::ConvertMouseButton(int button)
 {
 	switch (button) {
 		case SDL_BUTTON_LEFT:
@@ -339,7 +339,7 @@ int RmlSDLSpring::ConvertMouseButton(int button)
 	}
 }
 
-int RmlSDLSpring::GetKeyModifierState()
+int RmlSDLRecoil::GetKeyModifierState()
 {
 	SDL_Keymod sdl_mods = SDL_GetModState();
 

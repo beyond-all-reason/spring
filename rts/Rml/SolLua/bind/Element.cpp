@@ -143,9 +143,9 @@ namespace Rml::SolLua
 		}
 	}
 
-	void bind_element(sol::state_view& lua)
+	void bind_element(sol::table& namespace_table)
 	{
-		lua.new_usertype<Rml::EventListener>("EventListener", sol::no_constructor,
+		namespace_table.new_usertype<Rml::EventListener>("EventListener", sol::no_constructor,
 			// M
 			"OnAttach", &Rml::EventListener::OnAttach,
 			"OnDetach", &Rml::EventListener::OnDetach,
@@ -154,13 +154,13 @@ namespace Rml::SolLua
 
 		///////////////////////////
 
-		lua.new_usertype<style::StyleProxy>("StyleProxy", sol::no_constructor,
+		namespace_table.new_usertype<style::StyleProxy>("StyleProxy", sol::no_constructor,
 			sol::meta_function::index, &style::StyleProxy::Get,
 			sol::meta_function::new_index, &style::StyleProxy::Set,
 			sol::meta_function::pairs, &style::StyleProxy::Pairs
 		);
 
-		lua.new_usertype<Rml::Element>("Element", sol::no_constructor,
+		namespace_table.new_usertype<Rml::Element>("Element", sol::no_constructor,
 			// M
 			"AddEventListener", sol::overload(
 				[](Rml::Element& s, const Rml::String& e, sol::protected_function f) { functions::addEventListener(s, e, f, false); },

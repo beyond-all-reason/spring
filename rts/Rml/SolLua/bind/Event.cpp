@@ -29,17 +29,17 @@ namespace Rml::SolLua
 		}
 	}
 
-	void bind_event(sol::state_view& lua)
+	void bind_event(sol::table& namespace_table)
 	{
 		//--
-		lua.new_enum("RmlEventPhase",
+		namespace_table.new_enum("RmlEventPhase",
 			"None", Rml::EventPhase::None,
 			"Capture", Rml::EventPhase::Capture,
 			"Target", Rml::EventPhase::Target,
 			"Bubble", Rml::EventPhase::Bubble
 		);
 
-		lua.new_usertype<Rml::Event>("Event", sol::no_constructor,
+		namespace_table.new_usertype<Rml::Event>("Event", sol::no_constructor,
 			// M
 			"StopPropagation", &Rml::Event::StopPropagation,
 			//--
