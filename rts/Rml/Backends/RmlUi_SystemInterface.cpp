@@ -51,13 +51,7 @@ double RmlSystemInterface::GetElapsedTime()
 
 int RmlSystemInterface::TranslateString(Rml::String& translated, const Rml::String& input)
 {
-	if (!translationTable || !translationTable->exists(input)) {
-		translated = input;
-		return 0;
-	}
-	std::string translation = translationTable->getTranslationString(input);
-	translated = translation;
-	return 1;
+	return 0;
 }
 
 bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& message)
@@ -104,11 +98,6 @@ void RmlSystemInterface::GetClipboardText(Rml::String& text)
 	char* raw_text = SDL_GetClipboardText();
 	text = Rml::String(raw_text);
 	SDL_free(raw_text);
-}
-
-void RmlSystemInterface::SetTranslationTable(TranslationTable* tt)
-{
-	translationTable = tt;
 }
 
 bool RmlSDLSpring::EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key)

@@ -115,7 +115,6 @@ struct BackendData {
 	lua_State* ls = nullptr;
 
 	Rml::UniquePtr<PassThroughPlugin> plugin;
-	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
 	CtxMutex contextMutex;
 
     Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture;
@@ -161,30 +160,6 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());
-
-	return true;
-}
-
-bool RmlGui::InitializeLua(lua_State* lua_state)
-{
-	if (!RmlInitialized()) {
-		return false;
-	}
-	sol::state_view lua(lua_state);
-	data->ls = lua_state;
-	data->luaPlugin = Rml::SolLua::Initialise(&lua);
-	data->system_interface.SetTranslationTable(&data->luaPlugin->translationTable);
-	return true;
-}
-
-bool RmlGui::RemoveLua()
-{
-	if (!RmlInitialized() || !data->ls) {
-		return false;
-	}
-	data->luaPlugin->RemoveLuaItems();
-	Update();
-	Rml::UnregisterPlugin(data->luaPlugin);
 
 	return true;
 }
@@ -468,14 +443,4 @@ bool RmlGui::ProcessEvent(const SDL_Event& event)
 		result |= processContextEvent(context, event);
 	}
 	return result;
-}
-
-lua_State* RmlGui::GetLuaState()
-{
-    if (!RmlInitialized())
-    {
-        return nullptr;
-    }
-
-    return data->ls;
 }
