@@ -94,7 +94,7 @@ void bindTable(SolLuaDataModel* data, sol::table& table)
 sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::object model,
                          sol::this_state s)
 {
-	sol::state_view lua{s};
+	sol::state_view bindings{s};
 
 	// Create data model.
 	auto constructor = self.CreateDataModel(name);
@@ -106,7 +106,7 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 			return sol::lua_nil;
 	}
 
-	auto data = std::make_shared<SolLuaDataModel>(lua);
+	auto data = std::make_shared<SolLuaDataModel>(bindings);
 	data->Constructor = constructor;
 	data->Handle = constructor.GetModelHandle();
 	data->ObjectDef = std::make_unique<SolLuaObjectDef>(data.get());
@@ -117,7 +117,7 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 		datamodel::bindTable(data.get(), data->Table);
 	}
 
-	auto obj_table = lua.create_table();
+	auto obj_table = bindings.create_table();
 	auto new_index_func =  //
 		([data](sol::object t, const std::string& key, sol::object value, sol::this_state s) {
 			auto iter = data->BindingMap.find(key);
@@ -137,7 +137,7 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 			data->Handle.DirtyVariable(key);
 		});
 
-	sol::table obj_metatable = lua.create_table();
+	sol::table obj_metatable = bindings.create_table();
 	obj_metatable[sol::meta_function::new_index] = new_index_func;
 
 	obj_metatable[sol::meta_function::index] =
@@ -147,10 +147,10 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 
 	obj_table[sol::metatable_key] = obj_metatable;
 
-	sol::table obj_metatable_2 = lua.create_table();
-	obj_metatable_2[sol::meta_function::new_index] = new_index_func;
-
-	data->Table[sol::metatable_key] = obj_metatable_2;
+	// absolutely no assigning of keys to the top level table allowed
+	sol::table internal_data_metatable = bindings.create_table();
+	internal_data_metatable[sol::meta_function::new_index] = new_index_func;
+	data->Table[sol::metatable_key] = internal_data_metatable;
 
 	return obj_table;
 }
@@ -172,11 +172,11 @@ auto getElementAtPoint2(Rml::Context& self, Rml::Vector2f point, Rml::Element& i
 /// <summary>
 /// Binds the Rml::Context class to Lua.
 /// </summary>
-/// <param name="lua">The Lua state to bind into.</param>
-void bind_context(sol::state_view& lua, SolLuaPlugin* slp)
+/// <param name="bindings">The Lua object to bind into.</param>
+void bind_context(sol::table& namespace_table, SolLuaPlugin* slp)
 {
 	// clang-format off
-	lua.new_usertype<Rml::Context>(
+	namespace_table.new_usertype<Rml::Context>(
 		"Context", sol::no_constructor,
 		// M
 		"AddEventListener", &Rml::Context::AddEventListener,
@@ -185,21 +185,14 @@ void bind_context(sol::state_view& lua, SolLuaPlugin* slp)
 			slp->AddDocumentTracking(doc);
 			return doc;
 		},
-		"LoadDocument", [slp](Rml::Context& self, const Rml::String& document, sol::object w,
-							  sol::this_environment e, sol::this_state s) {
+		"LoadDocument", [slp](Rml::Context& self, const Rml::String& document, const sol::object& widget) {
 			auto doc = self.LoadDocument(document);
 			if (doc == nullptr) {
 				return (SolLuaDocument*)nullptr;
 			}
 			slp->AddDocumentTracking(doc);
 			auto env = dynamic_cast<SolLuaDocument*>(doc)->GetLuaEnvironment();
-			// sol::environment envi(e);
-		    // env[sol::metatable_key] = e.env;
-		    // sol::environment env(state, sol::create, state.globals());
-			env["widget"] = w;
-			// env["__HandleError"] = envi["__HandleError"];
-
-			// dynamic_cast<SolLuaDocument*>(doc)->m_environment = env;
+			env["widget"] = widget;
 			return dynamic_cast<SolLuaDocument*>(doc);
 		},
 		"GetDocument", &document::getDocumentBypassString,
@@ -212,7 +205,6 @@ void bind_context(sol::state_view& lua, SolLuaPlugin* slp)
 		"ProcessMouseMove", &Rml::Context::ProcessMouseMove,
 		"ProcessMouseButtonDown", &Rml::Context::ProcessMouseButtonDown,
 		"ProcessMouseButtonUp", &Rml::Context::ProcessMouseButtonUp,
-		// "ProcessMouseWheel", &Rml::Context::ProcessMouseWheel,
 		"ProcessMouseWheel", sol::overload(
 			static_cast<bool (Rml::Context::*)(float, int)>(&Rml::Context::ProcessMouseWheel),
 			static_cast<bool (Rml::Context::*)(Vector2f, int)>(&Rml::Context::ProcessMouseWheel)),

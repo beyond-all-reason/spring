@@ -103,10 +103,10 @@ namespace Rml::SolLua
 		}
 	}
 
-	void bind_element_form(sol::state_view& lua)
+	void bind_element_form(sol::table& namespace_table)
 	{
 
-		lua.new_usertype<Rml::ElementForm>("ElementForm", sol::no_constructor,
+		namespace_table.new_usertype<Rml::ElementForm>("ElementForm", sol::no_constructor,
 			// M
 			"Submit", sol::overload(&submit::submit, &submit::submitName, &submit::submitNameValue),
 
@@ -116,7 +116,7 @@ namespace Rml::SolLua
 
 		///////////////////////////
 
-		lua.new_usertype<Rml::ElementFormControl>("ElementFormControl", sol::no_constructor,
+		namespace_table.new_usertype<Rml::ElementFormControl>("ElementFormControl", sol::no_constructor,
 			// G+S
 			"disabled", sol::property(&Rml::ElementFormControl::IsDisabled, &Rml::ElementFormControl::SetDisabled),
 			"name", sol::property(&Rml::ElementFormControl::GetName, &Rml::ElementFormControl::SetName),
@@ -132,7 +132,7 @@ namespace Rml::SolLua
 
 		///////////////////////////
 
-		lua.new_usertype<Rml::ElementFormControlInput>("ElementFormControlInput", sol::no_constructor,
+		namespace_table.new_usertype<Rml::ElementFormControlInput>("ElementFormControlInput", sol::no_constructor,
 			// G+S
 			"checked", sol::property(HASATTRGETTER(Rml::ElementFormControlInput, "checked"), SETATTR(Rml::ElementFormControlInput, "checked", bool)),
 			"maxlength", sol::property(GETATTRGETTER(Rml::ElementFormControlInput, "maxlength", -1), SETATTR(Rml::ElementFormControlInput, "maxlength", int)),
@@ -147,18 +147,18 @@ namespace Rml::SolLua
 
 		///////////////////////////
 
-		lua.new_usertype<options::SelectOptionsProxy>("SelectOptionsProxy", sol::no_constructor,
+		namespace_table.new_usertype<options::SelectOptionsProxy>("SelectOptionsProxy", sol::no_constructor,
 			sol::meta_function::index, &options::SelectOptionsProxy::Get,
 			sol::meta_function::pairs, &options::SelectOptionsProxy::Pairs,
 			sol::meta_function::ipairs, &options::SelectOptionsProxy::Pairs
 		);
 
-		lua.new_usertype<options::SelectOptionsProxyNode>("SelectOptionsProxyNode", sol::no_constructor,
+		namespace_table.new_usertype<options::SelectOptionsProxyNode>("SelectOptionsProxyNode", sol::no_constructor,
 			"element", &options::SelectOptionsProxyNode::Element,
 			"value", &options::SelectOptionsProxyNode::Value
 		);
 
-		lua.new_usertype<Rml::ElementFormControlSelect>("ElementFormControlSelect", sol::no_constructor,
+		namespace_table.new_usertype<Rml::ElementFormControlSelect>("ElementFormControlSelect", sol::no_constructor,
 			// M
 			"Add", [](Rml::ElementFormControlSelect& self, Rml::ElementPtr& element, sol::variadic_args va) {
 				int before = (va.size() > 0 ? va.get<int>() : -1);
@@ -180,17 +180,7 @@ namespace Rml::SolLua
 
 		///////////////////////////
 
-		// lua.new_usertype<Rml::ElementFormControlDataSelect>("ElementFormControlDataSelect", sol::no_constructor,
-		// 	// M
-		// 	"SetDataSource", &Rml::ElementFormControlDataSelect::SetDataSource,
-
-		// 	// B
-		// 	sol::base_classes, sol::bases<Rml::ElementFormControlSelect, Rml::ElementFormControl, Rml::Element>()
-		// );
-
-		///////////////////////////
-
-		lua.new_usertype<Rml::ElementFormControlTextArea>("ElementFormControlTextArea", sol::no_constructor,
+		namespace_table.new_usertype<Rml::ElementFormControlTextArea>("ElementFormControlTextArea", sol::no_constructor,
 			// G+S
 			"cols", sol::property(&Rml::ElementFormControlTextArea::GetNumColumns, &Rml::ElementFormControlTextArea::SetNumColumns),
 			"maxlength", sol::property(&Rml::ElementFormControlTextArea::GetMaxLength, &Rml::ElementFormControlTextArea::SetMaxLength),

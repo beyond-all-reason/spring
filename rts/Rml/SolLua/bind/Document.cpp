@@ -59,11 +59,16 @@ namespace Rml::SolLua
 			auto combined = styleSheet->CombineStyleSheetContainer(*self.GetStyleSheetContainer());
 			self.SetStyleSheetContainer(std::move(combined));
 		}
+
+		auto getWidget(SolLuaDocument& self)
+		{
+			return self.GetLuaEnvironment()["widget"];
+		}
 	}
 
-	void bind_document(sol::state_view& lua)
+	void bind_document(sol::table& namespace_table)
 	{
-		lua.new_enum<Rml::ModalFlag>("RmlModalFlag",
+		namespace_table.new_enum<Rml::ModalFlag>("RmlModalFlag",
 			{
 				{ "None", Rml::ModalFlag::None },
 				{ "Modal", Rml::ModalFlag::Modal },
@@ -71,7 +76,7 @@ namespace Rml::SolLua
 			}
 		);
 
-		lua.new_enum<Rml::FocusFlag>("RmlFocusFlag",
+		namespace_table.new_enum<Rml::FocusFlag>("RmlFocusFlag",
 			{
 				{ "None", Rml::FocusFlag::None },
 				{ "Document", Rml::FocusFlag::Document },
@@ -80,7 +85,7 @@ namespace Rml::SolLua
 			}
 		);
 
-		lua.new_usertype<SolLuaDocument>("Document", sol::no_constructor,
+		namespace_table.new_usertype<SolLuaDocument>("Document", sol::no_constructor,
 			// M
 			"PullToFront", &SolLuaDocument::PullToFront,
 			"PushToBack", &SolLuaDocument::PushToBack,
@@ -104,6 +109,7 @@ namespace Rml::SolLua
 			//--
 			"url", sol::readonly_property(&SolLuaDocument::GetSourceURL),
 			"modal", sol::readonly_property(&SolLuaDocument::IsModal),
+			"widget", sol::readonly_property(&document::getWidget),
 
 			// B
 			sol::base_classes, sol::bases<Rml::Element>()
