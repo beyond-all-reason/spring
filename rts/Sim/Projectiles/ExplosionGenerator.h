@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "Rendering/GroundFlashInfo.h"
 #include "System/UnorderedMap.hpp"
 #include "System/Threading/SpringThreading.h"
 
@@ -135,9 +134,6 @@ protected:
 
 	struct ExpGenParams {
 		std::vector<ProjectileSpawnInfo> projectiles;
-
-		GroundFlashInfo groundFlash;
-
 		bool useDefaultExplosions;
 	};
 

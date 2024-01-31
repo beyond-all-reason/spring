@@ -44,8 +44,7 @@ class CStandardGroundFlash : public CGroundFlash
 public:
 	CR_DECLARE_DERIVED(CStandardGroundFlash)
 
-	CStandardGroundFlash();
-	CStandardGroundFlash(const float3& pos, const GroundFlashInfo& info);
+	CStandardGroundFlash() = default;
 	CStandardGroundFlash(
 		const float3& pos,
 		float _circleAlpha,
@@ -56,7 +55,7 @@ public:
 		const float3& _color = float3(1.0f, 1.0f, 0.7f)
 	);
 
-	void InitCommon(const float3& _pos, const float3& _color);
+	void Init(const CUnit* owner, const float3& offset) override;
 
 	void Draw() override;
 	bool Update() override;
@@ -64,6 +63,7 @@ public:
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
 
 private:
+	float3 normal;
 	float3 side1;
 	float3 side2;
 
