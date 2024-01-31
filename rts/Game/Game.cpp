@@ -2,6 +2,7 @@
 
 #include "Rendering/GL/myGL.h"
 
+#include <Rml/Backends/RmlUi_Backend.h>
 #include "Game.h"
 #include "Camera.h"
 #include "CameraHandler.h"
@@ -292,6 +293,7 @@ CGame::~CGame()
 	ENTER_SYNCED_CODE();
 	LOG("[Game::%s][1]", __func__);
 
+	RmlGui::Shutdown();
 	helper->Kill();
 	KillLua(true);
 	KillMisc();
@@ -800,6 +802,8 @@ void CGame::LoadInterface()
 		GameSetupDrawer::Disable();
 		GameSetupDrawer::Enable();
 	}
+
+	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext(), globalRendering->winSizeX, globalRendering->winSizeY);
 }
 
 void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
@@ -1068,6 +1072,9 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
 
+	if (RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat))
+		return 0;
+
 	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, lastActionList))
 		return 0;
 
@@ -1107,6 +1114,9 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 int CGame::KeyReleased(int keyCode, int scanCode)
 {
+	if (RmlGui::ProcessKeyReleased(keyCode, scanCode))
+		return 0;
+
 	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
 		return 0;
 
@@ -1140,6 +1150,9 @@ int CGame::KeyMapChanged()
 
 int CGame::TextInput(const std::string& utf8Text)
 {
+	if (RmlGui::ProcessTextInput(utf8Text))
+		return 0;
+
 	if (eventHandler.TextInput(utf8Text))
 		return 0;
 
@@ -1431,6 +1444,7 @@ bool CGame::Draw() {
 	if (UpdateUnsynced(currentTimePreUpdate))
 		return false;
 
+	RmlGui::Update();
 	const spring_time currentTimePreDraw = spring_gettime();
 
 	SCOPED_SPECIAL_TIMER("Draw");
@@ -1518,6 +1532,7 @@ bool CGame::Draw() {
 		DrawInputReceivers();
 		DrawInputText();
 		DrawInterfaceWidgets();
+		RmlGui::RenderFrame();
 		mouse->DrawCursor();
 
 		eventHandler.DrawScreenPost();

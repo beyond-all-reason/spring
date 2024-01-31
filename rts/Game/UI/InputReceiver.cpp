@@ -4,6 +4,7 @@
 #include "InputReceiver.h"
 #include "Lua/LuaInputReceiver.h"
 #include "Rendering/GL/myGL.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 #include "System/Rectangle.h"
 
 
@@ -68,7 +69,11 @@ void CInputReceiver::DrawReceivers()
 
 CInputReceiver* CInputReceiver::GetReceiverAt(int x, int y)
 {
-	// always ask Lua first
+	// check RmlUI first
+	if (RmlGui::IsMouseInteractingWith())
+		return RmlGui::GetInputReceiver();
+
+	// check lua second
 	if (luaInputReceiver != nullptr && luaInputReceiver->IsAbove(x, y))
 		return luaInputReceiver;
 
