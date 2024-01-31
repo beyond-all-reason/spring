@@ -41,12 +41,12 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/Elements/ElementLuaTexture.h"
-#include "Rml/Elements/ElementLuaTexture.h"
 #include "RmlUi_Backend.h"
 #include "RmlUi_Renderer_GL3_Spring.h"
 #include "RmlUi_SystemInterface.h"
 #include "RmlUi_VFSFileInterface.h"
 #include "System/Input/InputHandler.h"
+#include "System/Log/ILog.h"
 
 using CtxMutex = std::recursive_mutex;
 using CtxLockGuard = std::lock_guard<CtxMutex>;
@@ -207,7 +207,7 @@ void RmlGui::Reload()
 	if (!RmlInitialized()) {
 		return;
 	}
-	LOG_L(L_FATAL, "[SpringApp::%s] reloading: ", __func__);
+	LOG_L(L_NOTICE, "[SpringApp::%s] reloading: ", __func__);
 	SDL_Window* window = data->window;
 	SDL_GLContext glcontext = data->glcontext;
 	int winX = data->winX;
