@@ -1,4 +1,5 @@
 #include "SolLuaDataModel.h"
+#include "Rml/SolLua/bind/bind.h"
 
 #include <optional>
 
@@ -38,23 +39,7 @@ namespace Rml::SolLua
 	bool SolLuaObjectDef::Set(void* ptr, const Rml::Variant& variant)
 	{
 		auto obj = static_cast<sol::object*>(ptr);
-
-		if (obj->is<bool>())
-			variant.GetInto<bool>(*static_cast<bool*>(ptr));
-		else if (obj->is<std::string>())
-			variant.GetInto<std::string>(*static_cast<std::string*>(ptr));
-		else if (obj->is<Rml::Vector2i>())
-			variant.GetInto<Rml::Vector2i>(*static_cast<Rml::Vector2i*>(ptr));
-		else if (obj->is<Rml::Vector2f>())
-			variant.GetInto<Rml::Vector2f>(*static_cast<Rml::Vector2f*>(ptr));
-		else if (obj->is<Rml::Colourb>())
-			variant.GetInto<Rml::Colourb>(*static_cast<Rml::Colourb*>(ptr));
-		else if (obj->is<Rml::Colourf>())
-			variant.GetInto<Rml::Colourf>(*static_cast<Rml::Colourf*>(ptr));
-		else if (obj->is<lua_Number>())
-			variant.GetInto<lua_Number>(*static_cast<lua_Number*>(ptr));
-		else // if (obj->get_type() == sol::type::lua_nil)
-			*obj = sol::make_object(m_model->Lua, sol::nil);
+        *obj = makeObjectFromVariant(&variant, m_model->Lua);
 
 		return true;
 	}

@@ -37,17 +37,19 @@ namespace Rml::SolLua
 
     void RegisterLua(sol::state_view* state, SolLuaPlugin* slp)
     {
-        bind_color(*state);
-        bind_context(*state, slp);
-        bind_datamodel(*state);
-        bind_element(*state);
-        bind_element_derived(*state);
-        bind_element_form(*state);
-        bind_document(*state);
-        bind_event(*state);
-        bind_global(*state, slp);
-        bind_vector(*state);
-        bind_convert(*state);
+		sol::table namespace_table = state->create_named_table("RmlUi");
+
+        bind_color(namespace_table);
+        bind_context(namespace_table, slp);
+        bind_datamodel(namespace_table);
+        bind_element(namespace_table);
+        bind_element_derived(namespace_table);
+        bind_element_form(namespace_table);
+        bind_document(namespace_table);
+        bind_event(namespace_table);
+        bind_global(namespace_table, slp);
+        bind_vector(namespace_table);
+        bind_convert(namespace_table);
     }
 
 } // end namespace Rml::SolLua

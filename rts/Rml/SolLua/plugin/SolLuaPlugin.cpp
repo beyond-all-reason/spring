@@ -4,7 +4,6 @@
 #include "SolLuaInstancer.h"
 #include <RmlUi/Core.h>
 
-#include "../bind/bind.h"
 #include <algorithm>
 
 

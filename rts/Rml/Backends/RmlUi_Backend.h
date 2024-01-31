@@ -31,7 +31,7 @@
 #ifndef RMLUI_BACKENDS_BACKEND_H
 #define RMLUI_BACKENDS_BACKEND_H
 
-// #include "Rml/Rml_MathTypes_Conversions.h"
+#include "Rml/Rml_MathTypes_Conversions.h"
 #include <RmlUi/Core.h>
 #include <SDL.h>
 
