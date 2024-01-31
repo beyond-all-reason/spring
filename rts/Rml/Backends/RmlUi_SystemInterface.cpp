@@ -56,7 +56,7 @@ int RmlSystemInterface::TranslateString(Rml::String& translated, const Rml::Stri
 
 bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& message)
 {
-	const char* fmtStr = "[Lua:Rml] %s";
+	const char* fmtStr = "[RmlUi] %s";
 	const char* logStr = message.c_str();
 	switch (type) {
 		case Rml::Log::LT_ASSERT:

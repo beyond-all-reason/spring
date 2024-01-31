@@ -29,7 +29,6 @@
  *
  */
 
-#include <RmlSolLua/RmlSolLua.h>
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/Profiling.h>
 #include <RmlUi/Debugger.h>
@@ -37,10 +36,8 @@
 #include <functional>
 #include <tracy/Tracy.hpp>
 
-#include "Lua/LuaUI.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rml/RmlInputReceiver.h"
-#include "Rml/Elements/ElementLuaTexture.h"
 #include "Rml/Elements/ElementLuaTexture.h"
 #include "RmlUi_Backend.h"
 #include "RmlUi_Renderer_GL3_Spring.h"
@@ -112,7 +109,6 @@ struct BackendData {
 	bool debuggerAttached = false;
 	int winX = 1;
 	int winY = 1;
-	lua_State* ls = nullptr;
 
 	Rml::UniquePtr<PassThroughPlugin> plugin;
 	CtxMutex contextMutex;
