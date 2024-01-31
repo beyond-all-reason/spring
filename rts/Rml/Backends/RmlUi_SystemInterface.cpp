@@ -62,7 +62,7 @@ int RmlSystemInterface::TranslateString(Rml::String& translated, const Rml::Stri
 
 bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& message)
 {
-	const char* fmtStr = "[Lua:Rml] %s";
+	const char* fmtStr = "[RmlUi] %s";
 	const char* logStr = message.c_str();
 	switch (type) {
 		case Rml::Log::LT_ASSERT:
@@ -104,11 +104,6 @@ void RmlSystemInterface::GetClipboardText(Rml::String& text)
 	char* raw_text = SDL_GetClipboardText();
 	text = Rml::String(raw_text);
 	SDL_free(raw_text);
-}
-
-void RmlSystemInterface::SetTranslationTable(TranslationTable* tt)
-{
-	translationTable = tt;
 }
 
 bool RmlSDLSpring::EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key)
