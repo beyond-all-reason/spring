@@ -381,18 +381,16 @@ bool MoveDef::DoRawSearch(
 		return result;
 	};
 
-	const float3 testMoveDir2D = (testMoveDir * XZVector).SafeNormalize2D();
-
 	float minSpeedMod = std::numeric_limits<float>::max();
 	int   maxBlockBit = CMoveMath::BLOCK_NONE;
 
 	bool retTestMove = true;
 
 	if (testTerrain) {
-		auto test = [this, &minSpeedMod, &testMoveDir2D, speedModThreshold](int x, int z) -> bool {
+		auto test = [this, &minSpeedMod, speedModThreshold](int x, int z) -> bool {
 			if (x >= mapDims.mapx || x < 0 || z >= mapDims.mapy || z < 0) { return true; }
 
-			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir2D);
+			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z);
 			minSpeedMod = std::min(minSpeedMod, speedMod);
 
 			return (speedMod > speedModThreshold);
@@ -494,8 +492,6 @@ bool MoveDef::TestMoveSquareRange(
 	const int xmax = xmid + xsizeh * (1 - centerOnly);
 	const int zmax = zmid + zsizeh * (1 - centerOnly);
 
-	const float3 testMoveDir2D = (testMoveDir * XZVector).SafeNormalize2D();
-
 	float minSpeedMod = std::numeric_limits<float>::max();
 	int   maxBlockBit = CMoveMath::BLOCK_NONE;
 
@@ -504,7 +500,7 @@ bool MoveDef::TestMoveSquareRange(
 	if (testTerrain) {
 		for (int z = zmin; retTestMove && z <= zmax; ++z) {
 			for (int x = xmin; retTestMove && x <= xmax; ++x) {
-				const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir2D);
+				const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z);
 
 				minSpeedMod = std::min(minSpeedMod, speedMod);
 				retTestMove = (speedMod > 0.0f);
