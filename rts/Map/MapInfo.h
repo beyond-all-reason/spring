@@ -219,6 +219,8 @@ public:
 			unsigned int numSpeedModBins;
 			float        minSpeedModVal;
 			float        maxSpeedModVal;
+			unsigned int maxNodesSearched;
+			float        maxRelativeNodesSearched;
 		} qtpfs_constants;
 	} pfs;
 

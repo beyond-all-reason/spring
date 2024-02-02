@@ -135,6 +135,7 @@ QTPFS::PathManager::PathManager() {
 	QTNode::InitStatic();
 	NodeLayer::InitStatic();
 	PathManager::InitStatic();
+	PathSearch::InitStatic();
 
 	assert(registry.alive() == 0);
 
