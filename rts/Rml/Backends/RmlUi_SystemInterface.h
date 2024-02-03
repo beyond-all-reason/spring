@@ -34,6 +34,7 @@
 
 #include <RmlUi/Core/Input.h>
 
+#include <RmlSolLua/TranslationTable.h>
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
@@ -63,8 +64,10 @@ public:
 
 	//  Hooks for Spring engine
 	const Rml::String& GetMouseCursor();
+	void SetTranslationTable(TranslationTable* tt);
 
 private:
+	TranslationTable* translationTable = nullptr;
 	Rml::String mouseCursor;
 };
 
