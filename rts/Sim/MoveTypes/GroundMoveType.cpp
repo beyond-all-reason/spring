@@ -993,19 +993,20 @@ void CGroundMoveType::UpdatePreCollisionsMt() {
 
 		// a non-temp answer tells us that the new path is ready to be used.
 		if (tempWaypoint.y != (-1.f)) {
-			// switch straight over to the new path
-			earlyCurrWayPoint = tempWaypoint;
-			earlyNextWayPoint = pathManager->NextWayPoint(owner, nextPathId, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
-			lastWaypoint = false;
+			// if the unit has switched to a raw move since the new path was requested then don't
+			// try to redirect onto the new path.
+			if (!useRawMovement) {
+				// switch straight over to the new path
+				earlyCurrWayPoint = tempWaypoint;
+				earlyNextWayPoint = pathManager->NextWayPoint(owner, nextPathId, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+				lastWaypoint = false;
+				wantRepath = false;
+			}
 
 			// can't delete the path in an MT section
 			deletePathId = pathID;
 			pathID = nextPathId;
 			nextPathId = 0;
-			wantRepath = false;
-
-			// A new path obvious means raw move isn't active.
-			useRawMovement = false;
 		}
 	}
 
