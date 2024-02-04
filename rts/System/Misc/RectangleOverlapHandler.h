@@ -28,10 +28,6 @@ public:
 	size_t GetTotalArea() const;
 
 public:
-	typedef std::vector<SRectangle> container;
-	typedef container::iterator iterator;
-	typedef container::const_iterator const_iterator;
-
 	bool empty() const { return (frontIdx >= rectangles.size()); }
 	size_t size() const { return (rectangles.size() - frontIdx); }
 
@@ -80,11 +76,11 @@ public:
 		rectangles.reserve(512);
 	}
 
-	const_iterator cbegin() { return (rectangles.cbegin() + frontIdx); }
-	const_iterator cend() { return (rectangles.cend()); }
+	auto cbegin() const { return (rectangles.cbegin() + frontIdx); }
+	auto cend() const { return (rectangles.cend()); }
 
-	iterator begin() { return (rectangles.begin() + frontIdx); }
-	iterator end() { return (rectangles.end()); }
+	auto begin() { return (rectangles.begin() + frontIdx); }
+	auto end() { return (rectangles.end()); }
 
 private:
 	void StageDedup();
@@ -112,7 +108,7 @@ private:
 	static bool AreMergable(const SRectangle& rect1, const SRectangle& rect2);
 
 private:
-	container rectangles;
+	std::vector<SRectangle> rectangles;
 
 	constexpr static int maxAreaPerRect = 500 * 500;
 

@@ -90,6 +90,7 @@
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Scripts/UnitScriptFactory.h"
 #include "Sim/Units/Scripts/UnitScriptEngine.h"
+#include "Sim/Units/TerraformTask.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
@@ -649,6 +650,7 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	CWeaponLoader::InitStatic();
 
 	unitHandler.Init();
+	TerraformTask::Init();
 	featureHandler.Init();
 	projectileHandler.Init();
 	CLosHandler::InitStatic();
@@ -993,6 +995,7 @@ void CGame::KillSimulation()
 
 	featureHandler.Kill(); // depends on unitHandler (via ~CFeature)
 	unitHandler.Kill();
+	TerraformTask::Kill();
 	projectileHandler.Kill();
 
 	LOG("[Game::%s][3]", __func__);
@@ -1743,6 +1746,7 @@ void CGame::SimFrame() {
 		smoothGround.UpdateSmoothMesh();
 		mapDamage->Update();
 		unitHandler.Update();
+		TerraformTask::UpdateAll();
 		pathManager->Update();
 		projectileHandler.Update();
 		featureHandler.Update();

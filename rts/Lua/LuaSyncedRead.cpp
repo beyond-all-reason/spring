@@ -4343,7 +4343,7 @@ int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 			lua_pushnumber(L, reclaimee->id + unitHandler.MaxUnits());
 		}
 		return 2;
-	} else if (builder->helpTerraform || builder->terraforming) {
+	} else if (builder->Terraforming() && !builder->TerraformingForBuilding()) {
 		lua_pushnumber(L, CMD_RESTORE); // FIXME: could also be leveling ground before construction
 		return 1;
 	} else {

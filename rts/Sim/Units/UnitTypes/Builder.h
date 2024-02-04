@@ -7,7 +7,10 @@
 
 #include "Sim/Misc/NanoPieceCache.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/TerraformTask.h"
 #include "System/float3.h"
+#include "System/Rectangle.h"
+#include "System/RefCnt.h"
 
 struct UnitDef;
 struct BuildInfo;
@@ -32,25 +35,21 @@ public:
 	CBuilder();
 
 	void Update();
-	void SlowUpdate();
 	void DependentDied(CObject* o);
 
 	bool UpdateTerraform(const Command& fCommand);
-	bool AssistTerraform(const Command& fCommand);
 	bool UpdateBuild(const Command& fCommand);
 	bool UpdateReclaim(const Command& fCommand);
 	bool UpdateResurrect(const Command& fCommand);
 	bool UpdateCapture(const Command& fCommand);
 
 	bool StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWaitStance, bool& limitReached);
-	float CalculateBuildTerraformCost(BuildInfo& buildInfo);
 	void StopBuild(bool callScript = true);
 	void SetRepairTarget(CUnit* target);
 	void SetReclaimTarget(CSolidObject* object);
 	void StartRestore(float3 centerPos, float radius);
 	bool ScriptStartBuilding(float3 pos, bool silent);
 
-	void HelpTerraform(CBuilder* unit);
 	void CreateNanoParticle(const float3& goal, float radius, bool inverse, bool highPriority = false);
 	void SetResurrectTarget(CFeature* feature);
 	void SetCaptureTarget(CUnit* unit);
@@ -61,6 +60,12 @@ public:
 	const NanoPieceCache& GetNanoPieceCache() const { return nanoPieceCache; }
 	      NanoPieceCache& GetNanoPieceCache()       { return nanoPieceCache; }
 
+	bool Terraforming() const { return terraformTask != nullptr; }
+	bool TerraformingForBuilding() const;
+	float3 TerraformCenter() const;
+	float TerraformRadius() const;
+
+	static SRectangle GetBuildingRectangle(const CUnit& unit);
 public:
 	bool range3D; ///< spheres instead of infinite cylinders for range tests
 
@@ -78,19 +83,8 @@ public:
 	CUnit* curCapture;
 	CSolidObject* curReclaim;
 	bool reclaimingUnit;
-	CBuilder* helpTerraform;
 
-	bool terraforming;
-	float terraformHelp;
-	float myTerraformLeft;
-	enum TerraformType {
-		Terraform_Building,
-		Terraform_Restore
-	} terraformType;
-	int tx1,tx2,tz1,tz2;
-	float3 terraformCenter;
-	float terraformRadius;
-
+	recoil::LightSharedPtr<TerraformTask> terraformTask;
 private:
 	NanoPieceCache nanoPieceCache;
 };

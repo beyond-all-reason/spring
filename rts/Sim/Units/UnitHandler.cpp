@@ -90,10 +90,10 @@ void CUnitHandler::Init() {
 	GeneralMoveSystem::Init();
 	UnitTrapCheckSystem::Init();
 
-	static_assert(sizeof(CBuilder) >= sizeof(CUnit             ), "");
-	static_assert(sizeof(CBuilder) >= sizeof(CBuilding         ), "");
-	static_assert(sizeof(CBuilder) >= sizeof(CExtractorBuilding), "");
-	static_assert(sizeof(CBuilder) >= sizeof(CFactory          ), "");
+	static_assert(unitMemPool.PAGE_SIZE() >= sizeof(CUnit             ), "");
+	static_assert(unitMemPool.PAGE_SIZE() >= sizeof(CBuilding         ), "");
+	static_assert(unitMemPool.PAGE_SIZE() >= sizeof(CExtractorBuilding), "");
+	static_assert(unitMemPool.PAGE_SIZE() >= sizeof(CFactory          ), "");
 
 	{
 		// set the global (runtime-constant) unit-limit as the sum

@@ -24,12 +24,11 @@
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitLoader.h"
+#include "Sim/Units/TerraformTask.h"
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Sound/ISoundChannels.h"
-
-using std::min;
-using std::max;
+#include "System/creg/LightSharedPtr.h"
 
 CR_BIND_DERIVED(CBuilder, CUnit, )
 CR_REG_METADATA(CBuilder, (
@@ -47,14 +46,7 @@ CR_REG_METADATA(CBuilder, (
 	CR_MEMBER(curCapture),
 	CR_MEMBER(curReclaim),
 	CR_MEMBER(reclaimingUnit),
-	CR_MEMBER(helpTerraform),
-	CR_MEMBER(terraforming),
-	CR_MEMBER(myTerraformLeft),
-	CR_MEMBER(terraformHelp),
-	CR_MEMBER(tx1), CR_MEMBER(tx2), CR_MEMBER(tz1), CR_MEMBER(tz2),
-	CR_MEMBER(terraformCenter),
-	CR_MEMBER(terraformRadius),
-	CR_MEMBER(terraformType),
+	CR_MEMBER(terraformTask),
 	CR_MEMBER(nanoPieceCache)
 ))
 
@@ -79,21 +71,8 @@ CBuilder::CBuilder():
 	curCapture(0),
 	curReclaim(0),
 	reclaimingUnit(false),
-	helpTerraform(0),
-	terraforming(false),
-	terraformHelp(0),
-	myTerraformLeft(0),
-	terraformType(Terraform_Building),
-	tx1(0),
-	tx2(0),
-	tz1(0),
-	tz2(0),
-	terraformCenter(ZeroVector),
-	terraformRadius(0)
-{
-}
-
-
+	terraformTask(nullptr)
+{}
 
 void CBuilder::PreInit(const UnitLoadParams& params)
 {
@@ -135,162 +114,69 @@ bool CBuilder::CanRepairUnit(const CUnit* u) const
 	return (u->unitDef->repairable);
 }
 
+bool CBuilder::TerraformingForBuilding() const
+{
+	assert(Terraforming());
+	return (terraformTask->buildee != nullptr);
+}
+
+float3 CBuilder::TerraformCenter() const
+{
+	assert(Terraforming());
+	return terraformTask->GetCenterPos();
+}
+
+float CBuilder::TerraformRadius() const
+{
+	assert(Terraforming());
+	return terraformTask->GetRadius();
+}
+
+SRectangle CBuilder::GetBuildingRectangle(const CUnit& unit)
+{
+	const int tx1 = static_cast<int>((unit.pos.x - (unit.xsize * 0.5f * SQUARE_SIZE)) / SQUARE_SIZE);
+	const int tz1 = static_cast<int>((unit.pos.z - (unit.zsize * 0.5f * SQUARE_SIZE)) / SQUARE_SIZE);
+	const int tx2 = tx1 + unit.xsize;
+	const int tz2 = tz1 + unit.zsize;
+	return SRectangle{ tx1, tz1, tx2, tz2 };
+}
 
 
 bool CBuilder::UpdateTerraform(const Command&)
 {
-	CUnit* curBuildee = curBuild;
-
-	if (!terraforming || !inBuildStance)
+	if (!Terraforming() || !inBuildStance)
 		return false;
-
-	const float* heightmap = readMap->GetCornerHeightMapSynced();
-	float terraformScale = 0.1f;
 
 	assert(!mapDamage->Disabled());
+	assert(curBuild == terraformTask->buildee);
 
-	static constexpr int b = 3;
+	if (curBuild) {
+		// prevent building from timing out while terraforming for it
+		curBuild->AddBuildPower(this, 0.0f);
+	}
 
-	const auto SmoothBorders = [this, heightmap, &terraformScale]() {
-		// smooth the x-borders
-		for (int z = tz1; z <= tz2; z++) {
-			for (int x = 1; x <= 3; x++) {
-				if (tx1 - 3 >= 0) {
-					const float ch3 = heightmap[z * mapDims.mapxp1 + tx1];
-					const float ch = heightmap[z * mapDims.mapxp1 + tx1 - x];
-					const float ch2 = heightmap[z * mapDims.mapxp1 + tx1 - 3];
-					const float amount = ((ch3 * (3 - x) + ch2 * x) / 3 - ch) * terraformScale;
-
-					readMap->AddHeight(z * mapDims.mapxp1 + tx1 - x, amount);
-				}
-				if (tx2 + 3 < mapDims.mapx) {
-					const float ch3 = heightmap[z * mapDims.mapxp1 + tx2];
-					const float ch = heightmap[z * mapDims.mapxp1 + tx2 + x];
-					const float ch2 = heightmap[z * mapDims.mapxp1 + tx2 + 3];
-					const float amount = ((ch3 * (3 - x) + ch2 * x) / 3 - ch) * terraformScale;
-
-					readMap->AddHeight(z * mapDims.mapxp1 + tx2 + x, amount);
-				}
+	if (terraformTask->TerraformComplete()) {
+		if (curBuild) {
+			if (eventHandler.TerraformComplete(this, curBuild)) {
+				StopBuild();
 			}
 		}
-
-		// smooth the z-borders
-		for (int z = 1; z <= 3; z++) {
-			for (int x = tx1; x <= tx2; x++) {
-				if ((tz1 - 3) >= 0) {
-					const float ch3 = heightmap[(tz1)*mapDims.mapxp1 + x];
-					const float ch = heightmap[(tz1 - z) * mapDims.mapxp1 + x];
-					const float ch2 = heightmap[(tz1 - 3) * mapDims.mapxp1 + x];
-					const float adjust = ((ch3 * (3 - z) + ch2 * z) / 3 - ch) * terraformScale;
-
-					readMap->AddHeight((tz1 - z) * mapDims.mapxp1 + x, adjust);
-				}
-				if ((tz2 + 3) < mapDims.mapy) {
-					const float ch3 = heightmap[(tz2)*mapDims.mapxp1 + x];
-					const float ch = heightmap[(tz2 + z) * mapDims.mapxp1 + x];
-					const float ch2 = heightmap[(tz2 + 3) * mapDims.mapxp1 + x];
-					const float adjust = ((ch3 * (3 - z) + ch2 * z) / 3 - ch) * terraformScale;
-
-					readMap->AddHeight((tz2 + z) * mapDims.mapxp1 + x, adjust);
-				}
-			}
-		}
-	};
-
-	switch (terraformType) {
-	case Terraform_Building: {
-		if (curBuildee != nullptr) {
-			if (curBuildee->terraformLeft <= 0.0f)
-				terraformScale = 0.0f;
-			else
-				terraformScale = (terraformSpeed + terraformHelp) / curBuildee->terraformLeft;
-
-			curBuildee->terraformLeft -= (terraformSpeed + terraformHelp);
-
-			terraformHelp = 0.0f;
-			terraformScale = std::min(terraformScale, 1.0f);
-
-			// prevent building from timing out while terraforming for it
-			curBuildee->AddBuildPower(this, 0.0f);
-
-			for (int z = tz1; z <= tz2; z++) {
-				for (int x = tx1; x <= tx2; x++) {
-					const int idx = z * mapDims.mapxp1 + x;
-
-					readMap->AddHeight(idx, (curBuildee->pos.y - heightmap[idx]) * terraformScale);
-				}
-			}
-			SmoothBorders();
-			mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
-
-			if (curBuildee->terraformLeft <= 0.0f) {
-				terraforming = false;
-
-				curBuildee->groundLevelled = true;
-
-				if (eventHandler.TerraformComplete(this, curBuildee)) {
-					StopBuild();
-				}
-			}
-		}
-	} break;
-	case Terraform_Restore: {
-		if (myTerraformLeft <= 0.0f)
-			terraformScale = 0.0f;
-		else
-			terraformScale = (terraformSpeed + terraformHelp) / myTerraformLeft;
-
-		myTerraformLeft -= (terraformSpeed + terraformHelp);
-
-		terraformHelp = 0.0f;
-		terraformScale = std::min(terraformScale, 1.0f);
-
-		for (int z = tz1; z <= tz2; z++) {
-			for (int x = tx1; x <= tx2; x++) {
-				int idx = z * mapDims.mapxp1 + x;
-				float ch = heightmap[idx];
-				float oh = readMap->GetOriginalHeightMapSynced()[idx];
-
-				readMap->AddHeight(idx, (oh - ch) * terraformScale);
-			}
-		}
-		SmoothBorders();
-		mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
-
-		if (myTerraformLeft <= 0.0f) {
-			terraforming = false;
-
+		else {
 			StopBuild();
 		}
-	} break;
+		terraformTask = nullptr;
+	}
+	else {
+		terraformTask->AddTerraformSpeed(terraformSpeed);
 	}
 
-	ScriptDecloak(curBuildee, nullptr);
-	CreateNanoParticle(terraformCenter, terraformRadius * 0.5f, false);
+	if (curBuild)
+		ScriptDecloak(curBuild, nullptr);
 
+	if (Terraforming())
+		CreateNanoParticle(TerraformCenter(), TerraformRadius() * 0.5f, false);
 
-
-	return true;
-}
-
-bool CBuilder::AssistTerraform(const Command&)
-{
-	CBuilder* helpTerraformee = helpTerraform;
-
-	if (helpTerraformee == nullptr || !inBuildStance)
-		return false;
-
-	if (!helpTerraformee->terraforming) {
-		// delete our helpTerraform dependence
-		StopBuild(true);
-		return true;
-	}
-
-	ScriptDecloak(helpTerraformee, nullptr);
-
-	helpTerraformee->terraformHelp += terraformSpeed;
-	CreateNanoParticle(helpTerraformee->terraformCenter, helpTerraformee->terraformRadius * 0.5f, false);
-	return true;
+	return Terraforming();
 }
 
 bool CBuilder::UpdateBuild(const Command& fCommand)
@@ -539,7 +425,6 @@ void CBuilder::Update()
 
 	if (!beingBuilt && !IsStunned()) {
 		updated = updated || UpdateTerraform(fCommand);
-		updated = updated || AssistTerraform(fCommand);
 		updated = updated || UpdateBuild(fCommand);
 		updated = updated || UpdateReclaim(fCommand);
 		updated = updated || UpdateResurrect(fCommand);
@@ -548,16 +433,6 @@ void CBuilder::Update()
 
 	CUnit::Update();
 }
-
-
-void CBuilder::SlowUpdate()
-{
-	if (terraforming)
-		mapDamage->RecalcArea(tx1, tx2, tz1, tz2);
-
-	CUnit::SlowUpdate();
-}
-
 
 void CBuilder::SetRepairTarget(CUnit* target)
 {
@@ -572,15 +447,9 @@ void CBuilder::SetRepairTarget(CUnit* target)
 
 	if (!target->groundLevelled) {
 		// resume levelling the ground
-		tx1 = (int)std::max(0.0f, (target->pos.x - (target->xsize * 0.5f * SQUARE_SIZE)) / SQUARE_SIZE);
-		tz1 = (int)std::max(0.0f, (target->pos.z - (target->zsize * 0.5f * SQUARE_SIZE)) / SQUARE_SIZE);
-		tx2 = std::min(mapDims.mapx, tx1 + target->xsize);
-		tz2 = std::min(mapDims.mapy, tz1 + target->zsize);
-
-		terraformCenter = target->pos;
-		terraformRadius = (tx1 - tx2) * SQUARE_SIZE;
-		terraformType = Terraform_Building;
-		terraforming = true;
+		terraformTask = TerraformTask::AddTerraformTask(
+			GetBuildingRectangle(*target), target
+		);
 	}
 
 	ScriptStartBuilding(target->pos, false);
@@ -646,27 +515,14 @@ void CBuilder::StartRestore(float3 centerPos, float radius)
 	StopBuild(false);
 	TempHoldFire(CMD_RESTORE);
 
-	terraforming = true;
-	terraformType = Terraform_Restore;
-	terraformCenter = centerPos;
-	terraformRadius = radius;
-
-	tx1 = (int)max((float)0,(centerPos.x-radius)/SQUARE_SIZE);
-	tx2 = (int)min((float)mapDims.mapx,(centerPos.x+radius)/SQUARE_SIZE);
-	tz1 = (int)max((float)0,(centerPos.z-radius)/SQUARE_SIZE);
-	tz2 = (int)min((float)mapDims.mapy,(centerPos.z+radius)/SQUARE_SIZE);
-
-	float tcost = 0.0f;
-	const float* curHeightMap = readMap->GetCornerHeightMapSynced();
-	const float* orgHeightMap = readMap->GetOriginalHeightMapSynced();
-
-	for (int z = tz1; z <= tz2; z++) {
-		for (int x = tx1; x <= tx2; x++) {
-			float delta = orgHeightMap[z * mapDims.mapxp1 + x] - curHeightMap[z * mapDims.mapxp1 + x];
-			tcost += math::fabs(delta);
-		}
-	}
-	myTerraformLeft = tcost;
+	terraformTask = TerraformTask::AddTerraformTask(
+		SRectangle(
+			static_cast<int>((centerPos.x - radius) / SQUARE_SIZE),
+			static_cast<int>((centerPos.z - radius) / SQUARE_SIZE),
+			static_cast<int>((centerPos.x + radius) / SQUARE_SIZE),
+			static_cast<int>((centerPos.z + radius) / SQUARE_SIZE)
+		), nullptr
+	);
 
 	ScriptStartBuilding(centerPos, false);
 }
@@ -678,8 +534,6 @@ void CBuilder::StopBuild(bool callScript)
 		DeleteDeathDependence(curBuild, DEPENDENCE_BUILD);
 	if (curReclaim != nullptr)
 		DeleteDeathDependence(curReclaim, DEPENDENCE_RECLAIM);
-	if (helpTerraform != nullptr)
-		DeleteDeathDependence(helpTerraform, DEPENDENCE_TERRAFORM);
 	if (curResurrect != nullptr)
 		DeleteDeathDependence(curResurrect, DEPENDENCE_RESURRECT);
 	if (curCapture != nullptr)
@@ -687,11 +541,10 @@ void CBuilder::StopBuild(bool callScript)
 
 	curBuild = nullptr;
 	curReclaim = nullptr;
-	helpTerraform = nullptr;
 	curResurrect = nullptr;
 	curCapture = nullptr;
 
-	terraforming = false;
+	terraformTask = nullptr;
 
 	if (callScript)
 		script->StopBuilding();
@@ -757,8 +610,9 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 
 			if (u != nullptr) {
 				if (CanAssistUnit(u, buildInfo.def)) {
-					// StopBuild sets this to false, fix it here if picking up the same buildee again
-					terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
+					if (u != prvBuild) {
+						terraformTask = nullptr;
+					}
 
 					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
 					ScriptStartBuilding(u->pos, false);
@@ -795,21 +649,11 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 
 	if (!allowTerraform || skipTerraform) {
 		// skip the terraforming job
-		buildee->terraformLeft = 0.0f;
 		buildee->groundLevelled = true;
 	} else {
-		tx1 = (int)std::max(0.0f, (buildee->pos.x - (buildee->xsize * 0.5f * SQUARE_SIZE)) / SQUARE_SIZE);
-		tz1 = (int)std::max(0.0f, (buildee->pos.z - (buildee->zsize * 0.5f * SQUARE_SIZE)) / SQUARE_SIZE);
-		tx2 = std::min(mapDims.mapx, tx1 + buildee->xsize);
-		tz2 = std::min(mapDims.mapy, tz1 + buildee->zsize);
-
-		buildee->terraformLeft = CalculateBuildTerraformCost(buildInfo);
 		buildee->groundLevelled = false;
 
-		terraforming    = true;
-		terraformType   = Terraform_Building;
-		terraformRadius = (tx2 - tx1) * SQUARE_SIZE;
-		terraformCenter = buildee->pos;
+		terraformTask = TerraformTask::AddTerraformTask(GetBuildingRectangle(*buildee), buildee);
 	}
 
 	// pass the *builder*'s udef for checking canBeAssisted; if buildee
@@ -825,33 +669,6 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	return true;
 }
 
-
-float CBuilder::CalculateBuildTerraformCost(BuildInfo& buildInfo)
-{
-	float3& buildPos = buildInfo.pos;
-
-	float tcost = 0.0f;
-	const float* curHeightMap = readMap->GetCornerHeightMapSynced();
-	const float* orgHeightMap = readMap->GetOriginalHeightMapSynced();
-
-	for (int z = tz1; z <= tz2; z++) {
-		for (int x = tx1; x <= tx2; x++) {
-			const int idx = z * mapDims.mapxp1 + x;
-			float delta = buildPos.y - curHeightMap[idx];
-			float cost;
-			if (delta > 0) {
-				cost = max(3.0f, curHeightMap[idx] - orgHeightMap[idx] + delta * 0.5f);
-			} else {
-				cost = max(3.0f, orgHeightMap[idx] - curHeightMap[idx] - delta * 0.5f);
-			}
-			tcost += math::fabs(delta) * cost;
-		}
-	}
-
-	return tcost;
-}
-
-
 void CBuilder::DependentDied(CObject* o)
 {
 	if (o == curBuild) {
@@ -862,10 +679,6 @@ void CBuilder::DependentDied(CObject* o)
 		curReclaim = nullptr;
 		StopBuild();
 	}
-	if (o == helpTerraform) {
-		helpTerraform = nullptr;
-		StopBuild();
-	}
 	if (o == curResurrect) {
 		curResurrect = nullptr;
 		StopBuild();
@@ -874,6 +687,12 @@ void CBuilder::DependentDied(CObject* o)
 		curCapture = nullptr;
 		StopBuild();
 	}
+	/*
+	if (o == helpTerraform) {
+		helpTerraform = nullptr;
+		StopBuild();
+	}
+	*/
 	CUnit::DependentDied(o);
 }
 
@@ -897,21 +716,6 @@ bool CBuilder::ScriptStartBuilding(float3 pos, bool silent)
 
 	return inBuildStance;
 }
-
-
-void CBuilder::HelpTerraform(CBuilder* unit)
-{
-	if (helpTerraform == unit)
-		return;
-
-	StopBuild(false);
-
-	helpTerraform = unit;
-
-	AddDeathDependence(helpTerraform, DEPENDENCE_TERRAFORM);
-	ScriptStartBuilding(unit->terraformCenter, false);
-}
-
 
 void CBuilder::CreateNanoParticle(const float3& goal, float radius, bool inverse, bool highPriority)
 {

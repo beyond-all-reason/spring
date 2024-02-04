@@ -7,6 +7,7 @@
 #include "Game/GameHelper.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/GlobalUnsynced.h"
+#include "Map/ReadMap.h"
 #include "Map/Ground.h"
 #include "Map/MapDamage.h"
 #include "Sim/Features/Feature.h"
@@ -620,7 +621,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 		// keep moving until 3D distance to buildPos is LEQ our buildDistance
 		MoveInBuildRange(build.pos, objRadius);
 
-		if (ownerBuilder->curBuild == nullptr && !ownerBuilder->terraforming) {
+		if (ownerBuilder->curBuild == nullptr && !ownerBuilder->Terraforming()) {
 			building = false;
 			StopMoveAndFinishCommand();
 		}
@@ -873,9 +874,13 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 
 
 	if (CBuilder* b = dynamic_cast<CBuilder*>(guardee)) {
-		if (b->terraforming) {
-			if (MoveInBuildRange(b->terraformCenter, b->terraformRadius * 0.7f)) {
-				ownerBuilder->HelpTerraform(b);
+		if (b->Terraforming()) {
+			if (MoveInBuildRange(b->TerraformCenter(), b->TerraformRadius() * 0.7f)) {
+				if (ownerBuilder->terraformTask != b->terraformTask) {
+					ownerBuilder->StopBuild(false);
+					ownerBuilder->terraformTask = b->terraformTask;
+					ownerBuilder->ScriptStartBuilding(b->TerraformCenter(), false);
+				}
 			} else {
 				StopSlowGuard();
 			}
@@ -1304,22 +1309,62 @@ void CBuilderCAI::ExecuteRestore(Command& c)
 	if (!owner->unitDef->canRestore)
 		return;
 
+	if (c.GetNumParams() < 4)
+		return;
+
 	if (inCommand) {
-		if (!ownerBuilder->terraforming)
+		if (!ownerBuilder->Terraforming())
 			StopMoveAndFinishCommand();
 
 		return;
 	}
 
-	if (owner->unitDef->canRestore) {
-		const float3 pos(c.GetParam(0), CGround::GetHeightReal(c.GetParam(0), c.GetParam(2)), c.GetParam(2));
-		const float radius = std::min(c.GetParam(3), 200.0f);
+	static constexpr int SPLIT_RADIUS = 256;
+	static constexpr int SPLIT_HM_DIAMETER = 2 * SPLIT_RADIUS / SQUARE_SIZE;
 
+	const bool hasInternalRestoreFollowing =
+		(commandQue.size() >= 2) &&
+		commandQue[1].GetID() == CMD_RESTORE &&
+		commandQue[1].IsInternalOrder();
+
+	if (c.IsInternalOrder() || c.GetParam(3) <= static_cast<float>(SPLIT_RADIUS)) {
+		const float3 pos(c.GetParam(0), CGround::GetHeightReal(c.GetParam(0), c.GetParam(2)), c.GetParam(2));
+		const float radius = std::min(c.GetParam(3), static_cast<float>(SPLIT_RADIUS));
 		if (MoveInBuildRange(pos, radius * 0.7f)) {
 			ownerBuilder->StartRestore(pos, radius);
 			inCommand = true;
 		}
+		return;
 	}
+
+	const auto bounds = SRectangle {
+		std::clamp(static_cast<int>((c.GetParam(0) - c.GetParam(3)) / SQUARE_SIZE), 0, mapDims.mapx),
+		std::clamp(static_cast<int>((c.GetParam(2) - c.GetParam(3)) / SQUARE_SIZE), 0, mapDims.mapy),
+		std::clamp(static_cast<int>((c.GetParam(0) + c.GetParam(3)) / SQUARE_SIZE), 0, mapDims.mapx),
+		std::clamp(static_cast<int>((c.GetParam(2) + c.GetParam(3)) / SQUARE_SIZE), 0, mapDims.mapy)
+	};
+
+	commandQue.pop_front();
+
+	const int zstep = static_cast<int>((bounds.z2 - bounds.z1) / math::ceil((bounds.z2 - bounds.z1) / static_cast<float>(SPLIT_HM_DIAMETER)));
+	const int xstep = static_cast<int>((bounds.x2 - bounds.x1) / math::ceil((bounds.x2 - bounds.x1) / static_cast<float>(SPLIT_HM_DIAMETER)));
+
+	for (int z1 = bounds.z1; z1 < bounds.z2; z1 += zstep) {
+		int z2 = std::min(z1 + zstep, bounds.z2);
+		float cz = (z2 + z1) * SQUARE_SIZE * 0.5f;
+
+		for (int x1 = bounds.x1; x1 < bounds.x2; x1 += xstep) {
+			int x2 = std::min(x1 + xstep, bounds.x2);
+			float cx = (x2 + x1) * SQUARE_SIZE * 0.5f;
+			float cy = CGround::GetHeightReal(cx, cz, true);
+
+			Command intRestore(CMD_RESTORE, c.GetOpts() | INTERNAL_ORDER);
+			intRestore.PushPos(float3{ cx, cy, cz });
+			intRestore.PushParam(std::max(x2 - x1, z2 - z1) * SQUARE_SIZE * 0.5f);
+			commandQue.push_front(intRestore);
+		}
+	}
+	SlowUpdate();
 }
 
 
