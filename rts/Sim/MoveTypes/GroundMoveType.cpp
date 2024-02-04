@@ -1003,6 +1003,9 @@ void CGroundMoveType::UpdatePreCollisionsMt() {
 			pathID = nextPathId;
 			nextPathId = 0;
 			wantRepath = false;
+
+			// A new path obvious means raw move isn't active.
+			useRawMovement = false;
 		}
 	}
 
