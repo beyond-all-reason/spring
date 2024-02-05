@@ -29,7 +29,6 @@ list(APPEND engineHeadlessLibraries engineSim)
 list(APPEND engineHeadlessLibraries pr-downloader)
 list(APPEND engineHeadlessLibraries RmlCore)
 list(APPEND engineHeadlessLibraries RmlDebugger)
-list(APPEND engineHeadlessLibraries RmlSolLua)
 list(APPEND engineHeadlessLibraries lunasvg)
 
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/assimp/include)

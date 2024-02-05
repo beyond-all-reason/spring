@@ -1,10 +1,10 @@
-﻿#include <RmlSolLua/SolLuaPlugin.h>
+﻿#include "SolLuaPlugin.h"
 
 #include "RmlUi/Core/Context.h"
 #include "SolLuaInstancer.h"
 #include <RmlUi/Core.h>
 
-#include "bind/bind.h"
+#include "../bind/bind.h"
 #include <algorithm>
 
 
