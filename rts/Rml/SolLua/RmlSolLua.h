@@ -1,7 +1,9 @@
-﻿#pragma once
+﻿// This file is part of the Spring engine (GPL v2 or later), see LICENSE.html
 
+#pragma once
+
+#include "plugin/SolLuaPlugin.h"
 #include <RmlUi/Core.h>
-#include "SolLuaPlugin.h"
 
 #ifdef RMLUILUA_API
     #undef RMLUILUA_API
