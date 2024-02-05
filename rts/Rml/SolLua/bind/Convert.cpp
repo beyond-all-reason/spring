@@ -1,6 +1,6 @@
 #include "bind.h"
 
-#include "plugin/SolLuaDocument.h"
+#include "../plugin/SolLuaDocument.h"
 
 
 namespace Rml::SolLua
