@@ -67,7 +67,6 @@ list(APPEND engineLibraries engineSim)
 list(APPEND engineLibraries pr-downloader)
 list(APPEND engineLibraries RmlCore)
 list(APPEND engineLibraries RmlDebugger)
-list(APPEND engineLibraries RmlSolLua)
 list(APPEND engineLibraries lunasvg)
 
 ### Assemble external incude dirs

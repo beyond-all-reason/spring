@@ -154,6 +154,7 @@ make_global_var(engineSources
 		${sources_engine_Rendering}
 		${sources_engine_aGui}
 		${sources_engine_Rml}
+		${sources_engine_RmlSolLua}
 		${sources_engine_Menu}
 		${sources_engine_System}
 		${sources_engine_ExternalAI}

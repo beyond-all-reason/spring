@@ -107,5 +107,3 @@ set(CMAKE_CXX_FLAGS ${SAVED_CMAKE_FLAGS})
 
 option(ENABLE_SVG_PLUGIN "RmlUi with SVG support" ON)
 add_subdirectory(RmlUi)
-
-add_subdirectory(RmlSolLua)

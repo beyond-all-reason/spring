@@ -2,11 +2,11 @@
 
 #include <RmlUi/Core.h>
 #include <sol2/sol.hpp>
-#include "RmlSolLua/TranslationTable.h"
+#include "../TranslationTable.h"
 
 #include <type_traits>
 
-#include "RmlSolLua/SolLuaPlugin.h"
+#include "../plugin/SolLuaPlugin.h"
 
 
 #ifndef RMLUI_NO_THIRDPARTY_CONTAINERS

@@ -94,6 +94,12 @@ const Rml::String& RmlSystemInterface::GetMouseCursor()
 	return mouseCursor;
 }
 
+void RmlSystemInterface::SetTranslationTable(TranslationTable* tt)
+{
+	translationTable = tt;
+}
+
+
 void RmlSystemInterface::SetClipboardText(const Rml::String& text_utf8)
 {
 	SDL_SetClipboardText(text_utf8.c_str());
