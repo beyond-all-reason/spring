@@ -1,14 +1,21 @@
-﻿// RmlSolLua.h : Include file for standard system include files,
+﻿// This file is part of the Spring engine (GPL v2 or later), see LICENSE.html
+
+// This file is part of the Spring engine (GPL v2 or later), see LICENSE.html
+
+// RmlSolLua.h : Include file for standard system include files,
 // or project specific include files.
 
 #pragma once
 
-#include <RmlUi/Lua/Header.h>
-#include <RmlUi/Core/Plugin.h>
+#include "Rml/SolLua/TranslationTable.h"
+#include <RmlUi/Core/ElementDocument.h>
 #include <RmlUi/Core/Platform.h>
+#include <RmlUi/Core/Plugin.h>
+#include <RmlUi/Lua/Header.h>
+
+#include "lib/lua/mask_lua_macros.h"
 #include <sol2/sol.hpp>
-#include "RmlUi/Core/ElementDocument.h"
-#include "TranslationTable.h"
+#include "lib/lua/restore_lua_macros.h"
 
 #include <memory>
 

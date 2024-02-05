@@ -6,3 +6,10 @@ set(sources_engine_Rml
 		"${CMAKE_CURRENT_SOURCE_DIR}/Elements/ElementLuaTexture.cpp"
 		PARENT_SCOPE
 )
+
+add_subdirectory(SolLua)
+
+set(sources_engine_RmlSolLua
+		"${sources_RmlSolLua}"
+		PARENT_SCOPE
+)
