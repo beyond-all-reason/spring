@@ -29,7 +29,6 @@
  *
  */
 
-#include <RmlSolLua/RmlSolLua.h>
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/Profiling.h>
 #include <RmlUi/Debugger.h>
@@ -39,8 +38,9 @@
 
 #include "Lua/LuaUI.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "Rml/RmlInputReceiver.h"
 #include "Rml/Elements/ElementLuaTexture.h"
+#include "Rml/RmlInputReceiver.h"
+#include "Rml/SolLua/RmlSolLua.h"
 #include "RmlUi_Backend.h"
 #include "RmlUi_Renderer_GL3_Spring.h"
 #include "RmlUi_SystemInterface.h"
@@ -172,7 +172,7 @@ bool RmlGui::InitializeLua(lua_State* lua_state)
 	}
 	sol::state_view lua(lua_state);
 	data->ls = lua_state;
-	data->luaPlugin = Rml::SolLua::Initialise(&lua);
+	data->luaPlugin = Rml::SolLua::Initialise(&lua, "rmlDocumentId");
 	data->system_interface.SetTranslationTable(&data->luaPlugin->translationTable);
 	return true;
 }

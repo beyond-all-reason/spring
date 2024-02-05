@@ -33,11 +33,11 @@
 
 
 #include <RmlUi/Core/Input.h>
-
-#include <RmlSolLua/TranslationTable.h>
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
+
+#include "Rml/SolLua/TranslationTable.h"
 
 class RmlSystemInterface : public Rml::SystemInterface
 {
