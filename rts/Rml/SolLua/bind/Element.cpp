@@ -1,7 +1,7 @@
 #include "bind.h"
 
-#include "plugin/SolLuaDocument.h"
-#include "plugin/SolLuaEventListener.h"
+#include "../plugin/SolLuaDocument.h"
+#include "../plugin/SolLuaEventListener.h"
 
 #include <unordered_map>
 
