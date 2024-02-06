@@ -69,9 +69,9 @@ namespace Rml::SolLua
 
 			auto operator++(int) const
 			{
-				auto cur_pos = m_pos;
-				m_pos = std::min(++m_pos, m_owner->m_func_max());
-				return *this;
+				auto tmp = *this;
+				++(*this);
+				return tmp;
 			}
 
 			auto operator==(const Iter& other) const
@@ -79,7 +79,7 @@ namespace Rml::SolLua
 				auto max = m_owner->m_func_max();
 				auto my_pos = std::min(m_pos, max);
 				auto other_pos = std::min(other.m_pos, max);
-				return my_pos == other_pos;
+				return m_owner == other.m_owner && my_pos == other_pos;
 			}
 			auto operator!=(const Iter& other) const
 			{
