@@ -573,7 +573,11 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 				CWeapon* w = unit->weapons[index];
 
 				const SWeaponTarget origTarget = w->GetCurrentTarget();
-				const SWeaponTarget emitTarget = {absPos + absDir};
+
+				// Ideally the below should be absPos + absDir * w->range,
+				// but since the weapon could be a ballistic one, it's likely not safe.
+				// So keep the target one elmo in front of the emit position
+				const SWeaponTarget emitTarget = { absPos + absDir };
 
 				const float3 origWeaponMuzzlePos = w->weaponMuzzlePos;
 
@@ -582,8 +586,14 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 				w->Fire(true);
 				w->weaponMuzzlePos = origWeaponMuzzlePos;
 
-				const bool origRestored = w->Attack(origTarget);
-				assert(origRestored);
+				// the w->Fire(true); call above might have killed the same original target
+				// Drop the original target in such case, otherwise the weapon will
+				// continue to shoot at `emitTarget` and given how close it's to the emit point
+				// it will look like a random "ghosts" shooting
+				// See https://github.com/beyond-all-reason/spring/issues/1269
+				if (!w->Attack(origTarget))
+					w->DropCurrentTarget();
+
 				return true;
 			}
 
