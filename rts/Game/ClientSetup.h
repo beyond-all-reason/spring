@@ -28,6 +28,8 @@ public:
 	int hostPort;
 
 	bool isHost;
+
+	bool showServerIP;
 };
 
 #endif // CLIENT_SETUP_H

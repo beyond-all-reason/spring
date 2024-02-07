@@ -45,7 +45,7 @@ void ClientSetup::LoadFromStartScript(const std::string& setup)
 	// Technical parameters
 	file.GetDef(hostIP,       hostIP, "GAME\\HostIP");
 	file.GetDef(hostPort,     IntToString(hostPort), "GAME\\HostPort");
-
+	file.GetDef(showServerIP, IntToString(1), "GAME\\ShowServerIP");
 	file.GetDef(myPlayerName, "", "GAME\\MyPlayerName");
 	file.GetDef(myPasswd,     "", "GAME\\MyPasswd");
 
