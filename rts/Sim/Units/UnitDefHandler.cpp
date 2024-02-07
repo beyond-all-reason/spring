@@ -225,14 +225,15 @@ void CUnitDefHandler::SetNoCost(bool value)
 
 void CUnitDefHandler::SanitizeCorpseNames()
 {
-	for (size_t i = 1; i < unitDefsVector.size(); i++) {
-		UnitDef& ud = unitDefsVector[i];
+	for (auto &ud : unitDefsVector) {
+		if (ud.wreckName == "")
+			continue;
 
-		if (ud.wreckName != "") {
-			const FeatureDef* wreckFeatureDef = featureDefHandler->GetFeatureDef(ud.wreckName); 
-			if (wreckFeatureDef == nullptr) {
-				ud.wreckName = "";
-			}
-		}
+		const FeatureDef* wreckFeatureDef = featureDefHandler->GetFeatureDef(ud.wreckName);
+		if (wreckFeatureDef)
+			continue;
+
+		// warning message already produced by GetFeatureDef
+		ud.wreckName = "";
 	}
 }

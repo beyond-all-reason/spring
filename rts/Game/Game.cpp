@@ -639,10 +639,6 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 		SCOPED_ONCE_TIMER("Game::PostLoadSim (FeatureDefs)");
 		loadscreen->SetLoadMessage("Loading Feature Definitions");
 		featureDefHandler->Init(defsParser);
-
-		//Checks if unitDef.corpse refers to a valid featureDef
-		//Must be called after initialization of featureDefHandler
-		unitDefHandler->SanitizeCorpseNames();
 	}
 
 	CUnit::InitStatic();
@@ -684,6 +680,9 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	featureDefHandler->LoadFeatureDefsFromMap();
 	if (saveFileHandler == nullptr)
 		featureHandler.LoadFeaturesFromMap();
+
+	// must be called after features are all loaded
+	unitDefHandler->SanitizeCorpseNames();
 
 	envResHandler.LoadTidal(mapInfo->map.tidalStrength);
 	envResHandler.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);
