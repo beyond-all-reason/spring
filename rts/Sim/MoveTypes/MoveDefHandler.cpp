@@ -330,8 +330,14 @@ bool MoveDef::DoRawSearch(
 	const float upDir    = (startPos.z == endPos.z) ? 0 : 1 - float(startPos.z < endPos.z) * 2.f;
 	const float rightDir = (startPos.x == endPos.x) ? 0 : 1 - float(startPos.x < endPos.x) * 2.f;
 
-	const int2 startBlock(startPos.x / SQUARE_SIZE, startPos.z / SQUARE_SIZE);
-	const int2 endBlock((endPos.x + rightDir) / SQUARE_SIZE, (endPos.z + upDir) / SQUARE_SIZE);
+	const int2 startBlock
+		( std::clamp(int(startPos.x / SQUARE_SIZE), 0, mapDims.mapxm1)
+		, std::clamp(int(startPos.z / SQUARE_SIZE), 0, mapDims.mapym1)
+		);
+	const int2 endBlock
+		( std::clamp(int((endPos.x + rightDir) / SQUARE_SIZE), 0, mapDims.mapxm1)
+		, std::clamp(int((endPos.z + upDir) / SQUARE_SIZE), 0, mapDims.mapym1)
+		);
 	const int2 diffBlk = {std::abs(endBlock.x - startBlock.x), std::abs(endBlock.y - startBlock.y)};
 	const float speedModThreshold = modInfo.pfRawMoveSpeedThreshold;
 
@@ -415,8 +421,8 @@ bool MoveDef::DoRawSearch(
 		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
-			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapx - 1);
-			const int zmax = std::min(z + zsizeh * (1 - centerOnly), mapDims.mapy - 1);
+			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapxm1);
+			const int zmax = std::min(z + zsizeh * (1 - centerOnly), mapDims.mapym1);
 
 			// Height affects whether units in water collide or not, so the new y positions need
 			// to be considered or else we will get incorrect results.
