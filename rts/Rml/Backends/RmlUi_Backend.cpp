@@ -207,7 +207,7 @@ void RmlGui::Reload()
 	if (!RmlInitialized()) {
 		return;
 	}
-	LOG_L(L_NOTICE, "[SpringApp::%s] reloading: ", __func__);
+	LOG_L(L_NOTICE, "[RmlGui::%s] reloading: ", __func__);
 	SDL_Window* window = data->window;
 	SDL_GLContext glcontext = data->glcontext;
 	int winX = data->winX;
