@@ -20,6 +20,7 @@
 #include "System/UnorderedSet.hpp"
 
 static constexpr float4 DEFAULT_COLVOL_COLOR = float4(0.45f, 0.00f, 0.45f, 0.35f); // purple
+static constexpr float4 DEFAULT_SELVOL_COLOR = float4(0.00f, 0.45f, 0.00f, 0.20f); // dark green
 static unsigned int volumeDisplayListIDs[] = {0, 0, 0, 0, 0};
 
 static inline void DrawCollisionVolume(const CollisionVolume* vol)
@@ -173,6 +174,9 @@ static inline void DrawFeatureColVol(const CFeature* f)
 		glMultMatrixf(f->GetTransformMatrixRef(false));
 		DrawObjectMidAndAimPos(f);
 
+		glColorf4(DEFAULT_SELVOL_COLOR);
+		DrawCollisionVolume(&f->selectionVolume);
+
 		glColorf4(DEFAULT_COLVOL_COLOR);
 		if (v->DefaultToPieceTree()) {
 			// draw only the piece volumes for less clutter
@@ -245,6 +249,9 @@ static inline void DrawUnitColVol(const CUnit* u)
 	glPushMatrix();
 		glMultMatrixf(u->GetTransformMatrix(false));
 		DrawObjectMidAndAimPos(u);
+
+		glColorf4(DEFAULT_SELVOL_COLOR);
+		DrawCollisionVolume(&u->selectionVolume);
 
 		glColorf4(DEFAULT_COLVOL_COLOR);
 		if (v->DefaultToPieceTree()) {
