@@ -150,7 +150,6 @@ static inline void DrawObjectMidAndAimPos(const CSolidObject* o)
 		glColor4f(1.0f, 0.0f, 1.0f, 0.35f);
 		gluQuadricDrawStyle(q, GLU_FILL);
 		gluSphere(q, 2.0f, 5, 5);
-		glColorf4(DEFAULT_COLVOL_COLOR);
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -174,6 +173,7 @@ static inline void DrawFeatureColVol(const CFeature* f)
 		glMultMatrixf(f->GetTransformMatrixRef(false));
 		DrawObjectMidAndAimPos(f);
 
+		glColorf4(DEFAULT_COLVOL_COLOR);
 		if (v->DefaultToPieceTree()) {
 			// draw only the piece volumes for less clutter
 			// note: relMidPos transform is on the stack at this
@@ -238,7 +238,6 @@ static inline void DrawUnitColVol(const CUnit* u)
 		}
 	}
 
-	glColorf4(DEFAULT_COLVOL_COLOR);
 	glEnable(GL_DEPTH_TEST);
 	gluDeleteQuadric(q);
 
@@ -247,6 +246,7 @@ static inline void DrawUnitColVol(const CUnit* u)
 		glMultMatrixf(u->GetTransformMatrix(false));
 		DrawObjectMidAndAimPos(u);
 
+		glColorf4(DEFAULT_COLVOL_COLOR);
 		if (v->DefaultToPieceTree()) {
 			// draw only the piece volumes for less clutter
 			// note: relMidPos transform is on the stack at this
