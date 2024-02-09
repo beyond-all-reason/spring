@@ -43,6 +43,7 @@ void CFeatureHandler::Init() {
 
 void CFeatureHandler::Kill() {
 	for (const int featureID: activeFeatureIDs) {
+		Sim::registry.destroy(features[featureID]->entityReference);
 		featureMemPool.free(features[featureID]);
 	}
 
