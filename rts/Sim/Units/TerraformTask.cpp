@@ -9,23 +9,25 @@
 
 CR_BIND(TerraformTask, )
 CR_REG_METADATA(TerraformTask, (
+	CR_MEMBER(id),
 	CR_MEMBER(bounds),
 	CR_MEMBER(cost),
 	CR_MEMBER(amount),
 	CR_MEMBER(speed),
-	CR_MEMBER(buildee)
+	CR_MEMBER(buildee),
+	CR_MEMBER(refCnt)
 ))
 
-void TerraformTask::Init()
-{
-	terraformTasks = {};
-}
+CR_BIND(TerraformTaskHandler, )
+CR_REG_METADATA(TerraformTaskHandler, (
+	CR_MEMBER(nextId),
+	CR_MEMBER(terraformTasks)
+))
 
-void TerraformTask::Kill()
-{
-	spring::VectorEraseAllIf(terraformTasks, [](auto item) { return item.expired(); });
-	assert(terraformTasks.empty());
-}
+CR_BIND(TerraformTaskToken, )
+CR_REG_METADATA(TerraformTaskToken, (
+	CR_MEMBER(id)
+))
 
 TerraformTask::TerraformTask(const float3& center, const float2& dims, CUnit* buildee, const SResourcePack& cost)
 	: TerraformTask(
@@ -40,7 +42,9 @@ TerraformTask::TerraformTask(const float3& center, const float2& dims, CUnit* bu
 {}
 
 TerraformTask::TerraformTask(SRectangle&& bounds_, CUnit* buildee_, const SResourcePack& cost_)
-	: bounds(std::move(bounds_))
+	: id(terraformTaskHandler.GetNextId())
+	, refCnt(0)
+	, bounds(std::move(bounds_))
 	, buildee(buildee_)
 	, cost(cost_)
 	, speed(0.0f)
@@ -75,20 +79,6 @@ TerraformTask::TerraformTask(SRectangle&& bounds_, CUnit* buildee_, const SResou
 		cost *= 1.0f / amount; //cost per 1 amount
 	else
 		cost *= 0.0f;
-}
-
-void TerraformTask::UpdateAll()
-{
-	for (size_t i = 0; i < terraformTasks.size(); /*NOOP*/) {
-		if (terraformTasks[i].expired()) {
-			terraformTasks[i] = terraformTasks.back();
-			terraformTasks.pop_back();
-		}
-		else {
-			terraformTasks[i].lock()->Update();
-			++i;
-		}
-	}
 }
 
 void TerraformTask::Update()
@@ -146,32 +136,6 @@ void TerraformTask::Update()
 	else {
 		amount = 0.0f;
 	}
-}
-
-recoil::LightSharedPtr<TerraformTask> TerraformTask::AddTerraformTask(SRectangle&& bounds, CUnit* buildee, const SResourcePack& cost)
-{
-	for (auto& tt : terraformTasks) {
-		if (tt.expired())
-			continue;
-
-		if (auto ltt = tt.lock(); ltt->buildee == buildee && ltt->bounds == bounds)
-			return ltt;
-	}
-
-	return terraformTasks.emplace_back(
-		recoil::LightSharedPtr<TerraformTask>(std::move(bounds), buildee, cost)
-	).lock();
-}
-
-recoil::LightSharedPtr<TerraformTask> TerraformTask::AddTerraformTask(const float3& center, const float2& dims, CUnit* buildee, const SResourcePack& cost)
-{
-	auto bounds = SRectangle{
-		std::clamp(static_cast<int>((center.x - dims.x) / SQUARE_SIZE), 0, mapDims.mapx),
-		std::clamp(static_cast<int>((center.z - dims.y) / SQUARE_SIZE), 0, mapDims.mapy),
-		std::clamp(static_cast<int>((center.x + dims.x) / SQUARE_SIZE), 0, mapDims.mapx),
-		std::clamp(static_cast<int>((center.z + dims.y) / SQUARE_SIZE), 0, mapDims.mapy)
-	};
-	return AddTerraformTask(std::move(bounds), buildee, cost);
 }
 
 float3 TerraformTask::GetCenterPos() const
@@ -236,4 +200,70 @@ void TerraformTask::SmoothBorders(float scale) const
 		}
 	}
 
+}
+
+TerraformTaskHandler terraformTaskHandler;
+
+void TerraformTaskHandler::Init()
+{
+	terraformTasks = {};
+}
+
+void TerraformTaskHandler::Kill()
+{
+	spring::VectorEraseAllIf(terraformTasks, [](auto item) { return item.GetRefCnt() == 0; });
+	assert(terraformTasks.empty());
+}
+
+void TerraformTaskHandler::Update()
+{
+	for (size_t i = 0; i < terraformTasks.size(); /*NOOP*/) {
+		if (terraformTasks[i].GetRefCnt() == 0) {
+			terraformTasks[i] = terraformTasks.back();
+			terraformTasks.pop_back();
+		}
+		else {
+			terraformTasks[i].Update();
+			++i;
+		}
+	}
+}
+
+TerraformTask* TerraformTaskHandler::GetById(uint32_t id)
+{
+	if (id == 0)
+		return nullptr;
+
+	auto it = std::find_if(terraformTasks.begin(), terraformTasks.end(), [id](const TerraformTask& tt) { return tt.id == id; });
+	if (it == terraformTasks.end())
+		return nullptr;
+
+	return &(*it);
+}
+
+TerraformTaskToken TerraformTaskHandler::AddTerraformTask(SRectangle&& bounds, CUnit* buildee, const SResourcePack& cost)
+{
+	for (auto& tt : terraformTasks) {
+		if (tt.GetRefCnt() == 0)
+			continue;
+
+		if (tt.buildee == buildee && tt.bounds == bounds)
+			return TerraformTaskToken(tt.id);
+	}
+
+	return TerraformTaskToken(
+		terraformTasks.emplace_back(
+		std::move(bounds), buildee, cost
+	).id);
+}
+
+TerraformTaskToken TerraformTaskHandler::AddTerraformTask(const float3& center, const float2& dims, CUnit* buildee, const SResourcePack& cost)
+{
+	auto bounds = SRectangle{
+		std::clamp(static_cast<int>((center.x - dims.x) / SQUARE_SIZE), 0, mapDims.mapx),
+		std::clamp(static_cast<int>((center.z - dims.y) / SQUARE_SIZE), 0, mapDims.mapy),
+		std::clamp(static_cast<int>((center.x + dims.x) / SQUARE_SIZE), 0, mapDims.mapx),
+		std::clamp(static_cast<int>((center.z + dims.y) / SQUARE_SIZE), 0, mapDims.mapy)
+	};
+	return AddTerraformTask(std::move(bounds), buildee, cost);
 }

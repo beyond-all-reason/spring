@@ -22,6 +22,7 @@
 #include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Units/UnitHandler.h"
+#include "Sim/Units/TerraformTask.h"
 #include "Sim/Misc/BuildingMaskMap.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/InterceptHandler.h"
@@ -82,6 +83,7 @@ void CGameStateCollector::Serialize(creg::ISerializer* s)
 	s->SerializeObjectInstance(readMap, readMap->GetClass());
 	s->SerializeObjectInstance(&quadField, quadField.GetClass());
 	s->SerializeObjectInstance(&unitHandler, unitHandler.GetClass());
+	s->SerializeObjectInstance(&terraformTaskHandler, terraformTaskHandler.GetClass());
 	s->SerializeObjectInstance(cobEngine, cobEngine->GetClass());
 	s->SerializeObjectInstance(unitScriptEngine, unitScriptEngine->GetClass());
 	s->SerializeObjectInstance(&CNullUnitScript::value, CNullUnitScript::value.GetClass());

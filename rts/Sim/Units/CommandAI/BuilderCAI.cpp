@@ -621,7 +621,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 		// keep moving until 3D distance to buildPos is LEQ our buildDistance
 		MoveInBuildRange(build.pos, objRadius);
 
-		if (ownerBuilder->curBuild == nullptr && !ownerBuilder->Terraforming()) {
+		if (ownerBuilder->curBuild == nullptr && !ownerBuilder->GetTerraformTask()) {
 			building = false;
 			StopMoveAndFinishCommand();
 		}
@@ -874,12 +874,12 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 
 
 	if (CBuilder* b = dynamic_cast<CBuilder*>(guardee)) {
-		if (b->Terraforming()) {
-			if (MoveInBuildRange(b->TerraformCenter(), b->TerraformRadius() * 0.7f)) {
-				if (ownerBuilder->terraformTask != b->terraformTask) {
+		if (auto* tt = b->GetTerraformTask(); tt != nullptr) {
+			if (MoveInBuildRange(b->TerraformCenter(tt), b->TerraformRadius(tt) * 0.7f)) {
+				if (ownerBuilder->terraformTaskToken != b->terraformTaskToken) {
 					ownerBuilder->StopBuild(false);
-					ownerBuilder->terraformTask = b->terraformTask;
-					ownerBuilder->ScriptStartBuilding(b->TerraformCenter(), false);
+					ownerBuilder->terraformTaskToken = b->terraformTaskToken;
+					ownerBuilder->ScriptStartBuilding(b->TerraformCenter(tt), false);
 				}
 			} else {
 				StopSlowGuard();
@@ -1313,7 +1313,7 @@ void CBuilderCAI::ExecuteRestore(Command& c)
 		return;
 
 	if (inCommand) {
-		if (!ownerBuilder->Terraforming())
+		if (!ownerBuilder->GetTerraformTask())
 			StopMoveAndFinishCommand();
 
 		return;

@@ -28,7 +28,6 @@
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Sound/ISoundChannels.h"
-#include "System/creg/LightSharedPtr.h"
 
 CR_BIND_DERIVED(CBuilder, CUnit, )
 CR_REG_METADATA(CBuilder, (
@@ -46,7 +45,7 @@ CR_REG_METADATA(CBuilder, (
 	CR_MEMBER(curCapture),
 	CR_MEMBER(curReclaim),
 	CR_MEMBER(reclaimingUnit),
-	CR_MEMBER(terraformTask),
+	CR_MEMBER(terraformTaskToken),
 	CR_MEMBER(nanoPieceCache)
 ))
 
@@ -71,7 +70,7 @@ CBuilder::CBuilder():
 	curCapture(0),
 	curReclaim(0),
 	reclaimingUnit(false),
-	terraformTask(nullptr)
+	terraformTaskToken(nullptr)
 {}
 
 void CBuilder::PreInit(const UnitLoadParams& params)
@@ -114,22 +113,19 @@ bool CBuilder::CanRepairUnit(const CUnit* u) const
 	return (u->unitDef->repairable);
 }
 
-bool CBuilder::TerraformingForBuilding() const
+bool CBuilder::TerraformingForBuilding(TerraformTask* tt)
 {
-	assert(Terraforming());
-	return (terraformTask->buildee != nullptr);
+	return (tt != nullptr && tt->buildee != nullptr);
 }
 
-float3 CBuilder::TerraformCenter() const
+float3 CBuilder::TerraformCenter(TerraformTask* tt)
 {
-	assert(Terraforming());
-	return terraformTask->GetCenterPos();
+	return tt != nullptr ? tt->GetCenterPos() : float3{};
 }
 
-float CBuilder::TerraformRadius() const
+float CBuilder::TerraformRadius(TerraformTask* tt)
 {
-	assert(Terraforming());
-	return terraformTask->GetRadius();
+	return tt != nullptr ? tt->GetRadius() : 0.0f;
 }
 
 SRectangle CBuilder::GetBuildingRectangle(const CUnit& unit)
@@ -144,18 +140,19 @@ SRectangle CBuilder::GetBuildingRectangle(const CUnit& unit)
 
 bool CBuilder::UpdateTerraform(const Command&)
 {
-	if (!Terraforming() || !inBuildStance)
+	if (!GetTerraformTask() || !inBuildStance)
 		return false;
 
 	assert(!mapDamage->Disabled());
-	assert(curBuild == terraformTask->buildee);
+	auto* tt = GetTerraformTask();
+	assert(curBuild == tt->buildee);
 
 	if (curBuild) {
 		// prevent building from timing out while terraforming for it
 		curBuild->AddBuildPower(this, 0.0f);
 	}
 
-	if (terraformTask->TerraformComplete()) {
+	if (tt->TerraformComplete()) {
 		if (curBuild) {
 			if (eventHandler.TerraformComplete(this, curBuild)) {
 				StopBuild();
@@ -164,19 +161,19 @@ bool CBuilder::UpdateTerraform(const Command&)
 		else {
 			StopBuild();
 		}
-		terraformTask = nullptr;
+		terraformTaskToken = nullptr;
 	}
 	else {
-		terraformTask->AddTerraformSpeed(terraformSpeed);
+		tt->AddTerraformSpeed(terraformSpeed);
 	}
 
 	if (curBuild)
 		ScriptDecloak(curBuild, nullptr);
 
-	if (Terraforming())
-		CreateNanoParticle(TerraformCenter(), TerraformRadius() * 0.5f, false);
+	if (tt != nullptr)
+		CreateNanoParticle(TerraformCenter(tt), TerraformRadius(tt) * 0.5f, false);
 
-	return Terraforming();
+	return tt != nullptr;
 }
 
 bool CBuilder::UpdateBuild(const Command& fCommand)
@@ -447,7 +444,7 @@ void CBuilder::SetRepairTarget(CUnit* target)
 
 	if (!target->groundLevelled) {
 		// resume levelling the ground
-		terraformTask = TerraformTask::AddTerraformTask(
+		terraformTaskToken = terraformTaskHandler.AddTerraformTask(
 			GetBuildingRectangle(*target), target
 		);
 	}
@@ -515,7 +512,7 @@ void CBuilder::StartRestore(float3 centerPos, float radius)
 	StopBuild(false);
 	TempHoldFire(CMD_RESTORE);
 
-	terraformTask = TerraformTask::AddTerraformTask(
+	terraformTaskToken = terraformTaskHandler.AddTerraformTask(
 		SRectangle(
 			static_cast<int>((centerPos.x - radius) / SQUARE_SIZE),
 			static_cast<int>((centerPos.z - radius) / SQUARE_SIZE),
@@ -544,7 +541,7 @@ void CBuilder::StopBuild(bool callScript)
 	curResurrect = nullptr;
 	curCapture = nullptr;
 
-	terraformTask = nullptr;
+	terraformTaskToken = nullptr;
 
 	if (callScript)
 		script->StopBuilding();
@@ -611,7 +608,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 			if (u != nullptr) {
 				if (CanAssistUnit(u, buildInfo.def)) {
 					if (u != prvBuild) {
-						terraformTask = nullptr;
+						terraformTaskToken = nullptr;
 					}
 
 					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
@@ -653,7 +650,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	} else {
 		buildee->groundLevelled = false;
 
-		terraformTask = TerraformTask::AddTerraformTask(GetBuildingRectangle(*buildee), buildee);
+		terraformTaskToken = terraformTaskHandler.AddTerraformTask(GetBuildingRectangle(*buildee), buildee);
 	}
 
 	// pass the *builder*'s udef for checking canBeAssisted; if buildee

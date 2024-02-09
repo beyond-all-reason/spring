@@ -10,7 +10,6 @@
 #include "Sim/Units/TerraformTask.h"
 #include "System/float3.h"
 #include "System/Rectangle.h"
-#include "System/RefCnt.h"
 
 struct UnitDef;
 struct BuildInfo;
@@ -60,10 +59,10 @@ public:
 	const NanoPieceCache& GetNanoPieceCache() const { return nanoPieceCache; }
 	      NanoPieceCache& GetNanoPieceCache()       { return nanoPieceCache; }
 
-	bool Terraforming() const { return terraformTask != nullptr; }
-	bool TerraformingForBuilding() const;
-	float3 TerraformCenter() const;
-	float TerraformRadius() const;
+	TerraformTask* GetTerraformTask() const { return terraformTaskToken.GetTask(); }
+	static bool TerraformingForBuilding(TerraformTask* tt);
+	static float3 TerraformCenter(TerraformTask* tt);
+	static float TerraformRadius(TerraformTask* tt);
 
 	static SRectangle GetBuildingRectangle(const CUnit& unit);
 public:
@@ -84,7 +83,7 @@ public:
 	CSolidObject* curReclaim;
 	bool reclaimingUnit;
 
-	recoil::LightSharedPtr<TerraformTask> terraformTask;
+	TerraformTaskToken terraformTaskToken;
 private:
 	NanoPieceCache nanoPieceCache;
 };
