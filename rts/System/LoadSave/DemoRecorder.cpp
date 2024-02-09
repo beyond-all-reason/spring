@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "DemoRecorder.h"
+#include "base64.h"
 #include "Game/GameVersion.h"
 #include "Sim/Misc/TeamStatistics.h"
 #include "System/TimeUtil.h"
@@ -105,6 +106,9 @@ void CDemoRecorder::WriteDemoFile()
 
 void CDemoRecorder::WriteSetupText(const std::string& text)
 {
+	LOG_L(L_INFO, "[CDemoRecorder::%s] SetupText=\"%s\"", __func__,
+		base64_encode(reinterpret_cast<const uint8_t*>(text.c_str()), text.size()).c_str());
+
 	int length = text.length();
 	while (length > 0 && text[length - 1] == '\0') {
 		--length;

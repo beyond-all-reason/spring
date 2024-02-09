@@ -1,7 +1,7 @@
 #include "OGLDBInfo.h"
 
 #include "../../tools/pr-downloader/src/Downloader/CurlWrapper.h"
-#include "../../tools/pr-downloader/src/lib/jsoncpp/include/json/reader.h"
+#include "json/reader.h"
 #include "System/StringUtil.h"
 #include "System/ScopedResource.h"
 
