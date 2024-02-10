@@ -39,7 +39,6 @@ namespace Rml::SolLua
 		DataVariable Child(void* ptr, const Rml::DataAddressEntry& address) override;
 	protected:
 		SolLuaDataModel* m_model;
-		sol::object m_object;
 	};
 
 } // end namespace Rml::SolLua

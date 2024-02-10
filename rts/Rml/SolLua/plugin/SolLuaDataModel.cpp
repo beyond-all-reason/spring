@@ -72,7 +72,7 @@ namespace Rml::SolLua
 
 	DataVariable SolLuaObjectDef::Child(void* ptr, const Rml::DataAddressEntry& address)
 	{
-		// Child should be called on a table.
+		// Child must be called on a table.
 		auto object = static_cast<sol::object*>(ptr);
 		if (object->get_type() != sol::type::table)
 			return DataVariable{};
@@ -80,7 +80,7 @@ namespace Rml::SolLua
 		// Get our table object.
 		// Get the pointer as a string for use with holding onto the object.
 		sol::table table = object->as<sol::table>();
-		std::string tablestr = std::to_string(reinterpret_cast<intptr_t>(table.pointer()));
+		std::string pointer_str = std::to_string(reinterpret_cast<intptr_t>(table.pointer()));
 
 		// Accessing by name.
 		if (address.index == -1)
@@ -91,7 +91,7 @@ namespace Rml::SolLua
 				return DataVariable{};
 
 			// Hold a reference to it and return the pointer.
-			auto it = m_model->ObjectList.insert_or_assign(tablestr + "_" + address.name, e);
+			auto it = m_model->ObjectList.insert_or_assign(pointer_str + "_" + address.name, e);
 			return DataVariable{ m_model->ObjectDef.get(), &(it.first->second) };
 		}
 		// Accessing by index.
@@ -101,7 +101,7 @@ namespace Rml::SolLua
 			auto has_index = table.get<sol::object>(address.index+1);
 			if (has_index.get_type() != sol::type::lua_nil)
 			{
-				auto it = m_model->ObjectList.insert_or_assign(tablestr + "_" + std::to_string(address.index+1), has_index);
+				auto it = m_model->ObjectList.insert_or_assign(pointer_str + "_" + std::to_string(address.index+1), has_index);
 				return DataVariable{ m_model->ObjectDef.get(), &(it.first->second) };
 			}
 
@@ -111,7 +111,7 @@ namespace Rml::SolLua
 			{
 				if (idx == address.index+1)
 				{
-					auto it = m_model->ObjectList.insert_or_assign(tablestr + "_" + std::to_string(idx), v);
+					auto it = m_model->ObjectList.insert_or_assign(pointer_str + "_" + std::to_string(idx), v);
 					return DataVariable{ m_model->ObjectDef.get(), &(it.first->second) };
 				}
 				++idx;
