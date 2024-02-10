@@ -166,11 +166,6 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(avoidingUnits),
 	CR_MEMBER(setHeading),
 	CR_MEMBER(setHeadingDir),
-	CR_MEMBER(collidedFeatures),
-	CR_MEMBER(collidedUnits),
-	CR_MEMBER(killFeatures),
-	CR_MEMBER(killUnits),
-	CR_MEMBER(moveFeatures),
 
 	CR_POSTLOAD(PostLoad),
 	CR_PREALLOC(GetPreallocContainer)
@@ -510,12 +505,6 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 
 	ownerRadius = md->CalcFootPrintMinExteriorRadius();
 
-	collidedFeatures.reserve(UNIT_EVENTS_RESERVE);
-	collidedUnits.reserve(UNIT_EVENTS_RESERVE);
-	killFeatures.reserve(UNIT_EVENTS_RESERVE);
-	killUnits.reserve(UNIT_EVENTS_RESERVE);
-	moveFeatures.reserve(UNIT_EVENTS_RESERVE);
-
 	forceStaticObjectCheck = true;
 
 	Connect();
@@ -675,40 +664,14 @@ void CGroundMoveType::UpdateCollisionDetections() {
 	HandleObjectCollisions();
 }
 
-void CGroundMoveType::ProcessCollisionEvents() {
-	SyncWaypoints();
-
-	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
-	for (auto collidee: killUnits)
-		collidee->Kill(owner, crushImpulse, true);
-	killUnits.clear();
-
-	for (auto collidee: killFeatures)
-		collidee->Kill(owner, crushImpulse, true);
-	killFeatures.clear();
-
-	for (const auto collidee: collidedUnits)
-		eventHandler.UnitUnitCollision(owner, collidee);
-	collidedUnits.clear();
-
-	for (const auto collidee: collidedFeatures)
-		eventHandler.UnitFeatureCollision(owner, collidee);
-	collidedFeatures.clear();
-}
-
 bool CGroundMoveType::Update()
 {
+	SyncWaypoints();
+
 	if (owner->requestRemoveUnloadTransportId) {
 		owner->unloadingTransportId = -1;
 		owner->requestRemoveUnloadTransportId = false;
 	}
-
-	for (const auto& [collidee, moveVec] : moveFeatures) {
-		quadField.RemoveFeature(collidee);
-		collidee->Move(moveVec, true);
-		quadField.AddFeature(collidee);
-	}
-	moveFeatures.clear();
 
 	// do nothing at all if we are inside a transport
 	if (owner->GetTransporter() != nullptr) return false;
@@ -2793,6 +2756,9 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
+	auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
+	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
+
 	// copy on purpose, since the below can call Lua
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -2865,11 +2831,11 @@ void CGroundMoveType::HandleUnitCollisions(
 		crushCollidee &= ((colliderParams.x * collider->mass) > (collideeParams.x * collidee->mass));
 
 		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee))
-			killUnits.push_back(collidee);
+			comp.killUnits[curThread].emplace_back(UnitCrushEvent(collider->id, collider, collidee, crushImpulse));
 
 		// Only trigger this event once for each colliding pair of units.
 		if (collider->id < collidee->id)
-			collidedUnits.push_back(collidee);
+			comp.collidedUnits[curThread].emplace_back(UnitCollisionEvent(collider->id, collider, collidee));
 
 		if (collideeMobile)
 			HandleUnitCollisionsAux(collider, collidee, this, static_cast<CGroundMoveType*>(collidee->moveType));
@@ -2965,6 +2931,9 @@ void CGroundMoveType::HandleFeatureCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
+	auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
+	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
+
 	// copy on purpose, since DoDamage below can call Lua
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -2984,14 +2953,13 @@ void CGroundMoveType::HandleFeatureCollisions(
 		if (CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
 			continue;
 		if (!CMoveMath::CrushResistant(*colliderMD, collidee))
-			killFeatures.push_back(collidee);
-
+			comp.killFeatures[curThread].emplace_back(FeatureCrushEvent(collider->id, collider, collidee, crushImpulse));
 		#if 0
 		if (pathController.IgnoreCollision(collider, collidee))
 			continue;
 		#endif
 
-		collidedFeatures.push_back(collidee);
+		comp.collidedFeatures[curThread].emplace_back(FeatureCollisionEvent(collider->id, collider, collidee));
 
 		if (!collidee->IsMoving()) {
 			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false, curThread)) {
@@ -3027,7 +2995,8 @@ void CGroundMoveType::HandleFeatureCollisions(
 		const float collideeMassScale = std::clamp(1.0f - r2, 0.01f, 0.99f);
 
 		forceFromMovingCollidees += colResponseVec * colliderMassScale;
-		moveFeatures.push_back(std::make_tuple(collidee, -colResponseVec * collideeMassScale));
+
+		comp.moveFeatures[curThread].emplace_back(FeatureMoveEvent(collider->id, collider, collidee, -colResponseVec * collideeMassScale));
 	}
 }
 

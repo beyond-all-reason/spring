@@ -8,6 +8,7 @@
 #include <System/Threading/ThreadPool.h>
 
 struct CUnit;
+struct CFeature;
 
 namespace MoveTypes {
 
@@ -38,7 +39,84 @@ void serializeComponents(Archive &archive, Snapshot &snapshot) {
         >(archive);
 }
 
-struct YardmapTrapCheckSystemSystemComponent {
+struct FeatureCollisionEvent {
+    CUnit* collider;
+    CFeature* collidee;
+    int id;
+
+    FeatureCollisionEvent(int _id, CUnit* _collider, CFeature* _collidee)
+    : id(_id)
+    , collider(_collider)
+    , collidee(_collidee)
+    {}
+};
+
+struct FeatureCrushEvent {
+    CUnit* collider;
+    CFeature* collidee;
+    float3 crushImpulse;
+    int id;
+
+    FeatureCrushEvent(int _id, CUnit* _collider, CFeature* _collidee, float3 _crushImpulse)
+    : id(_id)
+    , collider(_collider)
+    , collidee(_collidee)
+    , crushImpulse(_crushImpulse)
+    {}
+};
+
+struct FeatureMoveEvent {
+    CUnit* collider;
+    CFeature* collidee;
+    float3 moveImpulse;
+    int id;
+
+    FeatureMoveEvent(int _id, CUnit* _collider, CFeature* _collidee, float3 _moveImpulse)
+    : id(_id)
+    , collider(_collider)
+    , collidee(_collidee)
+    , moveImpulse(_moveImpulse)
+    {}
+};
+
+struct UnitCollisionEvent {
+    CUnit* collider;
+    CUnit* collidee;
+    int id;
+
+    UnitCollisionEvent(int _id, CUnit* _collider, CUnit* _collidee)
+    : id(_id)
+    , collider(_collider)
+    , collidee(_collidee)
+    {}
+};
+
+struct UnitCrushEvent {
+    CUnit* collider;
+    CUnit* collidee;
+    float3 crushImpulse;
+    int id;
+
+    UnitCrushEvent(int _id, CUnit* _collider, CUnit* _collidee, float3 _crushImpulse)
+    : id(_id)
+    , collider(_collider)
+    , collidee(_collidee)
+    , crushImpulse(_crushImpulse)
+    {}
+};
+
+struct GroundMoveSystemComponent {
+	static constexpr std::size_t page_size = 1;
+    static constexpr std::size_t INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE = 64;
+
+	std::array<std::vector<FeatureCollisionEvent>, ThreadPool::MAX_THREADS> collidedFeatures;
+	std::array<std::vector<UnitCollisionEvent>,    ThreadPool::MAX_THREADS> collidedUnits;
+	std::array<std::vector<FeatureCrushEvent>,     ThreadPool::MAX_THREADS> killFeatures;
+	std::array<std::vector<UnitCrushEvent>,        ThreadPool::MAX_THREADS> killUnits;
+	std::array<std::vector<FeatureMoveEvent>,      ThreadPool::MAX_THREADS> moveFeatures;
+};
+
+struct YardmapTrapCheckSystemComponent {
 	static constexpr std::size_t page_size = 1;
     static constexpr std::size_t INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE = 8;
 

@@ -23,10 +23,10 @@
 using namespace MoveTypes;
 
 void UnitTrapCheckSystem::Init() {
-    auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemSystemComponent>();
+    auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemComponent>();
 
     // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
-    //     list.reserve(YardmapTrapCheckSystemSystemComponent::INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE);
+    //     list.reserve(YardmapTrapCheckSystemComponent::INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE);
     // });
 
     //Sim::systemUtils.OnUpdate().connect<&UnitTrapCheckSystem::Update>();
@@ -76,7 +76,7 @@ void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* co
 void UnitTrapCheckSystem::Update() {
     SCOPED_TIMER("ECS::UnitTrapCheckSystem::Update");
 
-    auto& comp = Sim::systemGlobals.GetSystemComponent<YardmapTrapCheckSystemSystemComponent>();
+    auto& comp = Sim::systemGlobals.GetSystemComponent<YardmapTrapCheckSystemComponent>();
 
     // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
     //     list.clear();
