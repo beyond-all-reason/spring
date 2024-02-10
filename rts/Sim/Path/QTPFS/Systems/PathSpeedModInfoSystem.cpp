@@ -28,10 +28,10 @@ using namespace SystemGlobals;
 using namespace QTPFS;
 
 // Tracking a crash in live, so need optimizations turned down here for awhile.
-#ifdef __GNUC__
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-#endif
+// #ifdef __GNUC__
+// #pragma GCC push_options
+// #pragma GCC optimize ("O0")
+// #endif
 
 void ScanForPathSpeedModInfo(int frameModulus) {
     auto& comp = systemGlobals.GetSystemComponent<PathSpeedModInfoSystemComponent>();
@@ -98,9 +98,9 @@ void ScanForPathSpeedModInfo(int frameModulus) {
             });
 }
 
-#ifdef __GNUC__
-#pragma GCC pop_options
-#endif
+// #ifdef __GNUC__
+// #pragma GCC pop_options
+// #endif
 
 void InitLayers() {
     std::vector<entt::entity> layers((size_t)moveDefHandler.GetNumMoveDefs());
