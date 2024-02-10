@@ -27,8 +27,8 @@ namespace Rml::SolLua
 			variant = obj->as<Rml::Colourb>();
 		else if (obj->is<Rml::Colourf>())
 			variant = obj->as<Rml::Colourf>();
-		else if (obj->is<double>())
-			variant = obj->as<double>();
+		else if (obj->is<lua_Number>())
+			variant = obj->as<lua_Number>();
 		else // if (obj->get_type() == sol::type::lua_nil)
 			variant = Rml::Variant{};
 
@@ -51,8 +51,8 @@ namespace Rml::SolLua
 			variant.GetInto<Rml::Colourb>(*static_cast<Rml::Colourb*>(ptr));
 		else if (obj->is<Rml::Colourf>())
 			variant.GetInto<Rml::Colourf>(*static_cast<Rml::Colourf*>(ptr));
-		else if (obj->is<double>())
-			variant.GetInto<double>(*static_cast<double*>(ptr));
+		else if (obj->is<lua_Number>())
+			variant.GetInto<lua_Number>(*static_cast<lua_Number*>(ptr));
 		else // if (obj->get_type() == sol::type::lua_nil)
 			*obj = sol::make_object(m_model->Lua, sol::nil);
 

@@ -26,7 +26,7 @@ namespace Rml::SolLua
 			return sol::make_object(s, variant->Get<uint64_t>());
 		case Rml::Variant::FLOAT:
 		case Rml::Variant::DOUBLE:
-			return sol::make_object(s, variant->Get<double>());
+			return sol::make_object(s, variant->Get<lua_Number>());
 		case Rml::Variant::COLOURB:
 			return sol::make_object_userdata<Rml::Colourb>(s, variant->Get<Rml::Colourb>());
 		case Rml::Variant::COLOURF:
