@@ -28,8 +28,8 @@ list(APPEND engineDedicatedLibraries headlessStubs engineSystemNet)
 list(APPEND engineDedicatedLibraries ${LIBUNWIND_LIBRARIES})
 list(APPEND engineDedicatedLibraries ${LZMA_LIBRARY})
 
-### libcpuid
-list(APPEND engineDedicatedLibraries "pr-base64")
+### base64 from pr-downloader
+list(APPEND engineDedicatedLibraries "prd::base64")
 
 ### smmalloc
 list(APPEND engineDedicatedLibraries "smmalloc")
