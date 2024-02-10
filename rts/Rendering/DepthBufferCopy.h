@@ -6,8 +6,7 @@
 
 #include "System/UnorderedSet.hpp"
 #include "System/EventClient.h"
-
-class FBO;
+#include "Rendering/GL/FBO.h"
 
 struct ScopedDepthBufferCopy;
 

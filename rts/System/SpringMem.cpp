@@ -2,6 +2,9 @@
     #include <malloc.h>
 #else
     #include <cstdlib>
+    #include <cstdint>
+    #include <cstring>
+    #include <new>
 #endif
 
 #include "SpringMem.h"
@@ -13,7 +16,8 @@ void* spring::AllocateAlignedMemory(size_t size, size_t alignment)
     return _aligned_malloc(size, alignment);
 #else
     void* ptr = nullptr;
-    posix_memalign(&ptr, alignment, size);
+    if (posix_memalign(&ptr, alignment, size) != 0)
+        throw std::bad_alloc();
     return ptr;
 #endif
 }
@@ -29,8 +33,9 @@ void* spring::ReallocateAlignedMemory(void* ptr, size_t size, size_t alignment)
 
     // bad luck
     void* newPtr = nullptr;
-    posix_memalign(&newPtr, alignment, size);
-    memcpy(ptr, newPtr, size);
+    if (posix_memalign(&ptr, alignment, size) != 0)
+        throw std::bad_alloc();
+    std::memcpy(ptr, newPtr, size);
     return newPtr;
 #endif
 }
