@@ -97,7 +97,7 @@ namespace RmlGui
 
         // The texture this element is rendering from.
     	// The Texture Handle of this should always be
-    	// RenderInterface_GL3_Spring::TextureEnableWithoutBinding (aka Rml::TextureHandle(-1))
+    	// RenderInterface_GL3_Recoil::TextureEnableWithoutBinding (aka Rml::TextureHandle(-1))
         Rml::Texture texture;
 
     	// Handle to the externally provided texture to be used
