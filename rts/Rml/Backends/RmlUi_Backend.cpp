@@ -39,10 +39,11 @@
 #include "Lua/LuaUI.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rml/Elements/ElementLuaTexture.h"
+#include "Rml/Elements/ElementRenderHook.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
 #include "RmlUi_Backend.h"
-#include "RmlUi_Renderer_GL3_Spring.h"
+#include "RmlUi_Renderer_GL3_Recoil.h"
 #include "RmlUi_SystemInterface.h"
 #include "RmlUi_VFSFileInterface.h"
 #include "System/Input/InputHandler.h"
@@ -95,7 +96,7 @@ public:
 struct BackendData {
 	RmlSystemInterface system_interface;
 #ifndef HEADLESS
-	RenderInterface_GL3_Spring render_interface;
+	RenderInterface_GL3_Recoil render_interface;
 #else
 	RenderInterface_Headless render_interface;
 #endif
@@ -118,7 +119,8 @@ struct BackendData {
 	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
 	CtxMutex contextMutex;
 
-    Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture;
+    Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
+    Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementRenderHook>> element_render_hook_instancer;
 };
 
 static Rml::UniquePtr<BackendData> data;
@@ -156,8 +158,11 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 	data->inputCon = input.AddHandler(&RmlGui::ProcessEvent);
 	data->initialized = true;
 
-	data->element_lua_texture = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
-	Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture.get());
+	data->element_lua_texture_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
+	Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture_instancer.get());
+
+	data->element_render_hook_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementRenderHook>>();
+	Rml::Factory::RegisterElementInstancer("render-hook", data->element_render_hook_instancer.get());
 
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());

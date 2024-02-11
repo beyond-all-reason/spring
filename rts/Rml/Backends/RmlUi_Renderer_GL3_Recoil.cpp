@@ -28,7 +28,7 @@
  *
  */
 
-#include "RmlUi_Renderer_GL3_Spring.h"
+#include "RmlUi_Renderer_GL3_Recoil.h"
 #include <RmlUi/Core/Core.h>
 #include <RmlUi/Core/FileInterface.h>
 #include <RmlUi/Core/Log.h>
@@ -43,32 +43,39 @@
 #endif
 
 #include "Rendering/GL/myGL.h"
-#include "Rendering/Textures/Bitmap.h"
-#define RMLUI_SHADER_HEADER "#version 130\n"
+#include "Rendering/GL/VAO.h"
+#include "Rendering/GL/VBO.h"
 
-static const char* shader_main_vertex = RMLUI_SHADER_HEADER R"(
+#include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/Textures/Bitmap.h"
+#include "System/Matrix44f.h"
+
+static const std::string rml_shader_header = "#version 130\n";
+
+static const std::string shader_main_vertex = R"(
 uniform vec2 _translate;
 uniform mat4 _transform;
 
-in vec2 inPosition;
-in vec4 inColor0;
-in vec2 inTexCoord0;
+in vec2 pos;
+in vec4 col;
+in vec2 uv;
 
 out vec2 fragTexCoord;
 out vec4 fragColor;
 
 void main() {
-	fragTexCoord = inTexCoord0;
-	fragColor = inColor0;
+	fragTexCoord = uv;
+	fragColor = col;
 
-	vec2 translatedPos = inPosition + _translate.xy;
+	vec2 translatedPos = pos + _translate.xy;
 	vec4 outPos = _transform * vec4(translatedPos, 0, 1);
 
     gl_Position = outPos;
 }
 )";
 
-static const char* shader_main_fragment_texture = RMLUI_SHADER_HEADER R"(
+static const std::string shader_main_fragment_texture = R"(
 uniform sampler2D _tex;
 in vec2 fragTexCoord;
 in vec4 fragColor;
@@ -80,7 +87,7 @@ void main() {
 	finalColor = fragColor * texColor;
 }
 )";
-static const char* shader_main_fragment_color = RMLUI_SHADER_HEADER R"(
+static const std::string shader_main_fragment_color = R"(
 in vec2 fragTexCoord;
 in vec4 fragColor;
 
@@ -91,242 +98,83 @@ void main() {
 }
 )";
 
-namespace Gfx
+namespace
 {
-
-enum class ProgramUniform { Translate, Transform, Tex, Count };
-static const char* const program_uniform_names[(size_t)ProgramUniform::Count] = {
-	"_translate", "_transform", "_tex"};
-
-enum class VertexAttribute { Position, Color0, TexCoord0, Count };
-static const char* const vertex_attribute_names[(size_t)VertexAttribute::Count] = {
-	"inPosition", "inColor0", "inTexCoord0"};
-
-struct CompiledGeometryData {
-	Rml::TextureHandle texture;
-	GLuint vao;
-	GLuint vbo;
-	GLuint ibo;
-	GLsizei draw_count;
-};
-
-struct ProgramData {
-	GLuint id;
-	GLint uniform_locations[(size_t)ProgramUniform::Count];
-};
-
-struct ShadersData {
-	ProgramData program_color;
-	ProgramData program_texture;
-	GLuint shader_main_vertex;
-	GLuint shader_main_fragment_color;
-	GLuint shader_main_fragment_texture;
-};
-
-static void CheckGLError(const char* operation_name)
-{
-#ifdef RMLUI_DEBUG
-	GLenum error_code = glGetError();
-	if (error_code != GL_NO_ERROR) {
-		static const Rml::Pair<GLenum, const char*> error_names[] = {
-			{GL_INVALID_ENUM, "GL_INVALID_ENUM"},
-			{GL_INVALID_VALUE, "GL_INVALID_VALUE"},
-			{GL_INVALID_OPERATION, "GL_INVALID_OPERATION"},
-			{GL_OUT_OF_MEMORY, "GL_OUT_OF_MEMORY"}};
-		const char* error_str = "''";
-		for (auto& err : error_names) {
-			if (err.first == error_code) {
-				error_str = err.second;
-				break;
-			}
-		}
-		Rml::Log::Message(Rml::Log::LT_ERROR, "OpenGL error during %s. Error code 0x%x (%s).",
-		                  operation_name, error_code, error_str);
+	namespace ProgramUniform
+	{
+		const char* const Translate = "_translate";
+		const char* const Transform = "_transform";
+		const char* const Tex = "_tex";
 	}
-#endif
-	(void)operation_name;
+
+	struct CompiledGeometryData
+	{
+		Rml::TextureHandle texture;
+		std::unique_ptr<VAO> vao;
+		std::unique_ptr<VBO> vbo;
+		std::unique_ptr<VBO> ibo;
+		int num_indices;
+
+		static std::array<AttributeDef, 3> attributeDefs;
+	};
+
+	std::array<AttributeDef, 3> CompiledGeometryData::attributeDefs = {
+		AttributeDef(0, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, position), GL_FALSE, "pos"),
+		AttributeDef(1, 4, GL_UNSIGNED_BYTE, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, colour), GL_TRUE, "col"),
+		AttributeDef(2, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, tex_coord), GL_FALSE, "uv")
+	};
 }
 
-// Create the shader, 'shader_type' is either GL_VERTEX_SHADER or GL_FRAGMENT_SHADER.
-static GLuint CreateShader(GLenum shader_type, const char* code_string)
+RenderInterface_GL3_Recoil::RenderInterface_GL3_Recoil()
 {
-	GLuint id = glCreateShader(shader_type);
-
-	glShaderSource(id, 1, (const GLchar**)&code_string, NULL);
-	glCompileShader(id);
-
-	GLint status = 0;
-	glGetShaderiv(id, GL_COMPILE_STATUS, &status);
-	if (status == GL_FALSE) {
-		GLint info_log_length = 0;
-		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &info_log_length);
-		char* info_log_string = new char[info_log_length + 1];
-		glGetShaderInfoLog(id, info_log_length, NULL, info_log_string);
-
-		Rml::Log::Message(Rml::Log::LT_ERROR, "Compile failure in OpenGL shader: %s",
-		                  info_log_string);
-		delete[] info_log_string;
-		glDeleteShader(id);
-		return 0;
-	}
-
-	CheckGLError("CreateShader");
-
-	return id;
+	CreateShaders();
 }
 
-static void BindAttribLocations(GLuint program)
+RenderInterface_GL3_Recoil::~RenderInterface_GL3_Recoil()
 {
-	for (GLuint i = 0; i < (GLuint)VertexAttribute::Count; i++) {
-		glBindAttribLocation(program, i, vertex_attribute_names[i]);
-	}
-	CheckGLError("BindAttribLocations");
+	shaderHandler->ReleaseProgramObjects("[Rml RenderInterface]");
 }
 
-static bool CreateProgram(GLuint vertex_shader, GLuint fragment_shader, ProgramData& out_program)
+bool RenderInterface_GL3_Recoil::CreateShaders()
 {
-	GLuint id = glCreateProgram();
-	RMLUI_ASSERT(id);
+	#define sh shaderHandler
+	static const std::string prog_handles[2] = {
+		"rml_tex",
+		"rml_color"
+	};
 
-	BindAttribLocations(id);
+	static const std::string* frag_code[2] = {
+		&shader_main_fragment_texture,
+		&shader_main_fragment_color
+	};
 
-	glAttachShader(id, vertex_shader);
-	glAttachShader(id, fragment_shader);
+	for (int i = 0; i < 2; i++) {
+		Shader::IProgramObject* po = sh->CreateProgramObject("[Rml RenderInterface]", prog_handles[i]);
+		po->AttachShaderObject(sh->CreateShaderObject(shader_main_vertex, rml_shader_header, GL_VERTEX_SHADER));
+		po->AttachShaderObject(sh->CreateShaderObject(*frag_code[i], rml_shader_header, GL_FRAGMENT_SHADER));
+		po->BindAttribLocations<CompiledGeometryData>();
+		po->Link();
 
-	glLinkProgram(id);
+		po->Enable();
+		po->SetUniform(ProgramUniform::Translate, 0, 0);
+		po->SetUniformMatrix4x4(ProgramUniform::Transform, false, CMatrix44f::Identity().m);
+		po->SetUniform(ProgramUniform::Tex, 0);
+		po->Disable();
+		po->Validate();
 
-	glDetachShader(id, vertex_shader);
-	glDetachShader(id, fragment_shader);
-
-	GLint status = 0;
-	glGetProgramiv(id, GL_LINK_STATUS, &status);
-	if (status == GL_FALSE) {
-		GLint info_log_length = 0;
-		glGetProgramiv(id, GL_INFO_LOG_LENGTH, &info_log_length);
-		char* info_log_string = new char[info_log_length + 1];
-		glGetProgramInfoLog(id, info_log_length, NULL, info_log_string);
-
-		Rml::Log::Message(Rml::Log::LT_ERROR, "OpenGL program linking failure: %s",
-		                  info_log_string);
-		delete[] info_log_string;
-		glDeleteProgram(id);
-		return false;
+		programs[i] = po;
 	}
-
-	out_program = {};
-	out_program.id = id;
-
-	// Make a lookup table for the uniform locations.
-	GLint num_active_uniforms = 0;
-	glGetProgramiv(id, GL_ACTIVE_UNIFORMS, &num_active_uniforms);
-
-	constexpr size_t name_size = 64;
-	GLchar name_buf[name_size] = "";
-	for (int unif = 0; unif < num_active_uniforms; ++unif) {
-		GLint array_size = 0;
-		GLenum type = 0;
-		GLsizei actual_length = 0;
-		glGetActiveUniform(id, unif, name_size, &actual_length, &array_size, &type, name_buf);
-		GLint location = glGetUniformLocation(id, name_buf);
-
-		// See if we have the name in our pre-defined name list.
-		ProgramUniform program_uniform = ProgramUniform::Count;
-		for (int i = 0; i < (int)ProgramUniform::Count; i++) {
-			const char* uniform_name = program_uniform_names[i];
-			if (strcmp(name_buf, uniform_name) == 0) {
-				program_uniform = (ProgramUniform)i;
-				break;
-			}
-		}
-
-		if ((size_t)program_uniform < (size_t)ProgramUniform::Count) {
-			out_program.uniform_locations[(size_t)program_uniform] = location;
-		} else {
-			Rml::Log::Message(Rml::Log::LT_ERROR, "OpenGL program uses unknown uniform '%s'.",
-			                  name_buf);
-			return false;
-		}
-	}
-
-	CheckGLError("CreateProgram");
-
-	return true;
+	return std::ranges::all_of(programs, &Shader::IProgramObject::IsValid);
+#undef sh
 }
 
-static bool CreateShaders(ShadersData& out_shaders)
-{
-	out_shaders = {};
-	GLuint& main_vertex = out_shaders.shader_main_vertex;
-	GLuint& main_fragment_color = out_shaders.shader_main_fragment_color;
-	GLuint& main_fragment_texture = out_shaders.shader_main_fragment_texture;
-
-	main_vertex = CreateShader(GL_VERTEX_SHADER, shader_main_vertex);
-	if (!main_vertex) {
-		Rml::Log::Message(Rml::Log::LT_ERROR,
-		                  "Could not create OpenGL shader: 'shader_main_vertex'.");
-		return false;
-	}
-	main_fragment_color = CreateShader(GL_FRAGMENT_SHADER, shader_main_fragment_color);
-	if (!main_fragment_color) {
-		Rml::Log::Message(Rml::Log::LT_ERROR,
-		                  "Could not create OpenGL shader: 'shader_main_fragment_color'.");
-		return false;
-	}
-	main_fragment_texture = CreateShader(GL_FRAGMENT_SHADER, shader_main_fragment_texture);
-	if (!main_fragment_texture) {
-		Rml::Log::Message(Rml::Log::LT_ERROR,
-		                  "Could not create OpenGL shader: 'shader_main_fragment_texture'.");
-		return false;
-	}
-
-	if (!CreateProgram(main_vertex, main_fragment_color, out_shaders.program_color)) {
-		Rml::Log::Message(Rml::Log::LT_ERROR, "Could not create OpenGL program: 'program_color'.");
-		return false;
-	}
-	if (!CreateProgram(main_vertex, main_fragment_texture, out_shaders.program_texture)) {
-		Rml::Log::Message(Rml::Log::LT_ERROR,
-		                  "Could not create OpenGL program: 'program_texture'.");
-		return false;
-	}
-
-	return true;
-}
-
-static void DestroyShaders(ShadersData& shaders)
-{
-	glDeleteProgram(shaders.program_color.id);
-	glDeleteProgram(shaders.program_texture.id);
-
-	glDeleteShader(shaders.shader_main_vertex);
-	glDeleteShader(shaders.shader_main_fragment_color);
-	glDeleteShader(shaders.shader_main_fragment_texture);
-
-	shaders = {};
-}
-
-}  // namespace Gfx
-
-RenderInterface_GL3_Spring::RenderInterface_GL3_Spring()
-{
-	shaders = Rml::MakeUnique<Gfx::ShadersData>();
-
-	if (!Gfx::CreateShaders(*shaders))
-		shaders.reset();
-}
-
-RenderInterface_GL3_Spring::~RenderInterface_GL3_Spring()
-{
-	if (shaders)
-		Gfx::DestroyShaders(*shaders);
-}
-
-void RenderInterface_GL3_Spring::SetViewport(int width, int height)
+void RenderInterface_GL3_Recoil::SetViewport(int width, int height)
 {
 	viewport_width = width;
 	viewport_height = height;
 }
 
-void RenderInterface_GL3_Spring::BeginFrame()
+void RenderInterface_GL3_Recoil::BeginFrame()
 {
 	RMLUI_ASSERT(viewport_width >= 0 && viewport_height >= 0);
 
@@ -387,7 +235,7 @@ void RenderInterface_GL3_Spring::BeginFrame()
 	SetTransform(nullptr);
 }
 
-void RenderInterface_GL3_Spring::EndFrame()
+void RenderInterface_GL3_Recoil::EndFrame()
 {
 	// Restore GL state.
 	if (glstate_backup.enable_cull_face)
@@ -439,14 +287,14 @@ void RenderInterface_GL3_Spring::EndFrame()
 	                    glstate_backup.stencil_back.pass_depth_pass);
 }
 
-void RenderInterface_GL3_Spring::Clear()
+void RenderInterface_GL3_Recoil::Clear()
 {
 	glClearStencil(0);
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void RenderInterface_GL3_Spring::RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices,
+void RenderInterface_GL3_Recoil::RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices,
                                          int num_indices, const Rml::TextureHandle texture,
                                          const Rml::Vector2f& translation)
 {
@@ -459,105 +307,87 @@ void RenderInterface_GL3_Spring::RenderGeometry(Rml::Vertex* vertices, int num_v
 	}
 }
 
-Rml::CompiledGeometryHandle RenderInterface_GL3_Spring::CompileGeometry(Rml::Vertex* vertices,
+Rml::CompiledGeometryHandle RenderInterface_GL3_Recoil::CompileGeometry(Rml::Vertex* vertices,
                                                                  int num_vertices, int* indices,
                                                                  int num_indices,
                                                                  Rml::TextureHandle texture)
 {
 	constexpr GLenum draw_usage = GL_STATIC_DRAW;
 
-	GLuint vao = 0;
-	GLuint vbo = 0;
-	GLuint ibo = 0;
+	auto vao = std::make_unique<VAO>();
+	auto vbo = std::make_unique<VBO>(GL_ARRAY_BUFFER);
+	auto ibo = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER);
 
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ibo);
-	glBindVertexArray(vao);
+	vao->Generate();
+	vbo->Generate();
+	ibo->Generate();
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Rml::Vertex) * num_vertices, (const void*)vertices,
-	             draw_usage);
+	vao->Bind();
 
-	glEnableVertexAttribArray((GLuint)Gfx::VertexAttribute::Position);
-	glVertexAttribPointer((GLuint)Gfx::VertexAttribute::Position, 2, GL_FLOAT, GL_FALSE,
-	                      sizeof(Rml::Vertex), (const GLvoid*)(offsetof(Rml::Vertex, position)));
+	vbo->Bind();
+	vbo->New(num_vertices * sizeof(Rml::Vertex), GL_STATIC_DRAW, vertices);
 
-	glEnableVertexAttribArray((GLuint)Gfx::VertexAttribute::Color0);
-	glVertexAttribPointer((GLuint)Gfx::VertexAttribute::Color0, 4, GL_UNSIGNED_BYTE, GL_TRUE,
-	                      sizeof(Rml::Vertex), (const GLvoid*)(offsetof(Rml::Vertex, colour)));
+	for (const AttributeDef& def : CompiledGeometryData::attributeDefs) {
+		glEnableVertexAttribArray(def.index);
+		glVertexAttribPointer(def.index, def.count, def.type, def.normalize, def.stride, def.data);
+	}
 
-	glEnableVertexAttribArray((GLuint)Gfx::VertexAttribute::TexCoord0);
-	glVertexAttribPointer((GLuint)Gfx::VertexAttribute::TexCoord0, 2, GL_FLOAT, GL_FALSE,
-	                      sizeof(Rml::Vertex), (const GLvoid*)(offsetof(Rml::Vertex, tex_coord)));
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * num_indices, (const void*)indices,
-	             draw_usage);
+	ibo->Bind();
+	ibo->New(sizeof(int) * num_indices, GL_STATIC_DRAW, indices);
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	Gfx::CheckGLError("CompileGeometry");
-
-	Gfx::CompiledGeometryData* geometry = new Gfx::CompiledGeometryData;
-	geometry->texture = texture;
-	geometry->vao = vao;
-	geometry->vbo = vbo;
-	geometry->ibo = ibo;
-	geometry->draw_count = num_indices;
+	auto* geometry = new CompiledGeometryData {
+		texture, std::move(vao), std::move(vbo), std::move(ibo), num_indices
+	};
 
 	return (Rml::CompiledGeometryHandle)geometry;
 }
 
-void RenderInterface_GL3_Spring::RenderCompiledGeometry(Rml::CompiledGeometryHandle handle,
+void RenderInterface_GL3_Recoil::RenderCompiledGeometry(Rml::CompiledGeometryHandle handle,
                                                  const Rml::Vector2f& translation)
 {
-	Gfx::CompiledGeometryData* geometry = (Gfx::CompiledGeometryData*)handle;
+	auto* geometry = (CompiledGeometryData*)handle;
+
+	Shader::IProgramObject* program = nullptr;
 
 	if (geometry->texture) {
-		glUseProgram(shaders->program_texture.id);
-		if (geometry->texture != TextureEnableWithoutBinding)
+		program = programs[(size_t)ProgramId::Texture - 1];
+		program->Enable();
+		if (geometry->texture != TextureEnableWithoutBinding) {
 			glBindTexture(GL_TEXTURE_2D, (GLuint)geometry->texture);
-		SubmitTransformUniform(
-			ProgramId::Texture,
-			shaders->program_texture.uniform_locations[(size_t)Gfx::ProgramUniform::Transform]);
-		glUniform2fv(
-			shaders->program_texture.uniform_locations[(size_t)Gfx::ProgramUniform::Translate], 1,
-			&translation.x);
+		}
+		SubmitTransformUniform(ProgramId::Texture);
 	} else {
-		glUseProgram(shaders->program_color.id);
+		program = programs[(size_t)ProgramId::Color - 1];
+		program->Enable();
 		glBindTexture(GL_TEXTURE_2D, 0);
-		SubmitTransformUniform(
-			ProgramId::Color,
-			shaders->program_color.uniform_locations[(size_t)Gfx::ProgramUniform::Transform]);
-		glUniform2fv(
-			shaders->program_color.uniform_locations[(size_t)Gfx::ProgramUniform::Translate], 1,
-			&translation.x);
+		SubmitTransformUniform(ProgramId::Color);
 	}
 
-	glBindVertexArray(geometry->vao);
-	glDrawElements(GL_TRIANGLES, geometry->draw_count, GL_UNSIGNED_INT, (const GLvoid*)0);
+	program->SetUniform(ProgramUniform::Translate, translation.x, translation.y);
 
-	glBindVertexArray(0);
-	glUseProgram(0);
+	geometry->vao->Bind();
+	glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, (const GLvoid*)0);
+	geometry->vao->Unbind();
+
+	program->Disable();
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	Gfx::CheckGLError("RenderCompiledGeometry");
 }
 
-void RenderInterface_GL3_Spring::ReleaseCompiledGeometry(Rml::CompiledGeometryHandle handle)
+void RenderInterface_GL3_Recoil::ReleaseCompiledGeometry(Rml::CompiledGeometryHandle handle)
 {
-	Gfx::CompiledGeometryData* geometry = (Gfx::CompiledGeometryData*)handle;
+	auto geometry = (CompiledGeometryData*)handle;
 
-	glDeleteVertexArrays(1, &geometry->vao);
-	glDeleteBuffers(1, &geometry->vbo);
-	glDeleteBuffers(1, &geometry->ibo);
+	geometry->vao->Delete();
+	geometry->vbo->Release();
+	geometry->ibo->Release();
 
 	delete geometry;
 }
 
-void RenderInterface_GL3_Spring::EnableScissorRegion(bool enable)
+void RenderInterface_GL3_Recoil::EnableScissorRegion(bool enable)
 {
 	ScissoringState new_state = ScissoringState::Disable;
 
@@ -581,7 +411,7 @@ void RenderInterface_GL3_Spring::EnableScissorRegion(bool enable)
 	}
 }
 
-void RenderInterface_GL3_Spring::SetScissorRegion(int x, int y, int width, int height)
+void RenderInterface_GL3_Recoil::SetScissorRegion(int x, int y, int width, int height)
 {
 	if (transform_active) {
 		const float left = float(x);
@@ -612,7 +442,7 @@ void RenderInterface_GL3_Spring::SetScissorRegion(int x, int y, int width, int h
 	}
 }
 
-bool RenderInterface_GL3_Spring::LoadTexture(Rml::TextureHandle& texture_handle,
+bool RenderInterface_GL3_Recoil::LoadTexture(Rml::TextureHandle& texture_handle,
                                       Rml::Vector2i& texture_dimensions,
                                       const Rml::String& source)
 {
@@ -626,7 +456,7 @@ bool RenderInterface_GL3_Spring::LoadTexture(Rml::TextureHandle& texture_handle,
 	return texture_handle != 0;
 }
 
-bool RenderInterface_GL3_Spring::GenerateTexture(Rml::TextureHandle& texture_handle,
+bool RenderInterface_GL3_Recoil::GenerateTexture(Rml::TextureHandle& texture_handle,
                                           const Rml::byte* source,
                                           const Rml::Vector2i& source_dimensions)
 {
@@ -655,7 +485,7 @@ bool RenderInterface_GL3_Spring::GenerateTexture(Rml::TextureHandle& texture_han
 	return true;
 }
 
-void RenderInterface_GL3_Spring::ReleaseTexture(Rml::TextureHandle texture_handle)
+void RenderInterface_GL3_Recoil::ReleaseTexture(Rml::TextureHandle texture_handle)
 {
 	// Something was using a texture loaded/managed outside of Rml. Do nothing.
 	if (texture_handle == TextureEnableWithoutBinding)
@@ -664,17 +494,17 @@ void RenderInterface_GL3_Spring::ReleaseTexture(Rml::TextureHandle texture_handl
 	glDeleteTextures(1, (GLuint*)&texture_handle);
 }
 
-void RenderInterface_GL3_Spring::SetTransform(const Rml::Matrix4f* new_transform)
+void RenderInterface_GL3_Recoil::SetTransform(const Rml::Matrix4f* new_transform)
 {
 	transform_active = (new_transform != nullptr);
 	transform = projection * (new_transform ? *new_transform : Rml::Matrix4f::Identity());
 	transform_dirty_state = ProgramId::All;
 }
 
-void RenderInterface_GL3_Spring::SubmitTransformUniform(ProgramId program_id, int uniform_location)
+void RenderInterface_GL3_Recoil::SubmitTransformUniform(ProgramId program_id)
 {
-	if ((int)program_id & (int)transform_dirty_state) {
-		glUniformMatrix4fv(uniform_location, 1, false, transform.data());
+	if ((int)program_id & (int)transform_dirty_state && program_id != ProgramId::All) {
+		programs[(int)program_id - 1]->SetUniformMatrix4x4(ProgramUniform::Transform, false, transform.data());
 		transform_dirty_state = ProgramId((int)transform_dirty_state & ~(int)program_id);
 	}
 }
