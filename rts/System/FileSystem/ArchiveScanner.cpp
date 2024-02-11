@@ -913,6 +913,9 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
 	if (ar->GetFile("springignore.txt", buf) && !buf.empty())
 		ignore->AddRule(std::string((char*)(&buf[0]), buf.size()));
 
+	ignore->AddRule("cmakelists.txt");
+	ignore->AddRule(".git");
+
 	return ignore;
 }
 
@@ -935,14 +938,10 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	// load ignore list, and insert all files to check in lowercase format
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
 	std::vector<std::string> fileNames;
-	std::vector<sha512::raw_digest> fileHashes;
-	static std::array<std::vector<std::uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
-	for (auto& fileBuffer : fileBuffers)
-		fileBuffer.clear();
+	spring::unordered_map<std::string, sha512::raw_digest> fileHashes;
 
 	fileNames.reserve(ar->NumFiles());
-	fileHashes.reserve(ar->NumFiles());
-
+	fileHashes.reserve(fileNames.capacity());
 	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
 		const std::pair<std::string, int>& info = ar->FileInfo(fid);
 
@@ -951,65 +950,101 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 		// create case-insensitive hashes
 		fileNames.push_back(StringToLower(info.first));
-		fileHashes.emplace_back();
+		fileHashes.emplace(fileNames.back(), {});
 	}
 
-	// sort by filename
-	std::stable_sort(fileNames.begin(), fileNames.end());
+	auto CalcChecksumTask = [&fileNames, &fileHashes, &archiveInfo]() {
+		// sort by filename
+		std::stable_sort(fileNames.begin(), fileNames.end());
+		// combine individual hashes, initialize to hash(name)
+		for (size_t i = 0; i < fileNames.size(); i++) {
+			const auto& fileHash = fileHashes[fileNames[i]];
 
+			sha512::raw_digest nameDigest = {};
+			sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), nameDigest.data());
 
-#if !defined(DEDICATED) && !defined(UNITSYNC)
-	std::vector<std::shared_ptr<std::future<void>>> tasks;
-	tasks.reserve(fileNames.size());
-
-	for (size_t i = 0; i < fileNames.size(); ++i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
-
-		auto ComputeHashesTask = [&ar](const std::string& fileName, sha512::raw_digest& fileHash) -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
-		};
-		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, std::cref(fileName), std::ref(fileHash)));
-	}
-
-	const auto erasePredicate = [](decltype(tasks)::value_type item) {
-		using namespace std::chrono_literals;
-		return item->wait_for(0us) == std::future_status::ready;
+			for (uint8_t j = 0; j < sha512::SHA_LEN; j++) {
+				archiveInfo.checksum[j] ^= nameDigest[j];
+				archiveInfo.checksum[j] ^= fileHash[j];
+			}
+		}
 	};
 
-	while (!tasks.empty()) {
-		spring::VectorEraseAllIf(tasks, erasePredicate);
-		spring::UnfreezeSpring(WDT_MAIN);
-		spring_sleep(spring_msecs(10));
-	}
-#else
-	for_mt(0, fileNames.size(), [&](const int i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
+#if !defined(DEDICATED) && !defined(UNITSYNC)
+	uint32_t availableConsumerThreads = std::max(ThreadPool::GetNumThreads() - 2, 0); // -1 - main, -1 - producer
+	std::atomic<uint32_t> busyConsumerThreads(0);
+
+	std::vector<std::shared_ptr<std::future<void>>> consumerTasks;
+	consumerTasks.reserve(fileNames.size());
+
+	auto SendBuffersTask = [&ar, &fileNames, &fileHashes, &busyConsumerThreads, &consumerTasks, availableConsumerThreads]() {
+
+		auto CalcHashTask = [&busyConsumerThreads](std::shared_ptr<std::vector<std::uint8_t>> buffer, sha512::raw_digest& hash) {
+			busyConsumerThreads.fetch_add(1, std::memory_order_release);
+			sha512::calc_digest(buffer->data(), buffer->size(), hash.data());
+			buffer = nullptr;
+			busyConsumerThreads.fetch_sub(1, std::memory_order_release);
 		};
-		ComputeHashesTask(std::cref(fileName), std::ref(fileHash));
-	});
-#endif
 
-	for (auto& fileBuffer : fileBuffers) //clean static buffers
-		fileBuffer.clear();
+		for (size_t i = 0; i < fileNames.size(); ++i) {
+			const auto& fileName = fileNames[i];
+			auto& fileHash = fileHashes[fileName];
 
-	// combine individual hashes, initialize to hash(name)
-	for (size_t i = 0; i < fileNames.size(); i++) {
-		sha512::raw_digest nameDigest = {};
-		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), nameDigest.data());
+			auto fileBuffer = std::make_shared<std::vector<std::uint8_t>>();
 
-		for (uint8_t j = 0; j < sha512::SHA_LEN; j++) {
-			archiveInfo.checksum[j] ^= nameDigest   [j];
-			archiveInfo.checksum[j] ^= fileHashes[i][j];
+			if (!ar->GetFile(ar->FindFile(fileName), *fileBuffer))
+				continue;
+
+			if (fileBuffer->empty())
+				continue;
+
+			consumerTasks.emplace_back(
+				ThreadPool::Enqueue(CalcHashTask, fileBuffer, std::ref(fileHash))
+			);
+
+			while (busyConsumerThreads.load(std::memory_order_acquire) == availableConsumerThreads) {
+				std::this_thread::yield();
+			}
 		}
+	};
 
-		#if !defined(DEDICATED) && !defined(UNITSYNC)
-		Watchdog::ClearTimer();
-		#endif
+	auto senderTask = ThreadPool::Enqueue(SendBuffersTask);
+
+	using namespace std::chrono_literals;
+	while (senderTask->wait_for(0us) != std::future_status::ready && busyConsumerThreads.load(std::memory_order_acquire) > 0) {
+		spring::UnfreezeSpring(WDT_MAIN);
+		std::this_thread::yield();
 	}
+
+	// just in case
+	if (senderTask->valid())
+		senderTask->get();
+
+	// just in case
+	for (auto& consumerTask : consumerTasks) {
+		if (consumerTask->valid())
+			consumerTask->get();
+	}
+
+	auto calcTask = ThreadPool::Enqueue(CalcChecksumTask);
+	while (calcTask->wait_for(0us) != std::future_status::ready) {
+		spring::UnfreezeSpring(WDT_MAIN);
+		std::this_thread::yield();
+	}
+	if (calcTask->valid())
+		calcTask->get();
+#else
+	// THREADPOOL definition is explicitly removed from unitsync and dedicated, so use simple implementation
+	for (size_t i = 0; i < fileNames.size(); ++i) {
+		const auto& fileName = fileNames[i];
+		auto& fileHash = fileHashes[fileName];
+
+		static std::vector<std::uint8_t> fileBuffer;
+		fileBuffer.clear();
+		ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffer);
+	}
+	CalcChecksumTask();
+#endif
 
 	return true;
 }
