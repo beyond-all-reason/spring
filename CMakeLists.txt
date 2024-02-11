@@ -634,7 +634,7 @@ add_subdirectory(rts/System)
 # additional tools
 add_subdirectory(tools)
 
-# man pages & user-docs
+# user-docs
 add_subdirectory(doc)
 
 ### Handle game content
