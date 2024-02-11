@@ -4,6 +4,7 @@
 #define PROJECTILE_DRAWER_HDR
 
 #include <array>
+#include <memory>
 
 #include "Sim/Projectiles/Projectile.h"
 #include "Rendering/GL/myGL.h"
@@ -176,7 +177,7 @@ private:
 
 	bool wantDrawOrder = true;
 
-	ScopedDepthBufferCopy sdbc{ false };
+	std::unique_ptr<ScopedDepthBufferCopy> sdbc;
 };
 
 extern CProjectileDrawer* projectileDrawer;

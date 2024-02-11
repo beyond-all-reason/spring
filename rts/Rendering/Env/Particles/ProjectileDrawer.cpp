@@ -320,6 +320,8 @@ void CProjectileDrawer::Init() {
 		fxShader->Validate();
 	}
 
+	sdbc = std::make_unique<ScopedDepthBufferCopy>(false);
+
 	EnableSoften(configHandler->GetInt("SoftParticles"));
 }
 
@@ -347,6 +349,7 @@ void CProjectileDrawer::Kill() {
 	shaderHandler->ReleaseProgramObjects("[ProjectileDrawer::VFS]");
 	fxShaders = { nullptr };
 	fsShadowShader = nullptr;
+	sdbc = nullptr;
 
 	configHandler->Set("SoftParticles", wantSoften);
 }
