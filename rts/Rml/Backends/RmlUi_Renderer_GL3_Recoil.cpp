@@ -178,7 +178,8 @@ void RenderInterface_GL3_Recoil::BeginFrame()
 {
 	RMLUI_ASSERT(viewport_width >= 0 && viewport_height >= 0);
 
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glPushAttrib(GL_VIEWPORT_BIT | GL_STENCIL_BUFFER_BIT |
+		GL_SCISSOR_BIT | GL_POLYGON_BIT | GL_COLOR_BUFFER_BIT);
 
 	// Setup expected GL state.
 	glViewport(0, 0, viewport_width, viewport_height);
