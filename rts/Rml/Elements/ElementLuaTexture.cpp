@@ -36,9 +36,9 @@
 #include "ElementLuaTexture.h"
 
 #include "Lua/LuaOpenGLUtils.h"
-#include "Rml/Backends/RmlUi_Backend.h"
-#include "Rml/Backends/RmlUi_Renderer_GL3_Spring.h"
 #include "Rendering/GL/myGL.h"
+#include "Rml/Backends/RmlUi_Backend.h"
+#include "Rml/Backends/RmlUi_Renderer_GL3_Recoil.h"
 
 #include "RmlUi/Core/ComputedValues.h"
 #include "RmlUi/Core/ElementUtilities.h"
@@ -236,7 +236,7 @@ bool ElementLuaTexture::LoadTexture()
 		}
 
 		// Don't give Rml handles to external textures
-		out_handle = RenderInterface_GL3_Spring::TextureEnableWithoutBinding;
+		out_handle = RenderInterface_GL3_Recoil::TextureEnableWithoutBinding;
 		luaTextureHandle = texUnit.GetTextureID();
 
 		const auto [width, height, _z] = texUnit.GetSize();

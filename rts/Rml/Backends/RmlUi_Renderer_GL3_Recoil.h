@@ -28,23 +28,37 @@
  *
  */
 
-#ifndef RMLUI_BACKENDS_RENDERER_GL3_SPRING_H
-#define RMLUI_BACKENDS_RENDERER_GL3_SPRING_H
+#ifndef RMLUI_BACKENDS_RENDERER_GL3_RECOIL_H
+#define RMLUI_BACKENDS_RENDERER_GL3_RECOIL_H
+
+#include "Rendering/Shaders/Shader.h"
+
 
 #include <RmlUi/Core/RenderInterface.h>
 #include <RmlUi/Core/Types.h>
 
-namespace Gfx {
-	struct ShadersData;
+namespace Shader
+{
+struct IProgramObject;
+struct IShaderObject;
+};  // namespace Shader
+
+namespace Gfx
+{
+struct ShadersData;
 }
 
-class RenderInterface_GL3_Spring : public Rml::RenderInterface {
+class RenderInterface_GL3_Recoil : public Rml::RenderInterface
+{
 public:
-	RenderInterface_GL3_Spring();
-	~RenderInterface_GL3_Spring();
+	RenderInterface_GL3_Recoil();
+	~RenderInterface_GL3_Recoil();
 
 	// Returns true if the renderer was successfully constructed.
-	explicit operator bool() const { return static_cast<bool>(shaders); }
+	explicit operator bool() const
+	{
+		return std::ranges::all_of(programs, &Shader::IProgramObject::IsValid);
+	}
 
 	// The viewport should be updated whenever the window size changes.
 	void SetViewport(int viewport_width, int viewport_height);
@@ -58,32 +72,46 @@ public:
 
 	// -- Inherited from Rml::RenderInterface --
 
-	void RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices, int num_indices, Rml::TextureHandle texture,
-		const Rml::Vector2f& translation) override;
+	void RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices, int num_indices,
+	                    Rml::TextureHandle texture, const Rml::Vector2f& translation) override;
 
-	Rml::CompiledGeometryHandle CompileGeometry(Rml::Vertex* vertices, int num_vertices, int* indices, int num_indices,
-		Rml::TextureHandle texture) override;
-	void RenderCompiledGeometry(Rml::CompiledGeometryHandle geometry, const Rml::Vector2f& translation) override;
+	Rml::CompiledGeometryHandle CompileGeometry(Rml::Vertex* vertices, int num_vertices,
+	                                            int* indices, int num_indices,
+	                                            Rml::TextureHandle texture) override;
+	void RenderCompiledGeometry(Rml::CompiledGeometryHandle geometry,
+	                            const Rml::Vector2f& translation) override;
 	void ReleaseCompiledGeometry(Rml::CompiledGeometryHandle geometry) override;
 
 	void EnableScissorRegion(bool enable) override;
 	void SetScissorRegion(int x, int y, int width, int height) override;
 
-	bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions, const Rml::String& source) override;
-	bool GenerateTexture(Rml::TextureHandle& texture_handle, const Rml::byte* source, const Rml::Vector2i& source_dimensions) override;
+	bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions,
+	                 const Rml::String& source) override;
+	bool GenerateTexture(Rml::TextureHandle& texture_handle, const Rml::byte* source,
+	                     const Rml::Vector2i& source_dimensions) override;
 	void ReleaseTexture(Rml::TextureHandle texture_handle) override;
 
 	void SetTransform(const Rml::Matrix4f* transform) override;
 
-	// Can be passed to RenderGeometry() to enable texture rendering without changing the bound texture.
-	// Can used as the output of a TextureCallback to signal that this texture is externally managed.
+	// Can be passed to RenderGeometry() to enable texture rendering without changing the bound
+	// texture. Can used as the output of a TextureCallback to signal that this texture is
+	// externally managed.
 	//   In that case, you will need to keep a reference to the texture
 	//   you want and bind it before rendering the geometry.
 	static const Rml::TextureHandle TextureEnableWithoutBinding = Rml::TextureHandle(-1);
 
 private:
-	enum class ProgramId { None, Texture = 1, Color = 2, All = (Texture | Color) };
-	void SubmitTransformUniform(ProgramId program_id, int uniform_location);
+	bool CreateShaders();
+
+	enum class ProgramId : unsigned char {
+		None = 0,
+		Texture = 1,
+		Color = 2,
+		All = (Texture | Color)
+	};
+
+	Shader::IProgramObject* programs[2]{};
+	void SubmitTransformUniform(ProgramId program_id);
 
 	Rml::Matrix4f transform, projection;
 	ProgramId transform_dirty_state = ProgramId::All;
@@ -94,8 +122,6 @@ private:
 
 	int viewport_width = 0;
 	int viewport_height = 0;
-
-	Rml::UniquePtr<Gfx::ShadersData> shaders;
 
 	struct GLStateBackup {
 		bool enable_cull_face;
