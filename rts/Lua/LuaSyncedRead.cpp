@@ -1295,8 +1295,6 @@ int LuaSyncedRead::GetModOption(lua_State* L)
 	
 	const std::string& opt = luaL_checkstring(L, 1);
 
-	const std::string* debuggingStr = modOpts.try_get(opt);
-
 	if (modOpts.find(opt) == modOpts.end()) {
 		return 0;
 	}
