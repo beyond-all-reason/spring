@@ -135,7 +135,7 @@ RenderInterface_GL3_Recoil::~RenderInterface_GL3_Recoil()
 	shaderHandler->ReleaseProgramObjects("[Rml RenderInterface]");
 }
 
-bool RenderInterface_GL3_Recoil::CreateShaders()
+void RenderInterface_GL3_Recoil::CreateShaders()
 {
 	#define sh shaderHandler
 	static const std::string prog_handles[2] = {
@@ -164,8 +164,7 @@ bool RenderInterface_GL3_Recoil::CreateShaders()
 
 		programs[i] = po;
 	}
-	return std::ranges::all_of(programs, &Shader::IProgramObject::IsValid);
-#undef sh
+	#undef sh
 }
 
 void RenderInterface_GL3_Recoil::SetViewport(int width, int height)

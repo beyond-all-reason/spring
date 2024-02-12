@@ -46,7 +46,7 @@ RmlSystemInterface::~RmlSystemInterface()
 
 double RmlSystemInterface::GetElapsedTime()
 {
-	return spring_gettime().toSecsf();
+	return spring_gettime().toSecs<double>();
 }
 
 int RmlSystemInterface::TranslateString(Rml::String& translated, const Rml::String& input)
