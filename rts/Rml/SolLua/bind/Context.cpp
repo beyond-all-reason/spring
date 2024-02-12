@@ -57,7 +57,7 @@ void bindTable(SolLuaDataModel* data, sol::table& table)
 		} else {
 			skey = key.as<std::string>();
 		}
-		auto it = data->ObjectList.insert_or_assign(skey, value);
+		auto it = data->ObjectMap.insert_or_assign(skey, value);
 
 		if (value.get_type() == sol::type::function) {
 			data->Constructor.BindEventCallback(skey, [skey, cb = sol::protected_function{value},
@@ -74,9 +74,11 @@ void bindTable(SolLuaDataModel* data, sol::table& table)
 						ErrorHandler(cb.lua_state(), std::move(pfr));
 				}
 			});
+			data->BindingMap[skey] = SolLuaDataModel::BindingType::Function;
 		} else {
 			data->Constructor.BindCustomDataVariable(
 				skey, Rml::DataVariable(data->ObjectDef.get(), &(it.first->second)));
+			data->BindingMap[skey] = SolLuaDataModel::BindingType::Variable;
 		}
 	}
 }
@@ -96,7 +98,6 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 
 	// Create data model.
 	auto constructor = self.CreateDataModel(name);
-	auto data = std::make_shared<SolLuaDataModel>(lua);
 
 	// Already created?  Get existing.
 	if (!constructor) {
@@ -105,6 +106,7 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 			return sol::lua_nil;
 	}
 
+	auto data = std::make_shared<SolLuaDataModel>(lua);
 	data->Constructor = constructor;
 	data->Handle = constructor.GetModelHandle();
 	data->ObjectDef = std::make_unique<SolLuaObjectDef>(data.get());
@@ -116,28 +118,39 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 	}
 
 	auto obj_table = lua.create_table();
+	auto new_index_func =  //
+		([data](sol::object t, const std::string& key, sol::object value, sol::this_state s) {
+			auto iter = data->BindingMap.find(key);
+			if (iter == data->BindingMap.end())
+				luaL_error(s, "Assigning a new key ('%s') in a DataModel is not allowed.",
+			               key.c_str());
+
+			if (iter->second == SolLuaDataModel::BindingType::Function)
+				luaL_error(
+					s,
+					"Changing the value of a key ('%s') bound to a Function in a DataModel is not "
+					"allowed.",
+					key.c_str());
+
+			data->Table.raw_set(key, value);
+			data->ObjectMap.insert_or_assign(key, value);
+			data->Handle.DirtyVariable(key);
+		});
 
 	sol::table obj_metatable = lua.create_table();
-	obj_metatable[sol::meta_function::new_index] = [data](sol::object t, const std::string& name,
-	                                                      sol::object value, sol::this_state s) {
-		data->Table.set(name, value);
-		data->ObjectList.insert_or_assign(name, value);
-		// FIXME: this call would cause a __debugbreak() crash with
-		// #RMLUI_DEBUG turned on if given a variable name that
-		// is not in the initial DataModel bindings
-		// Without #RMLUI_DEBUG that same call causes tiny amounts of pointless work to be done
-		// New variables cannot be used in a data binding expression
-		// TODO: Either disallow new values altogether (keeping in line with the RmlUi spec)
-		// TODO: or skip this call if a variable is not bound (likely requireing a third contrainer to keep track)
-		data->Handle.DirtyVariable(name);
-	};
+	obj_metatable[sol::meta_function::new_index] = new_index_func;
 
-	obj_metatable[sol::meta_function::index] = [data](sol::object t, const std::string& name,
-	                                                  sol::this_state s) {
-		return data->Table.get<sol::object>(name);
-	};
+	obj_metatable[sol::meta_function::index] =
+		([data](sol::object t, const std::string& key, sol::this_state s) {
+			return data->Table.get<sol::object>(key);
+		});
 
 	obj_table[sol::metatable_key] = obj_metatable;
+
+	sol::table obj_metatable_2 = lua.create_table();
+	obj_metatable_2[sol::meta_function::new_index] = new_index_func;
+
+	data->Table[sol::metatable_key] = obj_metatable_2;
 
 	return obj_table;
 }
@@ -162,6 +175,7 @@ auto getElementAtPoint2(Rml::Context& self, Rml::Vector2f point, Rml::Element& i
 /// <param name="lua">The Lua state to bind into.</param>
 void bind_context(sol::state_view& lua, SolLuaPlugin* slp)
 {
+	// clang-format off
 	lua.new_usertype<Rml::Context>(
 		"Context", sol::no_constructor,
 		// M
@@ -228,6 +242,7 @@ void bind_context(sol::state_view& lua, SolLuaPlugin* slp)
 		"hover_element", sol::readonly_property(&Rml::Context::GetHoverElement),
 		"name", sol::readonly_property(&Rml::Context::GetName),
 		"root_element", sol::readonly_property(&Rml::Context::GetRootElement));
+	// clang-format on
 }
 
 }  // end namespace Rml::SolLua
