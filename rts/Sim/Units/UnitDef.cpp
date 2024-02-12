@@ -366,7 +366,6 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	canReclaim   = udTable.GetBool("canReclaim",   builder) && (  reclaimSpeed > 0.0f);
 	canCapture   = udTable.GetBool("canCapture",     false) && (  captureSpeed > 0.0f);
 	canResurrect = udTable.GetBool("canResurrect",   false) && (resurrectSpeed > 0.0f);
-	canAssist    = udTable.GetBool("canAssist",    builder);
 
 	canBeAssisted = udTable.GetBool("canBeAssisted", true);
 	canSelfRepair = udTable.GetBool("canSelfRepair", false);
@@ -693,6 +692,33 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 				strncpy(tagStrs[k++], tag.c_str(), sizeof(tagStrs[0]));
 			}
 		}
+	}
+	{
+		//canAssist should default to true for mobile builders but should
+		//default to false for factories.
+		//
+		//To determine if this unit is a factory, previous unitDef 
+		//features need to be parsed, which is why canAssist is defined
+		//last.
+		//
+		//Note that a mobile builder with canAssist = false will be able
+		//to place a nanoframe and pour buildpower into it, but will not
+		//be able to resume building if interrupted for any reason (with
+		//the exception of the wait command). It will be unable to pour
+		//buildpower into a nanoframe placed by another unit. It will be
+		//unable to repair an incomplete nanoframe or place a nanoframe
+		//on top of an existing nanoframe, even if it is the exact same
+		//structure in the exact same location.
+		
+		//Using the following definitions from UnitDef.h:
+		//isImmobileUnit() = (pathType == -1U && !canfly && speed <= 0.0f); 
+		//isBuildingUnit() = (IsImmobileUnit() && !yardmap.empty());;
+		//isBuilderUnit() = (builder && buildSpeed > 0.0f && buildDistance > 0.0f);;
+		//IsFactoryUnit() = (IsBuilderUnit() &&  IsBuildingUnit());
+		canAssist = udTable.GetBool("canAssist", (builder && //!IsFactoryUnit()
+					!((builder && buildSpeed > 0.0f && buildDistance > 0.0f) && 
+						(pathType == -1U && !canfly && speed <= 0.0f && !yardmap.empty()))
+				)); 
 	}
 }
 
