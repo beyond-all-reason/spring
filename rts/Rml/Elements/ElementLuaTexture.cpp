@@ -95,12 +95,12 @@ bool ElementLuaTexture::GetIntrinsicDimensions(Rml::Vector2f& _dimensions, float
 
 void ElementLuaTexture::OnRender()
 {
-	glBindTexture(GL_TEXTURE_2D, luaTextureHandle);
 	// Regenerate the geometry if required (this will be set if 'rect' changes but does not result
 	// in a resize).
 	if (geometry_dirty)
 		GenerateGeometry();
 
+	glBindTexture(GL_TEXTURE_2D, luaTextureHandle);
 	// Render the geometry beginning at this element's content region.
 	geometry.Render(GetAbsoluteOffset(Rml::BoxArea::Content).Round());
 }
@@ -186,15 +186,15 @@ void ElementLuaTexture::GenerateGeometry()
 	indices.resize(6);
 
 	// Generate the texture coordinates.
-	Rml::Vector2f texcoords[2];
+	Rml::Vector2f tex_coords[2];
 	if (rect_source != RectSource::None) {
 		const auto texture_dimensions =
 			Rml::Vector2f(Rml::Math::Max(texture.GetDimensions(), Rml::Vector2i(1)));
-		texcoords[0] = rect.TopLeft() / texture_dimensions;
-		texcoords[1] = rect.BottomRight() / texture_dimensions;
+		tex_coords[0] = rect.TopLeft() / texture_dimensions;
+		tex_coords[1] = rect.BottomRight() / texture_dimensions;
 	} else {
-		texcoords[0] = Rml::Vector2f(0, 0);
-		texcoords[1] = Rml::Vector2f(1, 1);
+		tex_coords[0] = Rml::Vector2f(0, 0);
+		tex_coords[1] = Rml::Vector2f(1, 1);
 	}
 
 	const Rml::ComputedValues& computed = GetComputedValues();
@@ -206,7 +206,7 @@ void ElementLuaTexture::GenerateGeometry()
 	Rml::Vector2f quad_size = GetBox().GetSize(Rml::BoxArea::Content).Round();
 
 	Rml::GeometryUtilities::GenerateQuad(&vertices[0], &indices[0], Rml::Vector2f(0, 0), quad_size,
-	                                     quad_colour, texcoords[0], texcoords[1]);
+	                                     quad_colour, tex_coords[0], tex_coords[1]);
 
 	geometry_dirty = false;
 }
@@ -221,14 +221,15 @@ bool ElementLuaTexture::LoadTexture()
 
 	const auto source_name = GetAttribute<Rml::String>("src", "");
 	if (source_name.empty()) {
-		texture = Rml::Texture();
+		texture.Set("");
 		rect_source = RectSource::None;
 		return false;
 	}
 
-	const Rml::TextureCallback callback = [this](const auto _renderInterface, const Rml::String& name,
-	                                             Rml::TextureHandle& out_handle,
-	                                             Rml::Vector2i& out_dimensions) mutable -> bool {
+	const Rml::TextureCallback callback = //
+		[this](const auto _renderInterface, const Rml::String& name, Rml::TextureHandle& out_handle,
+	           Rml::Vector2i& out_dimensions) mutable -> bool {
+
 		LuaMatTexture texUnit;
 		if (!LuaOpenGLUtils::ParseTextureImage(RmlGui::GetLuaState(), texUnit, name)) {
 			luaTextureHandle = 0;
@@ -242,6 +243,7 @@ bool ElementLuaTexture::LoadTexture()
 		const auto [width, height, _z] = texUnit.GetSize();
 		out_dimensions.x = width;
 		out_dimensions.y = height;
+		geometry_dirty = true;
 
 		return true;
 	};
