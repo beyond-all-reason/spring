@@ -37,9 +37,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "Lua/LuaUI.h"
-#include "Rendering/Textures/Bitmap.h"
 #include "Rml/Elements/ElementLuaTexture.h"
-#include "Rml/Elements/ElementRenderHook.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
 #include "RmlUi_Backend.h"
@@ -103,7 +101,7 @@ struct BackendData {
 	VFSFileInterface file_interface;
 
 	SDL_Window* window = nullptr;
-	SDL_GLContext glcontext = nullptr;
+	SDL_GLContext gl_context = nullptr;
 	std::vector<Rml::Context*> contexts;
 	InputHandler::SignalType::connection_type inputCon;
 	CRmlInputReceiver inputReceiver;
@@ -120,7 +118,6 @@ struct BackendData {
 	CtxMutex contextMutex;
 
     Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
-    Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementRenderHook>> element_render_hook_instancer;
 };
 
 static Rml::UniquePtr<BackendData> data;
@@ -142,7 +139,7 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 	}
 
 	data->window = target_window;
-	data->glcontext = target_glcontext;
+	data->gl_context = target_glcontext;
 
 	Rml::SetFileInterface(&data->file_interface);
 	Rml::SetSystemInterface(RmlGui::GetSystemInterface());
@@ -160,9 +157,6 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 
 	data->element_lua_texture_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
 	Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture_instancer.get());
-
-	data->element_render_hook_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementRenderHook>>();
-	Rml::Factory::RegisterElementInstancer("render-hook", data->element_render_hook_instancer.get());
 
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());
@@ -214,11 +208,11 @@ void RmlGui::Reload()
 	}
 	LOG_L(L_NOTICE, "[RmlGui::%s] reloading: ", __func__);
 	SDL_Window* window = data->window;
-	SDL_GLContext glcontext = data->glcontext;
+	SDL_GLContext gl_context = data->gl_context;
 	int winX = data->winX;
 	int winY = data->winY;
 	RmlGui::Shutdown();
-	RmlGui::Initialize(window, glcontext, winX, winY);
+	RmlGui::Initialize(window, gl_context, winX, winY);
 }
 
 void RmlGui::ToggleDebugger(int contextIndex)
