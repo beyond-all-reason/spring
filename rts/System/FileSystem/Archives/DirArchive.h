@@ -31,6 +31,8 @@ class CDirArchive : public IArchive
 public:
 	CDirArchive(const std::string& archiveName);
 
+	void WarmUp(const std::atomic_bool& cont) const override;
+
 	int GetType() const override { return ARCHIVE_TYPE_SDD; }
 
 	bool IsOpen() override { return true; }

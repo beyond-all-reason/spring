@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstring>
 #include <optional>
+#include <fstream>
 
 #include <7zAlloc.h>
 #include <7zCrc.h>
@@ -209,6 +210,26 @@ CSevenZipArchive::~CSevenZipArchive()
 	}
 	ISzAlloc_Free(&allocImp, lookStream.buf);
 	SzArEx_Free(&db, &allocImp);
+}
+
+void CSevenZipArchive::WarmUp(const std::atomic_bool& cont) const
+{
+	volatile int val = 0;
+
+	std::ifstream file(archiveFile, std::ios::binary | std::ios::ate);
+
+	if (file.bad() || !file.is_open())
+		return;
+
+	auto filesize = file.tellg();
+	for (decltype(filesize) fpos = 0; fpos < filesize; fpos += 4096) {
+		if (!cont)
+			return;
+
+		file.seekg(fpos);
+		val = file.get();
+	}
+	file.close();
 }
 
 int CSevenZipArchive::GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer)

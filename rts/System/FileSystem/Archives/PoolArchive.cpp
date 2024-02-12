@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <fstream>
 
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
@@ -121,6 +122,45 @@ CPoolArchive::~CPoolArchive()
 		const unsigned long time = s.readTime / (1000 * 1000);
 
 		LOG_L(L_INFO, "\tfile=\"%s\" indx=%lu inflSize=%ukb readTime=%lums", f.name.c_str(), indx, f.size / 1024, time);
+	}
+}
+
+void CPoolArchive::WarmUp(const std::atomic_bool& cont) const
+{
+	static constexpr const char table[] = "0123456789abcdef";
+
+	volatile int val = 0;
+
+	char c_hex[32];
+	for (const auto& file : files) {
+		if (!cont)
+			return;
+
+		for (int i = 0; i < 16; ++i) {
+			c_hex[2 * i    ] = table[(file.md5sum[i] >> 4) & 0xf];
+			c_hex[2 * i + 1] = table[ file.md5sum[i]       & 0xf];
+		}
+
+		const std::string prefix(c_hex,      2);
+		const std::string pstfix(c_hex + 2, 30);
+
+			  std::string rpath = poolRootDir + "/pool/" + prefix + "/" + pstfix + ".gz";
+		const std::string  path = FileSystem::FixSlashes(rpath);
+
+		std::ifstream file(path, std::ios::binary | std::ios::ate);
+
+		if (file.bad() || !file.is_open())
+			continue;
+
+		auto filesize = file.tellg();
+		for (decltype(filesize) fpos = 0; fpos < filesize; fpos += 4096) {
+			if (!cont)
+				return;
+
+			file.seekg(fpos);
+			val = file.get();
+		}
+		file.close();
 	}
 }
 

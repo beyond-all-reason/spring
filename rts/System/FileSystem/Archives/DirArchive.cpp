@@ -41,6 +41,32 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 	}
 }
 
+void CDirArchive::WarmUp(const std::atomic_bool& cont) const
+{
+	volatile int val = 0;
+
+	for (const auto& searchFile : searchFiles) {
+		if (!cont)
+			return;
+
+		const std::string rawpath = dataDirsAccess.LocateFile(dirName + searchFile);
+		std::ifstream file(rawpath, std::ios::binary | std::ios::ate);
+
+		if (file.bad() || !file.is_open())
+			continue;
+
+		auto filesize = file.tellg();
+		for (decltype(filesize) fpos = 0; fpos < filesize; fpos += 4096) {
+			if (!cont)
+				return;
+
+			file.seekg(fpos);
+			val = file.get();
+		}
+		file.close();
+	}
+}
+
 
 bool CDirArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
 {

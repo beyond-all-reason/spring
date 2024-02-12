@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <cassert>
+#include <fstream>
 
 #include "System/StringUtil.h"
 #include "System/Log/ILog.h"
@@ -70,6 +71,26 @@ CZipArchive::~CZipArchive()
 		unzClose(zip);
 		zip = nullptr;
 	}
+}
+
+void CZipArchive::WarmUp(const std::atomic_bool& cont) const
+{
+	volatile int val = 0;
+
+	std::ifstream file(archiveFile, std::ios::binary | std::ios::ate);
+
+	if (file.bad() || !file.is_open())
+		return;
+
+	auto filesize = file.tellg();
+	for (decltype(filesize) fpos = 0; fpos < filesize; fpos += 4096) {
+		if (!cont)
+			return;
+
+		file.seekg(fpos);
+		val = file.get();
+	}
+	file.close();
 }
 
 

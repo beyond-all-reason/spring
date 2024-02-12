@@ -64,6 +64,8 @@ class CVirtualArchiveOpen : public IArchive
 public:
 	CVirtualArchiveOpen(CVirtualArchive* archive, const std::string& fileName);
 
+	void WarmUp(const std::atomic_bool& cont) const override {};
+
 	int GetType() const override { return ARCHIVE_TYPE_SDV; }
 
 	// virtual archives are stored in memory and as such always open
