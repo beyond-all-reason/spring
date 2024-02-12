@@ -26,7 +26,10 @@ namespace Rml::SolLua
 
 		// sol data types are reference counted.  Hold onto them as we use them.
 		sol::table Table;
-		std::unordered_map<std::string, sol::object> ObjectList;
+
+		enum class BindingType { None = 0, Variable = 1, Function = 2 };
+		std::unordered_map<std::string, BindingType> BindingMap;
+		std::unordered_map<std::string, sol::object> ObjectMap;
 	};
 
 	class SolLuaObjectDef final : public Rml::VariableDefinition

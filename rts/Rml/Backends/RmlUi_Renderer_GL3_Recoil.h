@@ -101,7 +101,7 @@ public:
 	static const Rml::TextureHandle TextureEnableWithoutBinding = Rml::TextureHandle(-1);
 
 private:
-	bool CreateShaders();
+	void CreateShaders();
 
 	enum class ProgramId : unsigned char {
 		None = 0,
