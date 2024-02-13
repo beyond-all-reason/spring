@@ -743,6 +743,8 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 
 	ADD_FLOAT("minCollisionSpeed", ud.minCollisionSpeed);
 	ADD_FLOAT("slideTolerance",    ud.slideTolerance);
+	ADD_FLOAT("rollingResistanceCoefficient", ud.rollingResistanceCoefficient);
+	ADD_FLOAT("groundFrictionCoefficient", ud.groundFrictionCoefficient);
 
 	ADD_FLOAT("maxWeaponRange", ud.maxWeaponRange);
 	ADD_FLOAT("maxCoverage", ud.maxCoverage);

@@ -123,6 +123,9 @@ UnitDef::UnitDef()
 	, stopToAttack(false)
 	, minCollisionSpeed(0.0f)
 	, slideTolerance(0.0f)
+	, rollingResistanceCoefficient(0.0f)
+	, groundFrictionCoefficient(0.0f)
+	, atmosphericDragCoefficient(0.0f)
 	, maxHeightDif(0.0f)
 	, waterline(0.0f)
 	, minWaterDepth(0.0f)
@@ -392,6 +395,9 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	waterline = udTable.GetFloat("waterline", 0.0f);
 	minCollisionSpeed = udTable.GetFloat("minCollisionSpeed", 1.0f);
 	slideTolerance = udTable.GetFloat("slideTolerance", 0.0f); // disabled
+	rollingResistanceCoefficient = udTable.GetFloat("rollingResistanceCoefficient", 0.05f);
+	groundFrictionCoefficient = udTable.GetFloat("groundFrictionCoefficient", 0.01f);
+	atmosphericDragCoefficient = udTable.GetFloat("atmosphericDragCoefficient", 1.0f);
 	pushResistant = udTable.GetBool("pushResistant", false);
 	selfDCountdown = udTable.GetInt("selfDestructCountdown", 5);
 

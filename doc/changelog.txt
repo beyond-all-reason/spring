@@ -86,7 +86,8 @@ Lua:
    start box (in elmos) for an ally team.
  - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
- 
+ - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
+
 
 Game Setup:
  - removed `mapSeed` parameter and `new_map_x`, `new_map_y` map generation options. Map is now generated
@@ -184,6 +185,11 @@ Sim:
  - Units given new paths will now switch to a new non-temp waypoint in 1 frame rather than 2.
    Units have a next and current waypoint, so if next is non-temp, but current is then it will make
    current <- next, and grab the next waypoint.
+ - Units will skid if hit with impulses sufficiently large in the direction opposite their
+   movement vector. Previously units would only skid on large impulses that hit their sides.
+ - New rollingResistanceCoefficient unitdef that is used to reduce a unit's speed when exceeding their maximumSpeed.
+ - New groundFrictionCoefficient unitdef that is used to reduce a unit's speed when skidding.
+ - New atmosphericDragCoefficient unitdef that reduces a unit's speed when skidding and exceeding speed maximum.
  - Assumes that a unit's default buildeeRadius will be the model's radius when figuring out the
    correct distance at which to start a new unit construction. Previously it was assumed 0.
  - unit defs have a new parameter, buildeeBuildRadius, which overrides the engine default assumption
@@ -375,11 +381,11 @@ BREAKING CHANGES SINCE 105.0 & HOW TO GET BACK OLD BEHAVIOURS:
  ! onlyLocal for all three Spring.Marker functions (Point, Line, Erase) no longer accepts
    numerical 0 as false (now follows regular Lua language rules where 0 is true). To get
    back old behaviour, change `0` to `false`.
-   
+
  ! Spring.GetConfigInt, Spring.GetConfigFloat and Spring.GetConfigString now accept nil
    as the second argument (what to return by default if not set). Previously it was treated
    as 0 (Int and Float) or "" (String). To get back previous behaviour:
- 
+
    local originalGetConfigInt = Spring.GetConfigInt
    Spring.GetConfigInt = function(key, def)
      return originalGetConfigInt(key, def) or 0
@@ -591,8 +597,8 @@ Fixes:
  - Fix piece projectiles (flying parts from dead units) not colliding with units
  - Fix KeyChains not being respected for GuiHandler actions and allow games to
    handle them with new actions argument on KeyPress/KeyRelease
- - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes, 
-   i.e. unplug/replug USB headset or swtich between builtin soundcard to 
+ - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes,
+   i.e. unplug/replug USB headset or swtich between builtin soundcard to
    monitor soundcard (HDMI), seamlessly possible without requiring a program restart
  - Fix keysets bound to duplicate actions when the action line contains
    discrepant comment sections
