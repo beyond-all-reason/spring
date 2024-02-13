@@ -42,9 +42,9 @@
 #pragma warning(disable : 4505)
 #endif
 
-#include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VAO.h"
 #include "Rendering/GL/VBO.h"
+#include "Rendering/GL/myGL.h"
 
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Shaders/ShaderHandler.h"
@@ -100,30 +100,31 @@ void main() {
 
 namespace
 {
-	namespace ProgramUniform
-	{
-		const char* const Translate = "_translate";
-		const char* const Transform = "_transform";
-		const char* const Tex = "_tex";
-	}
+namespace ProgramUniform
+{
+const char* const Translate = "_translate";
+const char* const Transform = "_transform";
+const char* const Tex = "_tex";
+}  // namespace ProgramUniform
 
-	struct CompiledGeometryData
-	{
-		Rml::TextureHandle texture;
-		std::unique_ptr<VAO> vao;
-		std::unique_ptr<VBO> vbo;
-		std::unique_ptr<VBO> ibo;
-		int num_indices;
+struct CompiledGeometryData {
+	Rml::TextureHandle texture;
+	std::unique_ptr<VAO> vao;
+	std::unique_ptr<VBO> vbo;
+	std::unique_ptr<VBO> ibo;
+	int num_indices;
 
-		static std::array<AttributeDef, 3> attributeDefs;
-	};
+	static std::array<AttributeDef, 3> attributeDefs;
+};
 
-	std::array<AttributeDef, 3> CompiledGeometryData::attributeDefs = {
-		AttributeDef(0, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, position), GL_FALSE, "pos"),
-		AttributeDef(1, 4, GL_UNSIGNED_BYTE, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, colour), GL_TRUE, "col"),
-		AttributeDef(2, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, tex_coord), GL_FALSE, "uv")
-	};
-}
+std::array<AttributeDef, 3> CompiledGeometryData::attributeDefs = {
+	AttributeDef(0, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, position),
+                 GL_FALSE, "pos"),
+	AttributeDef(1, 4, GL_UNSIGNED_BYTE, sizeof(Rml::Vertex),
+                 (const void*)offsetof(Rml::Vertex, colour), GL_TRUE, "col"),
+	AttributeDef(2, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, tex_coord),
+                 GL_FALSE, "uv")};
+}  // namespace
 
 RenderInterface_GL3_Recoil::RenderInterface_GL3_Recoil()
 {
@@ -137,21 +138,19 @@ RenderInterface_GL3_Recoil::~RenderInterface_GL3_Recoil()
 
 void RenderInterface_GL3_Recoil::CreateShaders()
 {
-	#define sh shaderHandler
-	static const std::string prog_handles[2] = {
-		"rml_tex",
-		"rml_color"
-	};
+#define sh shaderHandler
+	static const std::string prog_handles[2] = {"rml_tex", "rml_color"};
 
-	static const std::string* frag_code[2] = {
-		&shader_main_fragment_texture,
-		&shader_main_fragment_color
-	};
+	static const std::string* frag_code[2] = {&shader_main_fragment_texture,
+	                                          &shader_main_fragment_color};
 
 	for (int i = 0; i < 2; i++) {
-		Shader::IProgramObject* po = sh->CreateProgramObject("[Rml RenderInterface]", prog_handles[i]);
-		po->AttachShaderObject(sh->CreateShaderObject(shader_main_vertex, rml_shader_header, GL_VERTEX_SHADER));
-		po->AttachShaderObject(sh->CreateShaderObject(*frag_code[i], rml_shader_header, GL_FRAGMENT_SHADER));
+		Shader::IProgramObject* po =
+			sh->CreateProgramObject("[Rml RenderInterface]", prog_handles[i]);
+		po->AttachShaderObject(
+			sh->CreateShaderObject(shader_main_vertex, rml_shader_header, GL_VERTEX_SHADER));
+		po->AttachShaderObject(
+			sh->CreateShaderObject(*frag_code[i], rml_shader_header, GL_FRAGMENT_SHADER));
 		po->BindAttribLocations<CompiledGeometryData>();
 		po->Link();
 
@@ -164,7 +163,7 @@ void RenderInterface_GL3_Recoil::CreateShaders()
 
 		programs[i] = po;
 	}
-	#undef sh
+#undef sh
 }
 
 void RenderInterface_GL3_Recoil::SetViewport(int width, int height)
@@ -177,8 +176,8 @@ void RenderInterface_GL3_Recoil::BeginFrame()
 {
 	RMLUI_ASSERT(viewport_width >= 0 && viewport_height >= 0);
 
-	glPushAttrib(GL_VIEWPORT_BIT | GL_STENCIL_BUFFER_BIT |
-		GL_SCISSOR_BIT | GL_POLYGON_BIT | GL_COLOR_BUFFER_BIT);
+	glPushAttrib(GL_VIEWPORT_BIT | GL_STENCIL_BUFFER_BIT | GL_SCISSOR_BIT | GL_POLYGON_BIT |
+	             GL_COLOR_BUFFER_BIT);
 
 	// Setup expected GL state.
 	glViewport(0, 0, viewport_width, viewport_height);
@@ -215,9 +214,10 @@ void RenderInterface_GL3_Recoil::Clear()
 	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void RenderInterface_GL3_Recoil::RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices,
-                                         int num_indices, const Rml::TextureHandle texture,
-                                         const Rml::Vector2f& translation)
+void RenderInterface_GL3_Recoil::RenderGeometry(Rml::Vertex* vertices, int num_vertices,
+                                                int* indices, int num_indices,
+                                                const Rml::TextureHandle texture,
+                                                const Rml::Vector2f& translation)
 {
 	Rml::CompiledGeometryHandle geometry =
 		CompileGeometry(vertices, num_vertices, indices, num_indices, texture);
@@ -228,10 +228,9 @@ void RenderInterface_GL3_Recoil::RenderGeometry(Rml::Vertex* vertices, int num_v
 	}
 }
 
-Rml::CompiledGeometryHandle RenderInterface_GL3_Recoil::CompileGeometry(Rml::Vertex* vertices,
-                                                                 int num_vertices, int* indices,
-                                                                 int num_indices,
-                                                                 Rml::TextureHandle texture)
+Rml::CompiledGeometryHandle
+RenderInterface_GL3_Recoil::CompileGeometry(Rml::Vertex* vertices, int num_vertices, int* indices,
+                                            int num_indices, Rml::TextureHandle texture)
 {
 	constexpr GLenum draw_usage = GL_STATIC_DRAW;
 
@@ -259,15 +258,12 @@ Rml::CompiledGeometryHandle RenderInterface_GL3_Recoil::CompileGeometry(Rml::Ver
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	auto* geometry = new CompiledGeometryData {
-		texture, std::move(vao), std::move(vbo), std::move(ibo), num_indices
-	};
-
-	return (Rml::CompiledGeometryHandle)geometry;
+	return (Rml::CompiledGeometryHandle) new CompiledGeometryData{
+		texture, std::move(vao), std::move(vbo), std::move(ibo), num_indices};
 }
 
 void RenderInterface_GL3_Recoil::RenderCompiledGeometry(Rml::CompiledGeometryHandle handle,
-                                                 const Rml::Vector2f& translation)
+                                                        const Rml::Vector2f& translation)
 {
 	auto* geometry = (CompiledGeometryData*)handle;
 
@@ -364,8 +360,8 @@ void RenderInterface_GL3_Recoil::SetScissorRegion(int x, int y, int width, int h
 }
 
 bool RenderInterface_GL3_Recoil::LoadTexture(Rml::TextureHandle& texture_handle,
-                                      Rml::Vector2i& texture_dimensions,
-                                      const Rml::String& source)
+                                             Rml::Vector2i& texture_dimensions,
+                                             const Rml::String& source)
 {
 	CBitmap bmp;
 	if (!bmp.Load(source)) {
@@ -378,8 +374,8 @@ bool RenderInterface_GL3_Recoil::LoadTexture(Rml::TextureHandle& texture_handle,
 }
 
 bool RenderInterface_GL3_Recoil::GenerateTexture(Rml::TextureHandle& texture_handle,
-                                          const Rml::byte* source,
-                                          const Rml::Vector2i& source_dimensions)
+                                                 const Rml::byte* source,
+                                                 const Rml::Vector2i& source_dimensions)
 {
 	GLuint texture_id = 0;
 	glGenTextures(1, &texture_id);
@@ -425,7 +421,8 @@ void RenderInterface_GL3_Recoil::SetTransform(const Rml::Matrix4f* new_transform
 void RenderInterface_GL3_Recoil::SubmitTransformUniform(ProgramId program_id)
 {
 	if ((int)program_id & (int)transform_dirty_state && program_id != ProgramId::All) {
-		programs[(int)program_id - 1]->SetUniformMatrix4x4(ProgramUniform::Transform, false, transform.data());
+		programs[(int)program_id - 1]->SetUniformMatrix4x4(ProgramUniform::Transform, false,
+		                                                   transform.data());
 		transform_dirty_state = ProgramId((int)transform_dirty_state & ~(int)program_id);
 	}
 }
