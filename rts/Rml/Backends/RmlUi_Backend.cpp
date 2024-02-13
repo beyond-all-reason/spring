@@ -37,7 +37,8 @@
 #include <tracy/Tracy.hpp>
 
 #include "Lua/LuaUI.h"
-#include "Rml/Elements/ElementLuaTexture.h"
+#include "Rml/Components/ElementLuaTexture.h"
+#include "Rml/Components/DecoratorLuaRender.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
 #include "RmlUi_Backend.h"
@@ -49,9 +50,6 @@
 
 using CtxMutex = std::recursive_mutex;
 using CtxLockGuard = std::lock_guard<CtxMutex>;
-
-void createContext(const std::string& name);
-bool removeContext(const std::string& name);
 
 /// Passes through RML events to the function pointers given in the constructor
 class PassThroughPlugin : public Rml::Plugin
@@ -111,12 +109,12 @@ struct BackendData {
 	bool debuggerAttached = false;
 	int winX = 1;
 	int winY = 1;
+
 	lua_State* ls = nullptr;
-
-	Rml::UniquePtr<PassThroughPlugin> plugin;
 	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
-	CtxMutex contextMutex;
 
+	CtxMutex contextMutex;
+	Rml::UniquePtr<PassThroughPlugin> plugin;
     Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
 };
 
@@ -184,6 +182,9 @@ bool RmlGui::RemoveLua()
 	data->luaPlugin->RemoveLuaItems();
 	Update();
 	Rml::UnregisterPlugin(data->luaPlugin);
+	data->system_interface.SetTranslationTable(nullptr);
+	data->luaPlugin = nullptr;
+	data->ls = nullptr;
 
 	return true;
 }
