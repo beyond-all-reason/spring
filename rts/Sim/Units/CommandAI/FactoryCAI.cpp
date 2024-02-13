@@ -141,6 +141,14 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 }
 
 
+static constexpr int GetCountMultiplierFromOptions(int opts)
+{
+	// The choice of keys and their associated multipliers are from OTA.
+	int ret = 1;
+	if (opts &   SHIFT_KEY) ret *=  5;
+	if (opts & CONTROL_KEY) ret *= 20;
+	return ret;
+}
 
 void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
@@ -224,10 +232,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 	}
 
 	int& numQueued = boi->second;
-	int numItems = 1;
-
-	if (c.GetOpts() & SHIFT_KEY)   { numItems *= 5; }
-	if (c.GetOpts() & CONTROL_KEY) { numItems *= 20; }
+	int numItems = GetCountMultiplierFromOptions(c.GetOpts());
 
 	if (c.GetOpts() & RIGHT_MOUSE_KEY) {
 		numQueued -= numItems;
@@ -287,8 +292,9 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
                                      const Command& newCmd)
 {
 	const auto boi = buildOptions.find(newCmd.GetID());
+	auto buildCount = GetCountMultiplierFromOptions(newCmd.GetOpts());
 	if (boi != buildOptions.end()) {
-		boi->second++;
+		boi->second += buildCount;
 		UpdateIconName(newCmd.GetID(), boi->second);
 	}
 	if (!commandQue.empty() && (it == commandQue.begin())) {
@@ -296,7 +302,8 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
 		CFactory* fac = static_cast<CFactory*>(owner);
 		fac->StopBuild();
 	}
-	commandQue.insert(it, newCmd);
+	while (buildCount--)
+		it = commandQue.insert(it, newCmd);
 }
 
 
