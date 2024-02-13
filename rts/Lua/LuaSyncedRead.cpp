@@ -5740,7 +5740,8 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
  *
  * @number id
  * @tparam {number,...} params
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
+ * @number tag
  */
 
 
