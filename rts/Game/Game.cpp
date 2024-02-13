@@ -1768,6 +1768,7 @@ void CGame::SimFrame() {
 
 		teamHandler.GameFrame(gs->frameNum);
 		playerHandler.GameFrame(gs->frameNum);
+		eventHandler.GameFramePost(gs->frameNum);
 	}
 
 	lastSimFrameTime = spring_gettime();
