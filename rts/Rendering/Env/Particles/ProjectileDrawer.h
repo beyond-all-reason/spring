@@ -134,12 +134,12 @@ private:
 
 	void DrawProjectilesSet(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
 	void DrawProjectilesSetMT(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
-	static void DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles);
-	static void DrawProjectilesSetShadowMT(const std::vector<CProjectile*>& projectiles);
+	void DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles);
+	void DrawProjectilesSetShadowMT(const std::vector<CProjectile*>& projectiles);
 
 	void DrawProjectileNow(CProjectile* projectile, bool drawReflection, bool drawRefraction);
 
-	static void DrawProjectileShadow(CProjectile* projectile);
+	void DrawProjectileShadow(CProjectile* projectile);
 	static bool DrawProjectileModel(const CProjectile* projectile);
 
 	void UpdatePerlin();

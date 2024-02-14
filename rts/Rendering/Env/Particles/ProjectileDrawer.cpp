@@ -659,6 +659,7 @@ void CProjectileDrawer::DrawProjectilesShadow(int modelType)
 
 void CProjectileDrawer::DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles)
 {
+	mutex.SetThreadSafety(false);
 	for (CProjectile* p: projectiles) {
 		DrawProjectileShadow(p);
 	}
@@ -666,7 +667,8 @@ void CProjectileDrawer::DrawProjectilesSetShadow(const std::vector<CProjectile*>
 
 void CProjectileDrawer::DrawProjectilesSetShadowMT(const std::vector<CProjectile*>& projectiles)
 {
-	for_mt(0, projectiles.size(), [&projectiles](int i) {
+	mutex.SetThreadSafety(true);
+	for_mt(0, projectiles.size(), [&projectiles, this](int i) {
 		CProjectile* p = projectiles.at(i);
 		DrawProjectileShadow(p);
 	});
@@ -688,6 +690,7 @@ void CProjectileDrawer::DrawProjectileShadow(CProjectile* p)
 			return;
 
 		// don't need to z-sort in the shadow pass
+		auto lock = mutex.GetScopedLock();
 		p->Draw();
 	}
 }
