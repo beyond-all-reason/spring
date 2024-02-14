@@ -986,16 +986,18 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	auto SendBuffersTask = [&ar, &fileNames, &fileHashes, &freeConsumerThreads, &consumerTasks]() {
 
-		auto CalcHashTask = [&freeConsumerThreads](std::shared_ptr<std::vector<std::uint8_t>> buffer, sha512::raw_digest& hash) {
+		auto CalcHashTask = [&freeConsumerThreads](std::shared_ptr<std::vector<std::uint8_t>> buffer, uint8_t* hash) {
 			freeConsumerThreads.fetch_sub(1, std::memory_order_release);
-			sha512::calc_digest(buffer->data(), buffer->size(), hash.data());
+			sha512::calc_digest(buffer->data(), buffer->size(), hash);
 			buffer = nullptr;
 			freeConsumerThreads.fetch_add(1, std::memory_order_release);
 		};
 
 		for (size_t i = 0; i < fileNames.size(); ++i) {
 			const auto& fileName = fileNames[i];
-			auto& fileHash = fileHashes[fileName];
+			auto* fhPtr = fileHashes.try_get(fileName);
+			assert(fhPtr);
+			auto* shaPtr = (*fhPtr).data();
 
 			auto fileBuffer = std::make_shared<std::vector<std::uint8_t>>();
 
@@ -1006,7 +1008,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 				continue;
 
 			consumerTasks.emplace_back(
-				ThreadPool::Enqueue(CalcHashTask, fileBuffer, std::ref(fileHash))
+				ThreadPool::Enqueue(CalcHashTask, fileBuffer, shaPtr)
 			);
 
 			while (freeConsumerThreads.load(std::memory_order_acquire) == 0) {
