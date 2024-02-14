@@ -116,6 +116,7 @@ struct BackendData {
 	CtxMutex contextMutex;
 	Rml::UniquePtr<PassThroughPlugin> plugin;
     Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
+	Rml::UniquePtr<RmlGui::DecoratorLuaRenderInstancer> decorator_lua_render_instancer;
 };
 
 static Rml::UniquePtr<BackendData> data;
@@ -155,6 +156,9 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 
 	data->element_lua_texture_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
 	Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture_instancer.get());
+
+	data->decorator_lua_render_instancer = Rml::MakeUnique<RmlGui::DecoratorLuaRenderInstancer>();
+	Rml::Factory::RegisterDecoratorInstancer("lua-render", data->decorator_lua_render_instancer.get());
 
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());
