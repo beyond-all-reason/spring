@@ -27,11 +27,7 @@ public:
 
 protected:
 	const std::string render_callback_ident;
-	struct Data {
-		lua_State* L;
-	};
-	bool TryCallback(Rml::Element* element, const std::string& callback,
-	                 const sol::state_view& lua) const;
+	bool TryCallback(Rml::Element* element, const std::string& callback, const sol::environment& env, bool try_widget = true) const;
 };
 
 class DecoratorLuaRenderInstancer : public Rml::DecoratorInstancer {
