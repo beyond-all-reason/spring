@@ -971,19 +971,26 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	};
 
 #if !defined(DEDICATED) && !defined(UNITSYNC)
-	uint32_t availableConsumerThreads = std::max(ThreadPool::GetNumThreads() - 2, 0); // -1 - main, -1 - producer
-	std::atomic<uint32_t> busyConsumerThreads(0);
+	// exclude main and producer thread, make sure at least one thread is available to consume
+	uint32_t availableConsumerThreads = std::max(ThreadPool::GetNumThreads() - 2, 1);
+	std::atomic<uint32_t> freeConsumerThreads(availableConsumerThreads);
 
 	std::vector<std::shared_ptr<std::future<void>>> consumerTasks;
 	consumerTasks.reserve(fileNames.size());
 
-	auto SendBuffersTask = [&ar, &fileNames, &fileHashes, &busyConsumerThreads, &consumerTasks, availableConsumerThreads]() {
+	static const auto ReadyPredicate = [](auto&& item) {
+		using namespace std::chrono_literals;
+		auto status = item->wait_for(0ms);
+		return status == std::future_status::ready;
+	};
 
-		auto CalcHashTask = [&busyConsumerThreads](std::shared_ptr<std::vector<std::uint8_t>> buffer, sha512::raw_digest& hash) {
-			busyConsumerThreads.fetch_add(1, std::memory_order_release);
+	auto SendBuffersTask = [&ar, &fileNames, &fileHashes, &freeConsumerThreads, &consumerTasks]() {
+
+		auto CalcHashTask = [&freeConsumerThreads](std::shared_ptr<std::vector<std::uint8_t>> buffer, sha512::raw_digest& hash) {
+			freeConsumerThreads.fetch_sub(1, std::memory_order_release);
 			sha512::calc_digest(buffer->data(), buffer->size(), hash.data());
 			buffer = nullptr;
-			busyConsumerThreads.fetch_sub(1, std::memory_order_release);
+			freeConsumerThreads.fetch_add(1, std::memory_order_release);
 		};
 
 		for (size_t i = 0; i < fileNames.size(); ++i) {
@@ -1002,37 +1009,22 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 				ThreadPool::Enqueue(CalcHashTask, fileBuffer, std::ref(fileHash))
 			);
 
-			while (busyConsumerThreads.load(std::memory_order_acquire) == availableConsumerThreads) {
+			while (freeConsumerThreads.load(std::memory_order_acquire) == 0) {
 				std::this_thread::yield();
 			}
 		}
 	};
 
-	auto senderTask = ThreadPool::Enqueue(SendBuffersTask);
-
-	using namespace std::chrono_literals;
-	while (senderTask->wait_for(0us) != std::future_status::ready && busyConsumerThreads.load(std::memory_order_acquire) > 0) {
+	for (auto task = ThreadPool::Enqueue(SendBuffersTask); !ReadyPredicate(task) || freeConsumerThreads.load(std::memory_order_acquire) < availableConsumerThreads; /*NOOP*/) {
 		spring::UnfreezeSpring(WDT_MAIN);
-		std::this_thread::yield();
 	}
 
 	// just in case
-	if (senderTask->valid())
-		senderTask->get();
+	consumerTasks = {};
 
-	// just in case
-	for (auto& consumerTask : consumerTasks) {
-		if (consumerTask->valid())
-			consumerTask->get();
-	}
-
-	auto calcTask = ThreadPool::Enqueue(CalcChecksumTask);
-	while (calcTask->wait_for(0us) != std::future_status::ready) {
+	for (auto task = ThreadPool::Enqueue(CalcChecksumTask); !ReadyPredicate(task); /*NOOP*/) {
 		spring::UnfreezeSpring(WDT_MAIN);
-		std::this_thread::yield();
 	}
-	if (calcTask->valid())
-		calcTask->get();
 #else
 	// THREADPOOL definition is explicitly removed from unitsync and dedicated, so use simple implementation
 	for (size_t i = 0; i < fileNames.size(); ++i) {
