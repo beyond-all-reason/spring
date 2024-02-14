@@ -6,7 +6,10 @@
 
 #include "DecoratorLuaRender.h"
 
+#include "Lua/LuaOpenGL.h"
+#include "Lua/LuaUtils.h"
 #include "Rml/SolLua/plugin/SolLuaDocument.h"
+#include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
 namespace RmlGui
@@ -19,46 +22,53 @@ DecoratorLuaRender::DecoratorLuaRender(std::string render_callback_ident)
 
 Rml::DecoratorDataHandle DecoratorLuaRender::GenerateElementData(Rml::Element* element) const
 {
-	auto doc = dynamic_cast<Rml::SolLua::SolLuaDocument*>(element->GetOwnerDocument());
-	if (doc == nullptr)
-		return INVALID_DECORATORDATAHANDLE;
-
-	return (Rml::DecoratorDataHandle) new Data{doc->GetLuaEnvironment().lua_state()};
+	return 0;
 }
 
 void DecoratorLuaRender::ReleaseElementData(Rml::DecoratorDataHandle element_data) const
 {
-	auto* data = (Data*)element_data;
-	delete data;
-}
-void DecoratorLuaRender::RenderElement(Rml::Element* element,
-                                       Rml::DecoratorDataHandle element_data) const
-{
 
+}
+void DecoratorLuaRender::RenderElement(Rml::Element* element, Rml::DecoratorDataHandle _) const
+{
 	if (render_callback_ident.empty() || render_callback_ident == "none")
 		return;
 
-	auto lua_state = sol::state_view(((Data*)element_data)->L);
+	auto env = dynamic_cast<Rml::SolLua::SolLuaDocument*>(element->GetOwnerDocument())->GetLuaEnvironment();
+	auto L = env.lua_state();
 
-	if (!TryCallback(element, "widget." + render_callback_ident, lua_state) &&
-	    !TryCallback(element, render_callback_ident, lua_state)) {
-		LOG_L(L_WARNING, "Could not find a callback called '%s' in widget",
-		      render_callback_ident.c_str());
+	auto prev_drawing_enabled = LuaOpenGL::IsDrawingEnabled(L);
+	LuaOpenGL::SetDrawingEnabled(L, true);
+
+	try {
+		if (!TryCallback(element, render_callback_ident, env) &&
+			!TryCallback(element, render_callback_ident, env, false)) {
+			LOG_L(L_WARNING, "Could not find a callback called '%s' in widget env",
+				  render_callback_ident.c_str());
+		}
+	} catch (content_error& ex) {
+		LOG_L(L_FATAL, "[%s]: %s", __func__, ex.what());
 	}
+
+	LuaOpenGL::SetDrawingEnabled(L, prev_drawing_enabled);
 }
 
 bool DecoratorLuaRender::TryCallback(Rml::Element* element, const std::string& callback,
-                                     const sol::state_view& lua) const
+                                     const sol::environment & env, bool try_widget) const
 {
-	using maybe_func = sol::optional<sol::protected_function>;
-	maybe_func func = lua[render_callback_ident];
+	using opt_pf = sol::optional<sol::protected_function>;
+	opt_pf func;
+	if (try_widget) {
+		func = env.traverse_get<opt_pf>("widget", callback);
+	} else {
+		func = env.get<opt_pf>(callback);
+	}
 
 	if (func.has_value() && func->valid()) {
 		auto pfr = func->call(element);
 		if (!pfr.valid()) {
 			sol::error err = pfr;
-			LOG_L(L_ERROR, "[RmlGui] Error in DecoratorLuaRender callback");
-			LOG_L(L_ERROR, err.what());
+			LOG_L(L_ERROR, "[RmlGui] Error in DecoratorLuaRender callback: %s", err.what());
 		}
 		return true;
 	}
