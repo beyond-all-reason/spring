@@ -31,9 +31,6 @@
 
 #include "Sim/Path/HAPFS/PathGlobal.h"
 
-#include "System/Config/ConfigHandler.h"
-// TODO: Remove this once its validated to not cause major issues downstream
-CONFIG(int, SlowUpdateBoundingVolumeMT).defaultValue(1).safemodeValue(0).minimumValue(0).description("MTs the UpdateBoundingVolume in SlowUpdate. WARNING: TOGGLING THIS INGAME MAY DESYNC! THIS IS FOR TESTING ONLY!");
 
 CR_BIND(CUnitHandler, )
 CR_REG_METADATA(CUnitHandler, (
@@ -357,40 +354,27 @@ void CUnitHandler::SlowUpdateUnits()
 	activeSlowUpdateUnit = idxEnd;
 	// stagger the SlowUpdate's
 
-	int slowUpdateBoundingVolumeMT = configHandler->GetInt("SlowUpdateBoundingVolumeMT");
-	if (slowUpdateBoundingVolumeMT == 0) {
+
+	{
+		ZoneScopedN("Sim::Unit::SlowUpdateST");
 		for (size_t i = idxBeg; i < idxEnd; ++i) {
 			CUnit* unit = activeUnits[i];
 
 			unit->SanityCheck();
 			unit->SlowUpdate();
-			unit->SlowUpdateWeapons();				
-			unit->localModel.UpdateBoundingVolume();
-			unit->SanityCheck();
+			unit->SlowUpdateWeapons();
 		}
 	}
-	else {
-		{
-			ZoneScopedN("Sim::Unit::SlowUpdateST");
-			for (size_t i = idxBeg; i < idxEnd; ++i) {
-				CUnit* unit = activeUnits[i];
-
-				unit->SanityCheck();
-				unit->SlowUpdate();
-				unit->SlowUpdateWeapons();
+	// Since the bounding volumes are calculated from the maximum piecematrix-offset piece vertices
+	// They dont have much of an effect if updated late-ish. 
+	{
+		ZoneScopedN("Sim::Unit::SlowUpdateMT");
+		for_mt(idxBeg, idxEnd, [&](const int i) {
+			CUnit* unit = activeUnits[i];
+			unit->localModel.UpdateBoundingVolume();
+			unit->SanityCheck();
 			}
-		}
-		// Since the bounding volumes are calculated from the maximum piecematrix-offset piece vertices
-		// They dont have much of an effect if updated late-ish. 
-		{
-			ZoneScopedN("Sim::Unit::SlowUpdateMT");
-			for_mt(idxBeg, idxEnd, [&](const int i) {
-				CUnit* unit = activeUnits[i];
-				unit->localModel.UpdateBoundingVolume();
-				unit->SanityCheck();
-				}
-			);
-		}
+		);
 	}
 }
 
