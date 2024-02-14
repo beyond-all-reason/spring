@@ -29,7 +29,7 @@ public:
 
 	bool isHost;
 
-	bool showServerIP;
+	std::string showServerName;
 };
 
 #endif // CLIENT_SETUP_H
