@@ -2062,7 +2062,7 @@ int LuaSyncedRead::GetTeamLuaAI(lua_State* L)
  * @function Spring.GetTeamMaxUnits
  * @number teamID
  * @treturn number maxUnits
- * @treturn number? currentUnits
+ * @treturn nil|number currentUnits
  */
 int LuaSyncedRead::GetTeamMaxUnits(lua_State* L)
 {
