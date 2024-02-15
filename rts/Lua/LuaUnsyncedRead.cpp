@@ -111,6 +111,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetDrawFrame);
 	REGISTER_LUA_CFUNC(GetFrameTimeOffset);
+	REGISTER_LUA_CFUNC(GetGameSecondsInterpolated);
 	REGISTER_LUA_CFUNC(GetLastUpdateSeconds);
 	REGISTER_LUA_CFUNC(GetVideoCapturingMode);
 
@@ -1072,6 +1073,17 @@ int LuaUnsyncedRead::GetFrameTimeOffset(lua_State* L)
 	return 1;
 }
 
+/*** Gets game time for drawing purposes
+ *
+ * Returns the game time, taking the interpolated draw frame into account.
+ *
+ * @treturn number game time in seconds
+ */
+int LuaUnsyncedRead::GetGameSecondsInterpolated(lua_State* L)
+{
+	lua_pushnumber(L, (gs->GetLuaSimFrame() + globalRendering->timeOffset) / GAME_SPEED);
+	return 1;
+}
 
 /***
  *
