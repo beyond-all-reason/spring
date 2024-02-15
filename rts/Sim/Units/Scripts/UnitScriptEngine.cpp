@@ -13,6 +13,10 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
+#include "System/Config/ConfigHandler.h"
+
+
+CONFIG(int, AnimationMT).defaultValue(1).safemodeValue(0).minimumValue(0).description("Enable multithreaded execution of animation ticks");
 
 static CCobEngine gCobEngine;
 static CCobFileHandler gCobFileHandler;
@@ -116,22 +120,58 @@ void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 
 void CUnitScriptEngine::Tick(int deltaTime)
 {
-	cobEngine->Tick(deltaTime);
-
-	// tick all (COB or LUS) script instances that have registered themselves as animating
-	ZoneScopedN("Sim::Script::Animation");
-	for (size_t i = 0; i < animating.size(); ) {
-		currentScript = animating[i];
-
-		if (!currentScript->Tick(deltaTime)) {
-			animating[i] = animating.back();
-			animating.pop_back();
-			continue;
-		}
-
-		i++;
+	int animation_mt = configHandler->GetInt("AnimationMT");
+	if (animation_mt == 1) {
+		Tick_mt(deltaTime);
+		return;
 	}
+	{
+		cobEngine->Tick(deltaTime);
+		{
+			ZoneScoped;
+			// tick all (COB or LUS) script instances that have registered themselves as animating
+			for (size_t i = 0; i < animating.size(); ) {
+				currentScript = animating[i];
 
-	currentScript = nullptr;
+				if (!currentScript->Tick(deltaTime)) {
+					animating[i] = animating.back();
+					animating.pop_back();
+					continue;
+				}
+
+				i++;
+			}
+		}
+		currentScript = nullptr;
+	}
 }
 
+void CUnitScriptEngine::Tick_mt(int deltaTime)
+{
+	cobEngine->Tick(deltaTime);
+	{
+		{
+			//ZoneScopedN("CUnitScriptEngine::Tick_st");
+			SCOPED_TIMER("Sim::Script::Tick_mt");
+			for_mt(0, animating.size(), [&](const int idx) {
+				auto mtCurrentScript = animating[idx];
+				mtCurrentScript->Tick_mt(deltaTime);
+				});
+		}
+		{
+			ZoneScopedN("CUnitScriptEngine::Tick_st");
+			// tick all (COB or LUS) script instances that have registered themselves as animating
+			for (size_t i = 0; i < animating.size(); ) {
+				currentScript = animating[i];
+
+				//static AnimContainerType doneAnims[AMove + 1]; uh oh, here we are supposed to pre-alloc this one :/
+				if (!currentScript->Tick_st(deltaTime)) {
+					animating[i] = animating.back();
+					animating.pop_back();
+					continue;
+				}
+				i++;
+			}
+		}
+	}
+}

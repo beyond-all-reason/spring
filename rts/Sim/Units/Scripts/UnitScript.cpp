@@ -54,6 +54,7 @@ CR_REG_METADATA(CUnitScript, (
 	CR_MEMBER(unit),
 	CR_MEMBER(busy),
 	CR_MEMBER(anims),
+	CR_MEMBER(doneAnimsMT),
 
 	//Populated by children
 	CR_IGNORED(pieces),
@@ -196,6 +197,7 @@ void CUnitScript::TickAnims(int tickRate, const TickAnimFunc& tickAnimFunc, Anim
  */
 bool CUnitScript::Tick(int deltaTime)
 {
+	ZoneScoped;
 	// vector of indexes of finished animations,
 	// so we can get rid of them in constant time
 	static AnimContainerType doneAnims[AMove + 1];
@@ -218,7 +220,53 @@ bool CUnitScript::Tick(int deltaTime)
 	return (HaveAnimations());
 }
 
+/**
+ * @brief The multithreaded first half of the original CUnitScript::Tick function first does the heavy lifting of calculating all
+			  new piece positions according to the animations
+*/
+bool CUnitScript::Tick_mt(int deltaTime)
+{
+	ZoneScoped;
+	// vector of indexes of finished animations,
+	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
+	// AnimContainerType doneAnimsMT[AMove + 1];
+	constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
+	{
+		for (int animType = ATurn; animType <= AMove; animType++) {
+			TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnimsMT[animType]);
+		}
+	}
+	return true;
+}
+/**
+	 * @brief The single threaded second half of this function does the removal of finished animations,
+			  and it also is responsible for unblocking the listeners and returning wether we have animations or not.
+			  This is not multi threaded as it guarantees that AnimFinished will be called in consistent order for
+			  all anims for all participants of the simulation, and guarantees that the order of the animating
+			  vector in CUnitScriptEngine::Tick is preserved.
+	 * @param deltaTime int delta time to update
+	 * @return true if there are still active animations
+	 */
 
+bool CUnitScript::Tick_st(int deltaTime)
+{
+	ZoneScoped;
+	// vector of indexes of finished animations,
+	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
+	// AnimContainerType doneAnimsMT[AMove + 1];
+
+	// Tell listeners to unblock, and remove finished animations from the unit/script.
+	{
+		for (int animType = ATurn; animType <= AMove; animType++) {
+			for (AnimInfo& ai : doneAnimsMT[animType]) {
+				AnimFinished((AnimType)animType, ai.piece, ai.axis);
+			}
+
+			doneAnimsMT[animType].clear();
+		}
+	}
+	return (HaveAnimations());
+}
 
 CUnitScript::AnimContainerTypeIt CUnitScript::FindAnim(AnimType type, int piece, int axis)
 {
