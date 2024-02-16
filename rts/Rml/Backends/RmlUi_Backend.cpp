@@ -29,7 +29,6 @@
  *
  */
 
-#include "Rml/Rml_MathTypes_Conversions.h"
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/Profiling.h>
 #include <RmlUi/Debugger.h>
@@ -37,11 +36,9 @@
 #include <functional>
 #include <tracy/Tracy.hpp>
 
-#include "Lua/LuaUI.h"
+#include "Rendering/Textures/Bitmap.h"
 #include "Rml/Components/ElementLuaTexture.h"
-#include "Rml/Components/DecoratorLuaRender.h"
 #include "Rml/RmlInputReceiver.h"
-#include "Rml/SolLua/RmlSolLua.h"
 #include "RmlUi_Backend.h"
 #include "RmlUi_Renderer_GL3_Recoil.h"
 #include "RmlUi_SystemInterface.h"
@@ -112,12 +109,10 @@ struct BackendData {
 	int winY = 1;
 
 	lua_State* ls = nullptr;
-	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
 
 	CtxMutex contextMutex;
 	Rml::UniquePtr<PassThroughPlugin> plugin;
     Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
-	Rml::UniquePtr<RmlGui::DecoratorLuaRenderInstancer> decorator_lua_render_instancer;
 };
 
 static Rml::UniquePtr<BackendData> data;
@@ -158,38 +153,8 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 	data->element_lua_texture_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
 	Rml::Factory::RegisterElementInstancer("lua-texture", data->element_lua_texture_instancer.get());
 
-	data->decorator_lua_render_instancer = Rml::MakeUnique<RmlGui::DecoratorLuaRenderInstancer>();
-	Rml::Factory::RegisterDecoratorInstancer("lua-render", data->decorator_lua_render_instancer.get());
-
 	data->plugin = Rml::MakeUnique<PassThroughPlugin>(OnContextCreate, OnContextDestroy);
 	Rml::RegisterPlugin(data->plugin.get());
-
-	return true;
-}
-
-bool RmlGui::InitializeLua(lua_State* lua_state)
-{
-	if (!RmlInitialized()) {
-		return false;
-	}
-	sol::state_view lua(lua_state);
-	data->ls = lua_state;
-	data->luaPlugin = Rml::SolLua::Initialise(&lua, "rmlDocumentId");
-	data->system_interface.SetTranslationTable(&data->luaPlugin->translationTable);
-	return true;
-}
-
-bool RmlGui::RemoveLua()
-{
-	if (!RmlInitialized() || !data->ls) {
-		return false;
-	}
-	data->luaPlugin->RemoveLuaItems();
-	Update();
-	Rml::UnregisterPlugin(data->luaPlugin);
-	data->system_interface.SetTranslationTable(nullptr);
-	data->luaPlugin = nullptr;
-	data->ls = nullptr;
 
 	return true;
 }
@@ -473,14 +438,4 @@ bool RmlGui::ProcessEvent(const SDL_Event& event)
 		result |= processContextEvent(context, event);
 	}
 	return result;
-}
-
-lua_State* RmlGui::GetLuaState()
-{
-    if (!RmlInitialized())
-    {
-        return nullptr;
-    }
-
-    return data->ls;
 }

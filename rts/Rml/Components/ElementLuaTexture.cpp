@@ -231,7 +231,7 @@ bool ElementLuaTexture::LoadTexture()
 	           Rml::Vector2i& out_dimensions) mutable -> bool {
 
 		LuaMatTexture texUnit;
-		if (!LuaOpenGLUtils::ParseTextureImage(RmlGui::GetLuaState(), texUnit, name)) {
+		if (!LuaOpenGLUtils::ParseTextureImage(nullptr, texUnit, name)) {
 			luaTextureHandle = 0;
 			return false;
 		}
