@@ -46,7 +46,6 @@ namespace Rml::SolLua
         bind_document(*state);
         bind_event(*state);
         bind_global(*state, slp);
-        bind_log(*state);
         bind_vector(*state);
         bind_convert(*state);
     }
