@@ -316,9 +316,7 @@ class CLuaHandle : public CEventClient
 		void RunDrawCallIn(const LuaHashString& hs);
 
 		void DrawObjectsLua(std::initializer_list<bool> bools, const char* func);
-		void InitializeRmlUi();
 	protected:
-		bool rmlui = false;
 		bool userMode = false;
 		bool killMe = false; // set for handles that fail to RunCallIn
 

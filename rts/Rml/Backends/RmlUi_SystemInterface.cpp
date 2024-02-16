@@ -51,13 +51,7 @@ double RmlSystemInterface::GetElapsedTime()
 
 int RmlSystemInterface::TranslateString(Rml::String& translated, const Rml::String& input)
 {
-	if (!translationTable || !translationTable->exists(input)) {
-		translated = input;
 	return 0;
-}
-	std::string translation = translationTable->getTranslationString(input);
-	translated = translation;
-	return 1;
 }
 
 bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& message)
@@ -93,12 +87,6 @@ const Rml::String& RmlSystemInterface::GetMouseCursor()
 {
 	return mouseCursor;
 }
-
-void RmlSystemInterface::SetTranslationTable(TranslationTable* tt)
-{
-	translationTable = tt;
-}
-
 
 void RmlSystemInterface::SetClipboardText(const Rml::String& text_utf8)
 {

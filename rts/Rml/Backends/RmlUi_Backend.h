@@ -31,20 +31,15 @@
 #ifndef RMLUI_BACKENDS_BACKEND_H
 #define RMLUI_BACKENDS_BACKEND_H
 
-// #include "Rml/Rml_MathTypes_Conversions.h"
+#include "Rml/Rml_MathTypes_Conversions.h"
 #include <RmlUi/Core.h>
 #include <SDL.h>
 
 #include "Game/UI/InputReceiver.h"
-#include "lib/lua/mask_lua_macros.h"
-#include "lib/sol2/sol.hpp"
-#include "lib/lua/restore_lua_macros.h"
 
 namespace RmlGui
 {
 	bool Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext, int winX, int winY);
-	bool InitializeLua(lua_State* lua_state);
-	bool RemoveLua();
 
 	void Shutdown();
 	void Reload();
@@ -66,7 +61,6 @@ namespace RmlGui
 	bool IsMouseInteractingWith();
 	const std::string& GetMouseCursor();
 	CInputReceiver* GetInputReceiver();
-	lua_State* GetLuaState();
 
 	void Update();
 	void RenderFrame();

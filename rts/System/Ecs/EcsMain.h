@@ -3,7 +3,12 @@
 #ifndef ECS_MAIN_H__
 #define ECS_MAIN_H__
 
-#include "lib/lua/mask_lua_macros.h"
+// lua llimits.h and lstate.h makes some macros that breaks EnTT
+#ifdef cast
+#define RESTORE_LUA_MACROS
+#undef cast
+#undef registry
+#endif
 
 #define ENTT_USE_ATOMIC
 
@@ -47,6 +52,14 @@
 //         *comp += addition;
 // }
 
-#include "lib/lua/restore_lua_macros.h"
+#ifdef RESTORE_LUA_MACROS
+// from llimits.h
+#define cast(t, exp)	((t)(exp))
+// from lstate.h
+#define registry(L)	(&G(L)->l_registry)
+#undef RESTORE_LUA_MACROS
+#endif
+
+
 
 #endif

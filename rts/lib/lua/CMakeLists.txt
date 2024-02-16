@@ -49,8 +49,6 @@ else ()
 TARGET_LINK_LIBRARIES(lua)
 endif ()
 
-target_include_directories(lua PUBLIC include)
-
 if (UNIX)
 	SET_TARGET_PROPERTIES(lua PROPERTIES COMPILE_FLAGS "-DLUA_USE_MKSTEMP ${PIC_FLAG}")
 else (UNIX)
