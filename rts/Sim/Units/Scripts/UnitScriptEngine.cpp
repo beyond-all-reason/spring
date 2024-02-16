@@ -103,6 +103,7 @@ void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 
 void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 {
+	assert(currentScript == nullptr);
 	if (instance == currentScript)
 		return;
 
@@ -111,67 +112,64 @@ void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 
 void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 {
+	assert(currentScript == nullptr);
 	if (instance == currentScript)
 		return;
 
 	spring::VectorErase(animating, instance);
 }
 
-
 void CUnitScriptEngine::Tick(int deltaTime)
 {
-	int animation_mt = configHandler->GetInt("AnimationMT");
-	if (animation_mt == 1) {
-		Tick_mt(deltaTime);
-		return;
-	}
-	{
-		cobEngine->Tick(deltaTime);
-		{
-			ZoneScoped;
-			// tick all (COB or LUS) script instances that have registered themselves as animating
-			for (size_t i = 0; i < animating.size(); ) {
-				currentScript = animating[i];
+	SCOPED_TIMER("CUnitScriptEngine::Tick");
 
-				if (!currentScript->Tick(deltaTime)) {
-					animating[i] = animating.back();
-					animating.pop_back();
-					continue;
-				}
+	cobEngine->Tick(deltaTime);
 
-				i++;
-			}
-		}
-		currentScript = nullptr;
-	}
+	// TODO: remove the conditional once it's proven to be sync safe
+	if (configHandler->GetInt("AnimationMT"))
+		ImplTickMT(deltaTime);
+	else
+		ImplTickST(deltaTime);
+
+	currentScript = nullptr;
 }
 
-void CUnitScriptEngine::Tick_mt(int deltaTime)
+void CUnitScriptEngine::ImplTickST(int deltaTime)
 {
-	cobEngine->Tick(deltaTime);
-	{
-		{
-			//ZoneScopedN("CUnitScriptEngine::Tick_st");
-			SCOPED_TIMER("Sim::Script::Tick_mt");
-			for_mt(0, animating.size(), [&](const int idx) {
-				auto mtCurrentScript = animating[idx];
-				mtCurrentScript->Tick_mt(deltaTime);
-				});
-		}
-		{
-			ZoneScopedN("CUnitScriptEngine::Tick_st");
-			// tick all (COB or LUS) script instances that have registered themselves as animating
-			for (size_t i = 0; i < animating.size(); ) {
-				currentScript = animating[i];
+	ZoneScopedN("CUnitScriptEngine::ImplTickST");
+	// tick all (COB or LUS) script instances that have registered themselves as animating
+	for (size_t i = 0; i < animating.size(); ) {
+		currentScript = animating[i];
 
-				//static AnimContainerType doneAnims[AMove + 1]; uh oh, here we are supposed to pre-alloc this one :/
-				if (!currentScript->Tick_st(deltaTime)) {
-					animating[i] = animating.back();
-					animating.pop_back();
-					continue;
-				}
-				i++;
+		if (!currentScript->Tick(deltaTime)) {
+			animating[i] = animating.back();
+			animating.pop_back();
+			continue;
+		}
+		i++;
+	}
+}
+void CUnitScriptEngine::ImplTickMT(int deltaTime)
+{
+	ZoneScopedN("CUnitScriptEngine::ImplTickMT");
+	// tick all (COB or LUS) script instances that have registered themselves as animating
+	{
+		ZoneScopedN("CUnitScriptEngine::ImplTickMT(MT)");
+		for_mt(0, animating.size(), [&](const int i) {
+			animating[i]->TickAllAnims(deltaTime);
+		});
+	}
+	{
+		ZoneScopedN("CUnitScriptEngine::ImplTickMT(ST)");
+		for (size_t i = 0; i < animating.size(); ) {
+			currentScript = animating[i];
+
+			if (!currentScript->TickAnimFinished(deltaTime)) {
+				animating[i] = animating.back();
+				animating.pop_back();
+				continue;
 			}
+			i++;
 		}
 	}
 }
