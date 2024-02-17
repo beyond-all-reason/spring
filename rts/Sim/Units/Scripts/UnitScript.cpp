@@ -231,7 +231,7 @@ void CUnitScript::TickAllAnims(int deltaTime)
 	// vector of indexes of finished animations,
 	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
 	// AnimContainerType doneAnimsMT[AMove + 1];
-	constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
+	static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
 	{
 		for (int animType = ATurn; animType <= AMove; animType++) {
 			TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnimsMT[animType]);

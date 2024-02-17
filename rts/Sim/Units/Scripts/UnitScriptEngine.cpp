@@ -16,7 +16,7 @@
 #include "System/Config/ConfigHandler.h"
 
 
-CONFIG(int, AnimationMT).defaultValue(1).safemodeValue(0).minimumValue(0).description("Enable multithreaded execution of animation ticks");
+CONFIG(bool, AnimationMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded execution of animation ticks");
 
 static CCobEngine gCobEngine;
 static CCobFileHandler gCobFileHandler;
@@ -125,11 +125,10 @@ void CUnitScriptEngine::Tick(int deltaTime)
 
 	cobEngine->Tick(deltaTime);
 
+	using ImplFunctionT = decltype(&CUnitScriptEngine::ImplTickMT);
+	static constexpr ImplFunctionT ImplFunctions[] = { &CUnitScriptEngine::ImplTickMT, &CUnitScriptEngine::ImplTickST };
 	// TODO: remove the conditional once it's proven to be sync safe
-	if (configHandler->GetInt("AnimationMT"))
-		ImplTickMT(deltaTime);
-	else
-		ImplTickST(deltaTime);
+	(this->*ImplFunctions[configHandler->GetInt("AnimationMT")])(deltaTime);
 
 	currentScript = nullptr;
 }
