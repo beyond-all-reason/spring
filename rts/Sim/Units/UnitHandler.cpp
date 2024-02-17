@@ -31,6 +31,7 @@
 
 #include "Sim/Path/HAPFS/PathGlobal.h"
 
+
 CR_BIND(CUnitHandler, )
 CR_REG_METADATA(CUnitHandler, (
 	CR_MEMBER(idPool),
@@ -351,16 +352,31 @@ void CUnitHandler::SlowUpdateUnits()
 	const size_t idxEnd = idxBeg + indCnt;
 
 	activeSlowUpdateUnit = idxEnd;
-
 	// stagger the SlowUpdate's
-	for (size_t i = idxBeg; i<idxEnd; ++i) {
-		CUnit* unit = activeUnits[i];
 
-		unit->SanityCheck();
-		unit->SlowUpdate();
-		unit->SlowUpdateWeapons();
-		unit->localModel.UpdateBoundingVolume();
-		unit->SanityCheck();
+	static std::vector<CUnit*> updateBoundingVolumeList;
+	updateBoundingVolumeList.clear();
+	{
+		ZoneScopedN("Sim::Unit::SlowUpdateST");
+		for (size_t i = idxBeg; i < idxEnd; ++i) {
+			CUnit* unit = activeUnits[i];
+
+			unit->SanityCheck();
+			unit->SlowUpdate();
+			unit->SlowUpdateWeapons();
+			unit->SanityCheck();
+
+			if (!unit->isDead && unit->localModel.GetBoundariesNeedsRecalc())
+				updateBoundingVolumeList.emplace_back(unit);
+		}
+	}
+	// Since the bounding volumes are calculated from the maximum piecematrix-offset piece vertices
+	// They dont have much of an effect if updated late-ish.
+	{
+		ZoneScopedN("Sim::Unit::SlowUpdateMT");
+		for_mt(0, updateBoundingVolumeList.size(), [](int i) {
+			updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
+		});
 	}
 }
 
