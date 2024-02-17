@@ -13,6 +13,10 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
+#include "System/Config/ConfigHandler.h"
+
+
+CONFIG(bool, AnimationMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded execution of animation ticks");
 
 static CCobEngine gCobEngine;
 static CCobFileHandler gCobFileHandler;
@@ -99,6 +103,7 @@ void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 
 void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 {
+	assert(currentScript == nullptr);
 	if (instance == currentScript)
 		return;
 
@@ -107,19 +112,31 @@ void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 
 void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 {
+	assert(currentScript == nullptr);
 	if (instance == currentScript)
 		return;
 
 	spring::VectorErase(animating, instance);
 }
 
-
 void CUnitScriptEngine::Tick(int deltaTime)
 {
+	SCOPED_TIMER("CUnitScriptEngine::Tick");
+
 	cobEngine->Tick(deltaTime);
 
+	using ImplFunctionT = decltype(&CUnitScriptEngine::ImplTickST);
+	static constexpr ImplFunctionT ImplFunctions[] = { &CUnitScriptEngine::ImplTickST, &CUnitScriptEngine::ImplTickMT };
+	// TODO: remove the conditional once it's proven to be sync safe
+	(this->*ImplFunctions[configHandler->GetInt("AnimationMT")])(deltaTime);
+
+	currentScript = nullptr;
+}
+
+void CUnitScriptEngine::ImplTickST(int deltaTime)
+{
+	ZoneScopedN("CUnitScriptEngine::ImplTickST");
 	// tick all (COB or LUS) script instances that have registered themselves as animating
-	ZoneScopedN("Sim::Script::Animation");
 	for (size_t i = 0; i < animating.size(); ) {
 		currentScript = animating[i];
 
@@ -128,10 +145,30 @@ void CUnitScriptEngine::Tick(int deltaTime)
 			animating.pop_back();
 			continue;
 		}
-
 		i++;
 	}
-
-	currentScript = nullptr;
 }
+void CUnitScriptEngine::ImplTickMT(int deltaTime)
+{
+	ZoneScopedN("CUnitScriptEngine::ImplTickMT");
+	// tick all (COB or LUS) script instances that have registered themselves as animating
+	{
+		ZoneScopedN("CUnitScriptEngine::ImplTickMT(MT)");
+		for_mt(0, animating.size(), [&](const int i) {
+			animating[i]->TickAllAnims(deltaTime);
+		});
+	}
+	{
+		ZoneScopedN("CUnitScriptEngine::ImplTickMT(ST)");
+		for (size_t i = 0; i < animating.size(); ) {
+			currentScript = animating[i];
 
+			if (!currentScript->TickAnimFinished(deltaTime)) {
+				animating[i] = animating.back();
+				animating.pop_back();
+				continue;
+			}
+			i++;
+		}
+	}
+}
