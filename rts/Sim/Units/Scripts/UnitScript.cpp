@@ -257,14 +257,12 @@ bool CUnitScript::TickAnimFinished(int deltaTime)
 	// AnimContainerType doneAnimsMT[AMove + 1];
 
 	// Tell listeners to unblock, and remove finished animations from the unit/script.
-	{
-		for (int animType = ATurn; animType <= AMove; animType++) {
-			for (AnimInfo& ai : doneAnimsMT[animType]) {
-				AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
-			}
-
-			doneAnimsMT[animType].clear();
+	for (int animType = ATurn; animType <= AMove; animType++) {
+		for (AnimInfo& ai : doneAnimsMT[animType]) {
+			AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
 		}
+
+		doneAnimsMT[animType].clear();
 	}
 	return (HaveAnimations());
 }
