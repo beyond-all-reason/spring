@@ -13,11 +13,21 @@
 #include "System/UnorderedSet.hpp"
 
 
+
 class CKeyBindings : public CommandReceiver
 {
 	public:
+		struct KeyBinding {
+			Action action;
+
+			int         bindingIndex; ///< the order for the action trigger
+			std::string boundWith;    ///< the string that defined the binding keyset
+			CKeyChain   keyChain;     ///< the bound keychain/keyset
+		};
+
+		typedef std::vector<KeyBinding> KeyBindingList;
 		typedef std::vector<std::string> HotkeyList;
-		typedef std::function<bool (Action, Action)> ActionComparison;
+		typedef std::function<bool (KeyBinding, KeyBinding)> KeyBindingComparison;
 
 	protected:
 		struct KeySetHash {
@@ -26,7 +36,7 @@ class CKeyBindings : public CommandReceiver
 			}
 		};
 
-		typedef spring::unsynced_map<CKeySet, ActionList, KeySetHash> KeyMap; // keyset to action
+		typedef spring::unsynced_map<CKeySet, KeyBindingList, KeySetHash> KeyMap; // keyset to action
 		typedef spring::unsynced_map<std::string, HotkeyList> ActionMap; // action to keyset
 
 	public:
@@ -40,11 +50,13 @@ class CKeyBindings : public CommandReceiver
 		void Print() const;
 		void LoadDefaults();
 
-		ActionList GetActionList() const;
-		ActionList GetActionList(int keyCode, int scanCode) const;
-		ActionList GetActionList(int keyCode, int scanCode, unsigned char modifiers) const;
-		ActionList GetActionList(const CKeyChain& kc) const;
-		ActionList GetActionList(const CKeyChain& kc, const CKeyChain& sc) const;
+		static ActionList KeyBindingListToActionList(const KeyBindingList& keyActionList);
+
+		KeyBindingList GetKeyBindingList() const;
+		KeyBindingList GetKeyBindingList(int keyCode, int scanCode) const;
+		KeyBindingList GetKeyBindingList(int keyCode, int scanCode, unsigned char modifiers) const;
+		KeyBindingList GetKeyBindingList(const CKeyChain& kc) const;
+		KeyBindingList GetKeyBindingList(const CKeyChain& kc, const CKeyChain& sc) const;
 		const HotkeyList& GetHotkeys(const std::string& action) const;
 
 		virtual void PushAction(const Action&);
@@ -58,9 +70,9 @@ class CKeyBindings : public CommandReceiver
 
 	protected:
 		void BuildHotkeyMap();
-		void DebugActionList(const ActionList& actionList) const;
+		void DebugKeyBindingList(const KeyBindingList& keyBindingList) const;
 
-		void AddActionToKeyMap(KeyMap& bindings, Action& action);
+		void AddActionToKeyMap(KeyMap& bindings, KeyBinding& keyBinding);
 		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
 
 		bool Bind(const std::string& keystring, const std::string& action);
@@ -70,12 +82,12 @@ class CKeyBindings : public CommandReceiver
 		bool SetFakeMetaKey(const std::string& keystring);
 		bool AddKeySymbol(const std::string& keysym, const std::string& code);
 
-		static bool RemoveCommandFromList(ActionList& al, const std::string& command);
+		static bool RemoveCommandFromList(KeyBindingList& al, const std::string& command);
 
 		bool FileSave(FILE* file) const;
 
   protected:
-		const ActionList & GetActionList(const CKeySet& ks, bool forceAny) const;
+		const KeyBindingList & GetKeyBindingList(const CKeySet& ks, bool forceAny) const;
 
 		KeyMap codeBindings;
 		KeyMap scanBindings;

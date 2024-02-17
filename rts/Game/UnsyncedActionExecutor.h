@@ -13,16 +13,10 @@ class Action;
 class UnsyncedAction : public IAction
 {
 public:
-	UnsyncedAction(const Action& action, int key, bool repeat)
+	UnsyncedAction(const Action& action, bool repeat)
 		: IAction(action)
-		, key(key)
 		, repeat(repeat)
 	{}
-
-	/**
-	 * Returns the normalized key symbol.
-	 */
-	unsigned int GetKey() const { return key; }
 
 	/**
 	 * Returns whether the action is to be executed repeatedly.
@@ -30,7 +24,6 @@ public:
 	bool IsRepeat() const { return repeat; }
 
 private:
-	int key;
 	bool repeat;
 };
 
@@ -45,7 +38,21 @@ protected:
 	}
 
 public:
+	bool ExecuteActionRelease(const UnsyncedAction& action) const {
+		if (IsCheatRequired() && !gs->cheatEnabled) {
+			LOG_L(L_WARNING, "Chat command /%s (%s) cannot be executed (release) (cheats required)!",
+					GetCommand().c_str(),
+					(IsSynced() ? "synced" : "unsynced"));
+			return false;
+		} else {
+			return ExecuteRelease(action);
+		}
+	}
+
 	virtual ~IUnsyncedActionExecutor() {}
+
+private:
+	virtual bool ExecuteRelease(const UnsyncedAction& action) const { return false; }
 };
 
 #endif // UNSYNCED_ACTION_EXECUTOR_H

@@ -6,9 +6,11 @@
 #include <string>
 #include <vector>
 
+#include "Game/UI/MouseBindings.h"
 #include "Rendering/GL/RenderBuffersFwd.h"
 #include "System/float3.h"
 #include "System/type2.h"
+#include "System/Misc/SpringTime.h"
 #include "System/UnorderedMap.hpp"
 #include "MouseCursor.h"
 
@@ -171,6 +173,18 @@ private:
 	spring::unordered_map<std::string, size_t> cursorCommandMap;
 
 	const CUnit* lastClicked = nullptr;
+
+private:
+	bool CandidatePassesFilter(CMouseBindings::MouseBinding& candidate);
+	void FilterCandidateBindings();
+
+	bool TryBinding(CMouseBindings::MouseBinding& binding);
+
+	std::vector<CMouseBindings::MousePress> mouseChainCache;
+	CMouseBindings::MouseBindingList candidateBindings;
+	spring_time lastPressTimer = spring_now();
+	Action lastActionPressed[NUM_BUTTONS + 1]; /// One-bottomed.
+	int actionOwner[NUM_BUTTONS + 1]; // 0: Unowned, 1: Lua, 2: unsyncedGameCommands  
 };
 
 extern CMouseHandler* mouse;

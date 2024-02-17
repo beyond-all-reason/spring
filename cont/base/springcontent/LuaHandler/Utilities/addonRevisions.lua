@@ -135,10 +135,28 @@ function AddonRevs.NewAddonRev2()
 	--// addon related methods
 		tmergein(addonEnv.addon, {
 			Remove = function() handler:Remove(addon, "auto") end,
-			IsMouseOwner = function() return (handler.mouseOwner == addon) end,
-			DisownMouse  = function()
-				if (handler.mouseOwner == addon) then
-					handler.mouseOwner = nil
+			IsMouseOwner = function(button)
+				if button then
+					return (handler.mouseOwners[button] == addon)
+				else
+					for i = 1, 10 do
+						if handler.mouseOwners[i] == addon then
+							return true
+						end
+					end
+				end
+			end,
+			DisownMouse = function(button)
+				if button then
+					if handler.mouseOwners[button] == addon then
+						handler.mouseOwners[button] = nil
+					end
+				else
+					for i = 1, 10 do
+					  	if handler.mouseOwners[i] == addon then
+							handler.mouseOwners[i] = nil
+					  	end
+				  	end
 				end
 			end,
 			UpdateCallIn = function(name) handler:UpdateAddonCallIn(name, addon) end,
@@ -191,10 +209,28 @@ function AddonRevs.NewAddonRev1()
 	h.GetCommands  = function() return handler.commands end
 	h.GetViewSizes = function() return gl.GetViewSizes() end
 	h.GetHourTimer = function() return Spring.DiffTimers(Spring.GetTimer(), startTimer) % 3600 end
-	h.IsMouseOwner = function() return (handler.mouseOwner == addon) end
-	h.DisownMouse  = function()
-		if (handler.mouseOwner == addon) then
-			handler.mouseOwner = nil
+	h.IsMouseOwner = function(button)
+		if button then
+			return (handler.mouseOwners[button] == addon)
+		else
+			for i = 1, 10 do
+				if handler.mouseOwners[i] == addon then
+					return true
+				end
+			end
+		end
+	end
+	h.DisownMouse  = function(button)
+		if button then
+			if handler.mouseOwners[button] == addon then
+				handler.mouseOwners[button] = nil
+			end
+		else
+			for i = 1, 10 do
+				  if handler.mouseOwners[i] == addon then
+					handler.mouseOwners[i] = nil
+				  end
+			  end
 		end
 	end
 

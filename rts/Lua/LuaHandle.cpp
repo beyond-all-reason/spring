@@ -20,6 +20,7 @@
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Game/UI/KeyBindings.h"
 #include "Game/UI/KeySet.h"
 #include "Game/UI/MiniMap.h"
 #include "Rendering/GlobalRendering.h"
@@ -2824,12 +2825,12 @@ bool CLuaHandle::KeyPress(int keyCode, int scanCode, bool isRepeat)
 
 	if (isGame) {
 		int i = 1;
-		lua_createtable(L, 0, game->lastActionList.size());
-		for (const Action& action: game->lastActionList) {
+		lua_createtable(L, 0, game->lastKeyBindingList.size());
+		for (const CKeyBindings::KeyBinding& keybinding: game->lastKeyBindingList) {
 			lua_createtable(L, 0, 3); {
-				LuaPushNamedString(L, "command",   action.command);
-				LuaPushNamedString(L, "extra",     action.extra);
-				LuaPushNamedString(L, "boundWith", action.boundWith);
+				LuaPushNamedString(L, "command",   keybinding.action.command);
+				LuaPushNamedString(L, "extra",     keybinding.action.extra);
+				LuaPushNamedString(L, "boundWith", keybinding.boundWith);
 			}
 			lua_rawseti(L, -2, i++);
 		}
@@ -2884,12 +2885,12 @@ bool CLuaHandle::KeyRelease(int keyCode, int scanCode)
 
 	if (isGame) {
 		int i = 1;
-		lua_createtable(L, 0, game->lastActionList.size());
-		for (const Action& action: game->lastActionList) {
+		lua_createtable(L, 0, game->lastKeyBindingList.size());
+		for (const CKeyBindings::KeyBinding& keybinding: game->lastKeyBindingList) {
 			lua_createtable(L, 0, 3); {
-				LuaPushNamedString(L, "command",   action.command);
-				LuaPushNamedString(L, "extra",     action.extra);
-				LuaPushNamedString(L, "boundWith", action.boundWith);
+				LuaPushNamedString(L, "command",   keybinding.action.command);
+				LuaPushNamedString(L, "extra",     keybinding.action.extra);
+				LuaPushNamedString(L, "boundWith", keybinding.boundWith);
 			}
 			lua_rawseti(L, -2, i++);
 		}

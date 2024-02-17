@@ -86,7 +86,7 @@ widgetHandler = {
 
   globals = {}, -- global vars/funcs
 
-  mouseOwner = nil,
+  mouseOwners = {},
   ownedButton = 0,
 
   tweakMode = false,
@@ -538,10 +538,28 @@ function widgetHandler:NewWidget()
   wh.InTweakMode  = function (_) return self.tweakMode end
   wh.GetViewSizes = function (_) return self:GetViewSizes() end
   wh.GetHourTimer = function (_) return self:GetHourTimer() end
-  wh.IsMouseOwner = function (_) return (self.mouseOwner == widget) end
-  wh.DisownMouse  = function (_)
-    if (self.mouseOwner == widget) then
-      self.mouseOwner = nil
+  wh.IsMouseOwner = function (button)
+    if button then
+      return self.mouseOwners[button] == widget
+    else
+      for i = 1, 10 do
+        if self.mouseOwners[i] then 
+          return true
+        end
+      end
+    end
+  end
+  wh.DisownMouse  = function (button)
+    if button then
+      if self.mouseOwners[button] == widget then
+        self.mouseOwners[button] = nil
+      end
+    else
+      for i = 1, 10 do
+        if self.mouseOwners[i] == widget then
+          self.mouseOwners[i] = nil
+        end
+      end
     end
   end
 
@@ -1412,7 +1430,7 @@ end
 function widgetHandler:KeyPress(key, mods, isRepeat, label, unicode, scanCode, actions)
   if (self.tweakMode) then
     self.tweakKeys[key] = true
-    local mo = self.mouseOwner
+    local mo = self.mouseOwners[1]
     if (mo and mo.TweakKeyPress) then
       mo:TweakKeyPress(key, mods, isRepeat, label, unicode, scanCode, actions)
     end
@@ -1434,7 +1452,7 @@ end
 
 function widgetHandler:KeyRelease(key, mods, label, unicode, scanCode, actions)
   if (self.tweakMode and self.tweakKeys[key] ~= nil) then
-    local mo = self.mouseOwner
+    local mo = self.mouseOwners[1]
     if (mo and mo.TweakKeyRelease) then
       mo:TweakKeyRelease(key, mods, label, unicode, scanCode, actions)
     elseif (key == KEYSYMS.ESCAPE) then
@@ -1507,29 +1525,26 @@ end
 
 
 function widgetHandler:MousePress(x, y, button)
-  local mo = self.mouseOwner
+  local mo = self.mouseOwners[button]
+  self.mouseOwners[button] = nil
   if (not self.tweakMode) then
     if (mo) then
-      mo:MousePress(x, y, button)
-      return true  --  already have an active press
+      mo:MouseRelease(x, y, button)
     end
     for _,w in ipairs(self.MousePressList) do
       if (w:MousePress(x, y, button)) then
-        if (not mo) then
-          self.mouseOwner = w
-        end
+        self.mouseOwners[button] = w
         return true
       end
     end
     return false
   else
     if (mo) then
-      mo:TweakMousePress(x, y, button)
-      return true  --  already have an active press
+      mo:TweakMouseRelease(x, y, button)
     end
     for _,w in ipairs(self.TweakMousePressList) do
       if (w:TweakMousePress(x, y, button)) then
-        self.mouseOwner = w
+        self.mouseOwners[button] = w
         return true
       end
     end
@@ -1539,7 +1554,7 @@ end
 
 
 function widgetHandler:MouseMove(x, y, dx, dy, button)
-  local mo = self.mouseOwner
+  local mo = self.mouseOwners[button]
   if (not self.tweakMode) then
     if (mo and mo.MouseMove) then
       return mo:MouseMove(x, y, dx, dy, button)
@@ -1554,11 +1569,8 @@ end
 
 
 function widgetHandler:MouseRelease(x, y, button)
-  local mo = self.mouseOwner
-  local mx, my, lmb, mmb, rmb = Spring.GetMouseState()
-  if (not (lmb or mmb or rmb)) then
-    self.mouseOwner = nil
-  end
+  local mo = self.mouseOwners[button]
+  self.mouseOwners[button] = nil
 
   if (not self.tweakMode) then
     if (mo and mo.MouseRelease) then

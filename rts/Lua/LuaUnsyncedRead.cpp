@@ -3933,11 +3933,11 @@ int LuaUnsyncedRead::GetScanSymbol(lua_State* L)
  */
 int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 {
-	ActionList actions;
+	CKeyBindings::KeyBindingList keyBindingList;
 	const std::string& argument = luaL_optstring(L, 1, "");
 
 	if (argument.empty()) {
-		actions = keyBindings.GetActionList();
+		keyBindingList = keyBindings.GetKeyBindingList();
 	} else {
 		CKeySet ks;
 
@@ -3950,7 +3950,7 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 		const std::string& arg2 = luaL_optstring(L, 2, "");
 
 		if (arg2.empty()) {
-			actions = keyBindings.GetActionList(keyChain);
+			keyBindingList = keyBindings.GetKeyBindingList(keyChain);
 		} else {
 			if (!ks.Parse(luaL_checksstring(L, 2)))
 				return 0;
@@ -3958,20 +3958,20 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 			CKeyChain keyChain2;
 			keyChain2.emplace_back(ks);
 
-			actions = keyBindings.GetActionList(keyChain, keyChain2);
+			keyBindingList = keyBindings.GetKeyBindingList(keyChain, keyChain2);
 		}
 	}
 
 	int i = 1;
 	lua_newtable(L);
-	for (const Action& action: actions) {
+	for (const CKeyBindings::KeyBinding& keyBinding: keyBindingList) {
 		lua_newtable(L);
-			lua_pushsstring(L, action.command);
-			lua_pushsstring(L, action.extra);
+			lua_pushsstring(L, keyBinding.action.command);
+			lua_pushsstring(L, keyBinding.action.extra);
 			lua_rawset(L, -3);
-			LuaPushNamedString(L, "command",   action.command);
-			LuaPushNamedString(L, "extra",     action.extra);
-			LuaPushNamedString(L, "boundWith", action.boundWith);
+			LuaPushNamedString(L, "command",   keyBinding.action.command);
+			LuaPushNamedString(L, "extra",     keyBinding.action.extra);
+			LuaPushNamedString(L, "boundWith", keyBinding.boundWith);
 		lua_rawseti(L, -2, i++);
 	}
 	return 1;

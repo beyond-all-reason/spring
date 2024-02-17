@@ -110,7 +110,7 @@ handler = {
 	callInLists     = setmetatable({}, {__index = function(self, key) self[key] = CreateList(key, SortAddonsFunc); return self[key]; end});
 	callInHookFuncs = {};
 
-	mouseOwner  = nil;
+	mouseOwners  = {};
 	initialized = false;
 }
 
