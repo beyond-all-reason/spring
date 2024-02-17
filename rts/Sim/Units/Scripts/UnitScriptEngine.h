@@ -23,7 +23,7 @@ public:
 	void RemoveInstance(CUnitScript* instance);
 	void ReloadScripts(const UnitDef* udef);
 
-	void Tick(int deltaTime); 
+	void Tick(int deltaTime);
 
 	void Init() { animating.reserve(256); }
 	void Kill() { animating.clear(); }
