@@ -254,8 +254,19 @@ void CWeapon::UpdateWeaponPieces(const bool updateAimFrom)
 }
 
 
+void CWeapon::UpdateWeaponErrorVector()
+{
+	// update conditional cause last SlowUpdate maybe longer away than UNIT_SLOWUPDATE_RATE
+	// i.e. when the unit got stunned (neither is SlowUpdate exactly called at UNIT_SLOWUPDATE_RATE, it's only called `close` to that)
+	float3 newErrorVector = (errorVector + errorVectorAdd);
+	if (newErrorVector.SqLength() <= 1.0f)
+		errorVector = newErrorVector;
+}
+
 void CWeapon::UpdateWeaponVectors()
 {
+	ZoneScoped;
+
 	relAimFromPos = owner->script->GetPiecePos(aimFromPiece);
 	owner->script->GetEmitDirPos(muzzlePiece, relWeaponMuzzlePos, weaponDir);
 
@@ -289,11 +300,6 @@ float CWeapon::GetPredictedImpactTime(float3 p) const
 void CWeapon::Update()
 {
 	ZoneScoped;
-	// update conditional cause last SlowUpdate maybe longer away than UNIT_SLOWUPDATE_RATE
-	// i.e. when the unit got stunned (neither is SlowUpdate exactly called at UNIT_SLOWUPDATE_RATE, it's only called `close` to that)
-	float3 newErrorVector = (errorVector + errorVectorAdd);
-	if (newErrorVector.SqLength() <= 1.0f)
-		errorVector = newErrorVector;
 
 	// Fast auto targeting needs to trigger an immediate retarget once the target is dead.
 	bool fastAutoRetargetRequired = fastAutoRetargeting && HaveTarget()
@@ -314,7 +320,6 @@ void CWeapon::Update()
 	if (!HaveTarget() && owner->curTarget.type != Target_None)
 		Attack(owner->curTarget);
 
-	UpdateWeaponVectors();
 	currentTargetPos = GetLeadTargetPos(currentTarget);
 
 	if (!UpdateStockpile())
