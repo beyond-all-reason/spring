@@ -1262,6 +1262,31 @@ int LuaSyncedRead::GetFeatureRulesParam(lua_State* L)
  *     if (Spring.GetModOptions.exampleOption) then...end
 ******************************************************************************/
 
+static int PushSingleOption(lua_State* L, const auto &options)
+{
+	const std::string& key = luaL_checkstring(L, 1);
+
+	const std::string* value = options.try_get(key);
+	if (value == nullptr)
+		return 0;
+
+	lua_pushsstring(L, *value);
+	return 1;
+}
+
+static int PushAllOptions(lua_State* L, const auto &options)
+{
+	lua_createtable(L, 0, options.size());
+
+	for (const auto& [key, value] : options) {
+		lua_pushsstring(L, key);
+		lua_pushsstring(L, value);
+		lua_rawset(L, -3);
+	}
+
+	return 1;
+}
+
 /***
  *
  * @function Spring.GetMapOption
@@ -1272,15 +1297,7 @@ int LuaSyncedRead::GetFeatureRulesParam(lua_State* L)
  * */
 int LuaSyncedRead::GetMapOption(lua_State* L)
 {
-	const auto& mapOpts = CGameSetup::GetMapOptions();
-	
-	const std::string& opt = luaL_checkstring(L, 1);
-
-	const std::string* optValue = mapOpts.try_get(opt);
-	if (optValue == nullptr)
-		return 0;
-	lua_pushsstring(L, *optValue);
-	return 1;
+	return PushSingleOption(L, CGameSetup::GetMapOptions());
 }
 /***
  *
@@ -1290,17 +1307,7 @@ int LuaSyncedRead::GetMapOption(lua_State* L)
  */
 int LuaSyncedRead::GetMapOptions(lua_State* L)
 {
-	const auto& mapOpts = CGameSetup::GetMapOptions();
-
-	lua_createtable(L, 0, mapOpts.size());
-
-	for (const auto& mapOpt : mapOpts) {
-		lua_pushsstring(L, mapOpt.first);
-		lua_pushsstring(L, mapOpt.second);
-		lua_rawset(L, -3);
-	}
-
-	return 1;
+	return PushAllOptions(L, CGameSetup::GetMapOptions());
 }
 
 
@@ -1314,15 +1321,7 @@ int LuaSyncedRead::GetMapOptions(lua_State* L)
  */
 int LuaSyncedRead::GetModOption(lua_State* L)
 {
-	const auto& modOpts = CGameSetup::GetModOptions();
-	
-	const std::string& opt = luaL_checkstring(L, 1);
-
-	const std::string* optValue = modOpts.try_get(opt);
-	if (optValue == nullptr)
-		return 0;
-	lua_pushsstring(L, *optValue);
-	return 1;	
+	return PushSingleOption(L, CGameSetup::GetModOptions());
 }
 
 
@@ -1334,17 +1333,7 @@ int LuaSyncedRead::GetModOption(lua_State* L)
  */
 int LuaSyncedRead::GetModOptions(lua_State* L)
 {
-	const auto& modOpts = CGameSetup::GetModOptions();
-
-	lua_createtable(L, 0, modOpts.size());
-
-	for (const auto& modOpt: modOpts) {
-		lua_pushsstring(L, modOpt.first);
-		lua_pushsstring(L, modOpt.second);
-		lua_rawset(L, -3);
-	}
-
-	return 1;
+	return PushAllOptions(L, CGameSetup::GetModOptions());
 }
 
 
