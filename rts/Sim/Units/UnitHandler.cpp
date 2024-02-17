@@ -354,7 +354,8 @@ void CUnitHandler::SlowUpdateUnits()
 	activeSlowUpdateUnit = idxEnd;
 	// stagger the SlowUpdate's
 
-
+	static std::vector<CUnit*> updateBoundingVolumeList;
+	updateBoundingVolumeList.clear();
 	{
 		ZoneScopedN("Sim::Unit::SlowUpdateST");
 		for (size_t i = idxBeg; i < idxEnd; ++i) {
@@ -363,18 +364,19 @@ void CUnitHandler::SlowUpdateUnits()
 			unit->SanityCheck();
 			unit->SlowUpdate();
 			unit->SlowUpdateWeapons();
+			unit->SanityCheck();
+
+			if (!unit->isDead && unit->localModel.GetBoundariesNeedsRecalc())
+				updateBoundingVolumeList.emplace_back(unit);
 		}
 	}
 	// Since the bounding volumes are calculated from the maximum piecematrix-offset piece vertices
-	// They dont have much of an effect if updated late-ish. 
+	// They dont have much of an effect if updated late-ish.
 	{
 		ZoneScopedN("Sim::Unit::SlowUpdateMT");
-		for_mt(idxBeg, idxEnd, [&](const int i) {
-			CUnit* unit = activeUnits[i];
-			unit->localModel.UpdateBoundingVolume();
-			unit->SanityCheck();
-			}
-		);
+		for_mt(0, updateBoundingVolumeList.size(), [](int i) {
+			updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
+		});
 	}
 }
 

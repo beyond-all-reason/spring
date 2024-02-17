@@ -364,9 +364,6 @@ void LocalModel::UpdateBoundingVolume()
 {
 	ZoneScoped;
 
-	if (!needsBoundariesRecalc)
-		return;
-
 	// bounding-box extrema (local space)
 	float3 bbMins = DEF_MIN_SIZE;
 	float3 bbMaxs = DEF_MAX_SIZE;

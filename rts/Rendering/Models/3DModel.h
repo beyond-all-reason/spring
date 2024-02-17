@@ -613,7 +613,8 @@ struct LocalModel
 		verts[9] = bbMaxs;
 	}
 
-	void SetBoundariesNeedsRecalc() { needsBoundariesRecalc = true; }
+	void SetBoundariesNeedsRecalc()       { needsBoundariesRecalc = true; }
+	bool GetBoundariesNeedsRecalc() const { return needsBoundariesRecalc; }
 private:
 	LocalModelPiece* CreateLocalModelPieces(const S3DModelPiece* mpParent);
 
