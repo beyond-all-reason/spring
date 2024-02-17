@@ -96,6 +96,7 @@ public:
 	bool StopAttackingAllyTeam(const int ally);
 
 	bool IsFastAutoRetargetingEnabled() const { return fastAutoRetargeting; }
+	void UpdateWeaponErrorVector();
 	void UpdateWeaponVectors();
 
 protected:

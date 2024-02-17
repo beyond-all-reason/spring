@@ -673,6 +673,7 @@ void CUnit::UpdateWeaponVectors()
 		return;
 
 	for (CWeapon* w : weapons) {
+		w->UpdateWeaponErrorVector();
 		w->UpdateWeaponVectors();
 	}
 }
