@@ -234,10 +234,9 @@ void CUnitScript::TickAllAnims(int deltaTime)
 
 	// tick-functions; these never change address
 	static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
-	{
-		for (int animType = ATurn; animType <= AMove; animType++) {
-			TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnimsMT[animType]);
-		}
+
+	for (int animType = ATurn; animType <= AMove; animType++) {
+		TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnimsMT[animType]);
 	}
 }
 
