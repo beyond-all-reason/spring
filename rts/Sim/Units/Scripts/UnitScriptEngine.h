@@ -24,14 +24,15 @@ public:
 	void ReloadScripts(const UnitDef* udef);
 
 	void Tick(int deltaTime); 
-	void Tick_mt(int deltaTime);
 
 	void Init() { animating.reserve(256); }
 	void Kill() { animating.clear(); }
 
 	static void InitStatic();
 	static void KillStatic();
-
+private:
+	void ImplTickMT(int deltaTime);
+	void ImplTickST(int deltaTime);
 private:
 	CUnitScript* currentScript = nullptr;
 
