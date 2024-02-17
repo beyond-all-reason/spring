@@ -123,8 +123,10 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetPlayerRulesParam);
 	REGISTER_LUA_CFUNC(GetPlayerRulesParams);
-
+	
+	REGISTER_LUA_CFUNC(GetMapOption);
 	REGISTER_LUA_CFUNC(GetMapOptions);
+	REGISTER_LUA_CFUNC(GetModOption);
 	REGISTER_LUA_CFUNC(GetModOptions);
 
 	REGISTER_LUA_CFUNC(GetTidal);
@@ -1260,7 +1262,26 @@ int LuaSyncedRead::GetFeatureRulesParam(lua_State* L)
  *     if (Spring.GetModOptions.exampleOption) then...end
 ******************************************************************************/
 
+/***
+ *
+ * @function Spring.GetMapOption
+ *
+ * @string mapOption
+ *
+ * @treturn string value of mapOption  
+ * */
+int LuaSyncedRead::GetMapOption(lua_State* L)
+{
+	const auto& mapOpts = CGameSetup::GetMapOptions();
+	
+	const std::string& opt = luaL_checkstring(L, 1);
 
+	const std::string* optValue = mapOpts.try_get(opt);
+	if (optValue == nullptr)
+		return 0;
+	lua_pushsstring(L, *optValue);
+	return 1;
+}
 /***
  *
  * @function Spring.GetMapOptions
@@ -1280,6 +1301,28 @@ int LuaSyncedRead::GetMapOptions(lua_State* L)
 	}
 
 	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.GetModOption
+ *
+ * @string modOption 
+ *
+ * @treturn string value of modOption in option map
+ */
+int LuaSyncedRead::GetModOption(lua_State* L)
+{
+	const auto& modOpts = CGameSetup::GetModOptions();
+	
+	const std::string& opt = luaL_checkstring(L, 1);
+
+	const std::string* optValue = modOpts.try_get(opt);
+	if (optValue == nullptr)
+		return 0;
+	lua_pushsstring(L, *optValue);
+	return 1;	
 }
 
 

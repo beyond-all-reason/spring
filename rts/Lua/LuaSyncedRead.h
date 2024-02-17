@@ -15,7 +15,9 @@ class LuaSyncedRead {
 		static void AllowGameChanges(bool value);
 
 	public: // also used with LuaParser clients
+		static int GetMapOption(lua_State* L);
 		static int GetMapOptions(lua_State* L);
+		static int GetModOption(lua_State* L);
 		static int GetModOptions(lua_State* L);
 
 	private:
