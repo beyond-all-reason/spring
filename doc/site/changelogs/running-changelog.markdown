@@ -9,7 +9,8 @@ author: sprunk
 This is the changelog **since version 2314**.
 
 # Caveats
-These are the entries which may require special attention when migrating: (none so far)
+These are the entries which may require special attention when migrating:
+* some animations are now multi-threaded. It shouldn't cause desyncs, but an `AnimationMT` springsetting has been provided to disable it, just in case. See below.
 
 # Features
 * added a new optional boolean parameter to `Spring.GetUnitHeading`, default false. If true, the value returned is in radians instead of the TA 16-bit angular unit.
@@ -17,6 +18,9 @@ These are the entries which may require special attention when migrating: (none 
 Use for batching events that happened during the frame to be sent to unsynced for use in draw frames before the next sim frame.
 * added `Spring.GetTeamMaxUnits(teamID) -> number maxUnits, number? currentUnits`. The second value is only returned if you have read access to that team (max is public).
 There is currently no corresponding Set.
+* added `GAME/ShowServerName` startscript entry. If not empty, the initial connection screen's "Connecting to: X" message will display the value of that option instead of the host's IP.
+* added `Spring.GetModOption(string key) -> string? value`. Returns a single modoption; replaces the `Spring.GetModOptions().foo` pattern for greater performance.
+* added `Spring.GetMapOption(string key) -> string? value`, ditto for a single mapoption.
 
 ### Water
 * add `Spring.GetWaterLevel(x, z) -> number waterHeight`. Similar to `Spring.GetGroundHeight` except returns the height of water at that spot.
@@ -35,7 +39,10 @@ Use for example to unattach units from the grounds and trigger skidding.
 ### Debugging tools
 * `/debugcolvol` now also draws the selection volume, in green.
 * `/track 1 unitID unitID unitID` lets you specify units to track via the command. If no unitID is given it still behaves the old way and uses the current selection.
+* added an `AnimationMT` boolean springsetting. Defaults to true. Set to false if there's desync problems. Will be removed after some time, when MT animations prove to be sync-safe.
+* COB piece errors say the culprit's unit def name (since the same script can be shared by many units, with different piece lists).
 
 # Fixes
 * inserting (via `CMD.INSERT`) a "build unit" command to a factory with a SHIFT and/or CTRL modifier (i.e. x5/20) will now work correctly (previously ignored and went x1).
+* fix an issue where a unit that kills something via `SFX.FIRE_WEAPON` would sometimes continue to shoot at the location it was standing at at the time.
 * `Spring.GetUnitWeaponState(unitID, "burstRate")` now correctly returns fractional values (was only full integers before).
