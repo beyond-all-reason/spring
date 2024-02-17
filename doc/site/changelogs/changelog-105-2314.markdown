@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Release 2314
+title: Release 105-2314
 parent: Changelogs
 permalink: changelogs/changelog-105-2314
 author: sprunk
