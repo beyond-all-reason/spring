@@ -154,6 +154,7 @@ namespace CNamedTextures {
 		bool aniso   = false;
 		bool invert  = false;
 		bool greyed  = false;
+		bool mipnear = false;
 		bool tint    = false;
 		float tintColor[3];
 		bool resize  = false;
@@ -172,6 +173,7 @@ namespace CNamedTextures {
 				else if (ch == 'g') { greyed  = true; }
 				else if (ch == 'c') { clamped = true; }
 				else if (ch == 'b') { border  = true; }
+				else if (ch == 'm') { mipnear = true; }
 				else if (ch == 't') {
 					const char* cstr = filename.c_str() + p + 1;
 					const char* start = cstr;
@@ -224,7 +226,7 @@ namespace CNamedTextures {
 		}
 
 		if (bitmap.compressed) {
-			texID = bitmap.CreateDDSTexture(texID);
+			texID = bitmap.CreateDDSTexture(texID, mipnear);
 		} else {
 			if (resize) bitmap = bitmap.CreateRescaled(resizeDimensions.x,resizeDimensions.y);
 			if (invert) bitmap.InvertColors();
@@ -264,7 +266,7 @@ namespace CNamedTextures {
 			} else {
 				//! MIPMAPPING (default)
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipnear ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_LINEAR);
 
 				if ((xbits == 1 && ybits == 1) || GLEW_ARB_texture_non_power_of_two) {
 					glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
