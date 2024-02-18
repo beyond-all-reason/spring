@@ -384,6 +384,9 @@ void CWorldDrawer::DrawAlphaObjects() const
 		// draw alpha-objects below water surface (farthest)
 		unitDrawer->DrawAlphaPass(false);
 		featureDrawer->DrawAlphaPass(false);
+	}
+	{
+		SCOPED_TIMER("Draw::World::Projectiles");
 		projectileDrawer->DrawAlpha(false); //fix clip planes?
 
 		glDisable(GL_CLIP_PLANE3);
@@ -413,6 +416,9 @@ void CWorldDrawer::DrawAlphaObjects() const
 		// draw alpha-objects above water surface (closest)
 		unitDrawer->DrawAlphaPass(false);
 		featureDrawer->DrawAlphaPass(false);
+	}
+	{
+		SCOPED_TIMER("Draw::World::Projectiles");
 		//projectileDrawer->DrawAlpha(false); //fix clip planes?
 
 		glDisable(GL_CLIP_PLANE3);

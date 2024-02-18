@@ -453,7 +453,6 @@ void CShadowHandler::DrawShadowPasses()
 	}
 
 	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0){
-		ZoneScopedN("Draw::World::CreateShadows::Projectiles");
 		projectileDrawer->DrawShadowOpaque();
 	}
 	if ((shadowGenBits & SHADOWGEN_BIT_MODEL) != 0) {
