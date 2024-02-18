@@ -207,7 +207,7 @@ void CBeamLaserProjectile::Draw()
 	#undef WT1
 }
 
-void CBeamLaserProjectile::DrawOnMinimap()
+void CBeamLaserProjectile::DrawOnMinimap() const
 {
 	const SColor color = { edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u };
 

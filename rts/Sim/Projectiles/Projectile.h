@@ -49,7 +49,7 @@ public:
 	virtual void Init(const CUnit* owner, const float3& offset) override;
 
 	virtual void Draw() {}
-	virtual void DrawOnMinimap();
+	virtual void DrawOnMinimap() const;
 
 	virtual int GetProjectilesCount() const = 0;
 
@@ -93,8 +93,8 @@ public:
 	// UNSYNCED ONLY
 	CMatrix44f GetTransformMatrix(bool offsetPos) const;
 
-	float GetSortDist() const { return sortDist; }
-	void SetSortDist(float d) { sortDist = d + sortDistOffset; }
+	float GetSortDist(uint32_t camType) const { return sortDist[camType]; }
+	void SetSortDist(uint32_t camType, float d) { sortDist[camType] = d + sortDistOffset; }
 public:
 	bool synced = false;           // is this projectile part of the simulation?
 	bool weapon = false;           // is this a weapon projectile? (true implies synced true)
@@ -118,8 +118,8 @@ public:
 	float myrange = 0.0f;          // used by WeaponProjectile::TraveledRange
 	float mygravity = 0.0f;
 
-	float sortDist = 0.0f;         // distance used for z-sorting when rendering
-	float sortDistOffset = 0.0f;   // an offset used for z-sorting
+	std::array<float, 3> sortDist = {}; // distance used for z-sorting when rendering
+	float sortDistOffset = 0.0f;        // an offset used for z-sorting
 
 	int drawOrder = 0;
 

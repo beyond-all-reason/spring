@@ -101,7 +101,7 @@ void CNanoProjectile::Draw()
 	);
 }
 
-void CNanoProjectile::DrawOnMinimap()
+void CNanoProjectile::DrawOnMinimap() const
 {
 	AddMiniMapVertices({ pos        , color4::green }, { pos + speed, color4::green });
 }

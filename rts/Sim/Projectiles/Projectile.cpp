@@ -144,7 +144,7 @@ void CProjectile::Delete()
 }
 
 
-void CProjectile::DrawOnMinimap()
+void CProjectile::DrawOnMinimap() const
 {
 	AddMiniMapVertices({ pos        , color4::whiteA }, { pos + speed, color4::whiteA });
 }

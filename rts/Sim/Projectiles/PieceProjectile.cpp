@@ -254,7 +254,7 @@ void CPieceProjectile::Update()
 }
 
 
-void CPieceProjectile::DrawOnMinimap()
+void CPieceProjectile::DrawOnMinimap() const
 {
 	AddMiniMapVertices({ pos        , color4::red }, { pos + speed, color4::red });
 }

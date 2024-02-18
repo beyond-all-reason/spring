@@ -91,7 +91,7 @@ void CLightningProjectile::Draw()
 	}
 }
 
-void CLightningProjectile::DrawOnMinimap()
+void CLightningProjectile::DrawOnMinimap() const
 {
 	const SColor lcolor = SColor{
 		color[0],

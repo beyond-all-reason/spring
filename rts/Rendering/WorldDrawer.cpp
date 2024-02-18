@@ -219,6 +219,7 @@ void CWorldDrawer::Update(bool newSimFrame)
 	// lineDrawer.UpdateLineStipple();
 	CUnitDrawer::UpdateStatic();
 	CFeatureDrawer::UpdateStatic();
+	projectileDrawer->UpdateDrawFlags();
 
 	if (newSimFrame) {
 		projectileDrawer->UpdateTextures();
@@ -306,11 +307,6 @@ void CWorldDrawer::Draw() const
 	ISky::GetSky()->Draw();
 	DrawAlphaObjects();
 
-	{
-		SCOPED_TIMER("Draw::World::Projectiles");
-		projectileDrawer->Draw(false);
-	}
-
 	ISky::GetSky()->DrawSun();
 
 	{
@@ -356,6 +352,10 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		featureDrawer->Draw(false);
 	}
 	{
+		SCOPED_TIMER("Draw::World::Projectiles");
+		projectileDrawer->DrawOpaque(false);
+	}
+	{
 		SCOPED_TIMER("Draw::OpaqueObjects::Debug");
 		DebugColVolDrawer::Draw();
 		DebugVisibilityDrawer::DrawWorld();
@@ -384,6 +384,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 		// draw alpha-objects below water surface (farthest)
 		unitDrawer->DrawAlphaPass(false);
 		featureDrawer->DrawAlphaPass(false);
+		projectileDrawer->DrawAlpha(false); //fix clip planes?
 
 		glDisable(GL_CLIP_PLANE3);
 	}
@@ -412,6 +413,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 		// draw alpha-objects above water surface (closest)
 		unitDrawer->DrawAlphaPass(false);
 		featureDrawer->DrawAlphaPass(false);
+		//projectileDrawer->DrawAlpha(false); //fix clip planes?
 
 		glDisable(GL_CLIP_PLANE3);
 	}

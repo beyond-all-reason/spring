@@ -32,17 +32,6 @@ enum TerrainChangeTypes {
 	TERRAINCHANGE_OBJECT_DELETED       = 5,
 };
 
-enum DrawFlags : uint8_t {
-	SO_NODRAW_FLAG = 0, // must be 0
-	SO_OPAQUE_FLAG = 1,
-	SO_ALPHAF_FLAG = 2,
-	SO_REFLEC_FLAG = 4,
-	SO_REFRAC_FLAG = 8,
-	SO_SHOPAQ_FLAG = 16,
-	SO_SHTRAN_FLAG = 32,
-	SO_DRICON_FLAG = 128,
-};
-
 enum YardmapStates {
 	YARDMAP_OPEN         = 0,    // always free      (    walkable      buildable)
 	YARDMAP_STACKABLE    = 1,    // can be built on top of YARDMAP_BLOCKED
@@ -304,11 +293,6 @@ public:
 
 	virtual void SetMass(float newMass);
 
-	void ResetDrawFlag() { drawFlag = DrawFlags::SO_NODRAW_FLAG; }
-	void SetDrawFlag(DrawFlags f) { drawFlag  =  f; }
-	void AddDrawFlag(DrawFlags f) { drawFlag |=  f; }
-	void DelDrawFlag(DrawFlags f) { drawFlag &= ~f; }
-	bool HasDrawFlag(DrawFlags f) const { return (drawFlag & f) == f; }
 private:
 	void SetMidPos(const float3& mp, bool relative) {
 		if (relative) {
@@ -430,8 +414,6 @@ public:
 	///< drawPos + relMidPos (unsynced)
 	float3 drawMidPos;
 
-	uint8_t drawFlag = DrawFlags::SO_NODRAW_FLAG;
-	uint8_t previousDrawFlag = DrawFlags::SO_NODRAW_FLAG;
 	bool objectUsable = true;
 
 	/**

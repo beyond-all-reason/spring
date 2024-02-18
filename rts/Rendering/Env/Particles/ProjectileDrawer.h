@@ -33,11 +33,17 @@ public:
 	void Init();
 	void Kill();
 
-	void Draw(bool drawReflection, bool drawRefraction = false);
+	void UpdateDrawFlags();
+
+	void DrawOpaque(bool drawReflection, bool drawRefraction = false);
+	void DrawAlpha(bool drawReflection, bool drawRefraction = false);
+
 	void DrawProjectilesMiniMap();
+
 	void DrawGroundFlashes();
-	void DrawShadowPassOpaque();
-	void DrawShadowPassTransparent();
+
+	void DrawShadowOpaque();
+	void DrawShadowTransparent();
 
 	void LoadWeaponTextures();
 	void UpdateTextures();
@@ -125,6 +131,7 @@ public:
 	AtlasedTexture* seismictex = nullptr;
 public:
 	static bool CanDrawProjectile(const CProjectile* pro, int allyTeam);
+	static bool ShouldDrawProjectile(const CProjectile* pro, uint8_t thisPassMask);
 private:
 	static void ParseAtlasTextures(const bool, const LuaTable&, spring::unordered_set<std::string>&, CTextureAtlas*);
 
@@ -132,15 +139,7 @@ private:
 	void DrawProjectilesShadow(int modelType);
 	void DrawFlyingPieces(int modelType) const;
 
-	void DrawProjectilesSet(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
-	void DrawProjectilesSetMT(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
-	void DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles);
-	void DrawProjectilesSetShadowMT(const std::vector<CProjectile*>& projectiles);
-
-	void DrawProjectileNow(CProjectile* projectile, bool drawReflection, bool drawRefraction);
-
-	void DrawProjectileShadow(CProjectile* projectile);
-	static bool DrawProjectileModel(const CProjectile* projectile);
+	static void DrawProjectileModel(const CProjectile* projectile);
 
 	void UpdatePerlin();
 	static void GenerateNoiseTex(unsigned int tex);
@@ -164,16 +163,14 @@ private:
 
 	std::vector<const AtlasedTexture*> smokeTextures;
 
-	/// projectiles without a model, e.g. nano-particles
-	std::vector<CProjectile*> modellessProjectiles;
-	/// projectiles with a model
+	/// projectiles container {modelless, model}
+	std::array<std::vector<CProjectile*>, 2> renderProjectiles;
+
+	/// projectiles with a model, binned by model type and textures
 	std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> modelRenderers;
 
-	/// used to render particle effects in back-to-front order
-	std::vector<CProjectile*> sortedProjectiles;
-	std::vector<CProjectile*> unsortedProjectiles;
-
-	spring::WrappedSyncSpinLock mutex;
+	/// used to render particle effects in back-to-front order. {unsorted, sorted}
+	std::array<std::vector<CProjectile*>, 2> drawParticles;
 
 	bool drawSorted = true;
 
