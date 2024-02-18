@@ -814,38 +814,42 @@ void CProjectileDrawer::DrawAlpha(bool drawReflection, bool drawRefraction)
 	for (auto& dp : drawParticles)
 		dp.clear();
 
-	for (CProjectile* p : renderProjectiles[false]) {
-		if (!ShouldDrawProjectile(p, thisPassMask))
-			continue;
+	{
+		ZoneScopedN("ProjectileDrawer::DrawAlpha(DP)");
+		for (CProjectile* p : renderProjectiles[false]) {
+			if (!ShouldDrawProjectile(p, thisPassMask))
+				continue;
 
-		drawParticles[drawSorted && p->drawSorted].emplace_back(p);
+			drawParticles[drawSorted && p->drawSorted].emplace_back(p);
+		}
 	}
 
 	// set static variable to facilite sorting
 	sortCamType = camera->GetCamType();
 
-	if (wantDrawOrder)
-		std::sort(drawParticles[true].begin(), drawParticles[true].end(), CProjectileDrawOrderSortingPredicate);
-	else
-		std::sort(drawParticles[true].begin(), drawParticles[true].end(), CProjectileSortingPredicate);
-
-	glEnable(GL_BLEND);
+	{
+		ZoneScopedN("ProjectileDrawer::DrawAlpha(SO)");
+		if (wantDrawOrder)
+			std::sort(drawParticles[true].begin(), drawParticles[true].end(), CProjectileDrawOrderSortingPredicate);
+		else
+			std::sort(drawParticles[true].begin(), drawParticles[true].end(), CProjectileSortingPredicate);
+	}
 
 	{
-		ZoneScopedN("ProjectileDrawer::DrawAlpha(S)");
+		ZoneScopedN("ProjectileDrawer::DrawAlpha(DS)");
 		for (auto p : drawParticles[ true]) {
 			p->Draw();
 		}
 	}
 	{
-		ZoneScopedN("ProjectileDrawer::DrawAlpha(U)");
+		ZoneScopedN("ProjectileDrawer::DrawAlpha(DU)");
 		for (auto p : drawParticles[false]) {
 			p->Draw();
 		}
 	}
 
 	{
-		ZoneScopedN("ProjectileDrawer::DrawAlpha(R)");
+		ZoneScopedN("ProjectileDrawer::DrawAlpha(RR)");
 
 		using namespace GL::State;
 		auto state = GL::SubState(
