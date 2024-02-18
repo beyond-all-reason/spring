@@ -372,6 +372,7 @@ void CProjectileDrawer::Kill() {
 
 void CProjectileDrawer::UpdateDrawFlags()
 {
+	ZoneScopedN("ProjectileDrawer::UpdateDrawFlags");
 	for (auto& rp : renderProjectiles) {
 		if (rp.empty())
 			continue;
