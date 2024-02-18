@@ -103,7 +103,6 @@ void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 
 void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 {
-	assert(currentScript == nullptr);
 	if (instance == currentScript)
 		return;
 
@@ -112,7 +111,6 @@ void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 
 void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 {
-	assert(currentScript == nullptr);
 	if (instance == currentScript)
 		return;
 
@@ -154,6 +152,8 @@ void CUnitScriptEngine::ImplTickMT(int deltaTime)
 	// tick all (COB or LUS) script instances that have registered themselves as animating
 	{
 		ZoneScopedN("CUnitScriptEngine::ImplTickMT(MT)");
+
+		// setting currentScript = animating[i]; is not required here, only in ST section below
 		for_mt(0, animating.size(), [&](const int i) {
 			animating[i]->TickAllAnims(deltaTime);
 		});
