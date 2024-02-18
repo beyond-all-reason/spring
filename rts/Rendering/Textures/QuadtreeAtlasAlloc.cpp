@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <bit>
 
 #include "QuadtreeAtlasAlloc.h"
 #include "System/Exceptions.h"
@@ -214,8 +215,11 @@ bool CQuadtreeAtlasAlloc::Allocate()
 }
 
 
-int CQuadtreeAtlasAlloc::GetMaxMipMaps()
+int CQuadtreeAtlasAlloc::GetNumTexLevels() const
 {
 	if (!root) return 0;
-	return bits_ffs(root->GetMinSize());
+	return std::min(
+		std::bit_width(static_cast<uint32_t>(root->GetMinSize())),
+		numLevels
+	);
 }

@@ -22,6 +22,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/IPathDrawer.h"
+#include "Rendering/DepthBufferCopy.h"
 #include "Rendering/SmoothHeightMeshDrawer.h"
 #include "Rendering/InMapDrawView.h"
 #include "Rendering/ShadowHandler.h"
@@ -129,6 +130,9 @@ void CWorldDrawer::InitPost() const
 		heightMapTexture = new HeightMapTexture();
 	}
 	{
+		DepthBufferCopy::Init();
+	}
+	{
 		IGroundDecalDrawer::Init();
 	}
 	{
@@ -194,6 +198,7 @@ void CWorldDrawer::Kill()
 
 	readMap->KillGroundDrawer();
 	IGroundDecalDrawer::FreeInstance();
+	DepthBufferCopy::Kill();
 	LuaObjectDrawer::Kill();
 	SmoothHeightMeshDrawer::FreeInstance();
 
@@ -329,6 +334,7 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		{
 			SCOPED_TIMER("Draw::World::Terrain");
 			gd->Draw(DrawPass::Normal);
+			depthBufferCopy->MakeDepthBufferCopy();
 		}
 		{
 			eventHandler.DrawPreDecals();
