@@ -15,8 +15,8 @@ public:
 	CQuadtreeAtlasAlloc();
 	virtual ~CQuadtreeAtlasAlloc();
 
-	virtual bool Allocate();
-	virtual int GetMaxMipMaps();
+	bool Allocate() override;
+	int GetNumTexLevels() const override;
 
 private:
 	static bool CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2);
