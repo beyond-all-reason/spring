@@ -553,7 +553,9 @@ void CGame::LoadDefs(LuaParser* defsParser)
 		defsParser->GetTable("Spring");
 
 		LSR_ADDFUNC(GetModOptions);
+		LSR_ADDFUNC(GetModOption);
 		LSR_ADDFUNC(GetMapOptions);
+		LSR_ADDFUNC(GetMapOption);
 		LSR_ADDFUNC(GetTeamLuaAI);
 		LSR_ADDFUNC(GetTeamList);
 		LSR_ADDFUNC(GetGaiaTeamID);
