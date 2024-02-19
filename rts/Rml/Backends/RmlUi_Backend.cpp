@@ -42,7 +42,13 @@
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
 #include "RmlUi_Backend.h"
+
+#ifndef HEADLESS
 #include "RmlUi_Renderer_GL3_Recoil.h"
+#else
+#include "RmlUi_Renderer_Headless.h"
+#endif
+
 #include "RmlUi_SystemInterface.h"
 #include "RmlUi_VFSFileInterface.h"
 #include "System/Input/InputHandler.h"
@@ -50,6 +56,7 @@
 
 using CtxMutex = std::recursive_mutex;
 using CtxLockGuard = std::lock_guard<CtxMutex>;
+struct lua_State;
 
 /// Passes through RML events to the function pointers given in the constructor
 class PassThroughPlugin : public Rml::Plugin
