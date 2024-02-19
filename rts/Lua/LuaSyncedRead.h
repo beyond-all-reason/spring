@@ -19,7 +19,18 @@ class LuaSyncedRead {
 		static int GetMapOptions(lua_State* L);
 		static int GetModOption(lua_State* L);
 		static int GetModOptions(lua_State* L);
-
+		static int GetTeamLuaAI(lua_State* L);
+		static int GetTeamList(lua_State* L);
+		static int GetGaiaTeamID(lua_State* L);
+		static int GetAllyTeamList(lua_State* L);
+		static int GetPlayerList(lua_State* L);
+		static int GetTeamInfo(lua_State* L);
+		static int GetAllyTeamInfo(lua_State* L);
+		static int GetAIInfo(lua_State* L);
+		static int GetTeamAllyTeamID(lua_State* L);
+		static int AreTeamsAllied(lua_State* L);
+		static int ArePlayersAllied(lua_State* L);
+		static int GetSideData(lua_State* L);
 	private:
 		static int IsCheatingEnabled(lua_State* L);
 		static int IsGodModeEnabled(lua_State* L);
@@ -31,8 +42,6 @@ class LuaSyncedRead {
 		static int FixedAllies(lua_State* L);
 
 		static int IsGameOver(lua_State* L);
-
-		static int GetGaiaTeamID(lua_State* L);
 
 		static int GetGameFrame(lua_State* L);
 		static int GetGameSeconds(lua_State* L);
@@ -48,36 +57,22 @@ class LuaSyncedRead {
 		static int GetFacingFromHeading(lua_State* L);
 		static int GetHeadingFromFacing(lua_State* L);
 
-		static int GetSideData(lua_State* L);
-
 		static int GetAllyTeamStartBox(lua_State* L);
 		static int GetTeamStartPosition(lua_State* L);
 		static int GetMapStartPositions(lua_State* L);
-
-		static int GetAllyTeamList(lua_State* L);
-		static int GetTeamList(lua_State* L);
-		static int GetPlayerList(lua_State* L);
 
 		static int GetPlayerInfo(lua_State* L); // no name for synced scripts
 		static int GetPlayerControlledUnit(lua_State* L);
 		static int GetPlayerRulesParam(lua_State* L);
 		static int GetPlayerRulesParams(lua_State* L);
-		static int GetAIInfo(lua_State* L);
 
-		static int GetTeamInfo(lua_State* L);
 		static int GetTeamResources(lua_State* L);
 		static int GetTeamUnitStats(lua_State* L);
 		static int GetTeamResourceStats(lua_State* L);
 		static int GetTeamRulesParam(lua_State* L);
 		static int GetTeamRulesParams(lua_State* L);
 		static int GetTeamStatsHistory(lua_State* L);
-		static int GetTeamLuaAI(lua_State* L);
 		static int GetTeamMaxUnits(lua_State* L);
-
-		static int GetAllyTeamInfo(lua_State* L);
-		static int GetTeamAllyTeamID(lua_State* L);
-		static int AreTeamsAllied(lua_State* L);
-		static int ArePlayersAllied(lua_State* L);
 
 		static int GetAllUnits(lua_State* L);
 		static int GetTeamUnits(lua_State* L);

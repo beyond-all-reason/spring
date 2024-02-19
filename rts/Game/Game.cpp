@@ -549,10 +549,26 @@ void CGame::LoadDefs(LuaParser* defsParser)
 
 		defsParser->SetupLua(true, true);
 		// customize the defs environment; LuaParser has no access to LuaSyncedRead
+		#define LSR_ADDFUNC(f) defsParser->AddFunc(#f, LuaSyncedRead::f)
 		defsParser->GetTable("Spring");
-		defsParser->AddFunc("GetModOptions", LuaSyncedRead::GetModOptions);
-		defsParser->AddFunc("GetMapOptions", LuaSyncedRead::GetMapOptions);
+
+		LSR_ADDFUNC(GetModOptions);
+		LSR_ADDFUNC(GetMapOptions);
+		LSR_ADDFUNC(GetTeamLuaAI);
+		LSR_ADDFUNC(GetTeamList);
+		LSR_ADDFUNC(GetGaiaTeamID);
+		LSR_ADDFUNC(GetPlayerList);
+		LSR_ADDFUNC(GetAllyTeamList);
+		LSR_ADDFUNC(GetTeamInfo);
+		LSR_ADDFUNC(GetAllyTeamInfo);
+		LSR_ADDFUNC(GetAIInfo);
+		LSR_ADDFUNC(GetTeamAllyTeamID);
+		LSR_ADDFUNC(AreTeamsAllied);
+		LSR_ADDFUNC(ArePlayersAllied);
+		LSR_ADDFUNC(GetSideData);
+
 		defsParser->EndTable();
+		#undef LSR_ADDFUNC
 
 		// run the parser
 		if (!defsParser->Execute())
