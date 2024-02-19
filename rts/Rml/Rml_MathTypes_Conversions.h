@@ -38,7 +38,7 @@
 // Extra code to be inserted into RmlUi::Vector2<> class body.
 #define RMLUI_VECTOR2_USER_EXTRA                                                                 \
 	template <typename U = Type, typename std::enable_if_t<std::is_same_v<U, int>>* = nullptr>   \
-	operator typename int2() const                                                               \
+	operator int2() const                                                                        \
 	{                                                                                            \
 		return int2(x, y);                                                                       \
 	}                                                                                            \
