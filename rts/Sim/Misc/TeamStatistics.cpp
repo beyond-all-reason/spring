@@ -26,7 +26,9 @@ CR_REG_METADATA(TeamStatistics, (
 	CR_MEMBER(unitsSent),
 	CR_MEMBER(unitsCaptured),
 	CR_MEMBER(unitsOutCaptured),
-	CR_MEMBER(unitsKilled)
+	CR_MEMBER(unitsKilled),
+	CR_MEMBER(metalReclaimed),
+	CR_MEMBER(energyReclaimed)
 ))
 
 TeamStatistics::TeamStatistics()
@@ -53,6 +55,8 @@ TeamStatistics::TeamStatistics()
 	, unitsCaptured(0)
 	, unitsOutCaptured(0)
 	, unitsKilled(0)
+	, metalReclaimed(0.0f)
+	, energyReclaimed(0.0f)
 {
 }
 
@@ -79,5 +83,7 @@ void TeamStatistics::swab()
 	swabDWordInPlace(unitsCaptured);
 	swabDWordInPlace(unitsOutCaptured);
 	swabDWordInPlace(unitsKilled);
+	swabDWordInPlace(metalReclaimed);
+	swabDWordInPlace(energyReclaimed);
 }
 

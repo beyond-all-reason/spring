@@ -1995,14 +1995,28 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		order.quantum    = false;
 		order.overflow   = true;
 		order.use.energy = -energyRefundStepScaled;
+
+		CTeam* team = teamHandler.Team(builder->team);
+		TeamStatistics& stats = team->GetCurrentStats();
+
+		//update team statistics: energyReclaimed
+		stats.energyReclaimed += -energyRefundStepScaled;
+
 		if (modInfo.reclaimUnitMethod == 0) {
 			// gradual reclamation of invested metal
 			order.add.metal = -metalRefundStepScaled;
+
+			//update team statistics: metal reclaimed
+			stats.metalReclaimed += -metalRefundStepScaled;
 		} else {
 			// lump reclamation of invested metal
 			if (postHealth <= 0.0f || postBuildProgress <= 0.0f) {
-				order.add.metal = (cost.metal * buildProgress) * modInfo.reclaimUnitEfficiency;
+				float metalReclIncr = (cost.metal * buildProgress) * modInfo.reclaimUnitEfficiency;
+				order.add.metal = metalReclIncr;
 				killMe = true; // to make 100% sure the unit gets killed, and so no resources are reclaimed twice!
+				
+				//update team statistics: metalReclaimed
+				stats.metalReclaimed += metalReclIncr;
 			}
 		}
 

@@ -341,15 +341,26 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 	order.separate   = true;
 	order.use.energy = energyUseScaled;
 
+	CTeam* team = teamHandler.Team(builder->team);
+	TeamStatistics& stats = team->GetCurrentStats();
+
 	if (reclaimLeftTemp == 0.0f) {
 		// always give remaining resources at the end
 		order.add.metal  = resources.metal;
 		order.add.energy = resources.energy;
+
+		//update team statistics
+		stats.metalReclaimed += resources.metal;
+		stats.energyReclaimed += resources.energy;
 	}
 	else if (modInfo.reclaimMethod == 0) {
 		// Gradual reclaim
 		order.add.metal  = metalFraction;
 		order.add.energy = energyFraction;
+
+		//update team statistics
+		stats.metalReclaimed  += metalFraction;
+		stats.energyReclaimed += energyFraction;
 	}
 	else if (modInfo.reclaimMethod == 1) {
 		// All-at-end method
@@ -364,8 +375,14 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 		const int numChunks = oldChunk - newChunk;
 
 		if (numChunks != 0) {
-			order.add.metal  = std::min(numChunks * defResources.metal  * chunkSize, resources.metal);
-			order.add.energy = std::min(numChunks * defResources.energy * chunkSize, resources.energy);
+			float metalIncr  = std::min(numChunks * defResources.metal * chunkSize, resources.metal);
+			float energyIncr = std::min(numChunks * defResources.energy * chunkSize, resources.energy);
+			order.add.metal  = metalIncr;
+			order.add.energy = energyIncr;
+
+			//update team statistics
+			stats.metalReclaimed  += metalIncr;
+			stats.energyReclaimed += energyIncr;
 		}
 	}
 

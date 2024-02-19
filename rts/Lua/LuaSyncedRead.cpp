@@ -1919,7 +1919,8 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 			lua_pushnumber(L, stats.metalExcess);
 			lua_pushnumber(L, stats.metalReceived);
 			lua_pushnumber(L, stats.metalSent);
-			return 5;
+			lua_pushnumber(L, stats.metalReclaimed);
+			return 6;
 		} break;
 		case 'e': {
 			lua_pushnumber(L, stats.energyUsed);
@@ -1927,7 +1928,8 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 			lua_pushnumber(L, stats.energyExcess);
 			lua_pushnumber(L, stats.energyReceived);
 			lua_pushnumber(L, stats.energySent);
-			return 5;
+			lua_pushnumber(L, stats.energyReclaimed);
+			return 6;
 		} break;
 		default: {
 		} break;
@@ -2045,6 +2047,9 @@ int LuaSyncedRead::GetTeamStatsHistory(lua_State* L)
 				HSTR_PUSH_NUMBER(L, "unitsCaptured",    stats.unitsCaptured);
 				HSTR_PUSH_NUMBER(L, "unitsOutCaptured", stats.unitsOutCaptured);
 				HSTR_PUSH_NUMBER(L, "unitsKilled",      stats.unitsKilled);
+
+				HSTR_PUSH_NUMBER(L, "metalReclaimed",   stats.metalReclaimed);
+				HSTR_PUSH_NUMBER(L, "energyReclaimed",  stats.energyReclaimed);
 			}
 			lua_rawseti(L, -2, count++);
 		}

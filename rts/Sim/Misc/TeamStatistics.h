@@ -36,6 +36,9 @@ struct TeamStatistics
 	int unitsOutCaptured;
 	/* how many enemy units have been killed by this teams units */
 	int unitsKilled;
+	/* how much reclaim */
+	float metalReclaimed;
+	float energyReclaimed;
 
 	/// Change structure from host endian to little endian or vice versa.
 	void swab();
