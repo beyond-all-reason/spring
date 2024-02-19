@@ -22,6 +22,23 @@ There is currently no corresponding Set.
 * added `Spring.GetModOption(string key) -> string? value`. Returns a single modoption; replaces the `Spring.GetModOptions().foo` pattern for greater performance.
 * added `Spring.GetMapOption(string key) -> string? value`, ditto for a single mapoption.
 
+### More interfaces in `defs.lua`
+The following functions are now available in the `defs.lua` phase:
+* `Spring.GetMapOption` (new, see above)
+* `Spring.GetModOption` (new, see above)
+* `Spring.GetTeamLuaAI`
+* `Spring.GetTeamList`
+* `Spring.GetGaiaTeamID`
+* `Spring.GetPlayerList`
+* `Spring.GetAllyTeamList`
+* `Spring.GetTeamInfo`
+* `Spring.GetAllyTeamInfo`
+* `Spring.GetAIInfo`
+* `Spring.GetTeamAllyTeamID`
+* `Spring.AreTeamsAllied`
+* `Spring.ArePlayersAllied`
+* `Spring.GetSideData`
+
 ### Water
 * add `Spring.GetWaterLevel(x, z) -> number waterHeight`. Similar to `Spring.GetGroundHeight` except returns the height of water at that spot.
 Currently water height is 0 everywhere. Use where appropriate to be future-proof for when Recoil gets dynamic water, or just to give a name to the otherwise magic constant.
