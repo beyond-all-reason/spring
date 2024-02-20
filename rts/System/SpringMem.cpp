@@ -33,7 +33,7 @@ void* spring::ReallocateAlignedMemory(void* ptr, size_t size, size_t alignment)
 
     // bad luck
     void* newPtr = nullptr;
-    if (posix_memalign(&ptr, alignment, size) != 0)
+    if (posix_memalign(&newPtr, alignment, size) != 0)
         throw std::bad_alloc();
     std::memcpy(ptr, newPtr, size);
     return newPtr;
