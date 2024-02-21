@@ -225,22 +225,21 @@ void CUnitDefHandler::SetNoCost(bool value)
 
 void CUnitDefHandler::SanitizeUnitDefs()
 {
-	for (size_t i = 1; i < unitDefsVector.size(); i++) {
-		UnitDef& ud = unitDefsVector[i];
-		
-		//Sanitize unitDef.corpse (wreckName)
-		if (ud.wreckName != "") {
-			const FeatureDef* wreckFeatureDef = featureDefHandler->GetFeatureDef(ud.wreckName); 
-			if (wreckFeatureDef == nullptr) {
-				ud.wreckName = "";
-			}
-		}
-
-		//Sanitize unitDef.canAssist: 
-		//canAssist should default to true for mobile builders but should
-		//default to false for factories.
+	for (auto &ud : unitDefsVector) {
+		// Sanitize unitDef.canAssist: 
+		// canAssist should default to true for mobile builders but should
+		// default to false for factories.
 		if (ud.canAssist && ud.IsFactoryUnit()) {
 			ud.canAssist = false;
+		}
+	
+		// Sanitize unitDef.wreckName
+		if (ud.wreckName != "") {
+			const FeatureDef* wreckFeatureDef = featureDefHandler->GetFeatureDef(ud.wreckName);
+			if (wreckFeatureDef == nullptr) {
+				// warning message already produced by GetFeatureDef
+				ud.wreckName = "";
+			}
 		}
 	}
 }
