@@ -318,9 +318,6 @@ void main() {
 		//discard;
 	}
 
-	//fragColor = vec4(vec3(GetShadowColor(worldPos.xyz)), 1.0);
-	//return;
-
 	vec4 uv;
 	if (misc.z > 0.0) {
 		relUV.y = mod(misc.w / misc.z + relUV.y, 1.0);
@@ -336,13 +333,6 @@ void main() {
 		mix(uvTR.zw, uvBR.zw, relUV.z),
 	relUV.w);
 
-
-	/*
-	if (misc.z > 0.0) {
-		uv.x *= misc.w / misc.z;
-		uv.x = mod(uv.x, (uvBL.x + uvTL.x) * 0.5);
-	}
-	*/
 
 	float alpha = clamp(misc.x, 0.0, 1.0);
 
@@ -426,42 +416,7 @@ void main() {
 	}
 	#endif
 
-	// artistic adjustments
 	fragColor.a = mainCol.a * alpha;
+	// artistic adjustments
 	fragColor  *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is arbitrary
-	//fragColor = vec4(vec3(max(dot(sunDir, decalNormal), 0.0)), 1.0);
-	//fragColor = vec4(normVal.xyz, 1.0);
-	//fragColor = vec4(N, 1.0);
-
-	//fragColor =  vec4(texture(decalMainTex, uv.xy).rgb, 1.0);
-	//fragColor.a *= pow(max(0.0, N.y), 2);
-
-	//if (misc.z == 0.0) {
-	//	fragColor.a *= clamp(1.3 - abs(worldPos.y - midPoint.y) / misc.y, 0.0, 1.0); //height based elimination
-	//}
-
-	//fragColor = vec4(1, 0, 0, 1);
-	//fragColor = vec4(alpha);
-	//fragColor = vec4(relUV.yyy, 1.0);
-
-	//fragColor = vec4(GetShadowColor(worldPos.xyz, dot(sunDir, N)), 1.0);
-
-	//fragColor = vec4(relUV.yyy, 1.0);
-
-	//fragColor.rbg = vec3(mainCol.aaa);
-	//fragColor.a = 1.0;
-	//fragColor = mainCol;
-
-	//fragColor = vec4(decalNormal.zzz, 1.0);
-	//fragColor = vec4(decalNormal.xxx, 1.0);
-	//fragColor = vec4(NORM2SNORM(normVal.xyz).xxx, 1.0);
-	//fragColor = vec4(N, 1.0);
-	//fragColor = vec4(T, 1.0);
-	//fragColor = vec4(decalNormal, 1.0);
-
-	//fragColor = vec4(heightCol, 1);
-	//fragColor = vec4(alpha, alpha, alpha, 1.0);
-	//fragColor = vec4(uv.x, uv.x, uv.x, 1.0);
-	//float x = mod(uv.x * misc.w / misc.z * 1.0, (uvBL.x + uvTL.x) * 0.5);
-	//fragColor = vec4(x, x, x, 1.0);
 }
