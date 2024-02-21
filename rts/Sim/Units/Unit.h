@@ -118,9 +118,6 @@ public:
 
 	bool AllowedReclaim(CUnit* builder) const;
 
-	void SetMetalStorage(float newStorage);
-	void SetEnergyStorage(float newStorage);
-
 	bool UseMetal(float metal);
 	void AddMetal(float metal, bool useIncomeMultiplier = true);
 	bool UseEnergy(float energy);
@@ -459,7 +456,7 @@ public:
 	// the amount of storage the unit contributes to the team
 	SResourcePack storage;
 
-	// per unit metal storage (gets filled on reclaim and needs then to be unloaded at some storage building -> 2nd part is lua's job)
+	// per unit storage (gets filled on reclaim and needs then to be unloaded at some storage building -> 2nd part is lua's job)
 	SResourcePack harvestStorage;
 	SResourcePack harvested;
 

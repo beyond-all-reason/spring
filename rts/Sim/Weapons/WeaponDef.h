@@ -9,6 +9,7 @@
 #include "System/float4.h"
 #include "System/UnorderedMap.hpp"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/Resource.h"
 
 struct AtlasedTexture;
 class CColorMap;
@@ -97,8 +98,7 @@ public:
 	float uptime;
 	int flighttime;
 
-	float metalcost;
-	float energycost;
+	SResourcePack cost;
 
 	int projectilespershot;
 

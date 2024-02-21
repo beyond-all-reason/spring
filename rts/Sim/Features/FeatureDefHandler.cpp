@@ -102,14 +102,14 @@ FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const 
 	fd.geoThermal    =  fdTable.GetBool("geoThermal",      false);
 	fd.floating      =  fdTable.GetBool("floating",        false);
 
-	fd.metal       = fdTable.GetFloat("metal",  0.0f);
-	fd.energy      = fdTable.GetFloat("energy", 0.0f);
+	fd.cost.metal    = fdTable.GetFloat("metal",  0.0f);
+	fd.cost.energy   = fdTable.GetFloat("energy", 0.0f);
 
 	// "damage" is the legacy Total Annihilation spelling
 	fd.health      = fdTable.GetFloat("health", fdTable.GetFloat("damage", 0.0f));
 	fd.health      = std::max(0.1f, fd.health);
 
-	fd.reclaimTime = std::max(1.0f, fdTable.GetFloat("reclaimTime", (fd.metal + fd.energy) * 6.0f));
+	fd.reclaimTime = std::max(1.0f, fdTable.GetFloat("reclaimTime", (fd.cost.metal + fd.cost.energy) * 6.0f));
 
 	fd.smokeTime = fdTable.GetInt("smokeTime", 300);
 
@@ -137,7 +137,7 @@ FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const 
 
 	const float minMass = CSolidObject::MINIMUM_MASS;
 	const float maxMass = CSolidObject::MAXIMUM_MASS;
-	const float defMass = (fd.metal * 0.4f) + (fd.health * 0.1f);
+	const float defMass = (fd.cost.metal * 0.4f) + (fd.health * 0.1f);
 
 	fd.mass = std::clamp(fdTable.GetFloat("mass", defMass), minMass, maxMass);
 	fd.crushResistance = fdTable.GetFloat("crushResistance", fd.mass);
@@ -160,8 +160,7 @@ FeatureDef* CFeatureDefHandler::CreateDefaultTreeFeatureDef(const std::string& n
 	fd.destructable = true;
 	fd.reclaimable = true;
 	fd.drawType = DRAWTYPE_TREE + atoi(name.substr(8).c_str());
-	fd.energy = 250;
-	fd.metal = 0;
+	fd.cost = {0.0f, 250.0f};
 	fd.reclaimTime = 1500;
 	fd.health = 5.0f;
 	fd.xsize = 2;
@@ -185,8 +184,7 @@ FeatureDef* CFeatureDefHandler::CreateDefaultGeoFeatureDef(const std::string& na
 	// geos are (usually) rendered only as vents baked into
 	// the map's ground texture and emit smoke to be visible
 	fd.drawType = DRAWTYPE_NONE;
-	fd.energy = 0;
-	fd.metal = 0;
+	fd.cost = 0.0f;
 	fd.reclaimTime = 0;
 	fd.health = 0.0f;
 	fd.xsize = 0;

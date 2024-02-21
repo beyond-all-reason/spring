@@ -130,8 +130,7 @@ CUnit::~CUnit()
 	if (activated && unitDef->targfac)
 		losHandler->IncreaseAllyTeamRadarErrorSize(allyteam);
 
-	SetMetalStorage(0);
-	SetEnergyStorage(0);
+	SetStorage(0.0f);
 
 	// not all unit deletions run through KillUnit(),
 	// but we always want to call this for ourselves
@@ -265,8 +264,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	power = unitDef->power;
 	maxHealth = unitDef->health;
 	health = beingBuilt? 0.1f: unitDef->health;
-	cost.metal = unitDef->metal;
-	cost.energy = unitDef->energy;
+	cost = unitDef->cost;
 	buildTime = unitDef->buildTime;
 	armoredMultiple = unitDef->armoredMultiple;
 	armorType = unitDef->armorType;
@@ -302,8 +300,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	useHighTrajectory = (unitDef->highTrajectoryType == 1);
 
-	harvestStorage.metal  = unitDef->harvestMetalStorage;
-	harvestStorage.energy = unitDef->harvestEnergyStorage;
+	harvestStorage = unitDef->harvestStorage;
 
 	moveType = MoveTypeFactory::GetMoveType(this, unitDef);
 	script = CUnitScriptFactory::CreateScript(this, unitDef);
@@ -423,9 +420,7 @@ void CUnit::FinishedBuilding(bool postInit)
 	if (unitDef->activateWhenBuilt)
 		Activate();
 
-	SetMetalStorage(unitDef->metalStorage);
-	SetEnergyStorage(unitDef->energyStorage);
-
+	SetStorage(unitDef->storage);
 
 	// Sets the frontdir in sync with heading.
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
@@ -824,17 +819,13 @@ void CUnit::TransporteeKilled(const CObject* o)
 
 void CUnit::UpdateResources()
 {
-	resourcesMake.metal  = resourcesMakeI.metal  + resourcesMakeOld.metal;
-	resourcesUse.metal   = resourcesUseI.metal   + resourcesUseOld.metal;
-	resourcesMake.energy = resourcesMakeI.energy + resourcesMakeOld.energy;
-	resourcesUse.energy  = resourcesUseI.energy  + resourcesUseOld.energy;
+	resourcesMake = resourcesMakeI + resourcesMakeOld;
+	resourcesUse  = resourcesUseI  + resourcesUseOld;
 
-	resourcesMakeOld.metal  = resourcesMakeI.metal;
-	resourcesUseOld.metal   = resourcesUseI.metal;
-	resourcesMakeOld.energy = resourcesMakeI.energy;
-	resourcesUseOld.energy  = resourcesUseI.energy;
+	resourcesMakeOld = resourcesMakeI;
+	resourcesUseOld  = resourcesUseI;
 
-	resourcesMakeI.metal = resourcesUseI.metal = resourcesMakeI.energy = resourcesUseI.energy = 0.0f;
+	resourcesMakeI = resourcesUseI = 0.0f;
 }
 
 void CUnit::SetLosStatus(int at, unsigned short newStatus)
@@ -1010,31 +1001,23 @@ void CUnit::SlowUpdate()
 
 
 	// FIXME: scriptMakeMetal ...?
-	AddMetal(resourcesUncondMake.metal);
-	AddEnergy(resourcesUncondMake.energy);
-	UseMetal(resourcesUncondUse.metal);
-	UseEnergy(resourcesUncondUse.energy);
+	AddResources(resourcesUncondMake);
+	UseResources(resourcesUncondUse);
+
+	if (activated && UseResources(resourcesCondUse))
+		AddResources(resourcesCondMake);
+
+	AddResources(unitDef->resourceMake * 0.5f);
 
 	if (activated) {
-		if (UseMetal(resourcesCondUse.metal))
-			AddEnergy(resourcesCondMake.energy);
-
-		if (UseEnergy(resourcesCondUse.energy))
-			AddMetal(resourcesCondMake.metal);
-
-	}
-
-	AddMetal(unitDef->metalMake * 0.5f);
-
-	if (activated) {
-		if (UseEnergy(unitDef->energyUpkeep * 0.5f)) {
+		if (UseEnergy(unitDef->upkeep.energy * 0.5f)) {
 			AddMetal(unitDef->makesMetal * 0.5f);
 
 			if (unitDef->extractsMetal > 0.0f)
 				AddMetal(metalExtract * 0.5f);
 		}
 
-		UseMetal(unitDef->metalUpkeep * 0.5f);
+		UseMetal(unitDef->upkeep.metal * 0.5f);
 
 		if (unitDef->windGenerator > 0.0f) {
 			if (envResHandler.GetCurrentWindStrength() > unitDef->windGenerator) {
@@ -1046,7 +1029,7 @@ void CUnit::SlowUpdate()
 	}
 
 	// FIXME: tidal part should be under "if (activated)"?
-	AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * envResHandler.GetCurrentTidalStrength()) * 0.5f);
+	AddEnergy((unitDef->tidalGenerator * envResHandler.GetCurrentTidalStrength()) * 0.5f);
 
 
 	if (health < maxHealth) {
@@ -1499,11 +1482,8 @@ bool CUnit::ChangeTeam(int newteam, ChangeType type)
 	}
 
 	if (!beingBuilt) {
-		teamHandler.Team(oldteam)->resStorage.metal  -= storage.metal;
-		teamHandler.Team(oldteam)->resStorage.energy -= storage.energy;
-
-		teamHandler.Team(newteam)->resStorage.metal  += storage.metal;
-		teamHandler.Team(newteam)->resStorage.energy += storage.energy;
+		teamHandler.Team(oldteam)->resStorage -= storage;
+		teamHandler.Team(newteam)->resStorage += storage;
 	}
 
 
@@ -1911,34 +1891,25 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		if (beingBuilt) {
 			// build
 			const float step = std::min(amount / buildTime, 1.0f - buildProgress);
-			const float metalCostStep  = cost.metal  * step;
-			const float energyCostStep = cost.energy * step;
+			const auto resourceUse = cost * step;
 
-			if (builderTeam->res.metal < metalCostStep || builderTeam->res.energy < energyCostStep) {
-				// update the energy and metal required counts
-				builderTeam->resPull.metal  += metalCostStep;
-				builderTeam->resPull.energy += energyCostStep;
+			if (!builderTeam->HaveResources(resourceUse)) {
+				builderTeam->resPull += resourceUse;
 				return false;
 			}
 
 			if (!eventHandler.AllowUnitBuildStep(builder, this, step))
 				return false;
 
-			if (builder->UseMetal(metalCostStep)) {
-				// FIXME eventHandler.AllowUnitBuildStep() may have changed the storages!!! so the checks can be invalid!
-				// TODO add a builder->UseResources(SResources(cost.metalStep, cost.energyStep))
-				if (builder->UseEnergy(energyCostStep)) {
-					health += (maxHealth * step);
-					health = std::min(health, maxHealth);
-					buildProgress += step;
+			/* Note, eventHandler.AllowUnitBuildStep() may have
+			 * changed stored resources. That is fine though. */
+			if (builder->UseResources(resourceUse)) {
+				health += (maxHealth * step);
+				health = std::min(health, maxHealth);
 
-					if (buildProgress >= 1.0f) {
-						FinishedBuilding(false);
-					}
-				} else {
-					// refund already-deducted metal if *energy* cost cannot be
-					builder->UseMetal(-metalCostStep);
-				}
+				buildProgress += step;
+				if (buildProgress >= 1.0f)
+					FinishedBuilding(false);
 			}
 
 			return true;
@@ -2013,8 +1984,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		// turn reclaimee into nanoframe (even living units)
 		if ((modInfo.reclaimUnitMethod == 0) && !beingBuilt) {
 			beingBuilt = true;
-			SetMetalStorage(0);
-			SetEnergyStorage(0);
+			SetStorage(0.0f);
 
 			// make sure neighbor extractors update
 			CExtractorBuilding* extractor = dynamic_cast<CExtractorBuilding*>(this);
@@ -2045,22 +2015,6 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 
 //////////////////////////////////////////////////////////////////////
 //
-
-void CUnit::SetMetalStorage(float newStorage)
-{
-	teamHandler.Team(team)->resStorage.metal -= storage.metal;
-	storage.metal = newStorage;
-	teamHandler.Team(team)->resStorage.metal += storage.metal;
-}
-
-
-void CUnit::SetEnergyStorage(float newStorage)
-{
-	teamHandler.Team(team)->resStorage.energy -= storage.energy;
-	storage.energy = newStorage;
-	teamHandler.Team(team)->resStorage.energy += storage.energy;
-}
-
 
 bool CUnit::AllowedReclaim(CUnit* builder) const
 {

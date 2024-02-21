@@ -414,7 +414,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 	const float step = resurrectSpeed / resurrecteeDef->buildTime;
 
 	const bool resurrectAllowed = eventHandler.AllowFeatureBuildStep(this, curResurrectee, step);
-	const bool canExecResurrect = (resurrectAllowed && UseEnergy(resurrecteeDef->energy * step * modInfo.resurrectEnergyCostFactor));
+	const bool canExecResurrect = (resurrectAllowed && UseEnergy(resurrecteeDef->cost.energy * step * modInfo.resurrectEnergyCostFactor));
 
 	if (canExecResurrect) {
 		curResurrectee->resurrectProgress += step;
