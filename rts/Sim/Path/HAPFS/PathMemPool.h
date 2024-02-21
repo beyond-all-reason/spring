@@ -10,9 +10,9 @@
 
 namespace HAPFS {
 
-typedef DynMemPool<sizeof(CPathCache    )> PCMemPool;
+typedef DynMemPoolT<CPathCache> PCMemPool;
 //typedef DynMemPool<sizeof(CPathEstimator)> PEMemPool;
-typedef DynMemPool<sizeof(CPathFinder   )> PFMemPool;
+typedef DynMemPoolT<CPathFinder> PFMemPool;
 
 extern PCMemPool pcMemPool;
 //extern PEMemPool peMemPool;

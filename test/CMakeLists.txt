@@ -52,6 +52,7 @@ set(test_Log_sources
 
 set(test_common_libraries
 	cpuid
+	Tracy::TracyClient
 )
 
 add_custom_target(tests)
@@ -477,6 +478,9 @@ endif()
 			"${CMAKE_CURRENT_SOURCE_DIR}/other/testMemPoolTypes.cpp"
 			${test_Log_sources}
 		)
+	set(test_libs
+		""
+	)
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 
