@@ -18,7 +18,6 @@
 struct MoveDef;
 struct LocalModelPiece;
 struct SolidObjectDef;
-struct SolidObjectGroundDecal;
 
 class DamageArray;
 class CUnit;
@@ -386,8 +385,6 @@ public:
 
 	///< pieces that were last hit by a {[0] := unsynced, [1] := synced} projectile
 	const LocalModelPiece* hitModelPieces[2];
-
-	SolidObjectGroundDecal* groundDecal = nullptr;
 
 	///< object-local {z,x,y}-axes (in WS)
 	SyncedFloat3 frontdir =  FwdVector;

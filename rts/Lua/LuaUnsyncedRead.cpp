@@ -41,7 +41,6 @@
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
-#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Units/UnitDrawer.h"
@@ -282,11 +281,15 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetLogSections);
 
 	REGISTER_LUA_CFUNC(GetAllDecals);
-	REGISTER_LUA_CFUNC(GetDecalPos);
-	REGISTER_LUA_CFUNC(GetDecalSize);
+	REGISTER_LUA_CFUNC(GetDecalMiddlePos);
+	REGISTER_LUA_CFUNC(GetDecalQuadPos);
+	REGISTER_LUA_CFUNC(GetDecalSizeAndHeight);
 	REGISTER_LUA_CFUNC(GetDecalRotation);
 	REGISTER_LUA_CFUNC(GetDecalTexture);
+	REGISTER_LUA_CFUNC(GetDecalTextures);
 	REGISTER_LUA_CFUNC(GetDecalAlpha);
+	REGISTER_LUA_CFUNC(GetDecalNormal);
+	REGISTER_LUA_CFUNC(GetDecalCreationFrame);
 	REGISTER_LUA_CFUNC(GetDecalOwner);
 	REGISTER_LUA_CFUNC(GetDecalType);
 
@@ -4536,23 +4539,27 @@ int LuaUnsyncedRead::GetLogSections(lua_State* L) {
 /***
  *
  * @function Spring.GetAllDecals
- * @treturn nil|{[number],...} decalIndices
+ * @treturn nil|{[number],...} decalIDs
  */
 int LuaUnsyncedRead::GetAllDecals(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto& decals = groundDecals->GetAllDecals();
+
+	int numValid = 0;
+	for (const auto& d : decals) {
+		numValid += d.IsValid() || d.info.type == GroundDecal::Type::DECAL_LUA;
+	}
+
+	if (numValid == 0)
 		return 0;
 
-	const auto& decals = decalsGl4->GetAllDecals();
-
 	int i = 1;
-	lua_createtable(L, decals.size(), 0);
+	lua_createtable(L, numValid, 0);
 	for (const auto& d: decals) {
-		if (!d.IsValid())
+		if (!d.IsValid() && d.info.type != GroundDecal::Type::DECAL_LUA)
 			continue;
 
-		lua_pushnumber(L, d.GetIdx());
+		lua_pushnumber(L, d.info.id);
 		lua_rawseti(L, -2, i++);
 	}
 
@@ -4562,60 +4569,96 @@ int LuaUnsyncedRead::GetAllDecals(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalPos
- * @number decalIndex
+ * @function Spring.GetDecalMiddlePos
+ * @number decalID
  * @treturn nil|number posX
- * @treturn number posY
  * @treturn number posZ
  */
-int LuaUnsyncedRead::GetDecalPos(lua_State* L)
+int LuaUnsyncedRead::GetDecalMiddlePos(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
 		return 0;
+	}
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.pos.x);
-	lua_pushnumber(L, decal.pos.y);
-	lua_pushnumber(L, decal.pos.z);
+	const float2 midPointCurr = (decal->posTL + decal->posTR + decal->posBR + decal->posBL) * 0.25f;
+	lua_pushnumber(L, midPointCurr.x);
+	lua_pushnumber(L, midPointCurr.y);
+
+	return 2;
+}
+
+/***
+ *
+ * @function Spring.GetDecalQuadPos
+ * @number decalID
+ * @treturn nil|number posTL.x
+ * @treturn number posTL.z
+ * @treturn number posTR.x
+ * @treturn number posTR.z
+ * @treturn number posBR.x
+ * @treturn number posBR.z
+ * @treturn number posBL.x
+ * @treturn number posBL.z
+ */
+int LuaUnsyncedRead::GetDecalQuadPos(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->posTL.x);
+	lua_pushnumber(L, decal->posTL.y);
+	lua_pushnumber(L, decal->posTR.x);
+	lua_pushnumber(L, decal->posTR.y);
+	lua_pushnumber(L, decal->posBR.x);
+	lua_pushnumber(L, decal->posBR.y);
+	lua_pushnumber(L, decal->posBL.x);
+	lua_pushnumber(L, decal->posBL.y);
+
+	return 8;
+}
+
+
+/***
+ *
+ * @function Spring.GetDecalSizeAndHeight
+ * @number decalID
+ * @treturn nil|number sizeX
+ * @treturn number sizeY
+ * @treturn number projCubeHeight
+ */
+int LuaUnsyncedRead::GetDecalSizeAndHeight(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, (decal->posTL.Distance(decal->posTR) + decal->posBL.Distance(decal->posBR)) * 0.25f);
+	lua_pushnumber(L, (decal->posTL.Distance(decal->posBL) + decal->posTR.Distance(decal->posBR)) * 0.25f);
+	lua_pushnumber(L, decal->height);
+
 	return 3;
 }
 
 
 /***
  *
- * @function Spring.GetDecalSize
- * @number decalIndex
- * @treturn nil|number sizeX
- * @treturn number sizeY
- */
-int LuaUnsyncedRead::GetDecalSize(lua_State* L)
-{
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.size.x);
-	lua_pushnumber(L, decal.size.y);
-	return 2;
-}
-
-
-/***
- *
  * @function Spring.GetDecalRotation
- * @number decalIndex
+ * @number decalID
  * @treturn nil|number rotation in radians
  */
 int LuaUnsyncedRead::GetDecalRotation(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
 		return 0;
+	}
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.rot);
+	lua_pushnumber(L, decal->rot);
+
 	return 1;
 }
 
@@ -4623,17 +4666,29 @@ int LuaUnsyncedRead::GetDecalRotation(lua_State* L)
 /***
  *
  * @function Spring.GetDecalTexture
- * @number decalIndex
+ * @number decalID
+ * @bool[opt=true] isMainTex
  * @treturn nil|string texture
  */
 int LuaUnsyncedRead::GetDecalTexture(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	const auto& texName = groundDecals->GetDecalTexture(luaL_checkint(L, 1), luaL_optboolean(L, 2, true));
+	lua_pushsstring(L, texName);
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushsstring(L, decal.GetTexture());
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.GetDecalTextures
+ * @bool[opt=true] isMainTex
+ * @treturn {[string],...} textureNames
+ */
+int LuaUnsyncedRead::GetDecalTextures(lua_State* L)
+{
+	const auto& texNames = groundDecals->GetDecalTextures(luaL_optboolean(L, 2, true));
+	LuaUtils::PushStringVector(L, texNames);
+
 	return 1;
 }
 
@@ -4641,79 +4696,119 @@ int LuaUnsyncedRead::GetDecalTexture(lua_State* L)
 /***
  *
  * @function Spring.GetDecalAlpha
- * @number decalIndex
+ * @number decalID
  * @treturn nil|number alpha
+ * @treturn number alphaFalloff
  */
 int LuaUnsyncedRead::GetDecalAlpha(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
 		return 0;
+	}
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.alpha);
-	return 1;
+	lua_pushnumber(L, decal->alpha);
+	lua_pushnumber(L, decal->alphaFalloff);
+
+	return 2;
+}
+
+/***
+ *
+ * @function Spring.GetDecalNormal
+ * @number decalID
+ * @treturn nil|number normal.x
+ * @treturn number normal.y
+ * @treturn number normal.z
+ */
+int LuaUnsyncedRead::GetDecalNormal(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->forcedNormal.x);
+	lua_pushnumber(L, decal->forcedNormal.y);
+	lua_pushnumber(L, decal->forcedNormal.z);
+
+	return 3;
+}
+
+/***
+ *
+ * @function Spring.GetDecalCreationFrame
+ * @number decalID
+ * @treturn nil|number creationFrameMin
+ * @treturn number creationFrameMax
+ */
+int LuaUnsyncedRead::GetDecalCreationFrame(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->createFrameMin);
+	lua_pushnumber(L, decal->createFrameMax);
+
+	return 2;
 }
 
 
 /***
  *
  * @function Spring.GetDecalOwner
- * @number decalIndex
- * @treturn nil|number unitID
+ * @number decalID
+ * @treturn nil|number unitID|number featureID(+MAX_UNITS)
  */
 int LuaUnsyncedRead::GetDecalOwner(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* so = groundDecals->GetDecalSolidObjectOwner(luaL_checkint(L, 1));
+	if (so == nullptr)
 		return 0;
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
+	if (const auto* f = dynamic_cast<const CFeature*>(so); f != nullptr)
+		lua_pushnumber(L, unitHandler.MaxUnits() + so->id);
+	else
+		lua_pushnumber(L,                          so->id);
 
-	if (decal.owner == nullptr)
-		return 0;
-
-	//XXX: I know, not very fast, but you cannot dynamic_cast a void* back to a CUnit*
-	//     also it's not called very often and so doesn't matter
-	for (const CUnit* u: unitHandler.GetActiveUnits()) {
-		if (u != decal.owner)
-			continue;
-
-		lua_pushnumber(L, u->id);
-		return 1;
-	}
-
-	return 0;
+	return 1;
 }
 
 
 /***
  *
  * @function Spring.GetDecalType
- * @number decalIndex
- * @treturn nil|string type "explosion"|"building"|"lua"|"unknown"
+ * @number decalID
+ * @treturn nil|string type "explosion"|"plate"|"lua"|"track"|"unknown"
  */
 int LuaUnsyncedRead::GetDecalType(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
 		return 0;
-
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	switch (decal.type) {
-		case CDecalsDrawerGL4::Decal::EXPLOSION: {
-			lua_pushliteral(L, "explosion");
-		} break;
-		case CDecalsDrawerGL4::Decal::BUILDING: {
-			lua_pushliteral(L, "building");
-		} break;
-		case CDecalsDrawerGL4::Decal::LUA: {
-			lua_pushliteral(L, "lua");
-		} break;
-		default: {
-			lua_pushliteral(L, "unknown");
-		}
 	}
+
+	switch (decal->info.type)
+	{
+	case GroundDecal::Type::DECAL_PLATE:
+		lua_pushliteral(L, "plate");
+		break;
+	case GroundDecal::Type::DECAL_EXPLOSION:
+		lua_pushliteral(L, "explosion");
+		break;
+	case GroundDecal::Type::DECAL_TRACK:
+		lua_pushliteral(L, "track");
+		break;
+	case GroundDecal::Type::DECAL_LUA:
+		lua_pushliteral(L, "lua");
+		break;
+	default:
+		lua_pushliteral(L, "unknown");
+		break;
+	}
+
 	return 1;
 }
 

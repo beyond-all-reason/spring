@@ -2963,7 +2963,6 @@ CR_REG_METADATA(CUnit, (
 
 	CR_MEMBER(selfDCountdown),
 
-	CR_MEMBER_UN(myTrack),
 	CR_MEMBER_UN(myIcon),
 	CR_MEMBER_UN(drawIcon),
 

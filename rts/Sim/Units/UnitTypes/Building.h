@@ -6,8 +6,6 @@
 #include "Sim/Units/Unit.h"
 #include "System/float3.h"
 
-struct SolidObjectGroundDecal;
-
 class CBuilding : public CUnit
 {
 public:
