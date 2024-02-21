@@ -3,15 +3,19 @@
 #ifndef UNIT_MEMPOOL_H
 #define UNIT_MEMPOOL_H
 
-#include "UnitTypes/Builder.h"
+#include "UnitTypes/Building.h"
+#include "UnitTypes/Factory.h"
+#include "UnitTypes/ExtractorBuilding.h"
+
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/MemPoolTypes.h"
 
+static constexpr auto BiggestCUnitDerivative = std::max({ sizeof(CBuilding), sizeof(CFactory), sizeof(CExtractorBuilding) });
+
 #if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64))
-// CBuilder is (currently) the largest derived unit-type
-typedef StaticMemPool<MAX_UNITS, sizeof(CBuilder)> UnitMemPool;
+typedef StaticMemPool<MAX_UNITS, BiggestCUnitDerivative> UnitMemPool;
 #else
-typedef FixedDynMemPool<sizeof(CBuilder), MAX_UNITS / 1000, MAX_UNITS / 32> UnitMemPool;
+typedef FixedDynMemPool<BiggestCUnitDerivative, MAX_UNITS / 1000, MAX_UNITS / 32> UnitMemPool;
 #endif
 
 extern UnitMemPool unitMemPool;

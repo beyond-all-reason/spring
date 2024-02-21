@@ -4380,7 +4380,7 @@ static int GetBuilderWorkerTask(lua_State* L, const CBuilder *builder)
 			lua_pushnumber(L, reclaimee->id + unitHandler.MaxUnits());
 		}
 		return 2;
-	} else if (builder->helpTerraform || builder->terraforming) {
+	} else if (auto* tt = builder->GetTerraformTask(); builder->TerraformingForBuilding(tt) == false) {
 		lua_pushnumber(L, CMD_RESTORE); // FIXME: could also be leveling ground before construction
 		return 1;
 	} else {
