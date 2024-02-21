@@ -317,6 +317,11 @@ void CProjectileDrawer::Init() {
 			fxShader->SetUniform("depthTex", 15);
 			fxShader->SetUniform("softenExponent", softenExponent[0], softenExponent[1]);
 		}
+
+		fxShader->SetUniform("camPos", 0.0f, 0.0f, 0.0f);
+		fxShader->SetUniform("fogColor", 0.0f, 0.0f, 0.0f);
+		fxShader->SetUniform("fogParams", 0.0f, 0.0f);
+
 		fxShader->Disable();
 
 		fxShader->Validate();
@@ -792,15 +797,24 @@ void CProjectileDrawer::DrawAlpha(bool drawReflection, bool drawRefraction)
 			glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture(false));
 		}
 
-		fxShaders[needSoften]->Enable();
-		fxShaders[needSoften]->SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f);
+		auto* fxShader = fxShaders[needSoften];
+
+		const auto camPlayer = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
+		const auto& sky = ISky::GetSky();
+
+		fxShader->Enable();
+		fxShader->SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f);
 		if (needSoften) {
-			fxShaders[needSoften]->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
+			fxShader->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
 		}
+
+		fxShader->SetUniform("camPos", camPlayer->pos.x, camPlayer->pos.y, camPlayer->pos.z);
+		fxShader->SetUniform("fogColor", sky->fogColor.x, sky->fogColor.y, sky->fogColor.z);
+		fxShader->SetUniform("fogParams", sky->fogStart * camPlayer->GetFarPlaneDist(), sky->fogEnd * camPlayer->GetFarPlaneDist());
 
 		rb.DrawElements(GL_TRIANGLES);
 
-		fxShaders[needSoften]->Disable();
+		fxShader->Disable();
 
 		if (needSoften) {
 			glBindTexture(GL_TEXTURE_2D, 0); //15th slot
