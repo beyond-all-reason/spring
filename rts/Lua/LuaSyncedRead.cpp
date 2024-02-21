@@ -1475,10 +1475,10 @@ int LuaSyncedRead::GetSideData(lua_State* L)
 		return 3;
 	}
 	{
-		lua_newtable(L);
 		const unsigned int sideCount = sideParser.GetCount();
+		lua_createtable(L, sideCount, 0);
 		for (unsigned int i = 0; i < sideCount; i++) {
-			lua_newtable(L); {
+			lua_createtable(L, 0, 3); {
 				LuaPushNamedString(L, "sideName",  sideParser.GetSideName(i));
 				LuaPushNamedString(L, "caseName",  sideParser.GetCaseName(i));
 				LuaPushNamedString(L, "startUnit", sideParser.GetStartUnit(i));
@@ -2006,12 +2006,12 @@ int LuaSyncedRead::GetTeamStatsHistory(lua_State* L)
 
 	std::advance(it, start);
 
-	lua_newtable(L);
+	lua_createtable(L, max(0, end - start), 0);
 	if (statCount > 0) {
 		int count = 1;
 		for (int i = start; i <= end; ++i, ++it) {
 			const TeamStatistics& stats = *it;
-			lua_newtable(L); {
+			lua_createtable(L, 0, 21); {
 				if (i+1 == teamStats.size()) {
 					// the `stats.frame` var indicates the frame when a new entry needs to get added,
 					// for the most recent stats entry this lies obviously in the future,
@@ -2254,7 +2254,7 @@ int LuaSyncedRead::GetAIInfo(lua_State* L)
 		lua_pushsstring(L, aiData->shortName);
 		lua_pushsstring(L, aiData->version);
 
-		lua_newtable(L);
+		lua_createtable(L, 0, aiData->options.size());
 
 		for (const auto& option: aiData->options) {
 			lua_pushsstring(L, option.first);
@@ -5484,7 +5484,7 @@ int LuaSyncedRead::GetUnitDefDimensions(lua_State* L)
 
 	const S3DModel& m = *model;
 	const float3& mid = model->relMidPos;
-	lua_newtable(L);
+	lua_createtable(L, 0, 11);
 	HSTR_PUSH_NUMBER(L, "height", m.height);
 	HSTR_PUSH_NUMBER(L, "radius", m.radius);
 	HSTR_PUSH_NUMBER(L, "midx",   mid.x);
@@ -5542,7 +5542,7 @@ int LuaSyncedRead::GetUnitMoveTypeData(lua_State* L)
 
 	AMoveType* amt = unit->moveType;
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 26);
 	HSTR_PUSH_NUMBER(L, "maxSpeed", amt->GetMaxSpeed() * GAME_SPEED);
 	HSTR_PUSH_NUMBER(L, "maxWantedSpeed", amt->GetMaxWantedSpeed() * GAME_SPEED);
 	HSTR_PUSH_NUMBER(L, "goalx", amt->goalPos.x);
@@ -5914,7 +5914,7 @@ int LuaSyncedRead::GetFactoryBuggerOff(lua_State* L)
 static void PackFactoryCounts(lua_State* L,
                               const CCommandQueue& q, int count, bool noCmds)
 {
-	lua_newtable(L);
+	lua_createtable(L, count + 1, 0);
 
 	int entry = 0;
 	int currentCmd = 0;
@@ -5940,7 +5940,10 @@ static void PackFactoryCounts(lua_State* L,
 		}
 		else {
 			entry++;
-			lua_newtable(L); {
+			// Here and below, negative integer keys in lua tables are stored in the
+			// hash part of the table, hence we set nrec to 1 instead of narr.
+			// Lua Gems Chapter 2: About tables.
+			lua_createtable(L, 0, 1); {
 				lua_pushnumber(L, currentCount);
 				lua_rawseti(L, -2, -currentCmd);
 			}
@@ -5951,7 +5954,7 @@ static void PackFactoryCounts(lua_State* L,
 	}
 	if (currentCount > 0) {
 		entry++;
-		lua_newtable(L); {
+		lua_createtable(L, 0, 1); {
 			lua_pushnumber(L, currentCount);
 			lua_rawseti(L, -2, -currentCmd);
 		}
@@ -7940,12 +7943,12 @@ static int GetSolidObjectPieceList(lua_State* L, const CSolidObject* o)
 
 static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 {
-	lua_newtable(L);
+	lua_createtable(L, 0, 7);
 	HSTR_PUSH_STRING(L, "name", op.name);
 	HSTR_PUSH_STRING(L, "parent", ((op.parent != nullptr) ? op.parent->name : "[null]"));
 
 	HSTR_PUSH(L, "children");
-	lua_newtable(L);
+	lua_createtable(L, op.children.size(), 0);
 	for (size_t c = 0; c < op.children.size(); c++) {
 		lua_pushsstring(L, op.children[c]->name);
 		lua_rawseti(L, -2, c + 1);
@@ -7957,7 +7960,7 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "min");
-	lua_newtable(L); {
+	lua_createtable(L, 3, 0); {
 		lua_pushnumber(L, op.mins.x); lua_rawseti(L, -2, 1);
 		lua_pushnumber(L, op.mins.y); lua_rawseti(L, -2, 2);
 		lua_pushnumber(L, op.mins.z); lua_rawseti(L, -2, 3);
@@ -7965,7 +7968,7 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "max");
-	lua_newtable(L); {
+	lua_createtable(L, 3, 0); {
 		lua_pushnumber(L, op.maxs.x); lua_rawseti(L, -2, 1);
 		lua_pushnumber(L, op.maxs.y); lua_rawseti(L, -2, 2);
 		lua_pushnumber(L, op.maxs.z); lua_rawseti(L, -2, 3);
@@ -7973,7 +7976,7 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "offset");
-	lua_newtable(L); {
+	lua_createtable(L, 3, 0); {
 		lua_pushnumber(L, op.offset.x); lua_rawseti(L, -2, 1);
 		lua_pushnumber(L, op.offset.y); lua_rawseti(L, -2, 2);
 		lua_pushnumber(L, op.offset.z); lua_rawseti(L, -2, 3);

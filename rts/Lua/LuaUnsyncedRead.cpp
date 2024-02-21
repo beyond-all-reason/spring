@@ -2755,7 +2755,8 @@ int LuaUnsyncedRead::GetCameraState(lua_State* L)
 		}
 	}
 
-	lua_newtable(L);
+	lua_createtable(L, 0,
+			std::tuple_size<CCameraController::StateMap::ArrayMap>{});
 
 	lua_pushliteral(L, "name");
 	lua_pushsstring(L, (camHandler->GetCurrentController()).GetName());
@@ -2853,7 +2854,7 @@ int LuaUnsyncedRead::GetCameraVectors(lua_State* L)
 	lua_pushnumber(L, camera-> n .z); lua_rawseti(L, -2, 3); \
 	lua_rawset(L, -3)
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 7);
 	PACK_CAMERA_VECTOR(forward, GetDir());
 	PACK_CAMERA_VECTOR(up, GetUp());
 	PACK_CAMERA_VECTOR(right, GetRight());
@@ -3050,7 +3051,7 @@ static bool AddPlayerToRoster(lua_State* L, int playerID, bool onlyActivePlayers
 		return false;
 
 	int index = 1;
-	lua_newtable(L);
+	lua_createtable(L, 7, 0);
 	PUSH_ROSTER_ENTRY(string, p->name.c_str());
 	PUSH_ROSTER_ENTRY(number, playerID);
 	PUSH_ROSTER_ENTRY(number, p->team);
@@ -3397,7 +3398,12 @@ int LuaUnsyncedRead::GetActiveCmdDescs(lua_State* L)
 	const int cmdDescCount = (int)cmdDescs.size();
 
 	lua_checkstack(L, 1 + 2);
-	lua_newtable(L);
+	// When CMD_INDEX_OFFSET is not 1, lua will resort to using the hash
+	// part to index table keys as we're no longer adding keys to the table
+	// following the sequence 1 to N for any N.
+	lua_createtable(L,
+			CMD_INDEX_OFFSET == 1 ? cmdDescCount : 0,
+			CMD_INDEX_OFFSET == 1 ? 0 : cmdDescCount);
 
 	for (int i = 0; i < cmdDescCount; i++) {
 		LuaUtils::PushCommandDesc(L, cmdDescs[i]);
@@ -3966,9 +3972,9 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 	}
 
 	int i = 1;
-	lua_newtable(L);
+	lua_createtable(L, actions.size(), 0);
 	for (const Action& action: actions) {
-		lua_newtable(L);
+		lua_createtable(L, 0, 4);
 			lua_pushsstring(L, action.command);
 			lua_pushsstring(L, action.extra);
 			lua_rawset(L, -3);

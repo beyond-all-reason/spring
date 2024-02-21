@@ -783,7 +783,7 @@ int LuaUtils::PushModelTable(lua_State* L, const SolidObjectDef* def) {
 	 * access it in the slower way without realizing it */
 	const S3DModel* model = def->LoadModel();
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 10);
 
 	if (model != nullptr) {
 		// unit, or non-tree feature
@@ -811,7 +811,7 @@ int LuaUtils::PushModelTable(lua_State* L, const SolidObjectDef* def) {
 	}
 
 	HSTR_PUSH(L, "textures");
-	lua_newtable(L);
+	lua_createtable(L, 0, model != nullptr ? 2 : 0);
 
 	if (model != nullptr) {
 		LuaPushNamedString(L, "tex1", model->texs[0]);
@@ -829,7 +829,7 @@ int LuaUtils::PushModelTable(lua_State* L, const SolidObjectDef* def) {
 int LuaUtils::PushColVolTable(lua_State* L, const CollisionVolume* vol) {
 	assert(vol != nullptr);
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 11);
 	switch (vol->GetVolumeType()) {
 		case CollisionVolume::COLVOL_TYPE_ELLIPSOID:
 			HSTR_PUSH_CSTRING(L, "type", "ellipsoid");

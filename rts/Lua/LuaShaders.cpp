@@ -892,11 +892,11 @@ int LuaShaders::GetActiveUniforms(lua_State* L)
 	if (prog == nullptr)
 		return 0;
 
-	lua_newtable(L);
+	lua_createtable(L, prog->activeUniforms.size(), 0);
 
 	GLint i = 0;
 	for (const auto& [name, au] : prog->activeUniforms) {
-		lua_newtable(L); {
+		lua_createtable(L, 0, 5); {
 			HSTR_PUSH_STRING(L, "name"    , name);
 			HSTR_PUSH_STRING(L, "type"    , UniformTypeString(au.type));
 			HSTR_PUSH_NUMBER(L, "length"  , name.size());
