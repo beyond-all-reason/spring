@@ -653,74 +653,89 @@ void TBitmapAction<T, ch>::Renormalize(const float3& newCol)
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 {
-	static constexpr float blurkernel[9] = {
-		1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f,
-		2.0f / 16.0f, 4.0f / 16.0f, 2.0f / 16.0f,
-		1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f
+	// We use an axis-separated blur algorithm. Applies blurkernel in both the x
+	// and y dimensions. This 3x1 blur kernel is equivalent to a 3x3 kernel in
+	// both the x and y dimensions.
+	// See more info
+	// https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/
+	static constexpr float blurkernel[3] = {
+		1.0f / 4.0f, 2.0f / 4.0f, 1.0f / 4.0f
 	};
 
+	// Two temporaries are required in order to perform axis separated gaussian
+	// blur with an additional weight from the source pixel specified by `weight`.
+	// The first blur pass, when dimension == 0, applies blur in the x
+	// dimension on bitmaps[0] and saves the result to bitmaps[1]. The second blur
+	// pass, when dimension == 1, applies blur in the y dimension on bitmaps[1]
+	// and saves the result in bitmaps[2]. Additionally, the second blur pass adds
+	// an additional `weight` from bitmaps[0] to the final result in bitmaps[2].
 	CBitmap tmp(nullptr, bmp->xsize, bmp->ysize, bmp->channels, bmp->dataType);
+	CBitmap tmp2(nullptr, bmp->xsize, bmp->ysize, bmp->channels, bmp->dataType);
 
-	CBitmap* src =  bmp;
-	CBitmap* dst = &tmp;
-
-	//don't use "this" here
-	auto srcAction = BitmapAction::GetBitmapAction(src);
-	auto dstAction = BitmapAction::GetBitmapAction(dst);
+	std::array<CBitmap*, 3> bitmaps = {bmp, &tmp, &tmp2};
+	std::array<std::unique_ptr<BitmapAction>, 3> actions = {
+		BitmapAction::GetBitmapAction(bitmaps[0]),
+		BitmapAction::GetBitmapAction(bitmaps[1]),
+		BitmapAction::GetBitmapAction(bitmaps[2])
+	};
 
 	using ThisType = decltype(this);
 
 	for (int iter = 0; iter < iterations; ++iter) {
-		for_mt(0, src->ysize, [&](const int y) {
-			for (int x = 0; x < src->xsize; x++) {
-				int yBaseOffset = (y * src->xsize);
-				for (int a = 0; a < src->channels; a++) {
+		for(int dimension = 0; dimension < 2; ++dimension) {
 
-					///////////////////////////////////////
-					float fragment = 0.0f;
+			CBitmap* src = bitmaps[dimension];
+			CBitmap* dst = bitmaps[dimension + 1];
 
-					for (int i = 0; i < 9; ++i) {
-						int yoffset = (i / 3) - 1;
-						int xoffset = (i - (yoffset + 1) * 3) - 1;
+			auto& srcAction = actions[dimension];
+			auto& dstAction = actions[dimension + 1];
 
-						const int tx = x + xoffset;
-						const int ty = y + yoffset;
+			for_mt(0, src->ysize, [&](const int y) {
+				for (int x = 0; x < src->xsize; x++) {
+					int yBaseOffset = (y * src->xsize);
+					for (int a = 0; a < src->channels; a++) {
+						float fragment = 0.0f;
 
-						xoffset *= ((tx >= 0) && (tx < src->xsize));
-						yoffset *= ((ty >= 0) && (ty < src->ysize));
+						for (int i = 0; i < 3; ++i) {
+							int yoffset = dimension == 1 ? (i - 1) : 0;
+							int xoffset = dimension == 0 ? (i - 1) : 0;
 
-						const int offset = (yoffset * src->xsize + xoffset);
+							const int tx = x + xoffset;
+							const int ty = y + yoffset;
 
-						auto& srcChannel = static_cast<ThisType>(srcAction.get())->GetRef(yBaseOffset + x + offset, a);
+							xoffset *= ((tx >= 0) && (tx < src->xsize));
+							yoffset *= ((ty >= 0) && (ty < src->ysize));
 
-						const float thisWeight = mix(1.0f, weight, i == 4);
-						fragment += (thisWeight * blurkernel[i] * srcChannel);
+							const int offset = (yoffset * src->xsize + xoffset);
+
+							auto& srcChannel = static_cast<ThisType>(srcAction.get())->GetRef(yBaseOffset + x + offset, a);
+
+							fragment += (blurkernel[i] * srcChannel);
+						}
+
+						if (dimension == 1) {
+							auto& srcChannel = static_cast<ThisType>(actions[0].get())->GetRef(yBaseOffset + x, a);
+
+							fragment += (blurkernel[1] * blurkernel[1]) * (weight - 1.0f) * srcChannel;
+						}
+
+						auto& dstChannel = static_cast<ThisType>(dstAction.get())->GetRef(yBaseOffset + x, a);
+
+						if constexpr (std::is_same_v<ChanType, float>) {
+							dstChannel = static_cast<ChanType>(std::max(fragment, 0.0f));
+						}
+						else {
+							dstChannel = static_cast<ChanType>(std::clamp(fragment, 0.0f, static_cast<float>(GetMaxNormValue())));
+						}
 					}
-
-					auto& dstChannel = static_cast<ThisType>(dstAction.get())->GetRef(yBaseOffset + x, a);
-
-					if constexpr (std::is_same_v<ChanType, float>) {
-						dstChannel = static_cast<ChanType>(std::max(fragment, 0.0f));
-					}
-					else {
-						dstChannel = static_cast<ChanType>(std::clamp(fragment, 0.0f, static_cast<float>(GetMaxNormValue())));
-					}
-					///////////////////////////////////////
 				}
-			}
-		});
+			});
+		}
 
-		std::swap(srcAction, dstAction);
-		std::swap(src, dst);
+		std::swap(actions[0], actions[2]);
+		std::swap(bitmaps[0], bitmaps[2]);
 	}
 
-	// if dst points to temporary, we are done
-	// otherwise need to perform one more swap
-	// (e.g. if iterations=1)
-	if (dst != bmp)
-		return;
-
-	std::swap(src, dst);
 }
 
 template<typename T, uint32_t ch>
