@@ -64,7 +64,8 @@ private:
 // Helper to infer the memory alignment and size from a set of types.
 template <class ...T>
 struct TypesMem {
-    alignas(std::max({alignof(T)...})) uint8_t data[std::max({sizeof(T)...})];
+	static constexpr auto S = std::max({ sizeof(T)... });
+	static constexpr auto A = std::max({ alignof(T)... });
 };
 
 template<size_t S, size_t Alignment> struct DynMemPool {
@@ -160,7 +161,7 @@ private:
 
 // Helper to infer the DynMemPool pool parameters from a types.
 template<class ...T>
-using DynMemPoolT = DynMemPool<sizeof(TypesMem<T...>), alignof(TypesMem<T...>)>;
+using DynMemPoolT = DynMemPool<TypesMem<T...>::S, TypesMem<T...>::A>;
 
 // fixed-size dynamic version
 // page size per chunk, number of chunks, number of pages per chunk
@@ -279,7 +280,7 @@ private:
 
 // Helper to infer the FixedDynMemPool pool parameters from a types.
 template<size_t N, size_t K, class ...T>
-using FixedDynMemPoolT = FixedDynMemPool<sizeof(TypesMem<T...>), N, K, alignof(TypesMem<T...>)>;
+using FixedDynMemPoolT = FixedDynMemPool<TypesMem<T...>::S, N, K, TypesMem<T...>::A>;
 
 // fixed-size version.
 template<size_t N, size_t S, size_t Alignment> struct StaticMemPool {
@@ -365,7 +366,7 @@ private:
 
 // Helper to infer the StaticMemPool pool parameters from a types.
 template<size_t N, class ...T>
-using StaticMemPoolT = StaticMemPool<N, sizeof(TypesMem<T...>), alignof(TypesMem<T...>)>;
+using StaticMemPoolT = StaticMemPool<N, TypesMem<T...>::S, TypesMem<T...>::A>;
 
 
 // dynamic memory allocator operating with stable index positions
