@@ -27,7 +27,10 @@ void* spring::ReallocateAlignedMemory(void* ptr, size_t size, size_t alignment)
 #ifdef _WIN32
     return _aligned_realloc(ptr, size, alignment);
 #else
-    ptr = realloc(ptr, size);
+    void *const tmp = realloc(ptr, size);
+    if (!tmp)
+        throw std::bad_alloc();
+    ptr = tmp;
     if (reinterpret_cast<std::uintptr_t>(ptr) % alignment == 0)
         return ptr;
 
