@@ -2485,25 +2485,10 @@ static inline void InsertSearchUnitDefs(const UnitDef* ud, bool allied)
 	if (ud == nullptr)
 		return;
 
-	if (allied) {
-		gtuObjectIDs.push_back(ud->id);
-		return;
-	}
-	if (ud->decoyDef != nullptr)
+	if (!allied && ud->decoyDef)
 		return;
 
 	gtuObjectIDs.push_back(ud->id);
-
-	// spring::unordered_map<int, std::vector<int> >
-	const auto& decoyMap = unitDefHandler->GetDecoyDefIDs();
-	const auto decoyMapIt = decoyMap.find(ud->id);
-
-	if (decoyMapIt == decoyMap.end())
-		return;
-
-	for (int decoyDefID: decoyMapIt->second) {
-		gtuObjectIDs.push_back(decoyDefID);
-	}
 }
 
 
@@ -2726,26 +2711,36 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 	}
 
 	// sort the ID's so duplicates can be skipped
-	std::stable_sort(gtuObjectIDs.begin(), gtuObjectIDs.end());
+	spring::VectorSortUnique(gtuObjectIDs);
 
-	lua_createtable(L, gtuObjectIDs.size(), 0);
-
-	unsigned int unitCount = 1;
-	unsigned int prevUnitDefID = -1;
+	std::vector<int> unitIDs;
+	size_t lastOfsset = 0;
+	bool isCalledFromSynced = CLuaHandle::GetHandleSynced(L);
 
 	for (const int unitDefID: gtuObjectIDs) {
-		if (unitDefID == prevUnitDefID)
-			continue;
-
-		prevUnitDefID = unitDefID;
-
-		for (const CUnit* unit: unitHandler.GetUnitsByTeamAndDef(teamID, unitDefID)) {
+		for (const CUnit* unit: unitHandler.GetUnitsByTeam(teamID)) {
 			if (!allied && !LuaUtils::IsUnitTyped(L, unit))
 				continue;
 
-			lua_pushnumber(L, unit->id);
-			lua_rawseti(L, -2, unitCount++);
+			if (unit->unitDef->id == unitDefID || (!allied && unit->unitDef->decoyDef && unit->unitDef->decoyDef->id == unitDefID)) {
+				unitIDs.emplace_back(unit->id);
+			}
 		}
+
+		if (isCalledFromSynced)
+			continue;
+
+		/* `unitHandler.GetUnitsByTeam` returns units in creation order,
+		 * which would reveal some extra information if passed unchanged. */
+		spring::random_shuffle(unitIDs.begin() + lastOfsset, unitIDs.end(), guRNG);
+		lastOfsset = unitIDs.size();
+	}
+
+	lua_createtable(L, unitIDs.size(), 0);
+
+	for (int i = 0; i < unitIDs.size(); ++i) {
+		lua_pushnumber(L, unitIDs[i]);
+		lua_rawseti(L, -2, i + 1);
 	}
 
 	return 1;
