@@ -18,11 +18,12 @@ struct TeamStatistics
 
 	int frame; /* frame is the start address and must be the first element */
 
-	float metalUsed,     energyUsed;
-	float metalProduced, energyProduced;
-	float metalExcess,   energyExcess;
-	float metalReceived, energyReceived; /* received from allies */
-	float metalSent,     energySent;     /* sent to allies */
+	float metalUsed,      energyUsed;
+	float metalProduced,  energyProduced;
+	float metalExcess,    energyExcess;
+	float metalReceived,  energyReceived; /* received from allies */
+	float metalSent,      energySent;     /* sent to allies */
+	float metalReclaimed, energyReclaimed;
 
 	float damageDealt,   damageReceived; /* Damage taken and dealt to enemy units */
 

@@ -1992,7 +1992,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 			}
 		}
 
-		if (!builder->IssueResourceOrder(&order)) {
+		if (!builder->IssueResourceOrder(&order, true)) {
 			return false;
 		}
 
@@ -2176,7 +2176,7 @@ bool CUnit::UseResources(const SResourcePack& pack)
 }
 
 
-void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
+void CUnit::AddResources(const SResourcePack& pack, bool isReclaim, bool useIncomeMultiplier)
 {
 	//FIXME
 	/*if (energy < 0.0f) {
@@ -2184,7 +2184,7 @@ void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 		return true;
 	}*/
 	resourcesMakeI += pack;
-	teamHandler.Team(team)->AddResources(pack, useIncomeMultiplier);
+	teamHandler.Team(team)->AddResources(pack, isReclaim, useIncomeMultiplier);
 }
 
 
@@ -2248,7 +2248,7 @@ static bool LimitToFullStorage(const CUnit* u, const CTeam* team, SResourceOrder
 }
 
 
-bool CUnit::IssueResourceOrder(SResourceOrder* order)
+bool CUnit::IssueResourceOrder(SResourceOrder* order, bool isReclaim)
 {
 	//FIXME assert(order.use.energy >= 0.0f && order.use.metal >= 0.0f);
 	//FIXME assert(order.add.energy >= 0.0f && order.add.metal >= 0.0f);
@@ -2273,7 +2273,7 @@ bool CUnit::IssueResourceOrder(SResourceOrder* order)
 	// add
 	if (!order->add.empty()) {
 		if (harvestStorage.empty()) {
-			AddResources(order->add);
+			AddResources(order->add, isReclaim);
 		} else {
 			bool isFull = false;
 			for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {

@@ -18,6 +18,8 @@ CR_REG_METADATA(TeamStatistics, (
 	CR_MEMBER(energyReceived),
 	CR_MEMBER(metalSent),
 	CR_MEMBER(energySent),
+	CR_MEMBER(metalReclaimed),
+	CR_MEMBER(energyReclaimed),
 	CR_MEMBER(damageDealt),
 	CR_MEMBER(damageReceived),
 	CR_MEMBER(unitsProduced),
@@ -42,6 +44,8 @@ TeamStatistics::TeamStatistics()
 	, energyReceived(0.0f)
 	, metalSent(0.0f)
 	, energySent(0.0f)
+	, metalReclaimed(0.0f)
+	, energyReclaimed(0.0f)
 
 	, damageDealt(0.0f)
 	, damageReceived(0.0f)
@@ -70,6 +74,8 @@ void TeamStatistics::swab()
 	swabFloatInPlace(energyReceived);
 	swabFloatInPlace(metalSent);
 	swabFloatInPlace(energySent);
+	swabFloatInPlace(metalReclaimed);
+	swabFloatInPlace(energyReclaimed);
 	swabFloatInPlace(damageDealt);
 	swabFloatInPlace(damageReceived);
 	swabDWordInPlace(unitsProduced);
