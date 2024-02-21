@@ -63,9 +63,13 @@ private:
 
 // Helper to infer the memory alignment and size from a set of types.
 template <class ...T>
+#if 0 // doesn't compile on MSVC 19.37
 struct TypesMem {
-    alignas(std::max({alignof(T)...})) uint8_t data[std::max({sizeof(T)...})];
+    alignas(alignof(T)...) uint8_t data[std::max({sizeof(T)...})];
 };
+#else
+using TypesMem = std::aligned_storage_t< std::max({ sizeof(T)... }), std::max({ alignof(T)... }) >;
+#endif
 
 template<size_t S, size_t Alignment> struct DynMemPool {
 public:
