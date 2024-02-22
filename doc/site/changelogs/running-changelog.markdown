@@ -11,6 +11,7 @@ This is the changelog **since version 2314**.
 # Caveats
 These are the entries which may require special attention when migrating:
 * some animations are now multi-threaded. It shouldn't cause desyncs, but an `AnimationMT` springsetting has been provided to disable it, just in case. See below.
+* when building the engine via CMake, only native C++ AIs are now built by default.
 
 # Features
 * added a new optional boolean parameter to `Spring.GetUnitHeading`, default false. If true, the value returned is in radians instead of the TA 16-bit angular unit.
@@ -21,6 +22,11 @@ There is currently no corresponding Set.
 * added `GAME/ShowServerName` startscript entry. If not empty, the initial connection screen's "Connecting to: X" message will display the value of that option instead of the host's IP.
 * added `Spring.GetModOption(string key) -> string? value`. Returns a single modoption; replaces the `Spring.GetModOptions().foo` pattern for greater performance.
 * added `Spring.GetMapOption(string key) -> string? value`, ditto for a single mapoption.
+* add a `Patrolling` selection filter. Applies to units that have a Patrol command among the first 4 commands (remember Patrol prepends Fight, which itself prepends Attack).
+* the `SpringDataRoot` springsetting now accepts multiple data root paths. Split them via ';' (on Windows) or ':' (elsewhere).
+* `Spring.GetUnitWorkerTask` now works on factories.
+* major performance (incl. loading time and Lua memory usage) improvements.
+* further Tracy instrumentation.
 
 ### More interfaces in `defs.lua`
 The following functions are now available in the `defs.lua` phase:
@@ -45,6 +51,12 @@ Currently water height is 0 everywhere. Use where appropriate to be future-proof
 * add `Spring.GetWaterPlaneLevel() -> number waterPlaneHeight`. Ditto, except encodes that you expect the water to be a flat plane.
 Use as above but where you have no x/z coordinates.
 
+### Interpolated game seconds
+* added `Spring.GetGameSecondsInterpolated() -> number` function to unsynced Lua.
+Unlike `GetGameSeconds` it flows during rendering. Unlike `GetDrawSeconds` its flow reflects gamespeed (incl. stopping when paused).
+And unlike `GetGameFrame` and `GetFrameTimeOffset` it is in a natural unit instead of the technical frame abstraction.
+* shaders: changed the `timeInfo.z` uniform from draw frame number to interpolated game seconds.
+
 ### Skidding
 * units will skid if hit with impulses sufficiently large in the direction opposite their movement vector. Previously units would only skid on large impulses that hit their sides.
 * added `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> nil`, for setting a unit's physical state bit. Gotta use magic constants for bits at the moment.
@@ -62,4 +74,6 @@ Use for example to unattach units from the grounds and trigger skidding.
 # Fixes
 * inserting (via `CMD.INSERT`) a "build unit" command to a factory with a SHIFT and/or CTRL modifier (i.e. x5/20) will now work correctly (previously ignored and went x1).
 * fix an issue where a unit that kills something via `SFX.FIRE_WEAPON` would sometimes continue to shoot at the location it was standing at at the time.
+* fixed `VFS` functions that deal with file paths being exceedingly slow.
+* fixed `Spring.GetTeamUnitsByDefs` revealing much more information than it should.
 * `Spring.GetUnitWeaponState(unitID, "burstRate")` now correctly returns fractional values (was only full integers before).
