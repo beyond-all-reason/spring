@@ -4584,7 +4584,7 @@ int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
  * @function Spring.SetGroundDecalTexture
  * @number decalID
  * @string textureName
- * @bool[opt=true] isMainTex
+ * @bool[opt=false] isNormalsTex
  * @treturn nil|bool decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
