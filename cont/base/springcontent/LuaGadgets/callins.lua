@@ -111,6 +111,7 @@ CALLIN_LIST = {
 	"AllowUnitCloak",
 	"AllowUnitDecloak",
 	"AllowUnitKamikaze",
+	"AllowUnitChase",
 	"AllowFeatureBuildStep",
 	"AllowFeatureCreation",
 	"AllowResourceLevel",
