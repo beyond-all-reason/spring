@@ -280,18 +280,18 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetConfigString);
 	REGISTER_LUA_CFUNC(GetLogSections);
 
-	REGISTER_LUA_CFUNC(GetAllDecals);
-	REGISTER_LUA_CFUNC(GetDecalMiddlePos);
-	REGISTER_LUA_CFUNC(GetDecalQuadPos);
-	REGISTER_LUA_CFUNC(GetDecalSizeAndHeight);
-	REGISTER_LUA_CFUNC(GetDecalRotation);
-	REGISTER_LUA_CFUNC(GetDecalTexture);
-	REGISTER_LUA_CFUNC(GetDecalTextures);
-	REGISTER_LUA_CFUNC(GetDecalAlpha);
-	REGISTER_LUA_CFUNC(GetDecalNormal);
-	REGISTER_LUA_CFUNC(GetDecalCreationFrame);
-	REGISTER_LUA_CFUNC(GetDecalOwner);
-	REGISTER_LUA_CFUNC(GetDecalType);
+	REGISTER_LUA_CFUNC(GetAllGroundDecals);
+	REGISTER_LUA_CFUNC(GetGroundDecalMiddlePos);
+	REGISTER_LUA_CFUNC(GetGroundDecalQuadPos);
+	REGISTER_LUA_CFUNC(GetGroundDecalSizeAndHeight);
+	REGISTER_LUA_CFUNC(GetGroundDecalRotation);
+	REGISTER_LUA_CFUNC(GetGroundDecalTexture);
+	REGISTER_LUA_CFUNC(GetGroundDecalTextures);
+	REGISTER_LUA_CFUNC(GetGroundDecalAlpha);
+	REGISTER_LUA_CFUNC(GetGroundDecalNormal);
+	REGISTER_LUA_CFUNC(GetGroundDecalCreationFrame);
+	REGISTER_LUA_CFUNC(GetGroundDecalOwner);
+	REGISTER_LUA_CFUNC(GetGroundDecalType);
 
 	REGISTER_LUA_CFUNC(UnitIconGetDraw);
 
@@ -4544,10 +4544,10 @@ int LuaUnsyncedRead::GetLogSections(lua_State* L) {
 
 /***
  *
- * @function Spring.GetAllDecals
+ * @function Spring.GetAllGroundDecals
  * @treturn nil|{[number],...} decalIDs
  */
-int LuaUnsyncedRead::GetAllDecals(lua_State* L)
+int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 {
 	const auto& decals = groundDecals->GetAllDecals();
 
@@ -4575,12 +4575,12 @@ int LuaUnsyncedRead::GetAllDecals(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalMiddlePos
+ * @function Spring.GetGroundDecalMiddlePos
  * @number decalID
  * @treturn nil|number posX
  * @treturn number posZ
  */
-int LuaUnsyncedRead::GetDecalMiddlePos(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalMiddlePos(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
 	if (!decal) {
@@ -4607,7 +4607,7 @@ int LuaUnsyncedRead::GetDecalMiddlePos(lua_State* L)
  * @treturn number posBL.x
  * @treturn number posBL.z
  */
-int LuaUnsyncedRead::GetDecalQuadPos(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalQuadPos(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
 	if (!decal) {
@@ -4629,21 +4629,22 @@ int LuaUnsyncedRead::GetDecalQuadPos(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalSizeAndHeight
+ * @function Spring.GetGroundDecalSizeAndHeight
  * @number decalID
  * @treturn nil|number sizeX
  * @treturn number sizeY
  * @treturn number projCubeHeight
  */
-int LuaUnsyncedRead::GetDecalSizeAndHeight(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalSizeAndHeight(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
 	if (!decal) {
 		return 0;
 	}
 
-	lua_pushnumber(L, (decal->posTL.Distance(decal->posTR) + decal->posBL.Distance(decal->posBR)) * 0.25f);
-	lua_pushnumber(L, (decal->posTL.Distance(decal->posBL) + decal->posTR.Distance(decal->posBR)) * 0.25f);
+	// average and take half of it
+	lua_pushnumber(L, (decal->posTL.Distance(decal->posTR) + decal->posBL.Distance(decal->posBR)) * 0.5f * 0.5f);
+	lua_pushnumber(L, (decal->posTL.Distance(decal->posBL) + decal->posTR.Distance(decal->posBR)) * 0.5f * 0.5f);
 	lua_pushnumber(L, decal->height);
 
 	return 3;
@@ -4652,11 +4653,11 @@ int LuaUnsyncedRead::GetDecalSizeAndHeight(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalRotation
+ * @function Spring.GetGroundDecalRotation
  * @number decalID
  * @treturn nil|number rotation in radians
  */
-int LuaUnsyncedRead::GetDecalRotation(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
 	if (!decal) {
@@ -4671,12 +4672,12 @@ int LuaUnsyncedRead::GetDecalRotation(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalTexture
+ * @function Spring.GetGroundDecalTexture
  * @number decalID
  * @bool[opt=true] isMainTex
  * @treturn nil|string texture
  */
-int LuaUnsyncedRead::GetDecalTexture(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
 {
 	const auto& texName = groundDecals->GetDecalTexture(luaL_checkint(L, 1), luaL_optboolean(L, 2, true));
 	lua_pushsstring(L, texName);
@@ -4690,7 +4691,7 @@ int LuaUnsyncedRead::GetDecalTexture(lua_State* L)
  * @bool[opt=true] isMainTex
  * @treturn {[string],...} textureNames
  */
-int LuaUnsyncedRead::GetDecalTextures(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
 {
 	const auto& texNames = groundDecals->GetDecalTextures(luaL_optboolean(L, 2, true));
 	LuaUtils::PushStringVector(L, texNames);
@@ -4701,12 +4702,12 @@ int LuaUnsyncedRead::GetDecalTextures(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalAlpha
+ * @function Spring.GetGroundDecalAlpha
  * @number decalID
  * @treturn nil|number alpha
  * @treturn number alphaFalloff
  */
-int LuaUnsyncedRead::GetDecalAlpha(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalAlpha(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
 	if (!decal) {
@@ -4721,13 +4722,13 @@ int LuaUnsyncedRead::GetDecalAlpha(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalNormal
+ * @function Spring.GetGroundDecalNormal
  * @number decalID
  * @treturn nil|number normal.x
  * @treturn number normal.y
  * @treturn number normal.z
  */
-int LuaUnsyncedRead::GetDecalNormal(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalNormal(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
 	if (!decal) {
@@ -4743,12 +4744,12 @@ int LuaUnsyncedRead::GetDecalNormal(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalCreationFrame
+ * @function Spring.GetGroundDecalCreationFrame
  * @number decalID
  * @treturn nil|number creationFrameMin
  * @treturn number creationFrameMax
  */
-int LuaUnsyncedRead::GetDecalCreationFrame(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalCreationFrame(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
 	if (!decal) {
@@ -4764,11 +4765,11 @@ int LuaUnsyncedRead::GetDecalCreationFrame(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalOwner
+ * @function Spring.GetGroundDecalOwner
  * @number decalID
  * @treturn nil|number unitID|number featureID(+MAX_UNITS)
  */
-int LuaUnsyncedRead::GetDecalOwner(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 {
 	const auto* so = groundDecals->GetDecalSolidObjectOwner(luaL_checkint(L, 1));
 	if (so == nullptr)
@@ -4785,11 +4786,11 @@ int LuaUnsyncedRead::GetDecalOwner(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalType
+ * @function Spring.GetGroundDecalType
  * @number decalID
  * @treturn nil|string type "explosion"|"plate"|"lua"|"track"|"unknown"
  */
-int LuaUnsyncedRead::GetDecalType(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalType(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
 	if (!decal) {

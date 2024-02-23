@@ -1152,12 +1152,22 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 	if (static_cast<float>(decals.size()) / static_cast<float>(numToDelete) <= RESORT_THRESHOLD)
 		return;
 
+	// temporary store the id --> DecalOwner relationship,
+	// for the convinience to restore decalOwners correctness,
+	// after the compaction is complete
+	spring::unordered_map<uint32_t, DecalOwner> tmpOwnerToId;
+
 	// Remove owners of expired items
 	for (auto doIt = decalOwners.begin(); doIt != decalOwners.end(); /*NOOP*/) {
-		if (decals[doIt->second].IsValid())
-			doIt = decalOwners.erase(doIt);
-		else
+		if (const auto& decal = decals[doIt->second]; decal.IsValid() || decal.info.type == GroundDecal::Type::DECAL_LUA) {
+			const uint32_t id = decals.at(doIt->second).info.id; //can't use bitfield directly below
+			tmpOwnerToId.emplace(id, doIt->first);
+
 			doIt++;
+		}
+		else {
+			doIt = decalOwners.erase(doIt);
+		}
 	}
 
 	// group all expired items towards the end of the vector
@@ -1174,12 +1184,23 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 	for (size_t i = 0; i < decals.size(); ++i) {
 		idToPos.emplace(decals[i].info.id, i);
 	}
+
+	// update the new positions of shrunk decals vector
+	for (const auto& [id, owner] : tmpOwnerToId) {
+		const auto ipIt = idToPos.find(id);
+		if (ipIt == idToPos.end()) {
+			assert(false);
+			continue;
+		}
+
+		decalOwners[owner] = ipIt->second;
+	}
 }
 
 void CGroundDecalHandler::UpdateDecalsVisibility()
 {
-	for (const auto& [owner, posType] : decalOwners) {
-		auto& decal = decals.at(posType);
+	for (const auto& [owner, pos] : decalOwners) {
+		auto& decal = decals.at(pos);
 
 		if (decal.info.type != GroundDecal::Type::DECAL_PLATE)
 			continue;
@@ -1211,7 +1232,7 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 
 			if (math::fabs(wantedMult - decal.visMult) > 0.05f) {
 				decal.visMult = wantedMult;
-				decalsUpdateList.SetUpdate(posType);
+				decalsUpdateList.SetUpdate(pos);
 			}
 		}
 		else /* const GhostSolidObject* */ {

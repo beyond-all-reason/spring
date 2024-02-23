@@ -201,18 +201,18 @@ class LuaUnsyncedRead {
 		static int GetConfigString(lua_State* L);
 		static int GetLogSections(lua_State* L);
 
-		static int GetAllDecals(lua_State* L);
-		static int GetDecalMiddlePos(lua_State* L);
-		static int GetDecalQuadPos(lua_State* L);
-		static int GetDecalSizeAndHeight(lua_State* L);
-		static int GetDecalRotation(lua_State* L);
-		static int GetDecalTexture(lua_State* L);
-		static int GetDecalTextures(lua_State* L);
-		static int GetDecalAlpha(lua_State* L);
-		static int GetDecalNormal(lua_State* L);
-		static int GetDecalCreationFrame(lua_State* L);
-		static int GetDecalType(lua_State* L);
-		static int GetDecalOwner(lua_State* L);
+		static int GetAllGroundDecals(lua_State* L);
+		static int GetGroundDecalMiddlePos(lua_State* L);
+		static int GetGroundDecalQuadPos(lua_State* L);
+		static int GetGroundDecalSizeAndHeight(lua_State* L);
+		static int GetGroundDecalRotation(lua_State* L);
+		static int GetGroundDecalTexture(lua_State* L);
+		static int GetGroundDecalTextures(lua_State* L);
+		static int GetGroundDecalAlpha(lua_State* L);
+		static int GetGroundDecalNormal(lua_State* L);
+		static int GetGroundDecalCreationFrame(lua_State* L);
+		static int GetGroundDecalType(lua_State* L);
+		static int GetGroundDecalOwner(lua_State* L);
 
 		static int UnitIconGetDraw(lua_State* L);
 

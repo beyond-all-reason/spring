@@ -186,16 +186,16 @@ class LuaUnsyncedCtrl {
 		static int PreloadSoundItem(lua_State* L);
 		static int LoadModelTextures(lua_State* L);
 
-		static int CreateDecal(lua_State* L);
-		static int DestroyDecal(lua_State* L);
+		static int CreateGroundDecal(lua_State* L);
+		static int DestroyGroundDecal(lua_State* L);
 
-		static int SetDecalPosAndDims(lua_State* L);
-		static int SetDecalQuadPosAndHeight(lua_State* L);
-		static int SetDecalRotation(lua_State* L);
-		static int SetDecalTexture(lua_State* L);
-		static int SetDecalAlpha(lua_State* L);
-		static int SetDecalNormal(lua_State* L);
-		static int SetDecalCreationFrame(lua_State* L);
+		static int SetGroundDecalPosAndDims(lua_State* L);
+		static int SetGroundDecalQuadPosAndHeight(lua_State* L);
+		static int SetGroundDecalRotation(lua_State* L);
+		static int SetGroundDecalTexture(lua_State* L);
+		static int SetGroundDecalAlpha(lua_State* L);
+		static int SetGroundDecalNormal(lua_State* L);
+		static int SetGroundDecalCreationFrame(lua_State* L);
 
 		static int SDLSetTextInputRect(lua_State* L);
 		static int SDLStartTextInput(lua_State* L);
