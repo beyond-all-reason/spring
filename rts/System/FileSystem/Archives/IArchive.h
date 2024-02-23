@@ -30,6 +30,8 @@ public:
 
 	virtual int GetType() const = 0;
 
+	virtual void WarmUp(const std::atomic_bool& cont) const = 0;
+
 	virtual bool IsOpen() = 0;
 	const std::string& GetArchiveFile() const { return archiveFile; }
 
