@@ -1557,7 +1557,8 @@ bool CMobileCAI::FindEmptySpot(const CUnit* unloadee, const float3& center, floa
 	// radius is the size of the command unloading-zone (e.g. dragged by player);
 	// spread is the *minimum* distance between any pair of unloaded units which
 	// also has to respect radius
-	spread = std::clamp(spread, 1.0f * SQUARE_SIZE, radius);
+	radius = std::max(radius, static_cast<float>(SQUARE_SIZE));
+	spread = std::clamp(spread, static_cast<float>(SQUARE_SIZE), radius);
 
 	// more attempts for larger unloading zones
 	for (int a = 0; a < maxAttempts; ++a) {
