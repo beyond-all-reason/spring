@@ -2800,7 +2800,7 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	const float buildScale = (1.0f / TEAM_SLOWUPDATE_RATE);
+	constexpr float buildScale = (1.0f / GAME_SPEED);
 	const float buildSpeed = buildScale * max(0.0f, luaL_checkfloat(L, 2));
 
 	CFactory* factory = dynamic_cast<CFactory*>(unit);
