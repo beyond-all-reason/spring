@@ -76,7 +76,7 @@ void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 void CFactory::PreInit(const UnitLoadParams& params)
 {
 	unitDef = params.unitDef;
-	buildSpeed = unitDef->buildSpeed / TEAM_SLOWUPDATE_RATE;
+	buildSpeed = unitDef->buildSpeed / GAME_SPEED;
 
 	CBuilding::PreInit(params);
 
