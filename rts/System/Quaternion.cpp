@@ -56,10 +56,10 @@ CQuaternion CQuaternion::MakeFrom(float angle, const float3& axis)
 CQuaternion CQuaternion::MakeFrom(const float3& v1, const float3& v2)
 {
 	float dp = v1.dot(v2);
-	if (unlikely(v1.same(v2))) {
+	if unlikely(v1.same(v2)) {
 		return CQuaternion(0.0f, v1);
 	}
-	else if (unlikely(v1.same(-v2))) {
+	else if unlikely(v1.same(-v2)) {
 		float3 v;
 		if (v1.x > -float3::cmp_eps() && v1.x < float3::cmp_eps())		// if x ~= 0
 			v = { 1.0f, 0.0f, 0.0f };
@@ -176,7 +176,7 @@ std::tuple<float3, CQuaternion, float3>  CQuaternion::DecomposeIntoTRS(const CMa
 CQuaternion& CQuaternion::Normalize()
 {
 	const float sqn = SqNorm();
-	if (unlikely(sqn < float3::nrm_eps()))
+	if unlikely(sqn < float3::nrm_eps())
 		return *this;
 
 	q *= math::isqrt(sqn);
@@ -221,7 +221,7 @@ CMatrix44f CQuaternion::ToRotMatrix() const
 CQuaternion& CQuaternion::Inverse()
 {
 	const float sqn = SqNorm();
-	if (unlikely(sqn < float3::nrm_eps()))
+	if unlikely(sqn < float3::nrm_eps())
 		return *this;
 
 	Conjugate() / SqNorm();
@@ -255,7 +255,7 @@ CQuaternion CQuaternion::SLerp(const CQuaternion& q1, const CQuaternion& q2_, co
 	CQuaternion q2 = q2_ * s;
 	cosTheta *= s;
 
-	if (unlikely(cosTheta > 1.0f - float3::cmp_eps())) {
+	if unlikely(cosTheta > 1.0f - float3::cmp_eps()) {
 		// Linear interpolation
 		return CQuaternion(
 			mix(q1.q, q2.q, a)
