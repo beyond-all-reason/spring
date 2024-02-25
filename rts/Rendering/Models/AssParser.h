@@ -122,6 +122,8 @@ private:
 		const std::vector<MeshData>& meshes
 	);
 
+	static void FillAnimation(const aiScene* scene, S3DModel* model);
+
 	SAssPiece* AllocPiece();
 	SAssPiece* LoadPiece(
 		S3DModel* model,

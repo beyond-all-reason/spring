@@ -26,6 +26,7 @@
 #include "lib/assimp/include/assimp/DefaultLogger.hpp"
 
 #include <regex>
+#include <set>
 #include <algorithm>
 #include <numeric>
 
@@ -52,7 +53,7 @@ static constexpr unsigned int ASS_IMPORTER_OPTIONS =
 	  aiComponent_CAMERAS
 	| aiComponent_LIGHTS
 	| aiComponent_TEXTURES
-	| aiComponent_ANIMATIONS
+	//| aiComponent_ANIMATIONS
 	| aiComponent_MATERIALS
 	;
 static constexpr unsigned int ASS_LOGGING_OPTIONS =
@@ -346,6 +347,8 @@ void CAssParser::Load(S3DModel& model, const std::string& modelFilePath)
 		else
 			ReparentMeshesTrianglesToBones(&model, meshes);
 	}
+
+	FillAnimation(scene, &model);
 
 	UpdatePiecesMinMaxExtents(&model);
 	CalculateModelProperties(&model, modelTable);
@@ -1091,6 +1094,97 @@ void CAssParser::ReparentCompleteMeshesToBones(S3DModel* model, const std::vecto
 			vert.sTangent = (invMat * float4{ vert.sTangent, 0.0f }).xyz;
 			vert.tTangent = (invMat * float4{ vert.tTangent, 0.0f }).xyz;
 		}
+	}
+}
+
+void CAssParser::FillAnimation(const aiScene* scene, S3DModel* model)
+{
+	if (!scene->HasAnimations())
+		return;
+
+	for (uint32_t ai = 0; ai < scene->mNumAnimations; ++ai) {
+		const auto* anim = scene->mAnimations[ai];
+		if (!anim) {
+			LOG_SL(LOG_SECTION_PIECE, L_ERROR, "Error reading the animation data(%u). The animation data is null. Model \"%s\"", ai, model->name.c_str());
+			return;
+		}
+
+		for (uint32_t ci = 0; ci < anim->mNumChannels; ++ci) {
+			const auto* animCh = anim->mChannels[ci];
+
+			auto* piece = model->FindPiece(animCh->mNodeName.C_Str());
+			if (!piece) {
+				LOG_SL(LOG_SECTION_PIECE, L_ERROR, "Error reading the animation data. Missing piece \"%s\" Model \"%s\"", animCh->mNodeName.C_Str(), model->name.c_str());
+				return;
+			}
+
+			std::set<float> allTimeStamps;
+			for (uint32_t ki = 0; ki < animCh->mNumPositionKeys; ++ki) {
+				allTimeStamps.emplace(animCh->mPositionKeys[ki].mTime);
+			}
+			for (uint32_t ki = 0; ki < animCh->mNumRotationKeys; ++ki) {
+				allTimeStamps.emplace(animCh->mRotationKeys[ki].mTime);
+			}
+
+			std::vector<aiVectorKey> posVec;
+			posVec.reserve(animCh->mNumPositionKeys + 1);
+			posVec.assign(animCh->mPositionKeys, animCh->mPositionKeys + animCh->mNumPositionKeys);
+			posVec.emplace_back(std::numeric_limits<float>::infinity(), posVec.back().mValue);
+
+			std::vector<aiQuatKey> rotVec;
+			rotVec.reserve(animCh->mNumRotationKeys + 1);
+			rotVec.assign(animCh->mRotationKeys, animCh->mRotationKeys + animCh->mNumRotationKeys);
+			rotVec.emplace_back(std::numeric_limits<float>::infinity(), rotVec.back().mValue);
+
+			for (float ts : allTimeStamps) {
+				AnimationKeyFrame akf;
+				akf.time = ts;
+
+				size_t vx;
+
+				vx = size_t(-1);
+				for (size_t vi = 0; vi < posVec.size() - 1; ++vi) {
+					if (posVec[vi].mTime <= ts && ts < posVec[vi + 1].mTime) {
+						vx = vi;
+						break;
+					}
+				}
+				if (vx == size_t(-1)) {
+					continue;
+					assert(false);
+				}
+
+				akf.translation = mix(
+					float3{ posVec[vx + 0].mValue.x, posVec[vx + 0].mValue.y, posVec[vx + 0].mValue.z },
+					float3{ posVec[vx + 1].mValue.x, posVec[vx + 1].mValue.y, posVec[vx + 1].mValue.z },
+					(ts - posVec[vx + 0].mTime)/ (posVec[vx + 1].mTime - posVec[vx + 0].mTime)
+				);
+
+				vx = size_t(-1);
+				for (size_t vi = 0; vi < rotVec.size() - 1; ++vi) {
+					if (rotVec[vi].mTime <= ts && ts < rotVec[vi + 1].mTime) {
+						vx = vi;
+						break;
+					}
+				}
+				if (vx == size_t(-1)) {
+					continue;
+					assert(false);
+				}
+
+				akf.rotation = CQuaternion::SLerp(
+					CQuaternion{ rotVec[vx + 0].mValue.x, rotVec[vx + 0].mValue.y, rotVec[vx + 0].mValue.z, rotVec[vx + 0].mValue.w },
+					CQuaternion{ rotVec[vx + 1].mValue.x, rotVec[vx + 1].mValue.y, rotVec[vx + 1].mValue.z, rotVec[vx + 1].mValue.w },
+					(ts - rotVec[vx + 0].mTime) / (rotVec[vx + 1].mTime - rotVec[vx + 0].mTime)
+				);
+
+				piece->animKeyFrames.emplace_back(std::move(akf));
+			}
+		}
+
+		// in seconds
+		const float duration = anim->mDuration / (anim->mTicksPerSecond != 0.0f ? anim->mTicksPerSecond : 25.0f);
+		model->animInfo.emplace(anim->mName.length > 0 ? std::string(anim->mName.C_Str()) : std::to_string(ai), { .duration = duration, .pos = ai });
 	}
 }
 
