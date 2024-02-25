@@ -66,12 +66,11 @@ public:
 
 	/**
 	 * @brief	resource map analyzer
-	 * @param	resourceId index of the resource whichs map analyzer to fetch
 	 * @return	resource map analyzer
 	 *
-	 * Returns the resource map analyzer by index.
+	 * Returns the resource map analyzer.
 	 */
-	const CResourceMapAnalyzer* GetResourceMapAnalyzer(int resourceId);
+	const CResourceMapAnalyzer* GetResourceMapAnalyzer();
 
 	size_t GetNumResources() const { return resourceDescriptions.size(); }
 

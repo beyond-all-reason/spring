@@ -85,11 +85,8 @@ int CResourceHandler::GetResourceId(const std::string& resourceName) const
 	return ((iter == resourceDescriptions.end())? -1: (iter - resourceDescriptions.cbegin()));
 }
 
-const CResourceMapAnalyzer* CResourceHandler::GetResourceMapAnalyzer(int resourceId)
+const CResourceMapAnalyzer* CResourceHandler::GetResourceMapAnalyzer()
 {
-	if (!IsValidId(resourceId))
-		return nullptr;
-
 	CResourceMapAnalyzer* rma = &resourceMapAnalyzer.value();
 
 	if (rma->GetNumSpots() < 0)
