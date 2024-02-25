@@ -12,7 +12,7 @@
 CR_BIND(CResourceHandler, )
 CR_REG_METADATA(CResourceHandler, (
 	CR_IGNORED(resourceDescriptions),
-	CR_IGNORED(resourceMapAnalyzers),
+	CR_IGNORED(resourceMapAnalyzer),
 	CR_MEMBER(metalResourceId),
 	CR_MEMBER(energyResourceId),
 
@@ -36,8 +36,7 @@ void CResourceHandler::FreeInstance() { instance.Kill(); }
 void CResourceHandler::AddResources() {
 	resourceDescriptions.clear();
 	resourceDescriptions.reserve(SResourcePack::MAX_RESOURCES);
-	resourceMapAnalyzers.clear();
-	resourceMapAnalyzers.reserve(SResourcePack::MAX_RESOURCES);
+	resourceMapAnalyzer.reset();
 
 	CResourceDescription rMetal;
 	rMetal.name = "Metal";
@@ -60,7 +59,14 @@ int CResourceHandler::AddResource(const CResourceDescription& resource)
 	assert(resourceDescriptions.size() < SResourcePack::MAX_RESOURCES);
 
 	resourceDescriptions.push_back(resource);
-	resourceMapAnalyzers.emplace_back(resourceDescriptions.size() - 1);
+
+	/* I'm not sure whether this needs to wait until a resource description exists.
+	 * Perhaps it could be created unconditionally earlier, since the map should
+	 * contain everything needed regardless. Keep in mind object lifetime issues
+	 * when dealing with things like save/load, or reloading a different map tho. */
+	if (!resourceMapAnalyzer)
+		resourceMapAnalyzer.emplace(0);
+
 	return (resourceDescriptions.size() - 1);
 }
 
@@ -122,7 +128,7 @@ const CResourceMapAnalyzer* CResourceHandler::GetResourceMapAnalyzer(int resourc
 	if (!IsValidId(resourceId))
 		return nullptr;
 
-	CResourceMapAnalyzer* rma = &resourceMapAnalyzers[resourceId];
+	CResourceMapAnalyzer* rma = &resourceMapAnalyzer.value();
 
 	if (rma->GetNumSpots() < 0)
 		rma->Init();

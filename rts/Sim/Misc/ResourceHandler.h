@@ -3,6 +3,7 @@
 #ifndef _RESOURCEHANDLER_H
 #define _RESOURCEHANDLER_H
 
+#include <optional>
 #include <vector>
 
 #include "System/Misc/NonCopyable.h"
@@ -24,7 +25,7 @@ public:
 	void Init() { AddResources(); }
 	void Kill() {
 		resourceDescriptions.clear();
-		resourceMapAnalyzers.clear();
+		resourceMapAnalyzer.reset();
 	}
 
 	void PostLoad() { AddResources(); }
@@ -113,7 +114,7 @@ public:
 
 private:
 	std::vector<CResourceDescription> resourceDescriptions;
-	std::vector<CResourceMapAnalyzer> resourceMapAnalyzers;
+	std::optional<CResourceMapAnalyzer> resourceMapAnalyzer;
 
 	int metalResourceId = -1;
 	int energyResourceId = -1;
