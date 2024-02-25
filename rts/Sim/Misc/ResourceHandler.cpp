@@ -2,10 +2,8 @@
 
 #include "ResourceHandler.h"
 #include "ResourceMapAnalyzer.h"
-#include "Map/MapInfo.h" // for the metal extractor radius
-#include "Map/ReadMap.h" // for the metal map
-#include "Map/MetalMap.h"
 
+#include <algorithm>
 #include <cfloat>
 
 
@@ -41,15 +39,11 @@ void CResourceHandler::AddResources() {
 	CResourceDescription rMetal;
 	rMetal.name = "Metal";
 	rMetal.optimum = FLT_MAX;
-	rMetal.extractorRadius = mapInfo->map.extractorRadius;
-	rMetal.maxWorth = mapInfo->map.maxMetal;
 	metalResourceId = AddResource(rMetal);
 
 	CResourceDescription rEnergy;
 	rEnergy.name = "Energy";
 	rEnergy.optimum = FLT_MAX;
-	rEnergy.extractorRadius = 0.0f;
-	rEnergy.maxWorth = 0.0f;
 	energyResourceId = AddResource(rEnergy);
 }
 
@@ -65,7 +59,7 @@ int CResourceHandler::AddResource(const CResourceDescription& resource)
 	 * contain everything needed regardless. Keep in mind object lifetime issues
 	 * when dealing with things like save/load, or reloading a different map tho. */
 	if (!resourceMapAnalyzer)
-		resourceMapAnalyzer.emplace(0);
+		resourceMapAnalyzer.emplace();
 
 	return (resourceDescriptions.size() - 1);
 }
@@ -89,38 +83,6 @@ int CResourceHandler::GetResourceId(const std::string& resourceName) const
 	const auto pred = [&](const CResourceDescription& rd) { return (resourceName == rd.name); };
 	const auto iter = std::find_if(resourceDescriptions.cbegin(), resourceDescriptions.cend(), pred);
 	return ((iter == resourceDescriptions.end())? -1: (iter - resourceDescriptions.cbegin()));
-}
-
-const unsigned char* CResourceHandler::GetResourceMap(int resourceId) const
-{
-	if (resourceId == GetMetalId())
-		return (metalMap.GetDistributionMap());
-
-	return nullptr;
-}
-
-size_t CResourceHandler::GetResourceMapSize(int resourceId) const
-{
-	if (resourceId == GetMetalId())
-		return (GetResourceMapWidth(resourceId) * GetResourceMapHeight(resourceId));
-
-	return 0;
-}
-
-size_t CResourceHandler::GetResourceMapWidth(int resourceId) const
-{
-	if (resourceId == GetMetalId())
-		return mapDims.hmapx;
-
-	return 0;
-}
-
-size_t CResourceHandler::GetResourceMapHeight(int resourceId) const
-{
-	if (resourceId == GetMetalId())
-		return mapDims.hmapy;
-
-	return 0;
 }
 
 const CResourceMapAnalyzer* CResourceHandler::GetResourceMapAnalyzer(int resourceId)
