@@ -248,6 +248,11 @@ CQuaternion CQuaternion::Lerp(const CQuaternion& q1, const CQuaternion& q2, cons
 }
 
 CQuaternion CQuaternion::SLerp(const CQuaternion& q1, const CQuaternion& q2_, const float a) {
+	if (a == 0.0f)
+		return q1;
+	else if (a == 1.0f)
+		return q2_;
+
 	float cosTheta = q1.dot(q2_);
 
 	const float s = Sign(cosTheta);
