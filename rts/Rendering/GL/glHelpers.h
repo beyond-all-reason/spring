@@ -58,6 +58,7 @@ template <typename T> concept glEnumType = std::is_same_v<T, GLenum>;
 template<class ResultTupleType, glEnumType... ParamNames>
 inline ResultTupleType FetchEffectualStateAttribValues(ParamNames... paramNames)
 {
+	static_assert(sizeof...(paramNames) == std::tuple_size_v<ResultTupleType>);
 	ResultTupleType resultTuple;
 
 	auto IndexDispatcher = spring::make_index_dispatcher<std::tuple_size_v<ResultTupleType>>();
