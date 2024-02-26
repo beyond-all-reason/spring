@@ -124,7 +124,7 @@ struct S3DModelHelpers {
 
 struct AnimationKeyFrame {
 	float3 translation;
-	float time;
+	float time; //seconds
 	CQuaternion rotation;
 };
 
