@@ -7,6 +7,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
+#include "Sim/Objects/SolidObject.h"
 #include "System/Exceptions.h"
 #include "System/SafeUtil.h"
 
@@ -32,6 +33,9 @@ CR_REG_METADATA(LocalModelPiece, (
 	CR_MEMBER(localModel),
 	CR_MEMBER(children),
 
+	CR_MEMBER(pseudoWorldSpacePosition),
+	CR_MEMBER(pseudoWorldSpaceRotation),
+
 	// reload
 	CR_IGNORED(original),
 
@@ -49,7 +53,8 @@ CR_REG_METADATA(LocalModel, (
 
 	CR_MEMBER(boundingVolume),
 	CR_IGNORED(luaMaterialData),
-	CR_MEMBER(needsBoundariesRecalc)
+	CR_MEMBER(needsBoundariesRecalc),
+	CR_MEMBER(owningObject)
 ))
 
 
@@ -475,10 +480,7 @@ void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 
 	if (updateChildMatrices) {
 		modelSpaceMat = pieceSpaceMat;
-
-		if (parent != nullptr) {
-			modelSpaceMat >>= parent->modelSpaceMat;
-		}
+		ApplyParentMatrix(modelSpaceMat);
 	}
 
 	for (auto& child : children) {
@@ -496,8 +498,7 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 	pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
 	modelSpaceMat = pieceSpaceMat;
 
-	if (parent != nullptr)
-		modelSpaceMat >>= parent->modelSpaceMat;
+	ApplyParentMatrix(modelSpaceMat);
 }
 
 
@@ -561,6 +562,39 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 	emitPos = GetModelSpaceMatrix() *        original->GetEmitPos()        * WORLD_TO_OBJECT_SPACE;
 	emitDir = GetModelSpaceMatrix() * float4(original->GetEmitDir(), 0.0f) * WORLD_TO_OBJECT_SPACE;
 	return true;
+}
+
+void LocalModelPiece::ApplyParentMatrix(CMatrix44f &inOutMat) const {
+	if (parent != nullptr) {
+		inOutMat >>= parent->modelSpaceMat;
+	}
+
+	if (localModel->owningObject != nullptr && (pseudoWorldSpacePosition || pseudoWorldSpaceRotation)) {
+		const auto worldMat = localModel->owningObject->GetTransformMatrix(true);
+		// the line below instead gets the "unsynced only(?)" interpolated position for drawing
+		// which is much, much nicer visually (no need to add radar-jitter here)
+//		const auto worldMat = localModel->owningObject->GetTransformMatrix(false, true);
+		if (pseudoWorldSpacePosition) {
+			auto target = pos - worldMat.GetPos();
+			auto len = target.LengthNormalize();
+			inOutMat.SetPos(localModel->owningObject->GetObjectSpaceVec(target) * WORLD_TO_OBJECT_SPACE * len);
+		}
+
+		if (pseudoWorldSpaceRotation) {
+			inOutMat.RotateEulerZXY(-worldMat.GetEulerAnglesLftHand());
+		}
+
+		// never be clean
+		// world space position and rotation are almost always changing
+		dirty = true;
+		SetGetCustomDirty(true);
+
+		for (LocalModelPiece* child: children) {
+			if (child->dirty)
+				continue;
+			child->SetDirty();
+		}
+	}
 }
 
 /******************************************************************************/

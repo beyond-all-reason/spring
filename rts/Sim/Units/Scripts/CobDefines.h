@@ -114,5 +114,29 @@ static constexpr int KSIN                    = 135; // get (kiloSine    : 1024*s
 static constexpr int KCOS                    = 136; // get (kiloCosine  : 1024*cos(x))
 static constexpr int KTAN                    = 137; // get (kiloTangent : 1024*tan(x))
 static constexpr int SQRT                    = 138; // get (square root)
+static constexpr int ENERGY_MAKE             = 140; // set or get (100*E production)
+static constexpr int METAL_MAKE              = 141; // set or get (100*M production)
+
+// World Space bitfield format: 1100 1SRP
+static constexpr int WORLD_SPACE_FLAGS_BITMASK = 0b00000111; // SRP bit flags = (value & FLAGS_BITMASK)
+static constexpr int WORLD_SPACE_FLAG_POSITION = 0b0001;
+static constexpr int WORLD_SPACE_FLAG_ROTATION = 0b0010;
+//static constexpr int WORLD_SPACE_FLAG_SCALE    = 0b0100;
+
+// Reserves 200 - 207. Sets certain parts of a piece's transformation to be in (pseudo) world space
+// get: are these exact flags all enabled/disabled?
+// set: enable and disable these exact flags
+
+static constexpr int WORLD_SPACE_NONE          = 200;  // get or set
+static constexpr int WORLD_SPACE_POSITION      = WORLD_SPACE_NONE     | WORLD_SPACE_FLAG_POSITION; // get or set
+static constexpr int WORLD_SPACE_ROTATION      = WORLD_SPACE_NONE     | WORLD_SPACE_FLAG_ROTATION; // get or set
+static constexpr int WORLD_SPACE_POS_ROT       = WORLD_SPACE_POSITION | WORLD_SPACE_FLAG_ROTATION; // get or set
+// implement when/if unit rescaling is added
+//static constexpr int WORLD_SPACE_SCALE         = WORLD_SPACE_NONE     | WORLD_SPACE_FLAG_SCALE;    // get or set
+//static constexpr int WORLD_SPACE_POS_SCALE     = WORLD_SPACE_POSITION | WORLD_SPACE_FLAG_SCALE;    // get or set
+//static constexpr int WORLD_SPACE_ROT_SCALE     = WORLD_SPACE_ROTATION | WORLD_SPACE_FLAG_SCALE;    // get or set
+//static constexpr int WORLD_SPACE_ALL           = WORLD_SPACE_POS_ROT  | WORLD_SPACE_FLAG_SCALE;    // get or set
+
+static constexpr int WORLD_SPACE_FLAGS         = 208; // get (with fake set), return WORLD_SPACE bits
 
 // NOTE: shared variables use codes [1024 - 5119]
