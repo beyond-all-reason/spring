@@ -26,7 +26,7 @@
 #include "Sim/Units/UnitLoader.h"
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 
 using std::min;
 using std::max;
@@ -893,7 +893,7 @@ bool CBuilder::ScriptStartBuilding(float3 pos, bool silent)
 	}
 
 	if ((!silent || inBuildStance) && IsInLosForAllyTeam(gu->myAllyTeam))
-		Channels::General->PlayRandomSample(unitDef->sounds.build, pos);
+		Channels[ChannelType::CHANNEL_GENERAL]->PlayRandomSample(unitDef->sounds.build, pos);
 
 	return inBuildStance;
 }

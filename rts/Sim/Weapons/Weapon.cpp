@@ -28,7 +28,7 @@
 #include "System/EventHandler.h"
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/Log/ILog.h"
 
 #include <tracy/Tracy.hpp>
@@ -1118,7 +1118,7 @@ void CWeapon::Fire(bool scriptCall)
 		quadField.RemoveUnitIf(currentTarget.unit, currentTargetPos);
 
 	if (salvoLeft == (salvoSize - 1) || !weaponDef->soundTrigger)
-		Channels::Battle->PlayRandomSample(weaponDef->fireSound, owner);
+		Channels[ChannelType::CHANNEL_BATTLE]->PlayRandomSample(weaponDef->fireSound, owner);
 }
 
 

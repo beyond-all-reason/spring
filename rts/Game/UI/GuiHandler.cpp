@@ -49,7 +49,7 @@
 #include "System/StringUtil.h"
 #include "System/Input/KeyInput.h"
 #include "System/Sound/ISound.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/SimpleParser.h"
 
@@ -1268,7 +1268,7 @@ void CGuiHandler::MouseRelease(int x, int y, int button, const float3& cameraPos
 
 	if (c.GetID() == CMD_FAILED) {
 		// failed indicates we should not finish the current command
-		Channels::UserInterface->PlaySample(failedSound, 5);
+		Channels[ChannelType::CHANNEL_UI]->PlaySample(failedSound, 5);
 		return;
 	}
 

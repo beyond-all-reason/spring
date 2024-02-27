@@ -122,7 +122,7 @@
 #include "System/Platform/Misc.h"
 #include "System/Platform/Watchdog.h"
 #include "System/Sound/ISound.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/Sync/DumpState.h"
 #include "System/TimeProfiler.h"
 #include "System/LoadLock.h"
@@ -1951,13 +1951,13 @@ void CGame::HandleChatMsg(const ChatMessage& msg)
 			const bool allied = teamHandler.Ally(msgAllyTeam, gu->myAllyTeam);
 			if (gu->spectating || (allied && !player->spectator)) {
 				LOG("%sAllies: %s", label.c_str(), s.c_str());
-				Channels::UserInterface->PlaySample(chatSound, 5);
+				Channels[ChannelType::CHANNEL_UI]->PlaySample(chatSound, 5);
 			}
 		}
 		else if (msg.destination == ChatMessage::TO_SPECTATORS) {
 			if (gu->spectating || myMsg) {
 				LOG("%sSpectators: %s", label.c_str(), s.c_str());
-				Channels::UserInterface->PlaySample(chatSound, 5);
+				Channels[ChannelType::CHANNEL_UI]->PlaySample(chatSound, 5);
 			}
 		}
 		else if (msg.destination == ChatMessage::TO_EVERYONE) {
@@ -1968,7 +1968,7 @@ void CGame::HandleChatMsg(const ChatMessage& msg)
 				} else {
 					LOG("%s%s", label.c_str(), s.c_str());
 				}
-				Channels::UserInterface->PlaySample(chatSound, 5);
+				Channels[ChannelType::CHANNEL_UI]->PlaySample(chatSound, 5);
 			}
 		}
 		else if ((msg.destination < playerHandler.ActivePlayers()) && player)
@@ -1979,7 +1979,7 @@ void CGame::HandleChatMsg(const ChatMessage& msg)
 				LOG("%s whispered %s: %s", label.c_str(), playerHandler.Player(msg.destination)->name.c_str(), s.c_str());
 			} else if (msg.destination == gu->myPlayerNum && player->spectator == gu->spectating) {
 				LOG("%sPrivate: %s", label.c_str(), s.c_str());
-				Channels::UserInterface->PlaySample(chatSound, 5);
+				Channels[ChannelType::CHANNEL_UI]->PlaySample(chatSound, 5);
 			}
 			else if (player->playerNum == gu->myPlayerNum)
 			{

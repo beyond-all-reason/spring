@@ -80,7 +80,7 @@
 #include "System/UnorderedMap.hpp"
 #include "System/StringUtil.h"
 #include "System/Sound/ISound.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/DataDirLocater.h"
 #include "System/FileSystem/FileSystem.h"
@@ -697,6 +697,7 @@ int LuaUnsyncedCtrl::LoadSoundDef(lua_State* L)
  *    "battle" || "sfx" | 1
  *    "unitreply" || "voice" || 2
  *    "userinterface" || "ui" || 3
+ *    "ambient" || "amb" || 4
  *
  * @treturn ?nil|bool playSound
  */
@@ -728,24 +729,29 @@ int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 	}
 
 	// last argument (with and without pos/speed arguments) is the optional channel
-	IAudioChannel* channel = Channels::General;
+	IAudioChannel* channel = Channels[ChannelType::CHANNEL_GENERAL   ];
 
 	if (args >= index) {
 		if (lua_isstring(L, index)) {
 			switch (hashStringLower(lua_tostring(L, index))) {
 				case hashStringLower("battle"):
 				case hashStringLower("sfx"   ): {
-					channel = Channels::Battle;
+					channel = Channels[ChannelType::CHANNEL_BATTLE   ];
 				} break;
 
 				case hashStringLower("unitreply"):
 				case hashStringLower("voice"    ): {
-					channel = Channels::UnitReply;
+					channel = Channels[ChannelType::CHANNEL_UNITREPLY];
 				} break;
 
 				case hashStringLower("userinterface"):
 				case hashStringLower("ui"           ): {
-					channel = Channels::UserInterface;
+					channel = Channels[ChannelType::CHANNEL_UI       ];
+				} break;
+
+				case hashStringLower("ambient"):
+				case hashStringLower("amb"): {
+					channel = Channels[ChannelType::CHANNEL_AMBIENT  ];
 				} break;
 
 				default: {
@@ -753,10 +759,11 @@ int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 			}
 		} else if (lua_isnumber(L, index)) {
 			switch (lua_toint(L, index)) {
-				case  1: { channel = Channels::Battle       ; } break;
-				case  2: { channel = Channels::UnitReply    ; } break;
-				case  3: { channel = Channels::UserInterface; } break;
-				default: {                                    } break;
+				case  1: { channel = Channels[ChannelType::CHANNEL_BATTLE   ]; } break;
+				case  2: { channel = Channels[ChannelType::CHANNEL_UNITREPLY]; } break;
+				case  3: { channel = Channels[ChannelType::CHANNEL_UI       ]; } break;
+				case  4: { channel = Channels[ChannelType::CHANNEL_AMBIENT  ]; } break;
+				default: {                                                     } break;
 			}
 		}
 	}
@@ -794,7 +801,7 @@ int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 int LuaUnsyncedCtrl::PlaySoundStream(lua_State* L)
 {
 	// file, volume, enqueue
-	Channels::BGMusic->StreamPlay(luaL_checksstring(L, 1), luaL_optnumber(L, 2, 1.0f), luaL_optboolean(L, 3, false));
+	Channels[ChannelType::CHANNEL_BGMUSIC]->StreamPlay(luaL_checksstring(L, 1), luaL_optnumber(L, 2, 1.0f), luaL_optboolean(L, 3, false));
 
 	// .ogg files don't have sound ID's generated
 	// for them (yet), so we always succeed here
@@ -810,7 +817,7 @@ int LuaUnsyncedCtrl::PlaySoundStream(lua_State* L)
  */
 int LuaUnsyncedCtrl::StopSoundStream(lua_State*)
 {
-	Channels::BGMusic->StreamStop();
+	Channels[ChannelType::CHANNEL_BGMUSIC]->StreamStop();
 	return 0;
 }
 
@@ -822,7 +829,7 @@ int LuaUnsyncedCtrl::StopSoundStream(lua_State*)
  */
 int LuaUnsyncedCtrl::PauseSoundStream(lua_State*)
 {
-	Channels::BGMusic->StreamPause();
+	Channels[ChannelType::CHANNEL_BGMUSIC]->StreamPause();
 	return 0;
 }
 
@@ -835,7 +842,7 @@ int LuaUnsyncedCtrl::PauseSoundStream(lua_State*)
  */
 int LuaUnsyncedCtrl::SetSoundStreamVolume(lua_State* L)
 {
-	Channels::BGMusic->SetVolume(luaL_checkfloat(L, 1));
+	Channels[ChannelType::CHANNEL_BGMUSIC]->SetVolume(luaL_checkfloat(L, 1));
 	return 0;
 }
 

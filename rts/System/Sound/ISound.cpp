@@ -3,6 +3,7 @@
 #include "ISound.h"
 
 #include <cstring> //memset
+#include <array>
 
 #ifndef   NO_SOUND
 #include "OpenAL/Sound.h"
@@ -12,7 +13,7 @@
 #include "SoundLog.h"
 #include "System/Config/ConfigHandler.h"
 
-#include "ISoundChannels.h"
+#include "SoundChannels.h"
 #include "Null/NullAudioChannel.h"
 #ifndef NO_SOUND
 #include "OpenAL/AudioChannel.h"
@@ -36,18 +37,18 @@ CONFIG(int, snd_volunitreply).defaultValue(100).minimumValue(0).maximumValue(200
 CONFIG(int, snd_volbattle).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"battle\" sound channel.");
 CONFIG(int, snd_volui).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"ui\" sound channel.");
 CONFIG(int, snd_volmusic).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"music\" sound channel.");
+CONFIG(int, snd_volambient).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"ambient\" sound channel.");
 CONFIG(float, snd_airAbsorption).defaultValue(0.1f);
 
 CONFIG(std::string, snd_device).defaultValue("").description("Sets the used output device. See \"Available Devices\" section in infolog.txt.");
 
 
-
 #ifndef NO_SOUND
-// [0] := Music, [1] := General, [2] := Battle, [3] := UnitReply, [4] := UserInterface
-alignas(AudioChannel) static std::byte audioChannelMem[5][sizeof(AudioChannel)];
+using SelAudioChannel = AudioChannel;
 #else
-alignas(NullAudioChannel) static std::byte audioChannelMem[5][sizeof(NullAudioChannel)];
+using SelAudioChannel = NullAudioChannel;
 #endif
+alignas(SelAudioChannel) static std::array<std::array<std::byte, sizeof(SelAudioChannel)>, ChannelType::CHANNEL_COUNT> audioChannelMem;
 
 
 ISound* ISound::singleton = nullptr;
@@ -56,11 +57,9 @@ void ISound::Initialize(bool reload, bool forceNullSound)
 {
 #ifndef NO_SOUND
 	if (!IsNullAudio() && !forceNullSound) {
-		Channels::BGMusic       = new (audioChannelMem[0]) AudioChannel();
-		Channels::General       = new (audioChannelMem[1]) AudioChannel();
-		Channels::Battle        = new (audioChannelMem[2]) AudioChannel();
-		Channels::UnitReply     = new (audioChannelMem[3]) AudioChannel();
-		Channels::UserInterface = new (audioChannelMem[4]) AudioChannel();
+		for (size_t i = 0; i < Channels.size(); ++i) {
+			Channels[i] = new (audioChannelMem[i].data()) AudioChannel();
+		}
 
 		if (!reload) {
 			SCOPED_ONCE_TIMER("ISound::Init::New");
@@ -94,11 +93,9 @@ void ISound::Initialize(bool reload, bool forceNullSound)
 			singleton = new NullSound();
 		}
 
-		Channels::BGMusic       = new (audioChannelMem[0]) NullAudioChannel();
-		Channels::General       = new (audioChannelMem[1]) NullAudioChannel();
-		Channels::Battle        = new (audioChannelMem[2]) NullAudioChannel();
-		Channels::UnitReply     = new (audioChannelMem[3]) NullAudioChannel();
-		Channels::UserInterface = new (audioChannelMem[4]) NullAudioChannel();
+		for (size_t i = 0; i < Channels.size(); ++i) {
+			Channels[i] = new (audioChannelMem[i].data()) NullAudioChannel();
+		}
 	}
 }
 
@@ -111,17 +108,10 @@ void ISound::Shutdown(bool reload)
 	if (!reload)
 		spring::SafeDelete(singleton);
 
-	spring::SafeDestruct(Channels::BGMusic);
-	spring::SafeDestruct(Channels::General);
-	spring::SafeDestruct(Channels::Battle);
-	spring::SafeDestruct(Channels::UnitReply);
-	spring::SafeDestruct(Channels::UserInterface);
-
-	std::memset(audioChannelMem[0], 0, sizeof(audioChannelMem[0]));
-	std::memset(audioChannelMem[1], 0, sizeof(audioChannelMem[1]));
-	std::memset(audioChannelMem[2], 0, sizeof(audioChannelMem[2]));
-	std::memset(audioChannelMem[3], 0, sizeof(audioChannelMem[3]));
-	std::memset(audioChannelMem[4], 0, sizeof(audioChannelMem[4]));
+	for (size_t i = 0; i < Channels.size(); ++i) {
+		spring::SafeDestruct(Channels[i]);
+		std::memset(audioChannelMem[i].data(), 0, audioChannelMem[i].size());
+	}
 }
 
 

@@ -64,7 +64,7 @@
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
 #include "System/creg/STL_List.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/Sync/SyncedPrimitive.h"
 
 #undef near
@@ -2277,7 +2277,7 @@ void CUnit::Activate()
 		losHandler->DecreaseAllyTeamRadarErrorSize(allyteam);
 
 	if (IsInLosForAllyTeam(gu->myAllyTeam))
-		Channels::General->PlayRandomSample(unitDef->sounds.activate, this);
+		Channels[ChannelType::CHANNEL_GENERAL]->PlayRandomSample(unitDef->sounds.activate, this);
 }
 
 
@@ -2293,7 +2293,7 @@ void CUnit::Deactivate()
 		losHandler->IncreaseAllyTeamRadarErrorSize(allyteam);
 
 	if (IsInLosForAllyTeam(gu->myAllyTeam))
-		Channels::General->PlayRandomSample(unitDef->sounds.deactivate, this);
+		Channels[ChannelType::CHANNEL_GENERAL]->PlayRandomSample(unitDef->sounds.deactivate, this);
 }
 
 
