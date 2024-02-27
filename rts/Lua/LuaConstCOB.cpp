@@ -98,6 +98,7 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 	 * @number MIN
 	 * @number MAX
 	 * @number ABS
+	 * @number GAME_FRAME
 	 * @number ENERGY_MAKE
 	 * @number METAL_MAKE
 	 * @number WORLD_SPACE_NONE
