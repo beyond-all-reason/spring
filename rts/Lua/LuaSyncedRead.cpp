@@ -70,7 +70,6 @@
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
-#include "System/bitops.h"
 #include "System/MainDefines.h"
 #include "System/SpringMath.h"
 #include "System/FileSystem/FileHandler.h"

@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "RowAtlasAlloc.h"
-#include "System/bitops.h"
 
 #include <algorithm>
 #include <vector>
@@ -92,7 +91,7 @@ bool CRowAtlasAlloc::Allocate()
 		// else for the case when Allocate() is called multiple times, the
 		// width would grow faster than height
 		// also AddRow() only works with PowerOfTwo values.
-		atlasSize.y = next_power_of_2(atlasSize.y);
+		atlasSize.y = std::bit_ceil <uint32_t> (atlasSize.y);
 	}
 
 	// it gives much better results when we resize the available space before starting allocation
@@ -135,7 +134,7 @@ bool CRowAtlasAlloc::Allocate()
 	if (npot) {
 		atlasSize.y = nextRowPos;
 	} else {
-		atlasSize.y = next_power_of_2(nextRowPos);
+		atlasSize.y = std::bit_ceil <uint32_t> (nextRowPos);
 	}
 
 	return success;
