@@ -4590,12 +4590,12 @@ int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
  *
  * @function Spring.GetGroundDecalTexture
  * @number decalID
- * @bool[opt=true] isMainTex
+ * @bool[opt=false] isNormalsTex
  * @treturn nil|string texture
  */
 int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
 {
-	const auto& texName = groundDecals->GetDecalTexture(luaL_checkint(L, 1), luaL_optboolean(L, 2, true));
+	const auto& texName = groundDecals->GetDecalTexture(luaL_checkint(L, 1), luaL_optboolean(L, 2, false));
 	lua_pushsstring(L, texName);
 
 	return 1;
@@ -4604,12 +4604,12 @@ int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
 /***
  *
  * @function Spring.GetDecalTextures
- * @bool[opt=true] isMainTex
+ * @bool[opt=false] isNormalsTex
  * @treturn {[string],...} textureNames
  */
 int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
 {
-	const auto& texNames = groundDecals->GetDecalTextures(luaL_optboolean(L, 2, true));
+	const auto& texNames = groundDecals->GetDecalTextures(luaL_optboolean(L, 2, false));
 	LuaUtils::PushStringVector(L, texNames);
 
 	return 1;

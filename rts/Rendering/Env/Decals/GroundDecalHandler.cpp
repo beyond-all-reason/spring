@@ -145,10 +145,10 @@ static inline std::string GetExtraTextureName(const std::string& mainTex) {
 	return mainTex.substr(0, dotPos) + "_normal" + (dotPos == string::npos ? "" : mainTex.substr(dotPos));
 }
 
-void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex, bool convertOldBMP) {
+void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::string& filename, bool normalsTex, bool convertOldBMP) {
 	try {
 		const auto& [bm, fn] = LoadTexture(filename, convertOldBMP);
-		const auto& decalAtlas = (mainTex ? atlasMain : atlasNorm);
+		const auto& decalAtlas = (normalsTex ? atlasNorm : atlasMain);
 		decalAtlas->AddTexFromBitmap(name, bm);
 	}
 	catch (const content_error& err) {
@@ -178,8 +178,8 @@ void CGroundDecalHandler::AddBuildingDecalTextures()
 			const std::string mainTex =                    (decalDef.groundDecalTypeName);
 			const std::string normTex = GetExtraTextureName(decalDef.groundDecalTypeName);
 
-			AddTexToAtlas(mainTex, mainTex, true , false);
-			AddTexToAtlas(normTex, normTex, false, false);
+			AddTexToAtlas(mainTex, mainTex, false, false);
+			AddTexToAtlas(normTex, normTex, true , false);
 		}
 	};
 	ProcessDefs(featureDefHandler->GetFeatureDefsVec());
@@ -208,8 +208,8 @@ void CGroundDecalHandler::AddGroundScarTextures()
 		const auto mainName = IntToString(i, "mainscar_%i");
 		const auto normName = IntToString(i, "normscar_%i");
 
-		AddTexToAtlas(mainName, mainTexFileName,  true,  true);
-		AddTexToAtlas(normName, normTexFileName, false, false);
+		AddTexToAtlas(mainName, mainTexFileName, false,  true);
+		AddTexToAtlas(normName, normTexFileName,  true, false);
 
 		// check if loaded for real
 		// can't use atlas->TextureExists() as it's only populated after Finalize()
@@ -230,8 +230,8 @@ void CGroundDecalHandler::AddGroundScarTextures()
 		const auto mainName = IntToString(maxUniqueScars + 1, "mainscar_%i");
 		const auto normName = IntToString(maxUniqueScars + 1, "normscar_%i");
 
-		AddTexToAtlas(mainName, mainTexFileName,  true,  true);
-		AddTexToAtlas(normName, normTexFileName, false, false);
+		AddTexToAtlas(mainName, mainTexFileName, false,  true);
+		AddTexToAtlas(normName, normTexFileName,  true, false);
 
 		// check if loaded for real
 		// can't use atlas->TextureExists() as it's only populated after Finalize()
@@ -247,8 +247,8 @@ void CGroundDecalHandler::AddGroundTrackTextures()
 		const auto normName = mainName + "_norm";
 		const std::string normTexFileName = GetExtraTextureName(mainTexFileName);
 
-		AddTexToAtlas(mainName, mainTexFileName,  true,  true);
-		AddTexToAtlas(normName, normTexFileName, false, false);
+		AddTexToAtlas(mainName, mainTexFileName, false,  true);
+		AddTexToAtlas(normName, normTexFileName,  true, false);
 	}
 }
 
@@ -891,15 +891,15 @@ const GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id) const
 	return &decals.at(it->second);
 }
 
-bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex)
+bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texName, bool normalsTex)
 {
 	auto it = idToPos.find(id);
 	if (it == idToPos.end())
 		return false;
 
 	auto& decal = decals.at(it->second);
-	const auto& atlas  = mainTex ? atlasMain : atlasNorm;
-	      auto& offset = mainTex ? decal.texMainOffsets : decal.texNormOffsets;
+	const auto& atlas  = normalsTex ? atlasNorm : atlasMain;
+	      auto& offset = normalsTex ? decal.texNormOffsets : decal.texMainOffsets;
 
 	const AtlasedTexture newOffset = atlas->GetTexture(texName);
 	if (newOffset == AtlasedTexture::DefaultAtlasTexture)
@@ -909,15 +909,15 @@ bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texNam
 	return true;
 }
 
-std::string CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTex) const
+std::string CGroundDecalHandler::GetDecalTexture(uint32_t id, bool normalsTex) const
 {
 	auto it = idToPos.find(id);
 	if (it == idToPos.end())
 		return "";
 
 	const auto& decal = decals.at(it->second);
-	const auto& offset = mainTex ? decal.texMainOffsets : decal.texNormOffsets;
-	const auto& atlas = mainTex ? atlasMain : atlasNorm;
+	const auto& offset = normalsTex ? decal.texNormOffsets : decal.texMainOffsets;
+	const auto& atlas = normalsTex ? atlasNorm : atlasMain;
 
 	for (auto& [name, _] : atlas->GetAllocator()->GetEntries()) {
 		const auto at = atlas->GetTexture(name);
@@ -928,9 +928,9 @@ std::string CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTex) cons
 	return "";
 }
 
-const std::vector<std::string> CGroundDecalHandler::GetDecalTextures(bool mainTex) const
+const std::vector<std::string> CGroundDecalHandler::GetDecalTextures(bool normalsTex) const
 {
-	const auto& atlas = mainTex ? atlasMain : atlasNorm;
+	const auto& atlas = normalsTex ? atlasNorm : atlasMain;
 	std::vector<std::string> ret;
 	for (auto& [name, _] : atlas->GetAllocator()->GetEntries()) {
 		ret.emplace_back(name);

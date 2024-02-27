@@ -127,9 +127,9 @@ public:
 	bool DeleteLuaDecal(uint32_t id) override;
 	      GroundDecal* GetDecalById(uint32_t id)       override;
 	const GroundDecal* GetDecalById(uint32_t id) const override;
-	bool SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex) override;
-	std::string GetDecalTexture(uint32_t id, bool mainTex) const override;
-	const std::vector<std::string> GetDecalTextures(bool mainTex) const override;
+	bool SetDecalTexture(uint32_t id, const std::string& texName, bool normalsTex) override;
+	std::string GetDecalTexture(uint32_t id, bool normalsTex) const override;
+	const std::vector<std::string> GetDecalTextures(bool normalsTex) const override;
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override;
 private:
 	static void BindVertexAtrribs();
@@ -140,7 +140,7 @@ private:
 	void GenerateAtlasTextures();
 	void ReloadDecalShaders();
 
-	void AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex, bool convertOldBMP);
+	void AddTexToAtlas(const std::string& name, const std::string& filename, bool normalsTex, bool convertOldBMP);
 
 	void AddTrack(const CUnit* unit, const float3& newPos, bool forceEval = false);
 
