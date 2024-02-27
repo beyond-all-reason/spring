@@ -17,8 +17,11 @@ out float fogFactor;
 	noperspective out vec2 screenUV;
 #endif
 
+out float gl_ClipDistance[1];
+
 uniform vec2 fogParams;
 uniform vec3 camPos;
+uniform vec4 clipPlane = vec4(0.0, 0.0, 0.0, 1.0);
 
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
@@ -54,6 +57,8 @@ void main() {
 	float fogDist = length(pos - camPos);
 	fogFactor = (fogParams.y - fogDist) / (fogParams.y - fogParams.x);
 	fogFactor = clamp(fogFactor, 0.0, 1.0);
+
+	gl_ClipDistance[0] = dot(vec4(pos, 1.0), clipPlane); //water clip plane
 
 	#ifdef SMOOTH_PARTICLES
 		// viewport relative UV [0.0, 1.0]

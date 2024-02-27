@@ -725,7 +725,7 @@ void CProjectileDrawer::DrawOpaque(bool drawReflection, bool drawRefraction)
 	glDisable(GL_FOG);
 }
 
-void CProjectileDrawer::DrawAlpha(bool drawReflection, bool drawRefraction)
+void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawReflection, bool drawRefraction)
 {
 	ZoneScopedN("ProjectileDrawer::DrawAlpha");
 
@@ -779,7 +779,8 @@ void CProjectileDrawer::DrawAlpha(bool drawReflection, bool drawRefraction)
 			Blending(GL_TRUE),
 			BlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA),
 			DepthTest(GL_TRUE),
-			DepthMask(GL_FALSE)
+			DepthMask(GL_FALSE),
+			ClipDistance<0>(GL_TRUE)
 		);
 
 		auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
@@ -803,6 +804,8 @@ void CProjectileDrawer::DrawAlpha(bool drawReflection, bool drawRefraction)
 		const auto& sky = ISky::GetSky();
 
 		fxShader->Enable();
+
+		fxShader->SetUniform("clipPlane", 0.0f, (drawAboveWater ? 1.0f : -1.0f), 0.0f, 0.0f);
 		fxShader->SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f);
 		if (needSoften) {
 			fxShader->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
