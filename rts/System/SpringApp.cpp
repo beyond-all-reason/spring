@@ -59,7 +59,6 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
-#include "System/bitops.h"
 #include "System/ScopedResource.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"

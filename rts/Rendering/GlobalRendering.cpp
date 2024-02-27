@@ -15,7 +15,6 @@
 #include "Rendering/GL/FBO.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
-#include "System/bitops.h"
 #include "System/EventHandler.h"
 #include "System/type2.h"
 #include "System/TimeProfiler.h"
@@ -539,7 +538,9 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		if (softGL != nullptr)
 			LOG_L(L_WARNING, "MSAALevel > 0 and LIBGL_ALWAYS_SOFTWARE set, this will very likely crash!");
 
-		make_even_number(msaaLevel);
+		// has to be even
+		if (msaaLevel % 2 == 1)
+			++msaaLevel;
 	}
 
 	if ((sdlWindow = CreateSDLWindow(title)) == nullptr)

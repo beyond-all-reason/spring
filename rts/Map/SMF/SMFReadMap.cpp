@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <bit>
 #include <cstring> // mem{set,cpy}
 
 #include "xsimd/xsimd.hpp"
@@ -18,7 +19,6 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "System/bitops.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
@@ -380,7 +380,7 @@ void CSMFReadMap::CreateNormalTex()
 	normalsTex.SetRawSize(int2(mapDims.mapxp1, mapDims.mapyp1));
 
 	if (!globalRendering->supportNonPowerOfTwoTex)
-		normalsTex.SetRawSize(int2(next_power_of_2(mapDims.mapxp1), next_power_of_2(mapDims.mapyp1)));
+		normalsTex.SetRawSize(int2(std::bit_ceil <uint32_t> (mapDims.mapxp1), std::bit_ceil <uint32_t> (mapDims.mapyp1)));
 
 	glGenTextures(1, normalsTex.GetIDPtr());
 	glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());

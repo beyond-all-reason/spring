@@ -3,10 +3,10 @@
 #ifndef _NANO_PIECE_CACHE_H
 #define _NANO_PIECE_CACHE_H
 
+#include <bit>
 #include <vector>
 
 #include "Sim/Misc/GlobalConstants.h"
-#include "System/bitops.h"
 #include "System/creg/creg_cond.h"
 
 class CUnitScript;
@@ -21,7 +21,7 @@ public:
 
 	void Update() { curBuildPowerMask >>= 1; }
 
-	float GetBuildPower() const { return (count_bits_set(curBuildPowerMask) / float(UNIT_SLOWUPDATE_RATE)); }
+	float GetBuildPower() const { return std::popcount(curBuildPowerMask) / static_cast <float> (UNIT_SLOWUPDATE_RATE); }
 
 	/// returns modelPiece (NOT scriptModelPiece)
 	int GetNanoPiece(CUnitScript* ownerScript);
@@ -38,7 +38,7 @@ private:
 	static const int MAX_QUERYNANOPIECE_CALLS = 30;
 
 	int lastNanoPieceCnt;
-	int curBuildPowerMask;
+	uint32_t curBuildPowerMask;
 };
 
 #endif
