@@ -578,14 +578,17 @@ void LocalModelPiece::ApplyParentMatrix(CMatrix44f &inOutMat) const {
 
 	// useObjDrawPos is only ever turned on briefly by the GetDrawModelSpaceMatrix() function
 	// AND only if pseudoWorldSpacePosition is turned on
-	const auto invWorldMat = localModel->owningObject->GetTransformMatrix(!useObjDrawPos, true).Invert();
+	const auto invWorldMat = localModel->owningObject->GetTransformMatrix(!useObjDrawPos, true).InvertAffine();
 
 	if (pseudoWorldSpacePosition) {
 		inOutMat.SetPos(invWorldMat * pos);
 	}
 
 	if (pseudoWorldSpaceRotation) {
-		inOutMat.RotateEulerXYZ(invWorldMat.GetEulerAnglesLftHand());
+		inOutMat.SetX(invWorldMat.GetX());
+		inOutMat.SetY(invWorldMat.GetY());
+		inOutMat.SetZ(invWorldMat.GetZ());
+		inOutMat.RotateEulerYXZ(-rot);
 	}
 
 	// never be clean
