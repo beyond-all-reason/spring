@@ -572,33 +572,33 @@ void LocalModelPiece::ApplyParentMatrix(CMatrix44f &inOutMat) const {
 		inOutMat >>= parent->modelSpaceMat;
 	}
 
-	if unlikely((pseudoWorldSpacePosition || pseudoWorldSpaceRotation) && localModel->owningObject != nullptr) {
-		// useObjDrawPos is only ever turned on briefly by the GetDrawModelSpaceMatrix() function
-		// AND only if pseudoWorldSpacePosition is turned on
-		const auto worldMat = localModel->owningObject->GetTransformMatrix(!useObjDrawPos, true);
+	if likely(!((pseudoWorldSpacePosition || pseudoWorldSpaceRotation) && localModel->owningObject != nullptr)) {
+		return;
+	}
 
-		if (pseudoWorldSpacePosition) {
-			auto target = pos - worldMat.GetPos();
-			auto len = target.LengthNormalize();
-			inOutMat.SetPos(localModel->owningObject->GetObjectSpaceVec(target) * WORLD_TO_OBJECT_SPACE * len);
-		}
+	// useObjDrawPos is only ever turned on briefly by the GetDrawModelSpaceMatrix() function
+	// AND only if pseudoWorldSpacePosition is turned on
+	const auto invWorldMat = localModel->owningObject->GetTransformMatrix(!useObjDrawPos, true).Invert();
 
-		if (pseudoWorldSpaceRotation) {
-			inOutMat.RotateEulerZXY(-worldMat.GetEulerAnglesLftHand());
-		}
+	if (pseudoWorldSpacePosition) {
+		inOutMat.SetPos(invWorldMat * pos);
+	}
 
-		// never be clean
-		// world space position and rotation are almost always changing
-		// so it may not be worth it to skip this section
-		// via keeping track of the previous matrix and testing for changes
-		dirty = true;
-		SetGetCustomDirty(true);
+	if (pseudoWorldSpaceRotation) {
+		inOutMat.RotateEulerXYZ(invWorldMat.GetEulerAnglesLftHand());
+	}
 
-		for (LocalModelPiece* child: children) {
-			if (child->dirty)
-				continue;
-			child->SetDirty();
-		}
+	// never be clean
+	// world space position and rotation are almost always changing
+	// so it may not be worth it to skip this section
+	// via keeping track of the previous matrix and testing for changes
+	dirty = true;
+	SetGetCustomDirty(true);
+
+	for (LocalModelPiece* child: children) {
+		if (child->dirty)
+			continue;
+		child->SetDirty();
 	}
 }
 
