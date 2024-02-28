@@ -499,6 +499,9 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 	modelSpaceMat = pieceSpaceMat;
 
 	ApplyParentMatrix(modelSpaceMat);
+	if (pseudoWorldSpacePosition || pseudoWorldSpaceRotation) {
+		UpdateChildMatricesRec(false);
+	}
 }
 
 
@@ -606,7 +609,6 @@ const CMatrix44f LocalModelPiece::GetDrawModelSpaceMatrix() const {
 
 	useObjDrawPos = true;
 	UpdateParentMatricesRec();
-	UpdateChildMatricesRec(false);
 	useObjDrawPos = false;
 	return modelSpaceMat;
 }
