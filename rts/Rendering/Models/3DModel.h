@@ -512,6 +512,7 @@ struct LocalModelPiece
 
 	const CMatrix44f& GetPieceSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return pieceSpaceMat; }
 	const CMatrix44f& GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceMat; }
+	const CMatrix44f GetDrawModelSpaceMatrix() const;
 
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
@@ -534,11 +535,13 @@ private:
 	bool scriptSetVisible; // TODO: add (visibility) maxradius!
 
 	void ApplyParentMatrix(CMatrix44f& inOutMat) const;
+	mutable CMatrix44f prevModelSpaceMatrix;
 public:
 	bool blockScriptAnims; // if true, Set{Position,Rotation} are ignored for this piece
 
 	bool pseudoWorldSpacePosition = false; // if true, cancel out combined unit + model space position
 	bool pseudoWorldSpaceRotation = false; // if true, cancel out combined unit + model space rotation
+	mutable bool useObjDrawPos = false;
 	// implement when/if unit rescaling is implemented
 	// bool pseudoWorldSpaceScale = false; // if true, cancel out combined unit + model space scale
 

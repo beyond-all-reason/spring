@@ -513,7 +513,7 @@ void LocalModelPiece::Draw() const
 	assert(original);
 
 	glPushMatrix();
-	glMultMatrixf(GetModelSpaceMatrix());
+	glMultMatrixf(GetDrawModelSpaceMatrix());
 	S3DModelHelpers::BindLegacyAttrVBOs();
 	original->DrawElements();
 	S3DModelHelpers::UnbindLegacyAttrVBOs();
@@ -529,7 +529,7 @@ void LocalModelPiece::DrawLOD(uint32_t lod) const
 		return;
 
 	glPushMatrix();
-	glMultMatrixf(GetModelSpaceMatrix());
+	glMultMatrixf(GetDrawModelSpaceMatrix());
 	if (const auto ldl = lodDispLists[lod]; ldl == 0) {
 		S3DModelHelpers::BindLegacyAttrVBOs();
 		original->DrawElements();
@@ -569,11 +569,11 @@ void LocalModelPiece::ApplyParentMatrix(CMatrix44f &inOutMat) const {
 		inOutMat >>= parent->modelSpaceMat;
 	}
 
-	if (localModel->owningObject != nullptr && (pseudoWorldSpacePosition || pseudoWorldSpaceRotation)) {
-		const auto worldMat = localModel->owningObject->GetTransformMatrix(true);
-		// the line below instead gets the "unsynced only(?)" interpolated position for drawing
-		// which is much, much nicer visually (no need to add radar-jitter here)
-//		const auto worldMat = localModel->owningObject->GetTransformMatrix(false, true);
+	if unlikely((pseudoWorldSpacePosition || pseudoWorldSpaceRotation) && localModel->owningObject != nullptr) {
+		// useObjDrawPos is only ever turned on briefly by the GetDrawModelSpaceMatrix() function
+		// AND only if pseudoWorldSpacePosition is turned on
+		const auto worldMat = localModel->owningObject->GetTransformMatrix(!useObjDrawPos, true);
+
 		if (pseudoWorldSpacePosition) {
 			auto target = pos - worldMat.GetPos();
 			auto len = target.LengthNormalize();
@@ -586,6 +586,8 @@ void LocalModelPiece::ApplyParentMatrix(CMatrix44f &inOutMat) const {
 
 		// never be clean
 		// world space position and rotation are almost always changing
+		// so it may not be worth it to skip this section
+		// via keeping track of the previous matrix and testing for changes
 		dirty = true;
 		SetGetCustomDirty(true);
 
@@ -595,6 +597,18 @@ void LocalModelPiece::ApplyParentMatrix(CMatrix44f &inOutMat) const {
 			child->SetDirty();
 		}
 	}
+}
+
+const CMatrix44f LocalModelPiece::GetDrawModelSpaceMatrix() const {
+	if likely(!pseudoWorldSpacePosition || localModel->owningObject == nullptr) {
+		return GetModelSpaceMatrix();
+	}
+
+	useObjDrawPos = true;
+	UpdateParentMatricesRec();
+	UpdateChildMatricesRec(false);
+	useObjDrawPos = false;
+	return modelSpaceMat;
 }
 
 /******************************************************************************/

@@ -171,7 +171,7 @@ inline void CModelDrawerDataBase<T>::UpdateObjectSMMA(const T* o)
 		const LocalModelPiece& lmp = o->localModel.pieces[i];
 		const bool wasCustomDirty = lmp.SetGetCustomDirty(false);
 
-		if (!wasCustomDirty)
+		if (!wasCustomDirty && !(lmp.pseudoWorldSpacePosition))
 			continue;
 
 		if unlikely(!lmp.GetScriptVisible()) {
@@ -179,7 +179,7 @@ inline void CModelDrawerDataBase<T>::UpdateObjectSMMA(const T* o)
 			continue;
 		}
 
-		smma[i + 1] = lmp.GetModelSpaceMatrix();
+		smma[i + 1] = lmp.GetDrawModelSpaceMatrix();
 	}
 }
 
