@@ -14,6 +14,7 @@
 #include "Lua/LuaParser.h"
 #include "Textures/Bitmap.h"
 #include "System/Exceptions.h"
+#include "System/FileSystem/FileSystem.h"
 
 namespace icon {
 
@@ -58,7 +59,8 @@ bool CIconHandler::LoadIcons(const std::string& filename)
 	iconTypes.GetKeys(iconNames);
 
 	dummyIconData[ SAFETY_DATA_IDX] = {};
-	dummyIconData[DEFAULT_DATA_IDX] = {"default", GetDefaultTexture(), 1.0f, 1.0f, false, false, DEFAULT_TEX_SIZE_X, DEFAULT_TEX_SIZE_Y};
+	dummyIconData[DEFAULT_DATA_IDX] = { "default", GetDefaultTexture(), 1.0f, 1.0f, false, false, 0.0f, 0.0f, 1.0f, 1.0f };
+
 
 	for (const std::string& iconName : iconNames) {
 		const LuaTable iconTable = iconTypes.SubTable(iconName);
@@ -68,7 +70,11 @@ bool CIconHandler::LoadIcons(const std::string& filename)
 			iconTable.GetString("bitmap",       ""),
 			iconTable.GetFloat ("size",         1.0f),
 			iconTable.GetFloat ("distance",     1.0f),
-			iconTable.GetBool  ("radiusAdjust", false)
+			iconTable.GetBool  ("radiusAdjust", false),
+			iconTable.GetFloat ("u0",           0.0f),
+			iconTable.GetFloat ("v0",           0.0f),
+			iconTable.GetFloat ("u1",           1.0f),
+			iconTable.GetFloat ("v1",           1.0f)
 		);
 	}
 
@@ -90,7 +96,8 @@ bool CIconHandler::AddIcon(
 	const std::string& texName,
 	float size,
 	float distance,
-	bool radAdj
+	bool radAdj,
+	float u0, float v0, float u1, float v1
 ) {
 	if (numIcons == iconData.size()) {
 		LOG_L(L_DEBUG, "[IconHandler::%s] too many icons added (maximum=%u)", __func__, numIcons);
@@ -98,26 +105,36 @@ bool CIconHandler::AddIcon(
 	}
 
 	unsigned int texID = 0;
-	unsigned int xsize = 0;
-	unsigned int ysize = 0;
-
-	bool ownTexture = true;
 
 	try {
-		CBitmap bitmap;
+		if (!texName.empty()) {
+			const auto it = iconTexNameToTexID.find(texName);
 
-		if ((ownTexture = !texName.empty() && bitmap.Load(texName))) {
-			texID = bitmap.CreateMipMapTexture();
+			if (it != iconTexNameToTexID.end()){ // Assign it if we found it
+				texID = it->second;
+			}
+			else {
+				CBitmap bitmap;
+				if (bitmap.Load(texName)) {
+					if (FileSystem::GetExtension(texName) == "dds")
+						texID = bitmap.CreateTexture();
+					else
+						texID = bitmap.CreateMipMapTexture();
 
-			glBindTexture(GL_TEXTURE_2D, texID);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			xsize = bitmap.xsize;
-			ysize = bitmap.ysize;
-		} else {
+					iconTexNameToTexID[texName] = texID;
+
+					glBindTexture(GL_TEXTURE_2D, texID);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				}
+				else {
+					// failed to load it, 
+					texID = GetDefaultTexture();
+				}
+			}
+		}
+		else {
 			texID = GetDefaultTexture();
-			xsize = DEFAULT_TEX_SIZE_X;
-			ysize = DEFAULT_TEX_SIZE_Y;
 		}
 	} catch (const content_error& ex) {
 		// bail on non-existant file
@@ -131,7 +148,7 @@ bool CIconHandler::AddIcon(
 		FreeIcon(iconName);
 
 	// data must be constructed first since CIcon's ctor will Ref() it
-	iconData[numIcons] = {iconName, texID,  size, distance, radAdj, ownTexture, xsize, ysize};
+	iconData[numIcons] = {iconName, texID,  size, distance, radAdj, false, u0, v0, u1, v1};
 	// indices 0 and 1 are reserved
 	iconMap[iconName] = CIcon(ICON_DATA_OFFSET + numIcons++);
 
@@ -181,6 +198,14 @@ unsigned int CIconHandler::GetDefaultTexture()
 
 	if (defTexID != 0)
 		return defTexID;
+
+	CBitmap defaultEngineBitmap;
+	if (defaultEngineBitmap.Load("bitmaps/defaultradardot.png")) {
+		glBindTexture(GL_TEXTURE_2D, defTexID = defaultEngineBitmap.CreateTexture());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		return defTexID;
+	}
 
 	unsigned char si[DEFAULT_TEX_SIZE_X * DEFAULT_TEX_SIZE_Y * 4];
 	for (int y = 0; y < DEFAULT_TEX_SIZE_Y; ++y) {
@@ -293,15 +318,12 @@ CIconData::CIconData(
 	float _distance,
 	bool radAdj,
 	bool ownTex,
-	unsigned int _xsize,
-	unsigned int _ysize
+	float _u0, float _v0, float _u1, float _v1
 )
 	: name(_name)
 	, refCount(0)
 
 	, texID(_texID)
-	, xsize(_xsize)
-	, ysize(_ysize)
 
 	, size(_size)
 	, distance(_distance)
@@ -309,6 +331,11 @@ CIconData::CIconData(
 
 	, ownTexture(ownTex)
 	, radiusAdjust(radAdj)
+
+	, u0(_u0)
+	, v0(_v0)
+	, u1(_u1)
+	, v1(_v1)
 {
 }
 
@@ -333,8 +360,10 @@ void CIconData::CopyData(const CIconData* iconData)
 	distance     = iconData->distance;
 	distSqr      = iconData->distSqr;
 	radiusAdjust = iconData->radiusAdjust;
-	xsize        = iconData->xsize;
-	ysize        = iconData->ysize;
+	u0			 = iconData->u0;
+	v0			 = iconData->v0;
+	u1			 = iconData->u1;
+	v1			 = iconData->v1;
 	ownTexture   = false;
 }
 
@@ -348,10 +377,10 @@ void CIconData::Draw(float x0, float y0, float x1, float y1) const
 {
 	glBindTexture(GL_TEXTURE_2D, texID);
 	glBegin(GL_QUADS);
-	glTexCoord2f(0.0f, 0.0f); glVertex2f(x0, y0);
-	glTexCoord2f(1.0f, 0.0f); glVertex2f(x1, y0);
-	glTexCoord2f(1.0f, 1.0f); glVertex2f(x1, y1);
-	glTexCoord2f(0.0f, 1.0f); glVertex2f(x0, y1);
+	glTexCoord2f(u0, v0); glVertex2f(x0, y0);
+	glTexCoord2f(u1, v0); glVertex2f(x1, y0);
+	glTexCoord2f(u1, v1); glVertex2f(x1, y1);
+	glTexCoord2f(u0, v1); glVertex2f(x0, y1);
 	glEnd();
 }
 
