@@ -222,83 +222,169 @@ void CCobThread::InitStack(unsigned int n, CCobThread* t)
 
 // Command documentation from http://visualta.tauniverse.com/Downloads/cob-commands.txt
 // And some information from basm0.8 source (basm ops.txt)
+// 
+#define SHORTOPCODES
 
+#ifndef SHORTOPCODES
 // Model interaction
-static constexpr int MOVE       = 0x10001000;
-static constexpr int TURN       = 0x10002000;
-static constexpr int SPIN       = 0x10003000;
-static constexpr int STOP_SPIN  = 0x10004000;
-static constexpr int SHOW       = 0x10005000;
-static constexpr int HIDE       = 0x10006000;
-static constexpr int CACHE      = 0x10007000;
+static constexpr int MOVE = 0x10001000;
+static constexpr int TURN = 0x10002000;
+static constexpr int SPIN = 0x10003000;
+static constexpr int STOP_SPIN = 0x10004000;
+static constexpr int SHOW = 0x10005000;
+static constexpr int HIDE = 0x10006000;
+static constexpr int CACHE = 0x10007000;
 static constexpr int DONT_CACHE = 0x10008000;
-static constexpr int MOVE_NOW   = 0x1000B000;
-static constexpr int TURN_NOW   = 0x1000C000;
-static constexpr int SHADE      = 0x1000D000;
+static constexpr int MOVE_NOW = 0x1000B000;
+static constexpr int TURN_NOW = 0x1000C000;
+static constexpr int SHADE = 0x1000D000;
 static constexpr int DONT_SHADE = 0x1000E000;
-static constexpr int EMIT_SFX   = 0x1000F000;
+static constexpr int EMIT_SFX = 0x1000F000;
 
 // Blocking operations
-static constexpr int WAIT_TURN  = 0x10011000;
-static constexpr int WAIT_MOVE  = 0x10012000;
-static constexpr int SLEEP      = 0x10013000;
+static constexpr int WAIT_TURN = 0x10011000;
+static constexpr int WAIT_MOVE = 0x10012000;
+static constexpr int SLEEP = 0x10013000;
 
 // Stack manipulation
-static constexpr int PUSH_CONSTANT    = 0x10021001;
-static constexpr int PUSH_LOCAL_VAR   = 0x10021002;
-static constexpr int PUSH_STATIC      = 0x10021004;
+static constexpr int PUSH_CONSTANT = 0x10021001;
+static constexpr int PUSH_LOCAL_VAR = 0x10021002;
+static constexpr int PUSH_STATIC = 0x10021004;
 static constexpr int CREATE_LOCAL_VAR = 0x10022000;
-static constexpr int POP_LOCAL_VAR    = 0x10023002;
-static constexpr int POP_STATIC       = 0x10023004;
-static constexpr int POP_STACK        = 0x10024000; ///< Not sure what this is supposed to do
+static constexpr int POP_LOCAL_VAR = 0x10023002;
+static constexpr int POP_STATIC = 0x10023004;
+static constexpr int POP_STACK = 0x10024000; ///< Not sure what this is supposed to do
 
 // Arithmetic operations
-static constexpr int ADD         = 0x10031000;
-static constexpr int SUB         = 0x10032000;
-static constexpr int MUL         = 0x10033000;
-static constexpr int DIV         = 0x10034000;
-static constexpr int MOD		  = 0x10034001; ///< spring specific
+static constexpr int ADD = 0x10031000;
+static constexpr int SUB = 0x10032000;
+static constexpr int MUL = 0x10033000;
+static constexpr int DIV = 0x10034000;
+static constexpr int MOD = 0x10034001; ///< spring specific
 static constexpr int BITWISE_AND = 0x10035000;
-static constexpr int BITWISE_OR  = 0x10036000;
+static constexpr int BITWISE_OR = 0x10036000;
 static constexpr int BITWISE_XOR = 0x10037000;
 static constexpr int BITWISE_NOT = 0x10038000;
 
 // Native function calls
-static constexpr int RAND           = 0x10041000;
+static constexpr int RAND = 0x10041000;
 static constexpr int GET_UNIT_VALUE = 0x10042000;
-static constexpr int GET            = 0x10043000;
+static constexpr int GET = 0x10043000;
 
 // Comparison
-static constexpr int SET_LESS             = 0x10051000;
-static constexpr int SET_LESS_OR_EQUAL    = 0x10052000;
-static constexpr int SET_GREATER          = 0x10053000;
+static constexpr int SET_LESS = 0x10051000;
+static constexpr int SET_LESS_OR_EQUAL = 0x10052000;
+static constexpr int SET_GREATER = 0x10053000;
 static constexpr int SET_GREATER_OR_EQUAL = 0x10054000;
-static constexpr int SET_EQUAL            = 0x10055000;
-static constexpr int SET_NOT_EQUAL        = 0x10056000;
-static constexpr int LOGICAL_AND          = 0x10057000;
-static constexpr int LOGICAL_OR           = 0x10058000;
-static constexpr int LOGICAL_XOR          = 0x10059000;
-static constexpr int LOGICAL_NOT          = 0x1005A000;
+static constexpr int SET_EQUAL = 0x10055000;
+static constexpr int SET_NOT_EQUAL = 0x10056000;
+static constexpr int LOGICAL_AND = 0x10057000;
+static constexpr int LOGICAL_OR = 0x10058000;
+static constexpr int LOGICAL_XOR = 0x10059000;
+static constexpr int LOGICAL_NOT = 0x1005A000;
 
 // Flow control
-static constexpr int START           = 0x10061000;
-static constexpr int CALL            = 0x10062000; ///< converted when executed
-static constexpr int REAL_CALL       = 0x10062001; ///< spring custom
-static constexpr int LUA_CALL        = 0x10062002; ///< spring custom
-static constexpr int JUMP            = 0x10064000;
-static constexpr int RETURN          = 0x10065000;
-static constexpr int JUMP_NOT_EQUAL  = 0x10066000;
-static constexpr int SIGNAL          = 0x10067000;
+static constexpr int START = 0x10061000;
+static constexpr int CALL = 0x10062000; ///< converted when executed
+static constexpr int REAL_CALL = 0x10062001; ///< spring custom
+static constexpr int LUA_CALL = 0x10062002; ///< spring custom
+static constexpr int JUMP = 0x10064000;
+static constexpr int RETURN = 0x10065000;
+static constexpr int JUMP_NOT_EQUAL = 0x10066000;
+static constexpr int SIGNAL = 0x10067000;
 static constexpr int SET_SIGNAL_MASK = 0x10068000;
 
 // Piece destruction
-static constexpr int EXPLODE    = 0x10071000;
+static constexpr int EXPLODE = 0x10071000;
 static constexpr int PLAY_SOUND = 0x10072000;
 
 // Special functions
-static constexpr int SET    = 0x10082000;
+static constexpr int SET = 0x10082000;
 static constexpr int ATTACH = 0x10083000;
-static constexpr int DROP   = 0x10084000;
+static constexpr int DROP = 0x10084000;
+
+#else // !SHORTOPCODES
+
+// Model interaction
+static constexpr uint8_t MOVE = 0x01;
+static constexpr uint8_t TURN = 0x02;
+static constexpr uint8_t SPIN = 0x03;
+static constexpr uint8_t STOP_SPIN = 0x04;
+static constexpr uint8_t SHOW = 0x05;
+static constexpr uint8_t HIDE = 0x06;
+static constexpr uint8_t CACHE = 0x07;
+static constexpr uint8_t DONT_CACHE = 0x08;
+static constexpr uint8_t MOVE_NOW = 0x0B;
+static constexpr uint8_t TURN_NOW = 0x0C;
+static constexpr uint8_t SHADE = 0x0D;
+static constexpr uint8_t DONT_SHADE = 0x0E;
+static constexpr uint8_t EMIT_SFX = 0x0F;
+
+// Blocking operations
+static constexpr uint8_t WAIT_TURN = 0x11;
+static constexpr uint8_t WAIT_MOVE = 0x12;
+static constexpr uint8_t SLEEP = 0x13;
+
+// Stack manipulation
+static constexpr uint8_t PUSH_CONSTANT = 0x21;
+static constexpr uint8_t PUSH_LOCAL_VAR = 0x22;
+static constexpr uint8_t PUSH_STATIC = 0x23;
+static constexpr uint8_t CREATE_LOCAL_VAR = 0x24;
+static constexpr uint8_t POP_LOCAL_VAR = 0x25;
+static constexpr uint8_t POP_STATIC = 0x26;
+static constexpr uint8_t POP_STACK = 0x27;
+
+// Arithmetic operations
+static constexpr uint8_t ADD = 0x31;
+static constexpr uint8_t SUB = 0x32;
+static constexpr uint8_t MUL = 0x33;
+static constexpr uint8_t DIV = 0x34;
+static constexpr uint8_t MOD = 0x39;
+static constexpr uint8_t BITWISE_AND = 0x35;
+static constexpr uint8_t BITWISE_OR = 0x36;
+static constexpr uint8_t BITWISE_XOR = 0x37;
+static constexpr uint8_t BITWISE_NOT = 0x38;
+
+static constexpr uint8_t ABS = 0x40;
+
+// Native function calls
+static constexpr uint8_t RAND = 0x41;
+static constexpr uint8_t GET_UNIT_VALUE = 0x42;
+static constexpr uint8_t GET = 0x43;
+
+// Comparison
+static constexpr uint8_t SET_LESS = 0x51;
+static constexpr uint8_t SET_LESS_OR_EQUAL = 0x52;
+static constexpr uint8_t SET_GREATER = 0x53;
+static constexpr uint8_t SET_GREATER_OR_EQUAL = 0x54;
+static constexpr uint8_t SET_EQUAL = 0x55;
+static constexpr uint8_t SET_NOT_EQUAL = 0x56;
+static constexpr uint8_t LOGICAL_AND = 0x57;
+static constexpr uint8_t LOGICAL_OR = 0x58;
+static constexpr uint8_t LOGICAL_XOR = 0x59;
+static constexpr uint8_t LOGICAL_NOT = 0x5A;
+
+// Flow control
+static constexpr uint8_t START = 0x61;
+static constexpr uint8_t CALL = 0x62;
+static constexpr uint8_t REAL_CALL = 0x63;
+static constexpr uint8_t LUA_CALL = 0x69;
+static constexpr uint8_t JUMP = 0x64;
+static constexpr uint8_t RETURN = 0x65;
+static constexpr uint8_t JUMP_NOT_EQUAL = 0x66;
+static constexpr uint8_t SIGNAL = 0x67;
+static constexpr uint8_t SET_SIGNAL_MASK = 0x68;
+
+// Piece destruction
+static constexpr uint8_t EXPLODE = 0x71;
+static constexpr uint8_t PLAY_SOUND = 0x72;
+
+// Special functions
+static constexpr uint8_t SET = 0x82;
+static constexpr uint8_t ATTACH = 0x83;
+static constexpr uint8_t DROP = 0x84;
+
+#endif
 
 // Indices for SET, GET, and GET_UNIT_VALUE for LUA return values
 static constexpr int LUA0 = 110; // (LUA0 returns the lua call status, 0 or 1)
@@ -413,7 +499,14 @@ bool CCobThread::Tick()
 	int r1, r2, r3, r4, r5, r6;
 
 	while (state == Run) {
-		const int opcode = GET_LONG_PC();
+		#ifndef SHORTOPCODES
+			const int opcode = GET_LONG_PC();
+		#else
+			const int longopcode = GET_LONG_PC();
+			const uint8_t opcode = (uint8_t) longopcode;
+		#endif
+
+
 
 		switch (opcode) {
 			case PUSH_CONSTANT: {
@@ -607,6 +700,11 @@ bool CCobThread::Tick()
 			case BITWISE_NOT: {
 				r1 = PopDataStack();
 				PushDataStack(~r1);
+			} break;
+
+			case ABS: {
+				r1 = PopDataStack();
+				PushDataStack(abs(r1));
 			} break;
 
 			case EXPLODE: {

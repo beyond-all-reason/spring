@@ -107,15 +107,15 @@ protected:
 
 	void LuaCall();
 
-	void PushCallStack(CallInfo v) { callStack.push_back(v); }
-	void PushDataStack(int v) { dataStack.push_back(v); }
+	inline void PushCallStack(CallInfo v) { callStack.push_back(v); }
+	inline void PushDataStack(int v) { dataStack.push_back(v); }
 	CallInfo& PushCallStackRef() { return callStack.emplace_back(); }
 
 	int LocalFunctionID() const { return callStack.back().functionId; }
 	int LocalReturnAddr() const { return callStack.back().returnAddr; }
 	int LocalStackFrame() const { return callStack.back().stackTop; }
 
-	int PopDataStack() {
+	inline int PopDataStack() {
 		if (dataStack.empty()) {
 			return 0;
 		}
