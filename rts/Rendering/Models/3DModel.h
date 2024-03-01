@@ -122,15 +122,15 @@ struct S3DModelHelpers {
 	static void UnbindLegacyAttrVBOs();
 };
 
-struct AnimationKeyFrame {
+struct EmbeddedAnimKeyFrame {
 	float3 translation;
-	float time; //seconds
+	float time; // in synced frames
 	CQuaternion rotation;
 };
 
-struct AnimationInfo {
-	float duration; // in seconds
-	uint32_t pos;
+struct EmbeddedAnimInfo {
+	std::string name;
+	float duration; // in synced frames
 };
 
 
@@ -275,7 +275,7 @@ protected:
 
 	bool hasBakedMat;
 
-	std::vector<AnimationKeyFrame> animKeyFrames;
+	std::vector<EmbeddedAnimKeyFrame> animKeyFrames;
 public:
 	friend class CAssParser;
 };
@@ -450,7 +450,7 @@ public:
 	LoadStatus loadStatus;
 	bool uploaded;
 private:
-	spring::unordered_map<std::string, AnimationInfo> animInfo;
+	std::vector<EmbeddedAnimInfo> animInfo;
 	ScopedMatricesMemAlloc matAlloc;
 public:
 	friend class CAssParser;

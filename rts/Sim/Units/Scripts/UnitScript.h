@@ -42,13 +42,11 @@ protected:
 
 	typedef bool(CUnitScript::*TickAnimFunc)(int, LocalModelPiece&, AnimInfo&);
 
+	// Stores queued/lasting animations per animation type
 	AnimContainerType anims[AMove + 1];
 
-	//This vector is used to finished animations can be removed in linear time. 
-	// A single static allocation of this in CUnitScript::Tick is enough when only doing single threaded animations, 
-	// however multi threaded animation calculation cannot share this static vector across multiple threads, 
-	// so we need to allocate one of these for each CUnitScript instance. 
-	AnimContainerType doneAnimsMT[AMove + 1];
+	// This vector is used so the finished animations can be removed in linear time.
+	AnimContainerType doneAnims[AMove + 1];
 
 
 	bool hasSetSFXOccupy;

@@ -1152,7 +1152,7 @@ void CAssParser::FillAnimation(const aiScene* scene, S3DModel* model)
 			rotVec.emplace_back(std::numeric_limits<float>::infinity(), rotVec.back().mValue);
 
 			for (float ts : allTimeStamps) {
-				AnimationKeyFrame akf;
+				EmbeddedAnimKeyFrame akf;
 				akf.time = ts / ticksPerSecond;
 
 				size_t vx;
@@ -1193,13 +1193,18 @@ void CAssParser::FillAnimation(const aiScene* scene, S3DModel* model)
 					(ts - rotVec[vx + 0].mTime) / (rotVec[vx + 1].mTime - rotVec[vx + 0].mTime)
 				);
 
+				akf.time = math::round(akf.time / ticksPerSecond * GAME_SPEED); //round to match the frame boundary and switch to frames
+
 				piece->animKeyFrames.emplace_back(std::move(akf));
 			}
 		}
 
-		// in seconds
-		const float duration = anim->mDuration / ticksPerSecond;
-		model->animInfo.emplace(anim->mName.length > 0 ? std::string(anim->mName.C_Str()) : std::to_string(ai), { .duration = duration, .pos = ai });
+		// in frames
+		const float duration = math::round(anim->mDuration / ticksPerSecond * GAME_SPEED);
+		model->animInfo.emplace_back(EmbeddedAnimInfo{
+			.name = anim->mName.length > 0 ? std::string(anim->mName.C_Str()) : std::to_string(ai),
+			.duration = duration
+		});
 	}
 }
 

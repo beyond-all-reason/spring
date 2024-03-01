@@ -54,7 +54,7 @@ CR_REG_METADATA(CUnitScript, (
 	CR_MEMBER(unit),
 	CR_MEMBER(busy),
 	CR_MEMBER(anims),
-	CR_MEMBER(doneAnimsMT),
+	CR_MEMBER(doneAnims),
 
 	//Populated by children
 	CR_IGNORED(pieces),
@@ -197,14 +197,14 @@ void CUnitScript::TickAllAnims(int deltaTime)
 {
 	ZoneScoped;
 	// vector of indexes of finished animations,
-	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
-	// AnimContainerType doneAnimsMT[AMove + 1];
+	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnims
+	// AnimContainerType doneAnims[AMove + 1];
 
 	// tick-functions; these never change address
 	static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
 
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnimsMT[animType]);
+		TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnims[animType]);
 	}
 }
 
@@ -221,16 +221,16 @@ bool CUnitScript::TickAnimFinished(int deltaTime)
 {
 	ZoneScoped;
 	// vector of indexes of finished animations,
-	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
-	// AnimContainerType doneAnimsMT[AMove + 1];
+	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnims
+	// AnimContainerType doneAnims[AMove + 1];
 
 	// Tell listeners to unblock, and remove finished animations from the unit/script.
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		for (AnimInfo& ai : doneAnimsMT[animType]) {
+		for (AnimInfo& ai : doneAnims[animType]) {
 			AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
 		}
 
-		doneAnimsMT[animType].clear();
+		doneAnims[animType].clear();
 	}
 	return (HaveAnimations());
 }
@@ -278,12 +278,13 @@ void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float
 
 	float destf = 0.0f;
 
-	if (type == AMove) {
+	if (type == AMove)
 		destf = pieces[piece]->original->offset[axis] + dest;
-	} else {
+	else if (type == ATurn)
 		// clamp destination (angle) for turn-anims
-		destf = mix(dest, ClampRad(dest), type == ATurn);
-	}
+		destf = ClampRad(dest);
+	else
+		destf = dest;
 
 	AnimContainerTypeIt animInfoIt;
 	AnimInfo* ai = nullptr;
