@@ -22,6 +22,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/IPathDrawer.h"
+#include "Rendering/DepthBufferCopy.h"
 #include "Rendering/SmoothHeightMeshDrawer.h"
 #include "Rendering/InMapDrawView.h"
 #include "Rendering/ShadowHandler.h"
@@ -129,6 +130,9 @@ void CWorldDrawer::InitPost() const
 		heightMapTexture = new HeightMapTexture();
 	}
 	{
+		DepthBufferCopy::Init();
+	}
+	{
 		IGroundDecalDrawer::Init();
 	}
 	{
@@ -194,6 +198,7 @@ void CWorldDrawer::Kill()
 
 	readMap->KillGroundDrawer();
 	IGroundDecalDrawer::FreeInstance();
+	DepthBufferCopy::Kill();
 	LuaObjectDrawer::Kill();
 	SmoothHeightMeshDrawer::FreeInstance();
 
@@ -219,6 +224,7 @@ void CWorldDrawer::Update(bool newSimFrame)
 	// lineDrawer.UpdateLineStipple();
 	CUnitDrawer::UpdateStatic();
 	CFeatureDrawer::UpdateStatic();
+	projectileDrawer->UpdateDrawFlags();
 
 	if (newSimFrame) {
 		projectileDrawer->UpdateTextures();
@@ -306,11 +312,6 @@ void CWorldDrawer::Draw() const
 	ISky::GetSky()->Draw();
 	DrawAlphaObjects();
 
-	{
-		SCOPED_TIMER("Draw::World::Projectiles");
-		projectileDrawer->Draw(false);
-	}
-
 	ISky::GetSky()->DrawSun();
 
 	{
@@ -333,6 +334,7 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		{
 			SCOPED_TIMER("Draw::World::Terrain");
 			gd->Draw(DrawPass::Normal);
+			depthBufferCopy->MakeDepthBufferCopy();
 		}
 		{
 			eventHandler.DrawPreDecals();
@@ -354,6 +356,10 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		SCOPED_TIMER("Draw::World::Models::Opaque");
 		unitDrawer->Draw(false);
 		featureDrawer->Draw(false);
+	}
+	{
+		SCOPED_TIMER("Draw::World::Projectiles");
+		projectileDrawer->DrawOpaque(false);
 	}
 	{
 		SCOPED_TIMER("Draw::OpaqueObjects::Debug");
@@ -384,6 +390,10 @@ void CWorldDrawer::DrawAlphaObjects() const
 		// draw alpha-objects below water surface (farthest)
 		unitDrawer->DrawAlphaPass(false);
 		featureDrawer->DrawAlphaPass(false);
+	}
+	{
+		SCOPED_TIMER("Draw::World::Projectiles");
+		projectileDrawer->DrawAlpha(false, false, false);
 
 		glDisable(GL_CLIP_PLANE3);
 	}
@@ -412,6 +422,10 @@ void CWorldDrawer::DrawAlphaObjects() const
 		// draw alpha-objects above water surface (closest)
 		unitDrawer->DrawAlphaPass(false);
 		featureDrawer->DrawAlphaPass(false);
+	}
+	{
+		SCOPED_TIMER("Draw::World::Projectiles");
+		projectileDrawer->DrawAlpha(true, false, false);
 
 		glDisable(GL_CLIP_PLANE3);
 	}

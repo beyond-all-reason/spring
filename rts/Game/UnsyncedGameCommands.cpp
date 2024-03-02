@@ -1377,15 +1377,31 @@ public:
 	TrackActionExecutor() : IUnsyncedActionExecutor("Track",
 			"Start/stop following the selected unit(s) with the camera", false, {
 			{"", "Toggles tracking"},
-			{"<on|off>", "Set tracking <on|off>"},
+			{"<on|off>", "Set tracking <on|off> <unitID unitID ...>"},
 			}) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
 		bool enableTracking = unitTracker.Enabled();
-		InverseOrSetBool(enableTracking, action.GetArgs());
+		std::vector<int> unitIDs = {};
+
+		switch (args.size())
+		{
+			case 0:
+				InverseOrSetBool(enableTracking, ""); break;
+			case 1:
+				InverseOrSetBool(enableTracking, args.at(0)); break;
+			default: {
+				InverseOrSetBool(enableTracking, args.at(0));
+				if (enableTracking) {
+					for (size_t i = 1; i < args.size(); ++i)
+						unitIDs.emplace_back(StringToInt(args.at(i)));
+				}
+			} break;
+		}
 
 		if (enableTracking)
-			unitTracker.Track();
+			unitTracker.Track(std::move(unitIDs));
 		else
 			unitTracker.Disable();
 
@@ -3581,6 +3597,10 @@ public:
 			projectileDrawer->textureAtlas->ReloadTextures();
 			projectileDrawer->groundFXAtlas->ReloadTextures();
 		};
+		auto decalFunc = []() {
+			LOG("Reloading Decal textures");
+			groundDecals->ReloadTextures();
+		};
 
 		std::array argsExec = {
 			ArgTuple(hashString("lua") , false, luaFunc),
@@ -3589,6 +3609,8 @@ public:
 			ArgTuple(hashString("smf") , false, smfFunc),
 			ArgTuple(hashString("cegs"), false, cegFunc),
 			ArgTuple(hashString("ceg") , false, cegFunc),
+			ArgTuple(hashString("decal")  , false, decalFunc),
+			ArgTuple(hashString("decals") , false, decalFunc),
 		};
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
@@ -3602,17 +3624,25 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		auto projFunc = []() {
+			LOG("Dumping projectile textures");
+			projectileDrawer->textureAtlas->DumpTexture("TextureAtlas");
+			projectileDrawer->groundFXAtlas->DumpTexture("GroundFXAtlas");
+		};
+		auto threeDoFunc = []() {
+			LOG("Dumping 3do atlas textures");
+			glSaveTexture(textureHandler3DO.GetAtlasTex1ID(), "3doTex1.png");
+			glSaveTexture(textureHandler3DO.GetAtlasTex2ID(), "3doTex2.png");
+		};
+		auto decalsFunc = []() {
+			LOG("Dumping decal atlas textures");
+			groundDecals->DumpAtlasTextures();
+		};
 		std::array argsExec = {
-			ArgTuple(hashString("proj"), false, []() {
-				LOG("Dumping projectile textures");
-				projectileDrawer->textureAtlas->DumpTexture("TextureAtlas");
-				projectileDrawer->groundFXAtlas->DumpTexture("GroundFXAtlas");
-			}),
-			ArgTuple(hashString("3do"), false, []() {
-				LOG("Dumping 3do atlas textures");
-				glSaveTexture(textureHandler3DO.GetAtlasTex1ID(), "3doTex1.png");
-				glSaveTexture(textureHandler3DO.GetAtlasTex2ID(), "3doTex2.png");
-			}),
+			ArgTuple(hashString("proj"), false, projFunc),
+			ArgTuple(hashString("3do"), false, threeDoFunc),
+			ArgTuple(hashString("decal"), false, decalsFunc),
+			ArgTuple(hashString("decals"), false, decalsFunc)
 		};
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);

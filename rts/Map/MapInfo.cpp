@@ -441,6 +441,8 @@ void CMapInfo::ReadPFSConstants()
 	qtpfsConsts.numSpeedModBins = qtpfsTable.GetInt("numSpeedModBins", 10);
 	qtpfsConsts.minSpeedModVal  = std::max(                      0.0f, qtpfsTable.GetFloat("minSpeedModVal", 0.0f));
 	qtpfsConsts.maxSpeedModVal  = std::max(qtpfsConsts.minSpeedModVal, qtpfsTable.GetFloat("maxSpeedModVal", 2.0f));
+	qtpfsConsts.maxNodesSearched = qtpfsTable.GetInt("maxNodesSearched", 0);
+	qtpfsConsts.maxRelativeNodesSearched = qtpfsTable.GetFloat("maxRelativeNodesSearched", 0.f);
 }
 
 void CMapInfo::ReadSound()

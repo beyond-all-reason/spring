@@ -215,7 +215,7 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 	updateBuffer->renderCaps =
 		globalRendering->supportClipSpaceControl << 0;
 
-	updateBuffer->timeInfo = float4{(float)gs->frameNum, spring_tomsecs(globalRendering->grTime) * 0.001f, (float)globalRendering->drawFrame, globalRendering->timeOffset}; //gameFrame, drawSeconds, drawFrame, frameTimeOffset
+	updateBuffer->timeInfo = float4{(float)gs->frameNum, spring_tomsecs(globalRendering->grTime) * 0.001f, (gs->GetLuaSimFrame() + globalRendering->timeOffset) / GAME_SPEED, globalRendering->timeOffset}; //gameFrame, drawSeconds, interpolated(unsynced)GameSeconds(synced), frameTimeOffset
 	updateBuffer->viewGeometry = float4{(float)globalRendering->viewSizeX, (float)globalRendering->viewSizeY, (float)globalRendering->viewPosX, (float)globalRendering->viewPosY}; //vsx, vsy, vpx, vpy
 	updateBuffer->mapSize = float4{(float)mapDims.mapx, (float)mapDims.mapy, (float)mapDims.pwr2mapx, (float)mapDims.pwr2mapy} *(float)SQUARE_SIZE; //xz, xzPO2
 	updateBuffer->mapHeight = float4{readMap->GetCurrMinHeight(), readMap->GetCurrMaxHeight(), readMap->GetInitMinHeight(), readMap->GetInitMaxHeight()};

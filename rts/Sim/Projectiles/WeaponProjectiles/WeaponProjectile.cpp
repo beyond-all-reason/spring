@@ -359,7 +359,7 @@ void CWeaponProjectile::UpdateGroundBounce()
 }
 
 
-void CWeaponProjectile::DrawOnMinimap()
+void CWeaponProjectile::DrawOnMinimap() const
 {
 	AddMiniMapVertices({ pos        , color4::yellow }, { pos + speed, color4::yellow });
 }

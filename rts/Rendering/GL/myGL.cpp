@@ -3,7 +3,7 @@
 #include <array>
 #include <vector>
 #include <string>
-#include <cmath>
+#include <bit>
 
 #include <SDL.h>
 #if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
@@ -298,7 +298,12 @@ void glSaveTexture(const GLuint textureID, const char* filename, int level)
 	GLenum extFormat = params.isDepth ? GL_DEPTH_COMPONENT : CBitmap::GetExtFmt(params.chNum);
 	GLenum dataType = params.isDepth ? GL_FLOAT : GL_UNSIGNED_BYTE;
 
-	bmp.Alloc(params.sizeX, params.sizeY, params.chNum, dataType);
+	int2 imageSize {
+		std::max(params.sizeX >> level, 1),
+		std::max(params.sizeY >> level, 1)
+	};
+
+	bmp.Alloc(imageSize.x, imageSize.y, params.chNum, dataType);
 
 	{
 		GLint ra = CBitmap::ExtFmtToChannels(extFormat);
@@ -347,8 +352,8 @@ void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures)
 
 void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height)
 {
-	if (levels < 0)
-		levels = std::floor(math::log2(static_cast<float>(argmax(width, height)))) + 1;
+	if (levels <= 0)
+		levels = std::bit_width(static_cast<uint32_t>(std::max({ width , height })));
 
 	if (GLEW_ARB_texture_storage) {
 		glTexStorage2D(target, levels, internalFormat, width, height);
@@ -371,8 +376,8 @@ void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLs
 
 void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth)
 {
-	if (levels < 0)
-		levels = std::floor(math::log2(static_cast<float>(argmax(width, height, depth)))) + 1;
+	if (levels <= 0)
+		levels = std::bit_width(static_cast<uint32_t>(std::max({ width , height, depth })));
 
 	if (GLEW_ARB_texture_storage) {
 		glTexStorage3D(target, levels, internalFormat, width, height, depth);

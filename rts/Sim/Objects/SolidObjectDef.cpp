@@ -15,7 +15,7 @@ SolidObjectDecalDef::SolidObjectDecalDef()
 	, groundDecalDecaySpeed(0.0f)
 
 	, leaveTrackDecals(false)
-	, trackDecalType(-1)
+	//, trackDecalType(-1)
 	, trackDecalWidth(0.0f)
 	, trackDecalOffset(0.0f)
 	, trackDecalStrength(0.0f)
@@ -33,7 +33,7 @@ void SolidObjectDecalDef::Parse(const LuaTable& table) {
 	groundDecalDecaySpeed = table.GetFloat("groundDecalDecaySpeed", table.GetFloat("buildingGroundDecalDecaySpeed", 0.1f));
 
 	leaveTrackDecals   = table.GetBool("leaveTracks", false);
-	trackDecalType     = -1;
+	//trackDecalType     = -1;
 	trackDecalWidth    = table.GetFloat("trackWidth",   32.0f);
 	trackDecalOffset   = table.GetFloat("trackOffset",   0.0f);
 	trackDecalStrength = table.GetFloat("trackStrength", 0.0f);
@@ -46,8 +46,7 @@ SolidObjectDef::SolidObjectDef()
 	, xsize(0)
 	, zsize(0)
 
-	, metal(0.0f)
-	, energy(0.0f)
+	, cost(0.0f)
 	, health(0.0f)
 	, mass(0.0f)
 	, crushResistance(0.0f)

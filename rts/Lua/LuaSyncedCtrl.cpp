@@ -194,6 +194,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitShieldState);
 	REGISTER_LUA_CFUNC(SetUnitShieldRechargeDelay);
 	REGISTER_LUA_CFUNC(SetUnitFlanking);
+	REGISTER_LUA_CFUNC(SetUnitPhysicalStateBit);
 	REGISTER_LUA_CFUNC(SetUnitTravel);
 	REGISTER_LUA_CFUNC(SetUnitFuel);
 	REGISTER_LUA_CFUNC(SetUnitMoveGoal);
@@ -2799,7 +2800,7 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	const float buildScale = (1.0f / TEAM_SLOWUPDATE_RATE);
+	constexpr float buildScale = (1.0f / GAME_SPEED);
 	const float buildSpeed = buildScale * max(0.0f, luaL_checkfloat(L, 2));
 
 	CFactory* factory = dynamic_cast<CFactory*>(unit);
@@ -2843,7 +2844,7 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
  * @number builderID
  * @tparam table pieces
  * @treturn nil
- * 
+ *
  */
 int LuaSyncedCtrl::SetUnitNanoPieces(lua_State* L)
 {
@@ -3068,6 +3069,26 @@ int LuaSyncedCtrl::SetUnitFlanking(lua_State* L)
 	}
 	return 0;
 }
+
+/***
+ * @function Spring.SetUnitPhysicalStateBit
+ * @number unitID
+ * @number[bit] Physical state bit
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitPhysicalStateBit(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	int statebit = luaL_checkint(L, 2);
+
+	unit->SetPhysicalStateBit(statebit);
+	return 0;
+}
+
 
 
 int LuaSyncedCtrl::SetUnitTravel(lua_State* L) { return 0; } // FIXME: DELETE ME
@@ -3369,7 +3390,7 @@ int LuaSyncedCtrl::SetUnitPieceMatrix(lua_State* L)
  * @number tType
  * @number Axis
  * @treturn nil
- * 
+ *
  *  enum COLVOL_TYPES {
  *      COLVOL_TYPE_DISABLED = -1,
  *      COLVOL_TYPE_ELLIPSOID = 0,
@@ -4504,7 +4525,7 @@ int LuaSyncedCtrl::SetFeatureRotation(lua_State* L)
 
 
 /***
- * @function Spring.SetFeatureDirection 
+ * @function Spring.SetFeatureDirection
  * @number featureID
  * @number dirX
  * @number dirY
@@ -4633,7 +4654,7 @@ int LuaSyncedCtrl::SetFeatureMidAndAimPos(lua_State* L)
 
 
 /***
- * @function Spring.SetFeatureRadiusAndHeight 
+ * @function Spring.SetFeatureRadiusAndHeight
  * @number featureID
  * @number radius
  * @number height
@@ -4837,7 +4858,7 @@ int LuaSyncedCtrl::SetProjectilePosition(lua_State* L)
  * @number[opt=0] velY
  * @number[opt=0] velZ
  * @treturn nil
- * 
+ *
  */
 int LuaSyncedCtrl::SetProjectileVelocity(lua_State* L)
 {
@@ -4863,7 +4884,7 @@ int LuaSyncedCtrl::SetProjectileCollision(lua_State* L)
 /***
  * @function Spring.SetProjectileTarget
  *
- * targetTypeStr can be one of: 
+ * targetTypeStr can be one of:
  *     'u' - unit
  *     'f' - feature
  *     'p' - projectile
@@ -5179,7 +5200,7 @@ int LuaSyncedCtrl::UnitFinishCommand(lua_State* L)
  * @number unitID
  * @number cmdID
  * @tparam {number,...} params
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @treturn bool unitOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
@@ -5215,7 +5236,7 @@ int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
  * @tparam {[number]=table,...} unitMap table with unitIDs as keys
  * @number cmdID
  * @tparam {number,...} params
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @treturn number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
@@ -5258,7 +5279,7 @@ int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
  * @tparam {number,...} unitIDs
  * @number cmdID
  * @tparam {number,...} params
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @treturn number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)
@@ -5648,7 +5669,7 @@ int LuaSyncedCtrl::AddHeightMap(lua_State* L)
  *
  * @function Spring.SetHeightMap
  *
- * Can only be called in `Spring.SetHeightMapFunc`. The terraform argument is 
+ * Can only be called in `Spring.SetHeightMapFunc`. The terraform argument is
  *
  * @number x
  * @number z
@@ -6016,7 +6037,7 @@ static inline void ParseSmoothMeshParams(lua_State* L, const char* caller,
 			smoothGround.GetResolution(),
 			smoothGround.GetMaxX() - 1,
 			smoothGround.GetMaxY() - 1);
-			
+
 }
 
 

@@ -453,8 +453,7 @@ void CShadowHandler::DrawShadowPasses()
 	}
 
 	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0){
-		ZoneScopedN("Draw::World::CreateShadows::Projectiles");
-		projectileDrawer->DrawShadowPassOpaque();
+		projectileDrawer->DrawShadowOpaque();
 	}
 	if ((shadowGenBits & SHADOWGEN_BIT_MODEL) != 0) {
 		unitDrawer->DrawShadowPass();
@@ -479,9 +478,10 @@ void CShadowHandler::DrawShadowPasses()
 		ZoneScopedN("Draw::World::CreateShadows::Terrain");
 		readMap->GetGroundDrawer()->DrawShadowPass();
 	}
+
 	//transparent pass, comes last
 	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
-		projectileDrawer->DrawShadowPassTransparent();
+		projectileDrawer->DrawShadowTransparent();
 		eventHandler.DrawShadowPassTransparent();
 	}
 

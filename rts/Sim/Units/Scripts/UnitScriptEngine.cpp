@@ -13,6 +13,8 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
+#include "System/Config/ConfigHandler.h"
+
 
 static CCobEngine gCobEngine;
 static CCobFileHandler gCobFileHandler;
@@ -113,25 +115,40 @@ void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 	spring::VectorErase(animating, instance);
 }
 
-
 void CUnitScriptEngine::Tick(int deltaTime)
 {
+	SCOPED_TIMER("CUnitScriptEngine::Tick");
+
 	cobEngine->Tick(deltaTime);
 
-	// tick all (COB or LUS) script instances that have registered themselves as animating
-	ZoneScopedN("Sim::Script::Animation");
-	for (size_t i = 0; i < animating.size(); ) {
-		currentScript = animating[i];
-
-		if (!currentScript->Tick(deltaTime)) {
-			animating[i] = animating.back();
-			animating.pop_back();
-			continue;
-		}
-
-		i++;
-	}
+	ImplTickMT(deltaTime);
 
 	currentScript = nullptr;
 }
 
+void CUnitScriptEngine::ImplTickMT(int deltaTime)
+{
+	ZoneScopedN("CUnitScriptEngine::ImplTickMT");
+	// tick all (COB or LUS) script instances that have registered themselves as animating
+	{
+		ZoneScopedN("CUnitScriptEngine::ImplTickMT(MT)");
+
+		// setting currentScript = animating[i]; is not required here, only in ST section below
+		for_mt(0, animating.size(), [&](const int i) {
+			animating[i]->TickAllAnims(deltaTime);
+		});
+	}
+	{
+		ZoneScopedN("CUnitScriptEngine::ImplTickMT(ST)");
+		for (size_t i = 0; i < animating.size(); ) {
+			currentScript = animating[i];
+
+			if (!currentScript->TickAnimFinished(deltaTime)) {
+				animating[i] = animating.back();
+				animating.pop_back();
+				continue;
+			}
+			i++;
+		}
+	}
+}

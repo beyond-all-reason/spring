@@ -58,8 +58,6 @@ CR_REG_METADATA(CSolidObject,
 	CR_MEMBER(selectionVolume), // unsynced, could also be ignored
 	CR_MEMBER(hitModelPieces),
 
-	CR_IGNORED(groundDecal), // loaded from render*Created
-
 	CR_MEMBER(frontdir),
 	CR_MEMBER(rightdir),
 	CR_MEMBER(updir),
@@ -75,9 +73,6 @@ CR_REG_METADATA(CSolidObject,
 
 	CR_MEMBER(drawPos),
 	CR_MEMBER(drawMidPos),
-
-	CR_MEMBER(drawFlag),
-	CR_MEMBER(previousDrawFlag),
 
 	CR_MEMBER(buildFacing),
 	CR_MEMBER(modParams),
@@ -255,23 +250,26 @@ YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 	if (blockMap == nullptr)
 		return YARDMAP_OPEN;
 
-	const int2 hSize{footprint.x >> 1, footprint.y >> 1};
+	const int2 hFootprint{footprint.x >> 1, footprint.y >> 1};
+	const int2 hSize{ xsize >> 1, zsize >> 1};
+
 	const int2 gPos2
-			{ int(gpos.x + 0.01f) / SQUARE_SIZE
-			, int(gpos.z + 0.01f) / SQUARE_SIZE};
+			{ int(gpos.x / SQUARE_SIZE)
+			, int(gpos.z / SQUARE_SIZE)};
 	const int2 diff = gPos2 - (mapPos + hSize);
-	constexpr int2 dirs[] = { {0,1}, {1,0}, {0,-1}, {-1,0}, {0,1} };
+
+	constexpr int2 rotationDirs[] = { {0,1}, {1,0}, {0,-1}, {-1,0}, {0,1} };
+	const int2 front = rotationDirs[buildFacing];
+	const int2 right = rotationDirs[buildFacing+1];
 
 	// corrections needed because the rotation is off centre.
-	constexpr int2 corrections[] = { {0,0}, {-1,0}, {-1,-1}, {0,-1} };
+	constexpr int2 rotationCorrections[] = { {0,0}, {-1,0}, {-1,-1}, {0,-1} };
+	const int2 adjust = rotationCorrections[buildFacing];
 
-	const int2 front = dirs[buildFacing];
-	const int2 right = dirs[buildFacing+1];
-	const int2 adjust = corrections[buildFacing];
-
+	// Translate from map-space to yardmap-space
 	// negative result overflows to super high number
-	const uint32_t by = (front.x*diff.x) + (front.y*diff.y) + hSize.y + adjust.y;
-	const uint32_t bx = (right.x*diff.x) + (right.y*diff.y) + hSize.x + adjust.x;
+	const uint32_t by = (front.x*diff.x) + (front.y*diff.y) + hFootprint.y + adjust.y;
+	const uint32_t bx = (right.x*diff.x) + (right.y*diff.y) + hFootprint.x + adjust.x;
 
 	if ((bx >= footprint.x) || (by >= footprint.y))
 		return YARDMAP_OPEN;
@@ -292,7 +290,7 @@ int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 	return mp;
 }
 
-float3 CSolidObject::GetDragAccelerationVec(const float4& params) const
+float3 CSolidObject::GetDragAccelerationVec(float atmosphericDensity, float waterDensity, float dragCoeff, float frictionCoeff) const
 {
 	// KISS: use the cross-sectional area of a sphere, object shapes are complex
 	// this is a massive over-estimation so pretend the radius is in centimeters
@@ -302,9 +300,9 @@ float3 CSolidObject::GetDragAccelerationVec(const float4& params) const
 	//
 	const float3 speedSignVec = float3(Sign(speed.x), Sign(speed.y), Sign(speed.z));
 	const float3 dragScaleVec = float3(
-		IsInAir()    * dragScales.x * (0.5f * params.x * params.z * (math::PI * sqRadius * 0.01f * 0.01f)), // air
-		IsInWater()  * dragScales.y * (0.5f * params.y * params.z * (math::PI * sqRadius * 0.01f * 0.01f)), // water
-		IsOnGround() * dragScales.z * (                  params.w * (                               mass))  // ground
+		(IsInAir() || IsOnGround()) * dragScales.x * (0.5f * atmosphericDensity * dragCoeff * (math::PI * sqRadius * 0.01f * 0.01f)), // air
+		IsInWater()                 * dragScales.y * (0.5f * waterDensity * dragCoeff * (math::PI * sqRadius * 0.01f * 0.01f)), // water
+		IsOnGround()                * dragScales.z * (frictionCoeff * mass)  // ground
 	);
 
 	float3 dragAccelVec;

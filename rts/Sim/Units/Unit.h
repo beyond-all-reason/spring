@@ -38,7 +38,6 @@ class DamageArray;
 class DynDamageArray;
 struct SolidObjectDef;
 struct UnitDef;
-struct UnitTrackStruct;
 struct UnitLoadParams;
 struct SLosInstance;
 
@@ -119,9 +118,6 @@ public:
 
 	bool AllowedReclaim(CUnit* builder) const;
 
-	void SetMetalStorage(float newStorage);
-	void SetEnergyStorage(float newStorage);
-
 	bool UseMetal(float metal);
 	void AddMetal(float metal, bool useIncomeMultiplier = true);
 	bool UseEnergy(float energy);
@@ -195,6 +191,7 @@ public:
 	void UpdateLosStatus(int allyTeam);
 
 	void UpdateWeapons();
+	void UpdateWeaponVectors();
 
 	void SlowUpdateWeapons();
 	void SlowUpdateKamikaze(bool scanForTargets);
@@ -283,9 +280,8 @@ public:
 	static float GetExpGrade() { return expGrade; }
 
 	static float ExperienceScale(const float limExperience, const float experienceWeight) {
-		// limExperience ranges from 0.0 to 0.9999..., experienceWeight
-		// should be in [0, 1] and have no effect on accuracy when zero
-		return (1.0f - (limExperience * experienceWeight));
+		// limExperience ranges from 0.0 to 0.9999...
+		return std::max(0.0f, 1.0f - (limExperience * experienceWeight));
 	}
 
 public:
@@ -460,7 +456,7 @@ public:
 	// the amount of storage the unit contributes to the team
 	SResourcePack storage;
 
-	// per unit metal storage (gets filled on reclaim and needs then to be unloaded at some storage building -> 2nd part is lua's job)
+	// per unit storage (gets filled on reclaim and needs then to be unloaded at some storage building -> 2nd part is lua's job)
 	SResourcePack harvestStorage;
 	SResourcePack harvested;
 
@@ -562,7 +558,6 @@ public:
 
 	float iconRadius = 0.0f;
 
-	UnitTrackStruct* myTrack = nullptr;
 	icon::CIconData* myIcon = nullptr;
 
 	bool drawIcon = true;

@@ -54,6 +54,7 @@ CR_REG_METADATA(CUnitScript, (
 	CR_MEMBER(unit),
 	CR_MEMBER(busy),
 	CR_MEMBER(anims),
+	CR_MEMBER(doneAnimsMT),
 
 	//Populated by children
 	CR_IGNORED(pieces),
@@ -189,36 +190,50 @@ void CUnitScript::TickAnims(int tickRate, const TickAnimFunc& tickAnimFunc, Anim
 }
 
 /**
- * @brief Called by the engine when we are registered as animating.
-          If we return false there are no active animations left.
- * @param deltaTime int delta time to update
- * @return true if there are still active animations
- */
-bool CUnitScript::Tick(int deltaTime)
+ * @brief The multithreaded first half of the original CUnitScript::Tick function first does the heavy lifting of calculating all
+			  new piece positions according to the animations
+*/
+void CUnitScript::TickAllAnims(int deltaTime)
 {
+	ZoneScoped;
 	// vector of indexes of finished animations,
-	// so we can get rid of them in constant time
-	static AnimContainerType doneAnims[AMove + 1];
+	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
+	// AnimContainerType doneAnimsMT[AMove + 1];
+
 	// tick-functions; these never change address
-	static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = {&CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim};
+	static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
 
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnims[animType]);
+		TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnimsMT[animType]);
 	}
+}
+
+/**
+* @brief The single threaded second half of this function does the removal of finished animations,
+		and it also is responsible for unblocking the listeners and returning wether we have animations or not.
+		This is not multi threaded as it guarantees that AnimFinished will be called in consistent order for
+		all anims for all participants of the simulation, and guarantees that the order of the animating
+		vector in CUnitScriptEngine::Tick is preserved.
+* @param deltaTime int delta time to update
+* @return true if there are still active animations
+*/
+bool CUnitScript::TickAnimFinished(int deltaTime)
+{
+	ZoneScoped;
+	// vector of indexes of finished animations,
+	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
+	// AnimContainerType doneAnimsMT[AMove + 1];
 
 	// Tell listeners to unblock, and remove finished animations from the unit/script.
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		for (AnimInfo& ai: doneAnims[animType]) {
-			AnimFinished((AnimType) animType, ai.piece, ai.axis);
+		for (AnimInfo& ai : doneAnimsMT[animType]) {
+			AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
 		}
 
-		doneAnims[animType].clear();
+		doneAnimsMT[animType].clear();
 	}
-
 	return (HaveAnimations());
 }
-
-
 
 CUnitScript::AnimContainerTypeIt CUnitScript::FindAnim(AnimType type, int piece, int axis)
 {
@@ -573,7 +588,11 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 				CWeapon* w = unit->weapons[index];
 
 				const SWeaponTarget origTarget = w->GetCurrentTarget();
-				const SWeaponTarget emitTarget = {absPos + absDir};
+
+				// Ideally the below should be absPos + absDir * w->range,
+				// but since the weapon could be a ballistic one, it's likely not safe.
+				// So keep the target one elmo in front of the emit position
+				const SWeaponTarget emitTarget = { absPos + absDir };
 
 				const float3 origWeaponMuzzlePos = w->weaponMuzzlePos;
 
@@ -582,8 +601,14 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 				w->Fire(true);
 				w->weaponMuzzlePos = origWeaponMuzzlePos;
 
-				const bool origRestored = w->Attack(origTarget);
-				assert(origRestored);
+				// the w->Fire(true); call above might have killed the same original target
+				// Drop the original target in such case, otherwise the weapon will
+				// continue to shoot at `emitTarget` and given how close it's to the emit point
+				// it will look like a random "ghosts" shooting
+				// See https://github.com/beyond-all-reason/spring/issues/1269
+				if (!w->Attack(origTarget))
+					w->DropCurrentTarget();
+
 				return true;
 			}
 

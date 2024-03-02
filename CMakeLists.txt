@@ -175,6 +175,7 @@ else  (UNIX AND NOT MINGW)
 	endif()
 
 	if(MSVC)
+		set (CMAKE_VS_JUST_MY_CODE_DEBUGGING 1)
 		add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 		add_definitions(-DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 		set(GLEW_STATIC ON)
@@ -187,7 +188,7 @@ endif (UNIX AND NOT MINGW)
 # (next two are relative to CMAKE_INSTALL_PREFIX)
 set(AI_LIBS_DIR "${DATADIR}"     CACHE STRING "Where to install Skirmish AI libraries")
 set(AI_DATA_DIR "${AI_LIBS_DIR}" CACHE STRING "Where to install Skirmish AI additional files (eg. configuration)")
-set(AI_TYPES    "ALL"            CACHE STRING "Which AI Interfaces (and Skirmish AIs using them) to build [ALL|NATIVE|JAVA|NONE]")
+set(AI_TYPES    "NATIVE"            CACHE STRING "Which AI Interfaces (and Skirmish AIs using them) to build [ALL|NATIVE|JAVA|NONE]")
 
 ## DataDirs
 set(BUILTIN_DATADIRS "")
@@ -497,8 +498,8 @@ else  (MSVC)
 	# Experiment with frame pointers to see whether it improves the quality of the stack unwinds.
 	# We're having trouble getting meaningful information form crash reports. Trying this before
 	# moving onto more performance-impacting methods.
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
+	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+	# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
 
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IEEE_FP_FLAG} -pipe -fno-strict-aliasing ${VISIBILITY_HIDDEN} ${VISIBILITY_INLINES_HIDDEN}")
 	if (UNIX)
@@ -637,7 +638,7 @@ add_subdirectory(rts/System)
 # additional tools
 add_subdirectory(tools)
 
-# man pages & user-docs
+# user-docs
 add_subdirectory(doc)
 
 ### Handle game content

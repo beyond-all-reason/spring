@@ -84,6 +84,10 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 
   Keep only units that currently have a **Guard** order.
 
+### `Patrolling`
+
+  Keep only units that have a **Patrol** order early in the queue (first 4 commands, including sub-orders spawned by Patrol).
+
 ### `IdMatches_<string>`
 
   Keep only units whose internal name (unitDef name) matches `<string>` **exactly**.

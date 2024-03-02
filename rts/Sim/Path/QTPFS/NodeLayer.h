@@ -112,8 +112,8 @@ namespace QTPFS {
 		void IncreaseOpenNodeCounter() { numOpenNodes++; }
 		void IncreaseClosedNodeCounter() { numClosedNodes++; }
 
-		unsigned int GetNumOpenNodes() { return numOpenNodes; }
-		unsigned int GetNumClosedNodes() { return numClosedNodes; }
+		unsigned int GetNumOpenNodes() const { return numOpenNodes; }
+		unsigned int GetNumClosedNodes() const { return numClosedNodes; }
 
 		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
 		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }

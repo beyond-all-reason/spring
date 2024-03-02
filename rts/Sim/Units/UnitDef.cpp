@@ -66,21 +66,17 @@ UnitDef::UnitDef()
 	: SolidObjectDef()
 	, cobID(-1)
 	, decoyDef(nullptr)
-	, metalUpkeep(0.0f)
-	, energyUpkeep(0.0f)
-	, metalMake(0.0f)
+	, upkeep(0.0f)
+	, resourceMake(0.0f)
 	, makesMetal(0.0f)
-	, energyMake(0.0f)
 	, buildTime(0.0f)
 	, buildeeBuildRadius(-1.f)
 	, extractsMetal(0.0f)
 	, extractRange(0.0f)
 	, windGenerator(0.0f)
 	, tidalGenerator(0.0f)
-	, metalStorage(0.0f)
-	, energyStorage(0.0f)
-	, harvestMetalStorage(0.0f)
-	, harvestEnergyStorage(0.0f)
+	, storage(0.0f)
+	, harvestStorage(0.0f)
 	, autoHeal(0.0f)
 	, idleAutoHeal(0.0f)
 	, idleTime(0)
@@ -123,6 +119,9 @@ UnitDef::UnitDef()
 	, stopToAttack(false)
 	, minCollisionSpeed(0.0f)
 	, slideTolerance(0.0f)
+	, rollingResistanceCoefficient(0.0f)
+	, groundFrictionCoefficient(0.0f)
+	, atmosphericDragCoefficient(0.0f)
 	, maxHeightDif(0.0f)
 	, waterline(0.0f)
 	, minWaterDepth(0.0f)
@@ -243,10 +242,8 @@ UnitDef::UnitDef()
 	, showNanoSpray(false)
 	, nanoColor(ZeroVector)
 	, maxThisUnit(0)
-	, realMetalCost(0.0f)
-	, realEnergyCost(0.0f)
-	, realMetalUpkeep(0.0f)
-	, realEnergyUpkeep(0.0f)
+	, realCost(0.0f)
+	, realUpkeep(0.0f)
 	, realBuildTime(0.0f)
 {
 	memset(&modelCEGTags[0], 0, sizeof(modelCEGTags));
@@ -282,20 +279,28 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	buildPicName = udTable.GetString("buildPic", "");
 	decoyName = udTable.GetString("decoyFor", "");
 
-	metalStorage  = udTable.GetFloat("metalStorage",  0.0f);
-	energyStorage = udTable.GetFloat("energyStorage", 0.0f);
-	harvestMetalStorage  = udTable.GetFloat("harvestMetalStorage", udTable.GetFloat("harvestStorage", 0.0f));
-	harvestEnergyStorage = udTable.GetFloat("harvestEnergyStorage", 0.0f);
+	storage =
+		{ udTable.GetFloat( "metalStorage", 0.0f)
+		, udTable.GetFloat("energyStorage", 0.0f)
+	};
+	harvestStorage =
+		{ udTable.GetFloat("harvestMetalStorage", udTable.GetFloat("harvestStorage", 0.0f))
+		, udTable.GetFloat("harvestEnergyStorage", 0.0f)
+	};
 
 	extractsMetal  = udTable.GetFloat("extractsMetal",  0.0f);
 	windGenerator  = udTable.GetFloat("windGenerator",  0.0f);
 	tidalGenerator = udTable.GetFloat("tidalGenerator", 0.0f);
 
-	metalUpkeep  = udTable.GetFloat("metalUpkeep",  udTable.GetFloat("metalUse",  0.0f));
-	energyUpkeep = udTable.GetFloat("energyUpkeep", udTable.GetFloat("energyUse", 0.0f));
-	metalMake    = udTable.GetFloat("metalMake",  0.0f);
+	upkeep =
+		{ udTable.GetFloat( "metalUpkeep", udTable.GetFloat( "metalUse", 0.0f))
+		, udTable.GetFloat("energyUpkeep", udTable.GetFloat("energyUse", 0.0f))
+	};
+	resourceMake =
+		{ udTable.GetFloat( "metalMake", 0.0f)
+		, udTable.GetFloat("energyMake", 0.0f)
+	};
 	makesMetal   = udTable.GetFloat("makesMetal", 0.0f);
-	energyMake   = udTable.GetFloat("energyMake", 0.0f);
 
 	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
 	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
@@ -305,12 +310,12 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	if (health <= 0.0f)
 		throw content_error (unitName + ".health <= 0");
 
-	metal  = udTable.GetFloat("metalCost", udTable.GetFloat("buildCostMetal", 0.0f));
-	if (metal < 0.0f)
+	cost.metal = udTable.GetFloat("metalCost", udTable.GetFloat("buildCostMetal", 0.0f));
+	if (cost.metal < 0.0f)
 		throw content_error (unitName + ".metalCost < 0");
 
-	energy = udTable.GetFloat("energyCost", udTable.GetFloat("buildCostEnergy", 0.0f));
-	if (energy < 0.0f)
+	cost.energy = udTable.GetFloat("energyCost", udTable.GetFloat("buildCostEnergy", 0.0f));
+	if (cost.energy < 0.0f)
 		throw content_error (unitName + ".energyCost < 0");
 
 	buildTime = udTable.GetFloat("buildTime", 100.0f);
@@ -319,7 +324,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 	buildeeBuildRadius = udTable.GetFloat("buildeeBuildRadius", -1.f);
 
-	mass = std::clamp(udTable.GetFloat("mass", metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
+	mass = std::clamp(udTable.GetFloat("mass", cost.metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
 	crushResistance = udTable.GetFloat("crushResistance", mass);
 
 	cobID = udTable.GetInt("cobID", -1);
@@ -392,6 +397,9 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	waterline = udTable.GetFloat("waterline", 0.0f);
 	minCollisionSpeed = udTable.GetFloat("minCollisionSpeed", 1.0f);
 	slideTolerance = udTable.GetFloat("slideTolerance", 0.0f); // disabled
+	rollingResistanceCoefficient = udTable.GetFloat("rollingResistanceCoefficient", 0.05f);
+	groundFrictionCoefficient = udTable.GetFloat("groundFrictionCoefficient", 0.01f);
+	atmosphericDragCoefficient = udTable.GetFloat("atmosphericDragCoefficient", 1.0f);
 	pushResistant = udTable.GetBool("pushResistant", false);
 	selfDCountdown = udTable.GetInt("selfDestructCountdown", 5);
 
@@ -614,7 +622,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 		LOG_L(L_ERROR, "Couldn't find WeaponDef NOWEAPON and selfDestructAs for %s is missing!", unitName.c_str());
 	}
 
-	power = udTable.GetFloat("power", (metal + (energy / 60.0f)));
+	power = udTable.GetFloat("power", (cost.metal + (cost.energy / 60.0f)));
 
 	// Prevent a division by zero in experience calculations.
 	if (power < 1.0e-3f) {
@@ -840,23 +848,17 @@ void UnitDef::SetNoCost(bool noCost)
 {
 	if (noCost) {
 		// initialized from UnitDefHandler::PushNewUnitDef
-		realMetalCost    = metal;
-		realEnergyCost   = energy;
-		realMetalUpkeep  = metalUpkeep;
-		realEnergyUpkeep = energyUpkeep;
+		realCost         = cost;
+		realUpkeep       = upkeep;
 		realBuildTime    = buildTime;
 
-		metal        =  1.0f;
-		energy       =  1.0f;
+		cost         =  1.0f;
 		buildTime    = 10.0f;
-		metalUpkeep  =  0.0f;
-		energyUpkeep =  0.0f;
+		upkeep       =  0.0f;
 	} else {
-		metal        = realMetalCost;
-		energy       = realEnergyCost;
+		cost         = realCost;
 		buildTime    = realBuildTime;
-		metalUpkeep  = realMetalUpkeep;
-		energyUpkeep = realEnergyUpkeep;
+		upkeep       = realUpkeep;
 	}
 }
 

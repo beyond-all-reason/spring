@@ -8,6 +8,7 @@
 #include "PathSearch.h"
 #include "Path.h"
 #include "PathCache.h"
+#include "Map/MapInfo.h"
 #include "NodeLayer.h"
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
@@ -26,6 +27,18 @@
 #endif
 
 #include "System/float3.h"
+
+int QTPFS::PathSearch::MAP_MAX_NODES_SEARCHED;
+float QTPFS::PathSearch::MAP_RELATIVE_MAX_NODES_SEARCHED;
+
+void QTPFS::PathSearch::InitStatic() {
+	MAP_MAX_NODES_SEARCHED = std::max(0u, mapInfo->pfs.qtpfs_constants.maxNodesSearched);
+	MAP_RELATIVE_MAX_NODES_SEARCHED = std::max(0.f, mapInfo->pfs.qtpfs_constants.maxRelativeNodesSearched);
+
+	LOG("%s: MAP_MAX_NODES_SEARCHED=%i, MAP_RELATIVE_MAX_NODES_SEARCHED=%f", __func__
+			, MAP_MAX_NODES_SEARCHED, MAP_RELATIVE_MAX_NODES_SEARCHED);
+}
+
 
 // The bit shift needed for the power of two number that is slightly bigger than the given number.
 int GetNextBitShift(int n)
@@ -247,10 +260,11 @@ void QTPFS::PathSearch::InitStartingSearchNodes() {
 
 	// max nodes is split between forward and reverse search.
 	if (synced){
-		int limitedBasedOnMap = nodeLayer->GetNumOpenNodes() * modInfo.qtMaxNodesSearchedRelativeToMapOpenNodes;
-		fwdNodeSearchLimit = std::max(modInfo.qtMaxNodesSearched>>1, limitedBasedOnMap>>1);
-		// LOG("%s: Choosing fwdNodeSearchLimit as %d from (%d vs %d)", __func__
-		// 		, fwdNodeSearchLimit, modInfo.qtMaxNodesSearched>>1, limitedBasedOnMap>>1);
+		float relativeModifier = std::max(MAP_RELATIVE_MAX_NODES_SEARCHED, modInfo.qtMaxNodesSearchedRelativeToMapOpenNodes);
+		int relativeLimit = nodeLayer->GetNumOpenNodes() * relativeModifier;
+		int absoluteLimit = std::max(MAP_MAX_NODES_SEARCHED, modInfo.qtMaxNodesSearched);
+
+		fwdNodeSearchLimit = std::max(absoluteLimit, relativeLimit) >> 1;
 	} else {
 		fwdNodeSearchLimit = std::numeric_limits<int>::max();
 	}

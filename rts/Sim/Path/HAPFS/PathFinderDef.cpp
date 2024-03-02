@@ -32,7 +32,7 @@ CPathFinderDef::CPathFinderDef(const float3& startPos, const float3& goalPos, fl
 , exactPath(false)
 , allowRawPath(false)
 , allowDefPath(true)
-, dirIndependent(false)
+, dirIndependent(true)
 , synced(true)
 , useVerifiedStartBlock(false)
 {

@@ -155,11 +155,13 @@ void CCobInstance::MapScriptToModelPieces(LocalModel* lmodel)
 		} else {
 			pieces.push_back(nullptr);
 
-			const char* fmtString = "[%s] could not find piece named \"%s\" (referenced by COB script \"%s\")";
+			/* Note, scripts can be reused across multiple unit types,
+			 * so the COB script name alone is not sufficient */
+			const char* fmtString = "[%s] could not find piece named \"%s\" (referenced by COB script \"%s\" used by unit \"%s\")";
 			const char* pieceName = pieceNames[scriptPieceNum].c_str();
 			const char* scriptName = cobFile->name.c_str();
 
-			LOG_L(L_WARNING, fmtString, __FUNCTION__, pieceName, scriptName);
+			LOG_L(L_WARNING, fmtString, __FUNCTION__, pieceName, scriptName, unit->unitDef->name.c_str());
 		}
 	}
 }

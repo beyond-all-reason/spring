@@ -341,12 +341,12 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 
 	auto getNodeScore = [referencePoint, &cornerPoints](const INode* curNode) -> uint64_t {
 		int2 midRef(curNode->xmid(), curNode->zmid());
-		int midDist = referencePoint.distanceSq(midRef);
+		int midDist = referencePoint.DistanceSq(midRef);
 		int closestPointDist = midDist;
 		int bestIndex = 0;
 		for (int i = 0; i < 4; ++i) {
 			int2 ref(curNode->point(cornerPoints[i].x), curNode->point(cornerPoints[i].y));
-			int dist = referencePoint.distanceSq(ref);
+			int dist = referencePoint.DistanceSq(ref);
 			if (dist < closestPointDist) {
 				closestPointDist = dist;
 				bestIndex = i;

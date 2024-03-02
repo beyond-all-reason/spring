@@ -7,11 +7,13 @@ uniform sampler2D atlasTex;
 	uniform vec2 softenExponent;
 #endif
 uniform vec4 alphaCtrl = vec4(0.0, 0.0, 0.0, 1.0); //always pass
+uniform vec3 fogColor;
 
 in vec4 vCol;
 centroid in vec4 vUV;
 in float vLayer; //for sampler2Darray (future)
 in float vBF;
+in float fogFactor;
 #ifdef SMOOTH_PARTICLES
 	in vec4 vsPos;
 	noperspective in vec2 screenUV;
@@ -45,8 +47,9 @@ void main() {
 	vec4 c1 = texture(atlasTex, vUV.zw);
 
 	vec4 color = vec4(mix(c0, c1, vBF));
-
 	fragColor = color * vCol;
+
+	fragColor.rgb = mix(fragColor.rgb, fogColor * fragColor.a, (1.0 - fogFactor));
 
 	#ifdef SMOOTH_PARTICLES
 	float depthZO = texture(depthTex, screenUV).x;

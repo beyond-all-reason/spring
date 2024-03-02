@@ -232,24 +232,7 @@ void FBO::Init(bool noop)
 
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS_EXT, &maxAttachments);
 
-	// set maxSamples once
-	if (maxSamples == -1) {
-		bool multisampleExtensionFound = false;
-
-	#ifdef GLEW_EXT_framebuffer_multisample
-		multisampleExtensionFound = multisampleExtensionFound || (GLEW_EXT_framebuffer_multisample && GLEW_EXT_framebuffer_blit);
-	#endif
-	#ifdef GLEW_ARB_framebuffer_object
-		multisampleExtensionFound = multisampleExtensionFound || GLEW_ARB_framebuffer_object;
-	#endif
-
-		if (multisampleExtensionFound) {
-			glGetIntegerv(GL_MAX_SAMPLES_EXT, &maxSamples);
-			maxSamples = std::max(0, maxSamples);
-		} else {
-			maxSamples = 0;
-		}
-	}
+	GetMaxSamples();
 
 	glGenFramebuffersEXT(1, &fboId);
 
@@ -353,9 +336,18 @@ bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, 
 
 	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, fromID);
 	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT,   toID);
+
+	int samples; int sampleBuffers;
+	glGetFramebufferParameteriv(GL_READ_FRAMEBUFFER_EXT, GL_SAMPLES, &samples);
+	glGetFramebufferParameteriv(GL_READ_FRAMEBUFFER_EXT, GL_SAMPLE_BUFFERS, &sampleBuffers);
+
+	glGetFramebufferParameteriv(GL_DRAW_FRAMEBUFFER_EXT, GL_SAMPLES, &samples);
+	glGetFramebufferParameteriv(GL_DRAW_FRAMEBUFFER_EXT, GL_SAMPLE_BUFFERS, &sampleBuffers);
+
 	glBlitFramebufferEXT(srcRect[0], srcRect[1], srcRect[2], srcRect[3], dstRect[0], dstRect[1], dstRect[2], dstRect[3], mask, filter);
 
 	// required call
+	// Calling glBindFramebuffer with target set to GL_FRAMEBUFFER binds framebuffer to both the read and draw framebuffer targets.
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, currentFBO);
 
 	return true;
@@ -517,5 +509,27 @@ void FBO::CreateRenderBufferMultisample(const GLenum attachment, const GLenum fo
 
 GLsizei FBO::GetMaxSamples()
 {
+	if (maxSamples >= 0)
+		return maxSamples;
+
+	// set maxSamples once
+	if (maxSamples == -1) {
+		bool multisampleExtensionFound = false;
+
+	#ifdef GLEW_EXT_framebuffer_multisample
+		multisampleExtensionFound = multisampleExtensionFound || (GLEW_EXT_framebuffer_multisample && GLEW_EXT_framebuffer_blit);
+	#endif
+	#ifdef GLEW_ARB_framebuffer_object
+		multisampleExtensionFound = multisampleExtensionFound || GLEW_ARB_framebuffer_object;
+	#endif
+
+		if (multisampleExtensionFound) {
+			glGetIntegerv(GL_MAX_SAMPLES_EXT, &maxSamples);
+			maxSamples = std::max(0, maxSamples);
+		} else {
+			maxSamples = 0;
+		}
+	}
+
 	return maxSamples;
 }

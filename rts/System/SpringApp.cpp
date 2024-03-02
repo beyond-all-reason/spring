@@ -301,7 +301,7 @@ bool SpringApp::Init()
 
 bool SpringApp::InitPlatformLibs()
 {
-#if !(defined(_WIN32) || defined(__APPLE__) || defined(HEADLESS))
+#if !(defined(_WIN32) || defined(__APPLE__) || defined(HEADLESS)) || defined(__OpenBSD__)
 	// MUST run before any other X11 call (including
 	// those by SDL) to make calls to X11 threadsafe
 	if (!XInitThreads()) {

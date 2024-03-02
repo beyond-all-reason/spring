@@ -85,6 +85,8 @@ namespace QTPFS {
 		unsigned int searchState;  // offset that identifies nodes as part of current search
 
 	public:
+		static void InitStatic();
+
 		PathSearch()
 			: searchID(0)
 			, searchTeam(0)
@@ -240,6 +242,9 @@ public:
 		bool fwdPathConnected = false;
 		bool bwdPathConnected = false;
 		bool useFwdPathOnly = false;
+
+		static float MAP_RELATIVE_MAX_NODES_SEARCHED;
+		static int MAP_MAX_NODES_SEARCHED;
 	};
 }
 

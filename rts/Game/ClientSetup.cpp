@@ -43,11 +43,11 @@ void ClientSetup::LoadFromStartScript(const std::string& setup)
 	}
 
 	// Technical parameters
-	file.GetDef(hostIP,       hostIP, "GAME\\HostIP");
-	file.GetDef(hostPort,     IntToString(hostPort), "GAME\\HostPort");
-
-	file.GetDef(myPlayerName, "", "GAME\\MyPlayerName");
-	file.GetDef(myPasswd,     "", "GAME\\MyPasswd");
+	file.GetDef(hostIP,         hostIP, "GAME\\HostIP");
+	file.GetDef(hostPort,       IntToString(hostPort), "GAME\\HostPort");
+	file.GetDef(showServerName, "", "GAME\\ShowServerName");
+	file.GetDef(myPlayerName,   "", "GAME\\MyPlayerName");
+	file.GetDef(myPasswd,       "", "GAME\\MyPasswd");
 
 	if (!file.GetValue(isHost, "GAME\\IsHost"))
 		LOG_L(L_WARNING, "[ClientSetup::%s] IsHost-entry missing from setup-script; assuming this is a client", __func__);

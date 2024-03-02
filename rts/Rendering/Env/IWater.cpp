@@ -150,11 +150,12 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 		SetModelClippingPlane(&clipPlaneEqs[4]);
 		unitDrawer->Draw(true);
 		featureDrawer->Draw(true);
+		projectileDrawer->DrawOpaque(true);
 
 		// transparent
 		unitDrawer->DrawAlphaPass(true);
 		featureDrawer->DrawAlphaPass(true);
-		projectileDrawer->Draw(true);
+		projectileDrawer->DrawAlpha(true, true, false);
 		// sun-disc does not blend well with water
 		// sky->DrawSun();
 
@@ -188,11 +189,12 @@ void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool d
 		SetModelClippingPlane(&clipPlaneEqs[4]);
 		unitDrawer->Draw(false, true);
 		featureDrawer->Draw(false, true);
+		projectileDrawer->DrawOpaque(false, true);
 
 		// transparent
 		unitDrawer->DrawAlphaPass(false, true);
 		featureDrawer->DrawAlphaPass(false, true);
-		projectileDrawer->Draw(false, true);
+		projectileDrawer->DrawAlpha(false, false, true);
 
 		eventHandler.DrawWorldRefraction();
 		glDisable(GL_CLIP_PLANE2);
