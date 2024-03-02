@@ -7,7 +7,6 @@
 
 #include <string>
 #include <vector>
-#include <bitset>
 
 #include "Rendering/Models/3DModel.h"
 #include "System/creg/creg_cond.h"
@@ -21,53 +20,45 @@ class CUnitScript
 	CR_DECLARE(CUnitScript)
 	CR_DECLARE_SUB(AnimInfo)
 public:
-	enum AnimType {
-		ANone = -1,
-		ATurn =  0,
-		ASpin =  1,
-		AMove =  2
-	};
+	enum AnimType {ANone = -1, ATurn = 0, ASpin = 1, AMove = 2};
 
-	enum DoneWaitBits {
-		AXIS_X_EXEC = 0,
-		AXIS_Y_EXEC = 1,
-		AXIS_Z_EXEC = 2,
-					   
-		AXIS_X_DONE = 3,
-		AXIS_Y_DONE = 4,
-		AXIS_Z_DONE = 5,
-					   
-		AXIS_X_WAIT = 6,
-		AXIS_Y_WAIT = 7,
-		AXIS_Z_WAIT = 8,
-
-		NUM_OF_BITS = 9
-	};
-
-	struct AnimInfo {
-		CR_DECLARE_STRUCT(AnimInfo)
-		int piece;
-		float3 spd;
-		float3 dst;    // means final position when turning or moving, final speed when spinning
-		float3 acc;    // used for spinning, can be negative
-		std::bitset<DoneWaitBits::NUM_OF_BITS> flags;
-	};
-
-	using AnimContainerType = std::vector<AnimInfo>;
-	using AnimContainerTypeIt = AnimContainerType::iterator;
 protected:
 	CUnit* unit;
 	bool busy;
 
+	struct AnimInfo {
+		CR_DECLARE_STRUCT(AnimInfo)
+		int axis;
+		int piece;
+		float speed;
+		float dest;     // means final position when turning or moving, final speed when spinning
+		float accel;    // used for spinning, can be negative
+		bool done;
+		bool hasWaiting;
+	};
+
+	typedef std::vector<AnimInfo> AnimContainerType;
+	typedef AnimContainerType::iterator AnimContainerTypeIt;
+
+	typedef bool(CUnitScript::*TickAnimFunc)(int, LocalModelPiece&, AnimInfo&);
+
 	// Stores queued/lasting animations per animation type
 	AnimContainerType anims[AMove + 1];
+
+	// This vector is used so the finished animations can be removed in linear time.
+	AnimContainerType doneAnims[AMove + 1];
+
 
 	bool hasSetSFXOccupy;
 	bool hasRockUnit;
 	bool hasStartBuilding;
 
-	AnimContainerTypeIt FindAnim(AnimType type, int piece);
-	void RemoveAnim(AnimType type, int axis, const AnimContainerTypeIt& animInfoIt);
+	bool MoveToward(float& cur, float dest, float speed);
+	bool TurnToward(float& cur, float dest, float speed);
+	bool DoSpin(float& cur, float dest, float& speed, float accel, int divisor);
+
+	AnimContainerTypeIt FindAnim(AnimType type, int piece, int axis);
+	void RemoveAnim(AnimType type, const AnimContainerTypeIt& animInfoIt);
 	void AddAnim(AnimType type, int piece, int axis, float speed, float dest, float accel);
 
 	virtual void ShowScriptError(const std::string& msg) = 0;
@@ -109,8 +100,7 @@ public:
 		LocalModelPiece* p = GetScriptLocalModelPiece(scriptPieceNum);
 		return (p->GetEmitDirPos(pos, dir));
 	}
-private:
-	void TickAnims(int tickRate, AnimType animType);
+
 public:
 	CUnitScript(CUnit* unit);
 	virtual ~CUnitScript();
@@ -122,6 +112,11 @@ public:
 
 	void TickAllAnims(int tickRate);
 	bool TickAnimFinished(int tickRate);
+	// note: must copy-and-set here (LMP dirty flag, etc)
+	bool TickMoveAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 pos = lmp.GetPosition(); const bool ret = MoveToward(pos[ai.axis], ai.dest, ai.speed / tickRate); lmp.SetPosition(pos); return ret; }
+	bool TickTurnAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret = TurnToward(rot[ai.axis], ai.dest, ai.speed / tickRate         ); lmp.SetRotation(rot); return ret; }
+	bool TickSpinAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret =     DoSpin(rot[ai.axis], ai.dest, ai.speed, ai.accel, tickRate); lmp.SetRotation(rot); return ret; }
+	void TickAnims(int tickRate, const TickAnimFunc& tickAnimFunc, AnimContainerType& liveAnims, AnimContainerType& doneAnims);
 
 	// animation, used by CCobThread
 	void Spin(int piece, int axis, float speed, float accel);
@@ -148,8 +143,9 @@ public:
 	int GetUnitVal(int val, int p1, int p2, int p3, int p4);
 	void SetUnitVal(int val, int param);
 
-	bool IsInAnimation(AnimType type, int piece, int axis);
-
+	bool IsInAnimation(AnimType type, int piece, int axis) {
+		return (FindAnim(type, piece, axis) != anims[type].end());
+	}
 	bool HaveAnimations() const {
 		return (!anims[ATurn].empty() || !anims[ASpin].empty() || !anims[AMove].empty());
 	}

@@ -134,11 +134,9 @@ void CUnitScriptEngine::ImplTickMT(int deltaTime)
 		ZoneScopedN("CUnitScriptEngine::ImplTickMT(MT)");
 
 		// setting currentScript = animating[i]; is not required here, only in ST section below
-		//for_mt(0, animating.size(), [&](const int i) {
-		for (int i = 0; i < animating.size(); ++i) {
+		for_mt(0, animating.size(), [&](const int i) {
 			animating[i]->TickAllAnims(deltaTime);
-		}
-		//});
+		});
 	}
 	{
 		ZoneScopedN("CUnitScriptEngine::ImplTickMT(ST)");
