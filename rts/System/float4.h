@@ -105,12 +105,12 @@ struct float4 : public float3
 		return (x * f.x) + (y * f.y) + (z * f.z) + (w * f.w);
 	}
 
-	float SqLength() const {
+	float SqLength4() const {
 		return float3::SqLength() + w * w;
 	}
 
-	float Length() const {
-		return math::sqrt(SqLength());
+	float Length4() const {
+		return math::sqrt(SqLength4());
 	}
 
 	bool Normalized() const { return math::fabs(1.0f - dot4(*this)) <= cmp_eps(); }

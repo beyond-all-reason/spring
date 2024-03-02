@@ -158,7 +158,7 @@ std::tuple<float3, CQuaternion, float3>  CQuaternion::DecomposeIntoTRS(const CMa
 
 	const float s = Sign(d);
 
-	float3 scaling {s * c0.Length(), c1.Length(), c2.Length()};
+	float3 scaling {s * c0.Length4(), c1.Length4(), c2.Length4()};
 
 
 	t0[0] /= scaling[0];
@@ -240,7 +240,7 @@ CQuaternion CQuaternion::operator*(const CQuaternion& rhs) const
 }
 
 float CQuaternion::SqNorm() const {
-	return q.SqLength();
+	return q.SqLength4();
 }
 
 CQuaternion CQuaternion::Lerp(const CQuaternion& q1, const CQuaternion& q2, const float a) {
