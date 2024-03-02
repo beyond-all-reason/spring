@@ -711,17 +711,13 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 	int sizex = decalDef.groundDecalSizeX * SQUARE_SIZE;
 	int sizey = decalDef.groundDecalSizeY * SQUARE_SIZE;
 
-	// swap xsize and ysize if object faces East or West
-	if (object->buildFacing == FACING_EAST || object->buildFacing == FACING_WEST)
-		std::swap(sizex, sizey);
-
 	const float2 midPoint = float2(static_cast<int>(pos.x / SQUARE_SIZE), static_cast<int>(pos.z / SQUARE_SIZE)) * SQUARE_SIZE;
 	const float midPointHeight = CGround::GetHeightReal(midPoint.x, midPoint.y);
 
-	const auto posTL = midPoint + float2(-sizex, -sizey);
-	const auto posTR = midPoint + float2( sizex, -sizey);
-	const auto posBR = midPoint + float2( sizex,  sizey);
-	const auto posBL = midPoint + float2(-sizex,  sizey);
+	auto posTL = midPoint + float2(-sizex, -sizey);
+	auto posTR = midPoint + float2( sizex, -sizey);
+	auto posBR = midPoint + float2( sizex,  sizey);
+	auto posBL = midPoint + float2(-sizex,  sizey);
 
 	const float height = argmax(
 		math::fabs(midPointHeight - CGround::GetHeightReal(posTL.x, posTL.y)),
@@ -752,7 +748,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.texNormOffsets = atlasNorm->GetTexture(GetExtraTextureName(decalDef.groundDecalTypeName), "%FB_NORM%"),
 		.alpha = 1.0f,
 		.alphaFalloff = 0.0f,
-		.rot = 0.0f,
+		.rot = -object->buildFacing * math::HALFPI,
 		.height = height,
 		.createFrameMin = createFrame,
 		.createFrameMax = createFrame,

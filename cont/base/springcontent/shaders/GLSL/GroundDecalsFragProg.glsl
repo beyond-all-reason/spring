@@ -45,7 +45,7 @@ flat in vec4 vuvMain;
 flat in vec4 vuvNorm;
 flat in vec4 midPoint;
      in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left // can't be flat because of misc.x
-flat in vec4 misc2; // groundNormal.xyz, decayRate
+flat in vec4 misc2; // groundNormal.xyz, decalTypeAsFloat
 flat in vec3 xDir;
 
 #define groundNormal misc2.xyz
@@ -357,7 +357,11 @@ void main() {
 	vec4 mainCol = texture(decalMainTex, uv.xy);
 	vec4 normVal = texture(decalNormTex, uv.zw);
 	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0).rgb;
-	vec3 mapDecalMix = mix(mainCol.rgb, mapDiffuse.rgb, smoothstep(0.0, 0.6, dot(mainCol.rgb, LUMA)));
+	#if 0
+		vec3 mapDecalMix = mix(mainCol.rgb, mapDiffuse.rgb, smoothstep(0.0, 0.6, dot(mainCol.rgb, LUMA)));
+	#else
+		vec3 mapDecalMix = 2.0 * mainCol.rgb * mapDiffuse.rgb;
+	#endif
 	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(misc2.w == 1.0)); //only apply mapDecalMix for explosions (misc2.w == 1.0)
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
@@ -418,5 +422,5 @@ void main() {
 
 	fragColor.a = mainCol.a * alpha;
 	// artistic adjustments
-	fragColor  *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is arbitrary
+	//fragColor  *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is arbitrary
 }
