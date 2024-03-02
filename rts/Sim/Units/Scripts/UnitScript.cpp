@@ -42,6 +42,7 @@
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/FastMath.h"
 #include "System/SpringMath.h"
+#include "System/creg/STL_Bitset.h"
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 #include "System/Sound/ISoundChannels.h"
@@ -54,7 +55,6 @@ CR_REG_METADATA(CUnitScript, (
 	CR_MEMBER(unit),
 	CR_MEMBER(busy),
 	CR_MEMBER(anims),
-	CR_MEMBER(doneAnims),
 
 	//Populated by children
 	CR_IGNORED(pieces),
@@ -66,13 +66,11 @@ CR_REG_METADATA(CUnitScript, (
 CR_BIND(CUnitScript::AnimInfo,)
 
 CR_REG_METADATA_SUB(CUnitScript, AnimInfo,(
-	CR_MEMBER(axis),
 	CR_MEMBER(piece),
-	CR_MEMBER(speed),
-	CR_MEMBER(dest),
-	CR_MEMBER(accel),
-	CR_MEMBER(done),
-	CR_MEMBER(hasWaiting)
+	CR_MEMBER(spd),
+	CR_MEMBER(dst),
+	CR_MEMBER(acc),
+	CR_MEMBER(flags)
 ))
 
 
@@ -97,95 +95,133 @@ CUnitScript::~CUnitScript()
 
 /******************************************************************************/
 
+namespace {
+	/**
+	 * @brief Updates move animations
+	 * @param cur value to update
+	 * @param dest final value
+	 * @param speed max increment per tick
+	 * @return returns true if destination was reached, false otherwise
+	 */
+	bool MoveToward(float& cur, float dest, float speed)
+	{
+		const float delta = dest - cur;
 
-/**
- * @brief Updates move animations
- * @param cur float value to update
- * @param dest float final value
- * @param speed float max increment per tick
- * @return returns true if destination was reached, false otherwise
- */
-bool CUnitScript::MoveToward(float& cur, float dest, float speed)
-{
-	const float delta = dest - cur;
-
-	if (math::fabsf(delta) <= speed) {
-		cur = dest;
-		return true;
-	}
-
-	cur += (speed * Sign(delta));
-	return false;
-}
-
-
-/**
- * @brief Updates turn animations
- * @param cur float value to update
- * @param dest float final value
- * @param speed float max increment per tick
- * @return returns true if destination was reached, false otherwise
- */
-bool CUnitScript::TurnToward(float& cur, float dest, float speed)
-{
-	assert(dest < math::TWOPI);
-	assert(cur  < math::TWOPI);
-
-	float delta = math::fmod(dest - cur + math::THREEPI, math::TWOPI) - math::PI;
-
-	if (math::fabsf(delta) <= speed) {
-		cur = dest;
-		return true;
-	}
-
-	cur = ClampRad(cur + speed * Sign(delta));
-	return false;
-}
-
-
-/**
- * @brief Updates spin animations
- * @param cur float value to update
- * @param dest float the final desired speed (NOT the final angle!)
- * @param speed float is updated if it is not equal to dest
- * @param divisor int is the deltatime, it is not added before the call because speed may have to be updated
- * @return true if the desired speed is 0 and it is reached, false otherwise
- */
-bool CUnitScript::DoSpin(float& cur, float dest, float& speed, float accel, int divisor)
-{
-	const float delta = dest - speed;
-
-	// Check if we are not at the final speed and
-	// make sure we do not go past desired speed
-	if (math::fabsf(delta) <= accel) {
-		if ((speed = dest) == 0.0f)
+		if (math::fabsf(delta) <= speed) {
+			cur = dest;
 			return true;
-	} else {
-		// accelerations are defined in speed/frame (at GAME_SPEED fps)
-		speed += (accel * (GAME_SPEED * 1.0f / divisor) * Sign(delta));
-	}
-
-	cur = ClampRad(cur + (speed / divisor));
-	return false;
-}
-
-
-
-void CUnitScript::TickAnims(int tickRate, const TickAnimFunc& tickAnimFunc, AnimContainerType& liveAnims, AnimContainerType& doneAnims) {
-	for (size_t i = 0; i < liveAnims.size(); ) {
-		AnimInfo& ai = liveAnims[i];
-		LocalModelPiece& lmp = *pieces[ai.piece];
-
-		if ((ai.done |= (this->*tickAnimFunc)(tickRate, lmp, ai))) {
-			if (ai.hasWaiting)
-				doneAnims.push_back(ai);
-
-			ai = liveAnims.back();
-			liveAnims.pop_back();
-			continue;
 		}
 
-		++i;
+		cur += (speed * Sign(delta));
+		return false;
+	}
+
+
+	/**
+	 * @brief Updates turn animations
+	 * @param cur value to update
+	 * @param dest final value
+	 * @param speed max increment per tick
+	 * @return returns true if destination was reached, false otherwise
+	 */
+	bool TurnToward(float& cur, float dest, float speed)
+	{
+		assert(dest < math::TWOPI);
+		assert(cur < math::TWOPI);
+
+		static const float EPS = math::fmod(math::THREEPI, math::TWOPI) - math::PI;
+
+		float delta = math::fmod(dest - cur + math::THREEPI, math::TWOPI) - math::PI;
+
+		if (math::fabsf(delta) - speed <= EPS) {
+			cur = dest;
+			return true;
+		}
+
+		cur = ClampRad(cur + speed * Sign(delta));
+		return false;
+	}
+
+
+	/**
+	 * @brief Updates spin animations
+	 * @param cur float value to update
+	 * @param dest float the final desired speed (NOT the final angle!)
+	 * @param speed float is updated if it is not equal to dest
+	 * @param divisor int is the deltatime, it is not added before the call because speed may have to be updated
+	 * @return true if the desired speed is 0 and it is reached, false otherwise
+	 */
+	bool DoSpin(float& cur, float dest, float& speed, float accel, int divisor)
+	{
+		const float delta = dest - speed;
+
+		// Check if we are not at the final speed and
+		// make sure we do not go past desired speed
+		if (math::fabsf(delta) <= accel) {
+			if ((speed = dest) == 0.0f)
+				return true;
+		}
+		else {
+			// accelerations are defined in speed/frame (at GAME_SPEED fps)
+			speed += (accel * (GAME_SPEED * 1.0f / divisor) * Sign(delta));
+		}
+
+		cur = ClampRad(cur + (speed / divisor));
+		return false;
+	}
+
+	bool TickMoveAnim(int tickRate, size_t axis, LocalModelPiece& lmp, CUnitScript::AnimInfo& ai)
+	{
+		float3 pos = lmp.GetPosition();
+		const bool ret = MoveToward(pos[axis], ai.dst[axis], ai.spd[axis] / tickRate);
+		lmp.SetPosition(pos);
+
+		return ret;
+	}
+
+	bool TickTurnAnim(int tickRate, size_t axis, LocalModelPiece& lmp, CUnitScript::AnimInfo& ai)
+	{
+		float3 rot = lmp.GetRotation();
+		rot[axis] = ClampRad(rot[axis]);
+		const bool ret = TurnToward(rot[axis], ai.dst[axis], ai.spd[axis] / tickRate);
+		lmp.SetRotation(rot);
+
+		return ret;
+	}
+
+	bool TickSpinAnim(int tickRate, size_t axis, LocalModelPiece& lmp, CUnitScript::AnimInfo& ai)
+	{
+		float3 rot = lmp.GetRotation();
+		rot[axis] = ClampRad(rot[axis]);
+		const bool ret = DoSpin(rot[axis], ai.dst[axis], ai.spd[axis], ai.acc[axis], tickRate);
+		lmp.SetRotation(rot);
+
+		return ret;
+	}
+}
+
+
+void CUnitScript::TickAnims(int tickRate, AnimType animType) {
+	// tick-functions; these never change address
+	static constexpr decltype(&TickTurnAnim) tickAnimFuncs[] = { &TickTurnAnim, &TickSpinAnim, &TickMoveAnim };
+
+	assert(animType >= 0);
+
+	auto& anim = anims[animType];
+	const auto TickAnimFunc = tickAnimFuncs[animType];
+
+	for (auto& ai : anim) {
+		auto& lmp = *pieces[ai.piece];
+		// per axis execution
+		for (size_t axis = AXIS_X_EXEC; axis <= AXIS_Z_EXEC; ++axis) {
+			if (!ai.flags.test(AXIS_X_EXEC + axis))
+				continue; // anim is not enabled on this axis - skip TickAnimFunc()
+
+			if (ai.flags.test(AXIS_X_DONE + axis))
+				continue; // anim is done for this axis - skip TickAnimFunc()
+
+			ai.flags[AXIS_X_DONE + axis] = TickAnimFunc(tickRate, axis, lmp, ai);
+		}
 	}
 }
 
@@ -200,11 +236,8 @@ void CUnitScript::TickAllAnims(int deltaTime)
 	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnims
 	// AnimContainerType doneAnims[AMove + 1];
 
-	// tick-functions; these never change address
-	static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
-
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnims[animType]);
+		TickAnims(1000 / deltaTime, static_cast<AnimType>(animType));
 	}
 }
 
@@ -220,29 +253,50 @@ void CUnitScript::TickAllAnims(int deltaTime)
 bool CUnitScript::TickAnimFinished(int deltaTime)
 {
 	ZoneScoped;
-	// vector of indexes of finished animations,
-	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnims
-	// AnimContainerType doneAnims[AMove + 1];
-
 	// Tell listeners to unblock, and remove finished animations from the unit/script.
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		for (AnimInfo& ai : doneAnims[animType]) {
-			AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
-		}
+		auto& anim = anims[animType];
+		for (size_t i = 0; i < anim.size(); /*NOOP*/) {
+			auto& ai = anim[i];
 
-		doneAnims[animType].clear();
+			size_t doneAxis = 0;
+			size_t execAxis = 0;
+			for (size_t axis = AXIS_X_EXEC; axis <= AXIS_Z_EXEC; ++axis) {
+				if (!ai.flags.test(AXIS_X_EXEC + axis))
+					continue;
+
+				++execAxis;
+
+				if (!ai.flags.test(AXIS_X_DONE + axis))
+					continue;
+
+				++doneAxis;
+
+				AnimFinished(static_cast<AnimType>(animType), ai.piece, axis);
+				ai.flags.reset(AXIS_X_EXEC + axis);
+			}
+
+			if (doneAxis == execAxis) {
+				ai = anim.back();
+				anim.pop_back();
+			}
+			else {
+				++i;
+			}
+		}
 	}
+
 	return (HaveAnimations());
 }
 
-CUnitScript::AnimContainerTypeIt CUnitScript::FindAnim(AnimType type, int piece, int axis)
+CUnitScript::AnimContainerTypeIt CUnitScript::FindAnim(AnimType type, int piece)
 {
-	const auto& pred = [&](const AnimInfo& ai) { return (ai.piece == piece && ai.axis == axis); };
-	const auto& iter = std::find_if(anims[type].begin(), anims[type].end(), pred);
+	const auto& pred = [&](const AnimInfo& ai) { return (ai.piece == piece); };
+	const auto  iter = std::find_if(anims[type].begin(), anims[type].end(), pred);
 	return iter;
 }
 
-void CUnitScript::RemoveAnim(AnimType type, const AnimContainerTypeIt& animInfoIt)
+void CUnitScript::RemoveAnim(AnimType type, int axis, const AnimContainerTypeIt& animInfoIt)
 {
 	if (animInfoIt == anims[type].end())
 		return;
@@ -251,11 +305,17 @@ void CUnitScript::RemoveAnim(AnimType type, const AnimContainerTypeIt& animInfoI
 
 	// We need to unblock threads waiting on this animation, otherwise they will be lost in the void
 	// NOTE: AnimFinished might result in new anims being added
-	if (ai.hasWaiting)
-		AnimFinished(type, ai.piece, ai.axis);
 
-	ai = anims[type].back();
-	anims[type].pop_back();
+	if (ai.flags.test(AXIS_X_EXEC + axis) && ai.flags.test(AXIS_X_WAIT + axis)) {
+		AnimFinished(type, ai.piece, axis);
+		ai.flags.reset(AXIS_X_EXEC + axis);
+	}
+	
+	// ai.flags.test(AXIS_X_EXEC) && ai.flags.test(AXIS_Y_EXEC) && ai.flags.test(AXIS_Z_EXEC)
+	if ((ai.flags.to_ulong() & 0x7u) == 0x7u) {
+		ai = anims[type].back();
+		anims[type].pop_back();
+	}
 
 	// If this was the last animation, remove from currently animating list
 	// FIXME: this could be done in a cleaner way
@@ -297,11 +357,11 @@ void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float
 	switch (type) {
 		case ATurn: {
 			overrideType = ASpin;
-			animInfoIt = FindAnim(overrideType, piece, axis);
+			animInfoIt = FindAnim(overrideType, piece);
 		} break;
 		case ASpin: {
 			overrideType = ATurn;
-			animInfoIt = FindAnim(overrideType, piece, axis);
+			animInfoIt = FindAnim(overrideType, piece);
 		} break;
 		case AMove: {
 			// ensure we never remove an animation of this type
@@ -314,10 +374,10 @@ void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float
 	assert(overrideType >= 0);
 
 	if (animInfoIt != anims[overrideType].end())
-		RemoveAnim(overrideType, animInfoIt);
+		RemoveAnim(overrideType, axis, animInfoIt);
 
 	// now find an animation of our own type
-	animInfoIt = FindAnim(type, piece, axis);
+	animInfoIt = FindAnim(type, piece);
 
 	if (animInfoIt == anims[type].end()) {
 		// If we were not animating before, inform the engine of this so it can schedule us
@@ -328,33 +388,33 @@ void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float
 		anims[type].emplace_back();
 		ai = &anims[type].back();
 		ai->piece = piece;
-		ai->axis = axis;
+		ai->flags.reset();
 	} else {
 		ai = &(*animInfoIt);
 	}
 
-	ai->dest  = destf;
-	ai->speed = speed;
-	ai->accel = accel;
-	ai->done = false;
+	ai->flags.set(AXIS_X_EXEC + axis);
+	ai->dst[axis] = destf;
+	ai->spd[axis] = speed;
+	ai->acc[axis] = accel;
 }
 
 
 void CUnitScript::Spin(int piece, int axis, float speed, float accel)
 {
-	auto animInfoIt = FindAnim(ASpin, piece, axis);
+	auto animInfoIt = FindAnim(ASpin, piece);
 
 	// if we are already spinning, we may have to decelerate to the new speed
 	if (animInfoIt != anims[ASpin].end()) {
 		AnimInfo* ai = &(*animInfoIt);
-		ai->dest = speed;
+		ai->dst[axis] = speed;
 
 		if (accel > 0.0f) {
-			ai->accel = accel;
+			ai->acc[axis] = accel;
 		} else {
-			// Go there instantly. Or have a defaul accel?
-			ai->speed = speed;
-			ai->accel = 0.0f;
+			// Go there instantly. Or have a default accel?
+			ai->spd[axis] = speed;
+			ai->acc[axis] = 0.0f;
 		}
 
 		return;
@@ -371,17 +431,17 @@ void CUnitScript::Spin(int piece, int axis, float speed, float accel)
 
 void CUnitScript::StopSpin(int piece, int axis, float decel)
 {
-	auto animInfoIt = FindAnim(ASpin, piece, axis);
+	auto animInfoIt = FindAnim(ASpin, piece);
 
 	if (decel <= 0.0f) {
-		RemoveAnim(ASpin, animInfoIt);
+		RemoveAnim(ASpin, axis, animInfoIt);
 	} else {
 		if (animInfoIt == anims[ASpin].end())
 			return;
 
 		AnimInfo* ai = &(*animInfoIt);
-		ai->dest = 0.0f;
-		ai->accel = decel;
+		ai->dst[axis] = 0.0f;
+		ai->acc[axis] = decel;
 	}
 }
 
@@ -684,11 +744,20 @@ void CUnitScript::DropUnit(int u)
 #endif
 }
 
+bool CUnitScript::IsInAnimation(AnimType type, int piece, int axis)
+{
+	const auto it = FindAnim(type, piece);
+	if (it == anims[type].end())
+		return false;
+
+	// axis sanity checked by the Lua code
+	return it->flags.test(AXIS_X_EXEC + axis) && !it->flags.test(AXIS_X_DONE + axis);
+}
 
 //Returns true if there was an animation to listen to
 bool CUnitScript::NeedsWait(AnimType type, int piece, int axis)
 {
-	auto animInfoIt = FindAnim(type, piece, axis);
+	auto animInfoIt = FindAnim(type, piece);
 
 	if (animInfoIt == anims[type].end())
 		return false;
@@ -706,10 +775,12 @@ bool CUnitScript::NeedsWait(AnimType type, int piece, int axis)
 	//
 	// if (ai.hasWaiting)
 	// 		AnimFinished(ai.type, ai.piece, ai.axis);
-	if (ai.done)
+	if (ai.flags.test(AXIS_X_DONE + axis))
 		return false;
 
-	return (ai.hasWaiting = true);
+	ai.flags.set(AXIS_X_WAIT + axis);
+
+	return true;
 }
 
 

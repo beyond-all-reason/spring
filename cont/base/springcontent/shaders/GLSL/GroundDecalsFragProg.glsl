@@ -393,6 +393,7 @@ void main() {
 	fragColor.rgb += BlackBody(normVal.w * t) * glow;
 
 	// adaptation from SMFFragProg.glsl
+
 	#ifdef SMF_WATER_ABSORPTION
 	if (worldPos.y <= 0.0) {
 		vec3 waterShadeInt = waterBaseColor;
