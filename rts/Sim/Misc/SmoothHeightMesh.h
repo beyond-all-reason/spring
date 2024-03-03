@@ -4,7 +4,7 @@
 #define SMOOTH_HEIGHT_MESH_H
 
 #include <memory_resource>
-#include <queue>
+#include <deque>
 #include <vector>
 
 #include "Sim/Misc/GlobalConstants.h"
@@ -28,9 +28,9 @@ public:
 
 	struct MapChangeTrack {
 		std::vector<bool> damageMap;
-		std::queue<int> damageQueue[2];
-		std::queue<int> horizontalBlurQueue;
-		std::queue<int> verticalBlurQueue;
+		std::deque<int> damageQueue[2];
+		std::deque<int> horizontalBlurQueue;
+		std::deque<int> verticalBlurQueue;
 		int width = 0;
 		int height = 0;
 		int queueReleaseOnFrame = 0;

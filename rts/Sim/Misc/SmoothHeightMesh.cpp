@@ -103,10 +103,10 @@ void SmoothHeightMesh::InitDataStructures() {
 }
 
 void SmoothHeightMesh::Kill() {
-	while (!mapChangeTrack.damageQueue[0].empty()) { mapChangeTrack.damageQueue[0].pop(); }
-	while (!mapChangeTrack.damageQueue[1].empty()) { mapChangeTrack.damageQueue[1].pop(); }
-	while (!mapChangeTrack.horizontalBlurQueue.empty()) { mapChangeTrack.horizontalBlurQueue.pop(); }
-	while (!mapChangeTrack.verticalBlurQueue.empty()) { mapChangeTrack.verticalBlurQueue.pop(); }
+	while (!mapChangeTrack.damageQueue[0].empty()) { mapChangeTrack.damageQueue[0].pop_front(); }
+	while (!mapChangeTrack.damageQueue[1].empty()) { mapChangeTrack.damageQueue[1].pop_front(); }
+	while (!mapChangeTrack.horizontalBlurQueue.empty()) { mapChangeTrack.horizontalBlurQueue.pop_front(); }
+	while (!mapChangeTrack.verticalBlurQueue.empty()) { mapChangeTrack.verticalBlurQueue.pop_front(); }
 
 	mapChangeTrack.damageMap.clear();
 	maximaMesh.clear();
@@ -434,7 +434,7 @@ void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
 		for (int x = min.x; x <= max.x; ++x, ++i) {
 			if (!mapChangeTrack.damageMap[i]) {
 				mapChangeTrack.damageMap[i] = true;
-				mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].push(i);
+				mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].emplace_back(i);
 			}
 		}	
 	}
@@ -541,7 +541,7 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 	const bool updateMaxima = !mapChangeTrack.damageQueue[flushBuffer].empty();
 	const bool doHorizontalBlur = !mapChangeTrack.horizontalBlurQueue.empty();
 
-	std::queue<int>* activeQueue = nullptr;
+	std::deque<int>* activeQueue = nullptr;
 	if (updateMaxima) 
 		activeQueue = &mapChangeTrack.damageQueue[flushBuffer];
 	else if (doHorizontalBlur)
@@ -550,7 +550,7 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 		activeQueue = &mapChangeTrack.verticalBlurQueue;
 
 	const int damagedAreaIndex = activeQueue->front();
-	activeQueue->pop();
+	activeQueue->pop_front();
 
 	// area of the map which to recalculate the height values
 	const int damageX = damagedAreaIndex % mapChangeTrack.width;
@@ -566,7 +566,7 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 	if (updateMaxima) {
 		UpdateSmoothMeshMaximas(damageMin, damageMax);
 
-		mapChangeTrack.horizontalBlurQueue.push(damagedAreaIndex);
+		mapChangeTrack.horizontalBlurQueue.emplace_back(damagedAreaIndex);
 		mapChangeTrack.damageMap[damagedAreaIndex] = false;
 	} else {
 		const int winSize = smoothRadius / resolution;
@@ -586,7 +586,7 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 
 		if (doHorizontalBlur) {
 			BlurHorizontal(map, damageMin, damageMax, blurSize, resolution, maximaMesh, tempMesh);
-			mapChangeTrack.verticalBlurQueue.push(damagedAreaIndex);
+			mapChangeTrack.verticalBlurQueue.emplace_back(damagedAreaIndex);
 		}
 		else {
 			BlurVertical(map, damageMin, damageMax, blurSize, resolution, tempMesh, mesh);
