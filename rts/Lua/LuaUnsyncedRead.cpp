@@ -4462,9 +4462,7 @@ int LuaUnsyncedRead::GetLogSections(lua_State* L) {
  *
  * @function Spring.GetAllGroundDecals
  *
- * Note, won't ever return an empty table (if there's no decals it returns nil)
- *
- * @treturn nil|{[number],...} decalIDs
+ * @treturn {[number],...} decalIDs
  */
 int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 {
@@ -4475,8 +4473,10 @@ int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 		numValid += d.IsValid() || d.info.type == GroundDecal::Type::DECAL_LUA;
 	}
 
-	if (numValid == 0)
-		return 0;
+	if (numValid == 0) {
+		lua_newtable(L);
+		return 1;
+	}
 
 	int i = 1;
 	lua_createtable(L, numValid, 0);
@@ -4624,7 +4624,7 @@ int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
  * @function Spring.GetGroundDecalAlpha
  * @number decalID
  * @treturn nil|number alpha Between 0 and 1
- * @treturn number alphaFalloff Between 0 and 1, per frame
+ * @treturn number alphaFalloff Between 0 and 1, per second
  */
 int LuaUnsyncedRead::GetGroundDecalAlpha(lua_State* L)
 {
@@ -4634,7 +4634,7 @@ int LuaUnsyncedRead::GetGroundDecalAlpha(lua_State* L)
 	}
 
 	lua_pushnumber(L, decal->alpha);
-	lua_pushnumber(L, decal->alphaFalloff);
+	lua_pushnumber(L, decal->alphaFalloff * GAME_SPEED);
 
 	return 2;
 }
