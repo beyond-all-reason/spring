@@ -3297,8 +3297,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 	const int2 prevSquare = toMapSquare(prevPos);
 	const int2 newSquare = toMapSquare(newPos);
 	const int newPosStartSquare = toSquareId(newSquare);
-	// this will break stuck protection because it assumes the square is open
-	// if (toSquareId(prevSquare) == newPosStartSquare) { return; }
+	if (!positionStuck && toSquareId(prevSquare) == newPosStartSquare) { return; }
 
 	bool isSquareBlocked = !isSquareOpen(newPos);
 	if (!isSquareBlocked) {
