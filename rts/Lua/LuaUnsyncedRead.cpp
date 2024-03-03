@@ -4119,7 +4119,12 @@ int LuaUnsyncedRead::GetGroupUnitsCounts(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnitsCount(lua_State* L)
 {
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(luaL_checkint(L, 1));
+	const int groupID = luaL_checkint(L, 1);
+
+	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
+		return 0;
+
+	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
 
 	lua_pushnumber(L, group->units.size());
 	return 1;
