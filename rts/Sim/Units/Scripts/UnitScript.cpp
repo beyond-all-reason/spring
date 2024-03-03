@@ -205,7 +205,8 @@ void CUnitScript::TickAnims(int tickRate, AnimType animType) {
 	// tick-functions; these never change address
 	static constexpr decltype(&TickTurnAnim) tickAnimFuncs[] = { &TickTurnAnim, &TickSpinAnim, &TickMoveAnim };
 
-	assert(animType >= 0);
+	assert(animType >= ATurn);
+	assert(animType <= AMove);
 
 	auto& anim = anims[animType];
 	const auto TickAnimFunc = tickAnimFuncs[animType];
@@ -394,6 +395,8 @@ void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float
 	}
 
 	ai->flags.set(AXIS_X_EXEC + axis);
+	ai->flags.reset(AXIS_X_DONE + axis);
+	ai->flags.reset(AXIS_X_WAIT + axis);
 	ai->dst[axis] = destf;
 	ai->spd[axis] = speed;
 	ai->acc[axis] = accel;
