@@ -6045,6 +6045,10 @@ static inline void ParseSmoothMeshParams(lua_State* L, const char* caller,
 
 /***
  * @function Spring.RebuildSmoothMesh
+ *
+ * Heightmap changes normally take up to 25s to propagate to the smooth mesh.
+ * Use to force a mapwide update immediately.
+ *
  * @treturn nil
  */
 int LuaSyncedCtrl::RebuildSmoothMesh(lua_State* L)
