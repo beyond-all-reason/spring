@@ -4630,7 +4630,7 @@ int LuaUnsyncedCtrl::SetGroundDecalTextureParams(lua_State* L)
  * @function Spring.SetGroundDecalAlpha
  * @number decalID
  * @number[opt=currAlpha] alpha Between 0 and 1
- * @number[opt=currAlphaFalloff] alphaFalloff Between 0 and 1, per frame
+ * @number[opt=currAlphaFalloff] alphaFalloff Between 0 and 1, per second
  * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
@@ -4642,7 +4642,7 @@ int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
 	}
 
 	decal->alpha = luaL_optfloat(L, 2, decal->alpha);
-	decal->alphaFalloff = luaL_optfloat(L, 3, decal->alphaFalloff);
+	decal->alphaFalloff = luaL_optfloat(L, 3, decal->alphaFalloff * GAME_SPEED) / GAME_SPEED;
 
 	lua_pushboolean(L, true);
 	return 1;
