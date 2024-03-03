@@ -30,6 +30,11 @@ Spring changelog
 
 -- BAR105 NEXT ---------------------------------------------------
 
+(since release 2304)
+
+Lua:
+ - add `Spring.RebuildSmoothMesh` to force an immediate build of the complete Air Smooth Mesh.
+
 (since release 1544)
 
 Lua:
