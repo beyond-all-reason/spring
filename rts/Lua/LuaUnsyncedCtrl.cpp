@@ -4523,6 +4523,9 @@ int LuaUnsyncedCtrl::SetGroundDecalPosAndDims(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalQuadPosAndHeight
+ *
+ * Use for non-rectangular decals
+ *
  * @number decalID
  * @number[opt=currPosTL.x] posTL.x
  * @number[opt=currPosTL.z] posTL.z
@@ -4583,8 +4586,8 @@ int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
  *
  * @function Spring.SetGroundDecalTexture
  * @number decalID
- * @string textureName
- * @bool[opt=true] isMainTex
+ * @string textureName The texture has to be on the atlas which seems to mean it's defined as an explosion, unit tracks, or building plate decal on some unit already (no arbitrary textures)
+ * @bool[opt=true] isMainTex If false, it sets the normals/glow map
  * @treturn nil|bool decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
@@ -4600,8 +4603,8 @@ int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
  *
  * @function Spring.SetGroundDecalAlpha
  * @number decalID
- * @number[opt=currAlpha] alpha
- * @number[opt=currAlphaFalloff] alphaFalloff
+ * @number[opt=currAlpha] alpha Between 0 and 1
+ * @number[opt=currAlphaFalloff] alphaFalloff Between 0 and 1, per frame
  * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
@@ -4654,6 +4657,9 @@ int LuaUnsyncedCtrl::SetGroundDecalNormal(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalCreationFrame
+ *
+ * Use separate min and max for "gradient" style decals such as tank tracks
+ *
  * @number decalID
  * @number[opt=currCreationFrameMin] creationFrameMin
  * @number[opt=currCreationFrameMax] creationFrameMax
