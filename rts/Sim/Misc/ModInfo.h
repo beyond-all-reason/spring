@@ -220,6 +220,14 @@ public:
 
 	bool enableSmoothMesh;
 
+	/// Reduce the resolution of the smooth mesh by the divider value. Minimum 1, default 2.
+	int smoothMeshResDivider;
+
+	/// Radius in heightmap squares to use the smooth the mesh gradients. Increasing value
+	/// increases the area that a given point uses to find the local heighest point, and the
+	/// distance of the slope. Default is 40.
+	int smoothMeshSmoothRadius;
+
 	int quadFieldQuadSizeInElmos;
 
 	bool allowTake;
