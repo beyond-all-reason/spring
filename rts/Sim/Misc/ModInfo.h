@@ -220,7 +220,8 @@ public:
 
 	bool enableSmoothMesh;
 
-	/// Reduce the resolution of the smooth mesh by the divider value. Minimum 1, default 2.
+	/// Reduce the resolution of the smooth mesh by the divider value. Increasing the value reduces
+	/// the accuracy of the smooth mesh, but improves performance. Minimum 1, default 2.
 	int smoothMeshResDivider;
 
 	/// Radius in heightmap squares to use the smooth the mesh gradients. Increasing value
