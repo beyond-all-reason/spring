@@ -174,7 +174,13 @@ void main() {
 
 	// groundNormal
 	if (dot(forcedNormalAndAlphaMult.xyz, forcedNormalAndAlphaMult.xyz) == 0.0) {
-		groundNormal = GetFragmentNormal(midPoint.xz);
+		groundNormal = vec3(0.0);
+		groundNormal += 2.0 * GetFragmentNormal(midPoint.xz);
+		groundNormal += 1.0 * GetFragmentNormal(posT.xy);
+		groundNormal += 1.0 * GetFragmentNormal(posT.zw);
+		groundNormal += 1.0 * GetFragmentNormal(posB.xy);
+		groundNormal += 1.0 * GetFragmentNormal(posB.zw);
+		groundNormal  = normalize(groundNormal);
 	} else {
 		groundNormal = forcedNormalAndAlphaMult.xyz;
 	}

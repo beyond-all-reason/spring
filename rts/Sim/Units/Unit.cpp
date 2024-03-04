@@ -484,23 +484,24 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 
 	if (wd != nullptr) {
 		assert(da != nullptr);
-		CExplosionParams params = {
-			pos,
-			ZeroVector,
-			*da,
-			wd,
-			this,                                    // owner
-			nullptr,                                 // hitUnit
-			nullptr,                                 // hitFeature
-			da->craterAreaOfEffect,
-			da->damageAreaOfEffect,
-			da->edgeEffectiveness,
-			da->explosionSpeed,
-			(da->GetDefault() > 500.0f)? 1.0f: 2.0f, // gfxMod
-			false,                                   // impactOnly
-			false,                                   // ignoreOwner
-			true,                                    // damageGround
-			-1u                                      // projectileID
+		const CExplosionParams params = {
+			.pos                  = pos,
+			.dir                  = ZeroVector,
+			.damages              = *da,
+			.weaponDef            = wd,
+			.owner                = this,
+			.hitUnit              = nullptr,
+			.hitFeature           = nullptr,
+			.craterAreaOfEffect   = da->craterAreaOfEffect,
+			.damageAreaOfEffect   = da->damageAreaOfEffect,
+			.edgeEffectiveness    = da->edgeEffectiveness,
+			.explosionSpeed       = da->explosionSpeed,
+			.gfxMod               = (da->GetDefault() > 500.0f)? 1.0f: 2.0f,
+			.maxGroundDeformation = 0.0f,
+			.impactOnly           = false,
+			.ignoreOwner          = false,
+			.damageGround         = true,
+			.projectileID         = static_cast<uint32_t>(-1u)
 		};
 
 		helper->Explosion(params);

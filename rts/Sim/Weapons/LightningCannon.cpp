@@ -66,22 +66,23 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 
 	const DamageArray& damageArray = damages->GetDynamicDamages(weaponMuzzlePos, currentTargetPos);
 	const CExplosionParams params = {
-		curPos + curDir * boltLength,                     // hitPos (same as hitColQuery.GetHitPos() if no water or shield in way)
-		curDir,
-		damageArray,
-		weaponDef,
-		owner,
-		hitUnit,
-		hitFeature,
-		damages->craterAreaOfEffect,
-		damages->damageAreaOfEffect,
-		damages->edgeEffectiveness,
-		damages->explosionSpeed,
-		0.5f,                                             // gfxMod
-		weaponDef->impactOnly,
-		weaponDef->noExplode || weaponDef->noSelfDamage,  // ignoreOwner
-		false,                                            // damageGround
-		-1u                                               // projectileID
+		.pos                  = curPos + curDir * boltLength,
+		.dir                  = curDir,
+		.damages              = damageArray,
+		.weaponDef            = weaponDef,
+		.owner                = owner,
+		.hitUnit              = hitUnit,
+		.hitFeature           = hitFeature,
+		.craterAreaOfEffect   = damages->craterAreaOfEffect,
+		.damageAreaOfEffect   = damages->damageAreaOfEffect,
+		.edgeEffectiveness    = damages->edgeEffectiveness,
+		.explosionSpeed       = damages->explosionSpeed,
+		.gfxMod               = 0.5f,
+		.maxGroundDeformation = 0.0f,
+		.impactOnly           = weaponDef->impactOnly,
+		.ignoreOwner          = weaponDef->noExplode || weaponDef->noSelfDamage,
+		.damageGround         = false,
+		.projectileID         = static_cast<uint32_t>(-1u)
 	};
 
 	helper->Explosion(params);

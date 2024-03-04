@@ -71,7 +71,7 @@ private:
 	void BindAtlasTextures();
 	void BindCommonTextures();
 	void UnbindTextures();
-	void AddExplosion(float3 pos, float damage, float radius);
+	void AddExplosion(float3 pos, float3 explNormalVec, float damage, float radius, float maxHeightDiff);
 	void MoveSolidObject(const CSolidObject* object, const float3& pos);
 public:
 	// CEventClient

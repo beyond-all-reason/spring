@@ -80,7 +80,7 @@ void CBasicMapDamage::TerrainTypeSpeedModChanged(int ttIndex)
 }
 
 
-void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius)
+void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius, float& maxHeightDiff)
 {
 	if (!pos.IsInMap())
 		return;
@@ -160,6 +160,7 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius)
 			if (explDif < -0.3f && strength > 200.0f)
 				grassDrawer->RemoveGrass(float3(x * SQUARE_SIZE, 0.0f, y * SQUARE_SIZE));
 
+			maxHeightDiff = std::max(maxHeightDiff, math::fabs(explDif) * e.ttl);
 			SetExplosionSquare(explDif);
 		}
 	}

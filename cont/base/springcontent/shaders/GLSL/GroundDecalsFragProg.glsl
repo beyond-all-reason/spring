@@ -266,8 +266,9 @@ const float SMF_INTENSITY_MULT = 210.0 / 255.0;
 const float SMF_SHALLOW_WATER_DEPTH     = 10.0;
 const float SMF_SHALLOW_WATER_DEPTH_INV = 1.0 / SMF_SHALLOW_WATER_DEPTH;
 
-const vec3 all0 = vec3(0.0);
-const vec3 all1 = vec3(1.0);
+const float EPS = -1e-6;
+const vec3 all0 = vec3(0.0 + EPS);
+const vec3 all1 = vec3(1.0 - EPS);
 void main() {
 	#ifdef HAVE_MULTISAMPLING
 		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
@@ -421,6 +422,7 @@ void main() {
 	#endif
 
 	fragColor.a = mainCol.a * alpha;
+	//fragColor = vec4(0.5);
 	// artistic adjustments
 	//fragColor  *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is arbitrary
 }
