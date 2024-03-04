@@ -776,8 +776,9 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 
 	if (gb) {
 		// gb is the new owner
-		decalOwners.emplace(gb, doIt->second);
+		const auto pos = doIt->second;
 		decalOwners.erase(doIt);
+		decalOwners.emplace(gb, pos);
 		return;
 	}
 
@@ -1239,6 +1240,23 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 
 void CGroundDecalHandler::GameFrame(int frameNum)
 {
+#if 0
+	for (int cnt = 0; const auto & [owner, offset] : decalOwners) {
+		const void* ptr = std::holds_alternative<const CSolidObject*>(owner) ? static_cast<const void*>(std::get<const CSolidObject*>(owner)) : nullptr;
+		int id = (ptr != nullptr) ? std::get<const CSolidObject*>(owner)->id : -1;
+
+		LOG("DH:GD(fn=%d) [cnt=%d][ptr=%p][id=%d]=[pos=%u]",
+			frameNum,
+			cnt++,
+			ptr,
+			id,
+			static_cast<uint32_t>(offset)
+		);
+	}
+#endif
+	// can't call AddTrack() directly in the loop below as it messes with decalOwners iteration order
+	std::vector<const CUnit*> deferredTrackUpdate;
+
 	for (const auto& [owner, _] : decalOwners) {
 		if (!std::holds_alternative<const CSolidObject*>(owner))
 			continue;
@@ -1253,6 +1271,10 @@ void CGroundDecalHandler::GameFrame(int frameNum)
 		if (unit->moveType->progressState == AMoveType::ProgressState::Active)
 			continue;
 
+		deferredTrackUpdate.emplace_back(unit);
+	}
+
+	for (const auto* unit : deferredTrackUpdate) {
 		// call this one for stopped units, as AddTrack() is only called natively for moving units
 		// This will be called several times before it's erased from decalOwners, not a big deal
 		AddTrack(unit, unit->pos, true);
