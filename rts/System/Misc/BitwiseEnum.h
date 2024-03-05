@@ -34,7 +34,7 @@ namespace Bitwise
 template <class Enum>
 class BitwiseEnum
 {
-private:
+public:
 	int v;
 
 public:

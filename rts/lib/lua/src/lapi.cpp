@@ -51,7 +51,7 @@ static TValue *index2adr (lua_State *L, int idx) {
   if (idx > 0) {
     TValue *o = L->base + (idx - 1);
     api_check(L, idx <= L->ci->top - L->base);
-    if (o >= L->top) return cast(TValue *, luaO_nilobject);
+    if (o >= L->top) return lua_cast(TValue *, luaO_nilobject);
     else return o;
   }
   else if (idx > LUA_REGISTRYINDEX) {
@@ -59,7 +59,7 @@ static TValue *index2adr (lua_State *L, int idx) {
     return L->top + idx;
   }
   else switch (idx) {  /* pseudo-indices */
-    case LUA_REGISTRYINDEX: return registry(L);
+    case LUA_REGISTRYINDEX: return lua_registry(L);
     case LUA_ENVIRONINDEX: {
       Closure *func = curr_func(L);
       sethvalue(L, &L->env, func->c.env);
@@ -71,7 +71,7 @@ static TValue *index2adr (lua_State *L, int idx) {
       idx = LUA_GLOBALSINDEX - idx;
       return (idx <= func->c.nupvalues)
                 ? &func->c.upvalue[idx-1]
-                : cast(TValue *, luaO_nilobject);
+                : lua_cast(TValue *, luaO_nilobject);
     }
   }
 }
@@ -808,7 +808,7 @@ struct CallS {  /* data to `f_call' */
 
 
 static void f_call (lua_State *L, void *ud) {
-  struct CallS *c = cast(struct CallS *, ud);
+  struct CallS *c = lua_cast(struct CallS *, ud);
   luaD_call(L, c->func, c->nresults);
 }
 
@@ -847,7 +847,7 @@ struct CCallS {  /* data to `f_Ccall' */
 
 
 static void f_Ccall (lua_State *L, void *ud) {
-  struct CCallS *c = cast(struct CCallS *, ud);
+  struct CCallS *c = lua_cast(struct CCallS *, ud);
   Closure *cl;
   cl = luaF_newCclosure(L, 0, getcurrenv(L));
   cl->c.f = c->func;
@@ -936,7 +936,7 @@ LUA_API int lua_gc (lua_State *L, int what, int data) {
       break;
     }
     case LUA_GCSTEP: {
-      lu_mem a = (cast(lu_mem, data) << 10);
+      lu_mem a = (lua_cast(lu_mem, data) << 10);
       if (a <= g->totalbytes)
         g->GCthreshold = g->totalbytes - a;
       else

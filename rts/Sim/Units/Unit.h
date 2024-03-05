@@ -379,7 +379,7 @@ public:
 
 
 	// how much terraforming is left to do
-	float terraformLeft = 0.0f;
+	// float terraformLeft = 0.0f;
 	// How much reapir power has been added to this recently
 	float repairAmount = 0.0f;
 
@@ -546,7 +546,7 @@ public:
 	// if the updir is straight up or align to the ground vector
 	bool upright = true;
 	// whether the ground below this unit has been terraformed
-	bool groundLevelled = true;
+	// bool groundLevelled = true;
 
 	// true if the unit is currently cloaked (has enough energy etc)
 	bool isCloaked = false;

@@ -5,6 +5,7 @@
 
 #include "SaveLoadUtils.h"
 #include "System/Ecs/EcsMain.h"
+#include "System/Ecs/Utils/DoubleLinkedList.h"
 #include "System/Ecs/Utils/SystemGlobalUtils.h"
 #include "System/Ecs/Utils/SystemUtils.h"
 
@@ -13,6 +14,7 @@ namespace Sim {
     extern SystemGlobals::SystemGlobal systemGlobals;
     extern SystemUtils::SystemUtils systemUtils;
     extern SaveLoadUtils saveLoadUtils;
+    extern ecs_dll::DoubleLinkList doubleLinkedListUtils;
 }
 
 #endif

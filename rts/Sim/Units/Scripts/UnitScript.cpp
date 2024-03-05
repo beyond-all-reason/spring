@@ -34,6 +34,7 @@
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "Sim/Units/UnitTypes/Factory.h"
+#include "Sim/Units/Utils/BuilderUnitUtils.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
@@ -1338,6 +1339,8 @@ void CUnitScript::SetUnitVal(int val, int param)
 		} break;
 		case INBUILDSTANCE: {
 			unit->inBuildStance = (param != 0);
+			if (param != 0) SetBuildStance(unit);
+			else          	ClearBuildStance(unit);
 		} break;
 
 		case BUSY: {

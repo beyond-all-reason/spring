@@ -17,7 +17,7 @@ public:
 
 template<class T>
 void InsertChain(entt::entity head, entt::entity newLink) {
-    auto& nextChain = registry.get<T>(head);
+    auto& nextChain = registry.get_or_emplace<T>(head, head, head);
     auto& prevChain = registry.get<T>(nextChain.prev);
 
     // LOG("%s: added chain link with %x <-> [%x] <-> %x.", __func__
@@ -32,6 +32,8 @@ void InsertChain(entt::entity head, entt::entity newLink) {
 
 template<class T>
 void RemoveChain(entt::entity removeLink) {
+    if (!registry.all_of<T>(removeLink)) { return; }
+
     auto& curChain = registry.get<T>(removeLink);
 
     auto& nextChain = registry.get<T>(curChain.next);
@@ -60,6 +62,7 @@ void ForEachInChain(entt::entity head, F&& func) {
     //             , entt::to_integral(head));
     //     func(chainLink->next);
     // }
+    if (!registry.all_of<T>(head)) { return; }
 
     auto curEntity = head;
     do {
@@ -75,6 +78,8 @@ void ForEachInChain(entt::entity head, F&& func) {
 
 template<class T, typename F>
 void BackWalkWithEarlyExit(entt::entity head, F&& func) {
+    if (!registry.all_of<T>(head)) { return; }
+
     auto curEntity = head;
     do {
         // LOG("%s: walking chain link %x [head %x]", __func__

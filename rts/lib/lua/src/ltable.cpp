@@ -273,7 +273,7 @@ static void setarrayvector (lua_State *L, Table *t, int size) {
 static void setnodevector (lua_State *L, Table *t, int size) {
   int lsize;
   if (size == 0) {  /* no elements to hash part? */
-    t->node = cast(Node *, dummynode);  /* use common `dummynode' */
+    t->node = lua_cast(Node *, dummynode);  /* use common `dummynode' */
     lsize = 0;
   }
   else {
@@ -365,7 +365,7 @@ Table *luaH_new (lua_State *L, int narray, int nhash) {
   t->array = NULL;
   t->sizearray = 0;
   t->lsizenode = 0;
-  t->node = cast(Node *, dummynode);
+  t->node = lua_cast(Node *, dummynode);
   setarrayvector(L, t, narray);
   setnodevector(L, t, nhash);
   return t;
@@ -435,7 +435,7 @@ static TValue *newkey (lua_State *L, Table *t, const TValue *key) {
 */
 const TValue *luaH_getnum (Table *t, int key) {
   /* (1 <= key && key <= t->sizearray) */
-  if (cast(unsigned int, key-1) < cast(unsigned int, t->sizearray))
+  if (lua_cast(unsigned int, key-1) < lua_cast(unsigned int, t->sizearray))
     return &t->array[key-1];
   else {
     lua_Number nk = cast_num(key);
@@ -496,7 +496,7 @@ TValue *luaH_set (lua_State *L, Table *t, const TValue *key) {
   const TValue *p = luaH_get(t, key);
   t->flags = 0;
   if (p != luaO_nilobject)
-    return cast(TValue *, p);
+    return lua_cast(TValue *, p);
   else {
     if (ttisnil(key)) luaG_runerror(L, "table index is nil");
     else if (ttisnumber(key) && luai_numisnan(nvalue(key)))
@@ -509,7 +509,7 @@ TValue *luaH_set (lua_State *L, Table *t, const TValue *key) {
 TValue *luaH_setnum (lua_State *L, Table *t, int key) {
   const TValue *p = luaH_getnum(t, key);
   if (p != luaO_nilobject)
-    return cast(TValue *, p);
+    return lua_cast(TValue *, p);
   else {
     TValue k;
     setnvalue(&k, cast_num(key));
@@ -521,7 +521,7 @@ TValue *luaH_setnum (lua_State *L, Table *t, int key) {
 TValue *luaH_setstr (lua_State *L, Table *t, TString *key) {
   const TValue *p = luaH_getstr(t, key);
   if (p != luaO_nilobject)
-    return cast(TValue *, p);
+    return lua_cast(TValue *, p);
   else {
     TValue k;
     setsvalue(L, &k, key);
@@ -537,7 +537,7 @@ static int unbound_search (Table *t, unsigned int j) {
   while (!ttisnil(luaH_getnum(t, j))) {
     i = j;
     j *= 2;
-    if (j > cast(unsigned int, MAX_INT)) {  /* overflow? */
+    if (j > lua_cast(unsigned int, MAX_INT)) {  /* overflow? */
       /* table was built with bad purposes: resort to linear search */
       i = 1;
       while (!ttisnil(luaH_getnum(t, i))) i++;

@@ -396,9 +396,9 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "\t\t\t\thelpTerraform: " << DumpSolidObjectID(b->helpTerraform);
 			file << "\t\t\t\tterraforming: " << (b->terraforming ? 1 : 0) << "\n";
 			file << "\t\t\t\tterraformHelp: " << TapFloats(b->terraformHelp);
-			file << "\t\t\t\tmyTerraformLeft: " << TapFloats(b->myTerraformLeft);
+			// file << "\t\t\t\tmyTerraformLeft: " << TapFloats(b->myTerraformLeft);
 			file << "\t\t\t\tterraformType: " << std::to_string(b->terraformType) << "\n";
-			file << "\t\t\t\ttx1,tx2,tz1,tz2: " << b->tx1 << "," << b->tx2 << "," << b->tz1 << "," << b->tz2 << "\n";
+			// file << "\t\t\t\ttx1,tx2,tz1,tz2: " << b->tx1 << "," << b->tx2 << "," << b->tz1 << "," << b->tz2 << "\n";
 			file << "\t\t\t\tterraformCenter: " << TapFloats(b->terraformCenter);
 			file << "\t\t\t\tterraformRadius: " << TapFloats(b->terraformRadius);
 		}

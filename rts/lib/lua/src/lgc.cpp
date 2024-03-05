@@ -431,7 +431,7 @@ static GCObject **sweeplist (lua_State *L, GCObject **p, lu_mem count) {
 static void checkSizes (lua_State *L) {
   global_State *g = G(L);
   /* check size of string hash */
-  if (g->strt.nuse < cast(lu_int32, g->strt.size/4) &&
+  if (g->strt.nuse < lua_cast(lu_int32, g->strt.size/4) &&
       g->strt.size > MINSTRTABSIZE*2)
     luaS_resize(L, g->strt.size/2);  /* table is too big */
   /* check size of buffer */
@@ -506,7 +506,7 @@ static void markroot (lua_State *L) {
   markobject(g, g->mainthread);
   /* make global table be traversed before main stack */
   markvalue(g, gt(g->mainthread));
-  markvalue(g, registry(L));
+  markvalue(g, lua_registry(L));
   markmt(g);
   g->gcstate = GCSpropagate;
 }

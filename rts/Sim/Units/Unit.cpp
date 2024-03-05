@@ -2845,8 +2845,8 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(transportMassUsed),
 
 	CR_MEMBER(buildProgress),
-	CR_MEMBER(groundLevelled),
-	CR_MEMBER(terraformLeft),
+	// CR_MEMBER(groundLevelled),
+	// CR_MEMBER(terraformLeft),
 	CR_MEMBER(repairAmount),
 
 	CR_MEMBER(realLosRadius),

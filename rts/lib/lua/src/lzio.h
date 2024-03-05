@@ -17,7 +17,7 @@
 
 typedef struct Zio ZIO;
 
-#define char2int(c)	cast(int, cast(unsigned char, (c)))
+#define char2int(c)	lua_cast(int, lua_cast(unsigned char, (c)))
 
 #define zgetc(z)  (((z)->n--)>0 ?  char2int(*(z)->p++) : luaZ_fill(z))
 

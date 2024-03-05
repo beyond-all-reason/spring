@@ -11,7 +11,7 @@
 #include "lstate.h"
 
 
-#define pcRel(pc, p)	(cast(int, (pc) - (p)->code) - 1)
+#define pcRel(pc, p)	(lua_cast(int, (pc) - (p)->code) - 1)
 
 #define getline(f,pc)	(((f)->lineinfo) ? (f)->lineinfo[pc] : 0)
 

@@ -15,6 +15,10 @@ struct Command;
 class CFeature;
 class CSolidObject;
 
+namespace Unit {
+	class TerraformBuildTask;
+}
+
 class CBuilder : public CUnit
 {
 private:
@@ -43,7 +47,7 @@ public:
 	bool UpdateCapture(const Command& fCommand);
 
 	bool StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWaitStance, bool& limitReached);
-	float CalculateBuildTerraformCost(BuildInfo& buildInfo);
+	float CalculateBuildTerraformCost(BuildInfo& buildInfo, const Unit::TerraformBuildTask& newTask);
 	void StopBuild(bool callScript = true);
 	void SetRepairTarget(CUnit* target);
 	void SetReclaimTarget(CSolidObject* object);
@@ -82,12 +86,12 @@ public:
 
 	bool terraforming;
 	float terraformHelp;
-	float myTerraformLeft;
+	// float myTerraformLeft;
 	enum TerraformType {
 		Terraform_Building,
 		Terraform_Restore
 	} terraformType;
-	int tx1,tx2,tz1,tz2;
+	// int tx1,tx2,tz1,tz2;
 	float3 terraformCenter;
 	float terraformRadius;
 

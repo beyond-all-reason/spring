@@ -38,7 +38,7 @@ struct Component : public BasicComponentType<T> { \
 #define ALIAS_COMPONENT(Component, T) struct Component : public BasicComponentType<T> {};
 #define VOID_COMPONENT(Component) struct Component {};
 
-#define DLL_COMPONENT(Component) \
+#define DOUBLE_LINKED_LIST_COMPONENT(Component) \
 struct Component : public DoubleLinkedChain { \
     Component() = default; \
     Component(entt::entity initPrev, entt::entity initNext) \

@@ -824,7 +824,7 @@ void luaK_setlist (FuncState *fs, int base, int nelems, int tostore) {
     luaK_codeABC(fs, OP_SETLIST, base, b, c);
   else {
     luaK_codeABC(fs, OP_SETLIST, base, b, 0);
-    luaK_code(fs, cast(Instruction, c), fs->ls->lastline);
+    luaK_code(fs, lua_cast(Instruction, c), fs->ls->lastline);
   }
   fs->freereg = base + 1;  /* free registers with list values */
 }

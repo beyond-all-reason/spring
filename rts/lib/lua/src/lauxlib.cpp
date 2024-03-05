@@ -111,13 +111,13 @@ LUALIB_API int luaL_checkoption (lua_State *L, int narg, const char *def,
 
 
 LUALIB_API int luaL_newmetatable (lua_State *L, const char *tname) {
-  lua_getfield(L, LUA_REGISTRYINDEX, tname);  /* get registry.name */
+  lua_getfield(L, LUA_REGISTRYINDEX, tname);  /* get lua_registry.name */
   if (!lua_isnil(L, -1))  /* name already in use? */
     return 0;  /* leave previous value on top, but return 0 */
   lua_pop(L, 1);
   lua_newtable(L);  /* create metatable */
   lua_pushvalue(L, -1);
-  lua_setfield(L, LUA_REGISTRYINDEX, tname);  /* registry.name = metatable */
+  lua_setfield(L, LUA_REGISTRYINDEX, tname);  /* lua_registry.name = metatable */
   return 1;
 }
 

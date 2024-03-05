@@ -33,7 +33,7 @@ enum RESERVED {
 };
 
 /* number of reserved words */
-#define NUM_RESERVED	(cast(int, TK_WHILE-FIRST_RESERVED+1))
+#define NUM_RESERVED	(lua_cast(int, TK_WHILE-FIRST_RESERVED+1))
 
 
 /* array with token `names' */

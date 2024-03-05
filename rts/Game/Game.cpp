@@ -64,6 +64,7 @@
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
 #include "Sim/Ecs/Helper.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -90,6 +91,7 @@
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Scripts/UnitScriptFactory.h"
 #include "Sim/Units/Scripts/UnitScriptEngine.h"
+#include "Sim/Units/Systems/TerraformTaskSystem.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
@@ -688,6 +690,8 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	inMapDrawerModel = new CInMapDrawModel();
 	inMapDrawer = new CInMapDraw();
 
+	Unit::TerraformTaskSystem::Init();
+
 	LEAVE_SYNCED_CODE();
 }
 
@@ -1020,6 +1024,8 @@ void CGame::KillSimulation()
 	CUnitScriptEngine::KillStatic();
 	CWeaponLoader::KillStatic();
 	CommonDefHandler::KillStatic();
+
+	Unit::TerraformTaskSystem::Shutdown();
 
 	Sim::ClearRegistry();
 }
@@ -1752,6 +1758,9 @@ void CGame::SimFrame() {
 		}
 		envResHandler.Update();
 		losHandler->Update();
+
+		Sim::systemUtils.NotifyUpdate();
+
 		// dead ghosts have to be updated in sim, after los,
 		// to make sure they represent the current knowledge correctly.
 		// should probably be split from drawer

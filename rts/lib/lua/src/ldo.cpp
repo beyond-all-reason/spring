@@ -382,7 +382,7 @@ void luaD_call (lua_State *L, StkId func, int nResults) {
 
 
 static void resume (lua_State *L, void *ud) {
-  StkId firstArg = cast(StkId, ud);
+  StkId firstArg = lua_cast(StkId, ud);
   CallInfo *ci = L->ci;
   if (L->status == 0) {  /* start coroutine? */
     lua_assert(ci == L->base_ci && firstArg > L->base);
@@ -492,7 +492,7 @@ static void f_parser (lua_State *L, void *ud) {
   int i;
   Proto *tf;
   Closure *cl;
-  struct SParser *p = cast(struct SParser *, ud);
+  struct SParser *p = lua_cast(struct SParser *, ud);
   int c = luaZ_lookahead(p->z);
   luaC_checkGC(L);
   tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z,

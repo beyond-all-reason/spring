@@ -1,11 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#undef NDEBUG
+
 
 #include "UnitLoader.h"
 #include "Unit.h"
 #include "UnitDef.h"
 #include "UnitDefHandler.h"
 #include "UnitHandler.h"
+
+#include "Components/UnitComponents.h"
 
 #include "CommandAI/AirCAI.h"
 #include "CommandAI/BuilderCAI.h"
@@ -101,6 +105,10 @@ CUnit* CUnitLoader::LoadUnit(const UnitLoadParams& params)
 
 		unit->PreInit(params);
 		unit->PostInit(params.builder);
+
+		Sim::registry.emplace<Unit::UnitId>(unit->entityReference, unit->id);
+
+		assert(unit->entityReference != entt::null);
 	}
 
 	if (params.flattenGround)

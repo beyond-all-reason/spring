@@ -1570,8 +1570,16 @@ void QTPFS::PathManager::GetPathWayPoints(
 int2 QTPFS::PathManager::GetNumQueuedUpdates() const {
 	int2 data;
 
-	data.x = updateDirtyPathRate;//mapChangeTrack.damageQueue.size();// registry.size();
-	data.y = updateDirtyPathRemainder;
+	data.x = updateDirtyPathRate; //mapChangeTrack.damageQueue.size();// registry.size();
+	// data.y = updateDirtyPathRemainder;
+
+	int largestMapSearchLimit = 0;
+	std::for_each(nodeLayers.begin(), nodeLayers.end(), [this, &largestMapSearchLimit](const NodeLayer& nl){
+		int layerLimit = nl.GetNumOpenNodes() * modInfo.qtMaxNodesSearchedRelativeToMapOpenNodes;
+		largestMapSearchLimit = std::max(largestMapSearchLimit, layerLimit);
+	} );
+
+	data.y = largestMapSearchLimit;
 
 	return data;
 }

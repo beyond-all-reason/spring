@@ -160,7 +160,7 @@ static int registerlocalvar (LexState *ls, TString *varname) {
 static void new_localvar (LexState *ls, TString *name, int n) {
   FuncState *fs = ls->fs;
   luaY_checklimit(fs, fs->nactvar+n+1, LUAI_MAXVARS, "local variables");
-  fs->actvar[fs->nactvar+n] = cast(unsigned short, registerlocalvar(ls, name));
+  fs->actvar[fs->nactvar+n] = lua_cast(unsigned short, registerlocalvar(ls, name));
 }
 
 
