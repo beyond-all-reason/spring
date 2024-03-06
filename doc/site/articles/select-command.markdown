@@ -193,7 +193,7 @@ Some examples. Again, "unit" also includes buildings.
 
 - `AllMap+_Buildoptions_Building+_ClearSelection_SelectNum_1+`
   
-  Selects any (one) building that can produce units, map-wide (i.e. Factories). Repeatedly running this command will cycle through all factories. Unlike the above example, this selector will **not** snap the camera to the factory. Replace `SelectNum_1` with `SelectOne` in order to achieve this.
+  Selects any (one) building that can produce units (i.e. factories), map-wide. Repeatedly running this command will cycle through all factories. Unlike the above example, this selector will **not** snap the camera to the factory. Replace `SelectNum_1` with `SelectOne` in order to achieve this.
 
 - `AllMap+_Radar+_ClearSelection_SelectAll+`
 
