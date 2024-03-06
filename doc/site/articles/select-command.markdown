@@ -191,6 +191,10 @@ Some examples. Again, "unit" also includes buildings.
   
   Selects any (one) idle builder (unit or building) on entire map. Repeatedly running this command will cycle through all idle builders.
 
+- `AllMap+_Buildoptions_Building+_ClearSelection_SelectNum_1+`
+  
+  Selects any (one) building that can produce units, map-wide (i.e. Factories). Repeatedly running this command will cycle through all factories. Unlike the above example, this selector will **not** snap the camera to the factory. Replace `SelectNum_1` with `SelectOne` in order to achieve this.
+
 - `AllMap+_Radar+_ClearSelection_SelectAll+`
 
   Selects all units with radar/sonar/jammer.
