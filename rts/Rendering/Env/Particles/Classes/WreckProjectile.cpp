@@ -63,7 +63,7 @@ void CWreckProjectile::Draw()
 	#undef wt
 }
 
-void CWreckProjectile::DrawOnMinimap()
+void CWreckProjectile::DrawOnMinimap() const
 {
 	AddMiniMapVertices({ pos        , color4::redA }, { pos + speed, color4::redA });
 }

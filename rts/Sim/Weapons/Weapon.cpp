@@ -254,8 +254,19 @@ void CWeapon::UpdateWeaponPieces(const bool updateAimFrom)
 }
 
 
+void CWeapon::UpdateWeaponErrorVector()
+{
+	// update conditional cause last SlowUpdate maybe longer away than UNIT_SLOWUPDATE_RATE
+	// i.e. when the unit got stunned (neither is SlowUpdate exactly called at UNIT_SLOWUPDATE_RATE, it's only called `close` to that)
+	float3 newErrorVector = (errorVector + errorVectorAdd);
+	if (newErrorVector.SqLength() <= 1.0f)
+		errorVector = newErrorVector;
+}
+
 void CWeapon::UpdateWeaponVectors()
 {
+	ZoneScoped;
+
 	relAimFromPos = owner->script->GetPiecePos(aimFromPiece);
 	owner->script->GetEmitDirPos(muzzlePiece, relWeaponMuzzlePos, weaponDir);
 
@@ -289,11 +300,6 @@ float CWeapon::GetPredictedImpactTime(float3 p) const
 void CWeapon::Update()
 {
 	ZoneScoped;
-	// update conditional cause last SlowUpdate maybe longer away than UNIT_SLOWUPDATE_RATE
-	// i.e. when the unit got stunned (neither is SlowUpdate exactly called at UNIT_SLOWUPDATE_RATE, it's only called `close` to that)
-	float3 newErrorVector = (errorVector + errorVectorAdd);
-	if (newErrorVector.SqLength() <= 1.0f)
-		errorVector = newErrorVector;
 
 	// Fast auto targeting needs to trigger an immediate retarget once the target is dead.
 	bool fastAutoRetargetRequired = fastAutoRetargeting && HaveTarget()
@@ -314,7 +320,6 @@ void CWeapon::Update()
 	if (!HaveTarget() && owner->curTarget.type != Target_None)
 		Attack(owner->curTarget);
 
-	UpdateWeaponVectors();
 	currentTargetPos = GetLeadTargetPos(currentTarget);
 
 	if (!UpdateStockpile())
@@ -442,9 +447,7 @@ void CWeapon::UpdateFire()
 		return;
 
 	// pre-check if we got enough resources (so CobBlockShot gets only called when really possible to shoot)
-	const SResourcePack shotRes = {weaponDef->metalcost, weaponDef->energycost};
-
-	if (!weaponDef->stockpile && !owner->HaveResources(shotRes))
+	if (!weaponDef->stockpile && !owner->HaveResources(weaponDef->cost))
 		return;
 
 	if (CobBlockShot())
@@ -453,15 +456,14 @@ void CWeapon::UpdateFire()
 	if (!weaponDef->stockpile) {
 		// use resource for shoot
 		CTeam* ownerTeam = teamHandler.Team(owner->team);
-		if (!owner->UseResources(shotRes)) {
+		if (!owner->UseResources(weaponDef->cost)) {
 			// not enough resource, update pull (needs factor cause called each ::Update() and not at reloadtime!)
 			const int minPeriod = std::max(1, int(reloadTime / owner->reloadSpeed));
 			const float averageFactor = 1.0f / minPeriod;
-			ownerTeam->resPull.energy += (averageFactor * weaponDef->energycost);
-			ownerTeam->resPull.metal  += (averageFactor * weaponDef->metalcost);
+			ownerTeam->resPull += weaponDef->cost * averageFactor;
 			return;
 		}
-		ownerTeam->resPull += shotRes;
+		ownerTeam->resPull += weaponDef->cost;
 	} else {
 		const int oldCount = numStockpiled;
 		numStockpiled--;
@@ -490,7 +492,7 @@ bool CWeapon::UpdateStockpile()
 	if (numStockpileQued > 0) {
 		const float p = 1.0f / weaponDef->stockpileTime;
 
-		if (owner->UseResources({weaponDef->metalcost * p, weaponDef->energycost * p}))
+		if (owner->UseResources(weaponDef->cost * p))
 			buildPercent += p;
 
 		if (buildPercent >= 1) {
@@ -833,6 +835,11 @@ float3 CWeapon::GetTargetBorderPos(
 	tmpColVol.SetBoundingRadius();
 	tmpColVol.SetUseContHitTest(false);
 
+	// the DetectHit() code below clearly indicates it should go
+	// CCollisionHandler::Collision() branch so force it explicitly
+	tmpColVol.SetDefaultToPieceTree(false);
+	tmpColVol.SetIgnoreHits(false);
+
 	// our weapon muzzle is inside the target unit's volume (FIXME: use aimFromPos?)
 	if (CCollisionHandler::DetectHit(targetUnit, &tmpColVol, targetUnit->GetTransformMatrix(true), weaponMuzzlePos, ZeroVector, nullptr))
 		return (targetBorderPos = weaponMuzzlePos);
@@ -843,6 +850,8 @@ float3 CWeapon::GetTargetBorderPos(
 	// this either increases or decreases the length of <targetVec> but does
 	// not change its direction
 	tmpColVol.SetUseContHitTest(true);
+	tmpColVol.SetDefaultToPieceTree(targetUnit->collisionVolume.DefaultToPieceTree());
+	tmpColVol.SetIgnoreHits(targetUnit->collisionVolume.IgnoreHits());
 
 	// make the ray-segment long enough so it can reach the far side of the
 	// scaled collision volume (helps to ensure a ray-intersection is found)

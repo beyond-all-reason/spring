@@ -115,20 +115,17 @@ public:
 
 	const UnitDef* decoyDef;
 
-	float metalUpkeep;
-	float energyUpkeep;
-	float metalMake;		///< metal will always be created
+	SResourcePack upkeep;
+	SResourcePack resourceMake; ///< will always be created
 	float makesMetal;		///< metal will be created when unit is on and enough energy can be drained
-	float energyMake;
 	float buildTime;
+	float buildeeBuildRadius; ///< if >= 0.f, override default radius to use for the buildee in build distance calculations.
 	float extractsMetal;
 	float extractRange;
 	float windGenerator;
 	float tidalGenerator;
-	float metalStorage;
-	float energyStorage;
-	float harvestMetalStorage;
-	float harvestEnergyStorage;
+	SResourcePack storage;
+	SResourcePack harvestStorage;
 
 	float autoHeal;     ///< amount autohealed
 	float idleAutoHeal; ///< amount autohealed only during idling
@@ -184,6 +181,9 @@ public:
 	bool stopToAttack;
 	float minCollisionSpeed;
 	float slideTolerance;
+	float rollingResistanceCoefficient;
+	float groundFrictionCoefficient;
+	float atmosphericDragCoefficient;
 	float maxHeightDif;   /// maximum terraform height this building allows
 	float waterline;
 	float minWaterDepth;
@@ -384,10 +384,8 @@ private:
 	void ParseWeaponsTable(const LuaTable& weaponsTable);
 	void CreateYardMap(std::string&& yardMapStr);
 
-	float realMetalCost;
-	float realEnergyCost;
-	float realMetalUpkeep;
-	float realEnergyUpkeep;
+	SResourcePack realCost;
+	SResourcePack realUpkeep;
 	float realBuildTime;
 };
 

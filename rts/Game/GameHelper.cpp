@@ -895,6 +895,50 @@ void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, boo
 	::BuggerOffImpl(pos, radius, spherical, forced, teamId, testPredicate);
 }
 
+// version of bugger off that takes into account the unit's movedef footprint, which is what gets
+// used to check for square testing for building other units.
+void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, bool forced, int teamId, const CUnit* excludeUnit)
+{
+	const int bufferSize = (moveDefHandler.GetLargestFootPrintSizeH() + 1) * SQUARE_SIZE;
+	const float3 min((mins.x - bufferSize), 0.f, (mins.z - bufferSize));
+	const float3 max((maxs.x + bufferSize), 0.f, (maxs.z + bufferSize));
+
+	const float3 baseBufferOffLengths = (maxs - mins) * 0.5f;
+	const float3 centreOfBuggerOff = mins + baseBufferOffLengths;
+	const float baseBuggerOffRadius = baseBufferOffLengths.Length2D() + SQUARE_SIZE;
+
+	// copy on purpose since BuggerOff can call risky stuff
+	QuadFieldQuery qfQuery;
+	quadField.GetUnitsExact(qfQuery, min, max);
+	const int allyTeamId = teamHandler.AllyTeam(teamId);
+
+	for (CUnit* u : *qfQuery.units) {
+		if (u->moveDef == nullptr) { continue; }
+
+		const float footPrintX = (u->moveDef->xsizeh+1)*SQUARE_SIZE;
+		const float footPrintZ = (u->moveDef->zsizeh+1)*SQUARE_SIZE;
+
+		if (u->pos.x + footPrintX < mins.x) { continue; }
+		if (u->pos.z + footPrintZ < mins.z) { continue; }
+		if (u->pos.x - footPrintX > maxs.x) { continue; }
+		if (u->pos.z - footPrintZ > maxs.z) { continue; }
+
+		if (u == excludeUnit)
+			continue;
+
+		// don't send BuggerOff commands to enemy units
+		if (!teamHandler.Ally(u->allyteam, allyTeamId) && !teamHandler.Ally(allyTeamId, u->allyteam))
+			continue;
+		if (!forced && (u->moveType->IsPushResistant() || u->UsingScriptMoveType()))
+			continue;
+
+		const float footPrintRadius = math::sqrtf(footPrintX*footPrintX + footPrintZ*footPrintZ);
+		const float buggerOffRadius = baseBuggerOffRadius + footPrintRadius;
+
+		u->commandAI->BuggerOff(centreOfBuggerOff, buggerOffRadius);
+	}
+}
+
 void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, bool forced, int teamId, const CUnit* excludeUnit, const std::vector<const UnitDef*> excludeUnitDefs)
 {
 	const auto testPredicate = [excludeUnit, &excludeUnitDefs](const CUnit* u) {
@@ -1243,12 +1287,14 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	// units - so check that all nearby mobile units have correctly accurate positions up to date.
 	if (synced)
 	{
+		assert(!ThreadPool::inMultiThreadedSection);
+
 		// buffer should be the maximum distance given by the movetype using the formula:
-		// maxspeed * modInfo.unitQuadPositionUpdateRate + footStep + 1
+		// maxspeed * modInfo.unitQuadPositionUpdateRate + half footStep + 1
 		// +1 on end is a safety buffer against rounding issues with square placement.
 		// placeholder values are given here for the moment.
-		// TODO: switch out for a value determined by the above formula
-		const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + 10 + 1;
+		const int largestMoveTypSizeH = moveDefHandler.GetLargestFootPrintSizeH() + 1;
+		const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + largestMoveTypSizeH + 1;
 		const float3 min((x1 - bufferSize) * SQUARE_SIZE, 0.f, (z1 - bufferSize) * SQUARE_SIZE);
 		const float3 max((x2 + bufferSize) * SQUARE_SIZE, 0.f, (z2 + bufferSize) * SQUARE_SIZE);
 

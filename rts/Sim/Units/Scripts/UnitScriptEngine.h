@@ -30,7 +30,8 @@ public:
 
 	static void InitStatic();
 	static void KillStatic();
-
+private:
+	void ImplTickMT(int deltaTime);
 private:
 	CUnitScript* currentScript = nullptr;
 

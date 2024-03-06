@@ -59,12 +59,16 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 
 		// LOG("%s: %x is Dirty=%d", __func__, (int)entity, (int)registry.all_of<PathIsDirty>(entity));
 
-		if (registry.any_of<PathIsDirty>(entity)) continue;
+		if (registry.any_of<PathIsDirty, PathSearchRef>(entity)) continue;
 
 		IPath* path = &pathView.get<IPath>(entity);
 
 		if (path->IsSynced() == false) continue;
 		if (path->GetPathType() != pathType) { continue; }
+		// auto-repath should already be triggered.
+		if (path->GetRepathTriggerIndex() != 0 && path->GetNextPointIndex() > path->GetRepathTriggerIndex()) {
+			continue;
+		}
 
 		// LOG("%s: %x is processing", __func__, (int)entity);
 
@@ -77,49 +81,86 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 		if ((r.x1 * SQUARE_SIZE) > pathMaxs.x) { continue; }
 		if ((r.z1 * SQUARE_SIZE) > pathMaxs.z) { continue; }
 
-		// figure out if <path> has at least one edge crossing <r>
-		// we only care about the segments we have not yet visited
-		const unsigned int minIdx = std::max(path->GetNextPointIndex(), 2U) - 2;
-		const unsigned int maxIdx = std::max(path->NumPoints(), 1u) - 1;
+		// First check the boundary boxes
+		bool searchQuads = path->IsBoundingBoxOverriden();
+		bool intersectsQuads = false;
+		if (searchQuads) {
+			auto& pathNodeList = path->GetNodeList();
+			for (auto& node : pathNodeList) {
+				if (r.x2 < node.xmin) { continue; }
+				if (r.z2 < node.zmin) { continue; }
+				if (r.x1 > node.xmax) { continue; }
+				if (r.z1 > node.zmax) { continue; }
 
-		for (unsigned int i = minIdx; i < maxIdx; i++) {
-			const float3& p0 = path->GetPoint(i    );
-			const float3& p1 = path->GetPoint(i + 1);
-
-			const bool p0InRect =
-				((p0.x >= (r.x1 * SQUARE_SIZE) && p0.x < (r.x2 * SQUARE_SIZE)) &&
-				 (p0.z >= (r.z1 * SQUARE_SIZE) && p0.z < (r.z2 * SQUARE_SIZE)));
-			const bool p1InRect =
-				((p1.x >= (r.x1 * SQUARE_SIZE) && p1.x < (r.x2 * SQUARE_SIZE)) &&
-				 (p1.z >= (r.z1 * SQUARE_SIZE) && p1.z < (r.z2 * SQUARE_SIZE)));
-			const bool havePointInRect = (p0InRect || p1InRect);
-
-			// NOTE:
-			//     box-volume tests in its own space, but points are
-			//     in world-space so we must inv-transform them first
-			//     (p0 --> p0 - rm, p1 --> p1 - rm)
-			const bool
-				xRangeInRect = (p0.x >= (r.x1 * SQUARE_SIZE) && p1.x <  (r.x2 * SQUARE_SIZE)),
-				xRangeExRect = (p0.x <  (r.x1 * SQUARE_SIZE) && p1.x >= (r.x2 * SQUARE_SIZE)),
-				zRangeInRect = (p0.z >= (r.z1 * SQUARE_SIZE) && p1.z <  (r.z2 * SQUARE_SIZE)),
-				zRangeExRect = (p0.z <  (r.z1 * SQUARE_SIZE) && p1.z >= (r.z2 * SQUARE_SIZE));
-			const bool edgeCrossesRect =
-				(xRangeExRect && zRangeInRect) ||
-				(xRangeInRect && zRangeExRect) ||
-				CCollisionHandler::IntersectBox(&rv, p0 - rm, p1 - rm, NULL);
-
-			// LOG("%s: %x havePointInRect=%d edgeCrossesRect=%d", __func__, (int)entity
-			// 		, (int)havePointInRect, (int)edgeCrossesRect);
-
-			// remember the ID of each path affected by the deformation
-			if (havePointInRect || edgeCrossesRect) {
-				// assert(tempPaths.find(path->GetID()) == tempPaths.end());
-				// assert(std::find(dirtyPaths[pathType].begin(), dirtyPaths[pathType].end(), entity) == dirtyPaths[pathType].end());
-				dirtyPaths[pathType].emplace_back(entity);
-
-				// LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);
+				intersectsQuads = true;
 				break;
 			}
+		}
+
+		bool searchPaths = (!searchQuads || intersectsQuads);
+		bool intersectsPath = false;
+		int autoRefreshOnNode = 0;
+		if (searchPaths) {
+			// figure out if <path> has at least one edge crossing <r>
+			// we only care about the segments we have not yet visited
+			const unsigned int minIdx = std::max(path->GetNextPointIndex(), 2U) - 2;
+			const unsigned int maxIdx = (path->GetRepathTriggerIndex() > 0)
+							? path->GetRepathTriggerIndex()
+							: std::max(path->NumPoints(), 1u) - 1;
+
+			for (unsigned int i = minIdx; i < maxIdx; i++) {
+				const float3& p0 = path->GetPoint(i    );
+				const float3& p1 = path->GetPoint(i + 1);
+
+				const bool p0InRect =
+					((p0.x >= (r.x1 * SQUARE_SIZE) && p0.x < (r.x2 * SQUARE_SIZE)) &&
+					(p0.z >= (r.z1 * SQUARE_SIZE) && p0.z < (r.z2 * SQUARE_SIZE)));
+				const bool p1InRect =
+					((p1.x >= (r.x1 * SQUARE_SIZE) && p1.x < (r.x2 * SQUARE_SIZE)) &&
+					(p1.z >= (r.z1 * SQUARE_SIZE) && p1.z < (r.z2 * SQUARE_SIZE)));
+				const bool havePointInRect = (p0InRect || p1InRect);
+
+				// NOTE:
+				//     box-volume tests in its own space, but points are
+				//     in world-space so we must inv-transform them first
+				//     (p0 --> p0 - rm, p1 --> p1 - rm)
+				const bool
+					xRangeInRect = (p0.x >= (r.x1 * SQUARE_SIZE) && p1.x <  (r.x2 * SQUARE_SIZE)),
+					xRangeExRect = (p0.x <  (r.x1 * SQUARE_SIZE) && p1.x >= (r.x2 * SQUARE_SIZE)),
+					zRangeInRect = (p0.z >= (r.z1 * SQUARE_SIZE) && p1.z <  (r.z2 * SQUARE_SIZE)),
+					zRangeExRect = (p0.z <  (r.z1 * SQUARE_SIZE) && p1.z >= (r.z2 * SQUARE_SIZE));
+				const bool edgeCrossesRect =
+					(xRangeExRect && zRangeInRect) ||
+					(xRangeInRect && zRangeExRect) ||
+					CCollisionHandler::IntersectBox(&rv, p0 - rm, p1 - rm, NULL);
+
+				// LOG("%s: %x havePointInRect=%d edgeCrossesRect=%d", __func__, (int)entity
+				// 		, (int)havePointInRect, (int)edgeCrossesRect);
+
+				// remember the ID of each path affected by the deformation
+				if (havePointInRect || edgeCrossesRect) {
+					// assert(tempPaths.find(path->GetID()) == tempPaths.end());
+					// assert(std::find(dirtyPaths[pathType].begin(), dirtyPaths[pathType].end(), entity) == dirtyPaths[pathType].end());
+					intersectsPath = true;
+
+					bool triggerImmediateRepath = i <= (minIdx + 1);
+					if (!triggerImmediateRepath)
+						autoRefreshOnNode = i + 1; // trigger happens when waypoints are requested, which always grabs one ahead.
+
+					// LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);
+					break;
+				}
+			}
+		}
+
+		if (intersectsQuads || intersectsPath) {
+			DirtyPathDetail dirtyPathDetail;
+			dirtyPathDetail.pathEntity = entity;
+			dirtyPathDetail.clearSharing = true;
+			dirtyPathDetail.clearPath = intersectsPath && (autoRefreshOnNode == 0);
+			dirtyPathDetail.autoRepathTrigger = autoRefreshOnNode;
+
+			dirtyPaths[pathType].emplace_back(dirtyPathDetail);
 		}
 	}
 

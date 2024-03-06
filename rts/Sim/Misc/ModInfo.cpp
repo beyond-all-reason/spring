@@ -109,7 +109,10 @@ void CModInfo::ResetState()
 		pfRepathDelayInFrames = 60;
 		pfRepathMaxRateInFrames = 150;
 		pfRawMoveSpeedThreshold = 0.f;
-		pfHcostMult = 0.2f;
+		qtMaxNodesSearched = 8192;
+		qtRefreshPathMinDist = 2000.f;
+		qtMaxNodesSearchedRelativeToMapOpenNodes = 0.25;
+		qtLowerQualityPaths = false;
 
 		enableSmoothMesh = true;
 		quadFieldQuadSizeInElmos = 128;
@@ -159,7 +162,10 @@ void CModInfo::Init(const std::string& modFileName)
 		pfRepathDelayInFrames = std::clamp(system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames), 0, 300);
 		pfRepathMaxRateInFrames = std::clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
 		pfRawMoveSpeedThreshold = std::max(system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold), 0.f);
-		pfHcostMult = std::clamp(system.GetFloat("pfHcostMult", pfHcostMult), 0.0f, 2.0f);
+		qtMaxNodesSearched = std::max(system.GetInt("qtMaxNodesSearched", qtMaxNodesSearched), 1024);
+		qtRefreshPathMinDist = std::max(system.GetFloat("qtRefreshPathMinDist", qtRefreshPathMinDist), 0.0f);
+		qtMaxNodesSearchedRelativeToMapOpenNodes = std::max(system.GetFloat("qtMaxNodesSearchedRelativeToMapOpenNodes", qtMaxNodesSearchedRelativeToMapOpenNodes), 0.0f);
+		qtLowerQualityPaths = system.GetBool("qtLowerQualityPaths", qtLowerQualityPaths);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 

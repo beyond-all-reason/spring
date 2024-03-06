@@ -972,7 +972,8 @@ void CBumpWater::Draw()
 }
 
 void CBumpWater::DrawRefraction(const CGame* game)
-{
+{	
+	ZoneScopedN("BumpWater::DrawRefraction");
 	// _RENDER_ REFRACTION TEXTURE
 	refractFBO.Bind();
 
@@ -1006,6 +1007,7 @@ void CBumpWater::DrawRefraction(const CGame* game)
 
 void CBumpWater::DrawReflection(const CGame* game)
 {
+	ZoneScopedN("BumpWater::DrawReflection");
 	reflectFBO.Bind();
 
 	const auto& sky = ISky::GetSky();

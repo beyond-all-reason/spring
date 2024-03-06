@@ -18,6 +18,7 @@
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/Systems/GeneralMoveSystem.h"
 #include "Sim/MoveTypes/Systems/GroundMoveSystem.h"
+#include "Sim/MoveTypes/Systems/UnitTrapCheckSystem.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Weapons/Weapon.h"
 #include "System/EventHandler.h"
@@ -27,8 +28,10 @@
 #include "System/TimeProfiler.h"
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Set.h"
+#include "System/Threading/ThreadPool.h"
 
 #include "Sim/Path/HAPFS/PathGlobal.h"
+
 
 CR_BIND(CUnitHandler, )
 CR_REG_METADATA(CUnitHandler, (
@@ -87,6 +90,7 @@ CUnit* CUnitHandler::NewUnit(const UnitDef* ud)
 void CUnitHandler::Init() {
 	GroundMoveSystem::Init();
 	GeneralMoveSystem::Init();
+	UnitTrapCheckSystem::Init();
 
 	static_assert(sizeof(CBuilder) >= sizeof(CUnit             ), "");
 	static_assert(sizeof(CBuilder) >= sizeof(CBuilding         ), "");
@@ -243,6 +247,7 @@ bool CUnitHandler::GarbageCollectUnit(unsigned int id)
 
 void CUnitHandler::QueueDeleteUnits()
 {
+	ZoneScoped;
 	// gather up dead units
 	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
 		QueueDeleteUnit(activeUnits[activeUpdateUnit]);
@@ -317,10 +322,12 @@ void CUnitHandler::UpdateUnitMoveTypes()
 
 	GroundMoveSystem::Update();
 	GeneralMoveSystem::Update();
+	UnitTrapCheckSystem::Update();
 }
 
 void CUnitHandler::UpdateUnitLosStates()
 {
+	ZoneScoped;
 	for (CUnit* unit: activeUnits) {
 		for (int at = 0; at < teamHandler.ActiveAllyTeams(); ++at) {
 			unit->UpdateLosStatus(at);
@@ -346,16 +353,31 @@ void CUnitHandler::SlowUpdateUnits()
 	const size_t idxEnd = idxBeg + indCnt;
 
 	activeSlowUpdateUnit = idxEnd;
-
 	// stagger the SlowUpdate's
-	for (size_t i = idxBeg; i<idxEnd; ++i) {
-		CUnit* unit = activeUnits[i];
 
-		unit->SanityCheck();
-		unit->SlowUpdate();
-		unit->SlowUpdateWeapons();
-		unit->localModel.UpdateBoundingVolume();
-		unit->SanityCheck();
+	static std::vector<CUnit*> updateBoundingVolumeList;
+	updateBoundingVolumeList.clear();
+	{
+		ZoneScopedN("Sim::Unit::SlowUpdateST");
+		for (size_t i = idxBeg; i < idxEnd; ++i) {
+			CUnit* unit = activeUnits[i];
+
+			unit->SanityCheck();
+			unit->SlowUpdate();
+			unit->SlowUpdateWeapons();
+			unit->SanityCheck();
+
+			if (!unit->isDead && unit->localModel.GetBoundariesNeedsRecalc())
+				updateBoundingVolumeList.emplace_back(unit);
+		}
+	}
+	// Since the bounding volumes are calculated from the maximum piecematrix-offset piece vertices
+	// They dont have much of an effect if updated late-ish.
+	{
+		ZoneScopedN("Sim::Unit::SlowUpdateMT");
+		for_mt(0, updateBoundingVolumeList.size(), [](int i) {
+			updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
+		});
 	}
 }
 
@@ -380,9 +402,18 @@ void CUnitHandler::UpdateUnits()
 
 void CUnitHandler::UpdateUnitWeapons()
 {
-	SCOPED_TIMER("Sim::Unit::Weapon");
-	for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
-		activeUnits[activeUpdateUnit]->UpdateWeapons();
+	{
+		SCOPED_TIMER("Sim::Unit::UpdateWeaponVectors");
+		for_mt(0, activeUnits.size(), [&](const int idx) {
+			auto unit = activeUnits[idx];
+			unit->UpdateWeaponVectors();
+		});
+	}
+	{
+		SCOPED_TIMER("Sim::Unit::Weapon");
+		for (activeUpdateUnit = 0; activeUpdateUnit < activeUnits.size(); ++activeUpdateUnit) {
+			activeUnits[activeUpdateUnit]->UpdateWeapons();
+		}
 	}
 }
 

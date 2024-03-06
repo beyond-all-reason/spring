@@ -39,7 +39,7 @@
 #include "System/SafeUtil.h"
 #include "System/StringHash.h"
 
-static DynMemPool<sizeof(CCustomExplosionGenerator)> egMemPool;
+static DynMemPoolT<CCustomExplosionGenerator, CStdExplosionGenerator, IExplosionGenerator> egMemPool;
 
 alignas(LuaParser) static std::byte exploParserMem[sizeof(LuaParser)];
 alignas(LuaParser) static std::byte aliasParserMem[sizeof(LuaParser)];

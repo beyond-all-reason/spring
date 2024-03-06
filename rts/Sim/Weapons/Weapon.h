@@ -96,6 +96,8 @@ public:
 	bool StopAttackingAllyTeam(const int ally);
 
 	bool IsFastAutoRetargetingEnabled() const { return fastAutoRetargeting; }
+	void UpdateWeaponErrorVector();
+	void UpdateWeaponVectors();
 
 protected:
 	virtual void FireImpl(const bool scriptCall) {}
@@ -107,7 +109,6 @@ protected:
 	static bool TargetInWater(const float3 tgtPos, const SWeaponTarget&);
 
 	void UpdateWeaponPieces(const bool updateAimFrom = true);
-	void UpdateWeaponVectors();
 	float3 GetLeadVec(const CUnit* unit) const;
 
 private:

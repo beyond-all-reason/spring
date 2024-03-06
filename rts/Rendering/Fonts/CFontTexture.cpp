@@ -379,10 +379,10 @@ template<typename USET>
 static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t>& characters, const FT_Face origFace, const int origSize, const USET& blackList)
 {
 #if defined(USE_FONTCONFIG)
-	if (!FtLibraryHandler::CanUseFontConfig())
+	if (characters.empty())
 		return nullptr;
 
-	if (characters.empty())
+	if (!FtLibraryHandler::CanUseFontConfig())
 		return nullptr;
 
 	// create list of wanted characters
@@ -625,6 +625,13 @@ CFontTexture::~CFontTexture()
 }
 
 
+void CFontTexture::InitFonts()
+{
+#ifndef HEADLESS
+	maxFontTries = configHandler ? configHandler->GetInt("MaxFontTries") : 5;
+#endif
+}
+
 void CFontTexture::KillFonts()
 {
 	// check unused fonts
@@ -713,6 +720,7 @@ void CFontTexture::LoadWantedGlyphs(char32_t begin, char32_t end)
 
 void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 {
+#ifndef HEADLESS
 	if (wanted.empty())
 		return;
 
@@ -723,16 +731,18 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 	map.clear();
 
 	for (auto c : wanted) {
-		if (failedToFind.find(c) != failedToFind.end())
+		if (auto it = failedAttemptsToReplace.find(c); (it != failedAttemptsToReplace.end() && it->second == maxFontTries))
 			continue;
 
 		auto it = std::lower_bound(nonPrintableRanges.begin(), nonPrintableRanges.end(), c);
-		if (std::distance(nonPrintableRanges.begin(), it) % 2 != 0) {
+		if (it != nonPrintableRanges.end() && !(c < *it)) {
 			LoadGlyph(shFace, c, 0);
-			failedToFind.emplace(c);
+			failedAttemptsToReplace.emplace(c, maxFontTries);
 		}
 		else {
 			map.emplace_back(c);
+			// instantiate on the first retry to save space
+			//failedAttemptsToReplace.emplace(c, 0);
 		}
 	}
 	spring::VectorSortUnique(map);
@@ -743,13 +753,21 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 	// load glyphs from different fonts (using fontconfig)
 	std::shared_ptr<FontFace> f = shFace;
 
-#ifndef HEADLESS
 	static spring::unordered_set<std::string> alreadyCheckedFonts;
 	alreadyCheckedFonts.clear();
 	do {
 		alreadyCheckedFonts.insert(GetFaceKey(*f));
 
 		for (std::size_t idx = 0; idx < map.size(); /*nop*/) {
+			if (auto it = failedAttemptsToReplace.find(map[idx]); (it != failedAttemptsToReplace.end() && it->second == maxFontTries)) {
+				// handle maxFontTries attempts case
+				LoadGlyph(shFace, map[idx], 0);
+				LOG_L(L_WARNING, "[CFontTexture::%s] Failed to load glyph %u after %d font replacement attempts", __func__, uint32_t(map[idx]), failedAttemptsToReplace[map[idx]]);
+				map[idx] = map.back();
+				map.pop_back();
+				continue;
+			}
+
 			FT_UInt index = FT_Get_Char_Index(*f, map[idx]);
 
 			if (index != 0) {
@@ -759,20 +777,18 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 				map.pop_back();
 			}
 			else {
+				++failedAttemptsToReplace[map[idx]];
 				++idx;
 			}
 		}
 		f = GetFontForCharacters(map, *f, fontSize, alreadyCheckedFonts);
 	} while (!map.empty() && f);
-#endif
 
-	// load fail glyph for all remaining ones (they will all share the same fail glyph)
+	// handle glyphs that didn't reach maxFontTries number of attempts, but nonetheless failed
 	for (auto c: map) {
 		LoadGlyph(shFace, c, 0);
-		LOG_L(L_WARNING, "[CFontTexture::%s] Failed to load glyph %u", __func__, uint32_t(c));
-		failedToFind.insert(c);
+		LOG_L(L_WARNING, "[CFontTexture::%s] Failed to load glyph %u after %d font replacement attempts", __func__, uint32_t(c), failedAttemptsToReplace[c]);
 	}
-
 
 	// read atlasAlloc glyph data back into atlasUpdate{Shadow}
 	{
@@ -823,6 +839,7 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 
 	// schedule a texture update
 	++curTextureUpdate;
+#endif
 }
 
 

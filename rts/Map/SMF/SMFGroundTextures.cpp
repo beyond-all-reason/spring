@@ -431,9 +431,16 @@ bool CSMFGroundTextures::SetSquareLuaTexture(int texSquareX, int texSquareY, int
 		// free up some memory while the Lua texture is around
 		glDeleteTextures(1, square->GetTextureIDPtr());
 		square->SetRawTexture(0);
+		square->SetLuaTexture(texID);
+	}
+	else {
+		square->SetLuaTexture(0);
+		if (smfTextureStreaming)
+			LoadSquareTexture(texSquareX, texSquareY, square->GetMipLevel());
+		else
+			LoadSquareTexturePersistent(texSquareX, texSquareY);
 	}
 
-	square->SetLuaTexture(texID);
 	return square->HasLuaTexture();
 }
 

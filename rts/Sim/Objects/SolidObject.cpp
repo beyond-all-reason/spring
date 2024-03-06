@@ -58,8 +58,6 @@ CR_REG_METADATA(CSolidObject,
 	CR_MEMBER(selectionVolume), // unsynced, could also be ignored
 	CR_MEMBER(hitModelPieces),
 
-	CR_IGNORED(groundDecal), // loaded from render*Created
-
 	CR_MEMBER(frontdir),
 	CR_MEMBER(rightdir),
 	CR_MEMBER(updir),
@@ -75,9 +73,6 @@ CR_REG_METADATA(CSolidObject,
 
 	CR_MEMBER(drawPos),
 	CR_MEMBER(drawMidPos),
-
-	CR_MEMBER(drawFlag),
-	CR_MEMBER(previousDrawFlag),
 
 	CR_MEMBER(buildFacing),
 	CR_MEMBER(modParams),
@@ -252,59 +247,35 @@ bool CSolidObject::FootPrintOnGround() const {
 YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 {
 	const YardMapStatus* blockMap = GetBlockMap();
-
 	if (blockMap == nullptr)
 		return YARDMAP_OPEN;
 
-	const int hxsize = footprint.x >> 1;
-	const int hzsize = footprint.y >> 1;
+	const int2 hFootprint{footprint.x >> 1, footprint.y >> 1};
+	const int2 hSize{ xsize >> 1, zsize >> 1};
 
-	float3 frontv;
-	float3 rightv;
+	const int2 gPos2
+			{ int(gpos.x / SQUARE_SIZE)
+			, int(gpos.z / SQUARE_SIZE)};
+	const int2 diff = gPos2 - (mapPos + hSize);
 
-	#if 1
-		// use continuous floating-point space
-		gpos   -= pos;
-		gpos.x += SQUARE_SIZE / 2; //??? needed to move to SQUARE-center? (possibly current input is wrong)
-		gpos.z += SQUARE_SIZE / 2;
+	constexpr int2 rotationDirs[] = { {0,1}, {1,0}, {0,-1}, {-1,0}, {0,1} };
+	const int2 front = rotationDirs[buildFacing];
+	const int2 right = rotationDirs[buildFacing+1];
 
-		frontv =  frontdir;
-		rightv = -rightdir; // world-space is RH, unit-space is LH
-	#else
-		// use old fixed space (4 facing dirs & ints for unit positions)
+	// corrections needed because the rotation is off centre.
+	constexpr int2 rotationCorrections[] = { {0,0}, {-1,0}, {-1,-1}, {0,-1} };
+	const int2 adjust = rotationCorrections[buildFacing];
 
-		// form the rotated axis vectors
-		static constexpr float3 fronts[] = {FwdVector,  RgtVector, -FwdVector, -RgtVector};
-		static constexpr float3 rights[] = {RgtVector, -FwdVector, -RgtVector,  FwdVector};
+	// Translate from map-space to yardmap-space
+	// negative result overflows to super high number
+	const uint32_t by = (front.x*diff.x) + (front.y*diff.y) + hFootprint.y + adjust.y;
+	const uint32_t bx = (right.x*diff.x) + (right.y*diff.y) + hFootprint.x + adjust.x;
 
-		// get used axis vectors
-		frontv = fronts[buildFacing];
-		rightv = rights[buildFacing];
-
-		gpos -= float3(mapPos.x * SQUARE_SIZE, 0.0f, mapPos.y * SQUARE_SIZE);
-
-		// need to revert some of the transformations of CSolidObject::GetMapPos()
-		gpos.x += SQUARE_SIZE / 2 - (this->xsize >> 1) * SQUARE_SIZE;
-		gpos.z += SQUARE_SIZE / 2 - (this->zsize >> 1) * SQUARE_SIZE;
-	#endif
-
-	// transform worldspace pos to unit rotation dependent `centered blockmap space` [-hxsize .. +hxsize] x [-hzsize .. +hzsize]
-	float by = frontv.dot(gpos) / SQUARE_SIZE;
-	float bx = rightv.dot(gpos) / SQUARE_SIZE;
-
-	// outside of `blockmap space`?
-	if ((math::fabsf(bx) >= hxsize) || (math::fabsf(by) >= hzsize))
+	if ((bx >= footprint.x) || (by >= footprint.y))
 		return YARDMAP_OPEN;
 
-	// transform: [(-hxsize + eps) .. (+hxsize - eps)] x [(-hzsize + eps) .. (+hzsize - eps)] -> [0 .. (xsize - 1)] x [0 .. (zsize - 1)]
-	bx += hxsize;
-	by += hzsize;
-
-	assert(int(bx) >= 0 && int(bx) < footprint.x);
-	assert(int(by) >= 0 && int(by) < footprint.y);
-
 	// read from blockmap
-	return blockMap[int(bx) + int(by) * footprint.x];
+	return blockMap[bx + by*footprint.x];
 }
 
 int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
@@ -319,7 +290,7 @@ int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 	return mp;
 }
 
-float3 CSolidObject::GetDragAccelerationVec(const float4& params) const
+float3 CSolidObject::GetDragAccelerationVec(float atmosphericDensity, float waterDensity, float dragCoeff, float frictionCoeff) const
 {
 	// KISS: use the cross-sectional area of a sphere, object shapes are complex
 	// this is a massive over-estimation so pretend the radius is in centimeters
@@ -329,9 +300,9 @@ float3 CSolidObject::GetDragAccelerationVec(const float4& params) const
 	//
 	const float3 speedSignVec = float3(Sign(speed.x), Sign(speed.y), Sign(speed.z));
 	const float3 dragScaleVec = float3(
-		IsInAir()    * dragScales.x * (0.5f * params.x * params.z * (math::PI * sqRadius * 0.01f * 0.01f)), // air
-		IsInWater()  * dragScales.y * (0.5f * params.y * params.z * (math::PI * sqRadius * 0.01f * 0.01f)), // water
-		IsOnGround() * dragScales.z * (                  params.w * (                               mass))  // ground
+		(IsInAir() || IsOnGround()) * dragScales.x * (0.5f * atmosphericDensity * dragCoeff * (math::PI * sqRadius * 0.01f * 0.01f)), // air
+		IsInWater()                 * dragScales.y * (0.5f * waterDensity * dragCoeff * (math::PI * sqRadius * 0.01f * 0.01f)), // water
+		IsOnGround()                * dragScales.z * (frictionCoeff * mass)  // ground
 	);
 
 	float3 dragAccelVec;

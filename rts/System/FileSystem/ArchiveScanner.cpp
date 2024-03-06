@@ -38,6 +38,7 @@
 #define LOG_SECTION_ARCHIVESCANNER "ArchiveScanner"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
 
+#define ACRHIVE_CHECKSUM_DUMP 1
 
 /*
  * The archive scanner is used to find stuff in archives
@@ -442,7 +443,7 @@ void CArchiveScanner::ScanAllDirs()
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 
 	const std::vector<std::string>& dataDirPaths = dataDirLocater.GetDataDirPaths();
-	const std::array<std::string, 5>& dataDirRoots = dataDirLocater.GetDataDirRoots();
+	const std::vector<std::string>& dataDirRoots = dataDirLocater.GetDataDirRoots();
 
 	std::vector<std::string> scanDirs;
 	scanDirs.reserve(dataDirPaths.size() * dataDirRoots.size());
@@ -1431,7 +1432,18 @@ std::string CArchiveScanner::MapNameToMapFile(const std::string& versionedMapNam
 	return versionedMapName;
 }
 
+void DumpArchiveChecksum(const std::string& lcName, const sha512::raw_digest& cs) {
+#if ACRHIVE_CHECKSUM_DUMP == 1
+	{
+		sha512::hex_digest hexHash;
+		hexHash.fill(0);
 
+		sha512::dump_digest(cs, hexHash);
+
+		LOG_L(L_INFO, "[CAS::GASCB] Archive file=\"%s\" cs=\"%s\"", lcName.c_str(), &hexHash[0]);
+	}
+#endif
+}
 
 sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::string& filePath)
 {
@@ -1442,16 +1454,19 @@ sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::str
 	// cache will be rewritten on reload/shutdown)
 	ScanArchive(filePath, true);
 
-	const std::string& lcName = StringToLower(FileSystem::GetFilename(filePath));
+	const std::string lcName = StringToLower(FileSystem::GetFilename(filePath));
 	const auto aiIter = archiveInfosIndex.find(lcName);
 
 	sha512::raw_digest checksum;
 	std::fill(checksum.begin(), checksum.end(), 0);
 
-	if (aiIter == archiveInfosIndex.end())
+	if (aiIter == archiveInfosIndex.end()) {
+		DumpArchiveChecksum(lcName, checksum); //cs is 0
 		return checksum;
+	}
 
 	std::memcpy(checksum.data(), archiveInfos[aiIter->second].checksum, sha512::SHA_LEN);
+	DumpArchiveChecksum(lcName, checksum);
 	return checksum;
 }
 
@@ -1464,7 +1479,7 @@ sha512::raw_digest CArchiveScanner::GetArchiveCompleteChecksumBytes(const std::s
 		const std::string& archiveName = ArchiveFromName(depName);
 		const std::string  archivePath = GetArchivePath(archiveName) + archiveName;
 
-		const sha512::raw_digest& archiveChecksum = GetArchiveSingleChecksumBytes(archivePath);
+		const sha512::raw_digest archiveChecksum = GetArchiveSingleChecksumBytes(archivePath);
 
 		for (uint8_t i = 0; i < sha512::SHA_LEN; i++) {
 			checksum[i] ^= archiveChecksum[i];

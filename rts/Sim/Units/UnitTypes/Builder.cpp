@@ -101,7 +101,7 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	range3D = unitDef->buildRange3D;
 	buildDistance = (params.unitDef)->buildDistance;
 
-	const float scale = (1.0f / TEAM_SLOWUPDATE_RATE);
+	constexpr float scale = (1.0f / GAME_SPEED);
 
 	buildSpeed     = scale * unitDef->buildSpeed;
 	repairSpeed    = scale * unitDef->repairSpeed;
@@ -366,7 +366,7 @@ bool CBuilder::UpdateReclaim(const Command& fCommand)
 	// and reset curReclaim to null (which would crash CreateNanoParticle)
 	CSolidObject* curReclaimee = curReclaim;
 
-	if (curReclaimee == nullptr || f3SqDist(curReclaimee->pos, pos) >= Square(buildDistance + curReclaimee->radius) || !inBuildStance)
+	if (curReclaimee == nullptr || f3SqDist(curReclaimee->pos, pos) >= Square(buildDistance + curReclaimee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
@@ -388,7 +388,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 	CBuilderCAI* cai = static_cast<CBuilderCAI*>(commandAI);
 	CFeature* curResurrectee = curResurrect;
 
-	if (curResurrectee == nullptr || f3SqDist(curResurrectee->pos, pos) >= Square(buildDistance + curResurrectee->radius) || !inBuildStance)
+	if (curResurrectee == nullptr || f3SqDist(curResurrectee->pos, pos) >= Square(buildDistance + curResurrectee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
@@ -414,7 +414,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 	const float step = resurrectSpeed / resurrecteeDef->buildTime;
 
 	const bool resurrectAllowed = eventHandler.AllowFeatureBuildStep(this, curResurrectee, step);
-	const bool canExecResurrect = (resurrectAllowed && UseEnergy(resurrecteeDef->energy * step * modInfo.resurrectEnergyCostFactor));
+	const bool canExecResurrect = (resurrectAllowed && UseEnergy(resurrecteeDef->cost.energy * step * modInfo.resurrectEnergyCostFactor));
 
 	if (canExecResurrect) {
 		curResurrectee->resurrectProgress += step;
@@ -476,7 +476,7 @@ bool CBuilder::UpdateCapture(const Command& fCommand)
 {
 	CUnit* curCapturee = curCapture;
 
-	if (curCapturee == nullptr || f3SqDist(curCapturee->pos, pos) >= Square(buildDistance + curCapturee->radius) || !inBuildStance)
+	if (curCapturee == nullptr || f3SqDist(curCapturee->pos, pos) >= Square(buildDistance + curCapturee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {

@@ -33,11 +33,15 @@ struct AtlasedTexture
 	AtlasedTexture(const AtlasedTexture& f) { *this = f; }
 	AtlasedTexture& operator= (const AtlasedTexture& f) = default;
 */
-	bool operator==(const AtlasedTexture& rhs) {
+	bool operator==(const AtlasedTexture& rhs) const {
+		if (this == &rhs)
+			return true;
+
 		float4 f0(x    , y    , z    , w    );
 		float4 f1(rhs.x, rhs.y, rhs.z, rhs.w);
 		return f0 == f1;
 	}
+	bool operator!=(const AtlasedTexture& rhs) const { return !(*this == rhs); }
 
 	union {
 		struct { float x, y, z, w; };
@@ -46,7 +50,7 @@ struct AtlasedTexture
 		struct { float xstart, ystart, xend, yend; };
 	};
 
-	static const AtlasedTexture DefaultAtlasTexture;
+	static const AtlasedTexture& DefaultAtlasTexture;
 };
 
 
@@ -58,7 +62,7 @@ public:
 	enum TextureType {
 		RGBA32
 	};
-	enum {
+	enum AllocatorType {
 		ATLAS_ALLOC_LEGACY   = 0,
 		ATLAS_ALLOC_QUADTREE = 1,
 		ATLAS_ALLOC_ROW      = 2,
@@ -102,7 +106,7 @@ public:
 	CTextureAtlas& operator= (const CTextureAtlas&) = delete;
 
 	// add a texture from a memory pointer
-	size_t AddTexFromMem(std::string name, int xsize, int ysize, TextureType texType, void* data);
+	size_t AddTexFromMem(std::string name, int xsize, int ysize, TextureType texType, const void* data);
 	// add a texture from a file
 	size_t AddTexFromFile(std::string name, const std::string& file);
 	// add a blank texture
@@ -156,8 +160,11 @@ public:
 	int2 GetSize() const;
 	std::string GetName() const { return name; }
 
-	unsigned int GetTexID() const { return atlasTexID; }
+	uint32_t GetTexID() const { return atlasTexID; }
 	const uint32_t GetTexTarget() const;
+
+	int GetNumTexLevels() const;
+	void SetMaxTexLevel(int maxLevels);
 
 	void BindTexture();
 	void SetFreeTexture(bool b) { freeTexture = b; }
@@ -208,7 +215,7 @@ protected:
 		TextureType texType;
 
 		std::vector<std::string> names;
-		std::vector<char> mem;
+		std::vector<uint8_t> mem;
 	};
 
 	std::string name;
@@ -227,8 +234,6 @@ protected:
 
 	// set to true to write finalized texture atlas to disk
 	static inline bool debug = false;
-public:
-	static inline AtlasedTexture dummy = AtlasedTexture{};
 };
 
 #endif // TEXTURE_ATLAS_H

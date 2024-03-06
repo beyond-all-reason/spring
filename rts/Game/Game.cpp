@@ -549,10 +549,28 @@ void CGame::LoadDefs(LuaParser* defsParser)
 
 		defsParser->SetupLua(true, true);
 		// customize the defs environment; LuaParser has no access to LuaSyncedRead
+		#define LSR_ADDFUNC(f) defsParser->AddFunc(#f, LuaSyncedRead::f)
 		defsParser->GetTable("Spring");
-		defsParser->AddFunc("GetModOptions", LuaSyncedRead::GetModOptions);
-		defsParser->AddFunc("GetMapOptions", LuaSyncedRead::GetMapOptions);
+
+		LSR_ADDFUNC(GetModOptions);
+		LSR_ADDFUNC(GetModOption);
+		LSR_ADDFUNC(GetMapOptions);
+		LSR_ADDFUNC(GetMapOption);
+		LSR_ADDFUNC(GetTeamLuaAI);
+		LSR_ADDFUNC(GetTeamList);
+		LSR_ADDFUNC(GetGaiaTeamID);
+		LSR_ADDFUNC(GetPlayerList);
+		LSR_ADDFUNC(GetAllyTeamList);
+		LSR_ADDFUNC(GetTeamInfo);
+		LSR_ADDFUNC(GetAllyTeamInfo);
+		LSR_ADDFUNC(GetAIInfo);
+		LSR_ADDFUNC(GetTeamAllyTeamID);
+		LSR_ADDFUNC(AreTeamsAllied);
+		LSR_ADDFUNC(ArePlayersAllied);
+		LSR_ADDFUNC(GetSideData);
+
 		defsParser->EndTable();
+		#undef LSR_ADDFUNC
 
 		// run the parser
 		if (!defsParser->Execute())
@@ -1493,8 +1511,13 @@ bool CGame::Draw() {
 
 		// note: neither this call nor DrawWorld can be made conditional on minimap->GetMaximized()
 		// minimap never covers entire screen when maximized unless map aspect-ratio matches screen
-		// (unlikely); the minimap update also depends on GenerateIBLTextures for unbinding its FBO
+		// (unlikely);
 		worldDrawer.GenerateIBLTextures();
+
+		// restore back to the default FBO / Viewport
+		if (FBO::IsSupported())
+			FBO::Unbind();
+		camera->LoadViewport();
 
 		worldDrawer.Draw();
 		worldDrawer.ResetMVPMatrices();
@@ -1742,8 +1765,16 @@ void CGame::SimFrame() {
 		projectileHandler.Update();
 		featureHandler.Update();
 		{
+			/* The default GAME_SPEED is 30, which doesn't divide 1000 well,
+			 * so scripts will perceive 990ms per second. But this is fine,
+			 * since doing "29th February" style of extra counting would be
+			 * disruptive to sleeps that assume a constant tick length while
+			 * not being otherwise perceptible since most animations don't
+			 * run that long. */
+			static constexpr int tickMs = 1000 / GAME_SPEED;
+
 			SCOPED_TIMER("Sim::Script");
-			unitScriptEngine->Tick(33);
+			unitScriptEngine->Tick(tickMs);
 		}
 		envResHandler.Update();
 		losHandler->Update();
@@ -1755,6 +1786,7 @@ void CGame::SimFrame() {
 
 		teamHandler.GameFrame(gs->frameNum);
 		playerHandler.GameFrame(gs->frameNum);
+		eventHandler.GameFramePost(gs->frameNum);
 	}
 
 	lastSimFrameTime = spring_gettime();

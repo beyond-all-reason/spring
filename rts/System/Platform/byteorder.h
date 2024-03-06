@@ -59,7 +59,7 @@
 		// do not swab
 	#endif
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 
 	#include <sys/endian.h>
 

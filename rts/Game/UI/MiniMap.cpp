@@ -1039,7 +1039,7 @@ void CMiniMap::Update()
 void CMiniMap::ResizeTextureCache()
 {
 	minimapTexSize = curDim;
-	multisampledFBO = (fbo.GetMaxSamples() > 1);
+	multisampledFBO = (FBO::GetMaxSamples() > 1);
 
 	if (multisampledFBO) {
 		// multisampled FBO we are render to
@@ -1125,6 +1125,7 @@ void CMiniMap::UpdateTextureCache()
 
 void CMiniMap::Draw()
 {
+	ZoneScopedN("MiniMap::Draw");
 	if (slaveDrawMode)
 		return;
 
@@ -1229,6 +1230,7 @@ void CMiniMap::DrawMinimizedButtonLoop() const
 
 void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall)
 {
+	ZoneScopedN("MiniMap::DrawForReal");
 	if (minimized)
 		return;
 
@@ -1799,6 +1801,7 @@ void CMiniMap::DrawBackground() const
 
 void CMiniMap::DrawUnitIcons() const
 {
+	ZoneScopedN("MiniMap::DrawUnitIcons");
 #if USE_CLIP_PLANES
 	for (int i = 0; i < 4; ++i)
 		glDisable(GL_CLIP_PLANE0 + i);

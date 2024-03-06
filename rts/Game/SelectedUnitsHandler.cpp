@@ -257,7 +257,7 @@ void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 	}
 }
 
-static bool CanISelectTeam(const CPlayer* myPlayer, int teamID)
+bool CSelectedUnitsHandler::CanISelectTeam(const CPlayer* myPlayer, int teamID)
 {
 	/* Not redundant with the check below, because
 	 * spectators cannot control the team they view. */

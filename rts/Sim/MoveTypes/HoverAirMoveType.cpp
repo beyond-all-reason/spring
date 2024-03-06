@@ -687,8 +687,11 @@ void CHoverAirMoveType::UpdateBanking(bool noBanking)
 	rightDir2D = frontDir.cross(UpVector);
 
 
-	if (!owner->upright)
-		wantedPitch = (circlingPos.y - owner->pos.y) / circlingPos.distance(owner->pos);
+	if (!owner->upright) {
+		// std::max() is here to guard around the case when circlingPos == owner->pos,
+		// which caused NaNs all over the place
+		wantedPitch = (circlingPos.y - owner->pos.y) / std::max(0.01f, circlingPos.distance(owner->pos));
+	}
 
 	wantedPitch *= (aircraftState == AIRCRAFT_FLYING && flyState == FLY_ATTACKING && circlingPos.y != owner->pos.y);
 	currentPitch = mix(currentPitch, wantedPitch, 0.05f);

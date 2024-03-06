@@ -18,6 +18,7 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/MoveTypes/Utils/UnitTrapCheckUtils.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
 #include "Sim/Units/UnitDef.h"
@@ -161,8 +162,8 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	maxHealth = def->health;
 	reclaimTime = def->reclaimTime;
 
-	defResources = {def->metal, def->energy};
-	resources = {def->metal, def->energy};
+	defResources = def->cost;
+	resources = def->cost;
 
 	crushResistance = def->crushResistance;
 
@@ -213,6 +214,9 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 		} break;
 	}
 
+	// TODO: support custom buildee radii.
+	buildeeRadius = radius;
+
 	UpdateMidAndAimPos();
 	UpdateTransformAndPhysState();
 
@@ -232,6 +236,8 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	ChangeTeam(team);
 	UpdateCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS, def->collidable);
 	Block();
+
+	MoveTypes::RegisterFeatureForUnitTrapCheck(this);
 
 	eventHandler.RenderFeaturePreCreated(this);
 	// allow Spring.SetFeatureBlocking to be called from gadget:FeatureCreated
@@ -264,25 +270,20 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 		if (reclaimLeft <= 0.0f)
 			return false;
 
-		const CTeam* builderTeam = teamHandler.Team(builder->team);
+		const auto builderTeam = teamHandler.Team(builder->team);
 
 		// Work out how much to try to put back, based on the speed this unit would reclaim at.
 		const float step = amount / reclaimTime;
 
 		// Work out how much that will cost
-		const float metalUse  = step * defResources.metal;
-		const float energyUse = step * defResources.energy;
-		const bool canExecRepair = (builderTeam->res.metal >= metalUse && builderTeam->res.energy >= energyUse);
+		const auto resourceUse = defResources * step;
+		const bool canExecRepair = builderTeam->HaveResources(resourceUse);
 		const bool repairAllowed = !canExecRepair ? false : eventHandler.AllowFeatureBuildStep(builder, this, step);
 
 		if (repairAllowed) {
-			builder->UseMetal(metalUse);
-			builder->UseEnergy(energyUse);
-
-			resources.metal  += metalUse;
-			resources.energy += energyUse;
-			resources.metal  = std::min(resources.metal, defResources.metal);
-			resources.energy = std::min(resources.energy, defResources.energy);
+			builder->UseResources(resourceUse);
+			resources += resourceUse;
+			resources.cap_at(defResources);
 
 			reclaimLeft = std::clamp(reclaimLeft + step, 0.0f, 1.0f);
 
@@ -298,9 +299,7 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 			return true;
 		}
 
-		// update the energy and metal required counts
-		teamHandler.Team(builder->team)->resPull.energy += energyUse;
-		teamHandler.Team(builder->team)->resPull.metal  += metalUse;
+		builderTeam->resPull += resourceUse;
 		return false;
 	}
 
@@ -325,9 +324,8 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 	// stop the last bit giving too much resource
 	const float reclaimLeftTemp = std::max(0.0f, reclaimLeft - step);
 	const float fractionReclaimed = oldReclaimLeft - reclaimLeftTemp;
-	const float metalFraction  = std::min(defResources.metal  * fractionReclaimed, resources.metal);
-	const float energyFraction = std::min(defResources.energy * fractionReclaimed, resources.energy);
-	const float energyUseScaled = metalFraction * modInfo.reclaimFeatureEnergyCostFactor;
+	const auto resourceFraction = (defResources * fractionReclaimed).cap_at(resources);
+	const float energyUseScaled = resourceFraction.metal * modInfo.reclaimFeatureEnergyCostFactor;
 
 	SResourceOrder order;
 	order.quantum    = false;
@@ -337,13 +335,11 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 
 	if (reclaimLeftTemp == 0.0f) {
 		// always give remaining resources at the end
-		order.add.metal  = resources.metal;
-		order.add.energy = resources.energy;
+		order.add = resources;
 	}
 	else if (modInfo.reclaimMethod == 0) {
 		// Gradual reclaim
-		order.add.metal  = metalFraction;
-		order.add.energy = energyFraction;
+		order.add = resourceFraction;
 	}
 	else if (modInfo.reclaimMethod == 1) {
 		// All-at-end method
@@ -358,8 +354,8 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 		const int numChunks = oldChunk - newChunk;
 
 		if (numChunks != 0) {
-			order.add.metal  = std::min(numChunks * defResources.metal  * chunkSize, resources.metal);
-			order.add.energy = std::min(numChunks * defResources.energy * chunkSize, resources.energy);
+			order.add = defResources * (numChunks * chunkSize);
+			order.add.cap_at(resources);
 		}
 	}
 
@@ -423,8 +419,7 @@ void CFeature::DoDamage(
 			// if a partially reclaimed corpse got blasted,
 			// ensure its wreck is not worth the full amount
 			// (which might be more than the amount remaining)
-			deathFeature->resources.metal  *= (defResources.metal  != 0.0f) ? resources.metal  / defResources.metal  : 1.0f;
-			deathFeature->resources.energy *= (defResources.energy != 0.0f) ? resources.energy / defResources.energy : 1.0f;
+			deathFeature->resources *= resources / defResources;
 		}
 
 		featureHandler.DeleteFeature(this);
@@ -556,7 +551,7 @@ bool CFeature::UpdatePosition()
 		if (speed.SqLength() != 0.0f)
 			UpdateQuadFieldPosition(speed);
 	} else {
-		const float3 dragAccel = GetDragAccelerationVec(float4(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, 0.1f));
+		const float3 dragAccel = GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, 0.1f);
 		const float3 gravAccel = UpVector * mapInfo->map.gravity;
 
 		// horizontal movement

@@ -19,6 +19,7 @@ struct SResourcePack {
 
 public:
 	SResourcePack() : res1(0.0f), res2(0.0f) {}
+	SResourcePack(const float value) : metal(value), energy(value) {}
 	SResourcePack(const float m, const float e) : metal(m), energy(e) {}
 	CR_DECLARE_STRUCT(SResourcePack)
 
@@ -27,6 +28,13 @@ public:
 			if (res[i] != 0.0f) return false;
 		}
 		return true;
+	}
+
+	SResourcePack& cap_at (const SResourcePack &cap) {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] = std::min(res[i], cap.res[i]);
+
+		return *this;
 	}
 
 	decltype(std::begin(res)) begin() { return std::begin(res); }
@@ -72,6 +80,22 @@ public:
 		}
 		return *this;
 	}
+	SResourcePack& operator*=(const SResourcePack& other) {
+		for (int i = 0; i < MAX_RESOURCES; ++i)
+			res[i] *= other.res[i];
+
+		return *this;
+	}
+	SResourcePack& operator/=(const SResourcePack& other) {
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			if (!other[i])
+				res[i] = 1.0f;
+			else
+				res[i] /= other[i];
+		}
+
+		return *this;
+	}
 
 	SResourcePack& operator*=(float scale) {
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
@@ -81,6 +105,9 @@ public:
 	}
 };
 
+inline SResourcePack operator * (SResourcePack pack, float scale) { return pack *= scale; }
+inline SResourcePack operator * (SResourcePack lhs, const SResourcePack& rhs) { return lhs *= rhs; }
+inline SResourcePack operator / (SResourcePack lhs, const SResourcePack& rhs) { return lhs /= rhs; }
 
 struct SResourceOrder {
 	SResourcePack use;

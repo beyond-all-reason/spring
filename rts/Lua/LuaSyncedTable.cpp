@@ -38,7 +38,7 @@ static int SyncTableIndex(lua_State* dstL)
 	const int valueCopied = LuaUtils::CopyData(dstL, srcL, 1);
 	if (lua_istable(dstL, -1)) {
 		// disallow writing in SYNCED[...]
-		lua_newtable(dstL); { // the metatable
+		lua_createtable(dstL, 0, 2); {
 			LuaPushNamedCFunc(dstL, "__newindex",  SyncTableNewIndex);
 			LuaPushNamedCFunc(dstL, "__metatable", SyncTableMetatable);
 		}
@@ -75,7 +75,7 @@ bool LuaSyncedTable::PushEntries(lua_State* L)
 	HSTR_PUSH(L, "SYNCED");
 	lua_newtable(L); { // the proxy table
 
-		lua_newtable(L); { // the metatable
+		lua_createtable(L, 0, 3); { // the metatable
 			LuaPushNamedCFunc(L, "__index",     SyncTableIndex);
 			LuaPushNamedCFunc(L, "__newindex",  SyncTableNewIndex);
 			LuaPushNamedCFunc(L, "__metatable", SyncTableMetatable);

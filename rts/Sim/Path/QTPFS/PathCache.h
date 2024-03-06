@@ -21,6 +21,14 @@ struct SRectangle;
 
 namespace QTPFS {
 	struct PathCache {
+
+		struct DirtyPathDetail {
+			entt::entity pathEntity;
+			int autoRepathTrigger;
+			bool clearSharing;
+			bool clearPath;
+		};
+
 		bool MarkDeadPaths(const SRectangle& r, int pathType);
 
 		void Init(int pathTypes) {
@@ -32,7 +40,7 @@ namespace QTPFS {
 			dirtyPaths[pathType].reserve(paths);
 		}
 
-		std::vector< std::vector<entt::entity> > dirtyPaths;
+		std::vector< std::vector<DirtyPathDetail> > dirtyPaths;
 	};
 }
 

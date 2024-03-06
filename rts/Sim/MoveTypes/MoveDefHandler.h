@@ -4,6 +4,7 @@
 #define MOVEDEF_HANDLER_H
 
 #include <array>
+#include <limits>
 #include <string>
 
 #include "System/float3.h"
@@ -16,6 +17,18 @@ class CSolidObject;
 class CUnit;
 class LuaTable;
 
+namespace MoveTypes {
+	class CheckCollisionQuery;
+}
+
+namespace MoveDefs {
+	struct CollisionQueryStateTrack {
+		float lastPosY = std::numeric_limits<float>::infinity();
+		int lastInWater = -2;
+		int lastWaterCollisions = -2;
+		bool refreshCollisionCache = false;
+	};
+}
 
 struct MoveDef {
 	CR_DECLARE_STRUCT(MoveDef)
@@ -40,6 +53,7 @@ struct MoveDef {
 		int* maxBlockBitPtr,
 		int thread = 0
 	);
+	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
 	bool TestMoveSquareRange(
 		const CSolidObject* collider,
 		const float3 rangeMins,
@@ -66,7 +80,7 @@ struct MoveDef {
 		return (TestMoveSquareRange(collider, testMovePos, testMovePos, testMoveDir, testTerrain, testObjects, centerOnly, minSpeedModPtr, maxBlockBitPtr, thread));
 	}
 	bool TestMovePositionForObjects(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery* collider,
 		const float3 testMovePos,
 		int magicNum,
 		int thread
@@ -133,9 +147,11 @@ struct MoveDef {
 	/// controls movement and (un-)loading constraints
 	float depth = 0.0f;
 	float depthModParams[DEPTHMOD_NUM_PARAMS];
+	float height = 0.0f;
 	float maxSlope = 1.0f;
 	float slopeMod = 0.0f;
 	float crushStrength = 0.0f;
+	float waterline = 0.0f;
 
 	// PF speedmod-multipliers for squares blocked by mobile units
 	// (which can respectively be "idle" == non-moving and have no
@@ -195,12 +211,18 @@ public:
 	unsigned int GetNumMoveDefs() const { return mdCounter; }
 	unsigned int GetCheckSum() const { return mdChecksum; }
 
+	int GetLargestFootPrintXSize() { return largestSize; };
+	int GetLargestFootPrintSizeH() { return largestSizeH; };
+
 private:
 	std::array<MoveDef, MAX_MOVE_DEFS> moveDefs;
 	spring::unordered_map<unsigned int, int> nameMap;
 
 	unsigned int mdCounter = 0;
 	unsigned int mdChecksum = 0;
+
+	int largestSize = 0;
+	int largestSizeH = 0;
 };
 
 extern MoveDefHandler moveDefHandler;

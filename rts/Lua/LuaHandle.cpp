@@ -769,6 +769,28 @@ void CLuaHandle::GameFrame(int frameNum)
 	RunCallInTraceback(L, cmdStr, 1, 0, traceBack.GetErrFuncIdx(), false);
 }
 
+/*** Called at the end of every game simulation frame
+ *
+ * @function GameFramePost
+ * @number frame Starts at frame 1
+ */
+void CLuaHandle::GameFramePost(int frameNum)
+{
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 4, __func__);
+
+	const LuaUtils::ScopedDebugTraceBack traceBack(L);
+
+	static const LuaHashString cmdStr(__func__);
+
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, frameNum);
+
+	// call the routine
+	RunCallInTraceback(L, cmdStr, 1, 0, traceBack.GetErrFuncIdx(), false);
+}
 
 /*** Called once to deliver the gameID
  *
@@ -1098,8 +1120,8 @@ void CLuaHandle::UnitTaken(const CUnit* unit, int oldTeam, int newTeam)
  * @function UnitGiven
  * @number unitID
  * @number unitDefID
- * @number oldTeam
  * @number newTeam
+ * @number oldTeam 
  */
 void CLuaHandle::UnitGiven(const CUnit* unit, int oldTeam, int newTeam)
 {
@@ -1143,7 +1165,7 @@ void CLuaHandle::UnitIdle(const CUnit* unit)
  * @number unitTeam
  * @number cmdID
  * @tparam table cmdParams
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @number cmdTag
  */
 void CLuaHandle::UnitCommand(const CUnit* unit, const Command& command, int playerNum, bool fromSynced, bool fromLua)
@@ -1176,7 +1198,7 @@ void CLuaHandle::UnitCommand(const CUnit* unit, const Command& command, int play
  * @number unitTeam
  * @number cmdID
  * @tparam table cmdParams
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @number cmdTag
  */
 void CLuaHandle::UnitCmdDone(const CUnit* unit, const Command& command)
@@ -2275,7 +2297,7 @@ void CLuaHandle::ViewResize()
 
 	const int winPosY_bl = globalRendering->screenSizeY - globalRendering->winSizeY - globalRendering->winPosY; //! origin BOTTOMLEFT
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 16);
 	LuaPushNamedNumber(L, "screenSizeX", globalRendering->screenSizeX);
 	LuaPushNamedNumber(L, "screenSizeY", globalRendering->screenSizeY);
 	LuaPushNamedNumber(L, "screenPosX", globalRendering->screenPosX);
@@ -3138,7 +3160,7 @@ string CLuaHandle::GetTooltip(int x, int y)
  * @function CommandNotify
  * @int cmdID
  * @tparam table cmdParams
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
  * @treturn boolean Returning true deletes the command and does not send it through the network.
  */
 bool CLuaHandle::CommandNotify(const Command& cmd)
@@ -3355,7 +3377,7 @@ bool CLuaHandle::GameSetup(const string& state, bool& ready,
 	lua_pushsstring(L, state);
 	lua_pushboolean(L, ready);
 
-	lua_newtable(L);
+	lua_createtable(L, playerStates.size(), 0);
 
 	for (const auto& playerState: playerStates) {
 		lua_pushsstring(L, playerState.second);
@@ -3624,7 +3646,7 @@ void CLuaHandle::CollectGarbage(bool forced)
 bool CLuaHandle::AddBasicCalls(lua_State* L)
 {
 	HSTR_PUSH(L, "Script");
-	lua_newtable(L); {
+	lua_createtable(L, 0, 17); {
 		HSTR_PUSH_CFUNC(L, "Kill",            KillActiveHandle);
 		HSTR_PUSH_CFUNC(L, "UpdateCallIn",    CallOutUpdateCallIn);
 		HSTR_PUSH_CFUNC(L, "GetName",         CallOutGetName);
@@ -3768,7 +3790,7 @@ int CLuaHandle::CallOutGetCallInList(lua_State* L)
 	lua_createtable(L, 0, eventList.size());
 	for (const auto& event : eventList) {
 		lua_pushsstring(L, event);
-		lua_newtable(L); {
+		lua_createtable(L, 0, 2); {
 			lua_pushliteral(L, "unsynced");
 			lua_pushboolean(L, eventHandler.IsUnsynced(event));
 			lua_rawset(L, -3);

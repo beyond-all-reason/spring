@@ -18,12 +18,9 @@ using namespace MoveTypes;
 void GroundMoveSystem::Init() {}
 
 void GroundMoveSystem::Update() {
-    auto view = Sim::registry.view<GroundMoveType>();
-
-    size_t count = view.storage<GroundMoveType>().size();
-    assert( count == view.size() );
 	{
 		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
+        auto view = Sim::registry.view<GroundMoveType>();
         for_mt(0, view.size(), [&view](const int i){
             auto entity = view.storage<GroundMoveType>()[i];
             auto unitId = view.get<GroundMoveType>(entity);
@@ -41,6 +38,7 @@ void GroundMoveSystem::Update() {
 	}
 	{
 		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
+        auto view = Sim::registry.view<GroundMoveType>();
 		view.each([](GroundMoveType& unitId){
 			CUnit* unit = unitHandler.GetUnit(unitId.value);
 			AMoveType* moveType = unit->moveType;
@@ -50,7 +48,9 @@ void GroundMoveSystem::Update() {
 	}
     {
         SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetectionMT");
-        for_mt(0, count, [&view](const int i){
+        auto view = Sim::registry.view<GroundMoveType>();
+        //size_t count = view.storage<GroundMoveType>().size();
+        for_mt(0, view.size(), [&view](const int i){
             auto entity = view.storage<GroundMoveType>()[i];
             assert( Sim::registry.valid(entity) );
             assert( Sim::registry.all_of<GroundMoveType>(entity) );
@@ -66,6 +66,7 @@ void GroundMoveSystem::Update() {
     }
 	{
         SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
+        auto view = Sim::registry.view<GroundMoveType>();
         view.each([](GroundMoveType& unitId){
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             AMoveType* moveType = unit->moveType;
@@ -74,6 +75,7 @@ void GroundMoveSystem::Update() {
 	}
 	{
         SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
+        auto view = Sim::registry.view<GroundMoveType>();
         view.each([](GroundMoveType& unitId){
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             AMoveType* moveType = unit->moveType;

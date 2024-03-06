@@ -71,10 +71,10 @@ static std::string GetUnitDefBuildOptionToolTip(const UnitDef* ud, bool disabled
 	}
 
 	tooltip += (ud->humanName + " - " + ud->tooltip);
-	tooltip += ("\nHealth "      + FloatToString(ud->health,    "%.0f"));
-	tooltip += ("\nMetal cost "  + FloatToString(ud->metal,     "%.0f"));
-	tooltip += ("\nEnergy cost " + FloatToString(ud->energy,    "%.0f"));
-	tooltip += ("\nBuild time "  + FloatToString(ud->buildTime, "%.0f"));
+	tooltip += ("\nHealth "      + FloatToString(ud->health,      "%.0f"));
+	tooltip += ("\nMetal cost "  + FloatToString(ud->cost.metal,  "%.0f"));
+	tooltip += ("\nEnergy cost " + FloatToString(ud->cost.energy, "%.0f"));
+	tooltip += ("\nBuild time "  + FloatToString(ud->buildTime,   "%.0f"));
 
 	return tooltip;
 }
@@ -257,7 +257,7 @@ float CBuilderCAI::GetBuildRange(const float targetRadius) const
 
 bool CBuilderCAI::IsInBuildRange(const CWorldObject* obj) const
 {
-	return IsInBuildRange(obj->pos, obj->radius);
+	return IsInBuildRange(obj->pos, obj->buildeeRadius);
 }
 
 bool CBuilderCAI::IsInBuildRange(const float3& objPos, const float objRadius) const
@@ -272,7 +272,7 @@ bool CBuilderCAI::IsInBuildRange(const float3& objPos, const float objRadius) co
 
 inline bool CBuilderCAI::MoveInBuildRange(const CWorldObject* obj, const bool checkMoveTypeForFailed)
 {
-	return MoveInBuildRange(obj->pos, obj->radius, checkMoveTypeForFailed);
+	return MoveInBuildRange(obj->pos, obj->buildeeRadius, checkMoveTypeForFailed);
 }
 
 bool CBuilderCAI::MoveInBuildRange(const float3& objPos, float objRadius, const bool checkMoveTypeForFailed)
@@ -610,11 +610,15 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	assert(build.def != nullptr);
 	assert(build.def->id == -c.GetID() && build.def->id != 0);
 
-	auto* model = build.def->LoadModel();
+	float objRadius = build.def->buildeeBuildRadius;
+	if (objRadius < 0.f) {
+		auto* model = build.def->LoadModel();
+		objRadius = std::max(0.f, model->radius);
+	}
 
 	if (building) {
 		// keep moving until 3D distance to buildPos is LEQ our buildDistance
-		MoveInBuildRange(build.pos, std::max(0.f, model->radius));
+		MoveInBuildRange(build.pos, objRadius);
 
 		if (ownerBuilder->curBuild == nullptr && !ownerBuilder->terraforming) {
 			building = false;
@@ -625,7 +629,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	}
 
 	// keep moving until 3D distance to buildPos is LEQ our buildDistance
-	if (MoveInBuildRange(build.pos = CGameHelper::Pos2BuildPos(build, true), std::max(0.f, model->radius), true)) {
+	if (MoveInBuildRange(build.pos = CGameHelper::Pos2BuildPos(build, true), objRadius, true)) {
 		if (IsBuildPosBlocked(build)) {
 			StopMoveAndFinishCommand();
 			return;
@@ -667,18 +671,19 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 		}
 
 		if (!inWaitStance) {
-			const float buildeeRadius = GetBuildOptionRadius(build.def, c.GetID());
-			const float fpSqRadius = (build.def->xsize * build.def->xsize + build.def->zsize * build.def->zsize);
-			const float fpRadius = (math::sqrt(fpSqRadius) * 0.5f) * SQUARE_SIZE;
+			const float xhalf = build.def->xsize * 0.5f * SQUARE_SIZE;
+			const float zhalf = build.def->zsize * 0.5f * SQUARE_SIZE;
+			const float3 mins{build.pos.x - xhalf, 0.f, build.pos.z - zhalf};
+			const float3 maxs{build.pos.x + xhalf, 0.f, build.pos.z + zhalf};
 
 			// tell everything within the radius of the soon-to-be buildee
 			// to get out of the way; using the model radius is not correct
 			// because this can be shorter than half the footprint diagonal
-			// exclude owner iff it is outside the buildee footprint
+			// exclude owner if it is outside the buildee footprint
 			if (!build.FootPrintOverlap(owner->pos, owner->GetFootPrint(SQUARE_SIZE * 0.5f)))
-				CGameHelper::BuggerOff(build.pos, std::max(buildeeRadius, fpRadius), false, true, owner->team, owner);
+				CGameHelper::BuggerOffRectangle(mins, maxs, true, owner->team, owner);
 			else
-				CGameHelper::BuggerOff(build.pos, std::max(buildeeRadius, fpRadius), false, true, owner->team, nullptr);
+				CGameHelper::BuggerOffRectangle(mins, maxs, true, owner->team, nullptr);
 
 			NonMoving();
 			return;
@@ -733,7 +738,7 @@ void CBuilderCAI::ExecuteRepair(Command& c)
 
 		if (tempOrder && owner->moveState <= MOVESTATE_MANEUVER) {
 			// limit how far away we go when not roaming
-			if (LinePointDist(commandPos1, commandPos2, unit->pos) > std::max(500.0f, GetBuildRange(unit->radius))) {
+			if (LinePointDist(commandPos1, commandPos2, unit->pos) > std::max(500.0f, GetBuildRange(unit->buildeeRadius))) {
 				StopMoveAndFinishCommand();
 				return;
 			}
@@ -930,7 +935,7 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 		return;
 
 	const float3 pos    = guardee->pos;
-	const float  radius = (guardee->immobile) ? guardee->radius : guardee->radius * 0.8f; // in case of mobile units reduce radius a bit
+	const float  radius = (guardee->immobile) ? guardee->buildeeRadius : guardee->buildeeRadius * 0.8f; // in case of mobile units reduce radius a bit
 
 	if (MoveInBuildRange(pos, radius)) {
 		StartSlowGuard(guardee->moveType->GetMaxSpeed());
@@ -1795,7 +1800,7 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 			const float dist = f3SqDist(unit->pos, owner->pos);
 
 			if ((dist < bestDist) || !haveEnemy) {
-				if (owner->immobile && ((dist - unit->radius) > owner->maxRange))
+				if (owner->immobile && ((dist - unit->buildeeRadius) > owner->maxRange))
 					continue;
 
 				bestUnit = unit;

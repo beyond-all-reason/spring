@@ -89,10 +89,10 @@ namespace QTPFS {
 		unsigned int GetMaxNumNeighbors() const;
 		bool UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& threadData);
 
-		unsigned int xmin() const { return _xmin; }
-		unsigned int zmin() const { return _zmin; }
-		unsigned int xmax() const { return _xmax; }
-		unsigned int zmax() const { return _zmax; }
+		int xmin() const { return _xmin; }
+		int zmin() const { return _zmin; }
+		int xmax() const { return _xmax; }
+		int zmax() const { return _zmax; }
 		unsigned int xmid() const { return ((xmin() + xmax()) >> 1); }
 		unsigned int zmid() const { return ((zmin() + zmax()) >> 1); }
 		unsigned int xsize() const { return (xmax() - xmin()); }
@@ -137,7 +137,7 @@ namespace QTPFS {
 	private:
 		bool UpdateMoveCost(
 			const UpdateThreadData* threadData,
-			const NodeLayer& nl,
+			NodeLayer& nl,
 			const SRectangle& r,
 			unsigned int& numNewBinSquares,
 			unsigned int& numDifBinSquares,
@@ -198,6 +198,10 @@ namespace QTPFS {
 			hCost = QTPFS_POSITIVE_INFINITY;
 			index = other.index;
 			prevNode = other.prevNode;
+			xmin = other.xmin;
+			zmin = other.zmin;
+			xmax = other.xmax;
+			zmax = other.zmax;
 			// searchState = other.searchState;
 			return *this;
 		}
@@ -240,6 +244,11 @@ namespace QTPFS {
 		float2 selectedNetpoint;
 
 		uint32_t stepIndex = 0;
+
+		int xmin = 0;
+		int zmin = 0;
+		int xmax = 0;
+		int zmax = 0;
 	};
 }
 

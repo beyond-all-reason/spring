@@ -160,9 +160,6 @@ float ILosType::GetHeight(const CUnit* unit) const
 
 inline void ILosType::UpdateUnit(CUnit* unit, bool ignore)
 {
-	if (losHandler->GetGlobalLOS(unit->allyteam))
-		return;
-
 	// do not check if the unit is inside a transporter here
 	// non-firebase transporters stun their cargo, so are already handled below
 	// firebase transporters should not deprive sensor coverage from their cargo
@@ -181,6 +178,11 @@ inline void ILosType::UpdateUnit(CUnit* unit, bool ignore)
 		RemoveUnit(unit);
 		return;
 	}
+
+	/* No point processing LoS, but units can still be cloaked
+	 * or underwater, so the other sensors must still be handled */
+	if (sightOnly && losHandler->GetGlobalLOS(unit->allyteam))
+		return;
 
 	SLosInstance* uli = unit->los[type];
 
@@ -809,8 +811,11 @@ void CLosHandler::Update()
 		}
 		#else
 		// all at once
-		for (CUnit* u: activeUnits) {
-			lt->UpdateUnit(u, false);
+		{
+			ZoneScopedN("Sim::Los::UpdateLosTypeMT");
+			for (CUnit* u : activeUnits) {
+				lt->UpdateUnit(u, false);
+			}
 		}
 		#endif
 
@@ -822,6 +827,7 @@ void CLosHandler::Update()
 void CLosHandler::UpdateHeightMapSynced(SRectangle rect)
 {
 	for (ILosType* lt: losTypes) {
+		ZoneScopedN("LosHandler::UpdateHeightMapSynced");
 		lt->UpdateHeightMapSynced(rect);
 	}
 }

@@ -4,6 +4,7 @@
 #define MEMPOOL_TYPES_H
 
 #include <cassert>
+#include <cstddef>
 #include <cstring> // memset
 #include <cmath>
 #include <array>
@@ -11,7 +12,6 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include <tuple>
 
 #include "smmalloc/smmalloc.h"
 
@@ -19,7 +19,6 @@
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
 #include "System/Platform/Threading.h"
-#include "System/Threading/SpringThreading.h"
 #include "System/Log/ILog.h"
 
 template<uint32_t NumBuckets, size_t BucketSize> struct PassThroughPool {
@@ -32,6 +31,7 @@ public:
 	}
 
 	template<typename T, typename... A> T* alloc(A&&... a) {
+		static_assert(BUCKET_STEP >= alignof(T), "Can't allocate memory with alignment greater than BUCKET_STEP");
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 	void* allocMem(size_t size) {
@@ -61,7 +61,17 @@ private:
 	sm_allocator space = nullptr;
 };
 
-template<size_t S> struct DynMemPool {
+// Helper to infer the memory alignment and size from a set of types.
+template <class ...T>
+#if 0 // doesn't compile on MSVC 19.37
+struct TypesMem {
+    alignas(alignof(T)...) uint8_t data[std::max({sizeof(T)...})];
+};
+#else
+using TypesMem = std::aligned_storage_t< std::max({ sizeof(T)... }), std::max({ alignof(T)... }) >;
+#endif
+
+template<size_t S, size_t Alignment> struct DynMemPool {
 public:
 	void* allocMem(size_t size) {
 		assert(size <= PAGE_SIZE());
@@ -78,7 +88,7 @@ public:
 			i = spring::VectorBackPop(indcs);
 		}
 
-		m = pages[curr_page_index = i].data();
+		m = pages[curr_page_index = i].data;
 
 		table.emplace(m, i);
 		return m;
@@ -87,6 +97,7 @@ public:
 
 	template<typename T, typename... A> T* alloc(A&&... a) {
 		static_assert(sizeof(T) <= PAGE_SIZE(), "");
+		static_assert(Alignment >= alignof(T), "Memory pool memory is not sufficiently aligned");
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 
@@ -97,7 +108,7 @@ public:
 		const auto iter = table.find(m);
 		const auto pair = std::pair<void*, size_t>{iter->first, iter->second};
 
-		std::memset(pages[pair.second].data(), 0, PAGE_SIZE());
+		std::memset(pages[pair.second].data, 0, PAGE_SIZE());
 
 		indcs.push_back(pair.second);
 		table.erase(pair.first);
@@ -121,7 +132,7 @@ public:
 	size_t freed_size() const { return (indcs.size() * PAGE_SIZE()); } // size of number of pages that were freed and are awaiting reuse
 
 	bool mapped(void* p) const { return (table.find(p) != table.end()); }
-	bool alloced(void* p) const { return ((curr_page_index < pages.size()) && (pages[curr_page_index].data() == p)); }
+	bool alloced(void* p) const { return ((curr_page_index < pages.size()) && (pages[curr_page_index].data == p)); }
 	bool can_alloc() const { return true; }
 	bool can_free() const { return indcs.size() < pages.size(); }
 
@@ -138,7 +149,11 @@ public:
 	}
 
 private:
-	std::deque<std::array<uint8_t, S>> pages;
+	struct page {
+		alignas(Alignment) uint8_t data[S];
+	};
+
+	std::deque<page> pages;
 	std::vector<size_t> indcs;
 
 	// <pointer, page index> (non-intrusive)
@@ -147,27 +162,28 @@ private:
 	size_t curr_page_index = 0;
 };
 
-
+// Helper to infer the DynMemPool pool parameters from a types.
+template<class ...T>
+using DynMemPoolT = DynMemPool<sizeof(TypesMem<T...>), alignof(TypesMem<T...>)>;
 
 // fixed-size dynamic version
 // page size per chunk, number of chunks, number of pages per chunk
 // at most <N * K> simultaneous allocations can be made from a pool
 // of size NxK, each of which consumes S bytes (N chunks with every
 // chunk consuming S * K bytes) excluding overhead
-template<size_t S, size_t N, size_t K> struct FixedDynMemPool {
+template<size_t S, size_t N, size_t K, size_t Alignment> struct FixedDynMemPool {
 public:
 	template<typename T, typename... A> T* alloc(A&&... a) {
 		static_assert(sizeof(T) <= PAGE_SIZE(), "");
+		static_assert(Alignment >= alignof(T), "Memory pool memory is not sufficiently aligned");
 		return (new (allocMem(sizeof(T))) T(std::forward<A>(a)...));
 	}
 
 	void* allocMem(size_t size) {
-		uint8_t* ptr = nullptr;
-
 		if (indcs.empty()) {
 			// pool is full
 			if (num_chunks == N)
-				return ptr;
+				return nullptr;
 
 			assert(chunks[num_chunks] == nullptr);
 			chunks[num_chunks].reset(new t_chunk_mem());
@@ -185,8 +201,9 @@ public:
 		const uint32_t idx = spring::VectorBackPop(indcs);
 
 		assert(size <= PAGE_SIZE());
-		memcpy(ptr = page_mem(page_index = idx), &idx, sizeof(idx));
-		return (ptr + sizeof(idx));
+		t_page_mem* page = page_mem(idx);
+		page_index = page->index = idx;
+		return page->data;
 	}
 
 
@@ -200,15 +217,11 @@ public:
 	}
 
 	void freeMem(void* ptr) {
-		const uint32_t idx = page_idx(ptr);
-
-		// zero-fill page
-		assert(idx < (N * K));
-		memset(page_mem(idx), 0, sizeof(idx) + S);
-
-		indcs.push_back(idx);
+		t_page_mem* page = page_mem_from_ptr(ptr);
+		assert(page->index < (N * K));
+		indcs.push_back(page->index);
+		memset(page, 0, sizeof(t_page_mem));
 	}
-
 
 	void reserve(size_t n) { indcs.reserve(n); }
 	void clear() {
@@ -225,53 +238,55 @@ public:
 		page_index = 0;
 	}
 
-
 	static constexpr size_t NUM_CHUNKS() { return N; } // size K*S
 	static constexpr size_t NUM_PAGES() { return K; } // per chunk
 	static constexpr size_t PAGE_SIZE() { return S; }
 
-	const uint8_t* page_mem(size_t idx, size_t ofs = 0) const {
-		const t_chunk_ptr& chunk_ptr = chunks[idx / K];
-		const t_chunk_mem& chunk_mem = *chunk_ptr;
-		return (&chunk_mem[idx % K][0] + ofs);
-	}
-	uint8_t* page_mem(size_t idx, size_t ofs = 0) {
-		t_chunk_ptr& chunk_ptr = chunks[idx / K];
-		t_chunk_mem& chunk_mem = *chunk_ptr;
-		return (&chunk_mem[idx % K][0] + ofs);
-	}
-
-	uint32_t page_idx(void* ptr) const {
-		const uint8_t* raw_ptr = reinterpret_cast<const uint8_t*>(ptr);
-		const uint8_t* idx_ptr = raw_ptr - sizeof(uint32_t);
-
-		return (*reinterpret_cast<const uint32_t*>(idx_ptr));
-	}
-
 	size_t alloc_size() const { return (num_chunks * NUM_PAGES() * PAGE_SIZE()); } // size of total number of pages added over the pool's lifetime
 	size_t freed_size() const { return (indcs.size() * PAGE_SIZE()); } // size of number of pages that were freed and are awaiting reuse
 
-	bool mapped(void* ptr) const { return ((page_idx(ptr) < (num_chunks * K)) && (page_mem(page_idx(ptr), sizeof(uint32_t)) == ptr)); }
-	bool alloced(void* ptr) const { return ((page_index < (num_chunks * K)) && (page_mem(page_index, sizeof(uint32_t)) == ptr)); }
+	bool mapped(void* ptr) const { return ((page_mem_from_ptr(ptr)->index < (num_chunks * K)) && (page_mem(page_mem_from_ptr(ptr)->index)->data == ptr)); }
+	bool alloced(void* ptr) const { return ((page_index < (num_chunks * K)) && (page_mem(page_index)->data == ptr)); }
 	bool can_alloc() const { return num_chunks < N || !indcs.empty() ; }
 	bool can_free() const { return indcs.size() < (NUM_CHUNKS() * NUM_PAGES()); }
 
 private:
-	// first sizeof(uint32_t) bytes are reserved for index
-	typedef std::array<uint8_t[sizeof(uint32_t) + S], K> t_chunk_mem;
-	typedef std::unique_ptr<t_chunk_mem> t_chunk_ptr;
+	struct t_page_mem {
+		uint32_t index;
+		alignas(Alignment) uint8_t data[S];
+	};
 
-	std::array<t_chunk_ptr, N> chunks;
+	typedef std::array<t_page_mem, K> t_chunk_mem;
+
+	const t_page_mem* page_mem(size_t idx) const {
+		return &(*chunks[idx / K])[idx % K];
+	}
+
+	t_page_mem* page_mem(size_t idx) {
+		return &(*chunks[idx / K])[idx % K];
+	}
+
+	const t_page_mem* page_mem_from_ptr(void* ptr) const {
+		return reinterpret_cast<const t_page_mem*>(reinterpret_cast<const uint8_t*>(ptr) - offsetof(t_page_mem, data));
+	}
+
+	t_page_mem* page_mem_from_ptr(void* ptr) {
+		return reinterpret_cast<t_page_mem*>(reinterpret_cast<uint8_t*>(ptr) - offsetof(t_page_mem, data));
+	}
+
+	std::array<std::unique_ptr<t_chunk_mem>, N> chunks;
 	std::vector<uint32_t> indcs;
 
 	size_t num_chunks = 0;
 	size_t page_index = 0;
 };
 
+// Helper to infer the FixedDynMemPool pool parameters from a types.
+template<size_t N, size_t K, class ...T>
+using FixedDynMemPoolT = FixedDynMemPool<sizeof(TypesMem<T...>), N, K, alignof(TypesMem<T...>)>;
 
-
-// fixed-size version
-template<size_t N, size_t S> struct StaticMemPool {
+// fixed-size version.
+template<size_t N, size_t S, size_t Alignment> struct StaticMemPool {
 public:
 	StaticMemPool() { clear(); }
 
@@ -295,6 +310,7 @@ public:
 
 	template<typename T, typename... A> T* alloc(A&&... a) {
 		static_assert(sizeof(T) <= PAGE_SIZE(), "");
+		static_assert(Alignment >= alignof(T), "Memory pool memory is not sufficiently aligned");
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 
@@ -343,13 +359,17 @@ public:
 	}
 
 private:
-	std::array<std::array<uint8_t, S>, N> pages;
+	alignas(Alignment) std::array<std::array<uint8_t, S>, N> pages;
 	std::array<size_t, N> indcs;
 
 	size_t used_page_count = 0;
 	size_t free_page_count = 0; // indcs[fpc-1] is the last recycled page
 	size_t curr_page_index = 0;
 };
+
+// Helper to infer the StaticMemPool pool parameters from a types.
+template<size_t N, class ...T>
+using StaticMemPoolT = StaticMemPool<N, sizeof(TypesMem<T...>), alignof(TypesMem<T...>)>;
 
 
 // dynamic memory allocator operating with stable index positions

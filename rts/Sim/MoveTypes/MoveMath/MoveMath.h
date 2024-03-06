@@ -4,11 +4,42 @@
 #define MOVEMATH_H
 
 #include "Map/ReadMap.h"
+#include "Sim/Objects/SolidObject.h"
 #include "System/float3.h"
 #include "System/Misc/BitwiseEnum.h"
 
 struct MoveDef;
 class CSolidObject;
+
+namespace MoveTypes {
+	struct CheckCollisionQuery {
+		static constexpr float POS_Y_UNAVAILABLE = std::numeric_limits<float>::infinity();
+
+		CheckCollisionQuery(const CSolidObject* ref)
+			: unit(ref)
+			, moveDef(ref->moveDef)
+			, pos(ref->pos)
+			, physicalState(ref->physicalState)
+		{}
+
+		CheckCollisionQuery(const MoveDef* refMoveDef)
+			: moveDef(refMoveDef)
+		{}
+
+		bool    HasPhysicalStateBit(unsigned int bit) const { return ((physicalState & bit) != 0); }
+		void    SetPhysicalStateBit(unsigned int bit) { unsigned int ps = physicalState; ps |= ( bit); physicalState = static_cast<CSolidObject::PhysicalState>(ps); }
+		void  ClearPhysicalStateBit(unsigned int bit) { unsigned int ps = physicalState; ps &= (~bit); physicalState = static_cast<CSolidObject::PhysicalState>(ps); }
+		bool IsInWater() const { return (HasPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER)); }
+		void DisableHeightChecks() { pos.y = POS_Y_UNAVAILABLE; }
+
+		const CSolidObject* unit = nullptr;
+		const MoveDef* moveDef = nullptr;
+		float3 pos = {0.f, POS_Y_UNAVAILABLE, 0.f};
+		CSolidObject::PhysicalState physicalState = CSolidObject::PhysicalState(CSolidObject::PhysicalState::PSTATE_BIT_ONGROUND);
+	};
+}
+
+
 class CMoveMath {
 	CR_DECLARE(CMoveMath)
 
@@ -62,28 +93,55 @@ public:
 	static bool CrushResistant(const MoveDef& colliderMD, const CSolidObject* collidee);
 	// checks whether an object (collidee) is non-blocking for the given MoveDef
 	// (eg. would return true for a submarine's moveDef vs. a surface ship object)
-	static bool IsNonBlocking(const MoveDef& colliderMD, const CSolidObject* collidee, const CSolidObject* collider);
-	static bool IsNonBlocking(const CSolidObject* collidee, const CSolidObject* collider);
+	static bool IsNonBlocking(const CSolidObject* collidee, const MoveTypes::CheckCollisionQuery* collider);
+	static bool IsNonBlocking(const MoveDef& colliderMD, const CSolidObject* collidee, const CSolidObject* collider) {
+		if (collider != nullptr) {
+			MoveTypes::CheckCollisionQuery colliderInfo(collider);
+			return (IsNonBlocking(collidee, &colliderInfo));
+		} else {
+			MoveTypes::CheckCollisionQuery colliderInfo(&colliderMD);
+			return (IsNonBlocking(collidee, &colliderInfo));
+		}
+	};
+	//static bool IsNonBlocking(const CSolidObject* collidee, const CSolidObject* collider);
 
 	// check how this unit blocks its squares
-	static BlockType ObjectBlockType(const MoveDef& moveDef, const CSolidObject* collidee, const CSolidObject* collider);
+	static BlockType ObjectBlockType(const CSolidObject* collidee, const MoveTypes::CheckCollisionQuery* collider);
+	static BlockType ObjectBlockType(const MoveDef& moveDef, const CSolidObject* collidee, const CSolidObject* collider) {
+		if (collider != nullptr) {
+			MoveTypes::CheckCollisionQuery colliderInfo(collider);
+			return (ObjectBlockType(collidee, &colliderInfo));
+		} else {
+			MoveTypes::CheckCollisionQuery colliderInfo(&moveDef);
+			return (ObjectBlockType(collidee, &colliderInfo));
+		}
+	}; // TODO: EXPECT THIS FUNCTION CAN BE REMOVED
 
 	// checks if a single square is accessable for any object which uses the given MoveDef
 	static BlockType SquareIsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider);
 	static BlockType SquareIsBlocked(const MoveDef& moveDef, const float3& pos, const CSolidObject* collider) {
 		return (SquareIsBlocked(moveDef, pos.x / SQUARE_SIZE, pos.z / SQUARE_SIZE, collider));
 	}
-	static BlockType RangeIsBlocked(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread = 0);
-	static BlockType RangeIsBlockedTempNum(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int tempNum, int thread);
+	static BlockType RangeIsBlocked(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int thread = 0);
+	static BlockType RangeIsBlocked(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread = 0) {
+		if (collider != nullptr) {
+			MoveTypes::CheckCollisionQuery colliderInfo(collider);
+			return (RangeIsBlocked(xmin, xmax, zmin, zmax, &colliderInfo, thread));
+		} else {
+			MoveTypes::CheckCollisionQuery colliderInfo(&moveDef);
+			return (RangeIsBlocked(xmin, xmax, zmin, zmax, &colliderInfo, thread));
+		}
+	};
+	static BlockType RangeIsBlockedTempNum(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int tempNum, int thread);
 
-	static BlockType RangeIsBlockedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int magicNumber);
-	static BlockType RangeIsBlockedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int thread, int magicNumber);
+	static BlockType RangeIsBlockedSt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int magicNumber);
+	static BlockType RangeIsBlockedMt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int thread, int magicNumber);
 
 	static void InitRangeIsBlockedHashes();
-	static BlockType RangeIsBlockedHashedSt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int magicNumber);
-	static BlockType RangeIsBlockedHashedMt(const MoveDef& moveDef, int xmin, int xmax, int zmin, int zmax, const CSolidObject* collider, int magicNumber, int thread);
+	static BlockType RangeIsBlockedHashedSt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int magicNumber);
+	static BlockType RangeIsBlockedHashedMt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int magicNumber, int thread);
 
-	static void FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results);
+	static void FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results, int thread);
 
 public:
 	static bool noHoverWaterMove;

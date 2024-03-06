@@ -955,7 +955,8 @@ void CGameServer::LagProtection()
 		const float invSimDrawFract = 1.0f - globalConfig.minSimDrawBalance;
 		const float maxSimFrameRate = (1000.0f / gu->avgSimFrameTime) * invSimDrawFract;
 
-		newSpeed = std::clamp(newSpeed, 0.1f, ((maxSimFrameRate / GAME_SPEED) + internalSpeed) * 0.5f);
+		const float maxNewSpeed = std::max(0.1f, ((maxSimFrameRate / GAME_SPEED) + internalSpeed) * 0.5f);
+		newSpeed = std::clamp(newSpeed, 0.1f, maxNewSpeed);
 #endif
 
 		if (newSpeed != internalSpeed)

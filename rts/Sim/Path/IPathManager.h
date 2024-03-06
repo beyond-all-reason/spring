@@ -32,6 +32,7 @@ public:
 	 * (by re-requesting affected paths without changing their ID's)
 	 */
 	virtual bool PathUpdated(unsigned int pathID) { return false; }
+	virtual void ClearPathUpdated(unsigned int pathID) {}
 
 	virtual void RemoveCacheFiles() {}
 	virtual void Update() {}
@@ -43,7 +44,7 @@ public:
 	 * @param pathID
 	 *     The path-id returned by RequestPath.
 	 */
-	virtual void DeletePath(unsigned int pathID) {}
+	virtual void DeletePath(unsigned int pathID, bool force = false) {}
 
 	/**
 	 * Returns the next waypoint of the path.

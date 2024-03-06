@@ -33,9 +33,11 @@ struct PartialSharedPathChain {
 VOID_COMPONENT(PathIsTemp);
 VOID_COMPONENT(PathIsDirty);
 VOID_COMPONENT(PathIsToBeUpdated);
+VOID_COMPONENT(PathUpdatedCounterIncrease);
 VOID_COMPONENT(ProcessPath);
 
 ALIAS_COMPONENT(PathSearchRef, entt::entity);
+ALIAS_COMPONENT(PathRequeueSearch, bool);
 
 }
 

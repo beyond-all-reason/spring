@@ -84,6 +84,10 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 
   Keep only units that currently have a **Guard** order.
 
+### `Patrolling`
+
+  Keep only units that have a **Patrol** order early in the queue (first 4 commands, including sub-orders spawned by Patrol).
+
 ### `IdMatches_<string>`
 
   Keep only units whose internal name (unitDef name) matches `<string>` **exactly**. Differently from other filters further invocations will match units matching one name **OR** another.
@@ -189,6 +193,10 @@ Some examples. Again, "unit" also includes buildings.
 - `AllMap+_Builder_Idle+_ClearSelection_SelectOne+`
   
   Selects any (one) idle builder (unit or building) on entire map. Repeatedly running this command will cycle through all idle builders.
+
+- `AllMap+_Buildoptions_Building+_ClearSelection_SelectNum_1+`
+  
+  Selects any (one) building that can produce units (i.e. factories), map-wide. Repeatedly running this command will cycle through all factories. Unlike the above example, this selector will **not** snap the camera to the factory. Replace `SelectNum_1` with `SelectOne` in order to achieve this.
 
 - `AllMap+_Radar+_ClearSelection_SelectAll+`
 

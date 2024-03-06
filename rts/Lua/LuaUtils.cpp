@@ -776,9 +776,14 @@ int LuaUtils::PushModelPath(lua_State* L, const SolidObjectDef* def)
 
 int LuaUtils::PushModelTable(lua_State* L, const SolidObjectDef* def) {
 
+	/* Note, the line below loads the model if it isn't already
+	 * preloaded, which can be slow. This is also why this subtable
+	 * doesn't contain things like model type and path that are
+	 * known without loading it - otherwise devs would sometimes
+	 * access it in the slower way without realizing it */
 	const S3DModel* model = def->LoadModel();
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 10);
 
 	if (model != nullptr) {
 		// unit, or non-tree feature
@@ -806,7 +811,7 @@ int LuaUtils::PushModelTable(lua_State* L, const SolidObjectDef* def) {
 	}
 
 	HSTR_PUSH(L, "textures");
-	lua_newtable(L);
+	lua_createtable(L, 0, model != nullptr ? 2 : 0);
 
 	if (model != nullptr) {
 		LuaPushNamedString(L, "tex1", model->texs[0]);
@@ -824,7 +829,7 @@ int LuaUtils::PushModelTable(lua_State* L, const SolidObjectDef* def) {
 int LuaUtils::PushColVolTable(lua_State* L, const CollisionVolume* vol) {
 	assert(vol != nullptr);
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 11);
 	switch (vol->GetVolumeType()) {
 		case CollisionVolume::COLVOL_TYPE_ELLIPSOID:
 			HSTR_PUSH_CSTRING(L, "type", "ellipsoid");
