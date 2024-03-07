@@ -661,9 +661,9 @@ void CGroundDecalHandler::Draw()
 		Blending(GL_TRUE),
 		BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA),
 		DepthMask(GL_FALSE),
-		DepthTest(GL_TRUE),
+		DepthTest(GL_FALSE),
 		Culling(GL_TRUE),
-		CullFace(GL_FRONT)
+		CullFace(GL_BACK)
 	);
 
 	BindCommonTextures();
@@ -687,11 +687,9 @@ void CGroundDecalHandler::Draw()
 	if (shadowHandler.ShadowsLoaded())
 		decalShader->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
 
-	if (!decals.empty()) {
-		vao.Bind();
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, decals.size());
-		vao.Unbind();
-	}
+	vao.Bind();
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, decals.size());
+	vao.Unbind();
 
 	decalShader->Disable();
 

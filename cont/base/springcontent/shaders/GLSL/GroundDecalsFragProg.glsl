@@ -278,9 +278,7 @@ void main() {
 
 	vec3 worldPos = GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
 
-	// figure out why this is wrong
 	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, groundNormal) * groundNormal;
-	//worldPosProj = worldPos;
 
 	vec4 uvBL = vec4(uvMainBL, uvNormBL);
 	vec4 uvTL = vec4(uvMainTL, uvNormTL);
@@ -314,9 +312,9 @@ void main() {
 	}
 
 	if (disc) {
-		fragColor = vec4(0.0);
-		return;
-		//discard;
+		//fragColor = vec4(0.0);
+		//return;
+		discard;
 	}
 
 	vec4 uv;

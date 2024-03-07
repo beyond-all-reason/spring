@@ -108,6 +108,8 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius,
 	const float baseStrength = -math::pow(strength, 0.6f) * 3.0f;
 	const float invRadius = 1.0f / radius;
 
+	float2 minMax = { std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest() };
+
 	// figure out how much height to add to each square
 	for (int y = e.y1; y <= e.y2; ++y) {
 		for (int x = e.x1; x <= e.x2; ++x) {
@@ -160,10 +162,13 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius,
 			if (explDif < -0.3f && strength > 200.0f)
 				grassDrawer->RemoveGrass(float3(x * SQUARE_SIZE, 0.0f, y * SQUARE_SIZE));
 
-			maxHeightDiff = std::max(maxHeightDiff, math::fabs(explDif) * e.ttl);
+			minMax.x = std::min(minMax.x, explDif);
+			minMax.y = std::max(minMax.y, explDif);
 			SetExplosionSquare(explDif);
 		}
 	}
+
+	maxHeightDiff = (minMax.y - minMax.x) * e.ttl;
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, pos, radius);
