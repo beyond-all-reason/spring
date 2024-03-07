@@ -168,3 +168,4 @@ Spring.VC.VC.opendb
 toolchain
 compile_commands.json
 build-*
+/out/build/x64-Debug
