@@ -148,7 +148,7 @@ void main() {
 	misc2.w = float(typeAndId & 0xFu); //copy type only, don't care about ID
 
 	// emulate explosion fade in for the first 6 frames, asjusted by the initial alpha (less fadein for already weak scars)
-	misc.x *= mix(1.0, smoothstep(0.0, 6.0 * info.x, curAdjustedFrame - thisVertexCreateFrame), misc2.w);
+	misc.x *= mix(1.0, smoothstep(0.0, 6.0 * info.x, curAdjustedFrame - thisVertexCreateFrame), float(misc2.w == 1.0));
 
 	#if 1
 	if (alphaMax <= 0.0) {

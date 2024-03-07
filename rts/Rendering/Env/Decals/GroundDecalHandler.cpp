@@ -524,7 +524,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	const auto normName = IntToString(scarIdx, "normscar_%i");
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
-	const auto height = argmax(size, maxHeightDiff, 50.0f); // 50.0f is a leeway here
+	const auto height = argmax(size, maxHeightDiff) + 50.0f; // 50.0f is a leeway here
 
 	const auto& decal = decals.emplace_back(GroundDecal{
 		.posTL = posTL,
@@ -722,9 +722,8 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		math::fabs(midPointHeight - CGround::GetHeightReal(posTL.x, posTL.y)),
 		math::fabs(midPointHeight - CGround::GetHeightReal(posTR.x, posTR.y)),
 		math::fabs(midPointHeight - CGround::GetHeightReal(posBR.x, posBR.y)),
-		math::fabs(midPointHeight - CGround::GetHeightReal(posBL.x, posBL.y)),
-		25.0f
-	);
+		math::fabs(midPointHeight - CGround::GetHeightReal(posBL.x, posBL.y))
+	) + 25.0f;
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
@@ -1080,7 +1079,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 		const float2 midPointDist = (oldDecal.posTL + oldDecal.posTR + oldDecal.posBR + oldDecal.posBL) * 0.25f;
 		const float midPointHeight = CGround::GetHeightReal(midPointDist.x, midPointDist.y, false);
-		oldDecal.height = argmax(mm.max - midPointHeight, midPointHeight - mm.min, 25.0f);
+		oldDecal.height = argmax(mm.max - midPointHeight, midPointHeight - mm.min) + 25.0f;
 
 		decalsUpdateList.SetUpdate(doIt->second);
 		return;
