@@ -851,15 +851,20 @@ const std::vector<CAssParser::MeshData> CAssParser::GetModelSpaceMeshes(const ai
 			// vertex coordinates
 			vertex.pos = aiVectorToFloat3(aiVertex);
 
-			// vertex normal
-			const aiVector3D& aiNormal = mesh->mNormals[vertexIndex];
+			if (mesh->HasNormals()) {
+				// vertex normal
+				const aiVector3D& aiNormal = mesh->mNormals[vertexIndex];
 
-			if (IS_QNAN(aiNormal)) {
-				LOG_SL(LOG_SECTION_PIECE, L_DEBUG, "Malformed normal (model->name=\"%s\" meshName=\"%s\" vertexIndex=%d x=%f y=%f z=%f)", model->name.c_str(), mesh->mName.C_Str(), vertexIndex, aiNormal.x, aiNormal.y, aiNormal.z);
-				vertex.normal = float3{ 0.0f, 1.0f, 0.0f };
+				if (IS_QNAN(aiNormal)) {
+					LOG_SL(LOG_SECTION_PIECE, L_DEBUG, "Malformed normal (model->name=\"%s\" meshName=\"%s\" vertexIndex=%d x=%f y=%f z=%f)", model->name.c_str(), mesh->mName.C_Str(), vertexIndex, aiNormal.x, aiNormal.y, aiNormal.z);
+					vertex.normal = float3{ 0.0f, 1.0f, 0.0f };
+				}
+				else {
+					vertex.normal = (aiVectorToFloat3(aiNormal)).SafeANormalize();
+				}
 			}
 			else {
-				vertex.normal = (aiVectorToFloat3(aiNormal)).SafeANormalize();
+				vertex.normal = float3{ 0.0f, 1.0f, 0.0f };
 			}
 
 			// vertex tangent, x is positive in texture axis
