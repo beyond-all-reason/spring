@@ -32,10 +32,13 @@ i.e. it is the one accessible directly by the engine to be called from the outsi
 * this only works if the global in question is a function, and you won't receive any return values
 * you could put "normal" vars there, but it is discouraged (use `GG`/`WG`)
 * the main use case for this is calling events "native style" where you do `Script.LuaXYZ.UnitDamaged` which is then handled by the wupget handler and distributed to individual wupgets
-* you can (and should) use the function notation to check if the function you're about to call exists, i.e. always do:
+* it is safe to call functions this way even if there is nothing on the other side.
+You can use the function notation to check whether anything is linked though, e.g. for optimisation:
 ```lua
 if Script.LuaXYZ("Bla") then
+  local args = ExpensiveCalculation()
   Script.LuaXYZ.Bla(args)
+end
 ```
 * other examples of events you could add: nuclear launch detected, language changed in settings, metal spot added at runtime.
 
