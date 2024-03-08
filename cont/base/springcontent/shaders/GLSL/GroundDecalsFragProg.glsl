@@ -276,7 +276,6 @@ void main() {
 		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy),           0).x;
 	#endif
 
-	//xyBias = vec2(0);
 	vec3 worldPos = GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
 
 	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, groundNormal) * groundNormal;
