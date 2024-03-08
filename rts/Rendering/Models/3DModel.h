@@ -15,6 +15,7 @@
 #include "System/Matrix44f.h"
 #include "System/type2.h"
 #include "System/float4.h"
+#include "System/Quaternion.h"
 #include "System/SafeUtil.h"
 #include "System/SpringMath.h"
 #include "System/creg/creg_cond.h"
@@ -121,13 +122,23 @@ struct S3DModelHelpers {
 	static void UnbindLegacyAttrVBOs();
 };
 
+struct EmbeddedAnimKeyFrame {
+	float3 translation;
+	float time; // in synced frames
+	CQuaternion rotation;
+};
+
+struct EmbeddedAnimInfo {
+	std::string name;
+	float duration; // in synced frames
+};
+
 
 /**
  * S3DModel
  * A 3D model definition. Holds geometry (vertices/normals) and texture data as well as the piece tree.
  * The S3DModel is static and shouldn't change once created, instead a LocalModel is used by each agent.
  */
-
 struct S3DModelPiece {
 	S3DModelPiece() = default;
 
@@ -162,6 +173,7 @@ struct S3DModelPiece {
 		indxCount = ~0u;
 
 		hasBakedMat = false;
+		spring::clear_unordered_map(animKeyFrames); //just in case
 	}
 
 	virtual float3 GetEmitPos() const;
@@ -262,6 +274,8 @@ protected:
 	S3DModel* model;
 
 	bool hasBakedMat;
+
+	std::vector<EmbeddedAnimKeyFrame> animKeyFrames;
 public:
 	friend class CAssParser;
 };
@@ -294,6 +308,7 @@ struct S3DModel
 		, loadStatus(NOTLOADED)
 		, uploaded(false)
 
+		, animInfo{}
 		, matAlloc(ScopedMatricesMemAlloc())
 	{}
 
@@ -329,6 +344,8 @@ struct S3DModel
 
 		loadStatus = m.loadStatus;
 		uploaded = m.uploaded;
+
+		std::swap(animInfo, m.animInfo);
 
 		std::swap(matAlloc, m.matAlloc);
 
@@ -433,7 +450,10 @@ public:
 	LoadStatus loadStatus;
 	bool uploaded;
 private:
+	std::vector<EmbeddedAnimInfo> animInfo;
 	ScopedMatricesMemAlloc matAlloc;
+public:
+	friend class CAssParser;
 };
 
 

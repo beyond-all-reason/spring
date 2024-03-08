@@ -9,6 +9,7 @@
 #include "System/float3.h"
 #include "System/float4.h"
 
+class CQuaternion;
 class CMatrix44f
 {
 public:
@@ -30,6 +31,10 @@ public:
 
 	bool IsOrthoNormal() const;
 	bool IsIdentity() const;
+	bool IsRotMatrix()          const { return IsOrthoNormal() && math::fabs(1.0f - Det4()) <= float3::cmp_eps(); }
+	bool IsRotOrRotTranMatrix() const { return IsOrthoNormal() && math::fabs(1.0f - Det3()) <= float3::cmp_eps(); }
+	float Det3() const;
+	float Det4() const;
 
 	CMatrix44f& LoadIdentity() { return (*this = CMatrix44f()); }
 
@@ -43,8 +48,9 @@ public:
 	CMatrix44f& RotateEulerZXY(const float3 angles); // executes Rotate{Z,X,Y}
 	CMatrix44f& RotateEulerZYX(const float3 angles); // executes Rotate{Z,Y,X}
 	CMatrix44f& Translate(const float x, const float y, const float z);
-	CMatrix44f& Translate(const float3 pos) { return Translate(pos.x, pos.y, pos.z); }
-	CMatrix44f& Scale(const float3 scales);
+	CMatrix44f& Translate(const float3& pos) { return Translate(pos.x, pos.y, pos.z); }
+	CMatrix44f& Scale(const float3& scales);
+	CMatrix44f& FromTQS(const float3& pos, const CQuaternion& quat, const float3& scale);
 
 	void SetPos(const float3 pos) { m[12] = pos.x; m[13] = pos.y; m[14] = pos.z; }
 	void SetX  (const float3 dir) { m[ 0] = dir.x; m[ 1] = dir.y; m[ 2] = dir.z; }

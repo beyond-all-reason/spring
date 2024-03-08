@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "System/Matrix44f.h"
+#include "System/Quaternion.h"
 #include "System/SpringMath.h"
 #ifndef UNIT_TEST
 	#include "Rendering/GlobalRendering.h"
@@ -70,6 +71,22 @@ bool CMatrix44f::IsIdentity() const
 	return (*this) == IDENTITY;
 }
 
+float CMatrix44f::Det3() const
+{
+	// triple product == D
+	return col[0].dot(col[1].cross(col[2]));
+}
+
+float CMatrix44f::Det4() const
+{
+	return
+		md[0][3] * md[1][2] * md[2][1] * md[3][0] - md[0][2] * md[1][3] * md[2][1] * md[3][0] - md[0][3] * md[1][1] * md[2][2] * md[3][0] + md[0][1] * md[1][3] * md[2][2] * md[3][0] +
+		md[0][2] * md[1][1] * md[2][3] * md[3][0] - md[0][1] * md[1][2] * md[2][3] * md[3][0] - md[0][3] * md[1][2] * md[2][0] * md[3][1] + md[0][2] * md[1][3] * md[2][0] * md[3][1] +
+		md[0][3] * md[1][0] * md[2][2] * md[3][1] - md[0][0] * md[1][3] * md[2][2] * md[3][1] - md[0][2] * md[1][0] * md[2][3] * md[3][1] + md[0][0] * md[1][2] * md[2][3] * md[3][1] +
+		md[0][3] * md[1][1] * md[2][0] * md[3][2] - md[0][1] * md[1][3] * md[2][0] * md[3][2] - md[0][3] * md[1][0] * md[2][1] * md[3][2] + md[0][0] * md[1][3] * md[2][1] * md[3][2] +
+		md[0][1] * md[1][0] * md[2][3] * md[3][2] - md[0][0] * md[1][1] * md[2][3] * md[3][2] - md[0][2] * md[1][1] * md[2][0] * md[3][3] + md[0][1] * md[1][2] * md[2][0] * md[3][3] +
+		md[0][2] * md[1][0] * md[2][1] * md[3][3] - md[0][0] * md[1][2] * md[2][1] * md[3][3] - md[0][1] * md[1][0] * md[2][2] * md[3][3] + md[0][0] * md[1][1] * md[2][2] * md[3][3];
+}
 
 CMatrix44f& CMatrix44f::RotateX(float angle)
 {
@@ -272,7 +289,7 @@ CMatrix44f& CMatrix44f::RotateEulerZYX(const float3 angles)
 //  [ 0   0  sz   0]
 //  [ 0   0   0   1]
 //
-CMatrix44f& CMatrix44f::Scale(const float3 scales)
+CMatrix44f& CMatrix44f::Scale(const float3& scales)
 {
 	m[ 0] *= scales.x;
 	m[ 1] *= scales.x;
@@ -288,6 +305,15 @@ CMatrix44f& CMatrix44f::Scale(const float3 scales)
 	m[ 9] *= scales.z;
 	m[10] *= scales.z;
 	m[11] *= scales.z;
+	return *this;
+}
+
+CMatrix44f& CMatrix44f::FromTQS(const float3& pos, const CQuaternion& quat, const float3& scale)
+{
+	*this = quat.ToRotMatrix();
+	this->Scale(scale);
+	this->Translate(pos);
+
 	return *this;
 }
 
