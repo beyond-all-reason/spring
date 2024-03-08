@@ -17,7 +17,7 @@ public:
 		DECAL_LUA       = 4
 	};
 public:
-	bool IsValid() const { return info.type > Type::DECAL_NONE || alpha > 0.0f; }
+	bool IsValid() const { return info.type > Type::DECAL_NONE; }
 	void MarkInvalid() { info.type = Type::DECAL_NONE; }
 public:
 	float2 posTL;
