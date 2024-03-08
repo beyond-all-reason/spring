@@ -524,7 +524,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	const auto normName = IntToString(scarIdx, "normscar_%i");
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
-	const auto height = argmax(size, maxHeightDiff) + 50.0f; // 50.0f is a leeway here
+	const auto height = argmax(size, maxHeightDiff);
 
 	const auto& decal = decals.emplace_back(GroundDecal{
 		.posTL = posTL,
