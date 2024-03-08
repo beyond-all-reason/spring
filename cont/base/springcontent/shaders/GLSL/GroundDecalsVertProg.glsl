@@ -148,10 +148,10 @@ void main() {
 	misc2.w = float(typeAndId & 0xFu); //copy type only, don't care about ID
 
 	// emulate explosion fade in for the first 6 frames, asjusted by the initial alpha (less fadein for already weak scars)
-	misc.x *= mix(1.0, smoothstep(0.0, 6.0 * info.x, curAdjustedFrame - thisVertexCreateFrame), float(misc2.w == 1.0));
+	misc.x *= mix(1.0, smoothstep(0.0, 6.0 * info.x, curAdjustedFrame - thisVertexCreateFrame), float(misc2.w == 2.0/*DECAL_EXPLOSION*/));
 
 	#if 1
-	if (alphaMax <= 0.0) {
+	if (alphaMax <= 0.0 || misc2.w <= 0.0) {
 		vPosTL = vec3(0);
 		vPosTR = vec3(0);
 		vPosBL = vec3(0);

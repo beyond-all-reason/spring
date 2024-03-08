@@ -362,7 +362,7 @@ void main() {
 	#else
 		vec3 mapDecalMix = 2.0 * mainCol.rgb * mapDiffuse.rgb;
 	#endif
-	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(misc2.w == 1.0)); //only apply mapDecalMix for explosions (misc2.w == 1.0)
+	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(misc2.w == 2.0/*DECAL_EXPLOSION*/)); //only apply mapDecalMix for explosions
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
 
