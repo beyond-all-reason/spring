@@ -480,7 +480,7 @@ void CGroundDecalHandler::AddDecal(CUnit* unit, const float3& newPos)
 */
 
 
-void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
+void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float damage, float radius, float maxHeightDiff)
 {
 	if (!GetDrawDecals())
 		return;
@@ -524,6 +524,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 	const auto normName = IntToString(scarIdx, "normscar_%i");
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
+	const auto height = argmax(size, maxHeightDiff) + 50.0f; // 50.0f is a leeway here
 
 	const auto& decal = decals.emplace_back(GroundDecal{
 		.posTL = posTL,
@@ -535,12 +536,12 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float damage, float radius)
 		.alpha = alpha,
 		.alphaFalloff = alphaDecay,
 		.rot = guRNG.NextFloat() * math::TWOPI,
-		.height = size,
+		.height = height,
 		.createFrameMin = createFrame,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
-		.forcedNormal = float3{},
+		.forcedNormal = explNormalVec,
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{ .type = GroundDecal::Type::DECAL_EXPLOSION, .id = GroundDecal::GetNextId() }
 	});
@@ -686,11 +687,9 @@ void CGroundDecalHandler::Draw()
 	if (shadowHandler.ShadowsLoaded())
 		decalShader->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
 
-	if (!decals.empty()) {
-		vao.Bind();
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, decals.size());
-		vao.Unbind();
-	}
+	vao.Bind();
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, decals.size());
+	vao.Unbind();
 
 	decalShader->Disable();
 
@@ -724,7 +723,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		math::fabs(midPointHeight - CGround::GetHeightReal(posTR.x, posTR.y)),
 		math::fabs(midPointHeight - CGround::GetHeightReal(posBR.x, posBR.y)),
 		math::fabs(midPointHeight - CGround::GetHeightReal(posBL.x, posBL.y))
-	) + 1.0f;
+	) + 25.0f;
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
@@ -860,12 +859,15 @@ bool CGroundDecalHandler::DeleteLuaDecal(uint32_t id)
 		return false;
 
 	auto& decal = decals.at(it->second);
+	if (!decal.IsValid())
+		return false;
+
 	if (decal.info.type != GroundDecal::Type::DECAL_LUA)
 		return false;
 
-	decal.alpha = 0.0f;
+	decal.MarkInvalid();
 	decalsUpdateList.SetUpdate(it->second);
-	idToPos.erase(it); // the decal itself will be removed on the next compaction
+
 	return true;
 }
 
@@ -875,8 +877,12 @@ GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id)
 	if (it == idToPos.end())
 		return nullptr;
 
+	auto& decal = decals.at(it->second);
+	if (!decal.IsValid())
+		return nullptr;
+
 	decalsUpdateList.SetUpdate(it->second);
-	return &decals.at(it->second);
+	return &decal;
 }
 
 const GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id) const
@@ -885,7 +891,11 @@ const GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id) const
 	if (it == idToPos.end())
 		return nullptr;
 
-	return &decals.at(it->second);
+	const auto& decal = decals.at(it->second);
+	if (!decal.IsValid())
+		return nullptr;
+
+	return &decal;
 }
 
 bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex)
@@ -895,6 +905,9 @@ bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texNam
 		return false;
 
 	auto& decal = decals.at(it->second);
+	if (!decal.IsValid())
+		return false;
+
 	const auto& atlas  = mainTex ? atlasMain : atlasNorm;
 	      auto& offset = mainTex ? decal.texMainOffsets : decal.texNormOffsets;
 
@@ -903,6 +916,7 @@ bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texNam
 		return false;
 
 	offset = newOffset;
+	decalsUpdateList.SetUpdate(it->second);
 	return true;
 }
 
@@ -913,6 +927,9 @@ std::string CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTex) cons
 		return "";
 
 	const auto& decal = decals.at(it->second);
+	if (!decal.IsValid())
+		return "";
+
 	const auto& offset = mainTex ? decal.texMainOffsets : decal.texNormOffsets;
 	const auto& atlas = mainTex ? atlasMain : atlasNorm;
 
@@ -940,6 +957,11 @@ const CSolidObject* CGroundDecalHandler::GetDecalSolidObjectOwner(uint32_t id) c
 {
 	for (const auto& [owner, pos] : decalOwners) {
 		if (!std::holds_alternative<const CSolidObject*>(owner))
+			continue;
+
+		const auto& decal = decals.at(pos);
+
+		if (!decal.IsValid())
 			continue;
 
 		if (id != decals.at(pos).info.id)
@@ -1080,7 +1102,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 		const float2 midPointDist = (oldDecal.posTL + oldDecal.posTR + oldDecal.posBR + oldDecal.posBL) * 0.25f;
 		const float midPointHeight = CGround::GetHeightReal(midPointDist.x, midPointDist.y, false);
-		oldDecal.height = std::max(mm.max - midPointHeight, midPointHeight - mm.min) + 1.0f;
+		oldDecal.height = argmax(mm.max - midPointHeight, midPointHeight - mm.min) + 25.0f;
 
 		decalsUpdateList.SetUpdate(doIt->second);
 		return;
@@ -1109,7 +1131,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 	const float2 midPointDist = (newDecal.posTL + newDecal.posTR + newDecal.posBR + newDecal.posBL) * 0.25f;
 	const float midPointHeight = CGround::GetHeightReal(midPointDist.x, midPointDist.y, false);
-	newDecal.height = std::max(newDecal.height, std::max(mm.max - midPointHeight, midPointHeight - mm.min)) + 1.0f;
+	newDecal.height = argmax(newDecal.height, mm.max - midPointHeight, midPointHeight - mm.min, 25.0f);
 	mm = {};
 
 	// replace the old entry
@@ -1156,7 +1178,7 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 
 	// Remove owners of expired items
 	for (auto doIt = decalOwners.begin(); doIt != decalOwners.end(); /*NOOP*/) {
-		if (const auto& decal = decals[doIt->second]; decal.IsValid() || decal.info.type == GroundDecal::Type::DECAL_LUA) {
+		if (const auto& decal = decals[doIt->second]; decal.IsValid()) {
 			const uint32_t id = decals.at(doIt->second).info.id; //can't use bitfield directly below
 			tmpOwnerToId.emplace(id, doIt->first);
 
@@ -1170,7 +1192,7 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 	// group all expired items towards the end of the vector
 	// Lua items are not considered expired
 	auto partIt = std::stable_partition(decals.begin(), decals.end(), [](const GroundDecal& decal) {
-		return decal.IsValid() || decal.info.type == GroundDecal::Type::DECAL_LUA;
+		return decal.IsValid();
 	});
 
 	// remove expired decals
@@ -1309,7 +1331,15 @@ void CGroundDecalHandler::ExplosionOccurred(const CExplosionParams& event) {
 	if ((event.weaponDef != nullptr) && !event.weaponDef->visuals.explosionScar)
 		return;
 
-	AddExplosion(event.pos, event.damages.GetDefault(), event.craterAreaOfEffect);
+	const auto decalDir = CGround::GetNormal(event.pos.x, event.pos.z, false);
+
+	AddExplosion(
+		event.pos,
+		decalDir,
+		event.damages.GetDefault(),
+		event.craterAreaOfEffect,
+		event.maxGroundDeformation
+	);
 }
 
 void CGroundDecalHandler::ConfigNotify(const std::string& key, const std::string& value)

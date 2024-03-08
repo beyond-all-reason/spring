@@ -4472,7 +4472,7 @@ int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 
 	int numValid = 0;
 	for (const auto& d : decals) {
-		numValid += d.IsValid() || d.info.type == GroundDecal::Type::DECAL_LUA;
+		numValid += d.IsValid();
 	}
 
 	if (numValid == 0)
@@ -4481,7 +4481,7 @@ int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 	int i = 1;
 	lua_createtable(L, numValid, 0);
 	for (const auto& d: decals) {
-		if (!d.IsValid() && d.info.type != GroundDecal::Type::DECAL_LUA)
+		if (!d.IsValid())
 			continue;
 
 		lua_pushnumber(L, d.info.id);
@@ -4718,7 +4718,7 @@ int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 int LuaUnsyncedRead::GetGroundDecalType(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
-	if (!decal) {
+	if (!decal || decal->info.type == GroundDecal::Type::DECAL_NONE) {
 		return 0;
 	}
 

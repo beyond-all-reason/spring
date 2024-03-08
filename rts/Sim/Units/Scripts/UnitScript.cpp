@@ -625,22 +625,23 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 				const WeaponDef* weaponDef = weapon->weaponDef;
 
 				const CExplosionParams params = {
-					absPos,
-					ZeroVector,
-					*weapon->damages,
-					weaponDef,
-					unit,                              // owner
-					nullptr,                           // hitUnit
-					nullptr,                           // hitFeature
-					weapon->damages->craterAreaOfEffect,
-					weapon->damages->damageAreaOfEffect,
-					weapon->damages->edgeEffectiveness,
-					weapon->damages->explosionSpeed,
-					1.0f,                              // gfxMod
-					weaponDef->impactOnly,
-					weaponDef->noSelfDamage,           // ignoreOwner
-					true,                              // damageGround
-					-1u                                // projectileID
+					.pos                  = absPos,
+					.dir                  = ZeroVector,
+					.damages              = *weapon->damages,
+					.weaponDef            = weaponDef,
+					.owner                = unit,
+					.hitUnit              = nullptr,
+					.hitFeature           = nullptr,
+					.craterAreaOfEffect   = weapon->damages->craterAreaOfEffect,
+					.damageAreaOfEffect   = weapon->damages->damageAreaOfEffect,
+					.edgeEffectiveness    = weapon->damages->edgeEffectiveness,
+					.explosionSpeed       = weapon->damages->explosionSpeed,
+					.gfxMod               = 1.0f,
+					.maxGroundDeformation = 0.0f,
+					.impactOnly           = weaponDef->impactOnly,
+					.ignoreOwner          = weaponDef->noSelfDamage,
+					.damageGround         = true,
+					.projectileID         = static_cast<uint32_t>(-1u)
 				};
 
 				helper->Explosion(params);

@@ -6726,22 +6726,23 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 	if (lua_istable(L, 7)) {
 		DamageArray damages(1.0f);
 		CExplosionParams params = {
-			pos,
-			dir,
-			damages,
-			nullptr,           // weaponDef
-			nullptr,           // owner
-			nullptr,           // hitUnit
-			nullptr,           // hitFeature
-			0.0f,              // craterAreaOfEffect
-			0.0f,              // damageAreaOfEffect
-			0.0f,              // edgeEffectiveness
-			0.0f,              // explosionSpeed
-			0.0f,              // gfxMod (scale-mult for *S*EG's)
-			false,             // impactOnly
-			false,             // ignoreOwner
-			false,             // damageGround
-			static_cast<unsigned int>(-1)
+			.pos                  = pos,
+			.dir                  = dir,
+			.damages              = damages,
+			.weaponDef            = nullptr,
+			.owner                = nullptr,
+			.hitUnit              = nullptr,
+			.hitFeature           = nullptr,
+			.craterAreaOfEffect   = 0.0f,
+			.damageAreaOfEffect   = 0.0f,
+			.edgeEffectiveness    = 0.0f,
+			.explosionSpeed       = 0.0f,
+			.gfxMod               = 0.0f,
+			.maxGroundDeformation = 0.0f,
+			.impactOnly           = false,
+			.ignoreOwner          = false,
+			.damageGround         = false,
+			.projectileID         = static_cast<uint32_t>(-1)
 		};
 
 		for (lua_pushnil(L); lua_next(L, 7) != 0; lua_pop(L, 1)) {
@@ -6764,6 +6765,7 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 		params.edgeEffectiveness  = std::min(luaL_optfloat(L, 10, 0.0f), 1.0f);
 		params.explosionSpeed     = luaL_optfloat(L, 11, 0.0f);
 		params.gfxMod             = luaL_optfloat(L, 12, 0.0f);
+		params.maxGroundDeformation = 0.0f;
 
 		params.impactOnly   = luaL_optboolean(L, 13, false);
 		params.ignoreOwner  = luaL_optboolean(L, 14, false);

@@ -10,15 +10,15 @@ class CUnit;
 struct GroundDecal {
 public:
 	enum class Type : uint8_t {
-		DECAL_PLATE,
-		DECAL_EXPLOSION,
-		DECAL_TRACK,
-		DECAL_LUA
+		DECAL_NONE      = 0,
+		DECAL_PLATE     = 1,
+		DECAL_EXPLOSION = 2,
+		DECAL_TRACK     = 3,
+		DECAL_LUA       = 4
 	};
 public:
-	//enum class DecalType { EXPLOSION, BUILDING, GHOST, LUA };
-	bool IsValid() const { return (alpha > 0.0f); }
-	void MarkInvalid() { alpha = 0.0f; }
+	bool IsValid() const { return info.type > Type::DECAL_NONE || alpha > 0.0f; }
+	void MarkInvalid() { info.type = Type::DECAL_NONE; }
 public:
 	float2 posTL;
 	float2 posTR;
