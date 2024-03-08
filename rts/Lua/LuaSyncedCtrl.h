@@ -27,6 +27,7 @@ class LuaSyncedCtrl
 		inline static int inDestroyFeature = 0;
 		inline static int inGiveOrder = 0;
 		inline static int inTransferUnit = 0;
+		inline static int inTransferUnitLimit = 0;
 
 		inline static bool inHeightMap = false;
 		inline static bool inOriginalHeightMap = false;
@@ -67,6 +68,7 @@ class LuaSyncedCtrl
 		static int CreateUnit(lua_State* L);
 		static int DestroyUnit(lua_State* L);
 		static int TransferUnit(lua_State* L);
+		static int TransferUnitLimit(lua_State* L);
 
 		static int CreateFeature(lua_State* L);
 		static int DestroyFeature(lua_State* L);
