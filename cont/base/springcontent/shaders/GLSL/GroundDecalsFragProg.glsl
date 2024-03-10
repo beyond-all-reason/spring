@@ -335,9 +335,8 @@ void main() {
 	}
 
 	if (disc) {
-		//fragColor = vec4(0.0);
-		//return;
-		discard;
+		fragColor = vec4(0.0);
+		return;
 	}
 
 	vec4 uv;
