@@ -36,19 +36,17 @@ uniform mat4 shadowMatrix;
 
 uniform float curAdjustedFrame;
 
-flat in vec3 vPosTL;
-flat in vec3 vPosTR;
-flat in vec3 vPosBL;
-flat in vec3 vPosBR;
+flat in vec4 vPosTL;
+flat in vec4 vPosTR;
+flat in vec4 vPosBL;
+flat in vec4 vPosBR;
 
 flat in vec4 vuvMain;
 flat in vec4 vuvNorm;
 flat in vec4 midPoint;
      in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left // can't be flat because of misc.x
-flat in vec4 misc2; // groundNormal.xyz, decalTypeAsFloat
-flat in vec3 xDir;
-
-#define groundNormal misc2.xyz
+flat in vec4 misc2; // {3xempty}, decalTypeAsFloat
+flat in mat3 rotMat;
 
 out vec4 fragColor;
 
@@ -65,7 +63,7 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200068
+#line 200066
 
 vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     vec3 v0 = p2 - p0;
@@ -262,6 +260,28 @@ vec3 RotateByNormalVector(vec3 p, vec3 newUpDir, vec3 rotAxis) {
 	#undef nz
 }
 
+/*
+bool IsInEllipsoid(vec3 xyz, vec3 abc) {
+#if 1
+	float A = xyz.x * abc.y * abc.z;
+	float B = xyz.y * abc.x * abc.z;
+	float C = xyz.z * abc.x * abc.y;
+	float D = abc.x * abc.y * abc.z;
+
+	return A * A + B * B + C * C <= D * D;
+#else
+	return ((xyz.x*xyz.x) / (abc.x*abc.x) + (xyz.y*xyz.y) / (abc.y*abc.y) + (xyz.z*xyz.z) / (abc.z*abc.z) <= 1.0);
+#endif
+}
+*/
+float EllipsoidRedunction(vec3 xyz, vec3 abc) {
+	float s = (xyz.x*xyz.x) / (abc.x*abc.x) + (xyz.y*xyz.y) / (abc.y*abc.y) + (xyz.z*xyz.z) / (abc.z*abc.z);
+	return clamp(2.0 - max(s, 1.0), 0.0, 1.0);
+}
+
+
+const float DECAL_EXPLOSION = 2.0;
+
 const float SMF_INTENSITY_MULT = 210.0 / 255.0;
 const float SMF_SHALLOW_WATER_DEPTH     = 10.0;
 const float SMF_SHALLOW_WATER_DEPTH_INV = 1.0 / SMF_SHALLOW_WATER_DEPTH;
@@ -278,7 +298,11 @@ void main() {
 
 	vec3 worldPos = GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
 
-	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, groundNormal) * groundNormal;
+	//vec3 rotWorldPos = transpose(rotMat) * (worldPos - midPoint.xyz);
+	//if (misc2.w == DECAL_EXPLOSION && !IsInEllipsoid(rotWorldPos, vec3(vPosTL.w, misc.y, vPosTR.w)))
+	//	discard;
+
+	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, rotMat[1]) * rotMat[1];
 
 	vec4 uvBL = vec4(uvMainBL, uvNormBL);
 	vec4 uvTL = vec4(uvMainTL, uvNormTL);
@@ -287,14 +311,13 @@ void main() {
 
 	float u = 1.0;
 	if (misc.z > 0.0) {
-		u = distance((vPosTL + vPosBL) * 0.5, (vPosBR + vPosTR) * 0.5) / misc.z;
-		//u = distance(vPosTL, vPosTR) / misc.z;
+		u = distance((vPosTL.xyz + vPosBL.xyz) * 0.5, (vPosBR.xyz + vPosTR.xyz) * 0.5) / misc.z;
 	}
 
 	vec4 relUV;
 	bool disc = true;
 	{
-		vec3 bc = GetTriangleBarycentric(worldPosProj, vPosBL, vPosTL, vPosTR);
+		vec3 bc = GetTriangleBarycentric(worldPosProj, vPosBL.xyz, vPosTL.xyz, vPosTR.xyz);
 		if (all(greaterThanEqual(bc, all0)) && all(lessThanEqual(bc, all1))) {
 			disc = false;
 			//uv = bc.x * uvBL + bc.y * uvTL + bc.z * uvTR;
@@ -303,7 +326,7 @@ void main() {
 	}
 	if (disc)
 	{
-		vec3 bc = GetTriangleBarycentric(worldPosProj, vPosTR, vPosBR, vPosBL);
+		vec3 bc = GetTriangleBarycentric(worldPosProj, vPosTR.xyz, vPosBR.xyz, vPosBL.xyz);
 		if (all(greaterThanEqual(bc, all0)) && all(lessThanEqual(bc, all1))) {
 			disc = false;
 			//uv = bc.x * uvTR + bc.y * uvBR + bc.z * uvBL;
@@ -361,13 +384,13 @@ void main() {
 	#else
 		vec3 mapDecalMix = 2.0 * mainCol.rgb * mapDiffuse.rgb;
 	#endif
-	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(misc2.w == 2.0/*DECAL_EXPLOSION*/)); //only apply mapDecalMix for explosions
+	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(misc2.w == DECAL_EXPLOSION)); //only apply mapDecalMix for explosions
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
 
 	#if 0
 	// Expensive processing
-	vec3 T = xDir; //tangent if N was (0,1,0)
+	vec3 T = rotMat[0]; //tangent if N was (0,1,0)
 
 	if (1.0 - N.y > 0.01) {
 		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
@@ -376,7 +399,7 @@ void main() {
 	}
 	#else
 	// Cheaper Gramm-Schmidt
-	vec3 T = normalize(xDir - N * dot(xDir,  N));
+	vec3 T = normalize(rotMat[0] - N * dot(rotMat[0],  N));
 	#endif
 
 	vec3 B = normalize(cross(N, T));
@@ -420,9 +443,14 @@ void main() {
 	#endif
 
 	fragColor.a = mainCol.a * alpha;
+
+	vec3 rotWorldPos = transpose(rotMat) * (worldPos - midPoint.xyz);
+	//fragColor.xyz=vec3(1);
+	fragColor.a *= mix(1.0, EllipsoidRedunction(rotWorldPos, vec3(vPosTL.w, misc.y, vPosTR.w)), float(misc2.w == DECAL_EXPLOSION));
 	// artistic adjustments
-	//fragColor  *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is arbitrary
-	fragColor.a *=
-		smoothstep(0.0, EPS, relUV.x) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.x)) *
-		smoothstep(0.0, EPS, relUV.y) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.y));
+	//fragColor  *= pow(max(dot(rotMat[1], N), 0.0), 1.5); // MdotL^1.5 is arbitrary
+	//fragColor = vec4(1);
+	//fragColor.a *=
+	//	smoothstep(0.0, EPS, relUV.x) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.x)) *
+	//	smoothstep(0.0, EPS, relUV.y) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.y));
 }

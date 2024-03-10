@@ -501,6 +501,9 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	if (radius < 5.0f)
 		return;
 
+	if (damage < 5.0f)
+		return;
+
 	damage = std::min(damage, radius * 30.0f);
 	damage *= (radius / (radius + altitude));
 	radius = std::min(radius, damage * 0.25f);
@@ -524,7 +527,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	const auto normName = IntToString(scarIdx, "normscar_%i");
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
-	const auto height = argmax(size, maxHeightDiff) + 50.0f; // 50.0f is a leeway here
+	const auto height = argmax(size, maxHeightDiff);
 
 	const auto& decal = decals.emplace_back(GroundDecal{
 		.posTL = posTL,
@@ -1156,8 +1159,8 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 			numToDelete++;
 			continue;
 		}
-		const auto targetExpirationFrame = static_cast<int>(decal.alpha / decal.alphaFalloff);
-		if (frameNum - decal.createFrameMax > targetExpirationFrame) {
+		const auto targetExpirationFrame = static_cast<int>(decal.alpha / std::max(decal.alphaFalloff, 1e-6f));
+		if (decal.info.type != GroundDecal::Type::DECAL_LUA && frameNum - decal.createFrameMax > targetExpirationFrame) {
 			decal.MarkInvalid();
 			numToDelete++;
 		}
@@ -1176,17 +1179,21 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 	// after the compaction is complete
 	spring::unordered_map<uint32_t, DecalOwner> tmpOwnerToId;
 
-	// Remove owners of expired items
-	for (auto doIt = decalOwners.begin(); doIt != decalOwners.end(); /*NOOP*/) {
-		if (const auto& decal = decals[doIt->second]; decal.IsValid()) {
-			const uint32_t id = decals.at(doIt->second).info.id; //can't use bitfield directly below
-			tmpOwnerToId.emplace(id, doIt->first);
+	// avoid erasing while iterating
+	std::vector<DecalOwner> eraseList;
 
-			doIt++;
+	// Remove owners of expired items
+	for (const auto& [owner, pos] : decalOwners) {
+		if (const auto& decal = decals.at(pos); decal.IsValid()) {
+			const uint32_t id = decal.info.id; //can't use bitfield directly below
+			tmpOwnerToId.emplace(id, owner);
 		}
 		else {
-			doIt = decalOwners.erase(doIt);
+			eraseList.emplace_back(owner);
 		}
+	}
+	for (const auto& owner : eraseList) {
+		decalOwners.erase(owner);
 	}
 
 	// group all expired items towards the end of the vector

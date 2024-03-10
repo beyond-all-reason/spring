@@ -14,19 +14,17 @@ uniform sampler2D groundNormalTex;
 uniform vec4 mapDims; //mapxy; 1.0 / mapxy
 uniform float curAdjustedFrame;
 
-flat out vec3 vPosTL;
-flat out vec3 vPosTR;
-flat out vec3 vPosBL;
-flat out vec3 vPosBR;
+flat out vec4 vPosTL;
+flat out vec4 vPosTR;
+flat out vec4 vPosBL;
+flat out vec4 vPosBR;
 
 flat out vec4 vuvMain;
 flat out vec4 vuvNorm;
 flat out vec4 midPoint;
      out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset // can't be flat because of misc.x
-flat out vec4 misc2; // groundNormal.xyz, decalTypeAsFloat
-flat out vec3 xDir;
-
-#define groundNormal misc2.xyz
+flat out vec4 misc2; // {3xempty}, decalTypeAsFloat
+flat out mat3 rotMat;
 
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
@@ -135,6 +133,8 @@ vec3 RotateByNormalVector(vec3 p, vec3 newUpDir, vec3 rotAxis) {
 	#undef nz
 }
 
+const float DECAL_EXPLOSION = 2.0;
+
 // uv ==> L, T, R, B
 void main() {
 	vec3 relPos = CUBE_VERT[gl_VertexID];
@@ -148,14 +148,14 @@ void main() {
 	misc2.w = float(typeAndId & 0xFu); //copy type only, don't care about ID
 
 	// emulate explosion fade in for the first 6 frames, asjusted by the initial alpha (less fadein for already weak scars)
-	misc.x *= mix(1.0, smoothstep(0.0, 6.0 * info.x, curAdjustedFrame - thisVertexCreateFrame), float(misc2.w == 2.0/*DECAL_EXPLOSION*/));
+	misc.x *= mix(1.0, smoothstep(0.0, 6.0 * info.x, curAdjustedFrame - thisVertexCreateFrame), float(misc2.w == DECAL_EXPLOSION));
 
 	#if 1
 	if (alphaMax <= 0.0 || misc2.w <= 0.0) {
-		vPosTL = vec3(0);
-		vPosTR = vec3(0);
-		vPosBL = vec3(0);
-		vPosBR = vec3(0);
+		vPosTL = vec4(0);
+		vPosTR = vec4(0);
+		vPosBL = vec4(0);
+		vPosBR = vec4(0);
 		gl_Position = vec4(2.0, 2.0, 2.0, 1.0); //place outside of [-1;1]^3 NDC, basically cull out from the further rendering
 		return;
 	}
@@ -173,6 +173,7 @@ void main() {
 	midPoint.w *= 1.22474;
 
 	// groundNormal
+	vec3 groundNormal = vec3(0);
 	if (dot(forcedNormalAndAlphaMult.xyz, forcedNormalAndAlphaMult.xyz) == 0.0) {
 		groundNormal = vec3(0.0);
 		groundNormal += 2.0 * GetFragmentNormal(midPoint.xz);
@@ -186,26 +187,29 @@ void main() {
 	}
 
 	// get 2D orthonormal system
-	     xDir = vec3( ca, 0.0, sa);
-	vec3 zDir = vec3(-sa, 0.0, ca);
+	vec3 xDir = vec3( ca, 0.0, sa);
 
 	// don't rotate almost vertical cubes
 	if (1.0 - groundNormal.y > 0.05) {
 		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
 		vec3 rotAxis = normalize(vec3(groundNormal.z, 0.0, -groundNormal.x));
 		xDir = RotateByNormalVector(xDir, groundNormal, rotAxis);
-		zDir = normalize(cross(xDir, groundNormal));
 	}
+	vec3 zDir = normalize(cross(xDir, groundNormal));
 
 	// orthonormal system
-	mat3 ONS = mat3(xDir, groundNormal, zDir);
-	//ONS = mat3(1);
+	rotMat = mat3(xDir, groundNormal, zDir);
 
 	// absolute world coords, already rotated in all possible ways
-	vPosTL = ONS * (vec3(posT.x, 0.0, posT.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
-	vPosTR = ONS * (vec3(posT.z, 0.0, posT.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
-	vPosBR = ONS * (vec3(posB.x, 0.0, posB.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
-	vPosBL = ONS * (vec3(posB.z, 0.0, posB.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosTL.xyz = rotMat * (vec3(posT.x, 0.0, posT.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosTR.xyz = rotMat * (vec3(posT.z, 0.0, posT.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosBR.xyz = rotMat * (vec3(posB.x, 0.0, posB.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosBL.xyz = rotMat * (vec3(posB.z, 0.0, posB.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+
+	vPosTL.w = distance(posT.zw, posT.xy) * 0.5;
+	vPosTR.w = distance(posB.xy, posT.zw) * 0.5;
+	vPosBR.w = distance(posB.zw, posB.xy) * 0.5;
+	vPosBL.w = distance(posT.xy, posB.zw) * 0.5;
 
 	vuvMain = uvMain;
 	vuvNorm = uvNorm;
@@ -218,10 +222,10 @@ void main() {
 	);
 
 	vec3 worldPos = vec3(0);
-	worldPos.xyz += testResults.x * vPosTL;
-	worldPos.xyz += testResults.y * vPosTR;
-	worldPos.xyz += testResults.z * vPosBR;
-	worldPos.xyz += testResults.w * vPosBL;
+	worldPos.xyz += testResults.x * vPosTL.xyz;
+	worldPos.xyz += testResults.y * vPosTR.xyz;
+	worldPos.xyz += testResults.z * vPosBR.xyz;
+	worldPos.xyz += testResults.w * vPosBL.xyz;
 
 	// effect's height
 	misc.y = info.w;
