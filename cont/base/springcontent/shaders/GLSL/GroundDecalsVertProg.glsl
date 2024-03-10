@@ -1,13 +1,15 @@
 #version 130
 
+in vec4 forcedPos;
 in vec4 posT; //posTL, posTR
 in vec4 posB; //posBR, posBL
 in vec4 uvMain; // L, T, R, B
 in vec4 uvNorm; // L, T, R, B
-in vec4 info; // alpha, alphaFalloff, rot, height
-in vec4 createParams; //min, max (left, right) side, .z - uvWrapDistance, .w - traveled distance - used for tracks
-in vec4 forcedNormalAndAlphaMult; // .xyz - forcedNormal, .w - alphaVisMult
-in uint typeAndId; // { type:8; id:24; }
+in vec4 createParams1;
+in vec4 createParams2;
+in vec4 createParams3;
+in vec4 createParams4;
+in uvec4 createParams5; // { type:8; id:24; }
 
 uniform sampler2D heightTex;
 uniform sampler2D groundNormalTex;
@@ -21,10 +23,29 @@ flat out vec4 vPosBR;
 
 flat out vec4 vuvMain;
 flat out vec4 vuvNorm;
+
 flat out vec4 midPoint;
      out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset // can't be flat because of misc.x
 flat out vec4 misc2; // {3xempty}, decalTypeAsFloat
 flat out mat3 rotMat;
+
+#define alpha              (createParams1.x)
+#define alphaFalloff       (createParams1.y)
+#define glow               (createParams1.z)
+#define glowFalloff        (createParams1.w)
+
+#define rot                (createParams2.x)
+#define height             (createParams2.y)
+#define unused1            (createParams2.z)
+#define unused2            (createParams2.w)
+
+#define createFrameMin     (createParams3.x)
+#define createFrameMax     (createParams3.y)
+#define uvWrapDistance     (createParams3.z)
+#define uvTraveledDistance (createParams3.w)
+
+#define forcedNormal       (createParams4.xyz)
+#define visMult            (createParams4.w)
 
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)

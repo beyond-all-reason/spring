@@ -61,7 +61,6 @@ CGroundDecalHandler::CGroundDecalHandler()
 	, decalShader{ nullptr }
 	, decalsUpdateList{ }
 	, smfDrawer { nullptr }
-	, lastProcessedGameFrame{ std::numeric_limits<int>::lowest() }
 	, highQuality{ configHandler->GetBool("HighQualityDecals") && (globalRendering->msaaLevel > 0) }
 	, sdbc{ highQuality }
 {
@@ -267,34 +266,27 @@ void CGroundDecalHandler::AddFallbackTextures()
 
 void CGroundDecalHandler::BindVertexAtrribs()
 {
-	for (int i = 0; i <= 7; ++i) {
+	for (int i = 0; i <= 8; ++i) {
 		glEnableVertexAttribArray(i);
 		glVertexAttribDivisor(i, 1);
 	}
 
-	// posTL, posTR
-	glVertexAttribPointer(0, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, posTL));
-	// posBR, posBL
-	glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, posBR));
-	// texMainOffsets
-	glVertexAttribPointer(2, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, texMainOffsets));
-	// texNormOffsets
-	glVertexAttribPointer(3, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, texNormOffsets));
-	// alpha, alphaFalloff, rot, height
-	glVertexAttribPointer(4, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, alpha));
-	// createFrameMin, createFrameMax, uvWrapDistance, uvTraveledDistance
-	glVertexAttribPointer(5, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, createFrameMin));
-	// forcedNormal, visMult
-	glVertexAttribPointer(6, 4, GL_FLOAT, false, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, forcedNormal));
-	// type & id (packed)
-	glVertexAttribIPointer(7, 1, GL_UNSIGNED_INT, sizeof(GroundDecal), (const void*)offsetof(GroundDecal, info));
+	for (const AttributeDef& ad : GroundDecal::attributeDefs) {
+		glEnableVertexAttribArray(ad.index);
+		glVertexAttribDivisor(ad.index, 1);
+
+		if (ad.type == GL_FLOAT || ad.normalize)
+			glVertexAttribPointer(ad.index, ad.count, ad.type, ad.normalize, ad.stride, ad.data);
+		else //assume int types
+			glVertexAttribIPointer(ad.index, ad.count, ad.type, ad.stride, ad.data);
+	}
 }
 
 void CGroundDecalHandler::UnbindVertexAtrribs()
 {
-	for (int i = 0; i <= 7; ++i) {
-		glDisableVertexAttribArray(i);
-		glVertexAttribDivisor(i, 0);
+	for (const AttributeDef& ad : GroundDecal::attributeDefs) {
+		glDisableVertexAttribArray(ad.index);
+		glVertexAttribDivisor(ad.index, 0);
 	}
 }
 
@@ -345,14 +337,7 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 	decalShader->SetFlag("HAVE_INFOTEX", true);
 	decalShader->SetFlag("SMF_WATER_ABSORPTION", true);
 
-	decalShader->BindAttribLocation("posT"                    , 0);
-	decalShader->BindAttribLocation("posB"                    , 1);
-	decalShader->BindAttribLocation("uvMain"                  , 2);
-	decalShader->BindAttribLocation("uvNorm"                  , 3);
-	decalShader->BindAttribLocation("info"                    , 4);
-	decalShader->BindAttribLocation("createParams"            , 5);
-	decalShader->BindAttribLocation("forcedNormalAndAlphaMult", 6);
-	decalShader->BindAttribLocation("typeAndId"               , 7);
+	decalShader->BindAttribLocations<GroundDecal>();
 
 	decalShader->Link();
 

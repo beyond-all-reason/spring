@@ -183,7 +183,6 @@ private:
 
 	CSMFGroundDrawer* smfDrawer;
 
-	int lastProcessedGameFrame;
 	bool highQuality = false;
 	ScopedDepthBufferCopy sdbc;
 
