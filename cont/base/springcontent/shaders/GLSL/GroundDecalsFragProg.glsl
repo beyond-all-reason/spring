@@ -63,7 +63,7 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200069
+#line 200066
 
 vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     vec3 v0 = p2 - p0;
@@ -276,7 +276,7 @@ bool IsInEllipsoid(vec3 xyz, vec3 abc) {
 */
 float EllipsoidRedunction(vec3 xyz, vec3 abc) {
 	float s = (xyz.x*xyz.x) / (abc.x*abc.x) + (xyz.y*xyz.y) / (abc.y*abc.y) + (xyz.z*xyz.z) / (abc.z*abc.z);
-	return 2.0 - max(s, 1.0);
+	return clamp(2.0 - max(s, 1.0), 0.0, 1.0);
 }
 
 
