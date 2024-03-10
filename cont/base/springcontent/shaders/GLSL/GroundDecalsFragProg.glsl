@@ -45,11 +45,8 @@ flat in vec4 vuvMain;
 flat in vec4 vuvNorm;
 flat in vec4 midPoint;
      in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left // can't be flat because of misc.x
-flat in vec4 misc2; // groundNormal.xyz, decalTypeAsFloat
-flat in vec3 xDir;
-flat in vec3 zDir;
-
-#define groundNormal misc2.xyz
+flat in vec4 misc2; // {3xempty}, decalTypeAsFloat
+flat in mat3 rotMat;
 
 out vec4 fragColor;
 
@@ -301,11 +298,11 @@ void main() {
 
 	vec3 worldPos = GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
 
-	//vec3 rotWorldPos = transpose(mat3(xDir, groundNormal, zDir)) * (worldPos - midPoint.xyz);
+	//vec3 rotWorldPos = transpose(rotMat) * (worldPos - midPoint.xyz);
 	//if (misc2.w == DECAL_EXPLOSION && !IsInEllipsoid(rotWorldPos, vec3(vPosTL.w, misc.y, vPosTR.w)))
 	//	discard;
 
-	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, groundNormal) * groundNormal;
+	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, rotMat[1]) * rotMat[1];
 
 	vec4 uvBL = vec4(uvMainBL, uvNormBL);
 	vec4 uvTL = vec4(uvMainTL, uvNormTL);
@@ -393,7 +390,7 @@ void main() {
 
 	#if 0
 	// Expensive processing
-	vec3 T = xDir; //tangent if N was (0,1,0)
+	vec3 T = rotMat[0]; //tangent if N was (0,1,0)
 
 	if (1.0 - N.y > 0.01) {
 		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
@@ -402,7 +399,7 @@ void main() {
 	}
 	#else
 	// Cheaper Gramm-Schmidt
-	vec3 T = normalize(xDir - N * dot(xDir,  N));
+	vec3 T = normalize(rotMat[0] - N * dot(rotMat[0],  N));
 	#endif
 
 	vec3 B = normalize(cross(N, T));
@@ -447,11 +444,11 @@ void main() {
 
 	fragColor.a = mainCol.a * alpha;
 
-	vec3 rotWorldPos = transpose(mat3(xDir, groundNormal, zDir)) * (worldPos - midPoint.xyz);
+	vec3 rotWorldPos = transpose(rotMat) * (worldPos - midPoint.xyz);
 	//fragColor.xyz=vec3(1);
 	fragColor.a *= mix(1.0, EllipsoidRedunction(rotWorldPos, vec3(vPosTL.w, misc.y, vPosTR.w)), float(misc2.w == DECAL_EXPLOSION));
 	// artistic adjustments
-	//fragColor  *= pow(max(dot(groundNormal, N), 0.0), 1.5); // MdotL^1.5 is arbitrary
+	//fragColor  *= pow(max(dot(rotMat[1], N), 0.0), 1.5); // MdotL^1.5 is arbitrary
 	//fragColor = vec4(1);
 	//fragColor.a *=
 	//	smoothstep(0.0, EPS, relUV.x) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.x)) *

@@ -23,11 +23,8 @@ flat out vec4 vuvMain;
 flat out vec4 vuvNorm;
 flat out vec4 midPoint;
      out vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - uvOffset // can't be flat because of misc.x
-flat out vec4 misc2; // groundNormal.xyz, decalTypeAsFloat
-flat out vec3 xDir;
-flat out vec3 zDir;
-
-#define groundNormal misc2.xyz
+flat out vec4 misc2; // {3xempty}, decalTypeAsFloat
+flat out mat3 rotMat;
 
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
@@ -176,6 +173,7 @@ void main() {
 	midPoint.w *= 1.22474;
 
 	// groundNormal
+	vec3 groundNormal = vec3(0);
 	if (dot(forcedNormalAndAlphaMult.xyz, forcedNormalAndAlphaMult.xyz) == 0.0) {
 		groundNormal = vec3(0.0);
 		groundNormal += 2.0 * GetFragmentNormal(midPoint.xz);
@@ -189,26 +187,24 @@ void main() {
 	}
 
 	// get 2D orthonormal system
-	xDir = vec3( ca, 0.0, sa);
-	zDir = vec3(-sa, 0.0, ca);
+	vec3 xDir = vec3( ca, 0.0, sa);
 
 	// don't rotate almost vertical cubes
 	if (1.0 - groundNormal.y > 0.05) {
 		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
 		vec3 rotAxis = normalize(vec3(groundNormal.z, 0.0, -groundNormal.x));
 		xDir = RotateByNormalVector(xDir, groundNormal, rotAxis);
-		zDir = normalize(cross(xDir, groundNormal));
 	}
+	vec3 zDir = normalize(cross(xDir, groundNormal));
 
 	// orthonormal system
-	mat3 ONS = mat3(xDir, groundNormal, zDir);
-	//ONS = mat3(1);
+	rotMat = mat3(xDir, groundNormal, zDir);
 
 	// absolute world coords, already rotated in all possible ways
-	vPosTL.xyz = ONS * (vec3(posT.x, 0.0, posT.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
-	vPosTR.xyz = ONS * (vec3(posT.z, 0.0, posT.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
-	vPosBR.xyz = ONS * (vec3(posB.x, 0.0, posB.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
-	vPosBL.xyz = ONS * (vec3(posB.z, 0.0, posB.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosTL.xyz = rotMat * (vec3(posT.x, 0.0, posT.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosTR.xyz = rotMat * (vec3(posT.z, 0.0, posT.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosBR.xyz = rotMat * (vec3(posB.x, 0.0, posB.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
+	vPosBL.xyz = rotMat * (vec3(posB.z, 0.0, posB.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
 
 	vPosTL.w = distance(posT.zw, posT.xy) * 0.5;
 	vPosTR.w = distance(posB.xy, posT.zw) * 0.5;

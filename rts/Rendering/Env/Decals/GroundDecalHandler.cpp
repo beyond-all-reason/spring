@@ -501,6 +501,9 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	if (radius < 5.0f)
 		return;
 
+	if (damage < 5.0f)
+		return;
+
 	damage = std::min(damage, radius * 30.0f);
 	damage *= (radius / (radius + altitude));
 	radius = std::min(radius, damage * 0.25f);
