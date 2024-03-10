@@ -531,7 +531,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = explNormalVec,
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{ .type = GroundDecal::Type::DECAL_EXPLOSION, .id = GroundDecal::GetNextId() }
+		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() }
 	});
 
 	idToPos.emplace(decal.info.id, decals.size() - 1);
@@ -743,7 +743,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = float3{},
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = GroundDecal::Type::DECAL_PLATE, .id = GroundDecal::GetNextId() }
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE), .id = GroundDecal::GetNextId() }
 	});
 
 	decalsUpdateList.EmplaceBackUpdate();
@@ -772,7 +772,7 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 	auto& decayingDecal = decals.at(doIt->second);
 
 	// we only care about DECAL_PLATE decals below
-	if (decayingDecal.info.type != GroundDecal::Type::DECAL_PLATE) {
+	if (decayingDecal.info.type != static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE)) {
 		decalOwners.erase(doIt);
 		return;
 	}
@@ -803,7 +803,7 @@ void CGroundDecalHandler::GhostDestroyed(const GhostSolidObject* gb) {
 
 	auto& decal = decals.at(doIt->second);
 	// just in case
-	if (decal.info.type != GroundDecal::Type::DECAL_PLATE)
+	if (decal.info.type != static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE))
 		return;
 
 	decal.alpha = 0.0f;
@@ -832,7 +832,7 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = float3{},
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = GroundDecal::Type::DECAL_LUA, .id = GroundDecal::GetNextId() }
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA), .id = GroundDecal::GetNextId() }
 	});
 	decalsUpdateList.EmplaceBackUpdate();
 	idToPos.emplace(decal.info.id, decals.size() - 1);
@@ -850,7 +850,7 @@ bool CGroundDecalHandler::DeleteLuaDecal(uint32_t id)
 	if (!decal.IsValid())
 		return false;
 
-	if (decal.info.type != GroundDecal::Type::DECAL_LUA)
+	if (decal.info.type != static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA))
 		return false;
 
 	decal.MarkInvalid();
@@ -1040,7 +1040,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 			.uvTraveledDistance = 0.0f,
 			.forcedNormal = float3{unit->updir},
 			.visMult = 1.0f,
-			.info = GroundDecal::TypeID{.type = GroundDecal::Type::DECAL_TRACK, .id = GroundDecal::GetNextId() }
+			.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() }
 		});
 
 		mm = {};
@@ -1114,7 +1114,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		.uvTraveledDistance = oldDecal.uvTraveledDistance + posL.Distance(posR)/*oldDecal.posTL.Distance(oldDecal.posTR)*/,
 		.forcedNormal = float3{ unit->updir },
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = GroundDecal::Type::DECAL_TRACK, .id = GroundDecal::GetNextId() }
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() }
 	});
 
 	const float2 midPointDist = (newDecal.posTL + newDecal.posTR + newDecal.posBR + newDecal.posBL) * 0.25f;
@@ -1145,7 +1145,7 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 			continue;
 		}
 		const auto targetExpirationFrame = static_cast<int>(decal.alpha / std::max(decal.alphaFalloff, 1e-6f));
-		if (decal.info.type != GroundDecal::Type::DECAL_LUA && frameNum - decal.createFrameMax > targetExpirationFrame) {
+		if (decal.info.type != static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA) && frameNum - decal.createFrameMax > targetExpirationFrame) {
 			decal.MarkInvalid();
 			numToDelete++;
 		}
@@ -1213,7 +1213,7 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 	for (const auto& [owner, pos] : decalOwners) {
 		auto& decal = decals.at(pos);
 
-		if (decal.info.type != GroundDecal::Type::DECAL_PLATE)
+		if (decal.info.type != static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE))
 			continue;
 
 		if (std::holds_alternative<const CSolidObject*>(owner)) {

@@ -19,10 +19,13 @@ public:
 		DECAL_LUA       = 4
 	};
 public:
-	bool IsValid() const { return info.type > Type::DECAL_NONE; }
-	void MarkInvalid() { info.type = Type::DECAL_NONE; }
+	bool IsValid() const { return info.type > static_cast<uint8_t>(Type::DECAL_NONE); }
+	void MarkInvalid() { info.type = static_cast<uint8_t>(Type::DECAL_NONE); }
 public:
-	float4 forcedPos;
+	float refHeight;
+	float minHeight;
+	float maxHeight;
+	float forceHeightMode;
 
 	float2 posTL;
 	float2 posTR;
@@ -51,8 +54,8 @@ public:
 	float visMult;
 
 	struct TypeID {
-		Type type : 8;
-		uint32_t id : 24;
+		uint32_t type : 8;
+		uint32_t id   : 24;
 	} info;
 	SColor tintColor;
 	SColor glowColorMap[2];
@@ -65,3 +68,4 @@ public:
 
 	static const std::array<AttributeDef, 10> attributeDefs;
 };
+static_assert(sizeof(GroundDecal::info) == 4u);

@@ -4718,22 +4718,22 @@ int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 int LuaUnsyncedRead::GetGroundDecalType(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
-	if (!decal || decal->info.type == GroundDecal::Type::DECAL_NONE) {
+	if (!decal || decal->info.type == static_cast<uint8_t>(GroundDecal::Type::DECAL_NONE)) {
 		return 0;
 	}
 
 	switch (decal->info.type)
 	{
-	case GroundDecal::Type::DECAL_PLATE:
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE):
 		lua_pushliteral(L, "plate");
 		break;
-	case GroundDecal::Type::DECAL_EXPLOSION:
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION):
 		lua_pushliteral(L, "explosion");
 		break;
-	case GroundDecal::Type::DECAL_TRACK:
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK):
 		lua_pushliteral(L, "track");
 		break;
-	case GroundDecal::Type::DECAL_LUA:
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA):
 		lua_pushliteral(L, "lua");
 		break;
 	default:
