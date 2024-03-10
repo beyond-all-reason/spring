@@ -143,6 +143,10 @@ struct MoveDef {
 	int xsize = 0, xsizeh = 0;
 	int zsize = 0, zsizeh = 0;
 
+	// Apply additional collision boundary in elmos to keep units separated.
+	// The larger of two units' separation distance will be applied.
+	float separationDistance;
+
 	/// minWaterDepth for ships, maxWaterDepth otherwise
 	/// controls movement and (un-)loading constraints
 	float depth = 0.0f;

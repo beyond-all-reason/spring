@@ -2470,7 +2470,7 @@ void CGroundMoveType::HandleObjectCollisions()
 	// NOTE:
 	//   use the collider's MoveDef footprint as radius since it is
 	//   always mobile (its UnitDef footprint size may be different)
-	const float colliderFootPrintRadius = colliderMD->CalcFootPrintMaxInteriorRadius(); // ~= CalcFootPrintMinExteriorRadius(0.75f)
+	const float colliderFootPrintRadius = colliderMD->CalcFootPrintMaxInteriorRadius() + colliderMD->separationDistance;
 	const float colliderAxisStretchFact = colliderMD->CalcFootPrintAxisStretchFactor();
 
 	HandleUnitCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
@@ -2793,6 +2793,8 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
+	const float colliderSeparationDist = colliderMD->separationDistance;
+
 	// copy on purpose, since the below can call Lua
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -2834,7 +2836,17 @@ void CGroundMoveType::HandleUnitCollisions(
 
 		// use the collidee's MoveDef footprint as radius if it is mobile
 		// use the collidee's Unit (not UnitDef) footprint as radius otherwise
-		const float2 collideeParams = {collidee->speed.w, collideeMobile? collideeMD->CalcFootPrintMaxInteriorRadius(): collidee->CalcFootPrintMaxInteriorRadius()};
+		
+		float separation = 0.f;
+		if (collideeMobile) {
+			// If the collidee wants a larger separation then apply that.
+			const float separationDistAdjust = std::max(collideeMD->separationDistance - colliderSeparationDist, 0.f);
+			separation = collideeMD->CalcFootPrintMaxInteriorRadius() + separationDistAdjust;
+		} else {
+			separation = collidee->CalcFootPrintMaxInteriorRadius();
+		}
+
+		const float2 collideeParams = {collidee->speed.w, separation};
 		const float4 separationVect = {collider->pos - collidee->pos, Square(colliderParams.y + collideeParams.y)};
 
 		if (!checkCollisionFuncs[allowSAT && (forceSAT || (collideeMobile && collideeMD->CalcFootPrintAxisStretchFactor() > 0.1f))](separationVect, collider, collidee, colliderMD, collideeMD))

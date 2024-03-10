@@ -274,6 +274,8 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	if ((followGround && maxWaterDepth > 0.0f) || (speedModClass == MoveDef::Ship && minWaterDepth < 0.0f))
 		terrainClass = MoveDef::Mixed;
 
+	separationDistance = std::max(moveDefTable.GetInt("separationDistance", 0), 0);
+
 	const int xsizeDef = std::max(1, moveDefTable.GetInt("footprintX",        1));
 	const int zsizeDef = std::max(1, moveDefTable.GetInt("footprintZ", xsizeDef));
 
