@@ -44,6 +44,7 @@ flat in vec4 vuvNorm;
      in vec4 vData1;
 flat in vec4 vData2;
 flat in vec4 vData3;
+flat in vec4 vData4;
 
 flat in mat3 vRotMat;
 flat in mat3 vInvRotMat;
@@ -71,6 +72,9 @@ out vec4 fragColor;
 #define vUVWrapDist       vData2.y
 #define vUVOffset         vData2.z
 #define vDecalType        vData2.w
+
+#define vTintColor        vData3
+#define vGlowColor        vData4
 
 /////////////////////////////////////////////////////////
 
@@ -383,6 +387,8 @@ void main() {
 
 	vec4 mainCol = GetColorByRelUV(decalMainTex, uvTL.xy, uvBL.xy, uvTR.xy, uvBR.xy, relUV);
 	vec4 normVal = GetColorByRelUV(decalNormTex, uvTL.zw, uvBL.zw, uvTR.zw, uvBR.zw, relUV);
+
+	mainCol *= 2.0 * vTintColor;
 
 	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0).rgb;
 	#if 0

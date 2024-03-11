@@ -502,21 +502,19 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	float alpha = std::clamp(2.0f * damage / 255.0f, 0.8f, 1.0f);
 	float alphaDecay = 1.0f / ttl;
 	float glow = std::clamp(2.0f * damage / 255.0f, 0.0f, 1.0f);
-	float glowDecay = 1.0f / 30.0f;
+	float glowDecay = 1.0f / 60.0f;
 
-	float size = radius * math::SQRT2;
-
-	const float2 posTL = { pos.x - size, pos.z - size };
-	const float2 posTR = { pos.x + size, pos.z - size };
-	const float2 posBR = { pos.x + size, pos.z + size };
-	const float2 posBL = { pos.x - size, pos.z + size };
+	const float2 posTL = { pos.x - radius, pos.z - radius };
+	const float2 posTR = { pos.x + radius, pos.z - radius };
+	const float2 posBR = { pos.x + radius, pos.z + radius };
+	const float2 posBL = { pos.x - radius, pos.z + radius };
 
 	const int scarIdx = 1 + guRNG.NextInt(maxUniqueScars); //not inclusive
 	const auto mainName = IntToString(scarIdx, "mainscar_%i");
 	const auto normName = IntToString(scarIdx, "normscar_%i");
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
-	const auto height = argmax(size, maxHeightDiff);
+	const auto height = argmax(radius, maxHeightDiff);
 
 	const auto& decal = decals.emplace_back(GroundDecal{
 		.refHeight = groundHeight,
@@ -544,7 +542,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 		.forcedNormal = explNormalVec,
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() },
-		.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 
@@ -764,7 +762,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.forcedNormal = float3{},
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE), .id = GroundDecal::GetNextId() },
-		.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 
@@ -861,7 +859,7 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 		.forcedNormal = float3{},
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA), .id = GroundDecal::GetNextId() },
-		.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 	decalsUpdateList.EmplaceBackUpdate();
@@ -1077,7 +1075,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 			.forcedNormal = float3{unit->updir},
 			.visMult = 1.0f,
 			.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() },
-			.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+			.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 			.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 		});
 
@@ -1159,7 +1157,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		.forcedNormal = float3{ unit->updir },
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() },
-		.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 

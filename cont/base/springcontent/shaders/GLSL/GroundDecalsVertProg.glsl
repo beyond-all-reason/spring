@@ -24,6 +24,7 @@ flat out vec4 vuvNorm;
      out vec4 vData1;
 flat out vec4 vData2;
 flat out vec4 vData3;
+flat out vec4 vData4;
 
 flat out mat3 vRotMat;
 flat out mat3 vInvRotMat;
@@ -61,22 +62,22 @@ flat out mat3 vInvRotMat;
 #define decalType          ((createParams5.x >> 8u * 0u) & 0xFu)
 #define decalId            ((createParams5.x >> 8u * 1u) & 0xFFFu)
 #define texTint            vec4( \
-							float((createParams5.y >> 8u * 0u) & 0xFu) / 255.0,\
-							float((createParams5.y >> 8u * 1u) & 0xFu) / 255.0,\
-							float((createParams5.y >> 8u * 2u) & 0xFu) / 255.0,\
-							float((createParams5.y >> 8u * 3u) & 0xFu) / 255.0 \
+							float((createParams5.y >> 8u * 0u) & 0xFFu) / 255.0,\
+							float((createParams5.y >> 8u * 1u) & 0xFFu) / 255.0,\
+							float((createParams5.y >> 8u * 2u) & 0xFFu) / 255.0,\
+							float((createParams5.y >> 8u * 3u) & 0xFFu) / 255.0 \
 						   )
 #define glowTintMin        vec4( \
-							float((createParams5.z >> 8u * 0u) & 0xFu) / 255.0,\
-							float((createParams5.z >> 8u * 1u) & 0xFu) / 255.0,\
-							float((createParams5.z >> 8u * 2u) & 0xFu) / 255.0,\
-							float((createParams5.z >> 8u * 3u) & 0xFu) / 255.0 \
+							float((createParams5.z >> 8u * 0u) & 0xFFu) / 255.0,\
+							float((createParams5.z >> 8u * 1u) & 0xFFu) / 255.0,\
+							float((createParams5.z >> 8u * 2u) & 0xFFu) / 255.0,\
+							float((createParams5.z >> 8u * 3u) & 0xFFu) / 255.0 \
 						   )
 #define glowTintMax        vec4( \
-							float((createParams5.w >> 8u * 0u) & 0xFu) / 255.0,\
-							float((createParams5.w >> 8u * 1u) & 0xFu) / 255.0,\
-							float((createParams5.w >> 8u * 2u) & 0xFu) / 255.0,\
-							float((createParams5.w >> 8u * 3u) & 0xFu) / 255.0 \
+							float((createParams5.w >> 8u * 0u) & 0xFFu) / 255.0,\
+							float((createParams5.w >> 8u * 1u) & 0xFFu) / 255.0,\
+							float((createParams5.w >> 8u * 2u) & 0xFFu) / 255.0,\
+							float((createParams5.w >> 8u * 3u) & 0xFFu) / 255.0 \
 						   )
 
 /////////////////////////////////////////////////////////
@@ -90,6 +91,9 @@ flat out mat3 vInvRotMat;
 #define vUVWrapDist       vData2.y
 #define vUVOffset         vData2.z
 #define vDecalType        vData2.w
+
+#define vTintColor        vData3
+#define vGlowColor        vData4
 
 /////////////////////////////////////////////////////////
 
@@ -215,9 +219,6 @@ void main() {
 
 	vDecalType = float(decalType); //copy type only, don't care about ID
 
-	// emulate explosion fade in for the first 6 frames, asjusted by the initial alpha (less fadein for already weak scars)
-	vAlpha *= mix(1.0, smoothstep(0.0, 6.0 * alpha, curAdjustedFrame - thisVertexCreateFrame), float(vDecalType == DECAL_EXPLOSION));
-
 	#if 1
 	if (alphaMax <= 0.0 || vDecalType <= 0.0) {
 		vTranformedPos[0] = vec4(0);
@@ -240,7 +241,7 @@ void main() {
 	midPoint.y = mix(midPoint.y, refHeight + clamp(midPoint.y - refHeight, minHeight, maxHeight), float(forceHeightMode == 1.0));
 	// conditionally force absolute height
 	midPoint.y = mix(midPoint.y, clamp(midPoint.y, minHeight, maxHeight), float(forceHeightMode == 2.0));
-	
+
 	float sa = sin(rot);
 	float ca = cos(rot);
 
@@ -307,6 +308,12 @@ void main() {
 	worldPos.xyz += testResults.y * vTranformedPos[2].xyz;
 	worldPos.xyz += testResults.z * vTranformedPos[3].xyz;
 	worldPos.xyz += testResults.w * vTranformedPos[4].xyz;
+
+	vTintColor = texTint;
+	vGlowColor = mix(glowTintMin, glowTintMax, vAlpha);
+
+	// emulate explosion fade in for the first 6 frames, asjusted by the initial alpha (less fadein for already weak scars)
+	vAlpha *= mix(1.0, smoothstep(0.0, 6.0 * alpha, curAdjustedFrame - thisVertexCreateFrame), float(vDecalType == DECAL_EXPLOSION));
 
 	// effect's height
 	vHeight = height;
