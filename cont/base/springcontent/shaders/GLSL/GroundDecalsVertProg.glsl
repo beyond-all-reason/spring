@@ -241,8 +241,8 @@ void main() {
 	// conditionally force absolute height
 	midPoint.y = mix(midPoint.y, clamp(midPoint.y, minHeight, maxHeight), float(forceHeightMode == 2.0));
 	
-	float sa = sin(rot * 0.0);
-	float ca = cos(rot * 0.0);
+	float sa = sin(rot);
+	float ca = cos(rot);
 
 	// groundNormal
 	vec3 groundNormal = vec3(0);
@@ -255,7 +255,6 @@ void main() {
 		groundNormal += 1.0 * GetFragmentNormal(rotMat2d * (posBL - midPoint.xz) + midPoint.xz);
 		groundNormal += 1.0 * GetFragmentNormal(rotMat2d * (posBR - midPoint.xz) + midPoint.xz);
 		groundNormal  = normalize(groundNormal);
-		groundNormal  = vec3(0, 1, 0);
 	} else {
 		groundNormal = forcedNormal.xyz; //expected to be normalized by the CPU code
 	}
