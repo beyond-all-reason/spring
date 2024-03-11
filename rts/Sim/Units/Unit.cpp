@@ -991,13 +991,15 @@ void CUnit::SlowUpdate()
 			if (health <= 0.0f || buildProgress <= 0.0f)
 				KillUnit(nullptr, false, true);
 		}
+		moveType->SlowUpdate();
 
 		ScriptDecloak(nullptr, nullptr);
 		return;
 	}
 
-	// below is stuff that should not be run while being built
+	// should not be run while being built
 	commandAI->SlowUpdate();
+
 	moveType->SlowUpdate();
 
 
