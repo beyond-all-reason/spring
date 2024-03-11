@@ -9,7 +9,6 @@
 #include <limits>
 #include <optional>
 
-#include "GroundDecal.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"

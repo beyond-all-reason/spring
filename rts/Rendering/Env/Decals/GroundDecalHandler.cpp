@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
+#include "GroundDecal.h"
 #include "GroundDecalHandler.h"
 #include "Game/Camera.h"
 #include "Game/GameHelper.h"
@@ -473,7 +474,8 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	if (maxUniqueScars == 0)
 		return;
 
-	const float altitude = pos.y - CGround::GetHeightReal(pos.x, pos.z, false);
+	const float groundHeight = CGround::GetHeightReal(pos.x, pos.z, false);
+	const float altitude = pos.y - groundHeight;
 
 	// no decals for below-ground explosions
 	// also no decals if they are too high in the air
@@ -496,9 +498,11 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	if (damage > 400.0f)
 		damage = 400.0f + std::sqrt(damage - 400.0f);
 
-	const int ttl = std::clamp(decalLevel * damage * 3.0f, 15.0f, decalLevel * 1800.0f);
-	float alpha = std::clamp(2.0f * damage / 255.0f, 0.8f, 1.05f); // cap min alpha and glow
+	const float ttl = std::clamp(decalLevel * damage * 3.0f, 15.0f, decalLevel * 1800.0f);
+	float alpha = std::clamp(2.0f * damage / 255.0f, 0.8f, 1.0f);
 	float alphaDecay = 1.0f / ttl;
+	float glow = std::clamp(2.0f * damage / 255.0f, 0.0f, 1.0f);
+	float glowDecay = 1.0f / 30.0f;
 
 	float size = radius * math::SQRT2;
 
@@ -515,6 +519,10 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	const auto height = argmax(size, maxHeightDiff);
 
 	const auto& decal = decals.emplace_back(GroundDecal{
+		.refHeight = groundHeight,
+		.minHeight = -maxHeightDiff,
+		.maxHeight =  maxHeightDiff,
+		.forceHeightMode = 1.0f,
 		.posTL = posTL,
 		.posTR = posTR,
 		.posBR = posBR,
@@ -523,15 +531,21 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 		.texNormOffsets = atlasNorm->GetTexture(normName, "%FB_NORM%"),
 		.alpha = alpha,
 		.alphaFalloff = alphaDecay,
+		.glow = glow,
+		.glowFalloff = glowDecay,
 		.rot = guRNG.NextFloat() * math::TWOPI,
 		.height = height,
+		.unused1 = 0.0f,
+		.unused2 = 0.0f,
 		.createFrameMin = createFrame,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = explNormalVec,
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() }
+		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() },
+		.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 
 	idToPos.emplace(decal.info.id, decals.size() - 1);
@@ -727,6 +741,10 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 	}
 
 	const auto& decal = decals.emplace_back(GroundDecal{
+		.refHeight = 0.0f,
+		.minHeight = 0.0f,
+		.maxHeight = 0.0f,
+		.forceHeightMode = 0.0f,
 		.posTL = posTL,
 		.posTR = posTR,
 		.posBR = posBR,
@@ -735,6 +753,8 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.texNormOffsets = atlasNorm->GetTexture(GetExtraTextureName(decalDef.groundDecalTypeName), "%FB_NORM%"),
 		.alpha = 1.0f,
 		.alphaFalloff = 0.0f,
+		.glow = 0.0f,
+		.glowFalloff = 0.0f,
 		.rot = -object->buildFacing * math::HALFPI,
 		.height = height,
 		.createFrameMin = createFrame,
@@ -743,7 +763,9 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = float3{},
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE), .id = GroundDecal::GetNextId() }
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE), .id = GroundDecal::GetNextId() },
+		.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 
 	decalsUpdateList.EmplaceBackUpdate();
@@ -816,6 +838,10 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
 	const auto& decal = decals.emplace_back(GroundDecal{
+		.refHeight = 0.0f,
+		.minHeight = 0.0f,
+		.maxHeight = 0.0f,
+		.forceHeightMode = 0.0f,
 		.posTL = float2{},
 		.posTR = float2{},
 		.posBR = float2{},
@@ -824,6 +850,8 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 		.texNormOffsets = atlasNorm->GetTexture("%FB_NORM%"),
 		.alpha = 1.0f,
 		.alphaFalloff = 0.0f,
+		.glow = 0.0f,
+		.glowFalloff = 0.0f,
 		.rot = 0.0f,
 		.height = 0.0f,
 		.createFrameMin = createFrame,
@@ -832,7 +860,9 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = float3{},
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA), .id = GroundDecal::GetNextId() }
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA), .id = GroundDecal::GetNextId() },
+		.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 	decalsUpdateList.EmplaceBackUpdate();
 	idToPos.emplace(decal.info.id, decals.size() - 1);
@@ -1024,6 +1054,10 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		const float alphaDecay = 1.0f / trackLifeTime;
 
 		const auto& decal = decals.emplace_back(GroundDecal{
+			.refHeight = 0.0f,
+			.minHeight = 0.0f,
+			.maxHeight = 0.0f,
+			.forceHeightMode = 0.0f,
 			.posTL = decalPos2 - wc,
 			.posTR = decalPos2 - wc,
 			.posBR = decalPos2 + wc,
@@ -1032,6 +1066,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 			.texNormOffsets = atlasNorm->GetTexture(normName, "%FB_NORM%"),
 			.alpha = 1.0f,
 			.alphaFalloff = alphaDecay,
+			.glow = 0.0f,
+			.glowFalloff = 0.0f,
 			.rot = 0.0f,
 			.height = 0.0f,
 			.createFrameMin = createFrame,
@@ -1040,7 +1076,9 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 			.uvTraveledDistance = 0.0f,
 			.forcedNormal = float3{unit->updir},
 			.visMult = 1.0f,
-			.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() }
+			.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() },
+			.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+			.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 		});
 
 		mm = {};
@@ -1098,6 +1136,10 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 	// new decal, starting where the previous ended
 	auto& newDecal = decals.emplace_back(GroundDecal{
+		.refHeight = 0.0f,
+		.minHeight = 0.0f,
+		.maxHeight = 0.0f,
+		.forceHeightMode = 0.0f,
 		.posTL = oldDecal.posTR,
 		.posTR = decalPos2 - wc,
 		.posBR = decalPos2 + wc,
@@ -1106,6 +1148,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		.texNormOffsets = oldDecal.texNormOffsets,
 		.alpha = oldDecal.alpha,
 		.alphaFalloff = oldDecal.alphaFalloff,
+		.glow = 0.0f,
+		.glowFalloff = 0.0f,
 		.rot = 0.0f,
 		.height = oldDecal.height, //also set later
 		.createFrameMin = oldDecal.createFrameMax,
@@ -1114,7 +1158,9 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		.uvTraveledDistance = oldDecal.uvTraveledDistance + posL.Distance(posR)/*oldDecal.posTL.Distance(oldDecal.posTR)*/,
 		.forcedNormal = float3{ unit->updir },
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() }
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() },
+		.tintColor = SColor{1.0f, 1.0f, 1.0f, 1.0f},
+		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 
 	const float2 midPointDist = (newDecal.posTL + newDecal.posTR + newDecal.posBR + newDecal.posBL) * 0.25f;
