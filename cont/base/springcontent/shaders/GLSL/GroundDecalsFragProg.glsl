@@ -36,7 +36,7 @@ uniform mat4 shadowMatrix;
 
 uniform float curAdjustedFrame;
 
-flat in vec4 vTranformedPos[9]; // midpos + cube transformed vertices
+flat in vec4 vTranformedPos[5]; // midpos + 4 transformed vertices around midpos
 
 flat in vec4 vuvMain;
 flat in vec4 vuvNorm;
@@ -306,18 +306,6 @@ bool ProjectOntoPlane(vec3 worldPos, vec3 BL, vec3 TL, vec3 TR, vec3 BR, vec3 pr
 	return false;
 }
 
-vec3 TriPlanarBlendWeights(vec3 normal) {
-	vec3 bw = normal * normal;
-	float maxBlend = max(bw.x, max(bw.y, bw.z));
-
-    const float BlendZone = 0.8;
-	bw = bw - maxBlend * BlendZone;
-
-	bw = max(bw, vec3(0));
-
-	return bw / (bw.x + bw.y + bw.z);
-}
-
 vec4 GetColorByRelUV(sampler2D tex, vec2 uvTL, vec2 uvBL, vec2 uvTR, vec2 uvBR, vec4 relUV) {
 	vec2 uv = mix(
 		mix(uvTL, uvBL, relUV.x),
@@ -347,40 +335,6 @@ float EllipsoidRedunction(vec3 xyz, vec3 abc) {
 }
 
 const float DECAL_EXPLOSION = 2.0;
-bool TriplanarColor(vec3 worldPos, vec3 worldNormal, out vec4 col) {
-	col = vec4(0);
-
-	vec3 bw = TriPlanarBlendWeights(vInvRotMat * worldNormal);
-	float relDistance = distance(worldPos.xyz, midPoint.xyz) / midPoint.w;
-
-	relDistance = smoothstep(0.9, 0.1, relDistance);
-	relDistance = pow(relDistance, 5.0); // artistic choice to keep the glow centered
-
-	vec4 relUV;
-
-	// yDir projection: HBL, HTL, HTR, HBR
-	if (!ProjectOntoPlane(worldPos, vTranformedPos[1].xyz, vTranformedPos[2].xyz, vTranformedPos[3].xyz, vTranformedPos[4].xyz, vRotMat[1], 1.0, relUV))
-		return false;
-
-	col += 1.0 * bw.y * GetColorByRelUV(decalMainTex, uvMainTL, uvMainBL, uvMainTR, uvMainBR, relUV);
-
-	// xDir projection: HBR, HTR, LTR, LBR
-	ProjectOntoPlane(worldPos, vTranformedPos[4].xyz, vTranformedPos[3].xyz, vTranformedPos[7].xyz, vTranformedPos[8].xyz, vRotMat[0], 1.0, relUV);
-	col += bw.x * GetColorByRelUV(decalMainTex, uvMainTL, uvMainBL, uvMainTR, uvMainBR, relUV);
-
-	// zDir projection: LBL, HBL, HBR, LBR
-	ProjectOntoPlane(worldPos, vTranformedPos[5].xyz, vTranformedPos[1].xyz, vTranformedPos[4].xyz, vTranformedPos[8].xyz, vRotMat[2], 1.0, relUV);
-	col += bw.z * GetColorByRelUV(decalMainTex, uvMainTL, uvMainBL, uvMainTR, uvMainBR, relUV);
-	
-	vec3 ellipseAxes = vec3(vTranformedPos[1].w, vHeight, vTranformedPos[2].w);
-	vec3 rotCenterWorldPos = vInvRotMat * (worldPos - midPoint.xyz);
-	//col = vec4(1);
-	//col.a *= EllipsoidRedunction(rotCenterWorldPos, ellipseAxes);
-	//col.a *= float(IsInEllipsoid(rotCenterWorldPos, ellipseAxes));
-	col.a *= relDistance;
-
-	return true;
-}
 
 const float SMF_INTENSITY_MULT = 210.0 / 255.0;
 const float SMF_SHALLOW_WATER_DEPTH     = 10.0;
@@ -395,13 +349,6 @@ void main() {
 	vec4 uvTL = vec4(uvMainTL, uvNormTL);
 	vec4 uvTR = vec4(uvMainTR, uvNormTR);
 	vec4 uvBR = vec4(uvMainBR, uvNormBR);
-	
-	vec4 col;
-	vec3 Norm = GetFragmentNormal(worldPos.xz);
-	TriplanarColor(worldPos, Norm, col);
-	fragColor = col;
-	//fragColor= vec4(1);
-	return;
 
 	float u = 1.0;
 	if (vUVWrapDist > 0.0) {
@@ -409,43 +356,15 @@ void main() {
 	}
 
 	vec4 relUV;
-	//mat3 invRotMat = transpose(vRotMat);
-	#define PROJ 0
-	#if (PROJ == 0)
-	// yDir projection: HBL, HTL, HTR, HBR
+
 	if (!ProjectOntoPlane(worldPos, vTranformedPos[1].xyz, vTranformedPos[2].xyz, vTranformedPos[3].xyz, vTranformedPos[4].xyz, vRotMat[1], u, relUV)) {
 		fragColor = vec4(0.0);
 		return;
 	}
-	#elif (PROJ == 1)
-	// xDir projection: HBR, HTR, LTR, LBR
-	if (!ProjectOntoPlane(worldPos, vTranformedPos[4].xyz, vTranformedPos[3].xyz, vTranformedPos[7].xyz, vTranformedPos[8].xyz, vRotMat[0], u, relUV)) {
-		fragColor = vec4(0.0);
-		return;
-	}
-	#else
-	// zDir projection: LBL, HBL, HBR, LBR
-	if (!ProjectOntoPlane(worldPos, vTranformedPos[5].xyz, vTranformedPos[1].xyz, vTranformedPos[4].xyz, vTranformedPos[8].xyz, vRotMat[2], u, relUV)) {
-		fragColor = vec4(0.0);
-		return;
-	}
-	#endif
 
-	vec4 uv;
 	if (vUVWrapDist > 0.0) {
 		relUV.y = mod(vUVOffset / vUVWrapDist + relUV.y, 1.0);
 	}
-
-	uv.xy = mix(
-		mix(uvTL.xy, uvBL.xy, relUV.x),
-		mix(uvTR.xy, uvBR.xy, relUV.x),
-	relUV.y);
-
-	uv.zw = mix(
-		mix(uvTL.zw, uvBL.zw, relUV.z),
-		mix(uvTR.zw, uvBR.zw, relUV.z),
-	relUV.w);
-
 
 	float alpha = clamp(vAlpha, 0.0, 1.0);
 	float glow  = clamp(vGlow , 0.0, 1.0);
@@ -462,12 +381,12 @@ void main() {
 
 	float t = mix(1.0, 3700.0, glow);
 
-	const vec3 LUMA = vec3(0.2125, 0.7154, 0.0721);
+	vec4 mainCol = GetColorByRelUV(decalMainTex, uvTL.xy, uvBL.xy, uvTR.xy, uvBR.xy, relUV);
+	vec4 normVal = GetColorByRelUV(decalNormTex, uvTL.zw, uvBL.zw, uvTR.zw, uvBR.zw, relUV);
 
-	vec4 mainCol = texture(decalMainTex, uv.xy);
-	vec4 normVal = texture(decalNormTex, uv.zw);
 	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0).rgb;
 	#if 0
+		const vec3 LUMA = vec3(0.2125, 0.7154, 0.0721);
 		vec3 mapDecalMix = mix(mainCol.rgb, mapDiffuse.rgb, smoothstep(0.0, 0.6, dot(mainCol.rgb, LUMA)));
 	#else
 		vec3 mapDecalMix = 2.0 * mainCol.rgb * mapDiffuse.rgb;

@@ -16,7 +16,7 @@ uniform sampler2D groundNormalTex;
 uniform vec4 mapDims; //mapxy; 1.0 / mapxy
 uniform float curAdjustedFrame;
 
-flat out vec4 vTranformedPos[9]; // midpos + cube transformed vertices
+flat out vec4 vTranformedPos[5]; // midpos + 4 transformed vertices around midpos
 
 flat out vec4 vuvMain;
 flat out vec4 vuvNorm;
@@ -225,10 +225,7 @@ void main() {
 		vTranformedPos[2] = vec4(0);
 		vTranformedPos[3] = vec4(0);
 		vTranformedPos[4] = vec4(0);
-		vTranformedPos[5] = vec4(0);
-		vTranformedPos[6] = vec4(0);
-		vTranformedPos[7] = vec4(0);
-		vTranformedPos[8] = vec4(0);
+
 		gl_Position = vec4(2.0, 2.0, 2.0, 1.0); //place outside of [-1;1]^3 NDC, basically cull out from the further rendering
 		return;
 	}
@@ -280,33 +277,17 @@ void main() {
 
 	//vTranformedPos[0] is handled by midPoint manipulations above
 
-	/*
-		#define posTL posT.xy
-		#define posTR posT.zw
-		#define posBR posB.xy
-		#define posBL posB.zw
-	*/
-	// top cap (HBL, HTL, HTR, HBR)
+	// top cap (BL, TL, TR, BR)
 	vTranformedPos[1].xyz = vRotMat * (vec3(posB.z, 0.0, posB.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
 	vTranformedPos[2].xyz = vRotMat * (vec3(posT.x, 0.0, posT.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
 	vTranformedPos[3].xyz = vRotMat * (vec3(posT.z, 0.0, posT.w) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
 	vTranformedPos[4].xyz = vRotMat * (vec3(posB.x, 0.0, posB.y) - vec3(midPoint.x, 0.0, midPoint.z)) + midPoint.xyz;
-
-	// bottom cap (LBL, LTL, LTR, LBR)
-	vTranformedPos[5].xyz = vTranformedPos[1].xyz;
-	vTranformedPos[6].xyz = vTranformedPos[2].xyz;
-	vTranformedPos[7].xyz = vTranformedPos[3].xyz;
-	vTranformedPos[8].xyz = vTranformedPos[4].xyz;
 
 	// distances
 	vTranformedPos[1].w = distance(posBL, posBR) * 0.5;
 	vTranformedPos[2].w = distance(posTL, posBL) * 0.5;
 	vTranformedPos[3].w = distance(posTR, posTL) * 0.5;
 	vTranformedPos[4].w = distance(posBR, posTR) * 0.5;
-	vTranformedPos[5].w = vTranformedPos[1].w; // reuse for something else
-	vTranformedPos[6].w = vTranformedPos[2].w; // reuse for something else
-	vTranformedPos[7].w = vTranformedPos[3].w; // reuse for something else
-	vTranformedPos[8].w = vTranformedPos[4].w; // reuse for something else
 
 	// distance from the center (only relevant for the explosion cube)
 	midPoint.w = sqrt(vTranformedPos[1].w * vTranformedPos[1].w + vTranformedPos[3].w * vTranformedPos[2].w + height * height);
@@ -327,18 +308,6 @@ void main() {
 	worldPos.xyz += testResults.y * vTranformedPos[2].xyz;
 	worldPos.xyz += testResults.z * vTranformedPos[3].xyz;
 	worldPos.xyz += testResults.w * vTranformedPos[4].xyz;
-
-	// top cap
-	vTranformedPos[1].xyz += height * groundNormal;
-	vTranformedPos[2].xyz += height * groundNormal;
-	vTranformedPos[3].xyz += height * groundNormal;
-	vTranformedPos[4].xyz += height * groundNormal;
-
-	// bottom cap
-	vTranformedPos[5].xyz -= height * groundNormal;
-	vTranformedPos[6].xyz -= height * groundNormal;
-	vTranformedPos[7].xyz -= height * groundNormal;
-	vTranformedPos[8].xyz -= height * groundNormal;
 
 	// effect's height
 	vHeight = height;
