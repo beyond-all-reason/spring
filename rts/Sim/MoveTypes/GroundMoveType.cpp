@@ -2931,10 +2931,10 @@ void CGroundMoveType::HandleUnitCollisions(
             	forceFromMovingCollidees += CalculatePushVector(colliderParams, collideeParams, allowUCO, separationVect, collider, collidee);
 			else {
 				// push units away from each other though they are not colliding.
-				const float3 colliderParams = {colliderParams.x, colliderParams.y + separationDist * 0.5f, colliderParams.z};
-				const float2 collideeParams = {collidee->speed.w, collDist + separationDist * 0.5f};
-				const float4 separationVect = {collider->pos - collidee->pos, Square(colliderParams.y + collideeParams.y)};
-				forceFromMovingCollidees += CalculatePushVector(colliderParams, collideeParams, allowUCO, separationVect, collider, collidee);
+				const float3 colliderParams2 = {colliderParams.x, colliderParams.y + separationDist * 0.5f, colliderParams.z};
+				const float2 collideeParams2 = {collidee->speed.w, collDist + separationDist * 0.5f};
+				const float4 separationVect2 = {static_cast<float3>(separationVect), Square(colliderParams.y + collideeParams.y)};
+				forceFromMovingCollidees += CalculatePushVector(colliderParams2, collideeParams2, allowUCO, separationVect2, collider, collidee);
 			}
 		}
 	}
