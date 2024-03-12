@@ -221,11 +221,9 @@ bool CBuilder::UpdateTerraform(const Command&)
 				}
 			}
 			SmoothBorders();
-			mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 
 			if (curBuildee->terraformLeft <= 0.0f) {
 				terraforming = false;
-
 				curBuildee->groundLevelled = true;
 
 				if (eventHandler.TerraformComplete(this, curBuildee)) {
@@ -255,11 +253,9 @@ bool CBuilder::UpdateTerraform(const Command&)
 			}
 		}
 		SmoothBorders();
-		mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 
 		if (myTerraformLeft <= 0.0f) {
 			terraforming = false;
-
 			StopBuild();
 		}
 	} break;
@@ -553,7 +549,7 @@ void CBuilder::Update()
 void CBuilder::SlowUpdate()
 {
 	if (terraforming)
-		mapDamage->RecalcArea(tx1, tx2, tz1, tz2);
+		mapDamage->RecalcArea(tx1 - 3, tx2 + 3, tz1 - 3, tz2 + 3);
 
 	CUnit::SlowUpdate();
 }
@@ -690,6 +686,9 @@ void CBuilder::StopBuild(bool callScript)
 	helpTerraform = nullptr;
 	curResurrect = nullptr;
 	curCapture = nullptr;
+
+	if (terraforming)
+		mapDamage->RecalcArea(tx1 - 3, tx2 + 3, tz1 - 3, tz2 + 3);
 
 	terraforming = false;
 
