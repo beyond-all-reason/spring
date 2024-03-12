@@ -162,23 +162,22 @@ private:
 		int curThread
 	);
 
-	void HandleUnitCollisions(
-		CUnit* collider,
-		const float3& colliderParams,
-		const UnitDef* colliderUD,
-		const MoveDef* colliderMD,
-		int curThread
-	);
-	void HandleFeatureCollisions(
-		CUnit* collider,
-		const float3& colliderParams,
-		const UnitDef* colliderUD,
-		const MoveDef* colliderMD,
-		int curThread
-	);
+    void HandleUnitCollisions(
+        CUnit *collider,
+        const float3 &colliderParams,
+        const UnitDef *colliderUD,
+        const MoveDef *colliderMD,
+        int curThread);
+    float3 CalculatePushVector(const float3 &colliderParams, const float2 &collideeParams, const bool allowUCO, const float4 &separationVect, CUnit *collider, CUnit *collidee);
+    void HandleFeatureCollisions(
+        CUnit *collider,
+        const float3 &colliderParams,
+        const UnitDef *colliderUD,
+        const MoveDef *colliderMD,
+        int curThread);
 
-	void SetMainHeading();
-	void ChangeSpeed(float, bool, bool = false);
+    void SetMainHeading();
+    void ChangeSpeed(float, bool, bool = false);
 	void ChangeHeading(short newHeading);
 
 	void UpdateSkid();
