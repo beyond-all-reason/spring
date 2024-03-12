@@ -552,9 +552,6 @@ void CBuilder::Update()
 
 void CBuilder::SlowUpdate()
 {
-	if (terraforming)
-		mapDamage->RecalcArea(tx1, tx2, tz1, tz2);
-
 	CUnit::SlowUpdate();
 }
 
