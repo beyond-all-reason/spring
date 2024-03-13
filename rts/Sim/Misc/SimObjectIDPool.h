@@ -4,6 +4,7 @@
 
 #include "System/creg/creg_cond.h"
 #include "System/UnorderedMap.hpp"
+#include "Sim/Objects/WorldObject.h"
 
 class CSolidObject;
 class SimObjectIDPool {
@@ -27,7 +28,7 @@ public:
 		tempIDs.clear();
 	}
 
-	void AssignID(CSolidObject* object);
+	void AssignID(CWorldObject* object);
 	void FreeID(uint32_t uid, bool delayed);
 
 	bool RecycleID(uint32_t uid);

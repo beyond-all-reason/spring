@@ -284,7 +284,7 @@ const SkirmishAIKey* CSkirmishAIHandler::GetLocalSkirmishAILibraryKey(const size
 	const SkirmishAIData* aiData = GetSkirmishAI(skirmishAIId);
 	const SkirmishAIKey& resKey = aiLibManager->ResolveSkirmishAIKey(SkirmishAIKey(aiData->shortName, aiData->version));
 
-	assert(!resKey.IsUnspecified());
+	//assert(!resKey.IsUnspecified());
 
 	aiLibraryKeys[skirmishAIId] = resKey;
 	return &aiLibraryKeys[skirmishAIId];

@@ -79,10 +79,10 @@ static constexpr int MAX_PLAYERS = 251;
 static constexpr int MAX_AIS = 255;
 
 /**
- * @brief max units / features / projectiles
+ * @brief max units / features / projectiles / sensors
  *
  * Defines the absolute global maximum number of simulation objects
- * (units, features, projectiles) that are allowed to exist in a game
+ * (units, features, projectiles, sensors) that are allowed to exist in a game
  * at any time.
  *
  * NOTE:
@@ -97,9 +97,10 @@ static constexpr int MAX_AIS = 255;
 static constexpr int MAX_UNITS       =  32000;
 static constexpr int MAX_FEATURES    =  32000;
 static constexpr int MAX_PROJECTILES = 128000;
+static constexpr int MAX_SENSORS     =   320;
 
-static_assert(MAX_UNITS + MAX_FEATURES < std::numeric_limits<uint16_t>::max(),
-	"MAX_UNITS + MAX_FEATURES must fit in a 16-bit type because the network protocol packs them both there");
+static_assert(MAX_UNITS + MAX_FEATURES + MAX_SENSORS < std::numeric_limits<uint16_t>::max(),
+	"MAX_UNITS + MAX_FEATURES + MAX_SENSORS must fit in a 16-bit type because the network protocol packs them both there");
 
 /**
  * @brief max weapons per unit

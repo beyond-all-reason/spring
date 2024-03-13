@@ -15,6 +15,7 @@
 #include "Lua/LuaRulesParams.h"
 
 class CUnit;
+class CSensor;
 
 class CTeam : public TeamBase
 {
@@ -50,6 +51,12 @@ public:
 	unsigned int GetNumUnits() const { return numUnits; }
 	bool AtUnitLimit() const { return (numUnits >= maxUnits); }
 
+
+	void SetMaxSensors(unsigned int n) { maxSensors = n; }
+	unsigned int GetMaxSensors() const { return maxSensors; }
+	unsigned int GetNumSensors() const { return numSensors; }
+	bool AtSensorLimit() const { return (numSensors >= maxSensors); }
+
 	const TeamStatistics& GetCurrentStats() const { return statHistory.back(); }
 	      TeamStatistics& GetCurrentStats()       { return statHistory.back(); }
 
@@ -73,10 +80,16 @@ public:
 	void AddUnit(CUnit* unit, AddType type);
 	void RemoveUnit(CUnit* unit, RemoveType type);
 
+	void AddSensor(CSensor* sensor);
+	void RemoveSensor(CSensor* sensor);
+
 public:
 	int teamNum;
 	unsigned int numUnits; // number of units this team controls
 	unsigned int maxUnits; // maximum number of units this team can control
+
+	unsigned int numSensors;
+	unsigned int maxSensors;
 
 	bool isDead;
 	bool gaia;

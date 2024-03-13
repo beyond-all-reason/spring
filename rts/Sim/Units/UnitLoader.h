@@ -43,6 +43,7 @@ public:
 
 	void ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>& args, int team);
 	void GiveUnits(const std::string& objectName, float3 pos, int amount, int team, int allyTeamFeatures);
+	int GiveSensor(int team_, float3 pos_, int LOSType_, float LOSDistance_, int duration_);
 
 	void FlattenGround(const CUnit* unit);
 	void RestoreGround(const CUnit* unit);

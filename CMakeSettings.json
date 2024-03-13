@@ -33,8 +33,13 @@
         },
         {
           "name": "AI_TYPES",
-          "value": "NONE",
+          "value": "NATIVE",
           "type": "STRING"
+        },
+        {
+          "name": "TRACY_ENABLE",
+          "value": "True",
+          "type": "BOOL"
         }
       ]
     }
