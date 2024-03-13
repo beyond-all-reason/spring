@@ -343,7 +343,7 @@ inline void ILosType::UpdateSensor(CSensor* sensor, bool ignore)
 		UnrefInstance(sli);
 	}
 
-	const int hash = GetHashNum(sli->allyteam, baseLos, radius);
+	const int hash = GetHashNum(sensor->allyteam, baseLos, radius);
 
 	// Cache - search if there is already an instance with same properties
 	auto vit = instanceHashes.find(hash);

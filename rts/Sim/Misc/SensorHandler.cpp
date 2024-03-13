@@ -85,6 +85,8 @@ void CSensorHandler::InsertActiveSensor(CSensor* sensor)
 
 	assert(sensor->id < sensors.size());
 	assert(sensors[sensor->id] == nullptr);
+
+	activeSensors.push_back(sensor);
 	sensors[sensor->id] = sensor;
 }
 
@@ -133,6 +135,8 @@ bool CSensorHandler::QueueDeleteSensor(CSensor* sensor)
 		return false;
 	sensor->Kill();
 	sensorsToBeRemoved.push_back(sensor);
+	eventHandler.SensorExpired(sensor);
+	losHandler->SensorExpired(sensor);
 	return true;
 }
 
@@ -188,13 +192,13 @@ void CSensorHandler::UpdateSensors()
 
 	size_t activeSensorCount = activeSensors.size();
 	for (size_t i = 0; i < activeSensorCount; ++i) {
-		CSensor* censor = activeSensors[i];
-		if (censor->isDead)
+		CSensor* sensor = activeSensors[i];
+		if (sensor->isDead)
 			continue;
 
-		censor->Update();
+		sensor->Update();
 
-		assert(activeSensors[i] == censor);
+		assert(activeSensors[i] == sensor);
 	}
 }
 

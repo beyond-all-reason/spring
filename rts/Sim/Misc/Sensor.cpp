@@ -44,30 +44,30 @@ void CSensor::Init(int team_, float3 pos_, int LOSType_, float LOSDistance_, int
 	pos = pos_;
 
 	switch (LOSType_) {
-	case 1: {
+	case 1: 
 		losRadius = LOSDistance_;
 		airLosRadius = LOSDistance_;
 		radarRadius = 0;
 		sonarRadius = 0;
-	};
-	case 2: {
+		break;
+	case 2: 
 		losRadius = 0;
 		airLosRadius = 0;
 		radarRadius = LOSDistance_;
 		sonarRadius = LOSDistance_;
-	};
-	case 4: {
+		break;
+	case 4: 
 		losRadius = LOSDistance_;
 		airLosRadius = LOSDistance_;
 		radarRadius = LOSDistance_;
 		sonarRadius = LOSDistance_;
-	};
-	default: {
+		break;
+	default: 
 		losRadius = 0;
 		airLosRadius = 0;
 		radarRadius = 0;
 		sonarRadius = 0;
-	};
+		break;
 	}
 
 	jammerRadius = 0;
