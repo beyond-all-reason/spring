@@ -539,7 +539,7 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
-		.forcedNormal = explNormalVec,
+		.forcedNormal = float3{},
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() },
 		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},

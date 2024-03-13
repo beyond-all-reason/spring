@@ -360,7 +360,6 @@ void main() {
 	}
 
 	vec4 relUV;
-
 	if (!ProjectOntoPlane(worldPos, vTranformedPos[1].xyz, vTranformedPos[2].xyz, vTranformedPos[3].xyz, vTranformedPos[4].xyz, vRotMat[1], u, relUV)) {
 		fragColor = vec4(0.0);
 		return;
