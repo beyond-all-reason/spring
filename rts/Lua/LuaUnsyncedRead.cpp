@@ -4461,6 +4461,9 @@ int LuaUnsyncedRead::GetLogSections(lua_State* L) {
 /***
  *
  * @function Spring.GetAllGroundDecals
+ *
+ * Note, won't ever return an empty table (if there's no decals it returns nil)
+ *
  * @treturn nil|{[number],...} decalIDs
  */
 int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
@@ -4469,7 +4472,7 @@ int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 
 	int numValid = 0;
 	for (const auto& d : decals) {
-		numValid += d.IsValid() || d.info.type == GroundDecal::Type::DECAL_LUA;
+		numValid += d.IsValid();
 	}
 
 	if (numValid == 0)
@@ -4478,7 +4481,7 @@ int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 	int i = 1;
 	lua_createtable(L, numValid, 0);
 	for (const auto& d: decals) {
-		if (!d.IsValid() && d.info.type != GroundDecal::Type::DECAL_LUA)
+		if (!d.IsValid())
 			continue;
 
 		lua_pushnumber(L, d.info.id);
@@ -4590,7 +4593,7 @@ int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
  *
  * @function Spring.GetGroundDecalTexture
  * @number decalID
- * @bool[opt=true] isMainTex
+ * @bool[opt=true] isMainTex If false, it gets the normals/glow map
  * @treturn nil|string texture
  */
 int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
@@ -4604,8 +4607,8 @@ int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
 /***
  *
  * @function Spring.GetDecalTextures
- * @bool[opt=true] isMainTex
- * @treturn {[string],...} textureNames
+ * @bool[opt=true] isMainTex If false, it gets the texture for normals/glow maps
+ * @treturn {[string],...} textureNames All textures on the atlas and available for use in SetGroundDecalTexture
  */
 int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
 {
@@ -4620,8 +4623,8 @@ int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
  *
  * @function Spring.GetGroundDecalAlpha
  * @number decalID
- * @treturn nil|number alpha
- * @treturn number alphaFalloff
+ * @treturn nil|number alpha Between 0 and 1
+ * @treturn number alphaFalloff Between 0 and 1, per frame
  */
 int LuaUnsyncedRead::GetGroundDecalAlpha(lua_State* L)
 {
@@ -4639,6 +4642,9 @@ int LuaUnsyncedRead::GetGroundDecalAlpha(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalNormal
+ *
+ * If all three equal 0, the decal follows the normals of ground at midpoint
+ *
  * @number decalID
  * @treturn nil|number normal.x
  * @treturn number normal.y
@@ -4661,6 +4667,9 @@ int LuaUnsyncedRead::GetGroundDecalNormal(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalCreationFrame
+ *
+ * Min can be not equal to max for "gradient" style decals, e.g. unit tracks
+ *
  * @number decalID
  * @treturn nil|number creationFrameMin
  * @treturn number creationFrameMax
@@ -4709,7 +4718,7 @@ int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 int LuaUnsyncedRead::GetGroundDecalType(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
-	if (!decal) {
+	if (!decal || decal->info.type == GroundDecal::Type::DECAL_NONE) {
 		return 0;
 	}
 

@@ -390,22 +390,23 @@ void CBeamLaser::FireInternal(float3 curDir)
 		const DamageArray& baseDamages = damages->GetDynamicDamages(weaponMuzzlePos, curPos);
 		const DamageArray da = baseDamages * (hitIntensity * salvoDamageMult);
 		const CExplosionParams params = {
-			hitPos,
-			curDir,
-			da,
-			weaponDef,
-			owner,
-			hitUnit,
-			hitFeature,
-			damages->craterAreaOfEffect,
-			damages->damageAreaOfEffect,
-			damages->edgeEffectiveness,
-			damages->explosionSpeed,
-			1.0f,                                             // gfxMod
-			weaponDef->impactOnly,
-			weaponDef->noExplode || weaponDef->noSelfDamage,  // ignoreOwner
-			true,                                             // damageGround
-			-1u                                               // projectileID
+			.pos                  = hitPos,
+			.dir                  = curDir,
+			.damages              = da,
+			.weaponDef            = weaponDef,
+			.owner                = owner,
+			.hitUnit              = hitUnit,
+			.hitFeature           = hitFeature,
+			.craterAreaOfEffect   = damages->craterAreaOfEffect,
+			.damageAreaOfEffect   = damages->damageAreaOfEffect,
+			.edgeEffectiveness    = damages->edgeEffectiveness,
+			.explosionSpeed       = damages->explosionSpeed,
+			.gfxMod               = 1.0f,
+			.maxGroundDeformation = 0.0f,
+			.impactOnly           = weaponDef->impactOnly,
+			.ignoreOwner          = weaponDef->noExplode || weaponDef->noSelfDamage,
+			.damageGround         = true,
+			.projectileID         = static_cast<uint32_t>(-1u)
 		};
 
 		helper->Explosion(params);

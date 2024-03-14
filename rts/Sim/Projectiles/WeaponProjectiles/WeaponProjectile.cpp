@@ -187,22 +187,23 @@ void CWeaponProjectile::Explode(
 ) {
 	const DamageArray& damageArray = damages->GetDynamicDamages(startPos, impactPos);
 	const CExplosionParams params = {
-		impactPos,
-		impactDir.SafeNormalize(),
-		damageArray,
-		weaponDef,
-		owner(),
-		hitUnit,
-		hitFeature,
-		damages->craterAreaOfEffect,
-		damages->damageAreaOfEffect,
-		damages->edgeEffectiveness,
-		damages->explosionSpeed,
-		weaponDef->noExplode? 0.3f: 1.0f,                 // gfxMod
-		weaponDef->impactOnly,
-		weaponDef->noExplode || weaponDef->noSelfDamage,  // ignoreOwner
-		true,                                             // damgeGround
-		static_cast<unsigned int>(id)
+		.pos                  = impactPos,
+		.dir                  = impactDir.SafeNormalize(),
+		.damages              = damageArray,
+		.weaponDef            = weaponDef,
+		.owner                = owner(),
+		.hitUnit              = hitUnit,
+		.hitFeature           = hitFeature,
+		.craterAreaOfEffect   = damages->craterAreaOfEffect,
+		.damageAreaOfEffect   = damages->damageAreaOfEffect,
+		.edgeEffectiveness    = damages->edgeEffectiveness,
+		.explosionSpeed       = damages->explosionSpeed,
+		.gfxMod               = weaponDef->noExplode ? 0.3f : 1.0f,
+		.maxGroundDeformation = 0.0f,
+		.impactOnly           = weaponDef->impactOnly,
+		.ignoreOwner          = weaponDef->noExplode || weaponDef->noSelfDamage,
+		.damageGround         = true,
+		.projectileID         = static_cast<uint32_t>(id)
 	};
 
 	helper->Explosion(params);

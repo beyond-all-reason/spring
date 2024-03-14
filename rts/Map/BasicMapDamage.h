@@ -10,7 +10,7 @@
 class CBasicMapDamage : public IMapDamage
 {
 public:
-	void Explosion(const float3& pos, float strength, float radius) override;
+	void Explosion(const float3& pos, float strength, float radius, float& maxHeightDiff) override;
 	void RecalcArea(int x1, int x2, int y1, int y2) override;
 	void TerrainTypeHardnessChanged(int ttIndex) override;
 	void TerrainTypeSpeedModChanged(int ttIndex) override;

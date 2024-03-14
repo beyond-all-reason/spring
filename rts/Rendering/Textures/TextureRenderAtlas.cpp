@@ -60,8 +60,8 @@ CTextureRenderAtlas::CTextureRenderAtlas(
 	, atlasSizeY(atlasSizeY_)
 	, allocType(allocType_)
 	, glInternalType(glInternalType_)
-	, atlasName(atlasName_)
 	, texID(0)
+	, atlasName(atlasName_)
 	, finalized(false)
 {
 	switch (allocType) {

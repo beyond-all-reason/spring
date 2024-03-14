@@ -12,6 +12,9 @@ This is the changelog **since version 2314**.
 These are the entries which may require special attention when migrating:
 * some animations are now multi-threaded. It shouldn't cause desyncs, but an `AnimationMT` springsetting has been provided to disable it, just in case. See below.
 * when building the engine via CMake, only native C++ AIs are now built by default.
+* ground decals may behave a bit different because there's a new implementation.
+* ground decals may no longer work on potato hardware.
+* instead of 4 default explosion decals in basecontent, there's 2 new normal-mapped ones. Might want to produce more for variety and/or check your `gamedata/resources.lua` to see if you're referencing them.
 
 # Features
 * added a new optional boolean parameter to `Spring.GetUnitHeading`, default false. If true, the value returned is in radians instead of the TA 16-bit angular unit.
@@ -27,6 +30,15 @@ There is currently no corresponding Set.
 * `Spring.GetUnitWorkerTask` now works on factories.
 * major performance (incl. loading time and Lua memory usage) improvements.
 * further Tracy instrumentation.
+
+### New ground decals
+* added normal mapping to all decals (explosion scars, building plates, tank tracks).
+Name the normalmap the same as the base decal but with `_normal` at the end., e.g. when you use `scar1.tga` as a decal diffuse/alpha, use `scar1_normal.tga` as a normal map texture.
+* alpha channel of normal map is now used for explosion decal glow. Scales with weapon damage. Full opacity (255) represents the hottest part.
+* added a Lua interface to create and edit decals. Check the [control](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedCtrl.html#Decals)
+and [read](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Decals) parts in the API listings.
+* added a shader interface for decal rendering. No documentation of uniforms/attributes/etc seems to exist at the moment,
+but you can look up the default shader implementation ([fragment](https://github.com/beyond-all-reason/spring/blob/BAR105/cont/base/springcontent/shaders/GLSL/GroundDecalsFragProg.glsl), [vertex](https://github.com/beyond-all-reason/spring/blob/BAR105/cont/base/springcontent/shaders/GLSL/GroundDecalsVertProg.glsl)).
 
 ### More interfaces in `defs.lua`
 The following functions are now available in the `defs.lua` phase:

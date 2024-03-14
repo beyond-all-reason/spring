@@ -18,8 +18,8 @@ namespace MoveTypes {
 		CheckCollisionQuery(const CSolidObject* ref)
 			: unit(ref)
 			, moveDef(ref->moveDef)
-			, physicalState(ref->physicalState)
 			, pos(ref->pos)
+			, physicalState(ref->physicalState)
 		{}
 
 		CheckCollisionQuery(const MoveDef* refMoveDef)

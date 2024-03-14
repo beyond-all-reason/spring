@@ -303,7 +303,7 @@ void CGameHelper::Explosion(const CExplosionParams& params) {
 				const float craterStrength = (damageDepth + damages.craterBoost) * damages.craterMult;
 				const float craterRadius = craterAOE - altitude;
 
-				mapDamage->Explosion(params.pos, craterStrength, craterRadius);
+				mapDamage->Explosion(params.pos, craterStrength, craterRadius, params.maxGroundDeformation);
 			}
 		}
 	}

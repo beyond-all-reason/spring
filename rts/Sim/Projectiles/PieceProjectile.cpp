@@ -138,22 +138,23 @@ void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 	if ((explFlags & PF_Explode) && (unit || feature)) {
 		const DamageArray damageArray(modInfo.debrisDamage);
 		const CExplosionParams params = {
-			pos,
-			ZeroVector,
-			damageArray,
-			nullptr,           // weaponDef
-			owner(),
-			unit,              // hitUnit
-			feature,           // hitFeature
-			0.0f,              // craterAreaOfEffect
-			5.0f,              // damageAreaOfEffect
-			0.0f,              // edgeEffectiveness
-			10.0f,             // explosionSpeed
-			1.0f,              // gfxMod
-			true,              // impactOnly
-			false,             // ignoreOwner
-			false,             // damageGround
-			static_cast<unsigned int>(id)
+			.pos                  = pos,
+			.dir                  = ZeroVector,
+			.damages              = damageArray,
+			.weaponDef            = nullptr,
+			.owner                = owner(),
+			.hitUnit              = unit,
+			.hitFeature           = feature,
+			.craterAreaOfEffect   = 0.0f,
+			.damageAreaOfEffect   = 5.0f,
+			.edgeEffectiveness    = 0.0f,
+			.explosionSpeed       = 10.0f,
+			.gfxMod               = 1.0f,
+			.maxGroundDeformation = 0.0f,
+			.impactOnly           = true,
+			.ignoreOwner          = false,
+			.damageGround         = false,
+			.projectileID         = static_cast<uint32_t>(id)
 		};
 
 		helper->Explosion(params);
