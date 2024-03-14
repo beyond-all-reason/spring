@@ -29,7 +29,6 @@
  *
  */
 
-#include "Rml/Rml_MathTypes_Conversions.h"
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/Profiling.h>
 #include <RmlUi/Debugger.h>
@@ -38,12 +37,19 @@
 #include <tracy/Tracy.hpp>
 
 #include "Lua/LuaUI.h"
+#include "Rendering/Textures/Bitmap.h"
 #include "Rml/Components/ElementLuaTexture.h"
 #include "Rml/Components/DecoratorLuaRender.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
 #include "RmlUi_Backend.h"
+
+#ifndef HEADLESS
 #include "RmlUi_Renderer_GL3_Recoil.h"
+#else
+#include "RmlUi_Renderer_Headless.h"
+#endif
+
 #include "RmlUi_SystemInterface.h"
 #include "RmlUi_VFSFileInterface.h"
 #include "System/Input/InputHandler.h"
