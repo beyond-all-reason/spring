@@ -3657,6 +3657,7 @@ int LuaSyncedCtrl::SetUnitMass(lua_State* L)
  * @function Spring.SetUnitPosition
  * @number unitID
  * @number x
+ * @number[opt] y
  * @number z
  * @bool[opt] alwaysAboveSea
  * @treturn nil
