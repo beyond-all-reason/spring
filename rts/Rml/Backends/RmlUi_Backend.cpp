@@ -338,7 +338,7 @@ bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventMouseMove(context, x, y);
+		result |= !RmlSDLRecoil::EventMouseMove(context, x, y);
 	}
 	data->inputReceiver.setActive(result);
 	return result;
@@ -354,7 +354,7 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		bool handled = !RmlSDLSpring::EventMousePress(context, x, y, button);
+		bool handled = !RmlSDLRecoil::EventMousePress(context, x, y, button);
 		result |= handled;
 		if (!handled) {
 			Rml::Element* el = context->GetFocusElement();
@@ -377,7 +377,7 @@ bool RmlGui::ProcessMouseRelease(int x, int y, int button)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventMouseRelease(context, x, y, button);
+		result |= !RmlSDLRecoil::EventMouseRelease(context, x, y, button);
 	}
 	data->inputReceiver.setActive(result);
 	return result;
@@ -393,7 +393,7 @@ bool RmlGui::ProcessMouseWheel(float delta)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventMouseWheel(context, delta);
+		result |= !RmlSDLRecoil::EventMouseWheel(context, delta);
 	}
 	data->inputReceiver.setActive(result);
 	return result;
@@ -409,8 +409,8 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		auto kc = RmlSDLSpring::ConvertKey(keyCode);
-		result |= !RmlSDLSpring::EventKeyDown(context, kc);
+		auto kc = RmlSDLRecoil::ConvertKey(keyCode);
+		result |= !RmlSDLRecoil::EventKeyDown(context, kc);
 	}
 	return result;
 }
@@ -422,7 +422,7 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventKeyUp(context, RmlSDLSpring::ConvertKey(keyCode));
+		result |= !RmlSDLRecoil::EventKeyUp(context, RmlSDLRecoil::ConvertKey(keyCode));
 	}
 	return result;
 }
@@ -434,7 +434,7 @@ bool RmlGui::ProcessTextInput(const std::string& text)
 	}
 	bool result = false;
 	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
-		result |= !RmlSDLSpring::EventTextInput(context, text);
+		result |= !RmlSDLRecoil::EventTextInput(context, text);
 	}
 	return result;
 }
@@ -451,7 +451,7 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 					data->winY = dimensions.y;
 				} break;
 			}
-			RmlSDLSpring::InputEventHandler(context, event);
+			RmlSDLRecoil::InputEventHandler(context, event);
 		} break;
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEBUTTONDOWN:
@@ -462,10 +462,10 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 		case SDL_TEXTINPUT:
 			break;  // handled elsewhere
 		default: {
-			RmlSDLSpring::InputEventHandler(context, event);
+			RmlSDLRecoil::InputEventHandler(context, event);
 		} break;
 	}
-	// these events are not captured, and should continue propogating
+	// these events are not captured, and should continue propagating
 	return false;
 }
 

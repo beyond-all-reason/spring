@@ -33,7 +33,6 @@
 
 #include "Rendering/Shaders/Shader.h"
 
-
 #include <RmlUi/Core/RenderInterface.h>
 #include <RmlUi/Core/Types.h>
 
@@ -42,11 +41,6 @@ namespace Shader
 struct IProgramObject;
 struct IShaderObject;
 };  // namespace Shader
-
-namespace Gfx
-{
-struct ShadersData;
-}
 
 class RenderInterface_GL3_Recoil : public Rml::RenderInterface
 {

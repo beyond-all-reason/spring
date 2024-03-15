@@ -176,10 +176,10 @@ void RenderInterface_GL3_Recoil::BeginFrame()
 {
 	RMLUI_ASSERT(viewport_width >= 0 && viewport_height >= 0);
 
+	// Setup expected GL state.
 	glPushAttrib(GL_VIEWPORT_BIT | GL_STENCIL_BUFFER_BIT | GL_SCISSOR_BIT | GL_POLYGON_BIT |
 	             GL_COLOR_BUFFER_BIT);
 
-	// Setup expected GL state.
 	glViewport(0, 0, viewport_width, viewport_height);
 
 	glClearStencil(0);
@@ -232,8 +232,6 @@ Rml::CompiledGeometryHandle
 RenderInterface_GL3_Recoil::CompileGeometry(Rml::Vertex* vertices, int num_vertices, int* indices,
                                             int num_indices, Rml::TextureHandle texture)
 {
-	constexpr GLenum draw_usage = GL_STATIC_DRAW;
-
 	auto vao = std::make_unique<VAO>();
 	auto vbo = std::make_unique<VBO>(GL_ARRAY_BUFFER);
 	auto ibo = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER);
