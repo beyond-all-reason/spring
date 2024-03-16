@@ -169,6 +169,33 @@ bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontex
 	return true;
 }
 
+bool RmlGui::InitializeLua(lua_State* lua_state)
+{
+	if (!RmlInitialized()) {
+		return false;
+	}
+	sol::state_view lua(lua_state);
+	data->ls = lua_state;
+	data->luaPlugin = Rml::SolLua::Initialise(&lua, "rmlDocumentId");
+	data->system_interface.SetTranslationTable(&data->luaPlugin->translationTable);
+	return true;
+}
+
+bool RmlGui::RemoveLua()
+{
+	if (!RmlInitialized() || !data->ls) {
+		return false;
+	}
+	data->luaPlugin->RemoveLuaItems();
+	Update();
+	Rml::UnregisterPlugin(data->luaPlugin);
+	data->system_interface.SetTranslationTable(nullptr);
+	data->luaPlugin = nullptr;
+	data->ls = nullptr;
+
+	return true;
+}
+
 void RmlGui::Shutdown()
 {
 	if (!RmlInitialized()) {
