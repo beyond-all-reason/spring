@@ -58,22 +58,22 @@ CEndGameBox::CEndGameBox(const std::vector<unsigned char>& winningAllyTeams)
 	exitBox.x1 = 0.31f;
 	exitBox.y1 = 0.02f;
 	exitBox.x2 = 0.41f;
-	exitBox.y2 = 0.06f;
+	exitBox.y2 = 0.05f;
 
 	playerBox.x1 = 0.05f;
-	playerBox.y1 = 0.62f;
+	playerBox.y1 = 0.64f;
 	playerBox.x2 = 0.15f;
-	playerBox.y2 = 0.65f;
+	playerBox.y2 = 0.663f;
 
 	sumBox.x1 = 0.16f;
-	sumBox.y1 = 0.62f;
+	sumBox.y1 = 0.64f;
 	sumBox.x2 = 0.26f;
-	sumBox.y2 = 0.65f;
+	sumBox.y2 = 0.663f;
 
 	difBox.x1 = 0.27f;
-	difBox.y1 = 0.62f;
+	difBox.y1 = 0.64f;
 	difBox.x2 = 0.38f;
-	difBox.y2 = 0.65f;
+	difBox.y2 = 0.663f;
 
 	CBitmap bm;
 	if (!bm.Load("bitmaps/graphPaper.bmp"))
@@ -284,12 +284,12 @@ void CEndGameBox::Draw()
 			winnersText << "Game Over! Ally-team(s) ";
 			winnersText << winnersList.str() << " won!";
 
-			font->glPrint(box.x1 + 0.25f, box.y1 + 0.65f, 1.0f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, winnersText.str());
+			font->glPrint(box.x1 + 0.25f, box.y1 + 0.67f, 1.0f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, winnersText.str());
 		} else {
 			winnersText.str("");
 			winnersText << "Game Over! Your ally-team ";
 			winnersText << (playedAndWon? "won!": "lost!");
-			font->glPrint(box.x1 + 0.25f, box.y1 + 0.65f, 1.0f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, winnersText.str());
+			font->glPrint(box.x1 + 0.25f, box.y1 + 0.67f, 1.0f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, winnersText.str());
 		}
 	}
 
@@ -378,11 +378,11 @@ void CEndGameBox::Draw()
 
 
 
-		float ypos = 0.55f;
+		float ypos = 0.552f;
 		float maxy = 1.0f;
 
 		for (const auto& stat: stats) {
-			font->glPrint(box.x1 + 0.01f, box.y1 + ypos, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, stat.name);
+			font->glPrint(box.x1 + 0.01f, box.y1 + ypos, 0.75f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, stat.name);
 			ypos -= 0.02f;
 		}
 
