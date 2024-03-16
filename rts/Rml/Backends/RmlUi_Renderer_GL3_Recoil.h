@@ -51,7 +51,7 @@ public:
 	// Returns true if the renderer was successfully constructed.
 	explicit operator bool() const
 	{
-		return std::ranges::all_of(programs, &Shader::IProgramObject::IsValid);
+		return shader_program != nullptr && shader_program->IsValid();
 	}
 
 	// The viewport should be updated whenever the window size changes.
@@ -97,18 +97,10 @@ public:
 private:
 	void CreateShaders();
 
-	enum class ProgramId : unsigned char {
-		None = 0,
-		Texture = 1,
-		Color = 2,
-		All = (Texture | Color)
-	};
-
-	Shader::IProgramObject* programs[2]{};
-	void SubmitTransformUniform(ProgramId program_id);
+	Shader::IProgramObject* shader_program = nullptr;
+	bool transform_dirty = true;
 
 	Rml::Matrix4f transform, projection;
-	ProgramId transform_dirty_state = ProgramId::All;
 	bool transform_active = false;
 
 	enum class ScissoringState { Disable, Scissor, Stencil };

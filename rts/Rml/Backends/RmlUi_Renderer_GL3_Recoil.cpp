@@ -29,18 +29,7 @@
  */
 
 #include "RmlUi_Renderer_GL3_Recoil.h"
-#include <RmlUi/Core/Core.h>
-#include <RmlUi/Core/FileInterface.h>
 #include <RmlUi/Core/Log.h>
-#include <RmlUi/Core/Platform.h>
-#include <string.h>
-
-#if defined(RMLUI_PLATFORM_WIN32) && !defined(__MINGW32__)
-// function call missing argument list
-#pragma warning(disable : 4551)
-// unreferenced local function has been removed
-#pragma warning(disable : 4505)
-#endif
 
 #include "Rendering/GL/VAO.h"
 #include "Rendering/GL/VBO.h"
@@ -53,7 +42,8 @@
 
 static const std::string rml_shader_header = "#version 130\n";
 
-static const std::string shader_main_vertex = R"(
+//language=glsl
+static const std::string shader_vertex = R"(
 uniform vec2 _translate;
 uniform mat4 _transform;
 
@@ -75,110 +65,91 @@ void main() {
 }
 )";
 
-static const std::string shader_main_fragment_texture = R"(
-uniform sampler2D _tex;
+//language=glsl
+static const std::string shader_fragment = R"(
+uniform bool _useTexture;
+uniform sampler2D _texture;
+
 in vec2 fragTexCoord;
 in vec4 fragColor;
 
 out vec4 finalColor;
 
 void main() {
-	vec4 texColor = texture(_tex, fragTexCoord);
-	finalColor = fragColor * texColor;
-}
-)";
-static const std::string shader_main_fragment_color = R"(
-in vec2 fragTexCoord;
-in vec4 fragColor;
-
-out vec4 finalColor;
-
-void main() {
-	finalColor = fragColor;
+	if (_useTexture) {
+		finalColor = fragColor * texture(_texture, fragTexCoord);
+	} else {
+		finalColor = fragColor;
+	}
 }
 )";
 
-namespace
-{
-namespace ProgramUniform
-{
-const char* const Translate = "_translate";
-const char* const Transform = "_transform";
-const char* const Tex = "_tex";
-}  // namespace ProgramUniform
+namespace {
+	namespace ProgramUniform {
+		const char *const Translate = "_translate";
+		const char *const Transform = "_transform";
+		const char *const Texture = "_tex";
+		const char *const UseTexture = "_useTexture";
+	}  // namespace ProgramUniform
 
-struct CompiledGeometryData {
-	Rml::TextureHandle texture;
-	std::unique_ptr<VAO> vao;
-	std::unique_ptr<VBO> vbo;
-	std::unique_ptr<VBO> ibo;
-	int num_indices;
+	struct CompiledGeometryData {
+		Rml::TextureHandle texture;
+		std::unique_ptr<VAO> vao;
+		std::unique_ptr<VBO> vbo;
+		std::unique_ptr<VBO> ibo;
+		int num_indices;
 
-	static std::array<AttributeDef, 3> attributeDefs;
-};
+		static std::array<AttributeDef, 3> attributeDefs;
+	};
 
-std::array<AttributeDef, 3> CompiledGeometryData::attributeDefs = {
-	AttributeDef(0, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, position),
-                 GL_FALSE, "pos"),
-	AttributeDef(1, 4, GL_UNSIGNED_BYTE, sizeof(Rml::Vertex),
-                 (const void*)offsetof(Rml::Vertex, colour), GL_TRUE, "col"),
-	AttributeDef(2, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void*)offsetof(Rml::Vertex, tex_coord),
-                 GL_FALSE, "uv")};
+	std::array<AttributeDef, 3> CompiledGeometryData::attributeDefs = {
+			AttributeDef(0, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void *) offsetof(Rml::Vertex, position),
+						 GL_FALSE, "pos"),
+			AttributeDef(1, 4, GL_UNSIGNED_BYTE, sizeof(Rml::Vertex),
+						 (const void *) offsetof(Rml::Vertex, colour), GL_TRUE, "col"),
+			AttributeDef(2, 2, GL_FLOAT, sizeof(Rml::Vertex), (const void *) offsetof(Rml::Vertex, tex_coord),
+						 GL_FALSE, "uv")};
 }  // namespace
 
-RenderInterface_GL3_Recoil::RenderInterface_GL3_Recoil()
-{
+RenderInterface_GL3_Recoil::RenderInterface_GL3_Recoil() {
 	CreateShaders();
 }
 
-RenderInterface_GL3_Recoil::~RenderInterface_GL3_Recoil()
-{
+RenderInterface_GL3_Recoil::~RenderInterface_GL3_Recoil() {
 	shaderHandler->ReleaseProgramObjects("[Rml RenderInterface]");
 }
 
-void RenderInterface_GL3_Recoil::CreateShaders()
-{
+void RenderInterface_GL3_Recoil::CreateShaders() {
 #define sh shaderHandler
-	static const std::string prog_handles[2] = {"rml_tex", "rml_color"};
+	shader_program = sh->CreateProgramObject("[Rml RenderInterface]", "rml_shader");
+	shader_program->AttachShaderObject(sh->CreateShaderObject(shader_vertex, rml_shader_header, GL_VERTEX_SHADER));
+	shader_program->AttachShaderObject(sh->CreateShaderObject(shader_fragment, rml_shader_header, GL_FRAGMENT_SHADER));
+	shader_program->BindAttribLocations<CompiledGeometryData>();
+	shader_program->Link();
 
-	static const std::string* frag_code[2] = {&shader_main_fragment_texture,
-	                                          &shader_main_fragment_color};
-
-	for (int i = 0; i < 2; i++) {
-		Shader::IProgramObject* po =
-			sh->CreateProgramObject("[Rml RenderInterface]", prog_handles[i]);
-		po->AttachShaderObject(
-			sh->CreateShaderObject(shader_main_vertex, rml_shader_header, GL_VERTEX_SHADER));
-		po->AttachShaderObject(
-			sh->CreateShaderObject(*frag_code[i], rml_shader_header, GL_FRAGMENT_SHADER));
-		po->BindAttribLocations<CompiledGeometryData>();
-		po->Link();
-
-		po->Enable();
-		po->SetUniform(ProgramUniform::Translate, 0, 0);
-		po->SetUniformMatrix4x4(ProgramUniform::Transform, false, CMatrix44f::Identity().m);
-		po->SetUniform(ProgramUniform::Tex, 0);
-		po->Disable();
-		po->Validate();
-
-		programs[i] = po;
-	}
+	shader_program->Enable();
+	shader_program->SetUniform(ProgramUniform::Translate, 0, 0);
+	shader_program->SetUniformMatrix4x4(ProgramUniform::Transform, false, CMatrix44f::Identity().m);
+	shader_program->SetUniform(ProgramUniform::Texture, 0);
+	shader_program->SetUniform(ProgramUniform::UseTexture, false);
+	shader_program->Disable();
+	shader_program->Validate();
 #undef sh
 }
 
-void RenderInterface_GL3_Recoil::SetViewport(int width, int height)
-{
+void RenderInterface_GL3_Recoil::SetViewport(int width, int height) {
 	viewport_width = width;
 	viewport_height = height;
+	projection = Rml::Matrix4f::ProjectOrtho(0, (float) viewport_width, (float) viewport_height, 0,
+											 -10000, 10000);
 }
 
-void RenderInterface_GL3_Recoil::BeginFrame()
-{
+void RenderInterface_GL3_Recoil::BeginFrame() {
 	RMLUI_ASSERT(viewport_width >= 0 && viewport_height >= 0);
 
 	// Setup expected GL state.
 	glPushAttrib(GL_VIEWPORT_BIT | GL_STENCIL_BUFFER_BIT | GL_SCISSOR_BIT | GL_POLYGON_BIT |
-	             GL_COLOR_BUFFER_BIT);
+				 GL_COLOR_BUFFER_BIT);
 
 	glViewport(0, 0, viewport_width, viewport_height);
 
@@ -196,31 +167,34 @@ void RenderInterface_GL3_Recoil::BeginFrame()
 	glStencilMask(GLuint(-1));
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-	projection = Rml::Matrix4f::ProjectOrtho(0, (float)viewport_width, (float)viewport_height, 0,
-	                                         -10000, 10000);
 	SetTransform(nullptr);
 }
 
-void RenderInterface_GL3_Recoil::EndFrame()
-{
+void RenderInterface_GL3_Recoil::EndFrame() {
 	// Restore GL state.
 	glPopAttrib();
 }
 
-void RenderInterface_GL3_Recoil::Clear()
-{
+void RenderInterface_GL3_Recoil::Clear() {
 	glClearStencil(0);
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void RenderInterface_GL3_Recoil::RenderGeometry(Rml::Vertex* vertices, int num_vertices,
-                                                int* indices, int num_indices,
-                                                const Rml::TextureHandle texture,
-                                                const Rml::Vector2f& translation)
-{
+/// Called by RmlUi when it wants to render geometry that the application does not wish to optimise. Note that
+/// RmlUi renders everything as triangles.
+/// @param[in] vertices The geometry's vertex data.
+/// @param[in] num_vertices The number of vertices passed to the function.
+/// @param[in] indices The geometry's index data.
+/// @param[in] num_indices The number of indices passed to the function. This will always be a multiple of three.
+/// @param[in] texture The texture to be applied to the geometry. This may be nullptr, in which case the geometry is untextured.
+/// @param[in] translation The translation to apply to the geometry.
+void RenderInterface_GL3_Recoil::RenderGeometry(Rml::Vertex *vertices, int num_vertices,
+												int *indices, int num_indices,
+												const Rml::TextureHandle texture,
+												const Rml::Vector2f &translation) {
 	Rml::CompiledGeometryHandle geometry =
-		CompileGeometry(vertices, num_vertices, indices, num_indices, texture);
+			CompileGeometry(vertices, num_vertices, indices, num_indices, texture);
 
 	if (geometry) {
 		RenderCompiledGeometry(geometry, translation);
@@ -228,10 +202,19 @@ void RenderInterface_GL3_Recoil::RenderGeometry(Rml::Vertex* vertices, int num_v
 	}
 }
 
+/// Called by RmlUi when it wants to compile geometry it believes will be static for the forseeable future.
+/// If supported, this should return a handle to an optimised, application-specific version of the data. If
+/// not, do not override the function or return zero; the simpler RenderGeometry() will be called instead.
+/// @param[in] vertices The geometry's vertex data.
+/// @param[in] num_vertices The number of vertices passed to the function.
+/// @param[in] indices The geometry's index data.
+/// @param[in] num_indices The number of indices passed to the function. This will always be a multiple of three.
+/// @param[in] texture The texture to be applied to the geometry. This may be nullptr, in which case the geometry is untextured.
+/// @return The application-specific compiled geometry. Compiled geometry will be stored and rendered using RenderCompiledGeometry() in future
+/// calls, and released with ReleaseCompiledGeometry() when it is no longer needed.
 Rml::CompiledGeometryHandle
-RenderInterface_GL3_Recoil::CompileGeometry(Rml::Vertex* vertices, int num_vertices, int* indices,
-                                            int num_indices, Rml::TextureHandle texture)
-{
+RenderInterface_GL3_Recoil::CompileGeometry(Rml::Vertex *vertices, int num_vertices, int *indices,
+											int num_indices, Rml::TextureHandle texture) {
 	auto vao = std::make_unique<VAO>();
 	auto vbo = std::make_unique<VBO>(GL_ARRAY_BUFFER);
 	auto ibo = std::make_unique<VBO>(GL_ELEMENT_ARRAY_BUFFER);
@@ -245,7 +228,7 @@ RenderInterface_GL3_Recoil::CompileGeometry(Rml::Vertex* vertices, int num_verti
 	vbo->Bind();
 	vbo->New(num_vertices * sizeof(Rml::Vertex), GL_STATIC_DRAW, vertices);
 
-	for (const AttributeDef& def : CompiledGeometryData::attributeDefs) {
+	for (const AttributeDef &def: CompiledGeometryData::attributeDefs) {
 		glEnableVertexAttribArray(def.index);
 		glVertexAttribPointer(def.index, def.count, def.type, def.normalize, def.stride, def.data);
 	}
@@ -257,43 +240,44 @@ RenderInterface_GL3_Recoil::CompileGeometry(Rml::Vertex* vertices, int num_verti
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	return (Rml::CompiledGeometryHandle) new CompiledGeometryData{
-		texture, std::move(vao), std::move(vbo), std::move(ibo), num_indices};
+			texture, std::move(vao), std::move(vbo), std::move(ibo), num_indices};
 }
 
+/// Called by RmlUi when it wants to release application-compiled geometry.
+/// @param[in] geometry The application-specific compiled geometry to release.
 void RenderInterface_GL3_Recoil::RenderCompiledGeometry(Rml::CompiledGeometryHandle handle,
-                                                        const Rml::Vector2f& translation)
-{
-	auto* geometry = (CompiledGeometryData*)handle;
-
-	Shader::IProgramObject* program = nullptr;
+														const Rml::Vector2f &translation) {
+	auto *geometry = (CompiledGeometryData *) handle;
+	shader_program->Enable();
 
 	if (geometry->texture) {
-		program = programs[(size_t)ProgramId::Texture - 1];
-		program->Enable();
+		shader_program->SetUniform(ProgramUniform::UseTexture, true);
 		if (geometry->texture != TextureEnableWithoutBinding) {
-			glBindTexture(GL_TEXTURE_2D, (GLuint)geometry->texture);
+			glBindTexture(GL_TEXTURE_2D, (GLuint) geometry->texture);
 		}
-		SubmitTransformUniform(ProgramId::Texture);
 	} else {
-		program = programs[(size_t)ProgramId::Color - 1];
-		program->Enable();
+		shader_program->SetUniform(ProgramUniform::UseTexture, false);
 		glBindTexture(GL_TEXTURE_2D, 0);
-		SubmitTransformUniform(ProgramId::Color);
 	}
 
-	program->SetUniform(ProgramUniform::Translate, translation.x, translation.y);
+	shader_program->SetUniform(ProgramUniform::Translate, translation.x, translation.y);
+	if (transform_dirty) {
+		shader_program->SetUniformMatrix4x4(ProgramUniform::Transform, false, transform.data());
+		transform_dirty = false;
+	}
 
 	geometry->vao->Bind();
-	glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, (const GLvoid*)0);
+	glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
 	geometry->vao->Unbind();
 
-	program->Disable();
+	shader_program->Disable();
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void RenderInterface_GL3_Recoil::ReleaseCompiledGeometry(Rml::CompiledGeometryHandle handle)
-{
-	auto geometry = (CompiledGeometryData*)handle;
+/// Called by RmlUi when it wants to release application-compiled geometry.
+/// @param[in] geometry The application-specific compiled geometry to release.
+void RenderInterface_GL3_Recoil::ReleaseCompiledGeometry(Rml::CompiledGeometryHandle handle) {
+	auto geometry = (CompiledGeometryData *) handle;
 
 	geometry->vao->Delete();
 	geometry->vbo->Release();
@@ -302,8 +286,9 @@ void RenderInterface_GL3_Recoil::ReleaseCompiledGeometry(Rml::CompiledGeometryHa
 	delete geometry;
 }
 
-void RenderInterface_GL3_Recoil::EnableScissorRegion(bool enable)
-{
+/// Called by RmlUi when it wants to enable or disable scissoring to clip content.
+/// @param[in] enable True if scissoring is to enabled, false if it is to be disabled.
+void RenderInterface_GL3_Recoil::EnableScissorRegion(bool enable) {
 	ScissoringState new_state = ScissoringState::Disable;
 
 	if (enable)
@@ -326,8 +311,12 @@ void RenderInterface_GL3_Recoil::EnableScissorRegion(bool enable)
 	}
 }
 
-void RenderInterface_GL3_Recoil::SetScissorRegion(int x, int y, int width, int height)
-{
+/// Called by RmlUi when it wants to change the scissor region.
+/// @param[in] x The left-most pixel to be rendered. All pixels to the left of this should be clipped.
+/// @param[in] y The top-most pixel to be rendered. All pixels to the top of this should be clipped.
+/// @param[in] width The width of the scissored region. All pixels to the right of (x + width) should be clipped.
+/// @param[in] height The height of the scissored region. All pixels to below (y + height) should be clipped.
+void RenderInterface_GL3_Recoil::SetScissorRegion(int x, int y, int width, int height) {
 	if (transform_active) {
 		const float left = float(x);
 		const float right = float(x + width);
@@ -357,10 +346,14 @@ void RenderInterface_GL3_Recoil::SetScissorRegion(int x, int y, int width, int h
 	}
 }
 
-bool RenderInterface_GL3_Recoil::LoadTexture(Rml::TextureHandle& texture_handle,
-                                             Rml::Vector2i& texture_dimensions,
-                                             const Rml::String& source)
-{
+/// Called by RmlUi when a texture is required by the library.
+/// @param[out] texture_handle The handle to write the texture handle for the loaded texture to.
+/// @param[out] texture_dimensions The variable to write the dimensions of the loaded texture.
+/// @param[in] source The application-defined image source, joined with the path of the referencing document.
+/// @return True if the load attempt succeeded and the handle and dimensions are valid, false if not.
+bool RenderInterface_GL3_Recoil::LoadTexture(Rml::TextureHandle &texture_handle,
+											 Rml::Vector2i &texture_dimensions,
+											 const Rml::String &source) {
 	CBitmap bmp;
 	if (!bmp.Load(source)) {
 		return false;
@@ -371,10 +364,14 @@ bool RenderInterface_GL3_Recoil::LoadTexture(Rml::TextureHandle& texture_handle,
 	return texture_handle != 0;
 }
 
-bool RenderInterface_GL3_Recoil::GenerateTexture(Rml::TextureHandle& texture_handle,
-                                                 const Rml::byte* source,
-                                                 const Rml::Vector2i& source_dimensions)
-{
+/// Called by RmlUi when a texture is required to be built from an internally-generated sequence of pixels.
+/// @param[out] texture_handle The handle to write the texture handle for the generated texture to.
+/// @param[in] source The raw 8-bit texture data. Each pixel is made up of four 8-bit values, indicating red, green, blue and alpha in that order.
+/// @param[in] source_dimensions The dimensions, in pixels, of the source data.
+/// @return True if the texture generation succeeded and the handle is valid, false if not.
+bool RenderInterface_GL3_Recoil::GenerateTexture(Rml::TextureHandle &texture_handle,
+												 const Rml::byte *source,
+												 const Rml::Vector2i &source_dimensions) {
 	GLuint texture_id = 0;
 	glGenTextures(1, &texture_id);
 	if (texture_id == 0) {
@@ -386,41 +383,36 @@ bool RenderInterface_GL3_Recoil::GenerateTexture(Rml::TextureHandle& texture_han
 
 	GLint internal_format = GL_RGBA8;
 	glTexImage2D(GL_TEXTURE_2D, 0, internal_format, source_dimensions.x, source_dimensions.y, 0,
-	             GL_RGBA, GL_UNSIGNED_BYTE, source);
+				 GL_RGBA, GL_UNSIGNED_BYTE, source);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	texture_handle = (Rml::TextureHandle)texture_id;
+	texture_handle = (Rml::TextureHandle) texture_id;
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return true;
 }
 
-void RenderInterface_GL3_Recoil::ReleaseTexture(Rml::TextureHandle texture_handle)
-{
-	// Something was using a texture loaded/managed outside of Rml. Do nothing.
+/// Called by RmlUi when a loaded texture is no longer required.
+/// @param texture The texture handle to release.
+void RenderInterface_GL3_Recoil::ReleaseTexture(Rml::TextureHandle texture_handle) {
+	// Something was using a texture loaded/managed outside Rml. Do nothing.
 	if (texture_handle == TextureEnableWithoutBinding)
 		return;
 
-	glDeleteTextures(1, (GLuint*)&texture_handle);
+	glDeleteTextures(1, (GLuint *) &texture_handle);
 }
 
-void RenderInterface_GL3_Recoil::SetTransform(const Rml::Matrix4f* new_transform)
-{
+/// Called by RmlUi when it wants the renderer to use a new transform matrix.
+/// This will only be called if 'transform' properties are encountered. If no transform applies to the current element, nullptr
+/// is submitted. Then it expects the renderer to use an identity matrix or otherwise omit the multiplication with the transform.
+/// @param[in] transform The new transform to apply, or nullptr if no transform applies to the current element.
+void RenderInterface_GL3_Recoil::SetTransform(const Rml::Matrix4f *new_transform) {
 	transform_active = (new_transform != nullptr);
 	transform = projection * (new_transform ? *new_transform : Rml::Matrix4f::Identity());
-	transform_dirty_state = ProgramId::All;
-}
-
-void RenderInterface_GL3_Recoil::SubmitTransformUniform(ProgramId program_id)
-{
-	if ((int)program_id & (int)transform_dirty_state && program_id != ProgramId::All) {
-		programs[(int)program_id - 1]->SetUniformMatrix4x4(ProgramUniform::Transform, false,
-		                                                   transform.data());
-		transform_dirty_state = ProgramId((int)transform_dirty_state & ~(int)program_id);
-	}
+	transform_dirty = true;
 }
