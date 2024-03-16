@@ -19,6 +19,8 @@
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CTorpedoProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CTorpedoProjectile,(
@@ -59,6 +61,7 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 
 float3 CTorpedoProjectile::UpdateTargetingPos()
 {
+	//ZoneScoped;
 	float3 targetVel;
 
 	if (target != nullptr) {
@@ -90,6 +93,7 @@ float3 CTorpedoProjectile::UpdateTargetingPos()
 
 float3 CTorpedoProjectile::UpdateTargetingDir(const float3& targetObjVel)
 {
+	//ZoneScoped;
 	const float3 targetLeadVec = targetObjVel * (pos.distance(targetPos) / maxSpeed) * 0.7f;
 	const float3 targetLeadDir = (targetPos + targetLeadVec - pos).Normalize();
 
@@ -108,6 +112,7 @@ float3 CTorpedoProjectile::UpdateTargetingDir(const float3& targetObjVel)
 
 void CTorpedoProjectile::Update()
 {
+	//ZoneScoped;
 	// tracking only works when we are underwater
 	if (!weaponDef->submissile && pos.y > 0.0f) {
 		if (!luaMoveCtrl) {
@@ -162,6 +167,7 @@ void CTorpedoProjectile::Update()
 
 void CTorpedoProjectile::Draw()
 {
+	//ZoneScoped;
 	// do not draw if a 3D model has been defined for us
 	if (model != nullptr)
 		return;

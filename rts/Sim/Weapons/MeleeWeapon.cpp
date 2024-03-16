@@ -4,11 +4,14 @@
 #include "WeaponDef.h"
 #include "Sim/Units/Unit.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CMeleeWeapon, CWeapon, )
 CR_REG_METADATA(CMeleeWeapon, )
 
 void CMeleeWeapon::FireImpl(const bool scriptCall)
 {
+	//ZoneScoped;
 	if (currentTarget.type != Target_Unit)
 		return;
 

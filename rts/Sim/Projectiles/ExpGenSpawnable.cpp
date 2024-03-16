@@ -21,6 +21,8 @@
 #include "System/TemplateUtils.hpp"
 #include "Sim/Misc/GlobalSynced.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND_DERIVED_INTERFACE_POOL(CExpGenSpawnable, CWorldObject, projMemPool.allocMem, projMemPool.freeMem)
 CR_REG_METADATA(CExpGenSpawnable, (
@@ -42,6 +44,7 @@ CExpGenSpawnable::CExpGenSpawnable(const float3& pos, const float3& spd)
 	, rotVel{ 0 }
 	, createFrame{ 0 }
 {
+	//ZoneScoped;
 	assert(projMemPool.alloced(this));
 }
 
@@ -51,16 +54,19 @@ CExpGenSpawnable::CExpGenSpawnable()
 	, rotVel{ 0 }
 	, createFrame{ 0 }
 {
+	//ZoneScoped;
 	assert(projMemPool.alloced(this));
 }
 
 CExpGenSpawnable::~CExpGenSpawnable()
 {
+	//ZoneScoped;
 	assert(projMemPool.mapped(this));
 }
 
 void CExpGenSpawnable::Init(const CUnit* owner, const float3& offset)
 {
+	//ZoneScoped;
 	createFrame = gs->frameNum;
 	rotParams *= float3(math::DEG_TO_RAD / GAME_SPEED, math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED), math::DEG_TO_RAD);
 
@@ -69,6 +75,7 @@ void CExpGenSpawnable::Init(const CUnit* owner, const float3& offset)
 
 void CExpGenSpawnable::UpdateRotation()
 {
+	//ZoneScoped;
 	const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
 	// rotParams.y is acceleration in angle per frame^2
 	rotVel = rotParams.x + rotParams.y * t;
@@ -77,6 +84,7 @@ void CExpGenSpawnable::UpdateRotation()
 
 void CExpGenSpawnable::UpdateAnimParams()
 {
+	//ZoneScoped;
 	if (static_cast<int>(animParams.x) <= 1 && static_cast<int>(animParams.y) <= 1) {
 		animProgress = 0.0f;
 		return;
@@ -100,6 +108,7 @@ void CExpGenSpawnable::UpdateAnimParams()
 
 bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	//ZoneScoped;
 	static const unsigned int memberHashes[] = {
 		spring::LiteHash(          "pos",  sizeof(          "pos") - 1, 0),
 		spring::LiteHash(        "speed",  sizeof(        "speed") - 1, 0),
@@ -120,12 +129,14 @@ bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 TypedRenderBuffer<VA_TYPE_PROJ>& CExpGenSpawnable::GetPrimaryRenderBuffer()
 {
+	//ZoneScoped;
 	return RenderBuffer::GetTypedRenderBuffer<VA_TYPE_PROJ>();
 }
 
 template<typename Spawnable>
 CExpGenSpawnable::SpawnableTuple GetSpawnableEntryImpl()
 {
+	//ZoneScoped;
 	CExpGenSpawnable::SpawnableTuple entry{};
 
 	return std::make_tuple(
@@ -155,6 +166,7 @@ std::make_tuple( \
 
 void CExpGenSpawnable::InitSpawnables()
 {
+	//ZoneScoped;
 	auto funcTuple = MAKE_FUNCTIONS_TUPLE(GetSpawnableEntryImpl);
 	static_assert(std::tuple_size<decltype(funcTuple)>::value == spawnables.size());
 
@@ -170,6 +182,7 @@ void CExpGenSpawnable::InitSpawnables()
 
 bool CExpGenSpawnable::GetSpawnableMemberInfo(const std::string& spawnableName, SExpGenSpawnableMemberInfo& memberInfo)
 {
+	//ZoneScoped;
 	auto it = std::find_if(spawnables.begin(), spawnables.end(), [&spawnableName](const auto& entry) {
 		return std::get<0>(entry) == spawnableName;
 	});
@@ -182,6 +195,7 @@ bool CExpGenSpawnable::GetSpawnableMemberInfo(const std::string& spawnableName, 
 
 int CExpGenSpawnable::GetSpawnableID(const std::string& spawnableName)
 {
+	//ZoneScoped;
 	auto it = std::find_if(spawnables.begin(), spawnables.end(), [&spawnableName](const auto& entry) {
 		return std::get<0>(entry) == spawnableName;
 	});
@@ -194,6 +208,7 @@ int CExpGenSpawnable::GetSpawnableID(const std::string& spawnableName)
 
 CExpGenSpawnable* CExpGenSpawnable::CreateSpawnable(int spawnableID)
 {
+	//ZoneScoped;
 	if (spawnableID < 0 || spawnableID > spawnables.size() - 1)
 		return nullptr;
 
@@ -202,6 +217,7 @@ CExpGenSpawnable* CExpGenSpawnable::CreateSpawnable(int spawnableID)
 
 void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const
 {
+	//ZoneScoped;
 	float minS = std::numeric_limits<float>::max()   ; float minT = std::numeric_limits<float>::max()   ;
 	float maxS = std::numeric_limits<float>::lowest(); float maxT = std::numeric_limits<float>::lowest();
 	std::invoke([&](auto&&... arg) {

@@ -7,11 +7,14 @@
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 CScanCodes scanCodes;
 
 
 int CScanCodes::GetNormalizedSymbol(int sym)
 {
+	//ZoneScoped;
 	switch (sym) {
 		case SDL_SCANCODE_RSHIFT: { return SDL_SCANCODE_LSHIFT; } break;
 		case SDL_SCANCODE_RCTRL : { return SDL_SCANCODE_LCTRL ; } break;
@@ -26,6 +29,7 @@ int CScanCodes::GetNormalizedSymbol(int sym)
 
 bool CScanCodes::IsModifier(int code) const
 {
+	//ZoneScoped;
 	switch (code) {
 		case SDL_SCANCODE_LALT:
 		case SDL_SCANCODE_LCTRL:
@@ -43,6 +47,7 @@ bool CScanCodes::IsModifier(int code) const
 
 void CScanCodes::Reset()
 {
+	//ZoneScoped;
 	nameToCode.clear();
 	nameToCode.reserve(64);
 	codeToName.clear();
@@ -238,12 +243,14 @@ void CScanCodes::Reset()
 
 std::string CScanCodes::GetCodeString(int code)
 {
+	//ZoneScoped;
 	return IntToString(code, "sc_0x%03X");
 }
 
 
 std::string CScanCodes::GetName(int code) const
 {
+	//ZoneScoped;
 	const auto iter = std::lower_bound(codeToName.begin(), codeToName.end(), CodeNamePair{code, ""}, codePred);
 
 	if (iter == codeToName.end() || iter->first != code)
@@ -255,6 +262,7 @@ std::string CScanCodes::GetName(int code) const
 
 std::string CScanCodes::GetDefaultName(int code) const
 {
+	//ZoneScoped;
 	const auto iter = std::lower_bound(defaultCodeToName.begin(), defaultCodeToName.end(), CodeNamePair{code, ""}, codePred);
 
 	if (iter == defaultCodeToName.end() || iter->first != code)
@@ -266,6 +274,7 @@ std::string CScanCodes::GetDefaultName(int code) const
 
 void CScanCodes::PrintNameToCode() const
 {
+	//ZoneScoped;
 	for (const auto& p: nameToCode) {
 		LOG("SCANNAME: %s = %d", p.first.c_str(), p.second);
 	}
@@ -274,6 +283,7 @@ void CScanCodes::PrintNameToCode() const
 
 void CScanCodes::PrintCodeToName() const
 {
+	//ZoneScoped;
 	for (const auto& p: codeToName) {
 		LOG("SCANCODE: %d = '%s'", p.first, p.second.c_str());
 	}

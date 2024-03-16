@@ -6,12 +6,15 @@
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileFactory.h"
 #include "Sim/Units/Unit.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CDGunWeapon, CWeapon, )
 CR_REG_METADATA(CDGunWeapon, )
 
 
 void CDGunWeapon::FireImpl(const bool scriptCall)
 {
+	//ZoneScoped;
 	float3 dir = currentTargetPos - weaponMuzzlePos;
 	dir.Normalize();
 
@@ -30,6 +33,7 @@ void CDGunWeapon::FireImpl(const bool scriptCall)
 
 void CDGunWeapon::Init()
 {
+	//ZoneScoped;
 	CWeapon::Init();
 	muzzleFlareSize = 1.5f;
 }

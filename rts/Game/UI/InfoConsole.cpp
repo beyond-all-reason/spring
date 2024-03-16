@@ -8,6 +8,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/LogSinkHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 static constexpr int IC_BORDER = 7;
 
 CONFIG(int, InfoMessageTime).defaultValue(10).description("Time until old messages disappear from the ingame console.");
@@ -21,11 +23,13 @@ alignas(CInfoConsole) static std::byte infoConsoleMem[sizeof(CInfoConsole)];
 
 
 void CInfoConsole::InitStatic() {
+	//ZoneScoped;
 	assert(infoConsole == nullptr);
 	infoConsole = new (infoConsoleMem) CInfoConsole();
 }
 
 void CInfoConsole::KillStatic() {
+	//ZoneScoped;
 	assert(infoConsole != nullptr);
 	spring::SafeDestruct(infoConsole);
 	std::fill(std::begin(infoConsoleMem), std::end(infoConsoleMem), std::byte{0});
@@ -34,6 +38,7 @@ void CInfoConsole::KillStatic() {
 
 void CInfoConsole::Init()
 {
+	//ZoneScoped;
 	maxLines = 1;
 	newLines = 0;
 
@@ -77,6 +82,7 @@ void CInfoConsole::Init()
 
 void CInfoConsole::Kill()
 {
+	//ZoneScoped;
 	logSinkHandler.RemoveSink(this);
 	eventHandler.RemoveClient(this);
 
@@ -86,6 +92,7 @@ void CInfoConsole::Kill()
 
 void CInfoConsole::Draw()
 {
+	//ZoneScoped;
 	if (!enabled)
 		return;
 	if (smallFont == nullptr)
@@ -124,6 +131,7 @@ void CInfoConsole::Draw()
 
 void CInfoConsole::Update()
 {
+	//ZoneScoped;
 	std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
 	// pop old messages after timeout
@@ -162,6 +170,7 @@ void CInfoConsole::Update()
 
 void CInfoConsole::PushNewLinesToEventHandler()
 {
+	//ZoneScoped;
 	{
 		std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
@@ -189,6 +198,7 @@ void CInfoConsole::PushNewLinesToEventHandler()
 
 size_t CInfoConsole::GetRawLines(std::vector<RawLine>& lines)
 {
+	//ZoneScoped;
 	std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
 	const size_t numNewLines = newLines;
@@ -202,6 +212,7 @@ size_t CInfoConsole::GetRawLines(std::vector<RawLine>& lines)
 
 void CInfoConsole::RecordLogMessage(int level, const std::string& section, const std::string& message)
 {
+	//ZoneScoped;
 	std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
 	if (section == prvSection && message == prvMessage)
@@ -223,6 +234,7 @@ void CInfoConsole::RecordLogMessage(int level, const std::string& section, const
 
 void CInfoConsole::LastMessagePosition(const float3& pos)
 {
+	//ZoneScoped;
 	// reset index to head when a new msg comes in
 	msgPosIndx  = numPosMsgs % lastMsgPositions.size();
 	numPosMsgs += 1;
@@ -232,6 +244,7 @@ void CInfoConsole::LastMessagePosition(const float3& pos)
 
 const float3& CInfoConsole::GetMsgPos(const float3& defaultPos)
 {
+	//ZoneScoped;
 	if (numPosMsgs == 0)
 		return defaultPos;
 

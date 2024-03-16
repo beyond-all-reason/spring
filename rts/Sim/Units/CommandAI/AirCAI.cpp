@@ -21,6 +21,9 @@
 #include "System/StringUtil.h"
 
 #include <cassert>
+
+#include <tracy/Tracy.hpp>
+
 #define AUTO_GENERATE_ATTACK_ORDERS 1
 
 // AirCAI is always assigned to StrafeAirMoveType aircraft
@@ -84,6 +87,7 @@ CAirCAI::CAirCAI(CUnit* owner)
 
 void CAirCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
+	//ZoneScoped;
 	// take care not to allow aircraft to be ordered to move out of the map
 	if ((c.GetID() != CMD_MOVE) && !AllowedCommand(c, true))
 		return;
@@ -163,6 +167,7 @@ void CAirCAI::GiveCommandReal(const Command& c, bool fromSynced)
 
 void CAirCAI::SlowUpdate()
 {
+	//ZoneScoped;
 	// Commands issued may invoke SlowUpdate when paused
 	if (gs->paused)
 		return;
@@ -206,6 +211,7 @@ void CAirCAI::SlowUpdate()
 }
 
 bool CAirCAI::AirAutoGenerateTarget(AAirMoveType* myPlane) {
+	//ZoneScoped;
 	assert(commandQue.empty());
 	assert(myPlane->owner == owner);
 
@@ -253,6 +259,7 @@ bool CAirCAI::AirAutoGenerateTarget(AAirMoveType* myPlane) {
 
 void CAirCAI::ExecuteMove(Command& c)
 {
+	//ZoneScoped;
 	float3 cmdPos = c.GetPos(0);
 
 	AAirMoveType* myPlane = GetStrafeAirMoveType(owner);
@@ -271,6 +278,7 @@ void CAirCAI::ExecuteMove(Command& c)
 
 void CAirCAI::ExecuteFight(Command& c)
 {
+	//ZoneScoped;
 	const UnitDef* ownerDef = owner->unitDef;
 
 	assert(c.IsInternalOrder() || ownerDef->canFight);
@@ -375,6 +383,7 @@ void CAirCAI::ExecuteFight(Command& c)
 
 void CAirCAI::ExecuteAttack(Command& c)
 {
+	//ZoneScoped;
 	assert(owner->unitDef->canAttack);
 	targetAge++;
 
@@ -439,6 +448,7 @@ void CAirCAI::ExecuteAttack(Command& c)
 
 void CAirCAI::ExecuteAreaAttack(Command& c)
 {
+	//ZoneScoped;
 	assert(owner->unitDef->canAttack);
 
 	// FIXME: check owner->UsingScriptMoveType() and skip rest if true?
@@ -472,6 +482,7 @@ void CAirCAI::ExecuteAreaAttack(Command& c)
 
 void CAirCAI::ExecuteGuard(Command& c)
 {
+	//ZoneScoped;
 	assert(owner->unitDef->canGuard);
 
 	const CUnit* guardee = unitHandler.GetUnit(c.GetParam(0));
@@ -514,6 +525,7 @@ void CAirCAI::ExecuteGuard(Command& c)
 
 int CAirCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 {
+	//ZoneScoped;
 	if (pointed != nullptr) {
 		if (!teamHandler.Ally(gu->myAllyTeam, pointed->allyteam)) {
 			if (owner->unitDef->canAttack)
@@ -540,12 +552,14 @@ bool CAirCAI::IsValidTarget(const CUnit* enemy, CWeapon* weapon) const {
 
 void CAirCAI::FinishCommand()
 {
+	//ZoneScoped;
 	targetAge = 0;
 	CCommandAI::FinishCommand();
 }
 
 void CAirCAI::BuggerOff(const float3& pos, float radius)
 {
+	//ZoneScoped;
 	if (!owner->UsingScriptMoveType()) {
 		static_cast<AAirMoveType*>(owner->moveType)->Takeoff();
 	} else {
@@ -556,6 +570,7 @@ void CAirCAI::BuggerOff(const float3& pos, float radius)
 
 bool CAirCAI::SelectNewAreaAttackTargetOrPos(const Command& ac)
 {
+	//ZoneScoped;
 	assert(ac.GetID() == CMD_AREA_ATTACK);
 
 	if (ac.GetID() != CMD_AREA_ATTACK)

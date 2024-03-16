@@ -8,6 +8,8 @@
 #include "System/Log/ILog.h"
 #include "System/TimeProfiler.h"
 
+#include <tracy/Tracy.hpp>
+
 // #include "PathGlobal.h"
 // #include "System/Threading/ThreadPool.h"
 // #include "Game/SelectedUnitsHandler.h"
@@ -28,6 +30,7 @@ void IPathFinder::KillStatic() { pathFinderInstances.clear  ( ); }
 void IPathFinder::Init(unsigned int _BLOCK_SIZE)
 {
 	{
+		//ZoneScoped;
 		BLOCK_SIZE = _BLOCK_SIZE;
 		BLOCK_PIXEL_SIZE = BLOCK_SIZE * SQUARE_SIZE;
 
@@ -62,6 +65,7 @@ void IPathFinder::Init(unsigned int _BLOCK_SIZE)
 
 void IPathFinder::Kill()
 {
+	//ZoneScoped;
 	// allow our PNSB to be reused across reloads
 	if (instanceIndex < nodeStateBuffers.size())
 		nodeStateBuffers[instanceIndex] = std::move(blockStates);
@@ -70,6 +74,7 @@ void IPathFinder::Kill()
 
 void IPathFinder::AllocStateBuffer()
 {
+	//ZoneScoped;
 	if (instanceIndex >= nodeStateBuffers.size())
 		nodeStateBuffers.emplace_back();
 
@@ -82,6 +87,7 @@ void IPathFinder::AllocStateBuffer()
 
 void IPathFinder::ResetSearch()
 {
+	//ZoneScoped;
 	while (!dirtyBlocks.empty()) {
 		blockStates.ClearSquare(dirtyBlocks.back());
 		dirtyBlocks.pop_back();
@@ -104,6 +110,7 @@ IPath::SearchResult IPathFinder::GetPath(
 	IPath::Path& path,
 	const unsigned int maxNodes
 ) {
+	//ZoneScoped;
 	startPos.ClampInBounds();
 
 	// clear the path
@@ -231,6 +238,7 @@ IPath::SearchResult IPathFinder::GetPath(
 // set up the starting point of the search
 IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, const CSolidObject* owner)
 {
+	//ZoneScoped;
 	int2 square = mStartBlock;
 
 	if (BLOCK_SIZE != 1){
@@ -309,6 +317,7 @@ bool IPathFinder::SetStartBlock(
 	float3 startPos
 )
 {
+	//ZoneScoped;
 	mStartBlock.x  = startPos.x / BLOCK_PIXEL_SIZE;
 	mStartBlock.y  = startPos.z / BLOCK_PIXEL_SIZE;
 	mStartBlockIdx = BlockPosToIdx(mStartBlock);

@@ -6,6 +6,8 @@
 #include "LuaInclude.h"
 #include "LuaUtils.h"
 
+#include <tracy/Tracy.hpp>
+
 static const lua_Number POWERS_OF_TEN[] = {1.0f, 10.0f, 100.0f, 1000.0f, 10000.0f, 100000.0f, 1000000.0f, 10000000.0f};
 
 /******************************************************************************
@@ -40,6 +42,7 @@ bool LuaMathExtra::PushEntries(lua_State* L)
  * @treturn number sqrt(x*x+y*y)
  */
 int LuaMathExtra::hypot(lua_State* L) {
+	//ZoneScoped;
 	lua_pushnumber(L, math::hypot(luaL_checknumber_noassert(L, 1), luaL_checknumber_noassert(L, 2)));
 	return 1;
 }
@@ -55,6 +58,7 @@ int LuaMathExtra::hypot(lua_State* L) {
  * @treturn number diagonal
  */
 int LuaMathExtra::diag(lua_State* L) {
+	//ZoneScoped;
 	lua_Number res = 0.0f;
 
 	for (int i = lua_gettop(L); i >= 1; i--) {
@@ -72,6 +76,7 @@ int LuaMathExtra::diag(lua_State* L) {
  * @treturn number clamped
  */
 int LuaMathExtra::clamp(lua_State* L) {
+	//ZoneScoped;
 	const lua_Number lbound = luaL_checknumber_noassert(L, 2);
 	const lua_Number ubound = luaL_checknumber_noassert(L, 3);
 
@@ -87,6 +92,7 @@ int LuaMathExtra::clamp(lua_State* L) {
  * @treturn number sign
  */
 int LuaMathExtra::sgn(lua_State* L) {
+	//ZoneScoped;
 	const lua_Number x = luaL_checknumber_noassert(L, 1);
 
 	if (x != 0.0f) {
@@ -109,6 +115,7 @@ int LuaMathExtra::sgn(lua_State* L) {
  * @treturn number (x+(y-x)*a)
  */
 int LuaMathExtra::mix(lua_State* L) {
+	//ZoneScoped;
 	const lua_Number x = luaL_checknumber_noassert(L, 1);
 	const lua_Number y = luaL_checknumber_noassert(L, 2);
 	const lua_Number a = luaL_checknumber_noassert(L, 3);
@@ -126,6 +133,7 @@ int LuaMathExtra::mix(lua_State* L) {
  * @treturn number rounded
  */
 int LuaMathExtra::round(lua_State* L) {
+	//ZoneScoped;
 	const lua_Number x = luaL_checknumber_noassert(L, 1);
 
 	if (lua_gettop(L) > 1) {
@@ -154,6 +162,7 @@ int LuaMathExtra::round(lua_State* L) {
  * @treturn number erf
  */
 int LuaMathExtra::erf(lua_State* L) {
+	//ZoneScoped;
 	lua_pushnumber(L, math::erf(luaL_checknumber_noassert(L, 1)));
 	return 1;
 }
@@ -170,6 +179,7 @@ int LuaMathExtra::erf(lua_State* L) {
  * @treturn number smoothstep
  */
 int LuaMathExtra::smoothstep(lua_State* L) {
+	//ZoneScoped;
 	lua_pushnumber(L, ::smoothstep(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3)));
 	return 1;
 }

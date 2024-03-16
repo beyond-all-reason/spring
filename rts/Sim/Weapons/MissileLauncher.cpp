@@ -18,12 +18,15 @@
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CMissileLauncher, CWeapon, )
 CR_REG_METADATA(CMissileLauncher, )
 
 
 void CMissileLauncher::UpdateWantedDir()
 {
+	//ZoneScoped;
 	CWeapon::UpdateWantedDir();
 
 	if (weaponDef->trajectoryHeight > 0.0f) {
@@ -34,6 +37,7 @@ void CMissileLauncher::UpdateWantedDir()
 
 void CMissileLauncher::FireImpl(const bool scriptCall)
 {
+	//ZoneScoped;
 	float3 targetVec = currentTargetPos - weaponMuzzlePos;
 	const float targetDist = targetVec.LengthNormalize();
 
@@ -65,6 +69,7 @@ void CMissileLauncher::FireImpl(const bool scriptCall)
 
 bool CMissileLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const SWeaponTarget& trg) const
 {
+	//ZoneScoped;
 	// high-trajectory missiles use curved path rather than linear ground intersection
 	if (weaponDef->trajectoryHeight <= 0.0f)
 		return (CWeapon::HaveFreeLineOfFire(srcPos, tgtPos, trg));

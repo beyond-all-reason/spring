@@ -20,6 +20,8 @@
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 /******************************************************************************/
 
 UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef) {
@@ -259,6 +261,7 @@ UnitDef::UnitDef()
 
 UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 {
+	//ZoneScoped;
 	// rely on default-ctor to initialize all members
 	*this = UnitDef();
 	this->id = id;
@@ -707,6 +710,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 void UnitDef::ParseWeaponsTable(const LuaTable& weaponsTable)
 {
+	//ZoneScoped;
 	const WeaponDef* noWeaponDef = weaponDefHandler->GetWeaponDef("NOWEAPON");
 
 	for (int k = 0, w = 0; w < MAX_WEAPONS_PER_UNIT; w++) {
@@ -768,6 +772,7 @@ void UnitDef::ParseWeaponsTable(const LuaTable& weaponsTable)
 
 void UnitDef::CreateYardMap(std::string&& yardMapStr)
 {
+	//ZoneScoped;
 	// if a unit is immobile but does *not* have a yardmap
 	// defined, assume it is not supposed to be a building
 	// (so do not assign a default per facing)
@@ -846,6 +851,7 @@ void UnitDef::CreateYardMap(std::string&& yardMapStr)
 
 void UnitDef::SetNoCost(bool noCost)
 {
+	//ZoneScoped;
 	if (noCost) {
 		// initialized from UnitDefHandler::PushNewUnitDef
 		realCost         = cost;
@@ -863,6 +869,7 @@ void UnitDef::SetNoCost(bool noCost)
 }
 
 bool UnitDef::HasBomberWeapon(unsigned int idx) const {
+	//ZoneScoped;
 	// checked by Is*AirUnit
 	assert(HasWeapon(idx));
 	return (weapons[idx].def->IsAircraftWeapon());

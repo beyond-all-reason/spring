@@ -19,6 +19,8 @@
 
 #include <cstring>
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(int, MaxTextureAtlasSizeX).defaultValue(4096).minimumValue(512).maximumValue(32768).description("The max X size of the projectile and Lua texture atlasses");
 CONFIG(int, MaxTextureAtlasSizeY).defaultValue(4096).minimumValue(512).maximumValue(32768).description("The max Y size of the projectile and Lua texture atlasses");
 
@@ -42,6 +44,7 @@ CTextureAtlas::CTextureAtlas(uint32_t allocType_, int32_t atlasSizeX_, int32_t a
 
 CTextureAtlas::~CTextureAtlas()
 {
+	//ZoneScoped;
 	if (freeTexture) {
 		glDeleteTextures(1, &atlasTexID);
 		atlasTexID = 0u;
@@ -55,6 +58,7 @@ CTextureAtlas::~CTextureAtlas()
 
 void CTextureAtlas::ReinitAllocator()
 {
+	//ZoneScoped;
 	spring::SafeDelete(atlasAllocator);
 
 	switch (allocType) {
@@ -74,6 +78,7 @@ void CTextureAtlas::ReinitAllocator()
 
 size_t CTextureAtlas::AddTex(std::string texName, int xsize, int ysize, TextureType texType)
 {
+	//ZoneScoped;
 	memTextures.emplace_back();
 	MemTex& tex = memTextures.back();
 
@@ -92,6 +97,7 @@ size_t CTextureAtlas::AddTex(std::string texName, int xsize, int ysize, TextureT
 
 size_t CTextureAtlas::AddTexFromMem(std::string texName, int xsize, int ysize, TextureType texType, const void* data)
 {
+	//ZoneScoped;
 	const size_t texIdx = AddTex(std::move(texName), xsize, ysize, texType);
 
 	MemTex& tex = memTextures[texIdx];
@@ -102,6 +108,7 @@ size_t CTextureAtlas::AddTexFromMem(std::string texName, int xsize, int ysize, T
 
 size_t CTextureAtlas::AddTexFromFile(std::string texName, const std::string& file)
 {
+	//ZoneScoped;
 	StringToLowerInPlace(texName);
 
 	// if the file is already loaded, use that instead
@@ -128,6 +135,7 @@ size_t CTextureAtlas::AddTexFromFile(std::string texName, const std::string& fil
 
 bool CTextureAtlas::Finalize()
 {
+	//ZoneScoped;
 	if (initialized && !reloadable)
 		return true;
 
@@ -143,21 +151,25 @@ bool CTextureAtlas::Finalize()
 
 const uint32_t CTextureAtlas::GetTexTarget() const
 {
+	//ZoneScoped;
 	return GL_TEXTURE_2D; // just constant for now
 }
 
 int CTextureAtlas::GetNumTexLevels() const
 {
+	//ZoneScoped;
 	return atlasAllocator->GetNumTexLevels();
 }
 
 void CTextureAtlas::SetMaxTexLevel(int maxLevels)
 {
+	//ZoneScoped;
 	atlasAllocator->SetMaxTexLevel(maxLevels);
 }
 
 bool CTextureAtlas::CreateTexture()
 {
+	//ZoneScoped;
 	const int2 atlasSize = atlasAllocator->GetAtlasSize();
 	const int numLevels = atlasAllocator->GetNumTexLevels();
 
@@ -233,21 +245,25 @@ bool CTextureAtlas::CreateTexture()
 
 void CTextureAtlas::BindTexture()
 {
+	//ZoneScoped;
 	glBindTexture(GL_TEXTURE_2D, atlasTexID);
 }
 
 bool CTextureAtlas::TextureExists(const std::string& name)
 {
+	//ZoneScoped;
 	return (textures.find(StringToLower(name)) != textures.end());
 }
 
 const spring::unordered_map<std::string, IAtlasAllocator::SAtlasEntry>& CTextureAtlas::GetTextures() const
 {
+	//ZoneScoped;
 	return atlasAllocator->GetEntries();
 }
 
 void CTextureAtlas::ReloadTextures()
 {
+	//ZoneScoped;
 	if (!reloadable) {
 		LOG_L(L_ERROR, "[CTextureAtlas::%s] Attempting to reload non-reloadable texture atlas name=\"%s\"", __func__, name.c_str());
 		return;
@@ -295,6 +311,7 @@ void CTextureAtlas::ReloadTextures()
 
 void CTextureAtlas::DumpTexture(const char* newFileName) const
 {
+	//ZoneScoped;
 	if (!initialized)
 		return;
 
@@ -307,6 +324,7 @@ void CTextureAtlas::DumpTexture(const char* newFileName) const
 
 AtlasedTexture& CTextureAtlas::GetTexture(const std::string& name)
 {
+	//ZoneScoped;
 	if (TextureExists(name))
 		return textures[StringToLower(name)];
 
@@ -316,6 +334,7 @@ AtlasedTexture& CTextureAtlas::GetTexture(const std::string& name)
 
 AtlasedTexture& CTextureAtlas::GetTextureWithBackup(const std::string& name, const std::string& backupName)
 {
+	//ZoneScoped;
 	if (TextureExists(name))
 		return textures[StringToLower(name)];
 
@@ -327,6 +346,7 @@ AtlasedTexture& CTextureAtlas::GetTextureWithBackup(const std::string& name, con
 
 std::string CTextureAtlas::GetTextureName(AtlasedTexture* tex)
 {
+	//ZoneScoped;
 	if (texToName.empty()) {
 		for (auto& kv : textures)
 			texToName[&kv.second] = kv.first;
@@ -336,6 +356,7 @@ std::string CTextureAtlas::GetTextureName(AtlasedTexture* tex)
 }
 
 int2 CTextureAtlas::GetSize() const {
+	//ZoneScoped;
 	return (atlasAllocator->GetAtlasSize());
 }
 

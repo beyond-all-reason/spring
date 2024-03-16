@@ -20,6 +20,9 @@
 	#include <cstring> // strncmp
 #endif
 
+#include <tracy/Tracy.hpp>
+
+
 
 /*****************************************************************/
 
@@ -41,6 +44,7 @@ CONFIG(bool, UseShaderCache).defaultValue(true).description("If already compiled
 
 static bool glslIsValid(GLuint obj)
 {
+	//ZoneScoped;
 	const bool isShader = glIsShader(obj);
 	assert(glIsShader(obj) || glIsProgram(obj));
 
@@ -56,6 +60,7 @@ static bool glslIsValid(GLuint obj)
 
 static std::string glslGetLog(GLuint obj)
 {
+	//ZoneScoped;
 	const bool isShader = glIsShader(obj);
 	assert(glIsShader(obj) || glIsProgram(obj));
 
@@ -81,6 +86,7 @@ static std::string glslGetLog(GLuint obj)
 
 static bool ExtractGlslVersion(std::string* src, std::string* version)
 {
+	//ZoneScoped;
 	const auto pos = src->find("#version ");
 
 	if (pos != std::string::npos) {
@@ -137,6 +143,7 @@ namespace Shader {
 
 	bool IShaderObject::ReloadFromDisk()
 	{
+		//ZoneScoped;
 		reloadRequested = true;
 		std::string newText = GetShaderSource(srcFile);
 
@@ -222,6 +229,7 @@ namespace Shader {
 
 	void IProgramObject::SetLogReporting(bool b, bool shObjects)
 	{
+		//ZoneScoped;
 		logReporting = b;
 		if (shObjects) {
 			for (IShaderObject*& so : shaderObjs) {
@@ -231,6 +239,7 @@ namespace Shader {
 	}
 
 	void IProgramObject::Release() {
+		//ZoneScoped;
 		for (IShaderObject*& so: shaderObjs) {
 			so->Release();
 			delete so;
@@ -258,6 +267,7 @@ namespace Shader {
 	}
 
 	bool IProgramObject::RemoveShaderObject(GLenum soType) {
+		//ZoneScoped;
 		for (size_t i = 0; i < shaderObjs.size(); ++i) {
 			IShaderObject*& so = shaderObjs[i];
 			if (so->GetType() == soType) {
@@ -274,6 +284,7 @@ namespace Shader {
 
 	void IProgramObject::Enable()
 	{
+		//ZoneScoped;
 		assert(!bound);
 		shaderHandler->SetCurrentlyBoundProgram(this);
 		bound = true;
@@ -281,17 +292,20 @@ namespace Shader {
 
 	void IProgramObject::Disable()
 	{
+		//ZoneScoped;
 		assert(bound);
 		shaderHandler->SetCurrentlyBoundProgram(nullptr);
 		bound = false;
 	}
 
 	bool IProgramObject::LoadFromLua(const std::string& filename) {
+		//ZoneScoped;
 		return Shader::LoadFromLua(this, filename);
 	}
 
 	void IProgramObject::RecompileIfNeeded(bool validate)
 	{
+		//ZoneScoped;
 		if (shaderFlags.HashSet() && !shaderFlags.Updated())
 			return;
 
@@ -319,6 +333,7 @@ namespace Shader {
 
 	UniformState* IProgramObject::GetNewUniformState(const char* name)
 	{
+		//ZoneScoped;
 		const auto hash = hashString(name);
 		const auto it = uniformStates.emplace(hash, UniformState{name});
 
@@ -331,6 +346,7 @@ namespace Shader {
 
 	void IProgramObject::AddTextureBinding(const int texUnit, const std::string& luaTexName)
 	{
+		//ZoneScoped;
 		LuaMatTexture luaTex;
 
 		if (!LuaOpenGLUtils::ParseTextureImage(nullptr, luaTex, luaTexName))
@@ -341,6 +357,7 @@ namespace Shader {
 
 	void IProgramObject::BindTextures() const
 	{
+		//ZoneScoped;
 		for (const auto& p: luaTextures) {
 			glActiveTexture(GL_TEXTURE0 + p.first);
 			(p.second).Bind();
@@ -359,13 +376,16 @@ namespace Shader {
 	}
 
 	void ARBProgramObject::SetUniformTarget(int target) {
+		//ZoneScoped;
 		uniformTarget = target;
 	}
 	int ARBProgramObject::GetUnitformTarget() {
+		//ZoneScoped;
 		return uniformTarget;
 	}
 
 	void ARBProgramObject::Enable() {
+		//ZoneScoped;
 		RecompileIfNeeded(true);
 		for (const IShaderObject* so: shaderObjs) {
 			glEnable(so->GetType());
@@ -374,6 +394,7 @@ namespace Shader {
 		IProgramObject::Enable();
 	}
 	void ARBProgramObject::Disable() {
+		//ZoneScoped;
 		for (const IShaderObject* so: shaderObjs) {
 			glBindProgramARB(so->GetType(), 0);
 			glDisable(so->GetType());
@@ -382,6 +403,7 @@ namespace Shader {
 	}
 
 	void ARBProgramObject::Link() {
+		//ZoneScoped;
 		RecompileIfNeeded(false);
 		valid = true;
 
@@ -390,6 +412,7 @@ namespace Shader {
 		}
 	}
 	void ARBProgramObject::Reload(bool reloadFromDisk, bool validate) {
+		//ZoneScoped;
 		for (IShaderObject* so: GetAttachedShaderObjs()) {
 			if (reloadFromDisk) so->ReloadFromDisk();
 			so->Compile();
@@ -424,34 +447,41 @@ namespace Shader {
 	/*****************************************************************/
 
 	GLSLProgramObject::GLSLProgramObject(const std::string& poName): IProgramObject(poName), curSrcHash(0) {
+		//ZoneScoped;
 		objID = glCreateProgram();
 	}
 
 	void GLSLProgramObject::BindAttribLocation(const std::string& name, uint32_t index)
 	{
+		//ZoneScoped;
 		attribLocations[name] = index;
 	}
 
 	void GLSLProgramObject::Enable() {
+		//ZoneScoped;
 		RecompileIfNeeded(true);
 		EnableRaw();
 	}
 
 	void GLSLProgramObject::EnableRaw() {
+		//ZoneScoped;
 		glUseProgram(objID);
 		IProgramObject::Enable();
 	}
 	void GLSLProgramObject::DisableRaw() {
+		//ZoneScoped;
 		IProgramObject::Disable();
 		glUseProgram(0);
 	}
 
 	void GLSLProgramObject::Link() {
+		//ZoneScoped;
 		RecompileIfNeeded(false);
 		assert(glIsProgram(objID));
 	}
 
 	bool GLSLProgramObject::Validate() {
+		//ZoneScoped;
 		GLint validated = 0;
 
 		glValidateProgram(objID);
@@ -541,6 +571,7 @@ namespace Shader {
 	}
 
 	void GLSLProgramObject::Release() {
+		//ZoneScoped;
 		IProgramObject::Release();
 		glDeleteProgram(objID);
 		shaderFlags.Clear();
@@ -550,6 +581,7 @@ namespace Shader {
 	}
 
 	void GLSLProgramObject::Reload(bool reloadFromDisk, bool validate) {
+		//ZoneScoped;
 		const unsigned int oldProgID = objID;
 		const unsigned int oldSrcHash = curSrcHash;
 

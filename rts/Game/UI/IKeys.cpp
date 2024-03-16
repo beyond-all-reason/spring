@@ -3,9 +3,12 @@
 #include "IKeys.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 
 int IKeys::GetCode(const std::string& name) const
 {
+	//ZoneScoped;
 	const auto iter = std::lower_bound(nameToCode.begin(), nameToCode.end(), NameCodePair{name, 0}, namePred);
 
 	if (iter == nameToCode.end() || iter->first != name)
@@ -17,6 +20,7 @@ int IKeys::GetCode(const std::string& name) const
 
 bool IKeys::AddKeySymbol(const std::string& name, int code)
 {
+	//ZoneScoped;
 	if ((code < 0) || !IsValidLabel(name))
 		return false;
 
@@ -52,6 +56,7 @@ bool IKeys::AddKeySymbol(const std::string& name, int code)
 
 bool IKeys::IsPrintable(int code) const
 {
+	//ZoneScoped;
 	const auto iter = std::lower_bound(printableCodes.begin(), printableCodes.end(), code);
 
 	return (iter != printableCodes.end() && *iter == code);
@@ -59,6 +64,7 @@ bool IKeys::IsPrintable(int code) const
 
 void IKeys::SaveUserKeySymbols(FILE* file) const
 {
+	//ZoneScoped;
 	bool output = false;
 
 	for (const auto& p: nameToCode) {
@@ -82,6 +88,7 @@ void IKeys::SaveUserKeySymbols(FILE* file) const
 
 bool IKeys::IsValidLabel(const std::string& label)
 {
+	//ZoneScoped;
 	if (label.empty())
 		return false;
 
@@ -95,6 +102,7 @@ bool IKeys::IsValidLabel(const std::string& label)
 
 void IKeys::AddPair(const std::string& name, const int code, const bool printable)
 {
+	//ZoneScoped;
 	nameToCode.emplace_back(name, code);
 	codeToName.emplace_back(code, name);
 

@@ -6,6 +6,8 @@
 #include "System/StringHash.h"
 #include "System/creg/STL_Map.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(AllyTeam, )
 
 CR_REG_METADATA(AllyTeam, (
@@ -20,6 +22,7 @@ CR_REG_METADATA(AllyTeam, (
 
 void AllyTeam::SetValue(const std::string& key, const std::string& value)
 {
+	//ZoneScoped;
 	switch (hashString(key.c_str())) {
 		case hashString("startrecttop"): {
 			startRectTop = std::atof(value.c_str());

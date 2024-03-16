@@ -12,6 +12,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 
 // currently defined in HeightLinePalette.cpp
 //CONFIG(bool, ColorElev).defaultValue(true).description("If heightmap (default hotkey [F1]) should be colored or not.");
@@ -106,6 +108,7 @@ CHeightTexture::CHeightTexture()
 
 void CHeightTexture::UpdateCPU()
 {
+	//ZoneScoped;
 	const SColor* extraTexPal = CHeightLinePalette::GetData();
 	const float* heightMap = readMap->GetCornerHeightMapUnsynced();
 
@@ -132,6 +135,7 @@ void CHeightTexture::UpdateCPU()
 
 CHeightTexture::~CHeightTexture()
 {
+	//ZoneScoped;
 	glDeleteTextures(1, &paletteTex);
 	shaderHandler->ReleaseProgramObject("[CHeightTexture]", "CHeightTexture");
 }
@@ -139,6 +143,7 @@ CHeightTexture::~CHeightTexture()
 
 void CHeightTexture::Update()
 {
+	//ZoneScoped;
 	needUpdate = false;
 
 	if (!fbo.IsValid() || !shader->IsValid() || (heightMapTexture->GetTextureID() == 0))
@@ -172,11 +177,13 @@ void CHeightTexture::Update()
 
 void CHeightTexture::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
+	//ZoneScoped;
 	needUpdate = true;
 }
 
 
 bool CHeightTexture::IsUpdateNeeded()
 {
+	//ZoneScoped;
 	return needUpdate;
 }

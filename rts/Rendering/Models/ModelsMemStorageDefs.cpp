@@ -7,6 +7,8 @@
 
 #include "fmt/format.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(ModelUniformData, )
 CR_REG_METADATA(ModelUniformData, (
 	CR_MEMBER_BEGINFLAG(CM_NoSerialize),
@@ -28,6 +30,7 @@ CR_REG_METADATA(ModelUniformData, (
 
 void ModelUniformData::SetGLSLDefinition(int binding)
 {
+	//ZoneScoped;
 	const ModelUniformData dummy{};
 
 	std::map<uint32_t, std::pair<std::string, std::string>> membersMap;

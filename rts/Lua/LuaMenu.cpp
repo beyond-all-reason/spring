@@ -27,6 +27,8 @@
 #include "lib/luasocket/src/luasocket.h"
 #include "LuaUI.h"
 
+#include <tracy/Tracy.hpp>
+
 CLuaMenu* luaMenu = nullptr;
 
 /******************************************************************************
@@ -47,6 +49,7 @@ DECL_FREE_HANDLER(CLuaMenu, luaMenu)
 CLuaMenu::CLuaMenu()
 : CLuaHandle("LuaMenu", LUA_HANDLE_ORDER_MENU, true, false)
 {
+	//ZoneScoped;
 	luaMenu = this;
 
 	if (!IsValid())
@@ -143,12 +146,14 @@ CLuaMenu::CLuaMenu()
 
 CLuaMenu::~CLuaMenu()
 {
+	//ZoneScoped;
 	luaMenu = nullptr;
 }
 
 
 string CLuaMenu::LoadFile(const string& name) const
 {
+	//ZoneScoped;
 	CFileHandler f(name, SPRING_VFS_MENU SPRING_VFS_MOD SPRING_VFS_BASE);
 
 	string code;
@@ -160,6 +165,7 @@ string CLuaMenu::LoadFile(const string& name) const
 
 
 void CLuaMenu::InitLuaSocket(lua_State* L) {
+	//ZoneScoped;
 	std::string code;
 	std::string filename = "socket.lua";
 	CFileHandler f(filename);
@@ -321,6 +327,7 @@ bool CLuaMenu::LoadUnsyncedReadFunctions(lua_State* L)
 
 bool CLuaMenu::Enable(bool enableCommand)
 {
+	//ZoneScoped;
 	if (luaMenu != nullptr) {
 		if (enableCommand) {
 			LOG_L(L_WARNING, "[CLuaMenu] LuaMenu is already enabled");
@@ -349,6 +356,7 @@ bool CLuaMenu::Enable(bool enableCommand)
 
 bool CLuaMenu::Disable()
 {
+	//ZoneScoped;
 	if (luaMenu == nullptr) {
 		LOG_L(L_WARNING, "[CLuaMenu] LuaMenu is already disabled");
 		return false;
@@ -368,6 +376,7 @@ bool CLuaMenu::Disable()
  */
 void CLuaMenu::ActivateMenu(const std::string& msg)
 {
+	//ZoneScoped;
 	LUA_CALL_IN_CHECK(L);
 	luaL_checkstack(L, 3, __func__);
 
@@ -388,6 +397,7 @@ void CLuaMenu::ActivateMenu(const std::string& msg)
  */
 void CLuaMenu::ActivateGame()
 {
+	//ZoneScoped;
 	LUA_CALL_IN_CHECK(L);
 	luaL_checkstack(L, 2, __func__);
 
@@ -408,6 +418,7 @@ void CLuaMenu::ActivateGame()
  */
 bool CLuaMenu::AllowDraw()
 {
+	//ZoneScoped;
 	LUA_CALL_IN_CHECK(L);
 	luaL_checkstack(L, 2, __func__);
 
@@ -430,6 +441,7 @@ bool CLuaMenu::AllowDraw()
 
 int CLuaMenu::SendLuaUIMsg(lua_State* L)
 {
+	//ZoneScoped;
 	if (luaUI != nullptr)
 		luaUI->RecvLuaMsg(luaL_checksstring(L, 1), 0);
 

@@ -12,6 +12,8 @@
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 
 
 CMetalExtractionTexture::CMetalExtractionTexture()
@@ -84,12 +86,14 @@ CMetalExtractionTexture::CMetalExtractionTexture()
 
 CMetalExtractionTexture::~CMetalExtractionTexture()
 {
+	//ZoneScoped;
 	shaderHandler->ReleaseProgramObject("[CMetalExtractionTexture]", "CMetalExtractionTexture");
 }
 
 
 bool CMetalExtractionTexture::IsUpdateNeeded()
 {
+	//ZoneScoped;
 	// update only once per second
 	return (updateN++ % GAME_SPEED == 0);
 }
@@ -97,6 +101,7 @@ bool CMetalExtractionTexture::IsUpdateNeeded()
 
 void CMetalExtractionTexture::Update()
 {
+	//ZoneScoped;
 	// los-checking is done in FBO: when FBO isn't working don't expose hidden data!
 	if (!fbo.IsValid() || !shader->IsValid())
 		return;

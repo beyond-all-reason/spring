@@ -8,11 +8,14 @@
 #include "System/StringHash.h"
 #include "Rendering/GlobalRendering.h"
 
+#include <tracy/Tracy.hpp>
+
 using namespace GL;
 std::stack<FixedPipelineState, std::vector<FixedPipelineState>> FixedPipelineState::statesChain = {};
 
 FixedPipelineState::FixedPipelineState()
 {
+	//ZoneScoped;
 	if (statesChain.empty()) { //default state
 		InferState();
 		statesChain.emplace(*this);
@@ -23,6 +26,7 @@ FixedPipelineState::FixedPipelineState()
 
 FixedPipelineState& GL::FixedPipelineState::InferState()
 {
+	//ZoneScoped;
 	{
 		PolygonMode(GL_FILL);
 	}
@@ -143,6 +147,7 @@ FixedPipelineState& GL::FixedPipelineState::InferState()
 
 void FixedPipelineState::BindUnbind(const bool bind) const
 {
+	//ZoneScoped;
 	if (!bind)
 		statesChain.pop();
 

@@ -8,6 +8,8 @@
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(CollisionVolume, )
 CR_REG_METADATA(CollisionVolume, (
 	CR_MEMBER(fullAxisScales),
@@ -59,6 +61,7 @@ CollisionVolume::CollisionVolume(
 	const float3& cvScales,
 	const float3& cvOffsets
 ) {
+	//ZoneScoped;
 	// default-initialize
 	*this = CollisionVolume();
 
@@ -88,6 +91,7 @@ CollisionVolume::CollisionVolume(
 
 void CollisionVolume::PostLoad()
 {
+	//ZoneScoped;
 	SetAxisScales(fullAxisScales);
 	SetBoundingRadius();
 }
@@ -100,6 +104,7 @@ void CollisionVolume::InitShape(
 	const int tType,
 	const int pAxis
 ) {
+	//ZoneScoped;
 	axisOffsets = offsets;
 
 	// make sure none of the scales are ever negative or zero
@@ -139,6 +144,7 @@ void CollisionVolume::InitShape(
 
 
 void CollisionVolume::SetBoundingRadius() {
+	//ZoneScoped;
 	// set the radius of the minimum bounding sphere
 	// that encompasses this custom collision volume
 	// (for early-out testing)
@@ -172,6 +178,7 @@ void CollisionVolume::SetBoundingRadius() {
 }
 
 void CollisionVolume::SetAxisScales(const float3& scales) {
+	//ZoneScoped;
 	fullAxisScales = scales;
 	halfAxisScales = fullAxisScales * 0.5f;
 
@@ -180,6 +187,7 @@ void CollisionVolume::SetAxisScales(const float3& scales) {
 }
 
 void CollisionVolume::RescaleAxes(const float3& scales) {
+	//ZoneScoped;
 	fullAxisScales *= scales;
 	halfAxisScales *= scales;
 
@@ -189,6 +197,7 @@ void CollisionVolume::RescaleAxes(const float3& scales) {
 }
 
 void CollisionVolume::FixTypeAndScale(float3& scales) {
+	//ZoneScoped;
 	// NOTE:
 	//   prevent Lua (which calls InitShape directly) from
 	//   creating non-uniform spheres to emulate ellipsoids
@@ -222,6 +231,7 @@ void CollisionVolume::FixTypeAndScale(float3& scales) {
 
 
 float3 CollisionVolume::GetWorldSpacePos(const CSolidObject* o, const float3& extOffsets) const {
+	//ZoneScoped;
 	// collision-volumes are always centered on midPos
 	return (o->midPos + o->GetObjectSpaceVec(axisOffsets + extOffsets));
 }
@@ -229,10 +239,12 @@ float3 CollisionVolume::GetWorldSpacePos(const CSolidObject* o, const float3& ex
 
 
 float CollisionVolume::GetPointSurfaceDistance(const CUnit* u, const LocalModelPiece* lmp, const float3& pos) const {
+	//ZoneScoped;
 	return (GetPointSurfaceDistance(u, lmp, u->GetTransformMatrix(true), pos));
 }
 
 float CollisionVolume::GetPointSurfaceDistance(const CFeature* f, const LocalModelPiece* lmp, const float3& pos) const {
+	//ZoneScoped;
 	return (GetPointSurfaceDistance(f, lmp, f->GetTransformMatrixRef(true), pos));
 }
 
@@ -242,6 +254,7 @@ float CollisionVolume::GetPointSurfaceDistance(
 	const CMatrix44f& mat,
 	const float3& pos
 ) const {
+	//ZoneScoped;
 	CMatrix44f vm = mat;
 
 	if (lmp != nullptr && (obj->collisionVolume).DefaultToPieceTree()) {
@@ -265,6 +278,7 @@ float CollisionVolume::GetPointSurfaceDistance(
 
 
 float CollisionVolume::GetPointSurfaceDistance(const CMatrix44f& mv, const float3& p) const {
+	//ZoneScoped;
 	// transform <p> from world- to volume-space
 	float3 pv = mv.Mul(p);
 
@@ -322,6 +336,7 @@ float CollisionVolume::GetPointSurfaceDistance(const CMatrix44f& mv, const float
 
 float CollisionVolume::GetCylinderDistance(const float3& pv, size_t axisA, size_t axisB, size_t axisC) const
 {
+	//ZoneScoped;
 	const float pSq = (pv[axisB] * pv[axisB]) + (pv[axisC] * pv[axisC]);
 	const float rSq = (halfAxisScalesSqr[axisB] + halfAxisScalesSqr[axisC]) * 0.5f;
 
@@ -351,6 +366,7 @@ float CollisionVolume::GetCylinderDistance(const float3& pv, size_t axisA, size_
 //Newton's method according to http://wwwf.imperial.ac.uk/~rn/distance2ellipse.pdf
 float CollisionVolume::GetEllipsoidDistance(const float3& pv) const
 {
+	//ZoneScoped;
 	const float3& abc1 = halfAxisScales;    // {a, b, c}
 	const float3& abc2 = halfAxisScalesSqr; // {a2, b2, c2}
 

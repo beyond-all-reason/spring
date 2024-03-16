@@ -20,6 +20,8 @@
 #include "System/Log/ILog.h"
 #include "System/Platform/Clipboard.h"
 
+#include <tracy/Tracy.hpp>
+
 static constexpr float4 const  defColor(1.0f, 1.0f, 1.0f, 1.0f);
 static constexpr float4 const allyColor(0.5f, 1.0f, 0.5f, 1.0f);
 static constexpr float4 const specColor(1.0f, 1.0f, 0.5f, 1.0f);
@@ -27,6 +29,7 @@ static constexpr float4 const specColor(1.0f, 1.0f, 0.5f, 1.0f);
 GameControllerTextInput gameTextInput;
 
 void GameControllerTextInput::ViewResize() {
+	//ZoneScoped;
 	// inputTextSizeX and inputTextSizeY aren't actually used by anything
 	// so we assume those values are bad, and we could simply ignore the X component
 	// that said, the width of the SDL TextInputRect doesn't seem to matter either, as
@@ -41,6 +44,7 @@ void GameControllerTextInput::ViewResize() {
 }
 
 void GameControllerTextInput::Draw() {
+	//ZoneScoped;
 	if (!userWriting)
 		return;
 
@@ -96,6 +100,7 @@ void GameControllerTextInput::Draw() {
 
 
 int GameControllerTextInput::SetInputText(const std::string& utf8Text) {
+	//ZoneScoped;
 	if (!userWriting)
 		return 0;
 
@@ -111,6 +116,7 @@ int GameControllerTextInput::SetInputText(const std::string& utf8Text) {
 
 
 bool GameControllerTextInput::SendPromptInput() {
+	//ZoneScoped;
 	if (userWriting)
 		return false;
 	if (!userChatting)
@@ -131,6 +137,7 @@ bool GameControllerTextInput::SendPromptInput() {
 }
 
 bool GameControllerTextInput::SendLabelInput() {
+	//ZoneScoped;
 	if (userWriting)
 		return false;
 
@@ -146,6 +153,7 @@ bool GameControllerTextInput::SendLabelInput() {
 
 
 void GameControllerTextInput::PasteClipboard() {
+	//ZoneScoped;
 	const CClipboard clipboard;
 	const std::string text = clipboard.GetContents();
 
@@ -155,6 +163,7 @@ void GameControllerTextInput::PasteClipboard() {
 
 
 bool GameControllerTextInput::HandleChatCommand(int key, const std::string& command) {
+	//ZoneScoped;
 	switch (hashString(command.c_str())) {
 		case hashString("chatswitchall"): {
 			if ((userInput.find_first_of("aAsS") == 0) && (userInput[1] == ':')) {
@@ -363,6 +372,7 @@ bool GameControllerTextInput::HandleEditCommand(int keyCode, int scanCode, const
 
 
 bool GameControllerTextInput::HandlePasteCommand(int key, const std::string& rawLine) {
+	//ZoneScoped;
 	// we cannot use extra commands because tokenization strips multiple
 	// spaces or even trailing spaces, the text should be copied verbatim
 	const std::string pastecommand = "pastetext ";
@@ -378,6 +388,7 @@ bool GameControllerTextInput::HandlePasteCommand(int key, const std::string& raw
 }
 
 bool GameControllerTextInput::CheckHandlePasteCommand(const std::string& rawLine) {
+	//ZoneScoped;
 	if (!userWriting)
 		return false;
 
@@ -386,6 +397,7 @@ bool GameControllerTextInput::CheckHandlePasteCommand(const std::string& rawLine
 
 
 bool GameControllerTextInput::ProcessKeyPressAction(int keyCode, int scanCode, const Action& action) {
+	//ZoneScoped;
 	assert(userWriting);
 
 	if (action.command == "pastetext")
@@ -402,6 +414,7 @@ bool GameControllerTextInput::ProcessKeyPressAction(int keyCode, int scanCode, c
 
 
 bool GameControllerTextInput::ConsumePressedKey(int keyCode, int scanCode, const std::vector<Action>& actions) {
+	//ZoneScoped;
 	if (!userWriting)
 		return false;
 
@@ -419,6 +432,7 @@ bool GameControllerTextInput::ConsumePressedKey(int keyCode, int scanCode, const
 
 
 bool GameControllerTextInput::ConsumeReleasedKey(int keyCode, int scanCode) const {
+	//ZoneScoped;
 	if (!userWriting)
 		return false;
 	if (keyCodes.IsPrintable(keyCode))

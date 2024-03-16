@@ -20,6 +20,8 @@
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CFactoryCAI ,CCommandAI , )
 
 CR_REG_METADATA(CFactoryCAI , (
@@ -152,6 +154,7 @@ static constexpr int GetCountMultiplierFromOptions(int opts)
 
 void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
+	//ZoneScoped;
 	const int cmdID = c.GetID();
 
 	// move is always allowed for factories (passed to units it produces)
@@ -291,6 +294,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
                                      const Command& newCmd)
 {
+	//ZoneScoped;
 	const auto boi = buildOptions.find(newCmd.GetID());
 	auto buildCount = GetCountMultiplierFromOptions(newCmd.GetOpts());
 	if (boi != buildOptions.end()) {
@@ -309,6 +313,7 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
 
 bool CFactoryCAI::RemoveBuildCommand(CCommandQueue::iterator& it)
 {
+	//ZoneScoped;
 	Command& cmd = *it;
 	const auto boi = buildOptions.find(cmd.GetID());
 	if (boi != buildOptions.end()) {
@@ -331,6 +336,7 @@ bool CFactoryCAI::RemoveBuildCommand(CCommandQueue::iterator& it)
 
 void CFactoryCAI::DecreaseQueueCount(const Command& buildCommand, int& numQueued)
 {
+	//ZoneScoped;
 	// copy in case we get pop'ed
 	// NOTE: the queue should not be empty at this point!
 	const Command frontCommand = commandQue.empty()? Command(CMD_STOP): commandQue.front();
@@ -367,6 +373,7 @@ void CFactoryCAI::FactoryFinishBuild(const Command& command) {
 
 void CFactoryCAI::SlowUpdate()
 {
+	//ZoneScoped;
 	// Commands issued may invoke SlowUpdate when paused
 	if (gs->paused)
 		return;
@@ -409,6 +416,7 @@ void CFactoryCAI::SlowUpdate()
 
 void CFactoryCAI::ExecuteStop(Command& c)
 {
+	//ZoneScoped;
 	CFactory* fac = static_cast<CFactory*>(owner);
 	fac->StopBuild();
 
@@ -418,6 +426,7 @@ void CFactoryCAI::ExecuteStop(Command& c)
 
 int CFactoryCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 {
+	//ZoneScoped;
 	if (pointed == nullptr)
 		return CMD_MOVE;
 
@@ -433,6 +442,7 @@ int CFactoryCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 
 void CFactoryCAI::UpdateIconName(int cmdID, const int& numQueued)
 {
+	//ZoneScoped;
 	for (const SCommandDescription*& cd: possibleCommands) {
 		if (cd->id != cmdID)
 			continue;

@@ -132,6 +132,7 @@ namespace QTPFS {
 }
 
 QTPFS::PathManager::PathManager() {
+	//ZoneScoped;
 	QTNode::InitStatic();
 	NodeLayer::InitStatic();
 	PathManager::InitStatic();
@@ -146,6 +147,7 @@ QTPFS::PathManager::PathManager() {
 }
 
 QTPFS::PathManager::~PathManager() {
+	//ZoneScoped;
 	isFinalized = false;
 
 	PathSpeedModInfoSystem::Shutdown();
@@ -207,6 +209,7 @@ QTPFS::PathManager::~PathManager() {
 }
 
 std::int64_t QTPFS::PathManager::Finalize() {
+	//ZoneScoped;
 	const spring_time t0 = spring_gettime();
 
 	{
@@ -220,6 +223,7 @@ std::int64_t QTPFS::PathManager::Finalize() {
 }
 
 void QTPFS::PathManager::InitStatic() {
+	//ZoneScoped;
 	LAYERS_PER_UPDATE = std::max(1u, mapInfo->pfs.qtpfs_constants.layersPerUpdate);
 	MAX_TEAM_SEARCHES = std::max(1u, mapInfo->pfs.qtpfs_constants.maxTeamSearches);
 
@@ -253,6 +257,7 @@ void QTPFS::PathManager::InitStatic() {
 }
 
 void QTPFS::PathManager::Load() {
+	//ZoneScoped;
 	// NOTE: offset *must* start at a non-zero value
 	searchStateOffset = NODE_STATE_OFFSET;
 	numPathRequests   = 0;
@@ -410,6 +415,7 @@ std::uint64_t QTPFS::PathManager::GetMemFootPrint() const {
 
 
 void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
+	//ZoneScoped;
 	streflop::streflop_init<streflop::Simple>();
 
 	char loadMsg[512] = {'\0'};
@@ -462,6 +468,7 @@ void QTPFS::PathManager::InitNodeLayersThreaded(const SRectangle& rect) {
 }
 
 void QTPFS::PathManager::InitRootSize(const SRectangle& r) {
+	//ZoneScoped;
 	// setup the root node system
 	int width = r.x2 - r.x1;
 	int height = r.z2 - r.z1;
@@ -496,6 +503,7 @@ void QTPFS::PathManager::InitRootSize(const SRectangle& r) {
 }
 
 void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& r) {
+	//ZoneScoped;
 	NodeLayer& nl = nodeLayers[layerNum];
 
 	nl.Init(layerNum);
@@ -636,6 +644,7 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 // note that this is called twice per object:
 // height-map changes, then blocking-map does
 void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2, unsigned int type) {
+	//ZoneScoped;
 	if (!IsFinalized())
 		return;
 
@@ -643,6 +652,7 @@ void QTPFS::PathManager::TerrainChange(unsigned int x1, unsigned int z1,  unsign
 }
 
 void QTPFS::PathManager::MapChanged(int x1, int y1, int x2, int y2) {
+	//ZoneScoped;
 	const int res = DAMAGE_MAP_BLOCK_SIZE;
 
 	const auto layers = nodeLayers.size();
@@ -830,6 +840,7 @@ bool QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 }
 
 void QTPFS::PathManager::ReadyQueuedSearches() {
+	//ZoneScoped;
 	{
 		auto pathView = registry.view<PathSearch>();
 
@@ -1110,6 +1121,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	const bool synced,
 	const bool allowRawSearch
 ) {
+	//ZoneScoped;
 	assert(!ThreadPool::inMultiThreadedSection);
 
 	// NOTE:
@@ -1188,6 +1200,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 unsigned int QTPFS::PathManager::RequeueSearch(
 	IPath* oldPath, const bool allowRawSearch, const bool allowPartialSearch
 ) {
+	//ZoneScoped;
 	assert(!ThreadPool::inMultiThreadedSection);
 	entt::entity pathEntity = entt::entity(oldPath->GetID());
 
@@ -1252,6 +1265,7 @@ void QTPFS::PathManager::UpdatePath(const CSolidObject* owner, unsigned int path
 }
 
 void QTPFS::PathManager::DeletePath(unsigned int pathID, bool force) {
+	//ZoneScoped;
 	assert(!ThreadPool::inMultiThreadedSection);
 
 	entt::entity pathEntity = entt::entity(pathID);
@@ -1272,6 +1286,7 @@ void QTPFS::PathManager::DeletePath(unsigned int pathID, bool force) {
 }
 
 void QTPFS::PathManager::DeletePathEntity(entt::entity pathEntity) {
+	//ZoneScoped;
 	const PathTraceMapIt pathTraceIt = pathTraces.find(entt::to_integral(pathEntity));
 
 	RemovePathFromShared(pathEntity);
@@ -1289,6 +1304,7 @@ void QTPFS::PathManager::DeletePathEntity(entt::entity pathEntity) {
 }
 
 void QTPFS::PathManager::RemovePathFromShared(entt::entity entity) {
+	//ZoneScoped;
 	// if (!registry.valid(entity)) return;
 	if (!registry.all_of<SharedPathChain>(entity)) return;
 
@@ -1309,6 +1325,7 @@ void QTPFS::PathManager::RemovePathFromShared(entt::entity entity) {
 }
 
 void QTPFS::PathManager::RemovePathFromPartialShared(entt::entity entity) {
+	//ZoneScoped;
 	// if (!registry.valid(entity)) return;
 	if (!registry.all_of<PartialSharedPathChain>(entity)) return;
 
@@ -1330,6 +1347,7 @@ void QTPFS::PathManager::RemovePathFromPartialShared(entt::entity entity) {
 }
 
 void QTPFS::PathManager::RemovePathSearch(entt::entity pathEntity) {
+	//ZoneScoped;
 	auto search = registry.try_get<PathSearchRef>(pathEntity);
 	if (search != nullptr) {
 		entt::entity searchId = search->value;
@@ -1346,6 +1364,7 @@ unsigned int QTPFS::PathManager::RequestPath(
 	float radius,
 	bool synced
 ) {
+	//ZoneScoped;
 	unsigned int returnPathId = 0;
 
 	if (!IsFinalized())
@@ -1364,6 +1383,7 @@ unsigned int QTPFS::PathManager::RequestPath(
 }
 
 unsigned int QTPFS::PathManager::ExecuteUnsyncedSearch(unsigned int pathId){
+	//ZoneScoped;
 	entt::entity pathEntity = entt::entity(pathId);
 	assert(registry.valid(pathEntity));
 	entt::entity pathSearchEntity = registry.get<PathSearchRef>(pathEntity).value;
@@ -1396,6 +1416,7 @@ unsigned int QTPFS::PathManager::ExecuteUnsyncedSearch(unsigned int pathId){
 }
 
 bool QTPFS::PathManager::PathUpdated(unsigned int pathID) {
+	//ZoneScoped;
 	entt::entity pathEntity = (entt::entity)pathID;
 	if (!registry.valid(pathEntity)) { return false; }
 	IPath* livePath = registry.try_get<IPath>(pathEntity);
@@ -1407,6 +1428,7 @@ bool QTPFS::PathManager::PathUpdated(unsigned int pathID) {
 }
 
 void QTPFS::PathManager::ClearPathUpdated(unsigned int pathID) {
+	//ZoneScoped;
 	entt::entity pathEntity = (entt::entity)pathID;
 	if (!registry.valid(pathEntity)) { return; }
 	IPath* livePath = registry.try_get<IPath>(pathEntity);
@@ -1510,6 +1532,7 @@ float3 QTPFS::PathManager::NextWayPoint(
 
 
 bool QTPFS::PathManager::CurrentWaypointIsUnreachable(unsigned int pathID) {
+	//ZoneScoped;
 	entt::entity pathEntity = entt::entity(pathID);
 	if (!registry.valid(pathEntity))
 		return true;
@@ -1527,6 +1550,7 @@ bool QTPFS::PathManager::CurrentWaypointIsUnreachable(unsigned int pathID) {
 
 
 bool QTPFS::PathManager::NextWayPointIsUnreachable(unsigned int pathID) {
+	//ZoneScoped;
 	entt::entity pathEntity = entt::entity(pathID);
 	if (!registry.valid(pathEntity))
 		return true;
@@ -1547,6 +1571,7 @@ void QTPFS::PathManager::GetPathWayPoints(
 	std::vector<float3>& points,
 	std::vector<int>& starts
 ) const {
+	//ZoneScoped;
 	if (!IsFinalized())
 		return;
 
@@ -1568,6 +1593,7 @@ void QTPFS::PathManager::GetPathWayPoints(
 }
 
 int2 QTPFS::PathManager::GetNumQueuedUpdates() const {
+	//ZoneScoped;
 	int2 data;
 
 	data.x = updateDirtyPathRate;//mapChangeTrack.damageQueue.size();// registry.size();

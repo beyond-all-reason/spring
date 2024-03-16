@@ -16,9 +16,12 @@
 
 #include <string>
 
+#include <tracy/Tracy.hpp>
+
 
 void AviVideoCapturing::StopCapturing()
 {
+	//ZoneScoped;
 	if (!IsCapturing())
 		return;
 
@@ -31,6 +34,7 @@ void AviVideoCapturing::StopCapturing()
 
 void AviVideoCapturing::StartCapturing()
 {
+	//ZoneScoped;
 	if (allowRecord) {
 		LOG_L(L_WARNING, "Video capturing is already running.");
 		return;
@@ -82,6 +86,7 @@ void AviVideoCapturing::StartCapturing()
 
 void AviVideoCapturing::RenderFrame()
 {
+	//ZoneScoped;
 	if (!IsCapturing())
 		return;
 

@@ -18,6 +18,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringHash.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CHoverAirMoveType, AAirMoveType, (nullptr))
 
 CR_REG_METADATA(CHoverAirMoveType, (
@@ -155,6 +157,7 @@ CHoverAirMoveType::CHoverAirMoveType(CUnit* owner) :
 
 void CHoverAirMoveType::SetGoal(const float3& pos, float distance)
 {
+	//ZoneScoped;
 	goalPos = pos;
 	oldGoalPos = pos;
 
@@ -168,6 +171,7 @@ void CHoverAirMoveType::SetGoal(const float3& pos, float distance)
 
 void CHoverAirMoveType::SetState(AircraftState newState)
 {
+	//ZoneScoped;
 	// once in crashing, we should never change back into another state
 	if (aircraftState == AIRCRAFT_CRASHING && newState != AIRCRAFT_CRASHING)
 		return;
@@ -230,6 +234,7 @@ void CHoverAirMoveType::SetState(AircraftState newState)
 
 void CHoverAirMoveType::SetAllowLanding(bool allowLanding)
 {
+	//ZoneScoped;
 	dontLand = !allowLanding;
 
 	if (CanLand(false))
@@ -247,6 +252,7 @@ void CHoverAirMoveType::SetAllowLanding(bool allowLanding)
 
 void CHoverAirMoveType::StartMoving(float3 pos, float goalRadius)
 {
+	//ZoneScoped;
 	forceHeading = false;
 	wantToStop = false;
 	waitCounter = 0;
@@ -279,11 +285,13 @@ void CHoverAirMoveType::StartMoving(float3 pos, float goalRadius)
 
 void CHoverAirMoveType::StartMoving(float3 pos, float goalRadius, float speed)
 {
+	//ZoneScoped;
 	StartMoving(pos, goalRadius);
 }
 
 void CHoverAirMoveType::KeepPointingTo(float3 pos, float distance, bool aggressive)
 {
+	//ZoneScoped;
 	wantToStop = false;
 	forceHeading = false;
 	wantedHeight = orgWantedHeight;
@@ -316,6 +324,7 @@ void CHoverAirMoveType::KeepPointingTo(float3 pos, float distance, bool aggressi
 
 void CHoverAirMoveType::ExecuteStop()
 {
+	//ZoneScoped;
 	wantToStop = false;
 	wantedSpeed = ZeroVector;
 
@@ -359,6 +368,7 @@ void CHoverAirMoveType::ExecuteStop()
 
 void CHoverAirMoveType::StopMoving(bool callScript, bool hardStop, bool)
 {
+	//ZoneScoped;
 	// transports switch to landed state (via SetState which calls
 	// us) during pickup but must *not* be allowed to change their
 	// heading while "landed" (see MobileCAI)
@@ -376,6 +386,7 @@ void CHoverAirMoveType::StopMoving(bool callScript, bool hardStop, bool)
 
 void CHoverAirMoveType::UpdateLanded()
 {
+	//ZoneScoped;
 	AAirMoveType::UpdateLanded();
 
 	if (progressState != AMoveType::Failed)
@@ -384,6 +395,7 @@ void CHoverAirMoveType::UpdateLanded()
 
 void CHoverAirMoveType::UpdateTakeoff()
 {
+	//ZoneScoped;
 	const float3& pos = owner->pos;
 
 	wantedSpeed = ZeroVector;
@@ -427,6 +439,7 @@ void CHoverAirMoveType::UpdateHovering()
 
 void CHoverAirMoveType::UpdateFlying()
 {
+	//ZoneScoped;
 	const float3& pos = owner->pos;
 	// const float4& spd = owner->speed;
 
@@ -587,6 +600,7 @@ void CHoverAirMoveType::UpdateFlying()
 
 void CHoverAirMoveType::UpdateLanding()
 {
+	//ZoneScoped;
 	const float3 pos = owner->pos;
 
 	if (!HaveLandingPos()) {
@@ -645,6 +659,7 @@ void CHoverAirMoveType::UpdateLanding()
 
 void CHoverAirMoveType::UpdateHeading()
 {
+	//ZoneScoped;
 	if (aircraftState == AIRCRAFT_TAKEOFF && !owner->unitDef->factoryHeadingTakeoff)
 		return;
 	// UpdateDirVectors() resets our up-vector but we
@@ -664,6 +679,7 @@ void CHoverAirMoveType::UpdateHeading()
 
 void CHoverAirMoveType::UpdateBanking(bool noBanking)
 {
+	//ZoneScoped;
 	// need to allow LANDING so (autoLand=true) aircraft reset their
 	// pitch naturally after attacking ground and being told to stop
 	if (aircraftState != AIRCRAFT_FLYING && aircraftState != AIRCRAFT_HOVERING && aircraftState != AIRCRAFT_LANDING)
@@ -732,6 +748,7 @@ void CHoverAirMoveType::UpdateBanking(bool noBanking)
 
 void CHoverAirMoveType::UpdateVerticalSpeed(const float4& spd, float curRelHeight, float curVertSpeed) const
 {
+	//ZoneScoped;
 	float wh = wantedHeight; // wanted RELATIVE height (altitude)
 	float ws = 0.0f;         // wanted vertical speed
 
@@ -778,6 +795,7 @@ void CHoverAirMoveType::UpdateVerticalSpeed(const float4& spd, float curRelHeigh
 
 void CHoverAirMoveType::UpdateAirPhysics()
 {
+	//ZoneScoped;
 	const float3& pos = owner->pos;
 	const float4& spd = owner->speed;
 
@@ -859,6 +877,7 @@ void CHoverAirMoveType::UpdateAirPhysics()
 
 void CHoverAirMoveType::UpdateMoveRate()
 {
+	//ZoneScoped;
 	int curMoveRate = 1;
 
 	// currentspeed is not used correctly for vertical movement, so compensate with this hax
@@ -874,6 +893,7 @@ void CHoverAirMoveType::UpdateMoveRate()
 
 bool CHoverAirMoveType::Update()
 {
+	//ZoneScoped;
 	const float3 lastPos = owner->pos;
 	const float4 lastSpd = owner->speed;
 
@@ -969,6 +989,7 @@ bool CHoverAirMoveType::Update()
 
 void CHoverAirMoveType::SlowUpdate()
 {
+	//ZoneScoped;
 	UpdateMoveRate();
 	// note: NOT AAirMoveType::SlowUpdate
 	AMoveType::SlowUpdate();
@@ -977,6 +998,7 @@ void CHoverAirMoveType::SlowUpdate()
 /// Returns true if indicated position is a suitable landing spot
 bool CHoverAirMoveType::CanLandAt(const float3& pos) const
 {
+	//ZoneScoped;
 	if (forceHeading)
 		return true;
 	if (!CanLand(false))
@@ -1002,12 +1024,14 @@ bool CHoverAirMoveType::CanLandAt(const float3& pos) const
 
 void CHoverAirMoveType::ForceHeading(short h)
 {
+	//ZoneScoped;
 	forceHeading = true;
 	forcedHeading = h;
 }
 
 void CHoverAirMoveType::Takeoff()
 {
+	//ZoneScoped;
 	if (aircraftState == AAirMoveType::AIRCRAFT_LANDED) {
 		SetState(AAirMoveType::AIRCRAFT_TAKEOFF);
 	}
@@ -1018,6 +1042,7 @@ void CHoverAirMoveType::Takeoff()
 
 void CHoverAirMoveType::Land()
 {
+	//ZoneScoped;
 	if (aircraftState == AAirMoveType::AIRCRAFT_HOVERING) {
 		SetState(AAirMoveType::AIRCRAFT_FLYING); // switch to flying, it performs necessary checks to prepare for landing
 	}
@@ -1025,6 +1050,7 @@ void CHoverAirMoveType::Land()
 
 bool CHoverAirMoveType::HandleCollisions(bool checkCollisions)
 {
+	//ZoneScoped;
 	const float3& pos = owner->pos;
 
 	if (pos != oldPos) {
@@ -1123,6 +1149,7 @@ bool CHoverAirMoveType::HandleCollisions(bool checkCollisions)
 
 
 bool CHoverAirMoveType::SetMemberValue(unsigned int memberHash, void* memberValue) {
+	//ZoneScoped;
 	// try the generic members first
 	if (AMoveType::SetMemberValue(memberHash, memberValue))
 		return true;

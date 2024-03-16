@@ -7,6 +7,8 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 // #include "Game/SelectedUnitsHandler.h"
 // #include "PathGlobal.h"
 // #include "System/Threading/ThreadPool.h"
@@ -21,6 +23,7 @@ namespace HAPFS {
 
 void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, PathingState* ps)
 {
+	//ZoneScoped;
 	IPathFinder::Init(BLOCK_SIZE);
 
 	{
@@ -68,6 +71,7 @@ void CPathEstimator::InitEstimator()
 
 const CPathCache::CacheItem& CPathEstimator::GetCache(const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced) const
 {
+	//ZoneScoped;
 	tempCacheItem = pathingState->GetCache(strtBlock, goalBlock, goalRadius, pathType, synced);
 	return tempCacheItem;
 }
@@ -75,6 +79,7 @@ const CPathCache::CacheItem& CPathEstimator::GetCache(const int2 strtBlock, cons
 
 void CPathEstimator::AddCache(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
+	//ZoneScoped;
 	pathingState->AddCache(path, result, strtBlock, goalBlock, goalRadius, pathType, synced);
 }
 
@@ -85,6 +90,7 @@ bool CPathEstimator::SetStartBlock(
 	float3 startPos
 )
 {
+	//ZoneScoped;
 	/* Set this to determine how many of the nearest blocks to attempt to path to.
 	 *
 	 * The first nerest block is the one that the startPos is in, but the reference point may not
@@ -184,6 +190,7 @@ bool CPathEstimator::SetStartBlock(
 
 
 float CPathEstimator::GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const {
+	//ZoneScoped;
 	return pfDef.Heuristic(square.x, square.y, BLOCK_SIZE) * pathingState->GetMaxSpeedMod(moveDef.pathType);
 }
 
@@ -195,6 +202,7 @@ IPath::SearchResult CPathEstimator::DoBlockSearch(
 	const int2 s,
 	const int2 g
 ) {
+	//ZoneScoped;
 	const float3 sw = float3(s.x * SQUARE_SIZE, 0, s.y * SQUARE_SIZE);
 	const float3 gw = float3(g.x * SQUARE_SIZE, 0, g.y * SQUARE_SIZE);
 
@@ -208,6 +216,7 @@ IPath::SearchResult CPathEstimator::DoBlockSearch(
 	const float3 sw,
 	const float3 gw
 ) {
+	//ZoneScoped;
 	// always use max-res (in addition to raw) search for this
 	IPathFinder* pf = (BLOCK_SIZE == 32)? parentPathFinder->GetParent(): parentPathFinder;
 	CRectangularSearchConstraint pfDef = CRectangularSearchConstraint(sw, gw, 8.0f, BLOCK_SIZE); // sets goalSquare{X,Z}
@@ -229,6 +238,7 @@ IPath::SearchResult CPathEstimator::DoBlockSearch(
  */
 IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPathFinderDef& peDef, const CSolidObject* owner)
 {
+	//ZoneScoped;
 	bool foundGoal = false;
 
 	// get the goal square offset
@@ -349,6 +359,7 @@ bool CPathEstimator::TestBlock(
 	const unsigned int /*blockStatus*/,
 	float maxSpeedMod
 ) {
+	//ZoneScoped;
 	testedBlocks++;
 
 	// step from parent to child block (e.g. PATHDIR_LEFT_TO_RIGHT=<+1,0>)
@@ -541,6 +552,7 @@ bool CPathEstimator::TestBlockReachability(
 	const CSolidObject* owner,
 	const unsigned int testBlockIdx
 ) {
+	//ZoneScoped;
 	assert(testBlockIdx < (*psBlockStates).peNodeOffsets[moveDef.pathType].size());
 	const int2 testBlockSquare = (*psBlockStates).peNodeOffsets[moveDef.pathType][testBlockIdx];
 
@@ -557,6 +569,7 @@ bool CPathEstimator::TestBlockReachability(
  */
 void CPathEstimator::FinishSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, IPath::Path& foundPath) const
 {
+	//ZoneScoped;
 	if (pfDef.needPath) {
 		unsigned int blockIdx = mGoalBlockIdx;
 		unsigned int numNodes = 0;
@@ -616,6 +629,7 @@ void CPathEstimator::FinishSearch(const MoveDef& moveDef, const CPathFinderDef& 
  */
 std::uint32_t CPathEstimator::CalcHash(const char* caller) const
 {
+	//ZoneScoped;
 	const unsigned int hmChecksum = readMap->CalcHeightmapChecksum();
 	const unsigned int tmChecksum = readMap->CalcTypemapChecksum();
 	const unsigned int mdChecksum = moveDefHandler.GetCheckSum();

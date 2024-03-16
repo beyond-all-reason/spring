@@ -24,6 +24,8 @@
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CONFIG(bool, MiniMapCanDraw).defaultValue(false).description("Enables drawing with cursor over MiniMap.");
 
@@ -69,12 +71,14 @@ private:
 
 CInMapDraw::CInMapDraw()
 {
+	//ZoneScoped;
 	notificationPeeper = std::make_unique<CNotificationPeeper>();
 	eventHandler.AddClient(notificationPeeper.get());
 }
 
 CInMapDraw::~CInMapDraw()
 {
+	//ZoneScoped;
 	// EC destructor calls RemoveClient
 	eventHandler.RemoveClient(notificationPeeper.get());
 	notificationPeeper = nullptr;
@@ -83,6 +87,7 @@ CInMapDraw::~CInMapDraw()
 
 void CInMapDraw::MousePress(int x, int y, int button)
 {
+	//ZoneScoped;
 	const bool isInMiniMap = (minimap != nullptr) && minimap->IsInside(x,y);
 	const float3 pos = isInMiniMap ? minimap->GetMapPosition(x, y) : mouse->GetWorldMapPos();
 
@@ -113,12 +118,14 @@ void CInMapDraw::MousePress(int x, int y, int button)
 
 void CInMapDraw::MouseRelease(int x, int y, int button)
 {
+	//ZoneScoped;
 	// TODO implement CInMapDraw::MouseRelease
 }
 
 
 void CInMapDraw::MouseMove(int x, int y, int dx, int dy, int button)
 {
+	//ZoneScoped;
 	const bool isInMiniMap = (minimap != nullptr) && minimap->IsInside(x,y);
 
 	if (isInMiniMap && !configHandler->GetBool("MiniMapCanDraw"))
@@ -144,6 +151,7 @@ void CInMapDraw::MouseMove(int x, int y, int dx, int dy, int button)
 
 int CInMapDraw::GotNetMsg(std::shared_ptr<const netcode::RawPacket>& packet)
 {
+	//ZoneScoped;
 	int playerID = -1;
 
 	try {
@@ -206,11 +214,13 @@ int CInMapDraw::GotNetMsg(std::shared_ptr<const netcode::RawPacket>& packet)
 
 void CInMapDraw::SetSpecMapDrawingAllowed(bool state)
 {
+	//ZoneScoped;
 	LOG("[%s] spectator map-drawing is %s", __func__, (allowSpecMapDrawing = state)? "enabled": "disabled");
 }
 
 void CInMapDraw::SetLuaMapDrawingAllowed(bool state)
 {
+	//ZoneScoped;
 	LOG("[%s] Lua map-drawing is %s", __func__, (allowLuaMapDrawing = state)? "enabled": "disabled");
 }
 
@@ -218,6 +228,7 @@ void CInMapDraw::SetLuaMapDrawingAllowed(bool state)
 
 void CInMapDraw::SendErase(const float3& pos)
 {
+	//ZoneScoped;
 	if (!gu->spectating || allowSpecMapDrawing)
 		clientNet->Send(CBaseNetProtocol::Get().SendMapErase(gu->myPlayerNum, (short)pos.x, (short)pos.z));
 }
@@ -225,18 +236,21 @@ void CInMapDraw::SendErase(const float3& pos)
 
 void CInMapDraw::SendPoint(const float3& pos, const std::string& label, bool fromLua)
 {
+	//ZoneScoped;
 	if (!gu->spectating || allowSpecMapDrawing)
 		clientNet->Send(CBaseNetProtocol::Get().SendMapDrawPoint(gu->myPlayerNum, (short)pos.x, (short)pos.z, label, fromLua));
 }
 
 void CInMapDraw::SendLine(const float3& pos, const float3& pos2, bool fromLua)
 {
+	//ZoneScoped;
 	if (!gu->spectating || allowSpecMapDrawing)
 		clientNet->Send(CBaseNetProtocol::Get().SendMapDrawLine(gu->myPlayerNum, (short)pos.x, (short)pos.z, (short)pos2.x, (short)pos2.z, fromLua));
 }
 
 void CInMapDraw::SendWaitingInput(const std::string& label)
 {
+	//ZoneScoped;
 	SendPoint(waitingPoint, label, false);
 
 	wantLabel = false;
@@ -246,6 +260,7 @@ void CInMapDraw::SendWaitingInput(const std::string& label)
 
 void CInMapDraw::PromptLabel(const float3& pos)
 {
+	//ZoneScoped;
 	waitingPoint = pos;
 	wantLabel = true;
 
@@ -257,6 +272,7 @@ void CInMapDraw::PromptLabel(const float3& pos)
 
 void CInMapDraw::GetPoints(std::vector<PointMarker>& points, size_t maxPoints, const std::array<int, MAX_TEAMS>& teamIDs)
 {
+	//ZoneScoped;
 	maxPoints = std::min(maxPoints, inMapDrawerModel->GetNumPoints());
 
 	points.clear();
@@ -286,6 +302,7 @@ void CInMapDraw::GetPoints(std::vector<PointMarker>& points, size_t maxPoints, c
 
 void CInMapDraw::GetLines(std::vector<LineMarker>& lines, size_t maxLines, const std::array<int, MAX_TEAMS>& teamIDs)
 {
+	//ZoneScoped;
 	maxLines = std::min(maxLines, inMapDrawerModel->GetNumLines());
 
 	lines.clear();

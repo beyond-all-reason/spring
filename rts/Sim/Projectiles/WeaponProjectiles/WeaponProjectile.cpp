@@ -22,6 +22,8 @@
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND_DERIVED_INTERFACE(CWeaponProjectile, CProjectile)
 
@@ -175,6 +177,7 @@ CWeaponProjectile::CWeaponProjectile(const ProjectileParams& params)
 
 CWeaponProjectile::~CWeaponProjectile()
 {
+	//ZoneScoped;
 	DynDamageArray::DecRef(damages);
 }
 
@@ -218,11 +221,13 @@ void CWeaponProjectile::Explode(
 
 void CWeaponProjectile::Collision()
 {
+	//ZoneScoped;
 	Collision((CFeature*) nullptr);
 }
 
 void CWeaponProjectile::Collision(CFeature* feature)
 {
+	//ZoneScoped;
 	float3 impactPos = pos;
 	float3 impactDir = speed;
 
@@ -247,6 +252,7 @@ void CWeaponProjectile::Collision(CFeature* feature)
 
 void CWeaponProjectile::Collision(CUnit* unit)
 {
+	//ZoneScoped;
 	float3 impactPos = pos;
 	float3 impactDir = speed;
 
@@ -264,6 +270,7 @@ void CWeaponProjectile::Collision(CUnit* unit)
 
 void CWeaponProjectile::Update()
 {
+	//ZoneScoped;
 	CProjectile::Update();
 	UpdateGroundBounce();
 	UpdateInterception();
@@ -272,6 +279,7 @@ void CWeaponProjectile::Update()
 
 void CWeaponProjectile::UpdateInterception()
 {
+	//ZoneScoped;
 	if (target == nullptr)
 		return;
 
@@ -303,6 +311,7 @@ void CWeaponProjectile::UpdateInterception()
 
 void CWeaponProjectile::UpdateGroundBounce()
 {
+	//ZoneScoped;
 	#if 1
 	// projectile is not allowed to bounce on either surface
 	if (!weaponDef->groundBounce && !weaponDef->waterBounce)
@@ -362,18 +371,21 @@ void CWeaponProjectile::UpdateGroundBounce()
 
 void CWeaponProjectile::DrawOnMinimap() const
 {
+	//ZoneScoped;
 	AddMiniMapVertices({ pos        , color4::yellow }, { pos + speed, color4::yellow });
 }
 
 
 bool CWeaponProjectile::CanBeInterceptedBy(const WeaponDef* wd) const
 {
+	//ZoneScoped;
 	return ((weaponDef->targetable & wd->interceptor) != 0);
 }
 
 
 void CWeaponProjectile::DependentDied(CObject* o)
 {
+	//ZoneScoped;
 	if (o != target)
 		return;
 
@@ -383,6 +395,7 @@ void CWeaponProjectile::DependentDied(CObject* o)
 
 void CWeaponProjectile::PostLoad()
 {
+	//ZoneScoped;
 	assert(weaponDef != nullptr);
 	model = weaponDef->LoadModel();
 }

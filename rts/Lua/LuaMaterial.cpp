@@ -19,6 +19,8 @@
 
 #include <cctype>
 
+#include <tracy/Tracy.hpp>
+
 struct ActiveUniform {
 	GLint size = 0;
 	GLenum type = 0;
@@ -45,6 +47,7 @@ LuaMatBinPtrLessThan matBinCmp;
 
 static const char* GLUniformTypeToString(const GLenum uType)
 {
+	//ZoneScoped;
 	switch (uType) {
 		case      GL_FLOAT: return "float";
 		case GL_FLOAT_VEC2: return "vec2";
@@ -64,6 +67,7 @@ static const char* GLUniformTypeToString(const GLenum uType)
 
 static const char* GetMatTypeName(LuaMatType type)
 {
+	//ZoneScoped;
 	const char* typeName = "Unknown";
 
 	switch (type) {
@@ -89,6 +93,7 @@ static const char* GetMatTypeName(LuaMatType type)
 
 bool LuaObjectMaterial::SetLODCount(unsigned int count)
 {
+	//ZoneScoped;
 	lodCount = count;
 	lastLOD = lodCount - 1;
 	lodMats.resize(count);
@@ -97,6 +102,7 @@ bool LuaObjectMaterial::SetLODCount(unsigned int count)
 
 bool LuaObjectMaterial::SetLastLOD(unsigned int lod)
 {
+	//ZoneScoped;
 	lastLOD = std::min(lod, lodCount - 1);
 	return true;
 }
@@ -110,6 +116,7 @@ bool LuaObjectMaterial::SetLastLOD(unsigned int lod)
 
 int LuaMatShader::Compare(const LuaMatShader& a, const LuaMatShader& b)
 {
+	//ZoneScoped;
 	if (a.type != b.type)
 		return ((a.type > b.type) * 2 - 1);
 
@@ -122,6 +129,7 @@ int LuaMatShader::Compare(const LuaMatShader& a, const LuaMatShader& b)
 
 void LuaMatShader::Execute(const LuaMatShader& prev, bool deferredPass) const
 {
+	//ZoneScoped;
 	static_assert(int(LUASHADER_3DO) == int(MODELTYPE_3DO  ), "");
 	static_assert(int(LUASHADER_S3O) == int(MODELTYPE_S3O  ), "");
 	static_assert(int(LUASHADER_ASS) == int(MODELTYPE_ASS  ), "");
@@ -169,6 +177,7 @@ void LuaMatShader::Execute(const LuaMatShader& prev, bool deferredPass) const
 
 void LuaMatShader::Print(const string& indent, bool isDeferred) const
 {
+	//ZoneScoped;
 	const char* typeName = "Unknown";
 
 	switch (type) {
@@ -203,6 +212,7 @@ void LuaMaterial::Parse(
 	void(*ParseTexture)(lua_State*, int, LuaMatTexture&),
 	GLuint(*ParseDisplayList)(lua_State*, int)
 ) {
+	//ZoneScoped;
 	for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
 		if (!lua_israwstring(L, -2))
 			continue;
@@ -318,6 +328,7 @@ void LuaMaterial::Parse(
 
 void LuaMaterial::Finalize()
 {
+	//ZoneScoped;
 	for (int i: {LuaMatShader::LUASHADER_PASS_FWD, LuaMatShader::LUASHADER_PASS_DFR}) {
 		shaders[i].Finalize();
 		uniforms[i].AutoLink(&shaders[i]);
@@ -336,6 +347,7 @@ void LuaMaterial::Finalize()
 
 void LuaMaterial::Execute(const LuaMaterial& prev, bool deferredPass) const
 {
+	//ZoneScoped;
 	if (prev.postList != 0)
 		glCallList(prev.postList);
 	if (preList != 0)
@@ -374,6 +386,7 @@ void LuaMaterial::Execute(const LuaMaterial& prev, bool deferredPass) const
 
 void LuaMaterial::ExecuteInstanceUniforms(int objId, int objType, bool deferredPass) const
 {
+	//ZoneScoped;
 	const LuaMatShader&   matShader   =  shaders[deferredPass];
 	const LuaMatUniforms& matUniforms = uniforms[deferredPass];
 
@@ -420,6 +433,7 @@ void LuaMaterial::ExecuteInstanceUniforms(int objId, int objType, bool deferredP
 
 int LuaMaterial::Compare(const LuaMaterial& a, const LuaMaterial& b)
 {
+	//ZoneScoped;
 	// NOTE: the order of the comparisons is important (it's sorted by the GL perf cost of switching those states)
 	int cmp = 0;
 
@@ -468,6 +482,7 @@ int LuaMaterial::Compare(const LuaMaterial& a, const LuaMaterial& b)
 
 int LuaMatUniforms::Compare(const LuaMatUniforms& a, const LuaMatUniforms& b)
 {
+	//ZoneScoped;
 	if (a.viewMatrix.loc != b.viewMatrix.loc)
 		return ((a.viewMatrix.loc > b.viewMatrix.loc) * 2 - 1);
 	if (a.projMatrix.loc != b.projMatrix.loc)
@@ -510,6 +525,7 @@ int LuaMatUniforms::Compare(const LuaMatUniforms& a, const LuaMatUniforms& b)
 
 void LuaMaterial::Print(const string& indent) const
 {
+	//ZoneScoped;
 #define CULL_TO_STR(x) \
 	(x==GL_FRONT) ? "front" : (x==GL_BACK) ? "back" : (x!=0) ? "false" : "unknown"
 
@@ -609,6 +625,7 @@ spring::unsynced_map<std::string, LuaMatUniforms::IUniform*> LuaMatUniforms::Get
 
 void LuaMatUniforms::AutoLink(LuaMatShader* shader)
 {
+	//ZoneScoped;
 	if (!shader->IsCustomType())
 		return;
 
@@ -645,6 +662,7 @@ void LuaMatUniforms::AutoLink(LuaMatShader* shader)
 
 void LuaMatUniforms::Validate(LuaMatShader* s)
 {
+	//ZoneScoped;
 	constexpr const char* fmts[2] = {
 		"[LuaMatUniforms::%s] engine shaders prohibit the usage of uniform \"%s\"",
 		"[LuaMatUniforms::%s] incorrect uniform-type for \"%s\" at location %d (declared %s, expected %s)",
@@ -703,6 +721,7 @@ void LuaMatUniforms::Validate(LuaMatShader* s)
 
 void LuaMatUniforms::Parse(lua_State* L, const int tableIdx)
 {
+	//ZoneScoped;
 	decltype(GetEngineNameUniformPairs()) lcNameUniformPairs;
 
 	for (const auto& p: GetEngineNameUniformPairs()) {
@@ -737,6 +756,7 @@ void LuaMatUniforms::Parse(lua_State* L, const int tableIdx)
 
 void LuaMatUniforms::Execute() const
 {
+	//ZoneScoped;
 	viewMatrix.Execute(camera->GetViewMatrix());
 	projMatrix.Execute(camera->GetProjectionMatrix());
 	viprMatrix.Execute(camera->GetViewProjectionMatrix());
@@ -760,6 +780,7 @@ void LuaMatUniforms::Execute() const
 
 void LuaMatUniforms::Print(const string& indent, bool isDeferred) const
 {
+	//ZoneScoped;
 	LOG("%s[uniforms][%s]", indent.c_str(), (isDeferred? "deferred": "standard"));
 	LOG("%s  viewMatrixLoc    = %i", indent.c_str(), viewMatrix.loc);
 	LOG("%s  projMatrixLoc    = %i", indent.c_str(), projMatrix.loc);
@@ -793,6 +814,7 @@ void LuaMatUniforms::Print(const string& indent, bool isDeferred) const
 
 LuaMatRef::LuaMatRef(LuaMatBin* _bin)
 {
+	//ZoneScoped;
 	if ((bin = _bin) == nullptr)
 		return;
 
@@ -801,6 +823,7 @@ LuaMatRef::LuaMatRef(LuaMatBin* _bin)
 
 LuaMatRef::~LuaMatRef()
 {
+	//ZoneScoped;
 	if (bin == nullptr)
 		return;
 
@@ -809,6 +832,7 @@ LuaMatRef::~LuaMatRef()
 
 LuaMatRef::LuaMatRef(const LuaMatRef& mr)
 {
+	//ZoneScoped;
 	if ((bin = mr.bin) == nullptr)
 		return;
 
@@ -818,6 +842,7 @@ LuaMatRef::LuaMatRef(const LuaMatRef& mr)
 
 void LuaMatRef::Reset()
 {
+	//ZoneScoped;
 	if (bin != nullptr)
 		bin->UnRef();
 
@@ -827,6 +852,7 @@ void LuaMatRef::Reset()
 
 LuaMatRef& LuaMatRef::operator=(const LuaMatRef& mr)
 {
+	//ZoneScoped;
 	if (mr.bin != nullptr) { mr.bin->Ref();   }
 	if (   bin != nullptr) {    bin->UnRef(); }
 	bin = mr.bin;
@@ -836,6 +862,7 @@ LuaMatRef& LuaMatRef::operator=(const LuaMatRef& mr)
 
 void LuaMatRef::AddUnit(CSolidObject* o)
 {
+	//ZoneScoped;
 	if (bin == nullptr)
 		return;
 	bin->AddUnit(o);
@@ -843,6 +870,7 @@ void LuaMatRef::AddUnit(CSolidObject* o)
 
 void LuaMatRef::AddFeature(CSolidObject* o)
 {
+	//ZoneScoped;
 	if (bin == nullptr)
 		return;
 	bin->AddFeature(o);
@@ -858,6 +886,7 @@ void LuaMatRef::AddFeature(CSolidObject* o)
 
 void LuaMatBin::UnRef()
 {
+	//ZoneScoped;
 	if ((--refCount) > 0)
 		return;
 
@@ -867,6 +896,7 @@ void LuaMatBin::UnRef()
 
 void LuaMatBin::Print(const string& indent) const
 {
+	//ZoneScoped;
 	LOG("%s|units| = " _STPF_, indent.c_str(), units.size());
 	LOG("%s|features| = " _STPF_, indent.c_str(), features.size());
 	LOG("%spointer = %p", indent.c_str(), this);
@@ -882,6 +912,7 @@ void LuaMatBin::Print(const string& indent) const
 
 LuaMatHandler::LuaMatHandler()
 {
+	//ZoneScoped;
 	for (unsigned int i = LuaMatShader::LUASHADER_NONE; i < LuaMatShader::LUASHADER_LAST; i++) {
 		setupDrawStateFuncs[i] = nullptr;
 		resetDrawStateFuncs[i] = nullptr;
@@ -891,6 +922,7 @@ LuaMatHandler::LuaMatHandler()
 
 LuaMatHandler::~LuaMatHandler()
 {
+	//ZoneScoped;
 	for (int m = 0; m < LUAMAT_TYPE_COUNT; m++) {
 		for (LuaMatBin* bin: binTypes[LuaMatType(m)]) {
 			delete bin;
@@ -901,6 +933,7 @@ LuaMatHandler::~LuaMatHandler()
 
 LuaMatRef LuaMatHandler::GetRef(const LuaMaterial& mat)
 {
+	//ZoneScoped;
 	if ((mat.type < 0) || (mat.type >= LUAMAT_TYPE_COUNT)) {
 		LOG_L(L_WARNING, "[LuaMatHandler::%s] untyped material %d", __func__, mat.type);
 		return LuaMatRef();
@@ -937,6 +970,7 @@ LuaMatRef LuaMatHandler::GetRef(const LuaMaterial& mat)
 
 void LuaMatHandler::ClearBins(LuaObjType objType, LuaMatType matType)
 {
+	//ZoneScoped;
 	if ((matType < 0) || (matType >= LUAMAT_TYPE_COUNT))
 		return;
 
@@ -952,6 +986,7 @@ void LuaMatHandler::ClearBins(LuaObjType objType, LuaMatType matType)
 
 void LuaMatHandler::ClearBins(LuaObjType objType)
 {
+	//ZoneScoped;
 	for (int m = 0; m < LUAMAT_TYPE_COUNT; m++) {
 		ClearBins(objType, LuaMatType(m));
 	}
@@ -960,6 +995,7 @@ void LuaMatHandler::ClearBins(LuaObjType objType)
 
 void LuaMatHandler::FreeBin(LuaMatBin* argBin)
 {
+	//ZoneScoped;
 	LuaMatBinSet& binSet = binTypes[argBin->type];
 	LuaMatBinSet::iterator it = std::find_if(binSet.begin(), binSet.end(), [&](LuaMatBin* bin) {
 		return (!matBinCmp(bin, argBin) && !matBinCmp(argBin, bin));
@@ -984,6 +1020,7 @@ void LuaMatHandler::FreeBin(LuaMatBin* argBin)
 
 void LuaMatHandler::PrintBins(const string& indent, LuaMatType type) const
 {
+	//ZoneScoped;
 	if ((type < 0) || (type >= LUAMAT_TYPE_COUNT))
 		return;
 
@@ -999,6 +1036,7 @@ void LuaMatHandler::PrintBins(const string& indent, LuaMatType type) const
 
 void LuaMatHandler::PrintAllBins(const string& indent) const
 {
+	//ZoneScoped;
 	for (int m = 0; m < LUAMAT_TYPE_COUNT; m++) {
 		PrintBins(indent + GetMatTypeName(LuaMatType(m)) + "  ", LuaMatType(m));
 	}

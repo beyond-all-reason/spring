@@ -16,6 +16,8 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
+#include <tracy/Tracy.hpp>
+
 #define USE_STAGGERED_UPDATES 0
 
 
@@ -80,6 +82,7 @@ constexpr SLosInstance::RLE SLosInstance::EMPTY_RLE;
 
 void ILosType::Init(const int mipLevel_, LosType type_)
 {
+	//ZoneScoped;
 	mipLevel = mipLevel_;
 	mipDiv = SQUARE_SIZE * (1 << mipLevel);
 	invDiv = 1.0f / mipDiv;
@@ -101,6 +104,7 @@ void ILosType::Init(const int mipLevel_, LosType type_)
 
 void ILosType::Kill()
 {
+	//ZoneScoped;
 	// iterated in UpdateHeightMapSynced
 	spring::clear_unordered_map(instanceHashes);
 
@@ -130,6 +134,7 @@ void ILosType::Kill()
 
 float ILosType::GetRadius(const CUnit* unit) const
 {
+	//ZoneScoped;
 	switch (type) {
 		case LOS_TYPE_LOS:          return (unit->losRadius      / SQUARE_SIZE) >> mipLevel;
 		case LOS_TYPE_AIRLOS:       return (unit->airLosRadius   / SQUARE_SIZE) >> mipLevel;
@@ -147,6 +152,7 @@ float ILosType::GetRadius(const CUnit* unit) const
 
 float ILosType::GetHeight(const CUnit* unit) const
 {
+	//ZoneScoped;
 	if (algoType == LOS_ALGO_CIRCLE)
 		return 0.0f;
 
@@ -160,6 +166,7 @@ float ILosType::GetHeight(const CUnit* unit) const
 
 inline void ILosType::UpdateUnit(CUnit* unit, bool ignore)
 {
+	//ZoneScoped;
 	// do not check if the unit is inside a transporter here
 	// non-firebase transporters stun their cargo, so are already handled below
 	// firebase transporters should not deprive sensor coverage from their cargo
@@ -259,6 +266,7 @@ inline void ILosType::UpdateUnit(CUnit* unit, bool ignore)
 
 inline void ILosType::RemoveUnit(CUnit* unit, bool delayed)
 {
+	//ZoneScoped;
 	if (unit->los[type] == nullptr)
 		return;
 
@@ -273,6 +281,7 @@ inline void ILosType::RemoveUnit(CUnit* unit, bool delayed)
 
 inline void ILosType::LosAdd(SLosInstance* li)
 {
+	//ZoneScoped;
 	assert(li);
 	assert(teamHandler.IsValidAllyTeam(li->allyteam));
 
@@ -286,6 +295,7 @@ inline void ILosType::LosAdd(SLosInstance* li)
 
 inline void ILosType::LosRemove(SLosInstance* li)
 {
+	//ZoneScoped;
 	if (algoType == LOS_ALGO_RAYCAST) {
 		losMaps[li->allyteam].AddRaycast(li, -1);
 	} else {
@@ -296,6 +306,7 @@ inline void ILosType::LosRemove(SLosInstance* li)
 
 inline void ILosType::RefInstance(SLosInstance* li)
 {
+	//ZoneScoped;
 	if ((++li->refCount) != 1)
 		return;
 
@@ -313,6 +324,7 @@ inline void ILosType::RefInstance(SLosInstance* li)
 
 void ILosType::UnrefInstance(SLosInstance* li)
 {
+	//ZoneScoped;
 	assert(li->refCount > 0);
 
 	if ((--li->refCount) > 0)
@@ -324,6 +336,7 @@ void ILosType::UnrefInstance(SLosInstance* li)
 
 inline void ILosType::DelayedUnrefInstance(SLosInstance* li)
 {
+	//ZoneScoped;
 	DelayedInstance di;
 	di.instance = li;
 	di.timeoutTime = (gs->frameNum + (GAME_SPEED + (GAME_SPEED >> 1)));
@@ -333,6 +346,7 @@ inline void ILosType::DelayedUnrefInstance(SLosInstance* li)
 
 inline void ILosType::AddInstanceToCache(SLosInstance* li)
 {
+	//ZoneScoped;
 	if (li->status & SLosInstance::TLosStatus::RECALC) {
 		assert(!li->isCached);
 		DeleteInstance(li);
@@ -346,6 +360,7 @@ inline void ILosType::AddInstanceToCache(SLosInstance* li)
 
 inline SLosInstance* ILosType::CreateInstance()
 {
+	//ZoneScoped;
 	if (!freeIDs.empty()) {
 		const int id = freeIDs.back();
 		freeIDs.pop_back();
@@ -359,6 +374,7 @@ inline SLosInstance* ILosType::CreateInstance()
 
 inline void ILosType::DeleteInstance(SLosInstance* li)
 {
+	//ZoneScoped;
 	assert(li->refCount == 0);
 
 	auto  pit = instanceHashes.find(li->hashNum); assert(pit != instanceHashes.end());
@@ -392,6 +408,7 @@ inline void ILosType::DeleteInstance(SLosInstance* li)
 
 inline void ILosType::UpdateInstanceStatus(SLosInstance* li, SLosInstance::TLosStatus status)
 {
+	//ZoneScoped;
 	// queue for update
 	if (status == SLosInstance::TLosStatus::RECALC) {
 		if (!li->isQueuedForTerraform && !li->isQueuedForUpdate) {
@@ -441,6 +458,7 @@ inline void ILosType::UpdateInstanceStatus(SLosInstance* li, SLosInstance::TLosS
 
 inline SLosInstance::TLosStatus ILosType::OptimizeInstanceUpdate(SLosInstance* li)
 {
+	//ZoneScoped;
 	constexpr auto a = SLosInstance::TLosStatus::REACTIVATE | SLosInstance::TLosStatus::REMOVE;
 	if ((li->status & a) == a) {
 		assert(li->refCount > 0);
@@ -469,6 +487,7 @@ inline SLosInstance::TLosStatus ILosType::OptimizeInstanceUpdate(SLosInstance* l
 
 inline int ILosType::GetHashNum(const int allyteam, const int2 baseLos, const float radius) const
 {
+	//ZoneScoped;
 	std::uint32_t hash = 0;
 	hash = spring::LiteHash(&allyteam, sizeof(allyteam), hash);
 	hash = spring::LiteHash(&baseLos,  sizeof(baseLos),  hash);
@@ -479,6 +498,7 @@ inline int ILosType::GetHashNum(const int allyteam, const int2 baseLos, const fl
 
 void ILosType::Update()
 {
+	//ZoneScoped;
 	// delayed delete
 	while (!delayedDeleteQue.empty() && delayedDeleteQue.front().timeoutTime < gs->frameNum) {
 		UnrefInstance(delayedDeleteQue.front().instance);
@@ -596,6 +616,7 @@ void ILosType::Update()
 
 void ILosType::UpdateHeightMapSynced(SRectangle rect)
 {
+	//ZoneScoped;
 	if (algoType == LOS_ALGO_CIRCLE)
 		return;
 
@@ -659,6 +680,7 @@ CLosHandler* losHandler = nullptr;
 
 void CLosHandler::InitStatic()
 {
+	//ZoneScoped;
 	// reset globals
 	ILosType::cacheFails = 1;
 	ILosType::cacheHits  = 1;
@@ -672,6 +694,7 @@ void CLosHandler::InitStatic()
 
 void CLosHandler::KillStatic(bool reload)
 {
+	//ZoneScoped;
 	losHandler->Kill();
 
 	if (reload)
@@ -684,6 +707,7 @@ void CLosHandler::KillStatic(bool reload)
 
 void CLosHandler::Init()
 {
+	//ZoneScoped;
 	globalLOS.fill(false);
 
 	baseRadarErrorSize = defBaseRadarErrorSize;
@@ -713,6 +737,7 @@ void CLosHandler::Init()
 
 void CLosHandler::Kill()
 {
+	//ZoneScoped;
 	los.Kill();
 	airLos.Kill();
 	radar.Kill();
@@ -746,6 +771,7 @@ void CLosHandler::Kill()
 
 void CLosHandler::SetGlobalLOS(const int allyTeamId, const bool newState)
 {
+	//ZoneScoped;
 	globalLOS[allyTeamId] = newState;
 
 	if (globalLOS[allyTeamId])
@@ -754,6 +780,7 @@ void CLosHandler::SetGlobalLOS(const int allyTeamId, const bool newState)
 
 void CLosHandler::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
 {
+	//ZoneScoped;
 	for (ILosType* lt: losTypes) {
 		lt->RemoveUnit(const_cast<CUnit*>(unit), true);
 	}
@@ -762,6 +789,7 @@ void CLosHandler::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
 
 void CLosHandler::UnitTaken(const CUnit* unit, int oldTeam, int newTeam)
 {
+	//ZoneScoped;
 	for (ILosType* lt: losTypes) {
 		lt->RemoveUnit(const_cast<CUnit*>(unit));
 	}
@@ -770,6 +798,7 @@ void CLosHandler::UnitTaken(const CUnit* unit, int oldTeam, int newTeam)
 
 void CLosHandler::UnitReverseBuilt(const CUnit* unit)
 {
+	//ZoneScoped;
 	for (ILosType* lt: losTypes) {
 		lt->RemoveUnit(const_cast<CUnit*>(unit));
 	}
@@ -778,6 +807,7 @@ void CLosHandler::UnitReverseBuilt(const CUnit* unit)
 
 void CLosHandler::UnitLoaded(const CUnit* unit, const CUnit* transport)
 {
+	//ZoneScoped;
 	if (!unit->IsStunned())
 		return;
 
@@ -826,6 +856,7 @@ void CLosHandler::Update()
 
 void CLosHandler::UpdateHeightMapSynced(SRectangle rect)
 {
+	//ZoneScoped;
 	for (ILosType* lt: losTypes) {
 		ZoneScopedN("LosHandler::UpdateHeightMapSynced");
 		lt->UpdateHeightMapSynced(rect);
@@ -835,6 +866,7 @@ void CLosHandler::UpdateHeightMapSynced(SRectangle rect)
 
 bool CLosHandler::InLos(const CUnit* unit, int allyTeam) const
 {
+	//ZoneScoped;
 	// NOTE: units are treated differently than world objects in two ways:
 	//   1. they can be cloaked (has to be checked BEFORE all other cases)
 	//   2. when underwater, they are only considered to be in LOS if they
@@ -872,6 +904,7 @@ bool CLosHandler::InLos(const CUnit* unit, int allyTeam) const
 
 bool CLosHandler::InAirLos(const CUnit* unit, int allyTeam) const
 {
+	//ZoneScoped;
 	// NOTE: units are treated differently than world objects in two ways:
 	//   1. they can be cloaked (has to be checked BEFORE all other cases)
 	//   2. when underwater, they are only considered to be in LOS if they
@@ -905,6 +938,7 @@ bool CLosHandler::InAirLos(const CUnit* unit, int allyTeam) const
 
 bool CLosHandler::InRadar(const float3 pos, int allyTeam) const
 {
+	//ZoneScoped;
 	// position is underwater, only sonar can see it
 	// note: only check jammers when we have a common jammer map, else jammers only apply to objects!
 	if (pos.y < 0.0f)
@@ -916,6 +950,7 @@ bool CLosHandler::InRadar(const float3 pos, int allyTeam) const
 
 bool CLosHandler::InRadar(const CUnit* unit, int allyTeam) const
 {
+	//ZoneScoped;
 	// unit is discoverable by sonar
 	if (unit->IsInWater()) {
 		if ((!unit->sonarStealth || unit->beingBuilt) &&
@@ -938,6 +973,7 @@ bool CLosHandler::InRadar(const CUnit* unit, int allyTeam) const
 
 bool CLosHandler::InJammer(const float3 pos, int allyTeam) const
 {
+	//ZoneScoped;
 	const int jammerAlly = modInfo.separateJammers ? allyTeam : 0;
 
 	if (pos.y < 0.0f)
@@ -949,6 +985,7 @@ bool CLosHandler::InJammer(const float3 pos, int allyTeam) const
 
 bool CLosHandler::InJammer(const CUnit* unit, int allyTeam) const
 {
+	//ZoneScoped;
 	if (allyTeam == unit->allyteam)
 		return false;
 

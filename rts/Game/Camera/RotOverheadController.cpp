@@ -12,6 +12,8 @@
 
 #include "Game/CameraHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(float, RotOverheadMouseScale).defaultValue(0.01f);
 CONFIG(int, RotOverheadScrollSpeed).defaultValue(10);
 CONFIG(bool, RotOverheadEnabled).defaultValue(true).headlessValue(false);
@@ -21,6 +23,7 @@ CONFIG(bool, RotOverheadClampMap).defaultValue(true).headlessValue(true);
 
 CRotOverheadController::CRotOverheadController(): oldHeight(500.0f)
 {
+	//ZoneScoped;
 	mouseScale  = configHandler->GetFloat("RotOverheadMouseScale");
 	scrollSpeed = configHandler->GetInt("RotOverheadScrollSpeed") * 0.1f;
 	enabled     = configHandler->GetBool("RotOverheadEnabled");
@@ -31,6 +34,7 @@ CRotOverheadController::CRotOverheadController(): oldHeight(500.0f)
 
 void CRotOverheadController::KeyMove(float3 move)
 {
+	//ZoneScoped;
 	move *= math::sqrt(move.z) * 400;
 
 	float3 flatForward = camera->GetDir();
@@ -46,6 +50,7 @@ void CRotOverheadController::KeyMove(float3 move)
 
 void CRotOverheadController::MouseMove(float3 move)
 {
+	//ZoneScoped;
 	// use local dir state so CameraHandler can create smooth transition between
 	// current camera rot and desired
 	auto rot = CCamera::GetRotFromDir(dir);
@@ -70,12 +75,14 @@ void CRotOverheadController::MouseMove(float3 move)
 
 void CRotOverheadController::ScreenEdgeMove(float3 move)
 {
+	//ZoneScoped;
 	KeyMove(move);
 }
 
 
 void CRotOverheadController::MouseWheelMove(float move)
 {
+	//ZoneScoped;
 	const float gheight = CGround::GetHeightAboveWater(pos.x, pos.z, false);
 	float height = pos.y - gheight;
 
@@ -87,6 +94,7 @@ void CRotOverheadController::MouseWheelMove(float move)
 
 void CRotOverheadController::Update()
 {
+	//ZoneScoped;
 	if (clampToMap) {
 		pos.x = std::clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
 		pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
@@ -103,6 +111,7 @@ void CRotOverheadController::Update()
 
 void CRotOverheadController::SetPos(const float3& newPos)
 {
+	//ZoneScoped;
 	CCameraController::SetPos(newPos);
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + oldHeight;
 	Update();
@@ -111,12 +120,14 @@ void CRotOverheadController::SetPos(const float3& newPos)
 
 float3 CRotOverheadController::SwitchFrom() const
 {
+	//ZoneScoped;
 	return pos;
 }
 
 
 void CRotOverheadController::SwitchTo(const int oldCam, const bool showText)
 {
+	//ZoneScoped;
 	if (showText) {
 		LOG("Switching to Rotatable overhead camera");
 	}
@@ -125,6 +136,7 @@ void CRotOverheadController::SwitchTo(const int oldCam, const bool showText)
 
 void CRotOverheadController::GetState(StateMap& sm) const
 {
+	//ZoneScoped;
 	CCameraController::GetState(sm);
 
 	sm["oldHeight"] = oldHeight;
@@ -133,6 +145,7 @@ void CRotOverheadController::GetState(StateMap& sm) const
 
 bool CRotOverheadController::SetState(const StateMap& sm)
 {
+	//ZoneScoped;
 	CCameraController::SetState(sm);
 
 	SetStateFloat(sm, "oldHeight", oldHeight);

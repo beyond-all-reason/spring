@@ -64,6 +64,7 @@ CLoadScreen::CLoadScreen(std::string&& _mapFileName, std::string&& _modFileName,
 
 CLoadScreen::~CLoadScreen()
 {
+	//ZoneScoped;
 	// Kill() must have been called first, such that the loading
 	// thread can not access singleton while its dtor is running
 	assert(!gameLoadThread.joinable());
@@ -87,6 +88,7 @@ CLoadScreen::~CLoadScreen()
 
 bool CLoadScreen::Init()
 {
+	//ZoneScoped;
 	activeController = this;
 
 	// When calling this function, mod archives have to be loaded
@@ -147,6 +149,7 @@ bool CLoadScreen::Init()
 
 void CLoadScreen::Kill()
 {
+	//ZoneScoped;
 	if (mtLoading && !gameLoadThread.joinable())
 		return;
 
@@ -171,6 +174,7 @@ void CLoadScreen::Kill()
 
 static void FinishedLoading()
 {
+	//ZoneScoped;
 	if (gu->globalQuit)
 		return;
 
@@ -192,6 +196,7 @@ static void FinishedLoading()
 
 void CLoadScreen::CreateDeleteInstance(std::string&& mapFileName, std::string&& modFileName, ILoadSaveHandler* saveFile)
 {
+	//ZoneScoped;
 	if (CreateInstance(std::move(mapFileName), std::move(modFileName), saveFile))
 		return;
 
@@ -202,6 +207,7 @@ void CLoadScreen::CreateDeleteInstance(std::string&& mapFileName, std::string&& 
 
 bool CLoadScreen::CreateInstance(std::string&& mapFileName, std::string&& modFileName, ILoadSaveHandler* saveFile)
 {
+	//ZoneScoped;
 	assert(singleton == nullptr);
 	singleton = new CLoadScreen(std::move(mapFileName), std::move(modFileName), saveFile);
 
@@ -211,6 +217,7 @@ bool CLoadScreen::CreateInstance(std::string&& mapFileName, std::string&& modFil
 
 void CLoadScreen::DeleteInstance()
 {
+	//ZoneScoped;
 	if (singleton == nullptr)
 		return;
 
@@ -223,6 +230,7 @@ void CLoadScreen::DeleteInstance()
 
 void CLoadScreen::ResizeEvent()
 {
+	//ZoneScoped;
 	if (luaIntro != nullptr)
 		luaIntro->ViewResize();
 }
@@ -230,6 +238,7 @@ void CLoadScreen::ResizeEvent()
 
 int CLoadScreen::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
+	//ZoneScoped;
 	//FIXME add mouse events
 	if (luaIntro != nullptr)
 		luaIntro->KeyPress(keyCode, scanCode, isRepeat);
@@ -239,6 +248,7 @@ int CLoadScreen::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 int CLoadScreen::KeyReleased(int keyCode, int scanCode)
 {
+	//ZoneScoped;
 	if (luaIntro != nullptr)
 		luaIntro->KeyRelease(keyCode, scanCode);
 
@@ -278,6 +288,7 @@ bool CLoadScreen::Update()
 
 bool CLoadScreen::Draw()
 {
+	//ZoneScoped;
 	// limit FPS via sleep to not lock a singlethreaded CPU from loading the game
 	if (mtLoading) {
 		const spring_time now = spring_gettime();
@@ -316,6 +327,7 @@ bool CLoadScreen::Draw()
 
 void CLoadScreen::SetLoadMessage(const std::string& text, bool replaceLast)
 {
+	//ZoneScoped;
 	spring::UnfreezeSpring(WDT_LOAD);
 
 	std::lock_guard<spring::recursive_mutex> lck(mutex);

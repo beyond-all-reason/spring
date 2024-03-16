@@ -26,6 +26,8 @@
 #include "System/SafeUtil.h"
 #include "lib/lua/include/LuaUser.h" // spring_lua_alloc_get_stats
 
+#include <tracy/Tracy.hpp>
+
 ProfileDrawer* ProfileDrawer::instance = nullptr;
 
 static constexpr float MAX_THREAD_HIST_TIME = 0.5f; // secs
@@ -56,6 +58,7 @@ ProfileDrawer::ProfileDrawer()
 
 void ProfileDrawer::SetEnabled(bool enable)
 {
+	//ZoneScoped;
 	if (!enable) {
 		spring::SafeDelete(instance);
 		return;
@@ -72,6 +75,7 @@ void ProfileDrawer::SetEnabled(bool enable)
 
 static void DrawBufferStats(const float2 pos)
 {
+	//ZoneScoped;
 	const float4 drawArea = {pos.x, pos.y + 0.02f, 0.2f, pos.y - (0.23f + 0.02f)};
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
@@ -140,6 +144,7 @@ static void DrawTimeSlices(
 	const float4& drawArea,
 	const float4& sliceColor
 ) {
+	//ZoneScoped;
 	// remove old entries
 	while (!frames.empty() && (curTime - frames.front().second) > maxTime) {
 		frames.pop_front();
@@ -188,6 +193,7 @@ static void DrawTimeSlices(
 
 static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 {
+	//ZoneScoped;
 	auto& profiler = CTimeProfiler::GetInstance();
 	constexpr SColor    barColor = SColor{0.0f, 0.0f, 0.0f, 0.5f};
 	constexpr SColor feederColor = SColor{1.0f, 0.0f, 0.0f, 1.0f};
@@ -250,6 +256,7 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 static void DrawFrameBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 {
+	//ZoneScoped;
 	constexpr SColor    barColor = SColor{0.0f, 0.0f, 0.0f, 0.5f};
 	constexpr SColor feederColor = SColor{1.0f, 0.0f, 0.0f, 1.0f};
 
@@ -317,6 +324,7 @@ static void DrawFrameBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 {
+	//ZoneScoped;
 	auto& profiler = CTimeProfiler::GetInstance();
 	font->SetTextColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -459,6 +467,7 @@ static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 static void DrawInfoText(TypedRenderBuffer<VA_TYPE_C   >& rb)
 {
+	//ZoneScoped;
 	constexpr SColor bgColor = SColor{0.0f, 0.0f, 0.0f, 0.5f};
 
 	// background
@@ -556,6 +565,7 @@ static void DrawInfoText(TypedRenderBuffer<VA_TYPE_C   >& rb)
 
 void ProfileDrawer::DrawScreen()
 {
+	//ZoneScoped;
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 	auto& shader = rb.GetShader();
 
@@ -584,6 +594,7 @@ void ProfileDrawer::DrawScreen()
 
 bool ProfileDrawer::MousePress(int x, int y, int button)
 {
+	//ZoneScoped;
 	auto& profiler = CTimeProfiler::GetInstance();
 	if (!IsAbove(x, y))
 		return false;
@@ -607,6 +618,7 @@ bool ProfileDrawer::MousePress(int x, int y, int button)
 
 bool ProfileDrawer::IsAbove(int x, int y)
 {
+	//ZoneScoped;
 	const float mx = CInputReceiver::MouseX(x);
 	const float my = CInputReceiver::MouseY(y);
 
@@ -617,6 +629,7 @@ bool ProfileDrawer::IsAbove(int x, int y)
 
 void ProfileDrawer::DbgTimingInfo(DbgTimingInfoType type, const spring_time start, const spring_time end)
 {
+	//ZoneScoped;
 	if (!IsEnabled())
 		return;
 
