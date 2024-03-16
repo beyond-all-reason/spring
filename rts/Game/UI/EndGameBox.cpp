@@ -397,12 +397,15 @@ void CEndGameBox::Draw()
 		const float scalex = 0.54f / std::max(1.0f, numPoints - 1.0f);
 		const float scaley = 0.54f / maxy;
 
-		for (int a = 0; a < 5; ++a) {
-			const int secs = int(a * 0.25f * (numPoints - 1) * TeamStatistics::statsPeriod) % 60;
-			const int mins = int(a * 0.25f * (numPoints    ) * TeamStatistics::statsPeriod) / 60;
+		int numGraphLabels = 9;
+		float labelPosScale = 0.54f / (numGraphLabels - 1);
+		float labelValueScale = 1.0f / (numGraphLabels - 1);
+		for (int a = 0; a < numGraphLabels; ++a) {
+			const int secs = int(a * labelValueScale * (numPoints - 1) * TeamStatistics::statsPeriod) % 60;
+			const int mins = int(a * labelValueScale * (numPoints    ) * TeamStatistics::statsPeriod) / 60;
 
-			font->glPrint(box.x1 + 0.12f, box.y1 + 0.07f + (a * 0.135f), 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, FloatToSmallString(maxy * 0.25f * a));
-			font->glFormat(box.x1 + 0.135f + (a * 0.135f), box.y1 + 0.057f, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%02i:%02i", mins, secs);
+			font->glPrint(box.x1 + 0.12f, box.y1 + 0.07f + (a * labelPosScale), 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, FloatToSmallString(maxy * labelValueScale * a));
+			font->glFormat(box.x1 + 0.135f + (a * labelPosScale), box.y1 + 0.057f, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%02i:%02i", mins, secs);
 		}
 
 		font->glPrint(box.x1 + 0.55f, box.y1 + 0.65f, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED,                 stats[stat1].name     );
