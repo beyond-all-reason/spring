@@ -7176,12 +7176,14 @@ int LuaSyncedCtrl::RemoveUnitCmdDesc(lua_State* L)
  *
  * Offmap positions are clamped! Use MoveCtrl to move to such positions.
  *
- * @tparam string|number unitDefName or unitDefID
+ * @number teamID
  * @number x
  * @number y
  * @number z
- * @number teamID
- * @treturn number|nil unitID meaning unit was created
+ * @number LOSType (flag for los, radar, sonar, or combination)
+ * @number LOSDistance (distance of sensor)
+ * @number duration (number of frames)
+ * @treturn number|nil sensorID meaning sensor was created
  ***/
 int LuaSyncedCtrl::CreateSensor(lua_State* L)
 {
@@ -7217,6 +7219,7 @@ int LuaSyncedCtrl::CreateSensor(lua_State* L)
 
 	ASSERT_SYNCED(pos);
 
+	// reusing this...?
 	inCreateUnit++;
 
 	CSensor* sensor = sensorHandler.NewSensor(teamID, pos, LOSType, LOSDistance, duration);
