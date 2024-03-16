@@ -11,7 +11,6 @@
 #include "Game/Players/PlayerHandler.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GL/glExtra.h"
-#include "Rendering/GL/RenderBuffers.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/TeamStatistics.h"
@@ -425,23 +424,7 @@ void CEndGameBox::Draw()
 
 			{
 				const std::vector<float>& statValues = stats[stat1].values[teamNum];
-
-				for (size_t a = 0, n = numPoints - 1; a < n; ++a) {
-					float v0 = 0.0f;
-					float v1 = 0.0f;
-
-					if (dispMode == 1) {
-						v0 = statValues[a    ];
-						v1 = statValues[a + 1];
-					} else if (a > 0) {
-						// deltas
-						v0 = (statValues[a    ] - statValues[a - 1]) / TeamStatistics::statsPeriod;
-						v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
-					}
-
-					rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, team->color});
-					rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, team->color});
-				}
+				addVertices(rbC, statValues, numPoints, scalex, scaley, team->color);
 			}
 
 			if (stat2 != -1) {
@@ -450,21 +433,7 @@ void CEndGameBox::Draw()
 				// ditto
 				// glLineStipple(3, 0x5555);
 
-				for (size_t a = 0, n = numPoints - 1; a < n; ++a) {
-					float v0 = 0.0f;
-					float v1 = 0.0f;
-
-					if (dispMode == 1) {
-						v0 = statValues[a    ];
-						v1 = statValues[a + 1];
-					} else if (a > 0) {
-						v0 = (statValues[a    ] - statValues[a - 1]) / TeamStatistics::statsPeriod;
-						v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
-					}
-
-					rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, team->color});
-					rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, team->color});
-				}
+				addVertices(rbC, statValues, numPoints, scalex, scaley, team->color);
 			}
 		}
 
@@ -475,6 +444,26 @@ void CEndGameBox::Draw()
 	}
 
 	font->DrawBuffered();
+}
+
+void CEndGameBox::addVertices(TypedRenderBuffer<VA_TYPE_C> &rbC, const std::vector<float>& statValues, size_t numPoints, float scalex, float scaley, const uint8_t (&color)[4])
+{
+	for (size_t a = 0, n = numPoints - 1; a < n; ++a) {
+		float v0 = 0.0f;
+		float v1 = 0.0f;
+
+		if (dispMode == 1) {
+			v0 = statValues[a    ];
+			v1 = statValues[a + 1];
+		} else if (a > 0) {
+			// deltas
+			v0 = (statValues[a    ] - statValues[a - 1]) / TeamStatistics::statsPeriod;
+			v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
+		}
+
+		rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, color});
+		rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, color});
+	}
 }
 
 std::string CEndGameBox::GetTooltip(int x, int y)
