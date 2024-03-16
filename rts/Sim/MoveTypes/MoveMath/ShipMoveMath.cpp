@@ -3,11 +3,14 @@
 #include "MoveMath.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 /*
 Calculate speed-multiplier for given height and slope data.
 */
 float CMoveMath::ShipSpeedMod(const MoveDef& moveDef, float height, float slope)
 {
+	//ZoneScoped;
 	if (-height < moveDef.depth)
 		return 0.0f;
 
@@ -16,6 +19,7 @@ float CMoveMath::ShipSpeedMod(const MoveDef& moveDef, float height, float slope)
 
 float CMoveMath::ShipSpeedMod(const MoveDef& moveDef, float height, float slope, float dirSlopeMod)
 {
+	//ZoneScoped;
 	// uphill slopes can lead even closer to shore, so
 	// block movement if we are above our minWaterDepth
 	if (height >= 0.0f || ((dirSlopeMod >= 0.0f) && (-height < moveDef.depth)))

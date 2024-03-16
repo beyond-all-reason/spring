@@ -9,6 +9,7 @@
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
 
 
 CAirLosTexture::CAirLosTexture()
@@ -91,6 +92,7 @@ CAirLosTexture::CAirLosTexture()
 
 CAirLosTexture::~CAirLosTexture()
 {
+	//ZoneScoped;
 	glDeleteTextures(1, &uploadTex);
 	shaderHandler->ReleaseProgramObject("[CAirLosTexture]", "CAirLosTexture");
 }
@@ -98,6 +100,7 @@ CAirLosTexture::~CAirLosTexture()
 
 void CAirLosTexture::UpdateCPU()
 {
+	//ZoneScoped;
 	infoTexPBO.Bind();
 	auto infoTexMem = reinterpret_cast<unsigned char*>(infoTexPBO.MapBuffer());
 
@@ -123,6 +126,7 @@ void CAirLosTexture::UpdateCPU()
 
 void CAirLosTexture::Update()
 {
+	//ZoneScoped;
 	if (!fbo.IsValid() || !shader->IsValid() || uploadTex == 0)
 		return UpdateCPU();
 

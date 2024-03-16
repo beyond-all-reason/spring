@@ -11,11 +11,14 @@
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 static CFeatureDefHandler gFeatureDefHandler;
 CFeatureDefHandler* featureDefHandler = &gFeatureDefHandler;
 
 void CFeatureDefHandler::Init(LuaParser* defsParser)
 {
+	//ZoneScoped;
 	const LuaTable rootTable = defsParser->GetRoot().SubTable("FeatureDefs");
 
 	if (!rootTable.IsValid())
@@ -58,6 +61,7 @@ void CFeatureDefHandler::Init(LuaParser* defsParser)
 
 void CFeatureDefHandler::AddFeatureDef(const std::string& name, FeatureDef* fd, bool isDefaultFeature)
 {
+	//ZoneScoped;
 	if (fd == nullptr)
 		return;
 
@@ -72,6 +76,7 @@ void CFeatureDefHandler::AddFeatureDef(const std::string& name, FeatureDef* fd, 
 
 FeatureDef& CFeatureDefHandler::GetNewFeatureDef()
 {
+	//ZoneScoped;
 	featureDefsVector.emplace_back();
 	FeatureDef& fd = featureDefsVector.back();
 	fd.id = featureDefsVector.size() - 1;
@@ -82,6 +87,7 @@ FeatureDef& CFeatureDefHandler::GetNewFeatureDef()
 
 FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const std::string& mixedCase)
 {
+	//ZoneScoped;
 	const std::string& name = StringToLower(mixedCase);
 
 	if (featureDefIDs.find(name) != featureDefIDs.end())
@@ -153,6 +159,7 @@ FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const 
 
 FeatureDef* CFeatureDefHandler::CreateDefaultTreeFeatureDef(const std::string& name)
 {
+	//ZoneScoped;
 	FeatureDef& fd = GetNewFeatureDef();
 
 	fd.collidable = true;
@@ -174,6 +181,7 @@ FeatureDef* CFeatureDefHandler::CreateDefaultTreeFeatureDef(const std::string& n
 
 FeatureDef* CFeatureDefHandler::CreateDefaultGeoFeatureDef(const std::string& name)
 {
+	//ZoneScoped;
 	FeatureDef& fd = GetNewFeatureDef();
 
 	fd.collidable = false;
@@ -199,6 +207,7 @@ FeatureDef* CFeatureDefHandler::CreateDefaultGeoFeatureDef(const std::string& na
 
 const FeatureDef* CFeatureDefHandler::GetFeatureDef(string name, const bool showError) const
 {
+	//ZoneScoped;
 	if (name.empty())
 		return nullptr;
 
@@ -217,6 +226,7 @@ const FeatureDef* CFeatureDefHandler::GetFeatureDef(string name, const bool show
 
 void CFeatureDefHandler::LoadFeatureDefsFromMap()
 {
+	//ZoneScoped;
 	// reserved names
 	const char* treeDefName = "treetype";
 	const char*  geoDefName =  "geovent";

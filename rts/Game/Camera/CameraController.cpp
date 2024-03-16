@@ -7,12 +7,15 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/Config/ConfigHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CONFIG(float, UseDistToGroundForIcons).defaultValue(0.95f);
 
 
 CCameraController::CCameraController()
 {
+	//ZoneScoped;
 	// switchVal:
 	// * 1.0 = 0 degree  = overview
 	// * 0.0 = 90 degree = first person
@@ -32,6 +35,7 @@ float3 CCameraController::GetRot() const { return CCamera::GetRotFromDir(GetDir(
 
 bool CCameraController::SetStateBool(const StateMap& sm, const std::string& name, bool& var)
 {
+	//ZoneScoped;
 	const StateMap::const_iterator it = sm.find(name);
 
 	if (it != sm.cend()) {
@@ -44,6 +48,7 @@ bool CCameraController::SetStateBool(const StateMap& sm, const std::string& name
 
 bool CCameraController::SetStateFloat(const StateMap& sm, const std::string& name, float& var)
 {
+	//ZoneScoped;
 	const StateMap::const_iterator it = sm.find(name);
 
 	if (it != sm.cend()) {
@@ -73,6 +78,7 @@ bool CCameraController::GetUseDistToGroundForIcons() {
 
 bool CCameraController::SetState(const StateMap& sm)
 {
+	//ZoneScoped;
 	SetStateFloat(sm, "fov", fov);
 
 	SetStateFloat(sm, "px", pos.x);
@@ -88,6 +94,7 @@ bool CCameraController::SetState(const StateMap& sm)
 
 void CCameraController::GetState(StateMap& sm) const
 {
+	//ZoneScoped;
 	sm["fov"] = fov;
 
 	sm["px"] = pos.x;

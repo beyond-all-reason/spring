@@ -30,6 +30,8 @@
 #include "System/Threading/SpringThreading.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CLuaIntro* luaIntro = nullptr;
 
@@ -137,12 +139,14 @@ CLuaIntro::CLuaIntro()
 
 CLuaIntro::~CLuaIntro()
 {
+	//ZoneScoped;
 	luaIntro = nullptr;
 }
 
 
 bool CLuaIntro::RemoveSomeOpenGLFunctions(lua_State* L)
 {
+	//ZoneScoped;
 	// remove some spring opengl functions that don't work preloading
 	lua_getglobal(L, "gl"); {
 		#define PUSHNIL(x) lua_pushliteral(L, #x); lua_pushnil(L); lua_rawset(L, -3)
@@ -176,6 +180,7 @@ bool CLuaIntro::RemoveSomeOpenGLFunctions(lua_State* L)
 
 bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 {
+	//ZoneScoped;
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, Echo);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, Log);
 
@@ -218,6 +223,7 @@ bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 
 bool CLuaIntro::LoadUnsyncedReadFunctions(lua_State* L)
 {
+	//ZoneScoped;
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, IsReplay);
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedRead, GetViewGeometry);
@@ -266,6 +272,7 @@ bool CLuaIntro::LoadUnsyncedReadFunctions(lua_State* L)
 
 bool CLuaIntro::LoadSyncedReadFunctions(lua_State* L)
 {
+	//ZoneScoped;
 	REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, AreHelperAIsEnabled);
 	REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, FixedAllies);
 
@@ -304,6 +311,7 @@ bool CLuaIntro::LoadSyncedReadFunctions(lua_State* L)
 
 string CLuaIntro::LoadFile(const string& filename) const
 {
+	//ZoneScoped;
 	CFileHandler f(filename, SPRING_VFS_RAW_FIRST);
 
 	string code;
@@ -323,6 +331,7 @@ string CLuaIntro::LoadFile(const string& filename) const
  */
 void CLuaIntro::DrawLoadScreen()
 {
+	//ZoneScoped;
 	LUA_CALL_IN_CHECK(L);
 	luaL_checkstack(L, 2, __func__);
 	static const LuaHashString cmdStr(__func__);
@@ -347,6 +356,7 @@ void CLuaIntro::DrawLoadScreen()
  */
 void CLuaIntro::LoadProgress(const std::string& msg, const bool replace_lastline)
 {
+	//ZoneScoped;
 	LUA_CALL_IN_CHECK(L);
 	luaL_checkstack(L, 4, __func__);
 	static const LuaHashString cmdStr(__func__);

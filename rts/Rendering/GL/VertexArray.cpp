@@ -4,12 +4,15 @@
 
 #include "VertexArray.h"
 
+#include <tracy/Tracy.hpp>
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 CVertexArray::CVertexArray(unsigned int maxVerts): maxVertices(maxVerts)
 {
+	//ZoneScoped;
 	drawArray = new float[VA_INIT_VERTEXES]; // please don't change this, some files rely on specific initial sizes
 	stripArray = new unsigned int[VA_INIT_STRIPS];
 	Initialize();
@@ -19,6 +22,7 @@ CVertexArray::CVertexArray(unsigned int maxVerts): maxVertices(maxVerts)
 
 CVertexArray::~CVertexArray()
 {
+	//ZoneScoped;
 	delete[] drawArray;
 	delete[] stripArray;
 	drawArray = nullptr;
@@ -38,17 +42,20 @@ CVertexArray::~CVertexArray()
 
 void CVertexArray::Initialize()
 {
+	//ZoneScoped;
 	drawArrayPos  = drawArray;
 	stripArrayPos = stripArray;
 }
 
 bool CVertexArray::IsReady() const
 {
+	//ZoneScoped;
 	return true;
 }
 
 void CVertexArray::EndStrip()
 {
+	//ZoneScoped;
 	if ((char*)stripArrayPos > ((char*)stripArraySize - 4 * sizeof(unsigned int))) {
 		EnlargeStripArray();
 	}
@@ -64,6 +71,7 @@ void CVertexArray::EndStrip()
 
 static inline bool IsPrimitiveSplitable(GLenum mode)
 {
+	//ZoneScoped;
 	switch (mode) {
 		case GL_TRIANGLE_FAN:
 		case GL_POLYGON:
@@ -77,6 +85,7 @@ static inline bool IsPrimitiveSplitable(GLenum mode)
 
 static inline int GetPrimitiveRestartEach(GLenum mode)
 {
+	//ZoneScoped;
 	switch (mode) {
 		case GL_TRIANGLE_STRIP:
 			{ return 2; }
@@ -96,6 +105,7 @@ static inline int GetPrimitiveRestartEach(GLenum mode)
 
 static inline int GetStripStartOffset(GLenum mode)
 {
+	//ZoneScoped;
 	switch (mode) {
 		case GL_TRIANGLES:
 		case GL_QUAD_STRIP:
@@ -110,6 +120,7 @@ static inline int GetStripStartOffset(GLenum mode)
 
 void CVertexArray::DrawArrays(const GLenum mode, const unsigned int stride)
 {
+	//ZoneScoped;
 	unsigned int length;
 	unsigned int newIndex, oldIndex = 0;
 	const unsigned int* stripArrayPtr = stripArray;
@@ -151,6 +162,7 @@ void CVertexArray::DrawArrays(const GLenum mode, const unsigned int stride)
 
 void CVertexArray::DrawArraysCallback(const GLenum mode, const unsigned int stride, StripCallback callback, void* data)
 {
+	//ZoneScoped;
 	unsigned int length;
 	unsigned int newIndex, oldIndex = 0;
 	const unsigned int* stripArrayPtr = stripArray;
@@ -200,6 +212,7 @@ void CVertexArray::DrawArraysCallback(const GLenum mode, const unsigned int stri
 
 void CVertexArray::DrawArray0(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -212,6 +225,7 @@ void CVertexArray::DrawArray0(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArray2d0(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -224,6 +238,7 @@ void CVertexArray::DrawArray2d0(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArrayN(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -240,6 +255,7 @@ void CVertexArray::DrawArrayN(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArrayC(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -256,6 +272,7 @@ void CVertexArray::DrawArrayC(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArrayT(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -272,6 +289,7 @@ void CVertexArray::DrawArrayT(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArray2dT(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -288,6 +306,7 @@ void CVertexArray::DrawArray2dT(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArray2dTC(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -307,6 +326,7 @@ void CVertexArray::DrawArray2dTC(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArray2dT(const int drawType, StripCallback callback, void* data, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -323,6 +343,7 @@ void CVertexArray::DrawArray2dT(const int drawType, StripCallback callback, void
 
 void CVertexArray::DrawArrayTN(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -343,6 +364,7 @@ void CVertexArray::DrawArrayTN(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArrayTNT(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -383,6 +405,7 @@ void CVertexArray::DrawArrayTNT(const int drawType, unsigned int stride)
 
 void CVertexArray::DrawArrayTC(const int drawType, unsigned int stride)
 {
+	//ZoneScoped;
 	if (drawIndex() == 0)
 		return;
 
@@ -408,6 +431,7 @@ void CVertexArray::DrawArrayTC(const int drawType, unsigned int stride)
 
 void CVertexArray::EnlargeDrawArray()
 {
+	//ZoneScoped;
 	const unsigned int pos = drawArrayPos - drawArray;
 	const unsigned int oldsize = drawArraySize - drawArray;
 	const unsigned int newsize = oldsize * 2;
@@ -424,6 +448,7 @@ void CVertexArray::EnlargeDrawArray()
 
 void CVertexArray::EnlargeStripArray()
 {
+	//ZoneScoped;
 	const unsigned int pos = stripArrayPos - stripArray;
 	const unsigned int oldsize = stripArraySize - stripArray;
 	const unsigned int newsize = oldsize * 2;
@@ -473,12 +498,14 @@ void CVertexArray::EnlargeArrays(const unsigned int vertexes, const unsigned int
 
 
 void CVertexArray::AddVertexQ0(const float3& pos) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_0)
 		VA_TYPE_0* vat = GetTypedVertexArrayQ<VA_TYPE_0>(1);
 	vat->pos = pos;
 }
 
 void CVertexArray::AddVertexQ0(float x, float y, float z) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_0)
 		VA_TYPE_0* vat = GetTypedVertexArrayQ<VA_TYPE_0>(1);
 	vat->pos.x = x;
@@ -487,6 +514,7 @@ void CVertexArray::AddVertexQ0(float x, float y, float z) {
 }
 
 void CVertexArray::AddVertexQN(const float3& pos, const float3& normal) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_N)
 		VA_TYPE_N* vat = GetTypedVertexArrayQ<VA_TYPE_N>(1);
 	vat->pos = pos;
@@ -494,6 +522,7 @@ void CVertexArray::AddVertexQN(const float3& pos, const float3& normal) {
 }
 
 void CVertexArray::AddVertexQC(const float3& pos, const unsigned char* color) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_C)
 		VA_TYPE_C* vat = GetTypedVertexArrayQ<VA_TYPE_C>(1);
 	vat->pos = pos;
@@ -501,6 +530,7 @@ void CVertexArray::AddVertexQC(const float3& pos, const unsigned char* color) {
 }
 
 void CVertexArray::AddVertexQT(const float3& pos, float tx, float ty) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_T)
 		VA_TYPE_T* vat = GetTypedVertexArrayQ<VA_TYPE_T>(1);
 	vat->pos = pos;
@@ -509,6 +539,7 @@ void CVertexArray::AddVertexQT(const float3& pos, float tx, float ty) {
 }
 
 void CVertexArray::AddVertexQTN(const float3& pos, float tx, float ty, const float3& norm) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_TN)
 		VA_TYPE_TN* vat = GetTypedVertexArrayQ<VA_TYPE_TN>(1);
 	vat->pos = pos;
@@ -518,6 +549,7 @@ void CVertexArray::AddVertexQTN(const float3& pos, float tx, float ty, const flo
 }
 
 void CVertexArray::AddVertexQTNT(const float3& p, float tx, float ty, const float3& n, const float3& st, const float3& tt) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_TNT)
 		VA_TYPE_TNT* vat = GetTypedVertexArrayQ<VA_TYPE_TNT>(1);
 	vat->pos = p;
@@ -529,6 +561,7 @@ void CVertexArray::AddVertexQTNT(const float3& p, float tx, float ty, const floa
 }
 
 void CVertexArray::AddVertexQTC(const float3& pos, float tx, float ty, const unsigned char* col) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_TC)
 		VA_TYPE_TC* vat = GetTypedVertexArrayQ<VA_TYPE_TC>(1);
 	vat->pos = pos;
@@ -538,6 +571,7 @@ void CVertexArray::AddVertexQTC(const float3& pos, float tx, float ty, const uns
 }
 
 void CVertexArray::AddVertexQ2d0(float x, float z) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_2D0)
 		VA_TYPE_2D0* vat = GetTypedVertexArrayQ<VA_TYPE_2D0>(1);
 	vat->x = x;
@@ -545,6 +579,7 @@ void CVertexArray::AddVertexQ2d0(float x, float z) {
 }
 
 void CVertexArray::AddVertexQ2dT(float x, float y, float tx, float ty) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_2DT)
 		VA_TYPE_2DT* vat = GetTypedVertexArrayQ<VA_TYPE_2DT>(1);
 	vat->x = x;
@@ -554,6 +589,7 @@ void CVertexArray::AddVertexQ2dT(float x, float y, float tx, float ty) {
 }
 
 void CVertexArray::AddVertexQ2dTC(float x, float y, float tx, float ty, const unsigned char* c) {
+	//ZoneScoped;
 	ASSERT_SIZE(VA_SIZE_2DTC)
 		VA_TYPE_2DTC* vat = GetTypedVertexArrayQ<VA_TYPE_2DTC>(1);
 	vat->x = x;
@@ -570,56 +606,67 @@ void CVertexArray::AddVertexQ2dTC(float x, float y, float tx, float ty, const un
 //////////////////////////////////////////////////////////////////////
 
 void CVertexArray::AddVertex0(const float3& pos) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_0 * sizeof(float)); // sizeof(VA_TYPE_0)
 	AddVertexQ0(pos);
 }
 
 void CVertexArray::AddVertex0(float x, float y, float z) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_0 * sizeof(float)); // sizeof(VA_TYPE_0)
 	AddVertexQ0(x, y, z);
 }
 
 void CVertexArray::AddVertexN(const float3& pos, const float3& normal) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_N * sizeof(float)); // sizeof(VA_TYPE_N)
 	AddVertexQN(pos, normal);
 }
 
 void CVertexArray::AddVertexC(const float3& pos, const unsigned char* color) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_C * sizeof(float)); // sizeof(VA_TYPE_C)
 	AddVertexQC(pos, color);
 }
 
 void CVertexArray::AddVertexT(const float3& pos, float tx, float ty) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_T * sizeof(float)); // sizeof(VA_TYPE_T)
 	AddVertexQT(pos, tx, ty);
 }
 
 void CVertexArray::AddVertexTN(const float3& pos, float tx, float ty, const float3& norm) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_TN * sizeof(float)); // sizeof(VA_TYPE_TN)
 	AddVertexQTN(pos, tx, ty, norm);
 }
 
 void CVertexArray::AddVertexTNT(const float3& p, float tx, float ty, const float3& n, const float3& st, const float3& tt) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_TNT * sizeof(float)); // sizeof(VA_TYPE_TNT)
 	AddVertexQTNT(p, tx, ty, n, st, tt);
 }
 
 void CVertexArray::AddVertexTC(const float3& pos, float tx, float ty, const unsigned char* col) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_TC * sizeof(float)); // sizeof(VA_TYPE_TC)
 	AddVertexQTC(pos, tx, ty, col);
 }
 
 void CVertexArray::AddVertex2d0(float x, float z) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_2D0 * sizeof(float)); // sizeof(VA_TYPE_2D0)
 	AddVertexQ2d0(x, z);
 }
 
 void CVertexArray::AddVertex2dT(float x, float y, float tx, float ty) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_2DT * sizeof(float)); // sizeof(VA_TYPE_2DT)
 	AddVertexQ2dT(x, y, tx, ty);
 }
 
 void CVertexArray::AddVertex2dTC(float x, float y, float tx, float ty, const unsigned char* col) {
+	//ZoneScoped;
 	CheckEnlargeDrawArray(VA_SIZE_2DTC * sizeof(float)); // sizeof(VA_TYPE_2DTC)
 	AddVertexQ2dTC(x, y, tx, ty, col);
 }
@@ -630,6 +677,7 @@ void CVertexArray::AddVertex2dTC(float x, float y, float tx, float ty, const uns
 //////////////////////////////////////////////////////////////////////
 
 void CVertexArray::CheckEndStrip() {
+	//ZoneScoped;
 	if (stripArrayPos == stripArray || ((std::ptrdiff_t) * (stripArrayPos - 1)) != ((char*)drawArrayPos - (char*)drawArray))
 		EndStrip();
 }

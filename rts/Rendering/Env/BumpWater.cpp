@@ -34,6 +34,8 @@
 #include "System/SpringFormat.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 using std::string;
 using std::vector;
 using std::min;
@@ -93,6 +95,7 @@ static void GLSLDefineConstf1(string& str, const string& name, float x)
 
 static GLuint LoadTexture(const string& filename, const float anisotropy = 0.0f, int* sizeX = nullptr, int* sizeY = nullptr)
 {
+	//ZoneScoped;
 	CBitmap bm;
 
 	if (!bm.Load(filename))
@@ -111,6 +114,7 @@ static GLuint LoadTexture(const string& filename, const float anisotropy = 0.0f,
 
 static TypedRenderBuffer<VA_TYPE_0> GenWaterPlaneBuffer(bool radial)
 {
+	//ZoneScoped;
 	auto rb = TypedRenderBuffer<VA_TYPE_0>(9 * 9 * 6, 0, IStreamBufferConcept::Types::SB_BUFFERDATA);
 
 	if (radial) {
@@ -191,12 +195,14 @@ CBumpWater::CBumpWater()
 
 CBumpWater::~CBumpWater()
 {
+	//ZoneScoped;
 	FreeResources();
 	eventHandler.RemoveClient(this);
 }
 
 void CBumpWater::InitResources(bool loadShader)
 {
+	//ZoneScoped;
 	// LOAD USER CONFIGS
 	reflTexSize  = next_power_of_2(configHandler->GetInt("BumpWaterTexSizeReflection"));
 	reflection   = configHandler->GetInt("BumpWaterReflection");
@@ -523,6 +529,7 @@ void CBumpWater::InitResources(bool loadShader)
 
 void CBumpWater::FreeResources()
 {
+	//ZoneScoped;
 	const auto DeleteTexture = [](GLuint& texID) { if (texID > 0) { glDeleteTextures(1, &texID); texID = 0; } };
 
 	DeleteTexture(reflectTexture);
@@ -547,6 +554,7 @@ void CBumpWater::FreeResources()
 
 void CBumpWater::Update()
 {
+	//ZoneScoped;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
@@ -565,6 +573,7 @@ void CBumpWater::Update()
 
 void CBumpWater::UpdateWater(const CGame* game)
 {
+	//ZoneScoped;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
@@ -585,6 +594,7 @@ void CBumpWater::UpdateWater(const CGame* game)
 
 CBumpWater::CoastAtlasRect::CoastAtlasRect(const SRectangle& rect)
 {
+	//ZoneScoped;
 	ix1 = std::max(rect.x1 - 15,            0);
 	iy1 = std::max(rect.y1 - 15,            0);
 	ix2 = std::min(rect.x2 + 15, mapDims.mapx);
@@ -603,6 +613,7 @@ CBumpWater::CoastAtlasRect::CoastAtlasRect(const SRectangle& rect)
 
 void CBumpWater::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
+	//ZoneScoped;
 	if (!shoreWaves || !readMap->HasVisibleWater())
 		return;
 
@@ -612,6 +623,7 @@ void CBumpWater::UnsyncedHeightMapUpdate(const SRectangle& rect)
 
 void CBumpWater::UploadCoastline(const bool forceFull)
 {
+	//ZoneScoped;
 	// optimize update area (merge overlapping areas etc.)
 	heightmapUpdates.Process(forceFull);
 
@@ -690,6 +702,7 @@ void CBumpWater::UploadCoastline(const bool forceFull)
 
 void CBumpWater::UpdateCoastmap(const bool initialize)
 {
+	//ZoneScoped;
 	coastFBO.Bind();
 	glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_ENABLE_BIT);
 
@@ -810,6 +823,7 @@ void CBumpWater::UpdateCoastmap(const bool initialize)
 
 void CBumpWater::UpdateDynWaves(const bool initialize)
 {
+	//ZoneScoped;
 	if (!dynWaves || !dynWavesFBO.IsValid())
 		return;
 
@@ -893,6 +907,7 @@ void CBumpWater::UpdateDynWaves(const bool initialize)
 
 void CBumpWater::Draw()
 {
+	//ZoneScoped;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 

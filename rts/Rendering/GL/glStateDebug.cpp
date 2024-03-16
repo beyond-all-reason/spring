@@ -13,11 +13,14 @@
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
 
+#include <tracy/Tracy.hpp>
+
 static spring::unordered_map<std::string, std::string> lastSet;
 static spring::unordered_set<std::string> errorsSet;
 
 template<typename T, typename F>
 static void VERIFYGL(F func, GLenum pname, T defaultValue, std::string pstr, std::string area) {
+	//ZoneScoped;
 	if (errorsSet.find(area + pstr) == errorsSet.end()) {
 		T _temp;
 		func(pname, &_temp);
@@ -31,6 +34,7 @@ static void VERIFYGL(F func, GLenum pname, T defaultValue, std::string pstr, std
 
 template<typename T, typename F>
 static void VERIFYGL2(F func, GLenum pname, T default0, T default1, std::string pstr, std::string area) {
+	//ZoneScoped;
 	if (errorsSet.find(area + pstr) == errorsSet.end()) {
 		T _temp[4];
 		func(pname, _temp);
@@ -44,6 +48,7 @@ static void VERIFYGL2(F func, GLenum pname, T default0, T default1, std::string 
 
 template<typename T, typename F>
 static void VERIFYGL4(F func, GLenum pname, T default0, T default1, T default2, T default3, std::string pstr, std::string area) {
+	//ZoneScoped;
 	if (errorsSet.find(area + pstr) == errorsSet.end()) {
 		T _temp[4];
 		func(pname, _temp);
@@ -66,6 +71,7 @@ static void VERIFYGL4(F func, GLenum pname, T default0, T default1, T default2, 
 
 void _wrap_glEnable(GLenum pname, std::string pstr, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread())
 		lastSet[pstr] = location;
 
@@ -74,6 +80,7 @@ void _wrap_glEnable(GLenum pname, std::string pstr, std::string location)
 
 void _wrap_glDisable(GLenum pname, std::string pstr, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread())
 		lastSet[pstr] = location;
 
@@ -82,6 +89,7 @@ void _wrap_glDisable(GLenum pname, std::string pstr, std::string location)
 
 void _wrap_glBlendFunc(GLenum sfactor, GLenum dfactor, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread()) {
 		lastSet["GL_BLEND_SRC_RGB"] = location;
 		lastSet["GL_BLEND_SRC_ALPHA"] = location;
@@ -93,6 +101,7 @@ void _wrap_glBlendFunc(GLenum sfactor, GLenum dfactor, std::string location)
 
 void _wrap_glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread()) {
 		lastSet["GL_BLEND_SRC_RGB"] = location;
 		lastSet["GL_BLEND_SRC_ALPHA"] = location;
@@ -104,6 +113,7 @@ void _wrap_glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GL
 
 void _wrap_glColor3f(GLfloat red, GLfloat green, GLfloat blue, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread())
 		lastSet["GL_CURRENT_COLOR"] = location;
 
@@ -112,6 +122,7 @@ void _wrap_glColor3f(GLfloat red, GLfloat green, GLfloat blue, std::string locat
 
 void _wrap_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread())
 		lastSet["GL_CURRENT_COLOR"] = location;
 
@@ -120,6 +131,7 @@ void _wrap_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, st
 
 void _wrap_glColor4fv(const GLfloat *v, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread())
 		lastSet["GL_CURRENT_COLOR"] = location;
 
@@ -128,6 +140,7 @@ void _wrap_glColor4fv(const GLfloat *v, std::string location)
 
 void _wrap_glDepthMask(GLboolean flag, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread())
 		lastSet["GL_DEPTH_WRITEMASK"] = location;
 
@@ -137,6 +150,7 @@ void _wrap_glDepthMask(GLboolean flag, std::string location)
 
 void _wrap_glDepthFunc(GLenum func, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread())
 		lastSet["GL_DEPTH_FUNC"] = location;
 
@@ -145,6 +159,7 @@ void _wrap_glDepthFunc(GLenum func, std::string location)
 
 void _wrap_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha, std::string location)
 {
+	//ZoneScoped;
 	if (Threading::IsMainThread())
 		lastSet["GL_COLOR_WRITEMASK"] = location;
 
@@ -152,6 +167,7 @@ void _wrap_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean
 }
 
 void CGLStateChecker::VerifyState(std::string area) {
+	//ZoneScoped;
 	if (Threading::IsMainThread()) {
 		std::string _area = area + " " + id;
 		//VERIFYGLBOOL(GL_CULL_FACE, GL_FALSE)
@@ -191,11 +207,13 @@ void CGLStateChecker::VerifyState(std::string area) {
 
 CGLStateChecker::CGLStateChecker(std::string id) : id(id)
 {
+	//ZoneScoped;
 	VerifyState("entering");
 }
 
 CGLStateChecker::~CGLStateChecker()
 {
+	//ZoneScoped;
 	VerifyState("exiting");
 }
 

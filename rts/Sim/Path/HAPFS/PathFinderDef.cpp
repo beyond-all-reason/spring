@@ -6,6 +6,8 @@
 #include "PathConstants.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 constexpr float MAX_RAW_PATH_LEN = 1.8e19;  //math::sqrt(std::numeric_limits<float>::max())
 
 CPathFinderDef::CPathFinderDef(const float3& startPos, const float3& goalPos, float goalRadius, float sqGoalDistance)
@@ -74,6 +76,7 @@ float CPathFinderDef::Heuristic(
 // returns if the goal is inaccessable: this is
 // true if the goal area is "small" and blocked
 bool CPathFinderDef::IsGoalBlocked(const MoveDef& moveDef, const CMoveMath::BlockType& blockMask, const CSolidObject* owner) const {
+	//ZoneScoped;
 	const float r0 = SQUARE_SIZE * SQUARE_SIZE * 4.0f; // same as (SQUARE_SIZE*2)^2
 	const float r1 = ((moveDef.xsize * SQUARE_SIZE) >> 1) * ((moveDef.zsize * SQUARE_SIZE) >> 1) * 1.5f;
 
@@ -84,6 +87,7 @@ bool CPathFinderDef::IsGoalBlocked(const MoveDef& moveDef, const CMoveMath::Bloc
 }
 
 int2 CPathFinderDef::GoalSquareOffset(uint32_t blockSize) const {
+	//ZoneScoped;
 	const uint32_t blockPixelSize = blockSize * SQUARE_SIZE;
 
 	int2 offset;
@@ -106,6 +110,7 @@ CCircularSearchConstraint::CCircularSearchConstraint(
 	uint32_t extraSize
 ): CPathFinderDef(start, goal, goalRadius, start.SqDistance2D(goal))
 {
+	//ZoneScoped;
 	// calculate the center and radius of the constrained area
 	const uint32_t startX = start.x / SQUARE_SIZE;
 	const uint32_t startZ = start.z / SQUARE_SIZE;
@@ -132,6 +137,7 @@ CRectangularSearchConstraint::CRectangularSearchConstraint(
 	uint32_t blockSize
 ): CPathFinderDef(startPos, goalPos, 0.0f, startPos.SqDistance2D(goalPos))
 {
+	//ZoneScoped;
 	sqGoalRadius = std::max(sqRadius, sqGoalRadius);
 
 	// construct the rectangular areas containing {start,goal}Pos

@@ -10,6 +10,8 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CLightningProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CLightningProjectile,(
@@ -41,6 +43,7 @@ CLightningProjectile::CLightningProjectile(const ProjectileParams& params): CWea
 
 void CLightningProjectile::Update()
 {
+	//ZoneScoped;
 	if (--ttl <= 0) {
 		deleteMe = true;
 	} else {
@@ -57,6 +60,7 @@ void CLightningProjectile::Update()
 
 void CLightningProjectile::Draw()
 {
+	//ZoneScoped;
 	if (!validTextures[0])
 		return;
 
@@ -93,6 +97,7 @@ void CLightningProjectile::Draw()
 
 void CLightningProjectile::DrawOnMinimap() const
 {
+	//ZoneScoped;
 	const SColor lcolor = SColor{
 		color[0],
 		color[1],
@@ -104,5 +109,6 @@ void CLightningProjectile::DrawOnMinimap() const
 
 int CLightningProjectile::GetProjectilesCount() const
 {
+	//ZoneScoped;
 	return 2 * displacements_size * validTextures[0];
 }

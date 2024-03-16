@@ -9,9 +9,12 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/MoveTypes/Components/MoveTypesComponents.h"
 
+#include <tracy/Tracy.hpp>
+
 using namespace MoveTypes;
 
 void MoveTypes::RegisterFeatureForUnitTrapCheck(CFeature* object) {
+    //ZoneScoped;
     if (gs->frameNum < 0)
         return;
 

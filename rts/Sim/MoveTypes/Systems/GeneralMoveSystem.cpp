@@ -15,13 +15,17 @@
 #include "System/Threading/ThreadPool.h"
 #include "Sim/Units/UnitDef.h"
 
+#include <tracy/Tracy.hpp>
+
 using namespace MoveTypes;
 
 void GeneralMoveSystem::Init() {
+    //ZoneScoped;
     CMoveMath::InitRangeIsBlockedHashes();
 }
 
 void GeneralMoveSystem::Update() {
+    //ZoneScoped;
     auto view = Sim::registry.view<GeneralMoveType>();
 	{
         SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");

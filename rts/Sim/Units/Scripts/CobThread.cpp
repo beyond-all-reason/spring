@@ -75,6 +75,7 @@ CCobThread::CCobThread(CCobInstance* _cobInst)
 
 CCobThread::~CCobThread()
 {
+	//ZoneScoped;
 	Stop();
 
 	if (dataStack.capacity() > 0) {
@@ -142,6 +143,7 @@ CCobThread& CCobThread::operator = (const CCobThread& t) {
 
 void CCobThread::Start(int functionId, int sigMask, const std::array<int, 1 + MAX_COB_ARGS>& args, bool schedule)
 {
+	//ZoneScoped;
 	assert(callStack.size() == 0);
 
 	state = Run;
@@ -170,6 +172,7 @@ void CCobThread::Start(int functionId, int sigMask, const std::array<int, 1 + MA
 
 void CCobThread::Stop()
 {
+	//ZoneScoped;
 	if (cobInst == nullptr)
 		return;
 
@@ -186,12 +189,14 @@ void CCobThread::Stop()
 
 const std::string& CCobThread::GetName()
 {
+	//ZoneScoped;
 	return cobFile->scriptNames[callStack[0].functionId];
 }
 
 
 int CCobThread::CheckStack(unsigned int size, bool warn)
 {
+	//ZoneScoped;
 	if (size <= dataStack.size())
 		return size;
 
@@ -210,6 +215,7 @@ int CCobThread::CheckStack(unsigned int size, bool warn)
 
 void CCobThread::InitStack(unsigned int n, CCobThread* t)
 {
+	//ZoneScoped;
 	assert(dataStack.size() == 0);
 
 	// move n arguments from caller's stack onto our own
@@ -891,6 +897,7 @@ bool CCobThread::Tick()
 
 void CCobThread::ShowError(const char* msg)
 {
+	//ZoneScoped;
 	if ((errorCounter = std::max(errorCounter - 1, 0)) == 0)
 		return;
 
@@ -908,6 +915,7 @@ void CCobThread::ShowError(const char* msg)
 
 void CCobThread::LuaCall()
 {
+	//ZoneScoped;
 	const int r1 = GET_LONG_PC(); // script id
 	const int r2 = GET_LONG_PC(); // arg count
 
@@ -946,6 +954,7 @@ void CCobThread::LuaCall()
 
 void CCobThread::AnimFinished(CUnitScript::AnimType type, int piece, int axis)
 {
+	//ZoneScoped;
 	if (piece != waitPiece || axis != waitAxis)
 		return;
 

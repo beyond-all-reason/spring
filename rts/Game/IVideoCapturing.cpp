@@ -10,6 +10,8 @@
 
 #include "Rendering/GlobalRendering.h"
 
+#include <tracy/Tracy.hpp>
+
 
 IVideoCapturing* IVideoCapturing::GetInstance()
 {
@@ -25,12 +27,14 @@ IVideoCapturing* IVideoCapturing::GetInstance()
 
 void IVideoCapturing::FreeInstance()
 {
+	//ZoneScoped;
 	SetCapturing(false);
 }
 
 
 bool IVideoCapturing::SetCapturing(bool enable)
 {
+	//ZoneScoped;
 	const bool isCapturing = GetInstance()->IsCapturing();
 
 	if (!isCapturing && enable) {

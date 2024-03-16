@@ -31,6 +31,8 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/Threading/SpringThreading.h"
 
+#include <tracy/Tracy.hpp>
+
 struct InitializeOpenIL {
 	InitializeOpenIL() { ilInit(); }
 	~InitializeOpenIL() { ilShutDown(); }
@@ -165,6 +167,7 @@ public:
 	}
 
 	void FreeRaw(uint8_t* mem, size_t size) {
+		//ZoneScoped;
 		if (mem == nullptr)
 			return;
 
@@ -203,6 +206,7 @@ public:
 	}
 
 	void Resize(size_t size) {
+		//ZoneScoped;
 		size = AlignUp(size, sizeof(uint64_t));
 
 		if (size <= Size())
@@ -237,6 +241,7 @@ public:
 	}
 
 	bool Defrag() override {
+		//ZoneScoped;
 		if (freeList.empty())
 			return false;
 
@@ -249,6 +254,7 @@ public:
 
 private:
 	bool DefragRaw() {
+		//ZoneScoped;
 		const auto sortPred = [](const FreePair& a, const FreePair& b) { return (a.first < b.first); };
 		const auto accuPred = [](const FreePair& a, const FreePair& b) { return FreePair{0, a.second + b.second}; };
 
@@ -336,6 +342,7 @@ public:
 
 void ITexMemPool::Init(size_t size)
 {
+	//ZoneScoped;
 	if (size == 0) {
 		if (texMemPool == nullptr || typeid(*texMemPool.get()) != typeid(TexNoMemPool))
 			texMemPool = std::make_unique<TexNoMemPool>();
@@ -350,6 +357,7 @@ void ITexMemPool::Init(size_t size)
 
 void ITexMemPool::Kill()
 {
+	//ZoneScoped;
 	texMemPool = {};
 }
 
@@ -364,6 +372,7 @@ void ITexMemPool::Kill()
 // }
 
 static bool IsValidImageFormat(int format) {
+	//ZoneScoped;
 	static constexpr int formatList[] = {
 		IL_RGBA, IL_RGB, IL_BGRA, IL_BGR,
 		IL_COLOUR_INDEX, IL_LUMINANCE, IL_LUMINANCE_ALPHA
@@ -499,6 +508,7 @@ std::unique_ptr<BitmapAction> BitmapAction::GetBitmapAction(CBitmap* bmp)
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::CreateAlpha(uint8_t red, uint8_t green, uint8_t blue)
 {
+	//ZoneScoped;
 	//if constexpr needed here to avoid compilation errors
 	if constexpr (ch != 4) {
 		assert(false);
@@ -564,6 +574,7 @@ void TBitmapAction<T, ch>::ReplaceAlpha(float a)
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::SetTransparent(const SColor& c, const SColor t)
 {
+	//ZoneScoped;
 	//if constexpr needed here to avoid compilation errors
 	if constexpr (ch != 4) {
 		assert(false);
@@ -606,6 +617,7 @@ void TBitmapAction<T, ch>::SetTransparent(const SColor& c, const SColor t)
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::Renormalize(const float3& newCol)
 {
+	//ZoneScoped;
 	if (ch != 4) {
 		assert(false);
 		return;
@@ -653,6 +665,7 @@ void TBitmapAction<T, ch>::Renormalize(const float3& newCol)
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 {
+	//ZoneScoped;
 	// We use an axis-separated blur algorithm. Applies blurkernel in both the x
 	// and y dimensions. This 3x1 blur kernel is equivalent to a 3x3 kernel in
 	// both the x and y dimensions.
@@ -766,6 +779,7 @@ void TBitmapAction<T, ch>::Fill(const SColor& c)
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::InvertColors()
 {
+	//ZoneScoped;
 	if (ch != 4) {
 		assert(false);
 		return;
@@ -786,6 +800,7 @@ void TBitmapAction<T, ch>::InvertColors()
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::InvertAlpha()
 {
+	//ZoneScoped;
 	if (ch != 4) {
 		assert(false);
 		return;
@@ -804,6 +819,7 @@ void TBitmapAction<T, ch>::InvertAlpha()
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::MakeGrayScale()
 {
+	//ZoneScoped;
 	if (ch != 4) {
 		assert(false);
 		return;
@@ -850,6 +866,7 @@ void TBitmapAction<T, ch>::MakeGrayScale()
 template<typename T, uint32_t ch>
 void TBitmapAction<T, ch>::Tint(const float tint[3])
 {
+	//ZoneScoped;
 	if (ch != 4) {
 		assert(false);
 		return;
@@ -879,6 +896,7 @@ void TBitmapAction<T, ch>::Tint(const float tint[3])
 template<typename T, uint32_t ch>
 CBitmap TBitmapAction<T, ch>::CreateRescaled(int newx, int newy)
 {
+	//ZoneScoped;
 	CBitmap dst;
 
 	if (ch != 4) {
@@ -985,6 +1003,7 @@ CBitmap::CBitmap(const uint8_t* data, int _xsize, int _ysize, int _channels, uin
 
 CBitmap& CBitmap::operator=(const CBitmap& bmp)
 {
+	//ZoneScoped;
 	if (this != &bmp) {
 		// NB: Free preserves size for asserts
 		ITexMemPool::texMemPool->Free(GetRawMem(), GetMemSize());
@@ -1024,6 +1043,7 @@ CBitmap& CBitmap::operator=(const CBitmap& bmp)
 
 CBitmap& CBitmap::operator=(CBitmap&& bmp) noexcept
 {
+	//ZoneScoped;
 	if (this != &bmp) {
 		std::swap(memIdx, bmp.memIdx);
 		std::swap(xsize, bmp.xsize);
@@ -1045,11 +1065,13 @@ CBitmap& CBitmap::operator=(CBitmap&& bmp) noexcept
 
 bool CBitmap::CanBeKilled()
 {
+	//ZoneScoped;
 	return ITexMemPool::texMemPool->NoCurrentAllocations();
 }
 
 void CBitmap::InitPool(size_t size)
 {
+	//ZoneScoped;
 	// only allow expansion; config-size is in MB
 	size *= (1024 * 1024);
 	ITexMemPool::Init(size);
@@ -1059,6 +1081,7 @@ void CBitmap::InitPool(size_t size)
 
 void CBitmap::KillPool()
 {
+	//ZoneScoped;
 	assert(CanBeKilled());
 	ITexMemPool::Kill();
 }
@@ -1069,6 +1092,7 @@ const uint8_t* CBitmap::GetRawMem() const { return ITexMemPool::texMemPool->GetR
 
 void CBitmap::Alloc(int w, int h, int c, uint32_t glType)
 {
+	//ZoneScoped;
 	if (!Empty())
 		ITexMemPool::texMemPool->Free(GetRawMem(), GetMemSize());
 
@@ -1081,6 +1105,7 @@ void CBitmap::Alloc(int w, int h, int c, uint32_t glType)
 
 void CBitmap::AllocDummy(const SColor fill)
 {
+	//ZoneScoped;
 	compressed = false;
 
 	Alloc(1, 1, sizeof(SColor), dataType);
@@ -1089,6 +1114,7 @@ void CBitmap::AllocDummy(const SColor fill)
 
 uint32_t CBitmap::GetDataTypeSize(uint32_t glType)
 {
+	//ZoneScoped;
 	switch (glType) {
 	case GL_FLOAT:
 		return sizeof(float);
@@ -1109,12 +1135,14 @@ uint32_t CBitmap::GetDataTypeSize(uint32_t glType)
 
 int32_t CBitmap::GetExtFmt(uint32_t ch)
 {
+	//ZoneScoped;
 	static constexpr std::array extFormats = { 0, GL_RED, GL_RG , GL_RGB , GL_RGBA }; // GL_R is not accepted for [1]
 	return extFormats[ch];
 }
 
 int32_t CBitmap::ExtFmtToChannels(int32_t extFmt)
 {
+	//ZoneScoped;
 	// IL_COLOUR_INDEX is transformed elsewhere
 
 	switch (extFmt) {
@@ -1141,6 +1169,7 @@ int32_t CBitmap::ExtFmtToChannels(int32_t extFmt)
 #ifndef HEADLESS
 int32_t CBitmap::GetIntFmt() const
 {
+	//ZoneScoped;
 	constexpr uint32_t intFormats[3][5] = {
 			{ 0, GL_R8   , GL_RG8  , GL_RGB8  , GL_RGBA8   },
 			{ 0, GL_R16  , GL_RG16 , GL_RGB16 , GL_RGBA16  },
@@ -1165,6 +1194,7 @@ int32_t CBitmap::GetIntFmt() const { return 0; }
 
 bool CBitmap::CondReinterpret(int w, int h, int c, uint32_t dt)
 {
+	//ZoneScoped;
 #ifdef HEADLESS
 	return true;
 #else
@@ -1182,6 +1212,7 @@ bool CBitmap::CondReinterpret(int w, int h, int c, uint32_t dt)
 
 bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t reqChannel, uint32_t reqDataType, bool forceReplaceAlpha)
 {
+	//ZoneScoped;
 	bool isLoaded = false;
 	bool isValid  = false;
 	bool hasAlpha = false;
@@ -1387,6 +1418,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 
 bool CBitmap::LoadGrayscale(const std::string& filename)
 {
+	//ZoneScoped;
 	const size_t curMemSize = GetMemSize();
 
 	compressed = false;
@@ -1445,6 +1477,7 @@ bool CBitmap::LoadGrayscale(const std::string& filename)
 namespace {
 	bool SaveToFile(const ILchar* p, const std::string& ext)
 	{
+		//ZoneScoped;
 		bool success = false;
 
 		switch (hashString(ext)) {
@@ -1471,6 +1504,7 @@ namespace {
 
 bool CBitmap::Save(const std::string& filename, bool dontSaveAlpha, bool logged, unsigned quality) const
 {
+	//ZoneScoped;
 	if (compressed) {
 		#ifndef HEADLESS
 		return ddsimage.save(filename);
@@ -1549,6 +1583,7 @@ bool CBitmap::Save(const std::string& filename, bool dontSaveAlpha, bool logged,
 
 bool CBitmap::SaveGrayScale(const std::string& filename) const
 {
+	//ZoneScoped;
 	if (compressed)
 		return false;
 
@@ -1583,6 +1618,7 @@ bool CBitmap::SaveGrayScale(const std::string& filename) const
 
 bool CBitmap::SaveFloat(std::string const& filename) const
 {
+	//ZoneScoped;
 	if (GetMemSize() == 0 || channels != 1 || dataType != IL_FLOAT)
 		return false;
 
@@ -1643,6 +1679,7 @@ bool CBitmap::SaveFloat(std::string const& filename) const
 #ifndef HEADLESS
 uint32_t CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const
 {
+	//ZoneScoped;
 	if (compressed)
 		return CreateDDSTexture(texID, aniso, lodBias, mipmaps);
 
@@ -1685,6 +1722,7 @@ uint32_t CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32
 
 static void HandleDDSMipmap(GLenum target, bool mipmaps, int num_mipmaps)
 {
+	//ZoneScoped;
 	if (num_mipmaps > 0) {
 		// dds included the MipMaps use them
 		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -1702,6 +1740,7 @@ static void HandleDDSMipmap(GLenum target, bool mipmaps, int num_mipmaps)
 
 uint32_t CBitmap::CreateDDSTexture(uint32_t texID, float aniso, float lodBias, bool mipmaps) const
 {
+	//ZoneScoped;
 	glPushAttrib(GL_TEXTURE_BIT);
 
 	if (texID == 0)
@@ -1776,10 +1815,12 @@ uint32_t CBitmap::CreateDDSTexture(uint32_t texID, float aniso, float lodBias, b
 #else  // !HEADLESS
 
 uint32_t CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32_t texID) const {
+	//ZoneScoped;
 	return 0;
 }
 
 uint32_t CBitmap::CreateDDSTexture(uint32_t texID, float aniso, float lodBias, bool mipmaps) const {
+	//ZoneScoped;
 	return 0;
 }
 #endif // !HEADLESS
@@ -1787,6 +1828,7 @@ uint32_t CBitmap::CreateDDSTexture(uint32_t texID, float aniso, float lodBias, b
 
 void CBitmap::CreateAlpha(uint8_t red, uint8_t green, uint8_t blue)
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -1799,6 +1841,7 @@ void CBitmap::CreateAlpha(uint8_t red, uint8_t green, uint8_t blue)
 
 void CBitmap::SetTransparent(const SColor& c, const SColor trans)
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -1811,6 +1854,7 @@ void CBitmap::SetTransparent(const SColor& c, const SColor trans)
 
 void CBitmap::Renormalize(const float3& newCol)
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -1822,6 +1866,7 @@ void CBitmap::Renormalize(const float3& newCol)
 
 void CBitmap::Blur(int iterations, float weight)
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -1835,6 +1880,7 @@ void CBitmap::Blur(int iterations, float weight)
 
 void CBitmap::Fill(const SColor& c)
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -1846,6 +1892,7 @@ void CBitmap::Fill(const SColor& c)
 
 void CBitmap::ReplaceAlpha(float a)
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -1858,6 +1905,7 @@ void CBitmap::ReplaceAlpha(float a)
 
 void CBitmap::CopySubImage(const CBitmap& src, int xpos, int ypos)
 {
+	//ZoneScoped;
 	if ((xpos + src.xsize) > xsize || (ypos + src.ysize) > ysize) {
 		LOG_L(L_WARNING, "CBitmap::CopySubImage src image does not fit into dst!");
 		return;
@@ -1884,6 +1932,7 @@ void CBitmap::CopySubImage(const CBitmap& src, int xpos, int ypos)
 
 CBitmap CBitmap::CanvasResize(const int newx, const int newy, const bool center) const
 {
+	//ZoneScoped;
 	CBitmap bm;
 
 	if (xsize > newx || ysize > newy) {
@@ -1904,6 +1953,7 @@ CBitmap CBitmap::CanvasResize(const int newx, const int newy, const bool center)
 
 SDL_Surface* CBitmap::CreateSDLSurface()
 {
+	//ZoneScoped;
 	SDL_Surface* surface = nullptr;
 
 	if (channels < 3 && GetDataTypeSize() != 1) {
@@ -1924,6 +1974,7 @@ SDL_Surface* CBitmap::CreateSDLSurface()
 
 CBitmap CBitmap::CreateRescaled(int newx, int newy) const
 {
+	//ZoneScoped;
 	newx = std::max(1, newx);
 	newy = std::max(1, newy);
 
@@ -1954,6 +2005,7 @@ CBitmap CBitmap::CreateRescaled(int newx, int newy) const
 
 void CBitmap::InvertColors()
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -1966,6 +2018,7 @@ void CBitmap::InvertColors()
 
 void CBitmap::InvertAlpha()
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return; // Don't try to invert DDS
@@ -1978,6 +2031,7 @@ void CBitmap::InvertAlpha()
 
 void CBitmap::MakeGrayScale()
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -1989,6 +2043,7 @@ void CBitmap::MakeGrayScale()
 
 void CBitmap::Tint(const float tint[3])
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return;
@@ -2001,6 +2056,7 @@ void CBitmap::Tint(const float tint[3])
 
 void CBitmap::ReverseYAxis()
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (compressed)
 		return; // don't try to flip DDS

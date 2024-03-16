@@ -22,6 +22,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 static constexpr float SMF_TEXSQUARE_SIZE = 1024.0f;
 
 
@@ -33,6 +35,7 @@ ISMFRenderState* ISMFRenderState::GetInstance(bool luaShaders, bool noop) {
 }
 
 bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
+	//ZoneScoped;
 	const std::string names[GLSL_SHADER_COUNT] = {
 		"SMFShaderGLSL-Forward-Std",
 		"SMFShaderGLSL-Forward-Adv",
@@ -64,6 +67,7 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 }
 
 void SMFRenderStateGLSL::Kill() {
+	//ZoneScoped;
 	if (useLuaShaders) {
 		// make sure SH deletes only the wrapper objects; programs are managed by LuaShaders
 		for (uint32_t n = GLSL_SHADER_FWD_STD; n < GLSL_SHADER_COUNT; n++) {
@@ -82,6 +86,7 @@ void SMFRenderStateGLSL::Update(
 	const CSMFGroundDrawer* smfGroundDrawer,
 	const LuaMapShaderData* luaMapShaderData
 ) {
+	//ZoneScoped;
 	if (useLuaShaders) {
 		assert(luaMapShaderData != nullptr);
 
@@ -189,16 +194,19 @@ void SMFRenderStateGLSL::Update(
 }
 
 bool SMFRenderStateGLSL::HasValidShader(const DrawPass::e& drawPass) const {
+	//ZoneScoped;
 	Shader::IProgramObject* shader = (drawPass == DrawPass::TerrainDeferred) ? glslShaders[GLSL_SHADER_DFR_ADV] : currShader;
 	return (shader != nullptr && shader->IsValid());
 }
 
 bool SMFRenderStateGLSL::CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const
 {
+	//ZoneScoped;
 	return CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_DFR_ADV);
 }
 
 void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	//ZoneScoped;
 	if (useLuaShaders) {
 		// use raw, GLSLProgramObject::Enable also calls RecompileIfNeeded
 		currShader->EnableRaw();
@@ -264,6 +272,7 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 }
 
 void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	//ZoneScoped;
 	if (useLuaShaders) {
 		glActiveTexture(GL_TEXTURE0);
 		currShader->DisableRaw();
@@ -283,12 +292,14 @@ void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const 
 }
 
 void SMFRenderStateGLSL::SetSquareTexGen(const int sqx, const int sqy) const {
+	//ZoneScoped;
 	// needs to be set even for Lua shaders, is unknowable otherwise
 	// (works because SMFGroundDrawer::SetupBigSquare always calls us)
 	currShader->SetUniform("texSquare", sqx, sqy);
 }
 
 void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	//ZoneScoped;
 	if (drawPass == DrawPass::TerrainDeferred) {
 		currShader = glslShaders[GLSL_SHADER_DFR_ADV];
 		return;
@@ -302,6 +313,7 @@ void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawe
 
 void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 {
+	//ZoneScoped;
 	assert(currShader && !currShader->IsBound());
 
 	for (uint32_t n = GLSL_SHADER_FWD_ADV; n < GLSL_SHADER_COUNT; n++) {
@@ -317,5 +329,6 @@ void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 
 bool SMFRenderStateGLSL::CanUseAdvShading(const CSMFGroundDrawer* smfGroundDrawer, ShaderStage shStage) const
 {
+	//ZoneScoped;
 	return smfGroundDrawer->UseAdvShading() && glslShaders[shStage]->IsValid();
 }

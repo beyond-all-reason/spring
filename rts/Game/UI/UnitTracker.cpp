@@ -18,6 +18,8 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CUnitTracker unitTracker;
 
@@ -29,6 +31,7 @@ const char* CUnitTracker::modeNames[TrackModeCount] = {
 };
 
 bool IsInvalidUnitForSelection(int unitID) {
+	//ZoneScoped;
 	CUnit* u = unitHandler.GetUnit(unitID);
 	if (!u)
 		return true;
@@ -45,6 +48,7 @@ bool IsInvalidUnitForSelection(int unitID) {
 
 void CUnitTracker::Disable()
 {
+	//ZoneScoped;
 	smoothedRight = RgtVector;
 	enabled = false;
 }
@@ -52,12 +56,14 @@ void CUnitTracker::Disable()
 
 int CUnitTracker::GetMode() const
 {
+	//ZoneScoped;
 	return trackMode;
 }
 
 
 void CUnitTracker::IncMode()
 {
+	//ZoneScoped;
 	trackMode = (trackMode + 1) % TrackModeCount;
 	LOG("TrackMode: %s", modeNames[trackMode]);
 }
@@ -65,6 +71,7 @@ void CUnitTracker::IncMode()
 
 void CUnitTracker::SetMode(int mode)
 {
+	//ZoneScoped;
 	trackMode = std::clamp(mode, 0, TrackModeCount - 1);
 	LOG("TrackMode: %s", modeNames[trackMode]);
 }
@@ -74,6 +81,7 @@ void CUnitTracker::SetMode(int mode)
 
 void CUnitTracker::Track(std::vector<int>&& unitIDs)
 {
+	//ZoneScoped;
 	spring::VectorEraseAllIf(unitIDs, IsInvalidUnitForSelection);
 
 	if (!unitIDs.empty())
@@ -123,6 +131,7 @@ void CUnitTracker::Track(std::vector<int>&& unitIDs)
 
 void CUnitTracker::MakeTrackGroup()
 {
+	//ZoneScoped;
 	smoothedRight = RgtVector;
 	trackedUnitIDs.clear();
 
@@ -133,6 +142,7 @@ void CUnitTracker::MakeTrackGroup()
 
 void CUnitTracker::CleanTrackGroup()
 {
+	//ZoneScoped;
 	invalidUnitIDs.clear();
 	invalidUnitIDs.reserve(trackedUnitIDs.size());
 
@@ -160,6 +170,7 @@ void CUnitTracker::CleanTrackGroup()
 
 void CUnitTracker::NextUnit()
 {
+	//ZoneScoped;
 	if (trackedUnitIDs.empty())
 		return;
 
@@ -181,6 +192,7 @@ void CUnitTracker::NextUnit()
 
 CUnit* CUnitTracker::GetTrackUnit()
 {
+	//ZoneScoped;
 	CleanTrackGroup();
 
 	if (trackedUnitIDs.empty()) {
@@ -194,6 +206,7 @@ CUnit* CUnitTracker::GetTrackUnit()
 
 float3 CUnitTracker::CalcAveragePos() const
 {
+	//ZoneScoped;
 	float3 p;
 
 	for (const int unitID: trackedUnitIDs) {
@@ -206,6 +219,7 @@ float3 CUnitTracker::CalcAveragePos() const
 
 float3 CUnitTracker::CalcExtentsPos() const
 {
+	//ZoneScoped;
 	float3 minPos(+1e9f, +1e9f, +1e9f);
 	float3 maxPos(-1e9f, -1e9f, -1e9f);
 
@@ -224,6 +238,7 @@ float3 CUnitTracker::CalcExtentsPos() const
 
 void CUnitTracker::SetCam()
 {
+	//ZoneScoped;
 	CUnit* u = GetTrackUnit();
 
 	if (u == nullptr) {

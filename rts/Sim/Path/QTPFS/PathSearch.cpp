@@ -28,6 +28,8 @@
 
 #include "System/float3.h"
 
+#include <tracy/Tracy.hpp>
+
 int QTPFS::PathSearch::MAP_MAX_NODES_SEARCHED;
 float QTPFS::PathSearch::MAP_RELATIVE_MAX_NODES_SEARCHED;
 
@@ -43,6 +45,7 @@ void QTPFS::PathSearch::InitStatic() {
 // The bit shift needed for the power of two number that is slightly bigger than the given number.
 int GetNextBitShift(int n)
 {
+	//ZoneScoped;
     // n = n - 1;
     // while (n & n - 1) {
     //     n = n & n - 1;
@@ -57,6 +60,7 @@ int GetNextBitShift(int n)
 }
 
 void CopyNodeBoundaries(QTPFS::SearchNode& dest, const QTPFS::INode& src) {
+	//ZoneScoped;
 	dest.xmin = src.xmin();
 	dest.zmin = src.zmin();
 	dest.xmax = src.xmax();
@@ -69,6 +73,7 @@ void QTPFS::PathSearch::Initialize(
 	const float3& targetPoint,
 	const CSolidObject* owner
 ) {
+	//ZoneScoped;
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
 	fwd.srcPoint = sourcePoint; fwd.srcPoint.ClampInBounds(); fwd.srcPoint.y = 0.f;
@@ -239,6 +244,7 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 // #pragma GCC pop_options
 
 bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
+	//ZoneScoped;
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
 	haveFullPath = (fwd.srcSearchNode == fwd.tgtSearchNode);
@@ -255,6 +261,7 @@ bool QTPFS::PathSearch::Execute(unsigned int searchStateOffset) {
 }
 
 void QTPFS::PathSearch::InitStartingSearchNodes() {
+	//ZoneScoped;
 	fwdPathConnected = false;
 	bwdPathConnected = false;
 
@@ -282,6 +289,7 @@ void QTPFS::PathSearch::InitStartingSearchNodes() {
 }
 
 void QTPFS::PathSearch::UpdateHcostMult() {
+	//ZoneScoped;
 	auto& comp = systemGlobals.GetSystemComponent<PathSpeedModInfoSystemComponent>();
 
 	// be as optimistic as possible: assume the remainder of our path will
@@ -307,6 +315,7 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 }
 
 void QTPFS::PathSearch::RemoveOutdatedOpenNodesFromQueue(int searchDir) {
+	//ZoneScoped;
 	// Remove any out-of-date node entries in the queue.
 	DirectionalSearchData& searchData = directionalSearchData[searchDir];
 
@@ -325,6 +334,7 @@ void QTPFS::PathSearch::RemoveOutdatedOpenNodesFromQueue(int searchDir) {
 }
 
 bool QTPFS::PathSearch::IsNodeActive(const SearchNode& curSearchNode) const {
+	//ZoneScoped;
 	// prevNode catches all cases except the starting node.
 	// Path H-cost will avoid reporting unwalked target node as a false positive, but catch starting node.
 	return (curSearchNode.GetPrevNode() != nullptr)
@@ -332,11 +342,13 @@ bool QTPFS::PathSearch::IsNodeActive(const SearchNode& curSearchNode) const {
 }
 
 static float CircularEaseOut(float t) {
+	//ZoneScoped;
 	// Only using 0-1 range, the sqrt is too intense early on.
 	return /*math::sqrt(*/ 1 - Square(t-1); //);
 }
 
 void QTPFS::PathSearch::SetForwardSearchLimit() {
+	//ZoneScoped;
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
@@ -661,6 +673,7 @@ bool QTPFS::PathSearch::ExecuteRawSearch() {
 
 
 void QTPFS::PathSearch::ResetState(SearchNode* node, struct DirectionalSearchData& searchData) {
+	//ZoneScoped;
 	// will be copied into srcNode by UpdateNode()
 	netPoints[0] = {searchData.srcPoint.x, searchData.srcPoint.z};
 
@@ -682,6 +695,7 @@ void QTPFS::PathSearch::ResetState(SearchNode* node, struct DirectionalSearchDat
 }
 
 void QTPFS::PathSearch::UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx) {
+	//ZoneScoped;
 	// NOTE:
 	//   the heuristic must never over-estimate the distance,
 	//   but this is *impossible* to achieve on a non-regular
@@ -747,6 +761,7 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 }
 
 void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int searchDir) {
+	//ZoneScoped;
 	DirectionalSearchData& searchData = directionalSearchData[searchDir];
 
 	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
@@ -931,6 +946,7 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 }
 
 void QTPFS::PathSearch::GetRectangleCollisionVolume(const QTPFS::SearchNode& snode, CollisionVolume& v, float3& rm) const {
+	//ZoneScoped;
 	float3 vScales;
 	
 	// We cannot guarantee that the searchNode has been loaded with the quad dimensions.
@@ -952,6 +968,7 @@ void QTPFS::PathSearch::GetRectangleCollisionVolume(const QTPFS::SearchNode& sno
 }
 
 float3 QTPFS::PathSearch::FindNearestPointOnNodeToGoal(const QTPFS::SearchNode& node, const float3& goalPos) const {
+	//ZoneScoped;
 	CollisionVolume rv;
 	CollisionQuery cq;
 	float3 rm;
@@ -970,6 +987,7 @@ float3 QTPFS::PathSearch::FindNearestPointOnNodeToGoal(const QTPFS::SearchNode& 
 }
 
 void QTPFS::PathSearch::TracePath(IPath* path) {
+	//ZoneScoped;
 	constexpr uint32_t ONLY_NODE_ID_MASK = 0x80000000;
 	struct TracePoint{
 		float3 point;
@@ -1271,6 +1289,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 }
 
 void QTPFS::PathSearch::SmoothPath(IPath* path) {
+	//ZoneScoped;
 	if (path->NumPoints() == 2)
 		return;
 
@@ -1283,6 +1302,7 @@ void QTPFS::PathSearch::SmoothPath(IPath* path) {
 }
 
 bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
+	//ZoneScoped;
 	// smooth in reverse order (target to source)
 	//
 	// should terminate when waypoints stop moving,
@@ -1357,6 +1377,7 @@ bool QTPFS::PathSearch::SmoothPathIter(IPath* path) {
 
 // Only smooths the beginning of the path.
 void QTPFS::PathSearch::SmoothSharedPath(IPath* path) {
+	//ZoneScoped;
 	// No smoothing can be done on 2 points.
 	if (path->NumPoints() <= 2)
 		return;
@@ -1410,6 +1431,7 @@ void QTPFS::PathSearch::SmoothSharedPath(IPath* path) {
 }
 
 int QTPFS::PathSearch::SmoothPathPoints(const INode* nn0, const INode* nn1, const float3& p0, const float3& p1, const float3& p2, float3& result) const {
+	//ZoneScoped;
 	float3 pi = ZeroVector;
 
 	const unsigned int ngbRel = nn0->GetNeighborRelation(nn1);
@@ -1533,6 +1555,7 @@ int QTPFS::PathSearch::SmoothPathPoints(const INode* nn0, const INode* nn1, cons
 
 
 bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
+	//ZoneScoped;
 	assert(dstPath->GetID() != 0);
 	assert(dstPath->GetID() != srcPath->GetID());
 	// assert(dstPath->NumPoints() == 2);
@@ -1570,12 +1593,14 @@ bool QTPFS::PathSearch::SharedFinalize(const IPath* srcPath, IPath* dstPath) {
 }
 
 unsigned int GetChildId(uint32_t nodeNumber, uint32_t i, uint32_t rootMask) {
+	//ZoneScoped;
 	uint32_t rootId = rootMask & nodeNumber;
 	uint32_t nodeId = ((~rootMask) & nodeNumber);
 	return rootId | ((nodeId << 2) + (i + 1));
 }
 
 const QTPFS::PathHashType QTPFS::PathSearch::GenerateHash(const INode* srcNode, const INode* tgtNode) const {
+	//ZoneScoped;
 	uint32_t nodeSize = srcNode->xsize();
 
 	if (rawPathCheck)
@@ -1603,6 +1628,7 @@ const QTPFS::PathHashType QTPFS::PathSearch::GenerateHash(const INode* srcNode, 
 }
 
 const QTPFS::PathHashType QTPFS::PathSearch::GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const {
+	//ZoneScoped;
 	uint32_t srcNodeSize = srcNode->xsize();
 	uint32_t tgtNodeSize = tgtNode->xsize();
 
@@ -1637,6 +1663,7 @@ const QTPFS::PathHashType QTPFS::PathSearch::GenerateVirtualHash(const INode* sr
 }
 
 const QTPFS::PathHashType QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_t dest) const {
+	//ZoneScoped;
 	std::uint64_t k = nodeLayer->GetNodelayer();
 	PathHashType result(std::uint64_t(src) + ((std::uint64_t(dest) << 32)), k);
 
@@ -1644,6 +1671,7 @@ const QTPFS::PathHashType QTPFS::PathSearch::GenerateHash2(uint32_t src, uint32_
 }
 
 const std::uint32_t QTPFS::PathSearch::GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const {
+	//ZoneScoped;
 	uint32_t nodeSize = startNode->xsize();
 	uint32_t srcNodeNumber = startNode->GetNodeNumber();
 	uint32_t xoff = startNode->xmin();

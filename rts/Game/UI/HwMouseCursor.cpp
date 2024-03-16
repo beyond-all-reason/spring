@@ -31,6 +31,8 @@
 
 #include <cstring> // memset
 
+#include <tracy/Tracy.hpp>
+
 
 
 
@@ -267,6 +269,7 @@ void HardwareCursorWindows::Init(CMouseCursor::HotSpot hs)
 
 void HardwareCursorWindows::Kill()
 {
+	//ZoneScoped;
 	if (cursor != nullptr)
 		DestroyCursor(cursor);
 
@@ -279,6 +282,7 @@ void HardwareCursorWindows::Kill()
 
 void HardwareCursorWindows::PushImage(int xsize, int ysize, const void* mem)
 {
+	//ZoneScoped;
 	xmaxsize = std::max(xmaxsize, xsize);
 	ymaxsize = std::max(ymaxsize, ysize);
 
@@ -296,11 +300,13 @@ void HardwareCursorWindows::PushImage(int xsize, int ysize, const void* mem)
 
 void HardwareCursorWindows::SetDelay(float delay)
 {
+	//ZoneScoped;
 	framerates.back() = std::max(int(delay * 60.0f), 1);
 }
 
 void HardwareCursorWindows::PushFrame(int index, float delay)
 {
+	//ZoneScoped;
 	if (index >= imageCount)
 		return;
 
@@ -310,6 +316,7 @@ void HardwareCursorWindows::PushFrame(int index, float delay)
 
 void HardwareCursorWindows::resizeImage(ImageData* image, int new_x, int new_y)
 {
+	//ZoneScoped;
 	if (image->width == new_x && image->height == new_y)
 		return;
 
@@ -330,6 +337,7 @@ void HardwareCursorWindows::resizeImage(ImageData* image, int new_x, int new_y)
 
 void HardwareCursorWindows::buildIco(unsigned char* dst, ImageData& image)
 {
+	//ZoneScoped;
 	const int xsize = image.width;
 	const int ysize = image.height;
 
@@ -420,6 +428,7 @@ void HardwareCursorWindows::buildIco(unsigned char* dst, ImageData& image)
 
 static inline int GetBestCursorSize(const int minSize)
 {
+	//ZoneScoped;
 	constexpr int stdSizes[] = {/*16,*/ 32, 48, 64, 96, 128};
 	for (const int s: stdSizes)
 		if (s >= minSize)
@@ -431,6 +440,7 @@ static inline int GetBestCursorSize(const int minSize)
 
 void HardwareCursorWindows::Finish()
 {
+	//ZoneScoped;
 	if (frames.empty())
 		return;
 
@@ -539,6 +549,7 @@ void HardwareCursorWindows::Finish()
 
 void HardwareCursorWindows::Bind()
 {
+	//ZoneScoped;
 	#if 0
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
@@ -563,6 +574,7 @@ void HardwareCursorWindows::Bind()
 
 void HardwareCursorX11::Init(CMouseCursor::HotSpot hs)
 {
+	//ZoneScoped;
 	cursor   = 0;
 	hotSpot  = hs;
 	xmaxsize = 0;
@@ -571,6 +583,7 @@ void HardwareCursorX11::Init(CMouseCursor::HotSpot hs)
 
 void HardwareCursorX11::Kill()
 {
+	//ZoneScoped;
 	for (XcursorImage* img: cimages)
 		XcursorImageDestroy(img);
 
@@ -592,6 +605,7 @@ void HardwareCursorX11::Kill()
 
 void HardwareCursorX11::resizeImage(XcursorImage*& image, const int new_x, const int new_y)
 {
+	//ZoneScoped;
 	if (int(image->width) == new_x && int(image->height) == new_y)
 		return;
 
@@ -617,6 +631,7 @@ void HardwareCursorX11::resizeImage(XcursorImage*& image, const int new_x, const
 
 void HardwareCursorX11::PushImage(int xsize, int ysize, const void* mem)
 {
+	//ZoneScoped;
 	xmaxsize = std::max(xmaxsize, xsize);
 	ymaxsize = std::max(ymaxsize, ysize);
 
@@ -641,6 +656,7 @@ void HardwareCursorX11::PushImage(int xsize, int ysize, const void* mem)
 
 void HardwareCursorX11::SetDelay(float delay)
 {
+	//ZoneScoped;
 	cimages.back()->delay = (XcursorUInt)(delay*1000.0f); //in millseconds
 }
 
@@ -662,6 +678,7 @@ void HardwareCursorX11::PushFrame(int index, float delay)
 
 void HardwareCursorX11::Finish()
 {
+	//ZoneScoped;
 	if (cimages.empty())
 		return;
 
@@ -697,6 +714,7 @@ void HardwareCursorX11::Finish()
 
 void HardwareCursorX11::Bind()
 {
+	//ZoneScoped;
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
 
@@ -713,6 +731,7 @@ void HardwareCursorX11::Bind()
 
 void HardwareCursorSDL::PushImage(int xsize, int ysize, const void* mem)
 {
+	//ZoneScoped;
     auto surface = SDL_CreateRGBSurface(0, xsize, ysize, 32, 0x000000FF, 0x0000FF00, 0x00FF0000,  0xFF000000);
     if (!surface) {
         LOG_L(L_ERROR, "SDL_CreateRGBSurface failed: %s", SDL_GetError());
@@ -724,6 +743,7 @@ void HardwareCursorSDL::PushImage(int xsize, int ysize, const void* mem)
 
 void HardwareCursorSDL::PushFrame(int index, float delay)
 {
+	//ZoneScoped;
     if (index >= this->frames.size()) {
         return;
     }
@@ -737,6 +757,7 @@ void HardwareCursorSDL::PushFrame(int index, float delay)
 
 void HardwareCursorSDL::Update(float animTime)
 {
+	//ZoneScoped;
     float accumulated_time = 0;
     auto elem = this->frames.begin();
     while (elem != this->frames.end()) {
@@ -751,6 +772,7 @@ void HardwareCursorSDL::Update(float animTime)
 
 void HardwareCursorSDL::SetDelay(float delay)
 {
+	//ZoneScoped;
     if (!this->frames.empty()) {
         this->frames.back().delay = delay;
     }
@@ -758,11 +780,13 @@ void HardwareCursorSDL::SetDelay(float delay)
 
 void HardwareCursorSDL::SetHotSpot(CMouseCursor::HotSpot hs)
 {
+	//ZoneScoped;
     hotSpot = hs;
 }
 
 void HardwareCursorSDL::Finish()
 {
+	//ZoneScoped;
     for (auto &c : this->frames) {
         auto hotx = (hotSpot == CMouseCursor::TopLeft) ? 0 : c.surface->w / 2;
         auto hoty = (hotSpot == CMouseCursor::TopLeft) ? 0 : c.surface->h / 2;
@@ -777,11 +801,13 @@ void HardwareCursorSDL::Finish()
 
 void HardwareCursorSDL::Init(CMouseCursor::HotSpot hs)
 {
+	//ZoneScoped;
     hotSpot = hs;
 }
 
 void HardwareCursorSDL::Kill()
 {
+	//ZoneScoped;
     for (auto &c : this->frames) {
         if (c.cursor) {
             SDL_FreeCursor(c.cursor);
@@ -795,6 +821,7 @@ void HardwareCursorSDL::Kill()
 
 void HardwareCursorSDL::Bind()
 {
+	//ZoneScoped;
     SDL_ShowCursor(SDL_ENABLE);
     if (!this->frames.empty()) {
         SDL_SetCursor(this->frames[0].cursor);

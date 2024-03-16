@@ -9,6 +9,8 @@
 #include "Sim/Units/UnitLoader.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND_DERIVED(CBuilding, CUnit, )
 CR_REG_METADATA(CBuilding, (
@@ -19,12 +21,14 @@ CR_REG_METADATA(CBuilding, (
 
 void CBuilding::PostLoad()
 {
+	//ZoneScoped;
 	blockMap = unitDef->GetYardMapPtr();
 }
 
 
 void CBuilding::PreInit(const UnitLoadParams& params)
 {
+	//ZoneScoped;
 	unitDef = params.unitDef;
 	blockMap = unitDef->GetYardMapPtr(); // null if empty
 	blockHeightChanges = unitDef->levelGround;
@@ -34,6 +38,7 @@ void CBuilding::PreInit(const UnitLoadParams& params)
 
 void CBuilding::PostInit(const CUnit* builder)
 {
+	//ZoneScoped;
 	if (unitDef->cantBeTransported)
 		mass = CSolidObject::DEFAULT_MASS;
 
@@ -42,6 +47,7 @@ void CBuilding::PostInit(const CUnit* builder)
 
 
 void CBuilding::ForcedMove(const float3& newPos) {
+	//ZoneScoped;
 	// heading might have changed if building was dropped from transport
 	// (always needs to be axis-aligned because yardmaps are not rotated)
 	heading = GetHeadingFromFacing(buildFacing);

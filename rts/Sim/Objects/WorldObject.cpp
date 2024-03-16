@@ -4,6 +4,9 @@
 #include "Rendering/Models/3DModel.h"
 #include "System/Threading/ThreadPool.h"
 
+#include <tracy/Tracy.hpp>
+
+
 CR_BIND_DERIVED(CWorldObject, CObject, )
 CR_REG_METADATA(CWorldObject, (
 	CR_MEMBER(id),
@@ -28,6 +31,7 @@ CR_REG_METADATA(CWorldObject, (
 
 void CWorldObject::SetRadiusAndHeight(const S3DModel* mdl)
 {
+	//ZoneScoped;
 	// initial values; can be overridden by LSC::Set*RadiusAndHeight
 	SetRadiusAndHeight(mdl->radius, mdl->height);
 

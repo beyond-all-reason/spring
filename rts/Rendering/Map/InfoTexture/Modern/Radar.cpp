@@ -11,6 +11,8 @@
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 
 
 CRadarTexture::CRadarTexture()
@@ -114,6 +116,7 @@ CRadarTexture::CRadarTexture()
 
 CRadarTexture::~CRadarTexture()
 {
+	//ZoneScoped;
 	glDeleteTextures(1, &uploadTexRadar);
 	glDeleteTextures(1, &uploadTexJammer);
 	shaderHandler->ReleaseProgramObject("[CRadarTexture]", "CRadarTexture");
@@ -122,6 +125,7 @@ CRadarTexture::~CRadarTexture()
 
 void CRadarTexture::UpdateCPU()
 {
+	//ZoneScoped;
 	infoTexPBO.Bind();
 	auto infoTexMem = reinterpret_cast<unsigned char*>(infoTexPBO.MapBuffer());
 
@@ -159,6 +163,7 @@ void CRadarTexture::UpdateCPU()
 
 void CRadarTexture::Update()
 {
+	//ZoneScoped;
 	if (!fbo.IsValid() || !shader->IsValid() || uploadTexRadar == 0 || uploadTexJammer == 0)
 		return UpdateCPU();
 

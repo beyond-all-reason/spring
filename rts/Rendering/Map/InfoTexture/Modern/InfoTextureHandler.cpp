@@ -10,6 +10,8 @@
 #include "Path.h"
 #include "Radar.h"
 
+#include <tracy/Tracy.hpp>
+
 
 
 
@@ -36,6 +38,7 @@ CInfoTextureHandler::CInfoTextureHandler()
 
 CInfoTextureHandler::~CInfoTextureHandler()
 {
+	//ZoneScoped;
 	for (auto& pitex: infoTextures) {
 		delete pitex.second;
 	}
@@ -45,12 +48,14 @@ CInfoTextureHandler::~CInfoTextureHandler()
 
 void CInfoTextureHandler::AddInfoTexture(CPboInfoTexture* itex)
 {
+	//ZoneScoped;
 	infoTextures[itex->GetName()] = itex;
 }
 
 
 const CInfoTexture* CInfoTextureHandler::GetInfoTextureConst(const std::string& name) const
 {
+	//ZoneScoped;
 	static const CDummyInfoTexture dummy;
 
 	const auto it = infoTextures.find(name);
@@ -63,18 +68,21 @@ const CInfoTexture* CInfoTextureHandler::GetInfoTextureConst(const std::string& 
 
 CInfoTexture* CInfoTextureHandler::GetInfoTexture(const std::string& name)
 {
+	//ZoneScoped;
 	return (const_cast<CInfoTexture*>(GetInfoTextureConst(name)));
 }
 
 
 bool CInfoTextureHandler::IsEnabled() const
 {
+	//ZoneScoped;
 	return (infoTex->IsEnabled());
 }
 
 
 void CInfoTextureHandler::DisableCurrentMode()
 {
+	//ZoneScoped;
 	if (returnToLOS && (GetMode() != "los")) {
 		// return to LOS-mode if it was active before
 		SetMode("los");
@@ -87,6 +95,7 @@ void CInfoTextureHandler::DisableCurrentMode()
 
 void CInfoTextureHandler::SetMode(const std::string& name)
 {
+	//ZoneScoped;
 	returnToLOS &= (name !=      ""); // NOLINT(readability-container-size-empty)
 	returnToLOS |= (name ==   "los");
 	inMetalMode  = (name == "metal");
@@ -97,6 +106,7 @@ void CInfoTextureHandler::SetMode(const std::string& name)
 
 void CInfoTextureHandler::ToggleMode(const std::string& name)
 {
+	//ZoneScoped;
 	if (infoTex->GetMode() == name)
 		return (DisableCurrentMode());
 
@@ -106,22 +116,26 @@ void CInfoTextureHandler::ToggleMode(const std::string& name)
 
 const std::string& CInfoTextureHandler::GetMode() const
 {
+	//ZoneScoped;
 	return (infoTex->GetMode());
 }
 
 GLuint CInfoTextureHandler::GetCurrentInfoTexture() const
 {
+	//ZoneScoped;
 	return (infoTex->GetTexture());
 }
 
 int2 CInfoTextureHandler::GetCurrentInfoTextureSize() const
 {
+	//ZoneScoped;
 	return (infoTex->GetTexSize());
 }
 
 
 void CInfoTextureHandler::Update()
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE0);
 	glEnable(GL_TEXTURE_2D);
 

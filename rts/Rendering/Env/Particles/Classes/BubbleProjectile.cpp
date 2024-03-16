@@ -11,6 +11,8 @@
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CBubbleProjectile, CProjectile, )
 
 CR_REG_METADATA(CBubbleProjectile, (
@@ -54,6 +56,7 @@ CBubbleProjectile::CBubbleProjectile(
 
 void CBubbleProjectile::Update()
 {
+	//ZoneScoped;
 	pos += speed;
 	--ttl;
 	size += sizeExpansion;
@@ -77,6 +80,7 @@ void CBubbleProjectile::Update()
 
 void CBubbleProjectile::Draw()
 {
+	//ZoneScoped;
 	unsigned char col[4];
 	col[0] = (unsigned char)(255 * alpha);
 	col[1] = (unsigned char)(255 * alpha);
@@ -97,12 +101,14 @@ void CBubbleProjectile::Draw()
 
 int CBubbleProjectile::GetProjectilesCount() const
 {
+	//ZoneScoped;
 	return 1;
 }
 
 
 bool CBubbleProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	//ZoneScoped;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

@@ -9,6 +9,8 @@
 #include "System/Net/PackPacket.h"
 #include "System/Net/UnpackPacket.h"
 
+#include <tracy/Tracy.hpp>
+
 using namespace netcode;
 
 CommandMessage::CommandMessage(const std::string& cmd, int playerID)
@@ -25,6 +27,7 @@ CommandMessage::CommandMessage(const Action& action, int playerID)
 
 CommandMessage::CommandMessage(std::shared_ptr<const netcode::RawPacket> pckt)
 {
+	//ZoneScoped;
 	assert(pckt->data[0] == NETMSG_CCOMMAND);
 	UnpackPacket packet(pckt, 3);
 	packet >> playerID;
@@ -34,6 +37,7 @@ CommandMessage::CommandMessage(std::shared_ptr<const netcode::RawPacket> pckt)
 
 const netcode::RawPacket* CommandMessage::Pack() const
 {
+	//ZoneScoped;
 	unsigned short size = 3 + sizeof(playerID) + action.command.size() + action.extra.size() + 2;
 	PackPacket* buffer = new PackPacket(size, NETMSG_CCOMMAND);
 	*buffer << size;

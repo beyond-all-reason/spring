@@ -30,6 +30,8 @@
 #include "System/LoadLock.h"
 #include "System/XSimdOps.hpp"
 
+#include <tracy/Tracy.hpp>
+
 #define SSMF_UNCOMPRESSED_NORMALS 0
 
 using std::max;
@@ -55,6 +57,7 @@ static std::vector<unsigned char> shadingPixels;
 
 CSMFReadMap::CSMFReadMap(const std::string& mapName): CEventClient("[CSMFReadMap]", 271950, false)
 {
+	//ZoneScoped;
 	loadscreen->SetLoadMessage("Loading SMF");
 	eventHandler.AddClient(this);
 
@@ -125,6 +128,7 @@ void CSMFReadMap::ParseHeader()
 
 void CSMFReadMap::LoadHeightMap()
 {
+	//ZoneScoped;
 	const SMFHeader& header = mapFile.GetHeader();
 
 	cornerHeightMapSynced.clear();
@@ -152,6 +156,7 @@ void CSMFReadMap::LoadHeightMap()
 
 void CSMFReadMap::LoadMinimap()
 {
+	//ZoneScoped;
 	CBitmap minimapTexBM;
 
 	if (minimapTexBM.Load(mapInfo->smf.minimapTexName)) {
@@ -183,6 +188,7 @@ void CSMFReadMap::LoadMinimap()
 
 void CSMFReadMap::InitializeWaterHeightColors()
 {
+	//ZoneScoped;
 	waterHeightColors.clear();
 	waterHeightColors.resize(1024 * 4, 0);
 
@@ -199,6 +205,7 @@ void CSMFReadMap::InitializeWaterHeightColors()
 
 void CSMFReadMap::CreateSpecularTex()
 {
+	//ZoneScoped;
 	if (!haveSpecularTexture)
 		return;
 
@@ -255,6 +262,7 @@ void CSMFReadMap::CreateSpecularTex()
 
 void CSMFReadMap::CreateSplatDetailTextures()
 {
+	//ZoneScoped;
 	if (!haveSplatDetailDistribTexture)
 		return;
 
@@ -312,6 +320,7 @@ void CSMFReadMap::CreateSplatDetailTextures()
 
 void CSMFReadMap::CreateGrassTex()
 {
+	//ZoneScoped;
 	grassShadingTex.SetRawTexID(minimapTex.GetID());
 	grassShadingTex.SetRawSize(int2(1024, 1024));
 
@@ -328,6 +337,7 @@ void CSMFReadMap::CreateGrassTex()
 
 void CSMFReadMap::CreateDetailTex()
 {
+	//ZoneScoped;
 	CBitmap detailTexBM;
 
 	if (!detailTexBM.Load(mapInfo->smf.detailTexName)) {
@@ -342,6 +352,7 @@ void CSMFReadMap::CreateDetailTex()
 
 void CSMFReadMap::CreateShadingTex()
 {
+	//ZoneScoped;
 	shadingTex.SetRawSize(int2(mapDims.pwr2mapx, mapDims.pwr2mapy));
 
 	// the shading/normal texture buffers must have PO2 dimensions
@@ -365,6 +376,7 @@ void CSMFReadMap::CreateShadingTex()
 
 void CSMFReadMap::CreateNormalTex()
 {
+	//ZoneScoped;
 	normalsTex.SetRawSize(int2(mapDims.mapxp1, mapDims.mapyp1));
 
 	if (!globalRendering->supportNonPowerOfTwoTex)
@@ -384,6 +396,7 @@ void CSMFReadMap::CreateNormalTex()
 
 void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
+	//ZoneScoped;
 	UpdateVertexNormalsUnsynced(update);
 	UpdateHeightBoundsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
@@ -393,6 +406,7 @@ void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 
 void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 {
+	//ZoneScoped;
 	static_assert(bigSquareSize == PATCH_SIZE, "");
 
 	for (uint32_t pz = 0; pz < numBigTexY; ++pz) {
@@ -419,6 +433,7 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 
 void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 {
+	//ZoneScoped;
 	//corner space, inclusive
 	for (int z = update.z1; z <= update.z2; z++) {
 		{
@@ -510,6 +525,7 @@ void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 
 void CSMFReadMap::UpdateHeightBoundsUnsynced(const SRectangle& update)
 {
+	//ZoneScoped;
 	const uint32_t minPatchX = std::max(update.x1 / bigSquareSize, (0             ));
 	const uint32_t minPatchZ = std::max(update.z1 / bigSquareSize, (0             ));
 	const uint32_t maxPatchX = std::min(update.x2 / bigSquareSize, (numBigTexX - 1));
@@ -529,6 +545,7 @@ void CSMFReadMap::UpdateHeightBoundsUnsynced(const SRectangle& update)
 
 void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 {
+	//ZoneScoped;
 
 	const auto& sfn = faceNormalsSynced;
 	      auto& ufn = faceNormalsUnsynced;
@@ -644,6 +661,7 @@ void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 
 void CSMFReadMap::UpdateNormalTexture(const SRectangle& update)
 {
+	//ZoneScoped;
 	// texture space is [0 .. mapDims.mapx] x [0 .. mapDims.mapy] (NPOT; vertex-aligned)
 	float3* vvn = &visVertexNormals[0];
 
@@ -682,6 +700,7 @@ void CSMFReadMap::UpdateNormalTexture(const SRectangle& update)
 
 void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
 {
+	//ZoneScoped;
 	// update the shading texture (even if the map has specular
 	// lighting, we still need it to modulate the minimap image)
 	// this can be done for diffuse lighting only
@@ -725,6 +744,7 @@ void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
 
 const float CSMFReadMap::GetCenterHeightUnsynced(const int x, const int y) const
 {
+	//ZoneScoped;
 	const float* hm = GetCornerHeightMapUnsynced();
 	const float h =
 		hm[(y    ) * mapDims.mapxp1 + (x    )] +
@@ -737,6 +757,7 @@ const float CSMFReadMap::GetCenterHeightUnsynced(const int x, const int y) const
 
 void CSMFReadMap::UpdateShadingTexPart(int idx1, int idx2, unsigned char* dst) const
 {
+	//ZoneScoped;
 	for (int idx = idx1; idx <= idx2; ++idx) {
 		const int i = idx - idx1;
 		const int xi = idx % mapDims.mapx;
@@ -778,6 +799,7 @@ void CSMFReadMap::UpdateShadingTexPart(int idx1, int idx2, unsigned char* dst) c
 
 float CSMFReadMap::DiffuseSunCoeff(const int x, const int y) const
 {
+	//ZoneScoped;
 	const float3& N = centerNormalsUnsynced[y * mapDims.mapx + x];
 	const float3& L = ISky::GetSky()->GetLight()->GetLightDir();
 	return std::clamp(L.dot(N), 0.0f, 1.0f);
@@ -786,6 +808,7 @@ float CSMFReadMap::DiffuseSunCoeff(const int x, const int y) const
 
 float3 CSMFReadMap::GetLightValue(const int x, const int y) const
 {
+	//ZoneScoped;
 	float3 light =
 		sunLighting->groundAmbientColor +
 		sunLighting->groundDiffuseColor * DiffuseSunCoeff(x, y);
@@ -799,6 +822,7 @@ float3 CSMFReadMap::GetLightValue(const int x, const int y) const
 
 void CSMFReadMap::SunChanged()
 {
+	//ZoneScoped;
 	if (shadingTexUpdateProgress < 0) {
 		shadingTexUpdateProgress = 0;
 	} else {
@@ -811,6 +835,7 @@ void CSMFReadMap::SunChanged()
 
 void CSMFReadMap::ReloadTextures()
 {
+	//ZoneScoped;
 	const auto reloadTextureFunc = [](const std::string& texName, MapTexture& mt, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) {
 		/// perhaps *mt.GetIDPtr() == 0 should not be reloaded
 
@@ -843,6 +868,7 @@ void CSMFReadMap::ReloadTextures()
 
 void CSMFReadMap::UpdateShadingTexture()
 {
+	//ZoneScoped;
 	if (shadingTexUpdateProgress < 0)
 		return;
 
@@ -881,6 +907,7 @@ void CSMFReadMap::UpdateShadingTexture()
 
 int2 CSMFReadMap::GetPatch(int hmx, int hmz) const
 {
+	//ZoneScoped;
 	return int2 {
 		std::clamp(hmx, 0, numBigTexX - 1),
 		std::clamp(hmz, 0, numBigTexY - 1)
@@ -889,6 +916,7 @@ int2 CSMFReadMap::GetPatch(int hmx, int hmz) const
 
 void CSMFReadMap::BindMiniMapTextures() const
 {
+	//ZoneScoped;
 	// tc (0,0) - (1,1)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, minimapTex.GetID());
@@ -912,6 +940,7 @@ void CSMFReadMap::BindMiniMapTextures() const
 
 void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, int quadSize, int extraSize)
 {
+	//ZoneScoped;
 	if (cam == nullptr) {
 		// allow passing in a custom camera for grid-visibility testing
 		// otherwise this culls using the state of whichever camera most
@@ -995,6 +1024,7 @@ const char* CSMFReadMap::GetFeatureTypeName(int typeID) { return mapFile.GetFeat
 
 unsigned char* CSMFReadMap::GetInfoMap(const char* name, MapBitmapInfo* bmInfo)
 {
+	//ZoneScoped;
 	// get size
 	mapFile.GetInfoMapSize(name, bmInfo);
 
@@ -1043,12 +1073,14 @@ unsigned char* CSMFReadMap::GetInfoMap(const char* name, MapBitmapInfo* bmInfo)
 
 void CSMFReadMap::FreeInfoMap(const char* name, unsigned char* data)
 {
+	//ZoneScoped;
 	delete[] data;
 }
 
 
 void CSMFReadMap::ConfigureTexAnisotropyLevels()
 {
+	//ZoneScoped;
 	if (!GLEW_EXT_texture_filter_anisotropic) {
 		texAnisotropyLevels[false] = 0.0f;
 		texAnisotropyLevels[ true] = 0.0f;
@@ -1065,6 +1097,7 @@ void CSMFReadMap::ConfigureTexAnisotropyLevels()
 
 
 bool CSMFReadMap::SetLuaTexture(const MapTextureData& td) {
+	//ZoneScoped;
 	const unsigned int num = std::clamp(int(td.num), 0, NUM_SPLAT_DETAIL_NORMALS - 1);
 
 	switch (td.type) {

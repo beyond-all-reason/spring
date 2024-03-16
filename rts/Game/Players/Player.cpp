@@ -22,6 +22,8 @@
 #include "System/Log/ILog.h"
 #include "System/creg/STL_Set.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND_DERIVED(CPlayer, PlayerBase, )
 CR_REG_METADATA(CPlayer, (
@@ -48,6 +50,7 @@ CPlayer::CPlayer()
 
 void CPlayer::SetControlledTeams()
 {
+	//ZoneScoped;
 	controlledTeams.clear();
 	controlledTeams.reserve(teamHandler.ActiveTeams());
 
@@ -79,6 +82,7 @@ void CPlayer::SetControlledTeams()
 
 void CPlayer::UpdateControlledTeams()
 {
+	//ZoneScoped;
 	for (int p = 0; p < playerHandler.ActivePlayers(); p++) {
 		CPlayer* player = playerHandler.Player(p);
 
@@ -92,6 +96,7 @@ void CPlayer::UpdateControlledTeams()
 
 void CPlayer::StartSpectating()
 {
+	//ZoneScoped;
 	if (spectator)
 		return;
 
@@ -117,6 +122,7 @@ void CPlayer::StartSpectating()
 
 void CPlayer::JoinTeam(int newTeam)
 {
+	//ZoneScoped;
 	// a player that joins a team always stops spectating
 	spectator = false;
 	team = newTeam;
@@ -140,6 +146,7 @@ void CPlayer::JoinTeam(int newTeam)
 
 void CPlayer::GameFrame(int frameNum)
 {
+	//ZoneScoped;
 	if (!active || (fpsController.GetControllee() == nullptr))
 		return;
 
@@ -150,6 +157,7 @@ void CPlayer::GameFrame(int frameNum)
 
 void CPlayer::StartControllingUnit()
 {
+	//ZoneScoped;
 	CUnit* curControlleeUnit = fpsController.GetControllee();
 	CUnit* newControlleeUnit = nullptr;
 
@@ -206,6 +214,7 @@ void CPlayer::StartControllingUnit()
 
 void CPlayer::StopControllingUnit()
 {
+	//ZoneScoped;
 	if (fpsController.GetControllee() == nullptr || mouse == nullptr)
 		return;
 

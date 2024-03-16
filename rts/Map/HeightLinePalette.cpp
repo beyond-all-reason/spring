@@ -3,7 +3,7 @@
 #include "HeightLinePalette.h"
 #include "System/Config/ConfigHandler.h"
 
-
+#include <tracy/Tracy.hpp>
 
 CONFIG(bool, ColorElev).defaultValue(true).description("If heightmap (default hotkey [F1]) should be colored or not.");
 

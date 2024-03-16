@@ -12,6 +12,8 @@
 #include "System/EventHandler.h"
 #include "System/creg/STL_List.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CInMapDrawModel* inMapDrawerModel = nullptr;
 
@@ -42,6 +44,7 @@ CInMapDrawModel::CInMapDrawModel()
 
 bool CInMapDrawModel::MapDrawPrimitive::IsVisibleToPlayer(bool drawAllMarks) const
 {
+	//ZoneScoped;
 	const int allyTeam = teamHandler.AllyTeam(teamID);
 
 	const bool alliedAB = teamHandler.Ally(allyTeam, gu->myAllyTeam);
@@ -53,6 +56,7 @@ bool CInMapDrawModel::MapDrawPrimitive::IsVisibleToPlayer(bool drawAllMarks) con
 
 bool CInMapDrawModel::AllowedMsg(const CPlayer* sender) const
 {
+	//ZoneScoped;
 	const int  allyTeam  = teamHandler.AllyTeam(sender->team);
 
 	const bool alliedAB = teamHandler.Ally(allyTeam, gu->myAllyTeam);
@@ -68,6 +72,7 @@ bool CInMapDrawModel::AllowedMsg(const CPlayer* sender) const
 
 bool CInMapDrawModel::AddPoint(const float3& constPos, const std::string& label, int playerID)
 {
+	//ZoneScoped;
 	if (!playerHandler.IsValidPlayer(playerID)) {
 		return false;
 	}
@@ -103,6 +108,7 @@ bool CInMapDrawModel::AddPoint(const float3& constPos, const std::string& label,
 
 bool CInMapDrawModel::AddLine(const float3& constPos1, const float3& constPos2, int playerID)
 {
+	//ZoneScoped;
 	if (!playerHandler.IsValidPlayer(playerID)) {
 		return false;
 	}
@@ -135,6 +141,7 @@ bool CInMapDrawModel::AddLine(const float3& constPos1, const float3& constPos2, 
 
 void CInMapDrawModel::EraseNear(const float3& constPos, int playerID, const bool alwaysErase)
 {
+	//ZoneScoped;
 	if (!playerHandler.IsValidPlayer(playerID))
 		return;
 
@@ -194,6 +201,7 @@ void CInMapDrawModel::EraseNear(const float3& constPos, int playerID, const bool
 
 void CInMapDrawModel::EraseAll()
 {
+	//ZoneScoped;
 	for (auto& drawQuad: drawQuads) {
 		drawQuad.points.clear();
 		drawQuad.lines.clear();
@@ -208,5 +216,6 @@ void CInMapDrawModel::EraseAll()
 
 const CInMapDrawModel::DrawQuad* CInMapDrawModel::GetDrawQuad(int x, int y) const
 {
+	//ZoneScoped;
 	return &(drawQuads[(y * drawQuadsX) + x]);
 }

@@ -11,6 +11,8 @@
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CExploSpikeProjectile, CProjectile, )
 
 CR_REG_METADATA(CExploSpikeProjectile,
@@ -61,6 +63,7 @@ CExploSpikeProjectile::CExploSpikeProjectile(
 
 void CExploSpikeProjectile::Init(const CUnit* owner, const float3& offset)
 {
+	//ZoneScoped;
 	CProjectile::Init(owner, offset);
 
 	lengthGrowth = dir.Length() * (0.5f + guRNG.NextFloat() * 0.4f);
@@ -71,6 +74,7 @@ void CExploSpikeProjectile::Init(const CUnit* owner, const float3& offset)
 
 void CExploSpikeProjectile::Update()
 {
+	//ZoneScoped;
 	pos += speed;
 	length += lengthGrowth;
 	alpha = std::max(0.0f, alpha - alphaDecay);
@@ -80,6 +84,7 @@ void CExploSpikeProjectile::Update()
 
 void CExploSpikeProjectile::Draw()
 {
+	//ZoneScoped;
 	const float3 dif = (pos - camera->GetPos()).ANormalize();
 	const float3 dir2 = (dif.cross(dir)).ANormalize();
 
@@ -107,11 +112,13 @@ void CExploSpikeProjectile::Draw()
 
 int CExploSpikeProjectile::GetProjectilesCount() const
 {
+	//ZoneScoped;
 	return 1;
 }
 
 bool CExploSpikeProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	//ZoneScoped;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

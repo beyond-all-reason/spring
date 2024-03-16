@@ -4,6 +4,8 @@
 
 #include "System/Platform/byteorder.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(PlayerStatistics, )
 CR_REG_METADATA(PlayerStatistics, (
 	CR_MEMBER(mousePixels),
@@ -23,6 +25,7 @@ PlayerStatistics::PlayerStatistics()
 
 void PlayerStatistics::swab()
 {
+	//ZoneScoped;
 	TeamControllerStatistics::swab();
 	swabDWordInPlace(mousePixels);
 	swabDWordInPlace(mouseClicks);

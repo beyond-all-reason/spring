@@ -2,10 +2,13 @@
 
 #include "ConsoleHistory.h"
 
+#include <tracy/Tracy.hpp>
+
 CConsoleHistory gameConsoleHistory;
 
 void CConsoleHistory::Init()
 {
+	//ZoneScoped;
 	lines.clear();
 	lines.emplace_back(""); // queue is never empty
 
@@ -15,12 +18,14 @@ void CConsoleHistory::Init()
 
 void CConsoleHistory::ResetPosition()
 {
+	//ZoneScoped;
 	pos = lines.size();
 }
 
 
 bool CConsoleHistory::AddLine(const std::string& msg)
 {
+	//ZoneScoped;
 	std::string message;
 
 	if ((msg.find_first_of("aAsS") == 0) && (msg[1] == ':')) {
@@ -35,6 +40,7 @@ bool CConsoleHistory::AddLine(const std::string& msg)
 
 bool CConsoleHistory::AddLineRaw(const std::string& msg)
 {
+	//ZoneScoped;
 	// do not save blank lines
 	if (msg.empty())
 		return false;
@@ -59,6 +65,7 @@ bool CConsoleHistory::AddLineRaw(const std::string& msg)
 
 std::string CConsoleHistory::NextLine(const std::string& current)
 {
+	//ZoneScoped;
 	std::string prefix;
 	std::string message;
 
@@ -95,6 +102,7 @@ std::string CConsoleHistory::NextLine(const std::string& current)
 
 std::string CConsoleHistory::PrevLine(const std::string& current)
 {
+	//ZoneScoped;
 	std::string prefix;
 	std::string message;
 

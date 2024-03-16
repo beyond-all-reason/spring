@@ -12,6 +12,8 @@
 #include "System/SpringMath.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND_DERIVED(CBombDropper, CWeapon, )
 
@@ -44,6 +46,7 @@ CBombDropper::CBombDropper(CUnit* owner, const WeaponDef* def, bool useTorps)
 
 float CBombDropper::GetPredictedImpactTime(float3 impactPos) const
 {
+	//ZoneScoped;
 	if (weaponMuzzlePos.y <= impactPos.y)
 		return 0.0f;
 
@@ -76,6 +79,7 @@ float CBombDropper::GetPredictedImpactTime(float3 impactPos) const
 
 bool CBombDropper::TestTarget(const float3 pos, const SWeaponTarget& trg) const
 {
+	//ZoneScoped;
 	// assume we can still drop bombs on *partially* submerged targets
 	if (!dropTorpedoes && TargetUnderWater(pos, trg))
 		return false;
@@ -88,6 +92,7 @@ bool CBombDropper::TestTarget(const float3 pos, const SWeaponTarget& trg) const
 
 bool CBombDropper::TestRange(const float3 pos, const SWeaponTarget& trg) const
 {
+	//ZoneScoped;
 	// bombs always fall down
 	if (aimFromPos.y < pos.y)
 		return false;
@@ -105,12 +110,14 @@ bool CBombDropper::TestRange(const float3 pos, const SWeaponTarget& trg) const
 
 bool CBombDropper::CanFire(bool ignoreAngleGood, bool ignoreTargetType, bool ignoreRequestedDir) const
 {
+	//ZoneScoped;
 	return CWeapon::CanFire(true, ignoreTargetType, true);
 }
 
 
 void CBombDropper::FireImpl(const bool scriptCall)
 {
+	//ZoneScoped;
 	const float predict = GetPredictedImpactTime(currentTargetPos);
 
 	if (dropTorpedoes) {

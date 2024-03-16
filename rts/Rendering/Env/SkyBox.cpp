@@ -24,6 +24,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 #define LOG_SECTION_SKY_BOX "SkyBox"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_SKY_BOX)
 
@@ -35,6 +37,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_SKY_BOX)
 
 void CSkyBox::Init(uint32_t textureID, uint32_t xsize, uint32_t ysize, bool convertToCM)
 {
+	//ZoneScoped;
 	shader = nullptr;
 #ifndef HEADLESS
 	if (textureID == 0)
@@ -216,6 +219,7 @@ CSkyBox::CSkyBox(const std::string& texture)
 
 CSkyBox::~CSkyBox()
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (shader)
 		shaderHandler->ReleaseProgramObject("[SkyBox]", "SkyBox");
@@ -224,6 +228,7 @@ CSkyBox::~CSkyBox()
 
 void CSkyBox::Draw()
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	if (!globalRendering->drawSky)
 		return;

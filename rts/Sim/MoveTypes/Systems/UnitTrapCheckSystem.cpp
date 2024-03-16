@@ -20,9 +20,12 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
+#include <tracy/Tracy.hpp>
+
 using namespace MoveTypes;
 
 void UnitTrapCheckSystem::Init() {
+    //ZoneScoped;
     auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemSystemComponent>();
 
     // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
@@ -33,6 +36,7 @@ void UnitTrapCheckSystem::Init() {
 }
 
 void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* collidee, int curThread) {
+    //ZoneScoped;
     const int largestMoveTypSizeH = moveDefHandler.GetLargestFootPrintSizeH() + 1;
     const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + largestMoveTypSizeH + 1;
 

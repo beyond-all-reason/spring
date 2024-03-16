@@ -15,6 +15,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Input/KeyInput.h"
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(float, MiddleClickScrollSpeed).defaultValue(0.01f);
 CONFIG(int, OverheadScrollSpeed).defaultValue(10);
 CONFIG(float, OverheadTiltSpeed).defaultValue(1.0f);
@@ -43,11 +45,13 @@ COverheadController::COverheadController()
 
 COverheadController::~COverheadController()
 {
+	//ZoneScoped;
 	configHandler->RemoveObserver(this);
 }
 
 void COverheadController::ConfigUpdate()
 {
+	//ZoneScoped;
 	middleClickScrollSpeed = configHandler->GetFloat("MiddleClickScrollSpeed");
 	scrollSpeed = configHandler->GetInt("OverheadScrollSpeed") * 0.1f;
 	tiltSpeed = configHandler->GetFloat("OverheadTiltSpeed");
@@ -59,11 +63,13 @@ void COverheadController::ConfigUpdate()
 
 void COverheadController::ConfigNotify(const std::string & key, const std::string & value)
 {
+	//ZoneScoped;
 	ConfigUpdate();
 }
 
 void COverheadController::KeyMove(float3 move)
 {
+	//ZoneScoped;
 	if (flipped) {
 		move.x = -move.x;
 		move.y = -move.y;
@@ -78,6 +84,7 @@ void COverheadController::KeyMove(float3 move)
 
 void COverheadController::MouseMove(float3 move)
 {
+	//ZoneScoped;
 	// z is the speed modifier, in practice invertMouse{0,1} => move.z{-1,1}
 	move.x *= move.z;
 	move.y *= move.z;
@@ -99,12 +106,14 @@ void COverheadController::MouseMove(float3 move)
 
 void COverheadController::ScreenEdgeMove(float3 move)
 {
+	//ZoneScoped;
 	KeyMove(move);
 }
 
 
 void COverheadController::MouseWheelMove(float move, const float3& newDir)
 {
+	//ZoneScoped;
 	if (move == 0.0f)
 		return;
 
@@ -184,6 +193,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 
 void COverheadController::Update()
 {
+	//ZoneScoped;
 	pos.x = std::clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
 	pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);
@@ -198,6 +208,7 @@ void COverheadController::Update()
 
 void COverheadController::SetPos(const float3& newPos)
 {
+	//ZoneScoped;
 	pos = newPos;
 	Update();
 }
@@ -205,6 +216,7 @@ void COverheadController::SetPos(const float3& newPos)
 
 void COverheadController::SwitchTo(const int oldCam, const bool showText)
 {
+	//ZoneScoped;
 	if (showText)
 		LOG("Switching to Overhead (TA) style camera");
 
@@ -214,6 +226,7 @@ void COverheadController::SwitchTo(const int oldCam, const bool showText)
 
 void COverheadController::GetState(StateMap& sm) const
 {
+	//ZoneScoped;
 	CCameraController::GetState(sm);
 
 	sm["height"]  = height;
@@ -223,6 +236,7 @@ void COverheadController::GetState(StateMap& sm) const
 
 bool COverheadController::SetState(const StateMap& sm)
 {
+	//ZoneScoped;
 	CCameraController::SetState(sm);
 
 	SetStateFloat(sm, "height", height);

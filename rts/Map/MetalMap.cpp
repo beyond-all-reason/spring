@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND(CMetalMap, )
 
@@ -26,6 +28,7 @@ CMetalMap metalMap;
 #ifndef NO_METALMAP
 void CMetalMap::Init(const unsigned char* map, int _sizeX, int _sizeZ, float _metalScale)
 {
+	//ZoneScoped;
 	metalScale = _metalScale;
 	sizeX = _sizeX;
 	sizeZ = _sizeZ;
@@ -52,6 +55,7 @@ void CMetalMap::Init(const unsigned char* map, int _sizeX, int _sizeZ, float _me
 
 float CMetalMap::GetMetalAmount(int x1, int z1, int x2, int z2) const
 {
+	//ZoneScoped;
 	x1 = std::clamp(x1, 0, sizeX - 1);
 	x2 = std::clamp(x2, 0, sizeX - 1);
 	z1 = std::clamp(z1, 0, sizeZ - 1);
@@ -71,6 +75,7 @@ float CMetalMap::GetMetalAmount(int x1, int z1, int x2, int z2) const
 
 float CMetalMap::GetMetalAmount(int x, int z) const
 {
+	//ZoneScoped;
 	x = std::clamp(x, 0, sizeX - 1);
 	z = std::clamp(z, 0, sizeZ - 1);
 
@@ -80,6 +85,7 @@ float CMetalMap::GetMetalAmount(int x, int z) const
 
 void CMetalMap::SetMetalAmount(int x, int z, float m)
 {
+	//ZoneScoped;
 	x = std::clamp(x, 0, sizeX - 1);
 	z = std::clamp(z, 0, sizeZ - 1);
 
@@ -91,6 +97,7 @@ void CMetalMap::SetMetalAmount(int x, int z, float m)
 
 float CMetalMap::RequestExtraction(int x, int z, float toDepth)
 {
+	//ZoneScoped;
 	x = std::clamp(x, 0, sizeX - 1);
 	z = std::clamp(z, 0, sizeZ - 1);
 
@@ -109,6 +116,7 @@ float CMetalMap::RequestExtraction(int x, int z, float toDepth)
 
 void CMetalMap::RemoveExtraction(int x, int z, float depth)
 {
+	//ZoneScoped;
 	x = std::clamp(x, 0, sizeX - 1);
 	z = std::clamp(z, 0, sizeZ - 1);
 
@@ -118,6 +126,7 @@ void CMetalMap::RemoveExtraction(int x, int z, float depth)
 
 int CMetalMap::GetMetalExtraction(int x, int z) const
 {
+	//ZoneScoped;
 	x = std::clamp(x, 0, sizeX - 1);
 	z = std::clamp(z, 0, sizeZ - 1);
 

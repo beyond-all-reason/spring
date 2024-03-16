@@ -6,6 +6,8 @@
 #include "Rendering/GL/myGL.h"
 #include "System/Rectangle.h"
 
+#include <tracy/Tracy.hpp>
+
 
 float CInputReceiver::guiAlpha = 0.8f;
 
@@ -13,6 +15,7 @@ CInputReceiver* CInputReceiver::activeReceiver = nullptr;
 
 CInputReceiver::CInputReceiver(Where w)
 {
+	//ZoneScoped;
 	switch (w) {
 		case FRONT: { GetReceivers().push_front(this); } break;
 		case BACK: { GetReceivers().push_back(this); } break;
@@ -22,6 +25,7 @@ CInputReceiver::CInputReceiver(Where w)
 
 CInputReceiver::~CInputReceiver()
 {
+	//ZoneScoped;
 	if (activeReceiver == this)
 		activeReceiver = nullptr;
 
@@ -37,6 +41,7 @@ CInputReceiver::~CInputReceiver()
 
 void CInputReceiver::CollectGarbage()
 {
+	//ZoneScoped;
 	// remove dead receivers
 	std::deque<CInputReceiver*>& prvInputReceivers = GetReceivers();
 	std::deque<CInputReceiver*> nxtInputReceivers;
@@ -53,6 +58,7 @@ void CInputReceiver::CollectGarbage()
 
 void CInputReceiver::DrawReceivers()
 {
+	//ZoneScoped;
 	std::deque<CInputReceiver*>& receivers = GetReceivers();
 
 	// draw back to front
@@ -68,6 +74,7 @@ void CInputReceiver::DrawReceivers()
 
 CInputReceiver* CInputReceiver::GetReceiverAt(int x, int y)
 {
+	//ZoneScoped;
 	// always ask Lua first
 	if (luaInputReceiver != nullptr && luaInputReceiver->IsAbove(x, y))
 		return luaInputReceiver;
@@ -86,6 +93,7 @@ CInputReceiver* CInputReceiver::GetReceiverAt(int x, int y)
 
 bool CInputReceiver::InBox(float x, float y, const TRectangle<float>& box) const
 {
+	//ZoneScoped;
 	return ((x > box.x1) && (x < box.x2)  &&  (y > box.y1) && (y < box.y2));
 }
 

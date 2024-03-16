@@ -20,6 +20,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CMissileProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CMissileProjectile,(
@@ -66,6 +68,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 	, oldDir(dir)
 	, smokeTrail(nullptr)
 {
+	//ZoneScoped;
 	projectileType = WEAPON_MISSILE_PROJECTILE;
 
 
@@ -101,6 +104,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 
 void CMissileProjectile::Collision()
 {
+	//ZoneScoped;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -110,6 +114,7 @@ void CMissileProjectile::Collision()
 
 void CMissileProjectile::Collision(CUnit* unit)
 {
+	//ZoneScoped;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -119,6 +124,7 @@ void CMissileProjectile::Collision(CUnit* unit)
 
 void CMissileProjectile::Collision(CFeature* feature)
 {
+	//ZoneScoped;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -128,6 +134,7 @@ void CMissileProjectile::Collision(CFeature* feature)
 
 void CMissileProjectile::Update()
 {
+	//ZoneScoped;
 	const CUnit* own = owner();
 
 	if (--ttl > 0) {
@@ -260,6 +267,7 @@ void CMissileProjectile::Update()
 }
 
 float3 CMissileProjectile::UpdateTargeting() {
+	//ZoneScoped;
 	float3 targetVel;
 
 	if (!weaponDef->tracks || target == nullptr)
@@ -293,6 +301,7 @@ float3 CMissileProjectile::UpdateTargeting() {
 }
 
 void CMissileProjectile::UpdateWobble() {
+	//ZoneScoped;
 	if (!isWobbling)
 		return;
 
@@ -311,6 +320,7 @@ void CMissileProjectile::UpdateWobble() {
 }
 
 void CMissileProjectile::UpdateDance() {
+	//ZoneScoped;
 	if (!isDancing)
 		return;
 
@@ -325,25 +335,30 @@ void CMissileProjectile::UpdateDance() {
 
 inline float CMissileProjectile::GetSmokeSize() const
 {
+	//ZoneScoped;
 	return weaponDef->visuals.smokeSize;
 }
 
 inline float CMissileProjectile::GetSmokeColor() const
 {
+	//ZoneScoped;
 	return weaponDef->visuals.smokeColor;
 }
 
 inline int CMissileProjectile::GetSmokeTime() const
 {
+	//ZoneScoped;
 	return weaponDef->visuals.smokeTime;
 }
 
 inline int CMissileProjectile::GetSmokePeriod() const
 {
+	//ZoneScoped;
 	return weaponDef->visuals.smokePeriod;
 }
 
 void CMissileProjectile::UpdateGroundBounce() {
+	//ZoneScoped;
 	if (luaMoveCtrl)
 		return;
 
@@ -361,6 +376,7 @@ void CMissileProjectile::UpdateGroundBounce() {
 
 void CMissileProjectile::Draw()
 {
+	//ZoneScoped;
 	if (!validTextures[1])
 		return;
 
@@ -378,6 +394,7 @@ void CMissileProjectile::Draw()
 
 int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
+	//ZoneScoped;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -403,5 +420,6 @@ int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce
 
 int CMissileProjectile::GetProjectilesCount() const
 {
+	//ZoneScoped;
 	return 1 * validTextures[0];
 }

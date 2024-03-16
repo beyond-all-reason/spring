@@ -104,12 +104,14 @@ CPreGame::~CPreGame()
 
 void CPreGame::LoadSetupScript(const std::string& script)
 {
+	//ZoneScoped;
 	assert(clientSetup->isHost);
 	StartServer(script);
 }
 
 void CPreGame::LoadDemoFile(const std::string& demo)
 {
+	//ZoneScoped;
 	assert(clientSetup->isHost);
 	wantDemo &= configHandler->GetBool("DemoFromDemo");
 
@@ -118,6 +120,7 @@ void CPreGame::LoadDemoFile(const std::string& demo)
 
 void CPreGame::LoadSaveFile(const std::string& save)
 {
+	//ZoneScoped;
 	assert(clientSetup->isHost);
 
 	saveFileHandler = ILoadSaveHandler::CreateHandler(save);
@@ -143,6 +146,7 @@ void CPreGame::LoadSaveFile(const std::string& save)
 
 int CPreGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
+	//ZoneScoped;
 	if (keyCode != SDLK_ESCAPE)
 		return 0;
 
@@ -165,6 +169,7 @@ int CPreGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 bool CPreGame::Draw()
 {
+	//ZoneScoped;
 	spring_msecs(10).sleep(true);
 	ClearScreen();
 
@@ -210,6 +215,7 @@ bool CPreGame::Update()
 
 void CPreGame::AddMapArchivesToVFS(const CGameSetup* setup)
 {
+	//ZoneScoped;
 	// map gets added in StartServer if we are the host, so this can show twice
 	// StartServerForDemo does *not* add the map but waits for GameDataReceived
 	LOG("[PreGame::%s][server=%p] using map \"%s\" (loaded=%d cached=%d)", __func__, gameServer, setup->mapName.c_str(), vfsHandler->HasArchive(setup->mapName), vfsHandler->HasTempArchive(setup->mapName));
@@ -220,6 +226,7 @@ void CPreGame::AddMapArchivesToVFS(const CGameSetup* setup)
 
 void CPreGame::AddModArchivesToVFS(const CGameSetup* setup)
 {
+	//ZoneScoped;
 	LOG("[PreGame::%s][server=%p] using game \"%s\" (loaded=%d cached=%d)", __func__, gameServer, setup->modName.c_str(), vfsHandler->HasArchive(setup->modName), vfsHandler->HasTempArchive(setup->modName));
 
 	// load mutators (if any); use WithDeps since mutators depend on the archives they override
@@ -298,6 +305,7 @@ void CPreGame::StartServer(const std::string& setupscript)
 
 void CPreGame::UpdateClientNet()
 {
+	//ZoneScoped;
 	//FIXME move this code to a external file and move that to rts/Net/
 
 	clientNet->Update();
@@ -432,6 +440,7 @@ void CPreGame::UpdateClientNet()
 
 void CPreGame::StartServerForDemo(const std::string& demoName)
 {
+	//ZoneScoped;
 	TdfParser script((gameData->GetSetupText()).c_str(), (gameData->GetSetupText()).size());
 	TdfParser::TdfSection* tgame = script.GetRootSection()->sections["game"];
 

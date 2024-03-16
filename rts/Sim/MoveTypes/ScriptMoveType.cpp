@@ -15,6 +15,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 using namespace MoveTypes;
 
 CR_BIND_DERIVED(CScriptMoveType, AMoveType, (nullptr))
@@ -54,6 +56,7 @@ CR_REG_METADATA(CScriptMoveType, (
 
 CScriptMoveType::CScriptMoveType(CUnit* unit): AMoveType(unit)
 {
+	//ZoneScoped;
 	// use the transformation matrix instead of heading
 	UseHeading(false);
 
@@ -67,6 +70,7 @@ CScriptMoveType::CScriptMoveType(CUnit* unit): AMoveType(unit)
 
 CScriptMoveType::~CScriptMoveType()
 {
+	//ZoneScoped;
 	// clean up if noBlocking was made true at
 	// some point during this script's lifetime
 	// and not reset
@@ -78,6 +82,7 @@ CScriptMoveType::~CScriptMoveType()
 
 void CScriptMoveType::CheckNotify()
 {
+	//ZoneScoped;
 	if (scriptNotify == HitNothing)
 		return;
 
@@ -92,6 +97,7 @@ void CScriptMoveType::CheckNotify()
 
 bool CScriptMoveType::Update()
 {
+	//ZoneScoped;
 	if (useRotVel)
 		owner->SetDirVectorsEuler(rot += rotVel);
 
@@ -159,6 +165,7 @@ bool CScriptMoveType::Update()
 
 void CScriptMoveType::CheckLimits()
 {
+	//ZoneScoped;
 	float3 pos = owner->pos;
 	float4 vel = owner->speed;
 
@@ -188,6 +195,7 @@ void CScriptMoveType::CheckLimits()
 
 void CScriptMoveType::SetPhysics(const float3& _pos, const float3& _vel, const float3& _rot)
 {
+	//ZoneScoped;
 	SetPosition(_pos);
 	SetVelocity(_vel);
 	SetRotation(_rot);
@@ -204,17 +212,20 @@ void CScriptMoveType::SetRotationVelocity(const float3& _rotVel) { useRotVel = (
 
 void CScriptMoveType::SetRotation(const float3& _rot)
 {
+	//ZoneScoped;
 	owner->SetDirVectorsEuler(rot = _rot);
 }
 
 void CScriptMoveType::SetHeading(short heading)
 {
+	//ZoneScoped;
 	owner->SetHeading(heading, trackSlope, false, 0.0f);
 }
 
 
 void CScriptMoveType::SetNoBlocking(bool state)
 {
+	//ZoneScoped;
 	// if false, forces blocking-map updates
 	if ((noBlocking = state)) {
 		owner->UnBlock();

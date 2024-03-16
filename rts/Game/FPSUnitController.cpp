@@ -17,6 +17,8 @@
 
 #include <SDL_mouse.h>
 
+#include <tracy/Tracy.hpp>
+
 
 FPSUnitController::FPSUnitController()
 	: targetUnit(nullptr)
@@ -41,6 +43,7 @@ FPSUnitController::FPSUnitController()
 
 
 void FPSUnitController::Update() {
+	//ZoneScoped;
 	const float3 relPos = controllee->script->GetPiecePos(controllee->script->AimFromWeapon(0));
 	const float3 absPos = controllee->GetObjectSpacePos(relPos) + (UpVector * 7.0f);
 
@@ -84,6 +87,7 @@ void FPSUnitController::Update() {
 
 
 void FPSUnitController::RecvStateUpdate(const unsigned char* buf) {
+	//ZoneScoped;
 	forward    = !!(buf[2] & (1 << 0));
 	back       = !!(buf[2] & (1 << 1));
 	left       = !!(buf[2] & (1 << 2));
@@ -104,6 +108,7 @@ void FPSUnitController::RecvStateUpdate(const unsigned char* buf) {
 }
 
 void FPSUnitController::SendStateUpdate() {
+	//ZoneScoped;
 	if (!gu->fpsMode)
 		return;
 

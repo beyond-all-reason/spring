@@ -2,15 +2,19 @@
 
 #include "VAO.h"
 #include "Rendering/GL/myGL.h"
+#include <tracy/Tracy.hpp>
+
 
 bool VAO::IsSupported()
 {
+	//ZoneScoped;
 	static bool supported = GLEW_ARB_vertex_array_object;
 	return supported;
 }
 
 void VAO::Generate() const
 {
+	//ZoneScoped;
 	if (id > 0)
 		return;
 
@@ -19,6 +23,7 @@ void VAO::Generate() const
 
 void VAO::Delete() const
 {
+	//ZoneScoped;
 	if (id > 0) {
 		glDeleteVertexArrays(1, &id);
 		id = 0;
@@ -27,10 +32,12 @@ void VAO::Delete() const
 
 void VAO::Bind() const
 {
+	//ZoneScoped;
 	glBindVertexArray(GetId());
 }
 
 void VAO::Unbind() const
 {
+	//ZoneScoped;
 	glBindVertexArray(0);
 }

@@ -20,6 +20,8 @@
 
 #include <algorithm>
 
+#include <tracy/Tracy.hpp>
+
 static constexpr int CMDPARAM_MOVE_X = 0;
 static constexpr int CMDPARAM_MOVE_Y = 1;
 static constexpr int CMDPARAM_MOVE_Z = 2;
@@ -36,6 +38,7 @@ CSelectedUnitsHandlerAI selectedUnitsAI;
 
 inline void CSelectedUnitsHandlerAI::SetUnitWantedMaxSpeedNet(CUnit* unit)
 {
+	//ZoneScoped;
 	AMoveType* mt = unit->moveType;
 
 	if (!mt->UseWantedSpeed(false))
@@ -50,6 +53,7 @@ inline void CSelectedUnitsHandlerAI::SetUnitWantedMaxSpeedNet(CUnit* unit)
 
 inline void CSelectedUnitsHandlerAI::SetUnitGroupWantedMaxSpeedNet(CUnit* unit)
 {
+	//ZoneScoped;
 	AMoveType* mt = unit->moveType;
 
 	if (!mt->UseWantedSpeed(true))
@@ -64,6 +68,7 @@ inline void CSelectedUnitsHandlerAI::SetUnitGroupWantedMaxSpeedNet(CUnit* unit)
 
 static inline bool MayRequireSetMaxSpeedCommand(const Command& c)
 {
+	//ZoneScoped;
 	switch (c.GetID()) {
 		// this is not a complete list
 		case CMD_STOP:
@@ -81,6 +86,7 @@ static inline bool MayRequireSetMaxSpeedCommand(const Command& c)
 
 bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 {
+	//ZoneScoped;
 	assert(playerHandler.IsValidPlayer(playerNum));
 
 	const CPlayer* netPlayer = playerHandler.Player(playerNum);
@@ -268,6 +274,7 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 // Calculate the outer limits and the center of the group coordinates.
 //
 void CSelectedUnitsHandlerAI::CalculateGroupData(int playerNum, bool queueing) {
+	//ZoneScoped;
 	float3 sumCoor;
 	float3 minCoor =  OnesVector * 100000.0f;
 	float3 maxCoor = -OnesVector * 100000.0f;
@@ -316,6 +323,7 @@ void CSelectedUnitsHandlerAI::CalculateGroupData(int playerNum, bool queueing) {
 
 void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 {
+	//ZoneScoped;
 	// called when releasing the mouse; accompanies GuiHandler::DrawFormationFrontOrder
 	formationCenterPos = c->GetPos(0);
 	formationRightPos = c->GetPos(3);
@@ -477,6 +485,7 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 
 void CSelectedUnitsHandlerAI::CreateUnitOrder(std::vector< std::pair<float, int> >& out, int playerNum)
 {
+	//ZoneScoped;
 	const std::vector<int>& playerUnitIDs = selectedUnitsHandler.netSelected[playerNum];
 
 	out.clear();
@@ -509,6 +518,7 @@ float3 CSelectedUnitsHandlerAI::MoveToPos(
 	std::vector<std::pair<int, Command> >* frontcmds,
 	bool* newline
 ) {
+	//ZoneScoped;
 	#if 0
 	const int rowNum = posNum / formationNumColumns;
 	const int colNum = posNum - rowNum * formationNumColumns;
@@ -548,6 +558,7 @@ float3 CSelectedUnitsHandlerAI::MoveToPos(
 
 bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 {
+	//ZoneScoped;
 	bool ret = false;
 
 	// reuse for sorting targets, no overlap with MakeFormationFrontOrder
@@ -671,6 +682,7 @@ void CSelectedUnitsHandlerAI::SelectCircleUnits(
 	int playerNum,
 	std::vector<int>& units
 ) {
+	//ZoneScoped;
 	units.clear();
 
 	if (!playerHandler.IsValidPlayer(playerNum))
@@ -714,6 +726,7 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 	int playerNum,
 	std::vector<int>& units
 ) {
+	//ZoneScoped;
 	units.clear();
 
 	if (!playerHandler.IsValidPlayer(playerNum))
@@ -749,6 +762,7 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 
 float3 CSelectedUnitsHandlerAI::LastQueuePosition(const CUnit* unit)
 {
+	//ZoneScoped;
 	const CCommandQueue& queue = unit->commandAI->commandQue;
 
 	for (auto it = queue.rbegin(); it != queue.rend(); ++it) {

@@ -22,6 +22,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 static constexpr int   SMOKE_TIME   = 40;
 static constexpr int   SMOKE_SIZE   = 14;
 static constexpr float SMOKE_COLOR  = 0.5f;
@@ -56,6 +58,7 @@ CPieceProjectile::CPieceProjectile(
 	omp((lmp != nullptr) ? lmp->original : nullptr),
 	smokeTrail(nullptr)
 {
+	//ZoneScoped;
 	if (owner != nullptr) {
 		const UnitDef* ud = owner->unitDef;
 
@@ -102,6 +105,7 @@ CPieceProjectile::CPieceProjectile(
 
 void CPieceProjectile::Collision()
 {
+	//ZoneScoped;
 	Collision(nullptr, nullptr);
 	if (gsRNG.NextFloat() < 0.666f) { // give it a small chance to `ground bounce`
 		CProjectile::Collision();
@@ -118,6 +122,7 @@ void CPieceProjectile::Collision()
 
 void CPieceProjectile::Collision(CFeature* f)
 {
+	//ZoneScoped;
 	Collision(nullptr, f);
 	CProjectile::Collision(f);
 }
@@ -125,6 +130,7 @@ void CPieceProjectile::Collision(CFeature* f)
 
 void CPieceProjectile::Collision(CUnit* unit)
 {
+	//ZoneScoped;
 	Collision(unit, nullptr);
 	CProjectile::Collision(unit);
 }
@@ -184,6 +190,7 @@ void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 
 float3 CPieceProjectile::RandomVertexPos() const
 {
+	//ZoneScoped;
 	if (omp == nullptr)
 		return ZeroVector;
 	#define rf guRNG.NextFloat()
@@ -193,12 +200,14 @@ float3 CPieceProjectile::RandomVertexPos() const
 
 float CPieceProjectile::GetDrawAngle() const
 {
+	//ZoneScoped;
 	return spinAngle + spinSpeed * globalRendering->timeOffset;
 }
 
 
 void CPieceProjectile::Update()
 {
+	//ZoneScoped;
 	if (!luaMoveCtrl) {
 		speed.y += mygravity;
 		SetVelocityAndSpeed(speed * 0.997f);
@@ -257,12 +266,14 @@ void CPieceProjectile::Update()
 
 void CPieceProjectile::DrawOnMinimap() const
 {
+	//ZoneScoped;
 	AddMiniMapVertices({ pos        , color4::red }, { pos + speed, color4::red });
 }
 
 
 void CPieceProjectile::Draw()
 {
+	//ZoneScoped;
 	if ((explFlags & PF_Fire) == 0)
 		return;
 
@@ -289,5 +300,6 @@ void CPieceProjectile::Draw()
 
 int CPieceProjectile::GetProjectilesCount() const
 {
+	//ZoneScoped;
 	return NUM_TRAIL_PARTS;
 }

@@ -171,6 +171,8 @@
 #include "System/Platform/byteorder.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 using namespace std;
 using namespace nv_dds;
 
@@ -191,6 +193,7 @@ CDDSImage::CDDSImage()
 #if 0
 void CDDSImage::create_textureFlat(unsigned int format, unsigned int components, const CTexture &baseImage)
 {
+	//ZoneScoped;
     assert(format != 0);
     assert(components != 0);
     assert(baseImage.get_depth() == 1);
@@ -209,6 +212,7 @@ void CDDSImage::create_textureFlat(unsigned int format, unsigned int components,
 
 void CDDSImage::create_texture3D(unsigned int format, unsigned int components, const CTexture &baseImage)
 {
+	//ZoneScoped;
     assert(format != 0);
     assert(components != 0);
     assert(baseImage.get_depth() > 1);
@@ -230,6 +234,7 @@ void CDDSImage::create_texture3D(unsigned int format, unsigned int components, c
 #if 0
 inline bool same_size(const CTexture &a, const CTexture &b)
 {
+	//ZoneScoped;
     if (a.get_width() != b.get_width())
         return false;
     if (a.get_height() != b.get_height())
@@ -282,6 +287,7 @@ void CDDSImage::create_textureCubemap(unsigned int format, unsigned int componen
 // flipImage - specifies whether image is flipped on load, default is true
 bool CDDSImage::load(string filename, bool flipImage)
 {
+	//ZoneScoped;
 	assert(filename.length() != 0);
 
 	// clear any previously loaded images
@@ -547,6 +553,7 @@ bool CDDSImage::load(string filename, bool flipImage)
 
 bool CDDSImage::write_texture(const CTexture &texture, FILE *fp) const
 {
+	//ZoneScoped;
     assert(get_num_mipmaps() == texture.get_num_mipmaps());
 
     int res = fwrite(texture, 1, texture.get_size(), fp);
@@ -566,6 +573,7 @@ bool CDDSImage::write_texture(const CTexture &texture, FILE *fp) const
 
 bool CDDSImage::save(std::string filename, bool flipImage) const
 {
+	//ZoneScoped;
     assert(m_valid);
     assert(m_type != TextureNone);
 
@@ -704,6 +712,7 @@ bool CDDSImage::save(std::string filename, bool flipImage) const
 // free image memory
 void CDDSImage::clear()
 {
+	//ZoneScoped;
     m_components = 0;
     m_format = 0;
     m_type = TextureNone;
@@ -714,6 +723,7 @@ void CDDSImage::clear()
 
 bool CDDSImage::is_compressed() const
 {
+	//ZoneScoped;
 	return ((m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ||
 		   (m_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT) ||
 		   (m_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT));
@@ -725,6 +735,7 @@ bool CDDSImage::is_compressed() const
 // uploads a compressed/uncompressed 1D texture
 bool CDDSImage::upload_texture1D() const
 {
+	//ZoneScoped;
     assert(m_valid);
     assert(!m_images.empty());
 
@@ -788,6 +799,7 @@ bool CDDSImage::upload_texture1D() const
 //              default: GL_TEXTURE_2D
 bool CDDSImage::upload_texture2D(unsigned int imageIndex, int target) const
 {
+	//ZoneScoped;
     assert(m_valid);
     assert(!m_images.empty());
     assert(imageIndex >= 0);
@@ -849,6 +861,7 @@ bool CDDSImage::upload_texture2D(unsigned int imageIndex, int target) const
 // uploads a compressed/uncompressed 3D texture
 bool CDDSImage::upload_texture3D() const
 {
+	//ZoneScoped;
     assert(m_valid);
     assert(!m_images.empty());
     assert(m_type == Texture3D);
@@ -904,6 +917,7 @@ bool CDDSImage::upload_texture3D() const
 
 bool CDDSImage::upload_textureRectangle() const
 {
+	//ZoneScoped;
     return upload_texture2D(0, GL_TEXTURE_RECTANGLE_NV);
 }
 
@@ -911,6 +925,7 @@ bool CDDSImage::upload_textureRectangle() const
 // uploads a compressed/uncompressed cubemap texture
 bool CDDSImage::upload_textureCubemap() const
 {
+	//ZoneScoped;
     assert(m_valid);
     assert(!m_images.empty());
     assert(m_type == TextureCubemap);
@@ -936,6 +951,7 @@ bool CDDSImage::upload_textureCubemap() const
 // clamps input size to [1-size]
 inline unsigned int CDDSImage::clamp_size(unsigned int size) const
 {
+	//ZoneScoped;
     if (size <= 0)
         size = 1;
 
@@ -950,6 +966,7 @@ inline unsigned int CDDSImage::clamp_size(unsigned int size) const
 // calculates size of DXTC texture in bytes
 inline unsigned int CDDSImage::size_dxtc(unsigned int width, unsigned int height) const
 {
+	//ZoneScoped;
     return ((width+3)/4)*((height+3)/4)*
         (m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ? 8 : 16);
 }
@@ -958,6 +975,7 @@ inline unsigned int CDDSImage::size_dxtc(unsigned int width, unsigned int height
 // calculates size of uncompressed RGB texture in bytes
 inline unsigned int CDDSImage::size_rgb(unsigned int width, unsigned int height) const
 {
+	//ZoneScoped;
     return width*height*m_components;
 }
 
@@ -965,6 +983,7 @@ inline unsigned int CDDSImage::size_rgb(unsigned int width, unsigned int height)
 // flip image around X axis
 void CDDSImage::flip(CSurface &surface) const
 {
+	//ZoneScoped;
     unsigned int linesize;
 
     if (!is_compressed())
@@ -1034,6 +1053,7 @@ void CDDSImage::flip(CSurface &surface) const
 
 void CDDSImage::flip_texture(CTexture &texture) const
 {
+	//ZoneScoped;
     flip(texture);
 
     for (unsigned int i = 0; i < texture.get_num_mipmaps(); i++)
@@ -1046,6 +1066,7 @@ void CDDSImage::flip_texture(CTexture &texture) const
 // swap to sections of memory
 void CDDSImage::swap(void *byte1, void *byte2, unsigned int size) const
 {
+	//ZoneScoped;
     unsigned char *tmp = new unsigned char[size];
 
     memcpy(tmp, byte1, size);
@@ -1059,6 +1080,7 @@ void CDDSImage::swap(void *byte1, void *byte2, unsigned int size) const
 // flip a DXT1 color block
 void CDDSImage::flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks) const
 {
+	//ZoneScoped;
     DXTColBlock *curblock = line;
 
     for (unsigned int i = 0; i < numBlocks; i++)
@@ -1074,6 +1096,7 @@ void CDDSImage::flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks) con
 // flip a DXT3 color block
 void CDDSImage::flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks) const
 {
+	//ZoneScoped;
     DXTColBlock *curblock = line;
     DXT3AlphaBlock *alphablock;
 
@@ -1097,6 +1120,7 @@ void CDDSImage::flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks) con
 // flip a DXT5 alpha block
 void CDDSImage::flip_dxt5_alpha(DXT5AlphaBlock *block) const
 {
+	//ZoneScoped;
     unsigned char gBits[4][4];
 
     const unsigned int mask = 0x00000007;          // bits = 00 00 01 11
@@ -1175,6 +1199,7 @@ void CDDSImage::flip_dxt5_alpha(DXT5AlphaBlock *block) const
 // flip a DXT5 color block
 void CDDSImage::flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks) const
 {
+	//ZoneScoped;
     DXTColBlock *curblock = line;
     DXT5AlphaBlock *alphablock;
 
@@ -1208,6 +1233,7 @@ CTexture::CTexture(unsigned int w, unsigned int h, unsigned int d, unsigned int 
 // assignment operator
 CTexture &CTexture::operator=(const CTexture &rhs)
 {
+	//ZoneScoped;
 	if (this != &rhs) {
 		CSurface::operator=(rhs);
 
@@ -1223,6 +1249,7 @@ CTexture &CTexture::operator=(const CTexture &rhs)
 
 CTexture &CTexture::operator=(CTexture &&rhs) noexcept
 {
+	//ZoneScoped;
 	if (this != &rhs) {
 		CSurface::operator=(rhs);
 
@@ -1240,6 +1267,7 @@ CTexture &CTexture::operator=(CTexture &&rhs) noexcept
 
 void CTexture::create(unsigned int w, unsigned int h, unsigned int d, unsigned int imgsize, const unsigned char *pixels)
 {
+	//ZoneScoped;
     CSurface::create(w, h, d, imgsize, pixels);
 
     m_mipmaps.clear();
@@ -1247,6 +1275,7 @@ void CTexture::create(unsigned int w, unsigned int h, unsigned int d, unsigned i
 
 void CTexture::clear()
 {
+	//ZoneScoped;
     CSurface::clear();
 
     m_mipmaps.clear();

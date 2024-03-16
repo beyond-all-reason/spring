@@ -11,6 +11,8 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Common/ModelDrawerHelpers.h"
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(float, FeatureDrawDistance)
 .defaultValue(6000.0f)
 .minimumValue(0.0f)
@@ -24,6 +26,7 @@ CONFIG(float, FeatureFadeDistance)
 
 void CFeatureDrawerData::RenderFeaturePreCreated(const CFeature* feature)
 {
+	//ZoneScoped;
 	if (feature->def->drawType != DRAWTYPE_MODEL)
 		return;
 
@@ -33,6 +36,7 @@ void CFeatureDrawerData::RenderFeaturePreCreated(const CFeature* feature)
 //TODO remove
 void CFeatureDrawerData::RenderFeatureCreated(const CFeature* feature)
 {
+	//ZoneScoped;
 	assert(
 		feature->def->drawType != DRAWTYPE_MODEL ||
 		std::find(unsortedObjects.begin(), unsortedObjects.end(), feature) != unsortedObjects.end()
@@ -41,6 +45,7 @@ void CFeatureDrawerData::RenderFeatureCreated(const CFeature* feature)
 
 void CFeatureDrawerData::RenderFeatureDestroyed(const CFeature* feature)
 {
+	//ZoneScoped;
 	DelObject(feature, feature->def->drawType == DRAWTYPE_MODEL);
 	LuaObjectDrawer::SetObjectLOD(const_cast<CFeature*>(feature), LUAOBJ_FEATURE, 0);
 }
@@ -48,6 +53,7 @@ void CFeatureDrawerData::RenderFeatureDestroyed(const CFeature* feature)
 CFeatureDrawerData::CFeatureDrawerData(bool& mtModelDrawer_)
 	: CFeatureDrawerDataBase("[CFeatureDrawerData]", 313373, mtModelDrawer_)
 {
+	//ZoneScoped;
 	eventHandler.AddClient(this); //cannot be done in CModelRenderDataConcept, because object is not fully constructed
 	configHandler->NotifyOnChange(this, { "FeatureDrawDistance", "FeatureFadeDistance" });
 
@@ -60,11 +66,13 @@ CFeatureDrawerData::CFeatureDrawerData(bool& mtModelDrawer_)
 
 CFeatureDrawerData::~CFeatureDrawerData()
 {
+	//ZoneScoped;
 	configHandler->RemoveObserver(this);
 }
 
 void CFeatureDrawerData::ConfigNotify(const std::string& key, const std::string& value)
 {
+	//ZoneScoped;
 	switch (hashStringLower(key.c_str())) {
 	case hashStringLower("FeatureDrawDistance"): {
 		featureDrawDistance = std::strtof(value.c_str(), nullptr);
@@ -87,6 +95,7 @@ void CFeatureDrawerData::ConfigNotify(const std::string& key, const std::string&
 
 void CFeatureDrawerData::Update()
 {
+	//ZoneScoped;
 	if (mtModelDrawer) {
 		for_mt_chunk(0, unsortedObjects.size(), [this](const int k) {
 			CFeature* f = unsortedObjects[k];
@@ -104,11 +113,13 @@ void CFeatureDrawerData::Update()
 
 bool CFeatureDrawerData::IsAlpha(const CFeature* co) const
 {
+	//ZoneScoped;
 	return (co->drawAlpha < 1.0f);
 }
 
 void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 {
+	//ZoneScoped;
 	CFeature* f = static_cast<CFeature*>(o);
 	f->ResetDrawFlag();
 
@@ -194,6 +205,7 @@ void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 
 void CFeatureDrawerData::UpdateDrawPos(CFeature* f)
 {
+	//ZoneScoped;
 	f->drawPos    = f->GetDrawPos(globalRendering->timeOffset);
 	f->drawMidPos = f->GetMdlDrawMidPos();
 }

@@ -23,6 +23,7 @@
 #include "System/Threading/ThreadPool.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
 
 using namespace SystemGlobals;
 using namespace QTPFS;
@@ -30,6 +31,7 @@ using namespace QTPFS;
 
 void RemoveDeadPathsSystem::Init()
 {
+    //ZoneScoped;
     auto& comp = systemGlobals.CreateSystemComponent<RemoveDeadPathsComponent>();
     systemUtils.OnUpdate().connect<&RemoveDeadPathsSystem::Update>();
 }
@@ -53,5 +55,6 @@ void RemoveDeadPathsSystem::Update()
 }
 
 void RemoveDeadPathsSystem::Shutdown() {
+    //ZoneScoped;
     systemUtils.OnUpdate().disconnect<&RemoveDeadPathsSystem::Update>();
 }

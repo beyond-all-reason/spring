@@ -10,6 +10,8 @@
 #include <cassert>
 #include <cstring>
 
+#include <tracy/Tracy.hpp>
+
 
 static bool CheckHeader(const SMFHeader& h)
 {
@@ -28,6 +30,7 @@ static bool CheckHeader(const SMFHeader& h)
 
 void CSMFMapFile::Open(const std::string& mapFileName)
 {
+	//ZoneScoped;
 	char buf[512] = {0};
 	const char* fmts[] = {"[SMFMapFile::%s] could not open \"%s\"", "[SMFMapFile::%s] corrupt header for \"%s\" (v=%d ts=%d tps=%d ss=%d)"};
 
@@ -53,6 +56,7 @@ void CSMFMapFile::Open(const std::string& mapFileName)
 
 void CSMFMapFile::Close()
 {
+	//ZoneScoped;
 	ifs.Close();
 
 	memset(&       header, 0, sizeof(       header));
@@ -65,12 +69,14 @@ void CSMFMapFile::Close()
 
 void CSMFMapFile::ReadMinimap(void* data)
 {
+	//ZoneScoped;
 	ifs.Seek(header.minimapPtr);
 	ifs.Read(data, MINIMAP_SIZE);
 }
 
 int CSMFMapFile::ReadMinimap(std::vector<std::uint8_t>& data, unsigned miplevel)
 {
+	//ZoneScoped;
 	int offset = 0;
 	int mipsize = 1024;
 
@@ -90,6 +96,7 @@ int CSMFMapFile::ReadMinimap(std::vector<std::uint8_t>& data, unsigned miplevel)
 // used only by ReadInfoMap (for unitsync)
 void CSMFMapFile::ReadHeightmap(unsigned short* heightmap)
 {
+	//ZoneScoped;
 	const int hmx = header.mapx + 1;
 	const int hmy = header.mapy + 1;
 	const int len = hmx * hmy;
@@ -105,6 +112,7 @@ void CSMFMapFile::ReadHeightmap(unsigned short* heightmap)
 
 void CSMFMapFile::ReadHeightmap(float* sHeightMap, float* uHeightMap, float base, float mod)
 {
+	//ZoneScoped;
 	const int hmx = header.mapx + 1;
 	const int hmy = header.mapy + 1;
 	const int len = hmx * hmy;
@@ -129,6 +137,7 @@ void CSMFMapFile::ReadHeightmap(float* sHeightMap, float* uHeightMap, float base
 
 void CSMFMapFile::ReadFeatureInfo()
 {
+	//ZoneScoped;
 	ifs.Seek(header.featurePtr);
 	ReadMapFeatureHeader(featureHeader, ifs);
 
@@ -158,6 +167,7 @@ void CSMFMapFile::ReadFeatureInfo()
 
 void CSMFMapFile::ReadFeatureInfo(MapFeatureInfo* f)
 {
+	//ZoneScoped;
 	assert(featureFileOffset != 0);
 	ifs.Seek(featureFileOffset);
 
@@ -174,6 +184,7 @@ void CSMFMapFile::ReadFeatureInfo(MapFeatureInfo* f)
 
 const char* CSMFMapFile::GetFeatureTypeName(int typeID) const
 {
+	//ZoneScoped;
 	assert(typeID >= 0 && typeID < featureHeader.numFeatureType);
 	return featureTypes[typeID];
 }
@@ -181,6 +192,7 @@ const char* CSMFMapFile::GetFeatureTypeName(int typeID) const
 
 void CSMFMapFile::GetInfoMapSize(const char* name, MapBitmapInfo* info) const
 {
+
 	switch (hashString(name)) {
 		case hashString("height"): { *info = MapBitmapInfo(header.mapx + 1, header.mapy + 1); } break;
 		case hashString("grass" ): { *info = MapBitmapInfo(header.mapx / 4, header.mapy / 4); } break;
@@ -193,6 +205,7 @@ void CSMFMapFile::GetInfoMapSize(const char* name, MapBitmapInfo* info) const
 
 bool CSMFMapFile::ReadInfoMap(const char* name, void* data)
 {
+	//ZoneScoped;
 	switch (hashString(name)) {
 		case hashString("height"): {
 			ReadHeightmap(reinterpret_cast<unsigned short*>(data));
@@ -225,6 +238,7 @@ bool CSMFMapFile::ReadInfoMap(const char* name, void* data)
 
 bool CSMFMapFile::ReadGrassMap(void *data)
 {
+	//ZoneScoped;
 	ifs.Seek(sizeof(SMFHeader));
 
 	for (int a = 0; a < header.numExtraHeaders; ++a) {
@@ -259,6 +273,7 @@ bool CSMFMapFile::ReadGrassMap(void *data)
 /// read a float from file (endian aware)
 static float ReadFloat(CFileHandler& file)
 {
+	//ZoneScoped;
 	float __tmpfloat = 0.0f;
 	file.Read(&__tmpfloat, sizeof(float));
 	return swabFloat(__tmpfloat);
@@ -267,6 +282,7 @@ static float ReadFloat(CFileHandler& file)
 /// read an int from file (endian aware)
 static int ReadInt(CFileHandler& file)
 {
+	//ZoneScoped;
 	unsigned int __tmpdw = 0;
 	file.Read(&__tmpdw, sizeof(unsigned int));
 	return (int)swabDWord(__tmpdw);

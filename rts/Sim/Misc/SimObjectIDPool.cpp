@@ -7,6 +7,8 @@
 #include "System/Cpp11Compat.hpp"
 #include "System/creg/STL_Map.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND(SimObjectIDPool, )
 CR_REG_METADATA(SimObjectIDPool, (
@@ -17,6 +19,7 @@ CR_REG_METADATA(SimObjectIDPool, (
 
 
 void SimObjectIDPool::Expand(uint32_t baseID, uint32_t numIDs) {
+	//ZoneScoped;
 	std::vector<uint32_t> newIDs(numIDs);
 
 	// allocate new batch of (randomly shuffled) id's
@@ -46,6 +49,7 @@ void SimObjectIDPool::Expand(uint32_t baseID, uint32_t numIDs) {
 
 
 void SimObjectIDPool::AssignID(CSolidObject* object) {
+	//ZoneScoped;
 	if (object->id < 0) {
 		object->id = ExtractID();
 	} else {
@@ -54,6 +58,7 @@ void SimObjectIDPool::AssignID(CSolidObject* object) {
 }
 
 uint32_t SimObjectIDPool::ExtractID() {
+	//ZoneScoped;
 	// extract a random ID from the pool
 	//
 	// should be unreachable, UnitHandler
@@ -72,6 +77,7 @@ uint32_t SimObjectIDPool::ExtractID() {
 }
 
 void SimObjectIDPool::ReserveID(uint32_t uid) {
+	//ZoneScoped;
 	// reserve a chosen ID from the pool
 	assert(HasID(uid));
 	assert(!IsEmpty());
@@ -88,6 +94,7 @@ void SimObjectIDPool::ReserveID(uint32_t uid) {
 }
 
 void SimObjectIDPool::FreeID(uint32_t uid, bool delayed) {
+	//ZoneScoped;
 	// put an ID back into the pool either immediately
 	// or after all remaining free ID's run out (which
 	// is better iff the object count never gets close
@@ -106,6 +113,7 @@ void SimObjectIDPool::FreeID(uint32_t uid, bool delayed) {
 }
 
 bool SimObjectIDPool::RecycleID(uint32_t uid) {
+	//ZoneScoped;
 	assert(poolIDs.find(uid) != poolIDs.end());
 
 	const uint32_t idx = poolIDs[uid];
@@ -120,6 +128,7 @@ bool SimObjectIDPool::RecycleID(uint32_t uid) {
 }
 
 void SimObjectIDPool::RecycleIDs() {
+	//ZoneScoped;
 	// throw each ID recycled up until now back into the pool
 	freeIDs.insert(tempIDs.begin(), tempIDs.end());
 	tempIDs.clear();
@@ -127,6 +136,7 @@ void SimObjectIDPool::RecycleIDs() {
 
 
 bool SimObjectIDPool::HasID(uint32_t uid) const {
+	//ZoneScoped;
 	assert(poolIDs.find(uid) != poolIDs.end());
 
 	// check if given ID is available (to be assigned) in this pool

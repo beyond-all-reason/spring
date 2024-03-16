@@ -10,6 +10,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CONFIG(bool, HighResInfoTexture).defaultValue(true).description("Use full heightmap resolution info texture (true), or half resolution (false)");
 
@@ -64,12 +66,14 @@ CInfoTextureCombiner::CInfoTextureCombiner()
 
 CInfoTextureCombiner::~CInfoTextureCombiner()
 {
+	//ZoneScoped;
 	shaderHandler->ReleaseProgramObject("[CInfoTextureCombiner]", "CInfoTextureCombiner");
 }
 
 
 void CInfoTextureCombiner::SwitchMode(const std::string& name)
 {
+	//ZoneScoped;
 	if (name.empty()) {
 		disabled = true;
 
@@ -93,6 +97,7 @@ void CInfoTextureCombiner::SwitchMode(const std::string& name)
 
 bool CInfoTextureCombiner::CreateShader(const std::string& filename, const bool clear, const float4 clearColor)
 {
+	//ZoneScoped;
 	if (clear) {
 		// clear
 		fbo.Bind();
@@ -115,6 +120,7 @@ bool CInfoTextureCombiner::CreateShader(const std::string& filename, const bool 
 
 void CInfoTextureCombiner::Update()
 {
+	//ZoneScoped;
 	shader->Enable();
 	fbo.Bind();
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);

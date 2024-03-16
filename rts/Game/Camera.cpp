@@ -14,6 +14,8 @@
 #include "System/Matrix44f.h"
 #include "System/Config/ConfigHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CONFIG(float, EdgeMoveWidth)
 	.defaultValue(0.02f)
@@ -56,23 +58,27 @@ CCamera::CCamera(uint32_t cameraType, uint32_t projectionType)
 
 void CCamera::SetCamType(uint32_t ct)
 {
+	//ZoneScoped;
 	camType = ct;
 	// 0x3F - all planes, 0xF - all planes but NEAR/FAR
 	inViewPlanesMask = (camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F;
 }
 
 void CCamera::InitConfigNotify(){
+	//ZoneScoped;
 	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CamFrameTimeCorrection", "EdgeMoveDynamic", "EdgeMoveWidth"});
 	ConfigUpdate();
 }
 
 void CCamera::RemoveConfigNotify(){
+	//ZoneScoped;
 	configHandler->RemoveObserver(this);
 }
 
 
 void CCamera::ConfigUpdate()
 {
+	//ZoneScoped;
 	moveFastMult = configHandler->GetFloat("CameraMoveFastMult");
 	moveSlowMult = configHandler->GetFloat("CameraMoveSlowMult");
 	useInterpolate = configHandler->GetInt("CamFrameTimeCorrection");
@@ -82,18 +88,21 @@ void CCamera::ConfigUpdate()
 
 void CCamera::ConfigNotify(const std::string & key, const std::string & value)
 {
+	//ZoneScoped;
 	ConfigUpdate();
 }
 
 
 CCamera* CCamera::GetActive()
 {
+	//ZoneScoped;
 	return (CCameraHandler::GetActiveCamera());
 }
 
 
 void CCamera::CopyState(const CCamera* cam)
 {
+	//ZoneScoped;
 	// note: xy-scales are only relevant for CAMTYPE_SHADOW
 	frustum     = cam->frustum;
 
@@ -117,6 +126,7 @@ void CCamera::CopyState(const CCamera* cam)
 
 void CCamera::CopyStateReflect(const CCamera* cam)
 {
+	//ZoneScoped;
 	assert(cam->GetCamType() != CAMTYPE_UWREFL);
 	assert(     GetCamType() == CAMTYPE_UWREFL);
 
@@ -130,6 +140,7 @@ void CCamera::CopyStateReflect(const CCamera* cam)
 
 void CCamera::Update(const UpdateParams& p)
 {
+	//ZoneScoped;
 	lppScale = (2.0f * tanHalfFov) * globalRendering->pixelY;
 	aspectRatio = globalRendering->aspectRatio;
 
@@ -152,6 +163,7 @@ void CCamera::Update(const UpdateParams& p)
 
 void CCamera::UpdateFrustum()
 {
+	//ZoneScoped;
 	// scale-factors for {x,y}-axes
 	float2 nAxisScales;
 	float2 fAxisScales;
@@ -220,6 +232,7 @@ void CCamera::UpdateFrustum()
 
 void CCamera::UpdateMatrices(uint32_t vsx, uint32_t vsy, float var)
 {
+	//ZoneScoped;
 	// recalculate the projection transform
 	switch (projType) {
 		case PROJTYPE_PERSP: {
@@ -258,6 +271,7 @@ void CCamera::UpdateMatrices(uint32_t vsx, uint32_t vsy, float var)
 
 void CCamera::UpdateViewPort(int px, int py, int sx, int sy)
 {
+	//ZoneScoped;
 	viewport[0] = px;
 	viewport[1] = py;
 	viewport[2] = sx;
@@ -266,6 +280,7 @@ void CCamera::UpdateViewPort(int px, int py, int sx, int sy)
 
 void CCamera::UpdateLoadViewport(int px, int py, int sx, int sy)
 {
+	//ZoneScoped;
 	UpdateViewPort(px, py, sx, sy);
 	LoadViewport();
 }
@@ -273,6 +288,7 @@ void CCamera::UpdateLoadViewport(int px, int py, int sx, int sy)
 
 void CCamera::LoadMatrices() const
 {
+	//ZoneScoped;
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(&projectionMatrix.m[0]);
 
@@ -282,12 +298,14 @@ void CCamera::LoadMatrices() const
 
 void CCamera::LoadViewport() const
 {
+	//ZoneScoped;
 	glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
 
 void CCamera::UpdateViewRange()
 {
+	//ZoneScoped;
 	#if 0
 	// horizon-probe direction
 	const float3 hpPixelDir = (forward * XZVector + UpVector * -0.01f).Normalize();
@@ -337,11 +355,13 @@ void CCamera::UpdateViewRange()
 
 bool CCamera::InView(const float3& point, float radius) const
 {
+	//ZoneScoped;
 	return frustum.IntersectSphere(point, radius, inViewPlanesMask);
 }
 
 bool CCamera::InView(const AABB& aabb) const
 {
+	//ZoneScoped;
 	return InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb, inViewPlanesMask);
 }
 
@@ -349,6 +369,7 @@ bool CCamera::InView(const AABB& aabb) const
 // axis-aligned bounding box test (AABB)
 bool CCamera::InView(const AABB& aabb) const
 {
+	//ZoneScoped;
 	// orthographic plane offsets along each respective normal; [0] = LFT&RGT, [1] = TOP&BOT
 	const float xyPlaneOffsets[2] = {frustum.scales.x, frustum.scales.y};
 	const float zwPlaneOffsets[2] = {frustum.scales.z, frustum.scales.w};
@@ -458,16 +479,19 @@ bool CCamera::InView(const AABB& aabb) const
 
 void CCamera::SetVFOV(const float angle)
 {
+	//ZoneScoped;
 	fov = angle;
 	halfFov = (fov * 0.5f) * math::DEG_TO_RAD;
 	tanHalfFov = math::tan(halfFov);
 }
 
 float CCamera::GetHFOV() const {
+	//ZoneScoped;
 	return (2.0f * math::atan(tanHalfFov * aspectRatio) * math::RAD_TO_DEG);
 }
 #if 0
 float CCamera::CalcTanHalfHFOV() const {
+	//ZoneScoped;
 	const float half_h_fov_deg = math::atan(thvfov * h_aspect_ratio) * math::RAD_TO_DEG;
 	const float half_h_fov_rad = half_h_fov_deg * math::DEG_TO_RAD;
 	return (math::tan(half_h_fov_rad));
@@ -478,6 +502,7 @@ float CCamera::CalcTanHalfHFOV() const {
 
 float3 CCamera::GetRotFromDir(float3 fwd)
 {
+	//ZoneScoped;
 	fwd.Normalize();
 
 	// NOTE:
@@ -494,6 +519,7 @@ float3 CCamera::GetRotFromDir(float3 fwd)
 
 float3 CCamera::GetFwdFromRot(const float3& r)
 {
+	//ZoneScoped;
 	float3 fwd;
 	fwd.x = std::sin(r.x) *   std::sin(r.y);
 	fwd.z = std::sin(r.x) * (-std::cos(r.y));
@@ -503,6 +529,7 @@ float3 CCamera::GetFwdFromRot(const float3& r)
 
 float3 CCamera::GetRgtFromRot(const float3& r)
 {
+	//ZoneScoped;
 	// FIXME:
 	//   right should always be "right" relative to forward
 	//   (i.e. up should always point "up" in WS and camera
@@ -521,6 +548,7 @@ float3 CCamera::GetRgtFromRot(const float3& r)
 
 void CCamera::UpdateDirsFromRot(const float3& r)
 {
+	//ZoneScoped;
 	forward  = GetFwdFromRot(r);
 	right    = GetRgtFromRot(r);
 	up       = (right.cross(forward)).Normalize();
@@ -528,6 +556,7 @@ void CCamera::UpdateDirsFromRot(const float3& r)
 
 void CCamera::SetDir(const float3& dir)
 {
+	//ZoneScoped;
 	// if (dir == forward) return;
 	// update our axis-system from the angles
 	SetRot(GetRotFromDir(dir) + (FwdVector * rot.z));
@@ -538,6 +567,7 @@ void CCamera::SetDir(const float3& dir)
 
 float3 CCamera::CalcPixelDir(int x, int y) const
 {
+	//ZoneScoped;
 	const int vsx = std::max(1, globalRendering->viewSizeX);
 	const int vsy = std::max(1, globalRendering->viewSizeY);
 
@@ -550,6 +580,7 @@ float3 CCamera::CalcPixelDir(int x, int y) const
 
 float3 CCamera::CalcViewPortCoordinates(const float3& objPos) const
 {
+	//ZoneScoped;
 	// same as gluProject()
 	const float4 projPos = viewProjectionMatrix * float4(objPos, 1.0f);
 	const float3 clipPos = float3(projPos) / projPos.w;
@@ -647,6 +678,7 @@ void CCamera::CalcFrustumLine(
 
 void CCamera::ClipFrustumLines(const float zmin, const float zmax, bool neg)
 {
+	//ZoneScoped;
 	auto& lines = frustumLines[neg];
 
 	for (int i = 0, cnt = lines[4].sign; i < cnt; i++) {
@@ -679,6 +711,7 @@ void CCamera::ClipFrustumLines(const float zmin, const float zmax, bool neg)
 
 float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 {
+	//ZoneScoped;
 	float camDeltaTime = globalRendering->lastFrameTime;
 
 	if (useInterpolate > 0)
@@ -743,6 +776,7 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-points-and-spheres/
 bool CCamera::Frustum::IntersectSphere(float3 p, float radius, uint8_t testMask) const
 {
+	//ZoneScoped;
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
 		if ((testMask & (1 << i)) == 0)
 			continue;
@@ -820,6 +854,7 @@ bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
 bool CCamera::Frustum::IntersectAABB(const AABB& b, uint8_t testMask) const
 {
+	//ZoneScoped;
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
 		if ((testMask & (1 << i)) == 0)
 			continue;

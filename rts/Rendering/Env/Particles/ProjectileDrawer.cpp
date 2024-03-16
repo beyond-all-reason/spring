@@ -41,6 +41,8 @@
 #include "System/StringUtil.h"
 #include "System/ScopedResource.h"
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 
 static uint32_t sortCamType = 0;
@@ -61,12 +63,14 @@ alignas(CProjectileDrawer) static std::byte projectileDrawerMem[sizeof(CProjecti
 
 
 void CProjectileDrawer::InitStatic() {
+	//ZoneScoped;
 	if (projectileDrawer == nullptr)
 		projectileDrawer = new (projectileDrawerMem) CProjectileDrawer();
 
 	projectileDrawer->Init();
 }
 void CProjectileDrawer::KillStatic(bool reload) {
+	//ZoneScoped;
 	projectileDrawer->Kill();
 
 	if (reload)
@@ -77,6 +81,7 @@ void CProjectileDrawer::KillStatic(bool reload) {
 }
 
 void CProjectileDrawer::Init() {
+	//ZoneScoped;
 	eventHandler.AddClient(this);
 
 	loadscreen->SetLoadMessage("Creating Projectile Textures");
@@ -333,6 +338,7 @@ void CProjectileDrawer::Init() {
 }
 
 void CProjectileDrawer::Kill() {
+	//ZoneScoped;
 	eventHandler.RemoveClient(this);
 	autoLinkedEvents.clear();
 
@@ -430,6 +436,7 @@ void CProjectileDrawer::UpdateDrawFlags()
 
 bool CProjectileDrawer::CheckSoftenExt()
 {
+	//ZoneScoped;
 	static bool result =
 		FBO::IsSupported() &&
 		GLEW_EXT_framebuffer_blit; //eval once
@@ -442,6 +449,7 @@ void CProjectileDrawer::ParseAtlasTextures(
 	spring::unordered_set<std::string>& blockedTextures,
 	CTextureAtlas* texAtlas
 ) {
+	//ZoneScoped;
 	std::vector<std::string> subTables;
 	spring::unordered_map<std::string, std::string> texturesMap;
 
@@ -486,6 +494,7 @@ void CProjectileDrawer::ParseAtlasTextures(
 }
 
 void CProjectileDrawer::LoadWeaponTextures() {
+	//ZoneScoped;
 	// post-process the synced weapon-defs to set unsynced fields
 	// (this requires CWeaponDefHandler to have been initialized)
 	for (WeaponDef& wd: const_cast<std::vector<WeaponDef>&>(weaponDefHandler->GetWeaponDefsVec())) {
@@ -565,6 +574,7 @@ void CProjectileDrawer::LoadWeaponTextures() {
 
 bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 {
+	//ZoneScoped;
 	auto& th = teamHandler;
 	auto& lh = losHandler;
 	return (gu->spectatingFullView || (th.IsValidAllyTeam(allyTeam) && th.Ally(allyTeam, gu->myAllyTeam)) || lh->InLos(pro, gu->myAllyTeam));
@@ -572,6 +582,7 @@ bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 
 bool CProjectileDrawer::ShouldDrawProjectile(const CProjectile* p, uint8_t thisPassMask)
 {
+	//ZoneScoped;
 	assert(p);
 
 	if (p->drawFlag == 0)
@@ -650,6 +661,7 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 
 void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 {
+	//ZoneScoped;
 	const FlyingPieceContainer& container = projectileHandler.flyingPieces[modelType];
 
 	if (container.empty())
@@ -922,6 +934,7 @@ void CProjectileDrawer::DrawShadowTransparent()
 
 void CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 {
+	//ZoneScoped;
 	assert(p->model);
 
 	switch ((p->weapon * 2) + (p->piece * 1)) {
@@ -974,6 +987,7 @@ void CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 
 void CProjectileDrawer::DrawGroundFlashes()
 {
+	//ZoneScoped;
 	const GroundFlashContainer& gfc = projectileHandler.groundFlashes;
 
 	if (gfc.empty())
@@ -1063,11 +1077,13 @@ void CProjectileDrawer::DrawGroundFlashes()
 
 
 void CProjectileDrawer::UpdateTextures() {
+	//ZoneScoped;
 	if (perlinTexObjects > 0 && drawPerlinTex)
 		UpdatePerlin();
 }
 
 void CProjectileDrawer::UpdatePerlin() {
+	//ZoneScoped;
 	perlinFB.Bind();
 	glViewport(perlintex->xstart * (textureAtlas->GetSize()).x, perlintex->ystart * (textureAtlas->GetSize()).y, perlinTexSize, perlinTexSize);
 
@@ -1166,6 +1182,7 @@ void CProjectileDrawer::UpdatePerlin() {
 
 void CProjectileDrawer::GenerateNoiseTex(uint32_t tex)
 {
+	//ZoneScoped;
 	std::array<unsigned char, 4 * perlinBlendTexSize * perlinBlendTexSize> mem;
 
 	for (int a = 0; a < perlinBlendTexSize * perlinBlendTexSize; ++a) {
@@ -1185,6 +1202,7 @@ void CProjectileDrawer::GenerateNoiseTex(uint32_t tex)
 
 void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 {
+	//ZoneScoped;
 	auto& rp = renderProjectiles[p->model != nullptr];
 	const_cast<CProjectile*>(p)->SetRenderIndex(rp.size());
 	rp.push_back(const_cast<CProjectile*>(p));
@@ -1195,6 +1213,7 @@ void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 
 void CProjectileDrawer::RenderProjectileDestroyed(const CProjectile* p)
 {
+	//ZoneScoped;
 	const auto ri = p->GetRenderIndex();
 	auto& rp = renderProjectiles[p->model != nullptr];
 	if (ri >= rp.size()) {

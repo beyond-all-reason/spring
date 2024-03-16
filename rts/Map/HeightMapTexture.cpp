@@ -10,9 +10,12 @@
 
 #include <cstring>
 
+#include <tracy/Tracy.hpp>
+
 HeightMapTexture* heightMapTexture = nullptr;
 HeightMapTexture::HeightMapTexture(): CEventClient("[HeightMapTexture]", 2718965, false)
 {
+	//ZoneScoped;
 	eventHandler.AddClient(this);
 	Init();
 }
@@ -20,6 +23,7 @@ HeightMapTexture::HeightMapTexture(): CEventClient("[HeightMapTexture]", 2718965
 
 HeightMapTexture::~HeightMapTexture()
 {
+	//ZoneScoped;
 	Kill();
 	eventHandler.RemoveClient(this);
 }
@@ -27,6 +31,7 @@ HeightMapTexture::~HeightMapTexture()
 
 void HeightMapTexture::Init()
 {
+	//ZoneScoped;
 	assert(readMap != nullptr);
 	if (!GLEW_ARB_texture_float || !GLEW_ARB_texture_non_power_of_two)
 		return;
@@ -57,6 +62,7 @@ void HeightMapTexture::Init()
 
 void HeightMapTexture::Kill()
 {
+	//ZoneScoped;
 	glDeleteTextures(1, &texID);
 
 	texID = 0;

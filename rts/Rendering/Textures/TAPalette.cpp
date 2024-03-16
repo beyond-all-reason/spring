@@ -3,8 +3,11 @@
 #include "TAPalette.h"
 #include "System/FileSystem/FileHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 void CTAPalette::Init(CFileHandler& paletteFile)
 {
+	//ZoneScoped;
 	if (!paletteFile.FileExists())
 		return;
 

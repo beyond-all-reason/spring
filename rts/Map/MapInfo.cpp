@@ -21,6 +21,8 @@
 #include <array>
 #include <cassert>
 
+#include <tracy/Tracy.hpp>
+
 
 // Before delete, the const is const_cast'ed away. There are
 // no (other) situations where mapInfo may be modified, except
@@ -31,6 +33,7 @@ const CMapInfo* mapInfo = nullptr;
 
 static void FIND_MAP_TEXTURE(std::string* filePath, const std::string& defaultDir = "maps/")
 {
+	//ZoneScoped;
 	if (filePath->empty())
 		return;
 	if (CFileHandler::FileExists(*filePath, SPRING_VFS_ZIP)) // no RawFS, cause it's also used for synced textures (typemap, metalmap, ...)
@@ -43,6 +46,7 @@ static void FIND_MAP_TEXTURE(std::string* filePath, const std::string& defaultDi
 
 CMapInfo::CMapInfo(const std::string& mapFileName, const string& mapHumanName): mapInfoParser(mapFileName)
 {
+	//ZoneScoped;
 	map.name = mapHumanName;
 
 	if (!mapInfoParser.IsValid())
@@ -74,6 +78,7 @@ CMapInfo::CMapInfo(const std::string& mapFileName, const string& mapHumanName): 
 
 CMapInfo::~CMapInfo()
 {
+	//ZoneScoped;
 #if !defined(HEADLESS) && !defined(NO_SOUND)
 	delete efxprops;
 	efxprops = nullptr;
@@ -83,6 +88,7 @@ CMapInfo::~CMapInfo()
 
 void CMapInfo::ReadGlobal()
 {
+	//ZoneScoped;
 	const LuaTable& topTable = mapInfoParser.GetRoot();
 
 	map.description  = topTable.GetString("description", map.name);
@@ -112,6 +118,7 @@ void CMapInfo::ReadGlobal()
 
 void CMapInfo::ReadGui()
 {
+	//ZoneScoped;
 	// GUI
 	gui.autoShowMetal = mapInfoParser.GetRoot().GetBool("autoShowMetal", true);
 }
@@ -119,6 +126,7 @@ void CMapInfo::ReadGui()
 
 void CMapInfo::ReadAtmosphere()
 {
+	//ZoneScoped;
 	// MAP\ATMOSPHERE
 	const LuaTable& atmoTable = mapInfoParser.GetRoot().SubTable("atmosphere");
 	atmosphere_t& atmo = atmosphere;
@@ -149,6 +157,7 @@ void CMapInfo::ReadAtmosphere()
 
 void CMapInfo::ReadSplats()
 {
+	//ZoneScoped;
 	const LuaTable& splatsTable = mapInfoParser.GetRoot().SubTable("splats");
 
 	splats.texScales = splatsTable.GetFloat4("texScales", float4(0.02f, 0.02f, 0.02f, 0.02f));
@@ -157,6 +166,7 @@ void CMapInfo::ReadSplats()
 
 void CMapInfo::ReadGrass()
 {
+	//ZoneScoped;
 	const LuaTable& grassTable = mapInfoParser.GetRoot().SubTable("grass");
 	const LuaTable& mapResTable = mapInfoParser.GetRoot().SubTable("resources");
 
@@ -173,6 +183,7 @@ void CMapInfo::ReadGrass()
 
 void CMapInfo::ReadLight()
 {
+	//ZoneScoped;
 	const LuaTable& lightTable = mapInfoParser.GetRoot().SubTable("lighting");
 
 	// read the float4 direction first; keep it if the float3 value does not exist
@@ -199,6 +210,7 @@ void CMapInfo::ReadLight()
 
 void CMapInfo::ReadWater()
 {
+	//ZoneScoped;
 	const LuaTable& wt = mapInfoParser.GetRoot().SubTable("water");
 
 	water.fluidDensity = wt.GetFloat("fluidDensity", 960.0f * 0.25f);
@@ -310,6 +322,7 @@ void CMapInfo::ReadWater()
 template<typename T>
 static bool ParseSplatDetailNormalTexture(const LuaTable& table, const T key, std::vector<std::string>& texNames)
 {
+	//ZoneScoped;
 	if (!table.KeyExists(key))
 		return false;
 
@@ -322,6 +335,7 @@ static bool ParseSplatDetailNormalTexture(const LuaTable& table, const T key, st
 
 void CMapInfo::ReadSMF()
 {
+	//ZoneScoped;
 	// SMF specific settings
 	const LuaTable& mapResTable = mapInfoParser.GetRoot().SubTable("resources");
 	const LuaTable& sdnTexTable = mapResTable.SubTable("splatDetailNormalTex");
@@ -399,6 +413,7 @@ void CMapInfo::ReadSMF()
 
 void CMapInfo::ReadTerrainTypes()
 {
+	//ZoneScoped;
 	const LuaTable& terrTypeTable = mapInfoParser.GetRoot().SubTable("terrainTypes");
 
 	for (int tt = 0; tt < NUM_TERRAIN_TYPES; tt++) {
@@ -426,6 +441,7 @@ void CMapInfo::ReadTerrainTypes()
 
 void CMapInfo::ReadPFSConstants()
 {
+	//ZoneScoped;
 	const LuaTable& pfsTable = (mapInfoParser.GetRoot()).SubTable("pfs");
 //	const LuaTable& legacyTable = pfsTable.SubTable("legacyConstants");
 	const LuaTable& qtpfsTable = pfsTable.SubTable("qtpfsConstants");
@@ -447,6 +463,7 @@ void CMapInfo::ReadPFSConstants()
 
 void CMapInfo::ReadSound()
 {
+	//ZoneScoped;
 #if !defined(HEADLESS) && !defined(NO_SOUND)
 	const LuaTable& soundTable = mapInfoParser.GetRoot().SubTable("sound");
 

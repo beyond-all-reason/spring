@@ -10,8 +10,11 @@
 #include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Env/CubeMapHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 bool CModelDrawerHelper::ObjectVisibleReflection(const float3& objPos, const float3& camPos, float maxRadius)
 {
+	//ZoneScoped;
 #if 1
 	// If the object is underwater then,
 	// draw the object if the water depth at the object is less than the units draw radius
@@ -36,6 +39,7 @@ bool CModelDrawerHelper::ObjectVisibleReflection(const float3& objPos, const flo
 
 void CModelDrawerHelper::EnableTexturesCommon()
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE1);
 	glEnable(GL_TEXTURE_2D);
 
@@ -60,6 +64,7 @@ void CModelDrawerHelper::EnableTexturesCommon()
 
 void CModelDrawerHelper::DisableTexturesCommon()
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE1);
 	glDisable(GL_TEXTURE_2D);
 
@@ -80,6 +85,7 @@ void CModelDrawerHelper::DisableTexturesCommon()
 
 void CModelDrawerHelper::PushTransform(const CCamera* cam)
 {
+	//ZoneScoped;
 	// set model-drawing transform; view is combined with projection
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -91,6 +97,7 @@ void CModelDrawerHelper::PushTransform(const CCamera* cam)
 
 void CModelDrawerHelper::PopTransform()
 {
+	//ZoneScoped;
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -99,6 +106,7 @@ void CModelDrawerHelper::PopTransform()
 
 float4 CModelDrawerHelper::GetTeamColor(int team, float alpha)
 {
+	//ZoneScoped;
 	assert(teamHandler.IsValidTeam(team));
 
 	const   CTeam* t = teamHandler.Team(team);
@@ -109,6 +117,7 @@ float4 CModelDrawerHelper::GetTeamColor(int team, float alpha)
 
 void CModelDrawerHelper::DIDResetPrevProjection(bool toScreen)
 {
+	//ZoneScoped;
 	if (!toScreen)
 		return;
 
@@ -119,6 +128,7 @@ void CModelDrawerHelper::DIDResetPrevProjection(bool toScreen)
 
 void CModelDrawerHelper::DIDResetPrevModelView()
 {
+	//ZoneScoped;
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glPushMatrix();
@@ -126,6 +136,7 @@ void CModelDrawerHelper::DIDResetPrevModelView()
 
 bool CModelDrawerHelper::DIDCheckMatrixMode(int wantedMode)
 {
+	//ZoneScoped;
 #if 1
 	int matrixMode = 0;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
@@ -138,6 +149,7 @@ bool CModelDrawerHelper::DIDCheckMatrixMode(int wantedMode)
 
 void CModelDrawerHelper::BindModelTypeTexture(int mdlType, int texType)
 {
+	//ZoneScoped;
 	const auto texMat = textureHandlerS3O.GetTexture(texType);
 
 	if (shadowHandler.InShadowPass())
@@ -148,6 +160,7 @@ void CModelDrawerHelper::BindModelTypeTexture(int mdlType, int texType)
 
 void CModelDrawerHelper::UnbindModelTypeTexture(int mdlType)
 {
+	//ZoneScoped;
 	if (shadowHandler.InShadowPass())
 		modelDrawerHelpers[mdlType]->UnbindShadowTex();
 	else
@@ -156,12 +169,14 @@ void CModelDrawerHelper::UnbindModelTypeTexture(int mdlType)
 
 void CModelDrawerHelper::PushModelRenderState(int mdlType)
 {
+	//ZoneScoped;
 	assert(CModelDrawerHelper::modelDrawerHelpers[mdlType]);
 	modelDrawerHelpers[mdlType]->PushRenderState();
 }
 
 void CModelDrawerHelper::PushModelRenderState(const S3DModel* m)
 {
+	//ZoneScoped;
 	PushModelRenderState(m->type);
 	BindModelTypeTexture(m->type, m->textureType);
 }
@@ -170,6 +185,7 @@ void CModelDrawerHelper::PushModelRenderState(const CSolidObject* o) { PushModel
 
 void CModelDrawerHelper::PopModelRenderState(int mdlType)
 {
+	//ZoneScoped;
 	assert(modelDrawerHelpers[mdlType]);
 	modelDrawerHelpers[mdlType]->PopRenderState();
 }
@@ -189,16 +205,19 @@ const std::array<const CModelDrawerHelper*, MODELTYPE_CNT> CModelDrawerHelper::m
 
 void CModelDrawerHelper3DO::PushRenderState() const
 {
+	//ZoneScoped;
 	glDisable(GL_CULL_FACE);
 }
 
 void CModelDrawerHelper3DO::PopRenderState() const
 {
+	//ZoneScoped;
 	glEnable(GL_CULL_FACE);
 }
 
 void CModelDrawerHelper3DO::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
 	glActiveTexture(GL_TEXTURE0);
@@ -207,6 +226,7 @@ void CModelDrawerHelper3DO::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* t
 
 void CModelDrawerHelper3DO::UnbindOpaqueTex() const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
@@ -215,6 +235,7 @@ void CModelDrawerHelper3DO::UnbindOpaqueTex() const
 
 void CModelDrawerHelper3DO::BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE0);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, textureHandler3DO.GetAtlasTex2ID());
@@ -222,6 +243,7 @@ void CModelDrawerHelper3DO::BindShadowTex(const CS3OTextureHandler::S3OTexMat* t
 
 void CModelDrawerHelper3DO::UnbindShadowTex() const
 {
+	//ZoneScoped;
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
@@ -231,6 +253,7 @@ void CModelDrawerHelper3DO::UnbindShadowTex() const
 
 void CModelDrawerHelperS3O::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
 	glActiveTexture(GL_TEXTURE0);
@@ -239,6 +262,7 @@ void CModelDrawerHelperS3O::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* t
 
 void CModelDrawerHelperS3O::UnbindOpaqueTex() const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
@@ -247,6 +271,7 @@ void CModelDrawerHelperS3O::UnbindOpaqueTex() const
 
 void CModelDrawerHelperS3O::BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE0);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
@@ -254,6 +279,7 @@ void CModelDrawerHelperS3O::BindShadowTex(const CS3OTextureHandler::S3OTexMat* t
 
 void CModelDrawerHelperS3O::UnbindShadowTex() const
 {
+	//ZoneScoped;
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
@@ -263,6 +289,7 @@ void CModelDrawerHelperS3O::UnbindShadowTex() const
 
 void CModelDrawerHelperASS::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
 	glActiveTexture(GL_TEXTURE0);
@@ -271,6 +298,7 @@ void CModelDrawerHelperASS::BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* t
 
 void CModelDrawerHelperASS::UnbindOpaqueTex() const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
@@ -279,6 +307,7 @@ void CModelDrawerHelperASS::UnbindOpaqueTex() const
 
 void CModelDrawerHelperASS::BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE0);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, textureMat->tex2);
@@ -286,6 +315,7 @@ void CModelDrawerHelperASS::BindShadowTex(const CS3OTextureHandler::S3OTexMat* t
 
 void CModelDrawerHelperASS::UnbindShadowTex() const
 {
+	//ZoneScoped;
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);

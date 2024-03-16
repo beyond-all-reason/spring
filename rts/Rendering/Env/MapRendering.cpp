@@ -7,6 +7,8 @@
 #include "Map/MapInfo.h"
 #include "System/EventHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 /**
  * @brief mapRenderingInst
  *
@@ -15,6 +17,7 @@
 CMapRendering mapRenderingInst;
 
 void CMapRendering::Init() {
+	//ZoneScoped;
 	assert(mapInfo != nullptr);
 	assert(IsGlobalInstance());
 
@@ -26,5 +29,6 @@ void CMapRendering::Init() {
 }
 
 bool CMapRendering::IsGlobalInstance() const {
+	//ZoneScoped;
 	return (this == &mapRenderingInst);
 }

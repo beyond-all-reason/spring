@@ -6,6 +6,8 @@
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 
 ////////////////////////////////////////
 //can't be put in VFS due to initialization order
@@ -87,6 +89,7 @@ void main() {
 
 CglShaderFontRenderer::CglShaderFontRenderer()
 {
+	//ZoneScoped;
 	primaryBufferTC = TypedRenderBuffer<VA_TYPE_TC>(NUM_TRI_BUFFER_VERTS, NUM_TRI_BUFFER_ELEMS, IStreamBufferConcept::SB_BUFFERSUBDATA);
 	outlineBufferTC = TypedRenderBuffer<VA_TYPE_TC>(NUM_TRI_BUFFER_VERTS, NUM_TRI_BUFFER_ELEMS, IStreamBufferConcept::SB_BUFFERSUBDATA);
 
@@ -121,6 +124,7 @@ CglShaderFontRenderer::CglShaderFontRenderer()
 
 CglShaderFontRenderer::~CglShaderFontRenderer()
 {
+	//ZoneScoped;
 	--fontShaderRefs;
 	if (fontShaderRefs > 0)
 		return;
@@ -130,22 +134,26 @@ CglShaderFontRenderer::~CglShaderFontRenderer()
 
 void CglShaderFontRenderer::AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl)
 {
+	//ZoneScoped;
 	primaryBufferTC.AddQuadTriangles(std::move(tl), std::move(tr), std::move(br), std::move(bl));
 }
 
 void CglShaderFontRenderer::AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl)
 {
+	//ZoneScoped;
 	outlineBufferTC.AddQuadTriangles(std::move(tl), std::move(tr), std::move(br), std::move(bl));
 }
 
 void CglShaderFontRenderer::DrawTraingleElements()
 {
+	//ZoneScoped;
 	outlineBufferTC.DrawElements(GL_TRIANGLES);
 	primaryBufferTC.DrawElements(GL_TRIANGLES);
 }
 
 void CglShaderFontRenderer::HandleTextureUpdate(CFontTexture& fnt, bool onlyUpload)
 {
+	//ZoneScoped;
 	if (!onlyUpload)
 		fnt.UpdateGlyphAtlasTexture();
 
@@ -158,6 +166,7 @@ void CglShaderFontRenderer::HandleTextureUpdate(CFontTexture& fnt, bool onlyUplo
 
 void CglShaderFontRenderer::PushGLState(const CglFont& fnt)
 {
+	//ZoneScoped;
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_ALPHA_TEST); //just in case
@@ -173,6 +182,7 @@ void CglShaderFontRenderer::PushGLState(const CglFont& fnt)
 
 void CglShaderFontRenderer::PopGLState()
 {
+	//ZoneScoped;
 	fontShader->Disable();
 
 	if (currProgID > 0)
@@ -185,6 +195,7 @@ void CglShaderFontRenderer::PopGLState()
 
 void CglShaderFontRenderer::GetStats(std::array<size_t, 8>& stats) const
 {
+	//ZoneScoped;
 	stats[0 + 0] = primaryBufferTC.SumElems();
 	stats[0 + 1] = primaryBufferTC.SumIndcs();
 	stats[0 + 2] = primaryBufferTC.NumSubmits(false);
@@ -198,6 +209,7 @@ void CglShaderFontRenderer::GetStats(std::array<size_t, 8>& stats) const
 
 CglNoShaderFontRenderer::CglNoShaderFontRenderer()
 {
+	//ZoneScoped;
 	for (auto& v : verts)
 		v.reserve(NUM_TRI_BUFFER_VERTS);
 	for (auto& i : indcs)
@@ -210,11 +222,13 @@ CglNoShaderFontRenderer::CglNoShaderFontRenderer()
 
 CglNoShaderFontRenderer::~CglNoShaderFontRenderer()
 {
+	//ZoneScoped;
 	glDeleteLists(textureSpaceMatrix, 1);
 }
 
 void CglNoShaderFontRenderer::AddQuadTrianglesImpl(bool primary, VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl)
 {
+	//ZoneScoped;
 	auto& v = verts[primary];
 	auto& i = indcs[primary];
 
@@ -238,16 +252,19 @@ void CglNoShaderFontRenderer::AddQuadTrianglesImpl(bool primary, VA_TYPE_TC&& tl
 
 void CglNoShaderFontRenderer::AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl)
 {
+	//ZoneScoped;
 	AddQuadTrianglesImpl(true , std::move(tl), std::move(tr), std::move(br), std::move(bl));
 }
 
 void CglNoShaderFontRenderer::AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl)
 {
+	//ZoneScoped;
 	AddQuadTrianglesImpl(false, std::move(tl), std::move(tr), std::move(br), std::move(bl));
 }
 
 void CglNoShaderFontRenderer::DrawTraingleElements()
 {
+	//ZoneScoped;
 	static constexpr GLsizei stride = sizeof(VA_TYPE_TC);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -268,6 +285,7 @@ void CglNoShaderFontRenderer::DrawTraingleElements()
 
 void CglNoShaderFontRenderer::HandleTextureUpdate(CFontTexture& fnt, bool onlyUpload)
 {
+	//ZoneScoped;
 	if (!onlyUpload)
 		fnt.UpdateGlyphAtlasTexture();
 
@@ -285,6 +303,7 @@ void CglNoShaderFontRenderer::HandleTextureUpdate(CFontTexture& fnt, bool onlyUp
 
 void CglNoShaderFontRenderer::PushGLState(const CglFont& fnt)
 {
+	//ZoneScoped;
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST);
@@ -306,6 +325,7 @@ void CglNoShaderFontRenderer::PushGLState(const CglFont& fnt)
 
 void CglNoShaderFontRenderer::PopGLState()
 {
+	//ZoneScoped;
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glDisableClientState(GL_VERTEX_ARRAY);
@@ -321,6 +341,7 @@ void CglNoShaderFontRenderer::PopGLState()
 
 void CglNoShaderFontRenderer::GetStats(std::array<size_t, 8>& stats) const
 {
+	//ZoneScoped;
 	/// placeholder
 	std::fill(stats.begin(), stats.end(), 0);
 }
@@ -328,6 +349,7 @@ void CglNoShaderFontRenderer::GetStats(std::array<size_t, 8>& stats) const
 
 std::unique_ptr<CglFontRenderer> CglFontRenderer::CreateInstance()
 {
+	//ZoneScoped;
 #ifndef HEADLESS
 	//return std::make_unique<CglNoShaderFontRenderer>();
 	if (globalRendering->amdHacks)
@@ -346,10 +368,12 @@ std::unique_ptr<CglFontRenderer> CglFontRenderer::CreateInstance()
 
 void CglFontRenderer::DeleteInstance(std::unique_ptr<CglFontRenderer>& instance)
 {
+	//ZoneScoped;
 	instance = nullptr;
 }
 
 void CglNullFontRenderer::GetStats(std::array<size_t, 8>& stats) const
 {
+	//ZoneScoped;
 	std::fill(stats.begin(), stats.end(), 0u);
 }

@@ -10,9 +10,12 @@
 #include "Game/Camera.h"
 #include "System/Config/ConfigHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 CONFIG(bool, CamOverviewDynamicRotation).defaultValue(false).description("Transition from different camera preserves rotation");
 
 static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov, bool cameraSideways) {
+	//ZoneScoped;
 	static constexpr float marginForUI = 1.037f; // leave some space for UI outside of map edges
 	static constexpr float maxHeight = 25000.0f;
 	const float fovCoefficient = 1.0f/math::tan(fov * math::DEG_TO_RAD) * marginForUI;
@@ -25,10 +28,12 @@ static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov, bool 
 }
 
 static float GetClosestRightAngle(float angle) {
+	//ZoneScoped;
 	return std::round(angle/math::HALFPI) * math::HALFPI;
 }
 
 static bool CameraPointingSideways(float angle) {
+	//ZoneScoped;
 	return std::lround(angle/math::HALFPI) % 2;
 }
 
@@ -37,6 +42,7 @@ COverviewController::COverviewController() :
 	dynamicRotation(false),
 	camRotY(CCameraController::GetRot().y)
 {
+	//ZoneScoped;
 	enabled = false;
 
 	dir = float3(0.0f, -1.0f, -0.001f).ANormalize();
@@ -50,11 +56,13 @@ COverviewController::COverviewController() :
 
 COverviewController::~COverviewController()
 {
+	//ZoneScoped;
 	configHandler->RemoveObserver(this);
 }
 
 float3 COverviewController::SwitchFrom() const
 {
+	//ZoneScoped;
 	const float3 mdir = mouse->dir;
 	const float3 rpos = pos + mdir * CGround::LineGroundCol(pos, pos + mdir * 50000.0f, false);
 
@@ -65,6 +73,7 @@ float3 COverviewController::SwitchFrom() const
 }
 
 float3 COverviewController::GetRot() const {
+	//ZoneScoped;
 	const float3 defaultRot = CCameraController::GetRot();
 	if (!this->dynamicRotation)
 	{
@@ -76,6 +85,7 @@ float3 COverviewController::GetRot() const {
 
 void COverviewController::SwitchTo(const int oldCam, const bool showText)
 {
+	//ZoneScoped;
 	if (showText)
 		LOG("Switching to Overview style camera");
 
@@ -92,11 +102,13 @@ void COverviewController::SwitchTo(const int oldCam, const bool showText)
 
 void COverviewController::GetState(StateMap& sm) const
 {
+	//ZoneScoped;
 	CCameraController::GetState(sm);
 }
 
 bool COverviewController::SetState(const StateMap& sm)
 {
+	//ZoneScoped;
 	// CCameraController::SetState(sm);
 	// always centered, allow only for FOV change
 	SetStateFloat(sm, "fov", fov);
@@ -105,10 +117,12 @@ bool COverviewController::SetState(const StateMap& sm)
 
 void COverviewController::ConfigUpdate()
 {
+	//ZoneScoped;
 	dynamicRotation = configHandler->GetBool("CamOverviewDynamicRotation");
 }
 
 void COverviewController::ConfigNotify(const std::string & key, const std::string & value)
 {
+	//ZoneScoped;
 	ConfigUpdate();
 }

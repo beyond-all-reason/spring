@@ -10,6 +10,8 @@
 #include "Sim/Features/Feature.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CRifle, CWeapon, )
 CR_REG_METADATA(CRifle, )
 
@@ -20,6 +22,7 @@ CR_REG_METADATA(CRifle, )
 
 void CRifle::FireImpl(const bool scriptCall)
 {
+	//ZoneScoped;
 	float3 dir = (currentTargetPos - weaponMuzzlePos).SafeNormalize();
 	dir +=
 		(gsRNG.NextVector() * SprayAngleExperience() + SalvoErrorExperience());

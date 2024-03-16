@@ -6,8 +6,11 @@
 #include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/LuaObjectDrawer.h"
 
+#include <tracy/Tracy.hpp>
+
 void CModelDrawerConcept::InitStatic()
 {
+	//ZoneScoped;
 	if (initialized)
 		return;
 
@@ -30,6 +33,7 @@ void CModelDrawerConcept::InitStatic()
 
 void CModelDrawerConcept::KillStatic(bool reload)
 {
+	//ZoneScoped;
 	if (!initialized)
 		return;
 

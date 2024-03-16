@@ -7,6 +7,8 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 #define MAX_CACHE_QUEUE_SIZE   200
 #define MAX_PATH_LIFETIME_SECS   6
 #define USE_NONCOLLIDABLE_HASH   1
@@ -50,6 +52,7 @@ bool CPathCache::AddPath(
 	float goalRadius,
 	int pathType
 ) {
+	//ZoneScoped;
 	if (cacheQue.size() > MAX_CACHE_QUEUE_SIZE)
 		RemoveFrontQueItem();
 
@@ -87,6 +90,7 @@ const CPathCache::CacheItem& CPathCache::GetCachedPath(
 	float goalRadius,
 	int pathType
 ) {
+	//ZoneScoped;
 	const std::uint64_t hash = GetHash(strtBlock, goalBlock, goalRadius, pathType);
 
 	// LOG("%llu Cache lookup: (%d, %d) -> (%d, %d) ~ %f for [%d] (%llu) : %llu"
@@ -117,12 +121,14 @@ const CPathCache::CacheItem& CPathCache::GetCachedPath(
 
 void CPathCache::Update()
 {
+	//ZoneScoped;
 	while (!cacheQue.empty() && (cacheQue.front().timeout) < gs->frameNum)
 		RemoveFrontQueItem();
 }
 
 void CPathCache::RemoveFrontQueItem()
 {
+	//ZoneScoped;
 	const auto it = cachedPaths.find((cacheQue.front()).hash);
 
 	assert(it != cachedPaths.end());
@@ -175,6 +181,7 @@ bool CPathCache::HashCollision(
 	float goalRadius,
 	int pathType
 ) const {
+	//ZoneScoped;
 	bool hashColl = false;
 
 	hashColl |= (ci.strtBlock != strtBlk || ci.goalBlock != goalBlk);

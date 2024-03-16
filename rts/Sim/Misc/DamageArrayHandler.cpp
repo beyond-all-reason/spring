@@ -14,6 +14,7 @@
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
 
 CR_BIND(CDamageArrayHandler, )
 
@@ -28,6 +29,7 @@ CDamageArrayHandler damageArrayHandler;
 
 void CDamageArrayHandler::Init(LuaParser* defsParser)
 {
+	//ZoneScoped;
 	#define DEFAULT_ARMORDEF_NAME "default"
 
 	try {
@@ -87,6 +89,7 @@ void CDamageArrayHandler::Init(LuaParser* defsParser)
 
 int CDamageArrayHandler::GetTypeFromName(const std::string& name) const
 {
+	//ZoneScoped;
 	const auto it = armorDefNameIdxMap.find(StringToLower(name));
 
 	if (it != armorDefNameIdxMap.end())

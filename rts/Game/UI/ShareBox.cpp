@@ -20,6 +20,8 @@
 
 #include <SDL_keycode.h>
 
+#include <tracy/Tracy.hpp>
+
 #define MAX_SHARE_TEAMS (teamHandler.ActiveTeams() - 1)
 int CShareBox::lastShareTeam = 0;
 
@@ -112,6 +114,7 @@ CShareBox::~CShareBox() = default;
 
 void CShareBox::Draw()
 {
+	//ZoneScoped;
 	const float alpha = std::max(guiAlpha, 0.4f);
 
 	const float mx = MouseX(mouse->lastx);
@@ -258,6 +261,7 @@ void CShareBox::Draw()
 
 bool CShareBox::IsAbove(int x, int y)
 {
+	//ZoneScoped;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
@@ -266,6 +270,7 @@ bool CShareBox::IsAbove(int x, int y)
 
 std::string CShareBox::GetTooltip(int x, int y)
 {
+	//ZoneScoped;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
@@ -296,6 +301,7 @@ std::string CShareBox::GetTooltip(int x, int y)
 
 bool CShareBox::MousePress(int x, int y, int button)
 {
+	//ZoneScoped;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
@@ -346,6 +352,7 @@ bool CShareBox::MousePress(int x, int y, int button)
 
 void CShareBox::MouseRelease(int x, int y, int button)
 {
+	//ZoneScoped;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 	scrolling = false;
@@ -378,6 +385,7 @@ void CShareBox::MouseRelease(int x, int y, int button)
 
 void CShareBox::MouseMove(int x, int y, int dx, int dy, int button)
 {
+	//ZoneScoped;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
@@ -416,6 +424,7 @@ void CShareBox::MouseMove(int x, int y, int dx, int dy, int button)
 
 bool CShareBox::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
+	//ZoneScoped;
 	if (keyCode == SDLK_ESCAPE) {
 		delete this;
 		return true;

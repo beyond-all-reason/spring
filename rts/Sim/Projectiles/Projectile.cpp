@@ -13,6 +13,8 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/Matrix44f.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED_INTERFACE(CProjectile, CExpGenSpawnable)
 
 CR_REG_METADATA(CProjectile,
@@ -93,6 +95,7 @@ CProjectile::CProjectile(
 
 CProjectile::~CProjectile()
 {
+	//ZoneScoped;
 	if (!synced)
 		return;
 
@@ -101,6 +104,7 @@ CProjectile::~CProjectile()
 
 void CProjectile::Init(const CUnit* owner, const float3& offset)
 {
+	//ZoneScoped;
 	if (owner != nullptr) {
 		// must be set before the AddProjectile call
 		ownerID = owner->id;
@@ -129,6 +133,7 @@ void CProjectile::Init(const CUnit* owner, const float3& offset)
 
 void CProjectile::Update()
 {
+	//ZoneScoped;
 	if (luaMoveCtrl)
 		return;
 
@@ -139,6 +144,7 @@ void CProjectile::Update()
 
 void CProjectile::Delete()
 {
+	//ZoneScoped;
 	deleteMe = true;
 	checkCol = false;
 }
@@ -146,11 +152,13 @@ void CProjectile::Delete()
 
 void CProjectile::DrawOnMinimap() const
 {
+	//ZoneScoped;
 	AddMiniMapVertices({ pos        , color4::whiteA }, { pos + speed, color4::whiteA });
 }
 
 
 CUnit* CProjectile::owner() const {
+	//ZoneScoped;
 	// NOTE:
 	//   this death dependency optimization using "ownerID" is logically flawed:
 	//   because ID's are reused it could return a unit that is not the original
@@ -177,6 +185,7 @@ CMatrix44f CProjectile::GetTransformMatrix(bool offsetPos) const {
 
 bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	//ZoneScoped;
 	if (CExpGenSpawnable::GetMemberInfo(memberInfo))
 		return true;
 
@@ -189,11 +198,13 @@ bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 bool CProjectile::IsValidTexture(const AtlasedTexture* tex)
 {
+	//ZoneScoped;
 	return tex && (*tex != AtlasedTexture::DefaultAtlasTexture);
 }
 
 void CProjectile::AddMiniMapVertices(VA_TYPE_C&& v1, VA_TYPE_C&& v2)
 {
+	//ZoneScoped;
 	if (v1.pos.equals(v2.pos)) {
 		mmPtsRB.AddVertex(std::move(v1));
 	}

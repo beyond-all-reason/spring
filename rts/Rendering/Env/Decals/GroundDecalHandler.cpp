@@ -112,6 +112,7 @@ CGroundDecalHandler::CGroundDecalHandler()
 	, highQuality{ configHandler->GetBool("HighQualityDecals") && (globalRendering->msaaLevel > 0) }
 	, sdbc{ highQuality }
 {
+	//ZoneScoped;
 	if (!GetDrawDecals())
 		return;
 
@@ -140,6 +141,7 @@ void CGroundDecalHandler::PostLoad()
 
 CGroundDecalHandler::~CGroundDecalHandler()
 {
+	//ZoneScoped;
 	CExplosionCreator::RemoveExplosionListener(this);
 	eventHandler.RemoveClient(this);
 	configHandler->RemoveObserver(this);
@@ -152,6 +154,7 @@ CGroundDecalHandler::~CGroundDecalHandler()
 
 static auto LoadTexture(const std::string& name, bool convertDecalBitmap)
 {
+	//ZoneScoped;
 	std::string fileName = StringToLower(name);
 
 	if (FileSystem::GetExtension(fileName).empty())
@@ -194,11 +197,13 @@ static auto LoadTexture(const std::string& name, bool convertDecalBitmap)
 }
 
 static inline std::string GetExtraTextureName(const std::string& mainTex) {
+	//ZoneScoped;
 	auto dotPos = mainTex.find_last_of(".");
 	return mainTex.substr(0, dotPos) + "_normal" + (dotPos == string::npos ? "" : mainTex.substr(dotPos));
 }
 
 void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex, bool convertOldBMP) {
+	//ZoneScoped;
 	try {
 		const auto& [bm, fn] = LoadTexture(filename, convertOldBMP);
 		const auto& decalAtlas = (mainTex ? atlasMain : atlasNorm);
@@ -211,6 +216,7 @@ void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::stri
 
 void CGroundDecalHandler::AddBuildingDecalTextures()
 {
+	//ZoneScoped;
 	auto CreateFallBackTexture = [](const SColor& color) {
 		CBitmap bm;
 		bm.AllocDummy(color);
@@ -242,6 +248,7 @@ void CGroundDecalHandler::AddBuildingDecalTextures()
 
 void CGroundDecalHandler::AddTexturesFromTable()
 {
+	//ZoneScoped;
 	LuaParser resourcesParser("gamedata/resources.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP);
 	if (!resourcesParser.Execute()) {
 		LOG_L(L_ERROR, "Failed to load resources: %s", resourcesParser.GetErrorLog().c_str());
@@ -311,6 +318,7 @@ void CGroundDecalHandler::AddTexturesFromTable()
 
 void CGroundDecalHandler::AddGroundTrackTextures()
 {
+	//ZoneScoped;
 	const auto fileNames = CFileHandler::FindFiles("bitmaps/tracks/", "");
 	for (const auto& mainTexFileName : fileNames) {
 		const auto mainName = FileSystem::GetBasename(StringToLower(mainTexFileName));
@@ -325,6 +333,7 @@ void CGroundDecalHandler::AddGroundTrackTextures()
 
 void CGroundDecalHandler::AddFallbackTextures()
 {
+	//ZoneScoped;
 	{
 		const auto minDim = std::max(atlasMain->GetMinDim(), 32);
 		atlasMain->AddTex("%FB_MAIN%", minDim, minDim, SColor(255,   0,   0, 255));
@@ -374,6 +383,7 @@ void CGroundDecalHandler::UnbindVertexAtrribs()
 
 uint32_t CGroundDecalHandler::GetDepthBufferTextureTarget() const
 {
+	//ZoneScoped;
 	return highQuality ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 }
 
@@ -467,6 +477,7 @@ void CGroundDecalHandler::ReloadDecalShaders() {
 
 void CGroundDecalHandler::BindAtlasTextures()
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(atlasMain->GetTexTarget(), atlasMain->GetTexID());
 
@@ -476,6 +487,7 @@ void CGroundDecalHandler::BindAtlasTextures()
 
 void CGroundDecalHandler::BindCommonTextures()
 {
+	//ZoneScoped;
 	const CSMFReadMap* smfMap = smfDrawer->GetReadMap();
 
 	glActiveTexture(GL_TEXTURE2);
@@ -505,6 +517,7 @@ void CGroundDecalHandler::BindCommonTextures()
 
 void CGroundDecalHandler::UnbindTextures()
 {
+	//ZoneScoped;
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(atlasMain->GetTexTarget(), 0);
 
@@ -549,6 +562,7 @@ void CGroundDecalHandler::AddDecal(CUnit* unit, const float3& newPos)
 
 void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 {
+	//ZoneScoped;
 	if (!GetDrawDecals())
 		return;
 
@@ -680,6 +694,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 void CGroundDecalHandler::ReloadTextures()
 {
+	//ZoneScoped;
 	struct AtlasedTextureHash {
 		uint32_t operator()(const AtlasedTexture& at) const {
 			return spring::LiteHash(&at, sizeof(at));
@@ -734,12 +749,14 @@ void CGroundDecalHandler::ReloadTextures()
 
 void CGroundDecalHandler::DumpAtlasTextures()
 {
+	//ZoneScoped;
 	atlasMain->DumpTexture();
 	atlasNorm->DumpTexture();
 }
 
 void CGroundDecalHandler::Draw()
 {
+	//ZoneScoped;
 	if (!GetDrawDecals())
 		return;
 
@@ -827,6 +844,7 @@ void CGroundDecalHandler::Draw()
 void CGroundDecalHandler::AddSolidObject(const CSolidObject* object) { MoveSolidObject(object, object->pos); }
 void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const float3& pos)
 {
+	//ZoneScoped;
 	if (!GetDrawDecals())
 		return;
 
@@ -903,6 +921,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 
 void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const GhostSolidObject* gb)
 {
+	//ZoneScoped;
 	assert(object);
 
 	const auto doIt = decalOwners.find(object);
@@ -941,10 +960,12 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
  */
 void CGroundDecalHandler::ForceRemoveSolidObject(const CSolidObject* object)
 {
+	//ZoneScoped;
 	RemoveSolidObject(object, nullptr);
 }
 
 void CGroundDecalHandler::GhostDestroyed(const GhostSolidObject* gb) {
+	//ZoneScoped;
 	const auto doIt = decalOwners.find(gb);
 	if (doIt == decalOwners.end())
 		return;
@@ -961,6 +982,7 @@ void CGroundDecalHandler::GhostDestroyed(const GhostSolidObject* gb) {
 
 uint32_t CGroundDecalHandler::CreateLuaDecal()
 {
+	//ZoneScoped;
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
 
 	const auto& decal = decals.emplace_back(GroundDecal{
@@ -1000,6 +1022,7 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 
 bool CGroundDecalHandler::DeleteLuaDecal(uint32_t id)
 {
+	//ZoneScoped;
 	auto it = idToPos.find(id);
 	if (it == idToPos.end())
 		return false;
@@ -1020,6 +1043,7 @@ bool CGroundDecalHandler::DeleteLuaDecal(uint32_t id)
 
 GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id)
 {
+	//ZoneScoped;
 	auto it = idToPos.find(id);
 	if (it == idToPos.end())
 		return nullptr;
@@ -1034,6 +1058,7 @@ GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id)
 
 const GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id) const
 {
+	//ZoneScoped;
 	auto it = idToPos.find(id);
 	if (it == idToPos.end())
 		return nullptr;
@@ -1047,6 +1072,7 @@ const GroundDecal* CGroundDecalHandler::GetDecalById(uint32_t id) const
 
 bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex)
 {
+	//ZoneScoped;
 	auto it = idToPos.find(id);
 	if (it == idToPos.end())
 		return false;
@@ -1069,6 +1095,7 @@ bool CGroundDecalHandler::SetDecalTexture(uint32_t id, const std::string& texNam
 
 std::string CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTex) const
 {
+	//ZoneScoped;
 	auto it = idToPos.find(id);
 	if (it == idToPos.end())
 		return "";
@@ -1091,6 +1118,7 @@ std::string CGroundDecalHandler::GetDecalTexture(uint32_t id, bool mainTex) cons
 
 const std::vector<std::string> CGroundDecalHandler::GetDecalTextures(bool mainTex) const
 {
+	//ZoneScoped;
 	const auto& atlas = mainTex ? atlasMain : atlasNorm;
 	std::vector<std::string> ret;
 	for (auto& [name, _] : atlas->GetAllocator()->GetEntries()) {
@@ -1122,6 +1150,7 @@ const CSolidObject* CGroundDecalHandler::GetDecalSolidObjectOwner(uint32_t id) c
 
 void CGroundDecalHandler::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
 {
+	//ZoneScoped;
 	unit->leaveTracks = leaveTracks;
 	if (!leaveTracks) {
 		if (auto it = decalOwners.find(unit); it != decalOwners.end()) {
@@ -1138,6 +1167,7 @@ void CGroundDecalHandler::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
 
 static inline bool CanReceiveTracks(const float3& pos)
 {
+	//ZoneScoped;
 	// calculate typemap-index
 	const int tmz = pos.z / (SQUARE_SIZE * 2);
 	const int tmx = pos.x / (SQUARE_SIZE * 2);
@@ -1151,6 +1181,7 @@ static inline bool CanReceiveTracks(const float3& pos)
 
 void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool forceEval)
 {
+	//ZoneScoped;
 	if (!GetDrawDecals())
 		return;
 
@@ -1327,6 +1358,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 {
+	//ZoneScoped;
 	if (frameNum % 300 != 0)
 		return;
 
@@ -1443,6 +1475,7 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 
 void CGroundDecalHandler::UpdateDecalsVisibility()
 {
+	//ZoneScoped;
 	for (const auto& [owner, pos] : decalOwners) {
 		auto& decal = decals.at(pos);
 
@@ -1518,6 +1551,7 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 
 void CGroundDecalHandler::GameFramePost(int frameNum)
 {
+	//ZoneScoped;
 #if 0
 	LOG("DH:GD(fn=%d) Decals.size()=%u", frameNum, static_cast<uint32_t>(decals.size()));
 	for (int cnt = 0; const auto & [owner, offset] : decalOwners) {
@@ -1565,6 +1599,7 @@ void CGroundDecalHandler::GameFramePost(int frameNum)
 
 void CGroundDecalHandler::SunChanged()
 {
+	//ZoneScoped;
 	auto enToken = decalShader->EnableScoped();
 	decalShader->SetUniform("groundAmbientColor", sunLighting->groundAmbientColor.x, sunLighting->groundAmbientColor.y, sunLighting->groundAmbientColor.z, sunLighting->groundShadowDensity);
 	decalShader->SetUniform("groundDiffuseColor", sunLighting->groundDiffuseColor.x, sunLighting->groundDiffuseColor.y, sunLighting->groundDiffuseColor.z);
@@ -1573,6 +1608,7 @@ void CGroundDecalHandler::SunChanged()
 
 void CGroundDecalHandler::ViewResize()
 {
+	//ZoneScoped;
 	auto enToken = decalShader->EnableScoped();
 	decalShader->SetUniform("screenSizeInverse",
 		1.0f / globalRendering->viewSizeX,
@@ -1604,6 +1640,7 @@ void CGroundDecalHandler::ExplosionOccurred(const CExplosionParams& event) {
 
 void CGroundDecalHandler::ConfigNotify(const std::string& key, const std::string& value)
 {
+	//ZoneScoped;
 	if (key != "HighQualityDecals")
 		return;
 
@@ -1636,24 +1673,28 @@ void CGroundDecalHandler::UnitMoved(const CUnit* unit) { AddTrack(unit, unit->po
 
 void CGroundDecalHandler::DecalUpdateList::SetNeedUpdateAll()
 {
+	//ZoneScoped;
 	std::fill(updateList.begin(), updateList.end(), true);
 	changed = true;
 }
 
 void CGroundDecalHandler::DecalUpdateList::ResetNeedUpdateAll()
 {
+	//ZoneScoped;
 	std::fill(updateList.begin(), updateList.end(), false);
 	changed = false;
 }
 
 void CGroundDecalHandler::DecalUpdateList::SetUpdate(const CGroundDecalHandler::DecalUpdateList::IteratorPair& it)
 {
+	//ZoneScoped;
 	std::fill(it.first, it.second, true);
 	changed = true;
 }
 
 void CGroundDecalHandler::DecalUpdateList::SetUpdate(size_t offset)
 {
+	//ZoneScoped;
 	assert(offset < updateList.size());
 	updateList[offset] = true;
 	changed = true;
@@ -1661,12 +1702,14 @@ void CGroundDecalHandler::DecalUpdateList::SetUpdate(size_t offset)
 
 void CGroundDecalHandler::DecalUpdateList::EmplaceBackUpdate()
 {
+	//ZoneScoped;
 	updateList.emplace_back(true);
 	changed = true;
 }
 
 std::optional<CGroundDecalHandler::DecalUpdateList::IteratorPair> CGroundDecalHandler::DecalUpdateList::GetNext(const std::optional<CGroundDecalHandler::DecalUpdateList::IteratorPair>& prev)
 {
+	//ZoneScoped;
 	auto beg = prev.has_value() ? prev.value().second : updateList.begin();
 	     beg = std::find(beg, updateList.end(),  true);
 	auto end = std::find(beg, updateList.end(), false);
@@ -1679,6 +1722,7 @@ std::optional<CGroundDecalHandler::DecalUpdateList::IteratorPair> CGroundDecalHa
 
 std::pair<size_t, size_t> CGroundDecalHandler::DecalUpdateList::GetOffsetAndSize(const CGroundDecalHandler::DecalUpdateList::IteratorPair& it)
 {
+	//ZoneScoped;
 	return std::make_pair(
 		std::distance(updateList.begin(), it.first ),
 		std::distance(it.first          , it.second)

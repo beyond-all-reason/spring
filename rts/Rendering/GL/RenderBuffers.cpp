@@ -2,10 +2,13 @@
 
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 std::array<std::unique_ptr<RenderBuffer>, 13> RenderBuffer::typedRenderBuffers;
 
 void RenderBuffer::InitStatic()
 {
+	//ZoneScoped;
 	RenderBuffer::typedRenderBuffers = {
 		std::make_unique<TypedRenderBuffer<VA_TYPE_0   >>(1 << 16, 1 << 17),
 		std::make_unique<TypedRenderBuffer<VA_TYPE_C   >>(1 << 20, 1 << 21),
@@ -25,6 +28,7 @@ void RenderBuffer::InitStatic()
 
 void RenderBuffer::KillStatic()
 {
+	//ZoneScoped;
 	for (const auto& trb : typedRenderBuffers) {
 		const auto Cx = trb->GetBuffersCapacity();
 		const auto C0 = trb->GetInitialCapacity();

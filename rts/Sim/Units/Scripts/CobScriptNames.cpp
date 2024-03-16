@@ -6,6 +6,8 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 // script function-indices never change, so this is fine wrt. reloading
 static std::array<std::string, COBFN_NumUnitFuncs> scriptNames;
 static spring::unordered_map<std::string, int> scriptMap;
@@ -95,6 +97,7 @@ const spring::unordered_map<std::string, int>& CCobUnitScriptNames::GetScriptMap
 
 int CCobUnitScriptNames::GetScriptNumber(const std::string& fname)
 {
+	//ZoneScoped;
 	const auto it = scriptMap.find(fname);
 
 	if (it != scriptMap.end())
@@ -105,6 +108,7 @@ int CCobUnitScriptNames::GetScriptNumber(const std::string& fname)
 
 const std::string& CCobUnitScriptNames::GetScriptName(unsigned int num)
 {
+	//ZoneScoped;
 	const static std::string empty;
 
 	if (num < scriptNames.size())

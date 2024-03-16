@@ -9,6 +9,8 @@
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileFactory.h"
 #include "Sim/Units/Unit.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CStarburstLauncher, CWeapon, )
 CR_REG_METADATA(CStarburstLauncher, (
 	CR_MEMBER(uptime),
@@ -17,6 +19,7 @@ CR_REG_METADATA(CStarburstLauncher, (
 
 CStarburstLauncher::CStarburstLauncher(CUnit* owner, const WeaponDef* def): CWeapon(owner, def)
 {
+	//ZoneScoped;
 	// null happens when loading
 	if (def != nullptr) {
 		tracking = weaponDef->turnrate * def->tracks;
@@ -27,6 +30,7 @@ CStarburstLauncher::CStarburstLauncher(CUnit* owner, const WeaponDef* def): CWea
 
 void CStarburstLauncher::FireImpl(const bool scriptCall)
 {
+	//ZoneScoped;
 	const float3 speed = ((weaponDef->fixedLauncher)? weaponDir: UpVector) * weaponDef->startvelocity;
 	const float3 aimError = (gsRNG.NextVector() * SprayAngleExperience() + SalvoErrorExperience());
 
@@ -44,10 +48,12 @@ void CStarburstLauncher::FireImpl(const bool scriptCall)
 
 bool CStarburstLauncher::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const SWeaponTarget& trg) const
 {
+	//ZoneScoped;
 	return (!TraceRay::TestCone(srcPos, weaponDef->fixedLauncher? weaponDir: UpVector, 100.0f, 0.0f, owner->allyteam, avoidFlags, owner));
 }
 
 float CStarburstLauncher::GetRange2D(float boost, float ydiff) const
 {
+	//ZoneScoped;
 	return boost + range + (ydiff * weaponDef->heightmod);
 }

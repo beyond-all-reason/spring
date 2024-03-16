@@ -17,6 +17,8 @@
 #include "System/Exceptions.h"
 #include "fmt/format.h"
 
+#include <tracy/Tracy.hpp>
+
 
 /******************************************************************************
  * FBO
@@ -26,6 +28,7 @@
 
 LuaFBOs::~LuaFBOs()
 {
+	//ZoneScoped;
 	for (const FBO* fbo: fbos) {
 		glDeleteFramebuffersEXT(1, &fbo->id);
 	}
@@ -37,6 +40,7 @@ LuaFBOs::~LuaFBOs()
 
 bool LuaFBOs::PushEntries(lua_State* L)
 {
+	//ZoneScoped;
 	CreateMetatable(L);
 
 	REGISTER_LUA_CFUNC(CreateFBO);
@@ -54,6 +58,7 @@ bool LuaFBOs::PushEntries(lua_State* L)
 
 bool LuaFBOs::CreateMetatable(lua_State* L)
 {
+	//ZoneScoped;
 	luaL_newmetatable(L, "FBO");
 	HSTR_PUSH_CFUNC(L, "__gc",        meta_gc);
 	HSTR_PUSH_CFUNC(L, "__index",     meta_index);
@@ -68,6 +73,7 @@ bool LuaFBOs::CreateMetatable(lua_State* L)
 
 inline void CheckDrawingEnabled(lua_State* L, const char* caller)
 {
+	//ZoneScoped;
 	if (!LuaOpenGL::IsDrawingEnabled(L)) {
 		luaL_error(L, "%s(): OpenGL calls can only be used in Draw() "
 		              "call-ins, or while creating display lists", caller);
@@ -80,6 +86,7 @@ inline void CheckDrawingEnabled(lua_State* L, const char* caller)
 
 static GLenum GetBindingEnum(GLenum target)
 {
+	//ZoneScoped;
 	switch (target) {
 		case GL_FRAMEBUFFER_EXT:      { return GL_FRAMEBUFFER_BINDING_EXT;      }
 		case GL_DRAW_FRAMEBUFFER_EXT: { return GL_DRAW_FRAMEBUFFER_BINDING_EXT; }
@@ -92,6 +99,7 @@ static GLenum GetBindingEnum(GLenum target)
 
 static GLenum ParseAttachment(const std::string& name)
 {
+	//ZoneScoped;
 	switch (hashString(name.c_str())) {
 		case hashString(  "depth"): { return GL_DEPTH_ATTACHMENT  ; } break;
 		case hashString("stencil"): { return GL_STENCIL_ATTACHMENT; } break;
@@ -123,6 +131,7 @@ static GLenum ParseAttachment(const std::string& name)
 
 const LuaFBOs::FBO* LuaFBOs::GetLuaFBO(lua_State* L, int index)
 {
+	//ZoneScoped;
 	return static_cast<FBO*>(LuaUtils::GetUserData(L, index, "FBO"));
 }
 
@@ -132,6 +141,7 @@ const LuaFBOs::FBO* LuaFBOs::GetLuaFBO(lua_State* L, int index)
 
 void LuaFBOs::FBO::Init(lua_State* L)
 {
+	//ZoneScoped;
 	index  = -1u;
 	id     = 0;
 	target = GL_FRAMEBUFFER_EXT;
@@ -144,6 +154,7 @@ void LuaFBOs::FBO::Init(lua_State* L)
 
 void LuaFBOs::FBO::Free(lua_State* L)
 {
+	//ZoneScoped;
 	if (luaRef == LUA_NOREF)
 		return;
 
@@ -173,6 +184,7 @@ void LuaFBOs::FBO::Free(lua_State* L)
 
 int LuaFBOs::meta_gc(lua_State* L)
 {
+	//ZoneScoped;
 	FBO* fbo = static_cast<FBO*>(luaL_checkudata(L, 1, "FBO"));
 	fbo->Free(L);
 	return 0;
@@ -181,6 +193,7 @@ int LuaFBOs::meta_gc(lua_State* L)
 
 int LuaFBOs::meta_index(lua_State* L)
 {
+	//ZoneScoped;
 	const FBO* fbo = static_cast<FBO*>(luaL_checkudata(L, 1, "FBO"));
 
 	if (fbo->luaRef == LUA_NOREF)
@@ -196,6 +209,7 @@ int LuaFBOs::meta_index(lua_State* L)
 
 int LuaFBOs::meta_newindex(lua_State* L)
 {
+	//ZoneScoped;
 	FBO* fbo = static_cast<FBO*>(luaL_checkudata(L, 1, "FBO"));
 
 	if (fbo->luaRef == LUA_NOREF)
@@ -256,6 +270,7 @@ bool LuaFBOs::AttachObject(
 	GLenum attachTarget,
 	GLenum attachLevel
 ) {
+	//ZoneScoped;
 	if (lua_isnil(L, index)) {
 		// nil object
 		glFramebufferTexture2DEXT(fbo->target, attachID, GL_TEXTURE_2D, 0, 0);
@@ -306,6 +321,7 @@ bool LuaFBOs::AttachObject(
 
 void LuaFBOs::AttachObjectTexTarget(const char* funcName, GLenum fboTarget, GLenum texTarget, GLuint texId, GLenum attachID, GLenum attachLevel)
 {
+	//ZoneScoped;
 	//  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, tex.target, texID, 0);
 	switch (texTarget)
 	{
@@ -341,6 +357,7 @@ bool LuaFBOs::ApplyAttachment(
 	FBO* fbo,
 	const GLenum attachID
 ) {
+	//ZoneScoped;
 	if (attachID == 0)
 		return false;
 
@@ -372,6 +389,7 @@ bool LuaFBOs::ApplyAttachment(
 
 bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 {
+	//ZoneScoped;
 	if (lua_isnumber(L, index)) {
 		glDrawBuffer((GLenum)lua_toint(L, index));
 		return true;
@@ -499,6 +517,7 @@ int LuaFBOs::CreateFBO(lua_State* L)
  */
 int LuaFBOs::DeleteFBO(lua_State* L)
 {
+	//ZoneScoped;
 	if (lua_isnil(L, 1))
 		return 0;
 
@@ -562,6 +581,7 @@ int LuaFBOs::IsValidFBO(lua_State* L)
  */
 int LuaFBOs::ActiveFBO(lua_State* L)
 {
+	//ZoneScoped;
 	CheckDrawingEnabled(L, __func__);
 	
 	const FBO* fbo = static_cast<FBO*>(luaL_checkudata(L, 1, "FBO"));
@@ -630,6 +650,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
  */
 int LuaFBOs::RawBindFBO(lua_State* L)
 {
+	//ZoneScoped;
 	//CheckDrawingEnabled(L, __func__);
 
 	if (lua_isnil(L, 1)) {
@@ -686,6 +707,7 @@ int LuaFBOs::RawBindFBO(lua_State* L)
  */
 int LuaFBOs::BlitFBO(lua_State* L)
 {
+	//ZoneScoped;
 	if (lua_israwnumber(L, 1)) {
 		const GLint x0Src = (GLint)luaL_checknumber(L, 1);
 		const GLint y0Src = (GLint)luaL_checknumber(L, 2);

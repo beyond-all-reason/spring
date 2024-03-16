@@ -15,6 +15,8 @@
 #include "System/Platform/byteorder.h"
 #include "System/SpringHash.h"
 
+#include <tracy/Tracy.hpp>
+
 
 
 static constexpr float SCALE_FACTOR_3DO = 1.0f / 65536.0f;
@@ -27,6 +29,7 @@ static constexpr float SCALE_FACTOR_3DO = 1.0f / 65536.0f;
 
 static void STREAM_READ(void* buf, int length, const std::vector<unsigned char>& fileBuf, int& curOffset)
 {
+	//ZoneScoped;
 	memcpy(buf, &fileBuf[curOffset], length);
 	curOffset += length;
 }
@@ -34,6 +37,7 @@ static void STREAM_READ(void* buf, int length, const std::vector<unsigned char>&
 
 static std::string GET_TEXT(int pos, const std::vector<unsigned char>& fileBuf, int& curOffset)
 {
+	//ZoneScoped;
 	curOffset = pos;
 	std::string s;
 	s.reserve(16);
@@ -48,6 +52,7 @@ static std::string GET_TEXT(int pos, const std::vector<unsigned char>& fileBuf, 
 
 static void READ_3DOBJECT(TA3DO::_3DObject& o, const std::vector<unsigned char>& fileBuf, int& curOffset)
 {
+	//ZoneScoped;
 	unsigned int __tmp;
 	unsigned short __isize = sizeof(unsigned int);
 	STREAM_READ(&__tmp,__isize, fileBuf, curOffset);
@@ -81,6 +86,7 @@ static void READ_3DOBJECT(TA3DO::_3DObject& o, const std::vector<unsigned char>&
 
 static void READ_VERTEX(float3& v, const std::vector<unsigned char>& fileBuf, int& curOffset)
 {
+	//ZoneScoped;
 	unsigned int __tmp;
 	unsigned short __isize = sizeof(unsigned int);
 	STREAM_READ(&__tmp,__isize, fileBuf, curOffset);
@@ -94,6 +100,7 @@ static void READ_VERTEX(float3& v, const std::vector<unsigned char>& fileBuf, in
 
 static void READ_PRIMITIVE(TA3DO::_Primitive& p, const std::vector<unsigned char>& fileBuf, int& curOffset)
 {
+	//ZoneScoped;
 	unsigned int __tmp;
 	unsigned short __isize = sizeof(unsigned int);
 	STREAM_READ(&__tmp,__isize, fileBuf, curOffset);
@@ -124,6 +131,7 @@ static void READ_PRIMITIVE(TA3DO::_Primitive& p, const std::vector<unsigned char
 
 void C3DOParser::Init()
 {
+	//ZoneScoped;
 	CFileHandler file("unittextures/tatex/teamtex.txt");
 	CSimpleParser parser(file);
 
@@ -136,6 +144,7 @@ void C3DOParser::Init()
 
 void C3DOParser::Kill()
 {
+	//ZoneScoped;
 	teamTextures.clear();
 	LOG_L(L_INFO, "[3DOParser::%s] allocated %u pieces", __func__, numPoolPieces);
 
@@ -151,6 +160,7 @@ void C3DOParser::Kill()
 
 void C3DOParser::Load(S3DModel& model, const std::string& name)
 {
+	//ZoneScoped;
 	CFileHandler file(name);
 	std::vector<uint8_t> fileBuf;
 
@@ -185,6 +195,7 @@ void C3DOParser::Load(S3DModel& model, const std::string& name)
 
 void S3DOPiece::GetVertices(const TA3DO::_3DObject* o, const std::vector<unsigned char>& fileBuf)
 {
+	//ZoneScoped;
 	int curOffset = o->OffsetToVertexArray;
 
 	verts.clear();
@@ -203,6 +214,7 @@ void S3DOPiece::GetVertices(const TA3DO::_3DObject* o, const std::vector<unsigne
 
 bool S3DOPiece::IsBasePlate(const S3DOPrimitive* face) const
 {
+	//ZoneScoped;
 	if (!(face->primNormal.dot(-UpVector) > 0.99f))
 		return false;
 
@@ -229,6 +241,7 @@ C3DOTextureHandler::UnitTexture* S3DOPiece::GetTexture(
 	const std::vector<unsigned char>& fileBuf,
 	const spring::unordered_set<std::string>& teamTextures
 ) const {
+	//ZoneScoped;
 	std::string texName;
 
 	if (p->OffsetToTextureName != 0) {
@@ -261,6 +274,7 @@ void S3DOPiece::GetPrimitives(
 	const std::vector<unsigned char>& fileBuf,
 	const spring::unordered_set<std::string>& teamTextures
 ) {
+	//ZoneScoped;
 	spring::unordered_map<int, int> prevHashes;
 	std::vector<int> sortedVerts;
 
@@ -327,6 +341,7 @@ void S3DOPiece::GetPrimitives(
 
 S3DOPiece* C3DOParser::AllocPiece()
 {
+	//ZoneScoped;
 	std::lock_guard<spring::mutex> lock(poolMutex);
 
 	// lazily reserve pool here instead of during Init
@@ -345,6 +360,7 @@ S3DOPiece* C3DOParser::AllocPiece()
 
 S3DOPiece* C3DOParser::LoadPiece(S3DModel* model, S3DOPiece* parent, const std::vector<uint8_t>& buf, int pos)
 {
+	//ZoneScoped;
 	if ((pos + sizeof(TA3DO::_3DObject)) > buf.size())
 		throw content_error("[3DOParser] corrupted piece for model-file " + model->name);
 
@@ -396,6 +412,7 @@ S3DOPiece* C3DOParser::LoadPiece(S3DModel* model, S3DOPiece* parent, const std::
 
 void S3DOPiece::PostProcessGeometry(uint32_t pieceIndex)
 {
+	//ZoneScoped;
 	// cannot use HasGeometryData because vboIndices is still empty
 	if (prims.empty())
 		return;
@@ -450,6 +467,7 @@ void S3DOPiece::PostProcessGeometry(uint32_t pieceIndex)
 
 void S3DOPiece::CalcNormals()
 {
+	//ZoneScoped;
 	// generate for each vertex a list of faces that share it
 	std::vector<std::vector<int>> vertexToFaceIdx;
 	vertexToFaceIdx.resize(verts.size());
@@ -489,6 +507,7 @@ void S3DOPiece::CalcNormals()
 
 void S3DOPiece::SetMinMaxExtends()
 {
+	//ZoneScoped;
 	for (const float3 vp: verts) {
 		mins = float3::min(mins, vp);
 		maxs = float3::max(maxs, vp);

@@ -20,6 +20,8 @@
 #include <SDL_keycode.h>
 #include <cstdio>
 
+#include <tracy/Tracy.hpp>
+
 using std::string;
 using std::vector;
 
@@ -27,11 +29,13 @@ using std::vector;
 
 static const char* boolString(bool value)
 {
+	//ZoneScoped;
 	return (value)? "True": "False";
 }
 
 static const char* floatString(float value)
 {
+	//ZoneScoped;
 	static char buf[16];
 	sprintf(buf, "%8.3f", value);
 	return buf;
@@ -42,6 +46,7 @@ static void StringListStats(
 	float& maxWidth,
 	float& maxHeight
 ) {
+	//ZoneScoped;
 	maxWidth = 0.0f;
 	maxHeight = 0.0f;
 
@@ -57,18 +62,21 @@ static CGameInfo* instance = nullptr;
 
 void CGameInfo::Enable()
 {
+	//ZoneScoped;
 	if (instance == nullptr)
 		instance = new CGameInfo;
 }
 
 void CGameInfo::Disable()
 {
+	//ZoneScoped;
 	delete instance;
 	instance = nullptr;
 }
 
 bool CGameInfo::IsActive()
 {
+	//ZoneScoped;
 	return (instance != nullptr);
 }
 
@@ -76,6 +84,7 @@ bool CGameInfo::IsActive()
 
 CGameInfo::CGameInfo()
 {
+	//ZoneScoped;
 	box.x1 = 0.5f;
 	box.y1 = 0.5f;
 	box.x2 = 0.5f;
@@ -136,6 +145,7 @@ CGameInfo::CGameInfo()
 
 CGameInfo::~CGameInfo()
 {
+	//ZoneScoped;
 	instance = nullptr;
 }
 
@@ -157,12 +167,14 @@ void CGameInfo::FontString::CalcDimensions() {
 
 std::string CGameInfo::GetTooltip(int x,int y)
 {
+	//ZoneScoped;
 	return "Game Information";
 }
 
 
 bool CGameInfo::IsAbove(int x, int y)
 {
+	//ZoneScoped;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 	return InBox(mx, my, box);
@@ -171,12 +183,14 @@ bool CGameInfo::IsAbove(int x, int y)
 
 bool CGameInfo::MousePress(int x, int y, int button)
 {
+	//ZoneScoped;
 	return (IsAbove(x, y));
 }
 
 
 void CGameInfo::MouseRelease(int x, int y, int button)
 {
+	//ZoneScoped;
 	if (activeReceiver != this)
 		return;
 
@@ -189,6 +203,7 @@ void CGameInfo::MouseRelease(int x, int y, int button)
 
 bool CGameInfo::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
+	//ZoneScoped;
 	if (keyCode == SDLK_ESCAPE) {
 		delete this;
 		return true;
@@ -199,6 +214,7 @@ bool CGameInfo::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 void CGameInfo::Draw()
 {
+	//ZoneScoped;
 	if (gs->cheatEnabled) {
 		values[values.size() - 1] = "ENABLED";
 	} else {

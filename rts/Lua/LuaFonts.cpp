@@ -15,9 +15,12 @@
 #include "Rendering/Fonts/glFont.h"
 #include "System/Exceptions.h"
 
+#include <tracy/Tracy.hpp>
+
 
 bool LuaFonts::PushEntries(lua_State* L)
 {
+	//ZoneScoped;
 	CreateMetatable(L);
 
 	REGISTER_LUA_CFUNC(LoadFont);
@@ -29,6 +32,7 @@ bool LuaFonts::PushEntries(lua_State* L)
 
 bool LuaFonts::CreateMetatable(lua_State* L)
 {
+	//ZoneScoped;
 	luaL_newmetatable(L, "Font");
 
 	HSTR_PUSH_CFUNC(L, "__gc",        meta_gc);
@@ -65,6 +69,7 @@ bool LuaFonts::CreateMetatable(lua_State* L)
 
 inline void CheckDrawingEnabled(lua_State* L, const char* caller)
 {
+	//ZoneScoped;
 	if (LuaOpenGL::IsDrawingEnabled(L))
 		return;
 
@@ -74,6 +79,7 @@ inline void CheckDrawingEnabled(lua_State* L, const char* caller)
 
 inline CglFont* tofont(lua_State* L, int idx)
 {
+	//ZoneScoped;
 	auto font = static_cast<std::shared_ptr<CglFont>*>(luaL_checkudata(L, idx, "Font"));
 
 	if (*font == nullptr)
@@ -88,6 +94,7 @@ inline CglFont* tofont(lua_State* L, int idx)
 
 int LuaFonts::meta_gc(lua_State* L)
 {
+	//ZoneScoped;
 	if (lua_isnil(L, 1))
 		return 0;
 
@@ -100,6 +107,7 @@ int LuaFonts::meta_gc(lua_State* L)
 
 int LuaFonts::meta_index(lua_State* L)
 {
+	//ZoneScoped;
 	// first check if there is a function
 	luaL_getmetatable(L, "Font");
 	lua_pushvalue(L, 2);
@@ -175,6 +183,7 @@ int LuaFonts::meta_index(lua_State* L)
 
 int LuaFonts::LoadFont(lua_State* L)
 {
+	//ZoneScoped;
 	auto f = CglFont::LoadFont(luaL_checkstring(L, 1), luaL_optint(L, 2, 14), luaL_optint(L, 3, 2), luaL_optfloat(L, 4, 15.0f));
 	if (f == nullptr)
 		return 0;
@@ -192,6 +201,7 @@ int LuaFonts::LoadFont(lua_State* L)
 
 int LuaFonts::DeleteFont(lua_State* L)
 {
+	//ZoneScoped;
 	return meta_gc(L);
 }
 
@@ -201,6 +211,7 @@ int LuaFonts::DeleteFont(lua_State* L)
 
 int LuaFonts::Print(lua_State* L)
 {
+	//ZoneScoped;
 	CheckDrawingEnabled(L, __func__);
 
 	const int args = lua_gettop(L); // number of arguments
@@ -248,6 +259,7 @@ int LuaFonts::Print(lua_State* L)
 
 int LuaFonts::PrintWorld(lua_State* L)
 {
+	//ZoneScoped;
 	CheckDrawingEnabled(L, __func__);
 
 	const int args = lua_gettop(L); // number of arguments
@@ -301,6 +313,7 @@ int LuaFonts::PrintWorld(lua_State* L)
 
 int LuaFonts::Begin(lua_State* L)
 {
+	//ZoneScoped;
 	CheckDrawingEnabled(L, __func__);
 	auto f = tofont(L, 1);
 	f->Begin();
@@ -309,6 +322,7 @@ int LuaFonts::Begin(lua_State* L)
 
 int LuaFonts::End(lua_State* L)
 {
+	//ZoneScoped;
 	CheckDrawingEnabled(L, __func__);
 	auto f = tofont(L, 1);
 	f->End();
@@ -317,6 +331,7 @@ int LuaFonts::End(lua_State* L)
 
 int LuaFonts::SubmitBuffered(lua_State* L)
 {
+	//ZoneScoped;
 	CheckDrawingEnabled(L, __func__);
 	auto f = tofont(L, 1);
 
@@ -334,6 +349,7 @@ int LuaFonts::SubmitBuffered(lua_State* L)
 
 int LuaFonts::WrapText(lua_State* L)
 {
+	//ZoneScoped;
 	auto f = tofont(L, 1);
 
 	std::string text(luaL_checkstring(L, 2), lua_strlen(L, 2));
@@ -354,6 +370,7 @@ int LuaFonts::WrapText(lua_State* L)
 
 int LuaFonts::GetTextWidth(lua_State* L)
 {
+	//ZoneScoped;
 	auto f = tofont(L, 1);
 
 	lua_pushnumber(L, f->GetTextWidth(std::string(luaL_checkstring(L, 2), lua_strlen(L, 2))));
@@ -363,6 +380,7 @@ int LuaFonts::GetTextWidth(lua_State* L)
 
 int LuaFonts::GetTextHeight(lua_State* L)
 {
+	//ZoneScoped;
 	auto f = tofont(L, 1);
 
 	const std::string text(luaL_checkstring(L, 2), lua_strlen(L, 2));
@@ -382,6 +400,7 @@ int LuaFonts::GetTextHeight(lua_State* L)
 
 static int SetTextColorShared(lua_State* L, bool outline)
 {
+	//ZoneScoped;
 	auto f = tofont(L, 1);
 
 	const int args = lua_gettop(L); // number of arguments
@@ -416,6 +435,7 @@ int LuaFonts::SetOutlineColor(lua_State* L) { return (SetTextColorShared(L, true
 
 int LuaFonts::SetAutoOutlineColor(lua_State* L)
 {
+	//ZoneScoped;
 	auto f = tofont(L, 1);
 	f->SetAutoOutlineColor(luaL_checkboolean(L, 2));
 	return 0;
@@ -427,6 +447,7 @@ int LuaFonts::SetAutoOutlineColor(lua_State* L)
 
 int LuaFonts::BindTexture(lua_State* L)
 {
+	//ZoneScoped;
 	CheckDrawingEnabled(L, __func__);
 
 	auto f = tofont(L, 1);

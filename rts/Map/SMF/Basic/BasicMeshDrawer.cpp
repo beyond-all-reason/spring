@@ -11,6 +11,8 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/EventHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
 	: CEventClient("[CBasicMeshDrawer]", 717171, false)
@@ -64,6 +66,7 @@ CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
 
 CBasicMeshDrawer::~CBasicMeshDrawer()
 {
+	//ZoneScoped;
 	eventHandler.RemoveClient(this);
 
 	meshRenderBuffers = {};
@@ -74,6 +77,7 @@ CBasicMeshDrawer::~CBasicMeshDrawer()
 
 void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 {
+	//ZoneScoped;
 	CCamera* activeCam = CCameraHandler::GetActiveCamera();
 
 	static constexpr float wsEdge = PATCH_SIZE * SQUARE_SIZE;
@@ -102,6 +106,7 @@ void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 
 void CBasicMeshDrawer::UploadPatchSquareGeometry(std::unique_ptr<MeshRenderBuffer>& meshRenderBuffer, uint32_t lodStep)
 {
+	//ZoneScoped;
 	meshRenderBuffer->MakeQuadsTriangles(
 		{ { 0.0f                    , 0.0f ,       0.0f               } },
 		{ { PATCH_SIZE * SQUARE_SIZE, 0.0f ,       0.0f               } },
@@ -114,6 +119,7 @@ void CBasicMeshDrawer::UploadPatchSquareGeometry(std::unique_ptr<MeshRenderBuffe
 
 void CBasicMeshDrawer::UploadPatchBorderGeometry(std::unique_ptr<BordRenderBuffer>& borderRenderBuffer, MAP_BORDERS b, uint32_t lodStep)
 {
+	//ZoneScoped;
 	auto tl = VA_TYPE_C{ {0.0f,  0.0f ,0.0f}, { 255, 255, 255, 255 } };
 	auto tr = VA_TYPE_C{ {0.0f,  0.0f ,0.0f}, { 255, 255, 255, 255 } };
 	auto bl = VA_TYPE_C{ {0.0f, -1.0f ,0.0f}, { 255, 255, 255,   0 } };
@@ -164,6 +170,7 @@ void CBasicMeshDrawer::UploadPatchBorderGeometry(std::unique_ptr<BordRenderBuffe
 
 uint32_t CBasicMeshDrawer::CalcDrawPassLOD(const CCamera* cam, const DrawPass::e& drawPass) const
 {
+	//ZoneScoped;
 	// higher detail biases LOD-step toward a smaller value
 	// NOTE: should perhaps prevent an insane initial bias?
 	int32_t lodBias = smfGroundDrawer->GetGroundDetail(drawPass) % LOD_LEVELS;
@@ -207,11 +214,13 @@ uint32_t CBasicMeshDrawer::CalcDrawPassLOD(const CCamera* cam, const DrawPass::e
 
 void CBasicMeshDrawer::DrawSquareMeshPatch() const
 {
+	//ZoneScoped;
 	meshRenderBuffers[drawPassLOD]->DrawElements(GL_TRIANGLES, false);
 }
 
 void CBasicMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 {
+	//ZoneScoped;
 	Update(drawPass);
 
 	const CCamera* activeCam = CCameraHandler::GetActiveCamera();
@@ -234,12 +243,14 @@ void CBasicMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 
 void CBasicMeshDrawer::DrawBorderMeshPatch(const CCamera* activeCam, uint32_t borderSide) const
 {
+	//ZoneScoped;
 	const auto idx = drawPassLOD * static_cast<uint32_t>(MAP_BORDER_C) + static_cast<uint32_t>(borderSide);
 	borderRenderBuffers[idx]->DrawElements(GL_TRIANGLES, false);
 }
 
 void CBasicMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 {
+	//ZoneScoped;
 	const uint32_t npxm1 = numPatchesX - 1;
 	const uint32_t npym1 = numPatchesY - 1;
 

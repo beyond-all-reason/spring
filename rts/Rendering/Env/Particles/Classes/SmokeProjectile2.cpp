@@ -13,6 +13,8 @@
 #include "Sim/Misc/Wind.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CSmokeProjectile2, CProjectile, )
 
 CR_REG_METADATA(CSmokeProjectile2,
@@ -75,6 +77,7 @@ CSmokeProjectile2::CSmokeProjectile2(
 
 void CSmokeProjectile2::Init(const CUnit* owner, const float3& offset)
 {
+	//ZoneScoped;
 	useAirLos |= (offset.y - CGround::GetApproximateHeight(offset.x, offset.z, false) > 10.0f);
 	alwaysVisible |= (owner == nullptr);
 
@@ -85,6 +88,7 @@ void CSmokeProjectile2::Init(const CUnit* owner, const float3& offset)
 
 void CSmokeProjectile2::Update()
 {
+	//ZoneScoped;
 	wantedPos += speed;
 	wantedPos += (envResHandler.GetCurrentWindVec() * age * 0.05f);
 
@@ -104,6 +108,7 @@ void CSmokeProjectile2::Update()
 
 void CSmokeProjectile2::Draw()
 {
+	//ZoneScoped;
 	const float interAge = std::min(1.0f, age + ageSpeed * globalRendering->timeOffset);
 	unsigned char col[4];
 	unsigned char alpha;
@@ -142,6 +147,7 @@ int CSmokeProjectile2::GetProjectilesCount() const
 
 bool CSmokeProjectile2::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	//ZoneScoped;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

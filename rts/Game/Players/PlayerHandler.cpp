@@ -8,6 +8,8 @@
 #include "Game/GameSetup.h"
 #include "Game/SelectedUnitsHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(CPlayerHandler,)
 
 CR_REG_METADATA(CPlayerHandler, (
@@ -20,12 +22,14 @@ CPlayerHandler playerHandler;
 
 void CPlayerHandler::ResetState()
 {
+	//ZoneScoped;
 	players.clear();
 	players.reserve(MAX_PLAYERS);
 }
 
 void CPlayerHandler::LoadFromSetup(const CGameSetup* setup)
 {
+	//ZoneScoped;
 	const std::vector<PlayerBase>& playerData = setup->GetPlayerStartingDataCont();
 
 	const int oldSize = players.size();
@@ -49,6 +53,7 @@ void CPlayerHandler::LoadFromSetup(const CGameSetup* setup)
 
 int CPlayerHandler::Player(const std::string& name) const
 {
+	//ZoneScoped;
 	const auto pred = [&name](const CPlayer& player) { return (player.name == name); };
 	const auto iter = std::find_if(players.begin(), players.end(), pred);
 
@@ -60,6 +65,7 @@ int CPlayerHandler::Player(const std::string& name) const
 
 void CPlayerHandler::PlayerLeft(int id, unsigned char reason)
 {
+	//ZoneScoped;
 	Player(id)->active = false;
 	Player(id)->ping = 0;
 }
@@ -68,6 +74,7 @@ void CPlayerHandler::PlayerLeft(int id, unsigned char reason)
 
 unsigned int CPlayerHandler::NumActivePlayersInTeam(int teamId) const
 {
+	//ZoneScoped;
 	unsigned int n = 0;
 
 	for (const CPlayer& player: players) {
@@ -80,6 +87,7 @@ unsigned int CPlayerHandler::NumActivePlayersInTeam(int teamId) const
 
 std::vector<int> CPlayerHandler::ActivePlayersInTeam(int teamId) const
 {
+	//ZoneScoped;
 	std::vector<int> playersInTeam;
 
 	for (const CPlayer& player: players) {
@@ -101,6 +109,7 @@ std::vector<int> CPlayerHandler::ActivePlayersInTeam(int teamId) const
 
 void CPlayerHandler::GameFrame(int frameNum)
 {
+	//ZoneScoped;
 	for (CPlayer& player: players) {
 		player.GameFrame(frameNum);
 	}
@@ -108,6 +117,7 @@ void CPlayerHandler::GameFrame(int frameNum)
 
 void CPlayerHandler::AddPlayer(const CPlayer& player)
 {
+	//ZoneScoped;
 	const int oldSize = players.size();
 	const int newSize = std::max(oldSize, player.playerNum + 1);
 
