@@ -23,6 +23,7 @@
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/Misc/SensorHandler.h"
 
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
@@ -167,8 +168,25 @@ void CUnitLoader::ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>
 		LOG_L(L_WARNING, "[%s] invalid object-name argument", __FUNCTION__);
 		return;
 	}
+	
+	if (objectName == "sensor") {
+		GiveSensor(team, pos, 4, amount, 60);
+	}
+	else {
+		GiveUnits(objectName, pos, amount, team, featureAllyTeam);
+	}
+}
 
-	GiveUnits(objectName, pos, amount, team, featureAllyTeam);
+int CUnitLoader::GiveSensor(int team_, float3 pos_, int LOSType_, float LOSDistance_, int duration_)
+{
+	CSensor* sensor = sensorHandler.NewSensor(team_, pos_, LOSType_, LOSDistance_, duration_);
+
+	if (sensor == nullptr)
+		return 0;
+
+	sensorHandler.AddSensor(sensor);
+
+	return 1;
 }
 
 
