@@ -1,6 +1,5 @@
 #include "bind.h"
 
-#include "../plugin/SolLuaDocument.h"
 #include "../plugin/SolLuaDataModel.h"
 
 
@@ -25,15 +24,13 @@ namespace Rml::SolLua
 		}
 	}
 
-	void bind_datamodel(sol::state_view& lua)
+	void bind_datamodel(sol::table& namespace_table)
 	{
-
-		lua.new_usertype<SolLuaDataModel>("SolLuaDataModel", sol::no_constructor,
+		namespace_table.new_usertype<SolLuaDataModel>("SolLuaDataModel", sol::no_constructor,
 			sol::meta_function::index, &functions::dataModelGet,
 			sol::meta_function::new_index, &functions::dataModelSet,
 			"__SetDirty", &functions::dataModelSetDirty
 		);
-
 	}
 
 } // end namespace Rml::SolLua

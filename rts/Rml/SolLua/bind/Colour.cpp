@@ -19,9 +19,9 @@ namespace Rml::SolLua
 		sol::tie(self.red, self.green, self.blue, self.alpha) = color;
 	}
 
-	void bind_color(sol::state_view& lua)
+	void bind_color(sol::table& bindings)
 	{
-		lua.new_usertype<Rml::Colourb>("Colourb", sol::constructors<Rml::Colourb(), Rml::Colourb(Rml::byte, Rml::byte, Rml::byte), Rml::Colourb(Rml::byte, Rml::byte, Rml::byte, Rml::byte)>(),
+		bindings.new_usertype<Rml::Colourb>("Colourb", sol::constructors<Rml::Colourb(), Rml::Colourb(Rml::byte, Rml::byte, Rml::byte), Rml::Colourb(Rml::byte, Rml::byte, Rml::byte, Rml::byte)>(),
 			// O
 			sol::meta_function::addition, &Rml::Colourb::operator+,
 			sol::meta_function::subtraction, &Rml::Colourb::operator-,
@@ -37,7 +37,7 @@ namespace Rml::SolLua
 			"rgba", sol::property(static_cast<ColourbTuple(*)(Rml::Colourb&)>(&getRGBA), static_cast<void(*)(Rml::Colourb&, ColourbTuple)>(&setRGBA))
 		);
 
-		lua.new_usertype<Rml::Colourf>("Colourf", sol::constructors<Rml::Colourf(), Rml::Colourf(float, float, float), Rml::Colourf(float, float, float, float)>(),
+		bindings.new_usertype<Rml::Colourf>("Colourf", sol::constructors<Rml::Colourf(), Rml::Colourf(float, float, float), Rml::Colourf(float, float, float, float)>(),
 			// O
 			sol::meta_function::addition, &Rml::Colourf::operator+,
 			sol::meta_function::subtraction, &Rml::Colourf::operator-,

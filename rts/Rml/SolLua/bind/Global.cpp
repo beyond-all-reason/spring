@@ -45,13 +45,10 @@ namespace Rml::SolLua
 		}
 	}
 
-	void bind_global(sol::state_view& lua, SolLuaPlugin* slp)
+	void bind_global(sol::table& namespace_table, SolLuaPlugin* slp)
 	{
-
-		struct rmlui {};
 		auto translationTable = &slp->translationTable;
-
-		auto g = lua.new_usertype<rmlui>("rmlui",
+		namespace_table.set(
 			// M
 			"CreateContext", [slp](const Rml::String& name) {
 				// context will be resized right away by other code
@@ -82,11 +79,12 @@ namespace Rml::SolLua
 			//--
 			"version", sol::readonly_property(&Rml::GetVersion)
 		);
-		
-		#define KEY_ENUM(N) t[#N] = Rml::Input::KI_##N
-		g.set("key_identifier", sol::readonly_property([](sol::this_state l) {
+
+		namespace_table.set("key_identifier", sol::readonly_property([](sol::this_state l) {
 			sol::state_view lua(l);
 			sol::table t = lua.create_table();
+
+			#define KEY_ENUM(N) t[#N] = Rml::Input::KI_##N
 			KEY_ENUM(UNKNOWN);
 			KEY_ENUM(SPACE);
 			KEY_ENUM(0);
@@ -262,35 +260,36 @@ namespace Rml::SolLua
 			KEY_ENUM(ZOOM);
 			KEY_ENUM(PA1);
 			KEY_ENUM(OEM_CLEAR);
+			#undef KEY_ENUM
+
 			return t;
 		}));
-		#undef KEY_ENUM
-		
-		g.set("key_modifier", sol::readonly_property([](sol::this_state l) {
+
+		namespace_table.set("key_modifier", sol::readonly_property([](sol::this_state l) {
 			sol::state_view lua(l);
-			return sol::table::create_with(lua.lua_state(),
-				 "CTRL", Rml::Input::KM_CTRL ,
-				 "SHIFT", Rml::Input::KM_SHIFT ,
-				 "ALT", Rml::Input::KM_ALT ,
-				 "META", Rml::Input::KM_META ,
-				 "CAPSLOCK", Rml::Input::KM_CAPSLOCK ,
-				 "NUMLOCK", Rml::Input::KM_NUMLOCK ,
+			return lua.create_table_with(
+				 "CTRL", Rml::Input::KM_CTRL,
+				 "SHIFT", Rml::Input::KM_SHIFT,
+				 "ALT", Rml::Input::KM_ALT,
+				 "META", Rml::Input::KM_META,
+				 "CAPSLOCK", Rml::Input::KM_CAPSLOCK,
+				 "NUMLOCK", Rml::Input::KM_NUMLOCK,
 				 "SCROLLLOCK", Rml::Input::KM_SCROLLLOCK
 			);
 		}));
 
-		g.set("font_weight", sol::readonly_property([](sol::this_state l) {
+		namespace_table.set("font_weight", sol::readonly_property([](sol::this_state l) {
 			sol::state_view lua(l);
-			return sol::table::create_with(lua.lua_state(),
+			return lua.create_table_with(
 				"Auto", Rml::Style::FontWeight::Auto,
 				"Normal", Rml::Style::FontWeight::Normal,
 				"Bold", Rml::Style::FontWeight::Bold
 			);
 		}));
 
-		g.set("default_action_phase", sol::readonly_property([](sol::this_state l) {
+		namespace_table.set("default_action_phase", sol::readonly_property([](sol::this_state l) {
 			sol::state_view lua(l);
-			return sol::table::create_with(lua.lua_state(),
+			return lua.create_table_with(
 				"None", Rml::DefaultActionPhase::None,
 				"Target", Rml::DefaultActionPhase::Target,
 				"TargetAndBubble", Rml::DefaultActionPhase::TargetAndBubble

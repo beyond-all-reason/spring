@@ -8,10 +8,10 @@
 namespace Rml::SolLua
 {
 
-	void bind_element_derived(sol::state_view& lua)
+	void bind_element_derived(sol::table& namespace_table)
 	{
 
-		lua.new_usertype<Rml::ElementText>("ElementText", sol::no_constructor,
+		namespace_table.new_usertype<Rml::ElementText>("ElementText", sol::no_constructor,
 			// G
 			"text", sol::property(&Rml::ElementText::GetText, &Rml::ElementText::SetText),
 
@@ -21,7 +21,7 @@ namespace Rml::SolLua
 
 		///////////////////////////
 
-		lua.new_usertype<Rml::ElementTabSet>("ElementTabSet", sol::no_constructor,
+		namespace_table.new_usertype<Rml::ElementTabSet>("ElementTabSet", sol::no_constructor,
 			// M
 			"SetPanel", sol::resolve<void(int, const Rml::String&)>(&Rml::ElementTabSet::SetPanel),
 			"SetTab", sol::resolve<void(int, const Rml::String&)>(&Rml::ElementTabSet::SetTab),
@@ -41,7 +41,7 @@ namespace Rml::SolLua
 		///////////////////////////
 
 		//--
-		lua.new_usertype<Rml::ElementProgress>("ElementProgress", sol::no_constructor,
+		namespace_table.new_usertype<Rml::ElementProgress>("ElementProgress", sol::no_constructor,
 			// G+S
 			//--
 			"value", sol::property(&Rml::ElementProgress::GetValue, &Rml::ElementProgress::SetValue),

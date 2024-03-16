@@ -4,9 +4,9 @@
 namespace Rml::SolLua
 {
 
-	void bind_vector(sol::state_view& lua)
+	void bind_vector(sol::table& namespace_table)
 	{
-		lua.new_usertype<Rml::Vector2i>("Vector2i", sol::constructors<Rml::Vector2i(), Rml::Vector2i(int, int)>(),
+		namespace_table.new_usertype<Rml::Vector2i>("Vector2i", sol::constructors<Rml::Vector2i(), Rml::Vector2i(int, int)>(),
 			// O
 			sol::meta_function::addition, &Rml::Vector2i::operator+,
 			sol::meta_function::subtraction, sol::resolve<Rml::Vector2i(Vector2i) const>(&Rml::Vector2i::operator-),
@@ -28,7 +28,7 @@ namespace Rml::SolLua
 			"magnitude", &Rml::Vector2i::Magnitude
 		);
 
-		lua.new_usertype<Rml::Vector2f>("Vector2f", sol::constructors<Rml::Vector2f(), Rml::Vector2f(float, float)>(),
+		namespace_table.new_usertype<Rml::Vector2f>("Vector2f", sol::constructors<Rml::Vector2f(), Rml::Vector2f(float, float)>(),
 			// O
 			sol::meta_function::addition, &Rml::Vector2f::operator+,
 			sol::meta_function::subtraction, sol::resolve<Rml::Vector2f(Vector2f) const>(&Rml::Vector2f::operator-),

@@ -189,16 +189,16 @@ namespace Rml::SolLua
 {
 
 	// Called from RmlSolLua.cpp
-	void bind_color(sol::state_view& lua);
-	void bind_context(sol::state_view& lua, SolLuaPlugin *slp);
-	void bind_datamodel(sol::state_view& lua);
-	void bind_document(sol::state_view& lua);
-	void bind_element(sol::state_view& lua);
-	void bind_element_derived(sol::state_view& lua);
-	void bind_element_form(sol::state_view& lua);
-	void bind_event(sol::state_view& lua);
-	void bind_global(sol::state_view& lua, SolLuaPlugin *slp);
-	void bind_vector(sol::state_view& lua);
-	void bind_convert(sol::state_view& lua);
+	void bind_color(sol::table& namespace_table);
+	void bind_context(sol::table& namespace_table, SolLuaPlugin *slp);
+	void bind_datamodel(sol::table& namespace_table);
+	void bind_document(sol::table& namespace_table);
+	void bind_element(sol::table& namespace_table);
+	void bind_element_derived(sol::table& namespace_table);
+	void bind_element_form(sol::table& namespace_table);
+	void bind_event(sol::table& namespace_table);
+	void bind_global(sol::table& namespace_table, SolLuaPlugin *slp);
+	void bind_vector(sol::table& namespace_table);
+	void bind_convert(sol::table& namespace_table);
 
 } // end namespace Rml::SolLua
