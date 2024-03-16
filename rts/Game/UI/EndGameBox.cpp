@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <cmath>
 #include "EndGameBox.h"
 
 #include "MouseHandler.h"
@@ -74,6 +75,11 @@ CEndGameBox::CEndGameBox(const std::vector<unsigned char>& winningAllyTeams)
 	difBox.x2 = 0.38f;
 	difBox.y2 = 0.65f;
 
+	graphScaleBox.x1 = 0.50f;
+	graphScaleBox.y1 = 0.02f;
+	graphScaleBox.x2 = 0.58f;
+	graphScaleBox.y2 = 0.043f;
+
 	CBitmap bm;
 	if (!bm.Load("bitmaps/graphPaper.bmp"))
 		bm.AllocDummy(SColor(255, 255, 255, 255));
@@ -113,6 +119,9 @@ bool CEndGameBox::MousePress(int x, int y, int button)
 		moveBox = false;
 
 	if (InBox(mx, my, box + difBox))
+		moveBox = false;
+
+	if (InBox(mx, my, box + graphScaleBox))
 		moveBox = false;
 
 	const float bxmin = box.x1 + 0.01f ;
@@ -167,6 +176,8 @@ void CEndGameBox::MouseRelease(int x, int y, int button)
 	if (InBox(mx, my, box + difBox))
 		dispMode = 2;
 
+	if (InBox(mx, my, box + graphScaleBox))
+		logScale = !logScale;
 
 	if (dispMode <= 0)
 		return;
@@ -242,6 +253,12 @@ void CEndGameBox::Draw()
 		if (InBox(mx, my, box + difBox))
 			gleDrawQuadC(box + difBox, SColor{0.7f, 0.2f, 0.2f, guiAlpha}, rbC);
 
+		if (dispMode != 0){
+		  if (InBox(mx, my, box + graphScaleBox))
+				gleDrawQuadC(box + graphScaleBox, SColor{0.7f, 0.2f, 0.2f, guiAlpha}, rbC);
+			else if (logScale)
+				gleDrawQuadC(box + graphScaleBox, SColor{0.2f, 0.2f, 0.7f, guiAlpha}, rbC);
+		}
 	}
 	{
 		// draw boxes
@@ -256,6 +273,9 @@ void CEndGameBox::Draw()
 	font->glPrint(box.x1 + playerBox.x1 + 0.015f, box.y1 + playerBox.y1 + 0.005f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Player stats");
 	font->glPrint(box.x1 +    sumBox.x1 + 0.015f, box.y1 +    sumBox.y1 + 0.005f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Team stats");
 	font->glPrint(box.x1 +    difBox.x1 + 0.015f, box.y1 +    difBox.y1 + 0.005f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Team delta stats");
+	if (dispMode != 0){
+		font->glPrint(box.x1 + graphScaleBox.x1 + 0.015f, box.y1 + graphScaleBox.y1 + 0.005f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Log scale");
+	}
 
 	if (winners.empty()) {
 		font->glPrint(box.x1 + 0.25f, box.y1 + 0.65f, 1.0f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Game result was undecided");
@@ -390,6 +410,8 @@ void CEndGameBox::Draw()
 		} else {
 			maxy = std::max(stats[stat1].maxdif, (stat2 != -1) ? stats[stat2].maxdif : 0) / TeamStatistics::statsPeriod;
 		}
+		if (logScale)
+		  maxy = std::log10(maxy);
 
 		const size_t numPoints = stats[0].values[0].size();
 
@@ -400,7 +422,11 @@ void CEndGameBox::Draw()
 			const int secs = int(a * 0.25f * (numPoints - 1) * TeamStatistics::statsPeriod) % 60;
 			const int mins = int(a * 0.25f * (numPoints    ) * TeamStatistics::statsPeriod) / 60;
 
-			font->glPrint(box.x1 + 0.12f, box.y1 + 0.07f + (a * 0.135f), 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, FloatToSmallString(maxy * 0.25f * a));
+			float yLabelNum = maxy *  0.25f * a;
+			if (logScale)
+			  yLabelNum = std::pow(10, yLabelNum);
+
+			font->glPrint(box.x1 + 0.12f, box.y1 + 0.07f + (a * 0.135f), 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, FloatToSmallString(yLabelNum));
 			font->glFormat(box.x1 + 0.135f + (a * 0.135f), box.y1 + 0.057f, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%02i:%02i", mins, secs);
 		}
 
@@ -459,8 +485,16 @@ void CEndGameBox::addVertices(TypedRenderBuffer<VA_TYPE_C> &rbC, const std::vect
 			// deltas
 			v0 = (statValues[a    ] - statValues[a - 1]) / TeamStatistics::statsPeriod;
 			v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
+		} else {
+			v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
 		}
 
+		if (logScale){
+			v0 = std::log10(v0);
+			v1 = std::log10(v1);
+		}
+		v0 = v0 <= 0.0f ? 0.0f : v0;
+    v1 = v1 <= 0.0f ? 0.0f : v1;
 		rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, color});
 		rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, color});
 	}

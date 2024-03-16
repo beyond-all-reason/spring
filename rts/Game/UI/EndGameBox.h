@@ -34,13 +34,15 @@ protected:
 
 	TRectangle<float> box;
 
-	TRectangle<float>   exitBox;
-	TRectangle<float> playerBox;
-	TRectangle<float>    sumBox;
-	TRectangle<float>    difBox;
+	TRectangle<float>       exitBox;
+	TRectangle<float>     playerBox;
+	TRectangle<float>        sumBox;
+	TRectangle<float>        difBox;
+	TRectangle<float> graphScaleBox;
 
 	bool moveBox = false;
 
+  bool logScale = false;
 	int dispMode = 0;
 
 	int stat1 =  1;
