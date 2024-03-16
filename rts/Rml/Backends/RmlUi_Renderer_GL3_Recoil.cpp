@@ -413,6 +413,7 @@ void RenderInterface_GL3_Recoil::ReleaseTexture(Rml::TextureHandle texture_handl
 /// @param[in] transform The new transform to apply, or nullptr if no transform applies to the current element.
 void RenderInterface_GL3_Recoil::SetTransform(const Rml::Matrix4f *new_transform) {
 	transform_active = (new_transform != nullptr);
+	// wait until the next time the shader is actually used to set the transform in it
 	transform = projection * (new_transform ? *new_transform : Rml::Matrix4f::Identity());
 	transform_dirty = true;
 }
