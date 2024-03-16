@@ -147,10 +147,10 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 
 	obj_table[sol::metatable_key] = obj_metatable;
 
-	sol::table obj_metatable_2 = lua.create_table();
-	obj_metatable_2[sol::meta_function::new_index] = new_index_func;
-
-	data->Table[sol::metatable_key] = obj_metatable_2;
+	// absolutely no assigning of keys to the top level table allowed
+	sol::table internal_data_metatable = lua.create_table();
+	internal_data_metatable[sol::meta_function::new_index] = new_index_func;
+	data->Table[sol::metatable_key] = internal_data_metatable;
 
 	return obj_table;
 }
@@ -212,7 +212,6 @@ void bind_context(sol::state_view& lua, SolLuaPlugin* slp)
 		"ProcessMouseMove", &Rml::Context::ProcessMouseMove,
 		"ProcessMouseButtonDown", &Rml::Context::ProcessMouseButtonDown,
 		"ProcessMouseButtonUp", &Rml::Context::ProcessMouseButtonUp,
-		// "ProcessMouseWheel", &Rml::Context::ProcessMouseWheel,
 		"ProcessMouseWheel", sol::overload(
 			static_cast<bool (Rml::Context::*)(float, int)>(&Rml::Context::ProcessMouseWheel),
 			static_cast<bool (Rml::Context::*)(Vector2f, int)>(&Rml::Context::ProcessMouseWheel)),
