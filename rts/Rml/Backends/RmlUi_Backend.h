@@ -62,9 +62,10 @@ namespace RmlGui
 	bool ProcessMouseRelease(int x, int y, int button);
 	bool ProcessMouseWheel(float delta);
 
-	void ToggleDebugger(int contextIndex);
+	void ToggleDebugger(int contextIndex); // TODO: allow access from Lua and maybe also chat command
 	bool IsMouseInteractingWith();
 	const std::string& GetMouseCursor();
+	void SetMouseCursorAlias(std::string from, std::string to);
 	CInputReceiver* GetInputReceiver();
 	lua_State* GetLuaState();
 

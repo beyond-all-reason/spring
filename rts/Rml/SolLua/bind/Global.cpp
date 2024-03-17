@@ -1,5 +1,6 @@
 #include "bind.h"
 #include "../plugin//SolLuaPlugin.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 
 
 namespace Rml::SolLua
@@ -73,6 +74,7 @@ namespace Rml::SolLua
 			"ClearTranslations", [translationTable](sol::this_state s) {
 				return translationTable->clear();
 			},
+			"SetMouseCursorAlias", &RmlGui::SetMouseCursorAlias,
 
 			// G
 			"contexts", sol::readonly_property(&getIndexedTable<Rml::Context, &functions::getContext, &functions::getMaxContexts>),

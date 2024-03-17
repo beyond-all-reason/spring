@@ -86,7 +86,7 @@ bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& mess
 
 void RmlSystemInterface::SetMouseCursor(const Rml::String& cursor_name)
 {
-	mouseCursor = cursor_name;
+	mouseCursor = mouseCursorAliases.contains(cursor_name) ? mouseCursorAliases[cursor_name] : cursor_name;
 }
 
 const Rml::String& RmlSystemInterface::GetMouseCursor()
