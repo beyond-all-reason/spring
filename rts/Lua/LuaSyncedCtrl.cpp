@@ -1743,7 +1743,7 @@ int LuaSyncedCtrl::DestroyUnit(lua_State* L)
 /***
  * @function Spring.TransferUnit
  * @number unitID
- * @number newTeamID
+ * @number newTeamId
  * @bool[opt=true] given if false, the unit is captured.
  * @bool[opt=false] adjustUnitLimit if true, sets newTeam.maxUnits++ and oldTeam.maxUnits-- before transfer
  * @treturn bool successfulTransfer
@@ -1756,11 +1756,11 @@ int LuaSyncedCtrl::TransferUnit(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	const int newTeamID = luaL_checkint(L, 2);
-	if (!teamHandler.IsValidTeam(newTeamID))
+	const int newTeamId = luaL_checkint(L, 2);
+	if (!teamHandler.IsValidTeam(newTeamId))
 		return 0;
 
-	CTeam* newTeam = teamHandler.Team(newTeamID);
+	CTeam* newTeam = teamHandler.Team(newTeamId);
 	if (newTeam == nullptr)
 		return 0;
 
@@ -1782,15 +1782,15 @@ int LuaSyncedCtrl::TransferUnit(lua_State* L)
 
 	++ inTransferUnit;
 	ASSERT_SYNCED(unit->id);
-	ASSERT_SYNCED((int)oldTeam);
-	ASSERT_SYNCED((int)newTeam);
+	ASSERT_SYNCED(oldTeam->teamNum);
+	ASSERT_SYNCED((int)newTeamId);
 	ASSERT_SYNCED(given);
 	ASSERT_SYNCED(adjustUnitLimit);
 	if (adjustUnitLimit) {
 		newTeam->maxUnits++;
 		oldTeam->maxUnits--;
 	}
-	bool successfulTransfer = unit->ChangeTeam(newTeamID, given ? CUnit::ChangeGiven
+	bool successfulTransfer = unit->ChangeTeam(newTeamId, given ? CUnit::ChangeGiven
 	                                : CUnit::ChangeCaptured);
 	if (adjustUnitLimit && !successfulTransfer) {
 		newTeam->maxUnits--;
