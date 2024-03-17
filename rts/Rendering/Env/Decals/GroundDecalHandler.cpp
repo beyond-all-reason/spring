@@ -1046,7 +1046,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 	if (doIt == decalOwners.end()) {
 		// new decal
 
-		const auto& mainName = StringToLower(decalDef.trackDecalTypeName);
+		// the decal texture name is stored as a basename
+		const auto& mainName = FileSystem::GetBasename(StringToLower(decalDef.trackDecalTypeName));
 		const auto  normName = GetExtraTextureName(mainName);
 
 		const float alphaDecay = 1.0f / trackLifeTime;
