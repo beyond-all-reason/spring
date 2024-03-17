@@ -235,6 +235,13 @@ const std::string& RmlGui::GetMouseCursor()
 	return data->system_interface.GetMouseCursor();
 }
 
+void RmlGui::SetMouseCursorAlias(std::string from, std::string to) {
+	if (!RmlInitialized()) {
+		return;
+	}
+	data->system_interface.mouseCursorAliases.insert_or_assign(from, to);
+}
+
 CInputReceiver* RmlGui::GetInputReceiver()
 {
 	if (!RmlInitialized()) {
