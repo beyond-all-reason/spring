@@ -231,7 +231,7 @@ void CTeam::GiveEverythingTo(const unsigned toTeam)
 	for (size_t i = 0; i < teamUnits.size(); ) {
 		i += (!teamUnits[i]->ChangeTeam(toTeam, CUnit::ChangeGiven));
 	}
-
+	assert(numUnits == teamUnits.size());
 	// Some of the above transfers may have failed, so set maxUnits=numUnits and 
 	// reduce target->maxUnits by numUnits
 	maxUnits = numUnits;
