@@ -42,8 +42,8 @@ public:
 
 	float rot;
 	float height;
-	float unused1;
-	float unused2;
+	float dotElimExp;
+	float cmAlphaMult;
 
 	float createFrameMin;
 	float createFrameMax;
@@ -58,7 +58,7 @@ public:
 		uint32_t id   : 24;
 	} info;
 	SColor tintColor;
-	SColor glowColorMap[2];
+	std::array<SColor, 2> glowColorMap;
 public:
 	static uint32_t GetNextId() {
 		nextId = (nextId % GroundDecal::ID_WRAPAROUND) + 1; return nextId;

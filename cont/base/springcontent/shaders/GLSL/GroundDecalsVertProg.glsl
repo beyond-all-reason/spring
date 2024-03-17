@@ -48,8 +48,8 @@ flat out mat3 vInvRotMat;
 
 #define rot                createParams2.x
 #define height             createParams2.y
-#define unused1            createParams2.z
-#define unused2            createParams2.w
+#define dotElimExp         createParams2.z
+#define cmAlphaMult        createParams2.w
 
 #define createFrameMin     createParams3.x
 #define createFrameMax     createParams3.y
@@ -86,7 +86,8 @@ flat out mat3 vInvRotMat;
 
 #define vAlpha            vData1.x
 #define vGlow             vData1.y
-// vData1.z, vData1.w - empty
+#define vDotElimExp       vData1.z
+// vData1.w - empty
 #define vHeight           vData2.x
 #define vUVWrapDist       vData2.y
 #define vUVOffset         vData2.z
@@ -145,7 +146,7 @@ const vec3 CUBE_VERT[36] = vec3[36](
 	vec3(-1.0,  1.0, -1.0)
 );
 
-#line 100144
+#line 100149
 
 const vec2 HM_TEXEL = vec2(8.0, 8.0);
 float HeightAtWorldPos(vec2 wxz) {
@@ -311,10 +312,13 @@ void main() {
 	worldPos.xyz += testResults.w * vTranformedPos[4].xyz;
 
 	vTintColor = texTint;
-	vGlowColor = mix(glowTintMin, glowTintMax, vAlpha);
+	vGlowColor = mix(glowTintMin, glowTintMax, vAlpha * cmAlphaMult);
 
 	// emulate explosion fade in for the first 6 frames, asjusted by the initial alpha (less fadein for already weak scars)
 	vAlpha *= mix(1.0, smoothstep(0.0, 6.0 * alpha, curAdjustedFrame - thisVertexCreateFrame), float(vDecalType == DECAL_EXPLOSION));
+	
+	// vDotElimExp
+	vDotElimExp = dotElimExp;
 
 	// effect's height
 	vHeight = height;

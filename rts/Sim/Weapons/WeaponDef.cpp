@@ -3,6 +3,7 @@
 
 #include "Game/TraceRay.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Rendering/Textures/ColorMap.h"
 #include "Sim/Misc/DamageArrayHandler.h"
 #include "Sim/Misc/DefinitionTag.h"
 #include "Sim/Misc/GlobalConstants.h"
@@ -14,6 +15,7 @@
 #include "System/Log/ILog.h"
 #include "System/StringHash.h"
 #include "System/StringUtil.h"
+#include "System/FileSystem/SimpleParser.h"
 
 
 static DefType WeaponDefs("WeaponDefs");
@@ -204,6 +206,13 @@ WEAPONTAG(std::string, shieldArmorTypeName).externalName("shield.armorType").fal
 // Unsynced (= Visuals)
 WEAPONTAG(std::string, model, visuals.modelName).defaultValue("");
 WEAPONTAG(bool, explosionScar, visuals.explosionScar).defaultValue(true);
+WEAPONTAG(float, scarAlpha, visuals.scarAlpha).defaultValue(0.0f);
+WEAPONTAG(float, scarGlow, visuals.scarGlow).defaultValue(0.0f);
+WEAPONTAG(float, scarTtl, visuals.scarTtl).defaultValue(0.0f);
+WEAPONTAG(float, scarGlowTtl, visuals.scarGlowTtl).defaultValue(0.0f);
+WEAPONTAG(float, scarDotElimination, visuals.scarDotElimination).defaultValue(0.0f);
+WEAPONTAG(float4, scarProjVector, visuals.scarProjVector).defaultValue(float4{0.0f});
+WEAPONTAG(float4, scarColorTint, visuals.scarColorTint).defaultValue(float4{0.5f});
 WEAPONTAG(bool, alwaysVisible, visuals.alwaysVisible).defaultValue(false);
 WEAPONTAG(float, cameraShake).fallbackName("damage.default").defaultValue(0.0f).minimumValue(0.0f);
 
@@ -240,6 +249,8 @@ WEAPONTAG(float3, rgbColor, visuals.color).defaultValue(float3(1.0f, 0.5f, 0.0f)
 WEAPONTAG(float3, rgbColor2, visuals.color2).defaultValue(float3(1.0f, 1.0f, 1.0f));
 WEAPONTAG(float, intensity).defaultValue(0.9f).description("Alpha transparency for non-model projectiles. Lower values are more opaque, but 0.0 will cause the projectile to disappear entirely.");
 WEAPONTAG(std::string, colormap, visuals.colorMapStr).defaultValue("");
+WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("");
+WEAPONTAG(std::string, scarIndices, visuals.scarIdcsStr).defaultValue("");
 
 WEAPONTAG(std::string, textures1, visuals.texNames[0]).externalName("textures.1").fallbackName("texture1").defaultValue("");
 WEAPONTAG(std::string, textures2, visuals.texNames[1]).externalName("textures.2").fallbackName("texture2").defaultValue("");
@@ -504,6 +515,21 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 
 		interceptedByShieldType = wdTable.GetInt("interceptedByShieldType", defInterceptType);
 	}
+
+	if (!visuals.scarIdcsStr.empty())
+	{
+		const auto idcs = CSimpleParser::Tokenize(visuals.scarIdcsStr);
+		for (const auto & idx : idcs) {
+			bool fail;
+			auto i = StringToInt(idx, &fail);
+			if (!fail)
+				visuals.scarIdcs.emplace_back(i);
+		}
+	}
+	visuals.scarProjVector.w = visuals.scarProjVector.LengthNormalize();
+
+	if (!visuals.scarGlowColorMapStr.empty())
+		visuals.scarGlowColorMap = CColorMap::LoadFromDefString(visuals.scarGlowColorMapStr);
 
 	ParseWeaponSounds(wdTable);
 

@@ -30,6 +30,7 @@
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Sim/Features/Feature.h"
@@ -187,14 +188,15 @@ void CGroundDecalHandler::AddBuildingDecalTextures()
 }
 
 
-void CGroundDecalHandler::AddGroundScarTextures()
+void CGroundDecalHandler::AddTexturesFromTable()
 {
 	LuaParser resourcesParser("gamedata/resources.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP);
 	if (!resourcesParser.Execute()) {
 		LOG_L(L_ERROR, "Failed to load resources: %s", resourcesParser.GetErrorLog().c_str());
 	}
 
-	const LuaTable scarsTable = resourcesParser.GetRoot().SubTable("graphics").SubTable("scars");
+	const auto GraphicsTbl = resourcesParser.GetRoot().SubTable("graphics");
+	const LuaTable scarsTable = GraphicsTbl.SubTable("scars");
 	const int scarTblSize = scarsTable.GetLength();
 
 	maxUniqueScars = 0;
@@ -236,6 +238,22 @@ void CGroundDecalHandler::AddGroundScarTextures()
 		// check if loaded for real
 		// can't use atlas->TextureExists() as it's only populated after Finalize()
 		maxUniqueScars += atlasMain->GetAllocator()->contains(mainName);
+	}
+
+	const LuaTable decalsTable = GraphicsTbl.SubTable("decals");
+	const int decalsTblSize = decalsTable.GetLength();
+	for (int i = 1; i <= decalsTblSize; ++i) {
+		const std::string mainTexFileName = decalsTable.GetString(i, "");
+
+		if (mainTexFileName.find("_normal") != std::string::npos)
+			continue;
+
+		const std::string normTexFileName = mainTexFileName.empty() ? "" : GetExtraTextureName(mainTexFileName);
+		const auto mainName = IntToString(i, "decal_%i");
+		const auto normName = IntToString(i, "decal_%i");
+
+		AddTexToAtlas(mainName, mainTexFileName,  true,  true);
+		AddTexToAtlas(normName, normTexFileName, false, false);
 	}
 }
 
@@ -308,7 +326,7 @@ void CGroundDecalHandler::GenerateAtlasTextures() {
 	// often represented by compressed textures, cannot be added to the regular atlas
 	AddBuildingDecalTextures();
 
-	AddGroundScarTextures();
+	AddTexturesFromTable();
 	AddGroundTrackTextures();
 	AddFallbackTextures();
 
@@ -466,7 +484,7 @@ void CGroundDecalHandler::AddDecal(CUnit* unit, const float3& newPos)
 */
 
 
-void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float damage, float radius, float maxHeightDiff)
+void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 {
 	if (!GetDrawDecals())
 		return;
@@ -474,52 +492,90 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 	if (maxUniqueScars == 0)
 		return;
 
-	const float groundHeight = CGround::GetHeightReal(pos.x, pos.z, false);
-	const float altitude = pos.y - groundHeight;
+	const float groundHeight = CGround::GetHeightReal(ei.pos.x, ei.pos.z, false);
+	const float altitude = ei.pos.y - groundHeight;
 
 	// no decals for below-ground explosions
 	// also no decals if they are too high in the air
-	if (math::fabs(altitude) >= radius)
+	if (math::fabs(altitude) >= ei.radius)
 		return;
 
-	pos.y -= altitude;
-	radius -= altitude;
+	ei.pos.y -= altitude;
+	ei.radius -= altitude;
 
-	if (radius < 5.0f)
+	if (ei.radius < 5.0f)
 		return;
 
-	if (damage < 5.0f)
+	if (ei.damage < 5.0f)
 		return;
 
-	damage = std::min(damage, radius * 30.0f);
-	damage *= (radius / (radius + altitude));
-	radius = std::min(radius, damage * 0.25f);
+	ei.damage = std::min(ei.damage, ei.radius * 30.0f);
+	ei.damage *= (ei.radius / (ei.radius + altitude));
+	ei.radius = std::min(ei.radius, ei.damage * 0.25f);
 
-	if (damage > 400.0f)
-		damage = 400.0f + std::sqrt(damage - 400.0f);
+	if (ei.damage > 400.0f)
+		ei.damage = 400.0f + std::sqrt(ei.damage - 400.0f);
 
-	const float ttl = std::clamp(decalLevel * damage * 3.0f, 15.0f, decalLevel * 1800.0f);
-	float alpha = std::clamp(2.0f * damage / 255.0f, 0.8f, 1.0f);
-	float alphaDecay = 1.0f / ttl;
-	float glow = std::clamp(2.0f * damage / 255.0f, 0.0f, 1.0f);
-	float glowDecay = 1.0f / 60.0f;
+	const float alpha = (ei.wd->visuals.scarAlpha > 0.0f) ?
+		ei.wd->visuals.scarAlpha :
+		std::clamp(2.0f * ei.damage / 255.0f, 0.8f, 1.0f);
 
-	const float2 posTL = { pos.x - radius, pos.z - radius };
-	const float2 posTR = { pos.x + radius, pos.z - radius };
-	const float2 posBR = { pos.x + radius, pos.z + radius };
-	const float2 posBL = { pos.x - radius, pos.z + radius };
+	const float scarTTL = (ei.wd->visuals.scarTtl > 0.0f) ?
+		decalLevel * GAME_SPEED * ei.wd->visuals.scarTtl :
+		std::clamp(decalLevel * ei.damage * 3.0f, 15.0f, decalLevel * 1800.0f);
 
-	const int scarIdx = 1 + guRNG.NextInt(maxUniqueScars); //not inclusive
+	const float glow = (ei.wd->visuals.scarGlow > 0.0f) ?
+		ei.wd->visuals.scarGlow :
+		std::clamp(2.0f * ei.damage / 255.0f, 0.0f, 1.0f);
+
+	const float glowTTL = (ei.wd->visuals.scarGlowTtl > 0.0f) ?
+		decalLevel * GAME_SPEED * ei.wd->visuals.scarGlowTtl :
+		60.0f;
+
+	const float alphaDecay = 1.0f / scarTTL;
+	const float glowDecay = 1.0f / glowTTL;
+
+	const float2 posTL = { ei.pos.x - ei.radius, ei.pos.z - ei.radius };
+	const float2 posTR = { ei.pos.x + ei.radius, ei.pos.z - ei.radius };
+	const float2 posBR = { ei.pos.x + ei.radius, ei.pos.z + ei.radius };
+	const float2 posBL = { ei.pos.x - ei.radius, ei.pos.z + ei.radius };
+
+	static std::vector<int> validScarIndices;
+	validScarIndices.clear();
+	if (!ei.wd->visuals.scarIdcs.empty()) {
+		for (auto scarIdx : ei.wd->visuals.scarIdcs) {
+			if (scarIdx < 1 || scarIdx > maxUniqueScars - 1)
+				continue;
+
+			validScarIndices.emplace_back(scarIdx);
+		}
+	}
+	
+	int scarIdx;
+	if (validScarIndices.empty())
+		scarIdx = 1 + guRNG.NextInt(maxUniqueScars); //not inclusive
+	else
+		scarIdx = validScarIndices[guRNG.NextInt(validScarIndices.size())]; //not inclusive
+
 	const auto mainName = IntToString(scarIdx, "mainscar_%i");
 	const auto normName = IntToString(scarIdx, "normscar_%i");
 
 	const auto createFrame = static_cast<float>(std::max(gs->frameNum, 0));
-	const auto height = argmax(radius, maxHeightDiff);
+	const auto height = argmax(ei.radius, ei.maxHeightDiff);
+
+	std::array<SColor, 2> glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} };
+	float cmAlphaMult = 1.0f;
+	if (ei.wd->visuals.scarGlowColorMap && !ei.wd->visuals.scarGlowColorMap->Empty()) {
+		auto idcs = ei.wd->visuals.scarGlowColorMap->GetIndices(0.0f);
+		glowColorMap[0] = ei.wd->visuals.scarGlowColorMap->GetColor(idcs.first );
+		glowColorMap[1] = ei.wd->visuals.scarGlowColorMap->GetColor(idcs.second);
+		cmAlphaMult = static_cast<float>(ei.wd->visuals.scarGlowColorMap->GetMapSize());
+	}
 
 	const auto& decal = decals.emplace_back(GroundDecal{
 		.refHeight = groundHeight,
-		.minHeight = -maxHeightDiff,
-		.maxHeight =  maxHeightDiff,
+		.minHeight = -ei.maxHeightDiff,
+		.maxHeight = ei.maxHeightDiff,
 		.forceHeightMode = 1.0f,
 		.posTL = posTL,
 		.posTR = posTR,
@@ -533,18 +589,23 @@ void CGroundDecalHandler::AddExplosion(float3 pos, float3 explNormalVec, float d
 		.glowFalloff = glowDecay,
 		.rot = guRNG.NextFloat() * math::TWOPI,
 		.height = height,
-		.unused1 = 0.0f,
-		.unused2 = 0.0f,
+		.dotElimExp = ei.wd->visuals.scarDotElimination,
+		.cmAlphaMult = cmAlphaMult,
 		.createFrameMin = createFrame,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
 		.uvTraveledDistance = 0.0f,
-		.forcedNormal = float3{},
+		.forcedNormal = ei.projDir,
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() },
 		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
-		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
+		.glowColorMap = std::move(glowColorMap)
 	});
+
+	if (ei.wd->visuals.scarGlowColorMap && !ei.wd->visuals.scarGlowColorMap->Empty()) {
+		auto idcs = ei.wd->visuals.scarGlowColorMap->GetIndices(0.0f);
+		idToCmInfo.emplace(decal.info.id, std::make_tuple(ei.wd->visuals.scarGlowColorMap, idcs));
+	}
 
 	idToPos.emplace(decal.info.id, decals.size() - 1);
 	decalsUpdateList.EmplaceBackUpdate();
@@ -755,6 +816,8 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.glowFalloff = 0.0f,
 		.rot = -object->buildFacing * math::HALFPI,
 		.height = height,
+		.dotElimExp = 0.0f,
+		.cmAlphaMult = 1.0f,
 		.createFrameMin = createFrame,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
@@ -852,6 +915,8 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 		.glowFalloff = 0.0f,
 		.rot = 0.0f,
 		.height = 0.0f,
+		.dotElimExp = 0.0f,
+		.cmAlphaMult = 1.0f,
 		.createFrameMin = createFrame,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = 0.0f,
@@ -1069,6 +1134,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 			.glowFalloff = 0.0f,
 			.rot = 0.0f,
 			.height = 0.0f,
+			.dotElimExp = 0.0f,
+			.cmAlphaMult = 1.0f,
 			.createFrameMin = createFrame,
 			.createFrameMax = createFrame,
 			.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
@@ -1151,6 +1218,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		.glowFalloff = 0.0f,
 		.rot = 0.0f,
 		.height = oldDecal.height, //also set later
+		.dotElimExp = oldDecal.dotElimExp,
+		.cmAlphaMult = oldDecal.cmAlphaMult,
 		.createFrameMin = oldDecal.createFrameMax,
 		.createFrameMax = createFrame,
 		.uvWrapDistance = decalDef.trackDecalWidth * decalDef.trackDecalStretch,
@@ -1228,9 +1297,15 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 
 	// group all expired items towards the end of the vector
 	// Lua items are not considered expired
-	auto partIt = std::stable_partition(decals.begin(), decals.end(), [](const GroundDecal& decal) {
+	const auto expIt = std::stable_partition(decals.begin(), decals.end(), [](const GroundDecal& decal) {
 		return decal.IsValid();
 	});
+
+	// remove expired items from idToCmInfo map
+	for (auto decalIt = expIt; decalIt != decals.end(); ++decalIt) {
+		if (auto it = idToCmInfo.find(decalIt->info.id); it != idToCmInfo.end())
+			idToCmInfo.erase(it);
+	}
 
 	// remove expired decals
 	decals.resize(decals.size() - numToDelete);
@@ -1294,6 +1369,32 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 		else /* const GhostSolidObject* */ {
 			////
 		}
+	}
+
+	const float curAdjustedFrame = std::max(gs->frameNum, 0) + globalRendering->timeOffset;
+	for (auto& [id, info] : idToCmInfo) {
+		auto it = idToPos.find(id);
+		if (it == idToPos.end()) {
+			assert(false);
+			continue;
+		}
+		auto& decal = decals.at(it->second);
+
+		const float currAlpha = decal.alpha - (curAdjustedFrame - decal.createFrameMax) * decal.alphaFalloff;
+		if (currAlpha <= 0.0f)
+			continue;
+
+		const auto* cm = std::get<const CColorMap*>(info);
+		auto idcs = cm->GetIndices(currAlpha);
+
+		auto& storedIdcs = std::get<1>(info);
+		if (storedIdcs == idcs)
+			continue;
+
+		decal.glowColorMap[0] = cm->GetColor(idcs.first );
+		decal.glowColorMap[1] = cm->GetColor(idcs.second);
+		storedIdcs = idcs;
+		decalsUpdateList.SetUpdate(it->second);
 	}
 }
 
@@ -1368,15 +1469,18 @@ void CGroundDecalHandler::ExplosionOccurred(const CExplosionParams& event) {
 	if ((event.weaponDef != nullptr) && !event.weaponDef->visuals.explosionScar)
 		return;
 
-	const auto decalDir = CGround::GetNormal(event.pos.x, event.pos.z, false);
+	const auto decalDir = event.weaponDef->visuals.scarProjVector.w == 0.0f ?
+		CGround::GetNormal(event.pos.x, event.pos.z, false) :
+		float3{ event.weaponDef->visuals.scarProjVector };
 
-	AddExplosion(
+	AddExplosion(std::move(AddExplosionInfo{
 		event.pos,
 		decalDir,
 		event.damages.GetDefault(),
 		event.craterAreaOfEffect,
-		event.maxGroundDeformation
-	);
+		event.maxGroundDeformation,
+		event.weaponDef
+	}));
 }
 
 void CGroundDecalHandler::ConfigNotify(const std::string& key, const std::string& value)
@@ -1392,7 +1496,12 @@ void CGroundDecalHandler::ConfigNotify(const std::string& key, const std::string
 }
 
 void CGroundDecalHandler::RenderUnitCreated(const CUnit* unit, int cloaked) { AddSolidObject(unit); }
-void CGroundDecalHandler::RenderUnitDestroyed(const CUnit* unit) { RemoveSolidObject(unit, nullptr); }
+void CGroundDecalHandler::RenderUnitDestroyed(const CUnit* unit) {
+	if (auto it = unitMinMaxHeights.find(unit->id); it != unitMinMaxHeights.end())
+		unitMinMaxHeights.erase(it);
+
+	RemoveSolidObject(unit, nullptr);
+}
 
 void CGroundDecalHandler::RenderFeatureCreated(const CFeature* feature) { AddSolidObject(feature); }
 void CGroundDecalHandler::RenderFeatureDestroyed(const CFeature* feature) { RemoveSolidObject(feature, nullptr); }

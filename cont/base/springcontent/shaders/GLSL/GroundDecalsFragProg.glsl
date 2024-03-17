@@ -67,7 +67,8 @@ out vec4 fragColor;
 
 #define vAlpha            vData1.x
 #define vGlow             vData1.y
-// vData1.z, vData1.w - empty
+#define vDotElimExp       vData1.z
+// vData1.w - empty
 #define vHeight           vData2.x
 #define vUVWrapDist       vData2.y
 #define vUVOffset         vData2.z
@@ -81,7 +82,7 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200084
+#line 200085
 
 vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     vec3 v0 = p2 - p0;
@@ -372,18 +373,6 @@ void main() {
 	float alpha = clamp(vAlpha, 0.0, 1.0);
 	float glow  = clamp(vGlow , 0.0, 1.0);
 
-	// overglow
-	glow += smoothstep(0.75, 1.0, glow) * 0.2 * abs(sin(0.02 * curAdjustedFrame));
-
-	// distance based glow adjustment
-	float relDistance = distance(worldPos.xyz, midPoint.xyz) / midPoint.w;
-
-	relDistance = smoothstep(0.9, 0.1, relDistance);
-	glow *= pow(relDistance, 7.0); // artistic choice to keep the glow centered
-	glow *= smoothstep(-SMF_SHALLOW_WATER_DEPTH, 0.0, worldPos.y);
-
-	float t = mix(1.0, 3700.0, glow);
-
 	vec4 mainCol = GetColorByRelUV(decalMainTex, uvTL.xy, uvBL.xy, uvTR.xy, uvBR.xy, relUV);
 	vec4 normVal = GetColorByRelUV(decalNormTex, uvTL.zw, uvBL.zw, uvTR.zw, uvBR.zw, relUV);
 
@@ -411,7 +400,26 @@ void main() {
 	vec3 lightCol = diffuseTerm * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
 
 	fragColor.rgb = mainCol.rgb * lightCol;
-	fragColor.rgb += BlackBody(normVal.w * t) * glow;
+	
+	if (vGlowColor.a == 0.0) {
+		// overglow
+		glow += smoothstep(0.75, 1.0, glow) * 0.2 * abs(sin(0.02 * curAdjustedFrame));
+
+		// distance based glow adjustment
+		float relDistance = distance(worldPos.xyz, midPoint.xyz) / midPoint.w;
+
+		relDistance = smoothstep(0.9, 0.1, relDistance);
+		glow *= pow(relDistance, 7.0); // artistic choice to keep the glow centered
+		glow *= smoothstep(-SMF_SHALLOW_WATER_DEPTH, 0.0, worldPos.y);
+
+		float t = mix(1.0, 3700.0, glow);
+		fragColor.rgb += BlackBody(normVal.w * t) * glow;
+	} else {
+		// alpha mixed
+		fragColor.rgb  = mix(fragColor.rgb, vGlowColor.rgb * normVal.w * glow, vGlowColor.a);
+		// alpha added
+		//fragColor.rgb += vGlowColor.rgb * normVal.w * glow * vGlowColor.a;
+	}
 
 	// adaptation from SMFFragProg.glsl
 	#ifdef SMF_WATER_ABSORPTION
@@ -448,7 +456,8 @@ void main() {
 	vec3 ellipseAxes = vec3(vTranformedPos[1].w, vHeight, vTranformedPos[2].w);
 	fragColor.a *= mix(1.0, EllipsoidRedunction(rotWorldPos, ellipseAxes), float(vDecalType == DECAL_EXPLOSION));
 	// artistic adjustments
-	//fragColor  *= pow(max(dot(vRotMat[1], N), 0.0), 1.5); // MdotL^1.5 is arbitrary
+
+	fragColor  *= mix(1.0, pow(max(dot(vRotMat[1], N), 0.0), vDotElimExp), float(vDotElimExp > 0.0));
 
 	//fragColor.a *=
 	//	smoothstep(0.0, EPS, relUV.x) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.x)) *

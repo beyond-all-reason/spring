@@ -711,8 +711,8 @@ void QTPFS::PathSearch::IterateNodes(unsigned int searchDir) {
 	#endif
 
 	// LOG("%s: continuing search from %d to %d", __func__
-	// 		, curSearchNode->GetIndex()
-	// 		, tgtSearchNode->GetIndex()
+	// 		, curSearchNode->GetIndices()
+	// 		, tgtSearchNode->GetIndices()
 	// 		);
 
 	// Check if we've linked up with the other search
@@ -777,8 +777,8 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 		int nxtNodesId = nxtNodes[i].nodeId;
 		
 		// LOG("%s: target node search from %d to %d", __func__
-		// 		, curNode->GetIndex()
-		// 		, nxtNode->GetIndex()
+		// 		, curNode->GetIndices()
+		// 		, nxtNode->GetIndices()
 		// 		);
 
 		nextSearchNode = &searchThreadData->allSearchedNodes[searchDir].InsertINodeIfNotPresent(nxtNodesId);
@@ -866,7 +866,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 		// 	UpdateNode(nextSearchNode, curSearchNode, netPointIdx);
 
 		// 	// (*openNodes).push(nxtNode);
-		// 	(*openNodes).emplace(nextSearchNode->GetIndex(), nextSearchNode->GetHeapPriority());
+		// 	(*openNodes).emplace(nextSearchNode->GetIndices(), nextSearchNode->GetHeapPriority());
 
 		// 	#ifdef QTPFS_TRACE_PATH_SEARCHES
 		// 	searchIter.AddPushedNodeIdx(nxtNode->zmin() * mapDims.mapx + nxtNode->xmin());
@@ -881,7 +881,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 		// 		, nextSearchNode->GetPathCost(NODE_PATH_COST_G), gCosts[netPointIdx]);
 
 		// LOG("%s: adding node (%d) gcost %f < %f [old p:%f]", __func__
-		// 		, nextSearchNode->GetIndex()
+		// 		, nextSearchNode->GetIndices()
 		// 		, gCosts[netPointIdx]
 		// 		, nextSearchNode->GetPathCost(NODE_PATH_COST_G)
 		// 		, nextSearchNode->GetHeapPriority()
@@ -1062,7 +1062,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 				boundaryMaxs.x = std::max(boundaryMaxs.x, float(tmpNode->xmax*SQUARE_SIZE));
 				boundaryMaxs.z = std::max(boundaryMaxs.z, float(tmpNode->zmax*SQUARE_SIZE));
 				// LOG("%s: [%d] nxtNode=%d point (%f, %f, %f) [onlyNode=%d]", __func__, SearchThreadData::SEARCH_BACKWARD
-				// 		, tmpNode->GetIndex(), prvPoint.x, prvPoint.y, prvPoint.z, int(tmpPoint == prvPoint));
+				// 		, tmpNode->GetIndices(), prvPoint.x, prvPoint.y, prvPoint.z, int(tmpPoint == prvPoint));
 
 				#ifndef QTPFS_SMOOTH_PATHS
 				// make sure the back-pointers can never become dangling
@@ -1122,7 +1122,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 			boundaryMaxs.x = std::max(boundaryMaxs.x, float(tmpNode->xmax*SQUARE_SIZE));
 			boundaryMaxs.z = std::max(boundaryMaxs.z, float(tmpNode->zmax*SQUARE_SIZE));
 			// LOG("%s: [%d] nxtNode=%d point (%f, %f, %f) [onlyNode=%d]", __func__, SearchThreadData::SEARCH_FORWARD
-			// 		, tmpNode->GetIndex(), tmpPoint.x, tmpPoint.y, tmpPoint.z, int(tmpPoint == prvPoint));
+			// 		, tmpNode->GetIndices(), tmpPoint.x, tmpPoint.y, tmpPoint.z, int(tmpPoint == prvPoint));
 
 
 			#ifndef QTPFS_SMOOTH_PATHS
@@ -1144,7 +1144,7 @@ void QTPFS::PathSearch::TracePath(IPath* path) {
 					, tmpNode->xmin, tmpNode->zmin
 					, tmpNode->xmax, tmpNode->zmax);
 			// LOG("%s: [%d] tgtNode=%d point ", __func__, SearchThreadData::SEARCH_FORWARD
-			// 		, tmpNode->GetIndex());
+			// 		, tmpNode->GetIndices());
 			nodesWithoutPoints++;
 			boundaryMins.x = std::min(boundaryMins.x, float(tmpNode->xmin*SQUARE_SIZE));
 			boundaryMins.z = std::min(boundaryMins.z, float(tmpNode->zmin*SQUARE_SIZE));

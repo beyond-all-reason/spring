@@ -718,7 +718,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				ngb = threadData.relinkNodeGrid[relinkNodeindex];
 				
 				// if (nodeLayer.GetNodelayer() == 2) {
-				// 	LOG("Linking x %d -> [%d] (%d,%d) [%d,%d]", ngb->GetIndex(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1));
+				// 	LOG("Linking x %d -> [%d] (%d,%d) [%d,%d]", ngb->GetIndices(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1));
 				// }
 				hmz = ngb->zmax();
 
@@ -750,7 +750,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				ngb = threadData.relinkNodeGrid[relinkNodeindex];
 				
 				// if (nodeLayer.GetNodelayer() == 2) {
-				// 	LOG("Linking x %d -> [%d] (%d,%d) [%d,%d] = %d", ngb->GetIndex(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1), rWidth);
+				// 	LOG("Linking x %d -> [%d] (%d,%d) [%d,%d] = %d", ngb->GetIndices(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1), rWidth);
 				// }
 				hmz = ngb->zmax();
 
@@ -783,7 +783,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				ngb = threadData.relinkNodeGrid[relinkNodeindex];
 
 				// if (nodeLayer.GetNodelayer() == 2) {
-				// 	LOG("Linking z %d -> [%d] (%d,%d) [%d,%d] = %d", ngb->GetIndex(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1), rWidth);
+				// 	LOG("Linking z %d -> [%d] (%d,%d) [%d,%d] = %d", ngb->GetIndices(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1), rWidth);
 				// }
 				hmx = ngb->xmax();
 
@@ -815,7 +815,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				ngb = threadData.relinkNodeGrid[relinkNodeindex];
 
 				// if (nodeLayer.GetNodelayer() == 2) {
-				// 	LOG("Linking %d -> [%d] (%d,%d) [%d,%d]", ngb->GetIndex(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1));
+				// 	LOG("Linking %d -> [%d] (%d,%d) [%d,%d]", ngb->GetIndices(), relinkNodeindex, hmx, hmz, (hmx - r.x1), (hmz - r.z1));
 				// }
 				hmx = ngb->xmax();
 
@@ -900,7 +900,7 @@ bool QTPFS::QTNode::UpdateNeighborCache(NodeLayer& nodeLayer, UpdateThreadData& 
 				if (ngbC != ngbR && ngbC != ngbT) {
 					if (ngbR->AllSquaresAccessible() && ngbT->AllSquaresAccessible()) {
 						// neighbours.push_back(ngbC);
-						// neighbours.push_back(ngbC->GetIndex());
+						// neighbours.push_back(ngbC->GetIndices());
 						if (!ngbC->AllSquaresImpassable())
 							neighborCache[newNeighbors++] = ngbC;
 
