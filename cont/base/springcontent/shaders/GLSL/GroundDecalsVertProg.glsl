@@ -27,7 +27,6 @@ flat out vec4 vData3;
 flat out vec4 vData4;
 
 flat out mat3 vRotMat;
-flat out mat3 vInvRotMat;
 
 /////////////////////////////////////////////////////////
 
@@ -146,7 +145,7 @@ const vec3 CUBE_VERT[36] = vec3[36](
 	vec3(-1.0,  1.0, -1.0)
 );
 
-#line 100149
+#line 100148
 
 const vec2 HM_TEXEL = vec2(8.0, 8.0);
 float HeightAtWorldPos(vec2 wxz) {
@@ -271,11 +270,10 @@ void main() {
 		vec3 rotAxis = normalize(vec3(groundNormal.z, 0.0, -groundNormal.x));
 		xDir = RotateByNormalVector(xDir, groundNormal, rotAxis);
 	}
-	vec3 zDir = normalize(cross(xDir, groundNormal));
+	vec3 zDir = normalize(cross(xDir, groundNormal));  // ex. (0,0,1)x(0,1,0)=(0,0,1) - righthanded coord system
 
 	// orthonormal system
 	vRotMat = mat3(xDir, groundNormal, zDir);
-	vInvRotMat = transpose(vRotMat);
 
 	//vTranformedPos[0] is handled by midPoint manipulations above
 

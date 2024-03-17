@@ -598,7 +598,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 		.forcedNormal = ei.projDir,
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() },
-		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
+		.tintColor = SColor{ei.wd->visuals.scarColorTint},
 		.glowColorMap = std::move(glowColorMap)
 	});
 

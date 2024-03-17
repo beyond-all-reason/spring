@@ -47,7 +47,6 @@ flat in vec4 vData3;
 flat in vec4 vData4;
 
 flat in mat3 vRotMat;
-flat in mat3 vInvRotMat;
 
 out vec4 fragColor;
 
@@ -82,7 +81,7 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200085
+#line 200084
 
 vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     vec3 v0 = p2 - p0;
