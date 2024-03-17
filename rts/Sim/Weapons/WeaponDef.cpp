@@ -212,7 +212,7 @@ WEAPONTAG(float, scarTtl, visuals.scarTtl).defaultValue(0.0f);
 WEAPONTAG(float, scarGlowTtl, visuals.scarGlowTtl).defaultValue(0.0f);
 WEAPONTAG(float, scarDotElimination, visuals.scarDotElimination).defaultValue(0.0f);
 WEAPONTAG(float4, scarProjVector, visuals.scarProjVector).defaultValue(float4{0.0f});
-WEAPONTAG(float4, scarColorTint, visuals.scarColorTint).defaultValue(float4{0.5f});
+WEAPONTAG(float4, scarColorTint, visuals.scarColorTint).defaultValue(float4{0.5f, 0.5f, 0.5f, 0.5f });
 WEAPONTAG(bool, alwaysVisible, visuals.alwaysVisible).defaultValue(false);
 WEAPONTAG(float, cameraShake).fallbackName("damage.default").defaultValue(0.0f).minimumValue(0.0f);
 

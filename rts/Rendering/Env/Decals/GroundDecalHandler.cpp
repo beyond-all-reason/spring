@@ -1187,7 +1187,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		return;
 
 	// the old decal had zero len (was a new track decal) or similar dir and the unit updir is same-ish as before
-	if ((dirO.Dot(dirO) == 0.0f || dirO.Dot(dirN) >= 0.999f) && oldDecal.forcedNormal.dot(unit->updir) >= 0.95f) {
+	if ((dirO.Dot(dirO) == 0.0f || dirO.Dot(dirN) >= 0.9999f) && oldDecal.forcedNormal.dot(unit->updir) >= 0.99f) {
 		oldDecal.posTR = decalPos2 - wc;
 		oldDecal.posBR = decalPos2 + wc;
 		oldDecal.createFrameMax = createFrame;

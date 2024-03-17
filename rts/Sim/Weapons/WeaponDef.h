@@ -270,7 +270,7 @@ public:
 		float scarGlowTtl = 0.0f;
 		float scarDotElimination = 0.0f;
 		float4 scarProjVector = float4{ 0.0f }; // use last float to indicate if the vector is non-zero
-		float4 scarColorTint = float4{ 0.5f };
+		float4 scarColorTint = float4{ 0.5f, 0.5f, 0.5f, 0.5f };
 
 		std::vector<int> scarIdcs;
 
