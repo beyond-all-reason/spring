@@ -445,7 +445,7 @@ void main() {
 		// if depth is greater than _SHALLOW_ depth, select waterShadeInt
 		// otherwise interpolate between groundShadeInt and waterShadeInt
 		// (both are already cosine-weighted)
-		fragColor.rgb = mix(fragColor.rgb, waterShadeInt, waterShadeAlpha);
+		fragColor.rgb = mix(fragColor.rgb, fragColor.rgb * waterShadeInt, waterShadeAlpha);
 	}
 	#endif
 
