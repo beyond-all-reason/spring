@@ -1840,7 +1840,7 @@ int LuaSyncedCtrl::TransferUnitLimit(lua_State* L)
 		luaL_error(L, "TransferUnitLimit(): transferAmnt too large; would result in numUnits > maxUnits");
 	}
 
-	bool success = false;
+	bool success;
 	if (transferAmnt > 0) { 
 		success = teamHandler->TransferUnitLimit(fromTeam, toTeam, transferAmnt); 
 	} else { 
