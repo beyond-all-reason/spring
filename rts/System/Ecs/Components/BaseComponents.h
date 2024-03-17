@@ -25,7 +25,16 @@ struct Component : public BasicComponentType<T> { \
     Component(Component &&) = default; \
     Component& operator=(Component &&) = default; \
 };
-#define ALIAS_COMPONENT(Component, T) struct Component : public BasicComponentType<T> {};
+#define ALIAS_COMPONENT(Component, T) \
+struct Component : public BasicComponentType<T> { \
+    Component() = default; \
+    Component(T val){ value = val; } \
+    ~Component() = default; \
+    Component(const Component &) = default; \
+    Component& operator=(const Component &) = default; \
+    Component(Component &&) = default; \
+    Component& operator=(Component &&) = default; \
+};
 #define VOID_COMPONENT(Component) struct Component {};
 
 #endif

@@ -84,6 +84,8 @@ void process_thread_data(Container& threadDataLists, F func)
 void GroundMoveSystem::Update() {
     auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
 
+    // TODO: GroundMove could become a component (or series of components) and then the extra indirection wouldn't be
+    // needed. Though that will be a bigger change.
 	{
 		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
         auto view = Sim::registry.view<GroundMoveType>();
@@ -110,10 +112,15 @@ void GroundMoveSystem::Update() {
 			AMoveType* moveType = unit->moveType;
 
 			moveType->UpdatePreCollisions();
+
+            // this unit is not coming back, kill it now without any death
+            // sequence (s.t. deathScriptFinished becomes true immediately)
+            if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
+                unit->ForcedKillUnit(nullptr, false, true);
 		});
 	}
     {
-        SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetectionMT");
+        SCOPED_TIMER("Sim::Unit::MoveType::3::CollisionDetection");
         auto view = Sim::registry.view<GroundMoveType>();
         //size_t count = view.storage<GroundMoveType>().size();
         for_mt(0, view.size(), [&view](const int i){
@@ -152,25 +159,30 @@ void GroundMoveSystem::Update() {
         });
 	}
 	{
-        SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
+        SCOPED_TIMER("Sim::Unit::MoveType::5::Update");
         auto view = Sim::registry.view<GroundMoveType>();
-        view.each([](GroundMoveType& unitId){
+        // view.each([](GroundMoveType& unitId){
+        for_mt(0, view.size(), [&view, &comp](const int i){
+            auto curThread = ThreadPool::GetThreadNum();
+
+            auto entity = view.storage<GroundMoveType>()[i];
+            auto unitId = view.get<GroundMoveType>(entity);
+
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             AMoveType* moveType = unit->moveType;
-
             if (moveType->Update())
-                eventHandler.UnitMoved(unit);
-
-            // this unit is not coming back, kill it now without any death
-            // sequence (s.t. deathScriptFinished becomes true immediately)
-            if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
-                unit->ForcedKillUnit(nullptr, false, true);
+                comp.movedUnits[curThread].emplace_back(UnitMovedEvent(unitId.value));
 
             #ifndef NDEBUG
             unit->SanityCheck();
             #endif
         });
-	}
+
+        process_thread_data<UnitMovedEvent>(comp.movedUnits, [](UnitMovedEvent& event){
+            CUnit* unit = unitHandler.GetUnit(event.id);
+            eventHandler.UnitMoved(unit);
+        });
+    }
 }
 
 void GroundMoveSystem::Shutdown() {}

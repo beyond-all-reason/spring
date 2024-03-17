@@ -654,9 +654,6 @@ void CGroundMoveType::UpdatePreCollisions()
 }
 
 void CGroundMoveType::UpdateCollisionDetections() {
-	earlyCurrWayPoint = currWayPoint;
-	earlyNextWayPoint = nextWayPoint;
-
 	if (owner->GetTransporter() != nullptr) return;
 	if (owner->IsSkidding()) return;
 	if (owner->IsFalling()) return;
@@ -666,8 +663,6 @@ void CGroundMoveType::UpdateCollisionDetections() {
 
 bool CGroundMoveType::Update()
 {
-	SyncWaypoints();
-
 	if (owner->requestRemoveUnloadTransportId) {
 		owner->unloadingTransportId = -1;
 		owner->requestRemoveUnloadTransportId = false;
@@ -2670,12 +2665,6 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			//if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain, nullptr, nullptr, curThread)) {
 				forceFromStaticCollidees += summedVec;
 
-				// float3 waypointMove(summedVec.x, 0.f, summedVec.z);
-				// minimal hack to make FollowPath work at all turn-rates
-				// since waypointDir will undergo a (large) discontinuity
-				// earlyCurrWayPoint += waypointMove;
-				// earlyNextWayPoint += waypointMove;
-
 				// Disabled, due to excessive redirecting of waypoints away from the intended path
 				// because units get stuck for multiple frames, and the offset accumalates over several
 				// frames. It's better for the unit to adjust speed if neccessary for turn rate to allow
@@ -2683,10 +2672,6 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 				// several times.
 
 				limitSpeedForTurning = 2;
-
-				// LOG("%s: moving waypoint1 (%f,%f,%f)->(%f,%f,%f)", __func__
-				// 	, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
-				// 	, earlyNextWayPoint.x, earlyNextWayPoint.y, earlyNextWayPoint.z);
 			// } else {
 			// 	// never move fully back to oldPos when dealing with yardmaps
 			// 	forceFromStaticCollidees += ((oldPos - pos) + summedVec * 0.25f * checkYardMap);
@@ -2716,15 +2701,8 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		// if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true, nullptr, nullptr, curThread)) {
 			forceFromStaticCollidees += summedVec;
 
-			// summedVec.y = 0.f;
-			// earlyCurrWayPoint += summedVec;
-			// earlyNextWayPoint += summedVec;
-
 			limitSpeedForTurning = 2;
 
-			// LOG("%s: moving waypoint2 (%f,%f,%f)->(%f,%f,%f)", __func__
-			// 		, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
-			// 		, earlyNextWayPoint.x, earlyNextWayPoint.y, earlyNextWayPoint.z);
 		// } else {
 			// move back to previous-frame position
 			// ChangeSpeed calculates speedMod without checking squares for *structure* blockage
