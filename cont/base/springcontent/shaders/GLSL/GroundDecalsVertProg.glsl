@@ -256,6 +256,7 @@ void main() {
 		groundNormal += 1.0 * GetFragmentNormal(rotMat2d * (posBL - midPoint.xz) + midPoint.xz);
 		groundNormal += 1.0 * GetFragmentNormal(rotMat2d * (posBR - midPoint.xz) + midPoint.xz);
 		groundNormal  = normalize(groundNormal);
+		//groundNormal  = GetFragmentNormal(midPoint.xz);
 	} else {
 		groundNormal = forcedNormal.xyz; //expected to be normalized by the CPU code
 	}

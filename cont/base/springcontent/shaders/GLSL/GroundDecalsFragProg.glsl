@@ -81,7 +81,7 @@ out vec4 fragColor;
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200080
+#line 200084
 
 vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     vec3 v0 = p2 - p0;
@@ -399,22 +399,9 @@ void main() {
 	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(vDecalType == DECAL_EXPLOSION)); //only apply mapDecalMix for explosions
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
-
-	#if 0
-	// Expensive processing
-	vec3 T = vRotMat[0]; //tangent if N was (0,1,0)
-
-	if (1.0 - N.y > 0.01) {
-		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
-		vec3 rotAxis = normalize(vec3(N.z, 0.0, -N.x));
-		T = RotateByNormalVector(T, N, rotAxis);
-	}
-	#else
-	// Cheaper Gramm-Schmidt
 	vec3 T = normalize(vRotMat[0] - N * dot(vRotMat[0],  N));
-	#endif
-
 	vec3 B = normalize(cross(N, T)); // ex. (0,0,1)x(1,0,0)=(0,1,0) - righthanded coord system
+
 	mat3 TBN = mat3(T, B, N);
 
 	vec3 decalNormal = normalize(TBN * NORM2SNORM(normVal.xyz));
