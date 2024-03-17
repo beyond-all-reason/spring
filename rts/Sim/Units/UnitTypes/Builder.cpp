@@ -548,8 +548,10 @@ void CBuilder::Update()
 
 void CBuilder::SlowUpdate()
 {
-	if (terraforming)
-		mapDamage->RecalcArea(tx1 - 3, tx2 + 3, tz1 - 3, tz2 + 3);
+	if (terraforming) {
+		int tsr = TERRA_SMOOTHING_RADIUS;
+		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
+	}
 
 	CUnit::SlowUpdate();
 }
@@ -687,8 +689,10 @@ void CBuilder::StopBuild(bool callScript)
 	curResurrect = nullptr;
 	curCapture = nullptr;
 
-	if (terraforming)
-		mapDamage->RecalcArea(tx1 - 3, tx2 + 3, tz1 - 3, tz2 + 3);
+	if (terraforming) {
+		int tsr = TERRA_SMOOTHING_RADIUS;
+		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
+	}
 
 	terraforming = false;
 
