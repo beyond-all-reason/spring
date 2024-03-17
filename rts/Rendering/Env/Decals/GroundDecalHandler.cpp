@@ -575,7 +575,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 	const auto& decal = decals.emplace_back(GroundDecal{
 		.refHeight = groundHeight,
 		.minHeight = -ei.maxHeightDiff,
-		.maxHeight = ei.maxHeightDiff,
+		.maxHeight =  ei.maxHeightDiff,
 		.forceHeightMode = 1.0f,
 		.posTL = posTL,
 		.posTR = posTR,

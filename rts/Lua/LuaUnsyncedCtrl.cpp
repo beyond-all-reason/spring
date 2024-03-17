@@ -314,6 +314,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetGroundDecalTexture);
 	REGISTER_LUA_CFUNC(SetGroundDecalAlpha);
 	REGISTER_LUA_CFUNC(SetGroundDecalNormal);
+	REGISTER_LUA_CFUNC(SetGroundDecalTint);
+	REGISTER_LUA_CFUNC(SetGroundDecalMisc);
 	REGISTER_LUA_CFUNC(SetGroundDecalCreationFrame);
 
 	REGISTER_LUA_CFUNC(SDLSetTextInputRect);
@@ -4652,6 +4654,65 @@ int LuaUnsyncedCtrl::SetGroundDecalNormal(lua_State* L)
 
 	lua_pushboolean(L, true);
 	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetGroundDecalTint
+ * Sets the tint of the ground decal. Color = 2 * textureColor * tintColor
+ * Respectively a color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
+ * @number decalID
+ * @number[opt=curTintColR] tintColR
+ * @number[opt=curTintColG] tintColG
+ * @number[opt=curTintColB] tintColB
+ * @number[opt=curTintColA] tintColA
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalTint(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	float4 tintColor = decal->tintColor;
+	tintColor.r = luaL_optfloat(L, 2, tintColor.r);
+	tintColor.r = luaL_optfloat(L, 3, tintColor.r);
+	tintColor.r = luaL_optfloat(L, 4, tintColor.r);
+	tintColor.r = luaL_optfloat(L, 5, tintColor.r);
+
+	decal->tintColor = SColor{ tintColor };
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetGroundDecalMisc
+ * Sets varios secondary parameters of a decal
+ * @number decalID
+ * @number[opt=curValue] dotElimExp pow(max(dot(decalProjVector, SurfaceNormal), 0.0), dotElimExp), used to reduce decal artifacts on surfaces non-collinear with the projection vector
+ * @number[opt=curValue] refHeight
+ * @number[opt=curValue] minHeight
+ * @number[opt=curValue] maxHeight
+ * @number[opt=curValue] forceHeightMode in case forceHeightMode==1.0 ==> force relative height: midPoint.y = refHeight + clamp(midPoint.y - refHeight, minHeight); forceHeightMode==2.0 ==> force absolute height: midPoint.y = midPoint.y, clamp(midPoint.y, minHeight, maxHeight); other forceHeightMode values do not enforce the height of the center position
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalMisc(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	decal->dotElimExp = luaL_optfloat(L, 2, decal->dotElimExp);
+	decal->refHeight = luaL_optfloat(L, 3, decal->refHeight);
+	decal->minHeight = luaL_optfloat(L, 4, decal->minHeight);
+	decal->maxHeight = luaL_optfloat(L, 5, decal->maxHeight);
+	decal->forceHeightMode = luaL_optfloat(L, 6, decal->forceHeightMode);
 }
 
 /***

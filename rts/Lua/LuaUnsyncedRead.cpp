@@ -289,6 +289,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetGroundDecalTextures);
 	REGISTER_LUA_CFUNC(GetGroundDecalAlpha);
 	REGISTER_LUA_CFUNC(GetGroundDecalNormal);
+	REGISTER_LUA_CFUNC(GetGroundDecalTint);
+	REGISTER_LUA_CFUNC(GetGroundDecalMisc);
 	REGISTER_LUA_CFUNC(GetGroundDecalCreationFrame);
 	REGISTER_LUA_CFUNC(GetGroundDecalOwner);
 	REGISTER_LUA_CFUNC(GetGroundDecalType);
@@ -4662,6 +4664,59 @@ int LuaUnsyncedRead::GetGroundDecalNormal(lua_State* L)
 	lua_pushnumber(L, decal->forcedNormal.z);
 
 	return 3;
+}
+
+/***
+ *
+ * @function Spring.GetGroundDecalTint
+ * Gets the tint of the ground decal.
+ * A color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
+ * @number decalID
+ * @treturn nil|number tintR
+ * @treturn number tintG
+ * @treturn number tintB
+ * @treturn number tintA
+ */
+int LuaUnsyncedRead::GetGroundDecalTint(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	float4 tintColor = decal->tintColor;
+	lua_pushnumber(L, tintColor.r);
+	lua_pushnumber(L, tintColor.g);
+	lua_pushnumber(L, tintColor.b);
+	lua_pushnumber(L, tintColor.a);
+
+	return 4;
+}
+
+/***
+ *
+ * @function Spring.GetGroundDecalMisc
+ * Returns less important parameters of a ground decal
+ * @number decalID
+ * @treturn nil|number dotElimExp
+ * @treturn number refHeight
+ * @treturn number minHeight
+ * @treturn number maxHeight
+ * @treturn number forceHeightMode
+ */
+int LuaUnsyncedRead::GetGroundDecalMisc(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->dotElimExp);
+	lua_pushnumber(L, decal->refHeight);
+	lua_pushnumber(L, decal->minHeight);
+	lua_pushnumber(L, decal->maxHeight);
+	lua_pushnumber(L, decal->forceHeightMode);
+	return 5;
 }
 
 /***
