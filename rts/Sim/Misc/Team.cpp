@@ -221,8 +221,9 @@ void CTeam::GiveEverythingTo(const unsigned toTeam)
 
 	const auto& teamUnits = unitHandler.GetUnitsByTeam(teamNum);
 
-	// To avoid problems with hitting target's maxUnits limit,
-	// temporarily give all of team's unit limit to target
+	// Optimistically give *all* of team's unit limit to target
+	// If some transfers fail, need to partially revert this
+	// to ensure this.maxUnits == this.numUnits
 	target->maxUnits += maxUnits;
 	maxUnits = 0;
 

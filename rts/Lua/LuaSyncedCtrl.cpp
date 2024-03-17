@@ -121,7 +121,6 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 		inDestroyFeature = 0;
 		inGiveOrder = 0;
 		inTransferUnit = 0;
-		inTransferUnitLimit = 0;
 		inHeightMap = false;
 		inSmoothMesh = false;
 
@@ -1806,7 +1805,7 @@ int LuaSyncedCtrl::TransferUnit(lua_State* L)
 
 /***
  * @function Spring.TransferUnitLimit
- * @number oldTeamID
+ * @number fromTeamID
  * @number newTeamID
  * @number transferAmnt
  * @treturn bool successfulTransfer
@@ -1815,45 +1814,40 @@ int LuaSyncedCtrl::TransferUnitLimit(lua_State* L)
 {
 	CheckAllowGameChanges(L);
 	
-	const int oldTeamID = luaL_checkint(L, 1);
-	if (!teamHandler.IsValidTeam(oldTeamID))
+	const int fromTeamID = luaL_checkint(L, 1);
+	if (!teamHandler.IsValidTeam(fromTeamID))
 		return 0;
 
 	const int newTeamID = luaL_checkint(L, 2);
 	if (!teamHandler.IsValidTeam(newTeamID))
 		return 0;
 
-	CTeam* oldTeam = teamHandler.Team(oldTeamID);
-	if (oldTeam == nullptr)
+	CTeam* fromTeam = teamHandler.Team(fromTeamID);
+	if (fromTeam == nullptr)
 		return 0;
 
-	CTeam* newTeam = teamHandler.Team(newTeamID);
-	if (newTeam == nullptr)
+	CTeam* toTeam = teamHandler.Team(toTeamID);
+	if (toTeam == nullptr)
 		return 0;
 
 	const int transferAmnt = luaL_checkint(L, 3);
 	
-	//Only allow oldTeam to give a positive amount to newTeam
-	if (transferAmnt <= 0)
-		return 0;
-
-	//Make sure transferAmnt is in range
-	if (oldTeam->numUnits > oldTeam->maxUnits - transferAmnt || oldTeam->maxUnits - transferAmnt < 0 || newTeam->maxUnits + transferAmnt > MAX_UNITS) {
-		luaL_error(L, "TransferUnitLimit(): transferAmnt out of range");
+	// Make sure transferAmnt is in range
+	if (transferAmnt < fromTeam->maxUnits) {
+		luaL_error(L, "TransferUnitLimit(): transferAmnt > maxUnits");
+	}
+	if (transferAmnt < fromTeam->maxUnits - fromTeam->numUnits) {
+		luaL_error(L, "TransferUnitLimit(): transferAmnt too large; would result in numUnits > maxUnits");
 	}
 
-	if (inTransferUnitLimit >= MAX_CMD_RECURSION_DEPTH)
-		luaL_error(L, "TransferUnitLimit() recursion is not permitted, max depth: %d", MAX_CMD_RECURSION_DEPTH);
+	bool success = false;
+	if (transferAmnt > 0) { 
+		success = teamHandler->TransferUnitLimit(fromTeam, toTeam, transferAmnt); 
+	} else { 
+		success = teamHandler->TransferUnitLimit(toTeam, fromTeam, -transferAmnt); 
+	}
 
-	++inTransferUnitLimit;
-	ASSERT_SYNCED(oldTeamID);
-	ASSERT_SYNCED(newTeamID);
-	ASSERT_SYNCED(transferAmnt);
-	oldTeam->maxUnits -= transferAmnt;
-	newTeam->maxUnits += transferAmnt;
-	--inTransferUnitLimit;
-
-	lua_pushboolean(L, true);
+	lua_pushboolean(L, success);
 	return 1;
 }
 
