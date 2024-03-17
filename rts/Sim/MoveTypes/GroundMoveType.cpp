@@ -606,23 +606,6 @@ void CGroundMoveType::UpdatePreCollisions()
 		pathingArrived = false;
 	}
 
- 	switch (setHeading) {
- 		case 1: // moving
- 			ChangeHeading(setHeadingDir);
-			ChangeSpeed(maxWantedSpeed, WantReverse(waypointDir, flatFrontDir));
- 			setHeading = 0;
- 			break;
-		case 2: // stopping
-			SetMainHeading();
-			ChangeSpeed(0.0f, false);
-			setHeading = 0;
-			break;
-		case 3: // stunned
-			ChangeSpeed(0.0f, false);
-			setHeading = 0;
-			break;
-	}
-
  	if (pathingFailed) {
  		Fail(false);
  		pathingFailed = false;
@@ -646,6 +629,32 @@ void CGroundMoveType::UpdatePreCollisions()
 		UpdateControlledDrop();
 		return;
 	}
+
+	reversing = UpdateOwnerSpeed(math::fabs(oldSpeed), math::fabs(newSpeed), newSpeed);
+	oldSpeed = newSpeed = 0.f;
+}
+
+void CGroundMoveType::UpdatePreCollisions2() {
+	if (owner->IsSkidding()) return;
+
+ 	switch (setHeading) {
+ 		case 1: // moving
+ 			ChangeHeading(setHeadingDir);
+			ChangeSpeed(maxWantedSpeed, WantReverse(waypointDir, flatFrontDir));
+ 			setHeading = 0;
+ 			break;
+		case 2: // stopping
+			SetMainHeading();
+			ChangeSpeed(0.0f, false);
+			setHeading = 0;
+			break;
+		case 3: // stunned
+			ChangeSpeed(0.0f, false);
+			setHeading = 0;
+			break;
+	}
+
+	if (owner->GetTransporter() != nullptr) return;
 
  	if (owner->UnderFirstPersonControl())
  		UpdateDirectControl();
@@ -3365,8 +3374,8 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 
 void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3& newSpeedVector) {
-	const float oldSpeed = oldSpeedVector.dot(flatFrontDir);
-	const float newSpeed = newSpeedVector.dot(flatFrontDir);
+	/*const float*/ oldSpeed = oldSpeedVector.dot(flatFrontDir);
+	/*const float*/ newSpeed = newSpeedVector.dot(flatFrontDir);
 	const float3 moveRequest = newSpeedVector;
 
 	// if being built, the nanoframe might not be exactly on
@@ -3415,7 +3424,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		// assert(owner->moveDef->TestMoveSquare(owner, owner->pos, owner->speed, true, false, true));
 	}
 
-	reversing = UpdateOwnerSpeed(math::fabs(oldSpeed), math::fabs(newSpeed), newSpeed);
+	// reversing = UpdateOwnerSpeed(math::fabs(oldSpeed), math::fabs(newSpeed), newSpeed);
 }
 
 bool CGroundMoveType::UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, float newSpeedRaw)

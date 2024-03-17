@@ -39,6 +39,8 @@ public:
 	void UpdateObstacleAvoidance();
 	void UpdatePreCollisions() override;
 
+	void UpdatePreCollisions2();
+
 	void StartMovingRaw(const float3 moveGoalPos, float moveGoalRadius) override;
 	void StartMoving(float3 pos, float moveGoalRadius) override;
 	void StartMoving(float3 pos, float moveGoalRadius, float speed) override { StartMoving(pos, moveGoalRadius); }
@@ -259,6 +261,9 @@ private:
 	int setHeading = 0; // 1 = Regular (use setHeadingDir), 2 = Main
 	short setHeadingDir = 0;
 	short limitSpeedForTurning = 0;			/// if set, take extra care to prevent overshooting while turning for the next N waypoints.
+
+	float oldSpeed = 0.f;
+	float newSpeed = 0.f;
 
 	bool atGoal = true;
 	bool atEndOfPath = true;

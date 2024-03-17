@@ -87,7 +87,7 @@ void GroundMoveSystem::Update() {
     // TODO: GroundMove could become a component (or series of components) and then the extra indirection wouldn't be
     // needed. Though that will be a bigger change.
 	{
-		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisionsMT");
+		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisions");
         auto view = Sim::registry.view<GroundMoveType>();
         for_mt(0, view.size(), [&view](const int i){
             auto entity = view.storage<GroundMoveType>()[i];
@@ -105,8 +105,19 @@ void GroundMoveSystem::Update() {
 		});
 	}
 	{
-		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsST");
+		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsSP");
+
         auto view = Sim::registry.view<GroundMoveType>();
+        for_mt(0, view.size(), [&view](const int i){
+            auto entity = view.storage<GroundMoveType>()[i];
+            auto unitId = view.get<GroundMoveType>(entity);
+
+            CUnit* unit = unitHandler.GetUnit(unitId.value);
+			CGroundMoveType* moveType = static_cast<CGroundMoveType*>(unit->moveType);
+
+			moveType->UpdatePreCollisions2();
+		});
+
 		view.each([](GroundMoveType& unitId){
 			CUnit* unit = unitHandler.GetUnit(unitId.value);
 			AMoveType* moveType = unit->moveType;
