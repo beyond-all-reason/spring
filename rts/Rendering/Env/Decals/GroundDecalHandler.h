@@ -9,7 +9,6 @@
 #include <limits>
 #include <optional>
 
-#include "GroundDecal.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
@@ -26,6 +25,7 @@ struct SolidObjectDecalType;
 class CTextureAtlas;
 class CSMFGroundDrawer;
 class GhostSolidObject;
+class CColorMap;
 
 namespace Shader {
 	struct IProgramObject;
@@ -68,10 +68,19 @@ public:
 
 	void OnDecalLevelChanged() override {}
 private:
+	struct AddExplosionInfo {
+		float3 pos;
+		float3 projDir;
+		float damage;
+		float radius;
+		float maxHeightDiff;
+		const WeaponDef* wd;
+	};
+private:
 	void BindAtlasTextures();
 	void BindCommonTextures();
 	void UnbindTextures();
-	void AddExplosion(float3 pos, float3 explNormalVec, float damage, float radius, float maxHeightDiff);
+	void AddExplosion(AddExplosionInfo&& explInfo);
 	void MoveSolidObject(const CSolidObject* object, const float3& pos);
 public:
 	// CEventClient
@@ -151,7 +160,7 @@ private:
 	void UpdateDecalsVisibility();
 
 	void AddBuildingDecalTextures();
-	void AddGroundScarTextures();
+	void AddTexturesFromTable();
 	void AddGroundTrackTextures();
 	void AddFallbackTextures();
 private:
@@ -175,6 +184,7 @@ private:
 	spring::unordered_map<DecalOwner, size_t, std::hash<DecalOwner>> decalOwners; // for tracks, plates and ghosts
 	spring::unordered_map<int, UnitMinMaxHeight> unitMinMaxHeights; // for tracks
 	spring::unordered_map<uint32_t, size_t> idToPos;
+	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<size_t, size_t>>> idToCmInfo;
 
 	DecalUpdateList decalsUpdateList;
 
@@ -183,7 +193,6 @@ private:
 
 	CSMFGroundDrawer* smfDrawer;
 
-	int lastProcessedGameFrame;
 	bool highQuality = false;
 	ScopedDepthBufferCopy sdbc;
 
