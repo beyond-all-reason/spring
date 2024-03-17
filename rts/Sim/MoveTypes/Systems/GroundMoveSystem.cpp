@@ -30,7 +30,7 @@ struct ThreadEventWalker {
     ThreadEventWalker(std::array<std::vector<T>, ThreadPool::MAX_THREADS>& _threadEventQueues)
         : threadEventQueues(_threadEventQueues)
     {
-        std::for_each(indicies.begin(), indicies.end(), [](int &v){ v=0; });
+        std::fill(indicies.begin(), indicies.end(), 0);
     }
 
     T* getNextEventFromThreads() {

@@ -2809,11 +2809,11 @@ void CGroundMoveType::HandleUnitCollisions(
 		crushCollidee &= ((colliderParams.x * collider->mass) > (collideeParams.x * collidee->mass));
 
 		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee))
-			comp.killUnits[curThread].emplace_back(UnitCrushEvent(collider->id, collider, collidee, crushImpulse));
+			comp.killUnits[curThread].emplace_back(collider->id, collider, collidee, crushImpulse);
 
 		// Only trigger this event once for each colliding pair of units.
 		if (collider->id < collidee->id)
-			comp.collidedUnits[curThread].emplace_back(UnitCollisionEvent(collider->id, collider, collidee));
+			comp.collidedUnits[curThread].emplace_back(collider->id, collider, collidee);
 
 		if (collideeMobile)
 			HandleUnitCollisionsAux(collider, collidee, this, static_cast<CGroundMoveType*>(collidee->moveType));
@@ -2931,13 +2931,13 @@ void CGroundMoveType::HandleFeatureCollisions(
 		if (CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
 			continue;
 		if (!CMoveMath::CrushResistant(*colliderMD, collidee))
-			comp.killFeatures[curThread].emplace_back(FeatureCrushEvent(collider->id, collider, collidee, crushImpulse));
+			comp.killFeatures[curThread].emplace_back(collider->id, collider, collidee, crushImpulse);
 		#if 0
 		if (pathController.IgnoreCollision(collider, collidee))
 			continue;
 		#endif
 
-		comp.collidedFeatures[curThread].emplace_back(FeatureCollisionEvent(collider->id, collider, collidee));
+		comp.collidedFeatures[curThread].emplace_back(collider->id, collider, collidee);
 
 		if (!collidee->IsMoving()) {
 			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false, curThread)) {
@@ -2974,7 +2974,7 @@ void CGroundMoveType::HandleFeatureCollisions(
 
 		forceFromMovingCollidees += colResponseVec * colliderMassScale;
 
-		comp.moveFeatures[curThread].emplace_back(FeatureMoveEvent(collider->id, collider, collidee, -colResponseVec * collideeMassScale));
+		comp.moveFeatures[curThread].emplace_back(collider->id, collider, collidee, -colResponseVec * collideeMassScale);
 	}
 }
 
