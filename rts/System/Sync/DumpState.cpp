@@ -36,6 +36,7 @@
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Map/ReadMap.h"
 #include "System/StringUtil.h"
+#include "System/FileSystem/ArchiveScanner.h"
 #include "System/Log/ILog.h"
 #include "System/SpringHash.h"
 
@@ -174,6 +175,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 
 	#define DUMP_MATH_CONST
 	#define DUMP_MODEL_DATA
+	#define DUMP_CS_DATA
 	#define DUMP_UNIT_DATA
 	#define DUMP_UNIT_PIECE_DATA
 	#define DUMP_UNIT_WEAPON_DATA
@@ -215,6 +217,32 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		TAP_MATH_CONST(RAD_TO_DEG);
 		TAP_MATH_CONST(DEG_TO_RAD);
 		#undef TAP_MATH_CONST
+	}
+	#endif
+
+	#ifdef DUMP_CS_DATA
+	if (gs->frameNum == gMinFrameNum) { //dump once
+		sha512::hex_digest hexDigest;
+		{
+			hexDigest = { 0 };
+			const auto mapCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->mapName);
+			sha512::dump_digest(mapCheckSum, hexDigest);
+			file << "\tmapCheckSum: " << std::string(hexDigest.data()) << "\n";
+		}
+		{
+			hexDigest = { 0 };
+			const auto modCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->modName);
+			sha512::dump_digest(modCheckSum, hexDigest);
+			file << "\tmodCheckSum: " << std::string(hexDigest.data()) << "\n";
+		}
+		/*
+		for (const auto& ari : archiveScanner->GetAllArchives()) {
+			hexDigest = { 0 };
+			const auto cs = archiveScanner->GetArchiveCompleteChecksumBytes(ari.GetNameVersioned());
+			sha512::dump_digest(cs, hexDigest);
+			file << "\tArchive: " << ari.GetNameVersioned() << " checkSum: " << std::string(hexDigest.data()) << "\n";
+		}
+		*/
 	}
 	#endif
 
