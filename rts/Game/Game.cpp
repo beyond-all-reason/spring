@@ -698,6 +698,9 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	featureDefHandler->LoadFeatureDefsFromMap();
 	if (saveFileHandler == nullptr)
 		featureHandler.LoadFeaturesFromMap();
+	
+	// must be called after features are all loaded
+	unitDefHandler->SanitizeUnitDefs();
 
 	envResHandler.LoadTidal(mapInfo->map.tidalStrength);
 	envResHandler.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);
