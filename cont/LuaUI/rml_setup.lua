@@ -1,8 +1,8 @@
 --  file:    rml.lua
 --  brief:   RmlUi Setup
---  author:  lov
+--  author:  lov + ChrisFloofyKitsune
 --
---  Copyright (C) 2023.
+--  Copyright (C) 2024.
 --  Licensed under the terms of the GNU GPL, v2 or later.
 
 if (RmlGuard or not RmlUi) then
@@ -21,6 +21,7 @@ RmlUi.LoadFontFace("Fonts/FreeMonoBold.ttf", true)
 	RmlUi documentation: https://mikke89.github.io/RmlUiDoc/pages/rcss/user_interface.html#cursor
 ]]
 
--- when "cursor: normal" is set via RCSS, "cursornormal" will be sent to the engine... and so on for the rest
+-- when "cursor: normal" is set via RCSS, "cursornormal" will be sent to the engine
 RmlUi.SetMouseCursorAlias("default", 'cursornormal')
-RmlUi.SetMouseCursorAlias("pointer", 'Move') -- for command cursors, use the command name
+-- for command cursors, use the command name
+-- RmlUi.SetMouseCursorAlias("pointer", 'Move')
