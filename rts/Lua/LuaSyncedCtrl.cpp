@@ -3654,10 +3654,10 @@ int LuaSyncedCtrl::SetUnitMass(lua_State* L)
 
 
 /*** Set unit position (2D)
+ * @function Spring.SetUnitPosition
  *
  * Sets a unit's position in 2D, at terrain height.
  *
- * @function Spring.SetUnitPosition
  * @number unitID
  * @number x
  * @number z
@@ -3667,10 +3667,10 @@ int LuaSyncedCtrl::SetUnitMass(lua_State* L)
 
 
 /*** Set unit position (3D)
+ * @function Spring.SetUnitPosition
  *
  * Sets a unit's position in 3D, at an arbitrary height.
  *
- * @function Spring.SetUnitPosition
  * @number unitID
  * @number x
  * @number y
