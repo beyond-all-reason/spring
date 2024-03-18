@@ -17,6 +17,7 @@ These are the entries which may require special attention when migrating:
 * instead of 4 default explosion decals in basecontent, there's 2 new normal-mapped ones. Might want to produce more for variety and/or check your `gamedata/resources.lua` to see if you're referencing them.
 
 # Features
+* The `select` action now composes `IdMatches` filters as *OR* statements see [The select command]({{ site.baseurl }}{% link articles/select-command.markdown %}#idmatches_string) for further reference.
 * added a new optional boolean parameter to `Spring.GetUnitHeading`, default false. If true, the value returned is in radians instead of the TA 16-bit angular unit.
 * added a new callin, `GameFramePost(number frame)`. This is the last callin in a sim frame (regular `GameFrame` is the first).
 Use for batching events that happened during the frame to be sent to unsynced for use in draw frames before the next sim frame.

@@ -27,6 +27,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/SkyLight.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/SunLighting.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/WaterRendering.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Decals/GroundDecal.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Decals/GroundDecalHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/ProjectileDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/BitmapMuzzleFlame.cpp"

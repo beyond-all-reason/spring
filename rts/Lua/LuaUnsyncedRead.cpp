@@ -289,6 +289,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetGroundDecalTextures);
 	REGISTER_LUA_CFUNC(GetGroundDecalAlpha);
 	REGISTER_LUA_CFUNC(GetGroundDecalNormal);
+	REGISTER_LUA_CFUNC(GetGroundDecalTint);
+	REGISTER_LUA_CFUNC(GetGroundDecalMisc);
 	REGISTER_LUA_CFUNC(GetGroundDecalCreationFrame);
 	REGISTER_LUA_CFUNC(GetGroundDecalOwner);
 	REGISTER_LUA_CFUNC(GetGroundDecalType);
@@ -4666,6 +4668,59 @@ int LuaUnsyncedRead::GetGroundDecalNormal(lua_State* L)
 
 /***
  *
+ * @function Spring.GetGroundDecalTint
+ * Gets the tint of the ground decal.
+ * A color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
+ * @number decalID
+ * @treturn nil|number tintR
+ * @treturn number tintG
+ * @treturn number tintB
+ * @treturn number tintA
+ */
+int LuaUnsyncedRead::GetGroundDecalTint(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	float4 tintColor = decal->tintColor;
+	lua_pushnumber(L, tintColor.r);
+	lua_pushnumber(L, tintColor.g);
+	lua_pushnumber(L, tintColor.b);
+	lua_pushnumber(L, tintColor.a);
+
+	return 4;
+}
+
+/***
+ *
+ * @function Spring.GetGroundDecalMisc
+ * Returns less important parameters of a ground decal
+ * @number decalID
+ * @treturn nil|number dotElimExp
+ * @treturn number refHeight
+ * @treturn number minHeight
+ * @treturn number maxHeight
+ * @treturn number forceHeightMode
+ */
+int LuaUnsyncedRead::GetGroundDecalMisc(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->dotElimExp);
+	lua_pushnumber(L, decal->refHeight);
+	lua_pushnumber(L, decal->minHeight);
+	lua_pushnumber(L, decal->maxHeight);
+	lua_pushnumber(L, decal->forceHeightMode);
+	return 5;
+}
+
+/***
+ *
  * @function Spring.GetGroundDecalCreationFrame
  *
  * Min can be not equal to max for "gradient" style decals, e.g. unit tracks
@@ -4718,22 +4773,22 @@ int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 int LuaUnsyncedRead::GetGroundDecalType(lua_State* L)
 {
 	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
-	if (!decal || decal->info.type == GroundDecal::Type::DECAL_NONE) {
+	if (!decal || decal->info.type == static_cast<uint8_t>(GroundDecal::Type::DECAL_NONE)) {
 		return 0;
 	}
 
 	switch (decal->info.type)
 	{
-	case GroundDecal::Type::DECAL_PLATE:
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE):
 		lua_pushliteral(L, "plate");
 		break;
-	case GroundDecal::Type::DECAL_EXPLOSION:
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION):
 		lua_pushliteral(L, "explosion");
 		break;
-	case GroundDecal::Type::DECAL_TRACK:
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK):
 		lua_pushliteral(L, "track");
 		break;
-	case GroundDecal::Type::DECAL_LUA:
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA):
 		lua_pushliteral(L, "lua");
 		break;
 	default:

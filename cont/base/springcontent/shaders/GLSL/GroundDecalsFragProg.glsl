@@ -36,17 +36,17 @@ uniform mat4 shadowMatrix;
 
 uniform float curAdjustedFrame;
 
-flat in vec4 vPosTL;
-flat in vec4 vPosTR;
-flat in vec4 vPosBL;
-flat in vec4 vPosBR;
+flat in vec4 vTranformedPos[5]; // midpos + 4 transformed vertices around midpos
 
 flat in vec4 vuvMain;
 flat in vec4 vuvNorm;
-flat in vec4 midPoint;
-     in vec4 misc; //misc.x - alpha & glow, misc.y - height, misc.z - uvWrapDistance, misc.w - distance from left // can't be flat because of misc.x
-flat in vec4 misc2; // {3xempty}, decalTypeAsFloat
-flat in mat3 rotMat;
+
+     in vec4 vData1;
+flat in vec4 vData2;
+flat in vec4 vData3;
+flat in vec4 vData4;
+
+flat in mat3 vRotMat;
 
 out vec4 fragColor;
 
@@ -60,10 +60,28 @@ out vec4 fragColor;
 #define uvNormBR vuvNorm.zw
 #define uvNormBL vuvNorm.xw
 
+/////////////////////////////////////////////////////////
+
+#define midPoint          vTranformedPos[0]
+
+#define vAlpha            vData1.x
+#define vGlow             vData1.y
+#define vDotElimExp       vData1.z
+// vData1.w - empty
+#define vHeight           vData2.x
+#define vUVWrapDist       vData2.y
+#define vUVOffset         vData2.z
+#define vDecalType        vData2.w
+
+#define vTintColor        vData3
+#define vGlowColor        vData4
+
+/////////////////////////////////////////////////////////
+
 #define NORM2SNORM(value) (value * 2.0 - 1.0)
 #define SNORM2NORM(value) (value * 0.5 + 0.5)
 
-#line 200066
+#line 200084
 
 vec3 GetTriangleBarycentric(vec3 p, vec3 p0, vec3 p1, vec3 p2) {
     vec3 v0 = p2 - p0;
@@ -180,14 +198,14 @@ vec3 GetShadowColor(vec3 worldPos, float NdotL) {
 		float rndRotAngle = NORM2SNORM(hash12L(gl_FragCoord.xy)) * PI / 2.0 * samplingRandomness;
 
 		vec2 vSinCos = vec2(sin(rndRotAngle), cos(rndRotAngle));
-		mat2 rotMat = mat2(vSinCos.y, -vSinCos.x, vSinCos.x, vSinCos.y);
+		mat2 rotMat2d = mat2(vSinCos.y, -vSinCos.x, vSinCos.x, vSinCos.y);
 
 		vec2 filterSize = vec2(samplingDistance / vec2(textureSize(shadowTex, 0)));
 
 		float shadowFactor = 0.0;
 		for (int i = 0; i < shadowSamples; ++i) {
 			// SpiralSNorm return low discrepancy sampling vec2
-			vec2 offset = (rotMat * SpiralSNorm( i, shadowSamples )) * filterSize;
+			vec2 offset = (rotMat2d * SpiralSNorm( i, shadowSamples )) * filterSize;
 
 			vec3 shadowSamplingCoord = vec3(shadowPos.xy, 0.0) + vec3(offset, BiasedZ(shadowPos.z, dZduv, offset));
 			shadowSamplingCoord.xy += offset;
@@ -220,6 +238,16 @@ vec3 GetWorldPos(vec2 texCoord, float sampledDepth) {
 	vec4 pos = gl_ModelViewProjectionMatrixInverse * projPosition;
 
 	return pos.xyz / pos.w;
+}
+
+vec3 GetFragmentWorldPos() {
+	#ifdef HIGH_QUALITY
+		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
+	#else
+		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy),           0).x;
+	#endif
+
+	return GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
 }
 
 vec3 RotateByNormalVector(vec3 p, vec3 newUpDir, vec3 rotAxis) {
@@ -260,7 +288,38 @@ vec3 RotateByNormalVector(vec3 p, vec3 newUpDir, vec3 rotAxis) {
 	#undef nz
 }
 
-/*
+const vec3 all0 = vec3(0.0);
+const vec3 all1 = vec3(1.0);
+// returns if the fragment is within the quadrilateral
+bool ProjectOntoPlane(vec3 worldPos, vec3 BL, vec3 TL, vec3 TR, vec3 BR, vec3 projPlane, float u, out vec4 relUV) {
+	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, projPlane) * projPlane;
+	{
+		vec3 bc = GetTriangleBarycentric(worldPosProj, BL, TL, TR);
+		if (all(greaterThanEqual(bc, all0)) && all(lessThanEqual(bc, all1))) {
+			relUV = bc.x * vec4(0, u, 0, 1) + bc.y * vec4(0, 0, 0, 0) + bc.z * vec4(1, 0, 1, 0);
+			return true;
+		}
+	}
+	{
+		vec3 bc = GetTriangleBarycentric(worldPosProj, TR, BR, BL);
+		if (all(greaterThanEqual(bc, all0)) && all(lessThanEqual(bc, all1))) {
+			relUV = bc.x * vec4(1, 0, 1, 0) + bc.y * vec4(1, u, 1, 1) + bc.z * vec4(0, u, 0, 1);
+			return true;
+		}
+	}
+	return false;
+}
+
+vec4 GetColorByRelUV(sampler2D tex, vec2 uvTL, vec2 uvBL, vec2 uvTR, vec2 uvBR, vec4 relUV) {
+	vec2 uv = mix(
+		mix(uvTL, uvBL, relUV.x),
+		mix(uvTR, uvBR, relUV.x),
+	relUV.y);
+
+	return texture(tex, uv);
+}
+
+
 bool IsInEllipsoid(vec3 xyz, vec3 abc) {
 #if 1
 	float A = xyz.x * abc.y * abc.z;
@@ -273,12 +332,11 @@ bool IsInEllipsoid(vec3 xyz, vec3 abc) {
 	return ((xyz.x*xyz.x) / (abc.x*abc.x) + (xyz.y*xyz.y) / (abc.y*abc.y) + (xyz.z*xyz.z) / (abc.z*abc.z) <= 1.0);
 #endif
 }
-*/
+
 float EllipsoidRedunction(vec3 xyz, vec3 abc) {
 	float s = (xyz.x*xyz.x) / (abc.x*abc.x) + (xyz.y*xyz.y) / (abc.y*abc.y) + (xyz.z*xyz.z) / (abc.z*abc.z);
-	return clamp(2.0 - max(s, 1.0), 0.0, 1.0);
+	return 2.0 - max(s, 1.0);
 }
-
 
 const float DECAL_EXPLOSION = 2.0;
 
@@ -287,22 +345,9 @@ const float SMF_SHALLOW_WATER_DEPTH     = 10.0;
 const float SMF_SHALLOW_WATER_DEPTH_INV = 1.0 / SMF_SHALLOW_WATER_DEPTH;
 
 const float EPS = 3e-3;
-const vec3 all0 = vec3(0.0);
-const vec3 all1 = vec3(1.0);
+
 void main() {
-	#ifdef HIGH_QUALITY
-		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy), gl_SampleID).x;
-	#else
-		float depthZO = texelFetch(depthTex, ivec2(gl_FragCoord.xy),           0).x;
-	#endif
-
-	vec3 worldPos = GetWorldPos(gl_FragCoord.xy * screenSizeInverse, depthZO);
-
-	//vec3 rotWorldPos = transpose(rotMat) * (worldPos - midPoint.xyz);
-	//if (misc2.w == DECAL_EXPLOSION && !IsInEllipsoid(rotWorldPos, vec3(vPosTL.w, misc.y, vPosTR.w)))
-	//	discard;
-
-	vec3 worldPosProj = worldPos - dot(worldPos - midPoint.xyz, rotMat[1]) * rotMat[1];
+	vec3 worldPos = GetFragmentWorldPos();
 
 	vec4 uvBL = vec4(uvMainBL, uvNormBL);
 	vec4 uvTL = vec4(uvMainTL, uvNormTL);
@@ -310,98 +355,41 @@ void main() {
 	vec4 uvBR = vec4(uvMainBR, uvNormBR);
 
 	float u = 1.0;
-	if (misc.z > 0.0) {
-		u = distance((vPosTL.xyz + vPosBL.xyz) * 0.5, (vPosBR.xyz + vPosTR.xyz) * 0.5) / misc.z;
+	if (vUVWrapDist > 0.0) {
+		u = distance((vTranformedPos[1].xyz + vTranformedPos[2].xyz) * 0.5, (vTranformedPos[3].xyz + vTranformedPos[4].xyz) * 0.5) / vUVWrapDist;
 	}
 
 	vec4 relUV;
-	bool disc = true;
-	{
-		vec3 bc = GetTriangleBarycentric(worldPosProj, vPosBL.xyz, vPosTL.xyz, vPosTR.xyz);
-		if (all(greaterThanEqual(bc, all0)) && all(lessThanEqual(bc, all1))) {
-			disc = false;
-			//uv = bc.x * uvBL + bc.y * uvTL + bc.z * uvTR;
-			relUV = bc.x * vec4(0, u*1, 0, 1) + bc.y * vec4(0, 0, 0, 0) + bc.z * vec4(1, 0, 1, 0);
-		}
-	}
-	if (disc)
-	{
-		vec3 bc = GetTriangleBarycentric(worldPosProj, vPosTR.xyz, vPosBR.xyz, vPosBL.xyz);
-		if (all(greaterThanEqual(bc, all0)) && all(lessThanEqual(bc, all1))) {
-			disc = false;
-			//uv = bc.x * uvTR + bc.y * uvBR + bc.z * uvBL;
-			relUV = bc.x * vec4(1, 0, 1, 0) + bc.y * vec4(1, u*1, 1, 1) + bc.z * vec4(0, u*1, 0, 1);
-		}
-	}
-
-	if (disc) {
+	if (!ProjectOntoPlane(worldPos, vTranformedPos[1].xyz, vTranformedPos[2].xyz, vTranformedPos[3].xyz, vTranformedPos[4].xyz, vRotMat[1], u, relUV)) {
 		fragColor = vec4(0.0);
 		return;
 	}
 
-	vec4 uv;
-	if (misc.z > 0.0) {
-		relUV.y = mod(misc.w / misc.z + relUV.y, 1.0);
+	if (vUVWrapDist > 0.0) {
+		relUV.y = mod(vUVOffset / vUVWrapDist + relUV.y, 1.0);
 	}
 
-	uv.xy = mix(
-		mix(uvTL.xy, uvBL.xy, relUV.x),
-		mix(uvTR.xy, uvBR.xy, relUV.x),
-	relUV.y);
+	float alpha = clamp(vAlpha, 0.0, 1.0);
+	float glow  = clamp(vGlow , 0.0, 1.0);
 
-	uv.zw = mix(
-		mix(uvTL.zw, uvBL.zw, relUV.z),
-		mix(uvTR.zw, uvBR.zw, relUV.z),
-	relUV.w);
+	vec4 mainCol = GetColorByRelUV(decalMainTex, uvTL.xy, uvBL.xy, uvTR.xy, uvBR.xy, relUV);
+	vec4 normVal = GetColorByRelUV(decalNormTex, uvTL.zw, uvBL.zw, uvTR.zw, uvBR.zw, relUV);
 
+	mainCol *= 2.0 * vTintColor;
 
-	float alpha = clamp(misc.x, 0.0, 1.0);
-
-	// glow is from 1.05 to 1.0 as capped by the engine
-	// transform to 0 - 1
-	float glow = smoothstep(1.0, 1.05, misc.x);
-
-	// overglow
-	glow += smoothstep(0.75, 1.0, glow) * 0.2 * abs(sin(0.02 * curAdjustedFrame));
-
-	// distance based glow adjustment
-	float relDistance = distance(worldPos.xyz, midPoint.xyz) / midPoint.w;
-	//float relDistance = distance(worldPos.xz, midPoint.xz) / midPoint.w;
-	relDistance = smoothstep(0.9, 0.1, relDistance);
-	glow *= pow(relDistance, 7.0); // artistic choice to keep the glow centered
-	glow *= smoothstep(-SMF_SHALLOW_WATER_DEPTH, 0.0, worldPos.y);
-
-	float t = mix(1.0, 3700.0, glow);
-
-	const vec3 LUMA = vec3(0.2125, 0.7154, 0.0721);
-
-	vec4 mainCol = texture(decalMainTex, uv.xy);
-	vec4 normVal = texture(decalNormTex, uv.zw);
 	vec3 mapDiffuse = textureLod(miniMapTex, worldPos.xz * mapDims.zw, 0.0).rgb;
 	#if 0
+		const vec3 LUMA = vec3(0.2125, 0.7154, 0.0721);
 		vec3 mapDecalMix = mix(mainCol.rgb, mapDiffuse.rgb, smoothstep(0.0, 0.6, dot(mainCol.rgb, LUMA)));
 	#else
 		vec3 mapDecalMix = 2.0 * mainCol.rgb * mapDiffuse.rgb;
 	#endif
-	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(misc2.w == DECAL_EXPLOSION)); //only apply mapDecalMix for explosions
+	mainCol.rgb = mix(mainCol.rgb, mapDecalMix, float(vDecalType == DECAL_EXPLOSION)); //only apply mapDecalMix for explosions
 
 	vec3 N = GetFragmentNormal(worldPos.xz);
+	vec3 T = normalize(vRotMat[0] - N * dot(vRotMat[0],  N));
+	vec3 B = normalize(cross(N, T)); // ex. (0,0,1)x(1,0,0)=(0,1,0) - righthanded coord system
 
-	#if 0
-	// Expensive processing
-	vec3 T = rotMat[0]; //tangent if N was (0,1,0)
-
-	if (1.0 - N.y > 0.01) {
-		// rotAxis is cross(Upvector, N), but Upvector is known to be (0, 1, 0), so simplify
-		vec3 rotAxis = normalize(vec3(N.z, 0.0, -N.x));
-		T = RotateByNormalVector(T, N, rotAxis);
-	}
-	#else
-	// Cheaper Gramm-Schmidt
-	vec3 T = normalize(rotMat[0] - N * dot(rotMat[0],  N));
-	#endif
-
-	vec3 B = normalize(cross(N, T));
 	mat3 TBN = mat3(T, B, N);
 
 	vec3 decalNormal = normalize(TBN * NORM2SNORM(normVal.xyz));
@@ -411,7 +399,26 @@ void main() {
 	vec3 lightCol = diffuseTerm * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
 
 	fragColor.rgb = mainCol.rgb * lightCol;
-	fragColor.rgb += BlackBody(normVal.w * t) * glow;
+	
+	if (vGlowColor.a == 0.0) {
+		// overglow
+		glow += smoothstep(0.75, 1.0, glow) * 0.2 * abs(sin(0.02 * curAdjustedFrame));
+
+		// distance based glow adjustment
+		float relDistance = distance(worldPos.xyz, midPoint.xyz) / midPoint.w;
+
+		relDistance = smoothstep(0.9, 0.1, relDistance);
+		glow *= pow(relDistance, 7.0); // artistic choice to keep the glow centered
+		glow *= smoothstep(-SMF_SHALLOW_WATER_DEPTH, 0.0, worldPos.y);
+
+		float t = mix(1.0, 3700.0, glow);
+		fragColor.rgb += BlackBody(normVal.w * t) * glow;
+	} else {
+		// alpha mixed
+		fragColor.rgb  = mix(fragColor.rgb, vGlowColor.rgb * normVal.w * glow, vGlowColor.a);
+		// alpha added
+		//fragColor.rgb += vGlowColor.rgb * normVal.w * glow * vGlowColor.a;
+	}
 
 	// adaptation from SMFFragProg.glsl
 	#ifdef SMF_WATER_ABSORPTION
@@ -437,19 +444,21 @@ void main() {
 		// if depth is greater than _SHALLOW_ depth, select waterShadeInt
 		// otherwise interpolate between groundShadeInt and waterShadeInt
 		// (both are already cosine-weighted)
-		fragColor.rgb = mix(fragColor.rgb, waterShadeInt, waterShadeAlpha);
+		fragColor.rgb = mix(fragColor.rgb, fragColor.rgb * waterShadeInt, waterShadeAlpha);
 	}
 	#endif
 
 	fragColor.a = mainCol.a * alpha;
 
-	vec3 rotWorldPos = transpose(rotMat) * (worldPos - midPoint.xyz);
+	vec3 rotWorldPos = transpose(vRotMat) * (worldPos - midPoint.xyz);
 	//fragColor.xyz=vec3(1);
-	fragColor.a *= mix(1.0, EllipsoidRedunction(rotWorldPos, vec3(vPosTL.w, misc.y, vPosTR.w)), float(misc2.w == DECAL_EXPLOSION));
+	vec3 ellipseAxes = vec3(vTranformedPos[1].w, vHeight, vTranformedPos[2].w);
+	fragColor.a *= mix(1.0, EllipsoidRedunction(rotWorldPos, ellipseAxes), float(vDecalType == DECAL_EXPLOSION));
 	// artistic adjustments
-	//fragColor  *= pow(max(dot(rotMat[1], N), 0.0), 1.5); // MdotL^1.5 is arbitrary
-	//fragColor = vec4(1);
-	//fragColor.a *=
-	//	smoothstep(0.0, EPS, relUV.x) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.x)) *
-	//	smoothstep(0.0, EPS, relUV.y) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.y));
+
+	fragColor  *= mix(1.0, pow(max(dot(vRotMat[1], N), 0.0), vDotElimExp), float(vDotElimExp > 0.0));
+
+	fragColor.a *=
+		smoothstep(0.0, EPS, relUV.x) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.x)) *
+		smoothstep(0.0, EPS, relUV.y) * (1.0 - smoothstep(1.0 - EPS, 1.0, relUV.y));
 }
