@@ -1466,7 +1466,10 @@ void CGroundDecalHandler::GhostCreated(const CSolidObject* object, const GhostSo
 
 
 void CGroundDecalHandler::ExplosionOccurred(const CExplosionParams& event) {
-	if ((event.weaponDef != nullptr) && !event.weaponDef->visuals.explosionScar)
+	if (!event.weaponDef)
+		return;
+
+	if (!event.weaponDef->visuals.explosionScar)
 		return;
 
 	const auto decalDir = event.weaponDef->visuals.scarProjVector.w == 0.0f ?
