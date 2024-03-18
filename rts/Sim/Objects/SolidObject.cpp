@@ -87,6 +87,7 @@ void CSolidObject::PostLoad()
 		return;
 
 	localModel.SetModel(model, false);
+	localModel.owningObject = this;
 }
 
 
