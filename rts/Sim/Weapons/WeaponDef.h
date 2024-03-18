@@ -240,7 +240,6 @@ public:
 		std::string texNames[4];
 		std::string colorMapStr;
 		std::string scarGlowColorMapStr;
-		std::string scarIdcsStr;
 		std::string ptrailExpGenTag; ///< tag of CEG that projectiles fired by this weapon should use during flight
 		std::string impactExpGenTag; ///< tag of CEG that projectiles fired by this weapon should use on impact
 		std::string bounceExpGenTag; ///< tag of CEG that projectiles fired by this weapon should use when bouncing

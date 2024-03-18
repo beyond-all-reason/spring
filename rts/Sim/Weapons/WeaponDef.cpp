@@ -15,7 +15,6 @@
 #include "System/Log/ILog.h"
 #include "System/StringHash.h"
 #include "System/StringUtil.h"
-#include "System/FileSystem/SimpleParser.h"
 
 
 static DefType WeaponDefs("WeaponDefs");
@@ -205,6 +204,8 @@ WEAPONTAG(std::string, shieldArmorTypeName).externalName("shield.armorType").fal
 
 // Unsynced (= Visuals)
 WEAPONTAG(std::string, model, visuals.modelName).defaultValue("");
+WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("");
+WEAPONDUMMYTAG(table, scarIndices);
 WEAPONTAG(bool, explosionScar, visuals.explosionScar).defaultValue(true);
 WEAPONTAG(float, scarAlpha, visuals.scarAlpha).defaultValue(0.0f);
 WEAPONTAG(float, scarGlow, visuals.scarGlow).defaultValue(0.0f);
@@ -249,8 +250,6 @@ WEAPONTAG(float3, rgbColor, visuals.color).defaultValue(float3(1.0f, 0.5f, 0.0f)
 WEAPONTAG(float3, rgbColor2, visuals.color2).defaultValue(float3(1.0f, 1.0f, 1.0f));
 WEAPONTAG(float, intensity).defaultValue(0.9f).description("Alpha transparency for non-model projectiles. Lower values are more opaque, but 0.0 will cause the projectile to disappear entirely.");
 WEAPONTAG(std::string, colormap, visuals.colorMapStr).defaultValue("");
-WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("");
-WEAPONTAG(std::string, scarIndices, visuals.scarIdcsStr).defaultValue("");
 
 WEAPONTAG(std::string, textures1, visuals.texNames[0]).externalName("textures.1").fallbackName("texture1").defaultValue("");
 WEAPONTAG(std::string, textures2, visuals.texNames[1]).externalName("textures.2").fallbackName("texture2").defaultValue("");
@@ -516,16 +515,14 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 		interceptedByShieldType = wdTable.GetInt("interceptedByShieldType", defInterceptType);
 	}
 
-	if (!visuals.scarIdcsStr.empty())
-	{
-		const auto idcs = CSimpleParser::Tokenize(visuals.scarIdcsStr);
-		for (const auto & idx : idcs) {
-			bool fail;
-			auto i = StringToInt(idx, &fail);
-			if (!fail)
-				visuals.scarIdcs.emplace_back(i);
-		}
+	const auto siTbl = wdTable.SubTable("scarIndices");
+	const int siTblSize = siTbl.GetLength();
+	for (int i = 1; i <= siTblSize; ++i) {
+		const auto si = siTbl.GetInt(i, 0);
+		if (si > 0)
+			visuals.scarIdcs.emplace_back(si);
 	}
+
 	visuals.scarProjVector.w = visuals.scarProjVector.LengthNormalize();
 
 	if (!visuals.scarGlowColorMapStr.empty())
