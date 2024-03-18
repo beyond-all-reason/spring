@@ -3456,6 +3456,7 @@ int LuaSyncedCtrl::SetUnitPieceVisible(lua_State* L)
  * @function Spring.SetUnitSensorRadius
  * @number unitID
  * @string type "los" | "airLos" | "radar" | "sonar" | "seismic" | "radarJammer" | "sonarJammer"
+ * @number radius
  * @treturn ?nil|number newRadius
  */
 int LuaSyncedCtrl::SetUnitSensorRadius(lua_State* L)
