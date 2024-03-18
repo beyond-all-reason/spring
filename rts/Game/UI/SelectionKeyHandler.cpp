@@ -22,7 +22,6 @@
 #include "System/UnorderedSet.hpp"
 
 CSelectionKeyHandler selectionKeys;
-std::unordered_set<std::string> idMatchesSet;
 
 
 std::string CSelectionKeyHandler::ReadToken(std::string& str)
@@ -389,7 +388,9 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 
 	ReadDelimiter(selectString);
 
-	idMatchesSet.clear();
+	// Store positive (not prefixed by Not) IdMatches tokens for OR composition at end
+  // (can't be done serially, like all others)
+	std::unordered_set<std::string> idMatchesSet;
 
 	while (true) {
 		std::string filter = ReadDelimiter(selectString);
