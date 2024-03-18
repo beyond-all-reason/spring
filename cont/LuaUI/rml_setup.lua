@@ -1,8 +1,8 @@
 --  file:    rml.lua
 --  brief:   RmlUi Setup
---  author:  lov
+--  author:  lov + ChrisFloofyKitsune
 --
---  Copyright (C) 2023.
+--  Copyright (C) 2024.
 --  Licensed under the terms of the GNU GPL, v2 or later.
 
 if (RmlGuard or not RmlUi) then
