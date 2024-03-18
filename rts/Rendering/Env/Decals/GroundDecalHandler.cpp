@@ -1466,15 +1466,13 @@ void CGroundDecalHandler::GhostCreated(const CSolidObject* object, const GhostSo
 
 
 void CGroundDecalHandler::ExplosionOccurred(const CExplosionParams& event) {
-	if (!event.weaponDef)
+	if ((event.weaponDef != nullptr) && !event.weaponDef->visuals.explosionScar)
 		return;
 
-	if (!event.weaponDef->visuals.explosionScar)
-		return;
-
-	const auto decalDir = event.weaponDef->visuals.scarProjVector.w == 0.0f ?
-		CGround::GetNormal(event.pos.x, event.pos.z, false) :
-		float3{ event.weaponDef->visuals.scarProjVector };
+	const bool hasForcedProjVec = (event.weaponDef != nullptr && event.weaponDef->visuals.scarProjVector.w != 0.0f);
+	const auto decalDir = hasForcedProjVec ?
+		float3{ event.weaponDef->visuals.scarProjVector } :
+		CGround::GetNormal(event.pos.x, event.pos.z, false);
 
 	AddExplosion(std::move(AddExplosionInfo{
 		event.pos,
