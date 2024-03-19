@@ -4,9 +4,6 @@
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 #include <iostream>
-#ifndef _MSC_VER
-#include <cxxabi.h>
-#endif
 
 using std::cout;
 
@@ -95,30 +92,12 @@ const DefTagMetaData* DefType::GetMetaDataByExternalKey(const string& key) {
 	return nullptr;
 }
 
-
-std::string DefTagMetaData::GetTypeName(const std::type_info& typeInfo)
-{
-	// demangle typename
-#ifndef _MSC_VER
-	int status;
-	char* ctname = abi::__cxa_demangle(typeInfo.name(), 0, 0, &status);
-	const std::string tname = ctname;
-	free(ctname);
-#else
-	const std::string tname(typeInfo.name()); // FIXME?
-#endif
-	return tname;
-}
-
-
 /**
  * @brief Call Quote if type is not bool, float or int.
  */
 static inline std::string Quote(const std::string& type, const std::string& value)
 {
-	if (type == "std::string")
-		return Quote(value);
-	else if (type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >")
+	if (type == spring::TypeToStr<std::string>())
 		return Quote(value);
 
 	return value;
@@ -133,7 +112,7 @@ static std::ostream& operator<< (std::ostream& out, const DefTagMetaData* d)
 	const char* const OUTER_INDENT = "    ";
 	const char* const INDENT = "      ";
 
-	const std::string tname = DefTagMetaData::GetTypeName(d->GetTypeInfo());
+	const std::string tname = d->GetTypeName();
 
 	out << OUTER_INDENT << Quote(d->GetKey()) << ": {\n";
 
@@ -228,12 +207,11 @@ void DefType::OutputTagMap()
 }
 
 
-void DefType::CheckType(const DefTagMetaData* meta, const std::type_info& want)
+void DefType::CheckType(const DefTagMetaData* meta, const std::string_view otherTypeName)
 {
 	assert(meta != nullptr);
-	if (meta->GetTypeInfo() != want)
-		LOG_L(L_ERROR, "DEFTAG \"%s\" defined with wrong typevalue \"%s\" should be \"%s\"", meta->GetKey().c_str(), DefTagMetaData::GetTypeName(meta->GetTypeInfo()).c_str(), DefTagMetaData::GetTypeName(want).c_str());
-	assert(meta->GetTypeInfo() == want);
+	if (meta->GetTypeName() != otherTypeName)
+		LOG_L(L_ERROR, "DEFTAG \"%s\" defined with wrong typevalue \"%s\" should be \"%s\"", meta->GetKey().c_str(), meta->GetTypeName().c_str(), otherTypeName.data());
 }
 
 
