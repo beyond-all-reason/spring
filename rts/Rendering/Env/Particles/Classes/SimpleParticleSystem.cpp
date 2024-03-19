@@ -217,7 +217,7 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 		p.size = particleSize + guRNG.NextFloat()*particleSizeSpread;
 	}
 
-	drawRadius = (particleSpeed + particleSpeedSpread) * (particleLife * particleLifeSpread);
+	drawRadius = (particleSpeed + particleSpeedSpread) * (particleLife + particleLifeSpread);
 }
 
 int CSimpleParticleSystem::GetProjectilesCount() const
