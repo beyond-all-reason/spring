@@ -19,8 +19,8 @@ struct BasicComponentType<entt::entity> {
 
 #define ALIAS_COMPONENT_DEF(Component, T, DefaultValue) \
 struct Component : public BasicComponentType<T> { \
-    Component(){ value = DefaultValue; } \
-    Component(T val){ value = std::move(val); } \
+    Component() { value = DefaultValue; } \
+    Component(T val) { value = std::move(val); } \
     ~Component() = default; \
     Component(const Component &) = default; \
     Component& operator=(const Component &) = default; \
@@ -30,7 +30,7 @@ struct Component : public BasicComponentType<T> { \
 #define ALIAS_COMPONENT(Component, T) \
 struct Component : public BasicComponentType<T> { \
     Component() = default; \
-    Component(T val){ value = std::move(val); } \
+    Component(T val) { value = std::move(val); } \
     ~Component() = default; \
     Component(const Component &) = default; \
     Component& operator=(const Component &) = default; \

@@ -78,9 +78,11 @@ struct UnitCrushEvent {
 
 struct UnitMovedEvent {
     int id;
+    CUnit* unit;
 
-    UnitMovedEvent(int _id)
+    UnitMovedEvent(int _id, CUnit* _unit)
     : id(_id)
+    , unit(_unit)
     {}
 };
 

@@ -18,7 +18,7 @@
 using namespace MoveTypes;
 
 void GroundMoveSystem::Init() {
-    auto& comp = Sim::systemGlobals.CreateSystemComponent<GroundMoveSystemComponent>();
+    Sim::systemGlobals.CreateSystemComponent<GroundMoveSystemComponent>();
 }
 
 
@@ -87,25 +87,26 @@ void GroundMoveSystem::Update() {
     // TODO: GroundMove could become a component (or series of components) and then the extra indirection wouldn't be
     // needed. Though that will be a bigger change.
 	{
-		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdatePreCollisions");
+		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdateTraversalPlan");
         auto view = Sim::registry.view<GroundMoveType>();
         for_mt(0, view.size(), [&view](const int i){
             auto entity = view.storage<GroundMoveType>()[i];
             auto unitId = view.get<GroundMoveType>(entity);
 
             CUnit* unit = unitHandler.GetUnit(unitId.value);
-			AMoveType* moveType = unit->moveType;
+			CGroundMoveType* moveType = static_cast<CGroundMoveType*>(unit->moveType);
+            assert(moveType != nullptr);
 
             #ifndef NDEBUG
 			unit->SanityCheck();
             #endif
     
 			unit->PreUpdate();
-			moveType->UpdatePreCollisionsMt();
+			moveType->UpdateTraversalPlan();
 		});
 	}
 	{
-		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisionsSP");
+		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisions");
 
         auto view = Sim::registry.view<GroundMoveType>();
         for_mt(0, view.size(), [&view](const int i){
@@ -114,13 +115,15 @@ void GroundMoveSystem::Update() {
 
             CUnit* unit = unitHandler.GetUnit(unitId.value);
 			CGroundMoveType* moveType = static_cast<CGroundMoveType*>(unit->moveType);
+            assert(moveType != nullptr);
 
-			moveType->UpdatePreCollisions2();
+			moveType->UpdateUnitPositionAndHeading();
 		});
 
 		view.each([](GroundMoveType& unitId){
 			CUnit* unit = unitHandler.GetUnit(unitId.value);
-			AMoveType* moveType = unit->moveType;
+			CGroundMoveType* moveType = static_cast<CGroundMoveType*>(unit->moveType);
+            assert(moveType != nullptr);
 
 			moveType->UpdatePreCollisions();
 
@@ -143,27 +146,29 @@ void GroundMoveSystem::Update() {
             auto unitId = view.get<GroundMoveType>(entity);
 
             CUnit* unit = unitHandler.GetUnit(unitId.value);
-            AMoveType* moveType = unit->moveType;
+            CGroundMoveType* moveType = static_cast<CGroundMoveType*>(unit->moveType);
+            assert(moveType != nullptr);
 
+            moveType->SetMtJobId(i);
             moveType->UpdateCollisionDetections();
         });
     }
 	{
         SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
 
-        process_thread_data<UnitCrushEvent>(comp.killUnits, [](UnitCrushEvent& event){
+        process_thread_data<UnitCrushEvent>(comp.killUnits, [](const UnitCrushEvent& event){
             event.collidee->Kill(event.collider, event.crushImpulse, true);
         });
-        process_thread_data<FeatureCrushEvent>(comp.killFeatures, [](FeatureCrushEvent& event) {
+        process_thread_data<FeatureCrushEvent>(comp.killFeatures, [](const FeatureCrushEvent& event) {
             event.collidee->Kill(event.collider, event.crushImpulse, true);
         });
-        process_thread_data<UnitCollisionEvent>(comp.collidedUnits, [](UnitCollisionEvent& event) {
+        process_thread_data<UnitCollisionEvent>(comp.collidedUnits, [](const UnitCollisionEvent& event) {
             eventHandler.UnitUnitCollision(event.collider, event.collidee);
         });
-        process_thread_data<FeatureCollisionEvent>(comp.collidedFeatures, [](FeatureCollisionEvent& event) {
+        process_thread_data<FeatureCollisionEvent>(comp.collidedFeatures, [](const FeatureCollisionEvent& event) {
             eventHandler.UnitFeatureCollision(event.collider, event.collidee);
         });
-        process_thread_data<FeatureMoveEvent>(comp.moveFeatures, [](FeatureMoveEvent& event) {
+        process_thread_data<FeatureMoveEvent>(comp.moveFeatures, [](const FeatureMoveEvent& event) {
             quadField.RemoveFeature(event.collidee);
             event.collidee->Move(event.moveImpulse, true);
             quadField.AddFeature(event.collidee);
@@ -180,18 +185,18 @@ void GroundMoveSystem::Update() {
             auto unitId = view.get<GroundMoveType>(entity);
 
             CUnit* unit = unitHandler.GetUnit(unitId.value);
-            AMoveType* moveType = unit->moveType;
+            CGroundMoveType* moveType = static_cast<CGroundMoveType*>(unit->moveType);
+            assert(moveType != nullptr);
             if (moveType->Update())
-                comp.movedUnits[curThread].emplace_back(UnitMovedEvent(unitId.value));
+                comp.movedUnits[curThread].emplace_back(i, unit);
 
             #ifndef NDEBUG
             unit->SanityCheck();
             #endif
         });
 
-        process_thread_data<UnitMovedEvent>(comp.movedUnits, [](UnitMovedEvent& event){
-            CUnit* unit = unitHandler.GetUnit(event.id);
-            eventHandler.UnitMoved(unit);
+        process_thread_data<UnitMovedEvent>(comp.movedUnits, [](const UnitMovedEvent& event){
+            eventHandler.UnitMoved(event.unit);
         });
     }
 }

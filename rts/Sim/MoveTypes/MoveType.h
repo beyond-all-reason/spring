@@ -56,10 +56,6 @@ public:
 	void UpdateCollisionMap();
 	void UpdateGroundBlockMap();
 
-	virtual void UpdatePreCollisionsMt() {};
-	virtual void UpdatePreCollisions() {};
-	virtual void UpdateCollisionDetections() {};
-
 	virtual bool IsSkidding() const { return false; }
 	virtual bool IsFlying() const { return false; }
 	virtual bool IsReversing() const { return false; }

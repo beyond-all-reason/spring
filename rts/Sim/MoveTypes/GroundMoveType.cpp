@@ -589,6 +589,7 @@ bool CGroundMoveType::OwnerMoved(const short oldHeading, const float3& posDif, c
 void CGroundMoveType::UpdatePreCollisions()
 {
  	ASSERT_SYNCED(owner->pos);
+	ASSERT_SYNCED(owner->heading);
  	ASSERT_SYNCED(currWayPoint);
  	ASSERT_SYNCED(nextWayPoint);
 
@@ -622,8 +623,6 @@ void CGroundMoveType::UpdatePreCollisions()
 		return;
 	}
 
-	ASSERT_SYNCED(owner->pos);
-
 	// set drop height when we start to drop
 	if (owner->IsFalling()) {
 		UpdateControlledDrop();
@@ -634,7 +633,7 @@ void CGroundMoveType::UpdatePreCollisions()
 	oldSpeed = newSpeed = 0.f;
 }
 
-void CGroundMoveType::UpdatePreCollisions2() {
+void CGroundMoveType::UpdateUnitPositionAndHeading() {
 	if (owner->IsSkidding()) return;
 
  	switch (setHeading) {
@@ -967,7 +966,7 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 	progressState = Done;
 }
 
-void CGroundMoveType::UpdatePreCollisionsMt() {
+void CGroundMoveType::UpdateTraversalPlan() {
 	earlyCurrWayPoint = currWayPoint;
 	earlyNextWayPoint = nextWayPoint;
 
@@ -2818,11 +2817,11 @@ void CGroundMoveType::HandleUnitCollisions(
 		crushCollidee &= ((colliderParams.x * collider->mass) > (collideeParams.x * collidee->mass));
 
 		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee))
-			comp.killUnits[curThread].emplace_back(collider->id, collider, collidee, crushImpulse);
+			comp.killUnits[curThread].emplace_back(jobId, collider, collidee, crushImpulse);
 
 		// Only trigger this event once for each colliding pair of units.
 		if (collider->id < collidee->id)
-			comp.collidedUnits[curThread].emplace_back(collider->id, collider, collidee);
+			comp.collidedUnits[curThread].emplace_back(jobId, collider, collidee);
 
 		if (collideeMobile)
 			HandleUnitCollisionsAux(collider, collidee, this, static_cast<CGroundMoveType*>(collidee->moveType));
@@ -2940,13 +2939,13 @@ void CGroundMoveType::HandleFeatureCollisions(
 		if (CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
 			continue;
 		if (!CMoveMath::CrushResistant(*colliderMD, collidee))
-			comp.killFeatures[curThread].emplace_back(collider->id, collider, collidee, crushImpulse);
+			comp.killFeatures[curThread].emplace_back(jobId, collider, collidee, crushImpulse);
 		#if 0
 		if (pathController.IgnoreCollision(collider, collidee))
 			continue;
 		#endif
 
-		comp.collidedFeatures[curThread].emplace_back(collider->id, collider, collidee);
+		comp.collidedFeatures[curThread].emplace_back(jobId, collider, collidee);
 
 		if (!collidee->IsMoving()) {
 			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false, curThread)) {
@@ -2983,7 +2982,7 @@ void CGroundMoveType::HandleFeatureCollisions(
 
 		forceFromMovingCollidees += colResponseVec * colliderMassScale;
 
-		comp.moveFeatures[curThread].emplace_back(collider->id, collider, collidee, -colResponseVec * collideeMassScale);
+		comp.moveFeatures[curThread].emplace_back(jobId, collider, collidee, -colResponseVec * collideeMassScale);
 	}
 }
 
@@ -3076,7 +3075,7 @@ void CGroundMoveType::SetMainHeading() {
 		GetHeadingFromVector(dir2.x, dir2.z) -
 		GetHeadingFromVector(dir1.x, dir1.z);
 
-	ASSERT_SYNCED(newHeading);
+	// ASSERT_SYNCED(newHeading);
 
 	if (progressState == Active) {
 		if (owner->heading != newHeading) {

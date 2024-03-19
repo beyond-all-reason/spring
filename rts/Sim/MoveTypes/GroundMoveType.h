@@ -33,13 +33,31 @@ public:
 
 	bool Update() override;
 	void SlowUpdate() override;
-	void UpdatePreCollisionsMt() override;
-	void UpdateCollisionDetections() override;
+
+	// Decide how the unit should move to carry out obsctacle avoidance and path following decisions. Actual movement
+	// must be deferred to UpdateUnitPositionAndHeading() because unit heading, speed, and position will impact other
+	// units' obsctacle avoidance decision making.
+	// This is should be MT safe.
+	void UpdateTraversalPlan();
+
+	// Update the unit's movement according to obsctacle avoidance and path following decisions from UpdateTraversalPlan().
+	// This is should be MT safe.
+	void UpdateUnitPositionAndHeading();
+
+	// Resolves post UpdateTraversalPlan() and UpdateUnitPositionAndHeading() tasks that must be carried out in a single
+	// thread.
+	void UpdatePreCollisions();
+
+	// Carry out unit collision detections and resolution. Actual movement will be carried in Update() later because
+	// moving units will impact further collisions during these checks. All collision events have to be recorded in the
+	// appropriate GroundMoveSystemComponent event list for the current thread. These events will be issued afterwards,
+	// single threaded, before Update() is called. This is to ensure units responding to collision events are
+	// responding to the collision as the collision state, not post collision state.
+	// This is should be MT safe.
+	void UpdateCollisionDetections();
+
 
 	void UpdateObstacleAvoidance();
-	void UpdatePreCollisions() override;
-
-	void UpdatePreCollisions2();
 
 	void StartMovingRaw(const float3 moveGoalPos, float moveGoalRadius) override;
 	void StartMoving(float3 pos, float moveGoalRadius) override;
@@ -124,6 +142,7 @@ public:
 
 	bool IsAtGoal() const override { return atGoal; }
 	void OwnerMayBeStuck() { forceStaticObjectCheck = true; };
+	void SetMtJobId(int _jobId) { jobId = _jobId; }
 
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
@@ -200,6 +219,8 @@ private:
 
 private:
 	GMTDefaultPathController pathController;
+
+	int jobId = 0;
 
 	SyncedFloat3 currWayPoint;
 	SyncedFloat3 nextWayPoint;
