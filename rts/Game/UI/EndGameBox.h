@@ -42,7 +42,7 @@ protected:
 
 	bool moveBox = false;
 
-  bool logScale = false;
+	bool logScale = false;
 	int dispMode = 0;
 
 	int stat1 =  1;
