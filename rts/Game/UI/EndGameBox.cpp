@@ -474,29 +474,23 @@ void CEndGameBox::Draw()
 
 void CEndGameBox::addVertices(TypedRenderBuffer<VA_TYPE_C> &rbC, const std::vector<float>& statValues, size_t numPoints, float scalex, float scaley, const uint8_t (&color)[4])
 {
+	float v0 = 0.0f;
 	for (size_t a = 0, n = numPoints - 1; a < n; ++a) {
-		float v0 = 0.0f;
 		float v1 = 0.0f;
 
 		if (dispMode == 1) {
-			v0 = statValues[a    ];
 			v1 = statValues[a + 1];
-		} else if (a > 0) {
-			// deltas
-			v0 = (statValues[a    ] - statValues[a - 1]) / TeamStatistics::statsPeriod;
-			v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
 		} else {
+			// deltas
 			v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
 		}
-
 		if (logScale){
-			v0 = v0 <= 1.0f ? 1.0f : v0;
 			v1 = v1 <= 1.0f ? 1.0f : v1;
-			v0 = std::log(v0);
 			v1 = std::log(v1);
 		}
 		rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, color});
 		rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, color});
+		v0 = v1;
 	}
 }
 
