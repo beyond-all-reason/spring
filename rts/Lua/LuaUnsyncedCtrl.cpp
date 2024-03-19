@@ -4678,9 +4678,9 @@ int LuaUnsyncedCtrl::SetGroundDecalTint(lua_State* L)
 
 	float4 tintColor = decal->tintColor;
 	tintColor.r = luaL_optfloat(L, 2, tintColor.r);
-	tintColor.r = luaL_optfloat(L, 3, tintColor.r);
-	tintColor.r = luaL_optfloat(L, 4, tintColor.r);
-	tintColor.r = luaL_optfloat(L, 5, tintColor.r);
+	tintColor.g = luaL_optfloat(L, 3, tintColor.g);
+	tintColor.b = luaL_optfloat(L, 4, tintColor.b);
+	tintColor.a = luaL_optfloat(L, 5, tintColor.a);
 
 	decal->tintColor = SColor{ tintColor };
 
