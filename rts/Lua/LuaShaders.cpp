@@ -1223,6 +1223,15 @@ int LuaShaders::UniformSubroutine(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function gl.GetEngineUniformBufferDef
+ *
+ * Return the GLSL compliant definition of UniformMatricesBuffer(idx=0) or UniformParamsBuffer(idx=1) structure.
+ *
+ * @number index
+ * @treturn string glslDefinition
+ */
 int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
 {
 	if (!globalRendering->haveGL4)
@@ -1236,6 +1245,15 @@ int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function gl.GetEngineModelUniformDataDef
+ *
+ * Return the GLSL compliant definition of ModelUniformData structure (per Unit/Feature buffer available on GPU)
+ *
+ * @number index
+ * @treturn string glslDefinition
+ */
 int LuaShaders::GetEngineModelUniformDataDef(lua_State* L)
 {
 	if (!globalRendering->haveGL4)
