@@ -55,7 +55,8 @@ static constexpr int TEAM_SLOWUPDATE_RATE = 30;
 /**
  * @brief max teams
  *
- * Defines the maximum number of teams as 255
+ * teamID is 8 bits in the network protocol, with 255
+ * reserved as a special value. This leaves 255 teams
  * (254 real teams, and an extra slot for the GAIA team).
  */
 static constexpr int MAX_TEAMS = 255;
