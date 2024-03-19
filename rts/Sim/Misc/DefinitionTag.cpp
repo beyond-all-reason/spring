@@ -118,6 +118,8 @@ static inline std::string Quote(const std::string& type, const std::string& valu
 {
 	if (type == "std::string")
 		return Quote(value);
+	else if (type == "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >")
+		return Quote(value);
 
 	return value;
 }
