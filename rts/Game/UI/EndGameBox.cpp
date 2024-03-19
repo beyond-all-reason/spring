@@ -490,11 +490,11 @@ void CEndGameBox::addVertices(TypedRenderBuffer<VA_TYPE_C> &rbC, const std::vect
 		}
 
 		if (logScale){
+			v0 = v0 <= 1.0f ? 1.0f : v0;
+			v1 = v1 <= 1.0f ? 1.0f : v1;
 			v0 = std::log(v0);
 			v1 = std::log(v1);
 		}
-		v0 = v0 <= 0.0f ? 0.0f : v0;
-		v1 = v1 <= 0.0f ? 0.0f : v1;
 		rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, color});
 		rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, color});
 	}
