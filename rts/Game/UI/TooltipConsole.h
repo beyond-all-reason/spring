@@ -3,6 +3,7 @@
 #ifndef TOOL_TIP_CONSOLE_H
 #define TOOL_TIP_CONSOLE_H
 
+#include "Sim/Misc/Resource.h"
 #include "InputReceiver.h"
 #include <string>
 
@@ -20,10 +21,10 @@ public:
 	float experience;
 	float cost;
 	float maxRange;
-	float metalMake,  metalUse;
-	float energyMake, energyUse;
-	float harvestMetal,  harvestMetalMax;
-	float harvestEnergy, harvestEnergyMax;
+	SResourcePack resourceMake;
+	SResourcePack resourceUse;
+	SResourcePack resourceHarvest;
+	SResourcePack resourceHarvestMax;
 
 	int count;
 };
