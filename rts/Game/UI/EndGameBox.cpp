@@ -411,7 +411,7 @@ void CEndGameBox::Draw()
 			maxy = std::max(stats[stat1].maxdif, (stat2 != -1) ? stats[stat2].maxdif : 0) / TeamStatistics::statsPeriod;
 		}
 		if (logScale)
-			maxy = std::log10(maxy);
+			maxy = std::log(maxy);
 
 		const size_t numPoints = stats[0].values[0].size();
 
@@ -424,7 +424,7 @@ void CEndGameBox::Draw()
 
 			float yLabelNum = maxy *  0.25f * a;
 			if (logScale)
-				yLabelNum = std::pow(10, yLabelNum);
+				yLabelNum = std::exp(yLabelNum);
 
 			font->glPrint(box.x1 + 0.12f, box.y1 + 0.07f + (a * 0.135f), 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, FloatToSmallString(yLabelNum));
 			font->glFormat(box.x1 + 0.135f + (a * 0.135f), box.y1 + 0.057f, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%02i:%02i", mins, secs);
@@ -490,8 +490,8 @@ void CEndGameBox::addVertices(TypedRenderBuffer<VA_TYPE_C> &rbC, const std::vect
 		}
 
 		if (logScale){
-			v0 = std::log10(v0);
-			v1 = std::log10(v1);
+			v0 = std::log(v0);
+			v1 = std::log(v1);
 		}
 		v0 = v0 <= 0.0f ? 0.0f : v0;
 		v1 = v1 <= 0.0f ? 0.0f : v1;
