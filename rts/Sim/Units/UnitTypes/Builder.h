@@ -62,6 +62,8 @@ public:
 	      NanoPieceCache& GetNanoPieceCache()       { return nanoPieceCache; }
 
 public:
+	constexpr static int TERRA_SMOOTHING_RADIUS = 3;
+
 	bool range3D; ///< spheres instead of infinite cylinders for range tests
 
 	float buildDistance;
