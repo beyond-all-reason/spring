@@ -4713,6 +4713,9 @@ int LuaUnsyncedCtrl::SetGroundDecalMisc(lua_State* L)
 	decal->minHeight = luaL_optfloat(L, 4, decal->minHeight);
 	decal->maxHeight = luaL_optfloat(L, 5, decal->maxHeight);
 	decal->forceHeightMode = luaL_optfloat(L, 6, decal->forceHeightMode);
+
+	lua_pushboolean(L, true);
+	return 1;
 }
 
 /***
