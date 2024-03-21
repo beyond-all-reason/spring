@@ -203,6 +203,7 @@ public:
 	float weaponAimAdjustPriority;
 	bool fastAutoRetargeting;
 	bool fastQueryPointUpdate;
+	bool preaimAtBlockedTargets;
 
 protected:
 	SWeaponTarget currentTarget;
