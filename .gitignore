@@ -65,6 +65,7 @@ progress.make
 /_ReSharper.Caches
 .vs/
 .vscode
+/.idea
 
 # Windows libraries used by spring when compiling with MinGW
 # recommended: place the dir somewhere else, and specify with
@@ -74,6 +75,7 @@ progress.make
 
 # Windows libraries used by spring when compiling with Visual Studio
 /vclibs
+/vclibs64
 
 # Installer files
 /external
