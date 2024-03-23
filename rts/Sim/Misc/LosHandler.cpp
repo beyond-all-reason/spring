@@ -16,6 +16,11 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
+#include "System/Config/ConfigHandler.h"
+// TODO: Remove this once its validated to not cause major issues downstream
+CONFIG(int, LosHandlerUpdateHeightMapSyncedMT).defaultValue(1).safemodeValue(0).minimumValue(0).description("MTs  LosHandler::UpdateHeightMapSynced. Should be safe to toggle ingame as well.");
+
+
 #define USE_STAGGERED_UPDATES 0
 
 
@@ -826,10 +831,23 @@ void CLosHandler::Update()
 
 void CLosHandler::UpdateHeightMapSynced(SRectangle rect)
 {
-	for (ILosType* lt: losTypes) {
-		ZoneScopedN("LosHandler::UpdateHeightMapSynced");
-		lt->UpdateHeightMapSynced(rect);
+	int losHandlerUpdateHeightMapSyncedMT = configHandler->GetInt("LosHandlerUpdateHeightMapSyncedMT");
+	if (losHandlerUpdateHeightMapSyncedMT == 0) {
+
+		for (ILosType* lt : losTypes) {
+			ZoneScopedN("LosHandler::UpdateHeightMapSyncedST");
+			lt->UpdateHeightMapSynced(rect);
+		}
 	}
+	else {
+		for_mt(0, losTypes.size(), [&](const int idx) {
+			ILosType* lt = losTypes[idx];
+			ZoneScopedN("LosHandler::UpdateHeightMapSyncedMT");
+			lt->UpdateHeightMapSynced(rect);
+		});
+
+	}
+
 }
 
 
