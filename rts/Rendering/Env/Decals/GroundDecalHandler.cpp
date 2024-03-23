@@ -153,7 +153,7 @@ void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::stri
 		decalAtlas->AddTexFromBitmap(name, bm);
 	}
 	catch (const content_error& err) {
-		LOG_L(L_ERROR, "%s", err.what());
+		LOG_L(L_WARNING, "%s", err.what());
 	}
 }
 
