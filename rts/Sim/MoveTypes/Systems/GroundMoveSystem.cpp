@@ -21,65 +21,15 @@ void GroundMoveSystem::Init() {
     Sim::systemGlobals.CreateSystemComponent<GroundMoveSystemComponent>();
 }
 
-
-template<typename T>
-struct ThreadEventWalker {
-    std::array<std::vector<T>, ThreadPool::MAX_THREADS>& threadEventQueues;
-    std::array<int, ThreadPool::MAX_THREADS> indicies;
-
-    ThreadEventWalker(std::array<std::vector<T>, ThreadPool::MAX_THREADS>& _threadEventQueues)
-        : threadEventQueues(_threadEventQueues)
-    {
-        std::fill(indicies.begin(), indicies.end(), 0);
-    }
-
-    T* getNextEventFromThreads() {
-        int chosenThread = -1;
-        int chosenId = std::numeric_limits<int>::max();
-        T* result;
-
-        for(int i=0; i<threadEventQueues.size(); ++i){
-            if (indicies[i] >= threadEventQueues[i].size()) { continue; }
-
-            int curId = threadEventQueues[i][indicies[i]].id;
-            if (curId < chosenId) {
-                chosenId = curId;
-                chosenThread = i;
-                result = &threadEventQueues[i][indicies[i]];
-            }
-        }
-
-        if (chosenThread == -1)
-            return nullptr;
-
-        indicies[chosenThread]++;
-        return result;
-    }
-
-    template<typename F>
-    void forEach(F func) {
-        auto event = getNextEventFromThreads();
-        while (event != nullptr) {
-            func(*event);
-            event = getNextEventFromThreads();
-        }
-    }
-
-    void clearThreadData() {
-        for (int i=0; i < threadEventQueues.size(); ++i){
-            threadEventQueues[i].clear();
-        }
-    }
-};
-
-template<typename T, typename Container, typename F>
-void process_thread_data(Container& threadDataLists, F func)
+template<typename T, typename F>
+void issue_events(F func)
 {
-    ThreadEventWalker<T> threadEventWalker(threadDataLists);
-    threadEventWalker.forEach(func);
-    threadEventWalker.clearThreadData();
+    auto view = Sim::registry.view<T>();
+    view.each([&](T& comp){
+        std::for_each(comp.value.begin(), comp.value.end(), func);
+        comp.value.clear();
+    });
 }
-
 
 void GroundMoveSystem::Update() {
     auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
@@ -156,19 +106,19 @@ void GroundMoveSystem::Update() {
 	{
         SCOPED_TIMER("Sim::Unit::MoveType::4::ProcessCollisionEvents");
 
-        process_thread_data<UnitCrushEvent>(comp.killUnits, [](const UnitCrushEvent& event){
+        issue_events<UnitCrushEvents>([](const UnitCrushEvent& event) {
             event.collidee->Kill(event.collider, event.crushImpulse, true);
         });
-        process_thread_data<FeatureCrushEvent>(comp.killFeatures, [](const FeatureCrushEvent& event) {
+        issue_events<FeatureCrushEvents>([](const FeatureCrushEvent& event) {
             event.collidee->Kill(event.collider, event.crushImpulse, true);
         });
-        process_thread_data<UnitCollisionEvent>(comp.collidedUnits, [](const UnitCollisionEvent& event) {
+        issue_events<UnitCollisionEvents>([&](const UnitCollisionEvent& event) {
             eventHandler.UnitUnitCollision(event.collider, event.collidee);
         });
-        process_thread_data<FeatureCollisionEvent>(comp.collidedFeatures, [](const FeatureCollisionEvent& event) {
+        issue_events<FeatureCollisionEvents>([](const FeatureCollisionEvent& event) {
             eventHandler.UnitFeatureCollision(event.collider, event.collidee);
         });
-        process_thread_data<FeatureMoveEvent>(comp.moveFeatures, [](const FeatureMoveEvent& event) {
+        issue_events<FeatureMoveEvents>([](const FeatureMoveEvent& event) {
             quadField.RemoveFeature(event.collidee);
             event.collidee->Move(event.moveImpulse, true);
             quadField.AddFeature(event.collidee);
@@ -176,8 +126,8 @@ void GroundMoveSystem::Update() {
 	}
 	{
         SCOPED_TIMER("Sim::Unit::MoveType::5::Update");
+        {
         auto view = Sim::registry.view<GroundMoveType>();
-        // view.each([](GroundMoveType& unitId){
         for_mt(0, view.size(), [&view, &comp](const int i){
             auto curThread = ThreadPool::GetThreadNum();
 
@@ -187,17 +137,26 @@ void GroundMoveSystem::Update() {
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             CGroundMoveType* moveType = static_cast<CGroundMoveType*>(unit->moveType);
             assert(moveType != nullptr);
-            if (moveType->Update())
-                comp.movedUnits[curThread].emplace_back(i, unit);
+            if (moveType->Update()) {
+                auto& event = Sim::registry.get<UnitMovedEvent>(entity);
+                event.moved = true;
+                event.unit = unit;
+            }
 
             #ifndef NDEBUG
             unit->SanityCheck();
             #endif
         });
-
-        process_thread_data<UnitMovedEvent>(comp.movedUnits, [](const UnitMovedEvent& event){
-            eventHandler.UnitMoved(event.unit);
-        });
+        }
+        {
+        auto view = Sim::registry.view<UnitMovedEvent>();
+		view.each([&](UnitMovedEvent& event){
+            if (event.moved) {
+                eventHandler.UnitMoved(event.unit);
+                event.moved = false;
+            }
+		});
+        }
     }
 }
 

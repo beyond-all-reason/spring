@@ -43,13 +43,6 @@ void serializeComponents(Archive &archive, Snapshot &snapshot) {
 struct GroundMoveSystemComponent {
 	static constexpr std::size_t page_size = 1;
     static constexpr std::size_t INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE = 64;
-
-	std::array<std::vector<FeatureCollisionEvent>, ThreadPool::MAX_THREADS> collidedFeatures;
-	std::array<std::vector<UnitCollisionEvent>,    ThreadPool::MAX_THREADS> collidedUnits;
-	std::array<std::vector<FeatureCrushEvent>,     ThreadPool::MAX_THREADS> killFeatures;
-	std::array<std::vector<UnitCrushEvent>,        ThreadPool::MAX_THREADS> killUnits;
-	std::array<std::vector<FeatureMoveEvent>,      ThreadPool::MAX_THREADS> moveFeatures;
-    std::array<std::vector<UnitMovedEvent>,        ThreadPool::MAX_THREADS> movedUnits;
 };
 
 struct YardmapTrapCheckSystemComponent {
@@ -58,6 +51,14 @@ struct YardmapTrapCheckSystemComponent {
 
 	std::array<std::vector<CUnit*>, ThreadPool::MAX_THREADS> trappedUnitLists;
 };
+
+constexpr size_t UNIT_EVENT_VECTOR_RESERVE = 100;
+
+ALIAS_COMPONENT_LIST_RESERVE(FeatureCollisionEvents, std::vector<FeatureCollisionEvent>, UNIT_EVENT_VECTOR_RESERVE);
+ALIAS_COMPONENT_LIST_RESERVE(UnitCollisionEvents, std::vector<UnitCollisionEvent>, UNIT_EVENT_VECTOR_RESERVE);
+ALIAS_COMPONENT_LIST_RESERVE(FeatureCrushEvents, std::vector<FeatureCrushEvent>, UNIT_EVENT_VECTOR_RESERVE);
+ALIAS_COMPONENT_LIST_RESERVE(UnitCrushEvents, std::vector<UnitCrushEvent>, UNIT_EVENT_VECTOR_RESERVE);
+ALIAS_COMPONENT_LIST_RESERVE(FeatureMoveEvents, std::vector<FeatureMoveEvent>, UNIT_EVENT_VECTOR_RESERVE);
 
 }
 

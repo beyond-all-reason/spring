@@ -13,11 +13,9 @@ namespace MoveTypes {
 struct FeatureCollisionEvent {
     CUnit* collider;
     CFeature* collidee;
-    int id;
 
-    FeatureCollisionEvent(int _id, CUnit* _collider, CFeature* _collidee)
-    : id(_id)
-    , collider(_collider)
+    FeatureCollisionEvent(CUnit* _collider, CFeature* _collidee)
+    : collider(_collider)
     , collidee(_collidee)
     {}
 };
@@ -26,11 +24,9 @@ struct FeatureCrushEvent {
     CUnit* collider;
     CFeature* collidee;
     float3 crushImpulse;
-    int id;
 
-    FeatureCrushEvent(int _id, CUnit* _collider, CFeature* _collidee, float3 _crushImpulse)
-    : id(_id)
-    , collider(_collider)
+    FeatureCrushEvent(CUnit* _collider, CFeature* _collidee, float3 _crushImpulse)
+    : collider(_collider)
     , collidee(_collidee)
     , crushImpulse(_crushImpulse)
     {}
@@ -40,11 +36,9 @@ struct FeatureMoveEvent {
     CUnit* collider;
     CFeature* collidee;
     float3 moveImpulse;
-    int id;
 
-    FeatureMoveEvent(int _id, CUnit* _collider, CFeature* _collidee, float3 _moveImpulse)
-    : id(_id)
-    , collider(_collider)
+    FeatureMoveEvent(CUnit* _collider, CFeature* _collidee, float3 _moveImpulse)
+    : collider(_collider)
     , collidee(_collidee)
     , moveImpulse(_moveImpulse)
     {}
@@ -53,11 +47,9 @@ struct FeatureMoveEvent {
 struct UnitCollisionEvent {
     CUnit* collider;
     CUnit* collidee;
-    int id;
 
-    UnitCollisionEvent(int _id, CUnit* _collider, CUnit* _collidee)
-    : id(_id)
-    , collider(_collider)
+    UnitCollisionEvent(CUnit* _collider, CUnit* _collidee)
+    : collider(_collider)
     , collidee(_collidee)
     {}
 };
@@ -66,23 +58,21 @@ struct UnitCrushEvent {
     CUnit* collider;
     CUnit* collidee;
     float3 crushImpulse;
-    int id;
 
-    UnitCrushEvent(int _id, CUnit* _collider, CUnit* _collidee, float3 _crushImpulse)
-    : id(_id)
-    , collider(_collider)
+    UnitCrushEvent(CUnit* _collider, CUnit* _collidee, float3 _crushImpulse)
+    : collider(_collider)
     , collidee(_collidee)
     , crushImpulse(_crushImpulse)
     {}
 };
 
 struct UnitMovedEvent {
-    int id;
     CUnit* unit;
+    bool moved;
 
-    UnitMovedEvent(int _id, CUnit* _unit)
-    : id(_id)
-    , unit(_unit)
+    UnitMovedEvent(CUnit* _unit, bool _moved)
+    : unit(_unit)
+    , moved(_moved)
     {}
 };
 

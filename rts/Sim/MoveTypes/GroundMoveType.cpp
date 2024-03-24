@@ -2816,12 +2816,16 @@ void CGroundMoveType::HandleUnitCollisions(
 		crushCollidee |= (!alliedCollision || allowCAU);
 		crushCollidee &= ((colliderParams.x * collider->mass) > (collideeParams.x * collidee->mass));
 
-		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee))
-			comp.killUnits[curThread].emplace_back(jobId, collider, collidee, crushImpulse);
+		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee)) {
+			auto& events = Sim::registry.get<UnitCrushEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee, crushImpulse);
+		}
 
 		// Only trigger this event once for each colliding pair of units.
-		if (collider->id < collidee->id)
-			comp.collidedUnits[curThread].emplace_back(jobId, collider, collidee);
+		if (collider->id < collidee->id){
+			auto& events = Sim::registry.get<UnitCollisionEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee);
+		}
 
 		if (collideeMobile)
 			HandleUnitCollisionsAux(collider, collidee, this, static_cast<CGroundMoveType*>(collidee->moveType));
@@ -2938,14 +2942,20 @@ void CGroundMoveType::HandleFeatureCollisions(
 
 		if (CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
 			continue;
-		if (!CMoveMath::CrushResistant(*colliderMD, collidee))
-			comp.killFeatures[curThread].emplace_back(jobId, collider, collidee, crushImpulse);
+
+		if (!CMoveMath::CrushResistant(*colliderMD, collidee)){
+			auto& events = Sim::registry.get<FeatureCrushEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee, crushImpulse);
+		}
 		#if 0
 		if (pathController.IgnoreCollision(collider, collidee))
 			continue;
 		#endif
 
-		comp.collidedFeatures[curThread].emplace_back(jobId, collider, collidee);
+		{
+			auto& events = Sim::registry.get<FeatureCollisionEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee);
+		}
 
 		if (!collidee->IsMoving()) {
 			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false, curThread)) {
@@ -2982,7 +2992,10 @@ void CGroundMoveType::HandleFeatureCollisions(
 
 		forceFromMovingCollidees += colResponseVec * colliderMassScale;
 
-		comp.moveFeatures[curThread].emplace_back(jobId, collider, collidee, -colResponseVec * collideeMassScale);
+		{
+			auto& events = Sim::registry.get<FeatureMoveEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee, -colResponseVec * collideeMassScale);
+		}
 	}
 }
 
@@ -2995,11 +3008,23 @@ void CGroundMoveType::LeaveTransport()
 
 void CGroundMoveType::Connect() {
 	Sim::registry.emplace_or_replace<GroundMoveType>(owner->entityReference, owner->id);
+	Sim::registry.emplace_or_replace<FeatureCollisionEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<UnitCollisionEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<FeatureCrushEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<UnitCrushEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<FeatureMoveEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<UnitMovedEvent>(owner->entityReference, owner, false);
 	// LOG("%s: loading %s as %d", __func__, owner->unitDef->name.c_str(), entt::to_integral(owner->entityReference));
 }
 
 void CGroundMoveType::Disconnect() {
 	Sim::registry.remove<GroundMoveType>(owner->entityReference);
+	Sim::registry.remove<FeatureCollisionEvents>(owner->entityReference);
+	Sim::registry.remove<UnitCollisionEvents>(owner->entityReference);
+	Sim::registry.remove<FeatureCrushEvents>(owner->entityReference);
+	Sim::registry.remove<UnitCrushEvents>(owner->entityReference);
+	Sim::registry.remove<FeatureMoveEvents>(owner->entityReference);
+	Sim::registry.remove<UnitMovedEvent>(owner->entityReference);
 }
 
 void CGroundMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive) { KeepPointingTo(unit->pos, distance, aggressive); }
