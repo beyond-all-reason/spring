@@ -52,7 +52,7 @@ struct YardmapTrapCheckSystemComponent {
 	std::array<std::vector<CUnit*>, ThreadPool::MAX_THREADS> trappedUnitLists;
 };
 
-constexpr size_t UNIT_EVENT_VECTOR_RESERVE = 100;
+constexpr size_t UNIT_EVENT_VECTOR_RESERVE = 4;
 
 ALIAS_COMPONENT_LIST_RESERVE(FeatureCollisionEvents, std::vector<FeatureCollisionEvent>, UNIT_EVENT_VECTOR_RESERVE);
 ALIAS_COMPONENT_LIST_RESERVE(UnitCollisionEvents, std::vector<UnitCollisionEvent>, UNIT_EVENT_VECTOR_RESERVE);
