@@ -2038,7 +2038,7 @@ int LuaUnsyncedCtrl::SetUnitLeaveTracks(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	unit->leaveTracks = lua_toboolean(L, 2);
+	groundDecals->SetUnitLeaveTracks(unit, lua_toboolean(L, 2));
 	return 0;
 }
 

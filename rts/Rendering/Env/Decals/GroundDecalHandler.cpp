@@ -1054,6 +1054,22 @@ const CSolidObject* CGroundDecalHandler::GetDecalSolidObjectOwner(uint32_t id) c
 	return nullptr;
 }
 
+void CGroundDecalHandler::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
+{
+	if (!leaveTracks) {
+		if (auto it = decalOwners.find(unit); it != decalOwners.end()) {
+			auto& mm = unitMinMaxHeights[unit->id];
+
+			decalOwners.erase(it); // restart with new decal next time
+			mm = {};
+		}
+	}
+	else {
+		AddTrack(unit, unit->pos, false);
+	}
+	unit->leaveTracks = leaveTracks;
+}
+
 static inline bool CanReceiveTracks(const float3& pos)
 {
 	// calculate typemap-index
@@ -1398,7 +1414,7 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 	}
 }
 
-void CGroundDecalHandler::GameFrame(int frameNum)
+void CGroundDecalHandler::GameFramePost(int frameNum)
 {
 #if 0
 	for (int cnt = 0; const auto & [owner, offset] : decalOwners) {
@@ -1472,7 +1488,7 @@ void CGroundDecalHandler::ExplosionOccurred(const CExplosionParams& event) {
 	const bool hasForcedProjVec = (event.weaponDef != nullptr && event.weaponDef->visuals.scarProjVector.w != 0.0f);
 	const auto decalDir = hasForcedProjVec ?
 		float3{ event.weaponDef->visuals.scarProjVector } :
-		CGround::GetNormal(event.pos.x, event.pos.z, false);
+		float3{ 0.0f, 0.0f, 0.0f };
 
 	AddExplosion(std::move(AddExplosionInfo{
 		event.pos,
