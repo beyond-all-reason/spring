@@ -1054,6 +1054,17 @@ const CSolidObject* CGroundDecalHandler::GetDecalSolidObjectOwner(uint32_t id) c
 	return nullptr;
 }
 
+void CGroundDecalHandler::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
+{
+	if (!leaveTracks) {
+		auto& mm = unitMinMaxHeights[unit->id];
+
+		decalOwners.erase(unit); // restart with new decal next time
+		mm = {};
+	}
+	unit->leaveTracks = leaveTracks;
+}
+
 static inline bool CanReceiveTracks(const float3& pos)
 {
 	// calculate typemap-index
@@ -1398,7 +1409,7 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 	}
 }
 
-void CGroundDecalHandler::GameFrame(int frameNum)
+void CGroundDecalHandler::GameFramePost(int frameNum)
 {
 #if 0
 	for (int cnt = 0; const auto & [owner, offset] : decalOwners) {

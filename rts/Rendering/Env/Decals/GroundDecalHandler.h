@@ -93,7 +93,7 @@ public:
 			|| (eventName == "UnitMoved")
 			|| (eventName == "UnitLoaded")
 			|| (eventName == "UnitUnloaded")
-			|| (eventName == "GameFrame")
+			|| (eventName == "GameFramePost")
 			|| (eventName == "SunChanged")
 			|| (eventName == "ViewResize");
 	}
@@ -112,7 +112,7 @@ public:
 	void UnitLoaded(const CUnit* unit, const CUnit* transport) override;
 	void UnitUnloaded(const CUnit* unit, const CUnit* transport) override;
 
-	void GameFrame(int frameNum) override;
+	void GameFramePost(int frameNum) override;
 
 	void SunChanged() override;
 	void ViewResize() override;
@@ -140,6 +140,8 @@ public:
 	std::string GetDecalTexture(uint32_t id, bool mainTex) const override;
 	const std::vector<std::string> GetDecalTextures(bool mainTex) const override;
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override;
+
+	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override;
 private:
 	static void BindVertexAtrribs();
 	static void UnbindVertexAtrribs();
