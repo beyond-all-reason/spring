@@ -527,6 +527,8 @@ void CGroundMoveType::PostLoad()
 {
 	pathController = GMTDefaultPathController(owner);
 
+	Connect();
+
 	// HACK: re-initialize path after load
 	if (pathID == 0)
 		return;
