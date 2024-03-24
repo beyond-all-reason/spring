@@ -68,7 +68,7 @@ void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* co
         
         // curList.emplace_back(unit);
 
-        // This is okay for multithrading because the value will only be set one way.
+        // This is okay for multithreading because the value will only be set one way.
         unitMoveType->OwnerMayBeStuck();
     }
 }
