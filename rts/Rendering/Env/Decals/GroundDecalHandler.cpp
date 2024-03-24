@@ -1064,6 +1064,9 @@ void CGroundDecalHandler::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
 			mm = {};
 		}
 	}
+	else {
+		AddTrack(unit, unit->pos, false);
+	}
 	unit->leaveTracks = leaveTracks;
 }
 
