@@ -1057,10 +1057,12 @@ const CSolidObject* CGroundDecalHandler::GetDecalSolidObjectOwner(uint32_t id) c
 void CGroundDecalHandler::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
 {
 	if (!leaveTracks) {
-		auto& mm = unitMinMaxHeights[unit->id];
+		if (auto it = decalOwners.find(unit); it != decalOwners.end()) {
+			auto& mm = unitMinMaxHeights[unit->id];
 
-		decalOwners.erase(unit); // restart with new decal next time
-		mm = {};
+			decalOwners.erase(it); // restart with new decal next time
+			mm = {};
+		}
 	}
 	unit->leaveTracks = leaveTracks;
 }
