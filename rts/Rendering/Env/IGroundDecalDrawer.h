@@ -79,7 +79,7 @@ public:
 	const std::vector<std::string> GetDecalTextures(bool mainTex) const override { return {}; }
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override { return nullptr; }
 
-	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override { unit->leaveTracks = leaveTracks; }
+	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override;
 };
 
 

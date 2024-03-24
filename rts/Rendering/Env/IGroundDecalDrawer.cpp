@@ -6,6 +6,7 @@
 #include "System/Exceptions.h"
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
+#include "Sim/Units/Unit.h"
 
 
 CONFIG(int, GroundDecals).defaultValue(3).headlessValue(0).description("Controls whether ground decals underneath buildings and ground scars from explosions will be rendered. Values >1 define how long such decals will stay.");
@@ -61,4 +62,9 @@ void IGroundDecalDrawer::SetDrawDecals(bool v)
 	}
 
 	groundDecals->OnDecalLevelChanged();
+}
+
+void NullGroundDecalDrawer::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
+{
+	unit->leaveTracks = leaveTracks;
 }
