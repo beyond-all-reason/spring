@@ -3418,7 +3418,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		bool limitDisplacment = true;
 		float maxDisplacementSq = -1.f;
 
-		UpdatePos(owner, moveRequest, resultantVel, 0);
+		UpdatePos(owner, moveRequest, resultantVel, ThreadPool::GetThreadNum());
 
 		bool isMoveColliding = !resultantVel.same(moveRequest);
 		if (isMoveColliding) {
