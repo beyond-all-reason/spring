@@ -141,6 +141,8 @@ protected:
 
 	int luaArgs[MAX_LUA_COB_ARGS] = {0};
 
+	int cobVersion = 0;
+
 
 	std::vector<CallInfo> callStack;
 	std::vector<int> dataStack;

@@ -71,6 +71,7 @@ CCobThread::CCobThread(CCobInstance* _cobInst)
 		callStack.reserve(4);
 	}
 	memset(&luaArgs[0], 0, MAX_LUA_COB_ARGS * sizeof(luaArgs[0]));
+	cobVersion = cobFile->ch.VersionSignature;
 }
 
 CCobThread::~CCobThread()
