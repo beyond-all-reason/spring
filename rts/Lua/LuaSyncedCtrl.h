@@ -68,6 +68,10 @@ class LuaSyncedCtrl
 		static int DestroyUnit(lua_State* L);
 		static int TransferUnit(lua_State* L);
 
+		static int CreateSensor(lua_State* L);
+		static int DestroySensor(lua_State* L);
+		static int TransferSensor(lua_State* L);
+
 		static int CreateFeature(lua_State* L);
 		static int DestroyFeature(lua_State* L);
 		static int TransferFeature(lua_State* L);

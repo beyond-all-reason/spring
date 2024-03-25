@@ -45,7 +45,7 @@ void SimObjectIDPool::Expand(uint32_t baseID, uint32_t numIDs) {
 
 
 
-void SimObjectIDPool::AssignID(CSolidObject* object) {
+void SimObjectIDPool::AssignID(CWorldObject* object) {
 	if (object->id < 0) {
 		object->id = ExtractID();
 	} else {

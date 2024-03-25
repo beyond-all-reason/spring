@@ -38,6 +38,7 @@
 #include "Sim/Misc/DamageArrayHandler.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/ModInfo.h"
+#include "Sim/Misc/SensorHandler.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Misc/Team.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -554,6 +555,23 @@ static void ParseUnitDefArray(lua_State* L, const char* caller,
 
 		unitDefs.push_back(ud);
 	}
+}
+
+static inline CSensor* ParseSensor(lua_State* L, const char* caller, int index)
+{
+	CSensor* sensor = sensorHandler.GetSensor(luaL_checkint(L, index));
+	if (sensor == nullptr)
+		return nullptr;
+
+	const int ctrlTeam = CtrlTeam(L);
+
+	if (ctrlTeam < 0 && ctrlTeam == CEventClient::AllAccessTeam)
+		return sensor;
+
+	if (ctrlTeam == sensor->team)
+		return sensor;
+
+	return nullptr;
 }
 
 static int SetSolidObjectCollisionVolumeData(lua_State* L, CSolidObject* o)
@@ -7170,3 +7188,129 @@ int LuaSyncedCtrl::RemoveUnitCmdDesc(lua_State* L)
 }
 
 
+
+/***
+ * @function Spring.CreateSensor
+ * @see Spring.DestroySensor
+ *
+ * Offmap positions are clamped! Use MoveCtrl to move to such positions.
+ *
+ * @number teamID
+ * @number x
+ * @number y
+ * @number z
+ * @number LOSType (flag for los, radar, sonar, or combination)
+ * @number LOSDistance (distance of sensor)
+ * @number duration (number of frames)
+ * @treturn number|nil sensorID meaning sensor was created
+ ***/
+int LuaSyncedCtrl::CreateSensor(lua_State* L)
+{
+	CheckAllowGameChanges(L);
+
+	if (inCreateUnit >= MAX_CMD_RECURSION_DEPTH) {
+		luaL_error(L, "[%s()]: recursion is not permitted, max depth: %d", __func__, MAX_CMD_RECURSION_DEPTH);
+		return 0;
+	}
+
+	//int team_, float3 pos_, int LOSType_, float LOSDistance_, int duration_
+	const int teamID = luaL_checkinteger(L, 1);
+	if (!teamHandler.IsValidTeam(teamID)) {
+		luaL_error(L, "[%s()]: invalid team number (%d)", __func__, teamID);
+		return 0;
+	}
+	if (!FullCtrl(L) && (CtrlTeam(L) != teamID)) {
+		luaL_error(L, "[%s()]: not a controllable team (%d)", __func__, teamID);
+		return 0;
+	}
+	if (!sensorHandler.CanBuildSensor(teamID))
+		return 0; // unit limit reached
+
+	const float3 pos(
+		luaL_checkfloat(L, 2),
+		luaL_checkfloat(L, 3),
+		luaL_checkfloat(L, 4)
+	);
+
+	const int LOSType = luaL_checkinteger(L, 5);
+	const float LOSDistance = luaL_checkfloat(L, 6);
+	const int duration = luaL_checkinteger(L, 7);
+
+	ASSERT_SYNCED(pos);
+
+	// reusing this...?
+	inCreateUnit++;
+
+	CSensor* sensor = sensorHandler.NewSensor(teamID, pos, LOSType, LOSDistance, duration);
+	inCreateUnit--;
+
+	if (sensor == nullptr)
+		return 0;
+
+	sensorHandler.AddSensor(sensor);
+
+	lua_pushnumber(L, sensor->id);
+	return 1;
+}
+
+
+/***
+ * @function Spring.DestroySensor
+ * @see Spring.CreateSensor
+ * @number sensorID
+ * @treturn nil
+ ***/
+int LuaSyncedCtrl::DestroySensor(lua_State* L)
+{
+	CheckAllowGameChanges(L); // FIXME -- recursion protection
+	CSensor* sensor = ParseSensor(L, __func__, 1);
+
+	if (sensor == nullptr)
+		return 0;
+
+	if (inDestroyUnit >= MAX_CMD_RECURSION_DEPTH)
+		luaL_error(L, "DestroySensor() recursion is not permitted, max depth: %d", MAX_CMD_RECURSION_DEPTH);
+
+	inDestroyUnit++;
+
+	ASSERT_SYNCED(sensor->id);
+	sensor->Kill();
+
+	inDestroyUnit--;
+
+	return 0;
+}
+
+
+/***
+ * @function Spring.TransferSensor
+ * @number sensorID
+ * @number newTeamID
+ * @treturn nil
+ ***/
+int LuaSyncedCtrl::TransferSensor(lua_State* L)
+{
+	CheckAllowGameChanges(L);
+	CSensor* sensor = ParseSensor(L, __func__, 1);
+
+	if (sensor == nullptr)
+		return 0;
+
+	const int newTeam = luaL_checkint(L, 2);
+	if (!teamHandler.IsValidTeam(newTeam))
+		return 0;
+
+	const CTeam* team = teamHandler.Team(newTeam);
+	if (team == nullptr)
+		return 0;
+
+	if (inTransferUnit >= MAX_CMD_RECURSION_DEPTH)
+		luaL_error(L, "TransferSensor() recursion is not permitted, max depth: %d", MAX_CMD_RECURSION_DEPTH);
+
+	++inTransferUnit;
+	ASSERT_SYNCED(sensor->id);
+	ASSERT_SYNCED((int)newTeam);
+	sensor->ChangeTeam(newTeam);
+	--inTransferUnit;
+	return 0;
+}

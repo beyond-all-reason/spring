@@ -158,6 +158,7 @@ void CTeamHandler::UpdateTeamUnitLimitsPreSpawn(int liveTeamNum)
 	if (numRemainingActiveTeams == 0) {
 		// set default since we are the only team in our allyteam now
 		liveTeam->SetMaxUnits(std::min(gameSetup->maxUnitsPerTeam, int(MAX_UNITS / teams.size())));
+		liveTeam->SetMaxSensors(int(MAX_SENSORS / teams.size()));
 		return;
 	}
 
@@ -176,6 +177,7 @@ void CTeamHandler::UpdateTeamUnitLimitsPreSpawn(int liveTeamNum)
 
 	assert(tempTeam != nullptr);
 	liveTeam->SetMaxUnits(tempTeam->GetMaxUnits());
+	liveTeam->SetMaxSensors(tempTeam->GetMaxSensors());
 }
 
 void CTeamHandler::UpdateTeamUnitLimitsPreDeath(int deadTeamNum)

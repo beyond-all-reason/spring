@@ -1,0 +1,42 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "JAVA_AWT_INCLUDE_PATH",
+          "value": "C:\\Program Files\\Java\\jdk-21\\include\\",
+          "type": "PATH"
+        },
+        {
+          "name": "JAVA_INCLUDE_PATH",
+          "value": "C:\\Program Files\\Java\\jdk-21\\include\\",
+          "type": "PATH"
+        },
+        {
+          "name": "JAVA_AWT_LIBRARY",
+          "value": "C:\\Program Files\\Java\\jdk-21\\lib",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "JAVA_JVM_LIBRARY",
+          "value": "C:\\Program Files\\Java\\jdk-21\\bin",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "AI_TYPES",
+          "value": "NONE",
+          "type": "STRING"
+        }
+      ]
+    }
+  ]
+}

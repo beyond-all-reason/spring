@@ -76,6 +76,7 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/InterceptHandler.h"
 #include "Sim/Misc/QuadField.h"
+#include "Sim/Misc/SensorHandler.h"
 #include "Sim/Misc/SideParser.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -670,6 +671,7 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	featureHandler.Init();
 	projectileHandler.Init();
 	CLosHandler::InitStatic();
+	sensorHandler.Init();
 
 	readMap->InitHeightMapDigestVectors(losHandler->los.size);
 
@@ -1012,6 +1014,7 @@ void CGame::KillSimulation()
 	featureHandler.Kill(); // depends on unitHandler (via ~CFeature)
 	unitHandler.Kill();
 	projectileHandler.Kill();
+	sensorHandler.Kill();
 
 	LOG("[Game::%s][3]", __func__);
 	IPathManager::FreeInstance(pathManager);
@@ -1777,6 +1780,7 @@ void CGame::SimFrame() {
 			unitScriptEngine->Tick(tickMs);
 		}
 		envResHandler.Update();
+		sensorHandler.Update();
 		losHandler->Update();
 		// dead ghosts have to be updated in sim, after los,
 		// to make sure they represent the current knowledge correctly.

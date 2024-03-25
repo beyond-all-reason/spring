@@ -30,6 +30,8 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/Resource.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/ResourceHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/ResourceMapAnalyzer.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/Sensor.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/SensorHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/SideParser.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/SimObjectIDPool.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/SmoothHeightMesh.cpp"

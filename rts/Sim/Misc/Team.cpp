@@ -14,6 +14,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
+#include "Sim/Misc/Sensor.h"
 #include "System/ContainerUtil.h"
 #include "System/EventHandler.h"
 #include "System/MsgStrings.h"
@@ -28,6 +29,9 @@ CR_REG_METADATA(CTeam, (
 	CR_MEMBER(teamNum),
 	CR_MEMBER(numUnits),
 	CR_MEMBER(maxUnits),
+
+	CR_MEMBER(numSensors),
+	CR_MEMBER(maxSensors),
 
 	CR_MEMBER(isDead),
 	CR_MEMBER(gaia),
@@ -62,6 +66,9 @@ CTeam::CTeam():
 	teamNum(-1),
 	numUnits(0),
 	maxUnits(0),
+
+	numSensors(0),
+	maxSensors(0),
 
 	isDead(false),
 	gaia(false),
@@ -425,6 +432,18 @@ void CTeam::RemoveUnit(CUnit* unit, RemoveType type)
 			GetCurrentStats().unitsOutCaptured++;
 		} break;
 	}
+}
+
+
+void CTeam::AddSensor(CSensor* sensor)
+{
+	numSensors++;
+}
+
+
+void CTeam::RemoveSensor(CSensor* sensor)
+{
+	numSensors--;
 }
 
 void CTeam::UpdateControllerName() {
