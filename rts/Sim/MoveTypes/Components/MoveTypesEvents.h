@@ -7,6 +7,7 @@
 
 class CUnit;
 class CFeature;
+class CGroundMoveType;
 
 namespace MoveTypes {
 
@@ -67,12 +68,26 @@ struct UnitCrushEvent {
 };
 
 struct UnitMovedEvent {
-    CUnit* unit;
-    bool moved;
+    CUnit* unit = nullptr;
+    bool moved = false;
+};
 
-    UnitMovedEvent(CUnit* _unit, bool _moved)
-    : unit(_unit)
-    , moved(_moved)
+struct ChangeHeadingEvent {
+    int unitId;
+    short deltaHeading = 0;
+    bool changed = false;
+
+    ChangeHeadingEvent(int _unitId)
+    : unitId(_unitId)
+    {}
+};
+
+struct ChangeMainHeadingEvent {
+    int unitId;
+    bool changed = false;
+
+    ChangeMainHeadingEvent(int _unitId)
+    : unitId(_unitId)
     {}
 };
 

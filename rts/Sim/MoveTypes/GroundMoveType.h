@@ -22,6 +22,11 @@ public:
 	CGroundMoveType(CUnit* owner);
 	~CGroundMoveType();
 
+	static constexpr int HEADING_CHANGED_NONE = 0;
+	static constexpr int HEADING_CHANGED_MOVE = 1;
+	static constexpr int HEADING_CHANGED_STOP = 2;
+	static constexpr int HEADING_CHANGED_STUN = 3;
+
 	struct MemberData {
 		std::array<std::pair<unsigned int,  bool*>, 3>  bools;
 		std::array<std::pair<unsigned int, short*>, 1> shorts;
@@ -35,16 +40,16 @@ public:
 	void SlowUpdate() override;
 
 	// Decide how the unit should move to carry out obsctacle avoidance and path following decisions. Actual movement
-	// must be deferred to UpdateUnitPositionAndHeading() because unit heading, speed, and position will impact other
+	// must be deferred to UpdateUnitPosition() because unit heading, speed, and position will impact other
 	// units' obsctacle avoidance decision making.
 	// This is should be MT safe.
 	void UpdateTraversalPlan();
 
 	// Update the unit's movement according to obsctacle avoidance and path following decisions from UpdateTraversalPlan().
 	// This is should be MT safe.
-	void UpdateUnitPositionAndHeading();
+	void UpdateUnitPosition();
 
-	// Resolves post UpdateTraversalPlan() and UpdateUnitPositionAndHeading() tasks that must be carried out in a single
+	// Resolves post UpdateTraversalPlan() and UpdateUnitPosition() tasks that must be carried out in a single
 	// thread.
 	void UpdatePreCollisions();
 
@@ -197,10 +202,11 @@ private:
 		int curThread
 	);
 
-	void SetMainHeading();
 	void ChangeSpeed(float, bool, bool = false);
+public:
+	void SetMainHeading();
 	void ChangeHeading(short newHeading);
-
+private:
 	void UpdateSkid();
 	void UpdateControlledDrop();
 	void CheckCollisionSkid();

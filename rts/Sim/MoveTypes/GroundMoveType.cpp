@@ -595,6 +595,9 @@ void CGroundMoveType::UpdatePreCollisions()
  	ASSERT_SYNCED(currWayPoint);
  	ASSERT_SYNCED(nextWayPoint);
 
+	if (resultantForces.SqLength() > 0.f)
+		owner->Move(resultantForces, true);
+
 	SyncWaypoints();
 
 	// The mt section may have noticed the new path was ready and switched over to it. If so then
@@ -635,23 +638,25 @@ void CGroundMoveType::UpdatePreCollisions()
 	oldSpeed = newSpeed = 0.f;
 }
 
-void CGroundMoveType::UpdateUnitPositionAndHeading() {
+void CGroundMoveType::UpdateUnitPosition() {
+	resultantForces *= 0.f;
+
 	if (owner->IsSkidding()) return;
 
  	switch (setHeading) {
- 		case 1: // moving
- 			ChangeHeading(setHeadingDir);
+ 		case HEADING_CHANGED_MOVE:
+ 			// ChangeHeading(setHeadingDir);
 			ChangeSpeed(maxWantedSpeed, WantReverse(waypointDir, flatFrontDir));
- 			setHeading = 0;
+ 			setHeading = HEADING_CHANGED_NONE;
  			break;
-		case 2: // stopping
-			SetMainHeading();
+		case HEADING_CHANGED_STOP:
+	// 		SetMainHeading();
 			ChangeSpeed(0.0f, false);
-			setHeading = 0;
+			setHeading = HEADING_CHANGED_NONE;
 			break;
-		case 3: // stunned
+		case HEADING_CHANGED_STUN:
 			ChangeSpeed(0.0f, false);
-			setHeading = 0;
+			setHeading = HEADING_CHANGED_NONE;
 			break;
 	}
 
@@ -700,7 +705,7 @@ void CGroundMoveType::UpdateOwnerAccelAndHeading()
 {
 	if (owner->IsStunned() || owner->beingBuilt) {
 		// ChangeSpeed(0.0f, false);
-		setHeading = 3;
+		setHeading = HEADING_CHANGED_STUN;
 		return;
 	}
 
@@ -1022,14 +1027,12 @@ bool CGroundMoveType::FollowPath(int thread)
 	bool wantReverse = false;
 
 	if (WantToStop()) {
-		// currWayPoint.y = -1.0f;
-		// nextWayPoint.y = -1.0f;
 		earlyCurrWayPoint.y = -1.0f;
 		earlyNextWayPoint.y = -1.0f;
 
-		// SetMainHeading();
-		// ChangeSpeed(0.0f, false);
-		setHeading = 2;
+		setHeading = HEADING_CHANGED_STOP;
+		auto& event = Sim::registry.get<ChangeMainHeadingEvent>(owner->entityReference);
+		event.changed = true;
 	} else {
 		// ASSERT_SYNCED(currWayPoint);
 		// ASSERT_SYNCED(nextWayPoint);
@@ -1163,8 +1166,11 @@ bool CGroundMoveType::FollowPath(int thread)
 
 		// ChangeHeading(GetHeadingFromVector(modWantedDir.x, modWantedDir.z));
 		// ChangeSpeed(maxWantedSpeed, wantReverse);
-		setHeading = 1;
-		setHeadingDir = GetHeadingFromVector(modWantedDir.x, modWantedDir.z);
+		setHeading = HEADING_CHANGED_MOVE;
+		auto& event = Sim::registry.get<ChangeHeadingEvent>(owner->entityReference);
+		event.deltaHeading = GetHeadingFromVector(modWantedDir.x, modWantedDir.z);
+		event.changed = true;
+		// setHeadingDir = GetHeadingFromVector(modWantedDir.x, modWantedDir.z);
 
 
 		#ifdef PATHING_DEBUG
@@ -3015,7 +3021,9 @@ void CGroundMoveType::Connect() {
 	Sim::registry.emplace_or_replace<FeatureCrushEvents>(owner->entityReference);
 	Sim::registry.emplace_or_replace<UnitCrushEvents>(owner->entityReference);
 	Sim::registry.emplace_or_replace<FeatureMoveEvents>(owner->entityReference);
-	Sim::registry.emplace_or_replace<UnitMovedEvent>(owner->entityReference, owner, false);
+	Sim::registry.emplace_or_replace<UnitMovedEvent>(owner->entityReference);
+	Sim::registry.emplace_or_replace<ChangeHeadingEvent>(owner->entityReference, owner->id);
+	Sim::registry.emplace_or_replace<ChangeMainHeadingEvent>(owner->entityReference, owner->id);
 	// LOG("%s: loading %s as %d", __func__, owner->unitDef->name.c_str(), entt::to_integral(owner->entityReference));
 }
 
@@ -3027,6 +3035,8 @@ void CGroundMoveType::Disconnect() {
 	Sim::registry.remove<UnitCrushEvents>(owner->entityReference);
 	Sim::registry.remove<FeatureMoveEvents>(owner->entityReference);
 	Sim::registry.remove<UnitMovedEvent>(owner->entityReference);
+	Sim::registry.remove<ChangeHeadingEvent>(owner->entityReference);
+	Sim::registry.remove<ChangeMainHeadingEvent>(owner->entityReference);
 }
 
 void CGroundMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive) { KeepPointingTo(unit->pos, distance, aggressive); }
@@ -3432,7 +3442,8 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 
 		bool isThereAnOpenSquare = !resultantVel.same(ZeroVector);
 		if (isThereAnOpenSquare){
-			owner->Move(resultantVel, true);
+			resultantForces = resultantVel;
+			// owner->Move(resultantVel, true);
 			if (positionStuck) {
 				positionStuck = false;
 			}
@@ -3440,7 +3451,8 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			// Unit is stuck an the an open square could not be found. Just allow the unit to move
 			// so that it gets unstuck eventually. Hopefully this won't look silly in practice, but
 			// it is better than a unit being permanently stuck on something.
-			owner->Move(moveRequest, true);
+			resultantForces = moveRequest;
+			// owner->Move(moveRequest, true);
 		}
 
 		// NOTE:
