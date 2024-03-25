@@ -183,12 +183,28 @@ public:
 	/// the starting time in tick for last draw frame
 	spring_time lastFrameStart;
 
+	// tracking when the last draw frame was ready, and how long it took to send it to the display
 	spring_time lastSwapBuffersEnd;
 	spring_time lastSwapBuffersStart;
 
 	//The duration of the swapbuffers gives us a hint of wether triple buffering is being used
 	//and if the windows Desktop Compositor (DWM) is being enforced 
 	spring_time lastSwapBuffersDuration; 
+
+	// The exp averaged duration of a sim frame time
+	float avgSimFrameTime = 0;
+	float avgDrawFrameTime = 0;
+
+	// LuaTimeOffset is true on each frame, if the Addon:UpdateTimeOffset() function has returned true
+	bool luaTimeOffset = false;
+	// The FrameTimeOffset set by the Spring.SetTimeOffset from Addon:UpdateTimeOffset
+	float luaFrameTimeOffset = 0.0f;
+	// The CameraTransitionTimeOffset set by the Spring.SetCameraTransitionTimeOffset from Addon:UpdateTimeOffset
+	float luaCameraTransitionTimeOffset = 0.0f;
+	// The CameraTimeOffset set by the Spring.SetCameraTimeOffset from Addon:UpdateTimeOffset
+	float luaCameraTimeOffset = 0.0f;
+	// The set by the Spring.SetCameraDeltaTimefrom Addon:UpdateTimeOffset, for calculating how much to move
+	float luaCameraDeltaTime = 0.0f;
 
 	/// 0.001f * gu->simFPS, used for rendering
 	float weightedSpeedFactor;

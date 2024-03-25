@@ -636,6 +636,17 @@ void CEventHandler::Update()
 }
 
 
+void CEventHandler::UnitStartBuilding(const CUnit* unit, bool silent, int buildType)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(UnitStartBuilding, unit, silent, buildType);
+}
+
+void CEventHandler::UnitStopBuilding(const CUnit* unit)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(UnitStopBuilding, unit);
+}
 
 void CEventHandler::SunChanged()
 {
@@ -930,9 +941,11 @@ bool CEventHandler::MapDrawCmd(
 	return ControlReverseIterateDefTrue(listMapDrawCmd, &CEventClient::MapDrawCmd, playerID, type, pos0, pos1, label);
 }
 
-void CEventHandler::UpdateTimeOffset(float timeOffset, float drawSimRatio)
+bool CEventHandler::UpdateTimeOffset(float timeOffset, float drawSimRatio)
 {
-	ITERATE_EVENTCLIENTLIST(UpdateTimeOffset, timeOffset, drawSimRatio);
+	ZoneScoped;
+	return ControlReverseIterateDefTrue(listUpdateTimeOffset, &CEventClient::UpdateTimeOffset, timeOffset, drawSimRatio);
+	//ITERATE_EVENTCLIENTLIST(UpdateTimeOffset, timeOffset, drawSimRatio);
 }
 
 /******************************************************************************/

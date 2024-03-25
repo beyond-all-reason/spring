@@ -111,7 +111,6 @@
 #undef CreateDirectory
 #undef Yield
 
-
 /******************************************************************************
  * Callouts to set state
  *
@@ -185,6 +184,10 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetDrawModelsDeferred);
 	REGISTER_LUA_CFUNC(SetVideoCapturingMode);
 	REGISTER_LUA_CFUNC(SetVideoCapturingTimeOffset);
+	REGISTER_LUA_CFUNC(SetFrameTimeOffset);
+	REGISTER_LUA_CFUNC(SetCameraTransitionTimeOffset);
+	REGISTER_LUA_CFUNC(SetCameraTimeOffset);
+	REGISTER_LUA_CFUNC(SetCameraDeltaTime);
 
 	REGISTER_LUA_CFUNC(SetWaterParams);
 
@@ -4092,6 +4095,69 @@ int LuaUnsyncedCtrl::SetVideoCapturingTimeOffset(lua_State* L)
 	videoCapturing->SetTimeOffset(luaL_checkfloat(L, 1));
 	return 0;
 }
+
+/***  Set the unit and projectile motion interpolation value for the next draw frame.
+ * A float between 0 and 1 is ideal, but it can even be negative to go back in time
+ * Requires the use of the addon.UpdateTimeOffset() callin to return true
+ * A value of zero draws the sim frame as-is, a value of 0.5 would draw halfway between 
+ * current and next frame, and if all motion is linear, then 1.0 would be identical 
+ * to next sim frame
+ * 
+ * @function Spring.SetFrameTimeOffset
+ * @number timeOffset
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetFrameTimeOffset(lua_State* L)
+{
+	globalRendering->luaFrameTimeOffset = luaL_checkfloat(L, 1);
+	return 0;
+}
+
+
+/***  When a Spring.SetCameraState(..., time) command is issued, the start time of the 
+ * current camera transition is recalculated. If addon.UpdateTimeOffset() callin returned
+ * true, then the return value should be a time offset in milliseconds from the lastSwapBuffersEnd
+ * @function Spring.SetCameraTransitionTimeOffset
+ * @number CameraTransitionTimeOffset
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetCameraTransitionTimeOffset(lua_State* L)
+{
+	globalRendering->luaCameraTransitionTimeOffset = luaL_checkfloat(L, 1);
+	return 0;
+}
+
+/*** For calculating the camera position in a new frame, we need to specify where we 
+ * are in time in the current camera transition. If addon.UpdateTimeOffset() callin returned
+ * true. The return value should be a time offset in milliseconds from
+ * the lastSwapBuffersEnd
+ * 
+ * @function Spring.SetCameraTimeOffset
+ * @number CameraTimeOffset
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetCameraTimeOffset(lua_State* L)
+{
+	globalRendering->luaCameraTimeOffset = luaL_checkfloat(L, 1);
+	return 0;
+}
+
+
+
+/*** For calculating the camera position in a new frame, we also need to provide how much 
+ * virtual camera time has elapsed. If addon.UpdateTimeOffset() callin returned
+ * true. The return value should be a delta time in milliseconds since last camera position
+ * TODO: This should likely be internally identical to SetCameraTimeOffset
+ * @function Spring.SetCameraDeltaTime
+ * @number CameraDeltaTime
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetCameraDeltaTime(lua_State* L)
+{
+	globalRendering->luaCameraDeltaTime = luaL_checkfloat(L, 1);
+	return 0;
+}
+
 
 
 /*** Water params

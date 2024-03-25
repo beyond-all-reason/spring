@@ -1385,6 +1385,67 @@ bool CSyncedLuaHandle::TerraformComplete(const CUnit* unit, const CUnit* build)
 }
 
 
+/*** Called when a unit starts building (becomes inbuildstance). TODO: What is it building?
+ * @function UnitStartBuilding
+ * @number unitID
+ * @number unitDefID
+ * @number unitTeam
+ */
+void CSyncedLuaHandle::UnitStartBuilding(const CUnit* unit, bool silent, int buildType)
+{
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 6, __func__);
+
+	const LuaUtils::ScopedDebugTraceBack dbgTrace(L);
+	static const LuaHashString cmdStr(__func__);
+
+	if (!cmdStr.GetGlobalFunc(L))
+		return; // the call is not defined
+
+	// push the unit info
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+	lua_pushboolean(L, silent);
+	lua_pushnumber(L, buildType);
+	
+
+	// call the function
+	if (!RunCallInTraceback(L, cmdStr, 5, 0, dbgTrace.GetErrFuncIdx(), false))
+		return;
+	return;
+}
+
+
+/*** Called when a unit stops building
+ * @function UnitStopBuilding
+ * @number unitID
+ * @number unitDefID
+ * @number unitTeam
+ */
+void CSyncedLuaHandle::UnitStopBuilding(const CUnit* unit)
+{
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 4, __func__);
+
+	const LuaUtils::ScopedDebugTraceBack dbgTrace(L);
+	static const LuaHashString cmdStr(__func__);
+
+	if (!cmdStr.GetGlobalFunc(L))
+		return; // the call is not defined
+
+	// push the unit info
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+
+	// call the function
+	if (!RunCallInTraceback(L, cmdStr, 3, 0, dbgTrace.GetErrFuncIdx(), false))
+		return;
+	return;
+}
+
+
 /***
  * Damage Controllers
  *

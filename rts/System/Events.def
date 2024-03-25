@@ -44,6 +44,8 @@
 	SETUP_EVENT(UnitDestroyed,    MANAGED_BIT)
 	SETUP_EVENT(UnitTaken,        MANAGED_BIT)
 	SETUP_EVENT(UnitGiven,        MANAGED_BIT)
+	SETUP_EVENT(UnitStartBuilding,MANAGED_BIT)
+	SETUP_EVENT(UnitStopBuilding, MANAGED_BIT)
 
 	SETUP_EVENT(UnitIdle,       MANAGED_BIT)
 	SETUP_EVENT(UnitCommand,    MANAGED_BIT)
@@ -121,6 +123,7 @@
 	SETUP_EVENT(GameSetup,           MANAGED_BIT | UNSYNCED_BIT | CONTROL_BIT)
 	SETUP_EVENT(WorldTooltip,        MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(MapDrawCmd,          MANAGED_BIT | UNSYNCED_BIT | CONTROL_BIT)
+	SETUP_EVENT(UpdateTimeOffset,    MANAGED_BIT | UNSYNCED_BIT)
 
 	SETUP_EVENT(SunChanged,     MANAGED_BIT | UNSYNCED_BIT) //FIXME make synced? (whole dynSun code needs to then)
 

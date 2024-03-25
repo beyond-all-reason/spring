@@ -118,6 +118,7 @@ local flexCallIns = {
   'ShockFront',
   'WorldTooltip',
   'MapDrawCmd',
+  'UpdateTimeOffset',
   'DefaultCommand',
   'UnitCreated',
   'UnitFinished',
@@ -1786,6 +1787,15 @@ function widgetHandler:MapDrawCmd(playerID, cmdType, px, py, pz, ...)
     if (takeEvent) then
       retval = true
     end
+  end
+  return retval
+end
+
+
+function widgetHandler:UpdateTimeOffset(timeOffset, drawSimRatio)
+  local retval = false
+  for _,w in ipairs(self.UpdateTimeOffsetList) do
+    retval = retval or w:UpdateTimeOffset(timeOffset, drawSimRatio)
   end
   return retval
 end

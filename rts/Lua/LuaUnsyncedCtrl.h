@@ -61,6 +61,10 @@ class LuaUnsyncedCtrl {
 		static int SetDrawModelsDeferred(lua_State* L);
 		static int SetVideoCapturingMode(lua_State* L);
 		static int SetVideoCapturingTimeOffset(lua_State* L);
+		static int SetFrameTimeOffset(lua_State* L);
+		static int SetCameraTransitionTimeOffset(lua_State* L);
+		static int SetCameraTimeOffset(lua_State* L);
+		static int SetCameraDeltaTime(lua_State* L);
 
 		static int SetWaterParams(lua_State* L);
 		static int SetSoundEffectParams(lua_State* L);

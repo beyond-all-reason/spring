@@ -614,6 +614,8 @@ void CGame::ClientReadNet()
 				msgProcTimeLeft -= 1000.0f;
 				lastSimFrameNetPacketTime = spring_gettime();
 
+				TracyMessageL("ClientReadNet got new frame");
+				gu->lastSimFrameStartTime = spring_gettime();
 				SimFrame();
 
 #ifdef SYNCCHECK

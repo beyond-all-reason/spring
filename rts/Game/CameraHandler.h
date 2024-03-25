@@ -65,7 +65,9 @@ public:
   }
 	void CameraTransition(float nsecs);
 	void UpdateTransition();
-
+	
+	float GetCameraTimeOffset(float unUsed);
+	float cameraExpSmoothFps = 1;
 	void ToggleState();
 	void ToggleOverviewCamera();
 

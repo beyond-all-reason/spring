@@ -64,6 +64,7 @@ void COverheadController::ConfigNotify(const std::string & key, const std::strin
 
 void COverheadController::KeyMove(float3 move)
 {
+	ZoneScopedN("COverheadController::KeyMove"); 
 	if (flipped) {
 		move.x = -move.x;
 		move.y = -move.y;
@@ -78,6 +79,8 @@ void COverheadController::KeyMove(float3 move)
 
 void COverheadController::MouseMove(float3 move)
 {
+
+	ZoneScopedN("COverheadController::MouseMove"); 
 	// z is the speed modifier, in practice invertMouse{0,1} => move.z{-1,1}
 	move.x *= move.z;
 	move.y *= move.z;
@@ -107,6 +110,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 {
 	if (move == 0.0f)
 		return;
+	ZoneScopedN("COverheadController::MouseWheelMove"); 
 
 	camHandler->CameraTransition(0.05f); //MouseWheelMove
 
@@ -184,6 +188,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 
 void COverheadController::Update()
 {
+	ZoneScopedN("COverheadController::Update"); 
 	pos.x = Clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
 	pos.z = Clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);

@@ -19,11 +19,29 @@
 #include "Players/Player.h"
 #include "UI/UnitTracker.h"
 #include "Rendering/GlobalRendering.h"
+#include "Rendering/VerticalSync.h"
 #include "System/SpringMath.h"
 #include "System/SafeUtil.h"
 #include "System/StringHash.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
+#include "Game/GlobalUnsynced.h"
+
+#define TRACY_CAMERA
+
+#ifdef TRACY_CAMERA
+	#include <tracy/Tracy.hpp>
+	#include <common/TracyColor.hpp>
+	const char* const tracyCameraTimeRatio = "CameraTimeRatio";
+	const char* const tracyCameraTransitionDuration = "CameraTransitionDuration";
+	const char* const tracyCameraTweenFact = "CameraTweenFact";
+	const char* const tracyCameraDrawFPS = "CameraDrawFPS";
+	const char* const tracyCameraTimeRatioSmooth = "CameraTimeRatioSmooth";
+	const char* const tracyCameraTimeOffset = "CameraTimeOffset";
+	const char* const tracyAvgDrawTime = "AvgDrawTime";
+	const char* const tracyCamStart= "CamStart";
+	const char* const tracyCamEnd = "CamEnd";
+#endif
 
 
 static std::string strformat(const char* fmt, ...)
@@ -106,6 +124,17 @@ CCamera* CCameraHandler::GetActiveCamera() { return (GetCamera(cameras[CCamera::
 CCameraHandler::CCameraHandler() {
 	camControllers.fill(nullptr);
 	camControllers[CAMERA_MODE_DUMMY] = new (camControllerMem[CAMERA_MODE_DUMMY]) CDummyController();
+	#ifdef TRACY_CAMERA
+		TracyPlotConfig(tracyCameraTimeRatio, tracy::PlotFormatType::Number, true, false, tracy::Color::White);
+		TracyPlotConfig(tracyCameraTransitionDuration, tracy::PlotFormatType::Number, true, false, tracy::Color::White);
+		TracyPlotConfig(tracyCameraTweenFact, tracy::PlotFormatType::Number, true, false, tracy::Color::White);
+		TracyPlotConfig(tracyCameraDrawFPS, tracy::PlotFormatType::Number, true, false, tracy::Color::White);
+		TracyPlotConfig(tracyCameraTimeRatioSmooth, tracy::PlotFormatType::Number, false, false, tracy::Color::White);
+		TracyPlotConfig(tracyCameraTimeOffset, tracy::PlotFormatType::Number, true, false, tracy::Color::White);
+		TracyPlotConfig(tracyAvgDrawTime, tracy::PlotFormatType::Number, true, false, tracy::Color::White);
+		TracyPlotConfig(tracyCamStart, tracy::PlotFormatType::Number, false, false, tracy::Color::White);
+		TracyPlotConfig(tracyCamEnd, tracy::PlotFormatType::Number, false, false, tracy::Color::White);
+	#endif
 }
 
 CCameraHandler::~CCameraHandler() {
@@ -204,6 +233,9 @@ void CCameraHandler::KillControllers()
 
 void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode, bool fsEdgeMove, bool wnEdgeMove)
 {
+	#ifdef TRACY_CAMERA
+		ZoneScopedN("CCameraHandler::UpdateController(CPlayer)"); 
+	#endif
 	CCameraController& camCon = GetCurrentController();
 	FPSUnitController& fpsCon = player->fpsController;
 
@@ -220,6 +252,7 @@ void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode, bool fsEdge
 		fpsCon.oldDCpos = ZeroVector;
 	}
 
+	// Note that the Controller is responsible for mouse and keyboard camera movements
 	if (!fpsMode)
 		UpdateController(camCon, true, true, fusEdgeMove || winEdgeMove);
 
@@ -228,8 +261,12 @@ void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode, bool fsEdge
 	UpdateTransition();
 }
 
+
 void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, bool wheelMove, bool edgeMove)
 {
+	#ifdef TRACY_CAMERA
+		ZoneScopedN("CCameraHandler::UpdateController(CCameraController)"); 
+	#endif
 	if (keyMove) {
 		// NOTE: z-component contains speed scaling factor, xy is movement
 		const float3 camMoveVector = camera->GetMoveVectorFromState(true); 
@@ -266,19 +303,86 @@ void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, b
 		camCon.MouseWheelMove(mouseWheelDist);
 	}
 }
+// This function should be used by all functions that try to get a timing for interpolating camera positions.
+// It returns, in milliseconds, the expected additional time of when the currently drawn frame will be displayed, 
+// counting from the start of the update.
+// Ponders into the orb.
+float CCameraHandler::GetCameraTimeOffset(float unUsed){
+	
+	int vsync = verticalSync->GetInterval();
+	float lastswaptime = globalRendering->lastSwapBuffersEnd.toMilliSecsf();
+	float nowTime = globalRendering->lastFrameStart.toMilliSecsf();
 
+	// This value reflects how much time we spent pretty much in SimFrame only, preceding this new frame
+	float msSinceLastSwapBuffers = (globalRendering->lastFrameStart - globalRendering->lastSwapBuffersEnd).toMilliSecsf();
+	float avgFrameTimeMs = 1000.0 / std::fmax(cameraExpSmoothFps, 1.0f);
+
+	
+	float approximateFrameCount = msSinceLastSwapBuffers / avgFrameTimeMs;
+
+	// Approximate number of milliseconds spent in Draw
+	float timeSpentInDraw = globalRendering->avgDrawFrameTime * cameraExpSmoothFps;
+	//float 
+
+	float timeOffset = 0;
+	if (vsync == 0 ){ 
+		// vsync off, special case 
+		// kinda need to figure in Sim Load too
+		//paused?
+
+		
+		approximateFrameCount = std::fmax(1.0, approximateFrameCount);
+		timeOffset =  avgFrameTimeMs*approximateFrameCount;
+	}else{ // vsync on
+		approximateFrameCount = std::fmax(1.0, std::floor(approximateFrameCount + 0.5f));
+		timeOffset =  avgFrameTimeMs*approximateFrameCount;
+	}
+	#ifdef TRACY_CAMERA
+		TracyPlot(tracyCameraTimeOffset, approximateFrameCount);
+		TracyPlot(tracyAvgDrawTime, timeSpentInDraw);
+	#endif
+	return timeOffset;
+};
 
 void CCameraHandler::CameraTransition(float nsecs)
 {
+	#ifdef TRACY_CAMERA
+		ZoneScopedN("CCameraHandler::CameraTransition"); 
+	#endif
 	nsecs = std::max(nsecs, 0.0f) * camTransState.timeFactor;
 
 	// calculate when transition should end based on duration in seconds
+	// Note: Some games call Spring.SetCameraState(nil, nsecs(default 0!)) to override the camera into a much smoother one. 
+	// This is partly due to the misunderstanding of the camtimeexponent, and camtimefactor configuration params
+	// But also due to the fact that what they desire is a quick and linear initial transition, 
+	// followed by a very slow movement to the desired position. 
+	// This is often much more easily achieved by using a large CamTimeFactor + large CamTimeExponent.
+	// However, camtimeFactor and camtimeExponent are not taken into account when doing keyboard pans, or rotates around world.
+	// The default 0 arg means that if one wishes to add time to every Spring.SetCameraState, then it must be done there, instead of for every goddamned frame.
+
 	if (camera->useInterpolate == 0) { // old
 		camTransState.timeStart = globalRendering->lastFrameStart.toMilliSecsf();
 	}
-	if (camera->useInterpolate > 0) {
+	if (camera->useInterpolate == 1) {
 		camTransState.timeStart = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
 	}
+	if (camera->useInterpolate == 2) {
+		// lastFrameStart is actually the exact time this current update+draw frame started. 
+		// This is imperfect, 
+		camTransState.timeStart = globalRendering->lastFrameStart.toMilliSecsf();// + GetCameraTimeOffset(0.0);
+	}
+	if (globalRendering->luaTimeOffset) {
+		camTransState.timeStart = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + globalRendering->luaCameraTransitionTimeOffset;
+		char tracybuf[128];
+		sprintf(tracybuf, "CameraTransitionTimeOffset %f",camTransState.timeStart);
+		TracyMessage(tracybuf, sizeof(tracybuf)); 
+		#ifdef TRACY_TIMEOFFSET
+			//TracyMessageL("luaCameraTransitionTimeOffset");
+		#endif
+	}
+
+	TracyPlot(tracyCamStart, camTransState.timeStart);
+
 	camTransState.timeEnd   = camTransState.timeStart + nsecs * 1000.0f;
 
 	camTransState.startPos = camera->GetPos();
@@ -288,35 +392,84 @@ void CCameraHandler::CameraTransition(float nsecs)
 
 void CCameraHandler::UpdateTransition()
 {
+	#ifdef TRACY_CAMERA
+		ZoneScopedN("CCameraHandler::UpdateTransition"); // This helps us in checking if multiple camera commands trigger this.
+	#endif
 	camTransState.tweenPos = camControllers[currCamCtrlNum]->GetPos();
 	camTransState.tweenRot = camControllers[currCamCtrlNum]->GetRot();
 	camTransState.tweenFOV = camControllers[currCamCtrlNum]->GetFOV();
 
-
+	globalRendering->lastFrameStart.toMicroSecsi();
 	int vsync = configHandler->GetInt("VSync");
-	float transTime = globalRendering->lastFrameStart.toMilliSecsf();
+	float nowTime = globalRendering->lastFrameStart.toMilliSecsf(); // This is the timestamp of when the current draw frame was started. Woefully inaccurate due to the (float is woefully inaccurate here, considering that  game can easily go to 10K seconds, soooo.)
 	float lastswaptime = globalRendering->lastSwapBuffersEnd.toMilliSecsf();
 	float drawFPS = std::fmax(globalRendering->FPS, 1.0f); // this is probably much better
 
 
-	if (vsync == 1 && camera->useInterpolate > 0) {
-		transTime = lastswaptime;
-		transTime = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / drawFPS;
+
+	// REFACTOR
+	if(vsync == 0){
+		if (camera->useInterpolate == 0){
+		}
+		else if (camera->useInterpolate == 1){
+		}
+		else if (camera->useInterpolate == 2){
+		}
+
+	}else{
+		if (camera->useInterpolate == 0){
+		}
+		else if (camera->useInterpolate == 1){
+		}
+		else if (camera->useInterpolate == 2){
+		}
 	}
 
-	const float timeRatio = (camTransState.timeEnd - camTransState.timeStart != 0.0f) ?
-		std::fmax(0.0f, (camTransState.timeEnd - transTime) / (camTransState.timeEnd - camTransState.timeStart)) :
-		0.0f;
 
+	// When vsync is on and camera interpolations is smoothed then look 1 frame into the future.
+	// Instead, we should be looking 1 frame into the past!
+	if (vsync == 1 && camera->useInterpolate > 0) {
+		nowTime = lastswaptime + 1000.0f / drawFPS;
+	}
+
+	if (globalRendering->luaTimeOffset){
+		nowTime = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + globalRendering->luaCameraTimeOffset;
+		#ifdef TRACY_TIMEOFFSET
+			TracyMessageL("luaCameraTimeOffset");
+		#endif
+	}
+	// Goes from 1 to 0 as a fraction of how much of the camera transition is remaining to be executed
+	float timeRatio = 0.0;
+
+	// The duration of the camera movement in milliseconds
+	float cameraTransitionDuration = camTransState.timeEnd - camTransState.timeStart;
+	if (cameraTransitionDuration > 0.0f){ // If its positive in duration, 
+		timeRatio = std::clamp((camTransState.timeEnd - nowTime) / cameraTransitionDuration, 0.0f, 1.0f);
+	}
+
+	// Goes from 0.0 to 1.0 if input is also 0 to 1
 	float tweenFact = 1.0f - math::pow(timeRatio, camTransState.timeExponent);
 	
+	if (!globalRendering->luaTimeOffset){
+		if (vsync == 1 && camera->useInterpolate == 1) {
+			tweenFact = 1.0f - timeRatio;
+		}
+		if (vsync == 0 && camera->useInterpolate == 1){
+			// TODO COMPLETELY WRONG!
+			//tweenFact = 0.08f * (cameraTransitionDuration) / drawFPS ;// should be 0.25 at 120ms deltat and 60hz
+			tweenFact = 1.0f - timeRatio;
+		}
+	}
 
-	if (vsync == 1 && camera->useInterpolate == 1) {
-		tweenFact = 1.0f - timeRatio;
-	}
-	if (vsync == 0 && camera->useInterpolate == 1){
-		tweenFact = 0.08f * (camTransState.timeEnd - camTransState.timeStart) / drawFPS ;// should be 0.25 at 120ms deltat and 60hz
-	}
+
+
+	#ifdef TRACY_CAMERA
+		TracyPlot(tracyCameraTimeRatio, timeRatio);
+		TracyPlot(tracyCameraTransitionDuration, cameraTransitionDuration);
+		TracyPlot(tracyCameraTweenFact, tweenFact);
+		TracyPlot(tracyCameraDrawFPS, drawFPS);
+		TracyPlot(tracyCameraTimeRatioSmooth, timeRatio);
+	#endif
 	/*
 	LOG_L(L_INFO, "CamUpdate: %.3f, 1/FPS = %.4f, DF=%d, timeRatio = %.3f, tween = %.3f, swap = %.3f i=%d", globalRendering->lastFrameStart.toMilliSecsf(), drawFPS, globalRendering->drawFrame, timeRatio, tweenFact, lastswaptime, useInterpolate);
 	LOG_L(L_INFO, "CamEnd: %.3f, CamStart = %.3f, deltat = %.3f CamExp = %.3f",
@@ -327,7 +480,7 @@ void CCameraHandler::UpdateTransition()
 		);
 	LOG_L(L_INFO, "CSX = %.2f, CSZ = %.2f, CTX = %.2f CTZ = %.2f", camTransState.startPos.x, camTransState.startPos.z, camTransState.tweenPos.x, camTransState.tweenPos.z );
 	*/
-	if (transTime >= camTransState.timeEnd) {
+	if (nowTime >= camTransState.timeEnd) {
 		camera->SetPos(camTransState.tweenPos);
 		camera->SetRot(camTransState.tweenRot);
 		camera->SetVFOV(camTransState.tweenFOV);

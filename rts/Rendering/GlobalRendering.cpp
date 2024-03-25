@@ -122,9 +122,16 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_MEMBER(lastSwapBuffersEnd),
 	CR_MEMBER(lastSwapBuffersStart),
 	CR_MEMBER(lastSwapBuffersDuration),
+	CR_MEMBER(avgSimFrameTime),
+	CR_MEMBER(avgDrawFrameTime),
 	CR_MEMBER(weightedSpeedFactor),
 	CR_MEMBER(drawFrame),
 	CR_MEMBER(FPS),
+	CR_MEMBER(luaTimeOffset),
+	CR_MEMBER(luaFrameTimeOffset),
+	CR_MEMBER(luaCameraTransitionTimeOffset),
+	CR_MEMBER(luaCameraTimeOffset),
+	CR_MEMBER(luaCameraDeltaTime),
 
 	CR_IGNORED(numDisplays),
 
@@ -455,8 +462,9 @@ SDL_GLContext CGlobalRendering::CreateGLContext(const int2& minCtx)
 	}
 
 	if ((newContext = SDL_GL_CreateContext(sdlWindow)) != nullptr)
+	{
 		return newContext;
-
+	}
 	const char* frmts[] = {"[GR::%s] error (\"%s\") creating main GL%d.%d %s-context", "[GR::%s] created main GL%d.%d %s-context"};
 	const char* profs[] = {"compatibility", "core"};
 
@@ -649,6 +657,13 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 		SCOPED_TIMER("Misc::SwapBuffers");
 		assert(sdlWindow);
 
+		{
+			char msgBuf[128];
+			SNPRINTF(msgBuf, sizeof(msgBuf), "SwapBuffers allowSwapBuffers=[%d] forceSwapBuffers=[%d] clearErrors=[%d] ",
+				allowSwapBuffers, forceSwapBuffers, clearErrors);
+			TracyMessage(msgBuf, sizeof(msgBuf));
+		}
+
 		// silently or verbosely clear queue at the end of every frame
 		if (clearErrors || glDebugErrors)
 			glClearErrors("GR", __func__, glDebugErrors);
@@ -659,8 +674,10 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 		pre = spring_now();
 
 		RenderBuffer::SwapRenderBuffers(); //all RBs are swapped here
-		IStreamBufferConcept::PutBufferLocks();
-
+		{
+			ZoneScopedN("IStreamBufferConcept::PutBufferLocks");
+			IStreamBufferConcept::PutBufferLocks();
+		}
 		//https://stackoverflow.com/questions/68480028/supporting-opengl-screen-capture-by-third-party-applications
 		glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, 0);
 		
@@ -679,6 +696,7 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 	globalRendering->lastSwapBuffersEnd = spring_now();
 	globalRendering->lastSwapBuffersStart = pre;
 	globalRendering->lastSwapBuffersDuration = globalRendering->lastSwapBuffersEnd - pre;
+	globalRendering->avgDrawFrameTime = mix(globalRendering->avgDrawFrameTime, (globalRendering->lastSwapBuffersEnd - globalRendering->lastFrameStart).toMilliSecsf(), 0.05);
 }
 
 void CGlobalRendering::SetGLTimeStamp(uint32_t queryIdx) const

@@ -474,6 +474,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetSun);
 	REGISTER_LUA_CFUNC(GetWaterRendering);
 	REGISTER_LUA_CFUNC(GetMapRendering);
+	REGISTER_LUA_CFUNC(ObjectLabel);
 
 	if (canUseShaders)
 		LuaShaders::PushEntries(L);
@@ -5670,6 +5671,37 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
 	}
 
 	luaL_error(L, "[%s] unknown key %s", __func__, key);
+	return 0;
+}
+
+int LuaOpenGL::ObjectLabel(lua_State* L)
+{
+	// params enum type, gluint identifier, str 
+	//GL_BUFFER, GL_SHADER, GL_PROGRAM, GL_VERTEX_ARRAY, GL_QUERY, GL_PROGRAM_PIPELINE, 
+	//GL_TRANSFORM_FEEDBACK, GL_SAMPLER, GL_TEXTURE, GL_RENDERBUFFER, GL_FRAMEBUFFER
+	const char * identifierString = luaL_checkstring(L,1);
+	GLenum identifier = 0;
+
+	switch (hashString(identifierString)) {
+		case hashString("GL_BUFFER"): {identifier = GL_BUFFER; } break;
+		case hashString("GL_SHADER"): {identifier = GL_SHADER; } break;
+		case hashString("GL_PROGRAM"): {identifier = GL_PROGRAM; } break;
+		case hashString("GL_VERTEX_ARRAY"): {identifier = GL_VERTEX_ARRAY; } break;
+		case hashString("GL_QUERY"): {identifier = GL_QUERY; } break;
+		case hashString("GL_PROGRAM_PIPELINE"): {identifier = GL_PROGRAM_PIPELINE; } break;
+		case hashString("GL_TRANSFORM_FEEDBACK"): {identifier = GL_TRANSFORM_FEEDBACK; } break;
+		case hashString("GL_SAMPLER"): {identifier = GL_SAMPLER; } break;
+		case hashString("GL_TEXTURE"): {identifier = GL_TEXTURE; } break;
+		case hashString("GL_RENDERBUFFER"): {identifier = GL_RENDERBUFFER; } break;
+		case hashString("GL_FRAMEBUFFER"): {identifier = GL_FRAMEBUFFER; } break;
+		default: {return 1;} break;
+	}
+
+	GLuint name = luaL_checkint(L,2);
+	const char * label = luaL_checkstring(L,3);
+
+	glObjectLabel(identifier, name, -1, label);
+
 	return 0;
 }
 

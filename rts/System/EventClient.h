@@ -222,6 +222,8 @@ class CEventClient
 		virtual bool AllowStartPosition(int playerID, int teamID, unsigned char readyState, const float3& clampedPos, const float3& rawPickPos) { return true; }
 
 		virtual bool TerraformComplete(const CUnit* unit, const CUnit* build) { return false; }
+		virtual void UnitStartBuilding(const CUnit* unit, bool silent, int buildType) { }
+		virtual void UnitStopBuilding(const CUnit* unit) { }
 		virtual bool MoveCtrlNotify(const CUnit* unit, int data) { return false; }
 
 		virtual int AllowWeaponTargetCheck(unsigned int attackerID, unsigned int attackerWeaponNum, unsigned int attackerWeaponDefID) { return -1; }
@@ -319,7 +321,7 @@ class CEventClient
 		                        const float3* pos1,
 		                        const std::string* label);
 
-		virtual void UpdateTimeOffset(float timeOffset, float drawSimRatio) {}
+		virtual bool UpdateTimeOffset(float timeOffset, float drawSimRatio);
 
 		virtual void SunChanged();
 

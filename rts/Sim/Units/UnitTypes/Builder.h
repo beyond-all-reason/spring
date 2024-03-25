@@ -48,7 +48,7 @@ public:
 	void SetRepairTarget(CUnit* target);
 	void SetReclaimTarget(CSolidObject* object);
 	void StartRestore(float3 centerPos, float radius);
-	bool ScriptStartBuilding(float3 pos, bool silent);
+	bool ScriptStartBuilding(float3 pos, bool silent, int buildType);
 
 	void HelpTerraform(CBuilder* unit);
 	void CreateNanoParticle(const float3& goal, float radius, bool inverse, bool highPriority = false);

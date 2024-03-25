@@ -7,6 +7,7 @@
 
 #include "System/creg/creg_cond.h"
 #include "System/GlobalRNG.h"
+#include "System/Misc/SpringTime.h"
 
 class CPlayer;
 class CGameSetup;
@@ -168,6 +169,14 @@ public:
 	*/
 	std::atomic<bool> globalQuit = {false};
 	std::atomic<bool> globalReload = {false};
+
+	/**
+	* @brief lastSimFrameStartTime
+	*
+	* Global spring_time which tells us when we started the last sim frame 
+	* in local or demo mode. Used for GameServer new frame timing
+	*/
+	spring_time lastSimFrameStartTime;
 };
 
 

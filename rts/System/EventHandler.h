@@ -160,6 +160,8 @@ class CEventHandler
 		bool AllowStartPosition(int playerID, int teamID, unsigned char readyState, const float3& clampedPos, const float3& rawPickPos);
 
 		bool TerraformComplete(const CUnit* unit, const CUnit* build);
+		void UnitStartBuilding(const CUnit* unit, bool silent, int buildType);
+		void UnitStopBuilding(const CUnit* unit);
 		bool MoveCtrlNotify(const CUnit* unit, int data);
 
 		int AllowWeaponTargetCheck(unsigned int attackerID, unsigned int attackerWeaponNum, unsigned int attackerWeaponDefID);
@@ -257,7 +259,7 @@ class CEventHandler
 		                const float3* pos1,
 		                const std::string* label);
 		
-		void UpdateTimeOffset(float timeOffset, float drawSimRatio);
+		bool UpdateTimeOffset(float timeOffset, float drawSimRatio);
 
 		void SunChanged();
 

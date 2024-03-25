@@ -681,9 +681,19 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 {
 	float camDeltaTime = globalRendering->lastFrameTime;
 
-	if (useInterpolate > 0)
+	if (useInterpolate == 1)
 		camDeltaTime = 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
-	
+	if (useInterpolate == 2)
+		camDeltaTime =camHandler->GetCameraTimeOffset(0.0);
+	if (globalRendering->luaTimeOffset) 
+		{
+			TracyMessageL("luaCameraDeltaTime on");	
+			camDeltaTime = globalRendering->luaCameraDeltaTime;
+		}else{
+
+			TracyMessageL("luaCameraDeltaTime off");	
+		}
+
 	float camMoveSpeed = 1.0f;
 
 	camMoveSpeed *= movState[MOVE_STATE_SLW] ? moveSlowMult : 1.0f;

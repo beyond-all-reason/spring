@@ -100,5 +100,7 @@ bool CEventClient::MapDrawCmd(int playerID, int type,
                         const float3* pos1,
                         const std::string* label) { return false; }
 
+bool CEventClient::UpdateTimeOffset(float timeOffset, float drawSimRatio) { return false; }
+
 /******************************************************************************/
 /******************************************************************************/

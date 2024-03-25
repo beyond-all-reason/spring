@@ -3354,28 +3354,32 @@ bool CLuaHandle::MapDrawCmd(int playerID, int type,
 }
 
 
+
+/***
  *
  * @function UpdateTimeOffset
  * @number timeOffset
  * @number drawSimRatio
- * @return new timeOffset
+ * @return wether Lua has specified new timeoffsets
  */
-void CLuaHandle::UpdateTimeOffset(float timeOffset, float drawSimRatio)
+bool CLuaHandle::UpdateTimeOffset(float timeOffset, float drawSimRatio)
 {
 	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 4, __func__);
+	luaL_checkstack(L, 5, __func__);
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L))
-		return ;
+		return false;
 
-	int args = 2;
 
 	lua_pushnumber(L, timeOffset);
 	lua_pushnumber(L, drawSimRatio);
 
 	// call the routine
-	RunCallIn(L, cmdStr, args, 0);
-	return;
+	if (!RunCallIn(L, cmdStr, 2, 1))
+		return false;
+	const bool retval = luaL_optboolean(L, -1, false);
+	lua_pop(L, 1);
+	return retval;
 }
 
 
@@ -3601,7 +3605,6 @@ void CLuaHandle::CollectGarbage(bool forced)
 {
 	const float gcMemLoadMult = D.gcCtrl.baseMemLoadMult;
 	const float gcRunTimeMult = D.gcCtrl.baseRunTimeMult;
-
 	if (!forced && spring_lua_alloc_skip_gc(gcMemLoadMult))
 		return;
 

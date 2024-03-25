@@ -126,6 +126,9 @@ CALLIN_LIST = {
 	"MoveCtrlNotify",
 	"TerraformComplete",
 
+	"UnitStartBuilding",
+	"UnitStopBuilding",
+
 	-- synced message callins
 	"GotChatMsg",
 	"RecvLuaMsg",

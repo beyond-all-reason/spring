@@ -37,6 +37,17 @@ namespace WindowManagerHelper {
 	 * @brief returns the window-state of the given window in SDL_GetWindowFlags() format
 	 */
 	void SetWindowResizable(SDL_Window* window, bool resizable);
+
+	//extern void * DwmFlushFunction;
+	/**
+	 * @brief Attempts to load the DwmFlush function from dwmapi.dll 
+	 */
+	//void LoadDwmFlush();
+	
+	/**
+	 * @brief Calls the DwmFlush function from dwmapi.dll 
+	 */
+	//void DwmFlush();
 };
 
 #endif // WINDOW_MANAGER_HELPER_H

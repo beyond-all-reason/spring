@@ -126,6 +126,15 @@
 #include "System/TimeProfiler.h"
 #include "System/LoadLock.h"
 
+#define TRACY_TIMEOFFSET
+
+#ifdef TRACY_TIMEOFFSET
+	#include <common/TracyColor.hpp>
+	const char* const tracyCurrTimeOffset = "CurrTimeOffset";
+	const char* const tracyBadTimeOffset = "BadTimeOffset";
+	const char* const tracyWeightedSpeedFactor = "WeightedSpeedFactor";
+	const char* const tracyDrawSimRatio = "DrawSimRatio";
+#endif
 
 #undef CreateDirectory
 
@@ -284,6 +293,12 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 
 	CResourceHandler::CreateInstance();
 	CCategoryHandler::CreateInstance();
+	#ifdef TRACY_TIMEOFFSET
+		TracyPlotConfig(tracyCurrTimeOffset, tracy::PlotFormatType::Number, true, false, tracy::Color::Pink);
+		TracyPlotConfig(tracyWeightedSpeedFactor, tracy::PlotFormatType::Number, true, false, tracy::Color::Pink);
+		TracyPlotConfig(tracyBadTimeOffset, tracy::PlotFormatType::Number, true, false, tracy::Color::Pink);
+		TracyPlotConfig(tracyDrawSimRatio, tracy::PlotFormatType::Number, true, false, tracy::Color::Pink);
+	#endif
 }
 
 CGame::~CGame()
@@ -1249,12 +1264,16 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		return true;
 	}
 
+	float whichPath = 0.0;
 	const bool newSimFrame = (lastSimFrame != gs->frameNum);
+	const bool numSimFramesPassed = gs->frameNum - lastSimFrame;
 	numDrawFrames++;
 	globalRendering->drawFrame = std::max(1U, globalRendering->drawFrame + 1);
 	globalRendering->lastFrameStart = currentTime;
+	float oldTimeOffset = globalRendering->timeOffset;
 	// Update the interpolation coefficient (globalRendering->timeOffset)
 	if (!gs->paused && !IsSimLagging() && !gs->PreSimFrame() && !videoCapturing->AllowRecord()) {
+
 		globalRendering->weightedSpeedFactor = 0.001f * gu->simFPS; 
 		globalRendering->lastTimeOffset = globalRendering->timeOffset;
 		globalRendering->timeOffset = (currentTime - lastFrameTime).toMilliSecsf() * globalRendering->weightedSpeedFactor;
@@ -1273,10 +1292,14 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		float drawsimratio = gu->simFPS * gu->avgFrameTime * 0.001f; // This should be like 0.5 for 60hz draw 30hz sim
 		float LTO = globalRendering->lastTimeOffset;
 		float CTO = globalRendering->timeOffset;
+		#ifdef TRACY_TIMEOFFSET
+			TracyPlot(tracyBadTimeOffset, globalRendering->timeOffset);
+			TracyPlot(tracyDrawSimRatio, drawsimratio);
+		#endif
 
 		// This mode forces a strict time step of 0.5 simframes per draw frames. Only useful for testing @ 60hz
 		if (SmoothTimeOffset == -1) { 
-			if (newSimFrame) {
+			if (numSimFramesPassed > 0) {
 				if (LTO > (1.0f - drawsimratio * strictness)) 
 					globalRendering->timeOffset = drawsimratio;
 				else 
@@ -1301,7 +1324,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 			float oldCTO = globalRendering->timeOffset;
 			float newCTO = globalRendering->timeOffset;
 
-			if (newSimFrame) { 
+			if (numSimFramesPassed == 1) { 
 				// newsimframe is a special case, as our new time offset is kind of wrong. 
 				// What we want to know is when the last draw happened, and at what offset.
 				// There are two special cases here, if the last draw happened "on time", then we want to 'pull in' CTO to 0, 
@@ -1312,20 +1335,58 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 					newCTO = std::fmin((LTO + drawsimratio - 1.0f) * strictness, 1.3f);
 					//LOG_L(L_DEBUG, "UpdateUnsynced newframe skipping, last = %.3f, currtimeoffset = %.3f, averageoffset = %.3f, now cheating it to %.3f", globalRendering->lastTimeOffset, globalRendering->timeOffset, drawsimratio, newCTO);
 					globalRendering->timeOffset = newCTO;
+					whichPath = 1.0;
+				}else{
+					// If we were actually on time, then we dont need to carry over, and must pull in the time offset, so sim time doesnt factor in as strongly. 
+					newCTO = std::fmax(0.0, (LTO + drawsimratio * strictness) - 1.0);
+
+					// TODO what if sim took very very long? 
+					//newCTO = std::fmax(0.0, LTO - drawsimratio * strictness); // this is incorrect for > 60fps
+
+					globalRendering->timeOffset = newCTO;
+
+					whichPath = 2.0;
+
+					// LOOKS LIKE WE NEED TO GO BACK IN TIME MOTHERFERS
+					// We need to go back in time, if our last CTO, the one before this sim frame was < drawsimratio
+					// the 0.5 is needed or we are too likely to go back in time
+					if ( ( LTO < (drawsimratio * strictness) *0.5) && 
+						(oldCTO < 1.0 - LTO) && (oldCTO < 0.5 * drawsimratio)  ) {
+						newCTO = -1.0  * drawsimratio * strictness;
+						globalRendering->timeOffset = newCTO;
+						whichPath = 5.0;
+					}
 				}
 			}
-			else {
+			else if (numSimFramesPassed == 0){
 				// On draw frames that dont have a preceding sim frame, we want to 'smooth' the CTO out a bit. 
 				// Otherwise, the sim frame is also calculated into the offset, making things jittery
+
+				// If the current difference between theoretical offset and the last offset is lower than our expected rate
 				if ((CTO - LTO < (drawsimratio) * strictness)) {
 					newCTO = std::fmin(LTO + drawsimratio * strictness, 1.3f);
 					//LOG_L(L_DEBUG, "UpdateUnsynced Too short draw offset, last = %.3f, currtimeoffset = %.3f, averageoffset = %.3f, now cheating it to %.3f", globalRendering->lastTimeOffset, globalRendering->timeOffset, drawsimratio, newCTO);
 					globalRendering->timeOffset = newCTO;
+
+					whichPath = 3.0;
+				}else{ // if we spent more time than expected, only increase by expected rate, but allow for growth above 1.3f
+					// here we have to account for the fact that we already pulled time in in Path #2!
+					newCTO = LTO + drawsimratio * strictness;
+					globalRendering->timeOffset = newCTO;
+					whichPath = 4.0;
+					
 				}
+
+			}else {
+				// 2 or more simframes have passed, might as well throw everything out the window and try to go for 
+				// a cto of 0		
+				globalRendering->timeOffset = 0;
+				whichPath = 6.0;
 
 			}
 			//LOG_L(L_DEBUG, "oldCTO = %.3f newCTO = %.3f, drawsimratio = %.3f,  newframe = %d", oldCTO, newCTO, drawsimratio, newSimFrame);
 		}
+
 
 
 
@@ -1336,7 +1397,21 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		lastFrameTime = currentTime;
 	}
 
-	eventHandler.UpdateTimeOffset(globalRendering->timeOffset, gu->simFPS * gu->avgFrameTime * 0.001f);
+	globalRendering->luaTimeOffset = eventHandler.UpdateTimeOffset(globalRendering->timeOffset, gu->simFPS * gu->avgFrameTime * 0.001f);
+
+
+	if (globalRendering->luaTimeOffset){
+		TracyMessageL("luaTimeOffsets set");
+		globalRendering->timeOffset = globalRendering->luaFrameTimeOffset;
+	}
+	#ifdef TRACY_TIMEOFFSET
+		TracyPlot(tracyWeightedSpeedFactor, whichPath);
+		(tracyCurrTimeOffset, globalRendering->timeOffset);
+	#endif
+
+	// This is all so much easier if we can do it from lua, no?
+
+
 	if ((currentTime - frameStartTime).toMilliSecsf() >= 1000.0f) {
 		globalRendering->FPS = (numDrawFrames * 1000.0f) / std::max(0.01f, (currentTime - frameStartTime).toMilliSecsf());
 
@@ -1349,6 +1424,9 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	const bool forceUpdate = (unsyncedUpdateDeltaTime >= (1.0f / GAME_SPEED));
 
 	lastSimFrame = gs->frameNum;
+
+	// Set the smooth FPS rate for cam interpolatoins:
+	camHandler->cameraExpSmoothFps = mix(camHandler->cameraExpSmoothFps, globalRendering->FPS, 0.1);
 
 	// set camera
 	camHandler->UpdateController(playerHandler.Player(gu->myPlayerNum), gu->fpsMode, fullscreenEdgeMove, windowedEdgeMove);
@@ -1758,6 +1836,7 @@ void CGame::SimFrame() {
 	lastSimFrameTime = spring_gettime();
 	gu->avgSimFrameTime = mix(gu->avgSimFrameTime, (lastSimFrameTime - lastFrameTime).toMilliSecsf(), 0.05f);
 	gu->avgSimFrameTime = std::max(gu->avgSimFrameTime, 0.01f);
+	globalRendering->avgSimFrameTime = gu->avgSimFrameTime;
 
 	eventHandler.DbgTimingInfo(TIMING_SIM, lastFrameTime, lastSimFrameTime);
 

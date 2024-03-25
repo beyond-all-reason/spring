@@ -1329,6 +1329,19 @@ function gadgetHandler:TerraformComplete(unitID, unitDefID, unitTeam, buildUnitI
 end
 
 
+function gadgetHandler:UnitStartBuilding(unitID, unitDefID, unitTeam, silent, buildType)
+  for _,g in r_ipairs(self.UnitStartBuildingList) do
+    g:UnitStartBuilding(unitID, unitDefID, unitTeam, silent, buildType)
+  end
+end
+
+
+function gadgetHandler:UnitStopBuilding(unitID, unitDefID, unitTeam)
+  for _,g in r_ipairs(self.UnitStopBuildingList) do
+    g:UnitStopBuilding(unitID, unitDefID, unitTeam)
+  end
+end
+
 
 function gadgetHandler:AllowWeaponTargetCheck(attackerID, attackerWeaponNum, attackerWeaponDefID)
 	local ignore = true

@@ -583,7 +583,7 @@ void CBuilder::SetRepairTarget(CUnit* target)
 		terraforming = true;
 	}
 
-	ScriptStartBuilding(target->pos, false);
+	ScriptStartBuilding(target->pos, false, 2);
 }
 
 
@@ -607,7 +607,7 @@ void CBuilder::SetReclaimTarget(CSolidObject* target)
 	curReclaim = target;
 
 	AddDeathDependence(curReclaim, DEPENDENCE_RECLAIM);
-	ScriptStartBuilding(target->pos, false);
+	ScriptStartBuilding(target->pos, false, 3);
 }
 
 
@@ -622,7 +622,7 @@ void CBuilder::SetResurrectTarget(CFeature* target)
 	curResurrect = target;
 
 	AddDeathDependence(curResurrect, DEPENDENCE_RESURRECT);
-	ScriptStartBuilding(target->pos, false);
+	ScriptStartBuilding(target->pos, false, 4);
 }
 
 
@@ -637,7 +637,7 @@ void CBuilder::SetCaptureTarget(CUnit* target)
 	curCapture = target;
 
 	AddDeathDependence(curCapture, DEPENDENCE_CAPTURE);
-	ScriptStartBuilding(target->pos, false);
+	ScriptStartBuilding(target->pos, false, 5);
 }
 
 
@@ -668,7 +668,7 @@ void CBuilder::StartRestore(float3 centerPos, float radius)
 	}
 	myTerraformLeft = tcost;
 
-	ScriptStartBuilding(centerPos, false);
+	ScriptStartBuilding(centerPos, false, 6);
 }
 
 
@@ -696,6 +696,7 @@ void CBuilder::StopBuild(bool callScript)
 	if (callScript)
 		script->StopBuilding();
 
+	eventHandler.UnitStopBuilding(this);
 	SetHoldFire(false);
 }
 
@@ -761,7 +762,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 					terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
 
 					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
-					ScriptStartBuilding(u->pos, false);
+					ScriptStartBuilding(u->pos, false, 1);
 					return true;
 				}
 
@@ -780,7 +781,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	if ((limitReached = (unitHandler.NumUnitsByTeamAndDef(team, buildInfo.def->id) >= buildInfo.def->maxThisUnit)))
 		return false;
 
-	if ((inWaitStance = !ScriptStartBuilding(buildInfo.pos, true)))
+	if ((inWaitStance = !ScriptStartBuilding(buildInfo.pos, true, 8)))
 		return false;
 
 	const UnitDef* buildeeDef = buildInfo.def;
@@ -878,7 +879,7 @@ void CBuilder::DependentDied(CObject* o)
 }
 
 
-bool CBuilder::ScriptStartBuilding(float3 pos, bool silent)
+bool CBuilder::ScriptStartBuilding(float3 pos, bool silent, int buildType)
 {
 	if (script->HasStartBuilding()) {
 		const float3 wantedDir = (pos - midPos).Normalize();
@@ -895,6 +896,8 @@ bool CBuilder::ScriptStartBuilding(float3 pos, bool silent)
 	if ((!silent || inBuildStance) && IsInLosForAllyTeam(gu->myAllyTeam))
 		Channels::General->PlayRandomSample(unitDef->sounds.build, pos);
 
+	// Todo start event handler for building
+	if (inBuildStance) eventHandler.UnitStartBuilding(this, silent, buildType);
 	return inBuildStance;
 }
 
@@ -909,7 +912,7 @@ void CBuilder::HelpTerraform(CBuilder* unit)
 	helpTerraform = unit;
 
 	AddDeathDependence(helpTerraform, DEPENDENCE_TERRAFORM);
-	ScriptStartBuilding(unit->terraformCenter, false);
+	ScriptStartBuilding(unit->terraformCenter, false, 7);
 }
 
 
