@@ -226,7 +226,6 @@ void CCobThread::InitStack(unsigned int n, CCobThread* t)
 // 
 #define SHORTOPCODES
 
-#ifndef SHORTOPCODES
 // Model interaction
 static constexpr int MOVE = 0x10001000;
 static constexpr int TURN = 0x10002000;
@@ -304,88 +303,94 @@ static constexpr int SET = 0x10082000;
 static constexpr int ATTACH = 0x10083000;
 static constexpr int DROP = 0x10084000;
 
-#else // !SHORTOPCODES
 
-// Model interaction
-static constexpr uint8_t MOVE = 0x01;
-static constexpr uint8_t TURN = 0x02;
-static constexpr uint8_t SPIN = 0x03;
-static constexpr uint8_t STOP_SPIN = 0x04;
-static constexpr uint8_t SHOW = 0x05;
-static constexpr uint8_t HIDE = 0x06;
-static constexpr uint8_t CACHE = 0x07;
-static constexpr uint8_t DONT_CACHE = 0x08;
-static constexpr uint8_t MOVE_NOW = 0x0B;
-static constexpr uint8_t TURN_NOW = 0x0C;
-static constexpr uint8_t SHADE = 0x0D;
-static constexpr uint8_t DONT_SHADE = 0x0E;
-static constexpr uint8_t EMIT_SFX = 0x0F;
+static constexpr uint8_t RAS_MOVE = 0x01;
+static constexpr uint8_t RAS_TURN = 0x02;
+static constexpr uint8_t RAS_SPIN = 0x03;
+static constexpr uint8_t RAS_STOP_SPIN = 0x04;
+static constexpr uint8_t RAS_SHOW = 0x05;
+static constexpr uint8_t RAS_HIDE = 0x06;
+static constexpr uint8_t RAS_CACHE = 0x07;
+static constexpr uint8_t RAS_DONT_CACHE = 0x08;
+static constexpr uint8_t RAS_MOVE_NOW = 0x0B;
+static constexpr uint8_t RAS_TURN_NOW = 0x0C;
+static constexpr uint8_t RAS_SHADE = 0x0D;
+static constexpr uint8_t RAS_DONT_SHADE = 0x0E;
+static constexpr uint8_t RAS_EMIT_SFX = 0x0F;
 
 // Blocking operations
-static constexpr uint8_t WAIT_TURN = 0x11;
-static constexpr uint8_t WAIT_MOVE = 0x12;
-static constexpr uint8_t SLEEP = 0x13;
+static constexpr uint8_t RAS_WAIT_TURN = 0x11;
+static constexpr uint8_t RAS_WAIT_MOVE = 0x12;
+static constexpr uint8_t RAS_SLEEP = 0x13;
 
 // Stack manipulation
-static constexpr uint8_t PUSH_CONSTANT = 0x21;
-static constexpr uint8_t PUSH_LOCAL_VAR = 0x22;
-static constexpr uint8_t PUSH_STATIC = 0x23;
-static constexpr uint8_t CREATE_LOCAL_VAR = 0x24;
-static constexpr uint8_t POP_LOCAL_VAR = 0x25;
-static constexpr uint8_t POP_STATIC = 0x26;
-static constexpr uint8_t POP_STACK = 0x27;
+static constexpr uint8_t RAS_PUSH_CONSTANT = 0x21;
+static constexpr uint8_t RAS_PUSH_LOCAL_VAR = 0x22;
+static constexpr uint8_t RAS_PUSH_STATIC = 0x23;
+static constexpr uint8_t RAS_CREATE_LOCAL_VAR = 0x24;
+static constexpr uint8_t RAS_POP_LOCAL_VAR = 0x25;
+static constexpr uint8_t RAS_POP_STATIC = 0x26;
+static constexpr uint8_t RAS_POP_STACK = 0x27;
 
 // Arithmetic operations
-static constexpr uint8_t ADD = 0x31;
-static constexpr uint8_t SUB = 0x32;
-static constexpr uint8_t MUL = 0x33;
-static constexpr uint8_t DIV = 0x34;
-static constexpr uint8_t MOD = 0x39;
-static constexpr uint8_t BITWISE_AND = 0x35;
-static constexpr uint8_t BITWISE_OR = 0x36;
-static constexpr uint8_t BITWISE_XOR = 0x37;
-static constexpr uint8_t BITWISE_NOT = 0x38;
+static constexpr uint8_t RAS_ADD = 0x31;
+static constexpr uint8_t RAS_SUB = 0x32;
+static constexpr uint8_t RAS_MUL = 0x33;
+static constexpr uint8_t RAS_DIV = 0x34;
+static constexpr uint8_t RAS_MOD = 0x30;
+static constexpr uint8_t RAS_BITWISE_AND = 0x35;
+static constexpr uint8_t RAS_BITWISE_OR = 0x36;
+static constexpr uint8_t RAS_BITWISE_XOR = 0x37;
+static constexpr uint8_t RAS_BITWISE_NOT = 0x38;
 
-static constexpr uint8_t ABS = 0x40;
+static constexpr uint8_t RAS_ABS = 0x39;
+static constexpr uint8_t RAS_MINIMUM = 0x3A;
+static constexpr uint8_t RAS_MAXIMUM = 0x3B;
+static constexpr uint8_t RAS_SIGN = 0x3C;
+static constexpr uint8_t RAS_CLAMP = 0x3D;
+static constexpr uint8_t RAS_DELTAHEADING = 0x3E;
+static constexpr uint8_t RAS_KSINE = 0x3F;
+static constexpr uint8_t RAS_KCOSINE = 0x40;
+
 
 // Native function calls
-static constexpr uint8_t RAND = 0x41;
-static constexpr uint8_t GET_UNIT_VALUE = 0x42;
-static constexpr uint8_t GET = 0x43;
+static constexpr uint8_t RAS_RAND = 0x41;
+static constexpr uint8_t RAS_GET_UNIT_VALUE = 0x42;
+static constexpr uint8_t RAS_GET = 0x43;
 
 // Comparison
-static constexpr uint8_t SET_LESS = 0x51;
-static constexpr uint8_t SET_LESS_OR_EQUAL = 0x52;
-static constexpr uint8_t SET_GREATER = 0x53;
-static constexpr uint8_t SET_GREATER_OR_EQUAL = 0x54;
-static constexpr uint8_t SET_EQUAL = 0x55;
-static constexpr uint8_t SET_NOT_EQUAL = 0x56;
-static constexpr uint8_t LOGICAL_AND = 0x57;
-static constexpr uint8_t LOGICAL_OR = 0x58;
-static constexpr uint8_t LOGICAL_XOR = 0x59;
-static constexpr uint8_t LOGICAL_NOT = 0x5A;
+static constexpr uint8_t RAS_SET_LESS = 0x51;
+static constexpr uint8_t RAS_SET_LESS_OR_EQUAL = 0x52;
+static constexpr uint8_t RAS_SET_GREATER = 0x53;
+static constexpr uint8_t RAS_SET_GREATER_OR_EQUAL = 0x54;
+static constexpr uint8_t RAS_SET_EQUAL = 0x55;
+static constexpr uint8_t RAS_SET_NOT_EQUAL = 0x56;
+static constexpr uint8_t RAS_LOGICAL_AND = 0x57;
+static constexpr uint8_t RAS_LOGICAL_OR = 0x58;
+static constexpr uint8_t RAS_LOGICAL_XOR = 0x59;
+static constexpr uint8_t RAS_LOGICAL_NOT = 0x5A;
 
 // Flow control
-static constexpr uint8_t START = 0x61;
-static constexpr uint8_t CALL = 0x62;
-static constexpr uint8_t REAL_CALL = 0x63;
-static constexpr uint8_t LUA_CALL = 0x69;
-static constexpr uint8_t JUMP = 0x64;
-static constexpr uint8_t RETURN = 0x65;
-static constexpr uint8_t JUMP_NOT_EQUAL = 0x66;
-static constexpr uint8_t SIGNAL = 0x67;
-static constexpr uint8_t SET_SIGNAL_MASK = 0x68;
+static constexpr uint8_t RAS_START = 0x61;
+static constexpr uint8_t RAS_CALL = 0x62;
+static constexpr uint8_t RAS_REAL_CALL = 0x63;
+static constexpr uint8_t RAS_LUA_CALL = 0x69;
+static constexpr uint8_t RAS_JUMP = 0x64;
+static constexpr uint8_t RAS_RETURN = 0x65;
+static constexpr uint8_t RAS_JUMP_NOT_EQUAL = 0x66;
+static constexpr uint8_t RAS_SIGNAL = 0x67;
+static constexpr uint8_t RAS_SET_SIGNAL_MASK = 0x68;
 
 // Piece destruction
-static constexpr uint8_t EXPLODE = 0x71;
-static constexpr uint8_t PLAY_SOUND = 0x72;
+static constexpr uint8_t RAS_EXPLODE = 0x71;
+static constexpr uint8_t RAS_PLAY_SOUND = 0x72;
 
 // Special functions
-static constexpr uint8_t SET = 0x82;
-static constexpr uint8_t ATTACH = 0x83;
-static constexpr uint8_t DROP = 0x84;
+static constexpr uint8_t RAS_SET = 0x82;
+static constexpr uint8_t RAS_ATTACH = 0x83;
+static constexpr uint8_t RAS_DROP = 0x84;
 
-#endif
+
 
 // Indices for SET, GET, and GET_UNIT_VALUE for LUA return values
 static constexpr int LUA0 = 110; // (LUA0 returns the lua call status, 0 or 1)
@@ -478,12 +483,123 @@ static const char* GetOpcodeName(int opcode)
 		case SET: return "set";
 		case ATTACH: return "attach";
 		case DROP: return "drop";
+
+		case RAS_MOVE: return "move";
+		case RAS_TURN: return "turn";
+		case RAS_SPIN: return "spin";
+		case RAS_STOP_SPIN: return "stop-spin";
+		case RAS_SHOW: return "show";
+		case RAS_HIDE: return "hide";
+		case RAS_CACHE: return "cache";
+		case RAS_DONT_CACHE: return "dont-cache";
+		case RAS_TURN_NOW: return "turn-now";
+		case RAS_MOVE_NOW: return "move-now";
+		case RAS_SHADE: return "shade";
+		case RAS_DONT_SHADE: return "dont-shade";
+		case RAS_EMIT_SFX: return "sfx";
+
+		case RAS_WAIT_TURN: return "wait-for-turn";
+		case RAS_WAIT_MOVE: return "wait-for-move";
+		case RAS_SLEEP: return "sleep";
+
+		case RAS_PUSH_CONSTANT: return "pushc";
+		case RAS_PUSH_LOCAL_VAR: return "pushl";
+		case RAS_PUSH_STATIC: return "pushs";
+		case RAS_CREATE_LOCAL_VAR: return "clv";
+		case RAS_POP_LOCAL_VAR: return "popl";
+		case RAS_POP_STATIC: return "pops";
+		case RAS_POP_STACK: return "pop-stack";
+
+		case RAS_ADD: return "add";
+		case RAS_SUB: return "sub";
+		case RAS_MUL: return "mul";
+		case RAS_DIV: return "div";
+		case RAS_MOD: return "mod";
+		case RAS_BITWISE_AND: return "and";
+		case RAS_BITWISE_OR: return "or";
+		case RAS_BITWISE_XOR: return "xor";
+		case RAS_BITWISE_NOT: return "not";
+
+		case RAS_RAND: return "rand";
+		case RAS_GET_UNIT_VALUE: return "getuv";
+		case RAS_GET: return "get";
+
+		case RAS_SET_LESS: return "setl";
+		case RAS_SET_LESS_OR_EQUAL: return "setle";
+		case RAS_SET_GREATER: return "setg";
+		case RAS_SET_GREATER_OR_EQUAL: return "setge";
+		case RAS_SET_EQUAL: return "sete";
+		case RAS_SET_NOT_EQUAL: return "setne";
+		case RAS_LOGICAL_AND: return "land";
+		case RAS_LOGICAL_OR: return "lor";
+		case RAS_LOGICAL_XOR: return "lxor";
+		case RAS_LOGICAL_NOT: return "neg";
+
+		case RAS_START: return "start";
+		case RAS_CALL: return "call";
+		case RAS_REAL_CALL: return "call";
+		case RAS_LUA_CALL: return "lua_call";
+		case RAS_JUMP: return "jmp";
+		case RAS_RETURN: return "return";
+		case RAS_JUMP_NOT_EQUAL: return "jne";
+		case RAS_SIGNAL: return "signal";
+		case RAS_SET_SIGNAL_MASK: return "mask";
+
+		case RAS_EXPLODE: return "explode";
+		case RAS_PLAY_SOUND: return "play-sound";
+
+		case RAS_SET: return "set";
+		case RAS_ATTACH: return "attach";
+		case RAS_DROP: return "drop";
 	}
 
 	return "unknown";
 }
 #endif
+/*
+int interp_cgoto(unsigned char* code, int initval) {
+	// The indices of labels in the dispatch_table are the relevant opcodes
+	
+	static void* dispatch_table[] = {
+		&&do_halt, &&do_inc, &&do_dec, &&do_mul2,
+		&&do_div2, &&do_add7, &&do_neg };
+	#define DISPATCH() goto *dispatch_table[code[pc++]]
 
+	int pc = 0;
+	int val = initval;
+
+	DISPATCH();
+	while (1) {
+	do_halt:
+		return val;
+	do_inc:
+		val++;
+		DISPATCH();
+	do_dec:
+		val--;
+		DISPATCH();
+	do_mul2:
+		val *= 2;
+		DISPATCH();
+	do_div2:
+		val /= 2;
+		DISPATCH();
+	do_add7:
+		val += 7;
+		DISPATCH();
+	do_neg:
+		val = -val;
+		DISPATCH();
+	}
+}*/
+
+// Use computed goto for gcc
+
+#ifdef _MSC_VER
+
+#else	
+
+#endif
 
 bool CCobThread::Tick()
 {
@@ -494,22 +610,19 @@ bool CCobThread::Tick()
 		return false;
 
 	ZoneScoped;
+	//ZoneScopedN(GetName().c_str());
 
 	state = Run;
 
-	int r1, r2, r3, r4, r5, r6;
+	if (cobVersion < 8) {
 
-	while (state == Run) {
-		#ifndef SHORTOPCODES
+		int r1, r2, r3, r4, r5, r6;
+		while (true) {
+
 			const int opcode = GET_LONG_PC();
-		#else
-			const int longopcode = GET_LONG_PC();
-			const uint8_t opcode = (uint8_t) longopcode;
-		#endif
 
 
-
-		switch (opcode) {
+			switch (opcode) {
 			case PUSH_CONSTANT: {
 				r1 = GET_LONG_PC();
 				PushDataStack(r1);
@@ -631,7 +744,7 @@ bool CCobThread::Tick()
 
 				t.SetID(cobEngine->GenThreadID());
 				t.InitStack(r2, this);
-				t.Start(r1, signalMask, {{0}}, true);
+				t.Start(r1, signalMask, { {0} }, true);
 
 				// calling AddThread directly might move <this>, defer it
 				cobEngine->QueueAddThread(std::move(t));
@@ -640,7 +753,8 @@ bool CCobThread::Tick()
 			case CREATE_LOCAL_VAR: {
 				if (paramCount == 0) {
 					PushDataStack(0);
-				} else {
+				}
+				else {
 					paramCount--;
 				}
 			} break;
@@ -675,6 +789,7 @@ bool CCobThread::Tick()
 				r1 = GET_LONG_PC();
 				r2 = PopDataStack();
 				dataStack[LocalStackFrame() + r1] = r2;
+
 			} break;
 			case PUSH_LOCAL_VAR: {
 				r1 = GET_LONG_PC();
@@ -701,11 +816,6 @@ bool CCobThread::Tick()
 			case BITWISE_NOT: {
 				r1 = PopDataStack();
 				PushDataStack(~r1);
-			} break;
-
-			case ABS: {
-				r1 = PopDataStack();
-				PushDataStack(abs(r1));
 			} break;
 
 			case EXPLODE: {
@@ -833,7 +943,8 @@ bool CCobThread::Tick()
 
 				if (r2 != 0) {
 					r3 = r1 / r2;
-				} else {
+				}
+				else {
 					r3 = 1000; // infinity!
 					ShowError("division by zero");
 				}
@@ -845,7 +956,8 @@ bool CCobThread::Tick()
 
 				if (r2 != 0) {
 					PushDataStack(r1 % r2);
-				} else {
+				}
+				else {
 					PushDataStack(0);
 					ShowError("modulo division by zero");
 				}
@@ -921,7 +1033,7 @@ bool CCobThread::Tick()
 				cobInst->DropUnit(r1);
 			} break;
 
-			// like bitwise ops, but only on values 1 and 0
+				// like bitwise ops, but only on values 1 and 0
 			case LOGICAL_NOT: {
 				r1 = PopDataStack();
 				PushDataStack(int(r1 == 0));
@@ -959,31 +1071,861 @@ bool CCobThread::Tick()
 				// if true, we are in a Fire-script and should show a special flare effect
 				if (i < MAX_WEAPONS_PER_UNIT) {
 					cobInst->ShowFlare(r1);
-				} else {
+				}
+				else {
 					cobInst->SetVisibility(r1, true);
 				}
 			} break;
 
-			default: {
+
+			default:
+			{
 				const char* name = cobFile->name.c_str();
 				const char* func = cobFile->scriptNames[LocalFunctionID()].c_str();
 
 				LOG_L(L_ERROR, "[COBThread::%s] unknown opcode %x (in %s:%s at %x)", __func__, opcode, name, func, pc - 1);
 
-				#if 0
+#if 0
 				auto ei = execTrace.begin();
 				while (ei != execTrace.end()) {
 					LOG_L(L_ERROR, "\tprogctr: %3x  opcode: %s", __func__, *ei, GetOpcodeName(cobFile->code[*ei]));
 					++ei;
 				}
-				#endif
+#endif
 
 				state = Dead;
 				return false;
 			} break;
+			}
 		}
 	}
+	else // RAS (Recoil Animation Script), with a version signature of 8
+	{
+		/*
+		int interp_cgoto(unsigned char* code, int initval) {
+			// The indices of labels in the dispatch_table are the relevant opcodes
 
+			static void* dispatch_table[] = {
+				&&do_halt, &&do_inc, &&do_dec, &&do_mul2,
+				&&do_div2, &&do_add7, &&do_neg };
+			#define DISPATCH() goto *dispatch_table[code[pc++]]
+
+			int pc = 0;
+			int val = initval;
+
+			DISPATCH();
+			while (1) {
+			do_halt:
+				return val;
+			do_inc:
+				val++;
+				DISPATCH();
+			do_dec:
+				val--;
+				DISPATCH();
+			do_mul2:
+				val *= 2;
+				DISPATCH();
+			do_div2:
+				val /= 2;
+				DISPATCH();
+			do_add7:
+				val += 7;
+				DISPATCH();
+			do_neg:
+				val = -val;
+				DISPATCH();
+			}
+		}*/
+#ifndef _MSC_VER
+static void* ras_dispatch_table[] = {
+			&& DO_RAS_PUSH_CONSTANT,&& DO_RAS_SLEEP };
+#define RAS_DISPATCH() goto *ras_dispatch_table[(uint8_t)GET_LONG_PC()]
+#endif
+
+
+
+#ifdef _MSC_VER
+#define BREAK_OR_RAS_DISPATCH } break;
+// we have to use the RAS_ naming here cause otherwise it wont pick up whitespace and merges with case 
+#define CASE_OR_RAS_LABEL(name) case RAS_##name : { 
+#else
+#define BREAK_OR_RAS_DISPATCH RAS_DISPATCH();
+// we have to use the RAS_ naming here cause otherwise it wont pick up whitespace and merges with for MSC 
+#define CASE_OR_RAS_LABEL(name) DO_RAS_##name : 
+#endif
+
+
+
+
+		int r1, r2, r3, r4, r5, r6;
+
+		while (true) {
+
+			const int longopcode = GET_LONG_PC();
+			const uint8_t opcode = (uint8_t)longopcode;
+
+#ifdef _MSC_VER
+			switch (opcode) {
+#endif
+
+			CASE_OR_RAS_LABEL(PUSH_CONSTANT)
+
+				r1 = GET_LONG_PC();
+				PushDataStack(r1);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SLEEP)
+				r1 = PopDataStack();
+				wakeTime = cobEngine->GetCurrTime() + r1;
+				state = Sleep;
+
+				cobEngine->ScheduleThread(this);
+				return true;
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SPIN)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+				r3 = PopDataStack();         // speed
+				r4 = PopDataStack();         // accel
+				cobInst->Spin(r1, r2, r3, r4);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(STOP_SPIN)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+				r3 = PopDataStack();         // decel
+
+				cobInst->StopSpin(r1, r2, r3);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(RETURN)
+				retCode = PopDataStack();
+
+				if (LocalReturnAddr() == -1) {
+					state = Dead;
+
+					// leave values intact on stack in case RAS_caller wants to check them
+					// callStackSize -= 1;
+					return false;
+				}
+
+				// return to caller
+				pc = LocalReturnAddr();
+				if (dataStack.size() > LocalStackFrame())
+					dataStack.resize(LocalStackFrame());
+
+				callStack.pop_back();
+			BREAK_OR_RAS_DISPATCH
+
+			/*
+			CASE_OR_RAS_LABEL(SHADE)
+				r1 = GET_LONG_PC();
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(DONT_SHADE)
+				r1 = GET_LONG_PC();
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(CACHE)
+				r1 = GET_LONG_PC();
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(DONT_CACHE)
+				r1 = GET_LONG_PC();
+			BREAK_OR_RAS_DISPATCH
+			*/
+
+			CASE_OR_RAS_LABEL(CALL)
+				r1 = GET_LONG_PC();
+				pc--;
+
+				if (cobFile->scriptNames[r1].find("lua_") == 0) {
+					cobFile->code[pc - 1] = LUA_CALL;
+					LuaCall();
+#ifdef _MSC_VER
+					break;
+#else
+					RAS_DISPATCH();
+#endif
+				}
+
+				cobFile->code[pc - 1] = REAL_CALL;
+
+				// fall-through
+				// NOTE NO BREAK HERE!
+#ifndef _MSC_VER
+				goto DO_RAS_REAL_CALL;
+#endif 
+			}
+			CASE_OR_RAS_LABEL(REAL_CALL)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+
+				// do not call zero-length functions
+				// TODO: NOTE THIS BREAK!
+				if (cobFile->scriptLengths[r1] == 0)
+#ifdef _MSC_VER
+					break;
+#else
+					RAS_DISPATCH();
+#endif
+
+				CallInfo& ci = PushCallStackRef();
+				ci.functionId = r1;
+				ci.returnAddr = pc;
+				ci.stackTop = dataStack.size() - r2;
+
+				paramCount = r2;
+
+				// call cobFile->scriptNames[r1]
+				pc = cobFile->scriptOffsets[r1];
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(LUA_CALL)
+				LuaCall();
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(POP_STATIC)
+				r1 = GET_LONG_PC();
+				r2 = PopDataStack();
+
+				if (static_cast<size_t>(r1) < cobInst->staticVars.size())
+					cobInst->staticVars[r1] = r2;
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(POP_STACK)
+				PopDataStack();
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(START)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+
+				if (cobFile->scriptLengths[r1] == 0)
+					break;
+
+
+				CCobThread t(cobInst);
+
+				t.SetID(cobEngine->GenThreadID());
+				t.InitStack(r2, this);
+				t.Start(r1, signalMask, { {0} }, true);
+
+				// calling AddThread directly might move <this>, defer it
+				cobEngine->QueueAddThread(std::move(t));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(CREATE_LOCAL_VAR)
+				if (paramCount == 0) {
+					PushDataStack(0);
+				}
+				else {
+					paramCount--;
+				}
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(GET_UNIT_VALUE)
+				r1 = PopDataStack();
+				if ((r1 >= LUA0) && (r1 <= LUA9)) {
+					PushDataStack(luaArgs[r1 - LUA0]);
+					break;
+				}
+				r1 = cobInst->GetUnitVal(r1, 0, 0, 0, 0);
+				PushDataStack(r1);
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(JUMP_NOT_EQUAL)
+				r1 = GET_LONG_PC();
+				r2 = PopDataStack();
+
+				if (r2 == 0)
+					pc = r1;
+
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(JUMP)
+				r1 = GET_LONG_PC();
+				// this seem to be an error in the docs..
+				//r2 = cobFile->scriptOffsets[LocalFunctionID()] + r1;
+				pc = r1;
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(POP_LOCAL_VAR)
+				r1 = GET_LONG_PC();
+				r2 = PopDataStack();
+				dataStack[LocalStackFrame() + r1] = r2;
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(PUSH_LOCAL_VAR)
+				r1 = GET_LONG_PC();
+				r2 = dataStack[LocalStackFrame() + r1];
+				PushDataStack(r2);
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(BITWISE_AND)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(r1 & r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(BITWISE_OR)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(r1 | r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(BITWISE_XOR)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(r1 ^ r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(BITWISE_NOT)
+				r1 = PopDataStack();
+				PushDataStack(~r1);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(ABS)
+				r1 = PopDataStack();
+				PushDataStack(abs(r1));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(MINIMUM)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(std::min(r1, r2));
+
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(MAXIMUM)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(std::max(r1, r2));
+
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SIGN)
+				r1 = PopDataStack();
+				PushDataStack(((0 < r1) - (r1 < 0)));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(CLAMP)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				r3 = PopDataStack();
+				PushDataStack(std::min(std::max(r1, r2), r3));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(DELTAHEADING)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack((r1 - r2 + COBSCALE_HALF * 3) % (COBSCALE_HALF * 2) - COBSCALE_HALF);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(KSINE)
+				r1 = PopDataStack();
+				PushDataStack(int(1024 * math::sinf(TAANG2RAD * (float)r1)));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(KCOSINE)
+				r1 = PopDataStack();
+				PushDataStack(int(1024 * math::sinf(TAANG2RAD * (float)r1)));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(EXPLODE)
+				r1 = GET_LONG_PC();
+				r2 = PopDataStack();
+				cobInst->Explode(r1, r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(PLAY_SOUND)
+				r1 = GET_LONG_PC();
+				r2 = PopDataStack();
+				cobInst->PlayUnitSound(r1, r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(PUSH_STATIC)
+				r1 = GET_LONG_PC();
+
+				if (static_cast<size_t>(r1) < cobInst->staticVars.size())
+					PushDataStack(cobInst->staticVars[r1]);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SET_NOT_EQUAL)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+
+				PushDataStack(int(r1 != r2));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SET_EQUAL)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+
+				PushDataStack(int(r1 == r2));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SET_LESS)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+
+				PushDataStack(int(r1 < r2));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SET_LESS_OR_EQUAL)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+
+				PushDataStack(int(r1 <= r2));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SET_GREATER)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+
+				PushDataStack(int(r1 > r2));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SET_GREATER_OR_EQUAL)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+
+				PushDataStack(int(r1 >= r2));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(RAND)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+				r3 = gsRNG.NextInt(r2 - r1 + 1) + r1;
+				PushDataStack(r3);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(EMIT_SFX)
+				r1 = PopDataStack();
+				r2 = GET_LONG_PC();
+				cobInst->EmitSfx(r1, r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(MUL)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(r1 * r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SIGNAL)
+				r1 = PopDataStack();
+				cobInst->Signal(r1);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SET_SIGNAL_MASK)
+				r1 = PopDataStack();
+				signalMask = r1;
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(TURN)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+				r3 = GET_LONG_PC(); // piece
+				r4 = GET_LONG_PC(); // axis
+
+				cobInst->Turn(r3, r4, r1, r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(GET)
+				r5 = PopDataStack();
+				r4 = PopDataStack();
+				r3 = PopDataStack();
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+				if ((r1 >= LUA0) && (r1 <= LUA9)) {
+					PushDataStack(luaArgs[r1 - LUA0]);
+					break;
+				}
+				r6 = cobInst->GetUnitVal(r1, r2, r3, r4, r5);
+				PushDataStack(r6);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(ADD)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+				PushDataStack(r1 + r2);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SUB)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+				r3 = r1 - r2;
+				PushDataStack(r3);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(DIV)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+
+				if (r2 != 0) {
+					r3 = r1 / r2;
+				}
+				else {
+					r3 = 1000; // infinity!
+					ShowError("division by zero");
+				}
+				PushDataStack(r3);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(MOD)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+
+				if (r2 != 0) {
+					PushDataStack(r1 % r2);
+				}
+				else {
+					PushDataStack(0);
+					ShowError("modulo division by zero");
+				}
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(MOVE)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+				r4 = PopDataStack();
+				r3 = PopDataStack();
+				cobInst->Move(r1, r2, r3, r4);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(MOVE_NOW)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+				r3 = PopDataStack();
+				cobInst->MoveNow(r1, r2, r3);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(TURN_NOW)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+				r3 = PopDataStack();
+				cobInst->TurnNow(r1, r2, r3);
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(WAIT_TURN)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+
+				if (cobInst->NeedsWait(CCobInstance::ATurn, r1, r2)) {
+					state = WaitTurn;
+					waitPiece = r1;
+					waitAxis = r2;
+					return true;
+				}
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(WAIT_MOVE)
+				r1 = GET_LONG_PC();
+				r2 = GET_LONG_PC();
+
+				if (cobInst->NeedsWait(CCobInstance::AMove, r1, r2)) {
+					state = WaitMove;
+					waitPiece = r1;
+					waitAxis = r2;
+					return true;
+				}
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(SET)
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+
+				if ((r1 >= LUA0) && (r1 <= LUA9)) {
+					luaArgs[r1 - LUA0] = r2;
+					break;
+				}
+
+				cobInst->SetUnitVal(r1, r2);
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(ATTACH)
+				r3 = PopDataStack();
+				r2 = PopDataStack();
+				r1 = PopDataStack();
+				cobInst->AttachUnit(r2, r1);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(DROP)
+				r1 = PopDataStack();
+				cobInst->DropUnit(r1);
+			BREAK_OR_RAS_DISPATCH
+
+				// like bitwise ops, but only on values 1 and 0
+			CASE_OR_RAS_LABEL(LOGICAL_NOT)
+				r1 = PopDataStack();
+				PushDataStack(int(r1 == 0));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(LOGICAL_AND)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(int(r1 && r2));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(LOGICAL_OR)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(int(r1 || r2));
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(LOGICAL_XOR)
+				r1 = PopDataStack();
+				r2 = PopDataStack();
+				PushDataStack(int((!!r1) ^ (!!r2)));
+			BREAK_OR_RAS_DISPATCH
+
+
+			CASE_OR_RAS_LABEL(HIDE)
+				r1 = GET_LONG_PC();
+				cobInst->SetVisibility(r1, false);
+			BREAK_OR_RAS_DISPATCH
+
+			CASE_OR_RAS_LABEL(SHOW)
+				r1 = GET_LONG_PC();
+
+				int i;
+				for (i = 0; i < MAX_WEAPONS_PER_UNIT; ++i)
+					if (LocalFunctionID() == cobFile->scriptIndex[COBFN_FirePrimary + COBFN_Weapon_Funcs * i])
+						break;
+
+				// if true, we are in a Fire-script and should show a special flare effect
+				if (i < MAX_WEAPONS_PER_UNIT) {
+					cobInst->ShowFlare(r1);
+				}
+				else {
+					cobInst->SetVisibility(r1, true);
+				}
+			BREAK_OR_RAS_DISPATCH
+
+			// Note that Python developers found that switches becomes essentially a computed goto in MSVC if all cases are filled:
+			// https://github.com/python/cpython/pull/91718
+			case 0x0:
+			case 0x9:
+			case 0xa:
+			case 0x10:
+			case 0x14:
+			case 0x15:
+			case 0x16:
+			case 0x17:
+			case 0x18:
+			case 0x19:
+			case 0x1a:
+			case 0x1b:
+			case 0x1c:
+			case 0x1d:
+			case 0x1e:
+			case 0x1f:
+			case 0x20:
+			case 0x28:
+			case 0x29:
+			case 0x2a:
+			case 0x2b:
+			case 0x2c:
+			case 0x2d:
+			case 0x2e:
+			case 0x2f:
+
+			case 0x44:
+			case 0x45:
+			case 0x46:
+			case 0x47:
+			case 0x48:
+			case 0x49:
+			case 0x4a:
+			case 0x4b:
+			case 0x4c:
+			case 0x4d:
+			case 0x4e:
+			case 0x4f:
+			case 0x50:
+			case 0x5b:
+			case 0x5c:
+			case 0x5d:
+			case 0x5e:
+			case 0x5f:
+			case 0x60:
+			case 0x6a:
+			case 0x6b:
+			case 0x6c:
+			case 0x6d:
+			case 0x6e:
+			case 0x6f:
+			case 0x70:
+			case 0x73:
+			case 0x74:
+			case 0x75:
+			case 0x76:
+			case 0x77:
+			case 0x78:
+			case 0x79:
+			case 0x7a:
+			case 0x7b:
+			case 0x7c:
+			case 0x7d:
+			case 0x7e:
+			case 0x7f:
+			case 0x80:
+			case 0x81:
+			case 0x85:
+			case 0x86:
+			case 0x87:
+			case 0x88:
+			case 0x89:
+			case 0x8a:
+			case 0x8b:
+			case 0x8c:
+			case 0x8d:
+			case 0x8e:
+			case 0x8f:
+			case 0x90:
+			case 0x91:
+			case 0x92:
+			case 0x93:
+			case 0x94:
+			case 0x95:
+			case 0x96:
+			case 0x97:
+			case 0x98:
+			case 0x99:
+			case 0x9a:
+			case 0x9b:
+			case 0x9c:
+			case 0x9d:
+			case 0x9e:
+			case 0x9f:
+			case 0xa0:
+			case 0xa1:
+			case 0xa2:
+			case 0xa3:
+			case 0xa4:
+			case 0xa5:
+			case 0xa6:
+			case 0xa7:
+			case 0xa8:
+			case 0xa9:
+			case 0xaa:
+			case 0xab:
+			case 0xac:
+			case 0xad:
+			case 0xae:
+			case 0xaf:
+			case 0xb0:
+			case 0xb1:
+			case 0xb2:
+			case 0xb3:
+			case 0xb4:
+			case 0xb5:
+			case 0xb6:
+			case 0xb7:
+			case 0xb8:
+			case 0xb9:
+			case 0xba:
+			case 0xbb:
+			case 0xbc:
+			case 0xbd:
+			case 0xbe:
+			case 0xbf:
+			case 0xc0:
+			case 0xc1:
+			case 0xc2:
+			case 0xc3:
+			case 0xc4:
+			case 0xc5:
+			case 0xc6:
+			case 0xc7:
+			case 0xc8:
+			case 0xc9:
+			case 0xca:
+			case 0xcb:
+			case 0xcc:
+			case 0xcd:
+			case 0xce:
+			case 0xcf:
+			case 0xd0:
+			case 0xd1:
+			case 0xd2:
+			case 0xd3:
+			case 0xd4:
+			case 0xd5:
+			case 0xd6:
+			case 0xd7:
+			case 0xd8:
+			case 0xd9:
+			case 0xda:
+			case 0xdb:
+			case 0xdc:
+			case 0xdd:
+			case 0xde:
+			case 0xdf:
+			case 0xe0:
+			case 0xe1:
+			case 0xe2:
+			case 0xe3:
+			case 0xe4:
+			case 0xe5:
+			case 0xe6:
+			case 0xe7:
+			case 0xe8:
+			case 0xe9:
+			case 0xea:
+			case 0xeb:
+			case 0xec:
+			case 0xed:
+			case 0xee:
+			case 0xef:
+			case 0xf0:
+			case 0xf1:
+			case 0xf2:
+			case 0xf3:
+			case 0xf4:
+			case 0xf5:
+			case 0xf6:
+			case 0xf7:
+			case 0xf8:
+			case 0xf9:
+			case 0xfa:
+			case 0xfb:
+			case 0xfc:
+			case 0xfd:
+			case 0xfe:
+			case 0xff:
+			default:
+			{
+				const char* name = cobFile->name.c_str();
+				const char* func = cobFile->scriptNames[LocalFunctionID()].c_str();
+
+				LOG_L(L_ERROR, "[COBThread::%s] unknown opcode %x (in %s:%s at %x)", __func__, opcode, name, func, pc - 1);
+
+#if 0
+				auto ei = execTrace.begin();
+				while (ei != execTrace.end()) {
+					LOG_L(L_ERROR, "\tprogctr: %3x  opcode: %s", __func__, *ei, GetOpcodeName(cobFile->code[*ei]));
+					++ei;
+				}
+#endif
+
+				state = Dead;
+				return false;
+			} break;
+			}
+		}
+	}
 	// can arrive here as dead, through CCobInstance::Signal()
 	return (state != Dead);
 }
