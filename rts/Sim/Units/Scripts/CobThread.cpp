@@ -219,7 +219,17 @@ void CCobThread::InitStack(unsigned int n, CCobThread* t)
 	}
 }
 
-
+inline int CCobThread::PopDataStack() {
+	if (dataStack.empty()) {
+		const char* name = cobFile->name.c_str();
+		const char* func = cobFile->scriptNames[LocalFunctionID()].c_str();
+		LOG_L(L_ERROR, "[COBThread::%s] empty data stack (in %s at %x)", name, func, pc - 1);
+		return 0;
+	}
+	int ret = dataStack.back();
+	dataStack.pop_back();
+	return ret;
+}
 
 // Command documentation from http://visualta.tauniverse.com/Downloads/cob-commands.txt
 // And some information from basm0.8 source (basm ops.txt)
@@ -1169,763 +1179,788 @@ static void* ras_dispatch_table[] = {
 			switch (opcode) {
 #endif
 
-			CASE_OR_RAS_LABEL(PUSH_CONSTANT)
+				CASE_OR_RAS_LABEL(PUSH_CONSTANT)
 
-				r1 = GET_LONG_PC();
-				PushDataStack(r1);
-			BREAK_OR_RAS_DISPATCH
+					r1 = GET_LONG_PC();
+					PushDataStack(r1);
+				BREAK_OR_RAS_DISPATCH
 
-			CASE_OR_RAS_LABEL(SLEEP)
-				r1 = PopDataStack();
-				wakeTime = cobEngine->GetCurrTime() + r1;
-				state = Sleep;
+				CASE_OR_RAS_LABEL(SLEEP)
+					r1 = PopDataStack();
+					wakeTime = cobEngine->GetCurrTime() + r1;
+					state = Sleep;
 
-				cobEngine->ScheduleThread(this);
-				return true;
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SPIN)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
-				r3 = PopDataStack();         // speed
-				r4 = PopDataStack();         // accel
-				cobInst->Spin(r1, r2, r3, r4);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(STOP_SPIN)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
-				r3 = PopDataStack();         // decel
-
-				cobInst->StopSpin(r1, r2, r3);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(RETURN)
-				retCode = PopDataStack();
-
-				if (LocalReturnAddr() == -1) {
-					state = Dead;
-
-					// leave values intact on stack in case RAS_caller wants to check them
-					// callStackSize -= 1;
-					return false;
-				}
-
-				// return to caller
-				pc = LocalReturnAddr();
-				if (dataStack.size() > LocalStackFrame())
-					dataStack.resize(LocalStackFrame());
-
-				callStack.pop_back();
-			BREAK_OR_RAS_DISPATCH
-
-			/*
-			CASE_OR_RAS_LABEL(SHADE)
-				r1 = GET_LONG_PC();
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(DONT_SHADE)
-				r1 = GET_LONG_PC();
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(CACHE)
-				r1 = GET_LONG_PC();
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(DONT_CACHE)
-				r1 = GET_LONG_PC();
-			BREAK_OR_RAS_DISPATCH
-			*/
-
-			CASE_OR_RAS_LABEL(CALL)
-				r1 = GET_LONG_PC();
-				pc--;
-
-				if (cobFile->scriptNames[r1].find("lua_") == 0) {
-					cobFile->code[pc - 1] = LUA_CALL;
-					LuaCall();
-#ifdef _MSC_VER
-					break;
-#else
-					RAS_DISPATCH();
-#endif
-				}
-
-				cobFile->code[pc - 1] = REAL_CALL;
-
-				// fall-through
-				// NOTE NO BREAK HERE!
-#ifndef _MSC_VER
-				goto DO_RAS_REAL_CALL;
-#endif 
-			}
-			CASE_OR_RAS_LABEL(REAL_CALL)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
-
-				// do not call zero-length functions
-				// TODO: NOTE THIS BREAK!
-				if (cobFile->scriptLengths[r1] == 0)
-#ifdef _MSC_VER
-					break;
-#else
-					RAS_DISPATCH();
-#endif
-
-				CallInfo& ci = PushCallStackRef();
-				ci.functionId = r1;
-				ci.returnAddr = pc;
-				ci.stackTop = dataStack.size() - r2;
-
-				paramCount = r2;
-
-				// call cobFile->scriptNames[r1]
-				pc = cobFile->scriptOffsets[r1];
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(LUA_CALL)
-				LuaCall();
-			BREAK_OR_RAS_DISPATCH
-
-
-			CASE_OR_RAS_LABEL(POP_STATIC)
-				r1 = GET_LONG_PC();
-				r2 = PopDataStack();
-
-				if (static_cast<size_t>(r1) < cobInst->staticVars.size())
-					cobInst->staticVars[r1] = r2;
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(POP_STACK)
-				PopDataStack();
-			BREAK_OR_RAS_DISPATCH
-
-
-			CASE_OR_RAS_LABEL(START)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
-
-				if (cobFile->scriptLengths[r1] == 0)
-					break;
-
-
-				CCobThread t(cobInst);
-
-				t.SetID(cobEngine->GenThreadID());
-				t.InitStack(r2, this);
-				t.Start(r1, signalMask, { {0} }, true);
-
-				// calling AddThread directly might move <this>, defer it
-				cobEngine->QueueAddThread(std::move(t));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(CREATE_LOCAL_VAR)
-				if (paramCount == 0) {
-					PushDataStack(0);
-				}
-				else {
-					paramCount--;
-				}
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(GET_UNIT_VALUE)
-				r1 = PopDataStack();
-				if ((r1 >= LUA0) && (r1 <= LUA9)) {
-					PushDataStack(luaArgs[r1 - LUA0]);
-					break;
-				}
-				r1 = cobInst->GetUnitVal(r1, 0, 0, 0, 0);
-				PushDataStack(r1);
-			BREAK_OR_RAS_DISPATCH
-
-
-			CASE_OR_RAS_LABEL(JUMP_NOT_EQUAL)
-				r1 = GET_LONG_PC();
-				r2 = PopDataStack();
-
-				if (r2 == 0)
-					pc = r1;
-
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(JUMP)
-				r1 = GET_LONG_PC();
-				// this seem to be an error in the docs..
-				//r2 = cobFile->scriptOffsets[LocalFunctionID()] + r1;
-				pc = r1;
-			BREAK_OR_RAS_DISPATCH
-
-
-			CASE_OR_RAS_LABEL(POP_LOCAL_VAR)
-				r1 = GET_LONG_PC();
-				r2 = PopDataStack();
-				dataStack[LocalStackFrame() + r1] = r2;
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(PUSH_LOCAL_VAR)
-				r1 = GET_LONG_PC();
-				r2 = dataStack[LocalStackFrame() + r1];
-				PushDataStack(r2);
-			BREAK_OR_RAS_DISPATCH
-
-
-			CASE_OR_RAS_LABEL(BITWISE_AND)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(r1 & r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(BITWISE_OR)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(r1 | r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(BITWISE_XOR)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(r1 ^ r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(BITWISE_NOT)
-				r1 = PopDataStack();
-				PushDataStack(~r1);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(ABS)
-				r1 = PopDataStack();
-				PushDataStack(abs(r1));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(MINIMUM)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(std::min(r1, r2));
-
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(MAXIMUM)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(std::max(r1, r2));
-
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SIGN)
-				r1 = PopDataStack();
-				PushDataStack(((0 < r1) - (r1 < 0)));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(CLAMP)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				r3 = PopDataStack();
-				PushDataStack(std::min(std::max(r1, r2), r3));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(DELTAHEADING)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack((r1 - r2 + COBSCALE_HALF * 3) % (COBSCALE_HALF * 2) - COBSCALE_HALF);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(KSINE)
-				r1 = PopDataStack();
-				PushDataStack(int(1024 * math::sinf(TAANG2RAD * (float)r1)));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(KCOSINE)
-				r1 = PopDataStack();
-				PushDataStack(int(1024 * math::sinf(TAANG2RAD * (float)r1)));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(EXPLODE)
-				r1 = GET_LONG_PC();
-				r2 = PopDataStack();
-				cobInst->Explode(r1, r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(PLAY_SOUND)
-				r1 = GET_LONG_PC();
-				r2 = PopDataStack();
-				cobInst->PlayUnitSound(r1, r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(PUSH_STATIC)
-				r1 = GET_LONG_PC();
-
-				if (static_cast<size_t>(r1) < cobInst->staticVars.size())
-					PushDataStack(cobInst->staticVars[r1]);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SET_NOT_EQUAL)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-
-				PushDataStack(int(r1 != r2));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SET_EQUAL)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-
-				PushDataStack(int(r1 == r2));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SET_LESS)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-
-				PushDataStack(int(r1 < r2));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SET_LESS_OR_EQUAL)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-
-				PushDataStack(int(r1 <= r2));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SET_GREATER)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-
-				PushDataStack(int(r1 > r2));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SET_GREATER_OR_EQUAL)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-
-				PushDataStack(int(r1 >= r2));
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(RAND)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-				r3 = gsRNG.NextInt(r2 - r1 + 1) + r1;
-				PushDataStack(r3);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(EMIT_SFX)
-				r1 = PopDataStack();
-				r2 = GET_LONG_PC();
-				cobInst->EmitSfx(r1, r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(MUL)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(r1 * r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SIGNAL)
-				r1 = PopDataStack();
-				cobInst->Signal(r1);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SET_SIGNAL_MASK)
-				r1 = PopDataStack();
-				signalMask = r1;
-			BREAK_OR_RAS_DISPATCH
-
-
-			CASE_OR_RAS_LABEL(TURN)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-				r3 = GET_LONG_PC(); // piece
-				r4 = GET_LONG_PC(); // axis
-
-				cobInst->Turn(r3, r4, r1, r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(GET)
-				r5 = PopDataStack();
-				r4 = PopDataStack();
-				r3 = PopDataStack();
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-				if ((r1 >= LUA0) && (r1 <= LUA9)) {
-					PushDataStack(luaArgs[r1 - LUA0]);
-					break;
-				}
-				r6 = cobInst->GetUnitVal(r1, r2, r3, r4, r5);
-				PushDataStack(r6);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(ADD)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-				PushDataStack(r1 + r2);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SUB)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-				r3 = r1 - r2;
-				PushDataStack(r3);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(DIV)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-
-				if (r2 != 0) {
-					r3 = r1 / r2;
-				}
-				else {
-					r3 = 1000; // infinity!
-					ShowError("division by zero");
-				}
-				PushDataStack(r3);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(MOD)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-
-				if (r2 != 0) {
-					PushDataStack(r1 % r2);
-				}
-				else {
-					PushDataStack(0);
-					ShowError("modulo division by zero");
-				}
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(MOVE)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
-				r4 = PopDataStack();
-				r3 = PopDataStack();
-				cobInst->Move(r1, r2, r3, r4);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(MOVE_NOW)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
-				r3 = PopDataStack();
-				cobInst->MoveNow(r1, r2, r3);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(TURN_NOW)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
-				r3 = PopDataStack();
-				cobInst->TurnNow(r1, r2, r3);
-			BREAK_OR_RAS_DISPATCH
-
-
-			CASE_OR_RAS_LABEL(WAIT_TURN)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
-
-				if (cobInst->NeedsWait(CCobInstance::ATurn, r1, r2)) {
-					state = WaitTurn;
-					waitPiece = r1;
-					waitAxis = r2;
+					cobEngine->ScheduleThread(this);
 					return true;
-				}
-			BREAK_OR_RAS_DISPATCH
+				BREAK_OR_RAS_DISPATCH
 
-			CASE_OR_RAS_LABEL(WAIT_MOVE)
-				r1 = GET_LONG_PC();
-				r2 = GET_LONG_PC();
+				CASE_OR_RAS_LABEL(SPIN)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
+					r3 = PopDataStack();         // speed
+					r4 = PopDataStack();         // accel
+					cobInst->Spin(r1, r2, r3, r4);
+				BREAK_OR_RAS_DISPATCH
 
-				if (cobInst->NeedsWait(CCobInstance::AMove, r1, r2)) {
-					state = WaitMove;
-					waitPiece = r1;
-					waitAxis = r2;
-					return true;
-				}
-			BREAK_OR_RAS_DISPATCH
+				CASE_OR_RAS_LABEL(STOP_SPIN)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
+					r3 = PopDataStack();         // decel
 
+					cobInst->StopSpin(r1, r2, r3);
+				BREAK_OR_RAS_DISPATCH
 
-			CASE_OR_RAS_LABEL(SET)
-				r2 = PopDataStack();
-				r1 = PopDataStack();
+				CASE_OR_RAS_LABEL(RETURN)
+					retCode = PopDataStack();
 
-				if ((r1 >= LUA0) && (r1 <= LUA9)) {
-					luaArgs[r1 - LUA0] = r2;
-					break;
-				}
+					if (LocalReturnAddr() == -1) {
+						state = Dead;
 
-				cobInst->SetUnitVal(r1, r2);
-			BREAK_OR_RAS_DISPATCH
+						// leave values intact on stack in case RAS_caller wants to check them
+						// callStackSize -= 1;
+						return false;
+					}
 
+					// return to caller
+					pc = LocalReturnAddr();
+					if (dataStack.size() > LocalStackFrame())
+						dataStack.resize(LocalStackFrame());
 
-			CASE_OR_RAS_LABEL(ATTACH)
-				r3 = PopDataStack();
-				r2 = PopDataStack();
-				r1 = PopDataStack();
-				cobInst->AttachUnit(r2, r1);
-			BREAK_OR_RAS_DISPATCH
+					callStack.pop_back();
+				BREAK_OR_RAS_DISPATCH
 
-			CASE_OR_RAS_LABEL(DROP)
-				r1 = PopDataStack();
-				cobInst->DropUnit(r1);
-			BREAK_OR_RAS_DISPATCH
+				/*
+				CASE_OR_RAS_LABEL(SHADE)
+					r1 = GET_LONG_PC();
+				BREAK_OR_RAS_DISPATCH
 
-				// like bitwise ops, but only on values 1 and 0
-			CASE_OR_RAS_LABEL(LOGICAL_NOT)
-				r1 = PopDataStack();
-				PushDataStack(int(r1 == 0));
-			BREAK_OR_RAS_DISPATCH
+				CASE_OR_RAS_LABEL(DONT_SHADE)
+					r1 = GET_LONG_PC();
+				BREAK_OR_RAS_DISPATCH
 
-			CASE_OR_RAS_LABEL(LOGICAL_AND)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(int(r1 && r2));
-			BREAK_OR_RAS_DISPATCH
+				CASE_OR_RAS_LABEL(CACHE)
+					r1 = GET_LONG_PC();
+				BREAK_OR_RAS_DISPATCH
 
-			CASE_OR_RAS_LABEL(LOGICAL_OR)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(int(r1 || r2));
-			BREAK_OR_RAS_DISPATCH
+				CASE_OR_RAS_LABEL(DONT_CACHE)
+					r1 = GET_LONG_PC();
+				BREAK_OR_RAS_DISPATCH
+				*/
 
-			CASE_OR_RAS_LABEL(LOGICAL_XOR)
-				r1 = PopDataStack();
-				r2 = PopDataStack();
-				PushDataStack(int((!!r1) ^ (!!r2)));
-			BREAK_OR_RAS_DISPATCH
+				CASE_OR_RAS_LABEL(CALL)
+					r1 = GET_LONG_PC();
+					pc--;
 
-
-			CASE_OR_RAS_LABEL(HIDE)
-				r1 = GET_LONG_PC();
-				cobInst->SetVisibility(r1, false);
-			BREAK_OR_RAS_DISPATCH
-
-			CASE_OR_RAS_LABEL(SHOW)
-				r1 = GET_LONG_PC();
-
-				int i;
-				for (i = 0; i < MAX_WEAPONS_PER_UNIT; ++i)
-					if (LocalFunctionID() == cobFile->scriptIndex[COBFN_FirePrimary + COBFN_Weapon_Funcs * i])
+					if (cobFile->scriptNames[r1].find("lua_") == 0) {
+						cobFile->code[pc - 1] = LUA_CALL;
+						LuaCall();
+	#ifdef _MSC_VER
 						break;
+	#else
+						RAS_DISPATCH();
+	#endif
+					}
 
-				// if true, we are in a Fire-script and should show a special flare effect
-				if (i < MAX_WEAPONS_PER_UNIT) {
-					cobInst->ShowFlare(r1);
+					cobFile->code[pc - 1] = REAL_CALL;
+
+					// fall-through
+					// NOTE NO BREAK HERE!
+	#ifndef _MSC_VER
+					goto DO_RAS_REAL_CALL;
+	#else
 				}
-				else {
-					cobInst->SetVisibility(r1, true);
-				}
-			BREAK_OR_RAS_DISPATCH
+	#endif 
+				CASE_OR_RAS_LABEL(REAL_CALL)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
 
-			// Note that Python developers found that switches becomes essentially a computed goto in MSVC if all cases are filled:
-			// https://github.com/python/cpython/pull/91718
-			case 0x0:
-			case 0x9:
-			case 0xa:
-			case 0x10:
-			case 0x14:
-			case 0x15:
-			case 0x16:
-			case 0x17:
-			case 0x18:
-			case 0x19:
-			case 0x1a:
-			case 0x1b:
-			case 0x1c:
-			case 0x1d:
-			case 0x1e:
-			case 0x1f:
-			case 0x20:
-			case 0x28:
-			case 0x29:
-			case 0x2a:
-			case 0x2b:
-			case 0x2c:
-			case 0x2d:
-			case 0x2e:
-			case 0x2f:
+					// do not call zero-length functions
+					// TODO: NOTE THIS BREAK!
+					if (cobFile->scriptLengths[r1] == 0)
+	#ifdef _MSC_VER
+						break;
+	#else
+						RAS_DISPATCH();
+	#endif
 
-			case 0x44:
-			case 0x45:
-			case 0x46:
-			case 0x47:
-			case 0x48:
-			case 0x49:
-			case 0x4a:
-			case 0x4b:
-			case 0x4c:
-			case 0x4d:
-			case 0x4e:
-			case 0x4f:
-			case 0x50:
-			case 0x5b:
-			case 0x5c:
-			case 0x5d:
-			case 0x5e:
-			case 0x5f:
-			case 0x60:
-			case 0x6a:
-			case 0x6b:
-			case 0x6c:
-			case 0x6d:
-			case 0x6e:
-			case 0x6f:
-			case 0x70:
-			case 0x73:
-			case 0x74:
-			case 0x75:
-			case 0x76:
-			case 0x77:
-			case 0x78:
-			case 0x79:
-			case 0x7a:
-			case 0x7b:
-			case 0x7c:
-			case 0x7d:
-			case 0x7e:
-			case 0x7f:
-			case 0x80:
-			case 0x81:
-			case 0x85:
-			case 0x86:
-			case 0x87:
-			case 0x88:
-			case 0x89:
-			case 0x8a:
-			case 0x8b:
-			case 0x8c:
-			case 0x8d:
-			case 0x8e:
-			case 0x8f:
-			case 0x90:
-			case 0x91:
-			case 0x92:
-			case 0x93:
-			case 0x94:
-			case 0x95:
-			case 0x96:
-			case 0x97:
-			case 0x98:
-			case 0x99:
-			case 0x9a:
-			case 0x9b:
-			case 0x9c:
-			case 0x9d:
-			case 0x9e:
-			case 0x9f:
-			case 0xa0:
-			case 0xa1:
-			case 0xa2:
-			case 0xa3:
-			case 0xa4:
-			case 0xa5:
-			case 0xa6:
-			case 0xa7:
-			case 0xa8:
-			case 0xa9:
-			case 0xaa:
-			case 0xab:
-			case 0xac:
-			case 0xad:
-			case 0xae:
-			case 0xaf:
-			case 0xb0:
-			case 0xb1:
-			case 0xb2:
-			case 0xb3:
-			case 0xb4:
-			case 0xb5:
-			case 0xb6:
-			case 0xb7:
-			case 0xb8:
-			case 0xb9:
-			case 0xba:
-			case 0xbb:
-			case 0xbc:
-			case 0xbd:
-			case 0xbe:
-			case 0xbf:
-			case 0xc0:
-			case 0xc1:
-			case 0xc2:
-			case 0xc3:
-			case 0xc4:
-			case 0xc5:
-			case 0xc6:
-			case 0xc7:
-			case 0xc8:
-			case 0xc9:
-			case 0xca:
-			case 0xcb:
-			case 0xcc:
-			case 0xcd:
-			case 0xce:
-			case 0xcf:
-			case 0xd0:
-			case 0xd1:
-			case 0xd2:
-			case 0xd3:
-			case 0xd4:
-			case 0xd5:
-			case 0xd6:
-			case 0xd7:
-			case 0xd8:
-			case 0xd9:
-			case 0xda:
-			case 0xdb:
-			case 0xdc:
-			case 0xdd:
-			case 0xde:
-			case 0xdf:
-			case 0xe0:
-			case 0xe1:
-			case 0xe2:
-			case 0xe3:
-			case 0xe4:
-			case 0xe5:
-			case 0xe6:
-			case 0xe7:
-			case 0xe8:
-			case 0xe9:
-			case 0xea:
-			case 0xeb:
-			case 0xec:
-			case 0xed:
-			case 0xee:
-			case 0xef:
-			case 0xf0:
-			case 0xf1:
-			case 0xf2:
-			case 0xf3:
-			case 0xf4:
-			case 0xf5:
-			case 0xf6:
-			case 0xf7:
-			case 0xf8:
-			case 0xf9:
-			case 0xfa:
-			case 0xfb:
-			case 0xfc:
-			case 0xfd:
-			case 0xfe:
-			case 0xff:
-			default:
-			{
-				const char* name = cobFile->name.c_str();
-				const char* func = cobFile->scriptNames[LocalFunctionID()].c_str();
+					CallInfo& ci = PushCallStackRef();
+					ci.functionId = r1;
+					ci.returnAddr = pc;
+					ci.stackTop = dataStack.size() - r2;
 
-				LOG_L(L_ERROR, "[COBThread::%s] unknown opcode %x (in %s:%s at %x)", __func__, opcode, name, func, pc - 1);
+					paramCount = r2;
 
-#if 0
-				auto ei = execTrace.begin();
-				while (ei != execTrace.end()) {
-					LOG_L(L_ERROR, "\tprogctr: %3x  opcode: %s", __func__, *ei, GetOpcodeName(cobFile->code[*ei]));
-					++ei;
-				}
-#endif
+					// call cobFile->scriptNames[r1]
+					pc = cobFile->scriptOffsets[r1];
+				BREAK_OR_RAS_DISPATCH
 
-				state = Dead;
-				return false;
-			} break;
+				CASE_OR_RAS_LABEL(LUA_CALL)
+					LuaCall();
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(POP_STATIC)
+					r1 = GET_LONG_PC();
+					r2 = PopDataStack();
+
+					if (static_cast<size_t>(r1) < cobInst->staticVars.size())
+						cobInst->staticVars[r1] = r2;
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(POP_STACK)
+					PopDataStack();
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(START)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
+
+					if (cobFile->scriptLengths[r1] == 0)
+	#ifdef _MSC_VER
+						break;
+	#else
+						RAS_DISPATCH();
+	#endif
+
+
+					CCobThread t(cobInst);
+
+					t.SetID(cobEngine->GenThreadID());
+					t.InitStack(r2, this);
+					t.Start(r1, signalMask, { {0} }, true);
+
+					// calling AddThread directly might move <this>, defer it
+					cobEngine->QueueAddThread(std::move(t));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(CREATE_LOCAL_VAR)
+					if (paramCount == 0) {
+						PushDataStack(0);
+					}
+					else {
+						paramCount--;
+					}
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(GET_UNIT_VALUE)
+					r1 = PopDataStack();
+					if ((r1 >= LUA0) && (r1 <= LUA9)) {
+						PushDataStack(luaArgs[r1 - LUA0]);
+	#ifdef _MSC_VER
+						break;
+	#else
+						RAS_DISPATCH();
+	#endif
+					}
+					r1 = cobInst->GetUnitVal(r1, 0, 0, 0, 0);
+					PushDataStack(r1);
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(JUMP_NOT_EQUAL)
+					r1 = GET_LONG_PC();
+					r2 = PopDataStack();
+
+					if (r2 == 0)
+						pc = r1;
+
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(JUMP)
+					r1 = GET_LONG_PC();
+					// this seem to be an error in the docs..
+					//r2 = cobFile->scriptOffsets[LocalFunctionID()] + r1;
+					pc = r1;
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(POP_LOCAL_VAR)
+					r1 = GET_LONG_PC();
+					r2 = PopDataStack();
+					dataStack[LocalStackFrame() + r1] = r2;
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(PUSH_LOCAL_VAR)
+					r1 = GET_LONG_PC();
+					r2 = dataStack[LocalStackFrame() + r1];
+					PushDataStack(r2);
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(BITWISE_AND)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(r1 & r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(BITWISE_OR)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(r1 | r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(BITWISE_XOR)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(r1 ^ r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(BITWISE_NOT)
+					r1 = PopDataStack();
+					PushDataStack(~r1);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(ABS)
+					r1 = PopDataStack();
+					PushDataStack(abs(r1));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(MINIMUM)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(std::min(r1, r2));
+
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(MAXIMUM)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(std::max(r1, r2));
+
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SIGN)
+					r1 = PopDataStack();
+					PushDataStack(((0 < r1) - (r1 < 0)));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(CLAMP)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					r3 = PopDataStack();
+					PushDataStack(std::min(std::max(r1, r2), r3));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(DELTAHEADING)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack((r1 - r2 + COBSCALE_HALF * 3) % (COBSCALE_HALF * 2) - COBSCALE_HALF);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(KSINE)
+					r1 = PopDataStack();
+					PushDataStack(int(1024 * math::sinf(TAANG2RAD * (float)r1)));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(KCOSINE)
+					r1 = PopDataStack();
+					PushDataStack(int(1024 * math::sinf(TAANG2RAD * (float)r1)));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(EXPLODE)
+					r1 = GET_LONG_PC();
+					r2 = PopDataStack();
+					cobInst->Explode(r1, r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(PLAY_SOUND)
+					r1 = GET_LONG_PC();
+					r2 = PopDataStack();
+					cobInst->PlayUnitSound(r1, r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(PUSH_STATIC)
+					r1 = GET_LONG_PC();
+
+					if (static_cast<size_t>(r1) < cobInst->staticVars.size())
+						PushDataStack(cobInst->staticVars[r1]);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SET_NOT_EQUAL)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+
+					PushDataStack(int(r1 != r2));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SET_EQUAL)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+
+					PushDataStack(int(r1 == r2));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SET_LESS)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+
+					PushDataStack(int(r1 < r2));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SET_LESS_OR_EQUAL)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+
+					PushDataStack(int(r1 <= r2));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SET_GREATER)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+
+					PushDataStack(int(r1 > r2));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SET_GREATER_OR_EQUAL)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+
+					PushDataStack(int(r1 >= r2));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(RAND)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+					r3 = gsRNG.NextInt(r2 - r1 + 1) + r1;
+					PushDataStack(r3);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(EMIT_SFX)
+					r1 = PopDataStack();
+					r2 = GET_LONG_PC();
+					cobInst->EmitSfx(r1, r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(MUL)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(r1 * r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SIGNAL)
+					r1 = PopDataStack();
+					cobInst->Signal(r1);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SET_SIGNAL_MASK)
+					r1 = PopDataStack();
+					signalMask = r1;
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(TURN)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+					r3 = GET_LONG_PC(); // piece
+					r4 = GET_LONG_PC(); // axis
+
+					cobInst->Turn(r3, r4, r1, r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(GET)
+					r5 = PopDataStack();
+					r4 = PopDataStack();
+					r3 = PopDataStack();
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+					if ((r1 >= LUA0) && (r1 <= LUA9)) {
+						PushDataStack(luaArgs[r1 - LUA0]);
+	#ifdef _MSC_VER
+						break;
+	#else
+						RAS_DISPATCH();
+	#endif
+					}
+					r6 = cobInst->GetUnitVal(r1, r2, r3, r4, r5);
+					PushDataStack(r6);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(ADD)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+					PushDataStack(r1 + r2);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SUB)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+					r3 = r1 - r2;
+					PushDataStack(r3);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(DIV)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+
+					if (r2 != 0) {
+						r3 = r1 / r2;
+					}
+					else {
+						r3 = 1000; // infinity!
+						ShowError("division by zero");
+					}
+					PushDataStack(r3);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(MOD)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+
+					if (r2 != 0) {
+						PushDataStack(r1 % r2);
+					}
+					else {
+						PushDataStack(0);
+						ShowError("modulo division by zero");
+					}
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(MOVE)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
+					r4 = PopDataStack();
+					r3 = PopDataStack();
+					cobInst->Move(r1, r2, r3, r4);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(MOVE_NOW)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
+					r3 = PopDataStack();
+					cobInst->MoveNow(r1, r2, r3);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(TURN_NOW)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
+					r3 = PopDataStack();
+					cobInst->TurnNow(r1, r2, r3);
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(WAIT_TURN)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
+
+					if (cobInst->NeedsWait(CCobInstance::ATurn, r1, r2)) {
+						state = WaitTurn;
+						waitPiece = r1;
+						waitAxis = r2;
+						return true;
+					}
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(WAIT_MOVE)
+					r1 = GET_LONG_PC();
+					r2 = GET_LONG_PC();
+
+					if (cobInst->NeedsWait(CCobInstance::AMove, r1, r2)) {
+						state = WaitMove;
+						waitPiece = r1;
+						waitAxis = r2;
+						return true;
+					}
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(SET)
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+
+					if ((r1 >= LUA0) && (r1 <= LUA9)) {
+						luaArgs[r1 - LUA0] = r2;
+	#ifdef _MSC_VER
+						break;
+	#else
+						RAS_DISPATCH();
+	#endif
+					}
+
+					cobInst->SetUnitVal(r1, r2);
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(ATTACH)
+					r3 = PopDataStack();
+					r2 = PopDataStack();
+					r1 = PopDataStack();
+					cobInst->AttachUnit(r2, r1);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(DROP)
+					r1 = PopDataStack();
+					cobInst->DropUnit(r1);
+				BREAK_OR_RAS_DISPATCH
+
+					// like bitwise ops, but only on values 1 and 0
+				CASE_OR_RAS_LABEL(LOGICAL_NOT)
+					r1 = PopDataStack();
+					PushDataStack(int(r1 == 0));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(LOGICAL_AND)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(int(r1 && r2));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(LOGICAL_OR)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(int(r1 || r2));
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(LOGICAL_XOR)
+					r1 = PopDataStack();
+					r2 = PopDataStack();
+					PushDataStack(int((!!r1) ^ (!!r2)));
+				BREAK_OR_RAS_DISPATCH
+
+
+				CASE_OR_RAS_LABEL(HIDE)
+					r1 = GET_LONG_PC();
+					cobInst->SetVisibility(r1, false);
+				BREAK_OR_RAS_DISPATCH
+
+				CASE_OR_RAS_LABEL(SHOW)
+					r1 = GET_LONG_PC();
+
+					int i;
+					for (i = 0; i < MAX_WEAPONS_PER_UNIT; ++i)
+						if (LocalFunctionID() == cobFile->scriptIndex[COBFN_FirePrimary + COBFN_Weapon_Funcs * i])
+	#ifdef _MSC_VER
+						break;
+	#else
+						RAS_DISPATCH();
+	#endif
+
+					// if true, we are in a Fire-script and should show a special flare effect
+					if (i < MAX_WEAPONS_PER_UNIT) {
+						cobInst->ShowFlare(r1);
+					}
+					else {
+						cobInst->SetVisibility(r1, true);
+					}
+				BREAK_OR_RAS_DISPATCH
+
+				// Note that Python developers found that switches becomes essentially a computed goto in MSVC if all cases are filled:
+				// https://github.com/python/cpython/pull/91718
+
+			#ifdef _MSC_VER
+				case 0x0:
+				case 0x9:
+				case 0xa:
+				case 0x10:
+				case 0x14:
+				case 0x15:
+				case 0x16:
+				case 0x17:
+				case 0x18:
+				case 0x19:
+				case 0x1a:
+				case 0x1b:
+				case 0x1c:
+				case 0x1d:
+				case 0x1e:
+				case 0x1f:
+				case 0x20:
+				case 0x28:
+				case 0x29:
+				case 0x2a:
+				case 0x2b:
+				case 0x2c:
+				case 0x2d:
+				case 0x2e:
+				case 0x2f:
+
+				case 0x44:
+				case 0x45:
+				case 0x46:
+				case 0x47:
+				case 0x48:
+				case 0x49:
+				case 0x4a:
+				case 0x4b:
+				case 0x4c:
+				case 0x4d:
+				case 0x4e:
+				case 0x4f:
+				case 0x50:
+				case 0x5b:
+				case 0x5c:
+				case 0x5d:
+				case 0x5e:
+				case 0x5f:
+				case 0x60:
+				case 0x6a:
+				case 0x6b:
+				case 0x6c:
+				case 0x6d:
+				case 0x6e:
+				case 0x6f:
+				case 0x70:
+				case 0x73:
+				case 0x74:
+				case 0x75:
+				case 0x76:
+				case 0x77:
+				case 0x78:
+				case 0x79:
+				case 0x7a:
+				case 0x7b:
+				case 0x7c:
+				case 0x7d:
+				case 0x7e:
+				case 0x7f:
+				case 0x80:
+				case 0x81:
+				case 0x85:
+				case 0x86:
+				case 0x87:
+				case 0x88:
+				case 0x89:
+				case 0x8a:
+				case 0x8b:
+				case 0x8c:
+				case 0x8d:
+				case 0x8e:
+				case 0x8f:
+				case 0x90:
+				case 0x91:
+				case 0x92:
+				case 0x93:
+				case 0x94:
+				case 0x95:
+				case 0x96:
+				case 0x97:
+				case 0x98:
+				case 0x99:
+				case 0x9a:
+				case 0x9b:
+				case 0x9c:
+				case 0x9d:
+				case 0x9e:
+				case 0x9f:
+				case 0xa0:
+				case 0xa1:
+				case 0xa2:
+				case 0xa3:
+				case 0xa4:
+				case 0xa5:
+				case 0xa6:
+				case 0xa7:
+				case 0xa8:
+				case 0xa9:
+				case 0xaa:
+				case 0xab:
+				case 0xac:
+				case 0xad:
+				case 0xae:
+				case 0xaf:
+				case 0xb0:
+				case 0xb1:
+				case 0xb2:
+				case 0xb3:
+				case 0xb4:
+				case 0xb5:
+				case 0xb6:
+				case 0xb7:
+				case 0xb8:
+				case 0xb9:
+				case 0xba:
+				case 0xbb:
+				case 0xbc:
+				case 0xbd:
+				case 0xbe:
+				case 0xbf:
+				case 0xc0:
+				case 0xc1:
+				case 0xc2:
+				case 0xc3:
+				case 0xc4:
+				case 0xc5:
+				case 0xc6:
+				case 0xc7:
+				case 0xc8:
+				case 0xc9:
+				case 0xca:
+				case 0xcb:
+				case 0xcc:
+				case 0xcd:
+				case 0xce:
+				case 0xcf:
+				case 0xd0:
+				case 0xd1:
+				case 0xd2:
+				case 0xd3:
+				case 0xd4:
+				case 0xd5:
+				case 0xd6:
+				case 0xd7:
+				case 0xd8:
+				case 0xd9:
+				case 0xda:
+				case 0xdb:
+				case 0xdc:
+				case 0xdd:
+				case 0xde:
+				case 0xdf:
+				case 0xe0:
+				case 0xe1:
+				case 0xe2:
+				case 0xe3:
+				case 0xe4:
+				case 0xe5:
+				case 0xe6:
+				case 0xe7:
+				case 0xe8:
+				case 0xe9:
+				case 0xea:
+				case 0xeb:
+				case 0xec:
+				case 0xed:
+				case 0xee:
+				case 0xef:
+				case 0xf0:
+				case 0xf1:
+				case 0xf2:
+				case 0xf3:
+				case 0xf4:
+				case 0xf5:
+				case 0xf6:
+				case 0xf7:
+				case 0xf8:
+				case 0xf9:
+				case 0xfa:
+				case 0xfb:
+				case 0xfc:
+				case 0xfd:
+				case 0xfe:
+				case 0xff:
+				default:
+				{
+					const char* name = cobFile->name.c_str();
+					const char* func = cobFile->scriptNames[LocalFunctionID()].c_str();
+
+					LOG_L(L_ERROR, "[COBThread::%s] unknown opcode %x (in %s:%s at %x)", __func__, opcode, name, func, pc - 1);
+
+	#if 0
+					auto ei = execTrace.begin();
+					while (ei != execTrace.end()) {
+						LOG_L(L_ERROR, "\tprogctr: %3x  opcode: %s", __func__, *ei, GetOpcodeName(cobFile->code[*ei]));
+						++ei;
+					}
+	#endif
+
+					state = Dead;
+					return false;
+				} break;
+			}
+			#endif
 			}
 		}
-	}
+	
 	// can arrive here as dead, through CCobInstance::Signal()
 	return (state != Dead);
 }

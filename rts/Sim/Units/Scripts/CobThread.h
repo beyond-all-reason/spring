@@ -115,14 +115,17 @@ protected:
 	int LocalReturnAddr() const { return callStack.back().returnAddr; }
 	int LocalStackFrame() const { return callStack.back().stackTop; }
 
-	inline int PopDataStack() {
+	inline int PopDataStack();/* {
 		if (dataStack.empty()) {
+			const char* name = cobFile->name.c_str();
+			const char* func = cobFile->scriptNames[LocalFunctionID()].c_str();
+			LOG_L(L_ERROR, "[COBThread::%s] empty data stack (in %s at %x)", name, func, pc - 1);
 			return 0;
 		}
 		int ret = dataStack.back();
 		dataStack.pop_back();
 		return ret;
-	}
+	}*/
 
 protected:
 	int id = -1;
