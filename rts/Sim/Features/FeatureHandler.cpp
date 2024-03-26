@@ -43,7 +43,7 @@ void CFeatureHandler::Init() {
 
 void CFeatureHandler::Kill() {
 	for (const int featureID: activeFeatureIDs) {
-		Sim::registry.destroy(features[featureID]->entityReference);
+		// Sim::registry.destroy(features[featureID]->entityReference);
 		featureMemPool.free(features[featureID]);
 	}
 
@@ -105,7 +105,7 @@ CFeature* CFeatureHandler::LoadFeature(const FeatureLoadParams& params) {
 		return nullptr;
 
 	CFeature* feature = featureMemPool.alloc<CFeature>();
-	feature->entityReference = Sim::registry.create();
+	// feature->entityReference = Sim::registry.create();
 
 	// calls back into AddFeature
 	feature->Initialize(params);
@@ -217,7 +217,7 @@ bool CFeatureHandler::UpdateFeature(CFeature* feature)
 	assert(feature->inUpdateQue);
 
 	if (feature->deleteMe) {
-		Sim::registry.destroy(feature->entityReference);
+		// Sim::registry.destroy(feature->entityReference);
 
 		eventHandler.RenderFeatureDestroyed(feature);
 		eventHandler.FeatureDestroyed(feature);

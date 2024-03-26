@@ -97,7 +97,7 @@ CUnit* CUnitLoader::LoadUnit(const UnitLoadParams& params)
 		}
 
 		unit = CUnitHandler::NewUnit(ud);
-		unit->entityReference = Sim::registry.create();
+		// unit->entityReference = Sim::registry.create();
 
 		unit->PreInit(params);
 		unit->PostInit(params.builder);

@@ -57,6 +57,8 @@ void GroundMoveSystem::Update() {
 	}
 	{
 		SCOPED_TIMER("Sim::Unit::MoveType::2::HeadingUpdates");
+        
+        // TODO: these wouldn't need to be in ST section if the an alterntive sync var method was available.
         {
             auto view = Sim::registry.view<ChangeHeadingEvent>();
             view.each([](ChangeHeadingEvent& event){
@@ -154,17 +156,38 @@ void GroundMoveSystem::Update() {
         // Same for change heading above as well.
         SCOPED_TIMER("Sim::Unit::MoveType::5::Update");
         auto view = Sim::registry.view<GroundMoveType>();
-        view.each([&view](GroundMoveType& unitId){
+        // view.each([&view](entt::entity entity, GroundMoveType& unitId){
+        for_mt(0, view.size(), [&view](const int i){
+            auto entity = view.storage<GroundMoveType>()[i];
+            auto unitId = view.get<GroundMoveType>(entity);
+
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             CGroundMoveType* moveType = static_cast<CGroundMoveType*>(unit->moveType);
             assert(moveType != nullptr);
-            if (moveType->Update()) 
-                eventHandler.UnitMoved(unit);
+            if (moveType->Update()){
+                auto event = Sim::registry.get<UnitMovedEvent>(entity);
+                event.unit = unit;
+                event.moved = true;
+                // eventHandler.UnitMoved(unit);
+            }
 
             #ifndef NDEBUG
             unit->SanityCheck();
             #endif
         });
+    }
+    {
+        SCOPED_TIMER("Sim::Unit::MoveType::6::UnitMovedEvents");
+        uint32_t objectCount = 0;
+        auto view = Sim::registry.view<UnitMovedEvent>();
+		view.each([&](UnitMovedEvent& event){
+            if (event.moved) {
+                eventHandler.UnitMoved(event.unit);
+                event.moved = false;
+                objectCount++;
+            }
+		});
+        LOG("Unit Move Events Progressed: %i", objectCount);
     }
 }
 

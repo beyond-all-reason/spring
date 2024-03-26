@@ -5,10 +5,12 @@
 #include "SolidObjectDef.h"
 #include "Map/ReadMap.h"
 #include "Map/Ground.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/Objects/Components/SyncObjectsComponents.h"
 #include "Game/GameHelper.h"
 #include "System/SpringMath.h"
 
@@ -80,6 +82,15 @@ CR_REG_METADATA(CSolidObject,
 	CR_POSTLOAD(PostLoad)
 ))
 
+CSolidObject::CSolidObject(){
+	entityReference = Sim::registry.create();
+	Sim::registry.emplace_or_replace<Objects::SolidObjectSync>(entityReference);
+	Sim::registry.emplace_or_replace<Objects::SolidObjectRef>(entityReference, this);
+}
+
+CSolidObject::~CSolidObject(){
+	Sim::registry.destroy(entityReference);
+}
 
 void CSolidObject::PostLoad()
 {

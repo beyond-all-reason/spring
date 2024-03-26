@@ -675,10 +675,10 @@ void CHoverAirMoveType::UpdateBanking(bool noBanking)
 	float wantedBank = 0.0f;
 	float wantedPitch = 0.0f;
 
-	SyncedFloat3& frontDir = owner->frontdir;
-	SyncedFloat3& upDir = owner->updir;
-	SyncedFloat3& rightDir3D = owner->rightdir;
-	SyncedFloat3  rightDir2D;
+	float3& frontDir = owner->frontdir;
+	float3& upDir = owner->updir;
+	float3& rightDir3D = owner->rightdir;
+	float3  rightDir2D;
 
 	// pitching does not affect rightdir, but we want a flat right-vector to calculate wantedBank
 	frontDir.y = currentPitch;

@@ -105,9 +105,9 @@ static float GetRudderDeflection(
 	const CUnit* /*collidee*/,
 	const float3& pos,
 	const float4& spd,
-	const SyncedFloat3& rightdir,
-	const SyncedFloat3& updir,
-	const SyncedFloat3& frontdir,
+	const float3& rightdir,
+	const float3& updir,
+	const float3& frontdir,
 	const float3& goalDir,
 	float groundHeight,
 	float wantedHeight,
@@ -139,9 +139,9 @@ static float GetAileronDeflection(
 	const CUnit* /*collidee*/,
 	const float3& pos,
 	const float4& spd,
-	const SyncedFloat3& rightdir,
-	const SyncedFloat3& updir,
-	const SyncedFloat3& frontdir,
+	const float3& rightdir,
+	const float3& updir,
+	const float3& frontdir,
 	const float3& goalDir,
 	float groundHeight,
 	float wantedHeight,
@@ -210,9 +210,9 @@ static float GetElevatorDeflection(
 	const CUnit* collidee,
 	const float3& pos,
 	const float4& spd,
-	const SyncedFloat3& rightdir,
-	const SyncedFloat3& updir,
-	const SyncedFloat3& frontdir,
+	const float3& rightdir,
+	const float3& updir,
+	const float3& frontdir,
 	const float3& goalDir,
 	float groundHeight,
 	float wantedHeight,
@@ -310,9 +310,9 @@ static float3 GetControlSurfaceAngles(
 	const CUnit* collidee,
 	const float3& pos,
 	const float4& spd,
-	const SyncedFloat3& rightdir,
-	const SyncedFloat3& updir,
-	const SyncedFloat3& frontdir,
+	const float3& rightdir,
+	const float3& updir,
+	const float3& frontdir,
 	const float3& goalDir,
 	const float3& yprInputLocks,
 	const float3& maxBodyAngles, // .x := maxYaw, .y := maxPitch, .z := maxBank
@@ -338,8 +338,8 @@ static float3 GetControlSurfaceAngles(
 
 
 static int SelectLoopBackManeuver(
-	const SyncedFloat3& frontdir,
-	const SyncedFloat3& rightdir,
+	const float3& frontdir,
+	const float3& rightdir,
 	const float4& spd,
 	float turnRadius,
 	float groundDist
@@ -488,8 +488,8 @@ bool CStrafeAirMoveType::Update()
 					} else {
 						if (UpdateFlying(wantedHeight, 1.0f) && !goalInFront && loopbackAttack) {
 							// once yaw and roll are unblocked, semi-randomly decide to turn or loop
-							const SyncedFloat3& rightdir = owner->rightdir;
-							const SyncedFloat3& frontdir = owner->frontdir;
+							const float3& rightdir = owner->rightdir;
+							const float3& frontdir = owner->frontdir;
 
 							const float altitude = CGround::GetHeightAboveWater(owner->pos.x, owner->pos.z) - lastPos.y;
 
@@ -733,9 +733,9 @@ void CStrafeAirMoveType::UpdateAttack()
 	const float3& pos = owner->pos;
 	const float4& spd = owner->speed;
 
-	const SyncedFloat3& rightdir = owner->rightdir;
-	const SyncedFloat3& frontdir = owner->frontdir;
-	const SyncedFloat3& updir    = owner->updir;
+	const float3& rightdir = owner->rightdir;
+	const float3& frontdir = owner->frontdir;
+	const float3& updir    = owner->updir;
 
 	if (spd.w < 0.01f) {
 		UpdateAirPhysics({0.0f, 0.0f, 0.0f, 1.0f}, owner->frontdir);
@@ -796,9 +796,9 @@ bool CStrafeAirMoveType::UpdateFlying(float wantedHeight, float wantedThrottle)
 	const float3& pos = owner->pos;
 	const float4& spd = owner->speed;
 
-	const SyncedFloat3& rightdir = owner->rightdir;
-	const SyncedFloat3& frontdir = owner->frontdir;
-	const SyncedFloat3& updir    = owner->updir;
+	const float3& rightdir = owner->rightdir;
+	const float3& frontdir = owner->frontdir;
+	const float3& updir    = owner->updir;
 
 	// NOTE:
 	//   turnRadius is often way too small, but cannot calculate one
@@ -889,9 +889,9 @@ void CStrafeAirMoveType::UpdateTakeOff()
 
 	wantedHeight = orgWantedHeight;
 
-	SyncedFloat3& rightdir = owner->rightdir;
-	SyncedFloat3& frontdir = owner->frontdir;
-	SyncedFloat3& updir    = owner->updir;
+	float3& rightdir = owner->rightdir;
+	float3& frontdir = owner->frontdir;
+	float3& updir    = owner->updir;
 
 	const float3 goalDir = (goalPos - pos).Normalize();
 
@@ -927,9 +927,9 @@ void CStrafeAirMoveType::UpdateLanding()
 {
 	const float3 pos = owner->pos;
 
-	SyncedFloat3& rightdir = owner->rightdir;
-	SyncedFloat3& frontdir = owner->frontdir;
-	SyncedFloat3& updir    = owner->updir;
+	float3& rightdir = owner->rightdir;
+	float3& frontdir = owner->frontdir;
+	float3& updir    = owner->updir;
 
 	if (!HaveLandingPos()) {
 		reservedLandingPos = FindLandingPos(pos + frontdir * BrakingDistance(maxSpeed, decRate));
@@ -1030,9 +1030,9 @@ void CStrafeAirMoveType::UpdateAirPhysics(const float4& controlInputs, const flo
 	const float3& pos = owner->pos;
 	const float4& spd = owner->speed;
 
-	SyncedFloat3& rightdir = owner->rightdir;
-	SyncedFloat3& frontdir = owner->frontdir;
-	SyncedFloat3& updir    = owner->updir;
+	float3& rightdir = owner->rightdir;
+	float3& frontdir = owner->frontdir;
+	float3& updir    = owner->updir;
 
 	const float groundHeight = CGround::GetHeightAboveWater(pos.x, pos.z);
 	const float linearSpeed = spd.w;

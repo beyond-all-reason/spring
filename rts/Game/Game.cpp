@@ -83,6 +83,7 @@
 #include "Sim/Misc/ResourceHandler.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveTypeFactory.h"
+#include "Sim/Objects/Systems/SyncObjectsSystem.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/Projectile.h"
@@ -706,6 +707,8 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	inMapDrawerModel = new CInMapDrawModel();
 	inMapDrawer = new CInMapDraw();
 
+	SyncObjectsSystem::Init();
+
 	LEAVE_SYNCED_CODE();
 }
 
@@ -1038,6 +1041,8 @@ void CGame::KillSimulation()
 	CUnitScriptEngine::KillStatic();
 	CWeaponLoader::KillStatic();
 	CommonDefHandler::KillStatic();
+
+	SyncObjectsSystem::Shutdown();
 
 	Sim::ClearRegistry();
 }
@@ -1787,6 +1792,8 @@ void CGame::SimFrame() {
 		teamHandler.GameFrame(gs->frameNum);
 		playerHandler.GameFrame(gs->frameNum);
 		eventHandler.GameFramePost(gs->frameNum);
+
+		SyncObjectsSystem::Update();
 	}
 
 	lastSimFrameTime = spring_gettime();

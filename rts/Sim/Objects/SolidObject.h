@@ -99,7 +99,8 @@ public:
 		DAMAGE_EXTSOURCE_CRUSHED = 7,
 	};
 
-	virtual ~CSolidObject() {}
+	CSolidObject();
+	virtual ~CSolidObject();
 
 	void PostLoad();
 
@@ -354,9 +355,9 @@ public:
 	int2 footprint = {1, 1};
 
 	///< contains the same information as frontdir, but in a short signed integer
-	SyncedSshort heading = 0;
+	short heading = 0;
 	///< orientation of footprint, 4 different states
-	SyncedSshort buildFacing = 0;
+	short buildFacing = 0;
 
 
 	///< objects start out non-blocking but fully collidable
@@ -387,18 +388,18 @@ public:
 	const LocalModelPiece* hitModelPieces[2];
 
 	///< object-local {z,x,y}-axes (in WS)
-	SyncedFloat3 frontdir =  FwdVector;
-	SyncedFloat3 rightdir = -RgtVector;
-	SyncedFloat3    updir =   UpVector;
+	float3 frontdir =  FwdVector;
+	float3 rightdir = -RgtVector;
+	float3    updir =   UpVector;
 
 	///< local-space vector from pos to midPos (read from model, used to initialize midPos)
-	SyncedFloat3 relMidPos;
+	float3 relMidPos;
 	///< local-space vector from pos to aimPos (read from model, used to initialize aimPos)
-	SyncedFloat3 relAimPos;
+	float3 relAimPos;
 	///< mid-position of model in WS, used as center of mass (etc)
-	SyncedFloat3 midPos;
+	float3 midPos;
 	///< aim-position of model in WS, used by weapons
-	SyncedFloat3 aimPos;
+	float3 aimPos;
 
 	///< current position on GroundBlockingObjectMap
 	int2 mapPos;

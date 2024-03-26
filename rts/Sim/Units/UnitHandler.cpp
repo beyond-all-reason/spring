@@ -312,8 +312,8 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 	unitMemPool.free(delUnit);
 	CSolidObject::SetDeletingRefID(-1);
 
-	assert( Sim::registry.valid(delUnitEntity) );
-	Sim::registry.destroy(delUnitEntity);
+	// assert( Sim::registry.valid(delUnitEntity) );
+	// Sim::registry.destroy(delUnitEntity);
 }
 
 void CUnitHandler::UpdateUnitMoveTypes()
