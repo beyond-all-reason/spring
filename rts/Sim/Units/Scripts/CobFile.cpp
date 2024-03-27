@@ -83,7 +83,7 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 	} else {
 		cobFileData = std::move(in.GetBuffer());
 	}
-
+	COBHeader ch;
 	// time to parse
 	READ_COBHEADER(ch, cobFileData.data());
 
@@ -158,6 +158,13 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 			}
 		}
 	}
+
+
+	const char *cname = name.c_str();
+	LOG_L(L_ERROR, "[COBVERSION::%s] %d", cname, ch.VersionSignature);
+	//LogHeader("CCobFile::CCobFile");
+	cobVersion = ch.VersionSignature;
+
 
 
 	// create a reverse mapping (name->int)
