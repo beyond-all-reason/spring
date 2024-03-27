@@ -14,6 +14,8 @@
 #include "System/EventHandler.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CPlasmaRepulser, CWeapon, )
 CR_REG_METADATA(CPlasmaRepulser, (
 	CR_MEMBER(tempNum),
@@ -43,6 +45,7 @@ struct ShieldSegmentCollectionPool {
 	CR_DECLARE_STRUCT(ShieldSegmentCollectionPool)
 public:
 	void InsertCollection(CPlasmaRepulser* r) {
+		//ZoneScoped;
 		if (sscs.empty())
 			sscs.reserve(32);
 
@@ -58,11 +61,13 @@ public:
 	}
 
 	void RemoveCollection(const CPlasmaRepulser* r) {
+		//ZoneScoped;
 		sscs[r->scIndex].Kill();
 		idcs.push_back(r->scIndex);
 	}
 
 	void UpdateCollection(const CPlasmaRepulser* r) {
+		//ZoneScoped;
 		sscs[r->scIndex].UpdateColor();
 	}
 
@@ -85,6 +90,7 @@ static ShieldSegmentCollectionPool sscPool;
 
 void CPlasmaRepulser::SerializeShieldSegmentCollectionPool(creg::ISerializer* s)
 {
+	//ZoneScoped;
 	s->SerializeObjectInstance(&sscPool, sscPool.GetClass());
 }
 
@@ -92,6 +98,7 @@ void CPlasmaRepulser::SerializeShieldSegmentCollectionPool(creg::ISerializer* s)
 
 CPlasmaRepulser::~CPlasmaRepulser()
 {
+	//ZoneScoped;
 	quadField.RemoveRepulser(this);
 	sscPool.RemoveCollection(this);
 }
@@ -99,6 +106,7 @@ CPlasmaRepulser::~CPlasmaRepulser()
 
 void CPlasmaRepulser::Init()
 {
+	//ZoneScoped;
 	sqRadius = Square(radius = weaponDef->shieldRadius);
 	curPower = mix(10.0f * 1000.0f * 1000.0f, weaponDef->shieldStartingPower, weaponDef->shieldPower != 0.0f);
 
@@ -113,22 +121,26 @@ void CPlasmaRepulser::Init()
 
 bool CPlasmaRepulser::IsRepulsing(CWeaponProjectile* p) const
 {
+	//ZoneScoped;
 	return (weaponDef->shieldRepulser && std::find(repulsedProjectiles.begin(), repulsedProjectiles.end(), p) != repulsedProjectiles.end());
 }
 
 bool CPlasmaRepulser::IgnoreInteriorHit(CWeaponProjectile* p) const
 {
+	//ZoneScoped;
 	return (weaponDef->exteriorShield && !IsRepulsing(p));
 }
 
 
 bool CPlasmaRepulser::IsActive() const
 {
+	//ZoneScoped;
 	return isEnabled && !owner->IsStunned() && !owner->beingBuilt;
 }
 
 bool CPlasmaRepulser::CanIntercept(unsigned interceptedType, int allyTeam) const
 {
+	//ZoneScoped;
 	if ((weaponDef->shieldInterceptType & interceptedType) == 0)
 		return false;
 
@@ -141,6 +153,7 @@ bool CPlasmaRepulser::CanIntercept(unsigned interceptedType, int allyTeam) const
 
 void CPlasmaRepulser::Update()
 {
+	//ZoneScoped;
 	rechargeDelay -= (rechargeDelay > 0);
 	hitFrameCount -= (hitFrameCount > 0);
 
@@ -167,6 +180,7 @@ void CPlasmaRepulser::Update()
 
 void CPlasmaRepulser::SetRechargeDelay(int delay, bool overwrite)
 {
+	//ZoneScoped;
 	if (overwrite)
 		rechargeDelay = delay;
 	else
@@ -176,6 +190,7 @@ void CPlasmaRepulser::SetRechargeDelay(int delay, bool overwrite)
 // Returns true if the projectile is destroyed.
 bool CPlasmaRepulser::IncomingProjectile(CWeaponProjectile* p, const float3& hitPos)
 {
+	//ZoneScoped;
 	const int defHitFrames = weaponDef->visibleShieldHitFrames;
 
 	// gadget handles the collision event, don't touch the projectile
@@ -255,6 +270,7 @@ bool CPlasmaRepulser::IncomingProjectile(CWeaponProjectile* p, const float3& hit
 
 void CPlasmaRepulser::SlowUpdate()
 {
+	//ZoneScoped;
 	UpdateWeaponPieces();
 	UpdateWeaponVectors();
 	owner->script->AimShieldWeapon(this);
@@ -263,6 +279,7 @@ void CPlasmaRepulser::SlowUpdate()
 
 bool CPlasmaRepulser::IncomingBeam(const CWeapon* emitter, const float3& startPos, const float3& hitPos, float damageMultiplier)
 {
+	//ZoneScoped;
 	// gadget handles the collision event, don't touch the projectile
 	// note that startPos only equals the beam's true origin (which is
 	// p->GetStartPos()) if it did not get reflected
@@ -286,6 +303,7 @@ bool CPlasmaRepulser::IncomingBeam(const CWeapon* emitter, const float3& startPo
 
 void CPlasmaRepulser::DependentDied(CObject* o)
 {
+	//ZoneScoped;
 	spring::VectorErase(repulsedProjectiles, static_cast<CWeaponProjectile*>(o));
 	CWeapon::DependentDied(o);
 }

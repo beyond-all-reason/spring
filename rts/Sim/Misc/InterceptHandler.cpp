@@ -17,6 +17,8 @@
 #include "System/SpringMath.h"
 #include "System/creg/STL_Deque.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND_DERIVED(CInterceptHandler, CObject, )
 CR_REG_METADATA(CInterceptHandler, (
@@ -29,6 +31,7 @@ CInterceptHandler interceptHandler;
 
 
 void CInterceptHandler::Update(bool forced) {
+	//ZoneScoped;
 	if (((gs->frameNum % UNIT_SLOWUPDATE_RATE) != 0) && !forced)
 		return;
 
@@ -118,12 +121,14 @@ void CInterceptHandler::Update(bool forced) {
 
 void CInterceptHandler::AddInterceptorWeapon(CWeapon* weapon)
 {
+	//ZoneScoped;
 	interceptors.push_back(weapon);
 }
 
 
 void CInterceptHandler::RemoveInterceptorWeapon(CWeapon* weapon)
 {
+	//ZoneScoped;
 	auto it = std::find(interceptors.begin(), interceptors.end(), weapon);
 	if (it != interceptors.end()) {
 		interceptors.erase(it);
@@ -133,6 +138,7 @@ void CInterceptHandler::RemoveInterceptorWeapon(CWeapon* weapon)
 
 void CInterceptHandler::AddInterceptTarget(CWeaponProjectile* target, const float3& destination)
 {
+	//ZoneScoped;
 	// keep track of all interceptable projectiles
 	interceptables.push_back(target);
 
@@ -147,6 +153,7 @@ void CInterceptHandler::AddInterceptTarget(CWeaponProjectile* target, const floa
 
 void CInterceptHandler::DependentDied(CObject* o)
 {
+	//ZoneScoped;
 	auto it = std::find(interceptables.begin(), interceptables.end(), static_cast<CWeaponProjectile*>(o));
 	if (it != interceptables.end()) {
 		interceptables.erase(it);

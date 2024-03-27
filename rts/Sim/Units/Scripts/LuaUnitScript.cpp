@@ -25,6 +25,8 @@
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CLuaUnitScript, CUnitScript, )
 
 CR_REG_METADATA(CLuaUnitScript, (
@@ -40,6 +42,7 @@ CR_REG_METADATA(CLuaUnitScript, (
 
 void CLuaUnitScript::PostLoad()
 {
+	//ZoneScoped;
 	if (unit == nullptr)
 		return;
 
@@ -58,6 +61,7 @@ void CLuaUnitScript::PostLoad()
 
 
 void CLuaUnitScript::Serialize(creg::ISerializer* s) {
+	//ZoneScoped;
 	bool isLuaGaia;
 	if (s->IsWriting()) {
 		isLuaGaia = luaGaia != nullptr && handle == &luaGaia->syncedLuaHandle;
@@ -76,6 +80,7 @@ void CLuaUnitScript::Serialize(creg::ISerializer* s) {
 
 static inline LocalModelPiece* ParseLocalModelPiece(lua_State* L, CUnitScript* script, const char* caller)
 {
+	//ZoneScoped;
 	const int piece = luaL_checkint(L, 1) - 1;
 
 	if (!script->PieceExists(piece))
@@ -86,6 +91,7 @@ static inline LocalModelPiece* ParseLocalModelPiece(lua_State* L, CUnitScript* s
 
 static inline int ToLua(lua_State* L, const float3& v)
 {
+	//ZoneScoped;
 	lua_pushnumber(L, v.x);
 	lua_pushnumber(L, v.y);
 	lua_pushnumber(L, v.z);
@@ -240,6 +246,7 @@ CLuaUnitScript::CLuaUnitScript(lua_State* L, CUnit* unit)
 	: CUnitScript(unit)
 	, handle(CLuaHandle::GetHandle(L)), L(L)
 {
+	//ZoneScoped;
 	scriptIndex.fill(LUA_NOREF);
 	scriptNames.reserve(scriptIndex.size());
 	pieces.reserve(unit->localModel.pieces.size());
@@ -259,6 +266,7 @@ CLuaUnitScript::CLuaUnitScript(lua_State* L, CUnit* unit)
 
 CLuaUnitScript::~CLuaUnitScript()
 {
+	//ZoneScoped;
 	// if L is NULL then the lua_State is closed/closing (see HandleFreed)
 	if (L == nullptr)
 		return;
@@ -274,6 +282,7 @@ CLuaUnitScript::~CLuaUnitScript()
 
 void CLuaUnitScript::HandleFreed(CLuaHandle* handle)
 {
+	//ZoneScoped;
 	for (CUnit* u: unitHandler.GetActiveUnits()) {
 		CUnitScript* script = u->script;
 		CLuaUnitScript* luaScript = dynamic_cast<CLuaUnitScript*>(script);
@@ -297,6 +306,7 @@ void CLuaUnitScript::HandleFreed(CLuaHandle* handle)
 
 int CLuaUnitScript::UpdateCallIn()
 {
+	//ZoneScoped;
 	const std::string& fname = lua_tostring(L, 2);
 	const bool remove = lua_isnoneornil(L, 3);
 
@@ -339,6 +349,7 @@ int CLuaUnitScript::UpdateCallIn()
 
 void CLuaUnitScript::UpdateCallIn(const std::string& fname, int ref)
 {
+	//ZoneScoped;
 	// Map common function names to indices
 	int num = CLuaUnitScriptNames::GetScriptNumber(fname);
 
@@ -360,6 +371,7 @@ void CLuaUnitScript::UpdateCallIn(const std::string& fname, int ref)
 
 void CLuaUnitScript::RemoveCallIn(const std::string& fname)
 {
+	//ZoneScoped;
 	const auto it = scriptNames.find(fname);
 
 	if (it != scriptNames.end()) {
@@ -374,6 +386,7 @@ void CLuaUnitScript::RemoveCallIn(const std::string& fname)
 
 void CLuaUnitScript::ShowScriptError(const std::string& msg)
 {
+	//ZoneScoped;
 	// if we are in the same handle, we can truely raise an error
 	if (handle->IsRunning()) {
 		luaL_error(L, "Lua UnitScript error: %s", msg.c_str());
@@ -386,12 +399,14 @@ void CLuaUnitScript::ShowScriptError(const std::string& msg)
 
 bool CLuaUnitScript::HasBlockShot(int weaponNum) const
 {
+	//ZoneScoped;
 	return HasFunction(LUAFN_BlockShot);
 }
 
 
 bool CLuaUnitScript::HasTargetWeight(int weaponNum) const
 {
+	//ZoneScoped;
 	return HasFunction(LUAFN_TargetWeight);
 }
 
@@ -402,6 +417,7 @@ bool CLuaUnitScript::HasTargetWeight(int weaponNum) const
 
 inline float CLuaUnitScript::PopNumber(int fn, float def)
 {
+	//ZoneScoped;
 	if (!lua_israwnumber(L, -1)) {
 		const std::string& fname = CLuaUnitScriptNames::GetScriptName(fn);
 
@@ -420,6 +436,7 @@ inline float CLuaUnitScript::PopNumber(int fn, float def)
 
 inline bool CLuaUnitScript::PopBoolean(int fn, bool def)
 {
+	//ZoneScoped;
 	if (!lua_isboolean(L, -1)) {
 		const std::string& fname = CLuaUnitScriptNames::GetScriptName(fn);
 
@@ -438,6 +455,7 @@ inline bool CLuaUnitScript::PopBoolean(int fn, bool def)
 
 inline void CLuaUnitScript::RawPushFunction(int functionId)
 {
+	//ZoneScoped;
 	// Push Lua function on the stack
 	lua_rawgeti(L, LUA_REGISTRYINDEX, functionId);
 }
@@ -445,12 +463,14 @@ inline void CLuaUnitScript::RawPushFunction(int functionId)
 
 inline void CLuaUnitScript::PushFunction(int id)
 {
+	//ZoneScoped;
 	RawPushFunction(scriptIndex[id]);
 }
 
 
 inline void CLuaUnitScript::PushUnit(const CUnit* targetUnit)
 {
+	//ZoneScoped;
 	if (targetUnit) {
 		lua_pushnumber(L, targetUnit->id);
 	}
@@ -462,12 +482,14 @@ inline void CLuaUnitScript::PushUnit(const CUnit* targetUnit)
 
 inline bool CLuaUnitScript::RunCallIn(int id, int inArgs, int outArgs)
 {
+	//ZoneScoped;
 	return RawRunCallIn(scriptIndex[id], inArgs, outArgs);
 }
 
 
 int CLuaUnitScript::RunQueryCallIn(int fn)
 {
+	//ZoneScoped;
 	if (!HasFunction(fn))
 		return -1;
 
@@ -497,6 +519,7 @@ int CLuaUnitScript::RunQueryCallIn(int fn)
 
 int CLuaUnitScript::RunQueryCallIn(int fn, float arg1)
 {
+	//ZoneScoped;
 	if (!HasFunction(fn))
 		return -1;
 
@@ -527,6 +550,7 @@ int CLuaUnitScript::RunQueryCallIn(int fn, float arg1)
 
 void CLuaUnitScript::Call(int fn, float arg1)
 {
+	//ZoneScoped;
 	if (!HasFunction(fn))
 		return;
 
@@ -542,6 +566,7 @@ void CLuaUnitScript::Call(int fn, float arg1)
 
 void CLuaUnitScript::Call(int fn, float arg1, float arg2)
 {
+	//ZoneScoped;
 	if (!HasFunction(fn))
 		return;
 
@@ -558,6 +583,7 @@ void CLuaUnitScript::Call(int fn, float arg1, float arg2)
 
 void CLuaUnitScript::Call(int fn, float arg1, float arg2, float arg3)
 {
+	//ZoneScoped;
 	if (!HasFunction(fn))
 		return;
 
@@ -579,6 +605,7 @@ void CLuaUnitScript::Call(int fn, float arg1, float arg2, float arg3)
 
 void CLuaUnitScript::Create()
 {
+	//ZoneScoped;
 	// There is no use for Create
 	// (Lua code can just call it after Spring.UnitScript.CreateScript(...))
 }
@@ -895,6 +922,7 @@ void CLuaUnitScript::AnimFinished(AnimType type, int piece, int axis)
 
 void CLuaUnitScript::RawCall(int functionId)
 {
+	//ZoneScoped;
 	if (functionId < 0)
 		return;
 
@@ -908,6 +936,7 @@ void CLuaUnitScript::RawCall(int functionId)
 
 std::string CLuaUnitScript::GetScriptName(int functionId) const
 {
+	//ZoneScoped;
 	// only for error messages, so speed doesn't matter
 	const auto pred = [functionId](const decltype(scriptNames)::value_type& p) { return (functionId == p.second); };
 	const auto iter = std::find_if(scriptNames.begin(), scriptNames.end(), pred);
@@ -921,6 +950,7 @@ std::string CLuaUnitScript::GetScriptName(int functionId) const
 
 bool CLuaUnitScript::RawRunCallIn(int functionId, int inArgs, int outArgs)
 {
+	//ZoneScoped;
 	CUnit* oldActiveUnit = activeUnit;
 	CUnitScript* oldActiveScript = activeScript;
 
@@ -971,6 +1001,7 @@ void CLuaUnitScript::EndBurst(int weaponNum) { ZoneScoped; Call(LUAFN_EndBurst, 
 
 bool CLuaUnitScript::PushEntries(lua_State* L)
 {
+	//ZoneScoped;
 	{
 		// reset these in case we were reloaded
 		activeUnit = nullptr;
@@ -1031,6 +1062,7 @@ bool CLuaUnitScript::PushEntries(lua_State* L)
 
 static inline CUnit* ParseRawUnit(lua_State* L, const char* caller, int index)
 {
+	//ZoneScoped;
 	if (!lua_israwnumber(L, index))
 		luaL_error(L, "%s(): Bad unitID", caller);
 
@@ -1045,6 +1077,7 @@ static inline CUnit* ParseRawUnit(lua_State* L, const char* caller, int index)
 
 static inline CUnit* ParseUnit(lua_State* L, const char* caller, int index)
 {
+	//ZoneScoped;
 	CUnit* unit = ParseRawUnit(L, caller, index);
 
 	if (unit == nullptr)
@@ -1059,6 +1092,7 @@ static inline CUnit* ParseUnit(lua_State* L, const char* caller, int index)
 
 static inline int ParseAxis(lua_State* L, const char* caller, int index)
 {
+	//ZoneScoped;
 	if (!lua_israwnumber(L, index))
 		luaL_error(L, "%s(): Bad axis", caller);
 
@@ -1077,6 +1111,7 @@ static inline int ParseAxis(lua_State* L, const char* caller, int index)
 
 int CLuaUnitScript::CreateScript(lua_State* L)
 {
+	//ZoneScoped;
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
@@ -1104,6 +1139,7 @@ int CLuaUnitScript::CreateScript(lua_State* L)
 
 int CLuaUnitScript::UpdateCallIn(lua_State* L)
 {
+	//ZoneScoped;
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
@@ -1127,6 +1163,7 @@ int CLuaUnitScript::UpdateCallIn(lua_State* L)
 
 int CLuaUnitScript::CallAsUnit(lua_State* L)
 {
+	//ZoneScoped;
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
@@ -1159,6 +1196,7 @@ int CLuaUnitScript::CallAsUnit(lua_State* L)
 
 int CLuaUnitScript::GetUnitValue(lua_State* L, CUnitScript* script, int arg)
 {
+	//ZoneScoped;
 	bool splitData = false;
 	if (lua_isboolean(L, arg)) {
 		splitData = lua_toboolean(L, arg);
@@ -1193,6 +1231,7 @@ int CLuaUnitScript::GetUnitValue(lua_State* L, CUnitScript* script, int arg)
 
 int CLuaUnitScript::GetUnitCOBValue(lua_State* L)
 {
+	//ZoneScoped;
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
@@ -1204,6 +1243,7 @@ int CLuaUnitScript::GetUnitCOBValue(lua_State* L)
 
 int CLuaUnitScript::GetUnitValue(lua_State* L)
 {
+	//ZoneScoped;
 	if (activeScript == nullptr)
 		return 0;
 
@@ -1215,6 +1255,7 @@ int CLuaUnitScript::GetUnitValue(lua_State* L)
 
 int CLuaUnitScript::SetUnitValue(lua_State* L, CUnitScript* script, int arg)
 {
+	//ZoneScoped;
 	const int args = lua_gettop(L) - arg; // number of arguments
 	const int val = luaL_checkint(L, arg++);
 	int param;
@@ -1233,6 +1274,7 @@ int CLuaUnitScript::SetUnitValue(lua_State* L, CUnitScript* script, int arg)
 
 int CLuaUnitScript::SetUnitCOBValue(lua_State* L)
 {
+	//ZoneScoped;
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
@@ -1244,6 +1286,7 @@ int CLuaUnitScript::SetUnitCOBValue(lua_State* L)
 
 int CLuaUnitScript::SetUnitValue(lua_State* L)
 {
+	//ZoneScoped;
 	if (activeScript == nullptr)
 		return 0;
 
@@ -1253,6 +1296,7 @@ int CLuaUnitScript::SetUnitValue(lua_State* L)
 
 int CLuaUnitScript::SetPieceVisibility(lua_State* L)
 {
+	//ZoneScoped;
 	// void SetVisibility(int piece, bool visible);
 	if (activeScript == nullptr)
 		return 0;
@@ -1269,6 +1313,7 @@ int CLuaUnitScript::SetPieceVisibility(lua_State* L)
 
 int CLuaUnitScript::EmitSfx(lua_State* L)
 {
+	//ZoneScoped;
 	// void EmitSfx(int type, int piece);
 	if (activeScript == nullptr)
 		return 0;
@@ -1284,6 +1329,7 @@ int CLuaUnitScript::EmitSfx(lua_State* L)
 
 int CLuaUnitScript::AttachUnit(lua_State* L)
 {
+	//ZoneScoped;
 	// void AttachUnit(int piece, int unit);
 	if (activeScript == nullptr)
 		return 0;
@@ -1300,6 +1346,7 @@ int CLuaUnitScript::AttachUnit(lua_State* L)
 
 int CLuaUnitScript::DropUnit(lua_State* L)
 {
+	//ZoneScoped;
 	// void DropUnit(int unit);
 	if (activeScript == nullptr)
 		return 0;
@@ -1316,6 +1363,7 @@ int CLuaUnitScript::DropUnit(lua_State* L)
 
 int CLuaUnitScript::Explode(lua_State* L)
 {
+	//ZoneScoped;
 	// void Explode(int piece, int flags);
 	if (activeScript == nullptr)
 		return 0;
@@ -1329,6 +1377,7 @@ int CLuaUnitScript::Explode(lua_State* L)
 
 int CLuaUnitScript::ShowFlare(lua_State* L)
 {
+	//ZoneScoped;
 	// void ShowFlare(int piece);
 	if (activeScript == nullptr)
 		return 0;
@@ -1341,6 +1390,7 @@ int CLuaUnitScript::ShowFlare(lua_State* L)
 
 int CLuaUnitScript::Spin(lua_State* L)
 {
+	//ZoneScoped;
 	// void Spin(int piece, int axis, int speed, int accel);
 	if (activeScript == nullptr)
 		return 0;
@@ -1357,6 +1407,7 @@ int CLuaUnitScript::Spin(lua_State* L)
 
 int CLuaUnitScript::StopSpin(lua_State* L)
 {
+	//ZoneScoped;
 	// void StopSpin(int piece, int axis, int decel);
 	if (activeScript == nullptr)
 		return 0;
@@ -1372,6 +1423,7 @@ int CLuaUnitScript::StopSpin(lua_State* L)
 
 int CLuaUnitScript::Turn(lua_State* L)
 {
+	//ZoneScoped;
 	// void Turn(int piece, int axis, int speed, int destination);
 	// void TurnNow(int piece, int axis, int destination);
 	if (activeScript == nullptr)
@@ -1394,6 +1446,7 @@ int CLuaUnitScript::Turn(lua_State* L)
 
 int CLuaUnitScript::Move(lua_State* L)
 {
+	//ZoneScoped;
 	// void Move(int piece, int axis, int speed, int destination);
 	// void MoveNow(int piece, int axis, int destination);
 	if (activeScript == nullptr)
@@ -1416,6 +1469,7 @@ int CLuaUnitScript::Move(lua_State* L)
 
 int CLuaUnitScript::IsInAnimation(lua_State* L, const char* caller, AnimType type)
 {
+	//ZoneScoped;
 	if (activeScript == nullptr)
 		return 0;
 
@@ -1429,24 +1483,28 @@ int CLuaUnitScript::IsInAnimation(lua_State* L, const char* caller, AnimType typ
 
 int CLuaUnitScript::IsInTurn(lua_State* L)
 {
+	//ZoneScoped;
 	return IsInAnimation(L, __func__, ATurn);
 }
 
 
 int CLuaUnitScript::IsInMove(lua_State* L)
 {
+	//ZoneScoped;
 	return IsInAnimation(L, __func__, AMove);
 }
 
 
 int CLuaUnitScript::IsInSpin(lua_State* L)
 {
+	//ZoneScoped;
 	return IsInAnimation(L, __func__, ASpin);
 }
 
 
 int CLuaUnitScript::WaitForAnimation(lua_State* L, const char* caller, AnimType type)
 {
+	//ZoneScoped;
 	if (activeScript == nullptr)
 		return 0;
 
@@ -1465,18 +1523,21 @@ int CLuaUnitScript::WaitForAnimation(lua_State* L, const char* caller, AnimType 
 
 int CLuaUnitScript::WaitForTurn(lua_State* L)
 {
+	//ZoneScoped;
 	return WaitForAnimation(L, __func__, ATurn);
 }
 
 
 int CLuaUnitScript::WaitForMove(lua_State* L)
 {
+	//ZoneScoped;
 	return WaitForAnimation(L, __func__, AMove);
 }
 
 
 int CLuaUnitScript::SetDeathScriptFinished(lua_State* L)
 {
+	//ZoneScoped;
 	if (activeUnit == nullptr || activeScript == nullptr)
 		return 0;
 
@@ -1493,6 +1554,7 @@ int CLuaUnitScript::SetDeathScriptFinished(lua_State* L)
 
 int CLuaUnitScript::GetPieceTranslation(lua_State* L)
 {
+	//ZoneScoped;
 	if (activeScript == nullptr)
 		return 0;
 
@@ -1503,6 +1565,7 @@ int CLuaUnitScript::GetPieceTranslation(lua_State* L)
 
 int CLuaUnitScript::GetPieceRotation(lua_State* L)
 {
+	//ZoneScoped;
 	if (activeScript == nullptr)
 		return 0;
 
@@ -1513,6 +1576,7 @@ int CLuaUnitScript::GetPieceRotation(lua_State* L)
 
 int CLuaUnitScript::GetPiecePosDir(lua_State* L)
 {
+	//ZoneScoped;
 	if (activeScript == nullptr)
 		return 0;
 
@@ -1534,6 +1598,7 @@ int CLuaUnitScript::GetPiecePosDir(lua_State* L)
 
 int CLuaUnitScript::GetActiveUnitID(lua_State* L)
 {
+	//ZoneScoped;
 	if (activeScript == nullptr)
 		return 0;
 	if (activeUnit == nullptr)

@@ -26,6 +26,8 @@
 #include "Sim/Units/UnitDef.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 static std::array<uint8_t, 2048> udWeaponCounts;
 
 WeaponMemPool weaponMemPool;
@@ -40,6 +42,7 @@ void CWeaponLoader::KillStatic() { udWeaponCounts.fill(MAX_WEAPONS_PER_UNIT + 1)
 
 void CWeaponLoader::LoadWeapons(CUnit* unit)
 {
+	//ZoneScoped;
 	const UnitDef* unitDef = unit->unitDef;
 	const UnitDefWeapon* udWeapons = &unitDef->GetWeapon(0);
 
@@ -59,6 +62,7 @@ void CWeaponLoader::LoadWeapons(CUnit* unit)
 
 void CWeaponLoader::InitWeapons(CUnit* unit)
 {
+	//ZoneScoped;
 	const UnitDef* unitDef = unit->unitDef;
 
 	for (size_t n = 0; n < unit->weapons.size(); n++) {
@@ -68,6 +72,7 @@ void CWeaponLoader::InitWeapons(CUnit* unit)
 
 void CWeaponLoader::FreeWeapons(CUnit* unit)
 {
+	//ZoneScoped;
 	for (CWeapon*& w: unit->weapons) {
 		weaponMemPool.free(w);
 	}
@@ -79,6 +84,7 @@ void CWeaponLoader::FreeWeapons(CUnit* unit)
 
 CWeapon* CWeaponLoader::LoadWeapon(CUnit* owner, const WeaponDef* weaponDef)
 {
+	//ZoneScoped;
 	if (weaponDef->isNulled)
 		return (weaponMemPool.alloc<CNoWeapon>(owner, weaponDef));
 
@@ -137,6 +143,7 @@ CWeapon* CWeaponLoader::LoadWeapon(CUnit* owner, const WeaponDef* weaponDef)
 
 void CWeaponLoader::InitWeapon(CUnit* owner, CWeapon* weapon, const UnitDefWeapon* defWeapon)
 {
+	//ZoneScoped;
 	const WeaponDef* weaponDef = defWeapon->def;
 
 	weapon->reloadTime = std::max(1, int(weaponDef->reload * GAME_SPEED));

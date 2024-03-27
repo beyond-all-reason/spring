@@ -12,6 +12,8 @@
 #include "System/Platform/errorhandler.h"
 #endif
 
+#include <tracy/Tracy.hpp>
+
 
 CONFIG(std::string, HostIPDefault).defaultValue("localhost").dedicatedValue("").description("Default IP to use for hosting if not specified in script.txt");
 CONFIG(int, HostPortDefault).defaultValue(8452).minimumValue(0).maximumValue(65535).description("Default Port to use for hosting if not specified in script.txt");
@@ -26,6 +28,7 @@ ClientSetup::ClientSetup()
 
 void ClientSetup::SanityCheck()
 {
+	//ZoneScoped;
 	if (myPlayerName.empty())
 		myPlayerName = UnnamedPlayerName;
 
@@ -35,6 +38,7 @@ void ClientSetup::SanityCheck()
 
 void ClientSetup::LoadFromStartScript(const std::string& setup)
 {
+	//ZoneScoped;
 	TdfParser file(setup.c_str(), setup.length());
 
 	if (!file.SectionExist("GAME")) {

@@ -10,21 +10,26 @@
 #include "System/Net/UnpackPacket.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 using namespace netcode;
 
 GameData::GameData()
 {
+	//ZoneScoped;
 	std::memset(mapChecksum, 0, sizeof(mapChecksum));
 	std::memset(modChecksum, 0, sizeof(modChecksum));
 }
 GameData::GameData(const std::string& setup): setupText(setup)
 {
+	//ZoneScoped;
 	std::memset(mapChecksum, 0, sizeof(mapChecksum));
 	std::memset(modChecksum, 0, sizeof(modChecksum));
 }
 
 GameData::GameData(std::shared_ptr<const RawPacket> pckt)
 {
+	//ZoneScoped;
 	assert(pckt->data[0] == NETMSG_GAMEDATA);
 
 	UnpackPacket packet(pckt, 3);
@@ -50,6 +55,7 @@ GameData::GameData(std::shared_ptr<const RawPacket> pckt)
 
 const netcode::RawPacket* GameData::Pack() const
 {
+	//ZoneScoped;
 	if (compressed.empty())
 		compressed = zlib::deflate(reinterpret_cast<const std::uint8_t*>(setupText.data()), setupText.size());
 
@@ -71,6 +77,7 @@ const netcode::RawPacket* GameData::Pack() const
 
 void GameData::SetSetupText(const std::string& newSetup)
 {
+	//ZoneScoped;
 	setupText = newSetup;
 	compressed.clear();
 }

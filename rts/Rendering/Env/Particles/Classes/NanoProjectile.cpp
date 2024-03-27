@@ -14,6 +14,8 @@
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CNanoProjectile, CProjectile, )
 
 CR_REG_METADATA(CNanoProjectile,
@@ -31,6 +33,7 @@ CR_REG_METADATA(CNanoProjectile,
 
 CNanoProjectile::CNanoProjectile()
 {
+	//ZoneScoped;
 	deathFrame = 0;
 	color[0] = color[1] = color[2] = color[3] = 255;
 
@@ -43,6 +46,7 @@ CNanoProjectile::CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor 
 	, deathFrame(gs->frameNum + lifeTime)
 	, color(c)
 {
+	//ZoneScoped;
 	checkCol = false;
 	drawSorted = false;
 	drawRadius = 3;
@@ -60,11 +64,13 @@ CNanoProjectile::CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor 
 
 CNanoProjectile::~CNanoProjectile()
 {
+	//ZoneScoped;
 	projectileHandler.currentNanoParticles -= 1;
 }
 
 void CNanoProjectile::Update()
 {
+	//ZoneScoped;
 	pos += speed;
 
 	deleteMe |= (gs->frameNum >= deathFrame);
@@ -72,6 +78,7 @@ void CNanoProjectile::Update()
 
 void CNanoProjectile::Draw()
 {
+	//ZoneScoped;
 	{
 		const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
 		// rotParams.y is acceleration in angle per frame^2
@@ -103,6 +110,7 @@ void CNanoProjectile::Draw()
 
 void CNanoProjectile::DrawOnMinimap() const
 {
+	//ZoneScoped;
 	AddMiniMapVertices({ pos        , color4::green }, { pos + speed, color4::green });
 }
 
@@ -114,6 +122,7 @@ int CNanoProjectile::GetProjectilesCount() const
 
 bool CNanoProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	//ZoneScoped;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

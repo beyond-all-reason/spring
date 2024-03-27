@@ -6,6 +6,8 @@
 #include "System/Net/PackPacket.h"
 #include "System/Net/UnpackPacket.h"
 
+#include <tracy/Tracy.hpp>
+
 ChatMessage::ChatMessage(int from, int dest, const std::string& chat)
 	: fromPlayer(from)
 	, destination(dest)
@@ -22,6 +24,7 @@ ChatMessage::ChatMessage(int from, int dest, const std::string& chat)
 
 ChatMessage::ChatMessage(std::shared_ptr<const netcode::RawPacket> data)
 {
+	//ZoneScoped;
 	assert(data->data[0] == NETMSG_CHAT);
 	assert(data->length <= (4 * sizeof(uint8_t) + MAX_MSG_SIZE + 1));
 
@@ -40,6 +43,7 @@ ChatMessage::ChatMessage(std::shared_ptr<const netcode::RawPacket> data)
 
 const netcode::RawPacket* ChatMessage::Pack() const
 {
+	//ZoneScoped;
 	// message id (uint8), size (uint8), from (uint8), dest (uint8), len(msg)+null
 	// msg.size() itself is clamped to MAX_MSG_SIZE == UINT8_MAX/2 by construction
 	constexpr uint8_t  headerSize = 4 * sizeof(uint8_t);

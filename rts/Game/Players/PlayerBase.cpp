@@ -6,6 +6,8 @@
 #include "System/StringHash.h"
 #include "System/creg/STL_Map.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND_DERIVED(PlayerBase,TeamController, )
 CR_REG_METADATA(PlayerBase, (
@@ -28,6 +30,7 @@ PlayerBase::PlayerBase() {
 
 void PlayerBase::SetValue(const std::string& key, const std::string& value)
 {
+	//ZoneScoped;
 	switch (hashString(key.c_str())) {
 		case hashString("team"): {
 			team = std::atoi(value.c_str());

@@ -13,12 +13,15 @@
 #include "Rendering/GL/VertexArray.h"
 #include "System/Exceptions.h"
 
+#include <tracy/Tracy.hpp>
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 void CAdvWater::InitResources(bool loadShader)
 {
+	//ZoneScoped;
 	if (!FBO::IsSupported())
 		throw content_error("Water Error: missing FBO support");
 
@@ -105,6 +108,7 @@ void CAdvWater::InitResources(bool loadShader)
 
 void CAdvWater::FreeResources()
 {
+	//ZoneScoped;
 	const auto DeleteTexture = [](GLuint& texID) { if (texID > 0) { glDeleteTextures(1, &texID); texID = 0; } };
 	DeleteTexture(reflectTexture);
 	DeleteTexture(bumpTexture);
@@ -117,11 +121,13 @@ void CAdvWater::FreeResources()
 
 void CAdvWater::Draw()
 {
+	//ZoneScoped;
 	Draw(true);
 }
 
 void CAdvWater::Draw(bool useBlending)
 {
+	//ZoneScoped;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
@@ -245,6 +251,7 @@ void CAdvWater::Draw(bool useBlending)
 
 void CAdvWater::UpdateWater(const CGame* game)
 {
+	//ZoneScoped;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 

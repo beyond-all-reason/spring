@@ -11,6 +11,8 @@
 #include "System/SpringMath.h"
 #include <cstring> //memset
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CLargeBeamLaserProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CLargeBeamLaserProjectile,(
@@ -73,6 +75,7 @@ CLargeBeamLaserProjectile::CLargeBeamLaserProjectile(const ProjectileParams& par
 
 void CLargeBeamLaserProjectile::Update()
 {
+	//ZoneScoped;
 	if ((--ttl) <= 0) {
 		deleteMe = true;
 	} else {
@@ -89,6 +92,7 @@ void CLargeBeamLaserProjectile::Update()
 
 void CLargeBeamLaserProjectile::Draw()
 {
+	//ZoneScoped;
 	if (!validTextures[0])
 		return;
 
@@ -303,6 +307,7 @@ void CLargeBeamLaserProjectile::Draw()
 
 void CLargeBeamLaserProjectile::DrawOnMinimap() const
 {
+	//ZoneScoped;
 	const SColor color = { edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u };
 
 	AddMiniMapVertices({ startPos,  color }, { targetPos, color });
@@ -310,5 +315,6 @@ void CLargeBeamLaserProjectile::DrawOnMinimap() const
 
 int CLargeBeamLaserProjectile::GetProjectilesCount() const
 {
+	//ZoneScoped;
 	return 32; // too lazy to compute the correct one ...
 }

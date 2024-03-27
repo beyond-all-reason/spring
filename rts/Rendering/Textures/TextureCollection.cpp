@@ -5,19 +5,24 @@
 
 #include "Rendering/GL/myGL.h"
 
+#include <tracy/Tracy.hpp>
+
 CTextureCollection::~CTextureCollection()
 {
+	//ZoneScoped;
 	glDeleteTextures(textureIDs.size(), textureIDs.data());
 }
 
 bool CTextureCollection::TextureExists(const std::string& name)
 {
+	//ZoneScoped;
 	const auto it = std::ranges::find(textureNames, name);
 	return it != textureNames.end();
 }
 
 bool CTextureCollection::TextureExists(const std::string& name, const std::string& backupName)
 {
+	//ZoneScoped;
 	if (TextureExists(name))
 		return true;
 
@@ -29,6 +34,7 @@ bool CTextureCollection::TextureExists(const std::string& name, const std::strin
 
 uint32_t CTextureCollection::GetTextureID(const std::string& name)
 {
+	//ZoneScoped;
 	const auto it = std::ranges::find(textureNames, name);
 	if (it == textureNames.end())
 		return 0;
@@ -38,6 +44,7 @@ uint32_t CTextureCollection::GetTextureID(const std::string& name)
 
 uint32_t CTextureCollection::GetTextureID(const std::string& name, const std::string& backupName)
 {
+	//ZoneScoped;
 	if (auto texID = GetTextureID(name); texID != 0)
 		return texID;
 
@@ -49,6 +56,7 @@ uint32_t CTextureCollection::GetTextureID(const std::string& name, const std::st
 
 size_t CTextureCollection::GetTexturePos(const std::string& name)
 {
+	//ZoneScoped;
 	const auto it = std::ranges::find(textureNames, name);
 	if (it == textureNames.end())
 		return INVALID_TEXTURE_POS;
@@ -58,6 +66,7 @@ size_t CTextureCollection::GetTexturePos(const std::string& name)
 
 size_t CTextureCollection::GetTexturePos(const std::string& name, const std::string& backupName)
 {
+	//ZoneScoped;
 	if (auto pos = GetTexturePos(name); pos != INVALID_TEXTURE_POS)
 		return pos;
 
@@ -69,6 +78,7 @@ size_t CTextureCollection::GetTexturePos(const std::string& name, const std::str
 
 size_t CTextureCollection::AddTexFromFile(const std::string& name, const std::string& filename)
 {
+	//ZoneScoped;
 	CBitmap bitmap;
 	if (!bitmap.Load(filename))
 		return INVALID_TEXTURE_POS;
@@ -78,6 +88,7 @@ size_t CTextureCollection::AddTexFromFile(const std::string& name, const std::st
 
 size_t CTextureCollection::AddTexFromBitmap(const std::string& name, const std::string& filename, const CBitmap& bitmap)
 {
+	//ZoneScoped;
 	const auto texID = bitmap.CreateMipMapTexture();
 	if (texID == 0)
 		return INVALID_TEXTURE_POS;
@@ -91,6 +102,7 @@ size_t CTextureCollection::AddTexFromBitmap(const std::string& name, const std::
 
 size_t CTextureCollection::AddTexBlank(std::string name, int xsize, int ysize, const SColor& c)
 {
+	//ZoneScoped;
 	CBitmap bitmap;
 	bitmap.AllocDummy(c);
 	bitmap = bitmap.CreateRescaled(xsize, ysize);
@@ -105,6 +117,7 @@ size_t CTextureCollection::AddTexBlank(std::string name, int xsize, int ysize, c
 
 bool CTextureCollection::DeleteTex(const std::string& name)
 {
+	//ZoneScoped;
 	const auto it = std::ranges::find(textureNames, name);
 	if (it == textureNames.end())
 		return false;
@@ -128,6 +141,7 @@ bool CTextureCollection::DeleteTex(const std::string& name)
 
 void CTextureCollection::Reload()
 {
+	//ZoneScoped;
 	assert(textureIDs.size() == textureNames.size() && textureNames.size() == texturePaths.size());
 	for (size_t i = 0; i < textureIDs.size(); ++i) {
 		if (texturePaths[i].empty())

@@ -12,6 +12,8 @@
 #include "System/Log/ILog.h"
 #include <sstream>
 
+#include <tracy/Tracy.hpp>
+
 
 enum {
 	UNIFORM_TYPE_INT          = 0, // includes arrays
@@ -22,6 +24,7 @@ enum {
 
 static void ParseUniformsTable(Shader::IProgramObject* program, const LuaTable* root, const std::string& fieldName, int type)
 {
+	//ZoneScoped;
 	const LuaTable subTable = root->SubTable(fieldName);
 	std::vector<std::string> keys;
 	subTable.GetKeys(keys);
@@ -87,6 +90,7 @@ static void ParseUniformsTable(Shader::IProgramObject* program, const LuaTable* 
 
 static void ParseUniformSetupTables(Shader::IProgramObject* program, const LuaTable* root)
 {
+	//ZoneScoped;
 	ParseUniformsTable(program, root, "uniform",       UNIFORM_TYPE_FLOAT       );
 	ParseUniformsTable(program, root, "uniformFloat",  UNIFORM_TYPE_FLOAT       );
 	ParseUniformsTable(program, root, "uniformInt",    UNIFORM_TYPE_INT         );
@@ -100,6 +104,7 @@ static void CreateShaderObject(
 	const std::string& sources,
 	const GLenum type
 ) {
+	//ZoneScoped;
 	if (sources.empty())
 		return;
 
@@ -112,6 +117,7 @@ static void ParseShaderTable(
 	const std::string key,
 	std::stringstream& data
 ) {
+	//ZoneScoped;
 	const auto keyType = root->GetType(key);
 
 	switch (keyType) {
@@ -134,6 +140,7 @@ static void ParseShaderTable(
 
 static void LoadTextures(Shader::IProgramObject* program, const LuaTable* root)
 {
+	//ZoneScoped;
 	const LuaTable& textures = root->SubTable("textures");
 	std::vector<std::pair<int, std::string>> data;
 
@@ -149,6 +156,7 @@ static void LoadTextures(Shader::IProgramObject* program, const LuaTable* root)
 namespace Shader {
 bool LoadFromLua(Shader::IProgramObject* program, const std::string& filename)
 {
+	//ZoneScoped;
 	// lua only supports glsl shaders
 	assert(dynamic_cast<Shader::GLSLProgramObject*>(program) != nullptr);
 

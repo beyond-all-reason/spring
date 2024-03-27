@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include <tracy/Tracy.hpp>
+
 /******************************************************************************/
 
 
@@ -85,6 +87,7 @@ CCommandColors::CCommandColors()
 
 static bool ParseBlendMode(const std::string& word, unsigned int& mode)
 {
+	//ZoneScoped;
 	std::string lower = StringToLower(word);
 
 	switch (hashString(lower.c_str())) {
@@ -108,6 +111,7 @@ static bool ParseBlendMode(const std::string& word, unsigned int& mode)
 
 static bool IsValidSrcMode(unsigned int mode)
 {
+	//ZoneScoped;
 	switch (mode) {
 		case GL_ZERO:
 		case GL_ONE:
@@ -127,6 +131,7 @@ static bool IsValidSrcMode(unsigned int mode)
 
 static bool IsValidDstMode(unsigned int mode)
 {
+	//ZoneScoped;
 	switch (mode) {
 		case GL_ZERO:
 		case GL_ONE:
@@ -146,6 +151,7 @@ static bool IsValidDstMode(unsigned int mode)
 
 static bool SafeAtoF(float& var, const std::string& value)
 {
+	//ZoneScoped;
 	const char* startPtr = value.c_str();
 	      char*   endPtr = nullptr;
 
@@ -160,6 +166,7 @@ static bool SafeAtoF(float& var, const std::string& value)
 
 static bool SafeAtoI(unsigned int& var, const std::string& value)
 {
+	//ZoneScoped;
 	const char* startPtr = value.c_str();
 	      char*   endPtr = nullptr;
 
@@ -175,6 +182,7 @@ static bool SafeAtoI(unsigned int& var, const std::string& value)
 
 bool CCommandColors::LoadConfigFromFile(const std::string& filename)
 {
+	//ZoneScoped;
 	CFileHandler ifs(filename);
 	std::string cfg;
 	ifs.LoadStringData(cfg);
@@ -184,6 +192,7 @@ bool CCommandColors::LoadConfigFromFile(const std::string& filename)
 
 bool CCommandColors::LoadConfigFromString(const std::string& cfg)
 {
+	//ZoneScoped;
 	CSimpleParser parser(cfg);
 
 	while (true) {

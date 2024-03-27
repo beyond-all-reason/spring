@@ -33,6 +33,8 @@
 #include "System/Platform/Watchdog.h"
 #include "System/Threading/ThreadPool.h" // for_mt
 
+#include <tracy/Tracy.hpp>
+
 using std::sprintf;
 
 #define LOG_SECTION_SMF_GROUND_TEXTURES "CSMFGroundTextures"
@@ -60,6 +62,7 @@ std::vector<float> CSMFGroundTextures::stretchFactors;
 
 CSMFGroundTextures::GroundSquare::~GroundSquare()
 {
+	//ZoneScoped;
 	glDeleteTextures(1, &textureIDs[RAW_TEX_IDX]);
 
 	textureIDs[RAW_TEX_IDX] = 0;
@@ -70,6 +73,7 @@ CSMFGroundTextures::GroundSquare::~GroundSquare()
 
 CSMFGroundTextures::CSMFGroundTextures(CSMFReadMap* rm): smfMap(rm)
 {
+	//ZoneScoped;
 	smfTextureStreaming = configHandler->GetBool("SMFTextureStreaming");
 	smfTextureLodBias = configHandler->GetFloat("SMFTextureLodBias");
 
@@ -84,6 +88,7 @@ CSMFGroundTextures::CSMFGroundTextures(CSMFReadMap* rm): smfMap(rm)
 
 void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
 {
+	//ZoneScoped;
 	loadscreen->SetLoadMessage("Loading Map Tiles");
 
 	CFileHandler* ifs = file.GetFileHandler();
@@ -189,6 +194,7 @@ void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
 
 void CSMFGroundTextures::LoadSquareTextures(const int mipLevel)
 {
+	//ZoneScoped;
 	loadscreen->SetLoadMessage("Loading Square Textures");
 
 	for (int y = 0; y < smfMap->numBigTexY; ++y) {
@@ -201,6 +207,7 @@ void CSMFGroundTextures::LoadSquareTextures(const int mipLevel)
 
 void CSMFGroundTextures::LoadSquareTexturesPersistent()
 {
+	//ZoneScoped;
 	loadscreen->SetLoadMessage("Loading Square Textures");
 
 	for (int y = 0; y < smfMap->numBigTexY; ++y) {
@@ -313,6 +320,7 @@ bool CSMFGroundTextures::RecompressTilesIfNeeded()
 
 inline bool CSMFGroundTextures::TexSquareInView(int btx, int bty) const
 {
+	//ZoneScoped;
 	const CCamera* cam = CCameraHandler::GetActiveCamera();
 	const float* hm = readMap->GetCornerHeightMapUnsynced();
 
@@ -331,6 +339,7 @@ inline bool CSMFGroundTextures::TexSquareInView(int btx, int bty) const
 
 void CSMFGroundTextures::DrawUpdate()
 {
+	//ZoneScoped;
 	if (!smfTextureStreaming)
 		return;
 
@@ -422,6 +431,7 @@ void CSMFGroundTextures::DrawUpdate()
 
 
 bool CSMFGroundTextures::SetSquareLuaTexture(int texSquareX, int texSquareY, int texID) {
+	//ZoneScoped;
 	if (texSquareX < 0 || texSquareX >= smfMap->numBigTexX) { return false; }
 	if (texSquareY < 0 || texSquareY >= smfMap->numBigTexY) { return false; }
 
@@ -445,6 +455,7 @@ bool CSMFGroundTextures::SetSquareLuaTexture(int texSquareX, int texSquareY, int
 }
 
 bool CSMFGroundTextures::GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int lodMin, int lodMax) {
+	//ZoneScoped;
 	if (texSquareX < 0 || texSquareX >= smfMap->numBigTexX)
 		return false;
 	if (texSquareY < 0 || texSquareY >= smfMap->numBigTexY)
@@ -495,6 +506,7 @@ void CSMFGroundTextures::ExtractSquareTiles(
 	const int mipLevel,
 	GLint* tileBuf
 ) const {
+	//ZoneScoped;
 	if (tileBuf == nullptr)
 		return;
 
@@ -531,6 +543,7 @@ void CSMFGroundTextures::ExtractSquareTiles(
 
 void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 {
+	//ZoneScoped;
 	static constexpr GLenum ttarget = GL_TEXTURE_2D;
 	static constexpr GLbitfield access = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT;
 
@@ -574,6 +587,7 @@ void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 
 void CSMFGroundTextures::LoadSquareTexturePersistent(int x, int y)
 {
+	//ZoneScoped;
 	static constexpr GLenum ttarget = GL_TEXTURE_2D;
 
 	GroundSquare* square = &squares[y * smfMap->numBigTexX + x];
@@ -613,6 +627,7 @@ void CSMFGroundTextures::LoadSquareTexturePersistent(int x, int y)
 
 void CSMFGroundTextures::BindSquareTexture(int texSquareX, int texSquareY)
 {
+	//ZoneScoped;
 	assert(texSquareX >= 0);
 	assert(texSquareY >= 0);
 	assert(texSquareX < smfMap->numBigTexX);

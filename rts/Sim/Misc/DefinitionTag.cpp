@@ -5,6 +5,8 @@
 #include "System/StringUtil.h"
 #include <iostream>
 
+#include <tracy/Tracy.hpp>
+
 using std::cout;
 
 
@@ -25,6 +27,7 @@ DefType::DefType(const char* n): name(n) {
 
 void DefType::AddTagMetaData(const DefTagMetaData* data)
 {
+	//ZoneScoped;
 	const auto key = data->GetInternalName();
 
 	const auto tend = tagMetaData.begin() + tagMetaDataCnt;
@@ -65,6 +68,7 @@ void DefType::AddTagMetaData(const DefTagMetaData* data)
 
 
 const DefTagMetaData* DefType::GetMetaDataByInternalKey(const string& key) {
+	//ZoneScoped;
 	const std::string lkey = StringToLower(key);
 	if (auto it = tagMetaDataByInternalName.find(lkey);
 			it != tagMetaDataByInternalName.end()) {
@@ -75,6 +79,7 @@ const DefTagMetaData* DefType::GetMetaDataByInternalKey(const string& key) {
 
 
 const DefTagMetaData* DefType::GetMetaDataByExternalKey(const string& key) {
+	//ZoneScoped;
 	const std::string lkey = StringToLower(key);
 	if (auto it = tagMetaDataByExternalName.find(lkey);
 			it != tagMetaDataByExternalName.end()) {
@@ -109,6 +114,7 @@ static inline std::string Quote(const std::string& type, const std::string& valu
  */
 static std::ostream& operator<< (std::ostream& out, const DefTagMetaData* d)
 {
+	//ZoneScoped;
 	const char* const OUTER_INDENT = "    ";
 	const char* const INDENT = "      ";
 
@@ -172,6 +178,7 @@ static std::ostream& operator<< (std::ostream& out, const DefTagMetaData* d)
  */
 void DefType::OutputMetaDataMap() const
 {
+	//ZoneScoped;
 	cout << "{\n";
 
 	bool first = true;
@@ -191,6 +198,7 @@ void DefType::OutputMetaDataMap() const
 
 void DefType::OutputTagMap()
 {
+	//ZoneScoped;
 	cout << "{\n";
 
 	bool first = true;
@@ -209,6 +217,7 @@ void DefType::OutputTagMap()
 
 void DefType::CheckType(const DefTagMetaData* meta, const std::string_view otherTypeName)
 {
+	//ZoneScoped;
 	assert(meta != nullptr);
 	if (meta->GetTypeName() != otherTypeName)
 		LOG_L(L_ERROR, "DEFTAG \"%s\" defined with wrong typevalue \"%s\" should be \"%s\"", meta->GetKey().c_str(), meta->GetTypeName().c_str(), otherTypeName.data());
@@ -217,6 +226,7 @@ void DefType::CheckType(const DefTagMetaData* meta, const std::string_view other
 
 void DefType::ReportUnknownTags(const std::string& instanceName, const LuaTable& luaTable, const std::string pre)
 {
+	//ZoneScoped;
 	std::vector<std::string> keys;
 	luaTable.GetKeys(keys);
 
@@ -238,6 +248,7 @@ void DefType::ReportUnknownTags(const std::string& instanceName, const LuaTable&
 
 void DefType::Load(void* instance, const LuaTable& luaTable)
 {
+	//ZoneScoped;
 	this->luaTable = &luaTable;
 
 	for (unsigned int i = 0; i < defInitFuncCnt; i++) {

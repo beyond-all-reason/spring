@@ -8,6 +8,8 @@
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 
 static const char32_t spaceUTF16    = 0x20;
 static const char32_t ellipsisUTF16 = 0x2026;
@@ -35,6 +37,7 @@ static constexpr const char* spaceStringTable[1 + 10] = {
 template <typename T>
 static inline int SkipColorCodes(const spring::u8string& text, T* pos, SColor* color)
 {
+	//ZoneScoped;
 	int colorFound = 0;
 	while (text[(*pos)] == CTextWrap::ColorCodeIndicator) {
 		(*pos) += 4;
@@ -69,6 +72,7 @@ CTextWrap::CTextWrap(const std::string& fontfile, int size, int outlinewidth, fl
  */
 static inline bool IsUpperCase(const char32_t& c)
 {
+	//ZoneScoped;
 	// overkill to add unicode
 	return
 		(c >= 0x41 && c <= 0x5A) ||
@@ -82,6 +86,7 @@ static inline bool IsUpperCase(const char32_t& c)
 
 static inline bool IsLowerCase(const char32_t& c)
 {
+	//ZoneScoped;
 	// overkill to add unicode
 	return c >= 0x61 && c <= 0x7A; // only ascii (no latin-1!)
 }
@@ -96,6 +101,7 @@ static inline bool IsLowerCase(const char32_t& c)
  */
 static inline float GetPenalty(const char32_t& c, unsigned int strpos, unsigned int strlen)
 {
+	//ZoneScoped;
 	const float dist = strlen - strpos;
 
 	if (dist > (strlen / 2) && dist < 4) {
@@ -118,6 +124,7 @@ static inline float GetPenalty(const char32_t& c, unsigned int strpos, unsigned 
 
 CTextWrap::word CTextWrap::SplitWord(CTextWrap::word& w, float wantedWidth, bool smart)
 {
+	//ZoneScoped;
 	// returns two pieces 'L'eft and 'R'ight of the split word (returns L, *wi becomes R)
 
 	word w2;
@@ -190,6 +197,7 @@ CTextWrap::word CTextWrap::SplitWord(CTextWrap::word& w, float wantedWidth, bool
 
 void CTextWrap::AddEllipsis(std::list<line>& lines, std::list<word>& words, float maxWidth)
 {
+	//ZoneScoped;
 	const float ellipsisAdvance = GetGlyph(ellipsisUTF16).advance;
 	const float spaceAdvance = GetGlyph(spaceUTF16).advance;
 
@@ -304,6 +312,7 @@ void CTextWrap::AddEllipsis(std::list<line>& lines, std::list<word>& words, floa
 
 void CTextWrap::WrapTextConsole(std::list<word>& words, float maxWidth, float maxHeight)
 {
+	//ZoneScoped;
 	if (words.empty() || (GetLineHeight()<=0.0f))
 		return;
 	const bool splitAllWords = false;
@@ -416,6 +425,7 @@ void CTextWrap::WrapTextConsole(std::list<word>& words, float maxWidth, float ma
 
 void CTextWrap::SplitTextInWords(const spring::u8string& text, std::list<word>* words, std::list<colorcode>* colorcodes)
 {
+	//ZoneScoped;
 	const unsigned int length = (unsigned int)text.length();
 	const float spaceAdvance = GetGlyph(spaceUTF16).advance;
 
@@ -513,6 +523,7 @@ void CTextWrap::SplitTextInWords(const spring::u8string& text, std::list<word>* 
 
 void CTextWrap::RemergeColorCodes(std::list<word>* words, std::list<colorcode>& colorcodes) const
 {
+	//ZoneScoped;
 	auto wi = words->begin();
 	auto wi2 = words->begin();
 	for (auto& c: colorcodes) {
@@ -560,6 +571,7 @@ void CTextWrap::RemergeColorCodes(std::list<word>* words, std::list<colorcode>& 
 
 int CTextWrap::WrapInPlace(spring::u8string& text, float _fontSize, float maxWidth, float maxHeight)
 {
+	//ZoneScoped;
 	// TODO make an option to insert '-' for word wrappings (and perhaps try to syllabificate)
 
 	if (_fontSize <= 0.0f)
@@ -612,6 +624,7 @@ int CTextWrap::WrapInPlace(spring::u8string& text, float _fontSize, float maxWid
 
 spring::u8string CTextWrap::Wrap(const spring::u8string& text, float _fontSize, float maxWidth, float maxHeight)
 {
+	//ZoneScoped;
 	spring::u8string out(text);
 	WrapInPlace(out, _fontSize, maxWidth, maxHeight);
 	return out;

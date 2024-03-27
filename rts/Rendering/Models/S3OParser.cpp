@@ -16,10 +16,13 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/Platform/byteorder.h"
 
+#include <tracy/Tracy.hpp>
+
 
 
 void CS3OParser::Init() { numPoolPieces = 0; }
 void CS3OParser::Kill() {
+	//ZoneScoped;
 	LOG_L(L_INFO, "[S3OParser::%s] allocated %u pieces", __func__, numPoolPieces);
 
 	// reuse piece innards when reloading
@@ -33,6 +36,7 @@ void CS3OParser::Kill() {
 
 void CS3OParser::Load(S3DModel& model, const std::string& name)
 {
+	//ZoneScoped;
 	CFileHandler file(name);
 	std::vector<uint8_t> fileBuf;
 
@@ -74,6 +78,7 @@ void CS3OParser::Load(S3DModel& model, const std::string& name)
 
 SS3OPiece* CS3OParser::AllocPiece()
 {
+	//ZoneScoped;
 	std::lock_guard<spring::mutex> lock(poolMutex);
 
 	// lazily reserve pool here instead of during Init
@@ -92,6 +97,7 @@ SS3OPiece* CS3OParser::AllocPiece()
 
 SS3OPiece* CS3OParser::LoadPiece(S3DModel* model, SS3OPiece* parent, std::vector<uint8_t>& buf, int offset)
 {
+	//ZoneScoped;
 	if ((offset + sizeof(Piece)) > buf.size())
 		throw content_error("[S3OParser] corrupted piece for model-file " + model->name);
 
@@ -174,6 +180,7 @@ SS3OPiece* CS3OParser::LoadPiece(S3DModel* model, SS3OPiece* parent, std::vector
 
 void SS3OPiece::SetMinMaxExtends()
 {
+	//ZoneScoped;
 	for (const SVertexData& v: vertices) {
 		mins = float3::min(mins, v.pos);
 		maxs = float3::max(maxs, v.pos);
@@ -183,6 +190,7 @@ void SS3OPiece::SetMinMaxExtends()
 
 void SS3OPiece::Trianglize()
 {
+	//ZoneScoped;
 	switch (primType) {
 		case S3O_PRIMTYPE_TRIANGLES: {
 		} break;
@@ -242,6 +250,7 @@ void SS3OPiece::Trianglize()
 
 void SS3OPiece::SetVertexTangents()
 {
+	//ZoneScoped;
 	if (!HasGeometryData())
 		return;
 

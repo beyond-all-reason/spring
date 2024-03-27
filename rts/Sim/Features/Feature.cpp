@@ -29,6 +29,8 @@
 #include "System/creg/DefTypes.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 
 CR_BIND_DERIVED_POOL(CFeature, CSolidObject, , featureMemPool.allocMem, featureMemPool.freeMem)
 
@@ -75,6 +77,7 @@ CR_REG_METADATA_SUB(CFeature,MoveCtrl,(
 
 CFeature::CFeature(): CSolidObject()
 {
+	//ZoneScoped;
 	assert(featureMemPool.alloced(this));
 
 	crushable = true;
@@ -84,6 +87,7 @@ CFeature::CFeature(): CSolidObject()
 
 CFeature::~CFeature()
 {
+	//ZoneScoped;
 	assert(featureMemPool.mapped(this));
 	UnBlock();
 	quadField.RemoveFeature(this);
@@ -97,6 +101,7 @@ CFeature::~CFeature()
 
 void CFeature::PostLoad()
 {
+	//ZoneScoped;
 	eventHandler.RenderFeaturePreCreated(this);
 	eventHandler.RenderFeatureCreated(this);
 }
@@ -104,6 +109,7 @@ void CFeature::PostLoad()
 
 void CFeature::ChangeTeam(int newTeam)
 {
+	//ZoneScoped;
 	if (newTeam < 0) {
 		// remap all negative teams to Gaia
 		// if the Gaia team is not enabled, these would become
@@ -119,6 +125,7 @@ void CFeature::ChangeTeam(int newTeam)
 
 bool CFeature::IsInLosForAllyTeam(int argAllyTeam) const
 {
+	//ZoneScoped;
 	if (alwaysVisible || argAllyTeam == -1)
 		return true;
 
@@ -143,6 +150,7 @@ bool CFeature::IsInLosForAllyTeam(int argAllyTeam) const
 
 void CFeature::Initialize(const FeatureLoadParams& params)
 {
+	//ZoneScoped;
 	const CSolidObject* po = params.parentObj;
 
 	def = params.featureDef;
@@ -249,6 +257,7 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 
 bool CFeature::AddBuildPower(CUnit* builder, float amount)
 {
+	//ZoneScoped;
 	const float oldReclaimLeft = reclaimLeft;
 
 	if (amount > 0.0f) {
@@ -383,6 +392,7 @@ void CFeature::DoDamage(
 	int weaponDefID,
 	int projectileID
 ) {
+	//ZoneScoped;
 	// do nothing if already marked for deletion this frame, i.e. isDead
 	if (deleteMe)
 		return;
@@ -431,6 +441,7 @@ void CFeature::DoDamage(
 
 void CFeature::DependentDied(CObject *o)
 {
+	//ZoneScoped;
 	if (o == solidOnTop)
 		solidOnTop = nullptr;
 
@@ -440,6 +451,7 @@ void CFeature::DependentDied(CObject *o)
 
 void CFeature::SetVelocity(const float3& v)
 {
+	//ZoneScoped;
 	CWorldObject::SetVelocity(v * moveCtrl.velocityMask);
 	CWorldObject::SetSpeed(v * moveCtrl.velocityMask);
 
@@ -454,6 +466,7 @@ void CFeature::SetVelocity(const float3& v)
 
 void CFeature::ForcedMove(const float3& newPos)
 {
+	//ZoneScoped;
 	// remove from managers
 	quadField.RemoveFeature(this);
 
@@ -476,6 +489,7 @@ void CFeature::ForcedMove(const float3& newPos)
 
 void CFeature::ForcedSpin(const float3& newDir)
 {
+	//ZoneScoped;
 	// update local direction-vectors
 	CSolidObject::ForcedSpin(newDir);
 	UpdateTransform(pos, true);
@@ -484,6 +498,7 @@ void CFeature::ForcedSpin(const float3& newDir)
 
 void CFeature::UpdateTransformAndPhysState()
 {
+	//ZoneScoped;
 	UpdateDirVectors(!def->upright && IsOnGround(), true, 0.0f);
 	UpdateTransform(pos, true);
 
@@ -493,6 +508,7 @@ void CFeature::UpdateTransformAndPhysState()
 
 void CFeature::UpdateQuadFieldPosition(const float3& moveVec)
 {
+	//ZoneScoped;
 	quadField.RemoveFeature(this);
 	UnBlock();
 
@@ -509,6 +525,7 @@ bool CFeature::UpdateVelocity(
 	const float3& movMask,
 	const float3& velMask
 ) {
+	//ZoneScoped;
 	// apply drag and gravity to speed; leave more advanced physics (water
 	// buoyancy, etc) to Lua
 	// NOTE:
@@ -542,6 +559,7 @@ bool CFeature::UpdateVelocity(
 
 bool CFeature::UpdatePosition()
 {
+	//ZoneScoped;
 	const float3 oldPos = pos;
 	// const float4 oldSpd = speed;
 
@@ -592,6 +610,7 @@ bool CFeature::UpdatePosition()
 
 bool CFeature::Update()
 {
+	//ZoneScoped;
 	bool continueUpdating = UpdatePosition();
 
 	continueUpdating |= (smokeTime != 0);
@@ -625,6 +644,7 @@ bool CFeature::Update()
 
 void CFeature::StartFire()
 {
+	//ZoneScoped;
 	if (fireTime != 0 || !def->burnable)
 		return;
 
@@ -637,6 +657,7 @@ void CFeature::StartFire()
 
 void CFeature::EmitGeoSmoke()
 {
+	//ZoneScoped;
 	if ((gs->frameNum + id % 5) % 5 == 0) {
 		// Find the unit closest to the geothermal
 		QuadFieldQuery qfQuery;

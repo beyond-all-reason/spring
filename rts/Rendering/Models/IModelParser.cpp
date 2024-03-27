@@ -25,6 +25,8 @@
 #include "System/LoadLock.h"
 #include "lib/assimp/include/assimp/Importer.hpp"
 
+#include <tracy/Tracy.hpp>
+
 
 CModelLoader modelLoader;
 
@@ -49,6 +51,7 @@ static bool CheckAssimpWhitelist(const char* aiExt) {
 }
 
 static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
+	//ZoneScoped;
 	// file-extension should be lowercase
 	parsers.emplace_back("3do", &g3DOParser);
 	parsers.emplace_back("s3o", &gS3OParser);
@@ -88,6 +91,7 @@ static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
 
 static void LoadDummyModel(S3DModel& model)
 {
+	//ZoneScoped;
 	// create a crash-dummy
 	model.type = MODELTYPE_3DO;
 	model.numPieces = 1;
@@ -100,6 +104,7 @@ static void LoadDummyModel(S3DModel& model)
 
 static void LoadDummyModel(S3DModel& model, int id)
 {
+	//ZoneScoped;
 	// create a crash-dummy
 	model.id = id;
 	LoadDummyModel(model);
@@ -108,6 +113,7 @@ static void LoadDummyModel(S3DModel& model, int id)
 
 static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelPiece)
 {
+	//ZoneScoped;
 	if (auto vertCount = modelPiece->GetVerticesVec().size(); vertCount >= 3) {
 		// do not check pseudo-pieces
 		unsigned int numNullNormals = 0;
@@ -136,6 +142,7 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 
 void CModelLoader::Init()
 {
+	//ZoneScoped;
 	RegisterModelFormats(parsers);
 	InitParsers();
 
@@ -149,6 +156,7 @@ void CModelLoader::Init()
 
 void CModelLoader::InitParsers() const
 {
+	//ZoneScoped;
 	g3DOParser.Init();
 	gS3OParser.Init();
 	gAssParser.Init();
@@ -156,6 +164,7 @@ void CModelLoader::InitParsers() const
 
 void CModelLoader::Kill()
 {
+	//ZoneScoped;
 	LogErrors();
 	KillModels();
 	KillParsers();
@@ -166,12 +175,14 @@ void CModelLoader::Kill()
 
 void CModelLoader::KillModels()
 {
+	//ZoneScoped;
 	models.clear();
 	modelID = 0;
 }
 
 void CModelLoader::KillParsers() const
 {
+	//ZoneScoped;
 	g3DOParser.Kill();
 	gS3OParser.Kill();
 	gAssParser.Kill();
@@ -181,6 +192,7 @@ void CModelLoader::KillParsers() const
 
 std::string CModelLoader::FindModelPath(std::string name) const
 {
+	//ZoneScoped;
 	// check for empty string because we can be called
 	// from Lua*Defs and certain features have no models
 	if (name.empty())
@@ -209,6 +221,7 @@ std::string CModelLoader::FindModelPath(std::string name) const
 
 void CModelLoader::PreloadModel(const std::string& modelName)
 {
+	//ZoneScoped;
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	//NB: do preload in any case
@@ -232,6 +245,7 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 
 void CModelLoader::LogErrors()
 {
+	//ZoneScoped;
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	if (errors.empty())
@@ -256,6 +270,7 @@ void CModelLoader::LogErrors()
 
 S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 {
+	//ZoneScoped;
 	// cannot happen except through SpawnProjectile
 	if (name.empty())
 		return nullptr;
@@ -293,6 +308,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 
 S3DModel* CModelLoader::GetCachedModel(std::string fullName)
 {
+	//ZoneScoped;
 	// caller has mutex lock
 
 	static const auto CompPred = [](auto&& lhs, auto&& rhs) { return lhs.first < rhs.first; };
@@ -353,6 +369,7 @@ void CModelLoader::FillModel(
 
 void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 {
+	//ZoneScoped;
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
@@ -376,6 +393,7 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 
 IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 {
+	//ZoneScoped;
 	// cached record
 	static std::pair<std::string, IModelParser*> lastParser = {};
 
@@ -394,6 +412,7 @@ IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 
 void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const std::string& path)
 {
+	//ZoneScoped;
 	IModelParser* parser = GetFormatParser(FileSystem::GetExtension(path));
 
 	if (parser == nullptr) {
@@ -422,6 +441,7 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 
 void CModelLoader::PostProcessGeometry(S3DModel* model)
 {
+	//ZoneScoped;
 	if (model->loadStatus == S3DModel::LoadStatus::LOADED)
 		return;
 
@@ -442,6 +462,7 @@ void CModelLoader::PostProcessGeometry(S3DModel* model)
 }
 
 void CModelLoader::Upload(S3DModel* model) const {
+	//ZoneScoped;
 	if (model->uploaded) //already uploaded
 		return;
 

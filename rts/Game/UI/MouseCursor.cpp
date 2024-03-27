@@ -21,6 +21,8 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/SimpleParser.h"
 
+#include <tracy/Tracy.hpp>
+
 CMouseCursor::CMouseCursor(const std::string& name_, HotSpot hs)
 	: name(name_)
 	, hotSpot(hs)
@@ -46,6 +48,7 @@ CMouseCursor::CMouseCursor(const std::string& name_, HotSpot hs)
 
 CMouseCursor::~CMouseCursor()
 {
+	//ZoneScoped;
 	if (hwCursor != nullptr) {
 		hwCursor->Kill();
 		IHardwareCursor::Free(hwCursor);
@@ -89,6 +92,7 @@ CMouseCursor& CMouseCursor::operator = (CMouseCursor&& mc) noexcept {
 
 bool CMouseCursor::Build(const std::string& name)
 {
+	//ZoneScoped;
 	int lastFrame = 1000;
 
 	hwCursor = IHardwareCursor::Alloc(hwCursorMem);
@@ -104,6 +108,7 @@ bool CMouseCursor::Build(const std::string& name)
 
 bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 {
+	//ZoneScoped;
 	const std::string specFileName = "anims/" + name + ".txt";
 
 	if (!CFileHandler::FileExists(specFileName, SPRING_VFS_RAW_FIRST))
@@ -181,6 +186,7 @@ bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 
 bool CMouseCursor::BuildFromFileNames(const std::string& name, int lastFrame)
 {
+	//ZoneScoped;
 	// find the image file type to use
 	const char* ext = "";
 	const char* exts[] = {"png", "tga", "bmp"};
@@ -213,6 +219,7 @@ bool CMouseCursor::BuildFromFileNames(const std::string& name, int lastFrame)
 
 float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2& winScale) const
 {
+	//ZoneScoped;
 	if (winCoors.z > 1.0f || frames.empty())
 		return { 0.0f, 0.0f, 0.0f, 0.0f };
 
@@ -237,6 +244,7 @@ float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2&
 }
 bool CMouseCursor::LoadDummyImage()
 {
+	//ZoneScoped;
 	ImageData id;
 	CBitmap bn;
 
@@ -258,6 +266,7 @@ bool CMouseCursor::LoadDummyImage()
 
 bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 {
+	//ZoneScoped;
 	if (!CFileHandler::FileExists(name, SPRING_VFS_RAW_FIRST))
 		return false;
 
@@ -309,6 +318,7 @@ bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 
 void CMouseCursor::Draw(int x, int y, float scale) const
 {
+	//ZoneScoped;
 	if (frames.empty())
 		return;
 
@@ -359,6 +369,7 @@ void CMouseCursor::Draw(int x, int y, float scale) const
 
 void CMouseCursor::Update()
 {
+	//ZoneScoped;
 	if (frames.empty())
 		return;
 
@@ -378,6 +389,7 @@ void CMouseCursor::Update()
 
 void CMouseCursor::BindTexture() const
 {
+	//ZoneScoped;
 	if (frames.empty())
 		return;
 
@@ -389,12 +401,14 @@ void CMouseCursor::BindTexture() const
 
 void CMouseCursor::BindHwCursor() const
 {
+	//ZoneScoped;
 	assert(hwCursor != nullptr);
 	hwCursor->Bind();
 }
 
 void CMouseCursor::UpdateHwCursor() const
 {
+	//ZoneScoped;
     assert(hwCursor != nullptr);
     hwCursor->Update(animTime);
 }

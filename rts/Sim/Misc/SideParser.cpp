@@ -10,6 +10,8 @@
 #include "System/UnorderedSet.hpp"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 
 
 SideParser sideParser;
@@ -21,6 +23,7 @@ const std::string SideParser::emptyStr = "";
 
 bool SideParser::Load()
 {
+	//ZoneScoped;
 	dataVec.clear();
 	errorLog.clear();
 
@@ -73,6 +76,7 @@ bool SideParser::Load()
 
 const SideParser::Data* SideParser::FindSide(const std::string& sideName) const
 {
+	//ZoneScoped;
 	const std::string name = StringToLower(sideName);
 	for (unsigned int i = 0; i < dataVec.size(); i++) {
 		const Data& data = dataVec[i];
@@ -87,6 +91,7 @@ const SideParser::Data* SideParser::FindSide(const std::string& sideName) const
 const std::string& SideParser::GetSideName(unsigned int index,
 		const std::string& def) const
 {
+	//ZoneScoped;
 	if (!ValidSide(index)) {
 		return def;
 	}
@@ -97,6 +102,7 @@ const std::string& SideParser::GetSideName(unsigned int index,
 const std::string& SideParser::GetCaseName(unsigned int index,
 		const std::string& def) const
 {
+	//ZoneScoped;
 	if (!ValidSide(index)) {
 		return def;
 	}
@@ -107,6 +113,7 @@ const std::string& SideParser::GetCaseName(unsigned int index,
 const std::string& SideParser::GetCaseName(const std::string& name,
 		const std::string& def) const
 {
+	//ZoneScoped;
 	const Data* data = FindSide(name);
 	if (data == NULL) {
 		return def;
@@ -118,6 +125,7 @@ const std::string& SideParser::GetCaseName(const std::string& name,
 const std::string& SideParser::GetStartUnit(unsigned int index,
 		const std::string& def) const
 {
+	//ZoneScoped;
 	if (!ValidSide(index)) {
 		return def;
 	}
@@ -128,6 +136,7 @@ const std::string& SideParser::GetStartUnit(unsigned int index,
 const std::string& SideParser::GetStartUnit(const std::string& name,
 		const std::string& def) const
 {
+	//ZoneScoped;
 	const Data* data = FindSide(name);
 	if (data == NULL) {
 		return def;

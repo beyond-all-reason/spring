@@ -23,6 +23,8 @@
 #include "System/Threading/ThreadPool.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 
 using namespace SystemGlobals;
 using namespace QTPFS;
@@ -34,6 +36,7 @@ using namespace QTPFS;
 // #endif
 
 void ScanForPathSpeedModInfo(int frameModulus) {
+    //ZoneScoped;
     auto& comp = systemGlobals.GetSystemComponent<PathSpeedModInfoSystemComponent>();
     auto layersView = registry.view<NodeLayerSpeedInfoSweep>();
     auto pm = dynamic_cast<QTPFS::PathManager*>(pathManager);
@@ -103,6 +106,7 @@ void ScanForPathSpeedModInfo(int frameModulus) {
 // #endif
 
 void InitLayers() {
+    //ZoneScoped;
     std::vector<entt::entity> layers((size_t)moveDefHandler.GetNumMoveDefs());
     QTPFS::registry.create<decltype(layers)::iterator>(layers.begin(), layers.end());
 
@@ -117,6 +121,7 @@ void InitLayers() {
 
 void PathSpeedModInfoSystem::Init()
 {
+    //ZoneScoped;
     auto& comp = systemGlobals.CreateSystemComponent<PathSpeedModInfoSystemComponent>();
     auto pm = dynamic_cast<QTPFS::PathManager*>(IPathManager::GetInstance(QTPFS_TYPE));
 
@@ -160,6 +165,7 @@ void PathSpeedModInfoSystem::Update()
 }
 
 void PathSpeedModInfoSystem::Shutdown() {
+    //ZoneScoped;
     systemUtils.OnUpdate().disconnect<&PathSpeedModInfoSystem::Update>();
 
     registry.view<NodeLayerSpeedInfoSweep>()

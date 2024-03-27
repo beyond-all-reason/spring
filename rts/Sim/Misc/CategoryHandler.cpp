@@ -11,6 +11,8 @@
 #include "System/StringUtil.h"
 #include "System/Log/ILog.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(CCategoryHandler, )
 
 CR_REG_METADATA(CCategoryHandler, (
@@ -30,6 +32,7 @@ void CCategoryHandler::RemoveInstance() { instance.Kill(); }
 
 unsigned int CCategoryHandler::GetCategory(std::string name)
 {
+	//ZoneScoped;
 	StringTrimInPlace(name);
 	StringToLowerInPlace(name);
 
@@ -64,6 +67,7 @@ unsigned int CCategoryHandler::GetCategory(std::string name)
 
 unsigned int CCategoryHandler::GetCategories(std::string names)
 {
+	//ZoneScoped;
 	unsigned int ret = 0;
 
 	StringToLowerInPlace(names);
@@ -85,6 +89,7 @@ unsigned int CCategoryHandler::GetCategories(std::string names)
 
 std::vector<std::string> CCategoryHandler::GetCategoryNames(unsigned int bits) const
 {
+	//ZoneScoped;
 	std::vector<std::string> names;
 
 	names.reserve(categories.size());

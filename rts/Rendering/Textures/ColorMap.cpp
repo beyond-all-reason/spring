@@ -11,6 +11,8 @@
 #include "System/UnorderedMap.hpp"
 #include "System/creg/STL_Map.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(CColorMap, )
 CR_REG_METADATA(CColorMap, (
 	CR_MEMBER(xsize),
@@ -31,6 +33,7 @@ static size_t numColorMaps = 0;
 
 void CColorMap::InitStatic()
 {
+	//ZoneScoped;
 	namedColorMaps.clear();
 	namedColorMaps.reserve(colorMapsCache.size() - 2);
 
@@ -46,6 +49,7 @@ void CColorMap::InitStatic()
 
 CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)
 {
+	//ZoneScoped;
 	const auto fn = StringToLower(fileName);
 	const auto it = namedColorMaps.find(fn);
 
@@ -64,6 +68,7 @@ CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)
 
 CColorMap* CColorMap::LoadFromRawVector(const float* data, size_t size)
 {
+	//ZoneScoped;
 	CColorMap& cm = colorMapsCache[colorMapsCache.size() - 1];
 
 	cm.Clear();
@@ -92,6 +97,7 @@ CColorMap* CColorMap::LoadFromRawVector(const float* data, size_t size)
 
 CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
 {
+	//ZoneScoped;
 	std::array<float, 4096> vec;
 
 	size_t idx = 0;
@@ -115,6 +121,7 @@ CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
 
 CColorMap::CColorMap(const std::string& fileName)
 {
+	//ZoneScoped;
 	CBitmap bitmap;
 
 	if (!bitmap.Load(fileName)) {
@@ -135,6 +142,7 @@ CColorMap::CColorMap(const std::string& fileName)
 
 void CColorMap::Load(const float* data, size_t size)
 {
+	//ZoneScoped;
 	if (size < 8)
 		throw content_error("[ColorMap] less than two RGBA colors specified");
 
@@ -153,6 +161,7 @@ void CColorMap::Load(const float* data, size_t size)
 
 void CColorMap::LoadMap(const unsigned char* buf, int num)
 {
+	//ZoneScoped;
 	map.clear();
 	map.resize(num);
 
@@ -161,6 +170,7 @@ void CColorMap::LoadMap(const unsigned char* buf, int num)
 
 void CColorMap::GetColor(unsigned char* color, float pos)
 {
+	//ZoneScoped;
 	auto indices = GetIndices(pos);
 	if (indices.first == size_t(-1)) {
 		// dummy map, just return grey
@@ -187,6 +197,7 @@ void CColorMap::GetColor(unsigned char* color, float pos)
 
 std::pair<size_t, size_t> CColorMap::GetIndices(float pos) const
 {
+	//ZoneScoped;
 	if (map.empty())
 		return std::make_pair(size_t(-1), size_t(-1));
 
@@ -204,6 +215,7 @@ std::pair<size_t, size_t> CColorMap::GetIndices(float pos) const
 #ifdef USING_CREG
 void CColorMap::SerializeColorMaps(creg::ISerializer* s)
 {
+	//ZoneScoped;
 	if (!s->IsWriting()) {
 		for (CColorMap& cm: colorMapsCache) {
 			cm.Clear();
@@ -221,11 +233,13 @@ void CColorMap::SerializeColorMaps(creg::ISerializer* s)
 
 void CColorMap::PostLoad()
 {
+	//ZoneScoped;
 	nxsize = xsize - 1;
 }
 
 void CColorMap::Serialize(creg::ISerializer* s)
 {
+	//ZoneScoped;
 	if (!s->IsWriting())
 		map.resize(xsize * ysize);
 

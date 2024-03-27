@@ -17,6 +17,8 @@
 #include "Sim/Units/Unit.h"
 #include "System/creg/STL_Deque.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND_DERIVED(CFireProjectile, CProjectile, )
 CR_BIND(CFireProjectile::SubParticle, )
 
@@ -71,6 +73,7 @@ CFireProjectile::CFireProjectile(
 
 void CFireProjectile::Update()
 {
+	//ZoneScoped;
 	if ((--ttl) > 0) {
 		const float partSat = (gs->frameNum & 1) ? 1.0f : 0.8f;
 		if (projectileHandler.GetParticleSaturation() < partSat) {
@@ -141,6 +144,7 @@ void CFireProjectile::Update()
 
 void CFireProjectile::Draw()
 {
+	//ZoneScoped;
 	uint8_t col[4];
 	col[3] = 1;
 	uint8_t col2[4];
@@ -221,6 +225,7 @@ void CFireProjectile::Draw()
 
 int CFireProjectile::GetProjectilesCount() const
 {
+	//ZoneScoped;
 	return subParticles2.size() + subParticles.size() * 2;
 }
 

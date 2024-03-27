@@ -9,8 +9,11 @@
 #include "System/Platform/Misc.h"
 #include "System/StringUtil.h"
 
+#include <tracy/Tracy.hpp>
+
 std::vector<std::uint8_t> ClientData::GetCompressed()
 {
+	//ZoneScoped;
 	std::ostringstream clientDataStream;
 
 	// save user's non-default config; exclude non-engine tags
@@ -34,6 +37,7 @@ std::vector<std::uint8_t> ClientData::GetCompressed()
 
 std::string ClientData::GetUncompressed(const std::vector<std::uint8_t>& compressed)
 {
+	//ZoneScoped;
 	std::vector<std::uint8_t> buffer{zlib::inflate(compressed)};
 	std::string cdata{buffer.begin(), buffer.end()};
 

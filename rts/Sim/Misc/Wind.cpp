@@ -8,6 +8,8 @@
 #include "System/ContainerUtil.h"
 #include "System/SpringMath.h"
 
+#include <tracy/Tracy.hpp>
+
 CR_BIND(EnvResourceHandler, )
 
 CR_REG_METADATA(EnvResourceHandler, (
@@ -34,6 +36,7 @@ EnvResourceHandler envResHandler;
 
 void EnvResourceHandler::ResetState()
 {
+	//ZoneScoped;
 	curTidalStrength = 0.0f;
 	curWindStrength = 0.0f;
 	minWindStrength = 0.0f;
@@ -54,6 +57,7 @@ void EnvResourceHandler::ResetState()
 
 void EnvResourceHandler::LoadWind(float minStrength, float maxStrength)
 {
+	//ZoneScoped;
 	minWindStrength = std::min(minStrength, maxStrength);
 	maxWindStrength = std::max(minStrength, maxStrength);
 
@@ -63,11 +67,13 @@ void EnvResourceHandler::LoadWind(float minStrength, float maxStrength)
 
 
 bool EnvResourceHandler::AddGenerator(CUnit* u) {
+	//ZoneScoped;
 	// duplicates should never happen, no need to check
 	return (spring::VectorInsertUnique(newGeneratorIDs, u->id));
 }
 
 bool EnvResourceHandler::DelGenerator(CUnit* u) {
+	//ZoneScoped;
 	// id is never present in both
 	return (spring::VectorErase(newGeneratorIDs, u->id) || spring::VectorErase(allGeneratorIDs, u->id));
 }
@@ -76,6 +82,7 @@ bool EnvResourceHandler::DelGenerator(CUnit* u) {
 
 void EnvResourceHandler::Update()
 {
+	//ZoneScoped;
 	// zero-strength wind does not need updates
 	if (maxWindStrength <= 0.0f)
 		return;

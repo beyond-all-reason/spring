@@ -8,8 +8,11 @@
 #include <set>
 #include <bit>
 
+#include <tracy/Tracy.hpp>
+
 inline bool CRowAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
+	//ZoneScoped;
 	// sort by large to small
 
 	if (tex1->size.y > tex2->size.y) return true;
@@ -28,6 +31,7 @@ inline bool CRowAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntr
 
 void CRowAtlasAlloc::EstimateNeededSize()
 {
+	//ZoneScoped;
 	int spaceNeeded = 0;
 	int spaceFree = atlasSize.x * (atlasSize.y - nextRowPos);
 
@@ -57,6 +61,7 @@ void CRowAtlasAlloc::EstimateNeededSize()
 
 CRowAtlasAlloc::Row* CRowAtlasAlloc::AddRow(int glyphWidth, int glyphHeight)
 {
+	//ZoneScoped;
 	const int wantedRowHeight = glyphHeight;
 
 	while (atlasSize.y < (nextRowPos + wantedRowHeight)) {
@@ -79,6 +84,7 @@ CRowAtlasAlloc::Row* CRowAtlasAlloc::AddRow(int glyphWidth, int glyphHeight)
 
 bool CRowAtlasAlloc::Allocate()
 {
+	//ZoneScoped;
 	bool success = true;
 
 	if (npot) {
@@ -137,6 +143,7 @@ bool CRowAtlasAlloc::Allocate()
 
 int CRowAtlasAlloc::GetNumTexLevels() const
 {
+	//ZoneScoped;
 	return std::min(
 		std::bit_width(static_cast<uint32_t>(GetMinDim())),
 		numLevels
@@ -146,6 +153,7 @@ int CRowAtlasAlloc::GetNumTexLevels() const
 
 CRowAtlasAlloc::Row* CRowAtlasAlloc::FindRow(int glyphWidth, int glyphHeight)
 {
+	//ZoneScoped;
 	int   bestWidth = atlasSize.x;
 	float bestRatio = 10000.0f;
 	Row*  bestRow   = nullptr;
