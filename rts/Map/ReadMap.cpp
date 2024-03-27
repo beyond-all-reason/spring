@@ -621,7 +621,7 @@ void CReadMap::UpdateCenterHeightmap(const SRectangle& rect, bool initialize) co
 					, std::max(heightmapSynced[idxBL], heightmapSynced[idxBR])
 					);
 		}
-	}, -256);
+	}, 256);
 }
 
 
@@ -716,7 +716,7 @@ void CReadMap::UpdateFaceNormals(const SRectangle& rect, bool initialize)
 				centerNormalsUnsynced[y * mapDims.mapx + x] = centerNormalsSynced[y * mapDims.mapx + x];
 			}
 		}
-	}, -64);
+	}, 64);
 }
 
 
@@ -758,7 +758,7 @@ void CReadMap::UpdateSlopemap(const SRectangle& rect, bool initialize)
 
 			slopeMap[y * mapDims.hmapx + x] = 1.0f - slope;
 		}
-	}, -128);
+	}, 128);
 }
 
 
