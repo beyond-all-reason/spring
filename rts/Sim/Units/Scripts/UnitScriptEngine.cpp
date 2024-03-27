@@ -126,7 +126,7 @@ void CUnitScriptEngine::Tick(int deltaTime)
 	using ImplFunctionT = decltype(&CUnitScriptEngine::ImplTickST);
 	static constexpr ImplFunctionT ImplFunctions[] = { &CUnitScriptEngine::ImplTickST, &CUnitScriptEngine::ImplTickMT };
 	// TODO: remove the conditional once it's proven to be sync safe
-	(this->*ImplFunctions[configHandler->GetInt("AnimationMT")])(deltaTime);
+	(this->*ImplFunctions[configHandler->GetBool("AnimationMT")])(deltaTime);
 
 	currentScript = nullptr;
 }

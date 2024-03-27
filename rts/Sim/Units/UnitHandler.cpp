@@ -29,8 +29,12 @@
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Set.h"
 #include "System/Threading/ThreadPool.h"
-
 #include "Sim/Path/HAPFS/PathGlobal.h"
+
+#include "System/Config/ConfigHandler.h"
+CONFIG(bool, UpdateWeaponVectorsMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded update of weapon vectors");
+CONFIG(bool, UpdateBoundingVolumeMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded update of unit bounding volumes");
+
 
 
 CR_BIND(CUnitHandler, )
@@ -375,9 +379,16 @@ void CUnitHandler::SlowUpdateUnits()
 	// They dont have much of an effect if updated late-ish.
 	{
 		ZoneScopedN("Sim::Unit::SlowUpdateMT");
-		for_mt(0, updateBoundingVolumeList.size(), [](int i) {
-			updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
-		});
+		if (configHandler->GetBool("UpdateBoundingVolumeMT")) {
+			for_mt(0, updateBoundingVolumeList.size(), [](int i) {
+				updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
+			});
+		}
+		else {
+			for(size_t i = 0; i < updateBoundingVolumeList.size(); ++i) {
+				updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
+			}
+		}
 	}
 }
 
@@ -404,10 +415,19 @@ void CUnitHandler::UpdateUnitWeapons()
 {
 	{
 		SCOPED_TIMER("Sim::Unit::UpdateWeaponVectors");
-		for_mt(0, activeUnits.size(), [&](const int idx) {
-			auto unit = activeUnits[idx];
-			unit->UpdateWeaponVectors();
-		});
+
+		if (configHandler->GetBool("UpdateWeaponVectorsMT")) {
+			for_mt_chunk(0, activeUnits.size(), [&](const int idx) {
+				auto unit = activeUnits[idx];
+				unit->UpdateWeaponVectors();
+			});
+		}
+		else {
+			for (size_t idx = 0; idx < activeUnits.size(); ++idx) {
+				auto unit = activeUnits[idx];
+				unit->UpdateWeaponVectors();
+			}
+		}
 	}
 	{
 		SCOPED_TIMER("Sim::Unit::Weapon");
@@ -416,7 +436,6 @@ void CUnitHandler::UpdateUnitWeapons()
 		}
 	}
 }
-
 
 void CUnitHandler::Update()
 {
