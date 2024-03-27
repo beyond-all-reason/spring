@@ -5,6 +5,7 @@
 #include "InputReceiver.h"
 #include "Rendering/GL/myGL.h"
 #include "System/Rectangle.h"
+#include "Rendering/GL/RenderBuffers.h"
 
 #include <vector>
 
@@ -29,16 +30,19 @@ public:
 protected:
 	static CEndGameBox* endGameBox;
 	void FillTeamStats();
+	void addVertices(TypedRenderBuffer<VA_TYPE_C> &rbC, const std::vector<float>& statValues, size_t numPoints, float scalex, float scaley, const uint8_t (&color)[4]);
 
 	TRectangle<float> box;
 
-	TRectangle<float>   exitBox;
-	TRectangle<float> playerBox;
-	TRectangle<float>    sumBox;
-	TRectangle<float>    difBox;
+	TRectangle<float>       exitBox;
+	TRectangle<float>     playerBox;
+	TRectangle<float>        sumBox;
+	TRectangle<float>        difBox;
+	TRectangle<float> graphScaleBox;
 
 	bool moveBox = false;
 
+	bool logScale = false;
 	int dispMode = 0;
 
 	int stat1 =  1;
