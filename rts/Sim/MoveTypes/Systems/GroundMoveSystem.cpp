@@ -56,7 +56,9 @@ void GroundMoveSystem::Update() {
 		});
 	}
 	{
-		SCOPED_TIMER("Sim::Unit::MoveType::2::HeadingUpdates");
+		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisions");
+
+        // These two sections are ST due to the numerous synced vars being chnaged.
         {
             auto view = Sim::registry.view<ChangeHeadingEvent>();
             view.each([](ChangeHeadingEvent& event){
@@ -81,7 +83,6 @@ void GroundMoveSystem::Update() {
         }
     }
 	{
-		SCOPED_TIMER("Sim::Unit::MoveType::2+::UpdatePreCollisions");
         auto view = Sim::registry.view<GroundMoveType>();
         for_mt(0, view.size(), [&view](const int i){
             auto entity = view.storage<GroundMoveType>()[i];

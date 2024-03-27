@@ -639,7 +639,7 @@ void CGroundMoveType::UpdatePreCollisions()
 }
 
 void CGroundMoveType::UpdateUnitPosition() {
-	resultantForces *= 0.f;
+	resultantForces = ZeroVector;
 
 	if (owner->IsSkidding()) return;
 
@@ -2437,9 +2437,9 @@ void CGroundMoveType::HandleObjectCollisions()
 	const UnitDef* colliderUD = collider->unitDef;
 	const MoveDef* colliderMD = collider->moveDef;
 
-	resultantForces *= 0.f;
-	forceFromMovingCollidees *= 0.f;
-	forceFromStaticCollidees *= 0.f;
+	resultantForces = ZeroVector;
+	forceFromMovingCollidees = ZeroVector;
+	forceFromStaticCollidees = ZeroVector;
 
 	// NOTE:
 	//   use the collider's MoveDef footprint as radius since it is
