@@ -1,7 +1,7 @@
 {
   "AdvMapShading": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 43,
+    "declarationLine": 45,
     "description": "Enable shaders for terrain rendering.",
     "defaultValue": 1,
     "safemodeValue": 0,
@@ -24,7 +24,8 @@
   },
   "AllowDeferredMapRendering": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 44,
+    "declarationLine": 46,
+    "description": "Enable rendering the map to the map deferred buffers.",
     "defaultValue": 0,
     "safemodeValue": 0,
     "type": "bool"
@@ -39,31 +40,36 @@
   "AllowDeferredModelRendering": {
     "declarationFile": "/spring/rts/Rendering/LuaObjectDrawer.cpp",
     "declarationLine": 31,
+    "description": "Allows the rendering of model deferred buffers.",
     "defaultValue": 0,
     "safemodeValue": 0,
     "type": "bool"
   },
   "AllowDrawMapDeferredEvents": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 46,
+    "declarationLine": 48,
+    "description": "Enable DrawGroundDeferred Lua callin.",
     "defaultValue": 0,
     "type": "bool"
   },
   "AllowDrawMapPostDeferredEvents": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 45,
+    "declarationLine": 47,
+    "description": "Enable DrawGroundPostDeferred Lua callin.",
     "defaultValue": 0,
     "type": "bool"
   },
   "AllowDrawModelPostDeferredEvents": {
     "declarationFile": "/spring/rts/Rendering/LuaObjectDrawer.cpp",
     "declarationLine": 33,
+    "description": "Enable Draw{Units,Features}PostDeferred Lua callins.",
     "defaultValue": 1,
     "type": "bool"
   },
   "AllowMultiSampledFrameBuffers": {
     "declarationFile": "/spring/rts/Rendering/LuaObjectDrawer.cpp",
     "declarationLine": 34,
+    "description": "Enable FBOs that can have multisampled anti-aliasing.",
     "defaultValue": 0,
     "type": "bool"
   },
@@ -77,14 +83,14 @@
   },
   "AlwaysSendDrawGroundEvents": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 55,
+    "declarationLine": 57,
     "description": "Always send DrawGround{Pre,Post}{Forward,Deferred} events",
     "defaultValue": 0,
     "type": "bool"
   },
   "AtiHacks": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 57,
+    "declarationLine": 58,
     "description": "Enables graphics drivers workarounds for users with AMD proprietary drivers.\n -1:=runtime detect, 0:=off, 1:=on",
     "defaultValue": -1,
     "minimumValue": -1,
@@ -120,12 +126,13 @@
   "AutohostPort": {
     "declarationFile": "/spring/rts/Net/GameServer.cpp",
     "declarationLine": 69,
+    "description": "Which port should the engine listen on for Autohost interfact connections.",
     "defaultValue": 0,
     "type": "int"
   },
   "BlockCompositing": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 69,
+    "declarationLine": 70,
     "description": "Disables kwin compositing to fix tearing, possible fixes low FPS in windowed mode, too.",
     "defaultValue": 0,
     "safemodeValue": 1,
@@ -333,62 +340,76 @@
     "defaultValue": 0.3,
     "type": "float"
   },
+  "CamOverviewDynamicRotation": {
+    "declarationFile": "/spring/rts/Game/Camera/OverviewController.cpp",
+    "declarationLine": 13,
+    "description": "Transition from different camera preserves rotation",
+    "defaultValue": 0,
+    "type": "bool"
+  },
   "CamSpringEdgeRotate": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 24,
+    "declarationLine": 33,
     "description": "Rotate camera when cursor touches screen borders.",
     "defaultValue": 0,
     "type": "bool"
   },
   "CamSpringEnabled": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 18,
+    "declarationLine": 27,
     "defaultValue": 1,
     "headlessValue": 0,
     "type": "bool"
   },
   "CamSpringFOV": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 20,
+    "declarationLine": 29,
     "defaultValue": 45,
     "type": "float"
   },
   "CamSpringFastScaleMouseMove": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 25,
+    "declarationLine": 34,
     "description": "Scaling for CameraMoveFastMult in spring camera mode while moving mouse.",
     "defaultValue": 0.3,
     "type": "float"
   },
   "CamSpringFastScaleMousewheelMove": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 26,
+    "declarationLine": 35,
     "description": "Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.",
     "defaultValue": 0.2,
     "type": "float"
   },
   "CamSpringLockCardinalDirections": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 21,
+    "declarationLine": 30,
     "description": "Whether cardinal directions should be `locked` for a short time when rotating.",
     "defaultValue": 1,
     "type": "bool"
   },
   "CamSpringScrollSpeed": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 19,
+    "declarationLine": 28,
     "defaultValue": 10,
+    "type": "int"
+  },
+  "CamSpringTrackMapHeightMode": {
+    "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
+    "declarationLine": 36,
+    "description": "Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smoothmesh",
+    "defaultValue": 1,
     "type": "int"
   },
   "CamSpringZoomInToMousePos": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 22,
+    "declarationLine": 31,
     "defaultValue": 1,
     "type": "bool"
   },
   "CamSpringZoomOutFromMousePos": {
     "declarationFile": "/spring/rts/Game/Camera/SpringController.cpp",
-    "declarationLine": 23,
+    "declarationLine": 32,
     "defaultValue": 0,
     "type": "bool"
   },
@@ -433,7 +454,7 @@
   },
   "CompressTextures": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 60,
+    "declarationLine": 61,
     "description": "Runtime compress most textures to save VideoRAM.",
     "defaultValue": 0,
     "safemodeValue": 1,
@@ -441,31 +462,33 @@
   },
   "CrossAlpha": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 56,
+    "declarationLine": 59,
     "defaultValue": 0.5,
     "type": "float"
   },
   "CrossMoveScale": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 57,
+    "declarationLine": 60,
     "defaultValue": 1,
     "type": "float"
   },
   "CrossSize": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 55,
+    "declarationLine": 58,
     "defaultValue": 12,
     "type": "float"
   },
   "CubeTexGenerateMipMaps": {
     "declarationFile": "/spring/rts/Rendering/Env/CubeMapHandler.cpp",
     "declarationLine": 21,
+    "description": "Generate mipmaps for the reflection and specular cubemap textures, useful for efficient subsampling and blurring.",
     "defaultValue": 0,
     "type": "bool"
   },
   "CubeTexSizeReflection": {
     "declarationFile": "/spring/rts/Rendering/Env/CubeMapHandler.cpp",
     "declarationLine": 20,
+    "description": "The square resolution of each face of the environment reflection cubemap.",
     "defaultValue": 128,
     "minimumValue": 1,
     "type": "int"
@@ -473,20 +496,21 @@
   "CubeTexSizeSpecular": {
     "declarationFile": "/spring/rts/Rendering/Env/CubeMapHandler.cpp",
     "declarationLine": 19,
+    "description": "The square resolution of each face of the specular cubemap.",
     "defaultValue": 128,
     "minimumValue": 1,
     "type": "int"
   },
   "DebugGL": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 42,
+    "declarationLine": 43,
     "description": "Enables GL debug-context and output. (see GL_ARB_debug_output)",
     "defaultValue": 0,
     "type": "bool"
   },
   "DebugGLStacktraces": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 43,
+    "declarationLine": 44,
     "description": "Create a stacktrace when an OpenGL error occurs",
     "defaultValue": 0,
     "type": "bool"
@@ -500,7 +524,7 @@
   },
   "DefaultStartScript": {
     "declarationFile": "/spring/rts/System/SpringApp.cpp",
-    "declarationLine": 112,
+    "declarationLine": 115,
     "description": "filename of script.txt to use when no command line parameters are specified.",
     "defaultValue": "",
     "type": "std::string"
@@ -508,6 +532,7 @@
   "DemoFromDemo": {
     "declarationFile": "/spring/rts/Game/PreGame.cpp",
     "declarationLine": 60,
+    "description": "Enable recording a demo while playing back a demo.",
     "defaultValue": 0,
     "type": "bool"
   },
@@ -528,28 +553,28 @@
   },
   "DoubleClickTime": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 59,
+    "declarationLine": 62,
     "description": "Double click time in milliseconds.",
     "defaultValue": 200,
     "type": "float"
   },
   "DualScreenMiniMapAspectRatio": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 71,
+    "declarationLine": 77,
     "description": "Whether minimap preserves aspect ratio on dual screen mode.",
     "defaultValue": 1,
     "type": "bool"
   },
   "DualScreenMiniMapOnLeft": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 62,
+    "declarationLine": 63,
     "description": "When set, will make the left half of the screen the minimap when DualScreenMode is set.",
     "defaultValue": 0,
     "type": "bool"
   },
   "DualScreenMode": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 61,
+    "declarationLine": 62,
     "description": "Sets whether to split the screen in half, with one half for minimap and one for main screen. Right side is for minimap unless DualScreenMiniMapOnLeft is set.",
     "defaultValue": 0,
     "type": "bool"
@@ -557,7 +582,8 @@
   "DumpGameStateOnDesync": {
     "declarationFile": "/spring/rts/System/GlobalConfig.cpp",
     "declarationLine": 63,
-    "defaultValue": 0,
+    "description": "Enable writing clientgamestate and servergamestate dumps when a desync is detected",
+    "defaultValue": 1,
     "type": "bool"
   },
   "EdgeMoveDynamic": {
@@ -614,13 +640,13 @@
   },
   "FSAA": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 80,
+    "declarationLine": 81,
     "deprecated": 1,
     "type": "bool"
   },
   "FSAALevel": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 81,
+    "declarationLine": 82,
     "deprecated": 1,
     "type": "int"
   },
@@ -670,7 +696,7 @@
   },
   "ForceCoreContext": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 55,
+    "declarationLine": 56,
     "defaultValue": 0,
     "minimumValue": 0,
     "maximumValue": 1,
@@ -678,7 +704,7 @@
   },
   "ForceDisableClipCtrl": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 51,
+    "declarationLine": 52,
     "defaultValue": 0,
     "minimumValue": 0,
     "maximumValue": 1,
@@ -686,7 +712,7 @@
   },
   "ForceDisableExplicitAttribLocs": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 50,
+    "declarationLine": 51,
     "defaultValue": 0,
     "minimumValue": 0,
     "maximumValue": 1,
@@ -694,7 +720,7 @@
   },
   "ForceDisableGL4": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 53,
+    "declarationLine": 54,
     "defaultValue": 0,
     "minimumValue": 0,
     "maximumValue": 1,
@@ -703,7 +729,7 @@
   },
   "ForceDisablePersistentMapping": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 49,
+    "declarationLine": 50,
     "defaultValue": 0,
     "minimumValue": 0,
     "maximumValue": 1,
@@ -711,13 +737,13 @@
   },
   "ForceDisableShaders": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 82,
+    "declarationLine": 83,
     "deprecated": 1,
     "type": "bool"
   },
   "ForceSwapBuffers": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 56,
+    "declarationLine": 57,
     "defaultValue": 1,
     "minimumValue": 0,
     "maximumValue": 1,
@@ -725,7 +751,7 @@
   },
   "Fullscreen": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 67,
+    "declarationLine": 68,
     "description": "Sets whether the game will run in fullscreen, as opposed to a window. For Windowed Fullscreen of Borderless Window, set this to 0, WindowBorderless to 1, and WindowPosX and WindowPosY to 0.",
     "defaultValue": 1,
     "headlessValue": 0,
@@ -733,14 +759,14 @@
   },
   "FullscreenEdgeMove": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 136,
+    "declarationLine": 137,
     "description": "see WindowedEdgeMove, just for fullscreen mode",
     "defaultValue": 1,
     "type": "bool"
   },
   "GLContextMajorVersion": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 45,
+    "declarationLine": 46,
     "defaultValue": 3,
     "minimumValue": 3,
     "maximumValue": 4,
@@ -748,7 +774,7 @@
   },
   "GLContextMinorVersion": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 46,
+    "declarationLine": 47,
     "defaultValue": 0,
     "minimumValue": 0,
     "maximumValue": 5,
@@ -756,7 +782,7 @@
   },
   "GameEndOnConnectionLoss": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 132,
+    "declarationLine": 133,
     "defaultValue": 1,
     "type": "bool"
   },
@@ -785,7 +811,7 @@
   },
   "GroundDetail": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 30,
+    "declarationLine": 32,
     "description": "Controls how detailed the map geometry will be. On lowered settings, cliffs may appear to be jagged or \"melting\".",
     "defaultValue": 60,
     "minimumValue": 4,
@@ -815,19 +841,20 @@
   },
   "GroundNormalTextureHighPrecision": {
     "declarationFile": "/spring/rts/Map/SMF/SMFReadMap.cpp",
-    "declarationLine": 35,
-    "defaultValue": 0,
+    "declarationLine": 37,
+    "deprecated": 1,
     "type": "bool"
   },
   "GroundScarAlphaFade": {
     "declarationFile": "/spring/rts/Rendering/Env/Decals/GroundDecalHandler.cpp",
     "declarationLine": 55,
+    "description": "How fast ground scars like explosion scars and tracks fade out.",
     "defaultValue": 0,
     "type": "int"
   },
   "GuiOpacity": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 142,
+    "declarationLine": 143,
     "description": "Sets the opacity of the built-in Spring UI. Generally has no effect on LuaUI widgets. Can be set in-game using shift+, to decrease and shift+. to increase.",
     "defaultValue": 0.8,
     "minimumValue": 0,
@@ -845,7 +872,7 @@
   },
   "HardwareCursor": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 50,
+    "declarationLine": 53,
     "description": "Sets hardware mouse cursor rendering. If you have a low framerate, your mouse cursor will seem \"laggy\". Setting hardware cursor will render the mouse cursor separately from spring and the mouse will behave normally. Note, not all GPU drivers support it in fullscreen mode!",
     "defaultValue": 0,
     "type": "bool"
@@ -853,6 +880,7 @@
   "HighResInfoTexture": {
     "declarationFile": "/spring/rts/Rendering/Map/InfoTexture/Modern/Combiner.cpp",
     "declarationLine": 14,
+    "description": "Use full heightmap resolution info texture (true), or half resolution (false)",
     "defaultValue": 1,
     "type": "bool"
   },
@@ -896,19 +924,20 @@
   "InitialNetworkTimeout": {
     "declarationFile": "/spring/rts/System/GlobalConfig.cpp",
     "declarationLine": 15,
+    "description": "Time to wait for the initial connection to the game server.",
     "defaultValue": 30,
     "minimumValue": 10,
     "type": "int"
   },
   "InputTextGeo": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 143,
+    "declarationLine": 144,
     "defaultValue": "",
     "type": "std::string"
   },
   "InvertMouse": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 51,
+    "declarationLine": 54,
     "defaultValue": 0,
     "type": "bool"
   },
@@ -1056,7 +1085,8 @@
   },
   "LuaGarbageCollectionMemLoadMult": {
     "declarationFile": "/spring/rts/Lua/LuaHandle.cpp",
-    "declarationLine": 59,
+    "declarationLine": 60,
+    "description": "How much the amount of Lua memory in use increases the rate of garbage collection.",
     "defaultValue": 1.33,
     "minimumValue": 1,
     "maximumValue": 100,
@@ -1064,8 +1094,8 @@
   },
   "LuaGarbageCollectionRunTimeMult": {
     "declarationFile": "/spring/rts/Lua/LuaHandle.cpp",
-    "declarationLine": 60,
-    "description": "in milliseconds",
+    "declarationLine": 61,
+    "description": "How many milliseconds the garbage collected can run for in each GC cycle",
     "defaultValue": 5,
     "minimumValue": 1,
     "type": "float"
@@ -1094,7 +1124,7 @@
   },
   "MSAALevel": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 47,
+    "declarationLine": 48,
     "description": "Enables multisample anti-aliasing; 'level' is the number of samples used.",
     "defaultValue": 0,
     "minimumValue": 0,
@@ -1103,14 +1133,15 @@
   },
   "MapBorder": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 36,
+    "declarationLine": 38,
     "description": "Draws a solid border at the edges of the map.",
     "defaultValue": 1,
     "type": "bool"
   },
   "MaxDynamicMapLights": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 39,
+    "declarationLine": 41,
+    "description": "Maximum number of map-global dynamic lights that will be rendered at once. High numbers of lights cost performance, as they affect every map fragment.",
     "defaultValue": 1,
     "minimumValue": 0,
     "type": "int"
@@ -1120,6 +1151,13 @@
     "declarationLine": 63,
     "defaultValue": 1,
     "minimumValue": 0,
+    "type": "int"
+  },
+  "MaxFontTries": {
+    "declarationFile": "/spring/rts/System/SpringApp.cpp",
+    "declarationLine": 112,
+    "description": "Represents the maximum number of attempts to search for a glyph replacement using the FontConfig library (lower = foreign glyphs may fail to render, higher = searching for foreign glyphs can lag the game).",
+    "defaultValue": 5,
     "type": "int"
   },
   "MaxNanoParticles": {
@@ -1150,7 +1188,8 @@
   "MaxTextureAtlasSizeX": {
     "declarationFile": "/spring/rts/Rendering/Textures/TextureAtlas.cpp",
     "declarationLine": 22,
-    "defaultValue": 2048,
+    "description": "The max X size of the projectile and Lua texture atlasses",
+    "defaultValue": 4096,
     "minimumValue": 512,
     "maximumValue": 32768,
     "type": "int"
@@ -1158,7 +1197,8 @@
   "MaxTextureAtlasSizeY": {
     "declarationFile": "/spring/rts/Rendering/Textures/TextureAtlas.cpp",
     "declarationLine": 23,
-    "defaultValue": 2048,
+    "description": "The max Y size of the projectile and Lua texture atlasses",
+    "defaultValue": 4096,
     "minimumValue": 512,
     "maximumValue": 32768,
     "type": "int"
@@ -1183,9 +1223,23 @@
     "defaultValue": 0.01,
     "type": "float"
   },
+  "MinDrawFPS": {
+    "declarationFile": "/spring/rts/System/GlobalConfig.cpp",
+    "declarationLine": 66,
+    "description": "Defines how many frames per second should minimally be rendered. To reach this number we will delay simframes.",
+    "defaultValue": 2,
+    "type": "int"
+  },
+  "MinSimDrawBalance": {
+    "declarationFile": "/spring/rts/System/GlobalConfig.cpp",
+    "declarationLine": 65,
+    "description": "Percent of the time for simulation is minimum spend for drawing. E.g. if set to 0.15 then 15% of the total cpu time is exclusively reserved for drawing.",
+    "defaultValue": 0.15,
+    "type": "float"
+  },
   "MiniMapButtonSize": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 53,
+    "declarationLine": 59,
     "defaultValue": 16,
     "type": "int"
   },
@@ -1198,20 +1252,20 @@
   },
   "MiniMapCanFlip": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 73,
+    "declarationLine": 79,
     "description": "Whether minimap inverts coordinates when camera Y rotation is between 90 and 270 degrees.",
     "defaultValue": 0,
     "type": "bool"
   },
   "MiniMapCursorScale": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 60,
+    "declarationLine": 66,
     "defaultValue": -0.5,
     "type": "float"
   },
   "MiniMapDrawCommands": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 63,
+    "declarationLine": 69,
     "defaultValue": 1,
     "minimumValue": 0,
     "headlessValue": 0,
@@ -1219,26 +1273,26 @@
   },
   "MiniMapDrawProjectiles": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 65,
+    "declarationLine": 71,
     "defaultValue": 1,
     "headlessValue": 0,
     "type": "bool"
   },
   "MiniMapFullProxy": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 52,
+    "declarationLine": 58,
     "defaultValue": 1,
     "type": "bool"
   },
   "MiniMapGeometry": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 51,
+    "declarationLine": 57,
     "defaultValue": "2 2 200 200",
     "type": "std::string"
   },
   "MiniMapIcons": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 61,
+    "declarationLine": 67,
     "defaultValue": 1,
     "headlessValue": 0,
     "type": "bool"
@@ -1252,14 +1306,14 @@
   },
   "MiniMapMouseWheel": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 53,
+    "declarationLine": 56,
     "description": "Whether MiniMap responds to MouseWheel events",
     "defaultValue": 0,
     "type": "bool"
   },
   "MiniMapRefreshRate": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 69,
+    "declarationLine": 75,
     "description": "The refresh rate of the async MiniMap texture. Needs MiniMapRenderToTexture to be true. Value of \"0\" autoselects between 10-60FPS.",
     "defaultValue": 0,
     "minimumValue": 0,
@@ -1267,7 +1321,7 @@
   },
   "MiniMapRenderToTexture": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 68,
+    "declarationLine": 74,
     "description": "Asynchronous render MiniMap to a texture independent of screen FPS.",
     "defaultValue": 1,
     "safemodeValue": 0,
@@ -1275,20 +1329,20 @@
   },
   "MiniMapUnitExp": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 59,
+    "declarationLine": 65,
     "defaultValue": 0.25,
     "type": "float"
   },
   "MiniMapUnitSize": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 55,
+    "declarationLine": 61,
     "defaultValue": 2.5,
     "minimumValue": 0,
     "type": "float"
   },
   "MinimizeOnFocusLoss": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 65,
+    "declarationLine": 66,
     "description": "When set to 1 minimize Window if it loses key focus when in fullscreen mode.",
     "defaultValue": 0,
     "minimumValue": 0,
@@ -1297,41 +1351,41 @@
   },
   "MouseDragBoxCommandThreshold": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 65,
+    "declarationLine": 68,
     "description": "Distance in pixels which the mouse must be dragged to trigger a rectangular area command.",
     "defaultValue": 16,
     "type": "int"
   },
   "MouseDragCircleCommandThreshold": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 64,
+    "declarationLine": 67,
     "description": "Distance in pixels which the mouse must be dragged to trigger a circular area command.",
     "defaultValue": 4,
     "type": "int"
   },
   "MouseDragFrontCommandThreshold": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 66,
+    "declarationLine": 69,
     "description": "Distance in pixels which the mouse must be dragged to trigger a formation front command.",
     "defaultValue": 30,
     "type": "int"
   },
   "MouseDragScrollThreshold": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 62,
+    "declarationLine": 65,
     "defaultValue": 0.3,
     "type": "float"
   },
   "MouseDragSelectionThreshold": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 63,
+    "declarationLine": 66,
     "description": "Distance in pixels which the mouse must be dragged to trigger a selection box.",
     "defaultValue": 4,
     "type": "int"
   },
   "MouseRelativeModeWarp": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 52,
+    "declarationLine": 55,
     "defaultValue": 1,
     "type": "bool"
   },
@@ -1346,6 +1400,7 @@
   "NetworkTimeout": {
     "declarationFile": "/spring/rts/System/GlobalConfig.cpp",
     "declarationLine": 19,
+    "description": "Number of seconds before connection to game server is considered lost.",
     "defaultValue": 120,
     "minimumValue": 0,
     "type": "int"
@@ -1390,7 +1445,7 @@
   },
   "PathingThreadCount": {
     "declarationFile": "/spring/rts/Sim/Path/QTPFS/PathManager.cpp",
-    "declarationLine": 38,
+    "declarationLine": 59,
     "defaultValue": 0,
     "minimumValue": 0,
     "safemodeValue": 1,
@@ -1405,14 +1460,14 @@
   },
   "PreloadModels": {
     "declarationFile": "/spring/rts/Rendering/WorldDrawer.cpp",
-    "declarationLine": 53,
+    "declarationLine": 54,
     "description": "The engine will preload all models",
     "defaultValue": 1,
     "type": "bool"
   },
   "ROAM": {
     "declarationFile": "/spring/rts/Map/SMF/SMFGroundDrawer.cpp",
-    "declarationLine": 49,
+    "declarationLine": 51,
     "description": "Use ROAM for terrain mesh rendering: 0 to disable, 1=VBO mode to enable.",
     "defaultValue": 1,
     "minimumValue": 0,
@@ -1435,7 +1490,7 @@
   },
   "RendererHash": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 79,
+    "declarationLine": 80,
     "deprecated": 1,
     "type": "int"
   },
@@ -1480,27 +1535,44 @@
   },
   "SMFTexAniso": {
     "declarationFile": "/spring/rts/Map/SMF/SMFReadMap.cpp",
-    "declarationLine": 36,
+    "declarationLine": 38,
     "defaultValue": 4,
     "minimumValue": 0,
     "type": "float"
   },
+  "SMFTextureLodBias": {
+    "declarationFile": "/spring/rts/Map/SMF/SMFGroundTextures.cpp",
+    "declarationLine": 48,
+    "description": "In case SMFTextureStreaming = false, this parameter controls the sampling lod bias applied to diffuse texture",
+    "defaultValue": 0,
+    "safemodeValue": 0,
+    "type": "float"
+  },
+  "SMFTextureStreaming": {
+    "declarationFile": "/spring/rts/Map/SMF/SMFGroundTextures.cpp",
+    "declarationLine": 47,
+    "description": "Dynamically load and unload SMF Diffuse textures. Saves VRAM, worse performance and image quality.",
+    "defaultValue": 0,
+    "safemodeValue": 1,
+    "type": "bool"
+  },
   "SSMFTexAniso": {
     "declarationFile": "/spring/rts/Map/SMF/SMFReadMap.cpp",
-    "declarationLine": 37,
+    "declarationLine": 39,
     "defaultValue": 4,
     "minimumValue": 0,
     "type": "float"
   },
   "ScreenshotCounter": {
     "declarationFile": "/spring/rts/Rendering/Screenshot.cpp",
-    "declarationLine": 19,
+    "declarationLine": 20,
+    "description": "Deprecated, does nothing, but not marked as such to keep compatibility with older engine versions",
     "defaultValue": 0,
     "type": "int"
   },
   "ScrollWheelSpeed": {
     "declarationFile": "/spring/rts/Game/UI/MouseHandler.cpp",
-    "declarationLine": 60,
+    "declarationLine": 63,
     "defaultValue": -25,
     "minimumValue": -255,
     "maximumValue": 255,
@@ -1528,13 +1600,13 @@
   "ServerSleepTime": {
     "declarationFile": "/spring/rts/Net/GameServer.cpp",
     "declarationLine": 70,
-    "description": "number of milliseconds to sleep per tick",
+    "description": "Number of milliseconds to sleep per tick for the server thread. Lower values have marginally higher CPU load, while high values can introduce additional latency.",
     "defaultValue": 5,
     "type": "int"
   },
   "SetCoreAffinity": {
     "declarationFile": "/spring/rts/System/SpringApp.cpp",
-    "declarationLine": 105,
+    "declarationLine": 107,
     "description": "Defines a bitmask indicating which CPU cores the main-thread should use.",
     "defaultValue": "0",
     "safemodeValue": "1",
@@ -1542,14 +1614,14 @@
   },
   "ShadowColorMode": {
     "declarationFile": "/spring/rts/Rendering/ShadowHandler.cpp",
-    "declarationLine": 34,
+    "declarationLine": 35,
     "description": "Whether the colorbuffer of shadowmap FBO is RGB vs greyscale(to conserve some VRAM)",
     "defaultValue": 1,
     "type": "bool"
   },
   "ShadowMapSize": {
     "declarationFile": "/spring/rts/Rendering/ShadowHandler.cpp",
-    "declarationLine": 32,
+    "declarationLine": 33,
     "description": "Sets the resolution of shadows. Higher numbers increase quality at the cost of performance.",
     "defaultValue": 2048,
     "minimumValue": 32,
@@ -1557,13 +1629,13 @@
   },
   "ShadowProjectionMode": {
     "declarationFile": "/spring/rts/Rendering/ShadowHandler.cpp",
-    "declarationLine": 33,
+    "declarationLine": 34,
     "defaultValue": 1,
     "type": "int"
   },
   "Shadows": {
     "declarationFile": "/spring/rts/Rendering/ShadowHandler.cpp",
-    "declarationLine": 31,
+    "declarationLine": 32,
     "description": "Sets whether shadows are rendered.\n-1:=forceoff, 0:=off, 1:=full, 2:=fast (skip terrain)",
     "defaultValue": 2,
     "minimumValue": -1,
@@ -1573,7 +1645,7 @@
   },
   "ShowClock": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 139,
+    "declarationLine": 140,
     "description": "Displays a clock on the top-right corner of the screen showing the elapsed time of the current game.",
     "defaultValue": 1,
     "headlessValue": 0,
@@ -1581,28 +1653,28 @@
   },
   "ShowFPS": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 138,
+    "declarationLine": 139,
     "description": "Displays current framerate.",
     "defaultValue": 0,
     "type": "bool"
   },
   "ShowPlayerInfo": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 141,
+    "declarationLine": 142,
     "defaultValue": 1,
     "headlessValue": 0,
     "type": "int"
   },
   "ShowSpeed": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 140,
+    "declarationLine": 141,
     "description": "Displays current game speed.",
     "defaultValue": 0,
     "type": "bool"
   },
   "SimpleMiniMapColors": {
     "declarationFile": "/spring/rts/Game/UI/MiniMap.cpp",
-    "declarationLine": 66,
+    "declarationLine": 72,
     "defaultValue": 0,
     "type": "bool"
   },
@@ -1636,7 +1708,7 @@
   },
   "SmoothTimeOffset": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 145,
+    "declarationLine": 146,
     "description": "Enables frametimeoffset smoothing, 0 = off (old version), -1 = forced 0.5,  1-20 smooth, recommended = 2-3",
     "defaultValue": 0,
     "headlessValue": 0,
@@ -1644,7 +1716,7 @@
   },
   "SoftParticles": {
     "declarationFile": "/spring/rts/Rendering/Env/Particles/ProjectileDrawer.cpp",
-    "declarationLine": 44,
+    "declarationLine": 41,
     "description": "Soften up CEG particles on clipping edges",
     "defaultValue": 1,
     "safemodeValue": 0,
@@ -1674,7 +1746,7 @@
   },
   "SplashScreenDir": {
     "declarationFile": "/spring/rts/System/SpringApp.cpp",
-    "declarationLine": 113,
+    "declarationLine": 116,
     "defaultValue": ".",
     "type": "std::string"
   },
@@ -1694,16 +1766,23 @@
     "defaultValue": "",
     "type": "std::string"
   },
+  "StoreDefaultSettings": {
+    "declarationFile": "/spring/rts/System/Config/ConfigHandler.cpp",
+    "declarationLine": 18,
+    "description": "springsettings.cfg will save the settings values, if they match the implicit defaults and were set by a user explicitly",
+    "defaultValue": 0,
+    "type": "bool"
+  },
   "TCPAllowConnect": {
     "declarationFile": "/spring/rts/lib/luasocket/src/restrictions.cpp",
-    "declarationLine": 24,
+    "declarationLine": 25,
     "readOnly": 1,
     "defaultValue": "*",
     "type": "std::string"
   },
   "TCPAllowListen": {
     "declarationFile": "/spring/rts/lib/luasocket/src/restrictions.cpp",
-    "declarationLine": 25,
+    "declarationLine": 26,
     "readOnly": 1,
     "defaultValue": "*",
     "type": "std::string"
@@ -1718,14 +1797,14 @@
   },
   "TeamNanoSpray": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 63,
+    "declarationLine": 64,
     "defaultValue": 1,
     "headlessValue": 0,
     "type": "bool"
   },
   "TextureMemPoolSize": {
     "declarationFile": "/spring/rts/System/SpringApp.cpp",
-    "declarationLine": 106,
+    "declarationLine": 108,
     "description": "Set to 0 to disable, otherwise specify a predefined memory to serve Bitmap allocation requests",
     "defaultValue": "512",
     "minimumValue": "0",
@@ -1746,14 +1825,14 @@
   },
   "UDPAllowConnect": {
     "declarationFile": "/spring/rts/lib/luasocket/src/restrictions.cpp",
-    "declarationLine": 26,
+    "declarationLine": 27,
     "readOnly": 1,
     "defaultValue": "",
     "type": "std::string"
   },
   "UDPAllowListen": {
     "declarationFile": "/spring/rts/lib/luasocket/src/restrictions.cpp",
-    "declarationLine": 27,
+    "declarationLine": 28,
     "readOnly": 1,
     "defaultValue": "*",
     "type": "std::string"
@@ -1838,21 +1917,21 @@
   },
   "UseFontConfigLib": {
     "declarationFile": "/spring/rts/System/SpringApp.cpp",
-    "declarationLine": 109,
+    "declarationLine": 111,
     "description": "Whether the system fontconfig library (if present and enabled at compile-time) should be used for handling fonts.",
     "defaultValue": 1,
     "type": "bool"
   },
   "UseHighResTimer": {
     "declarationFile": "/spring/rts/System/SpringApp.cpp",
-    "declarationLine": 108,
+    "declarationLine": 110,
     "description": "On Windows, sets whether Spring will use low- or high-resolution timer functions for tasks like graphical interpolation between game frames.",
     "defaultValue": 0,
     "type": "bool"
   },
   "UseLuaMemPools": {
     "declarationFile": "/spring/rts/System/SpringApp.cpp",
-    "declarationLine": 107,
+    "declarationLine": 109,
     "description": "Whether Lua VM memory allocations are made from pools.",
     "defaultValue": 1,
     "type": "bool"
@@ -1860,15 +1939,14 @@
   "UseNetMessageSmoothingBuffer": {
     "declarationFile": "/spring/rts/System/GlobalConfig.cpp",
     "declarationLine": 58,
+    "description": "Buffer network packets for a few frames in an attempt to reduce lag from packet time variance. Introduces a fixed lag.",
     "defaultValue": 1,
     "type": "bool"
   },
   "UsePBO": {
     "declarationFile": "/spring/rts/Rendering/GL/VBO.cpp",
     "declarationLine": 21,
-    "defaultValue": 1,
-    "safemodeValue": 0,
-    "headlessValue": 0,
+    "deprecated": 1,
     "type": "bool"
   },
   "UseSDLAudio": {
@@ -1927,35 +2005,35 @@
   },
   "WindowBorderless": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 68,
+    "declarationLine": 69,
     "description": "When set and Fullscreen is 0, will put the game in Borderless Window mode, also known as Windowed Fullscreen. When using this, it is generally best to also set WindowPosX and WindowPosY to 0",
     "defaultValue": 0,
     "type": "bool"
   },
   "WindowPosX": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 75,
+    "declarationLine": 76,
     "description": "Sets the horizontal position of the game window, if Fullscreen is 0. When WindowBorderless is set, this should usually be 0.",
     "defaultValue": 0,
     "type": "int"
   },
   "WindowPosY": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 76,
+    "declarationLine": 77,
     "description": "Sets the vertical position of the game window, if Fullscreen is 0. When WindowBorderless is set, this should usually be 0.",
     "defaultValue": 32,
     "type": "int"
   },
   "WindowedEdgeMove": {
     "declarationFile": "/spring/rts/Game/Game.cpp",
-    "declarationLine": 135,
+    "declarationLine": 136,
     "description": "Sets whether moving the mouse cursor to the screen edge will move the camera across the map.",
     "defaultValue": 1,
     "type": "bool"
   },
   "WorkerThreadCount": {
     "declarationFile": "/spring/rts/System/Threading/ThreadPool.cpp",
-    "declarationLine": 43,
+    "declarationLine": 44,
     "description": "Number of workers (including the main thread!) used by ThreadPool.",
     "defaultValue": -1,
     "minimumValue": -1,
@@ -1964,7 +2042,7 @@
   },
   "XResolution": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 71,
+    "declarationLine": 72,
     "description": "Sets the width of the game screen. If set to 0 Spring will autodetect the current resolution of your desktop.",
     "defaultValue": 0,
     "minimumValue": 0,
@@ -1973,7 +2051,7 @@
   },
   "XResolutionWindowed": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 73,
+    "declarationLine": 74,
     "description": "See XResolution, just for windowed.",
     "defaultValue": 0,
     "minimumValue": 0,
@@ -1982,7 +2060,7 @@
   },
   "YResolution": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 72,
+    "declarationLine": 73,
     "description": "Sets the height of the game screen. If set to 0 Spring will autodetect the current resolution of your desktop.",
     "defaultValue": 0,
     "minimumValue": 0,
@@ -1991,7 +2069,7 @@
   },
   "YResolutionWindowed": {
     "declarationFile": "/spring/rts/Rendering/GlobalRendering.cpp",
-    "declarationLine": 74,
+    "declarationLine": 75,
     "description": "See YResolution, just for windowed.",
     "defaultValue": 0,
     "minimumValue": 0,
@@ -2007,7 +2085,7 @@
   },
   "name": {
     "declarationFile": "/spring/rts/System/SpringApp.cpp",
-    "declarationLine": 111,
+    "declarationLine": 114,
     "description": "Sets your name in the game. Since this is overridden by lobbies with your lobby username when playing, it usually only comes up when viewing replays or starting the engine directly for testing purposes.",
     "defaultValue": "UnnamedPlayer",
     "type": "std::string"

@@ -55,7 +55,19 @@
       "defaultValue": 1,
       "type": "bool"
     },
+    "collideFireBase": {
+      "defaultValue": 0,
+      "type": "bool"
+    },
+    "collideNonTarget": {
+      "defaultValue": 1,
+      "type": "bool"
+    },
     "collideGround": {
+      "defaultValue": 1,
+      "type": "bool"
+    },
+    "collideCloaked": {
       "defaultValue": 1,
       "type": "bool"
     },
