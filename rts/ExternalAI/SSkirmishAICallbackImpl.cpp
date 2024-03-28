@@ -2011,17 +2011,13 @@ EXPORT(int) skirmishAiCallback_Map_getResourceMapRaw(
 	return resourcesSize;
 }
 
-static inline const CResourceMapAnalyzer* getResourceMapAnalyzer(int resourceId) {
-	return resourceHandler->GetResourceMapAnalyzer(resourceId);
-}
-
 EXPORT(int) skirmishAiCallback_Map_getResourceMapSpotsPositions(
 	int skirmishAIId,
 	int resourceId,
 	float* spots,
 	int spotsMaxSize
 ) {
-	const std::vector<float3>& intSpots = getResourceMapAnalyzer(resourceId)->GetSpots();
+	const std::vector<float3>& intSpots = resourceHandler->GetResourceMapAnalyzer()->GetSpots();
 	const int spotsRealSize = intSpots.size() * 3;
 
 	size_t spotsSize = spotsRealSize;
@@ -2041,7 +2037,7 @@ EXPORT(int) skirmishAiCallback_Map_getResourceMapSpotsPositions(
 }
 
 EXPORT(float) skirmishAiCallback_Map_getResourceMapSpotsAverageIncome(int skirmishAIId, int resourceId) {
-	return getResourceMapAnalyzer(resourceId)->GetAverageIncome();
+	return resourceHandler->GetResourceMapAnalyzer()->GetAverageIncome();
 }
 
 EXPORT(void) skirmishAiCallback_Map_getResourceMapSpotsNearest(
@@ -2050,7 +2046,7 @@ EXPORT(void) skirmishAiCallback_Map_getResourceMapSpotsNearest(
 	float* pos_posF3,
 	float* return_posF3_out
 ) {
-	getResourceMapAnalyzer(resourceId)->GetNearestSpot(pos_posF3, AI_TEAM_IDS[skirmishAIId]).copyInto(return_posF3_out);
+	resourceHandler->GetResourceMapAnalyzer()->GetNearestSpot(pos_posF3, AI_TEAM_IDS[skirmishAIId]).copyInto(return_posF3_out);
 }
 
 EXPORT(int) skirmishAiCallback_Map_getHash(int skirmishAIId) {

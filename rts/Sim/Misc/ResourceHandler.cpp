@@ -2,17 +2,15 @@
 
 #include "ResourceHandler.h"
 #include "ResourceMapAnalyzer.h"
-#include "Map/MapInfo.h" // for the metal extractor radius
-#include "Map/ReadMap.h" // for the metal map
-#include "Map/MetalMap.h"
 
+#include <algorithm>
 #include <cfloat>
 
 
 CR_BIND(CResourceHandler, )
 CR_REG_METADATA(CResourceHandler, (
 	CR_IGNORED(resourceDescriptions),
-	CR_IGNORED(resourceMapAnalyzers),
+	CR_IGNORED(resourceMapAnalyzer),
 	CR_MEMBER(metalResourceId),
 	CR_MEMBER(energyResourceId),
 
@@ -36,21 +34,16 @@ void CResourceHandler::FreeInstance() { instance.Kill(); }
 void CResourceHandler::AddResources() {
 	resourceDescriptions.clear();
 	resourceDescriptions.reserve(SResourcePack::MAX_RESOURCES);
-	resourceMapAnalyzers.clear();
-	resourceMapAnalyzers.reserve(SResourcePack::MAX_RESOURCES);
+	resourceMapAnalyzer.reset();
 
 	CResourceDescription rMetal;
 	rMetal.name = "Metal";
 	rMetal.optimum = FLT_MAX;
-	rMetal.extractorRadius = mapInfo->map.extractorRadius;
-	rMetal.maxWorth = mapInfo->map.maxMetal;
 	metalResourceId = AddResource(rMetal);
 
 	CResourceDescription rEnergy;
 	rEnergy.name = "Energy";
 	rEnergy.optimum = FLT_MAX;
-	rEnergy.extractorRadius = 0.0f;
-	rEnergy.maxWorth = 0.0f;
 	energyResourceId = AddResource(rEnergy);
 }
 
@@ -60,7 +53,14 @@ int CResourceHandler::AddResource(const CResourceDescription& resource)
 	assert(resourceDescriptions.size() < SResourcePack::MAX_RESOURCES);
 
 	resourceDescriptions.push_back(resource);
-	resourceMapAnalyzers.emplace_back(resourceDescriptions.size() - 1);
+
+	/* I'm not sure whether this needs to wait until a resource description exists.
+	 * Perhaps it could be created unconditionally earlier, since the map should
+	 * contain everything needed regardless. Keep in mind object lifetime issues
+	 * when dealing with things like save/load, or reloading a different map tho. */
+	if (!resourceMapAnalyzer)
+		resourceMapAnalyzer.emplace();
+
 	return (resourceDescriptions.size() - 1);
 }
 
@@ -85,44 +85,9 @@ int CResourceHandler::GetResourceId(const std::string& resourceName) const
 	return ((iter == resourceDescriptions.end())? -1: (iter - resourceDescriptions.cbegin()));
 }
 
-const unsigned char* CResourceHandler::GetResourceMap(int resourceId) const
+const CResourceMapAnalyzer* CResourceHandler::GetResourceMapAnalyzer()
 {
-	if (resourceId == GetMetalId())
-		return (metalMap.GetDistributionMap());
-
-	return nullptr;
-}
-
-size_t CResourceHandler::GetResourceMapSize(int resourceId) const
-{
-	if (resourceId == GetMetalId())
-		return (GetResourceMapWidth(resourceId) * GetResourceMapHeight(resourceId));
-
-	return 0;
-}
-
-size_t CResourceHandler::GetResourceMapWidth(int resourceId) const
-{
-	if (resourceId == GetMetalId())
-		return mapDims.hmapx;
-
-	return 0;
-}
-
-size_t CResourceHandler::GetResourceMapHeight(int resourceId) const
-{
-	if (resourceId == GetMetalId())
-		return mapDims.hmapy;
-
-	return 0;
-}
-
-const CResourceMapAnalyzer* CResourceHandler::GetResourceMapAnalyzer(int resourceId)
-{
-	if (!IsValidId(resourceId))
-		return nullptr;
-
-	CResourceMapAnalyzer* rma = &resourceMapAnalyzers[resourceId];
+	CResourceMapAnalyzer* rma = &resourceMapAnalyzer.value();
 
 	if (rma->GetNumSpots() < 0)
 		rma->Init();

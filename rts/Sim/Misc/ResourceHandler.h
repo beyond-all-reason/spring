@@ -3,6 +3,7 @@
 #ifndef _RESOURCEHANDLER_H
 #define _RESOURCEHANDLER_H
 
+#include <optional>
 #include <vector>
 
 #include "System/Misc/NonCopyable.h"
@@ -24,7 +25,7 @@ public:
 	void Init() { AddResources(); }
 	void Kill() {
 		resourceDescriptions.clear();
-		resourceMapAnalyzers.clear();
+		resourceMapAnalyzer.reset();
 	}
 
 	void PostLoad() { AddResources(); }
@@ -64,45 +65,12 @@ public:
 	int GetResourceId(const std::string& resourceName) const;
 
 	/**
-	 * @brief	resource map
-	 * @param	resourceId index of the resource whichs map to fetch
-	 * @return	the resource values for all the pixels of the map
-	 *
-	 * Returns a resource map by index.
-	 */
-	const unsigned char* GetResourceMap(int resourceId) const;
-	/**
-	 * @brief	resource map size
-	 * @param	resourceId index of the resource whichs map size to fetch
-	 * @return	the number of values in the resource map
-	 *
-	 * Returns the resource map size by index.
-	 */
-	size_t GetResourceMapSize(int resourceId) const;
-	/**
-	 * @brief	resource map width
-	 * @param	resourceId index of the resource whichs map width to fetch
-	 * @return	width of values in the resource map
-	 *
-	 * Returns the resource map width by index.
-	 */
-	size_t GetResourceMapWidth(int resourceId) const;
-	/**
-	 * @brief	resource map height
-	 * @param	resourceId index of the resource whichs map height to fetch
-	 * @return	height of values in the resource map
-	 *
-	 * Returns the resource map height by index.
-	 */
-	size_t GetResourceMapHeight(int resourceId) const;
-	/**
 	 * @brief	resource map analyzer
-	 * @param	resourceId index of the resource whichs map analyzer to fetch
 	 * @return	resource map analyzer
 	 *
-	 * Returns the resource map analyzer by index.
+	 * Returns the resource map analyzer.
 	 */
-	const CResourceMapAnalyzer* GetResourceMapAnalyzer(int resourceId);
+	const CResourceMapAnalyzer* GetResourceMapAnalyzer();
 
 	size_t GetNumResources() const { return resourceDescriptions.size(); }
 
@@ -113,7 +81,7 @@ public:
 
 private:
 	std::vector<CResourceDescription> resourceDescriptions;
-	std::vector<CResourceMapAnalyzer> resourceMapAnalyzers;
+	std::optional<CResourceMapAnalyzer> resourceMapAnalyzer;
 
 	int metalResourceId = -1;
 	int energyResourceId = -1;
