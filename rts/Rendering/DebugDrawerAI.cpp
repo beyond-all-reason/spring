@@ -8,9 +8,9 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "System/bitops.h"
 
 #include <algorithm>
+#include <bit>
 
 static constexpr float3 GRAPH_MIN_SCALE( 1e9,  1e9, 0.0f);
 static constexpr float3 GRAPH_MAX_SCALE(-1e9, -1e9, 0.0f);
@@ -379,7 +379,8 @@ void DebugDrawerAI::TexSet::Clear() {
 }
 
 int DebugDrawerAI::TexSet::AddTexture(const float* data, int w, int h) {
-	if (!globalRendering->supportNonPowerOfTwoTex && (w != next_power_of_2(w) || h != next_power_of_2(h)))
+	const bool isPowerOfTwo = std::has_single_bit <uint32_t> (w) && std::has_single_bit <uint32_t> (h);
+	if (!globalRendering->supportNonPowerOfTwoTex && !isPowerOfTwo)
 		return 0;
 
 	textures.emplace(curTexHandle, TexSet::Texture(w, h, data));

@@ -22,7 +22,6 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/TextureAtlas.h"
-#include "System/bitops.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FastMath.h"
 #include "System/SpringMath.h"
@@ -33,6 +32,8 @@
 #include "System/Exceptions.h"
 #include "System/SpringFormat.h"
 #include "System/StringUtil.h"
+
+#include <bit>
 
 using std::string;
 using std::vector;
@@ -198,7 +199,7 @@ CBumpWater::~CBumpWater()
 void CBumpWater::InitResources(bool loadShader)
 {
 	// LOAD USER CONFIGS
-	reflTexSize  = next_power_of_2(configHandler->GetInt("BumpWaterTexSizeReflection"));
+	reflTexSize  = std::bit_ceil <uint32_t> (configHandler->GetInt("BumpWaterTexSizeReflection"));
 	reflection   = configHandler->GetInt("BumpWaterReflection");
 	refraction   = configHandler->GetInt("BumpWaterRefraction");
 	anisotropy   = configHandler->GetFloat("BumpWaterAnisotropy");
@@ -316,8 +317,8 @@ void CBumpWater::InitResources(bool loadShader)
 	if ((refraction > 0) || depthCopy) {
 		// ATIs do not have GLSL support for texrects
 		if (!globalRendering->supportNonPowerOfTwoTex) {
-			screenTextureX = next_power_of_2(screenTextureX);
-			screenTextureY = next_power_of_2(screenTextureY);
+			screenTextureX = std::bit_ceil <uint32_t> (screenTextureX);
+			screenTextureY = std::bit_ceil <uint32_t> (screenTextureY);
 		}
 	}
 
