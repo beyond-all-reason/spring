@@ -166,11 +166,6 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(avoidingUnits),
 	CR_MEMBER(setHeading),
 	CR_MEMBER(setHeadingDir),
-	CR_MEMBER(collidedFeatures),
-	CR_MEMBER(collidedUnits),
-	CR_MEMBER(killFeatures),
-	CR_MEMBER(killUnits),
-	CR_MEMBER(moveFeatures),
 
 	CR_POSTLOAD(PostLoad),
 	CR_PREALLOC(GetPreallocContainer)
@@ -510,12 +505,6 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 
 	ownerRadius = md->CalcFootPrintMinExteriorRadius();
 
-	collidedFeatures.reserve(UNIT_EVENTS_RESERVE);
-	collidedUnits.reserve(UNIT_EVENTS_RESERVE);
-	killFeatures.reserve(UNIT_EVENTS_RESERVE);
-	killUnits.reserve(UNIT_EVENTS_RESERVE);
-	moveFeatures.reserve(UNIT_EVENTS_RESERVE);
-
 	forceStaticObjectCheck = true;
 
 	Connect();
@@ -537,6 +526,8 @@ CGroundMoveType::~CGroundMoveType()
 void CGroundMoveType::PostLoad()
 {
 	pathController = GMTDefaultPathController(owner);
+
+	Connect();
 
 	// HACK: re-initialize path after load
 	if (pathID == 0)
@@ -600,8 +591,12 @@ bool CGroundMoveType::OwnerMoved(const short oldHeading, const float3& posDif, c
 void CGroundMoveType::UpdatePreCollisions()
 {
  	ASSERT_SYNCED(owner->pos);
+	ASSERT_SYNCED(owner->heading);
  	ASSERT_SYNCED(currWayPoint);
  	ASSERT_SYNCED(nextWayPoint);
+
+	if (resultantForces.SqLength() > 0.f)
+		owner->Move(resultantForces, true);
 
 	SyncWaypoints();
 
@@ -615,23 +610,6 @@ void CGroundMoveType::UpdatePreCollisions()
 	if (pathingArrived) {
 		Arrived(false);
 		pathingArrived = false;
-	}
-
- 	switch (setHeading) {
- 		case 1: // moving
- 			ChangeHeading(setHeadingDir);
-			ChangeSpeed(maxWantedSpeed, WantReverse(waypointDir, flatFrontDir));
- 			setHeading = 0;
- 			break;
-		case 2: // stopping
-			SetMainHeading();
-			ChangeSpeed(0.0f, false);
-			setHeading = 0;
-			break;
-		case 3: // stunned
-			ChangeSpeed(0.0f, false);
-			setHeading = 0;
-			break;
 	}
 
  	if (pathingFailed) {
@@ -650,13 +628,39 @@ void CGroundMoveType::UpdatePreCollisions()
 		return;
 	}
 
-	ASSERT_SYNCED(owner->pos);
-
 	// set drop height when we start to drop
 	if (owner->IsFalling()) {
 		UpdateControlledDrop();
 		return;
 	}
+
+	reversing = UpdateOwnerSpeed(math::fabs(oldSpeed), math::fabs(newSpeed), newSpeed);
+	oldSpeed = newSpeed = 0.f;
+}
+
+void CGroundMoveType::UpdateUnitPosition() {
+	resultantForces = ZeroVector;
+
+	if (owner->IsSkidding()) return;
+
+ 	switch (setHeading) {
+ 		case HEADING_CHANGED_MOVE:
+ 			// ChangeHeading(setHeadingDir);
+			ChangeSpeed(maxWantedSpeed, WantReverse(waypointDir, flatFrontDir));
+ 			setHeading = HEADING_CHANGED_NONE;
+ 			break;
+		case HEADING_CHANGED_STOP:
+	// 		SetMainHeading();
+			ChangeSpeed(0.0f, false);
+			setHeading = HEADING_CHANGED_NONE;
+			break;
+		case HEADING_CHANGED_STUN:
+			ChangeSpeed(0.0f, false);
+			setHeading = HEADING_CHANGED_NONE;
+			break;
+	}
+
+	if (owner->GetTransporter() != nullptr) return;
 
  	if (owner->UnderFirstPersonControl())
  		UpdateDirectControl();
@@ -665,35 +669,11 @@ void CGroundMoveType::UpdatePreCollisions()
 }
 
 void CGroundMoveType::UpdateCollisionDetections() {
-	earlyCurrWayPoint = currWayPoint;
-	earlyNextWayPoint = nextWayPoint;
-
 	if (owner->GetTransporter() != nullptr) return;
 	if (owner->IsSkidding()) return;
 	if (owner->IsFalling()) return;
 
 	HandleObjectCollisions();
-}
-
-void CGroundMoveType::ProcessCollisionEvents() {
-	SyncWaypoints();
-
-	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
-	for (auto collidee: killUnits)
-		collidee->Kill(owner, crushImpulse, true);
-	killUnits.clear();
-
-	for (auto collidee: killFeatures)
-		collidee->Kill(owner, crushImpulse, true);
-	killFeatures.clear();
-
-	for (const auto collidee: collidedUnits)
-		eventHandler.UnitUnitCollision(owner, collidee);
-	collidedUnits.clear();
-
-	for (const auto collidee: collidedFeatures)
-		eventHandler.UnitFeatureCollision(owner, collidee);
-	collidedFeatures.clear();
 }
 
 bool CGroundMoveType::Update()
@@ -702,13 +682,6 @@ bool CGroundMoveType::Update()
 		owner->unloadingTransportId = -1;
 		owner->requestRemoveUnloadTransportId = false;
 	}
-
-	for (const auto& [collidee, moveVec] : moveFeatures) {
-		quadField.RemoveFeature(collidee);
-		collidee->Move(moveVec, true);
-		quadField.AddFeature(collidee);
-	}
-	moveFeatures.clear();
 
 	// do nothing at all if we are inside a transport
 	if (owner->GetTransporter() != nullptr) return false;
@@ -732,7 +705,7 @@ void CGroundMoveType::UpdateOwnerAccelAndHeading()
 {
 	if (owner->IsStunned() || owner->beingBuilt) {
 		// ChangeSpeed(0.0f, false);
-		setHeading = 3;
+		setHeading = HEADING_CHANGED_STUN;
 		return;
 	}
 
@@ -1000,7 +973,7 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 	progressState = Done;
 }
 
-void CGroundMoveType::UpdatePreCollisionsMt() {
+void CGroundMoveType::UpdateTraversalPlan() {
 	earlyCurrWayPoint = currWayPoint;
 	earlyNextWayPoint = nextWayPoint;
 
@@ -1054,14 +1027,12 @@ bool CGroundMoveType::FollowPath(int thread)
 	bool wantReverse = false;
 
 	if (WantToStop()) {
-		// currWayPoint.y = -1.0f;
-		// nextWayPoint.y = -1.0f;
 		earlyCurrWayPoint.y = -1.0f;
 		earlyNextWayPoint.y = -1.0f;
 
-		// SetMainHeading();
-		// ChangeSpeed(0.0f, false);
-		setHeading = 2;
+		setHeading = HEADING_CHANGED_STOP;
+		auto& event = Sim::registry.get<ChangeMainHeadingEvent>(owner->entityReference);
+		event.changed = true;
 	} else {
 		// ASSERT_SYNCED(currWayPoint);
 		// ASSERT_SYNCED(nextWayPoint);
@@ -1195,8 +1166,11 @@ bool CGroundMoveType::FollowPath(int thread)
 
 		// ChangeHeading(GetHeadingFromVector(modWantedDir.x, modWantedDir.z));
 		// ChangeSpeed(maxWantedSpeed, wantReverse);
-		setHeading = 1;
-		setHeadingDir = GetHeadingFromVector(modWantedDir.x, modWantedDir.z);
+		setHeading = HEADING_CHANGED_MOVE;
+		auto& event = Sim::registry.get<ChangeHeadingEvent>(owner->entityReference);
+		event.deltaHeading = GetHeadingFromVector(modWantedDir.x, modWantedDir.z);
+		event.changed = true;
+		// setHeadingDir = GetHeadingFromVector(modWantedDir.x, modWantedDir.z);
 
 
 		#ifdef PATHING_DEBUG
@@ -2463,9 +2437,9 @@ void CGroundMoveType::HandleObjectCollisions()
 	const UnitDef* colliderUD = collider->unitDef;
 	const MoveDef* colliderMD = collider->moveDef;
 
-	resultantForces *= 0.f;
-	forceFromMovingCollidees *= 0.f;
-	forceFromStaticCollidees *= 0.f;
+	resultantForces = ZeroVector;
+	forceFromMovingCollidees = ZeroVector;
+	forceFromStaticCollidees = ZeroVector;
 
 	// NOTE:
 	//   use the collider's MoveDef footprint as radius since it is
@@ -2707,12 +2681,6 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			//if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, checkTerrain, checkYardMap, checkTerrain, nullptr, nullptr, curThread)) {
 				forceFromStaticCollidees += summedVec;
 
-				// float3 waypointMove(summedVec.x, 0.f, summedVec.z);
-				// minimal hack to make FollowPath work at all turn-rates
-				// since waypointDir will undergo a (large) discontinuity
-				// earlyCurrWayPoint += waypointMove;
-				// earlyNextWayPoint += waypointMove;
-
 				// Disabled, due to excessive redirecting of waypoints away from the intended path
 				// because units get stuck for multiple frames, and the offset accumalates over several
 				// frames. It's better for the unit to adjust speed if neccessary for turn rate to allow
@@ -2720,10 +2688,6 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 				// several times.
 
 				limitSpeedForTurning = 2;
-
-				// LOG("%s: moving waypoint1 (%f,%f,%f)->(%f,%f,%f)", __func__
-				// 	, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
-				// 	, earlyNextWayPoint.x, earlyNextWayPoint.y, earlyNextWayPoint.z);
 			// } else {
 			// 	// never move fully back to oldPos when dealing with yardmaps
 			// 	forceFromStaticCollidees += ((oldPos - pos) + summedVec * 0.25f * checkYardMap);
@@ -2753,15 +2717,8 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 		// if (colliderMD->TestMoveSquare(collider, pos + summedVec, vel, true, true, true, nullptr, nullptr, curThread)) {
 			forceFromStaticCollidees += summedVec;
 
-			// summedVec.y = 0.f;
-			// earlyCurrWayPoint += summedVec;
-			// earlyNextWayPoint += summedVec;
-
 			limitSpeedForTurning = 2;
 
-			// LOG("%s: moving waypoint2 (%f,%f,%f)->(%f,%f,%f)", __func__
-			// 		, earlyCurrWayPoint.x, earlyCurrWayPoint.y, earlyCurrWayPoint.z
-			// 		, earlyNextWayPoint.x, earlyNextWayPoint.y, earlyNextWayPoint.z);
 		// } else {
 			// move back to previous-frame position
 			// ChangeSpeed calculates speedMod without checking squares for *structure* blockage
@@ -2792,6 +2749,9 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool allowPEU = modInfo.allowPushingEnemyUnits;
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
+
+	auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
+	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
 
 	// copy on purpose, since the below can call Lua
 	QuadFieldQuery qfQuery;
@@ -2864,12 +2824,16 @@ void CGroundMoveType::HandleUnitCollisions(
 		crushCollidee |= (!alliedCollision || allowCAU);
 		crushCollidee &= ((colliderParams.x * collider->mass) > (collideeParams.x * collidee->mass));
 
-		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee))
-			killUnits.push_back(collidee);
+		if (crushCollidee && !CMoveMath::CrushResistant(*colliderMD, collidee)) {
+			auto& events = Sim::registry.get<UnitCrushEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee, crushImpulse);
+		}
 
 		// Only trigger this event once for each colliding pair of units.
-		if (collider->id < collidee->id)
-			collidedUnits.push_back(collidee);
+		if (collider->id < collidee->id){
+			auto& events = Sim::registry.get<UnitCollisionEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee);
+		}
 
 		if (collideeMobile)
 			HandleUnitCollisionsAux(collider, collidee, this, static_cast<CGroundMoveType*>(collidee->moveType));
@@ -2965,6 +2929,9 @@ void CGroundMoveType::HandleFeatureCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
+	auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
+	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
+
 	// copy on purpose, since DoDamage below can call Lua
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -2983,15 +2950,20 @@ void CGroundMoveType::HandleFeatureCollisions(
 
 		if (CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
 			continue;
-		if (!CMoveMath::CrushResistant(*colliderMD, collidee))
-			killFeatures.push_back(collidee);
 
+		if (!CMoveMath::CrushResistant(*colliderMD, collidee)){
+			auto& events = Sim::registry.get<FeatureCrushEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee, crushImpulse);
+		}
 		#if 0
 		if (pathController.IgnoreCollision(collider, collidee))
 			continue;
 		#endif
 
-		collidedFeatures.push_back(collidee);
+		{
+			auto& events = Sim::registry.get<FeatureCollisionEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee);
+		}
 
 		if (!collidee->IsMoving()) {
 			if (HandleStaticObjectCollision(collider, collidee, colliderMD,  colliderParams.y, collideeParams.y,  separationVect, (!atEndOfPath && !atGoal), true, false, curThread)) {
@@ -3027,7 +2999,11 @@ void CGroundMoveType::HandleFeatureCollisions(
 		const float collideeMassScale = std::clamp(1.0f - r2, 0.01f, 0.99f);
 
 		forceFromMovingCollidees += colResponseVec * colliderMassScale;
-		moveFeatures.push_back(std::make_tuple(collidee, -colResponseVec * collideeMassScale));
+
+		{
+			auto& events = Sim::registry.get<FeatureMoveEvents>(owner->entityReference);
+			events.value.emplace_back(collider, collidee, -colResponseVec * collideeMassScale);
+		}
 	}
 }
 
@@ -3040,11 +3016,27 @@ void CGroundMoveType::LeaveTransport()
 
 void CGroundMoveType::Connect() {
 	Sim::registry.emplace_or_replace<GroundMoveType>(owner->entityReference, owner->id);
+	Sim::registry.emplace_or_replace<FeatureCollisionEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<UnitCollisionEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<FeatureCrushEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<UnitCrushEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<FeatureMoveEvents>(owner->entityReference);
+	Sim::registry.emplace_or_replace<UnitMovedEvent>(owner->entityReference);
+	Sim::registry.emplace_or_replace<ChangeHeadingEvent>(owner->entityReference, owner->id);
+	Sim::registry.emplace_or_replace<ChangeMainHeadingEvent>(owner->entityReference, owner->id);
 	// LOG("%s: loading %s as %d", __func__, owner->unitDef->name.c_str(), entt::to_integral(owner->entityReference));
 }
 
 void CGroundMoveType::Disconnect() {
 	Sim::registry.remove<GroundMoveType>(owner->entityReference);
+	Sim::registry.remove<FeatureCollisionEvents>(owner->entityReference);
+	Sim::registry.remove<UnitCollisionEvents>(owner->entityReference);
+	Sim::registry.remove<FeatureCrushEvents>(owner->entityReference);
+	Sim::registry.remove<UnitCrushEvents>(owner->entityReference);
+	Sim::registry.remove<FeatureMoveEvents>(owner->entityReference);
+	Sim::registry.remove<UnitMovedEvent>(owner->entityReference);
+	Sim::registry.remove<ChangeHeadingEvent>(owner->entityReference);
+	Sim::registry.remove<ChangeMainHeadingEvent>(owner->entityReference);
 }
 
 void CGroundMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive) { KeepPointingTo(unit->pos, distance, aggressive); }
@@ -3120,7 +3112,7 @@ void CGroundMoveType::SetMainHeading() {
 		GetHeadingFromVector(dir2.x, dir2.z) -
 		GetHeadingFromVector(dir1.x, dir1.z);
 
-	ASSERT_SYNCED(newHeading);
+	// ASSERT_SYNCED(newHeading);
 
 	if (progressState == Active) {
 		if (owner->heading != newHeading) {
@@ -3418,8 +3410,8 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 
 void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3& newSpeedVector) {
-	const float oldSpeed = oldSpeedVector.dot(flatFrontDir);
-	const float newSpeed = newSpeedVector.dot(flatFrontDir);
+	/*const float*/ oldSpeed = oldSpeedVector.dot(flatFrontDir);
+	/*const float*/ newSpeed = newSpeedVector.dot(flatFrontDir);
 	const float3 moveRequest = newSpeedVector;
 
 	// if being built, the nanoframe might not be exactly on
@@ -3438,7 +3430,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		bool limitDisplacment = true;
 		float maxDisplacementSq = -1.f;
 
-		UpdatePos(owner, moveRequest, resultantVel, 0);
+		UpdatePos(owner, moveRequest, resultantVel, ThreadPool::GetThreadNum());
 
 		bool isMoveColliding = !resultantVel.same(moveRequest);
 		if (isMoveColliding) {
@@ -3450,7 +3442,8 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 
 		bool isThereAnOpenSquare = !resultantVel.same(ZeroVector);
 		if (isThereAnOpenSquare){
-			owner->Move(resultantVel, true);
+			resultantForces = resultantVel;
+			// owner->Move(resultantVel, true);
 			if (positionStuck) {
 				positionStuck = false;
 			}
@@ -3458,7 +3451,8 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 			// Unit is stuck an the an open square could not be found. Just allow the unit to move
 			// so that it gets unstuck eventually. Hopefully this won't look silly in practice, but
 			// it is better than a unit being permanently stuck on something.
-			owner->Move(moveRequest, true);
+			resultantForces = moveRequest;
+			// owner->Move(moveRequest, true);
 		}
 
 		// NOTE:
@@ -3468,7 +3462,7 @@ void CGroundMoveType::UpdateOwnerPos(const float3& oldSpeedVector, const float3&
 		// assert(owner->moveDef->TestMoveSquare(owner, owner->pos, owner->speed, true, false, true));
 	}
 
-	reversing = UpdateOwnerSpeed(math::fabs(oldSpeed), math::fabs(newSpeed), newSpeed);
+	// reversing = UpdateOwnerSpeed(math::fabs(oldSpeed), math::fabs(newSpeed), newSpeed);
 }
 
 bool CGroundMoveType::UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, float newSpeedRaw)
