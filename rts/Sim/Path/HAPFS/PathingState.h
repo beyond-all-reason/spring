@@ -134,7 +134,7 @@ private:
     void CalculateBlockOffsets(unsigned int, unsigned int);
     void EstimatePathCosts(unsigned int, unsigned int);
 
-    int2 FindBlockPosOffset(const MoveDef&, unsigned int, unsigned int) const;
+    int2 FindBlockPosOffset(const MoveDef&, unsigned int, unsigned int, int threadNum) const;
     void CalcVertexPathCosts(const MoveDef&, int2, unsigned int threadNum = 0);
     void CalcVertexPathCost(const MoveDef&, int2, unsigned int pathDir, unsigned int threadNum = 0);
 

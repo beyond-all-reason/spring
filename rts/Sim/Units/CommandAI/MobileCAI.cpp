@@ -15,6 +15,7 @@
 #include "Sim/MoveTypes/AAirMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
@@ -1029,6 +1030,12 @@ void CMobileCAI::NonMoving()
 	// increase the target distance if continuing to fail to clear
 	float targetDistance = buggerOffRadius + owner->radius * (1.0f + 0.4f * buggerOffAttempts);
 
+	MoveTypes::CheckCollisionQuery colliderInfo(owner);
+	const bool isSubmersible = (owner->moveDef->isSubmarine ||
+								(owner->moveDef->followGround && owner->moveDef->depth > owner->moveDef->height));
+	if (!isSubmersible)
+		colliderInfo.DisableHeightChecks();
+
 	if (buggerOffAttempts < 4) {
 		// head in the opposite direction of the center. since the buggeroff is a circle,
 		// this is the shortest distance out. future optimization would be to make rectangular buggerOffs
@@ -1043,7 +1050,13 @@ void CMobileCAI::NonMoving()
 		constexpr float3 rotation45deg = {0.7071067811865475, 0, 0.7071067811865475};
 		for (int i = 0; i < 10; i++) {
 			buggerPos = buggerOffPos + buggerDirection * targetDistance;
-			if (owner->moveDef->TestMoveSquare(nullptr, buggerPos, buggerVec) && buggerPos.IsInMap()) {
+
+			// Height affects whether units in water collide or not, so the new y positions need
+			// to be considered or else we will get incorrect results.
+			if (isSubmersible)
+				colliderInfo.UpdateElevationForPos(buggerPos);
+
+			if (owner->moveDef->TestMoveSquare(colliderInfo, buggerPos, buggerVec) && buggerPos.IsInMap()) {
 				break;
 			}
 			if (i == 0) {

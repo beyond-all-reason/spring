@@ -105,7 +105,6 @@ private:
 		IPath::Path& foundPath
 	) const;
 
-	BlockCheckFunc blockCheckFunc;
 	CPathCache::CacheItem dummyCacheItem;
 };
 

@@ -25,7 +25,7 @@ public:
 	void AllowDefPathSearch(bool b) { allowDefPath = b; }
 
 	bool IsGoal(uint32_t squareX, uint32_t squareZ) const;
-	bool IsGoalBlocked(const MoveDef& moveDef, const CMoveMath::BlockType& blockMask, const CSolidObject* owner) const;
+	bool IsGoalBlocked(const MoveDef& moveDef, const CMoveMath::BlockType& blockMask, const CSolidObject* owner, int threadNum) const;
 
 	float Heuristic(uint32_t srcSquareX, uint32_t srcSquareZ, uint32_t tgtSquareX, uint32_t tgtSquareZ, uint32_t blockSize) const;
 	float Heuristic(uint32_t srcSquareX, uint32_t srcSquareZ, uint32_t blockSize) const {

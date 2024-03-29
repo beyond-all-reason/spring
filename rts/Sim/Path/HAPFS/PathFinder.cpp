@@ -37,11 +37,6 @@ static constexpr uint32_t squareMobileBlockBits =
 	uint32_t(MMBT::BLOCK_MOBILE     ) |
 	uint32_t(MMBT::BLOCK_MOVING     );
 
-static constexpr CPathFinder::BlockCheckFunc blockCheckFuncs[2] = {
-	CMoveMath::IsBlockedNoSpeedModCheckThreadUnsafe, // alias for RangeIsBlocked
-	CMoveMath::IsBlockedNoSpeedModCheck // same as RangeIsBlocked without tempNum test
-};
-
 // both indexed by PATHOPT* bitmasks
 static constexpr float PF_DIRECTION_COSTS[] = {
 	0.0f       ,
@@ -127,7 +122,6 @@ void CPathFinder::Init(bool threadSafe)
 {
 	IPathFinder::Init(1);
 
-	blockCheckFunc = blockCheckFuncs[threadSafe];
 	dummyCacheItem = CPathCache::CacheItem{IPath::Error, {}, {-1, -1}, {-1, -1}, -1.0f, -1};
 }
 
@@ -234,7 +228,21 @@ void CPathFinder::TestNeighborSquares(
 	const int2 squarePos = square->nodePos;
 
 	const bool startSquareExpanded = (openBlocks.empty() && testedBlocks < 8);
-	const bool startSquareBlocked = (startSquareExpanded && (blockCheckFunc(moveDef, squarePos.x, squarePos.y, owner) & MMBT::BLOCK_STRUCTURE) != 0);
+	const bool startSquareBlocked = (startSquareExpanded && (CMoveMath::IsBlockedNoSpeedModCheck(moveDef, squarePos.x, squarePos.y, owner, thread) & MMBT::BLOCK_STRUCTURE) != 0);
+
+	int tempNum = gs->GetMtTempNum(thread);
+
+	MoveTypes::CheckCollisionQuery collisionQuery = (owner != nullptr)
+			? MoveTypes::CheckCollisionQuery(owner)
+			: MoveTypes::CheckCollisionQuery(&moveDef);
+	MoveDefs::CollisionQueryStateTrack queryState;
+	if (owner == nullptr)
+		moveDef.UpdateCheckCollisionQuery(collisionQuery, queryState, squarePos);
+
+	const bool isSubmersible = (moveDef.isSubmarine ||
+							   (moveDef.followGround && moveDef.depth > moveDef.height));
+	if (!isSubmersible)
+		collisionQuery.DisableHeightChecks();
 
 	// precompute structure-blocked state and speedmod for all neighbors
 	for (SquareState& sqState: ngbStates) {
@@ -253,28 +261,38 @@ void CPathFinder::TestNeighborSquares(
 			continue;
 
 		// IsBlockedNoSpeedModCheck; very expensive call but with a ~20% (?) chance of early-out
-		sqState.blockMask = CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, squarePos, ngbSquareCoors, owner, thread);
+		// sqState.blockMask = CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, squarePos, ngbSquareCoors, owner, thread);
+
+		// Height affects whether units in water collide or not, so the new y positions need
+		// to be considered or else we will get incorrect results.
+		if (isSubmersible){
+			moveDef.UpdateCheckCollisionQuery(collisionQuery, queryState, ngbSquareCoors);
+			if (queryState.refreshCollisionCache)
+				tempNum = gs->GetMtTempNum(thread);
+		}
+
+		const int xmin = std::max(ngbSquareCoors.x - moveDef.xsizeh,                0);
+		const int zmin = std::max(ngbSquareCoors.y - moveDef.zsizeh,                0);
+		const int xmax = std::min(ngbSquareCoors.x + moveDef.xsizeh, mapDims.mapx - 1);
+		const int zmax = std::min(ngbSquareCoors.y + moveDef.zsizeh, mapDims.mapy - 1);
+
+		sqState.blockMask = CMoveMath::RangeIsBlockedMt(xmin, xmax, zmin, zmax, &collisionQuery, thread, tempNum);
 		if (sqState.blockMask & MMBT::BLOCK_STRUCTURE) {
 			blockStates.nodeMask[ngbSquareIdx] |= PATHOPT_CLOSED;
 			dirtyBlocks.push_back(ngbSquareIdx);
 			continue;
 		}
 
-
-		if (!pfDef.dirIndependent) {
-			sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y, PF_DIRECTION_VECTORS_3D[optDir]);
-		} else {
-			// PE search; use positional speed-mods since PE assumes path-costs
-			// are bidirectionally symmetric between parent and child vertices
-			// no gain placing this in front of the above code, only has a ~2%
-			// chance (heavily depending on the map) to early-out
-			//
-			// only close node if search is directionally independent, since it
-			// might still be entered from another (better) direction otherwise
-			if ((sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y)) == 0.0f) {
-				blockStates.nodeMask[ngbSquareIdx] |= PATHOPT_CLOSED;
-				dirtyBlocks.push_back(ngbSquareIdx);
-			}
+		// PE search; use positional speed-mods since PE assumes path-costs
+		// are bidirectionally symmetric between parent and child vertices
+		// no gain placing this in front of the above code, only has a ~2%
+		// chance (heavily depending on the map) to early-out
+		//
+		// only close node if search is directionally independent, since it
+		// might still be entered from another (better) direction otherwise
+		if ((sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y)) == 0.0f) {
+			blockStates.nodeMask[ngbSquareIdx] |= PATHOPT_CLOSED;
+			dirtyBlocks.push_back(ngbSquareIdx);
 		}
 
 		// LHS is only here to save some cycles

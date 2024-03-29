@@ -480,7 +480,7 @@ void MoveDef::UpdateCheckCollisionQuery
 }
 
 bool MoveDef::TestMoveSquareRange(
-	const CSolidObject* collider,
+	const MoveTypes::CheckCollisionQuery& collider,
 	const float3 rangeMins,
 	const float3 rangeMaxs,
 	const float3 testMoveDir,
@@ -520,7 +520,7 @@ bool MoveDef::TestMoveSquareRange(
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects && retTestMove) {
-		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(*this, xmin, xmax, zmin, zmax, collider, thread);
+		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(xmin, xmax, zmin, zmax, &collider, thread);
 
 		maxBlockBit = blockBits;
 		retTestMove = ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);

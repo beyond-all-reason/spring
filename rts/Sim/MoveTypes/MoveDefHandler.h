@@ -55,7 +55,7 @@ struct MoveDef {
 	) const;
 	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
 	bool TestMoveSquareRange(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery& collider,
 		const float3 rangeMins,
 		const float3 rangeMaxs,
 		const float3 testMoveDir,
@@ -67,7 +67,7 @@ struct MoveDef {
 		int thread = 0
 	) const;
 	bool TestMoveSquare(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery& collider,
 		const float3 testMovePos,
 		const float3 testMoveDir,
 		bool testTerrain = true,
