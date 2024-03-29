@@ -140,81 +140,18 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	if (!moveDef.allowRawMovement)
 		return IPath::Error;
 
-	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
-    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-    // if (printMoveInfo) {
-    //     LOG("%s Block Size [%d] raw search started", __func__, BLOCK_SIZE);
-    // }}
+	int curThread = ThreadPool::GetThreadNum();
 
 	const int2 strtBlk = BlockIdxToPos(mStartBlockIdx);
 	const int2 goalBlk = {int(pfDef.goalSquareX), int(pfDef.goalSquareZ)};
-	const int2 diffBlk = {std::abs(goalBlk.x - strtBlk.x), std::abs(goalBlk.y - strtBlk.y)};
-	// has not been set yet, DoSearch is called after us
-	// const int2 goalBlk = BlockIdxToPos(mGoalBlockIdx);
 
-	if ((Square(diffBlk.x) + Square(diffBlk.y)) > Square(pfDef.maxRawPathLen))
-		return IPath::Error;
+	const float3 startPoint(strtBlk.x * SQUARE_SIZE, 0.f, strtBlk.y * SQUARE_SIZE);
+	const float3 goalPoint(goalBlk.x * SQUARE_SIZE, 0.f, goalBlk.y * SQUARE_SIZE);
 
-	int curThread = ThreadPool::GetThreadNum();
+	bool haveFullPath = moveDef.DoRawSearch( owner, &moveDef, startPoint, goalPoint
+						 				   , true, true, false, nullptr, nullptr, curThread);
 
-	const/*expr*/ auto StepFunc = [](const int2& dir, const int2& dif, int2& pos, int2& err) {
-		pos.x += (dir.x * (err.y >= 0));
-		pos.y += (dir.y * (err.y <= 0));
-		err.x -= (dif.y * (err.y >= 0));
-		err.x += (dif.x * (err.y <= 0));
-	};
-
-	const int2 fwdStepDir = int2{(goalBlk.x > strtBlk.x), (goalBlk.y > strtBlk.y)} * 2 - int2{1, 1};
-	const int2 revStepDir = int2{(strtBlk.x > goalBlk.x), (strtBlk.y > goalBlk.y)} * 2 - int2{1, 1};
-
-	int2 blkStepCtr = {diffBlk.x + diffBlk.y, diffBlk.x + diffBlk.y};
-	int2 fwdStepErr = {diffBlk.x - diffBlk.y, diffBlk.x - diffBlk.y};
-	int2 revStepErr = fwdStepErr;
-	int2 fwdTestBlk = strtBlk;
-	int2 revTestBlk = goalBlk;
-
-	int2 prevFwdTestBlk = {-1, -1};
-	int2 prevRevTestBlk = {-1, -1};
-
-	// test bidirectionally so bad goal-squares cause early exits
-	// NOTE:
-	//   no need for integration with backtracking in FinishSearch
-	//   the final "path" only contains startPos which is consumed
-	//   immediately, after which NextWayPoint keeps returning the
-	//   goal until owner reaches it
-	for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
-		{
-			if ((CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, prevFwdTestBlk, fwdTestBlk, owner, curThread) & MMBT::BLOCK_STRUCTURE) != 0)
-				return IPath::Error;
-			if (CMoveMath::GetPosSpeedMod(moveDef, fwdTestBlk.x, fwdTestBlk.y) <= pfDef.minRawSpeedMod)
-				return IPath::Error;
-		}
-
-		{
-			if ((CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, prevRevTestBlk, revTestBlk, owner, curThread) & MMBT::BLOCK_STRUCTURE) != 0)
-				return IPath::Error;
-			if (CMoveMath::GetPosSpeedMod(moveDef, revTestBlk.x, revTestBlk.y) <= pfDef.minRawSpeedMod)
-				return IPath::Error;
-		}
-
-		// NOTE: for odd-length paths, center square is tested twice
-		if ((std::abs(fwdTestBlk.x - revTestBlk.x) <= 1) && (std::abs(fwdTestBlk.y - revTestBlk.y) <= 1))
-			break;
-
-		prevFwdTestBlk = fwdTestBlk;
-		prevRevTestBlk = revTestBlk;
-
-		StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
-		StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
-
-		// skip if exactly crossing a vertex (in either direction)
-		blkStepCtr.x -= (fwdStepErr.y == 0);
-		blkStepCtr.y -= (revStepErr.y == 0);
-		fwdStepErr.y  = fwdStepErr.x;
-		revStepErr.y  = revStepErr.x;
-	}
-
-	return IPath::Ok;
+	return (haveFullPath) ? IPath::Ok : IPath::Error;
 }
 
 IPath::SearchResult CPathFinder::DoSearch(
