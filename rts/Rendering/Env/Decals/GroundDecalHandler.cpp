@@ -495,8 +495,10 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 	const float groundHeight = CGround::GetHeightReal(ei.pos.x, ei.pos.z, false);
 	const float altitude = ei.pos.y - groundHeight;
 
-	bool radiusOverride = (ei.wd->visuals.scarDiameter >= 0.0f);
-	ei.radius = mix(ei.radius, 0.5f * ei.wd->visuals.scarDiameter, radiusOverride);
+	const WeaponDef::Visuals& vi = ei.wd ? ei.wd->visuals : WeaponDef::Visuals{};
+
+	bool radiusOverride = (vi.scarDiameter >= 0.0f);
+	ei.radius = mix(ei.radius, 0.5f * vi.scarDiameter, radiusOverride);
 
 	// no decals for below-ground explosions
 	// also no decals if they are too high in the air
@@ -520,20 +522,20 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 	if (ei.damage > 400.0f)
 		ei.damage = 400.0f + std::sqrt(ei.damage - 400.0f);
 
-	const float alpha = (ei.wd->visuals.scarAlpha > 0.0f) ?
-		ei.wd->visuals.scarAlpha :
+	const float alpha = (vi.scarAlpha > 0.0f) ?
+		vi.scarAlpha :
 		std::clamp(2.0f * ei.damage / 255.0f, 0.8f, 1.0f);
 
-	const float scarTTL = (ei.wd->visuals.scarTtl > 0.0f) ?
-		decalLevel * GAME_SPEED * ei.wd->visuals.scarTtl :
+	const float scarTTL = (vi.scarTtl > 0.0f) ?
+		decalLevel * GAME_SPEED * vi.scarTtl :
 		std::clamp(decalLevel * ei.damage * 3.0f, 15.0f, decalLevel * 1800.0f);
 
-	const float glow = (ei.wd->visuals.scarGlow > 0.0f) ?
-		ei.wd->visuals.scarGlow :
+	const float glow = (vi.scarGlow > 0.0f) ?
+		vi.scarGlow :
 		std::clamp(2.0f * ei.damage / 255.0f, 0.0f, 1.0f);
 
-	const float glowTTL = (ei.wd->visuals.scarGlowTtl > 0.0f) ?
-		decalLevel * GAME_SPEED * ei.wd->visuals.scarGlowTtl :
+	const float glowTTL = (vi.scarGlowTtl > 0.0f) ?
+		decalLevel * GAME_SPEED * vi.scarGlowTtl :
 		60.0f;
 
 	const float alphaDecay = 1.0f / scarTTL;
@@ -546,8 +548,8 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 	static std::vector<int> validScarIndices;
 	validScarIndices.clear();
-	if (!ei.wd->visuals.scarIdcs.empty()) {
-		for (auto scarIdx : ei.wd->visuals.scarIdcs) {
+	if (vi.scarIdcs.empty()) {
+		for (auto scarIdx : vi.scarIdcs) {
 			if (scarIdx < 1 || scarIdx > maxUniqueScars - 1)
 				continue;
 
@@ -569,11 +571,11 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 	std::array<SColor, 2> glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} };
 	float cmAlphaMult = 1.0f;
-	if (ei.wd->visuals.scarGlowColorMap && !ei.wd->visuals.scarGlowColorMap->Empty()) {
-		auto idcs = ei.wd->visuals.scarGlowColorMap->GetIndices(0.0f);
-		glowColorMap[0] = ei.wd->visuals.scarGlowColorMap->GetColor(idcs.first );
-		glowColorMap[1] = ei.wd->visuals.scarGlowColorMap->GetColor(idcs.second);
-		cmAlphaMult = static_cast<float>(ei.wd->visuals.scarGlowColorMap->GetMapSize());
+	if (vi.scarGlowColorMap && !vi.scarGlowColorMap->Empty()) {
+		auto idcs = vi.scarGlowColorMap->GetIndices(0.0f);
+		glowColorMap[0] = vi.scarGlowColorMap->GetColor(idcs.first );
+		glowColorMap[1] = vi.scarGlowColorMap->GetColor(idcs.second);
+		cmAlphaMult = static_cast<float>(vi.scarGlowColorMap->GetMapSize());
 	}
 
 	const auto& decal = decals.emplace_back(GroundDecal{
@@ -593,7 +595,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 		.glowFalloff = glowDecay,
 		.rot = guRNG.NextFloat() * math::TWOPI,
 		.height = height,
-		.dotElimExp = ei.wd->visuals.scarDotElimination,
+		.dotElimExp = vi.scarDotElimination,
 		.cmAlphaMult = cmAlphaMult,
 		.createFrameMin = createFrame,
 		.createFrameMax = createFrame,
@@ -602,13 +604,13 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 		.forcedNormal = ei.projDir,
 		.visMult = 1.0f,
 		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() },
-		.tintColor = SColor{ei.wd->visuals.scarColorTint},
+		.tintColor = SColor{vi.scarColorTint},
 		.glowColorMap = std::move(glowColorMap)
 	});
 
-	if (ei.wd->visuals.scarGlowColorMap && !ei.wd->visuals.scarGlowColorMap->Empty()) {
-		auto idcs = ei.wd->visuals.scarGlowColorMap->GetIndices(0.0f);
-		idToCmInfo.emplace(decal.info.id, std::make_tuple(ei.wd->visuals.scarGlowColorMap, idcs));
+	if (vi.scarGlowColorMap && !vi.scarGlowColorMap->Empty()) {
+		auto idcs = vi.scarGlowColorMap->GetIndices(0.0f);
+		idToCmInfo.emplace(decal.info.id, std::make_tuple(vi.scarGlowColorMap, idcs));
 	}
 
 	idToPos.emplace(decal.info.id, decals.size() - 1);
