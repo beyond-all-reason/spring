@@ -6,9 +6,11 @@
 #include <list>
 
 #include "fmt/format.h"
+#include "fmt/printf.h"
 
 #include "DumpState.h"
 
+#include "Game/Game.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/GameVersion.h"
@@ -96,6 +98,15 @@ namespace {
 		s.append("\n");
 		return s;
 	}
+
+	inline std::string DumpGameID(const uint8_t* p) {
+		return fmt::sprintf(
+			"%02x%02x%02x%02x%02x%02x%02x%02x"
+			"%02x%02x%02x%02x%02x%02x%02x%02x",
+			p[0], p[1], p[ 2], p[ 3], p[ 4], p[ 5], p[ 6], p[ 7],
+			p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
+		);
+	}
 }
 
 
@@ -149,7 +160,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "maxFrame: " << gMaxFrameNum << "\n";
 			file << "randSeed: " << gsRNG.GetLastSeed() << "\n";
 			file << "initSeed: " << gsRNG.GetInitSeed() << "\n";
-			file << "  gameID: " << gameSetup->gameID << "\n";
+			file << "  gameID: " << DumpGameID(game->gameID) << "\n";
 			file << " syncVer: " << SpringVersion::GetSync() << "\n";
 		}
 
