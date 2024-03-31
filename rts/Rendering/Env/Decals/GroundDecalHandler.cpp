@@ -548,13 +548,11 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 	static std::vector<int> validScarIndices;
 	validScarIndices.clear();
-	if (!vi.scarIdcs.empty()) {
-		for (auto scarIdx : vi.scarIdcs) {
-			if (scarIdx < 1 || scarIdx > maxUniqueScars - 1)
-				continue;
+	for (auto scarIdx : vi.scarIdcs) {
+		if (scarIdx < 1 || scarIdx > maxUniqueScars - 1)
+			continue;
 
-			validScarIndices.emplace_back(scarIdx);
-		}
+		validScarIndices.emplace_back(scarIdx);
 	}
 	
 	int scarIdx;
