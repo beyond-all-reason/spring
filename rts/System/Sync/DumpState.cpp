@@ -652,6 +652,10 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	file.flush();
 	if (gs->frameNum == gMaxFrameNum)
 		file.close();
+
+	gMinFrameNum = -1;
+	gMaxFrameNum = -1;
+	gFramePeriod =  1;
 }
 
 void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
@@ -711,6 +715,8 @@ void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
 	if (gs->frameNum == gMaxFrameNum + 1) { //close the file and remove debug callback early next frame after gMaxFrameNum
 		gsRNG.SetDebug();
 		file.close();
+		gMinFrameNum = -1;
+		gMaxFrameNum = -1;
 	}
 	// check if the CURRENT frame lies within the bounds
 	if (gs->frameNum < gMinFrameNum)
