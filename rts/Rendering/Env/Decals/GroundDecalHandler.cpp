@@ -495,6 +495,9 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 	const float groundHeight = CGround::GetHeightReal(ei.pos.x, ei.pos.z, false);
 	const float altitude = ei.pos.y - groundHeight;
 
+	bool radiusOverride = (ei.wd->visuals.scarDiameter >= 0.0f);
+	ei.radius = mix(ei.radius, 0.5f * ei.wd->visuals.scarDiameter, radiusOverride);
+
 	// no decals for below-ground explosions
 	// also no decals if they are too high in the air
 	if (math::fabs(altitude) >= ei.radius)
@@ -511,7 +514,8 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 	ei.damage = std::min(ei.damage, ei.radius * 30.0f);
 	ei.damage *= (ei.radius / (ei.radius + altitude));
-	ei.radius = std::min(ei.radius, ei.damage * 0.25f);
+	if (!radiusOverride)
+		ei.radius = std::min(ei.radius, ei.damage * 0.25f);
 
 	if (ei.damage > 400.0f)
 		ei.damage = 400.0f + std::sqrt(ei.damage - 400.0f);

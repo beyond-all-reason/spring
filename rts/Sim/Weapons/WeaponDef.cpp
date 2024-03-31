@@ -207,6 +207,7 @@ WEAPONTAG(std::string, model, visuals.modelName).defaultValue("");
 WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("");
 WEAPONDUMMYTAG(table, scarIndices);
 WEAPONTAG(bool, explosionScar, visuals.explosionScar).defaultValue(true);
+WEAPONTAG(float, scarDiameter, visuals.scarDiameter).defaultValue(-1.0f);
 WEAPONTAG(float, scarAlpha, visuals.scarAlpha).defaultValue(0.0f);
 WEAPONTAG(float, scarGlow, visuals.scarGlow).defaultValue(0.0f);
 WEAPONTAG(float, scarTtl, visuals.scarTtl).defaultValue(0.0f);
