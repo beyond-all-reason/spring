@@ -323,8 +323,7 @@ void CPathFinder::TestNeighborSquares(
 			continue;
 		}
 
-
-		if (!pfDef.dirIndependent) {
+		if (moveDef.allowDirectionalPathing) {
 			sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y, PF_DIRECTION_VECTORS_3D[optDir]);
 		} else {
 			// PE search; use positional speed-mods since PE assumes path-costs
@@ -334,7 +333,8 @@ void CPathFinder::TestNeighborSquares(
 			//
 			// only close node if search is directionally independent, since it
 			// might still be entered from another (better) direction otherwise
-			if ((sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y)) == 0.0f) {
+			sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y);
+			if (sqState.speedMod == 0.0f) {
 				blockStates.nodeMask[ngbSquareIdx] |= PATHOPT_CLOSED;
 				dirtyBlocks.push_back(ngbSquareIdx);
 			}

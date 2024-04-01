@@ -374,7 +374,7 @@ bool CPathEstimator::TestBlock(
 	const unsigned int vertexCostIdx =
 		vertexBaseIdx +
 		openBlockIdx * PATH_DIRECTION_VERTICES +
-		GetBlockVertexOffset(pathDir, nbrOfBlocks.x);
+		GetBlockVertexOffset(moveDef, pathDir, nbrOfBlocks.x);
 
 	assert(testBlockIdx < (*psBlockStates).peNodeOffsets[moveDef.pathType].size());
 	//assert(vertexCostIdx < vertexCosts.size());

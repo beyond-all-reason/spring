@@ -2476,19 +2476,21 @@ void CGroundMoveType::HandleObjectCollisions()
 	HandleUnitCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
 	HandleFeatureCollisions(collider, {collider->speed.w, colliderFootPrintRadius, colliderAxisStretchFact}, colliderUD, colliderMD, curThread);
 
+	// This shouldn't be needed any more. Units are not permitted to enter impassible terrain squares.
+
 	// blocked square collision (very performance hungry, process only every 2nd game frame)
 	// dangerous: reduces effective square-size from 8 to 4, but many ground units can move
 	// at speeds greater than half the effective square-size per frame so this risks getting
 	// stuck on impassable squares
-	const bool squareChange = (CGround::GetSquare(owner->pos + owner->speed) != CGround::GetSquare(owner->pos));
-	const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
+	// const bool squareChange = (CGround::GetSquare(owner->pos + owner->speed) != CGround::GetSquare(owner->pos));
+	// const bool checkAllowed = ((collider->id & 1) == (gs->frameNum & 1));
 
-	if ((squareChange || checkAllowed) && owner->IsMoving()) {
-		const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, (!atEndOfPath && !atGoal), false, true, curThread);
-		if (requestPath) {
-			ReRequestPath(false);
-		}
-	}
+	// if ((squareChange || checkAllowed) && owner->IsMoving()) {
+	// 	const bool requestPath = HandleStaticObjectCollision(owner, owner, owner->moveDef,  colliderFootPrintRadius, 0.0f,  ZeroVector, (!atEndOfPath && !atGoal), false, true, curThread);
+	// 	if (requestPath) {
+	// 		ReRequestPath(false);
+	// 	}
+	// }
 
 	if (forceStaticObjectCheck) {
 		positionStuck |= !colliderMD->TestMoveSquare(collider, owner->pos, owner->speed, true, false, true, nullptr, nullptr, curThread);
@@ -2537,9 +2539,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 	// while being built, units that overlap their factory yardmap should not be moved at all
 	assert(!collider->beingBuilt);
 
-	// Even units standing still can be pushed into terrain and so need to be able to be pushed
-	// back out.
-	if (checkTerrain && (/*!collider->IsMoving() ||*/ collider->IsInAir()))
+	if (checkTerrain && (!collider->IsMoving() || collider->IsInAir()))
 		return false;
 
 	// for factories, check if collidee's position is behind us (which means we are likely exiting)
@@ -2586,7 +2586,6 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 
 		const float3 rightDir2D = (rgt * XZVector).SafeNormalize();
 		const float3 speedDir2D = (vel * XZVector).SafeNormalize();
-
 
 		const int xmid = (pos.x + vel.x) / SQUARE_SIZE;
 		const int zmid = (pos.z + vel.z) / SQUARE_SIZE;

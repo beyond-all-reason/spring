@@ -5,6 +5,7 @@
 
 #include <cinttypes>
 
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Path/IPathManager.h"
 #include "IPath.h"
 #include "IPathFinder.h"
@@ -117,23 +118,12 @@ public:
 	std::int64_t Finalize() override;
 	std::int64_t PostFinalizeRefresh() override;
 
+	bool AllowDirectionalPathing() override { return modInfo.allowDirectionalPathing; }
+
 	void RemoveCacheFiles() override;
 	void Update() override;
 	void UpdatePath(const CSolidObject*, unsigned int) override;
-	void DeletePath(unsigned int pathID, bool force = false) override;// {
-	// 	if (pathID == 0)
-	// 		return;
-	// 	{
-	// 		const std::lock_guard<std::mutex> lock(pathMapUpdate);
-	// 		const auto pi = pathMap.find(pathID);
-
-	// 		if (pi == pathMap.end())
-	// 			return;
-
-	// 		pathMap.erase(pi);
-	// 	}
-	// }
-
+	void DeletePath(unsigned int pathID, bool force = false) override;
 
 	float3 NextWayPoint(
 		const CSolidObject* owner,

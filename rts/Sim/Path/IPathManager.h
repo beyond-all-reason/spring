@@ -26,6 +26,8 @@ public:
 	virtual std::int64_t Finalize() { return 0; }
 	virtual std::int64_t PostFinalizeRefresh() { return 0; }
 
+	virtual bool AllowDirectionalPathing() { return false; }
+
 	/**
 	 * returns if a path was changed after RequestPath returned its pathID
 	 * this can happen eg. if a PathManager reacts to TerrainChange events

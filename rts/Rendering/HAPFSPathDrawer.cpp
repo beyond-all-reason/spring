@@ -431,7 +431,7 @@ void HAPFSPathDrawer::Draw(const HAPFS::CPathEstimator* pe) const {
 					if (obz >= peNumBlocks.y) continue;
 
 					const int obBlockNr = obz * peNumBlocks.x + obx;
-					const int vertexNr = vertexBaseNr + blockNr * PATH_DIRECTION_VERTICES + GetBlockVertexOffset(dir, peNumBlocks.x);
+					const int vertexNr = vertexBaseNr + blockNr * PATH_DIRECTION_VERTICES + GetBlockVertexOffset(*md, dir, peNumBlocks.x);
 
 					const float rawCost = ps->GetVertexCosts()[vertexNr];
 					const float nrmCost = (rawCost * PATH_NODE_SPACING) / ps->BLOCK_SIZE;
@@ -492,7 +492,7 @@ void HAPFSPathDrawer::Draw(const HAPFS::CPathEstimator* pe) const {
 					if (obz >= peNumBlocks.y) continue;
 
 					const int obBlockNr = obz * peNumBlocks.x + obx;
-					const int vertexNr = vertexBaseNr + blockNr * PATH_DIRECTION_VERTICES + GetBlockVertexOffset(dir, peNumBlocks.x);
+					const int vertexNr = vertexBaseNr + blockNr * PATH_DIRECTION_VERTICES + GetBlockVertexOffset(*md, dir, peNumBlocks.x);
 
 					// rescale so numbers remain near 1.0 (more readable)
 					const float rawCost = ps->GetVertexCosts()[vertexNr];

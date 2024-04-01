@@ -180,6 +180,7 @@ struct MoveDef {
 	/// otherwise, since they are never initialized)
 	bool avoidMobilesOnPath = true;
 	bool allowTerrainCollisions = true;
+	bool allowDirectionalPathing = true;
 	bool allowRawMovement = false;
 
 	/// do we leave heat and avoid any left by others?
@@ -198,6 +199,7 @@ public:
 	constexpr static size_t MAX_MOVE_DEFS = 256;
 
 	void Init(LuaParser* defsParser);
+	void PostSimInit();
 	void Kill() {
 		nameMap.clear(); // never iterated
 
