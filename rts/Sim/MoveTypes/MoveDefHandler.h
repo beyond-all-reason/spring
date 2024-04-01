@@ -182,6 +182,7 @@ struct MoveDef {
 	bool allowTerrainCollisions = true;
 	bool allowDirectionalPathing = true;
 	bool allowRawMovement = false;
+	bool preferShortestPath = true;
 
 	/// do we leave heat and avoid any left by others?
 	bool heatMapping = true;

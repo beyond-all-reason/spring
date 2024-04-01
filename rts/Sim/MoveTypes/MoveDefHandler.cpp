@@ -154,6 +154,7 @@ void MoveDefHandler::PostSimInit() {
 	// capabilities of the pathing system.
 	std::for_each(moveDefs.begin(), moveDefs.end(), [](MoveDef& md){
 		md.allowDirectionalPathing &= pathManager->AllowDirectionalPathing();
+		md.preferShortestPath &= pathManager->AllowShortestPath();
 	});
 }
 
@@ -319,7 +320,8 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
 
-	allowDirectionalPathing  = moveDefTable.GetBool("allowDirectionalPathing", allowDirectionalPathing);
+	allowDirectionalPathing = moveDefTable.GetBool("allowDirectionalPathing", allowDirectionalPathing);
+	preferShortestPath = moveDefTable.GetBool("preferShortestPath", preferShortestPath);
 }
 
 bool MoveDef::DoRawSearch(
