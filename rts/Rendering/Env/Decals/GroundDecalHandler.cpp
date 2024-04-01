@@ -549,7 +549,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 	static std::vector<int> validScarIndices;
 	validScarIndices.clear();
 	for (auto scarIdx : vi.scarIdcs) {
-		if (scarIdx < 1 || scarIdx > maxUniqueScars - 1)
+		if (scarIdx < 1 || scarIdx > maxUniqueScars) // these are raw from Lua, so remember the +1 compared to C++
 			continue;
 
 		validScarIndices.emplace_back(scarIdx);
