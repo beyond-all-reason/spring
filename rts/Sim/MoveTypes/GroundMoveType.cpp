@@ -887,7 +887,9 @@ void CGroundMoveType::StartMovingRaw(const float3 moveGoalPos, float moveGoalRad
 
 	goalPos = moveGoalPos * XZVector;
 	goalRadius = moveGoalRadius;
-	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(nullptr, moveGoalPos, ZeroVector, true, true));
+
+	MoveTypes::CheckCollisionQuery collisionQuery(owner->moveDef, moveGoalPos);
+	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(collisionQuery, moveGoalPos, ZeroVector, true, true));
 
 	currWayPoint = goalPos;
 	nextWayPoint = goalPos;
@@ -941,7 +943,8 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 	if (goalPos.z > mapz) { goalPos.z = mapz; }
 
 	goalRadius = moveGoalRadius;
-	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(nullptr, moveGoalPos, ZeroVector, true, true));
+	MoveTypes::CheckCollisionQuery collisionQuery(owner->moveDef, moveGoalPos);
+	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(collisionQuery, moveGoalPos, ZeroVector, true, true));
 
 	atGoal = (moveGoalPos.SqDistance2D(owner->pos) < Square(goalRadius + extraRadius));
 	atEndOfPath = false;
@@ -1828,6 +1831,8 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 	const float avoidanceRadius = std::max(currentSpeed, 1.0f) * (avoider->radius * 2.0f);
 	const float avoiderRadius = avoiderMD->CalcFootPrintMinExteriorRadius();
 
+	MoveTypes::CheckCollisionQuery avoiderInfo(avoider);
+
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = ThreadPool::GetThreadNum();
 	quadField.GetSolidsExact(qfQuery, avoider->pos, avoidanceRadius, 0xFFFFFFFF, CSolidObject::CSTATE_BIT_SOLIDOBJECTS);
@@ -1845,7 +1850,7 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 		// ignore aircraft (or flying ground units)
 		if (avoidee->IsInAir() || avoidee->IsFlying())
 			continue;
-		if (CMoveMath::IsNonBlocking(*avoiderMD, avoidee, avoider))
+		if (CMoveMath::IsNonBlocking(avoidee, &avoiderInfo))
 			continue;
 		if (!CMoveMath::CrushResistant(*avoiderMD, avoidee))
 			continue;
@@ -2201,7 +2206,7 @@ bool CGroundMoveType::CanSetNextWayPoint(int thread) {
 
 			// check the between pos and cwp for obstacles
 			// if still further than SS elmos from waypoint, disallow skipping
-			const bool rangeTest = owner->moveDef->DoRawSearch(owner, pos, targetPos, owner->speed, true, true, false, nullptr, nullptr, thread);
+			const bool rangeTest = owner->moveDef->DoRawSearch(owner, owner->moveDef, pos, targetPos, true, true, false, nullptr, nullptr, thread);
 
 			// {
 			// bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
@@ -2300,8 +2305,9 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 		return;
 	}
 
-	const auto CWP_BLOCK_MASK = CMoveMath::SquareIsBlocked(*owner->moveDef, earlyCurrWayPoint, owner);
-	const auto NWP_BLOCK_MASK = CMoveMath::SquareIsBlocked(*owner->moveDef, earlyNextWayPoint, owner);
+	MoveTypes::CheckCollisionQuery colliderInfo(owner);
+	const auto CWP_BLOCK_MASK = CMoveMath::SquareIsBlocked(*owner->moveDef, earlyCurrWayPoint, &colliderInfo);
+	const auto NWP_BLOCK_MASK = CMoveMath::SquareIsBlocked(*owner->moveDef, earlyNextWayPoint, &colliderInfo);
 
 	if ((CWP_BLOCK_MASK & CMoveMath::BLOCK_STRUCTURE) == 0 && (NWP_BLOCK_MASK & CMoveMath::BLOCK_STRUCTURE) == 0){
 		#ifdef PATHING_DEBUG
@@ -2493,8 +2499,9 @@ void CGroundMoveType::HandleObjectCollisions()
 	// }
 
 	if (forceStaticObjectCheck) {
-		positionStuck |= !colliderMD->TestMoveSquare(collider, owner->pos, owner->speed, true, false, true, nullptr, nullptr, curThread);
-		positionStuck |= !colliderMD->TestMoveSquare(collider, owner->pos, owner->speed, false, true, false, nullptr, nullptr, curThread);
+		MoveTypes::CheckCollisionQuery colliderInfo(collider);
+		positionStuck |= !colliderMD->TestMoveSquare(colliderInfo, owner->pos, owner->speed, true, false, true, nullptr, nullptr, curThread);
+		positionStuck |= !colliderMD->TestMoveSquare(colliderInfo, owner->pos, owner->speed, false, true, false, nullptr, nullptr, curThread);
 		forceStaticObjectCheck = false;
 	}
 
@@ -2616,6 +2623,8 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 			geometryLock.unlock();
 		}
 
+		MoveTypes::CheckCollisionQuery colliderInfo(owner);
+
 		// check for blocked squares inside collider's MoveDef footprint zone
 		// interpret each square as a "collidee" and sum up separation vectors
 		//
@@ -2637,7 +2646,7 @@ bool CGroundMoveType::HandleStaticObjectCollision(
 
 				if ( checkTerrain &&  (CMoveMath::GetPosSpeedMod(*colliderMD, xabs, zabs) > 0.f))
 					continue;
-				if ( checkYardMap && ((CMoveMath::SquareIsBlocked(*colliderMD, xabs, zabs, collider) & CMoveMath::BLOCK_STRUCTURE) == 0))
+				if ( checkYardMap && ((CMoveMath::SquareIsBlocked(*colliderMD, xabs, zabs, &colliderInfo) & CMoveMath::BLOCK_STRUCTURE) == 0))
 					continue;
 
 				const float3 squarePos = float3(xabs * SQUARE_SIZE + (SQUARE_SIZE >> 1), pos.y, zabs * SQUARE_SIZE + (SQUARE_SIZE >> 1));
@@ -2792,6 +2801,8 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
+	MoveTypes::CheckCollisionQuery colliderInfo(collider);
+
 	// copy on purpose, since the below can call Lua
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -2815,9 +2826,9 @@ void CGroundMoveType::HandleUnitCollisions(
 			collider->requestRemoveUnloadTransportId = true;
 
 		// don't push/crush either party if the collidee does not block the collider (or vv.)
-		if (colliderMobile && CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
+		if (colliderMobile && CMoveMath::IsNonBlocking(collidee, &colliderInfo))
 			continue;
-		if (collideeMobile && CMoveMath::IsNonBlocking(*collideeMD, collider, collidee))
+		if (collideeMobile && CMoveMath::IsNonBlocking(collider, &colliderInfo))
 			continue;
 
 		// disable collisions between collider and collidee
@@ -2964,6 +2975,8 @@ void CGroundMoveType::HandleFeatureCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
+	MoveTypes::CheckCollisionQuery colliderInfo(collider);
+
 	// copy on purpose, since DoDamage below can call Lua
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -2980,7 +2993,7 @@ void CGroundMoveType::HandleFeatureCollisions(
 			continue;
 
 
-		if (CMoveMath::IsNonBlocking(*colliderMD, collidee, collider))
+		if (CMoveMath::IsNonBlocking(collidee, &colliderInfo))
 			continue;
 		if (!CMoveMath::CrushResistant(*colliderMD, collidee))
 			killFeatures.push_back(collidee);
@@ -3282,7 +3295,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 		// separate calls because terrain is only checked for in the centre square, while
 		// static objects are checked for in the whole footprint.
 		bool result = ( pathController.IgnoreTerrain(*md, pos) ||
-				 unit->moveDef->TestMoveSquare(unit, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread)
+				 unit->moveDef->TestMoveSquare(virtualObject, pos, (pos - unit->pos), true, false, true, nullptr, nullptr, thread)
 			   )
 				&& unit->moveDef->TestMovePositionForObjects(&virtualObject, pos, tempNum, thread);
 

@@ -299,7 +299,7 @@ void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int thr
 		const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
 
 		//LOG("TK PathingState::InitBlocks: blockStates.peNodeOffsets %d now %d looking up %d", i, blockStates.peNodeOffsets[md->pathType].size(), blockIdx);
-		blockStates.peNodeOffsets[md->pathType][blockIdx] = FindBlockPosOffset(*md, blockPos.x, blockPos.y);
+		blockStates.peNodeOffsets[md->pathType][blockIdx] = FindBlockPosOffset(*md, blockPos.x, blockPos.y, threadNum);
 		// LOG("UPDATED blockStates.peNodeOffsets[%d][%d] = (%d, %d) : (%d, %d)"
 		// 		, md->pathType, blockIdx
 		// 		, blockStates.peNodeOffsets[md->pathType][blockIdx].x, blockStates.peNodeOffsets[md->pathType][blockIdx].y
@@ -310,7 +310,7 @@ void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int thr
 /**
  * Move around the blockPos a bit, so we `surround` unpassable blocks.
  */
-int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blockX, unsigned int blockZ) const
+int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blockX, unsigned int blockZ, int threadNum) const
 {
 	// lower corner position of block
 	const unsigned int lowerX = blockX * BLOCK_SIZE;
@@ -336,7 +336,7 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 		if (cost >= bestCost)
 			continue;
 
-		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr)) {
+		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr, threadNum)) {
 			bestCost = cost;
 			bestPos  = blockPos;
 		}
@@ -443,8 +443,8 @@ void PathingState::CalcVertexPathCost(
 	// note: PE itself should ensure this never happens to begin with?
 	//
 	// blocked goal positions are always early-outs (no searching needed)
-	const bool strtBlocked = ((CMoveMath::IsBlocked(moveDef, startPos, nullptr) & CMoveMath::BLOCK_STRUCTURE) != 0);
-	const bool goalBlocked = pfDef.IsGoalBlocked(moveDef, CMoveMath::BLOCK_STRUCTURE, nullptr);
+	const bool strtBlocked = ((CMoveMath::IsBlocked(moveDef, startPos, nullptr, threadNum) & CMoveMath::BLOCK_STRUCTURE) != 0);
+	const bool goalBlocked = pfDef.IsGoalBlocked(moveDef, CMoveMath::BLOCK_STRUCTURE, nullptr, threadNum);
 
 	if (strtBlocked || goalBlocked) {
 		vertexCosts[vertexCostIdx] = PATHCOST_INFINITY;
@@ -685,9 +685,8 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 				const SingleBlock sb = consumedBlocks[n];
 				const int blockN = BlockPosToIdx(sb.blockPos);
 				const MoveDef* currBlockMD = sb.moveDef;
-				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
+				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y, ThreadPool::GetThreadNum());
 			};
-
 
 		for_mt(0, consumedBlocks.size(), updateOffset);
 	}

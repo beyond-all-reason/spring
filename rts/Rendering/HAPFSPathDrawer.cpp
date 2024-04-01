@@ -160,6 +160,8 @@ void HAPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 				if (md != nullptr) {
 					const bool los = (gs->cheatEnabled || gu->spectating);
 
+					int thread = ThreadPool::GetThreadNum();
+
 					for (int ty = starty; ty < endy; ++ty) {
 						for (int tx = 0; tx < mapDims.hmapx; ++tx) {
 							const int sqx = (tx << 1);
@@ -170,10 +172,10 @@ void HAPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 							float scale = 1.0f;
 
 							if (los || losSqr) {
-								if (CMoveMath::IsBlocked(*md, sqx,     sqy    , nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-								if (CMoveMath::IsBlocked(*md, sqx + 1, sqy    , nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-								if (CMoveMath::IsBlocked(*md, sqx,     sqy + 1, nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-								if (CMoveMath::IsBlocked(*md, sqx + 1, sqy + 1, nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+								if (CMoveMath::IsBlocked(*md, sqx,     sqy    , nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+								if (CMoveMath::IsBlocked(*md, sqx + 1, sqy    , nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+								if (CMoveMath::IsBlocked(*md, sqx,     sqy + 1, nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+								if (CMoveMath::IsBlocked(*md, sqx + 1, sqy + 1, nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
 							}
 
 							// NOTE: raw speedmods are not necessarily clamped to [0, 1]

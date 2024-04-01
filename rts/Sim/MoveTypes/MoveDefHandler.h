@@ -43,19 +43,19 @@ struct MoveDef {
 
 	bool DoRawSearch(
 		const CSolidObject* collider,
+		const MoveDef* md,
 		const float3 startPos,
 		const float3 endPos,
-		const float3 testMoveDir,
 		bool testTerrain,
 		bool testObjects,
 		bool centerOnly,
 		float* minSpeedModPtr,
 		int* maxBlockBitPtr,
 		int thread = 0
-	);
+	) const;
 	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
 	bool TestMoveSquareRange(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery& collider,
 		const float3 rangeMins,
 		const float3 rangeMaxs,
 		const float3 testMoveDir,
@@ -67,7 +67,7 @@ struct MoveDef {
 		int thread = 0
 	) const;
 	bool TestMoveSquare(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery& collider,
 		const float3 testMovePos,
 		const float3 testMoveDir,
 		bool testTerrain = true,

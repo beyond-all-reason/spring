@@ -45,6 +45,7 @@
 #include "Sim/MoveTypes/ScriptMoveType.h"
 #include "Sim/MoveTypes/StaticMoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/Projectile.h"
@@ -7396,8 +7397,10 @@ int LuaSyncedRead::TestMoveOrder(lua_State* L)
 		los = losHandler->InLos(pos, CLuaHandle::GetHandleReadAllyTeam(L));
 	}
 
-	if (los)
-		ret = moveDef->TestMoveSquare(nullptr, pos, dir, testTerrain, testObjects, centerOnly);
+	if (los){
+		MoveTypes::CheckCollisionQuery collisionQuery(moveDef, pos);
+		ret = moveDef->TestMoveSquare(collisionQuery, pos, dir, testTerrain, testObjects, centerOnly);
+	}
 
 	lua_pushboolean(L, ret);
 	return 1;

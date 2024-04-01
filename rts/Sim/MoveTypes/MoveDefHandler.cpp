@@ -324,16 +324,16 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 
 bool MoveDef::DoRawSearch(
 	const CSolidObject* collider,
+	const MoveDef* md,
 	const float3 startPos,
 	const float3 endPos,
-	const float3 testMoveDir,
 	bool testTerrain,
 	bool testObjects,
 	bool centerOnly,
 	float* minSpeedModPtr,
 	int* maxBlockBitPtr,
 	int thread
-) {
+) const {
 	ZoneScoped;
 	assert(testTerrain || testObjects);
 
@@ -429,16 +429,19 @@ bool MoveDef::DoRawSearch(
 	if (testObjects & retTestMove) {
 		int tempNum = gs->GetMtTempNum(thread);
 
-		MoveDef *md = collider->moveDef;
-
-		MoveTypes::CheckCollisionQuery virtualObject(collider);
+		MoveTypes::CheckCollisionQuery virtualObject = (collider != nullptr)
+				? MoveTypes::CheckCollisionQuery(collider)
+				: MoveTypes::CheckCollisionQuery(md);
 		MoveDefs::CollisionQueryStateTrack queryState;
+		if (collider == nullptr)
+			md->UpdateCheckCollisionQuery(virtualObject, queryState, startBlock);
+
 		const bool isSubmersible = (md->isSubmarine ||
 								   (md->followGround && md->depth > md->height));
 		if (!isSubmersible)
 			virtualObject.DisableHeightChecks();
 
-		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
+		auto test = [this, &maxBlockBit, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
 			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapxm1);
@@ -497,7 +500,7 @@ void MoveDef::UpdateCheckCollisionQuery
 }
 
 bool MoveDef::TestMoveSquareRange(
-	const CSolidObject* collider,
+	const MoveTypes::CheckCollisionQuery& collider,
 	const float3 rangeMins,
 	const float3 rangeMaxs,
 	const float3 testMoveDir,
@@ -544,7 +547,7 @@ bool MoveDef::TestMoveSquareRange(
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects && retTestMove) {
-		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(*this, xmin, xmax, zmin, zmax, collider, thread);
+		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(xmin, xmax, zmin, zmax, &collider, thread);
 
 		maxBlockBit = blockBits;
 		retTestMove = ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
