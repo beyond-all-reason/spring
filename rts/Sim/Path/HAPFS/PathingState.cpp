@@ -734,13 +734,13 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 
 	// LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
 
-	constexpr uint8_t ALL_LINKS = PATH_DIRECTIONS_MASK;
-	constexpr uint8_t MASK_REMOVE_LEFT = ~(PATHDIR_LEFT_MASK | PATHDIR_LEFT_UP_MASK | PATHDIR_LEFT_DOWN_MASK);
-	constexpr uint8_t MASK_REMOVE_RIGHT = ~(PATHDIR_RIGHT_MASK | PATHDIR_RIGHT_UP_MASK| PATHDIR_RIGHT_DOWN_MASK);
-	constexpr uint8_t MASK_REMOVE_UP = ~(PATHDIR_UP_MASK | PATHDIR_LEFT_UP_MASK | PATHDIR_RIGHT_UP_MASK);
-	constexpr uint8_t MASK_REMOVE_DOWN = ~(PATHDIR_DOWN_MASK | PATHDIR_LEFT_DOWN_MASK | PATHDIR_RIGHT_DOWN_MASK);
+	constexpr uint32_t ALL_LINKS = PATH_DIRECTIONS_MASK;
+	constexpr uint32_t MASK_REMOVE_LEFT = ~(PATHDIR_LEFT_MASK | PATHDIR_LEFT_UP_MASK | PATHDIR_LEFT_DOWN_MASK);
+	constexpr uint32_t MASK_REMOVE_RIGHT = ~(PATHDIR_RIGHT_MASK | PATHDIR_RIGHT_UP_MASK| PATHDIR_RIGHT_DOWN_MASK);
+	constexpr uint32_t MASK_REMOVE_UP = ~(PATHDIR_UP_MASK | PATHDIR_LEFT_UP_MASK | PATHDIR_RIGHT_UP_MASK);
+	constexpr uint32_t MASK_REMOVE_DOWN = ~(PATHDIR_DOWN_MASK | PATHDIR_LEFT_DOWN_MASK | PATHDIR_RIGHT_DOWN_MASK);
 
-	constexpr uint8_t activeLinks[] = {
+	constexpr uint32_t activeLinks[] = {
 		ALL_LINKS & MASK_REMOVE_LEFT  & MASK_REMOVE_UP,
 		ALL_LINKS                     & MASK_REMOVE_UP,
 		ALL_LINKS & MASK_REMOVE_RIGHT & MASK_REMOVE_UP,
@@ -772,7 +772,7 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 			std::uint8_t blockOrigLinkFlags = blockStates.nodeLinksObsoleteFlags[idx];
 
 			uint8_t linkType = getIdxFromZ(z) + getIdxFromX(x);
-			blockStates.nodeLinksObsoleteFlags[idx] = activeLinks[linkType];
+			blockStates.nodeLinksObsoleteFlags[idx] = uint8_t(activeLinks[linkType]);
 			if (!pathingDirectional) 
 				blockStates.nodeLinksObsoleteFlags[idx] &= PATH_DIRECTIONS_HALF_MASK;
 

@@ -230,8 +230,6 @@ void CPathFinder::TestNeighborSquares(
 	const bool startSquareExpanded = (openBlocks.empty() && testedBlocks < 8);
 	const bool startSquareBlocked = (startSquareExpanded && (CMoveMath::IsBlockedNoSpeedModCheck(moveDef, squarePos.x, squarePos.y, owner, thread) & MMBT::BLOCK_STRUCTURE) != 0);
 
-	int tempNum = gs->GetMtTempNum(thread);
-
 	// precompute structure-blocked state and speedmod for all neighbors
 	for (SquareState& sqState: ngbStates) {
 		const unsigned int dirIdx = &sqState - &ngbStates[0];
