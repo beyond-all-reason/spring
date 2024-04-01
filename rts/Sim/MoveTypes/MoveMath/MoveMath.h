@@ -28,7 +28,8 @@ namespace MoveTypes {
 
 		CheckCollisionQuery(const MoveDef* refMoveDef, float3 testPos);
 
-		void UpdateElevationForPos(float3 newPos);
+		void UpdateElevationForPos(float3 newPos) { UpdateElevationForPos({int(pos.x / SQUARE_SIZE), int(pos.z / SQUARE_SIZE)}); };
+		void UpdateElevationForPos(int2 sqr);
 
 		bool    HasPhysicalStateBit(unsigned int bit) const { return ((physicalState & bit) != 0); }
 		void    SetPhysicalStateBit(unsigned int bit) { unsigned int ps = physicalState; ps |= ( bit); physicalState = static_cast<CSolidObject::PhysicalState>(ps); }
@@ -87,6 +88,7 @@ public:
 	static inline BlockType IsBlocked(const MoveDef& moveDef, const float3& pos, const CSolidObject* collider, int thread);
 	static inline BlockType IsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider, int thread);
 	static BlockType IsBlockedNoSpeedModCheck(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider, int thread);
+	static BlockType IsBlockedNoSpeedModCheckDiff(const MoveDef& moveDef, int2 prevSqr, int2 newSqr, const CSolidObject* collider, int thread = 0);
 	static inline BlockType IsBlockedStructure(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider, int thread);
 
 	// checks whether an object (collidee) is non-crushable by the given MoveDef
@@ -99,8 +101,8 @@ public:
 	static BlockType ObjectBlockType(const CSolidObject* collidee, const MoveTypes::CheckCollisionQuery* collider);
 
 	// checks if a single square is accessable for any object which uses the given MoveDef
-	static BlockType SquareIsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, const MoveTypes::CheckCollisionQuery* collider);
-	static BlockType SquareIsBlocked(const MoveDef& moveDef, const float3& pos, const MoveTypes::CheckCollisionQuery* collider) {
+	static BlockType SquareIsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, MoveTypes::CheckCollisionQuery* collider);
+	static BlockType SquareIsBlocked(const MoveDef& moveDef, const float3& pos, MoveTypes::CheckCollisionQuery* collider) {
 		return (SquareIsBlocked(moveDef, pos.x / SQUARE_SIZE, pos.z / SQUARE_SIZE, collider));
 	}
 	static BlockType RangeIsBlocked(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int thread = 0);

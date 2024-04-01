@@ -232,18 +232,6 @@ void CPathFinder::TestNeighborSquares(
 
 	int tempNum = gs->GetMtTempNum(thread);
 
-	MoveTypes::CheckCollisionQuery collisionQuery = (owner != nullptr)
-			? MoveTypes::CheckCollisionQuery(owner)
-			: MoveTypes::CheckCollisionQuery(&moveDef);
-	MoveDefs::CollisionQueryStateTrack queryState;
-	if (owner == nullptr)
-		moveDef.UpdateCheckCollisionQuery(collisionQuery, queryState, squarePos);
-
-	const bool isSubmersible = (moveDef.isSubmarine ||
-							   (moveDef.followGround && moveDef.depth > moveDef.height));
-	if (!isSubmersible)
-		collisionQuery.DisableHeightChecks();
-
 	// precompute structure-blocked state and speedmod for all neighbors
 	for (SquareState& sqState: ngbStates) {
 		const unsigned int dirIdx = &sqState - &ngbStates[0];
@@ -261,22 +249,7 @@ void CPathFinder::TestNeighborSquares(
 			continue;
 
 		// IsBlockedNoSpeedModCheck; very expensive call but with a ~20% (?) chance of early-out
-		// sqState.blockMask = CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, squarePos, ngbSquareCoors, owner, thread);
-
-		// Height affects whether units in water collide or not, so the new y positions need
-		// to be considered or else we will get incorrect results.
-		if (isSubmersible){
-			moveDef.UpdateCheckCollisionQuery(collisionQuery, queryState, ngbSquareCoors);
-			if (queryState.refreshCollisionCache)
-				tempNum = gs->GetMtTempNum(thread);
-		}
-
-		const int xmin = std::max(ngbSquareCoors.x - moveDef.xsizeh,                0);
-		const int zmin = std::max(ngbSquareCoors.y - moveDef.zsizeh,                0);
-		const int xmax = std::min(ngbSquareCoors.x + moveDef.xsizeh, mapDims.mapx - 1);
-		const int zmax = std::min(ngbSquareCoors.y + moveDef.zsizeh, mapDims.mapy - 1);
-
-		sqState.blockMask = CMoveMath::RangeIsBlockedMt(xmin, xmax, zmin, zmax, &collisionQuery, thread, tempNum);
+		sqState.blockMask = CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, squarePos, ngbSquareCoors, owner, thread);
 		if (sqState.blockMask & MMBT::BLOCK_STRUCTURE) {
 			blockStates.nodeMask[ngbSquareIdx] |= PATHOPT_CLOSED;
 			dirtyBlocks.push_back(ngbSquareIdx);
