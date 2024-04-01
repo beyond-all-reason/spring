@@ -2306,6 +2306,7 @@ void CGroundMoveType::SetNextWayPoint(int thread)
 	}
 
 	MoveTypes::CheckCollisionQuery colliderInfo(owner);
+	
 	const auto CWP_BLOCK_MASK = CMoveMath::SquareIsBlocked(*owner->moveDef, earlyCurrWayPoint, &colliderInfo);
 	const auto NWP_BLOCK_MASK = CMoveMath::SquareIsBlocked(*owner->moveDef, earlyNextWayPoint, &colliderInfo);
 

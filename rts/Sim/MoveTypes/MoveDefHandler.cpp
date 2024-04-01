@@ -413,8 +413,7 @@ bool MoveDef::DoRawSearch(
 				? MoveTypes::CheckCollisionQuery(collider)
 				: MoveTypes::CheckCollisionQuery(md);
 		MoveDefs::CollisionQueryStateTrack queryState;
-		if (collider == nullptr)
-			md->UpdateCheckCollisionQuery(virtualObject, queryState, startBlock);
+		md->UpdateCheckCollisionQuery(virtualObject, queryState, startBlock);
 
 		const bool isSubmersible = (md->isSubmarine ||
 								   (md->followGround && md->depth > md->height));
