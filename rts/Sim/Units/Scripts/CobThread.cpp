@@ -350,12 +350,12 @@ static constexpr uint8_t RAS_SPIN = 0x03;
 static constexpr uint8_t RAS_STOP_SPIN = 0x04;
 static constexpr uint8_t RAS_SHOW = 0x05;
 static constexpr uint8_t RAS_HIDE = 0x06;
-//static constexpr uint8_t RAS_CACHE = 0x07;
-//static constexpr uint8_t RAS_DONT_CACHE = 0x08;
+static constexpr uint8_t RAS_CACHE = 0x07; // TODO REMOVE
+static constexpr uint8_t RAS_DONT_CACHE = 0x08;
 static constexpr uint8_t RAS_MOVE_NOW = 0x0B;
 static constexpr uint8_t RAS_TURN_NOW = 0x0C;
-//static constexpr uint8_t RAS_SHADE = 0x0D;
-//static constexpr uint8_t RAS_DONT_SHADE = 0x0E;
+static constexpr uint8_t RAS_SHADE = 0x0D;
+static constexpr uint8_t RAS_DONT_SHADE = 0x0E;
 static constexpr uint8_t RAS_EMIT_SFX = 0x0F;
 
 // Blocking operations
@@ -449,7 +449,7 @@ static constexpr int LUA9 = 119;
 #define GET_LONG_PC() (cobFile->code.at(pc++))
 #endif
 
-#if 0
+#if 1
 static const char* GetOpcodeName(int opcode)
 {
 	switch (opcode) {
@@ -1387,8 +1387,14 @@ bool CCobThread::Tick()
 			&&DO_RAS_BADOPCODE, &&DO_RAS_BADOPCODE, &&DO_RAS_BADOPCODE, &&DO_RAS_BADOPCODE,
 			&&DO_RAS_BADOPCODE, &&DO_RAS_BADOPCODE, &&DO_RAS_BADOPCODE, &&DO_RAS_BADOPCODE
 			};
-#define RAS_DISPATCH() goto *ras_dispatch_table[(uint8_t)GET_LONG_PC()]
+#define RAS_DISPATCH() \
+	opcode = GET_LONG_PC(); \
+	LOG_L(L_ERROR, "[COBThread] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+	goto *ras_dispatch_table[opcode] ;
 #endif
+
+//	LOG_L(L_ERROR, "[COBThread::%s] unknown opcode %x (in %s:%s at %x)", __func__, opcode, name, func, pc - 1);
+
 
 #ifdef _MSC_VER
 #define BREAK_OR_RAS_DISPATCH \
@@ -1413,11 +1419,11 @@ bool CCobThread::Tick()
 
 		while (true)
 		{
-
-			const int longopcode = GET_LONG_PC();
-			const uint8_t opcode = (uint8_t)longopcode;
-
+			uint8_t opcode;
 #ifdef _MSC_VER
+			const int longopcode = GET_LONG_PC();
+			opcode = (uint8_t)longopcode; // TODO : const
+
 			switch (opcode)
 			{
 #else
