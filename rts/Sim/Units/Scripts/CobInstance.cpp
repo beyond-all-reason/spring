@@ -82,7 +82,7 @@ void CCobInstance::PostLoad()
 
 		t->cobInst = this;
 		t->cobFile = cobFile;
-		t->cobVersion = cobVersion;
+		//t->cobVersion = cobVersion;
 	}
 
 	InitCommon();
@@ -111,6 +111,7 @@ CCobInstance::~CCobInstance()
 void CCobInstance::InitCommon()
 {
 	assert(cobFile != nullptr);
+	cobVersion = cobFile->cobVersion;
 
 	MapScriptToModelPieces(&unit->localModel);
 
