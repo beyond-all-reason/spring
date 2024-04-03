@@ -900,8 +900,8 @@ void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, boo
 void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, bool forced, int teamId, const CUnit* excludeUnit)
 {
 	const int bufferSize = (moveDefHandler.GetLargestFootPrintSizeH() + 1) * SQUARE_SIZE;
-	const float3 min((mins.x - bufferSize), 0.f, (mins.z - bufferSize));
-	const float3 max((maxs.x + bufferSize), 0.f, (maxs.z + bufferSize));
+	const float3 min((mins.x - bufferSize), mins.y, (mins.z - bufferSize));
+	const float3 max((maxs.x + bufferSize), maxs.y, (maxs.z + bufferSize));
 
 	const float3 baseBufferOffLengths = (maxs - mins) * 0.5f;
 	const float3 centreOfBuggerOff = mins + baseBufferOffLengths;
