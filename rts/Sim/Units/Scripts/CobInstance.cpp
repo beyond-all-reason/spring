@@ -47,6 +47,7 @@ CR_REG_METADATA(CCobInstance, (
 
 	CR_MEMBER(staticVars),
 	CR_MEMBER(threadIDs),
+	CR_MEMBER(cobVersion),
 
 	CR_POSTLOAD(PostLoad),
 	CR_PREALLOC(GetUnit)
@@ -63,6 +64,7 @@ inline bool CCobInstance::HasFunction(int id) const
 void CCobInstance::Init()
 {
 	InitCommon();
+
 	staticVars.clear();
 	staticVars.resize(cobFile->numStaticVars, 0);
 }
@@ -80,7 +82,7 @@ void CCobInstance::PostLoad()
 
 		t->cobInst = this;
 		t->cobFile = cobFile;
-		//t->cobVersion = cobVersion;
+		t->cobVersion = cobVersion;
 	}
 
 	InitCommon();

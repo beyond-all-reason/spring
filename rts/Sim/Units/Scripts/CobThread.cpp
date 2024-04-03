@@ -12,66 +12,70 @@
 CR_BIND(CCobThread, )
 
 CR_REG_METADATA(CCobThread, (
-								CR_MEMBER(cobInst),
-								CR_IGNORED(cobFile),
+	CR_MEMBER(cobInst),
+	CR_IGNORED(cobFile),
 
-								CR_MEMBER(id),
-								CR_MEMBER(pc),
+	CR_MEMBER(id),
+	CR_MEMBER(pc),
 
-								CR_MEMBER(wakeTime),
-								CR_MEMBER(paramCount),
-								CR_MEMBER(retCode),
-								CR_MEMBER(cbParam),
-								CR_MEMBER(signalMask),
+	CR_MEMBER(wakeTime),
+	CR_MEMBER(paramCount),
+	CR_MEMBER(retCode),
+	CR_MEMBER(cbParam),
+	CR_MEMBER(signalMask),
 
-								CR_MEMBER(waitAxis),
-								CR_MEMBER(waitPiece),
+	CR_MEMBER(waitAxis),
+	CR_MEMBER(waitPiece),
 
-								CR_IGNORED(errorCounter),
+	CR_IGNORED(errorCounter),
 
-								CR_MEMBER(cbType),
-								CR_MEMBER(state),
+	CR_MEMBER(cbType),
+	CR_MEMBER(state),
 
-								CR_MEMBER(luaArgs),
-								CR_MEMBER(cobVersion),
-								CR_MEMBER(callStack),
-								CR_MEMBER(dataStack)))
+	CR_MEMBER(luaArgs),
+	CR_MEMBER(callStack),
+	CR_MEMBER(dataStack),
+	CR_MEMBER(cobVersion)
+))
 
-CR_BIND(CCobThread::CallInfo, )
+CR_BIND(CCobThread::CallInfo,)
 
-CR_REG_METADATA_SUB(CCobThread, CallInfo, (CR_MEMBER(functionId), CR_MEMBER(returnAddr), CR_MEMBER(stackTop)))
+CR_REG_METADATA_SUB(CCobThread, CallInfo,(
+	CR_MEMBER(functionId),
+	CR_MEMBER(returnAddr),
+	CR_MEMBER(stackTop)
+))
 
 std::vector<decltype(CCobThread::dataStack)> CCobThread::freeDataStacks;
 std::vector<decltype(CCobThread::callStack)> CCobThread::freeCallStacks;
 
 CCobThread::CCobThread(CCobInstance *_cobInst)
-	: cobInst(_cobInst), cobFile(_cobInst->cobFile)
+	: cobInst(_cobInst)
+	, cobFile(_cobInst->cobFile)
 {
-	// If there are any free data and call stacks available, reuse them by
-	// moving them to the current thread's data and call stack variables to
-	// amortize memory allocations.
-	if (!freeDataStacks.empty())
-	{
+       // If there are any free data and call stacks available, reuse them by
+       // moving them to the current thread's data and call stack variables to
+       // amortize memory allocations.
+    if (!freeDataStacks.empty())
+    {
 		assert(freeDataStacks.size() == freeCallStacks.size());
 		dataStack = std::move(freeDataStacks.back());
 		freeDataStacks.pop_back();
 		callStack = std::move(freeCallStacks.back());
 		freeCallStacks.pop_back();
-	}
-	else
-	{
-		// These reservation sizes were experimentally obtained from a few
-		// games in BAR, but regardless of the game being played, the size of
-		// all stacks in use will over time converge to the max size because we
-		// are reusing vectors from older threads.
+	} else {
+       // These reservation sizes were experimentally obtained from a few
+       // games in BAR, but regardless of the game being played, the size of
+       // all stacks in use will over time converge to the max size because we
+       // are reusing vectors from older threads.
 		dataStack.reserve(16);
 		callStack.reserve(4);
 	}
 	memset(&luaArgs[0], 0, MAX_LUA_COB_ARGS * sizeof(luaArgs[0]));
-	cobVersion = cobFile->cobVersion;
+	//cobVersion = cobFile->cobVersion;
 	//cobFile->LogHeader("thread constructor");
-	const char *name = cobFile->name.c_str();
-	LOG_L(L_ERROR, "[COBThread::%s] constr cobVersion %d", name, cobVersion);
+	//const char *name = cobFile->name.c_str();
+	//LOG_L(L_ERROR, "[COBThread::%s] constr cobVersion %d", name, cobVersion);
 }
 
 CCobThread::~CCobThread()
@@ -149,6 +153,10 @@ CCobThread &CCobThread::operator=(const CCobThread &t)
 	cobFile = t.cobFile;
 	if (cobFile != nullptr)
 		cobVersion = cobFile->cobVersion;
+
+
+	const char *name = cobFile->name.c_str();
+	LOG_L(L_ERROR, "[COBThread::%s] op= const cobVersion %d", name, cobVersion);
 	return *this;
 }
 

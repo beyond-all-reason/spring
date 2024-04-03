@@ -11,27 +11,6 @@
 #include "CobScriptNames.h"
 #include "System/UnorderedMap.hpp"
 
-
-//The following structure is taken from http://visualta.tauniverse.com/Downloads/ta-cob-fmt.txt
-//Information on missing fields from Format_Cob.pas
-typedef struct tagCOBHeader
-{
-	int VersionSignature; // 4 for ta, 6 for tak, 8 for RAS
-	int NumberOfScripts;
-	int NumberOfPieces;
-	int TotalScriptLen;
-	int NumberOfStaticVars;
-	int Unknown_2; /* Always seems to be 0 */
-	int OffsetToScriptCodeIndexArray;
-	int OffsetToScriptNameOffsetArray;
-	int OffsetToPieceNameOffsetArray;
-	int OffsetToScriptCode;
-	int Unknown_3; /* Always seems to point to first script name */
-
-	int OffsetToSoundNameArray;		// These two are only found in TA:K scripts
-	int NumberOfSounds;
-} COBHeader;
-
 class CFileHandler;
 
 class CCobFile

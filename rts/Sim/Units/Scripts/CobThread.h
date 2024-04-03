@@ -144,7 +144,6 @@ protected:
 
 	int luaArgs[MAX_LUA_COB_ARGS] = {0};
 
-	int cobVersion = 0;
 
 
 	std::vector<CallInfo> callStack;
@@ -159,6 +158,8 @@ protected:
 	// memory pool to speed up thread creation.
 	static std::vector<decltype(dataStack)> freeDataStacks;
 	static std::vector<decltype(callStack)> freeCallStacks;
+public:
+	int cobVersion = 0;
 };
 
 #endif // COB_THREAD_H
