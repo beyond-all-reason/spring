@@ -19,7 +19,7 @@
 //Information on missing fields from Format_Cob.pas
 typedef struct tagCOBHeader
 {
-	int VersionSignature;
+	int VersionSignature; // 4 for TA, 6 for TA:K
 	int NumberOfScripts;
 	int NumberOfPieces;
 	int TotalScriptLen;
