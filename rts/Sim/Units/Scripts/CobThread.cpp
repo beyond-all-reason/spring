@@ -112,12 +112,12 @@ CCobThread &CCobThread::operator=(CCobThread &&t)
 
 	state = t.state;
 	cbType = t.cbType;
-	if (cobInst != nullptr)
-		cobVersion = cobInst->cobVersion;
-	else{
+	//if (cobInst != nullptr)
+	//	cobVersion = cobInst->cobVersion;
+	//else{
 		cobVersion = t.cobVersion;
 		//LOG_L(L_ERROR, "[COBThread::] CCobThread::operator=(CCobThread &&t) cobInst nullptr!");
-	}
+	//}
 	cobInst = t.cobInst;
 	t.cobInst = nullptr;
 	cobFile = t.cobFile;
@@ -154,12 +154,12 @@ CCobThread &CCobThread::operator=(const CCobThread &t)
 	cobInst = t.cobInst;
 	cobFile = t.cobFile;
 
-	if (cobInst != nullptr)
-		cobVersion = cobInst->cobVersion;
-	else{
+	//if (cobInst != nullptr)
+		//cobVersion = cobInst->cobVersion;
+	//else{
 		cobVersion = t.cobVersion;
 		//LOG_L(L_ERROR, "[COBThread::] CCobThread::operator=(const CCobThread &t) cobInst nullptr!");
-	}
+	//}
 
 
 	//const char *name = cobFile->name.c_str();
@@ -652,7 +652,7 @@ bool CCobThread::Tick()
 	state = Run;
 
 	const char *name = cobFile->name.c_str();
-	LOG_L(L_ERROR, "[COBThread::%s] Tick %d", name, cobVersion);
+	//LOG_L(L_ERROR, "[COBThread::%s] Tick %d", name, cobVersion);
 	if (cobVersion < 8 )
 	//if ( 1 == 1)
 	{
@@ -1389,7 +1389,7 @@ bool CCobThread::Tick()
 			};
 #define RAS_DISPATCH() \
 	opcode = GET_LONG_PC(); \
-	LOG_L(L_ERROR, "[COBThread] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+	/*LOG_L(L_ERROR, "[COBThread] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);*/ \
 	goto *ras_dispatch_table[opcode] ;
 #endif
 
@@ -1501,7 +1501,7 @@ bool CCobThread::Tick()
 				*/
 
 				CASE_OR_RAS_LABEL(CALL)		
-					LOG_L(L_ERROR, "[COBThread::CALL] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+					//LOG_L(L_ERROR, "[COBThread::CALL] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
 
 					r1 = GET_LONG_PC();
 					pc--;
@@ -1527,7 +1527,7 @@ bool CCobThread::Tick()
 				}
 	#endif
 				CASE_OR_RAS_LABEL(REAL_CALL)
-					LOG_L(L_ERROR, "[COBThread::REAL_CALL] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+					//LOG_L(L_ERROR, "[COBThread::REAL_CALL] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
 
 					r1 = GET_LONG_PC();
 					r2 = GET_LONG_PC();
@@ -1551,7 +1551,7 @@ bool CCobThread::Tick()
 
 					// call cobFile->scriptNames[r1]
 					pc = cobFile->scriptOffsets[r1];		
-					LOG_L(L_ERROR, "[COBThread::REAL_CALL End] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+					//LOG_L(L_ERROR, "[COBThread::REAL_CALL End] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
 
 				BREAK_OR_RAS_DISPATCH
 
@@ -1583,14 +1583,14 @@ bool CCobThread::Tick()
 						RAS_DISPATCH();
 #endif
 					}
-					LOG_L(L_ERROR, "[COBThread::START] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+					//LOG_L(L_ERROR, "[COBThread::START] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
 
 					CCobThread t(cobInst);
 
 					t.SetID(cobEngine->GenThreadID());
 					t.InitStack(r2, this);
 					t.Start(r1, signalMask, {{0}}, true);
-					LOG_L(L_ERROR, "[COBThread::POSTSTART] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+					//LOG_L(L_ERROR, "[COBThread::POSTSTART] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
 
 					// calling AddThread directly might move <this>, defer it
 					cobEngine->QueueAddThread(std::move(t));
