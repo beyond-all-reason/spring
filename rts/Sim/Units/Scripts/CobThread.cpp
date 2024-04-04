@@ -1500,7 +1500,9 @@ bool CCobThread::Tick()
 				BREAK_OR_RAS_DISPATCH
 				*/
 
-				CASE_OR_RAS_LABEL(CALL)
+				CASE_OR_RAS_LABEL(CALL)		
+					LOG_L(L_ERROR, "[COBThread::CALL] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+
 					r1 = GET_LONG_PC();
 					pc--;
 
@@ -1520,23 +1522,26 @@ bool CCobThread::Tick()
 					// fall-through
 					// NOTE NO BREAK HERE!
 	#ifndef _MSC_VER
-					goto DO_RAS_REAL_CALL;
+					//goto DO_RAS_REAL_CALL;
 	#else
-			}
+				}
 	#endif
 				CASE_OR_RAS_LABEL(REAL_CALL)
+					LOG_L(L_ERROR, "[COBThread::REAL_CALL] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+
 					r1 = GET_LONG_PC();
 					r2 = GET_LONG_PC();
 
 					// do not call zero-length functions
 					// TODO: NOTE THIS BREAK!
 					if (cobFile->scriptLengths[r1] == 0)
+					{
 	#ifdef _MSC_VER
 						break;
 	#else
 					RAS_DISPATCH();
 	#endif
-
+					}
 					CallInfo &ci = PushCallStackRef();
 					ci.functionId = r1;
 					ci.returnAddr = pc;
@@ -1545,7 +1550,9 @@ bool CCobThread::Tick()
 					paramCount = r2;
 
 					// call cobFile->scriptNames[r1]
-					pc = cobFile->scriptOffsets[r1];
+					pc = cobFile->scriptOffsets[r1];		
+					LOG_L(L_ERROR, "[COBThread::REAL_CALL End] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
+
 				BREAK_OR_RAS_DISPATCH
 
 				CASE_OR_RAS_LABEL(LUA_CALL)
@@ -1569,17 +1576,21 @@ bool CCobThread::Tick()
 					r2 = GET_LONG_PC();
 
 					if (cobFile->scriptLengths[r1] == 0)
+					{
 #ifdef _MSC_VER
 						break;
 #else
 						RAS_DISPATCH();
 #endif
+					}
+					LOG_L(L_ERROR, "[COBThread::START] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
 
 					CCobThread t(cobInst);
 
 					t.SetID(cobEngine->GenThreadID());
 					t.InitStack(r2, this);
 					t.Start(r1, signalMask, {{0}}, true);
+					LOG_L(L_ERROR, "[COBThread::POSTSTART] opcode %s %x (in %s:%s at %x) r1=%d r2=%d",GetOpcodeName(opcode),  opcode, name, func, pc - 1, r1, r2);\
 
 					// calling AddThread directly might move <this>, defer it
 					cobEngine->QueueAddThread(std::move(t));
