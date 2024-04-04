@@ -21,6 +21,7 @@ public:
 
 	CCobFile& operator = (CCobFile&& f) {
 		numStaticVars = f.numStaticVars;
+		cobVersion = f.cobVersion;
 
 		code = std::move(f.code);
 		scriptNames = std::move(f.scriptNames);
@@ -37,10 +38,16 @@ public:
 		return *this;
 	}
 
+	//void LogHeader(const char * calledFrom){
+	//	const char *cname = name.c_str();
+	//	LOG_L(L_ERROR, "[LogHeader::%s %p] %s %i %i %i %i %i", cname, this, calledFrom, ch.VersionSignature, ch.NumberOfScripts, ch.NumberOfPieces, ch.TotalScriptLen, ch.NumberOfStaticVars);
+	//}
+
 	int GetFunctionId(const std::string& name);
 
 public:
 	int numStaticVars = 0;
+	int cobVersion = 0;
 
 	std::vector<int> code;
 	std::vector<std::string> scriptNames;

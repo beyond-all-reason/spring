@@ -19,7 +19,7 @@
 //Information on missing fields from Format_Cob.pas
 typedef struct tagCOBHeader
 {
-	int VersionSignature;
+	int VersionSignature; // 4 for ta, 6 for tak, 8 for RAS
 	int NumberOfScripts;
 	int NumberOfPieces;
 	int TotalScriptLen;
@@ -180,6 +180,13 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 			}
 		}
 	}
+
+
+	const char *cname = name.c_str();
+	LOG_L(L_ERROR, "[COBVERSION::%s] %d", cname, ch.VersionSignature);
+	//LogHeader("CCobFile::CCobFile");
+	cobVersion = ch.VersionSignature;
+
 
 
 	// create a reverse mapping (name->int)

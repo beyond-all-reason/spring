@@ -47,6 +47,7 @@ CR_REG_METADATA(CCobInstance, (
 
 	CR_MEMBER(staticVars),
 	CR_MEMBER(threadIDs),
+	CR_MEMBER(cobVersion),
 
 	CR_POSTLOAD(PostLoad),
 	CR_PREALLOC(GetUnit)
@@ -74,12 +75,14 @@ void CCobInstance::PostLoad()
 	assert(cobFile == nullptr);
 
 	cobFile = cobFileHandler->GetCobFile(unit->unitDef->scriptName);
+	cobVersion = cobFile->cobVersion;
 
 	for (int threadID: threadIDs) {
 		CCobThread* t = cobEngine->GetThread(threadID);
 
 		t->cobInst = this;
 		t->cobFile = cobFile;
+		//t->cobVersion = cobVersion;
 	}
 
 	InitCommon();
@@ -108,6 +111,7 @@ CCobInstance::~CCobInstance()
 void CCobInstance::InitCommon()
 {
 	assert(cobFile != nullptr);
+	cobVersion = cobFile->cobVersion;
 
 	MapScriptToModelPieces(&unit->localModel);
 
@@ -544,6 +548,7 @@ int CCobInstance::RealCall(int functionId, std::array<int, 1 + MAX_COB_ARGS>& ar
 
 		return ret;
 	}
+	ZoneScoped;
 
 	// LOG_L(L_DEBUG, "Calling %s:%s", cobFile->name.c_str(), cobFile->scriptNames[functionId].c_str());
 

@@ -46,6 +46,7 @@ protected:
 
 public:
 	CCobFile* cobFile;
+	int cobVersion;
 
 	std::vector<int> staticVars;
 	std::vector<int> threadIDs;

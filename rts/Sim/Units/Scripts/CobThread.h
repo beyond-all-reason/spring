@@ -107,22 +107,25 @@ protected:
 
 	void LuaCall();
 
-	void PushCallStack(CallInfo v) { callStack.push_back(v); }
-	void PushDataStack(int v) { dataStack.push_back(v); }
+	inline void PushCallStack(CallInfo v) { callStack.push_back(v); }
+	inline void PushDataStack(int v) { dataStack.push_back(v); }
 	CallInfo& PushCallStackRef() { return callStack.emplace_back(); }
 
 	int LocalFunctionID() const { return callStack.back().functionId; }
 	int LocalReturnAddr() const { return callStack.back().returnAddr; }
 	int LocalStackFrame() const { return callStack.back().stackTop; }
 
-	int PopDataStack() {
+	inline int PopDataStack();/* {
 		if (dataStack.empty()) {
+			const char* name = cobFile->name.c_str();
+			const char* func = cobFile->scriptNames[LocalFunctionID()].c_str();
+			LOG_L(L_ERROR, "[COBThread::%s] empty data stack (in %s at %x)", name, func, pc - 1);
 			return 0;
 		}
 		int ret = dataStack.back();
 		dataStack.pop_back();
 		return ret;
-	}
+	}*/
 
 protected:
 	int id = -1;
@@ -142,6 +145,7 @@ protected:
 	int luaArgs[MAX_LUA_COB_ARGS] = {0};
 
 
+
 	std::vector<CallInfo> callStack;
 	std::vector<int> dataStack;
 	// std::vector<int> execTrace;
@@ -154,6 +158,8 @@ protected:
 	// memory pool to speed up thread creation.
 	static std::vector<decltype(dataStack)> freeDataStacks;
 	static std::vector<decltype(callStack)> freeCallStacks;
+public:
+	int cobVersion = 0;
 };
 
 #endif // COB_THREAD_H
