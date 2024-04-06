@@ -62,6 +62,7 @@ namespace Rml::SolLua
 			//"RegisterTag",
 			//--
 			"GetContext", sol::resolve<Rml::Context* (const Rml::String&)>(&Rml::GetContext),
+			"RemoveContext", sol::resolve<bool (const Rml::String&)>(&Rml::RemoveContext),
 			"RegisterEventType", sol::overload(&functions::registerEventType4, &functions::registerEventType3),
 			"AddTranslationString", [translationTable](const Rml::String& key, const Rml::String& translation, sol::this_state s) {
 				return translationTable->addTranslation(key, translation);
