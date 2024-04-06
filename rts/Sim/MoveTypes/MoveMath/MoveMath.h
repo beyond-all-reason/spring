@@ -36,6 +36,7 @@ namespace MoveTypes {
 		void  ClearPhysicalStateBit(unsigned int bit) { unsigned int ps = physicalState; ps &= (~bit); physicalState = static_cast<CSolidObject::PhysicalState>(ps); }
 		bool IsInWater() const { return (HasPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER)); }
 		void DisableHeightChecks() { pos.y = POS_Y_UNAVAILABLE; }
+		bool IsHeightChecksEnabled() const { return pos.y != MoveTypes::CheckCollisionQuery::POS_Y_UNAVAILABLE; }
 
 		const CSolidObject* unit = nullptr;
 		const MoveDef* moveDef = nullptr;

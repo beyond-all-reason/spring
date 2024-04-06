@@ -2787,6 +2787,8 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
 	MoveTypes::CheckCollisionQuery colliderInfo(collider);
+	if ( !colliderMD->overrideUnitWaterline )
+		colliderInfo.DisableHeightChecks();
 
 	// copy on purpose, since the below can call Lua
 	QuadFieldQuery qfQuery;
@@ -2813,8 +2815,14 @@ void CGroundMoveType::HandleUnitCollisions(
 		// don't push/crush either party if the collidee does not block the collider (or vv.)
 		if (colliderMobile && CMoveMath::IsNonBlocking(collidee, &colliderInfo))
 			continue;
-		if (collideeMobile && CMoveMath::IsNonBlocking(collider, &colliderInfo))
-			continue;
+		if (collideeMobile) {
+			MoveTypes::CheckCollisionQuery collideeInfo(collidee);
+			if ( !colliderInfo.IsHeightChecksEnabled() || !collideeMD->overrideUnitWaterline )
+				collideeInfo.DisableHeightChecks();
+
+			if(CMoveMath::IsNonBlocking(collider, &collideeInfo))
+				continue;
+		}
 
 		// disable collisions between collider and collidee
 		// if collidee is currently inside any transporter,
@@ -3175,16 +3183,17 @@ const float3& CGroundMoveType::GetGroundNormal(const float3& p) const
 
 float CGroundMoveType::GetGroundHeight(const float3& p) const
 {
-	MoveDef *md = owner->moveDef;
-
 	// in [minHeight, maxHeight]
 	const float gh = CGround::GetHeightReal(p.x, p.z);
-	const float wh = -md->waterline * (gh <= 0.0f);
-
+	
 	// in [-waterline, maxHeight], note that waterline
 	// can be much deeper than ground in shallow water
-	if (owner->FloatOnWater())
+	if (owner->FloatOnWater()) {
+		MoveDef *md = owner->moveDef;
+		const float wh = ((md->overrideUnitWaterline) ? -md->waterline : -owner->unitDef->waterline) * (gh <= 0.0f);
+
 		return (std::max(gh, wh));
+	}
 
 	return gh;
 }
@@ -3249,8 +3258,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 	MoveTypes::CheckCollisionQuery virtualObject(unit);
 	MoveDefs::CollisionQueryStateTrack queryState;
-	const bool isSubmersible = (md->isSubmarine ||
-							   (md->followGround && md->depth > md->height));
+	const bool isSubmersible = md->IsComplexSubmersible();
 	if (!isSubmersible)
 		virtualObject.DisableHeightChecks();
 
