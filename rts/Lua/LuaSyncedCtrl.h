@@ -121,6 +121,7 @@ class LuaSyncedCtrl
 		static int SetUnitPieceMatrix(lua_State* L);
 		static int SetUnitSensorRadius(lua_State* L);
 		static int SetUnitPosErrorParams(lua_State* L);
+		static int SetUnitPosErrorEnabled(lua_State* L);
 
 		static int SetUnitPhysics(lua_State* L);
 		static int SetUnitMass(lua_State* L);

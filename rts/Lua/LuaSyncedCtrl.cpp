@@ -213,6 +213,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitPieceMatrix);
 	REGISTER_LUA_CFUNC(SetUnitSensorRadius);
 	REGISTER_LUA_CFUNC(SetUnitPosErrorParams);
+	REGISTER_LUA_CFUNC(SetUnitPosErrorEnabled);
 	REGISTER_LUA_CFUNC(SetUnitPhysics);
 	REGISTER_LUA_CFUNC(SetUnitMass);
 	REGISTER_LUA_CFUNC(SetUnitPosition);
@@ -3529,12 +3530,34 @@ int LuaSyncedCtrl::SetUnitPosErrorParams(lua_State* L)
 
 	unit->nextPosErrorUpdate = luaL_optint(L, 8, unit->nextPosErrorUpdate);
 
-	if (lua_isnumber(L, 9) && lua_isboolean(L, 10))
-		unit->SetPosErrorBit(std::clamp(lua_tointeger(L, 9), 0, teamHandler.ActiveAllyTeams()), lua_toboolean(L, 10));
-
 	return 0;
 }
 
+/*** Toggle whether a unit wobbles on an allyteam's radar
+ *
+ * Sets whether the unit's radar dot wobbles when in radar of given allyteam.
+ *
+ * @function Spring.SetUnitPosErrorEnabled
+ * @number unitID
+ * @number allyTeamID
+ * @bool enabled
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitPosErrorEnabled(lua_State* L)
+{
+	const auto unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	const auto allyTeamID = lua_tointeger(L, 2);
+	if (!teamHandler.IsValidAllyTeam(allyTeamID))
+		return 0;
+
+	const auto enabled = lua_toboolean(L, 3);
+
+	unit->SetPosErrorBit(allyTeamID, enabled);
+	return 0;
+}
 
 /*** Used by default commands to get in build-, attackrange etc.
  *
