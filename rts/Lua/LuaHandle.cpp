@@ -80,7 +80,7 @@ bool CLuaHandle::devMode = false;
  * For now, to use these addons in a widget, prepend widget: and, for a gadget, prepend gadget:. For example,
  *
  *    function widget:UnitCreated(unitID, unitDefID, unitTeam, builderID)
- *        ...
+ *        ...  
  *    end
  *
  * Some functions may differ between (synced) gadget and widgets; those are in the [Synced - Unsynced Shared](#Synced___Unsynced_Shared) section. Essentially the reason is that all information should be available to synced (game logic controlling) gadgets, but restricted to unsynced gadget/widget (e.g. information about an enemy unit only detected via radar and not yet in LOS). In such cases the full (synced) param list is documented.
@@ -1126,7 +1126,7 @@ void CLuaHandle::UnitTaken(const CUnit* unit, int oldTeam, int newTeam)
  * @number unitID
  * @number unitDefID
  * @number newTeam
- * @number oldTeam
+ * @number oldTeam 
  */
 void CLuaHandle::UnitGiven(const CUnit* unit, int oldTeam, int newTeam)
 {
@@ -3360,7 +3360,7 @@ bool CLuaHandle::MapDrawCmd(int playerID, int type,
 
 
 /***
- *
+ * 
  * @function GameSetup
  * @string state
  * @bool ready
