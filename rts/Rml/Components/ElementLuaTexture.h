@@ -42,86 +42,86 @@
 
 namespace RmlGui
 {
-    /// The 'LuaTexture' element can render texures created/used in the Lua environment.
-    ///
-    /// The 'src' attribute is used to specify what texture to load
-    /// See LuaOpenGLUtils::ParseTextureImage on how to format this special string
-    ///
-    /// See Rml::ElementImage for use of width/height/rect params
-    /// https://mikke89.github.io/RmlUiDoc/pages/rml/images.html
-    ///
-    /// @author ChrisFloofyKitsune
-    class ElementLuaTexture : public Rml::Element
-    {
-    public:
-        RMLUI_RTTI_DefineWithParent(ElementLuaTexture, Element)
+	/// The 'LuaTexture' element can render texures created/used in the Lua environment.
+	///
+	/// The 'src' attribute is used to specify what texture to load
+	/// See LuaOpenGLUtils::ParseTextureImage on how to format this special string
+	///
+	/// See Rml::ElementImage for use of width/height/rect params
+	/// https://mikke89.github.io/RmlUiDoc/pages/rml/images.html
+	///
+	/// @author ChrisFloofyKitsune
+	class ElementLuaTexture : public Rml::Element
+	{
+	public:
+		RMLUI_RTTI_DefineWithParent(ElementLuaTexture, Element)
 
-        /// Constructs a new ElementLuaTexture. This should not be called directly; use the Factory instead.
-        /// @param[in] tag The tag the element was declared as in RML.
-        ElementLuaTexture(const Rml::String& tag);
-        virtual ~ElementLuaTexture();
+		/// Constructs a new ElementLuaTexture. This should not be called directly; use the Factory instead.
+		/// @param[in] tag The tag the element was declared as in RML.
+		ElementLuaTexture(const Rml::String& tag);
+		virtual ~ElementLuaTexture();
 
-        /// Returns the element's inherent size.
-        bool GetIntrinsicDimensions(Rml::Vector2f& dimensions, float& ratio) override;
+		/// Returns the element's inherent size.
+		bool GetIntrinsicDimensions(Rml::Vector2f& dimensions, float& ratio) override;
 
-    protected:
-        /// Renders the image.
-        void OnRender() override;
+	protected:
+		/// Renders the image.
+		void OnRender() override;
 
-        /// Regenerates the element's geometry.
-        void OnResize() override;
+		/// Regenerates the element's geometry.
+		void OnResize() override;
 
-        /// Our intrinsic dimensions may change with the dp-ratio.
-        void OnDpRatioChange() override;
+		/// Our intrinsic dimensions may change with the dp-ratio.
+		void OnDpRatioChange() override;
 
-        /// Checks for changes to the image's source or dimensions.
-        /// @param[in] changed_attributes A list of attributes changed on the element.
-        void OnAttributeChange(const Rml::ElementAttributes& changed_attributes) override;
+		/// Checks for changes to the image's source or dimensions.
+		/// @param[in] changed_attributes A list of attributes changed on the element.
+		void OnAttributeChange(const Rml::ElementAttributes& changed_attributes) override;
 
-        /// Called when properties on the element are changed.
-        /// @param[in] changed_properties The properties changed on the element.
-        void OnPropertyChange(const Rml::PropertyIdSet& changed_properties) override;
+		/// Called when properties on the element are changed.
+		/// @param[in] changed_properties The properties changed on the element.
+		void OnPropertyChange(const Rml::PropertyIdSet& changed_properties) override;
 
-        /// Detect when we have been added to the document.
-        void OnChildAdd(Element* child) override;
+		/// Detect when we have been added to the document.
+		void OnChildAdd(Element* child) override;
 
-    private:
-        // Generates the element's geometry.
-        void GenerateGeometry();
+	private:
+		// Generates the element's geometry.
+		void GenerateGeometry();
 
-        // Loads the element's texture, as specified by the 'src' attribute.
-        bool LoadTexture();
+		// Loads the element's texture, as specified by the 'src' attribute.
+		bool LoadTexture();
 
-        // Loads the rect value from the element's attribute
-        void UpdateRect();
+		// Loads the rect value from the element's attribute
+		void UpdateRect();
 
-        // The texture this element is rendering from.
-    	// The Texture Handle of this should always be
-    	// RenderInterface_GL3_Recoil::TextureEnableWithoutBinding (aka Rml::TextureHandle(-1))
-        Rml::Texture texture;
+		// The texture this element is rendering from.
+		// The Texture Handle of this should always be
+		// RenderInterface_GL3_Recoil::TextureEnableWithoutBinding (aka Rml::TextureHandle(-1))
+		Rml::Texture texture;
 
-    	// Handle to the externally provided texture to be used
-    	Rml::TextureHandle luaTextureHandle;
+		// Handle to the externally provided texture to be used
+		Rml::TextureHandle luaTextureHandle;
 
-        // True if we need to refetch the texture's source from the element's attributes.
-        bool texture_dirty;
+		// True if we need to refetch the texture's source from the element's attributes.
+		bool texture_dirty;
 
-        // A factor which scales the intrinsic dimensions based on the dp-ratio and image scale.
-        float dimensions_scale;
+		// A factor which scales the intrinsic dimensions based on the dp-ratio and image scale.
+		float dimensions_scale;
 
-        // The element's computed intrinsic dimensions. If either of these values are set to -1, then
-        // that dimension has not been computed yet.
-        Rml::Vector2f dimensions;
+		// The element's computed intrinsic dimensions. If either of these values are set to -1, then
+		// that dimension has not been computed yet.
+		Rml::Vector2f dimensions;
 
-        // The rectangle extracted from the 'rect' attribute. The rect_source will be None if
-        // these have not been specified or are invalid.
-        Rml::Rectanglef rect;
-        enum class RectSource { None, Attribute } rect_source;
+		// The rectangle extracted from the 'rect' attribute. The rect_source will be None if
+		// these have not been specified or are invalid.
+		Rml::Rectanglef rect;
+		enum class RectSource { None, Attribute } rect_source;
 
-        // The geometry used to render this element.
-        Rml::Geometry geometry;
-        bool geometry_dirty;
-    };
+		// The geometry used to render this element.
+		Rml::Geometry geometry;
+		bool geometry_dirty;
+	};
 } // namespace RmlGui
 
 #endif //ELEMENTLUATEXTURE_H
