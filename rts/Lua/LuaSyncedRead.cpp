@@ -377,7 +377,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeaturePiecePosDir);
 	REGISTER_LUA_CFUNC(GetFeaturePieceMatrix);
 
-	REGISTER_LUA_CFUNC(GetRadarErrorParams);
+	REGISTER_LUA_CFUNC(GetRadarErrorParams); // deprecated
+	REGISTER_LUA_CFUNC(GetAllyTeamRadarErrorParams);
+	REGISTER_LUA_CFUNC(GetBaseRadarErrorParams);
 
 	if (!LuaMetalMap::PushReadEntries(L))
 		return false;
@@ -8439,15 +8441,13 @@ int LuaSyncedRead::GetUnitScriptNames(lua_State* L)
 
 /***
  *
- * @function Spring.GetRadarErrorParams
+ * @function Spring.GetAllyTeamRadarErrorParams
  *
  * @number allyTeamID
  *
- * @treturn nil|number radarErrorSize actual radar error size (when allyTeamID is allied to current team) or base radar error size
- * @treturn number baseRadarErrorSize
- * @treturn number baseRadarErrorMult
+ * @treturn number radarErrorSize actual radar error size (when allyTeamID is allied to current team) or base radar error size
  */
-int LuaSyncedRead::GetRadarErrorParams(lua_State* L)
+int LuaSyncedRead::GetAllyTeamRadarErrorParams(lua_State* L)
 {
 	const int allyTeamID = lua_tonumber(L, 1);
 
@@ -8459,9 +8459,29 @@ int LuaSyncedRead::GetRadarErrorParams(lua_State* L)
 	} else {
 		lua_pushnumber(L, losHandler->GetBaseRadarErrorSize());
 	}
+	return 1;
+}
+
+
+// no docs, deprecated and same as GetAllyTeamRadarErrorParams
+int LuaSyncedRead::GetRadarErrorParams(lua_State* L)
+{
+	return GetAllyTeamRadarErrorParams(L);
+}
+
+
+/***
+ *
+ * @function Spring.GetBaseRadarErrorParams
+ *
+ * @treturn number baseRadarErrorSize
+ * @treturn number baseRadarErrorMult
+ */
+int LuaSyncedRead::GetBaseRadarErrorParams(lua_State* L)
+{
 	lua_pushnumber(L, losHandler->GetBaseRadarErrorSize());
 	lua_pushnumber(L, losHandler->GetBaseRadarErrorMult());
-	return 3;
+	return 2;
 }
 
 
