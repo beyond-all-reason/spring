@@ -165,6 +165,8 @@ private:
 	void AddTexturesFromTable();
 	void AddGroundTrackTextures();
 	void AddFallbackTextures();
+
+	uint32_t GetNextId();
 private:
 	struct UnitMinMaxHeight {
 		UnitMinMaxHeight()
@@ -174,7 +176,6 @@ private:
 		float min;
 		float max;
 	};
-
 	int maxUniqueScars;
 
 	std::unique_ptr<CTextureRenderAtlas> atlasMain;
@@ -189,6 +190,9 @@ private:
 	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<size_t, size_t>>> idToCmInfo;
 
 	DecalUpdateList decalsUpdateList;
+
+	uint32_t nextId;
+	std::vector<uint32_t> freeIds;
 
 	VBO instVBO;
 	VAO vao;

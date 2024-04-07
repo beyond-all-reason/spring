@@ -83,7 +83,8 @@ CGroundDecalHandler::CGroundDecalHandler()
 
 	decals.reserve(decalLevel * 16384);
 	decalsUpdateList.Reserve(decals.capacity());
-	GroundDecal::nextId = 0;
+
+	nextId = 0;
 }
 
 CGroundDecalHandler::~CGroundDecalHandler()
@@ -281,6 +282,17 @@ void CGroundDecalHandler::AddFallbackTextures()
 		const auto minDim = std::max(atlasNorm->GetMinDim(), 32);
 		atlasNorm->AddTex("%FB_NORM%", minDim, minDim, SColor(128, 128, 255,   0));
 	}
+}
+
+uint32_t CGroundDecalHandler::GetNextId()
+{
+	if (freeIds.empty())
+		return ++nextId;
+
+	const auto newId = freeIds.back(); freeIds.pop_back();
+	return newId;
+
+	return 0;
 }
 
 void CGroundDecalHandler::BindVertexAtrribs()
@@ -601,7 +613,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = ei.projDir,
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GroundDecal::GetNextId() },
+		.info = GroundDecal::TypeID{ .type = static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION), .id = GetNextId() },
 		.tintColor = SColor{vi.scarColorTint},
 		.glowColorMap = std::move(glowColorMap)
 	});
@@ -828,7 +840,7 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = float3{},
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE), .id = GroundDecal::GetNextId() },
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE), .id = GetNextId() },
 		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
@@ -848,19 +860,19 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 		return;
 	}
 
+	const auto pos = doIt->second;
+	decalOwners.erase(doIt);
+
 	if (gb) {
 		// gb is the new owner
-		const auto pos = doIt->second;
-		decalOwners.erase(doIt);
 		decalOwners.emplace(gb, pos);
 		return;
 	}
 
-	auto& decayingDecal = decals.at(doIt->second);
+	auto& decayingDecal = decals.at(pos);
 
 	// we only care about DECAL_PLATE decals below
 	if (decayingDecal.info.type != static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE)) {
-		decalOwners.erase(doIt);
 		return;
 	}
 
@@ -870,9 +882,7 @@ void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const Gh
 	decayingDecal.createFrameMin = createFrame;
 	decayingDecal.createFrameMax = createFrame;
 
-	decalsUpdateList.SetUpdate(doIt->second);
-
-	decalOwners.erase(doIt);
+	decalsUpdateList.SetUpdate(pos);
 }
 
 /**
@@ -927,7 +937,7 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 		.uvTraveledDistance = 0.0f,
 		.forcedNormal = float3{},
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA), .id = GroundDecal::GetNextId() },
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA), .id = GetNextId() },
 		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
@@ -952,6 +962,7 @@ bool CGroundDecalHandler::DeleteLuaDecal(uint32_t id)
 
 	decal.MarkInvalid();
 	decalsUpdateList.SetUpdate(it->second);
+	freeIds.push_back(decal.info.id);
 
 	return true;
 }
@@ -1060,6 +1071,7 @@ const CSolidObject* CGroundDecalHandler::GetDecalSolidObjectOwner(uint32_t id) c
 
 void CGroundDecalHandler::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
 {
+	unit->leaveTracks = leaveTracks;
 	if (!leaveTracks) {
 		if (auto it = decalOwners.find(unit); it != decalOwners.end()) {
 			auto& mm = unitMinMaxHeights[unit->id];
@@ -1071,7 +1083,6 @@ void CGroundDecalHandler::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
 	else {
 		AddTrack(unit, unit->pos, false);
 	}
-	unit->leaveTracks = leaveTracks;
 }
 
 static inline bool CanReceiveTracks(const float3& pos)
@@ -1162,7 +1173,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 			.uvTraveledDistance = 0.0f,
 			.forcedNormal = float3{unit->updir},
 			.visMult = 1.0f,
-			.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() },
+			.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GetNextId() },
 			.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 			.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 		});
@@ -1246,7 +1257,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 		.uvTraveledDistance = oldDecal.uvTraveledDistance + posL.Distance(posR)/*oldDecal.posTL.Distance(oldDecal.posTR)*/,
 		.forcedNormal = float3{ unit->updir },
 		.visMult = 1.0f,
-		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GroundDecal::GetNextId() },
+		.info = GroundDecal::TypeID{.type = static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK), .id = GetNextId() },
 		.tintColor = SColor{0.5f, 0.5f, 0.5f, 0.5f},
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
@@ -1265,6 +1276,9 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 {
+	if (frameNum % 300 != 0)
+		return;
+
 	if (decals.empty())
 		return;
 
@@ -1298,22 +1312,16 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 	// after the compaction is complete
 	spring::unordered_map<uint32_t, DecalOwner> tmpOwnerToId;
 
-	// avoid erasing while iterating
-	std::vector<DecalOwner> eraseList;
-
 	// Remove owners of expired items
 	for (const auto& [owner, pos] : decalOwners) {
 		if (const auto& decal = decals.at(pos); decal.IsValid()) {
 			const uint32_t id = decal.info.id; //can't use bitfield directly below
 			tmpOwnerToId.emplace(id, owner);
 		}
-		else {
-			eraseList.emplace_back(owner);
-		}
 	}
-	for (const auto& owner : eraseList) {
-		decalOwners.erase(owner);
-	}
+
+	// clean to restore it later
+	decalOwners.clear();
 
 	// group all expired items towards the end of the vector
 	// Lua items are not considered expired
@@ -1322,7 +1330,10 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 	});
 
 	// remove expired items from idToCmInfo map
+	// and push expired ids to the freeIds vector
 	for (auto decalIt = expIt; decalIt != decals.end(); ++decalIt) {
+		freeIds.push_back(decalIt->info.id);
+
 		if (auto it = idToCmInfo.find(decalIt->info.id); it != idToCmInfo.end())
 			idToCmInfo.erase(it);
 	}
@@ -1344,7 +1355,7 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 			continue;
 		}
 
-		decalOwners[owner] = ipIt->second;
+		decalOwners.emplace(owner, ipIt->second);
 	}
 }
 
@@ -1421,12 +1432,12 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 void CGroundDecalHandler::GameFramePost(int frameNum)
 {
 #if 0
+	LOG("DH:GD(fn=%d) Decals.size()=%u", frameNum, static_cast<uint32_t>(decals.size()));
 	for (int cnt = 0; const auto & [owner, offset] : decalOwners) {
 		const void* ptr = std::holds_alternative<const CSolidObject*>(owner) ? static_cast<const void*>(std::get<const CSolidObject*>(owner)) : nullptr;
 		int id = (ptr != nullptr) ? std::get<const CSolidObject*>(owner)->id : -1;
 
-		LOG("DH:GD(fn=%d) [cnt=%d][ptr=%p][id=%d]=[pos=%u]",
-			frameNum,
+		LOG("DH:GD [cnt=%d][ptr=%p][id=%d]=[pos=%u]",
 			cnt++,
 			ptr,
 			id,

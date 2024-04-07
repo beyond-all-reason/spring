@@ -60,12 +60,6 @@ public:
 	SColor tintColor;
 	std::array<SColor, 2> glowColorMap;
 public:
-	static uint32_t GetNextId() {
-		nextId = (nextId % GroundDecal::ID_WRAPAROUND) + 1; return nextId;
-	}
-	static inline uint32_t nextId = 0; // 0 in fact is reserved and never used
-	static constexpr uint32_t ID_WRAPAROUND = 1 << 20;
-
 	static const std::array<AttributeDef, 10> attributeDefs;
 };
 static_assert(sizeof(GroundDecal::info) == 4u);
