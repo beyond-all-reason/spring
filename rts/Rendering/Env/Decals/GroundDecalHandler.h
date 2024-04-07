@@ -16,6 +16,7 @@
 #include "Rendering/Textures/TextureRenderAtlas.h"
 #include "System/EventClient.h"
 #include "System/UnorderedMap.hpp"
+#include "System/creg/creg.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 
@@ -33,8 +34,12 @@ namespace Shader {
 
 class CGroundDecalHandler: public IGroundDecalDrawer, public CEventClient, public IExplosionListener
 {
+	CR_DECLARE_DERIVED(CGroundDecalHandler)
+	CR_DECLARE_SUB(UnitMinMaxHeight)
+	CR_DECLARE_SUB(DecalUpdateList)
 public:
 	class DecalUpdateList {
+		CR_DECLARE_STRUCT(DecalUpdateList)
 	public:
 		using IteratorPair = std::pair<std::vector<bool>::iterator, std::vector<bool>::iterator>;
 	public:
@@ -142,6 +147,8 @@ public:
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override;
 
 	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override;
+
+	void PostLoad();
 private:
 	static void BindVertexAtrribs();
 	static void UnbindVertexAtrribs();
@@ -169,6 +176,7 @@ private:
 	uint32_t GetNextId();
 private:
 	struct UnitMinMaxHeight {
+		CR_DECLARE_STRUCT(UnitMinMaxHeight)
 		UnitMinMaxHeight()
 			: min(std::numeric_limits<float>::max()   )
 			, max(std::numeric_limits<float>::lowest())

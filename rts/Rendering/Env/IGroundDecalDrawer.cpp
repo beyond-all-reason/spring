@@ -16,6 +16,14 @@ IGroundDecalDrawer* IGroundDecalDrawer::singleton = &nullDecalDrawer;
 int IGroundDecalDrawer::decalLevel = 0;
 
 
+CR_BIND_INTERFACE(IGroundDecalDrawer)
+CR_REG_METADATA(IGroundDecalDrawer, (
+	CR_MEMBER(decals)
+))
+
+CR_BIND_DERIVED(NullGroundDecalDrawer, IGroundDecalDrawer, )
+CR_REG_METADATA(NullGroundDecalDrawer,  )
+
 static IGroundDecalDrawer* GetInstance()
 {
 	IGroundDecalDrawer* instance = &nullDecalDrawer;

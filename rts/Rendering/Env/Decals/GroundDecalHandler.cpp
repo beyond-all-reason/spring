@@ -51,9 +51,53 @@
 #include "System/StringUtil.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/creg/STL_Variant.h"
+#include "System/creg/STL_Tuple.h"
 
 CONFIG(int, GroundScarAlphaFade).deprecated(true);
 CONFIG(bool, HighQualityDecals).defaultValue(false).description("Forces MSAA processing of decals. Improves decals quality, but may ruin the performance.");
+
+
+CR_BIND(CGroundDecalHandler::UnitMinMaxHeight, )
+CR_REG_METADATA_SUB(CGroundDecalHandler, UnitMinMaxHeight,
+(
+	CR_MEMBER(min),
+	CR_MEMBER(max)
+))
+
+CR_BIND(CGroundDecalHandler::DecalUpdateList, )
+CR_REG_METADATA_SUB(CGroundDecalHandler, DecalUpdateList,
+(
+	CR_MEMBER(updateList),
+	CR_MEMBER(changed)
+))
+
+CR_BIND_DERIVED(CGroundDecalHandler, IGroundDecalDrawer, )
+CR_REG_METADATA(CGroundDecalHandler, (
+	CR_MEMBER_UN(maxUniqueScars),
+	CR_MEMBER_UN(atlasMain),
+	CR_MEMBER_UN(atlasNorm),
+	CR_MEMBER_UN(decalShader),
+
+	CR_MEMBER(decalOwners),
+	CR_MEMBER(unitMinMaxHeights),
+	CR_MEMBER(idToPos),
+	CR_MEMBER(idToCmInfo),
+
+	CR_MEMBER(decalsUpdateList),
+
+	CR_MEMBER(nextId),
+	CR_MEMBER(freeIds),
+
+	CR_MEMBER_UN(instVBO),
+	CR_MEMBER_UN(vao),
+	CR_MEMBER_UN(smfDrawer),
+
+	CR_MEMBER_UN(highQuality),
+	CR_MEMBER_UN(sdbc),
+
+	CR_POSTLOAD(PostLoad)
+))
 
 CGroundDecalHandler::CGroundDecalHandler()
 	: CEventClient("[CGroundDecalHandler]", 314159, false)
@@ -85,6 +129,11 @@ CGroundDecalHandler::CGroundDecalHandler()
 	decalsUpdateList.Reserve(decals.capacity());
 
 	nextId = 0;
+}
+
+void CGroundDecalHandler::PostLoad()
+{
+	decalsUpdateList.SetNeedUpdateAll();
 }
 
 CGroundDecalHandler::~CGroundDecalHandler()
