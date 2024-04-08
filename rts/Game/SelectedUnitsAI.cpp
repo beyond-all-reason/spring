@@ -492,7 +492,7 @@ void CSelectedUnitsHandlerAI::CreateUnitOrder(std::vector< std::pair<float, int>
 
 		// give weaponless units a long range to make them go to the back
 		const float range = (unit->maxRange < 1.0f)? 2000: unit->maxRange;
-		const float value = ((ud->cost.metal * 60) + ud->cost.energy) / ud->health * range;
+		const float value = ud->power / ud->health * range;
 
 		out.emplace_back(value, unitID);
 	}
