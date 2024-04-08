@@ -306,7 +306,7 @@ static void HandleUnitCollisionsAux(
 				const float collideeToCurrDistSq = currWaypoint.SqDistance2D(collidee->pos);
 				const float collideeGoalRadius = gmtCollidee->GetOwnerRadius();
 
-				if (collideeToCurrDistSq <= collideeGoalRadius*collideeGoalRadius) {
+				if (collideeToCurrDistSq <= Square(collideeGoalRadius+separationDist)) {
 					gmtCollider->TriggerSkipWayPoint();
 					return;
 				}
@@ -347,7 +347,7 @@ static void HandleUnitCollisionsAux(
 				const float collideeToCurrDistSq = currWaypoint.SqDistance2D(collidee->pos);
 				const float collideeGoalRadius = gmtCollidee->GetOwnerRadius();
 
-				if (collideeToCurrDistSq <= collideeGoalRadius*collideeGoalRadius) {
+				if (collideeToCurrDistSq <= Square(collideeGoalRadius+separationDist)) {
 					gmtCollider->TriggerSkipWayPoint();
 					return;
 				}
