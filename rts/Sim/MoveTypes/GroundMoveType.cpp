@@ -296,7 +296,8 @@ static void HandleUnitCollisionsAux(
 			if (collidee->IsMoving() || UNIT_CMD_QUE_SIZE(collidee) != 0)
 				return;
 
-			const bool triggerArrived = gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius());
+			float separationDist = std::max(collider->moveDef->separationDistance, collidee->moveDef->separationDistance);
+			const bool triggerArrived = gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius() + separationDist);
 			if (triggerArrived) {
 				gmtCollider->TriggerCallArrived();
 			} else {
@@ -334,8 +335,9 @@ static void HandleUnitCollisionsAux(
 				// }
 			}
 
-			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius())
-										|| gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius()));
+			float separationDist = std::max(collider->moveDef->separationDistance, collidee->moveDef->separationDistance);
+			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius() + separationDist)
+										|| gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius() + separationDist));
 			if (triggerArrived) {
 				gmtCollider->TriggerCallArrived();
 			} else {
