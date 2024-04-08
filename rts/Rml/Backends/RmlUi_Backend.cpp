@@ -37,7 +37,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "Lua/LuaUI.h"
-#include "Rendering/Textures/Bitmap.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rml/Components/ElementLuaTexture.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
@@ -132,19 +132,23 @@ bool RmlInitialized()
 	return data && data->initialized;
 }
 
-bool RmlGui::Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext, int winX,
-                        int winY)
+bool RmlGui::Initialize()
 {
 	data = Rml::MakeUnique<BackendData>();
 
 	if (!data->render_interface) {
 		data.reset();
-		fprintf(stderr, "Could not initialize OpenGL3 render interface.");
+		fprintf(stderr, "Could not initialize render interface.");
 		return false;
 	}
+	
+	auto window = globalRendering->sdlWindow;
+	auto gl_context = globalRendering->GetContext();
+	auto winX = globalRendering->winSizeX;
+	auto winY = globalRendering->winSizeY;
 
-	data->window = target_window;
-	data->gl_context = target_glcontext;
+	data->window = window;
+	data->gl_context = gl_context;
 
 	Rml::SetFileInterface(&data->file_interface);
 	Rml::SetSystemInterface(RmlGui::GetSystemInterface());
@@ -211,16 +215,12 @@ void RmlGui::Shutdown()
 
 void RmlGui::Reload()
 {
-	if (!RmlInitialized()) {
+	if (RmlInitialized()) {
+		LOG_L(L_NOTICE, "[RmlGui::%s] reloading: ", __func__);
+		RmlGui::Shutdown();
 		return;
 	}
-	LOG_L(L_NOTICE, "[RmlGui::%s] reloading: ", __func__);
-	SDL_Window* window = data->window;
-	SDL_GLContext gl_context = data->gl_context;
-	int winX = data->winX;
-	int winY = data->winY;
-	RmlGui::Shutdown();
-	RmlGui::Initialize(window, gl_context, winX, winY);
+	RmlGui::Initialize();
 }
 
 void RmlGui::ToggleDebugger(int contextIndex)
