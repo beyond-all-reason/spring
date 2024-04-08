@@ -233,6 +233,9 @@ void CTeam::Died(bool normalDeath)
 	if (isDead)
 		return;
 
+	LOG("%s: team(%d) has been declared as dead", __func__
+			, teamNum);
+
 	if (normalDeath) {
 		// this message is not relayed to clients, it's only for the server
 		clientNet->Send(CBaseNetProtocol::Get().SendTeamDied(gu->myPlayerNum, teamNum));

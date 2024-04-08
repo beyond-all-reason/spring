@@ -840,6 +840,9 @@ void CLuaHandle::TeamDied(int teamID)
 
 	lua_pushnumber(L, teamID);
 
+	LOG("%s: team(%d) has been decalred as dead", __func__
+			, teamID);
+
 	// call the routine
 	RunCallInTraceback(L, cmdStr, 1, 0, traceBack.GetErrFuncIdx(), false);
 }

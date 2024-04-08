@@ -913,6 +913,9 @@ int LuaSyncedCtrl::KillTeam(lua_State* L)
 	if (team == nullptr)
 		return 0;
 
+	LOG("%s: team %s (%d) is killed", __func__
+			, team->GetSideName(), teamID);
+
 	team->Died();
 	return 0;
 }

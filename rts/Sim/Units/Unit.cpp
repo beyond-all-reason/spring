@@ -460,6 +460,9 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 
 	isDead = true;
 
+	LOG("%s: %s is killed", __func__
+			, unitDef->humanName.c_str());
+
 	// release attached units
 	ReleaseTransportees(attacker, selfDestruct, reclaimed);
 
