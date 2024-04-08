@@ -832,7 +832,7 @@ void CGame::LoadInterface()
 		GameSetupDrawer::Enable();
 	}
 
-	RmlGui::Initialize(globalRendering->GetWindow(), globalRendering->GetContext(), globalRendering->winSizeX, globalRendering->winSizeY);
+	RmlGui::Initialize();
 }
 
 void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
