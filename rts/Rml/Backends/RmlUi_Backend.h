@@ -42,7 +42,7 @@
 
 namespace RmlGui
 {
-	bool Initialize(SDL_Window* target_window, SDL_GLContext target_glcontext, int winX, int winY);
+	bool Initialize();
 	bool InitializeLua(lua_State* lua_state);
 	bool RemoveLua();
 
