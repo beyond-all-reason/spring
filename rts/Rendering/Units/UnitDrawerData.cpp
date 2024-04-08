@@ -42,7 +42,6 @@ CR_REG_METADATA(GhostSolidObject, (
 	CR_MEMBER(facing),
 	CR_MEMBER(team),
 	CR_MEMBER(refCount),
-	CR_MEMBER(lastDrawFrame),
 
 	CR_IGNORED(model),
 
@@ -581,7 +580,6 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 				gso->dir = u->frontdir;
 				gso->team = u->team;
 				gso->refCount = 0;
-				gso->lastDrawFrame = 0;
 				gso->GetModel();
 
 				groundDecals->GhostCreated(u, gso);

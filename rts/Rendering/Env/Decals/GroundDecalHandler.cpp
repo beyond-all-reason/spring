@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 
 #include "GroundDecal.h"
 #include "GroundDecalHandler.h"
@@ -1481,8 +1482,8 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 		else /* const GhostSolidObject* */ {
 			const auto* gso = std::get<const GhostSolidObject*>(owner);
 			// only display non-allied ghosts
-			if (const auto gsoVis = static_cast<float>(!teamHandler.AlliedTeams(gu->myTeam, gso->team)); decal.visMult != gsoVis) {
-				decal.visMult = gsoVis;
+			if (const auto gsoVis = !teamHandler.AlliedTeams(gu->myTeam, gso->team); !std::signbit(decal.visMult) != gsoVis) {
+				decal.visMult = std::copysign(decal.visMult, 2.0f * gsoVis - 1.0f);
 				decalsUpdateList.SetUpdate(pos);
 			}
 		}

@@ -676,7 +676,6 @@ void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 
 			dgb->GetModel()->DrawStatic();
 			glPopMatrix();
-			dgb->lastDrawFrame = globalRendering->drawFrame;
 		}
 	}
 
