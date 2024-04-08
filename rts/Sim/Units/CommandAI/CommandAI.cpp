@@ -951,6 +951,8 @@ void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 						owner->selfDCountdown = 0;
 					} else {
 						owner->selfDCountdown = owner->unitDef->selfDCountdown*2+1;
+						LOG("%s: %s set self-destruct in %is", __func__
+								, owner->unitDef->humanName.c_str(), (selfDCountdown >> 1) + 1);
 					}
 				}
 				else if (commandQue.back().GetID() == CMD_SELFD) {
@@ -1531,6 +1533,8 @@ void CCommandAI::SlowUpdate()
 				owner->selfDCountdown = 0;
 			} else {
 				owner->selfDCountdown = (owner->unitDef->selfDCountdown * 2) + 1;
+				LOG("%s: %s set self-destruct in %is", __func__
+						, owner->unitDef->humanName.c_str(), (selfDCountdown >> 1) + 1);
 			}
 			FinishCommand();
 			return;

@@ -972,7 +972,7 @@ void CUnit::SlowUpdate()
 			return;
 		}
 
-		if ((selfDCountdown & 1) && (team == gu->myTeam) && !gu->spectating)
+		if ((selfDCountdown & 1) /*&& (team == gu->myTeam) && !gu->spectating*/)
 			LOG("%s: self-destruct in %is", unitDef->humanName.c_str(), (selfDCountdown >> 1) + 1);
 	}
 
