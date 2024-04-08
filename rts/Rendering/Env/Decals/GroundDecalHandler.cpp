@@ -33,6 +33,7 @@
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Textures/Bitmap.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -1356,6 +1357,21 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 	if (static_cast<float>(decals.size()) / static_cast<float>(numToDelete) <= RESORT_THRESHOLD)
 		return;
 
+#if 0
+	LOG("DH:CompactDecalsVector[1](fn=%d) Decals.size()=%u", frameNum, static_cast<uint32_t>(decals.size()));
+	for (int cnt = 0; const auto & [owner, offset] : decalOwners) {
+		const void* ptr = std::holds_alternative<const CSolidObject*>(owner) ? static_cast<const void*>(std::get<const CSolidObject*>(owner)) : nullptr;
+		int id = (ptr != nullptr) ? std::get<const CSolidObject*>(owner)->id : -1;
+
+		LOG("DH:CompactDecalsVector[1] [cnt=%d][ptr=%p][id=%d]=[pos=%u]",
+			cnt++,
+			ptr,
+			id,
+			static_cast<uint32_t>(offset)
+		);
+	}
+#endif
+
 	// temporary store the id --> DecalOwner relationship,
 	// for the convinience to restore decalOwners correctness,
 	// after the compaction is complete
@@ -1406,6 +1422,22 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 
 		decalOwners.emplace(owner, ipIt->second);
 	}
+
+
+#if 0
+	LOG("DH:CompactDecalsVector[2](fn=%d) Decals.size()=%u", frameNum, static_cast<uint32_t>(decals.size()));
+	for (int cnt = 0; const auto & [owner, offset] : decalOwners) {
+		const void* ptr = std::holds_alternative<const CSolidObject*>(owner) ? static_cast<const void*>(std::get<const CSolidObject*>(owner)) : nullptr;
+		int id = (ptr != nullptr) ? std::get<const CSolidObject*>(owner)->id : -1;
+
+		LOG("DH:CompactDecalsVector[2] [cnt=%d][ptr=%p][id=%d]=[pos=%u]",
+			cnt++,
+			ptr,
+			id,
+			static_cast<uint32_t>(offset)
+		);
+	}
+#endif
 }
 
 void CGroundDecalHandler::UpdateDecalsVisibility()
@@ -1447,7 +1479,12 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 			}
 		}
 		else /* const GhostSolidObject* */ {
-			////
+			const auto* gso = std::get<const GhostSolidObject*>(owner);
+			// only display non-allied ghosts
+			if (const auto gsoVis = static_cast<float>(!teamHandler.AlliedTeams(gu->myTeam, gso->team)); decal.visMult != gsoVis) {
+				decal.visMult = gsoVis;
+				decalsUpdateList.SetUpdate(pos);
+			}
 		}
 	}
 

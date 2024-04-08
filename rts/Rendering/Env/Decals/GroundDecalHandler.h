@@ -69,7 +69,7 @@ public:
 	};
 public:
 	CGroundDecalHandler();
-	~CGroundDecalHandler();
+	~CGroundDecalHandler() override;
 
 	void OnDecalLevelChanged() override {}
 private:
