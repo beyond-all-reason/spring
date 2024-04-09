@@ -54,8 +54,6 @@
 #include "System/Input/InputHandler.h"
 #include "System/Log/ILog.h"
 
-using CtxMutex = std::recursive_mutex;
-using CtxLockGuard = std::lock_guard<CtxMutex>;
 struct lua_State;
 
 /// Passes through RML events to the function pointers given in the constructor
@@ -105,22 +103,20 @@ struct BackendData {
 #endif
 	VFSFileInterface file_interface;
 
-	SDL_Window* window = nullptr;
-	SDL_GLContext gl_context = nullptr;
 	std::vector<Rml::Context*> contexts;
+	std::unordered_set<Rml::Context*> contexts_to_remove;
+	
 	InputHandler::SignalType::connection_type inputCon;
 	CRmlInputReceiver inputReceiver;
 
-	// make atomic_bool?
 	bool initialized = false;
 	bool debuggerAttached = false;
-	int winX = 1;
-	int winY = 1;
+	int winX = 0;
+	int winY = 0;
 
 	lua_State* ls = nullptr;
 	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
 
-	CtxMutex contextMutex;
 	Rml::UniquePtr<PassThroughPlugin> plugin;
     Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
 };
@@ -142,13 +138,8 @@ bool RmlGui::Initialize()
 		return false;
 	}
 	
-	auto window = globalRendering->sdlWindow;
-	auto gl_context = globalRendering->GetContext();
 	auto winX = globalRendering->winSizeX;
 	auto winY = globalRendering->winSizeY;
-
-	data->window = window;
-	data->gl_context = gl_context;
 
 	Rml::SetFileInterface(&data->file_interface);
 	Rml::SetSystemInterface(RmlGui::GetSystemInterface());
@@ -175,9 +166,10 @@ bool RmlGui::Initialize()
 
 bool RmlGui::InitializeLua(lua_State* lua_state)
 {
-	if (!RmlInitialized()) {
+	if (!RmlInitialized() || data->ls != nullptr) {
 		return false;
 	}
+
 	sol::state_view lua(lua_state);
 	data->ls = lua_state;
 	data->luaPlugin = Rml::SolLua::Initialise(&lua, "rmlDocumentId");
@@ -187,9 +179,10 @@ bool RmlGui::InitializeLua(lua_State* lua_state)
 
 bool RmlGui::RemoveLua()
 {
-	if (!RmlInitialized() || !data->ls) {
+	if (!RmlInitialized() || data->ls == nullptr) {
 		return false;
 	}
+
 	data->luaPlugin->RemoveLuaItems();
 	Update();
 	Rml::UnregisterPlugin(data->luaPlugin);
@@ -205,12 +198,15 @@ void RmlGui::Shutdown()
 	if (!RmlInitialized()) {
 		return;
 	}
-
+	
+	RemoveLua();
 	Rml::UnregisterPlugin(data->plugin.get());
-	data.reset();
-
-	// removes all contexts
+	
+	// removes all contexts, interfaces must be alive at this point
 	Rml::Shutdown();
+	
+	// interfaces within can now be destroyed
+	data.reset();
 }
 
 void RmlGui::Reload()
@@ -226,7 +222,6 @@ void RmlGui::Reload()
 void RmlGui::ToggleDebugger(int contextIndex)
 {
 	if (data->debuggerAttached) {
-		// TODO: Ensure thread safety somehow if needed
 		Rml::Debugger::Initialise(data->contexts[contextIndex]);
 		Rml::Debugger::SetVisible(true);
 	} else {
@@ -279,15 +274,21 @@ CInputReceiver* RmlGui::GetInputReceiver()
 
 void RmlGui::OnContextCreate(Rml::Context* context)
 {
-	CtxLockGuard lock(data->contextMutex);
 	context->SetDimensions({data->winX, data->winY});
 	data->contexts.push_back(context);
 }
 
 void RmlGui::OnContextDestroy(Rml::Context* context)
 {
-	CtxLockGuard lock(data->contextMutex);
 	data->contexts.erase(std::ranges::find(data->contexts, context));
+}
+
+void RmlGui::MarkContextForRemoval(Rml::Context *context) {
+	if (!RmlInitialized() || context == nullptr) {
+		return;
+	}
+	
+	data->contexts_to_remove.insert(context);
 }
 
 void RmlGui::Update()
@@ -297,10 +298,17 @@ void RmlGui::Update()
 		return;
 	}
 #ifndef HEADLESS
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		context->Update();
 	}
 #endif
+	
+	if unlikely(!data->contexts_to_remove.empty()) {
+		for (const auto& context : data->contexts_to_remove) {
+			Rml::RemoveContext(context->GetName());
+		}
+		data->contexts_to_remove.clear();
+	}
 }
 
 void RmlGui::RenderFrame()
@@ -312,7 +320,7 @@ void RmlGui::RenderFrame()
 
 #ifndef HEADLESS
 	RmlGui::BeginFrame();
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		context->Render();
 	}
 	RmlGui::PresentFrame();
@@ -321,7 +329,6 @@ void RmlGui::RenderFrame()
 
 void RmlGui::BeginFrame()
 {
-	// data->render_interface.Clear();
 	data->render_interface.BeginFrame();
 }
 
@@ -340,7 +347,7 @@ bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
 		return false;
 	}
 	bool result = false;
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		result |= !RmlSDLRecoil::EventMouseMove(context, x, y);
 	}
 	data->inputReceiver.setActive(result);
@@ -356,7 +363,7 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
 		return false;
 	}
 	bool result = false;
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		bool handled = !RmlSDLRecoil::EventMousePress(context, x, y, button);
 		result |= handled;
 		if (!handled) {
@@ -379,7 +386,7 @@ bool RmlGui::ProcessMouseRelease(int x, int y, int button)
 		return false;
 	}
 	bool result = false;
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		result |= !RmlSDLRecoil::EventMouseRelease(context, x, y, button);
 	}
 	data->inputReceiver.setActive(result);
@@ -395,7 +402,7 @@ bool RmlGui::ProcessMouseWheel(float delta)
 		return false;
 	}
 	bool result = false;
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		result |= !RmlSDLRecoil::EventMouseWheel(context, delta);
 	}
 	data->inputReceiver.setActive(result);
@@ -411,7 +418,7 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 		return false;
 	}
 	bool result = false;
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		auto kc = RmlSDLRecoil::ConvertKey(keyCode);
 		result |= !RmlSDLRecoil::EventKeyDown(context, kc);
 	}
@@ -424,7 +431,7 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 		return false;
 	}
 	bool result = false;
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		result |= !RmlSDLRecoil::EventKeyUp(context, RmlSDLRecoil::ConvertKey(keyCode));
 	}
 	return result;
@@ -436,7 +443,7 @@ bool RmlGui::ProcessTextInput(const std::string& text)
 		return false;
 	}
 	bool result = false;
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		result |= !RmlSDLRecoil::EventTextInput(context, text);
 	}
 	return result;
@@ -478,7 +485,7 @@ bool RmlGui::ProcessEvent(const SDL_Event& event)
 		return false;
 	}
 	bool result = false;
-	for (CtxLockGuard lock(data->contextMutex); const auto& context : data->contexts) {
+	for (const auto& context : data->contexts) {
 		result |= processContextEvent(context, event);
 	}
 	return result;
