@@ -48,7 +48,7 @@ namespace QTPFS {
 		bool PathUpdated(unsigned int pathID) override;
 		void ClearPathUpdated(unsigned int pathID) override;
 
-		bool AllowShortestPath() override { return modInfo.preferShortestPath; }
+		bool AllowShortestPath() override { return true; }
 
 		void TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2, unsigned int type) override;
 		void Update() override;

@@ -180,9 +180,9 @@ struct MoveDef {
 	/// otherwise, since they are never initialized)
 	bool avoidMobilesOnPath = true;
 	bool allowTerrainCollisions = true;
-	bool allowDirectionalPathing = true;
+	bool allowDirectionalPathing = false;
 	bool allowRawMovement = false;
-	bool preferShortestPath = true;
+	bool preferShortestPath = false;
 
 	/// do we leave heat and avoid any left by others?
 	bool heatMapping = true;

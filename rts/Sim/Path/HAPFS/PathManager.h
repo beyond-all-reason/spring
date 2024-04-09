@@ -118,7 +118,7 @@ public:
 	std::int64_t Finalize() override;
 	std::int64_t PostFinalizeRefresh() override;
 
-	bool AllowDirectionalPathing() override { return modInfo.allowDirectionalPathing; }
+	bool AllowDirectionalPathing() override { return true; }
 
 	void RemoveCacheFiles() override;
 	void Update() override;
