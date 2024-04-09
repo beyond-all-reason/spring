@@ -63,6 +63,7 @@ public:
 	bool OnSlope(float minSlideTolerance);
 	bool IsReversing() const override { return reversing; }
 	bool IsPushResistant() const override { return pushResistant; }
+	bool IsPushResitanceBlockActive() const override { return pushResistanceBlockActive; }
 	bool WantToStop() const { return (pathID == 0 && (!useRawMovement || atEndOfPath)); }
 
 	void TriggerSkipWayPoint() {
@@ -269,6 +270,7 @@ private:
 	bool reversing = false;
 	bool idling = false;
 	bool pushResistant = false;
+	bool pushResistanceBlockActive = false;
 	bool canReverse = false;
 	bool useMainHeading = false;            /// if true, turn toward mainHeadingPos until weapons[0] can TryTarget() it
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)
