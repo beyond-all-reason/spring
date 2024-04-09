@@ -143,16 +143,6 @@ struct MoveDef {
 	int xsize = 0, xsizeh = 0;
 	int zsize = 0, zsizeh = 0;
 
-	// Apply an additional collision boundary in elmos to keep units separated.
-	// This is used to make units keep a gap between them of the distance specified.
-	// [unit 1] <- separationDistance -> [unit 2]
-	// The larger of two units' separation distance will be applied.
-	// This works best with relatively small values such as 32 elmos or smaller.
-	// This only impacts mobile units to mobile units. This is deliberate because otherwise units
-	// would be unable to squeeze between buildings or would be able to knock over/crush features
-	// they are not touching.
-	float separationDistance = 0.0f;
-
 	/// minWaterDepth for ships, maxWaterDepth otherwise
 	/// controls movement and (un-)loading constraints
 	float depth = 0.0f;

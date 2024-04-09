@@ -296,7 +296,7 @@ static void HandleUnitCollisionsAux(
 			if (collidee->IsMoving() || UNIT_CMD_QUE_SIZE(collidee) != 0)
 				return;
 
-			float separationDist = std::max(collider->moveDef->separationDistance, collidee->moveDef->separationDistance);
+			float separationDist = std::max(collider->unitDef->separationDistance, collidee->unitDef->separationDistance);
 			const bool triggerArrived = gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius() + separationDist);
 			if (triggerArrived) {
 				gmtCollider->TriggerCallArrived();
@@ -335,7 +335,7 @@ static void HandleUnitCollisionsAux(
 				// }
 			}
 
-			float separationDist = std::max(collider->moveDef->separationDistance, collidee->moveDef->separationDistance);
+			float separationDist = std::max(collider->unitDef->separationDistance, collidee->unitDef->separationDistance);
 			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius() + separationDist)
 										|| gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius() + separationDist));
 			if (triggerArrived) {
@@ -2795,7 +2795,7 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
-	const float colliderSeparationDist = colliderMD->separationDistance;
+	const float colliderSeparationDist = colliderUD->separationDistance;
 
 	// Account for units that are larger than one's self.
 	const float maxCollisionRadius = colliderParams.y + moveDefHandler.GetLargestFootPrintSizeH();
@@ -2850,7 +2850,7 @@ void CGroundMoveType::HandleUnitCollisions(
 		// check for separation
 		float separationDist = 0.f;
 		if (!isCollision && collideeMobile) {
-			separationDist = std::max(colliderSeparationDist, collideeMD->separationDistance);
+			separationDist = std::max(colliderSeparationDist, collideeUD->separationDistance);
 			const float separation = colliderParams.y + collideeParams.y + separationDist; 
 			const bool isSeparation = static_cast<float3>(separationVect).SqLength2D() <= Square(separation);
 			if (!isSeparation)
