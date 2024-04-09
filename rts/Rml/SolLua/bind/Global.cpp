@@ -44,6 +44,17 @@ namespace Rml::SolLua
 		{
 			return Rml::RegisterEventType(type, interruptible, bubbles, Rml::DefaultActionPhase::None);
 		}
+		
+		auto removeContext(Rml::Context* context) {
+			RmlGui::MarkContextForRemoval(context);
+		}
+		
+		auto removeContextByName(const Rml::String& name) {
+			auto context = Rml::GetContext(name);
+			if (context != nullptr) {
+				RmlGui::MarkContextForRemoval(context);
+			}
+		}
 	}
 
 	void bind_global(sol::table& namespace_table, SolLuaPlugin* slp)
@@ -55,10 +66,15 @@ namespace Rml::SolLua
 				// context will be resized right away by other code
 				// send {0, 0} in to avoid triggering a pointless resize event in the Rml code
 				auto context = Rml::CreateContext(name, {0, 0});
-				slp->AddContextTracking(context);
+				if (context != nullptr) {
+					slp->AddContextTracking(context);
+				}
 				return context;
 			},
-			"RemoveContext", sol::resolve<bool (const Rml::String&)>(&Rml::RemoveContext),
+			"RemoveContext", sol::overload(
+				&functions::removeContext,
+				&functions::removeContextByName
+			),
 			"LoadFontFace", sol::overload(
 				&functions::loadFontFace1,
 				&functions::loadFontFace2,
