@@ -184,7 +184,10 @@ bool RmlGui::RemoveLua()
 	}
 
 	data->luaPlugin->RemoveLuaItems();
+	
+	// Update to allow clean up of removed items.
 	Update();
+	
 	Rml::UnregisterPlugin(data->luaPlugin);
 	data->system_interface.SetTranslationTable(nullptr);
 	data->luaPlugin = nullptr;
@@ -301,14 +304,14 @@ void RmlGui::Update()
 	for (const auto& context : data->contexts) {
 		context->Update();
 	}
-#endif
-	
+
 	if unlikely(!data->contexts_to_remove.empty()) {
 		for (const auto& context : data->contexts_to_remove) {
 			Rml::RemoveContext(context->GetName());
 		}
 		data->contexts_to_remove.clear();
 	}
+#endif
 }
 
 void RmlGui::RenderFrame()
@@ -449,20 +452,9 @@ bool RmlGui::ProcessTextInput(const std::string& text)
 	return result;
 }
 
-bool processContextEvent(Rml::Context* context, const SDL_Event& event)
+void processContextEvent(Rml::Context* context, const SDL_Event& event)
 {
 	switch (event.type) {
-		case SDL_WINDOWEVENT: {
-			switch (event.window.event) {
-				case SDL_WINDOWEVENT_SIZE_CHANGED: {
-					Rml::Vector2i dimensions(event.window.data1, event.window.data2);
-					data->render_interface.SetViewport(dimensions.x, dimensions.y);
-					data->winX = dimensions.x;
-					data->winY = dimensions.y;
-				} break;
-			}
-			RmlSDLRecoil::InputEventHandler(context, event);
-		} break;
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
@@ -470,13 +462,24 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 		case SDL_KEYDOWN:
 		case SDL_KEYUP:
 		case SDL_TEXTINPUT:
-			break;  // handled elsewhere
-		default: {
-			RmlSDLRecoil::InputEventHandler(context, event);
+			return;  // handled elsewhere
+		
+		case SDL_WINDOWEVENT: {
+			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+				auto x = event.window.data1;
+				auto y = event.window.data2;
+				
+				data->render_interface.SetViewport(x, y);
+				data->winX = x;
+				data->winY = y;
+			}
 		} break;
+		
+		default: 
+			break;
 	}
-	// these events are not captured, and should continue propagating
-	return false;
+	
+	RmlSDLRecoil::InputEventHandler(context, event);
 }
 
 bool RmlGui::ProcessEvent(const SDL_Event& event)
@@ -484,11 +487,13 @@ bool RmlGui::ProcessEvent(const SDL_Event& event)
 	if (!RmlInitialized()) {
 		return false;
 	}
-	bool result = false;
+	
 	for (const auto& context : data->contexts) {
-		result |= processContextEvent(context, event);
+		processContextEvent(context, event);
 	}
-	return result;
+
+	// these events are not captured, and should continue propagating
+	return false;
 }
 
 lua_State* RmlGui::GetLuaState()
