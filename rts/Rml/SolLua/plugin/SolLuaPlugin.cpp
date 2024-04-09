@@ -2,6 +2,7 @@
 
 #include "RmlUi/Core/Context.h"
 #include "SolLuaInstancer.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 #include <RmlUi/Core.h>
 
 #include <algorithm>
@@ -45,7 +46,7 @@ namespace Rml::SolLua
 			d->Close();
 		}
 		for(auto c: luaContexts) {
-			Rml::RemoveContext(c->GetName());
+			RmlGui::MarkContextForRemoval(c);
 		}
 	}
 
