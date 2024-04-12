@@ -23,8 +23,7 @@ namespace icon {
 				float distance,
 				bool radiusAdjust,
 				bool ownTexture,
-				unsigned int xsize,
-				unsigned int ysize
+				float u0, float v0, float u1, float v1
 			);
 			~CIconData();
 
@@ -34,12 +33,15 @@ namespace icon {
 				std::swap(refCount, id.refCount);
 				std::swap(texID, id.texID);
 
-				xsize = id.xsize;
-				ysize = id.ysize;
 
 				size = id.size;
 				distance = id.distance;
 				distSqr = id.distSqr;
+
+				u0 = id.u0;
+				v0 = id.v0;
+				u1 = id.u1;
+				v1 = id.v1;
 
 				std::swap(ownTexture, id.ownTexture);
 
@@ -68,8 +70,8 @@ namespace icon {
 			const std::string& GetName()   const { return name;         }
 
 			unsigned int GetTextureID()    const { return texID;        }
-			int          GetSizeX()        const { return xsize;        }
-			int          GetSizeY()        const { return ysize;        }
+			int          GetSizeX()        const { return 1;        }
+			int          GetSizeY()        const { return 1;        }
 
 			float        GetSize()         const { return size;         }
 			float        GetDistance()     const { return distance;     }
@@ -78,17 +80,22 @@ namespace icon {
 
 			bool         GetRadiusAdjust() const { return radiusAdjust; }
 
+			float u0 = 0.0f;
+			float v0 = 0.0f;
+			float u1 = 1.0f;
+			float v1 = 1.0f;
+
 		private:
 			std::string name;
 
 			int refCount = 123456;
 			unsigned int texID = 0;
-			int xsize = 1;
-			int ysize = 1;
 
 			float size = 1.0f;
 			float distance = 1.0f;
 			float distSqr = 1.0f;
+
+
 
 			bool ownTexture = false;
 			bool radiusAdjust = false;
@@ -110,7 +117,8 @@ namespace icon {
 				const std::string& texName,
 				float size,
 				float distance,
-				bool radiusAdjust
+				bool radiusAdjust,
+				float u0, float v0, float u1, float v1
 			);
 
 			bool FreeIcon(const std::string& iconName);
@@ -137,6 +145,8 @@ namespace icon {
 
 			bool LoadIcons(const std::string& filename);
 			unsigned int GetDefaultTexture();
+
+			spring::unordered_map<std::string, unsigned int> iconTexNameToTexID;
 
 		public:
 			static constexpr unsigned int  SAFETY_DATA_IDX = 0;

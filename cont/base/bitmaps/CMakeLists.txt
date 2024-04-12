@@ -36,6 +36,7 @@ set(FILES
 	bitmaps/groundring.tga
 	bitmaps/guiicon_move.bmp
 	bitmaps/detailtex2.bmp
+	bitmaps/defaultradardot.png
 	bitmaps/graphPaper.bmp
 	bitmaps/ui/background/background.jpg
 	bitmaps/wake.tga

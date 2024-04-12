@@ -2200,6 +2200,10 @@ int LuaUnsyncedCtrl::SetFeatureSelectionVolumeData(lua_State* L)
  * @number[opt] size
  * @number[opt] dist
  * @number[opt] radAdjust
+ * @number[opt] x0
+ * @number[opt] y0
+ * @number[opt] x1
+ * @number[opt] y1
  *
  * @treturn ?nil|bool added
  */
@@ -2216,7 +2220,13 @@ int LuaUnsyncedCtrl::AddUnitIcon(lua_State* L)
 
 	const bool   radAdjust = luaL_optboolean(L, 5, false);
 
-	lua_pushboolean(L, icon::iconHandler.AddIcon(iconName, texName, size, dist, radAdjust));
+	const float  u0 = luaL_optnumber(L, 6, 0.0f);
+	const float  v0 = luaL_optnumber(L, 7, 0.0f);
+
+	const float  u1 = luaL_optnumber(L, 8, 1.0f);
+	const float  v1 = luaL_optnumber(L, 9, 1.0f);
+
+	lua_pushboolean(L, icon::iconHandler.AddIcon(iconName, texName, size, dist, radAdjust, u0, v0, u1, v1));
 	return 1;
 }
 

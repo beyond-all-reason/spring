@@ -158,6 +158,7 @@ CUnitDrawerData::~CUnitDrawerData()
 
 void CUnitDrawerData::Update()
 {
+	ZoneScoped;
 	iconSizeBase = std::max(1.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
@@ -166,7 +167,11 @@ void CUnitDrawerData::Update()
 	}
 
 	const float3 camPos = (camHandler->GetCurrentController()).GetPos();
-	const float3 camDir = (camHandler->GetCurrentController()).GetDir();
+	float3 camDir = (camHandler->GetCurrentController()).GetDir();
+	// We are going to clamp camDir.y at UnitIconCameraMinAngleY, then re-normalize it. 
+	camDir.y = std::min(std::sin(configHandler->GetFloat("UnitIconCameraMinAngleY") * math::DEG_TO_RAD), camDir.y);
+	camDir = camDir.SafeNormalize();
+
 	float dist = CGround::LineGroundCol(camPos, camDir * 150000.0f, false);
 	if (dist < 0)
 		dist = std::max(0.0f, CGround::LinePlaneCol(camPos, camDir, 150000.0f, readMap->GetCurrAvgHeight()));
@@ -185,12 +190,14 @@ void CUnitDrawerData::Update()
 	};
 
 	if (mtModelDrawer) {
+		ZoneScopedN("UnitDrawerData::UpdateMT");
 		for_mt_chunk(0, unsortedObjects.size(), [this, &updateBody](const int k) {
 			CUnit* unit = unsortedObjects[k];
 			updateBody(unit);
 		}, CModelDrawerDataConcept::MT_CHUNK_OR_MIN_CHUNK_SIZE_UPDT);
 	}
 	else {
+		ZoneScopedN("UnitDrawerData::UpdateST");
 		for (CUnit* unit : unsortedObjects)
 			updateBody(unit);
 	}
@@ -330,7 +337,9 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	float iconSizeMult = iconData->GetSize();
 	if (iconData->GetRadiusAdjust() && !useDefaultIcon)
 		iconSizeMult *= (unit->radius / iconData->GetRadiusScale());
-	iconSizeMult = (iconSizeMult - 1) * 0.75 + 1;
+
+	iconSizeMult = iconSizeMult * 0.75f + 0.25f;
+
 
 	float limit = iconSizeBase / 2 * iconSizeMult;
 
@@ -349,9 +358,10 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 		return;
 	}
 
+	float unitCameraDistance = (unit->pos - camera->GetPos()).SqLength();
 	// don't render unit's model if it is smaller than icon by 10% in screen space
 	// render it anyway in case icon isn't completely opaque (below FadeStart distance)
-	unit->SetIsIcon(iconZoomDist / iconSizeMult > iconFadeStart && std::abs(pos.x - radiusPos.x) < limit * 0.9);
+	unit->SetIsIcon(unitCameraDistance > iconFadeStart * iconSizeMult && std::abs(pos.x - radiusPos.x) < limit * 0.9);
 }
 
 void CUnitDrawerData::UpdateDrawPos(CUnit* u)
