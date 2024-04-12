@@ -17,6 +17,7 @@ using std::fclose;
 #include "Game/GameHelper.h"
 #include "Game/GameSetup.h"
 #include "Map/MapInfo.h"
+#include "Map/ReadMap.h"
 #include "Map/MetalMap.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileQueryFlags.h"
@@ -28,11 +29,8 @@ using std::fclose;
 static constexpr float3 ERRORVECTOR(-1, 0, 0);
 static std::string CACHE_BASE("");
 
-CResourceMapAnalyzer::CResourceMapAnalyzer(int resourceId)
-	: resourceId(resourceId)
-	, numSpotsFound(-1)
-
-	, extractorRadius(-1.0f)
+CResourceMapAnalyzer::CResourceMapAnalyzer()
+	: numSpotsFound(-1)
 	, averageIncome(0.0f)
 
 	, stopMe(false)
@@ -111,14 +109,11 @@ float3 CResourceMapAnalyzer::GetNearestSpot(float3 fromPos, int team, const Unit
 
 
 void CResourceMapAnalyzer::Init() {
-	const CResourceDescription* resource = resourceHandler->GetResource(resourceId);
-
-	mapWidth = resourceHandler->GetResourceMapWidth(resourceId);
-	mapHeight = resourceHandler->GetResourceMapHeight(resourceId);
+	mapWidth = mapDims.hmapx;
+	mapHeight = mapDims.hmapy;
 
 	totalCells = mapHeight * mapWidth;
-	extractorRadius = resource->extractorRadius;
-	xtractorRadius = static_cast<int>(extractorRadius / (SQUARE_SIZE * 2));
+	xtractorRadius = static_cast<int>(mapInfo->map.extractorRadius / (SQUARE_SIZE * 2));
 	doubleRadius = xtractorRadius * 2;
 	squareRadius = xtractorRadius * xtractorRadius;
 	doubleSquareRadius = doubleRadius * doubleRadius;
@@ -152,7 +147,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 	}
 
 	// load up the resource values in each pixel
-	const unsigned char* resourceMapArray = resourceHandler->GetResourceMap(resourceId);
+	const unsigned char* resourceMapArray = metalMap.GetDistributionMap();
 	double totalResourcesDouble  = 0;
 
 	for (int i = 0; i < totalCells; i++) {
@@ -388,8 +383,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 			bufferSpot.x = coordX * (SQUARE_SIZE * 2) + SQUARE_SIZE;
 			bufferSpot.z = coordZ * (SQUARE_SIZE * 2) + SQUARE_SIZE;
 			// gets the actual amount of resource an extractor can make
-			const CResourceDescription* resource = resourceHandler->GetResource(resourceId);
-			bufferSpot.y = tempResources * (resource->maxWorth) * maxResource / 255;
+			bufferSpot.y = tempResources * mapInfo->map.maxMetal * maxResource / 255;
 			vectoredSpots.push_back(bufferSpot);
 
 			// plot TGA array (not necessary) for debug
@@ -563,9 +557,7 @@ bool CResourceMapAnalyzer::LoadResourceMap() {
 
 
 std::string CResourceMapAnalyzer::GetCacheFileName() const {
-
-	const CResourceDescription* resource = resourceHandler->GetResource(resourceId);
-	std::string absFile = CACHE_BASE + gameSetup->mapName + resource->name;
+	std::string absFile = CACHE_BASE + gameSetup->mapName + "Metal";
 
 	return absFile;
 }

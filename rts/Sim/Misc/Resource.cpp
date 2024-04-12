@@ -8,9 +8,7 @@ CR_BIND(CResourceDescription, )
 CR_REG_METADATA(CResourceDescription, (
 	CR_MEMBER(name),
 	CR_MEMBER(description),
-	CR_MEMBER(optimum),
-	CR_MEMBER(extractorRadius),
-	CR_MEMBER(maxWorth)
+	CR_MEMBER(optimum)
 ))
 
 
@@ -36,8 +34,6 @@ CR_REG_METADATA(SResourceOrder,(
 CResourceDescription::CResourceDescription()
 : name("UNNAMED_RESOURCE")
 , optimum(FLT_MAX)
-, extractorRadius(0.0f)
-, maxWorth(0.0f)
 {
 }
 

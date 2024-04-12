@@ -11,7 +11,7 @@ struct UnitDef;
 
 class CResourceMapAnalyzer {
 public:
-	CResourceMapAnalyzer(int resourceId);
+	CResourceMapAnalyzer();
 
 	// deferred to ResourceHandler
 	void Init();
@@ -39,10 +39,7 @@ private:
 
 	std::string GetCacheFileName() const;
 
-	int resourceId;
 	int numSpotsFound;
-
-	float extractorRadius;
 	float averageIncome;
 
 	bool stopMe;
