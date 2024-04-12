@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <cstdio>
 
-#if defined(USE_LIBSQUISH) && !defined(HEADLESS)
+#if !defined(HEADLESS)
 	#include "lib/squish/squish.h"
 	#include "lib/rg-etc1/rg_etc1.h"
 #endif
@@ -180,7 +180,7 @@ void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
 	}
 
 
-#if defined(USE_LIBSQUISH) && !defined(HEADLESS) && defined(GLEW_ARB_ES3_compatibility)
+#if !defined(HEADLESS) && defined(GLEW_ARB_ES3_compatibility)
 	if (RecompressTilesIfNeeded()) {
 		// Not all FOSS drivers support S3TC, use ETC1 for those if possible
 		// ETC2 is backward compatible with ETC1! GLEW doesn't have the ETC1 extension :<
@@ -285,7 +285,7 @@ void CSMFGroundTextures::ConvolveHeightMap(const int mapWidth, const int mipLeve
 	}
 }
 
-#if defined(USE_LIBSQUISH) && !defined(HEADLESS) && defined(GLEW_ARB_ES3_compatibility)
+#if !defined(HEADLESS) && defined(GLEW_ARB_ES3_compatibility)
 // Not all FOSS drivers support S3TC, use ETC1 for those if possible
 bool CSMFGroundTextures::RecompressTilesIfNeeded()
 {

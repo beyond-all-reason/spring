@@ -256,12 +256,6 @@ if    (WIN32)
 	endif(NOT MSVC)
 endif (WIN32)
 
-option(USE_LIBSQUISH "Enable libsquish for DXT decompressing. (needed for ETC1 support)" TRUE)
-if    (USE_LIBSQUISH)
-	add_definitions(-DUSE_LIBSQUISH)
-endif (USE_LIBSQUISH)
-
-
 option(USE_ASAN "Build/link with address sanitizer enabled (for DEBUG builds only)" FALSE)
 if    (USE_ASAN)
 	if (UNIX AND NOT MINGW)
