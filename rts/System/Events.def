@@ -88,6 +88,11 @@
 
 	SETUP_EVENT(StockpileChanged, MANAGED_BIT)
 
+	SETUP_EVENT(SensorCreated, MANAGED_BIT)
+	SETUP_EVENT(SensorExpired, MANAGED_BIT)
+	SETUP_EVENT(SensorTaken,   MANAGED_BIT)
+
+
 	// unsynced call-ins
 	SETUP_EVENT(Save,           MANAGED_BIT | UNSYNCED_BIT)
 

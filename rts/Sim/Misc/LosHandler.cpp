@@ -7,6 +7,8 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/ModInfo.h"
+#include "Sim/Misc/Sensor.h"
+#include "Sim/Misc/SensorHandler.h"
 #include "Map/ReadMap.h"
 #include "System/Log/ILog.h"
 #include "System/SpringHash.h"
@@ -128,7 +130,7 @@ void ILosType::Kill()
 }
 
 
-float ILosType::GetRadius(const CUnit* unit) const
+float ILosType::GetUnitRadius(const CUnit* unit) const
 {
 	switch (type) {
 		case LOS_TYPE_LOS:          return (unit->losRadius      / SQUARE_SIZE) >> mipLevel;
@@ -144,8 +146,24 @@ float ILosType::GetRadius(const CUnit* unit) const
 	return 0.0f;
 }
 
+float ILosType::GetSensorRadius(const CSensor* sensor) const
+{
+	switch (type) {
+	case LOS_TYPE_LOS:          return (sensor->losRadius / SQUARE_SIZE) >> mipLevel;
+	case LOS_TYPE_AIRLOS:       return (sensor->airLosRadius / SQUARE_SIZE) >> mipLevel;
+	case LOS_TYPE_RADAR:        return (sensor->radarRadius / SQUARE_SIZE) >> mipLevel;
+	case LOS_TYPE_SONAR:        return (sensor->sonarRadius / SQUARE_SIZE) >> mipLevel;
+	case LOS_TYPE_JAMMER:       return (sensor->jammerRadius / SQUARE_SIZE) >> mipLevel;
+	case LOS_TYPE_SEISMIC:      return (sensor->seismicRadius / SQUARE_SIZE) >> mipLevel;
+	case LOS_TYPE_SONAR_JAMMER: return (sensor->sonarJamRadius / SQUARE_SIZE) >> mipLevel;
+	case LOS_TYPE_COUNT:        break; //make the compiler happy
+	}
+	assert(false);
+	return 0.0f;
+}
 
-float ILosType::GetHeight(const CUnit* unit) const
+
+float ILosType::GetUnitHeight(const CUnit* unit) const
 {
 	if (algoType == LOS_ALGO_CIRCLE)
 		return 0.0f;
@@ -153,6 +171,19 @@ float ILosType::GetHeight(const CUnit* unit) const
 	const float emitHeight = (type == LOS_TYPE_LOS || type == LOS_TYPE_AIRLOS) ? unit->unitDef->losHeight : unit->unitDef->radarHeight;
 	const float losHeight  = std::max(unit->midPos.y + emitHeight, 0.0f);
 	const int bucketSize   = 1 << (mipLevel + 2);
+	const float iLosHeight = (int(losHeight) / bucketSize + 0.5f) * bucketSize; // save losHeight in buckets
+	return iLosHeight;
+}
+
+
+float ILosType::GetSensorHeight(const CSensor* sensor) const
+{
+	if (algoType == LOS_ALGO_CIRCLE)
+		return 0.0f;
+
+	const float emitHeight = (type == LOS_TYPE_LOS || type == LOS_TYPE_AIRLOS) ? sensor->losHeight : sensor->radarHeight;
+	const float losHeight = std::max(sensor->pos.y + emitHeight, 0.0f);
+	const int bucketSize = 1 << (mipLevel + 2);
 	const float iLosHeight = (int(losHeight) / bucketSize + 0.5f) * bucketSize; // save losHeight in buckets
 	return iLosHeight;
 }
@@ -195,8 +226,8 @@ inline void ILosType::UpdateUnit(CUnit* unit, bool ignore)
 	#endif
 
 	const float3 losPos = unit->midPos;
-	const float radius = GetRadius(unit);
-	const float height = GetHeight(unit);
+	const float radius = GetUnitRadius(unit);
+	const float height = GetUnitHeight(unit);
 	const int2 baseLos = PosToSquare(losPos);
 	      int allyteam = unit->allyteam;
 
@@ -254,6 +285,99 @@ inline void ILosType::UpdateUnit(CUnit* unit, bool ignore)
 	unit->los[type] = li;
 	instanceHashes[hash].push_back(li);
 	UpdateInstanceStatus(li, SLosInstance::TLosStatus::NEW);
+}
+
+
+inline void ILosType::UpdateSensor(CSensor* sensor, bool ignore)
+{
+
+	if (sensor->isDead || sensor->isExpired)
+		return;
+
+	SLosInstance* sli = sensor->los[type];
+
+#if (USE_STAGGERED_UPDATES == 1)
+	if (ignore && sli != nullptr) {
+		// make sure ILosType::Update will do nothing with this instance
+		sli->status = SLosInstance::TLosStatus::NONE;
+		return;
+	}
+#endif
+
+	const float3 losPos = sensor->pos;
+	const float radius = GetSensorRadius(sensor);
+	const float height = GetSensorHeight(sensor);
+	const int2 baseLos = PosToSquare(losPos);
+	int allyteam = sensor->allyteam;
+
+	// jammers share all the same map independent of the allyTeam
+	if (type == LOS_TYPE_JAMMER || type == LOS_TYPE_SONAR_JAMMER)
+		allyteam *= modInfo.separateJammers;
+
+	if (radius <= 0.0f) {
+		if (sli != nullptr) {
+			sensor->los[type] = nullptr;
+			UnrefInstance(sli);
+		}
+		return;
+	}
+
+	const auto CanRefInstance = [&](SLosInstance* li) -> bool {
+		return (li != nullptr
+			&& (li->basePos == baseLos)
+			&& (li->baseHeight == height)
+			&& (li->radius == radius)
+			&& (li->allyteam == allyteam)
+			);
+		};
+
+	// unchanged?
+	if (CanRefInstance(sli))
+		return;
+
+	if (sli != nullptr) {
+		sensor->los[type] = nullptr;
+		UnrefInstance(sli);
+	}
+
+	const int hash = GetHashNum(sensor->allyteam, baseLos, radius);
+
+	// Cache - search if there is already an instance with same properties
+	auto vit = instanceHashes.find(hash);
+
+	if (vit != instanceHashes.end()) {
+		for (SLosInstance* li : vit->second) {
+			if (CanRefInstance(li)) {
+				cacheHits += (algoType == LOS_ALGO_RAYCAST);
+				sensor->los[type] = li;
+				RefInstance(li);
+				return;
+			}
+		}
+	}
+
+	// New - create a new one
+	cacheFails += (algoType == LOS_ALGO_RAYCAST);
+	SLosInstance* li = CreateInstance();
+	li->Init(radius, allyteam, baseLos, height, hash);
+	li->refCount++;
+	sensor->los[type] = li;
+	instanceHashes[hash].push_back(li);
+	UpdateInstanceStatus(li, SLosInstance::TLosStatus::NEW);
+}
+
+void ILosType::RemoveSensor(CSensor* sensor, bool delayed)
+{
+	if (sensor->los[type] == nullptr)
+		return;
+
+	if (delayed) {
+		DelayedUnrefInstance(sensor->los[type]);
+	}
+	else {
+		UnrefInstance(sensor->los[type]);
+	}
+	sensor->los[type] = nullptr;
 }
 
 
@@ -786,12 +910,20 @@ void CLosHandler::UnitLoaded(const CUnit* unit, const CUnit* transport)
 	}
 }
 
+void CLosHandler::SensorExpired(const CSensor* sensor)
+{
+	for (ILosType* lt : losTypes) {
+		lt->RemoveSensor(const_cast<CSensor*>(sensor), true);
+	}
+}
+
 
 void CLosHandler::Update()
 {
 	SCOPED_TIMER("Sim::Los");
 
 	const std::vector<CUnit*>& activeUnits = unitHandler.GetActiveUnits();
+	const std::vector<CSensor*>& activeSensors = sensorHandler.GetActiveSensors();
 
 	#if (USE_STAGGERED_UPDATES == 1)
 	const size_t losBatchRate = UNIT_SLOWUPDATE_RATE;
@@ -815,6 +947,9 @@ void CLosHandler::Update()
 			ZoneScopedN("Sim::Los::UpdateLosTypeMT");
 			for (CUnit* u : activeUnits) {
 				lt->UpdateUnit(u, false);
+			}
+			for (CSensor* s : activeSensors) {
+				lt->UpdateSensor(s, false);
 			}
 		}
 		#endif

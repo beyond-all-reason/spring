@@ -10,6 +10,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Projectiles/Projectile.h"
+#include "Sim/Misc/Sensor.h"
 
 class CWeapon;
 struct Command;
@@ -132,6 +133,10 @@ class CEventHandler
 
 		void ProjectileCreated(const CProjectile* proj, int allyTeam);
 		void ProjectileDestroyed(const CProjectile* proj, int allyTeam);
+
+		void SensorCreated(const CSensor* sensor);
+		void SensorExpired(const CSensor* sensor);
+		void SensorTaken(const CSensor* sensor, int oldTeam, int newTeam);
 
 		bool Explosion(int weaponDefID, int projectileID, const float3& pos, const CUnit* owner);
 
@@ -764,6 +769,21 @@ inline void CEventHandler::RenderProjectileCreated(const CProjectile* proj)
 inline void CEventHandler::RenderProjectileDestroyed(const CProjectile* proj)
 {
 	ITERATE_EVENTCLIENTLIST(RenderProjectileDestroyed, proj)
+}
+
+inline void CEventHandler::SensorCreated(const CSensor* sensor)
+{
+	ITERATE_EVENTCLIENTLIST(SensorCreated, sensor)
+}
+
+inline void CEventHandler::SensorExpired(const CSensor* sensor)
+{
+	ITERATE_EVENTCLIENTLIST(SensorExpired, sensor)
+}
+
+inline void CEventHandler::SensorTaken(const CSensor* sensor, int oldTeam, int newTeam)
+{
+	ITERATE_EVENTCLIENTLIST(SensorTaken, sensor, oldTeam, newTeam)
 }
 
 

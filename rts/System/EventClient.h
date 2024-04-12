@@ -25,6 +25,7 @@ class CUnit;
 class CWeapon;
 class CFeature;
 class CProjectile;
+class CSensor;
 struct Command;
 class IArchive;
 struct SRectangle;
@@ -193,6 +194,10 @@ class CEventClient
 
 		virtual void RenderProjectileCreated(const CProjectile* proj) {}
 		virtual void RenderProjectileDestroyed(const CProjectile* proj) {}
+
+		virtual void SensorCreated(const CSensor* sensor) {}
+		virtual void SensorExpired(const CSensor* sensor) {}
+		virtual void SensorTaken(const CSensor* sensor, int oldTeam, int newTeam) {}
 
 		virtual void StockpileChanged(const CUnit* unit,
 		                              const CWeapon* weapon, int oldCount) {}

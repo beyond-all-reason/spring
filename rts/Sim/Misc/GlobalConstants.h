@@ -98,6 +98,7 @@ static constexpr int MAX_AIS = 255;
 static constexpr int MAX_UNITS       =  32000;
 static constexpr int MAX_FEATURES    =  32000;
 static constexpr int MAX_PROJECTILES = 128000;
+static constexpr int MAX_SENSORS     =   3200;
 
 static_assert(MAX_UNITS + MAX_FEATURES < std::numeric_limits<uint16_t>::max(),
 	"MAX_UNITS + MAX_FEATURES must fit in a 16-bit type because the network protocol packs them both there");

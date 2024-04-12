@@ -133,6 +133,9 @@ public:
 	void RemoveUnit(CUnit* unit, bool delayed = false);
 	void UpdateUnit(CUnit* unit, bool ignore = false);
 
+	void UpdateSensor(CSensor* sensor, bool ignore);
+	void RemoveSensor(CSensor* sensor, bool delayed = false);
+
 private:
 	//void PostLoad();
 
@@ -153,8 +156,10 @@ private:
 private:
 	int GetHashNum(const int allyteam, const int2 baseLos, const float radius) const;
 
-	float GetRadius(const CUnit* unit) const;
-	float GetHeight(const CUnit* unit) const;
+	float GetUnitRadius(const CUnit* unit) const;
+	float GetSensorRadius(const CSensor* sensor) const;
+	float GetUnitHeight(const CUnit* unit) const;
+	float GetSensorHeight(const CSensor* sensor) const;
 
 public:
 	int   mipLevel = 0;
@@ -293,6 +298,8 @@ public:
 	void UnitTaken(const CUnit* unit, int oldTeam, int newTeam) override;
 	void UnitLoaded(const CUnit* unit, const CUnit* transport) override;
 	void UnitReverseBuilt(const CUnit* unit) override;
+
+	void SensorExpired(const CSensor* sensor);
 
 public:
 	void Update() override;
