@@ -28,7 +28,7 @@ enum {
 	COBFN_MoveRate2,            // -
 	COBFN_MoveRate3,            // FIXME: unused (see CHoverAirMoveType::UpdateMoveRate)
 	COBFN_SetSFXOccupy,         // in: curTerrainType
-	COBFN_HitByWeaponId,        // in: 500 * hitDir.z, in: 500 * hitDir.x, in: weaponDefs[weaponId].tdfId, in: 100 * damage, return value: 100 * weaponHitMod
+	COBFN_HitByWeaponId,        // in: 500 * hitDir.z, in: 500 * hitDir.x, in: weaponDefs[weaponId].id, in: 100 * damage, return value: 100 * weaponHitMod
 	COBFN_QueryLandingPadCount, // out: landingPadCount (default 16)
 	COBFN_QueryLandingPad,      // landingPadCount times (out: piecenum)
 	COBFN_Falling,              // -

@@ -27,7 +27,6 @@ static DefType WeaponDefs("WeaponDefs");
 // General
 WEAPONTAG(std::string, description).externalName("name").defaultValue("Weapon").description("The descriptive name of the weapon, for GUI purposes.");
 WEAPONTAG(std::string, type).externalName("weaponType").defaultValue("Cannon");
-WEAPONTAG(int, tdfId).externalName("id").defaultValue(0);
 WEAPONDUMMYTAG(table, customParams).description("A table of arbitrary string key-value pairs, for use by Lua gadgets (no engine meaning)");
 
 // Collision & Avoidance
