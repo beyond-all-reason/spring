@@ -32,7 +32,7 @@
 #include "Sim/Weapons/Weapon.h"
 #include "System/StringUtil.h"
 #include "System/SpringMath.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 
 #include <tracy/Tracy.hpp>
 
@@ -714,7 +714,7 @@ void CCobInstance::Signal(int signal)
 
 void CCobInstance::PlayUnitSound(int snr, int attr)
 {
-	Channels::UnitReply->PlaySample(cobFile->sounds[snr], unit->pos, unit->speed, attr);
+	Channels[ChannelType::CHANNEL_UNITREPLY]->PlaySample(cobFile->sounds[snr], unit->pos, unit->speed, attr);
 }
 
 

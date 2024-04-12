@@ -5,8 +5,8 @@ remove_definitions(-DNO_SOUND)
 # Dummy Sound implementaiton
 set(noSoundSources
 		IAudioChannel.cpp
+		SoundChannels.cpp
 		ISound.cpp
-		Null/SoundChannels.cpp
 		Null/NullSound.cpp
 	)
 
@@ -27,6 +27,7 @@ if    (NOT NO_SOUND)
 	set(soundSources
 			ISound.cpp
 			IAudioChannel.cpp
+			SoundChannels.cpp
 			Null/NullSound.cpp
 			OpenAL/ALShared.cpp
 			OpenAL/EFX.cpp
@@ -37,7 +38,6 @@ if    (NOT NO_SOUND)
 			OpenAL/Mp3Decoder.cpp
 			OpenAL/MusicStream.cpp
 			OpenAL/Sound.cpp
-			OpenAL/SoundChannels.cpp
 			OpenAL/SoundBuffer.cpp
 			OpenAL/SoundItem.cpp
 			OpenAL/SoundSource.cpp

@@ -44,7 +44,7 @@
 #include "System/SpringMath.h"
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 
 #endif
 
@@ -1140,9 +1140,9 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		}
 
 		if (p4 == 0) {
-			Channels::General->PlaySample(cobFile->sounds[p1], unit->pos, unit->speed, float(p2) / COBSCALE);
+			Channels[ChannelType::CHANNEL_GENERAL]->PlaySample(cobFile->sounds[p1], unit->pos, unit->speed, float(p2) / COBSCALE);
 		} else {
-			Channels::General->PlaySample(cobFile->sounds[p1], float(p2) / COBSCALE);
+			Channels[ChannelType::CHANNEL_GENERAL]->PlaySample(cobFile->sounds[p1], float(p2) / COBSCALE);
 		}
 
 		return 0;

@@ -38,7 +38,7 @@
 #include "System/SpringMath.h"
 #include "System/TimeProfiler.h"
 #include "System/type2.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/SpringHash.h"
 
 // #define PATHING_DEBUG
@@ -973,7 +973,7 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 	bestReattemptedLastWaypointDist = std::numeric_limits<decltype(bestReattemptedLastWaypointDist)>::infinity();
 
 	if (owner->team == gu->myTeam)
-		Channels::General->PlayRandomSample(owner->unitDef->sounds.activate, owner);
+		Channels[ChannelType::CHANNEL_GENERAL]->PlayRandomSample(owner->unitDef->sounds.activate, owner);
 }
 
 void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw) {
@@ -2411,7 +2411,7 @@ void CGroundMoveType::Arrived(bool callScript)
 		StopEngine(callScript);
 
 		if (owner->team == gu->myTeam)
-			Channels::General->PlayRandomSample(owner->unitDef->sounds.arrived, owner);
+			Channels[ChannelType::CHANNEL_GENERAL]->PlayRandomSample(owner->unitDef->sounds.arrived, owner);
 
 		// and the action is done
 		progressState = Done;

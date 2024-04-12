@@ -68,7 +68,7 @@
 #include "System/Log/DefaultFilter.h"
 #include "System/Platform/SDL1_keysym.h"
 #include "System/Platform/Misc.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/StringUtil.h"
 #include "System/Misc/SpringTime.h"
 #include "System/ScopedResource.h"
@@ -3127,8 +3127,8 @@ int LuaUnsyncedRead::GetDrawSeconds(lua_State* L)
  */
 int LuaUnsyncedRead::GetSoundStreamTime(lua_State* L)
 {
-	lua_pushnumber(L, Channels::BGMusic->StreamGetPlayTime());
-	lua_pushnumber(L, Channels::BGMusic->StreamGetTime());
+	lua_pushnumber(L, Channels[ChannelType::CHANNEL_BGMUSIC]->StreamGetPlayTime());
+	lua_pushnumber(L, Channels[ChannelType::CHANNEL_BGMUSIC]->StreamGetTime());
 	return 2;
 }
 

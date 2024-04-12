@@ -104,7 +104,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Sound/ISound.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/Sync/DumpState.h"
 
 #include <SDL_events.h>
@@ -1645,20 +1645,15 @@ public:
 		std::string channel = std::move(args[0]);
 		bool enable = StringToBool(args[1]);
 
-		if (channel == "UnitReply")
-			Channels::UnitReply->Enable(enable);
-		else if (channel == "General")
-			Channels::General->Enable(enable);
-		else if (channel == "Battle")
-			Channels::Battle->Enable(enable);
-		else if (channel == "UserInterface")
-			Channels::UserInterface->Enable(enable);
-		else if (channel == "Music")
-			Channels::BGMusic->Enable(enable);
-		else
-			LOG_L(L_WARNING, "/%s: wrong channel name \"%s\"", GetCommand().c_str(), channel.c_str());
+		for (size_t i = 0; i < Channels.size(); ++i) {
+			if (channel == ChannelNames[i]) {
+				Channels[i]->Enable(enable);
+				return true;
+			}
+		}
 
-		return true;
+		LOG_L(L_WARNING, "/%s: wrong channel name \"%s\"", GetCommand().c_str(), channel.c_str());
+		return false;
 	}
 };
 

@@ -31,7 +31,7 @@
 #include "System/Platform/Watchdog.h"
 #include "System/Platform/Threading.h"
 #include "System/Sound/ISound.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 #include "System/LoadLock.h"
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)

@@ -22,7 +22,7 @@
 #include "System/EventClient.h"
 #include "System/Log/ILog.h"
 #include "System/Sound/ISound.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 
 
 CONFIG(bool, MiniMapCanDraw).defaultValue(false).description("Enables drawing with cursor over MiniMap.");
@@ -55,7 +55,7 @@ public:
 			// even if this message is not intented for our ears
 			LOG("%s added point: %s", sender->name.c_str(), label->c_str());
 			eventHandler.LastMessagePosition(*pos0);
-			Channels::UserInterface->PlaySample(blipSoundID, *pos0);
+			Channels[ChannelType::CHANNEL_UI]->PlaySample(blipSoundID, *pos0);
 			minimap->AddNotification(*pos0, OnesVector, 1.0f);
 		}
 

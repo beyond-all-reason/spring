@@ -38,7 +38,7 @@
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Input/KeyInput.h"
 #include "System/Sound/ISound.h"
-#include "System/Sound/ISoundChannels.h"
+#include "System/Sound/SoundChannels.h"
 
 #include <SDL_mouse.h>
 #include <SDL_keycode.h>
@@ -253,7 +253,7 @@ void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 	if (!selectedUnits.empty()) {
 		const CUnit* u = unitHandler.GetUnit(*selectedUnits.begin());
 		const UnitDef* ud = u->unitDef;
-		Channels::UnitReply->PlayRandomSample(ud->sounds.ok, u);
+		Channels[ChannelType::CHANNEL_UNITREPLY]->PlayRandomSample(ud->sounds.ok, u);
 	}
 }
 
@@ -322,10 +322,10 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 		case 0: {
 		} break;
 		case 1: {
-			Channels::UnitReply->PlayRandomSample(unit->unitDef->sounds.select, unit);
+			Channels[ChannelType::CHANNEL_UNITREPLY]->PlayRandomSample(unit->unitDef->sounds.select, unit);
 		} break;
 		default: {
-			Channels::UserInterface->PlaySample(soundMultiselID);
+			Channels[ChannelType::CHANNEL_UI]->PlaySample(soundMultiselID);
 		} break;
 	}
 }
@@ -372,7 +372,7 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 		}
 	}
 
-	Channels::UnitReply->PlayRandomSample(unit->unitDef->sounds.select, unit);
+	Channels[ChannelType::CHANNEL_UNITREPLY]->PlayRandomSample(unit->unitDef->sounds.select, unit);
 }
 
 
