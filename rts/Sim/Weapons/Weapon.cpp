@@ -8,6 +8,7 @@
 #include "Game/Players/Player.h"
 #include "Lua/LuaConfig.h"
 #include "Map/Ground.h"
+#include "Map/MapInfo.h"
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -32,6 +33,8 @@
 #include "System/Log/ILog.h"
 
 #include <tracy/Tracy.hpp>
+
+constexpr float SAFE_INTERCEPT_EPS = (1.0 / 65536);
 
 CR_BIND_DERIVED_POOL(CWeapon, CObject, , weaponMemPool.allocMem, weaponMemPool.freeMem)
 CR_REG_METADATA(CWeapon, (
@@ -108,7 +111,8 @@ CR_REG_METADATA(CWeapon, (
 
 	CR_MEMBER(weaponAimAdjustPriority),
 	CR_MEMBER(fastAutoRetargeting),
-	CR_MEMBER(fastQueryPointUpdate)
+	CR_MEMBER(fastQueryPointUpdate),
+	CR_MEMBER(accurateLeading)
 ))
 
 
@@ -187,7 +191,8 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 
 	weaponAimAdjustPriority(1.f),
 	fastAutoRetargeting(false),
-	fastQueryPointUpdate(false)
+	fastQueryPointUpdate(false),
+	accurateLeading(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -1284,13 +1289,194 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 	return aimPos;
 }
 
+float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
+{
+	float3 unitSpeed = unit->speed * predictMult;
+	float3 dist = unit->pos - weaponMuzzlePos;
+	float aa = unitSpeed.dot(unitSpeed) - (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
+	float bb = 2 * (dist.dot(unitSpeed));
+	float cc = dist.dot(dist);
+	float temp1 = 4 * aa * cc;
+	float temp2 = (bb * bb);
+	float predictTime = 0.0;
+	// goal here is to return the smallest positive solution to a quadratic formula
+	// while also being numerically stable
+	// We also know c is strictly positive.
+
+	// case 1, aa <0, target speed is less than projectile speed
+	// guaranteed existence of a positive solution
+	// case 1a, aa is a large value, standard quadratic formula works fine
+	if (aa < -1) {
+		// standard quadratic formula
+		predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
+	}
+	// case 1b, aa is a small value, "inverted" standard quadratic formula works better, and extra check needed
+	else if (aa <= 0) {
+		// check catastrophic case of aa=0 and bb>=0 
+		// target speed equal to projectile speed, and target is moving away
+		// answer is either only a negative number (bb>0) or does not exist (bb=0) 
+		// or very, very large positive number (aa=small and bb>=0)
+		if ((std::abs(aa) < (SAFE_INTERCEPT_EPS)) && (bb > (-SAFE_INTERCEPT_EPS))) {
+			return -1.0;
+		}
+		// use Citardauq Formula if aa is small
+		predictTime = (2 * cc) / (-bb + math::sqrt(temp2 - temp1));
+	}
+	// case 2, aa >0, target speed is greater than projectile speed
+	// no postive solution may exist
+	else if (aa > 0) {
+		// case 2a, check for imaginary solutions
+		if (temp1 >= temp2) {
+			// this triggers if the target cannot be intercepted
+			// units can get out of range before the slow projectile can hit it
+			return -1.0;
+		}
+
+		// case 2b, check if fast target is moving away from us
+		if (bb >= 0) {
+			return -1.0;
+		}
+		// case 2c, aa is a large value, standard quadratic formula works fine
+		if (aa > 1) {
+			// standard quadratic formula
+			predictTime = (-bb - math::sqrt(temp2 - temp1)) / (2 * aa);
+		}
+		// case 2d, aa is a small value, "inverted" standard quadratic formula works better, and extra check needed
+		else {
+			// check catastrophic case of aa=very small and bb=very small
+			// target speed nearly equal to projectile speed, and target is moving nearly tangentally
+			// answer is very, very large positive number (aa=small and bb=small)
+			if ((std::abs(aa) < (SAFE_INTERCEPT_EPS)) && (bb > (-SAFE_INTERCEPT_EPS))) {
+				return -1.0;
+			}
+			// use Citardauq Formula if aa is small
+			predictTime = (2 * cc) / (-bb + math::sqrt(temp2 - temp1));
+		}
+	}
+	
+	return predictTime;
+
+}
+
+float CWeapon::GetAccuratePredictedImpactTime(const CUnit* unit) const
+{
+	float predictTime = GetPredictedImpactTime(unit->pos);
+	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
+	
+	// check if the weapon could be affected by gravity 
+	if (weaponDef->gravityAffected) {
+
+		const float gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
+
+		if (gravity < 0) {
+			// precise target leading
+			// newton iterations of the raw quartic are too unstable, due to impossible to intercept targets, 
+			// and existence of low and high trajectory solutions
+			// if reformulated as a fixed point iteration, odd coefficients drop so the equation becomes biquadratic. 
+			// https://en.wikipedia.org/wiki/Fixed-point_iteration
+			// f(t_n) = t_n+1
+			// in our case, assuming a source position of [0, 0, 0], target position at time T, and projectile properties
+			// we can calculate time to intercept, f(t_n)
+			// a + c*T^2 + e*T^4 = 0
+			// a = distance to target at time t_n
+			// c = -(projectile speed)^2 - (target vertical distance)*(gravity)
+			// e = 0.25*(gravity)^2
+			// we use the new intercept time, t_n+1, to calculate an updated target position,
+			// and updated intercept time f(t_n+1)
+			// newton iterations of this fixed point intercept formula are stable
+			// f(t) - t = 0
+			// t_n+1 = t_n - (f(t_n) - t_n)/(df(t_n) - 1)
+			// providing quadratic convergence instead of the naive fixed point linear convergence
+			// df(t_n) is a lot of divisions, a secant approximation is perfectly acceptable
+			// exact df(t_n), for reference
+			// const float vy = unit->speed.y;
+			// const float ddist = unit->speed.dot(unit->pos - weaponMuzzlePos);
+			// const float vt = unit->speed.dot(unit->speed);
+			// float temp3 = 1.0f;
+			// temp3 = math::sqrt(temp2 - temp1);
+			// dt1 = (1 / t1) * (1 / gg)
+			//	* (vy * (gravity)
+			//		- (1 / (temp3)) * (ps2 * vy * (gravity) + predictTime * vy * vy * gg
+			//			- gg * (ddist + predictTime * vt)));
+			// At most 32 iterations are allowed, but mostly just 2 iterations are needed.
+
+			float3 dist = unit->pos + unit->speed * predictMult * predictTime - weaponMuzzlePos;
+			const float gg = (gravity) * (gravity);
+			const float ps2 = (weaponDef->projectilespeed) * (weaponDef->projectilespeed);
+			float t1 = 1.0f;
+			float dt1 = 1.0f;
+			float temp1 = 1.0f;
+			float temp2 = 1.0f;
+			float cc = 1.0f;
+			float deltatime = predictTime;
+			for (int ii = 0; ii < 32; ii++) {
+
+				cc = -ps2 - dist.y * (gravity);
+				temp1 = (dist.dot(dist) * gg);
+				temp2 = (cc * cc);
+				if (temp1 >= temp2) {
+					// this triggers if the target cannot be intercepted
+					// units can get out of range before the slow projectile can hit it
+					break;
+				}
+				//f(t_n)
+				t1 = math::sqrt((-cc - math::sqrt(temp2 - temp1)) / (0.5f * gg));
+
+				// secant approximation of df(t_n)
+				dt1 = (t1 - predictTime) / deltatime;
+
+				if (std::abs(dt1) < 1) {
+					// abs(dt1) less than 1 means newton iteration is stable, and can be used
+					t1 = predictTime - (t1 - predictTime) / (dt1 - 1);
+				}
+				
+				if (std::abs(t1 - predictTime) < 1) {
+					// we just need a 1 frame tolerance
+					predictTime = t1;
+					break;
+				}
+				deltatime = t1 - predictTime;
+				predictTime = t1;
+				// use new time estimate to get new estimate target location
+				dist = unit->pos + unit->speed * predictMult * predictTime - weaponMuzzlePos;
+			}
+		} else {
+			// weapon has no gravity (either zero map gravity, or myGravity set to zero)
+			// non-parabolic projectiles can be directly calculated
+			// just need to solve the quadratic equation, in a numerically safe way
+			const float interceptTime = GetSafeInterceptTime(unit, predictMult);
+			if (interceptTime > 0) {
+				predictTime = interceptTime;
+			}
+		}
+	}
+	else {
+
+		// weapon not gravity affected
+		// non-parabolic projectiles can be directly calculated
+		// just need to solve the quadratic equation, in a numerically safe way
+		const float interceptTime = GetSafeInterceptTime(unit, predictMult);
+		if (interceptTime > 0) {
+			predictTime = interceptTime;
+		}
+	}
+
+	return predictTime;
+}
+
 
 float3 CWeapon::GetLeadVec(const CUnit* unit) const
 {
-	const float predictTime = GetPredictedImpactTime(unit->pos);
 	const float predictMult = mix(predictSpeedMod, 1.0f, weaponDef->predictBoost);
-
-	float3 lead = unit->speed * predictTime * predictMult;
+	float3 lead = unit->speed;
+	if (accurateLeading == true) {
+		float predictTime = GetPredictedImpactTime(unit->pos); // dummy func for now
+		predictTime = GetAccuratePredictedImpactTime(unit);
+		lead = unit->speed * predictTime * predictMult;
+	} else {
+		float predictTime = GetPredictedImpactTime(unit->pos);
+		lead = unit->speed * predictTime * predictMult;
+	}
 
 	if (weaponDef->leadLimit < 0.0f)
 		return lead;

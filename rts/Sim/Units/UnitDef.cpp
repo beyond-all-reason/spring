@@ -56,6 +56,10 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 
 	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
 	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
+
+	// allow weapon to perform additional iterations when calculating target leading on a moving target, for better accuracy
+	// stops undershooting when firing at approaching or retreating enemies
+	accurateLeading = weaponTable.GetBool("accurateLeading", accurateLeading);
 }
 
 

@@ -110,6 +110,8 @@ protected:
 
 	void UpdateWeaponPieces(const bool updateAimFrom = true);
 	float3 GetLeadVec(const CUnit* unit) const;
+	float GetAccuratePredictedImpactTime(const CUnit* unit) const;
+	float GetSafeInterceptTime(const CUnit* unit, float predictMult) const;
 
 private:
 	void UpdateAim();
@@ -203,6 +205,7 @@ public:
 	float weaponAimAdjustPriority;
 	bool fastAutoRetargeting;
 	bool fastQueryPointUpdate;
+	bool accurateLeading;
 
 protected:
 	SWeaponTarget currentTarget;
