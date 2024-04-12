@@ -25,7 +25,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 static std::string strformat(const char* fmt, ...)
@@ -91,7 +91,7 @@ void CCameraHandler::InitStatic() {
 }
 
 void CCameraHandler::KillStatic() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (unsigned int i = CCamera::CAMTYPE_PLAYER; i < CCamera::CAMTYPE_COUNT; i++) {
 	    cameras[i].RemoveConfigNotify();
 	}
@@ -107,13 +107,13 @@ CCamera* CCameraHandler::GetActiveCamera() { return (GetCamera(cameras[CCamera::
 
 // some controllers access the heightmap, do not construct them yet
 CCameraHandler::CCameraHandler() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	camControllers.fill(nullptr);
 	camControllers[CAMERA_MODE_DUMMY] = new (camControllerMem[CAMERA_MODE_DUMMY]) CDummyController();
 }
 
 CCameraHandler::~CCameraHandler() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// regular controllers should already have been killed
 	assert(camControllers[0] == nullptr);
 	spring::SafeDestruct(camControllers[CAMERA_MODE_DUMMY]);
@@ -123,7 +123,7 @@ CCameraHandler::~CCameraHandler() {
 
 void CCameraHandler::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		InitControllers();
 
@@ -170,14 +170,14 @@ void CCameraHandler::Init()
 
 void CCameraHandler::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	KillControllers();
 }
 
 
 void CCameraHandler::InitControllers()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(        CFPSController) <= sizeof(camControllerMem[CAMERA_MODE_FIRSTPERSON]), "");
 	static_assert(sizeof(   COverheadController) <= sizeof(camControllerMem[CAMERA_MODE_OVERHEAD   ]), "");
 	static_assert(sizeof(     CSpringController) <= sizeof(camControllerMem[CAMERA_MODE_SPRING     ]), "");
@@ -196,7 +196,7 @@ void CCameraHandler::InitControllers()
 
 void CCameraHandler::KillControllers()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (camControllers[0] == nullptr)
 		return;
 
@@ -213,7 +213,7 @@ void CCameraHandler::KillControllers()
 
 void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode, bool fsEdgeMove, bool wnEdgeMove)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController& camCon = GetCurrentController();
 	FPSUnitController& fpsCon = player->fpsController;
 
@@ -240,7 +240,7 @@ void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode, bool fsEdge
 
 void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, bool wheelMove, bool edgeMove)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyMove) {
 		// NOTE: z-component contains speed scaling factor, xy is movement
 		const float3 camMoveVector = camera->GetMoveVectorFromState(true); 
@@ -281,7 +281,7 @@ void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, b
 
 void CCameraHandler::CameraTransition(float nsecs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	nsecs = std::max(nsecs, 0.0f) * camTransState.timeFactor;
 
 	// calculate when transition should end based on duration in seconds
@@ -300,7 +300,7 @@ void CCameraHandler::CameraTransition(float nsecs)
 
 void CCameraHandler::UpdateTransition()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	camTransState.tweenPos = camControllers[currCamCtrlNum]->GetPos();
 	camTransState.tweenRot = camControllers[currCamCtrlNum]->GetRot();
 	camTransState.tweenFOV = camControllers[currCamCtrlNum]->GetFOV();
@@ -360,7 +360,7 @@ void CCameraHandler::UpdateTransition()
 
 void CCameraHandler::SetCameraMode(unsigned int newMode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int oldMode = currCamCtrlNum;
 
 	if ((newMode >= camControllers.size()) || (newMode == oldMode))
@@ -385,7 +385,7 @@ void CCameraHandler::SetCameraMode(unsigned int newMode)
 
 void CCameraHandler::SetCameraMode(const std::string& modeName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int modeNum = (!modeName.empty())? GetModeIndex(modeName): configHandler->GetInt("CamMode");
 
 	// do nothing if the name is not matched
@@ -398,7 +398,7 @@ void CCameraHandler::SetCameraMode(const std::string& modeName)
 
 int CCameraHandler::GetModeIndex(const std::string& name) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = nameModeMap.find(name);
 
 	if (it != nameModeMap.end())
@@ -410,13 +410,13 @@ int CCameraHandler::GetModeIndex(const std::string& name) const
 
 void CCameraHandler::PushMode()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	controllerStack.push_back(GetCurrentControllerNum());
 }
 
 void CCameraHandler::PopMode()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (controllerStack.empty())
 		return;
 
@@ -427,7 +427,7 @@ void CCameraHandler::PopMode()
 
 void CCameraHandler::ToggleState()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int newMode = (currCamCtrlNum + 1) % camControllers.size();
 	unsigned int numTries = 0;
 
@@ -443,7 +443,7 @@ void CCameraHandler::ToggleState()
 
 void CCameraHandler::ToggleOverviewCamera()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CameraTransition(1.0f);
 
 	if (controllerStack.empty()) {
@@ -457,7 +457,7 @@ void CCameraHandler::ToggleOverviewCamera()
 
 void CCameraHandler::SaveView(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (name.empty())
 		return;
 
@@ -469,7 +469,7 @@ void CCameraHandler::SaveView(const std::string& name)
 
 bool CCameraHandler::LoadView(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (name.empty())
 		return false;
 
@@ -501,7 +501,7 @@ bool CCameraHandler::LoadView(const std::string& name)
 
 void CCameraHandler::GetState(CCameraController::StateMap& sm) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	sm.clear();
 	sm["mode"] = currCamCtrlNum;
 
@@ -510,7 +510,7 @@ void CCameraHandler::GetState(CCameraController::StateMap& sm) const
 
 CCameraController::StateMap CCameraHandler::GetState() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::StateMap sm;
 	GetState(sm);
 	return sm;
@@ -518,7 +518,7 @@ CCameraController::StateMap CCameraHandler::GetState() const
 
 bool CCameraHandler::SetState(const CCameraController::StateMap& sm)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = sm.find("mode");
 
 	if (it != sm.cend()) {
@@ -540,7 +540,7 @@ bool CCameraHandler::SetState(const CCameraController::StateMap& sm)
 
 void CCameraHandler::PushAction(const Action& action)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(action.command.c_str())) {
 		case hashString("viewfps"): {
 			SetCameraMode(CAMERA_MODE_FIRSTPERSON);
@@ -612,7 +612,7 @@ void CCameraHandler::PushAction(const Action& action)
 
 bool CCameraHandler::LoadViewData(const ViewData& vd)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (vd.empty())
 		return false;
 

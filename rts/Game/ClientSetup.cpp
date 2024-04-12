@@ -12,7 +12,7 @@
 #include "System/Platform/errorhandler.h"
 #endif
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CONFIG(std::string, HostIPDefault).defaultValue("localhost").dedicatedValue("").description("Default IP to use for hosting if not specified in script.txt");
@@ -28,7 +28,7 @@ ClientSetup::ClientSetup()
 
 void ClientSetup::SanityCheck()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (myPlayerName.empty())
 		myPlayerName = UnnamedPlayerName;
 
@@ -38,7 +38,7 @@ void ClientSetup::SanityCheck()
 
 void ClientSetup::LoadFromStartScript(const std::string& setup)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	TdfParser file(setup.c_str(), setup.length());
 
 	if (!file.SectionExist("GAME")) {

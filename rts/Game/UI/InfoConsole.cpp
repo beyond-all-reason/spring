@@ -8,7 +8,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/LogSinkHandler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 static constexpr int IC_BORDER = 7;
 
@@ -23,13 +23,13 @@ alignas(CInfoConsole) static std::byte infoConsoleMem[sizeof(CInfoConsole)];
 
 
 void CInfoConsole::InitStatic() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(infoConsole == nullptr);
 	infoConsole = new (infoConsoleMem) CInfoConsole();
 }
 
 void CInfoConsole::KillStatic() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(infoConsole != nullptr);
 	spring::SafeDestruct(infoConsole);
 	std::fill(std::begin(infoConsoleMem), std::end(infoConsoleMem), std::byte{0});
@@ -38,7 +38,7 @@ void CInfoConsole::KillStatic() {
 
 void CInfoConsole::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	maxLines = 1;
 	newLines = 0;
 
@@ -82,7 +82,7 @@ void CInfoConsole::Init()
 
 void CInfoConsole::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	logSinkHandler.RemoveSink(this);
 	eventHandler.RemoveClient(this);
 
@@ -92,7 +92,7 @@ void CInfoConsole::Kill()
 
 void CInfoConsole::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled)
 		return;
 	if (smallFont == nullptr)
@@ -131,7 +131,7 @@ void CInfoConsole::Draw()
 
 void CInfoConsole::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
 	// pop old messages after timeout
@@ -170,7 +170,7 @@ void CInfoConsole::Update()
 
 void CInfoConsole::PushNewLinesToEventHandler()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
@@ -198,7 +198,7 @@ void CInfoConsole::PushNewLinesToEventHandler()
 
 size_t CInfoConsole::GetRawLines(std::vector<RawLine>& lines)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
 	const size_t numNewLines = newLines;
@@ -212,7 +212,7 @@ size_t CInfoConsole::GetRawLines(std::vector<RawLine>& lines)
 
 void CInfoConsole::RecordLogMessage(int level, const std::string& section, const std::string& message)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
 	if (section == prvSection && message == prvMessage)
@@ -234,7 +234,7 @@ void CInfoConsole::RecordLogMessage(int level, const std::string& section, const
 
 void CInfoConsole::LastMessagePosition(const float3& pos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// reset index to head when a new msg comes in
 	msgPosIndx  = numPosMsgs % lastMsgPositions.size();
 	numPosMsgs += 1;
@@ -244,7 +244,7 @@ void CInfoConsole::LastMessagePosition(const float3& pos)
 
 const float3& CInfoConsole::GetMsgPos(const float3& defaultPos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (numPosMsgs == 0)
 		return defaultPos;
 

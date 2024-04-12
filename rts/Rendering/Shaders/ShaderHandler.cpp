@@ -11,11 +11,11 @@
 
 #include <cassert>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CShaderHandler* CShaderHandler::GetInstance() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gShaderHandler == nullptr) {
 		gShaderHandler = new CShaderHandler();
 	}
@@ -24,12 +24,12 @@ CShaderHandler* CShaderHandler::GetInstance() {
 }
 
 void CShaderHandler::FreeInstance() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::SafeDelete(gShaderHandler);
 }
 
 CShaderHandler::~CShaderHandler() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (auto it = programObjects.begin(); it != programObjects.end(); ++it) {
 		// release by poMap (not poClass) to avoid erase-while-iterating pattern
 		ReleaseProgramObjectsMap(it->second);
@@ -41,7 +41,7 @@ CShaderHandler::~CShaderHandler() {
 
 
 void CShaderHandler::ReloadAll() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (auto it = programObjects.cbegin(); it != programObjects.cend(); ++it) {
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			(jt->second)->Reload(true, true);
@@ -50,7 +50,7 @@ void CShaderHandler::ReloadAll() {
 }
 
 bool CShaderHandler::ReleaseProgramObjects(const std::string& poClass) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (programObjects.find(poClass) == programObjects.end())
 		return false;
 
@@ -62,7 +62,7 @@ bool CShaderHandler::ReleaseProgramObjects(const std::string& poClass) {
 
 bool CShaderHandler::ReleaseProgramObject(const std::string& poClass, const std::string& poName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto classIter = programObjects.find(poClass);
 	if (classIter == programObjects.end())
 		return false;
@@ -81,7 +81,7 @@ bool CShaderHandler::ReleaseProgramObject(const std::string& poClass, const std:
 }
 
 void CShaderHandler::ReleaseProgramObjectsMap(ProgramObjMap& poMap) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (auto it = poMap.cbegin(); it != poMap.cend(); ++it) {
 		Shader::IProgramObject* po = it->second;
 
@@ -96,7 +96,7 @@ void CShaderHandler::ReleaseProgramObjectsMap(ProgramObjMap& poMap) {
 
 
 Shader::IProgramObject* CShaderHandler::GetProgramObject(const std::string& poClass, const std::string& poName) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (programObjects.find(poClass) == programObjects.end())
 		return nullptr;
 
@@ -108,7 +108,7 @@ Shader::IProgramObject* CShaderHandler::GetProgramObject(const std::string& poCl
 
 
 Shader::IProgramObject* CShaderHandler::CreateProgramObject(const std::string& poClass, const std::string& poName) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Shader::IProgramObject* po = Shader::nullProgramObject;
 #ifndef HEADLESS
 

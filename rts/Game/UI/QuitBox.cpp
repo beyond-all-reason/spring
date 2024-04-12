@@ -23,7 +23,7 @@
 
 #include <SDL_keycode.h>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 #define MAX_QUIT_TEAMS (teamHandler.ActiveTeams() - 1)
 
@@ -115,7 +115,7 @@ CQuitBox::CQuitBox()
 
 void CQuitBox::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float mx = MouseX(mouse->lastx);
 	const float my = MouseY(mouse->lasty);
 
@@ -216,13 +216,13 @@ void CQuitBox::Draw()
 
 bool CQuitBox::IsAbove(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (InBox(MouseX(x), MouseY(y), box));
 }
 
 std::string CQuitBox::GetTooltip(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
@@ -256,7 +256,7 @@ std::string CQuitBox::GetTooltip(int x, int y)
 
 bool CQuitBox::MousePress(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
@@ -306,7 +306,7 @@ bool CQuitBox::MousePress(int x, int y, int button)
 
 void CQuitBox::MouseRelease(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
@@ -366,7 +366,7 @@ void CQuitBox::MouseRelease(int x, int y, int button)
 
 void CQuitBox::MouseMove(int x, int y, int dx, int dy, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
@@ -410,7 +410,7 @@ void CQuitBox::MouseMove(int x, int y, int dx, int dy, int button)
 
 bool CQuitBox::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyCode == SDLK_ESCAPE) {
 		delete this;
 		return true;

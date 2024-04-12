@@ -17,7 +17,7 @@
 
 #include "System/TimeProfiler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using namespace MoveTypes;
 
@@ -80,13 +80,13 @@ AMoveType::AMoveType(CUnit* owner):
 
 void AMoveType::SlowUpdate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateGroundBlockMap();
 }
 
 void AMoveType::UpdateCollisionMap()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
 		return;
 
@@ -97,7 +97,7 @@ void AMoveType::UpdateCollisionMap()
 }
 
 void AMoveType::UpdateGroundBlockMap() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (owner->pos != oldSlowUpdatePos) {
 		const int newMapSquare = CGround::GetSquare(oldSlowUpdatePos = owner->pos);
 
@@ -118,12 +118,12 @@ void AMoveType::UpdateGroundBlockMap() {
 
 void AMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	KeepPointingTo(float3(unit->pos), distance, aggressive);
 }
 
 float AMoveType::CalcStaticTurnRadius() const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// calculate a rough turn radius (not based on current speed)
 	const float turnFrames = SPRING_CIRCLE_DIVS / std::max(owner->unitDef->turnRate, 1.0f);
 	const float turnRadius = (maxSpeedDef * turnFrames) / math::TWOPI;
@@ -134,7 +134,7 @@ float AMoveType::CalcStaticTurnRadius() const {
 
 
 bool AMoveType::SetMemberValue(unsigned int memberHash, void* memberValue) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	#define          MAXSPEED_MEMBER_IDX 0
 	#define    MAXWANTEDSPEED_MEMBER_IDX 1
 	#define     MANEUVERLEASH_MEMBER_IDX 2
@@ -182,11 +182,11 @@ bool AMoveType::SetMemberValue(unsigned int memberHash, void* memberValue) {
 }
 
 void AMoveType::Connect() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
 }
 
 void AMoveType::Disconnect() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Sim::registry.remove<GeneralMoveType>(owner->entityReference);
 }

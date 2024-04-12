@@ -11,7 +11,7 @@
 #include "System/Sound/ISound.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 static const std::array<std::string, 2> soundExts = {{"wav", "ogg"}};
 
@@ -21,7 +21,7 @@ static std::vector<GuiSoundSetData> soundSetData;
 
 void CommonDefHandler::InitStatic()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	soundSetData.clear();
 	soundSetData.reserve(4096);
 	soundSetData.emplace_back();
@@ -29,14 +29,14 @@ void CommonDefHandler::InitStatic()
 
 void CommonDefHandler::KillStatic()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG_L(L_INFO, "[CommonDefHandler::%s] %u sound-set data items added", __func__, uint32_t(soundSetData.size()));
 }
 
 
 void CommonDefHandler::AddSoundSetData(GuiSoundSet& soundSet, const std::string& fileName, float volume)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// NB: for each set, all data variants should be loaded sequentially
 	soundSet.UpdateIndices(soundSetData.size());
 	soundSetData.emplace_back(fileName, -1, volume);
@@ -44,20 +44,20 @@ void CommonDefHandler::AddSoundSetData(GuiSoundSet& soundSet, const std::string&
 
 GuiSoundSetData& CommonDefHandler::GetSoundSetData(size_t idx)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (soundSetData.at(idx));
 }
 
 size_t CommonDefHandler::SoundSetDataCount()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (soundSetData.size());
 }
 
 
 int CommonDefHandler::LoadSoundFile(const std::string& fileName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!fileName.empty()) {
 		const std::string soundExt = FileSystem::GetExtension(fileName);
 

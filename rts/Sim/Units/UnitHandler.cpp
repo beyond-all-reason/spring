@@ -31,6 +31,8 @@
 #include "System/Threading/ThreadPool.h"
 #include "Sim/Path/HAPFS/PathGlobal.h"
 
+#include "System/Misc/TracyDefs.h"
+
 #include "System/Config/ConfigHandler.h"
 CONFIG(bool, UpdateWeaponVectorsMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded update of weapon vectors");
 CONFIG(bool, UpdateBoundingVolumeMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded update of unit bounding volumes");
@@ -66,7 +68,7 @@ CUnitHandler unitHandler;
 
 CUnit* CUnitHandler::NewUnit(const UnitDef* ud)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// special static builder structures that can always be given
 	// move orders (which are passed on to all mobile buildees)
 	if (ud->IsFactoryUnit())
@@ -93,7 +95,7 @@ CUnit* CUnitHandler::NewUnit(const UnitDef* ud)
 
 
 void CUnitHandler::Init() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	GroundMoveSystem::Init();
 	GeneralMoveSystem::Init();
 	UnitTrapCheckSystem::Init();
@@ -138,7 +140,7 @@ void CUnitHandler::Init() {
 
 void CUnitHandler::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (CUnit* u: activeUnits) {
 		// ~CUnit dereferences featureHandler which is destroyed already
 		u->KilledScriptFinished(-1);
@@ -174,7 +176,7 @@ void CUnitHandler::Kill()
 
 void CUnitHandler::DeleteScripts()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// predelete scripts since they sometimes reference (pieces
 	// of) models, which are already gone before KillSimulation
 	for (CUnit* u: activeUnits) {
@@ -185,7 +187,7 @@ void CUnitHandler::DeleteScripts()
 
 void CUnitHandler::InsertActiveUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	idPool.AssignID(unit);
 
 	assert(unit->id < units.size());
@@ -220,7 +222,7 @@ void CUnitHandler::InsertActiveUnit(CUnit* unit)
 
 bool CUnitHandler::AddUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// LoadUnit should make sure this is true
 	assert(CanAddUnit(unit->id));
 
@@ -240,7 +242,7 @@ bool CUnitHandler::AddUnit(CUnit* unit)
 
 bool CUnitHandler::GarbageCollectUnit(unsigned int id)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (inUpdateCall)
 		return false;
 
@@ -267,7 +269,7 @@ void CUnitHandler::QueueDeleteUnits()
 
 bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unit->deathScriptFinished)
 		return false;
 
@@ -282,7 +284,7 @@ bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 
 void CUnitHandler::DeleteUnits()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	while (!unitsToBeRemoved.empty()) {
 		DeleteUnit(unitsToBeRemoved.back());
 		unitsToBeRemoved.pop_back();
@@ -291,7 +293,7 @@ void CUnitHandler::DeleteUnits()
 
 void CUnitHandler::DeleteUnit(CUnit* delUnit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(delUnit->isDead);
 	// we want to call RenderUnitDestroyed while the unit is still valid
 	eventHandler.RenderUnitDestroyed(delUnit);
@@ -467,14 +469,14 @@ void CUnitHandler::Update()
 
 void CUnitHandler::AddBuilderCAI(CBuilderCAI* b)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// called from CBuilderCAI --> owner is already valid
 	builderCAIs[b->owner->id] = b;
 }
 
 void CUnitHandler::RemoveBuilderCAI(CBuilderCAI* b)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// called from ~CUnit --> owner is still valid
 	assert(b->owner != nullptr);
 	builderCAIs.erase(b->owner->id);
@@ -483,7 +485,7 @@ void CUnitHandler::RemoveBuilderCAI(CBuilderCAI* b)
 
 void CUnitHandler::ChangeUnitTeam(CUnit* unit, int oldTeamNum, int newTeamNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::VectorErase       (GetUnitsByTeamAndDef(oldTeamNum,                 0), unit       );
 	spring::VectorErase       (GetUnitsByTeamAndDef(oldTeamNum, unit->unitDef->id), unit       );
 	spring::VectorInsertUnique(GetUnitsByTeamAndDef(newTeamNum,                 0), unit, false);
@@ -493,7 +495,7 @@ void CUnitHandler::ChangeUnitTeam(CUnit* unit, int oldTeamNum, int newTeamNum)
 
 bool CUnitHandler::CanBuildUnit(const UnitDef* unitdef, int team) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (teamHandler.Team(team)->AtUnitLimit())
 		return false;
 
@@ -502,7 +504,7 @@ bool CUnitHandler::CanBuildUnit(const UnitDef* unitdef, int team) const
 
 unsigned int CUnitHandler::CalcMaxUnits() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int n = 0;
 
 	for (unsigned int i = 0; i < teamHandler.ActiveTeams(); i++) {

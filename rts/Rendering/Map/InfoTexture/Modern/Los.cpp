@@ -9,7 +9,7 @@
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
@@ -95,7 +95,7 @@ CLosTexture::CLosTexture()
 
 CLosTexture::~CLosTexture()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &uploadTex);
 	shaderHandler->ReleaseProgramObject("[CLosTexture]", "CLosTexture");
 }
@@ -103,7 +103,7 @@ CLosTexture::~CLosTexture()
 
 void CLosTexture::UpdateCPU()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	infoTexPBO.Bind();
 	auto infoTexMem = reinterpret_cast<unsigned char*>(infoTexPBO.MapBuffer());
 
@@ -129,7 +129,7 @@ void CLosTexture::UpdateCPU()
 
 void CLosTexture::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!fbo.IsValid() || !shader->IsValid() || uploadTex == 0)
 		return UpdateCPU();
 

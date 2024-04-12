@@ -8,7 +8,7 @@
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Projectiles/Projectile.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 //automatically initialized to zeros
 static constexpr float4 ZeroVector4;
@@ -43,7 +43,7 @@ void GL::LightHandler::Init(unsigned int cfgBaseLight, unsigned int cfgMaxLights
 
 
 unsigned int GL::LightHandler::AddLight(const GL::Light& light) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (light.GetTTL() == 0 || light.GetRadius() <= 0.0f)
 		return -1u;
 	if ((light.GetIntensityWeight()).SqLength() <= 0.01f)
@@ -76,7 +76,7 @@ unsigned int GL::LightHandler::AddLight(const GL::Light& light) {
 }
 
 unsigned int GL::LightHandler::SetLight(unsigned int lgtIndex, const GL::Light& light) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int lightID = lights[lgtIndex].GetID();
 
 	// clear any previous dependence this light might have
@@ -92,7 +92,7 @@ unsigned int GL::LightHandler::SetLight(unsigned int lgtIndex, const GL::Light& 
 }
 
 GL::Light* GL::LightHandler::GetLight(unsigned int lgtHandle) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = std::find_if(lights.begin(), lights.end(), [&](const GL::Light& lgt) { return (lgt.GetUID() == lgtHandle); });
 
 	if (it != lights.end())
@@ -103,7 +103,7 @@ GL::Light* GL::LightHandler::GetLight(unsigned int lgtHandle) {
 
 
 void GL::LightHandler::Update(Shader::IProgramObject* shader) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (lights.size() != numLights) {
 		numLights = lights.size();
 

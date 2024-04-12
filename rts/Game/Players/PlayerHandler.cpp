@@ -8,7 +8,7 @@
 #include "Game/GameSetup.h"
 #include "Game/SelectedUnitsHandler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(CPlayerHandler,)
 
@@ -22,14 +22,14 @@ CPlayerHandler playerHandler;
 
 void CPlayerHandler::ResetState()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	players.clear();
 	players.reserve(MAX_PLAYERS);
 }
 
 void CPlayerHandler::LoadFromSetup(const CGameSetup* setup)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<PlayerBase>& playerData = setup->GetPlayerStartingDataCont();
 
 	const int oldSize = players.size();
@@ -53,7 +53,7 @@ void CPlayerHandler::LoadFromSetup(const CGameSetup* setup)
 
 int CPlayerHandler::Player(const std::string& name) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto pred = [&name](const CPlayer& player) { return (player.name == name); };
 	const auto iter = std::find_if(players.begin(), players.end(), pred);
 
@@ -65,7 +65,7 @@ int CPlayerHandler::Player(const std::string& name) const
 
 void CPlayerHandler::PlayerLeft(int id, unsigned char reason)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Player(id)->active = false;
 	Player(id)->ping = 0;
 }
@@ -74,7 +74,7 @@ void CPlayerHandler::PlayerLeft(int id, unsigned char reason)
 
 unsigned int CPlayerHandler::NumActivePlayersInTeam(int teamId) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int n = 0;
 
 	for (const CPlayer& player: players) {
@@ -87,7 +87,7 @@ unsigned int CPlayerHandler::NumActivePlayersInTeam(int teamId) const
 
 std::vector<int> CPlayerHandler::ActivePlayersInTeam(int teamId) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<int> playersInTeam;
 
 	for (const CPlayer& player: players) {
@@ -109,7 +109,7 @@ std::vector<int> CPlayerHandler::ActivePlayersInTeam(int teamId) const
 
 void CPlayerHandler::GameFrame(int frameNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (CPlayer& player: players) {
 		player.GameFrame(frameNum);
 	}
@@ -117,7 +117,7 @@ void CPlayerHandler::GameFrame(int frameNum)
 
 void CPlayerHandler::AddPlayer(const CPlayer& player)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int oldSize = players.size();
 	const int newSize = std::max(oldSize, player.playerNum + 1);
 

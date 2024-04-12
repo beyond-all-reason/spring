@@ -10,7 +10,7 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CEmgProjectile, CWeaponProjectile, )
 
@@ -23,7 +23,7 @@ CR_REG_METADATA(CEmgProjectile,(
 
 CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectile(params)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EMG_PROJECTILE;
 
 	if (weaponDef != nullptr) {
@@ -41,7 +41,7 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 
 void CEmgProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// disable collisions when ttl reaches 0 since the
 	// projectile will travel far past its range while
 	// fading out
@@ -66,7 +66,7 @@ void CEmgProjectile::Update()
 
 void CEmgProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
 
@@ -87,7 +87,7 @@ void CEmgProjectile::Draw()
 
 int CEmgProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -103,6 +103,6 @@ int CEmgProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, fl
 
 int CEmgProjectile::GetProjectilesCount() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 1 * validTextures[0];
 }

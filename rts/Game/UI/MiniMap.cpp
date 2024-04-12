@@ -51,7 +51,7 @@
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Sound/ISoundChannels.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using namespace GL::State;
 
@@ -179,7 +179,7 @@ CMiniMap::CMiniMap()
 
 CMiniMap::~CMiniMap()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	shaderHandler->ReleaseProgramObjects("[MiniMap]");
 
 	glDeleteTextures(1, &buttonsTextureID);
@@ -190,7 +190,7 @@ CMiniMap::~CMiniMap()
 
 void CMiniMap::ConfigUpdate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	aspectRatio = configHandler->GetBool("DualScreenMiniMapAspectRatio");
 	buttonSize = configHandler->GetInt("MiniMapButtonSize");
 	drawProjectiles = configHandler->GetBool("MiniMapDrawProjectiles");
@@ -205,7 +205,7 @@ void CMiniMap::ConfigUpdate()
 
 void CMiniMap::ConfigNotify(const std::string& key, const std::string& value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
 
 	if (key == "DualScreenMiniMapAspectRatio")
@@ -214,7 +214,7 @@ void CMiniMap::ConfigNotify(const std::string& key, const std::string& value)
 
 void CMiniMap::ParseGeometry(const string& geostr)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string geodef = "2 2 200 200";
 
 	if ((sscanf(geostr.c_str(), "%i %i %i %i", &curPos.x, &curPos.y, &curDim.x, &curDim.y) == 4) && (geostr == geodef)) {
@@ -245,7 +245,7 @@ void CMiniMap::ParseGeometry(const string& geostr)
 
 void CMiniMap::ToggleMaximized(bool _maxspect)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((maximized = !maximized)) {
 		// stash current geometry
 		oldPos = curPos;
@@ -265,7 +265,7 @@ void CMiniMap::ToggleMaximized(bool _maxspect)
 void CMiniMap::SetAspectRatioGeometry(const float& viewSizeX, const float& viewSizeY,
 		const float& viewPosX, const float& viewPosY, const MINIMAP_POSITION position)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float  mapRatio = (float)mapDims.mapx / (float)mapDims.mapy;
 	const float viewRatio = viewSizeX / float(viewSizeY);;
 
@@ -312,7 +312,7 @@ void CMiniMap::LoadDualViewport() const {
 
 void CMiniMap::SetMaximizedGeometry()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!maxspect) {
 		curDim.y = globalRendering->viewSizeY;
 		curDim.x = curDim.y;
@@ -329,7 +329,7 @@ void CMiniMap::SetMaximizedGeometry()
 
 void CMiniMap::SetSlaveMode(bool newMode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (newMode) {
 		proxyMode   = false;
 		selecting   = false;
@@ -359,7 +359,7 @@ void CMiniMap::SetSlaveMode(bool newMode)
 
 void CMiniMap::ConfigCommand(const std::string& line)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<std::string>& words = CSimpleParser::Tokenize(line, 1);
 	if (words.empty())
 		return;
@@ -444,7 +444,7 @@ void CMiniMap::ConfigCommand(const std::string& line)
 
 void CMiniMap::SetGeometry(int px, int py, int sx, int sy)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	curPos = {px, py};
 	curDim = {sx, sy};
 
@@ -454,7 +454,7 @@ void CMiniMap::SetGeometry(int px, int py, int sx, int sy)
 
 void CMiniMap::UpdateGeometry()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// keep the same distance to the top
 	if (globalRendering->dualScreenMode) {
 		if (aspectRatio) {
@@ -579,7 +579,7 @@ void CMiniMap::UpdateGeometry()
 
 void CMiniMap::MoveView(const float3& mapPos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	camHandler->CameraTransition(0.0f);
 	camHandler->GetCurrentController().SetPos({mapPos.x, 0.0f, mapPos.z});
 	unitTracker.Disable();
@@ -588,7 +588,7 @@ void CMiniMap::MoveView(const float3& mapPos)
 
 void CMiniMap::SelectUnits(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit *_lastClicked = lastClicked;
 	lastClicked = nullptr;
 
@@ -634,7 +634,7 @@ void CMiniMap::SelectUnits(int x, int y)
 
 void CMiniMap::MouseWheel(bool up, float delta)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 mapPos = GetMapPosition(mouse->lastx, mouse->lasty);
 	mapPos.y = CGround::GetHeightAboveWater(mapPos.x, mapPos.z, false);
 
@@ -652,7 +652,7 @@ void CMiniMap::MouseWheel(bool up, float delta)
 
 bool CMiniMap::MousePress(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!mouseEvents)
 		return false;
 
@@ -720,7 +720,7 @@ bool CMiniMap::MousePress(int x, int y, int button)
 
 void CMiniMap::MouseMove(int x, int y, int dx, int dy, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if Press is not handled, should never get Move
 	assert(mouseEvents);
 
@@ -772,7 +772,7 @@ void CMiniMap::MouseMove(int x, int y, int dx, int dy, int button)
 
 void CMiniMap::MouseRelease(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if Press is not handled, should never get Release
 	assert(mouseEvents);
 
@@ -813,7 +813,7 @@ void CMiniMap::MouseRelease(int x, int y, int button)
 
 CUnit* CMiniMap::GetSelectUnit(const float3& pos) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* unit = CGameHelper::GetClosestUnit(pos, unitSelectRadius);
 
 	if (unit == nullptr)
@@ -828,7 +828,7 @@ CUnit* CMiniMap::GetSelectUnit(const float3& pos) const
 
 float3 CMiniMap::GetMapPosition(int x, int y) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float mapX = float3::maxxpos + 1.0f;
 	const float mapZ = float3::maxzpos + 1.0f;
 
@@ -856,7 +856,7 @@ float3 CMiniMap::GetMapPosition(int x, int y) const
 
 void CMiniMap::ProxyMousePress(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 mapPos = GetMapPosition(x, y);
 	const CUnit* unit = GetSelectUnit(mapPos);
 
@@ -879,7 +879,7 @@ void CMiniMap::ProxyMousePress(int x, int y, int button)
 
 void CMiniMap::ProxyMouseRelease(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 mapPos = GetMapPosition(x, y);
 	const CUnit* unit = GetSelectUnit(mapPos);
 
@@ -899,14 +899,14 @@ void CMiniMap::ProxyMouseRelease(int x, int y, int button)
 /******************************************************************************/
 bool CMiniMap::IsInside(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return !minimized && mapBox.Inside(x, y);
 }
 
 
 bool CMiniMap::IsAbove(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (minimized)
 		return ((x < buttonSize) && (y < buttonSize));
 
@@ -922,7 +922,7 @@ bool CMiniMap::IsAbove(int x, int y)
 
 std::string CMiniMap::GetTooltip(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (minimized)
 		return "Unminimize map";
 
@@ -963,7 +963,7 @@ std::string CMiniMap::GetTooltip(int x, int y)
 
 void CMiniMap::AddNotification(float3 pos, float3 color, float alpha)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Notification n;
 	n.pos = pos;
 	n.color[0] = color.x;
@@ -980,7 +980,7 @@ void CMiniMap::AddNotification(float3 pos, float3 color, float alpha)
 
 void CMiniMap::DrawCircle(TypedRenderBuffer<VA_TYPE_C>& rb, const float3& pos, SColor color, float radius) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float xPixels = radius * float(curDim.x) / float(mapDims.mapx * SQUARE_SIZE);
 	const float yPixels = radius * float(curDim.y) / float(mapDims.mapy * SQUARE_SIZE);
 	const auto lod = static_cast<int>(0.25 * math::log2(1.0f + (xPixels * yPixels)));
@@ -1002,7 +1002,7 @@ void CMiniMap::DrawCircle(TypedRenderBuffer<VA_TYPE_C>& rb, const float3& pos, S
 
 void CMiniMap::ApplyConstraintsMatrix() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!renderToTexture) {
 		if (globalRendering->dualScreenMode) {
 			glTranslatef(curPos.x, curPos.y, 0.0f);
@@ -1014,7 +1014,7 @@ void CMiniMap::ApplyConstraintsMatrix() const
 }
 
 float CMiniMap::GetRotation() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return flipped ? math::PI : 0;
 }
 
@@ -1022,7 +1022,7 @@ float CMiniMap::GetRotation() {
 
 void CMiniMap::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// need this because UpdateTextureCache sets curPos={0,0}
 	// (while calling DrawForReal, which can reach GetMapPos)
 	tmpPos = curPos;
@@ -1069,7 +1069,7 @@ void CMiniMap::Update()
 
 void CMiniMap::ResizeTextureCache()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	minimapTexSize = curDim;
 	multisampledFBO = (FBO::GetMaxSamples() > 1);
 
@@ -1119,7 +1119,7 @@ void CMiniMap::ResizeTextureCache()
 
 void CMiniMap::UpdateTextureCache()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// draws minimap into FBO
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -1195,7 +1195,7 @@ void CMiniMap::Draw()
 
 void CMiniMap::DrawMinimizedButtonQuad() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DTC>();
 	rb.AssertSubmission();
 
@@ -1224,7 +1224,7 @@ void CMiniMap::DrawMinimizedButtonQuad() const
 
 void CMiniMap::DrawMinimizedButtonLoop() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DC>();
 	rb.AssertSubmission();
 
@@ -1364,7 +1364,7 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 
 void CMiniMap::DrawCameraFrustumAndMouseSelection()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(curPos.x, curPos.y, curDim.x, curDim.y);
 
@@ -1525,7 +1525,7 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 
 void CMiniMap::DrawFrame()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DC>();
 	rb.AssertSubmission();
 
@@ -1552,7 +1552,7 @@ void CMiniMap::DrawFrame()
 
 void CMiniMap::IntBox::GetBoxRenderData(TypedRenderBuffer<VA_TYPE_2DC>& rb, SColor col) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float px = globalRendering->pixelX;
 	const float py = globalRendering->pixelY;
 
@@ -1566,7 +1566,7 @@ void CMiniMap::IntBox::GetBoxRenderData(TypedRenderBuffer<VA_TYPE_2DC>& rb, SCol
 
 void CMiniMap::IntBox::GetTextureBoxRenderData(TypedRenderBuffer<VA_TYPE_2DT>& rb) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float px = globalRendering->pixelX;
 	const float py = globalRendering->pixelY;
 
@@ -1581,7 +1581,7 @@ void CMiniMap::IntBox::GetTextureBoxRenderData(TypedRenderBuffer<VA_TYPE_2DT>& r
 
 void CMiniMap::DrawButtons()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int x = mouse->lastx;
 	const int y = mouse->lasty;
 
@@ -1685,7 +1685,7 @@ void CMiniMap::DrawButtons()
 
 void CMiniMap::DrawNotes()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (notes.empty()) {
 		return;
 	}
@@ -1741,7 +1741,7 @@ void CMiniMap::DrawNotes()
 
 bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!renderToTexture)
 		return false;
 
@@ -1796,7 +1796,7 @@ bool CMiniMap::RenderCachedTexture(bool useNormalizedCoors)
 
 void CMiniMap::DrawBackground() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
 	rb.AssertSubmission();
 
@@ -1874,7 +1874,7 @@ void CMiniMap::DrawUnitIcons() const
 
 void CMiniMap::DrawUnitRanges() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// draw unit ranges
 	const auto& selUnits = selectedUnitsHandler.selectedUnits;
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
@@ -1915,7 +1915,7 @@ void CMiniMap::DrawUnitRanges() const
 
 void CMiniMap::DrawWorldStuff() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 
 	if (flipped) {
@@ -1966,7 +1966,7 @@ void CMiniMap::DrawWorldStuff() const
 
 void CMiniMap::SetClipPlanes(const bool lua) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (lua) {
 		// prepare ClipPlanes for Lua's DrawInMinimap Modelview matrix
 

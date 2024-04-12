@@ -127,7 +127,7 @@
 #include "System/TimeProfiler.h"
 #include "System/LoadLock.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 #undef CreateDirectory
@@ -314,7 +314,7 @@ CGame::~CGame()
 
 void CGame::AddTimedJobs()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		JobDispatcher::Job j;
 
@@ -911,7 +911,7 @@ void CGame::LoadFinalize()
 
 void CGame::PostLoad()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	GameSetupDrawer::Disable();
 
 	if (gameServer != nullptr) {
@@ -922,7 +922,7 @@ void CGame::PostLoad()
 
 void CGame::KillLua(bool dtor)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// belongs here; destructs LuaIntro (which might access sound, etc)
 	// if LoadingMT=1, a reload-request might be seen by SpringApp::Run
 	// while the loading thread is still alive so this must go first
@@ -955,7 +955,7 @@ void CGame::KillLua(bool dtor)
 
 void CGame::KillMisc()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
 	CEndGameBox::Destroy();
 	IVideoCapturing::FreeInstance();
@@ -973,7 +973,7 @@ void CGame::KillMisc()
 
 void CGame::KillRendering()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
 	icon::iconHandler.Kill();
 	spring::SafeDelete(geometricObjects);
@@ -984,7 +984,7 @@ void CGame::KillRendering()
 
 void CGame::KillInterface()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
 	ProfileDrawer::SetEnabled(false);
 	camHandler->Kill();
@@ -1002,7 +1002,7 @@ void CGame::KillInterface()
 
 void CGame::KillSimulation()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
 
 	// Kill all teams that are still alive, in
@@ -1084,7 +1084,7 @@ void CGame::ResizeEvent()
 
 int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!gameOver && !isRepeat)
 		playerHandler.Player(gu->myPlayerNum)->currentStats.keyPresses++;
 
@@ -1135,7 +1135,7 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 int CGame::KeyReleased(int keyCode, int scanCode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
 		return 0;
 
@@ -1162,7 +1162,7 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 
 int CGame::KeyMapChanged()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.KeyMapChanged();
 
 	return 0;
@@ -1170,7 +1170,7 @@ int CGame::KeyMapChanged()
 
 int CGame::TextInput(const std::string& utf8Text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (eventHandler.TextInput(utf8Text))
 		return 0;
 
@@ -1179,7 +1179,7 @@ int CGame::TextInput(const std::string& utf8Text)
 
 int CGame::TextEditing(const std::string& utf8Text, unsigned int start, unsigned int length)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (eventHandler.TextEditing(utf8Text, start, length))
 		return 0;
 
@@ -1189,7 +1189,7 @@ int CGame::TextEditing(const std::string& utf8Text, unsigned int start, unsigned
 
 bool CGame::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	good_fpu_control_registers("CGame::Update");
 
 	jobDispatcher.Update();
@@ -1608,7 +1608,7 @@ void CGame::DrawInputReceivers()
 
 void CGame::DrawInterfaceWidgets()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (hideInterface)
 		return;
 
@@ -1648,7 +1648,7 @@ void CGame::DrawInterfaceWidgets()
 
 void CGame::ParseInputTextGeometry(const string& geo)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (geo == "default") { // safety
 		ParseInputTextGeometry("0.26 0.73 0.02 0.028");
 		return;
@@ -1669,14 +1669,14 @@ void CGame::ParseInputTextGeometry(const string& geo)
 
 void CGame::DrawInputText()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	gameTextInput.Draw();
 }
 
 
 void CGame::StartPlaying()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!playing);
 	playing = true;
 
@@ -1839,7 +1839,7 @@ void CGame::SimFrame() {
 
 void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool timeout)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gameOver)
 		return;
 
@@ -1899,7 +1899,7 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 
 void CGame::SendNetChat(std::string message, int destination)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (message.empty())
 		return;
 
@@ -1930,7 +1930,7 @@ void CGame::SendNetChat(std::string message, int destination)
 
 void CGame::HandleChatMsg(const ChatMessage& msg)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((msg.fromPlayer < 0) ||
 		((msg.fromPlayer >= playerHandler.ActivePlayers()) &&
 			(static_cast<unsigned int>(msg.fromPlayer) != SERVER_PLAYER))) {
@@ -2016,7 +2016,7 @@ void CGame::HandleChatMsg(const ChatMessage& msg)
 
 
 void CGame::StartSkip(int toFrame) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 0 // FIXME: desyncs
 	if (skipping)
 		LOG_L(L_ERROR, "skipping appears to be busted (%i)", skipping);
@@ -2050,7 +2050,7 @@ void CGame::StartSkip(int toFrame) {
 }
 
 void CGame::EndSkip() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 0 // FIXME
 	skipping = false;
 
@@ -2070,7 +2070,7 @@ void CGame::EndSkip() {
 
 
 void CGame::DrawSkip(bool blackscreen) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 0
 	const int framesLeft = (skipEndFrame - gs->frameNum);
 	if (blackscreen) {
@@ -2098,7 +2098,7 @@ void CGame::DrawSkip(bool blackscreen) {
 
 void CGame::ReloadCOB(const string& msg, int player)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!gs->cheatEnabled) {
 		LOG_L(L_WARNING, "[Game::%s] can only be used if cheating is enabled", __func__);
 		return;
@@ -2122,7 +2122,7 @@ void CGame::ReloadCOB(const string& msg, int player)
 
 bool CGame::IsSimLagging(float maxLatency) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float deltaTime = spring_tomsecs(spring_gettime() - lastFrameTime);
 	const float sfLatency = maxLatency / gs->speedFactor;
 
@@ -2132,7 +2132,7 @@ bool CGame::IsSimLagging(float maxLatency) const
 
 void CGame::Save(std::string&& fileName, std::string&& saveArgs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	globalSaveFileData.name = std::move(fileName);
 	globalSaveFileData.args = std::move(saveArgs);
 }
@@ -2141,7 +2141,7 @@ void CGame::Save(std::string&& fileName, std::string&& saveArgs)
 
 
 bool CGame::ProcessCommandText(int keyCode, int scanCode, const std::string& command) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (command.size() <= 2)
 		return false;
 
@@ -2156,7 +2156,7 @@ bool CGame::ProcessCommandText(int keyCode, int scanCode, const std::string& com
 
 bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool isRepeat)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ActionPressed(keyCode, scanCode, action, isRepeat))
 		return true;
 
@@ -2172,7 +2172,7 @@ bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool 
 
 void CGame::ActionReceived(const Action& action, int playerID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const ISyncedActionExecutor* executor = syncedGameCommands->GetActionExecutor(action.command);
 
 	if (executor != nullptr) {
@@ -2189,7 +2189,7 @@ void CGame::ActionReceived(const Action& action, int playerID)
 
 bool CGame::ActionPressed(int keyCode, int scanCode, const Action& action, bool isRepeat)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const IUnsyncedActionExecutor* executor = unsyncedGameCommands->GetActionExecutor(action.command);
 
 	if (executor != nullptr) {

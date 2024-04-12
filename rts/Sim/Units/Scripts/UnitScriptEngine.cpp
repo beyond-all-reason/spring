@@ -15,7 +15,7 @@
 #include "System/SafeUtil.h"
 #include "System/Config/ConfigHandler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(bool, AnimationMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded execution of animation ticks");
 
@@ -39,7 +39,7 @@ CR_REG_METADATA(CUnitScriptEngine, (
 
 
 void CUnitScriptEngine::InitStatic() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	cobEngine = &gCobEngine;
 	cobFileHandler = &gCobFileHandler;
 	unitScriptEngine = &gUnitScriptEngine;
@@ -50,7 +50,7 @@ void CUnitScriptEngine::InitStatic() {
 }
 
 void CUnitScriptEngine::KillStatic() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	cobEngine->Kill();
 	cobFileHandler->Kill();
 	unitScriptEngine->Kill();
@@ -64,7 +64,7 @@ void CUnitScriptEngine::KillStatic() {
 
 void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CCobFile* oldScriptFile = cobFileHandler->GetScriptFile(udef->scriptName);
 
 	if (oldScriptFile == nullptr) {
@@ -107,7 +107,7 @@ void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 
 void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance == currentScript)
 		return;
 
@@ -116,7 +116,7 @@ void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 
 void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance == currentScript)
 		return;
 

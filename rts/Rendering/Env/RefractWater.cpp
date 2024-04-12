@@ -10,18 +10,18 @@
 #include "Map/ReadMap.h"
 #include "System/bitops.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 void CRefractWater::InitResources(bool loadShader)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CAdvWater::InitResources(false);
 	LoadGfx();
 }
 
 void CRefractWater::FreeResources()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (subSurfaceTex) {
 		glDeleteTextures(1, &subSurfaceTex);
 		subSurfaceTex = 0;
@@ -30,7 +30,7 @@ void CRefractWater::FreeResources()
 
 void CRefractWater::LoadGfx()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// valid because GL_TEXTURE_RECTANGLE_ARB = GL_TEXTURE_RECTANGLE_EXT
 	if (GLEW_ARB_texture_rectangle || GLEW_EXT_texture_rectangle) {
 		target = GL_TEXTURE_RECTANGLE_ARB;
@@ -54,7 +54,7 @@ void CRefractWater::LoadGfx()
 
 void CRefractWater::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
@@ -92,7 +92,7 @@ void CRefractWater::Draw()
 
 void CRefractWater::SetupWaterDepthTex()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glActiveTextureARB(GL_TEXTURE3_ARB);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, readMap->GetShadingTexture()); // the shading texture has water depth encoded in alpha

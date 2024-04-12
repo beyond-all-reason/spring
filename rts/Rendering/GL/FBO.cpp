@@ -13,7 +13,7 @@
 #include "System/Log/ILog.h"
 #include "System/Config/ConfigHandler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(bool, AtiSwapRBFix).defaultValue(false);
 
@@ -35,7 +35,7 @@ bool FBO::IsSupported()
 
 GLint FBO::GetCurrentBoundFBO()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	GLint curFBO;
 	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &curFBO);
 	return curFBO;
@@ -66,7 +66,7 @@ GLenum FBO::GetTextureTargetByID(const GLuint id, const unsigned int i)
  */
 void FBO::DownloadAttachment(const GLenum attachment)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	GLuint target;
 	GLuint id;
 
@@ -160,7 +160,7 @@ void FBO::DownloadAttachment(const GLenum attachment)
  */
 void FBO::GLContextLost()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsSupported())
 		return;
 
@@ -191,7 +191,7 @@ void FBO::GLContextLost()
  */
 void FBO::GLContextReinit()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsSupported())
 		return;
 
@@ -231,7 +231,7 @@ void FBO::GLContextReinit()
  */
 void FBO::Init(bool noop)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (noop)
 		return;
 	if (!IsSupported())
@@ -258,7 +258,7 @@ void FBO::Init(bool noop)
  */
 void FBO::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (fboId == 0)
 		return;
 	if (!IsSupported())
@@ -295,7 +295,7 @@ void FBO::Kill()
  */
 bool FBO::IsValid() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (fboId != 0 && valid);
 }
 
@@ -305,7 +305,7 @@ bool FBO::IsValid() const
  */
 void FBO::Bind()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
 }
 
@@ -315,7 +315,7 @@ void FBO::Bind()
  */
 void FBO::Unbind()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Bind is instance whereas Unbind is static (!),
 	// this is cause Binding FBOs is a very expensive function
 	// and so you want to save redundant FBO bindings when ever possible. e.g:
@@ -331,7 +331,7 @@ void FBO::Unbind()
 
 bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, const std::array<int, 4>& dstRect, uint32_t mask, uint32_t filter)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!GLEW_EXT_framebuffer_blit)
 		return false;
 
@@ -372,7 +372,7 @@ bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, 
  */
 bool FBO::CheckStatus(const char* name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetCurrentBoundFBO() == fboId);
 	const GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 
@@ -414,7 +414,7 @@ bool FBO::CheckStatus(const char* name)
  */
 GLenum FBO::GetStatus()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetCurrentBoundFBO() == fboId);
 	return glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 }
@@ -425,7 +425,7 @@ GLenum FBO::GetStatus()
  */
 void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum attachment, const int mipLevel, const int zSlice )
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetCurrentBoundFBO() == fboId);
 	if (texTarget == GL_TEXTURE_1D) {
 		glFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_1D, texId, mipLevel);
@@ -445,7 +445,7 @@ void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum
  */
 void FBO::AttachRenderBuffer(const GLuint rboId, const GLenum attachment)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetCurrentBoundFBO() == fboId);
 	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, attachment, GL_RENDERBUFFER_EXT, rboId);
 }
@@ -456,7 +456,7 @@ void FBO::AttachRenderBuffer(const GLuint rboId, const GLenum attachment)
  */
 void FBO::Detach(const GLenum attachment)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetCurrentBoundFBO() == fboId);
 	GLuint target = 0;
 	glGetFramebufferAttachmentParameterivEXT(GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT, (GLint*) &target);
@@ -483,7 +483,7 @@ void FBO::Detach(const GLenum attachment)
  */
 void FBO::DetachAll()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetCurrentBoundFBO() == fboId);
 	for (int i = 0; i < maxAttachments; ++i) {
 		Detach(GL_COLOR_ATTACHMENT0_EXT + i);
@@ -498,7 +498,7 @@ void FBO::DetachAll()
  */
 void FBO::CreateRenderBuffer(const GLenum attachment, const GLenum format, const GLsizei width, const GLsizei height)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetCurrentBoundFBO() == fboId);
 	GLuint rbo;
 	glGenRenderbuffersEXT(1, &rbo);
@@ -514,7 +514,7 @@ void FBO::CreateRenderBuffer(const GLenum attachment, const GLenum format, const
  */
 void FBO::CreateRenderBufferMultisample(const GLenum attachment, const GLenum format, const GLsizei width, const GLsizei height, GLsizei samples)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetCurrentBoundFBO() == fboId);
 	assert(maxSamples > 0);
 	samples = std::min(samples, maxSamples);
@@ -529,7 +529,7 @@ void FBO::CreateRenderBufferMultisample(const GLenum attachment, const GLenum fo
 
 GLsizei FBO::GetMaxSamples()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (maxSamples >= 0)
 		return maxSamples;
 

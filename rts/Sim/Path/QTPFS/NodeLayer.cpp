@@ -31,14 +31,14 @@ inline int __bsfd (int mask)
 #include "Sim/Objects/SolidObject.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 unsigned int QTPFS::NodeLayer::NUM_SPEEDMOD_BINS;
 float        QTPFS::NodeLayer::MIN_SPEEDMOD_VALUE;
 float        QTPFS::NodeLayer::MAX_SPEEDMOD_VALUE;
 
 void QTPFS::NodeLayer::InitStatic() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	NUM_SPEEDMOD_BINS  = std::max(  1u, mapInfo->pfs.qtpfs_constants.numSpeedModBins);
 	MIN_SPEEDMOD_VALUE = std::max(0.0f, mapInfo->pfs.qtpfs_constants.minSpeedModVal);
 	MAX_SPEEDMOD_VALUE = std::min(8.0f, mapInfo->pfs.qtpfs_constants.maxSpeedModVal);
@@ -49,7 +49,7 @@ void QTPFS::NodeLayer::InitStatic() {
 
 
 void QTPFS::NodeLayer::Init(unsigned int layerNum) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert((QTPFS::NodeLayer::NUM_SPEEDMOD_BINS + 1) <= MaxSpeedBinTypeValue());
 
 	constexpr size_t initialNodeReserve = 256;
@@ -77,14 +77,14 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 }
 
 void QTPFS::NodeLayer::Clear() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	curSpeedMods.clear();
 	curSpeedBins.clear();
 }
 
 
 bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
 	unsigned int numClosedSquares = 0;
@@ -194,7 +194,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 
 
 QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float relSpeedMod) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE:
 	//     bins N and N+1 are reserved for modifiers <= min and >= max
 	//     respectively; blocked squares MUST be in their own category
@@ -211,7 +211,7 @@ QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float re
 
 
 void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// account for the rim of nodes around the bounding box
 	// (whose neighbors also changed during re-tesselation)
 	const int xmin = std::max(ur.x1 - 1, 0), xmax = std::min(ur.x2 + 1, mapDims.mapx);
@@ -267,7 +267,7 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, Update
 
 
 void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	openNodes.clear();
 	nodesFound.clear();
 
@@ -317,7 +317,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 		, int2 referencePoint
 		, std::vector<INode*>& tmpNodes
 		) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	tmpNodes.clear();
 	INode* bestNode = nullptr;
 	uint64_t bestDistScore = std::numeric_limits<uint64_t>::max();
@@ -395,7 +395,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 }
 
 QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	INode* selectedNode = nullptr;
 	int length = rootNodeSize;
 	int iz = (areaToEncase.z1 / length) * xRootNodes;

@@ -20,13 +20,13 @@
 #include <cstdio>
 #include <sstream>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using std::sprintf;
 
 
 static std::string FloatToSmallString(float num, float mul = 1) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	char c[50];
 
@@ -87,7 +87,7 @@ CEndGameBox::CEndGameBox(const std::vector<unsigned char>& winningAllyTeams)
 
 CEndGameBox::~CEndGameBox()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (graphTex != 0)
 		glDeleteTextures(1, &graphTex);
 
@@ -97,7 +97,7 @@ CEndGameBox::~CEndGameBox()
 
 bool CEndGameBox::MousePress(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return false;
 
@@ -134,7 +134,7 @@ bool CEndGameBox::MousePress(int x, int y, int button)
 
 void CEndGameBox::MouseMove(int x, int y, int dx, int dy, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return;
 
@@ -148,7 +148,7 @@ void CEndGameBox::MouseMove(int x, int y, int dx, int dy, int button)
 
 void CEndGameBox::MouseRelease(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return;
 
@@ -198,7 +198,7 @@ void CEndGameBox::MouseRelease(int x, int y, int button)
 
 bool CEndGameBox::IsAbove(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return false;
 
@@ -209,7 +209,7 @@ bool CEndGameBox::IsAbove(int x, int y)
 
 void CEndGameBox::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return;
 
@@ -488,7 +488,7 @@ void CEndGameBox::Draw()
 
 std::string CEndGameBox::GetTooltip(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return "";
 
@@ -516,7 +516,7 @@ std::string CEndGameBox::GetTooltip(int x, int y)
 
 void CEndGameBox::FillTeamStats()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	stats.clear();
 	stats.reserve(23);
 

@@ -20,7 +20,7 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CMissileProjectile, CWeaponProjectile, )
 
@@ -68,7 +68,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 	, oldDir(dir)
 	, smokeTrail(nullptr)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_MISSILE_PROJECTILE;
 
 
@@ -104,7 +104,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 
 void CMissileProjectile::Collision()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -114,7 +114,7 @@ void CMissileProjectile::Collision()
 
 void CMissileProjectile::Collision(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -124,7 +124,7 @@ void CMissileProjectile::Collision(CUnit* unit)
 
 void CMissileProjectile::Collision(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -134,7 +134,7 @@ void CMissileProjectile::Collision(CFeature* feature)
 
 void CMissileProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* own = owner();
 
 	if (--ttl > 0) {
@@ -267,7 +267,7 @@ void CMissileProjectile::Update()
 }
 
 float3 CMissileProjectile::UpdateTargeting() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 targetVel;
 
 	if (!weaponDef->tracks || target == nullptr)
@@ -301,7 +301,7 @@ float3 CMissileProjectile::UpdateTargeting() {
 }
 
 void CMissileProjectile::UpdateWobble() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!isWobbling)
 		return;
 
@@ -320,7 +320,7 @@ void CMissileProjectile::UpdateWobble() {
 }
 
 void CMissileProjectile::UpdateDance() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!isDancing)
 		return;
 
@@ -335,30 +335,30 @@ void CMissileProjectile::UpdateDance() {
 
 inline float CMissileProjectile::GetSmokeSize() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeSize;
 }
 
 inline float CMissileProjectile::GetSmokeColor() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeColor;
 }
 
 inline int CMissileProjectile::GetSmokeTime() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeTime;
 }
 
 inline int CMissileProjectile::GetSmokePeriod() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokePeriod;
 }
 
 void CMissileProjectile::UpdateGroundBounce() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return;
 
@@ -376,7 +376,7 @@ void CMissileProjectile::UpdateGroundBounce() {
 
 void CMissileProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[1])
 		return;
 
@@ -394,7 +394,7 @@ void CMissileProjectile::Draw()
 
 int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -420,6 +420,6 @@ int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce
 
 int CMissileProjectile::GetProjectilesCount() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 1 * validTextures[0];
 }

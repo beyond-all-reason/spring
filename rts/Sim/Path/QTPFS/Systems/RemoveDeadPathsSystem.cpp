@@ -23,7 +23,7 @@
 #include "System/Threading/ThreadPool.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using namespace SystemGlobals;
 using namespace QTPFS;
@@ -31,7 +31,7 @@ using namespace QTPFS;
 
 void RemoveDeadPathsSystem::Init()
 {
-    //ZoneScoped;
+    RECOIL_DETAILED_TRACY_ZONE;
     auto& comp = systemGlobals.CreateSystemComponent<RemoveDeadPathsComponent>();
     systemUtils.OnUpdate().connect<&RemoveDeadPathsSystem::Update>();
 }
@@ -55,6 +55,6 @@ void RemoveDeadPathsSystem::Update()
 }
 
 void RemoveDeadPathsSystem::Shutdown() {
-    //ZoneScoped;
+    RECOIL_DETAILED_TRACY_ZONE;
     systemUtils.OnUpdate().disconnect<&RemoveDeadPathsSystem::Update>();
 }

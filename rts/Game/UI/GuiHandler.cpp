@@ -56,7 +56,7 @@
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(bool, MiniMapMarker).defaultValue(true).headlessValue(false);
 CONFIG(bool, InvertQueueKey).defaultValue(false);
@@ -96,7 +96,7 @@ CGuiHandler::CGuiHandler()
 
 bool CGuiHandler::GetQueueKeystate() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (!invertQueueKey && KeyInput::GetKeyModState(KMOD_SHIFT)) ||
 	       (invertQueueKey && !KeyInput::GetKeyModState(KMOD_SHIFT));
 }
@@ -104,7 +104,7 @@ bool CGuiHandler::GetQueueKeystate() const
 
 void CGuiHandler::LoadDefaults()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	xIcons = 2;
 	yIcons = 8;
 
@@ -141,7 +141,7 @@ void CGuiHandler::LoadDefaults()
 
 static bool SafeAtoF(float& var, const std::string& value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	char* endPtr;
 	const char* startPtr = value.c_str();
 	const float tmp = (float)strtod(startPtr, &endPtr);
@@ -157,7 +157,7 @@ static bool SafeAtoF(float& var, const std::string& value)
 
 bool CGuiHandler::EnableLuaUI(bool enableCommand)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaUI != nullptr) {
 		if (enableCommand) {
 			LOG_L(L_WARNING, "[GUIHandler] LuaUI is already enabled");
@@ -220,7 +220,7 @@ bool CGuiHandler::DisableLuaUI(bool layoutIcons)
 
 bool CGuiHandler::LoadConfig(const std::string& cfg)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CSimpleParser parser(cfg);
 
 	std::string deadStr;
@@ -395,7 +395,7 @@ bool CGuiHandler::LoadConfig(const std::string& cfg)
 
 void CGuiHandler::ParseFillOrder(const std::string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// setup the default order
 	fillOrder.clear();
 	fillOrder.reserve(iconsPerPage);
@@ -428,7 +428,7 @@ void CGuiHandler::ParseFillOrder(const std::string& text)
 
 int CGuiHandler::ParseIconSlot(const std::string& text) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const char rowLetter = tolower(text[0]);
 
 	if ((rowLetter < 'a') || (rowLetter > 'z'))
@@ -453,7 +453,7 @@ int CGuiHandler::ParseIconSlot(const std::string& text) const
 
 bool CGuiHandler::ReloadConfigFromFile(const std::string& fileName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (fileName.empty())
 		return (ReloadConfigFromFile(DEFAULT_GUI_CONFIG));
 
@@ -469,7 +469,7 @@ bool CGuiHandler::ReloadConfigFromFile(const std::string& fileName)
 
 bool CGuiHandler::ReloadConfigFromString(const std::string& cfg)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LoadConfig(cfg);
 	activePage = 0;
 	selectedUnitsHandler.SetCommandPage(activePage);
@@ -480,7 +480,7 @@ bool CGuiHandler::ReloadConfigFromString(const std::string& cfg)
 
 void CGuiHandler::ResizeIconArray(size_t size)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (icons.size() < size)
 		icons.resize(std::max(icons.size() * 2, size));
 
@@ -490,7 +490,7 @@ void CGuiHandler::ResizeIconArray(size_t size)
 
 void CGuiHandler::AppendPrevAndNext(std::vector<SCommandDescription>& cmds)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		cmds.emplace_back();
 
@@ -520,7 +520,7 @@ void CGuiHandler::AppendPrevAndNext(std::vector<SCommandDescription>& cmds)
 
 int CGuiHandler::FindInCommandPage()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((inCommand < 0) || ((size_t)inCommand >= commands.size()))
 		return -1;
 
@@ -539,7 +539,7 @@ int CGuiHandler::FindInCommandPage()
 void CGuiHandler::RevertToCmdDesc(const SCommandDescription& cmdDesc,
                                   bool defaultCommand, bool samePage)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (size_t a = 0; a < commands.size(); ++a) {
 		if (commands[a].id != cmdDesc.id)
 			continue;
@@ -574,7 +574,7 @@ void CGuiHandler::RevertToCmdDesc(const SCommandDescription& cmdDesc,
 
 void CGuiHandler::LayoutIcons(bool useSelectionPage)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool defCmd;
 	bool validInCommand;
 	bool samePage;
@@ -739,7 +739,7 @@ void CGuiHandler::LayoutIcons(bool useSelectionPage)
 
 bool CGuiHandler::LayoutCustomIcons(bool useSelectionPage)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(luaUI != nullptr);
 
 	// get the commands to process
@@ -967,13 +967,13 @@ bool CGuiHandler::LayoutCustomIcons(bool useSelectionPage)
 
 void CGuiHandler::GiveCommand(const Command& cmd, bool fromUser)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	commandsToGive.emplace_back(cmd, fromUser);
 }
 
 
 void CGuiHandler::GiveCommandsNow() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const auto& [cmd, fromUser] : commandsToGive) {
 		if (eventHandler.CommandNotify(cmd))
 			continue;
@@ -993,7 +993,7 @@ void CGuiHandler::GiveCommandsNow() {
 
 void CGuiHandler::ConvertCommands(std::vector<SCommandDescription>& cmds)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!newAttackMode)
 		return;
 
@@ -1015,7 +1015,7 @@ void CGuiHandler::ConvertCommands(std::vector<SCommandDescription>& cmds)
 
 void CGuiHandler::SetShowingMetal(bool show)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!show) {
 		if (showingMetal) {
 			infoTextureHandler->DisableCurrentMode();
@@ -1034,7 +1034,7 @@ void CGuiHandler::SetShowingMetal(bool show)
 
 void CGuiHandler::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetCursorIcon();
 
 	{
@@ -1063,7 +1063,7 @@ void CGuiHandler::Update()
 
 void CGuiHandler::SetCursorIcon() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	string newCursor = "cursornormal";
 	float cursorScale = 1.0f;
 
@@ -1141,7 +1141,7 @@ void CGuiHandler::SetCursorIcon() const
 
 bool CGuiHandler::TryTarget(const SCommandDescription& cmdDesc) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (cmdDesc.id != CMD_ATTACK)
 		return true;
 
@@ -1194,7 +1194,7 @@ bool CGuiHandler::TryTarget(const SCommandDescription& cmdDesc) const
 
 bool CGuiHandler::MousePress(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		if (button != SDL_BUTTON_LEFT && button != SDL_BUTTON_RIGHT && button != -SDL_BUTTON_RIGHT && button != -SDL_BUTTON_LEFT)
 			return false;
@@ -1244,7 +1244,7 @@ bool CGuiHandler::MousePress(int x, int y, int button)
 
 void CGuiHandler::MouseRelease(int x, int y, int button, const float3& cameraPos, const float3& mouseDir)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (button != SDL_BUTTON_LEFT && button != SDL_BUTTON_RIGHT && button != -SDL_BUTTON_RIGHT && button != -SDL_BUTTON_LEFT)
 		return;
 
@@ -1312,7 +1312,7 @@ void CGuiHandler::MouseRelease(int x, int y, int button, const float3& cameraPos
 
 bool CGuiHandler::SetActiveCommand(int cmdIndex, bool rightMouseButton)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (cmdIndex >= (int)commands.size())
 		return false;
 
@@ -1412,7 +1412,7 @@ bool CGuiHandler::SetActiveCommand(int cmdIndex, int button,
                                    bool leftMouseButton, bool rightMouseButton,
                                    bool alt, bool ctrl, bool meta, bool shift)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// use the button value instead of rightMouseButton
 	const bool effectiveRMB = (button == SDL_BUTTON_LEFT) ? false : true;
 
@@ -1449,7 +1449,7 @@ bool CGuiHandler::SetActiveCommand(int cmdIndex, int button,
 
 int CGuiHandler::IconAtPos(int x, int y) // GetToolTip --> IconAtPos
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float fx = MouseX(x);
 	const float fy = MouseY(y);
 
@@ -1497,7 +1497,7 @@ struct ModGroup {
 
 static bool ParseCustomCmdMods(std::string& cmd, ModGroup& in, ModGroup& out)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const char* c = cmd.c_str();
 	if (*c != '@') {
 		return false;
@@ -1537,7 +1537,7 @@ static bool ParseCustomCmdMods(std::string& cmd, ModGroup& in, ModGroup& out)
 
 static bool CheckCustomCmdMods(bool rightMouseButton, ModGroup& inMods)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (((inMods.alt   == Required)  && !KeyInput::GetKeyModState(KMOD_ALT))   ||
 	    ((inMods.alt   == Forbidden) &&  KeyInput::GetKeyModState(KMOD_ALT))   ||
 	    ((inMods.ctrl  == Required)  && !KeyInput::GetKeyModState(KMOD_CTRL))  ||
@@ -1556,7 +1556,7 @@ static bool CheckCustomCmdMods(bool rightMouseButton, ModGroup& inMods)
 
 void CGuiHandler::RunCustomCommands(const std::vector<std::string>& cmds, bool rightMouseButton)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static int depth = 0;
 	if (depth > 8) {
 		return; // recursion protection
@@ -1597,7 +1597,7 @@ void CGuiHandler::RunCustomCommands(const std::vector<std::string>& cmds, bool r
 
 bool CGuiHandler::AboveGui(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (iconsCount <= 0)
 		return false;
 
@@ -1615,7 +1615,7 @@ bool CGuiHandler::AboveGui(int x, int y)
 
 unsigned char CGuiHandler::CreateOptions(bool rightMouseButton)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char options = 0;
 
 	if (rightMouseButton) {
@@ -1638,14 +1638,14 @@ unsigned char CGuiHandler::CreateOptions(bool rightMouseButton)
 }
 unsigned char CGuiHandler::CreateOptions(int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return CreateOptions(button != SDL_BUTTON_LEFT);
 }
 
 
 float CGuiHandler::GetNumberInput(const SCommandDescription& cd) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float minV = 0.0f;
 	float maxV = 100.0f;
 	if (!cd.params.empty()) { minV = atof(cd.params[0].c_str()); }
@@ -1664,7 +1664,7 @@ float CGuiHandler::GetNumberInput(const SCommandDescription& cd) const
 // LuaUnsyncedRead::GetDefaultCommand --> GetDefaultCommand
 int CGuiHandler::GetDefaultCommand(int x, int y, const float3& cameraPos, const float3& mouseDir) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CInputReceiver* ir = nullptr;
 
 	if (!game->hideInterface && !mouse->offscreen)
@@ -1706,7 +1706,7 @@ int CGuiHandler::GetDefaultCommand(int x, int y, const float3& cameraPos, const 
 
 bool CGuiHandler::ProcessLocalActions(const Action& action)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// do not process these actions if the control panel is not visible
 	if (iconsCount <= 0)
 		return false;
@@ -1768,7 +1768,7 @@ bool CGuiHandler::ProcessLocalActions(const Action& action)
 
 bool CGuiHandler::ProcessBuildActions(const Action& action)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string& arg = StringToLower(action.extra);
 	bool ret = false;
 
@@ -1821,7 +1821,7 @@ bool CGuiHandler::ProcessBuildActions(const Action& action)
 
 int CGuiHandler::GetIconPosCommand(int slot) const // only called by SetActiveCommand
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (slot < 0)
 		return -1;
 
@@ -1836,7 +1836,7 @@ int CGuiHandler::GetIconPosCommand(int slot) const // only called by SetActiveCo
 
 bool CGuiHandler::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyCode == SDLK_ESCAPE && activeMousePress) {
 		activeMousePress = false;
 		inCommand = -1;
@@ -1885,7 +1885,7 @@ bool CGuiHandler::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 bool CGuiHandler::SetActiveCommand(const Action& action,
                                    const CKeySet& ks, int actionIndex)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ProcessLocalActions(action)) {
 		return true;
 	}
@@ -2051,7 +2051,7 @@ bool CGuiHandler::SetActiveCommand(const Action& action,
 
 bool CGuiHandler::KeyReleased(int keyCode, int scanCode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return false;
 }
 
@@ -2068,14 +2068,14 @@ void CGuiHandler::FinishCommand(int button)
 
 bool CGuiHandler::IsAbove(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return AboveGui(x, y);
 }
 
 
 std::string CGuiHandler::GetTooltip(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string s;
 
 	const int iconPos = IconAtPos(x, y);
@@ -2117,7 +2117,7 @@ std::string CGuiHandler::GetBuildTooltip() const
 
 Command CGuiHandler::GetOrderPreview()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return GetCommand(mouse->lastx, mouse->lasty, -1, true);
 }
 
@@ -2155,7 +2155,7 @@ bool ZeroRadiusAllowed(const Command &c) {
 
 Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool preview, const float3& cameraPos, const float3& mouseDir)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const Command defaultRet(CMD_FAILED);
 
 	int tempInCommand = inCommand;
@@ -2450,7 +2450,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 
 static bool WouldCancelAnyQueued(const BuildInfo& b)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const Command c = b.CreateCommand();
 
 	for (const int unitID: selectedUnitsHandler.selectedUnits) {
@@ -2466,7 +2466,7 @@ static bool WouldCancelAnyQueued(const BuildInfo& b)
 
 static void FillRowOfBuildPos(const BuildInfo& startInfo, float x, float z, float xstep, float zstep, int n, int facing, bool nocancel, std::vector<BuildInfo>& ret)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int i = 0; i < n; ++i) {
 		BuildInfo bi(startInfo.def, float3(x, 0.0f, z), (startInfo.buildFacing + facing) % NUM_FACINGS);
 		bi.pos = CGameHelper::Pos2BuildPos(bi, false);
@@ -2482,7 +2482,7 @@ static void FillRowOfBuildPos(const BuildInfo& startInfo, float x, float z, floa
 
 size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInfo& endInfo, const float3& cameraPos, const float3& mouseDir)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// both builds must have the same unitdef
 	assert(startInfo.def == endInfo.def);
 
@@ -2599,7 +2599,7 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 
 void CGuiHandler::ProcessFrontPositions(float3& pos0, const float3& pos1)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// rotate around corner
 	if (!frontByEnds)
 		return;
@@ -2638,7 +2638,7 @@ void CGuiHandler::Draw()
 
 static std::string FindCornerText(const std::string& corner, const vector<std::string>& params)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const std::string& param: params) {
 		if (param.find(corner) == 0)
 			return param.substr(corner.length());
@@ -2650,7 +2650,7 @@ static std::string FindCornerText(const std::string& corner, const vector<std::s
 
 void CGuiHandler::DrawCustomButton(const IconInfo& icon, bool highlight)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const SCommandDescription& cmdDesc = commands[icon.commandsID];
 
 	const bool usedTexture = DrawTexture(icon, cmdDesc.iconname);
@@ -2678,7 +2678,7 @@ void CGuiHandler::DrawCustomButton(const IconInfo& icon, bool highlight)
 
 bool CGuiHandler::DrawUnitBuildIcon(const IconInfo& icon, int unitDefID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const UnitDef* ud = unitDefHandler->GetUnitDefByID(unitDefID);
 
 	if (ud == nullptr)
@@ -2707,7 +2707,7 @@ static inline bool ParseTextures(
 	float& xscale,
 	float& yscale
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// format:  "&<xscale>x<yscale>&<tex>1&<tex2>"  --  <>'s are not included
 
 	char* endPtr;
@@ -2742,7 +2742,7 @@ static inline bool ParseTextures(
 
 static inline bool BindUnitTexByString(const std::string& str)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	char* endPtr;
 	const char* startPtr = str.c_str() + 1; // skip the '#'
 	const int unitDefID = (int)strtol(startPtr, &endPtr, 10);
@@ -2762,7 +2762,7 @@ static inline bool BindUnitTexByString(const std::string& str)
 
 static inline bool BindIconTexByString(const std::string& str)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	char* endPtr;
 	const char* startPtr = str.c_str() + 1; // skip the '^'
 	const int unitDefID = (int)strtol(startPtr, &endPtr, 10);
@@ -2782,7 +2782,7 @@ static inline bool BindIconTexByString(const std::string& str)
 
 static inline bool BindLuaTexByString(const std::string& str)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CLuaHandle* luaHandle = nullptr;
 	const char scriptType = str[1];
 	switch (scriptType) {
@@ -2814,7 +2814,7 @@ static inline bool BindLuaTexByString(const std::string& str)
 
 static bool BindTextureString(const std::string& str)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (str[0] == '#')
 		return BindUnitTexByString(str);
 
@@ -2830,7 +2830,7 @@ static bool BindTextureString(const std::string& str)
 
 bool CGuiHandler::DrawTexture(const IconInfo& icon, const std::string& texName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (texName.empty())
 		return false;
 
@@ -2900,7 +2900,7 @@ bool CGuiHandler::DrawTexture(const IconInfo& icon, const std::string& texName)
 
 void CGuiHandler::DrawIconFrame(const IconInfo& icon)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const Box& b = icon.visual;
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_LINE_LOOP);
@@ -2915,7 +2915,7 @@ void CGuiHandler::DrawIconFrame(const IconInfo& icon)
 
 void CGuiHandler::DrawName(const IconInfo& icon, const std::string& text, bool offsetForLEDs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (text.empty())
 		return;
 
@@ -2940,7 +2940,7 @@ void CGuiHandler::DrawName(const IconInfo& icon, const std::string& text, bool o
 
 void CGuiHandler::DrawNWtext(const IconInfo& icon, const std::string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (text.empty())
 		return;
 
@@ -2956,7 +2956,7 @@ void CGuiHandler::DrawNWtext(const IconInfo& icon, const std::string& text)
 
 void CGuiHandler::DrawSWtext(const IconInfo& icon, const std::string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (text.empty())
 		return;
 
@@ -2972,7 +2972,7 @@ void CGuiHandler::DrawSWtext(const IconInfo& icon, const std::string& text)
 
 void CGuiHandler::DrawNEtext(const IconInfo& icon, const std::string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (text.empty())
 		return;
 
@@ -2988,7 +2988,7 @@ void CGuiHandler::DrawNEtext(const IconInfo& icon, const std::string& text)
 
 void CGuiHandler::DrawSEtext(const IconInfo& icon, const std::string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (text.empty())
 		return;
 
@@ -3004,7 +3004,7 @@ void CGuiHandler::DrawSEtext(const IconInfo& icon, const std::string& text)
 
 void CGuiHandler::DrawHilightQuad(const IconInfo& icon)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (icon.commandsID == inCommand) {
 		glColor4f(0.3f, 0.0f, 0.0f, 1.0f);
 	} else if (mouse->buttons[SDL_BUTTON_LEFT].pressed) {
@@ -3027,7 +3027,7 @@ void CGuiHandler::DrawHilightQuad(const IconInfo& icon)
 
 void CGuiHandler::DrawButtons() // Only called by Draw
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glLineWidth(1.0f);
 	font->Begin();
 
@@ -3188,7 +3188,7 @@ void CGuiHandler::DrawButtons() // Only called by Draw
 
 void CGuiHandler::DrawMenuName() // Only called by drawbuttons
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (menuName.empty() || (iconsCount == 0))
 		return;
 
@@ -3214,7 +3214,7 @@ void CGuiHandler::DrawMenuName() // Only called by drawbuttons
 
 void CGuiHandler::DrawSelectionInfo()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!selectedUnitsHandler.selectedUnits.empty()) {
 		std::ostringstream buf;
 
@@ -3252,7 +3252,7 @@ void CGuiHandler::DrawSelectionInfo()
 
 void CGuiHandler::DrawNumberInput() // Only called by drawbuttons
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// draw the value for CMDTYPE_NUMBER commands
 	if (size_t(inCommand) < commands.size()) {
 		const SCommandDescription& cd = commands[inCommand];
@@ -3287,7 +3287,7 @@ void CGuiHandler::DrawNumberInput() // Only called by drawbuttons
 
 void CGuiHandler::DrawPrevArrow(const IconInfo& icon)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const Box& b = icon.visual;
 	const float yCenter = 0.5f * (b.y1 + b.y2);
 	const float xSize = 0.166f * math::fabs(b.x2 - b.x1);
@@ -3306,7 +3306,7 @@ void CGuiHandler::DrawPrevArrow(const IconInfo& icon)
 
 void CGuiHandler::DrawNextArrow(const IconInfo& icon)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const Box& b = icon.visual;
 	const float yCenter = 0.5f * (b.y1 + b.y2);
 	const float xSize = 0.166f * math::fabs(b.x2 - b.x1);
@@ -3325,7 +3325,7 @@ void CGuiHandler::DrawNextArrow(const IconInfo& icon)
 
 void CGuiHandler::DrawOptionLEDs(const IconInfo& icon)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const SCommandDescription& cmdDesc = commands[icon.commandsID];
 
 	const int pCount = (int)cmdDesc.params.size() - 1;
@@ -3385,7 +3385,7 @@ void CGuiHandler::DrawOptionLEDs(const IconInfo& icon)
 
 static inline void DrawSensorRange(int radius, const float* color, const float3& pos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (radius > 0) {
 		glSurfaceCircle(pos, (float)radius, { color }, 40);
 	}
@@ -3394,7 +3394,7 @@ static inline void DrawSensorRange(int radius, const float* color, const float3&
 
 static void DrawUnitDefRanges(const CUnit* unit, const UnitDef* unitdef, const float3 pos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// draw build range for immobile builders
 	if (unitdef->builder) {
 		const float radius = unitdef->buildDistance;
@@ -3439,7 +3439,7 @@ static void DrawUnitDefRanges(const CUnit* unit, const UnitDef* unitdef, const f
 
 static inline GLuint GetConeList()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static GLuint list = 0; // FIXME: put in the class
 
 	if (list != 0)
@@ -3463,7 +3463,7 @@ static inline GLuint GetConeList()
 
 static void DrawWeaponCone(const float3& pos, float len, float hrads, float heading, float pitch)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 
 	const float xlen = len * std::cos(hrads);
@@ -3492,7 +3492,7 @@ static void DrawWeaponCone(const float3& pos, float len, float hrads, float head
 
 static inline void DrawWeaponArc(const CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const CWeapon* w: unit->weapons) {
 		// attack order needs to have been issued or wantedDir is undefined
 		if (!w->HaveTarget())
@@ -3512,7 +3512,7 @@ static inline void DrawWeaponArc(const CUnit* unit)
 
 void CGuiHandler::DrawMapStuff(bool onMiniMap)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!onMiniMap) {
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
@@ -3919,7 +3919,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 
 void CGuiHandler::DrawMiniMapMarker(const float3& cameraPos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float w = 10.0f;
 	const float h = 30.0f;
 
@@ -3972,7 +3972,7 @@ void CGuiHandler::DrawMiniMapMarker(const float3& cameraPos)
 
 void CGuiHandler::DrawCentroidCursor()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int cmd = -1;
 	if (size_t(inCommand) < commands.size()) {
 		cmd = commands[inCommand].id;
@@ -4026,7 +4026,7 @@ void CGuiHandler::DrawCentroidCursor()
 
 void CGuiHandler::DrawArea(float3 pos, float radius, const float* color)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useStencil) {
 		DrawSelectCircle(pos, radius, color);
 		return;
@@ -4061,7 +4061,7 @@ void CGuiHandler::DrawFormationFrontOrder(
 	const float3& cameraPos,
 	const float3& mouseDir
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CMouseHandler::ButtonPressEvt& bp = mouse->buttons[button];
 
 	const float buttonDist = CGround::LineGroundCol(bp.camPos, bp.camPos + bp.dir * camera->GetFarPlaneDist() * 1.4f, false);
@@ -4158,7 +4158,7 @@ struct BoxData {
 
 static void DrawBoxShape(const void* data)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const BoxData* boxData = static_cast<const BoxData*>(data);
 	const float3& mins = boxData->mins;
 	const float3& maxs = boxData->maxs;
@@ -4192,7 +4192,7 @@ static void DrawBoxShape(const void* data)
 
 static void DrawCornerPosts(const float3& pos0, const float3& pos1)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 lineVector(0.0f, 128.0f, 0.0f);
 	const float3 corner0(pos0.x, CGround::GetHeightAboveWater(pos0.x, pos0.z, false), pos0.z);
 	const float3 corner1(pos1.x, CGround::GetHeightAboveWater(pos1.x, pos1.z, false), pos1.z);
@@ -4217,7 +4217,7 @@ static void DrawCornerPosts(const float3& pos0, const float3& pos1)
 static void StencilDrawSelectBox(const float3& pos0, const float3& pos1,
 		bool invColorSelect)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	BoxData boxData;
 	boxData.mins = float3(std::min(pos0.x, pos1.x), readMap->GetCurrMinHeight() -   250.0f, std::min(pos0.z, pos1.z));
 	boxData.maxs = float3(std::max(pos0.x, pos1.x), readMap->GetCurrMaxHeight() + 10000.0f, std::max(pos0.z, pos1.z));
@@ -4244,7 +4244,7 @@ static void StencilDrawSelectBox(const float3& pos0, const float3& pos1,
 
 static void FullScreenDraw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
@@ -4261,7 +4261,7 @@ static void FullScreenDraw()
 
 static void DrawMinMaxBox(const float3& mins, const float3& maxs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBegin(GL_QUADS);
 		// the top
 		glVertex3f(mins.x, maxs.y, mins.z);
@@ -4287,7 +4287,7 @@ static void DrawMinMaxBox(const float3& mins, const float3& maxs)
 
 void CGuiHandler::DrawSelectBox(const float3& pos0, const float3& pos1, const float3& cameraPos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useStencil) {
 		StencilDrawSelectBox(pos0, pos1, invColorSelect);
 		return;
@@ -4343,7 +4343,7 @@ struct CylinderData {
 
 static void DrawCylinderShape(const void* data)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CylinderData& cyl = *static_cast<const CylinderData*>(data);
 	const float step = math::TWOPI / cyl.divs;
 	int i;
@@ -4378,7 +4378,7 @@ static void DrawCylinderShape(const void* data)
 void CGuiHandler::DrawSelectCircle(const float3& pos, float radius,
                                    const float* color)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CylinderData cylData;
 	cylData.xc = pos.x;
 	cylData.zc = pos.z;

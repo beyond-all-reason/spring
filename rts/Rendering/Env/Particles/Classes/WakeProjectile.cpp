@@ -11,7 +11,7 @@
 #include "Rendering/Textures/TextureAtlas.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CWakeProjectile, CProjectile, )
 
@@ -59,7 +59,7 @@ CWakeProjectile::CWakeProjectile(
 
 void CWakeProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos += speed;
 	rotation += rotSpeed;
 	alpha -= alphaFalloff;
@@ -85,7 +85,7 @@ void CWakeProjectile::Update()
 
 void CWakeProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char col[4];
 	col[0] = (unsigned char) (255 * alpha);
 	col[1] = (unsigned char) (255 * alpha);

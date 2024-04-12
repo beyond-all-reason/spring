@@ -20,7 +20,7 @@
 	#include <cstring> // strncmp
 #endif
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
@@ -44,7 +44,7 @@ CONFIG(bool, UseShaderCache).defaultValue(true).description("If already compiled
 
 static bool glslIsValid(GLuint obj)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool isShader = glIsShader(obj);
 	assert(glIsShader(obj) || glIsProgram(obj));
 
@@ -60,7 +60,7 @@ static bool glslIsValid(GLuint obj)
 
 static std::string glslGetLog(GLuint obj)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool isShader = glIsShader(obj);
 	assert(glIsShader(obj) || glIsProgram(obj));
 
@@ -86,7 +86,7 @@ static std::string glslGetLog(GLuint obj)
 
 static bool ExtractGlslVersion(std::string* src, std::string* version)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto pos = src->find("#version ");
 
 	if (pos != std::string::npos) {
@@ -143,7 +143,7 @@ namespace Shader {
 
 	bool IShaderObject::ReloadFromDisk()
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		reloadRequested = true;
 		std::string newText = GetShaderSource(srcFile);
 
@@ -229,7 +229,7 @@ namespace Shader {
 
 	void IProgramObject::SetLogReporting(bool b, bool shObjects)
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		logReporting = b;
 		if (shObjects) {
 			for (IShaderObject*& so : shaderObjs) {
@@ -239,7 +239,7 @@ namespace Shader {
 	}
 
 	void IProgramObject::Release() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		for (IShaderObject*& so: shaderObjs) {
 			so->Release();
 			delete so;
@@ -267,7 +267,7 @@ namespace Shader {
 	}
 
 	bool IProgramObject::RemoveShaderObject(GLenum soType) {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		for (size_t i = 0; i < shaderObjs.size(); ++i) {
 			IShaderObject*& so = shaderObjs[i];
 			if (so->GetType() == soType) {
@@ -284,7 +284,7 @@ namespace Shader {
 
 	void IProgramObject::Enable()
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		assert(!bound);
 		shaderHandler->SetCurrentlyBoundProgram(this);
 		bound = true;
@@ -292,20 +292,20 @@ namespace Shader {
 
 	void IProgramObject::Disable()
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		assert(bound);
 		shaderHandler->SetCurrentlyBoundProgram(nullptr);
 		bound = false;
 	}
 
 	bool IProgramObject::LoadFromLua(const std::string& filename) {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		return Shader::LoadFromLua(this, filename);
 	}
 
 	void IProgramObject::RecompileIfNeeded(bool validate)
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		if (shaderFlags.HashSet() && !shaderFlags.Updated())
 			return;
 
@@ -333,7 +333,7 @@ namespace Shader {
 
 	UniformState* IProgramObject::GetNewUniformState(const char* name)
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		const auto hash = hashString(name);
 		const auto it = uniformStates.emplace(hash, UniformState{name});
 
@@ -346,7 +346,7 @@ namespace Shader {
 
 	void IProgramObject::AddTextureBinding(const int texUnit, const std::string& luaTexName)
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		LuaMatTexture luaTex;
 
 		if (!LuaOpenGLUtils::ParseTextureImage(nullptr, luaTex, luaTexName))
@@ -357,7 +357,7 @@ namespace Shader {
 
 	void IProgramObject::BindTextures() const
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		for (const auto& p: luaTextures) {
 			glActiveTexture(GL_TEXTURE0 + p.first);
 			(p.second).Bind();
@@ -376,16 +376,16 @@ namespace Shader {
 	}
 
 	void ARBProgramObject::SetUniformTarget(int target) {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		uniformTarget = target;
 	}
 	int ARBProgramObject::GetUnitformTarget() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		return uniformTarget;
 	}
 
 	void ARBProgramObject::Enable() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		RecompileIfNeeded(true);
 		for (const IShaderObject* so: shaderObjs) {
 			glEnable(so->GetType());
@@ -394,7 +394,7 @@ namespace Shader {
 		IProgramObject::Enable();
 	}
 	void ARBProgramObject::Disable() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		for (const IShaderObject* so: shaderObjs) {
 			glBindProgramARB(so->GetType(), 0);
 			glDisable(so->GetType());
@@ -403,7 +403,7 @@ namespace Shader {
 	}
 
 	void ARBProgramObject::Link() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		RecompileIfNeeded(false);
 		valid = true;
 
@@ -412,7 +412,7 @@ namespace Shader {
 		}
 	}
 	void ARBProgramObject::Reload(bool reloadFromDisk, bool validate) {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		for (IShaderObject* so: GetAttachedShaderObjs()) {
 			if (reloadFromDisk) so->ReloadFromDisk();
 			so->Compile();
@@ -447,41 +447,41 @@ namespace Shader {
 	/*****************************************************************/
 
 	GLSLProgramObject::GLSLProgramObject(const std::string& poName): IProgramObject(poName), curSrcHash(0) {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		objID = glCreateProgram();
 	}
 
 	void GLSLProgramObject::BindAttribLocation(const std::string& name, uint32_t index)
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		attribLocations[name] = index;
 	}
 
 	void GLSLProgramObject::Enable() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		RecompileIfNeeded(true);
 		EnableRaw();
 	}
 
 	void GLSLProgramObject::EnableRaw() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		glUseProgram(objID);
 		IProgramObject::Enable();
 	}
 	void GLSLProgramObject::DisableRaw() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		IProgramObject::Disable();
 		glUseProgram(0);
 	}
 
 	void GLSLProgramObject::Link() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		RecompileIfNeeded(false);
 		assert(glIsProgram(objID));
 	}
 
 	bool GLSLProgramObject::Validate() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		GLint validated = 0;
 
 		glValidateProgram(objID);
@@ -571,7 +571,7 @@ namespace Shader {
 	}
 
 	void GLSLProgramObject::Release() {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		IProgramObject::Release();
 		glDeleteProgram(objID);
 		shaderFlags.Clear();
@@ -581,7 +581,7 @@ namespace Shader {
 	}
 
 	void GLSLProgramObject::Reload(bool reloadFromDisk, bool validate) {
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		const unsigned int oldProgID = objID;
 		const unsigned int oldSrcHash = curSrcHash;
 

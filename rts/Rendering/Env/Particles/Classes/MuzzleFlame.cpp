@@ -8,7 +8,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED(CMuzzleFlame, CProjectile, )
@@ -44,7 +44,7 @@ CMuzzleFlame::CMuzzleFlame(const float3& pos, const float3& speed, const float3&
 
 void CMuzzleFlame::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	age++;
 	if (age > (4 + size * 30)) {
 		deleteMe = true;
@@ -54,7 +54,7 @@ void CMuzzleFlame::Update()
 
 void CMuzzleFlame::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char col[4];
 	float alpha = std::max(0.0f, 1 - (age / (4 + size * 30)));
 	float modAge = fastmath::apxsqrt(static_cast<float>(age + 2));

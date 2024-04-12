@@ -14,7 +14,7 @@
 #include <cassert>
 #include <cctype>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 static const char* mapInfos[] = {"maphelper/mapinfo.lua", "mapinfo.lua"};
 static const char* vfsModes   = SPRING_VFS_MAP_BASE;
@@ -36,7 +36,7 @@ std::string MapParser::GetMapConfigName(const std::string& mapFileName)
 // check if map supplies its own info, otherwise rely on basecontent
 MapParser::MapParser(const std::string& mapFileName): parser(mapInfos[CFileHandler::FileExists(mapInfos[1], vfsModes)], vfsModes, vfsModes)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	parser.GetTable("Map");
 	parser.AddString("fileName", FileSystem::GetFilename(mapFileName));
 	parser.AddString("fullName", mapFileName);
@@ -61,7 +61,7 @@ MapParser::MapParser(const std::string& mapFileName): parser(mapInfos[CFileHandl
 
 bool MapParser::GetStartPos(int team, float3& pos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	errorLog.clear();
 
 	if (!parser.IsValid()) {

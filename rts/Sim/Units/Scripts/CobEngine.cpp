@@ -6,7 +6,7 @@
 #include "CobFile.h"
 
 #include <cstdint>
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(CCobEngine, )
 
@@ -35,7 +35,7 @@ static const char* const numCobThreadsPlot = "CobThreads";
 
 int CCobEngine::AddThread(CCobThread&& thread)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (thread.GetID() == -1)
 		thread.SetID(GenThreadID());
 
@@ -52,7 +52,7 @@ int CCobEngine::AddThread(CCobThread&& thread)
 }
 
 bool CCobEngine::RemoveThread(int threadID) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = threadInstances.find(threadID);
 
 	if (it != threadInstances.end()) {
@@ -87,7 +87,7 @@ void CCobEngine::ProcessQueuedThreads() {
 // a thread wants to continue running at a later time, and adds itself to the scheduler
 void CCobEngine::ScheduleThread(const CCobThread* thread)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (thread->GetState()) {
 		case CCobThread::Run: {
 			waitingThreadIDs.push_back(thread->GetID());
@@ -103,7 +103,7 @@ void CCobEngine::ScheduleThread(const CCobThread* thread)
 
 void CCobEngine::SanityCheckThreads(const CCobInstance* owner)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (false) {
 		// no threads belonging to owner should be left
 		for (const auto& p: threadInstances) {
@@ -118,7 +118,7 @@ void CCobEngine::SanityCheckThreads(const CCobInstance* owner)
 
 void CCobEngine::TickThread(CCobThread* thread)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// for error messages originating in CUnitScript
 	curThread = thread;
 
@@ -199,7 +199,7 @@ void CCobEngine::Tick(int deltaTime)
 
 void CCobEngine::ShowScriptError(const std::string& msg)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (curThread != nullptr) {
 		curThread->ShowError(msg.c_str());
 		return;

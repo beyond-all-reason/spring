@@ -28,13 +28,13 @@
 #include "System/Log/ILog.h"
 #include "System/Platform/Watchdog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
 CUnitLoader* CUnitLoader::GetInstance()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE: UnitLoader has no internal state, so this is fine wrt. reloading
 	static CUnitLoader instance;
 	return &instance;
@@ -42,7 +42,7 @@ CUnitLoader* CUnitLoader::GetInstance()
 
 CCommandAI* CUnitLoader::NewCommandAI(CUnit* u, const UnitDef* ud)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(CFactoryCAI) <= sizeof(u->caiMemBuffer), "");
 	static_assert(sizeof(CBuilderCAI) <= sizeof(u->caiMemBuffer), "");
 	static_assert(sizeof(    CAirCAI) <= sizeof(u->caiMemBuffer), "");
@@ -70,7 +70,7 @@ CCommandAI* CUnitLoader::NewCommandAI(CUnit* u, const UnitDef* ud)
 
 CUnit* CUnitLoader::LoadUnit(const std::string& name, const UnitLoadParams& params)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const_cast<UnitLoadParams&>(params).unitDef = unitDefHandler->GetUnitDefByName(name);
 
 	if (params.unitDef == nullptr)
@@ -81,7 +81,7 @@ CUnit* CUnitLoader::LoadUnit(const std::string& name, const UnitLoadParams& para
 
 CUnit* CUnitLoader::LoadUnit(const UnitLoadParams& params)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* unit = nullptr;
 
 	{
@@ -119,7 +119,7 @@ CUnit* CUnitLoader::LoadUnit(const UnitLoadParams& params)
 
 void CUnitLoader::ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>& args, int team)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (args.size() < 2) {
 		LOG_L(L_WARNING, "[%s] not enough arguments (\"/give [amount] <objectName | 'all'> [team] [@x, y, z]\")", __FUNCTION__);
 		return;
@@ -181,7 +181,7 @@ void CUnitLoader::ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>
 
 void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amount, int team, int featureAllyTeam)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CTeam* receivingTeam = teamHandler.Team(team);
 
 	if (objectName == "all") {
@@ -346,7 +346,7 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 
 void CUnitLoader::FlattenGround(const CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const UnitDef* unitDef = unit->unitDef;
 	// const MoveDef* moveDef = unit->moveDef;
 
@@ -383,7 +383,7 @@ void CUnitLoader::FlattenGround(const CUnit* unit)
 
 void CUnitLoader::RestoreGround(const CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const UnitDef* unitDef = unit->unitDef;
 
 	if (mapDamage->Disabled())

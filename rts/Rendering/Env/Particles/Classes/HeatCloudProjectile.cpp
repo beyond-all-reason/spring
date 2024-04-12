@@ -10,7 +10,7 @@
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED(CHeatCloudProjectile, CProjectile, )
@@ -71,7 +71,7 @@ CHeatCloudProjectile::CHeatCloudProjectile(
 
 void CHeatCloudProjectile::Serialize(creg::ISerializer* s)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string name;
 	if (s->IsWriting())
 		name = projectileDrawer->textureAtlas->GetTextureName(texture);
@@ -83,7 +83,7 @@ void CHeatCloudProjectile::Serialize(creg::ISerializer* s)
 
 void CHeatCloudProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos += speed;
 	heat = std::max(heat - heatFalloff, 0.0f);
 
@@ -95,13 +95,13 @@ void CHeatCloudProjectile::Update()
 
 void CHeatCloudProjectile::Init(const CUnit* owner, const float3& offset)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Init(owner, offset);
 }
 
 void CHeatCloudProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateRotation();
 
 	unsigned char col[4];
@@ -144,7 +144,7 @@ int CHeatCloudProjectile::GetProjectilesCount() const
 
 bool CHeatCloudProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

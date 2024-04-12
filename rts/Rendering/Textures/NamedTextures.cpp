@@ -13,7 +13,7 @@
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedMap.hpp"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
@@ -31,7 +31,7 @@ namespace CNamedTextures {
 
 	void Init()
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		texInfoMap.clear();
 		texInfoMap.reserve(128);
 		texInfoVec.clear();
@@ -45,7 +45,7 @@ namespace CNamedTextures {
 
 	void Kill(bool shutdown)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		decltype(texInfoMap) tempMap;
 
 		const std::lock_guard<spring::recursive_mutex> lck(mutex);
@@ -68,7 +68,7 @@ namespace CNamedTextures {
 
 	void Reload()
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		const std::lock_guard<spring::recursive_mutex> lck(mutex); //needed?
 
 		for (const auto& [texName, texIdx] : texInfoMap) {
@@ -85,7 +85,7 @@ namespace CNamedTextures {
 
 	static void InsertTex(const std::string& texName, const TexInfo& texInfo, bool loadTex)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		// caller (GenInsertTex) already has lock
 		if (!loadTex)
 			waitingTextures.push_back(texName);
@@ -103,7 +103,7 @@ namespace CNamedTextures {
 
 	static TexInfo GenTex(bool bindTex, bool persistTex)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		GLuint texID = 0;
 		glGenTextures(1, &texID);
 
@@ -118,7 +118,7 @@ namespace CNamedTextures {
 
 	static void GenInsertTex(const std::string& texName, const TexInfo& texInfo, bool genTex, bool bindTex, bool loadTex, bool persistTex)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		const std::lock_guard<spring::recursive_mutex> lck(mutex);
 
 		if (!genTex) {
@@ -131,7 +131,7 @@ namespace CNamedTextures {
 
 	static bool EraseTex(const std::string& texName)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		const std::lock_guard<spring::recursive_mutex> lck(mutex);
 
 		const auto it = texInfoMap.find(texName);
@@ -154,7 +154,7 @@ namespace CNamedTextures {
 
 	static bool Load(const std::string& texName, unsigned int texID, bool genInsert)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		// strip off the qualifiers
 		std::string filename = texName;
 		bool border  = false;
@@ -309,7 +309,7 @@ namespace CNamedTextures {
 
 	static bool GenLoadTex(const std::string& texName)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		GLuint texID = 0;
 		glGenTextures(1, &texID);
 		return (Load(texName, texID));
@@ -318,7 +318,7 @@ namespace CNamedTextures {
 
 	bool Bind(const std::string& texName)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		if (texName.empty())
 			return false;
 
@@ -346,7 +346,7 @@ namespace CNamedTextures {
 
 	void Update()
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		if (waitingTextures.empty())
 			return;
 
@@ -370,7 +370,7 @@ namespace CNamedTextures {
 
 	bool Free(const std::string& texName)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		if (texName.empty())
 			return false;
 
@@ -380,7 +380,7 @@ namespace CNamedTextures {
 
 	size_t GetInfoIndex(const std::string& texName)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		const auto it = texInfoMap.find(texName);
 
 		if (it != texInfoMap.end())
@@ -392,7 +392,7 @@ namespace CNamedTextures {
 	const TexInfo* GetInfo(size_t texIdx) { return &texInfoVec[texIdx]; }
 	const TexInfo* GetInfo(const std::string& texName, bool forceLoad, bool persist, bool secondaryGLContext)
 	{
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 		if (texName.empty())
 			return nullptr;
 

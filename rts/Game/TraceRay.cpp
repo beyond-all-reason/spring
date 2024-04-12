@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <vector>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 //////////////////////////////////////////////////////////////////////
 // Local/Helper functions
@@ -207,7 +207,7 @@ float TraceRay(
 	CFeature*& hitFeature,
 	CollisionQuery* hitColQuery
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE:
 	//   the bits here and in Test*Cone are interpreted as "do not scan for {enemy,friendly,...}
 	//   objects in quads" rather than "return false if ray hits an {enemy,friendly,...} object"
@@ -335,7 +335,7 @@ void TraceRayShields(
 	float length,
 	std::vector<SShieldDist>& hitShields
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CollisionQuery cq;
 
 	QuadFieldQuery qfQuery;
@@ -378,7 +378,7 @@ float GuiTraceRay(
 	bool groundOnly,
 	bool ignoreWater
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	hitUnit = nullptr;
 	hitFeature = nullptr;
 
@@ -513,7 +513,7 @@ bool TestCone(
 	int traceFlags,
 	CUnit* owner
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	quadField.GetQuadsOnRay(qfQuery, from, dir, length);
 
@@ -580,7 +580,7 @@ bool TestTrajectoryCone(
 	int traceFlags,
 	CUnit* owner
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	quadField.GetQuadsOnRay(qfQuery, from, dir, length);
 

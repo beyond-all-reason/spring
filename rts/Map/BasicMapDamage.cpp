@@ -15,12 +15,12 @@
 #include "Sim/Features/FeatureHandler.h"
 #include "System/TimeProfiler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 void CBasicMapDamage::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	mapHardness = mapInfo->map.hardness;
 
 	for (int a = 0; a <= CRATER_TABLE_SIZE; ++a) {
@@ -62,7 +62,7 @@ void CBasicMapDamage::Init()
 
 void CBasicMapDamage::TerrainTypeHardnessChanged(int ttIndex)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// table should contain only positive or only negative values, never both
 	rawHardness[ttIndex] = mapHardness * std::max(0.001f, mapInfo->terrainTypes[ttIndex].hardness);
 	invHardness[ttIndex] = 1.0f / rawHardness[ttIndex];
@@ -70,7 +70,7 @@ void CBasicMapDamage::TerrainTypeHardnessChanged(int ttIndex)
 
 void CBasicMapDamage::TerrainTypeSpeedModChanged(int ttIndex)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned char* typeMap = readMap->GetTypeMapSynced();
 
 	// update all map-squares that reference this terrain-type (slow)
@@ -87,7 +87,7 @@ void CBasicMapDamage::TerrainTypeSpeedModChanged(int ttIndex)
 
 void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius, float& maxHeightDiff)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!pos.IsInMap())
 		return;
 
@@ -227,7 +227,7 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius,
 
 void CBasicMapDamage::RecalcArea(int x1, int x2, int y1, int y2)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!readMap->GetHeightMapUpdated())
 		return;
 

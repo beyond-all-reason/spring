@@ -12,7 +12,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CSmokeTrailProjectile, CProjectile, )
 
@@ -80,14 +80,14 @@ CSmokeTrailProjectile::CSmokeTrailProjectile(
 
 void CSmokeTrailProjectile::Serialize(creg::ISerializer* s)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!s->IsWriting())
 		texture = projectileDrawer->smoketrailtex;
 }
 
 void CSmokeTrailProjectile::UpdateEndPos(const float3 pos, const float3 dir)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos1 = pos;
 	dir1 = dir;
 
@@ -110,7 +110,7 @@ void CSmokeTrailProjectile::UpdateEndPos(const float3 pos, const float3 dir)
 
 void CSmokeTrailProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float age = gs->frameNum + globalRendering->timeOffset - creationTime;
 	const float invLifeTime = (1.0f / lifeTime);
 
@@ -173,7 +173,7 @@ void CSmokeTrailProjectile::Draw()
 
 void CSmokeTrailProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe |= (gs->frameNum >= (creationTime + lifeTime));
 }
 

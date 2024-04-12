@@ -12,7 +12,7 @@
 #include "System/Input/KeyInput.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using std::max;
 using std::min;
@@ -71,7 +71,7 @@ CFreeController::CFreeController()
 
 void CFreeController::SetTrackingInfo(const float3& target, float radius)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	tracking = true;
 	trackPos = target;
 	trackRadius = radius;
@@ -83,7 +83,7 @@ void CFreeController::SetTrackingInfo(const float3& target, float radius)
 
 void CFreeController::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!globalRendering->active) {
 		vel  = ZeroVector;
 		avel = ZeroVector;
@@ -256,7 +256,7 @@ float3 CFreeController::GetDir() const
 
 void CFreeController::KeyMove(float3 move)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float qy = (move.y == 0.0f) ? 0.0f : (move.y > 0.0f ? 1.0f : -1.0f);
 	const float qx = (move.x == 0.0f) ? 0.0f : (move.x > 0.0f ? 1.0f : -1.0f);
 
@@ -287,7 +287,7 @@ void CFreeController::KeyMove(float3 move)
 
 void CFreeController::MouseMove(float3 move)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::uint8_t prevAlt   = KeyInput::GetKeyModState(KMOD_ALT);
 	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(KMOD_CTRL);
 	const std::uint8_t prevShift = KeyInput::GetKeyModState(KMOD_SHIFT);
@@ -305,7 +305,7 @@ void CFreeController::MouseMove(float3 move)
 
 void CFreeController::ScreenEdgeMove(float3 move)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::uint8_t prevAlt   = KeyInput::GetKeyModState(KMOD_ALT);
 	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(KMOD_CTRL);
 	const std::uint8_t prevShift = KeyInput::GetKeyModState(KMOD_SHIFT);
@@ -321,7 +321,7 @@ void CFreeController::ScreenEdgeMove(float3 move)
 
 void CFreeController::MouseWheelMove(float move)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(KMOD_CTRL);
 	const std::uint8_t prevShift = KeyInput::GetKeyModState(KMOD_SHIFT);
 
@@ -337,7 +337,7 @@ void CFreeController::MouseWheelMove(float move)
 
 void CFreeController::SetPos(const float3& newPos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float h = CGround::GetHeightReal(newPos.x, newPos.z, false);
 	const float3 target = float3(newPos.x, h, newPos.z);
 //	const float3 target = newPos;
@@ -366,7 +366,7 @@ void CFreeController::SetPos(const float3& newPos)
 
 float3 CFreeController::SwitchFrom() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float x = max(0.1f, min(float3::maxxpos - 0.1f, pos.x));
 	const float z = max(0.1f, min(float3::maxzpos - 0.1f, pos.z));
 	return {x, CGround::GetHeightAboveWater(x, z, false) + 5.0f, z};
@@ -375,7 +375,7 @@ float3 CFreeController::SwitchFrom() const
 
 void CFreeController::SwitchTo(const int oldCam, const bool showText)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText)
 		LOG("Switching to Free style camera");
 
@@ -386,7 +386,7 @@ void CFreeController::SwitchTo(const int oldCam, const bool showText)
 
 void CFreeController::GetState(StateMap& sm) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 
 	sm["gndOffset"]   = gndOffset;
@@ -418,7 +418,7 @@ void CFreeController::GetState(StateMap& sm) const
 
 bool CFreeController::SetState(const StateMap& sm)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 
 	SetStateFloat(sm, "fov",         fov);

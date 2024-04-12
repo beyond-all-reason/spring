@@ -12,12 +12,12 @@
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Features/Feature.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 void S3DModelVAO::EnableAttribs(bool inst) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!inst) {
 		for (int i = 0; i <= 5; ++i) {
 			glEnableVertexAttribArray(i);
@@ -44,7 +44,7 @@ void S3DModelVAO::EnableAttribs(bool inst) const
 
 void S3DModelVAO::DisableAttribs() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int i = 0; i <= 6; ++i) {
 		glDisableVertexAttribArray(i);
 		glVertexAttribDivisor(i, 0);
@@ -53,7 +53,7 @@ void S3DModelVAO::DisableAttribs() const
 
 S3DModelVAO::S3DModelVAO()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	vertData.reserve(VERT_SIZE0);
 	indxData.reserve(INDX_SIZE0);
 
@@ -69,7 +69,7 @@ S3DModelVAO::S3DModelVAO()
 
 void S3DModelVAO::ProcessVertices(const S3DModel* model)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(model);
 	assert(model->loadStatus == S3DModel::LoadStatus::LOADING);
 
@@ -87,7 +87,7 @@ void S3DModelVAO::ProcessVertices(const S3DModel* model)
 
 void S3DModelVAO::ProcessIndicies(S3DModel* model)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(model);
 	if (model->indxStart != ~0u)
 		return;
@@ -137,7 +137,7 @@ void S3DModelVAO::ProcessIndicies(S3DModel* model)
 
 void S3DModelVAO::CreateVAO()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	vao = VAO{};
 	vao.Bind();
 
@@ -158,7 +158,7 @@ void S3DModelVAO::CreateVAO()
 
 void S3DModelVAO::UploadVBOs()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr size_t MEM_STEP = 8 * 1024 * 1024;
 	bool reinitVAO = (vao.GetIdRaw() == 0);
 
@@ -201,34 +201,34 @@ void S3DModelVAO::UploadVBOs()
 
 void S3DModelVAO::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Kill();
 	instance = std::make_unique<S3DModelVAO>();
 }
 
 void S3DModelVAO::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	instance = nullptr;
 }
 
 void S3DModelVAO::Bind() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(vao.GetIdRaw() > 0);
 	vao.Bind();
 }
 
 void S3DModelVAO::Unbind() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(vao.GetIdRaw() > 0);
 	vao.Unbind();
 }
 
 void S3DModelVAO::BindLegacyVertexAttribsAndVBOs() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	vertVBO.Bind();
 	indxVBO.Bind();
 
@@ -257,7 +257,7 @@ void S3DModelVAO::BindLegacyVertexAttribsAndVBOs() const
 
 void S3DModelVAO::UnbindLegacyVertexAttribsAndVBOs() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glClientActiveTexture(GL_TEXTURE6);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
@@ -279,14 +279,14 @@ void S3DModelVAO::UnbindLegacyVertexAttribsAndVBOs() const
 
 void S3DModelVAO::DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboIndxCount) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDrawElements(prim, vboIndxCount, GL_UNSIGNED_INT, indxVBO.GetPtr(vboIndxStart * sizeof(uint32_t)));
 }
 
 template<typename TObj>
 bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint8_t teamID, uint8_t drawFlags)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto matIndex = matrixUploader.GetElemOffset(obj);
 	if (matIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
@@ -322,7 +322,7 @@ bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint
 
 bool S3DModelVAO::AddToSubmission(const S3DModel* model, uint8_t teamID, uint8_t drawFlags)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(model);
 
 	return AddToSubmissionImpl(model, model->indxStart, model->indxCount, teamID, drawFlags);
@@ -330,7 +330,7 @@ bool S3DModelVAO::AddToSubmission(const S3DModel* model, uint8_t teamID, uint8_t
 
 bool S3DModelVAO::AddToSubmission(const CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unit);
 
 	const S3DModel* model = unit->model;
@@ -341,7 +341,7 @@ bool S3DModelVAO::AddToSubmission(const CUnit* unit)
 
 bool S3DModelVAO::AddToSubmission(const CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(feature);
 
 	const S3DModel* model = feature->model;
@@ -352,7 +352,7 @@ bool S3DModelVAO::AddToSubmission(const CFeature* feature)
 
 bool S3DModelVAO::AddToSubmission(const UnitDef* unitDef, uint8_t teamID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unitDef);
 
 	const S3DModel* model = unitDef->model;
@@ -364,7 +364,7 @@ bool S3DModelVAO::AddToSubmission(const UnitDef* unitDef, uint8_t teamID)
 
 void S3DModelVAO::Submit(GLenum mode, bool bindUnbind)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static std::vector<SDrawElementsIndirectCommand> submitCmds;
 	submitCmds.clear();
 
@@ -413,7 +413,7 @@ void S3DModelVAO::Submit(GLenum mode, bool bindUnbind)
 template<typename TObj>
 bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint8_t teamID, uint8_t drawFlags, GLenum mode, bool bindUnbind)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::size_t matIndex = matrixUploader.GetElemOffset(obj);
 	if (matIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
@@ -468,14 +468,14 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 
 bool S3DModelVAO::SubmitImmediately(const S3DModel* model, uint8_t teamID, uint8_t drawFlags, GLenum mode, bool bindUnbind)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(model);
 	return SubmitImmediatelyImpl(model, model->indxStart, model->indxCount, teamID, drawFlags, mode, bindUnbind);
 }
 
 bool S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, bool bindUnbind)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unit);
 
 	const S3DModel* model = unit->model;
@@ -486,7 +486,7 @@ bool S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, bool b
 
 bool S3DModelVAO::SubmitImmediately(const CFeature* feature, GLenum mode, bool bindUnbind)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(feature);
 
 	const S3DModel* model = feature->model;
@@ -497,7 +497,7 @@ bool S3DModelVAO::SubmitImmediately(const CFeature* feature, GLenum mode, bool b
 
 bool S3DModelVAO::SubmitImmediately(const UnitDef* unitDef, int teamID, GLenum mode, bool bindUnbind)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unitDef);
 
 	const S3DModel* model = unitDef->model;

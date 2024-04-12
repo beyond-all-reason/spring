@@ -7,7 +7,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED(CGeoSquareProjectile, CProjectile, )
@@ -48,7 +48,7 @@ CGeoSquareProjectile::CGeoSquareProjectile(const float3& p1, const float3& p2, c
 
 void CGeoSquareProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char col[4];
 	col[0] = (unsigned char) (r * a * 255);
 	col[1] = (unsigned char) (g * a * 255);

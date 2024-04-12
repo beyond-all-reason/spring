@@ -1,11 +1,11 @@
 #include "CobFileHandler.h"
 #include "System/FileSystem/FileHandler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CCobFile* CCobFileHandler::GetCobFile(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = cobFileHandles.find(name);
 
 	if (it != cobFileHandles.end())
@@ -25,7 +25,7 @@ CCobFile* CCobFileHandler::GetCobFile(const std::string& name)
 
 CCobFile* CCobFileHandler::ReloadCobFile(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = cobFileHandles.find(name);
 
 	if (it == cobFileHandles.end())
@@ -41,7 +41,7 @@ CCobFile* CCobFileHandler::ReloadCobFile(const std::string& name)
 
 const CCobFile* CCobFileHandler::GetScriptFile(const std::string& name) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = cobFileHandles.find(name);
 
 	if (it != cobFileHandles.end())

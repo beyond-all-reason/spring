@@ -17,7 +17,7 @@
 #include <cstring> // strcpy,memset
 #include <sstream>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CBlankMapGenerator::CBlankMapGenerator(const CGameSetup* setup)
 	: setup(setup)
@@ -79,7 +79,7 @@ CBlankMapGenerator::CBlankMapGenerator(const CGameSetup* setup)
 
 void CBlankMapGenerator::Generate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// create archive for map
 	CVirtualArchive* archive = virtualArchiveFactory->AddArchive(setup->mapName);
 
@@ -98,7 +98,7 @@ void CBlankMapGenerator::Generate()
 
 void CBlankMapGenerator::GenerateMap()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	mapDescription = "Blank Map";
 
 	startPositions.emplace_back(20, 20);
@@ -107,7 +107,7 @@ void CBlankMapGenerator::GenerateMap()
 
 void CBlankMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SMFHeader smfHeader;
 	MapTileHeader smfTile;
 	MapFeatureHeader smfFeature;
@@ -207,7 +207,7 @@ void CBlankMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 
 void CBlankMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	//Open template mapinfo.lua
 	const std::string luaTemplate = "mapgenerator/mapinfo_template.lua";
 	CFileHandler fh(luaTemplate, SPRING_VFS_PWD_ALL);
@@ -236,7 +236,7 @@ void CBlankMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 
 void CBlankMapGenerator::GenerateSMT(CVirtualFile* fileSMT)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr int32_t TILE_SIZE = 32;
 	constexpr int32_t TILE_BPP = 3;
 
@@ -295,12 +295,12 @@ void CBlankMapGenerator::GenerateSMT(CVirtualFile* fileSMT)
 
 void CBlankMapGenerator::AppendToBuffer(CVirtualFile* file, const void* data, int size)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	file->buffer.insert(file->buffer.end(), (std::uint8_t*)data, (std::uint8_t*)data + size);
 }
 
 void CBlankMapGenerator::SetToBuffer(CVirtualFile* file, const void* data, int size, int position)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::copy((std::uint8_t*)data, (std::uint8_t*)data + size, file->buffer.begin() + position);
 }

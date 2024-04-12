@@ -11,7 +11,7 @@
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CFlareProjectile, CProjectile, )
 
@@ -53,7 +53,7 @@ CFlareProjectile::CFlareProjectile(const float3& pos, const float3& speed, CUnit
 
 void CFlareProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* owner = CProjectile::owner();
 	const UnitDef* ownerDef = (owner != nullptr)? owner->unitDef: nullptr;
 
@@ -111,7 +111,7 @@ void CFlareProjectile::Update()
 
 void CFlareProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gs->frameNum <= activateFrame)
 		return;
 

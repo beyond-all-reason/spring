@@ -7,7 +7,7 @@
 #include "Map/MapInfo.h"
 #include "System/EventHandler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 /**
  * @brief waterRenderingInst
@@ -17,7 +17,7 @@
 CWaterRendering waterRenderingInst;
 
 void CWaterRendering::Init() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(mapInfo != nullptr);
 	assert(IsGlobalInstance());
 
@@ -64,6 +64,6 @@ void CWaterRendering::Init() {
 }
 
 bool CWaterRendering::IsGlobalInstance() const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (this == &waterRenderingInst);
 }

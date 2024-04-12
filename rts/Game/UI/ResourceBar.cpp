@@ -11,7 +11,7 @@
 #include "Net/Protocol/NetProtocol.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CResourceBar* resourceBar = nullptr;
 
@@ -38,7 +38,7 @@ CResourceBar::CResourceBar()
 
 
 static std::string FloatToSmallString(float num, float mul = 1) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	char c[50];
 
@@ -60,7 +60,7 @@ static std::string FloatToSmallString(float num, float mul = 1) {
 
 void CResourceBar::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled)
 		return;
 
@@ -164,7 +164,7 @@ void CResourceBar::Draw()
 
 bool CResourceBar::IsAbove(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled)
 		return false;
 
@@ -176,7 +176,7 @@ bool CResourceBar::IsAbove(int x, int y)
 
 std::string CResourceBar::GetTooltip(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float mx = MouseX(x);
 
 	std::string resourceName;
@@ -195,7 +195,7 @@ std::string CResourceBar::GetTooltip(int x, int y)
 
 bool CResourceBar::MousePress(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled)
 		return false;
 
@@ -226,7 +226,7 @@ bool CResourceBar::MousePress(int x, int y, int button)
 
 void CResourceBar::MouseMove(int x, int y, int dx, int dy, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled)
 		return;
 

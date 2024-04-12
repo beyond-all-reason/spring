@@ -8,7 +8,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using namespace MoveTypes;
 
@@ -18,7 +18,7 @@ CR_REG_METADATA(CStaticMoveType, (
 ))
 
 CStaticMoveType::CStaticMoveType(CUnit* unit) : AMoveType(unit) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	useWantedSpeed[false] = false;
 	useWantedSpeed[ true] = false;
 
@@ -31,7 +31,7 @@ CStaticMoveType::CStaticMoveType(CUnit* unit) : AMoveType(unit) {
 
 void CStaticMoveType::SlowUpdate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// buildings and pseudo-static units can be transported
 	if (owner->GetTransporter() != nullptr)
 		return;

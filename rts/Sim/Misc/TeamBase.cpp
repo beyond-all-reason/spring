@@ -9,7 +9,7 @@
 #include "System/StringHash.h"
 #include "System/creg/STL_Map.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND(TeamBase, )
@@ -54,7 +54,7 @@ TeamBase::TeamBase() {
 
 void TeamBase::SetValue(const std::string& key, const std::string& value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(key.c_str())) {
 		case hashString("handicap"): {
 			// "handicap" is used for backwards compatibility only;

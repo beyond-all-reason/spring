@@ -15,7 +15,7 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CSimpleParticleSystem, CProjectile, )
 
@@ -87,7 +87,7 @@ CSimpleParticleSystem::CSimpleParticleSystem()
 
 void CSimpleParticleSystem::Serialize(creg::ISerializer* s)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string name;
 	if (s->IsWriting())
 		name = projectileDrawer->textureAtlas->GetTextureName(texture);
@@ -98,7 +98,7 @@ void CSimpleParticleSystem::Serialize(creg::ISerializer* s)
 
 void CSimpleParticleSystem::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateAnimParams();
 
 	float3 zdir;
@@ -172,7 +172,7 @@ void CSimpleParticleSystem::Draw()
 
 void CSimpleParticleSystem::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe = true;
 
 	for (auto& p: particles) {
@@ -192,7 +192,7 @@ void CSimpleParticleSystem::Update()
 
 void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Init(owner, offset);
 
 	const float3 up = emitVector;
@@ -235,7 +235,7 @@ int CSimpleParticleSystem::GetProjectilesCount() const
 
 bool CSimpleParticleSystem::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

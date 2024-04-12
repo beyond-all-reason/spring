@@ -14,7 +14,7 @@
 #include <cctype>
 #include <cstring>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 //The following structure is taken from http://visualta.tauniverse.com/Downloads/ta-cob-fmt.txt
@@ -89,7 +89,7 @@ static std::vector<uint8_t> cobFileData;
 
 CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	name.assign(scriptName);
 	scriptIndex.fill(-1);
 
@@ -204,7 +204,7 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 
 int CCobFile::GetFunctionId(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto i = scriptMap.find(name);
 
 	if (i != scriptMap.end())

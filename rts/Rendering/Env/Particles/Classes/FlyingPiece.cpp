@@ -12,7 +12,7 @@
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 static const float EXPLOSION_SPEED = 2.f;
@@ -61,7 +61,7 @@ FlyingPiece::FlyingPiece(
 
 void FlyingPiece::InitCommon(const float3 _pos, const float3 _speed, const float _radius, int _team, int _texture)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos   = _pos;
 	speed = _speed;
 
@@ -75,7 +75,7 @@ void FlyingPiece::InitCommon(const float3 _pos, const float3 _speed, const float
 
 bool FlyingPiece::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (splitterParts.empty())
 		return false;
 
@@ -104,7 +104,7 @@ bool FlyingPiece::Update()
 
 float3 FlyingPiece::GetDragFactors() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// We started with a naive (iterative) method like this:
 	//  pos   += speed;
 	//  speed *= airDrag;
@@ -169,7 +169,7 @@ float3 FlyingPiece::GetDragFactors() const
 
 CMatrix44f FlyingPiece::GetMatrixOf(const SplitterData& cp, const float3 dragFactors) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 interPos = cp.speed * dragFactors.x + UpVector * mapInfo->map.gravity * dragFactors.y;
 	const float4& rot = cp.rotationAxisAndSpeed;
 
@@ -183,7 +183,7 @@ CMatrix44f FlyingPiece::GetMatrixOf(const SplitterData& cp, const float3 dragFac
 
 void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
 
 	const auto thisModelType = piece->GetParentModel()->type;
@@ -209,14 +209,14 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 
 void FlyingPiece::BeginDraw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDisable(GL_CULL_FACE);
 	S3DModelHelpers::BindLegacyAttrVBOs();
 }
 
 void FlyingPiece::EndDraw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glEnable(GL_CULL_FACE);
 	S3DModelHelpers::UnbindLegacyAttrVBOs();
 
@@ -226,7 +226,7 @@ void FlyingPiece::EndDraw()
 
 void FlyingPiece::Draw(const FlyingPiece* prev) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CheckDrawStateChange(prev);
 
 	const float3 dragFactors = GetDragFactors(); // speedDrag, gravityDrag, interAge

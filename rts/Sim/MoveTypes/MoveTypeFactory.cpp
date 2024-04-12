@@ -10,10 +10,10 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 void MoveTypeFactory::InitStatic() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(CGroundMoveType) >= sizeof(CStrafeAirMoveType), "");
 	static_assert(sizeof(CGroundMoveType) >= sizeof(CHoverAirMoveType ), "");
 	static_assert(sizeof(CGroundMoveType) >= sizeof(CStaticMoveType   ), "");
@@ -21,7 +21,7 @@ void MoveTypeFactory::InitStatic() {
 }
 
 AMoveType* MoveTypeFactory::GetMoveType(CUnit* unit, const UnitDef* ud) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(CGroundMoveType) <= sizeof(unit->amtMemBuffer), "");
 	static_assert(sizeof(CScriptMoveType) <= sizeof(unit->smtMemBuffer), "");
 
@@ -55,7 +55,7 @@ AMoveType* MoveTypeFactory::GetMoveType(CUnit* unit, const UnitDef* ud) {
 }
 
 AMoveType* MoveTypeFactory::GetScriptMoveType(CUnit* unit) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (new (unit->smtMemBuffer) CScriptMoveType(unit));
 }
 

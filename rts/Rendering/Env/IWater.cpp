@@ -21,7 +21,7 @@
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(int, Water)
 .defaultValue(IWater::WATER_RENDERER_REFLECTIVE)
@@ -40,12 +40,12 @@ IWater::IWater()
 }
 
 void IWater::ExplosionOccurred(const CExplosionParams& event) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	AddExplosion(event.pos, event.damages.GetDefault(), event.craterAreaOfEffect);
 }
 
 void IWater::SetModelClippingPlane(const double* planeEq) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glLoadIdentity();
 	glClipPlane(GL_CLIP_PLANE2, planeEq);
@@ -54,7 +54,7 @@ void IWater::SetModelClippingPlane(const double* planeEq) {
 
 void IWater::SetWater(int rendererMode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static std::array<bool, NUM_WATER_RENDERERS> allowedModes = {
 		true,
 		GLEW_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/water.fp"),
@@ -134,7 +134,7 @@ void IWater::SetWater(int rendererMode)
 
 
 void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool drawSky) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	game->SetDrawMode(CGame::gameReflectionDraw);
 
 	{
@@ -175,7 +175,7 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 }
 
 void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool drawSky) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	game->SetDrawMode(CGame::gameRefractionDraw);
 
 	{

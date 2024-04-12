@@ -13,7 +13,7 @@
 #include "System/SpringMath.h"
 #include "System/FastMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CCannon, CWeapon, )
 
@@ -31,7 +31,7 @@ CR_REG_METADATA(CCannon,(
 
 void CCannon::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	gravity = mix(mapInfo->map.gravity, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
 	highTrajectory = (weaponDef->highTrajectory == 1);
 
@@ -40,7 +40,7 @@ void CCannon::Init()
 
 void CCannon::UpdateRange(const float val)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// clamp so as to not extend range if projectile
 	// speed is too low to reach the *updated* range
 	// note: new range can be zero (!) making range
@@ -59,7 +59,7 @@ void CCannon::UpdateRange(const float val)
 
 bool CCannon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const SWeaponTarget& trg) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// assume we can still fire at partially submerged targets
 	if (!weaponDef->waterweapon && TargetUnderWater(tgtPos, trg))
 		return false;
@@ -103,7 +103,7 @@ bool CCannon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const
 
 void CCannon::FireImpl(const bool scriptCall)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 targetVec = currentTargetPos - weaponMuzzlePos;
 	float3 launchDir = (targetVec.SqLength() > 4.0f) ? GetWantedDir(targetVec) : targetVec; // prevent vertical aim when emit-sfx firing the weapon
 
@@ -138,7 +138,7 @@ void CCannon::FireImpl(const bool scriptCall)
 
 void CCannon::SlowUpdate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->highTrajectory == 2 && owner->useHighTrajectory != highTrajectory)
 		highTrajectory = owner->useHighTrajectory;
 
@@ -148,7 +148,7 @@ void CCannon::SlowUpdate()
 
 float3 CCannon::GetWantedDir(const float3& targetVec)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 tgtDif = targetVec - lastTargetVec;
 
 	// try to cache results, sacrifice some (not much too much even for a pewee) accuracy
@@ -169,7 +169,7 @@ float3 CCannon::GetWantedDir(const float3& targetVec)
 
 float3 CCannon::CalcWantedDir(const float3& targetVec) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float Dsq = targetVec.SqLength();
 	const float DFsq = targetVec.SqLength2D();
 	const float g = gravity;
@@ -217,7 +217,7 @@ float3 CCannon::CalcWantedDir(const float3& targetVec) const
 
 
 float CCannon::GetStaticRange2D(const float2& baseConsts, const float2& projConsts, const float2& boostFacts) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto CalcRange2D = [](const float3& bc, const float2& pc, const float2& bf) {
 		float heightDiff = bc.x;
 

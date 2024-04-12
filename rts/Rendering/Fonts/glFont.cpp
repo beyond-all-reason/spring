@@ -17,7 +17,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 #undef GetCharWidth // winapi.h
 
@@ -47,7 +47,7 @@ static const float darkLuminosity = 0.05f +
 
 bool CglFont::LoadConfigFonts()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	font      = CglFont::LoadFont("", false);
 	smallFont = CglFont::LoadFont("", true);
 
@@ -62,7 +62,7 @@ bool CglFont::LoadConfigFonts()
 
 bool CglFont::LoadCustomFonts(const std::string& smallFontFile, const std::string& largeFontFile)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto newLargeFont = CglFont::LoadFont(largeFontFile, false);
 	auto newSmallFont = CglFont::LoadFont(smallFontFile,  true);
 
@@ -80,7 +80,7 @@ bool CglFont::LoadCustomFonts(const std::string& smallFontFile, const std::strin
 
 std::shared_ptr<CglFont> CglFont::LoadFont(const std::string& fontFileOverride, bool smallFont)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string fontFiles[] = {configHandler->GetString("FontFile"), configHandler->GetString("SmallFontFile")};
 	const std::string& fontFile = (fontFileOverride.empty())? fontFiles[smallFont]: fontFileOverride;
 
@@ -94,7 +94,7 @@ std::shared_ptr<CglFont> CglFont::LoadFont(const std::string& fontFileOverride, 
 
 std::shared_ptr<CglFont> CglFont::LoadFont(const std::string& fontFile, int size, int outlinewidth, float outlineweight)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	try {
 		//return (new CglFont(fontFile, size, outlinewidth, outlineweight));
 		auto fnt = FindFont(fontFile, size, outlinewidth, outlineweight);
@@ -116,7 +116,7 @@ std::shared_ptr<CglFont> CglFont::LoadFont(const std::string& fontFile, int size
 
 std::shared_ptr<CglFont> CglFont::FindFont(const std::string& fontFile, int size, int outlinewidth, float outlineweight)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto cmpFunc = [&fontFile, size, outlinewidth, outlineweight](std::weak_ptr<CFontTexture> item) {
 		std::shared_ptr<CglFont> font = std::static_pointer_cast<CglFont>(item.lock());
 		return
@@ -150,7 +150,7 @@ std::shared_ptr<CglFont> CglFont::FindFont(const std::string& fontFile, int size
 
 void CglFont::ReallocSystemFontAtlases(bool pre)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifdef _DEBUG
 	size_t fontsCounter = 0;
 	for (const auto& f : allFonts) {
@@ -227,7 +227,7 @@ void CglFont::GetStats(std::array<size_t, 8>& stats) const {}
 // helper for GetText{Width,Height}
 static inline int SkipColorCodes(const spring::u8string& text, int idx)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	while (idx < text.size()) {
 		switch (text[idx])
 		{
@@ -249,7 +249,7 @@ static inline int SkipColorCodes(const spring::u8string& text, int idx)
 
 bool CglFont::SkipColorCodesAndNewLines(const spring::u8string& text, int& curIndex, int& numLines)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int idx = curIndex;
 	int nls = 0;
 
@@ -310,7 +310,7 @@ bool CglFont::SkipColorCodesAndNewLines(const spring::u8string& text, int& curIn
 
 float CglFont::GetCharacterWidth(const char32_t c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& glyph = GetGlyph(c);
 	assert(&glyph != &CFontTexture::dummyGlyph);
 	return glyph.advance;
@@ -318,7 +318,7 @@ float CglFont::GetCharacterWidth(const char32_t c)
 
 float CglFont::GetTextWidth_(const spring::u8string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (text.empty())
 		return 0.0f;
 
@@ -388,7 +388,7 @@ float CglFont::GetTextWidth_(const spring::u8string& text)
 
 float CglFont::GetTextHeight_(const spring::u8string& text, float* descender, int* numLines)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (text.empty()) {
 		if (descender != nullptr) *descender = 0.0f;
 		if (numLines != nullptr) *numLines = 0;
@@ -449,7 +449,7 @@ float CglFont::GetTextHeight_(const spring::u8string& text, float* descender, in
 
 void CglFont::ScanForWantedGlyphs(const spring::u8string& ustr)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static std::vector<char32_t> missingGlyphs;
 	missingGlyphs.clear();
 
@@ -490,7 +490,7 @@ void CglFont::ScanForWantedGlyphs(const spring::u8string& ustr)
 
 std::deque<std::string> CglFont::SplitIntoLines(const spring::u8string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::deque<std::string> lines;
 	std::deque<std::string> colorCodeStack;
 
@@ -564,7 +564,7 @@ std::deque<std::string> CglFont::SplitIntoLines(const spring::u8string& text)
 
 void CglFont::SetAutoOutlineColor(bool enable)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto lock = sync.GetScopedLock();
 
 	autoOutlineColor = enable;
@@ -572,7 +572,7 @@ void CglFont::SetAutoOutlineColor(bool enable)
 
 void CglFont::SetTextColor(const float4* color)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (color == nullptr)
 		color = &white;
 
@@ -583,7 +583,7 @@ void CglFont::SetTextColor(const float4* color)
 
 void CglFont::SetOutlineColor(const float4* color)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (color == nullptr)
 		color = ChooseOutlineColor(textColor);
 
@@ -595,14 +595,14 @@ void CglFont::SetOutlineColor(const float4* color)
 
 void CglFont::SetColors(const float4* _textColor, const float4* _outlineColor)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetTextColor(_textColor);
 	SetOutlineColor(_outlineColor);
 }
 
 const float4* CglFont::ChooseOutlineColor(const float4& textColor)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float luminosity =
 		0.2126f * std::pow(textColor[0], 2.2f) +
 		0.7152f * std::pow(textColor[1], 2.2f) +
@@ -618,7 +618,7 @@ const float4* CglFont::ChooseOutlineColor(const float4& textColor)
 }
 
 void CglFont::Begin() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	sync.Lock();
 
 	if (inBeginEndBlock) {
@@ -630,7 +630,7 @@ void CglFont::Begin() {
 }
 
 void CglFont::End() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!inBeginEndBlock) {
 		LOG_L(L_ERROR, "called End() without Begin()");
 		return;
@@ -650,7 +650,7 @@ void CglFont::End() {
 
 void CglFont::DrawBuffered()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto lock = sync.GetScopedLock();
 
 	UpdateGlyphAtlasTexture();
@@ -663,7 +663,7 @@ void CglFont::DrawBuffered()
 
 void CglFont::DrawWorldBuffered()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glMultMatrixf(camera->GetBillBoardMatrix());
 
@@ -675,7 +675,7 @@ void CglFont::DrawWorldBuffered()
 template<int shiftXC, int shiftYC, bool outline>
 void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, const std::string& str)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const spring::u8string& ustr = toustring(str);
 
 	ScanForWantedGlyphs(ustr);
@@ -765,7 +765,7 @@ void CglFont::RenderStringImpl(float x, float y, float scaleX, float scaleY, con
 
 void CglFont::glWorldPrint(const float3& p, const float size, const std::string& str, int options)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool buffered = (options & FONT_BUFFERED) == FONT_BUFFERED;
 	if (!buffered) {
 		glPushMatrix();
@@ -803,7 +803,7 @@ CMatrix44f CglFont::DefProjMatrix() { return CMatrix44f::ClipOrthoProj01(); }
 
 void CglFont::glPrint(float x, float y, float s, const int options, const std::string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// s := scale or absolute size?
 	if (options & FONT_SCALE)
 		s *= fontSize;
@@ -888,7 +888,7 @@ void CglFont::glPrint(float x, float y, float s, const int options, const std::s
 // TODO: remove, only used by PlayerRosterDrawer
 void CglFont::glPrintTable(float x, float y, float s, const int options, const std::string& text)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<std::string> colLines;
 	std::vector<float> colWidths;
 	std::vector<SColor> colColor;
@@ -1027,7 +1027,7 @@ void CglFont::glPrintTable(float x, float y, float s, const int options, const s
 
 void CglFont::GetStats(std::array<size_t, 8>& stats) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	fontRenderer->GetStats(stats);
 }
 

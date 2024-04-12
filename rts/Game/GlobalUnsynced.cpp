@@ -18,7 +18,7 @@
 
 #include <ctime>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 /**
@@ -89,7 +89,7 @@ void CGlobalUnsynced::ResetState()
 
 void CGlobalUnsynced::LoadFromSetup(const CGameSetup* setup)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// do not call here; AddPlayer can precede LoadFromSetup
 	// playerHandler.ResetState();
 	playerHandler.LoadFromSetup(setup);
@@ -98,7 +98,7 @@ void CGlobalUnsynced::LoadFromSetup(const CGameSetup* setup)
 
 void CGlobalUnsynced::SetMyPlayer(const int myNumber)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CPlayer* myPlayer = playerHandler.Player(myPlayerNum = myNumber);
 
 	myTeam = myPlayer->team;
@@ -121,7 +121,7 @@ void CGlobalUnsynced::SetMyPlayer(const int myNumber)
 }
 
 CPlayer* CGlobalUnsynced::GetMyPlayer() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (playerHandler.Player(myPlayerNum));
 }
 

@@ -12,7 +12,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 // currently defined in HeightLinePalette.cpp
@@ -108,7 +108,7 @@ CHeightTexture::CHeightTexture()
 
 void CHeightTexture::UpdateCPU()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const SColor* extraTexPal = CHeightLinePalette::GetData();
 	const float* heightMap = readMap->GetCornerHeightMapUnsynced();
 
@@ -135,7 +135,7 @@ void CHeightTexture::UpdateCPU()
 
 CHeightTexture::~CHeightTexture()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &paletteTex);
 	shaderHandler->ReleaseProgramObject("[CHeightTexture]", "CHeightTexture");
 }
@@ -143,7 +143,7 @@ CHeightTexture::~CHeightTexture()
 
 void CHeightTexture::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	needUpdate = false;
 
 	if (!fbo.IsValid() || !shader->IsValid() || (heightMapTexture->GetTextureID() == 0))
@@ -177,13 +177,13 @@ void CHeightTexture::Update()
 
 void CHeightTexture::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	needUpdate = true;
 }
 
 
 bool CHeightTexture::IsUpdateNeeded()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return needUpdate;
 }

@@ -10,26 +10,26 @@
 #include "System/Net/UnpackPacket.h"
 #include "System/StringUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using namespace netcode;
 
 GameData::GameData()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::memset(mapChecksum, 0, sizeof(mapChecksum));
 	std::memset(modChecksum, 0, sizeof(modChecksum));
 }
 GameData::GameData(const std::string& setup): setupText(setup)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::memset(mapChecksum, 0, sizeof(mapChecksum));
 	std::memset(modChecksum, 0, sizeof(modChecksum));
 }
 
 GameData::GameData(std::shared_ptr<const RawPacket> pckt)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(pckt->data[0] == NETMSG_GAMEDATA);
 
 	UnpackPacket packet(pckt, 3);
@@ -55,7 +55,7 @@ GameData::GameData(std::shared_ptr<const RawPacket> pckt)
 
 const netcode::RawPacket* GameData::Pack() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (compressed.empty())
 		compressed = zlib::deflate(reinterpret_cast<const std::uint8_t*>(setupText.data()), setupText.size());
 
@@ -77,7 +77,7 @@ const netcode::RawPacket* GameData::Pack() const
 
 void GameData::SetSetupText(const std::string& newSetup)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	setupText = newSetup;
 	compressed.clear();
 }

@@ -16,7 +16,7 @@
 #include "System/StringHash.h"
 #include "System/StringUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 static DefType WeaponDefs("WeaponDefs");
@@ -546,7 +546,7 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 
 
 void WeaponDef::ParseWeaponSounds(const LuaTable& wdTable) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LoadSound(wdTable, "soundStart" , fireSound);
 	LoadSound(wdTable, "soundHitDry",  hitSound);
 	LoadSound(wdTable, "soundHitWet",  hitSound);
@@ -559,7 +559,7 @@ void WeaponDef::LoadSound(
 	const std::string& soundKey,
 	GuiSoundSet& soundData
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(soundKey.c_str())) {
 		case hashString("soundStart"): {
 			CommonDefHandler::AddSoundSetData(soundData, wdTable.GetString(soundKey, ""), wdTable.GetFloat(soundKey + "Volume", 1.0f));
@@ -580,7 +580,7 @@ void WeaponDef::LoadSound(
 
 S3DModel* WeaponDef::LoadModel()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (visuals.model != nullptr)
 		return visuals.model;
 
@@ -593,13 +593,13 @@ S3DModel* WeaponDef::LoadModel()
 }
 
 S3DModel* WeaponDef::LoadModel() const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	//not very sweet, but still better than replacing "const WeaponDef" _everywhere_
 	return const_cast<WeaponDef*>(this)->LoadModel();
 }
 
 void WeaponDef::PreloadModel() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (visuals.model != nullptr)
 		return;
 	if (visuals.modelName.empty())
@@ -610,7 +610,7 @@ void WeaponDef::PreloadModel() {
 
 void WeaponDef::PreloadModel() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	//not very sweet, but still better than replacing "const WeaponDef" _everywhere_
 	const_cast<WeaponDef*>(this)->PreloadModel();
 }

@@ -12,7 +12,7 @@
 
 #include <SDL_keycode.h>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 /******************************************************************************/
@@ -22,7 +22,7 @@
 
 void CKeySet::Reset()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	key = -1;
 	modifiers = 0;
 	type = KSKeyCode;
@@ -31,14 +31,14 @@ void CKeySet::Reset()
 
 void CKeySet::ClearModifiers()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	modifiers &= ~(KS_ALT | KS_CTRL | KS_META | KS_SHIFT);
 }
 
 
 void CKeySet::SetAnyBit()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	ClearModifiers();
 	modifiers |= KS_ANYMOD;
 }
@@ -46,25 +46,25 @@ void CKeySet::SetAnyBit()
 
 bool CKeySet::IsPureModifier() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (keyCodes.IsModifier(Key()) || (Key() == keyBindings.GetFakeMetaKey()));
 }
 
 bool CKeySet::IsModifier() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return GetKeys()->IsModifier(key);
 }
 
 bool CKeySet::IsKeyCode() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return type == KSKeyCode;
 }
 
 IKeys* CKeySet::GetKeys() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsKeyCode()) {
 		return &keyCodes;
 	} else {
@@ -86,7 +86,7 @@ CKeySet::CKeySet(int k, unsigned char mods, CKeySetType keyType)
 
 unsigned char CKeySet::GetCurrentModifiers()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char modifiers = 0;
 
 	if (KeyInput::GetKeyModState(KMOD_ALT))   { modifiers |= KS_ALT; }
@@ -100,7 +100,7 @@ unsigned char CKeySet::GetCurrentModifiers()
 
 std::string CKeySet::GetHumanModifiers(unsigned char modifiers)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string modstr;
 
 	if (modifiers & KS_ANYMOD)  { modstr += "Any+"; }
@@ -115,7 +115,7 @@ std::string CKeySet::GetHumanModifiers(unsigned char modifiers)
 
 std::string CKeySet::GetString(bool useDefaultKeysym) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string name;
 
 	const IKeys* keys = GetKeys();
@@ -127,14 +127,14 @@ std::string CKeySet::GetString(bool useDefaultKeysym) const
 
 std::string CKeySet::GetCodeString() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return IsKeyCode() ? CKeyCodes::GetCodeString(key) : CScanCodes::GetCodeString(key);
 }
 
 
 bool CKeySet::ParseModifier(std::string& s, const std::string& token, const std::string& abbr)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (s.find(token) == 0) {
 		s.erase(0, token.size());
 		return true;
@@ -149,7 +149,7 @@ bool CKeySet::ParseModifier(std::string& s, const std::string& token, const std:
 
 bool CKeySet::Parse(const std::string& token, bool showerror)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Reset();
 
 	std::string s = StringToLower(token);
@@ -225,7 +225,7 @@ bool CKeySet::Parse(const std::string& token, bool showerror)
 
 void CTimedKeyChain::push_back(const CKeySet& ks, const spring_time t, const bool isRepeat)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// clear chain on timeout
 	const auto dropTime = t - spring_msecs(keyBindings.GetKeyChainTimeout());
 

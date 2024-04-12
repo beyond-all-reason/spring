@@ -19,7 +19,7 @@
 #include "System/Threading/ThreadPool.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
@@ -78,13 +78,13 @@ static const SColor buildColors[] = {
 
 
 static inline const SColor& GetBuildColor(const BuildSquareStatus& status) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return buildColors[status];
 }
 
 
 static SColor GetSpeedModColor(const float sm) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SColor col(255, 0, 0);
 
 	if (sm > 0.0f) {
@@ -100,7 +100,7 @@ static SColor GetSpeedModColor(const float sm) {
 
 const MoveDef* CPathTexture::GetSelectedMoveDef()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (forcedPathType >= 0)
 		return moveDefHandler.GetMoveDefByPathType(forcedPathType);
 
@@ -117,7 +117,7 @@ const MoveDef* CPathTexture::GetSelectedMoveDef()
 
 const UnitDef* CPathTexture::GetCurrentBuildCmdUnitDef()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (forcedUnitDef >= 0)
 		return unitDefHandler->GetUnitDefByID(forcedUnitDef);
 
@@ -133,7 +133,7 @@ const UnitDef* CPathTexture::GetCurrentBuildCmdUnitDef()
 
 GLuint CPathTexture::GetTexture()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	lastUsage = spring_gettime();
 	return texture;
 }
@@ -141,7 +141,7 @@ GLuint CPathTexture::GetTexture()
 
 bool CPathTexture::ShowMoveDef(const int pathType)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	forcedUnitDef  = -1;
 	forcedPathType = pathType;
 	updateProcess = 0;
@@ -151,7 +151,7 @@ bool CPathTexture::ShowMoveDef(const int pathType)
 
 bool CPathTexture::ShowUnitDef(const int udefid)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	forcedUnitDef  = udefid;
 	forcedPathType = -1;
 	updateProcess = 0;
@@ -161,7 +161,7 @@ bool CPathTexture::ShowUnitDef(const int udefid)
 
 bool CPathTexture::IsUpdateNeeded()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// don't update when not rendered/used
 	if ((spring_gettime() - lastUsage).toSecsi() > 2) {
 		forcedUnitDef = forcedPathType = -1;
@@ -201,7 +201,7 @@ bool CPathTexture::IsUpdateNeeded()
 
 void CPathTexture::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const MoveDef* md = GetSelectedMoveDef();
 	const UnitDef* ud = GetCurrentBuildCmdUnitDef();
 

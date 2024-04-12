@@ -25,7 +25,7 @@
 #include "System/bitops.h"
 #include "System/Exceptions.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 #define LOG_SECTION_DYN_WATER "DynWater"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_DYN_WATER)
@@ -47,7 +47,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_DYN_WATER)
 */
 void CDynWater::InitResources(bool loadShader)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!FBO::IsSupported())
 		throw content_error("DynWater Error: missing FBO support");
 
@@ -255,7 +255,7 @@ void CDynWater::InitResources(bool loadShader)
 
 void CDynWater::FreeResources()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto DeleteTexture = [](GLuint& texID) { if (texID > 0) { glDeleteTextures(1, &texID); texID = 0; } };
 	const auto DeleteProgram = [](GLuint& proID) { if (proID > 0) { glSafeDeleteProgram(proID); proID = 0; } };
 
@@ -299,7 +299,7 @@ void CDynWater::FreeResources()
 
 void CDynWater::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
@@ -398,7 +398,7 @@ void CDynWater::Draw()
 
 void CDynWater::UpdateWater(const CGame* game)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
@@ -425,7 +425,7 @@ void CDynWater::UpdateWater(const CGame* game)
 
 void CDynWater::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
@@ -454,7 +454,7 @@ void CDynWater::Update()
 
 void CDynWater::DrawReflection(const CGame* game)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	reflectFBO.Bind();
 
 	const auto& sky = ISky::GetSky();
@@ -488,7 +488,7 @@ void CDynWater::DrawReflection(const CGame* game)
 
 void CDynWater::DrawRefraction(const CGame* game)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	camera->Update();
 
 	refractRight = camera->GetRight();
@@ -525,7 +525,7 @@ void CDynWater::DrawRefraction(const CGame* game)
 
 void CDynWater::DrawWaves()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float dx = camPosBig.x - oldCamPosBig.x;
 	float dy = camPosBig.z - oldCamPosBig.z;
 
@@ -710,7 +710,7 @@ void CDynWater::DrawWaves()
 
 void CDynWater::DrawHeightTex()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0, 1, 0, 1, -1, 1);
@@ -777,7 +777,7 @@ static inline void DrawVertexAQ(int x, int y)
 
 void CDynWater::DrawWaterSurface()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool inStrip = false;
 
 	va = GetVertexArray();
@@ -957,7 +957,7 @@ void CDynWater::DrawWaterSurface()
 
 void CDynWater::DrawDetailNormalTex()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int a = 0; a < 8; ++a) {
 		glActiveTextureARB(GL_TEXTURE0_ARB + a);
 		glBindTexture(GL_TEXTURE_2D, rawBumpTexture[0]);
@@ -1021,7 +1021,7 @@ void CDynWater::DrawDetailNormalTex()
 
 void CDynWater::AddShipWakes()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuffer);
 	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, waveTex1, 0);
 
@@ -1139,7 +1139,7 @@ void CDynWater::AddShipWakes()
 
 void CDynWater::AddExplosions()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (explosions.empty()) {
 		return;
 	}
@@ -1223,7 +1223,7 @@ void CDynWater::AddExplosions()
 
 void CDynWater::AddExplosion(const float3& pos, float strength, float size)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((pos.y > size) || (size < 8)) {
 		return;
 	}
@@ -1233,7 +1233,7 @@ void CDynWater::AddExplosion(const float3& pos, float strength, float size)
 
 void CDynWater::DrawUpdateSquare(float dx, float dy, int* resetTexs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float startx = std::max(0.f, -dx/WF_SIZE);
 	float starty = std::max(0.f, -dy/WF_SIZE);
 	float endx   = std::min(1.f, 1 - dx/WF_SIZE);
@@ -1264,7 +1264,7 @@ void CDynWater::DrawUpdateSquare(float dx, float dy, int* resetTexs)
 
 void CDynWater::DrawSingleUpdateSquare(float startx, float starty, float endx, float endy)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float texstart = 0.1f / 1024;
 	float texend = 1023.9f / 1024;
 	float texdif = texend - texstart;
@@ -1283,7 +1283,7 @@ void CDynWater::DrawSingleUpdateSquare(float startx, float starty, float endx, f
 
 void CDynWater::DrawOuterSurface()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CVertexArray* va = GetVertexArray();
 	va->Initialize();
 

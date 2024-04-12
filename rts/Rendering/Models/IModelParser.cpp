@@ -25,7 +25,7 @@
 #include "System/LoadLock.h"
 #include "lib/assimp/include/assimp/Importer.hpp"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CModelLoader modelLoader;
@@ -51,7 +51,7 @@ static bool CheckAssimpWhitelist(const char* aiExt) {
 }
 
 static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// file-extension should be lowercase
 	parsers.emplace_back("3do", &g3DOParser);
 	parsers.emplace_back("s3o", &gS3OParser);
@@ -91,7 +91,7 @@ static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
 
 static void LoadDummyModel(S3DModel& model)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// create a crash-dummy
 	model.type = MODELTYPE_3DO;
 	model.numPieces = 1;
@@ -104,7 +104,7 @@ static void LoadDummyModel(S3DModel& model)
 
 static void LoadDummyModel(S3DModel& model, int id)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// create a crash-dummy
 	model.id = id;
 	LoadDummyModel(model);
@@ -113,7 +113,7 @@ static void LoadDummyModel(S3DModel& model, int id)
 
 static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelPiece)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (auto vertCount = modelPiece->GetVerticesVec().size(); vertCount >= 3) {
 		// do not check pseudo-pieces
 		unsigned int numNullNormals = 0;
@@ -142,7 +142,7 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 
 void CModelLoader::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	RegisterModelFormats(parsers);
 	InitParsers();
 
@@ -156,7 +156,7 @@ void CModelLoader::Init()
 
 void CModelLoader::InitParsers() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	g3DOParser.Init();
 	gS3OParser.Init();
 	gAssParser.Init();
@@ -164,7 +164,7 @@ void CModelLoader::InitParsers() const
 
 void CModelLoader::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LogErrors();
 	KillModels();
 	KillParsers();
@@ -175,14 +175,14 @@ void CModelLoader::Kill()
 
 void CModelLoader::KillModels()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	models.clear();
 	modelID = 0;
 }
 
 void CModelLoader::KillParsers() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	g3DOParser.Kill();
 	gS3OParser.Kill();
 	gAssParser.Kill();
@@ -192,7 +192,7 @@ void CModelLoader::KillParsers() const
 
 std::string CModelLoader::FindModelPath(std::string name) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// check for empty string because we can be called
 	// from Lua*Defs and certain features have no models
 	if (name.empty())
@@ -221,7 +221,7 @@ std::string CModelLoader::FindModelPath(std::string name) const
 
 void CModelLoader::PreloadModel(const std::string& modelName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	//NB: do preload in any case
@@ -245,7 +245,7 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 
 void CModelLoader::LogErrors()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	if (errors.empty())
@@ -270,7 +270,7 @@ void CModelLoader::LogErrors()
 
 S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// cannot happen except through SpawnProjectile
 	if (name.empty())
 		return nullptr;
@@ -308,7 +308,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 
 S3DModel* CModelLoader::GetCachedModel(std::string fullName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// caller has mutex lock
 
 	static const auto CompPred = [](auto&& lhs, auto&& rhs) { return lhs.first < rhs.first; };
@@ -369,7 +369,7 @@ void CModelLoader::FillModel(
 
 void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
@@ -393,7 +393,7 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 
 IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// cached record
 	static std::pair<std::string, IModelParser*> lastParser = {};
 
@@ -412,7 +412,7 @@ IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 
 void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const std::string& path)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	IModelParser* parser = GetFormatParser(FileSystem::GetExtension(path));
 
 	if (parser == nullptr) {
@@ -441,7 +441,7 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 
 void CModelLoader::PostProcessGeometry(S3DModel* model)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (model->loadStatus == S3DModel::LoadStatus::LOADED)
 		return;
 
@@ -462,7 +462,7 @@ void CModelLoader::PostProcessGeometry(S3DModel* model)
 }
 
 void CModelLoader::Upload(S3DModel* model) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (model->uploaded) //already uploaded
 		return;
 

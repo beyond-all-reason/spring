@@ -12,7 +12,7 @@
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CDirtProjectile, CProjectile, )
 
@@ -67,7 +67,7 @@ CDirtProjectile::CDirtProjectile() :
 
 void CDirtProjectile::Serialize(creg::ISerializer* s)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string name;
 	if (s->IsWriting())
 		name = projectileDrawer->textureAtlas->GetTextureName(texture);
@@ -79,7 +79,7 @@ void CDirtProjectile::Serialize(creg::ISerializer* s)
 
 void CDirtProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetVelocityAndSpeed((speed * slowdown) + (UpVector * mygravity));
 	SetPosition(pos + speed);
 
@@ -92,7 +92,7 @@ void CDirtProjectile::Update()
 
 void CDirtProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsValidTexture(texture))
 		return;
 
@@ -122,14 +122,14 @@ void CDirtProjectile::Draw()
 
 int CDirtProjectile::GetProjectilesCount() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 1 * IsValidTexture(texture);
 }
 
 
 bool CDirtProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

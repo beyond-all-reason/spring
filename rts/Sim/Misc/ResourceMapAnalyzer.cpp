@@ -25,7 +25,7 @@ using std::fclose;
 
 #include <stdexcept>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 static constexpr float3 ERRORVECTOR(-1, 0, 0);
 static std::string CACHE_BASE("");
@@ -61,7 +61,7 @@ CResourceMapAnalyzer::CResourceMapAnalyzer(int resourceId)
 
 
 float3 CResourceMapAnalyzer::GetNearestSpot(int builderUnitId, const UnitDef* extractor) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	const CUnit* builder = unitHandler.GetUnit(builderUnitId);
 
@@ -74,7 +74,7 @@ float3 CResourceMapAnalyzer::GetNearestSpot(int builderUnitId, const UnitDef* ex
 }
 
 float3 CResourceMapAnalyzer::GetNearestSpot(float3 fromPos, int team, const UnitDef* extractor) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	float tempScore = 0.0f;
 	float maxDivergence = 16.0f;
@@ -115,7 +115,7 @@ float3 CResourceMapAnalyzer::GetNearestSpot(float3 fromPos, int team, const Unit
 
 
 void CResourceMapAnalyzer::Init() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CResourceDescription* resource = resourceHandler->GetResource(resourceId);
 
 	mapWidth = resourceHandler->GetResourceMapWidth(resourceId);
@@ -143,13 +143,13 @@ void CResourceMapAnalyzer::Init() {
 }
 
 float CResourceMapAnalyzer::GetAverageIncome() const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return averageIncome;
 }
 
 
 void CResourceMapAnalyzer::GetResourcePoints() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<int> xend(doubleRadius + 1);
 
 	for (int a = 0; a < doubleRadius + 1; a++) {
@@ -507,7 +507,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 
 template<typename T>
 static inline void writeToFile(const T& value, FILE* file) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	if (fwrite(&value, sizeof(T), 1, file) != 1) {
 		throw std::runtime_error("failed to write value to file");
@@ -515,7 +515,7 @@ static inline void writeToFile(const T& value, FILE* file) {
 }
 
 void CResourceMapAnalyzer::SaveResourceMap() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	const std::string cacheFileName = GetCacheFileName();
 	FILE* saveFile = fopen(cacheFileName.c_str(), "wb");
@@ -538,7 +538,7 @@ void CResourceMapAnalyzer::SaveResourceMap() {
 }
 
 static void fileReadChecked(void* buf, size_t size, size_t count, FILE* fstream) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	if (fread(buf, size, count, fstream) != count) {
 		throw std::runtime_error("Failed to read the required number of items");
@@ -546,7 +546,7 @@ static void fileReadChecked(void* buf, size_t size, size_t count, FILE* fstream)
 }
 
 bool CResourceMapAnalyzer::LoadResourceMap() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	bool loaded = false;
 
@@ -574,7 +574,7 @@ bool CResourceMapAnalyzer::LoadResourceMap() {
 
 
 std::string CResourceMapAnalyzer::GetCacheFileName() const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	const CResourceDescription* resource = resourceHandler->GetResource(resourceId);
 	std::string absFile = CACHE_BASE + gameSetup->mapName + resource->name;

@@ -43,7 +43,7 @@
 #include <SDL_mouse.h>
 #include <SDL_keycode.h>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
@@ -57,7 +57,7 @@ CSelectedUnitsHandler selectedUnitsHandler;
 
 void CSelectedUnitsHandler::Init(unsigned numPlayers)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	soundMultiselID = sound->GetDefSoundId("MultiSelect");
 	buildIconsFirst = configHandler->GetBool("BuildIconsFirst");
 	autoAddBuiltUnitsToFactoryGroup = configHandler->GetBool("AutoAddBuiltUnitsToFactoryGroup");
@@ -69,20 +69,20 @@ void CSelectedUnitsHandler::Init(unsigned numPlayers)
 
 bool CSelectedUnitsHandler::IsUnitSelected(const CUnit* unit) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (unit != nullptr && selectedUnits.find(unit->id) != selectedUnits.end());
 }
 
 bool CSelectedUnitsHandler::IsUnitSelected(const int unitID) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (IsUnitSelected(unitHandler.GetUnit(unitID)));
 }
 
 
 void CSelectedUnitsHandler::ToggleBuildIconsFirst()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	buildIconsFirst = !buildIconsFirst;
 	possibleCommandsChanged = true;
 }
@@ -90,7 +90,7 @@ void CSelectedUnitsHandler::ToggleBuildIconsFirst()
 
 CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailableCommands()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	possibleCommandsChanged = false;
 
 	int commandPage = 1000;
@@ -157,7 +157,7 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 
 void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gu->spectating && gs->godMode == 0)
 		return;
 	if (selectedUnits.empty())
@@ -267,7 +267,7 @@ void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 
 bool CSelectedUnitsHandler::CanISelectTeam(const CPlayer* myPlayer, int teamID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	/* Not redundant with the check below, because
 	 * spectators cannot control the team they view. */
 	if (gu->myTeam == teamID)
@@ -287,7 +287,7 @@ bool CSelectedUnitsHandler::CanISelectTeam(const CPlayer* myPlayer, int teamID)
 
 void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, const float4& planeLeft, const float4& planeTop, const float4& planeBottom)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* unit = nullptr;
 	const CPlayer* myPlayer = gu->GetMyPlayer();
 
@@ -343,7 +343,7 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 
 void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doInViewTest, bool selectType)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME make modular?
 	if (unit == nullptr)
 		return;
@@ -390,7 +390,7 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 
 void CSelectedUnitsHandler::AddUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if unit is being transported, we should not be able to select it
 	const CUnit* trans = unit->GetTransporter();
 
@@ -417,7 +417,7 @@ void CSelectedUnitsHandler::AddUnit(CUnit* unit)
 
 void CSelectedUnitsHandler::RemoveUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (selectedUnits.erase(unit->id))
 		DeleteDeathDependence(unit, DEPENDENCE_SELECTED);
 
@@ -430,7 +430,7 @@ void CSelectedUnitsHandler::RemoveUnit(CUnit* unit)
 
 void CSelectedUnitsHandler::ClearSelected()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const int unitID: selectedUnits) {
 		CUnit* u = unitHandler.GetUnit(unitID);
 
@@ -453,7 +453,7 @@ void CSelectedUnitsHandler::ClearSelected()
 
 void CSelectedUnitsHandler::SetGroup(CGroup* group, bool fromFactory, bool autoSelect)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const int unitID: selectedUnits) {
 		CUnit* u = unitHandler.GetUnit(unitID);
 
@@ -467,7 +467,7 @@ void CSelectedUnitsHandler::SetGroup(CGroup* group, bool fromFactory, bool autoS
 
 void CSelectedUnitsHandler::SelectGroup(int num)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	ClearSelected();
 	selectedGroup = num;
 	CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(num);
@@ -489,7 +489,7 @@ void CSelectedUnitsHandler::SelectGroup(int num)
 
 void CSelectedUnitsHandler::SelectUnits(const std::string& line)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const std::string& arg : CSimpleParser::Tokenize(line, 0)) {
 		if (arg == "clear") {
 			selectedUnitsHandler.ClearSelected();
@@ -523,7 +523,7 @@ void CSelectedUnitsHandler::SelectUnits(const std::string& line)
 
 void CSelectedUnitsHandler::SelectCycle(const std::string& command)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static spring::unordered_set<int> unitIDs;
 	static int lastID = -1;
 
@@ -593,7 +593,7 @@ void CSelectedUnitsHandler::SelectCycle(const std::string& command)
 
 void CSelectedUnitsHandler::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDisable(GL_TEXTURE_2D);
 	glDepthMask(false);
 	glDisable(GL_DEPTH_TEST);
@@ -716,7 +716,7 @@ void CSelectedUnitsHandler::Draw()
 
 void CSelectedUnitsHandler::DependentDied(CObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	selectedUnits.erase(static_cast<CUnit*>(o)->id);
 
 	selectionChanged = true;
@@ -727,7 +727,7 @@ void CSelectedUnitsHandler::DependentDied(CObject* o)
 // handles NETMSG_SELECT's
 void CSelectedUnitsHandler::NetSelect(std::vector<int>& s, int playerId)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unsigned(playerId) < netSelected.size());
 	netSelected[playerId] = s;
 }
@@ -735,7 +735,7 @@ void CSelectedUnitsHandler::NetSelect(std::vector<int>& s, int playerId)
 // handles NETMSG_COMMAND's
 void CSelectedUnitsHandler::NetOrder(Command& c, int playerId)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unsigned(playerId) < netSelected.size());
 
 	if (netSelected[playerId].empty())
@@ -747,14 +747,14 @@ void CSelectedUnitsHandler::NetOrder(Command& c, int playerId)
 
 void CSelectedUnitsHandler::ClearNetSelect(int playerId)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	netSelected[playerId].clear();
 }
 
 // handles NETMSG_AICOMMAND{S}'s sent by AICallback / LuaUnsyncedCtrl (!)
 void CSelectedUnitsHandler::AINetOrder(int unitID, int aiTeamID, int playerID, const Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* unit = unitHandler.GetUnit(unitID);
 
 	if (unit == nullptr)
@@ -793,7 +793,7 @@ static const CFeature* targetFeature = nullptr;
 
 static inline bool IsBetterLeader(const UnitDef* newDef, const UnitDef* oldDef)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// There is a lot more that could be done here to make better
 	// selections, but the users may prefer simplicity over smarts.
 
@@ -856,7 +856,7 @@ static inline bool IsBetterLeader(const UnitDef* newDef, const UnitDef* oldDef)
 // LuaUnsyncedRead::GetDefaultCommand --> CGuiHandler::GetDefaultCommand --> GetDefaultCmd
 int CSelectedUnitsHandler::GetDefaultCmd(const CUnit* unit, const CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// return the default if there are no units selected
 	if (selectedUnits.empty())
 		return CMD_STOP;
@@ -896,7 +896,7 @@ int CSelectedUnitsHandler::GetDefaultCmd(const CUnit* unit, const CFeature* feat
 
 void CSelectedUnitsHandler::PossibleCommandChange(CUnit* sender)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	possibleCommandsChanged |= (sender == nullptr || selectedUnits.find(sender->id) != selectedUnits.end());
 }
 
@@ -948,7 +948,7 @@ void CSelectedUnitsHandler::DrawCommands()
 // CMouseHandler::GetCurrentTooltip --> GetTooltip
 std::string CSelectedUnitsHandler::GetTooltip()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string s;
 
 	{
@@ -1008,7 +1008,7 @@ std::string CSelectedUnitsHandler::GetTooltip()
 
 void CSelectedUnitsHandler::SetCommandPage(int page)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const int unitID: selectedUnits) {
 		CUnit* u = unitHandler.GetUnit(unitID);
 		CCommandAI* c = u->commandAI;
@@ -1020,14 +1020,14 @@ void CSelectedUnitsHandler::SetCommandPage(int page)
 
 void CSelectedUnitsHandler::SendCommand(const Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SendSelect();
 	clientNet->Send(CBaseNetProtocol::Get().SendCommand(gu->myPlayerNum, c.GetID(), c.GetTimeOut(), c.GetOpts(), c.GetNumParams(), c.GetParams()));
 }
 
 void CSelectedUnitsHandler::SendSelect()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (selectionChanged) {
 		// send new selection; first gather unit IDs
 		selectedUnitIDs.clear();

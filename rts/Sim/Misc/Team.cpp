@@ -22,7 +22,7 @@
 #include "System/creg/STL_List.h"
 #include "System/creg/STL_Map.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED(CTeam, TeamBase, )
@@ -79,7 +79,7 @@ CTeam::CTeam():
 
 void CTeam::SetDefaultStartPos()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int allyTeam = teamHandler.AllyTeam(teamNum);
 
 	assert(allyTeam == teamAllyteam);
@@ -102,7 +102,7 @@ void CTeam::SetDefaultStartPos()
 
 void CTeam::ClampStartPosInStartBox(float3* pos) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int allyTeam = teamHandler.AllyTeam(teamNum);
 	const AllyTeam& allyTeamData = teamHandler.GetAllyTeam(allyTeam);
 	const SRectangle rect(
@@ -121,7 +121,7 @@ void CTeam::ClampStartPosInStartBox(float3* pos) const
 
 bool CTeam::UseMetal(float amount)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (res.metal < amount)
 		return false;
 
@@ -132,7 +132,7 @@ bool CTeam::UseMetal(float amount)
 
 bool CTeam::UseEnergy(float amount)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (res.energy < amount)
 		return false;
 
@@ -145,7 +145,7 @@ bool CTeam::UseEnergy(float amount)
 
 void CTeam::AddMetal(float amount, bool useIncomeMultiplier)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useIncomeMultiplier)
 		amount *= GetIncomeMultiplier();
 
@@ -161,7 +161,7 @@ void CTeam::AddMetal(float amount, bool useIncomeMultiplier)
 
 void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useIncomeMultiplier)
 		amount *= GetIncomeMultiplier();
 
@@ -177,14 +177,14 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 
 bool CTeam::HaveResources(const SResourcePack& amount) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (res >= amount);
 }
 
 
 void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useIncomeMultiplier)
 		amount *= GetIncomeMultiplier();
 
@@ -202,7 +202,7 @@ void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 
 bool CTeam::UseResources(const SResourcePack& amount)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!HaveResources(amount))
 		return false;
 
@@ -214,7 +214,7 @@ bool CTeam::UseResources(const SResourcePack& amount)
 
 void CTeam::GiveEverythingTo(const unsigned toTeam)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CTeam* target = teamHandler.Team(toTeam);
 
 	if (target == nullptr) {
@@ -242,7 +242,7 @@ void CTeam::GiveEverythingTo(const unsigned toTeam)
 
 void CTeam::Died(bool normalDeath)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead)
 		return;
 
@@ -270,7 +270,7 @@ void CTeam::Died(bool normalDeath)
 
 void CTeam::AddPlayer(int playerNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// note: does it matter if this team was already dead?
 	// (besides needing to restore its original unit-limit)
 	if (isDead)
@@ -287,7 +287,7 @@ void CTeam::AddPlayer(int playerNum)
 
 void CTeam::KillAIs()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const uint8_t id: skirmishAIHandler.GetSkirmishAIsInTeam(teamNum, gu->myPlayerNum)) {
 		skirmishAIHandler.SetLocalKillFlag(id, 2 /* = team died */);
 	}
@@ -297,7 +297,7 @@ void CTeam::KillAIs()
 
 void CTeam::ResetResourceState()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// reset all state variables that were
 	// potentially modified during the last
 	// <TEAM_SLOWUPDATE_RATE> frames
@@ -317,7 +317,7 @@ void CTeam::ResetResourceState()
 
 void CTeam::SlowUpdate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	TeamStatistics& currentStats = GetCurrentStats();
 
 	float eShare = 0.0f;
@@ -411,7 +411,7 @@ void CTeam::SlowUpdate()
 
 void CTeam::AddUnit(CUnit* unit, AddType type)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	numUnits++;
 
 	switch (type) {
@@ -430,7 +430,7 @@ void CTeam::AddUnit(CUnit* unit, AddType type)
 
 void CTeam::RemoveUnit(CUnit* unit, RemoveType type)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	numUnits--;
 
 	switch (type) {
@@ -447,7 +447,7 @@ void CTeam::RemoveUnit(CUnit* unit, RemoveType type)
 }
 
 void CTeam::UpdateControllerName() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// format is "Joe[, AI: ABCAI 0.1 ('Killer')[, AI: DEFAI 1.2 ('Slayer')[, ...]]]"
 	memset(controllerName, 0, sizeof(controllerName));
 

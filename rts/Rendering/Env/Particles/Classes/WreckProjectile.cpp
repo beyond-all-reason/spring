@@ -13,7 +13,7 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CWreckProjectile, CProjectile, )
 CR_REG_METADATA(CWreckProjectile, )
@@ -28,7 +28,7 @@ CWreckProjectile::CWreckProjectile(CUnit* owner, float3 pos, float3 speed, float
 
 void CWreckProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	speed.y += mygravity;
 	speed.x *= 0.994f;
 	speed.z *= 0.994f;
@@ -50,7 +50,7 @@ void CWreckProjectile::Update()
 
 void CWreckProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char col[4];
 	col[0] = (unsigned char) (0.15f * 200);
 	col[1] = (unsigned char) (0.1f  * 200);
@@ -69,7 +69,7 @@ void CWreckProjectile::Draw()
 
 void CWreckProjectile::DrawOnMinimap() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	AddMiniMapVertices({ pos        , color4::redA }, { pos + speed, color4::redA });
 }
 

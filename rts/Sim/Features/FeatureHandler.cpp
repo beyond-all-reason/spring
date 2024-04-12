@@ -14,7 +14,7 @@
 #include "System/EventHandler.h"
 #include "System/TimeProfiler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 /******************************************************************************/
 
@@ -35,7 +35,7 @@ CFeatureHandler featureHandler;
 
 
 void CFeatureHandler::Init() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	features.resize(MAX_FEATURES, nullptr);
 	activeFeatureIDs.reserve(MAX_FEATURES); // internal table size must be constant
 	featureMemPool.reserve(128);
@@ -45,7 +45,7 @@ void CFeatureHandler::Init() {
 }
 
 void CFeatureHandler::Kill() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const int featureID: activeFeatureIDs) {
 		Sim::registry.destroy(features[featureID]->entityReference);
 		featureMemPool.free(features[featureID]);
@@ -63,7 +63,7 @@ void CFeatureHandler::Kill() {
 
 void CFeatureHandler::LoadFeaturesFromMap()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// create map-specified feature instances
 	const int numFeatures = readMap->GetNumFeatures();
 
@@ -105,7 +105,7 @@ void CFeatureHandler::LoadFeaturesFromMap()
 
 
 CFeature* CFeatureHandler::LoadFeature(const FeatureLoadParams& params) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// need to check this BEFORE creating the instance
 	if (!CanAddFeature(params.featureID))
 		return nullptr;
@@ -121,7 +121,7 @@ CFeature* CFeatureHandler::LoadFeature(const FeatureLoadParams& params) {
 
 void CFeatureHandler::InsertActiveFeature(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	idPool.AssignID(feature);
 
 	assert(feature->id < features.size());
@@ -135,7 +135,7 @@ void CFeatureHandler::InsertActiveFeature(CFeature* feature)
 
 bool CFeatureHandler::AddFeature(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// LoadFeature should make sure this is true
 	assert(CanAddFeature(feature->id));
 
@@ -147,7 +147,7 @@ bool CFeatureHandler::AddFeature(CFeature* feature)
 
 void CFeatureHandler::DeleteFeature(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetFeatureUpdateable(feature);
 	feature->deleteMe = true;
 }
@@ -155,7 +155,7 @@ void CFeatureHandler::DeleteFeature(CFeature* feature)
 
 CFeature* CFeatureHandler::CreateWreckage(const FeatureLoadParams& cparams)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const FeatureDef* fd = cparams.featureDef;
 
 	if (fd == nullptr)
@@ -208,7 +208,7 @@ void CFeatureHandler::Update()
 
 bool CFeatureHandler::TryFreeFeatureID(int id)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CBuilderCAI::IsFeatureBeingReclaimed(id)) {
 		// postpone putting this ID back into the free pool
 		// (this gives area-reclaimers time to choose a new
@@ -225,7 +225,7 @@ bool CFeatureHandler::TryFreeFeatureID(int id)
 
 bool CFeatureHandler::UpdateFeature(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(feature->inUpdateQue);
 
 	if (feature->deleteMe) {
@@ -259,7 +259,7 @@ bool CFeatureHandler::UpdateFeature(CFeature* feature)
 
 void CFeatureHandler::SetFeatureUpdateable(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (feature->inUpdateQue) {
 		assert(std::find(updateFeatures.begin(), updateFeatures.end(), feature) != updateFeatures.end());
 		return;
@@ -272,7 +272,7 @@ void CFeatureHandler::SetFeatureUpdateable(CFeature* feature)
 
 void CFeatureHandler::TerrainChanged(int x1, int y1, int x2, int y2)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 mins(x1 * SQUARE_SIZE, 0, y1 * SQUARE_SIZE);
 	const float3 maxs(x2 * SQUARE_SIZE, 0, y2 * SQUARE_SIZE);
 

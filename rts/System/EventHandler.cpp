@@ -9,7 +9,7 @@
 #include "System/Platform/Threading.h"
 #include "System/GlobalConfig.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CEventHandler eventHandler;
 

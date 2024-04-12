@@ -4,15 +4,15 @@
 #include "Map/MapInfo.h"
 #include "System/FastMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 ISkyLight::ISkyLight() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetLightDir(mapInfo->light.sunDir);
 }
 
 float3& ISkyLight::CalcPolarLightDir() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	lightDirZ = lightDir;
 	lightDirZ.y = 0.0f;
 

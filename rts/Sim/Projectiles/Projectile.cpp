@@ -13,7 +13,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/Matrix44f.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED_INTERFACE(CProjectile, CExpGenSpawnable)
 
@@ -95,7 +95,7 @@ CProjectile::CProjectile(
 
 CProjectile::~CProjectile()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!synced)
 		return;
 
@@ -104,7 +104,7 @@ CProjectile::~CProjectile()
 
 void CProjectile::Init(const CUnit* owner, const float3& offset)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (owner != nullptr) {
 		// must be set before the AddProjectile call
 		ownerID = owner->id;
@@ -133,7 +133,7 @@ void CProjectile::Init(const CUnit* owner, const float3& offset)
 
 void CProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return;
 
@@ -144,7 +144,7 @@ void CProjectile::Update()
 
 void CProjectile::Delete()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe = true;
 	checkCol = false;
 }
@@ -152,13 +152,13 @@ void CProjectile::Delete()
 
 void CProjectile::DrawOnMinimap() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	AddMiniMapVertices({ pos        , color4::whiteA }, { pos + speed, color4::whiteA });
 }
 
 
 CUnit* CProjectile::owner() const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE:
 	//   this death dependency optimization using "ownerID" is logically flawed:
 	//   because ID's are reused it could return a unit that is not the original
@@ -185,7 +185,7 @@ CMatrix44f CProjectile::GetTransformMatrix(bool offsetPos) const {
 
 bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CExpGenSpawnable::GetMemberInfo(memberInfo))
 		return true;
 
@@ -198,13 +198,13 @@ bool CProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 bool CProjectile::IsValidTexture(const AtlasedTexture* tex)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return tex && (*tex != AtlasedTexture::DefaultAtlasTexture);
 }
 
 void CProjectile::AddMiniMapVertices(VA_TYPE_C&& v1, VA_TYPE_C&& v2)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (v1.pos.equals(v2.pos)) {
 		mmPtsRB.AddVertex(std::move(v1));
 	}

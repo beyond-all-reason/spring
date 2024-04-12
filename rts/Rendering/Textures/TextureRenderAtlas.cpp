@@ -19,7 +19,7 @@
 #include "System/StringUtil.h"
 #include "fmt/format.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 namespace {
 static constexpr const char* vsTRA = R"(
@@ -66,7 +66,7 @@ CTextureRenderAtlas::CTextureRenderAtlas(
 	, atlasName(atlasName_)
 	, finalized(false)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (allocType) {
 		case CTextureAtlas::ATLAS_ALLOC_LEGACY:   { atlasAllocator = std::make_unique<  CLegacyAtlasAlloc>(); } break;
 		case CTextureAtlas::ATLAS_ALLOC_QUADTREE: { atlasAllocator = std::make_unique<CQuadtreeAtlasAlloc>(); } break;
@@ -100,7 +100,7 @@ CTextureRenderAtlas::CTextureRenderAtlas(
 
 CTextureRenderAtlas::~CTextureRenderAtlas()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	shaderRef--;
 
 	if (shaderRef == 0)
@@ -121,19 +121,19 @@ CTextureRenderAtlas::~CTextureRenderAtlas()
 
 bool CTextureRenderAtlas::TextureExists(const std::string& texName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return finalized && nameToTexID.contains(texName);
 }
 
 bool CTextureRenderAtlas::TextureExists(const std::string& texName, const std::string& texBackupName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return finalized && (nameToTexID.contains(texName) || nameToTexID.contains(texBackupName));
 }
 
 bool CTextureRenderAtlas::AddTexFromFile(const std::string& name, const std::string& file)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (finalized)
 		return false;
 
@@ -152,7 +152,7 @@ bool CTextureRenderAtlas::AddTexFromFile(const std::string& name, const std::str
 
 bool CTextureRenderAtlas::AddTexFromBitmap(const std::string& name, const CBitmap& bm)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (finalized)
 		return false;
 
@@ -165,7 +165,7 @@ bool CTextureRenderAtlas::AddTexFromBitmap(const std::string& name, const CBitma
 
 bool CTextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBitmap& bm)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	atlasAllocator->AddEntry(name, int2{ bm.xsize, bm.ysize });
 	nameToTexID[name] = bm.CreateMipMapTexture();
 
@@ -175,7 +175,7 @@ bool CTextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBi
 
 bool CTextureRenderAtlas::AddTex(const std::string& name, int xsize, int ysize, const SColor& color)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (finalized)
 		return false;
 
@@ -191,7 +191,7 @@ bool CTextureRenderAtlas::AddTex(const std::string& name, int xsize, int ysize, 
 
 AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!finalized)
 		return AtlasedTexture::DefaultAtlasTexture;
 
@@ -203,7 +203,7 @@ AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName)
 
 AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName, const std::string& texBackupName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!finalized)
 		return AtlasedTexture::DefaultAtlasTexture;
 
@@ -218,31 +218,31 @@ AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName, const
 
 uint32_t CTextureRenderAtlas::GetTexTarget() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return GL_TEXTURE_2D;
 }
 
 int CTextureRenderAtlas::GetMinDim() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return atlasAllocator->GetMinDim();
 }
 
 int CTextureRenderAtlas::GetNumTexLevels() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return atlasAllocator->GetNumTexLevels();
 }
 
 void CTextureRenderAtlas::SetMaxTexLevel(int maxLevels)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	atlasAllocator->SetMaxTexLevel(maxLevels);
 }
 
 bool CTextureRenderAtlas::Finalize()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (finalized)
 		return false;
 
@@ -347,7 +347,7 @@ bool CTextureRenderAtlas::Finalize()
 
 bool CTextureRenderAtlas::DumpTexture() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!finalized)
 		return false;
 

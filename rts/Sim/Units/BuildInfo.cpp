@@ -6,7 +6,7 @@
 #include "System/SpringMath.h"
 #include "System/float3.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 BuildInfo::BuildInfo()
@@ -30,13 +30,13 @@ BuildInfo::BuildInfo(const std::string& name, const float3& pos, int facing)
 
 int BuildInfo::CreateCommandID() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return -def->id;
 }
 
 void BuildInfo::AddCommandParams(Command& cmd) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	cmd.PushPos(pos);
 	cmd.PushParam((float) buildFacing);
 }
@@ -44,7 +44,7 @@ void BuildInfo::AddCommandParams(Command& cmd) const
 
 bool BuildInfo::Parse(const Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (c.GetNumParams() < 3)
 		return false;
 
@@ -72,12 +72,12 @@ bool BuildInfo::Parse(const Command& c)
 
 int BuildInfo::GetXSize() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return ((buildFacing & 1) == 0) ? def->xsize : def->zsize;
 }
 
 int BuildInfo::GetZSize() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return ((buildFacing & 1) == 1) ? def->xsize : def->zsize;
 }

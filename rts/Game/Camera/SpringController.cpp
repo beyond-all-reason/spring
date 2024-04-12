@@ -16,7 +16,7 @@
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Misc/ModInfo.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 namespace {
 	enum HeightTracking : int {
@@ -38,7 +38,7 @@ CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).descr
 CONFIG(int,   CamSpringTrackMapHeightMode).defaultValue(HeightTracking::Terrain).description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smoothmesh");
 
 static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
 
 	// if the direction is not pointing towards the map we use provided xz plane as heuristic
@@ -55,7 +55,7 @@ CSpringController::CSpringController()
 	, oldDist(0.0f)
 	, zoomBack(false)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	enabled = configHandler->GetBool("CamSpringEnabled");
 	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode"});
 	ConfigUpdate();
@@ -63,14 +63,14 @@ CSpringController::CSpringController()
 
 CSpringController::~CSpringController()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	configHandler->RemoveObserver(this);
 }
 
 
 void CSpringController::ConfigUpdate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	scrollSpeed = configHandler->GetFloat("CamSpringScrollSpeed") * 0.1f;
 	fov = configHandler->GetFloat("CamSpringFOV");
 	cursorZoomIn = configHandler->GetBool("CamSpringZoomInToMousePos");
@@ -89,12 +89,12 @@ void CSpringController::ConfigUpdate()
 
 void CSpringController::ConfigNotify(const std::string & key, const std::string & value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
 }
 
 void CSpringController::SmoothCamHeight(const float3& prevPos) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!pos.IsInBounds()) {
 		return;
 	}
@@ -119,7 +119,7 @@ void CSpringController::SmoothCamHeight(const float3& prevPos) {
 
 void CSpringController::KeyMove(float3 move)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	move *= math::sqrt(move.z);
 
 	const bool moveRotate = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RTT];
@@ -159,7 +159,7 @@ void CSpringController::KeyMove(float3 move)
 
 void CSpringController::MouseMove(float3 move)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// z is the speed modifier, in practice invertMouse{0,1} => move.z{-1,1}
 	move.x *= move.z;
 	move.y *= move.z;
@@ -177,7 +177,7 @@ void CSpringController::MouseMove(float3 move)
 
 void CSpringController::ScreenEdgeMove(float3 move)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool belowMax = (mouse->lasty < globalRendering->viewSizeY /  3);
 	const bool aboveMin = (mouse->lasty > globalRendering->viewSizeY / 10);
 	const bool moveFast = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
@@ -195,7 +195,7 @@ void CSpringController::ScreenEdgeMove(float3 move)
 
 void CSpringController::MouseWheelMove(float move, const float3& newDir)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool moveFast    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
 	const bool moveTilt    = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
 	const float shiftSpeed = (moveFast ? camera->moveFastMult * fastScaleMousewheel : 1.0f);
@@ -233,7 +233,7 @@ void CSpringController::MouseWheelMove(float move, const float3& newDir)
 
 float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, const float& scaledMode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool moveReset = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RST];
 
 	if (moveReset && zoomBack) {
@@ -266,7 +266,7 @@ float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, c
 
 float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, const float& curDistPre, const float& scaledMode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool moveReset = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RST];
 	if (moveReset) {
 		// instazoom out to maximum height
@@ -324,7 +324,7 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 
 void CSpringController::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos.ClampInMap();
 
 	pos.y = CGround::GetHeightReal(pos.x, pos.z, false); // always focus on the ground
@@ -340,7 +340,7 @@ void CSpringController::Update()
 
 static float GetRotationWithCardinalLock(float rot)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr float cardinalDirLockWidth = 0.2f;
 
 	const float rotMoved = std::abs(rot /= math::HALFPI) - cardinalDirLockWidth * 0.5f;
@@ -357,7 +357,7 @@ static float GetRotationWithCardinalLock(float rot)
 
 float CSpringController::MoveAzimuth(float move)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float minRot  = std::floor(rot.y / math::HALFPI) * math::HALFPI;
 	const float maxRot  = std::ceil(rot.y / math::HALFPI) * math::HALFPI;
 	const bool moveTilt = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
@@ -375,7 +375,7 @@ float CSpringController::MoveAzimuth(float move)
 
 float CSpringController::GetAzimuth() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (lockCardinalDirections)
 		return GetRotationWithCardinalLock(rot.y);
 	return rot.y;
@@ -384,7 +384,7 @@ float CSpringController::GetAzimuth() const
 
 float3 CSpringController::GetPos() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 cvec = dir * curDist;
 	const float3 cpos = pos - cvec;
 	return {cpos.x, std::max(cpos.y, CGround::GetHeightAboveWater(cpos.x, cpos.z, false) + 5.0f), cpos.z};
@@ -393,7 +393,7 @@ float3 CSpringController::GetPos() const
 
 void CSpringController::SwitchTo(const int oldCam, const bool showText)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText)
 		LOG("Switching to Spring style camera");
 
@@ -406,7 +406,7 @@ void CSpringController::SwitchTo(const int oldCam, const bool showText)
 
 void CSpringController::GetState(StateMap& sm) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 	sm["dist"] = curDist;
 	sm["rx"]   = rot.x;
@@ -417,7 +417,7 @@ void CSpringController::GetState(StateMap& sm) const
 
 bool CSpringController::SetState(const StateMap& sm)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 	SetStateFloat(sm, "dist", curDist);
 	SetStateFloat(sm, "rx",   rot.x);

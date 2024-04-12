@@ -8,7 +8,7 @@
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Units/Unit.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CRepulseGfx, CProjectile, )
 
@@ -28,7 +28,7 @@ CRepulseGfx::CRepulseGfx(CUnit* owner, CProjectile* repulsee, float maxOwnerDist
 	sqMaxOwnerDist((maxOwnerDist * maxOwnerDist) + 100.0f),
 	color(gfxColor)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (repulsed != nullptr)
 		AddDeathDependence(repulsed, DEPENDENCE_REPULSE);
 
@@ -55,7 +55,7 @@ CRepulseGfx::CRepulseGfx(CUnit* owner, CProjectile* repulsee, float maxOwnerDist
 
 void CRepulseGfx::DependentDied(CObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (o != repulsed)
 		return;
 
@@ -65,7 +65,7 @@ void CRepulseGfx::DependentDied(CObject* o)
 
 void CRepulseGfx::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* owner = CProjectile::owner();
 
 	if (owner == nullptr || repulsed == nullptr)
@@ -165,7 +165,7 @@ void CRepulseGfx::Draw()
 
 void CRepulseGfx::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	age += 1;
 	deleteMe |= (repulsed != nullptr && owner() != nullptr && (repulsed->pos - owner()->pos).SqLength() > sqMaxOwnerDist);
 }

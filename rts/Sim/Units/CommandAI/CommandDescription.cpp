@@ -8,7 +8,7 @@
 #include "System/SpringHash.h"
 #include "System/creg/STL_Pair.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(SCommandDescription, )
 CR_REG_METADATA(SCommandDescription, (
@@ -70,7 +70,7 @@ CCommandDescriptionCache commandDescriptionCache;
 
 void CCommandDescriptionCache::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	index.fill({0, 0});
 	slots.fill(-1u);
 
@@ -89,7 +89,7 @@ void CCommandDescriptionCache::Init()
 
 void CCommandDescriptionCache::Dump(bool forced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!forced)
 		return;
 
@@ -127,7 +127,7 @@ void CCommandDescriptionCache::Dump(bool forced)
 
 int CCommandDescriptionCache::CalcHash(const SCommandDescription& cd) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int hash = 0;
 
 	hash = spring::LiteHash(&cd.id             , sizeof(cd.id)         , hash);
@@ -153,7 +153,7 @@ int CCommandDescriptionCache::CalcHash(const SCommandDescription& cd) const
 
 const SCommandDescription* CCommandDescriptionCache::GetPtr(SCommandDescription&& cd)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	using P = decltype(index)::value_type;
 
 	const int cdHash = CalcHash(cd);
@@ -203,7 +203,7 @@ const SCommandDescription* CCommandDescriptionCache::GetPtr(SCommandDescription&
 
 void CCommandDescriptionCache::DecRef(const SCommandDescription& cd)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	using P = decltype(index)::value_type;
 
 	const int cdHash = CalcHash(cd);
@@ -245,7 +245,7 @@ void CCommandDescriptionCache::DecRef(const SCommandDescription& cd)
 
 void CCommandDescriptionCache::DecRef(std::vector<const SCommandDescription*>& cmdDescs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const SCommandDescription* cd: cmdDescs) {
 		DecRef(*cd);
 	}

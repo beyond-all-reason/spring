@@ -41,7 +41,7 @@
 #include "System/StringUtil.h"
 #include "System/ScopedResource.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 
@@ -63,14 +63,14 @@ alignas(CProjectileDrawer) static std::byte projectileDrawerMem[sizeof(CProjecti
 
 
 void CProjectileDrawer::InitStatic() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (projectileDrawer == nullptr)
 		projectileDrawer = new (projectileDrawerMem) CProjectileDrawer();
 
 	projectileDrawer->Init();
 }
 void CProjectileDrawer::KillStatic(bool reload) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	projectileDrawer->Kill();
 
 	if (reload)
@@ -81,7 +81,7 @@ void CProjectileDrawer::KillStatic(bool reload) {
 }
 
 void CProjectileDrawer::Init() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.AddClient(this);
 
 	loadscreen->SetLoadMessage("Creating Projectile Textures");
@@ -338,7 +338,7 @@ void CProjectileDrawer::Init() {
 }
 
 void CProjectileDrawer::Kill() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.RemoveClient(this);
 	autoLinkedEvents.clear();
 
@@ -436,7 +436,7 @@ void CProjectileDrawer::UpdateDrawFlags()
 
 bool CProjectileDrawer::CheckSoftenExt()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static bool result =
 		FBO::IsSupported() &&
 		GLEW_EXT_framebuffer_blit; //eval once
@@ -449,7 +449,7 @@ void CProjectileDrawer::ParseAtlasTextures(
 	spring::unordered_set<std::string>& blockedTextures,
 	CTextureAtlas* texAtlas
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<std::string> subTables;
 	spring::unordered_map<std::string, std::string> texturesMap;
 
@@ -494,7 +494,7 @@ void CProjectileDrawer::ParseAtlasTextures(
 }
 
 void CProjectileDrawer::LoadWeaponTextures() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// post-process the synced weapon-defs to set unsynced fields
 	// (this requires CWeaponDefHandler to have been initialized)
 	for (WeaponDef& wd: const_cast<std::vector<WeaponDef>&>(weaponDefHandler->GetWeaponDefsVec())) {
@@ -574,7 +574,7 @@ void CProjectileDrawer::LoadWeaponTextures() {
 
 bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& th = teamHandler;
 	auto& lh = losHandler;
 	return (gu->spectatingFullView || (th.IsValidAllyTeam(allyTeam) && th.Ally(allyTeam, gu->myAllyTeam)) || lh->InLos(pro, gu->myAllyTeam));
@@ -582,7 +582,7 @@ bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 
 bool CProjectileDrawer::ShouldDrawProjectile(const CProjectile* p, uint8_t thisPassMask)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(p);
 
 	if (p->drawFlag == 0)
@@ -661,7 +661,7 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 
 void CProjectileDrawer::DrawFlyingPieces(int modelType) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const FlyingPieceContainer& container = projectileHandler.flyingPieces[modelType];
 
 	if (container.empty())
@@ -934,7 +934,7 @@ void CProjectileDrawer::DrawShadowTransparent()
 
 void CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(p->model);
 
 	switch ((p->weapon * 2) + (p->piece * 1)) {
@@ -987,7 +987,7 @@ void CProjectileDrawer::DrawProjectileModel(const CProjectile* p)
 
 void CProjectileDrawer::DrawGroundFlashes()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const GroundFlashContainer& gfc = projectileHandler.groundFlashes;
 
 	if (gfc.empty())
@@ -1077,13 +1077,13 @@ void CProjectileDrawer::DrawGroundFlashes()
 
 
 void CProjectileDrawer::UpdateTextures() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (perlinTexObjects > 0 && drawPerlinTex)
 		UpdatePerlin();
 }
 
 void CProjectileDrawer::UpdatePerlin() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	perlinFB.Bind();
 	glViewport(perlintex->xstart * (textureAtlas->GetSize()).x, perlintex->ystart * (textureAtlas->GetSize()).y, perlinTexSize, perlinTexSize);
 
@@ -1182,7 +1182,7 @@ void CProjectileDrawer::UpdatePerlin() {
 
 void CProjectileDrawer::GenerateNoiseTex(uint32_t tex)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::array<unsigned char, 4 * perlinBlendTexSize * perlinBlendTexSize> mem;
 
 	for (int a = 0; a < perlinBlendTexSize * perlinBlendTexSize; ++a) {
@@ -1202,7 +1202,7 @@ void CProjectileDrawer::GenerateNoiseTex(uint32_t tex)
 
 void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& rp = renderProjectiles[p->model != nullptr];
 	const_cast<CProjectile*>(p)->SetRenderIndex(rp.size());
 	rp.push_back(const_cast<CProjectile*>(p));
@@ -1213,7 +1213,7 @@ void CProjectileDrawer::RenderProjectileCreated(const CProjectile* p)
 
 void CProjectileDrawer::RenderProjectileDestroyed(const CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto ri = p->GetRenderIndex();
 	auto& rp = renderProjectiles[p->model != nullptr];
 	if (ri >= rp.size()) {

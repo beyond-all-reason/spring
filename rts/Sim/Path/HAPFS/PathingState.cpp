@@ -30,7 +30,7 @@
 #include "System/StringUtil.h"
 #include "System/Threading/ThreadPool.h" // for_mt
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 #define ENABLE_NETLOG_CHECKSUM 1
 
@@ -47,12 +47,12 @@ PCMemPool pcMemPool;
 // PEMemPool peMemPool;
 
 static const std::string GetPathCacheDir() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (FileSystem::GetCacheDir() + FileSystemAbstraction::GetNativePathSeparator() + "paths" + FileSystemAbstraction::GetNativePathSeparator());
 }
 
 static const std::string GetCacheFileName(const std::string& fileHashCode, const std::string& peFileName, const std::string& mapFileName) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (GetPathCacheDir() + mapFileName + "." + peFileName + "-" + fileHashCode + ".zip");
 }
 
@@ -60,14 +60,14 @@ void PathingState::KillStatic() { pathingStates = 0; }
 
 PathingState::PathingState()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pathCache[0] = nullptr;
 	pathCache[1] = nullptr;
 }
 
 void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* parentState, unsigned int _BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	BLOCK_SIZE = _BLOCK_SIZE;
 	BLOCK_PIXEL_SIZE = BLOCK_SIZE * SQUARE_SIZE;
 
@@ -95,7 +95,7 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 	AllocStateBuffer();
 
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		pathFinders = pathFinderlist;
 		BLOCKS_TO_UPDATE = (SQUARES_TO_UPDATE) / (BLOCK_SIZE * BLOCK_SIZE) + 1;
 
@@ -169,7 +169,7 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 
 void PathingState::Terminate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (pathCache[0] != nullptr)
 		pcMemPool.free(pathCache[0]);
 	
@@ -194,7 +194,7 @@ void PathingState::Terminate()
 
 void PathingState::AllocStateBuffer()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instanceIndex >= nodeStateBuffers.size())
 		nodeStateBuffers.emplace_back();
 
@@ -207,14 +207,14 @@ void PathingState::AllocStateBuffer()
 
 bool PathingState::RemoveCacheFile(const std::string& peFileName, const std::string& mapFileName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (FileSystem::Remove(GetCacheFileName(IntToString(fileHashCode, "%x"), peFileName, mapFileName)));
 }
 
 
 void PathingState::InitEstimator(const std::string& peFileName, const std::string& mapFileName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int numThreads = ThreadPool::GetNumThreads();
 	//LOG("TK PathingState::InitEstimator: %d threads available", numThreads);
 
@@ -266,7 +266,7 @@ void PathingState::InitEstimator(const std::string& peFileName, const std::strin
 
 void PathingState::InitBlocks()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// TK NOTE: moveDefHandler.GetNumMoveDefs() == 47
 	blockStates.peNodeOffsets.resize(moveDefHandler.GetNumMoveDefs());
 	for (unsigned int idx = 0; idx < moveDefHandler.GetNumMoveDefs(); idx++) {
@@ -279,7 +279,7 @@ void PathingState::InitBlocks()
 __FORCE_ALIGN_STACK__
 void PathingState::CalcOffsetsAndPathCosts(unsigned int threadNum, spring::barrier* pathBarrier)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// reset FPU state for synced computations
 	//streflop::streflop_init<streflop::Simple>();
 
@@ -301,7 +301,7 @@ void PathingState::CalcOffsetsAndPathCosts(unsigned int threadNum, spring::barri
 
 void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int threadNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 blockPos = BlockIdxToPos(blockIdx);
 
 	if (threadNum == 0 && blockIdx >= nextOffsetMessageIdx) {
@@ -326,7 +326,7 @@ void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int thr
  */
 int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blockX, unsigned int blockZ) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// lower corner position of block
 	const unsigned int lowerX = blockX * BLOCK_SIZE;
 	const unsigned int lowerZ = blockZ * BLOCK_SIZE;
@@ -383,7 +383,7 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 
 void PathingState::EstimatePathCosts(unsigned int blockIdx, unsigned int threadNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 blockPos = BlockIdxToPos(blockIdx);
 
 	if (threadNum == 0 && blockIdx >= nextCostMessageIdx) {
@@ -408,7 +408,7 @@ void PathingState::EstimatePathCosts(unsigned int blockIdx, unsigned int threadN
  */
 void PathingState::CalcVertexPathCosts(const MoveDef& moveDef, int2 block, unsigned int threadNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// see GetBlockVertexOffset(); costs are bi-directional and only
 	// calculated for *half* the outgoing edges (while costs for the
 	// other four directions are stored at the adjacent vertices)
@@ -432,7 +432,7 @@ void PathingState::CalcVertexPathCost(
 	unsigned int pathDir,
 	unsigned int threadNum
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 childBlockPos = parentBlockPos + PE_DIRECTION_VECTORS[pathDir];
 
 	const unsigned int parentBlockIdx = BlockPosToIdx(parentBlockPos);
@@ -533,7 +533,7 @@ void PathingState::CalcVertexPathCost(
  */
 bool PathingState::ReadFile(const std::string& peFileName, const std::string& mapFileName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string hashHexString = IntToString(fileHashCode, "%x");
 	const std::string cacheFileName = GetCacheFileName(hashHexString, peFileName, mapFileName);
 
@@ -602,7 +602,7 @@ bool PathingState::ReadFile(const std::string& peFileName, const std::string& ma
  */
 bool PathingState::WriteFile(const std::string& peFileName, const std::string& mapFileName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// we need this directory to exist
 	if (!FileSystem::CreateDirectory(GetPathCacheDir()))
 		return false;
@@ -653,7 +653,7 @@ bool PathingState::WriteFile(const std::string& peFileName, const std::string& m
  */
 void PathingState::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pathCache[0]->Update();
 	pathCache[1]->Update();
 
@@ -693,7 +693,7 @@ void PathingState::Update()
 
 void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int numMoveDefs = moveDefHandler.GetNumMoveDefs();
 
 	if (numMoveDefs == 0)
@@ -857,7 +857,7 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 
 std::uint32_t PathingState::CalcChecksum() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::uint32_t chksum = 0;
 	std::uint64_t nbytes = vertexCosts.size() * sizeof(float);
 	std::uint64_t offset = 0;
@@ -932,14 +932,14 @@ std::uint32_t PathingState::CalcChecksum() const
 
 void PathingState::AddCache(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::lock_guard<std::mutex> lock(cacheAccessLock);
 	pathCache[synced]->AddPath(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
 
 void PathingState::AddPathForCurrentFrame(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	//const std::lock_guard<std::mutex> lock(cacheAccessLock);
 	//pathCache[synced]->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
@@ -954,7 +954,7 @@ void PathingState::PromotePathForCurrentFrame(
 		const bool synced
 	)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int2 strtBlock = {int(startPosition.x / BLOCK_PIXEL_SIZE), int(startPosition.z / BLOCK_PIXEL_SIZE)};;
 	int2 goalBlock = {int(goalPosition.x / BLOCK_PIXEL_SIZE), int(goalPosition.z / BLOCK_PIXEL_SIZE)};
 
@@ -963,7 +963,7 @@ void PathingState::PromotePathForCurrentFrame(
 
 std::uint32_t PathingState::CalcHash(const char* caller) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int hmChecksum = readMap->CalcHeightmapChecksum();
 	const unsigned int tmChecksum = readMap->CalcTypemapChecksum();
 	const unsigned int mdChecksum = moveDefHandler.GetCheckSum();

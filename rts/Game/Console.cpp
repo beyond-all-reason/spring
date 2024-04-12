@@ -9,7 +9,7 @@
 #include <cassert>
 #include <algorithm>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CommandConsole gameCommandConsole;
 
@@ -20,7 +20,7 @@ void CommandReceiver::SortRegisteredActions() { gameCommandConsole.SortCommandMa
 
 void CommandConsole::SortCommandMap()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto cmpPred = [](const CmdPair& a, const CmdPair& b) { return (a.first <  b.first); };
 	const auto dupPred = [](const CmdPair& a, const CmdPair& b) { return (a.first == b.first); };
 
@@ -34,7 +34,7 @@ void CommandConsole::SortCommandMap()
 
 bool CommandConsole::ExecuteAction(const Action& action)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (action.command == "commands") {
 		LOG("Registered commands:");
 

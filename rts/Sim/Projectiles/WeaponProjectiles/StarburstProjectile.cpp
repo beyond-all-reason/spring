@@ -19,7 +19,7 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND(CStarburstProjectile::TracerPart, )
@@ -68,7 +68,7 @@ CStarburstProjectile::CStarburstProjectile(const ProjectileParams& params): CWea
 
 	, uptime(params.upTime)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_STARBURST_PROJECTILE;
 
 
@@ -98,7 +98,7 @@ CStarburstProjectile::CStarburstProjectile(const ProjectileParams& params): CWea
 
 void CStarburstProjectile::Collision()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (leaveSmokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -110,7 +110,7 @@ void CStarburstProjectile::Collision()
 
 void CStarburstProjectile::Collision(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (leaveSmokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -122,7 +122,7 @@ void CStarburstProjectile::Collision(CUnit* unit)
 
 void CStarburstProjectile::Collision(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (leaveSmokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldSmokeDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -135,7 +135,7 @@ void CStarburstProjectile::Collision(CFeature* feature)
 
 void CStarburstProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	ttl--;
 	uptime--;
 	missileAge++;
@@ -157,7 +157,7 @@ void CStarburstProjectile::Update()
 
 void CStarburstProjectile::UpdateTargeting()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (target == nullptr)
 		return;
 
@@ -183,7 +183,7 @@ void CStarburstProjectile::UpdateTargeting()
 
 void CStarburstProjectile::UpdateTrajectory()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (uptime > 0) {
 		// stage 1: going upwards
 		speed.w += weaponDef->weaponacceleration;
@@ -250,7 +250,7 @@ void CStarburstProjectile::UpdateTrajectory()
 
 void CStarburstProjectile::InitTracerParts()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int maxAgeMods = MAX_NUM_AGEMODS;
 	const unsigned int numAgeMods = static_cast<unsigned int>((speed.w + 0.6f) / TRACER_PARTS_STEP);
 
@@ -271,7 +271,7 @@ void CStarburstProjectile::InitTracerParts()
 
 void CStarburstProjectile::UpdateTracerPart()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	TracerPart& tracerPart = tracerParts[curTracerPart = (curTracerPart + 1) % NUM_TRACER_PARTS];
 	tracerPart.pos = pos;
 	tracerPart.dir = dir;
@@ -288,7 +288,7 @@ void CStarburstProjectile::UpdateTracerPart()
 
 void CStarburstProjectile::UpdateSmokeTrail()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!leaveSmokeTrail)
 		return;
 
@@ -321,31 +321,31 @@ void CStarburstProjectile::UpdateSmokeTrail()
 
 inline float CStarburstProjectile::GetSmokeSize() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeSize;
 }
 
 inline float CStarburstProjectile::GetSmokeColor() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeColor;
 }
 
 inline int CStarburstProjectile::GetSmokeTime() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeTime;
 }
 
 inline int CStarburstProjectile::GetSmokePeriod() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokePeriod;
 }
 
 void CStarburstProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
 
@@ -404,7 +404,7 @@ void CStarburstProjectile::Draw()
 
 int CStarburstProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ttl <= 0)
 		return 0;
 
@@ -426,7 +426,7 @@ int CStarburstProjectile::ShieldRepulse(const float3& shieldPos, float shieldFor
 
 int CStarburstProjectile::GetProjectilesCount() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return
 		numParts * validTextures[3] +
 		       1 * validTextures[1];

@@ -16,7 +16,7 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 //CONFIG(bool, UseVBO).defaultValue(true).safemodeValue(false);
 CONFIG(bool, UseVBO).deprecated(true);
@@ -28,7 +28,7 @@ CONFIG(bool, UsePBO).deprecated(true);
  */
 bool VBO::IsSupported() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return VBO::IsSupported(curBoundTarget);
 }
 
@@ -70,7 +70,7 @@ bool VBO::IsSupported(GLenum target) {
 
 VBO::VBO(GLenum _defTarget, const bool storage, bool readable)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	curBoundTarget = _defTarget;
 
 	isSupported = IsSupported();
@@ -91,14 +91,14 @@ VBO::VBO(GLenum _defTarget, const bool storage, bool readable)
 
 VBO::~VBO()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Release();
 }
 
 
 VBO& VBO::operator=(VBO&& other) noexcept
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::swap(vboId, other.vboId);
 	std::swap(bound, other.bound);
 	std::swap(mapped, other.mapped);
@@ -140,7 +140,7 @@ void VBO::Delete() {
 
 void VBO::Bind(GLenum target) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!bound);
 
 	if (isSupported)
@@ -152,7 +152,7 @@ void VBO::Bind(GLenum target) const
 
 void VBO::Unbind() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(bound);
 
 	if (isSupported)
@@ -163,7 +163,7 @@ void VBO::Unbind() const
 
 bool VBO::BindBufferRangeImpl(GLenum target, GLuint index, GLuint _vboId, GLuint offset, GLsizeiptr size) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(offset + size <= bufSize);
 
 	if (!isSupported)
@@ -207,7 +207,7 @@ bool VBO::BindBufferRangeImpl(GLenum target, GLuint index, GLuint _vboId, GLuint
 
 void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(bound);
 	assert(!mapped);
 
@@ -315,7 +315,7 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 
 void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(bound);
 	assert(!mapped || (newData == nullptr && newSize == bufSize && newUsage == usage));
 
@@ -393,7 +393,7 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 
 GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!mapped);
 	assert(offset + size <= bufSize);
 	mapped = true;
@@ -439,7 +439,7 @@ GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 
 void VBO::UnmapBuffer()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(mapped);
 
 	if (nullSizeMapped)
@@ -452,7 +452,7 @@ void VBO::UnmapBuffer()
 
 void VBO::SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!mapped);
 	assert((offset + size) <= bufSize);
 	glBufferSubData(curBoundTarget, offset, size, data);
@@ -461,7 +461,7 @@ void VBO::SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data)
 
 void VBO::Invalidate() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(bound);
 	assert(!immutableStorage);
 	assert(!mapped);
@@ -481,7 +481,7 @@ void VBO::Invalidate() const
 
 const GLvoid* VBO::GetPtr(GLintptr offset) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(bound);
 
 	if (isSupported)
@@ -495,7 +495,7 @@ const GLvoid* VBO::GetPtr(GLintptr offset) const
 
 size_t VBO::GetAlignedSize(GLenum target, size_t sz)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const size_t alignmentReq = GetOffsetAlignment(target);
 	if (alignmentReq > 1)
 		return AlignUp(sz, alignmentReq);
@@ -504,7 +504,7 @@ size_t VBO::GetAlignedSize(GLenum target, size_t sz)
 }
 
 size_t VBO::GetOffsetAlignment(GLenum target) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	const auto getOffsetAlignmentUBO = []() -> size_t {
 		GLint buffAlignment = 0;

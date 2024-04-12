@@ -6,23 +6,23 @@
 
 #include "System/FileSystem/FileHandler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 AssVFSStream::AssVFSStream(const std::string& pFile, const std::string& pMode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	file = new CFileHandler(pFile, SPRING_VFS_ZIP);
 }
 
 AssVFSStream::~AssVFSStream()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	delete file;
 }
 
 size_t AssVFSStream::Read( void* pvBuffer, size_t pSize, size_t pCount)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Spring VFS only supports reading chars. Need to convert.
 	int length = pSize * pCount;
 	return file->Read(pvBuffer, length);
@@ -30,14 +30,14 @@ size_t AssVFSStream::Read( void* pvBuffer, size_t pSize, size_t pCount)
 
 size_t AssVFSStream::Write( const void* pvBuffer, size_t pSize, size_t pCount)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// FAKE. Shouldn't need to write back to VFS
 	return pSize * pCount;
 }
 
 aiReturn AssVFSStream::Seek( size_t pOffset, aiOrigin pOrigin)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch(pOrigin){
 		case aiOrigin_SET: // from start of file
 			if ( pOffset >= file->FileSize() ) return AI_FAILURE;
@@ -58,14 +58,14 @@ aiReturn AssVFSStream::Seek( size_t pOffset, aiOrigin pOrigin)
 
 size_t AssVFSStream::Tell() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return file->GetPos();
 }
 
 
 size_t AssVFSStream::FileSize() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int filesize = file->FileSize();
 	if ( filesize < 0 ) filesize = 0;
 	return filesize;
@@ -79,7 +79,7 @@ void AssVFSStream::Flush () // FAKE
 // Check whether a specific file exists
 bool AssVFSSystem::Exists( const char* pFile) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CFileHandler file(pFile);
 	return file.FileExists();
 }
@@ -87,19 +87,19 @@ bool AssVFSSystem::Exists( const char* pFile) const
 // Get the path delimiter character we'd like to get
 char AssVFSSystem::getOsSeparator() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return '/';
 }
 
 // open a custom stream
 Assimp::IOStream* AssVFSSystem::Open( const char* pFile, const char* pMode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return new AssVFSStream( pFile, pMode );
 }
 
 void AssVFSSystem::Close( Assimp::IOStream* pFile)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	delete pFile;
 }

@@ -4,7 +4,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Units/Scripts/UnitScript.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(NanoPieceCache, )
 
@@ -15,7 +15,7 @@ CR_REG_METADATA(NanoPieceCache, (
 ))
 
 int NanoPieceCache::GetNanoPiece(CUnitScript* ownerScript) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	curBuildPowerMask |= (1 << (UNIT_SLOWUPDATE_RATE - 1));
 
 	int nanoPiece = -1;

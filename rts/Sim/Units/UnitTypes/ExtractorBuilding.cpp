@@ -13,7 +13,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "System/ContainerUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED(CExtractorBuilding, CBuilding, )
@@ -42,7 +42,7 @@ CExtractorBuilding::~CExtractorBuilding()
 
 void CExtractorBuilding::PreInit(const UnitLoadParams& params)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CBuilding::PreInit(params);
 
 	extractionRange = unitDef->extractRange;
@@ -52,7 +52,7 @@ void CExtractorBuilding::PreInit(const UnitLoadParams& params)
 /* resets the metalMap and notifies the neighbours */
 void CExtractorBuilding::ResetExtraction()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	metalExtract = 0;
 	script->ExtractionRateChanged(metalExtract);
 
@@ -76,7 +76,7 @@ void CExtractorBuilding::ResetExtraction()
 /* determine if two extraction areas overlap */
 bool CExtractorBuilding::IsNeighbour(CExtractorBuilding* other)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// circle vs. circle
 	return (this->pos.SqDistance2D(other->pos) < Square(this->extractionRange + other->extractionRange));
 }
@@ -84,7 +84,7 @@ bool CExtractorBuilding::IsNeighbour(CExtractorBuilding* other)
 /* sets the range of extraction for this extractor, also finds overlapping neighbours. */
 void CExtractorBuilding::SetExtractionRangeAndDepth(float range, float depth)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	extractionRange = std::max(range, 0.001f);
 	extractionDepth = std::max(depth, 0.0f);
 	maxExtractionRange = std::max(extractionRange, maxExtractionRange);
@@ -152,7 +152,7 @@ void CExtractorBuilding::SetExtractionRangeAndDepth(float range, float depth)
 /* adds a neighbour for this extractor */
 void CExtractorBuilding::AddNeighbour(CExtractorBuilding* neighbour)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(neighbour != this);
 	spring::VectorInsertUnique(neighbours, neighbour, true);
 }
@@ -160,7 +160,7 @@ void CExtractorBuilding::AddNeighbour(CExtractorBuilding* neighbour)
 /* removes a neighbour for this extractor */
 void CExtractorBuilding::RemoveNeighbour(CExtractorBuilding* neighbour)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(neighbour != this);
 	spring::VectorErase(neighbours, neighbour);
 }
@@ -169,7 +169,7 @@ void CExtractorBuilding::RemoveNeighbour(CExtractorBuilding* neighbour)
 /* recalculate metalExtract for this extractor (eg. when a neighbour dies) */
 void CExtractorBuilding::ReCalculateMetalExtraction()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	metalExtract = 0;
 
 	for (MetalSquareOfControl& msqr: metalAreaOfControl) {
@@ -189,7 +189,7 @@ void CExtractorBuilding::ReCalculateMetalExtraction()
 
 void CExtractorBuilding::Activate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (activated)
 		return;
 
@@ -202,7 +202,7 @@ void CExtractorBuilding::Activate()
 
 void CExtractorBuilding::Deactivate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!activated)
 		return;
 

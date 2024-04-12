@@ -9,7 +9,7 @@
 #include "Sim/Units/Unit.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CTorpedoLauncher, CWeapon, )
 CR_REG_METADATA(CTorpedoLauncher,(
@@ -18,7 +18,7 @@ CR_REG_METADATA(CTorpedoLauncher,(
 
 CTorpedoLauncher::CTorpedoLauncher(CUnit* owner, const WeaponDef* def): CWeapon(owner, def)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// null happens when loading
 	if (def != nullptr)
 		tracking = weaponDef->turnrate * def->tracks;
@@ -27,7 +27,7 @@ CTorpedoLauncher::CTorpedoLauncher(CUnit* owner, const WeaponDef* def): CWeapon(
 
 bool CTorpedoLauncher::TestTarget(const float3 pos, const SWeaponTarget& trg) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// by default we are a waterweapon, therefore:
 	//   if muzzle is above water, target position is only allowed to be IN water
 	//   if muzzle is below water, target position being valid depends on submissile
@@ -54,7 +54,7 @@ bool CTorpedoLauncher::TestTarget(const float3 pos, const SWeaponTarget& trg) co
 
 void CTorpedoLauncher::FireImpl(const bool scriptCall)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 dir = currentTargetPos - weaponMuzzlePos;
 	float3 vel;
 

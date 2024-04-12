@@ -16,7 +16,7 @@
 #include "Rendering/Env/CubeMapHandler.h"
 #include "System/Config/ConfigHandler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(int, CubeTexSizeSpecular).defaultValue(128).minimumValue(1).description("The square resolution of each face of the specular cubemap.");
 CONFIG(int, CubeTexSizeReflection).defaultValue(128).minimumValue(1).description("The square resolution of each face of the environment reflection cubemap.");
@@ -26,7 +26,7 @@ CubeMapHandler cubeMapHandler;
 
 
 bool CubeMapHandler::Init() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	envReflectionTexID = 0;
 	skyReflectionTexID = 0;
 	specularTexID = 0;
@@ -113,7 +113,7 @@ bool CubeMapHandler::Init() {
 }
 
 void CubeMapHandler::Free() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (specularTexID != 0) {
 		glDeleteTextures(1, &specularTexID);
 		specularTexID = 0;
@@ -134,7 +134,7 @@ void CubeMapHandler::Free() {
 
 void CubeMapHandler::UpdateReflectionTexture()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unitDrawer->UseAdvShading() && !readMap->GetGroundDrawer()->UseAdvShading())
 		return;
 
@@ -185,7 +185,7 @@ void CubeMapHandler::UpdateReflectionTexture()
 
 void CubeMapHandler::CreateReflectionFace(unsigned int glFace, bool skyOnly)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	reflectionCubeFBO.AttachTexture((skyOnly? skyReflectionTexID: envReflectionTexID), glFace);
 
 	glPushAttrib(GL_FOG_BIT | GL_DEPTH_BUFFER_BIT);
@@ -249,7 +249,7 @@ void CubeMapHandler::CreateReflectionFace(unsigned int glFace, bool skyOnly)
 
 void CubeMapHandler::UpdateSpecularTexture()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unitDrawer->UseAdvShading())
 		return;
 
@@ -286,7 +286,7 @@ void CubeMapHandler::CreateSpecularFacePart(
 	unsigned int y,
 	unsigned char* buf
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& sky = ISky::GetSky();
 	// TODO move to a shader
 	for (int x = 0; x < size; ++x) {
@@ -308,7 +308,7 @@ void CubeMapHandler::CreateSpecularFace(
 	const float3& xdif,
 	const float3& ydif
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int y = 0; y < size; ++y) {
 		CreateSpecularFacePart(texType, size, cdir, xdif, ydif, y, &specTexFaceBuf[y * size * 4]);
 	}
@@ -326,7 +326,7 @@ void CubeMapHandler::UpdateSpecularFace(
 	unsigned int y,
 	unsigned char* buf
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CreateSpecularFacePart(texType, size, cdir, xdif, ydif, y, buf);
 
 	glTexSubImage2D(texType, 0, 0, y, size, 1, GL_RGBA, GL_UNSIGNED_BYTE, buf);

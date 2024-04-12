@@ -7,7 +7,7 @@
 #include "Sim/Objects/SolidObject.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 #define FLOW_EPSILON         0.01f
 #define FLOW_DECAY_ENABLED   0
@@ -20,13 +20,13 @@ static PathFlowMap gPathFlowMap;
 
 
 PathFlowMap* PathFlowMap::GetInstance() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	gPathFlowMap.Init(PATH_FLOWMAP_XSCALE, PATH_FLOWMAP_ZSCALE);
 	return &gPathFlowMap;
 }
 
 void PathFlowMap::FreeInstance(PathFlowMap* pfm) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(pfm == &gPathFlowMap);
 	pfm->Kill();
 }
@@ -79,7 +79,7 @@ void PathFlowMap::Init(unsigned int scalex, unsigned int scalez) {
 
 
 void PathFlowMap::Update() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return;
 #if 0
 	std::vector<FlowCell>& fCells = buffers[fBufferIdx];
@@ -161,7 +161,7 @@ void PathFlowMap::Update() {
 }
 
 void PathFlowMap::AddFlow(const CSolidObject* o) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return;
 #if 0
 	if (!o->HasCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS))
@@ -225,7 +225,7 @@ void PathFlowMap::AddFlow(const CSolidObject* o) {
 
 
 unsigned int PathFlowMap::GetCellIdx(const CSolidObject* o) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int xcell = o->pos.x / xfact;
 	const unsigned int zcell = o->pos.z / zfact;
 
@@ -233,7 +233,7 @@ unsigned int PathFlowMap::GetCellIdx(const CSolidObject* o) const {
 }
 
 const float3& PathFlowMap::GetFlowVec(unsigned int hmx, unsigned int hmz) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return ZeroVector;
 #if 0
 	const std::vector<FlowCell>& fCells = buffers[fBufferIdx];
@@ -244,7 +244,7 @@ const float3& PathFlowMap::GetFlowVec(unsigned int hmx, unsigned int hmz) const 
 }
 
 float PathFlowMap::GetFlowCost(unsigned int x, unsigned int z, const MoveDef& md, unsigned int pathOpt) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 0.0f;
 #if 0
 	const float3& flowVec = GetFlowVec(x, z);

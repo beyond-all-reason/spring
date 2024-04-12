@@ -10,7 +10,7 @@
 #include "Sim/Projectiles/ProjectileMemPool.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CSpherePartProjectile, CProjectile, )
 
@@ -72,7 +72,7 @@ CSpherePartProjectile::CSpherePartProjectile(
 
 void CSpherePartProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe |= ((age += 1) >= ttl);
 	sphereSize += expansionSpeed;
 	pos = centerPos + vectors[12] * sphereSize;
@@ -80,7 +80,7 @@ void CSpherePartProjectile::Update()
 
 void CSpherePartProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char col0[4];
 	unsigned char col1[4];
 
@@ -122,7 +122,7 @@ int CSpherePartProjectile::GetProjectilesCount() const
 
 void CSpherePartProjectile::CreateSphere(const CUnit* owner, int ttl, float alpha, float expansionSpeed, float3 pos, float3 color)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int y = 0; y < 16; y += 4) {
 		for (int x = 0; x < 32; x += 4) {
 			projMemPool.alloc<CSpherePartProjectile>(owner, pos, x, y, expansionSpeed, alpha, ttl, color);
@@ -157,7 +157,7 @@ CR_REG_METADATA(CSpherePartSpawner,
 
 void CSpherePartSpawner::Init(const CUnit* owner, const float3& offset)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Init(owner, offset);
 	deleteMe = true;
 	CSpherePartProjectile::CreateSphere(owner, ttl, alpha, expansionSpeed, pos, color);
@@ -171,7 +171,7 @@ int CSpherePartSpawner::GetProjectilesCount() const
 
 bool CSpherePartSpawner::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

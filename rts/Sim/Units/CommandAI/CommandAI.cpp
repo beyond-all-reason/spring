@@ -34,7 +34,7 @@
 #include "System/creg/STL_Deque.h"
 #include <assert.h>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 // number of SlowUpdate calls that a target (unit) must
 // be out of radar (and hence LOS) contact before it is
@@ -379,7 +379,7 @@ CCommandAI::~CCommandAI()
 
 
 void CCommandAI::UpdateCommandDescription(unsigned int cmdDescIdx, const Command& cmd) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SCommandDescription cd = *possibleCommands[cmdDescIdx];
 	cd.params[0] = IntToString(int(cmd.GetParam(0)), "%d");
 	commandDescriptionCache.DecRef(*possibleCommands[cmdDescIdx]);
@@ -387,7 +387,7 @@ void CCommandAI::UpdateCommandDescription(unsigned int cmdDescIdx, const Command
 }
 
 void CCommandAI::UpdateCommandDescription(unsigned int cmdDescIdx, SCommandDescription&& modCmdDesc) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const SCommandDescription* curCmdDesc = possibleCommands[cmdDescIdx];
 
 	// modCmdDesc should be a modified copy of curCmdDesc
@@ -419,7 +419,7 @@ void CCommandAI::UpdateCommandDescription(unsigned int cmdDescIdx, SCommandDescr
 
 void CCommandAI::InsertCommandDescription(unsigned int cmdDescIdx, SCommandDescription&& cmdDesc)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const SCommandDescription* cmdDescPtr = commandDescriptionCache.GetPtr(std::move(cmdDesc));
 
 	if (cmdDescIdx >= possibleCommands.size()) {
@@ -440,7 +440,7 @@ void CCommandAI::InsertCommandDescription(unsigned int cmdDescIdx, SCommandDescr
 
 bool CCommandAI::RemoveCommandDescription(unsigned int cmdDescIdx)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (cmdDescIdx >= possibleCommands.size())
 		return false;
 
@@ -461,7 +461,7 @@ bool CCommandAI::RemoveCommandDescription(unsigned int cmdDescIdx)
 
 void CCommandAI::UpdateNonQueueingCommands()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	nonQueingCommands.clear();
 
 	for (const SCommandDescription* cmdDesc: possibleCommands) {
@@ -473,14 +473,14 @@ void CCommandAI::UpdateNonQueueingCommands()
 
 
 void CCommandAI::ClearCommandDependencies() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	while (!commandDeathDependences.empty()) {
 		DeleteDeathDependence(*commandDeathDependences.begin(), DEPENDENCE_COMMANDQUE);
 	}
 }
 
 void CCommandAI::AddCommandDependency(const Command& c) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int cpos;
 
 	if (!c.IsObjectCommand(cpos))
@@ -501,7 +501,7 @@ void CCommandAI::AddCommandDependency(const Command& c) {
 
 bool CCommandAI::HandleBuildOptionInsertion(int cmdId)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (cmdId >= 0)
 		return false;
 
@@ -515,7 +515,7 @@ bool CCommandAI::HandleBuildOptionInsertion(int cmdId)
 
 bool CCommandAI::HandleBuildOptionRemoval(int cmdId)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (cmdId >= 0)
 		return false;
 
@@ -551,7 +551,7 @@ bool CCommandAI::IsAttackCapable() const
 
 
 static inline const CUnit* GetCommandUnit(const Command& c, int idx) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (idx >= c.GetNumParams())
 		return nullptr;
 
@@ -563,7 +563,7 @@ static inline const CUnit* GetCommandUnit(const Command& c, int idx) {
 
 static inline bool IsCommandInMap(const Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (c.GetNumParams() < 3)
 		return true;
 
@@ -586,7 +586,7 @@ static inline bool IsCommandInMap(const Command& c)
 
 static inline bool AdjustGroundAttackCommand(const Command& c, bool fromSynced, bool aiOrder)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (c.GetNumParams() < 3)
 		return false;
 	if (aiOrder)
@@ -634,7 +634,7 @@ static inline bool AdjustGroundAttackCommand(const Command& c, bool fromSynced, 
 
 bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int cmdID = c.GetID();
 
 	// TODO check if the command is in the map first, for more commands
@@ -819,12 +819,12 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 
 void CCommandAI::GiveCommand(const Command& c, bool fromSynced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	GiveCommand(c, teamHandler.Team(owner->team)->leader, fromSynced, false);
 }
 void CCommandAI::GiveCommand(const Command& c, int playerNum, bool fromSynced, bool fromLua)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!eventHandler.AllowCommand(owner, c, playerNum, fromSynced, fromLua))
 		return;
 
@@ -835,7 +835,7 @@ void CCommandAI::GiveCommand(const Command& c, int playerNum, bool fromSynced, b
 
 void CCommandAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!AllowedCommand(c, fromSynced))
 		return;
 
@@ -845,7 +845,7 @@ void CCommandAI::GiveCommandReal(const Command& c, bool fromSynced)
 
 inline void CCommandAI::SetCommandDescParam0(const Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (unsigned int n = 0; n < possibleCommands.size(); n++) {
 		if (possibleCommands[n]->id != c.GetID())
 			continue;
@@ -858,7 +858,7 @@ inline void CCommandAI::SetCommandDescParam0(const Command& c)
 
 bool CCommandAI::ExecuteStateCommand(const Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (c.GetID()) {
 		case CMD_FIRE_STATE: {
 			owner->fireState = (int)c.GetParam(0);
@@ -952,7 +952,7 @@ bool CCommandAI::ExecuteStateCommand(const Command& c)
 
 
 void CCommandAI::ClearTargetLock(const Command &c) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if no meta-bit attack lock, clear the order
 	if (((c.GetID() == CMD_ATTACK) || (c.GetID() == CMD_MANUALFIRE)) && (c.GetOpts() & META_KEY) == 0)
 		owner->DropCurrentAttackTarget();
@@ -961,7 +961,7 @@ void CCommandAI::ClearTargetLock(const Command &c) {
 
 void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ExecuteStateCommand(c))
 		return;
 
@@ -1075,7 +1075,7 @@ void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 
 void CCommandAI::GiveWaitCommand(const Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (commandQue.empty()) {
 		commandQue.push_back(c);
 		return;
@@ -1119,7 +1119,7 @@ void CCommandAI::GiveWaitCommand(const Command& c)
 
 void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (c.GetNumParams() < 3)
 		return;
 
@@ -1219,7 +1219,7 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 
 void CCommandAI::ExecuteRemove(const Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCommandQueue* queue = &commandQue;
 	CFactoryCAI* facCAI = dynamic_cast<CFactoryCAI*>(this);
 
@@ -1308,14 +1308,14 @@ void CCommandAI::ExecuteRemove(const Command& c)
 
 bool CCommandAI::WillCancelQueued(const Command& c) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (GetCancelQueued(c, commandQue) != commandQue.end());
 }
 
 
 CCommandQueue::const_iterator CCommandAI::GetCancelQueued(const Command& c, const CCommandQueue& q) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCommandQueue::const_iterator ci = q.end();
 
 	while (ci != q.begin()) {
@@ -1369,7 +1369,7 @@ CCommandQueue::const_iterator CCommandAI::GetCancelQueued(const Command& c, cons
 
 int CCommandAI::CancelCommands(const Command& c, CCommandQueue& q, bool& first)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	first = false;
 	int cancelCount = 0;
 
@@ -1408,14 +1408,14 @@ int CCommandAI::CancelCommands(const Command& c, CCommandQueue& q, bool& first)
 
 std::vector<Command> CCommandAI::GetOverlapQueued(const Command& c) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return GetOverlapQueued(c, commandQue);
 }
 
 
 std::vector<Command> CCommandAI::GetOverlapQueued(const Command& c, const CCommandQueue& q) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCommandQueue::const_iterator ci = q.end();
 	std::vector<Command> v;
 	BuildInfo cbi(c);
@@ -1472,7 +1472,7 @@ std::vector<Command> CCommandAI::GetOverlapQueued(const Command& c, const CComma
 
 int CCommandAI::UpdateTargetLostTimer(int targetUnitID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* targetUnit = unitHandler.GetUnit(targetUnitID);
 	const UnitDef* targetUnitDef = (targetUnit != nullptr)? targetUnit->unitDef: nullptr;
 
@@ -1492,7 +1492,7 @@ int CCommandAI::UpdateTargetLostTimer(int targetUnitID)
 
 void CCommandAI::ExecuteAttack(Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(owner->unitDef->canAttack);
 
 	if (inCommand) {
@@ -1534,7 +1534,7 @@ void CCommandAI::ExecuteAttack(Command& c)
 
 void CCommandAI::ExecuteStop(Command& c)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	owner->DropCurrentAttackTarget();
 
 	for (CWeapon* w: owner->weapons) {
@@ -1547,7 +1547,7 @@ void CCommandAI::ExecuteStop(Command& c)
 
 void CCommandAI::SlowUpdate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gs->paused) // Commands issued may invoke SlowUpdate when paused
 		return;
 	if (commandQue.empty()) {
@@ -1598,7 +1598,7 @@ void CCommandAI::SlowUpdate()
 
 int CCommandAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (pointed != nullptr) {
 		if (!teamHandler.Ally(gu->myAllyTeam, pointed->allyteam)) {
 			if (IsAttackCapable())
@@ -1611,7 +1611,7 @@ int CCommandAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 
 
 void CCommandAI::AddDeathDependence(CObject* o, DependenceType dep) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (dep == DEPENDENCE_COMMANDQUE) {
 		if (commandDeathDependences.insert(o).second) // prevent multiple dependencies for the same object
 			CObject::AddDeathDependence(o, dep);
@@ -1622,7 +1622,7 @@ void CCommandAI::AddDeathDependence(CObject* o, DependenceType dep) {
 
 
 void CCommandAI::DeleteDeathDependence(CObject* o, DependenceType dep) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (dep == DEPENDENCE_COMMANDQUE) {
 		if (commandDeathDependences.erase(o))
 			CObject::DeleteDeathDependence(o, dep);
@@ -1634,7 +1634,7 @@ void CCommandAI::DeleteDeathDependence(CObject* o, DependenceType dep) {
 
 void CCommandAI::DependentDied(CObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (o == orderTarget) {
 		targetDied = true;
 		orderTarget = nullptr;
@@ -1663,7 +1663,7 @@ void CCommandAI::DependentDied(CObject* o)
 
 void CCommandAI::FinishCommand()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!commandQue.empty());
 
 	const Command cmd = commandQue.front(); // copy is needed here
@@ -1705,7 +1705,7 @@ void CCommandAI::FinishCommand()
 
 void CCommandAI::AddStockpileWeapon(CWeapon* weapon)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	stockpileWeapon = weapon;
 
 	SCommandDescription c;
@@ -1723,13 +1723,13 @@ void CCommandAI::AddStockpileWeapon(CWeapon* weapon)
 
 void CCommandAI::StockpileChanged(CWeapon* weapon)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateStockpileIcon();
 }
 
 void CCommandAI::UpdateStockpileIcon()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (unsigned int n = 0; n < possibleCommands.size(); n++) {
 		if (possibleCommands[n]->id != CMD_STOCKPILE)
 			continue;
@@ -1746,7 +1746,7 @@ void CCommandAI::UpdateStockpileIcon()
 
 void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!inCommand || commandQue.empty())
 		return;
 
@@ -1796,7 +1796,7 @@ void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget)
 
 void CCommandAI::PushOrUpdateReturnFight(const float3& cmdPos1, const float3& cmdPos2)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!commandQue.empty());
 	Command& c = commandQue.front();
 	assert(c.GetID() == CMD_FIGHT && c.GetNumParams() >= 3);
@@ -1814,7 +1814,7 @@ void CCommandAI::PushOrUpdateReturnFight(const float3& cmdPos1, const float3& cm
 
 
 bool CCommandAI::HasCommand(int cmdID) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (commandQue.empty())
 		return false;
 	if (cmdID < 0)
@@ -1825,7 +1825,7 @@ bool CCommandAI::HasCommand(int cmdID) const {
 
 bool CCommandAI::HasMoreMoveCommands(bool skipFirstCmd) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto pred = [](const Command& c) { return (c.IsMoveCommand()); };
 	const auto iter = std::find_if(commandQue.begin() + int(skipFirstCmd && !commandQue.empty()), commandQue.end(), pred);
 
@@ -1836,7 +1836,7 @@ bool CCommandAI::HasMoreMoveCommands(bool skipFirstCmd) const
 bool CCommandAI::CanChangeFireState() const { return (owner->unitDef->CanChangeFireState()); }
 bool CCommandAI::SkipParalyzeTarget(const CUnit* target) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((target == nullptr) || (owner->weapons.empty()))
 		return false;
 
@@ -1852,7 +1852,7 @@ bool CCommandAI::SkipParalyzeTarget(const CUnit* target) const
 
 void CCommandAI::StopAttackingTargetIf(const std::function<bool(const CUnit*)>& pred)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto hasTarget = [&](const Command& c) { return (c.GetNumParams() == 1 && (c.GetID() == CMD_FIGHT || c.GetID() == CMD_ATTACK)); };
 	const auto removeCmd = [&](const Command& c) { return (hasTarget(c) && pred(unitHandler.GetUnit(c.GetParam(0)))); };
 
@@ -1861,7 +1861,7 @@ void CCommandAI::StopAttackingTargetIf(const std::function<bool(const CUnit*)>& 
 
 void CCommandAI::StopAttackingAllyTeam(int ally)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	StopAttackingTargetIf([&](const CUnit* t) { return (t != nullptr && t->allyteam == ally); });
 }
 

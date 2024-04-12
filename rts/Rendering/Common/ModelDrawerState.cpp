@@ -23,13 +23,13 @@
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
 bool IModelDrawerState::SetTeamColor(int team, float alpha) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// need this because we can be called by no-team projectiles
 	if (!teamHandler.IsValidTeam(team))
 		return false;
@@ -43,7 +43,7 @@ bool IModelDrawerState::SetTeamColor(int team, float alpha) const
 
 void IModelDrawerState::SetupOpaqueDrawing(bool deferredPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * CModelDrawerConcept::WireFrameModeRef() + GL_FILL * (1 - CModelDrawerConcept::WireFrameModeRef()));
 
@@ -60,7 +60,7 @@ void IModelDrawerState::SetupOpaqueDrawing(bool deferredPass) const
 
 void IModelDrawerState::ResetOpaqueDrawing(bool deferredPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Disable(deferredPass);
 
 	if (IsLegacy())
@@ -71,7 +71,7 @@ void IModelDrawerState::ResetOpaqueDrawing(bool deferredPass) const
 
 void IModelDrawerState::SetupAlphaDrawing(bool deferredPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT | (GL_COLOR_BUFFER_BIT * IsLegacy()));
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * CModelDrawerConcept::WireFrameModeRef() + GL_FILL * (1 - CModelDrawerConcept::WireFrameModeRef()));
 
@@ -91,7 +91,7 @@ void IModelDrawerState::SetupAlphaDrawing(bool deferredPass) const
 
 void IModelDrawerState::ResetAlphaDrawing(bool deferredPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Disable(/*deferredPass*/ false);
 	glPopAttrib();
 }
@@ -101,7 +101,7 @@ void IModelDrawerState::ResetAlphaDrawing(bool deferredPass) const
 
 CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if (!CanEnable())
 	// 	return;
 
@@ -165,7 +165,7 @@ CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 
 CModelDrawerStateGLSL::~CModelDrawerStateGLSL()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	modelShaders.fill(nullptr);
 	modelShader = nullptr;
 	shaderHandler->ReleaseProgramObjects(PO_CLASS);
@@ -176,7 +176,7 @@ bool CModelDrawerStateGLSL::CanDrawDeferred() const { return CModelDrawerConcept
 
 bool CModelDrawerStateGLSL::SetTeamColor(int team, float alpha) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IModelDrawerState::SetTeamColor(team, alpha))
 		return false;
 
@@ -191,7 +191,7 @@ bool CModelDrawerStateGLSL::SetTeamColor(int team, float alpha) const
 
 void CModelDrawerStateGLSL::Enable(bool deferredPass, bool alphaPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// body of former EnableCommon();
 	CModelDrawerHelper::PushTransform(camera);
 	CModelDrawerHelper::EnableTexturesCommon();
@@ -213,7 +213,7 @@ void CModelDrawerStateGLSL::Enable(bool deferredPass, bool alphaPass) const
 
 void CModelDrawerStateGLSL::Disable(bool deferredPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader != nullptr);
 
 	modelShader->Disable();
@@ -225,7 +225,7 @@ void CModelDrawerStateGLSL::Disable(bool deferredPass) const
 
 void CModelDrawerStateGLSL::SetNanoColor(const float4& color) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader->IsBound());
 	modelShader->SetUniform4v("nanoColor", &color.x);
 }
@@ -237,7 +237,7 @@ void CModelDrawerStateGLSL::DisableTextures() const { CModelDrawerHelper::Disabl
 
 CModelDrawerStateGL4::CModelDrawerStateGL4()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!CanEnable())
 	return;
 
@@ -278,7 +278,7 @@ CModelDrawerStateGL4::CModelDrawerStateGL4()
 
 CModelDrawerStateGL4::~CModelDrawerStateGL4()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	modelShaders.fill(nullptr);
 	modelShader = nullptr;
 	shaderHandler->ReleaseProgramObjects(PO_CLASS);
@@ -289,7 +289,7 @@ bool CModelDrawerStateGL4::CanDrawDeferred() const { return CModelDrawerConcept:
 
 bool CModelDrawerStateGL4::SetTeamColor(int team, float alpha) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IModelDrawerState::SetTeamColor(team, alpha))
 		return false;
 
@@ -303,7 +303,7 @@ bool CModelDrawerStateGL4::SetTeamColor(int team, float alpha) const
 
 void CModelDrawerStateGL4::Enable(bool deferredPass, bool alphaPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// body of former EnableCommon();
 	CModelDrawerHelper::EnableTexturesCommon();
 
@@ -332,7 +332,7 @@ void CModelDrawerStateGL4::Enable(bool deferredPass, bool alphaPass) const
 
 void CModelDrawerStateGL4::Disable(bool deferredPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader != nullptr);
 
 	modelShader->Disable();
@@ -355,7 +355,7 @@ void CModelDrawerStateGL4::Disable(bool deferredPass) const
 
 void CModelDrawerStateGL4::SetNanoColor(const float4& color) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader != nullptr);
 	assert(modelShader->IsBound());
 
@@ -367,7 +367,7 @@ void CModelDrawerStateGL4::DisableTextures() const { CModelDrawerHelper::Disable
 
 void CModelDrawerStateGL4::SetColorMultiplier(float r, float g, float b, float a) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader != nullptr);
 	assert(modelShader->IsBound());
 	modelShader->SetUniform("colorMult", r, g, b, a);
@@ -375,7 +375,7 @@ void CModelDrawerStateGL4::SetColorMultiplier(float r, float g, float b, float a
 
 ShaderCameraModes CModelDrawerStateGL4::SetCameraMode(ShaderCameraModes scm_) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader != nullptr);
 	assert(modelShader->IsBound());
 
@@ -400,7 +400,7 @@ ShaderCameraModes CModelDrawerStateGL4::SetCameraMode(ShaderCameraModes scm_) co
 
 ShaderMatrixModes CModelDrawerStateGL4::SetMatrixMode(ShaderMatrixModes smm_) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader != nullptr);
 	assert(modelShader->IsBound());
 
@@ -412,7 +412,7 @@ ShaderMatrixModes CModelDrawerStateGL4::SetMatrixMode(ShaderMatrixModes smm_) co
 
 ShaderShadingModes CModelDrawerStateGL4::SetShadingMode(ShaderShadingModes ssm_) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader != nullptr);
 	assert(modelShader->IsBound());
 
@@ -424,7 +424,7 @@ ShaderShadingModes CModelDrawerStateGL4::SetShadingMode(ShaderShadingModes ssm_)
 
 void CModelDrawerStateGL4::SetStaticModelMatrix(const CMatrix44f& mat) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(modelShader != nullptr);
 	assert(modelShader->IsBound());
 
@@ -433,7 +433,7 @@ void CModelDrawerStateGL4::SetStaticModelMatrix(const CMatrix44f& mat) const
 
 void CModelDrawerStateGL4::SetClipPlane(uint8_t idx, const float4& cp) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (idx)
 	{
 	case 0: //upper construction clip plane
@@ -453,7 +453,7 @@ void CModelDrawerStateGL4::SetClipPlane(uint8_t idx, const float4& cp) const
 
 IModelDrawerState::IModelDrawerState()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	modelShaders.fill(nullptr);
 
 	//dup with every instance, but ok
@@ -465,7 +465,7 @@ IModelDrawerState::IModelDrawerState()
 
 bool IModelDrawerState::IsValid() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool valid = true;
 	for (auto ms : modelShaders) {
 		if (!ms)

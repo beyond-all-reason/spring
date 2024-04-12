@@ -17,7 +17,7 @@
 
 #include <string>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 /******************************************************************************/
 /******************************************************************************/
@@ -51,7 +51,7 @@ bool LuaArchive::PushEntries(lua_State* L)
 
 int LuaArchive::GetMaps(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LuaUtils::PushStringVector(L, archiveScanner->GetMaps());
 	return 1;
 }
@@ -59,7 +59,7 @@ int LuaArchive::GetMaps(lua_State* L)
 
 int LuaArchive::GetGames(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& archives = archiveScanner->GetPrimaryMods();
 
 	lua_createtable(L, archives.size(), 0);
@@ -74,7 +74,7 @@ int LuaArchive::GetGames(lua_State* L)
 
 int LuaArchive::GetAllArchives(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& archives = archiveScanner->GetAllArchives();
 
 	lua_createtable(L, archives.size(), 0);
@@ -90,7 +90,7 @@ int LuaArchive::GetAllArchives(lua_State* L)
 
 int LuaArchive::HasArchive(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string archiveName = luaL_checksstring(L, 1);
 	const CArchiveScanner::ArchiveData& archiveData = archiveScanner->GetArchiveData(archiveName);
 
@@ -101,7 +101,7 @@ int LuaArchive::HasArchive(lua_State* L)
 
 int LuaArchive::GetLoadedArchives(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LuaUtils::PushStringVector(L, vfsHandler->GetAllArchiveNames());
 	return 1;
 }
@@ -111,7 +111,7 @@ int LuaArchive::GetLoadedArchives(lua_State* L)
 
 int LuaArchive::GetArchivePath(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto archive = archiveScanner->ArchiveFromName(luaL_checksstring(L, 1));
 	const std::string archivePath = archiveScanner->GetArchivePath(archive) + archive;
 
@@ -125,7 +125,7 @@ int LuaArchive::GetArchivePath(lua_State* L)
 
 int LuaArchive::GetArchiveInfo(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string archiveName = luaL_checksstring(L, 1);
 	const auto archiveData = archiveScanner->GetArchiveData(archiveName);
 
@@ -165,7 +165,7 @@ int LuaArchive::GetArchiveInfo(lua_State* L)
 
 int LuaArchive::GetArchiveDependencies(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string archiveName = luaL_checksstring(L, 1);
 	const auto archiveData = archiveScanner->GetArchiveData(archiveName);
 
@@ -179,7 +179,7 @@ int LuaArchive::GetArchiveDependencies(lua_State* L)
 
 int LuaArchive::GetArchiveReplaces(lua_State* L)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string archiveName = luaL_checksstring(L, 1);
 	const auto archiveData = archiveScanner->GetArchiveData(archiveName);
 

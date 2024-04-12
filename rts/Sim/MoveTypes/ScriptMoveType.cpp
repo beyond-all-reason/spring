@@ -15,7 +15,7 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using namespace MoveTypes;
 
@@ -56,7 +56,7 @@ CR_REG_METADATA(CScriptMoveType, (
 
 CScriptMoveType::CScriptMoveType(CUnit* unit): AMoveType(unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// use the transformation matrix instead of heading
 	UseHeading(false);
 
@@ -70,7 +70,7 @@ CScriptMoveType::CScriptMoveType(CUnit* unit): AMoveType(unit)
 
 CScriptMoveType::~CScriptMoveType()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// clean up if noBlocking was made true at
 	// some point during this script's lifetime
 	// and not reset
@@ -82,7 +82,7 @@ CScriptMoveType::~CScriptMoveType()
 
 void CScriptMoveType::CheckNotify()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (scriptNotify == HitNothing)
 		return;
 
@@ -97,7 +97,7 @@ void CScriptMoveType::CheckNotify()
 
 bool CScriptMoveType::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useRotVel)
 		owner->SetDirVectorsEuler(rot += rotVel);
 
@@ -165,7 +165,7 @@ bool CScriptMoveType::Update()
 
 void CScriptMoveType::CheckLimits()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 pos = owner->pos;
 	float4 vel = owner->speed;
 
@@ -195,7 +195,7 @@ void CScriptMoveType::CheckLimits()
 
 void CScriptMoveType::SetPhysics(const float3& _pos, const float3& _vel, const float3& _rot)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetPosition(_pos);
 	SetVelocity(_vel);
 	SetRotation(_rot);
@@ -212,20 +212,20 @@ void CScriptMoveType::SetRotationVelocity(const float3& _rotVel) { useRotVel = (
 
 void CScriptMoveType::SetRotation(const float3& _rot)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	owner->SetDirVectorsEuler(rot = _rot);
 }
 
 void CScriptMoveType::SetHeading(short heading)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	owner->SetHeading(heading, trackSlope, false, 0.0f);
 }
 
 
 void CScriptMoveType::SetNoBlocking(bool state)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if false, forces blocking-map updates
 	if ((noBlocking = state)) {
 		owner->UnBlock();

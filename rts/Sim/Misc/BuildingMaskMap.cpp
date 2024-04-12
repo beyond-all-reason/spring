@@ -1,7 +1,7 @@
 #include "BuildingMaskMap.h"
 #include "Map/ReadMap.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 BuildingMaskMap buildingMaskMap;
 
@@ -13,14 +13,14 @@ CR_REG_METADATA(BuildingMaskMap, (
 
 bool BuildingMaskMap::CheckBounds(unsigned int x, unsigned int z) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return ((x < mapDims.hmapx) && (z < mapDims.hmapy));
 }
 
 // sets mask value for tile[x,z] in 2*SQUARE_SIZE coordinates
 bool BuildingMaskMap::SetTileMask(unsigned int x, unsigned int z, std::uint16_t value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!CheckBounds(x, z))
 		return false;
 
@@ -32,7 +32,7 @@ bool BuildingMaskMap::SetTileMask(unsigned int x, unsigned int z, std::uint16_t 
 // true - construction is allowed, false - it's not
 bool BuildingMaskMap::TestTileMaskUnsafe(unsigned int x, unsigned int z, std::uint16_t value) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(CheckBounds(x, z));
 	return (maskMap[x + z * mapDims.hmapx] & value) == value;
 }

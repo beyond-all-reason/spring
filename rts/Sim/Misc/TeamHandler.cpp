@@ -8,7 +8,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND(CTeamHandler, )
@@ -27,7 +27,7 @@ CTeamHandler teamHandler;
 
 void CTeamHandler::LoadFromSetup(const CGameSetup* setup)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// must start from a blank slate
 	assert(teams.empty());
 	assert(allyTeams.empty());
@@ -93,7 +93,7 @@ void CTeamHandler::LoadFromSetup(const CGameSetup* setup)
 
 void CTeamHandler::SetDefaultStartPositions(const CGameSetup* setup)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (setup->startPosType != CGameSetup::StartPos_ChooseInGame)
 		return;
 
@@ -115,7 +115,7 @@ void CTeamHandler::SetDefaultStartPositions(const CGameSetup* setup)
 
 void CTeamHandler::GameFrame(int frameNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((frameNum % TEAM_SLOWUPDATE_RATE) != 0)
 		return;
 
@@ -131,7 +131,7 @@ void CTeamHandler::GameFrame(int frameNum)
 
 unsigned int CTeamHandler::GetNumTeamsInAllyTeam(unsigned int allyTeamNum, bool countDeadTeams) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int numTeams = 0;
 
 	for (unsigned int teamNum = 0; teamNum < teamHandler.ActiveTeams(); teamNum++) {
@@ -148,7 +148,7 @@ unsigned int CTeamHandler::GetNumTeamsInAllyTeam(unsigned int allyTeamNum, bool 
 
 void CTeamHandler::UpdateTeamUnitLimitsPreSpawn(int liveTeamNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CTeam* liveTeam = &teams[liveTeamNum];
 	CTeam* tempTeam = nullptr;
 
@@ -187,7 +187,7 @@ void CTeamHandler::UpdateTeamUnitLimitsPreSpawn(int liveTeamNum)
 
 void CTeamHandler::UpdateTeamUnitLimitsPreDeath(int deadTeamNum)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CTeam* deadTeam = &teams[deadTeamNum];
 	CTeam* tempTeam = nullptr;
 

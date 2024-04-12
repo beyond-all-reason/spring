@@ -7,11 +7,11 @@
 #include <set>
 #include <bit>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 inline bool CLegacyAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// sort by large to small
 
 	if (tex1->size.y > tex2->size.y) return true;
@@ -30,7 +30,7 @@ inline bool CLegacyAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasE
 
 bool CLegacyAtlasAlloc::IncreaseSize()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (atlasSize.y < atlasSize.x) {
 		if ((atlasSize.y * 2) <= maxsize.y) {
 			atlasSize.y *= 2;
@@ -57,7 +57,7 @@ bool CLegacyAtlasAlloc::IncreaseSize()
 
 bool CLegacyAtlasAlloc::Allocate()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<SAtlasEntry*> memtextures;
 	memtextures.reserve(entries.size());
 
@@ -166,7 +166,7 @@ bool CLegacyAtlasAlloc::Allocate()
 
 int CLegacyAtlasAlloc::GetNumTexLevels() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return std::min(
 		std::bit_width(static_cast<uint32_t>(GetMinDim())),
 		numLevels

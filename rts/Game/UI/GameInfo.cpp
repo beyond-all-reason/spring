@@ -20,7 +20,7 @@
 #include <SDL_keycode.h>
 #include <cstdio>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 using std::string;
 using std::vector;
@@ -29,13 +29,13 @@ using std::vector;
 
 static const char* boolString(bool value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (value)? "True": "False";
 }
 
 static const char* floatString(float value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static char buf[16];
 	sprintf(buf, "%8.3f", value);
 	return buf;
@@ -46,7 +46,7 @@ static void StringListStats(
 	float& maxWidth,
 	float& maxHeight
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	maxWidth = 0.0f;
 	maxHeight = 0.0f;
 
@@ -62,21 +62,21 @@ static CGameInfo* instance = nullptr;
 
 void CGameInfo::Enable()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance == nullptr)
 		instance = new CGameInfo;
 }
 
 void CGameInfo::Disable()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	delete instance;
 	instance = nullptr;
 }
 
 bool CGameInfo::IsActive()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (instance != nullptr);
 }
 
@@ -84,7 +84,7 @@ bool CGameInfo::IsActive()
 
 CGameInfo::CGameInfo()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	box.x1 = 0.5f;
 	box.y1 = 0.5f;
 	box.x2 = 0.5f;
@@ -145,7 +145,7 @@ CGameInfo::CGameInfo()
 
 CGameInfo::~CGameInfo()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	instance = nullptr;
 }
 
@@ -167,14 +167,14 @@ void CGameInfo::FontString::CalcDimensions() {
 
 std::string CGameInfo::GetTooltip(int x,int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return "Game Information";
 }
 
 
 bool CGameInfo::IsAbove(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 	return InBox(mx, my, box);
@@ -183,14 +183,14 @@ bool CGameInfo::IsAbove(int x, int y)
 
 bool CGameInfo::MousePress(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (IsAbove(x, y));
 }
 
 
 void CGameInfo::MouseRelease(int x, int y, int button)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (activeReceiver != this)
 		return;
 
@@ -203,7 +203,7 @@ void CGameInfo::MouseRelease(int x, int y, int button)
 
 bool CGameInfo::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyCode == SDLK_ESCAPE) {
 		delete this;
 		return true;
@@ -214,7 +214,7 @@ bool CGameInfo::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 void CGameInfo::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gs->cheatEnabled) {
 		values[values.size() - 1] = "ENABLED";
 	} else {

@@ -9,7 +9,7 @@
 #include "System/creg/STL_Set.h"
 #include "System/float3.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(CGroup, (0, 0))
 CR_REG_METADATA(CGroup, (
@@ -23,7 +23,7 @@ CR_REG_METADATA(CGroup, (
 
 void CGroup::PostLoad()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	while (!units.empty()) {
 		CUnit* unit = unitHandler.GetUnit(*units.begin());
 
@@ -34,7 +34,7 @@ void CGroup::PostLoad()
 
 bool CGroup::AddUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unit->team != ghIndex)
 		return false;
 
@@ -45,7 +45,7 @@ bool CGroup::AddUnit(CUnit* unit)
 
 void CGroup::RemoveUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unit->team != ghIndex)
 		return;
 
@@ -55,7 +55,7 @@ void CGroup::RemoveUnit(CUnit* unit)
 
 void CGroup::RemoveIfEmptySpecialGroup()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!units.empty())
 		return;
 
@@ -71,7 +71,7 @@ void CGroup::RemoveIfEmptySpecialGroup()
 
 void CGroup::ClearUnits()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!uiGroupHandlers.empty());
 
 	while (!units.empty()) {
@@ -84,7 +84,7 @@ void CGroup::ClearUnits()
 
 float3 CGroup::CalculateCenter() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 center;
 
 	if (!units.empty()) {

@@ -34,7 +34,7 @@
 #include "System/SpringMath.h"
 #include "System/Sound/ISoundChannels.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 /******************************************************************************/
 /******************************************************************************/
@@ -55,7 +55,7 @@ CR_REG_METADATA(CCobInstance, (
 
 inline bool CCobInstance::HasFunction(int id) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (cobFile->scriptIndex.size() > id && cobFile->scriptIndex[id] >= 0);
 }
 
@@ -63,7 +63,7 @@ inline bool CCobInstance::HasFunction(int id) const
 
 void CCobInstance::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	InitCommon();
 
 	staticVars.clear();
@@ -72,7 +72,7 @@ void CCobInstance::Init()
 
 void CCobInstance::PostLoad()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unit != nullptr);
 	assert(cobFile == nullptr);
 
@@ -91,7 +91,7 @@ void CCobInstance::PostLoad()
 
 CCobInstance::~CCobInstance()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// this may be dangerous, is it really desired?
 	// Destroy();
 
@@ -111,7 +111,7 @@ CCobInstance::~CCobInstance()
 
 void CCobInstance::InitCommon()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(cobFile != nullptr);
 
 	MapScriptToModelPieces(&unit->localModel);
@@ -124,7 +124,7 @@ void CCobInstance::InitCommon()
 
 void CCobInstance::MapScriptToModelPieces(LocalModel* lmodel)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<std::string>& pieceNames = cobFile->pieceNames; // already in lowercase!
 	std::vector<LocalModelPiece>& lmodelPieces = lmodel->pieces;
 
@@ -175,21 +175,21 @@ void CCobInstance::MapScriptToModelPieces(LocalModel* lmodel)
 
 int CCobInstance::GetFunctionId(const std::string& fname) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return cobFile->GetFunctionId(fname);
 }
 
 
 bool CCobInstance::HasBlockShot(int weaponNum) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return HasFunction(COBFN_BlockShot + COBFN_Weapon_Funcs * weaponNum);
 }
 
 
 bool CCobInstance::HasTargetWeight(int weaponNum) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return HasFunction(COBFN_TargetWeight + COBFN_Weapon_Funcs * weaponNum);
 }
 
@@ -248,7 +248,7 @@ void CCobInstance::ExtractionRateChanged(float speed)
 
 void CCobInstance::WorldRockUnit(const float3& rockDir) 
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	RockUnit(unit->GetObjectSpaceVec(rockDir) * 500.0f);
 }
 
@@ -266,7 +266,7 @@ void CCobInstance::RockUnit(const float3& rockDir)
 
 void CCobInstance::WorldHitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	HitByWeapon(unit->GetObjectSpaceVec(hitDir) * 500.0f, weaponDefId, inoutDamage);
 }
 
@@ -542,7 +542,7 @@ void CCobInstance::EndBurst(int weaponNum) { ZoneScoped; Call(COBFN_EndBurst + C
  */
 int CCobInstance::RealCall(int functionId, std::array<int, 1 + MAX_COB_ARGS>& args, ThreadCallbackType cb, int cbParam, int* retCode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int ret = -1;
 
 	if (size_t(functionId) >= cobFile->scriptNames.size()) {
@@ -611,7 +611,7 @@ int CCobInstance::RealCall(int functionId, std::array<int, 1 + MAX_COB_ARGS>& ar
 
 int CCobInstance::Call(const std::string& fname)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs = {{0}};
 
 	return Call(fname, callinArgs, CBNone, 0, nullptr);
@@ -619,13 +619,13 @@ int CCobInstance::Call(const std::string& fname)
 
 int CCobInstance::Call(const std::string& fname, std::array<int, 1 + MAX_COB_ARGS>& args)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return Call(fname, args, CBNone, 0, nullptr);
 }
 
 int CCobInstance::Call(const std::string& fname, int arg1)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 1;
@@ -638,7 +638,7 @@ int CCobInstance::Call(const std::string& fname, int arg1)
 
 int CCobInstance::Call(const std::string& fname, std::array<int, 1 + MAX_COB_ARGS>& args, ThreadCallbackType cb, int cbParam, int* retCode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	//TODO: Check that new behaviour of actually calling cb when the function is not defined is right?
 	//      (the callback has always been called [when the function is not defined]
 	//       in the id-based Call()s, but never in the string based calls.)
@@ -649,7 +649,7 @@ int CCobInstance::Call(const std::string& fname, std::array<int, 1 + MAX_COB_ARG
 
 int CCobInstance::Call(int id)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs = {{0}};
 
 	return Call(id, callinArgs, CBNone, 0, nullptr);
@@ -657,7 +657,7 @@ int CCobInstance::Call(int id)
 
 int CCobInstance::Call(int id, int arg1)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 1;
@@ -668,7 +668,7 @@ int CCobInstance::Call(int id, int arg1)
 
 int CCobInstance::Call(int id, std::array<int, 1 + MAX_COB_ARGS>& args)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return Call(id, args, CBNone, 0, nullptr);
 }
 
@@ -680,7 +680,7 @@ int CCobInstance::Call(int id, std::array<int, 1 + MAX_COB_ARGS>& args, ThreadCa
 
 void CCobInstance::RawCall(int fn)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs = {{0}};
 
 	RealCall(fn, callinArgs, CBNone, 0, nullptr);
@@ -688,14 +688,14 @@ void CCobInstance::RawCall(int fn)
 
 int CCobInstance::RawCall(int fn, std::array<int, 1 + MAX_COB_ARGS>& args)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return RealCall(fn, args, CBNone, 0, nullptr);
 }
 
 
 void CCobInstance::ThreadCallback(ThreadCallbackType type, int retCode, int cbParam)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (type) {
 		// note: this callback is always called, even if Killed does not exist
 		// however, retCode is only set if the function has a return statement
@@ -722,7 +722,7 @@ void CCobInstance::ThreadCallback(ThreadCallbackType type, int retCode, int cbPa
 
 void CCobInstance::Signal(int signal)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int threadID: threadIDs) {
 		CCobThread* t = cobEngine->GetThread(threadID);
 
@@ -737,13 +737,13 @@ void CCobInstance::Signal(int signal)
 
 void CCobInstance::PlayUnitSound(int snr, int attr)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Channels::UnitReply->PlaySample(cobFile->sounds[snr], unit->pos, unit->speed, attr);
 }
 
 
 void CCobInstance::ShowScriptError(const std::string& msg)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	cobEngine->ShowScriptError(msg);
 }

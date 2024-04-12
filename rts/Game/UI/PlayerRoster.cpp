@@ -12,7 +12,7 @@
 #include <cassert>
 #include <cstring>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 static int CompareDummy      (const int aIdx, const int bIdx) { return ((aIdx > bIdx) * 2 - 1); }
 static int CompareAllies     (const int aIdx, const int bIdx);
@@ -34,7 +34,7 @@ PlayerRoster::PlayerRoster()
 
 void PlayerRoster::SetCompareFunc(SortType cmpType)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (cmpType) {
 		case Allies:     { compareFunc = CompareAllies;      } break;
 		case TeamID:     { compareFunc = CompareTeamIDs;     } break;
@@ -49,7 +49,7 @@ void PlayerRoster::SetCompareFunc(SortType cmpType)
 
 bool PlayerRoster::SetSortTypeByName(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int num = atoi(name.c_str());
 
 	if (num > 0)
@@ -71,7 +71,7 @@ bool PlayerRoster::SetSortTypeByName(const std::string& name)
 
 bool PlayerRoster::SetSortTypeByCode(SortType type)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (type) {
 		case Allies:     {                                                   } // fall-through
 		case TeamID:     {                                                   } // fall-through
@@ -88,7 +88,7 @@ bool PlayerRoster::SetSortTypeByCode(SortType type)
 
 const char* PlayerRoster::GetSortName() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (compareType) {
 		case Allies:     return "Allies";
 		case TeamID:     return "TeamID";
@@ -104,7 +104,7 @@ const char* PlayerRoster::GetSortName() const
 
 const std::vector<int>& PlayerRoster::GetIndices(bool includePathingFlag, bool callerBlockResort)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if Disabled, compareFunc is a dummy so the indices are left alone
 	// assert(compareType != Disabled);
 
@@ -133,7 +133,7 @@ const std::vector<int>& PlayerRoster::GetIndices(bool includePathingFlag, bool c
 
 static inline int CompareBasics(const CPlayer* a, const CPlayer* b)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// non-NULL first (and return 0 if both NULL)
 	if ((a != nullptr) && (b == nullptr)) return -1;
 	if ((a == nullptr) && (b != nullptr)) return +1;
@@ -155,7 +155,7 @@ static inline int CompareBasics(const CPlayer* a, const CPlayer* b)
 
 static int CompareAllies(const int aIdx, const int bIdx)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CPlayer* a = playerHandler.Player(aIdx);
 	const CPlayer* b = playerHandler.Player(bIdx);
 
@@ -203,7 +203,7 @@ static int CompareAllies(const int aIdx, const int bIdx)
 
 static int CompareTeamIDs(const int aIdx, const int bIdx)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CPlayer* a = playerHandler.Player(aIdx);
 	const CPlayer* b = playerHandler.Player(bIdx);
 
@@ -226,7 +226,7 @@ static int CompareTeamIDs(const int aIdx, const int bIdx)
 
 static int ComparePlayerNames(const int aIdx, const int bIdx)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CPlayer* a = playerHandler.Player(aIdx);
 	const CPlayer* b = playerHandler.Player(bIdx);
 
@@ -242,7 +242,7 @@ static int ComparePlayerNames(const int aIdx, const int bIdx)
 
 static int ComparePlayerCPUs(const int aIdx, const int bIdx)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CPlayer* a = playerHandler.Player(aIdx);
 	const CPlayer* b = playerHandler.Player(bIdx);
 
@@ -259,7 +259,7 @@ static int ComparePlayerCPUs(const int aIdx, const int bIdx)
 
 static int ComparePlayerPings(const int aIdx, const int bIdx)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CPlayer* a = playerHandler.Player(aIdx);
 	const CPlayer* b = playerHandler.Player(bIdx);
 

@@ -22,7 +22,7 @@
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED_INTERFACE(CWeaponProjectile, CProjectile)
@@ -177,7 +177,7 @@ CWeaponProjectile::CWeaponProjectile(const ProjectileParams& params)
 
 CWeaponProjectile::~CWeaponProjectile()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	DynDamageArray::DecRef(damages);
 }
 
@@ -221,13 +221,13 @@ void CWeaponProjectile::Explode(
 
 void CWeaponProjectile::Collision()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	Collision((CFeature*) nullptr);
 }
 
 void CWeaponProjectile::Collision(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 impactPos = pos;
 	float3 impactDir = speed;
 
@@ -252,7 +252,7 @@ void CWeaponProjectile::Collision(CFeature* feature)
 
 void CWeaponProjectile::Collision(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 impactPos = pos;
 	float3 impactDir = speed;
 
@@ -270,7 +270,7 @@ void CWeaponProjectile::Collision(CUnit* unit)
 
 void CWeaponProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Update();
 	UpdateGroundBounce();
 	UpdateInterception();
@@ -279,7 +279,7 @@ void CWeaponProjectile::Update()
 
 void CWeaponProjectile::UpdateInterception()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (target == nullptr)
 		return;
 
@@ -311,7 +311,7 @@ void CWeaponProjectile::UpdateInterception()
 
 void CWeaponProjectile::UpdateGroundBounce()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 1
 	// projectile is not allowed to bounce on either surface
 	if (!weaponDef->groundBounce && !weaponDef->waterBounce)
@@ -371,21 +371,21 @@ void CWeaponProjectile::UpdateGroundBounce()
 
 void CWeaponProjectile::DrawOnMinimap() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	AddMiniMapVertices({ pos        , color4::yellow }, { pos + speed, color4::yellow });
 }
 
 
 bool CWeaponProjectile::CanBeInterceptedBy(const WeaponDef* wd) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return ((weaponDef->targetable & wd->interceptor) != 0);
 }
 
 
 void CWeaponProjectile::DependentDied(CObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (o != target)
 		return;
 
@@ -395,7 +395,7 @@ void CWeaponProjectile::DependentDied(CObject* o)
 
 void CWeaponProjectile::PostLoad()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(weaponDef != nullptr);
 	model = weaponDef->LoadModel();
 }

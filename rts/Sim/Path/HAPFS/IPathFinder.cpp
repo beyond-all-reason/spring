@@ -8,7 +8,7 @@
 #include "System/Log/ILog.h"
 #include "System/TimeProfiler.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 // #include "PathGlobal.h"
 // #include "System/Threading/ThreadPool.h"
@@ -30,7 +30,7 @@ void IPathFinder::KillStatic() { pathFinderInstances.clear  ( ); }
 void IPathFinder::Init(unsigned int _BLOCK_SIZE)
 {
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		BLOCK_SIZE = _BLOCK_SIZE;
 		BLOCK_PIXEL_SIZE = BLOCK_SIZE * SQUARE_SIZE;
 
@@ -65,7 +65,7 @@ void IPathFinder::Init(unsigned int _BLOCK_SIZE)
 
 void IPathFinder::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// allow our PNSB to be reused across reloads
 	if (instanceIndex < nodeStateBuffers.size())
 		nodeStateBuffers[instanceIndex] = std::move(blockStates);
@@ -74,7 +74,7 @@ void IPathFinder::Kill()
 
 void IPathFinder::AllocStateBuffer()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instanceIndex >= nodeStateBuffers.size())
 		nodeStateBuffers.emplace_back();
 
@@ -87,7 +87,7 @@ void IPathFinder::AllocStateBuffer()
 
 void IPathFinder::ResetSearch()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	while (!dirtyBlocks.empty()) {
 		blockStates.ClearSquare(dirtyBlocks.back());
 		dirtyBlocks.pop_back();
@@ -110,7 +110,7 @@ IPath::SearchResult IPathFinder::GetPath(
 	IPath::Path& path,
 	const unsigned int maxNodes
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	startPos.ClampInBounds();
 
 	// clear the path
@@ -238,7 +238,7 @@ IPath::SearchResult IPathFinder::GetPath(
 // set up the starting point of the search
 IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, const CSolidObject* owner)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int2 square = mStartBlock;
 
 	if (BLOCK_SIZE != 1){
@@ -317,7 +317,7 @@ bool IPathFinder::SetStartBlock(
 	float3 startPos
 )
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	mStartBlock.x  = startPos.x / BLOCK_PIXEL_SIZE;
 	mStartBlock.y  = startPos.z / BLOCK_PIXEL_SIZE;
 	mStartBlockIdx = BlockPosToIdx(mStartBlock);

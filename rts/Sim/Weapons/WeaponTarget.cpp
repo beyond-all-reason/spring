@@ -4,7 +4,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(SWeaponTarget, )
 CR_REG_METADATA(SWeaponTarget, (
@@ -72,7 +72,7 @@ SWeaponTarget::SWeaponTarget(const CUnit* u, float3 p, bool userTarget, bool aut
 
 bool SWeaponTarget::operator!=(const SWeaponTarget& other) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (type != other.type) return true;
 	if (isUserTarget != other.isUserTarget) return true;
 	if (isAutoTarget != other.isAutoTarget) return true;

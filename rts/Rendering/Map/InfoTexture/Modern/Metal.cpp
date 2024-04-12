@@ -4,7 +4,7 @@
 #include "Map/MetalMap.h"
 #include "Map/ReadMap.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
@@ -28,7 +28,7 @@ CMetalTexture::CMetalTexture()
 
 void CMetalTexture::Update()
 {
-	#include <tracy/Tracy.hpp>
+	#include "System/Misc/TracyDefs.h"
 	assert(metalMap.GetSizeX() == texSize.x && metalMap.GetSizeZ() == texSize.y);
 
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -40,13 +40,13 @@ void CMetalTexture::Update()
 
 void CMetalTexture::MetalMapChanged(const int x, const int z)
 {
-	#include <tracy/Tracy.hpp>
+	#include "System/Misc/TracyDefs.h"
 	metalMapChanged = true;
 }
 
 
 bool CMetalTexture::IsUpdateNeeded()
 {
-	#include <tracy/Tracy.hpp>
+	#include "System/Misc/TracyDefs.h"
 	return metalMapChanged;
 }

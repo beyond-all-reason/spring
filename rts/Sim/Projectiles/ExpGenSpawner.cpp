@@ -5,7 +5,7 @@
 #include "ExpGenSpawnableMemberInfo.h"
 #include "ExplosionGenerator.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CExpGenSpawner, CProjectile, )
 CR_REG_METADATA(CExpGenSpawner,
@@ -21,13 +21,13 @@ CR_REG_METADATA(CExpGenSpawner,
 
 CExpGenSpawner::CExpGenSpawner() : CProjectile()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	checkCol = false;
 	deleteMe = false;
 }
 
 void CExpGenSpawner::Serialize(creg::ISerializer* s) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int generatorID;
 
 	if (s->IsWriting())
@@ -47,7 +47,7 @@ void CExpGenSpawner::Serialize(creg::ISerializer* s) {
 
 void CExpGenSpawner::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((deleteMe |= ((delay--) <= 0)))
 		explosionGenerator->Explosion(pos, dir,  damage, 0.0f, 0.0f,  owner(), nullptr, true);
 }
@@ -55,7 +55,7 @@ void CExpGenSpawner::Update()
 
 bool CExpGenSpawner::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

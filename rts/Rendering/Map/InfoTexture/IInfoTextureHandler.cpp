@@ -8,7 +8,7 @@
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 IInfoTextureHandler* infoTextureHandler = nullptr;
@@ -16,7 +16,7 @@ IInfoTextureHandler* infoTextureHandler = nullptr;
 
 void IInfoTextureHandler::Create()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (
 		globalRendering->supportNonPowerOfTwoTex &&
 		FBO::IsSupported()

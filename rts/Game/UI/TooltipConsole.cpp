@@ -24,7 +24,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/StringUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CONFIG(std::string, TooltipGeometry).defaultValue("0.0 0.0 0.41 0.1");
@@ -56,7 +56,7 @@ CTooltipConsole::~CTooltipConsole()
 
 void CTooltipConsole::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled) {
 		return;
 	}
@@ -93,7 +93,7 @@ void CTooltipConsole::Draw()
 
 bool CTooltipConsole::IsAbove(int x, int y)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled) {
 		return false;
 	}
@@ -157,7 +157,7 @@ static void GetDecoyResources(const CUnit* unit,
 
 std::string CTooltipConsole::MakeUnitString(const CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	string custom = eventHandler.WorldTooltip(unit, nullptr, nullptr);
 	if (!custom.empty())
 		return custom;
@@ -209,7 +209,7 @@ std::string CTooltipConsole::MakeUnitString(const CUnit* unit)
 
 std::string CTooltipConsole::MakeUnitStatsString(const SUnitStats& stats)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	string s;
 	s.resize(512);
 	size_t charsPrinted = 0;
@@ -248,7 +248,7 @@ std::string CTooltipConsole::MakeUnitStatsString(const SUnitStats& stats)
 
 std::string CTooltipConsole::MakeFeatureString(const CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	string custom = eventHandler.WorldTooltip(NULL, feature, NULL);
 	if (!custom.empty()) {
 		return custom;
@@ -278,7 +278,7 @@ std::string CTooltipConsole::MakeFeatureString(const CFeature* feature)
 
 std::string CTooltipConsole::MakeGroundString(const float3& pos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	string custom = eventHandler.WorldTooltip(NULL, NULL, &pos);
 	if (!custom.empty()) {
 		return custom;
@@ -328,7 +328,7 @@ SUnitStats::SUnitStats()
 
 void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const UnitDef* decoyDef = enemy ? unit->unitDef->decoyDef : nullptr;
 
 	++count;

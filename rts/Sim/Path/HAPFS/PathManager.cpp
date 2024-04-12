@@ -23,7 +23,7 @@
 
 #include "PathGlobal.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 // #include "Game/GlobalUnsynced.h"
 // #include "Game/SelectedUnitsHandler.h"
@@ -86,7 +86,7 @@ CPathManager::CPathManager()
 
 void CPathManager::InitStatic()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pathFinderGroups = ThreadPool::GetNumThreads();
 
 	LOG("TK CPathManager::InitStatic: %d threads available", pathFinderGroups);
@@ -130,7 +130,7 @@ void CPathManager::InitStatic()
 
 CPathManager::~CPathManager()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Finalize is not called in case of forced exit
 	// if (maxResPF != nullptr) {
 	// 	lowResPE->Kill();
@@ -170,7 +170,7 @@ CPathManager::~CPathManager()
 
 void CPathManager::RemoveCacheFiles()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pathingStates[PATH_MED_RES].RemoveCacheFile("pe" , mapInfo->map.name);
 	pathingStates[PATH_LOW_RES].RemoveCacheFile("pe2", mapInfo->map.name);
 }
@@ -189,7 +189,7 @@ std::uint32_t CPathManager::GetPathCheckSum() const {
 
 std::int64_t CPathManager::Finalize()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const spring_time t0 = spring_gettime();
 
 	{
@@ -217,7 +217,7 @@ std::int64_t CPathManager::Finalize()
 
 std::int64_t CPathManager::PostFinalizeRefresh()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const spring_time t0 = spring_gettime();
 
 	if (finalized)
@@ -275,7 +275,7 @@ IPath::SearchResult CPathManager::ArrangePath(
 	const float3& goalPos,
 	CSolidObject* caller
 ) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CPathFinderDef* pfDef = &newPath->peDef;
 
 	// choose the PF or the PE depending on the projected 2D goal-distance
@@ -314,7 +314,7 @@ IPath::SearchResult CPathManager::ArrangePath(
 	pfDef->useVerifiedStartBlock = true; // ((caller != nullptr) && ThreadPool::inMultiThreadedSection);
 
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		if (heurGoalDist2D <= (MAXRES_SEARCH_DISTANCE * modInfo.pfRawDistMult)) {
 			pfDef->AllowRawPathSearch( true);
 			pfDef->AllowDefPathSearch(false); // block default search
@@ -406,7 +406,7 @@ void CPathManager::DeletePath(unsigned int pathID, bool /* force ignored*/) {
 	if (pathID == 0)
 		return;
 	{
-		//ZoneScoped;
+		RECOIL_DETAILED_TRACY_ZONE;
 		const std::lock_guard<std::mutex> lock(pathMapUpdate); // TODO: remove this? not called in MT sections anymore?
 		const auto pi = pathMap.find(pathID);
 
@@ -875,7 +875,7 @@ CPathManager::MultiPath CPathManager::ExpandCurrentPath(
 
 // Tells estimators about changes in or on the map.
 void CPathManager::TerrainChange(unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2, unsigned int /*type*/) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return;
 		
@@ -968,7 +968,7 @@ void CPathManager::Update()
 // used to deposit heat on the heat-map as a unit moves along its path
 void CPathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(IsFinalized());
 
 	//pathFlowMap->AddFlow(owner);
@@ -978,7 +978,7 @@ void CPathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID)
 
 void CPathManager::SavePathCacheForPathId(int pathIdToSave)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const MultiPath& mpath = *GetMultiPathConst(pathIdToSave);
 	if (mpath.moveDef == nullptr) { return; }
 
@@ -1012,7 +1012,7 @@ void CPathManager::SavePathCacheForPathId(int pathIdToSave)
 // get the waypoints in world-coordinates
 void CPathManager::GetDetailedPath(unsigned pathID, std::vector<float3>& points) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const MultiPath* multiPath = GetMultiPathConst(pathID);
 
 	if (multiPath == nullptr) {
@@ -1033,7 +1033,7 @@ void CPathManager::GetDetailedPath(unsigned pathID, std::vector<float3>& points)
 
 void CPathManager::GetDetailedPathSquares(unsigned pathID, std::vector<int2>& squares) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const MultiPath* multiPath = GetMultiPathConst(pathID);
 
 	if (multiPath == nullptr) {
@@ -1059,7 +1059,7 @@ void CPathManager::GetPathWayPoints(
 	std::vector<float3>& points,
 	std::vector<int>& starts
 ) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	points.clear();
 	starts.clear();
 
@@ -1096,7 +1096,7 @@ void CPathManager::GetPathWayPoints(
 
 
 bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, bool synced) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return false;
 
@@ -1121,7 +1121,7 @@ bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, 
 }
 
 bool CPathManager::SetNodeExtraCosts(const float* costs, unsigned int sizex, unsigned int sizez, bool synced) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return false;
 
@@ -1147,7 +1147,7 @@ bool CPathManager::SetNodeExtraCosts(const float* costs, unsigned int sizex, uns
 }
 
 float CPathManager::GetNodeExtraCost(unsigned int x, unsigned int z, bool synced) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return 0.0f;
 
@@ -1162,7 +1162,7 @@ float CPathManager::GetNodeExtraCost(unsigned int x, unsigned int z, bool synced
 }
 
 const float* CPathManager::GetNodeExtraCosts(bool synced) const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return nullptr;
 
@@ -1174,7 +1174,7 @@ const float* CPathManager::GetNodeExtraCosts(bool synced) const {
 }
 
 int2 CPathManager::GetNumQueuedUpdates() const {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int2 data;
 
 	if (IsFinalized()) {

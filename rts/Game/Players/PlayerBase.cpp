@@ -6,7 +6,7 @@
 #include "System/StringHash.h"
 #include "System/creg/STL_Map.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED(PlayerBase,TeamController, )
@@ -30,7 +30,7 @@ PlayerBase::PlayerBase() {
 
 void PlayerBase::SetValue(const std::string& key, const std::string& value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(key.c_str())) {
 		case hashString("team"): {
 			team = std::atoi(value.c_str());

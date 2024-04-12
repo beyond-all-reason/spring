@@ -26,7 +26,7 @@
 
 #include "Game/GlobalUnsynced.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CFactory, CBuilding, )
 CR_REG_METADATA(CFactory, (
@@ -66,7 +66,7 @@ CFactory::CFactory()
 
 void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (curBuild != nullptr) {
 		curBuild->KillUnit(nullptr, false, true);
 		curBuild = nullptr;
@@ -77,7 +77,7 @@ void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 
 void CFactory::PreInit(const UnitLoadParams& params)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	unitDef = params.unitDef;
 	buildSpeed = unitDef->buildSpeed / GAME_SPEED;
 
@@ -92,7 +92,7 @@ void CFactory::PreInit(const UnitLoadParams& params)
 
 float3 CFactory::CalcBuildPos(int buildPiece)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 relBuildPos = script->GetPiecePos((buildPiece < 0)? script->QueryBuildInfo() : buildPiece);
 	const float3 absBuildPos = this->GetObjectSpacePos(relBuildPos);
 	return absBuildPos;
@@ -102,7 +102,7 @@ float3 CFactory::CalcBuildPos(int buildPiece)
 
 void CFactory::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	nanoPieceCache.Update();
 
 	if (beingBuilt) {
@@ -169,7 +169,7 @@ void CFactory::Update()
 
 
 void CFactory::StartBuild(const UnitDef* buildeeDef) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead)
 		return;
 
@@ -205,7 +205,7 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 }
 
 void CFactory::UpdateBuild(CUnit* buildee) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsStunned())
 		return;
 
@@ -248,7 +248,7 @@ void CFactory::UpdateBuild(CUnit* buildee) {
 }
 
 void CFactory::FinishBuild(CUnit* buildee) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (buildee->beingBuilt)
 		return;
 	if (unitDef->fullHealthFactory && buildee->health < buildee->maxHealth)
@@ -280,7 +280,7 @@ void CFactory::FinishBuild(CUnit* buildee) {
 
 unsigned int CFactory::QueueBuild(const UnitDef* buildeeDef, const Command& buildCmd)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!beingBuilt);
 	assert(buildeeDef != nullptr);
 
@@ -304,7 +304,7 @@ unsigned int CFactory::QueueBuild(const UnitDef* buildeeDef, const Command& buil
 
 void CFactory::StopBuild()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// cancel a build-in-progress
 	script->StopBuilding();
 
@@ -322,7 +322,7 @@ void CFactory::StopBuild()
 
 void CFactory::DependentDied(CObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (o == curBuild) {
 		curBuild = nullptr;
 		StopBuild();
@@ -335,7 +335,7 @@ void CFactory::DependentDied(CObject* o)
 
 void CFactory::SendToEmptySpot(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr int numSteps = 100;
 
 	const float searchRadius = radius * 4.0f + unit->radius * 4.0f;
@@ -421,7 +421,7 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 }
 
 void CFactory::AssignBuildeeOrders(CUnit* unit) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCommandAI* unitCAI = unit->commandAI;
 	CCommandQueue& unitCmdQue = unitCAI->commandQue;
 
@@ -495,7 +495,7 @@ void CFactory::AssignBuildeeOrders(CUnit* unit) {
 
 bool CFactory::ChangeTeam(int newTeam, ChangeType type)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!CBuilding::ChangeTeam(newTeam, type))
 		return false;
 
@@ -508,7 +508,7 @@ bool CFactory::ChangeTeam(int newTeam, ChangeType type)
 
 void CFactory::CreateNanoParticle(bool highPriority)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int modelNanoPiece = nanoPieceCache.GetNanoPiece(script);
 
 	if (!localModel.Initialized() || !localModel.HasPiece(modelNanoPiece))

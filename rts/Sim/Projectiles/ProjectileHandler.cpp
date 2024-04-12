@@ -32,7 +32,7 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 // reserve 5% of maxNanoParticles for important stuff such as capture and reclaim other teams' units
@@ -69,7 +69,7 @@ CProjectileHandler projectileHandler;
 
 void CProjectileHandler::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	currentNanoParticles = 0;
 	frameCurrentParticles = 0;
 	frameProjectileCounts[false] = 0;
@@ -99,7 +99,7 @@ void CProjectileHandler::Init()
 
 void CProjectileHandler::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	configHandler->RemoveObserver(this);
 
 	{
@@ -136,7 +136,7 @@ void CProjectileHandler::Kill()
 
 void CProjectileHandler::ConfigNotify(const std::string& key, const std::string& value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	maxParticles     = configHandler->GetInt("MaxParticles");
 	maxNanoParticles = configHandler->GetInt("MaxNanoParticles");
 
@@ -146,7 +146,7 @@ void CProjectileHandler::ConfigNotify(const std::string& key, const std::string&
 
 static void MAPPOS_SANITY_CHECK(const float3 v)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	v.AssertNaNs();
 	assert(v.x >= -(float3::maxxpos * 16.0f));
 	assert(v.x <=  (float3::maxxpos * 16.0f));
@@ -277,7 +277,7 @@ static void UPDATE_REF_CONTAINER(T& cont) {
 
 void CProjectileHandler::CreateProjectile(CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	p->createMe = false;
 
 	if (p->synced || PH_UNSYNCED_PROJECTILE_EVENTS == 1)
@@ -288,7 +288,7 @@ void CProjectileHandler::CreateProjectile(CProjectile* p)
 
 void CProjectileHandler::DestroyProjectile(CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!p->createMe);
 
 	eventHandler.RenderProjectileDestroyed(p);
@@ -355,7 +355,7 @@ void CProjectileHandler::Update()
 
 void CProjectileHandler::AddProjectile(CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// already initialized?
 	assert(p->id < 0);
 	assert(p->createMe);
@@ -378,7 +378,7 @@ void CProjectileHandler::AddProjectile(CProjectile* p)
 
 static bool CheckProjectileCollisionFlags(const CProjectile* p, const CUnit* u)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int collFlags = p->GetCollisionFlags() * p->weapon;
 
 	// only weapon-projectiles can have non-zero flags
@@ -425,7 +425,7 @@ void CProjectileHandler::CheckUnitCollisions(
 	const float3 ppos0,
 	const float3 ppos1
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!p->checkCol)
 		return;
 
@@ -466,7 +466,7 @@ void CProjectileHandler::CheckFeatureCollisions(
 	const float3 ppos0,
 	const float3 ppos1
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// already collided with unit?
 	if (!p->checkCol)
 		return;
@@ -506,7 +506,7 @@ void CProjectileHandler::CheckShieldCollisions(
 	const float3 ppos0,
 	const float3 ppos1
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!p->checkCol)
 		return;
 	// skip unsynced and non-weapon projectiles
@@ -556,7 +556,7 @@ void CProjectileHandler::CheckShieldCollisions(
 
 void CProjectileHandler::CheckUnitFeatureCollisions(bool synced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static std::vector<CUnit*> tempUnits;
 	static std::vector<CFeature*> tempFeatures;
 	static std::vector<CPlasmaRepulser*> tempRepulsers;
@@ -582,7 +582,7 @@ void CProjectileHandler::CheckUnitFeatureCollisions(bool synced)
 
 void CProjectileHandler::CheckGroundCollisions(bool synced)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	//can't use iterators here, because instructions inside the loop modify projectiles[synced]
 	for (size_t i = 0; i < projectiles[synced].size(); ++i) {
 		CProjectile* p = projectiles[synced][i];
@@ -645,7 +645,7 @@ void CProjectileHandler::AddFlyingPiece(
 	const float2 pieceParams,
 	const int2 renderParams
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	flyingPieces[modelType].emplace_back(piece, m, pos, speed, pieceParams, renderParams);
 	resortFlyingPieces[modelType] = true;
 }
@@ -658,7 +658,7 @@ void CProjectileHandler::AddNanoParticle(
 	int teamNum,
 	bool highPriority
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float priority = mix(NORMAL_NANO_PRIO, HIGH_NANO_PRIO, highPriority);
 	const float emitProb = 1.0f - GetNanoParticleSaturation(priority);
 
@@ -696,7 +696,7 @@ void CProjectileHandler::AddNanoParticle(
 	bool inverse,
 	bool highPriority
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float priority = mix(NORMAL_NANO_PRIO, HIGH_NANO_PRIO, highPriority);
 	const float emitProb = 1.0f - GetNanoParticleSaturation(priority);
 
@@ -731,7 +731,7 @@ void CProjectileHandler::AddNanoParticle(
 
 float CProjectileHandler::GetParticleSaturation(bool randomized) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int curParticles = GetCurrentParticles();
 
 	// use the random mult to weaken the max limit a little
@@ -746,7 +746,7 @@ float CProjectileHandler::GetParticleSaturation(bool randomized) const
 
 int CProjectileHandler::GetCurrentParticles() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// use precached part of particles count calculation that else becomes very heavy
 	// example where it matters: (in ZK) /cheat /give 20 armraven -> shoot ground
 	for (size_t i = frameProjectileCounts[true], e = projectiles[true].size(); i < e; ++i) {

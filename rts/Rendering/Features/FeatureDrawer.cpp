@@ -35,7 +35,7 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 void CFeatureDrawer::InitStatic()
 {
@@ -51,7 +51,7 @@ void CFeatureDrawer::InitStatic()
 
 bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, uint8_t thisPassMask)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(f);
 	assert(f->model);
 
@@ -81,7 +81,7 @@ bool CFeatureDrawer::ShouldDrawOpaqueFeature(CFeature* f, uint8_t thisPassMask)
 
 bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f, uint8_t thisPassMask)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(f);
 	assert(f->model);
 
@@ -111,7 +111,7 @@ bool CFeatureDrawer::ShouldDrawAlphaFeature(CFeature* f, uint8_t thisPassMask)
 
 bool CFeatureDrawer::ShouldDrawFeatureShadow(CFeature* f)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(f);
 	assert(f->model);
 
@@ -131,7 +131,7 @@ bool CFeatureDrawer::ShouldDrawFeatureShadow(CFeature* f)
 
 void CFeatureDrawer::PushIndividualState(const CFeature* feature, bool deferredPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetupOpaqueDrawing(false);
 	CModelDrawerHelper::PushModelRenderState(feature);
 	SetTeamColor(feature->team);
@@ -139,7 +139,7 @@ void CFeatureDrawer::PushIndividualState(const CFeature* feature, bool deferredP
 
 void CFeatureDrawer::PopIndividualState(const CFeature* feature, bool deferredPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CModelDrawerHelper::PopModelRenderState(feature);
 	ResetOpaqueDrawing(false);
 }
@@ -152,7 +152,7 @@ void CFeatureDrawerBase::Update() const
 
 void CFeatureDrawerLegacy::DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (preList != 0) {
 		glCallList(preList);
 	}
@@ -166,7 +166,7 @@ void CFeatureDrawerLegacy::DrawFeatureNoTrans(const CFeature* feature, unsigned 
 
 void CFeatureDrawerLegacy::DrawFeatureTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glMultMatrixf(feature->GetTransformMatrixRef());
 
@@ -177,7 +177,7 @@ void CFeatureDrawerLegacy::DrawFeatureTrans(const CFeature* feature, unsigned in
 
 void CFeatureDrawerLegacy::DrawIndividual(const CFeature* feature, bool noLuaCall) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (LuaObjectDrawer::DrawSingleObject(feature, LUAOBJ_FEATURE /*, noLuaCall*/))
 		return;
 
@@ -189,7 +189,7 @@ void CFeatureDrawerLegacy::DrawIndividual(const CFeature* feature, bool noLuaCal
 
 void CFeatureDrawerLegacy::DrawIndividualNoTrans(const CFeature* feature, bool noLuaCall) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (LuaObjectDrawer::DrawSingleObjectNoTrans(feature, LUAOBJ_FEATURE /*, noLuaCall*/))
 		return;
 
@@ -200,7 +200,7 @@ void CFeatureDrawerLegacy::DrawIndividualNoTrans(const CFeature* feature, bool n
 
 void CFeatureDrawerLegacy::DrawObjectsShadow(int modelType) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
@@ -224,7 +224,7 @@ void CFeatureDrawerLegacy::DrawObjectsShadow(int modelType) const
 
 void CFeatureDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_OPAQUE_FLAG +
 		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
@@ -246,7 +246,7 @@ void CFeatureDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection,
 
 void CFeatureDrawerLegacy::DrawAlphaObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
 		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
@@ -268,7 +268,7 @@ void CFeatureDrawerLegacy::DrawAlphaObjects(int modelType, bool drawReflection, 
 
 void CFeatureDrawerLegacy::DrawOpaqueFeature(CFeature* f, uint8_t thisPassMask) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!ShouldDrawOpaqueFeature(f, thisPassMask))
 		return;
 
@@ -279,7 +279,7 @@ void CFeatureDrawerLegacy::DrawOpaqueFeature(CFeature* f, uint8_t thisPassMask) 
 
 void CFeatureDrawerLegacy::DrawAlphaFeature(CFeature* f, uint8_t thisPassMask) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!ShouldDrawAlphaFeature(f, thisPassMask))
 		return;
 
@@ -289,14 +289,14 @@ void CFeatureDrawerLegacy::DrawAlphaFeature(CFeature* f, uint8_t thisPassMask) c
 
 void CFeatureDrawerLegacy::DrawFeatureShadow(CFeature* f) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ShouldDrawFeatureShadow(f))
 		DrawFeatureTrans(f, 0, 0, false, false);
 }
 
 void CFeatureDrawerLegacy::DrawFeatureModel(const CFeature* feature, bool noLuaCall) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!noLuaCall && feature->luaDraw && eventHandler.DrawFeature(feature))
 		return;
 
@@ -305,7 +305,7 @@ void CFeatureDrawerLegacy::DrawFeatureModel(const CFeature* feature, bool noLuaC
 
 void CFeatureDrawerGL4::DrawObjectsShadow(int modelType) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
 	auto& smv = S3DModelVAO::GetInstance();
@@ -337,7 +337,7 @@ void CFeatureDrawerGL4::DrawObjectsShadow(int modelType) const
 
 void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_OPAQUE_FLAG +
 		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
@@ -371,7 +371,7 @@ void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bo
 
 void CFeatureDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
 		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +

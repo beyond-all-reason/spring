@@ -10,7 +10,7 @@
 #include "Path.h"
 #include "Radar.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 
@@ -38,7 +38,7 @@ CInfoTextureHandler::CInfoTextureHandler()
 
 CInfoTextureHandler::~CInfoTextureHandler()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (auto& pitex: infoTextures) {
 		delete pitex.second;
 	}
@@ -48,14 +48,14 @@ CInfoTextureHandler::~CInfoTextureHandler()
 
 void CInfoTextureHandler::AddInfoTexture(CPboInfoTexture* itex)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	infoTextures[itex->GetName()] = itex;
 }
 
 
 const CInfoTexture* CInfoTextureHandler::GetInfoTextureConst(const std::string& name) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static const CDummyInfoTexture dummy;
 
 	const auto it = infoTextures.find(name);
@@ -68,21 +68,21 @@ const CInfoTexture* CInfoTextureHandler::GetInfoTextureConst(const std::string& 
 
 CInfoTexture* CInfoTextureHandler::GetInfoTexture(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (const_cast<CInfoTexture*>(GetInfoTextureConst(name)));
 }
 
 
 bool CInfoTextureHandler::IsEnabled() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (infoTex->IsEnabled());
 }
 
 
 void CInfoTextureHandler::DisableCurrentMode()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (returnToLOS && (GetMode() != "los")) {
 		// return to LOS-mode if it was active before
 		SetMode("los");
@@ -95,7 +95,7 @@ void CInfoTextureHandler::DisableCurrentMode()
 
 void CInfoTextureHandler::SetMode(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	returnToLOS &= (name !=      ""); // NOLINT(readability-container-size-empty)
 	returnToLOS |= (name ==   "los");
 	inMetalMode  = (name == "metal");
@@ -106,7 +106,7 @@ void CInfoTextureHandler::SetMode(const std::string& name)
 
 void CInfoTextureHandler::ToggleMode(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (infoTex->GetMode() == name)
 		return (DisableCurrentMode());
 
@@ -116,26 +116,26 @@ void CInfoTextureHandler::ToggleMode(const std::string& name)
 
 const std::string& CInfoTextureHandler::GetMode() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (infoTex->GetMode());
 }
 
 GLuint CInfoTextureHandler::GetCurrentInfoTexture() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (infoTex->GetTexture());
 }
 
 int2 CInfoTextureHandler::GetCurrentInfoTextureSize() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (infoTex->GetTexSize());
 }
 
 
 void CInfoTextureHandler::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glActiveTexture(GL_TEXTURE0);
 	glEnable(GL_TEXTURE_2D);
 

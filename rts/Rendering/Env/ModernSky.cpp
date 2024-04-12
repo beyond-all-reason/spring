@@ -13,7 +13,7 @@
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CModernSky::CModernSky()
 {
@@ -41,7 +41,7 @@ CModernSky::~CModernSky()
 
 void CModernSky::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	if (!globalRendering->drawSky)
 		return;

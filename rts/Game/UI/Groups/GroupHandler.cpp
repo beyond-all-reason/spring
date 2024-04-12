@@ -13,7 +13,7 @@
 #include "System/EventHandler.h"
 #include "System/StringHash.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 std::vector<CGroupHandler> uiGroupHandlers;
 
@@ -35,7 +35,7 @@ CR_REG_METADATA(CGroupHandler, (
 
 CGroupHandler::CGroupHandler(int teamId): team(teamId)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	groups.reserve(FIRST_SPECIAL_GROUP);
 
 	for (int groupId = 0; groupId < FIRST_SPECIAL_GROUP; ++groupId) {
@@ -46,7 +46,7 @@ CGroupHandler::CGroupHandler(int teamId): team(teamId)
 
 void CGroupHandler::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		for (CGroup& g: groups) {
 			// may invoke RemoveGroup, but can not cause iterator invalidation
@@ -71,7 +71,7 @@ void CGroupHandler::Update()
 
 bool CGroupHandler::GroupCommand(int num)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool error;
 
 	if (KeyInput::GetKeyModState(KMOD_CTRL))
@@ -88,7 +88,7 @@ bool CGroupHandler::GroupCommand(int num)
 
 bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	error = false;
 	CGroup* group = GetGroup(num);
 
@@ -188,7 +188,7 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 
 CGroup* CGroupHandler::CreateNewGroup()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (freeGroups.empty()) {
 		groups.emplace_back(firstUnusedGroup++, team);
 		return &groups[groups.size() - 1];
@@ -199,7 +199,7 @@ CGroup* CGroupHandler::CreateNewGroup()
 
 void CGroupHandler::RemoveGroup(CGroup* group)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (group->id < FIRST_SPECIAL_GROUP) {
 		LOG_L(L_WARNING, "[GroupHandler::%s] trying to remove hot-key group %i", __func__, group->id);
 		return;
@@ -214,6 +214,6 @@ void CGroupHandler::RemoveGroup(CGroup* group)
 
 void CGroupHandler::PushGroupChange(int id)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::VectorInsertUnique(changedGroups, id, true);
 }

@@ -41,7 +41,7 @@
 
 #include <vector>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(int, LoadingMT)
 	.description("Experimental option to load the game in separate thread. Expect visual glitches, crashes and deadlocks")
@@ -64,7 +64,7 @@ CLoadScreen::CLoadScreen(std::string&& _mapFileName, std::string&& _modFileName,
 
 CLoadScreen::~CLoadScreen()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Kill() must have been called first, such that the loading
 	// thread can not access singleton while its dtor is running
 	assert(!gameLoadThread.joinable());
@@ -88,7 +88,7 @@ CLoadScreen::~CLoadScreen()
 
 bool CLoadScreen::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	activeController = this;
 
 	// When calling this function, mod archives have to be loaded
@@ -149,7 +149,7 @@ bool CLoadScreen::Init()
 
 void CLoadScreen::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (mtLoading && !gameLoadThread.joinable())
 		return;
 
@@ -174,7 +174,7 @@ void CLoadScreen::Kill()
 
 static void FinishedLoading()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gu->globalQuit)
 		return;
 
@@ -196,7 +196,7 @@ static void FinishedLoading()
 
 void CLoadScreen::CreateDeleteInstance(std::string&& mapFileName, std::string&& modFileName, ILoadSaveHandler* saveFile)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CreateInstance(std::move(mapFileName), std::move(modFileName), saveFile))
 		return;
 
@@ -207,7 +207,7 @@ void CLoadScreen::CreateDeleteInstance(std::string&& mapFileName, std::string&& 
 
 bool CLoadScreen::CreateInstance(std::string&& mapFileName, std::string&& modFileName, ILoadSaveHandler* saveFile)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(singleton == nullptr);
 	singleton = new CLoadScreen(std::move(mapFileName), std::move(modFileName), saveFile);
 
@@ -217,7 +217,7 @@ bool CLoadScreen::CreateInstance(std::string&& mapFileName, std::string&& modFil
 
 void CLoadScreen::DeleteInstance()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (singleton == nullptr)
 		return;
 
@@ -230,7 +230,7 @@ void CLoadScreen::DeleteInstance()
 
 void CLoadScreen::ResizeEvent()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaIntro != nullptr)
 		luaIntro->ViewResize();
 }
@@ -238,7 +238,7 @@ void CLoadScreen::ResizeEvent()
 
 int CLoadScreen::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME add mouse events
 	if (luaIntro != nullptr)
 		luaIntro->KeyPress(keyCode, scanCode, isRepeat);
@@ -248,7 +248,7 @@ int CLoadScreen::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 int CLoadScreen::KeyReleased(int keyCode, int scanCode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaIntro != nullptr)
 		luaIntro->KeyRelease(keyCode, scanCode);
 
@@ -288,7 +288,7 @@ bool CLoadScreen::Update()
 
 bool CLoadScreen::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// limit FPS via sleep to not lock a singlethreaded CPU from loading the game
 	if (mtLoading) {
 		const spring_time now = spring_gettime();
@@ -327,7 +327,7 @@ bool CLoadScreen::Draw()
 
 void CLoadScreen::SetLoadMessage(const std::string& text, bool replaceLast)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::UnfreezeSpring(WDT_LOAD);
 
 	std::lock_guard<spring::recursive_mutex> lck(mutex);

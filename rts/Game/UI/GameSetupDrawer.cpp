@@ -21,7 +21,7 @@
 #include <cassert>
 #include <string>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 GameSetupDrawer* GameSetupDrawer::instance = nullptr;
@@ -29,7 +29,7 @@ GameSetupDrawer* GameSetupDrawer::instance = nullptr;
 
 void GameSetupDrawer::Enable()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(instance == nullptr);
 	assert(gameSetup != nullptr);
 
@@ -38,7 +38,7 @@ void GameSetupDrawer::Enable()
 
 void GameSetupDrawer::Disable()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	delete instance;
 	instance = nullptr;
 }
@@ -46,7 +46,7 @@ void GameSetupDrawer::Disable()
 
 void GameSetupDrawer::StartCountdown(unsigned time)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance != nullptr) {
 		instance->lastTick = spring_gettime(); //FIXME
 		instance->readyCountdown = spring_msecs(time);
@@ -58,7 +58,7 @@ GameSetupDrawer::GameSetupDrawer():
 	readyCountdown(spring_notime),
 	lastTick(spring_notime)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gameSetup->hostDemo)
 		return;
 	if (gameSetup->startPosType != CGameSetup::StartPos_ChooseInGame)
@@ -72,7 +72,7 @@ GameSetupDrawer::~GameSetupDrawer() = default;
 
 void GameSetupDrawer::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (readyCountdown > spring_nulltime) {
 		readyCountdown -= (spring_gettime() - lastTick);
 		lastTick = spring_gettime();

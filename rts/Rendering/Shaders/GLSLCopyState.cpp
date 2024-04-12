@@ -6,7 +6,7 @@
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 #define LOG_SECTION_SHADER "Shader"
@@ -169,7 +169,7 @@ DO_ONCE(CreateBindingTypeMap)
 
 static void CopyShaderState_Uniforms(GLuint newProgID, GLuint oldProgID, Shader::IProgramObject::UniformStates* uniformStates)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	GLsizei numUniforms = 0;
 	GLsizei maxUniformNameLength = 0;
 
@@ -292,7 +292,7 @@ static void CopyShaderState_Uniforms(GLuint newProgID, GLuint oldProgID, Shader:
 
 static void CopyShaderState_UniformBlocks(GLuint newProgID, GLuint oldProgID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!GLEW_ARB_uniform_buffer_object)
 		return;
 
@@ -327,7 +327,7 @@ static void CopyShaderState_UniformBlocks(GLuint newProgID, GLuint oldProgID)
 
 static void CopyShaderState_ShaderStorage(GLuint newProgID, GLuint oldProgID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifdef GL_ARB_program_interface_query
 	if (!GLEW_ARB_program_interface_query)
 		return;
@@ -368,7 +368,7 @@ static void CopyShaderState_ShaderStorage(GLuint newProgID, GLuint oldProgID)
 
 static void CopyShaderState_Attributes(GLuint newProgID, GLuint oldProgID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	GLsizei numAttributes, maxNameLength = 0;
 	glGetProgramiv(oldProgID, GL_ACTIVE_ATTRIBUTES, &numAttributes);
 	glGetProgramiv(oldProgID, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxNameLength);
@@ -399,7 +399,7 @@ static void CopyShaderState_Attributes(GLuint newProgID, GLuint oldProgID)
 
 static void CopyShaderState_TransformFeedback(GLuint newProgID, GLuint oldProgID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifdef GL_ARB_transform_feedback3
 	//FIXME find out what extensions are really needed
 	if (!GLEW_ARB_transform_feedback3)
@@ -438,7 +438,7 @@ static void CopyShaderState_TransformFeedback(GLuint newProgID, GLuint oldProgID
 
 static bool CopyShaderState_ContainsGeometryShader(GLuint oldProgID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool ret = false;
 
 	GLsizei numAttachedShaders = 0;
@@ -461,7 +461,7 @@ static bool CopyShaderState_ContainsGeometryShader(GLuint oldProgID)
 
 static void CopyShaderState_Geometry(GLuint newProgID, GLuint oldProgID)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 #if defined(GL_ARB_geometry_shader4) && defined(GL_ARB_get_program_binary)
 	if (!GLEW_ARB_geometry_shader4)
 		return;

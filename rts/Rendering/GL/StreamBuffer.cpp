@@ -7,7 +7,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 //////////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@
 // glClientWaitSync() right before you write into the buffer.
 void IStreamBufferConcept::PutBufferLocks()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (lockList.empty())
 		return;
 
@@ -51,13 +51,13 @@ IStreamBufferConcept::IStreamBufferConcept(StreamBufferCreationParams p, std::st
 
 void IStreamBufferConcept::QueueLockBuffer(GLsync& syncObj) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	lockList.emplace_back(&syncObj);
 }
 
 void IStreamBufferConcept::WaitBuffer(GLsync& syncObj) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!glIsSync(syncObj))
 		return;
 
@@ -78,7 +78,7 @@ void IStreamBufferConcept::WaitBuffer(GLsync& syncObj) const
 
 void IStreamBufferConcept::CreateBuffer(uint32_t byteBufferSize, uint32_t newUsage)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (id == 0)
 		glGenBuffers(1, &id);
 
@@ -91,7 +91,7 @@ void IStreamBufferConcept::CreateBuffer(uint32_t byteBufferSize, uint32_t newUsa
 
 void IStreamBufferConcept::CreateBufferStorage(uint32_t byteBufferSize, uint32_t flags)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glGenBuffers(1, &id);
 
 	Bind();
@@ -103,7 +103,7 @@ void IStreamBufferConcept::CreateBufferStorage(uint32_t byteBufferSize, uint32_t
 
 void IStreamBufferConcept::DeleteBuffer()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (glIsBuffer(id))
 		glDeleteBuffers(1, &id);
 
@@ -112,30 +112,30 @@ void IStreamBufferConcept::DeleteBuffer()
 
 uint32_t IStreamBufferConcept::GetAlignedByteSize(uint32_t byteSizeRaw)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return VBO::GetAlignedSize(target, byteSizeRaw);
 }
 
 void IStreamBufferConcept::Bind(uint32_t bindTarget) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBindBuffer(bindTarget > 0 ? bindTarget : target, id);
 }
 
 void  IStreamBufferConcept::Unbind(uint32_t bindTarget) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBindBuffer(bindTarget > 0 ? bindTarget : target, 0);
 }
 
 void IStreamBufferConcept::BindBufferRange(GLuint index, uint32_t bindTarget) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBindBufferRange(bindTarget > 0 ? bindTarget : this->target, index, id, allocIdx * this->byteSize, this->byteSize);
 }
 
 void IStreamBufferConcept::UnbindBufferRange(GLuint index, uint32_t bindTarget) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBindBufferRange(bindTarget > 0 ? bindTarget : this->target, index, 0u, allocIdx * this->byteSize, this->byteSize);
 }

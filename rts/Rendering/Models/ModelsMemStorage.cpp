@@ -1,21 +1,21 @@
 #include "ModelsMemStorage.h"
 #include "Sim/Objects/WorldObject.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 MatricesMemStorage matricesMemStorage;
 ModelsUniformsStorage modelsUniformsStorage;
 
 ModelsUniformsStorage::ModelsUniformsStorage()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	storage[0] = dummy;
 	objectsMap.emplace(nullptr, 0);
 }
 
 size_t ModelsUniformsStorage::AddObjects(const CWorldObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const size_t idx = storage.Add(ModelUniformData());
 	objectsMap[const_cast<CWorldObject*>(o)] = idx;
 	return idx;
@@ -23,7 +23,7 @@ size_t ModelsUniformsStorage::AddObjects(const CWorldObject* o)
 
 void ModelsUniformsStorage::DelObjects(const CWorldObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = objectsMap.find(const_cast<CWorldObject*>(o));
 	assert(it != objectsMap.end());
 
@@ -33,7 +33,7 @@ void ModelsUniformsStorage::DelObjects(const CWorldObject* o)
 
 size_t ModelsUniformsStorage::GetObjOffset(const CWorldObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = objectsMap.find(const_cast<CWorldObject*>(o));
 	if (it != objectsMap.end())
 		return it->second;
@@ -44,14 +44,14 @@ size_t ModelsUniformsStorage::GetObjOffset(const CWorldObject* o)
 
 ModelUniformData& ModelsUniformsStorage::GetObjUniformsArray(const CWorldObject* o)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	size_t offset = GetObjOffset(o);
 	return storage[offset];
 }
 
 void MatricesMemStorage::SetAllDirty()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(Threading::IsMainThread());
 	std::fill(dirtyMap.begin(), dirtyMap.end(), BUFFERING);
 }

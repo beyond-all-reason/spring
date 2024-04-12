@@ -11,7 +11,7 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CFlameProjectile, CWeaponProjectile, )
 
@@ -42,7 +42,7 @@ CFlameProjectile::CFlameProjectile(const ProjectileParams& params): CWeaponProje
 
 void CFlameProjectile::Collision()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3& norm = CGround::GetNormal(pos.x, pos.z);
 	const float ns = speed.dot(norm);
 
@@ -54,7 +54,7 @@ void CFlameProjectile::Collision()
 
 void CFlameProjectile::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!luaMoveCtrl) {
 		SetPosition(pos + speed);
 		UpdateGroundBounce();
@@ -76,7 +76,7 @@ void CFlameProjectile::Update()
 
 void CFlameProjectile::Draw()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
 
@@ -93,7 +93,7 @@ void CFlameProjectile::Draw()
 
 int CFlameProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -108,6 +108,6 @@ int CFlameProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, 
 
 int CFlameProjectile::GetProjectilesCount() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 1 * validTextures[0];
 }

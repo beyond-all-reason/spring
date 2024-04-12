@@ -8,7 +8,7 @@
 #include "System/Log/ILog.h"
 #include "Sim/Units/Unit.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CONFIG(int, GroundDecals).defaultValue(3).headlessValue(0).description("Controls whether ground decals underneath buildings and ground scars from explosions will be rendered. Values >1 define how long such decals will stay.");
@@ -28,7 +28,7 @@ CR_REG_METADATA(NullGroundDecalDrawer,  )
 
 static IGroundDecalDrawer* GetInstance()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	IGroundDecalDrawer* instance = &nullDecalDrawer;
 	if (!IGroundDecalDrawer::GetDrawDecals()) {
 		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "null");
@@ -46,7 +46,7 @@ static IGroundDecalDrawer* GetInstance()
 
 void IGroundDecalDrawer::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	decalLevel = configHandler->GetInt("GroundDecals");
 
 	FreeInstance();
@@ -56,7 +56,7 @@ void IGroundDecalDrawer::Init()
 
 void IGroundDecalDrawer::FreeInstance()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (singleton != &nullDecalDrawer)
 		spring::SafeDelete(singleton);
 }
@@ -64,7 +64,7 @@ void IGroundDecalDrawer::FreeInstance()
 
 void IGroundDecalDrawer::SetDrawDecals(bool v)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (v) {
 		decalLevel =  std::abs(decalLevel);
 	} else {

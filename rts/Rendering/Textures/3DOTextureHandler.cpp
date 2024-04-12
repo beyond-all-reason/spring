@@ -21,7 +21,7 @@
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Log/ILog.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -38,7 +38,7 @@ struct TexFile {
 
 void C3DOTextureHandler::Init()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<TexFile> texFiles = LoadTexFiles();
 
 	// TODO: make this use TextureAtlas directly
@@ -163,7 +163,7 @@ void C3DOTextureHandler::Init()
 
 void C3DOTextureHandler::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &atlas3do1);
 	glDeleteTextures(1, &atlas3do2);
 
@@ -176,7 +176,7 @@ void C3DOTextureHandler::Kill()
 
 std::vector<TexFile> C3DOTextureHandler::LoadTexFiles()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CFileHandler teamTexFile("unittextures/tatex/teamtex.txt");
 	CFileHandler paletteFile("unittextures/tatex/palette.pal");
 
@@ -231,7 +231,7 @@ std::vector<TexFile> C3DOTextureHandler::LoadTexFiles()
 
 C3DOTextureHandler::UnitTexture* C3DOTextureHandler::Get3DOTexture(const std::string& name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto tti = textures.find(name);
 
 	if (tti != textures.end())
@@ -243,7 +243,7 @@ C3DOTextureHandler::UnitTexture* C3DOTextureHandler::Get3DOTexture(const std::st
 
 TexFile C3DOTextureHandler::CreateTex(const std::string& name, const std::string& name2, bool teamcolor)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	TexFile texFile;
 	static constexpr float defaultAlpha = 30.0f / 255.0f;
 	texFile.tex.Load(name, defaultAlpha, 4, GL_UNSIGNED_BYTE, true);

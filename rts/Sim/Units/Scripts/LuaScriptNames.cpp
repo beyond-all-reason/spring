@@ -5,7 +5,7 @@
 #include "LuaScriptNames.h"
 #include "Sim/Misc/GlobalConstants.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 // script function-indices never change, so this is fine wrt. reloading
 static std::array<std::string, LUAFN_Last> scriptNames;
@@ -76,7 +76,7 @@ const spring::unordered_map<std::string, int>& CLuaUnitScriptNames::GetScriptMap
 
 int CLuaUnitScriptNames::GetScriptNumber(const std::string& fname)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = scriptMap.find(fname);
 
 	if (it != scriptMap.end())
@@ -87,7 +87,7 @@ int CLuaUnitScriptNames::GetScriptNumber(const std::string& fname)
 
 const std::string& CLuaUnitScriptNames::GetScriptName(unsigned int num)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const static std::string empty;
 
 	if (num < scriptNames.size())

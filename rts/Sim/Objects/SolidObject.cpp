@@ -12,7 +12,7 @@
 #include "Game/GameHelper.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 int CSolidObject::deletingRefID = -1;
 
@@ -85,7 +85,7 @@ CR_REG_METADATA(CSolidObject,
 
 void CSolidObject::PostLoad()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((model = GetDef()->LoadModel()) == nullptr)
 		return;
 
@@ -95,7 +95,7 @@ void CSolidObject::PostLoad()
 
 void CSolidObject::UpdatePhysicalState(float eps)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float gh = CGround::GetHeightReal(pos.x, pos.z);
 	const float wh = std::max(gh, 0.0f);
 
@@ -141,7 +141,7 @@ void CSolidObject::UpdatePhysicalState(float eps)
 
 bool CSolidObject::SetVoidState()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsInVoid())
 		return false;
 
@@ -161,7 +161,7 @@ bool CSolidObject::SetVoidState()
 
 bool CSolidObject::ClearVoidState()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsInVoid())
 		return false;
 
@@ -177,7 +177,7 @@ bool CSolidObject::ClearVoidState()
 
 void CSolidObject::UpdateVoidState(bool set)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (set) {
 		SetVoidState();
 	} else {
@@ -190,14 +190,14 @@ void CSolidObject::UpdateVoidState(bool set)
 
 void CSolidObject::SetMass(float newMass)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	mass = std::clamp(newMass, MINIMUM_MASS, MAXIMUM_MASS);
 }
 
 
 void CSolidObject::UnBlock()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsBlocking())
 		return;
 
@@ -207,7 +207,7 @@ void CSolidObject::UnBlock()
 
 void CSolidObject::Block()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// no point calling this if object is not
 	// collidable in principle, but simplifies
 	// external code to allow it
@@ -256,7 +256,7 @@ bool CSolidObject::FootPrintOnGround() const {
 
 YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const YardMapStatus* blockMap = GetBlockMap();
 	if (blockMap == nullptr)
 		return YARDMAP_OPEN;
@@ -291,7 +291,7 @@ YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 
 int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int2 mp;
 
 	mp.x = (int(position.x /*+ SQUARE_SIZE / 2*/) / SQUARE_SIZE) - (xsize / 2);
@@ -304,7 +304,7 @@ int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 
 float3 CSolidObject::GetDragAccelerationVec(float atmosphericDensity, float waterDensity, float dragCoeff, float frictionCoeff) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// KISS: use the cross-sectional area of a sphere, object shapes are complex
 	// this is a massive over-estimation so pretend the radius is in centimeters
 	// other units as normal: mass in kg, speed in elmos/frame, density in kg/m^3
@@ -349,7 +349,7 @@ float3 CSolidObject::GetDragAccelerationVec(float atmosphericDensity, float wate
 
 float3 CSolidObject::GetWantedUpDir(bool useGroundNormal, bool useObjectNormal, float dirSmoothing) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 groundUp = CGround::GetSmoothNormal(pos.x, pos.z);
 	const float3 curUpDir = float3{updir};
 	const float3 objectUp = mix(UpVector, curUpDir, useObjectNormal);
@@ -363,7 +363,7 @@ float3 CSolidObject::GetWantedUpDir(bool useGroundNormal, bool useObjectNormal, 
 
 void CSolidObject::SetDirVectorsEuler(const float3 angles)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	CMatrix44f matrix;
 
 	// our system is left-handed, so R(X)R(Y)R(Z) is really T(R(-Z)R(-Y)R(-X))
@@ -379,14 +379,14 @@ void CSolidObject::SetFacingFromHeading() { buildFacing = GetFacingFromHeading(h
 
 void CSolidObject::UpdateDirVectors(bool useGroundNormal, bool useObjectNormal, float dirSmoothing)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 uDir = GetWantedUpDir(useGroundNormal, useObjectNormal, dirSmoothing);
 	UpdateDirVectors(uDir);
 }
 
 void CSolidObject::UpdateDirVectors(const float3& uDir)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// set initial rotation of the object around updir=UpVector first
 	const float3 fDir = GetVectorFromHeading(heading);
 
@@ -403,7 +403,7 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 
 void CSolidObject::ForcedSpin(const float3& zdir)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// new front-direction should be normalized
 	assert(math::fabsf(zdir.SqLength() - 1.0f) <= float3::cmp_eps());
 
@@ -427,7 +427,7 @@ void CSolidObject::ForcedSpin(const float3& zdir)
 
 void CSolidObject::Kill(CUnit* killer, const float3& impulse, bool crushed)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateVoidState(false);
 	DoDamage(DamageArray(health + 1.0f), impulse, killer, crushed? -DAMAGE_EXTSOURCE_CRUSHED: -DAMAGE_EXTSOURCE_KILLED, -1);
 }

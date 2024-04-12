@@ -14,7 +14,7 @@
 #include "System/StringUtil.h"
 #include "System/Sound/ISound.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 static CUnitDefHandler gUnitDefHandler;
 CUnitDefHandler* unitDefHandler = &gUnitDefHandler;
@@ -29,7 +29,7 @@ bool isblank(int c) {
 
 void CUnitDefHandler::Init(LuaParser* defsParser)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	noCost = false;
 
 	const LuaTable& rootTable = defsParser->GetRoot().SubTable("UnitDefs");
@@ -60,7 +60,7 @@ void CUnitDefHandler::Init(LuaParser* defsParser)
 
 int CUnitDefHandler::PushNewUnitDef(const std::string& unitName, const LuaTable& udTable)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (std::find_if(unitName.begin(), unitName.end(), isblank) != unitName.end())
 		LOG_L(L_WARNING, "[%s] UnitDef name \"%s\" contains white-spaces", __func__, unitName.c_str());
 
@@ -92,7 +92,7 @@ int CUnitDefHandler::PushNewUnitDef(const std::string& unitName, const LuaTable&
 
 void CUnitDefHandler::CleanBuildOptions()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<int> eraseOpts;
 
 	// remove invalid build options
@@ -122,7 +122,7 @@ void CUnitDefHandler::CleanBuildOptions()
 
 void CUnitDefHandler::ProcessDecoys()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// assign the decoy pointers, and build the decoy map
 	for (const auto& p: decoyNameMap) {
 		const auto fakeIt = unitDefIDs.find(p.first);
@@ -154,7 +154,7 @@ void CUnitDefHandler::ProcessDecoys()
 
 void CUnitDefHandler::UnitDefLoadSounds(UnitDef* ud, const LuaTable& udTable)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	LuaTable soundsTable = udTable.SubTable("sounds");
 
 	LoadSounds(soundsTable, ud->sounds.ok,          "ok");      // eg. "ok1", "ok2", ...
@@ -170,7 +170,7 @@ void CUnitDefHandler::UnitDefLoadSounds(UnitDef* ud, const LuaTable& udTable)
 
 void CUnitDefHandler::LoadSounds(const LuaTable& soundsTable, GuiSoundSet& gsound, const string& soundName)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	string fileName = soundsTable.GetString(soundName, "");
 	if (!fileName.empty()) {
 		CommonDefHandler::AddSoundSetData(gsound, fileName, 1.0f);
@@ -206,7 +206,7 @@ void CUnitDefHandler::LoadSounds(const LuaTable& soundsTable, GuiSoundSet& gsoun
 
 const UnitDef* CUnitDefHandler::GetUnitDefByName(std::string name)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	StringToLowerInPlace(name);
 
 	const auto it = unitDefIDs.find(name);
@@ -220,7 +220,7 @@ const UnitDef* CUnitDefHandler::GetUnitDefByName(std::string name)
 
 void CUnitDefHandler::SetNoCost(bool value)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (noCost == value)
 		return;
 

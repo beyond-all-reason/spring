@@ -25,7 +25,7 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 //Basic, ROAM
 static constexpr int MIN_GROUND_DETAIL[] = {                               0,   4};
@@ -124,7 +124,7 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 
 CSMFGroundDrawer::~CSMFGroundDrawer()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// remember which ROAM-mode was enabled (if any)
 	configHandler->Set("ROAM", (dynamic_cast<CRoamMeshDrawer*>(meshDrawer) != nullptr)? 1: 0);
 
@@ -144,7 +144,7 @@ CSMFGroundDrawer::~CSMFGroundDrawer()
 
 IMeshDrawer* CSMFGroundDrawer::SwitchMeshDrawer(int wantedMode)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// toggle
 	if (wantedMode <= -1) {
 		wantedMode = drawerMode + 1;
@@ -175,7 +175,7 @@ IMeshDrawer* CSMFGroundDrawer::SwitchMeshDrawer(int wantedMode)
 
 ISMFRenderState* CSMFGroundDrawer::SelectRenderState(const DrawPass::e& drawPass)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// [0] := Lua GLSL, must have a valid shader for this pass
 	// [1] := default ARB *or* GLSL, same condition
 	const unsigned int stateEnums[2] = {RENDER_STATE_LUA, RENDER_STATE_SSP};
@@ -195,7 +195,7 @@ ISMFRenderState* CSMFGroundDrawer::SelectRenderState(const DrawPass::e& drawPass
 
 bool CSMFGroundDrawer::HaveLuaRenderState() const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (smfRenderStates[RENDER_STATE_SEL] == smfRenderStates[RENDER_STATE_LUA]);
 }
 
@@ -203,7 +203,7 @@ bool CSMFGroundDrawer::HaveLuaRenderState() const
 
 void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaTest)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!geomBuffer.Valid())
 		return;
 
@@ -275,7 +275,7 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 
 void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTest)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!SelectRenderState(drawPass)->CanDrawForward(this))
 		return;
 
@@ -308,7 +308,7 @@ void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTe
 
 void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// must be here because water renderers also call us
 	if (!globalRendering->drawGround)
 		return;
@@ -341,7 +341,7 @@ void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 
 void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	ISMFRenderState* prvState = smfRenderStates[RENDER_STATE_SEL];
 
 	// no need to enable, does nothing
@@ -391,7 +391,7 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 
 void CSMFGroundDrawer::DrawShadowPass()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!globalRendering->drawGround)
 		return;
 	if (readMap->HasOnlyVoidWater())
@@ -424,13 +424,13 @@ void CSMFGroundDrawer::DrawShadowPass()
 
 void CSMFGroundDrawer::SetLuaShader(const LuaMapShaderData* luaMapShaderData)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	smfRenderStates[RENDER_STATE_LUA]->Update(this, luaMapShaderData);
 }
 
 void CSMFGroundDrawer::SetupBigSquare(const DrawPass::e& drawPass, const int bigSquareX, const int bigSquareY)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (drawPass != DrawPass::Shadow) {
 		groundTextures->BindSquareTexture(bigSquareX, bigSquareY);
 		smfRenderStates[RENDER_STATE_SEL]->SetSquareTexGen(bigSquareX, bigSquareY);
@@ -450,7 +450,7 @@ void CSMFGroundDrawer::SetupBigSquare(const DrawPass::e& drawPass, const int big
 
 void CSMFGroundDrawer::Update()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (readMap->HasOnlyVoidWater())
 		return;
 
@@ -465,12 +465,12 @@ void CSMFGroundDrawer::Update()
 
 void CSMFGroundDrawer::UpdateRenderState()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	smfRenderStates[RENDER_STATE_SSP]->Update(this, nullptr);
 }
 
 void CSMFGroundDrawer::SunChanged() {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Lua has gl.GetSun
 	if (HaveLuaRenderState())
 		return;
@@ -481,7 +481,7 @@ void CSMFGroundDrawer::SunChanged() {
 
 bool CSMFGroundDrawer::UpdateGeometryBuffer(bool init)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	static const bool drawDeferredAllowed = configHandler->GetBool("AllowDeferredMapRendering");
 
 	if (!drawDeferredAllowed)
@@ -494,7 +494,7 @@ bool CSMFGroundDrawer::UpdateGeometryBuffer(bool init)
 
 void CSMFGroundDrawer::SetDetail(int newGroundDetail)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int minGroundDetail = MIN_GROUND_DETAIL[drawerMode == SMF_MESHDRAWER_ROAM];
 	const int maxGroundDetail = MAX_GROUND_DETAIL[drawerMode == SMF_MESHDRAWER_ROAM];
 
@@ -506,7 +506,7 @@ void CSMFGroundDrawer::SetDetail(int newGroundDetail)
 
 int CSMFGroundDrawer::GetGroundDetail(const DrawPass::e& drawPass) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	int detail = groundDetail;
 
 	switch (drawPass) {

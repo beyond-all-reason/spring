@@ -18,7 +18,7 @@
 	#include "Sim/Weapons/PlasmaRepulser.h"
 #endif
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(CQuadField, )
 CR_REG_METADATA(CQuadField, (
@@ -100,7 +100,7 @@ void CQuadField::Resize(int quad_size)
 
 void CQuadField::Quad::PostLoad()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef UNIT_TEST
 	Resize(teamHandler.ActiveAllyTeams());
 
@@ -112,7 +112,7 @@ void CQuadField::Quad::PostLoad()
 
 void CQuadField::Init(int2 mapDims, int quadSize)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	quadSizeX = quadSize;
 	quadSizeZ = quadSize;
 	numQuadsX = (mapDims.x * SQUARE_SIZE) / quadSize;
@@ -144,7 +144,7 @@ void CQuadField::Init(int2 mapDims, int quadSize)
 
 void CQuadField::Kill()
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// reuse quads when reloading
 	// baseQuads.clear();
 	for (Quad& quad: baseQuads) {
@@ -178,7 +178,7 @@ int2 CQuadField::WorldPosToQuadField(const float3 p) const
 
 int CQuadField::WorldPosToQuadFieldIdx(const float3 p) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return std::clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1) * numQuadsX + std::clamp(int(p.x / quadSizeX), 0, numQuadsX - 1);
 }
 
@@ -186,7 +186,7 @@ int CQuadField::WorldPosToQuadFieldIdx(const float3 p) const
 #ifndef UNIT_TEST
 void CQuadField::GetQuads(QuadFieldQuery& qfq, float3 pos, float radius)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos.AssertNaNs();
 	pos.ClampInBounds();
 	qfq.quads = tempQuads[qfq.threadOwner].ReserveVector();
@@ -217,7 +217,7 @@ void CQuadField::GetQuads(QuadFieldQuery& qfq, float3 pos, float radius)
 
 void CQuadField::GetQuadsRectangle(QuadFieldQuery& qfq, const float3& mins, const float3& maxs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	mins.AssertNaNs();
 	maxs.AssertNaNs();
 	qfq.quads = tempQuads[qfq.threadOwner].ReserveVector();
@@ -244,7 +244,7 @@ void CQuadField::GetQuadsRectangle(QuadFieldQuery& qfq, const float3& mins, cons
 /// note: this function got an UnitTest, check the tests/ folder!
 void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	dir.AssertNaNs();
 	start.AssertNaNs();
 
@@ -333,7 +333,7 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 #ifndef UNIT_TEST
 bool CQuadField::InsertUnitIf(CUnit* unit, const float3& wpos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unit != nullptr);
 
 	const int wposQuadIdx = WorldPosToQuadFieldIdx(wpos);
@@ -354,7 +354,7 @@ bool CQuadField::InsertUnitIf(CUnit* unit, const float3& wpos)
 
 bool CQuadField::RemoveUnitIf(CUnit* unit, const float3& wpos)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unit == nullptr)
 		return false;
 
@@ -389,7 +389,7 @@ bool CQuadField::RemoveUnitIf(CUnit* unit, const float3& wpos)
 #ifndef UNIT_TEST
 void CQuadField::MovedUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	GetQuads(qfQuery, unit->pos, unit->radius);
 
@@ -414,7 +414,7 @@ void CQuadField::MovedUnit(CUnit* unit)
 
 void CQuadField::RemoveUnit(CUnit* unit)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const int qi: unit->quads) {
 		spring::VectorErase(baseQuads[qi].units, unit);
 		spring::VectorErase(baseQuads[qi].teamUnits[unit->allyteam], unit);
@@ -436,7 +436,7 @@ void CQuadField::RemoveUnit(CUnit* unit)
 
 void CQuadField::MovedRepulser(CPlasmaRepulser* repulser)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	GetQuads(qfQuery, repulser->weaponMuzzlePos, repulser->GetRadius());
 
@@ -461,7 +461,7 @@ void CQuadField::MovedRepulser(CPlasmaRepulser* repulser)
 
 void CQuadField::RemoveRepulser(CPlasmaRepulser* repulser)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const int qi: repulser->GetQuads()) {
 		spring::VectorErase(baseQuads[qi].repulsers, repulser);
 	}
@@ -480,7 +480,7 @@ void CQuadField::RemoveRepulser(CPlasmaRepulser* repulser)
 
 void CQuadField::AddFeature(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	GetQuads(qfQuery, feature->pos, feature->radius);
 
@@ -491,7 +491,7 @@ void CQuadField::AddFeature(CFeature* feature)
 
 void CQuadField::RemoveFeature(CFeature* feature)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	GetQuads(qfQuery, feature->pos, feature->radius);
 
@@ -512,7 +512,7 @@ void CQuadField::RemoveFeature(CFeature* feature)
 
 void CQuadField::MovedProjectile(CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!p->synced)
 		return;
 	// hit-scan projectiles do NOT move!
@@ -528,7 +528,7 @@ void CQuadField::MovedProjectile(CProjectile* p)
 
 void CQuadField::AddProjectile(CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(p->synced);
 
 	if (p->hitscan) {
@@ -550,7 +550,7 @@ void CQuadField::AddProjectile(CProjectile* p)
 
 void CQuadField::RemoveProjectile(CProjectile* p)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(p->synced);
 
 	for (const int qi: p->quads) {
@@ -566,7 +566,7 @@ void CQuadField::RemoveProjectile(CProjectile* p)
 
 void CQuadField::GetUnits(QuadFieldQuery& qfq, const float3& pos, float radius)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto curThread = qfq.threadOwner;
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -589,7 +589,7 @@ void CQuadField::GetUnits(QuadFieldQuery& qfq, const float3& pos, float radius)
 
 void CQuadField::GetUnitsExact(QuadFieldQuery& qfq, const float3& pos, float radius, bool spherical)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto curThread = qfq.threadOwner;
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -622,7 +622,7 @@ void CQuadField::GetUnitsExact(QuadFieldQuery& qfq, const float3& pos, float rad
 
 void CQuadField::GetUnitsExact(QuadFieldQuery& qfq, const float3& mins, const float3& maxs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto curThread = qfq.threadOwner;
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -654,7 +654,7 @@ void CQuadField::GetUnitsExact(QuadFieldQuery& qfq, const float3& mins, const fl
 
 void CQuadField::GetFeaturesExact(QuadFieldQuery& qfq, const float3& pos, float radius, bool spherical)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto curThread = qfq.threadOwner;
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -687,7 +687,7 @@ void CQuadField::GetFeaturesExact(QuadFieldQuery& qfq, const float3& pos, float 
 
 void CQuadField::GetFeaturesExact(QuadFieldQuery& qfq, const float3& mins, const float3& maxs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto curThread = qfq.threadOwner;
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -719,7 +719,7 @@ void CQuadField::GetFeaturesExact(QuadFieldQuery& qfq, const float3& mins, const
 
 void CQuadField::GetProjectilesExact(QuadFieldQuery& qfq, const float3& pos, float radius)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	GetQuads(qfQuery, pos, radius);
 	const int tempNum = gs->GetTempNum();
@@ -744,7 +744,7 @@ void CQuadField::GetProjectilesExact(QuadFieldQuery& qfq, const float3& pos, flo
 
 void CQuadField::GetProjectilesExact(QuadFieldQuery& qfq, const float3& mins, const float3& maxs)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	GetQuadsRectangle(qfQuery, mins, maxs);
 	const int tempNum = gs->GetTempNum();
@@ -779,7 +779,7 @@ void CQuadField::GetSolidsExact(
 	const unsigned int physicalStateBits,
 	const unsigned int collisionStateBits
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto curThread = qfq.threadOwner;
 	QuadFieldQuery qfQuery;
 	qfQuery.threadOwner = curThread;
@@ -832,7 +832,7 @@ bool CQuadField::NoSolidsExact(
 	const unsigned int physicalStateBits,
 	const unsigned int collisionStateBits
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	GetQuads(qfQuery, pos, radius);
 	const int tempNum = gs->GetTempNum();
@@ -883,7 +883,7 @@ void CQuadField::GetUnitsAndFeaturesColVol(
 	std::vector<CFeature*>& features,
 	std::vector<CPlasmaRepulser*>* repulsers
 ) {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int tempNum = gs->GetTempNum();
 
 	QuadFieldQuery qfQuery;

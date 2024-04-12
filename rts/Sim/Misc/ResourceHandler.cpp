@@ -8,7 +8,7 @@
 
 #include <cfloat>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND(CResourceHandler, )
@@ -58,7 +58,7 @@ void CResourceHandler::AddResources() {
 
 int CResourceHandler::AddResource(const CResourceDescription& resource)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// GetResourceMapAnalyzer returns a pointer, no resizing allowed
 	assert(resourceDescriptions.size() < SResourcePack::MAX_RESOURCES);
 
@@ -70,7 +70,7 @@ int CResourceHandler::AddResource(const CResourceDescription& resource)
 
 const CResourceDescription* CResourceHandler::GetResource(int resourceId) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsValidId(resourceId))
 		return &resourceDescriptions[resourceId];
 
@@ -79,13 +79,13 @@ const CResourceDescription* CResourceHandler::GetResource(int resourceId) const
 
 const CResourceDescription* CResourceHandler::GetResourceByName(const std::string& resourceName) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	return GetResource(GetResourceId(resourceName));
 }
 
 int CResourceHandler::GetResourceId(const std::string& resourceName) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto pred = [&](const CResourceDescription& rd) { return (resourceName == rd.name); };
 	const auto iter = std::find_if(resourceDescriptions.cbegin(), resourceDescriptions.cend(), pred);
 	return ((iter == resourceDescriptions.end())? -1: (iter - resourceDescriptions.cbegin()));
@@ -93,7 +93,7 @@ int CResourceHandler::GetResourceId(const std::string& resourceName) const
 
 const unsigned char* CResourceHandler::GetResourceMap(int resourceId) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (resourceId == GetMetalId())
 		return (metalMap.GetDistributionMap());
 
@@ -102,7 +102,7 @@ const unsigned char* CResourceHandler::GetResourceMap(int resourceId) const
 
 size_t CResourceHandler::GetResourceMapSize(int resourceId) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (resourceId == GetMetalId())
 		return (GetResourceMapWidth(resourceId) * GetResourceMapHeight(resourceId));
 
@@ -111,7 +111,7 @@ size_t CResourceHandler::GetResourceMapSize(int resourceId) const
 
 size_t CResourceHandler::GetResourceMapWidth(int resourceId) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (resourceId == GetMetalId())
 		return mapDims.hmapx;
 
@@ -120,7 +120,7 @@ size_t CResourceHandler::GetResourceMapWidth(int resourceId) const
 
 size_t CResourceHandler::GetResourceMapHeight(int resourceId) const
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (resourceId == GetMetalId())
 		return mapDims.hmapy;
 
@@ -129,7 +129,7 @@ size_t CResourceHandler::GetResourceMapHeight(int resourceId) const
 
 const CResourceMapAnalyzer* CResourceHandler::GetResourceMapAnalyzer(int resourceId)
 {
-	//ZoneScoped;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsValidId(resourceId))
 		return nullptr;
 
