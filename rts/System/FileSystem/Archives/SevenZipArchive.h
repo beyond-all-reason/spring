@@ -34,6 +34,8 @@ public:
 	CSevenZipArchive(const std::string& name);
 	virtual ~CSevenZipArchive();
 
+	void WarmUp(const std::atomic_bool& cont) const override;
+
 	int GetType() const override { return ARCHIVE_TYPE_SD7; }
 
 	bool IsOpen() override { return isOpen; }

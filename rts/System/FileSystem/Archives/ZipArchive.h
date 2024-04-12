@@ -33,6 +33,8 @@ public:
 	CZipArchive(const std::string& archiveName);
 	virtual ~CZipArchive();
 
+	void WarmUp(const std::atomic_bool& cont) const override;
+
 	int GetType() const override { return ARCHIVE_TYPE_SDZ; }
 
 	bool IsOpen() override { return (zip != nullptr); }

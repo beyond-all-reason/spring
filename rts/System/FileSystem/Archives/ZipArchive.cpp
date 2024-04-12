@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <cassert>
+#include <fstream>
 
 #include "System/StringUtil.h"
 #include "System/Log/ILog.h"
@@ -17,12 +18,13 @@ IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const
 }
 
 
-CZipArchive::CZipArchive(const std::string& archiveName): CBufferedArchive(archiveName)
+CZipArchive::CZipArchive(const std::string& name)
+	: CBufferedArchive(name, true)
 {
 	std::lock_guard<spring::mutex> lck(archiveLock);
 
-	if ((zip = unzOpen(archiveName.c_str())) == nullptr) {
-		LOG_L(L_ERROR, "[%s] error opening \"%s\"", __func__, archiveName.c_str());
+	if ((zip = unzOpen(name.c_str())) == nullptr) {
+		LOG_L(L_ERROR, "[%s] error opening \"%s\"", __func__, name.c_str());
 		return;
 	}
 
@@ -69,6 +71,26 @@ CZipArchive::~CZipArchive()
 		unzClose(zip);
 		zip = nullptr;
 	}
+}
+
+void CZipArchive::WarmUp(const std::atomic_bool& cont) const
+{
+	volatile int val = 0;
+
+	std::ifstream file(archiveFile, std::ios::binary | std::ios::ate);
+
+	if (file.bad() || !file.is_open())
+		return;
+
+	auto filesize = file.tellg();
+	for (decltype(filesize) fpos = 0; fpos < filesize; fpos += 4096) {
+		if (!cont)
+			return;
+
+		file.seekg(fpos);
+		val = file.get();
+	}
+	file.close();
 }
 
 

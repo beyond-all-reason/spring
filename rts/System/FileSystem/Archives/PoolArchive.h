@@ -80,6 +80,8 @@ public:
 
 	int GetType() const override { return ARCHIVE_TYPE_SDP; }
 
+	void WarmUp(const std::atomic_bool& cont) const override;
+
 	bool IsOpen() override { return isOpen; }
 
 	unsigned NumFiles() const override { return (files.size()); }
