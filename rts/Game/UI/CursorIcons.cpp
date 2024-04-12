@@ -16,12 +16,15 @@
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CCursorIcons cursorIcons;
 
 
 CCursorIcons::CCursorIcons()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	enabled = true;
 }
 
@@ -33,11 +36,13 @@ CCursorIcons::~CCursorIcons()
 
 void CCursorIcons::Enable(bool value)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	enabled = value;
 }
 
 void CCursorIcons::SetCustomType(int cmdID, const std::string& cursor)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (cursor.empty()) {
 		customTypes.erase(cmdID);
 	} else {
@@ -48,6 +53,7 @@ void CCursorIcons::SetCustomType(int cmdID, const std::string& cursor)
 
 void CCursorIcons::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_CURRENT_BIT);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -66,6 +72,7 @@ void CCursorIcons::Draw()
 
 void CCursorIcons::Sort()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// sort to minimize the number of texture bindings, and to
 	// avoid overdraw from multiple units with the same command
 
@@ -76,6 +83,7 @@ void CCursorIcons::Sort()
 
 void CCursorIcons::DrawCursors() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (icons.empty() || !cmdColors.UseQueueIcons())
 		return;
 
@@ -139,6 +147,7 @@ void CCursorIcons::DrawCursors() const
 
 void CCursorIcons::DrawTexts() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (texts.empty())
 		return;
 
@@ -169,6 +178,7 @@ void CCursorIcons::DrawTexts() const
 
 void CCursorIcons::DrawBuilds() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	unitDrawer->DrawBuildIcons(buildIcons);
 }
 
@@ -176,6 +186,7 @@ void CCursorIcons::DrawBuilds() const
 
 const CMouseCursor* CCursorIcons::GetCursor(int cmd) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string cursorName;
 
 	switch (cmd) {

@@ -28,6 +28,8 @@
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 
+#include "System/Misc/TracyDefs.h"
+
 static FixedDynMemPoolT<MAX_UNITS / 1000, MAX_UNITS / 32, GhostSolidObject> ghostMemPool;
 
 ///////////////////////////
@@ -78,12 +80,14 @@ CR_REG_METADATA(CUnitDrawerData::SavedData, (
 
 void GhostSolidObject::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	model = nullptr;
 	GetModel();
 }
 
 const S3DModel* GhostSolidObject::GetModel() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!model)
 		model = modelLoader.LoadModel(modelName);
 
@@ -92,6 +96,7 @@ const S3DModel* GhostSolidObject::GetModel() const
 
 const UnitDef* CUnitDrawerData::TempDrawUnit::GetUnitDef() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unitDef)
 		unitDef = unitDefHandler->GetUnitDefByID(unitDefId);
 
@@ -103,6 +108,7 @@ const UnitDef* CUnitDrawerData::TempDrawUnit::GetUnitDef() const
 CUnitDrawerData::CUnitDrawerData(bool& mtModelDrawer_)
 	: CUnitDrawerDataBase("[CUnitDrawerData]", 271828, mtModelDrawer_)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
 
 	eventHandler.AddClient(this); //cannot be done in CModelRenderDataConcept, because object is not fully constructed
@@ -124,6 +130,7 @@ CUnitDrawerData::CUnitDrawerData(bool& mtModelDrawer_)
 
 CUnitDrawerData::~CUnitDrawerData()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (CUnit* u : unsortedObjects) {
 		groundDecals->ForceRemoveSolidObject(u);
 	}
@@ -158,6 +165,7 @@ CUnitDrawerData::~CUnitDrawerData()
 
 void CUnitDrawerData::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	iconSizeBase = std::max(1.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
@@ -209,6 +217,7 @@ void CUnitDrawerData::Update()
 
 void CUnitDrawerData::UpdateGhostedBuildings()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int allyTeam = 0; allyTeam < savedData.deadGhostBuildings.size(); ++allyTeam) {
 		for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 			auto& dgb = savedData.deadGhostBuildings[allyTeam][modelType];
@@ -236,6 +245,7 @@ void CUnitDrawerData::UpdateGhostedBuildings()
 
 const icon::CIconData* CUnitDrawerData::GetUnitIcon(const CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
 	const unsigned short prevMask = (LOS_PREVLOS | LOS_CONTRADAR);
 
@@ -259,6 +269,7 @@ const icon::CIconData* CUnitDrawerData::GetUnitIcon(const CUnit* unit)
 
 void CUnitDrawerData::UpdateUnitDefMiniMapIcons(const UnitDef* ud)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int teamNum = 0; teamNum < teamHandler.ActiveTeams(); teamNum++) {
 		for (const CUnit* unit : unitHandler.GetUnitsByTeamAndDef(teamNum, ud->id)) {
 			UpdateUnitIcon(unit, true, false);
@@ -268,6 +279,7 @@ void CUnitDrawerData::UpdateUnitDefMiniMapIcons(const UnitDef* ud)
 
 void CUnitDrawerData::UpdateUnitIcon(const CUnit* unit, bool forced, bool killed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit);
 
 	icon::CIconData* oldIcon = unit->myIcon;
@@ -290,6 +302,7 @@ void CUnitDrawerData::UpdateUnitIcon(const CUnit* unit, bool forced, bool killed
 
 void CUnitDrawerData::UpdateUnitIconState(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
 
 	unit->SetIsIcon((losStatus & LOS_INRADAR) != 0);
@@ -310,6 +323,7 @@ void CUnitDrawerData::UpdateUnitIconState(CUnit* unit)
 
 void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (game->hideInterface && iconHideWithUI) // icons are hidden with UI
 	{
 		unit->SetIsIcon(false); // draw unit model always
@@ -356,6 +370,7 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 
 void CUnitDrawerData::UpdateDrawPos(CUnit* u)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* t = u->GetTransporter();
 
 	if (t != nullptr) {
@@ -370,6 +385,7 @@ void CUnitDrawerData::UpdateDrawPos(CUnit* u)
 
 void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = static_cast<CUnit*>(o);
 
 	{
@@ -441,6 +457,7 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 
 bool CUnitDrawerData::DrawAsIconByDistance(const CUnit* unit, const float sqUnitCamDist) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float sqIconDistMult = unit->unitDef->iconType->GetDistanceSqr();
 	const float realIconLength = iconLength * sqIconDistMult;
 
@@ -452,6 +469,7 @@ bool CUnitDrawerData::DrawAsIconByDistance(const CUnit* unit, const float sqUnit
 
 static inline bool LoadBuildPic(const std::string& filename, CBitmap& bitmap)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CFileHandler::FileExists(filename, SPRING_VFS_RAW_FIRST)) {
 		bitmap.Load(filename);
 		return true;
@@ -462,6 +480,7 @@ static inline bool LoadBuildPic(const std::string& filename, CBitmap& bitmap)
 
 void CUnitDrawerData::SetUnitDefImage(const UnitDef* unitDef, const std::string& texName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UnitDefImage*& unitImage = unitDef->buildPic;
 
 	if (unitImage == nullptr) {
@@ -492,6 +511,7 @@ void CUnitDrawerData::SetUnitDefImage(const UnitDef* unitDef, const std::string&
 
 void CUnitDrawerData::SetUnitDefImage(const UnitDef* unitDef, unsigned int texID, int xsize, int ysize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UnitDefImage*& unitImage = unitDef->buildPic;
 
 	if (unitImage == nullptr) {
@@ -508,6 +528,7 @@ void CUnitDrawerData::SetUnitDefImage(const UnitDef* unitDef, unsigned int texID
 
 uint32_t CUnitDrawerData::GetUnitDefImage(const UnitDef* unitDef)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unitDef->buildPic == nullptr)
 		SetUnitDefImage(unitDef, unitDef->buildPicName);
 
@@ -516,6 +537,7 @@ uint32_t CUnitDrawerData::GetUnitDefImage(const UnitDef* unitDef)
 
 void CUnitDrawerData::AddTempDrawUnit(const TempDrawUnit& tdu)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const UnitDef* unitDef = tdu.GetUnitDef();
 	const S3DModel* model = unitDef->LoadModel();
 
@@ -529,6 +551,7 @@ void CUnitDrawerData::AddTempDrawUnit(const TempDrawUnit& tdu)
 
 void CUnitDrawerData::UpdateTempDrawUnits(std::vector<TempDrawUnit>& tempDrawUnits)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (unsigned int n = 0; n < tempDrawUnits.size(); /*no-op*/) {
 		if (tempDrawUnits[n].timeout <= gs->frameNum) {
 			// do not use spring::VectorErase; we already know the index
@@ -543,17 +566,20 @@ void CUnitDrawerData::UpdateTempDrawUnits(std::vector<TempDrawUnit>& tempDrawUni
 
 void CUnitDrawerData::RenderUnitPreCreated(const CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateObject(unit, true);
 }
 
 void CUnitDrawerData::RenderUnitCreated(const CUnit* unit, int cloaked)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(std::find(unsortedObjects.begin(), unsortedObjects.end(), unit) != unsortedObjects.end());
 	UpdateUnitIcon(unit, false, false);
 }
 
 void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit);
 
 	const UnitDef* unitDef = unit->unitDef;
@@ -602,6 +628,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 
 void CUnitDrawerData::UnitEnteredRadar(const CUnit* unit, int allyTeam)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
@@ -610,6 +637,7 @@ void CUnitDrawerData::UnitEnteredRadar(const CUnit* unit, int allyTeam)
 
 void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
 	if (gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit())
@@ -623,6 +651,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 
 void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
 	if (gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit())
@@ -636,6 +665,7 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 
 void CUnitDrawerData::PlayerChanged(int playerNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (playerNum != gu->myPlayerNum)
 		return;
 

@@ -21,6 +21,8 @@
 
 #include <cmath>
 
+#include "System/Misc/TracyDefs.h"
+
 
 
 #define LOG_SECTION_ROAM "RoamMeshDrawer"
@@ -112,6 +114,7 @@ CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
 
 CRoamMeshDrawer::~CRoamMeshDrawer()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.RemoveClient(this);
 }
 
@@ -180,6 +183,7 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 //  CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER) // gets the actual camera! lets hope its updated before shadow pass.
 void CRoamMeshDrawer::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCamera* cam = CCameraHandler::GetActiveCamera();
 
 	bool shadowPass = (cam->GetCamType() == CCamera::CAMTYPE_SHADOW);
@@ -448,6 +452,7 @@ void CRoamMeshDrawer::Update()
 
 void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE:
 	//   this updates the *tessellation* as well as the *visibility* of
 	//   patches at the same time, because both depend on the *current*
@@ -486,6 +491,7 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 
 void CRoamMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const Patch* p: borderPatches[drawPass == DrawPass::Shadow]) {
 		if (!p->IsVisible(CCameraHandler::GetActiveCamera()))
 			continue;
@@ -497,6 +503,7 @@ void CRoamMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 
 void CRoamMeshDrawer::DrawInMiniMap()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#ifdef DRAW_DEBUG_IN_MINIMAP
 	// DrawInMiniMap runs before DrawWorld
 	globalRendering->drawFrame -= 1;
@@ -535,6 +542,7 @@ void CRoamMeshDrawer::DrawInMiniMap()
 
 void CRoamMeshDrawer::Reset(bool shadowPass)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<Patch>& patches = patchMeshGrid[shadowPass];
 
 	// set the next free triangle pointer back to the beginning
@@ -563,6 +571,7 @@ void CRoamMeshDrawer::Reset(bool shadowPass)
 
 
 void CRoamMeshDrawer::Tessellate(std::vector<Patch>& patches, const CCamera* cam, int viewRadius, bool shadowPass) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool forceTess = false;
 
 	for (Patch& p: patches) {
@@ -578,6 +587,7 @@ void CRoamMeshDrawer::Tessellate(std::vector<Patch>& patches, const CCamera* cam
 
 void CRoamMeshDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr int BORDER_MARGIN = 2;
 	constexpr float INV_PATCH_SIZE = 1.0f / PATCH_SIZE;
 

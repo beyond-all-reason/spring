@@ -8,6 +8,8 @@
 #include "System/EventHandler.h"
 #include "System/StringHash.h"
 
+#include "System/Misc/TracyDefs.h"
+
 /**
  * @brief sunLightingInst
  *
@@ -16,6 +18,7 @@
 CSunLighting sunLightingInst;
 
 CSunLighting::CSunLighting() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	colors[0] = &groundAmbientColor;
 	colors[1] = &groundDiffuseColor;
 	colors[2] = &groundSpecularColor;
@@ -31,6 +34,7 @@ CSunLighting::CSunLighting() {
 
 // need an explicit copy-ctor because of colors[]
 CSunLighting::CSunLighting(const CSunLighting& sl) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	colors[0] = &groundAmbientColor;
 	colors[1] = &groundDiffuseColor;
 	colors[2] = &groundSpecularColor;
@@ -43,12 +47,14 @@ CSunLighting::CSunLighting(const CSunLighting& sl) {
 }
 
 CSunLighting& CSunLighting::operator = (const CSunLighting& sl) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Copy(sl);
 	return (*this);
 }
 
 
 void CSunLighting::Init() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(mapInfo != nullptr);
 	assert(IsGlobalInstance());
 
@@ -68,6 +74,7 @@ void CSunLighting::Init() {
 }
 
 void CSunLighting::Copy(const CSunLighting& sl) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(   colors[0] == &   groundAmbientColor);
 	assert(sl.colors[0] == &sl.groundAmbientColor);
 
@@ -90,6 +97,7 @@ void CSunLighting::Copy(const CSunLighting& sl) {
 
 
 bool CSunLighting::SetValue(const char* key, const float4 value) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(key)) {
 		case hashString("specularExponent"): {
 			specularExponent = value.x; return true;
@@ -133,6 +141,7 @@ bool CSunLighting::SetValue(const char* key, const float4 value) {
 
 
 bool CSunLighting::operator == (const CSunLighting& sl) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (unsigned int n = 0; n < sizeof(colors) / sizeof(colors[0]); n++) {
 		if (colors[n] != sl.colors[n])
 			return false;
@@ -147,6 +156,7 @@ bool CSunLighting::operator == (const CSunLighting& sl) const {
 }
 
 bool CSunLighting::IsGlobalInstance() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (this == &sunLightingInst);
 }
 

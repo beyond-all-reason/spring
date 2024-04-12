@@ -273,6 +273,14 @@ if    (USE_ASAN)
 	endif (MSVC)
 endif (USE_ASAN)
 
+### Tracy related stuff
+option(RECOIL_DETAILED_TRACY_ZONING "Enable additional detailed tracy zones (only enable this for testing/debugging)" FALSE)
+if    (RECOIL_DETAILED_TRACY_ZONING)
+	add_definitions(-DRECOIL_DETAILED_TRACY_ZONING)
+else  (RECOIL_DETAILED_TRACY_ZONING)
+	remove_definitions(-DRECOIL_DETAILED_TRACY_ZONING)
+endif (RECOIL_DETAILED_TRACY_ZONING)
+
 # Note the missing REQUIRED, as headless & dedi may not depend on those.
 #  So req. checks are done in the build target's CMakeLists.txt.
 find_package(SDL2)
@@ -416,8 +424,6 @@ add_definitions(-DSTREFLOP_SSE)
 else ()
 add_definitions(-DNOT_USING_STREFLOP)
 endif ()
-
-
 
 ### Asio
 add_definitions(-DASIO_STANDALONE)

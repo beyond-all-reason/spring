@@ -7,16 +7,20 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Objects/SolidObject.h"
 
+#include "System/Misc/TracyDefs.h"
+
 namespace HAPFS {
 
 PathHeatMap gPathHeatMap;
 
 void PathHeatMap::FreeInstance(PathHeatMap* phm) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(phm == &gPathHeatMap);
 	phm->Kill();
 }
 
 void PathHeatMap::Init(unsigned int scalex, unsigned int scalez) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	xscale = std::max(1, std::min(mapDims.hmapx, int(scalex)));
 	zscale = std::max(1, std::min(mapDims.hmapy, int(scalez)));
 	xsize  = mapDims.hmapx / xscale;
@@ -28,6 +32,7 @@ void PathHeatMap::Init(unsigned int scalex, unsigned int scalez) {
 }
 
 unsigned int PathHeatMap::GetHeatMapIndex(unsigned int hmx, unsigned int hmz) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!heatMap.empty());
 
 	// x & y are given in mapDims.mapi coords (:= mapDims.hmapi * 2)
@@ -38,6 +43,7 @@ unsigned int PathHeatMap::GetHeatMapIndex(unsigned int hmx, unsigned int hmz) co
 }
 
 void PathHeatMap::AddHeat(const CSolidObject* owner, const CPathManager* pm, unsigned int pathID) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (pathID == 0)
 		return;
 	if (!owner->moveDef->heatMapping)
@@ -80,6 +86,7 @@ void PathHeatMap::AddHeat(const CSolidObject* owner, const CPathManager* pm, uns
 }
 
 void PathHeatMap::UpdateHeatValue(unsigned int x, unsigned int y, unsigned int value, unsigned int ownerID) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int idx = GetHeatMapIndex(x, y);
 
 	if (heatMap[idx].value < (value + heatMapOffset)) {
@@ -89,6 +96,7 @@ void PathHeatMap::UpdateHeatValue(unsigned int x, unsigned int y, unsigned int v
 }
 
 float PathHeatMap::GetHeatCost(unsigned int x, unsigned int z, const MoveDef& md, unsigned int ownerID) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float c = 0.0f;
 
 	if (!md.heatMapping)

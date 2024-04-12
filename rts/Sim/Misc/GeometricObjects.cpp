@@ -8,6 +8,8 @@
 #include "Sim/Projectiles/ProjectileMemPool.h"
 #include "Rendering/Env/Particles/Classes/GeoSquareProjectile.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND(CGeometricObjects, )
 CR_BIND(CGeometricObjects::GeoGroup, )
 
@@ -24,6 +26,7 @@ CGeometricObjects* geometricObjects;
 
 CGeometricObjects::~CGeometricObjects()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	timedGroups.clear();
 	while (!geoGroups.empty()) {
 		DeleteGroup(geoGroups.begin()->first);
@@ -32,6 +35,7 @@ CGeometricObjects::~CGeometricObjects()
 
 int CGeometricObjects::AddSpline(float3 b1, float3 b2, float3 b3, float3 b4, float width, int arrow, int lifeTime, int group)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (group == 0)
 		group = firstFreeGroup++;
 
@@ -67,6 +71,7 @@ int CGeometricObjects::AddSpline(float3 b1, float3 b2, float3 b3, float3 b4, flo
 
 void CGeometricObjects::DeleteGroup(int group)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	GeoGroup* gg = &geoGroups[group];
 
 	for (auto gi = gg->squares.begin(); gi != gg->squares.end(); ++gi) {
@@ -79,6 +84,7 @@ void CGeometricObjects::DeleteGroup(int group)
 
 void CGeometricObjects::SetColor(int group, float r, float g, float b, float a)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	GeoGroup* gg = &geoGroups[group];
 
 	for (auto gi = gg->squares.begin(); gi != gg->squares.end(); ++gi) {
@@ -89,6 +95,7 @@ void CGeometricObjects::SetColor(int group, float r, float g, float b, float a)
 
 float3 CGeometricObjects::CalcSpline(float i, const float3& p1, const float3& p2, const float3& p3, const float3& p4)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float ni = 1 - i;
 
 	float3 res = p1*ni*ni*ni + p2*3*i*ni*ni + p3*3*i*i*ni + p4*i*i*i;
@@ -98,6 +105,7 @@ float3 CGeometricObjects::CalcSpline(float i, const float3& p1, const float3& p2
 
 int CGeometricObjects::AddLine(float3 start, float3 end, float width, int arrow, int lifetime, int group)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (group == 0)
 		group = firstFreeGroup++;
 
@@ -123,6 +131,7 @@ int CGeometricObjects::AddLine(float3 start, float3 end, float width, int arrow,
 
 void CGeometricObjects::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto iter = timedGroups.find(gs->frameNum);
 
 	if (iter == timedGroups.end())
@@ -138,6 +147,7 @@ void CGeometricObjects::Update()
 
 void CGeometricObjects::MarkSquare(int mapSquare)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 startPos;
 	startPos.x = (int) (mapSquare * SQUARE_SIZE) % mapDims.mapx;
 	startPos.z = (int) (mapSquare * SQUARE_SIZE) / mapDims.mapx;

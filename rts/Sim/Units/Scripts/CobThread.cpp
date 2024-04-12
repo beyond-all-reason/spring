@@ -8,7 +8,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(CCobThread, )
 
@@ -75,6 +75,7 @@ CCobThread::CCobThread(CCobInstance* _cobInst)
 
 CCobThread::~CCobThread()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Stop();
 
 	if (dataStack.capacity() > 0) {
@@ -142,6 +143,7 @@ CCobThread& CCobThread::operator = (const CCobThread& t) {
 
 void CCobThread::Start(int functionId, int sigMask, const std::array<int, 1 + MAX_COB_ARGS>& args, bool schedule)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(callStack.size() == 0);
 
 	state = Run;
@@ -170,6 +172,7 @@ void CCobThread::Start(int functionId, int sigMask, const std::array<int, 1 + MA
 
 void CCobThread::Stop()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (cobInst == nullptr)
 		return;
 
@@ -186,12 +189,14 @@ void CCobThread::Stop()
 
 const std::string& CCobThread::GetName()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return cobFile->scriptNames[callStack[0].functionId];
 }
 
 
 int CCobThread::CheckStack(unsigned int size, bool warn)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (size <= dataStack.size())
 		return size;
 
@@ -210,6 +215,7 @@ int CCobThread::CheckStack(unsigned int size, bool warn)
 
 void CCobThread::InitStack(unsigned int n, CCobThread* t)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(dataStack.size() == 0);
 
 	// move n arguments from caller's stack onto our own
@@ -891,6 +897,7 @@ bool CCobThread::Tick()
 
 void CCobThread::ShowError(const char* msg)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((errorCounter = std::max(errorCounter - 1, 0)) == 0)
 		return;
 
@@ -908,6 +915,7 @@ void CCobThread::ShowError(const char* msg)
 
 void CCobThread::LuaCall()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int r1 = GET_LONG_PC(); // script id
 	const int r2 = GET_LONG_PC(); // arg count
 
@@ -946,6 +954,7 @@ void CCobThread::LuaCall()
 
 void CCobThread::AnimFinished(CUnitScript::AnimType type, int piece, int axis)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (piece != waitPiece || axis != waitAxis)
 		return;
 
