@@ -13,7 +13,7 @@ CR_REG_METADATA(NanoPieceCache, (
 ))
 
 int NanoPieceCache::GetNanoPiece(CUnitScript* ownerScript) {
-	curBuildPowerMask |= (1 << (UNIT_SLOWUPDATE_RATE - 1));
+	curBuildPowerMask |= (1 << (MASK_BITS - 1));
 
 	int nanoPiece = -1;
 
