@@ -63,6 +63,7 @@
 #include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -913,6 +914,8 @@ void CGame::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	GameSetupDrawer::Disable();
+
+	Sim::systemUtils.NotifyPostLoad();
 
 	if (gameServer != nullptr) {
 		gameServer->PostLoad(gs->frameNum);
