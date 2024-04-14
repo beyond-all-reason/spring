@@ -16,6 +16,7 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Scripts/CobInstance.h"
@@ -729,6 +730,18 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 
 	buildInfo.pos = CGameHelper::Pos2BuildPos(buildInfo, true);
 
+	auto isBuildeeFloating = [](BuildInfo& buildInfo) {
+		if (buildInfo.def->RequireMoveDef()) {
+			MoveDef* md = moveDefHandler.GetMoveDefByPathType(buildInfo.def->pathType);
+			return (md->FloatOnWater());
+		} else {
+			return (buildInfo.def->floatOnWater);
+		}
+	};
+
+	if (isBuildeeFloating(buildInfo))
+		buildInfo.pos.y = (buildInfo.pos.y < 0.f) ? 0.f : buildInfo.pos.y;
+
 	// Pass -1 as allyteam to behave like we have maphack.
 	// This is needed to prevent building on top of cloaked stuff.
 	const CGameHelper::BuildSquareStatus tbs = CGameHelper::TestUnitBuildSquare(buildInfo, feature, -1, true);
@@ -774,20 +787,13 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 			// of the buildee's yardmap, fallback check
 			if (u == nullptr)
 				u = CGameHelper::GetClosestFriendlyUnit(nullptr, buildInfo.pos, buildDistance, allyteam);
+			else {
+				// StopBuild sets this to false, fix it here if picking up the same buildee again
+				terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
 
-			if (u != nullptr) {
-				if (CanAssistUnit(u, buildInfo.def)) {
-					// StopBuild sets this to false, fix it here if picking up the same buildee again
-					terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
-
-					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
-					ScriptStartBuilding(u->pos, false);
-					return true;
-				}
-
-				// let BuggerOff handle this case (TODO: non-landed aircraft should not count)
-				if (buildInfo.FootPrintOverlap(u->pos, u->GetFootPrint(SQUARE_SIZE * 0.5f)))
-					return false;
+				AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
+				ScriptStartBuilding(u->pos, false);
+				return true;
 			}
 		} return false;
 
