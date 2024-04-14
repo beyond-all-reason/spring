@@ -105,12 +105,13 @@ struct BackendData {
 
 	std::vector<Rml::Context*> contexts;
 	std::unordered_set<Rml::Context*> contexts_to_remove;
+
+	Rml::Context* debug_host_context = nullptr;
 	
 	InputHandler::SignalType::connection_type inputCon;
 	CRmlInputReceiver inputReceiver;
 
 	bool initialized = false;
-	bool debuggerAttached = false;
 	int winX = 0;
 	int winY = 0;
 
@@ -222,15 +223,32 @@ void RmlGui::Reload()
 	RmlGui::Initialize();
 }
 
-void RmlGui::ToggleDebugger(int contextIndex)
+void RmlGui::SetDebugContext(Rml::Context* context)
 {
-	if (data->debuggerAttached) {
-		Rml::Debugger::Initialise(data->contexts[contextIndex]);
-		Rml::Debugger::SetVisible(true);
-	} else {
-		Rml::Debugger::Shutdown();
+	if (!RmlInitialized()) {
+		return;
 	}
-	data->debuggerAttached = !data->debuggerAttached;
+
+	if (!data->debug_host_context) {
+		// will be automatically tracked and resized
+		data->debug_host_context = Rml::CreateContext("__debug_host_context", {0, 0});
+		Rml::Debugger::Initialise(data->debug_host_context);
+
+		// hide the RmlUi log button since Recoil already has its own log.
+		auto debug_doc = data->debug_host_context->GetDocument("rmlui-debug-menu");
+		if (debug_doc) {
+			auto event_log_button = debug_doc->GetElementById("event-log-button");
+			if (event_log_button) {
+				event_log_button->SetProperty(
+					Rml::PropertyId::Visibility,
+					Rml::Property(Rml::Style::Visibility::Hidden)
+				);
+			}
+		}
+	}
+
+	Rml::Debugger::SetContext(context);
+	Rml::Debugger::SetVisible(context != nullptr);
 }
 
 Rml::SystemInterface* RmlGui::GetSystemInterface()
