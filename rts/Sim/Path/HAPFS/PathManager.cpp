@@ -625,11 +625,7 @@ float3 CPathManager::NextWayPoint(
 
 	assert(multiPath->peDef.synced == synced);
 
-
-
 	#define EXTEND_PATH_POINTS(curResPts, nxtResPts, dist) ((!curResPts.empty() && (curResPts.back()).SqDistance2D(callerPos) < Square((dist))) || nxtResPts.size() <= 2)
-	// const bool extendMaxResPath = EXTEND_PATH_POINTS(medResPath.path, maxResPath.path, MAXRES_SEARCH_DISTANCE_EXT);
-	// const bool extendMedResPath = EXTEND_PATH_POINTS(lowResPath.path, medResPath.path, MEDRES_SEARCH_DISTANCE_EXT);
 	const bool extendMaxResPath = EXTEND_PATH_POINTS(lowResPath.path, maxResPath.path, MAXRES_SEARCH_DISTANCE_EXT);
 	#undef EXTEND_PATH_POINTS
 
@@ -659,7 +655,7 @@ float3 CPathManager::NextWayPoint(
 		// the way to it (ie. a GoalOutOfRange result)
 		// OR we are stuck on an impassable square
 		if (maxResPath.path.empty()) {
-			if (lowResPath.path.empty() /* && medResPath.path.empty()*/) {
+			if (lowResPath.path.empty()) {
 				if (multiPath->searchResult == IPath::Ok)
 					waypoint = multiPath->finalGoal;
 
@@ -685,10 +681,7 @@ float3 CPathManager::NextWayPoint(
 						return waypoint;
 					};
 
-					/*if (!medResPath.path.empty()) {
-						waypoint = createTempWaypointFromLowerRes(medResPath);
-					} else*/
-						waypoint = createTempWaypointFromLowerRes(lowResPath);
+					waypoint = createTempWaypointFromLowerRes(lowResPath);
 				}
 			}
 
@@ -729,8 +722,6 @@ float3 CPathManager::NextWayPoint(
 					, const_cast<CSolidObject*>(owner) // TODO: sort this const issue out
 					, owner->moveDef, startPos, multiPath->peDef.wsGoalPos, radius, pathID);
 			registry.emplace<PathExtension>(pathExtendEntity, ExtendPathResType::EXTEND_MAX_RES );
-			// registry.emplace<PathExtension>(pathExtendEntity,
-			// 	(extendMedResPath) ? ExtendPathResType::EXTEND_MED_RES : ExtendPathResType::EXTEND_MAX_RES );
 		}
 	}
 
