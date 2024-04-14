@@ -282,23 +282,26 @@ void CGroundDecalHandler::AddTexturesFromTable()
 	if (maxUniqueScars == scarTblSize)
 		return;
 
-	const size_t scarsDeficit = static_cast<size_t>(scarTblSize - maxUniqueScars);
-
+	// fill the gaps in case the loop above failed to load some of the scar textures
 	const std::vector<std::string> scarMainTextures = CFileHandler::FindFiles("bitmaps/scars/", "scar?.*");
 	const size_t scarsExtraNum = scarMainTextures.size();
 
-	for (size_t i = 0; i < std::min(scarsDeficit, scarsExtraNum); ++i) {
-		const std::string mainTexFileName = scarMainTextures[i];
-		const std::string normTexFileName = GetExtraTextureName(mainTexFileName);
-		const auto mainName = IntToString(maxUniqueScars + 1, "mainscar_%i");
-		const auto normName = IntToString(maxUniqueScars + 1, "normscar_%i");
+	if (scarsExtraNum > 0) {
+		for (int extraTexNum = 0, i = 1; scarTblSize - maxUniqueScars > 0 && i <= scarTblSize; ++i) {
+			const auto mainName = IntToString(i, "mainscar_%i");
+			if (atlasMain->GetAllocator()->contains(mainName))
+				continue;
 
-		AddTexToAtlas(mainName, mainTexFileName,  true,  true);
-		AddTexToAtlas(normName, normTexFileName, false, false);
+			const auto normName = IntToString(i, "normscar_%i");
 
-		// check if loaded for real
-		// can't use atlas->TextureExists() as it's only populated after Finalize()
-		maxUniqueScars += atlasMain->GetAllocator()->contains(mainName);
+			const std::string mainTexFileName = scarMainTextures[extraTexNum++ % scarsExtraNum];
+			const std::string normTexFileName = GetExtraTextureName(mainTexFileName);
+
+			AddTexToAtlas(mainName, mainTexFileName,  true,  true);
+			AddTexToAtlas(normName, normTexFileName, false, false);
+
+			maxUniqueScars += atlasMain->GetAllocator()->contains(mainName);
+		}
 	}
 
 	const LuaTable decalsTable = GraphicsTbl.SubTable("decals");
