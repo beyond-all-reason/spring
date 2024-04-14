@@ -313,8 +313,8 @@ void CGroundDecalHandler::AddTexturesFromTable()
 			continue;
 
 		const std::string normTexFileName = mainTexFileName.empty() ? "" : GetExtraTextureName(mainTexFileName);
-		const auto mainName = IntToString(i, "decal_%i");
-		const auto normName = IntToString(i, "decal_%i");
+		const auto mainName = IntToString(i, "maindecal_%i");
+		const auto normName = IntToString(i, "normdecal_%i");
 
 		AddTexToAtlas(mainName, mainTexFileName,  true,  true);
 		AddTexToAtlas(normName, normTexFileName, false, false);
