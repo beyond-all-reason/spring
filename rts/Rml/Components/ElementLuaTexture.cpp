@@ -141,12 +141,29 @@ void ElementLuaTexture::OnAttributeChange(const Rml::ElementAttributes& changed_
 		DirtyLayout();
 }
 
+static Rml::PropertyIdSet checked_properties = []() -> Rml::PropertyIdSet {
+	Rml::PropertyIdSet set;
+
+	set.Insert(Rml::PropertyId::ImageColor);
+	set.Insert(Rml::PropertyId::Opacity);
+
+	set.Insert(Rml::PropertyId::BorderTopLeftRadius);
+	set.Insert(Rml::PropertyId::BorderTopRightRadius);
+	set.Insert(Rml::PropertyId::BorderBottomRightRadius);
+	set.Insert(Rml::PropertyId::BorderBottomLeftRadius);
+
+	set.Insert(Rml::PropertyId::BorderTopWidth);
+	set.Insert(Rml::PropertyId::BorderLeftWidth);
+	set.Insert(Rml::PropertyId::BorderRightWidth);
+	set.Insert(Rml::PropertyId::BorderBottomWidth);
+	return set;
+}();
+
 void ElementLuaTexture::OnPropertyChange(const Rml::PropertyIdSet& changed_properties)
 {
 	Element::OnPropertyChange(changed_properties);
 
-	if (changed_properties.Contains(Rml::PropertyId::ImageColor) ||
-	    changed_properties.Contains(Rml::PropertyId::Opacity)) {
+	if (!(changed_properties & checked_properties).Empty()) {
 		GenerateGeometry();
 	}
 }
@@ -179,12 +196,6 @@ void ElementLuaTexture::GenerateGeometry()
 	// Release the old geometry before specifying the new vertices.
 	geometry.Release(true);
 
-	Rml::Vector<Rml::Vertex>& vertices = geometry.GetVertices();
-	Rml::Vector<int>& indices = geometry.GetIndices();
-
-	vertices.resize(4);
-	indices.resize(6);
-
 	// Generate the texture coordinates.
 	Rml::Vector2f tex_coords[2];
 	if (rect_source != RectSource::None) {
@@ -205,8 +216,45 @@ void ElementLuaTexture::GenerateGeometry()
 
 	Rml::Vector2f quad_size = GetBox().GetSize(Rml::BoxArea::Content).Round();
 
-	Rml::GeometryUtilities::GenerateQuad(&vertices[0], &indices[0], Rml::Vector2f(0, 0), quad_size,
-	                                     quad_colour, tex_coords[0], tex_coords[1]);
+	if (
+		computed.border_top_left_radius() > 0 ||
+		computed.border_top_right_radius() > 0 ||
+		computed.border_bottom_left_radius() > 0 ||
+		computed.border_bottom_right_radius() > 0
+	) {
+		Rml::Vector4f radii{
+			computed.border_top_left_radius(),
+			computed.border_top_right_radius(),
+			computed.border_bottom_left_radius(),
+			computed.border_bottom_right_radius(),
+		};
+
+		Rml::GeometryUtilities::GenerateBackgroundBorder(&geometry, GetBox(), Rml::Vector2f(), radii, quad_colour);
+
+		// GenerateBackgroundBorder does *not* set UV coords, so we must do that ourselves.
+		Rml::Vector<Rml::Vertex>& vertices = geometry.GetVertices();
+
+		// Map the vertex positions to tex_coord positions
+		std::ranges::for_each(vertices, [&quad_size, &tex_coords](Rml::Vertex& v) {
+			float tx = v. 	position.x / quad_size.x;
+			float ty = v.position.y / quad_size.y;
+			
+			v.tex_coord.x = Rml::Math::Lerp(tx, tex_coords[0].x, tex_coords[1].x);
+			v.tex_coord.y = Rml::Math::Lerp(ty, tex_coords[0].y, tex_coords[1].y);
+		});
+
+	} else {
+		Rml::Vector<Rml::Vertex>& vertices = geometry.GetVertices();
+		Rml::Vector<int>& indices = geometry.GetIndices();
+
+		vertices.resize(4);
+		indices.resize(6);
+
+		Rml::GeometryUtilities::GenerateQuad(
+			&vertices[0], &indices[0], Rml::Vector2f(0, 0), quad_size,
+			quad_colour, tex_coords[0], tex_coords[1]
+		);
+	}
 
 	geometry_dirty = false;
 }
