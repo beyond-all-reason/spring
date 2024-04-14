@@ -328,7 +328,6 @@ void ElementLuaTexture::UpdateRect()
 
 			// We have new, valid coordinates; force the geometry to be regenerated.
 			valid_rect = true;
-			geometry_dirty = true;
 			rect_source = RectSource::Attribute;
 		}
 	}
@@ -337,6 +336,8 @@ void ElementLuaTexture::UpdateRect()
 		rect = {};
 		rect_source = RectSource::None;
 	}
+
+	geometry_dirty = true;
 }
 
 }  // namespace RmlGui
