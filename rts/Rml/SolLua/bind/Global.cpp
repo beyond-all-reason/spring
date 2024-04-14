@@ -86,6 +86,17 @@ namespace Rml::SolLua
 				RmlGui::MarkContextForRemoval(context);
 			}
 		}
+		
+		auto setDebugContext(Rml::Context* context) {
+			RmlGui::SetDebugContext(context);
+		}
+		
+		auto setDebugContextByName(const Rml::String& name) {
+			auto context = Rml::GetContext(name);
+			if (context != nullptr) {
+				RmlGui::SetDebugContext(context);
+			}
+		}
 	}
 
 	void bind_global(sol::table& namespace_table, SolLuaPlugin* slp)
@@ -122,6 +133,7 @@ namespace Rml::SolLua
 				return translationTable->clear();
 			},
 			"SetMouseCursorAlias", &RmlGui::SetMouseCursorAlias,
+			"SetDebugContext", sol::overload(&functions::setDebugContext, &functions::setDebugContextByName),
 
 			// G
 			"contexts", sol::readonly_property(&getIndexedTable<Rml::Context, &functions::getContext, &functions::getMaxContexts>),
