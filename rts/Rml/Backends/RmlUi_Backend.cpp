@@ -328,13 +328,6 @@ void RmlGui::Update()
 	for (const auto& context : state->contexts) {
 		context->Update();
 	}
-
-	if unlikely(!state->contexts_to_remove.empty()) {
-		for (const auto& context : state->contexts_to_remove) {
-			Rml::RemoveContext(context->GetName());
-		}
-		state->contexts_to_remove.clear();
-	}
 	
 	if (state->clicked_context) {
 		auto context_pos = std::ranges::find(state->contexts, state->clicked_context);
@@ -347,6 +340,13 @@ void RmlGui::Update()
 			}
 		}
 		state->clicked_context = nullptr;
+	}
+
+	if unlikely(!state->contexts_to_remove.empty()) {
+		for (const auto& context : state->contexts_to_remove) {
+			Rml::RemoveContext(context->GetName());
+		}
+		state->contexts_to_remove.clear();
 	}
 #endif
 }
