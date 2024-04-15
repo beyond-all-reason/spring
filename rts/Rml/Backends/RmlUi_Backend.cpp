@@ -207,6 +207,10 @@ void RmlGui::Shutdown()
 		return;
 	}
 	
+	if (state->debug_host_context) {
+		Rml::Debugger::Shutdown();
+	}
+	
 	// note: during SpringApp shutdown, RmlGui::RemoveLua() was already called when LuaUI was shutdown
 	RemoveLua();
 	Rml::UnregisterPlugin(state.get());
