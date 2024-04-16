@@ -529,6 +529,18 @@ void CWeapon::UpdateSalvo()
 	salvoLeft--;
 	nextSalvo = gs->frameNum + salvoDelay;
 
+	if (!CheckAimingAngle()) {
+		UpdateWeaponPieces(false); // calls script->QueryWeapon()
+		UpdateWeaponVectors();
+		if (salvoLeft == 0) {
+			owner->script->EndBurst(weaponNum);
+
+			const bool searchForNewTarget = (currentTarget == owner->curTarget);
+			owner->commandAI->WeaponFired(this, searchForNewTarget, false);
+		}
+		return;
+	}
+
 	// Decloak
 	if (owner->unitDef->decloakOnFire)
 		owner->ScriptDecloak(HaveUnitTarget()? currentTarget.unit: nullptr, this);
