@@ -272,7 +272,9 @@ bool SpringApp::Init()
 	inputToken = input.AddHandler([this](const SDL_Event& event) { return SpringApp::MainEventHandler(event); });
 
 	// Global structures
+	ENTER_SYNCED_CODE();
 	gs->Init();
+	LEAVE_SYNCED_CODE();
 	gu->Init();
 
 	// GUIs
