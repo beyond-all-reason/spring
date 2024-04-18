@@ -108,7 +108,8 @@ CR_REG_METADATA(CWeapon, (
 
 	CR_MEMBER(weaponAimAdjustPriority),
 	CR_MEMBER(fastAutoRetargeting),
-	CR_MEMBER(fastQueryPointUpdate)
+	CR_MEMBER(fastQueryPointUpdate),
+	CR_MEMBER(stopBurstWhenOutOfArc)
 ))
 
 
@@ -187,7 +188,8 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 
 	weaponAimAdjustPriority(1.f),
 	fastAutoRetargeting(false),
-	fastQueryPointUpdate(false)
+	fastQueryPointUpdate(false),
+	stopBurstWhenOutOfArc(false)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -530,15 +532,25 @@ void CWeapon::UpdateSalvo()
 	nextSalvo = gs->frameNum + salvoDelay;
 
 	if (!CheckAimingAngle()) {
-		UpdateWeaponPieces(false); // calls script->QueryWeapon()
-		UpdateWeaponVectors();
-		if (salvoLeft == 0) {
-			owner->script->EndBurst(weaponNum);
+		if (stopBurstWhenOutOfArc) {
+			// Hold fire, but continue to aim towards the target.
+			UpdateWeaponPieces(false); // calls script->QueryWeapon()
+			UpdateWeaponVectors();
 
-			const bool searchForNewTarget = (currentTarget == owner->curTarget);
-			owner->commandAI->WeaponFired(this, searchForNewTarget, false);
+			// Special case needed here if the last shot of the salvo has been cancelled.
+			if (salvoLeft == 0) {
+				owner->script->EndBurst(weaponNum);
+
+				const bool searchForNewTarget = (currentTarget == owner->curTarget);
+				owner->commandAI->WeaponFired(this, searchForNewTarget, false);
+			}
+			return;
+		} else {
+			// Fire indiscriminately wherever the the weapon is pointing.
+			// currentTargetPos gets restored every frame in Update(), so we can change it here without breaking aiming
+			// when the target is back in arc.
+			currentTargetPos = aimFromPos + (weaponDir * range);
 		}
-		return;
 	}
 
 	// Decloak
