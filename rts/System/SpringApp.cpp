@@ -275,7 +275,9 @@ bool SpringApp::Init()
 	input.AddHandler(std::bind(&SpringApp::MainEventHandler, this, std::placeholders::_1));
 
 	// Global structures
+	ENTER_SYNCED_CODE();
 	gs->Init();
+	LEAVE_SYNCED_CODE();
 	gu->Init();
 
 	// GUIs
