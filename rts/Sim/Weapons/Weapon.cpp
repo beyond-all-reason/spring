@@ -353,12 +353,11 @@ bool CWeapon::CheckAimingAngle() const
 	RECOIL_DETAILED_TRACY_ZONE;
 	// check fire angle constraints
 	// TODO: write a per-weapontype CheckAim()?
-	const float3 worldTargetDir = (currentTargetPos - owner->pos).SafeNormalize();
-	const float3 worldMainDir = owner->GetObjectSpaceVec(mainDir);
+	const float3 worldTargetDir = (currentTargetPos - aimFromPos).SafeNormalize();
 
 	// weapon finished a previously started AimWeapon thread and wants to
 	// fire, but target is no longer within contraints --> wait for re-aim
-	return (CheckTargetAngleConstraint(worldTargetDir, worldMainDir));
+	return (CheckTargetAngleConstraint(worldTargetDir, weaponDir));
 }
 
 
@@ -1003,7 +1002,7 @@ bool CWeapon::TestRange(const float3 tgtPos, const SWeaponTarget& trg) const
 		return false;
 
 	// NOTE: mainDir is in unit-space
-	return (CheckTargetAngleConstraint((tgtPos - aimFromPos).SafeNormalize(), owner->GetObjectSpaceVec(mainDir)));
+	return (CheckTargetAngleConstraint((tgtPos - aimFromPos).SafeNormalize(), weaponDir));
 }
 
 
