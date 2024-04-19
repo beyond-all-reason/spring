@@ -799,6 +799,10 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 					ScriptStartBuilding(u->pos, false);
 					return true;
 				}
+
+				// let BuggerOff handle this case (TODO: non-landed aircraft should not count)
+				if (buildInfo.FootPrintOverlap(u->pos, u->GetFootPrint(SQUARE_SIZE * 0.5f)))
+					return false;
 			}
 		} return false;
 
