@@ -76,10 +76,11 @@ namespace Rml::SolLua
 
 	int SolLuaObjectDef::Size(void* ptr)
 	{
-		// Non-table types are 1 entry long.
 		auto object = static_cast<sol::object*>(ptr);
+		
+		// Non-table types have no children to iterate over.
 		if (object->get_type() != sol::type::table)
-			return 1;
+			return 0;
 
 		auto t = object->as<sol::table>();
 		return static_cast<int>(t.size());
