@@ -739,6 +739,8 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 		}
 	};
 
+	// Units that cannot be underwater need their build checks kept above water or else collision detections will
+	// produce the wrong results.
 	if (isBuildeeFloating(buildInfo))
 		buildInfo.pos.y = (buildInfo.pos.y < 0.f) ? 0.f : buildInfo.pos.y;
 
@@ -787,7 +789,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 			// of the buildee's yardmap, fallback check
 			if (u == nullptr)
 				u = CGameHelper::GetClosestFriendlyUnit(nullptr, buildInfo.pos, buildDistance, allyteam);
-			
+
 			if (u != nullptr) {
 				if (CanAssistUnit(u, buildInfo.def)) {
 					// StopBuild sets this to false, fix it here if picking up the same buildee again
