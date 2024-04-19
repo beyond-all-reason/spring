@@ -730,7 +730,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 
 	buildInfo.pos = CGameHelper::Pos2BuildPos(buildInfo, true);
 
-	auto isBuildeeFloating = [](BuildInfo& buildInfo) {
+	auto isBuildeeFloating = [](const BuildInfo& buildInfo) {
 		if (buildInfo.def->RequireMoveDef()) {
 			MoveDef* md = moveDefHandler.GetMoveDefByPathType(buildInfo.def->pathType);
 			return (md->FloatOnWater());
