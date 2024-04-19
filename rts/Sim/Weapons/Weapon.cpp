@@ -531,7 +531,15 @@ void CWeapon::UpdateSalvo()
 	salvoLeft--;
 	nextSalvo = gs->frameNum + salvoDelay;
 
-	if (!CheckAimingAngle()) {
+	float targetInArc = true;
+	if (weaponDef->maxFireAngle > -1.0f) {
+		const float3 currentTargetDir = (currentTargetPos - aimFromPos).SafeNormalize2D();
+		const float3 simpleWeaponDir = float3(weaponDir).SafeNormalize2D();
+		if (simpleWeaponDir.dot2D(currentTargetDir) < weaponDef->maxFireAngle)
+			targetInArc = false;
+	}
+
+	if (!targetInArc || !CheckAimingAngle()) {
 		if (stopBurstWhenOutOfArc) {
 			// Hold fire, but continue to aim towards the target.
 			UpdateWeaponPieces(false); // calls script->QueryWeapon()
