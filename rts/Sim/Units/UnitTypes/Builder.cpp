@@ -787,13 +787,16 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 			// of the buildee's yardmap, fallback check
 			if (u == nullptr)
 				u = CGameHelper::GetClosestFriendlyUnit(nullptr, buildInfo.pos, buildDistance, allyteam);
-			else {
-				// StopBuild sets this to false, fix it here if picking up the same buildee again
-				terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
+			
+			if (u != nullptr) {
+				if (CanAssistUnit(u, buildInfo.def)) {
+					// StopBuild sets this to false, fix it here if picking up the same buildee again
+					terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
 
-				AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
-				ScriptStartBuilding(u->pos, false);
-				return true;
+					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
+					ScriptStartBuilding(u->pos, false);
+					return true;
+				}
 			}
 		} return false;
 
