@@ -151,9 +151,26 @@ namespace Rml::SolLua
 				return prop->ToString();
 			}
 
-			void Set(const std::string& name, const std::string& value)
+			void Set(const sol::this_state L, const std::string& name, const sol::object& value)
 			{
-				m_element->SetProperty(name, value);
+				if (value.get_type() == sol::type::nil) {
+					m_element->RemoveProperty(name);
+					return;
+				}
+				
+				if (value.get_type() == sol::type::string) {
+					auto str = value.as<std::string&>();
+
+					if (str.empty()) {
+						m_element->RemoveProperty(name);
+					} else {
+						m_element->SetProperty(name, str);
+					}
+
+					return;
+				}
+
+				sol::type_error(L, sol::type::string, value.get_type());
 			}
 
 			auto Pairs()
@@ -188,7 +205,7 @@ namespace Rml::SolLua
 		///////////////////////////
 
 		namespace_table.new_usertype<style::StyleProxy>("StyleProxy", sol::no_constructor,
-			sol::meta_function::index, &style::StyleProxy::Get,
+														sol::meta_function::index, &style::StyleProxy::Set,
 			sol::meta_function::new_index, &style::StyleProxy::Set,
 			sol::meta_function::pairs, &style::StyleProxy::Pairs
 		);
