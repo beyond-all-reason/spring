@@ -531,8 +531,9 @@ void CWeapon::UpdateSalvo()
 	salvoLeft--;
 	nextSalvo = gs->frameNum + salvoDelay;
 
-	float targetInArc = true;
-	if (weaponDef->maxFireAngle > -1.0f) {
+	bool haveTarget = HaveTarget();
+	bool targetInArc = haveTarget;
+	if (targetInArc && weaponDef->maxFireAngle > -1.0f) {
 		const float3 currentTargetDir = (currentTargetPos - aimFromPos).SafeNormalize2D();
 		const float3 simpleWeaponDir = float3(weaponDir).SafeNormalize2D();
 		if (simpleWeaponDir.dot2D(currentTargetDir) < weaponDef->maxFireAngle)
@@ -556,8 +557,10 @@ void CWeapon::UpdateSalvo()
 		} else {
 			// Fire indiscriminately wherever the the weapon is pointing.
 			// currentTargetPos gets restored every frame in Update(), so we can change it here without breaking aiming
-			// when the target is back in arc.
-			currentTargetPos = aimFromPos + (weaponDir * range);
+			// when the target is back in arc. If we don't have a target, then the currentTargetPos will be pointing at
+			// the last target point and so can be left.
+			if (haveTarget)
+				currentTargetPos = aimFromPos + (weaponDir * range);
 		}
 	}
 
