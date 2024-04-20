@@ -124,51 +124,53 @@ namespace Rml::SolLua
 
 	namespace style
 	{
-		struct StyleProxyIter
+		auto nextPair(sol::user<Rml::PropertiesIteratorView&> iter_state, sol::this_state s)
 		{
-			StyleProxyIter(Rml::PropertiesIteratorView&& self) : Iterator(std::move(self)) {}
-			Rml::PropertiesIteratorView Iterator;
-		};
-
-		auto nextPair(sol::user<StyleProxyIter&> iter_state, sol::this_state s)
-		{
-			StyleProxyIter& iter = iter_state;
-			if (iter.Iterator.AtEnd())
+			auto& iter = iter_state.value();
+			
+			if (iter.AtEnd())
 				return std::make_tuple(sol::object(sol::lua_nil), sol::object(sol::lua_nil));
 
-			auto result = std::make_tuple(sol::object(s, sol::in_place, iter.Iterator.GetName()), sol::object(s, sol::in_place, iter.Iterator.GetProperty().ToString()));
-			++iter.Iterator;
+			auto result = std::make_tuple(
+				sol::object(s, sol::in_place, iter.GetName()),
+				sol::object(s, sol::in_place, iter.GetProperty().ToString())
+			);
+			++iter;
 
 			return result;
 		}
 
 		struct StyleProxy
 		{
-			StyleProxy(Rml::Element& element) : m_element(element) {}
+			explicit StyleProxy(Rml::Element* element) : m_element(element) {}
 
 			std::string Get(const std::string& name)
 			{
-				auto prop = m_element.GetProperty(name);
+				auto prop = m_element->GetProperty(name);
 				if (prop == nullptr) return {};
 				return prop->ToString();
 			}
 
 			void Set(const std::string& name, const std::string& value)
 			{
-				m_element.SetProperty(name, value);
+				m_element->SetProperty(name, value);
 			}
 
 			auto Pairs()
 			{
-				StyleProxyIter iter{ std::move(m_element.IterateLocalProperties()) };
-				return std::make_tuple(&nextPair, std::move(iter), sol::lua_nil);
+				auto iter = m_element->IterateLocalProperties();
+				return std::make_tuple(
+					&nextPair, 
+					sol::user<Rml::PropertiesIteratorView>(std::move(iter)),
+					sol::lua_nil
+				);
 			}
 
 		private:
-			Rml::Element& m_element;
+			Rml::Element* m_element;
 		};
 
-		auto getElementStyleProxy(Rml::Element& self)
+		auto getElementStyleProxy(Rml::Element* self)
 		{
 			return StyleProxy{ self };
 		}
