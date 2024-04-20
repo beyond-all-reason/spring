@@ -201,7 +201,9 @@ namespace Rml::SolLua
 				sol::resolve<void(Rml::Element&, const Rml::String&, const Rml::String&, sol::this_state)>(&functions::addEventListener),
 				sol::resolve<void(Rml::Element&, const Rml::String&, const Rml::String&, sol::this_state, bool)>(&functions::addEventListener)
 			),
-			"AppendChild", [](Rml::Element& self, Rml::ElementPtr& e) { self.AppendChild(std::move(e)); },
+			"AppendChild", [](Rml::Element& self, Rml::ElementPtr& e) { 
+				return self.AppendChild(std::move(e));
+			},
 			"Blur", &Rml::Element::Blur,
 			"Click", &Rml::Element::Click,
 			"DispatchEvent", sol::resolve<bool(const Rml::String&, const Rml::Dictionary&)>(&Rml::Element::DispatchEvent),
@@ -213,12 +215,16 @@ namespace Rml::SolLua
 			"QuerySelectorAll", &functions::getQuerySelectorAll,
 			"HasAttribute", &Rml::Element::HasAttribute,
 			"HasChildNodes", &Rml::Element::HasChildNodes,
-			"InsertBefore", [](Rml::Element& self, Rml::ElementPtr& element, Rml::Element* adjacent_element) { self.InsertBefore(std::move(element), adjacent_element); },
+			"InsertBefore", [](Rml::Element& self, Rml::ElementPtr& element, Rml::Element* adjacent_element) { 
+				return self.InsertBefore(std::move(element), adjacent_element);
+			},
 			"IsClassSet", &Rml::Element::IsClassSet,
 			"RemoveAttribute", &Rml::Element::RemoveAttribute,
 			"RemoveChild", &Rml::Element::RemoveChild,
-			"ReplaceChild", [](Rml::Element& self, Rml::ElementPtr& inserted_element, Rml::Element* replaced_element) { self.ReplaceChild(std::move(inserted_element), replaced_element); },
 			"ScrollIntoView", [](Rml::Element& self, sol::variadic_args va) { if (va.size() == 0) self.ScrollIntoView(true); else self.ScrollIntoView(va[0].as<bool>()); },
+			"ReplaceChild", [](Rml::Element& self, Rml::ElementPtr& inserted_element, Rml::Element* replaced_element) {
+				return self.ReplaceChild(std::move(inserted_element), replaced_element); 
+			},
 			"SetAttribute", static_cast<void(Rml::Element::*)(const Rml::String&, const Rml::String&)>(&Rml::Element::SetAttribute),
 			"SetClass", &Rml::Element::SetClass,
 			//--
