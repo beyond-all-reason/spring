@@ -221,9 +221,14 @@ namespace Rml::SolLua
 			"IsClassSet", &Rml::Element::IsClassSet,
 			"RemoveAttribute", &Rml::Element::RemoveAttribute,
 			"RemoveChild", &Rml::Element::RemoveChild,
-			"ScrollIntoView", [](Rml::Element& self, sol::variadic_args va) { if (va.size() == 0) self.ScrollIntoView(true); else self.ScrollIntoView(va[0].as<bool>()); },
 			"ReplaceChild", [](Rml::Element& self, Rml::ElementPtr& inserted_element, Rml::Element* replaced_element) {
 				return self.ReplaceChild(std::move(inserted_element), replaced_element); 
+			},
+			"ScrollIntoView", [](Rml::Element& self, sol::variadic_args va) { 
+				if (va.size() == 0) 
+					self.ScrollIntoView(true); 
+				else 
+					self.ScrollIntoView(va[0].as<bool>()); 
 			},
 			"SetAttribute", static_cast<void(Rml::Element::*)(const Rml::String&, const Rml::String&)>(&Rml::Element::SetAttribute),
 			"SetClass", &Rml::Element::SetClass,
@@ -240,7 +245,7 @@ namespace Rml::SolLua
 			"GetValue",[](Rml::Element& self) {
 				if (self.GetTagName() == "input") {
 					return dynamic_cast<Rml::ElementFormControlInput*>(&self)->GetValue();
-				}else if (self.GetTagName() == "textarea") {
+				} else if (self.GetTagName() == "textarea") {
 					return dynamic_cast<Rml::ElementFormControlTextArea*>(&self)->GetValue();
 				}
 				return std::string();
