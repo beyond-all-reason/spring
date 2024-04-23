@@ -4,6 +4,7 @@
 #include "Lua/LuaParser.h"
 #include "Map/MapInfo.h"
 #include "MoveMath/MoveMath.h"
+#include "Sim/Misc/ExitOnlyMap.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Units/Unit.h"
@@ -372,7 +373,7 @@ bool MoveDef::DoRawSearch(
 		// int2 prevRevTestBlk = {-1, -1};
 
 		for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
-			result = f(fwdTestBlk.x, fwdTestBlk.y) && f(revTestBlk.x, revTestBlk.y);
+			result = f(fwdTestBlk.x, fwdTestBlk.y, false) && f(revTestBlk.x, revTestBlk.y, true);
 			if (!result) { break; }
 
 			// NOTE: for odd-length paths, center square is tested twice
@@ -401,7 +402,7 @@ bool MoveDef::DoRawSearch(
 	bool retTestMove = true;
 
 	if (testTerrain) {
-		auto test = [this, &minSpeedMod, speedModThreshold](int x, int z) -> bool {
+		auto test = [this, &minSpeedMod, speedModThreshold](int x, int z, bool rev) -> bool {
 			if (x >= mapDims.mapx || x < 0 || z >= mapDims.mapy || z < 0) { return true; }
 
 			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z);
@@ -426,7 +427,7 @@ bool MoveDef::DoRawSearch(
 		if (!isSubmersible)
 			virtualObject.DisableHeightChecks();
 
-		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
+		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z, bool rev) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
 			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapxm1);
@@ -443,6 +444,20 @@ bool MoveDef::DoRawSearch(
 			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(xmin, xmax, zmin, zmax, &virtualObject, thread, tempNum);
 			maxBlockBit = blockBits;
 			return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
+		};
+		retTestMove = walkPath(test);
+	}
+
+	if (retTestMove) {
+		bool curExitOnlyState[2] = {true, true};
+		auto test = [this, &curExitOnlyState](int x, int z, bool rev) -> bool {
+			bool canProceed = true;
+			bool nextExitOnlyState = IsInExitOnly(x, z);
+			if (!curExitOnlyState[rev])
+				canProceed = !nextExitOnlyState;
+
+			curExitOnlyState[rev] = nextExitOnlyState;
+			return (canProceed);
 		};
 		retTestMove = walkPath(test);
 	}
@@ -555,11 +570,31 @@ bool MoveDef::TestMovePositionForObjects(
 	const int zmax = zmid + zsizeh;
 
 	const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedTempNum(xmin, xmax, zmin, zmax, collider, magicNum, thread);
+	if (blockBits & CMoveMath::BLOCK_STRUCTURE)
+		return false;
 
-	return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
+	if (!collider->inExitOnlyZone)
+		return !CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax);
+
+	return true;
+	// return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 }
 
+bool MoveDef::IsInExitOnly(const float3 testMovePos) const {
+	const int xmid = int(testMovePos.x / SQUARE_SIZE);
+	const int zmid = int(testMovePos.z / SQUARE_SIZE);
 
+	return IsInExitOnly(xmid, zmid);
+}
+
+bool MoveDef::IsInExitOnly(int xmid, int zmid) const {
+	const int xmin = std::max(xmid - xsizeh, 0);
+	const int zmin = std::max(zmid - zsizeh, 0);
+	const int xmax = std::min(xmid + xsizeh, mapDims.mapxm1);
+	const int zmax = std::min(zmid + zsizeh, mapDims.mapxm1);
+
+	return CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax);;
+}
 
 
 float MoveDef::CalcFootPrintMinExteriorRadius(float scale) const { return ((math::sqrt((xsize * xsize + zsize * zsize)) * 0.5f * SQUARE_SIZE) * scale); }

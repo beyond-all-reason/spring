@@ -4,6 +4,7 @@
 
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
+#include "Sim/Misc/ExitOnlyMap.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
@@ -20,6 +21,15 @@ float CMoveMath::waterDamageCost = 0.0f;
 static constexpr int FOOTPRINT_XSTEP = 2;
 static constexpr int FOOTPRINT_ZSTEP = 2;
 
+MoveTypes::CheckCollisionQuery::CheckCollisionQuery(const CSolidObject* ref)
+	: unit(ref)
+	, moveDef(ref->moveDef)
+	, pos(ref->pos)
+	, physicalState(ref->physicalState)
+{
+	if (moveDef != nullptr)
+		inExitOnlyZone = moveDef->IsInExitOnly(ref->pos);
+}
 
 float CMoveMath::yLevel(const MoveDef& moveDef, int xSqr, int zSqr)
 {
@@ -513,7 +523,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedHashedMt(int xmin, int xmax, int z
 
 			for (size_t i = 0, n = cell.size(); i < n; i++) {
 				CSolidObject* collidee = cell[i];
-
+  
 				auto blockMapResult = blockMap.find(collidee);
 				if (blockMapResult == blockMap.end()) {
 					blockMapResult = blockMap.emplace(collidee, ObjectBlockType(collidee, collider)).first;
@@ -564,5 +574,13 @@ void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObje
 			results.emplace_back(ret);
 		}
 	}
+}
+
+bool CMoveMath::RangeHasExitOnly(int xmin, int xmax, int zmin, int zmax) {
+	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
+		for (int x = xmin; x <= xmax; x += FOOTPRINT_XSTEP)
+			if (exitOnlyMap.IsExitOnly(x, z)) return true;
+	}
+	return false;
 }
 

@@ -5,6 +5,7 @@
 #include "GroundBlockingObjectMap.h"
 #include "GlobalConstants.h"
 #include "Map/ReadMap.h"
+#include "Sim/Misc/ExitOnlyMap.h"
 #include "Sim/Path/IPathManager.h"
 #include "System/ContainerUtil.h"
 #include "System/SpringHash.h"
@@ -73,9 +74,17 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 
 	for (int z = zminSqr; z < zmaxSqr; z++) {
 		for (int x = xminSqr; x < xmaxSqr; x++) {
+			auto yardmapState = object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
+
+			// Add Exit-only zone
+			if (yardmapState & YARDMAP_EXITONLY){
+				exitOnlyMap.SetExitOnly(x, z);
+				continue;
+			}
+
 			// unit yardmaps always contain sx=UnitDef::xsize * sz=UnitDef::zsize
 			// cells (the unit->moveDef footprint can have different dimensions)
-			if ((object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f}) & mask) == 0)
+			if ((yardmapState & mask) == 0)
 				continue;
 
 			CellInsertUnique(z * mapDims.mapx + x, object);
@@ -102,6 +111,14 @@ void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 
 	for (int z = bz; z < bz + sz; ++z) {
 		for (int x = bx; x < bx + sx; ++x) {
+			auto yardmapState = object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
+
+			// Remove Exit-only zone
+			if (yardmapState & YARDMAP_EXITONLY){
+				exitOnlyMap.ClearExitOnly(x, z);
+				continue;
+			}
+
 			CellErase(z * mapDims.mapx + x, object);
 		}
 	}

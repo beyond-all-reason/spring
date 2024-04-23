@@ -20,6 +20,7 @@ struct PathNode {
 		, gCost(0.0f)
 		, nodeNum(0)
 		, nodePos(0, 0)
+		, exitOnly(false)
 	{}
 
 	float fCost;
@@ -27,6 +28,7 @@ struct PathNode {
 
 	int nodeNum;
 	ushort2 nodePos;
+	bool exitOnly;
 
 	inline bool operator <  (const PathNode& pn) const { return (fCost < pn.fCost); }
 	inline bool operator >  (const PathNode& pn) const { return (fCost > pn.fCost); }

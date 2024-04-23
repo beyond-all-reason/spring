@@ -69,6 +69,7 @@
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
+#include "Sim/Misc/ExitOnlyMap.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/BuildingMaskMap.h"
@@ -536,6 +537,7 @@ void CGame::LoadMap(const std::string& mapFileName)
 		// half size; building positions are snapped to multiples of BUILD_SQUARE_SIZE
 		buildingMaskMap.Init(mapDims.hmapx * mapDims.hmapy);
 		groundBlockingObjectMap.Init(mapDims.mapSquares);
+		exitOnlyMap.InitNewExitOnlyMap();
 	}
 
 	LEAVE_SYNCED_CODE();

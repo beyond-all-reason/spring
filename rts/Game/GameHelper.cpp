@@ -16,6 +16,7 @@
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/DamageArray.h"
+#include "Sim/Misc/ExitOnlyMap.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/QuadField.h"
@@ -1425,6 +1426,10 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 
 	const float groundHeight = CGround::GetApproximateHeightUnsafe(sqx, sqz, synced);
 	const UnitDef* unitDef = buildInfo.def;
+
+	// Exit-only zones prevent building.
+	if (exitOnlyMap.IsExitOnly(sqx, sqz))
+		return BUILDSQUARE_BLOCKED;
 
 	if (!CheckTerrainConstraints(unitDef, moveDef, pos.y, groundHeight, CGround::GetSlope(pos.x, pos.z, synced)))
 		return BUILDSQUARE_BLOCKED;

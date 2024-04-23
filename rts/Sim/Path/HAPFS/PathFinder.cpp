@@ -442,6 +442,12 @@ bool CPathFinder::TestBlock(
 	assert((blockStatus & MMBT::BLOCK_STRUCTURE) == 0);
 	assert(speedMod != 0.0f);
 
+	const bool exitOnlyStatus = moveDef.IsInExitOnly(square.x, square.y);
+	if (!parentSquare->exitOnly && exitOnlyStatus) {
+		// Can't enter this way.
+		return true;
+	}
+
 	if (pfDef.testMobile && moveDef.avoidMobilesOnPath) {
 		switch (blockStatus & squareMobileBlockBits) {
 			case (uint32_t(MMBT::BLOCK_MOBILE_BUSY) | uint32_t(MMBT::BLOCK_MOBILE) | uint32_t(MMBT::BLOCK_MOVING)):   // 111
@@ -499,6 +505,7 @@ bool CPathFinder::TestBlock(
 		os->gCost   = gCost;
 		os->nodePos = square;
 		os->nodeNum = sqrIdx;
+		os->exitOnly = exitOnlyStatus;
 	openBlocks.push(os);
 
 	blockStates.SetMaxCost(NODE_COST_F, std::max(blockStates.GetMaxCost(NODE_COST_F), fCost));

@@ -246,6 +246,18 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	SetVelocity(params.speed);
 	Move(preFramePos = params.pos.cClampInMap(), false);
+
+	// Force immobile units to the 2x2 grid. This normally enforced, but immobile units spawned by maps have not
+	// been forced yet.
+	if (unitDef->yardmap.size() != 0) {
+		int x = params.pos.x / SQUARE_SIZE;
+		int z = params.pos.z / SQUARE_SIZE;
+
+		float3 offset( -SQUARE_SIZE * float(x & 1), 0.f, -SQUARE_SIZE * float(z & 1) );
+
+		Move(offset, true);
+	}
+
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
 	SetMidAndAimPos(model->relMidPos, model->relMidPos, true);
 	SetRadiusAndHeight(model);

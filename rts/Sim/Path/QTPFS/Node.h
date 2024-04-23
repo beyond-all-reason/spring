@@ -45,7 +45,8 @@ namespace QTPFS {
 		float2 GetNeighborEdgeTransitionPoint(const INode* ngb, const float3& pos, float alpha) const;
 		SRectangle ClipRectangle(const SRectangle& r) const;
 
-		unsigned int GetIndex() const { return index; }
+		unsigned int GetIndex() const { return index & ~EXIT_ONLY_MASK;; }
+		bool IsExitOnly() const { return !!(index & EXIT_ONLY_MASK); }
 
 		~QTNode() = default;
 		QTNode() = default;
@@ -146,6 +147,11 @@ namespace QTPFS {
 			bool& needSplit
 		);
 
+		bool UpdateExitOnly(
+			NodeLayer& nl,
+			bool& needSplit
+		);
+
 		static unsigned int MIN_SIZE_X;
 		static unsigned int MIN_SIZE_Z;
 
@@ -153,6 +159,9 @@ namespace QTPFS {
 		static unsigned int MAX_DEPTH;
 
 	private:
+		static constexpr unsigned int EXIT_ONLY_BIT_OFFSET = 31;
+		static constexpr unsigned int EXIT_ONLY_MASK = (0x1 << EXIT_ONLY_BIT_OFFSET);
+
 		unsigned int nodeNumber = -1u;
 		unsigned int index = 0;
 

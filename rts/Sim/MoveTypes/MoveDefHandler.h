@@ -86,6 +86,9 @@ struct MoveDef {
 		int thread
 	) const;
 
+	bool IsInExitOnly(float3 testMovePos) const;
+	bool IsInExitOnly(int x, int z) const;
+
 	// aircraft and buildings defer to UnitDef::floatOnWater
 	bool FloatOnWater() const { return (speedModClass == MoveDef::Hover || speedModClass == MoveDef::Ship); }
 

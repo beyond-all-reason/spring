@@ -335,26 +335,6 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 	int2 bestPos(lowerX + (BLOCK_SIZE >> 1), lowerZ + (BLOCK_SIZE >> 1));
 	float bestCost = std::numeric_limits<float>::max();
 
-	// search for an accessible position within this block
-	/*for (unsigned int z = 0; z < BLOCK_SIZE; ++z) {
-		for (unsigned int x = 0; x < BLOCK_SIZE; ++x) {
-			const float speedMod = CMoveMath::GetPosSpeedMod(moveDef, lowerX + x, lowerZ + z);
-			const bool curblock = (speedMod == 0.0f) || CMoveMath::IsBlockedStructure(moveDef, lowerX + x, lowerZ + z, nullptr);
-
-			if (!curblock) {
-				const float dx = x - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float dz = z - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float cost = (dx * dx + dz * dz) + (blockArea / (0.001f + speedMod));
-
-				if (cost < bestCost) {
-					bestCost = cost;
-					bestPos.x = lowerX + x;
-					bestPos.y = lowerZ + z;
-				}
-			}
-		}
-	}*/
-
 	// same as above, but with squares sorted by their baseCost
 	// s.t. we can exit early when a square exceeds our current
 	// best (from testing, on avg. 40% of blocks can be skipped)
@@ -371,7 +351,8 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 		if (cost >= bestCost)
 			continue;
 
-		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr)) {
+		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr)
+				&& !moveDef.IsInExitOnly(blockPos.x, blockPos.y)) {
 			bestCost = cost;
 			bestPos  = blockPos;
 		}

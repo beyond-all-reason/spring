@@ -283,6 +283,7 @@ IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathF
 		ob->gCost   = 0.0f;
 		ob->nodePos = mStartBlock;
 		ob->nodeNum = mStartBlockIdx;
+		ob->exitOnly = moveDef.IsInExitOnly(mStartBlock.x, mStartBlock.y);
 	openBlocks.push(ob);
 
 	// mark starting point as best found position

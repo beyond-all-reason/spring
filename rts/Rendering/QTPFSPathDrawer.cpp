@@ -38,9 +38,10 @@ static constexpr unsigned char LINK_COLOR[4] = {1 * 255, 0 * 255, 1 * 255, 1 * 1
 static constexpr unsigned char PATH_COLOR[4] = {0 * 255, 0 * 255, 1 * 255, 1 * 255};
 static constexpr unsigned char BAD_PATH_COLOR[4] = {1 * 255, 0 * 255, 0 * 255, 1 * 255};
 static constexpr unsigned char INCOMPLETE_PATH_COLOR[4] = {1 * 255, 1 * 255, 0 * 255, 1 * 128};
-static constexpr unsigned char NODE_COLORS[3][4] = {
+static constexpr unsigned char NODE_COLORS[][4] = {
 	{1 * 255, 0 * 255, 0 * 255, 1 * 255}, // red --> blocked
 	{0 * 255, 1 * 255, 0 * 255, 1 * 255}, // green --> passable
+	{1 * 255, 1 * 127, 0 * 255, 1 * 255}, // orange --> exit only
 	{0 * 255, 0 * 255, 1 *  64, 1 *  64}, // light blue --> pushed
 };
 
@@ -94,7 +95,8 @@ void QTPFSPathDrawer::DrawAll() const {
 
 void QTPFSPathDrawer::DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes, const QTPFS::NodeLayer& nodeLayer) const {
 	for (const QTPFS::QTNode* node: nodes) {
-		DrawNodeW(node, rb, &NODE_COLORS[!node->AllSquaresImpassable()][0], 0.f);
+		int nodeColour = node->AllSquaresImpassable() ? 0 : node->IsExitOnly() ? 2 : 1;
+		DrawNodeW(node, rb, &NODE_COLORS[nodeColour][0], 0.f);
 	}
 
 	glLineWidth(2.0f);
