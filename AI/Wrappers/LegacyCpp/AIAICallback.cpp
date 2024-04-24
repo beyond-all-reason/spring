@@ -1259,8 +1259,6 @@ const springLegacyAI::WeaponDef* springLegacyAI::CAIAICallback::GetWeaponDefById
 
 		// weaponDef->id = sAICallback->WeaponDef_getId(skirmishAIId, weaponDefId);
 		weaponDef->id = weaponDefId;
-		// weaponDef->tdfId = sAICallback->WeaponDef_getTdfId(skirmishAIId, weaponDefId);
-		weaponDef->tdfId = -1;
 
 		weaponDef->turret = sAICallback->WeaponDef_isTurret(skirmishAIId, weaponDefId);
 		weaponDef->onlyForward = sAICallback->WeaponDef_isOnlyForward(skirmishAIId, weaponDefId);

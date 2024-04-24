@@ -454,8 +454,6 @@ static bool InitParamMap()
 
 	ADD_INT("id", wd.id);
 
-	ADD_INT("tdfId", wd.tdfId);
-
 	ADD_STRING("name",        wd.name);
 	ADD_STRING("description", wd.description);
 

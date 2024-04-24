@@ -283,7 +283,7 @@ void CCobInstance::HitByWeapon(const float3& hitDir, int weaponDefId, float& ino
 		const WeaponDef* wd = weaponDefHandler->GetWeaponDefByID(weaponDefId);
 
 		callinArgs[0] = 4;
-		callinArgs[3] = ((wd != nullptr)? wd->tdfId : -1);
+		callinArgs[3] = ((wd != nullptr)? wd->id : -1);
 		callinArgs[4] = int(100 * inoutDamage);
 		// weaponHitMod, not an actual arg
 		callinArgs[MAX_COB_ARGS] = 1;

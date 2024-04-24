@@ -4492,10 +4492,6 @@ EXPORT(int) skirmishAiCallback_WeaponDef_getProjectilesPerShot(int skirmishAIId,
 	return getWeaponDefById(skirmishAIId, weaponDefId)->projectilespershot;
 }
 
-//EXPORT(int) skirmishAiCallback_WeaponDef_getTdfId(int skirmishAIId, int weaponDefId) {
-//	return getWeaponDefById(skirmishAIId, weaponDefId)->tdfId;
-//}
-
 EXPORT(bool) skirmishAiCallback_WeaponDef_isTurret(int skirmishAIId, int weaponDefId) {
 	return getWeaponDefById(skirmishAIId, weaponDefId)->turret;
 }
