@@ -3,30 +3,30 @@
 #ifndef EXIT_ONLY_MAP_H
 #define EXIT_ONLY_MAP_H
 
-// #include <array>
+#include <array>
 #include <cstdint>
 #include <vector>
 
+#include "Sim/Misc/GlobalConstants.h"
 #include "System/Log/ILog.h"
 
 class ExitOnlyMap {
+
+    static constexpr std::array<uint32_t, 5> zMasks = {0x0000FFFF, 0x00FF00FF, 0x0F0F0F0F, 0x33333333, 0x55555555};
+    static constexpr std::array<uint32_t, 5> zShifts = {16, 8, 4, 2, 1};
+
 public:
-    static constexpr int resolution = 2;
-    static constexpr int sectorWidth = 16;
-    static constexpr int internalSectorWidth = sectorWidth / resolution;
+    static constexpr int resolution = SPRING_FOOTPRINT_SCALE;
 
     uint32_t interleave(uint32_t x0, uint32_t y0)
     {
-        static const uint32_t B[] = {0x0000FFFF, 0x00FF00FF, 0x0F0F0F0F, 0x33333333, 0x55555555};
-        static const unsigned S[] = {16, 8, 4, 2, 1};
-
         uint32_t x = x0;
         uint32_t y = y0;
 
-        for(unsigned i = 0; i < sizeof(B)/sizeof(B[0]); i++)
+        for(uint32_t i = 0; i < zMasks.size(); i++)
         {
-            x = (x | (x << S[i])) & B[i];
-            y = (y | (y << S[i])) & B[i];
+            x = (x | (x << zShifts[i])) & zMasks[i];
+            y = (y | (y << zShifts[i])) & zMasks[i];
         }
         return x | (y << 1);
     }

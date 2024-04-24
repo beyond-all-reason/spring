@@ -247,7 +247,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	SetVelocity(params.speed);
 	Move(preFramePos = params.pos.cClampInMap(), false);
 
-	// Force immobile units to the 2x2 grid. This normally enforced, but immobile units spawned by maps have not
+	// Force buildings to the 2x2 grid. This normally enforced, but immobile units spawned by maps have not
 	// been forced yet.
 	if (unitDef->yardmap.size() != 0) {
 		int x = params.pos.x / SQUARE_SIZE;
