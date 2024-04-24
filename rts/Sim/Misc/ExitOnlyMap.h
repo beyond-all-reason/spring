@@ -18,11 +18,8 @@ class ExitOnlyMap {
 public:
     static constexpr int resolution = SPRING_FOOTPRINT_SCALE;
 
-    uint32_t interleave(uint32_t x0, uint32_t y0)
+    uint32_t interleave(uint32_t x, uint32_t y)
     {
-        uint32_t x = x0;
-        uint32_t y = y0;
-
         for(uint32_t i = 0; i < zMasks.size(); i++)
         {
             x = (x | (x << zShifts[i])) & zMasks[i];
