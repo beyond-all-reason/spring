@@ -34,14 +34,14 @@
 
 static std::vector<const QTPFS::QTNode*> visibleNodes;
 
-static constexpr unsigned char LINK_COLOR[4] = {1 * 255, 0 * 255, 1 * 255, 1 * 128};
-static constexpr unsigned char PATH_COLOR[4] = {0 * 255, 0 * 255, 1 * 255, 1 * 255};
-static constexpr unsigned char BAD_PATH_COLOR[4] = {1 * 255, 0 * 255, 0 * 255, 1 * 255};
-static constexpr unsigned char INCOMPLETE_PATH_COLOR[4] = {1 * 255, 1 * 255, 0 * 255, 1 * 128};
+static constexpr unsigned char LINK_COLOR[4]            = {255,   0, 255, 128};
+static constexpr unsigned char PATH_COLOR[4]            = {  0,   0, 255, 255};
+static constexpr unsigned char BAD_PATH_COLOR[4]        = {255,   0,   0, 255};
+static constexpr unsigned char INCOMPLETE_PATH_COLOR[4] = {255, 255,   0, 128};
 static constexpr unsigned char NODE_COLORS[3][4] = {
-	{1 * 255, 0 * 255, 0 * 255, 1 * 255}, // red --> blocked
-	{0 * 255, 1 * 255, 0 * 255, 1 * 255}, // green --> passable
-	{0 * 255, 0 * 255, 1 *  64, 1 *  64}, // light blue --> pushed
+	{255,   0,   0, 255}, // red --> blocked
+	{  0, 255,   0, 255}, // green --> passable
+	{  0,   0,  64,  64}, // light blue --> pushed
 };
 
 
