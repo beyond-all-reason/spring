@@ -87,7 +87,7 @@ struct MoveDef {
 	) const;
 
 	bool IsInExitOnly(float3 testMovePos) const;
-	bool IsInExitOnly(int x, int z) const;
+	bool IsInExitOnly(int x, int z, bool enableYcheck = true) const;
 
 	// aircraft and buildings defer to UnitDef::floatOnWater
 	bool FloatOnWater() const { return (speedModClass == MoveDef::Hover || speedModClass == MoveDef::Ship); }
@@ -175,6 +175,8 @@ struct MoveDef {
 	bool followGround = true;
 	/// are we supposed to be a purely sub-surface ship?
 	bool isSubmarine = false;
+	// can this unit completely submerge in water?
+	bool isSubmersible = false;
 
 	/// do we try to pathfind around squares blocked by mobile units?
 	///

@@ -15,7 +15,7 @@
 
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
-#include "Sim/Misc/ExitOnlyMap.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 
@@ -627,9 +627,10 @@ bool QTPFS::QTNode::UpdateExitOnly(NodeLayer& nl, bool& needSplit) {
 	auto checkRangeForSplit = [this, &nl, &exitOnlyStatePresent]() {
 		MoveDef *md = moveDefHandler.GetMoveDefByPathType(nl.GetNodelayer());
 
+		const bool isSubmersible = md->isSubmersible;
 		for (int z = zmin(); z < zmax(); ++z) {
 			for (int x = xmin(); x < xmax(); ++x) {
-				bool isExitOnlyZone = md->IsInExitOnly(x, z);
+				bool isExitOnlyZone = md->IsInExitOnly(x, z, isSubmersible);
 				exitOnlyStatePresent[isExitOnlyZone] = true;
 
 				// if the other state is also true, then multiple exitOnly states are present and a split is

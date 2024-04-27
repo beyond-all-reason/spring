@@ -4,7 +4,7 @@
 #define MOVEMATH_H
 
 #include "Map/ReadMap.h"
-#include "Sim/Misc/ExitOnlyMap.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Objects/SolidObject.h"
 #include "System/float3.h"
 #include "System/Misc/BitwiseEnum.h"
@@ -139,7 +139,7 @@ public:
 
 	static void FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results, int thread);
 
-	static bool RangeHasExitOnly(int xmin, int xmax, int zmin, int zmax);
+	static bool RangeHasExitOnly(int xmin, int xmax, int zmin, int zmax, const ObjectCollisionMapHelper& object);
 
 public:
 	static bool noHoverWaterMove;

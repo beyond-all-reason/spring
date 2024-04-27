@@ -4,7 +4,7 @@
 #include "Lua/LuaParser.h"
 #include "Map/MapInfo.h"
 #include "MoveMath/MoveMath.h"
-#include "Sim/Misc/ExitOnlyMap.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Units/Unit.h"
@@ -46,6 +46,7 @@ CR_REG_METADATA(MoveDef, (
 
 	CR_MEMBER(followGround),
 	CR_MEMBER(isSubmarine),
+	CR_MEMBER(isSubmersible),
 
 	CR_MEMBER(avoidMobilesOnPath),
 	CR_MEMBER(allowTerrainCollisions),
@@ -317,6 +318,8 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	}
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
+
+	isSubmersible = (isSubmarine || (followGround && depth > height));
 }
 
 bool MoveDef::DoRawSearch(
@@ -422,8 +425,7 @@ bool MoveDef::DoRawSearch(
 
 		MoveTypes::CheckCollisionQuery virtualObject(collider);
 		MoveDefs::CollisionQueryStateTrack queryState;
-		const bool isSubmersible = (md->isSubmarine ||
-								   (md->followGround && md->depth > md->height));
+		const bool isSubmersible = md->isSubmersible;
 		if (!isSubmersible)
 			virtualObject.DisableHeightChecks();
 
@@ -573,8 +575,15 @@ bool MoveDef::TestMovePositionForObjects(
 	if (blockBits & CMoveMath::BLOCK_STRUCTURE)
 		return false;
 
-	if (!collider->inExitOnlyZone)
-		return !CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax);
+	if (!collider->inExitOnlyZone) {
+		auto createHelper = [&](const MoveTypes::CheckCollisionQuery* collider) {
+			if (collider->pos.y != MoveTypes::CheckCollisionQuery::POS_Y_UNAVAILABLE)
+				return ObjectCollisionMapHelper(*this, collider->pos.y);
+			return ObjectCollisionMapHelper(*this);
+		};
+		const ObjectCollisionMapHelper object = createHelper(collider);
+		return !CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax, object);
+	}
 
 	return true;
 	// return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
@@ -587,13 +596,22 @@ bool MoveDef::IsInExitOnly(const float3 testMovePos) const {
 	return IsInExitOnly(xmid, zmid);
 }
 
-bool MoveDef::IsInExitOnly(int xmid, int zmid) const {
+bool MoveDef::IsInExitOnly(int xmid, int zmid, bool enableYcheck) const {
 	const int xmin = std::max(xmid - xsizeh, 0);
 	const int zmin = std::max(zmid - zsizeh, 0);
 	const int xmax = std::min(xmid + xsizeh, mapDims.mapxm1);
 	const int zmax = std::min(zmid + zsizeh, mapDims.mapxm1);
 
-	return CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax);;
+	auto initHelper = [this](int xmid, int zmid, bool enableYcheck) {
+		if (enableYcheck) {
+			float ypos = readMap->GetMaxHeightMapSynced()[xmid + (zmid * mapDims.mapx)];
+			return ObjectCollisionMapHelper(*this, ypos);
+		}
+		return ObjectCollisionMapHelper(*this);
+	};
+
+	const ObjectCollisionMapHelper object = initHelper(xmid, zmid, enableYcheck);
+	return CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax, object);
 }
 
 

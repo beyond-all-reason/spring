@@ -16,9 +16,10 @@
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/DamageArray.h"
-#include "Sim/Misc/ExitOnlyMap.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
+#include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/ModInfo.h"
@@ -1427,9 +1428,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 	const float groundHeight = CGround::GetApproximateHeightUnsafe(sqx, sqz, synced);
 	const UnitDef* unitDef = buildInfo.def;
 
-	// Exit-only zones prevent building.
-	if (exitOnlyMap.IsExitOnly(sqx, sqz))
-		return BUILDSQUARE_BLOCKED;
+	if (exitOnlyMap.AreAnyFlagsSet(sqx, sqz, YardmapStatusEffectsMap::BLOCK_BUILDING)) {
+		if ( synced || ((allyteam < 0) || losHandler->InLos(pos, allyteam)) ) {
+			return BUILDSQUARE_BLOCKED;
+		}
+	}
 
 	if (!CheckTerrainConstraints(unitDef, moveDef, pos.y, groundHeight, CGround::GetSlope(pos.x, pos.z, synced)))
 		return BUILDSQUARE_BLOCKED;

@@ -4,7 +4,7 @@
 
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
-#include "Sim/Misc/ExitOnlyMap.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
@@ -576,10 +576,10 @@ void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObje
 	}
 }
 
-bool CMoveMath::RangeHasExitOnly(int xmin, int xmax, int zmin, int zmax) {
+bool CMoveMath::RangeHasExitOnly(int xmin, int xmax, int zmin, int zmax, const ObjectCollisionMapHelper& object) {
 	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
 		for (int x = xmin; x <= xmax; x += FOOTPRINT_XSTEP)
-			if (exitOnlyMap.IsExitOnly(x, z)) return true;
+			if (object.IsExitOnlyAt(x, z)) return true;
 	}
 	return false;
 }
