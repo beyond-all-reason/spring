@@ -500,7 +500,7 @@ void QTPFS::QTNode::Tesselate(NodeLayer& nl, const SRectangle& r, unsigned int d
 	// when ALL squares in <r> changed bins in unison
 	//
 	UpdateMoveCost(threadData, nl, r, numNewBinSquares, numDifBinSquares, numClosedSquares, wantSplit, needSplit);
-	if (!needSplit) {
+	if (!needSplit && !AllSquaresImpassable()) {
 		UpdateExitOnly(nl, needSplit);
 	}
 
@@ -627,10 +627,9 @@ bool QTPFS::QTNode::UpdateExitOnly(NodeLayer& nl, bool& needSplit) {
 	auto checkRangeForSplit = [this, &nl, &exitOnlyStatePresent]() {
 		MoveDef *md = moveDefHandler.GetMoveDefByPathType(nl.GetNodelayer());
 
-		const bool isSubmersible = md->isSubmersible;
 		for (int z = zmin(); z < zmax(); ++z) {
 			for (int x = xmin(); x < xmax(); ++x) {
-				bool isExitOnlyZone = md->IsInExitOnly(x, z, isSubmersible);
+				bool isExitOnlyZone = md->IsInExitOnly(x, z);
 				exitOnlyStatePresent[isExitOnlyZone] = true;
 
 				// if the other state is also true, then multiple exitOnly states are present and a split is

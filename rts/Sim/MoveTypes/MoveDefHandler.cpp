@@ -596,21 +596,13 @@ bool MoveDef::IsInExitOnly(const float3 testMovePos) const {
 	return IsInExitOnly(xmid, zmid);
 }
 
-bool MoveDef::IsInExitOnly(int xmid, int zmid, bool enableYcheck) const {
+bool MoveDef::IsInExitOnly(int xmid, int zmid) const {
 	const int xmin = std::max(xmid - xsizeh, 0);
 	const int zmin = std::max(zmid - zsizeh, 0);
 	const int xmax = std::min(xmid + xsizeh, mapDims.mapxm1);
 	const int zmax = std::min(zmid + zsizeh, mapDims.mapxm1);
 
-	auto initHelper = [this](int xmid, int zmid, bool enableYcheck) {
-		if (enableYcheck) {
-			float ypos = readMap->GetMaxHeightMapSynced()[xmid + (zmid * mapDims.mapx)];
-			return ObjectCollisionMapHelper(*this, ypos);
-		}
-		return ObjectCollisionMapHelper(*this);
-	};
-
-	const ObjectCollisionMapHelper object = initHelper(xmid, zmid, enableYcheck);
+	const ObjectCollisionMapHelper object;
 	return CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax, object);
 }
 

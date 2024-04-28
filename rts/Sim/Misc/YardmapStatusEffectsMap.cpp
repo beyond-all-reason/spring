@@ -10,6 +10,12 @@
 
 YardmapStatusEffectsMap yardmapStatusEffectsMap;
 
+CR_BIND(YardmapStatusEffectsMap, )
+
+CR_REG_METADATA(YardmapStatusEffectsMap, (
+	CR_MEMBER(stateMap)
+))
+
 void YardmapStatusEffectsMap::InitNewExitOnlyMap() {
 
     // May over allocate, but the size is based on single byte storage and allows for fast indexing.

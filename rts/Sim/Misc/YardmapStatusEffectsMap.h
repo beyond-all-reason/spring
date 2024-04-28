@@ -19,6 +19,8 @@ class YardmapStatusEffectsMap {
 
 
 public:
+	CR_DECLARE(YardmapStatusEffectsMap)
+
     enum SquareStates {
         EXIT_ONLY      = 0x01,
         BLOCK_BUILDING = 0x02,
