@@ -13,11 +13,6 @@
 #include "System/Log/ILog.h"
 
 class YardmapStatusEffectsMap {
-
-    static constexpr uint32_t zMasks[] = {0x0000FFFF, 0x00FF00FF, 0x0F0F0F0F, 0x33333333, 0x55555555};
-    static constexpr uint32_t zShifts[] = {16, 8, 4, 2, 1};
-
-
 public:
 	CR_DECLARE(YardmapStatusEffectsMap)
 
@@ -30,6 +25,9 @@ public:
 
     uint32_t interleave(uint32_t x, uint32_t y)
     {
+		static constexpr uint32_t zMasks[] = {0x0000FFFF, 0x00FF00FF, 0x0F0F0F0F, 0x33333333, 0x55555555};
+		static constexpr uint32_t zShifts[] = {16, 8, 4, 2, 1};
+
         for(uint32_t i = 0; i < sizeof(zMasks)/sizeof(uint32_t); i++)
         {
             x = (x | (x << zShifts[i])) & zMasks[i];

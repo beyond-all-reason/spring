@@ -159,6 +159,9 @@ namespace QTPFS {
 		static unsigned int MAX_DEPTH;
 
 	private:
+		// Mask off the bits for node index, we can use higher bits for other purposes. We wouldn't normally, worry
+		// about so much about this, but when you have hundreds of thousands of nodes per movetype, the memory used
+		// adds up rather quickly so it is important to keep these objects as small as possible. 
 		static constexpr unsigned int NODE_INDEX_MASK = 0x000fffff;
 
 		static constexpr unsigned int EXIT_ONLY_BIT_OFFSET = 31;
