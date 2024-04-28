@@ -610,7 +610,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 		std::clamp(2.0f * ei.damage / 255.0f, 0.8f, 1.0f);
 
 	const float scarTTL = (vi.scarTtl > 0.0f) ?
-		decalLevel * GAME_SPEED * vi.scarTtl :
+		GAME_SPEED * vi.scarTtl :
 		std::clamp(decalLevel * ei.damage * 3.0f, 15.0f, decalLevel * 1800.0f);
 
 	const float glow = (vi.scarGlow > 0.0f) ?
@@ -618,7 +618,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 		std::clamp(2.0f * ei.damage / 255.0f, 0.0f, 1.0f);
 
 	const float glowTTL = (vi.scarGlowTtl > 0.0f) ?
-		decalLevel * GAME_SPEED * vi.scarGlowTtl :
+		GAME_SPEED * vi.scarGlowTtl :
 		60.0f;
 
 	const float alphaDecay = 1.0f / scarTTL;
