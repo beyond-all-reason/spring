@@ -259,10 +259,10 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 		}
 	} else {
 		if (c.GetOpts() & ALT_KEY) {
+			Command nc(c);
+			nc.SetOpts(nc.GetOpts() | INTERNAL_ORDER);
 			for (int a = 0; a < numItems; ++a) {
 				if (repeatOrders) {
-					Command nc(c);
-					nc.SetOpts(nc.GetOpts() | INTERNAL_ORDER);
 					if (commandQue.empty()) {
 						commandQue.push_front(nc);
 					} else {
