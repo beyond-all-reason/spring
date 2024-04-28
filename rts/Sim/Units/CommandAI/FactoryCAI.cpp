@@ -257,8 +257,6 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 				}
 			}
 		}
-		UpdateIconName(cmdID, numQueued);
-		SlowUpdate();
 	} else {
 		if (c.GetOpts() & ALT_KEY) {
 			for (int a = 0; a < numItems; ++a) {
@@ -284,10 +282,10 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 			}
 		}
 		numQueued += numItems;
-		UpdateIconName(cmdID, numQueued);
-
-		SlowUpdate();
 	}
+
+	UpdateIconName(cmdID, numQueued);
+	SlowUpdate();
 }
 
 
