@@ -197,13 +197,13 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "resurrectEnergyCostFactor"     , modInfo.resurrectEnergyCostFactor);
 		LuaPushNamedNumber(L, "captureEnergyCostFactor"       , modInfo.captureEnergyCostFactor);
 
+		// Despite being bools, these are exposed to Lua as 0/1 for legacy reasons
 		LuaPushNamedNumber(L, "transportAir"   , modInfo.transportAir);
 		LuaPushNamedNumber(L, "transportShip"  , modInfo.transportShip);
 		LuaPushNamedNumber(L, "transportHover" , modInfo.transportHover);
 		LuaPushNamedNumber(L, "transportGround", modInfo.transportGround);
 		LuaPushNamedNumber(L, "fireAtKilled"   , modInfo.fireAtKilled);
 		LuaPushNamedNumber(L, "fireAtCrashing" , modInfo.fireAtCrashing);
-
 		LuaPushNamedNumber(L, "requireSonarUnderWater", modInfo.requireSonarUnderWater);
 
 		LuaPushNamedBool  (L, "paralyzeOnMaxHealth", modInfo.paralyzeOnMaxHealth);
