@@ -8,46 +8,12 @@
 #include <vector>
 
 namespace spring {
-	template<typename T, typename TV>
-	static auto find(T& c, const TV& v) -> decltype(c.end())
-	{
-		return std::find(c.begin(), c.end(), v);
-	}
-
-	template<typename T, typename UnaryPredicate>
-	static void MapEraseIf(T& c, UnaryPredicate p)
-	{
-		for (auto it = c.begin(); it != c.end(); ) {
-			if (p(*it)) it = c.erase(it);
-			else ++it;
-		}
-	}
-
 	template<typename ForwardIt, typename T, typename Compare = std::less <>>
 	ForwardIt BinarySearch(ForwardIt first, ForwardIt last, const T& value, Compare comp = {})
 	{
 		first = std::lower_bound(first, last, value, comp);
 		return (!(first == last) && !(comp(value, *first))) ? first : last;
 	}
-
-	template<typename T, typename UnaryPredicate>
-	static bool VectorEraseAllIf(std::vector<T>& v, UnaryPredicate p)
-	{
-		bool b = false;
-		for (size_t i = 0; i < v.size(); /*NOOP*/) {
-			if (p(v[i])) {
-				v[i] = std::move(v.back());
-				v.pop_back();
-				b = true;
-			}
-			else {
-				++i;
-			}
-		}
-
-		return b;
-	}
-
 
 	template<typename T, typename UnaryPredicate>
 	static bool VectorEraseIf(std::vector<T>& v, UnaryPredicate p)
