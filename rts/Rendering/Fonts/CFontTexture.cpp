@@ -648,7 +648,7 @@ void CFontTexture::KillFonts()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// check unused fonts
-	spring::VectorEraseAllIf(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
+	std::erase_if(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
 
 	assert(allFonts.empty());
 	allFonts = {}; //just in case
@@ -660,7 +660,7 @@ void CFontTexture::Update() {
 	auto lock = CFontTexture::sync.GetScopedLock();
 
 	// check unused fonts
-	spring::VectorEraseAllIf(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
+	std::erase_if(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
 
 	static std::vector<std::shared_ptr<CFontTexture>> fontsToUpdate;
 	fontsToUpdate.clear();
