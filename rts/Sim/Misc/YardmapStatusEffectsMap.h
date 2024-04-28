@@ -47,7 +47,7 @@ public:
     void SetFlags(int x, int z, uint8_t flags) { GetMapState(x, z) |= flags; }
     void ClearFlags(int x, int z, uint8_t flags) { GetMapState(x, z) &= ~flags; }
 
-    void InitNewExitOnlyMap();
+    void InitNewYardmapStatusEffectsMap();
 
     typedef std::vector<uint8_t> ExitOnlyMapType;
     ExitOnlyMapType stateMap;

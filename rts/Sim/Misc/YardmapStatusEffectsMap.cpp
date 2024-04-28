@@ -16,10 +16,10 @@ CR_REG_METADATA(YardmapStatusEffectsMap, (
 	CR_MEMBER(stateMap)
 ))
 
-void YardmapStatusEffectsMap::InitNewExitOnlyMap() {
+void YardmapStatusEffectsMap::InitNewYardmapStatusEffectsMap() {
 
     // May over allocate, but the size is based on single byte storage and allows for fast indexing.
-    const uint32_t width = std::bit_ceil<uint32_t>(uint32_t(std::max(mapDims.mapx, mapDims.mapy))) / resolution;
+    const auto width = std::bit_ceil<uint32_t>(std::max(mapDims.mapx, mapDims.mapy)) / resolution;
 
     stateMap.clear();
     stateMap.resize(Square(width), 0);
