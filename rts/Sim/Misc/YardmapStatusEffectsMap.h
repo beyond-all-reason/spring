@@ -19,16 +19,9 @@ class YardmapStatusEffectsMap {
 
 
 public:
-
-    // States often need above water (AB) and below water (BW) 
     enum SquareStates {
-        EXIT_ONLY_AW = 0x01,
-        EXIT_ONLY_BW = 0x02,
-        BLOCK_BUILDING_AW = 0x04,
-        BLOCK_BUILDING_BW = 0x08,
-
-        EXIT_ONLY = (EXIT_ONLY_AW|EXIT_ONLY_BW),
-        BLOCK_BUILDING = (BLOCK_BUILDING_AW|BLOCK_BUILDING_BW)
+        EXIT_ONLY      = 0x01,
+        BLOCK_BUILDING = 0x02,
     };
 
     static constexpr int resolution = SPRING_FOOTPRINT_SCALE;
@@ -58,91 +51,91 @@ public:
     ExitOnlyMapType stateMap;
 };
 
-extern YardmapStatusEffectsMap exitOnlyMap;
+extern YardmapStatusEffectsMap yardmapStatusEffectsMap;
 
 struct ObjectCollisionMapHelper {
-	bool collidesUnderWater;
-	bool collidesAboveWater;
+	bool collidesUnderWater = false;
+	bool collidesAboveWater = false;
+
+	ObjectCollisionMapHelper() {}
 
 	ObjectCollisionMapHelper(const CSolidObject& object) {
-		SetObjectCollisionStates(object);
+		// SetObjectCollisionStates(object);
 	}
 
 	ObjectCollisionMapHelper(const MoveDef& moveDef, float ypos) {
-		SetMoveDefCollisionStates(moveDef, ypos);
+		// SetMoveDefCollisionStates(moveDef, ypos);
 	}
 
 	ObjectCollisionMapHelper(const MoveDef& moveDef) {
-		SetMoveDefCollisionStates(moveDef);
+		// SetMoveDefCollisionStates(moveDef);
 	}
 
-	float GetMoveCollisionHeight(const CSolidObject& object) const {
-		if (object.moveDef != nullptr)
-			return object.moveDef->height;
-		else
-			return object.height;
-	}
+	// float GetMoveCollisionHeight(const CSolidObject& object) const {
+	// 	if (object.moveDef != nullptr)
+	// 		return object.moveDef->height;
+	// 	else
+	// 		return object.height;
+	// }
 
-	bool IsOnWaterSurface(const CSolidObject& object) const {
-		if (object.moveDef != nullptr)
-			return !object.moveDef->isSubmersible;
-		else {
-			auto unit = dynamic_cast<const CUnit*>(&object);
-			if (unit != nullptr)
-				return unit->FloatOnWater();
-		}
-		return false;
-	}
+	// bool IsOnWaterSurface(const CSolidObject& object) const {
+	// 	if (object.moveDef != nullptr)
+	// 		return !object.moveDef->isSubmersible;
+	// 	else {
+	// 		auto unit = dynamic_cast<const CUnit*>(&object);
+	// 		if (unit != nullptr)
+	// 			return unit->FloatOnWater();
+	// 	}
+	// 	return false;
+	// }
 
-	void SetObjectCollisionStates(const CSolidObject& object) {
-		const bool floatsOnWater = IsOnWaterSurface(object);
-		collidesUnderWater = !floatsOnWater;
-		collidesAboveWater = (floatsOnWater || object.pos.y + GetMoveCollisionHeight(object) >= 0.f);
-	}
+	// void SetObjectCollisionStates(const CSolidObject& object) {
+	// 	const bool floatsOnWater = IsOnWaterSurface(object);
+	// 	collidesUnderWater = !floatsOnWater;
+	// 	collidesAboveWater = (floatsOnWater || object.pos.y + GetMoveCollisionHeight(object) >= 0.f);
+	// }
 
-    void SetMoveDefCollisionStates(const MoveDef& moveDef, float ypos) {
-		const bool floatsOnWater = !moveDef.isSubmersible;
-		collidesUnderWater = !floatsOnWater;
-		collidesAboveWater = (floatsOnWater || ypos + moveDef.height >= 0.f);
-    }
+    // void SetMoveDefCollisionStates(const MoveDef& moveDef, float ypos) {
+	// 	const bool floatsOnWater = !moveDef.isSubmersible;
+	// 	collidesUnderWater = !floatsOnWater;
+	// 	collidesAboveWater = (floatsOnWater || ypos + moveDef.height >= 0.f);
+    // }
 
-    void SetMoveDefCollisionStates(const MoveDef& moveDef) {
-		collidesUnderWater = moveDef.isSubmersible;
-		collidesAboveWater = true;
-    }
+    // void SetMoveDefCollisionStates(const MoveDef& moveDef) {
+	// 	collidesUnderWater = moveDef.isSubmersible;
+	// 	collidesAboveWater = true;
+    // }
 
 	uint8_t GetExitOnlyFlags() const {
-		return (YardmapStatusEffectsMap::EXIT_ONLY_BW * collidesUnderWater)
-			+ (YardmapStatusEffectsMap::EXIT_ONLY_AW * collidesAboveWater);
+		return YardmapStatusEffectsMap::EXIT_ONLY;
 	}
 
     bool IsExitOnlyAt(int x, int z) const {
-		return exitOnlyMap.AreAllFlagsSet(x, z, GetExitOnlyFlags());
+		return yardmapStatusEffectsMap.AreAllFlagsSet(x, z, GetExitOnlyFlags());
 	}
 
 	void SetExitOnlyAt(int x, int z) const {
-		exitOnlyMap.SetFlags(x, z, GetExitOnlyFlags());
+		yardmapStatusEffectsMap.SetFlags(x, z, GetExitOnlyFlags());
 	}
 
 	void ClearExitOnlyAt(int x, int z) const {
-		exitOnlyMap.ClearFlags(x, z, GetExitOnlyFlags());
+		yardmapStatusEffectsMap.ClearFlags(x, z, GetExitOnlyFlags());
 	}
 
 	uint8_t GetBlockBuildingFlags() const {
-		return (YardmapStatusEffectsMap::BLOCK_BUILDING_BW * collidesUnderWater)
-			+ (YardmapStatusEffectsMap::BLOCK_BUILDING_AW * collidesAboveWater);
+		return YardmapStatusEffectsMap::BLOCK_BUILDING;
 	}
 
     bool IsBlockBuildingAt(int x, int z) const {
-		return exitOnlyMap.AreAllFlagsSet(x, z, GetBlockBuildingFlags());
+		return yardmapStatusEffectsMap.AreAllFlagsSet(x, z, GetBlockBuildingFlags());
 	}
 
 	void SetBlockBuildingAt(int x, int z) const {
-		exitOnlyMap.SetFlags(x, z, GetBlockBuildingFlags());
+		yardmapStatusEffectsMap.SetFlags(x, z, GetBlockBuildingFlags());
 	}
 
 	void ClearBlockBuildingAt(int x, int z) const {
-		exitOnlyMap.ClearFlags(x, z, GetBlockBuildingFlags());
+		yardmapStatusEffectsMap.ClearFlags(x, z, GetBlockBuildingFlags());
 	}
 };
 

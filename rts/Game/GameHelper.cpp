@@ -1428,7 +1428,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 	const float groundHeight = CGround::GetApproximateHeightUnsafe(sqx, sqz, synced);
 	const UnitDef* unitDef = buildInfo.def;
 
-	if (exitOnlyMap.AreAnyFlagsSet(sqx, sqz, YardmapStatusEffectsMap::BLOCK_BUILDING)) {
+	if (yardmapStatusEffectsMap.AreAnyFlagsSet(sqx, sqz, YardmapStatusEffectsMap::BLOCK_BUILDING)) {
 		if ( synced || ((allyteam < 0) || losHandler->InLos(pos, allyteam)) ) {
 			return BUILDSQUARE_BLOCKED;
 		}

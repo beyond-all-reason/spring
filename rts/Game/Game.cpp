@@ -537,7 +537,7 @@ void CGame::LoadMap(const std::string& mapFileName)
 		// half size; building positions are snapped to multiples of BUILD_SQUARE_SIZE
 		buildingMaskMap.Init(mapDims.hmapx * mapDims.hmapy);
 		groundBlockingObjectMap.Init(mapDims.mapSquares);
-		exitOnlyMap.InitNewExitOnlyMap();
+		yardmapStatusEffectsMap.InitNewExitOnlyMap();
 	}
 
 	LEAVE_SYNCED_CODE();

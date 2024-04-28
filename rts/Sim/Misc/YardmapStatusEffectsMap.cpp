@@ -8,7 +8,7 @@
 #include "map/ReadMap.h"
 #include "System/SpringMath.h"
 
-YardmapStatusEffectsMap exitOnlyMap;
+YardmapStatusEffectsMap yardmapStatusEffectsMap;
 
 void YardmapStatusEffectsMap::InitNewExitOnlyMap() {
 
