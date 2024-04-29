@@ -26,7 +26,23 @@ static DefType WeaponDefs("WeaponDefs");
 
 // General
 WEAPONTAG(std::string, description).externalName("name").defaultValue("Weapon").description("The descriptive name of the weapon, for GUI purposes.");
-WEAPONTAG(std::string, type).externalName("weaponType").defaultValue("Cannon");
+WEAPONTAG(std::string, type).externalName("weaponType").defaultValue("Cannon")
+	.description("Sets weapon type, which is a bundle of behaviours and visuals (check other tags). "
+	"Available types (sorted from the most general):\n"
+	"Cannon - ballistic projectile, defaults to 'plasma ball' visuals\n"
+	"LaserCannon - non-ballistic projectile, defaults to 'slow laser' visuals (think stormtroopers)\n"
+	"BeamLaser - hitscan weapon, laser visuals\n"
+	"MissileLauncher - potentially homing projectile, leaves a smoke trail\n"
+	"TorpedoLauncher - missile that can't exit water by default\n"
+	"StarburstLauncher - missile with a vertical ascent phase at the beginning\n"
+	"AircraftBomb - resolves into Torpedo or Cannon, but has support for being dropped by a bomber plane\n"
+	"Flame - non-ballistic projectile, has a sprite which expands\n"
+	"LightningCannon - hitscan weapon, lightning visuals\n"
+	"Melee - just applies damage. No frontswing though\n"
+	"DGun - deprecated, a fiery ball projectile. Has a lot of hardcoded visuals but does NOT convey 'dgun' mechanics. Prefer Cannon instead\n"
+	"EmgCannon - deprecated, a version of Laser or Flame with crappy visuals\n"
+	"Rifle - deprecated, more or less equivalent to invisible Lightning\n"
+);
 WEAPONTAG(int, tdfId).externalName("id").defaultValue(0);
 WEAPONDUMMYTAG(table, customParams).description("A table of arbitrary string key-value pairs, for use by Lua gadgets (no engine meaning)");
 
@@ -48,7 +64,6 @@ WEAPONDUMMYTAG(bool, collideCloaked).defaultValue(true).description("Does the pr
 // Damaging
 WEAPONDUMMYTAG(table, damage).description("Damage table, indexed by armor class name");
 WEAPONDUMMYTAG(float, damage.default).defaultValue(1.0f).description("The default damage used in absence of explicit per-armorclass value");
-WEAPONDUMMYTAG(float, size);
 WEAPONDUMMYTAG(float, explosionSpeed).description("How fast does the shockwave propagate? Note that units cannot actually dodge the shockwave (they are tagged immediately and just damaged after a delay)");
 WEAPONTAG(bool, impactOnly).defaultValue(false).description("Does the projectile only damage a single thing it hits? Mostly equivalent to having 0 AoE without the issues with 0. Also removes cratering.");
 WEAPONTAG(bool, noSelfDamage).defaultValue(false).description("Is the unit unable to damage itself with the weapon?");
@@ -105,7 +120,7 @@ WEAPONTAG(bool, gravityAffected).defaultValue(false).description("#DGun weapon t
 WEAPONTAG(float, myGravity).defaultValue(0.0f).description("Overrides the map gravity for ballistic weapons. The default of 0.0 disables the tag in favour of map gravity.");
 WEAPONTAG(bool, canAttackGround).defaultValue(true).description("Can the unit target ground? Only units otherwise. Note, features are not directly targetable either way.");
 WEAPONTAG(float, uptime).externalName("weaponTimer").defaultValue(0.0f).description("StarburstLauncher only. Seconds of vertical ascent");
-WEAPONDUMMYTAG(float, flighttime).defaultValue(0).scaleValue(GAME_SPEED).description("Lifetime of the projectile, in seconds. Missile/Torpedo/Starburst projectiles \"lose fuel\" and fall down; Cannons explode; others fade away"); // needs to be written as int and read as float
+WEAPONDUMMYTAG(float, flighttime).defaultValue(0).scaleValue(GAME_SPEED).description("Lifetime of the projectile, in seconds. Missile/Torpedo/Starburst projectiles 'lose fuel' and fall down; Cannons explode; others fade away"); // needs to be written as int and read as float
 WEAPONTAG(float, turnrate).defaultValue(0.0f).scaleValue(float(TAANG2RAD) / GAME_SPEED).description("For projectiles with `tracks`, in COB angular units (65536 is tau) per second. Also the turn rate for Starburst when they stop ascending and turn towards target (regardless of homing).");
 WEAPONTAG(float, heightBoostFactor).defaultValue(-1.0f).description("#Cannon weapon type only. Controls the ballistic range gain/loss for height difference; larger means higher effect of range difference. -1 is derived some magic formula. Hard to tell how this stacks with `heightMod`.");
 WEAPONTAG(float, proximityPriority).defaultValue(1.0f).description("Importance of distance when picking targets. Higher means closer units are preferred more; negative values make weapons prefer distant targets.");
@@ -129,7 +144,7 @@ WEAPONTAG(float, beamtime).defaultValue(1.0f).description("#BeamLaser only. The 
 WEAPONTAG(bool, beamburst).defaultValue(false).description("#BeamLaser only. Lets a laser use burst mechanics, but sets `beamtime` to the duration of 1 sim frame.");
 WEAPONTAG(int, beamLaserTTL).externalName("beamTTL").defaultValue(0).description("BeamLaser and LightningCannon only. Linger time of the visual sprite, in sim frames.");
 WEAPONTAG(bool, sweepFire).defaultValue(false).description("Makes BeamLasers continue firing while aiming for a new target, 'sweeping' across the terrain.");
-WEAPONTAG(bool, largeBeamLaser).defaultValue(false);
+WEAPONTAG(bool, largeBeamLaser).defaultValue(false).description("BeamLaser only. Enables some extra fancy texturing (NOT size). Check other Beamlaser tags for 'large'.");
 
 // FLAMETHROWER
 WEAPONTAG(float, sizeGrowth).defaultValue(0.5f).description("#Flamethrower only. Visual-only radius growth in elmos per sim frame.");
@@ -206,6 +221,7 @@ WEAPONTAG(std::string, shieldArmorTypeName).externalName("shield.armorType").fal
 
 // Unsynced (= Visuals)
 WEAPONTAG(std::string, model, visuals.modelName).defaultValue("").description("Name of a 3D model. Otherwise uses 2D sprites");
+WEAPONDUMMYTAG(float, size).description("Size of the 2D visual sprite, if the weapon has no 'model' set.");
 WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("");
 WEAPONDUMMYTAG(table, scarIndices).description("A table of indices to the scar table in resources.lua");
 WEAPONTAG(bool, explosionScar, visuals.explosionScar).defaultValue(true).description("Does the explosion leave a scar decal on the ground?");
@@ -254,10 +270,10 @@ WEAPONTAG(float3, rgbColor2, visuals.color2).defaultValue(float3(1.0f, 1.0f, 1.0
 WEAPONTAG(float, intensity).defaultValue(0.9f).description("Alpha transparency for non-model projectiles. Lower values are more opaque, but 0.0 will cause the projectile to disappear entirely.");
 WEAPONTAG(std::string, colormap, visuals.colorMapStr).defaultValue("").description("A series of RGBA tuples. If the projectile is a sprite then it will shift over these colours over its lifetime");
 
-WEAPONTAG(std::string, textures1, visuals.texNames[0]).externalName("textures.1").fallbackName("texture1").defaultValue("");
-WEAPONTAG(std::string, textures2, visuals.texNames[1]).externalName("textures.2").fallbackName("texture2").defaultValue("");
-WEAPONTAG(std::string, textures3, visuals.texNames[2]).externalName("textures.3").fallbackName("texture3").defaultValue("");
-WEAPONTAG(std::string, textures4, visuals.texNames[3]).externalName("textures.4").fallbackName("texture4").defaultValue("");
+WEAPONTAG(std::string, textures1, visuals.texNames[0]).externalName("textures.1").fallbackName("texture1").defaultValue("").description("When not using a model, sprite texture for AircraftBomb, Cannon, EMG, Flame; main beam texture for LaserCannon, BeamLaser, Lightning; flare texture for Missile, Starburst; dome for Shield. Note that DGun has a hardcoded texture.");
+WEAPONTAG(std::string, textures2, visuals.texNames[1]).externalName("textures.2").fallbackName("texture2").defaultValue("").description("The end-of-beam texture for LaserCannon and BeamLaser (half of texture for each end); smoketrail for Missile and Starburst. Note that Torpedo has a hardcoded trail.");
+WEAPONTAG(std::string, textures3, visuals.texNames[2]).externalName("textures.3").fallbackName("texture3").defaultValue("").description("Flare for non-'large' BeamLaser, or directional muzzle exhaust for 'large'; flame exhaust for Starburst.");
+WEAPONTAG(std::string, textures4, visuals.texNames[3]).externalName("textures.4").fallbackName("texture4").defaultValue("").description("Flare for 'large' BeamLaser.");
 
 WEAPONTAG(std::string, cegTag,                   visuals.ptrailExpGenTag).defaultValue("").description("The name, without prefixes, of a CEG to be emitted by the projectile each frame.");
 WEAPONTAG(std::string, explosionGenerator,       visuals.impactExpGenTag).defaultValue("").description("The name, with prefix, of a CEG to be emitted on impact");
