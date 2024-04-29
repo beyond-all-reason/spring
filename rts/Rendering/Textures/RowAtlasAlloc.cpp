@@ -6,13 +6,13 @@
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <bit>
 
-// texture spacing in the atlas (in pixels)
-static constexpr int ATLAS_PADDING = 1;
-
+#include "System/Misc/TracyDefs.h"
 
 inline bool CRowAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// sort by large to small
 
 	if (tex1->size.y > tex2->size.y) return true;
@@ -31,6 +31,7 @@ inline bool CRowAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntr
 
 void CRowAtlasAlloc::EstimateNeededSize()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int spaceNeeded = 0;
 	int spaceFree = atlasSize.x * (atlasSize.y - nextRowPos);
 
@@ -60,6 +61,7 @@ void CRowAtlasAlloc::EstimateNeededSize()
 
 CRowAtlasAlloc::Row* CRowAtlasAlloc::AddRow(int glyphWidth, int glyphHeight)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int wantedRowHeight = glyphHeight;
 
 	while (atlasSize.y < (nextRowPos + wantedRowHeight)) {
@@ -82,6 +84,7 @@ CRowAtlasAlloc::Row* CRowAtlasAlloc::AddRow(int glyphWidth, int glyphHeight)
 
 bool CRowAtlasAlloc::Allocate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool success = true;
 
 	if (npot) {
@@ -110,9 +113,11 @@ bool CRowAtlasAlloc::Allocate()
 	}
 	std::stable_sort(memtextures.begin(), memtextures.end(), CRowAtlasAlloc::CompareTex);
 
+	int padding = 1 << GetNumTexLevels();
+
 	// find space for them
 	for (auto& curtex: memtextures) {
-		Row* row = FindRow(curtex->size.x + ATLAS_PADDING, curtex->size.y + ATLAS_PADDING);
+		Row* row = FindRow(curtex->size.x + padding, curtex->size.y + padding);
 
 		if (row == nullptr) {
 			success = false;
@@ -124,7 +129,7 @@ bool CRowAtlasAlloc::Allocate()
 		curtex->texCoords.x2 = row->width + curtex->size.x;
 		curtex->texCoords.y2 = row->position + curtex->size.y;
 
-		row->width += (curtex->size.x + ATLAS_PADDING);
+		row->width += (curtex->size.x + padding);
 	}
 
 	if (npot) {
@@ -136,9 +141,19 @@ bool CRowAtlasAlloc::Allocate()
 	return success;
 }
 
+int CRowAtlasAlloc::GetNumTexLevels() const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	return std::min(
+		std::bit_width(static_cast<uint32_t>(GetMinDim())),
+		numLevels
+	);
+}
+
 
 CRowAtlasAlloc::Row* CRowAtlasAlloc::FindRow(int glyphWidth, int glyphHeight)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int   bestWidth = atlasSize.x;
 	float bestRatio = 10000.0f;
 	Row*  bestRow   = nullptr;

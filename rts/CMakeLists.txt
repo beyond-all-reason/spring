@@ -50,6 +50,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/cereal/include)
 ### libcpuid
 list(APPEND engineCommonLibraries "cpuid")
 
+### base64 from pr-downloader
+list(APPEND engineCommonLibraries "prd::base64")
+
 ### smmalloc
 list(APPEND engineCommonLibraries "smmalloc")
 
@@ -77,9 +80,9 @@ if    (UNIX AND NOT MINGW)
 	list(APPEND engineCommonLibraries ${CMAKE_DL_LIBS})
 
 	# Needed for backtrace* on some systems
-	if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+	if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 		list(APPEND engineCommonLibraries execinfo)
-	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 endif (UNIX AND NOT MINGW)
 
 find_package_static(ZLIB REQUIRED)
@@ -87,6 +90,9 @@ list(APPEND engineCommonLibraries ${IL_LIBRARIES} ${JPEG_LIBRARY} ${PNG_LIBRARY}
 list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY} Tracy::TracyClient)
 list(APPEND engineCommonLibraries lua luasocket archives assimp
 	gflags_nothreads_static)
+if(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+	list(APPEND engineCommonLibraries execinfo)
+endif(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 if (ENABLE_STREFLOP)
 	list(APPEND engineCommonLibraries streflop)
 endif ()
@@ -97,7 +103,7 @@ if (WIN32)
 	list(APPEND engineCommonLibraries ${WIN32_LIBRARIES})
 endif (WIN32)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" OR ${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
 	#tcmalloc on freebsd is broken, default disable it (#4754)
 	set(USE_TCMALLOC_DEFAULT FALSE)
 else()
@@ -112,7 +118,7 @@ if    (USE_TCMALLOC AND TCMALLOC_LIBRARY)
 endif (USE_TCMALLOC AND TCMALLOC_LIBRARY)
 
 
-if(UNIX)
+if(UNIX AND NOT (CMAKE_SYSTEM_NAME MATCHES "OpenBSD"))
 	find_package_static(Libunwind REQUIRED)
 	prefer_static_libs()
 	find_library(LZMA_LIBRARY lzma)

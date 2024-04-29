@@ -45,6 +45,7 @@ namespace QTPFS {
 		std::int64_t Finalize() override;
 
 		bool PathUpdated(unsigned int pathID) override;
+		void ClearPathUpdated(unsigned int pathID) override;
 
 		void TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2, unsigned int type) override;
 		void Update() override;
@@ -104,10 +105,10 @@ namespace QTPFS {
 		typedef spring::unordered_map<unsigned int, unsigned int>::iterator PathTypeMapIt;
 		typedef spring::unordered_map<unsigned int, PathSearchTrace::Execution*> PathTraceMap;
 		typedef spring::unordered_map<unsigned int, PathSearchTrace::Execution*>::iterator PathTraceMapIt;
-		typedef spring::unordered_map<std::uint64_t, entt::entity> SharedPathMap;
-		typedef spring::unordered_map<std::uint64_t, entt::entity>::iterator SharedPathMapIt;
-		typedef spring::unordered_map<std::uint64_t, entt::entity> PartialSharedPathMap;
-		typedef spring::unordered_map<std::uint64_t, entt::entity>::iterator PartialSharedPathMapIt;
+		typedef spring::unordered_map<PathHashType, entt::entity> SharedPathMap;
+		typedef spring::unordered_map<PathHashType, entt::entity>::iterator SharedPathMapIt;
+		typedef spring::unordered_map<PathHashType, entt::entity> PartialSharedPathMap;
+		typedef spring::unordered_map<PathHashType, entt::entity>::iterator PartialSharedPathMapIt;
 
 		typedef std::vector<PathSearch*> PathSearchVect;
 		typedef std::vector<PathSearch*>::iterator PathSearchVectIt;
@@ -120,6 +121,7 @@ namespace QTPFS {
 		bool InitializeSearch(entt::entity searchEntity);
 		void RemovePathFromShared(entt::entity entity);
 		void RemovePathFromPartialShared(entt::entity entity);
+		void RemovePathSearch(entt::entity pathEntity);
 
 		void ReadyQueuedSearches();
 		void ExecuteQueuedSearches();
@@ -135,12 +137,14 @@ namespace QTPFS {
 			const bool allowRawSearch
 		);
 
+	public:
 		unsigned int RequeueSearch(
 			IPath* oldPath,
 			const bool allowRawSearch,
 			const bool allowPartialSearch
 		);
 
+	private:
 		bool ExecuteSearch(
 			PathSearch* search,
 			NodeLayer& nodeLayer,

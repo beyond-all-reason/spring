@@ -40,6 +40,8 @@
 #include "fmt/format.h"
 #include "fmt/printf.h"
 
+#include "System/Misc/TracyDefs.h"
+
 #define SUPPORT_AMD_HACKS_HERE
 
 #ifndef HEADLESS
@@ -254,6 +256,7 @@ private:
 
 void FtLibraryHandlerProxy::InitFtLibrary()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	FtLibraryHandler::GetLibrary();
 #endif
@@ -261,6 +264,7 @@ void FtLibraryHandlerProxy::InitFtLibrary()
 
 bool FtLibraryHandlerProxy::CheckGenFontConfigFast()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	return FtLibraryHandler::CheckGenFontConfigFast();
 #else
@@ -270,6 +274,7 @@ bool FtLibraryHandlerProxy::CheckGenFontConfigFast()
 
 bool FtLibraryHandlerProxy::CheckGenFontConfigFull(bool console)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	return FtLibraryHandler::CheckGenFontConfigFull(console);
 #else
@@ -291,6 +296,7 @@ bool FtLibraryHandlerProxy::CheckGenFontConfigFull(bool console)
 #ifndef HEADLESS
 static inline uint64_t GetKerningHash(char32_t lchar, char32_t rchar)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (lchar < 128 && rchar < 128)
 		return (lchar << 7) | rchar; // 14bit used
 
@@ -299,6 +305,7 @@ static inline uint64_t GetKerningHash(char32_t lchar, char32_t rchar)
 
 static std::shared_ptr<FontFace> GetFontFace(const std::string& fontfile, const int size)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(CFontTexture::sync.GetThreadSafety() || Threading::IsMainThread());
 	auto lock = CFontTexture::sync.GetScopedLock();
 
@@ -370,6 +377,7 @@ static std::shared_ptr<FontFace> GetFontFace(const std::string& fontfile, const 
 inline
 static std::string GetFaceKey(FT_Face f)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	FT_FaceRec_* fr = static_cast<FT_FaceRec_*>(f);
 	return fmt::format("{}-{}-{}", fr->family_name, fr->style_name, fr->num_glyphs);
 }
@@ -378,11 +386,12 @@ static std::string GetFaceKey(FT_Face f)
 template<typename USET>
 static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t>& characters, const FT_Face origFace, const int origSize, const USET& blackList)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #if defined(USE_FONTCONFIG)
-	if (!FtLibraryHandler::CanUseFontConfig())
+	if (characters.empty())
 		return nullptr;
 
-	if (characters.empty())
+	if (!FtLibraryHandler::CanUseFontConfig())
 		return nullptr;
 
 	// create list of wanted characters
@@ -543,6 +552,7 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	, wantedTexWidth(0)
 	, wantedTexHeight(0)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	atlasAlloc.SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
 	atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
 
@@ -617,6 +627,7 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 
 CFontTexture::~CFontTexture()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CglFontRenderer::DeleteInstance(fontRenderer);
 #ifndef HEADLESS
 	glDeleteTextures(1, &glyphAtlasTextureID);
@@ -625,8 +636,17 @@ CFontTexture::~CFontTexture()
 }
 
 
+void CFontTexture::InitFonts()
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
+	maxFontTries = configHandler ? configHandler->GetInt("MaxFontTries") : 5;
+#endif
+}
+
 void CFontTexture::KillFonts()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// check unused fonts
 	spring::VectorEraseAllIf(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
 
@@ -663,6 +683,7 @@ void CFontTexture::Update() {
 
 const GlyphInfo& CFontTexture::GetGlyph(char32_t ch)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	if (const auto it = glyphs.find(ch); it != glyphs.end())
 		return it->second;
@@ -674,6 +695,7 @@ const GlyphInfo& CFontTexture::GetGlyph(char32_t ch)
 
 float CFontTexture::GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	if (!FT_HAS_KERNING(shFace->face))
 		return lgl.advance;
@@ -703,6 +725,7 @@ float CFontTexture::GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl)
 
 void CFontTexture::LoadWantedGlyphs(char32_t begin, char32_t end)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static std::vector<char32_t> wanted;
 	wanted.clear();
 	for (char32_t i = begin; i < end; ++i)
@@ -713,6 +736,8 @@ void CFontTexture::LoadWantedGlyphs(char32_t begin, char32_t end)
 
 void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	if (wanted.empty())
 		return;
 
@@ -723,16 +748,18 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 	map.clear();
 
 	for (auto c : wanted) {
-		if (failedToFind.find(c) != failedToFind.end())
+		if (auto it = failedAttemptsToReplace.find(c); (it != failedAttemptsToReplace.end() && it->second == maxFontTries))
 			continue;
 
 		auto it = std::lower_bound(nonPrintableRanges.begin(), nonPrintableRanges.end(), c);
-		if (std::distance(nonPrintableRanges.begin(), it) % 2 != 0) {
+		if (it != nonPrintableRanges.end() && !(c < *it)) {
 			LoadGlyph(shFace, c, 0);
-			failedToFind.emplace(c);
+			failedAttemptsToReplace.emplace(c, maxFontTries);
 		}
 		else {
 			map.emplace_back(c);
+			// instantiate on the first retry to save space
+			//failedAttemptsToReplace.emplace(c, 0);
 		}
 	}
 	spring::VectorSortUnique(map);
@@ -743,13 +770,21 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 	// load glyphs from different fonts (using fontconfig)
 	std::shared_ptr<FontFace> f = shFace;
 
-#ifndef HEADLESS
 	static spring::unordered_set<std::string> alreadyCheckedFonts;
 	alreadyCheckedFonts.clear();
 	do {
 		alreadyCheckedFonts.insert(GetFaceKey(*f));
 
 		for (std::size_t idx = 0; idx < map.size(); /*nop*/) {
+			if (auto it = failedAttemptsToReplace.find(map[idx]); (it != failedAttemptsToReplace.end() && it->second == maxFontTries)) {
+				// handle maxFontTries attempts case
+				LoadGlyph(shFace, map[idx], 0);
+				LOG_L(L_WARNING, "[CFontTexture::%s] Failed to load glyph %u after %d font replacement attempts", __func__, uint32_t(map[idx]), failedAttemptsToReplace[map[idx]]);
+				map[idx] = map.back();
+				map.pop_back();
+				continue;
+			}
+
 			FT_UInt index = FT_Get_Char_Index(*f, map[idx]);
 
 			if (index != 0) {
@@ -759,20 +794,18 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 				map.pop_back();
 			}
 			else {
+				++failedAttemptsToReplace[map[idx]];
 				++idx;
 			}
 		}
 		f = GetFontForCharacters(map, *f, fontSize, alreadyCheckedFonts);
 	} while (!map.empty() && f);
-#endif
 
-	// load fail glyph for all remaining ones (they will all share the same fail glyph)
+	// handle glyphs that didn't reach maxFontTries number of attempts, but nonetheless failed
 	for (auto c: map) {
 		LoadGlyph(shFace, c, 0);
-		LOG_L(L_WARNING, "[CFontTexture::%s] Failed to load glyph %u", __func__, uint32_t(c));
-		failedToFind.insert(c);
+		LOG_L(L_WARNING, "[CFontTexture::%s] Failed to load glyph %u after %d font replacement attempts", __func__, uint32_t(c), failedAttemptsToReplace[c]);
 	}
-
 
 	// read atlasAlloc glyph data back into atlasUpdate{Shadow}
 	{
@@ -823,12 +856,14 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 
 	// schedule a texture update
 	++curTextureUpdate;
+#endif
 }
 
 
 
 void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned index)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	if (glyphs.find(ch) != glyphs.end())
 		return;
@@ -898,6 +933,7 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 
 void CFontTexture::CreateTexture(const int width, const int height)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	glGenTextures(1, &glyphAtlasTextureID);
 	glBindTexture(GL_TEXTURE_2D, glyphAtlasTextureID);
@@ -948,6 +984,7 @@ void CFontTexture::CreateTexture(const int width, const int height)
 
 void CFontTexture::ReallocAtlases(bool pre)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	static std::vector<uint8_t> atlasMem;
 	static std::vector<uint8_t> atlasShadowMem;
@@ -1008,6 +1045,7 @@ void CFontTexture::ReallocAtlases(bool pre)
 
 bool CFontTexture::GlyphAtlasTextureNeedsUpdate() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	return curTextureUpdate != lastTextureUpdate;
 #else
@@ -1017,6 +1055,7 @@ bool CFontTexture::GlyphAtlasTextureNeedsUpdate() const
 
 bool CFontTexture::GlyphAtlasTextureNeedsUpload() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	return needsTextureUpload;
 #else
@@ -1026,6 +1065,7 @@ bool CFontTexture::GlyphAtlasTextureNeedsUpload() const
 
 void CFontTexture::UpdateGlyphAtlasTexture()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	// no need to lock, MT safe
 	if (!GlyphAtlasTextureNeedsUpdate())
@@ -1061,11 +1101,13 @@ void CFontTexture::UpdateGlyphAtlasTexture()
 
 void CFontTexture::UploadGlyphAtlasTexture()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	fontRenderer->HandleTextureUpdate(*this, true);
 }
 
 void CFontTexture::UploadGlyphAtlasTextureImpl()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	if (!GlyphAtlasTextureNeedsUpload())
 		return;
@@ -1085,6 +1127,7 @@ void CFontTexture::UploadGlyphAtlasTextureImpl()
 
 FT_Byte* FontFileBytes::data()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return vec.data();
 }
 
@@ -1095,6 +1138,7 @@ FontFace::FontFace(FT_Face f, std::shared_ptr<FontFileBytes>& mem)
 
 FontFace::~FontFace()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	FT_Done_Face(face);
 #endif
@@ -1102,5 +1146,6 @@ FontFace::~FontFace()
 
 FontFace::operator FT_Face()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return this->face;
 }

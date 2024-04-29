@@ -28,6 +28,8 @@ public:
 	int hostPort;
 
 	bool isHost;
+
+	std::string showServerName;
 };
 
 #endif // CLIENT_SETUP_H

@@ -508,8 +508,8 @@ static bool InitParamMap()
 
 	ADD_FLOAT("uptime", wd.uptime);
 
-	ADD_FLOAT("metalCost",  wd.metalcost);
-	ADD_FLOAT("energyCost", wd.energycost);
+	ADD_FLOAT( "metalCost", wd.cost.metal);
+	ADD_FLOAT("energyCost", wd.cost.energy);
 
 	ADD_BOOL("turret", wd.turret);
 	ADD_BOOL("onlyForward", wd.onlyForward);

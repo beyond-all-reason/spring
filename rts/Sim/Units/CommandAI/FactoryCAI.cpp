@@ -20,6 +20,8 @@
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CFactoryCAI ,CCommandAI , )
 
 CR_REG_METADATA(CFactoryCAI , (
@@ -38,10 +40,10 @@ static std::string GetUnitDefBuildOptionToolTip(const UnitDef* ud, bool disabled
 	}
 
 	tooltip += (ud->humanName + " - " + ud->tooltip);
-	tooltip += ("\nHealth "      + FloatToString(ud->health,    "%.0f"));
-	tooltip += ("\nMetal cost "  + FloatToString(ud->metal,     "%.0f"));
-	tooltip += ("\nEnergy cost " + FloatToString(ud->energy,    "%.0f"));
-	tooltip += ("\nBuild time "  + FloatToString(ud->buildTime, "%.0f"));
+	tooltip += ("\nHealth "      + FloatToString(ud->health,      "%.0f"));
+	tooltip += ("\nMetal cost "  + FloatToString(ud->cost.metal,  "%.0f"));
+	tooltip += ("\nEnergy cost " + FloatToString(ud->cost.energy, "%.0f"));
+	tooltip += ("\nBuild time "  + FloatToString(ud->buildTime,   "%.0f"));
 
 	return tooltip;
 }
@@ -141,9 +143,18 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 }
 
 
+static constexpr int GetCountMultiplierFromOptions(int opts)
+{
+	// The choice of keys and their associated multipliers are from OTA.
+	int ret = 1;
+	if (opts &   SHIFT_KEY) ret *=  5;
+	if (opts & CONTROL_KEY) ret *= 20;
+	return ret;
+}
 
 void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int cmdID = c.GetID();
 
 	// move is always allowed for factories (passed to units it produces)
@@ -224,10 +235,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 	}
 
 	int& numQueued = boi->second;
-	int numItems = 1;
-
-	if (c.GetOpts() & SHIFT_KEY)   { numItems *= 5; }
-	if (c.GetOpts() & CONTROL_KEY) { numItems *= 20; }
+	int numItems = GetCountMultiplierFromOptions(c.GetOpts());
 
 	if (c.GetOpts() & RIGHT_MOUSE_KEY) {
 		numQueued -= numItems;
@@ -286,9 +294,11 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
                                      const Command& newCmd)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto boi = buildOptions.find(newCmd.GetID());
+	auto buildCount = GetCountMultiplierFromOptions(newCmd.GetOpts());
 	if (boi != buildOptions.end()) {
-		boi->second++;
+		boi->second += buildCount;
 		UpdateIconName(newCmd.GetID(), boi->second);
 	}
 	if (!commandQue.empty() && (it == commandQue.begin())) {
@@ -296,12 +306,14 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
 		CFactory* fac = static_cast<CFactory*>(owner);
 		fac->StopBuild();
 	}
-	commandQue.insert(it, newCmd);
+	while (buildCount--)
+		it = commandQue.insert(it, newCmd);
 }
 
 
 bool CFactoryCAI::RemoveBuildCommand(CCommandQueue::iterator& it)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Command& cmd = *it;
 	const auto boi = buildOptions.find(cmd.GetID());
 	if (boi != buildOptions.end()) {
@@ -324,6 +336,7 @@ bool CFactoryCAI::RemoveBuildCommand(CCommandQueue::iterator& it)
 
 void CFactoryCAI::DecreaseQueueCount(const Command& buildCommand, int& numQueued)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// copy in case we get pop'ed
 	// NOTE: the queue should not be empty at this point!
 	const Command frontCommand = commandQue.empty()? Command(CMD_STOP): commandQue.front();
@@ -360,6 +373,7 @@ void CFactoryCAI::FactoryFinishBuild(const Command& command) {
 
 void CFactoryCAI::SlowUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Commands issued may invoke SlowUpdate when paused
 	if (gs->paused)
 		return;
@@ -402,6 +416,7 @@ void CFactoryCAI::SlowUpdate()
 
 void CFactoryCAI::ExecuteStop(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CFactory* fac = static_cast<CFactory*>(owner);
 	fac->StopBuild();
 
@@ -411,6 +426,7 @@ void CFactoryCAI::ExecuteStop(Command& c)
 
 int CFactoryCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (pointed == nullptr)
 		return CMD_MOVE;
 
@@ -426,6 +442,7 @@ int CFactoryCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 
 void CFactoryCAI::UpdateIconName(int cmdID, const int& numQueued)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const SCommandDescription*& cd: possibleCommands) {
 		if (cd->id != cmdID)
 			continue;

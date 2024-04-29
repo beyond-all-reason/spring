@@ -11,6 +11,8 @@
 
 #include "System/float3.h"
 
+struct CollisionVolume;
+
 namespace QTPFS {
 	struct IPath;
 	struct NodeLayer;
@@ -83,6 +85,8 @@ namespace QTPFS {
 		unsigned int searchState;  // offset that identifies nodes as part of current search
 
 	public:
+		static void InitStatic();
+
 		PathSearch()
 			: searchID(0)
 			, searchTeam(0)
@@ -113,13 +117,15 @@ namespace QTPFS {
 		bool SharedFinalize(const IPath* srcPath, IPath* dstPath);
 		PathSearchTrace::Execution* GetExecutionTrace() { return searchExec; }
 
-		const std::uint64_t GetHash() const { return pathSearchHash; };
-		const std::uint64_t GetPartialSearchHash() const { return pathPartialSearchHash; };
+		const PathHashType GetHash() const { return pathSearchHash; };
+		const PathHashType GetPartialSearchHash() const { return pathPartialSearchHash; };
 
 		bool PathWasFound() const { return haveFullPath | havePartPath; }
 
 		void SetPathType(int newPathType) { pathType = newPathType; }
 		int GetPathType() const { return pathType; }
+
+		void SetGoalDistance(float dist) { goalDistance = dist; }
 
 	private:
 		struct DirectionalSearchData {
@@ -128,7 +134,6 @@ namespace QTPFS {
 				, srcSearchNode(nullptr)
 				, tgtSearchNode(nullptr)
 				, minSearchNode(nullptr)
-				, areaSearched(0)
 			{}
 
 			// global queue: allocated once, re-used by all searches without clear()'s
@@ -138,7 +143,6 @@ namespace QTPFS {
 			SearchNode *srcSearchNode, *tgtSearchNode;
 			float3 srcPoint, tgtPoint;
 			SearchNode *minSearchNode;
-			int areaSearched;
 		};
 
 		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData);
@@ -146,6 +150,8 @@ namespace QTPFS {
 
 		void IterateNodes(unsigned int searchDir);
 		void IterateNodeNeighbors(const INode* curNode, unsigned int searchDir);
+
+		float3 FindNearestPointOnNodeToGoal(const QTPFS::SearchNode& node, const float3& goalPos) const;
 
 		void TracePath(IPath* path);
 		void SmoothPath(IPath* path);
@@ -155,7 +161,7 @@ namespace QTPFS {
 
 		void InitStartingSearchNodes();
 		void UpdateHcostMult();
-		void RemoveOutdatedOpenNodesFromQueue();
+		void RemoveOutdatedOpenNodesFromQueue(int searchDir);
 		bool IsNodeActive(const SearchNode& curSearchNode) const;
 
 		bool ExecutePathSearch();
@@ -163,24 +169,26 @@ namespace QTPFS {
 
 		void SetForwardSearchLimit();
 
-		const std::uint64_t GenerateHash(const INode* srcNode, const INode* tgtNode) const;
-		const std::uint64_t GenerateHash2(uint32_t p1, uint32_t p2) const;
+		void GetRectangleCollisionVolume(const SearchNode& snode, CollisionVolume& v, float3& rm) const;
 
-		const std::uint64_t GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
+		const PathHashType GenerateHash(const INode* srcNode, const INode* tgtNode) const;
+		const PathHashType GenerateHash2(uint32_t p1, uint32_t p2) const;
+
+		const PathHashType GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
 		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const;
 
 		QTPFS::SearchThreadData* searchThreadData;
 
 		// Identifies the layer, target quad and source quad for a search query so that similar
 		// searches can be combined.
-		std::uint64_t pathSearchHash;
+		PathHashType pathSearchHash;
 
 		// Similar to hash, but the target quad and source quad numbers may not relate to actual
 		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
 		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
 		// start and/or end in different, but close, quads. This is used to handle partially-
 		// shared path searches.
-		std::uint64_t pathPartialSearchHash;
+		PathHashType pathPartialSearchHash;
 
 		const CSolidObject* pathOwner;
 		NodeLayer* nodeLayer;
@@ -195,6 +203,7 @@ namespace QTPFS {
 		DirectionalSearchData directionalSearchData[2];
 
 		float2 netPoints[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
+		float3 goalPos;
 
 		float gDists[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
 		float hDists[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
@@ -202,32 +211,40 @@ namespace QTPFS {
 		float hCosts[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
 
 		float hCostMult;
+		float goalDistance = 0.f;
+		float adjustedGoalDistance;
 
 		int fwdStepIndex = 0;
 		int bwdStepIndex = 0;
 
-		int fwdAreaSearchLimit = 0;
+		int fwdNodeSearchLimit = 0;
 
 		size_t fwdNodesSearched = 0;
+		size_t bwdNodesSearched = 0;
 
 		bool haveFullPath;
 		bool havePartPath;
 		bool badGoal;
+		bool disallowNodeRevisit = false;
 
 public:
-		bool rawPathCheck;
-		bool pathRequestWaiting;
-		bool doPartialSearch;
-		bool rejectPartialSearch;
-		bool allowPartialSearch;
-		bool searchEarlyDrop;
-		bool initialized;
+		bool rawPathCheck = false;
+		bool synced = false;
+		bool pathRequestWaiting = false;
+		bool doPartialSearch = false;
+		bool rejectPartialSearch = false;
+		bool allowPartialSearch = false;
+		bool expectIncompletePartialSearch = false;
+		bool searchEarlyDrop = false;
+		bool initialized = false;
 		bool partialReverseTrace = false;
 
 		bool fwdPathConnected = false;
 		bool bwdPathConnected = false;
+		bool useFwdPathOnly = false;
 
-		static constexpr std::uint64_t BAD_HASH = std::numeric_limits<std::uint64_t>::max();
+		static float MAP_RELATIVE_MAX_NODES_SEARCHED;
+		static int MAP_MAX_NODES_SEARCHED;
 	};
 }
 

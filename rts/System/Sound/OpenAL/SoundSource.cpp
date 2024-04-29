@@ -215,7 +215,7 @@ void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, flo
 		alSourcei(id, AL_SOURCE_RELATIVE, AL_TRUE);
 		alSourcef(id, AL_ROLLOFF_FACTOR, 0.f);
 		alSource3f(id, AL_POSITION, 0.0f, 0.0f, -1.0f * ELMOS_TO_METERS);
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__OpenBSD__)
 		alSourcef(id, AL_REFERENCE_DISTANCE, REFERENCE_DIST * ELMOS_TO_METERS);
 #endif
 	} else {
@@ -238,7 +238,7 @@ void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, flo
 		alSourcef(id, AL_ROLLOFF_FACTOR, ROLLOFF_FACTOR * item->rolloff * heightRolloffModifier);
 
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__OpenBSD__)
 		alSourcef(id, AL_MAX_DISTANCE, 1000000.0f);
 		// Max distance is too small by default on my Mac...
 		ALfloat gain = channel->volume * item->GetGain() * volume;

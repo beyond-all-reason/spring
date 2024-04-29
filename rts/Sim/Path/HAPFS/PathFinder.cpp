@@ -17,6 +17,9 @@
 #include "System/MathConstants.h"
 #include "System/TimeProfiler.h"
 
+#include "System/Misc/TracyDefs.h"
+
+
 // #include "Game/SelectedUnitsHandler.h"
 
 namespace HAPFS {
@@ -125,6 +128,7 @@ void CPathFinder::InitStatic() {
 
 void CPathFinder::Init(bool threadSafe)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	IPathFinder::Init(1);
 
 	blockCheckFunc = blockCheckFuncs[threadSafe];
@@ -137,6 +141,7 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	const CPathFinderDef& pfDef,
 	const CSolidObject* owner
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!moveDef.allowRawMovement)
 		return IPath::Error;
 
@@ -222,6 +227,7 @@ IPath::SearchResult CPathFinder::DoSearch(
 	const CPathFinderDef& pfDef,
 	const CSolidObject* owner
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool foundGoal = false;
 	int curThread = ThreadPool::GetThreadNum();
 
@@ -285,6 +291,7 @@ void CPathFinder::TestNeighborSquares(
 	const CSolidObject* owner,
 	int thread
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	struct SquareState {
 		CMoveMath::BlockType blockMask = MMBT::BLOCK_IMPASSABLE;
 		float speedMod = 0.0f;
@@ -421,6 +428,7 @@ bool CPathFinder::TestBlock(
 	const unsigned int blockStatus,
 	float speedMod
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	testedBlocks++;
 
 	// initial calculations of the new block
@@ -507,6 +515,7 @@ bool CPathFinder::TestBlock(
 
 void CPathFinder::FinishSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, IPath::Path& foundPath) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (pfDef.needPath) {
 		// backtrack
 		int2 square = BlockIdxToPos(mGoalBlockIdx);
@@ -565,6 +574,7 @@ void CPathFinder::FinishSearch(const MoveDef& moveDef, const CPathFinderDef& pfD
 /** Helper function for SmoothMidWaypoint */
 static inline void FixupPath3Pts(const MoveDef& moveDef, const float3 p1, float3& p2, const float3 p3)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #if ENABLE_PATH_DEBUG
 	float3 old = p2;
 #endif
@@ -584,6 +594,7 @@ void CPathFinder::SmoothMidWaypoint(
 	const MoveDef& moveDef,
 	IPath::Path& foundPath
 ) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr float COSTMOD = 1.39f; // (math::sqrt(2) + 1) / math::sqrt(3)
 
 	const int tstSqrIdx = BlockPosToIdx(testSqr);

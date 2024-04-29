@@ -22,6 +22,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
+
 static constexpr float SMF_TEXSQUARE_SIZE = 1024.0f;
 
 
@@ -33,6 +35,7 @@ ISMFRenderState* ISMFRenderState::GetInstance(bool luaShaders, bool noop) {
 }
 
 bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string names[GLSL_SHADER_COUNT] = {
 		"SMFShaderGLSL-Forward-Std",
 		"SMFShaderGLSL-Forward-Adv",
@@ -64,6 +67,7 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 }
 
 void SMFRenderStateGLSL::Kill() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
 		// make sure SH deletes only the wrapper objects; programs are managed by LuaShaders
 		for (uint32_t n = GLSL_SHADER_FWD_STD; n < GLSL_SHADER_COUNT; n++) {
@@ -82,6 +86,7 @@ void SMFRenderStateGLSL::Update(
 	const CSMFGroundDrawer* smfGroundDrawer,
 	const LuaMapShaderData* luaMapShaderData
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
 		assert(luaMapShaderData != nullptr);
 
@@ -189,16 +194,19 @@ void SMFRenderStateGLSL::Update(
 }
 
 bool SMFRenderStateGLSL::HasValidShader(const DrawPass::e& drawPass) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Shader::IProgramObject* shader = (drawPass == DrawPass::TerrainDeferred) ? glslShaders[GLSL_SHADER_DFR_ADV] : currShader;
 	return (shader != nullptr && shader->IsValid());
 }
 
 bool SMFRenderStateGLSL::CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_DFR_ADV);
 }
 
 void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
 		// use raw, GLSLProgramObject::Enable also calls RecompileIfNeeded
 		currShader->EnableRaw();
@@ -223,7 +231,8 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 
 	if (isAdv) {
 		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
-		currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
+		if (shadowHandler.ShadowsLoaded())
+			currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
 	}
 
 	// already on the MV stack at this point
@@ -263,6 +272,7 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 }
 
 void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
 		glActiveTexture(GL_TEXTURE0);
 		currShader->DisableRaw();
@@ -282,12 +292,14 @@ void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const 
 }
 
 void SMFRenderStateGLSL::SetSquareTexGen(const int sqx, const int sqy) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// needs to be set even for Lua shaders, is unknowable otherwise
 	// (works because SMFGroundDrawer::SetupBigSquare always calls us)
 	currShader->SetUniform("texSquare", sqx, sqy);
 }
 
 void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (drawPass == DrawPass::TerrainDeferred) {
 		currShader = glslShaders[GLSL_SHADER_DFR_ADV];
 		return;
@@ -301,6 +313,7 @@ void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawe
 
 void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(currShader && !currShader->IsBound());
 
 	for (uint32_t n = GLSL_SHADER_FWD_ADV; n < GLSL_SHADER_COUNT; n++) {
@@ -316,5 +329,6 @@ void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 
 bool SMFRenderStateGLSL::CanUseAdvShading(const CSMFGroundDrawer* smfGroundDrawer, ShaderStage shStage) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return smfGroundDrawer->UseAdvShading() && glslShaders[shStage]->IsValid();
 }

@@ -69,7 +69,7 @@
 
 #undef near
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 // See end of source for member bindings
@@ -87,6 +87,7 @@ float CUnit::expGrade       = 0.0f;
 
 CUnit::CUnit(): CSolidObject()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unitMemPool.alloced(this));
 
 	static_assert((sizeof(los) / sizeof(los[0])) == ILosType::LOS_TYPE_COUNT, "");
@@ -104,6 +105,7 @@ CUnit::CUnit(): CSolidObject()
 
 CUnit::~CUnit()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unitMemPool.mapped(this));
 	// clean up if we are still under MoveCtrl here
 	DisableScriptMoveType();
@@ -130,8 +132,7 @@ CUnit::~CUnit()
 	if (activated && unitDef->targfac)
 		losHandler->IncreaseAllyTeamRadarErrorSize(allyteam);
 
-	SetMetalStorage(0);
-	SetEnergyStorage(0);
+	SetStorage(0.0f);
 
 	// not all unit deletions run through KillUnit(),
 	// but we always want to call this for ourselves
@@ -155,6 +156,7 @@ CUnit::~CUnit()
 
 void CUnit::InitStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// numerator was 2*UNIT_SLOWUPDATE_RATE/GAME_SPEED which equals 1 since 99.0
 	SetEmpDeclineRate(1.0f / modInfo.paralyzeDeclineRate);
 	SetExpMultiplier(modInfo.unitExpMultiplier);
@@ -170,6 +172,7 @@ void CUnit::InitStatic()
 
 void CUnit::SanityCheck() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos.AssertNaNs();
 	midPos.AssertNaNs();
 	relMidPos.AssertNaNs();
@@ -248,6 +251,8 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	SetRadiusAndHeight(model);
 	UpdateMidAndAimPos();
 
+	buildeeRadius = (unitDef->buildeeBuildRadius >= 0.f) ? unitDef->buildeeBuildRadius : radius;
+
 	unitHandler.AddUnit(this);
 	quadField.MovedUnit(this);
 
@@ -263,8 +268,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	power = unitDef->power;
 	maxHealth = unitDef->health;
 	health = beingBuilt? 0.1f: unitDef->health;
-	cost.metal = unitDef->metal;
-	cost.energy = unitDef->energy;
+	cost = unitDef->cost;
 	buildTime = unitDef->buildTime;
 	armoredMultiple = unitDef->armoredMultiple;
 	armorType = unitDef->armorType;
@@ -300,8 +304,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	useHighTrajectory = (unitDef->highTrajectoryType == 1);
 
-	harvestStorage.metal  = unitDef->harvestMetalStorage;
-	harvestStorage.energy = unitDef->harvestEnergyStorage;
+	harvestStorage = unitDef->harvestStorage;
 
 	moveType = MoveTypeFactory::GetMoveType(this, unitDef);
 	script = CUnitScriptFactory::CreateScript(this, unitDef);
@@ -394,6 +397,7 @@ void CUnit::PostInit(const CUnit* builder)
 
 void CUnit::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.RenderUnitPreCreated(this);
 	eventHandler.RenderUnitCreated(this, isCloaked);
 }
@@ -404,6 +408,7 @@ void CUnit::PostLoad()
 
 void CUnit::FinishedBuilding(bool postInit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!beingBuilt && !postInit)
 		return;
 
@@ -421,9 +426,7 @@ void CUnit::FinishedBuilding(bool postInit)
 	if (unitDef->activateWhenBuilt)
 		Activate();
 
-	SetMetalStorage(unitDef->metalStorage);
-	SetEnergyStorage(unitDef->energyStorage);
-
+	SetStorage(unitDef->storage);
 
 	// Sets the frontdir in sync with heading.
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
@@ -450,6 +453,7 @@ void CUnit::FinishedBuilding(bool postInit)
 
 void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsCrashing() && !beingBuilt)
 		return;
 
@@ -458,6 +462,7 @@ void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 
 void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead)
 		return;
 
@@ -487,23 +492,24 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 
 	if (wd != nullptr) {
 		assert(da != nullptr);
-		CExplosionParams params = {
-			pos,
-			ZeroVector,
-			*da,
-			wd,
-			this,                                    // owner
-			nullptr,                                 // hitUnit
-			nullptr,                                 // hitFeature
-			da->craterAreaOfEffect,
-			da->damageAreaOfEffect,
-			da->edgeEffectiveness,
-			da->explosionSpeed,
-			(da->GetDefault() > 500.0f)? 1.0f: 2.0f, // gfxMod
-			false,                                   // impactOnly
-			false,                                   // ignoreOwner
-			true,                                    // damageGround
-			-1u                                      // projectileID
+		const CExplosionParams params = {
+			.pos                  = pos,
+			.dir                  = ZeroVector,
+			.damages              = *da,
+			.weaponDef            = wd,
+			.owner                = this,
+			.hitUnit              = nullptr,
+			.hitFeature           = nullptr,
+			.craterAreaOfEffect   = da->craterAreaOfEffect,
+			.damageAreaOfEffect   = da->damageAreaOfEffect,
+			.edgeEffectiveness    = da->edgeEffectiveness,
+			.explosionSpeed       = da->explosionSpeed,
+			.gfxMod               = (da->GetDefault() > 500.0f)? 1.0f: 2.0f,
+			.maxGroundDeformation = 0.0f,
+			.impactOnly           = false,
+			.ignoreOwner          = false,
+			.damageGround         = true,
+			.projectileID         = static_cast<uint32_t>(-1u)
 		};
 
 		helper->Explosion(params);
@@ -518,6 +524,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 
 void CUnit::ForcedMove(const float3& newPos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UnBlock();
 	Move((preFramePos = newPos) - pos, true);
 	Block();
@@ -530,6 +537,7 @@ void CUnit::ForcedMove(const float3& newPos)
 
 float3 CUnit::GetErrorVector(int argAllyTeam) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// false indicates LuaHandle without full read access
 	if (!teamHandler.IsValidAllyTeam(argAllyTeam))
 		return (posErrorVector * losHandler->GetBaseRadarErrorSize() * 2.0f);
@@ -554,6 +562,7 @@ float3 CUnit::GetErrorVector(int argAllyTeam) const
 
 void CUnit::UpdatePosErrorParams(bool updateError, bool updateDelta)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// every frame, magnitude of error increases
 	// error-direction is fixed until next delta
 	if (updateError)
@@ -578,6 +587,7 @@ void CUnit::UpdatePosErrorParams(bool updateError, bool updateDelta)
 
 void CUnit::Drop(const float3& parentPos, const float3& parentDir, CUnit* parent)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// drop unit from position
 	fallSpeed = mix(unitDef->unitFallSpeed, parent->unitDef->fallSpeed, unitDef->unitFallSpeed <= 0.0f);
 
@@ -595,6 +605,7 @@ void CUnit::Drop(const float3& parentPos, const float3& parentDir, CUnit* parent
 
 void CUnit::DeleteScript()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (script != &CNullUnitScript::value)
 		spring::SafeDestruct(script);
 
@@ -603,6 +614,7 @@ void CUnit::DeleteScript()
 
 void CUnit::EnableScriptMoveType()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (UsingScriptMoveType())
 		return;
 
@@ -613,6 +625,7 @@ void CUnit::EnableScriptMoveType()
 
 void CUnit::DisableScriptMoveType()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!UsingScriptMoveType())
 		return;
 
@@ -635,6 +648,7 @@ void CUnit::DisableScriptMoveType()
 
 void CUnit::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ASSERT_SYNCED(pos);
 
 	UpdatePhysicalState(0.1f);
@@ -663,11 +677,25 @@ void CUnit::Update()
 	outOfMapTime *= (!pos.IsInBounds());
 }
 
+void CUnit::UpdateWeaponVectors()
+{
+	ZoneScoped;
+
+	if (!CanUpdateWeapons())
+		return;
+
+	for (CWeapon* w : weapons) {
+		w->UpdateWeaponErrorVector();
+		w->UpdateWeaponVectors();
+	}
+}
+
 void CUnit::UpdateWeapons()
 {
 	ZoneScoped;
+
 	if (!CanUpdateWeapons())
-		return;
+			return;
 
 	for (CWeapon* w: weapons) {
 		w->Update();
@@ -676,6 +704,7 @@ void CUnit::UpdateWeapons()
 
 void CUnit::UpdateTransportees()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (TransportedUnit& tu: transportedUnits) {
 		CUnit* transportee = tu.unit;
 
@@ -718,6 +747,7 @@ void CUnit::UpdateTransportees()
 
 void CUnit::ReleaseTransportees(CUnit* attacker, bool selfDestruct, bool reclaimed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (TransportedUnit& tu: transportedUnits) {
 		CUnit* transportee = tu.unit;
 		assert(transportee != this);
@@ -789,6 +819,7 @@ void CUnit::ReleaseTransportees(CUnit* attacker, bool selfDestruct, bool reclaim
 
 void CUnit::TransporteeKilled(const CObject* o)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto pred = [&](const TransportedUnit& tu) { return (tu.unit == o); };
 	const auto iter = std::find_if(transportedUnits.begin(), transportedUnits.end(), pred);
 
@@ -808,21 +839,19 @@ void CUnit::TransporteeKilled(const CObject* o)
 
 void CUnit::UpdateResources()
 {
-	resourcesMake.metal  = resourcesMakeI.metal  + resourcesMakeOld.metal;
-	resourcesUse.metal   = resourcesUseI.metal   + resourcesUseOld.metal;
-	resourcesMake.energy = resourcesMakeI.energy + resourcesMakeOld.energy;
-	resourcesUse.energy  = resourcesUseI.energy  + resourcesUseOld.energy;
+	RECOIL_DETAILED_TRACY_ZONE;
+	resourcesMake = resourcesMakeI + resourcesMakeOld;
+	resourcesUse  = resourcesUseI  + resourcesUseOld;
 
-	resourcesMakeOld.metal  = resourcesMakeI.metal;
-	resourcesUseOld.metal   = resourcesUseI.metal;
-	resourcesMakeOld.energy = resourcesMakeI.energy;
-	resourcesUseOld.energy  = resourcesUseI.energy;
+	resourcesMakeOld = resourcesMakeI;
+	resourcesUseOld  = resourcesUseI;
 
-	resourcesMakeI.metal = resourcesUseI.metal = resourcesMakeI.energy = resourcesUseI.energy = 0.0f;
+	resourcesMakeI = resourcesUseI = 0.0f;
 }
 
 void CUnit::SetLosStatus(int at, unsigned short newStatus)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned short currStatus = losStatus[at];
 	const unsigned short diffBits = (currStatus ^ newStatus);
 
@@ -869,6 +898,7 @@ void CUnit::SetLosStatus(int at, unsigned short newStatus)
 
 unsigned short CUnit::CalcLosStatus(int at)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned short currStatus = losStatus[at];
 
 	unsigned short newStatus = currStatus;
@@ -892,6 +922,7 @@ unsigned short CUnit::CalcLosStatus(int at)
 
 void CUnit::UpdateLosStatus(int at)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned short currStatus = losStatus[at];
 	if ((currStatus & LOS_ALL_MASK_BITS) == LOS_ALL_MASK_BITS) {
 		return; // no need to update, all changes are masked
@@ -901,6 +932,7 @@ void CUnit::UpdateLosStatus(int at)
 
 
 void CUnit::SetStunned(bool stun) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	stunned = stun;
 
 	if (moveType->progressState == AMoveType::Active) {
@@ -994,31 +1026,23 @@ void CUnit::SlowUpdate()
 
 
 	// FIXME: scriptMakeMetal ...?
-	AddMetal(resourcesUncondMake.metal);
-	AddEnergy(resourcesUncondMake.energy);
-	UseMetal(resourcesUncondUse.metal);
-	UseEnergy(resourcesUncondUse.energy);
+	AddResources(resourcesUncondMake);
+	UseResources(resourcesUncondUse);
+
+	if (activated && UseResources(resourcesCondUse))
+		AddResources(resourcesCondMake);
+
+	AddResources(unitDef->resourceMake * 0.5f);
 
 	if (activated) {
-		if (UseMetal(resourcesCondUse.metal))
-			AddEnergy(resourcesCondMake.energy);
-
-		if (UseEnergy(resourcesCondUse.energy))
-			AddMetal(resourcesCondMake.metal);
-
-	}
-
-	AddMetal(unitDef->metalMake * 0.5f);
-
-	if (activated) {
-		if (UseEnergy(unitDef->energyUpkeep * 0.5f)) {
+		if (UseEnergy(unitDef->upkeep.energy * 0.5f)) {
 			AddMetal(unitDef->makesMetal * 0.5f);
 
 			if (unitDef->extractsMetal > 0.0f)
 				AddMetal(metalExtract * 0.5f);
 		}
 
-		UseMetal(unitDef->metalUpkeep * 0.5f);
+		UseMetal(unitDef->upkeep.metal * 0.5f);
 
 		if (unitDef->windGenerator > 0.0f) {
 			if (envResHandler.GetCurrentWindStrength() > unitDef->windGenerator) {
@@ -1030,7 +1054,7 @@ void CUnit::SlowUpdate()
 	}
 
 	// FIXME: tidal part should be under "if (activated)"?
-	AddEnergy((unitDef->energyMake + unitDef->tidalGenerator * envResHandler.GetCurrentTidalStrength()) * 0.5f);
+	AddEnergy((unitDef->tidalGenerator * envResHandler.GetCurrentTidalStrength()) * 0.5f);
 
 
 	if (health < maxHealth) {
@@ -1063,6 +1087,7 @@ void CUnit::SlowUpdateWeapons()
 
 void CUnit::SlowUpdateKamikaze(bool scanForTargets)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unitDef->canKamikaze)
 		return;
 
@@ -1114,6 +1139,7 @@ void CUnit::SlowUpdateKamikaze(bool scanForTargets)
 
 float CUnit::GetFlankingDamageBonus(const float3& attackDir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float flankingBonus = 1.0f;
 
 	if (flankingBonusMode <= 0)
@@ -1147,6 +1173,7 @@ float CUnit::GetFlankingDamageBonus(const float3& attackDir)
 
 void CUnit::DoWaterDamage()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (mapInfo->water.damage <= 0.0f)
 		return;
 	if (!pos.IsInBounds())
@@ -1165,6 +1192,7 @@ void CUnit::DoWaterDamage()
 
 static void AddUnitDamageStats(CUnit* unit, float damage, bool dealt)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unit == nullptr)
 		return;
 
@@ -1180,6 +1208,7 @@ static void AddUnitDamageStats(CUnit* unit, float damage, bool dealt)
 
 void CUnit::ApplyDamage(CUnit* attacker, const DamageArray& damages, float& baseDamage, float& experienceMod)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (damages.paralyzeDamageTime == 0) {
 		// real damage
 		if (baseDamage > 0.0f) {
@@ -1325,6 +1354,7 @@ void CUnit::DoDamage(
 
 
 void CUnit::ApplyImpulse(const float3& impulse) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (GetTransporter() != nullptr) {
 		// transfer impulse to unit transporting us, scaled by its mass
 		// assume we came here straight from DoDamage, not LuaSyncedCtrl
@@ -1349,6 +1379,7 @@ void CUnit::ApplyImpulse(const float3& impulse) {
 
 CMatrix44f CUnit::GetTransformMatrix(bool synced, bool fullread) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 interPos = synced ? pos : drawPos;
 
 	if (!synced && !fullread && !gu->spectatingFullView)
@@ -1362,6 +1393,7 @@ CMatrix44f CUnit::GetTransformMatrix(bool synced, bool fullread) const
 
 void CUnit::AddExperience(float exp)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (exp == 0.0f)
 		return;
 
@@ -1396,6 +1428,7 @@ void CUnit::AddExperience(float exp)
 
 void CUnit::SetMass(float newMass)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (transporter != nullptr)
 		transporter->SetMass(transporter->mass + (newMass - mass));
 
@@ -1405,6 +1438,7 @@ void CUnit::SetMass(float newMass)
 
 void CUnit::DoSeismicPing(float pingSize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (GetTransporter() != nullptr)
 		return;
 	if (pingSize <= 0.0f)
@@ -1438,6 +1472,7 @@ void CUnit::DoSeismicPing(float pingSize)
 
 void CUnit::ChangeLos(int losRad, int airRad)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	losRadius = losRad;
 	airLosRadius = airRad;
 }
@@ -1445,6 +1480,7 @@ void CUnit::ChangeLos(int losRad, int airRad)
 
 bool CUnit::ChangeTeam(int newteam, ChangeType type)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead)
 		return false;
 
@@ -1483,11 +1519,8 @@ bool CUnit::ChangeTeam(int newteam, ChangeType type)
 	}
 
 	if (!beingBuilt) {
-		teamHandler.Team(oldteam)->resStorage.metal  -= storage.metal;
-		teamHandler.Team(oldteam)->resStorage.energy -= storage.energy;
-
-		teamHandler.Team(newteam)->resStorage.metal  += storage.metal;
-		teamHandler.Team(newteam)->resStorage.energy += storage.energy;
+		teamHandler.Team(oldteam)->resStorage -= storage;
+		teamHandler.Team(newteam)->resStorage += storage;
 	}
 
 
@@ -1523,6 +1556,7 @@ bool CUnit::ChangeTeam(int newteam, ChangeType type)
 
 void CUnit::ChangeTeamReset()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		std::array<int, 1 + MAX_UNITS> alliedUnitIDs;
 		std::function<bool(const CObject*, int*)> alliedUnitPred = [&](const CObject* obj, int* id) {
@@ -1598,6 +1632,7 @@ void CUnit::ChangeTeamReset()
 }
 
 void CUnit::SetNeutral(bool b) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// only intervene for units *becoming* neutral
 	if (!(neutral = b))
 		return;
@@ -1630,6 +1665,7 @@ void CUnit::SetNeutral(bool b) {
 
 
 bool CUnit::FloatOnWater() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (moveDef != nullptr)
 		return (moveDef->FloatOnWater());
 
@@ -1639,6 +1675,7 @@ bool CUnit::FloatOnWater() const {
 
 bool CUnit::IsIdle() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (beingBuilt)
 		return false;
 
@@ -1648,6 +1685,7 @@ bool CUnit::IsIdle() const
 
 bool CUnit::AttackUnit(CUnit* targetUnit, bool isUserTarget, bool wantManualFire, bool fpsMode)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// don't self-target
 	if (targetUnit == this)
 		return false;
@@ -1675,6 +1713,7 @@ bool CUnit::AttackUnit(CUnit* targetUnit, bool isUserTarget, bool wantManualFire
 
 bool CUnit::AttackGround(const float3& pos, bool isUserTarget, bool wantManualFire, bool fpsMode)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	SWeaponTarget newTarget = SWeaponTarget(pos, isUserTarget);
 	newTarget.isManualFire = wantManualFire || fpsMode;
 
@@ -1693,6 +1732,7 @@ bool CUnit::AttackGround(const float3& pos, bool isUserTarget, bool wantManualFi
 
 void CUnit::DropCurrentAttackTarget()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (curTarget.type == Target_Unit)
 		DeleteDeathDependence(curTarget.unit, DEPENDENCE_TARGET);
 
@@ -1707,6 +1747,7 @@ void CUnit::DropCurrentAttackTarget()
 
 bool CUnit::SetSoloBuilder(CUnit* builder, const UnitDef* buildeeDef)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (builder == nullptr)
 		return false;
 	if (buildeeDef->canBeAssisted)
@@ -1718,6 +1759,7 @@ bool CUnit::SetSoloBuilder(CUnit* builder, const UnitDef* buildeeDef)
 
 void CUnit::SetLastAttacker(CUnit* attacker)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(attacker != nullptr);
 
 	if (teamHandler.AlliedTeams(team, attacker->team))
@@ -1734,6 +1776,7 @@ void CUnit::SetLastAttacker(CUnit* attacker)
 
 void CUnit::DependentDied(CObject* o)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	TransporteeKilled(o);
 
 	if (o == curTarget.unit)
@@ -1757,6 +1800,7 @@ void CUnit::DependentDied(CObject* o)
 
 void CUnit::UpdatePhysicalState(float eps)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool inAir      = IsInAir();
 	const bool inWater    = IsInWater();
 	const bool underWater = IsUnderWater();
@@ -1788,6 +1832,7 @@ void CUnit::UpdatePhysicalState(float eps)
 
 void CUnit::UpdateTerrainType()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (curTerrainType != lastTerrainType) {
 		script->SetSFXOccupy(curTerrainType);
 		lastTerrainType = curTerrainType;
@@ -1796,6 +1841,7 @@ void CUnit::UpdateTerrainType()
 
 void CUnit::CalculateTerrainType()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	enum {
 		SFX_TERRAINTYPE_NONE    = 0,
 		SFX_TERRAINTYPE_WATER_A = 1,
@@ -1839,6 +1885,7 @@ void CUnit::CalculateTerrainType()
 
 bool CUnit::SetGroup(CGroup* newGroup, bool fromFactory, bool autoSelect)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// factory is not necessarily selected
 	if (fromFactory && !selectedUnitsHandler.AutoAddBuiltUnitsToFactoryGroup())
 		return false;
@@ -1879,6 +1926,7 @@ const CGroup* CUnit::GetGroup() const { return uiGroupHandlers[team].GetUnitGrou
 
 bool CUnit::AddBuildPower(CUnit* builder, float amount)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead || IsCrashing())
 		return false;
 
@@ -1895,34 +1943,25 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		if (beingBuilt) {
 			// build
 			const float step = std::min(amount / buildTime, 1.0f - buildProgress);
-			const float metalCostStep  = cost.metal  * step;
-			const float energyCostStep = cost.energy * step;
+			const auto resourceUse = cost * step;
 
-			if (builderTeam->res.metal < metalCostStep || builderTeam->res.energy < energyCostStep) {
-				// update the energy and metal required counts
-				builderTeam->resPull.metal  += metalCostStep;
-				builderTeam->resPull.energy += energyCostStep;
+			if (!builderTeam->HaveResources(resourceUse)) {
+				builderTeam->resPull += resourceUse;
 				return false;
 			}
 
 			if (!eventHandler.AllowUnitBuildStep(builder, this, step))
 				return false;
 
-			if (builder->UseMetal(metalCostStep)) {
-				// FIXME eventHandler.AllowUnitBuildStep() may have changed the storages!!! so the checks can be invalid!
-				// TODO add a builder->UseResources(SResources(cost.metalStep, cost.energyStep))
-				if (builder->UseEnergy(energyCostStep)) {
-					health += (maxHealth * step);
-					health = std::min(health, maxHealth);
-					buildProgress += step;
+			/* Note, eventHandler.AllowUnitBuildStep() may have
+			 * changed stored resources. That is fine though. */
+			if (builder->UseResources(resourceUse)) {
+				health += (maxHealth * step);
+				health = std::min(health, maxHealth);
 
-					if (buildProgress >= 1.0f) {
-						FinishedBuilding(false);
-					}
-				} else {
-					// refund already-deducted metal if *energy* cost cannot be
-					builder->UseMetal(-metalCostStep);
-				}
+				buildProgress += step;
+				if (buildProgress >= 1.0f)
+					FinishedBuilding(false);
 			}
 
 			return true;
@@ -1997,8 +2036,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		// turn reclaimee into nanoframe (even living units)
 		if ((modInfo.reclaimUnitMethod == 0) && !beingBuilt) {
 			beingBuilt = true;
-			SetMetalStorage(0);
-			SetEnergyStorage(0);
+			SetStorage(0.0f);
 
 			// make sure neighbor extractors update
 			CExtractorBuilding* extractor = dynamic_cast<CExtractorBuilding*>(this);
@@ -2030,24 +2068,9 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 //////////////////////////////////////////////////////////////////////
 //
 
-void CUnit::SetMetalStorage(float newStorage)
-{
-	teamHandler.Team(team)->resStorage.metal -= storage.metal;
-	storage.metal = newStorage;
-	teamHandler.Team(team)->resStorage.metal += storage.metal;
-}
-
-
-void CUnit::SetEnergyStorage(float newStorage)
-{
-	teamHandler.Team(team)->resStorage.energy -= storage.energy;
-	storage.energy = newStorage;
-	teamHandler.Team(team)->resStorage.energy += storage.energy;
-}
-
-
 bool CUnit::AllowedReclaim(CUnit* builder) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Don't allow the reclaim if the unit is finished and we arent allowed to reclaim it
 	if (!beingBuilt) {
 		if (allyteam == builder->allyteam) {
@@ -2063,6 +2086,7 @@ bool CUnit::AllowedReclaim(CUnit* builder) const
 
 bool CUnit::UseMetal(float metal)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (metal < 0.0f) {
 		AddMetal(-metal);
 		return true;
@@ -2081,6 +2105,7 @@ bool CUnit::UseMetal(float metal)
 
 void CUnit::AddMetal(float metal, bool useIncomeMultiplier)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (metal < 0.0f) {
 		UseMetal(-metal);
 		return;
@@ -2093,6 +2118,7 @@ void CUnit::AddMetal(float metal, bool useIncomeMultiplier)
 
 bool CUnit::UseEnergy(float energy)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (energy < 0.0f) {
 		AddEnergy(-energy);
 		return true;
@@ -2111,6 +2137,7 @@ bool CUnit::UseEnergy(float energy)
 
 void CUnit::AddEnergy(float energy, bool useIncomeMultiplier)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (energy < 0.0f) {
 		UseEnergy(-energy);
 		return;
@@ -2122,6 +2149,7 @@ void CUnit::AddEnergy(float energy, bool useIncomeMultiplier)
 
 bool CUnit::AddHarvestedMetal(float metal)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (harvestStorage.metal <= 0.0f) {
 		AddMetal(metal, false);
 		return true;
@@ -2143,6 +2171,7 @@ bool CUnit::AddHarvestedMetal(float metal)
 
 void CUnit::SetStorage(const SResourcePack& newStorage)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	teamHandler.Team(team)->resStorage -= storage;
 	storage = newStorage;
 	teamHandler.Team(team)->resStorage += storage;
@@ -2151,12 +2180,14 @@ void CUnit::SetStorage(const SResourcePack& newStorage)
 
 bool CUnit::HaveResources(const SResourcePack& pack) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return teamHandler.Team(team)->HaveResources(pack);
 }
 
 
 bool CUnit::UseResources(const SResourcePack& pack)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME
 	/*if (energy < 0.0f) {
 		AddEnergy(-energy);
@@ -2176,6 +2207,7 @@ bool CUnit::UseResources(const SResourcePack& pack)
 
 void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME
 	/*if (energy < 0.0f) {
 		UseEnergy(-energy);
@@ -2188,6 +2220,7 @@ void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 
 static bool CanDispatch(const CUnit* u, const CTeam* team, const SResourceOrder& order)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool haveEnoughResources = (team->res >= order.use);
 	bool canDispatch = haveEnoughResources;
 
@@ -2208,6 +2241,7 @@ static bool CanDispatch(const CUnit* u, const CTeam* team, const SResourceOrder&
 
 static void GetScale(const float x1, const float x2, float* scale)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float v = std::min(x1, x2);
 	*scale = (x1 == 0.0f) ? *scale : std::min(*scale, v / x1);
 }
@@ -2215,6 +2249,7 @@ static void GetScale(const float x1, const float x2, float* scale)
 
 static bool LimitToFullStorage(const CUnit* u, const CTeam* team, SResourceOrder* order)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float scales[SResourcePack::MAX_RESOURCES];
 
 	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
@@ -2248,6 +2283,7 @@ static bool LimitToFullStorage(const CUnit* u, const CTeam* team, SResourceOrder
 
 bool CUnit::IssueResourceOrder(SResourceOrder* order)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME assert(order.use.energy >= 0.0f && order.use.metal >= 0.0f);
 	//FIXME assert(order.add.energy >= 0.0f && order.add.metal >= 0.0f);
 
@@ -2297,6 +2333,7 @@ bool CUnit::IssueResourceOrder(SResourceOrder* order)
 
 void CUnit::Activate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (activated)
 		return;
 
@@ -2313,6 +2350,7 @@ void CUnit::Activate()
 
 void CUnit::Deactivate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!activated)
 		return;
 
@@ -2330,6 +2368,7 @@ void CUnit::Deactivate()
 
 void CUnit::UpdateWind(float x, float z, float strength)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float windHeading = ClampRad(GetHeadingFromVectorF(-x, -z) - heading * TAANG2RAD);
 	const float windStrength = std::min(strength, unitDef->windGenerator);
 
@@ -2339,6 +2378,7 @@ void CUnit::UpdateWind(float x, float z, float strength)
 
 void CUnit::IncomingMissile(CMissileProjectile* missile)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unitDef->canDropFlare)
 		return;
 
@@ -2360,6 +2400,7 @@ void CUnit::IncomingMissile(CMissileProjectile* missile)
 
 void CUnit::TempHoldFire(int cmdID)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (weapons.empty())
 		return;
 	if (!eventHandler.AllowBuilderHoldFire(this, cmdID))
@@ -2378,6 +2419,7 @@ void CUnit::StopAttackingTargetIf(
 	const std::function<bool(const SWeaponTarget&)>& weaponPred,
 	const std::function<bool(const CUnit*)>& commandPred
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!pred(curTarget))
 		return;
 
@@ -2391,6 +2433,7 @@ void CUnit::StopAttackingTargetIf(
 #endif
 void CUnit::StopAttackingAllyTeam(int ally)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (lastAttacker != nullptr && lastAttacker->allyteam == ally) {
 		DeleteDeathDependence(lastAttacker, DEPENDENCE_ATTACKER);
 		lastAttacker = nullptr;
@@ -2407,6 +2450,7 @@ void CUnit::StopAttackingAllyTeam(int ally)
 
 
 bool CUnit::GetNewCloakState(bool stunCheck) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(wantCloak);
 
 	// grab nearest enemy wrt our default decloak-distance
@@ -2428,6 +2472,7 @@ bool CUnit::GetNewCloakState(bool stunCheck) {
 
 void CUnit::SlowUpdateCloak(bool stunCheck)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool oldCloak = isCloaked;
 	const bool newCloak = wantCloak && GetNewCloakState(stunCheck);
 
@@ -2447,6 +2492,7 @@ void CUnit::SlowUpdateCloak(bool stunCheck)
 // no use for this currently
 bool CUnit::ScriptCloak()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (isCloaked)
 		return true;
 
@@ -2463,6 +2509,7 @@ bool CUnit::ScriptCloak()
 
 bool CUnit::ScriptDecloak(const CSolidObject* object, const CWeapon* weapon)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// horrific ScriptCloak asymmetry for Lua's sake
 	// maintaining internal consistency requires the
 	// decloak event to only fire if isCloaked
@@ -2485,6 +2532,7 @@ bool CUnit::ScriptDecloak(const CSolidObject* object, const CWeapon* weapon)
 
 bool CUnit::CanTransport(const CUnit* unit) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unitDef->IsTransportUnit())
 		return false;
 	if (unit->GetTransporter() != nullptr)
@@ -2535,6 +2583,7 @@ bool CUnit::CanTransport(const CUnit* unit) const
 
 bool CUnit::AttachUnit(CUnit* unit, int piece, bool force)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unit != this);
 
 	if (unit->GetTransporter() == this) {
@@ -2614,6 +2663,7 @@ bool CUnit::AttachUnit(CUnit* unit, int piece, bool force)
 
 bool CUnit::DetachUnitCore(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unit->GetTransporter() != this)
 		return false;
 
@@ -2662,6 +2712,7 @@ bool CUnit::DetachUnitCore(CUnit* unit)
 
 bool CUnit::DetachUnit(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (DetachUnitCore(unit)) {
 		unit->Block();
 
@@ -2680,6 +2731,7 @@ bool CUnit::DetachUnit(CUnit* unit)
 
 bool CUnit::DetachUnitFromAir(CUnit* unit, const float3& pos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (DetachUnitCore(unit)) {
 		unit->Drop(this->pos, this->frontdir, this);
 
@@ -2694,6 +2746,7 @@ bool CUnit::DetachUnitFromAir(CUnit* unit, const float3& pos)
 }
 
 bool CUnit::CanLoadUnloadAtPos(const float3& wantedPos, const CUnit* unit, float* wantedHeightPtr) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool canLoadUnload = false;
 	float wantedHeight = GetTransporteeWantedHeight(wantedPos, unit, &canLoadUnload);
 
@@ -2704,6 +2757,7 @@ bool CUnit::CanLoadUnloadAtPos(const float3& wantedPos, const CUnit* unit, float
 }
 
 float CUnit::GetTransporteeWantedHeight(const float3& wantedPos, const CUnit* unit, bool* allowedPos) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool isAllowedTerrain = true;
 
 	float wantedHeight = unit->pos.y;
@@ -2771,6 +2825,7 @@ float CUnit::GetTransporteeWantedHeight(const float3& wantedPos, const CUnit* un
 }
 
 short CUnit::GetTransporteeWantedHeading(const CUnit* unit) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unit->GetTransporter() == nullptr)
 		return unit->heading;
 	if (dynamic_cast<CHoverAirMoveType*>(moveType) == nullptr)
@@ -2947,7 +3002,6 @@ CR_REG_METADATA(CUnit, (
 
 	CR_MEMBER(selfDCountdown),
 
-	CR_MEMBER_UN(myTrack),
 	CR_MEMBER_UN(myIcon),
 	CR_MEMBER_UN(drawIcon),
 

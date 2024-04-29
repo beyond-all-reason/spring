@@ -4,6 +4,9 @@
 #include "Rendering/Models/3DModel.h"
 #include "System/Threading/ThreadPool.h"
 
+#include "System/Misc/TracyDefs.h"
+
+
 CR_BIND_DERIVED(CWorldObject, CObject, )
 CR_REG_METADATA(CWorldObject, (
 	CR_MEMBER(id),
@@ -13,6 +16,8 @@ CR_REG_METADATA(CWorldObject, (
 	CR_MEMBER(height),
 	CR_MEMBER(sqRadius),
 	CR_MEMBER(drawRadius),
+	CR_MEMBER(drawFlag),
+	CR_MEMBER(previousDrawFlag),
 	// the projectile system needs to know that 'pos' and 'speed' are accessible by script
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(pos),
@@ -26,6 +31,7 @@ CR_REG_METADATA(CWorldObject, (
 
 void CWorldObject::SetRadiusAndHeight(const S3DModel* mdl)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// initial values; can be overridden by LSC::Set*RadiusAndHeight
 	SetRadiusAndHeight(mdl->radius, mdl->height);
 

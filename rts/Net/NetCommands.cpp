@@ -38,7 +38,7 @@
 #include "System/Sound/ISound.h"
 #include "System/Sync/DumpState.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(bool, LogClientData).defaultValue(false);
 
@@ -290,7 +290,7 @@ void CGame::ClientReadNet()
 
 			if (peekPacket != nullptr && peekPacket->data[0] == NETMSG_SYNCRESPONSE) {
 				if (haveServerDemo && haveClientDemo && gs->godMode != 0) {
-					assert(configHandler->GetBool("DemoFromDemo"));
+					//assert(configHandler->GetBool("DemoFromDemo"));
 
 					const  int32_t syncFrameNum = *reinterpret_cast<const int32_t*>(peekPacket->data + sizeof(uint8_t) + sizeof(uint8_t));
 					const uint32_t syncCheckSum = localSyncChecksums[syncFrameNum];

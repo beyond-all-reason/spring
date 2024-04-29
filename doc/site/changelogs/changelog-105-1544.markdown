@@ -69,7 +69,8 @@ Unlike similar existing functions these don't require a unit/feature instance to
 
 ### Miscellaneous features
 * add `Game.metalMapSquareSize` for use with API like `Spring.GetMetalAmount` etc
-* add mirrored looping of animated CEG sprites (animates backwards until it reaches the start and then bounces again), enabled by making the animation speed parameter negative (e.g. `animParams = "4,4,-30"`)
+* add mirrored looping of animated CEG sprites (animates backwards until it reaches the start and then bounces again), enabled by making the animation speed parameter negative (e.g. `animParams = "4,4,-30"`).
+Available for `BitmapMuzzleFlame`, `HeatCloudProjectile`, `SimpleParticleSystem` and `GroundFlash` CEG classes.
 * add `Spring.GiveOrderArrayToUnit`, accepts a single unitID and an order array and otherwise works the same as the existing `GiveOrderXYZ` family of functions
 
 ### Miscellaneous fixes

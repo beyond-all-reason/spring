@@ -23,12 +23,20 @@
 #include "System/Threading/ThreadPool.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 using namespace SystemGlobals;
 using namespace QTPFS;
 
+// Tracking a crash in live, so need optimizations turned down here for awhile.
+// #ifdef __GNUC__
+// #pragma GCC push_options
+// #pragma GCC optimize ("O0")
+// #endif
 
 void ScanForPathSpeedModInfo(int frameModulus) {
+    RECOIL_DETAILED_TRACY_ZONE;
     auto& comp = systemGlobals.GetSystemComponent<PathSpeedModInfoSystemComponent>();
     auto layersView = registry.view<NodeLayerSpeedInfoSweep>();
     auto pm = dynamic_cast<QTPFS::PathManager*>(pathManager);
@@ -93,7 +101,12 @@ void ScanForPathSpeedModInfo(int frameModulus) {
             });
 }
 
+// #ifdef __GNUC__
+// #pragma GCC pop_options
+// #endif
+
 void InitLayers() {
+    RECOIL_DETAILED_TRACY_ZONE;
     std::vector<entt::entity> layers((size_t)moveDefHandler.GetNumMoveDefs());
     QTPFS::registry.create<decltype(layers)::iterator>(layers.begin(), layers.end());
 
@@ -108,6 +121,7 @@ void InitLayers() {
 
 void PathSpeedModInfoSystem::Init()
 {
+    RECOIL_DETAILED_TRACY_ZONE;
     auto& comp = systemGlobals.CreateSystemComponent<PathSpeedModInfoSystemComponent>();
     auto pm = dynamic_cast<QTPFS::PathManager*>(IPathManager::GetInstance(QTPFS_TYPE));
 
@@ -151,6 +165,7 @@ void PathSpeedModInfoSystem::Update()
 }
 
 void PathSpeedModInfoSystem::Shutdown() {
+    RECOIL_DETAILED_TRACY_ZONE;
     systemUtils.OnUpdate().disconnect<&PathSpeedModInfoSystem::Update>();
 
     registry.view<NodeLayerSpeedInfoSweep>()

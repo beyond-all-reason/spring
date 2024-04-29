@@ -269,7 +269,7 @@ static int Pairs(lua_State* L)
 static int CustomParamsTable(lua_State* L, const void* data)
 {
 	const spring::unordered_map<std::string, std::string>& params = *((const spring::unordered_map<std::string, std::string>*)data);
-	lua_newtable(L);
+	lua_createtable(L, 0, params.size());
 
 	for (const auto& param: params) {
 		lua_pushsstring(L, param.first);
@@ -349,8 +349,8 @@ static bool InitParamMap()
 	ADD_STRING("name",     fd.name);
 	ADD_STRING("tooltip",  fd.description);
 
-	ADD_FLOAT("metal",       fd.metal);
-	ADD_FLOAT("energy",      fd.energy);
+	ADD_FLOAT("metal",       fd.cost.metal);
+	ADD_FLOAT("energy",      fd.cost.energy);
 	ADD_FLOAT("maxHealth",   fd.health);
 	ADD_FLOAT("reclaimTime", fd.reclaimTime);
 

@@ -28,6 +28,9 @@ list(APPEND engineDedicatedLibraries headlessStubs engineSystemNet)
 list(APPEND engineDedicatedLibraries ${LIBUNWIND_LIBRARIES})
 list(APPEND engineDedicatedLibraries ${LZMA_LIBRARY})
 
+### base64 from pr-downloader
+list(APPEND engineDedicatedLibraries "prd::base64")
+
 ### smmalloc
 list(APPEND engineDedicatedLibraries "smmalloc")
 
@@ -44,9 +47,9 @@ if    (UNIX AND NOT MINGW)
 	list(APPEND engineDedicatedLibraries ${CMAKE_DL_LIBS})
 
 	# Needed for backtrace* on some systems
-	if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+	if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 		list(APPEND engineDedicatedLibraries execinfo)
-	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 endif (UNIX AND NOT MINGW)
 
 find_package(SDL2 REQUIRED)
@@ -161,7 +164,7 @@ add_executable(engine-dedicated
 		${sources_engine_System_Log_sinkFile}
 		${sources_engine_System_Log_sinkOutputDebugString}
 		${ENGINE_ICON}
-		main
+		main.cpp
 	)
 target_link_libraries(engine-dedicated ${engineDedicatedLibraries})
 if    (MINGW)

@@ -16,9 +16,10 @@
 #include "Components/Path.h"
 #include "Components/PathSpeedModInfo.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 static void GetRectangleCollisionVolume(const SRectangle& r, CollisionVolume& v, float3& rm) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 vScales;
 
 	// rectangle dimensions (WS)
@@ -37,6 +38,7 @@ static void GetRectangleCollisionVolume(const SRectangle& r, CollisionVolume& v,
 }
 
 bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto pathView = registry.view<IPath>(/*entt::exclude<PathIsDirty>*/);
 	if (pathView.empty())
 		return false;
@@ -59,12 +61,16 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 
 		// LOG("%s: %x is Dirty=%d", __func__, (int)entity, (int)registry.all_of<PathIsDirty>(entity));
 
-		if (registry.any_of<PathIsDirty>(entity)) continue;
+		if (registry.any_of<PathIsDirty, PathSearchRef>(entity)) continue;
 
 		IPath* path = &pathView.get<IPath>(entity);
 
 		if (path->IsSynced() == false) continue;
 		if (path->GetPathType() != pathType) { continue; }
+		// auto-repath should already be triggered.
+		if (path->GetRepathTriggerIndex() != 0 && path->GetNextPointIndex() > path->GetRepathTriggerIndex()) {
+			continue;
+		}
 
 		// LOG("%s: %x is processing", __func__, (int)entity);
 
@@ -95,11 +101,14 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 
 		bool searchPaths = (!searchQuads || intersectsQuads);
 		bool intersectsPath = false;
+		int autoRefreshOnNode = 0;
 		if (searchPaths) {
 			// figure out if <path> has at least one edge crossing <r>
 			// we only care about the segments we have not yet visited
 			const unsigned int minIdx = std::max(path->GetNextPointIndex(), 2U) - 2;
-			const unsigned int maxIdx = std::max(path->NumPoints(), 1u) - 1;
+			const unsigned int maxIdx = (path->GetRepathTriggerIndex() > 0)
+							? path->GetRepathTriggerIndex()
+							: std::max(path->NumPoints(), 1u) - 1;
 
 			for (unsigned int i = minIdx; i < maxIdx; i++) {
 				const float3& p0 = path->GetPoint(i    );
@@ -136,6 +145,10 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 					// assert(std::find(dirtyPaths[pathType].begin(), dirtyPaths[pathType].end(), entity) == dirtyPaths[pathType].end());
 					intersectsPath = true;
 
+					bool triggerImmediateRepath = i <= (minIdx + 1);
+					if (!triggerImmediateRepath)
+						autoRefreshOnNode = i + 1; // trigger happens when waypoints are requested, which always grabs one ahead.
+
 					// LOG("%s: %x is Dirtied (pathType %d)", __func__, (int)entity, pathType);
 					break;
 				}
@@ -146,7 +159,8 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, int pathType) {
 			DirtyPathDetail dirtyPathDetail;
 			dirtyPathDetail.pathEntity = entity;
 			dirtyPathDetail.clearSharing = true;
-			dirtyPathDetail.clearPath = intersectsPath;
+			dirtyPathDetail.clearPath = intersectsPath && (autoRefreshOnNode == 0);
+			dirtyPathDetail.autoRepathTrigger = autoRefreshOnNode;
 
 			dirtyPaths[pathType].emplace_back(dirtyPathDetail);
 		}

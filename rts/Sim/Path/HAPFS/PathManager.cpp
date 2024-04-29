@@ -23,6 +23,8 @@
 
 #include "PathGlobal.h"
 
+#include "System/Misc/TracyDefs.h"
+
 // #include "Game/GlobalUnsynced.h"
 // #include "Game/SelectedUnitsHandler.h"
 // #include "Rendering/IPathDrawer.h"
@@ -84,6 +86,7 @@ CPathManager::CPathManager()
 
 void CPathManager::InitStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pathFinderGroups = ThreadPool::GetNumThreads();
 
 	LOG("TK CPathManager::InitStatic: %d threads available", pathFinderGroups);
@@ -121,13 +124,13 @@ void CPathManager::InitStatic()
 	pathFinders = std::move(newPathFinders);
 
 	constexpr size_t memoryPageSize = 4096;
-	pathSearches.reserve( memoryPageSize / sizeof(decltype(pathSearches)::value_type) );
 
 	//finalized = true;
 }
 
 CPathManager::~CPathManager()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Finalize is not called in case of forced exit
 	// if (maxResPF != nullptr) {
 	// 	lowResPE->Kill();
@@ -147,7 +150,6 @@ CPathManager::~CPathManager()
 	}
 
 	pathFinders.clear();
-	pathSearches.clear();
 
 	if (lowResPEs != nullptr) {
 		::operator delete(lowResPEs);
@@ -168,6 +170,7 @@ CPathManager::~CPathManager()
 
 void CPathManager::RemoveCacheFiles()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pathingStates[PATH_MED_RES].RemoveCacheFile("pe" , mapInfo->map.name);
 	pathingStates[PATH_LOW_RES].RemoveCacheFile("pe2", mapInfo->map.name);
 }
@@ -186,6 +189,7 @@ std::uint32_t CPathManager::GetPathCheckSum() const {
 
 std::int64_t CPathManager::Finalize()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const spring_time t0 = spring_gettime();
 
 	{
@@ -213,6 +217,7 @@ std::int64_t CPathManager::Finalize()
 
 std::int64_t CPathManager::PostFinalizeRefresh()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const spring_time t0 = spring_gettime();
 
 	if (finalized)
@@ -270,6 +275,7 @@ IPath::SearchResult CPathManager::ArrangePath(
 	const float3& goalPos,
 	CSolidObject* caller
 ) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CPathFinderDef* pfDef = &newPath->peDef;
 
 	// choose the PF or the PE depending on the projected 2D goal-distance
@@ -308,6 +314,7 @@ IPath::SearchResult CPathManager::ArrangePath(
 	pfDef->useVerifiedStartBlock = true; // ((caller != nullptr) && ThreadPool::inMultiThreadedSection);
 
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 		if (heurGoalDist2D <= (MAXRES_SEARCH_DISTANCE * modInfo.pfRawDistMult)) {
 			pfDef->AllowRawPathSearch( true);
 			pfDef->AllowDefPathSearch(false); // block default search
@@ -399,6 +406,7 @@ void CPathManager::DeletePath(unsigned int pathID, bool /* force ignored*/) {
 	if (pathID == 0)
 		return;
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 		const std::lock_guard<std::mutex> lock(pathMapUpdate); // TODO: remove this? not called in MT sections anymore?
 		const auto pi = pathMap.find(pathID);
 
@@ -455,6 +463,7 @@ unsigned int CPathManager::RequestPath(
 			registry.emplace<PathSearch>(searchEntity, caller, moveDef, startPos, goalPos, goalRadius, pathId);
 		}
 		else {
+			pathId = existingSearch->pathId;
 			MultiPath* curMultiPath = GetMultiPath(existingSearch->pathId);
 			*curMultiPath = std::move(newPath);
 			*existingSearch = std::move(PathSearch(caller, moveDef, startPos, goalPos, goalRadius, pathId));
@@ -693,7 +702,7 @@ float3 CPathManager::NextWayPoint(
 	}
 
 	MultiPath* multiPath = localMultiPath.moveDef != nullptr ? &localMultiPath : nullptr;
-	if (multiPath->moveDef == nullptr)
+	if (multiPath == nullptr)
 		return noPathPoint;
 
 	// if (numRetries > MAX_PATH_REFINEMENT_DEPTH)
@@ -725,37 +734,12 @@ float3 CPathManager::NextWayPoint(
 	// check whether the max-res path needs extending through
 	// recursive refinement of its lower-resolution segments
 	// if so, check if the med-res path also needs extending
-	if (extendMaxResPath) {
-		if (synced) {
-			std::lock_guard<std::mutex> lock(pathMapUpdate);
-
-			PathSearch* existingSearch = nullptr;
-			auto searchView = registry.view<PathSearch>();
-			for ( entt::entity entity : searchView ) {
-				auto& search = searchView.get<PathSearch>(entity);
-				if (search.caller == owner) {
-					existingSearch = &search;
-					break;
-				}
-			}
-
-			// if found then a full path search is underway, so don't mess with it.
-			// Or an extension has been requested, but that doesn't need to be done twice in a row.
-			if (existingSearch == nullptr) {
-				entt::entity pathExtendEntity = registry.create();
-				registry.emplace<PathSearch>(pathExtendEntity
-						, const_cast<CSolidObject*>(owner) // TODO: sort this const issue out
-						, owner->moveDef, callerPos, multiPath->peDef.wsGoalPos, radius, pathID);
-				registry.emplace<PathExtension>(pathExtendEntity,
-					(extendMedResPath) ? ExtendPathResType::EXTEND_MED_RES : ExtendPathResType::EXTEND_MAX_RES );
-			}
-		} else {
-			assert(!ThreadPool::inMultiThreadedSection);
-			if (extendMedResPath)
-				LowRes2MedRes(*multiPath, callerPos, owner, synced);
-			MedRes2MaxRes(*multiPath, callerPos, owner, synced);
-			FinalizePath(multiPath, callerPos, multiPath->finalGoal, multiPath->searchResult == IPath::CantGetCloser);
-		}
+	if (extendMaxResPath && (!synced)) {
+		assert(!ThreadPool::inMultiThreadedSection);
+		if (extendMedResPath)
+			LowRes2MedRes(*multiPath, callerPos, owner, synced);
+		MedRes2MaxRes(*multiPath, callerPos, owner, synced);
+		FinalizePath(multiPath, callerPos, multiPath->finalGoal, multiPath->searchResult == IPath::CantGetCloser);
 	}
 
 	float3 waypoint = noPathPoint;
@@ -811,6 +795,39 @@ float3 CPathManager::NextWayPoint(
 		}
 	} while ((callerPos.SqDistance2D(waypoint) < Square(radius)) && (waypoint != maxResPath.pathGoal));
 
+	// check whether the max-res path needs extending through
+	// recursive refinement of its lower-resolution segments
+	// if so, check if the med-res path also needs extending
+	if (extendMaxResPath && synced) {
+		std::lock_guard<std::mutex> lock(pathMapUpdate);
+
+		PathSearch* existingSearch = nullptr;
+		auto searchView = registry.view<PathSearch>();
+		for ( entt::entity entity : searchView ) {
+			auto& search = searchView.get<PathSearch>(entity);
+			if (search.caller == owner) {
+				existingSearch = &search;
+				break;
+			}
+		}
+
+		// if found then a full path search is underway, so don't mess with it.
+		// Or an extension has been requested, but that doesn't need to be done twice in a row.
+		if (existingSearch == nullptr) {
+			// try to look further ahead for the start point.
+			float3 startPos = (!maxResPath.path.empty()) ? maxResPath.path.back() : callerPos;
+			if (maxResPath.path.empty() && waypoint.y != (-1.f)) {
+				startPos = (!waypoint.same(noPathPoint)) ? waypoint : startPos;
+			}
+			entt::entity pathExtendEntity = registry.create();
+			registry.emplace<PathSearch>(pathExtendEntity
+					, const_cast<CSolidObject*>(owner) // TODO: sort this const issue out
+					, owner->moveDef, startPos, multiPath->peDef.wsGoalPos, radius, pathID);
+			registry.emplace<PathExtension>(pathExtendEntity,
+				(extendMedResPath) ? ExtendPathResType::EXTEND_MED_RES : ExtendPathResType::EXTEND_MAX_RES );
+		}
+	}
+
 	UpdateMultiPathMT(pathID, localMultiPath);
 	return waypoint;
 }
@@ -858,6 +875,7 @@ CPathManager::MultiPath CPathManager::ExpandCurrentPath(
 
 // Tells estimators about changes in or on the map.
 void CPathManager::TerrainChange(unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2, unsigned int /*type*/) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return;
 		
@@ -913,14 +931,11 @@ void CPathManager::Update()
 		SCOPED_TIMER("Sim::PathRequests");
 
 		auto pathSearchView = registry.view<PathSearch>();
-		pathSearches.clear();
-		pathSearches.reserve(pathSearchView.size());
-		auto& entities = pathSearches;
-		pathSearchView.each([&entities](entt::entity entity){ entities.emplace_back(entity); });
+		for_mt(0, pathSearchView.size(), [this, &pathSearchView](int idx){
+			entt::entity searchEntity = pathSearchView.begin()[idx];
 
-		for_mt(0, pathSearchView.size(), [this, &entities, &pathSearchView](int idx){
-			PathSearch& pathSearch = pathSearchView.get<PathSearch>( entities[idx] );
-			PathExtension* pathExtend = registry.try_get<PathExtension>( entities[idx] );
+			PathSearch& pathSearch = pathSearchView.get<PathSearch>( searchEntity );
+			PathExtension* pathExtend = registry.try_get<PathExtension>( searchEntity );
 
 			MultiPath newPath = (pathExtend == nullptr) ?
 					IssuePathRequest
@@ -953,6 +968,7 @@ void CPathManager::Update()
 // used to deposit heat on the heat-map as a unit moves along its path
 void CPathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(IsFinalized());
 
 	//pathFlowMap->AddFlow(owner);
@@ -962,6 +978,7 @@ void CPathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID)
 
 void CPathManager::SavePathCacheForPathId(int pathIdToSave)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const MultiPath& mpath = *GetMultiPathConst(pathIdToSave);
 	if (mpath.moveDef == nullptr) { return; }
 
@@ -995,6 +1012,7 @@ void CPathManager::SavePathCacheForPathId(int pathIdToSave)
 // get the waypoints in world-coordinates
 void CPathManager::GetDetailedPath(unsigned pathID, std::vector<float3>& points) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const MultiPath* multiPath = GetMultiPathConst(pathID);
 
 	if (multiPath == nullptr) {
@@ -1015,6 +1033,7 @@ void CPathManager::GetDetailedPath(unsigned pathID, std::vector<float3>& points)
 
 void CPathManager::GetDetailedPathSquares(unsigned pathID, std::vector<int2>& squares) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const MultiPath* multiPath = GetMultiPathConst(pathID);
 
 	if (multiPath == nullptr) {
@@ -1040,6 +1059,7 @@ void CPathManager::GetPathWayPoints(
 	std::vector<float3>& points,
 	std::vector<int>& starts
 ) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	points.clear();
 	starts.clear();
 
@@ -1076,6 +1096,7 @@ void CPathManager::GetPathWayPoints(
 
 
 bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, bool synced) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return false;
 
@@ -1100,6 +1121,7 @@ bool CPathManager::SetNodeExtraCost(unsigned int x, unsigned int z, float cost, 
 }
 
 bool CPathManager::SetNodeExtraCosts(const float* costs, unsigned int sizex, unsigned int sizez, bool synced) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return false;
 
@@ -1125,6 +1147,7 @@ bool CPathManager::SetNodeExtraCosts(const float* costs, unsigned int sizex, uns
 }
 
 float CPathManager::GetNodeExtraCost(unsigned int x, unsigned int z, bool synced) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return 0.0f;
 
@@ -1139,6 +1162,7 @@ float CPathManager::GetNodeExtraCost(unsigned int x, unsigned int z, bool synced
 }
 
 const float* CPathManager::GetNodeExtraCosts(bool synced) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsFinalized())
 		return nullptr;
 
@@ -1150,6 +1174,7 @@ const float* CPathManager::GetNodeExtraCosts(bool synced) const {
 }
 
 int2 CPathManager::GetNumQueuedUpdates() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int2 data;
 
 	if (IsFinalized()) {

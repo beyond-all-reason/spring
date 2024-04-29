@@ -4,9 +4,8 @@
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 #include <iostream>
-#ifndef _MSC_VER
-#include <cxxabi.h>
-#endif
+
+#include "System/Misc/TracyDefs.h"
 
 using std::cout;
 
@@ -28,6 +27,7 @@ DefType::DefType(const char* n): name(n) {
 
 void DefType::AddTagMetaData(const DefTagMetaData* data)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto key = data->GetInternalName();
 
 	const auto tend = tagMetaData.begin() + tagMetaDataCnt;
@@ -46,63 +46,63 @@ void DefType::AddTagMetaData(const DefTagMetaData* data)
 	}
 
 	tagMetaData[tagMetaDataCnt++] = data;
-}
 
-
-const DefTagMetaData* DefType::GetMetaDataByInternalKey(const string& key)
-{
-	const auto tend = tagMetaData.begin() + tagMetaDataCnt;
-	const auto pred = [&](const DefTagMetaData* md) { return (key == md->GetInternalName()); };
-	const auto iter = std::find_if(tagMetaData.begin(), tend, pred);
-
-	return ((iter == tend)? nullptr: *iter);
-}
-
-
-const DefTagMetaData* DefType::GetMetaDataByExternalKey(const string& key)
-{
-	const std::string lkey = StringToLower(key);
-
-	for (unsigned int i = 0; i < tagMetaDataCnt; i++) {
-		const DefTagMetaData* md = tagMetaData[i];
-
-		if (md->GetExternalName().IsSet()) {
-			if (lkey == StringToLower(md->GetExternalName().Get()))
-				return md;
-		} else {
-			if (lkey == StringToLower(md->GetInternalName()))
-				return md;
-		}
-
-		if (lkey == StringToLower(md->GetFallbackName().Get()))
-			return md;
+	if (const std::string internalKey = StringToLower(data->GetInternalName());
+			!tagMetaDataByInternalName.contains(internalKey)) {
+		tagMetaDataByInternalName[internalKey] = data;
 	}
 
+	if (const auto& externalName = data->GetExternalName(); externalName.IsSet()) {
+		if (const std::string externalKey = StringToLower(externalName.Get());
+				!tagMetaDataByExternalName.contains(externalKey)) {
+			tagMetaDataByExternalName[externalKey] = data;
+		}
+	}
+	if (const auto& fallbackName = data->GetFallbackName(); fallbackName.IsSet()) {
+		if (const std::string fallbackKey = StringToLower(fallbackName.Get());
+				!tagMetaDataByFallbackName.contains(fallbackKey)) {
+			tagMetaDataByFallbackName[fallbackKey] = data;
+		}
+	}
+}
+
+
+const DefTagMetaData* DefType::GetMetaDataByInternalKey(const string& key) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	const std::string lkey = StringToLower(key);
+	if (auto it = tagMetaDataByInternalName.find(lkey);
+			it != tagMetaDataByInternalName.end()) {
+		return it->second;
+	}
 	return nullptr;
 }
 
 
-std::string DefTagMetaData::GetTypeName(const std::type_info& typeInfo)
-{
-	// demangle typename
-#ifndef _MSC_VER
-	int status;
-	char* ctname = abi::__cxa_demangle(typeInfo.name(), 0, 0, &status);
-	const std::string tname = ctname;
-	free(ctname);
-#else
-	const std::string tname(typeInfo.name()); // FIXME?
-#endif
-	return tname;
-}
+const DefTagMetaData* DefType::GetMetaDataByExternalKey(const string& key) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	const std::string lkey = StringToLower(key);
+	if (auto it = tagMetaDataByExternalName.find(lkey);
+			it != tagMetaDataByExternalName.end()) {
+		return it->second;
+	}
+	if (auto it = tagMetaDataByInternalName.find(lkey);
+			it != tagMetaDataByInternalName.end()) {
+		return it->second;
+	}
+	if (auto it = tagMetaDataByFallbackName.find(lkey);
+			it != tagMetaDataByFallbackName.end()) {
+		return it->second;
+	}
 
+	return nullptr;
+}
 
 /**
  * @brief Call Quote if type is not bool, float or int.
  */
 static inline std::string Quote(const std::string& type, const std::string& value)
 {
-	if (type == "std::string")
+	if (type == spring::TypeToStr<std::string>())
 		return Quote(value);
 
 	return value;
@@ -114,10 +114,11 @@ static inline std::string Quote(const std::string& type, const std::string& valu
  */
 static std::ostream& operator<< (std::ostream& out, const DefTagMetaData* d)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const char* const OUTER_INDENT = "    ";
 	const char* const INDENT = "      ";
 
-	const std::string tname = DefTagMetaData::GetTypeName(d->GetTypeInfo());
+	const std::string tname = d->GetTypeName();
 
 	out << OUTER_INDENT << Quote(d->GetKey()) << ": {\n";
 
@@ -177,6 +178,7 @@ static std::ostream& operator<< (std::ostream& out, const DefTagMetaData* d)
  */
 void DefType::OutputMetaDataMap() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	cout << "{\n";
 
 	bool first = true;
@@ -196,6 +198,7 @@ void DefType::OutputMetaDataMap() const
 
 void DefType::OutputTagMap()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	cout << "{\n";
 
 	bool first = true;
@@ -212,17 +215,18 @@ void DefType::OutputTagMap()
 }
 
 
-void DefType::CheckType(const DefTagMetaData* meta, const std::type_info& want)
+void DefType::CheckType(const DefTagMetaData* meta, const std::string_view otherTypeName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(meta != nullptr);
-	if (meta->GetTypeInfo() != want)
-		LOG_L(L_ERROR, "DEFTAG \"%s\" defined with wrong typevalue \"%s\" should be \"%s\"", meta->GetKey().c_str(), DefTagMetaData::GetTypeName(meta->GetTypeInfo()).c_str(), DefTagMetaData::GetTypeName(want).c_str());
-	assert(meta->GetTypeInfo() == want);
+	if (meta->GetTypeName() != otherTypeName)
+		LOG_L(L_ERROR, "DEFTAG \"%s\" defined with wrong typevalue \"%s\" should be \"%s\"", meta->GetKey().c_str(), meta->GetTypeName().c_str(), otherTypeName.data());
 }
 
 
 void DefType::ReportUnknownTags(const std::string& instanceName, const LuaTable& luaTable, const std::string pre)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<std::string> keys;
 	luaTable.GetKeys(keys);
 
@@ -244,6 +248,7 @@ void DefType::ReportUnknownTags(const std::string& instanceName, const LuaTable&
 
 void DefType::Load(void* instance, const LuaTable& luaTable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	this->luaTable = &luaTable;
 
 	for (unsigned int i = 0; i < defInitFuncCnt; i++) {

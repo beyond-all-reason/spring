@@ -86,7 +86,8 @@ Lua:
    start box (in elmos) for an ally team.
  - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
- 
+ - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
+
 
 Game Setup:
  - removed `mapSeed` parameter and `new_map_x`, `new_map_y` map generation options. Map is now generated
@@ -97,6 +98,8 @@ Game Setup:
    the situation and handle startpos itself. In the worst case, teams without a startpos will spawn
    in the corner -- giving an obvious hint that something is amiss and the map is unable to support
    this number of players by itself without assistance from the game.
+ - Prevent StartPosSelecter from trying to process mouse clicks while the match is still loading. This
+   was able to cause the game to crash on the loading screens.
 
 Misc:
  - Add `/debugvisibility` command for debugging the visible quadfield quads
@@ -182,6 +185,26 @@ Sim:
  - Units given new paths will now switch to a new non-temp waypoint in 1 frame rather than 2.
    Units have a next and current waypoint, so if next is non-temp, but current is then it will make
    current <- next, and grab the next waypoint.
+ - Units will skid if hit with impulses sufficiently large in the direction opposite their
+   movement vector. Previously units would only skid on large impulses that hit their sides.
+ - New rollingResistanceCoefficient unitdef that is used to reduce a unit's speed when exceeding their maximumSpeed.
+ - New groundFrictionCoefficient unitdef that is used to reduce a unit's speed when skidding.
+ - New atmosphericDragCoefficient unitdef that reduces a unit's speed when skidding and exceeding speed maximum.
+ - Assumes that a unit's default buildeeRadius will be the model's radius when figuring out the
+   correct distance at which to start a new unit construction. Previously it was assumed 0.
+ - unit defs have a new parameter, buildeeBuildRadius, which overrides the engine default assumption
+   about the radius of an unit to use for build commands.
+ - Units and features now have a field, buildeeRadius, which defaults to the unit's model's radius,
+   (but for units can be overriden by their buildeeBuildRadius unitDef parameter.) This field is used
+   instead of radius for build, capture, repair, reclaim, guard and ressurect commands.
+ - New system added to allow units near to a recently created wreck (or feature) to immediately check
+   for being stuck. The standard fall-back checks for catching stuck units take too long when units
+   are getting stuck in wrecks in the thick of battle.
+ - Added [S|G]etUnitBuildeeRadius to allow game devs to configure the radius used in build-type
+   commands when a unit is the target of such commands.
+ - Moving system will not try to get to goal if the unit has reached the last waypoint, and the pathing
+   system reports that the path is incomplete. It will fail immediately rather than keep trying for A
+   while before failing later.
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
@@ -219,6 +242,13 @@ Sim::QTPFS
  - Searches are not only able to perform full-path sharing (i.e. same target/src quads), but also
    partial-path sharing. This means when the start/end quads are near another searches star/end
    quads, the path can be used to cut down search times by trying to link up to an existing route.
+ - QTPFS will automatically attempt to repath incomplete paths as progress is made to try and
+   improve the pathing result and get the unit closer to the goal.
+ - New modrule, `system.qtRefreshPathMinDist`, can be used to configure the minimum size a path
+   has to be in order to be eligible for an automatic incomplete path repath.
+ - New modrule. `system.qtMaxNodesSearched`, can be used to limit the number of nodes searched.
+ - New modrule, `system.qtMaxNodesSearchedRelativeToMapOpenNodes`, can be used to limit the number
+   of nodes searche relative to the number of pathable quads on the map.
 
 System:
  - Simulation can be configured to use up to ~100% CPU time to catch up.
@@ -351,11 +381,11 @@ BREAKING CHANGES SINCE 105.0 & HOW TO GET BACK OLD BEHAVIOURS:
  ! onlyLocal for all three Spring.Marker functions (Point, Line, Erase) no longer accepts
    numerical 0 as false (now follows regular Lua language rules where 0 is true). To get
    back old behaviour, change `0` to `false`.
-   
+
  ! Spring.GetConfigInt, Spring.GetConfigFloat and Spring.GetConfigString now accept nil
    as the second argument (what to return by default if not set). Previously it was treated
    as 0 (Int and Float) or "" (String). To get back previous behaviour:
- 
+
    local originalGetConfigInt = Spring.GetConfigInt
    Spring.GetConfigInt = function(key, def)
      return originalGetConfigInt(key, def) or 0
@@ -567,8 +597,8 @@ Fixes:
  - Fix piece projectiles (flying parts from dead units) not colliding with units
  - Fix KeyChains not being respected for GuiHandler actions and allow games to
    handle them with new actions argument on KeyPress/KeyRelease
- - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes, 
-   i.e. unplug/replug USB headset or swtich between builtin soundcard to 
+ - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes,
+   i.e. unplug/replug USB headset or swtich between builtin soundcard to
    monitor soundcard (HDMI), seamlessly possible without requiring a program restart
  - Fix keysets bound to duplicate actions when the action line contains
    discrepant comment sections

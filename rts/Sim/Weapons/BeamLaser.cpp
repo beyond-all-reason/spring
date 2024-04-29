@@ -17,6 +17,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 #include <vector>
 
 #define SWEEPFIRE_ENABLED 1
@@ -50,6 +52,7 @@ CR_REG_METADATA_SUB(CBeamLaser, SweepFireState, (
 
 void CBeamLaser::SweepFireState::Init(const float3& newTargetPos, const float3& muzzlePos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	sweepInitPos = sweepGoalPos;
 	sweepInitDst = (sweepInitPos - muzzlePos).Length2D();
 
@@ -65,6 +68,7 @@ void CBeamLaser::SweepFireState::Init(const float3& newTargetPos, const float3& 
 }
 
 float CBeamLaser::SweepFireState::GetTargetDist2D() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (sweepStartAngle < 0.01f)
 		return sweepGoalDst;
 
@@ -84,6 +88,7 @@ CBeamLaser::CBeamLaser(CUnit* owner, const WeaponDef* def)
 	: CWeapon(owner, def)
 	, salvoDamageMult(1.0f)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// null happens when loading
 	if (def != nullptr)
 		color = def->visuals.color;
@@ -95,6 +100,7 @@ CBeamLaser::CBeamLaser(CUnit* owner, const WeaponDef* def)
 
 void CBeamLaser::Init()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!weaponDef->beamburst) {
 		salvoDelay = 0;
 		salvoSize = int(weaponDef->beamtime * GAME_SPEED);
@@ -111,6 +117,7 @@ void CBeamLaser::Init()
 
 void CBeamLaser::UpdatePosAndMuzzlePos()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (sweepFireState.IsSweepFiring()) {
 		const int weaponPiece = owner->script->QueryWeapon(weaponNum);
 		const CMatrix44f weaponMat = owner->script->GetPieceMatrix(weaponPiece);
@@ -136,12 +143,14 @@ void CBeamLaser::UpdatePosAndMuzzlePos()
 
 float CBeamLaser::GetPredictedImpactTime(float3 p) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// beamburst tracks the target during the burst so there's no need to lead
 	return (salvoSize * 0.5f * (1 - weaponDef->beamburst));
 }
 
 void CBeamLaser::UpdateSweep()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// sweeping always happens between targets
 	if (!HaveTarget()) {
 		sweepFireState.SetSweepFiring(false);
@@ -172,11 +181,13 @@ void CBeamLaser::UpdateSweep()
 	if (reloadStatus > gs->frameNum)
 		return;
 
-	if (teamHandler.Team(owner->team)->res.metal < weaponDef->metalcost) { return; }
-	if (teamHandler.Team(owner->team)->res.energy < weaponDef->energycost) { return; }
-
-	owner->UseEnergy(weaponDef->energycost / salvoSize);
-	owner->UseMetal(weaponDef->metalcost / salvoSize);
+	/* FIXME: checking for the full amount but only consuming
+	 * a fraction looks odd, could use a good looking at. */
+	const auto team = teamHandler.Team(owner->team);
+	if (!team->HaveResources(weaponDef->cost))
+		return;
+	if (!team->UseResources(weaponDef->cost / salvoSize))
+		return;
 
 	FireInternal(sweepFireState.GetSweepCurrDir());
 
@@ -188,6 +199,7 @@ void CBeamLaser::UpdateSweep()
 
 void CBeamLaser::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdatePosAndMuzzlePos();
 	CWeapon::Update();
 	UpdateSweep();
@@ -195,6 +207,7 @@ void CBeamLaser::Update()
 
 float3 CBeamLaser::GetFireDir(bool sweepFire, bool scriptCall)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 dir = currentTargetPos - weaponMuzzlePos;
 
 	if (!sweepFire) {
@@ -250,6 +263,7 @@ float3 CBeamLaser::GetFireDir(bool sweepFire, bool scriptCall)
 
 void CBeamLaser::FireImpl(const bool scriptCall)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// sweepfire must exclude regular fire (!)
 	if (sweepFireState.IsSweepFiring())
 		return;
@@ -259,6 +273,7 @@ void CBeamLaser::FireImpl(const bool scriptCall)
 
 void CBeamLaser::FireInternal(float3 curDir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float actualRange = range;
 	float rangeMod = 1.0f - (0.05f * owner->UnderFirstPersonControl());
 
@@ -388,22 +403,23 @@ void CBeamLaser::FireInternal(float3 curDir)
 		const DamageArray& baseDamages = damages->GetDynamicDamages(weaponMuzzlePos, curPos);
 		const DamageArray da = baseDamages * (hitIntensity * salvoDamageMult);
 		const CExplosionParams params = {
-			hitPos,
-			curDir,
-			da,
-			weaponDef,
-			owner,
-			hitUnit,
-			hitFeature,
-			damages->craterAreaOfEffect,
-			damages->damageAreaOfEffect,
-			damages->edgeEffectiveness,
-			damages->explosionSpeed,
-			1.0f,                                             // gfxMod
-			weaponDef->impactOnly,
-			weaponDef->noExplode || weaponDef->noSelfDamage,  // ignoreOwner
-			true,                                             // damageGround
-			-1u                                               // projectileID
+			.pos                  = hitPos,
+			.dir                  = curDir,
+			.damages              = da,
+			.weaponDef            = weaponDef,
+			.owner                = owner,
+			.hitUnit              = hitUnit,
+			.hitFeature           = hitFeature,
+			.craterAreaOfEffect   = damages->craterAreaOfEffect,
+			.damageAreaOfEffect   = damages->damageAreaOfEffect,
+			.edgeEffectiveness    = damages->edgeEffectiveness,
+			.explosionSpeed       = damages->explosionSpeed,
+			.gfxMod               = 1.0f,
+			.maxGroundDeformation = 0.0f,
+			.impactOnly           = weaponDef->impactOnly,
+			.ignoreOwner          = weaponDef->noExplode || weaponDef->noSelfDamage,
+			.damageGround         = true,
+			.projectileID         = static_cast<uint32_t>(-1u)
 		};
 
 		helper->Explosion(params);

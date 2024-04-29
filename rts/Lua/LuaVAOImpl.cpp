@@ -368,7 +368,6 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
  *
  * @function VAO:DrawArrays
  * @number glEnum primitivesMode
- * @number[opt] numVertices
  * @number[opt] vertexCount
  * @number[opt] vertexFirst
  * @number[opt] instanceCount

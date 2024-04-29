@@ -22,7 +22,7 @@ public:
 	void Update();
 	void UpdateDir();
 
-	void DrawOnMinimap() {}
+	void DrawOnMinimap() const override {}
 
 	static void GeoThermDestroyed(const CFeature* geo);
 

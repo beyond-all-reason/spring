@@ -180,6 +180,21 @@ namespace QTPFS {
                                             , area.z2 + md.zsizeh);
             areaRelinked.ClampIn(mapRect);
             areaMaxBlockBits.ClampIn(mapRect);
+
+            // area must be at least big enough for the unit to be queried from its center point.
+            if (areaMaxBlockBits.GetWidth() < md.xsize){
+                if (areaMaxBlockBits.x1 == 0)
+                    areaMaxBlockBits.x2 = md.xsize;
+                else
+                    areaMaxBlockBits.x1 = mapRect.x2 - md.xsize;
+            }
+            if (areaMaxBlockBits.GetHeight() < md.zsize) {
+                if (areaMaxBlockBits.z1 == 0)
+                    areaMaxBlockBits.z2 = md.zsize;
+                else
+                    areaMaxBlockBits.z1 = mapRect.z2 - md.zsize;
+            }
+    
             maxBlockBits.reserve(areaMaxBlockBits.GetArea());
             relinkNodeGrid.reserve(areaRelinked.GetArea());
 

@@ -2,11 +2,13 @@
 
 #include "IGroundDecalDrawer.h"
 #include "Rendering/Env/Decals/GroundDecalHandler.h"
-#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
+#include "Sim/Units/Unit.h"
+
+#include "System/Misc/TracyDefs.h"
 
 
 CONFIG(int, GroundDecals).defaultValue(3).headlessValue(0).description("Controls whether ground decals underneath buildings and ground scars from explosions will be rendered. Values >1 define how long such decals will stay.");
@@ -16,28 +18,26 @@ IGroundDecalDrawer* IGroundDecalDrawer::singleton = &nullDecalDrawer;
 int IGroundDecalDrawer::decalLevel = 0;
 
 
+CR_BIND_INTERFACE(IGroundDecalDrawer)
+CR_REG_METADATA(IGroundDecalDrawer, (
+	CR_MEMBER(decals)
+))
+
+CR_BIND_DERIVED(NullGroundDecalDrawer, IGroundDecalDrawer, )
+CR_REG_METADATA(NullGroundDecalDrawer,  )
+
 static IGroundDecalDrawer* GetInstance()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	IGroundDecalDrawer* instance = &nullDecalDrawer;
 	if (!IGroundDecalDrawer::GetDrawDecals()) {
-		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "off");
+		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "null");
 		return instance;
 	}
 
-#if 0
-	try {
-		instance = new CDecalsDrawerGL4();
-		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "GL4");
-	} catch(const unsupported_error& ex) {
-		LOG_L(L_ERROR, "IGroundDecalDrawer loading failed: %s", ex.what());
-	} catch(const opengl_error& ex) {
-		LOG_L(L_ERROR, "IGroundDecalDrawer loading failed: %s", ex.what());
-	}
-#endif
-
 	if (instance == &nullDecalDrawer) {
 		instance = new CGroundDecalHandler();
-		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "Legacy");
+		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "standard");
 	}
 
 	return instance;
@@ -46,6 +46,7 @@ static IGroundDecalDrawer* GetInstance()
 
 void IGroundDecalDrawer::Init()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	decalLevel = configHandler->GetInt("GroundDecals");
 
 	FreeInstance();
@@ -55,6 +56,7 @@ void IGroundDecalDrawer::Init()
 
 void IGroundDecalDrawer::FreeInstance()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (singleton != &nullDecalDrawer)
 		spring::SafeDelete(singleton);
 }
@@ -62,6 +64,7 @@ void IGroundDecalDrawer::FreeInstance()
 
 void IGroundDecalDrawer::SetDrawDecals(bool v)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (v) {
 		decalLevel =  std::abs(decalLevel);
 	} else {
@@ -73,4 +76,9 @@ void IGroundDecalDrawer::SetDrawDecals(bool v)
 	}
 
 	groundDecals->OnDecalLevelChanged();
+}
+
+void NullGroundDecalDrawer::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
+{
+	unit->leaveTracks = leaveTracks;
 }

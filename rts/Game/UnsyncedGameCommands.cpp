@@ -875,7 +875,7 @@ public:
 			clientNet->Send(CBaseNetProtocol::Get().SendAIStateChanged(gu->myPlayerNum, skirmishAIId, SKIRMAISTATE_RELOADING));
 		}
 
-		LOG("Skirmish AI controlling team %i is beeing %sed ...", teamToKillId, actionName.c_str());
+		LOG("Skirmish AI controlling team %i is being %sed ...", teamToKillId, actionName.c_str());
 
 		return true;
 	}
@@ -966,7 +966,7 @@ public:
 			return WrongSyntax();
 		}
 		if (skirmishAIHandler.GetLocalSkirmishAIInCreation(teamToControlId) != nullptr) {
-			LOG_L(L_WARNING, "Team to control: there is already an AI beeing created for team: %i", teamToControlId);
+			LOG_L(L_WARNING, "Team to control: there is already an AI being created for team: %i", teamToControlId);
 			return WrongSyntax();
 		}
 
@@ -1233,7 +1233,9 @@ public:
 class GroupActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GroupActionExecutor() : IUnsyncedActionExecutor("Group", "Manage control groups", false, {
-			{"<n>", "Select group <n>"},
+			{"<n>", "Select group <n>, also focuses on second call (deprecated)"},
+			{"select <n>", "Select group <n>"},
+			{"focus <n>", "Focus camera on group <n>"},
 			{"set <n>", "Set current selected units as group <n>"},
 			{"add <n>", "Add current selected units to group <n>"},
 			{"unset", "Deassign control group for currently selected units"},
@@ -1375,15 +1377,31 @@ public:
 	TrackActionExecutor() : IUnsyncedActionExecutor("Track",
 			"Start/stop following the selected unit(s) with the camera", false, {
 			{"", "Toggles tracking"},
-			{"<on|off>", "Set tracking <on|off>"},
+			{"<on|off>", "Set tracking <on|off> <unitID unitID ...>"},
 			}) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
 		bool enableTracking = unitTracker.Enabled();
-		InverseOrSetBool(enableTracking, action.GetArgs());
+		std::vector<int> unitIDs = {};
+
+		switch (args.size())
+		{
+			case 0:
+				InverseOrSetBool(enableTracking, ""); break;
+			case 1:
+				InverseOrSetBool(enableTracking, args.at(0)); break;
+			default: {
+				InverseOrSetBool(enableTracking, args.at(0));
+				if (enableTracking) {
+					for (size_t i = 1; i < args.size(); ++i)
+						unitIDs.emplace_back(StringToInt(args.at(i)));
+				}
+			} break;
+		}
 
 		if (enableTracking)
-			unitTracker.Track();
+			unitTracker.Track(std::move(unitIDs));
 		else
 			unitTracker.Disable();
 
@@ -3579,6 +3597,10 @@ public:
 			projectileDrawer->textureAtlas->ReloadTextures();
 			projectileDrawer->groundFXAtlas->ReloadTextures();
 		};
+		auto decalFunc = []() {
+			LOG("Reloading Decal textures");
+			groundDecals->ReloadTextures();
+		};
 
 		std::array argsExec = {
 			ArgTuple(hashString("lua") , false, luaFunc),
@@ -3587,6 +3609,8 @@ public:
 			ArgTuple(hashString("smf") , false, smfFunc),
 			ArgTuple(hashString("cegs"), false, cegFunc),
 			ArgTuple(hashString("ceg") , false, cegFunc),
+			ArgTuple(hashString("decal")  , false, decalFunc),
+			ArgTuple(hashString("decals") , false, decalFunc),
 		};
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
@@ -3600,12 +3624,25 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		auto projFunc = []() {
+			LOG("Dumping projectile textures");
+			projectileDrawer->textureAtlas->DumpTexture("TextureAtlas");
+			projectileDrawer->groundFXAtlas->DumpTexture("GroundFXAtlas");
+		};
+		auto threeDoFunc = []() {
+			LOG("Dumping 3do atlas textures");
+			glSaveTexture(textureHandler3DO.GetAtlasTex1ID(), "3doTex1.png");
+			glSaveTexture(textureHandler3DO.GetAtlasTex2ID(), "3doTex2.png");
+		};
+		auto decalsFunc = []() {
+			LOG("Dumping decal atlas textures");
+			groundDecals->DumpAtlasTextures();
+		};
 		std::array argsExec = {
-			ArgTuple(hashString("proj"), false, []() {
-				LOG("Dumping projectile textures");
-				projectileDrawer->textureAtlas->DumpTexture("TextureAtlas");
-				projectileDrawer->groundFXAtlas->DumpTexture("GroundFXAtlas");
-			}),
+			ArgTuple(hashString("proj"), false, projFunc),
+			ArgTuple(hashString("3do"), false, threeDoFunc),
+			ArgTuple(hashString("decal"), false, decalsFunc),
+			ArgTuple(hashString("decals"), false, decalsFunc)
 		};
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);

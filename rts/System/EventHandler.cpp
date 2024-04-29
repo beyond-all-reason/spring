@@ -9,7 +9,7 @@
 #include "System/Platform/Threading.h"
 #include "System/GlobalConfig.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CEventHandler eventHandler;
 
@@ -553,6 +553,12 @@ void CEventHandler::GameFrame(int gameFrame)
 {
 	ZoneScoped;
 	ITERATE_EVENTCLIENTLIST(GameFrame, gameFrame);
+}
+
+void CEventHandler::GameFramePost(int gameFrame)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(GameFramePost, gameFrame);
 }
 
 void CEventHandler::GameProgress(int gameFrame)

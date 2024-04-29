@@ -11,7 +11,7 @@
 #include "System/float3.h"
 #include "System/Misc/SpringTime.h"
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__OpenBSD__)
 // defined in X11/X.h
 #undef KeyPress
 #undef KeyRelease
@@ -114,6 +114,7 @@ class CEventClient
 		virtual void GameOver(const std::vector<unsigned char>& winningAllyTeams) {}
 		virtual void GamePaused(int playerID, bool paused) {}
 		virtual void GameFrame(int gameFrame) {}
+		virtual void GameFramePost(int gameFrame) {}
 		virtual void GameID(const unsigned char* gameID, unsigned int numBytes) {}
 
 		virtual void TeamDied(int teamID) {}

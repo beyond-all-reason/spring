@@ -19,7 +19,8 @@
 #include "Sim/Weapons/Weapon.h"
 #include "System/UnorderedSet.hpp"
 
-static constexpr float4 DEFAULT_VOLUME_COLOR = float4(0.45f, 0.0f, 0.45f, 0.35f);
+static constexpr float4 DEFAULT_COLVOL_COLOR = float4(0.45f, 0.00f, 0.45f, 0.35f); // purple
+static constexpr float4 DEFAULT_SELVOL_COLOR = float4(0.00f, 0.45f, 0.00f, 0.20f); // dark green
 static unsigned int volumeDisplayListIDs[] = {0, 0, 0, 0, 0};
 
 static inline void DrawCollisionVolume(const CollisionVolume* vol)
@@ -90,7 +91,7 @@ static void DrawUnitDebugPieceTree(const LocalModelPiece* lmp, const LocalModelP
 			DrawCollisionVolume(lmp->GetCollisionVolume());
 
 			if ((lmp == lap) && (lapf > 0 && ((gs->frameNum - lapf) < 150))) {
-				glColorf3(DEFAULT_VOLUME_COLOR);
+				glColorf3(DEFAULT_COLVOL_COLOR);
 			}
 		}
 	glPopMatrix();
@@ -123,7 +124,7 @@ static void DrawObjectDebugPieces(const CSolidObject* o)
 		glPopMatrix();
 
 		if (setFadeColor && lmp == o->hitModelPieces[true])
-			glColorf4(DEFAULT_VOLUME_COLOR);
+			glColorf4(DEFAULT_COLVOL_COLOR);
 	}
 }
 
@@ -150,7 +151,6 @@ static inline void DrawObjectMidAndAimPos(const CSolidObject* o)
 		glColor4f(1.0f, 0.0f, 1.0f, 0.35f);
 		gluQuadricDrawStyle(q, GLU_FILL);
 		gluSphere(q, 2.0f, 5, 5);
-		glColorf4(DEFAULT_VOLUME_COLOR);
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -174,6 +174,10 @@ static inline void DrawFeatureColVol(const CFeature* f)
 		glMultMatrixf(f->GetTransformMatrixRef(false));
 		DrawObjectMidAndAimPos(f);
 
+		glColorf4(DEFAULT_SELVOL_COLOR);
+		DrawCollisionVolume(&f->selectionVolume);
+
+		glColorf4(DEFAULT_COLVOL_COLOR);
 		if (v->DefaultToPieceTree()) {
 			// draw only the piece volumes for less clutter
 			// note: relMidPos transform is on the stack at this
@@ -238,7 +242,6 @@ static inline void DrawUnitColVol(const CUnit* u)
 		}
 	}
 
-	glColorf4(DEFAULT_VOLUME_COLOR);
 	glEnable(GL_DEPTH_TEST);
 	gluDeleteQuadric(q);
 
@@ -247,6 +250,10 @@ static inline void DrawUnitColVol(const CUnit* u)
 		glMultMatrixf(u->GetTransformMatrix(false));
 		DrawObjectMidAndAimPos(u);
 
+		glColorf4(DEFAULT_SELVOL_COLOR);
+		DrawCollisionVolume(&u->selectionVolume);
+
+		glColorf4(DEFAULT_COLVOL_COLOR);
 		if (v->DefaultToPieceTree()) {
 			// draw only the piece volumes for less clutter
 			// note: relMidPos transform is on the stack at this
@@ -269,7 +276,7 @@ static inline void DrawUnitColVol(const CUnit* u)
 				DrawCollisionVolume(v);
 
 				if (setFadeColor)
-					glColorf4(DEFAULT_VOLUME_COLOR);
+					glColorf4(DEFAULT_COLVOL_COLOR);
 			}
 		}
 		if (u->shieldWeapon != nullptr) {

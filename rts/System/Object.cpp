@@ -54,14 +54,25 @@ CObject::~CObject()
 	assert(!detached);
 	detached = true;
 
-	for (const auto& p: listenersDepTbl) {
-		assert(p.first >= DEPENDENCE_ATTACKER && p.first < DEPENDENCE_COUNT);
-		assert(p.second < listeners.size());
+	// NB: listenersDepTbl must be iterated sequentially
+	// due to the presence of obj->DependentDied(this);
+	// The order of naive iteration becomes undefined in
+	// case "unsynced" dependencies like DEPENDENCE_SELECTED
+	// are present in listenersDepTbl
+	// Ex: can't use `for (const auto& p : listenersDepTbl) {}`
+	for (std::underlying_type_t<DependenceType> dt = DEPENDENCE_ATTACKER, cnt = 0; dt < DEPENDENCE_COUNT && cnt < listenersDepTbl.size(); ++dt) {
+		const auto it = listenersDepTbl.find(dt);
+		if (it == listenersDepTbl.end())
+			continue;
 
-		for (CObject* obj: listeners[p.second]) {
+		++cnt;
+
+		assert(it->second < listeners.size());
+
+		for (CObject* obj: listeners[it->second]) {
 			obj->DependentDied(this);
 
-			const auto jt = obj->listeningDepTbl.find(p.first);
+			const auto jt = obj->listeningDepTbl.find(it->first);
 
 			if (jt == obj->listeningDepTbl.end())
 				continue;

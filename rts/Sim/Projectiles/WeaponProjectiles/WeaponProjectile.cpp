@@ -22,6 +22,8 @@
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CR_BIND_DERIVED_INTERFACE(CWeaponProjectile, CProjectile)
 
@@ -175,6 +177,7 @@ CWeaponProjectile::CWeaponProjectile(const ProjectileParams& params)
 
 CWeaponProjectile::~CWeaponProjectile()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	DynDamageArray::DecRef(damages);
 }
 
@@ -187,22 +190,23 @@ void CWeaponProjectile::Explode(
 ) {
 	const DamageArray& damageArray = damages->GetDynamicDamages(startPos, impactPos);
 	const CExplosionParams params = {
-		impactPos,
-		impactDir.SafeNormalize(),
-		damageArray,
-		weaponDef,
-		owner(),
-		hitUnit,
-		hitFeature,
-		damages->craterAreaOfEffect,
-		damages->damageAreaOfEffect,
-		damages->edgeEffectiveness,
-		damages->explosionSpeed,
-		weaponDef->noExplode? 0.3f: 1.0f,                 // gfxMod
-		weaponDef->impactOnly,
-		weaponDef->noExplode || weaponDef->noSelfDamage,  // ignoreOwner
-		true,                                             // damgeGround
-		static_cast<unsigned int>(id)
+		.pos                  = impactPos,
+		.dir                  = impactDir.SafeNormalize(),
+		.damages              = damageArray,
+		.weaponDef            = weaponDef,
+		.owner                = owner(),
+		.hitUnit              = hitUnit,
+		.hitFeature           = hitFeature,
+		.craterAreaOfEffect   = damages->craterAreaOfEffect,
+		.damageAreaOfEffect   = damages->damageAreaOfEffect,
+		.edgeEffectiveness    = damages->edgeEffectiveness,
+		.explosionSpeed       = damages->explosionSpeed,
+		.gfxMod               = weaponDef->noExplode ? 0.3f : 1.0f,
+		.maxGroundDeformation = 0.0f,
+		.impactOnly           = weaponDef->impactOnly,
+		.ignoreOwner          = weaponDef->noExplode || weaponDef->noSelfDamage,
+		.damageGround         = true,
+		.projectileID         = static_cast<uint32_t>(id)
 	};
 
 	helper->Explosion(params);
@@ -217,11 +221,13 @@ void CWeaponProjectile::Explode(
 
 void CWeaponProjectile::Collision()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Collision((CFeature*) nullptr);
 }
 
 void CWeaponProjectile::Collision(CFeature* feature)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 impactPos = pos;
 	float3 impactDir = speed;
 
@@ -246,6 +252,7 @@ void CWeaponProjectile::Collision(CFeature* feature)
 
 void CWeaponProjectile::Collision(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 impactPos = pos;
 	float3 impactDir = speed;
 
@@ -263,6 +270,7 @@ void CWeaponProjectile::Collision(CUnit* unit)
 
 void CWeaponProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Update();
 	UpdateGroundBounce();
 	UpdateInterception();
@@ -271,6 +279,7 @@ void CWeaponProjectile::Update()
 
 void CWeaponProjectile::UpdateInterception()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (target == nullptr)
 		return;
 
@@ -302,6 +311,7 @@ void CWeaponProjectile::UpdateInterception()
 
 void CWeaponProjectile::UpdateGroundBounce()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 1
 	// projectile is not allowed to bounce on either surface
 	if (!weaponDef->groundBounce && !weaponDef->waterBounce)
@@ -359,20 +369,23 @@ void CWeaponProjectile::UpdateGroundBounce()
 }
 
 
-void CWeaponProjectile::DrawOnMinimap()
+void CWeaponProjectile::DrawOnMinimap() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	AddMiniMapVertices({ pos        , color4::yellow }, { pos + speed, color4::yellow });
 }
 
 
 bool CWeaponProjectile::CanBeInterceptedBy(const WeaponDef* wd) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return ((weaponDef->targetable & wd->interceptor) != 0);
 }
 
 
 void CWeaponProjectile::DependentDied(CObject* o)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (o != target)
 		return;
 
@@ -382,6 +395,7 @@ void CWeaponProjectile::DependentDied(CObject* o)
 
 void CWeaponProjectile::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(weaponDef != nullptr);
 	model = weaponDef->LoadModel();
 }

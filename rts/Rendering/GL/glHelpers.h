@@ -3,6 +3,7 @@
 #pragma once
 
 #include "myGL.h"
+#include "System/TemplateUtils.hpp"
 #include "Rendering/Textures/TextureFormat.h"
 #include <algorithm>
 #include <tuple>
@@ -11,7 +12,7 @@
 // Get gl parameter values into a homogenous GL-typed variable (single or array)
 // Must pass expectedValuesN to convert from GLint to other integer types (GLenum, GLsizei and such)
 template<class GLType>
-inline void glGetAny(GLenum paramName, GLType* data, const int expectedValuesN = -1)
+inline void glGetAny(GLenum paramName, GLType* data, const int expectedValuesN = 1)
 {
 	GLint ints[1024];
 	assert(expectedValuesN > 0 && expectedValuesN < 1024);
@@ -52,19 +53,20 @@ inline ResultType FetchEffectualStateAttribValue(GLenum paramName)
 	return resultValue;
 }
 
-template<class ResultTupleType>
-inline ResultTupleType FetchEffectualStateAttribValues(GLenum paramName)
+template <typename T> concept glEnumType = std::is_same_v<T, GLenum>;
+
+template<class ResultTupleType, glEnumType... ParamNames>
+inline ResultTupleType FetchEffectualStateAttribValues(ParamNames... paramNames)
 {
+	static_assert(sizeof...(paramNames) == std::tuple_size_v<ResultTupleType>);
 	ResultTupleType resultTuple;
-	glGetAny(paramName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>);
-	return resultTuple;
-}
-template<class ResultTupleType>
-inline ResultTupleType FetchEffectualStateAttribValues(GLenum firstParamName, GLenum secondParamName)
-{
-	ResultTupleType resultTuple;
-	glGetAny(firstParamName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
-	glGetAny(secondParamName, &std::get<std::tuple_size_v<ResultTupleType>/2-1>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
+
+	auto IndexDispatcher = spring::make_index_dispatcher<std::tuple_size_v<ResultTupleType>>();
+
+	IndexDispatcher([args = std::forward_as_tuple(paramNames...), &resultTuple](auto idx) {
+		glGetAny(std::get<idx>(args), &std::get<idx>(resultTuple));
+	});
+
 	return resultTuple;
 }
 
@@ -81,11 +83,14 @@ inline GLuint FetchCurrentSlotTextureID(GLenum target) {
 // Set gl attribute, whether it is capability (glEnable/glDisable) or dedicated, via this single interface
 // Pass DedicatedGLFuncPtrPtr *if* it exists, nullptr if it doesn't
 template<auto DedicatedGLFuncPtrPtr, GLenum... GLParamName, class AttribValuesTupleType>
-inline void glSetAny(AttribValuesTupleType newValues)
+inline void glSetAny(AttribValuesTupleType&& newValues)
 {
 	if constexpr(DedicatedGLFuncPtrPtr)
 	{
-		std::apply(DedicatedGLFuncPtrPtr, newValues);
+		static auto HelperFunc = [](auto&& ... p) {
+			(*DedicatedGLFuncPtrPtr)(std::forward<decltype(p)>(p)...);
+		};
+		std::apply(HelperFunc, std::forward<AttribValuesTupleType>(newValues));
 	}
 	else // glEnable/glDisable(attribute)
 	{

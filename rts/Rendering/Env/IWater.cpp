@@ -21,6 +21,8 @@
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(int, Water)
 .defaultValue(IWater::WATER_RENDERER_REFLECTIVE)
 .safemodeValue(IWater::WATER_RENDERER_BASIC)
@@ -38,10 +40,12 @@ IWater::IWater()
 }
 
 void IWater::ExplosionOccurred(const CExplosionParams& event) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	AddExplosion(event.pos, event.damages.GetDefault(), event.craterAreaOfEffect);
 }
 
 void IWater::SetModelClippingPlane(const double* planeEq) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glLoadIdentity();
 	glClipPlane(GL_CLIP_PLANE2, planeEq);
@@ -50,6 +54,7 @@ void IWater::SetModelClippingPlane(const double* planeEq) {
 
 void IWater::SetWater(int rendererMode)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static std::array<bool, NUM_WATER_RENDERERS> allowedModes = {
 		true,
 		GLEW_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/water.fp"),
@@ -129,6 +134,7 @@ void IWater::SetWater(int rendererMode)
 
 
 void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool drawSky) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	game->SetDrawMode(CGame::gameReflectionDraw);
 
 	{
@@ -150,11 +156,12 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 		SetModelClippingPlane(&clipPlaneEqs[4]);
 		unitDrawer->Draw(true);
 		featureDrawer->Draw(true);
+		projectileDrawer->DrawOpaque(true);
 
 		// transparent
 		unitDrawer->DrawAlphaPass(true);
 		featureDrawer->DrawAlphaPass(true);
-		projectileDrawer->Draw(true);
+		projectileDrawer->DrawAlpha(true, true, false);
 		// sun-disc does not blend well with water
 		// sky->DrawSun();
 
@@ -168,6 +175,7 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 }
 
 void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool drawSky) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	game->SetDrawMode(CGame::gameRefractionDraw);
 
 	{
@@ -188,11 +196,12 @@ void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool d
 		SetModelClippingPlane(&clipPlaneEqs[4]);
 		unitDrawer->Draw(false, true);
 		featureDrawer->Draw(false, true);
+		projectileDrawer->DrawOpaque(false, true);
 
 		// transparent
 		unitDrawer->DrawAlphaPass(false, true);
 		featureDrawer->DrawAlphaPass(false, true);
-		projectileDrawer->Draw(false, true);
+		projectileDrawer->DrawAlpha(false, false, true);
 
 		eventHandler.DrawWorldRefraction();
 		glDisable(GL_CLIP_PLANE2);

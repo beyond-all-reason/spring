@@ -60,7 +60,7 @@ CONFIG(bool, UseNetMessageSmoothingBuffer).defaultValue(true).description("Buffe
 CONFIG(bool, LuaWritableConfigFile).defaultValue(true);
 CONFIG(bool, VFSCacheArchiveFiles).defaultValue(true);
 
-CONFIG(bool, DumpGameStateOnDesync).defaultValue(false).description("Enable writing clientgamestate and servergamestate dumps when a desync is detected");
+CONFIG(bool, DumpGameStateOnDesync).defaultValue(true).description("Enable writing clientgamestate and servergamestate dumps when a desync is detected");
 
 CONFIG(float, MinSimDrawBalance).defaultValue(0.15f).description("Percent of the time for simulation is minimum spend for drawing. E.g. if set to 0.15 then 15% of the total cpu time is exclusively reserved for drawing.");
 CONFIG(int, MinDrawFPS).defaultValue(2).description("Defines how many frames per second should minimally be rendered. To reach this number we will delay simframes.");

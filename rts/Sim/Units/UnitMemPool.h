@@ -9,9 +9,9 @@
 
 #if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64))
 // CBuilder is (currently) the largest derived unit-type
-typedef StaticMemPool<MAX_UNITS, sizeof(CBuilder)> UnitMemPool;
+typedef StaticMemPoolT<MAX_UNITS, CBuilder> UnitMemPool;
 #else
-typedef FixedDynMemPool<sizeof(CBuilder), MAX_UNITS / 1000, MAX_UNITS / 32> UnitMemPool;
+typedef FixedDynMemPoolT<MAX_UNITS / 1000, MAX_UNITS / 32, CBuilder> UnitMemPool;
 #endif
 
 extern UnitMemPool unitMemPool;

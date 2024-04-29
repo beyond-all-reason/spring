@@ -12,6 +12,8 @@
 #include "System/Threading/SpringThreading.h"
 #include "lib/fmt/printf.h"
 
+#include "System/Misc/TracyDefs.h"
+
 // global, affects all pool instances
 bool LuaMemPool::enabled = false;
 
@@ -58,6 +60,7 @@ LuaMemPool* LuaMemPool::AcquirePtr(bool shared, bool owned)
 
 void LuaMemPool::ReleasePtr(LuaMemPool* p, const CLuaHandle* o)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	gCount -= (o != nullptr);
 
 	if (p == GetSharedPtr()) {
@@ -74,6 +77,7 @@ void LuaMemPool::FreeShared() { gSharedPool->Clear(); }
 void LuaMemPool::InitStatic(bool enable) { gSharedPool = new (gSharedPoolMem.data()) LuaMemPool(LuaMemPool::enabled = enable); }
 void LuaMemPool::KillStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (LuaMemPool*& p: gPools) {
 		spring::SafeDelete(p);
 	}
@@ -89,6 +93,7 @@ void LuaMemPool::KillStatic()
 LuaMemPool::LuaMemPool(bool isEnabled): LuaMemPool(size_t(-1)) { assert(isEnabled == LuaMemPool::enabled); }
 LuaMemPool::LuaMemPool(size_t lmpIndex): globalIndex(lmpIndex)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!LuaMemPool::enabled)
 		return;
 
@@ -97,11 +102,13 @@ LuaMemPool::LuaMemPool(size_t lmpIndex): globalIndex(lmpIndex)
 
 void LuaMemPool::Clear()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//allocStats = {};
 }
 
 void* LuaMemPool::Alloc(size_t size)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!LuaMemPool::enabled) {
 		allocStats[STAT_NAE] += 1 * (size > 0);
 		allocStats[STAT_NBE] += size;
@@ -133,6 +140,7 @@ void* LuaMemPool::Alloc(size_t size)
 
 void* LuaMemPool::Realloc(void* ptr, size_t nsize, size_t osize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ptr == nullptr || osize == 0)
 		return Alloc(nsize);
 
@@ -176,6 +184,7 @@ void* LuaMemPool::Realloc(void* ptr, size_t nsize, size_t osize)
 
 void LuaMemPool::Free(void* ptr, size_t size)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!LuaMemPool::enabled) {
 		::operator delete(ptr);
 		return;
@@ -186,6 +195,7 @@ void LuaMemPool::Free(void* ptr, size_t size)
 
 void LuaMemPool::LogStats(const char* handle, const char* lctype)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr auto one = uint64_t(1);
 	const float intPerc = 100.0f * static_cast<float>(allocStats[STAT_NAI]) / static_cast<float>(std::max(allocStats[STAT_NAI] + allocStats[STAT_NAF] + allocStats[STAT_NAE], one));
 	const float avgAllocTimeI = static_cast<float>(allocStats[STAT_NTI]) / static_cast<float>(std::max(allocStats[STAT_NAI], one));

@@ -23,17 +23,17 @@ class CWeaponProjectile : public CProjectile
 	CR_DECLARE_DERIVED(CWeaponProjectile)
 public:
 	CWeaponProjectile(const ProjectileParams& params);
-	virtual ~CWeaponProjectile();
+	~CWeaponProjectile() override;
 
 	virtual void Explode(CUnit* hitUnit, CFeature* hitFeature, float3 impactPos, float3 impactDir);
-	virtual void Collision() override;
-	virtual void Collision(CFeature* feature) override;
-	virtual void Collision(CUnit* unit) override;
-	virtual void Update() override;
+	void Collision() override;
+	void Collision(CFeature* feature) override;
+	void Collision(CUnit* unit) override;
+	void Update() override;
 	/// @return 0=unaffected, 1=instant repulse, 2=gradual repulse
 	virtual int ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed) { return 0; }
 
-	void DrawOnMinimap() override;
+	void DrawOnMinimap() const override;
 
 	// Why is this here? Here is why:
 	// ProjectileCreated(id) issues Spring.SpawnExplosion(), but the projectile(id) construction
@@ -41,7 +41,7 @@ public:
 	// "if (projectileHandler.GetParticleSaturation() < 1.0f)" is getting called as part of
 	// SpawnExplosion() flow and it cannot reach GetProjectilesCount() of derived classes, because
 	// their constructor is not done yet, thus this workaround
-	virtual int GetProjectilesCount() const override { 	return 1; }
+	int GetProjectilesCount() const override { 	return 1; }
 
 	void DependentDied(CObject* o) override;
 	void PostLoad();

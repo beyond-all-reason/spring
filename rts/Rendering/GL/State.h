@@ -119,6 +119,8 @@ namespace State {
 
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Blending, GL_BLEND);
 	ATTRIBUTE_TYPE_DEFS            (BlendFunc, GL_BLEND_SRC, GL_BLEND_DST);
+	ATTRIBUTE_TYPE_DEFS            (BlendEquation, GL_BLEND_EQUATION_RGB);
+	ATTRIBUTE_TYPE_DEFS            (BlendEquationSeparate, GL_BLEND_EQUATION_RGB, GL_BLEND_EQUATION_ALPHA);
 	ATTRIBUTE_TYPE_DEFS            (BlendColor, GL_BLEND_COLOR);
 	ATTRIBUTE_TYPE_DEFS            (ColorMask, GL_COLOR_WRITEMASK);
 
@@ -126,6 +128,7 @@ namespace State {
 	ATTRIBUTE_TYPE_DEFS            (PrimitiveRestartIndex, GL_PRIMITIVE_RESTART_INDEX);
 
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Multisampling, GL_MULTISAMPLE);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (SampleShading, GL_SAMPLE_SHADING);
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (AlphaToCoverage, GL_SAMPLE_ALPHA_TO_COVERAGE);
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (AlphaToOne, GL_SAMPLE_ALPHA_TO_ONE);
 
@@ -162,11 +165,14 @@ namespace State {
 		ATTRIBUTE(AlphaFunc),
 		ATTRIBUTE(Blending),
 		ATTRIBUTE(BlendFunc),
+		ATTRIBUTE(BlendEquation),
+		ATTRIBUTE(BlendEquationSeparate),
 		ATTRIBUTE(BlendColor),
 		ATTRIBUTE(ColorMask),
 		ATTRIBUTE(PrimitiveRestart),
 		ATTRIBUTE(PrimitiveRestartIndex),
 		ATTRIBUTE(Multisampling),
+		ATTRIBUTE(SampleShading),
 		ATTRIBUTE(AlphaToCoverage),
 		ATTRIBUTE(AlphaToOne),
 		ATTRIBUTE(CubemapSeamless),

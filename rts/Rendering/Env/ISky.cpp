@@ -16,6 +16,8 @@
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(bool, AdvSky).deprecated(true);
 
 ISky::ISky()
@@ -34,12 +36,14 @@ ISky::ISky()
 
 ISky::~ISky()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::SafeDelete(skyLight);
 }
 
 
 
 void ISky::SetupFog() {
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	if (globalRendering->drawFog) {
 		glEnable(GL_FOG);
@@ -56,6 +60,7 @@ void ISky::SetupFog() {
 
 void ISky::SetSky()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	sky = nullptr; //break before make
 
 	try {
@@ -81,6 +86,7 @@ void ISky::SetSky()
 }
 
 bool ISky::SunVisible(const float3 pos) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* hitUnit = nullptr;
 	const CFeature* hitFeature = nullptr;
 

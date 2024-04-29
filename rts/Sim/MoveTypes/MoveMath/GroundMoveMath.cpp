@@ -4,11 +4,14 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 
+#include "System/Misc/TracyDefs.h"
+
 /*
 Calculate speed-multiplier for given height and slope data.
 */
 float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slope)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float speedMod = 0.0f;
 
 	// slope too steep or square too deep?
@@ -27,6 +30,7 @@ float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slop
 
 float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slope, float dirSlopeMod)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!modInfo.allowDirectionalPathing) {
 		return GroundSpeedMod(moveDef, height, slope);
 	}
@@ -39,8 +43,8 @@ float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slop
 	if (slope > moveDef.maxSlope)
 		return speedMod;
 
-	// is this square below our maxWaterDepth and are we going further downhill?
-	if ((dirSlopeMod <= 0.0f) && (-height > moveDef.depth))
+	// is this square below our maxWaterDepth?
+	if ((-height) > moveDef.depth)
 		return speedMod;
 
 	// slope-mod (speedMod is not increased or decreased by downhill slopes)

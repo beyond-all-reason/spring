@@ -113,6 +113,8 @@ namespace springproc {
 	void CPUID::EnumerateCores() {
 		const auto oldAffinity = Threading::GetAffinity();
 
+		LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
+
 		availableProceesorAffinityMask = 0;
 		numLogicalCores = 0;
 		numPhysicalCores = 0;
@@ -140,6 +142,7 @@ namespace springproc {
 		auto& [raw_array, system, badResult] = cpuID.Get();
 
 		Threading::SetAffinity(oldAffinity);
+		LOG("%s: thread affinity %x ...", __func__, Threading::GetAffinity());
 		if (badResult) {
 			LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
 			return;

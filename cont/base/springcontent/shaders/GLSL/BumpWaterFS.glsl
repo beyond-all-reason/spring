@@ -295,8 +295,25 @@ void main()
 
   // REFRACTION
 #ifdef opt_refraction
-    vec3 refrColor = texture2D(refraction, screencoord + normal.xz * refractDistortion * ScreenInverse).rgb;
-    gl_FragColor.rgb = mix(refrColor, waterSurface, 0.1 + surfaceMix);
+    vec2 refrUV = screencoord + normal.xz * refractDistortion * ScreenInverse;
+
+    // Sample the screencopy for refraction at the distorted UV coordinate:
+    vec3 refrColor = texture2D(refraction, refrUV).rgb;
+
+    // Look up the depth of the distorted UV coordinate
+    float  texZ = ConvertDepthToEyeZ(texture2D(depthmap, refrUV).r);
+    float fragZ = ConvertDepthToEyeZ(gl_FragCoord.z);
+
+   // If the distorted coordinate is closer to the screen in Z, then set the mixback to 1.0
+    float mixback = clamp(texZ - fragZ, 0.0, 1.0);
+
+    // Sample the undistorted refraction screencopy, so we know what to replace it with. 
+    vec3 origRefrColor = texture2D(refraction, screencoord).rgb;
+
+    // Replace the distorted screencopy with the original if the fragment is above the water. 
+    refrColor = mix(refrColor, origRefrColor, mixback);
+
+    gl_FragColor.rgb = mix(refrColor, waterSurface, 0.1 + surfaceMix * 0.100);
 #else
     gl_FragColor.rgb = waterSurface;
     gl_FragColor.a   = surfaceMix + specular;

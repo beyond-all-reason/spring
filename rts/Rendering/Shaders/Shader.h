@@ -104,8 +104,20 @@ namespace Shader {
 		CompiledShaderObjectUniquePtr CompileShaderObject();
 	};
 
+	struct IProgramObject;
+	struct ShaderEnabledToken {
+		ShaderEnabledToken(IProgramObject* prog_);
 
+		ShaderEnabledToken(ShaderEnabledToken&& rhs) noexcept { *this = std::move(rhs); }
+		ShaderEnabledToken& operator=(ShaderEnabledToken&& rhs) noexcept { std::swap(prog, rhs.prog); return *this; }
 
+		ShaderEnabledToken(const ShaderEnabledToken&) = delete;
+		ShaderEnabledToken& operator=(const ShaderEnabledToken& rhs) = delete;
+
+		~ShaderEnabledToken();
+	private:
+		IProgramObject* prog = nullptr;
+	};
 
 	struct IProgramObject {
 	public:
@@ -130,6 +142,9 @@ namespace Shader {
 
 		void SetLogReporting(bool b, bool shObjects = true);
 
+		ShaderEnabledToken EnableScoped() {
+			return ShaderEnabledToken(this);
+		}
 		virtual void Enable();
 		virtual void Disable();
 		virtual void EnableRaw() {}

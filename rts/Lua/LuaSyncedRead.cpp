@@ -123,8 +123,10 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetPlayerRulesParam);
 	REGISTER_LUA_CFUNC(GetPlayerRulesParams);
-
+	
+	REGISTER_LUA_CFUNC(GetMapOption);
 	REGISTER_LUA_CFUNC(GetMapOptions);
+	REGISTER_LUA_CFUNC(GetModOption);
 	REGISTER_LUA_CFUNC(GetModOptions);
 
 	REGISTER_LUA_CFUNC(GetTidal);
@@ -158,6 +160,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetTeamRulesParams);
 	REGISTER_LUA_CFUNC(GetTeamStatsHistory);
 	REGISTER_LUA_CFUNC(GetTeamLuaAI);
+	REGISTER_LUA_CFUNC(GetTeamMaxUnits);
 
 	REGISTER_LUA_CFUNC(GetAllyTeamInfo);
 	REGISTER_LUA_CFUNC(AreTeamsAllied);
@@ -212,6 +215,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitPosErrorParams);
 	REGISTER_LUA_CFUNC(GetUnitHeight);
 	REGISTER_LUA_CFUNC(GetUnitRadius);
+	REGISTER_LUA_CFUNC(GetUnitBuildeeRadius);
 	REGISTER_LUA_CFUNC(GetUnitMass);
 	REGISTER_LUA_CFUNC(GetUnitPosition);
 	REGISTER_LUA_CFUNC(GetUnitBasePosition);
@@ -322,6 +326,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileDamages);
 
 	REGISTER_LUA_CFUNC(IsPosInMap);
+	REGISTER_LUA_CFUNC(GetWaterPlaneLevel);
+	REGISTER_LUA_CFUNC(GetWaterLevel);
 	REGISTER_LUA_CFUNC(GetGroundHeight);
 	REGISTER_LUA_CFUNC(GetGroundOrigHeight);
 	REGISTER_LUA_CFUNC(GetGroundNormal);
@@ -1256,7 +1262,43 @@ int LuaSyncedRead::GetFeatureRulesParam(lua_State* L)
  *     if (Spring.GetModOptions.exampleOption) then...end
 ******************************************************************************/
 
+static int PushSingleOption(lua_State* L, const auto &options)
+{
+	const std::string& key = luaL_checkstring(L, 1);
 
+	const std::string* value = options.try_get(key);
+	if (value == nullptr)
+		return 0;
+
+	lua_pushsstring(L, *value);
+	return 1;
+}
+
+static int PushAllOptions(lua_State* L, const auto &options)
+{
+	lua_createtable(L, 0, options.size());
+
+	for (const auto& [key, value] : options) {
+		lua_pushsstring(L, key);
+		lua_pushsstring(L, value);
+		lua_rawset(L, -3);
+	}
+
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.GetMapOption
+ *
+ * @string mapOption
+ *
+ * @treturn string value of mapOption  
+ * */
+int LuaSyncedRead::GetMapOption(lua_State* L)
+{
+	return PushSingleOption(L, CGameSetup::GetMapOptions());
+}
 /***
  *
  * @function Spring.GetMapOptions
@@ -1265,17 +1307,21 @@ int LuaSyncedRead::GetFeatureRulesParam(lua_State* L)
  */
 int LuaSyncedRead::GetMapOptions(lua_State* L)
 {
-	const auto& mapOpts = CGameSetup::GetMapOptions();
+	return PushAllOptions(L, CGameSetup::GetMapOptions());
+}
 
-	lua_createtable(L, 0, mapOpts.size());
 
-	for (const auto& mapOpt : mapOpts) {
-		lua_pushsstring(L, mapOpt.first);
-		lua_pushsstring(L, mapOpt.second);
-		lua_rawset(L, -3);
-	}
-
-	return 1;
+/***
+ *
+ * @function Spring.GetModOption
+ *
+ * @string modOption 
+ *
+ * @treturn string value of modOption in option map
+ */
+int LuaSyncedRead::GetModOption(lua_State* L)
+{
+	return PushSingleOption(L, CGameSetup::GetModOptions());
 }
 
 
@@ -1287,17 +1333,7 @@ int LuaSyncedRead::GetMapOptions(lua_State* L)
  */
 int LuaSyncedRead::GetModOptions(lua_State* L)
 {
-	const auto& modOpts = CGameSetup::GetModOptions();
-
-	lua_createtable(L, 0, modOpts.size());
-
-	for (const auto& modOpt: modOpts) {
-		lua_pushsstring(L, modOpt.first);
-		lua_pushsstring(L, modOpt.second);
-		lua_rawset(L, -3);
-	}
-
-	return 1;
+	return PushAllOptions(L, CGameSetup::GetModOptions());
 }
 
 
@@ -1439,10 +1475,10 @@ int LuaSyncedRead::GetSideData(lua_State* L)
 		return 3;
 	}
 	{
-		lua_newtable(L);
 		const unsigned int sideCount = sideParser.GetCount();
+		lua_createtable(L, sideCount, 0);
 		for (unsigned int i = 0; i < sideCount; i++) {
-			lua_newtable(L); {
+			lua_createtable(L, 0, 3); {
 				LuaPushNamedString(L, "sideName",  sideParser.GetSideName(i));
 				LuaPushNamedString(L, "caseName",  sideParser.GetCaseName(i));
 				LuaPushNamedString(L, "startUnit", sideParser.GetStartUnit(i));
@@ -1970,12 +2006,12 @@ int LuaSyncedRead::GetTeamStatsHistory(lua_State* L)
 
 	std::advance(it, start);
 
-	lua_newtable(L);
+	lua_createtable(L, max(0, end - start), 0);
 	if (statCount > 0) {
 		int count = 1;
 		for (int i = start; i <= end; ++i, ++it) {
 			const TeamStatistics& stats = *it;
-			lua_newtable(L); {
+			lua_createtable(L, 0, 21); {
 				if (i+1 == teamStats.size()) {
 					// the `stats.frame` var indicates the frame when a new entry needs to get added,
 					// for the most recent stats entry this lies obviously in the future,
@@ -2050,6 +2086,31 @@ int LuaSyncedRead::GetTeamLuaAI(lua_State* L)
 	return 1;
 }
 
+
+/*** Returns a team's unit cap.
+ *
+ * Also returns the current unit count for readable teams as the 2nd value.
+ *
+ * @function Spring.GetTeamMaxUnits
+ * @number teamID
+ * @treturn number maxUnits
+ * @treturn nil|number currentUnits
+ */
+int LuaSyncedRead::GetTeamMaxUnits(lua_State* L)
+{
+	const auto team = ParseTeam(L, __func__, 1);
+	if (team == nullptr)
+		return 0;
+
+	lua_pushnumber(L, team->GetMaxUnits());
+
+	if (LuaUtils::IsAlliedTeam(L, team->teamNum))
+		lua_pushnumber(L, team->GetNumUnits());
+	else
+		lua_pushnil(L);
+
+	return 2;
+}
 
 /***
  *
@@ -2193,7 +2254,7 @@ int LuaSyncedRead::GetAIInfo(lua_State* L)
 		lua_pushsstring(L, aiData->shortName);
 		lua_pushsstring(L, aiData->version);
 
-		lua_newtable(L);
+		lua_createtable(L, 0, aiData->options.size());
 
 		for (const auto& option: aiData->options) {
 			lua_pushsstring(L, option.first);
@@ -2424,25 +2485,10 @@ static inline void InsertSearchUnitDefs(const UnitDef* ud, bool allied)
 	if (ud == nullptr)
 		return;
 
-	if (allied) {
-		gtuObjectIDs.push_back(ud->id);
-		return;
-	}
-	if (ud->decoyDef != nullptr)
+	if (!allied && ud->decoyDef)
 		return;
 
 	gtuObjectIDs.push_back(ud->id);
-
-	// spring::unordered_map<int, std::vector<int> >
-	const auto& decoyMap = unitDefHandler->GetDecoyDefIDs();
-	const auto decoyMapIt = decoyMap.find(ud->id);
-
-	if (decoyMapIt == decoyMap.end())
-		return;
-
-	for (int decoyDefID: decoyMapIt->second) {
-		gtuObjectIDs.push_back(decoyDefID);
-	}
 }
 
 
@@ -2665,26 +2711,36 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 	}
 
 	// sort the ID's so duplicates can be skipped
-	std::stable_sort(gtuObjectIDs.begin(), gtuObjectIDs.end());
+	spring::VectorSortUnique(gtuObjectIDs);
 
-	lua_createtable(L, gtuObjectIDs.size(), 0);
-
-	unsigned int unitCount = 1;
-	unsigned int prevUnitDefID = -1;
+	std::vector<int> unitIDs;
+	size_t lastOfsset = 0;
+	bool isCalledFromSynced = CLuaHandle::GetHandleSynced(L);
 
 	for (const int unitDefID: gtuObjectIDs) {
-		if (unitDefID == prevUnitDefID)
-			continue;
-
-		prevUnitDefID = unitDefID;
-
-		for (const CUnit* unit: unitHandler.GetUnitsByTeamAndDef(teamID, unitDefID)) {
+		for (const CUnit* unit: unitHandler.GetUnitsByTeam(teamID)) {
 			if (!allied && !LuaUtils::IsUnitTyped(L, unit))
 				continue;
 
-			lua_pushnumber(L, unit->id);
-			lua_rawseti(L, -2, unitCount++);
+			if (unit->unitDef->id == unitDefID || (!allied && unit->unitDef->decoyDef && unit->unitDef->decoyDef->id == unitDefID)) {
+				unitIDs.emplace_back(unit->id);
+			}
 		}
+
+		if (isCalledFromSynced)
+			continue;
+
+		/* `unitHandler.GetUnitsByTeam` returns units in creation order,
+		 * which would reveal some extra information if passed unchanged. */
+		spring::random_shuffle(unitIDs.begin() + lastOfsset, unitIDs.end(), guRNG);
+		lastOfsset = unitIDs.size();
+	}
+
+	lua_createtable(L, unitIDs.size(), 0);
+
+	for (int i = 0; i < unitIDs.size(); ++i) {
+		lua_pushnumber(L, unitIDs[i]);
+		lua_rawseti(L, -2, i + 1);
 	}
 
 	return 1;
@@ -3943,13 +3999,19 @@ int LuaSyncedRead::GetUnitIsDead(lua_State* L)
 }
 
 
-/***
+/*** Checks whether a unit is disabled and can't act
+ *
+ * The first return value is a simple OR of the following ones,
+ * any of those conditions is sufficient to disable the unit.
+ *
+ * Note that EMP and being transported are mechanically the same and thus lumped together.
+ * Use other callouts to differentiate them if you need to.
  *
  * @function Spring.GetUnitIsStunned
  * @number unitID
- * @treturn nil|bool stunnedOrBuilt unit is stunned either via EMP or being under construction
- * @treturn bool stunned unit is stunned via EMP
- * @treturn bool beingBuilt unit is stunned via being under construction
+ * @treturn nil|bool stunnedOrBuilt unit is disabled
+ * @treturn bool stunned unit is either stunned via EMP or being transported by a non-fireplatform
+ * @treturn bool beingBuilt unit is under construction
  */
 int LuaSyncedRead::GetUnitIsStunned(lua_State* L)
 {
@@ -4079,6 +4141,23 @@ int LuaSyncedRead::GetUnitRadius(lua_State* L)
 
 /***
  *
+ * @function Spring.GetUnitBuildeeRadius
+ * Gets the unit's radius for when targeted by build, repair, reclaim-type commands.
+ * @number unitID
+ * @treturn nil|number
+ */
+int LuaSyncedRead::GetUnitBuildeeRadius(lua_State* L)
+{
+	const CUnit* unit = ParseTypedUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->buildeeRadius);
+	return 1;
+}
+
+/***
+ *
  * @function Spring.GetUnitMass
  * @number unitID
  * @treturn nil|number
@@ -4191,6 +4270,8 @@ int LuaSyncedRead::GetUnitDirection(lua_State* L)
  *
  * @function Spring.GetUnitHeading
  * @number unitID
+ * @bool[opt=false] convertToRadians
+ * @treturn heading
  */
 int LuaSyncedRead::GetUnitHeading(lua_State* L)
 {
@@ -4198,7 +4279,12 @@ int LuaSyncedRead::GetUnitHeading(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	lua_pushnumber(L, unit->heading);
+	float heading = unit->heading;
+	if (luaL_optboolean(L, 2, false)) {
+		heading = ClampRad(math::PI / 32768.0f * heading);
+	}
+
+	lua_pushnumber(L, heading);
 	return 1;
 }
 
@@ -4263,34 +4349,9 @@ int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 	return 0;
 }
 
-/*** Checks a builder's current task
- *
- * @function Spring.GetUnitWorkerTask
- *
- * Checks what a builder is currently doing. This is not the same as `Spring.GetUnitCurrentCommand`,
- * because you can have a command at the front of the queue and not be doing it (for example because
- * the target is still too far away), and on the other hand you can also be doing a task despite not
- * having it in front of the queue (for example you're Guarding another builder who does). Also, it
- * resolves the Repair command into either actual repair, or construction assist (in which case it
- * returns the appropriate "build" command). Only build-related commands are returned (no Move or any
- * custom commands).
- *
- * The possible commands returned are repair, reclaim, resurrect, capture, restore,
- * and build commands (negative buildee unitDefID).
- *
- * @number unitID
- * @treturn number cmdID of the relevant command
- * @treturn number targetID if applicable (all except RESTORE)
- */
-int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
+static int GetBuilderWorkerTask(lua_State* L, const CBuilder *builder)
 {
-	const auto unit = ParseInLosUnit(L, __func__, 1);
-	if (unit == nullptr)
-		return 0;
-
-	const auto builder = dynamic_cast <const CBuilder*> (unit);
-	if (builder == nullptr)
-		return 0;
+	assert(builder != nullptr);
 
 	if (builder->curBuild) {
 		lua_pushnumber(L, builder->curBuild->beingBuilt
@@ -4325,6 +4386,56 @@ int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 	} else {
 		return 0;
 	}
+}
+
+static int GetFactoryWorkerTask(lua_State* L, const CFactory *factory)
+{
+	assert(factory != nullptr);
+
+	if (factory->curBuild) {
+		lua_pushnumber(L, factory->curBuild->beingBuilt
+			? -factory->curBuild->unitDef->id
+			: CMD_REPAIR // fullHealthFactory
+		);
+		lua_pushnumber(L, factory->curBuild->id);
+		return 2;
+	} else {
+		return 0;
+	}
+}
+
+/*** Checks a builder's current task
+ *
+ * @function Spring.GetUnitWorkerTask
+ *
+ * Checks what a builder is currently doing. This is not the same as `Spring.GetUnitCurrentCommand`,
+ * because you can have a command at the front of the queue and not be doing it (for example because
+ * the target is still too far away), and on the other hand you can also be doing a task despite not
+ * having it in front of the queue (for example you're Guarding another builder who does). Also, it
+ * resolves the Repair command into either actual repair, or construction assist (in which case it
+ * returns the appropriate "build" command). Only build-related commands are returned (no Move or any
+ * custom commands).
+ *
+ * The possible commands returned are repair, reclaim, resurrect, capture, restore,
+ * and build commands (negative buildee unitDefID).
+ *
+ * @number unitID
+ * @treturn number cmdID of the relevant command
+ * @treturn number targetID if applicable (all except RESTORE)
+ */
+int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
+{
+	const auto unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	// perhaps this should be some sort of virtual function of CUnit?
+	if (const auto builder = dynamic_cast <const CBuilder *> (unit); builder)
+		return GetBuilderWorkerTask(L, builder);
+	if (const auto factory = dynamic_cast <const CFactory *> (unit); factory)
+		return GetFactoryWorkerTask(L, factory);
+
+	return 0;
 }
 
 /***
@@ -4760,7 +4871,7 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 			lua_pushnumber(L, weapon->salvoSize);
 		} break;
 		case hashString("burstRate"): {
-			lua_pushnumber(L, weapon->salvoDelay / GAME_SPEED);
+			lua_pushnumber(L, float(weapon->salvoDelay) / GAME_SPEED);
 		} break;
 
 		case hashString("projectiles"): {
@@ -5393,7 +5504,7 @@ int LuaSyncedRead::GetUnitDefDimensions(lua_State* L)
 
 	const S3DModel& m = *model;
 	const float3& mid = model->relMidPos;
-	lua_newtable(L);
+	lua_createtable(L, 0, 11);
 	HSTR_PUSH_NUMBER(L, "height", m.height);
 	HSTR_PUSH_NUMBER(L, "radius", m.radius);
 	HSTR_PUSH_NUMBER(L, "midx",   mid.x);
@@ -5451,7 +5562,7 @@ int LuaSyncedRead::GetUnitMoveTypeData(lua_State* L)
 
 	AMoveType* amt = unit->moveType;
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 26);
 	HSTR_PUSH_NUMBER(L, "maxSpeed", amt->GetMaxSpeed() * GAME_SPEED);
 	HSTR_PUSH_NUMBER(L, "maxWantedSpeed", amt->GetMaxWantedSpeed() * GAME_SPEED);
 	HSTR_PUSH_NUMBER(L, "goalx", amt->goalPos.x);
@@ -5716,7 +5827,8 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
  *
  * @number id
  * @tparam {number,...} params
- * @tparam cmdOpts cmdOpts
+ * @tparam cmdOpts options
+ * @number tag
  */
 
 
@@ -5756,10 +5868,13 @@ int LuaSyncedRead::GetUnitCommands(lua_State* L)
 	return 1;
 }
 
-/***
+/*** Get the number or list of commands for a factory
  *
  * @function Spring.GetFactoryCommands
+ *
  * @number unitID
+ * @number count when 0 returns the number of commands in the units queue, when -1 returns all commands, number of commands to return otherwise
+ * @treturn number|{cmd,...} commands
  */
 int LuaSyncedRead::GetFactoryCommands(lua_State* L)
 {
@@ -5819,7 +5934,7 @@ int LuaSyncedRead::GetFactoryBuggerOff(lua_State* L)
 static void PackFactoryCounts(lua_State* L,
                               const CCommandQueue& q, int count, bool noCmds)
 {
-	lua_newtable(L);
+	lua_createtable(L, count + 1, 0);
 
 	int entry = 0;
 	int currentCmd = 0;
@@ -5845,7 +5960,10 @@ static void PackFactoryCounts(lua_State* L,
 		}
 		else {
 			entry++;
-			lua_newtable(L); {
+			// Here and below, negative integer keys in lua tables are stored in the
+			// hash part of the table, hence we set nrec to 1 instead of narr.
+			// Lua Gems Chapter 2: About tables.
+			lua_createtable(L, 0, 1); {
 				lua_pushnumber(L, currentCount);
 				lua_rawseti(L, -2, -currentCmd);
 			}
@@ -5856,7 +5974,7 @@ static void PackFactoryCounts(lua_State* L,
 	}
 	if (currentCount > 0) {
 		entry++;
-		lua_newtable(L); {
+		lua_createtable(L, 0, 1); {
 			lua_pushnumber(L, currentCount);
 			lua_rawseti(L, -2, -currentCmd);
 		}
@@ -5867,10 +5985,14 @@ static void PackFactoryCounts(lua_State* L,
 }
 
 
-/***
+/*** Gets the build queue of a factory
  *
  * @function Spring.GetFactoryCounts
  * @number unitID
+ * @number[opt=-1] count then number of commands to retrieve, when -1 all
+ * @bool[opt=false] addCmds if commands other than buildunit are retrieved
+ *
+ * @treturn nil|{{[number]=number,...}} counts indexed by unitDefID or -cmdID
  */
 int LuaSyncedRead::GetFactoryCounts(lua_State* L)
 {
@@ -5987,10 +6109,11 @@ static int PackBuildQueue(lua_State* L, bool canBuild, const char* caller)
 }
 
 
-/***
+/*** Returns the build queue
  *
  * @function Spring.GetFullBuildQueue
  * @number unitID
+ * @treturn nil|{[number]=number,...} buildqueue indexed by unitDefID with count values
  */
 int LuaSyncedRead::GetFullBuildQueue(lua_State* L)
 {
@@ -5998,10 +6121,11 @@ int LuaSyncedRead::GetFullBuildQueue(lua_State* L)
 }
 
 
-/***
+/*** Returns the build queue cleaned of things the unit can't build itself
  *
  * @function Spring.GetRealBuildQueue
  * @number unitID
+ * @treturn nil|{[number]=number,...} buildqueue indexed by unitDefID with count values
  */
 int LuaSyncedRead::GetRealBuildQueue(lua_State* L)
 {
@@ -6927,7 +7051,9 @@ int LuaSyncedRead::IsPosInMap(lua_State* L)
 	return 2;
 }
 
-/***
+/*** Get ground height
+ *
+ * On sea, this returns the negative depth of the seafloor
  *
  * @function Spring.GetGroundHeight
  * @number x
@@ -6942,8 +7068,43 @@ int LuaSyncedRead::GetGroundHeight(lua_State* L)
 	return 1;
 }
 
+/*** Get water plane height
+ *
+ * Water may at some point become shaped (rivers etc) but for now it is always a flat plane.
+ * Use this function instead of GetWaterLevel to denote you are relying on that assumption.
+ *
+ * @see Spring.GetWaterLevel
+ * @function Spring.GetWaterPlaneLevel
+ * @treturn number waterPlaneLevel
+ */
+int LuaSyncedRead::GetWaterPlaneLevel(lua_State* L)
+{
+	lua_pushnumber(L, CGround::GetWaterPlaneLevel());
+	return 1;
+}
 
-/***
+/*** Get water level in a specific position
+ *
+ * Water is currently a flat plane, so this returns the same value regardless of XZ.
+ * However water may become more dynamic at some point so by using this you are future-proof.
+ *
+ * @function Spring.GetWaterLevel
+ * @number x
+ * @number z
+ * @treturn number waterLevel
+ */
+int LuaSyncedRead::GetWaterLevel(lua_State* L)
+{
+	const float x = luaL_checkfloat(L, 1);
+	const float z = luaL_checkfloat(L, 2);
+	lua_pushnumber(L, CGround::GetWaterLevel(x, z));
+	return 1;
+}
+
+
+/*** Get ground height as it was at game start
+ *
+ * Returns the original height before the ground got deformed
  *
  * @function Spring.GetGroundOrigHeight
  * @number x
@@ -7802,12 +7963,12 @@ static int GetSolidObjectPieceList(lua_State* L, const CSolidObject* o)
 
 static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 {
-	lua_newtable(L);
+	lua_createtable(L, 0, 7);
 	HSTR_PUSH_STRING(L, "name", op.name);
 	HSTR_PUSH_STRING(L, "parent", ((op.parent != nullptr) ? op.parent->name : "[null]"));
 
 	HSTR_PUSH(L, "children");
-	lua_newtable(L);
+	lua_createtable(L, op.children.size(), 0);
 	for (size_t c = 0; c < op.children.size(); c++) {
 		lua_pushsstring(L, op.children[c]->name);
 		lua_rawseti(L, -2, c + 1);
@@ -7819,7 +7980,7 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "min");
-	lua_newtable(L); {
+	lua_createtable(L, 3, 0); {
 		lua_pushnumber(L, op.mins.x); lua_rawseti(L, -2, 1);
 		lua_pushnumber(L, op.mins.y); lua_rawseti(L, -2, 2);
 		lua_pushnumber(L, op.mins.z); lua_rawseti(L, -2, 3);
@@ -7827,7 +7988,7 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "max");
-	lua_newtable(L); {
+	lua_createtable(L, 3, 0); {
 		lua_pushnumber(L, op.maxs.x); lua_rawseti(L, -2, 1);
 		lua_pushnumber(L, op.maxs.y); lua_rawseti(L, -2, 2);
 		lua_pushnumber(L, op.maxs.z); lua_rawseti(L, -2, 3);
@@ -7835,7 +7996,7 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "offset");
-	lua_newtable(L); {
+	lua_createtable(L, 3, 0); {
 		lua_pushnumber(L, op.offset.x); lua_rawseti(L, -2, 1);
 		lua_pushnumber(L, op.offset.y); lua_rawseti(L, -2, 2);
 		lua_pushnumber(L, op.offset.z); lua_rawseti(L, -2, 3);

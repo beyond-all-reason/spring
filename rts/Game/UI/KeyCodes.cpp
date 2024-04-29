@@ -9,11 +9,14 @@
 #include "System/Platform/SDL1_keysym.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CKeyCodes keyCodes;
 
 
 int CKeyCodes::GetNormalizedSymbol(int sym)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (sym <= SDLK_DELETE)
 		return (tolower(sym));
 
@@ -60,6 +63,7 @@ unsigned char CKeyCodes::ToModifier(const int code)
 
 bool CKeyCodes::IsModifier(int code) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (code) {
 		case SDLK_LALT:
 		case SDLK_LCTRL:
@@ -87,6 +91,7 @@ bool CKeyCodes::IsModifier(int code) const
 
 void CKeyCodes::Reset()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	nameToCode.clear();
 	nameToCode.reserve(64);
 	codeToName.clear();
@@ -227,12 +232,14 @@ void CKeyCodes::Reset()
 
 std::string CKeyCodes::GetCodeString(int code)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return IntToString(code, "0x%03X");
 }
 
 
 std::string CKeyCodes::GetName(int code) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto iter = std::lower_bound(codeToName.begin(), codeToName.end(), CodeNamePair{code, ""}, codePred);
 
 	if (iter == codeToName.end() || iter->first != code)
@@ -244,6 +251,7 @@ std::string CKeyCodes::GetName(int code) const
 
 std::string CKeyCodes::GetDefaultName(int code) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto iter = std::lower_bound(defaultCodeToName.begin(), defaultCodeToName.end(), CodeNamePair{code, ""}, codePred);
 
 	if (iter == defaultCodeToName.end() || iter->first != code)
@@ -255,6 +263,7 @@ std::string CKeyCodes::GetDefaultName(int code) const
 
 void CKeyCodes::PrintNameToCode() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const auto& p: nameToCode) {
 		LOG("KEYNAME: %13s = 0x%03X (SDL1 = 0x%03X)", p.first.c_str(), p.second, SDL21_keysyms(p.second));
 	}
@@ -263,6 +272,7 @@ void CKeyCodes::PrintNameToCode() const
 
 void CKeyCodes::PrintCodeToName() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const auto& p: codeToName) {
 		LOG("KEYCODE: 0x%03X = '%s' (SDL1 = 0x%03X)", p.first, p.second.c_str(), SDL21_keysyms(p.first));
 	}

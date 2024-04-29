@@ -8,7 +8,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(CCobThread, )
 
@@ -75,6 +75,7 @@ CCobThread::CCobThread(CCobInstance* _cobInst)
 
 CCobThread::~CCobThread()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Stop();
 
 	if (dataStack.capacity() > 0) {
@@ -142,6 +143,7 @@ CCobThread& CCobThread::operator = (const CCobThread& t) {
 
 void CCobThread::Start(int functionId, int sigMask, const std::array<int, 1 + MAX_COB_ARGS>& args, bool schedule)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(callStack.size() == 0);
 
 	state = Run;
@@ -170,6 +172,7 @@ void CCobThread::Start(int functionId, int sigMask, const std::array<int, 1 + MA
 
 void CCobThread::Stop()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (cobInst == nullptr)
 		return;
 
@@ -186,12 +189,14 @@ void CCobThread::Stop()
 
 const std::string& CCobThread::GetName()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return cobFile->scriptNames[callStack[0].functionId];
 }
 
 
 int CCobThread::CheckStack(unsigned int size, bool warn)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (size <= dataStack.size())
 		return size;
 
@@ -210,6 +215,7 @@ int CCobThread::CheckStack(unsigned int size, bool warn)
 
 void CCobThread::InitStack(unsigned int n, CCobThread* t)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(dataStack.size() == 0);
 
 	// move n arguments from caller's stack onto our own
@@ -224,93 +230,93 @@ void CCobThread::InitStack(unsigned int n, CCobThread* t)
 // And some information from basm0.8 source (basm ops.txt)
 
 // Model interaction
-constexpr int MOVE       = 0x10001000;
-constexpr int TURN       = 0x10002000;
-constexpr int SPIN       = 0x10003000;
-constexpr int STOP_SPIN  = 0x10004000;
-constexpr int SHOW       = 0x10005000;
-constexpr int HIDE       = 0x10006000;
-constexpr int CACHE      = 0x10007000;
-constexpr int DONT_CACHE = 0x10008000;
-constexpr int MOVE_NOW   = 0x1000B000;
-constexpr int TURN_NOW   = 0x1000C000;
-constexpr int SHADE      = 0x1000D000;
-constexpr int DONT_SHADE = 0x1000E000;
-constexpr int EMIT_SFX   = 0x1000F000;
+static constexpr int MOVE       = 0x10001000;
+static constexpr int TURN       = 0x10002000;
+static constexpr int SPIN       = 0x10003000;
+static constexpr int STOP_SPIN  = 0x10004000;
+static constexpr int SHOW       = 0x10005000;
+static constexpr int HIDE       = 0x10006000;
+static constexpr int CACHE      = 0x10007000;
+static constexpr int DONT_CACHE = 0x10008000;
+static constexpr int MOVE_NOW   = 0x1000B000;
+static constexpr int TURN_NOW   = 0x1000C000;
+static constexpr int SHADE      = 0x1000D000;
+static constexpr int DONT_SHADE = 0x1000E000;
+static constexpr int EMIT_SFX   = 0x1000F000;
 
 // Blocking operations
-constexpr int WAIT_TURN  = 0x10011000;
-constexpr int WAIT_MOVE  = 0x10012000;
-constexpr int SLEEP      = 0x10013000;
+static constexpr int WAIT_TURN  = 0x10011000;
+static constexpr int WAIT_MOVE  = 0x10012000;
+static constexpr int SLEEP      = 0x10013000;
 
 // Stack manipulation
-constexpr int PUSH_CONSTANT    = 0x10021001;
-constexpr int PUSH_LOCAL_VAR   = 0x10021002;
-constexpr int PUSH_STATIC      = 0x10021004;
-constexpr int CREATE_LOCAL_VAR = 0x10022000;
-constexpr int POP_LOCAL_VAR    = 0x10023002;
-constexpr int POP_STATIC       = 0x10023004;
-constexpr int POP_STACK        = 0x10024000; ///< Not sure what this is supposed to do
+static constexpr int PUSH_CONSTANT    = 0x10021001;
+static constexpr int PUSH_LOCAL_VAR   = 0x10021002;
+static constexpr int PUSH_STATIC      = 0x10021004;
+static constexpr int CREATE_LOCAL_VAR = 0x10022000;
+static constexpr int POP_LOCAL_VAR    = 0x10023002;
+static constexpr int POP_STATIC       = 0x10023004;
+static constexpr int POP_STACK        = 0x10024000; ///< Not sure what this is supposed to do
 
 // Arithmetic operations
-constexpr int ADD         = 0x10031000;
-constexpr int SUB         = 0x10032000;
-constexpr int MUL         = 0x10033000;
-constexpr int DIV         = 0x10034000;
-constexpr int MOD		  = 0x10034001; ///< spring specific
-constexpr int BITWISE_AND = 0x10035000;
-constexpr int BITWISE_OR  = 0x10036000;
-constexpr int BITWISE_XOR = 0x10037000;
-constexpr int BITWISE_NOT = 0x10038000;
+static constexpr int ADD         = 0x10031000;
+static constexpr int SUB         = 0x10032000;
+static constexpr int MUL         = 0x10033000;
+static constexpr int DIV         = 0x10034000;
+static constexpr int MOD		  = 0x10034001; ///< spring specific
+static constexpr int BITWISE_AND = 0x10035000;
+static constexpr int BITWISE_OR  = 0x10036000;
+static constexpr int BITWISE_XOR = 0x10037000;
+static constexpr int BITWISE_NOT = 0x10038000;
 
 // Native function calls
-constexpr int RAND           = 0x10041000;
-constexpr int GET_UNIT_VALUE = 0x10042000;
-constexpr int GET            = 0x10043000;
+static constexpr int RAND           = 0x10041000;
+static constexpr int GET_UNIT_VALUE = 0x10042000;
+static constexpr int GET            = 0x10043000;
 
 // Comparison
-constexpr int SET_LESS             = 0x10051000;
-constexpr int SET_LESS_OR_EQUAL    = 0x10052000;
-constexpr int SET_GREATER          = 0x10053000;
-constexpr int SET_GREATER_OR_EQUAL = 0x10054000;
-constexpr int SET_EQUAL            = 0x10055000;
-constexpr int SET_NOT_EQUAL        = 0x10056000;
-constexpr int LOGICAL_AND          = 0x10057000;
-constexpr int LOGICAL_OR           = 0x10058000;
-constexpr int LOGICAL_XOR          = 0x10059000;
-constexpr int LOGICAL_NOT          = 0x1005A000;
+static constexpr int SET_LESS             = 0x10051000;
+static constexpr int SET_LESS_OR_EQUAL    = 0x10052000;
+static constexpr int SET_GREATER          = 0x10053000;
+static constexpr int SET_GREATER_OR_EQUAL = 0x10054000;
+static constexpr int SET_EQUAL            = 0x10055000;
+static constexpr int SET_NOT_EQUAL        = 0x10056000;
+static constexpr int LOGICAL_AND          = 0x10057000;
+static constexpr int LOGICAL_OR           = 0x10058000;
+static constexpr int LOGICAL_XOR          = 0x10059000;
+static constexpr int LOGICAL_NOT          = 0x1005A000;
 
 // Flow control
-constexpr int START           = 0x10061000;
-constexpr int CALL            = 0x10062000; ///< converted when executed
-constexpr int REAL_CALL       = 0x10062001; ///< spring custom
-constexpr int LUA_CALL        = 0x10062002; ///< spring custom
-constexpr int JUMP            = 0x10064000;
-constexpr int RETURN          = 0x10065000;
-constexpr int JUMP_NOT_EQUAL  = 0x10066000;
-constexpr int SIGNAL          = 0x10067000;
-constexpr int SET_SIGNAL_MASK = 0x10068000;
+static constexpr int START           = 0x10061000;
+static constexpr int CALL            = 0x10062000; ///< converted when executed
+static constexpr int REAL_CALL       = 0x10062001; ///< spring custom
+static constexpr int LUA_CALL        = 0x10062002; ///< spring custom
+static constexpr int JUMP            = 0x10064000;
+static constexpr int RETURN          = 0x10065000;
+static constexpr int JUMP_NOT_EQUAL  = 0x10066000;
+static constexpr int SIGNAL          = 0x10067000;
+static constexpr int SET_SIGNAL_MASK = 0x10068000;
 
 // Piece destruction
-constexpr int EXPLODE    = 0x10071000;
-constexpr int PLAY_SOUND = 0x10072000;
+static constexpr int EXPLODE    = 0x10071000;
+static constexpr int PLAY_SOUND = 0x10072000;
 
 // Special functions
-constexpr int SET    = 0x10082000;
-constexpr int ATTACH = 0x10083000;
-constexpr int DROP   = 0x10084000;
+static constexpr int SET    = 0x10082000;
+static constexpr int ATTACH = 0x10083000;
+static constexpr int DROP   = 0x10084000;
 
 // Indices for SET, GET, and GET_UNIT_VALUE for LUA return values
-#define LUA0 110 // (LUA0 returns the lua call status, 0 or 1)
-#define LUA1 111
-#define LUA2 112
-#define LUA3 113
-#define LUA4 114
-#define LUA5 115
-#define LUA6 116
-#define LUA7 117
-#define LUA8 118
-#define LUA9 119
+static constexpr int LUA0 = 110; // (LUA0 returns the lua call status, 0 or 1)
+static constexpr int LUA1 = 111;
+static constexpr int LUA2 = 112;
+static constexpr int LUA3 = 113;
+static constexpr int LUA4 = 114;
+static constexpr int LUA5 = 115;
+static constexpr int LUA6 = 116;
+static constexpr int LUA7 = 117;
+static constexpr int LUA8 = 118;
+static constexpr int LUA9 = 119;
 
 #if 0
 #define GET_LONG_PC() (cobFile->code[pc++])
@@ -422,7 +428,7 @@ bool CCobThread::Tick()
 			} break;
 			case SLEEP: {
 				r1 = PopDataStack();
-				wakeTime = cobEngine->GetCurrentTime() + r1;
+				wakeTime = cobEngine->GetCurrTime() + r1;
 				state = Sleep;
 
 				cobEngine->ScheduleThread(this);
@@ -891,6 +897,7 @@ bool CCobThread::Tick()
 
 void CCobThread::ShowError(const char* msg)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((errorCounter = std::max(errorCounter - 1, 0)) == 0)
 		return;
 
@@ -908,6 +915,7 @@ void CCobThread::ShowError(const char* msg)
 
 void CCobThread::LuaCall()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int r1 = GET_LONG_PC(); // script id
 	const int r2 = GET_LONG_PC(); // arg count
 
@@ -946,6 +954,7 @@ void CCobThread::LuaCall()
 
 void CCobThread::AnimFinished(CUnitScript::AnimType type, int piece, int axis)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (piece != waitPiece || axis != waitAxis)
 		return;
 

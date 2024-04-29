@@ -14,6 +14,7 @@
 
 class CUnit;
 class CFeature;
+class CPlayer;
 struct SCommandDescription;
 
 class CSelectedUnitsHandler : public CObject
@@ -69,6 +70,8 @@ public:
 
 	bool GetBoxSelectionHandledByEngine() const { return ubHandledByEngine; }
 	void SetBoxSelectionHandledByEngine(bool b) { ubHandledByEngine = b; }
+
+	static bool CanISelectTeam(const CPlayer* myPlayer, int teamID);
 private:
 	int selectedGroup = -1;
 	int soundMultiselID = 0;

@@ -18,7 +18,6 @@
 struct MoveDef;
 struct LocalModelPiece;
 struct SolidObjectDef;
-struct SolidObjectGroundDecal;
 
 class DamageArray;
 class CUnit;
@@ -30,17 +29,6 @@ enum TerrainChangeTypes {
 	TERRAINCHANGE_OBJECT_INSERTED      = 3,
 	TERRAINCHANGE_OBJECT_INSERTED_YM   = 4,
 	TERRAINCHANGE_OBJECT_DELETED       = 5,
-};
-
-enum DrawFlags : uint8_t {
-	SO_NODRAW_FLAG = 0, // must be 0
-	SO_OPAQUE_FLAG = 1,
-	SO_ALPHAF_FLAG = 2,
-	SO_REFLEC_FLAG = 4,
-	SO_REFRAC_FLAG = 8,
-	SO_SHOPAQ_FLAG = 16,
-	SO_SHTRAN_FLAG = 32,
-	SO_DRICON_FLAG = 128,
 };
 
 enum YardmapStates {
@@ -67,7 +55,7 @@ public:
 	CR_DECLARE_DERIVED(CSolidObject)
 
 
-	virtual const SolidObjectDef* GetDef() const = 0;
+	virtual const SolidObjectDef* GetDef() const { return nullptr; };
 
 	enum PhysicalState {
 		// NOTE:
@@ -118,7 +106,7 @@ public:
 	virtual bool AddBuildPower(CUnit* builder, float amount) { return false; }
 	virtual void DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID, int projectileID) {}
 
-	virtual void ApplyImpulse(const float3& impulse) { SetVelocity(speed + impulse); }
+	virtual void ApplyImpulse(const float3& impulse) { SetVelocityAndSpeed(speed + impulse); }
 
 	virtual void Kill(CUnit* killer, const float3& impulse, bool crushed);
 	virtual int GetBlockingMapID() const { return -1; }
@@ -178,7 +166,7 @@ public:
 	void UpdateDirVectors(const float3& uDir);
 
 	CMatrix44f ComposeMatrix(const float3& p) const { return (CMatrix44f(p, -rightdir, updir, frontdir)); }
-	virtual CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const = 0;
+	virtual CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const { return CMatrix44f(); };
 
 	const CollisionVolume* GetCollisionVolume(const LocalModelPiece* lmp) const {
 		if (lmp == nullptr)
@@ -243,7 +231,7 @@ public:
 
 	float2 GetFootPrint(float scale) const { return {xsize * scale, zsize * scale}; }
 
-	float3 GetDragAccelerationVec(const float4& params) const;
+	float3 GetDragAccelerationVec(float atmosphericDensity, float waterDensity, float dragCoeff, float frictionCoeff) const;
 	float3 GetWantedUpDir(bool useGroundNormal, bool useObjectNormal, float dirSmoothing) const;
 
 	float GetDrawRadius() const override { return (localModel.GetDrawRadius()); }
@@ -304,11 +292,6 @@ public:
 
 	virtual void SetMass(float newMass);
 
-	void ResetDrawFlag() { drawFlag = DrawFlags::SO_NODRAW_FLAG; }
-	void SetDrawFlag(DrawFlags f) { drawFlag  =  f; }
-	void AddDrawFlag(DrawFlags f) { drawFlag |=  f; }
-	void DelDrawFlag(DrawFlags f) { drawFlag &= ~f; }
-	bool HasDrawFlag(DrawFlags f) const { return (drawFlag & f) == f; }
 private:
 	void SetMidPos(const float3& mp, bool relative) {
 		if (relative) {
@@ -403,8 +386,6 @@ public:
 	///< pieces that were last hit by a {[0] := unsynced, [1] := synced} projectile
 	const LocalModelPiece* hitModelPieces[2];
 
-	SolidObjectGroundDecal* groundDecal = nullptr;
-
 	///< object-local {z,x,y}-axes (in WS)
 	SyncedFloat3 frontdir =  FwdVector;
 	SyncedFloat3 rightdir = -RgtVector;
@@ -430,8 +411,6 @@ public:
 	///< drawPos + relMidPos (unsynced)
 	float3 drawMidPos;
 
-	uint8_t drawFlag = DrawFlags::SO_NODRAW_FLAG;
-	uint8_t previousDrawFlag = DrawFlags::SO_NODRAW_FLAG;
 	bool objectUsable = true;
 
 	/**

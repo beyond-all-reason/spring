@@ -262,6 +262,8 @@ void CGameServer::Initialize()
 
 	thread = spring::thread(std::bind(&CGameServer::UpdateLoop, this));
 
+	LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
+
 	// Something in CGameServer::CGameServer borks the FPU control word
 	// maybe the threading, or something in CNet::InitServer() ??
 	// Set single precision floating point math.
@@ -955,7 +957,8 @@ void CGameServer::LagProtection()
 		const float invSimDrawFract = 1.0f - globalConfig.minSimDrawBalance;
 		const float maxSimFrameRate = (1000.0f / gu->avgSimFrameTime) * invSimDrawFract;
 
-		newSpeed = std::clamp(newSpeed, 0.1f, ((maxSimFrameRate / GAME_SPEED) + internalSpeed) * 0.5f);
+		const float maxNewSpeed = std::max(0.1f, ((maxSimFrameRate / GAME_SPEED) + internalSpeed) * 0.5f);
+		newSpeed = std::clamp(newSpeed, 0.1f, maxNewSpeed);
 #endif
 
 		if (newSpeed != internalSpeed)
@@ -2721,6 +2724,8 @@ void CGameServer::UpdateLoop()
 
 		if (hostif != nullptr)
 			hostif->SendQuit();
+
+		LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
 
 		Broadcast(CBaseNetProtocol::Get().SendQuit("Server shutdown"));
 

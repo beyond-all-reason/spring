@@ -45,7 +45,7 @@
 #define ADDR2LINE "atos"
 #endif
 
-#if (defined(__FreeBSD__))
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 // show function names, demangle
 #define ADDR2LINE_ARGS " -f -C"
 #else

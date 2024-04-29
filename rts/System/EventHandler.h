@@ -53,6 +53,7 @@ class CEventHandler
 		void GameOver(const std::vector<unsigned char>& winningAllyTeams);
 		void GamePaused(int playerID, bool paused);
 		void GameFrame(int gameFrame);
+		void GameFramePost(int gameFrame);
 		void GameID(const unsigned char* gameID, unsigned int numBytes);
 
 		void TeamDied(int teamID);

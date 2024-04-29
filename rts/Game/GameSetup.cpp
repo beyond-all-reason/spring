@@ -20,6 +20,8 @@
 #include <cstring>
 #include <fstream>
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND(CGameSetup,)
 CR_REG_METADATA(CGameSetup, (
 	CR_IGNORED(initBlank),
@@ -87,6 +89,7 @@ CGameSetup* gameSetup = &gLocalGameSetup;
 
 bool CGameSetup::LoadReceivedScript(const std::string& script, bool isHost)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CGameSetup tempGameSetup;
 
 	if (!tempGameSetup.Init(script)) {
@@ -110,6 +113,7 @@ bool CGameSetup::LoadReceivedScript(const std::string& script, bool isHost)
 
 bool CGameSetup::LoadSavedScript(const std::string& file, const std::string& script)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (script.empty()) {
 		gameSetup = &gDummyGameSetup;
 		return false;
@@ -132,34 +136,40 @@ bool CGameSetup::LoadSavedScript(const std::string& file, const std::string& scr
 }
 
 bool CGameSetup::ScriptLoaded() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (gameSetup != &gDummyGameSetup && !gameSetup->setupText.empty());
 }
 
 
 const spring::unordered_map<std::string, std::string>& CGameSetup::GetMapOptions()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// will always be empty if !ScriptLoaded
 	return (gameSetup->GetMapOptionsCont());
 }
 
 const spring::unordered_map<std::string, std::string>& CGameSetup::GetModOptions()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (gameSetup->GetModOptionsCont());
 }
 
 
 const std::vector<PlayerBase>& CGameSetup::GetPlayerStartingData()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return gameSetup->GetPlayerStartingDataCont();
 }
 
 const std::vector<TeamBase>& CGameSetup::GetTeamStartingData()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return gameSetup->GetTeamStartingDataCont();
 }
 
 const std::vector<AllyTeam>& CGameSetup::GetAllyStartingData()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return gameSetup->GetAllyStartingDataCont();
 }
 
@@ -222,6 +232,7 @@ void CGameSetup::ResetState()
 
 void CGameSetup::LoadUnitRestrictions(const TdfParser& file)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int numRestrictions;
 	file.GetDef(numRestrictions, "0", "GAME\\NumRestrictions");
 
@@ -238,6 +249,7 @@ void CGameSetup::LoadUnitRestrictions(const TdfParser& file)
 
 void CGameSetup::LoadStartPositionsFromMap(int numTeams, const std::function<bool(MapParser& mapParser, int teamNum)>& startPosPred)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	MapParser mapParser(MapFileName());
 
 	if (!mapParser.IsValid())
@@ -249,6 +261,7 @@ void CGameSetup::LoadStartPositionsFromMap(int numTeams, const std::function<boo
 
 void CGameSetup::LoadStartPositions(bool withoutMap)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (withoutMap && (startPosType == StartPos_Random || startPosType == StartPos_Fixed))
 		throw content_error("You need the map to use the map's start-positions");
 
@@ -289,6 +302,7 @@ void CGameSetup::LoadStartPositions(bool withoutMap)
 
 void CGameSetup::LoadMutators(const TdfParser& file, std::vector<std::string>& mutatorsList)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int a = 0; a < 10; ++a) {
 		const std::string s = file.SGetValueDef("", IntToString(a, "GAME\\MUTATOR%i"));
 		if (s.empty())
@@ -299,6 +313,7 @@ void CGameSetup::LoadMutators(const TdfParser& file, std::vector<std::string>& m
 
 void CGameSetup::LoadPlayers(const TdfParser& file, spring::unordered_set<std::string>& nameList)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(numDemoPlayers == 0);
 
 	// i = player index in game (no gaps), a = player index in script
@@ -341,6 +356,7 @@ void CGameSetup::LoadPlayers(const TdfParser& file, spring::unordered_set<std::s
 
 void CGameSetup::LoadSkirmishAIs(const TdfParser& file, spring::unordered_set<std::string>& nameList)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// i = AI index in game (no gaps), a = AI index in script
 	for (int a = 0; a < MAX_PLAYERS; ++a) {
 		const std::string section = "GAME\\AI" + IntToString(a, "%i") + "\\";
@@ -392,6 +408,7 @@ void CGameSetup::LoadSkirmishAIs(const TdfParser& file, spring::unordered_set<st
 
 void CGameSetup::LoadTeams(const TdfParser& file)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// i = team index in game (no gaps), a = team index in script
 	for (int i = 0, a = 0; a < MAX_TEAMS; ++a) {
 		const std::string section = "GAME\\TEAM" + IntToString(a, "%i");
@@ -422,6 +439,7 @@ void CGameSetup::LoadTeams(const TdfParser& file)
 
 void CGameSetup::LoadAllyTeams(const TdfParser& file)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// i = allyteam index in game (no gaps), a = allyteam index in script
 	for (int i = 0, a = 0; a < MAX_TEAMS; ++a) {
 		const std::string section = "GAME\\ALLYTEAM" + IntToString(a, "%i");
@@ -472,6 +490,7 @@ void CGameSetup::LoadAllyTeams(const TdfParser& file)
 
 void CGameSetup::RemapPlayers()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// relocate Team.TeamLeader field
 	for (size_t a = 0; a < teamStartingData.size(); ++a) {
 		if (playerRemap.find(teamStartingData[a].GetLeader()) == playerRemap.end()) {
@@ -493,6 +512,7 @@ void CGameSetup::RemapPlayers()
 
 void CGameSetup::RemapTeams()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// relocate Player.team field
 	for (size_t a = 0; a < playerStartingData.size(); ++a) {
 		if (playerStartingData[a].spectator) {
@@ -517,6 +537,7 @@ void CGameSetup::RemapTeams()
 
 void CGameSetup::RemapAllyteams()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// relocate Team.Allyteam field
 	for (auto& startData: teamStartingData) {
 		if (allyteamRemap.find(startData.teamAllyteam) == allyteamRemap.end())
@@ -529,6 +550,7 @@ void CGameSetup::RemapAllyteams()
 // TODO: RemapSkirmishAIs()
 bool CGameSetup::Init(const std::string& buf)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!setupText.empty()) {
 		throw content_error("initializing a non-empty GameSetup instance");
 		return false;
@@ -585,7 +607,13 @@ bool CGameSetup::Init(const std::string& buf)
 	}
 	#endif
 
-	file.GetDef(initBlank, "0", "GAME\\InitBlank");
+	/* Don't be afraid to reuse MapSeed for something sensible if you're
+	 * implementing a proper random map generator. It's just used here
+	 * since historically the "random" map generator produced blank maps. */
+	int legacyMapSeed;
+	file.GetTDef(legacyMapSeed, 0, "GAME\\MapSeed");
+
+	file.GetTDef(initBlank, bool (legacyMapSeed != 0), "GAME\\InitBlank");
 
 	file.GetTDef(fixedRNGSeed, unsigned(0), "GAME\\FixedRNGSeed"); // 0 means use random seed
 	gameID      = file.SGetValueDef("",  "GAME\\GameID");

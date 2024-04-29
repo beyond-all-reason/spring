@@ -1,7 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <fstream>
-
 #include "SelectionKeyHandler.h"
 #include "Game/Camera/CameraController.h"
 #include "Game/Camera.h"
@@ -12,7 +10,9 @@
 #include "Game/UI/Groups/GroupHandler.h"
 #include "Map/Ground.h"
 #include "Sim/Misc/CategoryHandler.h"
+#include "Sim/Units/CommandAI/Command.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/CommandAI/CommandQueue.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
@@ -21,11 +21,15 @@
 #include "System/StringHash.h"
 #include "System/UnorderedSet.hpp"
 
+#include "System/Misc/TracyDefs.h"
+
 CSelectionKeyHandler selectionKeys;
 
 
 std::string CSelectionKeyHandler::ReadToken(std::string& str)
 {
+	
+RECOIL_DETAILED_TRACY_ZONE;
 	std::string ret;
 
 	size_t index = 0;
@@ -42,6 +46,8 @@ std::string CSelectionKeyHandler::ReadToken(std::string& str)
 
 std::string CSelectionKeyHandler::ReadDelimiter(std::string& str)
 {
+	
+RECOIL_DETAILED_TRACY_ZONE;
 	std::string ret = str.substr(0, 1);
 	if (!str.empty()) {
 		str = str.substr(1, std::string::npos);
@@ -124,6 +130,26 @@ namespace {
 	DECLARE_FILTER(Idle, unit->commandAI->commandQue.empty())
 	DECLARE_FILTER(Waiting, !unit->commandAI->commandQue.empty() && (unit->commandAI->commandQue.front().GetID() == CMD_WAIT))
 	DECLARE_FILTER(Guarding, !unit->commandAI->commandQue.empty() && (unit->commandAI->commandQue.front().GetID() == CMD_GUARD))
+
+	/* Patrol works by prepending fight commands, which can in turn prepend attack commands.
+	 * This can push the parent patrol command quite deep into the queue:
+	 * 1) attack order onto an enemy unit.
+	 * 2) fight order back onto the patrol route.
+	 * 3) fight order from the point above until a patrol waypoint.
+	 * 4) patrol order between two patrol waypoints.
+	 * So a check for the immediate front of the queue would not be enough. */
+	struct Patrolling_Filter : public Filter {
+		Patrolling_Filter() : Filter("Patrolling", 0) { }
+		bool ShouldIncludeUnit(const CUnit* unit) const override {
+			const auto& queue = unit->commandAI->commandQue;
+			const auto searchDepth = std::min <size_t> (queue.size(), 4);
+			for (size_t i = 0; i < searchDepth; ++i)
+				if (queue[i].GetID() == CMD_PATROL)
+					return true;
+			return false;
+		}
+	} Patrolling_filter_instance;
+
 	DECLARE_FILTER(InHotkeyGroup, unit->GetGroup() != nullptr)
 	DECLARE_FILTER(Radar, (unit->radarRadius > 0 || unit->sonarRadius > 0))
 	DECLARE_FILTER(Jammer, (unit->jammerRadius > 0))
@@ -176,6 +202,7 @@ namespace {
 		},
 	)
 
+	// Only used for the _Not_IdMatches case, the positive case is handled differently
 	DECLARE_FILTER_EX(IdMatches, 1, unit->unitDef->name.compare(name) == 0,
 		std::string name;
 		void SetParam(int index, const std::string& value) override {
@@ -253,6 +280,7 @@ namespace {
 
 void CSelectionKeyHandler::DoSelection(std::string selectString)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	selection.clear();
 
 	std::string s = ReadToken(selectString);
@@ -367,6 +395,10 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 
 	ReadDelimiter(selectString);
 
+	// Store positive (not prefixed by Not) IdMatches tokens for OR composition at end
+  // (can't be done serially, like all others)
+	std::unordered_set<std::string> idMatchesSet;
+
 	while (true) {
 		std::string filter = ReadDelimiter(selectString);
 
@@ -383,6 +415,16 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 			filter = ReadToken(selectString);
 		}
 
+		/* Positive IdMatches use OR instead of AND,
+		 * because that is intuitive and it's not possible
+		 * for a unit to match two names anyway. */
+		if (filter == "IdMatches" && !_not) {
+			ReadDelimiter(selectString);
+
+			idMatchesSet.insert(ReadToken(selectString));
+
+			continue;
+		}
 
 		using FilterPair = Filter::Pair;
 
@@ -399,20 +441,31 @@ void CSelectionKeyHandler::DoSelection(std::string selectString)
 				iter->second->SetParam(i, ReadToken(selectString));
 			}
 
-			auto ui = selection.begin();
-
-			while (ui != selection.end()) {
-				if (iter->second->ShouldIncludeUnit(*ui) ^ _not) {
-					++ui;
+			for (size_t idx = 0; idx < selection.size(); /*NOOP*/) {
+				if (iter->second->ShouldIncludeUnit(selection[idx]) ^ _not) {
+					++idx;
 				} else {
 					// erase, order is not relevant
-					*ui = selection.back();
+					selection[idx] = selection.back();
 					selection.pop_back();
 				}
 			}
 		} else {
 			LOG_L(L_WARNING, "[%s] unknown token in filter \"%s\"", __func__, filter.c_str());
 			return;
+		}
+	}
+
+	if (!idMatchesSet.empty()) {
+		auto ui = selection.begin();
+		while (ui != selection.end()) {
+			if (idMatchesSet.contains((*ui)->unitDef->name)) {
+				++ui;
+			} else {
+				// erase, order is not relevant
+				*ui = selection.back();
+				selection.pop_back();
+			}
 		}
 	}
 

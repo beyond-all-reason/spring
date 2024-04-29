@@ -14,6 +14,7 @@
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(CDamageArrayHandler, )
 
@@ -28,6 +29,7 @@ CDamageArrayHandler damageArrayHandler;
 
 void CDamageArrayHandler::Init(LuaParser* defsParser)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#define DEFAULT_ARMORDEF_NAME "default"
 
 	try {
@@ -45,11 +47,7 @@ void CDamageArrayHandler::Init(LuaParser* defsParser)
 		LOG("[%s] number of ArmorDefs: " _STPF_, __FUNCTION__, armorDefKeys.size());
 
 		// expects the following structure, subtables must be in array-format:
-		//
 		// {"tanks" = {[1] = "supertank", [2] = "megatank"}, "infantry" = {[1] = "dude"}, ...}
-		//
-		// the old (pre-95.0) <key, value> subtable definitions are no longer supported!
-		//
 		for (unsigned int armorDefIdx = 1; armorDefIdx < armorDefKeys.size(); armorDefIdx++) {
 			const std::string armorDefName = StringToLower(armorDefKeys[armorDefIdx]);
 
@@ -91,6 +89,7 @@ void CDamageArrayHandler::Init(LuaParser* defsParser)
 
 int CDamageArrayHandler::GetTypeFromName(const std::string& name) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = armorDefNameIdxMap.find(StringToLower(name));
 
 	if (it != armorDefNameIdxMap.end())

@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef SIMOBJECT_IDPOOL_H
-#define SIMOBJECT_IDPOOL_H
+#pragma once
 
 #include "System/creg/creg_cond.h"
 #include "System/UnorderedMap.hpp"
@@ -12,7 +11,7 @@ class SimObjectIDPool {
 
 public:
 	SimObjectIDPool() {} // FIXME: creg, needs PostLoad
-	SimObjectIDPool(unsigned int maxObjects) {
+	SimObjectIDPool(uint32_t maxObjects) {
 		// pools are reused as part of object handlers, internal table sizes must be
 		// constant at runtime to prevent desyncs between fresh and reloaded clients
 		// (both must execute Expand since it touches the RNG)
@@ -21,7 +20,7 @@ public:
 		tempIDs.reserve(maxObjects);
 	}
 
-	void Expand(unsigned int baseID, unsigned int numIDs);
+	void Expand(uint32_t baseID, uint32_t numIDs);
 	void Clear() {
 		freeIDs.clear();
 		poolIDs.clear();
@@ -29,26 +28,23 @@ public:
 	}
 
 	void AssignID(CSolidObject* object);
-	void FreeID(unsigned int uid, bool delayed);
+	void FreeID(uint32_t uid, bool delayed);
 
-	bool RecycleID(unsigned int uid);
-	bool HasID(unsigned int uid) const;
+	bool RecycleID(uint32_t uid);
+	bool HasID(uint32_t uid) const;
 	bool IsEmpty() const { return (freeIDs.empty()); }
 
-	unsigned int GetSize() const { return (freeIDs.size()); } // number of ID's still unused
-	unsigned int MaxSize() const { return (poolIDs.size()); } // number of ID's this pool owns
+	uint32_t GetSize() const { return (freeIDs.size()); } // number of ID's still unused
+	uint32_t MaxSize() const { return (poolIDs.size()); } // number of ID's this pool owns
 
 private:
-	unsigned int ExtractID();
+	uint32_t ExtractID();
 
-	void ReserveID(unsigned int uid);
+	void ReserveID(uint32_t uid);
 	void RecycleIDs();
 
 private:
-	spring::unordered_map<unsigned int, unsigned int> poolIDs; // uid to idx
-	spring::unordered_map<unsigned int, unsigned int> freeIDs; // idx to uid
-	spring::unordered_map<unsigned int, unsigned int> tempIDs; // idx to uid
+	spring::unordered_map<uint32_t, uint32_t> poolIDs; // uid to idx
+	spring::unordered_map<uint32_t, uint32_t> freeIDs; // idx to uid
+	spring::unordered_map<uint32_t, uint32_t> tempIDs; // idx to uid
 };
-
-#endif
-

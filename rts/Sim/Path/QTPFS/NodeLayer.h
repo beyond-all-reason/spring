@@ -49,15 +49,11 @@ namespace QTPFS {
 
 		const INode* GetNode(unsigned int x, unsigned int z) const {
 			ZoneScoped;
-			const INode* curNode = GetPoolNode(0);
-			int length = curNode->xsize(); // width/height is forced to be the same.
-			// int iz = ((z / length) + (int(z % length > 0))) * xRootNodes;
-			// int ix = (x / length) + (int(x % length > 0));
-			int iz = (z / length) * xRootNodes;
-			int ix = (x / length);
+			int iz = (z / rootNodeSize) * xRootNodes;
+			int ix = (x / rootNodeSize);
 			int i = iz + ix;
 
-			curNode = GetPoolNode(i);
+			const INode* curNode = GetPoolNode(i);
 
 			assert (curNode->xmin() <= x);
 			assert (curNode->xmax() >= x);
@@ -109,6 +105,15 @@ namespace QTPFS {
 			auto* curNode = GetPoolNode(nodeIndex);
 			curNode->DeactivateNode();
 		}
+
+		void DecreaseOpenNodeCounter() { assert(numOpenNodes > 0); numOpenNodes -= (numOpenNodes > 0); }
+		void DecreaseClosedNodeCounter() { assert(numClosedNodes > 0); numClosedNodes -= (numClosedNodes > 0); }
+
+		void IncreaseOpenNodeCounter() { numOpenNodes++; }
+		void IncreaseClosedNodeCounter() { numClosedNodes++; }
+
+		unsigned int GetNumOpenNodes() const { return numOpenNodes; }
+		unsigned int GetNumClosedNodes() const { return numClosedNodes; }
 
 		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
 		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
@@ -200,6 +205,8 @@ private:
 		unsigned int layerNumber = 0;
 		unsigned int numLeafNodes = 0;
 		unsigned int updateCounter = 0;
+		unsigned int numOpenNodes = 0;
+		unsigned int numClosedNodes = 0;
 
 		int32_t maxNodesAlloced = 0;
 		int32_t numRootNodes = 0;

@@ -38,11 +38,9 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/ShadowHandler.h"
-#include "Rendering/OGLDBInfo.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
-#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Units/UnitDrawer.h"
@@ -112,6 +110,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetDrawFrame);
 	REGISTER_LUA_CFUNC(GetFrameTimeOffset);
+	REGISTER_LUA_CFUNC(GetGameSecondsInterpolated);
 	REGISTER_LUA_CFUNC(GetLastUpdateSeconds);
 	REGISTER_LUA_CFUNC(GetVideoCapturingMode);
 
@@ -281,19 +280,23 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetConfigString);
 	REGISTER_LUA_CFUNC(GetLogSections);
 
-	REGISTER_LUA_CFUNC(GetAllDecals);
-	REGISTER_LUA_CFUNC(GetDecalPos);
-	REGISTER_LUA_CFUNC(GetDecalSize);
-	REGISTER_LUA_CFUNC(GetDecalRotation);
-	REGISTER_LUA_CFUNC(GetDecalTexture);
-	REGISTER_LUA_CFUNC(GetDecalAlpha);
-	REGISTER_LUA_CFUNC(GetDecalOwner);
-	REGISTER_LUA_CFUNC(GetDecalType);
+	REGISTER_LUA_CFUNC(GetAllGroundDecals);
+	REGISTER_LUA_CFUNC(GetGroundDecalMiddlePos);
+	REGISTER_LUA_CFUNC(GetGroundDecalQuadPos);
+	REGISTER_LUA_CFUNC(GetGroundDecalSizeAndHeight);
+	REGISTER_LUA_CFUNC(GetGroundDecalRotation);
+	REGISTER_LUA_CFUNC(GetGroundDecalTexture);
+	REGISTER_LUA_CFUNC(GetGroundDecalTextures);
+	REGISTER_LUA_CFUNC(GetGroundDecalTextureParams);
+	REGISTER_LUA_CFUNC(GetGroundDecalAlpha);
+	REGISTER_LUA_CFUNC(GetGroundDecalNormal);
+	REGISTER_LUA_CFUNC(GetGroundDecalTint);
+	REGISTER_LUA_CFUNC(GetGroundDecalMisc);
+	REGISTER_LUA_CFUNC(GetGroundDecalCreationFrame);
+	REGISTER_LUA_CFUNC(GetGroundDecalOwner);
+	REGISTER_LUA_CFUNC(GetGroundDecalType);
 
 	REGISTER_LUA_CFUNC(UnitIconGetDraw);
-
-	REGISTER_LUA_CFUNC(MakeGLDBQuery);
-	REGISTER_LUA_CFUNC(GetGLDBQuery);
 
 	REGISTER_LUA_CFUNC(GetSyncedGCInfo);
 
@@ -396,6 +399,59 @@ static int GetSolidObjectSelectionVolume(lua_State* L, const CSolidObject* obj)
 
 
 
+template <typename T>
+static void PushNumberContainerAsArray(lua_State* const L, const T &v)
+{
+	lua_createtable(L, v.size(), 0);
+	for (size_t i = 0; const auto &x : v) {
+		lua_pushnumber(L, x);
+		lua_rawseti(L, -2, ++i);
+	}
+}
+
+template <typename T>
+static size_t PushUnitListSortedByDef(lua_State *const L, const T &units)
+{
+	using unitDefID_t = int;
+	using unitID_t = int;
+
+	std::map <unitDefID_t, std::vector <unitID_t>> unitsByDef;
+
+	for (const auto unitID : units)
+		unitsByDef[unitHandler.GetUnit(unitID)->unitDef->id].push_back(unitID);
+
+	lua_createtable(L, 0, unitsByDef.size());
+
+	for (const auto & [unitDefID, unitIDs] : unitsByDef) {
+		assert(!unitIDs.empty());
+
+		PushNumberContainerAsArray(L, unitIDs);
+		lua_rawseti(L, -2, unitDefID);
+	}
+
+	return unitsByDef.size();
+}
+
+template <typename T>
+static size_t PushSparseUnitTallyByDef(lua_State *const L, const T &v)
+{
+	std::vector <size_t> counts (unitDefHandler->NumUnitDefs() + 1, 0);
+	size_t numDefKeys = 0;
+	for (const int unitID: v)
+		if (!counts[unitHandler.GetUnit(unitID)->unitDef->id]++)
+			numDefKeys++;
+
+	lua_createtable(L, 0, numDefKeys);
+	for (size_t i = 0; i < counts.size(); ++i) {
+		if (counts[i] == 0)
+			continue;
+
+		lua_pushnumber(L, counts[i]);
+		lua_rawseti(L, -2, i);
+	}
+
+	return numDefKeys;
+}
 
 
 /******************************************************************************
@@ -1076,6 +1132,17 @@ int LuaUnsyncedRead::GetFrameTimeOffset(lua_State* L)
 	return 1;
 }
 
+/*** Gets game time for drawing purposes
+ *
+ * Returns the game time, taking the interpolated draw frame into account.
+ *
+ * @treturn number game time in seconds
+ */
+int LuaUnsyncedRead::GetGameSecondsInterpolated(lua_State* L)
+{
+	lua_pushnumber(L, (gs->GetLuaSimFrame() + globalRendering->timeOffset) / GAME_SPEED);
+	return 1;
+}
 
 /***
  *
@@ -2298,26 +2365,9 @@ int LuaUnsyncedRead::GetSpectatingState(lua_State* L)
  */
 int LuaUnsyncedRead::GetSelectedUnits(lua_State* L)
 {
-	unsigned int count = 0;
-	const auto& selUnits = selectedUnitsHandler.selectedUnits;
-
-	// { [1] = number unitID, ... }
-	lua_createtable(L, selUnits.size(), 0);
-
-	for (const int unitID: selUnits) {
-		lua_pushnumber(L, unitID);
-		lua_rawseti(L, -2, ++count);
-	}
+	PushNumberContainerAsArray(L, selectedUnitsHandler.selectedUnits);
 	return 1;
 }
-
-
-static std::vector< std::pair<int, std::vector<const CUnit*> > > gsusUnitDefMap;
-static std::vector< std::pair<int, int> > gsucCountMap;
-
-static std::vector< std::pair<int, std::vector<const CUnit*> > > ggusUnitDefMap;
-static std::vector< std::pair<int, int> > ggucCountMap;
-
 
 /*** Get selected units aggregated by unitDefID
  *
@@ -2327,44 +2377,7 @@ static std::vector< std::pair<int, int> > ggucCountMap;
  */
 int LuaUnsyncedRead::GetSelectedUnitsSorted(lua_State* L)
 {
-	gsusUnitDefMap.clear();
-	gsusUnitDefMap.resize(unitDefHandler->NumUnitDefs() + 1);
-
-	int numDefKeys = 0;
-
-	for (const int unitID: selectedUnitsHandler.selectedUnits) {
-		const CUnit* unit = unitHandler.GetUnit(unitID);
-		const UnitDef* unitDef = unit->unitDef;
-
-		gsusUnitDefMap[unitDef->id].first = unitDef->id;
-		gsusUnitDefMap[unitDef->id].second.push_back(unit);
-	}
-
-	// { [number unitDefID] = { [1] = [number unitID], ...}, ... }
-	lua_createtable(L, 0, gsusUnitDefMap.size());
-
-	for (const std::pair<int, std::vector<const CUnit*> >& p: gsusUnitDefMap) {
-		const std::vector<const CUnit*>& v = p.second;
-
-		if (v.empty())
-			continue;
-
-		{
-			// inner array-table
-			lua_createtable(L, v.size(), 0);
-
-			for (unsigned int i = 0; i < v.size(); i++) {
-				lua_pushnumber(L, v[i]->id);
-				lua_rawseti(L, -2, i + 1);
-			}
-
-			// push the UnitDef index
-			lua_rawseti(L, -2, p.first);
-		}
-
-		numDefKeys += 1;
-	}
-
+	const auto numDefKeys = PushUnitListSortedByDef(L, selectedUnitsHandler.selectedUnits);
 	lua_pushnumber(L, numDefKeys);
 
 	return 2;
@@ -2380,33 +2393,7 @@ int LuaUnsyncedRead::GetSelectedUnitsSorted(lua_State* L)
  */
 int LuaUnsyncedRead::GetSelectedUnitsCounts(lua_State* L)
 {
-	gsucCountMap.clear();
-	gsucCountMap.resize(unitDefHandler->NumUnitDefs() + 1, {0, 0});
-
-	int numDefKeys = 0;
-
-	// tally the types
-	for (const int unitID: selectedUnitsHandler.selectedUnits) {
-		const CUnit* unit = unitHandler.GetUnit(unitID);
-		const UnitDef* unitDef = unit->unitDef;
-
-		gsucCountMap[unitDef->id].first = unitDef->id;
-		gsucCountMap[unitDef->id].second += 1;
-	}
-
-	// { [number unitDefID] = number count, ... }
-	lua_createtable(L, 0, gsucCountMap.size());
-
-	for (const std::pair<int, int>& p: gsucCountMap) {
-		if (p.second == 0)
-			continue;
-
-		lua_pushnumber(L, p.second); // push the UnitDef unit count (value)
-		lua_rawseti(L, -2, p.first); // push the UnitDef index (key)
-
-		numDefKeys += 1;
-	}
-
+	const auto numDefKeys = PushSparseUnitTallyByDef(L, selectedUnitsHandler.selectedUnits);
 	lua_pushnumber(L, numDefKeys);
 
 	return 2;
@@ -2744,7 +2731,8 @@ int LuaUnsyncedRead::GetCameraState(lua_State* L)
 		}
 	}
 
-	lua_newtable(L);
+	lua_createtable(L, 0,
+			std::tuple_size<CCameraController::StateMap::ArrayMap>{});
 
 	lua_pushliteral(L, "name");
 	lua_pushsstring(L, (camHandler->GetCurrentController()).GetName());
@@ -2842,7 +2830,7 @@ int LuaUnsyncedRead::GetCameraVectors(lua_State* L)
 	lua_pushnumber(L, camera-> n .z); lua_rawseti(L, -2, 3); \
 	lua_rawset(L, -3)
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 7);
 	PACK_CAMERA_VECTOR(forward, GetDir());
 	PACK_CAMERA_VECTOR(up, GetUp());
 	PACK_CAMERA_VECTOR(right, GetRight());
@@ -3039,7 +3027,7 @@ static bool AddPlayerToRoster(lua_State* L, int playerID, bool onlyActivePlayers
 		return false;
 
 	int index = 1;
-	lua_newtable(L);
+	lua_createtable(L, 7, 0);
 	PUSH_ROSTER_ENTRY(string, p->name.c_str());
 	PUSH_ROSTER_ENTRY(number, playerID);
 	PUSH_ROSTER_ENTRY(number, p->team);
@@ -3386,7 +3374,12 @@ int LuaUnsyncedRead::GetActiveCmdDescs(lua_State* L)
 	const int cmdDescCount = (int)cmdDescs.size();
 
 	lua_checkstack(L, 1 + 2);
-	lua_newtable(L);
+	// When CMD_INDEX_OFFSET is not 1, lua will resort to using the hash
+	// part to index table keys as we're no longer adding keys to the table
+	// following the sequence 1 to N for any N.
+	lua_createtable(L,
+			CMD_INDEX_OFFSET == 1 ? cmdDescCount : 0,
+			CMD_INDEX_OFFSET == 1 ? 0 : cmdDescCount);
 
 	for (int i = 0; i < cmdDescCount; i++) {
 		LuaUtils::PushCommandDesc(L, cmdDescs[i]);
@@ -3955,9 +3948,9 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 	}
 
 	int i = 1;
-	lua_newtable(L);
+	lua_createtable(L, actions.size(), 0);
 	for (const Action& action: actions) {
-		lua_newtable(L);
+		lua_createtable(L, 0, 4);
 			lua_pushsstring(L, action.command);
 			lua_pushsstring(L, action.extra);
 			lua_rawset(L, -3);
@@ -4076,15 +4069,7 @@ int LuaUnsyncedRead::GetGroupUnits(lua_State* L)
 
 	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
 
-	lua_createtable(L, group->units.size(), 0);
-
-	unsigned int count = 0;
-
-	for (const int unitID: group->units) {
-		lua_pushnumber(L, unitID);
-		lua_rawseti(L, -2, ++count);
-	}
-
+	PushNumberContainerAsArray(L, group->units);
 	return 1;
 }
 
@@ -4104,36 +4089,7 @@ int LuaUnsyncedRead::GetGroupUnitsSorted(lua_State* L)
 
 	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
 
-	ggusUnitDefMap.clear();
-	ggusUnitDefMap.resize(unitDefHandler->NumUnitDefs() + 1);
-
-	for (const int unitID: group->units) {
-		const CUnit* unit = unitHandler.GetUnit(unitID);
-		const UnitDef* unitDef = unit->unitDef;
-
-		ggusUnitDefMap[unitDef->id].first = unitDef->id;
-		ggusUnitDefMap[unitDef->id].second.push_back(unit);
-	}
-
-	lua_createtable(L, 0, ggusUnitDefMap.size());
-
-	for (const auto& el: ggusUnitDefMap) {
-		const std::vector<const CUnit*>& v = el.second;
-
-		if (v.empty())
-			continue;
-
-		lua_pushnumber(L, el.first); // push the UnitDef index
-		lua_createtable(L, v.size(), 0); {
-
-			for (size_t i = 0; i < v.size(); i++) {
-				lua_pushnumber(L, v[i]->id);
-				lua_rawseti(L, -2, i + 1);
-			}
-		}
-		lua_rawset(L, -3);
-	}
-
+	PushUnitListSortedByDef(L, group->units);
 	return 1;
 }
 
@@ -4153,27 +4109,7 @@ int LuaUnsyncedRead::GetGroupUnitsCounts(lua_State* L)
 
 	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
 
-	ggucCountMap.clear();
-	ggucCountMap.resize(unitDefHandler->NumUnitDefs() + 1, {0, 0});
-
-	for (const int unitID: group->units) {
-		const CUnit* unit = unitHandler.GetUnit(unitID);
-		const UnitDef* unitDef = unit->unitDef;
-
-		ggucCountMap[unitDef->id].first = unitDef->id;
-		ggucCountMap[unitDef->id].second += 1;
-	}
-
-	lua_createtable(L, 0, ggucCountMap.size());
-
-	for (const auto& el: ggucCountMap) {
-		if (el.second == 0)
-			continue;
-
-		lua_pushnumber(L, el.second); // push the UnitDef unit count
-		lua_rawseti(L, -2, el.first); // push the UnitDef index
-	}
-
+	PushSparseUnitTallyByDef(L, group->units);
 	return 1;
 }
 
@@ -4527,24 +4463,31 @@ int LuaUnsyncedRead::GetLogSections(lua_State* L) {
 
 /***
  *
- * @function Spring.GetAllDecals
- * @treturn nil|{[number],...} decalIndices
+ * @function Spring.GetAllGroundDecals
+ *
+ * @treturn {[number],...} decalIDs
  */
-int LuaUnsyncedRead::GetAllDecals(lua_State* L)
+int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	const auto& decals = groundDecals->GetAllDecals();
 
-	const auto& decals = decalsGl4->GetAllDecals();
+	int numValid = 0;
+	for (const auto& d : decals) {
+		numValid += d.IsValid();
+	}
+
+	if (numValid == 0) {
+		lua_newtable(L);
+		return 1;
+	}
 
 	int i = 1;
-	lua_createtable(L, decals.size(), 0);
+	lua_createtable(L, numValid, 0);
 	for (const auto& d: decals) {
 		if (!d.IsValid())
 			continue;
 
-		lua_pushnumber(L, d.GetIdx());
+		lua_pushnumber(L, d.info.id);
 		lua_rawseti(L, -2, i++);
 	}
 
@@ -4554,158 +4497,327 @@ int LuaUnsyncedRead::GetAllDecals(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalPos
- * @number decalIndex
+ * @function Spring.GetGroundDecalMiddlePos
+ * @number decalID
  * @treturn nil|number posX
- * @treturn number posY
  * @treturn number posZ
  */
-int LuaUnsyncedRead::GetDecalPos(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalMiddlePos(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
 		return 0;
+	}
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.pos.x);
-	lua_pushnumber(L, decal.pos.y);
-	lua_pushnumber(L, decal.pos.z);
+	const float2 midPointCurr = (decal->posTL + decal->posTR + decal->posBR + decal->posBL) * 0.25f;
+	lua_pushnumber(L, midPointCurr.x);
+	lua_pushnumber(L, midPointCurr.y);
+
+	return 2;
+}
+
+/***
+ *
+ * @function Spring.GetDecalQuadPos
+ * @number decalID
+ * @treturn nil|number posTL.x
+ * @treturn number posTL.z
+ * @treturn number posTR.x
+ * @treturn number posTR.z
+ * @treturn number posBR.x
+ * @treturn number posBR.z
+ * @treturn number posBL.x
+ * @treturn number posBL.z
+ */
+int LuaUnsyncedRead::GetGroundDecalQuadPos(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->posTL.x);
+	lua_pushnumber(L, decal->posTL.y);
+	lua_pushnumber(L, decal->posTR.x);
+	lua_pushnumber(L, decal->posTR.y);
+	lua_pushnumber(L, decal->posBR.x);
+	lua_pushnumber(L, decal->posBR.y);
+	lua_pushnumber(L, decal->posBL.x);
+	lua_pushnumber(L, decal->posBL.y);
+
+	return 8;
+}
+
+
+/***
+ *
+ * @function Spring.GetGroundDecalSizeAndHeight
+ * @number decalID
+ * @treturn nil|number sizeX
+ * @treturn number sizeY
+ * @treturn number projCubeHeight
+ */
+int LuaUnsyncedRead::GetGroundDecalSizeAndHeight(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	// average and take half of it
+	lua_pushnumber(L, (decal->posTL.Distance(decal->posTR) + decal->posBL.Distance(decal->posBR)) * 0.5f * 0.5f);
+	lua_pushnumber(L, (decal->posTL.Distance(decal->posBL) + decal->posTR.Distance(decal->posBR)) * 0.5f * 0.5f);
+	lua_pushnumber(L, decal->height);
+
 	return 3;
 }
 
 
 /***
  *
- * @function Spring.GetDecalSize
- * @number decalIndex
- * @treturn nil|number sizeX
- * @treturn number sizeY
+ * @function Spring.GetGroundDecalRotation
+ * @number decalID
+ * @treturn nil|number rotation in radians
  */
-int LuaUnsyncedRead::GetDecalSize(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
 		return 0;
+	}
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.size.x);
-	lua_pushnumber(L, decal.size.y);
+	lua_pushnumber(L, decal->rot);
+
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.GetGroundDecalTexture
+ * @number decalID
+ * @bool[opt=true] isMainTex If false, it gets the normals/glow map
+ * @treturn nil|string texture
+ */
+int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
+{
+	const auto& texName = groundDecals->GetDecalTexture(luaL_checkint(L, 1), luaL_optboolean(L, 2, true));
+	lua_pushsstring(L, texName);
+
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.GetDecalTextures
+ * @bool[opt=true] isMainTex If false, it gets the texture for normals/glow maps
+ * @treturn {[string],...} textureNames All textures on the atlas and available for use in SetGroundDecalTexture
+ */
+int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
+{
+	const auto& texNames = groundDecals->GetDecalTextures(luaL_optboolean(L, 2, true));
+	LuaUtils::PushStringVector(L, texNames);
+
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.SetGroundDecalTextureParams
+ * @number decalID
+ * @treturn nil|number texWrapDistance if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
+ * @treturn number texTraveledDistance shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
+ */
+int LuaUnsyncedRead::GetGroundDecalTextureParams(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->uvWrapDistance);
+	lua_pushnumber(L, decal->uvTraveledDistance);
+
 	return 2;
 }
 
 
 /***
  *
- * @function Spring.GetDecalRotation
- * @number decalIndex
- * @treturn nil|number rotation in radians
+ * @function Spring.GetGroundDecalAlpha
+ * @number decalID
+ * @treturn nil|number alpha Between 0 and 1
+ * @treturn number alphaFalloff Between 0 and 1, per second
  */
-int LuaUnsyncedRead::GetDecalRotation(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalAlpha(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
 		return 0;
-
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.rot);
-	return 1;
-}
-
-
-/***
- *
- * @function Spring.GetDecalTexture
- * @number decalIndex
- * @treturn nil|string texture
- */
-int LuaUnsyncedRead::GetDecalTexture(lua_State* L)
-{
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushsstring(L, decal.GetTexture());
-	return 1;
-}
-
-
-/***
- *
- * @function Spring.GetDecalAlpha
- * @number decalIndex
- * @treturn nil|number alpha
- */
-int LuaUnsyncedRead::GetDecalAlpha(lua_State* L)
-{
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	lua_pushnumber(L, decal.alpha);
-	return 1;
-}
-
-
-/***
- *
- * @function Spring.GetDecalOwner
- * @number decalIndex
- * @treturn nil|number unitID
- */
-int LuaUnsyncedRead::GetDecalOwner(lua_State* L)
-{
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-
-	if (decal.owner == nullptr)
-		return 0;
-
-	//XXX: I know, not very fast, but you cannot dynamic_cast a void* back to a CUnit*
-	//     also it's not called very often and so doesn't matter
-	for (const CUnit* u: unitHandler.GetActiveUnits()) {
-		if (u != decal.owner)
-			continue;
-
-		lua_pushnumber(L, u->id);
-		return 1;
 	}
 
-	return 0;
+	lua_pushnumber(L, decal->alpha);
+	lua_pushnumber(L, decal->alphaFalloff * GAME_SPEED);
+
+	return 2;
+}
+
+/***
+ *
+ * @function Spring.GetGroundDecalNormal
+ *
+ * If all three equal 0, the decal follows the normals of ground at midpoint
+ *
+ * @number decalID
+ * @treturn nil|number normal.x
+ * @treturn number normal.y
+ * @treturn number normal.z
+ */
+int LuaUnsyncedRead::GetGroundDecalNormal(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->forcedNormal.x);
+	lua_pushnumber(L, decal->forcedNormal.y);
+	lua_pushnumber(L, decal->forcedNormal.z);
+
+	return 3;
+}
+
+/***
+ *
+ * @function Spring.GetGroundDecalTint
+ * Gets the tint of the ground decal.
+ * A color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
+ * @number decalID
+ * @treturn nil|number tintR
+ * @treturn number tintG
+ * @treturn number tintB
+ * @treturn number tintA
+ */
+int LuaUnsyncedRead::GetGroundDecalTint(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	float4 tintColor = decal->tintColor;
+	lua_pushnumber(L, tintColor.r);
+	lua_pushnumber(L, tintColor.g);
+	lua_pushnumber(L, tintColor.b);
+	lua_pushnumber(L, tintColor.a);
+
+	return 4;
+}
+
+/***
+ *
+ * @function Spring.GetGroundDecalMisc
+ * Returns less important parameters of a ground decal
+ * @number decalID
+ * @treturn nil|number dotElimExp
+ * @treturn number refHeight
+ * @treturn number minHeight
+ * @treturn number maxHeight
+ * @treturn number forceHeightMode
+ */
+int LuaUnsyncedRead::GetGroundDecalMisc(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->dotElimExp);
+	lua_pushnumber(L, decal->refHeight);
+	lua_pushnumber(L, decal->minHeight);
+	lua_pushnumber(L, decal->maxHeight);
+	lua_pushnumber(L, decal->forceHeightMode);
+	return 5;
+}
+
+/***
+ *
+ * @function Spring.GetGroundDecalCreationFrame
+ *
+ * Min can be not equal to max for "gradient" style decals, e.g. unit tracks
+ *
+ * @number decalID
+ * @treturn nil|number creationFrameMin
+ * @treturn number creationFrameMax
+ */
+int LuaUnsyncedRead::GetGroundDecalCreationFrame(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		return 0;
+	}
+
+	lua_pushnumber(L, decal->createFrameMin);
+	lua_pushnumber(L, decal->createFrameMax);
+
+	return 2;
 }
 
 
 /***
  *
- * @function Spring.GetDecalType
- * @number decalIndex
- * @treturn nil|string type "explosion"|"building"|"lua"|"unknown"
+ * @function Spring.GetGroundDecalOwner
+ * @number decalID
+ * @treturn nil|number unitID|number featureID(+MAX_UNITS)
  */
-int LuaUnsyncedRead::GetDecalType(lua_State* L)
+int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 {
-	const auto decalsGl4 = dynamic_cast<const CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
+	const auto* so = groundDecals->GetDecalSolidObjectOwner(luaL_checkint(L, 1));
+	if (so == nullptr)
 		return 0;
 
-	const auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	switch (decal.type) {
-		case CDecalsDrawerGL4::Decal::EXPLOSION: {
-			lua_pushliteral(L, "explosion");
-		} break;
-		case CDecalsDrawerGL4::Decal::BUILDING: {
-			lua_pushliteral(L, "building");
-		} break;
-		case CDecalsDrawerGL4::Decal::LUA: {
-			lua_pushliteral(L, "lua");
-		} break;
-		default: {
-			lua_pushliteral(L, "unknown");
-		}
+	if (const auto* f = dynamic_cast<const CFeature*>(so); f != nullptr)
+		lua_pushnumber(L, unitHandler.MaxUnits() + so->id);
+	else
+		lua_pushnumber(L,                          so->id);
+
+	return 1;
+}
+
+
+/***
+ *
+ * @function Spring.GetGroundDecalType
+ * @number decalID
+ * @treturn nil|string type "explosion"|"plate"|"lua"|"track"|"unknown"
+ */
+int LuaUnsyncedRead::GetGroundDecalType(lua_State* L)
+{
+	const auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal || decal->info.type == static_cast<uint8_t>(GroundDecal::Type::DECAL_NONE)) {
+		return 0;
 	}
+
+	switch (decal->info.type)
+	{
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_PLATE):
+		lua_pushliteral(L, "plate");
+		break;
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_EXPLOSION):
+		lua_pushliteral(L, "explosion");
+		break;
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_TRACK):
+		lua_pushliteral(L, "track");
+		break;
+	case static_cast<uint8_t>(GroundDecal::Type::DECAL_LUA):
+		lua_pushliteral(L, "lua");
+		break;
+	default:
+		lua_pushliteral(L, "unknown");
+		break;
+	}
+
 	return 1;
 }
 
@@ -4714,88 +4826,6 @@ int LuaUnsyncedRead::GetDecalType(lua_State* L)
  * Misc
  * @section misc
 ******************************************************************************/
-
-
-namespace {
-	struct LuaGLDBQuery {
-		inline static std::unique_ptr<OGLDBInfo> object = nullptr;
-	};
-};
-
-
-/***
- *
- * @function Spring.MakeGLDBQuery
- * @bool[opt=false] forced
- * @treturn bool
- */
-int LuaUnsyncedRead::MakeGLDBQuery(lua_State* L)
-{
-	const bool forced = luaL_optboolean(L, 1, false);
-	if (LuaGLDBQuery::object && !forced) {
-		lua_pushboolean(L, false); //can't make another one (unless forced), old one is not consumed yet
-		return 1;
-	}
-
-	LuaGLDBQuery::object = std::make_unique<OGLDBInfo>(globalRenderingInfo.glRenderer, Platform::GetOSFamilyStr());
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
-/***
- *
- * @function Spring.GetGLDBQuery
- * @bool[opt=true] blockingCall
- * @treturn nil|bool ready
- * @treturn bool drivers not ok when true
- * @treturn number maxCtxX
- * @treturn number maxCtxY
- * @treturn string url
- * @treturn string driver
- */
-int LuaUnsyncedRead::GetGLDBQuery(lua_State* L)
-{
-	if (LuaGLDBQuery::object == nullptr) {
-		lua_pushnil(L);
-		return 1;
-	}
-
-	const bool blockingCall = luaL_optboolean(L, 1, true);
-
-	if (blockingCall || LuaGLDBQuery::object->IsReady()) {
-
-		int2 maxCtx = {0, 0};
-		std::string url;
-		std::string drv;
-
-		if (!LuaGLDBQuery::object->GetResult(maxCtx, url, drv)) {
-			LuaGLDBQuery::object = nullptr;
-			lua_pushnil(L);
-			return 1;
-		}
-
-		LuaGLDBQuery::object = nullptr;
-
-		if (maxCtx.x * 10 + maxCtx.y <= globalRenderingInfo.glContextVersion.x * 10 + globalRenderingInfo.glContextVersion.y) {
-			lua_pushboolean(L, true ); // ready
-			lua_pushboolean(L, false); // drivers are ok
-			return 2;
-		}
-
-		lua_pushboolean(L, true); // ready
-		lua_pushboolean(L, true); // drivers are not ok
-		lua_pushinteger(L, maxCtx.x);
-		lua_pushinteger(L, maxCtx.y);
-		lua_pushstring(L, url.c_str());
-		lua_pushstring(L, drv.c_str());
-
-		return 6;
-	}
-
-	lua_pushboolean(L, false); // not ready, user should come back later
-	return 1;
-}
 
 
 /***

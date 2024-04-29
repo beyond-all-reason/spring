@@ -54,7 +54,7 @@
 	#include "System/Sync/SyncDebugger.h"
 #endif
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 
 CONFIG(bool, DemoFromDemo).defaultValue(false).description("Enable recording a demo while playing back a demo.");
@@ -104,12 +104,14 @@ CPreGame::~CPreGame()
 
 void CPreGame::LoadSetupScript(const std::string& script)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(clientSetup->isHost);
 	StartServer(script);
 }
 
 void CPreGame::LoadDemoFile(const std::string& demo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(clientSetup->isHost);
 	wantDemo &= configHandler->GetBool("DemoFromDemo");
 
@@ -118,6 +120,7 @@ void CPreGame::LoadDemoFile(const std::string& demo)
 
 void CPreGame::LoadSaveFile(const std::string& save)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(clientSetup->isHost);
 
 	saveFileHandler = ILoadSaveHandler::CreateHandler(save);
@@ -143,6 +146,7 @@ void CPreGame::LoadSaveFile(const std::string& save)
 
 int CPreGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyCode != SDLK_ESCAPE)
 		return 0;
 
@@ -165,6 +169,7 @@ int CPreGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 bool CPreGame::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring_msecs(10).sleep(true);
 	ClearScreen();
 
@@ -178,10 +183,13 @@ bool CPreGame::Draw()
 	} else {
 		font->glPrint(0.5f, 0.48f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server response");
 	}
-
-	font->glFormat(0.60f, 0.40f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientNet->ConnectionStr().c_str());
-	font->glFormat(0.60f, 0.35f, 1.0f, FONT_SCALE | FONT_NORM, "User name: %s", clientSetup->myPlayerName.c_str());
-
+	if (clientSetup->showServerName.empty()) {
+		font->glFormat(0.60f, 0.40f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientNet->ConnectionStr().c_str());
+		font->glFormat(0.60f, 0.35f, 1.0f, FONT_SCALE | FONT_NORM, "User name: %s", clientSetup->myPlayerName.c_str());
+	}
+	else {
+		font->glFormat(0.60f, 0.40f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientSetup->showServerName.c_str());
+	}
 	font->glFormat(0.5f,0.25f,0.8f,FONT_CENTER | FONT_SCALE | FONT_NORM, "Press SHIFT + ESC to quit");
 	// credits
 	font->glFormat(0.5f,0.06f,1.0f,FONT_CENTER | FONT_SCALE | FONT_NORM, "Spring %s", SpringVersion::GetFull().c_str());
@@ -207,6 +215,7 @@ bool CPreGame::Update()
 
 void CPreGame::AddMapArchivesToVFS(const CGameSetup* setup)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// map gets added in StartServer if we are the host, so this can show twice
 	// StartServerForDemo does *not* add the map but waits for GameDataReceived
 	LOG("[PreGame::%s][server=%p] using map \"%s\" (loaded=%d cached=%d)", __func__, gameServer, setup->mapName.c_str(), vfsHandler->HasArchive(setup->mapName), vfsHandler->HasTempArchive(setup->mapName));
@@ -217,6 +226,7 @@ void CPreGame::AddMapArchivesToVFS(const CGameSetup* setup)
 
 void CPreGame::AddModArchivesToVFS(const CGameSetup* setup)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[PreGame::%s][server=%p] using game \"%s\" (loaded=%d cached=%d)", __func__, gameServer, setup->modName.c_str(), vfsHandler->HasArchive(setup->modName), vfsHandler->HasTempArchive(setup->modName));
 
 	// load mutators (if any); use WithDeps since mutators depend on the archives they override
@@ -295,6 +305,7 @@ void CPreGame::StartServer(const std::string& setupscript)
 
 void CPreGame::UpdateClientNet()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME move this code to a external file and move that to rts/Net/
 
 	clientNet->Update();
@@ -429,6 +440,7 @@ void CPreGame::UpdateClientNet()
 
 void CPreGame::StartServerForDemo(const std::string& demoName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	TdfParser script((gameData->GetSetupText()).c_str(), (gameData->GetSetupText()).size());
 	TdfParser::TdfSection* tgame = script.GetRootSection()->sections["game"];
 
