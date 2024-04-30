@@ -37,14 +37,14 @@ enum YardmapStates {
 	YARDMAP_GEOSTACKABLE = 2,    // can be built on top of YARDMAP_BLOCKED and needs GEO
 	YARDMAP_YARD         = 4,    // walkable when yard is open
 	YARDMAP_YARDINV      = 8,    // walkable when yard is closed
-	YARDMAP_WALKONLY     = 16,   // open for walk    (    walkable, not buildable)
+	YARDMAP_UNBUILDABLE  = 16,   // open for walk    (    walkable, not buildable)
 	YARDMAP_BUILDONLY	 = 32,	 // open for build   (not walkable,     buildable)	
 	YARDMAP_EXITONLY     = 64,   // closed for walk into, closed for build
-	YARDMAP_BLOCKED      = 0xFF & ~(YARDMAP_YARDINV|YARDMAP_EXITONLY|YARDMAP_WALKONLY), // always block     (not walkable, not buildable)
+	YARDMAP_BLOCKED      = 0xFF & ~(YARDMAP_YARDINV|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE), // always block     (not walkable, not buildable)
 
 	// helpers
-	YARDMAP_YARDBLOCKED  = (YARDMAP_YARD|YARDMAP_EXITONLY|YARDMAP_WALKONLY),
-	YARDMAP_YARDFREE     = ~(YARDMAP_YARD|YARDMAP_EXITONLY|YARDMAP_WALKONLY),
+	YARDMAP_YARDBLOCKED  = (YARDMAP_YARD|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE),
+	YARDMAP_YARDFREE     = ~(YARDMAP_YARD|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE),
 	YARDMAP_GEO          = YARDMAP_BLOCKED,
 };
 typedef Bitwise::BitwiseEnum<YardmapStates> YardMapStatus;

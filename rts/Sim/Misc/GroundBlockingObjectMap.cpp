@@ -87,7 +87,7 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 				objectCol.SetBlockBuildingAt(x, z);
 				continue;
 			}
-			if (yardmapState & YARDMAP_WALKONLY) {
+			if (yardmapState & YARDMAP_UNBUILDABLE) {
 				objectCol.SetBlockBuildingAt(x, z);
 				continue;
 			}
@@ -134,7 +134,7 @@ void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 				objectCol.ClearBlockBuildingAt(x, z);
 				continue;
 			}
-			if (yardmapState & YARDMAP_WALKONLY) {
+			if (yardmapState & YARDMAP_UNBUILDABLE) {
 				objectCol.ClearBlockBuildingAt(x, z);
 				continue;
 			}
