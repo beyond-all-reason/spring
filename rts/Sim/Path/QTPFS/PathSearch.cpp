@@ -665,7 +665,7 @@ bool QTPFS::PathSearch::ExecuteRawSearch() {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
 	haveFullPath = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer())
-			->DoRawSearch( pathOwner, fwd.srcPoint, fwd.tgtPoint, pathOwner->speed
+			->DoRawSearch( pathOwner, fwd.srcPoint, fwd.tgtPoint, pathOwner->speed, goalDistance
 						 , true, true, false, nullptr, nullptr, searchThreadData->threadId);
 
 	return haveFullPath;

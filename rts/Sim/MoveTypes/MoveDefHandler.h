@@ -46,6 +46,7 @@ struct MoveDef {
 		const float3 startPos,
 		const float3 endPos,
 		const float3 testMoveDir,
+		float goalRadius,
 		bool testTerrain,
 		bool testObjects,
 		bool centerOnly,

@@ -323,6 +323,7 @@ bool MoveDef::DoRawSearch(
 	const float3 startPos,
 	const float3 endPos,
 	const float3 testMoveDir,
+	float goalRadius,
 	bool testTerrain,
 	bool testObjects,
 	bool centerOnly,
@@ -337,6 +338,7 @@ bool MoveDef::DoRawSearch(
 	// block. If perfectly aligned with starPos then don't shift because the blocks will align.
 	const float upDir    = (startPos.z == endPos.z) ? 0 : 1 - float(startPos.z < endPos.z) * 2.f;
 	const float rightDir = (startPos.x == endPos.x) ? 0 : 1 - float(startPos.x < endPos.x) * 2.f;
+	const float goalRadiusSq = Square(goalRadius);
 
 	const int2 startBlock
 		( std::clamp(int(startPos.x / SQUARE_SIZE), 0, mapDims.mapxm1)
@@ -356,7 +358,7 @@ bool MoveDef::DoRawSearch(
 		err.x += (dif.x * (err.y <= 0));
 	};
 
-	auto walkPath = [startBlock, endBlock, diffBlk, &StepFunc](auto& f) -> bool {
+	auto walkPath = [startBlock, endBlock, diffBlk, &StepFunc, goalRadiusSq](auto& f) -> bool {
 		bool result = true;
 
 		const int2 fwdStepDir = int2{(endBlock.x > startBlock.x), (endBlock.y > startBlock.y)} * 2 - int2{1, 1};
@@ -372,7 +374,9 @@ bool MoveDef::DoRawSearch(
 		// int2 prevRevTestBlk = {-1, -1};
 
 		for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
-			result = f(fwdTestBlk.x, fwdTestBlk.y) && f(revTestBlk.x, revTestBlk.y);
+			result = f(fwdTestBlk.x, fwdTestBlk.y)
+				&& ( f(revTestBlk.x, revTestBlk.y)
+					|| (float((endBlock).DistanceSq(revTestBlk)*Square(SQUARE_SIZE)) < goalRadiusSq) );
 			if (!result) { break; }
 
 			// NOTE: for odd-length paths, center square is tested twice
