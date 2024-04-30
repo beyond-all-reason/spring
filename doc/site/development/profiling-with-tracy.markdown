@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Profiling with Tracy
-parent: Guides
+parent: Development
 permalink: development/profiling-with-tracy
 author: beherith
 ---
