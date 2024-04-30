@@ -679,7 +679,7 @@ bool QTPFS::PathSearch::ExecuteRawSearch() {
 		// Slightly higher than cos(45)*8, but smaller than a square width.
 		// Position is taken from the mid point of a square so we need a little tolerance to check whether it is the
 		// same square.
-		if (pos.SqDistance2D(fwd.tgtPoint) > Square(SQUARE_SIZE - 2))
+		if (pos.SqDistance2D(fwd.tgtPoint) > Square((SQUARE_SIZE * 3) / 4))
 			fwd.tgtPoint = pos;
 	}
 
