@@ -52,6 +52,7 @@ struct MoveDef {
 		bool centerOnly,
 		float* minSpeedModPtr,
 		int* maxBlockBitPtr,
+		int2* nearestSquare,
 		int thread = 0
 	);
 	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
