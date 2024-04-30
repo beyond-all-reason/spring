@@ -377,7 +377,6 @@ bool MoveDef::DoRawSearch(
 		// int2 prevFwdTestBlk = {-1, -1};
 		// int2 prevRevTestBlk = {-1, -1};
 
-		int2 fwdNearestSqr(-1,-1);
 		int2 bwdNearestSqr(-1,-1);
 
 		for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {

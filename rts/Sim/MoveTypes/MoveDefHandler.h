@@ -41,6 +41,7 @@ struct MoveDef {
 	MoveDef& operator = (const MoveDef& moveDef) = delete;
 	MoveDef& operator = (MoveDef&& moveDef) = default;
 
+	// nearestSquare is given a meaningful value only when the result is true.
 	bool DoRawSearch(
 		const CSolidObject* collider,
 		const float3 startPos,
