@@ -65,7 +65,8 @@ private:
 	// and from thereon to GameServer if this client is also the host
 	std::shared_ptr<ClientSetup> clientSetup;
 
-	// used to delay relaying messages to console to avoid issues
+	/* Member instead of global to avoid catching unrelated early messages.
+	 * In particular, modes like `spring -p` want a clean output log without library chaff. */
 	ConsoleSinkRegistrator consoleSink;
 };
 
