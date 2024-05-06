@@ -71,6 +71,7 @@ public:
 	void TriggerCallArrived() {
 		atEndOfPath = true;
 		atGoal = true;
+		pathingArrived = true;
 	}
 
 

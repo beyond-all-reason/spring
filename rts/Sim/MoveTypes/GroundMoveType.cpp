@@ -920,6 +920,9 @@ void CGroundMoveType::StartMovingRaw(const float3 moveGoalPos, float moveGoalRad
 
 	currWayPointDist = 0.0f;
 	prevWayPointDist = 0.0f;
+
+	pathingArrived = false;
+	pathingFailed = false;
 }
 
 void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
@@ -2444,6 +2447,8 @@ void CGroundMoveType::Arrived(bool callScript)
 	RECOIL_DETAILED_TRACY_ZONE;
 	// can only "arrive" if the engine is active
 	if (progressState == Active) {
+		eventHandler.UnitArrivedAtGoal(owner);
+
 		StopEngine(callScript);
 
 		if (owner->team == gu->myTeam)
