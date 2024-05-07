@@ -1035,6 +1035,7 @@ void CGroundMoveType::UpdatePreCollisionsMt() {
 				earlyNextWayPoint = pathManager->NextWayPoint(owner, nextPathId, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 				lastWaypoint = false;
 				wantRepath = false;
+				atEndOfPath = 0;
 			}
 
 			// can't delete the path in an MT section
