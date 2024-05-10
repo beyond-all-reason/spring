@@ -63,7 +63,6 @@ void CFlameProjectile::Update()
 
 	UpdateInterception();
 
-	sqRadius = radius * radius;
 	drawRadius = radius;
 
 	curTime = std::min(curTime + invttl, 1.0f);
