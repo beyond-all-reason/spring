@@ -222,7 +222,7 @@ WEAPONTAG(std::string, shieldArmorTypeName).externalName("shield.armorType").fal
 // Unsynced (= Visuals)
 WEAPONTAG(std::string, model, visuals.modelName).defaultValue("").description("Name of a 3D model. Otherwise uses 2D sprites");
 WEAPONDUMMYTAG(float, size).description("Size of the 2D visual sprite, if the weapon has no 'model' set.");
-WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("");
+WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("").description("A colormap (set of RGBA tuples) for the scar decal. Will smoothly fade between these colours over its lifetime.");
 WEAPONDUMMYTAG(table, scarIndices).description("A table of indices to the scar table in resources.lua");
 WEAPONTAG(bool, explosionScar, visuals.explosionScar).defaultValue(true).description("Does the explosion leave a scar decal on the ground?");
 WEAPONTAG(float, scarDiameter, visuals.scarDiameter).defaultValue(-1.0f).description("Diameter of the scar decal");
@@ -230,8 +230,8 @@ WEAPONTAG(float, scarAlpha, visuals.scarAlpha).defaultValue(0.0f).description("I
 WEAPONTAG(float, scarGlow, visuals.scarGlow).defaultValue(0.0f).description("Initial glow intensity of the scar decal (0-1)");
 WEAPONTAG(float, scarTtl, visuals.scarTtl).defaultValue(0.0f).description("Duration of the scar decal, in seconds");
 WEAPONTAG(float, scarGlowTtl, visuals.scarGlowTtl).defaultValue(0.0f).description("Duration of the glow of the scar, in seconds");
-WEAPONTAG(float, scarDotElimination, visuals.scarDotElimination).defaultValue(0.0f);
-WEAPONTAG(float4, scarProjVector, visuals.scarProjVector).defaultValue(float4{0.0f});
+WEAPONTAG(float, scarDotElimination, visuals.scarDotElimination).defaultValue(0.0f).description("Specifies the exponent of dot product of projection vector and current terrain normal vector, this is used to remove to remove scar projection from surfaces that usually should not receive the ground scar effect, the exponent controls the degree of elimination. The default 0.0 means there will be no elimination at all.");
+WEAPONTAG(float4, scarProjVector, visuals.scarProjVector).defaultValue(float4{0.0f}).description("Forced direction of a ground scar projection (you can think of this technique as if the scar image was projected onto the ground from the cinema projector at certain world-space vector). If all zeroes, it will use ground normals. Realistically this should either be left at default, or set to {0, 1, 0} for orbital-type weapons");
 WEAPONTAG(float4, scarColorTint, visuals.scarColorTint).defaultValue(float4{0.5f, 0.5f, 0.5f, 0.5f }).description("Color tint for explosion scar decal. Scaled so that 0.5 is no change, 1.0 is twice as bright.");
 WEAPONTAG(bool, alwaysVisible, visuals.alwaysVisible).defaultValue(false).description("Is the projectile visible regardless of sight?");
 WEAPONTAG(float, cameraShake).fallbackName("damage.default").defaultValue(0.0f).minimumValue(0.0f).description("Passed to the wupget:ShockFront callin as the first argument, intended for shaking the camera on particularly strong hits. Same scale as damage.");
