@@ -184,6 +184,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitsInSphere);
 	REGISTER_LUA_CFUNC(GetUnitsInCylinder);
 
+	REGISTER_LUA_CFUNC(GetUnitArrayCentroid);
+	REGISTER_LUA_CFUNC(GetUnitMapCentroid);
+
 	REGISTER_LUA_CFUNC(GetFeaturesInRectangle);
 	REGISTER_LUA_CFUNC(GetFeaturesInSphere);
 	REGISTER_LUA_CFUNC(GetFeaturesInCylinder);
@@ -3257,6 +3260,67 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 	}
 
 	return 1;
+}
+
+
+static int GetUnitTableCentroid(lua_State *const L, const int indexWithinTable, const char *const caller)
+{
+	if (!lua_istable(L, 1))
+		luaL_error(L, "[%s] argument must be a table", caller);
+
+	float3 center {0.0f, 0.0f, 0.0f};
+	size_t count = 0;
+	for (lua_pushnil(L); lua_next(L, 1); lua_pop(L, 1)) {
+		const auto unit = ParseUnit(L, caller, indexWithinTable);
+		if (unit == nullptr)
+			continue;
+
+		center += unit->midPos;
+		++ count;
+	}
+
+	if (!count)
+		return 0;
+
+	center /= static_cast <float> (count);
+
+	lua_pushnumber(L, center.x);
+	lua_pushnumber(L, center.y);
+	lua_pushnumber(L, center.z);
+
+	return 3;
+}
+
+
+
+/*** Returns the centroid of an array of units
+ *
+ * Returns nil for an empty array
+ *
+ * @function Spring.GetUnitArrayCentroid
+ * @table units { unitID, unitID, ... }
+ * @treturn centerX
+ * @treturn centerY
+ * @treturn centerZ
+ */
+int LuaSyncedRead::GetUnitArrayCentroid(lua_State* L)
+{
+	return GetUnitTableCentroid(L, -1, __func__);
+}
+
+/*** Returns the centroid of a map of units
+ *
+ * Returns nil for an empty map
+ *
+ * @function Spring.GetUnitMapCentroid
+ * @table units { [unitID] = true, [unitID] = true, ... }
+ * @treturn centerX
+ * @treturn centerY
+ * @treturn centerZ
+ */
+int LuaSyncedRead::GetUnitMapCentroid(lua_State* L)
+{
+	return GetUnitTableCentroid(L, -2, __func__);
 }
 
 
