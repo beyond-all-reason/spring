@@ -115,6 +115,7 @@ Misc:
  - Fix rotating the camera with the middle mouse stopped unit tracking. https://github.com/beyond-all-reason/spring/issues/626
  - Fix when a client that takes too long to connect can potentially trigger a desync.
    https://github.com/beyond-all-reason/spring/issues/1406
+ - Prevent logging general log information before the game engine has started. https://github.com/beyond-all-reason/spring/issues/683
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
