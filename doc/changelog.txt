@@ -87,6 +87,7 @@ Lua:
  - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
  - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
+ - Lua C++ Macros (cast and registry) prefixed lua_ to fix compilation issues.
 
 
 Game Setup:
@@ -109,6 +110,7 @@ Misc:
  - Add new `/remove` cheat-only command, it removes selected units similar to
    `/destroy` except no death script is run (so no explosion nor wreckage).
  - Units no longer clear command queue when shared. This can be implemented gameside with UnitGiven callin.
+ - Fix game save/load issue https://github.com/beyond-all-reason/spring/issues/1425
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
