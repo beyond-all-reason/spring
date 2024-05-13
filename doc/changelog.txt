@@ -111,6 +111,7 @@ Misc:
    `/destroy` except no death script is run (so no explosion nor wreckage).
  - Units no longer clear command queue when shared. This can be implemented gameside with UnitGiven callin.
  - Fix game save/load issue https://github.com/beyond-all-reason/spring/issues/1425
+ - Fix rotating the camera with the middle mouse stopped unit tracking. https://github.com/beyond-all-reason/spring/issues/626
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
