@@ -88,6 +88,7 @@ Lua:
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
  - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
  - Lua C++ Macros (cast and registry) prefixed lua_ to fix compilation issues.
+ - Protect Spring.GetGroupUnitsCount from crashing when given an invalid group id.
 
 
 Game Setup:
