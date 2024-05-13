@@ -11,11 +11,14 @@
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
+
 static CFeatureDefHandler gFeatureDefHandler;
 CFeatureDefHandler* featureDefHandler = &gFeatureDefHandler;
 
 void CFeatureDefHandler::Init(LuaParser* defsParser)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const LuaTable rootTable = defsParser->GetRoot().SubTable("FeatureDefs");
 
 	if (!rootTable.IsValid())
@@ -58,6 +61,7 @@ void CFeatureDefHandler::Init(LuaParser* defsParser)
 
 void CFeatureDefHandler::AddFeatureDef(const std::string& name, FeatureDef* fd, bool isDefaultFeature)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (fd == nullptr)
 		return;
 
@@ -72,6 +76,7 @@ void CFeatureDefHandler::AddFeatureDef(const std::string& name, FeatureDef* fd, 
 
 FeatureDef& CFeatureDefHandler::GetNewFeatureDef()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	featureDefsVector.emplace_back();
 	FeatureDef& fd = featureDefsVector.back();
 	fd.id = featureDefsVector.size() - 1;
@@ -82,6 +87,7 @@ FeatureDef& CFeatureDefHandler::GetNewFeatureDef()
 
 FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const std::string& mixedCase)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string& name = StringToLower(mixedCase);
 
 	if (featureDefIDs.find(name) != featureDefIDs.end())
@@ -153,6 +159,7 @@ FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const 
 
 FeatureDef* CFeatureDefHandler::CreateDefaultTreeFeatureDef(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	FeatureDef& fd = GetNewFeatureDef();
 
 	fd.collidable = true;
@@ -174,6 +181,7 @@ FeatureDef* CFeatureDefHandler::CreateDefaultTreeFeatureDef(const std::string& n
 
 FeatureDef* CFeatureDefHandler::CreateDefaultGeoFeatureDef(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	FeatureDef& fd = GetNewFeatureDef();
 
 	fd.collidable = false;
@@ -199,6 +207,7 @@ FeatureDef* CFeatureDefHandler::CreateDefaultGeoFeatureDef(const std::string& na
 
 const FeatureDef* CFeatureDefHandler::GetFeatureDef(string name, const bool showError) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (name.empty())
 		return nullptr;
 
@@ -217,6 +226,7 @@ const FeatureDef* CFeatureDefHandler::GetFeatureDef(string name, const bool show
 
 void CFeatureDefHandler::LoadFeatureDefsFromMap()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// reserved names
 	const char* treeDefName = "treetype";
 	const char*  geoDefName =  "geovent";

@@ -8,6 +8,8 @@
 #include "Game/GameSetup.h"
 #include "Game/SelectedUnitsHandler.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND(CPlayerHandler,)
 
 CR_REG_METADATA(CPlayerHandler, (
@@ -20,12 +22,14 @@ CPlayerHandler playerHandler;
 
 void CPlayerHandler::ResetState()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	players.clear();
 	players.reserve(MAX_PLAYERS);
 }
 
 void CPlayerHandler::LoadFromSetup(const CGameSetup* setup)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<PlayerBase>& playerData = setup->GetPlayerStartingDataCont();
 
 	const int oldSize = players.size();
@@ -49,6 +53,7 @@ void CPlayerHandler::LoadFromSetup(const CGameSetup* setup)
 
 int CPlayerHandler::Player(const std::string& name) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto pred = [&name](const CPlayer& player) { return (player.name == name); };
 	const auto iter = std::find_if(players.begin(), players.end(), pred);
 
@@ -60,6 +65,7 @@ int CPlayerHandler::Player(const std::string& name) const
 
 void CPlayerHandler::PlayerLeft(int id, unsigned char reason)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Player(id)->active = false;
 	Player(id)->ping = 0;
 }
@@ -68,6 +74,7 @@ void CPlayerHandler::PlayerLeft(int id, unsigned char reason)
 
 unsigned int CPlayerHandler::NumActivePlayersInTeam(int teamId) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int n = 0;
 
 	for (const CPlayer& player: players) {
@@ -80,6 +87,7 @@ unsigned int CPlayerHandler::NumActivePlayersInTeam(int teamId) const
 
 std::vector<int> CPlayerHandler::ActivePlayersInTeam(int teamId) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<int> playersInTeam;
 
 	for (const CPlayer& player: players) {
@@ -101,6 +109,7 @@ std::vector<int> CPlayerHandler::ActivePlayersInTeam(int teamId) const
 
 void CPlayerHandler::GameFrame(int frameNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (CPlayer& player: players) {
 		player.GameFrame(frameNum);
 	}
@@ -108,6 +117,7 @@ void CPlayerHandler::GameFrame(int frameNum)
 
 void CPlayerHandler::AddPlayer(const CPlayer& player)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int oldSize = players.size();
 	const int newSize = std::max(oldSize, player.playerNum + 1);
 

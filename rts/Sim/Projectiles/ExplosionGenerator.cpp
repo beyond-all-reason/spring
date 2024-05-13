@@ -39,6 +39,8 @@
 #include "System/SafeUtil.h"
 #include "System/StringHash.h"
 
+#include "System/Misc/TracyDefs.h"
+
 static DynMemPoolT<CCustomExplosionGenerator, CStdExplosionGenerator, IExplosionGenerator> egMemPool;
 
 alignas(LuaParser) static std::byte exploParserMem[sizeof(LuaParser)];
@@ -113,6 +115,7 @@ unsigned int CCustomExplosionGenerator::GetFlagsFromHeight(float height, float g
 
 void ClassAliasList::Load(const LuaTable& aliasTable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	decltype(aliases) aliasList;
 	aliasTable.GetMap(aliasList);
 	aliases.insert(aliasList.begin(), aliasList.end());
@@ -121,6 +124,7 @@ void ClassAliasList::Load(const LuaTable& aliasTable)
 
 std::string ClassAliasList::ResolveAlias(const std::string& name) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string n = name;
 
 	for (;;) {
@@ -138,6 +142,7 @@ std::string ClassAliasList::ResolveAlias(const std::string& name) const
 
 std::string ClassAliasList::FindAlias(const std::string& className) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const auto& p: aliases) {
 		if (p.second == className)
 			return p.first;
@@ -153,6 +158,7 @@ std::string ClassAliasList::FindAlias(const std::string& className) const
 
 void CExplosionGeneratorHandler::Init()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	egMemPool.clear();
 	egMemPool.reserve(512);
 
@@ -173,6 +179,7 @@ void CExplosionGeneratorHandler::Init()
 
 void CExplosionGeneratorHandler::Kill()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::SafeDestruct(exploParser);
 	spring::SafeDestruct(aliasParser);
 	spring::SafeDestruct(explTblRoot);
@@ -193,6 +200,7 @@ void CExplosionGeneratorHandler::Kill()
 
 void CExplosionGeneratorHandler::ParseExplosionTables()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(LuaParser) <= sizeof(exploParserMem), "");
 	static_assert(sizeof(LuaTable ) <= sizeof(explTblRootMem), "");
 
@@ -221,6 +229,7 @@ void CExplosionGeneratorHandler::ParseExplosionTables()
 }
 
 void CExplosionGeneratorHandler::ReloadGenerators(const std::string& tag) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// re-parse the projectile and generator tables
 	ParseExplosionTables();
 
@@ -269,6 +278,7 @@ void CExplosionGeneratorHandler::ReloadGenerators(const std::string& tag) {
 
 unsigned int CExplosionGeneratorHandler::LoadGeneratorID(const char* tag, const char* pre)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	IExplosionGenerator* eg = LoadGenerator(tag, pre);
 
 	if (eg == nullptr)
@@ -333,6 +343,7 @@ IExplosionGenerator* CExplosionGeneratorHandler::LoadGenerator(const char* tag, 
 
 IExplosionGenerator* CExplosionGeneratorHandler::GetGenerator(unsigned int expGenID)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (expGenID == EXPGEN_ID_INVALID)
 		return nullptr;
 	// can happen after save/load for spawners
@@ -353,6 +364,7 @@ bool CExplosionGeneratorHandler::GenExplosion(
 	CUnit* hit,
 	bool withMutex
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	IExplosionGenerator* expGen = GetGenerator(expGenID);
 
 	if (expGen == nullptr)
@@ -373,6 +385,7 @@ bool CStdExplosionGenerator::Explosion(
 	CUnit* hit,
 	bool withMutex
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float groundHeight = CGround::GetHeightReal(pos.x, pos.z);
 	const float altitude = pos.y - groundHeight;
 
@@ -589,6 +602,7 @@ bool CStdExplosionGenerator::Explosion(
 
 void CCustomExplosionGenerator::ExecuteExplosionCode(const char* code, float damage, char* instance, int spawnIndex, const float3& dir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float val = 0.0f;
 	float buffer[16];
 	void* ptr = nullptr;
@@ -722,6 +736,7 @@ void CCustomExplosionGenerator::ParseExplosionCode(
 	SExpGenSpawnableMemberInfo& memberInfo,
 	string& code
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string content = script.substr(0, script.find(';', 0));
 
 	const bool isFloat = (memberInfo.type == SExpGenSpawnableMemberInfo::TYPE_FLOAT);
@@ -851,6 +866,7 @@ void CCustomExplosionGenerator::ParseExplosionCode(
 
 bool CCustomExplosionGenerator::Load(CExplosionGeneratorHandler* handler, const char* tag)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const LuaTable* root = handler->GetExplosionTableRoot();
 	const LuaTable& expTable = (root != nullptr)? root->SubTable(tag): LuaTable();
 
@@ -931,6 +947,7 @@ bool CCustomExplosionGenerator::Load(CExplosionGeneratorHandler* handler, const 
 }
 
 bool CCustomExplosionGenerator::Reload(CExplosionGeneratorHandler* handler, const char* tag) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const ExpGenParams oldParams = expGenParams;
 
 	if (!Load(handler, tag)) {
@@ -951,6 +968,7 @@ bool CCustomExplosionGenerator::Explosion(
 	CUnit* hit,
 	bool withMutex
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int flags = GetFlagsFromHeight(pos.y, CGround::GetHeightReal(pos.x, pos.z));
 
 	const bool   unitCollision = (hit != nullptr);
@@ -1000,6 +1018,7 @@ bool CCustomExplosionGenerator::Explosion(
 
 bool CCustomExplosionGenerator::OutputProjectileClassInfo()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifdef USING_CREG
 	LOG_DISABLE();
 		// we need to load basecontent for class aliases

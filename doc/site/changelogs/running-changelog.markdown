@@ -12,9 +12,13 @@ This is the changelog **since version 2314**.
 These are the entries which may require special attention when migrating:
 * some animations are now multi-threaded. It shouldn't cause desyncs, but an `AnimationMT` springsetting has been provided to disable it, just in case. See below.
 * when building the engine via CMake, only native C++ AIs are now built by default.
-* ground decals may behave a bit different because there's a new implementation.
+* unit def `trackStretch` values now treated reciprocally compared to previous, i.e. a stretch factor of 2 now means the track is stretched x2 longer (was squeezed x0.5 shorter previously).
+* ground decals may behave a bit different because there's a new implementation. There are a handful of known issues, see the decals section above.
 * ground decals may no longer work on potato hardware.
-* instead of 4 default explosion decals in basecontent, there's 2 new normal-mapped ones. Might want to produce more for variety and/or check your `gamedata/resources.lua` to see if you're referencing them.
+* instead of 4 default explosion decals in basecontent (`bitmaps/scars/scarN.bmp`, 1-4), there's 2 new normal-mapped ones (`bitmaps/scars/scarN.tga` and `bitmaps/scars/scarN_normal.tga`, 1-2).
+Note the format change from BMP to TGA.
+You might want to check your `gamedata/resources.lua` to see if you're referencing the old default scars (either explicitly or e.g. autogenerating from the `bitmaps/scars` folder).
+You might also want to produce more to counteract the reduced variety.
 
 # Features
 * The `select` action now composes `IdMatches` filters as *OR* statements see [The select command]({{ site.baseurl }}{% link articles/select-command.markdown %}#idmatches_string) for further reference.
@@ -40,6 +44,11 @@ Name the normalmap the same as the base decal but with `_normal` at the end., e.
 and [read](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Decals) parts in the API listings.
 * added a shader interface for decal rendering. No documentation of uniforms/attributes/etc seems to exist at the moment,
 but you can look up the default shader implementation ([fragment](https://github.com/beyond-all-reason/spring/blob/BAR105/cont/base/springcontent/shaders/GLSL/GroundDecalsFragProg.glsl), [vertex](https://github.com/beyond-all-reason/spring/blob/BAR105/cont/base/springcontent/shaders/GLSL/GroundDecalsVertProg.glsl)).
+* replaced scar bitmaps in basecontent. See the caveats section above.
+* unit def `trackStretch` values now treated reciprocally compared to previous, i.e. a stretch factor of 2 now means the track is stretched x2 longer (was squeezed x0.5 shorter previously).
+* ground decals may no longer work on potato hardware.
+* known issue: tracks/footprints no longer maintain the texture offset on stutter-step.
+* known issue: building decals may not render correctly underwater.
 
 ### More interfaces in `defs.lua`
 The following functions are now available in the `defs.lua` phase:

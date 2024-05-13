@@ -87,6 +87,8 @@ Lua:
  - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
  - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
+ - Lua C++ Macros (cast and registry) prefixed lua_ to fix compilation issues.
+ - Protect Spring.GetGroupUnitsCount from crashing when given an invalid group id.
 
 
 Game Setup:
@@ -109,6 +111,8 @@ Misc:
  - Add new `/remove` cheat-only command, it removes selected units similar to
    `/destroy` except no death script is run (so no explosion nor wreckage).
  - Units no longer clear command queue when shared. This can be implemented gameside with UnitGiven callin.
+ - Fix game save/load issue https://github.com/beyond-all-reason/spring/issues/1425
+ - Fix rotating the camera with the middle mouse stopped unit tracking. https://github.com/beyond-all-reason/spring/issues/626
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)
@@ -205,6 +209,10 @@ Sim:
  - Moving system will not try to get to goal if the unit has reached the last waypoint, and the pathing
    system reports that the path is incomplete. It will fail immediately rather than keep trying for A
    while before failing later.
+ - Units will consider going to next path waypoint if they collide with a unit standing on their waypoint.
+ - Fix issue where units can get stuck walking into each other if one of their paths is changed as they reached their
+   current move goal. https://github.com/beyond-all-reason/spring/issues/1469
+ - Unit target selection no longer uses a random element. https://github.com/beyond-all-reason/spring/pull/1453
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.

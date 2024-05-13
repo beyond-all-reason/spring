@@ -65,13 +65,8 @@ endforeach()
 ADD_SUBDIRECTORY(assimp)
 target_compile_definitions(assimp PRIVATE -DASSIMP_BUILD_NO_OWN_ZLIB)
 
-if    (NOT HEADLESS_SYSTEM)
-
-	if    (USE_LIBSQUISH)
-		ADD_SUBDIRECTORY(rg-etc1)
-		ADD_SUBDIRECTORY(squish)
-	endif (USE_LIBSQUISH)
-endif (NOT HEADLESS_SYSTEM)
+ADD_SUBDIRECTORY(squish)
+ADD_SUBDIRECTORY(rg-etc1)
 
 option(TRACY_ENABLE "Enable tracy profiling" OFF)
 

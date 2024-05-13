@@ -6,6 +6,8 @@
 
 #include <cassert>
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND(DamageArray, )
 
 CR_REG_METADATA(DamageArray, (
@@ -19,6 +21,7 @@ CR_REG_METADATA(DamageArray, (
 
 void DamageArray::SetDefaultDamage(float damage)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	damages.clear();
 	damages.resize(std::max(1, damageArrayHandler.GetNumTypes()), damage);
 }
@@ -57,11 +60,13 @@ DynDamageArray::DynDamageArray(float damage)
 
 DynDamageArray::~DynDamageArray()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(refCount == 1);
 }
 
 void DynDamageArray::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// weapondefs aren't serialized but if their damages tables are in use
 	// these pointers will be serialized.
 	// so during loading, a duplicate of the damages table is created
@@ -76,6 +81,7 @@ void DynDamageArray::PostLoad()
 
 DamageArray DynDamageArray::GetDynamicDamages(const float3& startPos, const float3& curPos) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	DamageArray dynDamages(*this);
 
 	if (dynDamageExp <= 0.0f)
@@ -112,6 +118,7 @@ DamageArray DynDamageArray::GetDynamicDamages(const float3& startPos, const floa
 
 const DynDamageArray* DynDamageArray::IncRef(const DynDamageArray* dda)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	++dda->refCount;
 	return dda;
 }
@@ -119,6 +126,7 @@ const DynDamageArray* DynDamageArray::IncRef(const DynDamageArray* dda)
 
 void DynDamageArray::DecRef(const DynDamageArray* dda)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (dda->refCount == 1) {
 		delete const_cast<DynDamageArray*>(dda);
 	} else {
@@ -128,6 +136,7 @@ void DynDamageArray::DecRef(const DynDamageArray* dda)
 
 DynDamageArray* DynDamageArray::GetMutable(const DynDamageArray*& dda)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (dda != nullptr) {
 		if (dda->refCount == 1)
 			return const_cast<DynDamageArray*>(dda);

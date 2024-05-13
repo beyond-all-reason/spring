@@ -11,12 +11,15 @@
 #include "Sim/Units/UnitDef.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CEmgCannon, CWeapon, )
 CR_REG_METADATA(CEmgCannon, )
 
 
 void CEmgCannon::FireImpl(const bool scriptCall)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 dir = currentTargetPos - weaponMuzzlePos;
 	const float dist = dir.LengthNormalize();
 

@@ -16,7 +16,7 @@
 #include <cctype>
 #include <cstring>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(LocalModelPiece, (nullptr))
 CR_REG_METADATA(LocalModelPiece, (
@@ -55,10 +55,12 @@ CR_REG_METADATA(LocalModel, (
 
 void S3DModelHelpers::BindLegacyAttrVBOs()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	S3DModelVAO::GetInstance().BindLegacyVertexAttribsAndVBOs();
 }
 void S3DModelHelpers::UnbindLegacyAttrVBOs()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	S3DModelVAO::GetInstance().UnbindLegacyVertexAttribsAndVBOs();
 }
 
@@ -68,6 +70,7 @@ void S3DModelHelpers::UnbindLegacyAttrVBOs()
 
 void S3DModelPiece::DrawStaticLegacy(bool bind, bool bindPosMat) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!HasGeometryData())
 		return;
 
@@ -89,6 +92,7 @@ void S3DModelPiece::DrawStaticLegacy(bool bind, bool bindPosMat) const
 // only used by projectiles with the PF_Recursive flag
 void S3DModelPiece::DrawStaticLegacyRec() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	S3DModelHelpers::BindLegacyAttrVBOs();
 
 	DrawStaticLegacy(false, false);
@@ -103,6 +107,7 @@ void S3DModelPiece::DrawStaticLegacyRec() const
 
 float3 S3DModelPiece::GetEmitPos() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (vertices.size()) {
 		case 0:
 		case 1: { return ZeroVector; } break;
@@ -112,6 +117,7 @@ float3 S3DModelPiece::GetEmitPos() const
 
 float3 S3DModelPiece::GetEmitDir() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (vertices.size()) {
 		case 0: { return FwdVector; } break;
 		case 1: { return GetVertexPos(0); } break;
@@ -122,6 +128,7 @@ float3 S3DModelPiece::GetEmitDir() const
 
 void S3DModelPiece::CreateShatterPieces()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!HasGeometryData())
 		return;
 
@@ -135,6 +142,7 @@ void S3DModelPiece::CreateShatterPieces()
 
 void S3DModelPiece::CreateShatterPiecesVariation(int num)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	using ShatterPartDataPair = std::pair<S3DModelPiecePart::RenderData, std::vector<uint32_t>>;
 	using ShatterPartsBuffer  = std::array<ShatterPartDataPair, S3DModelPiecePart::SHATTER_MAX_PARTS>;
 
@@ -227,6 +235,7 @@ void S3DModelPiece::CreateShatterPiecesVariation(int num)
 
 void S3DModelPiece::Shatter(float pieceChance, int modelType, int texType, int team, const float3 pos, const float3 speed, const CMatrix44f& m) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float2  pieceParams = {float3::max(float3::fabs(maxs), float3::fabs(mins)).Length(), pieceChance};
 	const   int2 renderParams = {texType, team};
 
@@ -236,6 +245,7 @@ void S3DModelPiece::Shatter(float pieceChance, int modelType, int texType, int t
 
 void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!HasGeometryData())
 		return;
 
@@ -247,6 +257,7 @@ void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 
 void S3DModelPiece::DrawElements(GLuint prim) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (indxCount == 0)
 		return;
 	assert(indxCount != ~0u);
@@ -256,6 +267,7 @@ void S3DModelPiece::DrawElements(GLuint prim) const
 
 void S3DModelPiece::DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (vboIndxCount == 0)
 		return;
 
@@ -264,6 +276,7 @@ void S3DModelPiece::DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxC
 
 void S3DModelPiece::ReleaseShatterIndices()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	shatterIndices.clear();
 }
 
@@ -273,6 +286,7 @@ void S3DModelPiece::ReleaseShatterIndices()
 
 void LocalModel::DrawPieces() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const auto& p : pieces) {
 		p.Draw();
 	}
@@ -280,6 +294,7 @@ void LocalModel::DrawPieces() const
 
 void LocalModel::DrawPiecesLOD(uint32_t lod) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!luaMaterialData.ValidLOD(lod))
 		return;
 
@@ -290,6 +305,7 @@ void LocalModel::DrawPiecesLOD(uint32_t lod) const
 
 void LocalModel::SetLODCount(uint32_t lodCount)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(Initialized());
 
 	luaMaterialData.SetLODCount(lodCount);
@@ -299,6 +315,7 @@ void LocalModel::SetLODCount(uint32_t lodCount)
 
 void LocalModel::SetModel(const S3DModel* model, bool initialize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// make sure we do not get called for trees, etc
 	assert(model != nullptr);
 	assert(model->numPieces >= 1);
@@ -336,6 +353,7 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 
 LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParent)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	LocalModelPiece* lmpChild = nullptr;
 
 	// construct an LMP(mp) in-place
@@ -435,6 +453,7 @@ LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
 }
 
 void LocalModelPiece::SetDirty() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	dirty = true;
 	SetGetCustomDirty(true);
 
@@ -447,11 +466,13 @@ void LocalModelPiece::SetDirty() {
 
 bool LocalModelPiece::SetGetCustomDirty(bool cd) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::swap(cd, customDirty);
 	return cd;
 }
 
 void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (blockScriptAnims)
 		return;
 	if (!dirty && !dst.same(src)) {
@@ -466,6 +487,7 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 
 void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (dirty) {
 		dirty = false;
 		updateChildMatrices = true;
@@ -488,6 +510,7 @@ void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 
 void LocalModelPiece::UpdateParentMatricesRec() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (parent != nullptr && parent->dirty)
 		parent->UpdateParentMatricesRec();
 
@@ -503,6 +526,7 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 
 void LocalModelPiece::Draw() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!scriptSetVisible)
 		return;
 
@@ -521,6 +545,7 @@ void LocalModelPiece::Draw() const
 
 void LocalModelPiece::DrawLOD(uint32_t lod) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!scriptSetVisible)
 		return;
 
@@ -543,6 +568,7 @@ void LocalModelPiece::DrawLOD(uint32_t lod) const
 
 void LocalModelPiece::SetLODCount(uint32_t count)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// any new LOD's get null-lists first
 	lodDispLists.resize(count, 0);
 
@@ -554,6 +580,7 @@ void LocalModelPiece::SetLODCount(uint32_t count)
 
 bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (original == nullptr)
 		return false;
 
@@ -568,6 +595,7 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 
 S3DModelPiece* S3DModel::FindPiece(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
 		return piece->name == name;
 	});
@@ -579,6 +607,7 @@ S3DModelPiece* S3DModel::FindPiece(const std::string& name)
 
 const S3DModelPiece* S3DModel::FindPiece(const std::string& name) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
 		return piece->name == name;
 		});
@@ -590,6 +619,7 @@ const S3DModelPiece* S3DModel::FindPiece(const std::string& name) const
 
 size_t S3DModel::FindPieceOffset(const std::string& name) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
 		return piece->name == name;
 	});

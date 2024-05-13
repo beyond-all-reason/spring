@@ -4053,6 +4053,16 @@ int LuaUnsyncedRead::GetUnitGroup(lua_State* L)
 	return 1;
 }
 
+static inline const CGroup* GetGroupFromArg(lua_State* L, int arg)
+{
+	const int groupID = luaL_checkint(L, arg);
+	const auto& groupHandler = uiGroupHandlers[gu->myTeam];
+
+	if (!groupHandler.HasGroup(groupID))
+		return nullptr;
+
+	return groupHandler.GetGroup(groupID);
+}
 
 /***
  *
@@ -4062,12 +4072,9 @@ int LuaUnsyncedRead::GetUnitGroup(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnits(lua_State* L)
 {
-	const int groupID = luaL_checkint(L, 1);
-
-	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
-		return 0; // nils
-
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
+	const auto group = GetGroupFromArg(L, 1);
+	if (!group)
+		return 0;
 
 	PushNumberContainerAsArray(L, group->units);
 	return 1;
@@ -4082,12 +4089,9 @@ int LuaUnsyncedRead::GetGroupUnits(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnitsSorted(lua_State* L)
 {
-	const int groupID = luaL_checkint(L, 1);
-
-	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
-		return 0; // nils
-
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
+	const auto group = GetGroupFromArg(L, 1);
+	if (!group)
+		return 0;
 
 	PushUnitListSortedByDef(L, group->units);
 	return 1;
@@ -4102,12 +4106,9 @@ int LuaUnsyncedRead::GetGroupUnitsSorted(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnitsCounts(lua_State* L)
 {
-	const int groupID = luaL_checkint(L, 1);
-
-	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
-		return 0; // nils
-
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
+	const auto group = GetGroupFromArg(L, 1);
+	if (!group)
+		return 0;
 
 	PushSparseUnitTallyByDef(L, group->units);
 	return 1;
@@ -4122,7 +4123,9 @@ int LuaUnsyncedRead::GetGroupUnitsCounts(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnitsCount(lua_State* L)
 {
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(luaL_checkint(L, 1));
+	const auto group = GetGroupFromArg(L, 1);
+	if (!group)
+		return 0;
 
 	lua_pushnumber(L, group->units.size());
 	return 1;

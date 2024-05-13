@@ -127,32 +127,32 @@ typedef struct lua_TValue {
 
 #define setsvalue(L,obj,x) \
   { TValue *i_o=(obj); \
-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TSTRING; \
+    i_o->value.gc=lua_cast(GCObject *, (x)); i_o->tt=LUA_TSTRING; \
     checkliveness(G(L),i_o); }
 
 #define setuvalue(L,obj,x) \
   { TValue *i_o=(obj); \
-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TUSERDATA; \
+    i_o->value.gc=lua_cast(GCObject *, (x)); i_o->tt=LUA_TUSERDATA; \
     checkliveness(G(L),i_o); }
 
 #define setthvalue(L,obj,x) \
   { TValue *i_o=(obj); \
-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TTHREAD; \
+    i_o->value.gc=lua_cast(GCObject *, (x)); i_o->tt=LUA_TTHREAD; \
     checkliveness(G(L),i_o); }
 
 #define setclvalue(L,obj,x) \
   { TValue *i_o=(obj); \
-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TFUNCTION; \
+    i_o->value.gc=lua_cast(GCObject *, (x)); i_o->tt=LUA_TFUNCTION; \
     checkliveness(G(L),i_o); }
 
 #define sethvalue(L,obj,x) \
   { TValue *i_o=(obj); \
-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TTABLE; \
+    i_o->value.gc=lua_cast(GCObject *, (x)); i_o->tt=LUA_TTABLE; \
     checkliveness(G(L),i_o); }
 
 #define setptvalue(L,obj,x) \
   { TValue *i_o=(obj); \
-    i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TPROTO; \
+    i_o->value.gc=lua_cast(GCObject *, (x)); i_o->tt=LUA_TPROTO; \
     checkliveness(G(L),i_o); }
 
 
@@ -207,7 +207,7 @@ typedef union TString {
 } TString;
 
 
-#define getstr(ts)	cast(const char *, (ts) + 1)
+#define getstr(ts)	lua_cast(const char *, (ts) + 1)
 #define svalue(o)       getstr(rawtsvalue(o))
 
 
@@ -353,7 +353,7 @@ typedef struct Table {
 ** `module' operation for hashing (size is always a power of 2)
 */
 #define lmod(s,size) \
-	(check_exp((size&(size-1))==0, (cast(int, (s) & ((size)-1)))))
+	(check_exp((size&(size-1))==0, (lua_cast(int, (s) & ((size)-1)))))
 
 
 #define twoto(x)	(1<<(x))

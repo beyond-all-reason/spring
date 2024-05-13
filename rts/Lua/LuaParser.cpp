@@ -27,7 +27,7 @@
 #include "System/ScopedFPUSettings.h"
 #include "System/StringUtil.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 #include <tracy/TracyLua.hpp>
 
 LuaParser* GetLuaParser(lua_State* L) {
