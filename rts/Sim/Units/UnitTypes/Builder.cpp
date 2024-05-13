@@ -16,6 +16,7 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Scripts/CobInstance.h"
@@ -728,6 +729,20 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	TempHoldFire(-1);
 
 	buildInfo.pos = CGameHelper::Pos2BuildPos(buildInfo, true);
+
+	auto isBuildeeFloating = [](const BuildInfo& buildInfo) {
+		if (buildInfo.def->RequireMoveDef()) {
+			MoveDef* md = moveDefHandler.GetMoveDefByPathType(buildInfo.def->pathType);
+			return (md->FloatOnWater());
+		} else {
+			return (buildInfo.def->floatOnWater);
+		}
+	};
+
+	// Units that cannot be underwater need their build checks kept above water or else collision detections will
+	// produce the wrong results.
+	if (isBuildeeFloating(buildInfo))
+		buildInfo.pos.y = (buildInfo.pos.y < 0.f) ? 0.f : buildInfo.pos.y;
 
 	// Pass -1 as allyteam to behave like we have maphack.
 	// This is needed to prevent building on top of cloaked stuff.
