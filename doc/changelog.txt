@@ -205,6 +205,9 @@ Sim:
  - Moving system will not try to get to goal if the unit has reached the last waypoint, and the pathing
    system reports that the path is incomplete. It will fail immediately rather than keep trying for A
    while before failing later.
+ - Units will consider going to next path waypoint if they collide with a unit standing on their waypoint.
+ - Fix issue where units can get stuck walking into each other if one of their paths is changed as they reached their
+   current move goal. https://github.com/beyond-all-reason/spring/issues/1469
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
