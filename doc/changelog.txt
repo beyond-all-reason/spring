@@ -208,6 +208,7 @@ Sim:
  - Units will consider going to next path waypoint if they collide with a unit standing on their waypoint.
  - Fix issue where units can get stuck walking into each other if one of their paths is changed as they reached their
    current move goal. https://github.com/beyond-all-reason/spring/issues/1469
+ - Unit target selection no longer uses a random element. https://github.com/beyond-all-reason/spring/pull/1453
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
