@@ -173,6 +173,7 @@ class CEventClient
 		virtual bool UnitFeatureCollision(const CUnit* collider, const CFeature* collidee) { return false; }
 		virtual void UnitMoved(const CUnit* unit) {}
 		virtual void UnitMoveFailed(const CUnit* unit) {}
+		virtual void UnitArrivedAtGoal(const CUnit* unit) {}
 
 		virtual void FeatureCreated(const CFeature* feature) {}
 		virtual void FeatureDestroyed(const CFeature* feature) {}

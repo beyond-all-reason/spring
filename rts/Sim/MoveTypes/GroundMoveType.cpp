@@ -913,6 +913,9 @@ void CGroundMoveType::StartMovingRaw(const float3 moveGoalPos, float moveGoalRad
 
 	currWayPointDist = 0.0f;
 	prevWayPointDist = 0.0f;
+
+	pathingArrived = false;
+	pathingFailed = false;
 }
 
 void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
@@ -965,6 +968,9 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 
 	currWayPointDist = 0.0f;
 	prevWayPointDist = 0.0f;
+
+	pathingArrived = false;
+	pathingFailed = false;
 
 	LOG_L(L_DEBUG, "[%s] starting engine for unit %i", __func__, owner->id);
 
@@ -2423,6 +2429,8 @@ void CGroundMoveType::Arrived(bool callScript)
 	RECOIL_DETAILED_TRACY_ZONE;
 	// can only "arrive" if the engine is active
 	if (progressState == Active) {
+		eventHandler.UnitArrivedAtGoal(owner);
+
 		StopEngine(callScript);
 
 		if (owner->team == gu->myTeam)
@@ -2430,12 +2438,6 @@ void CGroundMoveType::Arrived(bool callScript)
 
 		// and the action is done
 		progressState = Done;
-
-		// update the position-parameter of our queue's front CMD_MOVE
-		// this is needed in case we Arrive()'ed non-directly (through
-		// colliding with another unit that happened to share our goal)
-		if (!owner->commandAI->HasMoreMoveCommands())
-			static_cast<CMobileCAI*>(owner->commandAI)->SetFrontMoveCommandPos(owner->pos);
 
 		owner->commandAI->SlowUpdate();
 
