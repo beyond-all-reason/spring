@@ -34,7 +34,7 @@ CFlameProjectile::CFlameProjectile(const ProjectileParams& params): CWeaponProje
 
 	if (weaponDef != nullptr) {
 		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
-
+		
 		drawRadius = weaponDef->size;
 		physLife = 1.0f / weaponDef->duration;
 	}
