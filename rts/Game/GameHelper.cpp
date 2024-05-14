@@ -761,7 +761,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 				}
 
 				if (targetLOSState & LOS_PREVLOS) {
-					targetPriority /= (damageMul * targetUnit->power * (0.7f + gsRNG.NextFloat() * 0.6f));
+					targetPriority /= (damageMul * targetUnit->power);
 					targetPriority *= tgtPriorityMults[((targetUnit->category & weapon->badTargetCategory) != 0) * 2];
 					targetPriority *= tgtPriorityMults[(targetUnit->IsCrashing()) * 3];
 					targetPriority *= tgtPriorityMults[(targetUnit == lastAttacker) * 4];

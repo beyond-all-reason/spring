@@ -427,13 +427,7 @@ static float3 CalcSpeedVectorExclGravity(const CUnit* owner, const CGroundMoveTy
 	// need to calculate hSpeedScale from it (not from
 	// currentSpeed) directly
 
-	// When currentSpeed is <0.1, then delta gets dropped to 0.f, but
-	// that means units will be left drifting very slowly. Catch that
-	// here and force the velocity to zero. The slightly higher check
-	// is because speed.w and currentSpeed are calculated differently
-	// and that causes  a slight variation that we need to compensate
-	// for.
-	if ((hAcc == 0.f) && (math::fabs(owner->speed.w) <= 0.013f))
+	if (mt->GetWantedSpeed() == 0.f && math::fabs(owner->speed.w) - hAcc <= 0.01f)
 		return ZeroVector;
 	else {
 		float vel = owner->speed.w;
@@ -743,7 +737,6 @@ void CGroundMoveType::UpdateOwnerAccelAndHeading()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (owner->IsStunned() || owner->beingBuilt) {
-		// ChangeSpeed(0.0f, false);
 		setHeading = 3;
 		return;
 	}
@@ -1035,6 +1028,7 @@ void CGroundMoveType::UpdatePreCollisionsMt() {
 				earlyNextWayPoint = pathManager->NextWayPoint(owner, nextPathId, 0, earlyCurrWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 				lastWaypoint = false;
 				wantRepath = false;
+				atEndOfPath = false;
 			}
 
 			// can't delete the path in an MT section
@@ -1072,19 +1066,10 @@ bool CGroundMoveType::FollowPath(int thread)
 	bool wantReverse = false;
 
 	if (WantToStop()) {
-		// currWayPoint.y = -1.0f;
-		// nextWayPoint.y = -1.0f;
 		earlyCurrWayPoint.y = -1.0f;
 		earlyNextWayPoint.y = -1.0f;
-
-		// SetMainHeading();
-		// ChangeSpeed(0.0f, false);
 		setHeading = 2;
 	} else {
-		// ASSERT_SYNCED(currWayPoint);
-		// ASSERT_SYNCED(nextWayPoint);
-		// ASSERT_SYNCED(owner->pos);
-
 		#ifdef PATHING_DEBUG
 		if (DEBUG_DRAWING_ENABLED) {
 			bool printMoveInfo = (selectedUnitsHandler.selectedUnits.size() == 1)
@@ -1211,8 +1196,6 @@ bool CGroundMoveType::FollowPath(int thread)
 
 		const float3& modWantedDir = lastAvoidanceDir;
 
-		// ChangeHeading(GetHeadingFromVector(modWantedDir.x, modWantedDir.z));
-		// ChangeSpeed(maxWantedSpeed, wantReverse);
 		setHeading = 1;
 		setHeadingDir = GetHeadingFromVector(modWantedDir.x, modWantedDir.z);
 
@@ -1257,10 +1240,9 @@ void CGroundMoveType::SetWaypointDir(const float3& cwp, const float3 &opos) {
 void CGroundMoveType::ChangeSpeed(float newWantedSpeed, bool wantReverse, bool fpsMode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// round low speeds to zero
+	// shortcut to specify acceleration to bring to a stop.
 	if ((wantedSpeed = newWantedSpeed) <= 0.0f && currentSpeed < 0.01f) {
-		currentSpeed = 0.0f;
-		deltaSpeed = 0.0f;
+		deltaSpeed = -currentSpeed;
 		return;
 	}
 
@@ -2490,6 +2472,8 @@ void CGroundMoveType::HandleObjectCollisions()
 	CUnit* collider = owner;
 	auto curThread = ThreadPool::GetThreadNum();
 
+	resultantForces = ZeroVector;
+
 	// handle collisions for even-numbered objects on even-numbered frames and vv.
 	// (temporal resolution is still high enough to not compromise accuracy much?)
 	if (collider->beingBuilt)
@@ -2498,7 +2482,6 @@ void CGroundMoveType::HandleObjectCollisions()
 	const UnitDef* colliderUD = collider->unitDef;
 	const MoveDef* colliderMD = collider->moveDef;
 
-	resultantForces *= 0.f;
 	forceFromMovingCollidees *= 0.f;
 	forceFromStaticCollidees *= 0.f;
 
