@@ -1841,6 +1841,26 @@ void CLuaHandle::UnitMoveFailed(const CUnit* unit)
 }
 
 
+/***
+ *
+ * @function UnitArrivedAtGoal
+ *
+ * @number unitID
+ * @number unitDefID
+ * @number unitTeam
+ */
+void CLuaHandle::UnitArrivedAtGoal(const CUnit* unit)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	UnitCallIn(cmdStr, unit);
+}
+
+
 /*** Called just before a unit is invalid, after it finishes its death animation.
  *
  * @function RenderUnitDestroyed
