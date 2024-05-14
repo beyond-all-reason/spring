@@ -62,7 +62,7 @@ void CFlameProjectile::Update()
 	}
 
 	UpdateInterception();
-	drawRadius = radius + weaponDef->sizeGrowth;
+	drawRadius += weaponDef->sizeGrowth;
 
 	curTime = std::min(curTime + invttl, 1.0f);
 	checkCol &= (curTime <= physLife);
