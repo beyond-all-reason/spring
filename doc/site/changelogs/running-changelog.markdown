@@ -19,11 +19,15 @@ These are the entries which may require special attention when migrating:
 Note the format change from BMP to TGA.
 You might want to check your `gamedata/resources.lua` to see if you're referencing the old default scars (either explicitly or e.g. autogenerating from the `bitmaps/scars` folder).
 You might also want to produce more to counteract the reduced variety.
+* default targeting priority for typed units no longer has a ±30% random component. Use `gadget:AllowWeaponTarget` to get back the previous behaviour.
+* engine line-move formations now use unit type power rather than a function of cost (60M+E) to distribute units around the formation. Power defaults to 60M+E and all known games use Lua customformations.
+* burst weapons now respect firing angle restrictions. See the burst section below.
 
 # Features
 * The `select` action now composes `IdMatches` filters as *OR* statements see [The select command]({{ site.baseurl }}{% link articles/select-command.markdown %}#idmatches_string) for further reference.
 * added a new optional boolean parameter to `Spring.GetUnitHeading`, default false. If true, the value returned is in radians instead of the TA 16-bit angular unit.
 * added a new callin, `GameFramePost(number frame)`. This is the last callin in a sim frame (regular `GameFrame` is the first).
+* added a new callin, `UnitArrivedAtGoal(unitID, unitDefID, teamID)`, for when a unit arrives at its movement goal (incl. raw move).
 Use for batching events that happened during the frame to be sent to unsynced for use in draw frames before the next sim frame.
 * added `Spring.GetTeamMaxUnits(teamID) -> number maxUnits, number? currentUnits`. The second value is only returned if you have read access to that team (max is public).
 There is currently no corresponding Set.
@@ -49,6 +53,13 @@ but you can look up the default shader implementation ([fragment](https://github
 * ground decals may no longer work on potato hardware.
 * known issue: tracks/footprints no longer maintain the texture offset on stutter-step.
 * known issue: building decals may not render correctly underwater.
+
+### Bursts and firing angles
+* burst weapons now respect firing cones coming from `mainDir` and `maxAngleDif`
+* burst weapons now respect firing cones coming from `turret = false` and `tolerance`
+* added a new weapon (not weapon def, the weapon table in a unit def) boolean tag, `stopBurstWhenOutOfArc`. Default false
+* if false, the weapon will just ignore attempts to aim outside the cone and keep firing in whatever direction it was pointing at
+* if true, the weapon will fail to produce shots aimed at targets out of the cone, wasting them. Aiming in the cone again will resume producing projectiles (but not "refund" the wasted ones, the overall timing of the burst is kept). The `EndBurst` script event still runs even if the last shot was wasted, but other shot events aren't.
 
 ### More interfaces in `defs.lua`
 The following functions are now available in the `defs.lua` phase:
@@ -99,3 +110,5 @@ Use for example to unattach units from the grounds and trigger skidding.
 * fixed `VFS` functions that deal with file paths being exceedingly slow.
 * fixed `Spring.GetTeamUnitsByDefs` revealing much more information than it should.
 * `Spring.GetUnitWeaponState(unitID, "burstRate")` now correctly returns fractional values (was only full integers before).
+* fixed camera rotation via the middle mouse button canceling unit tracking mode.
+* fixed timed out clients sometimes managing to send packets and claim a desync.
