@@ -223,6 +223,15 @@ Sim:
    https://github.com/beyond-all-reason/spring/pull/1441
  - Fixed the bugger-off checks may fail to get rid of units if they stand on the edge of an area of a new long building.
    https://github.com/beyond-all-reason/spring/issues/1428
+ - Fixed: units can sometimes get left behind at a "gather and wait" point.
+   https://github.com/beyond-all-reason/Beyond-All-Reason/issues/2799
+ - Fixed: provide a UnitArrivedAtGoal event so that the game can tell that the engine believes the move is complete to
+   help avoid custom move code breakage. https://github.com/beyond-all-reason/spring/issues/1459
+ - Fixed: burst-fire weapons could hit new targets outside their intended aim angles mid-burst.
+   https://github.com/beyond-all-reason/spring/issues/1470
+ - Fixed: units pathing using HAPFS could can caught in an infinite looping cycle, never reaching their move goal.
+   https://github.com/beyond-all-reason/spring/pull/1444
+
 
 Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
