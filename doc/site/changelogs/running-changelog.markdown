@@ -55,11 +55,11 @@ but you can look up the default shader implementation ([fragment](https://github
 * known issue: building decals may not render correctly underwater.
 
 ### Bursts and firing angles
-* burst weapons now respect firing cones coming from `mainDir` and `maxAngleDif`
-* burst weapons now respect firing cones coming from `turret = false` and `tolerance`
+* ongoing bursts (from 2nd shot onwards) now respect firing cones coming from `mainDir` + `maxAngleDif`, or from `turret = false` + `tolerance`
+* ongoing bursts also respect the cone coming from `fireTolerance`
 * added a new weapon (not weapon def, the weapon table in a unit def) boolean tag, `stopBurstWhenOutOfArc`. Default false
 * if false, the weapon will just ignore attempts to aim outside the cone and keep firing in whatever direction it was pointing at
-* if true, the weapon will fail to produce shots aimed at targets out of the cone, wasting them. Aiming in the cone again will resume producing projectiles (but not "refund" the wasted ones, the overall timing of the burst is kept). The `EndBurst` script event still runs even if the last shot was wasted, but other shot events aren't.
+* if true, the weapon will fail to produce shots aimed at targets out of the cone, wasting them. Aiming in the cone again will resume producing projectiles (but not "refund" the wasted ones, the overall timing of the burst is kept). The `EndBurst` script event still runs even if the ending shot was wasted, but per-shot events don't run for wasted shots.
 
 ### More interfaces in `defs.lua`
 The following functions are now available in the `defs.lua` phase:
