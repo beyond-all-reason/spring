@@ -538,13 +538,6 @@ void CWeapon::UpdateSalvo()
 			const float3 currentTargetDir = (currentTargetPos - aimFromPos).SafeNormalize2D();
 			const float3 simpleWeaponDir = float3(weaponDir).SafeNormalize2D();
 
-			LOG("%s: [%d] weaponDef->maxFireAngle = %f, salvoLeft =%d", __func__, owner->id, weaponDef->maxFireAngle, salvoLeft);
-			LOG("%s: [%d] simpleWeaponDir (%f,%f,%f) currentTargetDir (%f,%f,%f) simpleWeaponDir.dot2D(currentTargetDir) = %f"
-					, __func__, owner->id
-					, simpleWeaponDir.x, simpleWeaponDir.y, simpleWeaponDir.z
-					, currentTargetDir.x, currentTargetDir.y, currentTargetDir.z
-					, simpleWeaponDir.dot2D(currentTargetDir));
-
 			if (simpleWeaponDir.dot2D(currentTargetDir) < weaponDef->maxFireAngle)
 				targetInArc = false;
 		}
