@@ -109,7 +109,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(weaponAimAdjustPriority),
 	CR_MEMBER(fastAutoRetargeting),
 	CR_MEMBER(fastQueryPointUpdate),
-	CR_MEMBER(stopBurstWhenOutOfArc)
+	CR_MEMBER(burstControlWhenOutOfArc)
 ))
 
 
@@ -189,7 +189,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	weaponAimAdjustPriority(1.f),
 	fastAutoRetargeting(false),
 	fastQueryPointUpdate(false),
-	stopBurstWhenOutOfArc(false)
+	burstControlWhenOutOfArc(0)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -531,36 +531,46 @@ void CWeapon::UpdateSalvo()
 	salvoLeft--;
 	nextSalvo = gs->frameNum + salvoDelay;
 
-	bool haveTarget = HaveTarget();
-	bool targetInArc = haveTarget;
-	if (targetInArc && weaponDef->maxFireAngle > -1.0f) {
-		const float3 currentTargetDir = (currentTargetPos - aimFromPos).SafeNormalize2D();
-		const float3 simpleWeaponDir = float3(weaponDir).SafeNormalize2D();
-		if (simpleWeaponDir.dot2D(currentTargetDir) < weaponDef->maxFireAngle)
-			targetInArc = false;
-	}
+	if (burstControlWhenOutOfArc) {
+		bool haveTarget = HaveTarget();
+		bool targetInArc = haveTarget;
+		if (targetInArc && weaponDef->maxFireAngle > -1.0f) {
+			const float3 currentTargetDir = (currentTargetPos - aimFromPos).SafeNormalize2D();
+			const float3 simpleWeaponDir = float3(weaponDir).SafeNormalize2D();
 
-	if (!targetInArc || !CheckAimingAngle()) {
-		if (stopBurstWhenOutOfArc) {
-			// Hold fire, but continue to aim towards the target.
-			UpdateWeaponPieces(false); // calls script->QueryWeapon()
-			UpdateWeaponVectors();
+			LOG("%s: [%d] weaponDef->maxFireAngle = %f, salvoLeft =%d", __func__, owner->id, weaponDef->maxFireAngle, salvoLeft);
+			LOG("%s: [%d] simpleWeaponDir (%f,%f,%f) currentTargetDir (%f,%f,%f) simpleWeaponDir.dot2D(currentTargetDir) = %f"
+					, __func__, owner->id
+					, simpleWeaponDir.x, simpleWeaponDir.y, simpleWeaponDir.z
+					, currentTargetDir.x, currentTargetDir.y, currentTargetDir.z
+					, simpleWeaponDir.dot2D(currentTargetDir));
 
-			// Special case needed here if the last shot of the salvo has been cancelled.
-			if (salvoLeft == 0) {
-				owner->script->EndBurst(weaponNum);
+			if (simpleWeaponDir.dot2D(currentTargetDir) < weaponDef->maxFireAngle)
+				targetInArc = false;
+		}
 
-				const bool searchForNewTarget = (currentTarget == owner->curTarget);
-				owner->commandAI->WeaponFired(this, searchForNewTarget, false);
+		if (!targetInArc || !CheckAimingAngle()) {
+			if (burstControlWhenOutOfArc == UnitDefWeapon::BURST_CONTROL_OUT_OF_ARC_HOLD) {
+				// Hold fire, but continue to aim towards the target.
+				UpdateWeaponPieces(false); // calls script->QueryWeapon()
+				UpdateWeaponVectors();
+
+				// Special case needed here if the last shot of the salvo has been cancelled.
+				if (salvoLeft == 0) {
+					owner->script->EndBurst(weaponNum);
+
+					const bool searchForNewTarget = (currentTarget == owner->curTarget);
+					owner->commandAI->WeaponFired(this, searchForNewTarget, false);
+				}
+				return;
+			} else {
+				// Fire indiscriminately wherever the the weapon is pointing.
+				// currentTargetPos gets restored every frame in Update(), so we can change it here without breaking aiming
+				// when the target is back in arc. If we don't have a target, then the currentTargetPos will be pointing at
+				// the last target point and so can be left.
+				if (haveTarget)
+					currentTargetPos = aimFromPos + (weaponDir * range);
 			}
-			return;
-		} else {
-			// Fire indiscriminately wherever the the weapon is pointing.
-			// currentTargetPos gets restored every frame in Update(), so we can change it here without breaking aiming
-			// when the target is back in arc. If we don't have a target, then the currentTargetPos will be pointing at
-			// the last target point and so can be left.
-			if (haveTarget)
-				currentTargetPos = aimFromPos + (weaponDir * range);
 		}
 	}
 

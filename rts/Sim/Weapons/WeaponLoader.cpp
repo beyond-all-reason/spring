@@ -188,6 +188,6 @@ void CWeaponLoader::InitWeapon(CUnit* owner, CWeapon* weapon, const UnitDefWeapo
 	weapon->weaponAimAdjustPriority = defWeapon->weaponAimAdjustPriority;
 	weapon->fastAutoRetargeting = defWeapon->fastAutoRetargeting;
 	weapon->fastQueryPointUpdate = defWeapon->fastQueryPointUpdate;
-	weapon->stopBurstWhenOutOfArc = defWeapon->stopBurstWhenOutOfArc;
+	weapon->burstControlWhenOutOfArc = defWeapon->burstControlWhenOutOfArc;
 }
 
