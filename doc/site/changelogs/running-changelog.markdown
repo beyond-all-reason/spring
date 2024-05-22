@@ -21,7 +21,7 @@ You might want to check your `gamedata/resources.lua` to see if you're referenci
 You might also want to produce more to counteract the reduced variety.
 * default targeting priority for typed units no longer has a ±30% random component. Use `gadget:AllowWeaponTarget` to get back the previous behaviour.
 * engine line-move formations now use unit type power rather than a function of cost (60M+E) to distribute units around the formation. Power defaults to 60M+E and all known games use Lua customformations.
-* burst weapons now respect firing angle restrictions. See the burst section below.
+* burst weapons can now be made to respect firing angle restrictions. See the burst section below.
 
 # Features
 * The `select` action now composes `IdMatches` filters as *OR* statements see [The select command]({{ site.baseurl }}{% link articles/select-command.markdown %}#idmatches_string) for further reference.
@@ -55,11 +55,10 @@ but you can look up the default shader implementation ([fragment](https://github
 * known issue: building decals may not render correctly underwater.
 
 ### Bursts and firing angles
-* ongoing bursts (from 2nd shot onwards) now respect firing cones coming from `mainDir` + `maxAngleDif`, or from `turret = false` + `tolerance`
-* ongoing bursts also respect the cone coming from `fireTolerance`
-* added a new weapon (not weapon def, the weapon table in a unit def) boolean tag, `stopBurstWhenOutOfArc`. Default false
-* if false, the weapon will just ignore attempts to aim outside the cone and keep firing in whatever direction it was pointing at
-* if true, the weapon will fail to produce shots aimed at targets out of the cone, wasting them. Aiming in the cone again will resume producing projectiles (but not "refund" the wasted ones, the overall timing of the burst is kept). The `EndBurst` script event still runs even if the ending shot was wasted, but per-shot events don't run for wasted shots.
+* added a new weapon (not weapon def, the weapon table in a unit def) numerical tag, `burstControlWhenOutOfArc`. By setting it to 1 or 2, ongoing bursts (from 2nd shot onwards) can now be made to respect firing cones coming from `mainDir` + `maxAngleDif` (or equivalently from `turret = false` + `tolerance`), and also the other cone from `fireTolerance` compared to the aim-from piece direction.
+* if 0, further shots don't respect the cones. This is the default and the previous behaviour.
+* if 1, the weapon will fail to produce shots aimed at targets out of the cone, wasting them. Aiming in the cone again will resume producing projectiles (but not "refund" the wasted ones, the overall timing of the burst is kept). The `EndBurst` script event still runs even if the ending shot was wasted, but per-shot events don't run for wasted shots.
+* if 2, the weapon will just ignore attempts to aim outside the cone and keep firing in whatever direction its aim-from piece was pointing at.
 
 ### More interfaces in `defs.lua`
 The following functions are now available in the `defs.lua` phase:
