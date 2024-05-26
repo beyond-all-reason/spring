@@ -3949,6 +3949,46 @@ void CLuaHandle::InitLuaPandaDebug(lua_State* L)
 	}
 }
 
+
+int CLuaHandle::StartPandaDebugger(lua_State* L, const std::string& ip = "127.0.0.1", int port = 8818, bool breakImmediately = false)
+{
+	lua_getglobal(L, "LuaPanda");
+	lua_pushstring(L, "start");
+	lua_gettable(L,1);
+
+	lua_pushsstring(L,ip);
+	lua_pushinteger(L,port);
+
+	auto res = lua_pcall(L,2,1,0);
+	if (res != 0)
+	{
+		LOG_L(L_ERROR, "Error start panda debugger %s", lua_tostring(L, -1));
+		lua_pop(L, -1);//err
+		lua_pop(L, -1);//LuaPanda
+		return -1;
+	}
+	lua_pop(L, -1);//pop res
+
+	if (!breakImmediately)
+	{
+		lua_pop(L, -1);//pop LuaPanda
+		return 0;
+	}
+	lua_pushstring(L, "BP");
+	lua_gettable(L, 1);
+	res = lua_pcall(L, 0, 1, 0);
+	if (res != 0)
+	{
+		LOG_L(L_ERROR, "Error panda break failed %s", lua_tostring(L, -1));
+		lua_pop(L, -1);//err
+		lua_pop(L, -1);//LuaPanda
+		return -1;
+	}
+	lua_pop(L, -1);//pop res
+	lua_pop(L, -1);//LuaPanda
+	return 0;
+}
+
 #endif
 
 
