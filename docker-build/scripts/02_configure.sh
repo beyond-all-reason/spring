@@ -49,4 +49,5 @@ cmake \
     -DAI_EXCLUDE_REGEX="^CppTestAI$" \
     "${MYCMAKEFLAGS}" \
     "${EXTRA_CMAKE_ARGS[@]}" \
-    "${SPRING_DIR}"
+    "${SPRING_DIR}"           \
+    -DENABLE_LUA_PANDA=ON

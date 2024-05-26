@@ -58,6 +58,7 @@ CLuaMenu::CLuaMenu()
 	queuedAction = ACTION_NOVALUE;
 
 	const bool luaSocketEnabled = configHandler->GetBool("LuaSocketEnabled");
+	const bool luaPandaDebug = configHandler->GetBool("LuaPandaDebug");
 	const std::string file = "LuaMenu/main.lua";
 	std::string code = LoadFile(file);
 
@@ -77,10 +78,15 @@ CLuaMenu::CLuaMenu()
 	LUA_OPEN_LIB(L, luaopen_table);
 	LUA_OPEN_LIB(L, luaopen_string);
 	LUA_OPEN_LIB(L, luaopen_debug);
-
+	
 	//initialize luasocket
-	if (luaSocketEnabled)
+	if (luaSocketEnabled || luaPandaDebug)
 		InitLuaSocket(L);
+
+#ifdef ENABLE_LUA_PANDA
+	if (luaPandaDebug)
+		InitLuaPandaDebug(L);
+#endif
 
 	// setup the lua IO access check functions
 	lua_set_fopen(L, LuaIO::fopen);

@@ -96,6 +96,9 @@ endif(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 if (ENABLE_STREFLOP)
 	list(APPEND engineCommonLibraries streflop)
 endif ()
+if (ENABLE_LUA_PANDA)
+	list(APPEND engineCommonLibraries luaPanda)
+endif ()
 
 include_directories(${ZLIB_INCLUDE_DIR})
 

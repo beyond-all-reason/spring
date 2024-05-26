@@ -318,6 +318,9 @@ class CLuaHandle : public CEventClient
 		void RunDrawCallIn(const LuaHashString& hs);
 
 		void DrawObjectsLua(std::initializer_list<bool> bools, const char* func);
+		#ifdef ENABLE_LUA_PANDA
+		void InitLuaPandaDebug(lua_State* L);
+		#endif
 	protected:
 		bool userMode = false;
 		bool killMe = false; // set for handles that fail to RunCallIn

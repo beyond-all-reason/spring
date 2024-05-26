@@ -56,6 +56,12 @@
 #include <algorithm>
 #include <string>
 
+#ifdef ENABLE_LUA_PANDA
+#include "lib/LuaPanda/Debugger/debugger_lib/libpdebug.h"
+#include "System/FileSystem/FileHandler.h"
+#endif // ENABLE_LUA_PANDA
+
+
 
 CONFIG(float, LuaGarbageCollectionMemLoadMult).defaultValue(1.33f).minimumValue(1.0f).maximumValue(100.0f).description("How much the amount of Lua memory in use increases the rate of garbage collection.");
 CONFIG(float, LuaGarbageCollectionRunTimeMult).defaultValue(5.0f).minimumValue(1.0f).description("How many milliseconds the garbage collected can run for in each GC cycle");
@@ -3923,6 +3929,27 @@ int CLuaHandle::CallOutUpdateCallIn(lua_State* L)
 	lh->UpdateCallIn(L, name);
 	return 0;
 }
+
+
+#ifdef ENABLE_LUA_PANDA
+
+void CLuaHandle::InitLuaPandaDebug(lua_State* L)
+{
+	pdebug_init(L);
+
+	std::string code;
+	std::string filename = "LuaPanda.lua";
+	CFileHandler f(filename);
+
+	if (f.LoadStringData(code)) {
+		LoadCode(L, std::move(code), filename);
+	}
+	else {
+		LOG_L(L_ERROR, "Error loading %s", filename.c_str());
+	}
+}
+
+#endif
 
 
 /******************************************************************************/

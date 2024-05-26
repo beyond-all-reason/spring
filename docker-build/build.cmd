@@ -1,3 +1,4 @@
+@ECHO OFF
 
 for %%d in (%~dp0..) do set ENGINE_GIT_DIR=%%~fd
 
@@ -12,5 +13,5 @@ docker run -it --rm ^
             -v %WINDOWS_LIBS_DIR%:/mingwlibs64 ^
             -v %CCACHE_DIR%:/ccache ^
             -v %DOCKER_SCRIPTS_DIR%:/scripts ^
-            bar-spring build -l %*
+            ey1274704958/bar-spring build -l %*
 

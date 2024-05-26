@@ -12,6 +12,10 @@ if (ENABLE_STREFLOP)
 ADD_SUBDIRECTORY(streflop)
 endif ()
 
+if (ENABLE_LUA_PANDA)
+add_subdirectory(LuaPanda)
+endif()
+
 SET(GFLAGS_BUILD_SHARED_LIBS          FALSE)
 SET(GFLAGS_BUILD_STATIC_LIBS          TRUE)
 SET(GFLAGS_BUILD_gflags_LIB           FALSE)
