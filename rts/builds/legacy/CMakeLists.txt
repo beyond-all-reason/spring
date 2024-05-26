@@ -62,8 +62,8 @@ list(APPEND engineLibraries ${engineCommonLibraries})
 list(APPEND engineLibraries ${SPRING_SIM_LIBRARIES})
 list(APPEND engineLibraries engineSim)
 list(APPEND engineLibraries pr-downloader)
-list(APPEND engineLibraries RmlCore)
-list(APPEND engineLibraries RmlDebugger)
+list(APPEND engineLibraries RmlUi::Core)
+list(APPEND engineLibraries RmlUi::Debugger)
 list(APPEND engineLibraries lunasvg)
 
 ### Assemble external incude dirs
