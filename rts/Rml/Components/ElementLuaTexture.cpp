@@ -42,24 +42,28 @@
 
 #include "RmlUi/Core/ComputedValues.h"
 #include "RmlUi/Core/ElementUtilities.h"
-#include "RmlUi/Core/GeometryUtilities.h"
+#include "RmlUi/Core/MeshUtilities.h"
 #include "RmlUi/Core/PropertyIdSet.h"
-#include "RmlUi/Source/Core/TextureResource.h"
+#include "RmlUi/Source/Core/TextureDatabase.h"
 
 namespace RmlGui
 {
-ElementLuaTexture::ElementLuaTexture(const Rml::String& tag)
-	: Element(tag)
-	, dimensions(-1, -1)
-	, rect_source(RectSource::None)
+ElementLuaTexture::ElementLuaTexture(const Rml::String& tag) :
+	Element(tag),
+	dimensions(-1, -1), rect_source(RectSource::None), luaTexture()
 {
 	dimensions_scale = 1.0f;
 	geometry_dirty = false;
 	texture_dirty = true;
-	luaTextureHandle = 0;
 }
 
 ElementLuaTexture::~ElementLuaTexture() = default;
+
+Rml::Vector2i ElementLuaTexture::GetTextureDimensions()
+{
+	auto [x, y, _] = luaTexture.GetSize();
+	return {x, y};
+}
 
 bool ElementLuaTexture::GetIntrinsicDimensions(Rml::Vector2f& _dimensions, float& _ratio)
 {
@@ -67,11 +71,13 @@ bool ElementLuaTexture::GetIntrinsicDimensions(Rml::Vector2f& _dimensions, float
 	if (texture_dirty)
 		LoadTexture();
 
+	auto texDimensions = GetTextureDimensions();
+	
 	// Calculate the x dimension.
 	if (HasAttribute("width"))
 		dimensions.x = GetAttribute<float>("width", -1);
 	else if (rect_source == RectSource::None)
-		dimensions.x = (float)texture.GetDimensions().x;
+		dimensions.x = (float) texDimensions.x;
 	else
 		dimensions.x = rect.Width();
 
@@ -79,7 +85,7 @@ bool ElementLuaTexture::GetIntrinsicDimensions(Rml::Vector2f& _dimensions, float
 	if (HasAttribute("height"))
 		dimensions.y = GetAttribute<float>("height", -1);
 	else if (rect_source == RectSource::None)
-		dimensions.y = (float)texture.GetDimensions().y;
+		dimensions.y = (float) texDimensions.y;
 	else
 		dimensions.y = rect.Height();
 
@@ -100,7 +106,7 @@ void ElementLuaTexture::OnRender()
 	if (geometry_dirty)
 		GenerateGeometry();
 
-	glBindTexture(GL_TEXTURE_2D, luaTextureHandle);
+	glBindTexture(GL_TEXTURE_2D, luaTexture.GetTextureID());
 	// Render the geometry beginning at this element's content region.
 	geometry.Render(GetAbsoluteOffset(Rml::BoxArea::Content).Round());
 }
@@ -194,13 +200,13 @@ void ElementLuaTexture::OnDpRatioChange()
 void ElementLuaTexture::GenerateGeometry()
 {
 	// Release the old geometry before specifying the new vertices.
-	geometry.Release(true);
+	Rml::Mesh mesh = geometry.Release(Rml::Geometry::ReleaseMode::ClearMesh);
 
 	// Generate the texture coordinates.
 	Rml::Vector2f tex_coords[2];
 	if (rect_source != RectSource::None) {
 		const auto texture_dimensions =
-			Rml::Vector2f(Rml::Math::Max(texture.GetDimensions(), Rml::Vector2i(1)));
+			Rml::Vector2f(Rml::Math::Max(GetTextureDimensions(), Rml::Vector2i(1)));
 		tex_coords[0] = rect.TopLeft() / texture_dimensions;
 		tex_coords[1] = rect.BottomRight() / texture_dimensions;
 	} else {
@@ -211,8 +217,7 @@ void ElementLuaTexture::GenerateGeometry()
 	const Rml::ComputedValues& computed = GetComputedValues();
 
 	float opacity = computed.opacity();
-	Rml::Colourb quad_colour = computed.image_color();
-	quad_colour.alpha = (Rml::byte)(opacity * (float)quad_colour.alpha);
+	Rml::ColourbPremultiplied quad_colour = computed.image_color().ToPremultiplied(opacity);
 
 	Rml::Vector2f quad_size = GetBox().GetSize(Rml::BoxArea::Content).Round();
 
@@ -229,10 +234,14 @@ void ElementLuaTexture::GenerateGeometry()
 			computed.border_bottom_right_radius(),
 		};
 
-		Rml::GeometryUtilities::GenerateBackgroundBorder(&geometry, GetBox(), Rml::Vector2f(), radii, quad_colour);
+		const Rml::ColourbPremultiplied clear_colors[4] = {{0, 0},
+														   {0, 0},
+														   {0, 0},
+														   {0, 0}};
+		Rml::MeshUtilities::GenerateBackgroundBorder(mesh, GetBox(), Rml::Vector2f(), radii, quad_colour, clear_colors);
 
 		// GenerateBackgroundBorder does *not* set UV coords, so we must do that ourselves.
-		Rml::Vector<Rml::Vertex>& vertices = geometry.GetVertices();
+		Rml::Vector<Rml::Vertex>& vertices = mesh.vertices;
 
 		// Map the vertex positions to tex_coord positions
 		std::ranges::for_each(vertices, [&quad_size, &tex_coords](Rml::Vertex& v) {
@@ -244,14 +253,8 @@ void ElementLuaTexture::GenerateGeometry()
 		});
 
 	} else {
-		Rml::Vector<Rml::Vertex>& vertices = geometry.GetVertices();
-		Rml::Vector<int>& indices = geometry.GetIndices();
-
-		vertices.resize(4);
-		indices.resize(6);
-
-		Rml::GeometryUtilities::GenerateQuad(
-			&vertices[0], &indices[0], Rml::Vector2f(0, 0), quad_size,
+		Rml::MeshUtilities::GenerateQuad(
+			mesh, Rml::Vector2f(0, 0), quad_size,
 			quad_colour, tex_coords[0], tex_coords[1]
 		);
 	}
@@ -263,47 +266,14 @@ bool ElementLuaTexture::LoadTexture()
 {
 	texture_dirty = false;
 	geometry_dirty = true;
-	dimensions_scale = 1.0f;
-
-	const float dp_ratio = Rml::ElementUtilities::GetDensityIndependentPixelRatio(this);
+	dimensions_scale = Rml::ElementUtilities::GetDensityIndependentPixelRatio(this);
 
 	const auto source_name = GetAttribute<Rml::String>("src", "");
 	if (source_name.empty()) {
-		texture.Set("");
 		rect_source = RectSource::None;
-		return false;
 	}
 
-	const Rml::TextureCallback callback = //
-		[this](const auto _renderInterface, const Rml::String& name, Rml::TextureHandle& out_handle,
-	           Rml::Vector2i& out_dimensions) mutable -> bool {
-
-		LuaMatTexture texUnit;
-		if (!LuaOpenGLUtils::ParseTextureImage(RmlGui::GetLuaState(), texUnit, name)) {
-			luaTextureHandle = 0;
-			return false;
-		}
-
-		// Don't give Rml handles to external textures
-		out_handle = RenderInterface_GL3_Recoil::TextureEnableWithoutBinding;
-		luaTextureHandle = texUnit.GetTextureID();
-
-		const auto [width, height, _z] = texUnit.GetSize();
-		out_dimensions.x = width;
-		out_dimensions.y = height;
-		geometry_dirty = true;
-
-		return true;
-	};
-
-	texture.Set(source_name, callback);
-
-	dimensions_scale = dp_ratio;
-
-	// Set the texture onto our geometry object.
-	geometry.SetTexture(&texture);
-
-	return true;
+	return LuaOpenGLUtils::ParseTextureImage(RmlGui::GetLuaState(), luaTexture, source_name);
 }
 
 void ElementLuaTexture::UpdateRect()
