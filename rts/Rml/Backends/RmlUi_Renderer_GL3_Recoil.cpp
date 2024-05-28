@@ -465,14 +465,10 @@ private:
 };
 
 using Programs = EnumArray<Shader::IProgramObject*, ProgramId>;
-using VertShaders = EnumArray<Shader::IShaderObject*, VertShaderId>;
-using FragShaders = EnumArray<Shader::IShaderObject*, FragShaderId>;
 
 struct ProgramData
 {
 	Programs programs;
-	VertShaders vert_shaders;
-	FragShaders frag_shaders;
 };
 
 struct CompiledGeometryData
@@ -639,29 +635,22 @@ static void BindTexture(const FramebufferData& fb)
 static bool CreateShaders(ProgramData& data)
 {
 	auto is_null = [](auto* ptr) { return ptr == nullptr; };
-	RMLUI_ASSERT(std::ranges::all_of(data.vert_shaders, is_null));
-	RMLUI_ASSERT(std::ranges::all_of(data.frag_shaders, is_null));
 	RMLUI_ASSERT(std::ranges::all_of(data.programs, is_null));
 
 #define sh shaderHandler
-	for (const VertShaderDefinition& def: vert_shader_definitions) {
-		data.vert_shaders[def.id] = sh->CreateShaderObject(def.code_str, "", GL_VERTEX_SHADER);
-	}
-
-	for (const FragShaderDefinition& def: frag_shader_definitions) {
-		data.frag_shaders[def.id] = sh->CreateShaderObject(def.code_str, "", GL_FRAGMENT_SHADER);
-	}
-
 	for (const ProgramDefinition& def: program_definitions) {
+		auto vert_def = vert_shader_definitions[(size_t) def.vert_shader];
+		auto frag_def = frag_shader_definitions[(size_t) def.frag_shader];
+		
 		auto program = sh->CreateProgramObject("[Rml RenderInterface]", def.name_str);
-		program->AttachShaderObject(data.vert_shaders[def.vert_shader]);
-		program->AttachShaderObject(data.frag_shaders[def.frag_shader]);
+		program->AttachShaderObject(sh->CreateShaderObject(vert_def.code_str, "", GL_VERTEX_SHADER));
+		program->AttachShaderObject(sh->CreateShaderObject(frag_def.code_str, "", GL_FRAGMENT_SHADER));
 		program->BindAttribLocations<VA_TYPE_RML_VERTEX>();
 		program->Link();
 
 		if (!program->IsValid()) {
-			const char* fmt = "RMLUI Shader '%s' compilation error: %s";
-			LOG_L(L_ERROR, fmt, program->GetName().c_str(), program->GetLog().c_str());
+			const char* fmt = "RMLUI Shader '%s' (vert: '%s' frag: '%s') compilation error: %s";
+			LOG_L(L_ERROR, fmt, program->GetName().c_str(), vert_def.name_str, frag_def.name_str, program->GetLog().c_str());
 			return false;
 		}
 
@@ -675,18 +664,6 @@ static bool CreateShaders(ProgramData& data)
 	blend_mask_prog->Disable();
 
 	return true;
-}
-
-static void DestroyShaders(const ProgramData& data)
-{
-	for (auto* program: data.programs)
-		delete program;
-
-	for (auto* shader: data.vert_shaders)
-		delete shader;
-
-	for (auto* shader: data.frag_shaders)
-		delete shader;
 }
 
 } // namespace Gfx
@@ -710,7 +687,7 @@ RenderInterface_GL3_Recoil::~RenderInterface_GL3_Recoil()
 	}
 
 	if (program_data) {
-		Gfx::DestroyShaders(*program_data);
+		shaderHandler->ReleaseProgramObjects("[Rml RenderInterface]");
 		program_data.reset();
 	}
 }
