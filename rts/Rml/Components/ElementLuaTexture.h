@@ -39,6 +39,7 @@
 #include "RmlUi/Core/Element.h"
 #include "RmlUi/Core/Geometry.h"
 #include "RmlUi/Core/Texture.h"
+#include "Lua/LuaOpenGLUtils.h"
 
 namespace RmlGui
 {
@@ -95,13 +96,8 @@ namespace RmlGui
 		// Loads the rect value from the element's attribute
 		void UpdateRect();
 
-		// The texture this element is rendering from.
-		// The Texture Handle of this should always be
-		// RenderInterface_GL3_Recoil::TextureEnableWithoutBinding (aka Rml::TextureHandle(-1))
-		Rml::Texture texture;
-
 		// Handle to the externally provided texture to be used
-		Rml::TextureHandle luaTextureHandle;
+		LuaMatTexture luaTexture;
 
 		// True if we need to refetch the texture's source from the element's attributes.
 		bool texture_dirty;
@@ -121,6 +117,8 @@ namespace RmlGui
 		// The geometry used to render this element.
 		Rml::Geometry geometry;
 		bool geometry_dirty;
+
+		Rml::Vector2i GetTextureDimensions();
 	};
 } // namespace RmlGui
 

@@ -39,19 +39,21 @@ namespace Rml::SolLua
 	using ColourfTuple = std::tuple<float, float, float, float>;
 
 	template <typename T, int A>
-	std::tuple<T,T,T,T> getRGBA(Rml::Colour<T, A>& self)
+	std::tuple<T, T, T, T> getRGBA(Rml::Colour<T, A, std::false_type::value>& self)
 	{
 		return std::tuple<T,T,T,T>(self.red, self.green, self.blue, self.alpha);
 	}
 
 	template <typename T, int A>
-	void setRGBA(Rml::Colour<T, A>& self, std::tuple<T,T,T,T> color)
+	void setRGBA(Rml::Colour<T, A, std::false_type::value>& self, std::tuple<T, T, T, T> color)
 	{
 		sol::tie(self.red, self.green, self.blue, self.alpha) = color;
 	}
 
 	void bind_color(sol::table& bindings)
 	{
+#define COLOUR_COMPONENT(Component, Type, CompT) #Component, sol::property([](Type& self) { return self.Component;}, [](Type& self, CompT value) { self.Component = value; })
+		
 		bindings.new_usertype<Rml::Colourb>("Colourb", sol::constructors<Rml::Colourb(), Rml::Colourb(Rml::byte, Rml::byte, Rml::byte), Rml::Colourb(Rml::byte, Rml::byte, Rml::byte, Rml::byte)>(),
 			// O
 			sol::meta_function::addition, &Rml::Colourb::operator+,
@@ -61,10 +63,10 @@ namespace Rml::SolLua
 			sol::meta_function::equal_to, &Rml::Colourb::operator==,
 
 			// G+S
-			"red", &Rml::Colourb::red,
-			"green", &Rml::Colourb::green,
-			"blue", &Rml::Colourb::blue,
-			"alpha", &Rml::Colourb::alpha,
+			COLOUR_COMPONENT(red, Rml::Colourb, Rml::byte),
+			COLOUR_COMPONENT(green, Rml::Colourb, Rml::byte),
+			COLOUR_COMPONENT(blue, Rml::Colourb, Rml::byte),
+			COLOUR_COMPONENT(alpha, Rml::Colourb, Rml::byte),
 			"rgba", sol::property(static_cast<ColourbTuple(*)(Rml::Colourb&)>(&getRGBA), static_cast<void(*)(Rml::Colourb&, ColourbTuple)>(&setRGBA))
 		);
 
@@ -77,12 +79,13 @@ namespace Rml::SolLua
 			sol::meta_function::equal_to, &Rml::Colourf::operator==,
 
 			// G+S
-			"red", &Rml::Colourf::red,
-			"green", &Rml::Colourf::green,
-			"blue", &Rml::Colourf::blue,
-			"alpha", &Rml::Colourf::alpha,
+			COLOUR_COMPONENT(red, Rml::Colourf, float),
+			COLOUR_COMPONENT(green, Rml::Colourf, float),
+			COLOUR_COMPONENT(blue, Rml::Colourf, float),
+			COLOUR_COMPONENT(alpha, Rml::Colourf, float),
 			"rgba", sol::property(static_cast<ColourfTuple(*)(Rml::Colourf&)>(&getRGBA), static_cast<void(*)(Rml::Colourf&, ColourfTuple)>(&setRGBA))
 		);
+#undef COLOUR_COMPONENT
 	}
 
 } // end namespace Rml::SolLua
