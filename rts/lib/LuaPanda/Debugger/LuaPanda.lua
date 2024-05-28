@@ -151,7 +151,16 @@ function this.formatPathCache() return formatPathCache; end
 local fakeBreakPointCache = {};   --其中用 路径-{行号列表} 形式保存错误命中信息
 function this.fakeBreakPointCache() return fakeBreakPointCache; end
 --5.1/5.3兼容
-if _VERSION == "Lua 5.1" then
+
+local LUA_VER = "503"
+
+if string.find(_VERSION,"Lua 5.1",1) ~= nil then
+    LUA_VER = "501"
+elseif string.find(_VERSION,"Lua 5.4",1) ~= nil then
+    LUA_VER = "504"
+end
+
+if LUA_VER == "501" then
     debugger_loadString = loadstring;
 else
     debugger_loadString = load;
@@ -528,14 +537,7 @@ function this.doctor()
                 if OSType == "Darwin" then clibExt = "/?.so;"; platform = "mac";
                 elseif OSType == "Linux" then clibExt = "/?.so;"; platform = "linux";
                 else clibExt = "/?.dll;"; platform = "win";   end
-                local lua_ver;
-                if _VERSION == "Lua 5.1" then
-                    lua_ver = "501";
-                elseif _VERSION == "Lua 5.4" then
-                    lua_ver = "504";
-                else
-                    lua_ver = "503";
-                end
+                local lua_ver = LUA_VER;
                 local x86Path = clibPath .. platform .."/x86/".. lua_ver .. clibExt;
                 local x64Path = clibPath .. platform .."/x86_64/".. lua_ver .. clibExt;
                 local armPath = clibPath .. platform .."/arm_64/".. lua_ver .. clibExt;
@@ -821,7 +823,13 @@ function this.printToConsole(str, printLevel)
     if consoleLogLevel > printLevel then
         return;
     end
-    print("[LuaPanda] ".. tostring(str));
+    local level = "all"
+    if printLevel == 1 then
+        level = "info"
+    elseif printLevel == 2 then
+        level = "error"
+    end
+    Spring.Log("LuaPanda", level, str)
 end
 
 -----------------------------------------------------------------------------
@@ -949,7 +957,7 @@ function this.reGetSock()
     sock = lua_extension and lua_extension.luasocket and lua_extension.luasocket().tcp();
     if sock == nil then
         --call normal luasocket
-       if pcall(function() sock =  require("socket.core").tcp(); end) then
+       if pcall(function() sock =  socket.tcp(); end) then
             this.printToConsole("reGetSock success");
        else
             --call custom function to get socket
@@ -1354,14 +1362,7 @@ function this.dataProcess( dataStr )
                 elseif OSType == "Linux" then clibExt = "/?.so;"; platform = "linux";
                 else clibExt = "/?.dll;"; platform = "win";   end
 
-                local lua_ver;
-                if _VERSION == "Lua 5.1" then
-                    lua_ver = "501";
-                elseif _VERSION == "Lua 5.4" then
-                    lua_ver = "504";
-                else
-                    lua_ver = "503";
-                end
+                local lua_ver = LUA_VER;
 
                 local x86Path = clibPath.. platform .."/x86/".. lua_ver .. clibExt;
                 local x64Path = clibPath.. platform .."/x86_64/".. lua_ver .. clibExt;
@@ -1988,7 +1989,7 @@ function this.BP()
         end
 
         local co, isMain = coroutine.running();
-        if _VERSION == "Lua 5.1" then
+        if LUA_VER == "501" then
             if co == nil then
                 isMain = true;
             else
@@ -2086,7 +2087,7 @@ function this.debug_hook(event, line)
     --运行中
     local info;
     local co, isMain = coroutine.running();
-    if _VERSION == "Lua 5.1" then
+    if LUA_VER == "501" then
         if co == nil then
             isMain = true;
         else
@@ -2958,7 +2959,7 @@ function this.processExp(msgTable)
             local f = debugger_loadString(expressionWithReturn) or debugger_loadString(expression);
             --判断结果，如果表达式错误会返回nil
             if type(f) == "function" then
-                if _VERSION == "Lua 5.1" then
+                if LUA_VER == "501" then
                     setfenv(f , env);
                 else
                     debug.setupvalue(f, 1, env);
@@ -3005,7 +3006,7 @@ function this.processWatchedExp(msgTable)
     --判断结果，如果表达式错误会返回nil
     if type(f) == "function" then
         --表达式正确
-        if _VERSION == "Lua 5.1" then
+        if LUA_VER == "501" then
             setfenv(f , env);
         else
             debug.setupvalue(f, 1, env);
@@ -3182,9 +3183,9 @@ function tools.createJson()
     -----------------------------------------------------------------------------
     -- Imports and dependencies
     -----------------------------------------------------------------------------
-    local math = require('math')
-    local string = require("string")
-    local table = require("table")
+    --local math = require('math')
+    --local string = require("string")
+    --local table = require("table")
 
     -----------------------------------------------------------------------------
     -- Module declaration

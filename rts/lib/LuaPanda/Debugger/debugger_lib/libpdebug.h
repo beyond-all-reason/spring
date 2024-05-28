@@ -18,12 +18,12 @@
 #include <Tlhelp32.h>
 #else
 //2.如果lua源码是C++形式，注释掉下面extern "C"
-extern "C"{
+//extern "C"{
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
 #include "luaconf.h"
-}
+//}
 #endif
 
 #include <cstring>
