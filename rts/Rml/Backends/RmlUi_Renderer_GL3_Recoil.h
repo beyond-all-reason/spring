@@ -39,23 +39,23 @@
 
 enum class ProgramId;
 enum class UniformId;
-class RenderLayerStack;
+
 namespace Gfx {
 	struct ProgramData;
 	struct FramebufferData;
-} // namespace Gfx
+}
 
 namespace Shader
 {
-struct IShaderObject;
-struct IProgramObject;
-};  // namespace Shader
+	struct IShaderObject;
+	struct IProgramObject;
+}
 
 class RenderInterface_GL3_Recoil : public Rml::RenderInterface
 {
 public:
 	RenderInterface_GL3_Recoil();
-	~RenderInterface_GL3_Recoil();
+	~RenderInterface_GL3_Recoil() override;
 
 	// Returns true if the renderer was successfully constructed.
 	explicit operator bool() const;
@@ -163,9 +163,9 @@ private:
 		// Pop the top layer. All references to previously retrieved layers are invalidated.
 		void PopLayer();
 
-		const Gfx::FramebufferData& GetLayer(Rml::LayerHandle layer) const;
-		const Gfx::FramebufferData& GetTopLayer() const;
-		Rml::LayerHandle GetTopLayerHandle() const;
+		[[nodiscard]] const Gfx::FramebufferData& GetLayer(Rml::LayerHandle layer) const;
+		[[nodiscard]] const Gfx::FramebufferData& GetTopLayer() const;
+		[[nodiscard]] Rml::LayerHandle GetTopLayerHandle() const;
 
 		const Gfx::FramebufferData& GetPostprocessPrimary() { return EnsureFramebufferPostprocess(0); }
 		const Gfx::FramebufferData& GetPostprocessSecondary() { return EnsureFramebufferPostprocess(1); }
@@ -227,12 +227,6 @@ private:
 		Stencil stencil_back;
 	};
 	GLStateBackup glstate_backup = {};
-
-private:
-	void CreateShaders();
-
-	Shader::IProgramObject* shader_program = nullptr;
-	bool transform_dirty = true;
 };
 
 #endif
