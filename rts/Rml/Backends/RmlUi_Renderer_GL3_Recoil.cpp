@@ -28,8 +28,6 @@
  *
  */
 
-#define RMLUI_DEBUG
-
 #include "RmlUi_Renderer_GL3_Recoil.h"
 #include <RmlUi/Core/Log.h>
 
@@ -40,16 +38,13 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "System/Matrix44f.h"
 #include "System/Log/ILog.h"
 #include "RmlUi/Core/Mesh.h"
 #include "RmlUi/Core/Colour.h"
 #include "RmlUi/Core/MeshUtilities.h"
 #include "RmlUi/Core/Dictionary.h"
 #include "RmlUi/Core/Core.h"
-#include "RmlUi/Core/FileInterface.h"
 #include "RmlUi/Core/SystemInterface.h"
-#include "RmlUi/Core/TypeConverter.h"
 #include "RmlUi/Core/DecorationTypes.h"
 
 // Determines the anti-aliasing quality when creating layers. Enables better-looking visuals, especially when transforms are applied.
@@ -444,20 +439,20 @@ class EnumArray
 public:
 	const T& operator[](Enum id) const
 	{
-		RMLUI_ASSERT((size_t) id < (size_t) Enum::Count);
+		RMLUI_ASSERT((size_t) id < (size_t) Enum::Count)
 		return ids[size_t(id)];
 	}
 
 	T& operator[](Enum id)
 	{
-		RMLUI_ASSERT((size_t) id < (size_t) Enum::Count);
+		RMLUI_ASSERT((size_t) id < (size_t) Enum::Count)
 		return ids[size_t(id)];
 	}
 
-	auto begin() const
+	[[nodiscard]] auto begin() const
 	{ return ids.begin(); }
 
-	auto end() const
+	[[nodiscard]] auto end() const
 	{ return ids.end(); }
 
 private:
@@ -547,7 +542,7 @@ static bool CreateFramebuffer(
 	} else {
 		glGenTextures(1, &color_tex_buffer);
 		glBindTexture(GL_TEXTURE_2D, color_tex_buffer);
-		glTexImage2D(GL_TEXTURE_2D, 0, color_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, color_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_mag_filter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, min_mag_filter);
@@ -626,7 +621,7 @@ static void BindTexture(const FramebufferData& fb)
 	if (!fb.color_tex_buffer) {
 		RMLUI_ERRORMSG(
 			"Only framebuffers with color textures can be bound as textures. This framebuffer probably uses multisampling which needs a "
-			"blit step first.");
+			"blit step first.")
 	}
 
 	glBindTexture(GL_TEXTURE_2D, fb.color_tex_buffer);
@@ -634,14 +629,13 @@ static void BindTexture(const FramebufferData& fb)
 
 static bool CreateShaders(ProgramData& data)
 {
-	auto is_null = [](auto* ptr) { return ptr == nullptr; };
-	RMLUI_ASSERT(std::ranges::all_of(data.programs, is_null));
+	RMLUI_ASSERT(std::ranges::all_of(data.programs, [](auto* ptr) { return ptr == nullptr; }))
 
 #define sh shaderHandler
 	for (const ProgramDefinition& def: program_definitions) {
 		auto vert_def = vert_shader_definitions[(size_t) def.vert_shader];
 		auto frag_def = frag_shader_definitions[(size_t) def.frag_shader];
-		
+
 		auto program = sh->CreateProgramObject("[Rml RenderInterface]", def.name_str);
 		program->AttachShaderObject(sh->CreateShaderObject(vert_def.code_str, "", GL_VERTEX_SHADER));
 		program->AttachShaderObject(sh->CreateShaderObject(frag_def.code_str, "", GL_FRAGMENT_SHADER));
@@ -650,7 +644,8 @@ static bool CreateShaders(ProgramData& data)
 
 		if (!program->IsValid()) {
 			const char* fmt = "RMLUI Shader '%s' (vert: '%s' frag: '%s') compilation error: %s";
-			LOG_L(L_ERROR, fmt, program->GetName().c_str(), vert_def.name_str, frag_def.name_str, program->GetLog().c_str());
+			LOG_L(L_ERROR, fmt, program->GetName().c_str(), vert_def.name_str, frag_def.name_str,
+				  program->GetLog().c_str());
 			return false;
 		}
 
@@ -701,7 +696,7 @@ void RenderInterface_GL3_Recoil::SetViewport(int width, int height)
 
 void RenderInterface_GL3_Recoil::BeginFrame()
 {
-	RMLUI_ASSERT(viewport_width >= 1 && viewport_height >= 1);
+	RMLUI_ASSERT(viewport_width >= 1 && viewport_height >= 1)
 
 	// Backup GL state.
 	glstate_backup.enable_cull_face = glIsEnabled(GL_CULL_FACE);
@@ -897,7 +892,7 @@ RenderInterface_GL3_Recoil::CompileGeometry(Rml::Span<const Rml::Vertex> vertice
 void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle handle, Rml::Vector2f translation,
 												Rml::TextureHandle texture)
 {
-	Gfx::CompiledGeometryData* geometry = (Gfx::CompiledGeometryData*) handle;
+	auto* geometry = (Gfx::CompiledGeometryData*) handle;
 
 	if (texture == TexturePostprocess) {
 		// Do nothing.
@@ -938,7 +933,7 @@ void RenderInterface_GL3_Recoil::ReleaseGeometry(Rml::CompiledGeometryHandle han
 /// @note The Rectangle::Top and Rectangle::Bottom members will have reverse meaning in the returned rectangle.
 static Rml::Rectanglei VerticallyFlipped(Rml::Rectanglei rect, int viewport_height)
 {
-	RMLUI_ASSERT(rect.Valid());
+	RMLUI_ASSERT(rect.Valid())
 	Rml::Rectanglei flipped_rect = rect;
 	flipped_rect.p0.y = viewport_height - rect.p1.y;
 	flipped_rect.p1.y = viewport_height - rect.p0.y;
@@ -993,7 +988,7 @@ void
 RenderInterface_GL3_Recoil::RenderToClipMask(Rml::ClipMaskOperation operation, Rml::CompiledGeometryHandle geometry,
 											 Rml::Vector2f translation)
 {
-	RMLUI_ASSERT(glIsEnabled(GL_STENCIL_TEST));
+	RMLUI_ASSERT(glIsEnabled(GL_STENCIL_TEST))
 	using Rml::ClipMaskOperation;
 
 	const bool clear_stencil = (operation == ClipMaskOperation::Set || operation == ClipMaskOperation::SetInverse);
@@ -1034,26 +1029,6 @@ RenderInterface_GL3_Recoil::RenderToClipMask(Rml::ClipMaskOperation operation, R
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	glStencilFunc(GL_EQUAL, stencil_test_value, GLuint(-1));
 }
-
-// Set to byte packing, or the compiler will expand our struct, which means it won't read correctly from file
-#pragma pack(1)
-struct TGAHeader
-{
-	char idLength;
-	char colourMapType;
-	char dataType;
-	short int colourMapOrigin;
-	short int colourMapLength;
-	char colourMapDepth;
-	short int xOrigin;
-	short int yOrigin;
-	short int width;
-	short int height;
-	char bitsPerPixel;
-	char imageDescriptor;
-};
-// Restore packing
-#pragma pack()
 
 Rml::TextureHandle RenderInterface_GL3_Recoil::LoadTexture(Rml::Vector2i& texture_dimensions, const Rml::String& source)
 {
@@ -1120,7 +1095,7 @@ static Rml::Colourf ConvertToColorf(Rml::ColourbPremultiplied c0)
 static void SigmaToParameters(const float desired_sigma, int& out_pass_level, float& out_sigma)
 {
 	constexpr int max_num_passes = 10;
-	static_assert(max_num_passes < 31, "");
+	static_assert(max_num_passes < 31);
 	constexpr float max_single_pass_sigma = 3.0f;
 	out_pass_level = Rml::Math::Clamp(Rml::Math::Log2(int(desired_sigma * (2.f / max_single_pass_sigma))), 0,
 									  max_num_passes);
@@ -1167,8 +1142,8 @@ void RenderInterface_GL3_Recoil::RenderBlur(float sigma, const Gfx::FramebufferD
 											const Rml::Rectanglei window_flipped)
 {
 	RMLUI_ASSERT(&source_destination != &temp && source_destination.width == temp.width &&
-				 source_destination.height == temp.height);
-	RMLUI_ASSERT(window_flipped.Valid());
+				 source_destination.height == temp.height)
+	RMLUI_ASSERT(window_flipped.Valid())
 
 	int pass_level = 0;
 	SigmaToParameters(sigma, pass_level, sigma);
@@ -1422,7 +1397,7 @@ RenderInterface_GL3_Recoil::CompileShader(const Rml::String& name, const Rml::Di
 {
 	auto ApplyColorStopList = [](CompiledShader& shader, const Rml::Dictionary& shader_parameters) {
 		auto it = shader_parameters.find("color_stop_list");
-		RMLUI_ASSERT(it != shader_parameters.end() && it->second.GetType() == Rml::Variant::COLORSTOPLIST);
+		RMLUI_ASSERT(it != shader_parameters.end() && it->second.GetType() == Rml::Variant::COLORSTOPLIST)
 		const auto& color_stop_list = it->second.GetReference<Rml::ColorStopList>();
 		const int num_stops = Rml::Math::Min((int) color_stop_list.size(), MAX_NUM_STOPS);
 
@@ -1430,7 +1405,7 @@ RenderInterface_GL3_Recoil::CompileShader(const Rml::String& name, const Rml::Di
 		shader.stop_colors.resize(num_stops);
 		for (int i = 0; i < num_stops; i++) {
 			const Rml::ColorStop& stop = color_stop_list[i];
-			RMLUI_ASSERT(stop.position.unit == Rml::Unit::NUMBER);
+			RMLUI_ASSERT(stop.position.unit == Rml::Unit::NUMBER)
 			shader.stop_positions[i] = stop.position.number;
 			shader.stop_colors[i] = ConvertToColorf(stop.color);
 		}
@@ -1483,14 +1458,14 @@ void RenderInterface_GL3_Recoil::RenderShader(Rml::CompiledShaderHandle shader_h
 											  Rml::CompiledGeometryHandle geometry_handle,
 											  Rml::Vector2f translation, Rml::TextureHandle /*texture*/)
 {
-	RMLUI_ASSERT(shader_handle && geometry_handle);
+	RMLUI_ASSERT(shader_handle && geometry_handle)
 	const CompiledShader& shader = *reinterpret_cast<CompiledShader*>(shader_handle);
 	const CompiledShaderType type = shader.type;
 	const auto* geometry = (Gfx::CompiledGeometryData*) geometry_handle;
 
 	switch (type) {
 		case CompiledShaderType::Gradient: {
-			RMLUI_ASSERT(shader.stop_positions.size() == shader.stop_colors.size());
+			RMLUI_ASSERT(shader.stop_positions.size() == shader.stop_colors.size())
 			const int num_stops = (int) shader.stop_positions.size();
 
 			auto gradient_prog = UseProgram(ProgramId::Gradient);
@@ -1503,7 +1478,7 @@ void RenderInterface_GL3_Recoil::RenderShader(Rml::CompiledShaderHandle shader_h
 
 			SubmitTransformUniform(translation);
 			geometry->vao->Bind();
-			glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, (const GLvoid*) 0);
+			glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
 			geometry->vao->Unbind();
 		}
 			break;
@@ -1516,7 +1491,7 @@ void RenderInterface_GL3_Recoil::RenderShader(Rml::CompiledShaderHandle shader_h
 
 			SubmitTransformUniform(translation);
 			geometry->vao->Bind();
-			glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, (const GLvoid*) 0);
+			glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
 			geometry->vao->Unbind();
 		}
 			break;
@@ -1720,7 +1695,7 @@ Rml::TextureHandle RenderInterface_GL3_Recoil::SaveLayerAsTexture(Rml::Vector2i 
 
 	BlitLayerToPostprocessPrimary(render_layers.GetTopLayerHandle());
 
-	RMLUI_ASSERT(scissor_state.Valid() && render_texture);
+	RMLUI_ASSERT(scissor_state.Valid() && render_texture)
 	const Rml::Rectanglei initial_scissor_state = scissor_state;
 	EnableScissorRegion(false);
 
@@ -1778,7 +1753,7 @@ Rml::CompiledFilterHandle RenderInterface_GL3_Recoil::SaveLayerAsMaskImage()
 
 Shader::IProgramObject* RenderInterface_GL3_Recoil::UseProgram(ProgramId program_id)
 {
-	RMLUI_ASSERT(program_data);
+	RMLUI_ASSERT(program_data)
 	if (active_program_id != program_id) {
 		if (active_program_id != ProgramId::None)
 			program_data->programs[active_program_id]->Disable();
@@ -1833,7 +1808,7 @@ RenderInterface_GL3_Recoil::RenderLayerStack::~RenderLayerStack()
 
 Rml::LayerHandle RenderInterface_GL3_Recoil::RenderLayerStack::PushLayer()
 {
-	RMLUI_ASSERT(layers_size <= (int) fb_layers.size());
+	RMLUI_ASSERT(layers_size <= (int) fb_layers.size())
 
 	if (layers_size == (int) fb_layers.size()) {
 		// All framebuffers should share a single stencil buffer.
@@ -1850,13 +1825,13 @@ Rml::LayerHandle RenderInterface_GL3_Recoil::RenderLayerStack::PushLayer()
 
 void RenderInterface_GL3_Recoil::RenderLayerStack::PopLayer()
 {
-	RMLUI_ASSERT(layers_size > 0);
+	RMLUI_ASSERT(layers_size > 0)
 	layers_size -= 1;
 }
 
 const Gfx::FramebufferData& RenderInterface_GL3_Recoil::RenderLayerStack::GetLayer(Rml::LayerHandle layer) const
 {
-	RMLUI_ASSERT((size_t) layer < (size_t) layers_size);
+	RMLUI_ASSERT((size_t) layer < (size_t) layers_size)
 	return fb_layers[layer];
 }
 
@@ -1867,7 +1842,7 @@ const Gfx::FramebufferData& RenderInterface_GL3_Recoil::RenderLayerStack::GetTop
 
 Rml::LayerHandle RenderInterface_GL3_Recoil::RenderLayerStack::GetTopLayerHandle() const
 {
-	RMLUI_ASSERT(layers_size > 0);
+	RMLUI_ASSERT(layers_size > 0)
 	return static_cast<Rml::LayerHandle>(layers_size - 1);
 }
 
@@ -1878,7 +1853,7 @@ void RenderInterface_GL3_Recoil::RenderLayerStack::SwapPostprocessPrimarySeconda
 
 void RenderInterface_GL3_Recoil::RenderLayerStack::BeginFrame(int new_width, int new_height)
 {
-	RMLUI_ASSERT(layers_size == 0);
+	RMLUI_ASSERT(layers_size == 0)
 
 	if (new_width != width || new_height != height) {
 		width = new_width;
@@ -1892,14 +1867,14 @@ void RenderInterface_GL3_Recoil::RenderLayerStack::BeginFrame(int new_width, int
 
 void RenderInterface_GL3_Recoil::RenderLayerStack::EndFrame()
 {
-	RMLUI_ASSERT(layers_size == 1);
+	RMLUI_ASSERT(layers_size == 1)
 	PopLayer();
 }
 
 void RenderInterface_GL3_Recoil::RenderLayerStack::DestroyFramebuffers()
 {
 	RMLUI_ASSERTMSG(layers_size == 0,
-					"Do not call this during frame rendering, that is, between BeginFrame() and EndFrame().");
+					"Do not call this during frame rendering, that is, between BeginFrame() and EndFrame().")
 
 	for (Gfx::FramebufferData& fb: fb_layers)
 		Gfx::DestroyFramebuffer(fb);
@@ -1918,5 +1893,3 @@ const Gfx::FramebufferData& RenderInterface_GL3_Recoil::RenderLayerStack::Ensure
 		Gfx::CreateFramebuffer(fb, width, height, 0, Gfx::FramebufferAttachment::None, 0);
 	return fb;
 }
-
-#undef RMLUI_DEBUG
