@@ -1811,6 +1811,16 @@ void RenderInterface_GL3_Recoil::SubmitTransformUniform(Rml::Vector2f translatio
 	Gfx::CheckGLError("SubmitTransformUniform");
 }
 
+RenderInterface_GL3_Recoil::operator bool() const
+{
+	bool result = true;
+	for (auto i = 1; i < (int) ProgramId::Count; i++) {
+		auto prog = program_data->programs[(ProgramId) i];
+		result = result && prog != nullptr && prog->IsValid();
+	}
+	return result;
+}
+
 RenderInterface_GL3_Recoil::RenderLayerStack::RenderLayerStack()
 {
 	fb_postprocess.resize(4);
