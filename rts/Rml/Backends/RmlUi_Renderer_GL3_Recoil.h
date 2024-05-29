@@ -58,10 +58,7 @@ public:
 	~RenderInterface_GL3_Recoil();
 
 	// Returns true if the renderer was successfully constructed.
-	explicit operator bool() const
-	{
-		return shader_program != nullptr && shader_program->IsValid();
-	}
+	explicit operator bool() const;
 
 	// The viewport should be updated whenever the window size changes.
 	void SetViewport(int viewport_width, int viewport_height);
