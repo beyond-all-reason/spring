@@ -37,6 +37,7 @@
 #include <ranges>
 #include <tracy/Tracy.hpp>
 
+#include "System/Log/ILog.h"
 #include "Lua/LuaUI.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rml/Components/ElementLuaTexture.h"
@@ -123,11 +124,12 @@ bool RmlInitialized()
 
 bool RmlGui::Initialize()
 {
+	LOG_L(L_INFO, "[RmlUi::%s] Beginning RmlUi Initialization", __func__);
 	state = Rml::MakeUnique<BackendState>();
 
-	if (!state->render_interface) {
+	if (!((bool) state->render_interface)) {
 		state.reset();
-		fprintf(stderr, "Could not initialize render interface.");
+		LOG_L(L_ERROR, "[RmlGui::%s] Could not initialize render interface.", __func__);
 		return false;
 	}
 
@@ -161,6 +163,8 @@ bool RmlGui::InitializeLua(lua_State* lua_state)
 	if (!RmlInitialized() || state->ls != nullptr) {
 		return false;
 	}
+	
+	LOG_L(L_INFO, "[RmlGui::%s] Initializing RmlUi Lua Bindings", __func__);
 
 	sol::state_view lua(lua_state);
 	state->ls = lua_state;
