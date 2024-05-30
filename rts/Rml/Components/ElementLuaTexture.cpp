@@ -44,7 +44,6 @@
 #include "RmlUi/Core/ElementUtilities.h"
 #include "RmlUi/Core/MeshUtilities.h"
 #include "RmlUi/Core/PropertyIdSet.h"
-#include "RmlUi/Source/Core/TextureDatabase.h"
 
 namespace RmlGui
 {
@@ -57,7 +56,11 @@ ElementLuaTexture::ElementLuaTexture(const Rml::String& tag) :
 	texture_dirty = true;
 }
 
-ElementLuaTexture::~ElementLuaTexture() = default;
+ElementLuaTexture::~ElementLuaTexture() {
+	if (geometry_handle != (Rml::CompiledGeometryHandle) nullptr) {
+		GetRenderInterface()->ReleaseGeometry(geometry_handle);
+	}
+};
 
 Rml::Vector2i ElementLuaTexture::GetTextureDimensions()
 {
@@ -105,10 +108,13 @@ void ElementLuaTexture::OnRender()
 	// in a resize).
 	if (geometry_dirty)
 		GenerateGeometry();
-
+	
 	glBindTexture(GL_TEXTURE_2D, luaTexture.GetTextureID());
-	// Render the geometry beginning at this element's content region.
-	geometry.Render(GetAbsoluteOffset(Rml::BoxArea::Content).Round());
+	GetRenderInterface()->RenderGeometry(
+		geometry_handle,
+		GetAbsoluteOffset(Rml::BoxArea::Content).Round(),
+		RenderInterface_GL3_Recoil::TextureEnableWithoutBinding
+	);
 }
 
 void ElementLuaTexture::OnAttributeChange(const Rml::ElementAttributes& changed_attributes)
@@ -199,8 +205,13 @@ void ElementLuaTexture::OnDpRatioChange()
 
 void ElementLuaTexture::GenerateGeometry()
 {
-	// Release the old geometry before specifying the new vertices.
-	Rml::Mesh mesh = geometry.Release(Rml::Geometry::ReleaseMode::ClearMesh);
+	auto render_interface = GetRenderInterface();
+	// Release the old geometry before making the new one.
+	if (geometry_handle != (Rml::CompiledGeometryHandle) nullptr) {
+		render_interface->ReleaseGeometry(geometry_handle);
+		geometry_handle = (Rml::CompiledGeometryHandle) nullptr;
+	}
+	Rml::Mesh mesh;
 
 	// Generate the texture coordinates.
 	Rml::Vector2f tex_coords[2];
@@ -258,7 +269,8 @@ void ElementLuaTexture::GenerateGeometry()
 			quad_colour, tex_coords[0], tex_coords[1]
 		);
 	}
-
+	
+	geometry_handle = render_interface->CompileGeometry(mesh.vertices, mesh.indices);
 	geometry_dirty = false;
 }
 
