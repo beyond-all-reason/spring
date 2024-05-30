@@ -115,7 +115,7 @@ namespace RmlGui
 		enum class RectSource { None, Attribute } rect_source;
 
 		// The geometry used to render this element.
-		Rml::Geometry geometry;
+		Rml::CompiledGeometryHandle geometry_handle = (Rml::CompiledGeometryHandle) nullptr;
 		bool geometry_dirty;
 
 		Rml::Vector2i GetTextureDimensions();
