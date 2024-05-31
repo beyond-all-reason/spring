@@ -106,8 +106,6 @@ public:
 	void ReleaseShader(Rml::CompiledShaderHandle effect_handle) override;
 
 	// Can be passed to RenderGeometry() to enable texture rendering without changing the bound texture.
-	// Recoil: Can also used as the output of a TextureCallback to signal that the texture is
-	// externally managed (will be cleaned up by another part of the code).
 	static constexpr Rml::TextureHandle TextureEnableWithoutBinding = Rml::TextureHandle(-1);
 	// Can be passed to RenderGeometry() to leave the bound texture and used program unchanged.
 	static constexpr Rml::TextureHandle TexturePostprocess = Rml::TextureHandle(-2);
