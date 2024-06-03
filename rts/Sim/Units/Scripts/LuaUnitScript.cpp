@@ -1032,6 +1032,7 @@ bool CLuaUnitScript::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(MultiSpin);
 	REGISTER_LUA_CFUNC(MultiStopSpin);
 	REGISTER_LUA_CFUNC(MultiTurn);
+	REGISTER_LUA_CFUNC(MultiMove);
 	REGISTER_LUA_CFUNC(MultiExplode);
 	REGISTER_LUA_CFUNC(IsInTurn);
 	REGISTER_LUA_CFUNC(IsInMove);
