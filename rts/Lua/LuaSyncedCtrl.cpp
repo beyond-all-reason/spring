@@ -194,6 +194,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitShieldState);
 	REGISTER_LUA_CFUNC(SetUnitShieldRechargeDelay);
 	REGISTER_LUA_CFUNC(SetUnitFlanking);
+	REGISTER_LUA_CFUNC(GetUnitPhysicalState);
 	REGISTER_LUA_CFUNC(SetUnitPhysicalStateBit);
 	REGISTER_LUA_CFUNC(SetUnitTravel);
 	REGISTER_LUA_CFUNC(SetUnitFuel);
@@ -3087,6 +3088,22 @@ int LuaSyncedCtrl::SetUnitPhysicalStateBit(lua_State* L)
 
 	unit->SetPhysicalStateBit(statebit);
 	return 0;
+}
+
+/***
+ * @function Spring.GetUnitPhysicalState
+ * @number unitID
+ * @treturn number Unit's PhysicalState bitmask
+ */
+int LuaSyncedCtrl::GetUnitPhysicalState(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->physicalState);
+	return 1;
 }
 
 
