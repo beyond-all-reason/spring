@@ -243,18 +243,6 @@ void RmlGui::SetDebugContext(Rml::Context* context)
 		
 		// TODO?: Make own Debugger UI that better suits our needs
 		Rml::Debugger::Initialise(state->debug_host_context);
-
-		// hide the RmlUi log button since Recoil already has its own log.
-		auto debug_doc = state->debug_host_context->GetDocument("rmlui-debug-menu");
-		if (debug_doc) {
-			auto event_log_button = debug_doc->GetElementById("event-log-button");
-			if (event_log_button) {
-				event_log_button->SetProperty(
-					Rml::PropertyId::Visibility,
-					Rml::Property(Rml::Style::Visibility::Hidden)
-				);
-			}
-		}
 	}
 
 	Rml::Debugger::SetContext(context);
