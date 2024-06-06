@@ -910,9 +910,11 @@ void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle hand
 	geometry->vao->Bind();
 	glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
 	geometry->vao->Unbind();
-
-	UseProgram(ProgramId::None);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	
+	if (texture != TexturePostprocess) {
+		UseProgram(ProgramId::None);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
 
 	Gfx::CheckGLError("RenderCompiledGeometry");
 }
