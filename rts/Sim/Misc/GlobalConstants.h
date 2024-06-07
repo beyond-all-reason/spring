@@ -77,6 +77,7 @@ static constexpr int MAX_PLAYERS = 251;
  * (1 byte) in network messages with the value 255 reserved for
  * special purposes.
  */
+static constexpr int SPECIAL_AI_ID = 255;
 static constexpr int MAX_AIS = 255;
 
 /**
@@ -142,6 +143,27 @@ static constexpr float MAX_PROJECTILE_HEIGHT = 1e6f;
  * from any point
  */
 static constexpr int MAX_UNIT_SENSOR_RADIUS = 32768;
+
+
+ /**
+ * ID used to send chat messages to allies.
+ */
+static constexpr int TO_ALLIES = 252;
+
+/**
+ * ID used to send chat messages to spectators.
+ */
+static constexpr int TO_SPECTATORS = 253;
+
+/**
+ * ID send chat messages to everyone.
+ */
+static constexpr int TO_EVERYONE = 254;
+
+/**
+ * "player" number for GameServer-generated messages.
+ */
+static constexpr int SERVER_PLAYER = 255;
 
 #endif // _GLOBAL_CONSTANTS_H
 

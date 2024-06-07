@@ -863,7 +863,7 @@ void CGame::ClientReadNet()
 						commands.push_back(cmd);
 					}
 
-					assert(aiInstID == MAX_AIS);
+					assert(aiInstID == SPECIAL_AI_ID);
 
 					// apply the "AI" commands (which actually originate from LuaUnsyncedCtrl)
 					if (pairwise) {

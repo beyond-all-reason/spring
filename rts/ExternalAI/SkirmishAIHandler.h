@@ -201,7 +201,7 @@ private:
 	spring::unordered_set<std::string> luaAIShortNames;
 
 	// the current local AI ID that is executing, MAX_AIS if none (e.g. LuaUI)
-	uint8_t currentAIId = MAX_AIS;
+	uint8_t currentAIId = SPECIAL_AI_ID;
 	uint8_t numSkirmishAIs = 0;
 
 	bool gameInitialized = false;

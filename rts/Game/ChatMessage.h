@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include "Sim/Misc/GlobalConstants.h"
 
 namespace netcode {
 	class RawPacket;
@@ -19,10 +20,6 @@ public:
 	const netcode::RawPacket* Pack() const;
 
 	static constexpr size_t MAX_MSG_SIZE = UINT8_MAX / 2;
-
-	static constexpr int TO_ALLIES     = 252;
-	static constexpr int TO_SPECTATORS = 253;
-	static constexpr int TO_EVERYONE   = 254;
 
 	int fromPlayer = -1;
 	/// can be TO_ALLIES, TO_SPECTATORS, TO_EVERYONE, or a player number
