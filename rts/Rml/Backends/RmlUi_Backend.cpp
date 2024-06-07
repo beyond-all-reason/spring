@@ -159,8 +159,10 @@ bool RmlGui::Initialize()
 }
 
 bool RmlGui::InitializeLua(lua_State* lua_state)
-{
-	if (!RmlInitialized() || state->ls != nullptr) {
+{	
+	if (!RmlInitialized()) {
+		RmlGui::Initialize();
+	} else if (state->ls != nullptr) {
 		return false;
 	}
 	
