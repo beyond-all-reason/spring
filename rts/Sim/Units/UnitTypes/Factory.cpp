@@ -436,7 +436,7 @@ void CFactory::AssignBuildeeOrders(CUnit* unit) {
 
 	Command c(CMD_MOVE);
 
-	if (!unit->unitDef->canfly) {
+	if (!unit->unitDef->canfly && modInfo.insertBuiltUnitMoveCommand) {
 		// HACK: when a factory has a rallypoint set far enough away
 		// to trigger the non-admissable path estimators, we want to
 		// avoid units getting stuck inside by issuing them an extra
