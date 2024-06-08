@@ -37,9 +37,7 @@
 #include <RmlUi/Core/Plugin.h>
 #include <RmlUi/Lua/Header.h>
 
-#include "lib/lua/mask_lua_macros.h"
 #include <sol2/sol.hpp>
-#include "lib/lua/restore_lua_macros.h"
 
 #include <memory>
 
