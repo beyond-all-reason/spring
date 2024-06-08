@@ -63,11 +63,11 @@ struct lua_State;
   Global state used by this backend.
   Lifetime governed by the calls to Backend::Initialize() and
   Backend::Shutdown().
-  
+
   Listens for Rml Create/Destroy Context events
  */
 class BackendState : public Rml::Plugin {
-	
+
 public:
 	int GetEventClasses() override
 	{
@@ -86,7 +86,7 @@ public:
 	{
 		RmlGui::OnContextDestroy(context);
 	}
-	
+
 	RmlSystemInterface system_interface;
 #ifndef HEADLESS
 	RenderInterface_GL3_Recoil render_interface;
@@ -100,7 +100,7 @@ public:
 
 	Rml::Context* debug_host_context = nullptr;
 	Rml::Context* clicked_context = nullptr;
-	
+
 	InputHandler::SignalType::connection_type inputCon;
 	CRmlInputReceiver inputReceiver;
 
@@ -110,7 +110,7 @@ public:
 
 	lua_State* ls = nullptr;
 	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
-	
+
     Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
 };
 
@@ -130,7 +130,7 @@ bool RmlGui::Initialize()
 		fprintf(stderr, "Could not initialize render interface.");
 		return false;
 	}
-	
+
 	auto winX = globalRendering->winSizeX;
 	auto winY = globalRendering->winSizeY;
 
@@ -174,8 +174,8 @@ bool RmlGui::RemoveLua()
 	if (!RmlInitialized() || state->ls == nullptr) {
 		return false;
 	}
-	
-	// debugger must be shut down before the reference to 
+
+	// debugger must be shut down before the reference to
 	// Lua Plugin DocumentElementInstancer becomes a dangling pointer
 	if (state->debug_host_context) {
 		MarkContextForRemoval(state->debug_host_context);
@@ -185,10 +185,10 @@ bool RmlGui::RemoveLua()
 	}
 
 	state->luaPlugin->RemoveLuaItems();
-	
+
 	// Update to allow clean up of removed items.
 	Update();
-	
+
 	Rml::UnregisterPlugin(state->luaPlugin);
 	state->system_interface.SetTranslationTable(nullptr);
 	state->luaPlugin = nullptr;
@@ -202,14 +202,14 @@ void RmlGui::Shutdown()
 	if (!RmlInitialized()) {
 		return;
 	}
-	
+
 	// note: during SpringApp shutdown, RmlGui::RemoveLua() was already called when LuaUI was shutdown
 	RemoveLua();
 	Rml::UnregisterPlugin(state.get());
-	
+
 	// removes all contexts, interfaces must be alive at this point
 	Rml::Shutdown();
-	
+
 	// interfaces within can now be destroyed
 	state.reset();
 }
@@ -232,7 +232,7 @@ void RmlGui::SetDebugContext(Rml::Context* context)
 
 	if (state->debug_host_context == nullptr) {
 		state->debug_host_context = Rml::CreateContext(RML_DEBUG_HOST_CONTEXT_NAME, {0, 0});
-		
+
 		// TODO?: Make own Debugger UI that better suits our needs
 		Rml::Debugger::Initialise(state->debug_host_context);
 
@@ -314,7 +314,7 @@ void RmlGui::MarkContextForRemoval(Rml::Context *context) {
 	if (!RmlInitialized() || context == nullptr) {
 		return;
 	}
-	
+
 	state->contexts_to_remove.insert(context);
 }
 
@@ -328,7 +328,7 @@ void RmlGui::Update()
 	for (const auto& context : state->contexts) {
 		context->Update();
 	}
-	
+
 	if (state->clicked_context) {
 		auto context_pos = std::ranges::find(state->contexts, state->clicked_context);
 		if (context_pos != state->contexts.end()) {
@@ -404,16 +404,16 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
 	if (!RmlInitialized()) {
 		return false;
 	}
-	
+
 	bool result = false;
 	for (const auto& context : state->contexts) {
 		bool handled = false;
-		
+
 		if (!result) {
 			handled = !RmlSDLRecoil::EventMousePress(context, x, y, button);
 			result |= handled;
 		}
-		
+
 		if (!handled) {
 			Rml::Element* el = context->GetFocusElement();
 			if (el) {
@@ -423,7 +423,7 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
 			state->clicked_context = context;
 		}
 	}
-	
+
 	state->inputReceiver.setActive(result);
 	return result;
 }
@@ -516,22 +516,22 @@ bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 		case SDL_KEYUP:
 		case SDL_TEXTINPUT:
 			return true;  // handled elsewhere
-		
+
 		case SDL_WINDOWEVENT: {
 			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
 				auto x = event.window.data1;
 				auto y = event.window.data2;
-				
+
 				state->render_interface.SetViewport(x, y);
 				state->winX = x;
 				state->winY = y;
 			}
 		} break;
-		
-		default: 
+
+		default:
 			break;
 	}
-	
+
 	return RmlSDLRecoil::InputEventHandler(context, event);
 }
 

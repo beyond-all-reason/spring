@@ -238,7 +238,7 @@ void ElementLuaTexture::GenerateGeometry()
 		std::ranges::for_each(vertices, [&quad_size, &tex_coords](Rml::Vertex& v) {
 			float tx = v. 	position.x / quad_size.x;
 			float ty = v.position.y / quad_size.y;
-			
+
 			v.tex_coord.x = Rml::Math::Lerp(tx, tex_coords[0].x, tex_coords[1].x);
 			v.tex_coord.y = Rml::Math::Lerp(ty, tex_coords[0].y, tex_coords[1].y);
 		});

@@ -1,10 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 /*
- * This source file is derived from the code 
+ * This source file is derived from the code
  * at https://github.com/LoneBoco/RmlSolLua
  * which is under the following license:
- * 
+ *
  * MIT License
  *
  * Copyright (c) 2022 John Norman
@@ -15,10 +15,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -127,7 +127,7 @@ namespace Rml::SolLua
 		auto nextPair(sol::user<Rml::PropertiesIteratorView&> iter_state, sol::this_state s)
 		{
 			auto& iter = iter_state.value();
-			
+
 			if (iter.AtEnd())
 				return std::make_tuple(sol::object(sol::lua_nil), sol::object(sol::lua_nil));
 
@@ -157,7 +157,7 @@ namespace Rml::SolLua
 					m_element->RemoveProperty(name);
 					return;
 				}
-				
+
 				if (value.get_type() == sol::type::string) {
 					auto str = value.as<std::string&>();
 
@@ -177,7 +177,7 @@ namespace Rml::SolLua
 			{
 				auto iter = m_element->IterateLocalProperties();
 				return std::make_tuple(
-					&nextPair, 
+					&nextPair,
 					sol::user<Rml::PropertiesIteratorView>(std::move(iter)),
 					sol::lua_nil
 				);
@@ -218,7 +218,7 @@ namespace Rml::SolLua
 				sol::resolve<void(Rml::Element&, const Rml::String&, const Rml::String&, sol::this_state)>(&functions::addEventListener),
 				sol::resolve<void(Rml::Element&, const Rml::String&, const Rml::String&, sol::this_state, bool)>(&functions::addEventListener)
 			),
-			"AppendChild", [](Rml::Element& self, Rml::ElementPtr& e) { 
+			"AppendChild", [](Rml::Element& self, Rml::ElementPtr& e) {
 				return self.AppendChild(std::move(e));
 			},
 			"Blur", &Rml::Element::Blur,
@@ -232,20 +232,20 @@ namespace Rml::SolLua
 			"QuerySelectorAll", &functions::getQuerySelectorAll,
 			"HasAttribute", &Rml::Element::HasAttribute,
 			"HasChildNodes", &Rml::Element::HasChildNodes,
-			"InsertBefore", [](Rml::Element& self, Rml::ElementPtr& element, Rml::Element* adjacent_element) { 
+			"InsertBefore", [](Rml::Element& self, Rml::ElementPtr& element, Rml::Element* adjacent_element) {
 				return self.InsertBefore(std::move(element), adjacent_element);
 			},
 			"IsClassSet", &Rml::Element::IsClassSet,
 			"RemoveAttribute", &Rml::Element::RemoveAttribute,
 			"RemoveChild", &Rml::Element::RemoveChild,
 			"ReplaceChild", [](Rml::Element& self, Rml::ElementPtr& inserted_element, Rml::Element* replaced_element) {
-				return self.ReplaceChild(std::move(inserted_element), replaced_element); 
+				return self.ReplaceChild(std::move(inserted_element), replaced_element);
 			},
-			"ScrollIntoView", [](Rml::Element& self, sol::variadic_args va) { 
-				if (va.size() == 0) 
-					self.ScrollIntoView(true); 
-				else 
-					self.ScrollIntoView(va[0].as<bool>()); 
+			"ScrollIntoView", [](Rml::Element& self, sol::variadic_args va) {
+				if (va.size() == 0)
+					self.ScrollIntoView(true);
+				else
+					self.ScrollIntoView(va[0].as<bool>());
 			},
 			"SetAttribute", static_cast<void(Rml::Element::*)(const Rml::String&, const Rml::String&)>(&Rml::Element::SetAttribute),
 			"SetClass", &Rml::Element::SetClass,

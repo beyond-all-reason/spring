@@ -1,10 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 /*
- * This source file is derived from the code 
+ * This source file is derived from the code
  * at https://github.com/LoneBoco/RmlSolLua
  * which is under the following license:
- * 
+ *
  * MIT License
  *
  * Copyright (c) 2022 John Norman
@@ -15,10 +15,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -75,22 +75,22 @@ namespace Rml::SolLua
 		{
 			return Rml::RegisterEventType(type, interruptible, bubbles, Rml::DefaultActionPhase::None);
 		}
-		
+
 		auto removeContext(Rml::Context* context) {
 			RmlGui::MarkContextForRemoval(context);
 		}
-		
+
 		auto removeContextByName(const Rml::String& name) {
 			auto context = Rml::GetContext(name);
 			if (context != nullptr) {
 				RmlGui::MarkContextForRemoval(context);
 			}
 		}
-		
+
 		auto setDebugContext(Rml::Context* context) {
 			RmlGui::SetDebugContext(context);
 		}
-		
+
 		auto setDebugContextByName(const Rml::String& name) {
 			auto context = Rml::GetContext(name);
 			if (context != nullptr) {
