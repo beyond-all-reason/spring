@@ -87,6 +87,7 @@ Lua:
  - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
  - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
+ - add `Spring.GetUnitPhysicalState(number unitID) -> Gets the unit's PhysicalState bitmask.
  - Lua C Macros (cast and registry) prefixed lua_ to fix compilation issues.
  - Protect Spring.GetGroupUnitsCount from crashing when given an invalid group id.
 
