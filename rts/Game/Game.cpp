@@ -633,7 +633,7 @@ void CGame::PreLoadSimulation(LuaParser* defsParser)
 	ENTER_SYNCED_CODE();
 
 	loadscreen->SetLoadMessage("Creating Smooth Height Mesh");
-	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), 2, 40);
+	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), modInfo.smoothMeshResDivider, modInfo.smoothMeshSmoothRadius);
 
 	loadscreen->SetLoadMessage("Creating QuadField & CEGs");
 	moveDefHandler.Init(defsParser);
