@@ -5787,7 +5787,7 @@ int LuaSyncedCtrl::SetHeightMapFunc(lua_State* L)
 
 	if (error != 0) {
 		LOG_L(L_ERROR, "Spring.SetHeightMapFunc: error(%i) = %s",
-				error, lua_tostring(L, LUA_TABLE_VALUE_INDEX));
+				error, lua_tostring(L, -1));
 		lua_error(L);
 	}
 
@@ -6950,8 +6950,8 @@ static bool ParseNamedInt(lua_State* L, const string& key,
 	if (key != name) {
 		return false;
 	}
-	if (lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
-		value = lua_toint(L, LUA_TABLE_VALUE_INDEX);
+	if (lua_isnumber(L, -1)) {
+		value = lua_toint(L, -1);
 	} else {
 		luaL_error(L, "bad %s argument", name.c_str());
 	}
@@ -6965,8 +6965,8 @@ static bool ParseNamedBool(lua_State* L, const string& key,
 	if (key != name) {
 		return false;
 	}
-	if (lua_isboolean(L, LUA_TABLE_VALUE_INDEX)) {
-		value = (int)lua_toboolean(L, LUA_TABLE_VALUE_INDEX);
+	if (lua_isboolean(L, -1)) {
+		value = (int)lua_toboolean(L, -1);
 	} else {
 		luaL_error(L, "bad %s argument", name.c_str());
 	}
@@ -6980,8 +6980,8 @@ static bool ParseNamedString(lua_State* L, const string& key,
 	if (key != name) {
 		return false;
 	}
-	if (lua_isstring(L, LUA_TABLE_VALUE_INDEX)) {
-		value = lua_tostring(L, LUA_TABLE_VALUE_INDEX);
+	if (lua_isstring(L, -1)) {
+		value = lua_tostring(L, -1);
 	} else {
 		luaL_error(L, "bad %s argument", name.c_str());
 	}
@@ -6995,8 +6995,8 @@ static int ParseStringVector(lua_State* L, int index, vector<string>& strvec)
 	int i = 1;
 	while (true) {
 		lua_rawgeti(L, index, i);
-		if (lua_isstring(L, LUA_TABLE_VALUE_INDEX)) {
-			strvec.emplace_back(lua_tostring(L, LUA_TABLE_VALUE_INDEX));
+		if (lua_isstring(L, -1)) {
+			strvec.emplace_back(lua_tostring(L, -1));
 			lua_pop(L, 1);
 			i++;
 		} else {
@@ -7025,7 +7025,7 @@ static bool ParseCommandDescription(lua_State* L, int table,
 		if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX))
 			continue;
 
-		const string key = lua_tostring(L, LUA_TABLE_KEY_INDEX);
+		const string key = lua_tostring(L, -1);
 
 		if (ParseNamedInt(L,    key, "id",          cd.id)         ||
 		    ParseNamedInt(L,    key, "type",        cd.type)       ||
@@ -7042,7 +7042,7 @@ static bool ParseCommandDescription(lua_State* L, int table,
 			continue; // successfully parsed a parameter
 		}
 
-		if ((key != "params") || !lua_istable(L, LUA_TABLE_VALUE_INDEX))
+		if ((key != "params") || !lua_istable(L, -1))
 			luaL_error(L, "Unknown cmdDesc parameter %s", key.c_str());
 
 		// collect the parameters
