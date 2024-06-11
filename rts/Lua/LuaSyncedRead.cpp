@@ -1483,7 +1483,7 @@ int LuaSyncedRead::GetSideData(lua_State* L)
 				LuaPushNamedString(L, "caseName",  sideParser.GetCaseName(i));
 				LuaPushNamedString(L, "startUnit", sideParser.GetStartUnit(i));
 			}
-			lua_rawseti(L, -2, i + 1);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, i + 1);
 		}
 		return 1;
 	}
@@ -1597,10 +1597,10 @@ int LuaSyncedRead::GetMapStartPositions(lua_State* L)
 			return false;
 
 		lua_createtable(L, 3, 0);
-		lua_pushnumber(L, pos.x); lua_rawseti(L, -2, 1);
-		lua_pushnumber(L, pos.y); lua_rawseti(L, -2, 2);
-		lua_pushnumber(L, pos.z); lua_rawseti(L, -2, 3);
-		lua_rawseti(L, -2, 1 + teamNum); // [i] = {x,y,z}
+		lua_pushnumber(L, pos.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
+		lua_pushnumber(L, pos.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
+		lua_pushnumber(L, pos.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1 + teamNum); // [i] = {x,y,z}
 		return true;
 	});
 
@@ -1621,7 +1621,7 @@ int LuaSyncedRead::GetAllyTeamList(lua_State* L)
 
 	for (int at = 0; at < teamHandler.ActiveAllyTeams(); at++) {
 		lua_pushnumber(L, at);
-		lua_rawseti(L, -2, allyCount++);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, allyCount++);
 	}
 
 	return 1;
@@ -1662,7 +1662,7 @@ int LuaSyncedRead::GetTeamList(lua_State* L)
 			continue;
 
 		lua_pushnumber(L, t);
-		lua_rawseti(L, -2, teamCount++);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, teamCount++);
 	}
 
 	return 1;
@@ -1716,7 +1716,7 @@ int LuaSyncedRead::GetPlayerList(lua_State* L)
 		}
 
 		lua_pushnumber(L, p);
-		lua_rawseti(L, -2, playerCount++);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, playerCount++);
 	}
 
 	return 1;
@@ -2046,7 +2046,7 @@ int LuaSyncedRead::GetTeamStatsHistory(lua_State* L)
 				HSTR_PUSH_NUMBER(L, "unitsOutCaptured", stats.unitsOutCaptured);
 				HSTR_PUSH_NUMBER(L, "unitsKilled",      stats.unitsKilled);
 			}
-			lua_rawseti(L, -2, count++);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, count++);
 		}
 	}
 
@@ -2376,7 +2376,7 @@ int LuaSyncedRead::GetAllUnits(lua_State* L)
 	if (CLuaHandle::GetHandleFullRead(L)) {
 		for (const CUnit* unit: unitHandler.GetActiveUnits()) {
 			lua_pushnumber(L, unit->id);
-			lua_rawseti(L, -2, unitCount++);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, unitCount++);
 		}
 	} else {
 		for (const CUnit* unit: unitHandler.GetActiveUnits()) {
@@ -2384,7 +2384,7 @@ int LuaSyncedRead::GetAllUnits(lua_State* L)
 				continue;
 
 			lua_pushnumber(L, unit->id);
-			lua_rawseti(L, -2, unitCount++);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, unitCount++);
 		}
 	}
 
@@ -2418,7 +2418,7 @@ int LuaSyncedRead::GetTeamUnits(lua_State* L)
 
 		for (const CUnit* unit: unitHandler.GetUnitsByTeam(teamID)) {
 			lua_pushnumber(L, unit->id);
-			lua_rawseti(L, -2, unitCount++);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, unitCount++);
 		}
 
 		return 1;
@@ -2431,7 +2431,7 @@ int LuaSyncedRead::GetTeamUnits(lua_State* L)
 		if (!LuaUtils::IsUnitVisible(L, unit))
 			continue;
 		lua_pushnumber(L, unit->id);
-		lua_rawseti(L, -2, unitCount++);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, unitCount++);
 	}
 
 	return 1;
@@ -2474,7 +2474,7 @@ static bool PushVisibleUnits(
 
 		// add count-th unitID to table
 		lua_pushnumber(L, unit->id);
-		lua_rawseti(L, -2, (*unitCount)++);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, (*unitCount)++);
 	}
 
 	return createdTable;
@@ -2531,7 +2531,7 @@ int LuaSyncedRead::GetTeamUnitsSorted(lua_State* L)
 
 			for (const CUnit* unit: unitsByDef) {
 				lua_pushnumber(L, unit->id);
-				lua_rawseti(L, -2, unitCount++);
+				lua_rawseti(L, LUA_TABLE_KEY_INDEX, unitCount++);
 			}
 			lua_rawset(L, -3);
 		}
@@ -2576,7 +2576,7 @@ int LuaSyncedRead::GetTeamUnitsSorted(lua_State* L)
 
 			for (int unitID: gtuObjectIDs) {
 				lua_pushnumber(L, unitID);
-				lua_rawseti(L, -2, unitCount++);
+				lua_rawseti(L, LUA_TABLE_KEY_INDEX, unitCount++);
 			}
 			lua_rawset(L, -3);
 		}
@@ -2622,7 +2622,7 @@ int LuaSyncedRead::GetTeamUnitsCounts(lua_State* L)
 				continue;
 
 			lua_pushnumber(L, unitCount);
-			lua_rawseti(L, -2, unitDefID);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, unitDefID);
 			defCount++;
 		}
 
@@ -2657,7 +2657,7 @@ int LuaSyncedRead::GetTeamUnitsCounts(lua_State* L)
 		if (gtuDefCount.second == 0)
 			continue;
 		lua_pushnumber(L, gtuDefCount.second);
-		lua_rawseti(L, -2, gtuDefCount.first);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, gtuDefCount.first);
 		defCount++;
 	}
 	if (unknownCount > 0) {
@@ -2701,7 +2701,7 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 		const int tableIdx = 2;
 
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (!lua_isnumber(L, -1))
+			if (!lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
 				continue;
 
 			InsertSearchUnitDefs(unitDefHandler->GetUnitDefByID(lua_toint(L, -1)), allied);
@@ -2740,7 +2740,7 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 
 	for (int i = 0; i < unitIDs.size(); ++i) {
 		lua_pushnumber(L, unitIDs[i]);
-		lua_rawseti(L, -2, i + 1);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, i + 1);
 	}
 
 	return 1;
@@ -2867,7 +2867,7 @@ int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 			CUSTOM_TEST;                                            \
                                                                     \
 			lua_pushnumber(L, unit->id);                            \
-			lua_rawseti(L, -2, ++count);                            \
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, ++count);                            \
 		}                                                           \
 	}
 
@@ -3338,7 +3338,7 @@ inline void ProcessFeatures(lua_State* L, const vector<CFeature*>& features) {
 				const CFeature* feature = features[i];
 
 				lua_pushnumber(L, feature->id);
-				lua_rawseti(L, -2, arrayIndex++);
+				lua_rawseti(L, LUA_TABLE_KEY_INDEX, arrayIndex++);
 			}
 		}
 	} else {
@@ -3350,7 +3350,7 @@ inline void ProcessFeatures(lua_State* L, const vector<CFeature*>& features) {
 			}
 
 			lua_pushnumber(L, feature->id);
-			lua_rawseti(L, -2, arrayIndex++);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, arrayIndex++);
 		}
 	}
 }
@@ -3479,7 +3479,7 @@ int LuaSyncedRead::GetProjectilesInRectangle(lua_State* L)
 					continue;
 
 				lua_pushnumber(L, pro->id);
-				lua_rawseti(L, -2, arrayIndex++);
+				lua_rawseti(L, LUA_TABLE_KEY_INDEX, arrayIndex++);
 			}
 		}
 	} else {
@@ -3499,7 +3499,7 @@ int LuaSyncedRead::GetProjectilesInRectangle(lua_State* L)
 				continue;
 
 			lua_pushnumber(L, pro->id);
-			lua_rawseti(L, -2, arrayIndex++);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, arrayIndex++);
 		}
 	}
 
@@ -4218,9 +4218,9 @@ int LuaSyncedRead::GetUnitVectors(lua_State* L)
 
 #define PACK_VECTOR(n) \
 	lua_createtable(L, 3, 0);            \
-	lua_pushnumber(L, unit-> n .x); lua_rawseti(L, -2, 1); \
-	lua_pushnumber(L, unit-> n .y); lua_rawseti(L, -2, 2); \
-	lua_pushnumber(L, unit-> n .z); lua_rawseti(L, -2, 3)
+	lua_pushnumber(L, unit-> n .x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1); \
+	lua_pushnumber(L, unit-> n .y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2); \
+	lua_pushnumber(L, unit-> n .z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3)
 
 	PACK_VECTOR(frontdir);
 	PACK_VECTOR(updir);
@@ -4638,7 +4638,7 @@ int LuaSyncedRead::GetUnitNanoPieces(lua_State* L)
 		const int modelPieceNum = (*nanoPieces)[p];
 
 		lua_pushnumber(L, modelPieceNum + 1); //lua 1-indexed, c++ 0-indexed
-		lua_rawseti(L, -2, p + 1);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, p + 1);
 	}
 
 	return 1;
@@ -4683,7 +4683,7 @@ int LuaSyncedRead::GetUnitIsTransporting(lua_State* L)
 		const CUnit* carried = tu.unit;
 
 		lua_pushnumber(L, carried->id);
-		lua_rawseti(L, -2, unitCount++);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, unitCount++);
 	}
 
 	return 1;
@@ -4882,9 +4882,9 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 			const float3 salvoError =  weapon->SalvoErrorExperience();
 
 			lua_createtable(L, 3, 0);
-			lua_pushnumber(L, salvoError.x); lua_rawseti(L, -2, 1);
-			lua_pushnumber(L, salvoError.y); lua_rawseti(L, -2, 2);
-			lua_pushnumber(L, salvoError.z); lua_rawseti(L, -2, 3);
+			lua_pushnumber(L, salvoError.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
+			lua_pushnumber(L, salvoError.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
+			lua_pushnumber(L, salvoError.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
 		} break;
 
 		case hashString("salvoLeft"): {
@@ -5311,9 +5311,9 @@ int LuaSyncedRead::GetUnitWeaponTarget(lua_State* L)
 		case Target_Pos: {
 			lua_pushboolean(L, curTarget.isUserTarget);
 			lua_createtable(L, 3, 0);
-			lua_pushnumber(L, curTarget.groundPos.x); lua_rawseti(L, -2, 1);
-			lua_pushnumber(L, curTarget.groundPos.y); lua_rawseti(L, -2, 2);
-			lua_pushnumber(L, curTarget.groundPos.z); lua_rawseti(L, -2, 3);
+			lua_pushnumber(L, curTarget.groundPos.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
+			lua_pushnumber(L, curTarget.groundPos.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
+			lua_pushnumber(L, curTarget.groundPos.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
 			break;
 		}
 		case Target_Intercept: {
@@ -5770,7 +5770,7 @@ static void PackCommandQueue(lua_State* L, const CCommandQueue& commands, size_t
 			break;
 
 		PackCommand(L, command);
-		lua_rawseti(L, -2, ++c);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, ++c);
 	}
 }
 
@@ -5965,9 +5965,9 @@ static void PackFactoryCounts(lua_State* L,
 			// Lua Gems Chapter 2: About tables.
 			lua_createtable(L, 0, 1); {
 				lua_pushnumber(L, currentCount);
-				lua_rawseti(L, -2, -currentCmd);
+				lua_rawseti(L, LUA_TABLE_KEY_INDEX, -currentCmd);
 			}
-			lua_rawseti(L, -2, entry);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, entry);
 			currentCmd = cmdID;
 			currentCount = 1;
 		}
@@ -5976,9 +5976,9 @@ static void PackFactoryCounts(lua_State* L,
 		entry++;
 		lua_createtable(L, 0, 1); {
 			lua_pushnumber(L, currentCount);
-			lua_rawseti(L, -2, -currentCmd);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, -currentCmd);
 		}
-		lua_rawseti(L, -2, entry);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, entry);
 	}
 
 	hs_n.PushNumber(L, entry);
@@ -6088,8 +6088,8 @@ static int PackBuildQueue(lua_State* L, bool canBuild, const char* caller)
 			entry++;
 			lua_newtable(L);
 			lua_pushnumber(L, currentCount);
-			lua_rawseti(L, -2, currentType);
-			lua_rawseti(L, -2, entry);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, currentType);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, entry);
 			currentType = unitDefID;
 			currentCount = 1;
 		}
@@ -6099,8 +6099,8 @@ static int PackBuildQueue(lua_State* L, bool canBuild, const char* caller)
 		entry++;
 		lua_newtable(L);
 		lua_pushnumber(L, currentCount);
-		lua_rawseti(L, -2, currentType);
-		lua_rawseti(L, -2, entry);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, currentType);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, entry);
 	}
 
 	lua_pushnumber(L, entry);
@@ -6168,7 +6168,7 @@ int LuaSyncedRead::GetUnitCmdDescs(lua_State* L)
 	int count = 1;
 	for (int i = startIndex; i <= endIndex; i++) {
 		LuaUtils::PushCommandDesc(L, *cmdDescs[i]);
-		lua_rawseti(L, -2, count++);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, count++);
 	}
 
 	return 1;
@@ -6229,13 +6229,13 @@ int LuaSyncedRead::GetAllFeatures(lua_State* L)
 	if (CLuaHandle::GetHandleFullRead(L)) {
 		for (const int featureID: activeFeatureIDs) {
 			lua_pushnumber(L, featureID);
-			lua_rawseti(L, -2, ++count);
+			lua_rawseti(L, LUA_TABLE_KEY_INDEX, ++count);
 		}
 	} else {
 		for (const int featureID: activeFeatureIDs) {
 			if (LuaUtils::IsFeatureVisible(L, featureHandler.GetFeature(featureID))) {
 				lua_pushnumber(L, featureID);
-				lua_rawseti(L, -2, ++count);
+				lua_rawseti(L, LUA_TABLE_KEY_INDEX, ++count);
 			}
 		}
 	}
@@ -6741,9 +6741,9 @@ int LuaSyncedRead::GetProjectileTarget(lua_State* L)
 	if (wtgt == nullptr) {
 		lua_pushnumber(L, int('g')); // ground
 		lua_createtable(L, 3, 0);
-		lua_pushnumber(L, (wpro->GetTargetPos()).x); lua_rawseti(L, -2, 1);
-		lua_pushnumber(L, (wpro->GetTargetPos()).y); lua_rawseti(L, -2, 2);
-		lua_pushnumber(L, (wpro->GetTargetPos()).z); lua_rawseti(L, -2, 3);
+		lua_pushnumber(L, (wpro->GetTargetPos()).x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
+		lua_pushnumber(L, (wpro->GetTargetPos()).y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
+		lua_pushnumber(L, (wpro->GetTargetPos()).z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
 		return 2;
 	}
 
@@ -7892,7 +7892,7 @@ static int GetModelPieceList(lua_State* L, const std::string& modelName)
 	for (size_t i = 0; i < model->numPieces; i++) {
 		const auto* p = model->pieceObjects[i];
 		lua_pushsstring(L, p->name);
-		lua_rawseti(L, -2, i + 1);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, i + 1);
 	}
 
 	return 1;
@@ -7940,7 +7940,7 @@ static int GetSolidObjectPieceList(lua_State* L, const CSolidObject* o)
 	for (size_t i = 0; i < localModel.pieces.size(); i++) {
 		const LocalModelPiece& lp = localModel.pieces[i];
 		lua_pushsstring(L, lp.original->name);
-		lua_rawseti(L, -2, i + 1);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, i + 1);
 	}
 
 	return 1;
@@ -7971,7 +7971,7 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 	lua_createtable(L, op.children.size(), 0);
 	for (size_t c = 0; c < op.children.size(); c++) {
 		lua_pushsstring(L, op.children[c]->name);
-		lua_rawseti(L, -2, c + 1);
+		lua_rawseti(L, LUA_TABLE_KEY_INDEX, c + 1);
 	}
 	lua_rawset(L, -3);
 
@@ -7981,25 +7981,25 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 
 	HSTR_PUSH(L, "min");
 	lua_createtable(L, 3, 0); {
-		lua_pushnumber(L, op.mins.x); lua_rawseti(L, -2, 1);
-		lua_pushnumber(L, op.mins.y); lua_rawseti(L, -2, 2);
-		lua_pushnumber(L, op.mins.z); lua_rawseti(L, -2, 3);
+		lua_pushnumber(L, op.mins.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
+		lua_pushnumber(L, op.mins.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
+		lua_pushnumber(L, op.mins.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
 	}
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "max");
 	lua_createtable(L, 3, 0); {
-		lua_pushnumber(L, op.maxs.x); lua_rawseti(L, -2, 1);
-		lua_pushnumber(L, op.maxs.y); lua_rawseti(L, -2, 2);
-		lua_pushnumber(L, op.maxs.z); lua_rawseti(L, -2, 3);
+		lua_pushnumber(L, op.maxs.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
+		lua_pushnumber(L, op.maxs.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
+		lua_pushnumber(L, op.maxs.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
 	}
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "offset");
 	lua_createtable(L, 3, 0); {
-		lua_pushnumber(L, op.offset.x); lua_rawseti(L, -2, 1);
-		lua_pushnumber(L, op.offset.y); lua_rawseti(L, -2, 2);
-		lua_pushnumber(L, op.offset.z); lua_rawseti(L, -2, 3);
+		lua_pushnumber(L, op.offset.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
+		lua_pushnumber(L, op.offset.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
+		lua_pushnumber(L, op.offset.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
 	}
 	lua_rawset(L, -3);
 	return 1;
@@ -8385,7 +8385,7 @@ int LuaSyncedRead::GetUnitScriptPiece(lua_State* L)
 			const int piece = script->ScriptToModel(sp);
 			if (piece != -1) {
 				lua_pushnumber(L, piece + 1);
-				lua_rawseti(L, -2, sp);
+				lua_rawseti(L, LUA_TABLE_KEY_INDEX, sp);
 			}
 		}
 		return 1;
