@@ -67,7 +67,7 @@ static inline CAICheats* GetCheatCallBack(int skirmishAIId) { return &AI_LEGACY_
 
 
 static void CheckSkirmishAIId(int skirmishAIId, const char* caller) {
-	if (skirmishAIId >= 0 && skirmishAIId < SPECIAL_AI_ID)
+	if (skirmishAIId >= 0 && skirmishAIId < MAX_AIS)
 		return;
 
 	const char* fmt = "[%s][caller=%s] illegal skirmish-AI ID %i";
