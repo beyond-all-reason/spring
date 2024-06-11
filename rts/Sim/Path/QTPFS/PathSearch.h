@@ -97,7 +97,7 @@ namespace QTPFS {
 			, hCostMult(0.0f)
 			, haveFullPath(false)
 			, havePartPath(false)
-
+			, pathOwner(nullptr)
 			{}
 		PathSearch(unsigned int pathSearchType)
 			: PathSearch()
@@ -126,6 +126,8 @@ namespace QTPFS {
 		int GetPathType() const { return pathType; }
 
 		void SetGoalDistance(float dist) { goalDistance = dist; }
+
+		const CSolidObject* Getowner() const { return pathOwner; }
 
 	private:
 		struct DirectionalSearchData {
@@ -175,8 +177,11 @@ namespace QTPFS {
 		const PathHashType GenerateHash2(uint32_t p1, uint32_t p2) const;
 
 		const PathHashType GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
-		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const;
 
+		public:
+		static const std::uint32_t GenerateVirtualNodeNumber(const QTPFS::NodeLayer& nodeLayer, const INode* startNode, int nodeMaxSize, int x, int z, uint32_t* depth = nullptr);
+
+		private:
 		QTPFS::SearchThreadData* searchThreadData;
 
 		// Identifies the layer, target quad and source quad for a search query so that similar

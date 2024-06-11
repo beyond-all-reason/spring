@@ -537,7 +537,7 @@ void QTPFS::PathManager::InitNodeLayer(unsigned int layerNum, const SRectangle& 
 	for (int factor = 4; factor < numRootCount; factor <<= 2) {
 		rootShift -= 2;
 	}
-	QTNode::MAX_DEPTH = rootShift>>1; // std::min(rootShift>>1, QTNode::MAX_DEPTH);
+	QTNode::MAX_DEPTH = (rootShift)/QTPFS_NODE_NUMBER_SHIFT_STEP;
 	uint32_t rootMask = (~0) << rootShift;
 	nl.SetRootMask(rootMask);
 
@@ -633,7 +633,7 @@ void QTPFS::PathManager::UpdateNodeLayer(unsigned int layerNum, const SRectangle
 		#endif
 
 		pathCache.SetLayerPathCount(layerNum, INITIAL_PATH_RESERVE);
-		pathCache.MarkDeadPaths(re, layerNum);
+		pathCache.MarkDeadPaths(re, nodeLayer);
 
 		#ifndef QTPFS_CONSERVATIVE_NEIGHBOR_CACHE_UPDATES
 		nodeLayers[layerNum].ExecNodeNeighborCacheUpdates(ur, updateThreadData[currentThread]);
@@ -764,6 +764,9 @@ void QTPFS::PathManager::Update() {
 							path.SetBoundingBox();
 						}
 					}
+					// LOG("%s: clean path pos %d -> %d", __func__
+					// 	, path.GetFirstNodeIdOfCleanPath(), dirtyPathDetail.nodesAreCleanFromNodeId);
+					path.SetFirstNodeIdOfCleanPath(dirtyPathDetail.nodesAreCleanFromNodeId);
 					if (path.IsBoundingBoxOverriden())
 						path.SetBoundingBox();
 				//}
@@ -790,6 +793,9 @@ bool QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 
 	if (search->initialized)
 		return true;
+
+	// if (search->Getowner() != nullptr && 2102 == search->Getowner()->id)
+	// 	LOG("%s: search prep (%d)", __func__, search->GetID());
 
 	int pathType = search->GetPathType();
 
@@ -952,6 +958,9 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 	}
 }
 
+// #pragma GCC push_options
+// #pragma GCC optimize ("O0")
+
 bool QTPFS::PathManager::ExecuteSearch(
 	PathSearch* search,
 	NodeLayer& nodeLayer,
@@ -987,6 +996,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 	assert(path->GetID() == search->GetID());
 
 	bool synced = path->IsSynced();
+	bool forceFullPath = false;
 
 	entt::entity chainHeadEntity = entt::null;
 	entt::entity partialChainHeadEntity = entt::null;
@@ -1008,6 +1018,10 @@ bool QTPFS::PathManager::ExecuteSearch(
 				if (partialChainHeadEntity != pathEntity) {
 					bool pathIsCopyable = !registry.all_of<PathSearchRef>(partialChainHeadEntity);
 					if (!pathIsCopyable) {
+
+						// if (search->Getowner() != nullptr && 2102 == search->Getowner()->id)
+						// 	LOG("%s: partial-share search waiting (%d)", __func__, search->GetID());
+
 						search->pathRequestWaiting = true;
 						return false;
 					}
@@ -1020,6 +1034,10 @@ bool QTPFS::PathManager::ExecuteSearch(
 					// proceed with the search.
 					search->pathRequestWaiting = false;
 					search->doPartialSearch = true;
+
+					// if (search->Getowner() != nullptr && 2102 == search->Getowner()->id)
+					// 	LOG("%s: partial search start (%d)", __func__, search->GetID());
+
 				}
 			}
 		}
@@ -1030,7 +1048,6 @@ bool QTPFS::PathManager::ExecuteSearch(
 				// LOG("%s: chainHeadEntity %x != pathEntity %x", __func__
 				// 		, entt::to_integral(chainHeadEntity), entt::to_integral(pathEntity));
 				if (chainHeadEntity != pathEntity){
-					assert(partialChainHeadEntity != pathEntity);
 					bool pathIsCopyable = !registry.all_of<PathSearchRef>(chainHeadEntity);
 					if (pathIsCopyable) {
 						// LOG("%s: pathEntity %x pathIsCopyable = %d", __func__
@@ -1038,11 +1055,37 @@ bool QTPFS::PathManager::ExecuteSearch(
 						auto& headChainPath = registry.get<IPath>(chainHeadEntity);
 						search->SharedFinalize(&headChainPath, path);
 						search->pathRequestWaiting = false;
+
+						// if (search->Getowner() != nullptr && 2102 == search->Getowner()->id)
+						// 	LOG("%s: full shared (%d)", __func__, search->GetID());
 					}
 					else {
-						search->pathRequestWaiting = true;
+						PartialSharedPathMap::const_iterator partialSharedPathsIt = partialSharedPaths.find(path->GetVirtualHash());
+						if (partialSharedPathsIt != partialSharedPaths.end()) {
+							assert(path->GetVirtualHash() != QTPFS::BAD_HASH);
+							partialChainHeadEntity = partialSharedPathsIt->second;
+
+							// If this path is the head of a partial path, we need to make sure it isn't blocking the head
+							// of the full path copy (which would cause a deadlock.)
+							if (partialChainHeadEntity == pathEntity) {
+								auto& fullCopyHeadChainPath = registry.get<IPath>(chainHeadEntity);
+								if (fullCopyHeadChainPath.GetVirtualHash() == path->GetVirtualHash()) {
+									// we have deadlock, so force this path to be processed now.
+									forceFullPath = true;
+									search->pathRequestWaiting = false;
+								}
+							}
+						}
+
+						if (!forceFullPath) {
+							search->pathRequestWaiting = true;
+
+							// if (search->Getowner() != nullptr && 2102 == search->Getowner()->id)
+							// 	LOG("%s: fully-shared search waiting (%d)", __func__, search->GetID());
+						}
 					}
-					return false;
+					if (!forceFullPath)
+						return false;
 				}
 			}
 		}
@@ -1261,6 +1304,8 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	return (oldPath->GetID());
 }
 
+// #pragma GCC pop_options
+
 void QTPFS::PathManager::UpdatePath(const CSolidObject* owner, unsigned int pathID) {
 }
 
@@ -1374,6 +1419,9 @@ unsigned int QTPFS::PathManager::RequestPath(
 
 	returnPathId = QueueSearch(object, moveDef, sourcePoint, targetPoint, radius, synced, synced);
 
+	// if (object != nullptr && 30809 == object->id)
+	// 	LOG("%s: RequestPath (%d).", __func__, returnPathId);
+
 	if (!synced && returnPathId != 0) {
 		// Unsynced calls are expected to resolve immediately.
 		returnPathId = ExecuteUnsyncedSearch(returnPathId);
@@ -1441,7 +1489,7 @@ void QTPFS::PathManager::ClearPathUpdated(unsigned int pathID) {
 
 
 float3 QTPFS::PathManager::NextWayPoint(
-	const CSolidObject*, // owner
+	const CSolidObject* owner,
 	unsigned int pathID,
 	unsigned int, // numRetries
 	float3 point,
@@ -1519,6 +1567,10 @@ float3 QTPFS::PathManager::NextWayPoint(
 	} else {
 		livePath->SetNextPointIndex(nextPointIndex);
 	}
+
+	// if (owner != nullptr && 30809 == owner->id)
+	// 	LOG("%s: repath target waypoint (%d) current waypoint (%d) of (%d) pathId=%d", __func__
+	// 			, livePath->GetRepathTriggerIndex(), nextPointIndex, lastPointIndex, pathID);
 
 	if (livePath->GetRepathTriggerIndex() > 0 && nextPointIndex >= livePath->GetRepathTriggerIndex()) {
 		// Request an update to the path.
