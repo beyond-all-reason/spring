@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 cmake_policy(SET CMP0060 OLD) #causes link errors on Linux otherwise
 cmake_policy(SET CMP0065 OLD) #we need binaries compiled with -rdynamic for BARb to work (cause unknown https://github.com/beyond-all-reason/spring/issues/405)
+cmake_policy(SET CMP0135 NEW)
 
 set(CMAKE_MODULES_SPRING "${CMAKE_CURRENT_SOURCE_DIR}/rts/build/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_MODULES_SPRING}")
@@ -95,16 +96,32 @@ include(TestCXXFlags)
 
 ## 32bit or 64bit?
 set(MARCH_FLAG ${MARCH} CACHE STRING "CPU optimization (use `generic` for generic optimization)")
-if    (CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(MARCH_BITS 64 CACHE INTERNAL "" FORCE)
-else  (CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(MARCH_BITS 32 CACHE INTERNAL "" FORCE)
-endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
+set(MARCH_BITS 64 CACHE INTERNAL "" FORCE)
 
 message(STATUS "Building Spring on ${MARCH_BITS}bit environment")
-set(BUILD_BITS "${MARCH_BITS}" CACHE STRING "Target arch machine type")
-message(STATUS "Targetting ${BUILD_BITS}bit")
 
+function(FetchWinLibs libname)
+	include(FetchContent)
+	if (EXISTS "${CMAKE_SOURCE_DIR}/${libname}")
+		file(REMOVE_RECURSE "${CMAKE_SOURCE_DIR}/${libname}")
+	endif()
+	#set(FETCHCONTENT_BASE_DIR ${CMAKE_SOURCE_DIR})
+	FetchContent_Declare(
+		${libname}
+		URL "https://github.com/beyond-all-reason/${libname}/archive/refs/heads/master.zip"
+		#GIT_REPOSITORY https://github.com/beyond-all-reason/${libname}.git
+		#GIT_TAG master
+		#BUILD_DIR ""
+		#SUBBUILD_DIR ""
+		#GIT_SHALLOW    TRUE
+		#GIT_PROGRESS   TRUE
+		SOURCE_DIR "${CMAKE_SOURCE_DIR}/${libname}"
+	)
+
+	message(STATUS "Fetching ${libname}")
+	FetchContent_MakeAvailable(${libname})
+	set(MINGWLIBS "${CMAKE_SOURCE_DIR}/${libname}" CACHE PATH "Location of the mingwlibs package" FORCE)
+endfunction()
 
 ### Install paths (relative to CMAKE_INSTALL_PREFIX)
 if    (UNIX AND NOT MINGW)
@@ -123,22 +140,14 @@ else  (UNIX AND NOT MINGW)
 	set(DOCDIR  "doc" CACHE STRING "Where to install basic project documentation (README, LICENSE, etc.)")
 	set(DATADIR "." CACHE STRING "Where to install game content")
 
-	if    (NOT MINGWLIBS)
+	if (NOT MINGWLIBS OR MINGWLIBS STREQUAL "")
 		if(MSVC)
-			if(BUILD_BITS EQUAL 32)
-				set(MINGWLIBS ${CMAKE_SOURCE_DIR}/vclibs CACHE PATH "Location of the vclibs package")
-			else(BUILD_BITS EQUAL 32)
-				set(MINGWLIBS ${CMAKE_SOURCE_DIR}/vclibs64 CACHE PATH "Location of the vclibs package")
-			endif(BUILD_BITS EQUAL 32)
+			FetchWinLibs("vclibs64")
 		else(MSVC)
-			if(BUILD_BITS EQUAL 32)
-				set(MINGWLIBS ${CMAKE_SOURCE_DIR}/mingwlibs CACHE PATH "Location of the mingwlibs package")
-			else(BUILD_BITS EQUAL 32)
-				set(MINGWLIBS ${CMAKE_SOURCE_DIR}/mingwlibs64 CACHE PATH "Location of the mingwlibs package")
-			endif(BUILD_BITS EQUAL 32)
+			FetchWinLibs("mingwlibs64")
 		endif(MSVC)
 	endif ()
-	if    (EXISTS "${MINGWLIBS}" AND IS_DIRECTORY "${MINGWLIBS}")
+	if  (EXISTS "${MINGWLIBS}" AND IS_DIRECTORY "${MINGWLIBS}")
 		if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
 			#rectifying dll search issue present in CMake >= 3.17.0, see https://discourse.cmake.org/t/findzlib-fails-starting-with-cmake-3-17/6046/4
 			set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll" ${CMAKE_FIND_LIBRARY_SUFFIXES})
@@ -452,11 +461,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 		set(FALLBACK_SSE_FLAGS "${FALLBACK_SSE_FLAGS} -mno-avx -mno-fma -mno-fma4 -mno-xop -mno-lwp")
 		set(FALLBACK_SSE_FLAGS "${FALLBACK_SSE_FLAGS} -mno-avx2")
 
-		if (MARCH_BITS EQUAL 64)
-			set(FALLBACK_MARCH "x86-64")
-		else (MARCH_BITS EQUAL 64)
-			set(FALLBACK_MARCH "i686")
-		endif (MARCH_BITS EQUAL 64)
+		set(FALLBACK_MARCH "x86-64")
 
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${FALLBACK_MARCH} -mtune=generic ${FALLBACK_SSE_FLAGS}")
 	endif (NOT MARCH_FLAG STREQUAL "generic")
@@ -524,22 +529,9 @@ else  (MSVC)
 	#set(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3") #cmake has -g it by default
 	#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ggdb3") #cmake has -g it by default
 
-	if (MARCH_BITS EQUAL 64 AND BUILD_BITS EQUAL 32)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
-	endif (MARCH_BITS EQUAL 64 AND BUILD_BITS EQUAL 32)
-
 	if     (MINGW)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -Wl,--enable-auto-import")
 		set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -Wl,--enable-auto-import")
-		if    (BUILD_BITS EQUAL 32)
-			# Increase memory limit from 2GB to 3GB on 32bit Windows and 2GB->4GB on 64bit Windows (assuming spring.exe is 32bit)
-			# http://msdn.microsoft.com/en-us/library/windows/desktop/aa366778(v=vs.85).aspx
-			message(STATUS "Enable IMAGE_FILE_LARGE_ADDRESS_AWARE (>2GB memory limit)")
-			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--large-address-aware")
-		else (BUILD_BITS EQUAL 32)
-			message(WARNING "The 64bit version of spring on windows is experimental and may not sync with regular builds")
-		endif (BUILD_BITS EQUAL 32)
 	endif  (MINGW)
 endif (MSVC)
 
