@@ -170,8 +170,8 @@ void CModInfo::Init(const std::string& modFileName)
 		qtLowerQualityPaths = system.GetBool("qtLowerQualityPaths", qtLowerQualityPaths);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
-		smoothMeshResDivider = std::min(system.GetInt("smoothMeshResDivider", smoothMeshResDivider), 1);
-		smoothMeshSmoothRadius = std::min(system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius), 1);
+		smoothMeshResDivider = std::max(system.GetInt("smoothMeshResDivider", smoothMeshResDivider), 1);
+		smoothMeshSmoothRadius = std::max(system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius), 1);
 
 		quadFieldQuadSizeInElmos = std::clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
 
