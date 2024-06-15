@@ -1854,9 +1854,6 @@ void CLuaHandle::UnitArrivedAtGoal(const CUnit* unit)
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	static const LuaHashString cmdStr(__func__);
-	if (!cmdStr.GetGlobalFunc(L))
-		return;
-
 	UnitCallIn(cmdStr, unit);
 }
 
