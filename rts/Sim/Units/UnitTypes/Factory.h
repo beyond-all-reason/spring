@@ -23,6 +23,7 @@ public:
 	void UpdateBuild(CUnit* buildee);
 	void FinishBuild(CUnit* buildee);
 	void StopBuild();
+	bool IsCurrentBuildeeMatchingBuildQueueFront(const CCommandQueue& buildQueue) const;
 	/// @return whether the to-be-built unit is enqueued
 	unsigned int QueueBuild(const UnitDef* buildeeDef, const Command& buildCmd);
 

@@ -152,6 +152,13 @@ static constexpr int GetCountMultiplierFromOptions(int opts)
 	return ret;
 }
 
+void CFactoryCAI::BuildeeChangeCheck()
+{
+	const auto fac = static_cast <CFactory *> (owner);
+	if (!fac->IsCurrentBuildeeMatchingBuildQueueFront(commandQue))
+		fac->StopBuild();
+}
+
 void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -273,9 +280,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 				}
 			}
 
-			if (!repeatOrders)
-				static_cast<CFactory*>(owner)->StopBuild();
-
+			BuildeeChangeCheck();
 		} else {
 			for (int a = 0; a < numItems; ++a) {
 				commandQue.push_back(c);
@@ -299,13 +304,10 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
 		boi->second += buildCount;
 		UpdateIconName(newCmd.GetID(), boi->second);
 	}
-	if (!commandQue.empty() && (it == commandQue.begin())) {
-		// ExecuteStop(), without the pop_front()
-		CFactory* fac = static_cast<CFactory*>(owner);
-		fac->StopBuild();
-	}
 	while (buildCount--)
 		it = commandQue.insert(it, newCmd);
+
+	BuildeeChangeCheck();
 }
 
 
