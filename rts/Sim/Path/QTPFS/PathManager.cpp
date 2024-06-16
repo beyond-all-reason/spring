@@ -741,16 +741,18 @@ void QTPFS::PathManager::Update() {
 				}
 
 				// TODO: perhaps not mark paths multiple times if multiple blocks are updated in same frame?
-				if (registry.all_of<PathIsDirty>(pathEntity)) { continue; }
+				// if (registry.all_of<PathIsDirty>(pathEntity)) { continue; }
 
-				if (dirtyPathDetail.clearPath) {
-					registry.emplace<PathIsDirty>(pathEntity);
-					pathsMarkedDirty++;
-				}
+				if ( !registry.all_of<PathIsDirty>(pathEntity) ) {
+					if (dirtyPathDetail.clearPath) {
+						registry.emplace<PathIsDirty>(pathEntity);
+						pathsMarkedDirty++;
+					}
 				// currently always true
 				//if (dirtyPathDetail.clearSharing) {
 					RemovePathFromShared(pathEntity);
 					RemovePathFromPartialShared(pathEntity);
+				}
 
 					// The path may still be fine for owner, even if it can't be shared any more.
 					auto& path = registry.get<IPath>(pathEntity);
@@ -767,7 +769,7 @@ void QTPFS::PathManager::Update() {
 					// LOG("%s: clean path pos %d -> %d", __func__
 					// 	, path.GetFirstNodeIdOfCleanPath(), dirtyPathDetail.nodesAreCleanFromNodeId);
 					path.SetFirstNodeIdOfCleanPath(dirtyPathDetail.nodesAreCleanFromNodeId);
-					if (path.IsBoundingBoxOverriden())
+					// if (path.IsBoundingBoxOverriden())
 						path.SetBoundingBox();
 				//}
 			}
@@ -840,7 +842,8 @@ bool QTPFS::PathManager::InitializeSearch(entt::entity searchEntity) {
 		}
 
 		search->initialized = true;
-	}
+	} else // If the underlying path is missing for some reason, then this search is invalid.
+		return false;
 
 	return search->initialized;
 }
@@ -928,17 +931,17 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 
 						// adding a new search doesn't break this loop because new paths do not
 						// have the tag ProcessPath and so don't impact this group view.
-						RequeueSearch(path, false, true);
+						RequeueSearch(path, false, true, search->tryPathRepair);
 						// LOG("%s: %x - raw path check failed", __func__, entt::to_integral(pathEntity));
 					} else if (search->pathRequestWaiting) {
 						// nothing to do - it will be rerun next frame
 						// LOG("%s: %x - waiting for partial root path", __func__, entt::to_integral(pathEntity));
 						// continue;
 						registry.remove<PathSearchRef>(pathEntity);
-						RequeueSearch(path, false, search->allowPartialSearch);
+						RequeueSearch(path, false, search->allowPartialSearch, false);
 					} else if (search->rejectPartialSearch) {
 						registry.remove<PathSearchRef>(pathEntity);
-						RequeueSearch(path, false, false);
+						RequeueSearch(path, false, false, false);
 					}
 					else {
 						// LOG("%s: %x - search failed", __func__, entt::to_integral(pathEntity));
@@ -1091,11 +1094,18 @@ bool QTPFS::PathManager::ExecuteSearch(
 		}
 	}
 
+	// Only the head of a partial path share is allowed to attempt a path repair. It doesn't make sense for a
+	// subordinate sharing path to attempt a repair, because the repair should be done already.
+	bool isHeadOfPathSharing = !search->doPartialSearch;
+	search->tryPathRepair &= isHeadOfPathSharing;
+
 	search->InitializeThread(&searchThreadData[currentThread]);
 
 	if (search->doPartialSearch) {
 		auto* path = &registry.get<IPath>(partialChainHeadEntity);
 		search->LoadPartialPath(path);
+	} else if (search->doPathRepair) {
+		search->LoadRepairPath();
 	}
 
 	if (search->Execute(searchStateOffset)) {
@@ -1150,7 +1160,7 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 			registry.remove<PathIsToBeUpdated>(entity);
 			registry.emplace_or_replace<PathUpdatedCounterIncrease>(entity);
 
-			RequeueSearch(path, true, false);
+			RequeueSearch(path, true, false, true);
 		});
 	}
 }
@@ -1241,7 +1251,7 @@ unsigned int QTPFS::PathManager::QueueSearch(
 }
 
 unsigned int QTPFS::PathManager::RequeueSearch(
-	IPath* oldPath, const bool allowRawSearch, const bool allowPartialSearch
+	IPath* oldPath, const bool allowRawSearch, const bool allowPartialSearch, const bool allowRepair
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!ThreadPool::inMultiThreadedSection);
@@ -1280,7 +1290,7 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	// start re-request from the current point
 	// along the path, not the original source
 	// oldPath->AllocPoints(2); - don't clear, will mess up active units.
-	oldPath->AllocNodes(0);
+	//oldPath->AllocNodes(0);
 	oldPath->SetSourcePoint(pos);
 
 	newSearch->SetID(oldPath->GetID());
@@ -1293,6 +1303,8 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	newSearch->initialized = false;
 	newSearch->allowPartialSearch = allowPartialSearch;
 	newSearch->synced = oldPath->IsSynced();
+
+	newSearch->tryPathRepair = allowRepair;
 
 	registry.emplace_or_replace<PathSearchRef>(pathEntity, searchEntity);
 
@@ -1393,7 +1405,13 @@ void QTPFS::PathManager::RemovePathFromPartialShared(entt::entity entity) {
 
 void QTPFS::PathManager::RemovePathSearch(entt::entity pathEntity) {
 	RECOIL_DETAILED_TRACY_ZONE;
+
 	auto search = registry.try_get<PathSearchRef>(pathEntity);
+
+	// if (pathEntity == entt::entity(257949903))
+	// 		LOG("%s: id: %d search %p", __func__
+	// 			, entt::to_integral(pathEntity), search);
+
 	if (search != nullptr) {
 		entt::entity searchId = search->value;
 		if (registry.valid(searchId))

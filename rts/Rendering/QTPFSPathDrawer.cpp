@@ -118,9 +118,9 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 			continue;
 
 		font->SetTextColor(0.0f, 0.0f, 0.0f, 1.0f);
-		// font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
+		font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
 		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetNodeNumber(), "%08x"));
-		font->glWorldPrint(pos, 5.0f, IntToString(node->GetIndex(), "%d"));
+		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetDepth(), "%d"));
 	}
 
 	font->DrawWorldBuffered();

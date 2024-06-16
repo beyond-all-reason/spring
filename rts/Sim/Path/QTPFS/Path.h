@@ -22,7 +22,7 @@ class CSolidObject;
 namespace QTPFS {
 	struct IPath {
 		struct PathNodeData {
-			uint32_t nodeId;
+			uint32_t nodeId = -1U;
 			uint32_t nodeNumber = -1U;
 			float2 netPoint;
 			int pathPointIndex = -1;
@@ -98,6 +98,7 @@ namespace QTPFS {
 			haveFullPath = other.haveFullPath;
 			havePartialPath = other.havePartialPath;
 			boundingBoxOverride = other.boundingBoxOverride;
+			isRawPath = other.isRawPath;
 			points = other.points;
 			nodes = other.nodes;
 
@@ -129,6 +130,7 @@ namespace QTPFS {
 			haveFullPath = other.haveFullPath;
 			havePartialPath = other.havePartialPath;
 			boundingBoxOverride = other.boundingBoxOverride;
+			isRawPath = other.isRawPath;
 			points = std::move(other.points);
 			nodes = std::move(other.nodes);
 
@@ -174,7 +176,7 @@ namespace QTPFS {
 			const unsigned int begin = (nextPointIndex >= 2U) ? nextPointIndex - 2U : 0U;
 			// const unsigned int end = (repathAtPointIndex > 0U) ? repathAtPointIndex + 1U : points.size();
 			const unsigned int end = points.size();
-
+			
 			for (unsigned int n = begin; n < end; n++) {
 				boundingBoxMins.x = std::min(boundingBoxMins.x, points[n].x);
 				boundingBoxMins.z = std::min(boundingBoxMins.z, points[n].z);
@@ -248,6 +250,10 @@ namespace QTPFS {
 			nodes[i].SetNodeBad(isBad);
 		}
 
+		const PathNodeData& GetNode(unsigned int i) const {
+			return nodes[i];
+		};
+
 		void RemoveNode(size_t index) {
 			if (index >= nodes.size()) { return; }
 			unsigned int start = index, end = nodes.size() - 1;
@@ -261,7 +267,8 @@ namespace QTPFS {
 			nodes[i].xmax = xmax;
 			nodes[i].zmax = zmax;
 		}
-		const PathNodeData& GetNode(unsigned int i) const { return nodes[i]; };
+		// There are always (points - 1) valid path nodes.
+		uint32_t GetGoodNodeCount() const { return points.size() - 1; };
 
 		void SetSourcePoint(const float3& p) { /* checkPointInBounds(p); */ assert(points.size() >= 2); points[                0] = p; }
 		void SetTargetPoint(const float3& p) { /* checkPointInBounds(p); */ assert(points.size() >= 2); points[points.size() - 1] = p; }
@@ -323,6 +330,9 @@ namespace QTPFS {
 		unsigned int GetFirstNodeIdOfCleanPath() const { return firstNodeIdOfCleanPath; }
 		void SetFirstNodeIdOfCleanPath(int nodeId) { firstNodeIdOfCleanPath = nodeId; }
 
+		bool IsRawPath() const { return isRawPath; }
+		void SetIsRawPath(bool enable) { isRawPath = enable; }
+
 	private:
 		unsigned int pathID = 0;
 		int pathType = 0;
@@ -347,6 +357,7 @@ namespace QTPFS {
 		bool haveFullPath = true;
 		bool havePartialPath = false;
 		bool boundingBoxOverride = false;
+		bool isRawPath = false;
 
 		std::vector<float3> points;
 		std::vector<PathNodeData> nodes;

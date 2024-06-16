@@ -141,7 +141,8 @@ namespace QTPFS {
 		unsigned int RequeueSearch(
 			IPath* oldPath,
 			const bool allowRawSearch,
-			const bool allowPartialSearch
+			const bool allowPartialSearch,
+			const bool allowRepair
 		);
 
 	private:

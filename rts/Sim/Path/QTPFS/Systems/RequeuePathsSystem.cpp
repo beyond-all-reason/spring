@@ -39,7 +39,7 @@ void RequeuePathsSystem::Update()
             bool dirtyPath = registry.any_of<PathIsDirty>(pathEntity);
             if (dirtyPath) { continue; }
 
-            pm->RequeueSearch(&registry.get<IPath>(pathEntity), true, false);
+            pm->RequeueSearch(&registry.get<IPath>(pathEntity), true, false, true);
             registry.emplace_or_replace<PathUpdatedCounterIncrease>(pathEntity);
             
         }
