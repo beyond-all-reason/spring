@@ -760,7 +760,7 @@ void QTPFS::PathManager::Update() {
 					if (dirtyPathDetail.autoRepathTrigger > 0) {
 						// Rather than repath immediately we can defer the repath until the unit
 						// gets closer to the damaged area.
-						unsigned int currRepathTrigger = path.GetRepathTriggerIndex();
+						const unsigned int currRepathTrigger = path.GetRepathTriggerIndex();
 						if (currRepathTrigger == 0 || currRepathTrigger > dirtyPathDetail.autoRepathTrigger) {
 							path.SetRepathTriggerIndex(dirtyPathDetail.autoRepathTrigger);
 							path.SetBoundingBox();
@@ -768,7 +768,11 @@ void QTPFS::PathManager::Update() {
 					}
 					// LOG("%s: clean path pos %d -> %d", __func__
 					// 	, path.GetFirstNodeIdOfCleanPath(), dirtyPathDetail.nodesAreCleanFromNodeId);
-					path.SetFirstNodeIdOfCleanPath(dirtyPathDetail.nodesAreCleanFromNodeId);
+
+					// Ensure the last clean node is always taken in case multiple nodes were processed this frame.
+					const int curCleanNodeId = path.GetFirstNodeIdOfCleanPath();
+					const int nextCleanNodeId = dirtyPathDetail.nodesAreCleanFromNodeId;
+					path.SetFirstNodeIdOfCleanPath(std::max(curCleanNodeId, nextCleanNodeId));
 					// if (path.IsBoundingBoxOverriden())
 						path.SetBoundingBox();
 				//}
@@ -905,7 +909,7 @@ void QTPFS::PathManager::ExecuteQueuedSearches() {
 		registry.remove<PathSearchRef>(pathEntity);
 
 		// If the node data wasn't recorded, then the path isn't shareable.
-		if (!path->IsBoundingBoxOverriden()) {
+		if (!path->IsBoundingBoxOverriden() || path->GetNodeList().size() == 0) {
 			RemovePathFromShared(pathEntity);
 			RemovePathFromPartialShared(pathEntity);
 		}
@@ -1165,6 +1169,9 @@ void QTPFS::PathManager::QueueDeadPathSearches() {
 	}
 }
 
+// #pragma GCC push_options
+// #pragma GCC optimize ("O0")
+
 unsigned int QTPFS::PathManager::QueueSearch(
 	const CSolidObject* object,
 	const MoveDef* moveDef,
@@ -1250,6 +1257,8 @@ unsigned int QTPFS::PathManager::QueueSearch(
 	return (newPath->GetID());
 }
 
+// #pragma GCC pop_options
+
 unsigned int QTPFS::PathManager::RequeueSearch(
 	IPath* oldPath, const bool allowRawSearch, const bool allowPartialSearch, const bool allowRepair
 ) {
@@ -1257,10 +1266,10 @@ unsigned int QTPFS::PathManager::RequeueSearch(
 	assert(!ThreadPool::inMultiThreadedSection);
 	entt::entity pathEntity = entt::entity(oldPath->GetID());
 
-	assert(!registry.all_of<PathDelayedDelete>(pathEntity));
+	// assert(!registry.all_of<PathDelayedDelete>(pathEntity));
 
 	// If a path request is already in progress then don't create another one.
-	if (registry.all_of<PathSearchRef>(pathEntity))
+	if (registry.any_of<PathSearchRef, PathDelayedDelete>(pathEntity))
 		return (oldPath->GetID());
 
 	if (oldPath->GetOwner()->objectUsable == false) {
