@@ -125,15 +125,11 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, const NodeLayer& nodeL
 
 		if (path->IsSynced() == false) { continue; }
 		if (path->GetPathType() != pathType) { continue; }
-		// auto-repath should already be triggered. - TODO remove this.
-		// if (path->GetRepathTriggerIndex() != 0 && path->GetNextPointIndex() > path->GetRepathTriggerIndex()) {
-		// 	continue;
-		// }
 
 		// LOG("%s: %x is processing", __func__, (int)entity);
 
 		const float3& pathMins = path->GetBoundingBoxMins();
-		const float3& pathMaxs = path->GetBoundingBoxMaxs(); // why is node wrong size?
+		const float3& pathMaxs = path->GetBoundingBoxMaxs();
 
 		// if rectangle does not overlap bounding-box, skip this path
 		if ((r.x2 * SQUARE_SIZE) < pathMins.x) { continue; }
