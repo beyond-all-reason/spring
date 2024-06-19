@@ -1597,10 +1597,10 @@ int LuaSyncedRead::GetMapStartPositions(lua_State* L)
 			return false;
 
 		lua_createtable(L, 3, 0);
-		lua_pushnumber(L, pos.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
-		lua_pushnumber(L, pos.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
-		lua_pushnumber(L, pos.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
-		lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1 + teamNum); // [i] = {x,y,z}
+		lua_pushnumber(L, pos.x); lua_rawseti(L, -2, 1);
+		lua_pushnumber(L, pos.y); lua_rawseti(L, -2, 2);
+		lua_pushnumber(L, pos.z); lua_rawseti(L, -2, 3);
+		lua_rawseti(L, -2, 1 + teamNum); // [i] = {x,y,z}
 		return true;
 	});
 

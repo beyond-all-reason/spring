@@ -1465,9 +1465,9 @@ static inline void ParseCobArgs(
 			lua_rawgeti(L, a, 1);
 			lua_rawgeti(L, a, 2);
 
-			if (lua_isnumber(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
-				const int x = lua_toint(L, LUA_TABLE_KEY_INDEX);
-				const int z = lua_toint(L, LUA_TABLE_VALUE_INDEX);
+			if (lua_isnumber(L, -2) && lua_isnumber(L, -1)) {
+				const int x = lua_toint(L, -2);
+				const int z = lua_toint(L, -1);
 
 				args[1 + (args[0]++)] = PACKXZ(x, z);
 			} else {
@@ -7025,7 +7025,7 @@ static bool ParseCommandDescription(lua_State* L, int table,
 		if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX))
 			continue;
 
-		const string key = lua_tostring(L, -1);
+		const string key = lua_tostring(L, -2);
 
 		if (ParseNamedInt(L,    key, "id",          cd.id)         ||
 		    ParseNamedInt(L,    key, "type",        cd.type)       ||
