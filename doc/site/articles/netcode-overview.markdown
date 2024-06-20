@@ -19,7 +19,7 @@ Also, keep in mind the **gamestate can easily get magnitudes larger than the siz
 ### Ping and the packet queue
 Of course, packets do not arrive at the server immediately, your ping is involved.
 But that is not all: **to guard against network instability**, they are not broadcast by the server to other clients immediately. Instead, **packets are queued for a bit later in a buffer**.
-By default this is about about 3-6 simulation frames (100-200ms) on top of your "normal" ping, though **games can adjust it and the engine also adjusts it on its own if a match is "laggy"**.
+By default this is about 3-6 simulation frames (100-200ms) on top of your "normal" ping, though **games can adjust it and the engine also adjusts it on its own if a match is "laggy"**.
 In interfaces such as the `/info` playerlist and `Spring.GetPlayerInfo`, the **ping is in terms of sim frames after taking the queue into account**.
 
 ### Sync
@@ -43,7 +43,7 @@ This means that **using the save mechanism is not currently possible to get mid-
 
 ### Tradeoffs involved
 The **benefits** of this setup are:
-* extrmely small bandwidth use (remember Recoil has its roots in Total Annihilation back from 1997)
+* extremely small bandwidth use (remember Recoil has its roots in Total Annihilation back from 1997)
 * small replay size
 * you cannot easily cheat by modifying your own gamestate (cheat engine style), since there are no inputs that will replicate that on the server.
 * the server doesn't need to simulate a game, since clients already do. This makes hosting much easier. See [the dedicated server article]({{ site.baseurl }}{% link guides/headless-and-dedi.markdown %}).
