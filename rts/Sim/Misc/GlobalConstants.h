@@ -148,8 +148,5 @@ static constexpr float MAX_PROJECTILE_HEIGHT = 1e6f;
  */
 static constexpr int MAX_UNIT_SENSOR_RADIUS = 32768;
 
-
- 
-
 #endif // _GLOBAL_CONSTANTS_H
 
