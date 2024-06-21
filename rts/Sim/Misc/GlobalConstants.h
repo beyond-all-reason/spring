@@ -68,26 +68,10 @@ static constexpr int MAX_TEAMS = 255;
  * (1 byte) in network messages with the values 252 to 255 reserved for
  * special purposes. (FIXME: max should be 252 then?)
  */
-static constexpr int MAX_PLAYERS = 251;
-
-/**
- * ID used to send chat messages to allies.
- */
-static constexpr int TO_ALLIES = 252;
-
-/**
- * ID used to send chat messages to spectators.
- */
+static constexpr int MAX_PLAYERS   = 251;
+static constexpr int TO_ALLIES     = 252;
 static constexpr int TO_SPECTATORS = 253;
-
-/**
- * ID send chat messages to everyone.
- */
-static constexpr int TO_EVERYONE = 254;
-
-/**
- * "player" number for GameServer-generated messages.
- */
+static constexpr int TO_EVERYONE   = 254;
 static constexpr int SERVER_PLAYER = 255;
 
 /**
