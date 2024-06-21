@@ -33,7 +33,7 @@ CPathTexture::CPathTexture()
 , forcedUnitDef(-1)
 , lastUsage(spring_gettime())
 {
-	texSize = int2(mapDims.hmapx, mapDims.hmapy);
+	texSize = int2(mapDims.mapx, mapDims.mapy);
 	texChannels = 4;
 
 	glGenTextures(1, &texture);
@@ -219,13 +219,17 @@ void CPathTexture::Update()
 	}
 
 	// spread update across time
-	constexpr int TEX_SIZE_TO_UPDATE_EACH_FRAME = 128*128;
+	constexpr int TEX_SIZE_TO_UPDATE_EACH_FRAME = 256*256;
 	if (updateProcess >= texSize.y) updateProcess = 0;
 
-	int start = updateProcess;
-	const int updateLines = std::max(TEX_SIZE_TO_UPDATE_EACH_FRAME / texSize.x, ThreadPool::GetNumThreads());
+	const int start = updateProcess;
+	const int hst = start >> 1;
+	const int updateLines = std::max(TEX_SIZE_TO_UPDATE_EACH_FRAME / texSize.x, ThreadPool::GetNumThreads()) & 0xFFFE;
 	updateProcess += updateLines;
 	updateProcess = std::min(updateProcess, texSize.y);
+
+	// updateProcess is always even
+	const int hup = updateProcess >> 1;
 
 	// map PBO
 	infoTexPBO.Bind();
@@ -236,11 +240,16 @@ void CPathTexture::Update()
 	const bool losFullView = ((gu->spectating && gu->spectatingFullView) || losHandler->GetGlobalLOS(gu->myAllyTeam));
 
 	if (ud != nullptr) {
-		for_mt(start, updateProcess, [&](const int y) {
+		for_mt(hst, hup, [&](const int y) {
+			const int y2 = y << 1;
 			int currentThread = ThreadPool::GetThreadNum();
-			for (int x = 0; x < texSize.x; ++x) {
-				const float3 pos = float3(x << 1, 0.0f, y << 1) * SQUARE_SIZE;
-				const int idx = y * texSize.x + x;
+			for (int x = 0; x < (texSize.x >> 1); ++x) {
+				const int x2 = x << 1;
+				const float3 pos = float3(x2, 0.0f, y2) * SQUARE_SIZE;
+				const int idx00 = (y2 + 0) * texSize.x + (x2 + 0);
+				const int idx10 = (y2 + 0) * texSize.x + (x2 + 1);
+				const int idx01 = (y2 + 1) * texSize.x + (x2 + 0);
+				const int idx11 = (y2 + 1) * texSize.x + (x2 + 1);
 
 				BuildSquareStatus status = FREE;
 				BuildInfo bi(ud, pos, guihandler->buildFacing);
@@ -257,23 +266,24 @@ void CPathTexture::Update()
 				} else {
 					status = TERRAINBLOCKED;
 				}
-
-				infoTexMem[idx - offset] = GetBuildColor(status);
+				auto bc = GetBuildColor(status);
+				infoTexMem[idx00 - offset] = bc;
+				infoTexMem[idx10 - offset] = bc;
+				infoTexMem[idx01 - offset] = bc;
+				infoTexMem[idx11 - offset] = bc;
 			}
 		});
 	} else if (md != nullptr) {
 		for_mt(start, updateProcess, [&](const int y) {
 			for (int x = 0; x < texSize.x; ++x) {
-				const int2 sq = int2(x << 1, y << 1);
+				const int2 sq = int2(x, y);
 				const int idx = y * texSize.x + x;
 
 				float scale = 1.0f;
 
 				if (losFullView || losHandler->InLos(SquareToFloat3(sq), gu->myAllyTeam)) {
-					if (CMoveMath::IsBlocked(*md, sq.x,     sq.y    , nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-					if (CMoveMath::IsBlocked(*md, sq.x + 1, sq.y    , nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-					if (CMoveMath::IsBlocked(*md, sq.x,     sq.y + 1, nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-					if (CMoveMath::IsBlocked(*md, sq.x + 1, sq.y + 1, nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+					if (CMoveMath::IsBlocked(*md, sq.x, sq.y, nullptr) & CMoveMath::BLOCK_STRUCTURE)
+						scale = 0.0f;
 				}
 
 				// NOTE: raw speedmods are not necessarily clamped to [0, 1]

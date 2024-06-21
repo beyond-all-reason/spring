@@ -1268,7 +1268,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const int xsize = buildInfo.GetXSize();
 	const int zsize = buildInfo.GetZSize();
 
-	const float3 testPos = buildInfo.pos;
+	const float3& testPos = buildInfo.pos;
 	      float3 sqrPos;
 
 	const int x1 = int(testPos.x / SQUARE_SIZE) - (xsize >> 1), x2 = x1 + xsize;
