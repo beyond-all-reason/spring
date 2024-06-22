@@ -341,6 +341,7 @@ void CMouseHandler::MousePress(int x, int y, int button)
 				}
 			}
 		}
+		ToggleMiddleClickScroll();
 		return;
 	}
 
@@ -492,14 +493,12 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 		return;
 	}
 
-	// Switch camera mode on a middle click that wasn't a middle mouse drag scroll.
-	// the latter is determined by the time the mouse was held down:
-	// switch (dragScrollThreshold)
-	//   <= means a camera mode switch
-	//    > means a drag scroll
-	if (button == SDL_BUTTON_MIDDLE) {
-		if (buttons[SDL_BUTTON_MIDDLE].time > (gu->gameTime - dragScrollThreshold))
-			ToggleMiddleClickScroll();
+	if (locked && button == SDL_BUTTON_MIDDLE) {
+		const float isLongPressDragMovement = buttons[SDL_BUTTON_MIDDLE].time <= (gu->gameTime - dragScrollThreshold);
+		if (isLongPressDragMovement)
+		{
+			ToggleMiddleClickScroll(); // back to normal mode
+		}
 		return;
 	}
 
