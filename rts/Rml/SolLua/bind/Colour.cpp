@@ -52,8 +52,6 @@ namespace Rml::SolLua
 
 	void bind_color(sol::table& bindings)
 	{
-#define COLOUR_COMPONENT(Component, Type, CompT) #Component, sol::property([](Type& self) { return self.Component;}, [](Type& self, CompT value) { self.Component = value; })
-		
 		bindings.new_usertype<Rml::Colourb>("Colourb", sol::constructors<Rml::Colourb(), Rml::Colourb(Rml::byte, Rml::byte, Rml::byte), Rml::Colourb(Rml::byte, Rml::byte, Rml::byte, Rml::byte)>(),
 			// O
 			sol::meta_function::addition, &Rml::Colourb::operator+,
@@ -63,10 +61,10 @@ namespace Rml::SolLua
 			sol::meta_function::equal_to, &Rml::Colourb::operator==,
 
 			// G+S
-			COLOUR_COMPONENT(red, Rml::Colourb, Rml::byte),
-			COLOUR_COMPONENT(green, Rml::Colourb, Rml::byte),
-			COLOUR_COMPONENT(blue, Rml::Colourb, Rml::byte),
-			COLOUR_COMPONENT(alpha, Rml::Colourb, Rml::byte),
+			"red",   sol::property([](Rml::Colourb& self) { return self.red;   }, [](Rml::Colourb& self, Rml::byte value) { self.red   = value; }),
+			"green", sol::property([](Rml::Colourb& self) { return self.green; }, [](Rml::Colourb& self, Rml::byte value) { self.green = value; }),
+			"blue",  sol::property([](Rml::Colourb& self) { return self.blue;  }, [](Rml::Colourb& self, Rml::byte value) { self.blue  = value; }),
+			"alpha", sol::property([](Rml::Colourb& self) { return self.alpha; }, [](Rml::Colourb& self, Rml::byte value) { self.alpha = value; }),
 			"rgba", sol::property(static_cast<ColourbTuple(*)(Rml::Colourb&)>(&getRGBA), static_cast<void(*)(Rml::Colourb&, ColourbTuple)>(&setRGBA))
 		);
 
@@ -79,13 +77,12 @@ namespace Rml::SolLua
 			sol::meta_function::equal_to, &Rml::Colourf::operator==,
 
 			// G+S
-			COLOUR_COMPONENT(red, Rml::Colourf, float),
-			COLOUR_COMPONENT(green, Rml::Colourf, float),
-			COLOUR_COMPONENT(blue, Rml::Colourf, float),
-			COLOUR_COMPONENT(alpha, Rml::Colourf, float),
+			"red",   sol::property([](Rml::Colourf& self) { return self.red;   }, [](Rml::Colourf& self, float value) { self.red   = value; }),
+			"green", sol::property([](Rml::Colourf& self) { return self.green; }, [](Rml::Colourf& self, float value) { self.green = value; }),
+			"blue",  sol::property([](Rml::Colourf& self) { return self.blue;  }, [](Rml::Colourf& self, float value) { self.blue  = value; }),
+			"alpha", sol::property([](Rml::Colourf& self) { return self.alpha; }, [](Rml::Colourf& self, float value) { self.alpha = value; }),
 			"rgba", sol::property(static_cast<ColourfTuple(*)(Rml::Colourf&)>(&getRGBA), static_cast<void(*)(Rml::Colourf&, ColourfTuple)>(&setRGBA))
 		);
-#undef COLOUR_COMPONENT
 	}
 
 } // end namespace Rml::SolLua
