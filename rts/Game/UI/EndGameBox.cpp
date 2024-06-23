@@ -538,9 +538,6 @@ void CEndGameBox::FillTeamStats()
 	stats.emplace_back("Metal stored");
 	stats.emplace_back("Energy stored");
 
-	stats.emplace_back("Metal reclaimed");
-	stats.emplace_back("Energy reclaimed");
-
 	stats.emplace_back("Active Units");
 	stats.emplace_back("Units killed");
 
@@ -581,22 +578,19 @@ void CEndGameBox::FillTeamStats()
 			stats[11].AddStat(team, si.metalProduced + si.metalReceived - (si.metalUsed + si.metalSent+si.metalExcess) );
 			stats[12].AddStat(team, si.energyProduced + si.energyReceived - (si.energyUsed + si.energySent+si.energyExcess) );
 
-			stats[13].AddStat(team, si.metalReclaimed);
-			stats[14].AddStat(team, si.energyReclaimed);
+			stats[13].AddStat(team, si.unitsProduced + si.unitsReceived + si.unitsCaptured - (si.unitsDied + si.unitsSent + si.unitsOutCaptured));
+			stats[14].AddStat(team, si.unitsKilled);
 
-			stats[15].AddStat(team, si.unitsProduced + si.unitsReceived + si.unitsCaptured - (si.unitsDied + si.unitsSent + si.unitsOutCaptured));
-			stats[16].AddStat(team, si.unitsKilled);
+			stats[15].AddStat(team, si.unitsProduced);
+			stats[16].AddStat(team, si.unitsDied);
 
-			stats[17].AddStat(team, si.unitsProduced);
-			stats[18].AddStat(team, si.unitsDied);
+			stats[17].AddStat(team, si.unitsReceived);
+			stats[18].AddStat(team, si.unitsSent);
+			stats[19].AddStat(team, si.unitsCaptured);
+			stats[20].AddStat(team, si.unitsOutCaptured);
 
-			stats[19].AddStat(team, si.unitsReceived);
-			stats[20].AddStat(team, si.unitsSent);
-			stats[21].AddStat(team, si.unitsCaptured);
-			stats[22].AddStat(team, si.unitsOutCaptured);
-
-			stats[23].AddStat(team, si.damageDealt);
-			stats[24].AddStat(team, si.damageReceived);
+			stats[21].AddStat(team, si.damageDealt);
+			stats[22].AddStat(team, si.damageReceived);
 		}
 	}
 }

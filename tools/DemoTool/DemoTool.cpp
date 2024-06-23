@@ -470,8 +470,8 @@ void WriteTeamstatHistory(CDemoReader& reader, unsigned team, const std::string&
 		out << "Team Statistics for " << team << std::endl;
 		out << "Time[sec];MetalUsed;EnergyUsed;MetalProduced;EnergyProduced;MetalExcess;EnergyExcess;"
 		    << "EnergyReceived;MetalSent;EnergySent;DamageDealt;DamageReceived;"
-		    << "UnitsProduced;UnitsDied;UnitsReceived;UnitsSent;UnitsCaptured;"
-		    << "UnitsOutCaptured;UnitsKilled;MetalReclaimed;EnergyReclaimed" << std::endl;
+		    << "UnitsProduced;UnitsDied;UnitsReceived;UnitsSent;nitsCaptured;"
+		    << "UnitsOutCaptured;UnitsKilled" << std::endl;
 		for (unsigned i = 0; i < statvec[team].size(); ++i)
 		{
 			PrintSep(out, time);
@@ -494,8 +494,6 @@ void WriteTeamstatHistory(CDemoReader& reader, unsigned team, const std::string&
 			PrintSep(out, statvec[team][i].unitsCaptured);
 			PrintSep(out, statvec[team][i].unitsOutCaptured);
 			PrintSep(out, statvec[team][i].unitsKilled);
-			PrintSep(out, statvec[team][i].metalReclaimed);
-			PrintSep(out, statvec[team][i].energyReclaimed);
 			out << std::endl;
 			time += header.teamStatPeriod;
 		}

@@ -77,8 +77,6 @@ wstringstream& operator<<(wstringstream& str, const TeamStatistics& header)
 	str<<L"UnitsCaptured: " <<header.unitsCaptured<<endl;
 	str<<L"UnitsOutCaptured: " <<header.unitsOutCaptured<<endl;
 	str<<L"UnitsKilled: " <<header.unitsKilled<<endl;
-	str<<L"MetalReclaimed: " << header.metalReclaimed << endl;
-	str<<L"EnergyReclaimed: " << header.energyReclaimed << endl;
 	return str;
 }
 

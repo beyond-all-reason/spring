@@ -26,7 +26,7 @@ public:
 	void SlowUpdate();
 
 	bool HaveResources(const SResourcePack& amount) const;
-	void AddResources(SResourcePack res, bool isReclaim, bool useIncomeMultiplier = true);
+	void AddResources(SResourcePack res, bool useIncomeMultiplier = true);
 	bool UseResources(const SResourcePack& res);
 
 	void AddMetal(float amount, bool useIncomeMultiplier = true);
@@ -92,7 +92,6 @@ public:
 	SResourcePack resSent,     resPrevSent;
 	SResourcePack resReceived, resPrevReceived;
 	SResourcePack resPrevExcess;
-	SResourcePack resReclaim, resPrevReclaim;
 
 	int nextHistoryEntry;
 	std::vector<TeamStatistics> statHistory;

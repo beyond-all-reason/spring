@@ -127,8 +127,8 @@ public:
 	void SetStorage(const SResourcePack& newstorage);
 	bool HaveResources(const SResourcePack& res) const;
 	bool UseResources(const SResourcePack& res);
-	void AddResources(const SResourcePack& res, bool isReclaim, bool useIncomeMultiplier = true);
-	bool IssueResourceOrder(SResourceOrder* order, bool isReclaim);
+	void AddResources(const SResourcePack& res, bool useIncomeMultiplier = true);
+	bool IssueResourceOrder(SResourceOrder* order);
 
 	// push the new wind to the script
 	void UpdateWind(float x, float z, float strength);

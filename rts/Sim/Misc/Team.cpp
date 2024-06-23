@@ -49,8 +49,6 @@ CR_REG_METADATA(CTeam, (
 	CR_MEMBER(resReceived),
 	CR_MEMBER(resPrevReceived),
 	CR_MEMBER(resPrevExcess),
-	CR_MEMBER(resReclaim),
-	CR_MEMBER(resPrevReclaim),
 	CR_MEMBER(nextHistoryEntry),
 	CR_MEMBER(statHistory),
 	CR_MEMBER(modParams),
@@ -184,7 +182,7 @@ bool CTeam::HaveResources(const SResourcePack& amount) const
 }
 
 
-void CTeam::AddResources(SResourcePack amount, bool isReclaim, bool useIncomeMultiplier)
+void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (useIncomeMultiplier)
@@ -192,9 +190,6 @@ void CTeam::AddResources(SResourcePack amount, bool isReclaim, bool useIncomeMul
 
 	res += amount;
 	resIncome += amount;
-
-	if (isReclaim)
-		resReclaim += amount;
 
 	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
 		if (res[i] <= resStorage[i])
@@ -309,11 +304,9 @@ void CTeam::ResetResourceState()
 	resPrevPull.metal     = resPull.metal;     resPull.metal     = 0.0f;
 	resPrevIncome.metal   = resIncome.metal;   resIncome.metal   = 0.0f;
 	resPrevExpense.metal  = resExpense.metal;  resExpense.metal  = 0.0f;
-	resPrevReclaim.metal  = resReclaim.metal;  resReclaim.metal  = 0.0f;
 	resPrevPull.energy    = resPull.energy;    resPull.energy    = 0.0f;
 	resPrevIncome.energy  = resIncome.energy;  resIncome.energy  = 0.0f;
 	resPrevExpense.energy = resExpense.energy; resExpense.energy = 0.0f;
-	resPrevReclaim.energy = resReclaim.energy; resReclaim.energy = 0.0f;
 
 	// reset the sharing accumulators
 	resPrevSent.metal = resSent.metal; resSent.metal = 0.0f;
@@ -349,8 +342,6 @@ void CTeam::SlowUpdate()
 	currentStats.energyProduced += resPrevIncome.energy;
 	currentStats.metalUsed  += resPrevExpense.metal;
 	currentStats.energyUsed += resPrevExpense.energy;
-	currentStats.metalReclaimed  += resPrevReclaim.metal;
-	currentStats.energyReclaimed += resPrevReclaim.energy;
 
 	res.metal  += resDelayedShare.metal;  resDelayedShare.metal  = 0.0f;
 	res.energy += resDelayedShare.energy; resDelayedShare.energy = 0.0f;

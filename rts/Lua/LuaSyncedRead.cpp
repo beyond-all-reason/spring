@@ -1898,7 +1898,6 @@ int LuaSyncedRead::GetTeamUnitStats(lua_State* L)
  * @treturn number excessed
  * @treturn number received
  * @treturn number sent
- * @treturn number reclaimed
  */
 int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 {
@@ -1920,8 +1919,7 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 			lua_pushnumber(L, stats.metalExcess);
 			lua_pushnumber(L, stats.metalReceived);
 			lua_pushnumber(L, stats.metalSent);
-			lua_pushnumber(L, stats.metalReclaimed);
-			return 6;
+			return 5;
 		} break;
 		case 'e': {
 			lua_pushnumber(L, stats.energyUsed);
@@ -1929,8 +1927,7 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 			lua_pushnumber(L, stats.energyExcess);
 			lua_pushnumber(L, stats.energyReceived);
 			lua_pushnumber(L, stats.energySent);
-			lua_pushnumber(L, stats.energyReclaimed);
-			return 6;
+			return 5;
 		} break;
 		default: {
 		} break;
@@ -1948,13 +1945,11 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
  * @number metalExcess
  * @number metalReceived
  * @number metalSent
- * @number metalReclaimed
  * @number energyUsed
  * @number energyProduced
  * @number energyExcess
  * @number energyReceived
  * @number energySent
- * @number energyReclaimed
  * @number damageDealt
  * @number damageReceived
  * @number unitsProduced
@@ -2033,14 +2028,12 @@ int LuaSyncedRead::GetTeamStatsHistory(lua_State* L)
 				HSTR_PUSH_NUMBER(L, "metalExcess",      stats.metalExcess);
 				HSTR_PUSH_NUMBER(L, "metalReceived",    stats.metalReceived);
 				HSTR_PUSH_NUMBER(L, "metalSent",        stats.metalSent);
-				HSTR_PUSH_NUMBER(L, "metalReclaimed",   stats.metalReclaimed);
 
 				HSTR_PUSH_NUMBER(L, "energyUsed",       stats.energyUsed);
 				HSTR_PUSH_NUMBER(L, "energyProduced",   stats.energyProduced);
 				HSTR_PUSH_NUMBER(L, "energyExcess",     stats.energyExcess);
 				HSTR_PUSH_NUMBER(L, "energyReceived",   stats.energyReceived);
 				HSTR_PUSH_NUMBER(L, "energySent",       stats.energySent);
-				HSTR_PUSH_NUMBER(L, "energyReclaimed",  stats.energyReclaimed);
 
 				HSTR_PUSH_NUMBER(L, "damageDealt",      stats.damageDealt);
 				HSTR_PUSH_NUMBER(L, "damageReceived",   stats.damageReceived);
