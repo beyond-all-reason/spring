@@ -368,7 +368,7 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 		}
 	}
 
-	if (!builder->IssueResourceOrder(&order, true))
+	if (!builder->IssueResourceOrder(&order))
 		return false;
 
 	resources  -= order.add;
