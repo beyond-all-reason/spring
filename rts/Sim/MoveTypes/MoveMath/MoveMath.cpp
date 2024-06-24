@@ -241,7 +241,7 @@ bool CMoveMath::IsNonBlocking(const CSolidObject* collidee, const MoveTypes::Che
 	// owner would need to be accessible, but the path-estimator
 	// defs are not tied to any collider instances
 	//
-	if (collider->pos.y == MoveTypes::CheckCollisionQuery::POS_Y_UNAVAILABLE) {
+	if ( !collider->IsHeightChecksEnabled() ) {
 		const bool colliderIsSub = collider->moveDef->isSubmarine;
 		const bool collideeIsSub = collidee->moveDef != nullptr && collidee->moveDef->isSubmarine;
 

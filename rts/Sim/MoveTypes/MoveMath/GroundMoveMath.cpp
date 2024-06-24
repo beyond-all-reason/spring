@@ -30,7 +30,7 @@ float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slop
 
 float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slope, float dirSlopeMod)
 {
-  RECOIL_DETAILED_TRACY_ZONE;
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Directional speed is now equal to regular except when:
 	// 1) Climbing out of places which are below max depth.
 	// 2) Climbing hills is slower.

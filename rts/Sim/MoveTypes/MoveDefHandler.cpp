@@ -322,6 +322,7 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 			defaultWaterline = 1;
 		}
 		waterline = std::abs(moveDefTable.GetInt("waterline", defaultWaterline));
+		overrideUnitWaterline = moveDefTable.GetBool("overrideUnitWaterline", overrideUnitWaterline);
 	} else {
 		waterline = std::numeric_limits<int>::max();
 	}
@@ -444,9 +445,8 @@ bool MoveDef::DoRawSearch(
 				: MoveTypes::CheckCollisionQuery(md);
 		MoveDefs::CollisionQueryStateTrack queryState;
 		md->UpdateCheckCollisionQuery(virtualObject, queryState, startBlock);
+		const bool isSubmersible = md->IsComplexSubmersible();
 
-		const bool isSubmersible = (md->isSubmarine ||
-								   (md->followGround && md->depth > md->height));
 		if (!isSubmersible)
 			virtualObject.DisableHeightChecks();
 

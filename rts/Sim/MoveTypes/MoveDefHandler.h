@@ -99,6 +99,10 @@ struct MoveDef {
 
 	unsigned int CalcCheckSum() const;
 
+	bool IsComplexSubmersible() const {
+		return (isSubmarine || (followGround && depth > height)) && overrideUnitWaterline;
+	};
+
 	static float GetDefaultMinWaterDepth() { return -1e6f; }
 	static float GetDefaultMaxWaterDepth() { return +1e6f; }
 
@@ -172,6 +176,9 @@ struct MoveDef {
 	bool followGround = true;
 	/// are we supposed to be a purely sub-surface ship?
 	bool isSubmarine = false;
+	/// If false, this forces the use of simple underwater collisions, which can cause some pathing issues for
+	/// amphibious units. i.e. they are blocked by obstacles above and below the water regardless of height.
+	bool overrideUnitWaterline = true;
 
 	/// do we try to pathfind around squares blocked by mobile units?
 	///
