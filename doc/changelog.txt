@@ -43,6 +43,16 @@ Lua:
 Misc:
 - Fixed broken test. https://github.com/beyond-all-reason/spring/pull/1545
 
+Pathing:
+ - HAPFS uses the raw move found in the ground movement code, rather than its on version, which addresses several
+   issues. https://github.com/beyond-all-reason/spring/pull/1402
+ - HAPFS uses more detailed checks on unit movement to better follow chnages in the submerged state to give paths
+   that will avoid units getting stuck on underwater obstacles. https://github.com/beyond-all-reason/spring/pull/1402
+ - `movement.allowDirectionalPathing` when enabled now allows HAPFS to use directionality in its pathing algorithm.
+   https://github.com/beyond-all-reason/spring/pull/1402
+ - `movement.preferShortestPath` when enabled allows QTPFS to use the shortest path, rather than the fastest path.
+   https://github.com/beyond-all-reason/spring/pull/1402
+
 Sim:
  - Added: `system.smoothMeshResDivider` and `system.smoothMeshSmoothRadius` to control the behaviour of the Air Smooth
    Mesh. https://github.com/beyond-all-reason/spring/pull/1341
