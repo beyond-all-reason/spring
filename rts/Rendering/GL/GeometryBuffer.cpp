@@ -7,7 +7,10 @@
 #include <algorithm>
 #include <cstring> //memset
 
+#include "System/Misc/TracyDefs.h"
+
 void GL::GeometryBuffer::Init(bool ctor) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if dead, this must be a non-ctor reload
 	assert(!dead || !ctor);
 
@@ -28,6 +31,7 @@ void GL::GeometryBuffer::Init(bool ctor) {
 }
 
 void GL::GeometryBuffer::Kill(bool dtor) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (dead) {
 		// if already dead, this must be final cleanup
 		assert(dtor);
@@ -41,12 +45,14 @@ void GL::GeometryBuffer::Kill(bool dtor) {
 }
 
 void GL::GeometryBuffer::Clear() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(bound);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void GL::GeometryBuffer::SetDepthRange(float nearDepth, float farDepth) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 0
 	if (globalRendering->supportClipSpaceControl) {
 		// TODO: need to inform shaders about this, modify PM instead
@@ -61,6 +67,7 @@ void GL::GeometryBuffer::SetDepthRange(float nearDepth, float farDepth) const {
 }
 
 void GL::GeometryBuffer::DetachTextures(const bool init) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// nothing to detach yet during init
 	if (init)
 		return;
@@ -83,6 +90,7 @@ void GL::GeometryBuffer::DetachTextures(const bool init) {
 }
 
 void GL::GeometryBuffer::DrawDebug(const unsigned int texID, const float2 texMins, const float2 texMaxs) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glLoadIdentity();
 	glMatrixMode(GL_PROJECTION);
@@ -107,6 +115,7 @@ void GL::GeometryBuffer::DrawDebug(const unsigned int texID, const float2 texMin
 }
 
 bool GL::GeometryBuffer::Create(const int2 size) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int texTarget = GetTextureTarget();
 
 	for (unsigned int n = 0; n < ATTACHMENT_COUNT; n++) {
@@ -159,6 +168,7 @@ bool GL::GeometryBuffer::Create(const int2 size) {
 }
 
 bool GL::GeometryBuffer::Update(const bool init) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	currBufferSize = GetWantedSize(true);
 
 	// FBO must be valid from point of construction
@@ -187,10 +197,12 @@ bool GL::GeometryBuffer::Update(const bool init) {
 }
 
 int2 GL::GeometryBuffer::GetWantedSize(bool allowed) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return {globalRendering->viewSizeX * allowed, globalRendering->viewSizeY * allowed};
 }
 
 void GL::GeometryBuffer::LoadViewport()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glViewport(0, 0, globalRendering->viewSizeX, globalRendering->viewSizeY);
 }

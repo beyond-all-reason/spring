@@ -10,6 +10,8 @@
 #include "System/SpringMath.h"
 #include "System/Threading/ThreadPool.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 /**
  *  Draws a trigonometric circle in 'resolution' steps.
@@ -30,6 +32,7 @@ namespace {
 }
 void glSurfaceCircle(const float3& center, float radius, const SColor& col, uint32_t res)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float4 fColor = col;
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
@@ -51,6 +54,7 @@ void glSurfaceCircle(const float3& center, float radius, const SColor& col, uint
 
 void glSurfaceCircleLua(const float3& center, float radius, const SColor& col, uint32_t res)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CVertexArray* va = GetVertexArray();
 	va->Initialize();
 
@@ -139,6 +143,7 @@ namespace {
 
 void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float4 fColor = color;
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
@@ -158,6 +163,7 @@ void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, const 
 
 void glBallisticCircleLua(const CWeapon* weapon, const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CVertexArray* va = GetVertexArray();
 	va->Initialize();
 	va->EnlargeArrays(resolution, 0, VA_SIZE_C);
@@ -178,21 +184,25 @@ void glBallisticCircleLua(const CWeapon* weapon, const WeaponDef* weaponDef, con
 
 void glBallisticCircle(const CWeapon* weapon     , const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircle(weapon, weapon->weaponDef, color, resolution, center, params);
 }
 
 void glBallisticCircle(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircle(nullptr, weaponDef, color, resolution, center, params);
 }
 
 void glBallisticCircleLua(const CWeapon* weapon, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircleLua(weapon, weapon->weaponDef, color, resolution, center, params);
 }
 
 void glBallisticCircleLua(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircleLua(nullptr, weaponDef, color, resolution, center, params);
 }
 
@@ -237,6 +247,7 @@ void glDrawVolume(DrawVolumeFunc drawFunc, const void* data)
 /******************************************************************************/
 
 void glWireCube(uint32_t* listID) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr float3 vertices[8] = {
 		{ 0.5f,  0.5f,  0.5f},
 		{ 0.5f, -0.5f,  0.5f},
@@ -291,6 +302,7 @@ void glWireCube(uint32_t* listID) {
 }
 
 void glWireCylinder(uint32_t* listID, uint32_t numDivs, float zSize) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((*listID) != 0) {
 		glCallList(*listID);
 		return;
@@ -350,6 +362,7 @@ void glWireCylinder(uint32_t* listID, uint32_t numDivs, float zSize) {
 }
 
 void glWireSphere(uint32_t* listID, uint32_t numRows, uint32_t numCols) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((*listID) != 0) {
 		glCallList(*listID);
 		return;

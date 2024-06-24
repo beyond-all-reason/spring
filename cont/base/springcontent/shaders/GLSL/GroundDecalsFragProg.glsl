@@ -422,7 +422,7 @@ void main() {
 
 	// adaptation from SMFFragProg.glsl
 	#ifdef SMF_WATER_ABSORPTION
-	if (worldPos.y <= 0.0) {
+	if (worldPos.y <= 0.0 && vDecalType == DECAL_EXPLOSION) {
 		vec3 waterShadeInt = waterBaseColor;
 
 		float waterShadeAlpha  = -worldPos.y * SMF_SHALLOW_WATER_DEPTH_INV;

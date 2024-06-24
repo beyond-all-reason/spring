@@ -12,12 +12,15 @@
 #include "System/TimeProfiler.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 using namespace SystemGlobals;
 using namespace QTPFS;
 
 
 void RequeuePathsSystem::Init()
 {
+    RECOIL_DETAILED_TRACY_ZONE;
     systemUtils.OnUpdate().connect<&RequeuePathsSystem::Update>();
 }
 
@@ -44,5 +47,6 @@ void RequeuePathsSystem::Update()
 }
 
 void RequeuePathsSystem::Shutdown() {
+    RECOIL_DETAILED_TRACY_ZONE;
     systemUtils.OnUpdate().disconnect<&RequeuePathsSystem::Update>();
 }

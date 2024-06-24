@@ -104,6 +104,7 @@ class LuaSyncedCtrl
 		static int SetUnitShieldRechargeDelay(lua_State* L);
 		static int SetUnitFlanking(lua_State* L);
 		static int SetUnitPhysicalStateBit(lua_State* L);
+		static int GetUnitPhysicalState(lua_State* L);
 		static int SetUnitTravel(lua_State* L);
 		static int SetUnitFuel(lua_State* L);
 		static int SetUnitMoveGoal(lua_State* L);
@@ -203,6 +204,8 @@ class LuaSyncedCtrl
 		static int AddOriginalHeightMap(lua_State* L);
 		static int SetOriginalHeightMap(lua_State* L);
 		static int SetOriginalHeightMapFunc(lua_State* L);
+
+		static int RebuildSmoothMesh(lua_State* L);
 
 		static int LevelSmoothMesh(lua_State* L);
 		static int AdjustSmoothMesh(lua_State* L);

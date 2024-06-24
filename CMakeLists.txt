@@ -256,12 +256,6 @@ if    (WIN32)
 	endif(NOT MSVC)
 endif (WIN32)
 
-option(USE_LIBSQUISH "Enable libsquish for DXT decompressing. (needed for ETC1 support)" TRUE)
-if    (USE_LIBSQUISH)
-	add_definitions(-DUSE_LIBSQUISH)
-endif (USE_LIBSQUISH)
-
-
 option(USE_ASAN "Build/link with address sanitizer enabled (for DEBUG builds only)" FALSE)
 if    (USE_ASAN)
 	if (UNIX AND NOT MINGW)
@@ -272,6 +266,14 @@ if    (USE_ASAN)
 		add_compile_options("$<$<CONFIG:DEBUG>:/fsanitize=address>")
 	endif (MSVC)
 endif (USE_ASAN)
+
+### Tracy related stuff
+option(RECOIL_DETAILED_TRACY_ZONING "Enable additional detailed tracy zones (only enable this for testing/debugging)" FALSE)
+if    (RECOIL_DETAILED_TRACY_ZONING)
+	add_definitions(-DRECOIL_DETAILED_TRACY_ZONING)
+else  (RECOIL_DETAILED_TRACY_ZONING)
+	remove_definitions(-DRECOIL_DETAILED_TRACY_ZONING)
+endif (RECOIL_DETAILED_TRACY_ZONING)
 
 # Note the missing REQUIRED, as headless & dedi may not depend on those.
 #  So req. checks are done in the build target's CMakeLists.txt.
@@ -416,8 +418,6 @@ add_definitions(-DSTREFLOP_SSE)
 else ()
 add_definitions(-DNOT_USING_STREFLOP)
 endif ()
-
-
 
 ### Asio
 add_definitions(-DASIO_STANDALONE)

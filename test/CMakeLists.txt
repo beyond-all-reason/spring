@@ -327,6 +327,7 @@ endif()
 
 	set(test_flags "-DUNITSYNC")
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
+	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 	add_dependencies(test_${test_name} springcontent.sdz)
 
 ################################################################################
@@ -411,12 +412,14 @@ endif()
 		)
 	set(test_libs
 			streflop
+			smmalloc
 			lua
 			${WINMM_LIBRARY}
 			headlessStubs
 		)
 	set(test_flags "-DNOT_USING_CREG -DSTREFLOP_SSE -DBUILDING_AI")
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
+	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/lua/include)
 
 
@@ -466,9 +469,11 @@ endif()
 	set(test_libs
 			lua
 			headlessStubs
+			smmalloc
 		)
 	set(test_flags "-DNOT_USING_STREFLOP")
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
+	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/lua/include)
 
 ################################################################################

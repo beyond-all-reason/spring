@@ -4,6 +4,8 @@
 #include "Sim/Units/Unit.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 // keep one global copy so we don't need to allocate a lot of
 // near empty objects for mods that use Lua unit scripts.
@@ -21,6 +23,7 @@ CNullUnitScript::CNullUnitScript(CUnit *u)
 
 void CNullUnitScript::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unit == nullptr)
 		return;
 
@@ -31,6 +34,7 @@ void CNullUnitScript::PostLoad()
 
 void CNullUnitScript::ShowScriptError(const std::string& msg)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG_L(L_ERROR, "%s", msg.c_str());
 	LOG_L(L_ERROR, "why are you using CNullUnitScript anyway?");
 }

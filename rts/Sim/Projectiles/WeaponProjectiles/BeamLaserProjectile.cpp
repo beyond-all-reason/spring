@@ -11,6 +11,8 @@
 #include "Sim/Weapons/WeaponDef.h"
 #include <cstring> //memset
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CBeamLaserProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CBeamLaserProjectile,(
@@ -77,6 +79,7 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWea
 
 void CBeamLaserProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((--ttl) <= 0) {
 		deleteMe = true;
 	} else {
@@ -95,6 +98,7 @@ void CBeamLaserProjectile::Update()
 
 void CBeamLaserProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
 
@@ -209,6 +213,7 @@ void CBeamLaserProjectile::Draw()
 
 void CBeamLaserProjectile::DrawOnMinimap() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const SColor color = { edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u };
 
 	AddMiniMapVertices({ startPos , color }, { targetPos, color });
@@ -216,6 +221,7 @@ void CBeamLaserProjectile::DrawOnMinimap() const
 
 int CBeamLaserProjectile::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return
 		2 * validTextures[1] +
 		4 * validTextures[2] +

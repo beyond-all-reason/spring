@@ -12,12 +12,15 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 void CBasicWater::InitResources(bool loadShader)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CBitmap waterTexBM;
 	if (!waterTexBM.Load(waterRendering->texture)) {
 		LOG_L(L_WARNING, "[%s] could not read water texture from file \"%s\"", __FUNCTION__, waterRendering->texture.c_str());
@@ -36,11 +39,13 @@ void CBasicWater::InitResources(bool loadShader)
 
 void CBasicWater::FreeResources()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &textureID);
 }
 
 void CBasicWater::GenWaterQuadsRB()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr float div16 = 1.0f / 16.0f;
 
 	const float mapSizeX = mapDims.mapx * SQUARE_SIZE;
@@ -80,6 +85,7 @@ void CBasicWater::GenWaterQuadsRB()
 
 void CBasicWater::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
