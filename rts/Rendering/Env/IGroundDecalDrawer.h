@@ -3,12 +3,14 @@
 #pragma once
 
 #include "Decals/GroundDecal.h"
+#include "System/creg/creg.h"
 
 class CSolidObject;
 class GhostSolidObject;
 
 class IGroundDecalDrawer
 {
+	CR_DECLARE(IGroundDecalDrawer)
 public:
 	static bool GetDrawDecals() { return (decalLevel > 0); }
 	static void SetDrawDecals(bool v);
@@ -56,6 +58,7 @@ protected:
 
 class NullGroundDecalDrawer: public IGroundDecalDrawer
 {
+	CR_DECLARE_DERIVED(NullGroundDecalDrawer)
 public:
 	void ReloadTextures() override {}
 	void DumpAtlasTextures() override {}

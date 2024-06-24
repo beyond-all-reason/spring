@@ -20,6 +20,8 @@
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
+
 /******************************************************************************/
 
 UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef) {
@@ -56,6 +58,9 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 
 	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
 	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
+
+	// Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon 
+	burstControlWhenOutOfArc = weaponTable.GetInt("burstControlWhenOutOfArc", burstControlWhenOutOfArc);
 }
 
 
@@ -127,6 +132,7 @@ UnitDef::UnitDef()
 	, minWaterDepth(0.0f)
 	, maxWaterDepth(0.0f)
 	, upDirSmoothing(0.0f)
+	, separationDistance(0.0f)
 	, pathType(-1U)
 	, armoredMultiple(0.0f)
 	, armorType(0)
@@ -259,6 +265,7 @@ UnitDef::UnitDef()
 
 UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// rely on default-ctor to initialize all members
 	*this = UnitDef();
 	this->id = id;
@@ -347,6 +354,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	terraformSpeed = udTable.GetFloat("terraformSpeed", buildSpeed);
 
 	upDirSmoothing = std::clamp(udTable.GetFloat("upDirSmoothing", 0.0f), 0.0f, 0.95f);
+	separationDistance = std::max(udTable.GetInt("separationDistance", 0), 0);
 
 	reclaimable  = udTable.GetBool("reclaimable",  true);
 	capturable   = udTable.GetBool("capturable",   true);
@@ -707,6 +715,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 void UnitDef::ParseWeaponsTable(const LuaTable& weaponsTable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const WeaponDef* noWeaponDef = weaponDefHandler->GetWeaponDef("NOWEAPON");
 
 	for (int k = 0, w = 0; w < MAX_WEAPONS_PER_UNIT; w++) {
@@ -768,6 +777,7 @@ void UnitDef::ParseWeaponsTable(const LuaTable& weaponsTable)
 
 void UnitDef::CreateYardMap(std::string&& yardMapStr)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if a unit is immobile but does *not* have a yardmap
 	// defined, assume it is not supposed to be a building
 	// (so do not assign a default per facing)
@@ -846,6 +856,7 @@ void UnitDef::CreateYardMap(std::string&& yardMapStr)
 
 void UnitDef::SetNoCost(bool noCost)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (noCost) {
 		// initialized from UnitDefHandler::PushNewUnitDef
 		realCost         = cost;
@@ -863,6 +874,7 @@ void UnitDef::SetNoCost(bool noCost)
 }
 
 bool UnitDef::HasBomberWeapon(unsigned int idx) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// checked by Is*AirUnit
 	assert(HasWeapon(idx));
 	return (weapons[idx].def->IsAircraftWeapon());

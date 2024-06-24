@@ -17,12 +17,15 @@
 #include "Net/Protocol/NetProtocol.h"
 #include "Sim/Misc/TeamHandler.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CStartPosSelecter* CStartPosSelecter::selector = nullptr;
 
 
 CStartPosSelecter::CStartPosSelecter() : CInputReceiver(BACK)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	showReadyBox = true;
 	startPosSet = false;
 
@@ -36,12 +39,14 @@ CStartPosSelecter::CStartPosSelecter() : CInputReceiver(BACK)
 
 CStartPosSelecter::~CStartPosSelecter()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	selector = nullptr;
 }
 
 
 bool CStartPosSelecter::Ready(bool luaForcedReady)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!gs->PreSimFrame()) {
 		delete this;
 		return true;
@@ -77,6 +82,7 @@ bool CStartPosSelecter::Ready(bool luaForcedReady)
 
 bool CStartPosSelecter::MousePress(int x, int y, int button)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Not ready to process mouse clicks yet. Pass.
 	if (!game->IsDoneLoading())
 		return false;
@@ -104,6 +110,7 @@ bool CStartPosSelecter::MousePress(int x, int y, int button)
 #if 0
 void CStartPosSelecter::DrawStartBox(GL::RenderDataBufferC* buffer, Shader::IProgramObject* shader) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glAttribStatePtr->EnableDepthTest();
 
 	const AllyTeam& myStartData = teamHandler.GetAllyTeam(gu->myAllyTeam);
@@ -187,6 +194,7 @@ void CStartPosSelecter::DrawStartBox(GL::RenderDataBufferC* buffer, Shader::IPro
 
 void CStartPosSelecter::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gu->spectating) {
 		delete this;
 		return;

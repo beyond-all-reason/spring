@@ -6,6 +6,8 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CTracerProjectile, CProjectile, )
 
 CR_REG_METADATA(CTracerProjectile,
@@ -41,6 +43,7 @@ CTracerProjectile::CTracerProjectile(CUnit* owner, const float3& pos, const floa
 
 void CTracerProjectile::Init(const CUnit* owner, const float3& offset)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Init(owner, offset);
 
 	// FIXME: constant,assumes |speed| never changes after creation
@@ -51,6 +54,7 @@ void CTracerProjectile::Init(const CUnit* owner, const float3& offset)
 
 void CTracerProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos += speed;
 
 	drawLength += speedf;
@@ -61,6 +65,7 @@ void CTracerProjectile::Update()
 
 void CTracerProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	drawLength = std::min(drawLength, 3.0f);
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
@@ -84,6 +89,7 @@ int CTracerProjectile::GetProjectilesCount() const
 
 bool CTracerProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

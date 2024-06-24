@@ -15,6 +15,8 @@
 #include "System/StringHash.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND(MoveDef, ())
 CR_BIND(MoveDefHandler, )
 
@@ -69,6 +71,7 @@ static constexpr float MAX_ALLOWED_WATER_DAMAGE_HMM = 1e4f;
 
 static float DegreesToMaxSlope(float degrees)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Prevent MSVC from inlining stuff that would break the
 	// PE checksum compatibility between debug and release
 	static constexpr float degToRad = math::DEG_TO_RAD;
@@ -81,6 +84,7 @@ static float DegreesToMaxSlope(float degrees)
 
 static MoveDef::SpeedModClass ParseSpeedModClass(const std::string& moveDefName, const LuaTable& moveDefTable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int speedModClass = moveDefTable.GetInt("speedModClass", -1);
 
 	if (speedModClass != -1)
@@ -103,6 +107,7 @@ static MoveDef::SpeedModClass ParseSpeedModClass(const std::string& moveDefName,
 
 void MoveDefHandler::Init(LuaParser* defsParser)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const LuaTable& rootTable = defsParser->GetRoot().SubTable("MoveDefs");
 
 	if (!rootTable.IsValid())
@@ -161,6 +166,7 @@ void MoveDefHandler::PostSimInit() {
 
 MoveDef* MoveDefHandler::GetMoveDefByName(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto it = nameMap.find(hashString(name.c_str()));
 
 	if (it == nameMap.end())
@@ -173,6 +179,7 @@ MoveDef* MoveDefHandler::GetMoveDefByName(const std::string& name)
 
 MoveDef::MoveDef()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	depthModParams[DEPTHMOD_MIN_HEIGHT] = 0.0f;
 	depthModParams[DEPTHMOD_MAX_HEIGHT] = std::numeric_limits<float>::max();
 	depthModParams[DEPTHMOD_MAX_SCALE ] = std::numeric_limits<float>::max();
@@ -187,6 +194,7 @@ MoveDef::MoveDef()
 }
 
 MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	name          = StringToLower(moveDefTable.GetString("name", ""));
 	crushStrength = moveDefTable.GetFloat("crushStrength", 10.0f);
 
@@ -438,6 +446,7 @@ bool MoveDef::DoRawSearch(
 		MoveDefs::CollisionQueryStateTrack queryState;
 		md->UpdateCheckCollisionQuery(virtualObject, queryState, startBlock);
 		const bool isSubmersible = md->IsComplexSubmersible();
+
 		if (!isSubmersible)
 			virtualObject.DisableHeightChecks();
 
@@ -473,6 +482,7 @@ void MoveDef::UpdateCheckCollisionQuery
 	, MoveDefs::CollisionQueryStateTrack& state
 	, const int2 pos
 ) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	state.refreshCollisionCache = false;
 
 	const MoveDef* md = collider.moveDef;
@@ -511,6 +521,7 @@ bool MoveDef::TestMoveSquareRange(
 	int* maxBlockBitPtr,
 	int thread
 ) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(testTerrain || testObjects);
 
 	const int xmid = int(rangeMins.x / SQUARE_SIZE);
@@ -565,6 +576,7 @@ bool MoveDef::TestMovePositionForObjects(
 	int magicNum,
 	int thread
 ) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int xmid = int(testMovePos.x / SQUARE_SIZE);
 	const int zmid = int(testMovePos.z / SQUARE_SIZE);
 
@@ -590,6 +602,7 @@ float MoveDef::CalcFootPrintAxisStretchFactor() const
 
 
 float MoveDef::GetDepthMod(float height) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// [DEPTHMOD_{MIN, MAX}_HEIGHT] are always >= 0,
 	// so we return early for positive height values
 	// only negative heights ("depths") are allowed
@@ -618,6 +631,7 @@ float MoveDef::GetDepthMod(float height) const {
 }
 
 unsigned int MoveDef::CalcCheckSum() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int sum = 0;
 
 	const unsigned char* minByte = reinterpret_cast<const unsigned char*>(&speedModClass);

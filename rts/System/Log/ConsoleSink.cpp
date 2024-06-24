@@ -4,6 +4,7 @@
  * This is a simple sink for the ILog.h logging API.
  * It routes all logging messages to the console (stdout & stderr).
  */
+#include "ConsoleSink.h"
 
 #include "Backend.h"
 #include "FramePrefixer.h"
@@ -61,20 +62,13 @@ static void log_sink_record_console(int level, const char* section, const char* 
 
 ///@}
 
-
-namespace {
-	/// Auto-registers the sink defined in this file before main() is called
-	struct ConsoleSinkRegistrator {
-		ConsoleSinkRegistrator() {
-			log_backend_registerSink(&log_sink_record_console);
-		}
-		~ConsoleSinkRegistrator() {
-			log_backend_unregisterSink(&log_sink_record_console);
-		}
-	} consoleSinkRegistrator;
-}
-
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
+ConsoleSinkRegistrator::ConsoleSinkRegistrator() {
+	log_backend_registerSink(&log_sink_record_console);
+}
+ConsoleSinkRegistrator::~ConsoleSinkRegistrator() {
+	log_backend_unregisterSink(&log_sink_record_console);
+}

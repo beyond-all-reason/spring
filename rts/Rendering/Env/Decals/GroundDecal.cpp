@@ -16,3 +16,41 @@ decltype(GroundDecal::attributeDefs) GroundDecal::attributeDefs = {
 };
 
 #undef VA_ATTR_DEF
+
+CR_BIND(GroundDecal, )
+CR_REG_METADATA(GroundDecal, (
+	CR_MEMBER(refHeight),
+	CR_MEMBER(minHeight),
+	CR_MEMBER(maxHeight),
+	CR_MEMBER(forceHeightMode),
+
+	CR_MEMBER(posTL),
+	CR_MEMBER(posTR),
+	CR_MEMBER(posBR),
+	CR_MEMBER(posBL),
+
+	CR_MEMBER(texMainOffsets),
+	CR_MEMBER(texNormOffsets),
+
+	CR_MEMBER(alpha),
+	CR_MEMBER(alphaFalloff),
+	CR_MEMBER(glow),
+	CR_MEMBER(glowFalloff),
+
+	CR_MEMBER(rot),
+	CR_MEMBER(height),
+	CR_MEMBER(dotElimExp),
+	CR_MEMBER(cmAlphaMult),
+
+	CR_MEMBER(createFrameMin),
+	CR_MEMBER(createFrameMax),
+	CR_MEMBER(uvWrapDistance),
+	CR_MEMBER(uvTraveledDistance),
+
+	CR_MEMBER(forcedNormal),
+	CR_MEMBER(visMult),
+
+	CR_MEMBER(infoRep),
+	CR_MEMBER(tintColor),
+	CR_MEMBER(glowColorMap)
+))

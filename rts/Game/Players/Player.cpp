@@ -22,6 +22,8 @@
 #include "System/Log/ILog.h"
 #include "System/creg/STL_Set.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CR_BIND_DERIVED(CPlayer, PlayerBase, )
 CR_REG_METADATA(CPlayer, (
@@ -48,6 +50,7 @@ CPlayer::CPlayer()
 
 void CPlayer::SetControlledTeams()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	controlledTeams.clear();
 	controlledTeams.reserve(teamHandler.ActiveTeams());
 
@@ -79,6 +82,7 @@ void CPlayer::SetControlledTeams()
 
 void CPlayer::UpdateControlledTeams()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int p = 0; p < playerHandler.ActivePlayers(); p++) {
 		CPlayer* player = playerHandler.Player(p);
 
@@ -92,6 +96,7 @@ void CPlayer::UpdateControlledTeams()
 
 void CPlayer::StartSpectating()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (spectator)
 		return;
 
@@ -117,6 +122,7 @@ void CPlayer::StartSpectating()
 
 void CPlayer::JoinTeam(int newTeam)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// a player that joins a team always stops spectating
 	spectator = false;
 	team = newTeam;
@@ -140,6 +146,7 @@ void CPlayer::JoinTeam(int newTeam)
 
 void CPlayer::GameFrame(int frameNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!active || (fpsController.GetControllee() == nullptr))
 		return;
 
@@ -150,6 +157,7 @@ void CPlayer::GameFrame(int frameNum)
 
 void CPlayer::StartControllingUnit()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* curControlleeUnit = fpsController.GetControllee();
 	CUnit* newControlleeUnit = nullptr;
 
@@ -206,6 +214,7 @@ void CPlayer::StartControllingUnit()
 
 void CPlayer::StopControllingUnit()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (fpsController.GetControllee() == nullptr || mouse == nullptr)
 		return;
 

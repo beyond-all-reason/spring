@@ -118,7 +118,7 @@ public:
 	std::int64_t Finalize() override;
 	std::int64_t PostFinalizeRefresh() override;
 
-	bool AllowDirectionalPathing() override { return modInfo.allowDirectionalPathing; }
+	bool AllowDirectionalPathing() override { return true; }
 
 	void RemoveCacheFiles() override;
 	void Update() override;
@@ -259,8 +259,7 @@ private:
 
 	static void FinalizePath(MultiPath* path, const float3 startPos, const float3 goalPos, const bool cantGetCloser);
 
-	void LowRes2MedRes(MultiPath& path, const float3& startPos, const CSolidObject* owner, bool synced) const;
-	void MedRes2MaxRes(MultiPath& path, const float3& startPos, const CSolidObject* owner, bool synced) const;
+	void LowRes2MaxRes(MultiPath& path, const float3& startPos, const CSolidObject* owner, bool synced) const;
 
 	bool IsFinalized() const { return finalized; }
 

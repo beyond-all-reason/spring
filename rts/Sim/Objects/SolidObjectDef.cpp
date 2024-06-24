@@ -7,6 +7,8 @@
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 SolidObjectDecalDef::SolidObjectDecalDef()
 	: useGroundDecal(false)
 	, groundDecalType(-1)
@@ -62,6 +64,7 @@ SolidObjectDef::SolidObjectDef()
 
 void SolidObjectDef::PreloadModel() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (model != nullptr)
 		return;
 	if (modelName.empty())
@@ -72,6 +75,7 @@ void SolidObjectDef::PreloadModel() const
 
 S3DModel* SolidObjectDef::LoadModel() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (model != nullptr)
 		return model;
 	if (modelName.empty())
@@ -82,12 +86,14 @@ S3DModel* SolidObjectDef::LoadModel() const
 
 float SolidObjectDef::GetModelRadius() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return ((LoadModel() != nullptr)? model->GetDrawRadius(): 0.0f);
 }
 
 
 void SolidObjectDef::ParseCollisionVolume(const LuaTable& odTable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const LuaTable& cvTable = odTable.SubTable("collisionVolume");
 	const std::string& cvType = odTable.GetString("collisionVolumeType", "");
 
@@ -117,6 +123,7 @@ void SolidObjectDef::ParseCollisionVolume(const LuaTable& odTable)
 
 void SolidObjectDef::ParseSelectionVolume(const LuaTable& odTable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const LuaTable& svTable = odTable.SubTable("selectionVolume");
 	const std::string& svType = odTable.GetString("selectionVolumeType", odTable.GetString("collisionVolumeType", ""));
 

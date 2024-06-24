@@ -16,6 +16,7 @@
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Scripts/CobInstance.h"
@@ -27,6 +28,8 @@
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Sound/ISoundChannels.h"
+
+#include "System/Misc/TracyDefs.h"
 
 using std::min;
 using std::max;
@@ -97,6 +100,7 @@ CBuilder::CBuilder():
 
 void CBuilder::PreInit(const UnitLoadParams& params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	unitDef = params.unitDef;
 	range3D = unitDef->buildRange3D;
 	buildDistance = (params.unitDef)->buildDistance;
@@ -116,6 +120,7 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 
 bool CBuilder::CanAssistUnit(const CUnit* u, const UnitDef* def) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unitDef->canAssist)
 		return false;
 
@@ -125,6 +130,7 @@ bool CBuilder::CanAssistUnit(const CUnit* u, const UnitDef* def) const
 
 bool CBuilder::CanRepairUnit(const CUnit* u) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unitDef->canRepair)
 		return false;
 	if (u->beingBuilt)
@@ -139,6 +145,7 @@ bool CBuilder::CanRepairUnit(const CUnit* u) const
 
 bool CBuilder::UpdateTerraform(const Command&)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* curBuildee = curBuild;
 
 	if (!terraforming || !inBuildStance)
@@ -149,25 +156,23 @@ bool CBuilder::UpdateTerraform(const Command&)
 
 	assert(!mapDamage->Disabled());
 
-	static constexpr int b = 3;
-
 	const auto SmoothBorders = [this, heightmap, &terraformScale]() {
 		// smooth the x-borders
 		for (int z = tz1; z <= tz2; z++) {
-			for (int x = 1; x <= 3; x++) {
-				if (tx1 - 3 >= 0) {
+			for (int x = 1; x <= TERRA_SMOOTHING_RADIUS; x++) {
+				if (tx1 - TERRA_SMOOTHING_RADIUS >= 0) {
 					const float ch3 = heightmap[z * mapDims.mapxp1 + tx1];
 					const float ch = heightmap[z * mapDims.mapxp1 + tx1 - x];
-					const float ch2 = heightmap[z * mapDims.mapxp1 + tx1 - 3];
-					const float amount = ((ch3 * (3 - x) + ch2 * x) / 3 - ch) * terraformScale;
+					const float ch2 = heightmap[z * mapDims.mapxp1 + tx1 - TERRA_SMOOTHING_RADIUS];
+					const float amount = ((ch3 * (TERRA_SMOOTHING_RADIUS - x) + ch2 * x) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight(z * mapDims.mapxp1 + tx1 - x, amount);
 				}
-				if (tx2 + 3 < mapDims.mapx) {
+				if (tx2 + TERRA_SMOOTHING_RADIUS < mapDims.mapx) {
 					const float ch3 = heightmap[z * mapDims.mapxp1 + tx2];
 					const float ch = heightmap[z * mapDims.mapxp1 + tx2 + x];
-					const float ch2 = heightmap[z * mapDims.mapxp1 + tx2 + 3];
-					const float amount = ((ch3 * (3 - x) + ch2 * x) / 3 - ch) * terraformScale;
+					const float ch2 = heightmap[z * mapDims.mapxp1 + tx2 + TERRA_SMOOTHING_RADIUS];
+					const float amount = ((ch3 * (TERRA_SMOOTHING_RADIUS - x) + ch2 * x) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight(z * mapDims.mapxp1 + tx2 + x, amount);
 				}
@@ -175,21 +180,21 @@ bool CBuilder::UpdateTerraform(const Command&)
 		}
 
 		// smooth the z-borders
-		for (int z = 1; z <= 3; z++) {
+		for (int z = 1; z <= TERRA_SMOOTHING_RADIUS; z++) {
 			for (int x = tx1; x <= tx2; x++) {
-				if ((tz1 - 3) >= 0) {
+				if ((tz1 - TERRA_SMOOTHING_RADIUS) >= 0) {
 					const float ch3 = heightmap[(tz1)*mapDims.mapxp1 + x];
 					const float ch = heightmap[(tz1 - z) * mapDims.mapxp1 + x];
-					const float ch2 = heightmap[(tz1 - 3) * mapDims.mapxp1 + x];
-					const float adjust = ((ch3 * (3 - z) + ch2 * z) / 3 - ch) * terraformScale;
+					const float ch2 = heightmap[(tz1 - TERRA_SMOOTHING_RADIUS) * mapDims.mapxp1 + x];
+					const float adjust = ((ch3 * (TERRA_SMOOTHING_RADIUS - z) + ch2 * z) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight((tz1 - z) * mapDims.mapxp1 + x, adjust);
 				}
-				if ((tz2 + 3) < mapDims.mapy) {
+				if ((tz2 + TERRA_SMOOTHING_RADIUS) < mapDims.mapy) {
 					const float ch3 = heightmap[(tz2)*mapDims.mapxp1 + x];
 					const float ch = heightmap[(tz2 + z) * mapDims.mapxp1 + x];
-					const float ch2 = heightmap[(tz2 + 3) * mapDims.mapxp1 + x];
-					const float adjust = ((ch3 * (3 - z) + ch2 * z) / 3 - ch) * terraformScale;
+					const float ch2 = heightmap[(tz2 + TERRA_SMOOTHING_RADIUS) * mapDims.mapxp1 + x];
+					const float adjust = ((ch3 * (TERRA_SMOOTHING_RADIUS - z) + ch2 * z) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight((tz2 + z) * mapDims.mapxp1 + x, adjust);
 				}
@@ -221,11 +226,9 @@ bool CBuilder::UpdateTerraform(const Command&)
 				}
 			}
 			SmoothBorders();
-			mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 
 			if (curBuildee->terraformLeft <= 0.0f) {
 				terraforming = false;
-
 				curBuildee->groundLevelled = true;
 
 				if (eventHandler.TerraformComplete(this, curBuildee)) {
@@ -255,11 +258,9 @@ bool CBuilder::UpdateTerraform(const Command&)
 			}
 		}
 		SmoothBorders();
-		mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 
 		if (myTerraformLeft <= 0.0f) {
 			terraforming = false;
-
 			StopBuild();
 		}
 	} break;
@@ -275,6 +276,7 @@ bool CBuilder::UpdateTerraform(const Command&)
 
 bool CBuilder::AssistTerraform(const Command&)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CBuilder* helpTerraformee = helpTerraform;
 
 	if (helpTerraformee == nullptr || !inBuildStance)
@@ -295,6 +297,7 @@ bool CBuilder::AssistTerraform(const Command&)
 
 bool CBuilder::UpdateBuild(const Command& fCommand)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* curBuildee = curBuild;
 	CBuilderCAI* cai = static_cast<CBuilderCAI*>(commandAI);
 
@@ -362,6 +365,7 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 
 bool CBuilder::UpdateReclaim(const Command& fCommand)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// AddBuildPower can invoke StopBuild indirectly even if returns true
 	// and reset curReclaim to null (which would crash CreateNanoParticle)
 	CSolidObject* curReclaimee = curReclaim;
@@ -385,6 +389,7 @@ bool CBuilder::UpdateReclaim(const Command& fCommand)
 
 bool CBuilder::UpdateResurrect(const Command& fCommand)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CBuilderCAI* cai = static_cast<CBuilderCAI*>(commandAI);
 	CFeature* curResurrectee = curResurrect;
 
@@ -474,6 +479,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 
 bool CBuilder::UpdateCapture(const Command& fCommand)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* curCapturee = curCapture;
 
 	if (curCapturee == nullptr || f3SqDist(curCapturee->pos, pos) >= Square(buildDistance + curCapturee->buildeeRadius) || !inBuildStance)
@@ -528,6 +534,7 @@ bool CBuilder::UpdateCapture(const Command& fCommand)
 
 void CBuilder::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CBuilderCAI* cai = static_cast<CBuilderCAI*>(commandAI);
 
 	const CCommandQueue& cQueue = cai->commandQue;
@@ -552,8 +559,11 @@ void CBuilder::Update()
 
 void CBuilder::SlowUpdate()
 {
-	if (terraforming)
-		mapDamage->RecalcArea(tx1, tx2, tz1, tz2);
+  RECOIL_DETAILED_TRACY_ZONE;
+	if (terraforming) {
+		constexpr int tsr = TERRA_SMOOTHING_RADIUS;
+		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
+	}
 
 	CUnit::SlowUpdate();
 }
@@ -561,6 +571,7 @@ void CBuilder::SlowUpdate()
 
 void CBuilder::SetRepairTarget(CUnit* target)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (target == curBuild)
 		return;
 
@@ -589,6 +600,7 @@ void CBuilder::SetRepairTarget(CUnit* target)
 
 void CBuilder::SetReclaimTarget(CSolidObject* target)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (dynamic_cast<CFeature*>(target) != nullptr && !static_cast<CFeature*>(target)->def->reclaimable)
 		return;
 
@@ -613,6 +625,7 @@ void CBuilder::SetReclaimTarget(CSolidObject* target)
 
 void CBuilder::SetResurrectTarget(CFeature* target)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (curResurrect == target || target->udef == nullptr)
 		return;
 
@@ -628,6 +641,7 @@ void CBuilder::SetResurrectTarget(CFeature* target)
 
 void CBuilder::SetCaptureTarget(CUnit* target)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (target == curCapture)
 		return;
 
@@ -643,6 +657,7 @@ void CBuilder::SetCaptureTarget(CUnit* target)
 
 void CBuilder::StartRestore(float3 centerPos, float radius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	StopBuild(false);
 	TempHoldFire(CMD_RESTORE);
 
@@ -674,6 +689,7 @@ void CBuilder::StartRestore(float3 centerPos, float radius)
 
 void CBuilder::StopBuild(bool callScript)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (curBuild != nullptr)
 		DeleteDeathDependence(curBuild, DEPENDENCE_BUILD);
 	if (curReclaim != nullptr)
@@ -691,6 +707,11 @@ void CBuilder::StopBuild(bool callScript)
 	curResurrect = nullptr;
 	curCapture = nullptr;
 
+	if (terraforming) {
+		constexpr int tsr = TERRA_SMOOTHING_RADIUS;
+		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
+	}
+
 	terraforming = false;
 
 	if (callScript)
@@ -702,12 +723,27 @@ void CBuilder::StopBuild(bool callScript)
 
 bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWaitStance, bool& limitReached)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* prvBuild = curBuild;
 
 	StopBuild(false);
 	TempHoldFire(-1);
 
 	buildInfo.pos = CGameHelper::Pos2BuildPos(buildInfo, true);
+
+	auto isBuildeeFloating = [](const BuildInfo& buildInfo) {
+		if (buildInfo.def->RequireMoveDef()) {
+			MoveDef* md = moveDefHandler.GetMoveDefByPathType(buildInfo.def->pathType);
+			return (md->FloatOnWater());
+		} else {
+			return (buildInfo.def->floatOnWater);
+		}
+	};
+
+	// Units that cannot be underwater need their build checks kept above water or else collision detections will
+	// produce the wrong results.
+	if (isBuildeeFloating(buildInfo))
+		buildInfo.pos.y = (buildInfo.pos.y < 0.f) ? 0.f : buildInfo.pos.y;
 
 	// Pass -1 as allyteam to behave like we have maphack.
 	// This is needed to prevent building on top of cloaked stuff.
@@ -828,6 +864,7 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 
 float CBuilder::CalculateBuildTerraformCost(BuildInfo& buildInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3& buildPos = buildInfo.pos;
 
 	float tcost = 0.0f;
@@ -854,6 +891,7 @@ float CBuilder::CalculateBuildTerraformCost(BuildInfo& buildInfo)
 
 void CBuilder::DependentDied(CObject* o)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (o == curBuild) {
 		curBuild = nullptr;
 		StopBuild();
@@ -880,6 +918,7 @@ void CBuilder::DependentDied(CObject* o)
 
 bool CBuilder::ScriptStartBuilding(float3 pos, bool silent)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (script->HasStartBuilding()) {
 		const float3 wantedDir = (pos - midPos).Normalize();
 		const float h = GetHeadingFromVectorF(wantedDir.x, wantedDir.z);
@@ -901,6 +940,7 @@ bool CBuilder::ScriptStartBuilding(float3 pos, bool silent)
 
 void CBuilder::HelpTerraform(CBuilder* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (helpTerraform == unit)
 		return;
 
@@ -915,6 +955,7 @@ void CBuilder::HelpTerraform(CBuilder* unit)
 
 void CBuilder::CreateNanoParticle(const float3& goal, float radius, bool inverse, bool highPriority)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int modelNanoPiece = nanoPieceCache.GetNanoPiece(script);
 
 	if (!localModel.Initialized() || !localModel.HasPiece(modelNanoPiece))

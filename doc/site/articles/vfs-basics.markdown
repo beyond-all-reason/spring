@@ -41,9 +41,10 @@ What this means is that **local files are largely for local content like the UI*
 ### How do I defer to the other content?
 
 VFS interfaces tend to **expect a _mode_ parameter**, which lets you specify **where to look for and in what order**.
-The values are strings so **you can combine them** using the `..` operator.
-For example, if you want to include a file from the map but also have a game-side backup, you'd pass `VFS.MAP .. VFS.GAME` to `VFS.Include`.
+The values are strings so **you can combine them** using the `..` operator, and they are read left-to-right.
+For example, if you want to include a file from the map but also have a game-side backup, you'd pass `VFS.MAP..VFS.GAME` to `VFS.Include`.
 Since `VFS.RAW` was not passed, any existing loose file with the appropriate name among the user's local files is ignored.
+See below for a listing of modes accessible to Lua.
 
 By paying attention to the VFS mode, you can **prevent loading unwanted content**.
 As mentioned above, requesting unsynced modes in synced contexts is also ignored.
@@ -61,3 +62,21 @@ Writing is done by general Lua interfaces such as `io` and `os`, not `VFS`.
 A somewhat unorthodox way to pass (synced) content is **via modoptions**.
 Modoptions can **contain data** that gameside code can act upon, and if you're brave enough you can even **pass Lua code** as a modoption to be excuted.
 This is one of the ways to let people **run their local files in a synced way**, by just forwarding them as modoptions.
+
+## VFS mode listing
+Here are the fundamental modes:
+
+* `VFS.GAME` - anything included by either a game OR its dependencies, as long as they are not basecontent. There is no way to tell where a file comes from, but dependencies override!
+* `VFS.MAP` - the map archive.
+* `VFS.BASE` - loaded basecontent archives. Some of those are always implicit dependencies. Any dependency with the appropriate archive type fits though.
+* `VFS.MENU` - the loaded menu (lobby) archive, i.e. in practice Chobby.
+* `VFS.RAW` - anything not in an archive, i.e. any loose files the client may have in his data folder, or even anywhere on the filesystem. Only unsynced content can access these.
+
+And here are the convenience/legacy ones:
+
+* `VFS.ZIP` = `VFS.GAME .. VFS.MAP .. VFS.BASE`. Synced content can only use subsets of this. Note that this doesn't mean actual `.zip` (aka `.sdz`) archives, `.sdd` and `.sd7` still apply.
+* `VFS.ZIP_FIRST` = `VFS.ZIP .. VFS.RAW`.
+* `VFS.RAW_FIRST` = `VFS.RAW .. VFS.ZIP`.
+* `VFS.MOD` = `VFS.GAME`. This is NOT for mods, they are indistinguishable from the main game from the VFS' point of view! It's just a legacy synonym.
+* `VFS.RAW_ONLY` = `VFS.RAW`.
+* `VFS.ZIP_ONLY` = `VFS.ZIP`.

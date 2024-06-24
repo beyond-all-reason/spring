@@ -119,6 +119,7 @@ class CEventHandler
 		bool UnitFeatureCollision(const CUnit* collider, const CFeature* collidee);
 		void UnitMoved(const CUnit* unit);
 		void UnitMoveFailed(const CUnit* unit);
+		void UnitArrivedAtGoal(const CUnit* unit);
 
 		void FeatureCreated(const CFeature* feature);
 		void FeatureDestroyed(const CFeature* feature);
@@ -431,6 +432,7 @@ UNIT_CALLIN_NO_PARAM(UnitReverseBuilt);
 UNIT_CALLIN_NO_PARAM(UnitFinished)
 UNIT_CALLIN_NO_PARAM(UnitIdle)
 UNIT_CALLIN_NO_PARAM(UnitMoveFailed)
+UNIT_CALLIN_NO_PARAM(UnitArrivedAtGoal)
 UNIT_CALLIN_NO_PARAM(UnitEnteredUnderwater)
 UNIT_CALLIN_NO_PARAM(UnitEnteredWater)
 UNIT_CALLIN_NO_PARAM(UnitEnteredAir)

@@ -27,7 +27,7 @@
 	#include "Linux/ThreadSupport.h"
 #endif
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 namespace Threading {
 #ifndef _WIN32

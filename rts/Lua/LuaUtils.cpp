@@ -1391,9 +1391,9 @@ int LuaUtils::PushDebugTraceback(lua_State* L)
 
 
 
-LuaUtils::ScopedDebugTraceBack::ScopedDebugTraceBack(lua_State* _L)
-	: L(_L)
-	, errFuncIdx(PushDebugTraceback(_L))
+LuaUtils::ScopedDebugTraceBack::ScopedDebugTraceBack(lua_State* lst)
+	: L(lst)
+	, errFuncIdx(PushDebugTraceback(lst))
 {
 	assert(errFuncIdx >= 0);
 }

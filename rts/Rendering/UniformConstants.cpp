@@ -118,7 +118,9 @@ void UniformConstants::Init()
 		return;
 
 	if (!Supported()) {
+	#ifndef HEADLESS
 		LOG_L(L_ERROR, "[UniformConstants::%s] Important OpenGL extensions are not supported by the system\n  GLEW_ARB_uniform_buffer_object = %d\n  GLEW_ARB_shading_language_420pack = %d", __func__, GLEW_ARB_uniform_buffer_object, GLEW_ARB_shading_language_420pack);
+	#endif
 		return;
 	}
 

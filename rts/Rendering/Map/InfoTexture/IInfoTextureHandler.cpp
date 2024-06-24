@@ -8,12 +8,15 @@
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 IInfoTextureHandler* infoTextureHandler = nullptr;
 
 
 void IInfoTextureHandler::Create()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (
 		globalRendering->supportNonPowerOfTwoTex &&
 		FBO::IsSupported()
