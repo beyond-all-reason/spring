@@ -562,7 +562,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	assert(speedModSum >= 0.0f);
 
 	float speedModAvg = speedModSum / area();
-	moveCostAvg = (speedModAvg <= 0.001f) ? QTPFS_POSITIVE_INFINITY : (1.0f / speedModAvg);
+	moveCostAvg = (speedModAvg <= 0.001f) ? QTPFS_POSITIVE_INFINITY : (nl.UseShortestPath() ? 1.f : (1.f /  speedModAvg));
 
 	// no node can have ZERO traversal cost
 	assert(moveCostAvg > 0.0f);
@@ -611,6 +611,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	needSplit |= (AllSquaresImpassable() && xsize() > 16); // TODO: magic number for size of damage quads
 
 	wantSplit &= (xsize() > 16); // try not to split below 16 if possible.
+	wantSplit &= !(nl.UseShortestPath());
 
 	return (wantSplit || needSplit);
 }

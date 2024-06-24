@@ -24,11 +24,7 @@ float CMoveMath::HoverSpeedMod(const MoveDef& moveDef, float height, float slope
 
 float CMoveMath::HoverSpeedMod(const MoveDef& moveDef, float height, float slope, float dirSlopeMod)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (!modInfo.allowDirectionalPathing) {
-		return HoverSpeedMod(moveDef, height, slope);
-	}
-
+  RECOIL_DETAILED_TRACY_ZONE;
 	// Only difference direction can have is making hills climbing slower.
 
 	// no speed-penalty if on water

@@ -313,7 +313,7 @@ void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int thr
 		const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
 
 		//LOG("TK PathingState::InitBlocks: blockStates.peNodeOffsets %d now %d looking up %d", i, blockStates.peNodeOffsets[md->pathType].size(), blockIdx);
-		blockStates.peNodeOffsets[md->pathType][blockIdx] = FindBlockPosOffset(*md, blockPos.x, blockPos.y);
+		blockStates.peNodeOffsets[md->pathType][blockIdx] = FindBlockPosOffset(*md, blockPos.x, blockPos.y, threadNum);
 		// LOG("UPDATED blockStates.peNodeOffsets[%d][%d] = (%d, %d) : (%d, %d)"
 		// 		, md->pathType, blockIdx
 		// 		, blockStates.peNodeOffsets[md->pathType][blockIdx].x, blockStates.peNodeOffsets[md->pathType][blockIdx].y
@@ -324,7 +324,7 @@ void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int thr
 /**
  * Move around the blockPos a bit, so we `surround` unpassable blocks.
  */
-int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blockX, unsigned int blockZ) const
+int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blockX, unsigned int blockZ, int threadNum) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// lower corner position of block
@@ -334,26 +334,6 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 
 	int2 bestPos(lowerX + (BLOCK_SIZE >> 1), lowerZ + (BLOCK_SIZE >> 1));
 	float bestCost = std::numeric_limits<float>::max();
-
-	// search for an accessible position within this block
-	/*for (unsigned int z = 0; z < BLOCK_SIZE; ++z) {
-		for (unsigned int x = 0; x < BLOCK_SIZE; ++x) {
-			const float speedMod = CMoveMath::GetPosSpeedMod(moveDef, lowerX + x, lowerZ + z);
-			const bool curblock = (speedMod == 0.0f) || CMoveMath::IsBlockedStructure(moveDef, lowerX + x, lowerZ + z, nullptr);
-
-			if (!curblock) {
-				const float dx = x - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float dz = z - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float cost = (dx * dx + dz * dz) + (blockArea / (0.001f + speedMod));
-
-				if (cost < bestCost) {
-					bestCost = cost;
-					bestPos.x = lowerX + x;
-					bestPos.y = lowerZ + z;
-				}
-			}
-		}
-	}*/
 
 	// same as above, but with squares sorted by their baseCost
 	// s.t. we can exit early when a square exceeds our current
@@ -371,7 +351,7 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 		if (cost >= bestCost)
 			continue;
 
-		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr)) {
+		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr, threadNum)) {
 			bestCost = cost;
 			bestPos  = blockPos;
 		}
@@ -413,17 +393,14 @@ void PathingState::CalcVertexPathCosts(const MoveDef& moveDef, int2 block, unsig
 	// calculated for *half* the outgoing edges (while costs for the
 	// other four directions are stored at the adjacent vertices)
 	auto idx = BlockPosToIdx(block);
-	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_LEFT_MASK)
-		CalcVertexPathCost(moveDef, block, PATHDIR_LEFT,     threadNum);
+	const uint8_t nodeLinksObsoleteFlags = blockStates.nodeLinksObsoleteFlags[idx]
+								  		 & (moveDef.allowDirectionalPathing) ? PATH_DIRECTIONS_MASK : PATH_DIRECTIONS_HALF_MASK;
 
-	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_LEFT_UP_MASK)
-		CalcVertexPathCost(moveDef, block, PATHDIR_LEFT_UP,  threadNum);
-
-	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_UP_MASK)
-		CalcVertexPathCost(moveDef, block, PATHDIR_UP,       threadNum);
-
-	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_RIGHT_UP_MASK)
-		CalcVertexPathCost(moveDef, block, PATHDIR_RIGHT_UP, threadNum);
+	int pathdir = 0;
+	for (int checkBit = 1; checkBit <= PATHDIR_LEFT_DOWN_MASK; checkBit <<= 1, ++pathdir) {
+		if (nodeLinksObsoleteFlags & checkBit)
+			CalcVertexPathCost(moveDef, block, pathdir, threadNum);
+	}
 }
 
 void PathingState::CalcVertexPathCost(
@@ -484,8 +461,8 @@ void PathingState::CalcVertexPathCost(
 	// note: PE itself should ensure this never happens to begin with?
 	//
 	// blocked goal positions are always early-outs (no searching needed)
-	const bool strtBlocked = ((CMoveMath::IsBlocked(moveDef, startPos, nullptr) & CMoveMath::BLOCK_STRUCTURE) != 0);
-	const bool goalBlocked = pfDef.IsGoalBlocked(moveDef, CMoveMath::BLOCK_STRUCTURE, nullptr);
+	const bool strtBlocked = ((CMoveMath::IsBlocked(moveDef, startPos, nullptr, threadNum) & CMoveMath::BLOCK_STRUCTURE) != 0);
+	const bool goalBlocked = pfDef.IsGoalBlocked(moveDef, CMoveMath::BLOCK_STRUCTURE, nullptr, threadNum);
 
 	if (strtBlocked || goalBlocked) {
 		vertexCosts[vertexCostIdx] = PATHCOST_INFINITY;
@@ -500,24 +477,7 @@ void PathingState::CalcVertexPathCost(
 	pfDef.dirIndependent  = true;
 
 	IPath::Path path;
-	//const IPath::SearchResult result = pathFinders[threadNum].GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
-
-	IPath::SearchResult result;
-	{
-		//pathFinders[threadNum]->testedBlocks = 0;
-		//SCOPED_TIMER("AAA_IPathFinder::GetPath");
-		// if (vertexCostIdx == 27290 && moveDef.pathType == 8){
-		// 	TEST_ACTIVE = true;
-		// 	LOG("Allow Raw %d", (int)pfDef.allowRawPath);
-		// }
-		result = pathFinders[threadNum]->GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
-		
-		// if (TEST_ACTIVE){
-		// 	LOG("TK PathingState::CalcVertexPathCost parent %d, child %d PathCost %f (result: %d) vertexId %d, tested %d, blks %d [MoveType %d : %d]"
-		// 	, parentBlockIdx, childBlockIdx, path.pathCost, result, vertexCostIdx, pathFinders[threadNum]->testedBlocks, BLOCK_SIZE, moveDef.pathType, moveDef.xsize);
-		// 	TEST_ACTIVE = false;
-		// }
-	}
+	IPath::SearchResult result = pathFinders[threadNum]->GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
 
 	// store the result
 	if (result == IPath::Ok) {
@@ -747,22 +707,10 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 				const SingleBlock sb = consumedBlocks[n];
 				const int blockN = BlockPosToIdx(sb.blockPos);
 				const MoveDef* currBlockMD = sb.moveDef;
-				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
+				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y, ThreadPool::GetThreadNum());
 			};
 
-
 		for_mt(0, consumedBlocks.size(), updateOffset);
-
-		// for (int n=0; n<consumedBlocks.size(); n++){
-		// 	const SingleBlock sb = consumedBlocks[n];
-		// 	const int blockN = BlockPosToIdx(sb.blockPos);
-		// 	const MoveDef* currBlockMD = sb.moveDef;
-		// 	LOG("UPDATED consumed blockStates.peNodeOffsets[%d][%d] = (%d, %d) :(%d, %d)"
-		// 		, currBlockMD->pathType, blockN
-		// 		, blockStates.peNodeOffsets[currBlockMD->pathType][blockN].x
-		// 		, blockStates.peNodeOffsets[currBlockMD->pathType][blockN].y
-		// 		, sb.blockPos.x, sb.blockPos.y);
-		// }
 	}
 
 	{
@@ -804,44 +752,59 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 	const int startZ = std::clamp(lowerZ, 0, int(mapDimensionsInBlocks.y - 1));
 	const int endZ   = std::clamp(upperZ, 0, int(mapDimensionsInBlocks.y - 1));
 
+	bool pathingDirectional = pathManager->AllowDirectionalPathing();
+
 	// LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
+
+	constexpr uint32_t ALL_LINKS = PATH_DIRECTIONS_MASK;
+	constexpr uint32_t MASK_REMOVE_LEFT = ~(PATHDIR_LEFT_MASK | PATHDIR_LEFT_UP_MASK | PATHDIR_LEFT_DOWN_MASK);
+	constexpr uint32_t MASK_REMOVE_RIGHT = ~(PATHDIR_RIGHT_MASK | PATHDIR_RIGHT_UP_MASK| PATHDIR_RIGHT_DOWN_MASK);
+	constexpr uint32_t MASK_REMOVE_UP = ~(PATHDIR_UP_MASK | PATHDIR_LEFT_UP_MASK | PATHDIR_RIGHT_UP_MASK);
+	constexpr uint32_t MASK_REMOVE_DOWN = ~(PATHDIR_DOWN_MASK | PATHDIR_LEFT_DOWN_MASK | PATHDIR_RIGHT_DOWN_MASK);
+
+	constexpr uint32_t activeLinks[] = {
+		ALL_LINKS & MASK_REMOVE_LEFT  & MASK_REMOVE_UP,
+		ALL_LINKS                     & MASK_REMOVE_UP,
+		ALL_LINKS & MASK_REMOVE_RIGHT & MASK_REMOVE_UP,
+		ALL_LINKS & MASK_REMOVE_LEFT,
+		ALL_LINKS,
+		ALL_LINKS & MASK_REMOVE_RIGHT,
+		ALL_LINKS & MASK_REMOVE_LEFT  & MASK_REMOVE_DOWN,
+		ALL_LINKS                     & MASK_REMOVE_DOWN,
+		ALL_LINKS & MASK_REMOVE_RIGHT & MASK_REMOVE_DOWN,
+	};
+
+	auto getIdxFromZ = [&](int z){
+			if (z == lowerZ) return 0;
+			else if (z == upperZ) return 6;
+			else return 3;
+	};
+	auto getIdxFromX = [&](int x){
+			if (x == lowerX) return 0;
+			else if (x == upperX) return 2;
+			else return 1;
+	};
 
 	// mark the blocks inside the rectangle, enqueue them
 	// from upper to lower because of the placement of the
 	// bi-directional vertices
 	for (int z = endZ; z >= startZ; z--) {
 		for (int x = endX; x >= startX; x--) {
-			// the upper left corner won't have any flags assigned
-			if (x==upperX && z==upperZ)
-				continue;
-
 			const int idx = BlockPosToIdx(int2(x, z));
-
 			std::uint8_t blockOrigLinkFlags = blockStates.nodeLinksObsoleteFlags[idx];
-			if ((blockOrigLinkFlags & PATH_DIRECTIONS_HALF_MASK) == PATH_DIRECTIONS_HALF_MASK) 
+
+			uint8_t linkType = getIdxFromZ(z) + getIdxFromX(x);
+			blockStates.nodeLinksObsoleteFlags[idx] = uint8_t(activeLinks[linkType]);
+			if (!pathingDirectional) 
+				blockStates.nodeLinksObsoleteFlags[idx] &= PATH_DIRECTIONS_HALF_MASK;
+
+			if (blockStates.nodeLinksObsoleteFlags[idx] == blockOrigLinkFlags)
 				continue;
 
 			//if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0)
 			//	continue;
 
-// [t=00:05:48.829407][f=0000630] [Path] MapChanged: clamped to [14, 43] -> [16, 44]
-// [t=00:05:48.829430][f=0000630] [Path] MapChanged: [15, 44] result is 0f
-// [t=00:05:48.829453][f=0000630] [Path] MapChanged: [14, 44] result is 01
-// [t=00:05:48.829463][f=0000630] [Path] MapChanged: [16, 43] result is 08
-// [t=00:05:48.829472][f=0000630] [Path] MapChanged: [15, 43] result is 04
-// [t=00:05:48.829482][f=0000630] [Path] MapChanged: [14, 43] result is 02
-
-			const bool leftUpSpecificIgnoreBlocks  = (x==upperX-1 & z==lowerZ) | (x==lowerX & z==upperZ);
-			const bool rightUpSpecificIgnoreBlocks = (x==lowerX+1 & z==lowerZ) /* | (x==upperX & z==upperZ)*/;
-
 			//LOG("%s: [%d, %d] lower is %02x", __func__, x, z, blockOrigLinkFlags);
-
-			blockStates.nodeLinksObsoleteFlags[idx]
-				|=  (z > lowerZ) * (x < upperX)                   * PATHDIR_LEFT_MASK
-				 +  (x < upperX) * (!leftUpSpecificIgnoreBlocks)  * PATHDIR_LEFT_UP_MASK
-				 +  (x > lowerX) * (x < upperX)                   * PATHDIR_UP_MASK
-				 +  (x > lowerX) * (!rightUpSpecificIgnoreBlocks) * PATHDIR_RIGHT_UP_MASK;
-
 			//LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
 			//LOG("%s: [%d, %d] result is %02x", __func__, x, z, blockStates.nodeLinksObsoleteFlags[idx]);
 

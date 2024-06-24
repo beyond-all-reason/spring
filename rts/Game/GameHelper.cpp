@@ -1489,8 +1489,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 			}
 			#endif
 
-			if (moveDef != nullptr && CMoveMath::IsNonBlocking(*moveDef, so, nullptr))
-				ret = BUILDSQUARE_OPEN;
+			if (moveDef != nullptr) {
+				MoveTypes::CheckCollisionQuery collisionQuery(moveDef, pos);
+				if (CMoveMath::IsNonBlocking(so, &collisionQuery))
+					ret = BUILDSQUARE_OPEN;
+			}
 
 			#if 0
 			if (synced)

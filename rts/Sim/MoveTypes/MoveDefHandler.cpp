@@ -5,6 +5,7 @@
 #include "Map/MapInfo.h"
 #include "MoveMath/MoveMath.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Path/IPathManager.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Units/Unit.h"
 #include "System/creg/STL_Map.h"
@@ -150,6 +151,16 @@ void MoveDefHandler::Init(LuaParser* defsParser)
 	crc << CMoveMath::noHoverWaterMove;
 
 	mdChecksum = crc.GetDigest();
+}
+
+
+void MoveDefHandler::PostSimInit() {
+	// Pathing system is initialized later and the movedefs may need to adjust their behaviour to align with
+	// capabilities of the pathing system.
+	std::for_each(moveDefs.begin(), moveDefs.end(), [](MoveDef& md){
+		md.allowDirectionalPathing &= pathManager->AllowDirectionalPathing();
+		md.preferShortestPath &= pathManager->AllowShortestPath();
+	});
 }
 
 
@@ -316,20 +327,23 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	}
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
+
+	allowDirectionalPathing = moveDefTable.GetBool("allowDirectionalPathing", allowDirectionalPathing);
+	preferShortestPath = moveDefTable.GetBool("preferShortestPath", preferShortestPath);
 }
 
 bool MoveDef::DoRawSearch(
 	const CSolidObject* collider,
+	const MoveDef* md,
 	const float3 startPos,
 	const float3 endPos,
-	const float3 testMoveDir,
 	bool testTerrain,
 	bool testObjects,
 	bool centerOnly,
 	float* minSpeedModPtr,
 	int* maxBlockBitPtr,
 	int thread
-) {
+) const {
 	ZoneScoped;
 	assert(testTerrain || testObjects);
 
@@ -401,10 +415,18 @@ bool MoveDef::DoRawSearch(
 	bool retTestMove = true;
 
 	if (testTerrain) {
-		auto test = [this, &minSpeedMod, speedModThreshold](int x, int z) -> bool {
+		std::function<float(int x, int z)> getPosSpeedMod;
+		if (md->allowDirectionalPathing) {
+			float3 testMoveDir = startPos - endPos;
+			getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir); };
+		} else {
+			getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z); };
+		}
+
+		auto test = [this, &minSpeedMod, speedModThreshold, &getPosSpeedMod](int x, int z) -> bool {
 			if (x >= mapDims.mapx || x < 0 || z >= mapDims.mapy || z < 0) { return true; }
 
-			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z);
+			const float speedMod = getPosSpeedMod(x, z);
 			minSpeedMod = std::min(minSpeedMod, speedMod);
 
 			return (speedMod > speedModThreshold);
@@ -417,16 +439,18 @@ bool MoveDef::DoRawSearch(
 	if (testObjects & retTestMove) {
 		int tempNum = gs->GetMtTempNum(thread);
 
-		MoveDef *md = collider->moveDef;
-
-		MoveTypes::CheckCollisionQuery virtualObject(collider);
+		MoveTypes::CheckCollisionQuery virtualObject = (collider != nullptr)
+				? MoveTypes::CheckCollisionQuery(collider)
+				: MoveTypes::CheckCollisionQuery(md);
 		MoveDefs::CollisionQueryStateTrack queryState;
+		md->UpdateCheckCollisionQuery(virtualObject, queryState, startBlock);
+
 		const bool isSubmersible = (md->isSubmarine ||
 								   (md->followGround && md->depth > md->height));
 		if (!isSubmersible)
 			virtualObject.DisableHeightChecks();
 
-		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
+		auto test = [this, &maxBlockBit, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z) -> bool {
 			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
 			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
 			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapxm1);
@@ -486,7 +510,7 @@ void MoveDef::UpdateCheckCollisionQuery
 }
 
 bool MoveDef::TestMoveSquareRange(
-	const CSolidObject* collider,
+	const MoveTypes::CheckCollisionQuery& collider,
 	const float3 rangeMins,
 	const float3 rangeMaxs,
 	const float3 testMoveDir,
@@ -514,9 +538,16 @@ bool MoveDef::TestMoveSquareRange(
 	bool retTestMove = true;
 
 	if (testTerrain) {
+		std::function<float(int x, int z)> getPosSpeedMod;
+		if (collider.moveDef->allowDirectionalPathing) {
+			getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir); };
+		} else {
+			getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z); };
+		}
+
 		for (int z = zmin; retTestMove && z <= zmax; ++z) {
 			for (int x = xmin; retTestMove && x <= xmax; ++x) {
-				const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z);
+				const float speedMod = getPosSpeedMod(x, z);
 
 				minSpeedMod = std::min(minSpeedMod, speedMod);
 				retTestMove = (speedMod > 0.0f);
@@ -527,7 +558,7 @@ bool MoveDef::TestMoveSquareRange(
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects && retTestMove) {
-		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(*this, xmin, xmax, zmin, zmax, collider, thread);
+		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(xmin, xmax, zmin, zmax, &collider, thread);
 
 		maxBlockBit = blockBits;
 		retTestMove = ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);

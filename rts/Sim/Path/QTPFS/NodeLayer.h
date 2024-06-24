@@ -163,6 +163,8 @@ namespace QTPFS {
 		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint, std::vector<INode*>& openNodes);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
+		bool UseShortestPath() { return useShortestPath; }
+
 	private:
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
@@ -220,6 +222,7 @@ private:
 
 		float maxRelSpeedMod = 0.0f; // TODO: Remove these?
 		float avgRelSpeedMod = 0.0f;
+		bool useShortestPath = false;
 	};
 }
 

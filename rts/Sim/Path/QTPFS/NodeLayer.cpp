@@ -74,6 +74,9 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 
 	curSpeedMods.resize(xsize * zsize,  0);
 	curSpeedBins.resize(xsize * zsize, -1);
+
+	MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
+	useShortestPath = md->preferShortestPath;
 }
 
 void QTPFS::NodeLayer::Clear() {
