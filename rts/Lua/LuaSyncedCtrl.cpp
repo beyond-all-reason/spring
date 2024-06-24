@@ -194,6 +194,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitShieldState);
 	REGISTER_LUA_CFUNC(SetUnitShieldRechargeDelay);
 	REGISTER_LUA_CFUNC(SetUnitFlanking);
+	REGISTER_LUA_CFUNC(GetUnitPhysicalState);
 	REGISTER_LUA_CFUNC(SetUnitPhysicalStateBit);
 	REGISTER_LUA_CFUNC(SetUnitTravel);
 	REGISTER_LUA_CFUNC(SetUnitFuel);
@@ -310,6 +311,8 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(AddOriginalHeightMap);
 	REGISTER_LUA_CFUNC(SetOriginalHeightMap);
 	REGISTER_LUA_CFUNC(SetOriginalHeightMapFunc);
+
+	REGISTER_LUA_CFUNC(RebuildSmoothMesh);
 
 	REGISTER_LUA_CFUNC(LevelSmoothMesh);
 	REGISTER_LUA_CFUNC(AdjustSmoothMesh);
@@ -3089,6 +3092,22 @@ int LuaSyncedCtrl::SetUnitPhysicalStateBit(lua_State* L)
 	return 0;
 }
 
+/***
+ * @function Spring.GetUnitPhysicalState
+ * @number unitID
+ * @treturn number Unit's PhysicalState bitmask
+ */
+int LuaSyncedCtrl::GetUnitPhysicalState(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->physicalState);
+	return 1;
+}
+
 
 
 int LuaSyncedCtrl::SetUnitTravel(lua_State* L) { return 0; } // FIXME: DELETE ME
@@ -3456,6 +3475,7 @@ int LuaSyncedCtrl::SetUnitPieceVisible(lua_State* L)
  * @function Spring.SetUnitSensorRadius
  * @number unitID
  * @string type "los" | "airLos" | "radar" | "sonar" | "seismic" | "radarJammer" | "sonarJammer"
+ * @number radius
  * @treturn ?nil|number newRadius
  */
 int LuaSyncedCtrl::SetUnitSensorRadius(lua_State* L)
@@ -3653,12 +3673,28 @@ int LuaSyncedCtrl::SetUnitMass(lua_State* L)
 }
 
 
-/***
+/*** Set unit position (2D)
  * @function Spring.SetUnitPosition
+ *
+ * Sets a unit's position in 2D, at terrain height.
+ *
  * @number unitID
  * @number x
  * @number z
- * @bool[opt] alwaysAboveSea
+ * @bool[opt=false] floating If true, over water the position is on surface. If false, on seafloor.
+ * @treturn nil
+ */
+
+
+/*** Set unit position (3D)
+ * @function Spring.SetUnitPosition
+ *
+ * Sets a unit's position in 3D, at an arbitrary height.
+ *
+ * @number unitID
+ * @number x
+ * @number y
+ * @number z
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitPosition(lua_State* L)
@@ -6038,6 +6074,21 @@ static inline void ParseSmoothMeshParams(lua_State* L, const char* caller,
 			smoothGround.GetMaxX() - 1,
 			smoothGround.GetMaxY() - 1);
 
+}
+
+
+/***
+ * @function Spring.RebuildSmoothMesh
+ *
+ * Heightmap changes normally take up to 25s to propagate to the smooth mesh.
+ * Use to force a mapwide update immediately.
+ *
+ * @treturn nil
+ */
+int LuaSyncedCtrl::RebuildSmoothMesh(lua_State* L)
+{
+	smoothGround.MakeSmoothMesh();
+	return 0;
 }
 
 

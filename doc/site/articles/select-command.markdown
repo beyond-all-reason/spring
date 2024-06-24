@@ -90,15 +90,18 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 
 ### `IdMatches_<string>`
 
-  Keep only units whose internal name (unitDef name) matches `<string>` **exactly**.
+  Keep only units whose internal name (unitDef name) matches `<string>` **exactly**. Differently from other filters further invocations will match units matching one name **OR** another.
 
   - `IdMatches_armcom`: keep only Armada Commanders (internally named `armcom`).
+  - `IdMatches_armcom_IdMatches_armflea`: keep only Armada Commanders or Fleas.
+  - `Not_IdMatches_armcom_Not_IdMatches_armflea`: keep all units that are not Armada Commanders or Fleas.
 
 ### `Idle`
 
   Keep only units that are currently idle, i.e. do not have any active order.
 
 ### `InGroup_<int>`
+
   Keep only units that are in control group `<int>`.
 
   - `Not_InGroup_<int>`: keep all units that are **not** currently in control group `<int>`.

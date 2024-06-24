@@ -229,6 +229,7 @@ public:
 
 		S3DModel* model = nullptr;
 		CColorMap* colorMap = nullptr;
+		CColorMap* scarGlowColorMap = nullptr;
 
 		AtlasedTexture* texture1 = nullptr;
 		AtlasedTexture* texture2 = nullptr;
@@ -238,6 +239,7 @@ public:
 		std::string modelName;
 		std::string texNames[4];
 		std::string colorMapStr;
+		std::string scarGlowColorMapStr;
 		std::string ptrailExpGenTag; ///< tag of CEG that projectiles fired by this weapon should use during flight
 		std::string impactExpGenTag; ///< tag of CEG that projectiles fired by this weapon should use on impact
 		std::string bounceExpGenTag; ///< tag of CEG that projectiles fired by this weapon should use when bouncing
@@ -261,7 +263,17 @@ public:
 		float sizeDecay = 0.0f;
 		float separation = 0.0f;
 
-		/// TODO: make the scar-type configurable
+		float scarDiameter = -1.0f;
+		float scarAlpha = 0.0f;
+		float scarGlow = 0.0f;
+		float scarTtl = 0.0f;
+		float scarGlowTtl = 0.0f;
+		float scarDotElimination = 0.0f;
+		float4 scarProjVector = float4{ 0.0f }; // use last float to indicate if the vector is non-zero
+		float4 scarColorTint = float4{ 0.5f, 0.5f, 0.5f, 0.5f };
+
+		std::vector<int> scarIdcs;
+
 		bool explosionScar = true;
 		bool smokeTrail = false;
 		bool smokeTrailCastShadow = true;

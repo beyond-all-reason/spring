@@ -112,6 +112,7 @@ public:
 	      CUnit* GetUnit()       { return unit; }
 	const CUnit* GetUnit() const { return unit; }
 
+	bool Tick(int tickRate);
 	void TickAllAnims(int tickRate);
 	bool TickAnimFinished(int tickRate);
 	// note: must copy-and-set here (LMP dirty flag, etc)

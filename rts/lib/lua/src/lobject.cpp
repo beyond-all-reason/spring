@@ -94,7 +94,7 @@ int luaO_str2d (const char *s, lua_Number *result) {
   if (*endptr == 'x' || *endptr == 'X')  /* maybe an hexadecimal constant? */
     *result = cast_num(strtoul(s, &endptr, 16));
   if (*endptr == '\0') return 1;  /* most common case */
-  while (isspace(cast(unsigned char, *endptr))) endptr++;
+  while (isspace(lua_cast(unsigned char, *endptr))) endptr++;
   if (*endptr != '\0') return 0;  /* invalid trailing characters? */
   return 1;
 }
@@ -125,7 +125,7 @@ const char *luaO_pushvfstring (lua_State *L, const char *fmt, va_list argp) {
       }
       case 'c': {
         char buff[2];
-        buff[0] = cast(char, va_arg(argp, int));
+        buff[0] = lua_cast(char, va_arg(argp, int));
         buff[1] = '\0';
         pushstr(L, buff);
         break;

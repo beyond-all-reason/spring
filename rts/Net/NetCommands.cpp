@@ -38,7 +38,7 @@
 #include "System/Sound/ISound.h"
 #include "System/Sync/DumpState.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(bool, LogClientData).defaultValue(false);
 

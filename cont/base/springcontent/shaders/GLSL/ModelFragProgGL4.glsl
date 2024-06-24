@@ -14,7 +14,7 @@ layout(std140, binding = 1) uniform UniformParamsBuffer {
 	vec3 rndVec3; //new every draw frame.
 	uint renderCaps; //various render booleans
 
-	vec4 timeInfo;     //gameFrame, gameSeconds, drawFrame, frameTimeOffset
+	vec4 timeInfo;     //gameFrame, drawSeconds, interpolated(unsynced)GameSeconds(synced), frameTimeOffset
 	vec4 viewGeometry; //vsx, vsy, vpx, vpy
 	vec4 mapSize;      //xz, xzPO2
 	vec4 mapHeight;    //height minCur, maxCur, minInit, maxInit

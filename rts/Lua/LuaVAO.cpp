@@ -85,9 +85,11 @@ LuaVAOs::~LuaVAOs()
 int LuaVAOs::GetVAO(lua_State* L)
 {
 	if (!LuaVAOImpl::Supported()) {
+		#ifndef HEADLESS
 		LOG_L(L_ERROR, "[LuaVAOs::%s] Important OpenGL extensions are not supported by the system\n  \tGL_ARB_vertex_buffer_object = %d; GL_ARB_vertex_array_object = %d; GL_ARB_instanced_arrays = %d; GL_ARB_draw_elements_base_vertex = %d; GL_ARB_multi_draw_indirect = %d",
 			__func__, (GLEW_ARB_vertex_buffer_object), (GLEW_ARB_vertex_array_object), (GLEW_ARB_instanced_arrays), (GLEW_ARB_draw_elements_base_vertex), (GLEW_ARB_multi_draw_indirect)
 		);
+		#endif
 
 		return 0;
 	}

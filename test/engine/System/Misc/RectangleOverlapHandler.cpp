@@ -48,7 +48,7 @@ int Test(std::vector<int>& testMap, CRectangleOverlapHandler& ro)
 	}
 
 	//! optimize
-	ro.Process();
+	ro.Process(true);
 
 	//! fill testMap with optimized
 	for (CRectangleOverlapHandler::iterator it = ro.begin(); it != ro.end(); ++it) {

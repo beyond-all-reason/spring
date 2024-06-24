@@ -12,12 +12,13 @@
 #include <vector>
 #include <sstream>
 #include <string>
-#include <typeinfo>
+#include <string_view>
 
 #include "Lua/LuaParser.h"
 #include "System/float3.h"
 #include "System/SpringMath.h"
 #include "System/UnorderedMap.hpp"
+#include "System/TypeToStr.h"
 
 // table placeholder (used for LuaTables)
 // example usage: DUMMYTAG(Defs, DefClass, table, customParams)
@@ -82,12 +83,10 @@ public:
 	const OptionalString& GetExternalName() const { return externalName; }
 	         std::string  GetInternalName() const { return key; }
 
-	const std::type_info& GetTypeInfo() const { return *typeInfo; }
-	static std::string GetTypeName(const std::type_info& typeInfo);
-
+	const std::string GetTypeName() const { return typeName; }
 protected:
 	const char* key;
-	const std::type_info* typeInfo;
+	std::string typeName;
 	OptionalString declarationFile;
 	OptionalInt declarationLine;
 	OptionalString externalName;
@@ -110,7 +109,7 @@ template<typename T>
 class DefTagTypedMetaData : public DefTagMetaData
 {
 public:
-	DefTagTypedMetaData(const char* k) { key = k; typeInfo = &typeid(T); }
+	DefTagTypedMetaData(const char* k) { key = k; typeName = std::string(spring::TypeToStr<T>()); }
 
 private:
 	template<typename T1, typename T2>
@@ -277,7 +276,7 @@ public:
 		const DefTagMetaData* meta = GetMetaDataByInternalKey(name);
 	#ifdef DEBUG
 		assert(meta != nullptr);
-		CheckType(meta, typeid(T));
+		CheckType(meta, spring::TypeToStr<T>());
 	#endif
 		return static_cast<const DefTagTypedMetaData<T>*>(meta)->GetData(*luaTable);
 	}
@@ -339,7 +338,7 @@ private:
 	const DefTagMetaData* GetMetaDataByInternalKey(const std::string& key);
 	const DefTagMetaData* GetMetaDataByExternalKey(const std::string& key);
 
-	static void CheckType(const DefTagMetaData* meta, const std::type_info& want);
+	static void CheckType(const DefTagMetaData* meta, const std::string_view otherTypeName);
 
 	template<typename F> friend class DefTagBuilder;
 };

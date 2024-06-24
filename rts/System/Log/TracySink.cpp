@@ -7,7 +7,7 @@
 #include "lib/fmt/format.h"
 
 #include <algorithm>
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 static void log_sink_record_tracy(int level, const char* section, const char* record)
 {

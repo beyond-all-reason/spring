@@ -19,6 +19,7 @@
 #include "Net/GameServer.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Units/UnitDrawer.h"
+#include "Rendering/Env/Decals/GroundDecalHandler.h"
 #include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Units/UnitHandler.h"
@@ -108,6 +109,7 @@ void CGameStateCollector::Serialize(creg::ISerializer* s)
 	mapType->Serialize(s, &CSplitLuaHandle::gameParams);
 
 	s->SerializeObjectInstance(CUnitDrawer::modelDrawerData->GetSavedData(), CUnitDrawer::modelDrawerData->GetSavedData()->GetClass());
+	//s->SerializeObjectInstance(groundDecals, groundDecals->GetClass());
 }
 
 

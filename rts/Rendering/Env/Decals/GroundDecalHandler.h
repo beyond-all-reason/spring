@@ -9,7 +9,6 @@
 #include <limits>
 #include <optional>
 
-#include "GroundDecal.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
@@ -17,6 +16,7 @@
 #include "Rendering/Textures/TextureRenderAtlas.h"
 #include "System/EventClient.h"
 #include "System/UnorderedMap.hpp"
+#include "System/creg/creg.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 
@@ -26,6 +26,7 @@ struct SolidObjectDecalType;
 class CTextureAtlas;
 class CSMFGroundDrawer;
 class GhostSolidObject;
+class CColorMap;
 
 namespace Shader {
 	struct IProgramObject;
@@ -33,8 +34,12 @@ namespace Shader {
 
 class CGroundDecalHandler: public IGroundDecalDrawer, public CEventClient, public IExplosionListener
 {
+	CR_DECLARE_DERIVED(CGroundDecalHandler)
+	CR_DECLARE_SUB(UnitMinMaxHeight)
+	CR_DECLARE_SUB(DecalUpdateList)
 public:
 	class DecalUpdateList {
+		CR_DECLARE_STRUCT(DecalUpdateList)
 	public:
 		using IteratorPair = std::pair<std::vector<bool>::iterator, std::vector<bool>::iterator>;
 	public:
@@ -64,14 +69,23 @@ public:
 	};
 public:
 	CGroundDecalHandler();
-	~CGroundDecalHandler();
+	~CGroundDecalHandler() override;
 
 	void OnDecalLevelChanged() override {}
+private:
+	struct AddExplosionInfo {
+		float3 pos;
+		float3 projDir;
+		float damage;
+		float radius;
+		float maxHeightDiff;
+		const WeaponDef* wd;
+	};
 private:
 	void BindAtlasTextures();
 	void BindCommonTextures();
 	void UnbindTextures();
-	void AddExplosion(float3 pos, float3 explNormalVec, float damage, float radius, float maxHeightDiff);
+	void AddExplosion(AddExplosionInfo&& explInfo);
 	void MoveSolidObject(const CSolidObject* object, const float3& pos);
 public:
 	// CEventClient
@@ -84,7 +98,7 @@ public:
 			|| (eventName == "UnitMoved")
 			|| (eventName == "UnitLoaded")
 			|| (eventName == "UnitUnloaded")
-			|| (eventName == "GameFrame")
+			|| (eventName == "GameFramePost")
 			|| (eventName == "SunChanged")
 			|| (eventName == "ViewResize");
 	}
@@ -103,7 +117,7 @@ public:
 	void UnitLoaded(const CUnit* unit, const CUnit* transport) override;
 	void UnitUnloaded(const CUnit* unit, const CUnit* transport) override;
 
-	void GameFrame(int frameNum) override;
+	void GameFramePost(int frameNum) override;
 
 	void SunChanged() override;
 	void ViewResize() override;
@@ -131,6 +145,10 @@ public:
 	std::string GetDecalTexture(uint32_t id, bool mainTex) const override;
 	const std::vector<std::string> GetDecalTextures(bool mainTex) const override;
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override;
+
+	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override;
+
+	void PostLoad();
 private:
 	static void BindVertexAtrribs();
 	static void UnbindVertexAtrribs();
@@ -151,11 +169,14 @@ private:
 	void UpdateDecalsVisibility();
 
 	void AddBuildingDecalTextures();
-	void AddGroundScarTextures();
+	void AddTexturesFromTable();
 	void AddGroundTrackTextures();
 	void AddFallbackTextures();
+
+	uint32_t GetNextId();
 private:
 	struct UnitMinMaxHeight {
+		CR_DECLARE_STRUCT(UnitMinMaxHeight)
 		UnitMinMaxHeight()
 			: min(std::numeric_limits<float>::max()   )
 			, max(std::numeric_limits<float>::lowest())
@@ -163,7 +184,6 @@ private:
 		float min;
 		float max;
 	};
-
 	int maxUniqueScars;
 
 	std::unique_ptr<CTextureRenderAtlas> atlasMain;
@@ -175,15 +195,18 @@ private:
 	spring::unordered_map<DecalOwner, size_t, std::hash<DecalOwner>> decalOwners; // for tracks, plates and ghosts
 	spring::unordered_map<int, UnitMinMaxHeight> unitMinMaxHeights; // for tracks
 	spring::unordered_map<uint32_t, size_t> idToPos;
+	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<size_t, size_t>>> idToCmInfo;
 
 	DecalUpdateList decalsUpdateList;
+
+	uint32_t nextId;
+	std::vector<uint32_t> freeIds;
 
 	VBO instVBO;
 	VAO vao;
 
 	CSMFGroundDrawer* smfDrawer;
 
-	int lastProcessedGameFrame;
 	bool highQuality = false;
 	ScopedDepthBufferCopy sdbc;
 

@@ -63,6 +63,7 @@
 #include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -126,6 +127,8 @@
 #include "System/Sync/DumpState.h"
 #include "System/TimeProfiler.h"
 #include "System/LoadLock.h"
+
+#include "System/Misc/TracyDefs.h"
 
 
 #undef CreateDirectory
@@ -312,6 +315,7 @@ CGame::~CGame()
 
 void CGame::AddTimedJobs()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		JobDispatcher::Job j;
 
@@ -629,7 +633,7 @@ void CGame::PreLoadSimulation(LuaParser* defsParser)
 	ENTER_SYNCED_CODE();
 
 	loadscreen->SetLoadMessage("Creating Smooth Height Mesh");
-	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), 2, 40);
+	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), modInfo.smoothMeshResDivider, modInfo.smoothMeshSmoothRadius);
 
 	loadscreen->SetLoadMessage("Creating QuadField & CEGs");
 	moveDefHandler.Init(defsParser);
@@ -908,7 +912,10 @@ void CGame::LoadFinalize()
 
 void CGame::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	GameSetupDrawer::Disable();
+
+	Sim::systemUtils.NotifyPostLoad();
 
 	if (gameServer != nullptr) {
 		gameServer->PostLoad(gs->frameNum);
@@ -918,6 +925,7 @@ void CGame::PostLoad()
 
 void CGame::KillLua(bool dtor)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// belongs here; destructs LuaIntro (which might access sound, etc)
 	// if LoadingMT=1, a reload-request might be seen by SpringApp::Run
 	// while the loading thread is still alive so this must go first
@@ -950,6 +958,7 @@ void CGame::KillLua(bool dtor)
 
 void CGame::KillMisc()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
 	CEndGameBox::Destroy();
 	IVideoCapturing::FreeInstance();
@@ -967,6 +976,7 @@ void CGame::KillMisc()
 
 void CGame::KillRendering()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
 	icon::iconHandler.Kill();
 	spring::SafeDelete(geometricObjects);
@@ -977,6 +987,7 @@ void CGame::KillRendering()
 
 void CGame::KillInterface()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
 	ProfileDrawer::SetEnabled(false);
 	camHandler->Kill();
@@ -994,6 +1005,7 @@ void CGame::KillInterface()
 
 void CGame::KillSimulation()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
 
 	// Kill all teams that are still alive, in
@@ -1075,6 +1087,7 @@ void CGame::ResizeEvent()
 
 int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!gameOver && !isRepeat)
 		playerHandler.Player(gu->myPlayerNum)->currentStats.keyPresses++;
 
@@ -1125,6 +1138,7 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 int CGame::KeyReleased(int keyCode, int scanCode)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
 		return 0;
 
@@ -1151,6 +1165,7 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 
 int CGame::KeyMapChanged()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.KeyMapChanged();
 
 	return 0;
@@ -1158,6 +1173,7 @@ int CGame::KeyMapChanged()
 
 int CGame::TextInput(const std::string& utf8Text)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (eventHandler.TextInput(utf8Text))
 		return 0;
 
@@ -1166,6 +1182,7 @@ int CGame::TextInput(const std::string& utf8Text)
 
 int CGame::TextEditing(const std::string& utf8Text, unsigned int start, unsigned int length)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (eventHandler.TextEditing(utf8Text, start, length))
 		return 0;
 
@@ -1175,6 +1192,7 @@ int CGame::TextEditing(const std::string& utf8Text, unsigned int start, unsigned
 
 bool CGame::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	good_fpu_control_registers("CGame::Update");
 
 	jobDispatcher.Update();
@@ -1593,6 +1611,7 @@ void CGame::DrawInputReceivers()
 
 void CGame::DrawInterfaceWidgets()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (hideInterface)
 		return;
 
@@ -1632,6 +1651,7 @@ void CGame::DrawInterfaceWidgets()
 
 void CGame::ParseInputTextGeometry(const string& geo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (geo == "default") { // safety
 		ParseInputTextGeometry("0.26 0.73 0.02 0.028");
 		return;
@@ -1652,12 +1672,14 @@ void CGame::ParseInputTextGeometry(const string& geo)
 
 void CGame::DrawInputText()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	gameTextInput.Draw();
 }
 
 
 void CGame::StartPlaying()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!playing);
 	playing = true;
 
@@ -1820,6 +1842,7 @@ void CGame::SimFrame() {
 
 void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool timeout)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gameOver)
 		return;
 
@@ -1833,6 +1856,10 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 			clientNet->InitLocalClient();
 			return;
 		}
+
+		// Force the connection to close if it hasn't been already to avoid the chance of starting the game in an
+		// desynced state.
+		clientNet->Close();
 
 		LOG_L(L_ERROR, "[%s] lost connection to server; terminating game", __func__);
 	} else {
@@ -1865,7 +1892,8 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 	record->SetWinningAllyTeams(winningAllyTeams);
 
 	// tell everybody about our APM, it's the most important statistic
-	clientNet->Send(CBaseNetProtocol::Get().SendPlayerStat(gu->myPlayerNum, playerHandler.Player(gu->myPlayerNum)->currentStats));
+	if (!timeout)
+		clientNet->Send(CBaseNetProtocol::Get().SendPlayerStat(gu->myPlayerNum, playerHandler.Player(gu->myPlayerNum)->currentStats));
 
 	for (int i = 0; i < numPlayers; ++i) {
 		record->SetPlayerStats(i, playerHandler.Player(i)->currentStats);
@@ -1873,12 +1901,14 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 	for (int i = 0; i < numTeams; ++i) {
 		const CTeam* team = teamHandler.Team(i);
 		record->SetTeamStats(i, team->statHistory);
-		clientNet->Send(CBaseNetProtocol::Get().SendTeamStat(team->teamNum, team->GetCurrentStats()));
+		if (!timeout)
+			clientNet->Send(CBaseNetProtocol::Get().SendTeamStat(team->teamNum, team->GetCurrentStats()));
 	}
 }
 
 void CGame::SendNetChat(std::string message, int destination)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (message.empty())
 		return;
 
@@ -1909,6 +1939,7 @@ void CGame::SendNetChat(std::string message, int destination)
 
 void CGame::HandleChatMsg(const ChatMessage& msg)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((msg.fromPlayer < 0) ||
 		((msg.fromPlayer >= playerHandler.ActivePlayers()) &&
 			(static_cast<unsigned int>(msg.fromPlayer) != SERVER_PLAYER))) {
@@ -1994,6 +2025,7 @@ void CGame::HandleChatMsg(const ChatMessage& msg)
 
 
 void CGame::StartSkip(int toFrame) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 0 // FIXME: desyncs
 	if (skipping)
 		LOG_L(L_ERROR, "skipping appears to be busted (%i)", skipping);
@@ -2027,6 +2059,7 @@ void CGame::StartSkip(int toFrame) {
 }
 
 void CGame::EndSkip() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 0 // FIXME
 	skipping = false;
 
@@ -2046,6 +2079,7 @@ void CGame::EndSkip() {
 
 
 void CGame::DrawSkip(bool blackscreen) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 0
 	const int framesLeft = (skipEndFrame - gs->frameNum);
 	if (blackscreen) {
@@ -2073,6 +2107,7 @@ void CGame::DrawSkip(bool blackscreen) {
 
 void CGame::ReloadCOB(const string& msg, int player)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!gs->cheatEnabled) {
 		LOG_L(L_WARNING, "[Game::%s] can only be used if cheating is enabled", __func__);
 		return;
@@ -2096,6 +2131,7 @@ void CGame::ReloadCOB(const string& msg, int player)
 
 bool CGame::IsSimLagging(float maxLatency) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float deltaTime = spring_tomsecs(spring_gettime() - lastFrameTime);
 	const float sfLatency = maxLatency / gs->speedFactor;
 
@@ -2105,6 +2141,7 @@ bool CGame::IsSimLagging(float maxLatency) const
 
 void CGame::Save(std::string&& fileName, std::string&& saveArgs)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	globalSaveFileData.name = std::move(fileName);
 	globalSaveFileData.args = std::move(saveArgs);
 }
@@ -2113,6 +2150,7 @@ void CGame::Save(std::string&& fileName, std::string&& saveArgs)
 
 
 bool CGame::ProcessCommandText(int keyCode, int scanCode, const std::string& command) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (command.size() <= 2)
 		return false;
 
@@ -2127,6 +2165,7 @@ bool CGame::ProcessCommandText(int keyCode, int scanCode, const std::string& com
 
 bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool isRepeat)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ActionPressed(keyCode, scanCode, action, isRepeat))
 		return true;
 
@@ -2142,6 +2181,7 @@ bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool 
 
 void CGame::ActionReceived(const Action& action, int playerID)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const ISyncedActionExecutor* executor = syncedGameCommands->GetActionExecutor(action.command);
 
 	if (executor != nullptr) {
@@ -2158,6 +2198,7 @@ void CGame::ActionReceived(const Action& action, int playerID)
 
 bool CGame::ActionPressed(int keyCode, int scanCode, const Action& action, bool isRepeat)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const IUnsyncedActionExecutor* executor = unsyncedGameCommands->GetActionExecutor(action.command);
 
 	if (executor != nullptr) {

@@ -11,6 +11,8 @@
 #include "System/UnorderedMap.hpp"
 #include "System/creg/STL_Map.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND(CColorMap, )
 CR_REG_METADATA(CColorMap, (
 	CR_MEMBER(xsize),
@@ -31,6 +33,7 @@ static size_t numColorMaps = 0;
 
 void CColorMap::InitStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	namedColorMaps.clear();
 	namedColorMaps.reserve(colorMapsCache.size() - 2);
 
@@ -46,6 +49,7 @@ void CColorMap::InitStatic()
 
 CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto fn = StringToLower(fileName);
 	const auto it = namedColorMaps.find(fn);
 
@@ -64,6 +68,7 @@ CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)
 
 CColorMap* CColorMap::LoadFromRawVector(const float* data, size_t size)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CColorMap& cm = colorMapsCache[colorMapsCache.size() - 1];
 
 	cm.Clear();
@@ -92,6 +97,7 @@ CColorMap* CColorMap::LoadFromRawVector(const float* data, size_t size)
 
 CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::array<float, 4096> vec;
 
 	size_t idx = 0;
@@ -115,6 +121,7 @@ CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
 
 CColorMap::CColorMap(const std::string& fileName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CBitmap bitmap;
 
 	if (!bitmap.Load(fileName)) {
@@ -135,6 +142,7 @@ CColorMap::CColorMap(const std::string& fileName)
 
 void CColorMap::Load(const float* data, size_t size)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (size < 8)
 		throw content_error("[ColorMap] less than two RGBA colors specified");
 
@@ -142,7 +150,7 @@ void CColorMap::Load(const float* data, size_t size)
 	ysize  = 1;
 	nxsize = xsize - 1;
 
-	std::array<SColor, 4096> cmap;
+	static std::array<SColor, 4096> cmap; //to move it off the stack
 
 	for (size_t i = 0, n = std::min(size_t(xsize), cmap.size()); i < n; ++i) {
 		cmap[i] = SColor(&data[i * 4]);
@@ -153,6 +161,7 @@ void CColorMap::Load(const float* data, size_t size)
 
 void CColorMap::LoadMap(const unsigned char* buf, int num)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	map.clear();
 	map.resize(num);
 
@@ -161,7 +170,9 @@ void CColorMap::LoadMap(const unsigned char* buf, int num)
 
 void CColorMap::GetColor(unsigned char* color, float pos)
 {
-	if (map.empty()) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	auto indices = GetIndices(pos);
+	if (indices.first == size_t(-1)) {
 		// dummy map, just return grey
 		color[0] = 128;
 		color[1] = 128;
@@ -170,19 +181,13 @@ void CColorMap::GetColor(unsigned char* color, float pos)
 		return;
 	}
 
-	if (pos >= 1.0f) {
-		*reinterpret_cast<SColor*>(color) = map.back();
-		return;
-	}
-
 	const float fposn = pos * nxsize;
-	const int iposn = (int) fposn;
-	const float fracn = fposn - iposn;
-	const int aa = (int) (fracn * 256);
-	const int ia = 256 - aa;
+	const float fracn = fposn - indices.first;
+	const auto aa = (int) (fracn * 256);
+	const auto ia = 256 - aa;
 
-	unsigned char* col1 = (unsigned char*) &map[iposn    ];
-	unsigned char* col2 = (unsigned char*) &map[iposn + 1];
+	const auto* col1 = static_cast<uint8_t*>(map[indices.first ]);
+	const auto* col2 = static_cast<uint8_t*>(map[indices.second]);
 
 	color[0] = ((col1[0] * ia) + (col2[0] * aa)) >> 8;
 	color[1] = ((col1[1] * ia) + (col2[1] * aa)) >> 8;
@@ -190,9 +195,27 @@ void CColorMap::GetColor(unsigned char* color, float pos)
 	color[3] = ((col1[3] * ia) + (col2[3] * aa)) >> 8;
 }
 
+std::pair<size_t, size_t> CColorMap::GetIndices(float pos) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (map.empty())
+		return std::make_pair(size_t(-1), size_t(-1));
+
+	if (pos >= 1.0f)
+		return std::make_pair(map.size() - 1, map.size() - 1);
+
+	pos = std::max(pos, 0.0f);
+
+	const float fposn = pos * nxsize;
+	const size_t p = static_cast<size_t>(fposn);
+
+	return std::make_pair(p, std::min(p + 1, map.size() - 1));
+}
+
 #ifdef USING_CREG
 void CColorMap::SerializeColorMaps(creg::ISerializer* s)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!s->IsWriting()) {
 		for (CColorMap& cm: colorMapsCache) {
 			cm.Clear();
@@ -210,11 +233,13 @@ void CColorMap::SerializeColorMaps(creg::ISerializer* s)
 
 void CColorMap::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	nxsize = xsize - 1;
 }
 
 void CColorMap::Serialize(creg::ISerializer* s)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!s->IsWriting())
 		map.resize(xsize * ysize);
 

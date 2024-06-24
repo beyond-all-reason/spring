@@ -21,7 +21,7 @@
 #include "../tools/pr-downloader/src/pr-downloader.h"
 #include "fmt/format.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 #include <tracy/TracyLua.hpp>
 
 /******************************************************************************
