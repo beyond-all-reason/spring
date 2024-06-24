@@ -49,6 +49,9 @@ Sim:
  - Added: `float separationDistance` to unitDef, so that units try to keep separationDistance elmos away from each
    other. This avoids having to increase the unit's movedef size, which has other additional consequences.
    https://github.com/beyond-all-reason/spring/pull/1358
+ - Terraform activities are now done at slow update rate, rather than every frame. This is back to original behaviour.
+   An extra step is added at the end of the job to guarantee that the last of the terrain changes are processed and not
+   missed. https://github.com/beyond-all-reason/spring/pull/1360/
 
 UI:
  - SDL updates in preparation for RmlUI. https://github.com/beyond-all-reason/spring/pull/1419
