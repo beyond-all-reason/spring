@@ -12,7 +12,7 @@ public:
 	RenderInterface_Headless() = default;
 	~RenderInterface_Headless() override = default;
 	explicit operator bool() const { return true; }
-	Rml::CompiledGeometryHandle	CompileGeometry(Rml::Span<const Rml::Vertex>, Rml::Span<const int>) override
+	Rml::CompiledGeometryHandle CompileGeometry(Rml::Span<const Rml::Vertex>, Rml::Span<const int>) override
 	{
 		return (Rml::CompiledGeometryHandle) nullptr;
 	}
