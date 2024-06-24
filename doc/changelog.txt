@@ -52,6 +52,8 @@ Sim:
  - Terraform activities are now done at slow update rate, rather than every frame. This is back to original behaviour.
    An extra step is added at the end of the job to guarantee that the last of the terrain changes are processed and not
    missed. https://github.com/beyond-all-reason/spring/pull/1360/
+ - `CGroundMoveType::ChangeHeading` now avoid updating the unit if no rotation is neccessary.
+   https://github.com/beyond-all-reason/spring/pull/1382
 
 UI:
  - SDL updates in preparation for RmlUI. https://github.com/beyond-all-reason/spring/pull/1419
