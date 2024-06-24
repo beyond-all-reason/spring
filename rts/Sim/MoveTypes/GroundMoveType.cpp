@@ -519,6 +519,8 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 
 	forceStaticObjectCheck = true;
 
+	flatFrontDir = (owner->frontdir * XZVector).Normalize();
+
 	Connect();
 }
 
@@ -1396,11 +1398,15 @@ void CGroundMoveType::ChangeHeading(short newHeading) {
 	if (owner->GetTransporter() != nullptr)
 		return;
 
+	wantedHeading = newHeading;
+	if (owner->heading == wantedHeading)
+		return;
+
 	#if (MODEL_TURN_INERTIA == 0)
 	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, wantedHeading, owner->heading, turnRate);
 	#else
 	// model rotational inertia (more realistic for ships)
-	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, (wantedHeading = newHeading), owner->heading, turnRate, turnAccel, BrakingDistance(turnSpeed, turnAccel), &turnSpeed);
+	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, wantedHeading, owner->heading, turnRate, turnAccel, BrakingDistance(turnSpeed, turnAccel), &turnSpeed);
 	#endif
 	const short absDeltaHeading = rawDeltaHeading * Sign(rawDeltaHeading);
 
