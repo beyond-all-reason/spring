@@ -41,8 +41,6 @@ public:
 	std::string description;
 
 	// Movement behaviour
-	bool preferShortestPath;         //< if pathing system supports it, use shortest route instead of fastest route
-	bool allowDirectionalPathing;    //< determines if ground speed going downhill != going uphill
 	bool allowAircraftToLeaveMap;    //< determines if gunships are allowed to leave map boundaries
 	bool allowAircraftToHitGround;   //< determines if aircraft (both types) can collide with terrain
 	bool allowPushingEnemyUnits;     //< determines if enemy (ground-)units can be pushed during collisions

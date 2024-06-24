@@ -24,8 +24,6 @@ void CModInfo::ResetState()
 	description.clear();
 
 	{
-		preferShortestPath         = false;
-		allowDirectionalPathing    = true;
 		allowAircraftToLeaveMap    = true;
 		allowAircraftToHitGround   = true;
 		allowPushingEnemyUnits     = false;
@@ -187,8 +185,6 @@ void CModInfo::Init(const std::string& modFileName)
 		// movement
 		const LuaTable& movementTbl = root.SubTable("movement");
 
-		preferShortestPath = movementTbl.GetBool("preferShortestPath", preferShortestPath);
-		allowDirectionalPathing = movementTbl.GetBool("allowDirectionalPathing", allowDirectionalPathing);
 		allowAircraftToLeaveMap = movementTbl.GetBool("allowAirPlanesToLeaveMap", allowAircraftToLeaveMap);
 		allowAircraftToHitGround = movementTbl.GetBool("allowAircraftToHitGround", allowAircraftToHitGround);
 		allowPushingEnemyUnits = movementTbl.GetBool("allowPushingEnemyUnits", allowPushingEnemyUnits);
