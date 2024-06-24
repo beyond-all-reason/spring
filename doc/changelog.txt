@@ -46,6 +46,9 @@ Misc:
 Sim:
  - Added: `system.smoothMeshResDivider` and `system.smoothMeshSmoothRadius` to control the behaviour of the Air Smooth
    Mesh. https://github.com/beyond-all-reason/spring/pull/1341
+ - Added: `float separationDistance` to unitDef, so that units try to keep separationDistance elmos away from each
+   other. This avoids having to increase the unit's movedef size, which has other additional consequences.
+   https://github.com/beyond-all-reason/spring/pull/1358
 
 UI:
  - SDL updates in preparation for RmlUI. https://github.com/beyond-all-reason/spring/pull/1419
