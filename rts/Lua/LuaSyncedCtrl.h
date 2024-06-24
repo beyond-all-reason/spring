@@ -205,6 +205,8 @@ class LuaSyncedCtrl
 		static int SetOriginalHeightMap(lua_State* L);
 		static int SetOriginalHeightMapFunc(lua_State* L);
 
+		static int RebuildSmoothMesh(lua_State* L);
+
 		static int LevelSmoothMesh(lua_State* L);
 		static int AdjustSmoothMesh(lua_State* L);
 		static int RevertSmoothMesh(lua_State* L);
