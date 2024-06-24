@@ -2772,8 +2772,6 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
-	MoveTypes::CheckCollisionQuery colliderInfo(collider);
-
 	// Push resistent units when stopped impacting pathing and also cannot be pushed, so it is important that such
 	// units are not going to prevent other units from moving around them if they are near narrow pathways.
 	const float colliderSeparationDist = (pushResistant && pushResistanceBlockActive) ? 0.f : colliderUD->separationDistance;
@@ -2781,7 +2779,6 @@ void CGroundMoveType::HandleUnitCollisions(
 	// Account for units that are larger than one's self.
 	const float maxCollisionRadius = colliderParams.y + moveDefHandler.GetLargestFootPrintSizeH();
 	const float searchRadius = colliderParams.x + maxCollisionRadius + colliderSeparationDist;
-
 
 	MoveTypes::CheckCollisionQuery colliderInfo(collider);
 	if ( !colliderMD->overrideUnitWaterline )
@@ -3206,6 +3203,7 @@ const float3& CGroundMoveType::GetGroundNormal(const float3& p) const
 
 float CGroundMoveType::GetGroundHeight(const float3& p) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	MoveDef *md = owner->moveDef;
 
 	// in [minHeight, maxHeight]
