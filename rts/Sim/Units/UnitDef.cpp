@@ -132,6 +132,7 @@ UnitDef::UnitDef()
 	, minWaterDepth(0.0f)
 	, maxWaterDepth(0.0f)
 	, upDirSmoothing(0.0f)
+	, separationDistance(0.0f)
 	, pathType(-1U)
 	, armoredMultiple(0.0f)
 	, armorType(0)
@@ -353,6 +354,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	terraformSpeed = udTable.GetFloat("terraformSpeed", buildSpeed);
 
 	upDirSmoothing = std::clamp(udTable.GetFloat("upDirSmoothing", 0.0f), 0.0f, 0.95f);
+	separationDistance = std::max(udTable.GetInt("separationDistance", 0), 0);
 
 	reclaimable  = udTable.GetBool("reclaimable",  true);
 	capturable   = udTable.GetBool("capturable",   true);
