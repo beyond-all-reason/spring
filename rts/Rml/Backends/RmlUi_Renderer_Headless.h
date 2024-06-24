@@ -9,32 +9,32 @@
 class RenderInterface_Headless : public Rml::RenderInterface
 {
 public:
-	RenderInterface_Headless(){};
-	~RenderInterface_Headless(){};
+	RenderInterface_Headless() = default;
+	~RenderInterface_Headless() override = default;
 	explicit operator bool() const { return true; }
-	void RenderGeometry(Rml::Vertex *vertices, int num_vertices, int *indices, int num_indices, Rml::TextureHandle texture, const Rml::Vector2f &translation) {};
+	Rml::CompiledGeometryHandle	CompileGeometry(Rml::Span<const Rml::Vertex>, Rml::Span<const int>) override
+	{
+		return (Rml::CompiledGeometryHandle) nullptr;
+	}
+	void RenderGeometry(Rml::CompiledGeometryHandle, Rml::Vector2f, Rml::TextureHandle) override {}
+	void ReleaseGeometry(Rml::CompiledGeometryHandle) override {}
 
-	Rml::CompiledGeometryHandle CompileGeometry(Rml::Vertex *vertices, int num_vertices, int *indices, int num_indices, Rml::TextureHandle texture)
+	Rml::TextureHandle LoadTexture(Rml::Vector2i&, const Rml::String&) override
 	{
-		return (Rml::CompiledGeometryHandle)nullptr;
-	};
-	void RenderCompiledGeometry(Rml::CompiledGeometryHandle geometry, const Rml::Vector2f &translation){};
-	void ReleaseCompiledGeometry(Rml::CompiledGeometryHandle geometry){};
-	void SetScissorRegion(int x, int y, int width, int height) {};
-	void EnableScissorRegion(bool enable) {};
-	bool LoadTexture(Rml::TextureHandle &texture_handle, Rml::Vector2i &texture_dimensions, const Rml::String &source)
+		return (Rml::TextureHandle) nullptr;
+	}
+	Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte>, Rml::Vector2i) override
 	{
-		return true;
-	};
-	bool GenerateTexture(Rml::TextureHandle &texture_handle, const Rml::byte *source, const Rml::Vector2i &source_dimensions)
-	{
-		return true;
-	};
-	void ReleaseTexture(Rml::TextureHandle texture){};
-	void SetTransform(const Rml::Matrix4f *transform){};
-	void BeginFrame(){};
-	void EndFrame(){};
-	void SetViewport(int x, int y){};
+		return (Rml::TextureHandle) nullptr;
+	}
+	void ReleaseTexture(Rml::TextureHandle) override {}
+
+	void EnableScissorRegion(bool) override {}
+	void SetScissorRegion(Rml::Rectanglei) override {}
+
+	void SetViewport(int, int) {}
+	void BeginFrame() {}
+	void EndFrame() {}
 };
 
 #endif // RMLUI_RENDERER_HEADLESS_H
