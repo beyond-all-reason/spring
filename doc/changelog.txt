@@ -30,10 +30,27 @@ Spring changelog
 
 -- BAR105 NEXT ---------------------------------------------------
 
-(since release 2304)
+(since release 2511)
 
 Lua:
+ - add `Spring.GetUnitPhysicalState(number unitID) -> Gets the unit's PhysicalState bitmask.
+   https://github.com/beyond-all-reason/spring/pull/1528
  - add `Spring.RebuildSmoothMesh` to force an immediate build of the complete Air Smooth Mesh.
+   https://github.com/beyond-all-reason/spring/pull/1342
+ - Fix #1523, `Spring.UnitArrivedAtGoal` stack issue with warning spam.
+   https://github.com/beyond-all-reason/spring/pull/1546
+
+Misc:
+- Fixed broken test. https://github.com/beyond-all-reason/spring/pull/1545
+
+Sim:
+ - Added: `system.smoothMeshResDivider` and `system.smoothMeshSmoothRadius` to control the behaviour of the Air Smooth
+   Mesh. https://github.com/beyond-all-reason/spring/pull/1341
+
+UI:
+ - SDL updates in preparation for RmlUI. https://github.com/beyond-all-reason/spring/pull/1419
+
+
 
 (since release 1544)
 
@@ -92,7 +109,6 @@ Lua:
  - add `Spring.GetFacingFromHeading(number heading) -> number facing` for unit conversion.
    Add `Spring.GetHeadingFromFacing(number facing) -> number heading`, ditto.
  - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
- - add `Spring.GetUnitPhysicalState(number unitID) -> Gets the unit's PhysicalState bitmask.
  - Lua C Macros (cast and registry) prefixed lua_ to fix compilation issues.
  - Protect Spring.GetGroupUnitsCount from crashing when given an invalid group id.
 
