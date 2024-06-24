@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+// #undef NDEBUG
+
 #include "SaveLoadUtils.h"
 
 #include "cereal/archives/binary.hpp"
@@ -47,7 +49,6 @@ void ProcessComponents(T&& archive, S&& snapshot) {
     MoveTypes::serializeComponents(archive, snapshot);
 }
 
-
 using namespace Sim;
 
 void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
@@ -56,6 +57,9 @@ void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
     auto archive = cereal::BinaryInputArchive{iss};
     LOG_L(L_DEBUG, "%s: Entities before clear is %d", __func__, (int)registry.alive());
     registry.each([this](entt::entity entity) { registry.destroy(entity); });
+
+    assert(registry.alive() == 0);
+
     LOG_L(L_DEBUG, "%s: Entities after clear is %d (%d)", __func__, (int)registry.alive(), (int)iss.tellg());
     {ProcessComponents<entt::snapshot_loader>(archive, entt::snapshot_loader{registry});}
     LOG_L(L_DEBUG, "%s: Entities after load is %d (%d)", __func__, (int)registry.alive(), (int)iss.tellg());

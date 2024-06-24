@@ -666,7 +666,7 @@ bool QTPFS::PathSearch::ExecuteRawSearch() {
 
 	int2 nearestSquare;
 	haveFullPath = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer())
-			->DoRawSearch( pathOwner, fwd.srcPoint, fwd.tgtPoint, pathOwner->speed, goalDistance
+			->DoRawSearch( pathOwner, pathOwner->moveDef, fwd.srcPoint, fwd.tgtPoint, goalDistance
 						 , true, true, false, nullptr, nullptr, &nearestSquare, searchThreadData->threadId);
 
 	if (haveFullPath) {

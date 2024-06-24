@@ -24,15 +24,22 @@
 
 using namespace MoveTypes;
 
+void SystemInit() {
+    auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemSystemComponent>();
+}
+
 void UnitTrapCheckSystem::Init() {
     RECOIL_DETAILED_TRACY_ZONE;
-    auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemSystemComponent>();
 
     // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
     //     list.reserve(YardmapTrapCheckSystemSystemComponent::INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE);
     // });
 
-    //Sim::systemUtils.OnUpdate().connect<&UnitTrapCheckSystem::Update>();
+    SystemInit();
+
+    Sim::systemUtils.OnPostLoad().connect<&SystemInit>();
+
+    // Sim::systemUtils.OnUpdate().connect<&UnitTrapCheckSystem::Update>();
 }
 
 void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* collidee, int curThread) {
@@ -105,5 +112,6 @@ void UnitTrapCheckSystem::Update() {
 }
 
 void UnitTrapCheckSystem::Shutdown() {
+    Sim::systemUtils.OnPostLoad().disconnect<&SystemInit>();
     // systemUtils.OnUpdate().disconnect<&UnitTrapCheckSystem::Update>();
 }

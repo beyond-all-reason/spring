@@ -63,6 +63,7 @@
 #include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -632,7 +633,7 @@ void CGame::PreLoadSimulation(LuaParser* defsParser)
 	ENTER_SYNCED_CODE();
 
 	loadscreen->SetLoadMessage("Creating Smooth Height Mesh");
-	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), 2, 40);
+	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), modInfo.smoothMeshResDivider, modInfo.smoothMeshSmoothRadius);
 
 	loadscreen->SetLoadMessage("Creating QuadField & CEGs");
 	moveDefHandler.Init(defsParser);
@@ -695,6 +696,7 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	//   checksum (over heightmap + blockmap, not raw archive)
 	mapDamage = IMapDamage::InitMapDamage();
 	pathManager = IPathManager::GetInstance(modInfo.pathFinderSystem);
+	moveDefHandler.PostSimInit();
 
 	// load map-specific features
 	loadscreen->SetLoadMessage("Initializing Map Features");
@@ -913,6 +915,8 @@ void CGame::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	GameSetupDrawer::Disable();
+
+	Sim::systemUtils.NotifyPostLoad();
 
 	if (gameServer != nullptr) {
 		gameServer->PostLoad(gs->frameNum);
@@ -1854,6 +1858,10 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 			return;
 		}
 
+		// Force the connection to close if it hasn't been already to avoid the chance of starting the game in an
+		// desynced state.
+		clientNet->Close();
+
 		LOG_L(L_ERROR, "[%s] lost connection to server; terminating game", __func__);
 	} else {
 		// pass the winner info to the host in the case it's a dedicated server
@@ -1885,7 +1893,8 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 	record->SetWinningAllyTeams(winningAllyTeams);
 
 	// tell everybody about our APM, it's the most important statistic
-	clientNet->Send(CBaseNetProtocol::Get().SendPlayerStat(gu->myPlayerNum, playerHandler.Player(gu->myPlayerNum)->currentStats));
+	if (!timeout)
+		clientNet->Send(CBaseNetProtocol::Get().SendPlayerStat(gu->myPlayerNum, playerHandler.Player(gu->myPlayerNum)->currentStats));
 
 	for (int i = 0; i < numPlayers; ++i) {
 		record->SetPlayerStats(i, playerHandler.Player(i)->currentStats);
@@ -1893,7 +1902,8 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 	for (int i = 0; i < numTeams; ++i) {
 		const CTeam* team = teamHandler.Team(i);
 		record->SetTeamStats(i, team->statHistory);
-		clientNet->Send(CBaseNetProtocol::Get().SendTeamStat(team->teamNum, team->GetCurrentStats()));
+		if (!timeout)
+			clientNet->Send(CBaseNetProtocol::Get().SendTeamStat(team->teamNum, team->GetCurrentStats()));
 	}
 }
 

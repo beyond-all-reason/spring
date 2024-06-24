@@ -1744,7 +1744,7 @@ void CCommandAI::UpdateStockpileIcon()
 	}
 }
 
-void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget)
+void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget, bool raiseEvent)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!inCommand || commandQue.empty())
@@ -1786,7 +1786,8 @@ void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget)
 	// if this fails, we need to take a copy at top instead of a reference
 	assert(&c == &commandQue.front());
 
-	eoh->WeaponFired(*owner, *(weapon->weaponDef));
+	if (raiseEvent)
+		eoh->WeaponFired(*owner, *(weapon->weaponDef));
 
 	if (!orderFinished)
 		return;

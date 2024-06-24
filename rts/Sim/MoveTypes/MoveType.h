@@ -65,6 +65,7 @@ public:
 	virtual bool IsFlying() const { return false; }
 	virtual bool IsReversing() const { return false; }
 	virtual bool IsPushResistant() const { return false; }
+	virtual bool IsPushResitanceBlockActive() const { return false; }
 
 	bool UseHeading(      ) const { return (useHeading    ); }
 	bool UseHeading(bool b)       { return (useHeading = b); }

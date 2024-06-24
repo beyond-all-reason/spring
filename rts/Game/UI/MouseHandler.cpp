@@ -289,7 +289,9 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 
 	if (buttons[SDL_BUTTON_MIDDLE].pressed && (activeReceiver == nullptr)) {
 		camHandler->GetCurrentController().MouseMove(float3(dx, dy, invertMouse ? -1.0f : 1.0f));
-		unitTracker.Disable();
+		if (!camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RTT]) {
+			unitTracker.Disable();
+		}
 		return;
 	}
 }

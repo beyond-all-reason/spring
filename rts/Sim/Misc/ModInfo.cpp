@@ -24,7 +24,6 @@ void CModInfo::ResetState()
 	description.clear();
 
 	{
-		allowDirectionalPathing    = true;
 		allowAircraftToLeaveMap    = true;
 		allowAircraftToHitGround   = true;
 		allowPushingEnemyUnits     = false;
@@ -115,6 +114,8 @@ void CModInfo::ResetState()
 		qtLowerQualityPaths = false;
 
 		enableSmoothMesh = true;
+		smoothMeshResDivider = 2;
+		smoothMeshSmoothRadius = 40;
 		quadFieldQuadSizeInElmos = 128;
 
 		SLuaAllocLimit::MAX_ALLOC_BYTES = SLuaAllocLimit::MAX_ALLOC_BYTES_DEFAULT;
@@ -168,6 +169,8 @@ void CModInfo::Init(const std::string& modFileName)
 		qtLowerQualityPaths = system.GetBool("qtLowerQualityPaths", qtLowerQualityPaths);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
+		smoothMeshResDivider = std::max(system.GetInt("smoothMeshResDivider", smoothMeshResDivider), 1);
+		smoothMeshSmoothRadius = std::max(system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius), 1);
 
 		quadFieldQuadSizeInElmos = std::clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
 
@@ -182,7 +185,6 @@ void CModInfo::Init(const std::string& modFileName)
 		// movement
 		const LuaTable& movementTbl = root.SubTable("movement");
 
-		allowDirectionalPathing = movementTbl.GetBool("allowDirectionalPathing", allowDirectionalPathing);
 		allowAircraftToLeaveMap = movementTbl.GetBool("allowAirPlanesToLeaveMap", allowAircraftToLeaveMap);
 		allowAircraftToHitGround = movementTbl.GetBool("allowAircraftToHitGround", allowAircraftToHitGround);
 		allowPushingEnemyUnits = movementTbl.GetBool("allowPushingEnemyUnits", allowPushingEnemyUnits);

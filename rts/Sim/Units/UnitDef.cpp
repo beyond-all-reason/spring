@@ -58,6 +58,9 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 
 	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
 	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
+
+	// Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon 
+	burstControlWhenOutOfArc = weaponTable.GetInt("burstControlWhenOutOfArc", burstControlWhenOutOfArc);
 }
 
 
@@ -129,6 +132,7 @@ UnitDef::UnitDef()
 	, minWaterDepth(0.0f)
 	, maxWaterDepth(0.0f)
 	, upDirSmoothing(0.0f)
+	, separationDistance(0.0f)
 	, pathType(-1U)
 	, armoredMultiple(0.0f)
 	, armorType(0)
@@ -350,6 +354,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	terraformSpeed = udTable.GetFloat("terraformSpeed", buildSpeed);
 
 	upDirSmoothing = std::clamp(udTable.GetFloat("upDirSmoothing", 0.0f), 0.0f, 0.95f);
+	separationDistance = std::max(udTable.GetInt("separationDistance", 0), 0);
 
 	reclaimable  = udTable.GetBool("reclaimable",  true);
 	capturable   = udTable.GetBool("capturable",   true);

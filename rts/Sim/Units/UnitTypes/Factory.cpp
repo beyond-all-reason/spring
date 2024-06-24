@@ -11,6 +11,7 @@
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Scripts/UnitScript.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -345,6 +346,7 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 	const float3 tempPos = pos + frontdir * searchRadius;
 
 	float3 foundPos = tempPos;
+	MoveTypes::CheckCollisionQuery colliderInfo(unit);
 
 	for (int i = 0; i < numSteps; ++i) {
 		const float a = searchRadius * math::cos(i * searchAngle);
@@ -364,8 +366,11 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 
 		if (!quadField.NoSolidsExact(testPos, unit->radius * 1.5f, 0xFFFFFFFF, CSolidObject::CSTATE_BIT_SOLIDOBJECTS))
 			continue;
-		if (unit->moveDef != nullptr && !unit->moveDef->TestMoveSquare(nullptr, testPos, ZeroVector, true, true))
-			continue;
+		if (unit->moveDef != nullptr) {
+			colliderInfo.UpdateElevationForPos(testPos);
+			if (!unit->moveDef->TestMoveSquare(colliderInfo, testPos, ZeroVector, true, true))
+				continue;
+		}
 
 		foundPos = testPos;
 		break;
@@ -389,8 +394,11 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 			if ((foundPos - pos).dot(frontdir) < 0.0f)
 				continue;
 
-			if (unit->moveDef != nullptr && !unit->moveDef->TestMoveSquare(nullptr, foundPos, ZeroVector, true, true))
-				continue;
+			if (unit->moveDef != nullptr) {
+				colliderInfo.UpdateElevationForPos(foundPos);
+				if (!unit->moveDef->TestMoveSquare(colliderInfo, foundPos, ZeroVector, true, true))
+					continue;
+			}
 
 			break;
 		}
