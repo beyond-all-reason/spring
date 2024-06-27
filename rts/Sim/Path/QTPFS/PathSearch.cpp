@@ -664,9 +664,24 @@ bool QTPFS::PathSearch::ExecuteRawSearch() {
 	ZoneScoped;
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 
+	int2 nearestSquare;
 	haveFullPath = moveDefHandler.GetMoveDefByPathType(nodeLayer->GetNodelayer())
-			->DoRawSearch( pathOwner, pathOwner->moveDef, fwd.srcPoint, fwd.tgtPoint
-						 , true, true, false, nullptr, nullptr, searchThreadData->threadId);
+			->DoRawSearch( pathOwner, pathOwner->moveDef, fwd.srcPoint, fwd.tgtPoint, goalDistance
+						 , true, true, false, nullptr, nullptr, &nearestSquare, searchThreadData->threadId);
+
+	if (haveFullPath) {
+		useFwdPathOnly = true;
+
+		// Check whether the nearest point has to be moved.
+		int2 pos2 = (nearestSquare * SQUARE_SIZE) + (SQUARE_SIZE/2);
+		float3 pos(pos2.x, 0.f, pos2.y);
+
+		// Slightly higher than cos(45)*8, but smaller than a square width.
+		// Position is taken from the mid point of a square so we need a little tolerance to check whether it is the
+		// same square.
+		if (pos.SqDistance2D(fwd.tgtPoint) > Square((SQUARE_SIZE * 3) / 4))
+			fwd.tgtPoint = pos;
+	}
 
 	return haveFullPath;
 }

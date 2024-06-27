@@ -147,8 +147,8 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	const float3 startPoint(strtBlk.x * SQUARE_SIZE, 0.f, strtBlk.y * SQUARE_SIZE);
 	const float3 goalPoint(goalBlk.x * SQUARE_SIZE, 0.f, goalBlk.y * SQUARE_SIZE);
 
-	bool haveFullPath = moveDef.DoRawSearch( owner, &moveDef, startPoint, goalPoint
-						 				   , true, true, false, nullptr, nullptr, curThread);
+	bool haveFullPath = moveDef.DoRawSearch( owner, &moveDef, startPoint, goalPoint, 0
+						 				   , true, true, false, nullptr, nullptr, nullptr, curThread);
 
 	return (haveFullPath) ? IPath::Ok : IPath::Error;
 }
