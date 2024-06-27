@@ -392,7 +392,7 @@ bool MoveDef::DoRawSearch(
 		// int2 prevFwdTestBlk = {-1, -1};
 		// int2 prevRevTestBlk = {-1, -1};
 
-		int2 bwdNearestSqr(-1,-1);
+		int2 walkedNearestSqr(-1,-1);
 
 		for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
 			// Check forward search.
@@ -401,17 +401,25 @@ bool MoveDef::DoRawSearch(
 				// Forward search has got close enough, drop out early.
 				if (float((endBlock).DistanceSq(fwdTestBlk)*Square(SQUARE_SIZE)) < goalRadiusSq) {
 					if (nearestSquare != nullptr)
-						*nearestSquare = fwdTestBlk;
+						walkedNearestSqr = fwdTestBlk;
 					break;
 				}
 
 				// Now check reverse search.
 				result = f(revTestBlk.x, revTestBlk.y);
+
+				// Keep record of the current reverse test block to correctly report it as the nearest node.
+				int2 curRevTestBlk = revTestBlk;
+
+				// Need to step the reverse forward early to assess whether the next test will be within the goal
+				// radius if the current block test fails. As long as there's at least one more reverse block inside
+				// the goal radius, then a failure in the reverse search doesn't mean the walk is a failure.
+				StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
 				if (result) {
-					if (bwdNearestSqr.x == -1)
-						bwdNearestSqr = revTestBlk;
+					if (walkedNearestSqr.x == -1)
+						walkedNearestSqr = curRevTestBlk;
 				} else {
-					bwdNearestSqr = int2(-1, -1);
+					walkedNearestSqr = int2(-1, -1);
 
 					// Allow reverse search to continue if it is still within the goal radius.
 					result = ( float((endBlock).DistanceSq(revTestBlk)*Square(SQUARE_SIZE)) < goalRadiusSq );
@@ -424,7 +432,7 @@ bool MoveDef::DoRawSearch(
 				// This is to catch the case where the reverse never finds an open square but was always in the goal
 				// radius, and the forward search never reached the goal radius. I.e. they stopped on the squares
 				// that bordered either side of the goal radius.
-				result = (bwdNearestSqr.x != -1);
+				result = (walkedNearestSqr.x != -1);
 				break;
 			}
 
@@ -432,7 +440,7 @@ bool MoveDef::DoRawSearch(
 			// prevRevTestBlk = revTestBlk;
 
 			StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
-			StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
+			// StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr); - done earlier now.
 
 			// skip if exactly crossing a vertex (in either direction)
 			blkStepCtr.x -= (fwdStepErr.y == 0);
@@ -442,7 +450,7 @@ bool MoveDef::DoRawSearch(
 		}
 
 		if (result && nearestSquare != nullptr)
-			*nearestSquare = bwdNearestSqr;
+			*nearestSquare = walkedNearestSqr;
 
 		return result;
 	};
@@ -453,7 +461,7 @@ bool MoveDef::DoRawSearch(
 	std::function<float(int x, int z)> getPosSpeedMod;
 	if (md->allowDirectionalPathing) {
 		float3 testMoveDir = startPos - endPos;
-		getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir); };
+		getPosSpeedMod = [this, testMoveDir](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir); };
 	} else {
 		getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z); };
 	}
@@ -509,6 +517,8 @@ bool MoveDef::DoRawSearch(
 	// don't use std::min or |= because the ptr values might be garbage
 	if (minSpeedModPtr != nullptr) *minSpeedModPtr = minSpeedMod;
 	if (maxBlockBitPtr != nullptr) *maxBlockBitPtr = maxBlockBit;
+
+	assert(nearestSquare == nullptr || nearestSquare->x != -1);
 
 	return retTestMove;
 }
