@@ -11,6 +11,8 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CExplosiveProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CExplosiveProjectile, (
@@ -24,6 +26,7 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 	, invttl(0.0f)
 	, curTime(0.0f)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EXPLOSIVE_PROJECTILE;
 
 	mygravity = params.gravity;
@@ -44,6 +47,7 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 
 void CExplosiveProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Update();
 
 	if (--ttl == 0) {
@@ -67,6 +71,7 @@ void CExplosiveProjectile::Update()
 
 void CExplosiveProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// do not draw if a 3D model has been defined for us
 	if (model != nullptr)
 		return;
@@ -122,6 +127,7 @@ void CExplosiveProjectile::Draw()
 
 int CExplosiveProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -137,5 +143,6 @@ int CExplosiveProjectile::ShieldRepulse(const float3& shieldPos, float shieldFor
 
 int CExplosiveProjectile::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.stages * validTextures[0];
 }

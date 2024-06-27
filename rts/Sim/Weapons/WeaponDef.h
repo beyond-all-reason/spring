@@ -263,6 +263,7 @@ public:
 		float sizeDecay = 0.0f;
 		float separation = 0.0f;
 
+		float scarDiameter = -1.0f;
 		float scarAlpha = 0.0f;
 		float scarGlow = 0.0f;
 		float scarTtl = 0.0f;

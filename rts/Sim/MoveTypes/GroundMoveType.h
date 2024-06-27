@@ -87,6 +87,7 @@ public:
 	bool OnSlope(float minSlideTolerance);
 	bool IsReversing() const override { return reversing; }
 	bool IsPushResistant() const override { return pushResistant; }
+	bool IsPushResitanceBlockActive() const override { return pushResistanceBlockActive; }
 	bool WantToStop() const { return (pathID == 0 && (!useRawMovement || atEndOfPath)); }
 
 	void TriggerSkipWayPoint() {
@@ -95,6 +96,7 @@ public:
 	void TriggerCallArrived() {
 		atEndOfPath = true;
 		atGoal = true;
+		pathingArrived = true;
 	}
 
 
@@ -187,24 +189,23 @@ private:
 		int curThread
 	);
 
-	void HandleUnitCollisions(
-		CUnit* collider,
-		const float3& colliderParams,
-		const UnitDef* colliderUD,
-		const MoveDef* colliderMD,
-		int curThread
-	);
-	void HandleFeatureCollisions(
-		CUnit* collider,
-		const float3& colliderParams,
-		const UnitDef* colliderUD,
-		const MoveDef* colliderMD,
-		int curThread
-	);
+    void HandleUnitCollisions(
+        CUnit *collider,
+        const float3 &colliderParams,
+        const UnitDef *colliderUD,
+        const MoveDef *colliderMD,
+        int curThread);
+    float3 CalculatePushVector(const float3 &colliderParams, const float2 &collideeParams, const bool allowUCO, const float4 &separationVect, CUnit *collider, CUnit *collidee);
+    void HandleFeatureCollisions(
+        CUnit *collider,
+        const float3 &colliderParams,
+        const UnitDef *colliderUD,
+        const MoveDef *colliderMD,
+        int curThread);
 
-	void ChangeSpeed(float, bool, bool = false);
 public:
-	void SetMainHeading();
+    void SetMainHeading();
+    void ChangeSpeed(float, bool, bool = false);
 	void ChangeHeading(short newHeading);
 private:
 	void UpdateSkid();
@@ -301,6 +302,7 @@ private:
 	bool reversing = false;
 	bool idling = false;
 	bool pushResistant = false;
+	bool pushResistanceBlockActive = false;
 	bool canReverse = false;
 	bool useMainHeading = false;            /// if true, turn toward mainHeadingPos until weapons[0] can TryTarget() it
 	bool useRawMovement = false;            /// if true, move towards goal without invoking PFS (unrelated to MoveDef::allowRawMovement)

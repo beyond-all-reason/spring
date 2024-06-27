@@ -16,6 +16,7 @@
 #include "Rendering/Textures/TextureRenderAtlas.h"
 #include "System/EventClient.h"
 #include "System/UnorderedMap.hpp"
+#include "System/creg/creg.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 
@@ -33,8 +34,12 @@ namespace Shader {
 
 class CGroundDecalHandler: public IGroundDecalDrawer, public CEventClient, public IExplosionListener
 {
+	CR_DECLARE_DERIVED(CGroundDecalHandler)
+	CR_DECLARE_SUB(UnitMinMaxHeight)
+	CR_DECLARE_SUB(DecalUpdateList)
 public:
 	class DecalUpdateList {
+		CR_DECLARE_STRUCT(DecalUpdateList)
 	public:
 		using IteratorPair = std::pair<std::vector<bool>::iterator, std::vector<bool>::iterator>;
 	public:
@@ -64,7 +69,7 @@ public:
 	};
 public:
 	CGroundDecalHandler();
-	~CGroundDecalHandler();
+	~CGroundDecalHandler() override;
 
 	void OnDecalLevelChanged() override {}
 private:
@@ -93,7 +98,7 @@ public:
 			|| (eventName == "UnitMoved")
 			|| (eventName == "UnitLoaded")
 			|| (eventName == "UnitUnloaded")
-			|| (eventName == "GameFrame")
+			|| (eventName == "GameFramePost")
 			|| (eventName == "SunChanged")
 			|| (eventName == "ViewResize");
 	}
@@ -112,7 +117,7 @@ public:
 	void UnitLoaded(const CUnit* unit, const CUnit* transport) override;
 	void UnitUnloaded(const CUnit* unit, const CUnit* transport) override;
 
-	void GameFrame(int frameNum) override;
+	void GameFramePost(int frameNum) override;
 
 	void SunChanged() override;
 	void ViewResize() override;
@@ -140,6 +145,10 @@ public:
 	std::string GetDecalTexture(uint32_t id, bool mainTex) const override;
 	const std::vector<std::string> GetDecalTextures(bool mainTex) const override;
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override;
+
+	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override;
+
+	void PostLoad();
 private:
 	static void BindVertexAtrribs();
 	static void UnbindVertexAtrribs();
@@ -163,8 +172,11 @@ private:
 	void AddTexturesFromTable();
 	void AddGroundTrackTextures();
 	void AddFallbackTextures();
+
+	uint32_t GetNextId();
 private:
 	struct UnitMinMaxHeight {
+		CR_DECLARE_STRUCT(UnitMinMaxHeight)
 		UnitMinMaxHeight()
 			: min(std::numeric_limits<float>::max()   )
 			, max(std::numeric_limits<float>::lowest())
@@ -172,7 +184,6 @@ private:
 		float min;
 		float max;
 	};
-
 	int maxUniqueScars;
 
 	std::unique_ptr<CTextureRenderAtlas> atlasMain;
@@ -187,6 +198,9 @@ private:
 	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<size_t, size_t>>> idToCmInfo;
 
 	DecalUpdateList decalsUpdateList;
+
+	uint32_t nextId;
+	std::vector<uint32_t> freeIds;
 
 	VBO instVBO;
 	VAO vao;

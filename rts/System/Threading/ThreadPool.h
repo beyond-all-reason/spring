@@ -716,7 +716,7 @@ static inline void for_mt(int start, int end, F&& f)
 }
 
 template <typename F>
-static inline void for_mt_chunk(int b, int e, F&& f, int chunkOrMinChinkSize = 0)
+static inline void for_mt_chunk(int b, int e, F&& f, int minChunkSize = 1, int maxChunkSize = std::numeric_limits<int>::max())
 {
 	const int numElems = e - b;
 	if (numElems <= 0)
@@ -724,28 +724,19 @@ static inline void for_mt_chunk(int b, int e, F&& f, int chunkOrMinChinkSize = 0
 
 	static const int maxThreads = ThreadPool::GetNumThreads();
 
-	int chunkSize = chunkOrMinChinkSize;
-	if (chunkOrMinChinkSize <= 0) {
-		chunkSize = numElems / maxThreads + (numElems % maxThreads != 0); //split the work evenly. Does for_mt() do the same?
-		chunkSize = std::max(chunkSize, -chunkOrMinChinkSize);
-	}
-	chunkSize = std::max(chunkSize, 1);
+	const int chunkSize = std::clamp(numElems / maxThreads + (numElems % maxThreads != 0), minChunkSize, maxChunkSize);
+	const int numThreads = numElems / chunkSize + (numElems % chunkSize != 0);
 
-	const int numChunks = numElems / chunkSize + (numElems % chunkSize != 0);
-
-	if (numChunks == 1) {
+	if (numThreads == 1) {
 		for (int i = b; i < e; ++i)
 			f(i);
 
 		return;
 	}
 
-	const int chunksPerThread = numChunks / maxThreads + (numChunks % maxThreads != 0);
-	const int numThreads = std::min(numChunks, maxThreads);
-
-	for_mt(0, numThreads, 1, [&f, b, e, chunkSize, chunksPerThread](const int jobId) {
-		const int bb = b + jobId * chunksPerThread * chunkSize;
-		const int ee = std::min(bb + chunksPerThread * chunkSize, e);
+	for_mt(0, numThreads, 1, [&f, b, e, chunkSize](const int jobId) {
+		const int bb = b + jobId * chunkSize;
+		const int ee = std::min(bb + chunkSize, e);
 
 		for (int i = bb; i < ee; ++i)
 			std::forward<F>(f)(i);

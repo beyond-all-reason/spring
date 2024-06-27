@@ -989,6 +989,10 @@ SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint8_t de
 	const uint32_t matOffset = static_cast<uint32_t>(matrixUploader.GetElemOffset(obj));
 	const uint32_t uniIndex  = static_cast<uint32_t>(modelsUniformsStorage.GetObjOffset(obj)); //doesn't need to exist for defs and model. Don't check for validity
 
+	if (matOffset == ~0u) {
+		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
+	}
+
 	uint8_t drawFlags = 0u;
 	if constexpr (std::is_same_v<TObj, CUnit> || std::is_same_v<TObj, CFeature>) {
 		teamID = obj->team;
@@ -1006,9 +1010,6 @@ SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint8_t de
 		bposeIndex = matrixUploader.GetElemOffset(obj->model);
 	}
 
-	if (matOffset == ~0u) {
-		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
-	}
 	return SInstanceData(matOffset, teamID, drawFlags, numPieces, uniIndex, bposeIndex);
 }
 

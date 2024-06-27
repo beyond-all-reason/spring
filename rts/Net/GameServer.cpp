@@ -262,6 +262,8 @@ void CGameServer::Initialize()
 
 	thread = spring::thread(std::bind(&CGameServer::UpdateLoop, this));
 
+	LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
+
 	// Something in CGameServer::CGameServer borks the FPU control word
 	// maybe the threading, or something in CNet::InitServer() ??
 	// Set single precision floating point math.
@@ -2722,6 +2724,8 @@ void CGameServer::UpdateLoop()
 
 		if (hostif != nullptr)
 			hostif->SendQuit();
+
+		LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
 
 		Broadcast(CBaseNetProtocol::Get().SendQuit("Server shutdown"));
 

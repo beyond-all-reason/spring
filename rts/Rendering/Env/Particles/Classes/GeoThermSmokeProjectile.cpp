@@ -7,6 +7,8 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/Wind.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CR_BIND_DERIVED(CGeoThermSmokeProjectile, CSmokeProjectile, )
 
@@ -27,6 +29,7 @@ CGeoThermSmokeProjectile::CGeoThermSmokeProjectile(
 
 void CGeoThermSmokeProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateDir();
 
 	// NOTE:
@@ -46,6 +49,7 @@ void CGeoThermSmokeProjectile::Update()
 
 void CGeoThermSmokeProjectile::UpdateDir()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (geo == nullptr)
 		return;
 
@@ -79,6 +83,7 @@ void CGeoThermSmokeProjectile::UpdateDir()
 
 void CGeoThermSmokeProjectile::GeoThermDestroyed(const CFeature* geo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (CProjectile* p: projectileHandler.GetActiveProjectiles(false)) {
 		CGeoThermSmokeProjectile* geoPuff = dynamic_cast<CGeoThermSmokeProjectile*>(p);
 

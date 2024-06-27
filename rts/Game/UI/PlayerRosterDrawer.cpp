@@ -18,11 +18,14 @@
 #include "System/Misc/SpringTime.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 /******************************************************************************/
 
 
 void CPlayerRosterDrawer::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (playerRoster.GetSortType() == PlayerRoster::Disabled)
 		return;
 

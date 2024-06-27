@@ -1,2 +1,0 @@
-For a list of available commands in the console see
-https://springrts.com/wiki/UI_commands

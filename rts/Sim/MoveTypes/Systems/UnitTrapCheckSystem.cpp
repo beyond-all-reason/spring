@@ -20,19 +20,30 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
+#include "System/Misc/TracyDefs.h"
+
 using namespace MoveTypes;
 
-void UnitTrapCheckSystem::Init() {
+void SystemInit() {
     auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemComponent>();
+}
+
+void UnitTrapCheckSystem::Init() {
+    RECOIL_DETAILED_TRACY_ZONE;
 
     // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
     //     list.reserve(YardmapTrapCheckSystemComponent::INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE);
     // });
 
-    //Sim::systemUtils.OnUpdate().connect<&UnitTrapCheckSystem::Update>();
+    SystemInit();
+
+    Sim::systemUtils.OnPostLoad().connect<&SystemInit>();
+
+    // Sim::systemUtils.OnUpdate().connect<&UnitTrapCheckSystem::Update>();
 }
 
 void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* collidee, int curThread) {
+    RECOIL_DETAILED_TRACY_ZONE;
     const int largestMoveTypSizeH = moveDefHandler.GetLargestFootPrintSizeH() + 1;
     const int bufferSize = SQUARE_SIZE * modInfo.unitQuadPositionUpdateRate * 2 + largestMoveTypSizeH + 1;
 
@@ -101,5 +112,6 @@ void UnitTrapCheckSystem::Update() {
 }
 
 void UnitTrapCheckSystem::Shutdown() {
+    Sim::systemUtils.OnPostLoad().disconnect<&SystemInit>();
     // systemUtils.OnUpdate().disconnect<&UnitTrapCheckSystem::Update>();
 }

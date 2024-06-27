@@ -6,6 +6,8 @@
 #include <string>
 #include <memory>
 
+#include "System/Log/ConsoleSink.h"
+
 class ClientSetup;
 class CGameController;
 
@@ -62,6 +64,10 @@ private:
 	// this gets passed along to PreGame (or SelectMenu then PreGame),
 	// and from thereon to GameServer if this client is also the host
 	std::shared_ptr<ClientSetup> clientSetup;
+
+	/* Member instead of global to avoid catching unrelated early messages.
+	 * In particular, modes like `spring -p` want a clean output log without library chaff. */
+	ConsoleSinkRegistrator consoleSink;
 };
 
 /**

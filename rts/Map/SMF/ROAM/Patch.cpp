@@ -23,6 +23,8 @@
 #include <climits>
 #include <array>
 
+#include "System/Misc/TracyDefs.h"
+
 
 TriTreeNode TriTreeNode::dummyNode;
 
@@ -30,6 +32,7 @@ static std::array<CTriNodePool, CRoamMeshDrawer::MESH_COUNT> pools;
 
 void CTriNodePool::InitPools(bool shadowPass, size_t newPoolSize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int j = 0; newPoolSize > 0; j++) {
 		try {
 			size_t PoolSize =  std::max((CUR_POOL_SIZE = newPoolSize),newPoolSize); //the first pool should be larger, as only full retess uses threaded
@@ -49,6 +52,7 @@ void CTriNodePool::InitPools(bool shadowPass, size_t newPoolSize)
 
 void CTriNodePool::ResetAll(bool shadowPass)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool outOfNodes = pools[shadowPass].OutOfNodes();
 	pools[shadowPass].Reset();
 	if (!outOfNodes)
@@ -62,12 +66,14 @@ void CTriNodePool::ResetAll(bool shadowPass)
 
 CTriNodePool* CTriNodePool::GetPool(bool shadowPass)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return &(pools[shadowPass]);
 }
 
 
 void CTriNodePool::Resize(size_t poolSize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// child nodes are always allocated in pairs, so poolSize must be even
 	// (it does not technically need to be non-zero since patch root nodes
 	// live outside the pool, but KISS)
@@ -80,6 +86,7 @@ void CTriNodePool::Resize(size_t poolSize)
 
 bool CTriNodePool::Allocate(TriTreeNode*& left, TriTreeNode*& right)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// pool exhausted, make sure both child nodes are dummies
 	if (OutOfNodes()) {
 		LOG_L(L_WARNING, "[TriNodePool::%s] #nodes=" _STPF_ " #pool=" _STPF_ , __func__, nextTriNodeIdx, tris.size());
@@ -102,12 +109,14 @@ bool CTriNodePool::Allocate(TriTreeNode*& left, TriTreeNode*& right)
 
 Patch::Patch()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	varianceTrees[0].fill(0.0f);
 	varianceTrees[1].fill(0.0f);
 }
 
 Patch::~Patch()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//not really needed
 	vertVBO = {};
 	indxVBO = {};
@@ -116,6 +125,7 @@ Patch::~Patch()
 
 void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	coors = { patchX, patchZ };
 
 	smfGroundDrawer = _drawer;
@@ -144,6 +154,7 @@ void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
 
 void Patch::Reset()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// reset the important relationships
 	baseLeft  = {};
 	baseRight = {};
@@ -169,6 +180,7 @@ void Patch::Reset()
 
 void Patch::UpdateHeightMap(const SRectangle& rect)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	midPos.y = readMap->GetUnsyncedHeightInfo(coors.x / PATCH_SIZE, coors.y / PATCH_SIZE).z;
 	isDirty = true;
 }
@@ -176,6 +188,7 @@ void Patch::UpdateHeightMap(const SRectangle& rect)
 
 void Patch::UploadVertices()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	vertVBO.Bind();
 	vertVBO.New(vertices, GL_STATIC_DRAW);
 	vertVBO.Unbind();
@@ -209,18 +222,21 @@ namespace {
 
 void Patch::UploadIndices()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2, 8))
 		InitMainVAO();
 }
 
 void Patch::UploadBorderVertices()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2, 8))
 		InitBorderVAO();
 }
 
 void Patch::InitMainVAO() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	mainVAO.Bind();
 
 	indxVBO.Bind();
@@ -241,6 +257,7 @@ void Patch::InitMainVAO() const
 
 void Patch::InitBorderVAO() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	borderVAO.Bind();
 	borderVBO.Bind();
 
@@ -265,6 +282,7 @@ void Patch::InitBorderVAO() const
 //
 bool Patch::Split(TriTreeNode* tri)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (tri->IsDummy())
 		return false;
 
@@ -367,6 +385,7 @@ bool Patch::Split(TriTreeNode* tri)
 //
 void Patch::RecursTessellate(TriTreeNode* tri, const int2 left, const int2 right, const int2 apex, const int varTreeIdx, const int curNodeIdx)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// bail if we can not tessellate further in at least one dimension
 	if ((abs(left.x - right.x) <= 1) && (abs(left.y - right.y) <= 1))
 		return;
@@ -413,6 +432,7 @@ void Patch::RecursTessellate(TriTreeNode* tri, const int2 left, const int2 right
 
 void Patch::RecursRender(const TriTreeNode* tri, const int2 left, const int2 right, const int2 apex)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (tri->IsDummy())
 		return;
 	if (tri->IsLeaf()) {
@@ -460,6 +480,7 @@ void Patch::RecursRender(const TriTreeNode* tri, const int2 left, const int2 rig
 
 void Patch::GenerateIndices()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	indices.clear();
 	RecursRender(&baseLeft,  int2(         0, PATCH_SIZE), int2(PATCH_SIZE,          0), int2(         0,          0));
 	RecursRender(&baseRight, int2(PATCH_SIZE,          0), int2(         0, PATCH_SIZE), int2(PATCH_SIZE, PATCH_SIZE));
@@ -467,6 +488,7 @@ void Patch::GenerateIndices()
 
 float Patch::GetHeight(int2 pos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto* uhm = readMap->GetCornerHeightMapUnsynced();
 	return uhm[(coors.y + pos.y) * mapDims.mapxp1 + (coors.x + pos.x)];
 }
@@ -536,6 +558,7 @@ float Patch::RecursComputeVariance(
 //
 void Patch::ComputeVariance()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		const   int2 left = {         0, PATCH_SIZE};
 		const   int2 rght = {PATCH_SIZE,          0};
@@ -572,6 +595,7 @@ void Patch::ComputeVariance()
 //
 bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	isTesselated = true;
 
 	// Set/Update LOD params (FIXME: wrong height?)
@@ -622,6 +646,7 @@ bool Patch::Tessellate(const float3& camPos, int viewRadius, bool shadowPass)
 
 void Patch::Draw() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (indices.empty())
 		return;
 
@@ -633,6 +658,7 @@ void Patch::Draw() const
 
 void Patch::DrawBorder() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (borderVertices.empty())
 		return;
 
@@ -648,6 +674,7 @@ void Patch::RecursGenBorderVertices(
 	const int2 apex,
 	const int2 depth
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (tri->IsDummy())
 		return;
 
@@ -715,6 +742,7 @@ void Patch::RecursGenBorderVertices(
 
 void Patch::GenerateBorderVertices()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!isTesselated)
 		return;
 
@@ -736,6 +764,7 @@ void Patch::GenerateBorderVertices()
 
 void Patch::Upload()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UploadIndices();
 	UploadBorderVertices();
 	isChanged = false;
@@ -743,11 +772,13 @@ void Patch::Upload()
 
 void Patch::SetSquareTexture(const DrawPass::e& drawPass) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	smfGroundDrawer->SetupBigSquare(drawPass, coors.x / PATCH_SIZE, coors.y / PATCH_SIZE);
 }
 
 void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(cam->GetCamType() < CCamera::CAMTYPE_VISCUL);
 
 	const float minHeight = readMap->GetCurrMinHeight() - 100.0f;
@@ -776,5 +807,6 @@ void Patch::UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const in
 }
 
 bool Patch::IsVisible(const CCamera* cam) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (lastDrawFrames[cam->GetCamType()] >= globalRendering->drawFrame);
 }

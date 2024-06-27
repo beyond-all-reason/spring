@@ -163,6 +163,8 @@ namespace QTPFS {
 		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint, std::vector<INode*>& openNodes);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
+		bool UseShortestPath() { return useShortestPath; }
+
 	private:
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
@@ -189,6 +191,12 @@ public:
 			assert(i < numRootNodes);
 
 			return GetPoolNode(i);
+		}
+
+		const QTNode* GetRootNode(int x, int z) const {
+			// This is fine, the class doesn't get modified in the process of the call.
+			// This call is to add const to the return value.
+			return const_cast<QTPFS::NodeLayer *>(this)->GetRootNode(x, z);
 		}
 
 public:
@@ -220,6 +228,7 @@ private:
 
 		float maxRelSpeedMod = 0.0f; // TODO: Remove these?
 		float avgRelSpeedMod = 0.0f;
+		bool useShortestPath = false;
 	};
 }
 

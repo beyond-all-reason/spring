@@ -6,14 +6,18 @@
 #include "System/Log/ILog.h"
 #include "LuaAtlasTextures.h"
 
+#include "System/Misc/TracyDefs.h"
+
 void LuaAtlasTextures::Clear()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	textureAtlasVec.clear();
 	textureAtlasMap.clear();
 }
 
 std::string LuaAtlasTextures::Create(const int xsize, const int ysize, const int allocatorType)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string idStr = prefix + std::to_string(textureAtlasVec.size());
 
 	textureAtlasVec.emplace_back(CTextureAtlas(allocatorType, xsize, ysize, idStr));
@@ -24,6 +28,7 @@ std::string LuaAtlasTextures::Create(const int xsize, const int ysize, const int
 
 bool LuaAtlasTextures::Delete(const std::string& idStr)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::size_t index = GetAtlasIndexById(idStr);
 	if (index == invalidIndex)
 		return false;
@@ -41,11 +46,13 @@ bool LuaAtlasTextures::Delete(const std::string& idStr)
 
 CTextureAtlas* LuaAtlasTextures::GetAtlasById(const std::string& idStr) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return GetAtlasByIndex(GetAtlasIndexById(idStr));
 }
 
 CTextureAtlas* LuaAtlasTextures::GetAtlasByIndex(const size_t index) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (index == invalidIndex)
 		return nullptr;
 
@@ -54,6 +61,7 @@ CTextureAtlas* LuaAtlasTextures::GetAtlasByIndex(const size_t index) const
 
 size_t LuaAtlasTextures::GetAtlasIndexById(const std::string& idStr) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto it = textureAtlasMap.find(idStr);
 	if (it == textureAtlasMap.end())
 		return invalidIndex;

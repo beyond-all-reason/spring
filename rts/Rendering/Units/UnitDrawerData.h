@@ -33,7 +33,6 @@ public:
 	int facing; //FIXME replaced with dir-vector just legacy decal drawer uses this
 	uint8_t team;
 	int refCount;
-	int lastDrawFrame;
 private:
 	mutable const S3DModel* model;
 };

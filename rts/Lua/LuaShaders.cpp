@@ -991,7 +991,7 @@ int LuaShaders::SetFeatureBufferUniforms(lua_State* L) { return SetObjectBufferU
 /*** Sets the uniform float value at the locationID for the currently active shader. Shader must be activated before setting uniforms.
  *
  * @function gl.Uniform
- * @number locationID
+ * @number locationID|string uniformName
  * @number f1
  * @number[opt] f2
  * @number[opt] f3
@@ -1031,7 +1031,7 @@ int LuaShaders::Uniform(lua_State* L)
 /*** Sets the uniform int value at the locationID for the currently active shader. Shader must be activated before setting uniforms.
  *
  * @function gl.UniformInt
- * @number locationID
+ * @number locationID|string uniformName
  * @number int1
  * @number[opt] int2
  * @number[opt] int3
@@ -1094,7 +1094,7 @@ static bool GLUniformArray(lua_State* L, UniformFunc uf, ParseArrayFunc pf)
 /*** Sets the an array of uniform values at the locationID for the currently active shader. Shader must be activated before setting uniforms. Type can be one of {1 = int, 2 = float, 3 = float matrix}.
  *
  * @function gl.UniformArray
- * @number locationID
+ * @number locationID|string uniformName
  * @number type
  * @tparam table uniforms Array up to 1024 elements
  * @treturn nil
@@ -1140,7 +1140,7 @@ int LuaShaders::UniformArray(lua_State* L)
 /*** Sets the a uniform mat4 locationID for the currently active shader. Shader must be activated before setting uniforms. Can set one one common matrix like shadow, or by passing 16 additional numbers for the matrix.
  *
  * @function gl.UniformMatrix
- * @number locationID
+ * @number locationID|string uniformName
  * @tparam ?string|number m1 "shadows" | "camera" | "caminv" | "camprj"
  * @number[opt] m2
  * @number[opt] mn
@@ -1223,6 +1223,15 @@ int LuaShaders::UniformSubroutine(lua_State* L)
 	return 0;
 }
 
+/***
+ *
+ * @function gl.GetEngineUniformBufferDef
+ *
+ * Return the GLSL compliant definition of UniformMatricesBuffer(idx=0) or UniformParamsBuffer(idx=1) structure.
+ *
+ * @number index
+ * @treturn string glslDefinition
+ */
 int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
 {
 	if (!globalRendering->haveGL4)
@@ -1236,6 +1245,15 @@ int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function gl.GetEngineModelUniformDataDef
+ *
+ * Return the GLSL compliant definition of ModelUniformData structure (per Unit/Feature buffer available on GPU)
+ *
+ * @number index
+ * @treturn string glslDefinition
+ */
 int LuaShaders::GetEngineModelUniformDataDef(lua_State* L)
 {
 	if (!globalRendering->haveGL4)

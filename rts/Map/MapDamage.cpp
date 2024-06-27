@@ -7,6 +7,8 @@
 #include "MapInfo.h"
 #include "Game/GameSetup.h"
 
+#include "System/Misc/TracyDefs.h"
+
 static CDummyMapDamage dummyMapDamage;
 static CBasicMapDamage basicMapDamage;
 
@@ -15,6 +17,7 @@ IMapDamage* mapDamage = &dummyMapDamage;
 
 IMapDamage* IMapDamage::InitMapDamage()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (mapInfo->map.notDeformable) {
 		dummyMapDamage.Init();
 		return &dummyMapDamage;
@@ -30,6 +33,7 @@ IMapDamage* IMapDamage::InitMapDamage()
 
 void IMapDamage::FreeMapDamage(IMapDamage* p)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(p == mapDamage);
 	mapDamage = &dummyMapDamage;
 }

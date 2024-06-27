@@ -11,6 +11,8 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CLaserProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CLaserProjectile,(
@@ -60,6 +62,7 @@ CLaserProjectile::CLaserProjectile(const ProjectileParams& params): CWeaponProje
 
 void CLaserProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float4 oldSpeed = speed;
 
 	UpdateIntensity();
@@ -75,6 +78,7 @@ void CLaserProjectile::Update()
 }
 
 void CLaserProjectile::UpdateIntensity() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ttl > 0) {
 		explGenHandler.GenExplosion(cegID, pos, speed, ttl, intensity, 0.0f, owner(), nullptr);
 		return;
@@ -94,6 +98,7 @@ void CLaserProjectile::UpdateIntensity() {
 }
 
 void CLaserProjectile::UpdateLength() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (speed != ZeroVector) {
 		// expand bolt to maximum length if not
 		// stopped / collided OR after hardstop
@@ -108,6 +113,7 @@ void CLaserProjectile::UpdateLength() {
 }
 
 void CLaserProjectile::UpdatePos(const float4& oldSpeed) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return;
 
@@ -123,6 +129,7 @@ void CLaserProjectile::UpdatePos(const float4& oldSpeed) {
 
 
 void CLaserProjectile::CollisionCommon(const float3& oldPos) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// we will fade out over some time
 	deleteMe = false;
 
@@ -141,6 +148,7 @@ void CLaserProjectile::CollisionCommon(const float3& oldPos) {
 
 void CLaserProjectile::Collision(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 oldPos = pos;
 
 	CWeaponProjectile::Collision(unit);
@@ -149,6 +157,7 @@ void CLaserProjectile::Collision(CUnit* unit)
 
 void CLaserProjectile::Collision(CFeature* feature)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 oldPos = pos;
 
 	CWeaponProjectile::Collision(feature);
@@ -157,6 +166,7 @@ void CLaserProjectile::Collision(CFeature* feature)
 
 void CLaserProjectile::Collision()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 oldPos = pos;
 
 	CWeaponProjectile::Collision();
@@ -167,6 +177,7 @@ void CLaserProjectile::Collision()
 
 void CLaserProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// dont draw if a 3d model has been defined for us
 	if (model != nullptr)
 		return;
@@ -288,6 +299,7 @@ void CLaserProjectile::Draw()
 
 int CLaserProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -303,6 +315,7 @@ int CLaserProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, 
 
 int CLaserProjectile::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return
 		2 * validTextures[1] +
 		4 * validTextures[2];

@@ -216,6 +216,7 @@ void main() {
 	vGlow          = glow  - (curAdjustedFrame - thisVertexCreateFrame) *  glowFalloff;
 	float alphaMax = alpha - (curAdjustedFrame -        createFrameMax) * alphaFalloff;
 	alphaMax *= visMult;
+	vAlpha   *= visMult;
 
 	vDecalType = float(decalType); //copy type only, don't care about ID
 

@@ -6,9 +6,11 @@
 #include <list>
 
 #include "fmt/format.h"
+#include "fmt/printf.h"
 
 #include "DumpState.h"
 
+#include "Game/Game.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/GameVersion.h"
@@ -96,6 +98,15 @@ namespace {
 		s.append("\n");
 		return s;
 	}
+
+	inline std::string DumpGameID(const uint8_t* p) {
+		return fmt::sprintf(
+			"%02x%02x%02x%02x%02x%02x%02x%02x"
+			"%02x%02x%02x%02x%02x%02x%02x%02x",
+			p[0], p[1], p[ 2], p[ 3], p[ 4], p[ 5], p[ 6], p[ 7],
+			p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
+		);
+	}
 }
 
 
@@ -149,7 +160,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "maxFrame: " << gMaxFrameNum << "\n";
 			file << "randSeed: " << gsRNG.GetLastSeed() << "\n";
 			file << "initSeed: " << gsRNG.GetInitSeed() << "\n";
-			file << "  gameID: " << gameSetup->gameID << "\n";
+			file << "  gameID: " << DumpGameID(game->gameID) << "\n";
 			file << " syncVer: " << SpringVersion::GetSync() << "\n";
 		}
 
@@ -264,7 +275,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			const auto& m = mv[smn.second];
 			file << "\t\tname: " << m.name << "\n";
 			file << "\t\tnumPieces: " << m.numPieces << "\n";
-			file << "\t\ttextureType: " << m.textureType << "\n";
+			//file << "\t\ttextureType: " << m.textureType << "\n";
 			file << "\t\tmodelType: " << m.type << "\n";
 			file << "\t\tradius: " << TapFloats(m.radius);
 			file << "\t\theight: " << TapFloats(m.height);
@@ -641,6 +652,10 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	file.flush();
 	if (gs->frameNum == gMaxFrameNum)
 		file.close();
+
+	gMinFrameNum = -1;
+	gMaxFrameNum = -1;
+	gFramePeriod =  1;
 }
 
 void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
@@ -700,6 +715,8 @@ void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
 	if (gs->frameNum == gMaxFrameNum + 1) { //close the file and remove debug callback early next frame after gMaxFrameNum
 		gsRNG.SetDebug();
 		file.close();
+		gMinFrameNum = -1;
+		gMaxFrameNum = -1;
 	}
 	// check if the CURRENT frame lies within the bounds
 	if (gs->frameNum < gMinFrameNum)

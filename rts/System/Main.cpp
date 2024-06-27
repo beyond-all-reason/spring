@@ -44,7 +44,9 @@ int Run(int argc, char* argv[])
 	Threading::DetectCores();
 	Threading::SetMainThread();
 
+	LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
 	SpringApp app(argc, argv);
+	LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
 	return (app.Run());
 }
 

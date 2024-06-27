@@ -40,6 +40,8 @@
 #include "System/Input/KeyInput.h"
 #include "System/Input/MouseInput.h"
 
+#include "System/Misc/TracyDefs.h"
+
 #include <algorithm>
 
 // can't be up there since those contain conflicting definitions
@@ -112,6 +114,7 @@ CMouseHandler::CMouseHandler()
 
 CMouseHandler::~CMouseHandler()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (hwHideCursor)
 		SDL_ShowCursor(SDL_ENABLE);
 
@@ -121,6 +124,7 @@ CMouseHandler::~CMouseHandler()
 
 void CMouseHandler::InitStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(mouse == nullptr);
 	assert(mouseInput == nullptr);
 
@@ -130,6 +134,7 @@ void CMouseHandler::InitStatic()
 
 void CMouseHandler::KillStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::SafeDelete(mouse);
 	IMouseInput::FreeInstance(mouseInput);
 }
@@ -137,6 +142,7 @@ void CMouseHandler::KillStatic()
 
 void CMouseHandler::ReloadCursors()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CMouseCursor::HotSpot mCenter  = CMouseCursor::Center;
 	const CMouseCursor::HotSpot mTopLeft = CMouseCursor::TopLeft;
 
@@ -221,11 +227,13 @@ void CMouseHandler::ReloadCursors()
 
 void CMouseHandler::WindowEnter()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	offscreen = false;
 }
 
 void CMouseHandler::WindowLeave()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	offscreen = true;
 
 	const int2 viewMouseCenter = GetViewMouseCenter();
@@ -239,6 +247,7 @@ void CMouseHandler::WindowLeave()
 
 void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// FIXME: don't update if locked?
 	lastx = x;
 	// Origin for mousecursor on internal coordinates is top border of view screen
@@ -280,7 +289,9 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 
 	if (buttons[SDL_BUTTON_MIDDLE].pressed && (activeReceiver == nullptr)) {
 		camHandler->GetCurrentController().MouseMove(float3(dx, dy, invertMouse ? -1.0f : 1.0f));
-		unitTracker.Disable();
+		if (!camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RTT]) {
+			unitTracker.Disable();
+		}
 		return;
 	}
 }
@@ -288,6 +299,7 @@ void CMouseHandler::MouseMove(int x, int y, int dx, int dy)
 
 void CMouseHandler::MousePress(int x, int y, int button)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (button > NUM_BUTTONS)
 		return;
 
@@ -363,6 +375,7 @@ void CMouseHandler::MousePress(int x, int y, int button)
  */
 bool CMouseHandler::GetSelectionBoxVertices(float3& bl, float3& br, float3& tl, float3& tr) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (activeReceiver != nullptr)
 		return false;
 
@@ -451,6 +464,7 @@ void CMouseHandler::GetSelectionBoxCoeff(
 
 void CMouseHandler::MouseRelease(int x, int y, int button)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit *_lastClicked = lastClicked;
 	lastClicked = nullptr;
 
@@ -546,6 +560,7 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 
 void CMouseHandler::MouseWheel(float delta)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (eventHandler.MouseWheel(delta > 0.0f, delta))
 		return;
 
@@ -560,6 +575,7 @@ void CMouseHandler::MouseWheel(float delta)
 
 void CMouseHandler::DrawSelectionBox() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 btLeft, btRight, tpLeft, tpRight;
 
 	if (!GetSelectionBoxVertices(btLeft, btRight, tpLeft, tpRight))
@@ -674,6 +690,7 @@ std::string CMouseHandler::GetCurrentTooltip() const
 
 void CMouseHandler::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetCursor(queuedCursorName);
 
 	if (!hideCursor) {
@@ -703,6 +720,7 @@ void CMouseHandler::Update()
 
 void CMouseHandler::WarpMouse(int x, int y)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (locked)
 		return;
 
@@ -715,6 +733,7 @@ void CMouseHandler::WarpMouse(int x, int y)
 
 void CMouseHandler::ShowMouse()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!hideCursor)
 		return;
 
@@ -732,6 +751,7 @@ void CMouseHandler::ShowMouse()
 
 void CMouseHandler::HideMouse()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (hideCursor)
 		return;
 
@@ -759,6 +779,7 @@ void CMouseHandler::HideMouse()
 
 void CMouseHandler::ToggleMiddleClickScroll()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (locked) {
 		ShowMouse();
 	} else {
@@ -773,6 +794,7 @@ void CMouseHandler::ToggleMiddleClickScroll()
 
 void CMouseHandler::ToggleHwCursor(bool enable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((hardwareCursor = enable)) {
 		hwHideCursor = true;
 	} else {
@@ -789,6 +811,7 @@ void CMouseHandler::ToggleHwCursor(bool enable)
 
 void CMouseHandler::ChangeCursor(const std::string& cmdName, const float scale)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	queuedCursorName = cmdName;
 	cursorScale = scale;
 }
@@ -796,6 +819,7 @@ void CMouseHandler::ChangeCursor(const std::string& cmdName, const float scale)
 
 void CMouseHandler::SetCursor(const std::string& cmdName, const bool forceRebind)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((activeCursorName == cmdName) && !forceRebind)
 		return;
 
@@ -821,6 +845,7 @@ void CMouseHandler::SetCursor(const std::string& cmdName, const bool forceRebind
 
 void CMouseHandler::UpdateCursors()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// we update all cursors (for the command queue icons)
 	for (const auto& element: cursorFileMap) {
 		loadedCursors[element.second].Update();
@@ -830,12 +855,14 @@ void CMouseHandler::UpdateCursors()
 
 void CMouseHandler::UpdateCursorCameraDir()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	dir = GetCursorCameraDir(lastx, lasty);
 }
 
 
 void CMouseHandler::DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float scaleL = math::fabs(std::min(0.0f, scrollx)) * crossMoveScale + 1.0f;
 	const float scaleT = math::fabs(std::min(0.0f, scrolly)) * crossMoveScale + 1.0f;
 	const float scaleR = math::fabs(std::max(0.0f, scrollx)) * crossMoveScale + 1.0f;
@@ -892,6 +919,7 @@ void CMouseHandler::DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const
 
 void CMouseHandler::DrawFPSCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr int stepNumHalf = 2;
 
 	const float wingHalf = math::PI * 0.111111f;
@@ -911,6 +939,7 @@ void CMouseHandler::DrawFPSCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const
 
 void CMouseHandler::DrawCursor()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(activeCursorIdx != -1);
 
 	if (guihandler != nullptr)
@@ -983,6 +1012,7 @@ bool CMouseHandler::AssignMouseCursor(
 	CMouseCursor::HotSpot hotSpot,
 	bool overwrite
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto  cmdIt = cursorCommandMap.find(cmdName);
 	const auto fileIt = cursorFileMap.find(fileName);
 
@@ -1025,6 +1055,7 @@ bool CMouseHandler::ReplaceMouseCursor(
 	const string& newName,
 	CMouseCursor::HotSpot hotSpot
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto fileIt = cursorFileMap.find(oldName);
 
 	if (fileIt == cursorFileMap.end())
@@ -1054,11 +1085,13 @@ bool CMouseHandler::ReplaceMouseCursor(
 
 void CMouseHandler::ConfigNotify(const std::string& key, const std::string& value)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
 }
 
 void CMouseHandler::ConfigUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	dragScrollThreshold = configHandler->GetFloat("MouseDragScrollThreshold");
 	dragSelectionThreshold = configHandler->GetInt("MouseDragSelectionThreshold");
 	dragBoxCommandThreshold = configHandler->GetInt("MouseDragBoxCommandThreshold");
