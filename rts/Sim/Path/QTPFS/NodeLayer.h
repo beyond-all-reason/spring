@@ -193,6 +193,12 @@ public:
 			return GetPoolNode(i);
 		}
 
+		const QTNode* GetRootNode(int x, int z) const {
+			// This is fine, the class doesn't get modified in the process of the call.
+			// This call is to add const to the return value.
+			return const_cast<QTPFS::NodeLayer *>(this)->GetRootNode(x, z);
+		}
+
 public:
 
 		// NOTE:

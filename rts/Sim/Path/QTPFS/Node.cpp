@@ -205,7 +205,7 @@ void QTPFS::QTNode::InitStatic() {
 }
 
 void QTPFS::QTNode::Init(
-	const QTNode* /*parent*/,
+	const QTNode* parent,
 	unsigned int nn,
 	unsigned int x1, unsigned int z1,
 	unsigned int x2, unsigned int z2,
@@ -231,7 +231,8 @@ void QTPFS::QTNode::Init(
 	assert(zsize() != 0);
 
 	moveCostAvg = -1.0f;
-	index = idx;
+	uint32_t depth = (parent != nullptr) ? (parent->GetDepth() + 1) : 0;
+	index = (idx & NODE_INDEX_MASK) + ((depth << DEPTH_BIT_OFFSET) & DEPTH_MASK);
 
 	neighbours.clear();
 }
