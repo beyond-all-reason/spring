@@ -1369,6 +1369,38 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		return gs->frameNum;
 	} break;
 
+	case ENERGY_MAKE: {
+		return int(unit->resourcesMake.energy * 100);
+	} break;
+	case METAL_MAKE: {
+		return int(unit->resourcesMake.metal * 100);
+	} break;
+
+	case WORLD_SPACE_NONE:
+	case WORLD_SPACE_POSITION:
+	case WORLD_SPACE_ROTATION:
+	case WORLD_SPACE_POS_ROT: {
+		if (!PieceExists(p1)) {
+			ShowUnitScriptError("[US::GetUnitVal::WORLD_SPACE_*] invalid script piece index");
+			break;
+		}
+		const LocalModelPiece* smp = GetScriptLocalModelPiece(p1);
+		const auto checkFlags = val & WORLD_SPACE_FLAGS_BITMASK;
+		const auto pieceFlags = (smp->pseudoWorldSpacePosition * WORLD_SPACE_FLAG_POSITION) |
+								(smp->pseudoWorldSpaceRotation * WORLD_SPACE_FLAG_ROTATION);
+		return (checkFlags & pieceFlags) == checkFlags;
+	} break;
+
+	case WORLD_SPACE_FLAGS: {
+		if (!PieceExists(p1)) {
+			ShowUnitScriptError("[US::GetUnitVal::WORLD_SPACE_FLAGS] invalid script piece index");
+			break;
+		}
+		const LocalModelPiece* smp = GetScriptLocalModelPiece(p1);
+		return (smp->pseudoWorldSpacePosition * WORLD_SPACE_FLAG_POSITION) |
+			   (smp->pseudoWorldSpaceRotation * WORLD_SPACE_FLAG_ROTATION);
+	}
+
 	default:
 		ShowUnitScriptError("[US::GetUnitVal] unknown get-constant " + IntToString(val) + " (params = " + IntToString(p1) + " " + IntToString(p2) + " " + IntToString(p3) + " " + IntToString(p4) + ")");
 	}
@@ -1609,6 +1641,27 @@ void CUnitScript::SetUnitVal(int val, int param)
 			const float maxdamage = unit->flankingBonusAvgDamage + unit->flankingBonusDifDamage;
 			unit->flankingBonusAvgDamage = (maxdamage + param / (float)COBSCALE) * 0.5f;
 			unit->flankingBonusDifDamage = (maxdamage - param / (float)COBSCALE) * 0.5f;
+		} break;
+
+		case ENERGY_MAKE:
+		case METAL_MAKE: {
+		} break;
+
+		case WORLD_SPACE_NONE:
+		case WORLD_SPACE_POSITION:
+		case WORLD_SPACE_ROTATION:
+		case WORLD_SPACE_POS_ROT: {
+			if (!PieceExists(param)) {
+				ShowUnitScriptError("[US::SetUnitVal::WORLD_SPACE_*] invalid script piece index");
+				break;
+			}
+			LocalModelPiece* smp = GetScriptLocalModelPiece(param);
+			smp->pseudoWorldSpacePosition = !!(val & WORLD_SPACE_FLAG_POSITION);
+			smp->pseudoWorldSpaceRotation = !!(val & WORLD_SPACE_FLAG_ROTATION);
+			smp->SetDirty();
+		} break;
+
+		case WORLD_SPACE_FLAGS: {
 		} break;
 
 		default: {

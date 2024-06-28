@@ -512,6 +512,7 @@ struct LocalModelPiece
 
 	const CMatrix44f& GetPieceSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return pieceSpaceMat; }
 	const CMatrix44f& GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceMat; }
+	const CMatrix44f GetDrawModelSpaceMatrix() const;
 
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
@@ -532,8 +533,17 @@ private:
 	mutable bool customDirty;
 
 	bool scriptSetVisible; // TODO: add (visibility) maxradius!
+
+	void ApplyParentMatrix(CMatrix44f& inOutMat) const;
+	mutable CMatrix44f prevModelSpaceMatrix;
 public:
 	bool blockScriptAnims; // if true, Set{Position,Rotation} are ignored for this piece
+
+	bool pseudoWorldSpacePosition = false; // if true, cancel out combined unit + model space position
+	bool pseudoWorldSpaceRotation = false; // if true, cancel out combined unit + model space rotation
+	mutable bool useObjDrawPos = false;
+	// implement when/if unit rescaling is implemented
+	// bool pseudoWorldSpaceScale = false; // if true, cancel out combined unit + model space scale
 
 	unsigned int lmodelPieceIndex; // index of this piece into LocalModel::pieces
 	unsigned int scriptPieceIndex; // index of this piece into UnitScript::pieces
@@ -623,6 +633,8 @@ private:
 
 public:
 	std::vector<LocalModelPiece> pieces;
+	// used for referencing world space transform
+	CSolidObject* owningObject = nullptr;
 
 private:
 	// object-oriented box; accounts for piece movement
