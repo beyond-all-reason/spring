@@ -958,10 +958,10 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 	if (goalPos.z > mapz) { goalPos.z = mapz; }
 
 	goalRadius = moveGoalRadius;
-	MoveTypes::CheckCollisionQuery collisionQuery(owner->moveDef, moveGoalPos);
-	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(collisionQuery, moveGoalPos, ZeroVector, true, true));
+	MoveTypes::CheckCollisionQuery collisionQuery(owner->moveDef, goalPos);
+	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(collisionQuery, goalPos, ZeroVector, true, true));
 
-	atGoal = (moveGoalPos.SqDistance2D(owner->pos) < Square(goalRadius + extraRadius));
+	atGoal = (goalPos.SqDistance2D(owner->pos) < Square(goalRadius + extraRadius));
 	atEndOfPath = false;
 	lastWaypoint = false;
 
