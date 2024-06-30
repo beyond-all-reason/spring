@@ -39,6 +39,7 @@ Lua:
    https://github.com/beyond-all-reason/spring/pull/1342
  - Fix #1523, `Spring.UnitArrivedAtGoal` stack issue with warning spam.
    https://github.com/beyond-all-reason/spring/pull/1546
+ - DrawWorldPreParticles is now has parameters describing the particular phase it is called within a draw frame.
 
 Misc:
 - Fixed broken test. https://github.com/beyond-all-reason/spring/pull/1545

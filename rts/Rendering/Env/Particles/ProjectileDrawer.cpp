@@ -797,12 +797,12 @@ void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawReflection, bool
 
 		auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 		if (!rb.ShouldSubmit()) {
-			eventHandler.DrawWorldPreParticles();
+			eventHandler.DrawWorldPreParticles(drawAboveWater, drawReflection, drawRefraction);
 			return;
 		}
 
 		const bool needSoften = (wantSoften > 0) && !drawReflection && !drawRefraction;
-		eventHandler.DrawWorldPreParticles();
+		eventHandler.DrawWorldPreParticles(drawAboveWater, drawReflection, drawRefraction);
 
 		glActiveTexture(GL_TEXTURE0); textureAtlas->BindTexture();
 

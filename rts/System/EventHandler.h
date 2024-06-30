@@ -267,7 +267,7 @@ class CEventHandler
 		void DrawWorld();
 		void DrawWorldPreUnit();
 		void DrawPreDecals();
-		void DrawWorldPreParticles();
+		void DrawWorldPreParticles(bool drawAboveWater, bool drawReflection, bool drawRefraction);
 		void DrawWaterPost();
 		void DrawWorldShadow();
 		void DrawShadowPassTransparent();
