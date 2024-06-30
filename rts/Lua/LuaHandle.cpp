@@ -2606,7 +2606,7 @@ DRAW_CALLIN(DrawShadowUnitsLua)
 DRAW_CALLIN(DrawShadowFeaturesLua)
 
 /***
- * DrawWorldPreParticles is called multiples times per draw frame, during various phases of drawing water.
+ * DrawWorldPreParticles is called multiples times per draw frame.
  * Each phase has a different permutation of values for drawAboveWater, drawReflection, and drawRefraction.
  *
  * @function DrawWorldPreParticles
