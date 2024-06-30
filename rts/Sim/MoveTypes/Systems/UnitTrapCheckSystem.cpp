@@ -25,14 +25,14 @@
 using namespace MoveTypes;
 
 void SystemInit() {
-    auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemSystemComponent>();
+    auto& comp = Sim::systemGlobals.CreateSystemComponent<YardmapTrapCheckSystemComponent>();
 }
 
 void UnitTrapCheckSystem::Init() {
     RECOIL_DETAILED_TRACY_ZONE;
 
     // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
-    //     list.reserve(YardmapTrapCheckSystemSystemComponent::INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE);
+    //     list.reserve(YardmapTrapCheckSystemComponent::INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE);
     // });
 
     SystemInit();
@@ -79,7 +79,7 @@ void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* co
         
         // curList.emplace_back(unit);
 
-        // This is okay for multithrading because the value will only be set one way.
+        // This is okay for multithreading because the value will only be set one way.
         unitMoveType->OwnerMayBeStuck();
     }
 }
@@ -87,7 +87,7 @@ void TagUnitsThatMayBeStuck(std::vector<CUnit*> &curList, const CSolidObject* co
 void UnitTrapCheckSystem::Update() {
     SCOPED_TIMER("ECS::UnitTrapCheckSystem::Update");
 
-    auto& comp = Sim::systemGlobals.GetSystemComponent<YardmapTrapCheckSystemSystemComponent>();
+    auto& comp = Sim::systemGlobals.GetSystemComponent<YardmapTrapCheckSystemComponent>();
 
     // std::for_each(comp.trappedUnitLists.begin(), comp.trappedUnitLists.end(), [](auto& list){
     //     list.clear();

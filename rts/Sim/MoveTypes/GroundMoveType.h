@@ -22,6 +22,11 @@ public:
 	CGroundMoveType(CUnit* owner);
 	~CGroundMoveType();
 
+	static constexpr int HEADING_CHANGED_NONE = 0;
+	static constexpr int HEADING_CHANGED_MOVE = 1;
+	static constexpr int HEADING_CHANGED_STOP = 2;
+	static constexpr int HEADING_CHANGED_STUN = 3;
+
 	struct MemberData {
 		std::array<std::pair<unsigned int,  bool*>, 3>  bools;
 		std::array<std::pair<unsigned int, short*>, 1> shorts;
@@ -33,12 +38,31 @@ public:
 
 	bool Update() override;
 	void SlowUpdate() override;
-	void UpdatePreCollisionsMt() override;
-	void UpdateCollisionDetections() override;
-	void ProcessCollisionEvents() override;
+
+	// Decide how the unit should move to carry out obsctacle avoidance and path following decisions. Actual movement
+	// must be deferred to UpdateUnitPosition() because unit heading, speed, and position will impact other
+	// units' obsctacle avoidance decision making.
+	// This is should be MT safe.
+	void UpdateTraversalPlan();
+
+	// Update the unit's movement according to obsctacle avoidance and path following decisions from UpdateTraversalPlan().
+	// This is should be MT safe.
+	void UpdateUnitPosition();
+
+	// Resolves post UpdateTraversalPlan() and UpdateUnitPosition() tasks that must be carried out in a single
+	// thread.
+	void UpdatePreCollisions();
+
+	// Carry out unit collision detections and resolution. Actual movement will be carried in Update() later because
+	// moving units will impact further collisions during these checks. All collision events have to be recorded in the
+	// appropriate GroundMoveSystemComponent event list for the current thread. These events will be issued afterwards,
+	// single threaded, before Update() is called. This is to ensure units responding to collision events are
+	// responding to the collision as the collision state, not post collision state.
+	// This is should be MT safe.
+	void UpdateCollisionDetections();
+
 
 	void UpdateObstacleAvoidance();
-	void UpdatePreCollisions() override;
 
 	void StartMovingRaw(const float3 moveGoalPos, float moveGoalRadius) override;
 	void StartMoving(float3 pos, float moveGoalRadius) override;
@@ -125,6 +149,7 @@ public:
 
 	bool IsAtGoal() const override { return atGoal; }
 	void OwnerMayBeStuck() { forceStaticObjectCheck = true; };
+	void SetMtJobId(int _jobId) { jobId = _jobId; }
 
 private:
 	float3 GetObstacleAvoidanceDir(const float3& desiredDir);
@@ -178,10 +203,11 @@ private:
         const MoveDef *colliderMD,
         int curThread);
 
+public:
     void SetMainHeading();
     void ChangeSpeed(float, bool, bool = false);
 	void ChangeHeading(short newHeading);
-
+private:
 	void UpdateSkid();
 	void UpdateControlledDrop();
 	void CheckCollisionSkid();
@@ -200,6 +226,8 @@ private:
 
 private:
 	GMTDefaultPathController pathController;
+
+	int jobId = 0;
 
 	SyncedFloat3 currWayPoint;
 	SyncedFloat3 nextWayPoint;
@@ -262,6 +290,9 @@ private:
 	short setHeadingDir = 0;
 	short limitSpeedForTurning = 0;			/// if set, take extra care to prevent overshooting while turning for the next N waypoints.
 
+	float oldSpeed = 0.f;
+	float newSpeed = 0.f;
+
 	bool atGoal = true;
 	bool atEndOfPath = true;
 	bool wantRepath = false;
@@ -280,12 +311,6 @@ private:
 	bool positionStuck = false;
 	bool forceStaticObjectCheck = false;
 	bool avoidingUnits = false;
-
-	std::vector<CFeature*> collidedFeatures;
-	std::vector<CUnit*> collidedUnits;
-	std::vector<CFeature*> killFeatures;
-	std::vector<CUnit*> killUnits;
-	std::vector<std::tuple<CFeature*, float3>> moveFeatures;
 };
 
 #endif // GROUNDMOVETYPE_H
