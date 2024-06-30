@@ -49,6 +49,7 @@ private:
 
 	float curDist; // current zoom-out distance
 	const float maxDist; // maximum zoom-out distance
+	float minDist; // minimum zoom-in distance
 	float oldDist;
 	float fastScaleMove;
 	float fastScaleMousewheel;

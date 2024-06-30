@@ -22,7 +22,8 @@ CONFIG(int, OverheadScrollSpeed).defaultValue(10);
 CONFIG(float, OverheadTiltSpeed).defaultValue(1.0f);
 CONFIG(bool, OverheadEnabled).defaultValue(true).headlessValue(false);
 CONFIG(float, OverheadFOV).defaultValue(45.0f);
-CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("float multiplier for maximum overhead camera height");
+CONFIG(float, OverheadMinHeight).defaultValue(60.0f).description("Minimum camera height");
+CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("Float multiplier for maximum overhead camera height");
 CONFIG(float, CamOverheadFastScale).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult.");
 
 static const float angleStep = math::HALFPI / 14.0f;
@@ -37,9 +38,10 @@ COverheadController::COverheadController()
 	, oldAltHeight(height)
 
 	, maxHeight(10000.0f)
+	, minHeight(60.0f)
 	, angle(DEFAULT_ANGLE)
 {
-	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMaxHeightFactor", "CamOverheadFastScale"});
+	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMinHeight", "OverheadMaxHeightFactor", "CamOverheadFastScale"});
 	ConfigUpdate();
 }
 
@@ -57,6 +59,7 @@ void COverheadController::ConfigUpdate()
 	tiltSpeed = configHandler->GetFloat("OverheadTiltSpeed");
 	enabled = configHandler->GetBool("OverheadEnabled");
 	fov = configHandler->GetFloat("OverheadFOV");
+	minHeight = configHandler->GetFloat("OverheadMinHeight");
 	maxHeight = 9.5f * std::max(mapDims.mapx, mapDims.mapy) * configHandler->GetFloat("OverheadMaxHeightFactor");
 	fastScale = configHandler->GetFloat("CamOverheadFastScale");
 }
@@ -158,7 +161,7 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 			if ((wantedPos.y + (dir.y * newHeight)) < 0.0f)
 				newHeight = -wantedPos.y / yDirClamp;
 
-			if (newHeight < maxHeight) {
+			if (newHeight < maxHeight && newHeight > minHeight) {
 				height = newHeight;
 				pos = wantedPos + dir * height;
 			}
@@ -198,7 +201,7 @@ void COverheadController::Update()
 	pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);
 
-	height = std::clamp(height, 60.0f, maxHeight);
+	height = std::clamp(height, minHeight, maxHeight);
 	angle = std::clamp(angle, 0.01f, math::HALFPI);
 
 	dir = float3(0.0f, -fastmath::cos(angle), flipped ? fastmath::sin(angle) : -fastmath::sin(angle));
