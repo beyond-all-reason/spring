@@ -926,7 +926,7 @@ void QTPFS::PathSearch::Finalize(IPath* path) {
 		path->AllocPoints(2);
 		path->SetSourcePoint({fwd.srcPoint.x, 0.f, fwd.srcPoint.z});
 		path->SetTargetPoint({fwd.tgtPoint.x, 0.f, fwd.tgtPoint.z});
-		path->SetGoalPosition(path->GetTargetPoint());
+		//path->SetGoalPosition(path->GetTargetPoint());
 	}
 	path->SetRepathTriggerIndex(0);
 	path->SetNextPointIndex(0);
