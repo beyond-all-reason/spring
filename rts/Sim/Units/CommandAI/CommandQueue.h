@@ -43,6 +43,15 @@ class CCommandQueue {
 		inline void push_back(const Command& cmd);
 		inline void push_front(const Command& cmd);
 
+		void emplace_back(Command&& cmd) {
+			queue.emplace_back(cmd);
+			queue.back().SetTag(GetNextTag());
+		}
+		void emplace_front(Command&& cmd) {
+			queue.emplace_front(cmd);
+			queue.front().SetTag(GetNextTag());
+		}
+
 		inline iterator insert(iterator pos, const Command& cmd);
 
 		inline void pop_back()

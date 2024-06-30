@@ -74,6 +74,9 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 
 	curSpeedMods.resize(xsize * zsize,  0);
 	curSpeedBins.resize(xsize * zsize, -1);
+
+	MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
+	useShortestPath = md->preferShortestPath;
 }
 
 void QTPFS::NodeLayer::Clear() {
@@ -98,7 +101,8 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 
 	MoveTypes::CheckCollisionQuery virtualObject(md);
 	MoveDefs::CollisionQueryStateTrack queryState;
-	const bool isSubmersible = md->isSubmersible;
+
+	const bool isSubmersible = md->IsComplexSubmersible();
 	if (!isSubmersible) {
 		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits, threadData.threadId);
 	}

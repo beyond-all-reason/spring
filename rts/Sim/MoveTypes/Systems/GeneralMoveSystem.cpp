@@ -28,7 +28,7 @@ void GeneralMoveSystem::Update() {
     RECOIL_DETAILED_TRACY_ZONE;
     auto view = Sim::registry.view<GeneralMoveType>();
 	{
-        SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
+        SCOPED_TIMER("Sim::Unit::MoveType::5::Update");
         view.each([](GeneralMoveType& unitId){
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             AMoveType* moveType = unit->moveType;

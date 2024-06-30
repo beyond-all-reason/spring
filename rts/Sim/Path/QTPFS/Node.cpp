@@ -207,7 +207,7 @@ void QTPFS::QTNode::InitStatic() {
 }
 
 void QTPFS::QTNode::Init(
-	const QTNode* /*parent*/,
+	const QTNode* parent,
 	unsigned int nn,
 	unsigned int x1, unsigned int z1,
 	unsigned int x2, unsigned int z2,
@@ -233,7 +233,8 @@ void QTPFS::QTNode::Init(
 	assert(zsize() != 0);
 
 	moveCostAvg = -1.0f;
-	index = idx;
+	uint32_t depth = (parent != nullptr) ? (parent->GetDepth() + 1) : 0;
+	index = (idx & NODE_INDEX_MASK) + ((depth << DEPTH_BIT_OFFSET) & DEPTH_MASK);
 
 	neighbours.clear();
 }
@@ -567,7 +568,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	assert(speedModSum >= 0.0f);
 
 	float speedModAvg = speedModSum / area();
-	moveCostAvg = (speedModAvg <= 0.001f) ? QTPFS_POSITIVE_INFINITY : (1.0f / speedModAvg);
+	moveCostAvg = (speedModAvg <= 0.001f) ? QTPFS_POSITIVE_INFINITY : (nl.UseShortestPath() ? 1.f : (1.f /  speedModAvg));
 
 	// no node can have ZERO traversal cost
 	assert(moveCostAvg > 0.0f);
@@ -616,6 +617,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	needSplit |= (AllSquaresImpassable() && xsize() > 16); // TODO: magic number for size of damage quads
 
 	wantSplit &= (xsize() > 16); // try not to split below 16 if possible.
+	wantSplit &= !(nl.UseShortestPath());
 
 	return (wantSplit || needSplit);
 }

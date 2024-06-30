@@ -763,7 +763,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 				}
 
 				if (targetLOSState & LOS_PREVLOS) {
-					targetPriority /= (damageMul * targetUnit->power * (0.7f + gsRNG.NextFloat() * 0.6f));
+					targetPriority /= (damageMul * targetUnit->power);
 					targetPriority *= tgtPriorityMults[((targetUnit->category & weapon->badTargetCategory) != 0) * 2];
 					targetPriority *= tgtPriorityMults[(targetUnit->IsCrashing()) * 3];
 					targetPriority *= tgtPriorityMults[(targetUnit == lastAttacker) * 4];
@@ -1497,8 +1497,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 			}
 			#endif
 
-			if (moveDef != nullptr && CMoveMath::IsNonBlocking(*moveDef, so, nullptr))
-				ret = BUILDSQUARE_OPEN;
+			if (moveDef != nullptr) {
+				MoveTypes::CheckCollisionQuery collisionQuery(moveDef, pos);
+				if (CMoveMath::IsNonBlocking(so, &collisionQuery))
+					ret = BUILDSQUARE_OPEN;
+			}
 
 			#if 0
 			if (synced)

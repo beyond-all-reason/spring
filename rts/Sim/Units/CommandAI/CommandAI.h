@@ -45,7 +45,7 @@ public:
 	void GiveCommand(const Command& c, int playerNum, bool fromSynced       , bool fromLua); // net,Lua
 
 	void ClearTargetLock(const Command& fc);
-	void WeaponFired(CWeapon* weapon, const bool searchForNewTarget);
+	void WeaponFired(CWeapon* weapon, const bool searchForNewTarget, bool raiseEvent = true);
 
 	virtual bool CanWeaponAutoTarget(const CWeapon* weapon) const { return true; }
 	virtual int GetDefaultCmd(const CUnit* pointed, const CFeature* feature);

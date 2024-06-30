@@ -257,14 +257,12 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 				}
 			}
 		}
-		UpdateIconName(cmdID, numQueued);
-		SlowUpdate();
 	} else {
 		if (c.GetOpts() & ALT_KEY) {
+			Command nc(c);
+			nc.SetOpts(nc.GetOpts() | INTERNAL_ORDER);
 			for (int a = 0; a < numItems; ++a) {
 				if (repeatOrders) {
-					Command nc(c);
-					nc.SetOpts(nc.GetOpts() | INTERNAL_ORDER);
 					if (commandQue.empty()) {
 						commandQue.push_front(nc);
 					} else {
@@ -284,10 +282,10 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 			}
 		}
 		numQueued += numItems;
-		UpdateIconName(cmdID, numQueued);
-
-		SlowUpdate();
 	}
+
+	UpdateIconName(cmdID, numQueued);
+	SlowUpdate();
 }
 
 

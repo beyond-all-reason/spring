@@ -14,7 +14,10 @@ static inline float randf()
 	return rand() / float(RAND_MAX);
 }
 
-
+template <typename T> T Clamp(T val, T min, T max)
+{
+	return std::min(std::max(val, min), max);
+}
 
 TEST_CASE("QuadField")
 {

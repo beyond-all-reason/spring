@@ -6,6 +6,7 @@
 #include "MoveMath/MoveMath.h"
 #include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Path/IPathManager.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Units/Unit.h"
 #include "System/creg/STL_Map.h"
@@ -152,6 +153,16 @@ void MoveDefHandler::Init(LuaParser* defsParser)
 	crc << CMoveMath::noHoverWaterMove;
 
 	mdChecksum = crc.GetDigest();
+}
+
+
+void MoveDefHandler::PostSimInit() {
+	// Pathing system is initialized later and the movedefs may need to adjust their behaviour to align with
+	// capabilities of the pathing system.
+	std::for_each(moveDefs.begin(), moveDefs.end(), [](MoveDef& md){
+		md.allowDirectionalPathing &= pathManager->AllowDirectionalPathing();
+		md.preferShortestPath &= pathManager->AllowShortestPath();
+	});
 }
 
 
@@ -313,27 +324,31 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 			defaultWaterline = 1;
 		}
 		waterline = std::abs(moveDefTable.GetInt("waterline", defaultWaterline));
+		overrideUnitWaterline = moveDefTable.GetBool("overrideUnitWaterline", overrideUnitWaterline);
 	} else {
 		waterline = std::numeric_limits<int>::max();
 	}
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
-
 	isSubmersible = (isSubmarine || (followGround && depth > height));
+	allowDirectionalPathing = moveDefTable.GetBool("allowDirectionalPathing", allowDirectionalPathing);
+	preferShortestPath = moveDefTable.GetBool("preferShortestPath", preferShortestPath);
 }
 
 bool MoveDef::DoRawSearch(
 	const CSolidObject* collider,
+	const MoveDef* md,
 	const float3 startPos,
 	const float3 endPos,
-	const float3 testMoveDir,
+	float goalRadius,
 	bool testTerrain,
 	bool testObjects,
 	bool centerOnly,
 	float* minSpeedModPtr,
 	int* maxBlockBitPtr,
+	int2* nearestSquare,
 	int thread
-) {
+) const {
 	ZoneScoped;
 	assert(testTerrain || testObjects);
 
@@ -341,6 +356,7 @@ bool MoveDef::DoRawSearch(
 	// block. If perfectly aligned with starPos then don't shift because the blocks will align.
 	const float upDir    = (startPos.z == endPos.z) ? 0 : 1 - float(startPos.z < endPos.z) * 2.f;
 	const float rightDir = (startPos.x == endPos.x) ? 0 : 1 - float(startPos.x < endPos.x) * 2.f;
+	const float goalRadiusSq = Square(goalRadius);
 
 	const int2 startBlock
 		( std::clamp(int(startPos.x / SQUARE_SIZE), 0, mapDims.mapxm1)
@@ -360,8 +376,11 @@ bool MoveDef::DoRawSearch(
 		err.x += (dif.x * (err.y <= 0));
 	};
 
-	auto walkPath = [startBlock, endBlock, diffBlk, &StepFunc](auto& f) -> bool {
-		bool result = true;
+	if (nearestSquare != nullptr)
+		*nearestSquare = endBlock;
+
+	auto walkPath = [startBlock, endBlock, diffBlk, &StepFunc, goalRadiusSq, nearestSquare](auto& f) -> bool {
+		bool result = false;
 
 		const int2 fwdStepDir = int2{(endBlock.x > startBlock.x), (endBlock.y > startBlock.y)} * 2 - int2{1, 1};
 		const int2 revStepDir = int2{(startBlock.x > endBlock.x), (startBlock.y > endBlock.y)} * 2 - int2{1, 1};
@@ -375,19 +394,55 @@ bool MoveDef::DoRawSearch(
 		// int2 prevFwdTestBlk = {-1, -1};
 		// int2 prevRevTestBlk = {-1, -1};
 
+		int2 walkedNearestSqr(-1,-1);
+
 		for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
-			result = f(fwdTestBlk.x, fwdTestBlk.y, false) && f(revTestBlk.x, revTestBlk.y, true);
+			// Check forward search.
+			result = f(fwdTestBlk.x, fwdTestBlk.y, false);
+			if (result) {
+				// Forward search has got close enough, drop out early.
+				if (float((endBlock).DistanceSq(fwdTestBlk)*Square(SQUARE_SIZE)) < goalRadiusSq) {
+					if (nearestSquare != nullptr)
+						walkedNearestSqr = fwdTestBlk;
+					break;
+				}
+
+				// Now check reverse search.
+				result = f(revTestBlk.x, revTestBlk.y, true);
+
+				// Keep record of the current reverse test block to correctly report it as the nearest node.
+				int2 curRevTestBlk = revTestBlk;
+
+				// Need to step the reverse forward early to assess whether the next test will be within the goal
+				// radius if the current block test fails. As long as there's at least one more reverse block inside
+				// the goal radius, then a failure in the reverse search doesn't mean the walk is a failure.
+				StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
+				if (result) {
+					if (walkedNearestSqr.x == -1)
+						walkedNearestSqr = curRevTestBlk;
+				} else {
+					walkedNearestSqr = int2(-1, -1);
+
+					// Allow reverse search to continue if it is still within the goal radius.
+					result = ( float((endBlock).DistanceSq(revTestBlk)*Square(SQUARE_SIZE)) < goalRadiusSq );
+				}
+			}
 			if (!result) { break; }
 
 			// NOTE: for odd-length paths, center square is tested twice
-			if ((std::abs(fwdTestBlk.x - revTestBlk.x) <= 1) && (std::abs(fwdTestBlk.y - revTestBlk.y) <= 1))
+			if ((std::abs(fwdTestBlk.x - revTestBlk.x) <= 1) && (std::abs(fwdTestBlk.y - revTestBlk.y) <= 1)) {
+				// This is to catch the case where the reverse never finds an open square but was always in the goal
+				// radius, and the forward search never reached the goal radius. I.e. they stopped on the squares
+				// that bordered either side of the goal radius.
+				result = (walkedNearestSqr.x != -1);
 				break;
+			}
 
 			// prevFwdTestBlk = fwdTestBlk;
 			// prevRevTestBlk = revTestBlk;
 
 			StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
-			StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
+			// StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr); - done earlier now.
 
 			// skip if exactly crossing a vertex (in either direction)
 			blkStepCtr.x -= (fwdStepErr.y == 0);
@@ -396,77 +451,91 @@ bool MoveDef::DoRawSearch(
 			revStepErr.y  = revStepErr.x;
 		}
 
+		if (result && nearestSquare != nullptr)
+			*nearestSquare = walkedNearestSqr;
+
 		return result;
 	};
 
 	float minSpeedMod = std::numeric_limits<float>::max();
 	int   maxBlockBit = CMoveMath::BLOCK_NONE;
 
-	bool retTestMove = true;
-
-	if (testTerrain) {
-		auto test = [this, &minSpeedMod, speedModThreshold](int x, int z, bool rev) -> bool {
-			if (x >= mapDims.mapx || x < 0 || z >= mapDims.mapy || z < 0) { return true; }
-
-			const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z);
-			minSpeedMod = std::min(minSpeedMod, speedMod);
-
-			return (speedMod > speedModThreshold);
-		};
-		retTestMove = walkPath(test);
+	std::function<float(int x, int z)> getPosSpeedMod;
+	if (md->allowDirectionalPathing) {
+		float3 testMoveDir = startPos - endPos;
+		getPosSpeedMod = [this, testMoveDir](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir); };
+	} else {
+		getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z); };
 	}
+
+	auto terrainTest = [this, &minSpeedMod, speedModThreshold, &getPosSpeedMod](int x, int z) -> bool {
+		if (x >= mapDims.mapx || x < 0 || z >= mapDims.mapy || z < 0) { return true; }
+
+		const float speedMod = getPosSpeedMod(x, z);
+		minSpeedMod = std::min(minSpeedMod, speedMod);
+
+		return (speedMod > speedModThreshold);
+	};
 
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
-	if (testObjects & retTestMove) {
-		int tempNum = gs->GetMtTempNum(thread);
+	int tempNum = gs->GetMtTempNum(thread);
 
-		MoveDef *md = collider->moveDef;
+	MoveTypes::CheckCollisionQuery virtualObject = (collider != nullptr)
+			? MoveTypes::CheckCollisionQuery(collider)
+			: MoveTypes::CheckCollisionQuery(md);
+	MoveDefs::CollisionQueryStateTrack queryState;
+	md->UpdateCheckCollisionQuery(virtualObject, queryState, startBlock);
+	const bool isSubmersible = md->IsComplexSubmersible();
 
-		MoveTypes::CheckCollisionQuery virtualObject(collider);
-		MoveDefs::CollisionQueryStateTrack queryState;
-		const bool isSubmersible = md->isSubmersible;
-		if (!isSubmersible)
-			virtualObject.DisableHeightChecks();
 
-		auto test = [this, &maxBlockBit, collider, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState](int x, int z, bool rev) -> bool {
-			const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
-			const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
-			const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapxm1);
-			const int zmax = std::min(z + zsizeh * (1 - centerOnly), mapDims.mapym1);
+	if (!isSubmersible)
+		virtualObject.DisableHeightChecks();
 
-			// Height affects whether units in water collide or not, so the new y positions need
-			// to be considered or else we will get incorrect results.
-			if (isSubmersible){
-				UpdateCheckCollisionQuery(virtualObject, queryState, {x, z});
-				if (queryState.refreshCollisionCache)
-					tempNum = gs->GetMtTempNum(thread);
-			}
+	auto objectsTest = [this, &maxBlockBit, thread, centerOnly, &tempNum, md, isSubmersible, &virtualObject, &queryState]
+			(int x, int z) -> bool {
+		const int xmin = std::max(x - xsizeh * (1 - centerOnly), 0);
+		const int zmin = std::max(z - zsizeh * (1 - centerOnly), 0);
+		const int xmax = std::min(x + xsizeh * (1 - centerOnly), mapDims.mapxm1);
+		const int zmax = std::min(z + zsizeh * (1 - centerOnly), mapDims.mapym1);
 
-			const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedMt(xmin, xmax, zmin, zmax, &virtualObject, thread, tempNum);
-			maxBlockBit = blockBits;
-			return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
-		};
-		retTestMove = walkPath(test);
-	}
+		// Height affects whether units in water collide or not, so the new y positions need
+		// to be considered or else we will get incorrect results.
+		if (isSubmersible){
+			UpdateCheckCollisionQuery(virtualObject, queryState, {x, z});
+			if (queryState.refreshCollisionCache)
+				tempNum = gs->GetMtTempNum(thread);
+		}
 
-	if (retTestMove) {
-		bool curExitOnlyState[2] = {true, true};
-		auto test = [this, &curExitOnlyState](int x, int z, bool rev) -> bool {
-			bool canProceed = true;
-			bool nextExitOnlyState = IsInExitOnly(x, z);
-			if (!curExitOnlyState[rev])
-				canProceed = !nextExitOnlyState;
+		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedHashedMt(xmin, xmax, zmin, zmax, &virtualObject, tempNum, thread);
+		maxBlockBit = blockBits;
+		return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
+	};
+	
+	// Keep track of the exit only status on the path. A unit starting in exit only is allowed to leave, but it is not
+	// permitted to enter an exit only square if the path has left an exit-only zone or never started in exit-only.
+	bool curExitOnlyState[2] = {true, true};
+	auto exitOnlytest = [this, &curExitOnlyState](int x, int z, bool rev) -> bool {
+		bool canProceed = true;
+		bool nextExitOnlyState = IsInExitOnly(x, z);
+		if (!curExitOnlyState[rev])
+			canProceed = !nextExitOnlyState;
 
-			curExitOnlyState[rev] = nextExitOnlyState;
-			return (canProceed);
-		};
-		retTestMove = walkPath(test);
-	}
+		curExitOnlyState[rev] = nextExitOnlyState;
+		return (canProceed);
+	};
+
+	auto test = [this, testTerrain, testObjects, &terrainTest, &objectsTest, &exitOnlytest](int x, int z, bool rev) {
+		return (!testTerrain || terrainTest(x, z)) && (!testObjects || objectsTest(x, z)) && exitOnlytest(x, z, rev);
+	};
+	const bool retTestMove = walkPath(test);
 
 	// don't use std::min or |= because the ptr values might be garbage
 	if (minSpeedModPtr != nullptr) *minSpeedModPtr = minSpeedMod;
 	if (maxBlockBitPtr != nullptr) *maxBlockBitPtr = maxBlockBit;
+
+	assert(nearestSquare == nullptr || nearestSquare->x != -1);
+
 	return retTestMove;
 }
 
@@ -503,7 +572,7 @@ void MoveDef::UpdateCheckCollisionQuery
 }
 
 bool MoveDef::TestMoveSquareRange(
-	const CSolidObject* collider,
+	const MoveTypes::CheckCollisionQuery& collider,
 	const float3 rangeMins,
 	const float3 rangeMaxs,
 	const float3 testMoveDir,
@@ -531,9 +600,16 @@ bool MoveDef::TestMoveSquareRange(
 	bool retTestMove = true;
 
 	if (testTerrain) {
+		std::function<float(int x, int z)> getPosSpeedMod;
+		if (collider.moveDef->allowDirectionalPathing) {
+			getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z, testMoveDir); };
+		} else {
+			getPosSpeedMod = [&](int x, int z){ return CMoveMath::GetPosSpeedMod(*this, x, z); };
+		}
+
 		for (int z = zmin; retTestMove && z <= zmax; ++z) {
 			for (int x = xmin; retTestMove && x <= xmax; ++x) {
-				const float speedMod = CMoveMath::GetPosSpeedMod(*this, x, z);
+				const float speedMod = getPosSpeedMod(x, z);
 
 				minSpeedMod = std::min(minSpeedMod, speedMod);
 				retTestMove = (speedMod > 0.0f);
@@ -544,7 +620,7 @@ bool MoveDef::TestMoveSquareRange(
 	// GetPosSpeedMod only checks *one* square of terrain
 	// (heightmap/slopemap/typemap), not the blocking-map
 	if (testObjects && retTestMove) {
-		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(*this, xmin, xmax, zmin, zmax, collider, thread);
+		const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlocked(xmin, xmax, zmin, zmax, &collider, thread);
 
 		maxBlockBit = blockBits;
 		retTestMove = ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);

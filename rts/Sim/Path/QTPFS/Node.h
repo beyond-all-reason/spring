@@ -48,6 +48,9 @@ namespace QTPFS {
 		unsigned int GetIndex() const { return index & NODE_INDEX_MASK; }
 		bool IsExitOnly() const { return !!(index & EXIT_ONLY_MASK); }
 
+		unsigned int GetDepth() const { return (index & DEPTH_MASK) >> DEPTH_BIT_OFFSET; }
+		unsigned int GetRawIndex() const { return index; }
+
 		~QTNode() = default;
 		QTNode() = default;
 		QTNode(const QTNode& n) = delete;
@@ -70,9 +73,10 @@ namespace QTPFS {
 		//     root-node identifier is always 0
 		//     <i> is a NODE_IDX index in [0, 3]
 		unsigned int GetChildID(unsigned int i, uint32_t rootMask) const {
-			uint32_t rootId = rootMask & nodeNumber;
-			uint32_t nodeId = ((~rootMask) & nodeNumber);
-			return rootId | ((nodeId << 2) + (i + 1));
+			// uint32_t rootId = rootMask & nodeNumber;
+			// uint32_t nodeId = ((~rootMask) & nodeNumber);
+			uint32_t shift = (MAX_DEPTH - (GetDepth() + 1)) * QTPFS_NODE_NUMBER_SHIFT_STEP;
+			return nodeNumber + ((i + 1) << shift);
 		}
 
 		std::uint64_t GetCheckSum(const NodeLayer& nl) const;
@@ -167,6 +171,9 @@ namespace QTPFS {
 		static constexpr unsigned int EXIT_ONLY_BIT_OFFSET = 31;
 		static constexpr unsigned int EXIT_ONLY_MASK = (0x1 << EXIT_ONLY_BIT_OFFSET);
 
+		static constexpr unsigned int DEPTH_BIT_OFFSET = 20;
+		static constexpr unsigned int DEPTH_MASK = (0xf << DEPTH_BIT_OFFSET);
+
 		unsigned int nodeNumber = -1u;
 		unsigned int index = 0;
 
@@ -194,10 +201,12 @@ namespace QTPFS {
 
 		SearchNode(INode& srcNode)
 			: index(srcNode.index)
+			, nodeNumber(srcNode.nodeNumber)
 			{}
 
 		SearchNode(INode* srcNode)
 			: index(srcNode->index)
+			, nodeNumber(srcNode->nodeNumber)
 			{}
 
 		SearchNode(int nodeId)
@@ -216,8 +225,19 @@ namespace QTPFS {
 			zmin = other.zmin;
 			xmax = other.xmax;
 			zmax = other.zmax;
+			nodeNumber = other.nodeNumber;
+			badNode = other.badNode;
 			// searchState = other.searchState;
 			return *this;
+		}
+
+		void CopyGeneralNodeData(const SearchNode& other) {
+			index = other.index;
+			xmin = other.xmin;
+			zmin = other.zmin;
+			xmax = other.xmax;
+			zmax = other.zmax;
+			nodeNumber = other.nodeNumber;
 		}
 
 		float GetHeapPriority() const { return GetPathCost(NODE_PATH_COST_F); }
@@ -245,6 +265,9 @@ namespace QTPFS {
 		uint32_t GetStepIndex() const { return stepIndex; }
 		void SetStepIndex(uint32_t idx) { stepIndex = idx; }
 
+		bool isNodeBad() const { return badNode; /*selectedNetpoint.x == -1.f;*/ }
+		void SetNodeBad(bool state) { badNode = state; }
+
 		unsigned int index = 0;
 		// unsigned int searchState = 0;
 
@@ -263,6 +286,9 @@ namespace QTPFS {
 		int zmin = 0;
 		int xmax = 0;
 		int zmax = 0;
+
+		unsigned int nodeNumber = -1;
+		bool badNode = false;
 	};
 }
 

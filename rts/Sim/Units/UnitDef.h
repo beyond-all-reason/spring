@@ -45,7 +45,13 @@ struct UnitDefWeapon {
 
 	bool fastAutoRetargeting = false; ///< pick new targets as soon as possible, don't wait for slow update
 	bool fastQueryPointUpdate = false;	///< check in with unitscript to get most current query piece before every friendly fire check, don't wait for slow update
+	unsigned int burstControlWhenOutOfArc = 0; ///< Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon 
 	float weaponAimAdjustPriority = 1.f;		///< relative importance of picking enemy targets that are in front
+
+
+	static constexpr unsigned int BURST_CONTROL_OUT_OF_ARC_OFF = 0;
+	static constexpr unsigned int BURST_CONTROL_OUT_OF_ARC_HOLD = 1;
+	static constexpr unsigned int BURST_CONTROL_OUT_OF_ARC_FIRE_FORWARD = 2;
 };
 
 
@@ -190,6 +196,16 @@ public:
 	float maxWaterDepth;
 
 	float upDirSmoothing;
+
+	// Apply an additional collision boundary in elmos to keep units separated.
+	// This is used to make units keep a gap between them of the distance specified.
+	// [unit 1] <- separationDistance -> [unit 2]
+	// The larger of two units' separation distance will be applied.
+	// This works best with relatively small values such as 32 elmos or smaller.
+	// This only impacts mobile units to mobile units. This is deliberate because otherwise units
+	// would be unable to squeeze between buildings or would be able to knock over/crush features
+	// they are not touching.
+	float separationDistance;
 
 	unsigned int pathType;
 
