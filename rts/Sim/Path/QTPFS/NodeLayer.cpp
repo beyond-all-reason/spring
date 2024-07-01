@@ -389,6 +389,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 			if (zmax <= childNode->zmin()) { continue; }
 			if (zmin >= childNode->zmax()) { continue; }
 			if (childNode->AllSquaresImpassable()) { continue; }
+			if (childNode->IsExitOnly()) { continue; }
 
 			tmpNodes.emplace_back(childNode);
 		}
