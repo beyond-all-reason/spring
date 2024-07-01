@@ -78,6 +78,7 @@ WEAPONTAG(float, projectilespeed).externalName("weaponVelocity").fallbackName("m
 WEAPONTAG(float, startvelocity).defaultValue(0.0f).minimumValue(0.01f).scaleValue(INV_GAME_SPEED).description("Initial projectile speed in elmo/s");
 WEAPONTAG(float, weaponacceleration).fallbackName("acceleration").defaultValue(0.0f).scaleValue(INV_GAME_SPEED * INV_GAME_SPEED).description("Acceleration in elmo/s^2");
 WEAPONTAG(float, reload).externalName("reloadTime").defaultValue(1.0f).description("Reload time between bursts, in seconds. Note that reloadTime starts to count down from the first round fired, not the last, so if (reloadTime < burst * burstRate) the weapon will fire continuously.");
+WEAPONDUMMYTAG(float, salvoWindup).externalName("windup").description("Delay between firing and the first shot");
 WEAPONTAG(float, salvodelay).externalName("burstRate").defaultValue(0.1f).description("Delay between shots within a burst, in seconds");
 WEAPONTAG(int, salvosize).externalName("burst").defaultValue(1).description("Shots per burst. Cannot be used by #BeamLaser unless `beamburst` is used which comes with caveats.");
 WEAPONTAG(int, projectilespershot).externalName("projectiles").defaultValue(1).description("Projectiles per shot. Best used in conjunction with `sprayAngle` or changing the firing piece in script using ShotX as otherwise they'll all be clumped up in one blob.");
@@ -340,6 +341,7 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 	shieldArmorType = damageArrayHandler.GetTypeFromName(shieldArmorTypeName);
 	flighttime = int(wdTable.GetFloat("flighttime", 0.0f) * GAME_SPEED);
 	maxFireAngle = math::cos(wdTable.GetFloat("firetolerance", 3640.0f) * TAANG2RAD);
+	salvoWindup = int(wdTable.GetFloat("windup", 0.0f) * GAME_SPEED);
 
 	collisionFlags = 0;
 	collisionFlags |= (Collision::NOENEMIES    * (!wdTable.GetBool("collideEnemy",      true)));
