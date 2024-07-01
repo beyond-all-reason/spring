@@ -921,8 +921,8 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 	// set the new goal
 	goalPos = moveGoalPos * XZVector;
 
-	float mapx = mapDims.mapx * SQUARE_SIZE;
-	float mapz = mapDims.mapy * SQUARE_SIZE;
+	float mapx = mapDims.mapxm1 * SQUARE_SIZE;
+	float mapz = mapDims.mapym1 * SQUARE_SIZE;
 
 	// Sanitize the move command.
 	if (goalPos.x < 0.f)  { goalPos.x = 0.f; }
