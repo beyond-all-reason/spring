@@ -154,6 +154,7 @@ void CWeaponLoader::InitWeapon(CUnit* owner, CWeapon* weapon, const UnitDefWeapo
 
 	weapon->salvoSize = weaponDef->salvosize;
 	weapon->salvoDelay = int(weaponDef->salvodelay * GAME_SPEED);
+	weapon->salvoWindup = weaponDef->salvoWindup;
 	weapon->projectilesPerShot = weaponDef->projectilespershot;
 
 	weapon->onlyForward = weaponDef->onlyForward;

@@ -4874,6 +4874,9 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 		case hashString("burstRate"): {
 			lua_pushnumber(L, float(weapon->salvoDelay) / GAME_SPEED);
 		} break;
+		case hashString("windup"): {
+			lua_pushnumber(L, float(weapon->salvoWindup) / GAME_SPEED);
+		} break;
 
 		case hashString("projectiles"): {
 			lua_pushnumber(L, weapon->projectilesPerShot);

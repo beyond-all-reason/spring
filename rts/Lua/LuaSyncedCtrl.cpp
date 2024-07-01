@@ -2100,6 +2100,9 @@ static bool SetSingleUnitWeaponState(lua_State* L, CWeapon* weapon, int index)
 		case hashString("burstRate"): {
 			weapon->salvoDelay = (int) (lua_tofloat(L, index + 1) * GAME_SPEED);
 		} break;
+		case hashString("windup"): {
+			weapon->salvoWindup = (int) (lua_tofloat(L, index + 1) * GAME_SPEED);
+		} break;
 
 		case hashString("projectiles"): {
 			weapon->projectilesPerShot = lua_toint(L, index + 1);

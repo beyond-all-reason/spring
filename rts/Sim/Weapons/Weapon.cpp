@@ -52,6 +52,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(projectilesPerShot),
 	CR_MEMBER(nextSalvo),
 	CR_MEMBER(salvoLeft),
+	CR_MEMBER(salvoWindup),
 
 	CR_MEMBER(range),
 	CR_MEMBER(projectileSpeed),
@@ -137,6 +138,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	projectilesPerShot(1),
 	nextSalvo(0),
 	salvoLeft(0),
+	salvoWindup(0),
 
 	range(1.0f),
 	projectileSpeed(1.0f),
@@ -487,7 +489,7 @@ void CWeapon::UpdateFire()
 	reloadStatus = gs->frameNum + int(reloadTime / owner->reloadSpeed);
 
 	salvoLeft = salvoSize;
-	nextSalvo = gs->frameNum;
+	nextSalvo = gs->frameNum + salvoWindup;
 	salvoError = gsRNG.NextVector() * (owner->IsMoving()? weaponDef->movingAccuracy: accuracyError);
 
 	owner->lastMuzzleFlameSize = muzzleFlareSize;

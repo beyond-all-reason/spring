@@ -150,6 +150,7 @@ public:
 	int projectilesPerShot;                 // number of projectiles per shot
 	int nextSalvo;                          // when the next shot in the current salvo will fire
 	int salvoLeft;                          // number of shots left in current salvo
+	int salvoWindup;                        // delay before first shot (in frames)
 
 	float range;
 	float projectileSpeed;
