@@ -398,7 +398,7 @@ bool MoveDef::DoRawSearch(
 
 		for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
 			// Check forward search.
-			result = f(fwdTestBlk.x, fwdTestBlk.y, false);
+			result = f(fwdTestBlk.x, fwdTestBlk.y);
 			if (result) {
 				// Forward search has got close enough, drop out early.
 				if (float((endBlock).DistanceSq(fwdTestBlk)*Square(SQUARE_SIZE)) < goalRadiusSq) {
@@ -408,7 +408,7 @@ bool MoveDef::DoRawSearch(
 				}
 
 				// Now check reverse search.
-				result = f(revTestBlk.x, revTestBlk.y, true);
+				result = f(revTestBlk.x, revTestBlk.y);
 
 				// Keep record of the current reverse test block to correctly report it as the nearest node.
 				int2 curRevTestBlk = revTestBlk;
@@ -453,6 +453,44 @@ bool MoveDef::DoRawSearch(
 
 		if (result && nearestSquare != nullptr)
 			*nearestSquare = walkedNearestSqr;
+
+		return result;
+	};
+
+	auto walkPathFwdOnly = [startBlock, endBlock, diffBlk, &StepFunc, goalRadiusSq, nearestSquare](auto& f) -> bool {
+		bool result = false;
+
+		const int2 fwdStepDir = int2{(endBlock.x > startBlock.x), (endBlock.y > startBlock.y)} * 2 - int2{1, 1};
+
+		int blkStepCtr = diffBlk.x + diffBlk.y;
+		int2 fwdStepErr = {diffBlk.x - diffBlk.y, diffBlk.x - diffBlk.y};
+		int2 fwdTestBlk = startBlock;
+
+		for (blkStepCtr += 1; blkStepCtr > 0; blkStepCtr -= 1) {
+			// Check forward search.
+			result = f(fwdTestBlk.x, fwdTestBlk.y);
+			if (!result) {
+				break;
+			} else {
+				// Forward search has got close enough, drop out early.
+				float dist = float((endBlock).DistanceSq(fwdTestBlk)*Square(SQUARE_SIZE));
+				if (dist < goalRadiusSq) {
+					if (nearestSquare != nullptr) {
+						// Move the nearest square further out if the unit would hit an exit only zone sooner
+						float origDist = float((endBlock).DistanceSq(*nearestSquare)*Square(SQUARE_SIZE));
+						if (dist > origDist)
+							*nearestSquare = fwdTestBlk;
+					}
+					break;
+				}
+			}
+
+			StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
+
+			// skip if exactly crossing a vertex (in either direction)
+			blkStepCtr -= (fwdStepErr.y == 0);
+			fwdStepErr.y  = fwdStepErr.x;
+		}
 
 		return result;
 	};
@@ -514,21 +552,21 @@ bool MoveDef::DoRawSearch(
 	
 	// Keep track of the exit only status on the path. A unit starting in exit only is allowed to leave, but it is not
 	// permitted to enter an exit only square if the path has left an exit-only zone or never started in exit-only.
-	bool curExitOnlyState[2] = {true, true};
-	auto exitOnlytest = [this, &curExitOnlyState](int x, int z, bool rev) -> bool {
+	bool curExitOnlyState = true;
+	auto exitOnlytest = [this, &curExitOnlyState](int x, int z) -> bool {
 		bool canProceed = true;
 		bool nextExitOnlyState = IsInExitOnly(x, z);
-		if (!curExitOnlyState[rev])
+		if (!curExitOnlyState)
 			canProceed = !nextExitOnlyState;
 
-		curExitOnlyState[rev] = nextExitOnlyState;
+		curExitOnlyState = nextExitOnlyState;
 		return (canProceed);
 	};
 
-	auto test = [this, testTerrain, testObjects, &terrainTest, &objectsTest, &exitOnlytest](int x, int z, bool rev) {
-		return (!testTerrain || terrainTest(x, z)) && (!testObjects || objectsTest(x, z)) && exitOnlytest(x, z, rev);
+	auto test = [this, testTerrain, testObjects, &terrainTest, &objectsTest, &exitOnlytest](int x, int z) {
+		return (!testTerrain || terrainTest(x, z)) && (!testObjects || objectsTest(x, z));
 	};
-	const bool retTestMove = walkPath(test);
+	const bool retTestMove = walkPath(test) && walkPathFwdOnly(exitOnlytest);
 
 	// don't use std::min or |= because the ptr values might be garbage
 	if (minSpeedModPtr != nullptr) *minSpeedModPtr = minSpeedMod;
