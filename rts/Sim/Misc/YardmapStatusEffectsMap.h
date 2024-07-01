@@ -21,8 +21,6 @@ public:
         BLOCK_BUILDING = 0x02,
     };
 
-    static constexpr int resolution = SPRING_FOOTPRINT_SCALE;
-
     uint32_t interleave(uint32_t x, uint32_t y)
     {
 		static constexpr uint32_t zMasks[] = {0x0000FFFF, 0x00FF00FF, 0x0F0F0F0F, 0x33333333, 0x55555555};
@@ -37,7 +35,7 @@ public:
     }
 
     uint8_t& GetMapState(int x, int z) { return stateMap[interleave(x / resolution, z / resolution)]; }
-    uint8_t& GetMapStateNative(int x, int z) { return stateMap[interleave(x, z)]; }
+    uint8_t& GetMapStateWithPrescaledArgs(int x, int z) { return stateMap[interleave(x, z)]; }
 
     bool AreAllFlagsSet(int x, int z, uint8_t flags) { return (GetMapState(x, z) & flags) == flags; }
 	bool AreAnyFlagsSet(int x, int z, uint8_t flags) { return (GetMapState(x, z) & flags) != 0; }
@@ -45,10 +43,11 @@ public:
     void SetFlags(int x, int z, uint8_t flags) { GetMapState(x, z) |= flags; }
     void ClearFlags(int x, int z, uint8_t flags) { GetMapState(x, z) &= ~flags; }
 
-    void InitNewYardmapStatusEffectsMap();
+    void InitNewYardmapStatusEffectsMap(int divisionScale);
 
     typedef std::vector<uint8_t> ExitOnlyMapType;
     ExitOnlyMapType stateMap;
+    int resolution = SPRING_FOOTPRINT_SCALE;
 };
 
 extern YardmapStatusEffectsMap yardmapStatusEffectsMap;
@@ -110,7 +109,7 @@ struct ObjectCollisionMapHelper {
 		return YardmapStatusEffectsMap::EXIT_ONLY;
 	}
 
-    bool IsExitOnlyAt(int x, int z) const {
+	bool IsExitOnlyAt(int x, int z) const {
 		return yardmapStatusEffectsMap.AreAllFlagsSet(x, z, GetExitOnlyFlags());
 	}
 

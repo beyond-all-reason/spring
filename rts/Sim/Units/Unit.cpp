@@ -247,11 +247,13 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	SetVelocity(params.speed);
 	Move(preFramePos = params.pos.cClampInMap(), false);
 
-	// Force buildings to the 2x2 grid. This normally enforced, but buildings spawned by maps have not
+	// Force buildings to the grid. This normally enforced, but buildings spawned by maps, scripts, and cheats have not
 	// been forced yet.
 	if (unitDef->yardmap.size() != 0) {
-		float x = (std::round(params.pos.x / BUILD_SQUARE_SIZE) * BUILD_SQUARE_SIZE);
-		float z = (std::round(params.pos.z / BUILD_SQUARE_SIZE) * BUILD_SQUARE_SIZE);
+		const float buildSquareSize = modInfo.yardmapAlignment * SQUARE_SIZE;
+
+		const float x = (std::round(params.pos.x / buildSquareSize) * buildSquareSize);
+		const float z = (std::round(params.pos.z / buildSquareSize) * buildSquareSize);
 
 		Move(float3(x, 0.f, z), false);
 	}

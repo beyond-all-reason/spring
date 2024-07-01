@@ -113,6 +113,7 @@ void CModInfo::ResetState()
 		qtMaxNodesSearchedRelativeToMapOpenNodes = 0.25;
 		qtLowerQualityPaths = false;
 
+		yardmapAlignment = SPRING_FOOTPRINT_SCALE;
 		enableSmoothMesh = true;
 		smoothMeshResDivider = 2;
 		smoothMeshSmoothRadius = 40;
@@ -167,6 +168,8 @@ void CModInfo::Init(const std::string& modFileName)
 		qtRefreshPathMinDist = std::max(system.GetFloat("qtRefreshPathMinDist", qtRefreshPathMinDist), 0.0f);
 		qtMaxNodesSearchedRelativeToMapOpenNodes = std::max(system.GetFloat("qtMaxNodesSearchedRelativeToMapOpenNodes", qtMaxNodesSearchedRelativeToMapOpenNodes), 0.0f);
 		qtLowerQualityPaths = system.GetBool("qtLowerQualityPaths", qtLowerQualityPaths);
+
+		yardmapAlignment = std::clamp(system.GetInt("yardmapAlignment", yardmapAlignment), 1, SPRING_FOOTPRINT_SCALE);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
 		smoothMeshResDivider = std::max(system.GetInt("smoothMeshResDivider", smoothMeshResDivider), 1);

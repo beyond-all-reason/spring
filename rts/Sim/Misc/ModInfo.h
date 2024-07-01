@@ -217,6 +217,13 @@ public:
 	float pfRawDistMult;
 	float pfUpdateRateScale;
 
+	/// Strictest enforcement of yardmap alignment in squares. 1 or 2 are the possible values.
+	/// 1 is the original engine behaviour, 2 is default. Buildings are still aligned to 2 squares through the UI for
+	/// building placement; however, it is possible to use scripts to place buildings on a 1 square alignment, unless
+	/// this option is set to 2. The main impact is the memory used by the exit-only map. By aligning to 2 squares, the
+	/// exit-only map can reduce memory usage by 75%.
+	int yardmapAlignment;
+
 	bool enableSmoothMesh;
 
 	/// Reduce the resolution of the smooth mesh by the divider value. Increasing the value reduces
