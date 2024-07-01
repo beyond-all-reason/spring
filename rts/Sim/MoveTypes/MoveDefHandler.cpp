@@ -526,7 +526,6 @@ bool MoveDef::DoRawSearch(
 	md->UpdateCheckCollisionQuery(virtualObject, queryState, startBlock);
 	const bool isSubmersible = md->IsComplexSubmersible();
 
-
 	if (!isSubmersible)
 		virtualObject.DisableHeightChecks();
 
@@ -563,7 +562,7 @@ bool MoveDef::DoRawSearch(
 		return (canProceed);
 	};
 
-	auto test = [this, testTerrain, testObjects, &terrainTest, &objectsTest, &exitOnlytest](int x, int z) {
+	auto test = [this, testTerrain, testObjects, &terrainTest, &objectsTest](int x, int z) {
 		return (!testTerrain || terrainTest(x, z)) && (!testObjects || objectsTest(x, z));
 	};
 	const bool retTestMove = walkPath(test) && walkPathFwdOnly(exitOnlytest);
