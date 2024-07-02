@@ -14,7 +14,7 @@ body:
         - If you have multiple questions, suggestions, or bugs, please submit them in separate issues.
         - We accept pull request. If you know how to fix it - go ahead!
 
-        Please provide the following details about the issue you encountered. *Issues that do not provide the information requested in this form will be flagged as **incomplete** & automatically closed.*
+        Please provide the following details about the issue you encountered.
   - type: markdown
     attributes:
       value: Provide a clear & concise details about the bug.
@@ -29,7 +29,7 @@ body:
     id: reproduce
     attributes:
       label: Reproduce the bug
-      description: A clear and concise set of instructions on how to reproduce the issue. Best accompanied with a sandboxed replay. An in-action replay is helpful but not sufficient - the burden to investigate how to reproduce the issue is then moved to the maintainer.
+      description: A clear and concise set of instructions on how to reproduce the issue.
     validations:
       required: true
   - type: textarea
