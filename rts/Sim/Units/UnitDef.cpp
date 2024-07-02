@@ -379,6 +379,15 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	canReclaim   = udTable.GetBool("canReclaim",   builder) && (  reclaimSpeed > 0.0f);
 	canCapture   = udTable.GetBool("canCapture",     false) && (  captureSpeed > 0.0f);
 	canResurrect = udTable.GetBool("canResurrect",   false) && (resurrectSpeed > 0.0f);
+
+	/* Note that a mobile builder with canAssist = false will be able
+	 * to place a nanoframe and pour buildpower into it, but will not
+	 * be able to resume building if interrupted for any reason (with
+	 * the exception of the wait command). It will be unable to pour
+	 * buildpower into a nanoframe placed by another unit. It will be
+	 * unable to repair an incomplete nanoframe or place a nanoframe
+	 * on top of an existing nanoframe, even if it is the exact same
+	 * structure in the exact same location. */
 	canAssist    = udTable.GetBool("canAssist",    builder);
 
 	canBeAssisted = udTable.GetBool("canBeAssisted", true);
