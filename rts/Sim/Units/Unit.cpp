@@ -247,17 +247,6 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	SetVelocity(params.speed);
 	Move(preFramePos = params.pos.cClampInMap(), false);
 
-	// Force buildings to the grid. This normally enforced, but buildings spawned by maps, scripts, and cheats have not
-	// been forced yet.
-	if (unitDef->yardmap.size() != 0) {
-		const float buildSquareSize = modInfo.yardmapAlignment * SQUARE_SIZE;
-
-		const float x = (std::round(params.pos.x / buildSquareSize) * buildSquareSize);
-		const float z = (std::round(params.pos.z / buildSquareSize) * buildSquareSize);
-
-		Move(float3(x, 0.f, z), false);
-	}
-
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
 	SetMidAndAimPos(model->relMidPos, model->relMidPos, true);
 	SetRadiusAndHeight(model);

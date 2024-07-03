@@ -34,8 +34,7 @@ public:
         return x | (y << 1);
     }
 
-    uint8_t& GetMapState(int x, int z) { return stateMap[interleave(x / resolution, z / resolution)]; }
-    uint8_t& GetMapStateWithPrescaledArgs(int x, int z) { return stateMap[interleave(x, z)]; }
+    uint8_t& GetMapState(int x, int z) { return stateMap[interleave(x, z)]; }
 
     bool AreAllFlagsSet(int x, int z, uint8_t flags) { return (GetMapState(x, z) & flags) == flags; }
 	bool AreAnyFlagsSet(int x, int z, uint8_t flags) { return (GetMapState(x, z) & flags) != 0; }
@@ -43,11 +42,10 @@ public:
     void SetFlags(int x, int z, uint8_t flags) { GetMapState(x, z) |= flags; }
     void ClearFlags(int x, int z, uint8_t flags) { GetMapState(x, z) &= ~flags; }
 
-    void InitNewYardmapStatusEffectsMap(int divisionScale);
+    void InitNewYardmapStatusEffectsMap();
 
     typedef std::vector<uint8_t> ExitOnlyMapType;
     ExitOnlyMapType stateMap;
-    int resolution = SPRING_FOOTPRINT_SCALE;
 };
 
 extern YardmapStatusEffectsMap yardmapStatusEffectsMap;
