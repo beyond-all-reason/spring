@@ -220,7 +220,9 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 		doPathRepair = false;
 	}
 
-	if (tgtNode->AllSquaresImpassable()) {
+	const bool moveTargetOutOfExitOnly = ( tgtNode->IsExitOnly() && (!srcNode->IsExitOnly()) );
+
+	if (moveTargetOutOfExitOnly || tgtNode->AllSquaresImpassable()) {
 		// find nearest acceptable node because this will otherwise trigger a full walk of every pathable node.
 		int searchWidth = std::max(int(goalDistance)/SQUARE_SIZE, 16);
 		INode* altTgtNode = nodeLayer->GetNearestNodeInArea

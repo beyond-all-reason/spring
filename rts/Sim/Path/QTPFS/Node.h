@@ -46,6 +46,8 @@ namespace QTPFS {
 		SRectangle ClipRectangle(const SRectangle& r) const;
 
 		unsigned int GetIndex() const { return index & NODE_INDEX_MASK; }
+		bool IsExitOnly() const { return !!(index & EXIT_ONLY_MASK); }
+
 		unsigned int GetDepth() const { return (index & DEPTH_MASK) >> DEPTH_BIT_OFFSET; }
 		unsigned int GetRawIndex() const { return index; }
 
@@ -149,6 +151,11 @@ namespace QTPFS {
 			bool& needSplit
 		);
 
+		bool UpdateExitOnly(
+			NodeLayer& nl,
+			bool& needSplit
+		);
+
 		static unsigned int MIN_SIZE_X;
 		static unsigned int MIN_SIZE_Z;
 
@@ -163,6 +170,7 @@ namespace QTPFS {
 
 		static constexpr unsigned int EXIT_ONLY_BIT_OFFSET = 31;
 		static constexpr unsigned int EXIT_ONLY_MASK = (0x1 << EXIT_ONLY_BIT_OFFSET);
+
 		static constexpr unsigned int DEPTH_BIT_OFFSET = 20;
 		static constexpr unsigned int DEPTH_MASK = (0xf << DEPTH_BIT_OFFSET);
 

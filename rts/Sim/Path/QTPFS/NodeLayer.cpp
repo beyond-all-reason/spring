@@ -101,6 +101,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 
 	MoveTypes::CheckCollisionQuery virtualObject(md);
 	MoveDefs::CollisionQueryStateTrack queryState;
+
 	const bool isSubmersible = md->IsComplexSubmersible();
 	if (!isSubmersible) {
 		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits, threadData.threadId);
@@ -388,6 +389,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 			if (zmax <= childNode->zmin()) { continue; }
 			if (zmin >= childNode->zmax()) { continue; }
 			if (childNode->AllSquaresImpassable()) { continue; }
+			if (childNode->IsExitOnly()) { continue; }
 
 			tmpNodes.emplace_back(childNode);
 		}

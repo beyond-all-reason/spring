@@ -3301,6 +3301,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 	MoveTypes::CheckCollisionQuery virtualObject(unit);
 	MoveDefs::CollisionQueryStateTrack queryState;
+
 	const bool isSubmersible = md->IsComplexSubmersible();
 	if (!isSubmersible)
 		virtualObject.DisableHeightChecks();

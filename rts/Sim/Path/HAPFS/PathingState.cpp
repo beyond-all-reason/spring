@@ -351,7 +351,8 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 		if (cost >= bestCost)
 			continue;
 
-		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr, threadNum)) {
+		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr, threadNum)
+				&& !moveDef.IsInExitOnly(blockPos.x, blockPos.y)) {
 			bestCost = cost;
 			bestPos  = blockPos;
 		}
