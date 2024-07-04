@@ -181,8 +181,13 @@ bool MusicStream::StartPlaying()
 		return false;
 	}
 	
-	const int numDecodedStreams = 1 + static_cast<int>(DecodeStream(buffers[1]));
-
+	int numDecodedStreams = 1;
+	if (DecodeStream(buffers[1])) {
+		++numDecodedStreams;
+	} else {
+		// small file or broken stream
+	}
+	
 	alSourceQueueBuffers(source, numDecodedStreams, buffers.data());
 
 	// CheckError returns true if *no* error occurred
