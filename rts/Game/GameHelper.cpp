@@ -1428,22 +1428,24 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 	const float groundHeight = CGround::GetApproximateHeightUnsafe(sqx, sqz, synced);
 	const UnitDef* unitDef = buildInfo.def;
 
-	if (yardmapStatusEffectsMap.AreAnyFlagsSet(sqx, sqz, YardmapStatusEffectsMap::BLOCK_BUILDING)) {
-		if ( synced || ((allyteam < 0) || losHandler->InLos(pos, allyteam)) ) {
-			return BUILDSQUARE_BLOCKED;
-		}
-	}
-
 	if (!CheckTerrainConstraints(unitDef, moveDef, pos.y, groundHeight, CGround::GetSlope(pos.x, pos.z, synced)))
 		return BUILDSQUARE_BLOCKED;
 
 	if (!buildingMaskMap.TestTileMaskUnsafe(sqx >> 1, sqz >> 1, unitDef->buildingMask))
 		return BUILDSQUARE_BLOCKED;
 
-
 	BuildSquareStatus ret = BUILDSQUARE_OPEN;
 	const int yardxpos = unsigned(pos.x) / SQUARE_SIZE;
 	const int yardypos = unsigned(pos.z) / SQUARE_SIZE;
+	const int2 yardpos = { yardxpos, yardypos };
+	const int ymIdx = GetYardMapIndex(buildInfo.buildFacing, yardpos, xrange, zrange);
+
+	if (yardmapStatusEffectsMap.AreAnyFlagsSet(sqx, sqz, YardmapStatusEffectsMap::BLOCK_BUILDING)) {
+		bool isStackable = (!unitDef->yardmap.empty() && unitDef->yardmap[ymIdx] <= YardmapStates::YARDMAP_STACKABLE);
+		if ( !isStackable && (synced || ((allyteam < 0) || losHandler->InLos(pos, allyteam))) ) {
+			return BUILDSQUARE_BLOCKED;
+		}
+	}
 
 	CSolidObject* so = groundBlockingObjectMap.GroundBlocked(yardxpos, yardypos);
 
@@ -1468,10 +1470,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 			assert(u);
 			if ((allyteam < 0) || (u->losStatus[allyteam] & LOS_INLOS)) {
 				if (so->immobile) {
-
-					const int2 yardpos = { yardxpos, yardypos };
-					const int ymIdx = GetYardMapIndex(buildInfo.buildFacing, yardpos, xrange, zrange);
-
 					bool isStackable = (!unitDef->yardmap.empty() && unitDef->yardmap[ymIdx] <= YardmapStates::YARDMAP_GEOSTACKABLE);
 					ret = isStackable ? BUILDSQUARE_OPEN :
 							(TestBlockSquareForBuildOnly(so, yardpos) ? BUILDSQUARE_OPEN : BUILDSQUARE_BLOCKED);
