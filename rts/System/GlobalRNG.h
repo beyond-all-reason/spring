@@ -8,6 +8,10 @@
 #include "lib/streflop/streflop_cond.h"
 #include "System/float3.h"
 
+#if defined(SYNCCHECK) && defined(DEBUG)
+#include <cassert>
+#include "System/Sync/SyncChecker.h"
+#endif
 
 
 #if 0
@@ -93,7 +97,7 @@ private:
 	val_type seq;
 };
 
-template<typename RNG, bool synced> class CGlobalRNG {
+template<typename RNG, bool synced, bool assuresynced = false> class CGlobalRNG {
 public:
 	typedef typename RNG::val_type rng_val_type;
 	typedef typename RNG::res_type rng_res_type;
@@ -102,8 +106,19 @@ public:
 
 	static_assert(std::numeric_limits<float>::digits == 24, "sign plus mantissa bits should be 24");
 
+	#if defined(SYNCCHECK) && defined(DEBUG)
+	inline void AssureSyncedness() const {
+		if constexpr (assuresynced) {
+			assert(CSyncChecker::InSyncedCode() == synced);
+		}
+	}
+	#else
+	inline void AssureSyncedness() const {}
+	#endif
+
 	void Seed(rng_val_type seed) { SetSeed(seed); }
 	void SetSeed(rng_val_type seed, bool init = false) {
+		AssureSyncedness();
 		// use address of this object as sequence-id for unsynced RNG, modern systems have ASLR
 		if (init) {
 			gen.seed(initSeed = seed, static_cast<rng_val_type>(size_t(this)) * (1 - synced) + RNG::def_seq * synced);
@@ -112,13 +127,13 @@ public:
 		}
 	}
 
-	rng_val_type GetInitSeed() const { return initSeed; }
-	rng_val_type GetLastSeed() const { return lastSeed; }
-	rng_val_type GetGenState() const { return (gen.state()); }
+	rng_val_type GetInitSeed() const { AssureSyncedness(); return initSeed; }
+	rng_val_type GetLastSeed() const { AssureSyncedness(); return lastSeed; }
+	rng_val_type GetGenState() const { AssureSyncedness(); return (gen.state()); }
 
 	// needed for std::{random_}shuffle
-	rng_res_type operator()(              ) { return (this->*gnext )( ); }
-	rng_res_type operator()(rng_res_type N) { return (this->*gbnext)(N); }
+	rng_res_type operator()(              ) { AssureSyncedness(); return (this->*gnext )( ); }
+	rng_res_type operator()(rng_res_type N) { AssureSyncedness(); return (this->*gbnext)(N); }
 
 	static constexpr rng_res_type  min() { return RNG::min_res; }
 	static constexpr rng_res_type  max() { return RNG::max_res; }
@@ -169,8 +184,8 @@ private:
 
 
 // synced and unsynced RNG's no longer need to be different types
-typedef CGlobalRNG<PCG32, true > CGlobalSyncedRNG;
-typedef CGlobalRNG<PCG32, false> CGlobalUnsyncedRNG;
+typedef CGlobalRNG<PCG32, true , true > CGlobalSyncedRNG;
+typedef CGlobalRNG<PCG32, false, false> CGlobalUnsyncedRNG;
 
 #endif
 
