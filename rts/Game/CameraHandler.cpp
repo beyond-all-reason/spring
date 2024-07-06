@@ -67,8 +67,6 @@ CCameraHandler* camHandler = nullptr;
 
 
 
-bool transitioning = false;
-
 // cameras[ACTIVE] is just used to store which of the others is active
 static CCamera cameras[CCamera::CAMTYPE_COUNT];
 
@@ -157,6 +155,7 @@ void CCameraHandler::Init()
 		camTransState.startFOV  = 90.0f;
 		camTransState.timeStart =  0.0f;
 		camTransState.timeEnd   =  0.0f;
+		transitioning = false;
 
 		camTransState.timeFactor   = configHandler->GetFloat("CamTimeFactor");
 		camTransState.timeExponent = configHandler->GetFloat("CamTimeExponent");
@@ -287,7 +286,7 @@ void CCameraHandler::CameraTransition(float nsecs)
 
 	if (transitioning) {
 		camTransState.timeEnd += nsecs * 1000.0f;
-	}else {
+	} else {
 		transitioning = nsecs > 0.0f;
 		// calculate when transition should end based on duration in seconds
 		if (camera->useInterpolate == 0) { // old
@@ -296,7 +295,7 @@ void CCameraHandler::CameraTransition(float nsecs)
 		if (camera->useInterpolate > 0) {
 			camTransState.timeStart = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
 		}
-		camTransState.timeEnd   = camTransState.timeStart + nsecs * 1000.0f;
+		camTransState.timeEnd = camTransState.timeStart + nsecs * 1000.0f;
 	}
 
 	camTransState.startPos = camera->GetPos();
@@ -316,7 +315,6 @@ void CCameraHandler::UpdateTransition()
 	float transTime = globalRendering->lastFrameStart.toMilliSecsf();
 	float lastswaptime = globalRendering->lastSwapBuffersEnd.toMilliSecsf();
 	float drawFPS = std::fmax(globalRendering->FPS, 1.0f); // this is probably much better
-
 
 	if (vsync == 1 && camera->useInterpolate > 0) {
 		transTime = lastswaptime;

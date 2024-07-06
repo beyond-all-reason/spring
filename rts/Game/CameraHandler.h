@@ -124,6 +124,7 @@ private:
 	};
 
 	CamTransitionState camTransState;
+	bool transitioning;
 
 	// last controller is a dummy
 	std::array<CCameraController*, CAMERA_MODE_LAST> camControllers;
