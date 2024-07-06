@@ -67,6 +67,7 @@ CCameraHandler* camHandler = nullptr;
 
 
 
+bool transitioning = false;
 
 // cameras[ACTIVE] is just used to store which of the others is active
 static CCamera cameras[CCamera::CAMTYPE_COUNT];
@@ -243,7 +244,7 @@ void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, b
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyMove) {
 		// NOTE: z-component contains speed scaling factor, xy is movement
-		const float3 camMoveVector = camera->GetMoveVectorFromState(true); 
+		const float3 camMoveVector = camera->GetMoveVectorFromState(true);
 
 		// key scrolling
 		if ((camMoveVector * XYVector).SqLength() > 0.0f) {
@@ -284,14 +285,19 @@ void CCameraHandler::CameraTransition(float nsecs)
 	RECOIL_DETAILED_TRACY_ZONE;
 	nsecs = std::max(nsecs, 0.0f) * camTransState.timeFactor;
 
-	// calculate when transition should end based on duration in seconds
-	if (camera->useInterpolate == 0) { // old
-		camTransState.timeStart = globalRendering->lastFrameStart.toMilliSecsf();
+	if (transitioning) {
+		camTransState.timeEnd += nsecs * 1000.0f;
+	}else {
+		transitioning = nsecs > 0.0f;
+		// calculate when transition should end based on duration in seconds
+		if (camera->useInterpolate == 0) { // old
+			camTransState.timeStart = globalRendering->lastFrameStart.toMilliSecsf();
+		}
+		if (camera->useInterpolate > 0) {
+			camTransState.timeStart = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
+		}
+		camTransState.timeEnd   = camTransState.timeStart + nsecs * 1000.0f;
 	}
-	if (camera->useInterpolate > 0) {
-		camTransState.timeStart = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
-	}
-	camTransState.timeEnd   = camTransState.timeStart + nsecs * 1000.0f;
 
 	camTransState.startPos = camera->GetPos();
 	camTransState.startRot = camera->GetRot();
@@ -322,7 +328,7 @@ void CCameraHandler::UpdateTransition()
 		0.0f;
 
 	float tweenFact = 1.0f - math::pow(timeRatio, camTransState.timeExponent);
-	
+
 
 	if (vsync == 1 && camera->useInterpolate == 1) {
 		tweenFact = 1.0f - timeRatio;
@@ -331,7 +337,7 @@ void CCameraHandler::UpdateTransition()
 		tweenFact = 0.08f * (camTransState.timeEnd - camTransState.timeStart) / drawFPS ;// should be 0.25 at 120ms deltat and 60hz
 	}
 	/*
-	LOG_L(L_INFO, "CamUpdate: %.3f, 1/FPS = %.4f, DF=%d, timeRatio = %.3f, tween = %.3f, swap = %.3f i=%d", globalRendering->lastFrameStart.toMilliSecsf(), drawFPS, globalRendering->drawFrame, timeRatio, tweenFact, lastswaptime, useInterpolate);
+	LOG_L(L_INFO, "CamUpdate: %.3f, 1/FPS = %.4f, DF=%d, timeRatio = %.3f, tween = %.3f, swap = %.3f i=%d", globalRendering->lastFrameStart.toMilliSecsf(), drawFPS, globalRendering->drawFrame, timeRatio, tweenFact, lastswaptime, camera->useInterpolate);
 	LOG_L(L_INFO, "CamEnd: %.3f, CamStart = %.3f, deltat = %.3f CamExp = %.3f",
 		camTransState.timeEnd,
 		camTransState.timeStart,
@@ -345,6 +351,7 @@ void CCameraHandler::UpdateTransition()
 		camera->SetRot(camTransState.tweenRot);
 		camera->SetVFOV(camTransState.tweenFOV);
 		camera->Update();
+		transitioning = false;
 		return;
 	}
 
