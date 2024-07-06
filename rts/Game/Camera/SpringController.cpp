@@ -262,9 +262,7 @@ float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, c
 	float3 wantedPos = curCamPos + cursorVec * zoomAmount;
 
 	// figure out how far we will end up from the ground at new wanted point
-	float wantedDist = DistanceToGround(wantedPos, dir, pos.y);
-
-	curDist = wantedDist;
+	curDist = DistanceToGround(wantedPos, dir, pos.y);
 	pos = wantedPos + dir * curDist;
 
 	return 0.25f;
