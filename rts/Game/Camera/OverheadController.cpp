@@ -22,8 +22,8 @@ CONFIG(int, OverheadScrollSpeed).defaultValue(10);
 CONFIG(float, OverheadTiltSpeed).defaultValue(1.0f);
 CONFIG(bool, OverheadEnabled).defaultValue(true).headlessValue(false);
 CONFIG(float, OverheadFOV).defaultValue(45.0f);
-CONFIG(float, OverheadMinHeight).defaultValue(60.0f).description("Minimum camera height");
-CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("Float multiplier for maximum overhead camera height");
+CONFIG(float, OverheadMinZoomDistance).defaultValue(60.0f).description("Minimum camera zoom distance");
+CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("Float multiplier for maximum overhead camera zoom distance");
 CONFIG(float, CamOverheadFastScale).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult.");
 
 static const float angleStep = math::HALFPI / 14.0f;
@@ -41,7 +41,7 @@ COverheadController::COverheadController()
 	, minHeight(60.0f)
 	, angle(DEFAULT_ANGLE)
 {
-	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMinHeight", "OverheadMaxHeightFactor", "CamOverheadFastScale"});
+	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMinZoomDistance", "OverheadMaxHeightFactor", "CamOverheadFastScale"});
 	ConfigUpdate();
 }
 
@@ -59,7 +59,7 @@ void COverheadController::ConfigUpdate()
 	tiltSpeed = configHandler->GetFloat("OverheadTiltSpeed");
 	enabled = configHandler->GetBool("OverheadEnabled");
 	fov = configHandler->GetFloat("OverheadFOV");
-	minHeight = configHandler->GetFloat("OverheadMinHeight");
+	minHeight = configHandler->GetFloat("OverheadMinZoomDistance");
 	maxHeight = 9.5f * std::max(mapDims.mapx, mapDims.mapy) * configHandler->GetFloat("OverheadMaxHeightFactor");
 	fastScale = configHandler->GetFloat("CamOverheadFastScale");
 }
@@ -161,7 +161,12 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 			if ((wantedPos.y + (dir.y * newHeight)) < 0.0f)
 				newHeight = -wantedPos.y / yDirClamp;
 
-			if (newHeight < maxHeight && newHeight > minHeight) {
+			if(newHeight < minHeight) {
+				wantedPos = cpos + newDir * (height - minHeight);
+				newHeight = minHeight;
+			}
+
+			if(height > minHeight) {
 				height = newHeight;
 				pos = wantedPos + dir * height;
 			}

@@ -29,7 +29,7 @@ namespace {
 CONFIG(bool,  CamSpringEnabled).defaultValue(true).headlessValue(false);
 CONFIG(int,   CamSpringScrollSpeed).defaultValue(10);
 CONFIG(float, CamSpringFOV).defaultValue(45.0f);
-CONFIG(float, CamSpringMinHeight).defaultValue(20.0f).description("Minimum camera height");
+CONFIG(float, CamSpringMinZoomDistance).defaultValue(20.0f).description("Minimum camera zoom distance");
 CONFIG(bool,  CamSpringLockCardinalDirections).defaultValue(true).description("Whether cardinal directions should be `locked` for a short time when rotating.");
 CONFIG(bool,  CamSpringZoomInToMousePos).defaultValue(true);
 CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);
@@ -59,7 +59,7 @@ CSpringController::CSpringController()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	enabled = configHandler->GetBool("CamSpringEnabled");
-	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringMinHeight", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode"});
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringMinZoomDistance", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode"});
 	ConfigUpdate();
 }
 
@@ -75,7 +75,7 @@ void CSpringController::ConfigUpdate()
 	RECOIL_DETAILED_TRACY_ZONE;
 	scrollSpeed = configHandler->GetFloat("CamSpringScrollSpeed") * 0.1f;
 	fov = configHandler->GetFloat("CamSpringFOV");
-	minDist = configHandler->GetFloat("CamSpringMinHeight");
+	minDist = configHandler->GetFloat("CamSpringMinZoomDistance");
 	cursorZoomIn = configHandler->GetBool("CamSpringZoomInToMousePos");
 	cursorZoomOut = configHandler->GetBool("CamSpringZoomOutFromMousePos");
 	fastScaleMove = configHandler->GetFloat("CamSpringFastScaleMouseMove");
@@ -221,7 +221,7 @@ void CSpringController::MouseWheelMove(float move, const float3& newDir)
 
 		if (move < 0.0f) {
 			// ZOOM IN - to mouse cursor or along our own forward dir
-			zoomTransTime = ZoomIn(curCamPos, newDir, scaledMove);
+			zoomTransTime = ZoomIn(curCamPos, newDir, curDistPre, scaledMove);
 		} else {
 			// ZOOM OUT - from mid screen
 			zoomTransTime = ZoomOut(curCamPos, newDir, curDistPre, scaledMove);
@@ -234,7 +234,7 @@ void CSpringController::MouseWheelMove(float move, const float3& newDir)
 }
 
 
-float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, const float& scaledMode)
+float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, const float& curDistPre, const float& scaledMode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const bool moveReset = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RST];
@@ -256,16 +256,16 @@ float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, c
 
 	// zoom in to cursor, then back out (along same dir) based on scaledMove
 	// to find where we want to place camera, but make sure the wanted point
-	// is always in front of curCamPos
+	// is always in front of curCamPos, and limit the zoom amount by the minDist
 	const float3 cursorVec = newDir * curGroundDist;
-	const float3 wantedPos = curCamPos + cursorVec * (1.0f - scaledMode);
+	float zoomAmount = std::min(1.0f - scaledMode, (curDistPre - minDist) / curDistPre);
+	float3 wantedPos = curCamPos + cursorVec * zoomAmount;
 
 	// figure out how far we will end up from the ground at new wanted point
 	float wantedDist = DistanceToGround(wantedPos, dir, pos.y);
-	if (wantedDist > minDist) {
-		curDist = wantedDist;
-		pos = wantedPos + dir * curDist;
-	}
+
+	curDist = wantedDist;
+	pos = wantedPos + dir * curDist;
 
 	return 0.25f;
 }

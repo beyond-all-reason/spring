@@ -39,7 +39,7 @@ private:
 	float GetAzimuth() const;
 	float MoveAzimuth(float move);
 
-	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& scaledMode);
+	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 	inline float ZoomOut(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 
 	void SmoothCamHeight(const float3& prevPos);
