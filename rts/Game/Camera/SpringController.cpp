@@ -258,8 +258,8 @@ float CSpringController::ZoomIn(const float3& curCamPos, const float3& newDir, c
 	// to find where we want to place camera, but make sure the wanted point
 	// is always in front of curCamPos, and limit the zoom amount by the minDist
 	const float3 cursorVec = newDir * curGroundDist;
-	float zoomAmount = std::min(1.0f - scaledMode, (curDistPre - minDist) / curDistPre);
-	float3 wantedPos = curCamPos + cursorVec * zoomAmount;
+	const float zoomAmount = std::min(1.0f - scaledMode, (curDistPre - minDist) / curDistPre);
+	const float3 wantedPos = curCamPos + cursorVec * zoomAmount;
 
 	// figure out how far we will end up from the ground at new wanted point
 	curDist = DistanceToGround(wantedPos, dir, pos.y);
