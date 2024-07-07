@@ -73,15 +73,15 @@ void CModInfo::ResetState()
 		paralyzeOnMaxHealth = true;
 	}
 	{
-		transportGround            = 1;
-		transportHover             = 0;
-		transportShip              = 0;
-		transportAir               = 0;
+		transportGround = true;
+		transportHover  = false;
+		transportShip   = false;
+		transportAir    = false;
 		targetableTransportedUnits = 0;
 	}
 	{
-		fireAtKilled   = 0;
-		fireAtCrashing = 0;
+		fireAtKilled   = false;
+		fireAtCrashing = false;
 	}
 	{
 		flankingBonusModeDefault = 0;
@@ -258,20 +258,20 @@ void CModInfo::Init(const std::string& modFileName)
 		// fire-at-dead-units
 		const LuaTable& fireAtDeadTbl = root.SubTable("fireAtDead");
 
-		fireAtKilled   = fireAtDeadTbl.GetBool("fireAtKilled", bool(fireAtKilled));
-		fireAtCrashing = fireAtDeadTbl.GetBool("fireAtCrashing", bool(fireAtCrashing));
+		fireAtKilled   = fireAtDeadTbl.GetBool("fireAtKilled", fireAtKilled);
+		fireAtCrashing = fireAtDeadTbl.GetBool("fireAtCrashing", fireAtCrashing);
 	}
 
 	{
 		// transportability
 		const LuaTable& transportTbl = root.SubTable("transportability");
 
-		transportAir    = transportTbl.GetBool("transportAir",    bool(transportAir   ));
-		transportShip   = transportTbl.GetBool("transportShip",   bool(transportShip  ));
-		transportHover  = transportTbl.GetBool("transportHover",  bool(transportHover ));
-		transportGround = transportTbl.GetBool("transportGround", bool(transportGround));
+		transportAir    = transportTbl.GetBool("transportAir",    transportAir   );
+		transportShip   = transportTbl.GetBool("transportShip",   transportShip  );
+		transportHover  = transportTbl.GetBool("transportHover",  transportHover );
+		transportGround = transportTbl.GetBool("transportGround", transportGround);
 
-		targetableTransportedUnits = transportTbl.GetBool("targetableTransportedUnits", bool(targetableTransportedUnits));
+		targetableTransportedUnits = transportTbl.GetBool("targetableTransportedUnits", targetableTransportedUnits);
 	}
 
 	{
