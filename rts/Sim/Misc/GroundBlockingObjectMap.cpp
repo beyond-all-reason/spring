@@ -91,10 +91,11 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 				objectCol.SetBlockBuildingAt(x, z);
 				continue;
 			}
-			if (yardmapState & (YARDMAP_YARD|YARDMAP_YARDINV)) {
-				objectCol.SetBlockBuildingAt(x, z);
-				// may still need to be added to ground map.
-			}
+			// Hold off on this because BAR is using these yardmap types for controlling building upgrades.
+			// if (yardmapState & (YARDMAP_YARD|YARDMAP_YARDINV)) {
+			// 	objectCol.SetBlockBuildingAt(x, z);
+			// 	// may still need to be added to ground map.
+			// }
 
 			// unit yardmaps always contain sx=UnitDef::xsize * sz=UnitDef::zsize
 			// cells (the unit->moveDef footprint can have different dimensions)
