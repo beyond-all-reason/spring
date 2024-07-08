@@ -206,6 +206,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitIsStunned);
 	REGISTER_LUA_CFUNC(GetUnitIsBeingBuilt);
 	REGISTER_LUA_CFUNC(GetUnitResources);
+	REGISTER_LUA_CFUNC(GetUnitCosts);
 	REGISTER_LUA_CFUNC(GetUnitMetalExtraction);
 	REGISTER_LUA_CFUNC(GetUnitMaxRange);
 	REGISTER_LUA_CFUNC(GetUnitExperience);
@@ -4129,6 +4130,28 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 	lua_pushnumber(L, unit->resourcesMake.energy);
 	lua_pushnumber(L, unit->resourcesUse.energy);
 	return 4;
+}
+
+/***
+ * @function Spring.GetUnitCosts
+ * @number unitID
+ * @tparam {[number],...} where values are respectively: buildTime, metalCost, energyCost
+ * @treturn nil
+ */
+int LuaSyncedRead::GetUnitCosts(lua_State* L)
+{
+	const CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	if (!lua_istable(L, 1))
+		luaL_error(L, "Incorrect arguments to GetUnitCosts");
+
+	lua_pushnumber(L, unit->buildTime);
+	lua_pushnumber(L, unit->cost.metal);
+	lua_pushnumber(L, unit->cost.energy);
+	return 3;
 }
 
 
