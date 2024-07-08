@@ -4145,9 +4145,6 @@ int LuaSyncedRead::GetUnitCosts(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	if (!lua_istable(L, 1))
-		luaL_error(L, "Incorrect arguments to GetUnitCosts");
-
 	lua_pushnumber(L, unit->buildTime);
 	lua_pushnumber(L, unit->cost.metal);
 	lua_pushnumber(L, unit->cost.energy);
