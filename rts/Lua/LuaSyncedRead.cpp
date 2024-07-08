@@ -4135,13 +4135,13 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 /***
  * @function Spring.GetUnitCosts
  * @number unitID
- * @tparam {[number],...} where values are respectively: buildTime, metalCost, energyCost
- * @treturn nil
+ * @treturn nil|number buildTime
+ * @treturn number metalCost
+ * @treturn number energyCost
  */
 int LuaSyncedRead::GetUnitCosts(lua_State* L)
 {
-	const CUnit* unit = ParseUnit(L, __func__, 1);
-
+	const CUnit* const unit = ParseInLosUnit(L, __func__, 1);
 	if (unit == nullptr)
 		return 0;
 
