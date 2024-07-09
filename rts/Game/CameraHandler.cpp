@@ -406,11 +406,11 @@ void simple_spring_damper_exact_vector_part(
 	float eydt,
 	float dt)
 {
-  float xj0 = cur - goal;
-  float xj1 = v + xj0*y;
+	float xj0 = cur - goal;
+	float xj1 = v + xj0*y;
 
-  cur = eydt*(xj0 + xj1*dt) + goal;
-  v = eydt*(v - xj1*y*dt);
+	cur = eydt*(xj0 + xj1*dt) + goal;
+	v = eydt*(v - xj1*y*dt);
 }
 
 float spring_damper_damping(float halflife)
