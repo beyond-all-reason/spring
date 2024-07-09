@@ -71,6 +71,7 @@ make_global_var(sources_engine_System_common
 		"${CMAKE_CURRENT_SOURCE_DIR}/float4.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/SpringMath.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/SpringMem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/SpringDampers.cpp"
 		"${memoryProfileSource}"
 	)
 if    (NO_CREG)
