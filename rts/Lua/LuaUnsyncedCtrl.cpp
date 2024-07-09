@@ -1226,9 +1226,9 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 		luaL_error(L, "[%s([ stateTable[, camTransTime[, transTimeFactor[, transTimeExpon] ] ] ])] incorrect arguments", __func__);
 
 	camHandler->SetTransitionParams(luaL_optfloat(L, 3, camHandler->GetTransitionTimeFactor()), luaL_optfloat(L, 4, camHandler->GetTransitionTimeExponent()));
-	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
 
 	const bool retval = camHandler->SetState(hasState ? ParseCamStateMap(L, 1) : camHandler->GetState());
+	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
 	const bool synced = CLuaHandle::GetHandleSynced(L);
 
 	// always push false in synced
@@ -2657,7 +2657,7 @@ int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
  *
  * @function Spring.ReplaceMouseCursor
  * @string oldFileName
- * @string newFileName 
+ * @string newFileName
  * @bool[opt=false] hotSpotTopLeft
  * @treturn ?nil|bool assigned
  */
@@ -3552,7 +3552,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
  * @number x
  * @number y
  * @number z
- * @treturn nil 
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
 {

@@ -29,6 +29,36 @@ public:
 		CAMERA_MODE_DUMMY       = 6,
 		CAMERA_MODE_LAST        = 7,
 	};
+	enum {
+		CAMERA_TRANSITION_MODE_EXP_DECAY = 0,
+		CAMERA_TRANSITION_MODE_SPRING_DAMPENED = 1,
+		CAMERA_TRANSITION_MODE_TIMED_SPRING_DAMPENED = 2,
+	};
+
+	struct CamTransitionState {
+		float3 startPos;
+		float3 tweenPos;
+		float3 startRot;
+		float3 tweenRot;
+
+		float startFOV = 0.0f;
+		float tweenFOV = 0.0f;
+
+		float timeStart = 0.0f;
+		float timeEnd = 0.0f;
+
+		// spring dampened transitions
+		float3 posVelocity;
+		float3 rotVelocity;
+		float fovVelocity;
+		float lastTime;
+
+		// configurable parameters
+		float timeFactor = 0.0f;
+		float timeExponent = 0.0f;
+		float halflife = 0.0f;
+	};
+
 
 public:
 	CCameraHandler();
@@ -58,6 +88,8 @@ public:
 	void SetCameraMode(const std::string& mode);
 	void PushMode();
 	void PopMode();
+
+	void ConfigNotify(const std::string& key, const std::string& value);
 
 	void SetTransitionParams(float factor, float expon) {
 		camTransState.timeFactor   = factor;
@@ -106,22 +138,7 @@ private:
 
 private:
 	unsigned int currCamCtrlNum = CAMERA_MODE_DUMMY;
-
-	struct CamTransitionState {
-		float3 startPos;
-		float3 tweenPos;
-		float3 startRot;
-		float3 tweenRot;
-
-		float startFOV = 0.0f;
-		float tweenFOV = 0.0f;
-
-		float timeStart = 0.0f;
-		float timeEnd = 0.0f;
-		// configurable parameters
-		float timeFactor = 0.0f;
-		float timeExponent = 0.0f;
-	};
+	unsigned int currCamTransitionNum = CAMERA_TRANSITION_MODE_EXP_DECAY;
 
 	CamTransitionState camTransState;
 

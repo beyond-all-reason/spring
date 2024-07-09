@@ -63,6 +63,19 @@ CONFIG(float, CamTimeExponent)
 	.minimumValue(0.0f)
 	.description("Camera transitions happen at lerp(old, new, timeNorm ^ CamTimeExponent).");
 
+CONFIG(int, CamTransitionMode)
+	.defaultValue(CCameraHandler::CAMERA_TRANSITION_MODE_EXP_DECAY)
+	.description(strformat("Defines the function used for camera transitions. Options are:\n%i = Exponential Decay\n%i = Spring Dampened",
+		(int)CCameraHandler::CAMERA_TRANSITION_MODE_EXP_DECAY,
+		(int)CCameraHandler::CAMERA_TRANSITION_MODE_SPRING_DAMPENED))
+	.minimumValue(0)
+	.maximumValue((int)CCameraHandler::CAMERA_TRANSITION_MODE_TIMED_SPRING_DAMPENED);
+
+CONFIG(int, CamSpringHalflife)
+	.defaultValue(100)
+	.description("For Spring Dampened camera. It is the time at which the camera should be approximately halfway towards the goal.")
+	.minimumValue(0);
+
 CCameraHandler* camHandler = nullptr;
 
 
@@ -152,6 +165,8 @@ void CCameraHandler::Init()
 		SortRegisteredActions();
 	}
 
+	configHandler->NotifyOnChange(this, {"CamModeName", "CamTimeFactor", "CamTimeExponent", "CamTransitionMode", "CamSpringHalflife"});
+
 	{
 		camTransState.startFOV  = 90.0f;
 		camTransState.timeStart =  0.0f;
@@ -159,9 +174,11 @@ void CCameraHandler::Init()
 
 		camTransState.timeFactor   = configHandler->GetFloat("CamTimeFactor");
 		camTransState.timeExponent = configHandler->GetFloat("CamTimeExponent");
+		camTransState.halflife = configHandler->GetFloat("CamSpringHalflife");
 	}
 
 	SetCameraMode(configHandler->GetString("CamModeName"));
+	currCamTransitionNum = configHandler->GetInt("CamTransitionMode");
 
 	for (CCameraController* cc: camControllers) {
 		cc->Update();
@@ -210,6 +227,21 @@ void CCameraHandler::KillControllers()
 	assert(camControllers[0] == nullptr);
 }
 
+void CCameraHandler::ConfigNotify(const std::string& key, const std::string& value)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (key == "CamModeName") {
+		SetCameraMode(configHandler->GetString("CamModeName"));
+	}else {
+		currCamTransitionNum = configHandler->GetInt("CamTransitionMode");
+
+		camTransState.timeFactor   = configHandler->GetFloat("CamTimeFactor");
+		camTransState.timeExponent = configHandler->GetFloat("CamTimeExponent");
+		camTransState.halflife = configHandler->GetFloat("CamSpringHalflife");
+
+		camTransState.lastTime = spring_gettime().toMilliSecsf();
+	}
+}
 
 void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode, bool fsEdgeMove, bool wnEdgeMove)
 {
@@ -223,7 +255,9 @@ void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode, bool fsEdge
 	// We have to update transition both before and after updating the controller:
 	// before: if the controller makes a new begincam, it needs to take into account previous transitions
 	// after: apply changes made by the controller with 0 time transition.
-	UpdateTransition();
+	if (currCamTransitionNum == CAMERA_TRANSITION_MODE_EXP_DECAY) {
+		UpdateTransition();
+	}
 
 	if (fpsCon.oldDCpos != ZeroVector) {
 		camCon.SetPos(fpsCon.oldDCpos);
@@ -243,7 +277,7 @@ void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, b
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyMove) {
 		// NOTE: z-component contains speed scaling factor, xy is movement
-		const float3 camMoveVector = camera->GetMoveVectorFromState(true); 
+		const float3 camMoveVector = camera->GetMoveVectorFromState(true);
 
 		// key scrolling
 		if ((camMoveVector * XYVector).SqLength() > 0.0f) {
@@ -278,10 +312,8 @@ void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, b
 	}
 }
 
-
-void CCameraHandler::CameraTransition(float nsecs)
+void CameraTransitionExpDecay(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState, float nsecs)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
 	nsecs = std::max(nsecs, 0.0f) * camTransState.timeFactor;
 
 	// calculate when transition should end based on duration in seconds
@@ -298,13 +330,144 @@ void CCameraHandler::CameraTransition(float nsecs)
 	camTransState.startFOV = camera->GetVFOV();
 }
 
-void CCameraHandler::UpdateTransition()
+void CameraTransitionTimedSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState, float nsecs)
+{
+	if (nsecs <= 0.0f) {
+		camera->SetPos(currCam->GetPos());
+		camera->SetRot(currCam->GetRot());
+		camera->SetVFOV(currCam->GetFOV());
+	} else {
+		camTransState.timeEnd = nsecs * 1000.0f;
+		camTransState.lastTime = spring_gettime().toMilliSecsf();
+
+		camTransState.startPos = camera->GetPos();
+		camTransState.startRot = camera->GetRot();
+		camTransState.startFOV = camera->GetVFOV();
+	}
+}
+
+void CameraTransitionSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState, float nsecs)
+{
+	if (nsecs <= 0.0f) {
+		camera->SetPos(currCam->GetPos());
+		camera->SetRot(currCam->GetRot());
+		camera->SetVFOV(currCam->GetFOV());
+	}
+}
+
+
+static constexpr decltype(&CameraTransitionExpDecay) cameraTransitionFunction[] = {
+	CameraTransitionExpDecay,
+	CameraTransitionSpringDampened,
+	CameraTransitionTimedSpringDampened,
+};
+
+void CCameraHandler::CameraTransition(float nsecs)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	camTransState.tweenPos = camControllers[currCamCtrlNum]->GetPos();
-	camTransState.tweenRot = camControllers[currCamCtrlNum]->GetRot();
-	camTransState.tweenFOV = camControllers[currCamCtrlNum]->GetFOV();
+	cameraTransitionFunction[currCamTransitionNum](camControllers[currCamCtrlNum], camTransState, nsecs);
+}
 
+float halflife_to_damping(float halflife, float eps = 1e-5f)
+{
+	return (4.0f * 0.69314718056f) / (halflife + eps);
+}
+
+float fast_negexp(float x)
+{
+	return 1.0f / (1.0f + x + 0.48f*x*x + 0.235f*x*x*x);
+}
+
+/*
+	Spring Damper Functions are MIT License Copyright (c) 2021 Daniel Holden
+	https://github.com/orangeduck/Spring-It-On
+	https://theorangeduck.com/page/spring-roll-call
+*/
+void simple_spring_damper_exact(
+	float& x,
+	float& v,
+	float x_goal,
+	float halflife,
+	float dt)
+{
+	float y = halflife_to_damping(halflife) / 2.0f;
+	float j0 = x - x_goal;
+	float j1 = v + j0*y;
+	float eydt = fast_negexp(y*dt);
+
+	x = eydt*(j0 + j1*dt) + x_goal;
+	v = eydt*(v - j1*y*dt);
+}
+
+void simple_spring_damper_exact_vector_part(
+	float& cur,
+	float& v,
+	float goal,
+	float y,
+	float eydt,
+	float dt)
+{
+  float xj0 = cur - goal;
+  float xj1 = v + xj0*y;
+
+  cur = eydt*(xj0 + xj1*dt) + goal;
+  v = eydt*(v - xj1*y*dt);
+}
+
+void simple_spring_damper_exact_vector(
+	float3& cur,
+	float3& v,
+	float3 goal,
+	float halflife,
+	float dt)
+{
+	float y = halflife_to_damping(halflife) / 2.0f;
+	float eydt = fast_negexp(y*dt);
+
+	simple_spring_damper_exact_vector_part(cur.x, v.x, goal.x, y, eydt, dt);
+	simple_spring_damper_exact_vector_part(cur.y, v.y, goal.y, y, eydt, dt);
+	simple_spring_damper_exact_vector_part(cur.z, v.z, goal.z, y, eydt, dt);
+}
+
+void timed_spring_damper_exact_vector(
+	float3& x,
+	float3& v,
+	float3& xi,
+	float3 goal,
+	float t_goal,
+	float halflife,
+	float dt,
+	float apprehension = 2.0f)
+{
+	float min_time = t_goal > dt ? t_goal : dt;
+	float t_goal_future = dt + apprehension * halflife;
+
+	float xv_goal = (goal.x - xi.x) / min_time;
+	float x_goal_future = t_goal_future < t_goal ?
+			xi.x + xv_goal * t_goal_future : goal.x;
+	simple_spring_damper_exact(x.x, v.x, x_goal_future, halflife, dt);
+	xi.x += xv_goal * dt;
+
+	float yv_goal = (goal.y - xi.y) / min_time;
+	float y_goal_future = t_goal_future < t_goal ?
+			xi.y + yv_goal * t_goal_future : goal.y;
+	simple_spring_damper_exact(x.y, v.y, y_goal_future, halflife, dt);
+	xi.y += yv_goal * dt;
+
+	float zv_goal = (goal.z - xi.z) / min_time;
+	float z_goal_future = t_goal_future < t_goal ?
+			xi.z + zv_goal * t_goal_future : goal.z;
+	simple_spring_damper_exact(x.z, v.z, z_goal_future, halflife, dt);
+	xi.z += zv_goal * dt;
+}
+
+void UpdateTransitionExpDecay(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	// CameraTransition(1.25);
+	camTransState.tweenPos = currCam->GetPos();
+	camTransState.tweenRot = currCam->GetRot();
+	camTransState.tweenFOV = currCam->GetFOV();
 
 	int vsync = configHandler->GetInt("VSync");
 	float transTime = globalRendering->lastFrameStart.toMilliSecsf();
@@ -322,7 +485,7 @@ void CCameraHandler::UpdateTransition()
 		0.0f;
 
 	float tweenFact = 1.0f - math::pow(timeRatio, camTransState.timeExponent);
-	
+
 
 	if (vsync == 1 && camera->useInterpolate == 1) {
 		tweenFact = 1.0f - timeRatio;
@@ -357,6 +520,76 @@ void CCameraHandler::UpdateTransition()
 	camera->Update();
 }
 
+void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
+{
+	float3 targetPos = currCam->GetPos();
+	float3 targetRot = currCam->GetRot();
+	float targetFov = currCam->GetFOV();
+
+	float3 currentPos = camera->GetPos();
+	float3 currentRot = camera->GetRot();
+	float currentFov = camera->GetVFOV();
+	float3 goalRot{};
+
+	float currTime = spring_gettime().toMilliSecsf();
+	float dt = currTime - camTransState.lastTime;
+	camTransState.lastTime = currTime;
+	camTransState.timeEnd -= dt;
+
+	if(currentPos.equals(targetPos)	&& currentRot.equals(targetRot)	&& currentFov == targetFov) {
+		return;
+	}
+
+	timed_spring_damper_exact_vector(currentPos, camTransState.posVelocity, camTransState.startPos,
+		targetPos, camTransState.timeEnd, camTransState.halflife, dt, 2.0f);
+	simple_spring_damper_exact_vector(goalRot, camTransState.rotVelocity, GetRadAngleToward(currentRot, targetRot), camTransState.halflife, dt);
+	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, camTransState.halflife, dt);
+	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.0f", 0.0f, camTransState.timeEnd, dt);
+	camera->SetPos(currentPos);
+	camera->SetRot(ClampRad(goalRot + currentRot));
+	camera->SetVFOV(currentFov);
+	camera->Update();
+}
+
+void UpdateTransitionSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState){
+	float3 targetPos = currCam->GetPos();
+	float3 targetRot = currCam->GetRot();
+	float targetFov = currCam->GetFOV();
+
+	float3 currentPos = camera->GetPos();
+	float3 currentRot = camera->GetRot();
+	float currentFov = camera->GetVFOV();
+	float3 goalRot{};
+
+	float currTime = spring_gettime().toMilliSecsf();
+	float dt = currTime - camTransState.lastTime;
+	camTransState.lastTime = currTime;
+
+	if(currentPos.equals(targetPos)	&& currentRot.equals(targetRot)	&& currentFov == targetFov) {
+		return;
+	}
+
+	simple_spring_damper_exact_vector(currentPos, camTransState.posVelocity, targetPos, camTransState.halflife, dt);
+	simple_spring_damper_exact_vector(goalRot, camTransState.rotVelocity, GetRadAngleToward(currentRot, targetRot), camTransState.halflife, dt);
+	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, camTransState.halflife, dt);
+	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.0f", goalRot.x, goalRot.y, goalRot.z);
+	camera->SetPos(currentPos);
+	camera->SetRot(ClampRad(goalRot + currentRot));
+	camera->SetVFOV(currentFov);
+	camera->Update();
+}
+
+static constexpr decltype(&UpdateTransitionExpDecay) cameraUpdateTransitionFunction[] = {
+	UpdateTransitionExpDecay,
+	UpdateTransitionSpringDampened,
+	UpdateTransitionTimedSpringDampened,
+};
+
+void CCameraHandler::UpdateTransition()
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	cameraUpdateTransitionFunction[currCamTransitionNum](camControllers[currCamCtrlNum], camTransState);
+}
 
 void CCameraHandler::SetCameraMode(unsigned int newMode)
 {
