@@ -232,10 +232,10 @@ void CCameraHandler::ConfigNotify(const std::string& key, const std::string& val
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (key == "CamModeName") {
 		SetCameraMode(configHandler->GetString("CamModeName"));
-	}else {
+	} else {
 		currCamTransitionNum = configHandler->GetInt("CamTransitionMode");
 
-		camTransState.timeFactor   = configHandler->GetFloat("CamTimeFactor");
+		camTransState.timeFactor = configHandler->GetFloat("CamTimeFactor");
 		camTransState.timeExponent = configHandler->GetFloat("CamTimeExponent");
 		camTransState.halflife = configHandler->GetFloat("CamSpringHalflife");
 
@@ -387,13 +387,12 @@ void simple_spring_damper_exact(
 	float& x,
 	float& v,
 	float x_goal,
-	float halflife,
+	float y,
+	float eydt,
 	float dt)
 {
-	float y = halflife_to_damping(halflife) / 2.0f;
 	float j0 = x - x_goal;
 	float j1 = v + j0*y;
-	float eydt = fast_negexp(y*dt);
 
 	x = eydt*(j0 + j1*dt) + x_goal;
 	v = eydt*(v - j1*y*dt);
@@ -414,16 +413,24 @@ void simple_spring_damper_exact_vector_part(
   v = eydt*(v - xj1*y*dt);
 }
 
+float spring_damper_damping(float halflife)
+{
+	return halflife_to_damping(halflife) / 2.0f;
+}
+
+float spring_damper_eydt(float y, float dt)
+{
+	return fast_negexp(y*dt);
+}
+
 void simple_spring_damper_exact_vector(
 	float3& cur,
 	float3& v,
 	float3 goal,
-	float halflife,
+	float y,
+	float eydt,
 	float dt)
 {
-	float y = halflife_to_damping(halflife) / 2.0f;
-	float eydt = fast_negexp(y*dt);
-
 	simple_spring_damper_exact_vector_part(cur.x, v.x, goal.x, y, eydt, dt);
 	simple_spring_damper_exact_vector_part(cur.y, v.y, goal.y, y, eydt, dt);
 	simple_spring_damper_exact_vector_part(cur.z, v.z, goal.z, y, eydt, dt);
@@ -436,6 +443,8 @@ void timed_spring_damper_exact_vector(
 	float3 goal,
 	float t_goal,
 	float halflife,
+	float y,
+	float eydt,
 	float dt,
 	float apprehension = 2.0f)
 {
@@ -445,19 +454,19 @@ void timed_spring_damper_exact_vector(
 	float xv_goal = (goal.x - xi.x) / min_time;
 	float x_goal_future = t_goal_future < t_goal ?
 			xi.x + xv_goal * t_goal_future : goal.x;
-	simple_spring_damper_exact(x.x, v.x, x_goal_future, halflife, dt);
+	simple_spring_damper_exact(x.x, v.x, x_goal_future, y, eydt, dt);
 	xi.x += xv_goal * dt;
 
 	float yv_goal = (goal.y - xi.y) / min_time;
 	float y_goal_future = t_goal_future < t_goal ?
 			xi.y + yv_goal * t_goal_future : goal.y;
-	simple_spring_damper_exact(x.y, v.y, y_goal_future, halflife, dt);
+	simple_spring_damper_exact(x.y, v.y, y_goal_future, y, eydt, dt);
 	xi.y += yv_goal * dt;
 
 	float zv_goal = (goal.z - xi.z) / min_time;
 	float z_goal_future = t_goal_future < t_goal ?
 			xi.z + zv_goal * t_goal_future : goal.z;
-	simple_spring_damper_exact(x.z, v.z, z_goal_future, halflife, dt);
+	simple_spring_damper_exact(x.z, v.z, z_goal_future, y, eydt, dt);
 	xi.z += zv_goal * dt;
 }
 
@@ -540,10 +549,13 @@ void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 		return;
 	}
 
+	float damping = spring_damper_damping(camTransState.halflife);
+	float eydt = spring_damper_eydt(damping, dt);
+
 	timed_spring_damper_exact_vector(currentPos, camTransState.posVelocity, camTransState.startPos,
-		targetPos, camTransState.timeEnd, camTransState.halflife, dt, 2.0f);
-	simple_spring_damper_exact_vector(goalRot, camTransState.rotVelocity, GetRadAngleToward(currentRot, targetRot), camTransState.halflife, dt);
-	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, camTransState.halflife, dt);
+		targetPos, camTransState.timeEnd, camTransState.halflife, damping, eydt, dt, 2.0f);
+	simple_spring_damper_exact_vector(goalRot, camTransState.rotVelocity, GetRadAngleToward(currentRot, targetRot), damping, eydt, dt);
+	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, damping, eydt, dt);
 	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.0f", 0.0f, camTransState.timeEnd, dt);
 	camera->SetPos(currentPos);
 	camera->SetRot(ClampRad(goalRot + currentRot));
@@ -569,9 +581,12 @@ void UpdateTransitionSpringDampened(const CCameraController* currCam, CCameraHan
 		return;
 	}
 
-	simple_spring_damper_exact_vector(currentPos, camTransState.posVelocity, targetPos, camTransState.halflife, dt);
-	simple_spring_damper_exact_vector(goalRot, camTransState.rotVelocity, GetRadAngleToward(currentRot, targetRot), camTransState.halflife, dt);
-	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, camTransState.halflife, dt);
+	float damping = spring_damper_damping(camTransState.halflife);
+	float eydt = spring_damper_eydt(damping, dt);
+
+	simple_spring_damper_exact_vector(currentPos, camTransState.posVelocity, targetPos, damping, eydt, dt);
+	simple_spring_damper_exact_vector(goalRot, camTransState.rotVelocity, GetRadAngleToward(currentRot, targetRot), damping, eydt, dt);
+	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, damping, eydt, dt);
 	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.0f", goalRot.x, goalRot.y, goalRot.z);
 	camera->SetPos(currentPos);
 	camera->SetRot(ClampRad(goalRot + currentRot));
