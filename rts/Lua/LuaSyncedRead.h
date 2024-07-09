@@ -110,6 +110,7 @@ class LuaSyncedRead {
 		static int GetUnitIsStunned(lua_State* L);
 		static int GetUnitIsBeingBuilt(lua_State* L);
 		static int GetUnitCosts(lua_State* L);
+		static int GetUnitCostTable(lua_State* L);
 		static int GetUnitResources(lua_State* L);
 		static int GetUnitMetalExtraction(lua_State* L);
 		static int GetUnitExperience(lua_State* L);
