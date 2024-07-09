@@ -4136,8 +4136,9 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 /***
  * @function Spring.GetUnitCosts
  * @number unitID
- * @treturn nil|{ metal = number, energy = number }, number buildTime
- * @treturn number buildTime
+ * @treturn nil|number buildTime
+ * @treturn number metalCost
+ * @treturn number energyCost
  */
 int LuaSyncedRead::GetUnitCosts(lua_State* L)
 {
@@ -4153,9 +4154,8 @@ int LuaSyncedRead::GetUnitCosts(lua_State* L)
 /***
  * @function Spring.GetUnitCostTable
  * @number unitID
- * @treturn nil|number buildTime
- * @treturn number metalCost
- * @treturn number energyCost
+ * @treturn nil|{ metal = number, energy = number }, number buildTime
+ * @treturn number buildTime
  */
 int LuaSyncedRead::GetUnitCostTable(lua_State* L)
 {
