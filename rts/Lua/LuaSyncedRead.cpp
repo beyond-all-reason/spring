@@ -4151,7 +4151,7 @@ int LuaSyncedRead::GetUnitCosts(lua_State* L)
 	return 3;
 }
 /***
- * @function Spring.GetUnitCosts
+ * @function Spring.GetUnitCostTable
  * @number unitID
  * @treturn nil|number buildTime
  * @treturn number metalCost
