@@ -68,9 +68,10 @@ CONFIG(float, CamTimeExponent)
 
 CONFIG(int, CamTransitionMode)
 	.defaultValue(CCameraHandler::CAMERA_TRANSITION_MODE_EXP_DECAY)
-	.description(strformat("Defines the function used for camera transitions. Options are:\n%i = Exponential Decay\n%i = Spring Dampened",
+	.description(strformat("Defines the function used for camera transitions. Options are:\n%i = Exponential Decay\n%i = Spring Dampened\n%i = Spring Dampened with timed transitions",
 		(int)CCameraHandler::CAMERA_TRANSITION_MODE_EXP_DECAY,
-		(int)CCameraHandler::CAMERA_TRANSITION_MODE_SPRING_DAMPENED))
+		(int)CCameraHandler::CAMERA_TRANSITION_MODE_SPRING_DAMPENED,
+		(int)CCameraHandler::CAMERA_TRANSITION_MODE_TIMED_SPRING_DAMPENED))
 	.minimumValue(0)
 	.maximumValue((int)CCameraHandler::CAMERA_TRANSITION_MODE_TIMED_SPRING_DAMPENED);
 
@@ -319,13 +320,7 @@ void CameraTransitionExpDecay(const CCameraController* currCam, CCameraHandler::
 {
 	nsecs = std::max(nsecs, 0.0f) * camTransState.timeFactor;
 
-	// calculate when transition should end based on duration in seconds
-	if (camera->useInterpolate == 0) { // old
-		camTransState.timeStart = globalRendering->lastFrameStart.toMilliSecsf();
-	}
-	if (camera->useInterpolate > 0) {
-		camTransState.timeStart = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
-	}
+	camTransState.timeStart = spring_gettime().toMilliSecsf();
 	camTransState.timeEnd   = camTransState.timeStart + nsecs * 1000.0f;
 
 	camTransState.startPos = camera->GetPos();
@@ -370,35 +365,15 @@ void CCameraHandler::CameraTransition(float nsecs)
 void UpdateTransitionExpDecay(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// CameraTransition(1.25);
 	camTransState.tweenPos = currCam->GetPos();
 	camTransState.tweenRot = currCam->GetRot();
 	camTransState.tweenFOV = currCam->GetFOV();
 
-	int vsync = configHandler->GetInt("VSync");
-	float transTime = globalRendering->lastFrameStart.toMilliSecsf();
-	float lastswaptime = globalRendering->lastSwapBuffersEnd.toMilliSecsf();
-	float drawFPS = std::fmax(globalRendering->FPS, 1.0f); // this is probably much better
-
-
-	if (vsync == 1 && camera->useInterpolate > 0) {
-		transTime = lastswaptime;
-		transTime = globalRendering->lastSwapBuffersEnd.toMilliSecsf() + 1000.0f / drawFPS;
-	}
-
-	const float timeRatio = (camTransState.timeEnd - camTransState.timeStart != 0.0f) ?
-		std::fmax(0.0f, (camTransState.timeEnd - transTime) / (camTransState.timeEnd - camTransState.timeStart)) :
-		0.0f;
+	float currTime = spring_gettime().toMilliSecsf();
+	float timeRatio = (camTransState.timeEnd - currTime) / (camTransState.timeEnd - camTransState.timeStart);
 
 	float tweenFact = 1.0f - math::pow(timeRatio, camTransState.timeExponent);
 
-
-	if (vsync == 1 && camera->useInterpolate == 1) {
-		tweenFact = 1.0f - timeRatio;
-	}
-	if (vsync == 0 && camera->useInterpolate == 1){
-		tweenFact = 0.08f * (camTransState.timeEnd - camTransState.timeStart) / drawFPS ;// should be 0.25 at 120ms deltat and 60hz
-	}
 	/*
 	LOG_L(L_INFO, "CamUpdate: %.3f, 1/FPS = %.4f, DF=%d, timeRatio = %.3f, tween = %.3f, swap = %.3f i=%d", globalRendering->lastFrameStart.toMilliSecsf(), drawFPS, globalRendering->drawFrame, timeRatio, tweenFact, lastswaptime, useInterpolate);
 	LOG_L(L_INFO, "CamEnd: %.3f, CamStart = %.3f, deltat = %.3f CamExp = %.3f",
@@ -409,7 +384,7 @@ void UpdateTransitionExpDecay(const CCameraController* currCam, CCameraHandler::
 		);
 	LOG_L(L_INFO, "CSX = %.2f, CSZ = %.2f, CTX = %.2f CTZ = %.2f", camTransState.startPos.x, camTransState.startPos.z, camTransState.tweenPos.x, camTransState.tweenPos.z );
 	*/
-	if (transTime >= camTransState.timeEnd) {
+	if (currTime >= camTransState.timeEnd) {
 		camera->SetPos(camTransState.tweenPos);
 		camera->SetRot(camTransState.tweenRot);
 		camera->SetVFOV(camTransState.tweenFOV);
