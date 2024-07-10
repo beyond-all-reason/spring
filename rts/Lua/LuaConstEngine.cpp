@@ -35,6 +35,10 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 	#else
 	LuaPushNamedNumber(L, "wordSize", (!CLuaHandle::GetHandleSynced(L))? Platform::NativeWordSize() * 8: 0);
 	#endif
+
+	// temporary, see #1028
+	LuaPushNamedNumber(L, "cruiseAltitudeMultiplier", 1.0f);
+
 	return true;
 }
 
