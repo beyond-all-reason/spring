@@ -82,7 +82,7 @@ void timed_spring_damper_exact_vector(
 	float dt,
 	float apprehension)
 {
-	float min_time = t_goal > dt ? t_goal : dt;
+	float min_time = std::max(t_goal, dt);
 	float t_goal_future = dt + apprehension * halflife;
 
 	float xv_goal = (goal.x - xi.x) / min_time;
