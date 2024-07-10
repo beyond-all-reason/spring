@@ -29,7 +29,6 @@
 #include "System/SpringDampers.h"
 
 #include "System/Misc/TracyDefs.h"
-#include "streflop/SMath.h"
 
 
 static std::string strformat(const char* fmt, ...)
@@ -79,7 +78,7 @@ CONFIG(int, CamTransitionMode)
 
 CONFIG(int, CamSpringHalflife)
 	.defaultValue(100)
-	.description("For Spring Dampened camera. It is the time at which the camera should be approximately halfway towards the goal.")
+	.description("For Spring Dampened camera. It is the time in milliseconds at which the camera should be approximately halfway towards the goal.")
 	.minimumValue(0);
 
 CCameraHandler* camHandler = nullptr;
@@ -501,7 +500,7 @@ void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 	float eydt = spring_damper_eydt(damping, dt);
 
 	timed_spring_damper_exact_vector(currentPos, camTransState.posVelocity, camTransState.startPos,
-		targetPos, camTransState.timeEnd, camTransState.halflife, damping, eydt, dt, 2.0f);
+		targetPos, camTransState.timeEnd, camTransState.halflife, damping, eydt, dt);
 
 	if (abs(targetRot.y - currentRot.y) > 4.5f) {
 		if (targetRot.y > 0) {
@@ -511,7 +510,7 @@ void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 		}
 	}
 	timed_spring_damper_exact_vector(currentRot, camTransState.rotVelocity, camTransState.startRot,
-		targetRot, camTransState.timeStart, camTransState.halflife, damping, eydt, dt, 2.0f);
+		targetRot, camTransState.timeStart, camTransState.halflife, damping, eydt, dt);
 
 	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, damping, eydt, dt);
 	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.3f", 0.0f, camTransState.timeEnd, dt);

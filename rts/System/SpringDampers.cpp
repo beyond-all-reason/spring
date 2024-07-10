@@ -6,10 +6,12 @@
 */
 
 #include "System/SpringDampers.h"
+#include <numbers>
 
 float halflife_to_damping(float halflife, float eps)
 {
-	return (4.0f * 0.69314718056f) / (halflife + eps);
+	static constexpr float ln2x4 = 4.0f * std::numbers::ln2_v<float>;
+	return ln2x4 / (halflife + eps);
 }
 
 float fast_negexp(float x)
