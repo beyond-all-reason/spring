@@ -440,7 +440,7 @@ void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 
 	if (abs(targetRot.y - currentRot.y) > 4.5f) {
 		if (targetRot.y > 0) {
-			targetRot.y += math::TWOPI;
+			targetRot.y -= math::TWOPI;
 		}else {
 			targetRot.y += math::TWOPI;
 		}
