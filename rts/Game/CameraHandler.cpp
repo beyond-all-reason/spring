@@ -29,6 +29,7 @@
 #include "System/SpringDampers.h"
 
 #include "System/Misc/TracyDefs.h"
+#include "streflop/SMath.h"
 
 
 static std::string strformat(const char* fmt, ...)
@@ -68,12 +69,13 @@ CONFIG(float, CamTimeExponent)
 
 CONFIG(int, CamTransitionMode)
 	.defaultValue(CCameraHandler::CAMERA_TRANSITION_MODE_EXP_DECAY)
-	.description(strformat("Defines the function used for camera transitions. Options are:\n%i = Exponential Decay\n%i = Spring Dampened\n%i = Spring Dampened with timed transitions",
+	.description(strformat("Defines the function used for camera transitions. Options are:\n%i = Exponential Decay\n%i = Spring Dampened\n%i = Spring Dampened with timed transitions\n%i = Lerp Smoothed",
 		(int)CCameraHandler::CAMERA_TRANSITION_MODE_EXP_DECAY,
 		(int)CCameraHandler::CAMERA_TRANSITION_MODE_SPRING_DAMPENED,
-		(int)CCameraHandler::CAMERA_TRANSITION_MODE_TIMED_SPRING_DAMPENED))
+		(int)CCameraHandler::CAMERA_TRANSITION_MODE_TIMED_SPRING_DAMPENED,
+		(int)CCameraHandler::CAMERA_TRANSITION_MODE_LERP_SMOOTHED))
 	.minimumValue(0)
-	.maximumValue((int)CCameraHandler::CAMERA_TRANSITION_MODE_TIMED_SPRING_DAMPENED);
+	.maximumValue((int)CCameraHandler::CAMERA_TRANSITION_MODE_LERP_SMOOTHED);
 
 CONFIG(int, CamSpringHalflife)
 	.defaultValue(100)
@@ -360,6 +362,7 @@ static constexpr decltype(&CameraTransitionExpDecay) cameraTransitionFunction[] 
 	CameraTransitionExpDecay,
 	CameraTransitionSpringDampened,
 	CameraTransitionTimedSpringDampened,
+	CameraTransitionSpringDampened, // lerp smoothed is same
 };
 
 void CCameraHandler::CameraTransition(float nsecs)
@@ -434,15 +437,52 @@ float3 vectorRemainder(float3 vec)
 	return vec;
 }
 
-void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
+// From Freya Holmer https://www.youtube.com/watch?v=LSNQuFEDOyQ
+float expDecay(float a, float b, float decay, float dt)
 {
-	float3 targetPos = currCam->GetPos();
-	float3 targetRot = vectorRemainder(currCam->GetRot());
-	float targetFov = currCam->GetFOV();
+	return b+(a-b)*math::exp(-decay*dt);
+}
+void expDecay(float3& a, float3 b, float decay, float dt)
+{
+	a.x = expDecay(a.x, b.x, decay, dt);
+	a.y = expDecay(a.y, b.y, decay, dt);
+	a.z = expDecay(a.z, b.z, decay, dt);
+}
 
+void UpdateTransitionLerpSmoothed(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
+{
 	float3 currentPos = camera->GetPos();
 	float3 currentRot = vectorRemainder(camera->GetRot());
 	float currentFov = camera->GetVFOV();
+
+	float3 targetPos = currCam->GetPos();
+	float3 targetRot = vectorRemainder(currCam->GetRot());
+	float targetFov = currCam->GetFOV();
+	float3 goalRot{};
+
+	float currTime = spring_gettime().toMilliSecsf();
+	float dt = currTime - camTransState.lastTime;
+	camTransState.lastTime = currTime;
+
+	float decay = camTransState.halflife / 1000.0f;
+	expDecay(currentPos, targetPos, decay, dt);
+	expDecay(currentRot, targetRot, decay, dt);
+	expDecay(currentFov, targetFov, decay, dt);
+	camera->SetPos(currentPos);
+	camera->SetRot(vectorRemainder(currentRot));
+	camera->SetVFOV(currentFov);
+	camera->Update();
+}
+
+void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
+{
+	float3 currentPos = camera->GetPos();
+	float3 currentRot = vectorRemainder(camera->GetRot());
+	float currentFov = camera->GetVFOV();
+
+	float3 targetPos = currCam->GetPos();
+	float3 targetRot = vectorRemainder(currCam->GetRot());
+	float targetFov = currCam->GetFOV();
 	float3 goalRot{};
 
 	float currTime = spring_gettime().toMilliSecsf();
@@ -482,13 +522,13 @@ void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 }
 
 void UpdateTransitionSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState){
-	float3 targetPos = currCam->GetPos();
-	float3 targetRot = ClampRad(currCam->GetRot());
-	float targetFov = currCam->GetFOV();
-
 	float3 currentPos = camera->GetPos();
 	float3 currentRot = ClampRad(camera->GetRot());
 	float currentFov = camera->GetVFOV();
+
+	float3 targetPos = currCam->GetPos();
+	float3 targetRot = ClampRad(currCam->GetRot());
+	float targetFov = currCam->GetFOV();
 	float3 goalRot{};
 
 	float currTime = spring_gettime().toMilliSecsf();
@@ -516,6 +556,7 @@ static constexpr decltype(&UpdateTransitionExpDecay) cameraUpdateTransitionFunct
 	UpdateTransitionExpDecay,
 	UpdateTransitionSpringDampened,
 	UpdateTransitionTimedSpringDampened,
+	UpdateTransitionLerpSmoothed,
 };
 
 void CCameraHandler::UpdateTransition()
