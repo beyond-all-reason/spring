@@ -33,11 +33,19 @@ Decent for factory construction areas, but keep in mind it only affects ground u
 * added `system.smoothMeshResDivider` numerical modrule, default 2. Reduces the resolution of the smoothmesh. Increase to get better performance at the cost of worse accuracy.
 * added `system.smoothMeshSmoothRadius` numerical modrule, default 40. The radius for smoothing, in elmos.
 
-### Misc and fixes
+### Lua wupget API
+* added `Spring.RebuildSmoothMesh() → nil`, see above.
 * added `Spring.GetUnitPhysicalState(unitID) → number bitmask`. See engine source for the meanings of bits. Only available to synced.
+* added `Spring.GetUnitArrayCentroid({unitID, unitID, ...}) → numbers x, y, z`. Returns the centroid (average position), or nil if the array is empty.
+* added `Spring.GetUnitMapCentroid({[unitID] = any, [unitID] = any, ...}) → numbers x, y, z`. Ditto but the unitIDs are keys instead of values in the accepted table.
+* added `Spring.GetUnitCosts(unitID) → number buildTime, number metal, number energy`.
+* added `Spring.GetUnitCostTable(unitID) → { metal = number, energy = number }, number buildTime`. Note that buildtime is not a regular resource and is returned separately.
+
+### Misc and fixes
 * something happened to terraforming rate (via restore command, or ground flattening before construction).
 * lots of general performance improvements.
 * fixed weapon def `numBounce` set to -1 not being infinite (and equivalent to 0 instead). Note that -1 is the default, so setting `groundBounce` (or water) is sufficient to get a bouncy weapon.
 * fixed the stack warning spam if `wupget:UnitArrivedAtGoal` was defined.
 * fixed factory UnitDefs being able to have `canAssist` set to true
+* fixed mouse not warping correctly (when using `Spring.WarpMouse`) on Unix/Wayland
 * fixed invalid corpse names being left unsanitized in UnitDefs `corpse`
