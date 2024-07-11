@@ -20,7 +20,7 @@ CONFIG(float, FPSFOV).defaultValue(45.0f);
 CONFIG(bool, FPSClampPos).defaultValue(true);
 
 
-CFPSController::CFPSController(): oldHeight(300.0f)
+CFPSController::CFPSController(): oldHeight(300.0f), rot(2.677f, 0.0f, 0.0f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
@@ -64,9 +64,8 @@ void CFPSController::KeyMove(float3 move)
 void CFPSController::MouseMove(float3 move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	camera->SetRotY(camera->GetRot().y + mouseScale * move.x);
-	camera->SetRotX(std::clamp(camera->GetRot().x + mouseScale * move.y * move.z, 0.01f, math::PI * 0.99f));
-	dir = camera->GetDir();
+	rot.y += mouseScale * move.x;
+	rot.x = std::clamp(rot.x + mouseScale * move.y * move.z, 0.01f, math::PI * 0.99f);
 	Update();
 }
 

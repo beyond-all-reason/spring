@@ -22,6 +22,7 @@ public:
 
 	void SetPos(const float3& newPos);
 	void SetDir(const float3& newDir);
+	float3 GetRot() const { return rot; }
 	float3 SwitchFrom() const { return pos; }
 	void SwitchTo(const int oldCam, const bool showText);
 
@@ -35,6 +36,7 @@ public:
 	void ConfigUpdate();
 
 private:
+	float3 rot;
 	float mouseScale;
 	float oldHeight;
 	bool clampPos;
