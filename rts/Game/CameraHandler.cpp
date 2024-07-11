@@ -56,6 +56,9 @@ CONFIG(int, CamMode)
 	.minimumValue(0)
 	.maximumValue(CCameraHandler::CAMERA_MODE_DUMMY - 1);
 
+CONFIG(bool, WindowedEdgeMove).defaultValue(true).description("Sets whether moving the mouse cursor to the screen edge will move the camera across the map.");
+CONFIG(bool, FullscreenEdgeMove).defaultValue(true).description("see WindowedEdgeMove, just for fullscreen mode");
+
 CONFIG(float, CamTimeFactor)
 	.defaultValue(1.0f)
 	.minimumValue(0.0f)
@@ -170,20 +173,17 @@ void CCameraHandler::Init()
 		SortRegisteredActions();
 	}
 
-	configHandler->NotifyOnChange(this, {"CamModeName", "CamTimeFactor", "CamTimeExponent", "CamTransitionMode", "CamSpringHalflife"});
+	configHandler->NotifyOnChange(this, {"CamModeName", "WindowedEdgeMove", "FullscreenEdgeMove", "CamTimeFactor", "CamTimeExponent", "CamTransitionMode", "CamSpringHalflife"});
 
 	{
 		camTransState.startFOV  = 90.0f;
 		camTransState.timeStart =  0.0f;
 		camTransState.timeEnd   =  0.0f;
-
-		camTransState.timeFactor   = configHandler->GetFloat("CamTimeFactor");
-		camTransState.timeExponent = configHandler->GetFloat("CamTimeExponent");
-		camTransState.halflife = configHandler->GetFloat("CamSpringHalflife");
 	}
 
+	ConfigNotify("", "");
+
 	SetCameraMode(configHandler->GetString("CamModeName"));
-	currCamTransitionNum = configHandler->GetInt("CamTransitionMode");
 
 	for (CCameraController* cc: camControllers) {
 		cc->Update();
@@ -240,6 +240,9 @@ void CCameraHandler::ConfigNotify(const std::string& key, const std::string& val
 	} else {
 		currCamTransitionNum = configHandler->GetInt("CamTransitionMode");
 
+		windowedEdgeMove   = configHandler->GetBool("WindowedEdgeMove");
+		fullscreenEdgeMove = configHandler->GetBool("FullscreenEdgeMove");
+
 		camTransState.timeFactor = configHandler->GetFloat("CamTimeFactor");
 		camTransState.timeExponent = configHandler->GetFloat("CamTimeExponent");
 		camTransState.halflife = configHandler->GetFloat("CamSpringHalflife");
@@ -248,14 +251,14 @@ void CCameraHandler::ConfigNotify(const std::string& key, const std::string& val
 	}
 }
 
-void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode, bool fsEdgeMove, bool wnEdgeMove)
+void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController& camCon = GetCurrentController();
 	FPSUnitController& fpsCon = player->fpsController;
 
-	const bool fusEdgeMove = ( globalRendering->fullScreen && fsEdgeMove);
-	const bool winEdgeMove = (!globalRendering->fullScreen && wnEdgeMove);
+	const bool fusEdgeMove = ( globalRendering->fullScreen && fullscreenEdgeMove);
+	const bool winEdgeMove = (!globalRendering->fullScreen && windowedEdgeMove);
 
 	// We have to update transition both before and after updating the controller:
 	// before: if the controller makes a new begincam, it needs to take into account previous transitions

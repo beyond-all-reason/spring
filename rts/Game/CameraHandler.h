@@ -83,7 +83,7 @@ public:
 	void Kill();
 	void InitControllers();
 	void KillControllers();
-	void UpdateController(CPlayer* player, bool fpsMode, bool fsEdgeMove, bool wnEdgeMove);
+	void UpdateController(CPlayer* player, bool fpsMode);
 
 	void SetCameraMode(unsigned int mode);
 	void SetCameraMode(const std::string& mode);
@@ -142,6 +142,9 @@ private:
 	unsigned int currCamTransitionNum = CAMERA_TRANSITION_MODE_EXP_DECAY;
 
 	CamTransitionState camTransState;
+
+	bool windowedEdgeMove = false;
+	bool fullscreenEdgeMove = false;
 
 	// last controller is a dummy
 	std::array<CCameraController*, CAMERA_MODE_LAST> camControllers;
