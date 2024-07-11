@@ -428,14 +428,6 @@ void UpdateTransitionExpDecay(const CCameraController* currCam, CCameraHandler::
 	camera->Update();
 }
 
-float3 vectorRemainder(float3 vec)
-{
-	vec.x = std::remainder(vec.x, math::TWOPI);
-	vec.y = std::remainder(vec.y, math::TWOPI);
-	vec.z = std::remainder(vec.z, math::TWOPI);
-	return vec;
-}
-
 // From Freya Holmer https://www.youtube.com/watch?v=LSNQuFEDOyQ
 float expDecay(float a, float b, float decay, float dt)
 {
@@ -451,11 +443,11 @@ void expDecay(float3& a, float3 b, float decay, float dt)
 void UpdateTransitionLerpSmoothed(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
 {
 	float3 currentPos = camera->GetPos();
-	float3 currentRot = vectorRemainder(camera->GetRot());
+	float3 currentRot = camera->GetRot();
 	float currentFov = camera->GetVFOV();
 
 	float3 targetPos = currCam->GetPos();
-	float3 targetRot = vectorRemainder(currCam->GetRot());
+	float3 targetRot = currCam->GetRot();
 	float targetFov = currCam->GetFOV();
 	float3 goalRot{};
 
@@ -468,7 +460,7 @@ void UpdateTransitionLerpSmoothed(const CCameraController* currCam, CCameraHandl
 	expDecay(currentRot, targetRot, decay, dt);
 	expDecay(currentFov, targetFov, decay, dt);
 	camera->SetPos(currentPos);
-	camera->SetRot(vectorRemainder(currentRot));
+	camera->SetRot(currentRot);
 	camera->SetVFOV(currentFov);
 	camera->Update();
 }
@@ -476,13 +468,12 @@ void UpdateTransitionLerpSmoothed(const CCameraController* currCam, CCameraHandl
 void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
 {
 	float3 currentPos = camera->GetPos();
-	float3 currentRot = vectorRemainder(camera->GetRot());
+	float3 currentRot = camera->GetRot();
 	float currentFov = camera->GetVFOV();
 
 	float3 targetPos = currCam->GetPos();
-	float3 targetRot = vectorRemainder(currCam->GetRot());
+	float3 targetRot = currCam->GetRot();
 	float targetFov = currCam->GetFOV();
-	float3 goalRot{};
 
 	float currTime = spring_gettime().toMilliSecsf();
 	float dt = currTime - camTransState.lastTime;
@@ -501,34 +492,24 @@ void UpdateTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 
 	timed_spring_damper_exact_vector(currentPos, camTransState.posVelocity, camTransState.startPos,
 		targetPos, camTransState.timeEnd, camTransState.halflife, damping, eydt, dt);
-
-	if (abs(targetRot.y - currentRot.y) > 4.5f) {
-		if (targetRot.y > 0) {
-			targetRot.y -= math::TWOPI;
-		}else {
-			targetRot.y += math::TWOPI;
-		}
-	}
 	timed_spring_damper_exact_vector(currentRot, camTransState.rotVelocity, camTransState.startRot,
 		targetRot, camTransState.timeStart, camTransState.halflife, damping, eydt, dt);
-
 	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, damping, eydt, dt);
-	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.3f", 0.0f, camTransState.timeEnd, dt);
+
 	camera->SetPos(currentPos);
-	camera->SetRot(vectorRemainder(currentRot));
+	camera->SetRot(currentRot);
 	camera->SetVFOV(currentFov);
 	camera->Update();
 }
 
 void UpdateTransitionSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState){
 	float3 currentPos = camera->GetPos();
-	float3 currentRot = ClampRad(camera->GetRot());
+	float3 currentRot = camera->GetRot();
 	float currentFov = camera->GetVFOV();
 
 	float3 targetPos = currCam->GetPos();
-	float3 targetRot = ClampRad(currCam->GetRot());
+	float3 targetRot = currCam->GetRot();
 	float targetFov = currCam->GetFOV();
-	float3 goalRot{};
 
 	float currTime = spring_gettime().toMilliSecsf();
 	float dt = currTime - camTransState.lastTime;
@@ -542,11 +523,11 @@ void UpdateTransitionSpringDampened(const CCameraController* currCam, CCameraHan
 	float eydt = spring_damper_eydt(damping, dt);
 
 	simple_spring_damper_exact_vector(currentPos, camTransState.posVelocity, targetPos, damping, eydt, dt);
-	simple_spring_damper_exact_vector(goalRot, camTransState.rotVelocity, GetRadAngleToward(currentRot, targetRot), damping, eydt, dt);
+	simple_spring_damper_exact_vector(currentRot, camTransState.rotVelocity, targetRot, damping, eydt, dt);
 	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, damping, eydt, dt);
 	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.3f", GetRadAngleToward(currentRot, targetRot).x, GetRadAngleToward(currentRot, targetRot).y, GetRadAngleToward(currentRot, targetRot).z);
 	camera->SetPos(currentPos);
-	camera->SetRot(ClampRad(goalRot + currentRot));
+	camera->SetRot(currentRot);
 	camera->SetVFOV(currentFov);
 	camera->Update();
 }
