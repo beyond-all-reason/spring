@@ -4154,7 +4154,7 @@ int LuaSyncedRead::GetUnitCosts(lua_State* L)
 /***
  * @function Spring.GetUnitCostTable
  * @number unitID
- * @treturn nil|{ metal = number, energy = number }, number buildTime
+ * @treturn nil|{ metal = number, energy = number }
  * @treturn number buildTime
  */
 int LuaSyncedRead::GetUnitCostTable(lua_State* L)
@@ -4162,15 +4162,15 @@ int LuaSyncedRead::GetUnitCostTable(lua_State* L)
 	const CUnit* const unit = ParseInLosUnit(L, __func__, 1);
 	if (unit == nullptr)
 		return 0;
-	lua_createtable(L, 2, 1);
-	lua_pushnumber(L, unit->cost.metal);
+	lua_createtable(L, 0, 2);
 	lua_pushstring(L, "metal");
+	lua_pushnumber(L, unit->cost.metal);
 	lua_rawset(L, -3);
-	lua_pushnumber(L, unit->cost.energy);
 	lua_pushstring(L, "energy");
+	lua_pushnumber(L, unit->cost.energy);
 	lua_rawset(L, -3);
 	lua_pushnumber(L, unit->buildTime);
-	return 1;
+	return 2;
 }
 
 
