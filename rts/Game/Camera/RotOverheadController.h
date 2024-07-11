@@ -25,10 +25,12 @@ public:
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
+	float3 GetRot() const { return rot; }
 
 	void Update();
 
 private:
+	float3 rot;
 	float mouseScale;
 	float oldHeight;
 	bool clampToMap;

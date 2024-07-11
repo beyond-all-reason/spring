@@ -525,7 +525,7 @@ void UpdateTransitionSpringDampened(const CCameraController* currCam, CCameraHan
 	simple_spring_damper_exact_vector(currentPos, camTransState.posVelocity, targetPos, damping, eydt, dt);
 	simple_spring_damper_exact_vector(currentRot, camTransState.rotVelocity, targetRot, damping, eydt, dt);
 	simple_spring_damper_exact(currentFov, camTransState.fovVelocity, targetFov, damping, eydt, dt);
-	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.3f", GetRadAngleToward(currentRot, targetRot).x, GetRadAngleToward(currentRot, targetRot).y, GetRadAngleToward(currentRot, targetRot).z);
+	// LOG_L(L_INFO, "tweenfact %0.3f, %0.3f, %0.3f", currentRot.y, targetRot.y, camTransState.rotVelocity.y);
 	camera->SetPos(currentPos);
 	camera->SetRot(currentRot);
 	camera->SetVFOV(currentFov);
