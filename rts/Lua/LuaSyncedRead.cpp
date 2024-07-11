@@ -207,6 +207,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitIsBeingBuilt);
 	REGISTER_LUA_CFUNC(GetUnitResources);
 	REGISTER_LUA_CFUNC(GetUnitCosts);
+	REGISTER_LUA_CFUNC(GetUnitCostTable);
 	REGISTER_LUA_CFUNC(GetUnitMetalExtraction);
 	REGISTER_LUA_CFUNC(GetUnitMaxRange);
 	REGISTER_LUA_CFUNC(GetUnitExperience);
@@ -4149,6 +4150,27 @@ int LuaSyncedRead::GetUnitCosts(lua_State* L)
 	lua_pushnumber(L, unit->cost.metal);
 	lua_pushnumber(L, unit->cost.energy);
 	return 3;
+}
+/***
+ * @function Spring.GetUnitCostTable
+ * @number unitID
+ * @treturn nil|{ metal = number, energy = number }
+ * @treturn number buildTime
+ */
+int LuaSyncedRead::GetUnitCostTable(lua_State* L)
+{
+	const CUnit* const unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+	lua_createtable(L, 0, 2);
+	lua_pushstring(L, "metal");
+	lua_pushnumber(L, unit->cost.metal);
+	lua_rawset(L, -3);
+	lua_pushstring(L, "energy");
+	lua_pushnumber(L, unit->cost.energy);
+	lua_rawset(L, -3);
+	lua_pushnumber(L, unit->buildTime);
+	return 2;
 }
 
 
