@@ -21,7 +21,7 @@ CONFIG(float, RotOverheadFOV).defaultValue(45.0f);
 CONFIG(bool, RotOverheadClampMap).defaultValue(true).headlessValue(true);
 
 
-CRotOverheadController::CRotOverheadController(): oldHeight(500.0f)
+CRotOverheadController::CRotOverheadController(): oldHeight(500.0f), rot(2.677f, 0.0f, 0.0f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	mouseScale  = configHandler->GetFloat("RotOverheadMouseScale");
