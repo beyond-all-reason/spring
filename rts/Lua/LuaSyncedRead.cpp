@@ -1944,12 +1944,16 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 }
 
 
-/***
+/*** Gets team damage dealt/received totals
  *
  * @function Spring.GetTeamDamageStats
+ *
+ * Returns a team's damage stats. Note that all damage is counted,
+ * including self-inflicted and unconfirmed out-of-sight.
+ *
  * @number teamID
- * @treturn damageDealt number
- * @treturn damageReceived number
+ * @treturn number damageDealt
+ * @treturn number damageReceived
  */
 int LuaSyncedRead::GetTeamDamageStats(lua_State* L)
 {
