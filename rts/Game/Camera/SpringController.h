@@ -23,6 +23,7 @@ public:
 
 	void Update();
 	void SetPos(const float3& newPos) { pos = newPos; Update(); }
+	void SetRot(const float3& newRot) { rot = newRot; Update(); }
 	float3 GetPos() const;
 	float3 GetRot() const { return (float3(rot.x, GetAzimuth(), 0.0f)); }
 

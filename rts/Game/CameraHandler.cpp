@@ -569,6 +569,7 @@ void CCameraHandler::SetCameraMode(unsigned int newMode)
 	CCameraController* newCamCtrl = camControllers[currCamCtrlNum = newMode];
 
 	newCamCtrl->SetPos(oldCamCtrl->SwitchFrom());
+	newCamCtrl->SetRot(oldCamCtrl->GetRot());
 	newCamCtrl->SwitchTo(oldMode);
 	newCamCtrl->Update();
 }

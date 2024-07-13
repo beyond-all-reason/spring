@@ -222,6 +222,7 @@ void COverheadController::SwitchTo(const int oldCam, const bool showText)
 
 	angle = DEFAULT_ANGLE;
 	Update();
+	camHandler->CameraTransition(0.0f);
 }
 
 void COverheadController::GetState(StateMap& sm) const

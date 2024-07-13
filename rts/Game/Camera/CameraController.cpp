@@ -31,6 +31,7 @@ CCameraController::CCameraController()
 }
 
 float3 CCameraController::GetRot() const { return CCamera::GetRotFromDir(GetDir()); }
+void CCameraController::SetRot(const float3& newRot) { dir = CCamera::GetFwdFromRot(newRot); }
 
 
 bool CCameraController::SetStateBool(const StateMap& sm, const std::string& name, bool& var)

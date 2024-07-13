@@ -108,6 +108,7 @@ public:
 	virtual float3 GetRot() const;
 
 	virtual void SetPos(const float3& newPos) { pos = newPos; }
+	virtual void SetRot(const float3& newRot);
 	virtual void SetDir(const float3& newDir) { dir = newDir; }
 	virtual bool DisableTrackingByKey() { return true; }
 

@@ -19,6 +19,7 @@ public:
 	void MouseWheelMove(float move, const float3& newDir) { MouseWheelMove(move); }
 
 	void SetPos(const float3& newPos);
+	void SetRot(const float3& newRot) { rot = newRot; };
 
 	float3 SwitchFrom() const;
 	void SwitchTo(const int oldCam, const bool showText);
