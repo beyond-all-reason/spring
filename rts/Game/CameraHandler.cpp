@@ -340,11 +340,11 @@ void CameraTransitionExpDecay(const CCameraController* currCam, CCameraHandler::
 
 void CameraTransitionTimedSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState, float nsecs)
 {
-	if (nsecs <= 0.0f) {
+	if (nsecs == 0.0f) {
 		camera->SetPos(currCam->GetPos());
 		camera->SetRot(currCam->GetRot());
 		camera->SetVFOV(currCam->GetFOV());
-	} else {
+	} else if (nsecs > 0.0f) {
 		camTransState.timeEnd = nsecs * 1000.0f;
 		camTransState.timeStart = nsecs * 1000.0f;
 	}
@@ -352,7 +352,7 @@ void CameraTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 
 void CameraTransitionSpringDampened(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState, float nsecs)
 {
-	if (nsecs <= 0.0f) {
+	if (nsecs == 0.0f) {
 		camera->SetPos(currCam->GetPos());
 		camera->SetRot(currCam->GetRot());
 		camera->SetVFOV(currCam->GetFOV());
