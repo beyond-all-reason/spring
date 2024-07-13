@@ -1405,7 +1405,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 
 	}
 
-	const bool forceUpdate = (unsyncedUpdateDeltaTime >= (1.0f / GAME_SPEED));
+	const bool forceUpdate = (unsyncedUpdateDeltaTime >= INV_GAME_SPEED);
 
 	lastSimFrame = gs->frameNum;
 
@@ -2061,7 +2061,7 @@ void CGame::StartSkip(int toFrame) {
 	}
 
 	skipTotalFrames = skipEndFrame - skipStartFrame;
-	skipSeconds = skipTotalFrames / float(GAME_SPEED);
+	skipSeconds = skipTotalFrames * INV_GAME_SPEED;
 
 	skipSoundmute = sound->IsMuted();
 	if (!skipSoundmute)

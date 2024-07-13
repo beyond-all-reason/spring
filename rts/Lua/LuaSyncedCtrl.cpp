@@ -2803,8 +2803,7 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	constexpr float buildScale = (1.0f / GAME_SPEED);
-	const float buildSpeed = buildScale * max(0.0f, luaL_checkfloat(L, 2));
+	const float buildSpeed = INV_GAME_SPEED * max(0.0f, luaL_checkfloat(L, 2));
 
 	CFactory* factory = dynamic_cast<CFactory*>(unit);
 
@@ -2820,19 +2819,19 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 
 	builder->buildSpeed = buildSpeed;
 	if (lua_isnumber(L, 3)) {
-		builder->repairSpeed    = buildScale * max(0.0f, lua_tofloat(L, 3));
+		builder->repairSpeed    = INV_GAME_SPEED * max(0.0f, lua_tofloat(L, 3));
 	}
 	if (lua_isnumber(L, 4)) {
-		builder->reclaimSpeed   = buildScale * max(0.0f, lua_tofloat(L, 4));
+		builder->reclaimSpeed   = INV_GAME_SPEED * max(0.0f, lua_tofloat(L, 4));
 	}
 	if (lua_isnumber(L, 5)) {
-		builder->resurrectSpeed = buildScale * max(0.0f, lua_tofloat(L, 5));
+		builder->resurrectSpeed = INV_GAME_SPEED * max(0.0f, lua_tofloat(L, 5));
 	}
 	if (lua_isnumber(L, 6)) {
-		builder->captureSpeed   = buildScale * max(0.0f, lua_tofloat(L, 6));
+		builder->captureSpeed   = INV_GAME_SPEED * max(0.0f, lua_tofloat(L, 6));
 	}
 	if (lua_isnumber(L, 7)) {
-		builder->terraformSpeed = buildScale * max(0.0f, lua_tofloat(L, 7));
+		builder->terraformSpeed = INV_GAME_SPEED * max(0.0f, lua_tofloat(L, 7));
 	}
 	return 0;
 }

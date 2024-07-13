@@ -309,8 +309,8 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	};
 	makesMetal   = udTable.GetFloat("makesMetal", 0.0f);
 
-	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
-	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
+	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
+	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
 	idleTime     = udTable.GetInt("idleTime", 600);
 
 	health = udTable.GetFloat("health", udTable.GetFloat("maxDamage", 100.0f));
