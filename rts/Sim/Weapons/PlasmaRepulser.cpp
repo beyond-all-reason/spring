@@ -158,8 +158,8 @@ void CPlasmaRepulser::Update()
 	hitFrameCount -= (hitFrameCount > 0);
 
 	if (IsActive() && (curPower < weaponDef->shieldPower) && rechargeDelay <= 0) {
-		const float energyCost = weaponDef->shieldPowerRegenEnergy * (1.0f / GAME_SPEED);
-		const float powerRegen = weaponDef->shieldPowerRegen       * (1.0f / GAME_SPEED);
+		const float energyCost = weaponDef->shieldPowerRegenEnergy * INV_GAME_SPEED;
+		const float powerRegen = weaponDef->shieldPowerRegen       * INV_GAME_SPEED;
 
 		curPower += (powerRegen * owner->UseEnergy(energyCost));
 	}

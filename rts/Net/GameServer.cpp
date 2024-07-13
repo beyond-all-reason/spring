@@ -789,7 +789,7 @@ void CGameServer::CheckSync()
 
 float CGameServer::GetDemoTime() const {
 	if (!gameHasStarted) return gameTime;
-	return (startTime + serverFrameNum / float(GAME_SPEED));
+	return (startTime + serverFrameNum * INV_GAME_SPEED);
 }
 
 

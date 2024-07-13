@@ -909,7 +909,7 @@ int LuaSyncedRead::GetGameFrame(lua_State* L)
  */
 int LuaSyncedRead::GetGameSeconds(lua_State* L)
 {
-	lua_pushnumber(L, gs->GetLuaSimFrame() / (1.0f * GAME_SPEED));
+	lua_pushnumber(L, gs->GetLuaSimFrame() * INV_GAME_SPEED);
 	return 1;
 }
 
@@ -4943,10 +4943,7 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 		} break;
 
 		case hashString("reloadTime"): {
-			// SetUnitWeaponState sets reloadTime to int(value * GAME_SPEED);
-			// divide by 1.0 here since reloadTime / GAME_SPEED would itself
-			// be an integer division
-			lua_pushnumber(L, (weapon->reloadTime / 1.0f) / GAME_SPEED);
+			lua_pushnumber(L, weapon->reloadTime * INV_GAME_SPEED);
 		} break;
 		case hashString("reloadTimeXP"): {
 			// reloadSpeed is affected by unit experience
@@ -4978,7 +4975,7 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 			lua_pushnumber(L, weapon->salvoSize);
 		} break;
 		case hashString("burstRate"): {
-			lua_pushnumber(L, float(weapon->salvoDelay) / GAME_SPEED);
+			lua_pushnumber(L, weapon->salvoDelay * INV_GAME_SPEED);
 		} break;
 
 		case hashString("projectiles"): {

@@ -105,14 +105,12 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	range3D = unitDef->buildRange3D;
 	buildDistance = (params.unitDef)->buildDistance;
 
-	constexpr float scale = (1.0f / GAME_SPEED);
-
-	buildSpeed     = scale * unitDef->buildSpeed;
-	repairSpeed    = scale * unitDef->repairSpeed;
-	reclaimSpeed   = scale * unitDef->reclaimSpeed;
-	resurrectSpeed = scale * unitDef->resurrectSpeed;
-	captureSpeed   = scale * unitDef->captureSpeed;
-	terraformSpeed = scale * unitDef->terraformSpeed;
+	buildSpeed     = INV_GAME_SPEED * unitDef->buildSpeed;
+	repairSpeed    = INV_GAME_SPEED * unitDef->repairSpeed;
+	reclaimSpeed   = INV_GAME_SPEED * unitDef->reclaimSpeed;
+	resurrectSpeed = INV_GAME_SPEED * unitDef->resurrectSpeed;
+	captureSpeed   = INV_GAME_SPEED * unitDef->captureSpeed;
+	terraformSpeed = INV_GAME_SPEED * unitDef->terraformSpeed;
 
 	CUnit::PreInit(params);
 }

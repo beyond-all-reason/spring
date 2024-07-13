@@ -157,7 +157,6 @@ CUnit::~CUnit()
 void CUnit::InitStatic()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// numerator was 2*UNIT_SLOWUPDATE_RATE/GAME_SPEED which equals 1 since 99.0
 	SetEmpDeclineRate(1.0f / modInfo.paralyzeDeclineRate);
 	SetExpMultiplier(modInfo.unitExpMultiplier);
 	SetExpPowerScale(modInfo.unitExpPowerScale);
@@ -968,7 +967,7 @@ void CUnit::SlowUpdate()
 		// DoDamage) we potentially start decaying from a lower damage
 		// level and would otherwise be de-paralyzed more quickly than
 		// specified by <paralyzeTime>
-		paralyzeDamage -= ((modInfo.paralyzeOnMaxHealth? maxHealth: health) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED)) * CUnit::empDeclineRate);
+		paralyzeDamage -= ((modInfo.paralyzeOnMaxHealth? maxHealth: health) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED) * CUnit::empDeclineRate);
 		paralyzeDamage = std::max(paralyzeDamage, 0.0f);
 	}
 
