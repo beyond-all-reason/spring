@@ -69,6 +69,7 @@ class LuaSyncedRead {
 		static int GetTeamResources(lua_State* L);
 		static int GetTeamUnitStats(lua_State* L);
 		static int GetTeamResourceStats(lua_State* L);
+		static int GetTeamDamageStats(lua_State* L);
 		static int GetTeamRulesParam(lua_State* L);
 		static int GetTeamRulesParams(lua_State* L);
 		static int GetTeamStatsHistory(lua_State* L);
