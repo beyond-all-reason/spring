@@ -70,6 +70,7 @@
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/BuildingMaskMap.h"
@@ -528,6 +529,7 @@ void CGame::LoadMap(const std::string& mapFileName)
 		// half size; building positions are snapped to multiples of BUILD_SQUARE_SIZE
 		buildingMaskMap.Init(mapDims.hmapx * mapDims.hmapy);
 		groundBlockingObjectMap.Init(mapDims.mapSquares);
+		yardmapStatusEffectsMap.InitNewYardmapStatusEffectsMap();
 	}
 
 	LEAVE_SYNCED_CODE();
@@ -694,6 +696,9 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	featureDefHandler->LoadFeatureDefsFromMap();
 	if (saveFileHandler == nullptr)
 		featureHandler.LoadFeaturesFromMap();
+
+	// must be called after features are all loaded
+	unitDefHandler->SanitizeUnitDefs();
 
 	envResHandler.LoadTidal(mapInfo->map.tidalStrength);
 	envResHandler.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);

@@ -157,6 +157,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetTeamResources);
 	REGISTER_LUA_CFUNC(GetTeamUnitStats);
 	REGISTER_LUA_CFUNC(GetTeamResourceStats);
+	REGISTER_LUA_CFUNC(GetTeamDamageStats);
 	REGISTER_LUA_CFUNC(GetTeamRulesParam);
 	REGISTER_LUA_CFUNC(GetTeamRulesParams);
 	REGISTER_LUA_CFUNC(GetTeamStatsHistory);
@@ -185,6 +186,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitsInSphere);
 	REGISTER_LUA_CFUNC(GetUnitsInCylinder);
 
+	REGISTER_LUA_CFUNC(GetUnitArrayCentroid);
+	REGISTER_LUA_CFUNC(GetUnitMapCentroid);
+
 	REGISTER_LUA_CFUNC(GetFeaturesInRectangle);
 	REGISTER_LUA_CFUNC(GetFeaturesInSphere);
 	REGISTER_LUA_CFUNC(GetFeaturesInCylinder);
@@ -203,6 +207,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitIsStunned);
 	REGISTER_LUA_CFUNC(GetUnitIsBeingBuilt);
 	REGISTER_LUA_CFUNC(GetUnitResources);
+	REGISTER_LUA_CFUNC(GetUnitCosts);
+	REGISTER_LUA_CFUNC(GetUnitCostTable);
 	REGISTER_LUA_CFUNC(GetUnitMetalExtraction);
 	REGISTER_LUA_CFUNC(GetUnitMaxRange);
 	REGISTER_LUA_CFUNC(GetUnitExperience);
@@ -1938,6 +1944,37 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 }
 
 
+/*** Gets team damage dealt/received totals
+ *
+ * @function Spring.GetTeamDamageStats
+ *
+ * Returns a team's damage stats. Note that all damage is counted,
+ * including self-inflicted and unconfirmed out-of-sight.
+ *
+ * @number teamID
+ * @treturn number damageDealt
+ * @treturn number damageReceived
+ */
+int LuaSyncedRead::GetTeamDamageStats(lua_State* L)
+{
+	const CTeam* team = ParseTeam(L, __func__, 1);
+	if (team == nullptr || game == nullptr)
+		return 0;
+
+	const int teamID = team->teamNum;
+
+	if (!LuaUtils::IsAlliedTeam(L, teamID) && !game->IsGameOver())
+		return 0;
+
+	const TeamStatistics& stats = team->GetCurrentStats();
+
+	lua_pushnumber(L, stats.damageDealt);
+	lua_pushnumber(L, stats.damageReceived);
+
+	return 2;
+}
+
+
 /*** @table teamStats
  * @number time
  * @number frame
@@ -3261,6 +3298,67 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 }
 
 
+static int GetUnitTableCentroid(lua_State *const L, const int indexWithinTable, const char *const caller)
+{
+	if (!lua_istable(L, 1))
+		luaL_error(L, "[%s] argument must be a table", caller);
+
+	float3 center {0.0f, 0.0f, 0.0f};
+	size_t count = 0;
+	for (lua_pushnil(L); lua_next(L, 1); lua_pop(L, 1)) {
+		const auto unit = ParseUnit(L, caller, indexWithinTable);
+		if (unit == nullptr)
+			continue;
+
+		center += unit->midPos;
+		++ count;
+	}
+
+	if (!count)
+		return 0;
+
+	center /= static_cast <float> (count);
+
+	lua_pushnumber(L, center.x);
+	lua_pushnumber(L, center.y);
+	lua_pushnumber(L, center.z);
+
+	return 3;
+}
+
+
+
+/*** Returns the centroid of an array of units
+ *
+ * Returns nil for an empty array
+ *
+ * @function Spring.GetUnitArrayCentroid
+ * @table units { unitID, unitID, ... }
+ * @treturn centerX
+ * @treturn centerY
+ * @treturn centerZ
+ */
+int LuaSyncedRead::GetUnitArrayCentroid(lua_State* L)
+{
+	return GetUnitTableCentroid(L, -1, __func__);
+}
+
+/*** Returns the centroid of a map of units
+ *
+ * Returns nil for an empty map
+ *
+ * @function Spring.GetUnitMapCentroid
+ * @table units { [unitID] = true, [unitID] = true, ... }
+ * @treturn centerX
+ * @treturn centerY
+ * @treturn centerZ
+ */
+int LuaSyncedRead::GetUnitMapCentroid(lua_State* L)
+{
+	return GetUnitTableCentroid(L, -2, __func__);
+}
+
+
 /***
  *
  * @function Spring.GetUnitNearestAlly
@@ -4065,6 +4163,46 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 	lua_pushnumber(L, unit->resourcesMake.energy);
 	lua_pushnumber(L, unit->resourcesUse.energy);
 	return 4;
+}
+
+/***
+ * @function Spring.GetUnitCosts
+ * @number unitID
+ * @treturn nil|number buildTime
+ * @treturn number metalCost
+ * @treturn number energyCost
+ */
+int LuaSyncedRead::GetUnitCosts(lua_State* L)
+{
+	const CUnit* const unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->buildTime);
+	lua_pushnumber(L, unit->cost.metal);
+	lua_pushnumber(L, unit->cost.energy);
+	return 3;
+}
+/***
+ * @function Spring.GetUnitCostTable
+ * @number unitID
+ * @treturn nil|{ metal = number, energy = number }
+ * @treturn number buildTime
+ */
+int LuaSyncedRead::GetUnitCostTable(lua_State* L)
+{
+	const CUnit* const unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+	lua_createtable(L, 0, 2);
+	lua_pushstring(L, "metal");
+	lua_pushnumber(L, unit->cost.metal);
+	lua_rawset(L, -3);
+	lua_pushstring(L, "energy");
+	lua_pushnumber(L, unit->cost.energy);
+	lua_rawset(L, -3);
+	lua_pushnumber(L, unit->buildTime);
+	return 2;
 }
 
 

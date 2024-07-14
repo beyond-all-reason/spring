@@ -4,8 +4,12 @@
 
 #include "GroundBlockingObjectMap.h"
 #include "GlobalConstants.h"
+#include "Map/Ground.h"
 #include "Map/ReadMap.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Path/IPathManager.h"
+#include "Sim/Units/Unit.h"
 #include "System/ContainerUtil.h"
 #include "System/SpringHash.h"
 
@@ -71,11 +75,31 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 	const int xminSqr = bx, xmaxSqr = bx + sx;
 	const int zminSqr = bz, zmaxSqr = bz + sz;
 
+	ObjectCollisionMapHelper objectCol(*object);
+
 	for (int z = zminSqr; z < zmaxSqr; z++) {
 		for (int x = xminSqr; x < xmaxSqr; x++) {
+			auto yardmapState = object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
+
+			// Add Exit-only zone
+			if (yardmapState & YARDMAP_EXITONLY){
+				objectCol.SetExitOnlyAt(x, z);
+				objectCol.SetBlockBuildingAt(x, z);
+				continue;
+			}
+			if (yardmapState & YARDMAP_UNBUILDABLE) {
+				objectCol.SetBlockBuildingAt(x, z);
+				continue;
+			}
+			// Hold off on this because BAR is using these yardmap types for controlling building upgrades.
+			// if (yardmapState & (YARDMAP_YARD|YARDMAP_YARDINV)) {
+			// 	objectCol.SetBlockBuildingAt(x, z);
+			// 	// may still need to be added to ground map.
+			// }
+
 			// unit yardmaps always contain sx=UnitDef::xsize * sz=UnitDef::zsize
 			// cells (the unit->moveDef footprint can have different dimensions)
-			if ((object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f}) & mask) == 0)
+			if ((yardmapState & mask) == 0)
 				continue;
 
 			CellInsertUnique(z * mapDims.mapx + x, object);
@@ -99,9 +123,27 @@ void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 	const int sz = object->zsize;
 
 	object->ClearPhysicalStateBit(CSolidObject::PSTATE_BIT_BLOCKING);
+	ObjectCollisionMapHelper objectCol(*object);
 
 	for (int z = bz; z < bz + sz; ++z) {
 		for (int x = bx; x < bx + sx; ++x) {
+			auto yardmapState = object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
+
+			// Remove Exit-only zone
+			if (yardmapState & YARDMAP_EXITONLY){
+				objectCol.ClearExitOnlyAt(x, z);
+				objectCol.ClearBlockBuildingAt(x, z);
+				continue;
+			}
+			if (yardmapState & YARDMAP_UNBUILDABLE) {
+				objectCol.ClearBlockBuildingAt(x, z);
+				continue;
+			}
+			if (yardmapState & (YARDMAP_YARD|YARDMAP_YARDINV)) {
+				objectCol.ClearBlockBuildingAt(x, z);
+				// may need to be removed from ground map
+			}
+
 			CellErase(z * mapDims.mapx + x, object);
 		}
 	}

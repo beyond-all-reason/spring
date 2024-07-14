@@ -4,6 +4,7 @@
 #define MOVEMATH_H
 
 #include "Map/ReadMap.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Objects/SolidObject.h"
 #include "System/float3.h"
 #include "System/Misc/BitwiseEnum.h"
@@ -15,13 +16,7 @@ namespace MoveTypes {
 	struct CheckCollisionQuery {
 		static constexpr float POS_Y_UNAVAILABLE = std::numeric_limits<float>::infinity();
 
-		CheckCollisionQuery(const CSolidObject* ref)
-			: unit(ref)
-			, moveDef(ref->moveDef)
-			, pos(ref->pos)
-			, physicalState(ref->physicalState)
-		{}
-
+		CheckCollisionQuery(const CSolidObject* ref);
 		CheckCollisionQuery(const MoveDef* refMoveDef)
 			: moveDef(refMoveDef)
 		{}
@@ -42,6 +37,7 @@ namespace MoveTypes {
 		const MoveDef* moveDef = nullptr;
 		float3 pos = {0.f, POS_Y_UNAVAILABLE, 0.f};
 		CSolidObject::PhysicalState physicalState = CSolidObject::PhysicalState(CSolidObject::PhysicalState::PSTATE_BIT_ONGROUND);
+		bool inExitOnlyZone = false;
 	};
 }
 
@@ -117,6 +113,8 @@ public:
 	static BlockType RangeIsBlockedHashedMt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int magicNumber, int thread);
 
 	static void FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results, int thread);
+
+	static bool RangeHasExitOnly(int xmin, int xmax, int zmin, int zmax, const ObjectCollisionMapHelper& object);
 
 public:
 	static bool noHoverWaterMove;

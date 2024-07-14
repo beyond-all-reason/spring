@@ -968,9 +968,9 @@ bool CWeapon::TestTarget(const float3 tgtPos, const SWeaponTarget& trg) const
 				return false;
 			if ((trg.unit->category & onlyTargetCategory) == 0)
 				return false;
-			if (trg.unit->isDead && modInfo.fireAtKilled == 0)
+			if (trg.unit->isDead && !modInfo.fireAtKilled)
 				return false;
-			if (trg.unit->IsCrashing() && modInfo.fireAtCrashing == 0)
+			if (trg.unit->IsCrashing() && !modInfo.fireAtCrashing)
 				return false;
 			if ((trg.unit->losStatus[owner->allyteam] & (LOS_INLOS | LOS_INRADAR)) == 0)
 				return false;
