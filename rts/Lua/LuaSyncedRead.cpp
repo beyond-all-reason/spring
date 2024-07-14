@@ -157,6 +157,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetTeamResources);
 	REGISTER_LUA_CFUNC(GetTeamUnitStats);
 	REGISTER_LUA_CFUNC(GetTeamResourceStats);
+	REGISTER_LUA_CFUNC(GetTeamDamageStats);
 	REGISTER_LUA_CFUNC(GetTeamRulesParam);
 	REGISTER_LUA_CFUNC(GetTeamRulesParams);
 	REGISTER_LUA_CFUNC(GetTeamStatsHistory);
@@ -1940,6 +1941,37 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 	}
 
 	return 0;
+}
+
+
+/*** Gets team damage dealt/received totals
+ *
+ * @function Spring.GetTeamDamageStats
+ *
+ * Returns a team's damage stats. Note that all damage is counted,
+ * including self-inflicted and unconfirmed out-of-sight.
+ *
+ * @number teamID
+ * @treturn number damageDealt
+ * @treturn number damageReceived
+ */
+int LuaSyncedRead::GetTeamDamageStats(lua_State* L)
+{
+	const CTeam* team = ParseTeam(L, __func__, 1);
+	if (team == nullptr || game == nullptr)
+		return 0;
+
+	const int teamID = team->teamNum;
+
+	if (!LuaUtils::IsAlliedTeam(L, teamID) && !game->IsGameOver())
+		return 0;
+
+	const TeamStatistics& stats = team->GetCurrentStats();
+
+	lua_pushnumber(L, stats.damageDealt);
+	lua_pushnumber(L, stats.damageReceived);
+
+	return 2;
 }
 
 
