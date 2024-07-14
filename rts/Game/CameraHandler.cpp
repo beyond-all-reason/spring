@@ -26,7 +26,8 @@
 #include "System/StringHash.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
-#include "System/SpringDampers.h"
+#include "System/Math/SpringDampers.h"
+#include "System/Math/expDecay.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -429,18 +430,6 @@ void UpdateTransitionExpDecay(const CCameraController* currCam, CCameraHandler::
 	camera->SetRot(mixRotation(camTransState.startRot, camTransState.tweenRot, tweenFact));
 	camera->SetVFOV(mix(camTransState.startFOV, camTransState.tweenFOV, tweenFact));
 	camera->Update();
-}
-
-// From Freya Holmer https://www.youtube.com/watch?v=LSNQuFEDOyQ
-float expDecay(float a, float b, float decay, float dt)
-{
-	return b+(a-b)*math::exp(-decay*dt);
-}
-void expDecay(float3& a, float3 b, float decay, float dt)
-{
-	a.x = expDecay(a.x, b.x, decay, dt);
-	a.y = expDecay(a.y, b.y, decay, dt);
-	a.z = expDecay(a.z, b.z, decay, dt);
 }
 
 void UpdateTransitionLerpSmoothed(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
