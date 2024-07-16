@@ -26,6 +26,12 @@ class LuaTable;
 
 class CProjectileDrawer: public CEventClient {
 public:
+	enum AlphaWaterRenderingStage {
+		ALPHA_WATER_RENDERING_STAGE_BELOW = 0,
+		ALPHA_WATER_RENDERING_STAGE_ABOVE = 1,
+		ALPHA_WATER_RENDERING_STAGE_ALL   = 2
+	};
+public:
 	CProjectileDrawer(): CEventClient("[CProjectileDrawer]", 123456, false), perlinFB(true) {}
 
 	static void InitStatic();
@@ -37,7 +43,7 @@ public:
 	void UpdateDrawFlags();
 
 	void DrawOpaque(bool drawReflection, bool drawRefraction = false);
-	void DrawAlpha(bool drawAboveWater, bool drawReflection, bool drawRefraction);
+	void DrawAlpha(AlphaWaterRenderingStage alphaWaterRenderingStage, bool drawReflection, bool drawRefraction);
 
 	void DrawProjectilesMiniMap();
 
