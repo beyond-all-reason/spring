@@ -3223,6 +3223,10 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		if (!gs->cheatEnabled) {
+			LOG_L(L_WARNING, "smooth air-mesh map overlay cannot be enabled (try with /cheat)");
+			return true;
+		}
 		InverseOrSetBool(smoothHeightMeshDrawer->DrawEnabled(), action.GetArgs());
 		LogSystemStatus("smooth air-mesh map overlay", smoothHeightMeshDrawer->DrawEnabled());
 		return true;
