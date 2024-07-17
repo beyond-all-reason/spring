@@ -346,8 +346,8 @@ void CameraTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 		camera->SetRot(currCam->GetRot());
 		camera->SetVFOV(currCam->GetFOV());
 	} else if (nsecs > 0.0f) {
-		camTransState.timeEnd = nsecs * 1000.0f;
-		camTransState.timeStart = nsecs * 1000.0f;
+		camTransState.timeEnd = nsecs * 1000.0f * camTransState.timeFactor;
+		camTransState.timeStart = nsecs * 1000.0f * camTransState.timeFactor;
 	}
 }
 
