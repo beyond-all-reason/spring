@@ -614,13 +614,35 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 			if ((sfxType & SFX_GLOBAL) != 0) {
 				// emit defined explosion-generator (can only be custom, not standard)
 				// index is made valid by callee, an ID of -1 means CEG failed to load
-				explGenHandler.GenExplosion(sfxType - SFX_GLOBAL, absPos, absDir, unit->cegDamage, 1.0f, 0.0f, unit, nullptr);
+				explGenHandler.GenExplosion(
+					sfxType - SFX_GLOBAL,
+					absPos,
+					absDir,
+					unit->cegDamage,
+					1.0f,
+					0.0f,
+					unit,
+					nullptr,
+					nullptr,
+					nullptr
+				);
 				return true;
 			}
 			if ((sfxType & SFX_CEG) != 0) {
 				// emit defined explosion-generator (can only be custom, not standard)
 				// index is made valid by callee, an ID of -1 means CEG failed to load
-				explGenHandler.GenExplosion(ud->GetModelExpGenID(sfxType - SFX_CEG), absPos, absDir, unit->cegDamage, 1.0f, 0.0f, unit, nullptr);
+				explGenHandler.GenExplosion(
+					ud->GetModelExpGenID(sfxType - SFX_CEG),
+					absPos,
+					absDir,
+					unit->cegDamage,
+					1.0f,
+					0.0f,
+					unit,
+					nullptr,
+					nullptr,
+					nullptr
+				);
 				return true;
 			}
 
@@ -680,6 +702,7 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 					.owner                = unit,
 					.hitUnit              = nullptr,
 					.hitFeature           = nullptr,
+					.hitWeapon            = nullptr,
 					.craterAreaOfEffect   = weapon->damages->craterAreaOfEffect,
 					.damageAreaOfEffect   = weapon->damages->damageAreaOfEffect,
 					.edgeEffectiveness    = weapon->damages->edgeEffectiveness,

@@ -32,8 +32,10 @@ struct CExplosionParams {
 	const WeaponDef* weaponDef;
 
 	CUnit* owner;
+
 	CUnit* hitUnit;
 	CFeature* hitFeature;
+	CWeapon* hitWeapon;
 
 	float craterAreaOfEffect;
 	float damageAreaOfEffect; // radius

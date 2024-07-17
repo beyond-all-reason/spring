@@ -509,6 +509,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 			.owner                = this,
 			.hitUnit              = nullptr,
 			.hitFeature           = nullptr,
+			.hitWeapon            = nullptr,
 			.craterAreaOfEffect   = da->craterAreaOfEffect,
 			.damageAreaOfEffect   = da->damageAreaOfEffect,
 			.edgeEffectiveness    = da->edgeEffectiveness,

@@ -71,7 +71,18 @@ void CFlameProjectile::Update()
 	checkCol &= (curTime <= physLife);
 	deleteMe |= (curTime >= 1.0f);
 
-	explGenHandler.GenExplosion(cegID, pos, speed, curTime, 0.0f, 0.0f, owner(), nullptr);
+	explGenHandler.GenExplosion(
+		cegID,
+		pos,
+		speed,
+		curTime,
+		0.0f,
+		0.0f,
+		owner(),
+		nullptr,
+		nullptr,
+		nullptr
+	);
 }
 
 void CFlameProjectile::Draw()

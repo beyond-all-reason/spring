@@ -39,6 +39,7 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 
 	CUnit* hitUnit = nullptr;
 	CFeature* hitFeature = nullptr;
+	CPlasmaRepulser* hitShield = nullptr;
 	CollisionQuery hitColQuery;
 
 	float boltLength = TraceRay::TraceRay(curPos, curDir, range, collisionFlags, owner, hitUnit, hitFeature, &hitColQuery);
@@ -60,6 +61,7 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 			boltLength = sd.dist;
 			hitUnit = nullptr;
 			hitFeature = nullptr;
+			hitShield = sd.rep;
 			break;
 		}
 	}
@@ -77,6 +79,7 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 		.owner                = owner,
 		.hitUnit              = hitUnit,
 		.hitFeature           = hitFeature,
+		.hitWeapon            = hitShield,
 		.craterAreaOfEffect   = damages->craterAreaOfEffect,
 		.damageAreaOfEffect   = damages->damageAreaOfEffect,
 		.edgeEffectiveness    = damages->edgeEffectiveness,

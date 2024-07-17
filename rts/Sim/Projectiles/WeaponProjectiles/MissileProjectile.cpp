@@ -217,7 +217,18 @@ void CMissileProjectile::Update()
 			SetDirectionAndSpeed(dir, speed.w);
 		}
 
-		explGenHandler.GenExplosion(cegID, pos, dir, ttl, damages->damageAreaOfEffect, 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(
+			cegID,
+			pos,
+			dir,
+			ttl,
+			damages->damageAreaOfEffect,
+			0.0f,
+			owner(),
+			nullptr,
+			nullptr,
+			nullptr
+		);
 	} else {
 		if (weaponDef->selfExplode) {
 			Collision();

@@ -327,7 +327,9 @@ void CGameHelper::Explosion(const CExplosionParams& params) {
 			damageAOE,
 			params.gfxMod,
 			params.owner,
-			params.hitUnit
+			params.hitUnit,
+			params.hitFeature,
+			params.hitWeapon
 		);
 	}
 
