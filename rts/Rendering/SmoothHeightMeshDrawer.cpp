@@ -41,7 +41,7 @@ SmoothHeightMeshDrawer::~SmoothHeightMeshDrawer() {
 
 void SmoothHeightMeshDrawer::DrawInMiniMap()
 {
-	if (!(drawEnabled && gs->cheatEnabled))
+	if (!drawEnabled)
 		return;
 
 	glMatrixMode(GL_PROJECTION);
@@ -80,7 +80,7 @@ void SmoothHeightMeshDrawer::DrawInMiniMap()
 }
 
 void SmoothHeightMeshDrawer::Draw(float yoffset) {
-	if (!(drawEnabled && gs->cheatEnabled))
+	if (!drawEnabled)
 		return;
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
