@@ -309,7 +309,7 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 		for (CUnit* u: unitHandler.GetUnitsByTeam(team)) {
 			const float radius = u->selectionRadius;
 
-			float3 m = u->midPos;
+			const float3 m = u->midPos;
 			if(distanceToPlane(m, planeRight) > radius)
 				continue;
 			if(distanceToPlane(m, planeLeft) > radius)
