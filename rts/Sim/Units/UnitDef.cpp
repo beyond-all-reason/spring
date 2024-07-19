@@ -251,7 +251,6 @@ UnitDef::UnitDef()
 	, realCost(0.0f)
 	, realUpkeep(0.0f)
 	, realBuildTime(0.0f)
-	, selectionRadius(0.0f)
 {
 	memset(&modelCEGTags[0], 0, sizeof(modelCEGTags));
 	memset(&pieceCEGTags[0], 0, sizeof(pieceCEGTags));
@@ -675,7 +674,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	strafeToAttack = udTable.GetBool("strafeToAttack", false);
 	stopToAttack = udTable.GetBool("stopToAttack", false);
 
-	selectionRadius = udTable.GetFloat("selectionRadius", 0.0f);
+	boxSelectionRadius = udTable.GetFloat("boxSelectionRadius", 0.0f);
 
 	// initialize the (per-unitdef) collision-volume
 	// all CUnit instances hold a copy of this object

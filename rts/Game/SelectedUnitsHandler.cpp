@@ -308,7 +308,7 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 
 		for (CUnit* u: unitHandler.GetUnitsByTeam(team)) {
 			const float4 vec(u->midPos, 1.0f);
-			const float radius = u->unitDef->selectionRadius;
+			const float radius = u->unitDef->boxSelectionRadius;
 
 			if (vec.dot4(planeRight) >= radius)
 				continue;

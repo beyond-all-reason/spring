@@ -602,6 +602,7 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FUNCTION("iconType",           ud.iconType,           SafeIconType);
 	ADD_FUNCTION("collisionVolume",    ud.collisionVolume,    ColVolTable);
 	ADD_FUNCTION("selectionVolume",    ud.selectionVolume,    ColVolTable);
+	ADD_FLOAT("boxSelectionRadius",   ud.boxSelectionRadius);
 
 	ADD_FUNCTION("isTransport", ud, IsTransportUnit);
 	ADD_FUNCTION("isImmobile", ud, IsImmobileUnit);
@@ -901,8 +902,6 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 
 	ADD_STRING("scriptName", ud.scriptName);
 	ADD_STRING("scriptPath", ud.scriptName); //FIXME // backward compability
-
-	ADD_FLOAT("selectionRadius",   ud.selectionRadius);
 
 	return true;
 }

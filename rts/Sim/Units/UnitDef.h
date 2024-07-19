@@ -396,8 +396,6 @@ public:
 
 	int maxThisUnit;                                ///< number of units of this type allowed simultaneously in the game
 
-	float selectionRadius;
-
 private:
 	void ParseWeaponsTable(const LuaTable& weaponsTable);
 	void CreateYardMap(std::string&& yardMapStr);
