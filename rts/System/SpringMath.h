@@ -256,11 +256,6 @@ float GetRadFromXY(const float dx, const float dy) _const;
  */
 float3 hs2rgb(float h, float s) _pure _warn_unused_result;
 
-/**
- * @brief Distance from point to a plane. The plane normal must be normalized.
- */
-float distanceToPlane(const float3 point, const float4& plane);
-
 
 #include "SpringMath.inl"
 

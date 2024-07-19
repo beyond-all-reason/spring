@@ -436,8 +436,3 @@ float3 hs2rgb(float h, float s)
 
 	return col;
 }
-
-float distanceToPlane(const float3 point, const float4& plane)
-{
-	return plane.x * point.x + plane.y * point.y + plane.z * point.z + plane.w;
-}
