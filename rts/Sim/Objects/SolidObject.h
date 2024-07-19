@@ -38,7 +38,7 @@ enum YardmapStates {
 	YARDMAP_YARD         = 4,    // walkable when yard is open
 	YARDMAP_YARDINV      = 8,    // walkable when yard is closed
 	YARDMAP_UNBUILDABLE  = 16,   // open for walk    (    walkable, not buildable)
-	YARDMAP_BUILDONLY	 = 32,	 // open for build   (not walkable,     buildable)
+	YARDMAP_BUILDONLY	 = 32,	 // open for build   (not walkable,     buildable)	
 	YARDMAP_EXITONLY     = 64,   // closed for walk into, closed for build
 	YARDMAP_BLOCKED      = 0xFF & ~(YARDMAP_YARDINV|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE), // always block     (not walkable, not buildable)
 
@@ -383,7 +383,6 @@ public:
 	LocalModel localModel;
 	CollisionVolume collisionVolume;
 	CollisionVolume selectionVolume;
-	float selectionRadius = 0.0f;
 
 	///< pieces that were last hit by a {[0] := unsynced, [1] := synced} projectile
 	const LocalModelPiece* hitModelPieces[2];
