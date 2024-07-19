@@ -534,13 +534,17 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 			if (bttmleft.y != 0.0f) norm2 = (camera->GetDir() * signf( bttmleft.y)) - (camera->GetUp()    / math::fabs(bttmleft.y));
 			if (topright.x != 0.0f) norm3 = (camera->GetDir() * signf(-topright.x)) + (camera->GetRight() / math::fabs(topright.x));
 			if (bttmleft.x != 0.0f) norm4 = (camera->GetDir() * signf( bttmleft.x)) - (camera->GetRight() / math::fabs(bttmleft.x));
+			norm1.Normalize();
+			norm2.Normalize();
+			norm3.Normalize();
+			norm4.Normalize();
 
 			const float4 plane1(norm1, -(norm1.dot(camera->GetPos())));
 			const float4 plane2(norm2, -(norm2.dot(camera->GetPos())));
 			const float4 plane3(norm3, -(norm3.dot(camera->GetPos())));
 			const float4 plane4(norm4, -(norm4.dot(camera->GetPos())));
 
-			selectedUnitsHandler.HandleUnitBoxSelection(plane1, plane2, plane3, plane4);
+			selectedUnitsHandler.HandleUnitBoxSelection(plane3, plane4, plane1, plane2);
 		} else {
 			const CUnit* unit = nullptr;
 			const CFeature* feature = nullptr;

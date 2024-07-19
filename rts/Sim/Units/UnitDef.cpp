@@ -59,7 +59,7 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
 	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
 
-	// Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon 
+	// Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon
 	burstControlWhenOutOfArc = weaponTable.GetInt("burstControlWhenOutOfArc", burstControlWhenOutOfArc);
 }
 
@@ -251,6 +251,7 @@ UnitDef::UnitDef()
 	, realCost(0.0f)
 	, realUpkeep(0.0f)
 	, realBuildTime(0.0f)
+	, selectionRadius(0.0f)
 {
 	memset(&modelCEGTags[0], 0, sizeof(modelCEGTags));
 	memset(&pieceCEGTags[0], 0, sizeof(pieceCEGTags));
@@ -674,6 +675,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	strafeToAttack = udTable.GetBool("strafeToAttack", false);
 	stopToAttack = udTable.GetBool("stopToAttack", false);
 
+	selectionRadius = udTable.GetFloat("selectionRadius", 0.0f);
 
 	// initialize the (per-unitdef) collision-volume
 	// all CUnit instances hold a copy of this object

@@ -45,7 +45,7 @@ struct UnitDefWeapon {
 
 	bool fastAutoRetargeting = false; ///< pick new targets as soon as possible, don't wait for slow update
 	bool fastQueryPointUpdate = false;	///< check in with unitscript to get most current query piece before every friendly fire check, don't wait for slow update
-	unsigned int burstControlWhenOutOfArc = 0; ///< Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon 
+	unsigned int burstControlWhenOutOfArc = 0; ///< Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon
 	float weaponAimAdjustPriority = 1.f;		///< relative importance of picking enemy targets that are in front
 
 
@@ -395,6 +395,8 @@ public:
 	float3 nanoColor;								///< If nano spray is displayed what color is it?
 
 	int maxThisUnit;                                ///< number of units of this type allowed simultaneously in the game
+
+	float selectionRadius;
 
 private:
 	void ParseWeaponsTable(const LuaTable& weaponsTable);

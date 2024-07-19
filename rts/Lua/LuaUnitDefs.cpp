@@ -360,7 +360,7 @@ static int WeaponsTable(lua_State* L, const void* data)
 	// When LUA_WEAPON_BASE_INDEX is not 1, lua will resort to using the hash
 	// part to index table keys as we're no longer adding keys to the table
 	// following the sequence 1 to N for any N.
-	lua_createtable(L, 
+	lua_createtable(L,
 			LUA_WEAPON_BASE_INDEX == 1 ? udWeapons.size() : 0,
 			LUA_WEAPON_BASE_INDEX == 1 ? 0 : udWeapons.size());
 
@@ -901,6 +901,8 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 
 	ADD_STRING("scriptName", ud.scriptName);
 	ADD_STRING("scriptPath", ud.scriptName); //FIXME // backward compability
+
+	ADD_FLOAT("selectionRadius",   ud.selectionRadius);
 
 	return true;
 }
