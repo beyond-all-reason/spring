@@ -307,8 +307,6 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	harvestStorage = unitDef->harvestStorage;
 
-	selectionRadius = unitDef->selectionRadius;
-
 	moveType = MoveTypeFactory::GetMoveType(this, unitDef);
 	script = CUnitScriptFactory::CreateScript(this, unitDef);
 
