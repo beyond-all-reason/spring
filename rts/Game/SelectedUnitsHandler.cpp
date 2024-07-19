@@ -310,7 +310,7 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 			const float radius = u->selectionRadius;
 
 			const float3 m = u->midPos;
-			if(distanceToPlane(m, planeRight) > radius)
+			if (distanceToPlane(m, planeRight) > radius)
 				continue;
 			if(distanceToPlane(m, planeLeft) > radius)
 				continue;
