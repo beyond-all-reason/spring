@@ -4827,8 +4827,8 @@ int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
  *
  * @function Spring.SetWindowGeometry
  * @number displayIndex
- * @number winPosX
- * @number winPosY
+ * @number winRelPosX
+ * @number winRelPosY
  * @number winSizeX
  * @number winSizeY
  * @bool fullScreen

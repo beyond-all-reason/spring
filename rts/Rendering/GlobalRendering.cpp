@@ -1165,7 +1165,7 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 	      int2 newRes = GetCfgWinRes();
 
 	LOG("[GR::%s][1] cfgFullScreen=%d numDisplays=%d winPos=<%d,%d> newRes=<%d,%d>", __func__, fullScreen, numDisplays, winPosX, winPosY, newRes.x, newRes.y);
-	GetWindowPosSizeBounded(winPosX, winPosY, newRes.x, newRes.y);
+	//GetWindowPosSizeBounded(winPosX, winPosY, newRes.x, newRes.y);
 	LOG("[GR::%s][2] cfgFullScreen=%d numDisplays=%d winPos=<%d,%d> newRes=<%d,%d>", __func__, fullScreen, numDisplays, winPosX, winPosY, newRes.x, newRes.y);
 
 //	if (SDL_SetWindowFullscreen(window, 0) != 0)
@@ -1173,12 +1173,13 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 
 	SDL_RestoreWindow(window);
 	SDL_SetWindowMinimumSize(window, minRes.x, minRes.y);
-	SDL_SetWindowPosition(window, winPosX, winPosY);
-	SDL_SetWindowSize(window, newRes.x, newRes.y);
-	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
 
 	if (SDL_SetWindowFullscreen(window, (borderless ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
 		LOG("[GR::%s][4][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
+
+	SDL_SetWindowPosition(window, winPosX, winPosY);
+	SDL_SetWindowSize(window, newRes.x, newRes.y);
+	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
 
 	if (newRes == maxRes)
 		SDL_MaximizeWindow(window);
