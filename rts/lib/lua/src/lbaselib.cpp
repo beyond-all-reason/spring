@@ -235,6 +235,13 @@ static int luaB_next (lua_State *L) {
 }
 
 
+/*** 
+ * Meta <code>__pairs</code> backported from Lua 5.2,
+ * originally <code>lua_pushvalue(L, lua_upvalueindex(1)); </code> was <code>lua_pushcfunction(L, luaB_next);</code>
+ * <br>
+ * but that requires "light C function" support,
+ * which makes lua_pushcfunction not allocate extra memory for the GC to clean up.
+ */
 static int luaB_pairs (lua_State *L) {
   luaL_checkany(L, 1);
   if (luaL_getmetafield(L, 1, "__pairs") == LUA_TNIL) {  /* no metamethod? */
