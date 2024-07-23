@@ -228,7 +228,7 @@ void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr
 void CExpGenSpawnable::AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl, const float3& ap, const float& p)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	float minS = std::numeric_limits<float>::max(); float minT = std::numeric_limits<float>::max();
+	float minS = std::numeric_limits<float>::max()   ; float minT = std::numeric_limits<float>::max()   ;
 	float maxS = std::numeric_limits<float>::lowest(); float maxT = std::numeric_limits<float>::lowest();
 	std::invoke([&](auto&&... arg) {
 		((minS = std::min(minS, arg.s)), ...);
@@ -255,14 +255,14 @@ void CExpGenSpawnable::AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC
 void CExpGenSpawnable::AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	float minS = std::numeric_limits<float>::max(); float minT = std::numeric_limits<float>::max();
+	float minS = std::numeric_limits<float>::max()   ; float minT = std::numeric_limits<float>::max()   ;
 	float maxS = std::numeric_limits<float>::lowest(); float maxT = std::numeric_limits<float>::lowest();
 	std::invoke([&](auto&&... arg) {
 		((minS = std::min(minS, arg.s)), ...);
 		((minT = std::min(minT, arg.t)), ...);
 		((maxS = std::max(maxS, arg.s)), ...);
 		((maxT = std::max(maxT, arg.t)), ...);
-		}, tl, tr, br, bl);
+	}, tl, tr, br, bl);
 
 	auto& rb = GetPrimaryRenderBuffer();
 
