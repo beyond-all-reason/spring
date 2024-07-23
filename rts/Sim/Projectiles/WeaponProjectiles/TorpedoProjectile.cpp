@@ -28,7 +28,9 @@ CR_REG_METADATA(CTorpedoProjectile,(
 	CR_MEMBER(ignoreError),
 	CR_MEMBER(tracking),
 	CR_MEMBER(maxSpeed),
-	CR_MEMBER(nextBubble)
+	CR_MEMBER(nextBubble),
+	CR_MEMBER(texx),
+	CR_MEMBER(texy)
 ))
 
 
@@ -39,6 +41,8 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 	, maxSpeed(0.0f)
 
 	, nextBubble(4)
+	, texx(0.0f)
+	, texy(0.0f)
 {
 	projectileType = WEAPON_TORPEDO_PROJECTILE;
 
@@ -48,6 +52,9 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 		maxSpeed = weaponDef->projectilespeed;
 
 	drawRadius = maxSpeed * 8.0f;
+
+	texx = projectileDrawer->torpedotex->xstart - (projectileDrawer->torpedotex->xend - projectileDrawer->torpedotex->xstart) * 0.5f;
+	texy = projectileDrawer->torpedotex->ystart - (projectileDrawer->torpedotex->yend - projectileDrawer->torpedotex->ystart) * 0.5f;
 }
 
 
@@ -166,9 +173,6 @@ void CTorpedoProjectile::Draw()
 		return;
 
 	//UpdateWeaponAnimParams();
-
-	const auto texx = projectileDrawer->torpedotex->xstart - (projectileDrawer->torpedotex->xend - projectileDrawer->torpedotex->xstart) * 0.5f;
-	const auto texy = projectileDrawer->torpedotex->ystart - (projectileDrawer->torpedotex->yend - projectileDrawer->torpedotex->ystart) * 0.5f;
 
 	float3 r = dir.cross(UpVector);
 
