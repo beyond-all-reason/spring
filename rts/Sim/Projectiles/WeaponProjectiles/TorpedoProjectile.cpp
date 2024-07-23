@@ -28,9 +28,7 @@ CR_REG_METADATA(CTorpedoProjectile,(
 	CR_MEMBER(ignoreError),
 	CR_MEMBER(tracking),
 	CR_MEMBER(maxSpeed),
-	CR_MEMBER(nextBubble),
-	CR_MEMBER(texx),
-	CR_MEMBER(texy)
+	CR_MEMBER(nextBubble)
 ))
 
 
@@ -41,8 +39,6 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 	, maxSpeed(0.0f)
 
 	, nextBubble(4)
-	, texx(0.0f)
-	, texy(0.0f)
 {
 	projectileType = WEAPON_TORPEDO_PROJECTILE;
 
@@ -52,9 +48,6 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 		maxSpeed = weaponDef->projectilespeed;
 
 	drawRadius = maxSpeed * 8.0f;
-
-	texx = projectileDrawer->torpedotex->xstart - (projectileDrawer->torpedotex->xend - projectileDrawer->torpedotex->xstart) * 0.5f;
-	texy = projectileDrawer->torpedotex->ystart - (projectileDrawer->torpedotex->yend - projectileDrawer->torpedotex->ystart) * 0.5f;
 }
 
 
@@ -172,6 +165,11 @@ void CTorpedoProjectile::Draw()
 	if (model != nullptr)
 		return;
 
+	//UpdateWeaponAnimParams();
+
+	const auto texx = projectileDrawer->torpedotex->xstart - (projectileDrawer->torpedotex->xend - projectileDrawer->torpedotex->xstart) * 0.5f;
+	const auto texy = projectileDrawer->torpedotex->ystart - (projectileDrawer->torpedotex->yend - projectileDrawer->torpedotex->ystart) * 0.5f;
+
 	float3 r = dir.cross(UpVector);
 
 	if (r.SqLength() < 0.001f)
@@ -183,56 +181,56 @@ void CTorpedoProjectile::Draw()
 	const float w = 2;
 	const SColor col(60, 60, 100, 255);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos + (r * w),             texx, texy, col },
 		{ drawPos + (u * w),             texx, texy, col },
 		{ drawPos + (u * w) + (dir * h), texx, texy, col },
 		{ drawPos + (r * w) + (dir * h), texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos + (u * w),             texx, texy, col },
 		{ drawPos - (r * w),             texx, texy, col },
 		{ drawPos - (r * w) + (dir * h), texx, texy, col },
 		{ drawPos + (u * w) + (dir * h), texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos - (r * w),             texx, texy, col },
 		{ drawPos - (u * w),             texx, texy, col },
 		{ drawPos - (u * w) + (dir * h), texx, texy, col },
 		{ drawPos - (r * w) + (dir * h), texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos - (u * w),             texx, texy, col },
 		{ drawPos + (r * w),             texx, texy, col },
 		{ drawPos + (r * w) + (dir * h), texx, texy, col },
 		{ drawPos - (u * w) + (dir * h), texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos + (r * w) + (dir * h), texx, texy, col },
 		{ drawPos + (u * w) + (dir * h), texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos + (u * w) + (dir * h), texx, texy, col },
 		{ drawPos - (r * w) + (dir * h), texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos - (r * w) + (dir * h), texx, texy, col },
 		{ drawPos - (u * w) + (dir * h), texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos - (u * w) + (dir * h), texx, texy, col },
 		{ drawPos + (r * w) + (dir * h), texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },

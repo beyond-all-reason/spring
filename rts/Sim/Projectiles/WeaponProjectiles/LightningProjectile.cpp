@@ -64,6 +64,8 @@ void CLightningProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	UpdateWeaponAnimParams();
+
 	uint8_t col[4] {
 		(uint8_t)(color.x * 255),
 		(uint8_t)(color.y * 255),
@@ -85,7 +87,7 @@ void CLightningProjectile::Draw()
 			tempPos  = (startPos * (1.0f - f)) + (targetPos * f);
 
 			const auto& WDV = weaponDef->visuals;
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<1>(
 				{ tempPosO + (dir1 * (displacement[d    ] + WDV.thickness)), WDV.texture1->xstart, WDV.texture1->ystart, col },
 				{ tempPos  + (dir1 * (displacement[d + 1] + WDV.thickness)), WDV.texture1->xend,   WDV.texture1->ystart, col },
 				{ tempPos  + (dir1 * (displacement[d + 1] - WDV.thickness)), WDV.texture1->xend,   WDV.texture1->yend,   col },
