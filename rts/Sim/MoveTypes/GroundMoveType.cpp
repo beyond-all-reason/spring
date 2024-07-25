@@ -1832,7 +1832,11 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 	// now we do the obstacle avoidance proper
 	// avoider always uses its never-rotated MoveDef footprint
 	// note: should increase radius for smaller turnAccel values
-	const float avoidanceRadius = std::max(currentSpeed, 1.0f) * (avoider->radius * 2.0f);
+	const float avoiderSeparationDist = avoider->unitDef->separationDistance;
+	// FIXME: Search radius probably should the be largest movedef radius & 2.0f? Otherwise small units won't try to
+	// avoid large units. However, this will come with a performance cost.
+	// FIXME: what about avoiding fast units? Again they could be missed.
+	const float avoidanceRadius = std::max(currentSpeed, 1.0f) * (avoider->radius * 2.0f) + avoiderSeparationDist;
 	const float avoiderRadius = avoiderMD->CalcFootPrintMinExteriorRadius();
 
 	MoveTypes::CheckCollisionQuery avoiderInfo(avoider);
@@ -1866,10 +1870,11 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 
 		// use the avoidee's MoveDef footprint as radius if it is mobile
 		// use the avoidee's Unit (not UnitDef) footprint as radius otherwise
+		const float avoideeSeparationDist = (avoideeUD != nullptr) ? avoideeUD->separationDistance : 0.f;
 		const float avoideeRadius = avoideeMobile?
 			avoideeMD->CalcFootPrintMinExteriorRadius():
 			avoidee->CalcFootPrintMinExteriorRadius();
-		const float avoidanceRadiusSum = avoiderRadius + avoideeRadius;
+		const float avoidanceRadiusSum = avoiderRadius + avoideeRadius + std::max(avoiderSeparationDist, avoideeSeparationDist);
 		const float avoidanceMassSum = avoider->mass + avoidee->mass;
 		const float avoideeMassScale = avoideeMobile? (avoidee->mass / avoidanceMassSum): 1.0f;
 		const float avoideeDistSq = avoideeVector.SqLength();
