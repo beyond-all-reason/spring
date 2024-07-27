@@ -290,7 +290,12 @@ static bool set_cpu_affinity(logical_cpu_t logical_cpu)
 
 static int get_total_cpus(void)
 {
+#ifdef __OpenBSD__
+	// HW_NCPUONLINE accounts for hyperthreading off/on
+	int mib[2] = { CTL_HW, HW_NCPUONLINE };
+#else
 	int mib[2] = { CTL_HW, HW_NCPU };
+#endif
 	int ncpus;
 	size_t len = sizeof(ncpus);
 	if (sysctl(mib, 2, &ncpus, &len, (void *) 0, 0) != 0) return 1;
