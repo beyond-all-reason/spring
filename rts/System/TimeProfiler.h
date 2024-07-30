@@ -11,7 +11,6 @@
 
 #include "System/Misc/SpringTime.h"
 #include "System/Misc/NonCopyable.h"
-#include "System/float3.h"
 #include "System/StringHash.h"
 #include "System/UnorderedMap.hpp"
 
@@ -120,8 +119,8 @@ public:
 		std::array<spring_time, numFrames> frames;
 
 		// .x := maximum dt, .y := time-percentage, .z := peak-percentage
-		float3 stats;
-		float3 color;
+		std::array<float, 3> stats;
+		std::array<float, 3> color;
 
 		bool newPeak = false;
 		bool newLagPeak = false;
@@ -148,8 +147,8 @@ public:
 	size_t GetNumSortedProfiles() const { return (sortedProfiles.size()); }
 	size_t GetNumThreadProfiles() const { return (threadProfiles.size()); }
 
-	float GetTimePercentage(const char* name) const { return (GetTimeRecord(name).stats.y); }
-	float GetTimePercentageRaw(const char* name) const { return (GetTimeRecordRaw(name).stats.y); }
+	float GetTimePercentage(const char* name) const { return (GetTimeRecord(name).stats[1]); }
+	float GetTimePercentageRaw(const char* name) const { return (GetTimeRecordRaw(name).stats[1]); }
 
 	const TimeRecord& GetTimeRecord(const char* name) const;
 	const TimeRecord& GetTimeRecordRaw(const char* name) const {
@@ -169,7 +168,7 @@ public:
 		ToggleLock(true);
 
 		for (auto& p: profiles)
-			p.second.stats.z = 0.0f;
+			p.second.stats[2] = 0.0f;
 
 		ToggleLock(false);
 	}

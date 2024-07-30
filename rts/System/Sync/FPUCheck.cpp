@@ -5,7 +5,7 @@
 #endif
 
 #include "FPUCheck.h"
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 #include "System/Exceptions.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/Log/ILog.h"

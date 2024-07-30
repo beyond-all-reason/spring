@@ -27,9 +27,9 @@ static CGlobalUnsyncedRNG profileColorRNG;
 const std::array<CTimeProfiler::ProfileSortFunc, CTimeProfiler::SortType::ST_COUNT> CTimeProfiler::SortingFunctions = {
 	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.first          < b.first         ); }, // ST_ALPHABETICAL = 0,
 	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.total   > b.second.total  ); }, // ST_TOTALTIME    = 1,
-	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.y > b.second.stats.y); }, // ST_CURRENTTIME  = 2,
-	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.z > b.second.stats.z); }, // ST_MAXTIME      = 3,
-	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.x > b.second.stats.x); }, // ST_LAG          = 4,
+	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats[1] > b.second.stats[1]); }, // ST_CURRENTTIME  = 2,
+	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats[2] > b.second.stats[2]); }, // ST_MAXTIME      = 3,
+	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats[0] > b.second.stats[0]); }, // ST_LAG          = 4,
 };
 
 
@@ -251,16 +251,16 @@ void CTimeProfiler::UpdateRaw()
 		for (auto& pi: profiles) {
 			auto& p = pi.second;
 
-			p.stats.y = spring_tomsecs(p.current) / timeDiff;
+			p.stats[1] = spring_tomsecs(p.current) / timeDiff;
 			p.current = spring_notime;
 
 			p.newLagPeak = false;
-			p.newPeak = (p.stats.y > p.stats.z);
+			p.newPeak = (p.stats[1] > p.stats[2]);
 
 			if (!p.newPeak)
 				continue;
 
-			p.stats.z = p.stats.y;
+			p.stats[2] = p.stats[1];
 
 		}
 
@@ -269,7 +269,7 @@ void CTimeProfiler::UpdateRaw()
 
 	if (curTime.toSecsi() % 6 == 0) {
 		for (auto& pi: profiles) {
-			(pi.second).stats.x *= 0.5f;
+			(pi.second).stats[0] *= 0.5f;
 		}
 	}
 }
@@ -408,17 +408,17 @@ void CTimeProfiler::AddTimeRaw(
 	p.total   += deltaTime;
 	p.current += deltaTime;
 
-	p.newLagPeak = (p.stats.x > 0.0f && deltaTime.toMilliSecsf() > p.stats.x);
-	p.stats.x    = std::max(p.stats.x, deltaTime.toMilliSecsf());
+	p.newLagPeak = (p.stats[0] > 0.0f && deltaTime.toMilliSecsf() > p.stats[0]);
+	p.stats[0]   = std::max(p.stats[0], deltaTime.toMilliSecsf());
 
 	if (pi != profiles.end()) {
 		// profile already exists, add dt
 		p.frames[currentPosition] += deltaTime;
 	} else {
 		// new profile, new color
-		p.color.x = profileColorRNG.NextFloat();
-		p.color.y = profileColorRNG.NextFloat();
-		p.color.z = profileColorRNG.NextFloat();
+		p.color[0] = profileColorRNG.NextFloat();
+		p.color[1] = profileColorRNG.NextFloat();
+		p.color[2] = profileColorRNG.NextFloat();
 		p.showGraph = showGraph;
 
 		resortProfiles += 1;
@@ -436,7 +436,7 @@ void CTimeProfiler::PrintProfilingInfo() const
 		const std::string& name = sortedProfile.first;
 		const TimeRecord& tr = sortedProfile.second;
 
-		LOG("%35s %16.2fms %5.2f%%", name.c_str(), tr.total.toMilliSecsf(), tr.stats.y * 100);
+		LOG("%35s %16.2fms %5.2f%%", name.c_str(), tr.total.toMilliSecsf(), tr.stats[1] * 100);
 	}
 }
 

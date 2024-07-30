@@ -17,7 +17,6 @@ macro    (ai_wrapper_message type msg)
 	endif (NOT AIWRAPPER_FIND_QUIETLY)
 endmacro (ai_wrapper_message type msg)
 
-
 # Configure all AI Wrapper submodules that need processing
 get_list_of_submodules(AI_WRAPPER_DIRS)
 set(DEPS_AI_WRAPPERS "")

@@ -11,6 +11,8 @@
 
 add_definitions(-DBUILDING_AI)
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../rts/lib)
+
 
 ### User-definable build options
 set (AI_EXCLUDE_REGEX "XXXXXXXX" CACHE STRING "Which Skirmish AIs not to build (none by default, example: \"NTai|Null.*AI\", see also: AI_TYPES")

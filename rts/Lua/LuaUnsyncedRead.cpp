@@ -548,9 +548,9 @@ int LuaUnsyncedRead::GetProfilerTimeRecord(lua_State* L)
 	int numRet = 5;
 	lua_pushnumber(L, record.total.toMilliSecsf());
 	lua_pushnumber(L, record.current.toMilliSecsf());
-	lua_pushnumber(L, record.stats.x); // max-dt
-	lua_pushnumber(L, record.stats.y); // time-%
-	lua_pushnumber(L, record.stats.z); // peak-%
+	lua_pushnumber(L, record.stats[0]); // max-dt
+	lua_pushnumber(L, record.stats[1]); // time-%
+	lua_pushnumber(L, record.stats[2]); // peak-%
 
 	if (luaL_optboolean(L, 2, false)) {
 		for (size_t i = 0; i < record.frames.size(); i++) {

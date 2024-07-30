@@ -9,7 +9,7 @@ ADD_SUBDIRECTORY(luasocket)
 ADD_SUBDIRECTORY(minizip)
 ADD_SUBDIRECTORY(headlessStubs)
 if (ENABLE_STREFLOP)
-ADD_SUBDIRECTORY(streflop)
+	ADD_SUBDIRECTORY(streflop)
 endif ()
 
 SET(GFLAGS_BUILD_SHARED_LIBS          FALSE)
@@ -29,13 +29,15 @@ ADD_SUBDIRECTORY(gflags)
 # sadly still manual changes are needed!
 
 set(DISABLED_ASSIMP_FORMATS "")
-foreach(var AMF AC ASE ASSBIN ASSXML B3D BVH DXF CSM HMP IRRMESH IRR LWS MD2 MD3 MD5 MDC MDL MMD NFF NDO OFF OGRE OPENGEX PLY MS3D COB IFC XGL FBX Q3D Q3BSP RAW SIB SMD STL TERRAGEN 3D X X3D GLTF 3MF)
+foreach(var AMF AC ASE ASSBIN ASSXML B3D BVH DXF CSM HMP IRRMESH IRR LWS MD2 MD3 MD5 MDC MDL MMD NFF NDO OFF OGRE OPENGEX PLY MS3D COB IFC XGL FBX Q3D Q3BSP RAW SIB SMD STL TERRAGEN 3D X X3D 3MF)
 	list(APPEND DISABLED_ASSIMP_FORMATS "ASSIMP_BUILD_${var}_IMPORTER")
 endforeach()
+
 set(ENABLED_ASSIMP_FORMATS "")
-foreach(var 3DS COLLADA LWO OBJ BLEND)
+foreach(var 3DS COLLADA LWO OBJ BLEND GLTF USD)
 	list(APPEND ENABLED_ASSIMP_FORMATS "ASSIMP_BUILD_${var}_IMPORTER")
 endforeach()
+
 
 foreach(var
 		${DISABLED_ASSIMP_FORMATS}
@@ -47,23 +49,41 @@ foreach(var
 		ASSIMP_BUILD_ASSIMP_TOOLS
 		ASSIMP_BUILD_NONFREE_C4D_IMPORTER
 		ASSIMP_DOUBLE_PRECISION
+		ASSIMP_INSTALL
+		ASSIMP_INJECT_DEBUG_POSTFIX # handle https://github.com/beyond-all-reason/spring/commit/479b42e61a9ee8d5bc8b5a3d772708276c5900e5
 	)
-	set("${var}" OFF CACHE STRING "forced off by spring build env" FORCE)
+	set("${var}" OFF CACHE STRING "forced off by Recoil build env" FORCE)
 endforeach()
 
 foreach(var
 		${ENABLED_ASSIMP_FORMATS}
 	)
-	set("${var}" ON CACHE STRING "forced on by spring build env" FORCE)
+	set("${var}" ON CACHE STRING "forced on by Recoil build env" FORCE)
 endforeach()
 
 foreach(var ASSIMP_BUILD_STATIC_LIB ASSIMP_NO_EXPORT)
 	message(STATUS "Forcing assimp option ${var} to on")
-	set("${var}" ON CACHE STRING "forced on by spring build env" FORCE)
+	set("${var}" ON CACHE STRING "forced on by Recoil build env" FORCE)
 endforeach()
 
+set("ASSIMP_WARNINGS_AS_ERRORS" OFF CACHE BOOL "forced on by Recoil build env" FORCE)
+
+FIND_PACKAGE(ZLIB)
+IF (NOT ZLIB_FOUND)
+	set("ASSIMP_BUILD_ZLIB" ON CACHE BOOL "forced on by Recoil build env" FORCE)
+endif()
+
+set("ASSIMP_BUILD_MINIZIP" ON CACHE BOOL "forced on by Recoil build env" FORCE)
+
+set(CMAKE_CXX_FLAGS_ORIG ${CMAKE_CXX_FLAGS})
+if (CMAKE_COMPILER_IS_GNUCXX)
+	# Assimp cannot be compiled with "-fsingle-precision-constant"
+	string(REPLACE "-fsingle-precision-constant" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+endif(CMAKE_COMPILER_IS_GNUCXX)
+
 ADD_SUBDIRECTORY(assimp)
-target_compile_definitions(assimp PRIVATE -DASSIMP_BUILD_NO_OWN_ZLIB)
+
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_ORIG})
 
 ADD_SUBDIRECTORY(squish)
 ADD_SUBDIRECTORY(rg-etc1)

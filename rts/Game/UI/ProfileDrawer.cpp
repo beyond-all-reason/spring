@@ -372,9 +372,9 @@ static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		font->glFormat(fStartX += 0.04f, fStartY, textSize, FONT_DESCENDER | FONT_SCALE | FONT_NORM | FONT_RIGHT | FONT_BUFFERED, "%.2fs", profileData.total.toSecsf());
 
 		// print percent of CPU time used within the last 500ms
-		font->glFormat(fStartX += 0.06f, fStartY, textSize, FONT_DESCENDER | FONT_SCALE | FONT_NORM | FONT_RIGHT | FONT_BUFFERED, "%.2f%%", profileData.stats.y * 100.0f);
-		font->glFormat(fStartX += 0.04f, fStartY, textSize, FONT_DESCENDER | FONT_SCALE | FONT_NORM | FONT_RIGHT | FONT_BUFFERED, "\xff\xff%c%c%.2f%%", profileData.newPeak? 1: 255, profileData.newPeak? 1: 255, profileData.stats.z * 100.0f);
-		font->glFormat(fStartX += 0.04f, fStartY, textSize, FONT_DESCENDER | FONT_SCALE | FONT_NORM | FONT_RIGHT | FONT_BUFFERED, "\xff\xff%c%c%.0fms", profileData.newLagPeak? 1: 255, profileData.newLagPeak? 1: 255, profileData.stats.x);
+		font->glFormat(fStartX += 0.06f, fStartY, textSize, FONT_DESCENDER | FONT_SCALE | FONT_NORM | FONT_RIGHT | FONT_BUFFERED, "%.2f%%", profileData.stats[1] * 100.0f);
+		font->glFormat(fStartX += 0.04f, fStartY, textSize, FONT_DESCENDER | FONT_SCALE | FONT_NORM | FONT_RIGHT | FONT_BUFFERED, "\xff\xff%c%c%.2f%%", profileData.newPeak? 1: 255, profileData.newPeak? 1: 255, profileData.stats[2] * 100.0f);
+		font->glFormat(fStartX += 0.04f, fStartY, textSize, FONT_DESCENDER | FONT_SCALE | FONT_NORM | FONT_RIGHT | FONT_BUFFERED, "\xff\xff%c%c%.0fms", profileData.newLagPeak? 1: 255, profileData.newLagPeak? 1: 255, profileData.stats[0]);
 
 		// print timer name
 		font->glPrint(fStartX += 0.01f, fStartY, textSize, FONT_DESCENDER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, p.first);
@@ -394,7 +394,7 @@ static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		for (const auto& p: sortedProfiles) {
 			const CTimeProfiler::TimeRecord& tr = p.second;
 
-			const SColor selColor(tr.color.x, tr.color.y, tr.color.z, 1.0f);
+			const SColor selColor(tr.color[0], tr.color[1], tr.color[2], 1.0f);
 			const SColor actColor(1.0f, 0.0f, 0.0f, 1.0f);
 
 			// selection box
@@ -432,7 +432,7 @@ static void DrawProfiler(TypedRenderBuffer<VA_TYPE_C   >& rb)
 	for (const auto& p: sortedProfiles) {
 		const CTimeProfiler::TimeRecord& tr = p.second;
 
-		const float3& fc = tr.color;
+		const auto& fc = tr.color;
 		const SColor c(fc[0], fc[1], fc[2]);
 
 		if (!tr.showGraph)

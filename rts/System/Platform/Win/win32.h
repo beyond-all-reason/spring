@@ -13,7 +13,7 @@
 	#endif
 
 	// do not include <cmath> or <math.h> before this, it'll cause ambiguous call er
-	#include "lib/streflop/streflop_cond.h"
+	#include <streflop/streflop_cond.h>
 
 	#ifdef HEADLESS
 		// workaround for mingw64 bug which leads to undefined reference to _imp__gl*

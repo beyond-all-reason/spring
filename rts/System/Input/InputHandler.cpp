@@ -2,6 +2,7 @@
 
 #include "InputHandler.h"
 #include "System/TimeProfiler.h"
+#include <streflop/streflop_cond.h>
 
 InputHandler input;
 

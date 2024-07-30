@@ -10,7 +10,7 @@
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 #include "System/FileSystem/FileHandler.h"
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 #include <SDL_mouse.h>
 #include <SDL_events.h>
 
