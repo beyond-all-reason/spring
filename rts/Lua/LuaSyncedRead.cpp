@@ -39,7 +39,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
-#include "Sim//Misc/CollisionHandler.h"
+#include "Sim/Misc/CollisionHandler.h"
 #include "Sim/MoveTypes/StrafeAirMoveType.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
@@ -8535,9 +8535,9 @@ int LuaSyncedRead::GetUnitScriptNames(lua_State* L)
 
 int LuaSyncedRead::TraceRayUnits(lua_State* L) //returns the list of units that an raytrace has hit
 {
-	float3 pos((double)luaL_checknumber(L, 1), (double)luaL_checknumber(L, 2), (double)luaL_checknumber(L, 3));
-	float3 dir((double)luaL_checknumber(L, 4), (double)luaL_checknumber(L, 5), (double)luaL_checknumber(L, 6));
-	float traceLength = luaL_checknumber(L, 7);
+	float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	float3 dir(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
+	float traceLength = luaL_checkfloat(L, 7);
 	QuadFieldQuery qfQuery;
 	quadField.GetQuadsOnRay(qfQuery, pos, dir, traceLength);
 	CollisionQuery cq;
@@ -8579,14 +8579,14 @@ int LuaSyncedRead::TraceRayUnits(lua_State* L) //returns the list of units that 
  */
 int LuaSyncedRead::TraceRayFeatures(lua_State* L) //returns the list of features that an raytrace has hit
 {
-	 float3 pos((double)luaL_checknumber(L, 1), (double)luaL_checknumber(L, 2), (double)luaL_checknumber(L, 3));
-	 float3 dir((double)luaL_checknumber(L, 4), (double)luaL_checknumber(L, 5), (double)luaL_checknumber(L, 6));
-	 float traceLength = luaL_checknumber(L, 7);
-	 QuadFieldQuery qfQuery;
-	 quadField.GetQuadsOnRay(qfQuery, pos, dir, traceLength);
-	 CollisionQuery cq;
-	 int num = 0;
-	 lua_newtable(L);
+	float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	float3 dir(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
+	float traceLength = luaL_checkfloat(L, 7);
+	QuadFieldQuery qfQuery;
+	quadField.GetQuadsOnRay(qfQuery, pos, dir, traceLength);
+	CollisionQuery cq;
+	int num = 0;
+	lua_newtable(L);
 	for (const int quadIdx : *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
 
@@ -8618,19 +8618,21 @@ int LuaSyncedRead::TraceRayFeatures(lua_State* L) //returns the list of features
  * @number dirY
  * @number dirZ
  * @number traceLength
- * @treturn {{len, Id},...}
+ * @treturn nil|len
  */
 int LuaSyncedRead::TraceRayGround(lua_State* L)
 {
-	 float3 pos((double)luaL_checknumber(L, 1), (double)luaL_checknumber(L, 2), (double)luaL_checknumber(L, 3));
-	 float3 dir((double)luaL_checknumber(L, 4), (double)luaL_checknumber(L, 5), (double)luaL_checknumber(L, 6));
-	 float traceLength = luaL_checknumber(L, 7);
-	 const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength);
+	float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	float3 dir(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
+	float traceLength = luaL_checkfloat(L, 7);
+	const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength);
 
-	 if (traceLength > groundLength && groundLength > 0.0f) {
-		 traceLength = groundLength;
-	 }
-	 lua_pushnumber(L, traceLength);
+	if (traceLength > groundLength && groundLength > 0.0f) {
+		traceLength = groundLength;
+	}
+	if (-1.0f != groundLength)
+		return 0;
+	lua_pushnumber(L, traceLength);
 	return 1;
 }
 /******************************************************************************
