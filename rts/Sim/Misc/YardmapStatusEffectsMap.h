@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "Map/ReadMap.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Units/Unit.h"
@@ -21,17 +22,20 @@ public:
         BLOCK_BUILDING = 0x02,
     };
 
-    uint32_t interleave(uint32_t x, uint32_t y)
+    uint32_t interleave(uint32_t x, uint32_t z)
     {
+		x = std::clamp(x, 0, mapDims.mapx);
+		z = std::clamp(z, 0, mapDims.mapy);
+
 		static constexpr uint32_t zMasks[] = {0x0000FFFF, 0x00FF00FF, 0x0F0F0F0F, 0x33333333, 0x55555555};
 		static constexpr uint32_t zShifts[] = {16, 8, 4, 2, 1};
 
         for(uint32_t i = 0; i < sizeof(zMasks)/sizeof(uint32_t); i++)
         {
             x = (x | (x << zShifts[i])) & zMasks[i];
-            y = (y | (y << zShifts[i])) & zMasks[i];
+            z = (z | (z << zShifts[i])) & zMasks[i];
         }
-        return x | (y << 1);
+        return x | (z << 1);
     }
 
     uint8_t& GetMapState(int x, int z) { return stateMap[interleave(x, z)]; }
