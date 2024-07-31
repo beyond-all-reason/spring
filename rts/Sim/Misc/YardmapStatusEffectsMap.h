@@ -24,8 +24,8 @@ public:
 
     uint32_t interleave(uint32_t x, uint32_t z)
     {
-		x = std::clamp(x, 0, mapDims.mapx);
-		z = std::clamp(z, 0, mapDims.mapy);
+		x = std::clamp(int(x), 0, mapDims.mapx);
+		z = std::clamp(int(z), 0, mapDims.mapy);
 
 		static constexpr uint32_t zMasks[] = {0x0000FFFF, 0x00FF00FF, 0x0F0F0F0F, 0x33333333, 0x55555555};
 		static constexpr uint32_t zShifts[] = {16, 8, 4, 2, 1};
