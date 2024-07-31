@@ -39,6 +39,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
+#include "Sim//Misc/CollisionHandler.h"
 #include "Sim/MoveTypes/StrafeAirMoveType.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
@@ -381,6 +382,10 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeaturePieceDirection);
 	REGISTER_LUA_CFUNC(GetFeaturePiecePosDir);
 	REGISTER_LUA_CFUNC(GetFeaturePieceMatrix);
+
+	REGISTER_LUA_CFUNC(TraceRayFeatures);
+	REGISTER_LUA_CFUNC(TraceRayGround);
+	REGISTER_LUA_CFUNC(TraceRayUnits);
 
 	REGISTER_LUA_CFUNC(GetRadarErrorParams);
 
@@ -8515,8 +8520,119 @@ int LuaSyncedRead::GetUnitScriptNames(lua_State* L)
 
 	return 1;
 }
+/***
+ *
+ * @function Spring.TraceRayUnits
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @number traceLength
+ * @treturn {{len, Id},...}
+ */
 
+int LuaSyncedRead::TraceRayUnits(lua_State* L) //returns the list of units that an raytrace has hit
+{
+	float3 pos((double)luaL_checknumber(L, 1), (double)luaL_checknumber(L, 2), (double)luaL_checknumber(L, 3));
+	float3 dir((double)luaL_checknumber(L, 4), (double)luaL_checknumber(L, 5), (double)luaL_checknumber(L, 6));
+	float traceLength = luaL_checknumber(L, 7);
+	QuadFieldQuery qfQuery;
+	quadField.GetQuadsOnRay(qfQuery, pos, dir, traceLength);
+	CollisionQuery cq;
+	int num = 0;
+	lua_newtable(L);
+	for (const int quadIdx : *qfQuery.quads) {
+		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
 
+		for (CUnit* u : quad.units) {
+
+			if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+				continue;
+
+			if (CCollisionHandler::DetectHit(u, u->GetTransformMatrix(true), pos, pos + dir * traceLength, &cq, true)) {
+				const float len = cq.GetHitPosDist(pos, dir);
+				lua_newtable(L);
+				lua_pushnumber(L, len);
+				lua_rawseti(L, -2, 1);
+				lua_pushnumber(L, u->id);
+				lua_rawseti(L, -2, 2);
+				lua_rawseti(L, -2, num + 1);
+				num++;
+			}
+		}
+	}
+	return 1;
+}
+/***
+ *
+ * @function Spring.TraceRayFeatures
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @number traceLength
+ * @treturn {{len, Id},...}
+ */
+int LuaSyncedRead::TraceRayFeatures(lua_State* L) //returns the list of features that an raytrace has hit
+{
+	 float3 pos((double)luaL_checknumber(L, 1), (double)luaL_checknumber(L, 2), (double)luaL_checknumber(L, 3));
+	 float3 dir((double)luaL_checknumber(L, 4), (double)luaL_checknumber(L, 5), (double)luaL_checknumber(L, 6));
+	 float traceLength = luaL_checknumber(L, 7);
+	 QuadFieldQuery qfQuery;
+	 quadField.GetQuadsOnRay(qfQuery, pos, dir, traceLength);
+	 CollisionQuery cq;
+	 int num = 0;
+	 lua_newtable(L);
+	for (const int quadIdx : *qfQuery.quads) {
+		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
+
+		for (CFeature* f : quad.features) {
+			if (!f->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+				continue;
+
+			if (CCollisionHandler::DetectHit(f, f->GetTransformMatrix(true), pos, pos + dir * traceLength, &cq, true)) {
+				const float len = cq.GetHitPosDist(pos, dir);
+				lua_newtable(L);
+				lua_pushnumber(L, len);
+				lua_rawseti(L, -2, 1);
+				lua_pushnumber(L, f->id);
+				lua_rawseti(L, -2, 2);
+				lua_rawseti(L, -2, num + 1);
+				num++;
+			}
+		}
+	}
+	return 1;
+}
+/***
+ *
+ * @function Spring.TraceRayGround
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @number traceLength
+ * @treturn {{len, Id},...}
+ */
+int LuaSyncedRead::TraceRayGround(lua_State* L)
+{
+	 float3 pos((double)luaL_checknumber(L, 1), (double)luaL_checknumber(L, 2), (double)luaL_checknumber(L, 3));
+	 float3 dir((double)luaL_checknumber(L, 4), (double)luaL_checknumber(L, 5), (double)luaL_checknumber(L, 6));
+	 float traceLength = luaL_checknumber(L, 7);
+	 const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength);
+
+	 if (traceLength > groundLength && groundLength > 0.0f) {
+		 traceLength = groundLength;
+	 }
+	 lua_pushnumber(L, traceLength);
+	return 1;
+}
 /******************************************************************************
  * Misc
  *
