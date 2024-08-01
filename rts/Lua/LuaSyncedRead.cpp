@@ -8630,7 +8630,7 @@ int LuaSyncedRead::TraceRayGround(lua_State* L)
 	if (traceLength > groundLength && groundLength > 0.0f) {
 		traceLength = groundLength;
 	}
-	if (-1.0f != groundLength)
+	if (-1.0f == groundLength)
 		return 0;
 	lua_pushnumber(L, traceLength);
 	return 1;
