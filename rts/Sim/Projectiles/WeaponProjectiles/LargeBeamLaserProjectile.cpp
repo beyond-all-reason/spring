@@ -40,30 +40,24 @@ CLargeBeamLaserProjectile::CLargeBeamLaserProjectile(const ProjectileParams& par
 {
 	projectileType = WEAPON_LARGEBEAMLASER_PROJECTILE;
 
-	if (weaponDef != nullptr) {
-		assert(weaponDef->IsHitScanWeapon());
+	assert(weaponDef->IsHitScanWeapon());
 
-		thickness     = weaponDef->visuals.thickness;
-		corethickness = weaponDef->visuals.corethickness;
-		flaresize     = weaponDef->visuals.laserflaresize;
-		tilelength    = weaponDef->visuals.tilelength;
-		scrollspeed   = weaponDef->visuals.scrollspeed;
-		pulseSpeed    = weaponDef->visuals.pulseSpeed;
-		decay         = weaponDef->visuals.beamdecay;
+	thickness     = weaponDef->visuals.thickness;
+	corethickness = weaponDef->visuals.corethickness;
+	flaresize     = weaponDef->visuals.laserflaresize;
+	tilelength    = weaponDef->visuals.tilelength;
+	scrollspeed   = weaponDef->visuals.scrollspeed;
+	pulseSpeed    = weaponDef->visuals.pulseSpeed;
+	decay         = weaponDef->visuals.beamdecay;
 
-		coreColStart[0] = (weaponDef->visuals.color2.x * 255);
-		coreColStart[1] = (weaponDef->visuals.color2.y * 255);
-		coreColStart[2] = (weaponDef->visuals.color2.z * 255);
-		coreColStart[3] = 1;
-		edgeColStart[0] = (weaponDef->visuals.color.x * 255);
-		edgeColStart[1] = (weaponDef->visuals.color.y * 255);
-		edgeColStart[2] = (weaponDef->visuals.color.z * 255);
-		edgeColStart[3] = 1;
-	}
-	else {
-		memset(&coreColStart[0], 0, sizeof(coreColStart));
-		memset(&edgeColStart[0], 0, sizeof(edgeColStart));
-	}
+	coreColStart[0] = (weaponDef->visuals.color2.x * 255);
+	coreColStart[1] = (weaponDef->visuals.color2.y * 255);
+	coreColStart[2] = (weaponDef->visuals.color2.z * 255);
+	coreColStart[3] = 1;
+	edgeColStart[0] = (weaponDef->visuals.color.x * 255);
+	edgeColStart[1] = (weaponDef->visuals.color.y * 255);
+	edgeColStart[2] = (weaponDef->visuals.color.z * 255);
+	edgeColStart[3] = 1;
 }
 
 

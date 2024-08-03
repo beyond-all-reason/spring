@@ -64,8 +64,6 @@ CWeaponProjectile::CWeaponProjectile(const ProjectileParams& params)
 {
 	projectileType = WEAPON_BASE_PROJECTILE;
 
-	assert(weaponDef != nullptr);
-
 	if (weaponDef->IsHitScanWeapon()) {
 		hitscan = true;
 		// the else-case (default) is handled in CProjectile::Init

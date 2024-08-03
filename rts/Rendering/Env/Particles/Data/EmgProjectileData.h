@@ -14,8 +14,8 @@ struct alignas(16) EmgProjectileData {
 	struct {
 		SColor color;
 		float intensity;
-		float strFrame;
-		float endFrame;
+		float creatFrame;
+		float destrFrame;
 	};
 };
 

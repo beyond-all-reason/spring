@@ -72,25 +72,23 @@ CStarburstProjectile::CStarburstProjectile(const ProjectileParams& params): CWea
 	projectileType = WEAPON_STARBURST_PROJECTILE;
 
 
-	if (weaponDef != nullptr) {
-		maxSpeed = weaponDef->projectilespeed;
-		ttl = weaponDef->flighttime;
+	maxSpeed = weaponDef->projectilespeed;
+	ttl = weaponDef->flighttime;
 
-		// Default uptime is -1. Positive values override the weapondef.
-		if (uptime < 0)
-			uptime = weaponDef->uptime * GAME_SPEED;
+	// Default uptime is -1. Positive values override the weapondef.
+	if (uptime < 0)
+		uptime = weaponDef->uptime * GAME_SPEED;
 
-		if (weaponDef->flighttime == 0)
-			ttl = std::min(3000.0f, uptime + myrange / maxSpeed + 100);
-	}
+	if (weaponDef->flighttime == 0)
+		ttl = std::min(3000.0f, uptime + myrange / maxSpeed + 100);
 
 	oldSmokeDir = dir;
 
 	maxGoodDif = math::cos(tracking * 0.6f);
 	drawRadius = maxSpeed * 8.0f;
 
-	castShadow = weaponDef ? weaponDef->visuals.castShadow : true;
-	leaveSmokeTrail = (weaponDef != nullptr && weaponDef->visuals.smokeTrail);
+	castShadow = weaponDef->visuals.castShadow;
+	leaveSmokeTrail = weaponDef->visuals.smokeTrail;
 
 	InitTracerParts();
 }

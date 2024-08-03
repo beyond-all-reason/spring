@@ -37,11 +37,9 @@ CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params): CWeapo
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_FIREBALL_PROJECTILE;
 
-	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
-		drawRadius = weaponDef->size;
-		castShadow = weaponDef->visuals.castShadow;
-	}
+	SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
+	drawRadius = weaponDef->size;
+	castShadow = weaponDef->visuals.castShadow;
 
 	validTextures[1] = IsValidTexture(projectileDrawer->explotex);
 	validTextures[2] = IsValidTexture(projectileDrawer->dguntex);

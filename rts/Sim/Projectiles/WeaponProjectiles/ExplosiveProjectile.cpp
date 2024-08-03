@@ -32,11 +32,9 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 	mygravity = params.gravity;
 	useAirLos = true;
 
-	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
-		drawRadius = weaponDef->size;
-		castShadow = weaponDef->visuals.castShadow;
-	}
+	SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
+	drawRadius = weaponDef->size;
+	castShadow = weaponDef->visuals.castShadow;
 
 	if (ttl <= 0) {
 		invttl = 1.0f;

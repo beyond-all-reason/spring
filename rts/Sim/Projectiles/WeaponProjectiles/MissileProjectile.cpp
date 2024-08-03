@@ -75,25 +75,23 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 	if (model != nullptr)
 		SetRadiusAndHeight(model);
 
-	if (weaponDef != nullptr) {
-		maxSpeed = weaponDef->projectilespeed;
-		isDancing = (weaponDef->dance > 0);
-		isWobbling = (weaponDef->wobble > 0);
+	maxSpeed = weaponDef->projectilespeed;
+	isDancing = (weaponDef->dance > 0);
+	isWobbling = (weaponDef->wobble > 0);
 
-		if (weaponDef->trajectoryHeight > 0.0f) {
-			const float dist = pos.distance(targetPos);
+	if (weaponDef->trajectoryHeight > 0.0f) {
+		const float dist = pos.distance(targetPos);
 
-			assert(maxSpeed > 0.0f);
-			assert((std::max(dist, maxSpeed) / maxSpeed) >= 1.0f);
+		assert(maxSpeed > 0.0f);
+		assert((std::max(dist, maxSpeed) / maxSpeed) >= 1.0f);
 
-			extraHeight = (dist * weaponDef->trajectoryHeight);
-			extraHeightTime = int(std::max(dist, maxSpeed) / maxSpeed);
-			extraHeightDecay = extraHeight / extraHeightTime;
-		}
+		extraHeight = (dist * weaponDef->trajectoryHeight);
+		extraHeightTime = int(std::max(dist, maxSpeed) / maxSpeed);
+		extraHeightDecay = extraHeight / extraHeightTime;
 	}
 
 	drawRadius = radius + maxSpeed * 8.0f;
-	castShadow = weaponDef ? weaponDef->visuals.castShadow : true;
+	castShadow = weaponDef->visuals.castShadow;
 
 	CUnit* u = dynamic_cast<CUnit*>(target);
 	if (u == nullptr)

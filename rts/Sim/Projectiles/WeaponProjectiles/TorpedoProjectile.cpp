@@ -48,8 +48,7 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 
 	tracking = params.tracking;
 
-	if (weaponDef != nullptr)
-		maxSpeed = weaponDef->projectilespeed;
+	maxSpeed = weaponDef->projectilespeed;
 
 	drawRadius = maxSpeed * 8.0f;
 

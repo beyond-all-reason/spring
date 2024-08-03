@@ -26,17 +26,13 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EMG_PROJECTILE;
 
-	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
-		drawRadius = weaponDef->size;
+	SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
+	drawRadius = weaponDef->size;
 
-		intensity = weaponDef->intensity;
-		color = weaponDef->visuals.color;
+	intensity = weaponDef->intensity;
+	color = weaponDef->visuals.color;
 
-		castShadow = weaponDef->visuals.castShadow;
-	} else {
-		intensity = 0.0f;
-	}
+	castShadow = weaponDef->visuals.castShadow;
 }
 
 void CEmgProjectile::Update()
