@@ -1174,11 +1174,12 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 	SDL_RestoreWindow(window);
 	SDL_SetWindowMinimumSize(window, minRes.x, minRes.y);
 
+	SDL_SetWindowPosition(window, winPosX, winPosY);
+	SDL_SetWindowSize(window, newRes.x, newRes.y);
+
 	if (SDL_SetWindowFullscreen(window, (borderless ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
 		LOG("[GR::%s][4][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
 
-	SDL_SetWindowPosition(window, winPosX, winPosY);
-	SDL_SetWindowSize(window, newRes.x, newRes.y);
 	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
 
 	if (newRes == maxRes)
