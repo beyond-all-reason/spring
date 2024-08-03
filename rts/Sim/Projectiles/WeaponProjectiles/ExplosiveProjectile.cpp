@@ -93,12 +93,12 @@ void CExplosiveProjectile::Draw()
 		col[3] = weaponDef->intensity * 255;
 	}
 
-	const float  alphaDecay = wdVisuals.alphaDecay;
-	const float  sizeDecay  = wdVisuals.sizeDecay;
-	const float  separation = wdVisuals.separation;
-	const bool   noGap      = wdVisuals.noGap;
-	const int    stages     = wdVisuals.stages;
-	const float  invStages  = 1.0f / std::max(1, stages);
+	const auto& alphaDecay = wdVisuals.alphaDecay;
+	const auto& sizeDecay  = wdVisuals.sizeDecay;
+	const auto& separation = wdVisuals.separation;
+	const auto& noGap      = wdVisuals.noGap;
+	const auto& stages     = wdVisuals.stages;
+	const float invStages  = 1.0f / std::max(1, stages);
 
 	const float3 ndir = dir * separation * 0.6f;
 

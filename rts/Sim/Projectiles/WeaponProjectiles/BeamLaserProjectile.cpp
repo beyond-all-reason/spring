@@ -121,9 +121,9 @@ void CBeamLaserProjectile::Draw()
 	const float3& pos1 = startPos;
 	const float3& pos2 = targetPos;
 
-	#define WT1 weaponDef->visuals.texture1
-	#define WT2 weaponDef->visuals.texture2
-	#define WT3 weaponDef->visuals.texture3
+	const auto* WT1 = weaponDef->visuals.texture1;
+	const auto* WT2 = weaponDef->visuals.texture2;
+	const auto* WT3 = weaponDef->visuals.texture3;
 
 	if (playerCamDistSq < Square(1000.0f)) {
 		if (validTextures[2]) {
@@ -205,10 +205,6 @@ void CBeamLaserProjectile::Draw()
 			{ pos1 - camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xstart, WT3->yend,   coreColStart }
 		);
 	}
-
-	#undef WT3
-	#undef WT2
-	#undef WT1
 }
 
 void CBeamLaserProjectile::DrawOnMinimap() const

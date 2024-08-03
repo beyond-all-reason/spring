@@ -68,14 +68,13 @@ void CFireBallProjectile::Draw()
 		col[1] = (numSparks - i) *  6;
 		col[2] = (numSparks - i) *  4;
 
-		#define ept projectileDrawer->explotex
+		const auto* ept = projectileDrawer->explotex;
 		AddEffectsQuad(
 			{ sparks[i].pos - camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xstart, ept->ystart, col },
 			{ sparks[i].pos + camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xend  , ept->ystart, col },
 			{ sparks[i].pos + camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xend  , ept->yend  , col },
 			{ sparks[i].pos - camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xstart, ept->yend  , col }
 		);
-		#undef ept
 	}
 
 	if (validTextures[2])
@@ -83,14 +82,13 @@ void CFireBallProjectile::Draw()
 		col[0] = (maxCol - i) * 25;
 		col[1] = (maxCol - i) * 15;
 		col[2] = (maxCol - i) * 10;
-		#define dgt projectileDrawer->dguntex
+		const auto* dgt = projectileDrawer->dguntex;
 		AddEffectsQuad(
 			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size - camera->GetUp() * size, dgt->xstart, dgt->ystart, col },
 			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size - camera->GetUp() * size, dgt->xend ,  dgt->ystart, col },
 			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size + camera->GetUp() * size, dgt->xend ,  dgt->yend  , col },
 			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size + camera->GetUp() * size, dgt->xstart, dgt->yend  , col }
 		);
-		#undef dgt
 	}
 }
 

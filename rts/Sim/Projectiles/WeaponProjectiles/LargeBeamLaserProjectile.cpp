@@ -25,9 +25,7 @@ CR_REG_METADATA(CLargeBeamLaserProjectile,(
 	CR_MEMBER(tilelength),
 	CR_MEMBER(scrollspeed),
 	CR_MEMBER(pulseSpeed),
-	CR_MEMBER(decay),
-	CR_MEMBER(beamtex),
-	CR_MEMBER(sidetex)
+	CR_MEMBER(decay)
 ))
 
 
@@ -52,9 +50,6 @@ CLargeBeamLaserProjectile::CLargeBeamLaserProjectile(const ProjectileParams& par
 		scrollspeed   = weaponDef->visuals.scrollspeed;
 		pulseSpeed    = weaponDef->visuals.pulseSpeed;
 		decay         = weaponDef->visuals.beamdecay;
-
-		beamtex       = *weaponDef->visuals.texture1;
-		sidetex       = *weaponDef->visuals.texture3;
 
 		coreColStart[0] = (weaponDef->visuals.color2.x * 255);
 		coreColStart[1] = (weaponDef->visuals.color2.y * 255);
@@ -106,8 +101,11 @@ void CLargeBeamLaserProjectile::Draw()
 	float3 pos1 = startPos;
 	float3 pos2 = targetPos;
 
+	const auto* beamtex = weaponDef->visuals.texture1;
+	const auto* sidetex = weaponDef->visuals.texture3;
+
 	const float startTex = 1.0f - ((gu->modGameTime * scrollspeed) - int(gu->modGameTime * scrollspeed));
-	const float texSizeX = beamtex.xend - beamtex.xstart;
+	const float texSizeX = beamtex->xend - beamtex->xstart;
 
 	const float beamEdgeSize = thickness;
 	const float beamCoreSize = beamEdgeSize * corethickness;
@@ -120,16 +118,16 @@ void CLargeBeamLaserProjectile::Draw()
 	// note: beamTileMaxDst can be negative, in which case we want numBeamTiles to equal zero
 	const float numBeamTiles = std::floor(((std::max(beamTileMinDst, beamTileMaxDst) - beamTileMinDst) / tilelength) + 0.5f);
 
-	#define WT2 weaponDef->visuals.texture2
-	#define WT4 weaponDef->visuals.texture4
+	const auto* WT2 = weaponDef->visuals.texture2;
+	const auto* WT4 = weaponDef->visuals.texture4;
 
 	if (validTextures[1]) {
-		AtlasedTexture tex = beamtex;
+		AtlasedTexture tex = *beamtex;
 
 		if (beamTileMinDst > beamLength) {
 			// beam short enough to be drawn by one polygon
 			// draw laser start
-			tex.xstart = beamtex.xstart + startTex * texSizeX;
+			tex.xstart = beamtex->xstart + startTex * texSizeX;
 
 			AddEffectsQuad(
 				{ pos1 - (xdir * beamEdgeSize), tex.xstart, tex.ystart, edgeColStart },
@@ -149,7 +147,7 @@ void CLargeBeamLaserProjectile::Draw()
 			pos2 = pos1 + zdir * beamTileMinDst;
 
 			// draw laser start
-			tex.xstart = beamtex.xstart + startTex * texSizeX;
+			tex.xstart = beamtex->xstart + startTex * texSizeX;
 
 			AddEffectsQuad(
 				{ pos1 - (xdir * beamEdgeSize), tex.xstart, tex.ystart, edgeColStart },
@@ -166,7 +164,7 @@ void CLargeBeamLaserProjectile::Draw()
 			);
 
 			// draw continous beam
-			tex.xstart = beamtex.xstart;
+			tex.xstart = beamtex->xstart;
 
 			for (float i = beamTileMinDst; i < beamTileMaxDst; i += tilelength) {
 				pos1 = startPos + zdir * i;
@@ -241,17 +239,17 @@ void CLargeBeamLaserProjectile::Draw()
 		pos1 = startPos - zdir * (thickness * flaresize) * 0.02f;
 
 		AddEffectsQuad(
-			{ pos1 + (ydir * muzzleEdgeSize),                           sidetex.xstart, sidetex.ystart, edgeColor },
-			{ pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex.xend,   sidetex.ystart, edgeColor },
-			{ pos1 - (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex.xend,   sidetex.yend,   edgeColor },
-			{ pos1 - (ydir * muzzleEdgeSize),                           sidetex.xstart, sidetex.yend,   edgeColor }
+			{ pos1 + (ydir * muzzleEdgeSize),                           sidetex->xstart, sidetex->ystart, edgeColor },
+			{ pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex->xend,   sidetex->ystart, edgeColor },
+			{ pos1 - (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex->xend,   sidetex->yend,   edgeColor },
+			{ pos1 - (ydir * muzzleEdgeSize),                           sidetex->xstart, sidetex->yend,   edgeColor }
 		);
 
 		AddEffectsQuad(
-			{ pos1 + (ydir * muzzleCoreSize),                           sidetex.xstart, sidetex.ystart, coreColor },
-			{ pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex.xend,   sidetex.ystart, coreColor },
-			{ pos1 - (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex.xend,   sidetex.yend,   coreColor },
-			{ pos1 - (ydir * muzzleCoreSize),                           sidetex.xstart, sidetex.yend,   coreColor }
+			{ pos1 + (ydir * muzzleCoreSize),                           sidetex->xstart, sidetex->ystart, coreColor },
+			{ pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex->xend,   sidetex->ystart, coreColor },
+			{ pos1 - (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex->xend,   sidetex->yend,   coreColor },
+			{ pos1 - (ydir * muzzleCoreSize),                           sidetex->xstart, sidetex->yend,   coreColor }
 		);
 
 		pulseStartTime += 0.5f;
@@ -266,19 +264,19 @@ void CLargeBeamLaserProjectile::Draw()
 		muzzleEdgeSize = thickness * flaresize * pulseStartTime;
 
 		AddEffectsQuad(
-			{ pos1 + (ydir * muzzleEdgeSize),                           sidetex.xstart, sidetex.ystart, edgeColor },
-			{ pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex.xend,   sidetex.ystart, edgeColor },
-			{ pos1 - (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex.xend,   sidetex.yend,   edgeColor },
-			{ pos1 - (ydir * muzzleEdgeSize),                           sidetex.xstart, sidetex.yend,   edgeColor }
+			{ pos1 + (ydir * muzzleEdgeSize),                           sidetex->xstart, sidetex->ystart, edgeColor },
+			{ pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex->xend,   sidetex->ystart, edgeColor },
+			{ pos1 - (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex->xend,   sidetex->yend,   edgeColor },
+			{ pos1 - (ydir * muzzleEdgeSize),                           sidetex->xstart, sidetex->yend,   edgeColor }
 		);
 
 		muzzleCoreSize = muzzleEdgeSize * 0.6f;
 
 		AddEffectsQuad(
-			{ pos1 + (ydir * muzzleCoreSize),                           sidetex.xstart, sidetex.ystart, coreColor },
-			{ pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex.xend,   sidetex.ystart, coreColor },
-			{ pos1 - (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex.xend,   sidetex.yend,   coreColor },
-			{ pos1 - (ydir * muzzleCoreSize),                           sidetex.xstart, sidetex.yend,   coreColor }
+			{ pos1 + (ydir * muzzleCoreSize),                           sidetex->xstart, sidetex->ystart, coreColor },
+			{ pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex->xend,   sidetex->ystart, coreColor },
+			{ pos1 - (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex->xend,   sidetex->yend,   coreColor },
+			{ pos1 - (ydir * muzzleCoreSize),                           sidetex->xstart, sidetex->yend,   coreColor }
 		);
 	}
 
@@ -300,9 +298,6 @@ void CLargeBeamLaserProjectile::Draw()
 			{ pos1 - (camera->GetRight() * flareCoreSize) + (camera->GetUp() * flareCoreSize), WT4->xstart, WT4->yend  , coreColStart }
 		);
 	}
-
-#undef WT4
-#undef WT2
 }
 
 void CLargeBeamLaserProjectile::DrawOnMinimap() const

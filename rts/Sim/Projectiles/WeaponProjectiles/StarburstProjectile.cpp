@@ -349,8 +349,8 @@ void CStarburstProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
-	const auto wt3 = weaponDef->visuals.texture3;
-	const auto wt1 = weaponDef->visuals.texture1;
+	const auto* wt3 = weaponDef->visuals.texture3;
+	const auto* wt1 = weaponDef->visuals.texture1;
 
 	const SColor lightYellow(255, 200, 150, 1);
 	const SColor lightRed(255, 180, 180, 1);
