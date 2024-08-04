@@ -6,15 +6,18 @@
 #include "Map/Ground.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
+#include "Rendering/Env/Particles/Generators/EmgParticleGenerator.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
+#include "Sim/Misc/GlobalSynced.h"
 
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CEmgProjectile, CWeaponProjectile, )
 
-CR_REG_METADATA(CEmgProjectile,(
+CR_REG_METADATA(CEmgProjectile, (
 	CR_SETFLAG(CF_Synced),
 	CR_MEMBER(intensity),
 	CR_MEMBER(color)
@@ -33,6 +36,20 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 	color = weaponDef->visuals.color;
 
 	castShadow = weaponDef->visuals.castShadow;
+
+	//auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<EmgParticleGenerator>();
+	//
+	//pg.Add(EmgParticleData{
+	//	.pos = drawPos,
+	//	.radius = drawRadius,
+	//	.speed = speed,
+	//	.gravity = mygravity,
+	//	.texCoord = *weaponDef->visuals.texture1,
+	//	.color = SColor(color.x, color.x, color.z, 1.0f),
+	//	.intensity = intensity,
+	//	.creatFrame = static_cast<float>(gs->frameNum),
+	//	.destrFrame = static_cast<float>(gs->frameNum + ttl)
+	//});
 }
 
 void CEmgProjectile::Update()
@@ -62,6 +79,7 @@ void CEmgProjectile::Update()
 
 void CEmgProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
@@ -79,6 +97,7 @@ void CEmgProjectile::Draw()
 		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   col },
 		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   col }
 	);
+	*/
 }
 
 int CEmgProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)

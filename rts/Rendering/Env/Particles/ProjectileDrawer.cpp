@@ -23,6 +23,7 @@
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Common/ModelDrawerHelpers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -335,6 +336,8 @@ void CProjectileDrawer::Init() {
 	sdbc = std::make_unique<ScopedDepthBufferCopy>(false);
 
 	EnableSoften(configHandler->GetInt("SoftParticles"));
+
+	ParticleGeneratorHandler::GetInstance().Init();
 }
 
 void CProjectileDrawer::Kill() {
@@ -367,6 +370,8 @@ void CProjectileDrawer::Kill() {
 	sdbc = nullptr;
 
 	configHandler->Set("SoftParticles", wantSoften);
+
+	ParticleGeneratorHandler::GetInstance().Kill();
 }
 
 void CProjectileDrawer::UpdateDrawFlags()
@@ -740,6 +745,8 @@ void CProjectileDrawer::DrawOpaque(bool drawReflection, bool drawRefraction)
 void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflection, bool drawRefraction)
 {
 	ZoneScopedN("ProjectileDrawer::DrawAlpha");
+
+	ParticleGeneratorHandler::GetInstance().GenerateAll();
 
 	static constexpr std::array<float, 4> clipPlanes[] {
 		{ 0.0f, -1.0f, 0.0f, 0.0f},

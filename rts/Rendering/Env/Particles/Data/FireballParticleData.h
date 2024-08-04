@@ -2,6 +2,7 @@
 
 #include "System/float3.h"
 #include "System/float4.h"
+#include "Rendering/Textures/TextureAtlas.h"
 #include "System/Color.h"
 
 // needs Update()
@@ -10,7 +11,7 @@ struct alignas(16) FireBallSparkData {
 	float size;
 	float3 speed;
 	SColor col;
-	float4 texCoord;
+	AtlasedTexture  texCoord;
 };
 
 // needs Update()
@@ -20,12 +21,10 @@ struct alignas(16) FireBallDgunData {
 	float3 speed;
 	float size;
 	float4 texCoord;
-	struct {
-		uint32_t numFire;
-		uint32_t maxCol;
-		uint32_t unused1;
-		uint32_t unused2;
-	};
+	uint32_t numFire;
+	uint32_t maxCol;
+	uint32_t unused1;
+	uint32_t unused2;
 };
 
 static_assert(sizeof(FireBallSparkData) % 16 == 0);

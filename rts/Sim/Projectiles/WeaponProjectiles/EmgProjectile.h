@@ -4,6 +4,7 @@
 #define _EMG_PROJECTILE_H
 
 #include "WeaponProjectile.h"
+#include "Rendering/Env/Particles/Generators/EmgParticleGenerator.h"
 
 class CEmgProjectile : public CWeaponProjectile
 {

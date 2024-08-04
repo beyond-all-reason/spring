@@ -7,6 +7,8 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
+#include "Rendering/Env/Particles/Generators/ExplosiveParticleGenerator.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -41,6 +43,25 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 	} else {
 		invttl = 1.0f / ttl;
 	}
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
+	
+	pg.Add(ExplosiveParticleData{
+		.pos = drawPos,
+		.radius = drawRadius,
+	
+		.color0 = SColor(1.0f, 1.0f, 1.0f),
+		.color1 = SColor(1.0f, 1.0f, 1.0f),
+		.numStages = static_cast<uint32_t>(weaponDef->visuals.stages),
+		.noGap = weaponDef->visuals.noGap,
+	
+		.alphaDecay = weaponDef->visuals.alphaDecay,
+		.sizeDecay = weaponDef->visuals.sizeDecay,
+		.separation = weaponDef->visuals.separation,
+		.unused = 0.0f,
+	
+		.texCoord = *weaponDef->visuals.texture1
+	});
 }
 
 void CExplosiveProjectile::Update()
@@ -65,10 +86,16 @@ void CExplosiveProjectile::Update()
 
 	UpdateGroundBounce();
 	UpdateInterception();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
+
+	auto& data = pg.Update(0);
+	data.pos = drawPos;
 }
 
 void CExplosiveProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	// do not draw if a 3D model has been defined for us
 	if (model != nullptr)
@@ -121,6 +148,7 @@ void CExplosiveProjectile::Draw()
 			{ stagePos - xdirCam + ydirCam, tex->xstart, tex->yend,   col }
 		);
 	}
+	*/
 }
 
 int CExplosiveProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
