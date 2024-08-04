@@ -47,7 +47,7 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
 	
 	pg.Add(ExplosiveParticleData{
-		.pos = drawPos,
+		.pos = pos,
 		.radius = drawRadius,
 	
 		.color0 = SColor(1.0f, 1.0f, 1.0f),
@@ -58,7 +58,6 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 		.alphaDecay = weaponDef->visuals.alphaDecay,
 		.sizeDecay = weaponDef->visuals.sizeDecay,
 		.separation = weaponDef->visuals.separation,
-		.unused = 0.0f,
 	
 		.texCoord = *weaponDef->visuals.texture1
 	});
@@ -90,7 +89,7 @@ void CExplosiveProjectile::Update()
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
 
 	auto& data = pg.Update(0);
-	data.pos = drawPos;
+	data.pos = pos;
 }
 
 void CExplosiveProjectile::Draw()

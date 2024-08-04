@@ -1,7 +1,7 @@
 #version 430 core
 
 uniform ivec3 arraySizes;
-uniform vec2 frameData; //prev, this
+uniform float currFrame;
 uniform mat3 camView;
 uniform vec3 camPos;
 
