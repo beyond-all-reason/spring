@@ -1411,6 +1411,13 @@ function gadgetHandler:UnitReverseBuilt(unitID, unitDefID, unitTeam)
 end
 
 
+function gadgetHandler:UnitConstructionDecayed(unitID, unitDefID, unitTeam, part)
+  for _,g in r_ipairs(self.UnitConstructionDecayedList) do
+    g:UnitConstructionDecayed(unitID, unitDefID, unitTeam, part)
+  end
+end
+
+
 function gadgetHandler:UnitDestroyed(
   unitID,     unitDefID,     unitTeam,
   attackerID, attackerDefID, attackerTeam,

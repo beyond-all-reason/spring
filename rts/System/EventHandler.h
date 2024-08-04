@@ -65,6 +65,7 @@ class CEventHandler
 		void UnitCreated(const CUnit* unit, const CUnit* builder);
 		void UnitFinished(const CUnit* unit);
 		void UnitReverseBuilt(const CUnit* unit);
+		void UnitConstructionDecayed(const CUnit* unit, float part);
 		void UnitFromFactory(const CUnit* unit, const CUnit* factory, bool userOrders);
 		void UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID);
 		void UnitTaken(const CUnit* unit, int oldTeam, int newTeam);
@@ -463,6 +464,11 @@ UNIT_CALLIN_LOS_PARAM(LeftRadar)
 UNIT_CALLIN_LOS_PARAM(LeftLos)
 
 
+inline void CEventHandler::UnitConstructionDecayed(const CUnit* unit,
+                                                   float part)
+{
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitConstructionDecayed, unit, part)
+}
 
 inline void CEventHandler::UnitFromFactory(const CUnit* unit,
                                                const CUnit* factory,

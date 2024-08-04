@@ -1012,6 +1012,8 @@ void CUnit::SlowUpdate()
 
 			AddMetal(cost.metal * buildDecay, false);
 
+			eventHandler.UnitConstructionDecayed(this, buildDecay);
+
 			if (health <= 0.0f || buildProgress <= 0.0f)
 				KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_CONSTRUCTION_DECAY);
 		}

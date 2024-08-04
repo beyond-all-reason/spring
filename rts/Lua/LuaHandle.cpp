@@ -1083,6 +1083,35 @@ void CLuaHandle::UnitReverseBuilt(const CUnit* unit)
 }
 
 
+/*** Called when a unit being built starts decaying.
+ *
+ * @function UnitConstructionDecayed
+ * @number unitID
+ * @number unitDefID
+ * @number unitTeam
+ * @number part
+ */
+void CLuaHandle::UnitConstructionDecayed(const CUnit* unit, float part)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 7, __func__);
+	const LuaUtils::ScopedDebugTraceBack traceBack(L);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+	lua_pushnumber(L, part);
+
+	// call the routine
+	RunCallInTraceback(L, cmdStr, 4, 0, traceBack.GetErrFuncIdx(), false);
+}
+
+
 /*** Called when a unit is destroyed.
  *
  * @function UnitDestroyed
