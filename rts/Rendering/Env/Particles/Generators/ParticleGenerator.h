@@ -363,7 +363,7 @@ inline std::pair<typename ParticleGenerator<ParticleDataType, ParticleGenType>::
 	assert(pos < particles.size());
 
 	particlesUpdateList.SetUpdate(pos);
-	return std::make_pair(UpdateToken(this, pos), &particles[pos]);
+	return std::pair(UpdateToken(this, pos), &particles[pos]);
 }
 
 template<typename ParticleDataType, typename ParticleGenType>

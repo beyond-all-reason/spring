@@ -236,8 +236,8 @@ struct VA_TYPE_TC {
 };
 struct VA_TYPE_PROJ {
 	using MY_VA_TYPE = VA_TYPE_PROJ;
-	float3 pos;
-	float3 uvw;
+	float4 pos;
+	float4 uvw;
 	float4 uvInfo;
 	float3 aparams;
 	SColor c;

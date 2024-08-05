@@ -48,14 +48,6 @@ void ParticleGeneratorHandler::GenerateAll()
 	if (numQuads <= 0)
 		return;
 
-	struct TriangleData
-	{
-		float4 pos;
-		float4 uvw;
-		float4 uvInfo;
-		float4 apAndCol;
-	};
-
 	ParticleGeneratorGlobal::atomicCntVal = { 0 };
 	{
 		static constexpr uint32_t ZERO = 0u;
@@ -66,7 +58,7 @@ void ParticleGeneratorHandler::GenerateAll()
 
 	{
 		vertVBO.Bind();
-		vertVBO.ReallocToFit(4u * numQuads * sizeof(TriangleData)); // TODO replace with VA_TYPE_PROJ
+		vertVBO.ReallocToFit(4u * numQuads * sizeof(VA_TYPE_PROJ));
 		vertVBO.Unbind();
 	}
 
@@ -98,8 +90,8 @@ void ParticleGeneratorHandler::GenerateAll()
 
 		if (val > 0) {
 			vertVBO.Bind();
-			std::vector<TriangleData> trData(4 * val);
-			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(TriangleData) * trData.size(), trData.data());
+			std::vector<VA_TYPE_PROJ> trData(4 * val);
+			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VA_TYPE_PROJ) * trData.size(), trData.data());
 			vertVBO.Unbind();
 
 			indcVBO.Bind();

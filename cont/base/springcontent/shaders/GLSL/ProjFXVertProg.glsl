@@ -1,8 +1,8 @@
 #version 130
 //#extension GL_ARB_explicit_attrib_location : require
 
-in vec3 pos;
-in vec3 uvw;
+in vec4 pos;
+in vec4 uvw;
 in vec4 uvInfo;
 in vec3 aparams;
 in vec4 color;
@@ -54,18 +54,18 @@ void main() {
 	vLayer = uvw.z;
 	vCol = color;
 
-	float fogDist = length(pos - camPos);
+	float fogDist = length(pos.xyz - camPos);
 	fogFactor = (fogParams.y - fogDist) / (fogParams.y - fogParams.x);
 	fogFactor = clamp(fogFactor, 0.0, 1.0);
 
-	gl_ClipDistance[0] = dot(vec4(pos, 1.0), clipPlane); //water clip plane
+	gl_ClipDistance[0] = dot(vec4(pos.xyz, 1.0), clipPlane); //water clip plane
 
 	#ifdef SMOOTH_PARTICLES
 		// viewport relative UV [0.0, 1.0]
-		vsPos = gl_ModelViewMatrix * vec4(pos, 1.0);
+		vsPos = gl_ModelViewMatrix * vec4(pos.xyz, 1.0);
 		gl_Position = gl_ProjectionMatrix * vsPos;
 		screenUV = SNORM2NORM(gl_Position.xy / gl_Position.w);
 	#else
-		gl_Position = gl_ModelViewProjectionMatrix * vec4(pos, 1.0);
+		gl_Position = gl_ModelViewProjectionMatrix * vec4(pos.xyz, 1.0);
 	#endif
 }
