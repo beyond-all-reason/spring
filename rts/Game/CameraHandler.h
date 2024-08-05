@@ -8,6 +8,7 @@
 #include <string>
 
 #include "Camera/CameraController.h"
+#include "Game/Camera/DollyController.h"
 #include "System/UnorderedMap.hpp"
 #include "Console.h"
 
@@ -26,8 +27,9 @@ public:
 		CAMERA_MODE_ROTOVERHEAD = 3,
 		CAMERA_MODE_FREE        = 4,
 		CAMERA_MODE_OVERVIEW    = 5,
-		CAMERA_MODE_DUMMY       = 6,
-		CAMERA_MODE_LAST        = 7,
+		CAMERA_MODE_DOLLY       = 6,
+		CAMERA_MODE_DUMMY       = 7,
+		CAMERA_MODE_LAST        = 8,
 	};
 	enum {
 		CAMERA_TRANSITION_MODE_EXP_DECAY = 0,
@@ -130,6 +132,8 @@ public:
 
 	const CCameraController& GetCurrentController() const { return *(camControllers[currCamCtrlNum]); }
 	      CCameraController& GetCurrentController()       { return *(camControllers[currCamCtrlNum]); }
+
+	const CDollyController& GetDollyController() { return *(static_cast<CDollyController*>(camControllers[CAMERA_MODE_DOLLY])); }
 
 	const std::array<CCameraController*, CAMERA_MODE_LAST>& GetControllers() const { return camControllers; }
 
