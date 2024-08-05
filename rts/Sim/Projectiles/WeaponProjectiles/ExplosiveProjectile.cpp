@@ -20,13 +20,15 @@ CR_BIND_DERIVED(CExplosiveProjectile, CWeaponProjectile, )
 CR_REG_METADATA(CExplosiveProjectile, (
 	CR_SETFLAG(CF_Synced),
 	CR_MEMBER(invttl),
-	CR_MEMBER(curTime)
+	CR_MEMBER(curTime),
+	CR_MEMBER(pgOffset)
 ))
 
 
 CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWeaponProjectile(params)
 	, invttl(0.0f)
 	, curTime(0.0f)
+	, pgOffset(-1)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EXPLOSIVE_PROJECTILE;
@@ -45,22 +47,38 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 	}
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
+
+	const WeaponDef::Visuals& wdVisuals = weaponDef->visuals;
+	auto DefColor = SColor(wdVisuals.color.x, wdVisuals.color.y, wdVisuals.color.z, weaponDef->intensity);
 	
-	pg.Add(ExplosiveParticleData{
+	pgOffset = pg.Add(ExplosiveParticleData{
 		.pos = pos,
 		.radius = drawRadius,
-	
-		.color0 = SColor(1.0f, 1.0f, 1.0f),
-		.color1 = SColor(1.0f, 1.0f, 1.0f),
+
+		.dir = dir,
+		.drawOrder = drawOrder,
+
+		.color0 = DefColor,
+		.color1 = DefColor,
 		.numStages = static_cast<uint32_t>(weaponDef->visuals.stages),
 		.noGap = weaponDef->visuals.noGap,
-	
+
 		.alphaDecay = weaponDef->visuals.alphaDecay,
 		.sizeDecay = weaponDef->visuals.sizeDecay,
 		.separation = weaponDef->visuals.separation,
-	
-		.texCoord = *weaponDef->visuals.texture1
+
+		.colEdge0 = 0.0f,
+		.colEdge1 = 1.0f,
+		.curTime = curTime,
+
+		.texCoord = weaponDef->visuals.texture1 ? *weaponDef->visuals.texture1 : AtlasedTexture::DefaultAtlasTexture
 	});
+}
+
+CExplosiveProjectile::~CExplosiveProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 void CExplosiveProjectile::Update()
@@ -88,8 +106,18 @@ void CExplosiveProjectile::Update()
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
 
-	auto& data = pg.Update(0);
-	data.pos = pos;
+	const auto [token, data] = pg.Get(pgOffset);
+
+	data->pos = pos;
+	data->curTime = curTime;
+
+	if (const auto* cm = weaponDef->visuals.colorMap; cm) {
+		auto [i0, i1]  = cm->GetIndices(curTime);
+		data->color0   = cm->GetColor(i0);
+		data->color1   = cm->GetColor(i1);
+		data->colEdge0 = cm->GetColorPos(i0);
+		data->colEdge1 = cm->GetColorPos(i1);
+	}
 }
 
 void CExplosiveProjectile::Draw()

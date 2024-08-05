@@ -3,11 +3,19 @@
 #include <tuple>
 #include <memory>
 
+#include "Rendering/GL/VBO.h"
+
 #include "EmgParticleGenerator.h"
 #include "ExplosiveParticleGenerator.h"
 
 class ParticleGeneratorHandler {
 public:
+	ParticleGeneratorHandler() = default;
+	ParticleGeneratorHandler(ParticleGeneratorHandler&&) = delete;
+	ParticleGeneratorHandler(const ParticleGeneratorHandler&) = delete;
+	ParticleGeneratorHandler& operator=(ParticleGeneratorHandler&&) = delete;
+	ParticleGeneratorHandler& operator=(const ParticleGeneratorHandler&) = delete;
+
 	void Init();
 	void Kill();
 	void GenerateAll();
@@ -26,4 +34,11 @@ private:
 		std::unique_ptr<EmgParticleGenerator>,
 		std::unique_ptr<ExplosiveParticleGenerator>
 	> generators;
+
+	int32_t numQuads;
+
+	VBO vertVBO;
+	VBO indcVBO;
+
+	VBO atomicCntVBO;					//for the GPU based updates
 };

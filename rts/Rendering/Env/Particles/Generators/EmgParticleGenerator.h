@@ -6,22 +6,23 @@
 struct alignas(16) EmgParticleData {
 	float3 pos;
 	float radius;
-	float3 speed;
-	float gravity;
+
+	float3 animParams;
+	SColor color;
+
+	float3 rotParams;
+	int32_t drawOrder;
+
 	AtlasedTexture texCoord;
 
-	SColor color;
-	float intensity;
-	float creatFrame;
-	float destrFrame;
+	int32_t GetNumQuads() const { return 1 * (texCoord != AtlasedTexture::DefaultAtlasTexture); }
 };
 static_assert(sizeof(EmgParticleData) % 16 == 0);
 
 class EmgParticleGenerator : public ParticleGenerator<EmgParticleData, EmgParticleGenerator> {
 public:
-	EmgParticleGenerator();
-	~EmgParticleGenerator();
+	EmgParticleGenerator() {}
+	~EmgParticleGenerator() override {}
 protected:
-	bool GenerateGPU() override;
-	bool GenerateCPU() override;
+	bool GenerateCPUImpl() override { return false; }
 };

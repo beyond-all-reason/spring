@@ -195,6 +195,12 @@ void CColorMap::GetColor(unsigned char* color, float pos)
 	color[3] = ((col1[3] * ia) + (col2[3] * aa)) >> 8;
 }
 
+float CColorMap::GetColorPos(size_t idx) const
+{
+	idx = std::clamp(idx, size_t(0), map.size() - 1);
+	return static_cast<float>(idx) / (map.size() - 1);
+}
+
 std::pair<size_t, size_t> CColorMap::GetIndices(float pos) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;

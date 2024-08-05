@@ -40,6 +40,7 @@ public:
 	 */
 	void GetColor(unsigned char* color, float pos);
 	const SColor& GetColor(size_t idx) const { return map[idx]; }
+	float GetColorPos(size_t idx) const;
 	std::pair<size_t, size_t> GetIndices(float pos) const;
 	auto GetMapSize() const { return map.size(); }
 	auto Empty() const { return map.empty(); }

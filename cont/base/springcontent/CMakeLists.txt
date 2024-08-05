@@ -1,17 +1,23 @@
-file(GLOB_RECURSE ARB_SHADERS  CONFIGURE_DEPENDS "shaders/ARB/*.vp" "shaders/ARB/*.fp")
-file(GLOB_RECURSE GLSL_SHADERS CONFIGURE_DEPENDS "shaders/GLSL/*.glsl" "shaders/GLSL/*.lua")
+file(GLOB ARB_SHADERS  CONFIGURE_DEPENDS "shaders/ARB/*.vp" "shaders/ARB/*.fp")
+file(GLOB GLSL_SHADERS CONFIGURE_DEPENDS "shaders/GLSL/*.glsl" "shaders/GLSL/*.lua")
+file(GLOB PARTICLE_SHADERS CONFIGURE_DEPENDS "shaders/GLSL/Particles/*.lua")
 
 foreach(ITEM ${ARB_SHADERS})
    get_filename_component(ITEM_NAME ${ITEM} NAME)
-   list(APPEND FILES "shaders/ARB/${ITEM_NAME}")
+   list(APPEND SHADERS "shaders/ARB/${ITEM_NAME}")
 endforeach()
 
 foreach(ITEM ${GLSL_SHADERS})
    get_filename_component(ITEM_NAME ${ITEM} NAME)
-   list(APPEND FILES "shaders/GLSL/${ITEM_NAME}")
+   list(APPEND SHADERS "shaders/GLSL/${ITEM_NAME}")
 endforeach()
 
-list(APPEND FILES
+foreach(ITEM ${PARTICLE_SHADERS})
+   get_filename_component(ITEM_NAME ${ITEM} NAME)
+   list(APPEND SHADERS "shaders/GLSL/Particles/${ITEM_NAME}")
+endforeach()
+
+list(APPEND SHADERS
 	unittextures/tatex/PALETTE.PAL
 	unittextures/tree_fir_tall_5_1.dds
 	unittextures/tree_fir_tall_5_2.dds

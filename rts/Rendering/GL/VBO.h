@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef GL_VBO_H
-#define GL_VBO_H
+#pragma once
 
 #include <unordered_map>
 
@@ -34,8 +33,8 @@ public:
 	void Delete();
 
 	/**
-	 * @param target can be either GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER or GL_UNIFORM_BUFFER_EXT
-	 * @see http://www.opengl.org/sdk/docs/man/xhtml/glBindBuffer.xml
+	 * @param target can be either GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_UNIFORM_BUFFER or GL_SHADER_STORAGE_BUFFER
+	 * @see https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBindBuffer.xhtml
 	 */
 	void Bind() const { Bind(curBoundTarget); }
 	void Bind(GLenum target) const;
@@ -57,6 +56,16 @@ public:
 	template<typename TData>
 	void New(const std::vector<TData>& data, GLenum newUsage = GL_STATIC_DRAW) { New(sizeof(TData) * data.size(), newUsage, data.data()); };
 	void New(GLsizeiptr newSize, GLenum newUsage = GL_STREAM_DRAW, const void* newData = nullptr);
+
+	// Reallocates the VBO if it's too small or too big, copies newData if not nullptr, returns true if the VBo was reallocated
+	bool ReallocToFit(GLsizeiptr newSize, size_t sizeUpMult = 2, size_t sizeDownMult = 8, const void* newData = nullptr);
+
+	// Reallocates the VBO if it's too small or too big, returns true if the VBo was reallocated
+	template<typename TData>
+	bool ReallocToFit(const std::vector<TData>& vec, size_t sizeUpMult = 2, size_t sizeDownMult = 8) {
+		const auto reqSz = vec.size() * sizeof(TData);
+		return ReallocToFit(reqSz, sizeUpMult, sizeDownMult, vec.data());
+	}
 
 	void Invalidate() const; //< discards all current data (frees the memory w/o resizing)
 
@@ -165,5 +174,3 @@ private:
 	mutable std::unordered_map<BoundBufferRangeIndex, BoundBufferRangeData, BoundBufferRangeIndexHash> bbrItems;
 	GLubyte* data = nullptr;
 };
-
-#endif /* VBO_H */

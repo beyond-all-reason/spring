@@ -14,6 +14,7 @@ public:
 	CEmgProjectile() { }
 
 	CEmgProjectile(const ProjectileParams& params);
+	~CEmgProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -25,6 +26,7 @@ public:
 private:
 	float intensity;
 	float3 color;
+	size_t pgOffset;
 };
 
 #endif // _EMG_PROJECTILE_H

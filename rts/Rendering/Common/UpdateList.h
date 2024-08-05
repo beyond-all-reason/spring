@@ -29,6 +29,7 @@ public:
 
 	void EmplaceBackUpdate();
 	void PopBack();
+	void PopBack(size_t N);
 
 	bool NeedUpdate() const { return changed; }
 

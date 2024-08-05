@@ -121,11 +121,24 @@ namespace Shader {
 
 	std::string IShaderObject::GetShaderSource(const std::string& fileName)
 	{
-		if (fileName.find("void main()") != std::string::npos)
-			return fileName;
+		// get rid of '\r\n's so the output looks nicer in the infolog
+		static const auto ReplaceCRLF = [](std::string& src) {
+			std::string::size_type pos = 0;
+			while ((pos = src.find("\r\n", pos)) != std::string::npos) {
+				src.replace(pos, 2, "\n");
+				++pos;
+			}
+		};
+
+		std::string soSource;
+
+		if (fileName.find("void main()") != std::string::npos) {
+			soSource = fileName; // fileName content is actually the source code
+			ReplaceCRLF(soSource);
+			return soSource;
+		}
 
 		std::string soPath = "shaders/" + fileName;
-		std::string soSource = "";
 
 		CFileHandler soFile(soPath);
 
@@ -138,6 +151,7 @@ namespace Shader {
 			LOG_L(L_ERROR, "[%s] file not found \"%s\"", __FUNCTION__, soPath.c_str());
 		}
 
+		ReplaceCRLF(soSource);
 		return soSource;
 	}
 

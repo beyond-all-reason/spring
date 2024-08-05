@@ -13,6 +13,7 @@ public:
 	CExplosiveProjectile() { }
 
 	CExplosiveProjectile(const ProjectileParams& params);
+	~CExplosiveProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -20,10 +21,10 @@ public:
 	int GetProjectilesCount() const override;
 
 	int ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed) override;
-
 private:
 	float invttl;
 	float curTime;
+	size_t pgOffset;
 };
 
 #endif // _EXPLOSIVE_PROJECTILE_H

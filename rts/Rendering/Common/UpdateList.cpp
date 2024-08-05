@@ -52,6 +52,14 @@ void UpdateList::PopBack()
 	changed = true;
 }
 
+void UpdateList::PopBack(size_t N)
+{
+	while (N-- >= 0)
+		updateList.pop_back();
+
+	changed = true;
+}
+
 std::optional<UpdateList::IteratorPair> UpdateList::GetNext(const std::optional<UpdateList::IteratorPair>& prev)
 {
 	RECOIL_DETAILED_TRACY_ZONE;

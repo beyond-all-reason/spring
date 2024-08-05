@@ -390,6 +390,18 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 	}
 }
 
+bool VBO::ReallocToFit(GLsizeiptr newSize, size_t sizeUpMult, size_t sizeDownMult, const void* newData)
+{
+	assert(bound);
+	if (newSize > GetSize() || GetSize() >= newSize * sizeDownMult) {
+		New(newSize, usage, newData);
+		return true;
+	} else if (newData) {
+		SetBufferSubData(0, newSize, newData);
+	}
+	return false;
+}
+
 
 GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 {

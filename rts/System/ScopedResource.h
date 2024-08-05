@@ -8,7 +8,7 @@ namespace spring {
 	public:
 		template<typename C>
 		ScopedNullResource(C&& c, D&& d_)
-			: d{ std::move(d_) }
+			: d{ std::forward<D>(d_) }
 		{
 			c();
 		}
