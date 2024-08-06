@@ -45,8 +45,17 @@ uint GetUnpackedValue(uint packedValue, uint byteNum) {
 	return (packedValue >> (8u * byteNum)) & 0xFFu;
 }
 
+vec4 GetColorFromIntegers(uvec4 bytes) {
+	return vec4(
+		float(bytes[0] / 255.0),
+		float(bytes[1] / 255.0),
+		float(bytes[2] / 255.0),
+		float(bytes[3] / 255.0)
+	);
+}
+
 vec4 GetPackedColor(uint packedColor) {
-	return  vec4(
+	return vec4(
 		float(GetUnpackedValue(packedColor, 0)) / 255.0,
 		float(GetUnpackedValue(packedColor, 1)) / 255.0,
 		float(GetUnpackedValue(packedColor, 2)) / 255.0,

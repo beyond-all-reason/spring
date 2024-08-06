@@ -1,4 +1,5 @@
 #include "FireBallProjectile.h"
+#include "FireBallProjectile.h"
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
@@ -8,6 +9,8 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
+#include "Rendering/Env/Particles/Generators/FireballParticleGenerator.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/SpringMath.h"
@@ -19,7 +22,8 @@ CR_BIND_DERIVED(CFireBallProjectile, CWeaponProjectile, )
 CR_REG_METADATA(CFireBallProjectile,(
 	CR_SETFLAG(CF_Synced),
 	CR_MEMBER(sparks),
-	CR_MEMBER(numSparks)
+	CR_MEMBER(numSparks),
+	CR_MEMBER(pgOffset)
 ))
 
 
@@ -44,10 +48,32 @@ CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params): CWeapo
 	validTextures[1] = IsValidTexture(projectileDrawer->explotex);
 	validTextures[2] = IsValidTexture(projectileDrawer->dguntex);
 	validTextures[0] = validTextures[1] || validTextures[2];
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
+	pgOffset = pg.Add(FireballData{
+		.sparkPosSize = {},
+		.dgunPos = {},
+		.dgunSize = radius * 1.3f,
+		.animParams1 = {},
+		.numSparks = 0,
+		.animParams2 = {},
+		.drawOrder = drawOrder,
+		.speed = speed,
+		.checkCol = 1.0f,
+		.texCoord1 = *projectileDrawer->explotex,
+		.texCoord2 = *projectileDrawer->dguntex
+	});
+}
+
+CFireBallProjectile::~CFireBallProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 void CFireBallProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
@@ -88,6 +114,7 @@ void CFireBallProjectile::Draw()
 			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size + camera->GetUp() * size, dgt->xstart, dgt->yend  , col }
 		);
 	}
+	*/
 }
 
 void CFireBallProjectile::Update()
@@ -107,6 +134,20 @@ void CFireBallProjectile::Update()
 	TickSparks();
 	UpdateGroundBounce();
 	UpdateInterception();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
+	const auto [token, data] = pg.Get(pgOffset);
+
+	for (uint32_t i = 0; i < numSparks; ++i) {
+		data->sparkPosSize[i] = float4{ sparks[i].pos, sparks[i].size };
+	}
+
+	data->numSparks = static_cast<int32_t>(numSparks);
+	data->dgunPos = pos;
+	data->speed = speed;
+	data->checkCol = static_cast<float>(checkCol);
+	//data->animParams1
+	//data->animParams2
 }
 
 

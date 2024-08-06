@@ -15,6 +15,7 @@ public:
 	// creg only
 	CFireBallProjectile() { }
 	CFireBallProjectile(const ProjectileParams& params);
+	~CFireBallProjectile() override;
 
 	void Draw() override;
 	void Update() override;
@@ -39,6 +40,7 @@ private:
 	Spark sparks[12];
 
 	unsigned int numSparks = 0;
+	size_t pgOffset;
 };
 
 #endif // _FIRE_BALL_PROJECTILE_H

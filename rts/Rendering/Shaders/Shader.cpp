@@ -16,6 +16,7 @@
 #include "System/Config/ConfigHandler.h"
 
 #include <algorithm>
+#include <array>
 #ifdef DEBUG
 	#include <cstring> // strncmp
 #endif
@@ -201,19 +202,18 @@ namespace Shader {
 		if (!versionStr.empty()) EnsureEndsWith(&versionStr, "\n");
 		if (!defFlags.empty())   EnsureEndsWith(&defFlags,   "\n");
 
-		std::vector<const GLchar*> sources = {
+		std::array sources = {
 			"// SHADER VERSION\n",
 			versionStr.c_str(),
 			"// SHADER FLAGS\n",
 			defFlags.c_str(),
 			"// SHADER SOURCE\n",
-			"#line 1\n",
 			sourceStr.c_str()
 		};
 
 		res->id = glCreateShader(type);
 
-		glShaderSource(res->id, sources.size(), &sources[0], NULL);
+		glShaderSource(res->id, sources.size(), &sources[0], nullptr);
 		glCompileShader(res->id);
 
 		res->valid = glslIsValid(res->id);
@@ -222,7 +222,7 @@ namespace Shader {
 		if (!res->valid && logReporting) {
 			const std::string& name = srcFile.find("void main()") != std::string::npos ? "unknown" : srcFile;
 			LOG_L(L_WARNING, "[GLSL-SO::%s] shader-object name: %s, compile-log:\n%s\n", __FUNCTION__, name.c_str(), res->log.c_str());
-			LOG_L(L_WARNING, "\n%s%s%s%s%s%s%s", sources[0], sources[1], sources[2], sources[3], sources[4], sources[5], sources[6]);
+			LOG_L(L_WARNING, "\n%s%s%s%s%s%s", sources[0], sources[1], sources[2], sources[3], sources[4], sources[5]);
 		}
 
 		return res;

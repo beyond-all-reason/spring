@@ -262,8 +262,8 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shader->Enable();
 
-	shader->SetUniform("currFrame", 0);
-	shader->SetUniform("camPos", 0, 0, 0);
+	shader->SetUniform("currFrame", 0.0f);
+	shader->SetUniform("camPos", 0.0f, 0.0f, 0.0f);
 	shader->SetUniformMatrix4x4("camView", false, CMatrix44f::Zero().m);
 
 	shader->Disable();

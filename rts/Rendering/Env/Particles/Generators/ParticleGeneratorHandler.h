@@ -8,6 +8,7 @@
 #include "BeamLaserParticleGenerator.h"
 #include "EmgParticleGenerator.h"
 #include "ExplosiveParticleGenerator.h"
+#include "FireballParticleGenerator.h"
 
 class ParticleGeneratorHandler {
 public:
@@ -34,7 +35,8 @@ private:
 	std::tuple<
 		std::unique_ptr<BeamLaserParticleGenerator>,
 		std::unique_ptr<EmgParticleGenerator>,
-		std::unique_ptr<ExplosiveParticleGenerator>
+		std::unique_ptr<ExplosiveParticleGenerator>,
+		std::unique_ptr<FireballParticleGenerator>
 	> generators;
 
 	int32_t numQuads;
@@ -42,5 +44,5 @@ private:
 	VBO vertVBO;
 	VBO indcVBO;
 
-	VBO counterVBO;					//for the GPU based updates
+	VBO counterVBO;	//for the GPU based updates
 };

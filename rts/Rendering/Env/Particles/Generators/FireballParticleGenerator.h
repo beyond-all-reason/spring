@@ -1,31 +1,47 @@
 #pragma once
 
-#include "System/float3.h"
-#include "System/float4.h"
-#include "Rendering/Textures/TextureAtlas.h"
-#include "System/Color.h"
+#include <array>
+#include <algorithm>
 
-// needs Update()
-struct alignas(16) FireBallSparkData {
-	float3 pos;
-	float size;
+#include "ParticleGenerator.h"
+#include "System/SpringMath.h"
+
+struct alignas(16) FireballData {
+	std::array<float4, 12> sparkPosSize;
+
+	float3 dgunPos;
+	float dgunSize;
+
+	float3 animParams1;
+	int32_t numSparks;
+
+	float3 animParams2;
+	int32_t drawOrder;
+
 	float3 speed;
-	SColor col;
-	AtlasedTexture  texCoord;
+	float checkCol;
+
+	AtlasedTexture texCoord1;
+	AtlasedTexture texCoord2;
+
+	int32_t GetNumQuads() const {
+		const auto numFire = std::min(10, numSparks);
+		return
+			numSparks * (texCoord1 != AtlasedTexture::DefaultAtlasTexture) +
+			numFire   * (texCoord2 != AtlasedTexture::DefaultAtlasTexture);
+	}
+	void Invalidate() {
+		texCoord1 = AtlasedTexture::DefaultAtlasTexture;
+		texCoord2 = AtlasedTexture::DefaultAtlasTexture;
+	}
 };
 
-// needs Update()
-struct alignas(16) FireBallDgunData {
-	float3 pos;
-	float posUpdate;
-	float3 speed;
-	float size;
-	float4 texCoord;
-	uint32_t numFire;
-	uint32_t maxCol;
-	uint32_t unused1;
-	uint32_t unused2;
-};
+static_assert(sizeof(FireballData) % 16 == 0);
 
-static_assert(sizeof(FireBallSparkData) % 16 == 0);
-static_assert(sizeof(FireBallDgunData) % 16 == 0);
+class FireballParticleGenerator : public ParticleGenerator<FireballData, FireballParticleGenerator> {
+public:
+	FireballParticleGenerator() {}
+	~FireballParticleGenerator() override {}
+protected:
+	bool GenerateCPUImpl() override { return false; }
+};
