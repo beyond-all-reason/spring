@@ -336,8 +336,6 @@ void CProjectileDrawer::Init() {
 	sdbc = std::make_unique<ScopedDepthBufferCopy>(false);
 
 	EnableSoften(configHandler->GetInt("SoftParticles"));
-
-	ParticleGeneratorHandler::GetInstance().Init();
 }
 
 void CProjectileDrawer::Kill() {
@@ -370,8 +368,6 @@ void CProjectileDrawer::Kill() {
 	sdbc = nullptr;
 
 	configHandler->Set("SoftParticles", wantSoften);
-
-	ParticleGeneratorHandler::GetInstance().Kill();
 }
 
 void CProjectileDrawer::UpdateDrawFlags()

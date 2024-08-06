@@ -34,6 +34,11 @@ struct alignas(16) BeamLaserData {
 			4 * (texCoord2 != AtlasedTexture::DefaultAtlasTexture) +
 			2 * (texCoord3 != AtlasedTexture::DefaultAtlasTexture);
 	}
+	void Invalidate() {
+		texCoord1 = AtlasedTexture::DefaultAtlasTexture;
+		texCoord2 = AtlasedTexture::DefaultAtlasTexture;
+		texCoord3 = AtlasedTexture::DefaultAtlasTexture;
+	}
 };
 
 static_assert(sizeof(BeamLaserData) % 16 == 0);

@@ -16,6 +16,9 @@ struct alignas(16) EmgParticleData {
 	AtlasedTexture texCoord;
 
 	int32_t GetNumQuads() const { return 1 * (texCoord != AtlasedTexture::DefaultAtlasTexture); }
+	void Invalidate() {
+		texCoord = AtlasedTexture::DefaultAtlasTexture;
+	}
 };
 static_assert(sizeof(EmgParticleData) % 16 == 0);
 

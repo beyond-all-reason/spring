@@ -80,7 +80,7 @@ void ParticleGeneratorHandler::GenerateAll()
 	indcVBO.UnbindBufferRange(ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
 	atomicCntVBO.UnbindBufferRange(ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
 
-#if 0
+#if 1
 	{
 		// Debug
 		atomicCntVBO.Bind();

@@ -82,6 +82,15 @@ void AddEffectsQuad(
 	vec3 brPos, vec2 brUV, vec4 brCol,
 	vec3 blPos, vec2 blUV, vec4 blCol
 ) {
+	// sanity check
+	#if 1
+		if (thisQuadIndex >= uint(arraySizes.y))
+			return;
+	#endif
+	
+	uint triIndex = 4u * thisQuadIndex;
+	uint idxIndex = 6u * thisQuadIndex;
+	
 	vec4 minMaxUV = vec4(
 		min(min(min(tlUV, trUV), brUV), blUV),
 		max(max(max(tlUV, trUV), brUV), blUV)
@@ -89,9 +98,6 @@ void AddEffectsQuad(
 
 	vec4 uvInfo = vec4(minMaxUV.x, minMaxUV.y, minMaxUV.z - minMaxUV.x, minMaxUV.w - minMaxUV.y);
 	const float textureLayer = 0.0; //for future
-
-	uint triIndex = 4u * thisQuadIndex;
-	uint idxIndex = 6u * thisQuadIndex;
 
 	/////////////////
 	// Indices
@@ -181,7 +187,7 @@ void AddEffectsQuadCamera(
 void main()
 {
 	if (gl_LocalInvocationID.x == 0u)
-		localQuadsCounter = 0u;
+		localQuadsCounter = atomicAdd(quadsCounter, 0u); //do I need atomicAdd() to read quadsCounter?
 
 	barrier();
     memoryBarrierShared();

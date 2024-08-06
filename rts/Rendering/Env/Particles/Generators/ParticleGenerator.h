@@ -120,14 +120,17 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateBufferDa
 	if (!particlesUpdateList.NeedUpdate())
 		return;
 
+	static constexpr auto DataSize = sizeof(decltype(particles)::value_type);
+	static_assert(std::is_same_v<decltype(particles)::value_type, ParticleDataType>);
+
 	dataVBO.Bind();
-	if (dataVBO.ReallocToFit(sizeof(ParticleGenType) * particles.size())) {
+	if (dataVBO.ReallocToFit(DataSize * particles.size())) {
 		dataVBO.SetBufferSubData(particles);
 	} else {
 		for (auto itPair = particlesUpdateList.GetNext(); itPair.has_value(); itPair = particlesUpdateList.GetNext(itPair)) {
 			auto offSize = particlesUpdateList.GetOffsetAndSize(itPair.value());
-			GLintptr byteOffs = offSize.first  * sizeof(ParticleGenType);
-			GLintptr byteSize = offSize.second * sizeof(ParticleGenType);
+			GLintptr byteOffs = offSize.first  * DataSize;
+			GLintptr byteSize = offSize.second * DataSize;
 			dataVBO.SetBufferSubData(byteOffs, byteSize, particles.data() + offSize.first/* in elements */);
 		}
 	}
@@ -339,8 +342,9 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Del(size_t pos
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(pos < particles.size());
 
-	const auto& data = particles[pos];
+	auto& data = particles[pos];
 	numQuads -= data.GetNumQuads();
+	data.Invalidate(); // the shader should know what particles to skip
 
 	freeList.emplace(pos);
 
