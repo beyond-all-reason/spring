@@ -8,7 +8,6 @@
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
-#include "Rendering/Env/Particles/Generators/ExplosiveParticleGenerator.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -25,7 +24,8 @@ CR_REG_METADATA(CExplosiveProjectile, (
 ))
 
 
-CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWeaponProjectile(params)
+CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params)
+	: CWeaponProjectile(params)
 	, invttl(0.0f)
 	, curTime(0.0f)
 	, pgOffset(-1)

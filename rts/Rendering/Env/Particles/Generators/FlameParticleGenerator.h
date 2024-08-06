@@ -1,28 +1,37 @@
 #pragma once
 
-#include "System/float3.h"
-#include "System/float4.h"
-#include "System/Color.h"
+#include "ParticleGenerator.h"
 
-//update every Update();
 struct alignas(16) FlameParticleData {
 	float3 pos;
 	float radius;
-	float3 speed;
-	float radiusGrowth;
-	float3 spread;
-	float unused2;
-	struct {
-		SColor color0;
-		SColor color1;
-		uint32_t unused2;
-		uint32_t unused3;
-	};
-	float4 texCoord;
+
+	float3 animParams;
+	int32_t drawOrder;
+
 	float3 rotParams;
 	float curTime;
-	float3 animParams;
-	float unused4;
+
+	SColor color0;
+	SColor color1;
+	float colEdge0;
+	float colEdge1;
+
+	AtlasedTexture texCoord;
+
+	int32_t GetNumQuads() const { return 1 * (texCoord != AtlasedTexture::DefaultAtlasTexture); }
+	void Invalidate() {
+		texCoord = AtlasedTexture::DefaultAtlasTexture;
+	}
 };
 
 static_assert(sizeof(FlameParticleData) % 16 == 0);
+
+
+class FlameParticleGenerator : public ParticleGenerator<FlameParticleData, FlameParticleGenerator> {
+public:
+	FlameParticleGenerator() {}
+	~FlameParticleGenerator() override {}
+protected:
+	bool GenerateCPUImpl() override { return false; }
+};

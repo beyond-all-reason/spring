@@ -7,6 +7,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -20,11 +21,13 @@ CR_REG_METADATA(CFlameProjectile,(
 	CR_MEMBER(spread),
 	CR_MEMBER(curTime),
 	CR_MEMBER(physLife),
-	CR_MEMBER(invttl)
+	CR_MEMBER(invttl),
+	CR_MEMBER(pgOffset)
 ))
 
 
-CFlameProjectile::CFlameProjectile(const ProjectileParams& params): CWeaponProjectile(params)
+CFlameProjectile::CFlameProjectile(const ProjectileParams& params)
+	: CWeaponProjectile(params)
 	, curTime(0.0f)
 	, physLife(0.0f)
 	, invttl(1.0f / ttl)
@@ -32,12 +35,34 @@ CFlameProjectile::CFlameProjectile(const ProjectileParams& params): CWeaponProje
 {
 	projectileType = WEAPON_FLAME_PROJECTILE;
 
-	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->size * weaponDef->collisionSize, 0.0f);
+	SetRadiusAndHeight(weaponDef->size * weaponDef->collisionSize, 0.0f);
 
-		drawRadius = weaponDef->size;
-		physLife = 1.0f / weaponDef->duration;
-	}
+	drawRadius = weaponDef->size;
+	physLife = 1.0f / weaponDef->duration;
+
+	const WeaponDef::Visuals& wdVisuals = weaponDef->visuals;
+	auto DefColor = SColor(wdVisuals.color.x, wdVisuals.color.y, wdVisuals.color.z, weaponDef->intensity);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FlameParticleGenerator>();
+	pgOffset = pg.Add(FlameParticleData{
+		.pos = {},
+		.radius = radius,
+		.animParams = {},
+		.drawOrder = drawOrder,
+		.rotParams = {},
+		.curTime = curTime,
+		.color0 = DefColor,
+		.color1 = DefColor,
+		.colEdge0 = 0.0f,
+		.colEdge1 = 1.0f,
+		.texCoord = *wdVisuals.texture1
+	});
+}
+
+CFlameProjectile::~CFlameProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FlameParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 void CFlameProjectile::Collision()
@@ -70,6 +95,21 @@ void CFlameProjectile::Update()
 	curTime = std::min(curTime + invttl, 1.0f);
 	checkCol &= (curTime <= physLife);
 	deleteMe |= (curTime >= 1.0f);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FlameParticleGenerator>();
+	const auto [token, data] = pg.Get(pgOffset);
+
+	data->radius = radius;
+	data->pos = pos;
+	data->curTime = curTime;
+
+	if (const auto* cm = weaponDef->visuals.colorMap; cm) {
+		auto [i0, i1] = cm->GetIndices(curTime);
+		data->color0 = cm->GetColor(i0);
+		data->color1 = cm->GetColor(i1);
+		data->colEdge0 = cm->GetColorPos(i0);
+		data->colEdge1 = cm->GetColorPos(i1);
+	}
 
 	explGenHandler.GenExplosion(cegID, pos, speed, curTime, 0.0f, 0.0f, owner(), nullptr);
 }

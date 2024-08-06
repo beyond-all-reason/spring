@@ -10,7 +10,6 @@
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
-#include "Rendering/Env/Particles/Generators/FireballParticleGenerator.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/SpringMath.h"

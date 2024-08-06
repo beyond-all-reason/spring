@@ -8,7 +8,6 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
-#include "Rendering/Env/Particles/Generators/BeamLaserParticleGenerator.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"

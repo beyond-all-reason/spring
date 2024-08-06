@@ -9,6 +9,7 @@
 #include "EmgParticleGenerator.h"
 #include "ExplosiveParticleGenerator.h"
 #include "FireballParticleGenerator.h"
+#include "FlameParticleGenerator.h"
 
 class ParticleGeneratorHandler {
 public:
@@ -36,7 +37,8 @@ private:
 		std::unique_ptr<BeamLaserParticleGenerator>,
 		std::unique_ptr<EmgParticleGenerator>,
 		std::unique_ptr<ExplosiveParticleGenerator>,
-		std::unique_ptr<FireballParticleGenerator>
+		std::unique_ptr<FireballParticleGenerator>,
+		std::unique_ptr<FlameParticleGenerator>
 	> generators;
 
 	int32_t numQuads;

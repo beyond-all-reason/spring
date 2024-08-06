@@ -33,15 +33,11 @@ struct InputData {
 	MainCode =
 [[
 	vec4 col = GetPackedColor(color);
-	vec3 xDirCam = camView[0].xyz;
-	vec3 yDirCam = camView[1].xyz;
-	AddEffectsQuad(
+	
+	AddEffectsQuadCamera(
 		quadStartIndex,
 		animParams,
-		drawPos - xDirCam * drawRadius - yDirCam * drawRadius, texCoord.xy,
-		drawPos + xDirCam * drawRadius - yDirCam * drawRadius, texCoord.zy,
-		drawPos + xDirCam * drawRadius + yDirCam * drawRadius, texCoord.zw,
-		drawPos - xDirCam * drawRadius + yDirCam * drawRadius, texCoord.xw,
+		drawPos, vec2(drawRadius), texCoord,
 		col
 	);
 ]]
