@@ -5,15 +5,11 @@ uniform float currFrame;
 uniform mat4 camView;
 uniform vec3 camPos;
 
-#line 10008
 // Placeholer for the struct InputData
 %s
 
-#line 20012
 // Placeholer for definitions
 %s
-
-#line 30016
 
 struct TriangleData
 {
@@ -189,13 +185,10 @@ void main()
 
 	barrier();
     memoryBarrierShared();
-	
-#line 40170
+
 	// Placeholer for early exit
 %s
-#line 50173
 
-#line 60175
 	// Placeholer to define the number of quads
 	uint quadStartIndex = atomicAdd(localQuadsCounter, (%s) * uint(gl_GlobalInvocationID.x < arraySizes.x));
 
@@ -207,8 +200,7 @@ void main()
 
 	if (gl_GlobalInvocationID.x >= arraySizes.x)
 		return;
-	
-#line 70188
+
 	// Placeholer for the rest of the main code
 %s
 }
