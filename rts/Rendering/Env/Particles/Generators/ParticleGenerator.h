@@ -32,6 +32,10 @@ struct ParticleGeneratorDefs {
 	static constexpr int32_t IDCS_SSBO_BINDING_IDX = 4;
 	static constexpr int32_t ATOM_SSBO_BINDING_IDX = 5;
 
+	static constexpr int32_t ATOM_SSBO_NUM_ELEMENTS = 1024;
+	static constexpr int32_t ATOM_SSBO_QUAD_IDX = 0;
+	static constexpr int32_t ATOM_SSBO_STAT_IDX = 512; // leave some space to avoid false sharing
+
 	static constexpr int32_t WORKGROUP_SIZE = 512;
 };
 
@@ -251,6 +255,8 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	shader->SetFlag("VERT_SSBO_BINDING_IDX", ParticleGeneratorDefs::VERT_SSBO_BINDING_IDX);
 	shader->SetFlag("IDCS_SSBO_BINDING_IDX", ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
 	shader->SetFlag("ATOM_SSBO_BINDING_IDX", ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
+	shader->SetFlag("ATOM_SSBO_QUAD_IDX", ParticleGeneratorDefs::ATOM_SSBO_QUAD_IDX);
+	shader->SetFlag("ATOM_SSBO_STAT_IDX", ParticleGeneratorDefs::ATOM_SSBO_STAT_IDX);
 
 	shader->Link();
 

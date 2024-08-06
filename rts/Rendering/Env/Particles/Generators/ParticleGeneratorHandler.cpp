@@ -18,10 +18,10 @@ void ParticleGeneratorHandler::Init()
 	vertVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
 	indcVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
 
-	atomicCntVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
-	atomicCntVBO.Bind();
-	atomicCntVBO.New(sizeof(uint32_t), GL_STREAM_COPY);
-	atomicCntVBO.Unbind();
+	counterVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
+	counterVBO.Bind();
+	counterVBO.New(ParticleGeneratorDefs::ATOM_SSBO_NUM_ELEMENTS * sizeof(uint32_t), GL_STREAM_COPY);
+	counterVBO.Unbind();
 }
 
 void ParticleGeneratorHandler::Kill()
@@ -36,7 +36,7 @@ void ParticleGeneratorHandler::Kill()
 
 	vertVBO.Release();
 	indcVBO.Release();
-	atomicCntVBO.Release();
+	counterVBO.Release();
 }
 
 void ParticleGeneratorHandler::GenerateAll()
@@ -51,9 +51,9 @@ void ParticleGeneratorHandler::GenerateAll()
 	ParticleGeneratorGlobal::atomicCntVal = { 0 };
 	{
 		static constexpr uint32_t ZERO = 0u;
-		atomicCntVBO.Bind();
+		counterVBO.Bind();
 		glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &ZERO);
-		atomicCntVBO.Unbind();
+		counterVBO.Unbind();
 	}
 
 	{
@@ -70,7 +70,7 @@ void ParticleGeneratorHandler::GenerateAll()
 
 	vertVBO.BindBufferRange(ParticleGeneratorDefs::VERT_SSBO_BINDING_IDX);
 	indcVBO.BindBufferRange(ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
-	atomicCntVBO.BindBufferRange(ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
+	counterVBO.BindBufferRange(ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
 	
 	std::apply([](auto& ... gen) {
 		(gen->Generate(), ...);
@@ -78,15 +78,15 @@ void ParticleGeneratorHandler::GenerateAll()
 
 	vertVBO.UnbindBufferRange(ParticleGeneratorDefs::VERT_SSBO_BINDING_IDX);
 	indcVBO.UnbindBufferRange(ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
-	atomicCntVBO.UnbindBufferRange(ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
+	counterVBO.UnbindBufferRange(ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
 
 #if 1
 	{
 		// Debug
-		atomicCntVBO.Bind();
+		counterVBO.Bind();
 		uint32_t val;
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(val), &val);
-		atomicCntVBO.Unbind();
+		counterVBO.Unbind();
 
 		if (val > 0) {
 			vertVBO.Bind();

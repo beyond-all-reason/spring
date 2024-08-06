@@ -36,9 +36,9 @@ layout(std430, binding = IDCS_SSBO_BINDING_IDX) buffer OUT2
     uint indicesData[];
 };
 
-layout(std430, binding = ATOM_SSBO_BINDING_IDX) buffer QUADSCOUNTER
+layout(std430, binding = ATOM_SSBO_BINDING_IDX) buffer ATOMIC
 {
-    uint quadsCounter;
+    uint atomicCounters[];
 };
 
 uint GetUnpackedValue(uint packedValue, uint byteNum) {
@@ -187,7 +187,7 @@ void AddEffectsQuadCamera(
 void main()
 {
 	if (gl_LocalInvocationID.x == 0u)
-		localQuadsCounter = atomicAdd(quadsCounter, 0u); //do I need atomicAdd() to read quadsCounter?
+		localQuadsCounter = atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], 0u); //do I need atomicAdd() to read atomicCounters[ATOM_SSBO_QUAD_IDX]?
 
 	barrier();
     memoryBarrierShared();
@@ -202,7 +202,7 @@ void main()
     memoryBarrierShared();
 
 	if (gl_LocalInvocationID.x == 0u)
-		atomicAdd(quadsCounter, localQuadsCounter);
+		atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], localQuadsCounter);
 
 	if (gl_GlobalInvocationID.x >= arraySizes.x)
 		return;

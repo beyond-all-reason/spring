@@ -42,5 +42,5 @@ private:
 	VBO vertVBO;
 	VBO indcVBO;
 
-	VBO atomicCntVBO;					//for the GPU based updates
+	VBO counterVBO;					//for the GPU based updates
 };
