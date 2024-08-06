@@ -44,7 +44,7 @@ struct InputData {
 ]],
 	NumQuads =
 [[
-	numStages * uint(gl_GlobalInvocationID.x < arraySizes.x)
+	numStages
 ]],
 	MainCode =
 [[
@@ -73,6 +73,7 @@ struct InputData {
 
 		AddEffectsQuad(
 			quadStartIndex + stage,
+			animParams,
 			stagePos - xdirCam - ydirCam, texCoord.xy,
 			stagePos + xdirCam - ydirCam, texCoord.zy,
 			stagePos + xdirCam + ydirCam, texCoord.zw,

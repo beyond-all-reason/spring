@@ -46,11 +46,10 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 		invttl = 1.0f / ttl;
 	}
 
-	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
-
 	const WeaponDef::Visuals& wdVisuals = weaponDef->visuals;
 	auto DefColor = SColor(wdVisuals.color.x, wdVisuals.color.y, wdVisuals.color.z, weaponDef->intensity);
-	
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
 	pgOffset = pg.Add(ExplosiveParticleData{
 		.pos = pos,
 		.radius = drawRadius,

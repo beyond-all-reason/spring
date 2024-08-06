@@ -80,6 +80,7 @@ shared uint localQuadsCounter;
 
 void AddEffectsQuad(
 	uint thisQuadIndex,
+	vec3 animPrms,
 	vec3 tlPos, vec2 tlUV, vec4 tlCol,
 	vec3 trPos, vec2 trUV, vec4 trCol,
 	vec3 brPos, vec2 brUV, vec4 brCol,
@@ -117,32 +118,33 @@ void AddEffectsQuad(
 	triangleData[triIndex].pos      = vec4(tlPos, drawOrder);
 	triangleData[triIndex].uvw      = vec4(tlUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
-	triangleData[triIndex].apAndCol = vec4(animParams, uintBitsToFloat(PackColor(tlCol)));
+	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(tlCol)));
 	triIndex++;
 
 	// TR
 	triangleData[triIndex].pos      = vec4(trPos, drawOrder);
 	triangleData[triIndex].uvw      = vec4(trUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
-	triangleData[triIndex].apAndCol = vec4(animParams, uintBitsToFloat(PackColor(trCol)));
+	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(trCol)));
 	triIndex++;
 
 	// BR
 	triangleData[triIndex].pos      = vec4(brPos, drawOrder);
 	triangleData[triIndex].uvw      = vec4(brUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
-	triangleData[triIndex].apAndCol = vec4(animParams, uintBitsToFloat(PackColor(brCol)));
+	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(brCol)));
 	triIndex++;
 
 	// BL
 	triangleData[triIndex].pos      = vec4(blPos, drawOrder);
 	triangleData[triIndex].uvw      = vec4(blUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
-	triangleData[triIndex].apAndCol = vec4(animParams, uintBitsToFloat(PackColor(blCol)));
+	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(blCol)));
 }
 
 void AddEffectsQuad(
 	uint thisQuadIndex,
+	vec3 animPrms,
 	vec3 tlPos, vec2 tlUV,
 	vec3 trPos, vec2 trUV,
 	vec3 brPos, vec2 brUV,
@@ -152,10 +154,31 @@ void AddEffectsQuad(
 	// TODO write optimized code
 	AddEffectsQuad(
 		thisQuadIndex,
+		animPrms,
 		tlPos, tlUV, quadColor,
 		trPos, trUV, quadColor,
 		brPos, brUV, quadColor,
 		blPos, blUV, quadColor
+	);
+}
+
+void AddEffectsQuadCamera(
+	uint thisQuadIndex,
+	vec3 animPrms,
+	vec3 centerPos,
+	vec2 quadDims,
+	vec4 texCrds,
+	vec4 quadColor
+) {
+	// TODO write optimized code
+	AddEffectsQuad(
+		thisQuadIndex,
+		animPrms,
+		centerPos - camView[0].xyz * quadDims.x - camView[1].xyz * quadDims.y, texCrds.xy,
+		centerPos + camView[0].xyz * quadDims.x - camView[1].xyz * quadDims.y, texCrds.zy,
+		centerPos + camView[0].xyz * quadDims.x + camView[1].xyz * quadDims.y, texCrds.zw,
+		centerPos - camView[0].xyz * quadDims.x + camView[1].xyz * quadDims.y, texCrds.xw,
+		quadColor
 	);
 }
 
@@ -174,7 +197,7 @@ void main()
 
 #line 60175
 	// Placeholer to define the number of quads
-	uint quadStartIndex = atomicAdd(localQuadsCounter, %s);
+	uint quadStartIndex = atomicAdd(localQuadsCounter, (%s) * uint(gl_GlobalInvocationID.x < arraySizes.x));
 
 	barrier();
     memoryBarrierShared();

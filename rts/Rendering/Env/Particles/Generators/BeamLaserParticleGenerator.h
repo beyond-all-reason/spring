@@ -1,25 +1,47 @@
 #pragma once
 
-#include "System/float3.h"
-#include "System/float4.h"
-#include "System/Color.h"
+#include "ParticleGenerator.h"
 
 //no regular Update() needed
 struct alignas(16) BeamLaserData {
 	float3 startPos;
-	float unused0;
+	SColor coreColStart;
+
 	float3 targetPos;
-	float unused1;
-	struct {
-		SColor coreColStart;
-		SColor coreColEnd;
-		SColor edgeColStart;
-		SColor edgeColEnd;
-	};
-	float4 texCoord1;
-	float4 texCoord2;
-	float4 texCoord3;
-	float4 thicknessFlareDecay;
+	SColor coreColEnd;
+
+	float3 animParams1;
+	SColor edgeColStart;
+
+	float3 animParams2;
+	SColor edgeColEnd;
+
+	float3 animParams3;
+	int32_t drawOrder;
+
+	AtlasedTexture texCoord1;
+	AtlasedTexture texCoord2;
+	AtlasedTexture texCoord3;
+
+	float thickness;
+	float coreThickness;
+	float flareSize;
+	float midTexX2;
+
+	int32_t GetNumQuads() const {
+		return
+			2 * (texCoord1 != AtlasedTexture::DefaultAtlasTexture) +
+			4 * (texCoord2 != AtlasedTexture::DefaultAtlasTexture) +
+			2 * (texCoord3 != AtlasedTexture::DefaultAtlasTexture);
+	}
 };
 
 static_assert(sizeof(BeamLaserData) % 16 == 0);
+
+class BeamLaserParticleGenerator : public ParticleGenerator<BeamLaserData, BeamLaserParticleGenerator> {
+public:
+	BeamLaserParticleGenerator() {}
+	~BeamLaserParticleGenerator() override {}
+protected:
+	bool GenerateCPUImpl() override { return false; }
+};

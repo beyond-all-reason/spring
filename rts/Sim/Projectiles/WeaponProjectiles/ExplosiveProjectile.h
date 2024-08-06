@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _EXPLOSIVE_PROJECTILE_H
-#define _EXPLOSIVE_PROJECTILE_H
+#pragma once
 
 #include "WeaponProjectile.h"
 
@@ -26,5 +25,3 @@ private:
 	float curTime;
 	size_t pgOffset;
 };
-
-#endif // _EXPLOSIVE_PROJECTILE_H

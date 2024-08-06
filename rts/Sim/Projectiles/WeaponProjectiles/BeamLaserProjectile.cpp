@@ -1,3 +1,4 @@
+#include "BeamLaserProjectile.h"
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
@@ -6,6 +7,8 @@
 #include "Game/CameraHandler.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
+#include "Rendering/Env/Particles/Generators/BeamLaserParticleGenerator.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -21,25 +24,18 @@ CR_REG_METADATA(CBeamLaserProjectile,(
 	CR_MEMBER(coreColEnd),
 	CR_MEMBER(edgeColStart),
 	CR_MEMBER(edgeColEnd),
-	CR_MEMBER(thickness),
-	CR_MEMBER(corethickness),
-	CR_MEMBER(flaresize),
-	CR_MEMBER(decay),
-	CR_MEMBER(midtexx)
+	CR_MEMBER(pgOffset)
 ))
 
 
-CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWeaponProjectile(params)
-	, thickness(0.0f)
-	, corethickness(0.0f)
-	, flaresize(0.0f)
-	, decay(0.0f)
-	, midtexx(0.0f)
+CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params)
+	: CWeaponProjectile(params)
+	, pgOffset(-1)
 {
 	projectileType = WEAPON_BEAMLASER_PROJECTILE;
 
 	assert(weaponDef->IsHitScanWeapon());
-
+/*
 	thickness = weaponDef->visuals.thickness;
 	corethickness = weaponDef->visuals.corethickness;
 	flaresize = weaponDef->visuals.laserflaresize;
@@ -48,7 +44,7 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWea
 	midtexx =
 		(weaponDef->visuals.texture2->xstart +
 		(weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
-
+*/
 	coreColStart[0] = (weaponDef->visuals.color2.x * params.startAlpha);
 	coreColStart[1] = (weaponDef->visuals.color2.y * params.startAlpha);
 	coreColStart[2] = (weaponDef->visuals.color2.z * params.startAlpha);
@@ -65,6 +61,33 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWea
 	edgeColEnd[1] = (weaponDef->visuals.color.y * params.endAlpha);
 	edgeColEnd[2] = (weaponDef->visuals.color.z * params.endAlpha);
 	edgeColEnd[3] = 1;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
+	pgOffset = pg.Add(BeamLaserData{
+		.startPos = startPos,
+		.coreColStart = SColor(coreColStart[0], coreColStart[1], coreColStart[2], coreColStart[3]),
+		.targetPos = targetPos,
+		.coreColEnd = SColor(coreColEnd[0], coreColEnd[1], coreColEnd[2], coreColEnd[3]),
+		.animParams1 = animParams,
+		.edgeColStart = SColor(edgeColStart[0], edgeColStart[1], edgeColStart[2], edgeColStart[3]),
+		.animParams2 = {},
+		.edgeColEnd = SColor(edgeColEnd[0], edgeColEnd[1], edgeColEnd[2], edgeColEnd[3]),
+		.animParams3 = {},
+		.drawOrder = drawOrder,
+		.texCoord1 = *weaponDef->visuals.texture1,
+		.texCoord2 = *weaponDef->visuals.texture2,
+		.texCoord3 = *weaponDef->visuals.texture3,
+		.thickness = weaponDef->visuals.thickness,
+		.coreThickness = weaponDef->visuals.corethickness,
+		.flareSize = weaponDef->visuals.laserflaresize,
+		.midTexX2 = (weaponDef->visuals.texture2->xend + weaponDef->visuals.texture2->xstart) * 0.5f
+	});
+}
+
+CBeamLaserProjectile::~CBeamLaserProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 
@@ -72,6 +95,9 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWea
 void CBeamLaserProjectile::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	const auto& decay = weaponDef->visuals.beamdecay;
+
 	if ((--ttl) <= 0) {
 		deleteMe = true;
 	} else {
@@ -82,14 +108,25 @@ void CBeamLaserProjectile::Update()
 			edgeColEnd[i]   *= decay;
 		}
 
+		const auto& flaresize = weaponDef->visuals.laserflaresize;
+
 		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f, flaresize, 0.0f, owner(), nullptr);
 	}
 
 	UpdateInterception();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
+	const auto [token, data] = pg.Get(pgOffset);
+
+	data->coreColStart = SColor(coreColStart[0], coreColStart[1], coreColStart[2], coreColStart[3]);
+	data->coreColEnd = SColor(coreColEnd[0], coreColEnd[1], coreColEnd[2], coreColEnd[3]);
+	data->edgeColStart = SColor(edgeColStart[0], edgeColStart[1], edgeColStart[2], edgeColStart[3]);
+	data->edgeColEnd = SColor(edgeColEnd[0], edgeColEnd[1], edgeColEnd[2], edgeColEnd[3]);
 }
 
 void CBeamLaserProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
@@ -197,6 +234,7 @@ void CBeamLaserProjectile::Draw()
 			{ pos1 - camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xstart, WT3->yend,   coreColStart }
 		);
 	}
+	*/
 }
 
 void CBeamLaserProjectile::DrawOnMinimap() const

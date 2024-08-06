@@ -28,7 +28,7 @@ struct InputData {
 ]],
 	NumQuads =
 [[
-	1 * uint(gl_GlobalInvocationID.x < arraySizes.x)
+	1
 ]],
 	MainCode =
 [[
@@ -37,6 +37,7 @@ struct InputData {
 	vec3 yDirCam = camView[1].xyz;
 	AddEffectsQuad(
 		quadStartIndex,
+		animParams,
 		drawPos - xDirCam * drawRadius - yDirCam * drawRadius, texCoord.xy,
 		drawPos + xDirCam * drawRadius - yDirCam * drawRadius, texCoord.zy,
 		drawPos + xDirCam * drawRadius + yDirCam * drawRadius, texCoord.zw,

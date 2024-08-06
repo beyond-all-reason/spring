@@ -5,6 +5,7 @@
 
 #include "Rendering/GL/VBO.h"
 
+#include "BeamLaserParticleGenerator.h"
 #include "EmgParticleGenerator.h"
 #include "ExplosiveParticleGenerator.h"
 
@@ -31,6 +32,7 @@ public:
 	}
 private:
 	std::tuple<
+		std::unique_ptr<BeamLaserParticleGenerator>,
 		std::unique_ptr<EmgParticleGenerator>,
 		std::unique_ptr<ExplosiveParticleGenerator>
 	> generators;

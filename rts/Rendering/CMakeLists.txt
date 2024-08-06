@@ -50,6 +50,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/TracerProjectile.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/WakeProjectile.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Classes/WreckProjectile.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/BeamLaserParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/ParticleGeneratorHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/EmgParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/ExplosiveParticleGenerator.cpp"
