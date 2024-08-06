@@ -201,7 +201,7 @@ void main()
 	barrier();
     memoryBarrierShared();
 
-	// Placeholer for early exit
+	// Placeholer for early exit and other init code
 %s
 
 	// Placeholer to define the number of quads

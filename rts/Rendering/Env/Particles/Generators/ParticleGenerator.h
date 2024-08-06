@@ -232,7 +232,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	const std::string inputData = root.GetString("InputData", "");
 	const std::string inputDefs = root.GetString("InputDefs", "");
 	const std::string earlyExit = root.GetString("EarlyExit", "");
-	const std::string numQuads  = root.GetString("NumQuads" , "");
+	      std::string numQuads  = root.GetString("NumQuads" , ""); numQuads.erase(std::remove(numQuads.begin(), numQuads.end(), '\n'), numQuads.cend());
 	const std::string mainCode  = root.GetString("MainCode" , "");
 
 	shaderSrc = fmt::sprintf(shaderSrc,
