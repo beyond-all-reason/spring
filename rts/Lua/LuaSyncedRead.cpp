@@ -8618,6 +8618,7 @@ int LuaSyncedRead::TraceRayFeatures(lua_State* L) //returns the list of features
  * @number dirY
  * @number dirZ
  * @number traceLength
+ * @bool[opt=false] ignoreWater
  * @treturn nil|len
  */
 int LuaSyncedRead::TraceRayGround(lua_State* L)
@@ -8626,12 +8627,18 @@ int LuaSyncedRead::TraceRayGround(lua_State* L)
 	float3 dir(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
 	float traceLength = luaL_checkfloat(L, 7);
 	const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength);
-
+	const float waterRayLength = CGround::LinePlaneCol(pos, dir, traceLength, 0.0f);
+	const int optArgIdx = 8 + lua_isnumber(L, 8);
+	const bool ignoreWater = luaL_optboolean(L, optArgIdx, false);
+	const float height = CGround::GetHeightReal(pos + dir * traceLength);
+	if (-1.0f == groundLength)
+		return 0;
 	if (traceLength > groundLength && groundLength > 0.0f) {
 		traceLength = groundLength;
 	}
-	if (-1.0f == groundLength)
-		return 0;
+	traceLength == CGround::LinePlaneCol(pos, dir, traceLength, height);
+	if (!ignoreWater)
+		traceLength = std::min(traceLength, waterRayLength);
 	lua_pushnumber(L, traceLength);
 	return 1;
 }
