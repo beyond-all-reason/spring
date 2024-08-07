@@ -2,6 +2,7 @@
 
 #include "LuaUnsyncedCtrl.h"
 
+#include "Game/Camera/DollyController.h"
 #include "LuaConfig.h"
 #include "LuaInclude.h"
 #include "LuaHandle.h"
@@ -157,6 +158,9 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetCameraState);
 	REGISTER_LUA_CFUNC(SetCameraTarget);
+
+	REGISTER_LUA_CFUNC(SetDollyCameraCurve);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookCurve);
 
 	REGISTER_LUA_CFUNC(DeselectUnit);
 	REGISTER_LUA_CFUNC(DeselectUnitMap);
@@ -1233,6 +1237,42 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 
 	// always push false in synced
 	lua_pushboolean(L, retval && !synced);
+	return 1;
+}
+
+/*** Sets camera state
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	camHandler->GetDollyController().SetNURBS(degree, cpoints, knots);
+
+	return 1;
+}
+/*** Sets camera state
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_CURVE);
+	camHandler->GetDollyController().SetLookCurve(degree, cpoints, knots);
+
 	return 1;
 }
 

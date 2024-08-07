@@ -399,6 +399,7 @@ void CSpringController::SwitchTo(const int oldCam, const bool showText)
 
 	if (oldCam == CCameraHandler::CAMERA_MODE_OVERVIEW)
 		return;
+	Update();
 }
 
 

@@ -139,7 +139,7 @@ CCameraHandler::~CCameraHandler() {
 	// regular controllers should already have been killed
 	assert(camControllers[0] == nullptr);
 	spring::SafeDestruct(camControllers[CAMERA_MODE_DUMMY]);
-	std::memset(camControllerMem[CAMERA_MODE_DUMMY], 0, sizeof(camControllerMem[CAMERA_MODE_DUMMY]));
+	std::memset(camControllerMem[CAMERA_MODE_DOLLY], 0, sizeof(camControllerMem[CAMERA_MODE_DOLLY]));
 }
 
 
@@ -374,8 +374,8 @@ void CCameraHandler::CameraTransition(float nsecs)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	cameraTransitionFunction[currCamTransitionNum](camControllers[currCamCtrlNum], camTransState, nsecs);
-	LOG_L(L_INFO, "CamPos: %s, Dir: %s",
-	camControllers[currCamCtrlNum]->GetPos().str().c_str(), camControllers[currCamCtrlNum]->GetDir().str().c_str());
+	// LOG_L(L_INFO, "CamPos: %s, Dir: %s",
+	// camControllers[currCamCtrlNum]->GetPos().str().c_str(), camControllers[currCamCtrlNum]->GetDir().str().c_str());
 }
 
 void UpdateTransitionExpDecay(const CCameraController* currCam, CCameraHandler::CamTransitionState& camTransState)
@@ -511,7 +511,7 @@ void UpdateTransitionSpringDampened(const CCameraController* currCam, CCameraHan
 	float dt = currTime - camTransState.lastTime;
 	camTransState.lastTime = currTime;
 
-	if(currentPos.equals(targetPos)	&& currentRot.equals(targetRot)	&& currentFov == targetFov) {
+	if((currentPos.equals(targetPos)	&& currentRot.equals(targetRot)	&& currentFov == targetFov) || dt <= 0) {
 		return;
 	}
 

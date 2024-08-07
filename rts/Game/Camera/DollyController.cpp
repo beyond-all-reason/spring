@@ -5,21 +5,22 @@
 #include "DollyController.h"
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
+#include "Game/UI/MouseHandler.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
-#include "Game/UI/MouseHandler.h"
 #include "Rendering/GlobalRendering.h"
+#include "Sim/Misc/ModInfo.h"
+#include "Sim/Misc/SmoothHeightMesh.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
-#include "System/Misc/SpringTime.h"
-#include "System/SpringMath.h"
-#include "Sim/Misc/SmoothHeightMesh.h"
-#include "Sim/Misc/ModInfo.h"
 #include "System/Math/NURBS.h"
+#include "System/Misc/SpringTime.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 #include "System/float3.h"
 
-namespace {
+namespace
+{
 	enum HeightTracking : int {
 		Disabled = 0,
 		Terrain,
@@ -27,18 +28,30 @@ namespace {
 	};
 }
 
-CONFIG(bool,  CamDollyEnabled).defaultValue(true).headlessValue(false);
-CONFIG(int,   CamDollyScrollSpeed).defaultValue(10);
+CONFIG(bool, CamDollyEnabled).defaultValue(true).headlessValue(false);
+CONFIG(int, CamDollyScrollSpeed).defaultValue(10);
 CONFIG(float, CamDollyFOV).defaultValue(45.0f);
-CONFIG(bool,  CamDollyLockCardinalDirections).defaultValue(true).description("Whether cardinal directions should be `locked` for a short time when rotating.");
-CONFIG(bool,  CamDollyZoomInToMousePos).defaultValue(true);
-CONFIG(bool,  CamDollyZoomOutFromMousePos).defaultValue(false);
-CONFIG(bool,  CamDollyEdgeRotate).defaultValue(false).description("Rotate camera when cursor touches screen borders.");
-CONFIG(float, CamDollyFastScaleMouseMove).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
-CONFIG(float, CamDollyFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
-CONFIG(int,   CamDollyTrackMapHeightMode).defaultValue(HeightTracking::Terrain).description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smoothmesh");
+CONFIG(bool, CamDollyLockCardinalDirections)
+	.defaultValue(true)
+	.description("Whether cardinal directions should be `locked` for a short time when rotating.");
+CONFIG(bool, CamDollyZoomInToMousePos).defaultValue(true);
+CONFIG(bool, CamDollyZoomOutFromMousePos).defaultValue(false);
+CONFIG(bool, CamDollyEdgeRotate)
+	.defaultValue(false)
+	.description("Rotate camera when cursor touches screen borders.");
+CONFIG(float, CamDollyFastScaleMouseMove)
+	.defaultValue(3.0f / 10.0f)
+	.description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
+CONFIG(float, CamDollyFastScaleMousewheelMove)
+	.defaultValue(2.0f / 10.0f)
+	.description(
+		"Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
+CONFIG(int, CamDollyTrackMapHeightMode)
+	.defaultValue(HeightTracking::Terrain)
+	.description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smoothmesh");
 
-static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
+static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
 
@@ -51,17 +64,20 @@ static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight
 
 CDollyController::CDollyController()
 	: rot(2.677f, 0.0f, 0.0f)
-	, curDist(float3(mapDims.mapx * 0.5f, 0.0f, mapDims.mapy * 0.55f).Length2D() * 1.5f * SQUARE_SIZE)
+	, curDist(float3(mapDims.mapx * 0.5f, 0.0f, mapDims.mapy * 0.55f).Length2D() * 1.5f *
+              SQUARE_SIZE)
 	, maxDist(std::max(mapDims.mapx, mapDims.mapy) * SQUARE_SIZE * 1.333f)
 	, oldDist(0.0f)
-	, zoomBack(false),
-	lookTarget(float3(5000.f,100.f,5000.f))
+	, zoomBack(false)
+	, lookTarget(float3(5000.f, 100.f, 5000.f))
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	enabled = configHandler->GetBool("CamDollyEnabled");
-	configHandler->NotifyOnChange(this, {"CamDollyScrollSpeed", "CamDollyFOV", "CamDollyZoomInToMousePos",
-		"CamDollyZoomOutFromMousePos", "CamDollyFastScaleMousewheelMove", "CamDollyFastScaleMouseMove", "CamDollyEdgeRotate",
-		"CamDollyLockCardinalDirections", "CamDollyTrackMapHeightMode"});
+	configHandler->NotifyOnChange(this,
+	                              {"CamDollyScrollSpeed", "CamDollyFOV", "CamDollyZoomInToMousePos",
+	                               "CamDollyZoomOutFromMousePos", "CamDollyFastScaleMousewheelMove",
+	                               "CamDollyFastScaleMouseMove", "CamDollyEdgeRotate",
+	                               "CamDollyLockCardinalDirections", "CamDollyTrackMapHeightMode"});
 	ConfigUpdate();
 }
 
@@ -91,7 +107,7 @@ void CDollyController::ConfigUpdate()
 	}
 }
 
-void CDollyController::ConfigNotify(const std::string & key, const std::string & value)
+void CDollyController::ConfigNotify(const std::string& key, const std::string& value)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
@@ -102,28 +118,38 @@ void CDollyController::Update()
 	RECOIL_DETAILED_TRACY_ZONE;
 	float curTime = spring_gettime().toMilliSecsf();
 	float percent = std::clamp(1 - (endTime - curTime) / (endTime - startTime), 0.f, 1.f);
-	float minU = 0.f;
-	float maxU = 1.f;
+	float minU = NURBS::minU(curveDegree, curveControlPoints, nurbsKnots);
+	float maxU = NURBS::maxU(curveDegree, curveControlPoints, nurbsKnots);
 	float u = minU + percent * (maxU - minU);
-	pos = SolveNURBS(curveDegree, curveControlPoints, nurbsKnots, u);
-	// LOG_L(L_INFO, "Dollypos: %s", pos.str().c_str());
+	pos = NURBS::SolveNURBS(curveDegree, curveControlPoints, nurbsKnots, u);
+	LOG_L(L_INFO, "Dollypos: %s", pos.str().c_str());
 
 
 	// pos.ClampInMap();
-	// pos.y = std::min(pos.y, CGround::GetHeightReal(pos.x, pos.z, false)); // always focus on the ground
-	dir =(lookTarget - pos).Normalize();
+	// pos.y = std::min(pos.y, CGround::GetHeightReal(pos.x, pos.z, false)); // always focus on the
+	// ground
+	if (lookMode == DOLLY_LOOKMODE_POSITION) {
+		dir = (lookTarget - pos).Normalize();
+	} else if (lookMode == DOLLY_LOOKMODE_CURVE) {
+		float minU = NURBS::minU(lookCurveDegree, lookControlPoints, lookKnots);
+		float maxU = NURBS::maxU(lookCurveDegree, lookControlPoints, lookKnots);
+		float u = minU + percent * (maxU - minU);
+		float3 lookT = NURBS::SolveNURBS(lookCurveDegree, lookControlPoints, lookKnots, u);
+		dir = (lookT - pos).Normalize();
+	}
 	float3 newRot = CCamera::GetRotFromDir(GetDir());
+	LOG_L(L_INFO, "Dollyrot: %s", newRot.str().c_str());
 	rot = rot + GetRadAngleToward(rot, newRot);
-	camHandler->CameraTransition(0.f);
-	//rot.x = std::clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
+	camHandler->CameraTransition(0.01f);
+	// rot.x = std::clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
 
 	// camera->SetRot(float3(rot.x, GetAzimuth(), rot.z));
-	//dir = CCamera::GetFwdFromRot(this->GetRot());
+	// dir = CCamera::GetFwdFromRot(this->GetRot());
 
-	//curDist = std::clamp(curDist, 20.0f, maxDist);
-	//pixelSize = (camera->GetTanHalfFov() * 2.0f) / globalRendering->viewSizeY * curDist * 2.0f;
-	// camera->SetPos(pos);
-		// camera->SetRot(rot);
+	// curDist = std::clamp(curDist, 20.0f, maxDist);
+	// pixelSize = (camera->GetTanHalfFov() * 2.0f) / globalRendering->viewSizeY * curDist * 2.0f;
+	//  camera->SetPos(pos);
+	//  camera->SetRot(rot);
 }
 
 
@@ -149,30 +175,48 @@ void CDollyController::SwitchTo(const int oldCam, const bool showText)
 	if (showText)
 		LOG("Switching to Dolly style camera");
 
-	if (oldCam == CCameraHandler::CAMERA_MODE_OVERVIEW)
-		return;
-	curveControlPoints = {
-			{-3595.333, 9152.273, 15470.391, 1.0},
-			{1331.407, 3582.310, 10525.238, 1.0},
-			{3426.812, 833.980, 7029.465, 1.0},
-			{3334.951, 909.047, 3736.86, 1.0},
-			{8099.745, 1582.447, 55.414, 1.0}
-	};
-	nurbsKnots = {0.0, 0.0, 0.0, 0.0, 0.5,1.0, 1.0, 1.0, 1.0};
 	startTime = spring_gettime().toMilliSecsf();
 	endTime = startTime + 10000;
 	lookTarget = float3(7530.750, 152.520, 3352.290);
 }
 
+void CDollyController::SetNURBS(int degree, std::vector<float4> cpoints, std::vector<float> knots)
+{
+	curveDegree = degree;
+	curveControlPoints = cpoints;
+	nurbsKnots = knots;
+}
+
+void CDollyController::SetLookMode(int mode)
+{
+	if (mode < DOLLY_LOOKMODE_POSITION || mode > DOLLY_LOOKMODE_CURVE) {
+		mode = 1;
+	}
+	lookMode = mode;
+}
+
+void CDollyController::SetLookPosition(float3 pos)
+{
+	lookTarget = pos;
+}
+void CDollyController::SetLookUnit(int unitid)
+{
+	lookUnit = unitid;
+}
+
+void CDollyController::SetLookCurve(int degree, std::vector<float4> cpoints,
+                                    std::vector<float> knots)
+{
+	lookCurveDegree = degree;
+	lookControlPoints = cpoints;
+	lookKnots = knots;
+}
 
 void CDollyController::GetState(StateMap& sm) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
-	sm["dist"] = curDist;
-	sm["rx"]   = rot.x;
-	sm["ry"]   = rot.y;
-	sm["rz"]   = rot.z;
+
 }
 
 
@@ -181,8 +225,8 @@ bool CDollyController::SetState(const StateMap& sm)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 	SetStateFloat(sm, "dist", curDist);
-	SetStateFloat(sm, "rx",   rot.x);
-	SetStateFloat(sm, "ry",   rot.y);
-	SetStateFloat(sm, "rz",   rot.z);
+	SetStateFloat(sm, "rx", rot.x);
+	SetStateFloat(sm, "ry", rot.y);
+	SetStateFloat(sm, "rz", rot.z);
 	return true;
 }

@@ -133,7 +133,7 @@ public:
 	const CCameraController& GetCurrentController() const { return *(camControllers[currCamCtrlNum]); }
 	      CCameraController& GetCurrentController()       { return *(camControllers[currCamCtrlNum]); }
 
-	const CDollyController& GetDollyController() { return *(static_cast<CDollyController*>(camControllers[CAMERA_MODE_DOLLY])); }
+	CDollyController& GetDollyController() { return *(static_cast<CDollyController*>(camControllers[CAMERA_MODE_DOLLY])); }
 
 	const std::array<CCameraController*, CAMERA_MODE_LAST>& GetControllers() const { return camControllers; }
 
