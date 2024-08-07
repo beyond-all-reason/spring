@@ -8620,6 +8620,9 @@ int LuaSyncedRead::TraceRayFeatures(lua_State* L) //returns the list of features
  * @number traceLength
  * @bool[opt=false] ignoreWater
  * @treturn nil|len
+ * @treturn number     posX
+ * @treturn number     posY
+ * @treturn number     posZ
  */
 int LuaSyncedRead::TraceRayGround(lua_State* L)
 {
@@ -8640,7 +8643,11 @@ int LuaSyncedRead::TraceRayGround(lua_State* L)
 	if (!ignoreWater)
 		traceLength = std::min(traceLength, waterRayLength);
 	lua_pushnumber(L, traceLength);
-	return 1;
+	auto result = pos + dir * traceLength;
+	lua_pushnumber(L, result.x);
+	lua_pushnumber(L, result.y);
+	lua_pushnumber(L, result.z);
+	return 4;
 }
 /******************************************************************************
  * Misc
