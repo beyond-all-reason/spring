@@ -15,6 +15,7 @@ public:
 	CLargeBeamLaserProjectile() { }
 
 	CLargeBeamLaserProjectile(const ProjectileParams& params);
+	~CLargeBeamLaserProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -33,6 +34,7 @@ private:
 	float scrollspeed;
 	float pulseSpeed;
 	float decay;
+	size_t pgOffset;
 };
 
 #endif // LARGE_BEAM_LASER_PROJECTILE_H

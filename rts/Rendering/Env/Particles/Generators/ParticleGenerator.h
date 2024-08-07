@@ -16,6 +16,7 @@
 #include "System/UnorderedSet.hpp"
 #include "System/FileSystem/FileHandler.h"
 #include "Game/Camera.h"
+#include "Game/GlobalUnsynced.h"
 #include "lua/LuaParser.h"
 #include "Sim/Misc/GlobalSynced.h"
 
@@ -99,7 +100,6 @@ protected:
 
 	virtual bool GenerateCPUImpl() = 0;
 
-	float currFrame;
 	int32_t numQuads;
 
 	spring::unordered_set<size_t> freeList;
@@ -156,9 +156,9 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUn
 		numQuads
 	);
 
-	shader->SetUniform("currFrame", currFrame);
+	shader->SetUniform("frameInfo", static_cast<float>(gs->frameNum), globalRendering->timeOffset, gu->modGameTime);
 	shader->SetUniform("camPos", camPos.x, camPos.y, camPos.z);
-	shader->SetUniformMatrix4x4("camView", false, camera->GetViewMatrix().m);
+	shader->SetUniformMatrix4x4("camDirPos", false, CMatrix44f{ camera->GetPos(), camera->GetRight(), camera->GetUp(), camera->GetForward() }.m);
 }
 
 template<typename ParticleDataType, typename ParticleGenType>
@@ -262,7 +262,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shader->Enable();
 
-	shader->SetUniform("currFrame", 0.0f);
+	shader->SetUniform("frameInfo", 0.0f, 0.0f, 0.0f);
 	shader->SetUniform("camPos", 0.0f, 0.0f, 0.0f);
 	shader->SetUniformMatrix4x4("camView", false, CMatrix44f::Zero().m);
 
@@ -278,8 +278,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 template<typename ParticleDataType, typename ParticleGenType>
 inline ParticleGenerator<ParticleDataType, ParticleGenType>::ParticleGenerator()
-	:currFrame{ 0 }
-	,numQuads{ 0 }
+	: numQuads{ 0 }
 {
 	static_cast<void>(GetShader()); //warm up shader creation
 	dataVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
@@ -301,7 +300,6 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Generate()
 	if (particles.empty())
 		return;
 
-	currFrame = gs->frameNum + globalRendering->timeOffset;
 	auto* shader = GetShader();
 
 	if (shader && shader->IsValid() && !GenerateGPU(shader)) {

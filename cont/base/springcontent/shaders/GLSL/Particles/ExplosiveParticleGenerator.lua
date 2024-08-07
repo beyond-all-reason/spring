@@ -63,8 +63,8 @@ struct InputData {
 		float stageDecay = (numStages - (stage * alphaDecay)) * invStages;
 		float stageSize  = drawRadius * (1.0f - (stage * sizeDecay));
 
-		vec3 xdirCam  = camView[0].xyz * stageSize;
-		vec3 ydirCam  = camView[1].xyz * stageSize;
+		vec3 xdirCam  = camDirPos[0].xyz * stageSize;
+		vec3 ydirCam  = camDirPos[1].xyz * stageSize;
 
 		vec3 stageGap = (noGap > 0) ? (ndir * stageSize * stage) : (ndir * drawRadius * stage);
 		vec3 stagePos = drawPos - stageGap;

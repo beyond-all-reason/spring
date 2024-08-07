@@ -5,6 +5,7 @@
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -58,6 +59,31 @@ CLargeBeamLaserProjectile::CLargeBeamLaserProjectile(const ProjectileParams& par
 	edgeColStart[1] = (weaponDef->visuals.color.y * 255);
 	edgeColStart[2] = (weaponDef->visuals.color.z * 255);
 	edgeColStart[3] = 1;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LargeBeamLaserParticleGenerator>();
+	pgOffset = pg.Add(LargeBeamLaserData{
+		.startPos = startPos,
+		.drawOrder = drawOrder,
+		.targetPos = targetPos,
+		.thickness = thickness,
+		.coreThickness = corethickness,
+		.flareSize = flaresize,
+		.tileLength = tilelength,
+		.scrollSpeed = scrollspeed,
+		.pulseSpeed = pulseSpeed,
+		.coreColStart = SColor(coreColStart),
+		.edgeColStart = SColor(edgeColStart),
+		.texCoord1 = *weaponDef->visuals.texture1,
+		.texCoord2 = *weaponDef->visuals.texture2,
+		.texCoord3 = *weaponDef->visuals.texture3,
+		.texCoord4 = *weaponDef->visuals.texture4
+	});
+}
+
+CLargeBeamLaserProjectile::~CLargeBeamLaserProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LargeBeamLaserParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 
@@ -77,6 +103,14 @@ void CLargeBeamLaserProjectile::Update()
 	}
 
 	UpdateInterception();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LargeBeamLaserParticleGenerator>();
+	const auto [token, data] = pg.Get(pgOffset);
+
+	data->startPos = startPos; // not needed?
+	data->targetPos = targetPos; // not needed?
+	data->coreColStart = SColor(coreColStart);
+	data->edgeColStart = SColor(edgeColStart);
 }
 
 void CLargeBeamLaserProjectile::Draw()

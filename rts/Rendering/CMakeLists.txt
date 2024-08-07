@@ -56,6 +56,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/ExplosiveParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/FireballParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/FlameParticleGenerator.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/LargeBeamLaserParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/FBO.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/StreamBuffer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/GeometryBuffer.cpp"

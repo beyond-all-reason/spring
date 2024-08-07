@@ -68,11 +68,10 @@ struct InputData {
 	}
 
 	if (validTextures.y) {
-		vec3 interPos = mix(dgunPos, dgunPos + fract(dgunPos) * speed, checkCol);
+		vec3 interPos = mix(dgunPos, dgunPos + frameInfo.y * speed, checkCol);
 
 		int maxCol = int(mix(float(numFire), 10.0, checkCol));
 
-		vec3 dgunDrawPos = dgunPos + fract(dgunPos) * speed * checkCol;
 		for (int i = 0; i < numFire; ++i) {
 			vec4 dgunColor = GetColorFromIntegers(uvec4(
 				(maxCol - i) * 25,

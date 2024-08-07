@@ -27,7 +27,6 @@ struct alignas(16) FlameParticleData {
 
 static_assert(sizeof(FlameParticleData) % 16 == 0);
 
-
 class FlameParticleGenerator : public ParticleGenerator<FlameParticleData, FlameParticleGenerator> {
 public:
 	FlameParticleGenerator() {}

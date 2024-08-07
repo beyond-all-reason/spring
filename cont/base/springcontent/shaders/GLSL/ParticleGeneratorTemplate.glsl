@@ -1,9 +1,8 @@
 #version 430 core
 
 uniform ivec2 arraySizes;
-uniform float currFrame;
-uniform mat4 camView;
-uniform vec3 camPos;
+uniform vec3 frameInfo;
+uniform mat4 camDirPos; // not a matrix, but convinient collection of xDir, yDir, zDir, Pos vectors
 
 // Placeholer for the struct InputData
 %s
@@ -185,10 +184,10 @@ void AddEffectsQuadCamera(
 	AddEffectsQuad(
 		thisQuadIndex,
 		animPrms,
-		centerPos - camView[0].xyz * quadDims.x - camView[1].xyz * quadDims.y, texCrds.xy,
-		centerPos + camView[0].xyz * quadDims.x - camView[1].xyz * quadDims.y, texCrds.zy,
-		centerPos + camView[0].xyz * quadDims.x + camView[1].xyz * quadDims.y, texCrds.zw,
-		centerPos - camView[0].xyz * quadDims.x + camView[1].xyz * quadDims.y, texCrds.xw,
+		centerPos - camDirPos[0].xyz * quadDims.x - camDirPos[1].xyz * quadDims.y, texCrds.xy,
+		centerPos + camDirPos[0].xyz * quadDims.x - camDirPos[1].xyz * quadDims.y, texCrds.zy,
+		centerPos + camDirPos[0].xyz * quadDims.x + camDirPos[1].xyz * quadDims.y, texCrds.zw,
+		centerPos - camDirPos[0].xyz * quadDims.x + camDirPos[1].xyz * quadDims.y, texCrds.xw,
 		quadColor
 	);
 }
