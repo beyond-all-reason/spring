@@ -7,7 +7,7 @@ struct alignas(16) LargeBeamLaserData {
 	int32_t drawOrder;
 
 	float3 targetPos;
-	// gap
+	float unused;
 
 	float thickness;
 	float coreThickness;
@@ -27,7 +27,8 @@ struct alignas(16) LargeBeamLaserData {
 	int32_t GetMaxNumQuads() const {
 		const float beamLength = (targetPos - startPos).Length();
 
-		int32_t numQuads1 = 2 + std::max(0, 2 + static_cast<int32_t>(std::truncf(beamLength / tileLength)));
+		// underestimates the number of quads. FIX
+		int32_t numQuads1 = 4 + 2 * std::max(0, static_cast<int32_t>(std::truncf(beamLength / tileLength)));
 
 		return
 			numQuads1 * (texCoord1 != AtlasedTexture::DefaultAtlasTexture) +

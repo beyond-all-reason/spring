@@ -59,7 +59,6 @@ struct InputData {
 			));
 
 			AddEffectsQuadCamera(
-				quadStartIndex++,
 				animParams1,
 				SparkPos(i), vec2(SparkSize(i)), texCoord1,
 				sparkColor
@@ -81,7 +80,6 @@ struct InputData {
 			));
 
 			AddEffectsQuadCamera(
-				quadStartIndex++,
 				animParams2,
 				interPos - (speed * 0.5 * i), vec2(dgunSize), texCoord2,
 				dgunColor

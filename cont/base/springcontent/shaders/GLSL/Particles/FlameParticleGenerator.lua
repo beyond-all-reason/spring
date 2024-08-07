@@ -45,7 +45,6 @@ struct InputData {
 	vec4 col = mix(col0, col1, colMixRate);
 
 	AddEffectsQuadCamera(
-		quadStartIndex,
 		animParams,
 		drawPos, vec2(drawRadius), texCoord,
 		col

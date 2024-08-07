@@ -33,9 +33,9 @@ struct ParticleGeneratorDefs {
 	static constexpr int32_t IDCS_SSBO_BINDING_IDX = 4;
 	static constexpr int32_t ATOM_SSBO_BINDING_IDX = 5;
 
-	static constexpr int32_t ATOM_SSBO_NUM_ELEMENTS = 1024;
+	static constexpr int32_t ATOM_SSBO_NUM_ELEMENTS = 2;
 	static constexpr int32_t ATOM_SSBO_QUAD_IDX = 0;
-	static constexpr int32_t ATOM_SSBO_STAT_IDX = 512; // leave some space to avoid false sharing
+	static constexpr int32_t ATOM_SSBO_STAT_IDX = 1; // (dont for now) leave some space to avoid false sharing
 
 	static constexpr int32_t WORKGROUP_SIZE = 512;
 };
@@ -157,8 +157,13 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUn
 	);
 
 	shader->SetUniform("frameInfo", static_cast<float>(gs->frameNum), globalRendering->timeOffset, gu->modGameTime);
-	shader->SetUniform("camPos", camPos.x, camPos.y, camPos.z);
 	shader->SetUniformMatrix4x4("camDirPos", false, CMatrix44f{ camera->GetPos(), camera->GetRight(), camera->GetUp(), camera->GetForward() }.m);
+	shader->SetUniform4v("frustumPlanes[0]", &camera->GetFrustumPlane(0).x);
+	shader->SetUniform4v("frustumPlanes[1]", &camera->GetFrustumPlane(1).x);
+	shader->SetUniform4v("frustumPlanes[2]", &camera->GetFrustumPlane(2).x);
+	shader->SetUniform4v("frustumPlanes[3]", &camera->GetFrustumPlane(3).x);
+	shader->SetUniform4v("frustumPlanes[4]", &camera->GetFrustumPlane(4).x);
+	shader->SetUniform4v("frustumPlanes[5]", &camera->GetFrustumPlane(5).x);
 }
 
 template<typename ParticleDataType, typename ParticleGenType>
@@ -262,15 +267,17 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shader->Enable();
 
+	shader->SetUniform("arraySizes", 0, 0);
 	shader->SetUniform("frameInfo", 0.0f, 0.0f, 0.0f);
 	shader->SetUniform("camPos", 0.0f, 0.0f, 0.0f);
 	shader->SetUniformMatrix4x4("camView", false, CMatrix44f::Zero().m);
-	shader->SetUniform4v("frustumPlanes[0]", &camera->GetFrustumPlane(0).x);
-	shader->SetUniform4v("frustumPlanes[1]", &camera->GetFrustumPlane(1).x);
-	shader->SetUniform4v("frustumPlanes[2]", &camera->GetFrustumPlane(2).x);
-	shader->SetUniform4v("frustumPlanes[3]", &camera->GetFrustumPlane(3).x);
-	shader->SetUniform4v("frustumPlanes[4]", &camera->GetFrustumPlane(4).x);
-	shader->SetUniform4v("frustumPlanes[5]", &camera->GetFrustumPlane(5).x);
+	static constexpr float4 ZERO4 = float4{ 0.0f };
+	shader->SetUniform4v("frustumPlanes[0]", &ZERO4.x);
+	shader->SetUniform4v("frustumPlanes[1]", &ZERO4.x);
+	shader->SetUniform4v("frustumPlanes[2]", &ZERO4.x);
+	shader->SetUniform4v("frustumPlanes[3]", &ZERO4.x);
+	shader->SetUniform4v("frustumPlanes[4]", &ZERO4.x);
+	shader->SetUniform4v("frustumPlanes[5]", &ZERO4.x);
 
 
 	shader->Disable();

@@ -75,7 +75,6 @@ struct InputData {
 
 	if (validTextures.y) {
 		AddEffectsQuad(
-			quadStartIndex++,
 			animParams2,
 			startPos - xdir * beamEdgeSize                      , vec2(midTexX2, texCoord2.y),
 			startPos - xdir * beamEdgeSize - ydir * beamEdgeSize, texCoord2.zy,
@@ -85,7 +84,6 @@ struct InputData {
 		);
 
 		AddEffectsQuad(
-			quadStartIndex++,
 			animParams2,
 			startPos - xdir * beamCoreSize                      , vec2(midTexX2, texCoord2.y),
 			startPos - xdir * beamCoreSize - ydir * beamCoreSize, texCoord2.zy,
@@ -97,7 +95,6 @@ struct InputData {
 
 	if (validTextures.x) {
 		AddEffectsQuad(
-			quadStartIndex++,
 			animParams1,
 			startPos  - xdir * beamEdgeSize, texCoord1.xy, ecsColor,
 			targetPos - xdir * beamEdgeSize, texCoord1.zy, eceColor,
@@ -106,7 +103,6 @@ struct InputData {
 		);
 
 		AddEffectsQuad(
-			quadStartIndex++,
 			animParams1,
 			startPos  - xdir * beamCoreSize, texCoord1.xy, ecsColor,
 			targetPos - xdir * beamCoreSize, texCoord1.zy, eceColor,
@@ -117,7 +113,6 @@ struct InputData {
 
 	if (validTextures.y) {
 		AddEffectsQuad(
-			quadStartIndex++,
 			animParams2,
 			targetPos - xdir * beamEdgeSize                      , vec2(midTexX2, texCoord2.y),
 			targetPos - xdir * beamEdgeSize + ydir * beamEdgeSize, texCoord2.zy,
@@ -127,7 +122,6 @@ struct InputData {
 		);
 
 		AddEffectsQuad(
-			quadStartIndex++,
 			animParams2,
 			targetPos - xdir * beamCoreSize                      , vec2(midTexX2, texCoord2.y),
 			targetPos - xdir * beamCoreSize + ydir * beamCoreSize, texCoord2.zy,
@@ -139,13 +133,11 @@ struct InputData {
 
 	if (validTextures.z) {
 		AddEffectsQuadCamera(
-			quadStartIndex++,
 			animParams3,
 			startPos, vec2(flareEdgeSize), texCoord3,
 			ecsColor
 		);
 		AddEffectsQuadCamera(
-			quadStartIndex++,
 			animParams3,
 			startPos, vec2(flareCoreSize), texCoord3,
 			ccsColor

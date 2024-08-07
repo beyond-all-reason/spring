@@ -72,7 +72,6 @@ struct InputData {
 		col *= stageDecay;
 
 		AddEffectsQuad(
-			quadStartIndex + stage,
 			animParams,
 			stagePos - xdirCam - ydirCam, texCoord.xy,
 			stagePos + xdirCam - ydirCam, texCoord.zy,

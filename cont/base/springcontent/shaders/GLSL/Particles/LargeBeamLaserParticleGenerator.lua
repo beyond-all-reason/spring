@@ -94,7 +94,6 @@ struct InputData {
 			tex.x = texCoord1.x + startTex * texSizeX;
 
 			AddEffectsQuad(
-				quadStartIndex++,
 				vec3(1.0),
 				pos1 - (xdir * beamEdgeSize), tex.xy,
 				pos2 - (xdir * beamEdgeSize), tex.zy,
@@ -104,7 +103,6 @@ struct InputData {
 			);
 
 			AddEffectsQuad(
-				quadStartIndex++,
 				vec3(1.0),
 				pos1 - (xdir * beamCoreSize), tex.xy,
 				pos2 - (xdir * beamCoreSize), tex.zy,
@@ -120,7 +118,6 @@ struct InputData {
 			tex.x = texCoord1.x + startTex * texSizeX;
 
 			AddEffectsQuad(
-				quadStartIndex++,
 				vec3(1.0),
 				pos1 - (xdir * beamEdgeSize), tex.xy,
 				pos2 - (xdir * beamEdgeSize), tex.zy,
@@ -130,7 +127,6 @@ struct InputData {
 			);
 
 			AddEffectsQuad(
-				quadStartIndex++,
 				vec3(1.0),
 				pos1 - (xdir * beamCoreSize), tex.xy,
 				pos2 - (xdir * beamCoreSize), tex.zy,
@@ -147,7 +143,6 @@ struct InputData {
 				pos2 = startPos + zdir * (i + tileLength);
 
 				AddEffectsQuad(
-					quadStartIndex++,
 					vec3(1.0),
 					pos1 - (xdir * beamEdgeSize), tex.xy,
 					pos2 - (xdir * beamEdgeSize), tex.zy,
@@ -157,7 +152,6 @@ struct InputData {
 				);
 
 				AddEffectsQuad(
-					quadStartIndex++,
 					vec3(1.0),
 					pos1 - (xdir * beamCoreSize), tex.xy,
 					pos2 - (xdir * beamCoreSize), tex.zy,
@@ -174,7 +168,6 @@ struct InputData {
 			tex.z = tex.x + (distance(pos1, pos2) / tileLength) * texSizeX;
 
 			AddEffectsQuad(
-				quadStartIndex++,
 				vec3(1.0),
 				pos1 - (xdir * beamEdgeSize), tex.xy,
 				pos2 - (xdir * beamEdgeSize), tex.zy,
@@ -184,7 +177,6 @@ struct InputData {
 			);
 
 			AddEffectsQuad(
-				quadStartIndex++,
 				vec3(1.0),
 				pos1 - (xdir * beamCoreSize), tex.xy,
 				pos2 - (xdir * beamCoreSize), tex.zy,
@@ -197,7 +189,6 @@ struct InputData {
 
 	if (validTextures.y) {
 		AddEffectsQuad(
-			quadStartIndex++,
 			vec3(1.0),
 			pos2 - (xdir * beamEdgeSize)                        , texCoord2.xy,
 			pos2 - (xdir * beamEdgeSize) + (ydir * beamEdgeSize), texCoord2.zy,
@@ -207,7 +198,6 @@ struct InputData {
 		);
 
 		AddEffectsQuad(
-			quadStartIndex++,
 			vec3(1.0),
 			pos2 - (xdir * beamCoreSize)                        , texCoord2.xy,
 			pos2 - (xdir * beamCoreSize) + (ydir * beamCoreSize), texCoord2.zy,
@@ -232,7 +222,6 @@ struct InputData {
 		pos1 = startPos - zdir * (thickness * flareSize) * 0.02;
 
 		AddEffectsQuad(
-			quadStartIndex++,
 			vec3(1.0),
 			pos1 + (ydir * muzzleEdgeSize)                          , texCoord3.xy,
 			pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), texCoord3.zy,
@@ -242,7 +231,6 @@ struct InputData {
 		);
 
 		AddEffectsQuad(
-			quadStartIndex++,
 			vec3(1.0),
 			pos1 + (ydir * muzzleCoreSize)                          , texCoord3.xy,
 			pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), texCoord3.zy,
@@ -260,7 +248,6 @@ struct InputData {
 		muzzleEdgeSize = thickness * flareSize * pulseStartTime;
 
 		AddEffectsQuad(
-			quadStartIndex++,
 			vec3(1.0),
 			pos1 + (ydir * muzzleEdgeSize)                          , texCoord3.xy,
 			pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), texCoord3.zy,
@@ -270,7 +257,6 @@ struct InputData {
 		);
 
 		AddEffectsQuad(
-			quadStartIndex++,
 			vec3(1.0),
 			pos1 + (ydir * muzzleCoreSize)                          , texCoord3.xy,
 			pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), texCoord3.zy,
@@ -285,14 +271,12 @@ struct InputData {
 		pos1 = startPos - (camDirPos[2].xyz * 3.0);
 		
 		AddEffectsQuadCamera(
-			quadStartIndex++,
 			vec3(1.0),
 			pos1, vec2(flareEdgeSize), texCoord4,
 			ecsColor
 		);
 		
 		AddEffectsQuadCamera(
-			quadStartIndex++,
 			vec3(1.0),
 			pos1, vec2(flareCoreSize), texCoord4,
 			ccsColor

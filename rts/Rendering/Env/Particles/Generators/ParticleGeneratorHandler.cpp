@@ -84,18 +84,18 @@ void ParticleGeneratorHandler::GenerateAll()
 	{
 		// Debug
 		counterVBO.Bind();
-		uint32_t val;
-		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(val), &val);
+		std::array<uint32_t, ParticleGeneratorDefs::ATOM_SSBO_NUM_ELEMENTS> vals;
+		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * vals.size(), vals.data());
 		counterVBO.Unbind();
 
-		if (val > 0) {
+		if (vals[0] > 0) {
 			vertVBO.Bind();
-			std::vector<VA_TYPE_PROJ> trData(4 * val);
+			std::vector<VA_TYPE_PROJ> trData(6 * vals[0]);
 			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VA_TYPE_PROJ) * trData.size(), trData.data());
 			vertVBO.Unbind();
 
 			indcVBO.Bind();
-			std::vector<uint32_t> idData(4 * val);
+			std::vector<uint32_t> idData(4 * vals[0]);
 			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * idData.size(), idData.data());
 			indcVBO.Unbind();
 		}

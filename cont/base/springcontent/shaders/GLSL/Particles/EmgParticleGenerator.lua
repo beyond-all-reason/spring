@@ -35,7 +35,6 @@ struct InputData {
 	vec4 col = GetPackedColor(color);
 	
 	AddEffectsQuadCamera(
-		quadStartIndex,
 		animParams,
 		drawPos, vec2(drawRadius), texCoord,
 		col
