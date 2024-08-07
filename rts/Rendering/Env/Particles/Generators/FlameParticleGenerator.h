@@ -19,7 +19,7 @@ struct alignas(16) FlameParticleData {
 
 	AtlasedTexture texCoord;
 
-	int32_t GetNumQuads() const { return 1 * (texCoord != AtlasedTexture::DefaultAtlasTexture); }
+	int32_t GetMaxNumQuads() const { return 1 * (texCoord != AtlasedTexture::DefaultAtlasTexture); }
 	void Invalidate() {
 		texCoord = AtlasedTexture::DefaultAtlasTexture;
 	}

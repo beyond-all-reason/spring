@@ -27,7 +27,7 @@ struct alignas(16) ExplosiveParticleData {
 
 	AtlasedTexture texCoord;
 
-	int32_t GetNumQuads() const { return numStages * (texCoord != AtlasedTexture::DefaultAtlasTexture); }
+	int32_t GetMaxNumQuads() const { return numStages * (texCoord != AtlasedTexture::DefaultAtlasTexture); }
 	void Invalidate() {
 		texCoord = AtlasedTexture::DefaultAtlasTexture;
 	}

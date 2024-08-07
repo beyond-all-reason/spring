@@ -54,7 +54,7 @@ struct InputData {
 	vec3 xdir = normalize(cross(cameraDir, zdir));
 	vec3 ydir = normalize(cross(cameraDir, xdir));
 
-	float startTex = 1.0 - fract(frameInfo.z * scrollspeed);
+	float startTex = 1.0 - fract(frameInfo.z * scrollSpeed);
 	float texSizeX = texCoord1.z - texCoord1.x;
 
 	float beamEdgeSize  = thickness;
@@ -225,8 +225,8 @@ struct InputData {
 		vec4 coreColor; coreColor.a = 1.0 / 255.0;
 		vec4 edgeColor; edgeColor.a = 1.0 / 255.0;
 
-		coreColor.rgb = coreColStart.rgb * (1.0 - pulseStartTime);
-		edgeColor.rgb = edgeColStart.rgb * (1.0 - pulseStartTime);
+		coreColor.rgb = ccsColor.rgb * (1.0 - pulseStartTime);
+		edgeColor.rgb = ecsColor.rgb * (1.0 - pulseStartTime);
 
 		// draw muzzleflare
 		pos1 = startPos - zdir * (thickness * flareSize) * 0.02;
@@ -252,12 +252,12 @@ struct InputData {
 		);
 
 		pulseStartTime += 0.5;
-		pulseStartTime -= (1.0 * (pulseStartTime > 1.0));
+		pulseStartTime -= 1.0 * float(pulseStartTime > 1.0);
 
-		coreColor.rgb = coreColStart.rgb * (1.0 - pulseStartTime);
-		edgeColor.rgb = edgeColStart.rgb * (1.0 - pulseStartTime);
+		coreColor.rgb = ccsColor.rgb * (1.0 - pulseStartTime);
+		edgeColor.rgb = ecsColor.rgb * (1.0 - pulseStartTime);
 
-		muzzleEdgeSize = thickness * flaresize * pulseStartTime;
+		muzzleEdgeSize = thickness * flareSize * pulseStartTime;
 
 		AddEffectsQuad(
 			quadStartIndex++,

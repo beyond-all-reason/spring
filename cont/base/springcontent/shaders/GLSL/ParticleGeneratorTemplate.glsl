@@ -2,7 +2,9 @@
 
 uniform ivec2 arraySizes;
 uniform vec3 frameInfo;
+
 uniform mat4 camDirPos; // not a matrix, but convinient collection of xDir, yDir, zDir, Pos vectors
+uniform vec4 frustumPlanes[6];
 
 // Placeholer for the struct InputData
 %s

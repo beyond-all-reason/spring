@@ -24,7 +24,7 @@ struct alignas(16) FireballData {
 	AtlasedTexture texCoord1;
 	AtlasedTexture texCoord2;
 
-	int32_t GetNumQuads() const {
+	int32_t GetMaxNumQuads() const {
 		const auto numFire = std::min(10, numSparks);
 		return
 			numSparks * (texCoord1 != AtlasedTexture::DefaultAtlasTexture) +

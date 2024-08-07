@@ -28,7 +28,7 @@ struct alignas(16) BeamLaserData {
 	float flareSize;
 	float midTexX2;
 
-	int32_t GetNumQuads() const {
+	int32_t GetMaxNumQuads() const {
 		return
 			2 * (texCoord1 != AtlasedTexture::DefaultAtlasTexture) +
 			4 * (texCoord2 != AtlasedTexture::DefaultAtlasTexture) +

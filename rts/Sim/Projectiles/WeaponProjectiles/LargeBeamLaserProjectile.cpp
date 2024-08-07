@@ -129,11 +129,11 @@ void CLargeBeamLaserProjectile::Draw()
 	float3 pos1 = startPos;
 	float3 pos2 = targetPos;
 
-	const auto* beamtex = weaponDef->visuals.texture1;
-	const auto* sidetex = weaponDef->visuals.texture3;
+	const auto* WT1 = weaponDef->visuals.texture1;
+	const auto* WT3 = weaponDef->visuals.texture3;
 
-	const float startTex = 1.0f - ((gu->modGameTime * scrollspeed) - int(gu->modGameTime * scrollspeed));
-	const float texSizeX = beamtex->xend - beamtex->xstart;
+	const float startTex = 1.0f - ((gu->modGameTime * scrollspeed) - std::truncf(gu->modGameTime * scrollspeed));
+	const float texSizeX = WT1->xend - WT1->xstart;
 
 	const float beamEdgeSize = thickness;
 	const float beamCoreSize = beamEdgeSize * corethickness;
@@ -150,12 +150,12 @@ void CLargeBeamLaserProjectile::Draw()
 	const auto* WT4 = weaponDef->visuals.texture4;
 
 	if (validTextures[1]) {
-		AtlasedTexture tex = *beamtex;
+		AtlasedTexture tex = *WT1;
 
 		if (beamTileMinDst > beamLength) {
 			// beam short enough to be drawn by one polygon
 			// draw laser start
-			tex.xstart = beamtex->xstart + startTex * texSizeX;
+			tex.xstart = WT1->xstart + startTex * texSizeX;
 
 			AddEffectsQuad(
 				{ pos1 - (xdir * beamEdgeSize), tex.xstart, tex.ystart, edgeColStart },
@@ -175,7 +175,7 @@ void CLargeBeamLaserProjectile::Draw()
 			pos2 = pos1 + zdir * beamTileMinDst;
 
 			// draw laser start
-			tex.xstart = beamtex->xstart + startTex * texSizeX;
+			tex.xstart = WT1->xstart + startTex * texSizeX;
 
 			AddEffectsQuad(
 				{ pos1 - (xdir * beamEdgeSize), tex.xstart, tex.ystart, edgeColStart },
@@ -192,7 +192,7 @@ void CLargeBeamLaserProjectile::Draw()
 			);
 
 			// draw continous beam
-			tex.xstart = beamtex->xstart;
+			tex.xstart = WT1->xstart;
 
 			for (float i = beamTileMinDst; i < beamTileMaxDst; i += tilelength) {
 				pos1 = startPos + zdir * i;
@@ -267,17 +267,17 @@ void CLargeBeamLaserProjectile::Draw()
 		pos1 = startPos - zdir * (thickness * flaresize) * 0.02f;
 
 		AddEffectsQuad(
-			{ pos1 + (ydir * muzzleEdgeSize),                           sidetex->xstart, sidetex->ystart, edgeColor },
-			{ pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex->xend,   sidetex->ystart, edgeColor },
-			{ pos1 - (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex->xend,   sidetex->yend,   edgeColor },
-			{ pos1 - (ydir * muzzleEdgeSize),                           sidetex->xstart, sidetex->yend,   edgeColor }
+			{ pos1 + (ydir * muzzleEdgeSize),                           WT2->xstart, WT2->ystart, edgeColor },
+			{ pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), WT2->xend,   WT2->ystart, edgeColor },
+			{ pos1 - (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), WT2->xend,   WT2->yend,   edgeColor },
+			{ pos1 - (ydir * muzzleEdgeSize),                           WT2->xstart, WT2->yend,   edgeColor }
 		);
 
 		AddEffectsQuad(
-			{ pos1 + (ydir * muzzleCoreSize),                           sidetex->xstart, sidetex->ystart, coreColor },
-			{ pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex->xend,   sidetex->ystart, coreColor },
-			{ pos1 - (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex->xend,   sidetex->yend,   coreColor },
-			{ pos1 - (ydir * muzzleCoreSize),                           sidetex->xstart, sidetex->yend,   coreColor }
+			{ pos1 + (ydir * muzzleCoreSize),                           WT2->xstart, WT2->ystart, coreColor },
+			{ pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), WT2->xend,   WT2->ystart, coreColor },
+			{ pos1 - (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), WT2->xend,   WT2->yend,   coreColor },
+			{ pos1 - (ydir * muzzleCoreSize),                           WT2->xstart, WT2->yend,   coreColor }
 		);
 
 		pulseStartTime += 0.5f;
@@ -292,19 +292,19 @@ void CLargeBeamLaserProjectile::Draw()
 		muzzleEdgeSize = thickness * flaresize * pulseStartTime;
 
 		AddEffectsQuad(
-			{ pos1 + (ydir * muzzleEdgeSize),                           sidetex->xstart, sidetex->ystart, edgeColor },
-			{ pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex->xend,   sidetex->ystart, edgeColor },
-			{ pos1 - (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), sidetex->xend,   sidetex->yend,   edgeColor },
-			{ pos1 - (ydir * muzzleEdgeSize),                           sidetex->xstart, sidetex->yend,   edgeColor }
+			{ pos1 + (ydir * muzzleEdgeSize),                           WT2->xstart, WT2->ystart, edgeColor },
+			{ pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), WT2->xend,   WT2->ystart, edgeColor },
+			{ pos1 - (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), WT2->xend,   WT2->yend,   edgeColor },
+			{ pos1 - (ydir * muzzleEdgeSize),                           WT2->xstart, WT2->yend,   edgeColor }
 		);
 
 		muzzleCoreSize = muzzleEdgeSize * 0.6f;
 
 		AddEffectsQuad(
-			{ pos1 + (ydir * muzzleCoreSize),                           sidetex->xstart, sidetex->ystart, coreColor },
-			{ pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex->xend,   sidetex->ystart, coreColor },
-			{ pos1 - (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), sidetex->xend,   sidetex->yend,   coreColor },
-			{ pos1 - (ydir * muzzleCoreSize),                           sidetex->xstart, sidetex->yend,   coreColor }
+			{ pos1 + (ydir * muzzleCoreSize),                           WT2->xstart, WT2->ystart, coreColor },
+			{ pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), WT2->xend,   WT2->ystart, coreColor },
+			{ pos1 - (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), WT2->xend,   WT2->yend,   coreColor },
+			{ pos1 - (ydir * muzzleCoreSize),                           WT2->xstart, WT2->yend,   coreColor }
 		);
 	}
 

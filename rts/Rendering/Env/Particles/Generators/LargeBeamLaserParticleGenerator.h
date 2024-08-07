@@ -24,19 +24,10 @@ struct alignas(16) LargeBeamLaserData {
 	AtlasedTexture texCoord3;
 	AtlasedTexture texCoord4;
 
-	int32_t GetNumQuads() const {
-		/*
-		const float3 zdir = (targetPos - startPos).SafeANormalize();
-		const float startTex = 1.0 - std::modf(frameInfo.z * scrollSpeed, 1.0f);
-		float beamTileMinDst = tileLength * (1.0 - startTex);
-		const float beamLength = (targetPos - startPos).dot(zdir);
-		const float beamTileMaxDst = beamLength - tilelength;
+	int32_t GetMaxNumQuads() const {
+		const float beamLength = (targetPos - startPos).Length();
 
-		int32_t numQuads1 = (beamTileMinDst > beamLength) ?
-			2 :
-			4 + 2 * int(std::ceilf((beamTileMaxDst - beamTileMinDst) / tilelength));
-		*/
-		int32_t numQuads1 = 100;
+		int32_t numQuads1 = 2 + std::max(0, 2 + static_cast<int32_t>(std::truncf(beamLength / tileLength)));
 
 		return
 			numQuads1 * (texCoord1 != AtlasedTexture::DefaultAtlasTexture) +

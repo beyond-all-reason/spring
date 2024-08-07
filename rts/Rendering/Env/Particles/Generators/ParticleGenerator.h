@@ -55,7 +55,7 @@ public:
 			ref = other.ref;
 			pos = other.pos;
 
-			ref->numQuads -= ref->particles[pos].GetNumQuads();
+			ref->numQuads -= ref->particles[pos].GetMaxNumQuads();
 		}
 		UpdateToken(UpdateToken&&) = delete;
 		UpdateToken& operator=(UpdateToken&&) = delete;
@@ -65,11 +65,11 @@ public:
 			: ref{ ref_ }
 			, pos{ pos_ }
 		{
-			ref->numQuads -= ref->particles[pos].GetNumQuads();
+			ref->numQuads -= ref->particles[pos].GetMaxNumQuads();
 		}
 		~UpdateToken()
 		{
-			ref->numQuads += ref->particles[pos].GetNumQuads();
+			ref->numQuads += ref->particles[pos].GetMaxNumQuads();
 		}
 	private:
 		MyType* ref;
@@ -90,7 +90,7 @@ public:
 	const ParticleDataType& Get(size_t pos) const;
 	[[nodiscard]] std::pair<UpdateToken, ParticleDataType*> Get(size_t pos);
 
-	int32_t GetNumQuads() const { return numQuads; }
+	int32_t GetMaxNumQuads() const { return numQuads; }
 protected:
 	static Shader::IProgramObject* GetShader();
 
@@ -265,6 +265,13 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	shader->SetUniform("frameInfo", 0.0f, 0.0f, 0.0f);
 	shader->SetUniform("camPos", 0.0f, 0.0f, 0.0f);
 	shader->SetUniformMatrix4x4("camView", false, CMatrix44f::Zero().m);
+	shader->SetUniform4v("frustumPlanes[0]", &camera->GetFrustumPlane(0).x);
+	shader->SetUniform4v("frustumPlanes[1]", &camera->GetFrustumPlane(1).x);
+	shader->SetUniform4v("frustumPlanes[2]", &camera->GetFrustumPlane(2).x);
+	shader->SetUniform4v("frustumPlanes[3]", &camera->GetFrustumPlane(3).x);
+	shader->SetUniform4v("frustumPlanes[4]", &camera->GetFrustumPlane(4).x);
+	shader->SetUniform4v("frustumPlanes[5]", &camera->GetFrustumPlane(5).x);
+
 
 	shader->Disable();
 
@@ -314,7 +321,7 @@ inline size_t ParticleGenerator<ParticleDataType, ParticleGenType>::Add(const Pa
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
-	numQuads += data.GetNumQuads();
+	numQuads += data.GetMaxNumQuads();
 
 	if (!freeList.empty()) {
 		auto it = freeList.begin();
@@ -347,7 +354,7 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Del(size_t pos
 	assert(pos < particles.size());
 
 	auto& data = particles[pos];
-	numQuads -= data.GetNumQuads();
+	numQuads -= data.GetMaxNumQuads();
 	data.Invalidate(); // the shader should know what particles to skip
 
 	freeList.emplace(pos);

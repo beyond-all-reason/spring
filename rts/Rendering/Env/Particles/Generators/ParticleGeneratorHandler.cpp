@@ -42,7 +42,7 @@ void ParticleGeneratorHandler::Kill()
 void ParticleGeneratorHandler::GenerateAll()
 {
 	numQuads = std::apply([](auto& ... gen) {
-		return (0 + ... + gen->GetNumQuads());
+		return (0 + ... + gen->GetMaxNumQuads());
 	}, generators);
 
 	if (numQuads <= 0)
