@@ -265,17 +265,17 @@ struct InputData {
 			coreColor
 		);
 	}
-	
+
 	if (validTextures.w) {
 		// draw flare (moved slightly along the camera direction)
 		pos1 = startPos - (camDirPos[2].xyz * 3.0);
-		
+
 		AddEffectsQuadCamera(
 			vec3(1.0),
 			pos1, vec2(flareEdgeSize), texCoord4,
 			ecsColor
 		);
-		
+
 		AddEffectsQuadCamera(
 			vec3(1.0),
 			pos1, vec2(flareCoreSize), texCoord4,

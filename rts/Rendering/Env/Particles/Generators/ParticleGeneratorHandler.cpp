@@ -41,6 +41,8 @@ void ParticleGeneratorHandler::Kill()
 
 void ParticleGeneratorHandler::GenerateAll()
 {
+	SCOPED_TIMER("ParticleGeneratorHandler::GenerateAll");
+
 	numQuads = std::apply([](auto& ... gen) {
 		return (0 + ... + gen->GetMaxNumQuads());
 	}, generators);
@@ -72,15 +74,15 @@ void ParticleGeneratorHandler::GenerateAll()
 	indcVBO.BindBufferRange(ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
 	counterVBO.BindBufferRange(ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
 	
-	std::apply([](auto& ... gen) {
-		(gen->Generate(), ...);
+	std::apply([this](auto& ... gen) {
+		(gen->Generate(numQuads), ...);
 	}, generators);
 
 	vertVBO.UnbindBufferRange(ParticleGeneratorDefs::VERT_SSBO_BINDING_IDX);
 	indcVBO.UnbindBufferRange(ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
 	counterVBO.UnbindBufferRange(ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
 
-#if 1
+#if 0
 	{
 		// Debug
 		counterVBO.Bind();

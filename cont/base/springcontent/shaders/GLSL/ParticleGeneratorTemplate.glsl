@@ -12,8 +12,6 @@ uniform vec4 frustumPlanes[6];
 // Placeholer for definitions
 %s
 
-#define USE_LOCAL_ATOMIC 1
-
 struct TriangleData
 {
     vec4 pos;
@@ -24,22 +22,22 @@ struct TriangleData
 
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
-layout(std430, binding = DATA_SSBO_BINDING_IDX) readonly buffer IN
+layout(std430, binding = DATA_SSBO_BINDING_IDX) readonly restrict buffer IN
 {
     InputData dataIn[];
 };
 
-layout(std430, binding = VERT_SSBO_BINDING_IDX) buffer OUT1
+layout(std430, binding = VERT_SSBO_BINDING_IDX) writeonly restrict buffer OUT1
 {
     TriangleData triangleData[];
 };
 
-layout(std430, binding = IDCS_SSBO_BINDING_IDX) buffer OUT2
+layout(std430, binding = IDCS_SSBO_BINDING_IDX) writeonly restrict buffer OUT2
 {
     uint indicesData[];
 };
 
-layout(std430, binding = ATOM_SSBO_BINDING_IDX) buffer ATOMIC
+layout(std430, binding = ATOM_SSBO_BINDING_IDX) coherent restrict buffer ATOMIC
 {
     uint atomicCounters[];
 };
@@ -47,10 +45,6 @@ layout(std430, binding = ATOM_SSBO_BINDING_IDX) buffer ATOMIC
 uint GetUnpackedValue(uint packedValue, uint byteNum) {
 	return (packedValue >> (8u * byteNum)) & 0xFFu;
 }
-
-#if USE_LOCAL_ATOMIC
-	shared uint localQuadsCounter;
-#endif
 
 vec4 GetColorFromIntegers(uvec4 bytes) {
 	return vec4(
@@ -109,32 +103,34 @@ void AddEffectsQuad(
 	vec3 blPos, vec2 blUV, vec4 blCol
 ) {
 
-#if 1
-	// sanity check
-	if (localQuadsCounter >= uint(arraySizes.y)) {
-		atomicAdd(atomicCounters[ATOM_SSBO_STAT_IDX], 1u);
-		return;
-	}
-#endif
-	
+#define FRUSTUM_CULLING
 #ifdef FRUSTUM_CULLING
 {
 	vec3 m = min(tlPos, min(trPos, min(brPos, blPos)));
 	vec3 M = max(tlPos, max(trPos, max(brPos, blPos)));
 	vec3 spherePos = (M + m) * 0.5;
 	vec3 scales = (M - m) * 0.5;
-	if (!SphereInView(vec4(spherePos, length(scales))))
+	if (!SphereInView(vec4(spherePos, length(scales)))) {
+		atomicAdd(atomicCounters[ATOM_SSBO_CULL_IDX], 1u);
 		return;
+	}
 }
 #endif
-	#if USE_LOCAL_ATOMIC
-		uint thisQuadIndex = atomicAdd(localQuadsCounter, 1u);
-	#else
-		uint thisQuadIndex = atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], 1u);
-	#endif
+	//barrier();
+    //memoryBarrierBuffer();
+	//groupMemoryBarrier();
+
+	uint thisQuadIndex = atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], 1u);
+
+	// sanity check
+	if (thisQuadIndex >= uint(arraySizes.y)) {
+		atomicAdd(atomicCounters[ATOM_SSBO_OOBC_IDX], 1u);
+		return;
+	}
+
 	uint triIndex = 4u * thisQuadIndex;
 	uint idxIndex = 6u * thisQuadIndex;
-	
+
 	vec4 minMaxUV = vec4(
 		min(min(min(tlUV, trUV), brUV), blUV),
 		max(max(max(tlUV, trUV), brUV), blUV)
@@ -228,14 +224,6 @@ void main()
 {
 	if (gl_GlobalInvocationID.x >= arraySizes.x)
 		return;
-	
-	#if USE_LOCAL_ATOMIC
-	if (gl_LocalInvocationID.x == 0u)
-		localQuadsCounter = atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], 0u); //do I need atomicAdd() to read atomicCounters[ATOM_SSBO_QUAD_IDX]?
-	#endif
-
-	barrier();
-    memoryBarrierShared();
 
 	// Placeholer for early exit and other init code
 %s
@@ -248,12 +236,4 @@ void main()
 
 	// Placeholer for the rest of the main code
 %s
-
-	barrier();
-    memoryBarrierShared();
-	
-	#if USE_LOCAL_ATOMIC
-	if (gl_LocalInvocationID.x == 0u)
-		atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], localQuadsCounter);
-	#endif
 }

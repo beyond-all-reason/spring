@@ -27,15 +27,17 @@
 #include "System/Color.h"
 
 struct ParticleGeneratorDefs {
-	// bindings 0 and 1 are busy by MATRIX_SSBO_BINDING_IDX and MATUNI_SSBO_BINDING_IDX
+	// bindings 0 and 1 are occupied by MATRIX_SSBO_BINDING_IDX and MATUNI_SSBO_BINDING_IDX
 	static constexpr int32_t DATA_SSBO_BINDING_IDX = 2;
 	static constexpr int32_t VERT_SSBO_BINDING_IDX = 3;
 	static constexpr int32_t IDCS_SSBO_BINDING_IDX = 4;
 	static constexpr int32_t ATOM_SSBO_BINDING_IDX = 5;
 
-	static constexpr int32_t ATOM_SSBO_NUM_ELEMENTS = 2;
+	static constexpr int32_t ATOM_SSBO_NUM_ELEMENTS = 16;
+	// TODO spread them to reduce false sharing
 	static constexpr int32_t ATOM_SSBO_QUAD_IDX = 0;
-	static constexpr int32_t ATOM_SSBO_STAT_IDX = 1; // (dont for now) leave some space to avoid false sharing
+	static constexpr int32_t ATOM_SSBO_OOBC_IDX = 1; // out of bounds write attempts
+	static constexpr int32_t ATOM_SSBO_CULL_IDX = 2; // number of culled quads
 
 	static constexpr int32_t WORKGROUP_SIZE = 512;
 };
@@ -81,7 +83,7 @@ public:
 	ParticleGenerator();
 	virtual ~ParticleGenerator();
 
-	void Generate();
+	void Generate(int32_t totalNumQuads);
 
 	size_t Add(const ParticleDataType& data);
 	void Update(size_t pos, const ParticleDataType& data);
@@ -95,7 +97,7 @@ protected:
 	static Shader::IProgramObject* GetShader();
 
 	void UpdateBufferData(); //on GPU
-	void UpdateCommonUniforms(Shader::IProgramObject* shader) const;
+	void UpdateCommonUniforms(Shader::IProgramObject* shader, int32_t totalNumQuads) const;
 	void RunComputeShader() const;
 
 	virtual bool GenerateCPUImpl() = 0;
@@ -113,7 +115,7 @@ protected:
 	static constexpr const char* ProgramClass = "[ParticleGenerator]";
 private:
 	bool GenerateCPU();
-	bool GenerateGPU(Shader::IProgramObject* shader);
+	bool GenerateGPU(Shader::IProgramObject* shader, int32_t totalNumQuads);
 };
 
 template<typename ParticleDataType, typename ParticleGenType>
@@ -143,7 +145,7 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateBufferDa
 }
 
 template<typename ParticleDataType, typename ParticleGenType>
-inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUniforms(Shader::IProgramObject* shader) const
+inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUniforms(Shader::IProgramObject* shader, int32_t totalNumQuads) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
@@ -153,7 +155,7 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUn
 
 	shader->SetUniform("arraySizes",
 		static_cast<int32_t>(particles.size()),
-		numQuads
+		totalNumQuads
 	);
 
 	shader->SetUniform("frameInfo", static_cast<float>(gs->frameNum), globalRendering->timeOffset, gu->modGameTime);
@@ -182,7 +184,7 @@ inline bool ParticleGenerator<ParticleDataType, ParticleGenType>::GenerateCPU()
 }
 
 template<typename ParticleDataType, typename ParticleGenType>
-inline bool ParticleGenerator<ParticleDataType, ParticleGenType>::GenerateGPU(Shader::IProgramObject* shader)
+inline bool ParticleGenerator<ParticleDataType, ParticleGenType>::GenerateGPU(Shader::IProgramObject* shader, int32_t totalNumQuads)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateBufferData();
@@ -190,7 +192,7 @@ inline bool ParticleGenerator<ParticleDataType, ParticleGenType>::GenerateGPU(Sh
 	dataVBO.BindBufferRange(ParticleGeneratorDefs::DATA_SSBO_BINDING_IDX);
 	{
 		auto token = shader->EnableScoped();
-		UpdateCommonUniforms(shader);
+		UpdateCommonUniforms(shader, totalNumQuads);
 		RunComputeShader();
 	}
 	dataVBO.UnbindBufferRange(ParticleGeneratorDefs::DATA_SSBO_BINDING_IDX);
@@ -261,7 +263,8 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	shader->SetFlag("IDCS_SSBO_BINDING_IDX", ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
 	shader->SetFlag("ATOM_SSBO_BINDING_IDX", ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
 	shader->SetFlag("ATOM_SSBO_QUAD_IDX", ParticleGeneratorDefs::ATOM_SSBO_QUAD_IDX);
-	shader->SetFlag("ATOM_SSBO_STAT_IDX", ParticleGeneratorDefs::ATOM_SSBO_STAT_IDX);
+	shader->SetFlag("ATOM_SSBO_OOBC_IDX", ParticleGeneratorDefs::ATOM_SSBO_OOBC_IDX);
+	shader->SetFlag("ATOM_SSBO_CULL_IDX", ParticleGeneratorDefs::ATOM_SSBO_CULL_IDX);
 
 	shader->Link();
 
@@ -307,7 +310,7 @@ inline ParticleGenerator<ParticleDataType, ParticleGenType>::~ParticleGenerator(
 }
 
 template<typename ParticleDataType, typename ParticleGenType>
-inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Generate()
+inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Generate(int32_t totalNumQuads)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
@@ -316,7 +319,7 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Generate()
 
 	auto* shader = GetShader();
 
-	if (shader && shader->IsValid() && !GenerateGPU(shader)) {
+	if (shader && shader->IsValid() && !GenerateGPU(shader, totalNumQuads)) {
 		if (!GenerateCPU()) {
 			LOG_L(L_ERROR, "Failed to run particle generator of type %s", GenTypeName);
 		}
@@ -363,6 +366,7 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Del(size_t pos
 	auto& data = particles[pos];
 	numQuads -= data.GetMaxNumQuads();
 	data.Invalidate(); // the shader should know what particles to skip
+	particlesUpdateList.SetUpdate(pos);
 
 	freeList.emplace(pos);
 
