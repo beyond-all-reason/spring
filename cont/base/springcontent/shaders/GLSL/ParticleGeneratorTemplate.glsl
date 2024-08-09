@@ -12,6 +12,8 @@ uniform vec4 frustumPlanes[6];
 // Placeholer for definitions
 %s
 
+shared uvec3 localAtomics;
+
 struct TriangleData
 {
     vec4 pos;
@@ -111,20 +113,16 @@ void AddEffectsQuad(
 	vec3 spherePos = (M + m) * 0.5;
 	vec3 scales = (M - m) * 0.5;
 	if (!SphereInView(vec4(spherePos, length(scales)))) {
-		atomicAdd(atomicCounters[ATOM_SSBO_CULL_IDX], 1u);
+		atomicAdd(localAtomics[ATOM_SSBO_CULL_IDX], 1u);
 		return;
 	}
 }
 #endif
-	//barrier();
-    //memoryBarrierBuffer();
-	//groupMemoryBarrier();
-
 	uint thisQuadIndex = atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], 1u);
 
 	// sanity check
 	if (thisQuadIndex >= uint(arraySizes.y)) {
-		atomicAdd(atomicCounters[ATOM_SSBO_OOBC_IDX], 1u);
+		atomicAdd(localAtomics[ATOM_SSBO_OOBC_IDX], 1u);
 		return;
 	}
 
@@ -222,6 +220,12 @@ void AddEffectsQuadCamera(
 
 void main()
 {
+	if (gl_LocalInvocationID.x == 0u)
+		localAtomics = uvec3(0u);
+
+	barrier();
+	memoryBarrierShared();
+
 	if (gl_GlobalInvocationID.x >= arraySizes.x)
 		return;
 
@@ -236,4 +240,13 @@ void main()
 
 	// Placeholer for the rest of the main code
 %s
+
+	barrier();
+	memoryBarrierShared();
+
+	if (gl_LocalInvocationID.x == 0u) {
+		//atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], localAtomics[ATOM_SSBO_QUAD_IDX]);
+		atomicAdd(atomicCounters[ATOM_SSBO_OOBC_IDX], localAtomics[ATOM_SSBO_OOBC_IDX]);
+		atomicAdd(atomicCounters[ATOM_SSBO_CULL_IDX], localAtomics[ATOM_SSBO_CULL_IDX]);
+	}
 }
