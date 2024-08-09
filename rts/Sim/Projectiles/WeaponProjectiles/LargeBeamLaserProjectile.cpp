@@ -61,7 +61,7 @@ CLargeBeamLaserProjectile::CLargeBeamLaserProjectile(const ProjectileParams& par
 	edgeColStart[3] = 1;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LargeBeamLaserParticleGenerator>();
-	pgOffset = pg.Add(LargeBeamLaserData{
+	pgOffset = pg.Add({
 		.startPos = startPos,
 		.drawOrder = drawOrder,
 		.targetPos = targetPos,

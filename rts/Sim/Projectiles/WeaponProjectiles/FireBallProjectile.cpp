@@ -49,7 +49,7 @@ CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params): CWeapo
 	validTextures[0] = validTextures[1] || validTextures[2];
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
-	pgOffset = pg.Add(FireballData{
+	pgOffset = pg.Add({
 		.sparkPosSize = {},
 		.dgunPos = {},
 		.dgunSize = radius * 1.3f,

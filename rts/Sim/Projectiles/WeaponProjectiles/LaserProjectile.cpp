@@ -54,7 +54,7 @@ CLaserProjectile::CLaserProjectile(const ProjectileParams& params): CWeaponProje
 	drawRadius = maxLength;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LaserParticleGenerator>();
-	pgOffset = pg.Add(LaserData{
+	pgOffset = pg.Add({
 		.drawPos = pos,
 		.curLength = curLength,
 		.dir = dir,

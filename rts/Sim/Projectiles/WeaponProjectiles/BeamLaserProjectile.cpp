@@ -62,7 +62,7 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params)
 	edgeColEnd[3] = 1;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
-	pgOffset = pg.Add(BeamLaserData{
+	pgOffset = pg.Add({
 		.startPos = startPos,
 		.coreColStart = SColor(coreColStart[0], coreColStart[1], coreColStart[2], coreColStart[3]),
 		.targetPos = targetPos,

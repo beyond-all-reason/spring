@@ -40,7 +40,7 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<EmgParticleGenerator>();
 	
-	pgOffset = pg.Add(EmgParticleData{
+	pgOffset = pg.Add({
 		.pos = drawPos,
 		.radius = drawRadius,
 		.animParams = animParams,

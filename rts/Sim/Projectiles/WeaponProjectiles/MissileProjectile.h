@@ -19,6 +19,7 @@ public:
 	CMissileProjectile() { }
 
 	CMissileProjectile(const ProjectileParams& params);
+	~CMissileProjectile() override;
 
 	void Collision(CUnit* unit) override;
 	void Collision(CFeature* feature) override;
@@ -62,6 +63,7 @@ private:
 	float3 oldSmoke;
 	float3 oldDir;
 	CSmokeTrailProjectile* smokeTrail;
+	size_t pgOffset;
 private:
 	inline float GetSmokeSize() const;
 	inline float GetSmokeColor() const;
