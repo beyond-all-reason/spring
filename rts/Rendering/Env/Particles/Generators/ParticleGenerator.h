@@ -73,6 +73,7 @@ public:
 		{
 			ref->numQuads += ref->particles[pos].GetMaxNumQuads();
 		}
+		operator size_t() const { return pos; }
 	private:
 		MyType* ref;
 		size_t pos;
@@ -85,7 +86,7 @@ public:
 
 	void Generate(int32_t totalNumQuads);
 
-	size_t Add(const ParticleDataType& data);
+	size_t Add(const ParticleDataType& data = {});
 	void Update(size_t pos, const ParticleDataType& data);
 	void Del(size_t pos);
 

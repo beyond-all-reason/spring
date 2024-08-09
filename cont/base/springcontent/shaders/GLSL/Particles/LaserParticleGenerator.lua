@@ -46,7 +46,7 @@ struct InputData {
 ]],
 	NumQuads =
 [[
-	2 * uint(validTextures.x) + 4 * uint(validTextures.y);
+	2 * uint(validTextures.x) + 4 * uint(validTextures.y)
 ]],
 	MainCode =
 [[

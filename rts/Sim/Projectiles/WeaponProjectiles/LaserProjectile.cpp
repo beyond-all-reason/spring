@@ -211,6 +211,7 @@ void CLaserProjectile::Collision()
 
 void CLaserProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	// dont draw if a 3d model has been defined for us
 	assert(!model);
@@ -331,6 +332,7 @@ void CLaserProjectile::Draw()
 			);
 		}
 	}
+	*/
 }
 
 int CLaserProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)

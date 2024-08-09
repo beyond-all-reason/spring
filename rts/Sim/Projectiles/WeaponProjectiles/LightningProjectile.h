@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef LIGHTNING_PROJECTILE_H
-#define LIGHTNING_PROJECTILE_H
+#pragma once
 
 #include "WeaponProjectile.h"
 
@@ -15,6 +14,7 @@ public:
 	CLightningProjectile() { }
 
 	CLightningProjectile(const ProjectileParams& params);
+	~CLightningProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -23,11 +23,6 @@ public:
 	int GetProjectilesCount() const override;
 
 private:
-	float3 color;
-
-	static constexpr int displacements_size = 10;
-	float displacements1[displacements_size];
-	float displacements2[displacements_size];
+	std::array<std::array<float, 12>, 2> displacements;
+	size_t pgOffset;
 };
-
-#endif /* LIGHTNING_PROJECTILE_H */

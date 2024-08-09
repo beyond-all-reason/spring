@@ -12,6 +12,7 @@
 #include "FlameParticleGenerator.h"
 #include "LargeBeamLaserParticleGenerator.h"
 #include "LaserParticleGenerator.h"
+#include "LightningParticleGenerator.h"
 
 class ParticleGeneratorHandler {
 public:
@@ -42,7 +43,8 @@ private:
 		std::unique_ptr<FireballParticleGenerator>,
 		std::unique_ptr<FlameParticleGenerator>,
 		std::unique_ptr<LargeBeamLaserParticleGenerator>,
-		std::unique_ptr<LaserParticleGenerator>
+		std::unique_ptr<LaserParticleGenerator>,
+		std::unique_ptr<LightningParticleGenerator>
 	> generators;
 
 	int32_t numQuads;
