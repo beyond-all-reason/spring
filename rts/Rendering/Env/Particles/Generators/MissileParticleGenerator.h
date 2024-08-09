@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "ParticleGenerator.h"
 
 struct alignas(16) MissileData {
