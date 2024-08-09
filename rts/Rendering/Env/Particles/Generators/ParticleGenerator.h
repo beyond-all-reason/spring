@@ -135,10 +135,10 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateBufferDa
 		dataVBO.SetBufferSubData(particles);
 	} else {
 		for (auto itPair = particlesUpdateList.GetNext(); itPair.has_value(); itPair = particlesUpdateList.GetNext(itPair)) {
-			auto offSize = particlesUpdateList.GetOffsetAndSize(itPair.value());
-			GLintptr byteOffs = offSize.first  * DataSize;
-			GLintptr byteSize = offSize.second * DataSize;
-			dataVBO.SetBufferSubData(byteOffs, byteSize, particles.data() + offSize.first/* in elements */);
+			auto [offt, size] = particlesUpdateList.GetOffsetAndSize(itPair.value());
+			GLintptr byteOffs = offt * DataSize;
+			GLintptr byteSize = size * DataSize;
+			dataVBO.SetBufferSubData(byteOffs, byteSize, particles.data() + offt/* in elements */);
 		}
 	}
 	dataVBO.Unbind();

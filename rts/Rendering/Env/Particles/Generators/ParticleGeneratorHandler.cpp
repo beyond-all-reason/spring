@@ -60,13 +60,13 @@ void ParticleGeneratorHandler::GenerateAll()
 
 	{
 		vertVBO.Bind();
-		vertVBO.ReallocToFit(6u * numQuads * sizeof(VA_TYPE_PROJ));
+		vertVBO.ReallocToFit(4u * numQuads * sizeof(VA_TYPE_PROJ));
 		vertVBO.Unbind();
 	}
 
 	{
 		indcVBO.Bind();
-		indcVBO.ReallocToFit(4u * numQuads * sizeof(uint32_t));
+		indcVBO.ReallocToFit(6u * numQuads * sizeof(uint32_t));
 		indcVBO.Unbind();
 	}
 
@@ -92,12 +92,12 @@ void ParticleGeneratorHandler::GenerateAll()
 
 		if (vals[0] > 0) {
 			vertVBO.Bind();
-			std::vector<VA_TYPE_PROJ> trData(6 * vals[0]);
+			std::vector<VA_TYPE_PROJ> trData(4 * vals[0]);
 			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VA_TYPE_PROJ) * trData.size(), trData.data());
 			vertVBO.Unbind();
 
 			indcVBO.Bind();
-			std::vector<uint32_t> idData(4 * vals[0]);
+			std::vector<uint32_t> idData(6 * vals[0]);
 			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * idData.size(), idData.data());
 			indcVBO.Unbind();
 		}
