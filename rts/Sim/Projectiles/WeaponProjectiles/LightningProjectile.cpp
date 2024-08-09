@@ -105,6 +105,7 @@ void CLightningProjectile::Update()
 
 void CLightningProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
@@ -137,6 +138,7 @@ void CLightningProjectile::Draw()
 			);
 		}
 	}
+	*/
 }
 
 void CLightningProjectile::DrawOnMinimap() const

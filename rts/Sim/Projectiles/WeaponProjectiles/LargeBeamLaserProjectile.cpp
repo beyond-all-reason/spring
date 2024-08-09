@@ -115,6 +115,7 @@ void CLargeBeamLaserProjectile::Update()
 
 void CLargeBeamLaserProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
@@ -326,6 +327,7 @@ void CLargeBeamLaserProjectile::Draw()
 			{ pos1 - (camera->GetRight() * flareCoreSize) + (camera->GetUp() * flareCoreSize), WT4->xstart, WT4->yend  , coreColStart }
 		);
 	}
+	*/
 }
 
 void CLargeBeamLaserProjectile::DrawOnMinimap() const

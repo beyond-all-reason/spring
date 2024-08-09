@@ -181,6 +181,7 @@ void CTorpedoProjectile::Update()
 
 void CTorpedoProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	const auto& tt = *projectileDrawer->torpedotex;
@@ -254,5 +255,6 @@ void CTorpedoProjectile::Draw()
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col }
 	);
+	*/
 }
 
