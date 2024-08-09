@@ -3,8 +3,8 @@
 #include "ParticleGenerator.h"
 #include <array>
 
-struct alignas(16) StarburstData {
-	struct alignas(16) TraceDirNumMods {
+struct StarburstData {
+	struct TraceDirNumMods {
 		float3 dir;
 		uint32_t numAgeMods;
 	};

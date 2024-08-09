@@ -2,7 +2,7 @@
 
 #include "ParticleGenerator.h"
 
-struct alignas(16) LargeBeamLaserData {
+struct LargeBeamLaserData {
 	float3 startPos;
 	int32_t drawOrder;
 

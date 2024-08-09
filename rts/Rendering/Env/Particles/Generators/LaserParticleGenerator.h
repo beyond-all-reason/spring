@@ -2,7 +2,7 @@
 
 #include "ParticleGenerator.h"
 // needs Update()
-struct alignas(16) LaserData {
+struct LaserData {
 	float3 drawPos;
 	float curLength;
 
@@ -20,7 +20,7 @@ struct alignas(16) LaserData {
 	float stayTime;
 
 	float speedf;
-	// 3 x gap
+	float unused[3];
 
 	AtlasedTexture texCoord1;
 	AtlasedTexture texCoord2;

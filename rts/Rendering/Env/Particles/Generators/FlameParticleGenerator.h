@@ -2,7 +2,7 @@
 
 #include "ParticleGenerator.h"
 
-struct alignas(16) FlameParticleData {
+struct FlameParticleData {
 	float3 pos;
 	float radius;
 

@@ -9,7 +9,6 @@ struct alignas(16) LightningData {
 
 	float3 targetPos;
 	float unused;
-	// gap
 
 	std::array<float, 24> displacements;
 
@@ -17,7 +16,7 @@ struct alignas(16) LightningData {
 
 	SColor col;
 	int32_t drawOrder;
-	//2 gaps
+	float unused2[2];
 
 	int32_t GetMaxNumQuads() const {
 		return

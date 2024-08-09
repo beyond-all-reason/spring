@@ -8,6 +8,7 @@
 #include "Map/Ground.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
 #include "Rendering/Env/Particles/Classes/SmokeTrailProjectile.h"
 #include "Rendering/Textures/TextureAtlas.h"
@@ -29,8 +30,7 @@ CR_REG_METADATA(CTorpedoProjectile,(
 	CR_MEMBER(tracking),
 	CR_MEMBER(maxSpeed),
 	CR_MEMBER(nextBubble),
-	CR_MEMBER(texx),
-	CR_MEMBER(texy)
+	CR_MEMBER(pgOffset)
 ))
 
 
@@ -41,8 +41,6 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 	, maxSpeed(0.0f)
 
 	, nextBubble(4)
-	, texx(0.0f)
-	, texy(0.0f)
 {
 	projectileType = WEAPON_TORPEDO_PROJECTILE;
 
@@ -52,10 +50,21 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 
 	drawRadius = maxSpeed * 8.0f;
 
-	texx = projectileDrawer->torpedotex->xstart - (projectileDrawer->torpedotex->xend - projectileDrawer->torpedotex->xstart) * 0.5f;
-	texy = projectileDrawer->torpedotex->ystart - (projectileDrawer->torpedotex->yend - projectileDrawer->torpedotex->ystart) * 0.5f;
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<TorpedoParticleGenerator>();
+
+	pgOffset = pg.Add({
+		.partPos = pos,
+		.drawOrder = drawOrder,
+		.partSpeed = speed.xyz,
+		.texCoord = *projectileDrawer->torpedotex
+	});
 }
 
+CTorpedoProjectile::~CTorpedoProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<TorpedoParticleGenerator>();
+	pg.Del(pgOffset);
+}
 
 
 float3 CTorpedoProjectile::UpdateTargetingPos()
@@ -160,6 +169,12 @@ void CTorpedoProjectile::Update()
 
 	UpdateGroundBounce();
 	UpdateInterception();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<TorpedoParticleGenerator>();
+	const auto [token, data] = pg.Get(pgOffset);
+
+	data->partPos = pos;
+	data->partSpeed = speed;
 }
 
 
@@ -167,9 +182,11 @@ void CTorpedoProjectile::Update()
 void CTorpedoProjectile::Draw()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// do not draw if a 3D model has been defined for us
-	if (model != nullptr)
-		return;
+
+	const auto& tt = *projectileDrawer->torpedotex;
+
+	const float texx = (tt.xend + tt.xstart) * 0.5f;
+	const float texy = (tt.yend + tt.ystart) * 0.5f;
 
 	float3 r = dir.cross(UpVector);
 

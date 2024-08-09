@@ -6,7 +6,7 @@
 #include "ParticleGenerator.h"
 #include "System/SpringMath.h"
 
-struct alignas(16) FireballData {
+struct FireballData {
 	std::array<float4, 12> sparkPosSize;
 
 	float3 dgunPos;

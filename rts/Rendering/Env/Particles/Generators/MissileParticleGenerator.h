@@ -2,7 +2,7 @@
 
 #include "ParticleGenerator.h"
 
-struct alignas(16) MissileData {
+struct MissileData {
 	float3 pos;
 	float fsize;
 
