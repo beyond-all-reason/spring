@@ -257,7 +257,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(shaderSrc, "", GL_COMPUTE_SHADER));
 
 	shader->SetFlag("WORKGROUP_SIZE", ParticleGeneratorDefs::WORKGROUP_SIZE);
-	shader->SetFlag("FRUSTUM_CULLING", false);
+	shader->SetFlag("FRUSTUM_CULLING", true);
 
 	shader->SetFlag("DATA_SSBO_BINDING_IDX", ParticleGeneratorDefs::DATA_SSBO_BINDING_IDX);
 	shader->SetFlag("VERT_SSBO_BINDING_IDX", ParticleGeneratorDefs::VERT_SSBO_BINDING_IDX);

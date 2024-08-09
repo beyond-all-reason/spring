@@ -105,13 +105,13 @@ void AddEffectsQuad(
 	vec3 blPos, vec2 blUV, vec4 blCol
 ) {
 
-#define FRUSTUM_CULLING
 #ifdef FRUSTUM_CULLING
 {
 	vec3 m = min(tlPos, min(trPos, min(brPos, blPos)));
 	vec3 M = max(tlPos, max(trPos, max(brPos, blPos)));
 	vec3 spherePos = (M + m) * 0.5;
-	vec3 scales = (M - m) * 0.5;
+	vec3 scales    = (M - m) * 0.5;
+
 	if (!SphereInView(vec4(spherePos, length(scales)))) {
 		atomicAdd(localAtomics[ATOM_SSBO_CULL_IDX], 1u);
 		return;
