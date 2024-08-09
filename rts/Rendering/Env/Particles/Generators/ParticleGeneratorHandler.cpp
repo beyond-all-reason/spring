@@ -60,13 +60,13 @@ void ParticleGeneratorHandler::GenerateAll()
 
 	{
 		vertVBO.Bind();
-		vertVBO.ReallocToFit(4u * numQuads * sizeof(VA_TYPE_PROJ));
+		vertVBO.ReallocToFit(6u * numQuads * sizeof(VA_TYPE_PROJ));
 		vertVBO.Unbind();
 	}
 
 	{
 		indcVBO.Bind();
-		indcVBO.ReallocToFit(6u * numQuads * sizeof(uint32_t));
+		indcVBO.ReallocToFit(4u * numQuads * sizeof(uint32_t));
 		indcVBO.Unbind();
 	}
 
