@@ -8632,7 +8632,7 @@ int LuaSyncedRead::TraceRayGround(lua_State* L)
 	float3 normDir = dir.Normalize();
 	auto result2 = pos + normDir * traceLength;
 	const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength, CLuaHandle::GetHandleSynced(L));
-	const float waterRayLength = CGround::LinePlaneCol(pos, normDir, traceLength, 0.0f);
+	const float waterRayLength = CGround::LinePlaneCol(pos, normDir, traceLength, CGround::GetWaterPlaneLevel());
 	const bool ignoreWater = luaL_optboolean(L, 8, false);
 	if (-1.0f == groundLength)
 		return 0;
