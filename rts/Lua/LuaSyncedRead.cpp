@@ -8631,19 +8631,14 @@ int LuaSyncedRead::TraceRayGround(lua_State* L)
 	float traceLength = luaL_checkfloat(L, 7);
 	float3 normDir = dir.Normalize();
 	auto result2 = pos + normDir * traceLength;
-	const float groundLength = CGround::LineGroundCol(pos, result2);
+	const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength, CLuaHandle::GetHandleSynced(L));
 	const float waterRayLength = CGround::LinePlaneCol(pos, normDir, traceLength, 0.0f);
-	const int optArgIdx = 8 + lua_isnumber(L, 8);
-	const bool ignoreWater = luaL_optboolean(L, optArgIdx, false);
-	const float height = CGround::GetHeightReal(pos + normDir * traceLength);
+	const bool ignoreWater = luaL_optboolean(L, 8, false);
 	if (-1.0f == groundLength)
 		return 0;
 	if (traceLength > groundLength && groundLength > 0.0f) {
 		traceLength = groundLength;
 	}
-	auto realvalue = CGround::LinePlaneCol(pos, normDir, traceLength, height);
-	if (-1.0f != realvalue && std::numeric_limits<float>::max() != realvalue)
-		traceLength == realvalue;
 	if (!ignoreWater && waterRayLength != -1.0f)
 		traceLength = std::min(traceLength, waterRayLength);
 	lua_pushnumber(L, traceLength);
