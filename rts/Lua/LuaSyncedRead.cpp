@@ -8629,21 +8629,25 @@ int LuaSyncedRead::TraceRayGround(lua_State* L)
 	float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
 	float3 dir(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
 	float traceLength = luaL_checkfloat(L, 7);
-	const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength);
-	const float waterRayLength = CGround::LinePlaneCol(pos, dir, traceLength, 0.0f);
+	float3 normDir = dir.Normalize();
+	auto result2 = pos + normDir * traceLength;
+	const float groundLength = CGround::LineGroundCol(pos, result2);
+	const float waterRayLength = CGround::LinePlaneCol(pos, normDir, traceLength, 0.0f);
 	const int optArgIdx = 8 + lua_isnumber(L, 8);
 	const bool ignoreWater = luaL_optboolean(L, optArgIdx, false);
-	const float height = CGround::GetHeightReal(pos + dir * traceLength);
+	const float height = CGround::GetHeightReal(pos + normDir * traceLength);
 	if (-1.0f == groundLength)
 		return 0;
 	if (traceLength > groundLength && groundLength > 0.0f) {
 		traceLength = groundLength;
 	}
-	traceLength == CGround::LinePlaneCol(pos, dir, traceLength, height);
-	if (!ignoreWater)
+	auto realvalue = CGround::LinePlaneCol(pos, normDir, traceLength, height);
+	if (-1.0f != realvalue && std::numeric_limits<float>::max() != realvalue)
+		traceLength == realvalue;
+	if (!ignoreWater && waterRayLength != -1.0f)
 		traceLength = std::min(traceLength, waterRayLength);
 	lua_pushnumber(L, traceLength);
-	auto result = pos + dir * traceLength;
+	auto result = pos + normDir * traceLength;
 	lua_pushnumber(L, result.x);
 	lua_pushnumber(L, result.y);
 	lua_pushnumber(L, result.z);
