@@ -58,7 +58,7 @@ void GroundMoveSystem::Update() {
 	{
 		SCOPED_TIMER("Sim::Unit::MoveType::2::UpdatePreCollisions");
 
-        // These two sections are ST due to the numerous synced vars being chnaged.
+        // These two sections are ST due to the numerous synced vars being changed.
         {
             auto view = Sim::registry.view<ChangeHeadingEvent>();
             view.each([](ChangeHeadingEvent& event){
