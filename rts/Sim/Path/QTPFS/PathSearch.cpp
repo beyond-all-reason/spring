@@ -1595,9 +1595,13 @@ float3 QTPFS::PathSearch::FindNearestPointOnNodeToGoal(const QTPFS::SearchNode& 
 	const float3 lastPoint({lastPoint2.x, 0.f, lastPoint2.y});
 	GetRectangleCollisionVolume(node, rv, rm);
 	bool collide = CCollisionHandler::IntersectBox(&rv, goalPos - rm, lastPoint - rm, &cq);
+	if (collide) {
+		// If the goalPos is inside the node, then the goalPos should be used.
+		return (cq.InsideHit()) ? goalPos : cq.GetHitPos() + rm;
+	}
 
 	// No collision means the nearest point was really the nearest point. We can't do better.
-	return (collide) ? cq.GetHitPos() + rm : lastPoint;
+	return  lastPoint;
 }
 
 // #pragma GCC push_options
