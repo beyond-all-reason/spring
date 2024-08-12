@@ -26,6 +26,8 @@ bool LuaMathExtra::PushEntries(lua_State* L)
 	LuaPushNamedCFunc(L, "round",  round);
 	LuaPushNamedCFunc(L, "erf",    erf);
 	LuaPushNamedCFunc(L, "smoothstep", smoothstep);
+	LuaPushNamedCFunc(L, "vectorlength", vectorlength);
+	LuaPushNamedCFunc(L, "normalizevector", normalizevector);
 	return true;
 }
 
@@ -182,6 +184,42 @@ int LuaMathExtra::smoothstep(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	lua_pushnumber(L, ::smoothstep(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3)));
 	return 1;
+}
+
+
+/*** Returns the length of an given vector.
+ *
+ * @function math.vectorlength
+ * @number x
+ * @number y
+ * @number z
+ * @treturn vector length
+ */
+int LuaMathExtra::vectorlength(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	float3 float3(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	lua_pushnumber(L, float3.Length());
+	return 1;
+}
+
+/*** Returns the normalize vector of an given vector.
+ *
+ * @function math.vectorvector
+ * @number x
+ * @number y
+ * @number z
+ * @treturn normalize vector
+ */
+int LuaMathExtra::normalizevector(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	float3 float3(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	auto &vec = float3.Normalize();
+	lua_pushnumber(L, vec.x);
+	lua_pushnumber(L, vec.y);
+	lua_pushnumber(L, vec.z);
+	return 3;
 }
 
 /******************************************************************************/
