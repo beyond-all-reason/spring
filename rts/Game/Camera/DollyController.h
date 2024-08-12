@@ -12,6 +12,10 @@ public:
 	CDollyController();
 	~CDollyController();
 	enum {
+		DOLLY_MODE_POSITION = 1,
+		DOLLY_MODE_CURVE = 2,
+	};
+	enum {
 		DOLLY_LOOKMODE_POSITION = 1,
 		DOLLY_LOOKMODE_UNIT = 2,
 		DOLLY_LOOKMODE_CURVE = 3,
@@ -24,21 +28,18 @@ public:
 	void KeyMove(float3 move) {};
 	void MouseMove(float3 move) {};
 	void ScreenEdgeMove(float3 move) {};
-	void MouseWheelMove(float move)
-	{
-	}
+	void MouseWheelMove(float move) {};
 	void MouseWheelMove(float move, const float3& newDir) {};
 
 	void Update();
 	void SetPos(const float3& newPos)
 	{
 		pos = newPos;
-	}
+	};
 	void SetRot(const float3& newRot)
 	{
 		rot = newRot;
-	}
-	// float3 GetPos() const;
+	};
 	float3 GetRot()
 	{
 		return rot;
@@ -47,8 +48,8 @@ public:
 	float3 SwitchFrom() const
 	{
 		return pos;
-	}
-	void SwitchTo(const int oldCam, const bool showText);
+	};
+	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
@@ -56,6 +57,7 @@ public:
 	void ConfigNotify(const std::string& key, const std::string& value);
 	void ConfigUpdate();
 
+	void SetMode(int newMode) { mode = std::clamp(newMode, 1, 2); }
 	void SetNURBS(int degree, std::vector<float4> cpoints, std::vector<float> knots);
 
 	void SetLookMode(int mode);
@@ -65,19 +67,7 @@ public:
 
 private:
 	float3 rot;
-
-	float curDist;        // current zoom-out distance
-	const float maxDist;  // maximum zoom-out distance
-	float oldDist;
-	float fastScaleMove;
-	float fastScaleMousewheel;
-
-	bool zoomBack;
-	bool cursorZoomIn;
-	bool cursorZoomOut;
-	bool doRotate;
-	bool lockCardinalDirections;
-	int trackMapHeight;
+	int mode = 1;
 
 	std::vector<float4> curveControlPoints = {{-4.0, -4.0, 0.0, 1.0},
 	                                          {-2.0, 4.0, 0.0, 1.0},

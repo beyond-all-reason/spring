@@ -161,6 +161,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetDollyCameraCurve);
 	REGISTER_LUA_CFUNC(SetDollyCameraLookCurve);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookPosition);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookUnit);
 
 	REGISTER_LUA_CFUNC(DeselectUnit);
 	REGISTER_LUA_CFUNC(DeselectUnitMap);
@@ -1272,6 +1274,34 @@ int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
 
 	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_CURVE);
 	camHandler->GetDollyController().SetLookCurve(degree, cpoints, knots);
+
+	return 1;
+}
+
+/*** Sets camera state
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
+{
+	int x = luaL_checkint(L, 1);
+	int y = luaL_checkint(L, 2);
+	int z = luaL_checkint(L, 3);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_POSITION);
+	camHandler->GetDollyController().SetLookPosition(float3(x, y, z));
+
+	return 1;
+}
+
+/*** Sets camera state
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
+{
+	int unitid = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_UNIT);
+	camHandler->GetDollyController().SetLookUnit(unitid);
 
 	return 1;
 }

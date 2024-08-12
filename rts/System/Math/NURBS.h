@@ -10,12 +10,12 @@ namespace NURBS
 
 	int findSpan(int n, int degree, const std::vector<float>& knots, float t);
 
-	float3 SolveNURBS(int degree, std::vector<float4>& controlPoints, std::vector<float>& knots,
+	float3 SolveNURBS(int degree, const std::vector<float4>& controlPoints, const std::vector<float>& knots,
 	                  float t);
-	std::vector<float3> SolveNURBSCurve(int degree, std::vector<float4>& controlPoints,
-	                                    std::vector<float>& knots, float segments);
+	std::vector<float3> SolveNURBSCurve(int degree, const std::vector<float4>& controlPoints,
+	                                    const std::vector<float>& knots, float segments);
 
-	float minU(int degree, std::vector<float4>& controlPoints, std::vector<float>& knots);
-	float maxU(int degree, std::vector<float4>& controlPoints, std::vector<float>& knots);
+	float minU(int degree, const std::vector<float4>& controlPoints, const std::vector<float>& knots);
+	float maxU(int degree, const std::vector<float4>& controlPoints, const std::vector<float>& knots);
 
 }  // namespace NURBS

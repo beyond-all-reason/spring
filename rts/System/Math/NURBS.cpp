@@ -56,7 +56,7 @@ namespace NURBS
 		return n;
 	}
 
-	bool isValidNURBS(int degree, std::vector<float4>& controlPoints, std::vector<float>& knots,
+	bool isValidNURBS(int degree, const std::vector<float4>& controlPoints, const std::vector<float>& knots,
 	                  float t)
 	{
 		float last = knots[0];
@@ -85,7 +85,7 @@ namespace NURBS
 		return true;
 	}
 
-	float3 SolveNURBS(int degree, std::vector<float4>& controlPoints, std::vector<float>& knots,
+	float3 SolveNURBS(int degree, const std::vector<float4>& controlPoints, const std::vector<float>& knots,
 	                  float t)
 	{
 		if (!isValidNURBS(degree, controlPoints, knots, t)) {
@@ -100,8 +100,8 @@ namespace NURBS
 		return GetPoint0(N, k, controlPoints, degree);
 	}
 
-	std::vector<float3> SolveNURBSCurve(int degree, std::vector<float4>& controlPoints,
-	                                    std::vector<float>& knots, float segments)
+	std::vector<float3> SolveNURBSCurve(int degree, const std::vector<float4>& controlPoints,
+	                                    const std::vector<float>& knots, float segments)
 	{
 		float umin = minU(degree, controlPoints, knots);
 		float umax = maxU(degree, controlPoints, knots);
@@ -112,19 +112,20 @@ namespace NURBS
 			return points;
 		}
 
-		for (float x = umin; x <= umax; x += increment) {
-
-			const int k = findSpan(controlPoints.size() - 1, degree, knots, x);
+		// x segments requires x+1 points
+		for (int x = 0; x <= segments; x++) {
+			float u = std::clamp(umin + increment * x, umin, umax);
+			const int k = findSpan(controlPoints.size() - 1, degree, knots, u);
 			if (k < 0) {
 				return points;
 			}
-			std::vector<float> N = Basis_ITS0(k, degree, knots, x);
+			std::vector<float> N = Basis_ITS0(k, degree, knots, u);
 			points.push_back(GetPoint0(N, k, controlPoints, degree));
 		}
 		return points;
 	}
 
-	float minU(int degree, std::vector<float4>& controlPoints, std::vector<float>& knots)
+	float minU(int degree, const std::vector<float4>& controlPoints, const std::vector<float>& knots)
 	{
 		float last = knots[0];
 		int mult = 1;
@@ -132,7 +133,7 @@ namespace NURBS
 			if (knots[i] == last) {
 				mult++;
 			} else {
-				return knots[degree]; // +1?
+				return knots[degree];
 			}
 			if (mult > degree) {
 				return 0;
@@ -140,7 +141,7 @@ namespace NURBS
 		}
 		return 0;
 	}
-	float maxU(int degree, std::vector<float4>& controlPoints, std::vector<float>& knots)
+	float maxU(int degree, const std::vector<float4>& controlPoints, const std::vector<float>& knots)
 	{
 		int klen = knots.size();
 		float last = knots[klen - 1];
@@ -157,5 +158,4 @@ namespace NURBS
 		}
 		return 1;
 	}
-
 }  // namespace NURBS
