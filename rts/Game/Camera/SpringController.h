@@ -27,8 +27,8 @@ public:
 	float3 GetPos() const;
 	float3 GetRot() const { return (float3(rot.x, GetAzimuth(), 0.0f)); }
 
-	float3 SwitchFrom() const { return pos; }
-	void SwitchTo(const int oldCam, const bool showText);
+	float3 SwitchFrom() const { return GetPos(); }
+	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);

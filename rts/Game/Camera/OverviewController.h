@@ -26,7 +26,7 @@ public:
 	void SetRot(const float3& newDir) override {camRotY = newDir.y;}
 
 	float3 SwitchFrom() const;
-	void SwitchTo(const int oldCam, const bool showText);
+	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);

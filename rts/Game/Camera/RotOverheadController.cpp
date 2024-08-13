@@ -110,12 +110,20 @@ float3 CRotOverheadController::SwitchFrom() const
 }
 
 
-void CRotOverheadController::SwitchTo(const int oldCam, const bool showText)
+void CRotOverheadController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText) {
 		LOG("Switching to Rotatable overhead camera");
 	}
+	float3 newPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov") {
+		pos = float3(newPos.x, pos.y, newPos.z);
+		Update();
+		return;
+	}
+	pos = newPos;
+	rot = oldCam->GetRot();
 }
 
 

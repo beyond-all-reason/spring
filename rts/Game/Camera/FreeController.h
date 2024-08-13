@@ -23,11 +23,13 @@ public:
 
 	void Update();
 	float3 GetDir() const;
-	
+	float3 GetRot() const { return rot; };
+
 	void SetPos(const float3& newPos);
+	void SetRot(const float3& newRot) { rot = newRot; Update(); };
 	void SetTrackingInfo(const float3& pos, float radius);
 	float3 SwitchFrom() const;
-	void SwitchTo(const int oldCam, const bool showText);
+	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);

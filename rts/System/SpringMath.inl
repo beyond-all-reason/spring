@@ -168,6 +168,17 @@ inline float3 ClampRad(float3 v)
 	return v;
 }
 
+inline float3 ClampRadPrincipal(float3 v)
+{
+	v.x = ClampRad(v.x);
+	v.y = ClampRad(v.y);
+	v.z = ClampRad(v.z);
+	v.x -= (v.x > math::PI) * math::TWOPI;
+	v.y -= (v.y > math::PI) * math::TWOPI;
+	v.z -= (v.z > math::PI) * math::TWOPI;
+	return v;
+}
+
 inline float GetRadAngleToward(float f1, float f2) {
 	 return (f2-f1) +
 			 (f2-f1 > math::PI ?

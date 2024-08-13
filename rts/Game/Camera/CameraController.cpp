@@ -3,6 +3,7 @@
 
 #include "CameraController.h"
 #include "Game/Camera.h"
+#include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/Config/ConfigHandler.h"
@@ -107,3 +108,14 @@ void CCameraController::GetState(StateMap& sm) const
 	sm["dz"] = dir.z;
 }
 
+float CCameraController::DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
+
+	// if the direction is not pointing towards the map we use provided xz plane as heuristic
+	if (newGroundDist <= 0.0f) {
+		newGroundDist = CGround::LinePlaneCol(from, dir, 150000.0f, fallbackPlaneHeight);
+	}
+
+	return newGroundDist;
+}
