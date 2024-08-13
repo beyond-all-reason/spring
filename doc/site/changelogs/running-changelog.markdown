@@ -40,11 +40,11 @@ Decent for factory construction areas, but keep in mind it only affects ground u
 * added `Spring.GetUnitMapCentroid({[unitID] = any, [unitID] = any, ...}) → numbers x, y, z`. Ditto but the unitIDs are keys instead of values in the accepted table.
 * added `Spring.GetUnitCosts(unitID) → number buildTime, number metal, number energy`.
 * added `Spring.GetUnitCostTable(unitID) → { metal = number, energy = number }, number buildTime`. Note that buildtime is not a regular resource and is returned separately.
+* added `Spring.GetTeamDamageStats(teamID) → number damageDealt, number damageReceived`. Same as the values already available from `Spring.GetTeamStatsHistory`, but without most of the overhead.
 
 ### Misc and fixes
 * something happened to terraforming rate (via restore command, or ground flattening before construction).
 * lots of general performance improvements.
-* fixed weapon def `numBounce` set to -1 not being infinite (and equivalent to 0 instead). Note that -1 is the default, so setting `groundBounce` (or water) is sufficient to get a bouncy weapon.
 * fixed the stack warning spam if `wupget:UnitArrivedAtGoal` was defined.
 * fixed factory UnitDefs being able to have `canAssist` set to true
 * fixed mouse not warping correctly (when using `Spring.WarpMouse`) on Unix/Wayland
