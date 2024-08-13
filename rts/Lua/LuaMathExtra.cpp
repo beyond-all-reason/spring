@@ -188,7 +188,7 @@ int LuaMathExtra::smoothstep(lua_State* L) {
 
 /*** Returns the normalize vector of an given vector.
  *
- * @function math.normalizevector
+ * @function math.normalize
  * @number x
  * @number y
  * @number z
