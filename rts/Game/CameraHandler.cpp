@@ -551,15 +551,16 @@ void CCameraHandler::SetCameraMode(unsigned int newMode)
 		currCamCtrlNum = newMode;
 		return;
 	}
-
 	CameraTransition(1.0f);
 
 	CCameraController* oldCamCtrl = camControllers[                 oldMode];
 	CCameraController* newCamCtrl = camControllers[currCamCtrlNum = newMode];
 
-	newCamCtrl->SetPos(oldCamCtrl->SwitchFrom());
-	newCamCtrl->SetRot(oldCamCtrl->GetRot());
-	newCamCtrl->SwitchTo(oldMode);
+	// clamp rotations so that the camera doesnt spin excessively to get to the new rotation
+	camera->SetRot(ClampRadPrincipal(camera->GetRot()));
+	oldCamCtrl->SetRot(ClampRadPrincipal(oldCamCtrl->GetRot()));
+
+	newCamCtrl->SwitchTo(oldCamCtrl);
 	newCamCtrl->Update();
 }
 
@@ -709,7 +710,7 @@ bool CCameraHandler::SetState(const CCameraController::StateMap& sm)
 			return false;
 
 		if (camMode != currCamCtrlNum)
-			camControllers[currCamCtrlNum = camMode]->SwitchTo(oldMode);
+			camControllers[currCamCtrlNum = camMode]->SwitchTo(camControllers[oldMode]);
 	}
 
 	const bool result = camControllers[currCamCtrlNum]->SetState(sm);
@@ -807,7 +808,7 @@ bool CCameraHandler::LoadViewData(const ViewData& vd)
 
 		if (camMode != currCamCtrlNum) {
 			CameraTransition(1.0f);
-			camControllers[currCamCtrlNum = camMode]->SwitchTo(curMode, camMode != curMode);
+			camControllers[currCamCtrlNum = camMode]->SwitchTo(camControllers[curMode], camMode != curMode);
 		}
 	}
 

@@ -118,16 +118,31 @@ void CFPSController::SetDir(const float3& newDir)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	dir = newDir;
-	Update();
+	rot = CCamera::GetRotFromDir(newDir);
+}
+
+void CFPSController::SetRot(const float3& newRot)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	rot = newRot;
+	dir = CCamera::GetFwdFromRot(newRot);
 }
 
 
-void CFPSController::SwitchTo(const int oldCam, const bool showText)
+void CFPSController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText) {
 		LOG("Switching to FPS style camera");
 	}
+	float3 newPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov") {
+		pos = float3(newPos.x, pos.y, newPos.z);
+		Update();
+		return;
+	}
+	rot = oldCam->GetRot();
+	pos = newPos;
 }
 
 
