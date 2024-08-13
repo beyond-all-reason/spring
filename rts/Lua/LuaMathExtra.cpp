@@ -190,27 +190,32 @@ int LuaMathExtra::smoothstep(lua_State* L) {
  *
  * @function math.normalize
  * @number x
- * @number y
- * @number z
- * @treturn nil|normalize vector
+ * @number[opt] xn and so on
+ * @treturn zero xn numbers|xn numbers
  */
 int LuaMathExtra::normalizevector(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	lua_Number res = 0.0f;
-
-	for (int i = lua_gettop(L); i >= 1; i--) {
+	const int param = lua_gettop(L);
+	for (int i = param; i >= 1; i--) {
 		res += Square(luaL_checknumber_noassert(L, i));
 	}
-	res = math::sqrt(res);
+	if likely(res > float3::nrm_eps())
+		res = math::sqrt(res);
 	if (res == 0)
-		return 0;
-	for (int i = lua_gettop(L); i >= 1; i--) {
+	{
+		for (int i = param; i >= 1; i--) {
+			lua_pushnumber(L, 0);
+		}
+		return param;
+	}
+	for (int i = param; i >= 1; i--) {
 		float tmp = luaL_checknumber_noassert(L, i);
-		tmp = res / tmp;
+		tmp = tmp / res;
 		lua_pushnumber(L, tmp);
 	}
-	return lua_gettop(L);
+	return param;
 }
 
 /******************************************************************************/
