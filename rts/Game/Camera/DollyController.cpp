@@ -84,7 +84,7 @@ void CDollyController::Update()
 		float u = minU + percent * (maxU - minU);
 		float3 lookT = NURBS::SolveNURBS(lookCurveDegree, lookControlPoints, lookKnots, u);
 		pos += lookT * relative;
-		dir = (lookT - pos + lookT).Normalize();
+		dir = (lookT - pos).Normalize();
 	} else if (lookMode == DOLLY_LOOKMODE_UNIT) {
 		CUnit* unit = unitHandler.GetUnit(lookUnit);
 		if (unit != nullptr) {
