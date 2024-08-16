@@ -24,7 +24,8 @@ CONFIG(float, CamDollyFOV).defaultValue(45.0f);
 
 CDollyController::CDollyController()
 	: rot(2.677f, 0.0f, 0.0f)
-	, lookTarget(float3(500.f, 100.f, 500.f))
+	, lookTarget(0.f, 0.f, 0.f)
+	, position(400.f, 400.f, 400.f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	configHandler->NotifyOnChange(this, {"CamDollyFOV"});
@@ -49,46 +50,57 @@ void CDollyController::ConfigNotify(const std::string& key, const std::string& v
 	ConfigUpdate();
 }
 
+void CDollyController::Run(float milliseconds)
+{
+	startTime = spring_gettime().toMilliSecsf();
+	endTime = startTime + milliseconds;
+}
+
 void CDollyController::Update()
 {
 	ZoneScoped;
 	float curTime = spring_gettime().toMilliSecsf();
-	float percent = std::clamp(1 - (endTime - curTime) / (endTime - startTime), 0.f, 1.f);
+	float percent = 0;
+	if (endTime != startTime) {
+		percent = std::clamp(1 - (endTime - curTime) / (endTime - startTime), 0.f, 1.f);
+	}
 	if (mode == DOLLY_MODE_CURVE) {
 		float minU = NURBS::minU(curveDegree, curveControlPoints, nurbsKnots);
 		float maxU = NURBS::maxU(curveDegree, curveControlPoints, nurbsKnots);
 		float u = minU + percent * (maxU - minU);
 		pos = NURBS::SolveNURBS(curveDegree, curveControlPoints, nurbsKnots, u);
+	} else if (mode == DOLLY_MODE_POSITION) {
+		pos = position;
 	}
-	// LOG_L(L_INFO, "Dollypos: %s", pos.str().c_str());
 
+	// LOG_L(L_INFO, "Dollypos: %s", pos.str().c_str());
+	float relative = relmode - 1.0;
 	if (lookMode == DOLLY_LOOKMODE_POSITION) {
+		pos += lookTarget * relative;
 		dir = (lookTarget - pos).Normalize();
 	} else if (lookMode == DOLLY_LOOKMODE_CURVE) {
 		float minU = NURBS::minU(lookCurveDegree, lookControlPoints, lookKnots);
 		float maxU = NURBS::maxU(lookCurveDegree, lookControlPoints, lookKnots);
 		float u = minU + percent * (maxU - minU);
 		float3 lookT = NURBS::SolveNURBS(lookCurveDegree, lookControlPoints, lookKnots, u);
-		dir = (lookT - pos).Normalize();
+		pos += lookT * relative;
+		dir = (lookT - pos + lookT).Normalize();
 	} else if (lookMode == DOLLY_LOOKMODE_UNIT) {
 		CUnit* unit = unitHandler.GetUnit(lookUnit);
 		if (unit != nullptr) {
-			dir = (unit->midPos - pos).Normalize();
+			pos += unit->drawPos * relative;
+			dir = (unit->drawPos - pos).Normalize();
 		}
 	}
+
 	float3 newRot = CCamera::GetRotFromDir(GetDir());
-	float3 toward = GetRadAngleToward(rot, newRot);
-	if (std::abs(toward.x) > math::PI) {
-		toward.x += math::TWOPI * Sign(toward.x);
+	int wraps = std::trunc(rot.y / math::TWOPI);
+	newRot.y += math::TWOPI * wraps;
+	float ydiff = rot.y - newRot.y;
+	if (abs(ydiff) > math::PI) {
+		newRot.y += math::TWOPI * Sign(ydiff);
 	}
-	if (std::abs(toward.y) > math::PI) {
-		toward.y += math::TWOPI * Sign(toward.x);
-	}
-	if (std::abs(toward.z) > math::PI) {
-		toward.z += math::TWOPI * Sign(toward.x);
-	}
-	// LOG_L(L_INFO, "Dollyrot: %s", newRot.str().c_str());
-	rot = rot + toward;
+	rot = newRot;
 	camHandler->CameraTransition(0.01f);
 }
 
@@ -97,27 +109,19 @@ void CDollyController::SwitchTo(const CCameraController* oldCam, const bool show
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText)
 		LOG("Switching to Dolly style camera");
-
-	startTime = spring_gettime().toMilliSecsf();
-	endTime = startTime + 10000;
+	startTime = endTime = 0.f;
+	rot = oldCam->GetRot();
 }
 
-void CDollyController::SetNURBS(int degree, std::vector<float4> cpoints, std::vector<float> knots)
+void CDollyController::SetNURBS(int degree, const std::vector<float4>& cpoints,
+                                const std::vector<float>& knots)
 {
 	curveDegree = degree;
 	curveControlPoints = cpoints;
 	nurbsKnots = knots;
 }
 
-void CDollyController::SetLookMode(int mode)
-{
-	if (mode < DOLLY_LOOKMODE_POSITION || mode > DOLLY_LOOKMODE_CURVE) {
-		mode = 1;
-	}
-	lookMode = mode;
-}
-
-void CDollyController::SetLookPosition(float3 pos)
+void CDollyController::SetLookPosition(const float3& pos)
 {
 	lookTarget = pos;
 }
@@ -127,8 +131,8 @@ void CDollyController::SetLookUnit(int unitid)
 	lookUnit = unitid;
 }
 
-void CDollyController::SetLookCurve(int degree, std::vector<float4> cpoints,
-                                    std::vector<float> knots)
+void CDollyController::SetLookCurve(int degree, const std::vector<float4>& cpoints,
+                                    const std::vector<float>& knots)
 {
 	lookCurveDegree = degree;
 	lookControlPoints = cpoints;

@@ -16,6 +16,10 @@ public:
 		DOLLY_MODE_CURVE = 2,
 	};
 	enum {
+		DOLLY_RELATIVE_WORLD = 1,
+		DOLLY_RELATIVE_TARGET = 2,
+	};
+	enum {
 		DOLLY_LOOKMODE_POSITION = 1,
 		DOLLY_LOOKMODE_UNIT = 2,
 		DOLLY_LOOKMODE_CURVE = 3,
@@ -40,7 +44,7 @@ public:
 	{
 		rot = newRot;
 	};
-	float3 GetRot()
+	float3 GetRot() const
 	{
 		return rot;
 	};
@@ -51,6 +55,7 @@ public:
 	};
 	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
+	void Run(float milliseconds);
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
 
@@ -58,32 +63,30 @@ public:
 	void ConfigUpdate();
 
 	void SetMode(int newMode) { mode = std::clamp(newMode, 1, 2); }
-	void SetNURBS(int degree, std::vector<float4> cpoints, std::vector<float> knots);
+	void SetRelativeMode(int newMode) { relmode = std::clamp(newMode, 1, 2); }
+	void SetPosition(const float3& newPosition) { position = newPosition; };
+	void SetNURBS(int degree, const std::vector<float4> &cpoints, const std::vector<float> &knots);
 
-	void SetLookMode(int mode);
-	void SetLookPosition(float3 pos);
+	void SetLookMode(int newMode) { lookMode = std::clamp(newMode, 1, 3); };
+	void SetLookPosition(const float3 &pos);
 	void SetLookUnit(int unitid);
-	void SetLookCurve(int degree, std::vector<float4> cpoints, std::vector<float> knots);
+	void SetLookCurve(int degree, const std::vector<float4> &cpoints, const std::vector<float> &knots);
 
 private:
 	float3 rot;
 	int mode = 1;
+	int relmode = 1;
+	float3 position;
 
-	std::vector<float4> curveControlPoints = {{-4.0, -4.0, 0.0, 1.0},
-	                                          {-2.0, 4.0, 0.0, 1.0},
-	                                          {2.0, -4.0, 0.0, 1.0},
-	                                          {4.0, 4.0, 0.0, 1.0}};
-	std::vector<float> nurbsKnots = {0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0};
+	std::vector<float4> curveControlPoints;
+	std::vector<float> nurbsKnots;
 
 	int lookMode = 1;
 	float3 lookTarget;
 	int lookUnit;
 	int lookCurveDegree;
-	std::vector<float4> lookControlPoints = {{-4.0, -4.0, 0.0, 1.0},
-	                                         {-2.0, 4.0, 0.0, 1.0},
-	                                         {2.0, -4.0, 0.0, 1.0},
-	                                         {4.0, 4.0, 0.0, 1.0}};
-	std::vector<float> lookKnots = {0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0};
+	std::vector<float4> lookControlPoints;
+	std::vector<float> lookKnots;
 
 	int curveDegree = 3;
 	float startTime = 1.;
