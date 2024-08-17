@@ -160,6 +160,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetCameraTarget);
 
 	REGISTER_LUA_CFUNC(RunDollyCamera);
+	REGISTER_LUA_CFUNC(PauseDollyCamera);
+	REGISTER_LUA_CFUNC(ResumeDollyCamera);
 	REGISTER_LUA_CFUNC(SetDollyCameraMode);
 	REGISTER_LUA_CFUNC(SetDollyCameraPosition);
 	REGISTER_LUA_CFUNC(SetDollyCameraCurve);
@@ -1258,6 +1260,30 @@ int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
 
 	return 0;
 }
+
+/*** Pause Dolly Camera
+ * @number [percent] of the total runtime to pause at, 0 to 1 inclusive
+ *
+ */
+int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
+{
+	float percent = luaL_optfloat(L, 1, -1);
+
+	camHandler->GetDollyController().Pause(percent);
+
+	return 0;
+}
+
+/*** Resume Dolly Camera
+ *
+ */
+int LuaUnsyncedCtrl::ResumeDollyCamera(lua_State* L)
+{
+	camHandler->GetDollyController().Resume();
+
+	return 0;
+}
+
 /*** Sets Dolly Camera Position
  * @number x
  * @number y

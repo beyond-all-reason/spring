@@ -54,12 +54,34 @@ void CDollyController::Run(float milliseconds)
 {
 	startTime = spring_gettime().toMilliSecsf();
 	endTime = startTime + milliseconds;
+	pauseTime = 0.f;
+}
+
+void CDollyController::Pause(float percent)
+{
+	if (percent >= 0.f && percent <= 1.f) {
+		pauseTime = percent * (endTime - startTime) + startTime;
+	} else {
+		pauseTime = spring_gettime().toMilliSecsf();
+	}
+}
+
+void CDollyController::Resume()
+{
+	float current = spring_gettime().toMilliSecsf();
+	float duration = endTime - startTime;
+	startTime = current - pauseTime + startTime;
+	endTime = startTime + duration;
+	pauseTime = 0.f;
 }
 
 void CDollyController::Update()
 {
 	ZoneScoped;
 	float curTime = spring_gettime().toMilliSecsf();
+	if (pauseTime > 0.f) {
+		curTime = pauseTime;
+	}
 	float percent = 0;
 	if (endTime != startTime) {
 		percent = std::clamp(1 - (endTime - curTime) / (endTime - startTime), 0.f, 1.f);

@@ -56,6 +56,8 @@ public:
 	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void Run(float milliseconds);
+	void Pause(float percent);
+	void Resume();
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
 
@@ -91,6 +93,7 @@ private:
 	int curveDegree = 3;
 	float startTime = 1.;
 	float endTime = 1.;
+	float pauseTime = 0.;
 };
 
 #endif  // _DOLLY_CONTROLLER_H
