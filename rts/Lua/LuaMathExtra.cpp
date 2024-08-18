@@ -212,7 +212,7 @@ int LuaMathExtra::normalize(lua_State* L)
 		}
 		return param;
 	}
-	for (int i = param; i >= 1; i--) {
+	for (int i = 1; i <= param; ++i) {
 		float tmp = luaL_checknumber_noassert(L, i);
 		tmp = tmp / res;
 		lua_pushnumber(L, tmp);
