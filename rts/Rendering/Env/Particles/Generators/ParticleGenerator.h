@@ -31,7 +31,7 @@ struct ParticleGeneratorDefs {
 	// for particles generator
 	static constexpr int32_t DATA_SSBO_BINDING_IDX = 2;
 	static constexpr int32_t VERT_SSBO_BINDING_IDX = 3;
-	static constexpr int32_t SIZE_SSBO_BINDING_IDX = 4;
+	static constexpr int32_t SIZE_SSBO_BINDING_IDX = 5;
 
 	static constexpr int32_t SIZE_SSBO_NUM_ELEMENTS = 256;
 

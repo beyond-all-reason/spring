@@ -1,17 +1,5 @@
 #version 430 core
 
-struct TriangleData
-{
-    vec4 pos;
-    vec4 uvw;
-    vec4 uvInfo;
-	vec4 apAndCol;
-};
-
-layout(std430, binding = VERT_SSBO_BINDING_IDX) restrict readonly buffer OUT1
-{
-    TriangleData triangleData[];
-};
 
 layout(std430, binding = VALI_SSBO_BINDING_IDX) restrict readonly buffer VALSIN
 {
@@ -28,8 +16,7 @@ layout(std430, binding = IDCS_SSBO_BINDING_IDX) writeonly restrict buffer OUT2
     uint indicesData[];
 };
 
-uniform int indcsArraySize;
-
+shared uint indcsArraySize;
 shared uint totalNumElems;
 shared uint localNumOutOfB;
 
@@ -37,6 +24,11 @@ layout(local_size_x = WORKGROUP_SIZE) in;
 void main()
 {
 	if (gl_LocalInvocationID.x == 0u) {
+		#ifdef PROCESS_TRIANGLES
+			indcsArraySize = 3u * GET_NUM_ELEMS;
+		#else
+			indcsArraySize = 6u * GET_NUM_ELEMS;
+		#endif
 		totalNumElems = atomicCounters[SIZE_SSBO_NUM_ELEM];
 		localNumOutOfB = 0u;
 	}
@@ -49,14 +41,15 @@ void main()
 		return;
 
 	#ifdef PROCESS_TRIANGLES
-	uint triIndex = valsIn[elemIdx];
-	uint idxIndex = 3u * triIndex;
+	uint triIndex = 4u * (valsIn[elemIdx] >> 1u);
+	uint idxIndex = 3u * elemIdx;
 
+/*
 	if (idxIndex + 3u >= indcsArraySize) {
 		atomicAdd(localNumOutOfB, 1u);
 		return;
 	}
-
+*/
 	if (elemIdx % 2u == 0u) {
 		indicesData[idxIndex++] = triIndex + 3u;
 		indicesData[idxIndex++] = triIndex + 0u;
@@ -67,14 +60,14 @@ void main()
 		indicesData[idxIndex  ] = triIndex + 2u;
 	}
 	#else
-	uint triIndex = valsIn[elemIdx];
-	uint idxIndex = 3u * triIndex;
-
+	uint triIndex = 4u * valsIn[elemIdx];
+	uint idxIndex = 3u * elemIdx;
+/*
 	if (idxIndex + 6u >= indcsArraySize) {
 		atomicAdd(localNumOutOfB, 1u);
 		return;
 	}
-
+*/
 	indicesData[idxIndex++] = triIndex + 3u;
 	indicesData[idxIndex++] = triIndex + 0u;
 	indicesData[idxIndex++] = triIndex + 1u;

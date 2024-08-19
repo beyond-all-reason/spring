@@ -38,10 +38,9 @@ struct RadixSortStorageBindings {
 
 struct IndicesProducerStorageBindings {
 	// bindings 0 and 1 are occupied by MATRIX_SSBO_BINDING_IDX and MATUNI_SSBO_BINDING_IDX
-	static constexpr int32_t VERT_SSBO_BINDING_IDX = 2;
 	static constexpr int32_t VALI_SSBO_BINDING_IDX = 3;
-	static constexpr int32_t SIZE_SSBO_BINDING_IDX = 4;
-	static constexpr int32_t IDCS_SSBO_BINDING_IDX = 5;
+	static constexpr int32_t IDCS_SSBO_BINDING_IDX = 4;
+	static constexpr int32_t SIZE_SSBO_BINDING_IDX = 5;
 };
 
 void ParticleGeneratorHandler::Init()
@@ -123,10 +122,12 @@ void ParticleGeneratorHandler::Init()
 		shader->SetFlag("KEYO_SSBO_BINDING_IDX", KeyValStorageBindings::KEYO_SSBO_BINDING_IDX);
 		shader->SetFlag("VALO_SSBO_BINDING_IDX", KeyValStorageBindings::VALO_SSBO_BINDING_IDX);
 		shader->SetFlag("PROCESS_TRIANGLES", PROCESS_TRIANGLES);
+		shader->SetFlag("USE_PROJECTED_DISTANCE", USE_PROJECTED_DISTANCE);
 		shader->Link();
 
 		shader->Enable();
 		shader->SetUniform("cameraPos", 0.0f, 0.0f, 0.0f);
+		shader->SetUniform("cameraFwd", 0.0f, 0.0f, 1.0f);
 		shader->SetUniform("cameraNearFar", 0.0f, 1.0f);
 		shader->Disable();
 
@@ -179,16 +180,16 @@ void ParticleGeneratorHandler::Init()
 		shader = shaderHandler->CreateProgramObject("ParticleGeneratorHandler", "TriangleIndicesProducer");
 		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ParticleProduceIndcsCS.glsl", "", GL_COMPUTE_SHADER));
 		shader->SetFlag("WORKGROUP_SIZE", ParticleGeneratorDefs::WORKGROUP_SIZE);
-		shader->SetFlag("VERT_SSBO_BINDING_IDX", IndicesProducerStorageBindings::VERT_SSBO_BINDING_IDX);
 		shader->SetFlag("VALI_SSBO_BINDING_IDX", IndicesProducerStorageBindings::VALI_SSBO_BINDING_IDX);
 		shader->SetFlag("SIZE_SSBO_BINDING_IDX", IndicesProducerStorageBindings::SIZE_SSBO_BINDING_IDX);
 		shader->SetFlag("IDCS_SSBO_BINDING_IDX", IndicesProducerStorageBindings::IDCS_SSBO_BINDING_IDX);
 		shader->SetFlag("SIZE_SSBO_NUM_ELEM", ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEM);
 		shader->SetFlag("SIZE_SSBO_OOBC_IDX", ParticleGeneratorDefs::SIZE_SSBO_OOBC_IDX);
+		shader->SetFlag("PROCESS_TRIANGLES", PROCESS_TRIANGLES);
+		shader->SetFlag("GET_NUM_ELEMS", fmt::format("atomicCounters[{}]", ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEM).c_str());
 		shader->Link();
 
 		shader->Enable();
-		shader->SetUniform("indcsArraySize", 0);
 		shader->Disable();
 
 		shader->Validate();
@@ -220,11 +221,11 @@ void ParticleGeneratorHandler::ReallocateBuffersPre()
 {
 	{
 		auto bindingToken = vertVBO.BindScoped();
-		vertVBO.ReallocToFit(4u * numQuads * sizeof(VA_TYPE_PROJ));
+		vertVBO.ReallocToFit(4 * numQuads * sizeof(VA_TYPE_PROJ));
 	}
 	{
 		auto bindingToken = indcVBO.BindScoped();
-		indcVBO.ReallocToFit(6u * numQuads * sizeof(uint32_t));
+		indcVBO.ReallocToFit(6 * numQuads * sizeof(uint32_t));
 	}
 }
 
@@ -314,10 +315,10 @@ void ParticleGeneratorHandler::GenerateAll()
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * cntrs.size(), cntrs.data());
 		cntrVBO.Unbind();
 
-		cntrVBO.Bind();
+		indrVBO.Bind();
 		std::array<uint32_t, IndirectBufferIndices::INDR_SSBO_ELEM_SIZE> indir;
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * indir.size(), indir.data());
-		cntrVBO.Unbind();
+		indrVBO.Unbind();
 	}
 
 	// keep indirect draw buffer manually bound
@@ -332,7 +333,9 @@ void ParticleGeneratorHandler::GenerateAll()
 
 		auto enToken = keyValShader->EnableScoped();
 		const auto& camPos = camera->GetPos();
+		const auto& camFwd = camera->GetForward();
 		keyValShader->SetUniform("cameraPos", camPos.x, camPos.y, camPos.z);
+		keyValShader->SetUniform("cameraFwd", camFwd.x, camFwd.y, camFwd.z);
 		keyValShader->SetUniform("cameraNearFar", camera->GetNearPlaneDist(), camera->GetFarPlaneDist());
 #if 1
 		glDispatchComputeIndirect(static_cast<GLintptr>(IndirectBufferIndices::KVAL_SSBO_INDRCT_X * sizeof(int32_t)));
@@ -403,6 +406,25 @@ void ParticleGeneratorHandler::GenerateAll()
 		outBufs[1]->Unbind();
 	}
 
+	{
+		auto bindingToken1 = outBufs[1]->BindBufferRangeScoped(IndicesProducerStorageBindings::VALI_SSBO_BINDING_IDX);
+		auto bindingToken2 = indcVBO.BindBufferRangeScoped(IndicesProducerStorageBindings::IDCS_SSBO_BINDING_IDX);
+		auto bindingToken3 = cntrVBO.BindBufferRangeScoped(IndicesProducerStorageBindings::SIZE_SSBO_BINDING_IDX);
+
+		auto enToken = indcsProdShader->EnableScoped();
+
+		glDispatchComputeIndirect(static_cast<GLintptr>(IndirectBufferIndices::KVAL_SSBO_INDRCT_X * sizeof(int32_t)));
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	}
+
+	{
+		// Debug
+		indcVBO.Bind();
+		std::vector<uint32_t> indcs(6 * numQuads);
+		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * indcs.size(), indcs.data());
+		indcVBO.Unbind();
+	}
+
 	// Unbind manually
 	indrVBO.Unbind();
 	indrVBO.SetCurrTargetRaw(GL_SHADER_STORAGE_BUFFER); //reset so it can be bound to a slot in the shader
@@ -415,14 +437,14 @@ void ParticleGeneratorHandler::GenerateAll()
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * vals.size(), vals.data());
 		cntrVBO.Unbind();
 
-		if (vals[0] > 0) {
+		if (auto numQ = vals[ParticleGeneratorDefs::SIZE_SSBO_QUAD_IDX]; numQ > 0) {
 			vertVBO.Bind();
-			std::vector<VA_TYPE_PROJ> trData(4 * vals[0]);
+			std::vector<VA_TYPE_PROJ> trData(4 * numQ);
 			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VA_TYPE_PROJ) * trData.size(), trData.data());
 			vertVBO.Unbind();
 
 			indcVBO.Bind();
-			std::vector<uint32_t> idData(6 * vals[0]);
+			std::vector<uint32_t> idData(6 * numQ);
 			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * idData.size(), idData.data());
 			indcVBO.Unbind();
 		}

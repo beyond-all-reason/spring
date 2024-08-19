@@ -90,4 +90,5 @@ private:
 	static constexpr int32_t HIST_BIN_SIZE = (1 << RADIX_BIN_BIT_SIZE);
 
 	static constexpr bool PROCESS_TRIANGLES = true;
+	static constexpr bool USE_PROJECTED_DISTANCE = true;
 };

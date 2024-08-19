@@ -29,6 +29,7 @@ layout(std430, binding = VALO_SSBO_BINDING_IDX) restrict writeonly buffer VALS
 };
 
 uniform vec3 cameraPos;
+uniform vec3 cameraFwd;
 uniform vec2 cameraNearFar;
 
 shared uint totalNumQuads;
@@ -58,10 +59,17 @@ void main()
 	vec3 trCenter1 = (vertexPositions[3u].xyz + vertexPositions[0u].xyz + vertexPositions[1u].xyz) * 0.333333333;
 	vec3 trCenter2 = (vertexPositions[3u].xyz + vertexPositions[1u].xyz + vertexPositions[2u].xyz) * 0.333333333;
 
+#ifdef USE_PROJECTED_DISTANCE
+	vec2 distances = vec2(
+		dot(cameraFwd, trCenter1 - cameraPos),
+		dot(cameraFwd, trCenter2 - cameraPos)
+	);
+#else
 	vec2 distances = vec2(
 		distance(cameraPos, trCenter1),
 		distance(cameraPos, trCenter2)
 	);
+#endif
 
 	distances = clamp((distances - cameraNearFar.xx) / (cameraNearFar.yy - cameraNearFar.xx), vec2(0), vec2(1));
 	
@@ -74,7 +82,13 @@ void main()
 	valsOut[2u * quadIdx + 1u] = 2u * quadIdx + 1u;
 #else
 	vec3 quadCenter = (vertexPositions[0u].xyz + vertexPositions[1u].xyz + vertexPositions[2u].xyz + vertexPositions[3u].xyz) * 0.25;
+
+#ifdef USE_PROJECTED_DISTANCE
+	float distance = dot(cameraFwd, quadCenter - cameraPos);
+#else
 	float distance = distance(cameraPos, quadCenter);
+#endif
+
 	distance = clamp((distance - cameraNearFar.x) / (cameraNearFar.y - cameraNearFar.x), 0.0, 1.0);
 	
 	uint key = uint(0xFFFFFFu * distances); // save in 24 bit depth format
