@@ -12,7 +12,8 @@ uniform vec4 frustumPlanes[6];
 // Placeholer for definitions
 %s
 
-shared uvec3 localAtomics;
+shared uint localNumCulled;
+shared uint localNumOutOfB;
 
 struct TriangleData
 {
@@ -34,12 +35,14 @@ layout(std430, binding = VERT_SSBO_BINDING_IDX) writeonly restrict buffer OUT1
     TriangleData triangleData[];
 };
 
+/*
 layout(std430, binding = IDCS_SSBO_BINDING_IDX) writeonly restrict buffer OUT2
 {
     uint indicesData[];
 };
+*/
 
-layout(std430, binding = ATOM_SSBO_BINDING_IDX) coherent restrict buffer ATOMIC
+layout(std430, binding = SIZE_SSBO_BINDING_IDX) coherent restrict buffer SIZE
 {
     uint atomicCounters[];
 };
@@ -74,15 +77,10 @@ uint PackColor(vec4 unpackedColor) {
 		(uint(0xFFu * clamp(unpackedColor.w, 0.0, 1.0)) << 24);
 }
 
-/*
-float3 rotate(float angle, vec3 axis, inout vec3[]) const {
-	float ca = cos(angle);
-	float sa = sin(angle);
-
+vec3 Rotate(vec2 sc, vec3 axis, vec3 input) {
 	//Rodrigues' rotation formula
-	return (*this) * ca + axis.cross(*this) * sa + axis * axis.dot(*this) * (1.0f - ca);
+	return input * sc.y + cross(axis, input) * sc.x + axis * dot(axis, input) * (1.0 - sc.y);
 }
-*/
 
 bool SphereInView(vec4 posRad) {
 	for (uint i = 0u; i < 6u; ++i) {
@@ -113,16 +111,16 @@ void AddEffectsQuad(
 	vec3 scales    = (M - m) * 0.5;
 
 	if (!SphereInView(vec4(spherePos, length(scales)))) {
-		atomicAdd(localAtomics[ATOM_SSBO_CULL_IDX], 1u);
+		atomicAdd(localNumCulled, 1u);
 		return;
 	}
 }
 #endif
-	uint thisQuadIndex = atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], 1u);
+	uint thisQuadIndex = atomicAdd(atomicCounters[SIZE_SSBO_QUAD_IDX], 1u);
 
 	// sanity check
 	if (thisQuadIndex >= uint(arraySizes.y)) {
-		atomicAdd(localAtomics[ATOM_SSBO_OOBC_IDX], 1u);
+		atomicAdd(localNumOutOfB, 1u);
 		return;
 	}
 
@@ -137,6 +135,8 @@ void AddEffectsQuad(
 	vec4 uvInfo = vec4(minMaxUV.x, minMaxUV.y, minMaxUV.z - minMaxUV.x, minMaxUV.w - minMaxUV.y);
 	const float textureLayer = 0.0; //for future
 
+	// Proper indices will be produced after sorting
+	/*
 	/////////////////
 	// Indices
 	/////////////////
@@ -149,7 +149,7 @@ void AddEffectsQuad(
 	indicesData[idxIndex++] = triIndex + 3u;
 	indicesData[idxIndex++] = triIndex + 1u;
 	indicesData[idxIndex  ] = triIndex + 2u;
-
+	*/
 
 	/////////////////
 	// Triangles
@@ -220,8 +220,10 @@ void AddEffectsQuadCamera(
 
 void main()
 {
-	if (gl_LocalInvocationID.x == 0u)
-		localAtomics = uvec3(0u);
+	if (gl_LocalInvocationID.x == 0u) {
+		localNumOutOfB = 0u;
+		localNumCulled = 0u;
+	}
 
 	barrier();
 	memoryBarrierShared();
@@ -245,8 +247,7 @@ void main()
 	memoryBarrierShared();
 
 	if (gl_LocalInvocationID.x == 0u) {
-		//atomicAdd(atomicCounters[ATOM_SSBO_QUAD_IDX], localAtomics[ATOM_SSBO_QUAD_IDX]);
-		atomicAdd(atomicCounters[ATOM_SSBO_OOBC_IDX], localAtomics[ATOM_SSBO_OOBC_IDX]);
-		atomicAdd(atomicCounters[ATOM_SSBO_CULL_IDX], localAtomics[ATOM_SSBO_CULL_IDX]);
+		atomicAdd(atomicCounters[SIZE_SSBO_OOBC_IDX], localNumOutOfB);
+		atomicAdd(atomicCounters[SIZE_SSBO_CULL_IDX], localNumCulled);
 	}
 }

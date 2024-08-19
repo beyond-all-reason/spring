@@ -28,16 +28,18 @@
 
 struct ParticleGeneratorDefs {
 	// bindings 0 and 1 are occupied by MATRIX_SSBO_BINDING_IDX and MATUNI_SSBO_BINDING_IDX
+	// for particles generator
 	static constexpr int32_t DATA_SSBO_BINDING_IDX = 2;
 	static constexpr int32_t VERT_SSBO_BINDING_IDX = 3;
-	static constexpr int32_t IDCS_SSBO_BINDING_IDX = 4;
-	static constexpr int32_t ATOM_SSBO_BINDING_IDX = 5;
+	static constexpr int32_t SIZE_SSBO_BINDING_IDX = 4;
 
-	static constexpr int32_t ATOM_SSBO_NUM_ELEMENTS = 16;
-	// TODO spread them to reduce false sharing
-	static constexpr int32_t ATOM_SSBO_QUAD_IDX = 0;
-	static constexpr int32_t ATOM_SSBO_OOBC_IDX = 1; // out of bounds write attempts
-	static constexpr int32_t ATOM_SSBO_CULL_IDX = 2; // number of culled quads
+	static constexpr int32_t SIZE_SSBO_NUM_ELEMENTS = 256;
+
+	// spreaded by 32 to reduce false sharing
+	static constexpr int32_t SIZE_SSBO_NUM_ELEM = 00; // number of elements (filled out later)
+	static constexpr int32_t SIZE_SSBO_QUAD_IDX = 32; // number of produced quads
+	static constexpr int32_t SIZE_SSBO_OOBC_IDX = 64; // out of bounds write attempts
+	static constexpr int32_t SIZE_SSBO_CULL_IDX = 96; // number of culled quads
 
 	static constexpr int32_t WORKGROUP_SIZE = 512;
 };
@@ -127,8 +129,9 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateBufferDa
 	if (!particlesUpdateList.NeedUpdate())
 		return;
 
-	static constexpr auto DataSize = sizeof(decltype(particles)::value_type);
-	static_assert(std::is_same_v<decltype(particles)::value_type, ParticleDataType>);
+	using DeductedParticleDataType = typename decltype(particles)::value_type;
+	static constexpr auto DataSize = sizeof(DeductedParticleDataType);
+	static_assert(std::is_same_v<DeductedParticleDataType, ParticleDataType>);
 
 	dataVBO.Bind();
 	if (dataVBO.ReallocToFit(DataSize * particles.size())) {
@@ -261,11 +264,11 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shader->SetFlag("DATA_SSBO_BINDING_IDX", ParticleGeneratorDefs::DATA_SSBO_BINDING_IDX);
 	shader->SetFlag("VERT_SSBO_BINDING_IDX", ParticleGeneratorDefs::VERT_SSBO_BINDING_IDX);
-	shader->SetFlag("IDCS_SSBO_BINDING_IDX", ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
-	shader->SetFlag("ATOM_SSBO_BINDING_IDX", ParticleGeneratorDefs::ATOM_SSBO_BINDING_IDX);
-	shader->SetFlag("ATOM_SSBO_QUAD_IDX", ParticleGeneratorDefs::ATOM_SSBO_QUAD_IDX);
-	shader->SetFlag("ATOM_SSBO_OOBC_IDX", ParticleGeneratorDefs::ATOM_SSBO_OOBC_IDX);
-	shader->SetFlag("ATOM_SSBO_CULL_IDX", ParticleGeneratorDefs::ATOM_SSBO_CULL_IDX);
+	//shader->SetFlag("IDCS_SSBO_BINDING_IDX", ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
+	shader->SetFlag("SIZE_SSBO_BINDING_IDX", ParticleGeneratorDefs::SIZE_SSBO_BINDING_IDX);
+	shader->SetFlag("SIZE_SSBO_QUAD_IDX", ParticleGeneratorDefs::SIZE_SSBO_QUAD_IDX);
+	shader->SetFlag("SIZE_SSBO_OOBC_IDX", ParticleGeneratorDefs::SIZE_SSBO_OOBC_IDX);
+	shader->SetFlag("SIZE_SSBO_CULL_IDX", ParticleGeneratorDefs::SIZE_SSBO_CULL_IDX);
 
 	shader->Link();
 

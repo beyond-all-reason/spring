@@ -19,7 +19,7 @@ struct AtlasedTexture
 {
 	CR_DECLARE_STRUCT(AtlasedTexture)
 
-	explicit AtlasedTexture() = default;
+	AtlasedTexture() = default;
 	explicit AtlasedTexture(const float4& f)
 		: x(f.x)
 		, y(f.y)

@@ -196,6 +196,12 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(glslMaxUniformBufferSize),
 	CR_IGNORED(glslMaxStorageBufferBindings),
 	CR_IGNORED(glslMaxStorageBufferSize),
+
+	CR_IGNORED(csMaxInvocations),
+	CR_IGNORED(csWarpSize),
+	CR_IGNORED(csMaxWorkGroupSize),
+	CR_IGNORED(csMaxTotalWorkGroupSize),
+
 	CR_IGNORED(dualScreenMode),
 	CR_IGNORED(dualScreenMiniMapOnLeft),
 
@@ -324,6 +330,11 @@ CGlobalRendering::CGlobalRendering()
 	, glslMaxUniformBufferSize(0)
 	, glslMaxStorageBufferBindings(0)
 	, glslMaxStorageBufferSize(0)
+
+	, csMaxInvocations{0}
+	, csWarpSize(0)
+	, csMaxWorkGroupSize{0}
+	, csMaxTotalWorkGroupSize(0)
 
 	, dualScreenMode(false)
 	, dualScreenMiniMapOnLeft(false)
@@ -902,6 +913,21 @@ void CGlobalRendering::QueryGLMaxVals()
 		glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE,      &glslMaxStorageBufferSize);
 	}
 
+	if (GLEW_ARB_compute_shader) {
+		for (int idx = 0; idx < 3; idx++) {
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, idx, &csMaxInvocations[idx]);
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, idx, &csMaxWorkGroupSize[idx]);
+		}
+		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &csMaxTotalWorkGroupSize);
+
+		// old glew is not aware of this one
+		if (glewIsExtensionSupported("GL_KHR_shader_subgroup") || true)
+		{
+			static constexpr GLenum SUBGROUP_SIZE_KHR = 0x9532;
+			glGetIntegerv(SUBGROUP_SIZE_KHR, &csWarpSize);
+		}
+	}
+
 	glGetIntegerv(GL_MAX_VARYING_FLOATS,                 &glslMaxVaryings);
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS,                 &glslMaxAttributes);
 	glGetIntegerv(GL_MAX_DRAW_BUFFERS,                   &glslMaxDrawBuffers);
@@ -1002,82 +1028,109 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tmax. uniform block-size       : %iKB", glslMaxUniformBufferSize / 1024);
 	LOG("\tmax. storage buffer-bindings  : %i", glslMaxStorageBufferBindings);
 	LOG("\tmax. storage block-size       : %iMB", glslMaxStorageBufferSize / (1024 * 1024));
+
+	LOG("\t");
+	LOG("\tmax. compute shader invocations  (X) : %i", csMaxInvocations[0]);
+	LOG("\tmax. compute shader invocations  (Y) : %i", csMaxInvocations[1]);
+	LOG("\tmax. compute shader invocations  (Z) : %i", csMaxInvocations[2]);
+	LOG("\tmax. compute shader group size   (X) : %i", csMaxWorkGroupSize[0]);
+	LOG("\tmax. compute shader group size   (Y) : %i", csMaxWorkGroupSize[1]);
+	LOG("\tmax. compute shader group size   (Z) : %i", csMaxWorkGroupSize[2]);
+	LOG("\tmax. compute shader group size (XYZ) : %i", csMaxTotalWorkGroupSize);
+	LOG("\tcompute shader subgroup/warp size    : %i", csWarpSize);
+
 	LOG("\t");
 	LOG("\tenable AMD-hacks : %i", amdHacks);
 	LOG("\tcompress MIP-maps: %i", compressTextures);
 
-	GLint numberOfTextureFormats = 0;
-	glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &numberOfTextureFormats);
-	std::vector<GLint> textureFormats; textureFormats.resize(numberOfTextureFormats);
-	glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, textureFormats.data());
+	{
+		GLint numberOfTextureFormats = 0;
+		glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &numberOfTextureFormats);
+		std::vector<GLint> textureFormats; textureFormats.resize(numberOfTextureFormats);
+		glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, textureFormats.data());
 
-	#define EnumToString(arg) { arg, #arg }
-	std::unordered_map<GLenum, std::string> compressedEnumToString = {
-		EnumToString(GL_COMPRESSED_RED_RGTC1),
-		EnumToString(GL_COMPRESSED_SIGNED_RED_RGTC1),
-		EnumToString(GL_COMPRESSED_RG_RGTC2),
-		EnumToString(GL_COMPRESSED_SIGNED_RG_RGTC2),
-		EnumToString(GL_COMPRESSED_RGBA_BPTC_UNORM),
-		EnumToString(GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM),
-		EnumToString(GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT),
-		EnumToString(GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT),
-		EnumToString(GL_COMPRESSED_RGB8_ETC2),
-		EnumToString(GL_COMPRESSED_SRGB8_ETC2),
-		EnumToString(GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2),
-		EnumToString(GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2),
-		EnumToString(GL_COMPRESSED_RGBA8_ETC2_EAC),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC),
-		EnumToString(GL_COMPRESSED_R11_EAC),
-		EnumToString(GL_COMPRESSED_SIGNED_R11_EAC),
-		EnumToString(GL_COMPRESSED_RG11_EAC),
-		EnumToString(GL_COMPRESSED_SIGNED_RG11_EAC),
-		EnumToString(GL_COMPRESSED_RGB_S3TC_DXT1_EXT),
-		EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT),
-		EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT3_EXT),
-		EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_4x4_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_5x4_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_5x5_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_6x5_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_6x6_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_8x5_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_8x6_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_8x8_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_10x5_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_10x6_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_10x8_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_10x10_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_12x10_KHR),
-		EnumToString(GL_COMPRESSED_RGBA_ASTC_12x12_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR),
-		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR),
-	};
-	#undef EnumToString
+		#define EnumToString(arg) { arg, #arg }
+		std::unordered_map<GLenum, std::string> compressedEnumToString = {
+			EnumToString(GL_COMPRESSED_RED_RGTC1),
+			EnumToString(GL_COMPRESSED_SIGNED_RED_RGTC1),
+			EnumToString(GL_COMPRESSED_RG_RGTC2),
+			EnumToString(GL_COMPRESSED_SIGNED_RG_RGTC2),
+			EnumToString(GL_COMPRESSED_RGBA_BPTC_UNORM),
+			EnumToString(GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM),
+			EnumToString(GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT),
+			EnumToString(GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT),
+			EnumToString(GL_COMPRESSED_RGB8_ETC2),
+			EnumToString(GL_COMPRESSED_SRGB8_ETC2),
+			EnumToString(GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2),
+			EnumToString(GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2),
+			EnumToString(GL_COMPRESSED_RGBA8_ETC2_EAC),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC),
+			EnumToString(GL_COMPRESSED_R11_EAC),
+			EnumToString(GL_COMPRESSED_SIGNED_R11_EAC),
+			EnumToString(GL_COMPRESSED_RG11_EAC),
+			EnumToString(GL_COMPRESSED_SIGNED_RG11_EAC),
+			EnumToString(GL_COMPRESSED_RGB_S3TC_DXT1_EXT),
+			EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT),
+			EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT3_EXT),
+			EnumToString(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_4x4_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_5x4_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_5x5_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_6x5_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_6x6_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_8x5_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_8x6_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_8x8_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_10x5_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_10x6_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_10x8_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_10x10_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_12x10_KHR),
+			EnumToString(GL_COMPRESSED_RGBA_ASTC_12x12_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR),
+			EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR),
+		};
+		#undef EnumToString
 
-	LOG("\tNumber of compressed texture formats: %i", numberOfTextureFormats);
-	std::ostringstream ss;
-	for (auto tf : textureFormats) {
-		auto it = compressedEnumToString.find(tf);
-		if (it != compressedEnumToString.end())
-			ss << it->second << ", ";
-		else
-			ss << "0x" << std::hex << tf << ", ";
+		LOG("\tNumber of compressed texture formats: %i", numberOfTextureFormats);
+		std::ostringstream ss;
+		for (auto tf : textureFormats) {
+			auto it = compressedEnumToString.find(tf);
+			if (it != compressedEnumToString.end())
+				ss << it->second << ", ";
+			else
+				ss << "0x" << std::hex << tf << ", ";
+		}
+		ss.seekp(-2, std::ios_base::end);
+		ss << ".";
+		LOG("\tCompressed texture formats: %s", ss.str().c_str());
 	}
-	ss.seekp(-2, std::ios_base::end);
-	ss << ".";
-	LOG("\tCompressed texture formats: %s", ss.str().c_str());
+	{
+		GLint numExt;
+		glGetIntegerv(GL_NUM_EXTENSIONS, &numExt);
+		LOG("\tNumber of supported extensions: %i", numExt);
+		std::ostringstream ss;
+
+		for (GLint i = 0; i < numExt; i++)
+		{
+			ss << (const char*)glGetStringi(GL_EXTENSIONS, i) << ", ";
+		}
+		ss.seekp(-2, std::ios_base::end);
+		ss << ".";
+		LOG("\tList of supported extensions: %s", ss.str().c_str());
+	}
 }
 
 void CGlobalRendering::LogDisplayMode(SDL_Window* window) const

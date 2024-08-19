@@ -5,6 +5,7 @@
 
 #include "Rendering/GL/VBO.h"
 
+// Weapon Projectiles
 #include "BeamLaserParticleGenerator.h"
 #include "EmgParticleGenerator.h"
 #include "ExplosiveParticleGenerator.h"
@@ -16,6 +17,12 @@
 #include "MissileParticleGenerator.h"
 #include "StarburstParticleGenerator.h"
 #include "TorpedoParticleGenerator.h"
+// CEG Classes
+#include "BitmapMuzzleFlameParticleGenerator.h"
+
+namespace Shader {
+	struct IProgramObject;
+}
 
 class ParticleGeneratorHandler {
 public:
@@ -39,7 +46,11 @@ public:
 		return instance;
 	}
 private:
+	void ReallocateBuffersPre();
+	void ReallocateBuffersPost();
+private:
 	std::tuple<
+		// Weapon Projectiles
 		std::unique_ptr<BeamLaserParticleGenerator>,
 		std::unique_ptr<EmgParticleGenerator>,
 		std::unique_ptr<ExplosiveParticleGenerator>,
@@ -50,13 +61,33 @@ private:
 		std::unique_ptr<LightningParticleGenerator>,
 		std::unique_ptr<MissileParticleGenerator>,
 		std::unique_ptr<StarburstParticleGenerator>,
-		std::unique_ptr<TorpedoParticleGenerator>
+		std::unique_ptr<TorpedoParticleGenerator>,
+		// CEG classes
+		std::unique_ptr<BitmapMuzzleFlameParticleGenerator>
 	> generators;
 
 	int32_t numQuads;
+	int32_t sortElemsPerThread;
+	int32_t sortHistNumWorkGroups;
 
 	VBO vertVBO;
 	VBO indcVBO;
+	VBO cntrVBO;	//for the GPU based updates
+	VBO indrVBO;
+	VBO keysInVBO;
+	VBO valsInVBO;
+	VBO keysOutVBO;
+	VBO valsOutVBO;
+	VBO histVBO;
 
-	VBO counterVBO;	//for the GPU based updates
+	Shader::IProgramObject* indirParamsShader;
+	Shader::IProgramObject* keyValShader;
+	Shader::IProgramObject* radixHistShader;
+	Shader::IProgramObject* radixSortShader;
+	Shader::IProgramObject* indcsProdShader;
+
+	static constexpr int32_t RADIX_BIN_BIT_SIZE = 8;
+	static constexpr int32_t HIST_BIN_SIZE = (1 << RADIX_BIN_BIT_SIZE);
+
+	static constexpr bool PROCESS_TRIANGLES = true;
 };

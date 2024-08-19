@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "Rendering/GL/myGL.h"
+#include "System/ScopedResource.h"
 
 /**
  * @brief VBO
@@ -40,12 +41,45 @@ public:
 	void Bind(GLenum target) const;
 	void Unbind() const;
 
+	auto BindScoped(GLenum target) const {
+		return spring::ScopedNullResource(
+			[this, target]() { this->Bind(target); },
+			[this]() { this->Unbind(); }
+		);
+	}
+	auto BindScoped() const {
+		return spring::ScopedNullResource(
+			[this]() { this->Bind(); },
+			[this]() { this->Unbind(); }
+		);
+	}
+
 	bool BindBufferRange(GLuint index) const { return BindBufferRangeImpl(curBoundTarget, index, vboId, 0u, bufSize); }
 	bool BindBufferRange(GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(curBoundTarget, index, vboId, offset, size); }
 	bool BindBufferRange(GLenum target, GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(target, index, vboId, offset, size); };
 	bool UnbindBufferRange(GLuint index) const { return BindBufferRangeImpl(curBoundTarget, index, 0u, 0u, bufSize); };
 	bool UnbindBufferRange(GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(curBoundTarget, index, 0u, offset, size); };
 	bool UnbindBufferRange(GLenum target, GLuint index, GLuint offset, GLsizeiptr size) const { return BindBufferRangeImpl(target, index, 0u, offset, size); };
+
+	auto BindBufferRangeScoped(GLenum index) const {
+		return spring::ScopedResource(
+			BindBufferRange(index),
+			[this, index](auto mapped) { if (mapped) this->UnbindBufferRange(index); }
+		);
+	}
+	auto BindBufferRangeScoped(GLuint index, GLuint offset, GLsizeiptr size) const {
+		return spring::ScopedResource(
+			BindBufferRange(index, offset, size),
+			[this, index, offset, size](auto mapped) { if (mapped) this->UnbindBufferRange(index, offset, size); }
+		);
+	}
+	auto BindBufferRangeScoped(GLenum target, GLuint index, GLuint offset, GLsizeiptr size) const {
+		return spring::ScopedResource(
+			BindBufferRange(target, index, offset, size),
+			[this, target, index, offset, size](auto mapped) { if (mapped) this->UnbindBufferRange(target, index, offset, size); }
+		);
+	}
+
 	/**
 	 * @param usage can be either GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, or GL_DYNAMIC_COPY
 	 * @param data (optional) initialize the VBO with the data (the array must have minimum `size` length!)
@@ -54,7 +88,7 @@ public:
 	void Resize(GLsizeiptr newSize, GLenum newUsage = GL_STREAM_DRAW);
 
 	template<typename TData>
-	void New(const std::vector<TData>& data, GLenum newUsage = GL_STATIC_DRAW) { New(sizeof(TData) * data.size(), newUsage, data.data()); };
+	void New(const std::vector<TData>& data, GLenum newUsage = GL_STREAM_DRAW) { New(sizeof(TData) * data.size(), newUsage, data.data()); };
 	void New(GLsizeiptr newSize, GLenum newUsage = GL_STREAM_DRAW, const void* newData = nullptr);
 
 	// Reallocates the VBO if it's too small or too big, copies newData if not nullptr, returns true if the VBo was reallocated
@@ -87,6 +121,26 @@ public:
 		Unbind();
 	}
 
+	template<typename TData>
+	auto MapBufferScoped(const std::vector<TData>& data, GLintptr elemOffset = 0, GLbitfield access = GL_WRITE_ONLY) {
+		return spring::ScopedResource(
+			MapBuffer(data, elemOffset, access),
+			[this](auto mapped) { if (mapped) this->UnmapBuffer(); }
+		);
+	}
+	auto MapBufferScoped(GLbitfield access = GL_WRITE_ONLY) {
+		return spring::ScopedResource(
+			MapBuffer(access),
+			[this](auto mapped) { if (mapped) this->UnmapBuffer(); }
+		);
+	}
+	auto MapBufferScoped(GLintptr offset, GLsizeiptr size, GLbitfield access = GL_WRITE_ONLY) {
+		return spring::ScopedResource(
+			MapBuffer(offset, size, access),
+			[this](auto mapped) { if (mapped) this->UnmapBuffer(); }
+		);
+	}
+
 	// uploads vector of data from 0 to size() - 1 at elemOffset
 	template<typename TData>
 	void SetBufferSubData(const std::vector<TData>& data, GLintptr elemOffset = 0) { SetBufferSubData(sizeof(TData) * elemOffset, sizeof(TData) * data.size(), data.data()); }
@@ -104,6 +158,11 @@ public:
 
 	GLenum GetCurrTarget() const {
 		return curBoundTarget;
+	}
+
+	// use with caution
+	GLenum SetCurrTargetRaw(GLenum newTarget) {
+		return std::exchange(curBoundTarget, newTarget);
 	}
 
 	size_t GetSize() const { return bufSize; }

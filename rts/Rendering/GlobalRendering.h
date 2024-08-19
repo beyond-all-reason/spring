@@ -343,6 +343,10 @@ public:
 	int glslMaxStorageBufferBindings;
 	int glslMaxStorageBufferSize; ///< in bytes
 
+	std::array<int, 3> csMaxInvocations;
+	int csWarpSize;
+	std::array<int, 3> csMaxWorkGroupSize;
+	int csMaxTotalWorkGroupSize;
 	/**
 	 * @brief dual screen mode
 	 * In dual screen mode, the screen is split up between a game screen and a minimap screen.

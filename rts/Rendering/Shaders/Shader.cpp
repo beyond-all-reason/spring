@@ -628,8 +628,12 @@ namespace Shader {
 		}
 
 		// early-exit: empty program (TODO: delete it?)
-		if (shaderObjs.empty())
+		if (shaderObjs.empty()) {
+			if (logReporting) {
+				LOG_L(L_WARNING, "[GLSL-PO::%s] program-object name: %s, shader objects list is empty\n", __func__, name.c_str());
+			}
 			return;
+		}
 
 		bool deleteOldShader = true;
 

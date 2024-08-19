@@ -45,6 +45,7 @@ bool VBO::IsSupported(GLenum target) {
 	static bool isUBOSupported  = (GLEW_ARB_uniform_buffer_object);
 	static bool isSSBOSupported = (GLEW_ARB_shader_storage_buffer_object);
 	static bool isCopyBuffSupported = (GLEW_ARB_copy_buffer);
+	static bool isDispIndirSupported = (GLEW_ARB_compute_shader);
 
 	switch (target) {
 	case GL_PIXEL_PACK_BUFFER:
@@ -60,6 +61,8 @@ bool VBO::IsSupported(GLenum target) {
 	case GL_COPY_WRITE_BUFFER:
 	case GL_COPY_READ_BUFFER:
 		return isCopyBuffSupported;
+	case GL_DISPATCH_INDIRECT_BUFFER:
+		return isDispIndirSupported;
 	default: {
 		LOG_L(L_ERROR, "[VBO:%s]: wrong target [%u] is specified", __func__, target);
 		return false;
@@ -538,6 +541,8 @@ size_t VBO::GetOffsetAlignment(GLenum target) {
 		return offsetAlignmentUBO;
 	case GL_SHADER_STORAGE_BUFFER:
 		return offsetAlignmentSSBO;
+	case GL_DISPATCH_INDIRECT_BUFFER:
+		return 4;
 	case GL_PIXEL_PACK_BUFFER:
 	case GL_PIXEL_UNPACK_BUFFER:
 	case GL_ARRAY_BUFFER:
