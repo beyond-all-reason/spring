@@ -15,7 +15,13 @@ struct IndirectBufferIndices {
 	static constexpr int32_t HIST_SSBO_INDRCT_Y = 4;
 	static constexpr int32_t HIST_SSBO_INDRCT_Z = 5;
 
-	static constexpr int32_t INDR_SSBO_ELEM_SIZE = 6;
+	static constexpr int32_t DRAW_SSBO_INDSC = 6;
+	static constexpr int32_t DRAW_SSBO_INSTC = 7;
+	static constexpr int32_t DRAW_SSBO_FIRSI = 8;
+	static constexpr int32_t DRAW_SSBO_BASEV = 9;
+	static constexpr int32_t DRAW_SSBO_BASEI = 10;
+
+	static constexpr int32_t INDR_SSBO_ELEM_SIZE = 11;
 };
 
 struct KeyValStorageBindings {
@@ -99,6 +105,11 @@ void ParticleGeneratorHandler::Init()
 		shader->SetFlag("HIST_SSBO_INDRCT_X", IndirectBufferIndices::HIST_SSBO_INDRCT_X);
 		shader->SetFlag("HIST_SSBO_INDRCT_Y", IndirectBufferIndices::HIST_SSBO_INDRCT_Y);
 		shader->SetFlag("HIST_SSBO_INDRCT_Z", IndirectBufferIndices::HIST_SSBO_INDRCT_Z);
+		shader->SetFlag("DRAW_SSBO_INDSC", IndirectBufferIndices::DRAW_SSBO_INDSC);
+		shader->SetFlag("DRAW_SSBO_INSTC", IndirectBufferIndices::DRAW_SSBO_INSTC);
+		shader->SetFlag("DRAW_SSBO_FIRSI", IndirectBufferIndices::DRAW_SSBO_FIRSI);
+		shader->SetFlag("DRAW_SSBO_BASEV", IndirectBufferIndices::DRAW_SSBO_BASEV);
+		shader->SetFlag("DRAW_SSBO_BASEI", IndirectBufferIndices::DRAW_SSBO_BASEI);
 		shader->SetFlag("SIZE_SSBO_NUM_ELEM", ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEM);
 		shader->SetFlag("KEYVAL_SORTING_KEYVAL_WG_SIZE", ParticleGeneratorDefs::WORKGROUP_SIZE);
 		shader->SetFlag("RADIX_SHADER_WG_SIZE", ParticleGeneratorDefs::WORKGROUP_SIZE);
@@ -294,8 +305,8 @@ void ParticleGeneratorHandler::GenerateAll()
 	ReallocateBuffersPre();
 
 	ParticleGeneratorGlobal::atomicCntVal = { 0 };
+	static constexpr uint32_t ZERO = 0u;
 	{
-		static constexpr uint32_t ZERO = 0u;
 		auto bindingToken = cntrVBO.BindScoped();
 		glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &ZERO);
 	}
@@ -310,6 +321,13 @@ void ParticleGeneratorHandler::GenerateAll()
 
 	// TODO check if Generate() used CPU or GPU
 	ReallocateBuffersPost();
+
+	/*
+	{
+		auto token = indcVBO.BindScoped();
+		glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &ZERO);
+	}
+	*/
 
 	// form indirect dispatch buffer + set constants
 	{
@@ -467,6 +485,26 @@ void ParticleGeneratorHandler::GenerateAll()
 
 void ParticleGeneratorHandler::RenderAll()
 {
+	if (numQuads == 0)
+		return;
 
+	indrVBO.Bind(GL_DRAW_INDIRECT_BUFFER);
+	vao.Bind();
+	//vertVBO.Bind();
+	//indcVBO.Bind();
+
+	glDrawElementsIndirect(
+		GL_TRIANGLES,
+		GL_UNSIGNED_INT,
+		reinterpret_cast<const void*>(
+		IndirectBufferIndices::DRAW_SSBO_INDSC * sizeof(uint32_t))
+	);
+
+	vao.Unbind();
+	//vertVBO.Unbind();
+	//indcVBO.Unbind();
+
+	indrVBO.Unbind();
+	indrVBO.SetCurrTargetRaw(GL_SHADER_STORAGE_BUFFER); //reset so it can be bound to a slot in the shader
 }
 

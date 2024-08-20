@@ -50,7 +50,7 @@ void main()
 		return;
 	}
 */
-	if (elemIdx % 2u == 0u) {
+	if (elemIdx % 2u == 1u) {
 		indicesData[idxIndex++] = triIndex + 3u;
 		indicesData[idxIndex++] = triIndex + 0u;
 		indicesData[idxIndex  ] = triIndex + 1u;

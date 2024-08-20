@@ -15,13 +15,13 @@ uniform int sortElemsPerThread;
 layout(local_size_x = 1) in;
 void main()
 {
+	uint numQuads = atomicCounters[SIZE_SSBO_QUAD_IDX];
 #ifdef PROCESS_TRIANGLES
-	uint numElems = 2u * atomicCounters[SIZE_SSBO_QUAD_IDX];
+	uint numElems = 2u * numQuads;
 #else // quads
-	uint numElems = 1u * atomicCounters[SIZE_SSBO_QUAD_IDX];
+	uint numElems = 1u * numQuads;
 #endif
 	atomicCounters[SIZE_SSBO_NUM_ELEM] = numElems;
-	
 	{
 		uint divisor = KEYVAL_SORTING_KEYVAL_WG_SIZE;
 		indirect[KVAL_SSBO_INDRCT_X] = (numElems + divisor - 1) / divisor;
@@ -33,5 +33,12 @@ void main()
 		indirect[HIST_SSBO_INDRCT_X] = (numElems + divisor - 1) / divisor;
 		indirect[HIST_SSBO_INDRCT_Y] = 1u;
 		indirect[HIST_SSBO_INDRCT_Z] = 1u;
+	}
+	{
+		indirect[DRAW_SSBO_INDSC] = 3u * numElems;
+		indirect[DRAW_SSBO_INSTC] = 1u;
+		indirect[DRAW_SSBO_FIRSI] = 0u;
+		indirect[DRAW_SSBO_BASEV] = 0u;
+		indirect[DRAW_SSBO_BASEI] = 0u;
 	}
 }
