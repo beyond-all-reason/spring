@@ -60,40 +60,40 @@ void main()
 	vec3 trCenter2 = (vertexPositions[3u].xyz + vertexPositions[1u].xyz + vertexPositions[2u].xyz) * 0.333333333;
 
 #ifdef USE_PROJECTED_DISTANCE
-	vec2 distances = vec2(
+	vec2 dist = vec2(
 		dot(cameraFwd, trCenter1 - cameraPos),
 		dot(cameraFwd, trCenter2 - cameraPos)
 	);
 #else
-	vec2 distances = vec2(
+	vec2 dist = vec2(
 		distance(cameraPos, trCenter1),
 		distance(cameraPos, trCenter2)
 	);
 #endif
 
-	distances = clamp((distances - cameraNearFar.xx) / (cameraNearFar.yy - cameraNearFar.xx), vec2(0), vec2(1));
+	dist = clamp((dist - cameraNearFar.xx) / (cameraNearFar.yy - cameraNearFar.xx), vec2(0), vec2(1));
 	
-	uvec2 key = uvec2(0xFFFFFFu * distances); // save in 24 bit depth format
+	uvec2 key = uvec2(0xFFFFFFu * dist); // save in 24 bit depth format
 	key |= uvec2(drawOrder << 24u); // add drawOrder as MSB of UINT
 	
-	keysOut[2u * quadIdx + 0u] = key[0u];
-	keysOut[2u * quadIdx + 1u] = key[1u];
+	keysOut[2u * quadIdx + 0u] = 0xFFFFFFFFu - key[0u];
+	keysOut[2u * quadIdx + 1u] = 0xFFFFFFFFu - key[1u];
 	valsOut[2u * quadIdx + 0u] = 2u * quadIdx + 0u;
 	valsOut[2u * quadIdx + 1u] = 2u * quadIdx + 1u;
 #else
 	vec3 quadCenter = (vertexPositions[0u].xyz + vertexPositions[1u].xyz + vertexPositions[2u].xyz + vertexPositions[3u].xyz) * 0.25;
 
 #ifdef USE_PROJECTED_DISTANCE
-	float distance = dot(cameraFwd, quadCenter - cameraPos);
+	float dist = dot(cameraFwd, quadCenter - cameraPos);
 #else
-	float distance = distance(cameraPos, quadCenter);
+	float dist = distance(cameraPos, quadCenter);
 #endif
 
-	distance = clamp((distance - cameraNearFar.x) / (cameraNearFar.y - cameraNearFar.x), 0.0, 1.0);
+	dist = clamp((distance - cameraNearFar.x) / (cameraNearFar.y - cameraNearFar.x), 0.0, 1.0);
 	
-	uint key = uint(0xFFFFFFu * distances); // save in 24 bit depth format
+	uint key = uint(0xFFFFFFu * dist); // save in 24 bit depth format
 	key |= uint(drawOrder << 24u); // add drawOrder as MSB of UINT
-	keysOut[quadIdx] = key;
+	keysOut[quadIdx] = 0xFFFFFFFFu - key;
 	valsOut[quadIdx] = quadIdx;
 #endif
 }
