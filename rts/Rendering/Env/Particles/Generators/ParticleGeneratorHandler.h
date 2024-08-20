@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Rendering/GL/VBO.h"
+#include "Rendering/GL/VAO.h"
 
 // Weapon Projectiles
 #include "BeamLaserParticleGenerator.h"
@@ -35,6 +36,7 @@ public:
 	void Init();
 	void Kill();
 	void GenerateAll();
+	void RenderAll();
 
 	template<typename PGT>
 	auto& GetGenerator() {
@@ -79,6 +81,8 @@ private:
 	VBO keysOutVBO;
 	VBO valsOutVBO;
 	VBO histVBO;
+
+	VAO vao;
 
 	Shader::IProgramObject* indirParamsShader;
 	Shader::IProgramObject* keyValShader;

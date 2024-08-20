@@ -38,6 +38,27 @@ struct AttributeDef {
 	uint8_t normalize;
 };
 
+template<typename T>
+struct VA_UTILS {
+	static void BindVertexAtrribs() {
+		for (const AttributeDef& ad : T::attributeDefs) {
+			glEnableVertexAttribArray(ad.index);
+			glVertexAttribDivisor(ad.index, 0);
+
+			if (ad.type == GL_FLOAT || ad.normalize)
+				glVertexAttribPointer(ad.index, ad.count, ad.type, ad.normalize, ad.stride, ad.data);
+			else //assume int types
+				glVertexAttribIPointer(ad.index, ad.count, ad.type, ad.stride, ad.data);
+		}
+	}
+	static void UnbindVertexAtrribs() {
+		for (const AttributeDef& ad : T::attributeDefs) {
+			glDisableVertexAttribArray(ad.index);
+			glVertexAttribDivisor(ad.index, 0);
+		}
+	}
+};
+
 struct VA_TYPE_0 {
 	using MY_VA_TYPE = VA_TYPE_0;
 	float3 pos;
@@ -57,6 +78,9 @@ struct VA_TYPE_0 {
 		v.pos *= t;
 		return v;
 	}
+
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
 
 	static std::array<AttributeDef, 1> attributeDefs;
 };
@@ -85,6 +109,9 @@ struct VA_TYPE_N {
 		return v;
 	}
 
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
+
 	static std::array<AttributeDef, 2> attributeDefs;
 };
 struct VA_TYPE_C {
@@ -110,6 +137,9 @@ struct VA_TYPE_C {
 		v.c *= t;
 		return v;
 	}
+
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
@@ -140,6 +170,9 @@ struct VA_TYPE_T {
 		return v;
 	}
 
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
+
 	static std::array<AttributeDef, 2> attributeDefs;
 };
 struct VA_TYPE_T4 {
@@ -165,6 +198,9 @@ struct VA_TYPE_T4 {
 		v.uv *= t;
 		return v;
 	}
+
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
@@ -199,6 +235,9 @@ struct VA_TYPE_TN {
 		return v;
 	}
 
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
+
 	static std::array<AttributeDef, 3> attributeDefs;
 };
 struct VA_TYPE_TC {
@@ -231,6 +270,9 @@ struct VA_TYPE_TC {
 		v.c *= t;
 		return v;
 	}
+
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
 
 	static std::array<AttributeDef, 3> attributeDefs;
 };
@@ -269,6 +311,9 @@ struct VA_TYPE_PROJ {
 		v.c *= t;
 		return v;
 	}
+
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
 
 	static std::array<AttributeDef, 5> attributeDefs;
 };
@@ -311,6 +356,9 @@ struct VA_TYPE_TNT {
 		return v;
 	}
 
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
+
 	static std::array<AttributeDef, 5> attributeDefs;
 };
 struct VA_TYPE_2D0 {
@@ -335,6 +383,9 @@ struct VA_TYPE_2D0 {
 		v.y *= t;
 		return v;
 	}
+
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
 
 	static std::array<AttributeDef, 1> attributeDefs;
 };
@@ -364,6 +415,9 @@ struct VA_TYPE_2DC {
 		v.c *= t;
 		return v;
 	}
+
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
@@ -396,6 +450,9 @@ struct VA_TYPE_2DT {
 		v.t *= t;
 		return v;
 	}
+
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
 
 	static std::array<AttributeDef, 2> attributeDefs;
 };
@@ -433,8 +490,12 @@ struct VA_TYPE_2DTC {
 		return v;
 	}
 
+	static void BindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::BindVertexAtrribs(); }
+	static void UnbindVertexAtrribs() { VA_UTILS<MY_VA_TYPE>::UnbindVertexAtrribs(); }
+
 	static std::array<AttributeDef, 3> attributeDefs;
 };
+
 
 // number of elements (bytes / sizeof(float)) per vertex
 constexpr size_t VA_SIZE_0    = (sizeof(VA_TYPE_0) / sizeof(float));

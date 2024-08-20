@@ -219,13 +219,26 @@ void ParticleGeneratorHandler::Kill()
 
 void ParticleGeneratorHandler::ReallocateBuffersPre()
 {
+	bool reInitVAO = (vertVBO.GetIdRaw() == 0 || indcVBO.GetIdRaw() == 0);
 	{
 		auto bindingToken = vertVBO.BindScoped();
-		vertVBO.ReallocToFit(4 * numQuads * sizeof(VA_TYPE_PROJ));
+		reInitVAO |= vertVBO.ReallocToFit(4 * numQuads * sizeof(VA_TYPE_PROJ));
 	}
 	{
 		auto bindingToken = indcVBO.BindScoped();
-		indcVBO.ReallocToFit(6 * numQuads * sizeof(uint32_t));
+		reInitVAO |= indcVBO.ReallocToFit(6 * numQuads * sizeof(uint32_t));
+	}
+
+	if (reInitVAO) {
+		vao.Bind();
+		vertVBO.Bind(GL_ARRAY_BUFFER);
+		indcVBO.Bind(GL_ELEMENT_ARRAY_BUFFER);
+		VA_TYPE_PROJ::BindVertexAtrribs();
+
+		vao.Unbind();
+		vertVBO.Unbind(); vertVBO.SetCurrTargetRaw(GL_SHADER_STORAGE_BUFFER);
+		indcVBO.Unbind(); indcVBO.SetCurrTargetRaw(GL_SHADER_STORAGE_BUFFER);
+		VA_TYPE_PROJ::UnbindVertexAtrribs();
 	}
 }
 
@@ -450,5 +463,10 @@ void ParticleGeneratorHandler::GenerateAll()
 		}
 	}
 #endif
+}
+
+void ParticleGeneratorHandler::RenderAll()
+{
+
 }
 
