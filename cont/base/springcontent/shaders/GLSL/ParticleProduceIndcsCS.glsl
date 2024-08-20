@@ -18,7 +18,7 @@ layout(std430, binding = IDCS_SSBO_BINDING_IDX) writeonly restrict buffer OUT2
 
 shared uint indcsArraySize;
 shared uint totalNumElems;
-shared uint localNumOutOfB;
+//shared uint localNumOutOfB;
 
 layout(local_size_x = WORKGROUP_SIZE) in;
 void main()
@@ -30,7 +30,7 @@ void main()
 			indcsArraySize = 6u * GET_NUM_ELEMS;
 		#endif
 		totalNumElems = atomicCounters[SIZE_SSBO_NUM_ELEM];
-		localNumOutOfB = 0u;
+		//localNumOutOfB = 0u;
 	}
 
 	barrier();
@@ -80,5 +80,5 @@ void main()
 	barrier();
     memoryBarrierShared();
 	
-	atomicAdd(atomicCounters[SIZE_SSBO_OOBC_IDX], localNumOutOfB);
+	//atomicAdd(atomicCounters[SIZE_SSBO_OOBC_IDX], localNumOutOfB);
 }
