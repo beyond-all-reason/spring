@@ -273,14 +273,14 @@ void ParticleGeneratorHandler::ReallocateBuffersPost()
 		valsOutVBO.ReallocToFit(allocSize);
 	}
 	{
+		// guesswork and experiments on RTX 3060
 		static constexpr uint32_t OPTIMAL_NUM_WG = 64u;
 
 		const uint32_t numKeyData = 4u * numQuads;
 		const uint32_t elemsPerWorkGroup = (numKeyData + ParticleGeneratorDefs::WORKGROUP_SIZE - 1) / ParticleGeneratorDefs::WORKGROUP_SIZE;
 		sortElemsPerThread = (elemsPerWorkGroup + OPTIMAL_NUM_WG - 1) / OPTIMAL_NUM_WG;
 		sortElemsPerThread = 1 << static_cast<uint32_t>(std::round(std::log2(sortElemsPerThread)));
-		sortElemsPerThread = std::clamp(sortElemsPerThread, 1, 32);
-		sortElemsPerThread = 32;
+		sortElemsPerThread = std::clamp(sortElemsPerThread, 1, 32); // sortElemsPerThread > 32 usually makes no sense in tests
 
 		const uint32_t elemsPerWorkGroupExt = ParticleGeneratorDefs::WORKGROUP_SIZE * sortElemsPerThread;
 		sortHistNumWorkGroups = (numKeyData + elemsPerWorkGroupExt - 1) / elemsPerWorkGroupExt;
