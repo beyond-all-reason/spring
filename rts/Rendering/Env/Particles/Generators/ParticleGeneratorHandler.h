@@ -20,6 +20,7 @@
 #include "TorpedoParticleGenerator.h"
 // CEG Classes
 #include "BitmapMuzzleFlameParticleGenerator.h"
+#include "BubbleParticleGenerator.h"
 
 namespace Shader {
 	struct IProgramObject;
@@ -65,7 +66,8 @@ private:
 		std::unique_ptr<StarburstParticleGenerator>,
 		std::unique_ptr<TorpedoParticleGenerator>,
 		// CEG classes
-		std::unique_ptr<BitmapMuzzleFlameParticleGenerator>
+		std::unique_ptr<BitmapMuzzleFlameParticleGenerator>,
+		std::unique_ptr<BubbleParticleGenerator>
 	> generators;
 
 	int32_t numQuads;

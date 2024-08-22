@@ -19,6 +19,7 @@ public:
 		float sizeExpansion,
 		float alpha
 	);
+	~CBubbleProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -33,6 +34,8 @@ private:
 	float size;
 	float startSize;
 	float sizeExpansion;
+
+	size_t pgOffset;
 };
 
 #endif // _BUBBLE_PROJECTILE_H
