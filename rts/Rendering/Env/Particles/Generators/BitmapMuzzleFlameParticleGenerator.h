@@ -3,7 +3,7 @@
 #include "ParticleGenerator.h"
 
 //no regular Update() needed
-struct alignas(16) BitmapMuzzleFlameData {
+struct BitmapMuzzleFlameData {
 	float3 pos;
 	int32_t ttl;
 
@@ -40,7 +40,7 @@ struct alignas(16) BitmapMuzzleFlameData {
 	}
 };
 
-static_assert(sizeof(BeamLaserData) % 16 == 0);
+static_assert(sizeof(BitmapMuzzleFlameData) % 16 == 0);
 
 class BitmapMuzzleFlameParticleGenerator : public ParticleGenerator<BitmapMuzzleFlameData, BitmapMuzzleFlameParticleGenerator> {
 public:

@@ -3,7 +3,7 @@
 #include "ParticleGenerator.h"
 
 // needs Update()
-struct alignas(16) LightningData {
+struct LightningData {
 	float3 startPos;
 	float thickness;
 

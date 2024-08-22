@@ -3,7 +3,7 @@
 #include "ParticleGenerator.h"
 
 //no regular Update() needed
-struct alignas(16) EmgParticleData {
+struct EmgParticleData {
 	float3 pos;
 	float radius;
 

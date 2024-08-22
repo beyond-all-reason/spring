@@ -8,6 +8,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "System/creg/DefTypes.h"
@@ -50,6 +51,12 @@ CBitmapMuzzleFlame::CBitmapMuzzleFlame()
 	deleteMe  = false;
 }
 
+CBitmapMuzzleFlame::~CBitmapMuzzleFlame()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
+	pg.Del(pgOffset);
+}
+
 void CBitmapMuzzleFlame::Serialize(creg::ISerializer* s)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -68,6 +75,7 @@ void CBitmapMuzzleFlame::Serialize(creg::ISerializer* s)
 
 void CBitmapMuzzleFlame::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateRotation();
 	UpdateAnimParams();
@@ -133,12 +141,25 @@ void CBitmapMuzzleFlame::Draw()
 			{ fpos + bounds[11], frontTexture->xstart, frontTexture->yend , col }
 		);
 	}
+	*/
 }
 
 void CBitmapMuzzleFlame::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe |= ((ttl--) == 0);
+
+	const float life = (gs->frameNum - createFrame) * invttl;
+	auto [col0, col1, edge0, edge1] = colorMap->GetColorsPair(life);
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
+
+	const auto [token, data] = pg.Get(pgOffset);
+	data->pos = pos;
+	data->ttl = ttl;
+	data->col0 = col0;
+	data->col1 = col1;
+	data->edge0 = edge0;
+	data->edge1 = edge1;
 }
 
 void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
@@ -147,6 +168,29 @@ void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 	CProjectile::Init(owner, offset);
 
 	invttl = 1.0f / ttl;
+
+	auto [col0, col1, edge0, edge1] = colorMap->GetColorsPair();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.ttl = ttl,
+		.dir = dir,
+		.createFrame = createFrame,
+		.rotParams = rotParams,
+		.drawOrder = drawOrder,
+		.animParams = animParams,
+		.sizeGrowth = sizeGrowth,
+		.size = size,
+		.length = length,
+		.frontOffset = frontOffset,
+		.col0 = col0,
+		.col1 = col1,
+		.edge0 = edge0,
+		.edge1 = edge1,
+		.sideTexture = *sideTexture,
+		.frontTexture = *frontTexture
+	});
 
 	SetDrawRadius(std::max(size, length));
 }

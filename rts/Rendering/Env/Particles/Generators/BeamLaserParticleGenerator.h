@@ -3,7 +3,7 @@
 #include "ParticleGenerator.h"
 
 //no regular Update() needed
-struct alignas(16) BeamLaserData {
+struct BeamLaserData {
 	float3 startPos;
 	SColor coreColStart;
 

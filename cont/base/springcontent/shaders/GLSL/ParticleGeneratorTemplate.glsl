@@ -1,7 +1,7 @@
 #version 430 core
 
 uniform ivec2 arraySizes;
-uniform vec3 frameInfo;
+uniform vec3 frameInfo; // gs->frameNum, globalRendering->timeOffset, gu->modGameTime
 
 uniform mat4 camDirPos; // not a matrix, but convinient collection of xDir, yDir, zDir, Pos vectors
 uniform vec4 frustumPlanes[6];
@@ -81,6 +81,47 @@ vec3 Rotate(vec2 sc, vec3 axis, vec3 input) {
 	//Rodrigues' rotation formula
 	return input * sc.y + cross(axis, input) * sc.x + axis * dot(axis, input) * (1.0 - sc.y);
 }
+
+vec3 Rotate(float angle, vec3 axis, vec3 input) {
+	vec2 sc = vec2(sin(angle), cos(angle));
+	return Rotate(sc, axis, input);
+}
+
+float GetCurrentRotation(vec3 rotationParameters, float currTime) {
+	// rotationParameters.y is acceleration in angle per frame^2
+	float rotVel = rotationParameters.x + rotationParameters.y * currTime;
+	float rotVal = rotationParameters.z + rotVel               * currTime;
+
+	return rotVal;
+}
+
+float GetCurrentAnimation(vec3 animationParameters, float currTime) {
+	if (animationParameters.x <= 1.0 && animationParameters.y <= 1.0)
+		return 0.0;
+
+	float animProgress;
+	float animSpeed = abs(animationParameters.z);
+	if (animationParameters.z < 0.0) {
+		animProgress = 1.0 - abs(mod(currTime, 2.0 * animSpeed) / animSpeed - 1.0);
+	} else {
+		animProgress = mod(currTime, animSpeed) / animSpeed;
+	}
+
+	return animProgress;
+}
+
+vec4 GetCurrentColor(vec4 unpackedColorEdge0, vec4 unpackedColorEdge1, float lifeEdge0, float lifeEdge1, float currTime) {
+	float colMixRate = clamp((lifeEdge1 - currTime)/(lifeEdge1 - lifeEdge0), 0.0, 1.0);
+	return mix(unpackedColorEdge0, unpackedColorEdge1, colMixRate);
+}
+
+vec4 GetCurrentColor(uint colorEdge0, uint colorEdge1, float lifeEdge0, float lifeEdge1, float currTime) {
+	vec4 unpackedColorEdge0 = GetPackedColor(colorEdge0);
+	vec4 unpackedColorEdge1 = GetPackedColor(colorEdge1);
+
+	return GetCurrentColor(unpackedColorEdge0, unpackedColorEdge1, lifeEdge0, lifeEdge1, currTime);
+}
+
 
 bool SphereInView(vec4 posRad) {
 	for (uint i = 0u; i < 6u; ++i) {
@@ -197,6 +238,25 @@ void AddEffectsQuad(
 		trPos, trUV, quadColor,
 		brPos, brUV, quadColor,
 		blPos, blUV, quadColor
+	);
+}
+
+void AddEffectsQuad(
+	vec3 animPrms,
+	vec3 tlPos,
+	vec3 trPos,
+	vec3 brPos,
+	vec3 blPos,
+	vec4 texCrds,
+	vec4 quadColor
+) {
+	// TODO write optimized code
+	AddEffectsQuad(
+		animPrms,
+		tlPos, texCrds.xy, quadColor,
+		trPos, texCrds.zy, quadColor,
+		brPos, texCrds.zw, quadColor,
+		blPos, texCrds.xw, quadColor
 	);
 }
 

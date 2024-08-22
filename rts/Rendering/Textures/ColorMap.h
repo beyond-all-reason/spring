@@ -38,6 +38,7 @@ public:
 	 * @param color buffer with room for 4 bytes
 	 * @param pos value between 0.0f and 1.0f, returns pointer to color
 	 */
+	std::tuple<SColor, SColor, float, float> GetColorsPair(float pos = 0.0f) const;
 	void GetColor(unsigned char* color, float pos);
 	const SColor& GetColor(size_t idx) const { return map[idx]; }
 	float GetColorPos(size_t idx) const;

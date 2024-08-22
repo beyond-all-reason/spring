@@ -168,6 +168,16 @@ void CColorMap::LoadMap(const unsigned char* buf, int num)
 	std::memcpy(&map[0], buf, num * 4);
 }
 
+std::tuple<SColor, SColor, float, float> CColorMap::GetColorsPair(float pos) const
+{
+	auto [i0, i1] = GetIndices(pos);
+	auto& color0 = GetColor(i0);
+	auto& color1 = GetColor(i1);
+	auto colEdge0 = GetColorPos(i0);
+	auto colEdge1 = GetColorPos(i1);
+	return std::make_tuple(color0, color1, colEdge0, colEdge1);
+}
+
 void CColorMap::GetColor(unsigned char* color, float pos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;

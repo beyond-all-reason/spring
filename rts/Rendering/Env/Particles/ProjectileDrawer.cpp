@@ -378,7 +378,7 @@ void CProjectileDrawer::UpdateDrawFlags()
 			continue;
 
 		auto hasModel = (&rp == &renderProjectiles[true]);
-		for_mt(0, rp.size(), [&rp, hasModel](int i) {
+		for (int i = 0; i < rp.size(); i++) {
 			CProjectile* p = rp[i];
 			assert((p->model != nullptr) == hasModel);
 
@@ -410,28 +410,28 @@ void CProjectileDrawer::UpdateDrawFlags()
 
 				switch (camType)
 				{
-					case CCamera::CAMTYPE_PLAYER: {
-						if (hasModel)
-							p->AddDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
-						else
-							p->AddDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
+				case CCamera::CAMTYPE_PLAYER: {
+					if (hasModel)
+						p->AddDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
+					else
+						p->AddDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
 
-						if (p->drawPos.y - p->GetDrawRadius() < 0.0f)
-							p->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
-					} break;
-					case CCamera::CAMTYPE_UWREFL: {
-						if (CModelDrawerHelper::ObjectVisibleReflection(p->drawPos, cam->GetPos(), p->GetDrawRadius()))
-							p->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
-					} break;
-					case CCamera::CAMTYPE_SHADOW: {
-						if (p->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
-							p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-						else if (p->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
-							p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
-					} break;
+					if (p->drawPos.y - p->GetDrawRadius() < 0.0f)
+						p->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
+				} break;
+				case CCamera::CAMTYPE_UWREFL: {
+					if (CModelDrawerHelper::ObjectVisibleReflection(p->drawPos, cam->GetPos(), p->GetDrawRadius()))
+						p->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
+				} break;
+				case CCamera::CAMTYPE_SHADOW: {
+					if (p->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
+						p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
+					else if (p->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+						p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+				} break;
 				}
 			}
-		});
+		}
 	}
 }
 
