@@ -41,7 +41,9 @@ void main()
 		return;
 
 	#ifdef PROCESS_TRIANGLES
-	uint triIndex = 4u * (valsIn[elemIdx] >> 1u);
+	uint triaNum = valsIn[elemIdx];
+	uint quadNum = (triaNum >> 1u);
+	uint vrtIndex = 4u * quadNum;
 	uint idxIndex = 3u * elemIdx;
 
 /*
@@ -50,31 +52,32 @@ void main()
 		return;
 	}
 */
-	if (elemIdx % 2u == 1u) {
-		indicesData[idxIndex++] = triIndex + 3u;
-		indicesData[idxIndex++] = triIndex + 0u;
-		indicesData[idxIndex  ] = triIndex + 1u;
+	if (triaNum % 2u == 1u) {
+		indicesData[idxIndex++] = vrtIndex + 3u;
+		indicesData[idxIndex++] = vrtIndex + 0u;
+		indicesData[idxIndex  ] = vrtIndex + 1u;
 	} else {
-		indicesData[idxIndex++] = triIndex + 3u;
-		indicesData[idxIndex++] = triIndex + 1u;
-		indicesData[idxIndex  ] = triIndex + 2u;
+		indicesData[idxIndex++] = vrtIndex + 3u;
+		indicesData[idxIndex++] = vrtIndex + 1u;
+		indicesData[idxIndex  ] = vrtIndex + 2u;
 	}
 	#else
-	uint triIndex = 4u * valsIn[elemIdx];
-	uint idxIndex = 3u * elemIdx;
+	uint quadNum = valsIn[elemIdx];
+	uint vrtIndex = 4u * quadNum;
+	uint idxIndex = 6u * elemIdx;
 /*
 	if (idxIndex + 6u >= indcsArraySize) {
 		atomicAdd(localNumOutOfB, 1u);
 		return;
 	}
 */
-	indicesData[idxIndex++] = triIndex + 3u;
-	indicesData[idxIndex++] = triIndex + 0u;
-	indicesData[idxIndex++] = triIndex + 1u;
+	indicesData[idxIndex++] = vrtIndex + 3u;
+	indicesData[idxIndex++] = vrtIndex + 0u;
+	indicesData[idxIndex++] = vrtIndex + 1u;
 
-	indicesData[idxIndex++] = triIndex + 3u;
-	indicesData[idxIndex++] = triIndex + 1u;
-	indicesData[idxIndex  ] = triIndex + 2u;
+	indicesData[idxIndex++] = vrtIndex + 3u;
+	indicesData[idxIndex++] = vrtIndex + 1u;
+	indicesData[idxIndex  ] = vrtIndex + 2u;
 	#endif
 	
 	barrier();

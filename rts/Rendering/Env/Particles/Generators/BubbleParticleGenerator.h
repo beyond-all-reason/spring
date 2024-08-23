@@ -20,7 +20,7 @@ struct BubbleParticleData {
 };
 static_assert(sizeof(BubbleParticleData) % 16 == 0);
 
-class BubbleParticleGenerator : public ParticleGenerator<BubbleParticleData, BubbleParticleData> {
+class BubbleParticleGenerator : public ParticleGenerator<BubbleParticleData, BubbleParticleGenerator> {
 public:
 	BubbleParticleGenerator() {}
 	~BubbleParticleGenerator() override {}

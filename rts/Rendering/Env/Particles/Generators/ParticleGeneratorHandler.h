@@ -28,6 +28,13 @@ namespace Shader {
 
 class ParticleGeneratorHandler {
 public:
+	struct ParticleGeneratorStats {
+		uint32_t totalQuads;
+		uint32_t totalElems;
+		uint32_t culledQuads;
+		uint32_t oobQuads;
+	};
+public:
 	ParticleGeneratorHandler() = default;
 	ParticleGeneratorHandler(ParticleGeneratorHandler&&) = delete;
 	ParticleGeneratorHandler(const ParticleGeneratorHandler&) = delete;
@@ -38,6 +45,8 @@ public:
 	void Kill();
 	void GenerateAll();
 	void RenderAll();
+
+	const auto& GetStats() const { return pgs; }
 
 	template<typename PGT>
 	auto& GetGenerator() {
@@ -51,6 +60,7 @@ public:
 private:
 	void ReallocateBuffersPre();
 	void ReallocateBuffersPost();
+	void AsyncUpdateStatistics();
 private:
 	std::tuple<
 		// Weapon Projectiles
@@ -84,7 +94,13 @@ private:
 	VBO valsOutVBO;
 	VBO histVBO;
 
+	VBO statVBO;
+
 	VAO vao;
+
+	GLsync statSync{};
+
+	ParticleGeneratorStats pgs;
 
 	Shader::IProgramObject* indirParamsShader;
 	Shader::IProgramObject* keyValShader;

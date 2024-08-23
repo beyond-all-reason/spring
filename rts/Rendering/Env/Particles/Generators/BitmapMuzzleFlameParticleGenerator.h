@@ -5,7 +5,7 @@
 //no regular Update() needed
 struct BitmapMuzzleFlameData {
 	float3 pos;
-	int32_t ttl;
+	float invttl;
 
 	float3 dir;
 	int32_t createFrame;

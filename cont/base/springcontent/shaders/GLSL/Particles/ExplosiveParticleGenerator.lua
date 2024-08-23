@@ -22,7 +22,7 @@ struct InputData {
 #define color0     dataIn[gl_GlobalInvocationID.x].info2.x
 #define color1     dataIn[gl_GlobalInvocationID.x].info2.y
 #define numStages  dataIn[gl_GlobalInvocationID.x].info2.z
-#define noGap      dataIn[gl_GlobalInvocationID.x].info2.w
+#define noGap      floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info2.w)
 
 #define animParams dataIn[gl_GlobalInvocationID.x].info3.xyz
 #define alphaDecay dataIn[gl_GlobalInvocationID.x].info3.w
@@ -73,10 +73,11 @@ struct InputData {
 
 		AddEffectsQuad(
 			animParams,
-			stagePos - xdirCam - ydirCam, texCoord.xy,
-			stagePos + xdirCam - ydirCam, texCoord.zy,
-			stagePos + xdirCam + ydirCam, texCoord.zw,
-			stagePos - xdirCam + ydirCam, texCoord.xw,
+			stagePos - xdirCam - ydirCam,
+			stagePos + xdirCam - ydirCam,
+			stagePos + xdirCam + ydirCam,
+			stagePos - xdirCam + ydirCam,
+			texCoord,
 			col
 		);
 	}

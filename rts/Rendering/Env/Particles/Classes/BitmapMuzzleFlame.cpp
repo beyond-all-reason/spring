@@ -155,7 +155,6 @@ void CBitmapMuzzleFlame::Update()
 
 	const auto [token, data] = pg.Get(pgOffset);
 	data->pos = pos;
-	data->ttl = ttl;
 	data->col0 = col0;
 	data->col1 = col1;
 	data->edge0 = edge0;
@@ -174,7 +173,7 @@ void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
 	pgOffset = pg.Add({
 		.pos = pos,
-		.ttl = ttl,
+		.invttl = invttl,
 		.dir = dir,
 		.createFrame = createFrame,
 		.rotParams = rotParams,

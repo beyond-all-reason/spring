@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <atomic>
+#include <type_traits>
 
 #include <fmt/format.h>
 #include <fmt/printf.h>
@@ -52,6 +53,11 @@ template<typename ParticleDataType, typename ParticleGenType>
 class ParticleGenerator {
 public:
 	using MyType = ParticleGenerator<ParticleDataType, ParticleGenType>;
+
+	// some protection from silly typos
+	static_assert(std::is_member_function_pointer_v<decltype(&ParticleDataType::Invalidate)>);
+	static_assert(std::is_member_function_pointer_v<decltype(&ParticleDataType::GetMaxNumQuads)>);
+	static_assert(!std::is_same_v<ParticleDataType, ParticleGenType>);
 
 	class UpdateToken {
 	public:

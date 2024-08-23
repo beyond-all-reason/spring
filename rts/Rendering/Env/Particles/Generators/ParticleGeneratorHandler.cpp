@@ -76,6 +76,11 @@ void ParticleGeneratorHandler::Init()
 	cntrVBO.New(ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEMENTS * sizeof(uint32_t), GL_STREAM_COPY);
 	cntrVBO.Unbind();
 
+	statVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
+	statVBO.Bind();
+	statVBO.New(ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEMENTS * sizeof(uint32_t), GL_DYNAMIC_COPY);
+	statVBO.Unbind();
+
 	histVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
 	histVBO.SetUsage(GL_STREAM_COPY);
 
@@ -276,7 +281,7 @@ void ParticleGeneratorHandler::ReallocateBuffersPost()
 		// guesswork and experiments on RTX 3060
 		static constexpr uint32_t OPTIMAL_NUM_WG = 64u;
 
-		const uint32_t numKeyData = 4u * numQuads;
+		const uint32_t numKeyData = (1 + PROCESS_TRIANGLES) * numQuads;
 		const uint32_t elemsPerWorkGroup = (numKeyData + ParticleGeneratorDefs::WORKGROUP_SIZE - 1) / ParticleGeneratorDefs::WORKGROUP_SIZE;
 		sortElemsPerThread = (elemsPerWorkGroup + OPTIMAL_NUM_WG - 1) / OPTIMAL_NUM_WG;
 		sortElemsPerThread = 1 << static_cast<uint32_t>(std::round(std::log2(sortElemsPerThread)));
@@ -288,6 +293,34 @@ void ParticleGeneratorHandler::ReallocateBuffersPost()
 
 		auto bindingToken = histVBO.BindScoped();
 		histVBO.ReallocToFit(histElemCount * sizeof(uint32_t));
+	}
+}
+
+void ParticleGeneratorHandler::AsyncUpdateStatistics()
+{
+	GLenum waitReturn = GL_WAIT_FAILED;
+	if (glIsSync(statSync))
+		waitReturn = glClientWaitSync(statSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+
+	if (waitReturn == GL_ALREADY_SIGNALED || waitReturn == GL_CONDITION_SATISFIED) {
+		auto bindingToken = statVBO.BindScoped();
+		std::array<uint32_t, ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEMENTS> tmpStats;
+		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, tmpStats.size() * sizeof(uint32_t), tmpStats.data());
+		pgs.totalQuads  = tmpStats[ParticleGeneratorDefs::SIZE_SSBO_QUAD_IDX];
+		pgs.totalElems  = tmpStats[ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEM];
+		pgs.oobQuads    = tmpStats[ParticleGeneratorDefs::SIZE_SSBO_OOBC_IDX];
+		pgs.culledQuads = tmpStats[ParticleGeneratorDefs::SIZE_SSBO_CULL_IDX];
+		glDeleteSync(statSync);
+		statSync = {};
+		waitReturn = GL_WAIT_FAILED;
+	}
+	if (waitReturn == GL_WAIT_FAILED) {
+		cntrVBO.Bind(GL_COPY_READ_BUFFER);
+		statVBO.Bind(GL_COPY_WRITE_BUFFER);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, statVBO.GetSize());
+		statSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+		cntrVBO.Unbind(); cntrVBO.SetCurrTargetRaw(GL_SHADER_STORAGE_BUFFER);
+		statVBO.Unbind(); statVBO.SetCurrTargetRaw(GL_SHADER_STORAGE_BUFFER);
 	}
 }
 
@@ -337,8 +370,13 @@ void ParticleGeneratorHandler::GenerateAll()
 		indirParamsShader->SetUniform("sortElemsPerThread", sortElemsPerThread);
 
 		glDispatchCompute(1, 1, 1);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
+
+	AsyncUpdateStatistics(); // cntrVBO is fully correct here
+
+//#define DEBUG_PARTICLES_DATA
+#ifdef DEBUG_PARTICLES_DATA
 	{
 		// Debug
 		cntrVBO.Bind();
@@ -351,7 +389,9 @@ void ParticleGeneratorHandler::GenerateAll()
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * indir.size(), indir.data());
 		indrVBO.Unbind();
 	}
+#endif
 
+	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 	// keep indirect draw buffer manually bound
 	indrVBO.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
@@ -376,6 +416,7 @@ void ParticleGeneratorHandler::GenerateAll()
 #endif
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+#ifdef DEBUG_PARTICLES_DATA
 		// Debug
 		keysInVBO.Bind();
 		std::vector<uint32_t> keys(numQuads * (1 + PROCESS_TRIANGLES));
@@ -386,6 +427,7 @@ void ParticleGeneratorHandler::GenerateAll()
 		std::vector<uint32_t> vals(numQuads * (1 + PROCESS_TRIANGLES));
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * vals.size(), vals.data());
 		valsInVBO.Unbind();
+#endif
 	}
 	// radix sorting
 	std::array<VBO*, 2> outBufs;
@@ -424,6 +466,7 @@ void ParticleGeneratorHandler::GenerateAll()
 			std::swap(valsInVBO, valsOutVBO);
 		}
 	}
+#ifdef DEBUG_PARTICLES_DATA
 	{
 		// Debug
 		outBufs[0]->Bind();
@@ -436,7 +479,7 @@ void ParticleGeneratorHandler::GenerateAll()
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t)* vals.size(), vals.data());
 		outBufs[1]->Unbind();
 	}
-
+#endif
 	{
 		auto bindingToken1 = outBufs[1]->BindBufferRangeScoped(IndicesProducerStorageBindings::VALI_SSBO_BINDING_IDX);
 		auto bindingToken2 = indcVBO.BindBufferRangeScoped(IndicesProducerStorageBindings::IDCS_SSBO_BINDING_IDX);
@@ -447,7 +490,7 @@ void ParticleGeneratorHandler::GenerateAll()
 		glDispatchComputeIndirect(static_cast<GLintptr>(IndirectBufferIndices::KVAL_SSBO_INDRCT_X * sizeof(int32_t)));
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
-
+#ifdef DEBUG_PARTICLES_DATA
 	{
 		// Debug
 		indcVBO.Bind();
@@ -455,12 +498,13 @@ void ParticleGeneratorHandler::GenerateAll()
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * indcs.size(), indcs.data());
 		indcVBO.Unbind();
 	}
+#endif
 
 	// Unbind manually
 	indrVBO.Unbind();
 	indrVBO.SetCurrTargetRaw(GL_SHADER_STORAGE_BUFFER); //reset so it can be bound to a slot in the shader
 
-#if 1
+#ifdef DEBUG_PARTICLES_DATA
 	{
 		// Debug
 		cntrVBO.Bind();
@@ -485,8 +529,15 @@ void ParticleGeneratorHandler::GenerateAll()
 
 void ParticleGeneratorHandler::RenderAll()
 {
+	SCOPED_TIMER("ParticleGeneratorHandler::RenderAll");
+
 	if (numQuads == 0)
 		return;
+
+	glMemoryBarrier(
+		GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT |
+		GL_ELEMENT_ARRAY_BARRIER_BIT
+	);
 
 	indrVBO.Bind(GL_DRAW_INDIRECT_BUFFER);
 	vao.Bind();

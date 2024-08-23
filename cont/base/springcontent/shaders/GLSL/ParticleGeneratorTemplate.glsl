@@ -144,6 +144,7 @@ void AddEffectsQuad(
 	vec3 blPos, vec2 blUV, vec4 blCol
 ) {
 
+//#undef FRUSTUM_CULLING
 #ifdef FRUSTUM_CULLING
 {
 	vec3 m = min(tlPos, min(trPos, min(brPos, blPos)));
