@@ -21,6 +21,7 @@ public:
 		float alpha,
 		float alphaDecay
 	);
+	~CExploSpikeProjectile() override;
 
 	void Draw() override;
 	void Update() override;
@@ -41,6 +42,8 @@ private:
 	float alphaDecay;
 	float lengthGrowth;
 	float3 color;
+
+	size_t pgOffset;
 };
 
 #endif // EXPLO_SPIKE_PROJECTILE_H

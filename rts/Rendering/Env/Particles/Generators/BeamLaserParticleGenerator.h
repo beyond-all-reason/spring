@@ -44,9 +44,10 @@ struct BeamLaserData {
 static_assert(sizeof(BeamLaserData) % 16 == 0);
 
 class BeamLaserParticleGenerator : public ParticleGenerator<BeamLaserData, BeamLaserParticleGenerator> {
+	friend class ParticleGenerator<BeamLaserData, BeamLaserParticleGenerator>;
 public:
 	BeamLaserParticleGenerator() {}
-	~BeamLaserParticleGenerator() override {}
+	~BeamLaserParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

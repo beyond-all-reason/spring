@@ -43,9 +43,10 @@ struct BitmapMuzzleFlameData {
 static_assert(sizeof(BitmapMuzzleFlameData) % 16 == 0);
 
 class BitmapMuzzleFlameParticleGenerator : public ParticleGenerator<BitmapMuzzleFlameData, BitmapMuzzleFlameParticleGenerator> {
+	friend class ParticleGenerator<BitmapMuzzleFlameData, BitmapMuzzleFlameParticleGenerator>;
 public:
 	BitmapMuzzleFlameParticleGenerator() {}
-	~BitmapMuzzleFlameParticleGenerator() override {}
+	~BitmapMuzzleFlameParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

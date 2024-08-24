@@ -38,9 +38,10 @@ struct StarburstData {
 static_assert(sizeof(StarburstData) % 16 == 0);
 
 class StarburstParticleGenerator : public ParticleGenerator<StarburstData, StarburstParticleGenerator> {
+	friend class ParticleGenerator<StarburstData, StarburstParticleGenerator>;
 public:
 	StarburstParticleGenerator() {}
-	~StarburstParticleGenerator() override {}
+	~StarburstParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

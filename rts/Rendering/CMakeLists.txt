@@ -63,6 +63,8 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/TorpedoParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/BitmapMuzzleFlameParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/BubbleParticleGenerator.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/DirtParticleGenerator.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/ExploSpikeParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/FBO.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/StreamBuffer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/GeometryBuffer.cpp"

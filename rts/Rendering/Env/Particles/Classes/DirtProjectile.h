@@ -22,6 +22,7 @@ public:
 		float slowdown,
 		const float3& color
 	);
+	~CDirtProjectile() override;
 
 	void Serialize(creg::ISerializer* s);
 
@@ -41,6 +42,8 @@ private:
 	float3 color;
 
 	AtlasedTexture* texture;
+
+	size_t pgOffset;
 };
 
 #endif // _DIRT_PROJECTILE_H

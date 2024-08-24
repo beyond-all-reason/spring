@@ -24,9 +24,10 @@ struct TorpedoData {
 static_assert(sizeof(TorpedoData) % 16 == 0);
 
 class TorpedoParticleGenerator : public ParticleGenerator<TorpedoData, TorpedoParticleGenerator> {
+	friend class ParticleGenerator<TorpedoData, TorpedoParticleGenerator>;
 public:
 	TorpedoParticleGenerator() {}
-	~TorpedoParticleGenerator() override {}
+	~TorpedoParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

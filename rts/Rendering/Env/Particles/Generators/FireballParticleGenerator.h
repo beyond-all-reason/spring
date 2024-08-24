@@ -39,9 +39,10 @@ struct FireballData {
 static_assert(sizeof(FireballData) % 16 == 0);
 
 class FireballParticleGenerator : public ParticleGenerator<FireballData, FireballParticleGenerator> {
+	friend class ParticleGenerator<FireballData, FireballParticleGenerator>;
 public:
 	FireballParticleGenerator() {}
-	~FireballParticleGenerator() override {}
+	~FireballParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

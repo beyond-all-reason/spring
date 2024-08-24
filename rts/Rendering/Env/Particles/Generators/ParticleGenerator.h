@@ -90,7 +90,7 @@ public:
 	friend class MyType::UpdateToken;
 
 	ParticleGenerator();
-	virtual ~ParticleGenerator();
+	~ParticleGenerator();
 
 	void Generate(int32_t totalNumQuads);
 
@@ -108,8 +108,6 @@ protected:
 	void UpdateBufferData(); //on GPU
 	void UpdateCommonUniforms(Shader::IProgramObject* shader, int32_t totalNumQuads) const;
 	void RunComputeShader() const;
-
-	virtual bool GenerateCPUImpl() = 0;
 
 	int32_t numQuads;
 
@@ -190,7 +188,7 @@ template<typename ParticleDataType, typename ParticleGenType>
 inline bool ParticleGenerator<ParticleDataType, ParticleGenType>::GenerateCPU()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return GenerateCPUImpl();
+	return static_cast<ParticleGenType*>(this)->GenerateCPUImpl();
 }
 
 template<typename ParticleDataType, typename ParticleGenType>

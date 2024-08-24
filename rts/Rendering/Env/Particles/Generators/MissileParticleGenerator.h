@@ -23,9 +23,10 @@ struct MissileData {
 static_assert(sizeof(MissileData) % 16 == 0);
 
 class MissileParticleGenerator : public ParticleGenerator<MissileData, MissileParticleGenerator> {
+	friend class ParticleGenerator<MissileData, MissileParticleGenerator>;
 public:
 	MissileParticleGenerator() {}
-	~MissileParticleGenerator() override {}
+	~MissileParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

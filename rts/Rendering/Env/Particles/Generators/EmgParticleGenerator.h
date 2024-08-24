@@ -23,9 +23,10 @@ struct EmgParticleData {
 static_assert(sizeof(EmgParticleData) % 16 == 0);
 
 class EmgParticleGenerator : public ParticleGenerator<EmgParticleData, EmgParticleGenerator> {
+	friend class ParticleGenerator<EmgParticleData, EmgParticleGenerator>;
 public:
 	EmgParticleGenerator() {}
-	~EmgParticleGenerator() override {}
+	~EmgParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

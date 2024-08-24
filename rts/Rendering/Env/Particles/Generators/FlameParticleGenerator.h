@@ -28,9 +28,10 @@ struct FlameParticleData {
 static_assert(sizeof(FlameParticleData) % 16 == 0);
 
 class FlameParticleGenerator : public ParticleGenerator<FlameParticleData, FlameParticleGenerator> {
+	friend class ParticleGenerator<FlameParticleData, FlameParticleGenerator>;
 public:
 	FlameParticleGenerator() {}
-	~FlameParticleGenerator() override {}
+	~FlameParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

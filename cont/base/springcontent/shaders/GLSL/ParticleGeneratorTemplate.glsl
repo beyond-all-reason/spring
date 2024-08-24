@@ -3,7 +3,7 @@
 uniform ivec2 arraySizes;
 uniform vec3 frameInfo; // gs->frameNum, globalRendering->timeOffset, gu->modGameTime
 
-uniform mat4 camDirPos; // not a matrix, but convinient collection of xDir, yDir, zDir, Pos vectors
+uniform mat4 camDirPos; // not a matrix, but convinient collection of Pos, xDir, yDir, zDir vectors
 uniform vec4 frustumPlanes[6];
 
 // Placeholer for the struct InputData

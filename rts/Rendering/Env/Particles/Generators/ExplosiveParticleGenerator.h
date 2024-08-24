@@ -35,9 +35,10 @@ struct ExplosiveParticleData {
 static_assert(sizeof(ExplosiveParticleData) % 16 == 0);
 
 class ExplosiveParticleGenerator : public ParticleGenerator<ExplosiveParticleData, ExplosiveParticleGenerator> {
+	friend class ParticleGenerator<ExplosiveParticleData, ExplosiveParticleGenerator>;
 public:
 	ExplosiveParticleGenerator() {}
-	~ExplosiveParticleGenerator() override {}
+	~ExplosiveParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

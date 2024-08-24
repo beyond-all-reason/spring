@@ -30,9 +30,10 @@ struct LightningData {
 static_assert(sizeof(LightningData) % 16 == 0);
 
 class LightningParticleGenerator : public ParticleGenerator<LightningData, LightningParticleGenerator> {
+	friend class ParticleGenerator<LightningData, LightningParticleGenerator>;
 public:
 	LightningParticleGenerator() {}
-	~LightningParticleGenerator() override {}
+	~LightningParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };

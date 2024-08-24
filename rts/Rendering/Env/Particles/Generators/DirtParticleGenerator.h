@@ -2,9 +2,12 @@
 
 #include "ParticleGenerator.h"
 
-struct BubbleParticleData {
+struct DirtParticleData {
 	float3 pos;
 	float alpha;
+
+	float3 speed;
+	SColor color;
 
 	float size;
 	float sizeExpansion;
@@ -18,13 +21,13 @@ struct BubbleParticleData {
 		texCoord = AtlasedTexture::DefaultAtlasTexture;
 	}
 };
-static_assert(sizeof(BubbleParticleData) % 16 == 0);
+static_assert(sizeof(DirtParticleData) % 16 == 0);
 
-class BubbleParticleGenerator : public ParticleGenerator<BubbleParticleData, BubbleParticleGenerator> {
-	friend class ParticleGenerator<BubbleParticleData, BubbleParticleGenerator>;
+class DirtParticleGenerator : public ParticleGenerator<DirtParticleData, DirtParticleGenerator> {
+	friend class ParticleGenerator<DirtParticleData, DirtParticleGenerator>;
 public:
-	BubbleParticleGenerator() {}
-	~BubbleParticleGenerator() {}
+	DirtParticleGenerator() {}
+	~DirtParticleGenerator() {}
 protected:
 	bool GenerateCPUImpl() { return false; }
 };

@@ -39,9 +39,10 @@ struct LaserData {
 static_assert(sizeof(LaserData) % 16 == 0);
 
 class LaserParticleGenerator : public ParticleGenerator<LaserData, LaserParticleGenerator> {
+	friend class ParticleGenerator<LaserData, LaserParticleGenerator>;
 public:
 	LaserParticleGenerator() {}
-	~LaserParticleGenerator() override {}
+	~LaserParticleGenerator() {}
 protected:
-	bool GenerateCPUImpl() override { return false; }
+	bool GenerateCPUImpl() { return false; }
 };
