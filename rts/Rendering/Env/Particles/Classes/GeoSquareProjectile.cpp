@@ -6,6 +6,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -43,6 +44,25 @@ CGeoSquareProjectile::CGeoSquareProjectile(const float3& p1, const float3& p2, c
 	alwaysVisible = true;
 
 	SetRadiusAndHeight(p1.distance(p2) * 0.55f, 0.0f);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<GeoSquareParticleGenerator>();
+	pgOffset = pg.Add({
+		.p1 = p1,
+		.w1 = w1,
+		.p2 = p2,
+		.w2 = w2,
+		.v1 = v1,
+		.drawOrder = drawOrder,
+		.v2 = v2,
+		.color = SColor{r, g, b, 1.0f},
+		.texCoord = *projectileDrawer->geosquaretex
+	});
+}
+
+CGeoSquareProjectile::~CGeoSquareProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<GeoSquareParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 
