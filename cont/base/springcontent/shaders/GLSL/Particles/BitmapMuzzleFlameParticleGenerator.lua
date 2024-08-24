@@ -57,7 +57,6 @@ struct InputData {
 	MainCode =
 [[
 	float currTime = frameInfo.x + frameInfo.y - createFrame;
-	currTime = 4.0;
 
 	float life = currTime * invttl;
 	float rotVal  = GetCurrentRotation(rotParams, life);

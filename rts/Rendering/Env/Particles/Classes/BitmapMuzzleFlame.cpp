@@ -151,10 +151,16 @@ void CBitmapMuzzleFlame::Update()
 
 	const float life = (gs->frameNum - createFrame) * invttl;
 	auto [col0, col1, edge0, edge1] = colorMap->GetColorsPair(life);
-	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
 
+	{
+		const auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
+		if (const auto& d = pg.Get(pgOffset); std::forward_as_tuple(col0, col1, edge0, edge1) == std::forward_as_tuple(d.col0, d.col1, d.edge0, d.edge1))
+			return;
+	}
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
 	const auto [token, data] = pg.Get(pgOffset);
-	data->pos = pos;
+	//data->pos = pos; // doesn't seem to get updated
 	data->col0 = col0;
 	data->col1 = col1;
 	data->edge0 = edge0;

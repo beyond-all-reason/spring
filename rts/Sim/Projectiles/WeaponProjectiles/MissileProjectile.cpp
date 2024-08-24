@@ -101,7 +101,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 
 	u->IncomingMissile(this);
 
-	if (!model)
+	if (model)
 		return;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<MissileParticleGenerator>();
@@ -237,7 +237,7 @@ void CMissileProjectile::Update()
 			SetDirectionAndSpeed(dir, speed.w);
 		}
 
-		explGenHandler.GenExplosion(cegID, pos, dir, ttl, damages->damageAreaOfEffect, 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(cegID, pos + speed.xyz, dir, 0.0f, damages->damageAreaOfEffect, 0.0f, owner(), nullptr);
 	} else {
 		if (weaponDef->selfExplode) {
 			Collision();
@@ -285,7 +285,7 @@ void CMissileProjectile::Update()
 	UpdateInterception();
 	UpdateGroundBounce();
 
-	if (!model)
+	if (model)
 		return;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<MissileParticleGenerator>();
