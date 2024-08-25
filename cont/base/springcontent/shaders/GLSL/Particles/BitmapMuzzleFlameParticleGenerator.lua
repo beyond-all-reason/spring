@@ -59,8 +59,8 @@ struct InputData {
 	float currTime = frameInfo.x + frameInfo.y - createFrame;
 
 	float life = currTime * invttl;
-	float rotVal  = GetCurrentRotation(rotParams, life);
-	float animVal = GetCurrentAnimation(rotParams, life);
+	float rotVal  = GetCurrentRotation(rotParams, currTime);
+	float animVal = GetCurrentAnimation(rotParams, currTime);
 
 	float igrowth = sizeGrowth * (1.0 - (1.0 - life) * (1.0 - life));
 
@@ -94,7 +94,7 @@ struct InputData {
 		 -xdir * isize - ydir * isize
 	);
 
-	for (uint i = 0u; i < 12u; ++i) {
+	for (uint i = 0u; i < uint(bounds.length()); ++i) {
 		bounds[i] = Rotate(sc, dir, bounds[i]);
 	}
 

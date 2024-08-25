@@ -24,6 +24,7 @@
 #include "DirtParticleGenerator.h"
 #include "ExploSpikeParticleGenerator.h"
 #include "GeoSquareParticleGenerator.h"
+#include "HeatCloudParticleGenerator.h"
 
 namespace Shader {
 	struct IProgramObject;
@@ -83,7 +84,8 @@ private:
 		std::unique_ptr<BubbleParticleGenerator>,
 		std::unique_ptr<DirtParticleGenerator>,
 		std::unique_ptr<ExploSpikeParticleGenerator>,
-		std::unique_ptr<GeoSquareParticleGenerator>
+		std::unique_ptr<GeoSquareParticleGenerator>,
+		std::unique_ptr<HeatCloudParticleGenerator>
 	> generators;
 
 	int32_t numQuads;

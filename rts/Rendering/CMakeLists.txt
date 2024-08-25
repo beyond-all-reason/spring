@@ -66,6 +66,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/DirtParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/ExploSpikeParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/GeoSquareParticleGenerator.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/HeatCloudParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/FBO.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/StreamBuffer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/GeometryBuffer.cpp"

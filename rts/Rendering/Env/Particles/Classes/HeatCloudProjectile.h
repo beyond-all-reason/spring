@@ -20,6 +20,7 @@ public:
 		const float temperature,
 		const float size
 	);
+	~CHeatCloudProjectile() override;
 
 	void Serialize(creg::ISerializer* s);
 
@@ -42,6 +43,8 @@ private:
 	float sizeGrowth;
 	float sizemod;
 	float sizemodmod;
+
+	size_t pgOffset;
 
 	AtlasedTexture* texture;
 };
