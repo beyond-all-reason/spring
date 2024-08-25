@@ -289,10 +289,10 @@ void CMissileProjectile::Update()
 		return;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<MissileParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
-	data->speed = speed;
-	data->pos = pos;
-	data->fsize = radius * 0.4f;
+	auto& data = pg.Get(pgOffset);
+	data.speed = speed;
+	data.pos = pos;
+	data.fsize = radius * 0.4f;
 }
 
 float3 CMissileProjectile::UpdateTargeting() {

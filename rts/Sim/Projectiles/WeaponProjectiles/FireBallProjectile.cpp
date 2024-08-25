@@ -135,16 +135,16 @@ void CFireBallProjectile::Update()
 	UpdateInterception();
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
 	for (uint32_t i = 0; i < numSparks; ++i) {
-		data->sparkPosSize[i] = float4{ sparks[i].pos, sparks[i].size };
+		data.sparkPosSize[i] = float4{ sparks[i].pos, sparks[i].size };
 	}
 
-	data->numSparks = static_cast<int32_t>(numSparks);
-	data->dgunPos = pos;
-	data->speed = speed;
-	data->checkCol = static_cast<float>(checkCol);
+	data.numSparks = static_cast<int32_t>(numSparks);
+	data.dgunPos = pos;
+	data.speed = speed;
+	data.checkCol = static_cast<float>(checkCol);
 	//data->animParams1
 	//data->animParams2
 }

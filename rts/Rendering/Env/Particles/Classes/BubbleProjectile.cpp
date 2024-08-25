@@ -95,11 +95,11 @@ void CBubbleProjectile::Update()
 	}
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BubbleParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->pos = pos;
-	data->alpha = alpha;
-	data->size = size;
+	data.pos = pos;
+	data.alpha = alpha;
+	data.size = size;
 }
 
 void CBubbleProjectile::Draw()

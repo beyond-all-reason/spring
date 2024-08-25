@@ -97,18 +97,18 @@ void CFlameProjectile::Update()
 	deleteMe |= (curTime >= 1.0f);
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FlameParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->radius = radius;
-	data->pos = pos;
-	data->curTime = curTime;
+	data.radius = radius;
+	data.pos = pos;
+	data.curTime = curTime;
 
 	if (const auto* cm = weaponDef->visuals.colorMap; cm) {
 		auto [i0, i1] = cm->GetIndices(curTime);
-		data->color0 = cm->GetColor(i0);
-		data->color1 = cm->GetColor(i1);
-		data->colEdge0 = cm->GetColorPos(i0);
-		data->colEdge1 = cm->GetColorPos(i1);
+		data.color0 = cm->GetColor(i0);
+		data.color1 = cm->GetColor(i1);
+		data.colEdge0 = cm->GetColorPos(i0);
+		data.colEdge1 = cm->GetColorPos(i1);
 	}
 
 	explGenHandler.GenExplosion(cegID, pos, speed, curTime, 0.0f, 0.0f, owner(), nullptr);

@@ -92,8 +92,8 @@ void CNanoProjectile::Update()
 	deleteMe |= (gs->frameNum >= deathFrame);
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<NanoParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
-	data->partPos = pos;
+	auto& data = pg.Get(pgOffset);
+	data.partPos = pos;
 }
 
 void CNanoProjectile::Draw()

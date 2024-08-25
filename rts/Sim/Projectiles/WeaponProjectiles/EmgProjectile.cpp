@@ -83,11 +83,11 @@ void CEmgProjectile::Update()
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<EmgParticleGenerator>();
 
-	const auto [token, data] = pg.Get(pgOffset);
-	data->pos = pos;
-	data->color = SColor(color.x, color.x, color.z, 1.0f) * intensity;
-	data->animParams = animParams;
-	data->rotParams = rotParams;
+	auto& data = pg.Get(pgOffset);
+	data.pos = pos;
+	data.color = SColor(color.x, color.x, color.z, 1.0f) * intensity;
+	data.animParams = animParams;
+	data.rotParams = rotParams;
 }
 
 void CEmgProjectile::Draw()

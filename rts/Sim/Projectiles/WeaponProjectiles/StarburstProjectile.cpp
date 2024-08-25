@@ -176,22 +176,22 @@ void CStarburstProjectile::Update()
 		return;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<StarburstParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->partPos = pos;
-	data->missileAge = missileAge;
+	data.partPos = pos;
+	data.missileAge = missileAge;
 
-	data->partSpeed = speed.xyz;
-	data->curTracerPart = curTracerPart;
+	data.partSpeed = speed.xyz;
+	data.curTracerPart = curTracerPart;
 
 	for (size_t ti = 0; ti < NUM_TRACER_PARTS; ++ti) {
 		const TracerPart& tracerPart = tracerParts[ti];
 
-		data->tracerPosSpeed[ti] = float4{ tracerPart.pos, tracerPart.speedf };
-		data->tracerDir[ti] = StarburstData::TraceDirNumMods{.dir = tracerPart.dir, .numAgeMods = tracerPart.numAgeMods};
+		data.tracerPosSpeed[ti] = float4{ tracerPart.pos, tracerPart.speedf };
+		data.tracerDir[ti] = StarburstData::TraceDirNumMods{.dir = tracerPart.dir, .numAgeMods = tracerPart.numAgeMods};
 
 		for (size_t ami = 0; ami < MAX_NUM_AGEMODS; ++ami) {
-			data->allAgeMods[MAX_NUM_AGEMODS * ti + ami] = tracerPart.ageMods[ami];
+			data.allAgeMods[MAX_NUM_AGEMODS * ti + ami] = tracerPart.ageMods[ami];
 		}
 	}
 }

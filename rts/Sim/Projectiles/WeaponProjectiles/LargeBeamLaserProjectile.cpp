@@ -105,12 +105,12 @@ void CLargeBeamLaserProjectile::Update()
 	UpdateInterception();
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LargeBeamLaserParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->startPos = startPos; // not needed?
-	data->targetPos = targetPos; // not needed?
-	data->coreColStart = SColor(coreColStart);
-	data->edgeColStart = SColor(edgeColStart);
+	data.startPos = startPos; // not needed?
+	data.targetPos = targetPos; // not needed?
+	data.coreColStart = SColor(coreColStart);
+	data.edgeColStart = SColor(edgeColStart);
 }
 
 void CLargeBeamLaserProjectile::Draw()

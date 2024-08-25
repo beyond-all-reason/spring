@@ -315,7 +315,11 @@ void ParticleGeneratorHandler::GenerateAll()
 {
 	SCOPED_TIMER("ParticleGeneratorHandler::GenerateAll");
 
-	numQuads = std::apply([](auto& ... gen) {
+	std::apply([](auto& ... gen) {
+		(gen.SetMaxNumQuads(), ...);
+	}, *generators);
+
+	numQuads = std::apply([](const auto& ... gen) {
 		return (0 + ... + gen.GetMaxNumQuads());
 	}, *generators);
 

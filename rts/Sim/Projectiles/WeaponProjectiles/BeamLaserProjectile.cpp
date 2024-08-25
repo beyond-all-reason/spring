@@ -115,12 +115,12 @@ void CBeamLaserProjectile::Update()
 	UpdateInterception();
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->coreColStart = SColor(coreColStart[0], coreColStart[1], coreColStart[2], coreColStart[3]);
-	data->coreColEnd = SColor(coreColEnd[0], coreColEnd[1], coreColEnd[2], coreColEnd[3]);
-	data->edgeColStart = SColor(edgeColStart[0], edgeColStart[1], edgeColStart[2], edgeColStart[3]);
-	data->edgeColEnd = SColor(edgeColEnd[0], edgeColEnd[1], edgeColEnd[2], edgeColEnd[3]);
+	data.coreColStart = SColor(coreColStart[0], coreColStart[1], coreColStart[2], coreColStart[3]);
+	data.coreColEnd = SColor(coreColEnd[0], coreColEnd[1], coreColEnd[2], coreColEnd[3]);
+	data.edgeColStart = SColor(edgeColStart[0], edgeColStart[1], edgeColStart[2], edgeColStart[3]);
+	data.edgeColEnd = SColor(edgeColEnd[0], edgeColEnd[1], edgeColEnd[2], edgeColEnd[3]);
 }
 
 void CBeamLaserProjectile::Draw()

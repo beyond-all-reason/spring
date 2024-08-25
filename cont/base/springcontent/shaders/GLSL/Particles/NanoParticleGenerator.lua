@@ -27,8 +27,8 @@ struct InputData {
 ]],
 	EarlyExit =
 [[
-	//if ((texCoord.z - texCoord.x) * (texCoord.w - texCoord.y) <= 0.0)
-	//	return;
+	if ((texCoord.z - texCoord.x) * (texCoord.w - texCoord.y) <= 0.0)
+		return;
 ]],
 	NumQuads =
 [[

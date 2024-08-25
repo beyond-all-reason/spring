@@ -171,10 +171,10 @@ void CTorpedoProjectile::Update()
 	UpdateInterception();
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<TorpedoParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->partPos = pos;
-	data->partSpeed = speed;
+	data.partPos = pos;
+	data.partSpeed = speed;
 }
 
 

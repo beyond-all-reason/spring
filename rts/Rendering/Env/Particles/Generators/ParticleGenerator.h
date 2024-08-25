@@ -59,36 +59,6 @@ public:
 	static_assert(std::is_member_function_pointer_v<decltype(&ParticleDataType::GetMaxNumQuads)>);
 	static_assert(!std::is_same_v<ParticleDataType, ParticleGenType>);
 
-	class UpdateToken {
-	public:
-		UpdateToken(const UpdateToken& other) {
-			ref = other.ref;
-			pos = other.pos;
-
-			ref->numQuads -= ref->particles[pos].GetMaxNumQuads();
-		}
-		UpdateToken(UpdateToken&&) = delete;
-		UpdateToken& operator=(UpdateToken&&) = delete;
-		UpdateToken& operator=(const UpdateToken&) = delete;
-
-		UpdateToken(MyType* ref_, size_t pos_)
-			: ref{ ref_ }
-			, pos{ pos_ }
-		{
-			ref->numQuads -= ref->particles[pos].GetMaxNumQuads();
-		}
-		~UpdateToken()
-		{
-			ref->numQuads += ref->particles[pos].GetMaxNumQuads();
-		}
-		operator size_t() const { return pos; }
-	private:
-		MyType* ref;
-		size_t pos;
-	};
-
-	friend class MyType::UpdateToken;
-
 	ParticleGenerator();
 	~ParticleGenerator();
 
@@ -99,17 +69,16 @@ public:
 	void Del(size_t pos);
 
 	const ParticleDataType& Get(size_t pos) const;
-	[[nodiscard]] std::pair<UpdateToken, ParticleDataType*> Get(size_t pos);
+	      ParticleDataType& Get(size_t pos);
 
-	int32_t GetMaxNumQuads() const { return numQuads; }
+	void SetMaxNumQuads();
+	int32_t GetMaxNumQuads() const { return maxNumQuads; }
 protected:
 	static Shader::IProgramObject* GetShader();
 
 	void UpdateBufferData(); //on GPU
 	void UpdateCommonUniforms(Shader::IProgramObject* shader, int32_t totalNumQuads) const;
 	void RunComputeShader() const;
-
-	int32_t numQuads;
 
 	spring::unordered_set<size_t> freeList;
 	std::vector<ParticleDataType> particles;
@@ -123,6 +92,8 @@ protected:
 private:
 	bool GenerateCPU();
 	bool GenerateGPU(Shader::IProgramObject* shader, int32_t totalNumQuads);
+
+	int32_t maxNumQuads;
 };
 
 template<typename ParticleDataType, typename ParticleGenType>
@@ -280,8 +251,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shader->SetUniform("arraySizes", 0, 0);
 	shader->SetUniform("frameInfo", 0.0f, 0.0f, 0.0f);
-	shader->SetUniform("camPos", 0.0f, 0.0f, 0.0f);
-	shader->SetUniformMatrix4x4("camView", false, CMatrix44f::Zero().m);
+	shader->SetUniformMatrix4x4("camDirPos", false, CMatrix44f::Zero().m);
 	static constexpr float4 ZERO4 = float4{ 0.0f };
 	shader->SetUniform4v("frustumPlanes[0]", &ZERO4.x);
 	shader->SetUniform4v("frustumPlanes[1]", &ZERO4.x);
@@ -303,7 +273,6 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 template<typename ParticleDataType, typename ParticleGenType>
 inline ParticleGenerator<ParticleDataType, ParticleGenType>::ParticleGenerator()
-	: numQuads{ 0 }
 {
 	static_cast<void>(GetShader()); //warm up shader creation
 	dataVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
@@ -339,8 +308,6 @@ inline size_t ParticleGenerator<ParticleDataType, ParticleGenType>::Add(const Pa
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
-	numQuads += data.GetMaxNumQuads();
-
 	if (!freeList.empty()) {
 		auto it = freeList.begin();
 		const size_t pos = *it; freeList.erase(it);
@@ -360,7 +327,6 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Update(size_t 
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(pos < particles.size());
 
-	numQuads += data.GetNumQuads() - particles[pos].GetNumQuads();
 	particles[pos] = data;
 	particlesUpdateList.SetUpdate(pos);
 }
@@ -372,7 +338,6 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Del(size_t pos
 	assert(pos < particles.size());
 
 	auto& data = particles[pos];
-	numQuads -= data.GetMaxNumQuads();
 	data.Invalidate(); // the shader should know what particles to skip
 	particlesUpdateList.SetUpdate(pos);
 
@@ -391,13 +356,19 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Del(size_t pos
 }
 
 template<typename ParticleDataType, typename ParticleGenType>
-inline std::pair<typename ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateToken, ParticleDataType*> ParticleGenerator<ParticleDataType, ParticleGenType>::Get(size_t pos)
+inline ParticleDataType& ParticleGenerator<ParticleDataType, ParticleGenType>::Get(size_t pos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(pos < particles.size());
 
 	particlesUpdateList.SetUpdate(pos);
-	return std::pair(UpdateToken(this, pos), &particles[pos]);
+	return particles[pos];
+}
+
+template<typename ParticleDataType, typename ParticleGenType>
+inline void ParticleGenerator<ParticleDataType, ParticleGenType>::SetMaxNumQuads()
+{
+	maxNumQuads = std::reduce(particles.begin(), particles.end(), 0, [](int32_t prev, const auto& p) { return prev + p.GetMaxNumQuads(); });
 }
 
 template<typename ParticleDataType, typename ParticleGenType>

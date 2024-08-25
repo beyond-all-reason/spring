@@ -72,9 +72,9 @@ void CMuzzleFlame::Update()
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<MuzzleFlameParticleGenerator>();
 	for (int a = 0; a < numSmoke; ++a) {
-		const auto [token, data] = pg.Get(pgOffsets[a]);
-		data->pos = pos;
-		data->age = static_cast<float>(age);
+		auto& data = pg.Get(pgOffsets[a]);
+		data.pos = pos;
+		data.age = static_cast<float>(age);
 	}
 }
 

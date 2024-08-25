@@ -122,6 +122,13 @@ vec4 GetCurrentColor(uint colorEdge0, uint colorEdge1, float lifeEdge0, float li
 	return GetCurrentColor(unpackedColorEdge0, unpackedColorEdge1, lifeEdge0, lifeEdge1, currTime);
 }
 
+float GetParticleTime(int creationFrame) {
+	return frameInfo.x + frameInfo.y - creationFrame;
+}
+
+vec3 GetParticleDrawPos(vec3 particlePosition, vec3 particleSpeed) {
+	return particlePosition + particleSpeed * frameInfo.y;
+}
 
 bool SphereInView(vec4 posRad) {
 	for (uint i = 0u; i < 6u; ++i) {

@@ -96,19 +96,19 @@ void CLaserProjectile::Update()
 	deleteMe |= ((intensity <= 0.01f) && (!weaponDef->laserHardStop));
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LaserParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
 	const auto& c1 = weaponDef->visuals.color;
 	const auto& c2 = weaponDef->visuals.color2;
 
-	data->drawPos = pos;
-	data->curLength = curLength;
-	data->dir = dir;
-	data->color1 = SColor(intensity * c1.r, intensity * c1.g, intensity * c1.b, 1.0f / 255.0f);
-	data->color2 = SColor(intensity * c2.r, intensity * c2.g, intensity * c2.b, 1.0f / 255.0f);
-	data->checkCol = static_cast<int32_t>(checkCol);
-	data->stayTime = static_cast<float>(stayTime);
-	data->speedf = speedf;
+	data.drawPos = pos;
+	data.curLength = curLength;
+	data.dir = dir;
+	data.color1 = SColor(intensity * c1.r, intensity * c1.g, intensity * c1.b, 1.0f / 255.0f);
+	data.color2 = SColor(intensity * c2.r, intensity * c2.g, intensity * c2.b, 1.0f / 255.0f);
+	data.checkCol = static_cast<int32_t>(checkCol);
+	data.stayTime = static_cast<float>(stayTime);
+	data.speedf = speedf;
 }
 
 void CLaserProjectile::UpdateIntensity() {

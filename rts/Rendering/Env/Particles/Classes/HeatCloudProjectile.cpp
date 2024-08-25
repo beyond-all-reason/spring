@@ -100,12 +100,12 @@ void CHeatCloudProjectile::Update()
 	sizemod *= sizemodmod;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<HeatCloudParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->pos = pos;
-	data->heat = heat;
-	data->size = size;
-	data->sizeMod = sizemod;
+	data.pos = pos;
+	data.heat = heat;
+	data.size = size;
+	data.sizeMod = sizemod;
 }
 
 void CHeatCloudProjectile::Init(const CUnit* owner, const float3& offset)

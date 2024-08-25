@@ -42,23 +42,23 @@ CLightningProjectile::CLightningProjectile(const ProjectileParams& params): CWea
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LightningParticleGenerator>();
 	pgOffset = pg.Add();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->startPos = startPos;
-	data->targetPos = targetPos;
-	data->thickness = weaponDef->visuals.thickness;
+	data.startPos = startPos;
+	data.targetPos = targetPos;
+	data.thickness = weaponDef->visuals.thickness;
 
 	for (size_t d = 0; d < displacements[0].size(); ++d) {
-		data->displacements[d                          ] = displacements[0][d];
+		data.displacements[d                          ] = displacements[0][d];
 	}
 	for (size_t d = 0; d < displacements[1].size(); ++d) {
-		data->displacements[d + displacements[0].size()] = displacements[1][d];
+		data.displacements[d + displacements[0].size()] = displacements[1][d];
 	}
 
-	data->texCoord = *weaponDef->visuals.texture1;
+	data.texCoord = *weaponDef->visuals.texture1;
 	const auto& color = weaponDef->visuals.color;
-	data->col = SColor{ color.x, color.y, color.z, 1.0f / 255.0f };
-	data->drawOrder = drawOrder;
+	data.col = SColor{ color.x, color.y, color.z, 1.0f / 255.0f };
+	data.drawOrder = drawOrder;
 
 
 	static_assert(sizeof(displacements[0]) + sizeof(displacements[1]) == sizeof(LightningData::displacements));
@@ -89,17 +89,17 @@ void CLightningProjectile::Update()
 	UpdateInterception();
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LightningParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
 	// needed?
-	data->startPos = startPos;
-	data->targetPos = targetPos;
+	data.startPos = startPos;
+	data.targetPos = targetPos;
 
 	for (size_t d = 1; d < displacements[0].size(); ++d) {
-		data->displacements[d                          ] = displacements[0][d];
+		data.displacements[d                          ] = displacements[0][d];
 	}
 	for (size_t d = 1; d < displacements[1].size(); ++d) {
-		data->displacements[d + displacements[0].size()] = displacements[1][d];
+		data.displacements[d + displacements[0].size()] = displacements[1][d];
 	}
 }
 

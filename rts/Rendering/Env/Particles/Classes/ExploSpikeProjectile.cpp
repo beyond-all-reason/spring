@@ -104,13 +104,13 @@ void CExploSpikeProjectile::Update()
 	deleteMe |= (alpha <= 0.0f);
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExploSpikeParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->pos = pos;
-	data->alpha = alpha;
-	data->speed = speed;
-	data->dir = dir;
-	data->length = length;
+	data.pos = pos;
+	data.alpha = alpha;
+	data.speed = speed;
+	data.dir = dir;
+	data.length = length;
 }
 
 void CExploSpikeProjectile::Draw()

@@ -109,13 +109,13 @@ void CDirtProjectile::Update()
 	deleteMe |= (alpha <= 0.0f);
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<DirtParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 
-	data->pos = pos;
-	data->alpha = alpha;
-	data->speed = speed;
-	data->size = size;
-	data->sizeExpansion = sizeExpansion;
+	data.pos = pos;
+	data.alpha = alpha;
+	data.speed = speed;
+	data.size = size;
+	data.sizeExpansion = sizeExpansion;
 }
 
 void CDirtProjectile::Draw()

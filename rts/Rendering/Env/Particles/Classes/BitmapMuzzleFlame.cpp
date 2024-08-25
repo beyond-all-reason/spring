@@ -159,12 +159,12 @@ void CBitmapMuzzleFlame::Update()
 	}
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
-	const auto [token, data] = pg.Get(pgOffset);
+	auto& data = pg.Get(pgOffset);
 	//data->pos = pos; // doesn't seem to get updated
-	data->col0 = col0;
-	data->col1 = col1;
-	data->edge0 = edge0;
-	data->edge1 = edge1;
+	data.col0 = col0;
+	data.col1 = col1;
+	data.edge0 = edge0;
+	data.edge1 = edge1;
 }
 
 void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
