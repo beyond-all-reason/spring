@@ -21,10 +21,10 @@ public:
 	int GetProjectilesCount() const override;
 
 private:
-	uint8_t coreColStart[4];
-	uint8_t coreColEnd[4];
-	uint8_t edgeColStart[4];
-	uint8_t edgeColEnd[4];
+	uint8_t ccsColor[4];
+	uint8_t cceColor[4];
+	uint8_t ecsColor[4];
+	uint8_t eceColor[4];
 
 	size_t pgOffset;
 };

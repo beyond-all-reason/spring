@@ -55,7 +55,7 @@ CLaserProjectile::CLaserProjectile(const ProjectileParams& params): CWeaponProje
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LaserParticleGenerator>();
 	pgOffset = pg.Add({
-		.partPos = pos,
+		.pos = pos,
 		.curLength = curLength,
 		.dir = dir,
 		.maxLength = maxLength,
@@ -101,7 +101,7 @@ void CLaserProjectile::Update()
 	const auto& c1 = weaponDef->visuals.color;
 	const auto& c2 = weaponDef->visuals.color2;
 
-	data.partPos = pos;
+	data.pos = pos;
 	data.curLength = curLength;
 	data.dir = dir;
 	data.color1 = SColor(intensity * c1.r, intensity * c1.g, intensity * c1.b, 1.0f / 255.0f);

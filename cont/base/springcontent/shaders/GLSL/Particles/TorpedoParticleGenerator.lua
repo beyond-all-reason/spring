@@ -6,7 +6,7 @@ return {
 		(texCoord.w + texCoord.y) * 0.5
 	);
 
-	vec3 dir = normalize(partSpeed);
+	vec3 dir = normalize(speed);
 	vec3 r = cross(dir, vec3(0.0, 1.0, 0.0)/*UpVector*/);
 
 	if (length(r) < 0.01)
@@ -21,9 +21,10 @@ return {
 
 	vec4 col = GetColorFromIntegers(uvec4(60, 60, 100, 255));
 	
-	vec3 drawPos = partPos + partSpeed * frameInfo.y;
+	vec3 drawPos = pos + speed * frameInfo.y;
 
 	AddEffectsQuad(
+		drawOrder,
 		vec3(1.0),
 		drawPos + (r * w)            , texXY,
 		drawPos + (u * w)            , texXY,
@@ -33,6 +34,7 @@ return {
 	);
 
 	AddEffectsQuad(
+		drawOrder,
 		vec3(1.0),
 		drawPos + (u * w)            , texXY,
 		drawPos - (r * w)            , texXY,
@@ -42,6 +44,7 @@ return {
 	);
 
 	AddEffectsQuad(
+		drawOrder,
 		vec3(1.0),
 		drawPos - (r * w)           ,  texXY,
 		drawPos - (u * w)           ,  texXY,
@@ -51,6 +54,7 @@ return {
 	);
 
 	AddEffectsQuad(
+		drawOrder,
 		vec3(1.0),
 		drawPos - (u * w)            , texXY,
 		drawPos + (r * w)            , texXY,
@@ -60,6 +64,7 @@ return {
 	);
 
 	AddEffectsQuad(
+		drawOrder,
 		vec3(1.0),
 		drawPos + (r * w) + (dir * h), texXY,
 		drawPos + (u * w) + (dir * h), texXY,
@@ -69,6 +74,7 @@ return {
 	);
 
 	AddEffectsQuad(
+		drawOrder,
 		vec3(1.0),
 		drawPos + (u * w) + (dir * h), texXY,
 		drawPos - (r * w) + (dir * h), texXY,
@@ -78,6 +84,7 @@ return {
 	);
 
 	AddEffectsQuad(
+		drawOrder,
 		vec3(1.0),
 		drawPos - (r * w) + (dir * h), texXY,
 		drawPos - (u * w) + (dir * h), texXY,
@@ -87,6 +94,7 @@ return {
 	);
 
 	AddEffectsQuad(
+		drawOrder,
 		vec3(1.0),
 		drawPos - (u * w) + (dir * h), texXY,
 		drawPos + (r * w) + (dir * h), texXY,

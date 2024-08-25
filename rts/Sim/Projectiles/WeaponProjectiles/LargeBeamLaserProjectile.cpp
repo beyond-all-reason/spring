@@ -18,8 +18,8 @@ CR_BIND_DERIVED(CLargeBeamLaserProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CLargeBeamLaserProjectile,(
 	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(coreColStart),
-	CR_MEMBER(edgeColStart),
+	CR_MEMBER(ccsColor),
+	CR_MEMBER(ecsColor),
 	CR_MEMBER(thickness),
 	CR_MEMBER(corethickness),
 	CR_MEMBER(flaresize),
@@ -51,14 +51,14 @@ CLargeBeamLaserProjectile::CLargeBeamLaserProjectile(const ProjectileParams& par
 	pulseSpeed    = weaponDef->visuals.pulseSpeed;
 	decay         = weaponDef->visuals.beamdecay;
 
-	coreColStart[0] = (weaponDef->visuals.color2.x * 255);
-	coreColStart[1] = (weaponDef->visuals.color2.y * 255);
-	coreColStart[2] = (weaponDef->visuals.color2.z * 255);
-	coreColStart[3] = 1;
-	edgeColStart[0] = (weaponDef->visuals.color.x * 255);
-	edgeColStart[1] = (weaponDef->visuals.color.y * 255);
-	edgeColStart[2] = (weaponDef->visuals.color.z * 255);
-	edgeColStart[3] = 1;
+	ccsColor[0] = (weaponDef->visuals.color2.x * 255);
+	ccsColor[1] = (weaponDef->visuals.color2.y * 255);
+	ccsColor[2] = (weaponDef->visuals.color2.z * 255);
+	ccsColor[3] = 1;
+	ecsColor[0] = (weaponDef->visuals.color.x * 255);
+	ecsColor[1] = (weaponDef->visuals.color.y * 255);
+	ecsColor[2] = (weaponDef->visuals.color.z * 255);
+	ecsColor[3] = 1;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LargeBeamLaserParticleGenerator>();
 	pgOffset = pg.Add({
@@ -71,8 +71,8 @@ CLargeBeamLaserProjectile::CLargeBeamLaserProjectile(const ProjectileParams& par
 		.tileLength = tilelength,
 		.scrollSpeed = scrollspeed,
 		.pulseSpeed = pulseSpeed,
-		.coreColStart = SColor(coreColStart),
-		.edgeColStart = SColor(edgeColStart),
+		.ccsColor = SColor(ccsColor),
+		.ecsColor = SColor(ecsColor),
 		.texCoord1 = *weaponDef->visuals.texture1,
 		.texCoord2 = *weaponDef->visuals.texture2,
 		.texCoord3 = *weaponDef->visuals.texture3,
@@ -95,8 +95,8 @@ void CLargeBeamLaserProjectile::Update()
 		deleteMe = true;
 	} else {
 		for (int i = 0; i < 3; i++) {
-			coreColStart[i] = (uint8_t)(coreColStart[i] * decay);
-			edgeColStart[i] = (uint8_t)(edgeColStart[i] * decay);
+			ccsColor[i] = (uint8_t)(ccsColor[i] * decay);
+			ecsColor[i] = (uint8_t)(ecsColor[i] * decay);
 		}
 
 		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f, flaresize, 0.0f, owner(), nullptr);
@@ -109,8 +109,8 @@ void CLargeBeamLaserProjectile::Update()
 
 	data.startPos = startPos; // not needed?
 	data.targetPos = targetPos; // not needed?
-	data.coreColStart = SColor(coreColStart);
-	data.edgeColStart = SColor(edgeColStart);
+	data.ccsColor = SColor(ccsColor);
+	data.ecsColor = SColor(ecsColor);
 }
 
 void CLargeBeamLaserProjectile::Draw()
@@ -333,7 +333,7 @@ void CLargeBeamLaserProjectile::Draw()
 void CLargeBeamLaserProjectile::DrawOnMinimap() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const SColor color = { edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u };
+	const SColor color = { ecsColor[0], ecsColor[1], ecsColor[2], 255u };
 
 	AddMiniMapVertices({ startPos,  color }, { targetPos, color });
 }

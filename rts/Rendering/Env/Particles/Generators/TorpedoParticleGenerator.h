@@ -5,10 +5,10 @@
 // no need for regular Update()
 struct TorpedoParticleData {
 	CR_DECLARE_STRUCT(TorpedoParticleData)
-	float3 partPos;
+	float3 pos;
 	int32_t drawOrder;
 
-	float3 partSpeed; // non-normalized dir
+	float3 speed; // non-normalized dir
 	float unused;
 
 	AtlasedTexture texCoord;

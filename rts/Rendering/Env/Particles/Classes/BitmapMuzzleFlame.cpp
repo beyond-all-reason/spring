@@ -154,15 +154,15 @@ void CBitmapMuzzleFlame::Update()
 
 	{
 		const auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
-		if (const auto& d = pg.Get(pgOffset); std::forward_as_tuple(col0, col1, edge0, edge1) == std::forward_as_tuple(d.col0, d.col1, d.edge0, d.edge1))
+		if (const auto& d = pg.Get(pgOffset); std::forward_as_tuple(col0, col1, edge0, edge1) == std::forward_as_tuple(d.color0, d.color1, d.edge0, d.edge1))
 			return;
 	}
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
 	auto& data = pg.Get(pgOffset);
 	//data->pos = pos; // doesn't seem to get updated
-	data.col0 = col0;
-	data.col1 = col1;
+	data.color0 = col0;
+	data.color1 = col1;
 	data.edge0 = edge0;
 	data.edge1 = edge1;
 }
@@ -187,10 +187,10 @@ void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 		.animParams = animParams,
 		.sizeGrowth = sizeGrowth,
 		.size = size,
-		.length = length,
+		.len = length,
 		.frontOffset = frontOffset,
-		.col0 = col0,
-		.col1 = col1,
+		.color0 = col0,
+		.color1 = col1,
 		.edge0 = edge0,
 		.edge1 = edge1,
 		.sideTexture = *sideTexture,

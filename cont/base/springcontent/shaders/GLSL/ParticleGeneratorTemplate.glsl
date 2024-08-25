@@ -108,6 +108,20 @@ float GetCurrentAnimation(vec3 animationParameters, float currTime) {
 	return animProgress;
 }
 
+void SetCurrentAnimation(inout vec3 animationParameters, float currTime) {
+	if (animationParameters.x <= 1.0 && animationParameters.y <= 1.0) {
+		animationParameters.z = 0.0;
+		return;
+	}
+
+	float animSpeed = abs(animationParameters.z);
+	if (animationParameters.z < 0.0) {
+		animationParameters.z = 1.0 - abs(mod(currTime, 2.0 * animSpeed) / animSpeed - 1.0);
+	} else {
+		animationParameters.z = mod(currTime, animSpeed) / animSpeed;
+	}
+}
+
 vec4 GetCurrentColor(vec4 unpackedColorEdge0, vec4 unpackedColorEdge1, float lifeEdge0, float lifeEdge1, float currTime) {
 	float colMixRate = clamp((lifeEdge1 - currTime)/(lifeEdge1 - lifeEdge0), 0.0, 1.0);
 	return mix(unpackedColorEdge0, unpackedColorEdge1, colMixRate);

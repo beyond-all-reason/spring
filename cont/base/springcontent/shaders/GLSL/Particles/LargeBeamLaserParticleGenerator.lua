@@ -43,6 +43,7 @@ return {
 			tex.x = texCoord1.x + startTex * texSizeX;
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos1 - (xdir * beamEdgeSize), tex.xy,
 				pos2 - (xdir * beamEdgeSize), tex.zy,
@@ -52,6 +53,7 @@ return {
 			);
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos1 - (xdir * beamCoreSize), tex.xy,
 				pos2 - (xdir * beamCoreSize), tex.zy,
@@ -67,6 +69,7 @@ return {
 			tex.x = texCoord1.x + startTex * texSizeX;
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos1 - (xdir * beamEdgeSize), tex.xy,
 				pos2 - (xdir * beamEdgeSize), tex.zy,
@@ -76,6 +79,7 @@ return {
 			);
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos1 - (xdir * beamCoreSize), tex.xy,
 				pos2 - (xdir * beamCoreSize), tex.zy,
@@ -92,6 +96,7 @@ return {
 				pos2 = startPos + zdir * (i + tileLength);
 
 				AddEffectsQuad(
+					drawOrder,
 					vec3(1.0),
 					pos1 - (xdir * beamEdgeSize), tex.xy,
 					pos2 - (xdir * beamEdgeSize), tex.zy,
@@ -101,6 +106,7 @@ return {
 				);
 
 				AddEffectsQuad(
+					drawOrder,
 					vec3(1.0),
 					pos1 - (xdir * beamCoreSize), tex.xy,
 					pos2 - (xdir * beamCoreSize), tex.zy,
@@ -117,6 +123,7 @@ return {
 			tex.z = tex.x + (distance(pos1, pos2) / tileLength) * texSizeX;
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos1 - (xdir * beamEdgeSize), tex.xy,
 				pos2 - (xdir * beamEdgeSize), tex.zy,
@@ -126,6 +133,7 @@ return {
 			);
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos1 - (xdir * beamCoreSize), tex.xy,
 				pos2 - (xdir * beamCoreSize), tex.zy,
@@ -138,6 +146,7 @@ return {
 
 	if (validTextures.y) {
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			pos2 - (xdir * beamEdgeSize)                        , texCoord2.xy,
 			pos2 - (xdir * beamEdgeSize) + (ydir * beamEdgeSize), texCoord2.zy,
@@ -147,6 +156,7 @@ return {
 		);
 
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			pos2 - (xdir * beamCoreSize)                        , texCoord2.xy,
 			pos2 - (xdir * beamCoreSize) + (ydir * beamCoreSize), texCoord2.zy,
@@ -171,6 +181,7 @@ return {
 		pos1 = startPos - zdir * (thickness * flareSize) * 0.02;
 
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			pos1 + (ydir * muzzleEdgeSize)                          , texCoord3.xy,
 			pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), texCoord3.zy,
@@ -180,6 +191,7 @@ return {
 		);
 
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			pos1 + (ydir * muzzleCoreSize)                          , texCoord3.xy,
 			pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), texCoord3.zy,
@@ -197,6 +209,7 @@ return {
 		muzzleEdgeSize = thickness * flareSize * pulseStartTime;
 
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			pos1 + (ydir * muzzleEdgeSize)                          , texCoord3.xy,
 			pos1 + (ydir * muzzleEdgeSize) + (zdir * muzzleEdgeSize), texCoord3.zy,
@@ -206,6 +219,7 @@ return {
 		);
 
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			pos1 + (ydir * muzzleCoreSize)                          , texCoord3.xy,
 			pos1 + (ydir * muzzleCoreSize) + (zdir * muzzleCoreSize), texCoord3.zy,
@@ -220,12 +234,14 @@ return {
 		pos1 = startPos - (camDir[2].xyz * 3.0);
 
 		AddEffectsQuadCamera(
+			drawOrder,
 			vec3(1.0),
 			pos1, vec2(flareEdgeSize), texCoord4,
 			ecsColor
 		);
 
 		AddEffectsQuadCamera(
+			drawOrder,
 			vec3(1.0),
 			pos1, vec2(flareCoreSize), texCoord4,
 			ccsColor

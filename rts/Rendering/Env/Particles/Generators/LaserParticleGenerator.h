@@ -5,7 +5,7 @@
 struct LaserParticleData {
 	CR_DECLARE_STRUCT(LaserParticleData)
 
-	float3 partPos;
+	float3 pos;
 	float curLength;
 
 	float3 dir;

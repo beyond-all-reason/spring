@@ -19,10 +19,10 @@ CR_BIND_DERIVED(CBeamLaserProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CBeamLaserProjectile,(
 	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(coreColStart),
-	CR_MEMBER(coreColEnd),
-	CR_MEMBER(edgeColStart),
-	CR_MEMBER(edgeColEnd),
+	CR_MEMBER(ccsColor),
+	CR_MEMBER(cceColor),
+	CR_MEMBER(ecsColor),
+	CR_MEMBER(eceColor),
 	CR_MEMBER(pgOffset)
 ))
 
@@ -44,33 +44,33 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params)
 		(weaponDef->visuals.texture2->xstart +
 		(weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
 */
-	coreColStart[0] = (weaponDef->visuals.color2.x * params.startAlpha);
-	coreColStart[1] = (weaponDef->visuals.color2.y * params.startAlpha);
-	coreColStart[2] = (weaponDef->visuals.color2.z * params.startAlpha);
-	coreColStart[3] = 1;
-	coreColEnd[0] = (weaponDef->visuals.color2.x * params.endAlpha);
-	coreColEnd[1] = (weaponDef->visuals.color2.y * params.endAlpha);
-	coreColEnd[2] = (weaponDef->visuals.color2.z * params.endAlpha);
-	coreColEnd[3] = 1;
-	edgeColStart[0] = (weaponDef->visuals.color.x * params.startAlpha);
-	edgeColStart[1] = (weaponDef->visuals.color.y * params.startAlpha);
-	edgeColStart[2] = (weaponDef->visuals.color.z * params.startAlpha);
-	edgeColStart[3] = 1;
-	edgeColEnd[0] = (weaponDef->visuals.color.x * params.endAlpha);
-	edgeColEnd[1] = (weaponDef->visuals.color.y * params.endAlpha);
-	edgeColEnd[2] = (weaponDef->visuals.color.z * params.endAlpha);
-	edgeColEnd[3] = 1;
+	ccsColor[0] = (weaponDef->visuals.color2.x * params.startAlpha);
+	ccsColor[1] = (weaponDef->visuals.color2.y * params.startAlpha);
+	ccsColor[2] = (weaponDef->visuals.color2.z * params.startAlpha);
+	ccsColor[3] = 1;
+	cceColor[0] = (weaponDef->visuals.color2.x * params.endAlpha);
+	cceColor[1] = (weaponDef->visuals.color2.y * params.endAlpha);
+	cceColor[2] = (weaponDef->visuals.color2.z * params.endAlpha);
+	cceColor[3] = 1;
+	ecsColor[0] = (weaponDef->visuals.color.x * params.startAlpha);
+	ecsColor[1] = (weaponDef->visuals.color.y * params.startAlpha);
+	ecsColor[2] = (weaponDef->visuals.color.z * params.startAlpha);
+	ecsColor[3] = 1;
+	eceColor[0] = (weaponDef->visuals.color.x * params.endAlpha);
+	eceColor[1] = (weaponDef->visuals.color.y * params.endAlpha);
+	eceColor[2] = (weaponDef->visuals.color.z * params.endAlpha);
+	eceColor[3] = 1;
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
 	pgOffset = pg.Add({
 		.startPos = startPos,
-		.coreColStart = SColor(coreColStart[0], coreColStart[1], coreColStart[2], coreColStart[3]),
+		.ccsColor = SColor(ccsColor[0], ccsColor[1], ccsColor[2], ccsColor[3]),
 		.targetPos = targetPos,
-		.coreColEnd = SColor(coreColEnd[0], coreColEnd[1], coreColEnd[2], coreColEnd[3]),
+		.cceColor = SColor(cceColor[0], cceColor[1], cceColor[2], cceColor[3]),
 		.animParams1 = animParams,
-		.edgeColStart = SColor(edgeColStart[0], edgeColStart[1], edgeColStart[2], edgeColStart[3]),
+		.ecsColor = SColor(ecsColor[0], ecsColor[1], ecsColor[2], ecsColor[3]),
 		.animParams2 = {},
-		.edgeColEnd = SColor(edgeColEnd[0], edgeColEnd[1], edgeColEnd[2], edgeColEnd[3]),
+		.eceColor = SColor(eceColor[0], eceColor[1], eceColor[2], eceColor[3]),
 		.animParams3 = {},
 		.drawOrder = drawOrder,
 		.texCoord1 = *weaponDef->visuals.texture1,
@@ -101,10 +101,10 @@ void CBeamLaserProjectile::Update()
 		deleteMe = true;
 	} else {
 		for (int i = 0; i < 3; i++) {
-			coreColStart[i] *= decay;
-			coreColEnd[i]   *= decay;
-			edgeColStart[i] *= decay;
-			edgeColEnd[i]   *= decay;
+			ccsColor[i] *= decay;
+			cceColor[i]   *= decay;
+			ecsColor[i] *= decay;
+			eceColor[i]   *= decay;
 		}
 
 		const auto& flaresize = weaponDef->visuals.laserflaresize;
@@ -117,10 +117,10 @@ void CBeamLaserProjectile::Update()
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
 	auto& data = pg.Get(pgOffset);
 
-	data.coreColStart = SColor(coreColStart[0], coreColStart[1], coreColStart[2], coreColStart[3]);
-	data.coreColEnd = SColor(coreColEnd[0], coreColEnd[1], coreColEnd[2], coreColEnd[3]);
-	data.edgeColStart = SColor(edgeColStart[0], edgeColStart[1], edgeColStart[2], edgeColStart[3]);
-	data.edgeColEnd = SColor(edgeColEnd[0], edgeColEnd[1], edgeColEnd[2], edgeColEnd[3]);
+	data.ccsColor = SColor(ccsColor[0], ccsColor[1], ccsColor[2], ccsColor[3]);
+	data.cceColor = SColor(cceColor[0], cceColor[1], cceColor[2], cceColor[3]);
+	data.ecsColor = SColor(ecsColor[0], ecsColor[1], ecsColor[2], ecsColor[3]);
+	data.eceColor = SColor(eceColor[0], eceColor[1], eceColor[2], eceColor[3]);
 }
 
 void CBeamLaserProjectile::Draw()
@@ -239,7 +239,7 @@ void CBeamLaserProjectile::Draw()
 void CBeamLaserProjectile::DrawOnMinimap() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const SColor color = { edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u };
+	const SColor color = { ecsColor[0], ecsColor[1], ecsColor[2], 255u };
 
 	AddMiniMapVertices({ startPos , color }, { targetPos, color });
 }

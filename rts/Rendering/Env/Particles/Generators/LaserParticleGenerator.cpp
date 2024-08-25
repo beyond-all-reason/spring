@@ -3,7 +3,7 @@
 CR_BIND(LaserParticleData, )
 CR_REG_METADATA(LaserParticleData,
 (
-	CR_MEMBER(partPos),
+	CR_MEMBER(pos),
 	CR_MEMBER(curLength),
 	CR_MEMBER(dir),
 	CR_MEMBER(maxLength),

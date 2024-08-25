@@ -3,9 +3,9 @@
 CR_BIND(TorpedoParticleData, )
 CR_REG_METADATA(TorpedoParticleData,
 (
-	CR_MEMBER(partPos),
+	CR_MEMBER(pos),
 	CR_MEMBER(drawOrder),
-	CR_MEMBER(partSpeed),
+	CR_MEMBER(speed),
 	CR_IGNORED(unused),
 	CR_MEMBER(texCoord)
 ))

@@ -6,10 +6,10 @@
 struct StarburstParticleData {
 	CR_DECLARE_STRUCT(StarburstParticleData)
 
-	float3 partPos;
+	float3 pos;
 	int32_t missileAge;
 
-	float3 partSpeed;
+	float3 speed;
 	uint32_t curTracerPart;
 
 	int32_t drawOrder;

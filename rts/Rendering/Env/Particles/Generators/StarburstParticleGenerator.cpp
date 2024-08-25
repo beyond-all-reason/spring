@@ -3,9 +3,9 @@
 CR_BIND(StarburstParticleData, )
 CR_REG_METADATA(StarburstParticleData,
 (
-	CR_MEMBER(partPos),
+	CR_MEMBER(pos),
 	CR_MEMBER(missileAge),
-	CR_MEMBER(partSpeed),
+	CR_MEMBER(speed),
 	CR_MEMBER(curTracerPart),
 	CR_MEMBER(drawOrder),
 	CR_IGNORED(unused),

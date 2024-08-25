@@ -45,6 +45,7 @@ return {
 
 	if (validTextures.x) {
 		AddEffectsQuad(
+			drawOrder,
 			vec3(animParams.xy, animVal),
 			position + bounds[0],
 			position + bounds[1],
@@ -55,6 +56,7 @@ return {
 		);
 
 		AddEffectsQuad(
+			drawOrder,
 			vec3(animParams.xy, animVal),
 			position + bounds[4],
 			position + bounds[5],
@@ -67,6 +69,7 @@ return {
 
 	if (validTextures.y) {
 		AddEffectsQuad(
+			drawOrder,
 			vec3(animParams.xy, animVal),
 			frontPosition + bounds[ 8],
 			frontPosition + bounds[ 9],

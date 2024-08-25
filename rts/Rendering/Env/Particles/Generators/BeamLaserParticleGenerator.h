@@ -6,16 +6,16 @@
 struct BeamLaserParticleData {
 	CR_DECLARE_STRUCT(BeamLaserParticleData)
 	float3 startPos;
-	SColor coreColStart;
+	SColor ccsColor;
 
 	float3 targetPos;
-	SColor coreColEnd;
+	SColor cceColor;
 
 	float3 animParams1;
-	SColor edgeColStart;
+	SColor ecsColor;
 
 	float3 animParams2;
-	SColor edgeColEnd;
+	SColor eceColor;
 
 	float3 animParams3;
 	int32_t drawOrder;

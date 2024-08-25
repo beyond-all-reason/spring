@@ -13,6 +13,7 @@ return {
 			));
 
 			AddEffectsQuadCamera(
+				drawOrder,
 				animParams1,
 				SparkPos(i), vec2(SparkSize(i)), texCoord1,
 				sparkColor
@@ -34,6 +35,7 @@ return {
 			));
 
 			AddEffectsQuadCamera(
+				drawOrder,
 				animParams2,
 				interPos - (speed * 0.5 * i), vec2(dgunSize), texCoord2,
 				dgunColor

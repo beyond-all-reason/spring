@@ -178,10 +178,10 @@ void CStarburstProjectile::Update()
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<StarburstParticleGenerator>();
 	auto& data = pg.Get(pgOffset);
 
-	data.partPos = pos;
+	data.pos = pos;
 	data.missileAge = missileAge;
 
-	data.partSpeed = speed.xyz;
+	data.speed = speed.xyz;
 	data.curTracerPart = curTracerPart;
 
 	for (size_t ti = 0; ti < NUM_TRACER_PARTS; ++ti) {

@@ -1,11 +1,6 @@
 return {
 	MainCode =
 [[
-	vec4 ccsColor = GetPackedColor(coreColStart);
-	vec4 cceColor = GetPackedColor(coreColEnd);
-	vec4 ecsColor = GetPackedColor(edgeColStart);
-	vec4 eceColor = GetPackedColor(edgeColEnd);
-
 	vec3 midPos = (targetPos + startPos) * 0.5f;
 	vec3 cameraDir = normalize(midPos - camPos);
 
@@ -20,6 +15,7 @@ return {
 
 	if (validTextures.y) {
 		AddEffectsQuad(
+			drawOrder,
 			animParams2,
 			startPos - xdir * beamEdgeSize                      , vec2(midTexX2, texCoord2.y),
 			startPos - xdir * beamEdgeSize - ydir * beamEdgeSize, texCoord2.zy,
@@ -29,6 +25,7 @@ return {
 		);
 
 		AddEffectsQuad(
+			drawOrder,
 			animParams2,
 			startPos - xdir * beamCoreSize                      , vec2(midTexX2, texCoord2.y),
 			startPos - xdir * beamCoreSize - ydir * beamCoreSize, texCoord2.zy,
@@ -40,6 +37,7 @@ return {
 
 	if (validTextures.x) {
 		AddEffectsQuad(
+			drawOrder,
 			animParams1,
 			startPos  - xdir * beamEdgeSize, texCoord1.xy, ecsColor,
 			targetPos - xdir * beamEdgeSize, texCoord1.zy, eceColor,
@@ -48,6 +46,7 @@ return {
 		);
 
 		AddEffectsQuad(
+			drawOrder,
 			animParams1,
 			startPos  - xdir * beamCoreSize, texCoord1.xy, ecsColor,
 			targetPos - xdir * beamCoreSize, texCoord1.zy, eceColor,
@@ -58,6 +57,7 @@ return {
 
 	if (validTextures.y) {
 		AddEffectsQuad(
+			drawOrder,
 			animParams2,
 			targetPos - xdir * beamEdgeSize                      , vec2(midTexX2, texCoord2.y),
 			targetPos - xdir * beamEdgeSize + ydir * beamEdgeSize, texCoord2.zy,
@@ -67,6 +67,7 @@ return {
 		);
 
 		AddEffectsQuad(
+			drawOrder,
 			animParams2,
 			targetPos - xdir * beamCoreSize                      , vec2(midTexX2, texCoord2.y),
 			targetPos - xdir * beamCoreSize + ydir * beamCoreSize, texCoord2.zy,
@@ -78,11 +79,13 @@ return {
 
 	if (validTextures.z) {
 		AddEffectsQuadCamera(
+			drawOrder,
 			animParams3,
 			startPos, vec2(flareEdgeSize), texCoord3,
 			ecsColor
 		);
 		AddEffectsQuadCamera(
+			drawOrder,
 			animParams3,
 			startPos, vec2(flareCoreSize), texCoord3,
 			ccsColor

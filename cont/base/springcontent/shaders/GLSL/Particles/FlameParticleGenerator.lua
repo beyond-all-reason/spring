@@ -8,6 +8,7 @@ return {
 	vec4 col = mix(col0, col1, colMixRate);
 
 	AddEffectsQuadCamera(
+		drawOrder,
 		animParams,
 		drawPos, vec2(drawRadius), texCoord,
 		col

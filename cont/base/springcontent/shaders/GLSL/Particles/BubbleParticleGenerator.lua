@@ -6,8 +6,9 @@ return {
 	float interSize = size + sizeExpansion * frameInfo.y;
 
 	AddEffectsQuadCamera(
+		drawOrder,
 		vec3(1.0),
-		partPos, vec2(interSize), texCoord,
+		pos, vec2(interSize), texCoord,
 		partColor
 	);
 ]]

@@ -31,6 +31,7 @@ return {
 				vec4 col = lightYellow; col.rgb *= clamp(alpha, 0.0, 1.0);
 
 				AddEffectsQuadCamera(
+					drawOrder,
 					vec3(1.0),
 					interPos, vec2(drawsize), texCoord3,
 					col
@@ -45,8 +46,9 @@ return {
 		const vec2 fsize2 = vec2(25.0);
 
 		AddEffectsQuadCamera(
+			drawOrder,
 			vec3(1.0),
-			partPos, fsize2, texCoord1,
+			pos, fsize2, texCoord1,
 			lightRed
 		);
 	}

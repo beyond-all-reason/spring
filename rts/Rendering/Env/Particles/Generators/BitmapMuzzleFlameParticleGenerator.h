@@ -19,12 +19,12 @@ struct BitmapMuzzleFlameData {
 	float sizeGrowth;
 
 	float size;
-	float length;
+	float len;
 	float frontOffset;
 	float unused;
 
-	SColor col0;
-	SColor col1;
+	SColor color0;
+	SColor color1;
 	float edge0;
 	float edge1;
 

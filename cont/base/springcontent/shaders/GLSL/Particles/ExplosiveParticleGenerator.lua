@@ -22,6 +22,7 @@ return {
 		col *= stageDecay;
 
 		AddEffectsQuad(
+			drawOrder,
 			animParams,
 			stagePos + (-camDir[0] - camDir[1]) * stageSize,
 			stagePos + ( camDir[0] - camDir[1]) * stageSize,

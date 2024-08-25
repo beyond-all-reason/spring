@@ -16,6 +16,7 @@ return {
 		tempPos = (startPos * (1.0 - f)) + (targetPos * f);
 
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			tempPosO + (dir1 * (Displacement1(d    ) + thickness)), texCoord.xy,
 			tempPos  + (dir1 * (Displacement1(d + 1) + thickness)), texCoord.zy,
@@ -32,6 +33,7 @@ return {
 		tempPos = (startPos * (1.0 - f)) + (targetPos * f);
 
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			tempPosO + (dir1 * (Displacement2(d    ) + thickness)), texCoord.xy,
 			tempPos  + (dir1 * (Displacement2(d + 1) + thickness)), texCoord.zy,

@@ -31,6 +31,7 @@ return {
 
 		if (validTextures.y) {
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				drawPos - (dir1 * size) - (dir2 * size), vec2(texCoord2.x, texCoord2.y),
 				drawPos - (dir1 * size)                , vec2(midtexx,     texCoord2.y),
@@ -40,6 +41,7 @@ return {
 			);
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				drawPos - (dir1 * coresize) - (dir2 * coresize), vec2(texCoord2.x, texCoord2.y),
 				drawPos - (dir1 * coresize)                    , vec2(midtexx    , texCoord2.y),
@@ -51,6 +53,7 @@ return {
 
 		if (validTextures.x) {
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				drawPos - (dir1 * size), vec2(texCoord1.x + texStartOffset, texCoord1.y),
 				pos2    - (dir1 * size), vec2(texCoord1.z + texEndOffset  , texCoord1.y),
@@ -60,6 +63,7 @@ return {
 			);
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				drawPos - (dir1 * coresize), vec2(texCoord1.x + texStartOffset, texCoord1.y),
 				pos2    - (dir1 * coresize), vec2(texCoord1.z + texEndOffset  , texCoord1.y),
@@ -71,6 +75,7 @@ return {
 
 		if (validTextures.y) {
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos2 - (dir1 * size)                , vec2(midtexx    , texCoord2.y),
 				pos2 - (dir1 * size) + (dir2 * size), vec2(texCoord2.z, texCoord2.y),
@@ -80,6 +85,7 @@ return {
 			);
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos2 - (dir1 * coresize)                    , vec2(midtexx    , texCoord2.y),
 				pos2 - (dir1 * coresize) + (dir2 * coresize), vec2(texCoord2.z, texCoord2.y),
@@ -105,6 +111,7 @@ return {
 
 		if (validTextures.x) {
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos1 - (dir1 * size), vec2(texCoord1.x + texStartOffset, texCoord1.y),
 				pos2 - (dir1 * size), vec2(texCoord1.z + texEndOffset  , texCoord1.y),
@@ -114,6 +121,7 @@ return {
 			);
 
 			AddEffectsQuad(
+				drawOrder,
 				vec3(1.0),
 				pos1 - (dir1 * coresize), vec2(texCoord1.x + texStartOffset, texCoord1.y),
 				pos2 - (dir1 * coresize), vec2(texCoord1.z + texEndOffset  , texCoord1.y),

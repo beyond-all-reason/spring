@@ -18,8 +18,8 @@ struct LargeBeamLaserParticleData {
 
 	float scrollSpeed;
 	float pulseSpeed;
-	SColor coreColStart;
-	SColor edgeColStart;
+	SColor ccsColor;
+	SColor ecsColor;
 
 	AtlasedTexture texCoord1;
 	AtlasedTexture texCoord2;

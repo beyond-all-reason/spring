@@ -64,9 +64,9 @@ CNanoProjectile::CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor 
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<NanoParticleGenerator>();
 	pgOffset = pg.Add({
-		.partPos = pos,
+		.pos = pos,
 		.createFrame = createFrame,
-		.partSpeed = speed,
+		.speed = speed,
 		.color = color,
 		.animParams = animParams,
 		.partSize = drawRadius,
@@ -93,7 +93,7 @@ void CNanoProjectile::Update()
 
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<NanoParticleGenerator>();
 	auto& data = pg.Get(pgOffset);
-	data.partPos = pos;
+	data.pos = pos;
 }
 
 void CNanoProjectile::Draw()

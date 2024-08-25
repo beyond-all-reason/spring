@@ -3,9 +3,9 @@
 CR_BIND(NanoParticleData, )
 CR_REG_METADATA(NanoParticleData,
 (
-	CR_MEMBER(partPos),
+	CR_MEMBER(pos),
 	CR_MEMBER(createFrame),
-	CR_MEMBER(partSpeed),
+	CR_MEMBER(speed),
 	CR_MEMBER(color),
 	CR_MEMBER(animParams),
 	CR_MEMBER(partSize),

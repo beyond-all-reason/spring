@@ -5,10 +5,10 @@
 struct NanoParticleData {
 	CR_DECLARE_STRUCT(NanoParticleData)
 
-	float3 partPos;
+	float3 pos;
 	int32_t createFrame;
 
-	float3 partSpeed;
+	float3 speed;
 	SColor color;
 
 	float3 animParams;

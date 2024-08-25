@@ -53,9 +53,9 @@ CTorpedoProjectile::CTorpedoProjectile(const ProjectileParams& params): CWeaponP
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<TorpedoParticleGenerator>();
 
 	pgOffset = pg.Add({
-		.partPos = pos,
+		.pos = pos,
 		.drawOrder = drawOrder,
-		.partSpeed = speed.xyz,
+		.speed = speed.xyz,
 		.texCoord = *projectileDrawer->torpedotex
 	});
 }
@@ -173,8 +173,8 @@ void CTorpedoProjectile::Update()
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<TorpedoParticleGenerator>();
 	auto& data = pg.Get(pgOffset);
 
-	data.partPos = pos;
-	data.partSpeed = speed;
+	data.pos = pos;
+	data.speed = speed;
 }
 
 

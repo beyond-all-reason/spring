@@ -16,6 +16,7 @@ return {
 	
 	if (partW2 != 0.0) {
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			partP1 - dir1 * partW1, vec2(u, v1),
 			partP1 + dir1 * partW1, vec2(u, v0),
@@ -25,6 +26,7 @@ return {
 		);
 	} else {
 		AddEffectsQuad(
+			drawOrder,
 			vec3(1.0),
 			partP1 - dir1 * partW1, vec2(u, v1                  ),
 			partP1 + dir1 * partW1, vec2(u, v0                  ),

@@ -4,7 +4,7 @@ return {
 	float currTime = frameInfo.x + frameInfo.y - createFrame;
 
 	float rotVal  = GetCurrentRotation(rotParams, currTime);
-	float animVal = GetCurrentAnimation(animParams, currTime);
+	SetCurrentAnimation(animParams, currTime);
 	
 	vec4 partColor = GetPackedColor(partCol);
 
@@ -20,10 +20,11 @@ return {
 		bounds[i] = Rotate(sc, camDir[2], bounds[i]);
 	}
 	
-	vec3 drawPos = partPos + partSpeed * frameInfo.y;
+	vec3 drawPos = pos + speed * frameInfo.y;
 
 	AddEffectsQuad(
-		vec3(animParams.xy, animVal),
+		drawOrder,
+		animParams,
 		drawPos + bounds[0],
 		drawPos + bounds[1],
 		drawPos + bounds[2],
