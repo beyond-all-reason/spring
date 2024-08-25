@@ -25,6 +25,7 @@
 #include "ExploSpikeParticleGenerator.h"
 #include "GeoSquareParticleGenerator.h"
 #include "HeatCloudParticleGenerator.h"
+#include "MuzzleFlameParticleGenerator.h"
 
 namespace Shader {
 	struct IProgramObject;
@@ -54,7 +55,11 @@ public:
 
 	template<typename PGT>
 	auto& GetGenerator() {
-		return *(std::get<std::unique_ptr<PGT>>(generators).get());
+		return std::get<PGT>(*generators);
+	}
+	template<typename PGT>
+	const auto& GetGenerator() const {
+		return std::get<PGT>(*generators);
 	}
 
 	static ParticleGeneratorHandler& GetInstance() {
@@ -66,27 +71,30 @@ private:
 	void ReallocateBuffersPost();
 	void AsyncUpdateStatistics();
 private:
-	std::tuple<
+	using GeneratorsTuple = std::tuple<
 		// Weapon Projectiles
-		std::unique_ptr<BeamLaserParticleGenerator>,
-		std::unique_ptr<EmgParticleGenerator>,
-		std::unique_ptr<ExplosiveParticleGenerator>,
-		std::unique_ptr<FireballParticleGenerator>,
-		std::unique_ptr<FlameParticleGenerator>,
-		std::unique_ptr<LargeBeamLaserParticleGenerator>,
-		std::unique_ptr<LaserParticleGenerator>,
-		std::unique_ptr<LightningParticleGenerator>,
-		std::unique_ptr<MissileParticleGenerator>,
-		std::unique_ptr<StarburstParticleGenerator>,
-		std::unique_ptr<TorpedoParticleGenerator>,
+		BeamLaserParticleGenerator,
+		EmgParticleGenerator,
+		ExplosiveParticleGenerator,
+		FireballParticleGenerator,
+		FlameParticleGenerator,
+		LargeBeamLaserParticleGenerator,
+		LaserParticleGenerator,
+		LightningParticleGenerator,
+		MissileParticleGenerator,
+		StarburstParticleGenerator,
+		TorpedoParticleGenerator,
 		// CEG classes
-		std::unique_ptr<BitmapMuzzleFlameParticleGenerator>,
-		std::unique_ptr<BubbleParticleGenerator>,
-		std::unique_ptr<DirtParticleGenerator>,
-		std::unique_ptr<ExploSpikeParticleGenerator>,
-		std::unique_ptr<GeoSquareParticleGenerator>,
-		std::unique_ptr<HeatCloudParticleGenerator>
-	> generators;
+		BitmapMuzzleFlameParticleGenerator,
+		BubbleParticleGenerator,
+		DirtParticleGenerator,
+		ExploSpikeParticleGenerator,
+		GeoSquareParticleGenerator,
+		HeatCloudParticleGenerator,
+		MuzzleFlameParticleGenerator
+	>;
+
+	std::unique_ptr<GeneratorsTuple> generators;
 
 	int32_t numQuads;
 	int32_t sortElemsPerThread;

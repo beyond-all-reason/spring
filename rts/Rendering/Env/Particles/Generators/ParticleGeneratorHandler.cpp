@@ -51,14 +51,7 @@ struct IndicesProducerStorageBindings {
 
 void ParticleGeneratorHandler::Init()
 {
-	static auto Initialize = [](auto& gen) {
-		using T = std::remove_reference_t<decltype(*gen.get())>;
-		gen = std::make_unique<T>();
-	};
-	
-	std::apply([](auto& ... gen) {
-		(Initialize(gen), ...);
-	}, generators);
+	generators = std::make_unique<GeneratorsTuple>();
 
 	vertVBO = VBO{ GL_SHADER_STORAGE_BUFFER };
 	vertVBO.SetUsage(GL_STREAM_COPY);
@@ -214,13 +207,7 @@ void ParticleGeneratorHandler::Init()
 
 void ParticleGeneratorHandler::Kill()
 {
-	static auto Nullify = [](auto& gen) {
-		gen = nullptr;
-	};
-	
-	std::apply([](auto& ... gens) {
-		(Nullify(gens), ...);
-	}, generators);
+	generators = nullptr;
 
 	vertVBO.Release();
 	indcVBO.Release();
@@ -329,8 +316,8 @@ void ParticleGeneratorHandler::GenerateAll()
 	SCOPED_TIMER("ParticleGeneratorHandler::GenerateAll");
 
 	numQuads = std::apply([](auto& ... gen) {
-		return (0 + ... + gen->GetMaxNumQuads());
-	}, generators);
+		return (0 + ... + gen.GetMaxNumQuads());
+	}, *generators);
 
 	if (numQuads <= 0)
 		return;
@@ -348,8 +335,8 @@ void ParticleGeneratorHandler::GenerateAll()
 		auto bindingToken2 = cntrVBO.BindBufferRangeScoped(ParticleGeneratorDefs::SIZE_SSBO_BINDING_IDX);
 
 		std::apply([this](auto& ... gen) {
-			(gen->Generate(numQuads), ...);
-		}, generators);
+			(gen.Generate(numQuads), ...);
+		}, *generators);
 	}
 
 	// TODO check if Generate() used CPU or GPU

@@ -17,13 +17,13 @@ struct InputData {
 #define partSpd    dataIn[gl_GlobalInvocationID.x].info1.xyz
 #define alphaDecay floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info1.w)
 
-#define partDir    dataIn[gl_GlobalInvocationID.x].info1.xyz
-#define partCol    floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info1.w)
+#define partDir    dataIn[gl_GlobalInvocationID.x].info2.xyz
+#define partCol    floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info2.w)
 
-#define partLen        dataIn[gl_GlobalInvocationID.x].info2.x
-#define partLenGrowth  dataIn[gl_GlobalInvocationID.x].info2.y
-#define partWidth      dataIn[gl_GlobalInvocationID.x].info2.z
-#define drawOrder      dataIn[gl_GlobalInvocationID.x].info2.w
+#define partLen        dataIn[gl_GlobalInvocationID.x].info3.x
+#define partLenGrowth  dataIn[gl_GlobalInvocationID.x].info3.y
+#define partWidth      dataIn[gl_GlobalInvocationID.x].info3.z
+#define drawOrder      dataIn[gl_GlobalInvocationID.x].info3.w
 
 #define texCoord   dataIn[gl_GlobalInvocationID.x].info4
 ]],

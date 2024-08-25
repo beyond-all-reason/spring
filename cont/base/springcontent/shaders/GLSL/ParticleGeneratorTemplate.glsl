@@ -271,10 +271,10 @@ void AddEffectsQuadCamera(
 	// TODO write optimized code
 	AddEffectsQuad(
 		animPrms,
-		centerPos - camDirPos[0].xyz * quadDims.x - camDirPos[1].xyz * quadDims.y, texCrds.xy,
-		centerPos + camDirPos[0].xyz * quadDims.x - camDirPos[1].xyz * quadDims.y, texCrds.zy,
-		centerPos + camDirPos[0].xyz * quadDims.x + camDirPos[1].xyz * quadDims.y, texCrds.zw,
-		centerPos - camDirPos[0].xyz * quadDims.x + camDirPos[1].xyz * quadDims.y, texCrds.xw,
+		centerPos - camDirPos[1].xyz * quadDims.x - camDirPos[2].xyz * quadDims.y, texCrds.xy,
+		centerPos + camDirPos[1].xyz * quadDims.x - camDirPos[2].xyz * quadDims.y, texCrds.zy,
+		centerPos + camDirPos[1].xyz * quadDims.x + camDirPos[2].xyz * quadDims.y, texCrds.zw,
+		centerPos - camDirPos[1].xyz * quadDims.x + camDirPos[2].xyz * quadDims.y, texCrds.xw,
 		quadColor
 	);
 }
