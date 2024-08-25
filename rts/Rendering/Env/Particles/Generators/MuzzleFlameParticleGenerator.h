@@ -3,6 +3,8 @@
 #include "ParticleGenerator.h"
 
 struct MuzzleFlameParticleData {
+	CR_DECLARE_STRUCT(MuzzleFlameParticleData)
+
 	float3 pos;
 	float age;
 

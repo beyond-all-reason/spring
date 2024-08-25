@@ -3,7 +3,9 @@
 #include "ParticleGenerator.h"
 
 // needs Update()
-struct LightningData {
+struct LightningParticleData {
+	CR_DECLARE_STRUCT(LightningParticleData)
+
 	float3 startPos;
 	float thickness;
 
@@ -16,7 +18,7 @@ struct LightningData {
 
 	SColor col;
 	int32_t drawOrder;
-	float unused2[2];
+	std::array<float, 2> unused2;
 
 	int32_t GetMaxNumQuads() const {
 		return
@@ -27,10 +29,10 @@ struct LightningData {
 	}
 };
 
-static_assert(sizeof(LightningData) % 16 == 0);
+static_assert(sizeof(LightningParticleData) % 16 == 0);
 
-class LightningParticleGenerator : public ParticleGenerator<LightningData, LightningParticleGenerator> {
-	friend class ParticleGenerator<LightningData, LightningParticleGenerator>;
+class LightningParticleGenerator : public ParticleGenerator<LightningParticleData, LightningParticleGenerator> {
+	friend class ParticleGenerator<LightningParticleData, LightningParticleGenerator>;
 public:
 	LightningParticleGenerator() {}
 	~LightningParticleGenerator() {}

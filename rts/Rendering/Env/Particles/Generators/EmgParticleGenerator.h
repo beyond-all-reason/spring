@@ -4,6 +4,7 @@
 
 //no regular Update() needed
 struct EmgParticleData {
+	CR_DECLARE_STRUCT(EmgParticleData)
 	float3 pos;
 	float radius;
 

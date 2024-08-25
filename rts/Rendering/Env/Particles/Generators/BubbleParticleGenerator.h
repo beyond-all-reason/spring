@@ -3,6 +3,7 @@
 #include "ParticleGenerator.h"
 
 struct BubbleParticleData {
+	CR_DECLARE_STRUCT(BubbleParticleData)
 	float3 pos;
 	float alpha;
 

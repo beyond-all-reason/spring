@@ -3,6 +3,8 @@
 #include "ParticleGenerator.h"
 
 struct GeoSquareParticleData {
+	CR_DECLARE_STRUCT(GeoSquareParticleData)
+
 	float3 p1;
 	float w1;
 

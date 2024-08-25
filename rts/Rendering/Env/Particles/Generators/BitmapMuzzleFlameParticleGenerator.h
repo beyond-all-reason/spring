@@ -4,6 +4,8 @@
 
 //no regular Update() needed
 struct BitmapMuzzleFlameData {
+	CR_DECLARE_STRUCT(BitmapMuzzleFlameData)
+
 	float3 pos;
 	float invttl;
 

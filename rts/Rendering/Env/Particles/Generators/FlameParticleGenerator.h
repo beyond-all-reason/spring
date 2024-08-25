@@ -3,6 +3,8 @@
 #include "ParticleGenerator.h"
 
 struct FlameParticleData {
+	CR_DECLARE_STRUCT(FlameParticleData)
+
 	float3 pos;
 	float radius;
 

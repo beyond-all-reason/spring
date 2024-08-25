@@ -3,6 +3,7 @@
 #include "ParticleGenerator.h"
 
 struct ExploSpikeParticleData {
+	CR_DECLARE_STRUCT(ExploSpikeParticleData)
 	float3 pos;
 	float alpha;
 

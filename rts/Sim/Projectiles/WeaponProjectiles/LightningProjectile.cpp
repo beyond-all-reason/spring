@@ -61,7 +61,7 @@ CLightningProjectile::CLightningProjectile(const ProjectileParams& params): CWea
 	data.drawOrder = drawOrder;
 
 
-	static_assert(sizeof(displacements[0]) + sizeof(displacements[1]) == sizeof(LightningData::displacements));
+	static_assert(sizeof(displacements[0]) + sizeof(displacements[1]) == sizeof(LightningParticleData::displacements));
 }
 
 CLightningProjectile::~CLightningProjectile()

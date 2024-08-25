@@ -3,6 +3,8 @@
 #include "ParticleGenerator.h"
 
 struct NanoParticleData {
+	CR_DECLARE_STRUCT(NanoParticleData)
+
 	float3 partPos;
 	int32_t createFrame;
 

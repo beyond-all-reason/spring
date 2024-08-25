@@ -3,6 +3,8 @@
 #include "ParticleGenerator.h"
 
 struct HeatCloudParticleData {
+	CR_DECLARE_STRUCT(HeatCloudParticleData)
+
 	float3 pos;
 	float maxHeat;
 

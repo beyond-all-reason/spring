@@ -3,6 +3,7 @@
 #include "ParticleGenerator.h"
 
 struct DirtParticleData {
+	CR_DECLARE_STRUCT(DirtParticleData)
 	float3 pos;
 	float alpha;
 

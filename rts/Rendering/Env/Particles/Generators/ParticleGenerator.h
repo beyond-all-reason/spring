@@ -26,6 +26,7 @@
 #include "System/float3.h"
 #include "System/float4.h"
 #include "System/Color.h"
+#include "System/creg/creg_cond.h"
 
 struct ParticleGeneratorDefs {
 	// bindings 0 and 1 are occupied by MATRIX_SSBO_BINDING_IDX and MATUNI_SSBO_BINDING_IDX

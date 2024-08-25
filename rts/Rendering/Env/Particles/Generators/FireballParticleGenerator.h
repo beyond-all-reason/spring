@@ -6,7 +6,9 @@
 #include "ParticleGenerator.h"
 #include "System/SpringMath.h"
 
-struct FireballData {
+struct FireballParticleData {
+	CR_DECLARE_STRUCT(FireballParticleData)
+
 	std::array<float4, 12> sparkPosSize;
 
 	float3 dgunPos;
@@ -36,10 +38,10 @@ struct FireballData {
 	}
 };
 
-static_assert(sizeof(FireballData) % 16 == 0);
+static_assert(sizeof(FireballParticleData) % 16 == 0);
 
-class FireballParticleGenerator : public ParticleGenerator<FireballData, FireballParticleGenerator> {
-	friend class ParticleGenerator<FireballData, FireballParticleGenerator>;
+class FireballParticleGenerator : public ParticleGenerator<FireballParticleData, FireballParticleGenerator> {
+	friend class ParticleGenerator<FireballParticleData, FireballParticleGenerator>;
 public:
 	FireballParticleGenerator() {}
 	~FireballParticleGenerator() {}

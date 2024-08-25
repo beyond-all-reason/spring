@@ -3,6 +3,7 @@
 #include "ParticleGenerator.h"
 
 struct ExplosiveParticleData {
+	CR_DECLARE_STRUCT(ExplosiveParticleData)
 	float3 pos;
 	float radius;
 

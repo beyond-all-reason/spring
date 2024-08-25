@@ -3,7 +3,8 @@
 #include "ParticleGenerator.h"
 
 // no need for regular Update()
-struct TorpedoData {
+struct TorpedoParticleData {
+	CR_DECLARE_STRUCT(TorpedoParticleData)
 	float3 partPos;
 	int32_t drawOrder;
 
@@ -21,10 +22,10 @@ struct TorpedoData {
 	}
 };
 
-static_assert(sizeof(TorpedoData) % 16 == 0);
+static_assert(sizeof(TorpedoParticleData) % 16 == 0);
 
-class TorpedoParticleGenerator : public ParticleGenerator<TorpedoData, TorpedoParticleGenerator> {
-	friend class ParticleGenerator<TorpedoData, TorpedoParticleGenerator>;
+class TorpedoParticleGenerator : public ParticleGenerator<TorpedoParticleData, TorpedoParticleGenerator> {
+	friend class ParticleGenerator<TorpedoParticleData, TorpedoParticleGenerator>;
 public:
 	TorpedoParticleGenerator() {}
 	~TorpedoParticleGenerator() {}

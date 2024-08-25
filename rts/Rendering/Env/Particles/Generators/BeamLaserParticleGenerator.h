@@ -3,7 +3,8 @@
 #include "ParticleGenerator.h"
 
 //no regular Update() needed
-struct BeamLaserData {
+struct BeamLaserParticleData {
+	CR_DECLARE_STRUCT(BeamLaserParticleData)
 	float3 startPos;
 	SColor coreColStart;
 
@@ -41,10 +42,10 @@ struct BeamLaserData {
 	}
 };
 
-static_assert(sizeof(BeamLaserData) % 16 == 0);
+static_assert(sizeof(BeamLaserParticleData) % 16 == 0);
 
-class BeamLaserParticleGenerator : public ParticleGenerator<BeamLaserData, BeamLaserParticleGenerator> {
-	friend class ParticleGenerator<BeamLaserData, BeamLaserParticleGenerator>;
+class BeamLaserParticleGenerator : public ParticleGenerator<BeamLaserParticleData, BeamLaserParticleGenerator> {
+	friend class ParticleGenerator<BeamLaserParticleData, BeamLaserParticleGenerator>;
 public:
 	BeamLaserParticleGenerator() {}
 	~BeamLaserParticleGenerator() {}

@@ -2,7 +2,9 @@
 
 #include "ParticleGenerator.h"
 
-struct LargeBeamLaserData {
+struct LargeBeamLaserParticleData {
+	CR_DECLARE_STRUCT(LargeBeamLaserParticleData)
+
 	float3 startPos;
 	int32_t drawOrder;
 
@@ -44,10 +46,10 @@ struct LargeBeamLaserData {
 	}
 };
 
-static_assert(sizeof(LargeBeamLaserData) % 16 == 0);
+static_assert(sizeof(LargeBeamLaserParticleData) % 16 == 0);
 
-class LargeBeamLaserParticleGenerator : public ParticleGenerator<LargeBeamLaserData, LargeBeamLaserParticleGenerator> {
-	friend class ParticleGenerator<LargeBeamLaserData, LargeBeamLaserParticleGenerator>;
+class LargeBeamLaserParticleGenerator : public ParticleGenerator<LargeBeamLaserParticleData, LargeBeamLaserParticleGenerator> {
+	friend class ParticleGenerator<LargeBeamLaserParticleData, LargeBeamLaserParticleGenerator>;
 public:
 	LargeBeamLaserParticleGenerator() {}
 	~LargeBeamLaserParticleGenerator() {}

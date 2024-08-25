@@ -2,8 +2,10 @@
 
 #include "ParticleGenerator.h"
 // needs Update()
-struct LaserData {
-	float3 drawPos;
+struct LaserParticleData {
+	CR_DECLARE_STRUCT(LaserParticleData)
+
+	float3 partPos;
 	float curLength;
 
 	float3 dir;
@@ -20,7 +22,7 @@ struct LaserData {
 	float stayTime;
 
 	float speedf;
-	float unused[3];
+	std::array<float, 3> unused;
 
 	AtlasedTexture texCoord1;
 	AtlasedTexture texCoord2;
@@ -36,10 +38,10 @@ struct LaserData {
 	}
 };
 
-static_assert(sizeof(LaserData) % 16 == 0);
+static_assert(sizeof(LaserParticleData) % 16 == 0);
 
-class LaserParticleGenerator : public ParticleGenerator<LaserData, LaserParticleGenerator> {
-	friend class ParticleGenerator<LaserData, LaserParticleGenerator>;
+class LaserParticleGenerator : public ParticleGenerator<LaserParticleData, LaserParticleGenerator> {
+	friend class ParticleGenerator<LaserParticleData, LaserParticleGenerator>;
 public:
 	LaserParticleGenerator() {}
 	~LaserParticleGenerator() {}

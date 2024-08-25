@@ -3,8 +3,12 @@
 #include "ParticleGenerator.h"
 #include <array>
 
-struct StarburstData {
+struct StarburstParticleData {
+	CR_DECLARE_STRUCT(StarburstParticleData)
+	CR_DECLARE_SUB(TraceDirNumMods)
+
 	struct TraceDirNumMods {
+		CR_DECLARE_STRUCT(TraceDirNumMods)
 		float3 dir;
 		uint32_t numAgeMods;
 	};
@@ -15,7 +19,7 @@ struct StarburstData {
 	uint32_t curTracerPart;
 
 	int32_t drawOrder;
-	int32_t unused[3];
+	std::array<int32_t, 3> unused;
 
 	std::array<float4, 3> tracerPosSpeed;
 	std::array<TraceDirNumMods, 3> tracerDir;
@@ -35,10 +39,10 @@ struct StarburstData {
 	}
 };
 
-static_assert(sizeof(StarburstData) % 16 == 0);
+static_assert(sizeof(StarburstParticleData) % 16 == 0);
 
-class StarburstParticleGenerator : public ParticleGenerator<StarburstData, StarburstParticleGenerator> {
-	friend class ParticleGenerator<StarburstData, StarburstParticleGenerator>;
+class StarburstParticleGenerator : public ParticleGenerator<StarburstParticleData, StarburstParticleGenerator> {
+	friend class ParticleGenerator<StarburstParticleData, StarburstParticleGenerator>;
 public:
 	StarburstParticleGenerator() {}
 	~StarburstParticleGenerator() {}

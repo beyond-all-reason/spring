@@ -2,7 +2,9 @@
 
 #include "ParticleGenerator.h"
 
-struct MissileData {
+struct MissileParticleData {
+	CR_DECLARE_STRUCT(MissileParticleData)
+
 	float3 pos;
 	float fsize;
 
@@ -20,10 +22,10 @@ struct MissileData {
 	}
 };
 
-static_assert(sizeof(MissileData) % 16 == 0);
+static_assert(sizeof(MissileParticleData) % 16 == 0);
 
-class MissileParticleGenerator : public ParticleGenerator<MissileData, MissileParticleGenerator> {
-	friend class ParticleGenerator<MissileData, MissileParticleGenerator>;
+class MissileParticleGenerator : public ParticleGenerator<MissileParticleData, MissileParticleGenerator> {
+	friend class ParticleGenerator<MissileParticleData, MissileParticleGenerator>;
 public:
 	MissileParticleGenerator() {}
 	~MissileParticleGenerator() {}
