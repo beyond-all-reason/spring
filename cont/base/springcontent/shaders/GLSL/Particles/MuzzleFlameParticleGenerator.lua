@@ -48,7 +48,7 @@ struct InputData {
 	vec3 interPos = partPos + (aIndex + 2.0 + frameInfo.y) * randDir * modAge * 0.4;
 
 	vec4 partColor1 = vec4(180, 180, 180, 255) * alpha * fade / 255.0;
-	
+
 	AddEffectsQuadCamera(
 		vec3(1.0),
 		interPos, drawSize, texCoord1,

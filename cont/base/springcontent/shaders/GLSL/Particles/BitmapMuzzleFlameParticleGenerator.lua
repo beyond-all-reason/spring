@@ -60,7 +60,7 @@ struct InputData {
 
 	float life = currTime * invttl;
 	float rotVal  = GetCurrentRotation(rotParams, currTime);
-	float animVal = GetCurrentAnimation(rotParams, currTime);
+	float animVal = GetCurrentAnimation(animParams, currTime);
 
 	float igrowth = sizeGrowth * (1.0 - (1.0 - life) * (1.0 - life));
 

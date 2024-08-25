@@ -7,6 +7,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Rendering/Colors.h"
 #include "Rendering/GlobalRendering.h"
 #include "Game/GlobalUnsynced.h"
@@ -60,12 +61,27 @@ CNanoProjectile::CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor 
 	rotVal = rotVal0 + rotVal0x;
 	rotVel = rotVel0 + rotVel0x;
 	rotAcc = rotAcc0 + rotAcc0x;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<NanoParticleGenerator>();
+	pgOffset = pg.Add({
+		.partPos = pos,
+		.createFrame = createFrame,
+		.partSpeed = speed,
+		.color = color,
+		.animParams = animParams,
+		.partSize = drawRadius,
+		.rotParams = float3(rotVel, rotAcc, rotVal),
+		.drawOrder = drawOrder,
+		.texCoord = *projectileDrawer->gfxtex
+	});
 }
 
 CNanoProjectile::~CNanoProjectile()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileHandler.currentNanoParticles -= 1;
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<NanoParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 void CNanoProjectile::Update()
@@ -74,6 +90,10 @@ void CNanoProjectile::Update()
 	pos += speed;
 
 	deleteMe |= (gs->frameNum >= deathFrame);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<NanoParticleGenerator>();
+	const auto [token, data] = pg.Get(pgOffset);
+	data->partPos = pos;
 }
 
 void CNanoProjectile::Draw()

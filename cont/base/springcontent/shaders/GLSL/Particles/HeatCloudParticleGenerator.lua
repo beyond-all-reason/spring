@@ -44,7 +44,7 @@ struct InputData {
 	float currTime = frameInfo.x + frameInfo.y - createFrame;
 
 	float rotVal  = GetCurrentRotation(rotParams, currTime);
-	float animVal = GetCurrentAnimation(rotParams, currTime);
+	float animVal = GetCurrentAnimation(animParams, currTime);
 
 	float dheat = max(0.0, heat - frameInfo.y);
 	float alpha = (dheat / maxHeat);
@@ -54,9 +54,6 @@ struct InputData {
 	float drawSize = (size + sizeGrowth * frameInfo.y) * (1.0 - sizeMod);
 
 	vec2 sc = vec2(sin(rotVal), cos(rotVal));
-
-	vec3 camUp = camDirPos[2].xyz;
-	vec3 camRi = camDirPos[1].xyz;
 
 	vec3 bounds[4] = vec3[4](
 		vec3(-camDirPos[1].xyz - camDirPos[2].xyz) * drawSize,

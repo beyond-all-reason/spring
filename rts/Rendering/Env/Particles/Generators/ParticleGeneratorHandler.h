@@ -26,6 +26,7 @@
 #include "GeoSquareParticleGenerator.h"
 #include "HeatCloudParticleGenerator.h"
 #include "MuzzleFlameParticleGenerator.h"
+#include "NanoParticleGenerator.h"
 
 namespace Shader {
 	struct IProgramObject;
@@ -91,7 +92,8 @@ private:
 		ExploSpikeParticleGenerator,
 		GeoSquareParticleGenerator,
 		HeatCloudParticleGenerator,
-		MuzzleFlameParticleGenerator
+		MuzzleFlameParticleGenerator,
+		NanoParticleGenerator
 	>;
 
 	std::unique_ptr<GeneratorsTuple> generators;
