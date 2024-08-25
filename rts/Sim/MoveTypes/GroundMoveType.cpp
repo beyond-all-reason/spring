@@ -534,8 +534,11 @@ void CGroundMoveType::PostLoad()
 	pathController = GMTDefaultPathController(owner);
 
 	// If the active moveType is not set to default ground move (i.e. is on scripted move type) then skip.
-	if ((void*)owner->moveType != (void*)owner->amtMemBuffer)
+	if ((void*)owner->moveType != (void*)owner->amtMemBuffer) {
+		// Safety measure to clear the path id.
+		pathID = 0;
 		return;
+	}
 
 	Connect();
 
