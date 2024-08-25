@@ -15,6 +15,7 @@
 #include "System/Log/ILog.h"
 #include "System/TypeToStr.h"
 #include "System/UnorderedSet.hpp"
+#include "System/StringUtil.h"
 #include "System/FileSystem/FileHandler.h"
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
@@ -196,6 +197,143 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 		}
 	}
 
+	std::ostringstream dataStructSS;
+	std::ostringstream dataToFieldsSS;
+	std::ostringstream earlyExitAutoSS;
+	{
+		std::vector<std::string> allAtlassedTextures;
+
+		constexpr auto VEC4_BYTE_SIZE = 4 * sizeof(float);
+		const auto* cregClass = ParticleDataType::StaticClass();
+		assert(cregClass->size % VEC4_BYTE_SIZE == 0);
+		const uint32_t numVec4 = cregClass->size / VEC4_BYTE_SIZE;
+		std::map<uint32_t, std::tuple<std::string, std::string, uint32_t>> membersMap;
+		for (const auto& member : cregClass->members) {
+			membersMap[member.offset] = std::make_tuple(std::string{ member.name }, member.type->GetName(), member.type->GetSize());
+		}
+
+		dataStructSS << "struct InputData {\n";
+		dataStructSS << "\tvec4 info[" << numVec4 << "];\n";
+		dataStructSS << "};";
+
+		static constexpr const char* TABS = "\t";
+		for (const auto& [offt, fieldInfo] : membersMap) {
+			const auto& name = std::get<0>(fieldInfo);
+			auto typeName = std::get<1>(fieldInfo);
+			auto size = std::get<2>(fieldInfo);
+
+			size_t arraySize = 1;
+
+			if (name.rfind("unused") != std::string::npos)
+				continue;
+
+			if (auto ps = typeName.rfind("["); ps != std::string::npos) {
+				auto pe = typeName.rfind("]");
+				bool failed;
+				arraySize = StringToInt<size_t>(typeName.substr(ps + 1, pe - ps - 1), &failed);
+				assert(!failed);
+				typeName = typeName.substr(0, ps);
+				size /= arraySize; // will account for that later
+			}
+
+			std::string glslType;
+			std::string reinterpretString;
+			std::string reinterpretString2;
+
+			switch (hashString(typeName))
+			{
+			case hashString("float4"): {
+				glslType = "vec4";
+			} break;
+			case hashString("float3"): {
+				glslType = "vec3";
+			} break;
+			case hashString("float2"): {
+				glslType = "vec2";
+			} break;
+			case hashString("int"): {
+				reinterpretString = "floatBitsToInt";
+				glslType = "int";
+			} break;
+			case hashString("uint"): {
+				reinterpretString = "floatBitsToUInt";
+				glslType = "uint";
+			} break;
+			case hashString("float"): {
+				glslType = "float";
+			} break;
+			case hashString("SColor"): {
+				glslType = "vec4";
+				reinterpretString = "floatBitsToUint";
+				reinterpretString2 = "GetPackedColor";
+			} break;
+			case hashString("AtlasedTexture"): {
+				glslType = "vec4";
+				allAtlassedTextures.emplace_back(name);
+			} break;
+			default:
+				assert(false);
+				break;
+			}
+
+			if (arraySize > 1) {
+				dataToFieldsSS << TABS << glslType << " " << name << "[" << arraySize << "];\n";
+			}
+
+			for (int ai = 0; ai < arraySize; ++ai) {
+				uint32_t localOffset = (offt + ai * VEC4_BYTE_SIZE);
+				uint32_t infoIndex = (localOffset / VEC4_BYTE_SIZE);
+				uint32_t vec4Index = (localOffset % VEC4_BYTE_SIZE) / sizeof(float);
+
+				std::ostringstream infoTxtSS;
+				if (!reinterpretString2.empty())
+					infoTxtSS << reinterpretString2 << "(";
+				if (!reinterpretString.empty())
+					infoTxtSS << reinterpretString << "(";
+
+				static constexpr const char* SWIZZLE = "xyzw";
+				infoTxtSS << fmt::format("dataIn[gl_GlobalInvocationID.x].info[{}]", infoIndex);
+				if (size != VEC4_BYTE_SIZE) {
+					infoTxtSS << ".";
+					for (int sr = 0; sr < size / 4; ++sr) {
+						infoTxtSS << SWIZZLE[vec4Index + sr];
+					}
+				}
+
+				if (!reinterpretString.empty())
+					infoTxtSS << ")";
+				if (!reinterpretString2.empty())
+					infoTxtSS << ")";
+
+				if (arraySize == 1) {
+					dataToFieldsSS << TABS << glslType << " " << name << " = " << infoTxtSS.str() << ";\n";
+				}
+				else {
+					dataToFieldsSS << TABS << name << "[" << ai << "]" << " = " << infoTxtSS.str() << ";\n";
+				}
+			}
+		}
+
+		const std::string boolType = (allAtlassedTextures.size() == 1) ? "bool" : fmt::format("bvec{}", allAtlassedTextures.size());
+		static constexpr const char* VT_FORMAT_COM = "({}.z - {}.x) * ({}.w - {}.y) > 0.0,\n";
+		static constexpr const char* VT_FORMAT_END = "({}.z - {}.x) * ({}.w - {}.y) > 0.0\n";
+		earlyExitAutoSS << TABS << boolType << " validTextures = " << boolType << "(\n";
+		for (size_t ati = 0; ati < allAtlassedTextures.size(); ++ati) {
+			const auto& at = allAtlassedTextures[ati];
+			if (ati == allAtlassedTextures.size() - 1)
+				earlyExitAutoSS << TABS << "\t" << fmt::format(VT_FORMAT_END, at, at, at, at);
+			else
+				earlyExitAutoSS << TABS << "\t" << fmt::format(VT_FORMAT_COM, at, at, at, at);
+		}
+		earlyExitAutoSS << TABS << ");\n\n";
+		earlyExitAutoSS << TABS << "bool anyValidTextures = " << ((allAtlassedTextures.size() == 1) ?
+			"validTextures;\n" :
+			"any(validTextures);\n");
+
+		earlyExitAutoSS << TABS << "if (!anyValidTextures)\n";
+		earlyExitAutoSS << TABS << "\treturn;\n";
+	}
+
 	static constexpr const char* shaderTemplateFilePath = "shaders/GLSL/ParticleGeneratorTemplate.glsl";
 
 	CFileHandler shaderTemplateFile(shaderTemplateFilePath);
@@ -218,17 +356,15 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	}
 	const LuaTable root = parser.GetRoot();
 
-	const std::string inputData = root.GetString("InputData", "");
 	const std::string inputDefs = root.GetString("InputDefs", "");
 	const std::string earlyExit = root.GetString("EarlyExit", "");
-	      std::string numQuads  = root.GetString("NumQuads" , ""); numQuads.erase(std::remove(numQuads.begin(), numQuads.end(), '\n'), numQuads.cend());
 	const std::string mainCode  = root.GetString("MainCode" , "");
 
 	shaderSrc = fmt::sprintf(shaderSrc,
-		inputData,
-		inputDefs,
+		dataStructSS.str(),
+		earlyExitAutoSS.str(),
 		earlyExit,
-		numQuads,
+		dataToFieldsSS.str(),		
 		mainCode
 	);
 
@@ -374,7 +510,7 @@ inline ParticleDataType& ParticleGenerator<ParticleDataType, ParticleGenType>::G
 template<typename ParticleDataType, typename ParticleGenType>
 inline void ParticleGenerator<ParticleDataType, ParticleGenType>::SetMaxNumQuads()
 {
-	maxNumQuads = std::reduce(particles.begin(), particles.end(), 0, [](int32_t prev, const auto& p) { return prev + p.GetMaxNumQuads(); });
+	maxNumQuads = std::accumulate(particles.begin(), particles.end(), 0, [](int32_t prev, const auto& p) { return prev + p.GetMaxNumQuads(); });
 }
 
 template<typename ParticleDataType, typename ParticleGenType>

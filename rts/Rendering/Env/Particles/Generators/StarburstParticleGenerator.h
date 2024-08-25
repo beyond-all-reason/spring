@@ -5,13 +5,7 @@
 
 struct StarburstParticleData {
 	CR_DECLARE_STRUCT(StarburstParticleData)
-	CR_DECLARE_SUB(TraceDirNumMods)
 
-	struct TraceDirNumMods {
-		CR_DECLARE_STRUCT(TraceDirNumMods)
-		float3 dir;
-		uint32_t numAgeMods;
-	};
 	float3 partPos;
 	int32_t missileAge;
 
@@ -22,7 +16,7 @@ struct StarburstParticleData {
 	std::array<int32_t, 3> unused;
 
 	std::array<float4, 3> tracerPosSpeed;
-	std::array<TraceDirNumMods, 3> tracerDir;
+	std::array<float4, 3> tracerDirNumMods;
 	std::array<float, 3 * 20> allAgeMods;
 
 	AtlasedTexture texCoord1;

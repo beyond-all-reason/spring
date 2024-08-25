@@ -188,7 +188,7 @@ void CStarburstProjectile::Update()
 		const TracerPart& tracerPart = tracerParts[ti];
 
 		data.tracerPosSpeed[ti] = float4{ tracerPart.pos, tracerPart.speedf };
-		data.tracerDir[ti] = StarburstParticleData::TraceDirNumMods{.dir = tracerPart.dir, .numAgeMods = tracerPart.numAgeMods};
+		data.tracerDirNumMods[ti] = float4{ tracerPart.dir, std::bit_cast<float>(tracerPart.numAgeMods) };
 
 		for (size_t ami = 0; ami < MAX_NUM_AGEMODS; ++ami) {
 			data.allAgeMods[MAX_NUM_AGEMODS * ti + ami] = tracerPart.ageMods[ami];

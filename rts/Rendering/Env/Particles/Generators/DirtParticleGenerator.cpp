@@ -10,6 +10,6 @@ CR_REG_METADATA(DirtParticleData,
 	CR_MEMBER(size),
 	CR_MEMBER(sizeExpansion),
 	CR_MEMBER(drawOrder),
-	CR_MEMBER(unused),
+	CR_IGNORED(unused),
 	CR_MEMBER(texCoord)
 ))

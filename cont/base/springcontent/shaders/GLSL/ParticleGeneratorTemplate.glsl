@@ -10,9 +10,6 @@ uniform vec4 frustumPlanes[6];
 // Placeholer for the struct InputData
 %s
 
-// Placeholer for definitions
-%s
-
 shared uint localNumCulled;
 shared uint localNumOutOfB;
 
@@ -145,6 +142,7 @@ bool SphereInView(vec4 posRad) {
 }
 
 void AddEffectsQuad(
+	int drawOrder,
 	vec3 animPrms,
 	vec3 tlPos, vec2 tlUV, vec4 tlCol,
 	vec3 trPos, vec2 trUV, vec4 trCol,
@@ -205,34 +203,35 @@ void AddEffectsQuad(
 	// Triangles
 	/////////////////
 	// TL
-	triangleData[triIndex].pos      = vec4(tlPos, drawOrder);
+	triangleData[triIndex].pos      = vec4(tlPos, intBitsToFloat(drawOrder));
 	triangleData[triIndex].uvw      = vec4(tlUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
 	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(tlCol)));
 	triIndex++;
 
 	// TR
-	triangleData[triIndex].pos      = vec4(trPos, drawOrder);
+	triangleData[triIndex].pos      = vec4(trPos, intBitsToFloat(drawOrder));
 	triangleData[triIndex].uvw      = vec4(trUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
 	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(trCol)));
 	triIndex++;
 
 	// BR
-	triangleData[triIndex].pos      = vec4(brPos, drawOrder);
+	triangleData[triIndex].pos      = vec4(brPos, intBitsToFloat(drawOrder));
 	triangleData[triIndex].uvw      = vec4(brUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
 	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(brCol)));
 	triIndex++;
 
 	// BL
-	triangleData[triIndex].pos      = vec4(blPos, drawOrder);
+	triangleData[triIndex].pos      = vec4(blPos, intBitsToFloat(drawOrder));
 	triangleData[triIndex].uvw      = vec4(blUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
 	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(blCol)));
 }
 
 void AddEffectsQuad(
+	int drawOrder,
 	vec3 animPrms,
 	vec3 tlPos, vec2 tlUV,
 	vec3 trPos, vec2 trUV,
@@ -242,6 +241,7 @@ void AddEffectsQuad(
 ) {
 	// TODO write optimized code
 	AddEffectsQuad(
+		drawOrder,
 		animPrms,
 		tlPos, tlUV, quadColor,
 		trPos, trUV, quadColor,
@@ -251,6 +251,7 @@ void AddEffectsQuad(
 }
 
 void AddEffectsQuad(
+	int drawOrder,
 	vec3 animPrms,
 	vec3 tlPos,
 	vec3 trPos,
@@ -261,6 +262,7 @@ void AddEffectsQuad(
 ) {
 	// TODO write optimized code
 	AddEffectsQuad(
+		drawOrder,
 		animPrms,
 		tlPos, texCrds.xy, quadColor,
 		trPos, texCrds.zy, quadColor,
@@ -270,6 +272,7 @@ void AddEffectsQuad(
 }
 
 void AddEffectsQuadCamera(
+	int drawOrder,
 	vec3 animPrms,
 	vec3 centerPos,
 	vec2 quadDims,
@@ -278,6 +281,7 @@ void AddEffectsQuadCamera(
 ) {
 	// TODO write optimized code
 	AddEffectsQuad(
+		drawOrder,
 		animPrms,
 		centerPos - camDir[0] * quadDims.x - camDir[1] * quadDims.y, texCrds.xy,
 		centerPos + camDir[0] * quadDims.x - camDir[1] * quadDims.y, texCrds.zy,
@@ -300,15 +304,12 @@ void main()
 	if (gl_GlobalInvocationID.x >= arraySizes.x)
 		return;
 
-	// Placeholer for early exit and other init code
+	// Placeholer for automatic early exit
 %s
-
-	// Placeholer to define the number of quads
-	//quadStartIndex = atomicAdd(localQuadsCounter, (%s) * uint(gl_GlobalInvocationID.x < arraySizes.x));
-
-	//barrier();
-    //memoryBarrierShared();
-
+	// Placeholer for custom early exit and other init code
+%s
+	// Automatically formed input data
+%s
 	// Placeholer for the rest of the main code
 %s
 

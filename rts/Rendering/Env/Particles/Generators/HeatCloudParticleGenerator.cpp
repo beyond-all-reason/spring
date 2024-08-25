@@ -14,6 +14,6 @@ CR_REG_METADATA(HeatCloudParticleData,
 	CR_MEMBER(sizeMod),
 	CR_MEMBER(drawOrder),
 	CR_MEMBER(createFrame),
-	CR_MEMBER(unused),
+	CR_IGNORED(unused),
 	CR_MEMBER(texCoord)
 ))
