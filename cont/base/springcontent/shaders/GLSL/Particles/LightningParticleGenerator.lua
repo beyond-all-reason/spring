@@ -1,39 +1,4 @@
 return {
-	InputData =
-[[
-struct InputData {
-	vec4 info0; // .xyz startPos, .w thickness
-	vec4 info1; // .xyz targetPos, .w unused
-	vec4 info2[(12 >> 2)]; // displacements1
-	vec4 info3[(12 >> 2)]; // displacements2
-	vec4 info4; // texCoord
-	vec4 info5; // .x color, .y drawOrder, .zw - unused
-};
-]],
-	InputDefs =
-[[
-#define startPos           dataIn[gl_GlobalInvocationID.x].info0.xyz
-#define thickness          dataIn[gl_GlobalInvocationID.x].info0.w
-
-#define targetPos          dataIn[gl_GlobalInvocationID.x].info1.xyz
-
-#define Displacement1(IDX) dataIn[gl_GlobalInvocationID.x].info2[(IDX >> 2)][(IDX % 4)]
-#define Displacement2(IDX) dataIn[gl_GlobalInvocationID.x].info3[(IDX >> 2)][(IDX % 4)]
-
-#define texCoord           dataIn[gl_GlobalInvocationID.x].info4
-
-#define color              floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info5.x)
-#define drawOrder          dataIn[gl_GlobalInvocationID.x].info5.y
-]],
-	EarlyExit =
-[[
-	if ((texCoord.z - texCoord.x) * (texCoord.w - texCoord.y) <= 0.0)
-		return;
-]],
-	NumQuads =
-[[
-	(12 + 12 - 2)
-]],
 	MainCode =
 [[
 	vec4 col = GetPackedColor(color);

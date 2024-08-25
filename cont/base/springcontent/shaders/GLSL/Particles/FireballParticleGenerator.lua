@@ -1,54 +1,8 @@
 return {
-	InputData =
-[[
-struct InputData {
-	vec4  info0[12]; // .xyz sparkPos, .w sparkSize
-	vec4  info1;     // .xyz dgunPos, .w dgunSize
-	vec4  info2;     // .xyz animParams1, .w numSparks
-	vec4  info3;     // .xyz animParams2, .w drawOrder
-	vec4  info4;     // .xyz speed, .w checkCol
-	vec4  info5;     // texCoord1
-	vec4  info6;     // texCoord2
-};
-]],
-	InputDefs =
-[[
-#define SparkPos(IDX) dataIn[gl_GlobalInvocationID.x].info0[IDX].xyz
-#define SparkSize(IDX) dataIn[gl_GlobalInvocationID.x].info0[IDX].w
-
-#define dgunPos  dataIn[gl_GlobalInvocationID.x].info1.xyz
-#define dgunSize dataIn[gl_GlobalInvocationID.x].info1.w
-
-#define animParams1 dataIn[gl_GlobalInvocationID.x].info2.xyz
-#define numSparks   floatBitsToInt(dataIn[gl_GlobalInvocationID.x].info2.w)
-
-#define animParams2 dataIn[gl_GlobalInvocationID.x].info3.xyz
-#define drawOrder   dataIn[gl_GlobalInvocationID.x].info3.w
-
-#define speed     dataIn[gl_GlobalInvocationID.x].info4.xyz
-#define checkCol  dataIn[gl_GlobalInvocationID.x].info4.w
-
-#define texCoord1   dataIn[gl_GlobalInvocationID.x].info5
-#define texCoord2   dataIn[gl_GlobalInvocationID.x].info6
-]],
-	EarlyExit =
-[[
-	bvec2 validTextures = bvec2(
-		(texCoord1.z - texCoord1.x) * (texCoord1.w - texCoord1.y) > 0.0,
-		(texCoord2.z - texCoord2.x) * (texCoord2.w - texCoord2.y) > 0.0
-	);
-
-	if (!any(validTextures))
-		return;
-		
-	int numFire = min(10, numSparks);
-]],
-	NumQuads =
-[[
-	numSparks * uint(validTextures.x) + numFire * uint(validTextures.y)
-]],
 	MainCode =
 [[
+	int numFire = min(10, numSparks);
+
 	if (validTextures.x) {
 		for (int i = 0; i < numSparks; ++i) {
 			vec4 sparkColor = GetColorFromIntegers(uvec4(

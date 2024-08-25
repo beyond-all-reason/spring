@@ -1,51 +1,6 @@
 return {
-	InputData =
+	MainCode =
 [[
-struct InputData {
-	vec4 info0; // .xyz startPos, .w drawOrder
-	vec4 info1; // .xyz targetPos, .w unused
-	vec4 info2; // .x thickness, .y coreThickness, .z flareSize, .w tileLength
-	vec4 info3; // .x scrollSpeed, .y pulseSpeed, .z coreColStart, .w edgeColStart
-	vec4 info4; // texCoord1
-	vec4 info5; // texCoord2
-	vec4 info6; // texCoord3
-	vec4 info7; // texCoord4
-};
-]],
-	InputDefs =
-[[
-#define startPos      dataIn[gl_GlobalInvocationID.x].info0.xyz
-#define drawOrder     dataIn[gl_GlobalInvocationID.x].info0.w
-
-#define targetPos     dataIn[gl_GlobalInvocationID.x].info1.xyz
-
-#define thickness      dataIn[gl_GlobalInvocationID.x].info2.x
-#define coreThickness  dataIn[gl_GlobalInvocationID.x].info2.y
-#define flareSize      dataIn[gl_GlobalInvocationID.x].info2.z
-#define tileLength     dataIn[gl_GlobalInvocationID.x].info2.w
-
-#define scrollSpeed    dataIn[gl_GlobalInvocationID.x].info3.x
-#define pulseSpeed     dataIn[gl_GlobalInvocationID.x].info3.y
-#define coreColStart   floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info3.z)
-#define edgeColStart   floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info3.w)
-
-#define texCoord1    dataIn[gl_GlobalInvocationID.x].info4
-#define texCoord2    dataIn[gl_GlobalInvocationID.x].info5
-#define texCoord3    dataIn[gl_GlobalInvocationID.x].info6
-#define texCoord4    dataIn[gl_GlobalInvocationID.x].info7
-]],
-	EarlyExit =
-[[
-	bvec4 validTextures = bvec4(
-		(texCoord1.z - texCoord1.x) * (texCoord1.w - texCoord1.y) > 0.0,
-		(texCoord2.z - texCoord2.x) * (texCoord2.w - texCoord2.y) > 0.0,
-		(texCoord3.z - texCoord3.x) * (texCoord3.w - texCoord3.y) > 0.0,
-		(texCoord4.z - texCoord4.x) * (texCoord4.w - texCoord4.y) > 0.0
-	);
-
-	if (!any(validTextures))
-		return;
-
 	vec3 midPos = (targetPos + startPos) * 0.5;
 	vec3 cameraDir = normalize(midPos - camPos);
 
@@ -73,13 +28,7 @@ struct InputData {
 		(beamTileMinDst > beamLength) ?
 		2 :
 		4 + 2 * int(ceil((beamTileMaxDst - beamTileMinDst) / tileLength));
-]],
-	NumQuads =
-[[
-	numQuads1 * uint(validTextures.x) + 2 * uint(validTextures.y) + 4 * uint(validTextures.z) + 2 * uint(validTextures.w)
-]],
-	MainCode =
-[[
+
 	vec4 ccsColor = GetPackedColor(coreColStart);
 	vec4 ecsColor = GetPackedColor(edgeColStart);
 

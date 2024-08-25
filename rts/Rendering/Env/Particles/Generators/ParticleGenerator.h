@@ -356,7 +356,6 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	}
 	const LuaTable root = parser.GetRoot();
 
-	const std::string inputDefs = root.GetString("InputDefs", "");
 	const std::string earlyExit = root.GetString("EarlyExit", "");
 	const std::string mainCode  = root.GetString("MainCode" , "");
 

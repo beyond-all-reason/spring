@@ -1,30 +1,4 @@
 return {
-	InputData =
-[[
-struct InputData {
-	vec4  info0; // .xyz partPos, .w drawOrder
-	vec4  info1; //	.xyz partSpeed, .w unused
-	vec4  info2; // texCoord
-};
-]],
-	InputDefs =
-[[
-#define partPos    dataIn[gl_GlobalInvocationID.x].info0.xyz
-#define drawOrder  dataIn[gl_GlobalInvocationID.x].info0.w
-
-#define partSpeed  dataIn[gl_GlobalInvocationID.x].info1.xyz
-
-#define texCoord   dataIn[gl_GlobalInvocationID.x].info2
-]],
-	EarlyExit =
-[[
-	if ((texCoord.z - texCoord.x) * (texCoord.w - texCoord.y) <= 0.0)
-		return;
-]],
-	NumQuads =
-[[
-	8
-]],
 	MainCode =
 [[
 	vec2 texXY = vec2(

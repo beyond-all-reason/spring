@@ -1,41 +1,4 @@
 return {
-	InputData =
-[[
-struct InputData {
-	vec4 info0; // .xyz partPos, .w alpha
-	vec4 info1; // .xyz speed, .w alphaDecay
-	vec4 info2; // .xyz dir, .w color
-	vec4 info3; // .x length, .y lengthGrowth, .z width, .w drawOrder
-	vec4 info4; // texCoord
-};
-]],
-	InputDefs =
-[[
-#define partPos    dataIn[gl_GlobalInvocationID.x].info0.xyz
-#define alpha      dataIn[gl_GlobalInvocationID.x].info0.w
-
-#define partSpd    dataIn[gl_GlobalInvocationID.x].info1.xyz
-#define alphaDecay floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info1.w)
-
-#define partDir    dataIn[gl_GlobalInvocationID.x].info2.xyz
-#define partCol    floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info2.w)
-
-#define partLen        dataIn[gl_GlobalInvocationID.x].info3.x
-#define partLenGrowth  dataIn[gl_GlobalInvocationID.x].info3.y
-#define partWidth      dataIn[gl_GlobalInvocationID.x].info3.z
-#define drawOrder      dataIn[gl_GlobalInvocationID.x].info3.w
-
-#define texCoord   dataIn[gl_GlobalInvocationID.x].info4
-]],
-	EarlyExit =
-[[
-	if ((texCoord.z - texCoord.x) * (texCoord.w - texCoord.y) <= 0.0)
-		return;
-]],
-	NumQuads =
-[[
-	1
-]],
 	MainCode =
 [[
 	vec4 partColor = GetPackedColor(partCol);

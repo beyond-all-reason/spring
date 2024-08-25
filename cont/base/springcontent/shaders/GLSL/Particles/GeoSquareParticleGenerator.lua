@@ -1,39 +1,4 @@
 return {
-	InputData =
-[[
-struct InputData {
-	vec4 info0; // .xyz p1, .w w1
-	vec4 info1; // .xyz p2, .w w2
-	vec4 info2; // .xyz v1, .w drawOrder
-	vec4 info3; // .xyz v2, .w color
-	vec4 info4; // texCoord
-};
-]],
-	InputDefs =
-[[
-#define partP1    dataIn[gl_GlobalInvocationID.x].info0.xyz
-#define partW1    dataIn[gl_GlobalInvocationID.x].info0.w
-
-#define partP2    dataIn[gl_GlobalInvocationID.x].info1.xyz
-#define partW2    dataIn[gl_GlobalInvocationID.x].info1.w
-
-#define partV1    dataIn[gl_GlobalInvocationID.x].info2.xyz
-#define drawOrder dataIn[gl_GlobalInvocationID.x].info2.w
-
-#define partV2    dataIn[gl_GlobalInvocationID.x].info2.xyz
-#define partCol   floatBitsToUint(dataIn[gl_GlobalInvocationID.x].info2.w)
-
-#define texCoord   dataIn[gl_GlobalInvocationID.x].info4
-]],
-	EarlyExit =
-[[
-	if ((texCoord.z - texCoord.x) * (texCoord.w - texCoord.y) <= 0.0)
-		return;
-]],
-	NumQuads =
-[[
-	1
-]],
 	MainCode =
 [[
 	vec4 partColor = GetPackedColor(partCol);

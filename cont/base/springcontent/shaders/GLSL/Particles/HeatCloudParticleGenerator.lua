@@ -1,44 +1,4 @@
 return {
-	InputData =
-[[
-struct InputData {
-	vec4 info0; // .xyz partPos, .w maxHeat
-	vec4 info1; // .xyz speed, .w heat
-	vec4 info2; // .xyz animParams, .w size
-	vec4 info3; // .xyz rotParams, .w sizeGrowth
-	vec4 info4; // .x sizeMod, .y drawOrder, .z createFrame, .w unused
-	vec4 info5; // texCoord
-};
-]],
-	InputDefs =
-[[
-#define partPos    dataIn[gl_GlobalInvocationID.x].info0.xyz
-#define maxHeat    dataIn[gl_GlobalInvocationID.x].info0.w
-
-#define partSpd    dataIn[gl_GlobalInvocationID.x].info1.xyz
-#define heat       dataIn[gl_GlobalInvocationID.x].info1.w
-
-#define animParams dataIn[gl_GlobalInvocationID.x].info2.xyz
-#define size       dataIn[gl_GlobalInvocationID.x].info2.w
-
-#define rotParams  dataIn[gl_GlobalInvocationID.x].info3.xyz
-#define sizeGrowth dataIn[gl_GlobalInvocationID.x].info3.w
-
-#define sizeMod     dataIn[gl_GlobalInvocationID.x].info4.x
-#define drawOrder   dataIn[gl_GlobalInvocationID.x].info4.y
-#define createFrame floatBitsToInt(dataIn[gl_GlobalInvocationID.x].info4.z)
-
-#define texCoord   dataIn[gl_GlobalInvocationID.x].info5
-]],
-	EarlyExit =
-[[
-	if ((texCoord.z - texCoord.x) * (texCoord.w - texCoord.y) <= 0.0)
-		return;
-]],
-	NumQuads =
-[[
-	1
-]],
 	MainCode =
 [[
 	float currTime = frameInfo.x + frameInfo.y - createFrame;
