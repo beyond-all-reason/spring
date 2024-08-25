@@ -50,7 +50,7 @@ struct InputData {
 ]],
 	MainCode =
 [[
-	vec3 dif = drawPos - camDirPos[3].xyz;
+	vec3 dif = drawPos - camPos;
 	float camDist = length(dif);
 	dif /= camDist;
 

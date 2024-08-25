@@ -56,14 +56,14 @@ struct InputData {
 	vec2 sc = vec2(sin(rotVal), cos(rotVal));
 
 	vec3 bounds[4] = vec3[4](
-		vec3(-camDirPos[1].xyz - camDirPos[2].xyz) * drawSize,
-		vec3( camDirPos[1].xyz - camDirPos[2].xyz) * drawSize,
-		vec3( camDirPos[1].xyz + camDirPos[2].xyz) * drawSize,
-		vec3(-camDirPos[1].xyz + camDirPos[2].xyz) * drawSize
+		vec3(-camDir[0] - camDir[1]) * drawSize,
+		vec3( camDir[0] - camDir[1]) * drawSize,
+		vec3( camDir[0] + camDir[1]) * drawSize,
+		vec3(-camDir[0] + camDir[1]) * drawSize
 	);
 
 	for (uint i = 0u; i < uint(bounds.length()); ++i) {
-		bounds[i] = Rotate(sc, camDirPos[3].xyz, bounds[i]);
+		bounds[i] = Rotate(sc, camDir[2], bounds[i]);
 	}
 
 	vec3 drawPos = partPos + partSpd * frameInfo.y;

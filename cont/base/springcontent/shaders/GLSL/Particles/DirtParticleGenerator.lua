@@ -27,7 +27,7 @@ struct InputData {
 	if ((texCoord.z - texCoord.x) * (texCoord.w - texCoord.y) <= 0.0)
 		return;
 	
-	float partAbove = partPos.y / (size * camDirPos[0].y);
+	float partAbove = partPos.y / (size * camPos.y);
 	
 	if (partAbove < -1.0)
 		return;
@@ -47,16 +47,13 @@ struct InputData {
 	float texx = texCoord.x + (texCoord.z - texCoord.x) * ((1.0 - partAbove) * 0.5);
 	
 	vec3 drawPos = partPos + partSpd * frameInfo.y;
-	
-	vec3 camUp    = camDirPos[2].xyz;
-	vec3 camRight = camDirPos[1].xyz;
 
 	AddEffectsQuad(
 		vec3(1.0),
-		drawPos - camRight * interSize - camUp * interSize * partAbove, vec2(texx,       texCoord.y),
-		drawPos - camRight * interSize + camUp * interSize            , vec2(texCoord.z, texCoord.y),
-		drawPos + camRight * interSize + camUp * interSize            , vec2(texCoord.z, texCoord.w),
-		drawPos + camRight * interSize - camUp * interSize * partAbove, vec2(texx,       texCoord.w),
+		drawPos - camDir[0] * interSize - camDir[1] * interSize * partAbove, vec2(texx,       texCoord.y),
+		drawPos - camDir[0] * interSize + camDir[1] * interSize            , vec2(texCoord.z, texCoord.y),
+		drawPos + camDir[0] * interSize + camDir[1] * interSize            , vec2(texCoord.z, texCoord.w),
+		drawPos + camDir[0] * interSize - camDir[1] * interSize * partAbove, vec2(texx,       texCoord.w),
 		partColor
 	);
 ]]

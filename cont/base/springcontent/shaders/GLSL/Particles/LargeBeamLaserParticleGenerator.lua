@@ -47,7 +47,7 @@ struct InputData {
 		return;
 
 	vec3 midPos = (targetPos + startPos) * 0.5;
-	vec3 cameraDir = normalize(midPos - camDirPos[3].xyz);
+	vec3 cameraDir = normalize(midPos - camPos);
 
 	// beam's coor-system; degenerate if targetPos == startPos
 	vec3 zdir = normalize(targetPos - startPos);
@@ -268,7 +268,7 @@ struct InputData {
 
 	if (validTextures.w) {
 		// draw flare (moved slightly along the camera direction)
-		pos1 = startPos - (camDirPos[2].xyz * 3.0);
+		pos1 = startPos - (camDir[2].xyz * 3.0);
 
 		AddEffectsQuadCamera(
 			vec3(1.0),

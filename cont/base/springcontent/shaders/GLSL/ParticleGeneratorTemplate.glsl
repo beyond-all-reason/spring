@@ -3,7 +3,8 @@
 uniform ivec2 arraySizes;
 uniform vec3 frameInfo; // gs->frameNum, globalRendering->timeOffset, gu->modGameTime
 
-uniform mat4 camDirPos; // not a matrix, but convinient collection of Pos, xDir, yDir, zDir vectors
+uniform vec3 camPos;
+uniform vec3 camDir[3]; // right, up, forward
 uniform vec4 frustumPlanes[6];
 
 // Placeholer for the struct InputData
@@ -278,10 +279,10 @@ void AddEffectsQuadCamera(
 	// TODO write optimized code
 	AddEffectsQuad(
 		animPrms,
-		centerPos - camDirPos[1].xyz * quadDims.x - camDirPos[2].xyz * quadDims.y, texCrds.xy,
-		centerPos + camDirPos[1].xyz * quadDims.x - camDirPos[2].xyz * quadDims.y, texCrds.zy,
-		centerPos + camDirPos[1].xyz * quadDims.x + camDirPos[2].xyz * quadDims.y, texCrds.zw,
-		centerPos - camDirPos[1].xyz * quadDims.x + camDirPos[2].xyz * quadDims.y, texCrds.xw,
+		centerPos - camDir[0] * quadDims.x - camDir[1] * quadDims.y, texCrds.xy,
+		centerPos + camDir[0] * quadDims.x - camDir[1] * quadDims.y, texCrds.zy,
+		centerPos + camDir[0] * quadDims.x + camDir[1] * quadDims.y, texCrds.zw,
+		centerPos - camDir[0] * quadDims.x + camDir[1] * quadDims.y, texCrds.xw,
 		quadColor
 	);
 }

@@ -42,7 +42,7 @@ struct InputData {
 	float a = max(0.0f, alpha - alphaDecay * frameInfo.y);
 	partColor *= a;
 	
-	vec3 dif1 = normalize(partPos - camDirPos[0].xyz);
+	vec3 dif1 = normalize(partPos - camPos);
 	vec3 dir2 = normalize(cross(dif1, partDir));
 	
 	vec3 l = (partDir * partLen) + (partLenGrowth * frameInfo.y);

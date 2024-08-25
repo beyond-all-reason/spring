@@ -23,7 +23,7 @@ struct InputData {
 #define rotParams     dataIn[gl_GlobalInvocationID.x].info3.xyz
 #define drawOrder     dataIn[gl_GlobalInvocationID.x].info3.w
 
-#define texCoord   dataIn[gl_GlobalInvocationID.x].info3
+#define texCoord   dataIn[gl_GlobalInvocationID.x].info4
 ]],
 	EarlyExit =
 [[
@@ -44,15 +44,15 @@ struct InputData {
 	vec4 partColor = GetPackedColor(partCol);
 
 	vec3 bounds[4] = vec3[4](
-		vec3(-camDirPos[1].xyz - camDirPos[2].xyz) * partSize,
-		vec3( camDirPos[1].xyz - camDirPos[2].xyz) * partSize,
-		vec3( camDirPos[1].xyz + camDirPos[2].xyz) * partSize,
-		vec3(-camDirPos[1].xyz + camDirPos[2].xyz) * partSize
+		vec3(-camDir[0] - camDir[1]) * partSize,
+		vec3( camDir[0] - camDir[1]) * partSize,
+		vec3( camDir[0] + camDir[1]) * partSize,
+		vec3(-camDir[0] + camDir[1]) * partSize
 	);
 
 	vec2 sc = vec2(sin(rotVal), cos(rotVal));	
 	for (uint i = 0u; i < uint(bounds.length()); ++i) {
-		bounds[i] = Rotate(sc, camDirPos[3].xyz, bounds[i]);
+		bounds[i] = Rotate(sc, camDir[2], bounds[i]);
 	}
 	
 	vec3 drawPos = partPos + partSpeed * frameInfo.y;

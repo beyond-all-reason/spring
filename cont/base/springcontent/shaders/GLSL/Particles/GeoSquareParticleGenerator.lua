@@ -39,10 +39,10 @@ struct InputData {
 	vec4 partColor = GetPackedColor(partCol);
 	partColor.rgb *= partColor.a;
 
-	vec3 dif1 = normalize(partP1 - camDirPos[0].xyz);
+	vec3 dif1 = normalize(partP1 - camPos);
 	vec3 dir1 = normalize(cross(dif1, partV1));
 
-	vec3 dif2 = normalize(partP2 - camDirPos[0].xyz);
+	vec3 dif2 = normalize(partP2 - camPos);
 	vec3 dir2 = normalize(cross(dif2, partV2));
 	
 	float u = (texCoord.x + texCoord.z) * 0.5;

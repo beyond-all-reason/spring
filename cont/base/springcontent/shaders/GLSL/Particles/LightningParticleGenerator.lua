@@ -39,7 +39,7 @@ struct InputData {
 	vec4 col = GetPackedColor(color);
 
 	vec3 ddir = normalize(targetPos - startPos);
-	vec3 dif  = normalize(startPos - camDirPos[3].xyz);
+	vec3 dif  = normalize(startPos - camPos);
 	vec3 dir1 = normalize(cross(dif, ddir));
 
 	vec3 tempPos;

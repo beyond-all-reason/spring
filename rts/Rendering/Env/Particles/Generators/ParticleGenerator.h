@@ -128,8 +128,6 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUn
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
-	const float3& camPos = camera->GetPos();
-
 	assert(shader->IsBound());
 
 	shader->SetUniform("arraySizes",
@@ -138,7 +136,11 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUn
 	);
 
 	shader->SetUniform("frameInfo", static_cast<float>(gs->frameNum), globalRendering->timeOffset, gu->modGameTime);
-	shader->SetUniformMatrix4x4("camDirPos", false, CMatrix44f{ camera->GetPos(), camera->GetRight(), camera->GetUp(), camera->GetForward() }.m);
+
+	shader->SetUniform3v("camPos", &camera->GetPos().x);
+	shader->SetUniform3v("camDir[0]", &camera->GetRight().x);
+	shader->SetUniform3v("camDir[1]", &camera->GetUp().x);
+	shader->SetUniform3v("camDir[2]", &camera->GetForward().x);
 	shader->SetUniform4v("frustumPlanes[0]", &camera->GetFrustumPlane(0).x);
 	shader->SetUniform4v("frustumPlanes[1]", &camera->GetFrustumPlane(1).x);
 	shader->SetUniform4v("frustumPlanes[2]", &camera->GetFrustumPlane(2).x);
@@ -251,7 +253,10 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shader->SetUniform("arraySizes", 0, 0);
 	shader->SetUniform("frameInfo", 0.0f, 0.0f, 0.0f);
-	shader->SetUniformMatrix4x4("camDirPos", false, CMatrix44f::Zero().m);
+	shader->SetUniform("camPos", 0.0f, 0.0f, 0.0f);
+	shader->SetUniform("camDir[0]", 0.0f, 0.0f, 0.0f);
+	shader->SetUniform("camDir[1]", 0.0f, 0.0f, 0.0f);
+	shader->SetUniform("camDir[2]", 0.0f, 0.0f, 0.0f);
 	static constexpr float4 ZERO4 = float4{ 0.0f };
 	shader->SetUniform4v("frustumPlanes[0]", &ZERO4.x);
 	shader->SetUniform4v("frustumPlanes[1]", &ZERO4.x);

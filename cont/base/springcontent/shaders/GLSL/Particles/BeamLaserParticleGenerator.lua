@@ -62,7 +62,7 @@ struct InputData {
 	vec4 eceColor = GetPackedColor(edgeColEnd);
 
 	vec3 midPos = (targetPos + startPos) * 0.5f;
-	vec3 cameraDir = normalize(midPos - camDirPos[3].xyz);
+	vec3 cameraDir = normalize(midPos - camPos);
 
 	vec3 zdir = normalize(targetPos - startPos);
 	vec3 xdir = normalize(cross(cameraDir, zdir));

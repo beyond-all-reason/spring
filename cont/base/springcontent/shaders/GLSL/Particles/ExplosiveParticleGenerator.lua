@@ -63,9 +63,6 @@ struct InputData {
 		float stageDecay = (numStages - (stage * alphaDecay)) * invStages;
 		float stageSize  = drawRadius * (1.0f - (stage * sizeDecay));
 
-		vec3 xdirCam  = camDirPos[0].xyz * stageSize;
-		vec3 ydirCam  = camDirPos[1].xyz * stageSize;
-
 		vec3 stageGap = (noGap > 0) ? (ndir * stageSize * stage) : (ndir * drawRadius * stage);
 		vec3 stagePos = drawPos - stageGap;
 
@@ -73,10 +70,10 @@ struct InputData {
 
 		AddEffectsQuad(
 			animParams,
-			stagePos - xdirCam - ydirCam,
-			stagePos + xdirCam - ydirCam,
-			stagePos + xdirCam + ydirCam,
-			stagePos - xdirCam + ydirCam,
+			stagePos + (-camDir[0] - camDir[1]) * stageSize,
+			stagePos + ( camDir[0] - camDir[1]) * stageSize,
+			stagePos + ( camDir[0] + camDir[1]) * stageSize,
+			stagePos + (-camDir[0] + camDir[1]) * stageSize,
 			texCoord,
 			col
 		);
