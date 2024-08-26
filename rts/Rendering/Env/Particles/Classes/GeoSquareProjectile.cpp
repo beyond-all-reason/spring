@@ -51,9 +51,9 @@ CGeoSquareProjectile::CGeoSquareProjectile(const float3& p1, const float3& p2, c
 		.w1 = w1,
 		.p2 = p2,
 		.w2 = w2,
-		.v1 = v1,
+		.vctr1 = v1,
 		.drawOrder = drawOrder,
-		.v2 = v2,
+		.vctr2 = v2,
 		.color = SColor{r, g, b, 1.0f},
 		.texCoord = *projectileDrawer->geosquaretex
 	});

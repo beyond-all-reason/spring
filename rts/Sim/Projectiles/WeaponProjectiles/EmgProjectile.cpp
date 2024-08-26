@@ -41,10 +41,12 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<EmgParticleGenerator>();
 	
 	pgOffset = pg.Add({
-		.pos = drawPos,
-		.radius = drawRadius,
+		.pos = pos,
+		.drawRadius = drawRadius,
+		.speed = speed,
+		.createFrame = createFrame,
 		.animParams = animParams,
-		.color = SColor(color.x, color.x, color.z, 1.0f),
+		.color = SColor(color.x, color.y, color.z, 1.0f),
 		.rotParams = rotParams,
 		.drawOrder = drawOrder,
 		.texCoord = *weaponDef->visuals.texture1,

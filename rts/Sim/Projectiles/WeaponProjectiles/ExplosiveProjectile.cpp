@@ -52,7 +52,10 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params)
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
 	pgOffset = pg.Add({
 		.pos = pos,
-		.radius = drawRadius,
+		.drawRadius = drawRadius,
+
+		.speed = speed,
+		.createFrame = createFrame,
 
 		.dir = dir,
 		.drawOrder = drawOrder,
@@ -109,6 +112,7 @@ void CExplosiveProjectile::Update()
 
 	data.pos = pos;
 	data.curTime = curTime;
+	data.speed = speed;
 
 	if (const auto* cm = weaponDef->visuals.colorMap; cm) {
 		auto [i0, i1]  = cm->GetIndices(curTime);

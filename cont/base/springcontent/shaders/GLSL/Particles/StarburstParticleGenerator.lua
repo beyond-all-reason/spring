@@ -13,15 +13,15 @@ return {
 
 	if (validTextures.y) {
 		for (uint a = 0u; a < NUM_TRACER_PARTS; ++a) {
-			vec3 opos = TracerPos(partNum);
-			vec3 odir = TracerDir(partNum);
-			float ospeed = Speedf(partNum);
+			vec3 opos = tracerPosSpeed[partNum].xyz;
+			vec3 odir = tracerDirNumMods[partNum].xyz;
+			float ospeed = tracerPosSpeed[partNum].w;
 
 			float curStep = 0.0;
-			uint thisNumAgeMods = numAgeMods(partNum);
+			uint thisNumAgeMods = floatBitsToUint(tracerDirNumMods[partNum].w);
 			for (int ageModIdx = 0; ageModIdx < thisNumAgeMods; ++ageModIdx) {
 				curStep += TRACER_PARTS_STEP;
-				float ageMod = AgeMod(partNum * MAX_NUM_AGEMODS + ageModIdx);
+				float ageMod = allAgeMods[partNum * MAX_NUM_AGEMODS + ageModIdx];
 				float age2 = (a + (curStep / (ospeed + 0.01))) * 0.2;
 				float drawsize = 1.0f + age2 * 0.8f * ageMod * 7;
 				float alpha = (missileAge >= 20) ? ((1.0 - age2) * max(0.0, 1.0 - age2)) : (1.0 - age2) * (1.0 - age2);

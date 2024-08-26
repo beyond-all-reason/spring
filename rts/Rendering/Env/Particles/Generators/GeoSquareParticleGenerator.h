@@ -11,10 +11,10 @@ struct GeoSquareParticleData {
 	float3 p2;
 	float w2;
 
-	float3 v1;
+	float3 vctr1;
 	int32_t drawOrder;
 
-	float3 v2;
+	float3 vctr2;
 	SColor color;
 
 	AtlasedTexture texCoord;

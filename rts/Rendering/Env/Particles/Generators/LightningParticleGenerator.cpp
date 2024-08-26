@@ -9,7 +9,7 @@ CR_REG_METADATA(LightningParticleData,
 	CR_IGNORED(unused),
 	CR_MEMBER(displacements),
 	CR_MEMBER(texCoord),
-	CR_MEMBER(col),
+	CR_MEMBER(color),
 	CR_MEMBER(drawOrder),
 	CR_IGNORED(unused2)
 ))

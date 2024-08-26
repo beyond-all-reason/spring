@@ -14,7 +14,7 @@ return {
 
 	vec4 currColor = GetCurrentColor(color0, color1, edge0, edge1, life);
 
-	vec3 frontPosition = position + dir * frontOffset * ilength;
+	vec3 frontPos = pos + dir * frontOffset * ilength;
 
 	vec3 zdir = (abs(dot(dir, vec3(0, 1, 0)/*UpVector*/)) >= 0.99) ? vec3(0, 0, 1)/*FwdVector*/: vec3(0, 1, 0)/*UpVector*/;
 	vec3 xdir = normalize(cross(dir, zdir));
@@ -47,10 +47,10 @@ return {
 		AddEffectsQuad(
 			drawOrder,
 			vec3(animParams.xy, animVal),
-			position + bounds[0],
-			position + bounds[1],
-			position + bounds[2],
-			position + bounds[3],
+			pos + bounds[0],
+			pos + bounds[1],
+			pos + bounds[2],
+			pos + bounds[3],
 			sideTexture,
 			currColor
 		);
@@ -58,10 +58,10 @@ return {
 		AddEffectsQuad(
 			drawOrder,
 			vec3(animParams.xy, animVal),
-			position + bounds[4],
-			position + bounds[5],
-			position + bounds[6],
-			position + bounds[7],
+			pos + bounds[4],
+			pos + bounds[5],
+			pos + bounds[6],
+			pos + bounds[7],
 			sideTexture,
 			currColor
 		);
@@ -71,10 +71,10 @@ return {
 		AddEffectsQuad(
 			drawOrder,
 			vec3(animParams.xy, animVal),
-			frontPosition + bounds[ 8],
-			frontPosition + bounds[ 9],
-			frontPosition + bounds[10],
-			frontPosition + bounds[11],
+			frontPos + bounds[ 8],
+			frontPos + bounds[ 9],
+			frontPos + bounds[10],
+			frontPos + bounds[11],
 			frontTexture,
 			currColor
 		);

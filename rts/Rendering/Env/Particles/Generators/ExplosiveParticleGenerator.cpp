@@ -4,7 +4,9 @@ CR_BIND(ExplosiveParticleData, )
 CR_REG_METADATA(ExplosiveParticleData,
 (
 	CR_MEMBER(pos),
-	CR_MEMBER(radius),
+	CR_MEMBER(drawRadius),
+	CR_MEMBER(speed),
+	CR_MEMBER(createFrame),
 	CR_MEMBER(dir),
 	CR_MEMBER(drawOrder),
 	CR_MEMBER(color0),

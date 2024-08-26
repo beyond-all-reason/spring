@@ -5,8 +5,6 @@ return {
 
 	float rotVal  = GetCurrentRotation(rotParams, currTime);
 	SetCurrentAnimation(animParams, currTime);
-	
-	vec4 partColor = GetPackedColor(partCol);
 
 	vec3 bounds[4] = vec3[4](
 		vec3(-camDir[0] - camDir[1]) * partSize,
@@ -30,7 +28,7 @@ return {
 		drawPos + bounds[2],
 		drawPos + bounds[3],
 		texCoord,
-		partColor
+		color
 	);
 ]]
 }

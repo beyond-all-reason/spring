@@ -4,7 +4,9 @@ CR_BIND(FlameParticleData, )
 CR_REG_METADATA(FlameParticleData,
 (
 	CR_MEMBER(pos),
-	CR_MEMBER(radius),
+	CR_MEMBER(drawRadius),
+	CR_MEMBER(speed),
+	CR_MEMBER(createFrame),
 	CR_MEMBER(animParams),
 	CR_MEMBER(drawOrder),
 	CR_MEMBER(rotParams),

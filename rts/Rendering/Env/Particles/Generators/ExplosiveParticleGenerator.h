@@ -5,7 +5,10 @@
 struct ExplosiveParticleData {
 	CR_DECLARE_STRUCT(ExplosiveParticleData)
 	float3 pos;
-	float radius;
+	float drawRadius;
+
+	float3 speed;
+	int32_t createFrame;
 
 	float3 dir;
 	int32_t drawOrder;

@@ -21,8 +21,7 @@ struct LaserParticleData {
 	int32_t checkCol;
 	float stayTime;
 
-	float speedf;
-	std::array<float, 3> unused;
+	float4 speed;
 
 	AtlasedTexture texCoord1;
 	AtlasedTexture texCoord2;

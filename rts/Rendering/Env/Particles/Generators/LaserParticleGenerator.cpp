@@ -15,8 +15,7 @@ CR_REG_METADATA(LaserParticleData,
 	CR_MEMBER(drawOrder),
 	CR_MEMBER(checkCol),
 	CR_MEMBER(stayTime),
-	CR_MEMBER(speedf),
-	CR_IGNORED(unused),
+	CR_MEMBER(speed),
 	CR_MEMBER(texCoord1),
 	CR_MEMBER(texCoord2)
 ))

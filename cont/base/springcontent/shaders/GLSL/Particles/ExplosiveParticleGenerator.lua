@@ -1,11 +1,9 @@
 return {
 	MainCode =
 [[
-	vec4 col0 = GetPackedColor(color0);
-	vec4 col1 = GetPackedColor(color1);
+	vec3 drawPos = pos + speed * frameInfo.y;
 
-	float colMixRate = clamp((edge1 - curTime)/(edge1 - edge0), 0.0, 1.0);
-	vec4 col = mix(col0, col1, colMixRate);
+	vec4 color = GetCurrentColor(color0, color1, colEdge0, colEdge1, curTime);
 
 	float invStages  = 1.0 / max(1u, numStages);
 	vec3 ndir = dir * separation * 0.6f;
@@ -19,7 +17,7 @@ return {
 		vec3 stageGap = (noGap > 0) ? (ndir * stageSize * stage) : (ndir * drawRadius * stage);
 		vec3 stagePos = drawPos - stageGap;
 
-		col *= stageDecay;
+		color *= stageDecay;
 
 		AddEffectsQuad(
 			drawOrder,
@@ -29,7 +27,7 @@ return {
 			stagePos + ( camDir[0] + camDir[1]) * stageSize,
 			stagePos + (-camDir[0] + camDir[1]) * stageSize,
 			texCoord,
-			col
+			color
 		);
 	}
 ]]

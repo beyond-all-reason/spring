@@ -67,7 +67,7 @@ CLaserProjectile::CLaserProjectile(const ProjectileParams& params): CWeaponProje
 		.drawOrder = drawOrder,
 		.checkCol = static_cast<int32_t>(checkCol),
 		.stayTime = static_cast<float>(stayTime),
-		.speedf = speedf,
+		.speed = float4{ speed.xyz, speedf },
 		.texCoord1 = *weaponDef->visuals.texture1,
 		.texCoord2 = *weaponDef->visuals.texture2
 	});
@@ -108,7 +108,7 @@ void CLaserProjectile::Update()
 	data.color2 = SColor(intensity * c2.r, intensity * c2.g, intensity * c2.b, 1.0f / 255.0f);
 	data.checkCol = static_cast<int32_t>(checkCol);
 	data.stayTime = static_cast<float>(stayTime);
-	data.speedf = speedf;
+	data.speed = float4{ speed.xyz, speedf };
 }
 
 void CLaserProjectile::UpdateIntensity() {

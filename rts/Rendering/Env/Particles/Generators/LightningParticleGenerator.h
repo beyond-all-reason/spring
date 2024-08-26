@@ -16,7 +16,7 @@ struct LightningParticleData {
 
 	AtlasedTexture texCoord;
 
-	SColor col;
+	SColor color;
 	int32_t drawOrder;
 	std::array<float, 2> unused2;
 

@@ -227,6 +227,9 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 			if (name.rfind("unused") != std::string::npos)
 				continue;
 
+			if (typeName.rfind("ignored") != std::string::npos)
+				continue;
+
 			if (auto ps = typeName.rfind("["); ps != std::string::npos) {
 				auto pe = typeName.rfind("]");
 				bool failed;
@@ -256,7 +259,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				glslType = "int";
 			} break;
 			case hashString("uint"): {
-				reinterpretString = "floatBitsToUInt";
+				reinterpretString = "floatBitsToUint";
 				glslType = "uint";
 			} break;
 			case hashString("float"): {
@@ -280,8 +283,10 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				dataToFieldsSS << TABS << glslType << " " << name << "[" << arraySize << "];\n";
 			}
 
+			assert(size <= VEC4_BYTE_SIZE);
+
 			for (int ai = 0; ai < arraySize; ++ai) {
-				uint32_t localOffset = (offt + ai * VEC4_BYTE_SIZE);
+				uint32_t localOffset = (offt + ai * size);
 				uint32_t infoIndex = (localOffset / VEC4_BYTE_SIZE);
 				uint32_t vec4Index = (localOffset % VEC4_BYTE_SIZE) / sizeof(float);
 
@@ -291,11 +296,13 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				if (!reinterpretString.empty())
 					infoTxtSS << reinterpretString << "(";
 
+				assert(vec4Index + (size / 4) <= 4);
+
 				static constexpr const char* SWIZZLE = "xyzw";
 				infoTxtSS << fmt::format("dataIn[gl_GlobalInvocationID.x].info[{}]", infoIndex);
 				if (size != VEC4_BYTE_SIZE) {
 					infoTxtSS << ".";
-					for (int sr = 0; sr < size / 4; ++sr) {
+					for (int sr = 0; sr < (size / 4); ++sr) {
 						infoTxtSS << SWIZZLE[vec4Index + sr];
 					}
 				}
@@ -361,9 +368,9 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shaderSrc = fmt::sprintf(shaderSrc,
 		dataStructSS.str(),
+		dataToFieldsSS.str(),
 		earlyExitAutoSS.str(),
 		earlyExit,
-		dataToFieldsSS.str(),		
 		mainCode
 	);
 

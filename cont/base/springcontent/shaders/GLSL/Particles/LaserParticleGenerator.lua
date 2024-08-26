@@ -1,15 +1,13 @@
 return {
 	MainCode =
 [[
+	vec3 drawPos = pos + speed.xyz * frameInfo.y;
 	vec3 dif = drawPos - camPos;
 	float camDist = length(dif);
 	dif /= camDist;
 
 	vec3 dir1 = normalize(cross(dif, dir ));
 	vec3 dir2 = normalize(cross(dif, dir1));
-
-	vec4 col1 = GetPackedColor(color1);
-	vec4 col2 = GetPackedColor(color2);
 
 	float size = thickness;
 	float coresize = size * coreThickness;
@@ -25,8 +23,8 @@ return {
 			texStartOffset = 0.0;
 			texEndOffset   = ( 1.0 - (curLength / maxLength)) * (texCoord1.x - texCoord1.z);
 		} else {
-			texStartOffset = (-1.0 + (curLength / maxLength) + (stayTime * (speedf / maxLength))) * (texCoord1.x - texCoord1.z);
-			texEndOffset   = (stayTime * (speedf / maxLength)) * (texCoord1.x - texCoord1.z);
+			texStartOffset = (-1.0 + (curLength / maxLength) + (stayTime * (speed.w / maxLength))) * (texCoord1.x - texCoord1.z);
+			texEndOffset   = (stayTime * (speed.w / maxLength)) * (texCoord1.x - texCoord1.z);
 		}
 
 		if (validTextures.y) {
@@ -37,7 +35,7 @@ return {
 				drawPos - (dir1 * size)                , vec2(midtexx,     texCoord2.y),
 				drawPos + (dir1 * size)                , vec2(midtexx,     texCoord2.w),
 				drawPos + (dir1 * size) - (dir2 * size), vec2(texCoord2.x, texCoord2.w),
-				col1
+				color1
 			);
 
 			AddEffectsQuad(
@@ -47,7 +45,7 @@ return {
 				drawPos - (dir1 * coresize)                    , vec2(midtexx    , texCoord2.y),
 				drawPos + (dir1 * coresize)                    , vec2(midtexx    , texCoord2.w),
 				drawPos + (dir1 * coresize) - (dir2 * coresize), vec2(texCoord2.x, texCoord2.w),
-				col2
+				color2
 			);
 		}
 
@@ -59,7 +57,7 @@ return {
 				pos2    - (dir1 * size), vec2(texCoord1.z + texEndOffset  , texCoord1.y),
 				pos2    + (dir1 * size), vec2(texCoord1.z + texEndOffset  , texCoord1.w),
 				drawPos + (dir1 * size), vec2(texCoord1.x + texStartOffset, texCoord1.w),
-				col1
+				color1
 			);
 
 			AddEffectsQuad(
@@ -69,7 +67,7 @@ return {
 				pos2    - (dir1 * coresize), vec2(texCoord1.z + texEndOffset  , texCoord1.y),
 				pos2    + (dir1 * coresize), vec2(texCoord1.z + texEndOffset  , texCoord1.w),
 				drawPos + (dir1 * coresize), vec2(texCoord1.x + texStartOffset, texCoord1.w),
-				col2
+				color2
 			);
 		}
 
@@ -81,7 +79,7 @@ return {
 				pos2 - (dir1 * size) + (dir2 * size), vec2(texCoord2.z, texCoord2.y),
 				pos2 + (dir1 * size) + (dir2 * size), vec2(texCoord2.z, texCoord2.w),
 				pos2 + (dir1 * size)                , vec2(midtexx    , texCoord2.w),
-				col1
+				color1
 			);
 
 			AddEffectsQuad(
@@ -91,7 +89,7 @@ return {
 				pos2 - (dir1 * coresize) + (dir2 * coresize), vec2(texCoord2.z, texCoord2.y),
 				pos2 + (dir1 * coresize) + (dir2 * coresize), vec2(texCoord2.z, texCoord2.w),
 				pos2 + (dir1 * coresize)                    , vec2(midtexx    , texCoord2.w),
-				col2
+				color2
 			);
 		}
 	} else {
@@ -105,8 +103,8 @@ return {
 			texStartOffset = 0.0;
 			texEndOffset   = ( 1.0 - (curLength / maxLength)) * (texCoord1.x - texCoord1.z);
 		} else {
-			texStartOffset = (-1.0 + (curLength / maxLength) + (stayTime * (speedf / maxLength))) * (texCoord1.x - texCoord1.z);
-			texEndOffset   = (stayTime * (speedf / maxLength)) * (texCoord1.x - texCoord1.z);
+			texStartOffset = (-1.0 + (curLength / maxLength) + (stayTime * (speed.w / maxLength))) * (texCoord1.x - texCoord1.z);
+			texEndOffset   = (stayTime * (speed.w / maxLength)) * (texCoord1.x - texCoord1.z);
 		}
 
 		if (validTextures.x) {
@@ -117,7 +115,7 @@ return {
 				pos2 - (dir1 * size), vec2(texCoord1.z + texEndOffset  , texCoord1.y),
 				pos2 + (dir1 * size), vec2(texCoord1.z + texEndOffset  , texCoord1.w),
 				pos1 + (dir1 * size), vec2(texCoord1.x + texStartOffset, texCoord1.w),
-				col1
+				color1
 			);
 
 			AddEffectsQuad(
@@ -127,7 +125,7 @@ return {
 				pos2 - (dir1 * coresize), vec2(texCoord1.z + texEndOffset  , texCoord1.y),
 				pos2 + (dir1 * coresize), vec2(texCoord1.z + texEndOffset  , texCoord1.w),
 				pos1 + (dir1 * coresize), vec2(texCoord1.x + texStartOffset, texCoord1.w),
-				col2
+				color2
 			);
 		}
 	}

@@ -6,7 +6,10 @@
 struct EmgParticleData {
 	CR_DECLARE_STRUCT(EmgParticleData)
 	float3 pos;
-	float radius;
+	float drawRadius;
+
+	float3 speed;
+	int32_t createFrame;
 
 	float3 animParams;
 	SColor color;

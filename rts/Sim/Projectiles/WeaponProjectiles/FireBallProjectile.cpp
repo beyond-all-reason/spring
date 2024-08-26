@@ -51,17 +51,22 @@ CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params): CWeapo
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
 	pgOffset = pg.Add({
 		.sparkPosSize = {},
-		.dgunPos = {},
+		.dgunPos = pos,
 		.dgunSize = radius * 1.3f,
-		.animParams1 = {},
-		.numSparks = 0,
-		.animParams2 = {},
+		.animParams1 = {1.0f},
+		.numSparks = static_cast<int32_t>(numSparks),
+		.animParams2 = {1.0f},
 		.drawOrder = drawOrder,
 		.speed = speed,
 		.checkCol = 1.0f,
 		.texCoord1 = *projectileDrawer->explotex,
 		.texCoord2 = *projectileDrawer->dguntex
 	});
+
+	auto& data = pg.Get(pgOffset);
+	for (uint32_t i = 0; i < numSparks; ++i) {
+		data.sparkPosSize[i] = float4{ sparks[i].pos, sparks[i].size };
+	}
 }
 
 CFireBallProjectile::~CFireBallProjectile()

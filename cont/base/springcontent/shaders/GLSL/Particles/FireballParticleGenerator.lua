@@ -15,7 +15,7 @@ return {
 			AddEffectsQuadCamera(
 				drawOrder,
 				animParams1,
-				SparkPos(i), vec2(SparkSize(i)), texCoord1,
+				sparkPosSize[i].xyz, vec2(sparkPosSize[i].w), texCoord1,
 				sparkColor
 			);
 		}

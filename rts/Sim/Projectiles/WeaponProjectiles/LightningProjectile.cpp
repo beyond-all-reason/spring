@@ -57,7 +57,7 @@ CLightningProjectile::CLightningProjectile(const ProjectileParams& params): CWea
 
 	data.texCoord = *weaponDef->visuals.texture1;
 	const auto& color = weaponDef->visuals.color;
-	data.col = SColor{ color.x, color.y, color.z, 1.0f / 255.0f };
+	data.color = SColor{ color.x, color.y, color.z, 1.0f / 255.0f };
 	data.drawOrder = drawOrder;
 
 

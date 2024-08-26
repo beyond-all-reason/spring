@@ -46,7 +46,9 @@ CFlameProjectile::CFlameProjectile(const ProjectileParams& params)
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FlameParticleGenerator>();
 	pgOffset = pg.Add({
 		.pos = {},
-		.radius = radius,
+		.drawRadius = drawRadius,
+		.speed = speed,
+		.createFrame = createFrame,
 		.animParams = {},
 		.drawOrder = drawOrder,
 		.rotParams = {},
@@ -99,8 +101,9 @@ void CFlameProjectile::Update()
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FlameParticleGenerator>();
 	auto& data = pg.Get(pgOffset);
 
-	data.radius = radius;
+	data.drawRadius = drawRadius;
 	data.pos = pos;
+	data.speed = speed;
 	data.curTime = curTime;
 
 	if (const auto* cm = weaponDef->visuals.colorMap; cm) {

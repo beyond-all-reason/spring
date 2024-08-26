@@ -7,8 +7,8 @@ return {
 	vec3 dif1 = normalize(pos - camPos);
 	vec3 dir2 = normalize(cross(dif1, dir));
 	
-	vec3 l = (dir * partLen) + (partLenGrowth * frameInfo.y);
-	vec3 w = (dir2 * partWidth);
+	vec3 l = (dir * length) + (lengthGrowth * frameInfo.y);
+	vec3 w = (dir2 * width);
 	
 	vec3 drawPos = pos + speed * frameInfo.y;
 

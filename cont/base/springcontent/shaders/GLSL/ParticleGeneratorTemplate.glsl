@@ -213,32 +213,34 @@ void AddEffectsQuad(
 	indicesData[idxIndex  ] = triIndex + 2u;
 	*/
 
+	float drawOrderFloatBits = intBitsToFloat(drawOrder);
+
 	/////////////////
 	// Triangles
 	/////////////////
 	// TL
-	triangleData[triIndex].pos      = vec4(tlPos, intBitsToFloat(drawOrder));
+	triangleData[triIndex].pos      = vec4(tlPos, drawOrderFloatBits);
 	triangleData[triIndex].uvw      = vec4(tlUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
 	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(tlCol)));
 	triIndex++;
 
 	// TR
-	triangleData[triIndex].pos      = vec4(trPos, intBitsToFloat(drawOrder));
+	triangleData[triIndex].pos      = vec4(trPos, drawOrderFloatBits);
 	triangleData[triIndex].uvw      = vec4(trUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
 	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(trCol)));
 	triIndex++;
 
 	// BR
-	triangleData[triIndex].pos      = vec4(brPos, intBitsToFloat(drawOrder));
+	triangleData[triIndex].pos      = vec4(brPos, drawOrderFloatBits);
 	triangleData[triIndex].uvw      = vec4(brUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
 	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(brCol)));
 	triIndex++;
 
 	// BL
-	triangleData[triIndex].pos      = vec4(blPos, intBitsToFloat(drawOrder));
+	triangleData[triIndex].pos      = vec4(blPos, drawOrderFloatBits);
 	triangleData[triIndex].uvw      = vec4(blUV, textureLayer, 0.0);
 	triangleData[triIndex].uvInfo   = uvInfo;
 	triangleData[triIndex].apAndCol = vec4(animPrms, uintBitsToFloat(PackColor(blCol)));
@@ -318,11 +320,11 @@ void main()
 	if (gl_GlobalInvocationID.x >= arraySizes.x)
 		return;
 
+	// Automatically formed input data
+%s
 	// Placeholer for automatic early exit
 %s
 	// Placeholer for custom early exit and other init code
-%s
-	// Automatically formed input data
 %s
 	// Placeholer for the rest of the main code
 %s

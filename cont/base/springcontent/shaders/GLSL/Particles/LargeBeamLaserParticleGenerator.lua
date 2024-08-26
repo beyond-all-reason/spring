@@ -29,9 +29,6 @@ return {
 		2 :
 		4 + 2 * int(ceil((beamTileMaxDst - beamTileMinDst) / tileLength));
 
-	vec4 ccsColor = GetPackedColor(coreColStart);
-	vec4 ecsColor = GetPackedColor(edgeColStart);
-
 	vec3 pos1 = startPos;
 	vec3 pos2 = targetPos;
 
