@@ -357,6 +357,8 @@ void ParticleGeneratorHandler::GenerateAll()
 	{
 		auto bindingToken1 = cntrVBO.BindBufferRangeScoped(IndirectBufferIndices::SIZE_SSBO_BINDING_IDX);
 		auto bindingToken2 = indrVBO.BindBufferRangeScoped(IndirectBufferIndices::INDR_SSBO_BINDING_IDX);
+
+		indirParamsShader->SetFlag("PROCESS_TRIANGLES", PROCESS_TRIANGLES);
 		auto shaderToken = indirParamsShader->EnableScoped();
 		indirParamsShader->SetUniform("sortElemsPerThread", sortElemsPerThread);
 
@@ -393,6 +395,8 @@ void ParticleGeneratorHandler::GenerateAll()
 		auto bindingToken3 = keysInVBO.BindBufferRangeScoped(KeyValStorageBindings::KEYO_SSBO_BINDING_IDX);
 		auto bindingToken4 = valsInVBO.BindBufferRangeScoped(KeyValStorageBindings::VALO_SSBO_BINDING_IDX);
 
+		keyValShader->SetFlag("USE_PROJECTED_DISTANCE", USE_PROJECTED_DISTANCE);
+		keyValShader->SetFlag("PROCESS_TRIANGLES", PROCESS_TRIANGLES);
 		auto enToken = keyValShader->EnableScoped();
 		const auto& camPos = camera->GetPos();
 		const auto& camFwd = camera->GetForward();
@@ -421,8 +425,9 @@ void ParticleGeneratorHandler::GenerateAll()
 #endif
 	}
 	// radix sorting
-	std::array<VBO*, 2> outBufs;
-	{
+	std::array<VBO*, 2> outBufs = { &keysInVBO, &valsInVBO };
+
+	if (SORT_PARTICLES) {
 		auto bindingToken1 = histVBO.BindBufferRangeScoped(RadixSortStorageBindings::HIST_SSBO_BINDING_IDX);
 		auto bindingToken2 = cntrVBO.BindBufferRangeScoped(RadixSortStorageBindings::SIZE_SSBO_BINDING_IDX);
 
@@ -476,6 +481,7 @@ void ParticleGeneratorHandler::GenerateAll()
 		auto bindingToken2 = indcVBO.BindBufferRangeScoped(IndicesProducerStorageBindings::IDCS_SSBO_BINDING_IDX);
 		auto bindingToken3 = cntrVBO.BindBufferRangeScoped(IndicesProducerStorageBindings::SIZE_SSBO_BINDING_IDX);
 
+		indcsProdShader->SetFlag("PROCESS_TRIANGLES", PROCESS_TRIANGLES);
 		auto enToken = indcsProdShader->EnableScoped();
 
 		glDispatchComputeIndirect(static_cast<GLintptr>(IndirectBufferIndices::KVAL_SSBO_INDRCT_X * sizeof(int32_t)));

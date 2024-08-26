@@ -80,6 +80,7 @@
 #include "Rendering/Env/IWater.h"
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Map/InfoTexture/Modern/Path.h"
@@ -2833,11 +2834,89 @@ public:
 	}
 };
 
-
-
-class DistSortProjectilesActionExecutor: public IUnsyncedActionExecutor {
+class DistSortParticlesActionExecutor : public IUnsyncedActionExecutor {
 public:
-	DistSortProjectilesActionExecutor(): IUnsyncedActionExecutor(
+	DistSortParticlesActionExecutor() : IUnsyncedActionExecutor(
+		"DistSortParticles",
+		"Enable/Disable sorting drawn particles by camera distance"
+	) {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		const auto& args = action.GetArgs();
+
+		const char* fmt = "ParticleGeneratorHandler distance-sorting %s";
+		const char* strs[] = { "disabled", "enabled" };
+
+		auto& pgh = ParticleGeneratorHandler::GetInstance();
+
+		if (!args.empty()) {
+			LOG(fmt, strs[pgh.EnableSorting(StringToInt(args))]);
+		}
+		else {
+			LOG(fmt, strs[pgh.ToggleSorting()]);
+		}
+
+		return true;
+	}
+};
+class TriangleSortParticlesActionExecutor : public IUnsyncedActionExecutor {
+public:
+	TriangleSortParticlesActionExecutor() : IUnsyncedActionExecutor(
+		"TriangleSortParticles",
+		"Enable/Disable sorting particles by triangles vs quads"
+	) {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		const auto& args = action.GetArgs();
+
+		const char* fmt = "ParticleGeneratorHandler sorting type is %s";
+		const char* strs[] = { "quads", "triangles" };
+
+		auto& pgh = ParticleGeneratorHandler::GetInstance();
+
+		if (!args.empty()) {
+			LOG(fmt, strs[pgh.EnableTriangles(StringToInt(args))]);
+		}
+		else {
+			LOG(fmt, strs[pgh.ToggleTriangles()]);
+		}
+
+		return true;
+	}
+};
+class ProjDistSortParticlesActionExecutor : public IUnsyncedActionExecutor {
+public:
+	ProjDistSortParticlesActionExecutor(): IUnsyncedActionExecutor(
+		"ProjDistSortParticles",
+		"Enable/Disable the use of projected distance for particles sorting"
+	) {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		const auto& args = action.GetArgs();
+
+		const char* fmt = "ParticleGeneratorHandler distance type is %s";
+		const char* strs[] = { "euclidean", "projected" };
+
+		auto& pgh = ParticleGeneratorHandler::GetInstance();
+
+		if (!args.empty()) {
+			LOG(fmt, strs[pgh.EnableProjDistance(StringToInt(args))]);
+		}
+		else {
+			LOG(fmt, strs[pgh.ToggleProjDistance()]);
+		}
+
+		return true;
+	}
+};
+
+
+class DistSortProjectilesActionExecutor : public IUnsyncedActionExecutor {
+public:
+	DistSortProjectilesActionExecutor() : IUnsyncedActionExecutor(
 		"DistSortProjectiles",
 		"Enable/Disable sorting drawn projectiles by camera distance"
 	) {
@@ -2847,18 +2926,18 @@ public:
 		const auto& args = action.GetArgs();
 
 		const char* fmt = "ProjectileDrawer distance-sorting %s";
-		const char* strs[] = {"disabled", "enabled"};
+		const char* strs[] = { "disabled", "enabled" };
 
 		if (!args.empty()) {
 			LOG(fmt, strs[projectileDrawer->EnableSorting(StringToInt(args))]);
-		} else {
+		}
+		else {
 			LOG(fmt, strs[projectileDrawer->ToggleSorting()]);
 		}
 
 		return true;
 	}
 };
-
 class ParticleSoftenActionExecutor : public IUnsyncedActionExecutor {
 public:
 	ParticleSoftenActionExecutor() : IUnsyncedActionExecutor(
@@ -4022,6 +4101,10 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<LuaGarbageCollectControlExecutor>());
 	AddActionExecutor(AllocActionExecutor<MiniMapActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<GroundDecalsActionExecutor>());
+
+	AddActionExecutor(AllocActionExecutor<DistSortParticlesActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<TriangleSortParticlesActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<ProjDistSortParticlesActionExecutor>());
 
 	AddActionExecutor(AllocActionExecutor<DistSortProjectilesActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ParticleSoftenActionExecutor>());

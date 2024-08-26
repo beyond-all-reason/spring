@@ -89,7 +89,7 @@ void main()
 	float dist = distance(cameraPos, quadCenter);
 #endif
 
-	dist = clamp((distance - cameraNearFar.x) / (cameraNearFar.y - cameraNearFar.x), 0.0, 1.0);
+	dist = clamp((dist - cameraNearFar.x) / (cameraNearFar.y - cameraNearFar.x), 0.0, 1.0);
 	
 	uint key = uint(0xFFFFFFu * dist); // save in 24 bit depth format
 	key |= uint(drawOrder << 24u); // add drawOrder as MSB of UINT

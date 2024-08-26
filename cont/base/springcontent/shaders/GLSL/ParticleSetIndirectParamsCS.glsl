@@ -35,7 +35,7 @@ void main()
 		indirect[HIST_SSBO_INDRCT_Z] = 1u;
 	}
 	{
-		indirect[DRAW_SSBO_INDSC] = 3u * numElems;
+		indirect[DRAW_SSBO_INDSC] = 6u * numQuads;
 		indirect[DRAW_SSBO_INSTC] = 1u;
 		indirect[DRAW_SSBO_FIRSI] = 0u;
 		indirect[DRAW_SSBO_BASEV] = 0u;
