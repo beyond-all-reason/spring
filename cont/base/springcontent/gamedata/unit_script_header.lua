@@ -24,6 +24,13 @@ local Turn = UnitScript.Turn
 local Spin = UnitScript.Spin
 local StopSpin = UnitScript.StopSpin
 
+local MultiSetPieceVisibility = UnitScript.MultiSetPieceVisibility
+local MultiMove = UnitScript.MultiMove
+local MultiTurn = UnitScript.MultiTurn
+local MultiSpin = UnitScript.MultiSpin
+local MultiStopSpin = UnitScript.MultiStopSpin
+local MultiExplode = UnitScript.MultiExplode
+
 local StartThread = UnitScript.StartThread
 local Signal = UnitScript.Signal
 local SetSignalMask = UnitScript.SetSignalMask
