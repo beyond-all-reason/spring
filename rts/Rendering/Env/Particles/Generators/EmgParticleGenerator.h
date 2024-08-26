@@ -6,7 +6,7 @@
 struct EmgParticleData {
 	CR_DECLARE_STRUCT(EmgParticleData)
 	float3 pos;
-	float drawRadius;
+	float size;
 
 	float3 speed;
 	int32_t createFrame;

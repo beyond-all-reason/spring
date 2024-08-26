@@ -6,7 +6,7 @@ struct FlameParticleData {
 	CR_DECLARE_STRUCT(FlameParticleData)
 
 	float3 pos;
-	float drawRadius;
+	float size;
 
 	float3 speed;
 	int32_t createFrame;

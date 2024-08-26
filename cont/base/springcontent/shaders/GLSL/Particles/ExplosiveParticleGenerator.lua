@@ -12,9 +12,9 @@ return {
 
 	for (uint stage = 0u; stage < numStages; ++stage) {
 		float stageDecay = (numStages - (stage * alphaDecay)) * invStages;
-		float stageSize  = drawRadius * (1.0f - (stage * sizeDecay));
+		float stageSize  = size * (1.0f - (stage * sizeDecay));
 
-		vec3 stageGap = (noGap > 0) ? (ndir * stageSize * stage) : (ndir * drawRadius * stage);
+		vec3 stageGap = (noGap > 0) ? (ndir * stageSize * stage) : (ndir * size * stage);
 		vec3 stagePos = drawPos - stageGap;
 
 		color *= stageDecay;

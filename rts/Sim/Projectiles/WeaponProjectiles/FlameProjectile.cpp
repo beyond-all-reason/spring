@@ -46,7 +46,7 @@ CFlameProjectile::CFlameProjectile(const ProjectileParams& params)
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FlameParticleGenerator>();
 	pgOffset = pg.Add({
 		.pos = {},
-		.drawRadius = drawRadius,
+		.size = drawRadius,
 		.speed = speed,
 		.createFrame = createFrame,
 		.animParams = {},
@@ -101,7 +101,7 @@ void CFlameProjectile::Update()
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FlameParticleGenerator>();
 	auto& data = pg.Get(pgOffset);
 
-	data.drawRadius = drawRadius;
+	data.size = drawRadius;
 	data.pos = pos;
 	data.speed = speed;
 	data.curTime = curTime;

@@ -52,7 +52,7 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params)
 	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
 	pgOffset = pg.Add({
 		.pos = pos,
-		.drawRadius = drawRadius,
+		.size = drawRadius,
 
 		.speed = speed,
 		.createFrame = createFrame,

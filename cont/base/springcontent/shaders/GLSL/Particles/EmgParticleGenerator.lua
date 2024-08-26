@@ -11,7 +11,7 @@ return {
 	AddEffectsQuadCamera(
 		drawOrder,
 		animParams,
-		drawPos, vec2(drawRadius), texCoord,
+		drawPos, vec2(size), texCoord,
 		color
 	);
 ]]

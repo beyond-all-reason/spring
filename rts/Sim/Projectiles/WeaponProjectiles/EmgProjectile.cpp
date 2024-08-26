@@ -42,7 +42,7 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 	
 	pgOffset = pg.Add({
 		.pos = pos,
-		.drawRadius = drawRadius,
+		.size = drawRadius,
 		.speed = speed,
 		.createFrame = createFrame,
 		.animParams = animParams,
