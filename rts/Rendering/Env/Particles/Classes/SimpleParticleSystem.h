@@ -72,6 +72,7 @@ protected:
 
 protected:
 	 std::vector<Particle> particles;
+	 std::vector<size_t> pgOffsets;
 };
 
 /**

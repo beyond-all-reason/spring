@@ -95,6 +95,8 @@ private:
 	bool GenerateCPU();
 	bool GenerateGPU(Shader::IProgramObject* shader, int32_t totalNumQuads);
 
+	float currFrame = 0.0f;
+	float prevFrame = 0.0f;
 	int32_t maxNumQuads;
 };
 
@@ -137,7 +139,9 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUn
 		totalNumQuads
 	);
 
-	shader->SetUniform("frameInfo", static_cast<float>(gs->frameNum), globalRendering->timeOffset, gu->modGameTime);
+	prevFrame = std::exchange(currFrame, static_cast<float>(gs->frameNum));
+
+	shader->SetUniform("frameInfo", currFrame, globalRendering->timeOffset, gu->modGameTime, prevFrame);
 
 	shader->SetUniform3v("camPos", &camera->GetPos().x);
 	shader->SetUniform3v("camDir[0]", &camera->GetRight().x);
@@ -395,7 +399,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	shader->Enable();
 
 	shader->SetUniform("arraySizes", 0, 0);
-	shader->SetUniform("frameInfo", 0.0f, 0.0f, 0.0f);
+	shader->SetUniform("frameInfo", 0.0f, 0.0f, 0.0f, 0.0f);
 	shader->SetUniform("camPos", 0.0f, 0.0f, 0.0f);
 	shader->SetUniform("camDir[0]", 0.0f, 0.0f, 0.0f);
 	shader->SetUniform("camDir[1]", 0.0f, 0.0f, 0.0f);

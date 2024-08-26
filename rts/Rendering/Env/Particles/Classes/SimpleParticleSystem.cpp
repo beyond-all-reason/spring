@@ -7,6 +7,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
@@ -209,7 +210,13 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 		LOG_L(L_WARNING, "[CSimpleParticleSystem::%s] no texture specified", __func__);
 	}
 
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<SimpleParticleGenerator>();
+
 	particles.resize(numParticles);
+	pgOffsets.reserve(numParticles);
+
+	auto [color0, color1, edge0, edge1] = colorMap->GetColorsPair(0.0f);
+
 	for (auto& p: particles) {
 		float az = guRNG.NextFloat() * math::TWOPI;
 		float ay = (emitRot + (emitRotSpread * guRNG.NextFloat())) * math::DEG_TO_RAD;
@@ -221,7 +228,29 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 		p.life = 0.0f;
 		p.decayrate = 1.0f / (particleLife + (guRNG.NextFloat() * particleLifeSpread));
 		p.size = particleSize + guRNG.NextFloat()*particleSizeSpread;
+
+		pgOffsets.emplace_back(pg.Add({
+			.pos = p.pos,
+			.size = p.size,
+			.speed = p.speed,
+			.createFrame = createFrame,
+			.gravity = gravity,
+			.airDrag = airdrag,
+			.lifeDecayRate = p.decayrate,
+			.sizeMod = sizeMod,
+			.sizeGrowth = sizeGrowth,
+			.animParams = animParams,
+			.directional = directional,
+			.rotParams = rotParams,
+			.drawOrder = drawOrder,
+			.color0 = color0,
+			.color1 = color1,
+			.colEdge0 = edge0,
+			.colEdge1 = edge1,
+			.texCoord = *texture
+		}));
 	}
+	pgOffsets.resize(numParticles);
 
 	drawRadius = (particleSpeed + particleSpeedSpread) * (particleLife + particleLifeSpread);
 }

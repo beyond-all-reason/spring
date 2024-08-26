@@ -1,7 +1,7 @@
 #version 430 core
 
 uniform ivec2 arraySizes;
-uniform vec3 frameInfo; // gs->frameNum, globalRendering->timeOffset, gu->modGameTime
+uniform vec4 frameInfo; // gs->frameNum, globalRendering->timeOffset, gu->modGameTime, prevSyncedFrame
 
 uniform vec3 camPos;
 uniform vec3 camDir[3]; // right, up, forward
@@ -44,6 +44,28 @@ layout(std430, binding = SIZE_SSBO_BINDING_IDX) coherent restrict buffer SIZE
 {
     uint atomicCounters[];
 };
+
+// ((((Val + Vel)*Mul + Vel)*Mul + Vel)*Mul + Vel)*Mul -- >
+// Mul*Vel + Mul^2*Vel + Mul^3*Vel + Mul^4*Vel + Mul^4*Val
+// and so on
+float ValVelMulSteps(float val, float vel, float mul, uint N) {
+	float tmpMulN = 1.0;
+	float tmpMulNSum = 0.0;
+	for (uint n = 1u; n <= N; ++n) {
+		tmpMulN *= mul;
+		tmpMulNSum += tmpMulN;
+	}
+	return tmpMulNSum * vel + tmpMulN * val;
+}
+vec3 ValVelMulSteps(vec3 val, vec3 vel, vec3 mul, uint N) {
+	vec3 tmpMulN = 1.0;
+	vec3 tmpMulNSum = 0.0;
+	for (uint n = 1u; n <= N; ++n) {
+		tmpMulN *= mul;
+		tmpMulNSum += tmpMulN;
+	}
+	return tmpMulNSum * vel + tmpMulN * val;
+}
 
 uint GetUnpackedValue(uint packedValue, uint byteNum) {
 	return (packedValue >> (8u * byteNum)) & 0xFFu;

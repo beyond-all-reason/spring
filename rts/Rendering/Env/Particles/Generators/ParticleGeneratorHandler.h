@@ -27,6 +27,7 @@
 #include "HeatCloudParticleGenerator.h"
 #include "MuzzleFlameParticleGenerator.h"
 #include "NanoParticleGenerator.h"
+#include "SimpleParticleGenerator.h"
 
 namespace Shader {
 	struct IProgramObject;
@@ -100,7 +101,9 @@ private:
 		GeoSquareParticleGenerator,
 		HeatCloudParticleGenerator,
 		MuzzleFlameParticleGenerator,
-		NanoParticleGenerator
+		NanoParticleGenerator,
+		// skipped shields and repulsor
+		SimpleParticleGenerator
 	>;
 
 	std::unique_ptr<GeneratorsTuple> generators;
@@ -109,6 +112,7 @@ private:
 	int32_t sortElemsPerThread;
 	int32_t sortHistNumWorkGroups;
 
+	VBO colorMapVBO;
 	VBO vertVBO;
 	VBO indcVBO;
 	VBO cntrVBO;	//for the GPU based updates
