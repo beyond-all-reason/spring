@@ -201,6 +201,7 @@ void CWorldDrawer::Kill()
 	DepthBufferCopy::Kill();
 	LuaObjectDrawer::Kill();
 	SmoothHeightMeshDrawer::FreeInstance();
+	CColorMap::KillStatic();
 
 	numUpdates = 0;
 }

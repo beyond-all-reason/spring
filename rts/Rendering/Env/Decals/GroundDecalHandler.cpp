@@ -645,11 +645,12 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 	std::array<SColor, 2> glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} };
 	float cmAlphaMult = 1.0f;
-	if (vi.scarGlowColorMap && !vi.scarGlowColorMap->Empty()) {
+	if (vi.scarGlowColorMap) {
+		// TODO: fix me
 		auto idcs = vi.scarGlowColorMap->GetIndices(0.0f);
 		glowColorMap[0] = vi.scarGlowColorMap->GetColor(idcs.first );
 		glowColorMap[1] = vi.scarGlowColorMap->GetColor(idcs.second);
-		cmAlphaMult = static_cast<float>(vi.scarGlowColorMap->GetMapSize());
+		cmAlphaMult = 1.0f /*What is this for?*/;
 	}
 
 	const auto& decal = decals.emplace_back(GroundDecal{
@@ -682,7 +683,8 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 		.glowColorMap = std::move(glowColorMap)
 	});
 
-	if (vi.scarGlowColorMap && !vi.scarGlowColorMap->Empty()) {
+	if (vi.scarGlowColorMap) {
+		// TODO fix me
 		auto idcs = vi.scarGlowColorMap->GetIndices(0.0f);
 		idToCmInfo[decal.info.id] = std::make_tuple(vi.scarGlowColorMap, idcs);
 	}

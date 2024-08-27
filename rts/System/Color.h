@@ -65,6 +65,8 @@ struct SColor
 		, a(static_cast<uint8_t>(f[3] * 255.0f))
 	{}
 
+	constexpr bool operator==(const SColor& o) const { return i == o.i; }
+
 	constexpr SColor operator+ (const SColor& o) const {
 		return {
 			r + o.r,
