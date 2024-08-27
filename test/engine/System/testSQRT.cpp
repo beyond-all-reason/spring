@@ -2,7 +2,7 @@
 
 #include <array>
 #include <cmath>
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 #include "System/TimeProfiler.h"
 #include "System/Misc/SpringTime.h"
 #include "System/FastMath.h"

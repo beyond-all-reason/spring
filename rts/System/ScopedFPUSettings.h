@@ -6,7 +6,7 @@
 // dedicated is compiled w/o streflop!
 #if defined(__SUPPORT_SNAN__) && !defined(DEDICATED) && !defined(UNITSYNC)
 
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 
 class ScopedDisableFpuExceptions {
 public:

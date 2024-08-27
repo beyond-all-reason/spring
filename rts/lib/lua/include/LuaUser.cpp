@@ -3,7 +3,7 @@
 #include <array>
 #include <cinttypes>
 
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 
 #include "LuaInclude.h"
 #include "Lua/LuaAllocState.h"

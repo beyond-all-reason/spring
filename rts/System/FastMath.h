@@ -8,7 +8,7 @@
 #endif
 #include <cinttypes>
 
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 #include "System/MainDefines.h"
 #include "System/MathConstants.h"
 

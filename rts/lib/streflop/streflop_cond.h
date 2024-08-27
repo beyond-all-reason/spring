@@ -27,7 +27,15 @@
 
 
 #if STREFLOP_ENABLED
+#ifdef _MSC_VER
+	#pragma warning( push )
+	#pragma warning( disable : 4100)
+#endif
 #include "streflop.h"
+#ifdef _MSC_VER
+	#pragma warning( pop )
+#endif
+
 
 namespace math {
 	using namespace streflop;
@@ -144,8 +152,75 @@ namespace std {
 }
 #endif
 
-
-
 #endif // STREFLOP_ENABLED
+
+
+#include <type_traits>
+
+namespace assimp_math {
+
+#define ASSIMP_MATH_DEFINE_FUNC1F(FNAME)\
+template<typename F, typename = std::enable_if_t<std::is_floating_point_v<F>> >\
+static inline float FNAME(F f) {\
+	return math::FNAME(static_cast<float>(f));\
+}
+#define ASSIMP_MATH_DEFINE_FUNC2F(FNAME)\
+template<typename F, typename = std::enable_if_t<std::is_floating_point_v<F>> >\
+static inline float FNAME(F f1, F f2) {\
+	return math::FNAME(static_cast<float>(f1), static_cast<float>(f2));\
+}
+#define ASSIMP_MATH_DEFINE_FUNC1F1PI(FNAME)\
+template<typename F, typename = std::enable_if_t<std::is_floating_point_v<F>> >\
+static inline float FNAME(F f, int* i) {\
+	return math::FNAME(static_cast<float>(f), i);\
+}
+#define ASSIMP_MATH_DEFINE_FUNC1F1I(FNAME)\
+template<typename F, typename = std::enable_if_t<std::is_floating_point_v<F>> >\
+static inline float FNAME(F f, int i) {\
+	return math::FNAME(static_cast<float>(f), i);\
+}
+
+	ASSIMP_MATH_DEFINE_FUNC1F(fabs)
+
+	ASSIMP_MATH_DEFINE_FUNC1F(sin)
+	ASSIMP_MATH_DEFINE_FUNC1F(cos)
+
+	ASSIMP_MATH_DEFINE_FUNC1F(sinh)
+	ASSIMP_MATH_DEFINE_FUNC1F(cosh)
+	ASSIMP_MATH_DEFINE_FUNC1F(tan)
+	ASSIMP_MATH_DEFINE_FUNC1F(tanh)
+	ASSIMP_MATH_DEFINE_FUNC1F(asin)
+	ASSIMP_MATH_DEFINE_FUNC1F(acos)
+	ASSIMP_MATH_DEFINE_FUNC1F(atan)
+	ASSIMP_MATH_DEFINE_FUNC2F(atan2)
+
+	ASSIMP_MATH_DEFINE_FUNC1F(sqrt)
+
+	ASSIMP_MATH_DEFINE_FUNC1F(ceil)
+	ASSIMP_MATH_DEFINE_FUNC1F(floor)
+	ASSIMP_MATH_DEFINE_FUNC2F(fmod)
+	ASSIMP_MATH_DEFINE_FUNC2F(hypot)
+	ASSIMP_MATH_DEFINE_FUNC2F(pow)
+	ASSIMP_MATH_DEFINE_FUNC1F(log)
+	ASSIMP_MATH_DEFINE_FUNC1F(log2)
+	ASSIMP_MATH_DEFINE_FUNC1F(log10)
+	ASSIMP_MATH_DEFINE_FUNC1F(exp)
+	ASSIMP_MATH_DEFINE_FUNC1F1PI(frexp)
+	ASSIMP_MATH_DEFINE_FUNC1F1I(ldexp)
+	ASSIMP_MATH_DEFINE_FUNC1F(round)
+	ASSIMP_MATH_DEFINE_FUNC1F(erf)
+
+	ASSIMP_MATH_DEFINE_FUNC1F(cosf)
+	ASSIMP_MATH_DEFINE_FUNC1F(sinf)
+	ASSIMP_MATH_DEFINE_FUNC1F(tanf)
+	ASSIMP_MATH_DEFINE_FUNC1F(acosf)
+	ASSIMP_MATH_DEFINE_FUNC1F(fabsf)
+
+	ASSIMP_MATH_DEFINE_FUNC1F(isnan)
+	ASSIMP_MATH_DEFINE_FUNC1F(isinf)
+	ASSIMP_MATH_DEFINE_FUNC1F(isfinite)
+
+#undef ASSIMP_MATH_DEFINE_FUNC1
+}
 
 #endif // STREFLOP_COND_H

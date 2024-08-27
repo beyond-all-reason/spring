@@ -5,7 +5,7 @@
 
 #include <limits>
 
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 #include "System/float3.h"
 
 

@@ -11,4 +11,3 @@ add_library(engineSystemNet STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/UDPListener.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/UnpackPacket.cpp"
 	)
-

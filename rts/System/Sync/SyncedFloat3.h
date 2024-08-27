@@ -8,7 +8,7 @@
 
 #if defined(SYNCDEBUG) || defined(SYNCCHECK)
 
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 #include "SyncedPrimitive.h"
 #include "System/FastMath.h" //SSE (I)SQRT
 

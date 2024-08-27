@@ -17,13 +17,13 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
 
-#include "lib/assimp/include/assimp/config.h"
-#include "lib/assimp/include/assimp/defs.h"
-#include "lib/assimp/include/assimp/types.h"
-#include "lib/assimp/include/assimp/scene.h"
-#include "lib/assimp/include/assimp/postprocess.h"
-#include "lib/assimp/include/assimp/Importer.hpp"
-#include "lib/assimp/include/assimp/DefaultLogger.hpp"
+#include <assimp/config.h>
+#include <assimp/defs.h>
+#include <assimp/types.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+#include <assimp/DefaultLogger.hpp>
 
 #include <regex>
 #include <algorithm>
@@ -265,8 +265,8 @@ void CAssParser::Load(S3DModel& model, const std::string& modelFilePath)
 	}
 
 	if (modelTable.GetBool("nodenamesfromids", false)) {
-		assert(FileSystem::GetExtension(modelFilePath) == "dae");
-		PreProcessFileBuffer(fileBuf);
+		if (FileSystem::GetExtension(modelFilePath) == "dae");
+			PreProcessFileBuffer(fileBuf);
 	}
 
 

@@ -12,7 +12,7 @@
 #include "lualib.h"
 #include "lauxlib.h"
 #include "lib/lua/src/lstate.h"
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 #include "System/Log/ILog.h"
 
 

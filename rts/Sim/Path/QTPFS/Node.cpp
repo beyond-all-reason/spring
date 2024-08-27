@@ -5,7 +5,7 @@
 #include <cassert>
 #include <limits>
 
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 
 #include "Node.h"
 #include "NodeLayer.h"

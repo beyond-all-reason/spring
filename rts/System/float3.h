@@ -7,7 +7,7 @@
 #include <array>
 
 #include "System/BranchPrediction.h"
-#include "lib/streflop/streflop_cond.h"
+#include <streflop/streflop_cond.h>
 #include "System/creg/creg_cond.h"
 #include "System/FastMath.h"
 #ifdef _MSC_VER

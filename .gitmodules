@@ -30,3 +30,6 @@
 [submodule "rts/lib/cereal"]
 	path = rts/lib/cereal
 	url = https://github.com/USCiLab/cereal.git
+[submodule "rts/lib/assimp"]
+	path = rts/lib/assimp
+	url = https://github.com/recoilengine/assimp
