@@ -139,8 +139,6 @@ inline void ParticleGenerator<ParticleDataType, ParticleGenType>::UpdateCommonUn
 		totalNumQuads
 	);
 
-	prevFrame = std::exchange(currFrame, static_cast<float>(gs->frameNum));
-
 	shader->SetUniform("frameInfo", currFrame, globalRendering->timeOffset, gu->modGameTime, prevFrame);
 
 	shader->SetUniform3v("camPos", &camera->GetPos().x);
@@ -442,6 +440,8 @@ template<typename ParticleDataType, typename ParticleGenType>
 inline void ParticleGenerator<ParticleDataType, ParticleGenType>::Generate(int32_t totalNumQuads)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	prevFrame = std::exchange(currFrame, static_cast<float>(gs->frameNum));
 
 	if (particles.empty())
 		return;
