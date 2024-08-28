@@ -70,11 +70,11 @@ public:
 	}
 
 	bool EnableSorting(bool b) { return (SORT_PARTICLES =               b); }
-	bool ToggleSorting(      ) { return (SORT_PARTICLES != SORT_PARTICLES); }
+	bool ToggleSorting(      ) { return (SORT_PARTICLES = !SORT_PARTICLES); }
 	bool EnableTriangles(bool b) { return (PROCESS_TRIANGLES =                  b); }
-	bool ToggleTriangles(      ) { return (PROCESS_TRIANGLES != PROCESS_TRIANGLES); }
+	bool ToggleTriangles(      ) { return (PROCESS_TRIANGLES = !PROCESS_TRIANGLES); }
 	bool EnableProjDistance(bool b) { return (USE_PROJECTED_DISTANCE =                       b); }
-	bool ToggleProjDistance(      ) { return (USE_PROJECTED_DISTANCE != USE_PROJECTED_DISTANCE); }
+	bool ToggleProjDistance(      ) { return (USE_PROJECTED_DISTANCE = !USE_PROJECTED_DISTANCE); }
 private:
 	void ReallocateBuffersPre();
 	void ReallocateBuffersPost();
