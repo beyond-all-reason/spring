@@ -34,6 +34,7 @@ struct ParticleGeneratorDefs {
 	// for particles generator
 	static constexpr int32_t DATA_SSBO_BINDING_IDX = 2;
 	static constexpr int32_t VERT_SSBO_BINDING_IDX = 3;
+	static constexpr int32_t COLM_SSBO_BINDING_IDX = 4;
 	static constexpr int32_t SIZE_SSBO_BINDING_IDX = 5;
 
 	static constexpr int32_t SIZE_SSBO_NUM_ELEMENTS = 256;
@@ -386,6 +387,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shader->SetFlag("DATA_SSBO_BINDING_IDX", ParticleGeneratorDefs::DATA_SSBO_BINDING_IDX);
 	shader->SetFlag("VERT_SSBO_BINDING_IDX", ParticleGeneratorDefs::VERT_SSBO_BINDING_IDX);
+	shader->SetFlag("COLM_SSBO_BINDING_IDX", ParticleGeneratorDefs::COLM_SSBO_BINDING_IDX);
 	//shader->SetFlag("IDCS_SSBO_BINDING_IDX", ParticleGeneratorDefs::IDCS_SSBO_BINDING_IDX);
 	shader->SetFlag("SIZE_SSBO_BINDING_IDX", ParticleGeneratorDefs::SIZE_SSBO_BINDING_IDX);
 	shader->SetFlag("SIZE_SSBO_QUAD_IDX", ParticleGeneratorDefs::SIZE_SSBO_QUAD_IDX);

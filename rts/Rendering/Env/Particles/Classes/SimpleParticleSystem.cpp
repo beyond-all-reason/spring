@@ -86,6 +86,20 @@ CSimpleParticleSystem::CSimpleParticleSystem()
 	useAirLos = true;
 }
 
+CSimpleParticleSystem::~CSimpleParticleSystem()
+{
+	particles.clear();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<SimpleParticleGenerator>();
+	while (!pgOffsets.empty()) {
+		// clean in backwards direction because pg.Del() is faster that way
+		pg.Del(pgOffsets.back());
+		pgOffsets.pop_back();
+	}
+
+	pgOffsets.clear();
+}
+
 void CSimpleParticleSystem::Serialize(creg::ISerializer* s)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -215,7 +229,7 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 	particles.resize(numParticles);
 	pgOffsets.reserve(numParticles);
 
-	auto [color0, color1, edge0, edge1] = colorMap->GetColorsPair(0.0f);
+	//auto [color0, color1, edge0, edge1] = colorMap->GetColorsPair(0.0f);
 
 	for (auto& p: particles) {
 		float az = guRNG.NextFloat() * math::TWOPI;
@@ -243,14 +257,11 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 			.directional = directional,
 			.rotParams = rotParams,
 			.drawOrder = drawOrder,
-			.color0 = color0,
-			.color1 = color1,
-			.colEdge0 = edge0,
-			.colEdge1 = edge1,
+			.colMapOfft = colorMap->GetOffset(),
+			.colMapSize = colorMap->GetSize(),
 			.texCoord = *texture
 		}));
 	}
-	pgOffsets.resize(numParticles);
 
 	drawRadius = (particleSpeed + particleSpeedSpread) * (particleLife + particleLifeSpread);
 }

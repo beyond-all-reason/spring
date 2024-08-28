@@ -33,6 +33,11 @@ layout(std430, binding = VERT_SSBO_BINDING_IDX) writeonly restrict buffer OUT1
     TriangleData triangleData[];
 };
 
+layout(std430, binding = COLM_SSBO_BINDING_IDX) readonly restrict buffer COLORMAP
+{
+	vec4 colorMapData[];
+};
+
 /*
 layout(std430, binding = IDCS_SSBO_BINDING_IDX) writeonly restrict buffer OUT2
 {
@@ -45,26 +50,48 @@ layout(std430, binding = SIZE_SSBO_BINDING_IDX) coherent restrict buffer SIZE
     uint atomicCounters[];
 };
 
-// ((((Val + Vel)*Mul + Vel)*Mul + Vel)*Mul + Vel)*Mul -- >
-// Mul*Vel + Mul^2*Vel + Mul^3*Vel + Mul^4*Vel + Mul^4*Val
+// ((((Val + Add)*Mul + Add)*Mul + Add)*Mul + Add)*Mul -- >
+// Add*Mul + Add*Power(Mul,2) + Add*Power(Mul,3) + Add*Power(Mul,4) + Power(Mul,4)*Val
 // and so on
-float ValVelMulSteps(float val, float vel, float mul, uint N) {
+float ValAddMulSteps(float val, float add, float mul, int N) {
 	float tmpMulN = 1.0;
 	float tmpMulNSum = 0.0;
-	for (uint n = 1u; n <= N; ++n) {
+	for (int n = 1; n <= N; ++n) {
 		tmpMulN *= mul;
 		tmpMulNSum += tmpMulN;
 	}
-	return tmpMulNSum * vel + tmpMulN * val;
+	return tmpMulNSum * add + tmpMulN * val;
 }
-vec3 ValVelMulSteps(vec3 val, vec3 vel, vec3 mul, uint N) {
-	vec3 tmpMulN = 1.0;
-	vec3 tmpMulNSum = 0.0;
-	for (uint n = 1u; n <= N; ++n) {
+vec3 ValAddMulSteps(vec3 val, vec3 add, vec3 mul, int N) {
+	vec3 tmpMulN = vec3(1.0);
+	vec3 tmpMulNSum = vec3(0.0);
+	for (int n = 1; n <= N; ++n) {
 		tmpMulN *= mul;
 		tmpMulNSum += tmpMulN;
 	}
-	return tmpMulNSum * vel + tmpMulN * val;
+	return tmpMulNSum * add + tmpMulN * val;
+}
+
+// (((Val*Mul + Add)*Mul + Add)*Mul + Add)*Mul + Add -->
+// Add + Add*Mul + Add*Power(Mul,2) + Add*Power(Mul,3) + Power(Mul,4)*Val
+// and so on
+float ValMulAddSteps(float val, float mul, float add, int N) {
+	float tmpMulN = 1.0;
+	float tmpMulNSum = tmpMulN;
+	for (int n = 1; n <= N - 1; ++n) {
+		tmpMulN *= mul;
+		tmpMulNSum += tmpMulN;
+	}
+	return add * tmpMulNSum + (tmpMulN * tmpMulN) * val;
+}
+vec3 ValMulAddSteps(vec3 val, vec3 mul, vec3 add, int N) {
+	vec3 tmpMulN = vec3(1.0);
+	vec3 tmpMulNSum = tmpMulN;
+	for (int n = 1; n <= N - 1; ++n) {
+		tmpMulN *= mul;
+		tmpMulNSum += tmpMulN;
+	}
+	return add * tmpMulNSum + (tmpMulN * tmpMulN) * val;
 }
 
 uint GetUnpackedValue(uint packedValue, uint byteNum) {
@@ -144,16 +171,28 @@ void SetCurrentAnimation(inout vec3 animationParameters, float currTime) {
 	}
 }
 
-vec4 GetCurrentColor(vec4 unpackedColorEdge0, vec4 unpackedColorEdge1, float lifeEdge0, float lifeEdge1, float currTime) {
-	float colMixRate = clamp((lifeEdge1 - currTime)/(lifeEdge1 - lifeEdge0), 0.0, 1.0);
+vec4 GetCurrentColorFromColorMap(uint offt, uint size, float pos) {
+	float cpos = clamp(pos, 0.0, 0.999f);
+	uint i0 = offt + uint(cpos * (size - 1));
+	uint i1 = i0 + 1;
+
+	float fpos = pos * (size - 1);
+	float ipos = floor(fpos);
+	pos = (fpos - ipos);
+
+	return mix(colorMapData[i0], colorMapData[i1], pos);
+}
+
+vec4 GetCurrentColor(vec4 unpackedColorEdge0, vec4 unpackedColorEdge1, float lifeEdge0, float lifeEdge1, float life) {
+	float colMixRate = clamp((lifeEdge1 - life)/(lifeEdge1 - lifeEdge0), 0.0, 1.0);
 	return mix(unpackedColorEdge0, unpackedColorEdge1, colMixRate);
 }
 
-vec4 GetCurrentColor(uint colorEdge0, uint colorEdge1, float lifeEdge0, float lifeEdge1, float currTime) {
+vec4 GetCurrentColor(uint colorEdge0, uint colorEdge1, float lifeEdge0, float lifeEdge1, float life) {
 	vec4 unpackedColorEdge0 = GetPackedColor(colorEdge0);
 	vec4 unpackedColorEdge1 = GetPackedColor(colorEdge1);
 
-	return GetCurrentColor(unpackedColorEdge0, unpackedColorEdge1, lifeEdge0, lifeEdge1, currTime);
+	return GetCurrentColor(unpackedColorEdge0, unpackedColorEdge1, lifeEdge0, lifeEdge1, life);
 }
 
 float GetParticleTime(int creationFrame) {

@@ -17,7 +17,7 @@ class CSimpleParticleSystem : public CProjectile
 
 public:
 	CSimpleParticleSystem();
-	virtual ~CSimpleParticleSystem() { particles.clear(); }
+	~CSimpleParticleSystem() override;
 
 	void Serialize(creg::ISerializer* s);
 

@@ -112,7 +112,6 @@ private:
 	int32_t sortElemsPerThread;
 	int32_t sortHistNumWorkGroups;
 
-	VBO colorMapVBO;
 	VBO vertVBO;
 	VBO indcVBO;
 	VBO cntrVBO;	//for the GPU based updates

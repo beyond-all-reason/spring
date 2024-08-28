@@ -20,10 +20,10 @@ CR_REG_METADATA(CColorMap, (
 ))
 
 template
-CColorMap* CColorMap::LoadFromArray<float>(const float* fp, size_t num);
+CColorMap* CColorMap::LoadFromArray<float>(const float* fp, uint32_t num);
 
 template
-CColorMap* CColorMap::LoadFromArray<uint8_t>(const uint8_t* fp, size_t num);
+CColorMap* CColorMap::LoadFromArray<uint8_t>(const uint8_t* fp, uint32_t num);
 
 void CColorMap::InitStatic()
 {
@@ -31,6 +31,8 @@ void CColorMap::InitStatic()
 
 	allColorMaps.reserve(512);
 	allColorMapValues.reserve(allColorMaps.capacity() * 4);
+
+	vbo = VBO{ GL_SHADER_STORAGE_BUFFER, false, false };
 }
 
 void CColorMap::KillStatic()
@@ -38,6 +40,27 @@ void CColorMap::KillStatic()
 	allColorMaps.clear();
 	allColorMapValues.clear();
 	namedColorMaps.clear();
+
+	vbo.Release(); vbo = {};
+}
+
+VBO& CColorMap::GetSSBO()
+{
+	if (vbo.GetIdRaw() != 0 && vbo.GetSize() == allColorMapValues.size() * sizeof(float4))
+		return vbo;
+
+	auto token = vbo.BindScoped();
+	vbo.Resize(allColorMapValues.size() * sizeof(float4), GL_STATIC_READ);
+
+	auto* ptr = vbo.MapBuffer(GL_WRITE_ONLY);
+	for (const auto& c : allColorMapValues) {
+		const auto f = static_cast<float4>(c);
+		std::memcpy(ptr, &f, sizeof(float4));
+		ptr += sizeof(float4);
+	}
+	vbo.UnmapBuffer();
+
+	return vbo;
 }
 
 CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)
@@ -63,7 +86,7 @@ CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)
 }
 
 template<typename T>
-CColorMap* CColorMap::LoadFromArray(const T* vals, size_t num)
+CColorMap* CColorMap::LoadFromArray(const T* vals, uint32_t num)
 {
 	std::array<SColor, 1024> tmpColors;
 
@@ -77,14 +100,14 @@ CColorMap* CColorMap::LoadFromArray(const T* vals, size_t num)
 
 	num /= 4;
 
-	for (size_t i = 0; i < num; ++i) {
+	for (uint32_t i = 0; i < num; ++i) {
 		tmpColors[i] = SColor(vals[4 * i + 0], vals[4 * i + 1], vals[4 * i + 2], vals[4 * i + 3]);
 	}
 
 #if 0
 	const auto valueIt = std::search(allColorMapValues.begin(), allColorMapValues.end(), tmpColors.begin(), tmpColors.begin() + num);
 	if (valueIt != allColorMapValues.end()) {
-		CColorMap cm{ static_cast<size_t>(std::distance(allColorMapValues.begin(), valueIt)), num };
+		CColorMap cm{ static_cast<uint32_t>(std::distance(allColorMapValues.begin(), valueIt)), num };
 		const auto cmIt = std::find(allColorMaps.begin(), allColorMaps.end(), cm);
 		if (cmIt != allColorMaps.end())
 			return &(*cmIt);
@@ -104,7 +127,7 @@ CColorMap* CColorMap::LoadFromArray(const T* vals, size_t num)
 	}
 #endif
 
-	size_t offset = allColorMapValues.size();
+	uint32_t offset = allColorMapValues.size();
 	allColorMapValues.insert(allColorMapValues.end(), tmpColors.begin(), tmpColors.begin() + num);
 	return &allColorMaps.emplace_back(offset, num);
 }
@@ -114,7 +137,7 @@ CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
 	RECOIL_DETAILED_TRACY_ZONE;
 	std::array<float, 4096> tmpFloats;
 
-	size_t idx = 0;
+	uint32_t idx = 0;
 
 	char* pos = const_cast<char*>(defString.c_str());
 	char* end = nullptr;
@@ -161,30 +184,30 @@ SColor CColorMap::GetColor(float pos) const
 	RECOIL_DETAILED_TRACY_ZONE;
 	auto [i0, i1] = GetIndices(pos);
 	const auto fpos = pos * (size - 1);
-	const auto ipos = static_cast<size_t>(fpos);
+	const auto ipos = static_cast<uint32_t>(fpos);
 	pos = (fpos - ipos);
 
 	return mix(allColorMapValues[i0], allColorMapValues[i1], pos);
 }
 
-const SColor& CColorMap::GetColorAt(size_t idx) const
+const SColor& CColorMap::GetColorAt(uint32_t idx) const
 {
 	idx = std::clamp(idx, offt, offt + size);
 	return allColorMapValues[idx];
 }
 
-float CColorMap::GetColorPos(size_t idx) const
+float CColorMap::GetColorPos(uint32_t idx) const
 {
 	idx = std::clamp(idx, offt, offt + size);
 	return static_cast<float>(idx - offt) / (size - 1);
 }
 
-std::pair<size_t, size_t> CColorMap::GetIndices(float pos) const
+std::pair<uint32_t, uint32_t> CColorMap::GetIndices(float pos) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	pos = std::clamp(pos, 0.0f, 0.999f);
 
-	const size_t basePos = offt + static_cast<size_t>(pos * (size - 1));
+	const uint32_t basePos = offt + static_cast<uint32_t>(pos * (size - 1));
 	return std::make_pair(
 		basePos + 0,
 		basePos + 1

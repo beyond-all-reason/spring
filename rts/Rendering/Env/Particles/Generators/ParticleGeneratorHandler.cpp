@@ -2,6 +2,7 @@
 
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/VertexArrayTypes.h"
+#include "Rendering/Textures/ColorMap.h"
 
 struct IndirectBufferIndices {
 	static constexpr int32_t INDR_SSBO_BINDING_IDX = 2;
@@ -335,8 +336,11 @@ void ParticleGeneratorHandler::GenerateAll()
 		glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &ZERO);
 	}
 	{
+		const auto& colmVBO = CColorMap::GetSSBO();
+
 		auto bindingToken1 = vertVBO.BindBufferRangeScoped(ParticleGeneratorDefs::VERT_SSBO_BINDING_IDX);
 		auto bindingToken2 = cntrVBO.BindBufferRangeScoped(ParticleGeneratorDefs::SIZE_SSBO_BINDING_IDX);
+		auto bindingToken3 = colmVBO.BindBufferRangeScoped(ParticleGeneratorDefs::COLM_SSBO_BINDING_IDX);
 
 		std::apply([this](auto& ... gen) {
 			(gen.Generate(numQuads), ...);

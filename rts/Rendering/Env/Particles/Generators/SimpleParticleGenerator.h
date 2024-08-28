@@ -16,7 +16,7 @@ struct SimpleParticleData {
 	float lifeDecayRate;
 	float sizeMod;
 	float sizeGrowth;
-	float unused;
+	float unused1;
 
 	float3 animParams;
 	int32_t directional;
@@ -24,10 +24,10 @@ struct SimpleParticleData {
 	float3 rotParams;
 	int32_t drawOrder;
 
-	SColor color0;
-	SColor color1;
-	float colEdge0;
-	float colEdge1;
+	uint32_t colMapOfft;
+	uint32_t colMapSize;
+	float unused2;
+	float unused3;
 
 	AtlasedTexture texCoord;
 
