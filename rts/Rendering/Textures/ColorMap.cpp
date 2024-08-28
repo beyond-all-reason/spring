@@ -32,7 +32,7 @@ void CColorMap::InitStatic()
 	allColorMaps.reserve(512);
 	allColorMapValues.reserve(allColorMaps.capacity() * 4);
 
-	vbo = VBO{ GL_SHADER_STORAGE_BUFFER, false, false };
+	vbo = std::make_unique<VBO>(GL_SHADER_STORAGE_BUFFER, false, false);
 }
 
 void CColorMap::KillStatic()
@@ -41,26 +41,26 @@ void CColorMap::KillStatic()
 	allColorMapValues.clear();
 	namedColorMaps.clear();
 
-	vbo.Release(); vbo = {};
+	vbo = nullptr;
 }
 
 VBO& CColorMap::GetSSBO()
 {
-	if (vbo.GetIdRaw() != 0 && vbo.GetSize() == allColorMapValues.size() * sizeof(float4))
-		return vbo;
+	if (vbo->GetIdRaw() != 0 && vbo->GetSize() == allColorMapValues.size() * sizeof(float4))
+		return *vbo;
 
-	auto token = vbo.BindScoped();
-	vbo.Resize(allColorMapValues.size() * sizeof(float4), GL_STATIC_READ);
+	auto token = vbo->BindScoped();
+	vbo->Resize(allColorMapValues.size() * sizeof(float4), GL_STATIC_READ);
 
-	auto* ptr = vbo.MapBuffer(GL_WRITE_ONLY);
+	auto* ptr = vbo->MapBuffer(GL_WRITE_ONLY);
 	for (const auto& c : allColorMapValues) {
 		const auto f = static_cast<float4>(c);
 		std::memcpy(ptr, &f, sizeof(float4));
 		ptr += sizeof(float4);
 	}
-	vbo.UnmapBuffer();
+	vbo->UnmapBuffer();
 
-	return vbo;
+	return *vbo;
 }
 
 CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)

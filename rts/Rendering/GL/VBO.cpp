@@ -11,6 +11,8 @@
 
 #include "VBO.h"
 
+#include <SDL.h>
+
 #include "Rendering/GlobalRendering.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
@@ -29,6 +31,7 @@ CONFIG(bool, UsePBO).deprecated(true);
 bool VBO::IsSupported() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	assert(SDL_WasInit(SDL_INIT_VIDEO) > 0); // called before SDL2 was initialized, probably in static member constructor
 	return VBO::IsSupported(curBoundTarget);
 }
 

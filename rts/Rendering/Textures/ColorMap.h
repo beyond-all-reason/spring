@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <tuple>
+#include <memory>
 
 #include "System/Color.h"
 #include "System/UnorderedMap.hpp"
@@ -80,7 +81,7 @@ private:
 	inline static std::vector<SColor> allColorMapValues;
 	inline static spring::unordered_map<std::string, uint32_t> namedColorMaps;
 
-	inline static VBO vbo;
+	inline static std::unique_ptr<VBO> vbo;
 };
 
 #endif // COLOR_MAP_H
