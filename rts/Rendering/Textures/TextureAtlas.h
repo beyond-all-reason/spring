@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <cstring>
 
 #include "System/creg/creg_cond.h"
 #include "System/float4.h"
@@ -37,9 +38,7 @@ struct AtlasedTexture
 		if (this == &rhs)
 			return true;
 
-		float4 f0(x    , y    , z    , w    );
-		float4 f1(rhs.x, rhs.y, rhs.z, rhs.w);
-		return f0 == f1;
+		return std::memcmp(&x, &rhs.x, sizeof(AtlasedTexture)) == 0;
 	}
 	bool operator!=(const AtlasedTexture& rhs) const { return !(*this == rhs); }
 

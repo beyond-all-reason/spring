@@ -1,7 +1,7 @@
 return {
 	EarlyExit =
 [[
-	int syncedTime = int(createFrame - frameInfo.x);
+	int syncedTime = int(frameInfo.x - createFrame);
 	float currTime = syncedTime + frameInfo.y;
 	float life = lifeDecayRate * syncedTime;
 	if (life >= 1.0)
@@ -10,14 +10,14 @@ return {
 	MainCode =
 [[
 	// update time
-	if (frameInfo.x != frameInfo.w) {
-		speed = ValAddMulSteps(speed, gravity, vec3(airDrag), syncedTime);
-		size = ValMulAddSteps(size, sizeMod, sizeGrowth, syncedTime);
+	for (int i = 0; i < syncedTime; ++i) {
+		pos    += speed;
+		speed  += gravity;
+		speed  *= airDrag;
+		size    = size * sizeMod + sizeGrowth;
 	}
 
-	vec4 color = GetCurrentColorFromColorMap(colMapOfft, colMapSize, life);
-
-	pos += currTime * speed;
+	vec4 color = GetCurrentColorFromColorMap(colMapOfft, colMapSize, life);	
 	vec3 drawPos = pos + speed * frameInfo.y;
 
 	float rotVal = GetCurrentRotation(rotParams, currTime);

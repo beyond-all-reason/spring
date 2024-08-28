@@ -43,6 +43,7 @@ void CWreckProjectile::Update()
 		if (!(gs->frameNum & (projectileHandler.GetParticleSaturation() < 0.5f ? 1 : 3))) {
 			CSmokeProjectile* hp = projMemPool.alloc<CSmokeProjectile>(owner(), pos, ZeroVector, 50, 4, 0.3f, 0.5f);
 			hp->size += 0.1f;
+			hp->Init(owner(), pos);
 		}
 	}
 	deleteMe |= (pos.y + 0.3f < CGround::GetApproximateHeight(pos.x, pos.z));

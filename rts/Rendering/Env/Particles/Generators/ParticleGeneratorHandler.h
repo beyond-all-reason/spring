@@ -140,6 +140,6 @@ private:
 	static constexpr int32_t HIST_BIN_SIZE = (1 << RADIX_BIN_BIT_SIZE);
 
 	bool SORT_PARTICLES = true;
-	bool PROCESS_TRIANGLES = true;
-	bool USE_PROJECTED_DISTANCE = true;
+	bool PROCESS_TRIANGLES = false;
+	bool USE_PROJECTED_DISTANCE = false;
 };

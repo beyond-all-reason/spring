@@ -50,50 +50,6 @@ layout(std430, binding = SIZE_SSBO_BINDING_IDX) coherent restrict buffer SIZE
     uint atomicCounters[];
 };
 
-// ((((Val + Add)*Mul + Add)*Mul + Add)*Mul + Add)*Mul -- >
-// Add*Mul + Add*Power(Mul,2) + Add*Power(Mul,3) + Add*Power(Mul,4) + Power(Mul,4)*Val
-// and so on
-float ValAddMulSteps(float val, float add, float mul, int N) {
-	float tmpMulN = 1.0;
-	float tmpMulNSum = 0.0;
-	for (int n = 1; n <= N; ++n) {
-		tmpMulN *= mul;
-		tmpMulNSum += tmpMulN;
-	}
-	return tmpMulNSum * add + tmpMulN * val;
-}
-vec3 ValAddMulSteps(vec3 val, vec3 add, vec3 mul, int N) {
-	vec3 tmpMulN = vec3(1.0);
-	vec3 tmpMulNSum = vec3(0.0);
-	for (int n = 1; n <= N; ++n) {
-		tmpMulN *= mul;
-		tmpMulNSum += tmpMulN;
-	}
-	return tmpMulNSum * add + tmpMulN * val;
-}
-
-// (((Val*Mul + Add)*Mul + Add)*Mul + Add)*Mul + Add -->
-// Add + Add*Mul + Add*Power(Mul,2) + Add*Power(Mul,3) + Power(Mul,4)*Val
-// and so on
-float ValMulAddSteps(float val, float mul, float add, int N) {
-	float tmpMulN = 1.0;
-	float tmpMulNSum = tmpMulN;
-	for (int n = 1; n <= N - 1; ++n) {
-		tmpMulN *= mul;
-		tmpMulNSum += tmpMulN;
-	}
-	return add * tmpMulNSum + (tmpMulN * tmpMulN) * val;
-}
-vec3 ValMulAddSteps(vec3 val, vec3 mul, vec3 add, int N) {
-	vec3 tmpMulN = vec3(1.0);
-	vec3 tmpMulNSum = tmpMulN;
-	for (int n = 1; n <= N - 1; ++n) {
-		tmpMulN *= mul;
-		tmpMulNSum += tmpMulN;
-	}
-	return add * tmpMulNSum + (tmpMulN * tmpMulN) * val;
-}
-
 uint GetUnpackedValue(uint packedValue, uint byteNum) {
 	return (packedValue >> (8u * byteNum)) & 0xFFu;
 }
