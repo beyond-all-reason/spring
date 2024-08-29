@@ -523,7 +523,7 @@ bool CStrafeAirMoveType::Update()
 			UpdateAirPhysics({crashRudder, crashElevator, crashAileron, 0.0f}, owner->frontdir);
 
 			if ((CGround::GetHeightAboveWater(owner->pos.x, owner->pos.z) + 5.0f + owner->radius) > owner->pos.y)
-				owner->ForcedKillUnit(nullptr, true, false);
+				owner->ForcedKillUnit(nullptr, true, false, -CSolidObject::DAMAGE_AIRCRAFT_CRASHED);
 
 			amtEmitCrashTrailFuncs[crashExpGenID != -1u](owner, crashExpGenID);
 		} break;
@@ -650,7 +650,7 @@ bool CStrafeAirMoveType::HandleCollisions(bool checkCollisions) {
 			// if crashing and we hit a building, die right now
 			// rather than waiting until we are close enough to
 			// the ground
-			owner->ForcedKillUnit(nullptr, true, false);
+			owner->ForcedKillUnit(nullptr, true, false, -CSolidObject::DAMAGE_AIRCRAFT_CRASHED);
 			return true;
 		}
 
