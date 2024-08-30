@@ -47,11 +47,12 @@ layout(std430, binding = SIZE_SSBO_BINDING_IDX) restrict readonly buffer NUMKEYS
     uint atomicCounters[];
 };
 shared uint numElements;
+shared uint numWorkGroups;
 #else
 uniform int numElements;
+uniform int numWorkGroups;
 #endif
 
-uniform int numWorkGroups;
 uniform int passNum;
 uniform int numElemsPerThread;
 
@@ -78,8 +79,12 @@ void main()
 	#ifdef INDIRECT_EXECUTION
 	if (lID == 0u) {
 		numElements = GET_NUM_ELEMS;
+        numWorkGroups = GET_NUM_WRKGS;
 	}
 	#endif
+
+    barrier();
+    memoryBarrierShared();
 
     uint localHist = 0;
     uint prefSum = 0;

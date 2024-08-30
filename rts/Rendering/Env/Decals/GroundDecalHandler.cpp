@@ -1539,6 +1539,7 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 		const auto* cm = std::get<const CColorMap*>(info);
 		auto idcs = cm->GetIndices(currAlpha);
 
+		// TODO revise
 		auto& storedIdcs = std::get<1>(info);
 		if (storedIdcs == idcs)
 			continue;

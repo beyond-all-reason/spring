@@ -90,8 +90,8 @@ CColorMap* CColorMap::LoadFromArray(const T* vals, uint32_t num)
 {
 	std::array<SColor, 1024> tmpColors;
 
-	if (num % 4 != 0)
-		throw content_error("[ColorMap] invalid number of color components (not multiple of 4)");
+	//if (num % 4 != 0)
+	//	throw content_error("[ColorMap] invalid number of color components (not multiple of 4)");
 
 	if (num > tmpColors.size() * 4) {
 		LOG_L(L_WARNING, "[ColorMap] colormap float array is too big %u, truncating to %u", static_cast<uint32_t>(num), static_cast<uint32_t>(4 * tmpColors.size()));

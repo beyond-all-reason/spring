@@ -33,6 +33,8 @@ void main()
 		indirect[HIST_SSBO_INDRCT_X] = (numElems + divisor - 1) / divisor;
 		indirect[HIST_SSBO_INDRCT_Y] = 1u;
 		indirect[HIST_SSBO_INDRCT_Z] = 1u;
+
+		atomicCounters[SIZE_SSBO_NUM_WRKG] = (numElems + divisor - 1) / divisor;
 	}
 	{
 		indirect[DRAW_SSBO_INDSC] = 6u * numQuads;

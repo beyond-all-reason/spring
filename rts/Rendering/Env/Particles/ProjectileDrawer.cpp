@@ -850,7 +850,7 @@ void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflec
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 #endif
-	const auto* camPlayer = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
+	const auto* currCam = CCamera::GetActive();
 	const auto& sky = ISky::GetSky();
 
 	const bool needSoften = (wantSoften > 0) && !drawReflection && !drawRefraction;
@@ -879,9 +879,9 @@ void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflec
 		fxShader->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
 	}
 
-	fxShader->SetUniform("camPos", camPlayer->pos.x, camPlayer->pos.y, camPlayer->pos.z);
+	fxShader->SetUniform("camPos", currCam->pos.x, currCam->pos.y, currCam->pos.z);
 	fxShader->SetUniform("fogColor", sky->fogColor.x, sky->fogColor.y, sky->fogColor.z);
-	fxShader->SetUniform("fogParams", sky->fogStart * camPlayer->GetFarPlaneDist(), sky->fogEnd * camPlayer->GetFarPlaneDist());
+	fxShader->SetUniform("fogParams", sky->fogStart * currCam->GetFarPlaneDist(), sky->fogEnd * currCam->GetFarPlaneDist());
 
 	ParticleGeneratorHandler::GetInstance().RenderAll();
 

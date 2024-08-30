@@ -110,6 +110,7 @@ void ParticleGeneratorHandler::Init()
 		shader->SetFlag("DRAW_SSBO_BASEV", IndirectBufferIndices::DRAW_SSBO_BASEV);
 		shader->SetFlag("DRAW_SSBO_BASEI", IndirectBufferIndices::DRAW_SSBO_BASEI);
 		shader->SetFlag("SIZE_SSBO_NUM_ELEM", ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEM);
+		shader->SetFlag("SIZE_SSBO_NUM_WRKG", ParticleGeneratorDefs::SIZE_SSBO_NUM_WRKG);
 		shader->SetFlag("KEYVAL_SORTING_KEYVAL_WG_SIZE", ParticleGeneratorDefs::WORKGROUP_SIZE);
 		shader->SetFlag("RADIX_SHADER_WG_SIZE", ParticleGeneratorDefs::WORKGROUP_SIZE);
 		shader->SetFlag("PROCESS_TRIANGLES", PROCESS_TRIANGLES);
@@ -176,6 +177,7 @@ void ParticleGeneratorHandler::Init()
 		shader->SetFlag("KEYO_SSBO_BINDING_IDX", RadixSortStorageBindings::KEYO_SSBO_BINDING_IDX);
 		shader->SetFlag("VALO_SSBO_BINDING_IDX", RadixSortStorageBindings::VALO_SSBO_BINDING_IDX);
 		shader->SetFlag("GET_NUM_ELEMS", fmt::format("atomicCounters[{}]", ParticleGeneratorDefs::SIZE_SSBO_NUM_ELEM).c_str());
+		shader->SetFlag("GET_NUM_WRKGS", fmt::format("atomicCounters[{}]", ParticleGeneratorDefs::SIZE_SSBO_NUM_WRKG).c_str());
 		shader->SetFlag("SUBGROUP_SIZE", globalRendering->csWarpSize);
 		shader->SetFlag("BIN_BIT_SIZE", RADIX_BIN_BIT_SIZE);
 		shader->Link();
@@ -204,6 +206,8 @@ void ParticleGeneratorHandler::Init()
 
 		shader->Validate();
 	}
+
+	currFrame = std::numeric_limits<int32_t>::min();
 }
 
 void ParticleGeneratorHandler::Kill()
@@ -316,13 +320,17 @@ void ParticleGeneratorHandler::GenerateAll()
 {
 	SCOPED_TIMER("ParticleGeneratorHandler::GenerateAll");
 
-	std::apply([](auto& ... gen) {
-		(gen.SetMaxNumQuads(), ...);
-	}, *generators);
+	prevFrame = std::exchange(currFrame, gs->frameNum);
 
-	numQuads = std::apply([](const auto& ... gen) {
-		return (0 + ... + gen.GetMaxNumQuads());
-	}, *generators);
+	if (prevFrame != currFrame) {
+		std::apply([](auto& ... gen) {
+			(gen.SetMaxNumQuads(), ...);
+			}, *generators);
+
+		numQuads = std::apply([](const auto& ... gen) {
+			return (0 + ... + gen.GetMaxNumQuads());
+			}, *generators);
+	}
 
 	if (numQuads <= 0)
 		return;
@@ -454,7 +462,9 @@ void ParticleGeneratorHandler::GenerateAll()
 				// not needed because of the information provide in SSBO
 				//radixSortShader->SetUniform("numElements", numQuads * (1 + PROCESS_TRIANGLES));
 				radixSortShader->SetUniform("numElemsPerThread", sortElemsPerThread);
+#if 0
 				radixSortShader->SetUniform("numWorkGroups", sortHistNumWorkGroups);
+#endif
 				radixSortShader->SetUniform("passNum", passNum);
 				glDispatchComputeIndirect(static_cast<GLintptr>(IndirectBufferIndices::HIST_SSBO_INDRCT_X * sizeof(int32_t)));
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);

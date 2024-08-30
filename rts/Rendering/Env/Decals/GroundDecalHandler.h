@@ -165,7 +165,7 @@ private:
 	spring::unordered_map<DecalOwner, size_t, std::hash<DecalOwner>> decalOwners; // for tracks, plates and ghosts
 	spring::unordered_map<int, UnitMinMaxHeight> unitMinMaxHeights; // for tracks
 	spring::unordered_map<uint32_t, size_t> idToPos;
-	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<size_t, size_t>>> idToCmInfo;
+	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<uint32_t, uint32_t>>> idToCmInfo;
 
 	UpdateList decalsUpdateList;
 

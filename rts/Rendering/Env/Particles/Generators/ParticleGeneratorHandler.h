@@ -108,6 +108,9 @@ private:
 
 	std::unique_ptr<GeneratorsTuple> generators;
 
+	int32_t prevFrame;
+	int32_t currFrame;
+
 	int32_t numQuads;
 	int32_t sortElemsPerThread;
 	int32_t sortHistNumWorkGroups;
