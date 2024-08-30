@@ -41,7 +41,7 @@ struct ParticleGeneratorDefs {
 
 	// spreaded by 32 to reduce false sharing
 	static constexpr int32_t SIZE_SSBO_NUM_ELEM =  00; // number of elements (filled out later)
-	static constexpr int32_t SIZE_SSBO_NUM_WRKG =  32; // number of elements (filled out later)
+	static constexpr int32_t SIZE_SSBO_NUM_WRKG =  32; // number of workgroups for the Radix sorting shader
 	static constexpr int32_t SIZE_SSBO_QUAD_IDX =  64; // number of produced quads
 	static constexpr int32_t SIZE_SSBO_OOBC_IDX =  96; // out of bounds write attempts
 	static constexpr int32_t SIZE_SSBO_CULL_IDX = 128; // number of culled quads
