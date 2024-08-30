@@ -703,6 +703,7 @@ void RenderInterface_GL3_Recoil::BeginFrame()
 	glstate_backup.enable_blend = glIsEnabled(GL_BLEND);
 	glstate_backup.enable_stencil_test = glIsEnabled(GL_STENCIL_TEST);
 	glstate_backup.enable_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
+	glstate_backup.enable_depth_test = glIsEnabled(GL_DEPTH_TEST);
 
 	glGetIntegerv(GL_VIEWPORT, glstate_backup.viewport);
 	glGetIntegerv(GL_SCISSOR_BOX, glstate_backup.scissor);
@@ -817,6 +818,11 @@ void RenderInterface_GL3_Recoil::EndFrame()
 		glEnable(GL_SCISSOR_TEST);
 	else
 		glDisable(GL_SCISSOR_TEST);
+
+	if (glstate_backup.enable_depth_test)
+		glEnable(GL_DEPTH_TEST);
+	else
+		glDisable(GL_DEPTH_TEST);
 
 	glViewport(glstate_backup.viewport[0], glstate_backup.viewport[1], glstate_backup.viewport[2],
 			   glstate_backup.viewport[3]);
@@ -1209,6 +1215,15 @@ void RenderInterface_GL3_Recoil::RenderBlur(float sigma, const Gfx::FramebufferD
 	Gfx::BindTexture(source_destination);
 	glBindFramebuffer(GL_FRAMEBUFFER, temp.framebuffer);
 
+	// Add a 1px transparent border around the blur region by first clearing with a padded scissor. This helps prevent
+	// artifacts when upscaling the blur result in the later step. On Intel and AMD, we have observed that during
+	// blitting with linear filtering, pixels outside the 'src' region can be blended into the output. On the other
+	// hand, it looks like Nvidia clamps the pixels to the source edge, which is what we really want. Regardless, we
+	// work around the issue with this extra step.
+	SetScissor(scissor.Extend(1), true);
+	glClear(GL_COLOR_BUFFER_BIT);
+	SetScissor(scissor, true);
+
 	SetTexelOffset({1.f, 0.f}, source_destination.width);
 	DrawFullscreenQuad();
 
@@ -1286,7 +1301,7 @@ RenderInterface_GL3_Recoil::CompileFilter(const Rml::String& name, const Rml::Di
 		filter.blend_factor = Rml::Get(parameters, "value", 1.0f);
 	} else if (name == "blur") {
 		filter.type = FilterType::Blur;
-		filter.sigma = 0.5f * Rml::Get(parameters, "radius", 1.0f);
+		filter.sigma = Rml::Get(parameters, "sigma", 1.0f);
 	} else if (name == "drop-shadow") {
 		filter.type = FilterType::DropShadow;
 		filter.sigma = Rml::Get(parameters, "sigma", 0.f);
@@ -1532,7 +1547,7 @@ void RenderInterface_GL3_Recoil::RenderFilters(Rml::Span<const Rml::CompiledFilt
 		switch (type) {
 			case FilterType::Passthrough: {
 				UseProgram(ProgramId::Passthrough);
-				glBlendFunc(GL_CONSTANT_ALPHA, GL_ZERO);
+				glBlendFunc(GL_CONSTANT_COLOR, GL_ZERO);
 				glBlendColor(0.0f, 0.0f, 0.0f, filter.blend_factor);
 
 				const Gfx::FramebufferData& source = render_layers.GetPostprocessPrimary();
@@ -1689,25 +1704,24 @@ void RenderInterface_GL3_Recoil::PopLayer()
 	glBindFramebuffer(GL_FRAMEBUFFER, render_layers.GetTopLayer().framebuffer);
 }
 
-Rml::TextureHandle RenderInterface_GL3_Recoil::SaveLayerAsTexture(Rml::Vector2i dimensions)
+Rml::TextureHandle RenderInterface_GL3_Recoil::SaveLayerAsTexture()
 {
-	Rml::TextureHandle render_texture = GenerateTexture({}, dimensions);
+	RMLUI_ASSERT(scissor_state.Valid());
+	const Rml::Rectanglei bounds = scissor_state;
+
+	Rml::TextureHandle render_texture = GenerateTexture({}, bounds.Size());
 	if (!render_texture)
 		return {};
 
 	BlitLayerToPostprocessPrimary(render_layers.GetTopLayerHandle());
 
-	RMLUI_ASSERT(scissor_state.Valid() && render_texture)
-	const Rml::Rectanglei initial_scissor_state = scissor_state;
 	EnableScissorRegion(false);
 
 	const Gfx::FramebufferData& source = render_layers.GetPostprocessPrimary();
 	const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination.framebuffer);
-
-	Rml::Rectanglei bounds = initial_scissor_state;
-
+	
 	// Flip the image vertically, as that convention is used for textures, and move to origin.
 	glBlitFramebuffer(                                  //
 		bounds.Left(), source.height - bounds.Bottom(), // src0
@@ -1723,7 +1737,7 @@ Rml::TextureHandle RenderInterface_GL3_Recoil::SaveLayerAsTexture(Rml::Vector2i 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, texture_source.framebuffer);
 	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, bounds.Width(), bounds.Height());
 
-	SetScissor(initial_scissor_state);
+	SetScissor(bounds);
 	glBindFramebuffer(GL_FRAMEBUFFER, render_layers.GetTopLayer().framebuffer);
 	Gfx::CheckGLError("SaveLayerAsTexture");
 
