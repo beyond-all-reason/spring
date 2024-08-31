@@ -778,7 +778,7 @@ void CLosHandler::SetGlobalLOS(const int allyTeamId, const bool newState)
 		readMap->BecomeSpectator(); //update unsynced heightmap
 }
 
-void CLosHandler::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
+void CLosHandler::UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (ILosType* lt: losTypes) {

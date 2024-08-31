@@ -319,8 +319,8 @@ void CSkirmishAIWrapper::UnitFinished(int unitId) {
 	HandleEvent(EVENT_UNIT_FINISHED, &evtData);
 }
 
-void CSkirmishAIWrapper::UnitDestroyed(int unitId, int attackerUnitId) {
-	const SUnitDestroyedEvent evtData = {unitId, attackerUnitId};
+void CSkirmishAIWrapper::UnitDestroyed(int unitId, int attackerUnitId, int weaponDefID) {
+	const SUnitDestroyedEvent evtData = {unitId, attackerUnitId, weaponDefID};
 	HandleEvent(EVENT_UNIT_DESTROYED, &evtData);
 }
 

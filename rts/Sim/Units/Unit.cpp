@@ -473,8 +473,8 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 	ReleaseTransportees(attacker, selfDestruct, reclaimed);
 
 	// pre-destruction event; unit may be kept around for its death sequence
-	eventHandler.UnitDestroyed(this, attacker);
-	eoh->UnitDestroyed(*this, attacker);
+	eventHandler.UnitDestroyed(this, attacker, weaponDefID);
+	eoh->UnitDestroyed(*this, attacker, weaponDefID);
 
 	// Will be called in the destructor again, but this can not hurt
 	SetGroup(nullptr);

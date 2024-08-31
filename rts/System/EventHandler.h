@@ -66,7 +66,7 @@ class CEventHandler
 		void UnitFinished(const CUnit* unit);
 		void UnitReverseBuilt(const CUnit* unit);
 		void UnitFromFactory(const CUnit* unit, const CUnit* factory, bool userOrders);
-		void UnitDestroyed(const CUnit* unit, const CUnit* attacker);
+		void UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID);
 		void UnitTaken(const CUnit* unit, int oldTeam, int newTeam);
 		void UnitGiven(const CUnit* unit, int oldTeam, int newTeam);
 
@@ -409,9 +409,9 @@ inline void CEventHandler::UnitCreated(const CUnit* unit, const CUnit* builder)
 }
 
 
-inline void CEventHandler::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
+inline void CEventHandler::UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID)
 {
-	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitDestroyed, unit, attacker)
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitDestroyed, unit, attacker, weaponDefID)
 }
 
 #define UNIT_CALLIN_NO_PARAM(name)                                 \
