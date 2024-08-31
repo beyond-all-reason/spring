@@ -1413,12 +1413,14 @@ end
 
 function gadgetHandler:UnitDestroyed(
   unitID,     unitDefID,     unitTeam,
-  attackerID, attackerDefID, attackerTeam
+  attackerID, attackerDefID, attackerTeam,
+  weaponDefID
 )
   for _,g in r_ipairs(self.UnitDestroyedList) do
     g:UnitDestroyed(
       unitID,     unitDefID,     unitTeam,
-      attackerID, attackerDefID, attackerTeam
+      attackerID, attackerDefID, attackerTeam,
+      weaponDefID
     )
   end
 end
