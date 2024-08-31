@@ -204,6 +204,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 	std::ostringstream dataStructSS;
 	std::ostringstream dataToFieldsSS;
 	std::ostringstream earlyExitAutoSS;
+	std::ostringstream saveStateSS;
 	{
 		std::vector<std::string> allAtlassedTextures;
 
@@ -215,10 +216,13 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 		for (const auto& member : cregClass->members) {
 			membersMap[member.offset] = std::make_tuple(std::string{ member.name }, member.type->GetName(), member.type->GetSize());
 		}
+		std::vector<bool> saveIf(numVec4, false);
 
-		dataStructSS << "struct InputData {\n";
+		dataStructSS << "struct InOutData {\n";
 		dataStructSS << "\tvec4 info[" << numVec4 << "];\n";
 		dataStructSS << "};";
+
+		saveStateSS << "void SaveState(uint startIndex, uint endIndex) {\n";
 
 		static constexpr const char* TABS = "\t";
 		for (const auto& [offt, fieldInfo] : membersMap) {
@@ -246,6 +250,8 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 			std::string glslType;
 			std::string reinterpretString;
 			std::string reinterpretString2;
+			std::string revReinterpretString;
+			std::string revReinterpretString2;
 
 			switch (hashString(typeName))
 			{
@@ -259,12 +265,14 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				glslType = "vec2";
 			} break;
 			case hashString("int"): {
-				reinterpretString = "floatBitsToInt";
 				glslType = "int";
+				reinterpretString = "floatBitsToInt";
+				revReinterpretString = "intBitsToFloat";
 			} break;
 			case hashString("uint"): {
-				reinterpretString = "floatBitsToUint";
 				glslType = "uint";
+				reinterpretString = "floatBitsToUint";
+				revReinterpretString = "uintBitsToFloat";
 			} break;
 			case hashString("float"): {
 				glslType = "float";
@@ -273,6 +281,8 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				glslType = "vec4";
 				reinterpretString = "floatBitsToUint";
 				reinterpretString2 = "GetPackedColor";
+				revReinterpretString = "PackColor";
+				revReinterpretString2 = "uintBitsToFloat";
 			} break;
 			case hashString("AtlasedTexture"): {
 				glslType = "vec4";
@@ -294,6 +304,15 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				uint32_t infoIndex = (localOffset / VEC4_BYTE_SIZE);
 				uint32_t vec4Index = (localOffset % VEC4_BYTE_SIZE) / sizeof(float);
 
+				if (!saveIf[infoIndex]) {
+					if (infoIndex > 0) {
+						saveStateSS << "\t}\n"; // close the prev if block
+					}
+					saveIf[infoIndex] = true;
+					// open the new if block
+					saveStateSS << "\t" << fmt::format("if (startIndex <= {} && {} <= endIndex)", infoIndex, infoIndex) << " {\n";
+				}
+
 				std::ostringstream infoTxtSS;
 				if (!reinterpretString2.empty())
 					infoTxtSS << reinterpretString2 << "(";
@@ -302,28 +321,49 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 				assert(vec4Index + (size / 4) <= 4);
 
+				std::ostringstream diSS;
 				static constexpr const char* SWIZZLE = "xyzw";
-				infoTxtSS << fmt::format("dataIn[gl_GlobalInvocationID.x].info[{}]", infoIndex);
+				diSS << fmt::format("dataInOut[gl_GlobalInvocationID.x].info[{}]", infoIndex);
 				if (size != VEC4_BYTE_SIZE) {
-					infoTxtSS << ".";
+					diSS << ".";
 					for (int sr = 0; sr < (size / 4); ++sr) {
-						infoTxtSS << SWIZZLE[vec4Index + sr];
+						diSS << SWIZZLE[vec4Index + sr];
 					}
 				}
+
+				infoTxtSS << diSS.str();
 
 				if (!reinterpretString.empty())
 					infoTxtSS << ")";
 				if (!reinterpretString2.empty())
 					infoTxtSS << ")";
 
+				std::ostringstream revInfoTxtSS;
+				revInfoTxtSS << diSS.str() << " = ";
+				if (!revReinterpretString2.empty())
+					revInfoTxtSS << revReinterpretString2 << "(";
+				if (!revReinterpretString.empty())
+					revInfoTxtSS << revReinterpretString << "(";
+
 				if (arraySize == 1) {
 					dataToFieldsSS << TABS << glslType << " " << name << " = " << infoTxtSS.str() << ";\n";
+					revInfoTxtSS << name;
 				}
 				else {
 					dataToFieldsSS << TABS << name << "[" << ai << "]" << " = " << infoTxtSS.str() << ";\n";
+					revInfoTxtSS << name << "[" << ai << "]";
 				}
+
+				if (!revReinterpretString.empty())
+					revInfoTxtSS << ")";
+				if (!revReinterpretString2.empty())
+					revInfoTxtSS << ")";
+				revInfoTxtSS << ";\n";
+				saveStateSS << "\t\t" << revInfoTxtSS.str();
 			}
 		}
+		saveStateSS << "\t}\n"; // close the last if
+		saveStateSS << "}"; // close the function
 
 		const std::string boolType = (allAtlassedTextures.size() == 1) ? "bool" : fmt::format("bvec{}", allAtlassedTextures.size());
 		static constexpr const char* VT_FORMAT_COM = "({}.z - {}.x) * ({}.w - {}.y) > 0.0,\n";
@@ -372,6 +412,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shaderSrc = fmt::sprintf(shaderSrc,
 		dataStructSS.str(),
+		saveStateSS.str(),
 		dataToFieldsSS.str(),
 		earlyExitAutoSS.str(),
 		earlyExit,

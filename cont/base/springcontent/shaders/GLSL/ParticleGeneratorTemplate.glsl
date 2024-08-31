@@ -7,7 +7,7 @@ uniform vec3 camPos;
 uniform vec3 camDir[3]; // right, up, forward
 uniform vec4 frustumPlanes[6];
 
-// Placeholer for the struct InputData
+// Placeholer for the struct InOutData
 %s
 
 shared uint localNumCulled;
@@ -23,9 +23,10 @@ struct TriangleData
 
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
-layout(std430, binding = DATA_SSBO_BINDING_IDX) readonly restrict buffer IN
+// can be optionally saved upon Update()
+layout(std430, binding = DATA_SSBO_BINDING_IDX) restrict buffer INOUT
 {
-    InputData dataIn[];
+    InOutData dataInOut[];
 };
 
 layout(std430, binding = VERT_SSBO_BINDING_IDX) writeonly restrict buffer OUT1
@@ -323,6 +324,9 @@ void AddEffectsQuadCamera(
 		quadColor
 	);
 }
+
+// Placeholder for automatically formed SaveState() function
+%s
 
 void main()
 {
