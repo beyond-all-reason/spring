@@ -2055,7 +2055,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		if (killMe || buildProgress <= 0.0f || health <= 0.0f) {
 			health = 0.0f;
 			buildProgress = 0.0f;
-			KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_RECLAIMED);
+			KillUnit(builder, false, true, -CSolidObject::DAMAGE_RECLAIMED);
 			return false;
 		}
 
