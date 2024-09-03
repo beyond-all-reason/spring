@@ -14,32 +14,23 @@
 template<class GLType>
 inline void glGetAny(GLenum paramName, GLType* data, const int expectedValuesN = 1)
 {
-	GLint ints[1024];
+	std::array<GLType, 1024> values;
 	assert(expectedValuesN > 0 && expectedValuesN < 1024);
-	glGetIntegerv(paramName, ints);
-	std::copy(ints, ints+expectedValuesN, data);
-}
-template<>
-inline void glGetAny<GLint>(GLenum paramName, GLint* data, const int)
-{
-	glGetIntegerv(paramName, data);
-}
-template<>
-inline void glGetAny<GLboolean>(GLenum paramName, GLboolean* data, const int)
-{
-	glGetBooleanv(paramName, data);
-}
-template<>
-inline void glGetAny<GLfloat>(GLenum paramName, GLfloat* data, const int)
-{
-	glGetFloatv(paramName, data);
-}
-template<>
-inline void glGetAny<GLdouble>(GLenum paramName, GLdouble* data, const int)
-{
-	glGetDoublev(paramName, data);
-}
+	if constexpr (std::is_same_v<GLType, int32_t>)
+		glGetIntegerv(paramName, values.data());
+	else if constexpr (std::is_same_v<GLType, uint32_t>)
+		glGetIntegerv(paramName, reinterpret_cast<GLint*>(values.data()));
+	else if constexpr (std::is_same_v<GLType, GLboolean>)
+		glGetBooleanv(paramName, values.data());
+	else if constexpr (std::is_same_v<GLType, GLfloat>)
+		glGetFloatv(paramName, values.data());
+	else if constexpr (std::is_same_v<GLType, GLdouble>)
+		glGetDoublev(paramName, values.data());
+	else
+		assert(false);
 
+	std::copy(values.begin(), values.begin() + expectedValuesN, data);
+}
 
 namespace GL
 {
