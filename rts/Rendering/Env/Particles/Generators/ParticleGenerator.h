@@ -412,7 +412,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shaderSrc = fmt::sprintf(shaderSrc,
 		dataStructSS.str(),
-		saveStateSS.str(),
+		/*saveStateSS.str()*/"",
 		dataToFieldsSS.str(),
 		earlyExitAutoSS.str(),
 		earlyExit,
