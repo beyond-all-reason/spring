@@ -691,10 +691,10 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 	if (vi.scarGlowColorMap && !vi.scarGlowColorMap->Empty()) {
 		auto idcs = vi.scarGlowColorMap->GetIndices(0.0f);
-		idToCmInfo.emplace(decal.info.id, std::make_tuple(vi.scarGlowColorMap, idcs));
+		idToCmInfo[decal.info.id] = std::make_tuple(vi.scarGlowColorMap, idcs);
 	}
 
-	idToPos.emplace(decal.info.id, decals.size() - 1);
+	idToPos[decal.info.id] = decals.size() - 1;
 	decalsUpdateList.EmplaceBackUpdate();
 }
 
@@ -921,8 +921,8 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 	});
 
 	decalsUpdateList.EmplaceBackUpdate();
-	idToPos.emplace(decal.info.id, decals.size() - 1);
-	decalOwners.emplace(object, decals.size() - 1);
+	idToPos[decal.info.id] = decals.size() - 1;
+	decalOwners[object] = decals.size() - 1;
 }
 
 void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const GhostSolidObject* gb)
@@ -1021,7 +1021,7 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 	decalsUpdateList.EmplaceBackUpdate();
-	idToPos.emplace(decal.info.id, decals.size() - 1);
+	idToPos[decal.info.id] = decals.size() - 1;
 
 	return decal.info.id;
 }
@@ -1269,8 +1269,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 		mm = {};
 
-		decalOwners.emplace(unit, decals.size() - 1);
-		idToPos.emplace(decal.info.id, decals.size() - 1);
+		decalOwners[unit] = decals.size() - 1;
+		idToPos[decal.info.id] = decals.size() - 1;
 		decalsUpdateList.EmplaceBackUpdate();
 
 		return;
@@ -1359,7 +1359,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 	// replace the old entry
 	decalOwners[unit] = decals.size() - 1;
 
-	idToPos.emplace(newDecal.info.id, decals.size() - 1);
+	idToPos[newDecal.info.id], decals.size() - 1;
 	decalsUpdateList.EmplaceBackUpdate();
 }
 
