@@ -1042,7 +1042,6 @@ bool CGroundDecalHandler::DeleteLuaDecal(uint32_t id)
 
 	decal.MarkInvalid();
 	decalsUpdateList.SetUpdate(it->second);
-	freeIds.push_back(decal.info.id);
 
 	return true;
 }
