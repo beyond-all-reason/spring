@@ -28,6 +28,7 @@
 #include "MuzzleFlameParticleGenerator.h"
 #include "NanoParticleGenerator.h"
 #include "SimpleParticleGenerator.h"
+#include "SmokeParticleGenerator.h"
 
 namespace Shader {
 	struct IProgramObject;
@@ -103,7 +104,8 @@ private:
 		MuzzleFlameParticleGenerator,
 		NanoParticleGenerator,
 		// skipped shields and repulsor
-		SimpleParticleGenerator
+		SimpleParticleGenerator,
+		SmokeParticleGenerator
 	>;
 
 	std::unique_ptr<GeneratorsTuple> generators;

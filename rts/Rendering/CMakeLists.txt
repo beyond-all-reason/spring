@@ -71,6 +71,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/MuzzleFlameParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/NanoParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/SimpleParticleGenerator.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Env/Particles/Generators/SmokeParticleGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/FBO.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/StreamBuffer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/GeometryBuffer.cpp"

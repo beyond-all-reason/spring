@@ -9,6 +9,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/Wind.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
@@ -67,6 +68,28 @@ CSmokeProjectile::CSmokeProjectile(
 
 	useAirLos |= ((pos.y - CGround::GetApproximateHeight(pos.x, pos.z, false)) > 10.0f);
 	alwaysVisible |= (owner == nullptr);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<SmokeParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.size = size,
+		.startSize = startSize,
+		.sizeExpansion = sizeExpansion,
+		.ageRate = ageSpeed,
+		.speed = speed,
+		.createFrame = createFrame,
+		.animParams = animParams,
+		.color = SColor{color, color, color, 1.0f},
+		.rotParams = rotParams,
+		.drawOrder = drawOrder,
+		.texCoord = *projectileDrawer->GetSmokeTexture(textureNum)
+	});
+}
+
+CSmokeProjectile::~CSmokeProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<SmokeParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 

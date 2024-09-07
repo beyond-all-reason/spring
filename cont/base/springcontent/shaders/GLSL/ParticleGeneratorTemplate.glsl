@@ -2,6 +2,7 @@
 
 uniform ivec2 arraySizes;
 uniform vec4 frameInfo; // gs->frameNum, globalRendering->timeOffset, gu->modGameTime, prevSyncedFrame
+uniform vec3 windVec; // vec * speed
 
 uniform vec3 camPos;
 uniform vec3 camDir[3]; // right, up, forward
