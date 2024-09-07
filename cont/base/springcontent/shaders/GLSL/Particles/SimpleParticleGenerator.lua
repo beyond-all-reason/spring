@@ -9,12 +9,18 @@ return {
 ]],
 	MainCode =
 [[
-	// update time
-	for (int i = 0; i < syncedTime; ++i) {
+	bool doUpdate = (frameInfo.x > frameInfo.w);
+
+	// time to update values
+	if (doUpdate) {
 		pos    += speed;
 		speed  += gravity;
 		speed  *= airDrag;
 		size    = size * sizeMod + sizeGrowth;
+		// save back to the SSBO
+		SavePos(pos);
+		SaveSpeed(speed);
+		SaveSize(size);
 	}
 
 	vec4 color = GetCurrentColorFromColorMap(colMapOfft, colMapSize, life);	

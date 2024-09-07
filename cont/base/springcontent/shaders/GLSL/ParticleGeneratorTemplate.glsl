@@ -328,18 +328,6 @@ void AddEffectsQuadCamera(
 // Placeholder for automatically formed SaveState() function
 %s
 
-/*
-vec4 PackPosAndRadius(vec3 pos, float rad) {
-	return vec4(
-
-	);
-}
-*/
-
-void SaveStateInfo(uint idx, vec4 packedData) {
-	dataInOut[gl_GlobalInvocationID.x].info[idx] = packedData;
-}
-
 void main()
 {
 	if (gl_LocalInvocationID.x == 0u) {
