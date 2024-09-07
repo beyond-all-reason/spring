@@ -212,6 +212,13 @@ void ParticleGeneratorHandler::Init()
 
 void ParticleGeneratorHandler::Kill()
 {
+	shaderHandler->ReleaseProgramObjects("ParticleGeneratorHandler");
+	indirParamsShader = nullptr;
+	keyValShader = nullptr;
+	radixHistShader = nullptr;
+	radixSortShader = nullptr;
+	indcsProdShader = nullptr;
+
 	generators = nullptr;
 
 	vertVBO.Release();
