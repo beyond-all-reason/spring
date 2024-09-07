@@ -216,13 +216,10 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 		for (const auto& member : cregClass->members) {
 			membersMap[member.offset] = std::make_tuple(std::string{ member.name }, member.type->GetName(), member.type->GetSize());
 		}
-		std::vector<bool> saveIf(numVec4, false);
 
 		dataStructSS << "struct InOutData {\n";
 		dataStructSS << "\tvec4 info[" << numVec4 << "];\n";
 		dataStructSS << "};";
-
-		saveStateSS << "void SaveState(uint startIndex, uint endIndex) {\n";
 
 		static constexpr const char* TABS = "\t";
 		for (const auto& [offt, fieldInfo] : membersMap) {
@@ -293,6 +290,10 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				break;
 			}
 
+			static constexpr const char* SaveFuncTempl = "void Save{}{}({} {}{}) {{\n";
+			const std::string suffix = (arraySize > 1) ? std::format("[{}]", arraySize) : "";
+			saveStateSS << fmt::format(SaveFuncTempl, static_cast<char>(std::toupper(name[0])), &name[1], glslType, name, suffix);
+
 			if (arraySize > 1) {
 				dataToFieldsSS << TABS << glslType << " " << name << "[" << arraySize << "];\n";
 			}
@@ -303,15 +304,6 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				uint32_t localOffset = (offt + ai * size);
 				uint32_t infoIndex = (localOffset / VEC4_BYTE_SIZE);
 				uint32_t vec4Index = (localOffset % VEC4_BYTE_SIZE) / sizeof(float);
-
-				if (!saveIf[infoIndex]) {
-					if (infoIndex > 0) {
-						saveStateSS << "\t}\n"; // close the prev if block
-					}
-					saveIf[infoIndex] = true;
-					// open the new if block
-					saveStateSS << "\t" << fmt::format("if (startIndex <= {} && {} <= endIndex)", infoIndex, infoIndex) << " {\n";
-				}
 
 				std::ostringstream infoTxtSS;
 				if (!reinterpretString2.empty())
@@ -359,11 +351,10 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 				if (!revReinterpretString2.empty())
 					revInfoTxtSS << ")";
 				revInfoTxtSS << ";\n";
-				saveStateSS << "\t\t" << revInfoTxtSS.str();
+				saveStateSS << "\t" << revInfoTxtSS.str();
 			}
+			saveStateSS << "}\n\n"; // close the function
 		}
-		saveStateSS << "\t}\n"; // close the last if
-		saveStateSS << "}"; // close the function
 
 		const std::string boolType = (allAtlassedTextures.size() == 1) ? "bool" : fmt::format("bvec{}", allAtlassedTextures.size());
 		static constexpr const char* VT_FORMAT_COM = "({}.z - {}.x) * ({}.w - {}.y) > 0.0,\n";
@@ -412,7 +403,7 @@ inline Shader::IProgramObject* ParticleGenerator<ParticleDataType, ParticleGenTy
 
 	shaderSrc = fmt::sprintf(shaderSrc,
 		dataStructSS.str(),
-		/*saveStateSS.str()*/"",
+		saveStateSS.str(),
 		dataToFieldsSS.str(),
 		earlyExitAutoSS.str(),
 		earlyExit,
