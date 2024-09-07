@@ -35,6 +35,8 @@ public:
 
 public:
 	float size;
+protected:
+	size_t pgOffset;
 private:
 	float color;
 	float age;
@@ -42,7 +44,6 @@ private:
 	float startSize;
 	float sizeExpansion;
 	int textureNum;
-	size_t pgOffset;
 };
 
 #endif /* SMOKE_PROJECTILE_H */

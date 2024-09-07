@@ -24,6 +24,7 @@ public:
 		float sizeExpansion,
 		float color = 0.7f
 	);
+	~CSmokeProjectile2() override;
 
 	void Update() override;
 	void Draw() override;
@@ -43,6 +44,7 @@ private:
 	int textureNum;
 	float3 wantedPos;
 	float glowFalloff;
+	size_t pgOffset;
 };
 
 #endif /* SMOKE_PROJECTILE_2_H */
