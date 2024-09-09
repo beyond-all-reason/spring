@@ -265,10 +265,8 @@ int CLuaHandle::XCall(lua_State* srcState, const char* funcName)
 
 	// push the function
 	const LuaHashString funcHash(funcName);
-	if (!funcHash.GetGlobalFunc(L)) {
-		LOG_L(L_WARNING, "[LuaHandle::%s] tried to cross-call unlinked Script.%s.%s()", __func__, name.c_str(), funcName);
+	if (!funcHash.GetGlobalFunc(L))
 		return 0;
-	}
 
 	int retCount;
 
