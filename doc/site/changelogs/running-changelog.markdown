@@ -25,7 +25,7 @@ so that inline event handlers can call its functions like so: `onclick="widget:O
 * our data model is reactive only on the first depth level.
 All keys for reactivity are expected to exist at creation.
 Behaviour is unspecified if the same data model is "opened" repeatedly.
-* there is some sort of texture difference (FIXME)
+* there is a custom html tag called `texture` that provides access to engine textures, e.g. `src="$heightmap"`
 
 Look for upcoming examples in games, especially BAR.
 The API is currently v1 and may be subject to change, use the new `Engine.FeatureSupport.rmlUiApiVersion` var for compat (see below).
