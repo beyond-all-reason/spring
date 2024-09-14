@@ -316,12 +316,9 @@ void CWeaponProjectile::UpdateGroundBounce()
 	// projectile is not allowed to bounce on either surface
 	if (!weaponDef->groundBounce && !weaponDef->waterBounce)
 		return;
-
 	// maximum number of bounce already reached?
-	if (weaponDef->numBounce != -1 // infinite
-	&&  bounces >= weaponDef->numBounce)
+	if ((bounces + 1) > weaponDef->numBounce)
 		return;
-
 	if (luaMoveCtrl)
 		return;
 	if (ttl <= 0) {

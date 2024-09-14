@@ -737,9 +737,15 @@ void CProjectileDrawer::DrawOpaque(bool drawReflection, bool drawRefraction)
 	glDisable(GL_FOG);
 }
 
-void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawReflection, bool drawRefraction)
+void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflection, bool drawRefraction)
 {
 	ZoneScopedN("ProjectileDrawer::DrawAlpha");
+
+	static constexpr std::array<float, 4> clipPlanes[] {
+		{ 0.0f, -1.0f, 0.0f, 0.0f},
+		{ 0.0f,  1.0f, 0.0f, 0.0f},
+		{ 0.0f,  0.0f, 0.0f, 1.0f}
+	};
 
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
@@ -817,7 +823,9 @@ void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawReflection, bool
 
 		fxShader->Enable();
 
-		fxShader->SetUniform("clipPlane", 0.0f, (drawAboveWater ? 1.0f : -1.0f), 0.0f, 0.0f);
+		const auto& clipPlane = clipPlanes[awrs];
+
+		fxShader->SetUniform("clipPlane", clipPlane[0], clipPlane[1], clipPlane[2], clipPlane[3]);
 		fxShader->SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f);
 		if (needSoften) {
 			fxShader->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);

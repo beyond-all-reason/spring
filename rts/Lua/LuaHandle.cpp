@@ -23,6 +23,7 @@
 #include "Game/UI/KeySet.h"
 #include "Game/UI/MiniMap.h"
 #include "Rendering/GlobalRendering.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Projectiles/Projectile.h"
@@ -173,6 +174,10 @@ void CLuaHandle::KillLua(bool inFreeHandler)
 	// 2. shutdown
 	if (inFreeHandler)
 		Shutdown();
+
+	if(rmlui) {
+		RmlGui::RemoveLua();
+	}
 
 	// 3. delete the lua_State
 	//
@@ -3921,6 +3926,10 @@ int CLuaHandle::CallOutUpdateCallIn(lua_State* L)
 	return 0;
 }
 
+void CLuaHandle::InitializeRmlUi()
+{
+	rmlui = RmlGui::InitializeLua(L);
+}
 
 /******************************************************************************/
 /******************************************************************************/

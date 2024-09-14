@@ -379,14 +379,14 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 	};
 
 	// collect completed futures
-	spring::VectorEraseAllIf(preloadFutures, erasePredicate);
+	std::erase_if(preloadFutures, erasePredicate);
 
 	if (preloadFutures.size() <= numAllowed)
 		return;
 
 	while (preloadFutures.size() > numAllowed) {
 		//drain queue until there are <= numAllowed items there
-		spring::VectorEraseAllIf(preloadFutures, erasePredicate);
+		std::erase_if(preloadFutures, erasePredicate);
 		spring_sleep(spring_msecs(100));
 	}
 }

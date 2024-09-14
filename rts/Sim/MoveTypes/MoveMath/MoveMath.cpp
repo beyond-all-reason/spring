@@ -33,7 +33,7 @@ MoveTypes::CheckCollisionQuery::CheckCollisionQuery(const CSolidObject* ref)
 
 MoveTypes::CheckCollisionQuery::CheckCollisionQuery(const MoveDef* refMoveDef, float3 testPos)
 	: moveDef(refMoveDef)
-	, pos(testPos)
+	, pos(testPos.cClampInBounds())
 {
 	UpdateElevationForPos(pos);
 }

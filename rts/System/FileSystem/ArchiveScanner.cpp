@@ -978,7 +978,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	};
 
 	while (!tasks.empty()) {
-		spring::VectorEraseAllIf(tasks, erasePredicate);
+		std::erase_if(tasks, erasePredicate);
 		spring::UnfreezeSpring(WDT_MAIN);
 		spring_sleep(spring_msecs(10));
 	}

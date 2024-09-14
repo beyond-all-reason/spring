@@ -333,9 +333,13 @@ static void HandleUnitCollisionsAux(
 				// }
 			}
 
+			// Several large units can end up surrounding a waypoint and block each other from touching it, because it
+			// sits diagonally from all of them and outside their radius.
+			// Adding an extra diagonal distance compensation will allow such large units to "touch" the waypoint.
+			constexpr float adjustForDiagonal = 1.45f;
 			float separationDist = std::max(collider->unitDef->separationDistance, collidee->unitDef->separationDistance);
-			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius() + separationDist)
-										|| gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius() + separationDist));
+			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, (gmtCollider->GetOwnerRadius() + separationDist)*adjustForDiagonal)
+										|| gmtCollider->IsAtGoalPos(collidee->pos, (gmtCollidee->GetOwnerRadius() + separationDist)*adjustForDiagonal));
 			if (triggerArrived) {
 				gmtCollider->TriggerCallArrived();
 			} else {
@@ -344,8 +348,7 @@ static void HandleUnitCollisionsAux(
 				const float3& currWaypoint = gmtCollider->GetCurrWayPoint();
 				const float collideeToCurrDistSq = currWaypoint.SqDistance2D(collidee->pos);
 				const float collideeGoalRadius = gmtCollidee->GetOwnerRadius();
-
-				if (collideeToCurrDistSq <= Square(collideeGoalRadius+separationDist)) {
+				if (collideeToCurrDistSq <= Square((collideeGoalRadius+separationDist)*adjustForDiagonal)) {
 					gmtCollider->TriggerSkipWayPoint();
 					return;
 				}
@@ -361,7 +364,6 @@ static void HandleUnitCollisionsAux(
 		} break;
 	}
 }
-
 
 
 static float3 CalcSpeedVectorInclGravity(const CUnit* owner, const CGroundMoveType* mt, float hAcc, float vAcc) {
@@ -531,6 +533,13 @@ void CGroundMoveType::PostLoad()
 	RECOIL_DETAILED_TRACY_ZONE;
 	pathController = GMTDefaultPathController(owner);
 
+	// If the active moveType is not set to default ground move (i.e. is on scripted move type) then skip.
+	if ((void*)owner->moveType != (void*)owner->amtMemBuffer) {
+		// Safety measure to clear the path id.
+		pathID = 0;
+		return;
+	}
+
 	Connect();
 
 	// HACK: re-initialize path after load
@@ -691,6 +700,9 @@ bool CGroundMoveType::Update()
 		owner->unloadingTransportId = -1;
 		owner->requestRemoveUnloadTransportId = false;
 	}
+
+	// Collisions can change waypoint states (y); though they won't move them (xz).
+	SyncWaypoints();
 
 	// do nothing at all if we are inside a transport
 	if (owner->GetTransporter() != nullptr) return false;
