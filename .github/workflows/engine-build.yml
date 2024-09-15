@@ -1,0 +1,36 @@
+name: Build Engine
+on:
+  workflow_dispatch:
+jobs:
+  build-engine:
+    runs-on: namespace-profile-recoil
+    strategy:
+      matrix:
+        system:
+          - x86_64-linux
+          - x86_64-windows
+    steps:
+      - name: Checkout code
+        uses: namespacelabs/nscloud-checkout-action@v5
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          dissociate: true
+          path: src
+      - name: Setup ccache cache
+        uses: namespacelabs/nscloud-cache-action@v1
+        with:
+          path: ccache
+      - name: Build
+        run: |
+          mkdir -p ccache/x86_64-linux
+          docker run --rm \
+            -v $(pwd)/src:/build/src:ro \
+            -v $(pwd)/ccache/x86_64-linux:/build/cache:rw \
+            ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest \
+            bash -c './bin/cmake_config && cd out && ninja && ninja install'
+      - name: Save
+        uses: namespace-actions/upload-artifact@v0
+        with:
+          name: output-${{ matrix.system }}
+          path: ./target
