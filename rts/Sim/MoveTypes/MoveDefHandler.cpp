@@ -713,7 +713,7 @@ bool MoveDef::IsInExitOnly(int xmid, int zmid) const {
 	const int xmin = std::max(xmid - xsizeh, 0);
 	const int zmin = std::max(zmid - zsizeh, 0);
 	const int xmax = std::min(xmid + xsizeh, mapDims.mapxm1);
-	const int zmax = std::min(zmid + zsizeh, mapDims.mapxm1);
+	const int zmax = std::min(zmid + zsizeh, mapDims.mapym1);
 
 	const ObjectCollisionMapHelper object;
 	return CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax, object);
