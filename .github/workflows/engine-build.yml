@@ -3,12 +3,16 @@ on:
   workflow_dispatch:
 jobs:
   build-engine:
-    runs-on: namespace-profile-recoil
     strategy:
       matrix:
         system:
           - x86_64-linux
           - x86_64-windows
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-16x32-with-cache
+      - nscloud-cache-tag-engine-${{ matrix.system }}
+      - nscloud-cache-size-20gb
+      - nscloud-git-mirror-5gb
     steps:
       - name: Checkout code
         uses: namespacelabs/nscloud-checkout-action@v5
