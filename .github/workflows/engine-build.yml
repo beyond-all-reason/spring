@@ -9,7 +9,7 @@ jobs:
           - amd64-linux
           - amd64-windows
     runs-on:
-      - nscloud-ubuntu-24.04-amd64-16x32-with-cache
+      - nscloud-ubuntu-24.04-amd64-8x16-with-cache
       - nscloud-cache-tag-engine-${{ matrix.system }}
       - nscloud-cache-size-20gb
       - nscloud-git-mirror-5gb
