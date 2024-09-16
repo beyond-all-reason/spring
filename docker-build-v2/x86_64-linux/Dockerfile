@@ -1,8 +1,5 @@
 FROM docker.io/ubuntu:18.04
 
-RUN mkdir -p /build/src /build/out /build/target /build/artifacts /build/cache /build/bin
-WORKDIR /build
-
 RUN apt-get update \
  && apt-get install --no-install-recommends --yes software-properties-common \
  && add-apt-repository ppa:ubuntu-toolchain-r/test --yes \
@@ -26,9 +23,12 @@ RUN pip3 install --upgrade pip \
  && pip3 install scikit-build \
  && pip3 install cmake==3.25.*
 
+WORKDIR /build
+RUN mkdir src out target cache bin && chmod a+rwx out
+
 RUN git clone --depth=1 https://github.com/beyond-all-reason/spring-static-libs.git -b 18.04 spring-static-libs
 
 COPY toolchain.cmake .
 COPY ccache.conf .
 ENV CCACHE_CONFIGPATH=/build/ccache.conf
-COPY cmake_config.sh /build/bin/cmake_config
+COPY cmake_config.sh bin/cmake_config
