@@ -22,11 +22,17 @@ jobs:
         with:
           path: ccache
       - name: Build
+        # Instead of manually running docker, it would be cool to just run whole GitHub actions
+        # in container, but unfortunately ubuntu 18.04 is just too old to be able to do it ;(.
         run: |
-          mkdir -p ccache/x86_64-linux
+          mkdir -p ccache/x86_64-linux target
           docker run --rm \
+            -v /etc/passwd:/etc/passwd:ro \
+            -v /etc/group:/etc/group:ro \
+            --user="$(id -u):$(id -g)" \
             -v $(pwd)/src:/build/src:ro \
             -v $(pwd)/ccache/x86_64-linux:/build/cache:rw \
+            -v $(pwd)/target:/build/target \
             ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest \
             bash -c './bin/cmake_config && cd out && ninja && ninja install'
       - name: Save
