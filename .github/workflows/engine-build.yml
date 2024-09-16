@@ -13,6 +13,7 @@ jobs:
       - nscloud-cache-tag-engine-${{ matrix.system }}
       - nscloud-cache-size-20gb
       - nscloud-git-mirror-5gb
+      - nscloud-exp-container-image-cache
     steps:
       - name: Checkout code
         uses: namespacelabs/nscloud-checkout-action@v5
