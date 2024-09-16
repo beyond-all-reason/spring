@@ -8,8 +8,8 @@ jobs:
     strategy:
       matrix:
         system:
-          - x86_64-linux
-          - x86_64-windows
+          - amd64-linux
+          - amd64-windows
     permissions:
       packages: write
       contents: read
