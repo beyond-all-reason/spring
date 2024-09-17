@@ -6038,7 +6038,7 @@ int LuaSyncedCtrl::SetOriginalHeightMapFunc(lua_State* L)
 
 	if (error != 0) {
 		LOG_L(L_ERROR, "Spring.SetOriginalHeightMapFunc: error(%i) = %s",
-				error, lua_tostring(L, LUA_TABLE_VALUE_INDEX));
+				error, lua_tostring(L, -1));
 		lua_error(L);
 	}
 
@@ -6265,7 +6265,7 @@ int LuaSyncedCtrl::SetSmoothMeshFunc(lua_State* L)
 
 	if (error != 0) {
 		LOG_L(L_ERROR, "Spring.SetSmoothMeshFunc: error(%i) = %s",
-				error, lua_tostring(L, LUA_TABLE_VALUE_INDEX));
+				error, lua_tostring(L, -1));
 		lua_error(L);
 	}
 
