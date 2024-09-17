@@ -7892,7 +7892,7 @@ static int GetModelPieceList(lua_State* L, const std::string& modelName)
 	for (size_t i = 0; i < model->numPieces; i++) {
 		const auto* p = model->pieceObjects[i];
 		lua_pushsstring(L, p->name);
-		lua_rawseti(L, LUA_TABLE_KEY_INDEX, i + 1);
+		lua_rawseti(L, -2, i + 1);
 	}
 
 	return 1;
