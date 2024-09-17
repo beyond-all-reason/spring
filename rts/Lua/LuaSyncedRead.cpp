@@ -6235,7 +6235,7 @@ int LuaSyncedRead::GetAllFeatures(lua_State* L)
 		for (const int featureID: activeFeatureIDs) {
 			if (LuaUtils::IsFeatureVisible(L, featureHandler.GetFeature(featureID))) {
 				lua_pushnumber(L, featureID);
-				lua_rawseti(L, LUA_TABLE_KEY_INDEX, ++count);
+				lua_rawseti(L, -2, ++count);
 			}
 		}
 	}
@@ -6741,9 +6741,9 @@ int LuaSyncedRead::GetProjectileTarget(lua_State* L)
 	if (wtgt == nullptr) {
 		lua_pushnumber(L, int('g')); // ground
 		lua_createtable(L, 3, 0);
-		lua_pushnumber(L, (wpro->GetTargetPos()).x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
-		lua_pushnumber(L, (wpro->GetTargetPos()).y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
-		lua_pushnumber(L, (wpro->GetTargetPos()).z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
+		lua_pushnumber(L, (wpro->GetTargetPos()).x); lua_rawseti(L, -2, 1);
+		lua_pushnumber(L, (wpro->GetTargetPos()).y); lua_rawseti(L, -2, 2);
+		lua_pushnumber(L, (wpro->GetTargetPos()).z); lua_rawseti(L, -2, 3);
 		return 2;
 	}
 
@@ -7940,7 +7940,7 @@ static int GetSolidObjectPieceList(lua_State* L, const CSolidObject* o)
 	for (size_t i = 0; i < localModel.pieces.size(); i++) {
 		const LocalModelPiece& lp = localModel.pieces[i];
 		lua_pushsstring(L, lp.original->name);
-		lua_rawseti(L, LUA_TABLE_KEY_INDEX, i + 1);
+		lua_rawseti(L, -2, i + 1);
 	}
 
 	return 1;
@@ -7971,7 +7971,7 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 	lua_createtable(L, op.children.size(), 0);
 	for (size_t c = 0; c < op.children.size(); c++) {
 		lua_pushsstring(L, op.children[c]->name);
-		lua_rawseti(L, LUA_TABLE_KEY_INDEX, c + 1);
+		lua_rawseti(L, -2, c + 1);
 	}
 	lua_rawset(L, -3);
 
@@ -7981,25 +7981,25 @@ static int GetSolidObjectPieceInfoHelper(lua_State* L, const S3DModelPiece& op)
 
 	HSTR_PUSH(L, "min");
 	lua_createtable(L, 3, 0); {
-		lua_pushnumber(L, op.mins.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
-		lua_pushnumber(L, op.mins.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
-		lua_pushnumber(L, op.mins.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
+		lua_pushnumber(L, op.mins.x); lua_rawseti(L, -2, 1);
+		lua_pushnumber(L, op.mins.y); lua_rawseti(L, -2, 2);
+		lua_pushnumber(L, op.mins.z); lua_rawseti(L, -2, 3);
 	}
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "max");
 	lua_createtable(L, 3, 0); {
-		lua_pushnumber(L, op.maxs.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
-		lua_pushnumber(L, op.maxs.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
-		lua_pushnumber(L, op.maxs.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
+		lua_pushnumber(L, op.maxs.x); lua_rawseti(L, -2, 1);
+		lua_pushnumber(L, op.maxs.y); lua_rawseti(L, -2, 2);
+		lua_pushnumber(L, op.maxs.z); lua_rawseti(L, -2, 3);
 	}
 	lua_rawset(L, -3);
 
 	HSTR_PUSH(L, "offset");
 	lua_createtable(L, 3, 0); {
-		lua_pushnumber(L, op.offset.x); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 1);
-		lua_pushnumber(L, op.offset.y); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 2);
-		lua_pushnumber(L, op.offset.z); lua_rawseti(L, LUA_TABLE_KEY_INDEX, 3);
+		lua_pushnumber(L, op.offset.x); lua_rawseti(L, -2, 1);
+		lua_pushnumber(L, op.offset.y); lua_rawseti(L, -2, 2);
+		lua_pushnumber(L, op.offset.z); lua_rawseti(L, -2, 3);
 	}
 	lua_rawset(L, -3);
 	return 1;
@@ -8385,7 +8385,7 @@ int LuaSyncedRead::GetUnitScriptPiece(lua_State* L)
 			const int piece = script->ScriptToModel(sp);
 			if (piece != -1) {
 				lua_pushnumber(L, piece + 1);
-				lua_rawseti(L, LUA_TABLE_KEY_INDEX, sp);
+				lua_rawseti(L, -2, sp);
 			}
 		}
 		return 1;
