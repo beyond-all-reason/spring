@@ -21,7 +21,7 @@ See [the reference](https://mikke89.github.io/RmlUiDoc/pages/lua_manual/api_refe
 Differences compared to upstream:
 * `context:LoadDocument(filepath, widget)` takes a second argument that is the widget itself,
 so that inline event handlers can call its functions like so: `onclick="widget:OnReloadClick()"`.
-* `document` is available too. (FIXME is it actually?)
+* `document` is available too.
 * our data model is reactive only on the first depth level.
 All keys for reactivity are expected to exist at creation.
 Behaviour is unspecified if the same data model is "opened" repeatedly.
