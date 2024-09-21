@@ -3,7 +3,7 @@ FROM docker.io/ubuntu:24.04
 RUN apt-get update \
  && apt-get upgrade --yes \
  && apt-get install --no-install-recommends --yes \
-    g++-mingw-w64-x86-64-posix git ninja-build ccache pipx p7zip-full \
+    g++-mingw-w64-x86-64-posix git ninja-build ccache pipx p7zip-full binutils \
  && rm -rf /var/lib/apt/lists/*
 
 # pipx --global since 1.5 we don't have https://github.com/pypa/pipx/issues/754
