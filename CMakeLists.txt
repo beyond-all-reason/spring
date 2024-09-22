@@ -12,7 +12,7 @@ project(Spring)
 
 add_definitions(-DFMT_HEADER_ONLY) #for fmt lib
 
-option(INSTALL_PORTABLE "Make a portable installation (instead of regular system installation)" FALSE)
+option(INSTALL_PORTABLE "Make a portable installation (instead of regular system installation)" TRUE)
 option(WITH_MAPCOMPILER "Include map compiler" TRUE)
 
 # dummy so that qtcreator shows all files (even those of windows)
@@ -111,12 +111,19 @@ message(STATUS "Targetting ${BUILD_BITS}bit")
 
 ### Install paths (relative to CMAKE_INSTALL_PREFIX)
 if    (UNIX AND NOT MINGW)
-	set(BINDIR  "bin"                CACHE STRING "Where to install binaries")
-	set(LIBDIR  "lib"                CACHE STRING "Where to install libraries")
-	set(MANDIR  "share/man"          CACHE STRING "Where to install man pages")
-	set(DOCDIR  "share/doc/spring-VERSION" CACHE STRING "Where to install basic project documentation (README, LICENSE, etc.)") # TODO set correct version here, and re-enable userdocs in doc/CMakeLists.txt
-	set(DATADIR "share/games/spring" CACHE STRING "Where to install game content")
+	if (INSTALL_PORTABLE)
+		set(BINDIR  "."   CACHE STRING "Where to install binaries")
+		set(LIBDIR  "."   CACHE STRING "Where to install libraries")
+		set(DATADIR "."   CACHE STRING "Where to install game content")
+		set(DOCDIR, "doc" CACHE STRING "Where to install basic project documentation (README, LICENSE, etc.)")
+	else()
+		set(BINDIR  "bin"                CACHE STRING "Where to install binaries")
+		set(LIBDIR  "lib"                CACHE STRING "Where to install libraries")
+		set(DATADIR "share/games/spring" CACHE STRING "Where to install game content")
+		set(DOCDIR  "share/doc/spring-VERSION" CACHE STRING "Where to install basic project documentation (README, LICENSE, etc.)") # TODO set correct version here, and re-enable userdocs in doc/CMakeLists.txt
+	endif()
 
+	set(MANDIR  "share/man"          CACHE STRING "Where to install man pages")
 	set(APPLICATIONS_DIR "share/applications" CACHE STRING "Where to install desktop files")
 	set(PIXMAPS_DIR      "share/pixmaps"      CACHE STRING "Where to install icons")
 	set(MIME_DIR         "share/mime"         CACHE STRING "Where MIME definitions are located")
