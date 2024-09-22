@@ -15,6 +15,33 @@ These are the entries which may require special attention when migrating:
 
 # Features
 
+### rmlUI
+RmlUI is here! It is a GUI framework that will let you create widgets using web technologies (html, css and all that nonsense).
+See [the reference](https://mikke89.github.io/RmlUiDoc/pages/lua_manual/api_reference.html) for the Lua API; it is available to LuaUI under the `RmlUi` global.
+Differences compared to upstream:
+* `context:LoadDocument(filepath, widget)` takes a second argument that is the widget itself,
+so that inline event handlers can call its functions like so: `onclick="widget:OnReloadClick()"`.
+* `document` is available too.
+* our data model is reactive only on the first depth level.
+All keys for reactivity are expected to exist at creation.
+Behaviour is unspecified if the same data model is "opened" repeatedly.
+* there is a custom html tag called `texture` that provides access to engine textures, e.g. `src="$heightmap"`
+
+Look for upcoming examples in games, especially BAR.
+The API is currently v1 and may be subject to change, use the new `Engine.FeatureSupport.rmlUiApiVersion` var for compat (see below).
+
+### Feature support table
+
+There is a new `Engine.FeatureSupport` table containing various feature support checks.
+Use for engine version compatibility, similar to existing `Script.IsEngineMinVersion`,
+except self-documenting and does not assume linear availability / commit numbering.
+
+So far contains two vars:
+* `rmlUiApiVersion` = `1`
+* `hasExitOnlyYardmaps` = `true`
+
+More will be added in the future as new features are added.
+
 ### Movement
 * removed the `movement.allowDirectionalPathing` modrule. Pathing is now always directional, i.e. going downhill does not incur a speed penalty. All known games had directional pathing enabled already.
 * added `allowDirectionalPathing` boolean movedef entry, default false. Allows the HAPFS (aka legacy) pathfinder to take direction into account. If false, it will avoid going downhill to the same extent as climbing that slope uphill (note that this is the previous behaviour). Does not apply to QTPFS, which cannot use directional pathing.
@@ -27,6 +54,7 @@ These are the entries which may require special attention when migrating:
 * added 'u' yardmap tile: not buildable, but pathable. Good replacement for indoor 'y'.
 * added 'e' yardmap tile: not buildable, exit-only. Units cannot path from a normal tile to an exit-only tile (but pathing between adjacent exit-only tiles is fine).
 Decent for factory construction areas, but keep in mind it only affects ground units (not aircraft, not wrecks, etc) and even ground units can still enter such tiles via non-pathing means (e.g. via impulse).
+* added boolean `Engine.FeatureSupport.hasExitOnlyYardmaps` = `true` check for compatibility.
 
 ### Smooth mesh
 * added `Spring.RebuildSmoothMesh() → nil` synced callout to immediately rebuild the smooth mesh.
