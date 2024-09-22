@@ -798,6 +798,8 @@ void RenderInterface_GL3_Recoil::EndFrame()
 
 	render_layers.EndFrame();
 
+	UseProgram(ProgramId::None);
+
 	// Restore GL state.
 	if (glstate_backup.enable_cull_face)
 		glEnable(GL_CULL_FACE);
