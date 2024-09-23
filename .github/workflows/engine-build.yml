@@ -2,7 +2,7 @@ name: Build Engine
 on:
   workflow_dispatch:
   schedule:
-    - cron: "36 */4 * * *"
+    - cron: "36 00 * * *"
 jobs:
   build-engine:
     strategy:
