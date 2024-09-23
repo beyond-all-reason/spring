@@ -954,7 +954,12 @@ void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, boo
 			continue;
 
 		const float footPrintRadius = math::sqrtf(footPrintX*footPrintX + footPrintZ*footPrintZ);
-		const float buggerOffRadius = baseBuggerOffRadius + footPrintRadius;
+
+		// If the unit radius is smaller than the moveDef foot print then the bugger off may not be honoured by the
+		// unit because the bugger off command uses unit radius to determine whether the unit has moved far enough.
+		const float addForUnitRadius = (footPrintRadius > u->radius) ? (footPrintRadius - u->radius) : 0.f;
+
+		const float buggerOffRadius = baseBuggerOffRadius + footPrintRadius + addForUnitRadius;
 
 		u->commandAI->BuggerOff(centreOfBuggerOff, buggerOffRadius);
 	}
