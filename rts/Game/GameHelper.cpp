@@ -934,10 +934,13 @@ void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, boo
 	const int allyTeamId = teamHandler.AllyTeam(teamId);
 
 	for (CUnit* u : *qfQuery.units) {
-		if (u->moveDef == nullptr) { continue; }
+		if (u->unitDef == nullptr || u->unitDef->IsImmobileUnit()) { continue; }
 
-		const float footPrintX = (u->moveDef->xsizeh+1)*SQUARE_SIZE;
-		const float footPrintZ = (u->moveDef->zsizeh+1)*SQUARE_SIZE;
+		// apparently air units may not have a move def.
+		const bool useMoveDef = (u->moveDef != nullptr);
+
+		const float footPrintX = ((useMoveDef ? u->moveDef->xsizeh : u->xsize/2) + 1) * SQUARE_SIZE;
+		const float footPrintZ = ((useMoveDef ? u->moveDef->zsizeh : u->zsize/2) + 1) * SQUARE_SIZE;
 
 		if (u->pos.x + footPrintX < mins.x) { continue; }
 		if (u->pos.z + footPrintZ < mins.z) { continue; }
