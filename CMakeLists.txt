@@ -13,7 +13,6 @@ project(Spring)
 add_definitions(-DFMT_HEADER_ONLY) #for fmt lib
 
 option(INSTALL_PORTABLE "Make a portable installation (instead of regular system installation)" TRUE)
-option(WITH_MAPCOMPILER "Include map compiler" TRUE)
 
 # Allow to set PREFER_STATIC_LIBS from env, defaults to false
 option(PREFER_STATIC_LIBS "Prefer static libraries when linking deps" $ENV{PREFER_STATIC_LIBS})
