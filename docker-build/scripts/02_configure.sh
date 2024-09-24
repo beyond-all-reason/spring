@@ -14,7 +14,6 @@ if [ "${PLATFORM}" == "linux-64" ]; then
         -DBINDIR:PATH=./
         -DLIBDIR:PATH=./
         -DDATADIR:PATH=./
-        -DMANDIR:PATH=share/man
         -DDOCDIR:PATH=doc
     )
     export PKG_CONFIG_LIBDIR=${LIBS_DIR}/lib/pkgconfig
@@ -45,7 +44,6 @@ cmake \
     -DCMAKE_INSTALL_PREFIX:PATH="${INSTALL_DIR}" \
     -DUSERDOCS_PLAIN=ON \
     -DINSTALL_PORTABLE=ON \
-    -DWITH_MAPCOMPILER=OFF \
     -DAI_EXCLUDE_REGEX="^CppTestAI$" \
     "${MYCMAKEFLAGS}" \
     "${EXTRA_CMAKE_ARGS[@]}" \
