@@ -125,7 +125,6 @@ if    (UNIX AND NOT MINGW)
 		set(DOCDIR  "share/doc/spring-VERSION" CACHE STRING "Where to install basic project documentation (README, LICENSE, etc.)") # TODO set correct version here, and re-enable userdocs in doc/CMakeLists.txt
 	endif()
 
-	set(MANDIR  "share/man"          CACHE STRING "Where to install man pages")
 	set(APPLICATIONS_DIR "share/applications" CACHE STRING "Where to install desktop files")
 	set(PIXMAPS_DIR      "share/pixmaps"      CACHE STRING "Where to install icons")
 	set(MIME_DIR         "share/mime"         CACHE STRING "Where MIME definitions are located")

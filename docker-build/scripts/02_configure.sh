@@ -14,7 +14,6 @@ if [ "${PLATFORM}" == "linux-64" ]; then
         -DBINDIR:PATH=./
         -DLIBDIR:PATH=./
         -DDATADIR:PATH=./
-        -DMANDIR:PATH=share/man
         -DDOCDIR:PATH=doc
     )
     export PKG_CONFIG_LIBDIR=${LIBS_DIR}/lib/pkgconfig
