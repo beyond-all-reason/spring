@@ -32,18 +32,25 @@ jobs:
         # Instead of manually running docker, it would be cool to just run whole GitHub actions
         # in container, but unfortunately ubuntu 18.04 is just too old to be able to do it ;(.
         run: |
-          mkdir -p ccache target
-          docker run --rm \
+          mkdir -p ccache artifacts
+          docker run -i --rm \
             -v /etc/passwd:/etc/passwd:ro \
             -v /etc/group:/etc/group:ro \
             --user="$(id -u):$(id -g)" \
             -v $(pwd)/src:/build/src:ro \
             -v $(pwd)/ccache:/build/cache:rw \
-            -v $(pwd)/target:/build/target:rw \
+            -v $(pwd)/artifacts:/build/artifacts:rw \
             ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest \
-            bash -c './bin/cmake_config && cd out && ninja && ninja install'
+            bash <<EOF
+          set -e
+          cd /build/src/docker-build-v2/scripts
+          ./build.sh
+          ./split-debug-info.sh
+          ./package.sh
+
+          EOF
       - name: Save
         uses: namespace-actions/upload-artifact@v0
         with:
           name: output-${{ matrix.system }}
-          path: ./target
+          path: ./artifacts

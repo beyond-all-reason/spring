@@ -1,4 +1,5 @@
 FROM docker.io/ubuntu:18.04
+ENV ENGINE_PLATFORM=amd64-linux
 
 RUN apt-get update \
  && apt-get install --no-install-recommends --yes software-properties-common \
@@ -19,16 +20,33 @@ RUN curl -L -O https://github.com/ccache/ccache/releases/download/v${CCACHE_VERS
  && mv ccache-${CCACHE_VERSION}-linux-x86_64/ccache /usr/bin \
  && rm -rf ccache-${CCACHE_VERSION}-linux-x86_64*
 
+# And need newer zstd :(, fortunatelly it's quick build
+RUN git clone --depth 1 --branch v1.5.6 https://github.com/facebook/zstd.git \
+ && cd zstd \
+ && CC=g++-13 make -j$(nproc) \
+ && mv programs/zstd /usr/local/bin \
+ && cd .. \
+ && rm -rf zstd
+
 RUN pip3 install --upgrade pip \
  && pip3 install scikit-build \
  && pip3 install cmake==3.25.*
 
 WORKDIR /build
-RUN mkdir src out target cache bin && chmod a+rwx out
+RUN mkdir src cache out artifacts && chmod a+rwx out artifacts
 
+# Fetch library dependencies and configure resolution
 RUN git clone --depth=1 https://github.com/beyond-all-reason/spring-static-libs.git -b 18.04 spring-static-libs
+ENV PKG_CONFIG_LIBDIR=/build/spring-static-libs/lib/pkgconfig
+ENV PKG_CONFIG="pkg-config --define-prefix --static"
+ENV CMAKE_PREFIX_PATH=/build/spring-static-libs/
+ENV PREFER_STATIC_LIBS=TRUE
 
+# Set up default cmake toolchain
 COPY toolchain.cmake .
+ENV CMAKE_TOOLCHAIN_FILE=/build/toolchain.cmake
+
+# Configure ccache caching
 COPY ccache.conf .
 ENV CCACHE_CONFIGPATH=/build/ccache.conf
-COPY cmake_config.sh bin/cmake_config
+ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
