@@ -146,8 +146,8 @@ private:
 	std::vector<std::pair<const int, const BufferAttribDef>> bufferAttribDefsVec;
 	std::map<const int, BufferAttribDef> bufferAttribDefs;
 private:
-	static constexpr uint32_t uboMinIndex = 5 + 1; // glBindBufferBase(GL_UNIFORM_BUFFER, 5, uboGroundLighting.GetId()); //DecalsDrawerGL4
-	static constexpr uint32_t ssboMinIndex = 3 + 1; // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, uboDecalsStructures.GetId()); //DecalsDrawerGL4
+	static constexpr uint32_t uboMinIndex = 1 + 1; // UBO_PARAMS_IDX = 1
+	static constexpr uint32_t ssboMinIndex = 1 + 1; // MATUNI_SSBO_BINDING_IDX = 1;
 private:
 	static constexpr uint32_t VA_NUMBER_OF_ATTRIBUTES = 16u;
 	static constexpr uint32_t UBO_SAFE_SIZE_BYTES = 0x4000u; //16 KB

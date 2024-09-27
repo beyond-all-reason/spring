@@ -8,6 +8,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 
@@ -51,6 +52,22 @@ CBubbleProjectile::CBubbleProjectile(
 	sizeExpansion(sizeExpansion)
 {
 	checkCol = false;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BubbleParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.alpha = alpha,
+		.size = size,
+		.sizeExpansion = sizeExpansion,
+		.drawOrder = drawOrder,
+		.texCoord = *projectileDrawer->bubbletex
+	});
+}
+
+CBubbleProjectile::~CBubbleProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BubbleParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 
@@ -76,10 +93,18 @@ void CBubbleProjectile::Update()
 		alpha = 0;
 		deleteMe = true;
 	}
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BubbleParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+
+	data.pos = pos;
+	data.alpha = alpha;
+	data.size = size;
 }
 
 void CBubbleProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char col[4];
 	col[0] = (unsigned char)(255 * alpha);
@@ -97,6 +122,7 @@ void CBubbleProjectile::Draw()
 		{ drawPos - camera->GetRight() * interSize + camera->GetUp() * interSize, bt->xstart, bt->yend,   col }
 	);
 	#undef bt
+	*/
 }
 
 int CBubbleProjectile::GetProjectilesCount() const

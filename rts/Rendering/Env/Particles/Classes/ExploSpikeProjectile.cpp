@@ -9,6 +9,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
 #include "System/Misc/TracyDefs.h"
@@ -61,6 +62,12 @@ CExploSpikeProjectile::CExploSpikeProjectile(
 	SetRadiusAndHeight(length + lengthGrowth * alpha / alphaDecay, 0.0f);
 }
 
+CExploSpikeProjectile::~CExploSpikeProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExploSpikeParticleGenerator>();
+	pg.Del(pgOffset);
+}
+
 void CExploSpikeProjectile::Init(const CUnit* owner, const float3& offset)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -70,6 +77,21 @@ void CExploSpikeProjectile::Init(const CUnit* owner, const float3& offset)
 	dir /= lengthGrowth;
 
 	SetRadiusAndHeight(length + lengthGrowth * alpha / alphaDecay, 0.0f);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExploSpikeParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.alpha = alpha,
+		.speed = speed,
+		.alphaDecay = alphaDecay,
+		.dir = dir,
+		.color = SColor(color, 1u),
+		.length = length,
+		.lengthGrowth = lengthGrowth,
+		.width = width,
+		.drawOrder = drawOrder,
+		.texCoord = *projectileDrawer->laserendtex
+	});
 }
 
 void CExploSpikeProjectile::Update()
@@ -80,6 +102,15 @@ void CExploSpikeProjectile::Update()
 	alpha = std::max(0.0f, alpha - alphaDecay);
 
 	deleteMe |= (alpha <= 0.0f);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExploSpikeParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+
+	data.pos = pos;
+	data.alpha = alpha;
+	data.speed = speed;
+	data.dir = dir;
+	data.length = length;
 }
 
 void CExploSpikeProjectile::Draw()
@@ -98,14 +129,13 @@ void CExploSpikeProjectile::Draw()
 	const float3 l = (dir * length) + (lengthGrowth * globalRendering->timeOffset);
 	const float3 w = dir2 * width;
 
-	#define let projectileDrawer->laserendtex
+	const auto* let = projectileDrawer->laserendtex;
 	AddEffectsQuad(
 		{ drawPos - l - w, let->xstart, let->ystart, col },
 		{ drawPos + l - w, let->xend,   let->ystart, col },
 		{ drawPos + l + w, let->xend,   let->yend,   col },
 		{ drawPos - l + w, let->xstart, let->yend,   col }
 	);
-	#undef let
 }
 
 

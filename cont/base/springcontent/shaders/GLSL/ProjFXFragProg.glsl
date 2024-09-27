@@ -48,6 +48,7 @@ void main() {
 
 	vec4 color = vec4(mix(c0, c1, vBF));
 	fragColor = color * vCol;
+	//fragColor = vCol;
 
 	fragColor.rgb = mix(fragColor.rgb, fogColor * fragColor.a, (1.0 - fogFactor));
 

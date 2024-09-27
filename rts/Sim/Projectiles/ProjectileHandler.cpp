@@ -18,6 +18,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
@@ -95,6 +96,8 @@ void CProjectileHandler::Init()
 
 	// register ConfigNotify()
 	configHandler->NotifyOnChange(this, {"MaxParticles", "MaxNanoParticles"});
+
+	ParticleGeneratorHandler::GetInstance().Init();
 }
 
 void CProjectileHandler::Kill()
@@ -129,6 +132,8 @@ void CProjectileHandler::Kill()
 			fpc.clear();
 		}
 	}
+
+	ParticleGeneratorHandler::GetInstance().Kill();
 
 	CCollisionHandler::PrintStats();
 }

@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _EXPLOSIVE_PROJECTILE_H
-#define _EXPLOSIVE_PROJECTILE_H
+#pragma once
 
 #include "WeaponProjectile.h"
 
@@ -13,6 +12,7 @@ public:
 	CExplosiveProjectile() { }
 
 	CExplosiveProjectile(const ProjectileParams& params);
+	~CExplosiveProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -20,10 +20,8 @@ public:
 	int GetProjectilesCount() const override;
 
 	int ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed) override;
-
 private:
 	float invttl;
 	float curTime;
+	size_t pgOffset;
 };
-
-#endif // _EXPLOSIVE_PROJECTILE_H

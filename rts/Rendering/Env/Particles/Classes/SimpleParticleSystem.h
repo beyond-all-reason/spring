@@ -17,7 +17,7 @@ class CSimpleParticleSystem : public CProjectile
 
 public:
 	CSimpleParticleSystem();
-	virtual ~CSimpleParticleSystem() { particles.clear(); }
+	~CSimpleParticleSystem() override;
 
 	void Serialize(creg::ISerializer* s);
 
@@ -72,6 +72,7 @@ protected:
 
 protected:
 	 std::vector<Particle> particles;
+	 std::vector<size_t> pgOffsets;
 };
 
 /**

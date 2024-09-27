@@ -8,6 +8,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
 #include "System/Misc/TracyDefs.h"
@@ -69,6 +70,12 @@ CHeatCloudProjectile::CHeatCloudProjectile(
 	SetRadiusAndHeight(size + sizeGrowth * heat / heatFalloff, 0.0f);
 }
 
+CHeatCloudProjectile::~CHeatCloudProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<HeatCloudParticleGenerator>();
+	pg.Del(pgOffset);
+}
+
 void CHeatCloudProjectile::Serialize(creg::ISerializer* s)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -91,12 +98,35 @@ void CHeatCloudProjectile::Update()
 
 	size += sizeGrowth;
 	sizemod *= sizemodmod;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<HeatCloudParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+
+	data.pos = pos;
+	data.heat = heat;
+	data.size = size;
+	data.sizeMod = sizemod;
 }
 
 void CHeatCloudProjectile::Init(const CUnit* owner, const float3& offset)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Init(owner, offset);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<HeatCloudParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.maxHeat = maxheat,
+		.speed = speed,
+		.heat = heat,
+		.animParams = animParams,
+		.size = size,
+		.rotParams = rotParams,
+		.sizeGrowth = sizeGrowth,
+		.sizeMod = sizemod,
+		.drawOrder = drawOrder,
+		.createFrame = createFrame
+	});
 }
 
 void CHeatCloudProjectile::Draw()

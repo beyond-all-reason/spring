@@ -8,6 +8,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
@@ -55,7 +56,8 @@ CR_REG_METADATA(CStarburstProjectile, (
 	CR_MEMBER(turnToTarget),
 
 	CR_MEMBER(tracerParts),
-	CR_MEMBER(smokeTrail)
+	CR_MEMBER(smokeTrail),
+	CR_MEMBER(pgOffset)
 ))
 
 
@@ -72,29 +74,45 @@ CStarburstProjectile::CStarburstProjectile(const ProjectileParams& params): CWea
 	projectileType = WEAPON_STARBURST_PROJECTILE;
 
 
-	if (weaponDef != nullptr) {
-		maxSpeed = weaponDef->projectilespeed;
-		ttl = weaponDef->flighttime;
+	maxSpeed = weaponDef->projectilespeed;
+	ttl = weaponDef->flighttime;
 
-		// Default uptime is -1. Positive values override the weapondef.
-		if (uptime < 0)
-			uptime = weaponDef->uptime * GAME_SPEED;
+	// Default uptime is -1. Positive values override the weapondef.
+	if (uptime < 0)
+		uptime = weaponDef->uptime * GAME_SPEED;
 
-		if (weaponDef->flighttime == 0)
-			ttl = std::min(3000.0f, uptime + myrange / maxSpeed + 100);
-	}
+	if (weaponDef->flighttime == 0)
+		ttl = std::min(3000.0f, uptime + myrange / maxSpeed + 100);
 
 	oldSmokeDir = dir;
 
 	maxGoodDif = math::cos(tracking * 0.6f);
 	drawRadius = maxSpeed * 8.0f;
 
-	castShadow = weaponDef ? weaponDef->visuals.castShadow : true;
-	leaveSmokeTrail = (weaponDef != nullptr && weaponDef->visuals.smokeTrail);
+	castShadow = weaponDef->visuals.castShadow;
+	leaveSmokeTrail = weaponDef->visuals.smokeTrail;
 
 	InitTracerParts();
+
+	if (!model)
+		return;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<StarburstParticleGenerator>();
+	pgOffset = pg.Add({
+		.drawOrder = drawOrder,
+		.texCoord1 = *weaponDef->visuals.texture1,
+		.texCoord3 = *weaponDef->visuals.texture3
+	});
 }
 
+CStarburstProjectile::~CStarburstProjectile()
+{
+	if (!model)
+		return;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<StarburstParticleGenerator>();
+	pg.Del(pgOffset);
+}
 
 void CStarburstProjectile::Collision()
 {
@@ -153,6 +171,29 @@ void CStarburstProjectile::Update()
 	UpdateTracerPart();
 	UpdateSmokeTrail();
 	UpdateInterception();
+
+	if (!model)
+		return;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<StarburstParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+
+	data.pos = pos;
+	data.missileAge = missileAge;
+
+	data.speed = speed.xyz;
+	data.curTracerPart = curTracerPart;
+
+	for (size_t ti = 0; ti < NUM_TRACER_PARTS; ++ti) {
+		const TracerPart& tracerPart = tracerParts[ti];
+
+		data.tracerPosSpeed[ti] = float4{ tracerPart.pos, tracerPart.speedf };
+		data.tracerDirNumMods[ti] = float4{ tracerPart.dir, std::bit_cast<float>(tracerPart.numAgeMods) };
+
+		for (size_t ami = 0; ami < MAX_NUM_AGEMODS; ++ami) {
+			data.allAgeMods[MAX_NUM_AGEMODS * ti + ami] = tracerPart.ageMods[ami];
+		}
+	}
 }
 
 void CStarburstProjectile::UpdateTargeting()
@@ -345,12 +386,13 @@ inline int CStarburstProjectile::GetSmokePeriod() const
 
 void CStarburstProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
 
-	const auto wt3 = weaponDef->visuals.texture3;
-	const auto wt1 = weaponDef->visuals.texture1;
+	const auto* wt3 = weaponDef->visuals.texture3;
+	const auto* wt1 = weaponDef->visuals.texture1;
 
 	const SColor lightYellow(255, 200, 150, 1);
 	const SColor lightRed(255, 180, 180, 1);
@@ -366,7 +408,8 @@ void CStarburstProjectile::Draw()
 
 		float curStep = 0.0f;
 
-		for (int ageModIdx = 0, numAgeMods = tracerPart->numAgeMods; ageModIdx < numAgeMods; curStep += TRACER_PARTS_STEP, ++ageModIdx) {
+		for (int ageModIdx = 0; ageModIdx < tracerPart->numAgeMods; ++ageModIdx) {
+			curStep += TRACER_PARTS_STEP;
 			const float ageMod = tracerPart->ageMods[ageModIdx];
 			const float age2 = (a + (curStep / (ospeed + 0.01f))) * 0.2f;
 			const float drawsize = 1.0f + age2 * 0.8f * ageMod * 7;
@@ -400,6 +443,7 @@ void CStarburstProjectile::Draw()
 			{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, wt1->xstart, wt1->yend,   lightRed }
 		);
 	}
+	*/
 }
 
 int CStarburstProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)

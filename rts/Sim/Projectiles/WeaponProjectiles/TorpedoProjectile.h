@@ -12,6 +12,7 @@ public:
 	// creg only
 	CTorpedoProjectile() { }
 	CTorpedoProjectile(const ProjectileParams& params);
+	~CTorpedoProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -30,9 +31,7 @@ private:
 	float tracking;
 	float maxSpeed;
 	int nextBubble;
-
-	float texx;
-	float texy;
+	size_t pgOffset;
 };
 
 

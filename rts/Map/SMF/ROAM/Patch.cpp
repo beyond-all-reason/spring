@@ -242,17 +242,14 @@ void Patch::InitMainVAO() const
 	indxVBO.Bind();
 	vertVBO.Bind();
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribDivisor(0, 0);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
+	VA_TYPE_0::BindVertexAtrribs();
 
 	mainVAO.Unbind();
 
 	indxVBO.Unbind();
 	vertVBO.Unbind();
 
-	glDisableVertexAttribArray(0);
+	VA_TYPE_0::UnbindVertexAtrribs();
 }
 
 void Patch::InitBorderVAO() const
@@ -261,19 +258,12 @@ void Patch::InitBorderVAO() const
 	borderVAO.Bind();
 	borderVBO.Bind();
 
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribDivisor(0, 0);
-	glVertexAttribDivisor(1, 0);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, pos));
-	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, true, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, c));
+	VA_TYPE_C::BindVertexAtrribs();
 
 	borderVAO.Unbind();
 	borderVBO.Unbind();
 
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(0);
+	VA_TYPE_C::UnbindVertexAtrribs();
 }
 
 // -------------------------------------------------------------------------------------------------

@@ -4,6 +4,7 @@
 #include "GeoThermSmokeProjectile.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/Wind.h"
 
@@ -43,8 +44,14 @@ void CGeoThermSmokeProjectile::Update()
 	const float curSpeed = fastmath::sqrt_builtin(speed.SqLength());
 	const float newSpeed = speed.w * (speed.w / curSpeed);
 
-	CWorldObject::SetVelocity((dir = (speed / curSpeed)) * newSpeed);
+	dir = static_cast<float3>(speed) / curSpeed;
+
+	CWorldObject::SetVelocity(dir * newSpeed);
 	CSmokeProjectile::Update();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<SmokeParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+	data.speed = speed;
 }
 
 void CGeoThermSmokeProjectile::UpdateDir()

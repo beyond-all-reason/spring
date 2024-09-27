@@ -15,6 +15,7 @@ public:
 		const float3& v1, const float3& v2,
 		float w1, float w2
 	);
+	~CGeoSquareProjectile() override;
 
 	void Draw() override;
 	void Update() override;
@@ -32,6 +33,8 @@ private:
 	float3 p1, p2, v1, v2; ///< FIXME what is this?
 	float w1, w2; ///< FIXME what is this?
 	float r, g, b, a; ///< RGBA color
+
+	size_t pgOffset;
 };
 
 

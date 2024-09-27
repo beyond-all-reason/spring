@@ -1,10 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef BEAM_LASER_PROJECTILE_H
-#define BEAM_LASER_PROJECTILE_H
+#pragma once
 
 #include "WeaponProjectile.h"
-#include "System/Color.h"
 
 class CBeamLaserProjectile: public CWeaponProjectile
 {
@@ -14,6 +12,7 @@ public:
 	CBeamLaserProjectile() { }
 
 	CBeamLaserProjectile(const ProjectileParams& params);
+	~CBeamLaserProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -22,16 +21,10 @@ public:
 	int GetProjectilesCount() const override;
 
 private:
-	uint8_t coreColStart[4];
-	uint8_t coreColEnd[4];
-	uint8_t edgeColStart[4];
-	uint8_t edgeColEnd[4];
+	uint8_t ccsColor[4];
+	uint8_t cceColor[4];
+	uint8_t ecsColor[4];
+	uint8_t eceColor[4];
 
-	float thickness;
-	float corethickness;
-	float flaresize;
-	float decay;
-	float midtexx;
+	size_t pgOffset;
 };
-
-#endif // BEAM_LASER_PROJECTILE_H

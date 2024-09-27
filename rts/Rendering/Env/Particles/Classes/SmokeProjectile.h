@@ -23,6 +23,7 @@ public:
 		float sizeExpansion,
 		float color
 	);
+	~CSmokeProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -32,13 +33,14 @@ public:
 
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
 
+public:
+	float size;
+protected:
+	size_t pgOffset;
 private:
 	float color;
 	float age;
 	float ageSpeed;
-public:
-	float size;
-private:
 	float startSize;
 	float sizeExpansion;
 	int textureNum;

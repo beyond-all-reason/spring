@@ -1,4 +1,5 @@
 #include "FireBallProjectile.h"
+#include "FireBallProjectile.h"
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
@@ -8,6 +9,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/SpringMath.h"
@@ -19,7 +21,8 @@ CR_BIND_DERIVED(CFireBallProjectile, CWeaponProjectile, )
 CR_REG_METADATA(CFireBallProjectile,(
 	CR_SETFLAG(CF_Synced),
 	CR_MEMBER(sparks),
-	CR_MEMBER(numSparks)
+	CR_MEMBER(numSparks),
+	CR_MEMBER(pgOffset)
 ))
 
 
@@ -37,19 +40,44 @@ CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params): CWeapo
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_FIREBALL_PROJECTILE;
 
-	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
-		drawRadius = weaponDef->size;
-		castShadow = weaponDef->visuals.castShadow;
-	}
+	SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
+	drawRadius = weaponDef->size;
+	castShadow = weaponDef->visuals.castShadow;
 
 	validTextures[1] = IsValidTexture(projectileDrawer->explotex);
 	validTextures[2] = IsValidTexture(projectileDrawer->dguntex);
 	validTextures[0] = validTextures[1] || validTextures[2];
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
+	pgOffset = pg.Add({
+		.sparkPosSize = {},
+		.dgunPos = pos,
+		.dgunSize = radius * 1.3f,
+		.animParams1 = {1.0f},
+		.numSparks = static_cast<int32_t>(numSparks),
+		.animParams2 = {1.0f},
+		.drawOrder = drawOrder,
+		.speed = speed,
+		.checkCol = 1.0f,
+		.texCoord1 = *projectileDrawer->explotex,
+		.texCoord2 = *projectileDrawer->dguntex
+	});
+
+	auto& data = pg.Get(pgOffset);
+	for (uint32_t i = 0; i < numSparks; ++i) {
+		data.sparkPosSize[i] = float4{ sparks[i].pos, sparks[i].size };
+	}
+}
+
+CFireBallProjectile::~CFireBallProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 void CFireBallProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
@@ -68,14 +96,13 @@ void CFireBallProjectile::Draw()
 		col[1] = (numSparks - i) *  6;
 		col[2] = (numSparks - i) *  4;
 
-		#define ept projectileDrawer->explotex
+		const auto* ept = projectileDrawer->explotex;
 		AddEffectsQuad(
 			{ sparks[i].pos - camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xstart, ept->ystart, col },
 			{ sparks[i].pos + camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xend  , ept->ystart, col },
 			{ sparks[i].pos + camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xend  , ept->yend  , col },
 			{ sparks[i].pos - camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xstart, ept->yend  , col }
 		);
-		#undef ept
 	}
 
 	if (validTextures[2])
@@ -83,15 +110,15 @@ void CFireBallProjectile::Draw()
 		col[0] = (maxCol - i) * 25;
 		col[1] = (maxCol - i) * 15;
 		col[2] = (maxCol - i) * 10;
-		#define dgt projectileDrawer->dguntex
+		const auto* dgt = projectileDrawer->dguntex;
 		AddEffectsQuad(
 			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size - camera->GetUp() * size, dgt->xstart, dgt->ystart, col },
 			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size - camera->GetUp() * size, dgt->xend ,  dgt->ystart, col },
 			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size + camera->GetUp() * size, dgt->xend ,  dgt->yend  , col },
 			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size + camera->GetUp() * size, dgt->xstart, dgt->yend  , col }
 		);
-		#undef dgt
 	}
+	*/
 }
 
 void CFireBallProjectile::Update()
@@ -111,6 +138,20 @@ void CFireBallProjectile::Update()
 	TickSparks();
 	UpdateGroundBounce();
 	UpdateInterception();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<FireballParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+
+	for (uint32_t i = 0; i < numSparks; ++i) {
+		data.sparkPosSize[i] = float4{ sparks[i].pos, sparks[i].size };
+	}
+
+	data.numSparks = static_cast<int32_t>(numSparks);
+	data.dgunPos = pos;
+	data.speed = speed;
+	data.checkCol = static_cast<float>(checkCol);
+	//data->animParams1
+	//data->animParams2
 }
 
 

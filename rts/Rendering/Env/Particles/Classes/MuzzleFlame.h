@@ -12,6 +12,7 @@ class CMuzzleFlame : public CProjectile
 public:
 	CMuzzleFlame() { }
 	CMuzzleFlame(const float3& pos, const float3& speed, const float3& dir, float size);
+	~CMuzzleFlame() override;
 
 	void Draw() override;
 	void Update() override;
@@ -25,6 +26,7 @@ private:
 	int numSmoke;
 
 	std::vector<float3> randSmokeDir;
+	std::vector<size_t> pgOffsets;
 };
 
 

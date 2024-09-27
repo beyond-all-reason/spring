@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _FLAME_PROJECTILE_H_
-#define _FLAME_PROJECTILE_H_
+#pragma once
 
 #include "WeaponProjectile.h"
 
@@ -13,6 +12,7 @@ public:
 	CFlameProjectile() { }
 
 	CFlameProjectile(const ProjectileParams& params);
+	~CFlameProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -29,6 +29,5 @@ private:
 	float invttl;
 
 	float3 spread;
+	size_t pgOffset;
 };
-
-#endif // _FLAME_PROJECTILE_H_

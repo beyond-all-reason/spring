@@ -8,6 +8,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "System/creg/DefTypes.h"
@@ -50,6 +51,12 @@ CBitmapMuzzleFlame::CBitmapMuzzleFlame()
 	deleteMe  = false;
 }
 
+CBitmapMuzzleFlame::~CBitmapMuzzleFlame()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
+	pg.Del(pgOffset);
+}
+
 void CBitmapMuzzleFlame::Serialize(creg::ISerializer* s)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -68,6 +75,7 @@ void CBitmapMuzzleFlame::Serialize(creg::ISerializer* s)
 
 void CBitmapMuzzleFlame::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateRotation();
 	UpdateAnimParams();
@@ -133,12 +141,30 @@ void CBitmapMuzzleFlame::Draw()
 			{ fpos + bounds[11], frontTexture->xstart, frontTexture->yend , col }
 		);
 	}
+	*/
 }
 
 void CBitmapMuzzleFlame::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe |= ((ttl--) == 0);
+
+	const float life = (gs->frameNum - createFrame) * invttl;
+	auto [col0, col1, edge0, edge1] = colorMap->GetColorsPair(life);
+
+	{
+		const auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
+		if (const auto& d = pg.Get(pgOffset); std::forward_as_tuple(col0, col1, edge0, edge1) == std::forward_as_tuple(d.color0, d.color1, d.edge0, d.edge1))
+			return;
+	}
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+	//data->pos = pos; // doesn't seem to get updated
+	data.color0 = col0;
+	data.color1 = col1;
+	data.edge0 = edge0;
+	data.edge1 = edge1;
 }
 
 void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
@@ -147,6 +173,29 @@ void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 	CProjectile::Init(owner, offset);
 
 	invttl = 1.0f / ttl;
+
+	auto [col0, col1, edge0, edge1] = colorMap->GetColorsPair();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BitmapMuzzleFlameParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.invttl = invttl,
+		.dir = dir,
+		.createFrame = createFrame,
+		.rotParams = rotParams,
+		.drawOrder = drawOrder,
+		.animParams = animParams,
+		.sizeGrowth = sizeGrowth,
+		.size = size,
+		.len = length,
+		.frontOffset = frontOffset,
+		.color0 = col0,
+		.color1 = col1,
+		.edge0 = edge0,
+		.edge1 = edge1,
+		.sideTexture = *sideTexture,
+		.frontTexture = *frontTexture
+	});
 
 	SetDrawRadius(std::max(size, length));
 }

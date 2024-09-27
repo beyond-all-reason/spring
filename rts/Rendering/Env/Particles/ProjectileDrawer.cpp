@@ -23,6 +23,7 @@
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Common/ModelDrawerHelpers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
@@ -377,7 +378,7 @@ void CProjectileDrawer::UpdateDrawFlags()
 			continue;
 
 		auto hasModel = (&rp == &renderProjectiles[true]);
-		for_mt(0, rp.size(), [&rp, hasModel](int i) {
+		for (int i = 0; i < rp.size(); i++) {
 			CProjectile* p = rp[i];
 			assert((p->model != nullptr) == hasModel);
 
@@ -409,28 +410,28 @@ void CProjectileDrawer::UpdateDrawFlags()
 
 				switch (camType)
 				{
-					case CCamera::CAMTYPE_PLAYER: {
-						if (hasModel)
-							p->AddDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
-						else
-							p->AddDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
+				case CCamera::CAMTYPE_PLAYER: {
+					if (hasModel)
+						p->AddDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
+					else
+						p->AddDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
 
-						if (p->drawPos.y - p->GetDrawRadius() < 0.0f)
-							p->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
-					} break;
-					case CCamera::CAMTYPE_UWREFL: {
-						if (CModelDrawerHelper::ObjectVisibleReflection(p->drawPos, cam->GetPos(), p->GetDrawRadius()))
-							p->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
-					} break;
-					case CCamera::CAMTYPE_SHADOW: {
-						if (p->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
-							p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-						else if (p->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
-							p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
-					} break;
+					if (p->drawPos.y - p->GetDrawRadius() < 0.0f)
+						p->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
+				} break;
+				case CCamera::CAMTYPE_UWREFL: {
+					if (CModelDrawerHelper::ObjectVisibleReflection(p->drawPos, cam->GetPos(), p->GetDrawRadius()))
+						p->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
+				} break;
+				case CCamera::CAMTYPE_SHADOW: {
+					if (p->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
+						p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
+					else if (p->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+						p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+				} break;
 				}
 			}
-		});
+		}
 	}
 }
 
@@ -741,12 +742,15 @@ void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflec
 {
 	ZoneScopedN("ProjectileDrawer::DrawAlpha");
 
+	ParticleGeneratorHandler::GetInstance().GenerateAll();
+
+
 	static constexpr std::array<float, 4> clipPlanes[] {
 		{ 0.0f, -1.0f, 0.0f, 0.0f},
 		{ 0.0f,  1.0f, 0.0f, 0.0f},
 		{ 0.0f,  0.0f, 0.0f, 1.0f}
 	};
-
+#if 0
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
 		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
@@ -845,6 +849,47 @@ void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflec
 		}
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+#endif
+	const auto* currCam = CCamera::GetActive();
+	const auto& sky = ISky::GetSky();
+
+	const bool needSoften = (wantSoften > 0) && !drawReflection && !drawRefraction;
+	eventHandler.DrawWorldPreParticles();
+
+	using namespace GL::State;
+	auto state = GL::SubState(
+		Blending(GL_TRUE),
+		BlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA),
+		DepthTest(GL_TRUE),
+		DepthMask(GL_FALSE),
+		ClipDistance<0>(GL_TRUE)
+	);
+
+	glActiveTexture(GL_TEXTURE0); textureAtlas->BindTexture();
+
+	if (needSoften) {
+		glActiveTexture(GL_TEXTURE15); glBindTexture(GL_TEXTURE_2D, depthBufferCopy->GetDepthBufferTexture(false));
+	}
+	const auto& clipPlane = clipPlanes[awrs];
+	auto* fxShader = fxShaders[needSoften];
+	auto token = fxShader->EnableScoped();
+	fxShader->SetUniform("clipPlane", clipPlane[0], clipPlane[1], clipPlane[2], clipPlane[3]);
+	fxShader->SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f);
+	if (needSoften) {
+		fxShader->SetUniform("softenThreshold", CProjectileDrawer::softenThreshold[0]);
+	}
+
+	fxShader->SetUniform("camPos", currCam->pos.x, currCam->pos.y, currCam->pos.z);
+	fxShader->SetUniform("fogColor", sky->fogColor.x, sky->fogColor.y, sky->fogColor.z);
+	fxShader->SetUniform("fogParams", sky->fogStart * currCam->GetFarPlaneDist(), sky->fogEnd * currCam->GetFarPlaneDist());
+
+	ParticleGeneratorHandler::GetInstance().RenderAll();
+
+	if (needSoften) {
+		glBindTexture(GL_TEXTURE_2D, 0); //15th slot
+		glActiveTexture(GL_TEXTURE0);
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void CProjectileDrawer::DrawShadowOpaque()

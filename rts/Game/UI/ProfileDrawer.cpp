@@ -12,6 +12,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Features/FeatureMemPool.h"
 #include "Sim/Misc/GlobalConstants.h" // for GAME_SPEED
 #include "Sim/Misc/GlobalSynced.h"
@@ -132,8 +133,14 @@ static void DrawBufferStats(const float2 pos)
 			);
 			bias += 0.02f;
 		}
-
-		#undef FMT
+		static constexpr const char* FMT2 = "\tGPU Particles={tq=%u},{te=%u},{cq=%u},{oobq=%u}";
+		const auto& pghStats = ParticleGeneratorHandler::GetInstance().GetStats();
+		font->glFormat(pos.x, pos.y - (0.025f + bias), 0.5f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, FMT2,
+			pghStats.totalQuads,
+			pghStats.totalElems,
+			pghStats.culledQuads,
+			pghStats.oobQuads
+		);
 	}
 }
 

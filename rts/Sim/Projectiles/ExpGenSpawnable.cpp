@@ -235,9 +235,9 @@ void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr
 
 	//pos, uvw, uvmm, col
 	rb.AddQuadTriangles(
-		{ tl.pos, float3{ tl.s, tl.t, layer }, uvInfo, animInfo, tl.c },
-		{ tr.pos, float3{ tr.s, tr.t, layer }, uvInfo, animInfo, tr.c },
-		{ br.pos, float3{ br.s, br.t, layer }, uvInfo, animInfo, br.c },
-		{ bl.pos, float3{ bl.s, bl.t, layer }, uvInfo, animInfo, bl.c }
+		{ float4{ tl.pos, 0.0f }, float4{ tl.s, tl.t, layer, 0.0f }, uvInfo, animInfo, tl.c },
+		{ float4{ tr.pos, 0.0f }, float4{ tr.s, tr.t, layer, 0.0f }, uvInfo, animInfo, tr.c },
+		{ float4{ br.pos, 0.0f }, float4{ br.s, br.t, layer, 0.0f }, uvInfo, animInfo, br.c },
+		{ float4{ bl.pos, 0.0f }, float4{ bl.s, bl.t, layer, 0.0f }, uvInfo, animInfo, bl.c }
 	);
 }

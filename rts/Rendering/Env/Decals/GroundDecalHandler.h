@@ -14,6 +14,7 @@
 #include "Rendering/GL/VAO.h"
 #include "Rendering/DepthBufferCopy.h"
 #include "Rendering/Textures/TextureRenderAtlas.h"
+#include "Rendering/Common/UpdateList.h"
 #include "System/EventClient.h"
 #include "System/UnorderedMap.hpp"
 #include "System/creg/creg.h"
@@ -36,37 +37,6 @@ class CGroundDecalHandler: public IGroundDecalDrawer, public CEventClient, publi
 {
 	CR_DECLARE_DERIVED(CGroundDecalHandler)
 	CR_DECLARE_SUB(UnitMinMaxHeight)
-	CR_DECLARE_SUB(DecalUpdateList)
-public:
-	class DecalUpdateList {
-		CR_DECLARE_STRUCT(DecalUpdateList)
-	public:
-		using IteratorPair = std::pair<std::vector<bool>::iterator, std::vector<bool>::iterator>;
-	public:
-		DecalUpdateList()
-			: updateList()
-			, changed(true)
-		{}
-
-		void Resize(size_t newSize) { updateList.resize(newSize); SetNeedUpdateAll(); }
-		void Reserve(size_t reservedSize) { updateList.reserve(reservedSize); }
-
-		void SetUpdate(const IteratorPair& it);
-		void SetUpdate(size_t offset);
-
-		void SetNeedUpdateAll();
-		void ResetNeedUpdateAll();
-
-		void EmplaceBackUpdate();
-
-		bool NeedUpdate() const { return changed; }
-
-		std::optional<IteratorPair> GetNext(const std::optional<IteratorPair>& prev = std::nullopt);
-		std::pair<size_t, size_t> GetOffsetAndSize(const IteratorPair& it);
-	private:
-		std::vector<bool> updateList;
-		bool changed;
-	};
 public:
 	CGroundDecalHandler();
 	~CGroundDecalHandler() override;
@@ -195,9 +165,9 @@ private:
 	spring::unordered_map<DecalOwner, size_t, std::hash<DecalOwner>> decalOwners; // for tracks, plates and ghosts
 	spring::unordered_map<int, UnitMinMaxHeight> unitMinMaxHeights; // for tracks
 	spring::unordered_map<uint32_t, size_t> idToPos;
-	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<size_t, size_t>>> idToCmInfo;
+	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<uint32_t, uint32_t>>> idToCmInfo;
 
-	DecalUpdateList decalsUpdateList;
+	UpdateList decalsUpdateList;
 
 	uint32_t nextId;
 	std::vector<uint32_t> freeIds;

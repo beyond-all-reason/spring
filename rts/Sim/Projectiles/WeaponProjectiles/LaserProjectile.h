@@ -13,6 +13,7 @@ public:
 	CLaserProjectile() { }
 
 	CLaserProjectile(const ProjectileParams& params);
+	~CLaserProjectile() override;
 
 	void Draw() override;
 	void Update() override;
@@ -44,8 +45,7 @@ private:
 	 */
 	int stayTime;
 
-	float3 color;
-	float3 color2;
+	size_t pgOffset;
 };
 
 #endif /* LASER_PROJECTILE_H */

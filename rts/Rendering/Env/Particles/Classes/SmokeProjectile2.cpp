@@ -9,6 +9,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/Wind.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
@@ -71,8 +72,31 @@ CSmokeProjectile2::CSmokeProjectile2(
 
 	glowFalloff = 4.5f + guRNG.NextFloat() * 6;
 	textureNum = (int)(guRNG.NextInt(projectileDrawer->NumSmokeTextures()));
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<SmokeParticleGenerator2>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.size = size,
+		.wantedPos = wantedPos,
+		.startSize = startSize,
+		.sizeExpansion = sizeExpansion,
+		.ageRate = ageSpeed,
+		.glowFalloff = glowFalloff,
+		.speed = speed,
+		.createFrame = createFrame,
+		.animParams = animParams,
+		.color = SColor{color, color, color, 1.0f},
+		.rotParams = rotParams,
+		.drawOrder = drawOrder,
+		.texCoord = *projectileDrawer->GetSmokeTexture(textureNum)
+	});
 }
 
+CSmokeProjectile2::~CSmokeProjectile2()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<SmokeParticleGenerator2>();
+	pg.Del(pgOffset);
+}
 
 
 void CSmokeProjectile2::Init(const CUnit* owner, const float3& offset)

@@ -4,8 +4,8 @@
 #include "Game/Camera.h"
 #include "LaserProjectile.h"
 #include "Map/Ground.h"
-#include "Rendering/Env/Particles/Classes/SimpleParticleSystem.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
@@ -18,14 +18,13 @@ CR_BIND_DERIVED(CLaserProjectile, CWeaponProjectile, )
 CR_REG_METADATA(CLaserProjectile,(
 	CR_SETFLAG(CF_Synced),
 	CR_MEMBER(intensity),
-	CR_MEMBER(color),
-	CR_MEMBER(color2),
 	CR_MEMBER(speedf),
 	CR_MEMBER(maxLength),
 	CR_MEMBER(curLength),
 	CR_MEMBER(stayTime),
 	CR_MEMBER(intensityFalloff),
-	CR_MEMBER(midtexx)
+	CR_MEMBER(midtexx),
+	CR_MEMBER(pgOffset)
 ))
 
 
@@ -42,22 +41,42 @@ CLaserProjectile::CLaserProjectile(const ProjectileParams& params): CWeaponProje
 {
 	projectileType = WEAPON_LASER_PROJECTILE;
 
-	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
+	SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
 
-		maxLength = weaponDef->duration * (speedf * GAME_SPEED);
-		intensity = weaponDef->intensity;
-		intensityFalloff = intensity * weaponDef->falloffRate;
+	maxLength = weaponDef->duration * (speedf * GAME_SPEED);
+	intensity = weaponDef->intensity;
+	intensityFalloff = intensity * weaponDef->falloffRate;
 
-		midtexx =
-			(weaponDef->visuals.texture2->xstart +
-			(weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
-
-		color = weaponDef->visuals.color;
-		color2 = weaponDef->visuals.color2;
-	}
+	midtexx =
+		(weaponDef->visuals.texture2->xstart +
+		(weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
 
 	drawRadius = maxLength;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LaserParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.curLength = curLength,
+		.dir = dir,
+		.maxLength = maxLength,
+		.thickness = weaponDef->visuals.thickness,
+		.coreThickness = weaponDef->visuals.corethickness,
+		.color1 = SColor{},
+		.color2 = SColor{},
+		.lodDistance = static_cast<float>(weaponDef->visuals.lodDistance),
+		.drawOrder = drawOrder,
+		.checkCol = static_cast<int32_t>(checkCol),
+		.stayTime = static_cast<float>(stayTime),
+		.speed = float4{ speed.xyz, speedf },
+		.texCoord1 = *weaponDef->visuals.texture1,
+		.texCoord2 = *weaponDef->visuals.texture2
+	});
+}
+
+CLaserProjectile::~CLaserProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LaserParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 void CLaserProjectile::Update()
@@ -73,8 +92,23 @@ void CLaserProjectile::Update()
 	// pre-decrement ttl: if projectile has to live for N frames
 	// we want to check for collisions only N (not N + 1) times!
 	checkCol &= ((ttl -= 1) >= 0);
-	deleteMe |= ((curLength <= 0.01f) && ( weaponDef->laserHardStop));
+	deleteMe |= ((curLength <= 0.01f) && (weaponDef->laserHardStop));
 	deleteMe |= ((intensity <= 0.01f) && (!weaponDef->laserHardStop));
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<LaserParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+
+	const auto& c1 = weaponDef->visuals.color;
+	const auto& c2 = weaponDef->visuals.color2;
+
+	data.pos = pos;
+	data.curLength = curLength;
+	data.dir = dir;
+	data.color1 = SColor(intensity * c1.r, intensity * c1.g, intensity * c1.b, 1.0f / 255.0f);
+	data.color2 = SColor(intensity * c2.r, intensity * c2.g, intensity * c2.b, 1.0f / 255.0f);
+	data.checkCol = static_cast<int32_t>(checkCol);
+	data.stayTime = static_cast<float>(stayTime);
+	data.speed = float4{ speed.xyz, speedf };
 }
 
 void CLaserProjectile::UpdateIntensity() {
@@ -177,10 +211,10 @@ void CLaserProjectile::Collision()
 
 void CLaserProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	// dont draw if a 3d model has been defined for us
-	if (model != nullptr)
-		return;
+	assert(!model);
 
 	if (!validTextures[0])
 		return;
@@ -191,6 +225,9 @@ void CLaserProjectile::Draw()
 	float3 dir1(dif.cross(dir));
 	dir1.Normalize();
 	float3 dir2(dif.cross(dir1));
+
+	const auto& color  = weaponDef->visuals.color;
+	const auto& color2 = weaponDef->visuals.color2;
 
 	const uint8_t col[4] = {
 		(uint8_t)(color.x * intensity * 255),
@@ -206,8 +243,8 @@ void CLaserProjectile::Draw()
 		1 //intensity*255;
 	};
 
-	const float size = weaponDef->visuals.thickness;
-	const float coresize = size * weaponDef->visuals.corethickness;
+	const float& size = weaponDef->visuals.thickness;
+	const float& coresize = size * weaponDef->visuals.corethickness;
 
 	if (camDist < weaponDef->visuals.lodDistance) {
 		const float3 pos2 = drawPos - (dir * curLength);
@@ -295,6 +332,7 @@ void CLaserProjectile::Draw()
 			);
 		}
 	}
+	*/
 }
 
 int CLaserProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)

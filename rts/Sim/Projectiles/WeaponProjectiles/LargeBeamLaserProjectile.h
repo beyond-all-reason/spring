@@ -15,6 +15,7 @@ public:
 	CLargeBeamLaserProjectile() { }
 
 	CLargeBeamLaserProjectile(const ProjectileParams& params);
+	~CLargeBeamLaserProjectile() override;
 
 	void Update() override;
 	void Draw() override;
@@ -23,8 +24,8 @@ public:
 	int GetProjectilesCount() const override;
 
 private:
-	uint8_t coreColStart[4];
-	uint8_t edgeColStart[4];
+	uint8_t ccsColor[4];
+	uint8_t ecsColor[4];
 
 	float thickness;
 	float corethickness;
@@ -33,9 +34,7 @@ private:
 	float scrollspeed;
 	float pulseSpeed;
 	float decay;
-
-	AtlasedTexture beamtex;
-	AtlasedTexture sidetex;
+	size_t pgOffset;
 };
 
 #endif // LARGE_BEAM_LASER_PROJECTILE_H

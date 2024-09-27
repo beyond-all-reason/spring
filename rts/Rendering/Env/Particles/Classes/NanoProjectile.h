@@ -39,6 +39,8 @@ public:
 
 	int deathFrame;
 	SColor color;
+
+	size_t pgOffset;
 };
 
 #endif /* NANO_PROJECTILE_H */

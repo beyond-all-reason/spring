@@ -1,3 +1,4 @@
+#include "BeamLaserProjectile.h"
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
@@ -6,6 +7,7 @@
 #include "Game/CameraHandler.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -17,62 +19,74 @@ CR_BIND_DERIVED(CBeamLaserProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CBeamLaserProjectile,(
 	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(coreColStart),
-	CR_MEMBER(coreColEnd),
-	CR_MEMBER(edgeColStart),
-	CR_MEMBER(edgeColEnd),
-	CR_MEMBER(thickness),
-	CR_MEMBER(corethickness),
-	CR_MEMBER(flaresize),
-	CR_MEMBER(decay),
-	CR_MEMBER(midtexx)
+	CR_MEMBER(ccsColor),
+	CR_MEMBER(cceColor),
+	CR_MEMBER(ecsColor),
+	CR_MEMBER(eceColor),
+	CR_MEMBER(pgOffset)
 ))
 
 
-CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWeaponProjectile(params)
-	, thickness(0.0f)
-	, corethickness(0.0f)
-	, flaresize(0.0f)
-	, decay(0.0f)
-	, midtexx(0.0f)
+CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params)
+	: CWeaponProjectile(params)
+	, pgOffset(-1)
 {
 	projectileType = WEAPON_BEAMLASER_PROJECTILE;
 
-	if (weaponDef != nullptr) {
-		assert(weaponDef->IsHitScanWeapon());
+	assert(weaponDef->IsHitScanWeapon());
+/*
+	thickness = weaponDef->visuals.thickness;
+	corethickness = weaponDef->visuals.corethickness;
+	flaresize = weaponDef->visuals.laserflaresize;
+	decay = weaponDef->visuals.beamdecay;
 
-		thickness = weaponDef->visuals.thickness;
-		corethickness = weaponDef->visuals.corethickness;
-		flaresize = weaponDef->visuals.laserflaresize;
-		decay = weaponDef->visuals.beamdecay;
+	midtexx =
+		(weaponDef->visuals.texture2->xstart +
+		(weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
+*/
+	ccsColor[0] = (weaponDef->visuals.color2.x * params.startAlpha);
+	ccsColor[1] = (weaponDef->visuals.color2.y * params.startAlpha);
+	ccsColor[2] = (weaponDef->visuals.color2.z * params.startAlpha);
+	ccsColor[3] = 1;
+	cceColor[0] = (weaponDef->visuals.color2.x * params.endAlpha);
+	cceColor[1] = (weaponDef->visuals.color2.y * params.endAlpha);
+	cceColor[2] = (weaponDef->visuals.color2.z * params.endAlpha);
+	cceColor[3] = 1;
+	ecsColor[0] = (weaponDef->visuals.color.x * params.startAlpha);
+	ecsColor[1] = (weaponDef->visuals.color.y * params.startAlpha);
+	ecsColor[2] = (weaponDef->visuals.color.z * params.startAlpha);
+	ecsColor[3] = 1;
+	eceColor[0] = (weaponDef->visuals.color.x * params.endAlpha);
+	eceColor[1] = (weaponDef->visuals.color.y * params.endAlpha);
+	eceColor[2] = (weaponDef->visuals.color.z * params.endAlpha);
+	eceColor[3] = 1;
 
-		midtexx =
-			(weaponDef->visuals.texture2->xstart +
-			(weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
+	pgOffset = pg.Add({
+		.startPos = startPos,
+		.ccsColor = SColor(ccsColor[0], ccsColor[1], ccsColor[2], ccsColor[3]),
+		.targetPos = targetPos,
+		.cceColor = SColor(cceColor[0], cceColor[1], cceColor[2], cceColor[3]),
+		.animParams1 = animParams,
+		.ecsColor = SColor(ecsColor[0], ecsColor[1], ecsColor[2], ecsColor[3]),
+		.animParams2 = {},
+		.eceColor = SColor(eceColor[0], eceColor[1], eceColor[2], eceColor[3]),
+		.animParams3 = {},
+		.drawOrder = drawOrder,
+		.texCoord1 = *weaponDef->visuals.texture1,
+		.texCoord2 = *weaponDef->visuals.texture2,
+		.texCoord3 = *weaponDef->visuals.texture3,
+		.thickness = weaponDef->visuals.thickness,
+		.coreThickness = weaponDef->visuals.corethickness,
+		.flareSize = weaponDef->visuals.laserflaresize,
+		.midTexX2 = (weaponDef->visuals.texture2->xend + weaponDef->visuals.texture2->xstart) * 0.5f
+	});
+}
 
-		coreColStart[0] = (weaponDef->visuals.color2.x * params.startAlpha);
-		coreColStart[1] = (weaponDef->visuals.color2.y * params.startAlpha);
-		coreColStart[2] = (weaponDef->visuals.color2.z * params.startAlpha);
-		coreColStart[3] = 1;
-		coreColEnd[0] = (weaponDef->visuals.color2.x * params.endAlpha);
-		coreColEnd[1] = (weaponDef->visuals.color2.y * params.endAlpha);
-		coreColEnd[2] = (weaponDef->visuals.color2.z * params.endAlpha);
-		coreColEnd[3] = 1;
-		edgeColStart[0] = (weaponDef->visuals.color.x * params.startAlpha);
-		edgeColStart[1] = (weaponDef->visuals.color.y * params.startAlpha);
-		edgeColStart[2] = (weaponDef->visuals.color.z * params.startAlpha);
-		edgeColStart[3] = 1;
-		edgeColEnd[0] = (weaponDef->visuals.color.x * params.endAlpha);
-		edgeColEnd[1] = (weaponDef->visuals.color.y * params.endAlpha);
-		edgeColEnd[2] = (weaponDef->visuals.color.z * params.endAlpha);
-		edgeColEnd[3] = 1;
-	}
-	else {
-		memset(&coreColStart[0], 0, sizeof(coreColStart));
-		memset(&coreColEnd[0], 0, sizeof(coreColEnd));
-		memset(&edgeColStart[0], 0, sizeof(edgeColStart));
-		memset(&edgeColEnd[0], 0, sizeof(edgeColEnd));
-	}
+CBeamLaserProjectile::~CBeamLaserProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 
@@ -80,24 +94,38 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWea
 void CBeamLaserProjectile::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	const auto& decay = weaponDef->visuals.beamdecay;
+
 	if ((--ttl) <= 0) {
 		deleteMe = true;
 	} else {
 		for (int i = 0; i < 3; i++) {
-			coreColStart[i] *= decay;
-			coreColEnd[i]   *= decay;
-			edgeColStart[i] *= decay;
-			edgeColEnd[i]   *= decay;
+			ccsColor[i] *= decay;
+			cceColor[i]   *= decay;
+			ecsColor[i] *= decay;
+			eceColor[i]   *= decay;
 		}
+
+		const auto& flaresize = weaponDef->visuals.laserflaresize;
 
 		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f, flaresize, 0.0f, owner(), nullptr);
 	}
 
 	UpdateInterception();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<BeamLaserParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+
+	data.ccsColor = SColor(ccsColor[0], ccsColor[1], ccsColor[2], ccsColor[3]);
+	data.cceColor = SColor(cceColor[0], cceColor[1], cceColor[2], cceColor[3]);
+	data.ecsColor = SColor(ecsColor[0], ecsColor[1], ecsColor[2], ecsColor[3]);
+	data.eceColor = SColor(eceColor[0], eceColor[1], eceColor[2], eceColor[3]);
 }
 
 void CBeamLaserProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
@@ -121,9 +149,9 @@ void CBeamLaserProjectile::Draw()
 	const float3& pos1 = startPos;
 	const float3& pos2 = targetPos;
 
-	#define WT1 weaponDef->visuals.texture1
-	#define WT2 weaponDef->visuals.texture2
-	#define WT3 weaponDef->visuals.texture3
+	const auto* WT1 = weaponDef->visuals.texture1;
+	const auto* WT2 = weaponDef->visuals.texture2;
+	const auto* WT3 = weaponDef->visuals.texture3;
 
 	if (playerCamDistSq < Square(1000.0f)) {
 		if (validTextures[2]) {
@@ -205,16 +233,13 @@ void CBeamLaserProjectile::Draw()
 			{ pos1 - camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xstart, WT3->yend,   coreColStart }
 		);
 	}
-
-	#undef WT3
-	#undef WT2
-	#undef WT1
+	*/
 }
 
 void CBeamLaserProjectile::DrawOnMinimap() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const SColor color = { edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u };
+	const SColor color = { ecsColor[0], ecsColor[1], ecsColor[2], 255u };
 
 	AddMiniMapVertices({ startPos , color }, { targetPos, color });
 }

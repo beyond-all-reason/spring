@@ -18,6 +18,7 @@ public:
 	CStarburstProjectile() { }
 
 	CStarburstProjectile(const ProjectileParams& params);
+	~CStarburstProjectile() override;
 
 	void Collision(CUnit* unit) override;
 	void Collision(CFeature* feature) override;
@@ -82,6 +83,7 @@ private:
 
 	TracerPart tracerParts[NUM_TRACER_PARTS];
 	CSmokeTrailProjectile* smokeTrail = nullptr;
+	size_t pgOffset;
 };
 
 #endif /* STARBURST_PROJECTILE_H */

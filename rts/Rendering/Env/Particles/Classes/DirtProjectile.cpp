@@ -10,6 +10,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 
 #include "System/Misc/TracyDefs.h"
@@ -52,6 +53,24 @@ CDirtProjectile::CDirtProjectile(
 	checkCol = false;
 	alphaFalloff = 255 / ttl;
 	texture = projectileDrawer->randdotstex;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<DirtParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.alpha = alpha,
+		.speed = speed,
+		.color = SColor(color),
+		.size = size,
+		.sizeExpansion = sizeExpansion,
+		.drawOrder = drawOrder,
+		.texCoord = *texture
+	});
+}
+
+CDirtProjectile::~CDirtProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<DirtParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 CDirtProjectile::CDirtProjectile() :
@@ -88,6 +107,15 @@ void CDirtProjectile::Update()
 
 	deleteMe |= (CGround::GetApproximateHeight(pos.x, pos.z, false) - 40.0f > pos.y);
 	deleteMe |= (alpha <= 0.0f);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<DirtParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+
+	data.pos = pos;
+	data.alpha = alpha;
+	data.speed = speed;
+	data.size = size;
+	data.sizeExpansion = sizeExpansion;
 }
 
 void CDirtProjectile::Draw()

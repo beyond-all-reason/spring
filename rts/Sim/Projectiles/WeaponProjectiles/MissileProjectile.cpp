@@ -9,6 +9,7 @@
 #include "Rendering/Env/Particles/Classes/SmokeTrailProjectile.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -44,7 +45,8 @@ CR_REG_METADATA(CMissileProjectile,(
 	CR_MEMBER(extraHeight),
 	CR_MEMBER(extraHeightDecay),
 	CR_MEMBER(extraHeightTime),
-	CR_IGNORED(smokeTrail)
+	CR_IGNORED(smokeTrail),
+	CR_MEMBER(pgOffset)
 ))
 
 
@@ -75,31 +77,49 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 	if (model != nullptr)
 		SetRadiusAndHeight(model);
 
-	if (weaponDef != nullptr) {
-		maxSpeed = weaponDef->projectilespeed;
-		isDancing = (weaponDef->dance > 0);
-		isWobbling = (weaponDef->wobble > 0);
+	maxSpeed = weaponDef->projectilespeed;
+	isDancing = (weaponDef->dance > 0);
+	isWobbling = (weaponDef->wobble > 0);
 
-		if (weaponDef->trajectoryHeight > 0.0f) {
-			const float dist = pos.distance(targetPos);
+	if (weaponDef->trajectoryHeight > 0.0f) {
+		const float dist = pos.distance(targetPos);
 
-			assert(maxSpeed > 0.0f);
-			assert((std::max(dist, maxSpeed) / maxSpeed) >= 1.0f);
+		assert(maxSpeed > 0.0f);
+		assert((std::max(dist, maxSpeed) / maxSpeed) >= 1.0f);
 
-			extraHeight = (dist * weaponDef->trajectoryHeight);
-			extraHeightTime = int(std::max(dist, maxSpeed) / maxSpeed);
-			extraHeightDecay = extraHeight / extraHeightTime;
-		}
+		extraHeight = (dist * weaponDef->trajectoryHeight);
+		extraHeightTime = int(std::max(dist, maxSpeed) / maxSpeed);
+		extraHeightDecay = extraHeight / extraHeightTime;
 	}
 
 	drawRadius = radius + maxSpeed * 8.0f;
-	castShadow = weaponDef ? weaponDef->visuals.castShadow : true;
+	castShadow = weaponDef->visuals.castShadow;
 
 	CUnit* u = dynamic_cast<CUnit*>(target);
 	if (u == nullptr)
 		return;
 
 	u->IncomingMissile(this);
+
+	if (model)
+		return;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<MissileParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.fsize = radius * 0.4f,
+		.speed = speed,
+		.drawOrder = drawOrder,
+		.texCoord = *weaponDef->visuals.texture1
+	});
+}
+
+CMissileProjectile::~CMissileProjectile()
+{
+	if (!model) {
+		auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<MissileParticleGenerator>();
+		pg.Del(pgOffset);
+	}
 }
 
 void CMissileProjectile::Collision()
@@ -217,7 +237,7 @@ void CMissileProjectile::Update()
 			SetDirectionAndSpeed(dir, speed.w);
 		}
 
-		explGenHandler.GenExplosion(cegID, pos, dir, ttl, damages->damageAreaOfEffect, 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(cegID, pos + speed.xyz, dir, 0.0f, damages->damageAreaOfEffect, 0.0f, owner(), nullptr);
 	} else {
 		if (weaponDef->selfExplode) {
 			Collision();
@@ -264,6 +284,15 @@ void CMissileProjectile::Update()
 
 	UpdateInterception();
 	UpdateGroundBounce();
+
+	if (model)
+		return;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<MissileParticleGenerator>();
+	auto& data = pg.Get(pgOffset);
+	data.speed = speed;
+	data.pos = pos;
+	data.fsize = radius * 0.4f;
 }
 
 float3 CMissileProjectile::UpdateTargeting() {
@@ -376,6 +405,7 @@ void CMissileProjectile::UpdateGroundBounce() {
 
 void CMissileProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[1])
 		return;
@@ -390,6 +420,7 @@ void CMissileProjectile::Draw()
 		{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   lightYellow },
 		{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   lightYellow }
 	);
+	*/
 }
 
 int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)

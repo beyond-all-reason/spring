@@ -1,3 +1,4 @@
+#include "EmgProjectile.h"
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
@@ -6,18 +7,21 @@
 #include "Map/Ground.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
+#include "Sim/Misc/GlobalSynced.h"
 
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CEmgProjectile, CWeaponProjectile, )
 
-CR_REG_METADATA(CEmgProjectile,(
+CR_REG_METADATA(CEmgProjectile, (
 	CR_SETFLAG(CF_Synced),
 	CR_MEMBER(intensity),
-	CR_MEMBER(color)
+	CR_MEMBER(color),
+	CR_MEMBER(pgOffset)
 ))
 
 
@@ -26,17 +30,33 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EMG_PROJECTILE;
 
-	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
-		drawRadius = weaponDef->size;
+	SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
+	drawRadius = weaponDef->size;
 
-		intensity = weaponDef->intensity;
-		color = weaponDef->visuals.color;
+	intensity = weaponDef->intensity;
+	color = weaponDef->visuals.color;
 
-		castShadow = weaponDef->visuals.castShadow;
-	} else {
-		intensity = 0.0f;
-	}
+	castShadow = weaponDef->visuals.castShadow;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<EmgParticleGenerator>();
+	
+	pgOffset = pg.Add({
+		.pos = pos,
+		.size = drawRadius,
+		.speed = speed,
+		.createFrame = createFrame,
+		.animParams = animParams,
+		.color = SColor(color.x, color.y, color.z, 1.0f),
+		.rotParams = rotParams,
+		.drawOrder = drawOrder,
+		.texCoord = *weaponDef->visuals.texture1,
+	});
+}
+
+CEmgProjectile::~CEmgProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<EmgParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 void CEmgProjectile::Update()
@@ -62,10 +82,19 @@ void CEmgProjectile::Update()
 	UpdateInterception();
 
 	--ttl;
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<EmgParticleGenerator>();
+
+	auto& data = pg.Get(pgOffset);
+	data.pos = pos;
+	data.color = SColor(color.x, color.x, color.z, 1.0f) * intensity;
+	data.animParams = animParams;
+	data.rotParams = rotParams;
 }
 
 void CEmgProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
@@ -83,6 +112,7 @@ void CEmgProjectile::Draw()
 		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   col },
 		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   col }
 	);
+	*/
 }
 
 int CEmgProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)

@@ -14,6 +14,7 @@ class CBitmapMuzzleFlame : public CProjectile
 
 public:
 	CBitmapMuzzleFlame();
+	~CBitmapMuzzleFlame() override;
 
 	void Serialize(creg::ISerializer* s);
 
@@ -39,6 +40,8 @@ private:
 	int ttl;
 
 	float invttl;
+
+	size_t pgOffset;
 };
 
 #endif // BITMAP_MUZZLE_FLAME_H

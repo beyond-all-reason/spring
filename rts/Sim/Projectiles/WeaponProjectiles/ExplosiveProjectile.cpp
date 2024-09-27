@@ -7,6 +7,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Rendering/Env/Particles/Generators/ParticleGeneratorHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -18,13 +19,16 @@ CR_BIND_DERIVED(CExplosiveProjectile, CWeaponProjectile, )
 CR_REG_METADATA(CExplosiveProjectile, (
 	CR_SETFLAG(CF_Synced),
 	CR_MEMBER(invttl),
-	CR_MEMBER(curTime)
+	CR_MEMBER(curTime),
+	CR_MEMBER(pgOffset)
 ))
 
 
-CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWeaponProjectile(params)
+CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params)
+	: CWeaponProjectile(params)
 	, invttl(0.0f)
 	, curTime(0.0f)
+	, pgOffset(-1)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EXPLOSIVE_PROJECTILE;
@@ -32,17 +36,51 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 	mygravity = params.gravity;
 	useAirLos = true;
 
-	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
-		drawRadius = weaponDef->size;
-		castShadow = weaponDef->visuals.castShadow;
-	}
+	SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
+	drawRadius = weaponDef->size;
+	castShadow = weaponDef->visuals.castShadow;
 
 	if (ttl <= 0) {
 		invttl = 1.0f;
 	} else {
 		invttl = 1.0f / ttl;
 	}
+
+	const WeaponDef::Visuals& wdVisuals = weaponDef->visuals;
+	auto DefColor = SColor(wdVisuals.color.x, wdVisuals.color.y, wdVisuals.color.z, weaponDef->intensity);
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
+	pgOffset = pg.Add({
+		.pos = pos,
+		.size = drawRadius,
+
+		.speed = speed,
+		.createFrame = createFrame,
+
+		.dir = dir,
+		.drawOrder = drawOrder,
+
+		.color0 = DefColor,
+		.color1 = DefColor,
+		.numStages = static_cast<uint32_t>(weaponDef->visuals.stages),
+		.noGap = weaponDef->visuals.noGap,
+
+		.alphaDecay = weaponDef->visuals.alphaDecay,
+		.sizeDecay = weaponDef->visuals.sizeDecay,
+		.separation = weaponDef->visuals.separation,
+
+		.colEdge0 = 0.0f,
+		.colEdge1 = 1.0f,
+		.curTime = curTime,
+
+		.texCoord = weaponDef->visuals.texture1 ? *weaponDef->visuals.texture1 : AtlasedTexture::DefaultAtlasTexture
+	});
+}
+
+CExplosiveProjectile::~CExplosiveProjectile()
+{
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
+	pg.Del(pgOffset);
 }
 
 void CExplosiveProjectile::Update()
@@ -67,10 +105,27 @@ void CExplosiveProjectile::Update()
 
 	UpdateGroundBounce();
 	UpdateInterception();
+
+	auto& pg = ParticleGeneratorHandler::GetInstance().GetGenerator<ExplosiveParticleGenerator>();
+
+	auto& data = pg.Get(pgOffset);
+
+	data.pos = pos;
+	data.curTime = curTime;
+	data.speed = speed;
+
+	if (const auto* cm = weaponDef->visuals.colorMap; cm) {
+		auto [i0, i1]  = cm->GetIndices(curTime);
+		data.color0   = cm->GetColor(i0);
+		data.color1   = cm->GetColor(i1);
+		data.colEdge0 = cm->GetColorPos(i0);
+		data.colEdge1 = cm->GetColorPos(i1);
+	}
 }
 
 void CExplosiveProjectile::Draw()
 {
+	/*
 	RECOIL_DETAILED_TRACY_ZONE;
 	// do not draw if a 3D model has been defined for us
 	if (model != nullptr)
@@ -93,12 +148,12 @@ void CExplosiveProjectile::Draw()
 		col[3] = weaponDef->intensity * 255;
 	}
 
-	const float  alphaDecay = wdVisuals.alphaDecay;
-	const float  sizeDecay  = wdVisuals.sizeDecay;
-	const float  separation = wdVisuals.separation;
-	const bool   noGap      = wdVisuals.noGap;
-	const int    stages     = wdVisuals.stages;
-	const float  invStages  = 1.0f / std::max(1, stages);
+	const auto& alphaDecay = wdVisuals.alphaDecay;
+	const auto& sizeDecay  = wdVisuals.sizeDecay;
+	const auto& separation = wdVisuals.separation;
+	const auto& noGap      = wdVisuals.noGap;
+	const auto& stages     = wdVisuals.stages;
+	const float invStages  = 1.0f / std::max(1, stages);
 
 	const float3 ndir = dir * separation * 0.6f;
 
@@ -123,6 +178,7 @@ void CExplosiveProjectile::Draw()
 			{ stagePos - xdirCam + ydirCam, tex->xstart, tex->yend,   col }
 		);
 	}
+	*/
 }
 
 int CExplosiveProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
