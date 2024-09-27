@@ -18,6 +18,10 @@ private:
 	using ValuesType = std::tuple<UniqueAttributeValueTypes...>;
 
 public:
+	inline SubState()
+		: pushed{false}
+		, savedValues{}
+	{}
 	inline SubState(UniqueAttributeValueTypes... newValues)
 	{
 		((std::get<UniqueAttributeValueTypes>(savedValues) = std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes)), ...);
