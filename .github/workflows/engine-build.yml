@@ -28,6 +28,8 @@ jobs:
         uses: namespacelabs/nscloud-cache-action@v1
         with:
           path: ccache
+      - name: Pull builder image
+        run: docker pull ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest
       - name: Build
         # Instead of manually running docker, it would be cool to just run whole GitHub actions
         # in container, but unfortunately ubuntu 18.04 is just too old to be able to do it ;(.
