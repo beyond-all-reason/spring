@@ -513,8 +513,8 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 	flatFrontDir = (owner->frontdir * XZVector).Normalize();
 
 	// Override the unit size, it should match the MoveDef's to avoid conflicts elsewhere in the code.
-	owner->xsize = md->zsize;
-	owner->zsize = md->xsize;
+	owner->xsize = md->xsize;
+	owner->zsize = md->zsize;
 
 	Connect();
 }

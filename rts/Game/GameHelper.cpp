@@ -934,7 +934,7 @@ void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, boo
 	const int allyTeamId = teamHandler.AllyTeam(teamId);
 
 	for (CUnit* u : *qfQuery.units) {
-		if (u->unitDef == nullptr || u->unitDef->IsImmobileUnit()) { continue; }
+		if (u->unitDef->IsImmobileUnit()) { continue; }
 
 		// apparently air units may not have a move def.
 		const bool useMoveDef = (u->moveDef != nullptr);
