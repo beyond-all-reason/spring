@@ -2138,11 +2138,7 @@ void CGameServer::CheckForGameStart(bool forced)
 	bool allReady = true;
 
 	for (size_t a = static_cast<size_t>(myGameSetup->numDemoPlayers); a < players.size(); a++) {
-		if (players[a].myState == GameParticipant::UNCONNECTED && serverStartTime + spring_secs(30) < spring_gettime()) {
-			// autostart the game when 45 seconds have passed and everyone who managed to connect is ready
-			continue;
-		}
-		else if (players[a].myState < GameParticipant::INGAME) {
+		if (players[a].myState < GameParticipant::INGAME) {
 			allReady = false;
 			break;
 		} else if (!players[a].spectator && teams[players[a].team].IsActive() && !players[a].IsReadyToStart() && demoReader == nullptr) {
