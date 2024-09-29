@@ -2138,10 +2138,11 @@ void CGameServer::CheckForGameStart(bool forced)
 	bool allReady = true;
 
 	for (size_t a = static_cast<size_t>(myGameSetup->numDemoPlayers); a < players.size(); a++) {
-		if (players[a].myState < GameParticipant::INGAME) {
+		const auto& player = players[a];
+		if (player.myState < GameParticipant::INGAME) {
 			allReady = false;
 			break;
-		} else if (!players[a].spectator && teams[players[a].team].IsActive() && !players[a].IsReadyToStart() && demoReader == nullptr) {
+		} else if (!player.spectator && teams[player.team].IsActive() && !player.IsReadyToStart() && demoReader == nullptr) {
 			allReady = false;
 			break;
 		}
