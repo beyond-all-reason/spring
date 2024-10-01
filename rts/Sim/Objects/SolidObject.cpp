@@ -96,8 +96,10 @@ void CSolidObject::PostLoad()
 void CSolidObject::UpdatePhysicalState(float eps)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float gh = CGround::GetHeightReal(pos.x, pos.z);
-	const float wh = std::max(gh, 0.0f);
+	const float waterLevel = CGround::GetWaterLevel(pos.x, pos.z);
+	const float groundHeight = CGround::GetHeightReal(pos.x, pos.z);
+	// Get height of whichever surface is higher between ground and water
+	const float topSurfaceHeight = std::max(groundHeight, waterLevel);
 
 	unsigned int ps = physicalState;
 
@@ -113,13 +115,13 @@ void CSolidObject::UpdatePhysicalState(float eps)
 	//   the height property is used for much fewer purposes
 	//   than radius, so less reliable for determining state
 	#define MASK_NOAIR (PSTATE_BIT_ONGROUND | PSTATE_BIT_INWATER | PSTATE_BIT_UNDERWATER | PSTATE_BIT_UNDERGROUND)
-	ps |= (PSTATE_BIT_ONGROUND    * ((   pos.y -         gh) <=  eps));
-	ps |= (PSTATE_BIT_INWATER     * ((   pos.y             ) <= 0.0f));
+	ps |= (PSTATE_BIT_ONGROUND    * ((   pos.y -         groundHeight) <=  eps));
+	ps |= (PSTATE_BIT_INWATER     * ((   pos.y             ) <= waterLevel));
 //	ps |= (PSTATE_BIT_UNDERWATER  * ((   pos.y +     height) <  0.0f));
-//	ps |= (PSTATE_BIT_UNDERGROUND * ((   pos.y +     height) <    gh));
-	ps |= (PSTATE_BIT_UNDERWATER  * ((midPos.y +     radius) <  0.0f));
-	ps |= (PSTATE_BIT_UNDERGROUND * ((midPos.y +     radius) <    gh));
-	ps |= (PSTATE_BIT_INAIR       * ((   pos.y -         wh) >   eps));
+//	ps |= (PSTATE_BIT_UNDERGROUND * ((   pos.y +     height) <    groundHeight));
+	ps |= (PSTATE_BIT_UNDERWATER  * ((midPos.y +     radius) <  waterLevel));
+	ps |= (PSTATE_BIT_UNDERGROUND * ((midPos.y +     radius) <    groundHeight));
+	ps |= (PSTATE_BIT_INAIR       * ((   pos.y -         topSurfaceHeight) >   eps));
 	ps |= (PSTATE_BIT_INAIR       * ((    ps   & MASK_NOAIR) ==    0));
 	#undef MASK_NOAIR
 
@@ -129,7 +131,7 @@ void CSolidObject::UpdatePhysicalState(float eps)
 	// fails then A and B *must* both be false
 	//
 	// problem case: pos.y < eps (but > 0) &&
-	// gh < -eps causes ONGROUND and INAIR to
+	// groundHeight < -eps causes ONGROUND and INAIR to
 	// both be false but INWATER will fail too
 	#if 0
 	assert((IsInAir() != IsOnGround()) || IsInWater());
@@ -243,7 +245,7 @@ bool CSolidObject::FootPrintOnGround() const {
 	for (int z = hmFpr.z1; z <= hmFpr.z2; ++z) {
 		const float* hPtr = CGround::GetApproximateHeightUnsafePtr(hmFpr.x1, z, true);
 		for (int x = hmFpr.x1; x <= hmFpr.x2; ++x) {
-			const auto heightAboveWaterHere = std::max(*hPtr, 0.0f);
+			const auto heightAboveWaterHere = std::max(*hPtr, CGround::GetWaterLevel(x, z));
 			if ((pos.y - SQUARE_SIZE) <= heightAboveWaterHere)
 				return true;
 			hPtr++;

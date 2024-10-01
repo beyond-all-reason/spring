@@ -1006,7 +1006,7 @@ bool CHoverAirMoveType::CanLandAt(const float3& pos) const
 	if (!pos.IsInBounds())
 		return false;
 
-	if ((CGround::GetApproximateHeight(pos) < 0.0f) && ((mapInfo->water.damage > 0.0f) || !(floatOnWater || canSubmerge)))
+	if ((CGround::GetApproximateHeight(pos) < CGround::GetWaterLevel(pos.x, pos.z)) && ((mapInfo->water.damage > 0.0f) || !(floatOnWater || canSubmerge)))
 		return false;
 
 	const int2 os = {owner->xsize, owner->zsize};

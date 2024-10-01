@@ -672,7 +672,7 @@ void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
 		bi.pos = CGameHelper::Pos2BuildPos(bi, false);
 
 		buildCommands += 1;
-		uwaterCommands += (bi.pos.y < 0.0f);
+		uwaterCommands += (bi.pos.y < CGround::GetWaterLevel(bi.pos.x, bi.pos.z));
 	}
 
 	// worst case - 2 squares per building (when underwater) - 8 vertices * 3 floats

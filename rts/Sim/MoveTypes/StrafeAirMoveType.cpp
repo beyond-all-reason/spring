@@ -1248,7 +1248,7 @@ void CStrafeAirMoveType::SetState(AAirMoveType::AircraftState newState)
 float3 CStrafeAirMoveType::FindLandingPos(float3 landPos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (((landPos.y = CGround::GetHeightReal(landPos)) < 0.0f) && ((mapInfo->water.damage > 0.0f) || !(floatOnWater || canSubmerge)))
+	if (((landPos.y = CGround::GetHeightReal(landPos)) < CGround::GetWaterLevel(landPos.x, landPos.z)) && ((mapInfo->water.damage > 0.0f) || !(floatOnWater || canSubmerge)))
 		return -OnesVector;
 
 	const int2 os = {owner->xsize, owner->zsize};
