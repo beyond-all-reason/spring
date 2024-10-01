@@ -7,6 +7,7 @@
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
@@ -311,7 +312,7 @@ void CFactory::StopBuild()
 
 	if (curBuild) {
 		if (curBuild->beingBuilt) {
-			AddMetal(curBuild->cost.metal * curBuild->buildProgress, false);
+			AddResources(curBuild->cost * curBuild->buildProgress * modInfo.factoryCancelRefund, false);
 			curBuild->KillUnit(nullptr, false, true);
 		}
 		DeleteDeathDependence(curBuild, DEPENDENCE_BUILD);

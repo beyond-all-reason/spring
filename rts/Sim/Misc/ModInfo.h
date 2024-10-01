@@ -5,6 +5,7 @@
 
 #include <string>
 #include "Sim/Path/PFSTypes.h"
+#include "Sim/Misc/Resource.h"
 
 class CModInfo
 {
@@ -69,6 +70,10 @@ public:
 	int constructionDecayTime;
 	/// How fast do they decay?
 	float constructionDecaySpeed;
+	/// How much is refunded for decay?
+	SResourcePack constructionDecayRefund;
+	/// How much is refunded for canceling in factory?
+	SResourcePack factoryCancelRefund;
 
 	// Damage behaviour
 	/// unit pieces flying off (usually on death)

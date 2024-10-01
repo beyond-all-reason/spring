@@ -124,6 +124,23 @@ void CModInfo::ResetState()
 
 		allowEnginePlayerlist = true;
 	}
+
+	factoryCancelRefund = {1.0f, 0.0f};
+	constructionDecayRefund = {1.0f, 0.0f};
+}
+
+static inline void ReadResourcePack(const LuaTable& root, const std::string& key, SResourcePack &pack)
+{
+	const LuaTable& resources = root.SubTable(key);
+
+	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i)
+		pack[i] = resources.GetFloat(i, pack[i]);
+
+	/* Read both by index and by name. The kosher way would be to also do
+	 *  pack[i] = resources.GetFloat(resourceHandler->GetResource(i)->name, pack[i]);
+	 * in the loop above, but resource handler isn't yet initialized. */
+	 pack.metal  = resources.GetFloat( "metal", pack.metal );
+	 pack.energy = resources.GetFloat("energy", pack.energy);
 }
 
 void CModInfo::Init(const std::string& modFileName)
@@ -327,5 +344,8 @@ void CModInfo::Init(const std::string& modFileName)
 		if ((airMipLevel < 0) || (airMipLevel > 30))
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
 	}
+
+	ReadResourcePack(root,     "factoryCancelRefund",     factoryCancelRefund);
+	ReadResourcePack(root, "constructionDecayRefund", constructionDecayRefund);
 }
 

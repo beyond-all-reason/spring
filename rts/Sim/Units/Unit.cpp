@@ -1011,7 +1011,7 @@ void CUnit::SlowUpdate()
 			health         = std::max(0.0f, health - maxHealth * buildDecay);
 			buildProgress -= buildDecay;
 
-			AddMetal(cost.metal * buildDecay, false);
+			AddResources(cost * buildDecay * modInfo.constructionDecayRefund, false);
 
 			if (health <= 0.0f || buildProgress <= 0.0f)
 				KillUnit(nullptr, false, true);
