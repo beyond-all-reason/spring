@@ -77,7 +77,7 @@ void CSkirmishAIHandler::ResetState()
 	luaAIShortNames.clear();
 
 	numSkirmishAIs = 0;
-	currentAIId = MAX_AIS;
+	currentAIId = SPECIAL_AI_ID;
 
 	gameInitialized = false;
 }

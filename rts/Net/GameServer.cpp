@@ -1670,7 +1670,7 @@ void CGameServer::ProcessPacket(const unsigned playerNum, std::shared_ptr<const 
 				}
 
 				// discard bogus ID from message, reserve actual slot here
-				if ((skirmishAIId = ReserveSkirmishAIId()) == MAX_AIS) {
+				if ((skirmishAIId = ReserveSkirmishAIId()) == SPECIAL_AI_ID) {
 					Message(spring::format("[GameServer::%s][NETMSG_AI_CREATED] unable to create AI, limit reached (%d)", __func__, (int)MAX_AIS));
 					break;
 				}
@@ -1975,7 +1975,7 @@ void CGameServer::ServerReadNet()
 
 		// relay all packets to separate connections for player and AIs
 		while ((packet = playerLink->GetData()) != nullptr) {
-			uint8_t aiID = MAX_AIS;
+			uint8_t aiID = SPECIAL_AI_ID;
 			int cmdID = -1;
 
 			if (packet->length >= 5) {
@@ -2064,14 +2064,14 @@ void CGameServer::ServerReadNet()
 				it->second.numPacketsSent = numPacketsSent;
 
 			if (numPktsDropped > 0) {
-				if (aiClientNum == MAX_AIS)
+				if (aiClientNum == SPECIAL_AI_ID)
 					PrivateMessage(player.id, spring::format("Warning: Waiting packet limit was reached for %s [%d packets dropped, %d sent]", player.name.c_str(), numPktsDropped, numPacketsSent));
 				else
 					PrivateMessage(player.id, spring::format("Warning: Waiting packet limit was reached for %s AI %d [%d packets dropped, %d sent]", player.name.c_str(), (int)aiClientNum, numPktsDropped, numPacketsSent));
 			}
 
 			if (!bwLimitWasReached && bwLimitIsReached) {
-				if (aiClientNum == MAX_AIS)
+				if (aiClientNum == SPECIAL_AI_ID)
 					PrivateMessage(player.id, spring::format("Warning: Bandwidth limit was reached for %s [packets delayed, %d sent]", player.name.c_str(), numPacketsSent));
 				else
 					PrivateMessage(player.id, spring::format("Warning: Bandwidth limit was reached for %s AI %d [packets delayed, %d sent]", player.name.c_str(), (int)aiClientNum, numPacketsSent));

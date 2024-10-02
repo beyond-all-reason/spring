@@ -89,7 +89,7 @@ int CSkirmishAILibrary::HandleEvent(int skirmishAIId, int topic, const void* dat
 {
 	skirmishAIHandler.SetCurrentAIID(skirmishAIId);
 	const int ret = aiLib.handleEvent(skirmishAIId, topic, data);
-	skirmishAIHandler.SetCurrentAIID(MAX_AIS);
+	skirmishAIHandler.SetCurrentAIID(SPECIAL_AI_ID);
 
 	if (ret == 0)
 		return ret;
