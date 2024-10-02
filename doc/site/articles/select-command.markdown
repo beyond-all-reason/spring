@@ -58,11 +58,11 @@ Here are the filters. Note that "units" generally means both buildings and mobil
 
 ### `Builder`
 
-  Keep only units and buildings that can construct. This means Factories, Construction Turrets, Constructors, but not Rezzers.
+  Keep only units and buildings that can do any sort of worker tasks. This means Factories, Construction Turrets, Constructors, Rezzers and whatnot.
 
 ### `Buildoptions`
 
-  Keep only units that can build other units or buildings.
+  Keep only units that have build options, i.e. can start building other units or buildings on their own.
 
 ### `Building`
 
