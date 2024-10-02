@@ -5,6 +5,7 @@
 #include "GlobalSynced.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
+#include "Sim/Misc/ModInfo.h"
 #include "System/ContainerUtil.h"
 #include "System/SpringMath.h"
 
@@ -87,7 +88,7 @@ void EnvResourceHandler::Update()
 	if (maxWindStrength <= 0.0f)
 		return;
 
-	if (windDirTimer == 0) {
+	if (windDirTimer == 0 ) {
 		oldWindVec = curWindVec;
 		newWindVec = oldWindVec;
 
@@ -105,7 +106,7 @@ void EnvResourceHandler::Update()
 		newWindVec *= (newStrength = std::clamp(newStrength, minWindStrength, maxWindStrength));
 
 		// update generators
-		for (const int unitID: allGeneratorIDs) {
+		for (auto unitID: allGeneratorIDs) {
 			(unitHandler.GetUnit(unitID))->UpdateWind(newWindVec.x, newWindVec.z, newStrength);
 		}
 	} else {
@@ -120,7 +121,14 @@ void EnvResourceHandler::Update()
 		curWindDir = curWindVec;
 		curWindVec = curWindDir * (curWindStrength = std::clamp(curWindStrength, minWindStrength, maxWindStrength));
 
-		for (const int unitID: newGeneratorIDs) {
+		if (const auto& wcrp = modInfo.windChangeReportPeriod; wcrp > 0 && gs->frameNum % wcrp == 0) {
+			// update generators every modInfo.windChangeReportPeriod frames
+			for (auto unitID : allGeneratorIDs) {
+				(unitHandler.GetUnit(unitID))->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
+			}
+		}
+
+		for (auto unitID: newGeneratorIDs) {
 			// make newly added generators point in direction of wind
 			(unitHandler.GetUnit(unitID))->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
 			allGeneratorIDs.push_back(unitID);
