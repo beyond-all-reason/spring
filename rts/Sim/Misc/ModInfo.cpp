@@ -124,6 +124,9 @@ void CModInfo::ResetState()
 
 		allowEnginePlayerlist = true;
 	}
+	{
+		windChangeReportPeriod = 0;
+	}
 }
 
 void CModInfo::Init(const std::string& modFileName)
@@ -326,6 +329,12 @@ void CModInfo::Init(const std::string& modFileName)
 
 		if ((airMipLevel < 0) || (airMipLevel > 30))
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
+	}
+	{
+		//misc
+		const LuaTable& misc = root.SubTable("misc");
+
+		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", 0.0f) * GAME_SPEED));
 	}
 }
 
