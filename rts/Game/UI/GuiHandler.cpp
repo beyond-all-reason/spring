@@ -2225,7 +2225,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 
 			const BuildInfo bi(unitdef, cameraPos + mouseDir * dist, buildFacing);
 
-			if (GetQueueKeystate() && (button == SDL_BUTTON_LEFT)) {
+			if (button == SDL_BUTTON_LEFT) {
 				const float3 camTracePos = mouse->buttons[SDL_BUTTON_LEFT].camPos;
 				const float3 camTraceDir = mouse->buttons[SDL_BUTTON_LEFT].dir;
 
@@ -2249,16 +2249,26 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 
 			}
 
+			// Create options based on inputs, which will include shift if the user
+			// intends to enqueue.
+			char options = CreateOptions(button);
+
 			if (!preview) {
-				// only issue if more than one entry, i.e. user created some
-				// kind of line/area queue (caller handles the last command)
+				// In the case of a line or rectangle of buildings, we must give multiple commands.
+				// This method returns one command, so we give all but the last build
+				// command here, as it will be returned.
+				//
+				// TODO: Handle proper ordering when holding space.
 				for (auto beg = buildInfos.cbegin(), end = --buildInfos.cend(); beg != end; ++beg) {
-					GiveCommand(beg->CreateCommand(CreateOptions(button)));
+					GiveCommand(beg->CreateCommand(options));
+
+					// If shift was not held, act like it is so the queueing succeeds.
+					options |= SHIFT_KEY;
 				}
 			}
 
 			buildCommands.clear();
-			return CheckCommand((buildInfos.back()).CreateCommand(CreateOptions(button)));
+			return CheckCommand((buildInfos.back()).CreateCommand(options));
 		}
 
 		case CMDTYPE_ICON_UNIT: {
@@ -2496,7 +2506,7 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 	buildInfos.clear();
 	buildInfos.reserve(16);
 
-	if (GetQueueKeystate() && KeyInput::GetKeyModState(KMOD_CTRL)) {
+	if (KeyInput::GetKeyModState(KMOD_CTRL)) {
 		const CUnit* unit = nullptr;
 		const CFeature* feature = nullptr;
 
@@ -2517,7 +2527,7 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 		}
 	}
 
-	if (other.def && GetQueueKeystate() && KeyInput::GetKeyModState(KMOD_CTRL)) {
+	if (other.def && KeyInput::GetKeyModState(KMOD_CTRL)) {
 		// circle build around building
 		const int oxsize = other.GetXSize() * SQUARE_SIZE;
 		const int ozsize = other.GetZSize() * SQUARE_SIZE;
@@ -3793,7 +3803,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 				const float3 cPos = tracePos + traceDir * rayTraceDist;
 
 				const CMouseHandler::ButtonPressEvt& bp = mouse->buttons[SDL_BUTTON_LEFT];
-				if (GetQueueKeystate() && bp.pressed) {
+				if (bp.pressed) {
 					const float bpDist = CGround::LineGroundWaterCol(bp.camPos, bp.dir, maxTraceDist, buildeeDef->floatOnWater, false);
 					const float3 bPos = bp.camPos + bp.dir * bpDist;
 					const BuildInfo cInfo = BuildInfo(buildeeDef, cPos, buildFacing);
