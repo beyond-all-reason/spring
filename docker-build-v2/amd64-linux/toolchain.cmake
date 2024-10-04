@@ -4,3 +4,4 @@ SET(CMAKE_CXX_COMPILER "g++-13")
 SET(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=gold")
 SET(CMAKE_MODULE_LINKER_FLAGS_INIT "-fuse-ld=gold")
 SET(CMAKE_SHARED_LINKER_FLAGS_INIT "-fuse-ld=gold")
+SET(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)  # Little usage, only rmlui, improves ccache hit ratio

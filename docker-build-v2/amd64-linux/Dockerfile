@@ -50,3 +50,4 @@ ENV CMAKE_TOOLCHAIN_FILE=/build/toolchain.cmake
 COPY ccache.conf .
 ENV CCACHE_CONFIGPATH=/build/ccache.conf
 ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
+ENV CMAKE_C_COMPILER_LAUNCHER=ccache
