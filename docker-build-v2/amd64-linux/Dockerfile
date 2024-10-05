@@ -33,7 +33,7 @@ RUN pip3 install --upgrade pip \
  && pip3 install cmake==3.25.*
 
 WORKDIR /build
-RUN mkdir src cache out artifacts && chmod a+rwx out artifacts
+RUN mkdir src cache out artifacts && chmod a+rwx cache out artifacts
 
 # Fetch library dependencies and configure resolution
 RUN git clone --depth=1 https://github.com/beyond-all-reason/spring-static-libs.git -b 18.04 spring-static-libs

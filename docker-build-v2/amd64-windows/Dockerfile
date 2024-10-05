@@ -11,7 +11,7 @@ RUN apt-get update \
 RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install cmake==3.25.*
 
 WORKDIR /build
-RUN mkdir src cache out artifacts && chmod a+rwx out artifacts
+RUN mkdir src cache out artifacts && chmod a+rwx cache out artifacts
 
 # Fetch library dependencies and configure resolution
 RUN git clone --depth=1 https://github.com/beyond-all-reason/mingwlibs64.git

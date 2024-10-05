@@ -27,21 +27,55 @@ jobs:
       - name: Setup ccache cache
         uses: namespacelabs/nscloud-cache-action@v1
         with:
-          path: ccache
+          path: bazel-remote-data
+      - name: Start remote ccache fetcher
+        env:
+          BAZEL_REMOTE_S3_ENDPOINT: ${{ vars.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          BAZEL_REMOTE_S3_BUCKET: ${{ vars.R2_BUCKET_BUILD_CACHE }}
+          BAZEL_REMOTE_S3_ACCESS_KEY_ID: ${{ vars.R2_ACCESS_KEY_ID }}
+          BAZEL_REMOTE_S3_SECRET_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY_SECRET }}
+        run: |
+          docker network create --driver bridge engine-build
+          docker run -d --rm \
+            -v /etc/passwd:/etc/passwd:ro \
+            -v /etc/group:/etc/group:ro \
+            --user=$(id -u):$(id -g) \
+            -v $(pwd)/bazel-remote-data/:/data \
+            --network engine-build \
+            --name remote-cache \
+            -e BAZEL_REMOTE_S3_ENDPOINT \
+            -e BAZEL_REMOTE_S3_BUCKET \
+            -e BAZEL_REMOTE_S3_ACCESS_KEY_ID \
+            -e BAZEL_REMOTE_S3_SECRET_ACCESS_KEY \
+            docker.io/buchgr/bazel-remote-cache:v2.4.4 \
+            --dir /data \
+            --s3.auth_method access_key \
+            --s3.region auto \
+            --max_size 5 \
+            --disable_http_ac_validation
+
+          cat > remote_ccache.conf <<EOF
+          max_size = 10G
+          cache_dir = /build/cache
+          remote_storage = http://remote-cache:8080|layout=bazel
+          remote_only = true
+          EOF
       - name: Pull builder image
         run: docker pull ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest
       - name: Build
         # Instead of manually running docker, it would be cool to just run whole GitHub actions
         # in container, but unfortunately ubuntu 18.04 is just too old to be able to do it ;(.
         run: |
-          mkdir -p ccache artifacts
+          mkdir -p artifacts
           docker run -i --rm \
             -v /etc/passwd:/etc/passwd:ro \
             -v /etc/group:/etc/group:ro \
             --user="$(id -u):$(id -g)" \
             -v $(pwd)/src:/build/src:ro \
-            -v $(pwd)/ccache:/build/cache:rw \
+            -v $(pwd)/remote_ccache.conf:/build/ccache.conf:ro \
             -v $(pwd)/artifacts:/build/artifacts:rw \
+            --network engine-build \
+            --name builder \
             ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest \
             bash <<EOF
           set -e
@@ -56,3 +90,8 @@ jobs:
         with:
           name: output-${{ matrix.system }}
           path: ./artifacts
+      - name: Stop docker containers
+        if: always()
+        run: |
+          docker stop builder || true
+          docker stop remote-cache
