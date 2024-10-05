@@ -22,4 +22,4 @@ function split_debug {
 export -f split_debug
 
 find \( -regex '.*\.\(dll\|so\|exe\)' -o -type f ! -name '*.dbg' -executable \) -print0 \
-    | xargs -0 -P1 -n1 bash -c 'split_debug "$0"'
+    | xargs -0 -P0 -n1 bash -c 'split_debug "$0"'
