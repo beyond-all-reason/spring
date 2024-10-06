@@ -2237,16 +2237,21 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 				GetBuildPositions(startInfo, endInfo, cameraPos, mouseDir);
 			}
 
-			if (buildInfos.empty())
-				return Command(CMD_STOP);
+			// Remove any invalid placements.
+			// Awful syntax from: https://stackoverflow.com/a/17270869/317135
+			buildInfos.erase(std::remove_if(
+				buildInfos.begin(),
+				buildInfos.end(),
+				[](auto bi) {
+					CFeature* feature = nullptr;
+					// TODO: maybe also check out-of-range for immobile builder?
+					return !CGameHelper::TestUnitBuildSquare(bi, feature, gu->myAllyTeam, false);
+				}
+			), buildInfos.end());
 
-			if (buildInfos.size() == 1) {
-				CFeature* feature = nullptr;
-
-				// TODO: maybe also check out-of-range for immobile builder?
-				if (!CGameHelper::TestUnitBuildSquare(buildInfos[0], feature, gu->myAllyTeam, false))
-					return defaultRet;
-
+			// If no valid placements remain, fail command.
+			if (buildInfos.empty()) {
+				return defaultRet;
 			}
 
 			// Create options based on inputs, which will include shift if the user
