@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _BLANK_MAP_GENERATOR_H_
-#define _BLANK_MAP_GENERATOR_H_
+#pragma once
 
 #include "Game/GameSetup.h"
 #include "System/type2.h"
@@ -16,6 +15,12 @@ public:
 
 	void Generate();
 
+	struct MapColor {
+		uint8_t r;
+		uint8_t g;
+		uint8_t b;
+		uint8_t a; //unused
+	};
 private:
 	void GenerateMap();
 	void GenerateSMF(CVirtualFile*);
@@ -38,7 +43,5 @@ private:
 	std::string mapDescription;
 	std::vector<int2> startPositions;
 
-	std::tuple <uint8_t, uint8_t, uint8_t> mapColor;
+	MapColor mapColor;
 };
-
-#endif // _BLANK_MAP_GENERATOR_H_

@@ -289,7 +289,7 @@ public:
 	bool GetFullRead() const override { return true; }
 	int  GetReadAllyTeam() const override { return AllAccessTeam; }
 
-	void UnitDestroyed(const CUnit* unit, const CUnit* attacker) override;
+	void UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID) override;
 	void UnitTaken(const CUnit* unit, int oldTeam, int newTeam) override;
 	void UnitLoaded(const CUnit* unit, const CUnit* transport) override;
 	void UnitReverseBuilt(const CUnit* unit) override;

@@ -3219,7 +3219,7 @@ public:
 
 class AirMeshActionExecutor: public IUnsyncedActionExecutor {
 public:
-	AirMeshActionExecutor(): IUnsyncedActionExecutor("airmesh", "Show/Hide the smooth air-mesh map overlay") {
+	AirMeshActionExecutor(): IUnsyncedActionExecutor("airmesh", "Show/Hide the smooth air-mesh map overlay", true) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {

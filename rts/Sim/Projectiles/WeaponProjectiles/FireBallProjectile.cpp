@@ -12,6 +12,8 @@
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CFireBallProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CFireBallProjectile,(
@@ -32,6 +34,7 @@ CR_REG_METADATA_SUB(CFireBallProjectile, Spark, (
 
 CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params): CWeaponProjectile(params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_FIREBALL_PROJECTILE;
 
 	if (weaponDef != nullptr) {
@@ -47,6 +50,7 @@ CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params): CWeapo
 
 void CFireBallProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
 
@@ -92,6 +96,7 @@ void CFireBallProjectile::Draw()
 
 void CFireBallProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (checkCol) {
 		pos += (speed * (1 - luaMoveCtrl));
 		speed.y += (mygravity * weaponDef->gravityAffected * (1 - luaMoveCtrl));
@@ -111,6 +116,7 @@ void CFireBallProjectile::Update()
 
 void CFireBallProjectile::EmitSpark()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr unsigned int maxSparks = sizeof(sparks) / sizeof(sparks[0]);
 
 	if (numSparks == maxSparks)
@@ -130,6 +136,7 @@ void CFireBallProjectile::EmitSpark()
 
 void CFireBallProjectile::TickSparks()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (unsigned int i = 0; i < numSparks; ) {
 		if ((--sparks[i].ttl) <= 0) {
 			sparks[i] = sparks[--numSparks];
@@ -148,12 +155,14 @@ void CFireBallProjectile::TickSparks()
 
 void CFireBallProjectile::Collision()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CWeaponProjectile::Collision();
 	deleteMe = false;
 }
 
 int CFireBallProjectile::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return
 		validTextures[1] * numSparks +
 		validTextures[2] * std::min(10u, numSparks);

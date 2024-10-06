@@ -12,7 +12,7 @@ struct S3DModel;
 enum DrawFlags : uint8_t {
 	SO_NODRAW_FLAG = 0, // must be 0
 	SO_OPAQUE_FLAG = 1,
-	SO_ALPHAF_FLAG = 2,
+	SO_ALPHAF_FLAG = 2, //design oversight, should be split to alpha_below_water, alpha_above_water for better CPU side culling
 	SO_REFLEC_FLAG = 4,
 	SO_REFRAC_FLAG = 8,
 	SO_SHOPAQ_FLAG = 16,

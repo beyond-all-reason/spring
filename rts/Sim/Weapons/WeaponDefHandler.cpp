@@ -12,6 +12,7 @@
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
 
 static CWeaponDefHandler gWeaponDefHandler;
 CWeaponDefHandler* weaponDefHandler = &gWeaponDefHandler;
@@ -19,6 +20,7 @@ CWeaponDefHandler* weaponDefHandler = &gWeaponDefHandler;
 
 void CWeaponDefHandler::Init(LuaParser* defsParser)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const LuaTable& rootTable = defsParser->GetRoot().SubTable("WeaponDefs");
 
 	if (!rootTable.IsValid())
@@ -42,6 +44,7 @@ void CWeaponDefHandler::Init(LuaParser* defsParser)
 
 const WeaponDef* CWeaponDefHandler::GetWeaponDef(std::string wdName) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	StringToLowerInPlace(wdName);
 
 	const auto it = weaponDefIDs.find(wdName);
@@ -55,6 +58,7 @@ const WeaponDef* CWeaponDefHandler::GetWeaponDef(std::string wdName) const
 
 const WeaponDef* CWeaponDefHandler::GetWeaponDefByID(int id) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsValidWeaponDefID(id))
 		return nullptr;
 

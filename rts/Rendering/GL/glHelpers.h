@@ -3,15 +3,17 @@
 #pragma once
 
 #include "myGL.h"
+#include "System/TemplateUtils.hpp"
 #include "Rendering/Textures/TextureFormat.h"
 #include <algorithm>
 #include <tuple>
+#include <array>
 
 
 // Get gl parameter values into a homogenous GL-typed variable (single or array)
 // Must pass expectedValuesN to convert from GLint to other integer types (GLenum, GLsizei and such)
 template<class GLType>
-inline void glGetAny(GLenum paramName, GLType* data, const int expectedValuesN = -1)
+inline void glGetAny(GLenum paramName, GLType* data, const int expectedValuesN = 1)
 {
 	GLint ints[1024];
 	assert(expectedValuesN > 0 && expectedValuesN < 1024);
@@ -52,19 +54,37 @@ inline ResultType FetchEffectualStateAttribValue(GLenum paramName)
 	return resultValue;
 }
 
-template<class ResultTupleType>
-inline ResultTupleType FetchEffectualStateAttribValues(GLenum paramName)
+template <typename T> concept glEnumType = std::is_same_v<T, GLenum>;
+
+template<class ResultTupleType, glEnumType... ParamNames>
+inline ResultTupleType FetchEffectualStateAttribValues(ParamNames... paramNames)
 {
+	static_assert(sizeof...(paramNames) == std::tuple_size_v<ResultTupleType>);
 	ResultTupleType resultTuple;
-	glGetAny(paramName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>);
+
+	auto IndexDispatcher = spring::make_index_dispatcher<std::tuple_size_v<ResultTupleType>>();
+
+	IndexDispatcher([args = std::forward_as_tuple(paramNames...), &resultTuple](auto idx) {
+		glGetAny(std::get<idx>(args), &std::get<idx>(resultTuple));
+	});
+
 	return resultTuple;
 }
-template<class ResultTupleType>
-inline ResultTupleType FetchEffectualStateAttribValues(GLenum firstParamName, GLenum secondParamName)
+
+template<class ResultTupleType, glEnumType ParamName>
+inline ResultTupleType FetchEffectualStateAttribValues(ParamName paramName)
 {
 	ResultTupleType resultTuple;
-	glGetAny(firstParamName, &std::get<0>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
-	glGetAny(secondParamName, &std::get<std::tuple_size_v<ResultTupleType>/2-1>(resultTuple), std::tuple_size_v<ResultTupleType>/2);
+
+	using ArrType = std::tuple_element_t<0, ResultTupleType>;
+	std::array<ArrType, std::tuple_size_v<ResultTupleType>> arr;
+	glGetAny(paramName, arr.data(), arr.size());
+
+	auto IndexDispatcher = spring::make_index_dispatcher<std::tuple_size_v<ResultTupleType>>();
+	IndexDispatcher([&arr, &resultTuple](auto idx) {
+		std::get<idx>(resultTuple) = arr[idx];
+	});
+
 	return resultTuple;
 }
 

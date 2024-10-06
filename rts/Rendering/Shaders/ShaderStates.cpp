@@ -4,6 +4,8 @@
 #include "System/SpringHash.h"
 #include "System/UnorderedSet.hpp"
 
+#include "System/Misc/TracyDefs.h"
+
 
 static spring::unordered_set<int> samplerTypes{
 #ifndef HEADLESS
@@ -63,6 +65,7 @@ namespace Shader {
 
 	int UniformState::Hash(const int* v, int count) const
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 		int hash = ~0;
 		for (int n = 0; n < count; ++n) {
 			hash += v[n] ^ (hash * 33);
@@ -73,6 +76,7 @@ namespace Shader {
 
 	bool UniformState::IsLocationValid() const
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 	#ifdef HEADLESS
 		// our stub headers are outdated and are missing GL_INVALID_INDEX
 		return false;
@@ -85,6 +89,7 @@ namespace Shader {
 #ifdef DEBUG
 	void UniformState::AssertType(int type) const
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 		int utype = this->type;
 		if (samplerTypes.find(utype) != samplerTypes.end())
 			utype = GL_INT;
@@ -94,6 +99,7 @@ namespace Shader {
 
 
 	unsigned int ShaderFlags::CalcHash() const {
+		RECOIL_DETAILED_TRACY_ZONE;
 		unsigned int hash = 997;
 
 		for (const auto& p: bitFlags) {

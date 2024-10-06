@@ -127,7 +127,7 @@ class CEventClient
 		virtual void UnitFinished(const CUnit* unit) {}
 		virtual void UnitReverseBuilt(const CUnit* unit) {}
 		virtual void UnitFromFactory(const CUnit* unit, const CUnit* factory, bool userOrders) {}
-		virtual void UnitDestroyed(const CUnit* unit, const CUnit* attacker) {}
+		virtual void UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID) {}
 		virtual void UnitTaken(const CUnit* unit, int oldTeam, int newTeam) {}
 		virtual void UnitGiven(const CUnit* unit, int oldTeam, int newTeam) {}
 
@@ -173,6 +173,7 @@ class CEventClient
 		virtual bool UnitFeatureCollision(const CUnit* collider, const CFeature* collidee) { return false; }
 		virtual void UnitMoved(const CUnit* unit) {}
 		virtual void UnitMoveFailed(const CUnit* unit) {}
+		virtual void UnitArrivedAtGoal(const CUnit* unit) {}
 
 		virtual void FeatureCreated(const CFeature* feature) {}
 		virtual void FeatureDestroyed(const CFeature* feature) {}
@@ -327,7 +328,7 @@ class CEventClient
 		virtual void DrawWorld() {}
 		virtual void DrawWorldPreUnit() {}
 		virtual void DrawPreDecals() {}
-		virtual void DrawWorldPreParticles() {}
+		virtual void DrawWorldPreParticles(bool drawAboveWater, bool drawReflection, bool drawRefraction) {}
 		virtual void DrawWaterPost() {}
 		virtual void DrawWorldShadow() {}
 		virtual void DrawShadowPassTransparent() {}

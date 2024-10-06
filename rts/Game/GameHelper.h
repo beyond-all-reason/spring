@@ -41,6 +41,8 @@ struct CExplosionParams {
 	float explosionSpeed;
 	float gfxMod;
 
+	mutable float maxGroundDeformation;
+
 	bool impactOnly;
 	bool ignoreOwner;
 	bool damageGround;

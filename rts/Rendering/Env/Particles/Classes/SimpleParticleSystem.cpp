@@ -15,6 +15,8 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CSimpleParticleSystem, CProjectile, )
 
 CR_REG_METADATA(CSimpleParticleSystem,
@@ -85,6 +87,7 @@ CSimpleParticleSystem::CSimpleParticleSystem()
 
 void CSimpleParticleSystem::Serialize(creg::ISerializer* s)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string name;
 	if (s->IsWriting())
 		name = projectileDrawer->textureAtlas->GetTextureName(texture);
@@ -95,6 +98,7 @@ void CSimpleParticleSystem::Serialize(creg::ISerializer* s)
 
 void CSimpleParticleSystem::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateAnimParams();
 
 	float3 zdir;
@@ -168,6 +172,7 @@ void CSimpleParticleSystem::Draw()
 
 void CSimpleParticleSystem::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe = true;
 
 	for (auto& p: particles) {
@@ -187,6 +192,7 @@ void CSimpleParticleSystem::Update()
 
 void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Init(owner, offset);
 
 	const float3 up = emitVector;
@@ -217,7 +223,7 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 		p.size = particleSize + guRNG.NextFloat()*particleSizeSpread;
 	}
 
-	drawRadius = (particleSpeed + particleSpeedSpread) * (particleLife * particleLifeSpread);
+	drawRadius = (particleSpeed + particleSpeedSpread) * (particleLife + particleLifeSpread);
 }
 
 int CSimpleParticleSystem::GetProjectilesCount() const
@@ -229,6 +235,7 @@ int CSimpleParticleSystem::GetProjectilesCount() const
 
 bool CSimpleParticleSystem::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

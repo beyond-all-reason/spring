@@ -59,7 +59,7 @@ static void ExitSpringProcess(const char* msg, const char* caption, unsigned int
 
 static void ExitSpringProcess(const char* msg, const char* caption, unsigned int flags)
 {
-	LOG_L(L_ERROR, "[%s] errorMsg=\"%s\" msgCaption=\"%s\" mainThread=%d", __func__, msg, caption, Threading::IsMainThread());
+	LOG_L(L_FATAL, "[%s] errorMsg=\"%s\" msgCaption=\"%s\" mainThread=%d", __func__, msg, caption, Threading::IsMainThread());
 
 	switch (SpringApp::PostKill(Threading::Error(caption, msg, flags))) {
 		case -1: {

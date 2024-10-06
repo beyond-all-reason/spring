@@ -31,15 +31,23 @@ float CSoundSource::globalPitch = 1.0f;
 // reduce the rolloff when the camera is height above the ground (so we still hear something in tab mode or far zoom)
 float CSoundSource::heightRolloffModifier = 1.0f;
 
+void CSoundSource::swap(CSoundSource& r)
+{
+	std::swap(id, r.id);
+	std::swap(curChannel, r.curChannel);
+	std::swap(curStream, r.curStream);
+	std::swap(curVolume, r.curVolume);
+	std::swap(loopStop, r.loopStop);
+	std::swap(in3D, r.in3D);
+	std::swap(efxEnabled, r.efxEnabled);
+	std::swap(efxUpdates, r.efxUpdates);
+	std::swap(curHeightRolloffModifier, r.curHeightRolloffModifier);
+
+	std::swap(curPlayingItem, r.curPlayingItem);
+	std::swap(asyncPlayItem, r.asyncPlayItem);
+}
 
 CSoundSource::CSoundSource()
-	: curChannel(nullptr)
-	, curVolume(1.0f)
-	, loopStop(1e9)
-	, in3D(false)
-	, efxEnabled(false)
-	, efxUpdates(0)
-	, curHeightRolloffModifier(1.0f)
 {
 	alGenSources(1, &id);
 
@@ -49,10 +57,24 @@ CSoundSource::CSoundSource()
 		alSourcef(id, AL_REFERENCE_DISTANCE, REFERENCE_DIST * ELMOS_TO_METERS);
 		CheckError("CSoundSource::CSoundSource");
 	}
-
-	curPlayingItem = {0,  0, 0,  0.0f, 0.0f};
 }
 
+
+CSoundSource::CSoundSource(CSoundSource&& src)
+{
+	// can't use naive/default move because `id` member has to be unique
+	this->swap(src);
+}
+
+CSoundSource& CSoundSource::operator = (CSoundSource&& src) {
+	this->swap(src);
+	return *this;
+}
+
+CSoundSource::~CSoundSource()
+{
+	Delete();
+}
 
 void CSoundSource::Update()
 {
@@ -80,11 +102,11 @@ void CSoundSource::Update()
 			Stop();
 	}
 
-	if (curStream.Valid()) {
-		if (curStream.IsFinished()) {
+	if (curStream) {
+		if (curStream->IsFinished()) {
 			Stop();
 		} else {
-			curStream.Update();
+			curStream->Update();
 			CheckError("CSoundSource::Update");
 		}
 	}
@@ -115,7 +137,7 @@ int CSoundSource::GetCurrentPriority() const
 	if (asyncPlayItem.id != 0)
 		return asyncPlayItem.priority;
 
-	if (curStream.Valid())
+	if (curStream)
 		return INT_MAX;
 
 	if (curPlayingItem.id == 0)
@@ -126,7 +148,7 @@ int CSoundSource::GetCurrentPriority() const
 
 bool CSoundSource::IsPlaying(const bool checkOpenAl) const
 {
-	if (curStream.Valid())
+	if (curStream)
 		return true;
 
 	if (asyncPlayItem.id != 0)
@@ -168,8 +190,7 @@ void CSoundSource::Stop()
 		curPlayingItem = {};
 	}
 
-	if (curStream.Valid())
-		curStream.Stop();
+	curStream.reset();
 
 	if (curChannel != nullptr) {
 		IAudioChannel* oldChannel = curChannel;
@@ -181,7 +202,7 @@ void CSoundSource::Stop()
 
 void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, float3 velocity, float volume, bool relative)
 {
-	assert(!curStream.Valid());
+	assert(!curStream);
 	assert(channel);
 
 	if (!item->PlayNow())
@@ -288,8 +309,8 @@ void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, f
 	// stop any current playback
 	Stop();
 
-	if (!curStream.Valid())
-		curStream = MusicStream(id);
+	if (!curStream)
+		curStream = std::make_unique <MusicStream> ();
 
 	// OpenAL params
 	curChannel = channel;
@@ -312,14 +333,14 @@ void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, f
 
 	// COggStreams only appends buffers, giving errors when a buffer of another format is still assigned
 	alSourcei(id, AL_BUFFER, AL_NONE);
-	curStream.Play(file, volume);
-	curStream.Update();
+	curStream->Play(file, volume, id);
+	curStream->Update();
 	CheckError("CSoundSource::Update");
 }
 
 void CSoundSource::StreamStop()
 {
-	if (!curStream.Valid())
+	if (!curStream)
 		return;
 
 	Stop();
@@ -327,10 +348,10 @@ void CSoundSource::StreamStop()
 
 void CSoundSource::StreamPause()
 {
-	if (!curStream.Valid())
+	if (!curStream)
 		return;
 
-	if (curStream.TogglePause())
+	if (curStream->TogglePause())
 		alSourcePause(id);
 	else
 		alSourcePlay(id);
@@ -338,12 +359,18 @@ void CSoundSource::StreamPause()
 
 float CSoundSource::GetStreamTime()
 {
-	return (curStream.Valid())? curStream.GetTotalTime() : 0.0f;
+	return curStream
+		? curStream->GetTotalTime()
+		: 0.0f
+	;
 }
 
 float CSoundSource::GetStreamPlayTime()
 {
-	return (curStream.Valid())? curStream.GetPlayTime() : 0.0f;
+	return curStream
+		? curStream->GetPlayTime()
+		: 0.0f
+	;
 }
 
 void CSoundSource::UpdateVolume()
@@ -351,7 +378,7 @@ void CSoundSource::UpdateVolume()
 	if (curChannel == nullptr)
 		return;
 
-	if (curStream.Valid()) {
+	if (curStream) {
 		alSourcef(id, AL_GAIN, curVolume * curChannel->volume);
 		return;
 	}

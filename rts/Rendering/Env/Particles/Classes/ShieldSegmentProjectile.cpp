@@ -14,6 +14,8 @@
 #include "System/SpringMath.h"
 #include "System/UnorderedMap.hpp"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CR_BIND(ShieldSegmentCollection, )
 CR_REG_METADATA(ShieldSegmentCollection, (
@@ -66,6 +68,7 @@ ShieldSegmentCollection& ShieldSegmentCollection::operator=(ShieldSegmentCollect
 
 void ShieldSegmentCollection::Init(CPlasmaRepulser* shield_)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	shield = shield_;
 	shieldTexture = nullptr;
 
@@ -101,6 +104,7 @@ void ShieldSegmentCollection::Init(CPlasmaRepulser* shield_)
 
 void ShieldSegmentCollection::Kill()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	shield = nullptr;
 
 	for (ShieldSegmentProjectile* seg : shieldSegments)
@@ -117,6 +121,7 @@ void ShieldSegmentCollection::Kill()
 
 void ShieldSegmentCollection::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	lastAllowDrawFrame = -1;
 	if (shield == nullptr)
 		return;
@@ -138,11 +143,13 @@ void ShieldSegmentCollection::PostLoad()
 
 bool ShieldSegmentCollection::UsingPerlinNoise() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (projectileDrawer != nullptr && shieldTexture == projectileDrawer->perlintex);
 }
 
 bool ShieldSegmentCollection::AllowDrawing()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// call eventHandler.DrawShield only once per shield & frame
 	if (lastAllowDrawFrame == globalRendering->drawFrame)
 		return allowDrawing;
@@ -174,6 +181,7 @@ bool ShieldSegmentCollection::AllowDrawing()
 
 void ShieldSegmentCollection::UpdateColor()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const WeaponDef* shieldDef = shield->weaponDef;
 
 	// lerp between badColor and goodColor based on shield's current power
@@ -195,6 +203,7 @@ void ShieldSegmentCollection::UpdateColor()
 
 float3 ShieldSegmentCollection::GetShieldDrawPos() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(shield != nullptr);
 	assert(shield->owner != nullptr);
 	return shield->owner->GetObjectSpaceDrawPos(shield->relWeaponMuzzlePos);
@@ -230,6 +239,7 @@ ShieldSegmentProjectile::ShieldSegmentProjectile(
 
 void ShieldSegmentProjectile::Reload(ShieldSegmentCollection* collection_, int xpart, int ypart)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!deleteMe);
 
 	collection = collection_;
@@ -244,6 +254,7 @@ void ShieldSegmentProjectile::Reload(ShieldSegmentCollection* collection_, int x
 
 const float3* ShieldSegmentProjectile::GetSegmentVertices(const int xpart, const int ypart)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (spherevertices.empty()) {
 		spherevertices.resize(ShieldSegmentCollection::NUM_SEGMENTS_Y * ShieldSegmentCollection::NUM_SEGMENTS_X * NUM_VERTICES_Y * NUM_VERTICES_X);
 
@@ -276,6 +287,7 @@ const float3* ShieldSegmentProjectile::GetSegmentVertices(const int xpart, const
 
 const float2* ShieldSegmentProjectile::GetSegmentTexCoords(const AtlasedTexture* texture, const int xpart, const int ypart)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto fit = spheretexcoords.find(texture);
 
 	if (fit == spheretexcoords.end()) {
@@ -310,6 +322,7 @@ const float2* ShieldSegmentProjectile::GetSegmentTexCoords(const AtlasedTexture*
 
 void ShieldSegmentProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (collection == nullptr)
 		return;
 
@@ -320,6 +333,7 @@ void ShieldSegmentProjectile::Update()
 
 void ShieldSegmentProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (collection == nullptr)
 		return;
 

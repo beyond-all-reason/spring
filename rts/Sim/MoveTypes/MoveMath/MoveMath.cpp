@@ -4,6 +4,7 @@
 
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
@@ -12,7 +13,7 @@
 #include "Sim/Units/Unit.h"
 #include "System/Platform/Threading.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 bool CMoveMath::noHoverWaterMove = false;
 float CMoveMath::waterDamageCost = 0.0f;
@@ -20,9 +21,37 @@ float CMoveMath::waterDamageCost = 0.0f;
 static constexpr int FOOTPRINT_XSTEP = 2;
 static constexpr int FOOTPRINT_ZSTEP = 2;
 
+MoveTypes::CheckCollisionQuery::CheckCollisionQuery(const CSolidObject* ref)
+	: unit(ref)
+	, moveDef(ref->moveDef)
+	, pos(ref->pos)
+	, physicalState(ref->physicalState)
+{
+	if (moveDef != nullptr)
+		inExitOnlyZone = moveDef->IsInExitOnly(ref->pos);
+}
+
+MoveTypes::CheckCollisionQuery::CheckCollisionQuery(const MoveDef* refMoveDef, float3 testPos)
+	: moveDef(refMoveDef)
+	, pos(testPos.cClampInBounds())
+{
+	UpdateElevationForPos(pos);
+}
+
+void MoveTypes::CheckCollisionQuery::UpdateElevationForPos(int2 sqr) {
+	const float mapHeight = readMap->GetMaxHeightMapSynced()[sqr.y * mapDims.mapx + sqr.x];
+	pos.y = std::max(mapHeight, -moveDef->waterline);
+
+	bool inWater = (pos.y < 0.f);
+	if (inWater)
+		SetPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+	else
+		ClearPhysicalStateBit(CSolidObject::PhysicalState::PSTATE_BIT_INWATER);
+}
 
 float CMoveMath::yLevel(const MoveDef& moveDef, int xSqr, int zSqr)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (moveDef.speedModClass) {
 		case MoveDef::Tank: // fall-through
 		case MoveDef::KBot:  { return (CGround::GetHeightReal      (xSqr * SQUARE_SIZE, zSqr * SQUARE_SIZE) + 10.0f); } break;
@@ -35,6 +64,7 @@ float CMoveMath::yLevel(const MoveDef& moveDef, int xSqr, int zSqr)
 
 float CMoveMath::yLevel(const MoveDef& moveDef, const float3& pos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (moveDef.speedModClass) {
 		case MoveDef::Tank: // fall-through
 		case MoveDef::KBot:  { return (CGround::GetHeightReal      (pos.x, pos.z) + 10.0f); } break;
@@ -50,6 +80,7 @@ float CMoveMath::yLevel(const MoveDef& moveDef, const float3& pos)
 /* calculate the local speed-modifier for this MoveDef */
 float CMoveMath::GetPosSpeedMod(const MoveDef& moveDef, unsigned xSquare, unsigned zSquare)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (xSquare >= mapDims.mapx || zSquare >= mapDims.mapy)
 		return 0.0f;
 
@@ -75,6 +106,7 @@ float CMoveMath::GetPosSpeedMod(const MoveDef& moveDef, unsigned xSquare, unsign
 
 float CMoveMath::GetPosSpeedMod(const MoveDef& moveDef, unsigned xSquare, unsigned zSquare, float3 moveDir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (xSquare >= mapDims.mapx || zSquare >= mapDims.mapy)
 		return 0.0f;
 
@@ -110,40 +142,19 @@ float CMoveMath::GetPosSpeedMod(const MoveDef& moveDef, unsigned xSquare, unsign
 }
 
 /* Check if a given square-position is accessable by the MoveDef footprint. */
-CMoveMath::BlockType CMoveMath::IsBlockedNoSpeedModCheck(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider)
+CMoveMath::BlockType CMoveMath::IsBlockedNoSpeedModCheck(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider, int thread)
 {
-	const int xmin = std::max(xSquare - moveDef.xsizeh,                0);
-	const int zmin = std::max(zSquare - moveDef.zsizeh,                0);
-	const int xmax = std::min(xSquare + moveDef.xsizeh, mapDims.mapx - 1);
-	const int zmax = std::min(zSquare + moveDef.zsizeh, mapDims.mapy - 1);
+	MoveTypes::CheckCollisionQuery collisionQuery = (collider != nullptr)
+			? MoveTypes::CheckCollisionQuery(collider)
+			: MoveTypes::CheckCollisionQuery(&moveDef);
+	collisionQuery.UpdateElevationForPos(int2{xSquare, zSquare});
 
-	BlockType ret = BLOCK_NONE;
-
-	// footprints are point-symmetric around <xSquare, zSquare>
-	// same as RangeIsBlocked but without anti-duplication test
-	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
-		const int zOffset = z * mapDims.mapx;
-
-		for (int x = xmin; x <= xmax; x += FOOTPRINT_XSTEP) {
-			const CGroundBlockingObjectMap::BlockingMapCell& cell = groundBlockingObjectMap.GetCellUnsafeConst(zOffset + x);
-
-			for (size_t i = 0, n = cell.size(); i < n; i++) {
-				const CSolidObject* collidee = cell[i];
-
-				if (((ret |= ObjectBlockType(moveDef, collidee, collider)) & BLOCK_STRUCTURE) == 0)
-					continue;
-
-				return ret;
-			}
-		}
-	}
-
-	return ret;
+	return RangeIsBlocked(xSquare - moveDef.xsizeh, xSquare + moveDef.xsizeh, zSquare - moveDef.zsizeh, zSquare + moveDef.zsizeh, &collisionQuery, thread);
 }
 
-/* Check if a given square-position is accessable by the MoveDef footprint. */
 CMoveMath::BlockType CMoveMath::IsBlockedNoSpeedModCheckDiff(const MoveDef& moveDef, int2 prevSqr, int2 newSqr, const CSolidObject* collider, int thread)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// prev allows {-1, -1} so that the first check is always treated as a full test
 	const int prev_xmin = std::max(prevSqr.x - moveDef.xsizeh,               -1);
 	const int prev_zmin = std::max(prevSqr.y - moveDef.zsizeh,               -1);
@@ -156,6 +167,11 @@ CMoveMath::BlockType CMoveMath::IsBlockedNoSpeedModCheckDiff(const MoveDef& move
 	const int zmax = std::min(newSqr.y + moveDef.zsizeh, mapDims.mapy - 1);
 
 	BlockType ret = BLOCK_NONE;
+
+	MoveTypes::CheckCollisionQuery colliderInfo = (collider != nullptr)
+			? MoveTypes::CheckCollisionQuery(collider)
+			: MoveTypes::CheckCollisionQuery(&moveDef);
+	colliderInfo.UpdateElevationForPos(int2{newSqr.x, newSqr.y});
 
 	const int tempNum = gs->GetMtTempNum(thread);
 
@@ -179,7 +195,7 @@ CMoveMath::BlockType CMoveMath::IsBlockedNoSpeedModCheckDiff(const MoveDef& move
 
 				collidee->mtTempNum[thread] = tempNum;
 
-				if (((ret |= ObjectBlockType(moveDef, collidee, collider)) & BLOCK_STRUCTURE) == 0)
+				if (((ret |= ObjectBlockType(collidee, &colliderInfo)) & BLOCK_STRUCTURE) == 0)
 					continue;
 
 				return ret;
@@ -190,15 +206,9 @@ CMoveMath::BlockType CMoveMath::IsBlockedNoSpeedModCheckDiff(const MoveDef& move
 	return ret;
 }
 
-CMoveMath::BlockType CMoveMath::IsBlockedNoSpeedModCheckThreadUnsafe(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider)
-{
-	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
-	return RangeIsBlocked(moveDef, xSquare - moveDef.xsizeh, xSquare + moveDef.xsizeh, zSquare - moveDef.zsizeh, zSquare + moveDef.zsizeh, collider);
-}
-
-
 bool CMoveMath::CrushResistant(const MoveDef& colliderMD, const CSolidObject* collidee)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!collidee->HasCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS))
 		return false;
 	if (!collidee->crushable)
@@ -209,6 +219,7 @@ bool CMoveMath::CrushResistant(const MoveDef& colliderMD, const CSolidObject* co
 
 bool CMoveMath::IsNonBlocking(const CSolidObject* collidee, const MoveTypes::CheckCollisionQuery* collider)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (collider->unit == collidee)
 		return true;
 	if (!collidee->HasCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS))
@@ -240,7 +251,7 @@ bool CMoveMath::IsNonBlocking(const CSolidObject* collidee, const MoveTypes::Che
 	// owner would need to be accessible, but the path-estimator
 	// defs are not tied to any collider instances
 	//
-	if (collider->pos.y == MoveTypes::CheckCollisionQuery::POS_Y_UNAVAILABLE) {
+	if ( !collider->IsHeightChecksEnabled() ) {
 		const bool colliderIsSub = collider->moveDef->isSubmarine;
 		const bool collideeIsSub = collidee->moveDef != nullptr && collidee->moveDef->isSubmarine;
 
@@ -283,6 +294,7 @@ bool CMoveMath::IsNonBlocking(const CSolidObject* collidee, const MoveTypes::Che
 
 CMoveMath::BlockType CMoveMath::ObjectBlockType(const CSolidObject* collidee, const MoveTypes::CheckCollisionQuery* collider)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsNonBlocking(collidee, collider))
 		return BLOCK_NONE;
 
@@ -307,17 +319,19 @@ CMoveMath::BlockType CMoveMath::ObjectBlockType(const CSolidObject* collidee, co
 	return ((u->IsIdle())? BLOCK_MOBILE: BLOCK_MOBILE_BUSY);
 }
 
-CMoveMath::BlockType CMoveMath::SquareIsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider)
+CMoveMath::BlockType CMoveMath::SquareIsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, MoveTypes::CheckCollisionQuery* collider)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (static_cast<unsigned>(xSquare) >= mapDims.mapx || static_cast<unsigned>(zSquare) >= mapDims.mapy)
 		return BLOCK_IMPASSABLE;
 
+	collider->UpdateElevationForPos(int2(xSquare, zSquare));
 	BlockType r = BLOCK_NONE;
 
 	const CGroundBlockingObjectMap::BlockingMapCell& cell = groundBlockingObjectMap.GetCellUnsafeConst(zSquare * mapDims.mapx + xSquare);
 
 	for (size_t i = 0, n = cell.size(); i < n; i++) {
-		r |= ObjectBlockType(moveDef, cell[i], collider);
+		r |= ObjectBlockType(cell[i], collider);
 	}
 
 	return r;
@@ -325,6 +339,7 @@ CMoveMath::BlockType CMoveMath::SquareIsBlocked(const MoveDef& moveDef, int xSqu
 
 CMoveMath::BlockType CMoveMath::RangeIsBlocked(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int thread)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	xmin = std::max(xmin,                0);
 	zmin = std::max(zmin,                0);
 	xmax = std::min(xmax, mapDims.mapx - 1);
@@ -344,6 +359,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlocked(int xmin, int xmax, int zmin, int
 
 CMoveMath::BlockType CMoveMath::RangeIsBlockedTempNum(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int tempNum, int thread)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	xmin = std::max(xmin,                0);
 	zmin = std::max(zmin,                0);
 	xmax = std::min(xmax, mapDims.mapx - 1);
@@ -363,6 +379,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedTempNum(int xmin, int xmax, int zm
 
 CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int tempNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	BlockType ret = BLOCK_NONE;
 
 	// footprints are point-symmetric around <xSquare, zSquare>
@@ -394,6 +411,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedSt(int xmin, int xmax, int zmin, i
 
 CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int thread, int tempNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	BlockType ret = BLOCK_NONE;
 
 	// footprints are point-symmetric around <xSquare, zSquare>
@@ -424,6 +442,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedMt(int xmin, int xmax, int zmin, i
 
 CMoveMath::BlockType CMoveMath::RangeIsBlockedHashedSt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int tempNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	BlockType ret = BLOCK_NONE;
 
 	static spring::unordered_map<CSolidObject*, CMoveMath::BlockType> blockMap(10);
@@ -477,6 +496,7 @@ void CMoveMath::InitRangeIsBlockedHashes() {
 
 CMoveMath::BlockType CMoveMath::RangeIsBlockedHashedMt(int xmin, int xmax, int zmin, int zmax, const MoveTypes::CheckCollisionQuery* collider, int tempNum, int thread)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	BlockType ret = BLOCK_NONE;
 
 	spring::unordered_map<CSolidObject*, CMoveMath::BlockType>& blockMap = blockMaps[thread];
@@ -496,7 +516,7 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedHashedMt(int xmin, int xmax, int z
 
 			for (size_t i = 0, n = cell.size(); i < n; i++) {
 				CSolidObject* collidee = cell[i];
-
+  
 				auto blockMapResult = blockMap.find(collidee);
 				if (blockMapResult == blockMap.end()) {
 					blockMapResult = blockMap.emplace(collidee, ObjectBlockType(collidee, collider)).first;
@@ -517,11 +537,16 @@ CMoveMath::BlockType CMoveMath::RangeIsBlockedHashedMt(int xmin, int xmax, int z
 
 void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObject* collider, const SRectangle& areaToSample, std::vector<std::uint8_t>& results, int thread)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::unordered_map<CSolidObject*, CMoveMath::BlockType>& blockMap = blockMaps[thread];
 	blockMap.clear();
 
 	results.clear();
 	results.reserve(areaToSample.GetArea());
+
+	MoveTypes::CheckCollisionQuery colliderInfo = (collider != nullptr)
+			? MoveTypes::CheckCollisionQuery(collider)
+			: MoveTypes::CheckCollisionQuery(&moveDef, {float(areaToSample.x1*SQUARE_SIZE), 0.f, float(areaToSample.z1*SQUARE_SIZE)});
 
 	for (int z = areaToSample.z1; z < areaToSample.z2; ++z) {
 		const int zOffset = z * mapDims.mapx;
@@ -535,7 +560,7 @@ void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObje
 
 				auto blockMapResult = blockMap.find(collidee);
 				if (blockMapResult == blockMap.end()) {
-					blockMapResult = blockMap.emplace(collidee, ObjectBlockType(moveDef, collidee, collider)).first;
+					blockMapResult = blockMap.emplace(collidee, ObjectBlockType(collidee, &colliderInfo)).first;
 				}
 
 				ret |= blockMapResult->second;
@@ -546,5 +571,13 @@ void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObje
 			results.emplace_back(ret);
 		}
 	}
+}
+
+bool CMoveMath::RangeHasExitOnly(int xmin, int xmax, int zmin, int zmax, const ObjectCollisionMapHelper& object) {
+	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
+		for (int x = xmin; x <= xmax; x += FOOTPRINT_XSTEP)
+			if (object.IsExitOnlyAt(x, z)) return true;
+	}
+	return false;
 }
 

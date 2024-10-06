@@ -14,7 +14,7 @@ public:
 public:
 	virtual ~IMapDamage() {}
 
-	virtual void Explosion(const float3& pos, float strength, float radius) = 0;
+	virtual void Explosion(const float3& pos, float strength, float radius, float& maxHeightDiff) = 0;
 	virtual void RecalcArea(int x1, int x2, int y1, int y2) = 0;
 	virtual void TerrainTypeHardnessChanged(int ttIndex) {}
 	virtual void TerrainTypeSpeedModChanged(int ttIndex) {}

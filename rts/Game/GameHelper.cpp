@@ -16,8 +16,10 @@
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/DamageArray.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
+#include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/ModInfo.h"
@@ -39,12 +41,15 @@
 #include "System/SpringMath.h"
 #include "System/Sound/ISoundChannels.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 static CGameHelper gGameHelper;
 CGameHelper* helper = &gGameHelper;
 
 void CGameHelper::Init()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (auto& wdVec: waitingDamages) {
 		wdVec.clear();
 		wdVec.reserve(32);
@@ -57,6 +62,7 @@ void CGameHelper::Kill()
 
 void CGameHelper::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int wdIdx = gs->frameNum & (waitingDamages.size() - 1);
 
 	// need to use explicit indexing because CUnit::DoDamage
@@ -111,6 +117,7 @@ void CGameHelper::DoExplosionDamage(
 	const int weaponDefID,
 	const int projectileID
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unit != nullptr);
 
 	if (ignoreOwner && (unit == owner))
@@ -175,6 +182,7 @@ void CGameHelper::DoExplosionDamage(
 	const int weaponDefID,
 	const int projectileID
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(feature != nullptr);
 
 	const LocalModelPiece* lhp = feature->GetLastHitPiece(gs->frameNum);
@@ -210,6 +218,7 @@ void CGameHelper::DamageObjectsInExplosionRadius(
 	const float expRad,
 	const int weaponDefID
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static std::vector<CUnit*> unitCache;
 	static std::vector<CFeature*> featureCache;
 
@@ -240,6 +249,7 @@ void CGameHelper::DamageObjectsInExplosionRadius(
 }
 
 void CGameHelper::Explosion(const CExplosionParams& params) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const DamageArray& damages = params.damages;
 
 	// if weaponDef is NULL, this is a piece-explosion
@@ -303,7 +313,7 @@ void CGameHelper::Explosion(const CExplosionParams& params) {
 				const float craterStrength = (damageDepth + damages.craterBoost) * damages.craterMult;
 				const float craterRadius = craterAOE - altitude;
 
-				mapDamage->Explosion(params.pos, craterStrength, craterRadius);
+				mapDamage->Explosion(params.pos, craterStrength, craterRadius, params.maxGroundDeformation);
 			}
 		}
 	}
@@ -324,6 +334,7 @@ void CGameHelper::Explosion(const CExplosionParams& params) {
 	CExplosionCreator::FireExplosionEvent(params);
 
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 		if (weaponDef == nullptr)
 			return;
 
@@ -752,7 +763,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 				}
 
 				if (targetLOSState & LOS_PREVLOS) {
-					targetPriority /= (damageMul * targetUnit->power * (0.7f + gsRNG.NextFloat() * 0.6f));
+					targetPriority /= (damageMul * targetUnit->power);
 					targetPriority *= tgtPriorityMults[((targetUnit->category & weapon->badTargetCategory) != 0) * 2];
 					targetPriority *= tgtPriorityMults[(targetUnit->IsCrashing()) * 3];
 					targetPriority *= tgtPriorityMults[(targetUnit == lastAttacker) * 4];
@@ -779,6 +790,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 
 CUnit* CGameHelper::GetClosestUnit(const float3& pos, float searchRadius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Query::ClosestUnit_ErrorPos_NOT_SYNCED q(pos, searchRadius);
 	QueryUnits(Filter::Friendly_All_Plus_Enemy_InLos_NOT_SYNCED(), q);
 	return q.GetClosestUnit();
@@ -786,6 +798,7 @@ CUnit* CGameHelper::GetClosestUnit(const float3& pos, float searchRadius)
 
 CUnit* CGameHelper::GetClosestEnemyUnit(const CUnit* excludeUnit, const float3& pos, float searchRadius, int searchAllyteam)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Query::ClosestUnit q(pos, searchRadius);
 	QueryUnits(Filter::Enemy_InLos(excludeUnit, searchAllyteam), q);
 	return q.GetClosestUnit();
@@ -793,6 +806,7 @@ CUnit* CGameHelper::GetClosestEnemyUnit(const CUnit* excludeUnit, const float3& 
 
 CUnit* CGameHelper::GetClosestValidTarget(const float3& pos, float searchRadius, int searchAllyteam, const CMobileCAI* cai)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Query::ClosestUnit q(pos, searchRadius);
 	QueryUnits(Filter::Enemy_InLos_ValidTarget(searchAllyteam, cai), q);
 	return q.GetClosestUnit();
@@ -806,6 +820,7 @@ CUnit* CGameHelper::GetClosestEnemyUnitNoLosTest(
 	bool sphereDistTest,
 	bool checkSightDist
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* closestUnit = nullptr;
 
 	if (sphereDistTest) {
@@ -825,6 +840,7 @@ CUnit* CGameHelper::GetClosestEnemyUnitNoLosTest(
 
 CUnit* CGameHelper::GetClosestFriendlyUnit(const CUnit* excludeUnit, const float3& pos, float searchRadius, int searchAllyteam)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Query::ClosestUnit q(pos, searchRadius);
 	QueryUnits(Filter::Friendly(excludeUnit, searchAllyteam), q);
 	return q.GetClosestUnit();
@@ -832,6 +848,7 @@ CUnit* CGameHelper::GetClosestFriendlyUnit(const CUnit* excludeUnit, const float
 
 CUnit* CGameHelper::GetClosestEnemyAircraft(const CUnit* excludeUnit, const float3& pos, float searchRadius, int searchAllyteam)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Query::ClosestUnit q(pos, searchRadius);
 	QueryUnits(Filter::EnemyAircraft(excludeUnit, searchAllyteam), q);
 	return q.GetClosestUnit();
@@ -839,6 +856,7 @@ CUnit* CGameHelper::GetClosestEnemyAircraft(const CUnit* excludeUnit, const floa
 
 size_t CGameHelper::GetEnemyUnits(const float3& pos, float searchRadius, int searchAllyteam, std::vector<int>& found)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	found.clear();
 	found.reserve(128);
 
@@ -850,6 +868,7 @@ size_t CGameHelper::GetEnemyUnits(const float3& pos, float searchRadius, int sea
 
 size_t CGameHelper::GetEnemyUnitsNoLosTest(const float3& pos, float searchRadius, int searchAllyteam, std::vector<int>& found)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	found.clear();
 	found.reserve(128);
 
@@ -890,6 +909,7 @@ namespace {
 
 void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, bool forced, int teamId, const CUnit* excludeUnit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto testPredicate = [excludeUnit](const CUnit* u) { return u == excludeUnit; };
 
 	::BuggerOffImpl(pos, radius, spherical, forced, teamId, testPredicate);
@@ -899,9 +919,10 @@ void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, boo
 // used to check for square testing for building other units.
 void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, bool forced, int teamId, const CUnit* excludeUnit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int bufferSize = (moveDefHandler.GetLargestFootPrintSizeH() + 1) * SQUARE_SIZE;
-	const float3 min((mins.x - bufferSize), 0.f, (mins.z - bufferSize));
-	const float3 max((maxs.x + bufferSize), 0.f, (maxs.z + bufferSize));
+	const float3 min((mins.x - bufferSize), mins.y, (mins.z - bufferSize));
+	const float3 max((maxs.x + bufferSize), maxs.y, (maxs.z + bufferSize));
 
 	const float3 baseBufferOffLengths = (maxs - mins) * 0.5f;
 	const float3 centreOfBuggerOff = mins + baseBufferOffLengths;
@@ -941,6 +962,7 @@ void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, boo
 
 void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, bool forced, int teamId, const CUnit* excludeUnit, const std::vector<const UnitDef*> excludeUnitDefs)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto testPredicate = [excludeUnit, &excludeUnitDefs](const CUnit* u) {
 		if (u == excludeUnit)
 			return true;
@@ -958,6 +980,7 @@ void CGameHelper::BuggerOff(const float3& pos, float radius, bool spherical, boo
 
 float3 CGameHelper::Pos2BuildPos(const BuildInfo& buildInfo, bool synced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 pos;
 
 	// snap build-positions to 16-elmo grid
@@ -977,6 +1000,7 @@ float3 CGameHelper::Pos2BuildPos(const BuildInfo& buildInfo, bool synced)
 
 float4 CGameHelper::BuildPosToRect(const float3& midPoint, int facing, int xsize, int zsize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto xs = ((facing & 1) == 0) ? xsize : zsize;
 	const auto zs = ((facing & 1) == 1) ? xsize : zsize;
 
@@ -990,6 +1014,7 @@ float4 CGameHelper::BuildPosToRect(const float3& midPoint, int facing, int xsize
 
 int CGameHelper::GetYardMapIndex(int buildFacing, const int2& yardPos, const int2& xrange, const int2& zrange)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int yardX = yardPos.x - xrange.x;
 	int yardZ = yardPos.y - zrange.x;
 	int yardXR = xrange.y - xrange.x;
@@ -1029,6 +1054,7 @@ struct SearchOffset {
 
 static const std::vector<SearchOffset>& GetSearchOffsetTable(int radius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(radius >= 0);
 
 	static std::vector<SearchOffset> searchOffsets;
@@ -1068,6 +1094,7 @@ float3 CGameHelper::ClosestBuildPos(
 	int buildFacing,
 	bool synced
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (unitDef == nullptr)
 		return -RgtVector;
 
@@ -1153,6 +1180,7 @@ float3 CGameHelper::ClosestBuildPos(
 // against which to compare all footprint squares
 float CGameHelper::GetBuildHeight(const float3& pos, const UnitDef* unitdef, bool synced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// we are not going to terraform the ground for mobile units
 	// (so we do not care about maxHeightDif constraints either)
 	// TODO: maybe respect waterline if <pos> is in water
@@ -1236,6 +1264,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const std::vector<Command>* commands,
 	int threadOwner
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	feature = nullptr;
 
 	const int xsize = buildInfo.GetXSize();
@@ -1390,6 +1419,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 	int allyteam,
 	bool synced
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(pos.IsInBounds());
 
 	const int sqx = unsigned(pos.x) / SQUARE_SIZE;
@@ -1404,10 +1434,18 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 	if (!buildingMaskMap.TestTileMaskUnsafe(sqx >> 1, sqz >> 1, unitDef->buildingMask))
 		return BUILDSQUARE_BLOCKED;
 
-
 	BuildSquareStatus ret = BUILDSQUARE_OPEN;
 	const int yardxpos = unsigned(pos.x) / SQUARE_SIZE;
 	const int yardypos = unsigned(pos.z) / SQUARE_SIZE;
+	const int2 yardpos = { yardxpos, yardypos };
+	const int ymIdx = GetYardMapIndex(buildInfo.buildFacing, yardpos, xrange, zrange);
+
+	if (yardmapStatusEffectsMap.AreAnyFlagsSet(sqx, sqz, YardmapStatusEffectsMap::BLOCK_BUILDING)) {
+		bool isStackable = (!unitDef->yardmap.empty() && unitDef->yardmap[ymIdx] <= YardmapStates::YARDMAP_STACKABLE);
+		if ( !isStackable && (synced || ((allyteam < 0) || losHandler->InLos(pos, allyteam))) ) {
+			return BUILDSQUARE_BLOCKED;
+		}
+	}
 
 	CSolidObject* so = groundBlockingObjectMap.GroundBlocked(yardxpos, yardypos);
 
@@ -1432,10 +1470,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 			assert(u);
 			if ((allyteam < 0) || (u->losStatus[allyteam] & LOS_INLOS)) {
 				if (so->immobile) {
-
-					const int2 yardpos = { yardxpos, yardypos };
-					const int ymIdx = GetYardMapIndex(buildInfo.buildFacing, yardpos, xrange, zrange);
-
 					bool isStackable = (!unitDef->yardmap.empty() && unitDef->yardmap[ymIdx] <= YardmapStates::YARDMAP_GEOSTACKABLE);
 					ret = isStackable ? BUILDSQUARE_OPEN :
 							(TestBlockSquareForBuildOnly(so, yardpos) ? BUILDSQUARE_OPEN : BUILDSQUARE_BLOCKED);
@@ -1461,8 +1495,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 			}
 			#endif
 
-			if (moveDef != nullptr && CMoveMath::IsNonBlocking(*moveDef, so, nullptr))
-				ret = BUILDSQUARE_OPEN;
+			if (moveDef != nullptr) {
+				MoveTypes::CheckCollisionQuery collisionQuery(moveDef, pos);
+				if (CMoveMath::IsNonBlocking(so, &collisionQuery))
+					ret = BUILDSQUARE_OPEN;
+			}
 
 			#if 0
 			if (synced)
@@ -1482,6 +1519,7 @@ bool CGameHelper::TestBlockSquareForBuildOnly(
 	const int2 yardpos
 )
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool ret = false;
 	auto so = blockingObject;
 	
@@ -1542,6 +1580,7 @@ bool CGameHelper::CheckTerrainConstraints(
 	float groundSlope,
 	float* clampedHeight
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool depthCheck =  true;
 	bool slopeCheck = false;
 

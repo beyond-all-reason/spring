@@ -68,6 +68,11 @@ namespace spring {
 		struct type_name_holder {
 			static inline constexpr auto value = type_name_array<T>();
 		};
+		template <>
+		struct type_name_holder<std::string> {
+			static constexpr std::string_view tn = std::string_view{ "std::string" };
+			static inline constexpr auto value = substring_as_char_n(tn, std::make_index_sequence<tn.size()>{});
+		};
 	}
 
 	template<unsigned ...Len>

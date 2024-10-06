@@ -16,6 +16,8 @@ set(FILES
 	bitmaps/button.bmp
 	bitmaps/scars/scar1.tga
 	bitmaps/scars/scar1_normal.tga
+	bitmaps/scars/scar2.tga
+	bitmaps/scars/scar2_normal.tga
 	bitmaps/laserfalloff.tga
 	bitmaps/emptyBuildPane.bmp
 	bitmaps/detailtex.bmp

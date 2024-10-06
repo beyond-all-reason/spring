@@ -11,6 +11,8 @@
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
 
+#include <bit>
+
 CModInfo modInfo;
 
 void CModInfo::ResetState()
@@ -24,7 +26,6 @@ void CModInfo::ResetState()
 	description.clear();
 
 	{
-		allowDirectionalPathing    = true;
 		allowAircraftToLeaveMap    = true;
 		allowAircraftToHitGround   = true;
 		allowPushingEnemyUnits     = false;
@@ -74,15 +75,15 @@ void CModInfo::ResetState()
 		paralyzeOnMaxHealth = true;
 	}
 	{
-		transportGround            = 1;
-		transportHover             = 0;
-		transportShip              = 0;
-		transportAir               = 0;
+		transportGround = true;
+		transportHover  = false;
+		transportShip   = false;
+		transportAir    = false;
 		targetableTransportedUnits = 0;
 	}
 	{
-		fireAtKilled   = 0;
-		fireAtCrashing = 0;
+		fireAtKilled   = false;
+		fireAtCrashing = false;
 	}
 	{
 		flankingBonusModeDefault = 0;
@@ -110,11 +111,13 @@ void CModInfo::ResetState()
 		pfRepathMaxRateInFrames = 150;
 		pfRawMoveSpeedThreshold = 0.f;
 		qtMaxNodesSearched = 8192;
-		qtRefreshPathMinDist = 2000.f;
+		qtRefreshPathMinDist = 512.f;
 		qtMaxNodesSearchedRelativeToMapOpenNodes = 0.25;
 		qtLowerQualityPaths = false;
 
 		enableSmoothMesh = true;
+		smoothMeshResDivider = 2;
+		smoothMeshSmoothRadius = 40;
 		quadFieldQuadSizeInElmos = 128;
 
 		SLuaAllocLimit::MAX_ALLOC_BYTES = SLuaAllocLimit::MAX_ALLOC_BYTES_DEFAULT;
@@ -168,6 +171,8 @@ void CModInfo::Init(const std::string& modFileName)
 		qtLowerQualityPaths = system.GetBool("qtLowerQualityPaths", qtLowerQualityPaths);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
+		smoothMeshResDivider = std::max(system.GetInt("smoothMeshResDivider", smoothMeshResDivider), 1);
+		smoothMeshSmoothRadius = std::max(system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius), 1);
 
 		quadFieldQuadSizeInElmos = std::clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
 
@@ -182,7 +187,6 @@ void CModInfo::Init(const std::string& modFileName)
 		// movement
 		const LuaTable& movementTbl = root.SubTable("movement");
 
-		allowDirectionalPathing = movementTbl.GetBool("allowDirectionalPathing", allowDirectionalPathing);
 		allowAircraftToLeaveMap = movementTbl.GetBool("allowAirPlanesToLeaveMap", allowAircraftToLeaveMap);
 		allowAircraftToHitGround = movementTbl.GetBool("allowAircraftToHitGround", allowAircraftToHitGround);
 		allowPushingEnemyUnits = movementTbl.GetBool("allowPushingEnemyUnits", allowPushingEnemyUnits);
@@ -256,20 +260,20 @@ void CModInfo::Init(const std::string& modFileName)
 		// fire-at-dead-units
 		const LuaTable& fireAtDeadTbl = root.SubTable("fireAtDead");
 
-		fireAtKilled   = fireAtDeadTbl.GetBool("fireAtKilled", bool(fireAtKilled));
-		fireAtCrashing = fireAtDeadTbl.GetBool("fireAtCrashing", bool(fireAtCrashing));
+		fireAtKilled   = fireAtDeadTbl.GetBool("fireAtKilled", fireAtKilled);
+		fireAtCrashing = fireAtDeadTbl.GetBool("fireAtCrashing", fireAtCrashing);
 	}
 
 	{
 		// transportability
 		const LuaTable& transportTbl = root.SubTable("transportability");
 
-		transportAir    = transportTbl.GetBool("transportAir",    bool(transportAir   ));
-		transportShip   = transportTbl.GetBool("transportShip",   bool(transportShip  ));
-		transportHover  = transportTbl.GetBool("transportHover",  bool(transportHover ));
-		transportGround = transportTbl.GetBool("transportGround", bool(transportGround));
+		transportAir    = transportTbl.GetBool("transportAir",    transportAir   );
+		transportShip   = transportTbl.GetBool("transportShip",   transportShip  );
+		transportHover  = transportTbl.GetBool("transportHover",  transportHover );
+		transportGround = transportTbl.GetBool("transportGround", transportGround);
 
-		targetableTransportedUnits = transportTbl.GetBool("targetableTransportedUnits", bool(targetableTransportedUnits));
+		targetableTransportedUnits = transportTbl.GetBool("targetableTransportedUnits", targetableTransportedUnits);
 	}
 
 	{
@@ -325,5 +329,8 @@ void CModInfo::Init(const std::string& modFileName)
 		if ((airMipLevel < 0) || (airMipLevel > 30))
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
 	}
+
+	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))
+		throw content_error("quadFieldQuadSizeInElmos modrule has to be a power of 2");
 }
 

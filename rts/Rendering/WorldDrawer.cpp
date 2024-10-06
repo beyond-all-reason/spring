@@ -378,14 +378,21 @@ void CWorldDrawer::DrawAlphaObjects() const
 	static const double belowPlaneEq[4] = {0.0f, -1.0f, 0.0f, 0.0f};
 	static const double abovePlaneEq[4] = {0.0f,  1.0f, 0.0f, 0.0f};
 
+	const bool hasWaterRendering = globalRendering->drawWater && readMap->HasVisibleWater();
+	const auto firstAWRS = hasWaterRendering ?
+		CProjectileDrawer::AlphaWaterRenderingStage::ALPHA_WATER_RENDERING_STAGE_BELOW :
+		CProjectileDrawer::AlphaWaterRenderingStage::ALPHA_WATER_RENDERING_STAGE_ALL;
+
 	{
 		SCOPED_TIMER("Draw::World::Models::Alpha");
 		// clip in model-space
-		glPushMatrix();
-		glLoadIdentity();
-		glClipPlane(GL_CLIP_PLANE3, belowPlaneEq);
-		glPopMatrix();
-		glEnable(GL_CLIP_PLANE3);
+		if (hasWaterRendering) {
+			glPushMatrix();
+			glLoadIdentity();
+			glClipPlane(GL_CLIP_PLANE3, belowPlaneEq);
+			glPopMatrix();
+			glEnable(GL_CLIP_PLANE3);
+		}
 
 		// draw alpha-objects below water surface (farthest)
 		unitDrawer->DrawAlphaPass(false);
@@ -393,13 +400,17 @@ void CWorldDrawer::DrawAlphaObjects() const
 	}
 	{
 		SCOPED_TIMER("Draw::World::Projectiles");
-		projectileDrawer->DrawAlpha(false); //fix clip planes?
+		projectileDrawer->DrawAlpha(firstAWRS, false, false);
 
-		glDisable(GL_CLIP_PLANE3);
+		if (hasWaterRendering)
+			glDisable(GL_CLIP_PLANE3);
 	}
 
+	if (!hasWaterRendering)
+		return;
+
 	// draw water (in-between)
-	if (globalRendering->drawWater && !mapRendering->voidWater) {
+	{
 		SCOPED_TIMER("Draw::World::Water");
 
 		const auto& water = IWater::GetWater();
@@ -425,7 +436,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 	}
 	{
 		SCOPED_TIMER("Draw::World::Projectiles");
-		//projectileDrawer->DrawAlpha(false); //fix clip planes?
+		projectileDrawer->DrawAlpha(CProjectileDrawer::AlphaWaterRenderingStage::ALPHA_WATER_RENDERING_STAGE_ABOVE, false, false);
 
 		glDisable(GL_CLIP_PLANE3);
 	}

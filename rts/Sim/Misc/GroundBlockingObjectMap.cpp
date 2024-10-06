@@ -4,10 +4,16 @@
 
 #include "GroundBlockingObjectMap.h"
 #include "GlobalConstants.h"
+#include "Map/Ground.h"
 #include "Map/ReadMap.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Path/IPathManager.h"
+#include "Sim/Units/Unit.h"
 #include "System/ContainerUtil.h"
 #include "System/SpringHash.h"
+
+#include "System/Misc/TracyDefs.h"
 
 CGroundBlockingObjectMap groundBlockingObjectMap;
 
@@ -29,6 +35,7 @@ CR_REG_METADATA(CGroundBlockingObjectMap, (
 
 void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (object->GetBlockMap() != nullptr) {
 		// if object has a yardmap, add it to map selectively
 		// (checking the specific state of each yardmap cell)
@@ -59,6 +66,7 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object)
 
 void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, const YardMapStatus& mask)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	object->SetPhysicalStateBit(CSolidObject::PSTATE_BIT_BLOCKING);
 	object->SetMapPos(object->GetMapPos());
 
@@ -67,11 +75,31 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 	const int xminSqr = bx, xmaxSqr = bx + sx;
 	const int zminSqr = bz, zmaxSqr = bz + sz;
 
+	ObjectCollisionMapHelper objectCol(*object);
+
 	for (int z = zminSqr; z < zmaxSqr; z++) {
 		for (int x = xminSqr; x < xmaxSqr; x++) {
+			auto yardmapState = object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
+
+			// Add Exit-only zone
+			if (yardmapState & YARDMAP_EXITONLY){
+				objectCol.SetExitOnlyAt(x, z);
+				objectCol.SetBlockBuildingAt(x, z);
+				continue;
+			}
+			if (yardmapState & YARDMAP_UNBUILDABLE) {
+				objectCol.SetBlockBuildingAt(x, z);
+				continue;
+			}
+			// Hold off on this because BAR is using these yardmap types for controlling building upgrades.
+			// if (yardmapState & (YARDMAP_YARD|YARDMAP_YARDINV)) {
+			// 	objectCol.SetBlockBuildingAt(x, z);
+			// 	// may still need to be added to ground map.
+			// }
+
 			// unit yardmaps always contain sx=UnitDef::xsize * sz=UnitDef::zsize
 			// cells (the unit->moveDef footprint can have different dimensions)
-			if ((object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f}) & mask) == 0)
+			if ((yardmapState & mask) == 0)
 				continue;
 
 			CellInsertUnique(z * mapDims.mapx + x, object);
@@ -88,15 +116,34 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 
 void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int bx = object->mapPos.x;
 	const int bz = object->mapPos.y;
 	const int sx = object->xsize;
 	const int sz = object->zsize;
 
 	object->ClearPhysicalStateBit(CSolidObject::PSTATE_BIT_BLOCKING);
+	ObjectCollisionMapHelper objectCol(*object);
 
 	for (int z = bz; z < bz + sz; ++z) {
 		for (int x = bx; x < bx + sx; ++x) {
+			auto yardmapState = object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
+
+			// Remove Exit-only zone
+			if (yardmapState & YARDMAP_EXITONLY){
+				objectCol.ClearExitOnlyAt(x, z);
+				objectCol.ClearBlockBuildingAt(x, z);
+				continue;
+			}
+			if (yardmapState & YARDMAP_UNBUILDABLE) {
+				objectCol.ClearBlockBuildingAt(x, z);
+				continue;
+			}
+			if (yardmapState & (YARDMAP_YARD|YARDMAP_YARDINV)) {
+				objectCol.ClearBlockBuildingAt(x, z);
+				// may need to be removed from ground map
+			}
+
 			CellErase(z * mapDims.mapx + x, object);
 		}
 	}
@@ -111,6 +158,7 @@ void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 
 
 CSolidObject* CGroundBlockingObjectMap::GroundBlocked(int x, int z) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (static_cast<unsigned int>(x) >= mapDims.mapx || static_cast<unsigned int>(z) >= mapDims.mapy)
 		return nullptr;
 
@@ -119,6 +167,7 @@ CSolidObject* CGroundBlockingObjectMap::GroundBlocked(int x, int z) const {
 
 
 CSolidObject* CGroundBlockingObjectMap::GroundBlocked(const float3& pos) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int xSqr = int(pos.x / SQUARE_SIZE);
 	const int zSqr = int(pos.z / SQUARE_SIZE);
 	return (GroundBlocked(xSqr, zSqr));
@@ -127,6 +176,7 @@ CSolidObject* CGroundBlockingObjectMap::GroundBlocked(const float3& pos) const {
 
 bool CGroundBlockingObjectMap::GroundBlocked(int x, int z, const CSolidObject* ignoreObj) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (static_cast<unsigned int>(x) >= mapDims.mapx || static_cast<unsigned int>(z) >= mapDims.mapy)
 		return false;
 
@@ -149,6 +199,7 @@ bool CGroundBlockingObjectMap::GroundBlocked(int x, int z, const CSolidObject* i
 
 bool CGroundBlockingObjectMap::GroundBlocked(const float3& pos, const CSolidObject* ignoreObj) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int xSqr = static_cast<unsigned>(pos.x / SQUARE_SIZE);
 	const int zSqr = static_cast<unsigned>(pos.z / SQUARE_SIZE);
 	return (GroundBlocked(xSqr, zSqr, ignoreObj));
@@ -157,6 +208,7 @@ bool CGroundBlockingObjectMap::GroundBlocked(const float3& pos, const CSolidObje
 
 CGroundBlockingObjectMap::BlockingMapCell CGroundBlockingObjectMap::GetCellUnsafeConst(const float3& pos) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int xSqr = static_cast<unsigned>(pos.x / SQUARE_SIZE);
 	const int zSqr = static_cast<unsigned>(pos.z / SQUARE_SIZE);
 	return (GetCellUnsafeConst(zSqr * mapDims.mapx + xSqr));
@@ -169,6 +221,7 @@ CGroundBlockingObjectMap::BlockingMapCell CGroundBlockingObjectMap::GetCellUnsaf
   */
 void CGroundBlockingObjectMap::OpenBlockingYard(CSolidObject* object)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	RemoveGroundBlockingObject(object);
 	AddGroundBlockingObject(object, YARDMAP_YARDFREE);
 
@@ -185,6 +238,7 @@ void CGroundBlockingObjectMap::OpenBlockingYard(CSolidObject* object)
   */
 void CGroundBlockingObjectMap::CloseBlockingYard(CSolidObject* object)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	RemoveGroundBlockingObject(object);
 	AddGroundBlockingObject(object, YARDMAP_YARDBLOCKED);
 
@@ -194,6 +248,7 @@ void CGroundBlockingObjectMap::CloseBlockingYard(CSolidObject* object)
 
 bool CGroundBlockingObjectMap::CheckYard(const CSolidObject* yardUnit, const YardMapStatus& mask) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 mins = yardUnit->mapPos;
 	const int2 maxs = mins + int2(yardUnit->xsize, yardUnit->zsize);
 
@@ -213,6 +268,7 @@ bool CGroundBlockingObjectMap::CheckYard(const CSolidObject* yardUnit, const Yar
 
 unsigned int CGroundBlockingObjectMap::CalcChecksum() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int checksum = 666;
 
 	for (unsigned int i = 0; i < arrCells.size(); ++i) {
@@ -226,6 +282,7 @@ unsigned int CGroundBlockingObjectMap::CalcChecksum() const
 
 
 bool CGroundBlockingObjectMap::CellInsertUnique(unsigned int sqr, CSolidObject* o) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ArrCell& ac = GetArrCell(sqr);
 	VecCell* vc = nullptr;
 
@@ -250,6 +307,7 @@ bool CGroundBlockingObjectMap::CellInsertUnique(unsigned int sqr, CSolidObject* 
 }
 
 bool CGroundBlockingObjectMap::CellErase(unsigned int sqr, CSolidObject* o) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ArrCell& ac = GetArrCell(sqr);
 	VecCell* vc = nullptr;
 

@@ -15,6 +15,7 @@
 #include "System/SafeUtil.h"
 #include "System/Config/ConfigHandler.h"
 
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(bool, AnimationMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded execution of animation ticks");
 
@@ -38,6 +39,7 @@ CR_REG_METADATA(CUnitScriptEngine, (
 
 
 void CUnitScriptEngine::InitStatic() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	cobEngine = &gCobEngine;
 	cobFileHandler = &gCobFileHandler;
 	unitScriptEngine = &gUnitScriptEngine;
@@ -48,6 +50,7 @@ void CUnitScriptEngine::InitStatic() {
 }
 
 void CUnitScriptEngine::KillStatic() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	cobEngine->Kill();
 	cobFileHandler->Kill();
 	unitScriptEngine->Kill();
@@ -61,6 +64,7 @@ void CUnitScriptEngine::KillStatic() {
 
 void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CCobFile* oldScriptFile = cobFileHandler->GetScriptFile(udef->scriptName);
 
 	if (oldScriptFile == nullptr) {
@@ -103,6 +107,7 @@ void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 
 void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance == currentScript)
 		return;
 
@@ -111,6 +116,7 @@ void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 
 void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance == currentScript)
 		return;
 
@@ -126,7 +132,7 @@ void CUnitScriptEngine::Tick(int deltaTime)
 	using ImplFunctionT = decltype(&CUnitScriptEngine::ImplTickST);
 	static constexpr ImplFunctionT ImplFunctions[] = { &CUnitScriptEngine::ImplTickST, &CUnitScriptEngine::ImplTickMT };
 	// TODO: remove the conditional once it's proven to be sync safe
-	(this->*ImplFunctions[configHandler->GetInt("AnimationMT")])(deltaTime);
+	(this->*ImplFunctions[configHandler->GetBool("AnimationMT")])(deltaTime);
 
 	currentScript = nullptr;
 }

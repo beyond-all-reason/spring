@@ -62,7 +62,7 @@ struct UniformParamsBuffer {
 	float3 rndVec3; //new every draw frame.
 	uint32_t renderCaps; //various render booleans
 
-	float4 timeInfo;     //gameFrame, gameSeconds, drawFrame, frameTimeOffset
+	float4 timeInfo;     //gameFrame, drawSeconds, interpolated(unsynced)GameSeconds(synced), frameTimeOffset
 	float4 viewGeometry; //vsx, vsy, vpx, vpy
 	float4 mapSize;      //xz, xzPO2
 	float4 mapHeight;    //height minCur, maxCur, minInit, maxInit

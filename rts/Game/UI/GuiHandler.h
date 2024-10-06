@@ -263,7 +263,6 @@ private:
 	// DrawMapStuff caches
 	std::vector<BuildInfo> buildInfos;
 	std::vector<Command> buildCommands;
-	std::vector<float4> buildColors;
 
 public:
 	std::vector<SCommandDescription> commands;

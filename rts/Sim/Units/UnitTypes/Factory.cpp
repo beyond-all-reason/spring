@@ -11,6 +11,7 @@
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Scripts/UnitScript.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -26,6 +27,7 @@
 
 #include "Game/GlobalUnsynced.h"
 
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CFactory, CBuilding, )
 CR_REG_METADATA(CFactory, (
@@ -63,18 +65,20 @@ CFactory::CFactory()
 	, lastBuildUpdateFrame(-1)
 { }
 
-void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
+void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (curBuild != nullptr) {
-		curBuild->KillUnit(nullptr, false, true);
+		curBuild->KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_FACTORY_KILLED);
 		curBuild = nullptr;
 	}
 
-	CUnit::KillUnit(attacker, selfDestruct, reclaimed);
+	CUnit::KillUnit(attacker, selfDestruct, reclaimed, weaponDefID);
 }
 
 void CFactory::PreInit(const UnitLoadParams& params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	unitDef = params.unitDef;
 	buildSpeed = unitDef->buildSpeed / GAME_SPEED;
 
@@ -89,6 +93,7 @@ void CFactory::PreInit(const UnitLoadParams& params)
 
 float3 CFactory::CalcBuildPos(int buildPiece)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 relBuildPos = script->GetPiecePos((buildPiece < 0)? script->QueryBuildInfo() : buildPiece);
 	const float3 absBuildPos = this->GetObjectSpacePos(relBuildPos);
 	return absBuildPos;
@@ -98,6 +103,7 @@ float3 CFactory::CalcBuildPos(int buildPiece)
 
 void CFactory::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	nanoPieceCache.Update();
 
 	if (beingBuilt) {
@@ -164,6 +170,7 @@ void CFactory::Update()
 
 
 void CFactory::StartBuild(const UnitDef* buildeeDef) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead)
 		return;
 
@@ -199,6 +206,7 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 }
 
 void CFactory::UpdateBuild(CUnit* buildee) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsStunned())
 		return;
 
@@ -241,6 +249,7 @@ void CFactory::UpdateBuild(CUnit* buildee) {
 }
 
 void CFactory::FinishBuild(CUnit* buildee) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (buildee->beingBuilt)
 		return;
 	if (unitDef->fullHealthFactory && buildee->health < buildee->maxHealth)
@@ -272,6 +281,7 @@ void CFactory::FinishBuild(CUnit* buildee) {
 
 unsigned int CFactory::QueueBuild(const UnitDef* buildeeDef, const Command& buildCmd)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!beingBuilt);
 	assert(buildeeDef != nullptr);
 
@@ -295,13 +305,14 @@ unsigned int CFactory::QueueBuild(const UnitDef* buildeeDef, const Command& buil
 
 void CFactory::StopBuild()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// cancel a build-in-progress
 	script->StopBuilding();
 
 	if (curBuild) {
 		if (curBuild->beingBuilt) {
 			AddMetal(curBuild->cost.metal * curBuild->buildProgress, false);
-			curBuild->KillUnit(nullptr, false, true);
+			curBuild->KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_FACTORY_CANCEL);
 		}
 		DeleteDeathDependence(curBuild, DEPENDENCE_BUILD);
 	}
@@ -312,6 +323,7 @@ void CFactory::StopBuild()
 
 void CFactory::DependentDied(CObject* o)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (o == curBuild) {
 		curBuild = nullptr;
 		StopBuild();
@@ -324,6 +336,7 @@ void CFactory::DependentDied(CObject* o)
 
 void CFactory::SendToEmptySpot(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr int numSteps = 100;
 
 	const float searchRadius = radius * 4.0f + unit->radius * 4.0f;
@@ -333,6 +346,7 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 	const float3 tempPos = pos + frontdir * searchRadius;
 
 	float3 foundPos = tempPos;
+	MoveTypes::CheckCollisionQuery colliderInfo(unit);
 
 	for (int i = 0; i < numSteps; ++i) {
 		const float a = searchRadius * math::cos(i * searchAngle);
@@ -352,8 +366,11 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 
 		if (!quadField.NoSolidsExact(testPos, unit->radius * 1.5f, 0xFFFFFFFF, CSolidObject::CSTATE_BIT_SOLIDOBJECTS))
 			continue;
-		if (unit->moveDef != nullptr && !unit->moveDef->TestMoveSquare(nullptr, testPos, ZeroVector, true, true))
-			continue;
+		if (unit->moveDef != nullptr) {
+			colliderInfo.UpdateElevationForPos(testPos);
+			if (!unit->moveDef->TestMoveSquare(colliderInfo, testPos, ZeroVector, true, true))
+				continue;
+		}
 
 		foundPos = testPos;
 		break;
@@ -377,8 +394,11 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 			if ((foundPos - pos).dot(frontdir) < 0.0f)
 				continue;
 
-			if (unit->moveDef != nullptr && !unit->moveDef->TestMoveSquare(nullptr, foundPos, ZeroVector, true, true))
-				continue;
+			if (unit->moveDef != nullptr) {
+				colliderInfo.UpdateElevationForPos(foundPos);
+				if (!unit->moveDef->TestMoveSquare(colliderInfo, foundPos, ZeroVector, true, true))
+					continue;
+			}
 
 			break;
 		}
@@ -409,6 +429,7 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 }
 
 void CFactory::AssignBuildeeOrders(CUnit* unit) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCommandAI* unitCAI = unit->commandAI;
 	CCommandQueue& unitCmdQue = unitCAI->commandQue;
 
@@ -482,6 +503,7 @@ void CFactory::AssignBuildeeOrders(CUnit* unit) {
 
 bool CFactory::ChangeTeam(int newTeam, ChangeType type)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!CBuilding::ChangeTeam(newTeam, type))
 		return false;
 
@@ -494,6 +516,7 @@ bool CFactory::ChangeTeam(int newTeam, ChangeType type)
 
 void CFactory::CreateNanoParticle(bool highPriority)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int modelNanoPiece = nanoPieceCache.GetNanoPiece(script);
 
 	if (!localModel.Initialized() || !localModel.HasPiece(modelNanoPiece))

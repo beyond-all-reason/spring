@@ -12,6 +12,8 @@
 
 #include <vector>
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CLightningCannon, CWeapon, )
 CR_REG_METADATA(CLightningCannon, (
 	CR_MEMBER(color)
@@ -19,6 +21,7 @@ CR_REG_METADATA(CLightningCannon, (
 
 CLightningCannon::CLightningCannon(CUnit* owner, const WeaponDef* def): CWeapon(owner, def)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// null happens when loading
 	if (def != nullptr)
 		color = def->visuals.color;
@@ -27,6 +30,7 @@ CLightningCannon::CLightningCannon(CUnit* owner, const WeaponDef* def): CWeapon(
 
 void CLightningCannon::FireImpl(const bool scriptCall)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 curPos = weaponMuzzlePos;
 	float3 curDir = (currentTargetPos - weaponMuzzlePos).SafeNormalize();
 
@@ -66,22 +70,23 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 
 	const DamageArray& damageArray = damages->GetDynamicDamages(weaponMuzzlePos, currentTargetPos);
 	const CExplosionParams params = {
-		curPos + curDir * boltLength,                     // hitPos (same as hitColQuery.GetHitPos() if no water or shield in way)
-		curDir,
-		damageArray,
-		weaponDef,
-		owner,
-		hitUnit,
-		hitFeature,
-		damages->craterAreaOfEffect,
-		damages->damageAreaOfEffect,
-		damages->edgeEffectiveness,
-		damages->explosionSpeed,
-		0.5f,                                             // gfxMod
-		weaponDef->impactOnly,
-		weaponDef->noExplode || weaponDef->noSelfDamage,  // ignoreOwner
-		false,                                            // damageGround
-		-1u                                               // projectileID
+		.pos                  = curPos + curDir * boltLength,
+		.dir                  = curDir,
+		.damages              = damageArray,
+		.weaponDef            = weaponDef,
+		.owner                = owner,
+		.hitUnit              = hitUnit,
+		.hitFeature           = hitFeature,
+		.craterAreaOfEffect   = damages->craterAreaOfEffect,
+		.damageAreaOfEffect   = damages->damageAreaOfEffect,
+		.edgeEffectiveness    = damages->edgeEffectiveness,
+		.explosionSpeed       = damages->explosionSpeed,
+		.gfxMod               = 0.5f,
+		.maxGroundDeformation = 0.0f,
+		.impactOnly           = weaponDef->impactOnly,
+		.ignoreOwner          = weaponDef->noExplode || weaponDef->noSelfDamage,
+		.damageGround         = false,
+		.projectileID         = static_cast<uint32_t>(-1u)
 	};
 
 	helper->Explosion(params);

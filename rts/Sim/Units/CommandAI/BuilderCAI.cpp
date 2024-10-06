@@ -30,6 +30,8 @@
 #include "System/Log/ILog.h"
 #include "System/creg/STL_Map.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CR_BIND_DERIVED(CBuilderCAI ,CMobileCAI , )
 
@@ -62,6 +64,7 @@ std::vector<int> CBuilderCAI::removees;
 
 
 static std::string GetUnitDefBuildOptionToolTip(const UnitDef* ud, bool disabled) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string tooltip;
 
 	if (disabled) {
@@ -218,6 +221,7 @@ CBuilderCAI::CBuilderCAI(CUnit* owner):
 
 CBuilderCAI::~CBuilderCAI()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	RemoveUnitFromReclaimers(owner);
 	RemoveUnitFromFeatureReclaimers(owner);
 	RemoveUnitFromResurrecters(owner);
@@ -226,6 +230,7 @@ CBuilderCAI::~CBuilderCAI()
 
 void CBuilderCAI::InitStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::clear_unordered_set(reclaimers);
 	spring::clear_unordered_set(featureReclaimers);
 	spring::clear_unordered_set(resurrecters);
@@ -233,6 +238,7 @@ void CBuilderCAI::InitStatic()
 
 void CBuilderCAI::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (const SCommandDescription* cd: possibleCommands) {
 		if (cd->id < 0)
 			buildOptions.insert(cd->id);
@@ -252,16 +258,19 @@ void CBuilderCAI::PostLoad()
 
 float CBuilderCAI::GetBuildRange(const float targetRadius) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (ownerBuilder->buildDistance + targetRadius);
 }
 
 bool CBuilderCAI::IsInBuildRange(const CWorldObject* obj) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return IsInBuildRange(obj->pos, obj->buildeeRadius);
 }
 
 bool CBuilderCAI::IsInBuildRange(const float3& objPos, const float objRadius) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float immDistSqr = f3SqDist(owner->pos, objPos);
 	const float buildDist = GetBuildRange(objRadius);
 
@@ -272,11 +281,13 @@ bool CBuilderCAI::IsInBuildRange(const float3& objPos, const float objRadius) co
 
 inline bool CBuilderCAI::MoveInBuildRange(const CWorldObject* obj, const bool checkMoveTypeForFailed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return MoveInBuildRange(obj->pos, obj->buildeeRadius, checkMoveTypeForFailed);
 }
 
 bool CBuilderCAI::MoveInBuildRange(const float3& objPos, float objRadius, const bool checkMoveTypeForFailed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsInBuildRange(objPos, objRadius)) {
 		// NOTE:
 		//   ignore the fail-check if we are an aircraft, movetype code
@@ -309,6 +320,7 @@ bool CBuilderCAI::MoveInBuildRange(const float3& objPos, float objRadius, const 
 
 bool CBuilderCAI::IsBuildPosBlocked(const BuildInfo& bi, const CUnit** nanoFrame) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CFeature* feature = nullptr;
 	CGameHelper::BuildSquareStatus status = CGameHelper::TestUnitBuildSquare(bi, feature, owner->allyteam, true);
 
@@ -374,6 +386,7 @@ bool CBuilderCAI::IsBuildPosBlocked(const BuildInfo& bi, const CUnit** nanoFrame
 
 inline bool CBuilderCAI::OutOfImmobileRange(const Command& cmd) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// builder can move
 	if (owner->unitDef->canmove)
 		return false;
@@ -411,6 +424,7 @@ inline bool CBuilderCAI::OutOfImmobileRange(const Command& cmd) const
 
 float CBuilderCAI::GetBuildOptionRadius(const UnitDef* ud, int cmdId)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float radius = cachedRadius;
 
 	if (cachedRadiusId != cmdId) {
@@ -425,6 +439,7 @@ float CBuilderCAI::GetBuildOptionRadius(const UnitDef* ud, int cmdId)
 
 void CBuilderCAI::CancelRestrictedUnit()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (owner->team == gu->myTeam) {
 		LOG_L(L_WARNING, "%s: Build failed, unit type limit reached", owner->unitDef->humanName.c_str());
 		eventHandler.LastMessagePosition(owner->pos);
@@ -435,6 +450,7 @@ void CBuilderCAI::CancelRestrictedUnit()
 
 void CBuilderCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!AllowedCommand(c, fromSynced))
 		return;
 
@@ -496,6 +512,7 @@ void CBuilderCAI::GiveCommandReal(const Command& c, bool fromSynced)
 
 void CBuilderCAI::SlowUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gs->paused) // Commands issued may invoke SlowUpdate when paused
 		return;
 
@@ -539,6 +556,7 @@ void CBuilderCAI::SlowUpdate()
 
 void CBuilderCAI::ReclaimFeature(CFeature* f)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!owner->unitDef->canReclaim || !f->def->reclaimable) {
 		// FIXME user shouldn't be able to queue buildings on top of features
 		// in the first place (in this case).
@@ -554,6 +572,7 @@ void CBuilderCAI::ReclaimFeature(CFeature* f)
 
 void CBuilderCAI::FinishCommand()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	buildRetries = 0;
 	CMobileCAI::FinishCommand();
 }
@@ -561,6 +580,7 @@ void CBuilderCAI::FinishCommand()
 
 void CBuilderCAI::ExecuteStop(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	building = false;
 	ownerBuilder->StopBuild();
 	CMobileCAI::ExecuteStop(c);
@@ -569,6 +589,7 @@ void CBuilderCAI::ExecuteStop(Command& c)
 
 void CBuilderCAI::ExecuteBuildCmd(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (buildOptions.find(c.GetID()) == buildOptions.end())
 		return;
 
@@ -671,19 +692,13 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 		}
 
 		if (!inWaitStance) {
-			const float xhalf = build.def->xsize * 0.5f * SQUARE_SIZE;
-			const float zhalf = build.def->zsize * 0.5f * SQUARE_SIZE;
-			const float3 mins{build.pos.x - xhalf, 0.f, build.pos.z - zhalf};
-			const float3 maxs{build.pos.x + xhalf, 0.f, build.pos.z + zhalf};
+			const float xhalf = (((build.buildFacing & 1) == 0) ? build.def->xsize : build.def->zsize)* 0.5f * SQUARE_SIZE;
+			const float zhalf = (((build.buildFacing & 1) == 1) ? build.def->xsize : build.def->zsize)* 0.5f * SQUARE_SIZE;
 
-			// tell everything within the radius of the soon-to-be buildee
-			// to get out of the way; using the model radius is not correct
-			// because this can be shorter than half the footprint diagonal
-			// exclude owner if it is outside the buildee footprint
-			if (!build.FootPrintOverlap(owner->pos, owner->GetFootPrint(SQUARE_SIZE * 0.5f)))
-				CGameHelper::BuggerOffRectangle(mins, maxs, true, owner->team, owner);
-			else
-				CGameHelper::BuggerOffRectangle(mins, maxs, true, owner->team, nullptr);
+			const float3 mins{build.pos.x - xhalf, build.pos.y, build.pos.z - zhalf};
+			const float3 maxs{build.pos.x + xhalf, build.pos.y, build.pos.z + zhalf};
+
+			CGameHelper::BuggerOffRectangle(mins, maxs, true, owner->team, nullptr);
 
 			NonMoving();
 			return;
@@ -712,6 +727,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 
 
 bool CBuilderCAI::TargetInterceptable(const CUnit* unit, float targetSpeed) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if the target is moving away at a higher speed than we can manage, there is little point in chasing it
 	const float maxSpeed = owner->moveType->GetMaxSpeed();
 	if (targetSpeed <= maxSpeed)
@@ -723,6 +739,7 @@ bool CBuilderCAI::TargetInterceptable(const CUnit* unit, float targetSpeed) {
 
 void CBuilderCAI::ExecuteRepair(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// not all builders are repair-capable by default
 	if (!owner->unitDef->canRepair)
 		return;
@@ -794,6 +811,7 @@ void CBuilderCAI::ExecuteRepair(Command& c)
 
 void CBuilderCAI::ExecuteCapture(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// not all builders are capture-capable by default
 	if (!owner->unitDef->canCapture)
 		return;
@@ -849,6 +867,7 @@ void CBuilderCAI::ExecuteCapture(Command& c)
 
 void CBuilderCAI::ExecuteGuard(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!owner->unitDef->canGuard)
 		return;
 
@@ -963,6 +982,7 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 
 void CBuilderCAI::ExecuteReclaim(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// not all builders are reclaim-capable by default
 	if (!owner->unitDef->canReclaim)
 		return;
@@ -1103,6 +1123,7 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 
 
 bool CBuilderCAI::ResurrectObject(CFeature *feature) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (MoveInBuildRange(feature, true)) {
 		ownerBuilder->SetResurrectTarget(feature);
 		return true;
@@ -1114,6 +1135,7 @@ bool CBuilderCAI::ResurrectObject(CFeature *feature) {
 
 void CBuilderCAI::ExecuteResurrect(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// not all builders are resurrect-capable by default
 	if (!owner->unitDef->canResurrect)
 		return;
@@ -1176,6 +1198,7 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 
 void CBuilderCAI::ExecutePatrol(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!owner->unitDef->canPatrol)
 		return;
 
@@ -1195,6 +1218,7 @@ void CBuilderCAI::ExecutePatrol(Command& c)
 
 void CBuilderCAI::ExecuteFight(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(c.IsInternalOrder() || owner->unitDef->canFight);
 
 	if (tempOrder) {
@@ -1301,6 +1325,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 
 void CBuilderCAI::ExecuteRestore(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!owner->unitDef->canRestore)
 		return;
 
@@ -1325,6 +1350,7 @@ void CBuilderCAI::ExecuteRestore(Command& c)
 
 int CBuilderCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (pointed != nullptr) {
 		if (!teamHandler.Ally(gu->myAllyTeam, pointed->allyteam)) {
 			if (owner->unitDef->canAttack && (owner->maxRange > 0.0f))
@@ -1418,6 +1444,7 @@ bool CBuilderCAI::IsUnitBeingReclaimed(const CUnit* unit, const CUnit* friendUni
 
 bool CBuilderCAI::IsFeatureBeingReclaimed(int featureId, const CUnit* friendUnit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool retval = false;
 
 	removees.clear();
@@ -1453,6 +1480,7 @@ bool CBuilderCAI::IsFeatureBeingReclaimed(int featureId, const CUnit* friendUnit
 
 bool CBuilderCAI::IsFeatureBeingResurrected(int featureId, const CUnit* friendUnit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool retval = false;
 
 	removees.clear();
@@ -1487,6 +1515,7 @@ bool CBuilderCAI::IsFeatureBeingResurrected(int featureId, const CUnit* friendUn
 
 
 bool CBuilderCAI::ReclaimObject(CSolidObject* object) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (MoveInBuildRange(object)) {
 		ownerBuilder->SetReclaimTarget(object);
 		return true;
@@ -1498,6 +1527,7 @@ bool CBuilderCAI::ReclaimObject(CSolidObject* object) {
 
 int CBuilderCAI::FindReclaimTarget(const float3& pos, float radius, unsigned char cmdopt, ReclaimOption recoptions, float bestStartDist) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool noResCheck   = recoptions & REC_NORESCHECK;
 	const bool recUnits     = recoptions & REC_UNITS;
 	const bool recNonRez    = recoptions & REC_NONREZ;
@@ -1605,6 +1635,7 @@ int CBuilderCAI::FindReclaimTarget(const float3& pos, float radius, unsigned cha
 
 bool CBuilderCAI::FindReclaimTargetAndReclaim(const float3& pos, float radius, unsigned char cmdopt, ReclaimOption recoptions)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int rid = FindReclaimTarget(pos, radius, cmdopt, recoptions);
 
 	if (rid < 0)
@@ -1627,6 +1658,7 @@ bool CBuilderCAI::FindResurrectableFeatureAndResurrect(
 	unsigned char options,
 	bool freshOnly
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	quadField.GetFeaturesExact(qfQuery, pos, radius, false);
 
@@ -1672,6 +1704,7 @@ bool CBuilderCAI::FindCaptureTargetAndCapture(
 	unsigned char options,
 	bool healthyOnly
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, pos, radius, false);
 
@@ -1727,6 +1760,7 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 	bool attackEnemy,
 	bool builtOnly
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, pos, radius, false);
 	const CUnit* bestUnit = nullptr;
@@ -1835,6 +1869,7 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 
 
 void CBuilderCAI::BuggerOff(const float3& pos, float radius) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (owner->unitDef->IsStaticBuilderUnit())
 		return;
 

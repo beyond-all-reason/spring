@@ -37,13 +37,14 @@ enum YardmapStates {
 	YARDMAP_GEOSTACKABLE = 2,    // can be built on top of YARDMAP_BLOCKED and needs GEO
 	YARDMAP_YARD         = 4,    // walkable when yard is open
 	YARDMAP_YARDINV      = 8,    // walkable when yard is closed
-//	YARDMAP_WALKABLE     = 16,   // open for walk    (    walkable, not buildable)
-	YARDMAP_BUILDONLY	 = 32,	 // open for build   (not walkable,     buildable)
-	YARDMAP_BLOCKED      = 0xFF & ~YARDMAP_YARDINV, // always block     (not walkable, not buildable)
+	YARDMAP_UNBUILDABLE  = 16,   // open for walk    (    walkable, not buildable)
+	YARDMAP_BUILDONLY	 = 32,	 // open for build   (not walkable,     buildable)	
+	YARDMAP_EXITONLY     = 64,   // closed for walk into, closed for build
+	YARDMAP_BLOCKED      = 0xFF & ~(YARDMAP_YARDINV|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE), // always block     (not walkable, not buildable)
 
 	// helpers
-	YARDMAP_YARDBLOCKED  = YARDMAP_YARD,
-	YARDMAP_YARDFREE     = ~YARDMAP_YARD,
+	YARDMAP_YARDBLOCKED  = (YARDMAP_YARD|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE),
+	YARDMAP_YARDFREE     = ~(YARDMAP_YARD|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE),
 	YARDMAP_GEO          = YARDMAP_BLOCKED,
 };
 typedef Bitwise::BitwiseEnum<YardmapStates> YardMapStatus;
@@ -89,14 +90,36 @@ public:
 		CSTATE_BIT_QUADMAPRAYS  = (1 << 2),
 	};
 	enum DamageType {
-		DAMAGE_EXPLOSION_WEAPON  = 0, // weapon-projectile that triggered GameHelper::Explosion (weaponDefID >= 0)
-		DAMAGE_EXPLOSION_DEBRIS  = 1, // piece-projectile that triggered GameHelper::Explosion (weaponDefID < 0)
-		DAMAGE_COLLISION_GROUND  = 2, // ground collision
-		DAMAGE_COLLISION_OBJECT  = 3, // object collision
-		DAMAGE_EXTSOURCE_FIRE    = 4,
-		DAMAGE_EXTSOURCE_WATER   = 5, // lava/acid/etc
-		DAMAGE_EXTSOURCE_KILLED  = 6,
-		DAMAGE_EXTSOURCE_CRUSHED = 7,
+		DAMAGE_EXPLOSION_WEAPON    = 0, // weapon-projectile that triggered GameHelper::Explosion (weaponDefID >= 0)
+		DAMAGE_EXPLOSION_DEBRIS    = 1, // piece-projectile that triggered GameHelper::Explosion (weaponDefID < 0)
+		DAMAGE_COLLISION_GROUND    = 2, // ground collision
+		DAMAGE_COLLISION_OBJECT    = 3, // object collision
+		DAMAGE_EXTSOURCE_FIRE      = 4,
+		DAMAGE_EXTSOURCE_WATER     = 5, // lava/acid/etc
+		DAMAGE_EXTSOURCE_KILLED    = 6,
+		DAMAGE_EXTSOURCE_CRUSHED   = 7,
+		DAMAGE_AIRCRAFT_CRASHED    = 8,
+		DAMAGE_KAMIKAZE_ACTIVATED  = 9,
+		DAMAGE_SELFD_EXPIRED       = 10,
+		DAMAGE_CONSTRUCTION_DECAY  = 11,
+		DAMAGE_RECLAIMED           = 12,
+		DAMAGE_TURNED_INTO_FEATURE = 13,
+		DAMAGE_TRANSPORT_KILLED    = 14,
+		DAMAGE_FACTORY_KILLED      = 15,
+		DAMAGE_FACTORY_CANCEL      = 16,
+		DAMAGE_UNIT_SCRIPT         = 17,
+		DAMAGE_NEGATIVE_HEALTH     = 18,
+		DAMAGE_KILLED_OOB          = 19,
+		DAMAGE_KILLED_CHEAT        = 20,
+
+		// Keep killed by Lua as last index here. This will be exposed as
+		// lowest index for games. As we keep killed by Lua as lowest index,
+		// games can introduce their own damage types by doing code like
+		//
+		//      envTypes.CullingStrike      = envTypes.KilledByLua - 1
+		//      envTypes.SummonTimerExpired = envTypes.KilledByLua - 2
+		//
+		DAMAGE_KILLED_LUA = 21
 	};
 
 	virtual ~CSolidObject() {}
@@ -212,8 +235,8 @@ public:
 
 
 	// these transform a point or vector to object-space
-	float3 GetObjectSpaceVec(const float3& v) const { return (      (frontdir * v.z) + (rightdir * v.x) + (updir * v.y)); }
-	float3 GetObjectSpacePos(const float3& p) const { return (pos + (frontdir * p.z) + (rightdir * p.x) + (updir * p.y)); }
+	float3 GetObjectSpaceVec(const float3& v) const { return (      (frontdir * v.z) - (rightdir * v.x) + (updir * v.y)); }
+	float3 GetObjectSpacePos(const float3& p) const { return (pos + (frontdir * p.z) - (rightdir * p.x) + (updir * p.y)); }
 
 	// note: requires drawPos to have been set first
 	float3 GetObjectSpaceDrawPos(const float3& p) const { return (drawPos + GetObjectSpaceVec(p)); }
@@ -221,8 +244,6 @@ public:
 	// unsynced mid-{position,vector}s
 	float3 GetMdlDrawMidPos() const { return (GetObjectSpaceDrawPos(localModel.GetRelMidPos())); }
 	float3 GetObjDrawMidPos() const { return (GetObjectSpaceDrawPos(              relMidPos  )); }
-	float3 GetMdlDrawRelMidPos() const { return (GetObjectSpaceVec(localModel.GetRelMidPos())); }
-	float3 GetObjDrawRelMidPos() const { return (GetObjectSpaceVec(              relMidPos  )); }
 
 
 	int2 GetMapPos() const { return (GetMapPos(pos)); }

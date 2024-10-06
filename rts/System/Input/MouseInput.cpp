@@ -214,6 +214,13 @@ bool IMouseInput::SetPos(int2 pos)
 
 bool IMouseInput::WarpPos(int2 pos)
 {
+	#if __unix__
+		/* Needed for SDL2+Wayland where warping isn't allowed otherwise, works fine with X11.
+		 * One would think there should be a corresponding `SDL_ShowCursor(SDL_ENABLE);` below,
+		 * but apparently this prevents this work-around from working (?!). */
+		SDL_ShowCursor(SDL_DISABLE);
+	#endif
+
 	SDL_WarpMouseInWindow(globalRendering->GetWindow(), pos.x, pos.y);
 
 	// SDL_WarpMouse generates SDL_MOUSEMOTION events

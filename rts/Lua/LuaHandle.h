@@ -126,7 +126,7 @@ class CLuaHandle : public CEventClient
 		void UnitFinished(const CUnit* unit) override;
 		void UnitFromFactory(const CUnit* unit, const CUnit* factory, bool userOrders) override;
 		void UnitReverseBuilt(const CUnit* unit) override;
-		void UnitDestroyed(const CUnit* unit, const CUnit* attacker) override;
+		void UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID) override;
 		void UnitTaken(const CUnit* unit, int oldTeam, int newTeam) override;
 		void UnitGiven(const CUnit* unit, int oldTeam, int newTeam) override;
 
@@ -168,6 +168,7 @@ class CLuaHandle : public CEventClient
 		bool UnitUnitCollision(const CUnit* collider, const CUnit* collidee) override;
 		bool UnitFeatureCollision(const CUnit* collider, const CFeature* collidee) override;
 		void UnitMoveFailed(const CUnit* unit) override;
+		void UnitArrivedAtGoal(const CUnit* unit) override;
 
 		void RenderUnitDestroyed(const CUnit* unit) override;
 
@@ -241,7 +242,7 @@ class CLuaHandle : public CEventClient
 		void DrawWorld() override;
 		void DrawWorldPreUnit() override;
 		void DrawPreDecals() override;
-		void DrawWorldPreParticles() override;
+		void DrawWorldPreParticles(bool drawAboveWater, bool drawReflection, bool drawRefraction) override;
 		void DrawWaterPost() override;
 		void DrawWorldShadow() override;
 		void DrawShadowPassTransparent() override;
@@ -317,7 +318,9 @@ class CLuaHandle : public CEventClient
 		void RunDrawCallIn(const LuaHashString& hs);
 
 		void DrawObjectsLua(std::initializer_list<bool> bools, const char* func);
+		void InitializeRmlUi();
 	protected:
+		bool rmlui = false;
 		bool userMode = false;
 		bool killMe = false; // set for handles that fail to RunCallIn
 
