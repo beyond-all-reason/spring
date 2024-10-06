@@ -379,9 +379,6 @@ void CWorldDrawer::DrawAlphaObjects() const
 	static const double abovePlaneEq[4] = {0.0f,  1.0f, 0.0f, 0.0f};
 
 	const bool hasWaterRendering = globalRendering->drawWater && readMap->HasVisibleWater();
-	const auto firstAWRS = hasWaterRendering ?
-		CProjectileDrawer::AlphaWaterRenderingStage::ALPHA_WATER_RENDERING_STAGE_BELOW :
-		CProjectileDrawer::AlphaWaterRenderingStage::ALPHA_WATER_RENDERING_STAGE_ALL;
 
 	{
 		SCOPED_TIMER("Draw::World::Models::Alpha");
@@ -400,7 +397,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 	}
 	{
 		SCOPED_TIMER("Draw::World::Projectiles");
-		projectileDrawer->DrawAlpha(firstAWRS, false, false);
+		projectileDrawer->DrawAlpha(!hasWaterRendering, true, false, false);
 
 		if (hasWaterRendering)
 			glDisable(GL_CLIP_PLANE3);
@@ -436,7 +433,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 	}
 	{
 		SCOPED_TIMER("Draw::World::Projectiles");
-		projectileDrawer->DrawAlpha(CProjectileDrawer::AlphaWaterRenderingStage::ALPHA_WATER_RENDERING_STAGE_ABOVE, false, false);
+		projectileDrawer->DrawAlpha(true, false, false, false);
 
 		glDisable(GL_CLIP_PLANE3);
 	}

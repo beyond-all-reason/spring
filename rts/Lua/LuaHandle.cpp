@@ -2615,14 +2615,15 @@ DRAW_CALLIN(DrawShadowFeaturesLua)
 
 /***
  * DrawWorldPreParticles is called multiples times per draw frame.
- * Each call has a different permutation of values for drawAboveWater, drawReflection, and drawRefraction.
+ * Each call has a different permutation of values for drawAboveWater, drawBelowWater, drawReflection, and drawRefraction.
  *
  * @function DrawWorldPreParticles
  * @bool drawAboveWater
+ * @bool drawBelowWater
  * @bool drawReflection
  * @bool drawRefraction
  */
-void CLuaHandle::DrawWorldPreParticles(bool drawAboveWater, bool drawReflection, bool drawRefraction)
+void CLuaHandle::DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L);
@@ -2632,12 +2633,13 @@ void CLuaHandle::DrawWorldPreParticles(bool drawAboveWater, bool drawReflection,
 		return;
 
 	lua_pushboolean(L, drawAboveWater);
+	lua_pushboolean(L, drawBelowWater);
 	lua_pushboolean(L, drawReflection);
 	lua_pushboolean(L, drawRefraction);
 
 	LuaOpenGL::SetDrawingEnabled(L, true);
 
-	RunCallIn(L, cmdStr, 3, 0);
+	RunCallIn(L, cmdStr, 4, 0);
 
 	LuaOpenGL::SetDrawingEnabled(L, false);
 }

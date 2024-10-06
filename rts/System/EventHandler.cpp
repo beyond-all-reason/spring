@@ -953,10 +953,10 @@ void CEventHandler::MetalMapChanged(const int x, const int z)
 	ITERATE_EVENTCLIENTLIST(MetalMapChanged, x, z);
 }
 
-void CEventHandler::DrawWorldPreParticles(bool drawAboveWater, bool drawReflection, bool drawRefraction)
+void CEventHandler::DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction)
 {
 	ZoneScoped;
-	ITERATE_EVENTCLIENTLIST(DrawWorldPreParticles, drawAboveWater, drawReflection, drawRefraction);
+	ITERATE_EVENTCLIENTLIST(DrawWorldPreParticles, drawAboveWater, drawBelowWater, drawReflection, drawRefraction);
 }
 
 void CEventHandler::DrawOpaqueUnitsLua(bool deferredPass, bool drawReflection, bool drawRefraction)
