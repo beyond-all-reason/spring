@@ -108,6 +108,7 @@ namespace NURBS
 		float umax = maxU(degree, controlPoints, knots);
 		float increment = (umax - umin) / segments;
 		std::vector<float3> points{};
+		points.reserve(segments + 1);
 
 		if (!isValidNURBS(degree, controlPoints, knots, umin)) {
 			return points;
