@@ -23,6 +23,7 @@ public:
 
 	void SetPos(const float3& newPos) override {}
 	void SetDir(const float3& newDir) override {}
+	void SetRot(const float3& newDir) override {camRotY = newDir.y;}
 
 	float3 SwitchFrom() const;
 	void SwitchTo(const int oldCam, const bool showText);

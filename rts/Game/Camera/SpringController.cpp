@@ -302,7 +302,7 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 	};
 
 	auto [wantedCamPos, newDist] = extrapolate_position(1.0);
-	// don't move above the limit as camera height will be trimmed and the 
+	// don't move above the limit as camera height will be trimmed and the
 	// transition will not appear smooth
 	if (newDist > maxDist) {
 		// try to get as close as possible to the height limit
@@ -399,8 +399,6 @@ void CSpringController::SwitchTo(const int oldCam, const bool showText)
 
 	if (oldCam == CCameraHandler::CAMERA_MODE_OVERVIEW)
 		return;
-
-	rot = camera->GetRot() * XZVector;
 }
 
 

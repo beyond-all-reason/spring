@@ -174,9 +174,6 @@ public:
 
 	int chatSound = -1;
 
-	bool windowedEdgeMove = false;
-	bool fullscreenEdgeMove = false;
-
 	bool hideInterface = false;
 	bool showFPS = true;
 	bool showClock = true;
