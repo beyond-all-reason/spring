@@ -176,13 +176,19 @@ bool MusicStream::StartPlaying()
 {
 	msecsPlayed = spring_nulltime;
 	lastTick = spring_gettime();
-
-	if (!DecodeStream(buffers[0]) || !DecodeStream(buffers[1])) {
-		// streaming very small file is not possible if we use 2 buffers
+	
+	if (!DecodeStream(buffers[0])) {
 		return false;
 	}
-
-	alSourceQueueBuffers(source, 2, buffers.data());
+	
+	int numDecodedStreams = 1;
+	if (DecodeStream(buffers[1])) {
+		++numDecodedStreams;
+	} else {
+		// small file or broken stream
+	}
+	
+	alSourceQueueBuffers(source, numDecodedStreams, buffers.data());
 
 	// CheckError returns true if *no* error occurred
 	if (!CheckError("[MusicStream::StartPlaying][1]"))
