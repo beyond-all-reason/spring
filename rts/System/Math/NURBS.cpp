@@ -1,4 +1,5 @@
 #include "NURBS.h"
+#include <algorithm>
 
 namespace NURBS
 {
