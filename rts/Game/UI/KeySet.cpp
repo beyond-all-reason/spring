@@ -81,6 +81,24 @@ CKeySet::CKeySet(int k, unsigned char mods, CKeySetType keyType)
 	type = keyType;
 	key = k;
 	modifiers = mods;
+
+	SanitizeModifiers();
+}
+
+
+void CKeySet::SanitizeModifiers() {
+	if (AnyMod() || !IsModifier()) {
+		return;
+	}
+
+	// Disambiguate pure modifier keysets
+	// (mod)Alt+(key)ctrl == (mod)Ctrl+(key)alt -> (mod)Alt+(mod)Ctrl+(key)none
+	// This optimizes matching keysets that are combination of multiple pure
+	// modifiers
+	unsigned char modifier = IsKeyCode() ? CKeyCodes::ToModifier(key) : CScanCodes::ToModifier(key);
+	modifiers |= modifier;
+
+	key = -1;
 }
 
 
@@ -208,11 +226,11 @@ bool CKeySet::Parse(const std::string& token, bool showerror)
 		return false;
 	}
 
-	if (IsModifier())
-		modifiers |= KS_ANYMOD;
-
-	if (AnyMod())
+	if (AnyMod()) {
 		ClearModifiers();
+	} else if (IsModifier()) {
+		SanitizeModifiers();
+	}
 	
 	return true;
 }
@@ -232,7 +250,7 @@ void CTimedKeyChain::push_back(const CKeySet& ks, const spring_time t, const boo
 	if (!empty() && times.back() < dropTime)
 		clear();
 
-	// append repeating keystrokes only wjen they differ from the last
+	// append repeating keystrokes only when they differ from the last
 	if (isRepeat && (!empty() && ks == back()))
 		return;
 

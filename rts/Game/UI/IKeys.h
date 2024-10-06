@@ -27,6 +27,7 @@ public:
 	virtual std::string GetDefaultName(int code) const = 0;
 
 	static bool IsValidLabel(const std::string& label);
+	static unsigned char ToModifier(const int code);
 
 protected:
 	void AddPair(const std::string& name, const int code, const bool printable = false);
