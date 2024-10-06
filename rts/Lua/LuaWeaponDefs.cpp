@@ -346,7 +346,7 @@ static int NoGroundCollide(lua_State* L, const void* data)
 static int FramesToSeconds(lua_State* L, const void* data)
 {
 	const auto frames = *reinterpret_cast <const int *> (data);
-	lua_pushnumber(L, frames / float(GAME_SPEED));
+	lua_pushnumber(L, frames * INV_GAME_SPEED);
 	return 1;
 }
 
