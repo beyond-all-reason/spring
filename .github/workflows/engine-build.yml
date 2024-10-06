@@ -1,6 +1,11 @@
 name: Build Engine
 on:
   workflow_dispatch:
+    inputs:
+      recache:
+        description: "Recache ccache build objects"
+        type: boolean
+        default: false
   schedule:
     - cron: "36 00 * * *"
 jobs:
@@ -74,6 +79,7 @@ jobs:
             -v $(pwd)/src:/build/src:ro \
             -v $(pwd)/remote_ccache.conf:/build/ccache.conf:ro \
             -v $(pwd)/artifacts:/build/artifacts:rw \
+            -e CCACHE_${{ inputs.recache && 'RECACHE' || 'NORECACHE' }}=1 \
             --network engine-build \
             --name builder \
             ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest \
