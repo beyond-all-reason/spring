@@ -102,6 +102,8 @@ void CBeamLaserProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	UpdateWeaponAnimParams();
+
 	const float3 midPos = (targetPos + startPos) * 0.5f;
 	const float3 cameraDir = (midPos - camera->GetPos()).SafeANormalize();
 
@@ -121,19 +123,19 @@ void CBeamLaserProjectile::Draw()
 	const float3& pos1 = startPos;
 	const float3& pos2 = targetPos;
 
-	#define WT1 weaponDef->visuals.texture1
-	#define WT2 weaponDef->visuals.texture2
-	#define WT3 weaponDef->visuals.texture3
+	const auto* WT1 = weaponDef->visuals.texture1;
+	const auto* WT2 = weaponDef->visuals.texture2;
+	const auto* WT3 = weaponDef->visuals.texture3;
 
 	if (playerCamDistSq < Square(1000.0f)) {
 		if (validTextures[2]) {
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<2>(
 				{ pos1 - xdir * beamEdgeSize,                       midtexx  , WT2->ystart, edgeColStart },
 				{ pos1 - xdir * beamEdgeSize - ydir * beamEdgeSize, WT2->xend, WT2->ystart, edgeColStart },
 				{ pos1 + xdir * beamEdgeSize - ydir * beamEdgeSize, WT2->xend, WT2->yend  , edgeColStart },
 				{ pos1 + xdir * beamEdgeSize,                       midtexx  , WT2->yend  , edgeColStart }
 			);
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<2>(
 				{ pos1 - xdir * beamCoreSize,                       midtexx  , WT2->ystart, coreColStart },
 				{ pos1 - xdir * beamCoreSize - ydir * beamCoreSize, WT2->xend, WT2->ystart, coreColStart },
 				{ pos1 + xdir * beamCoreSize - ydir * beamCoreSize, WT2->xend, WT2->yend  , coreColStart },
@@ -142,14 +144,14 @@ void CBeamLaserProjectile::Draw()
 
 		}
 		if (validTextures[1]) {
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<1>(
 				{ pos1 - xdir * beamEdgeSize,                       WT1->xstart, WT1->ystart, edgeColStart },
 				{ pos2 - xdir * beamEdgeSize,                       WT1->xend  , WT1->ystart, edgeColEnd   },
 				{ pos2 + xdir * beamEdgeSize,                       WT1->xend  , WT1->yend  , edgeColEnd   },
 				{ pos1 + xdir * beamEdgeSize,                       WT1->xstart, WT1->yend  , edgeColStart }
 			);
 
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<1>(
 				{ pos1 - xdir * beamCoreSize,                       WT1->xstart, WT1->ystart, coreColStart },
 				{ pos2 - xdir * beamCoreSize,                       WT1->xend  , WT1->ystart, coreColEnd   },
 				{ pos2 + xdir * beamCoreSize,                       WT1->xend  , WT1->yend  , coreColEnd   },
@@ -157,14 +159,14 @@ void CBeamLaserProjectile::Draw()
 			);
 		}
 		if (validTextures[2]) {
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<2>(
 				{ pos2 - xdir * beamEdgeSize,                       midtexx  , WT2->ystart, edgeColStart },
 				{ pos2 - xdir * beamEdgeSize + ydir * beamEdgeSize, WT2->xend, WT2->ystart, edgeColStart },
 				{ pos2 + xdir * beamEdgeSize + ydir * beamEdgeSize, WT2->xend, WT2->yend  , edgeColStart },
 				{ pos2 + xdir * beamEdgeSize,                       midtexx  , WT2->yend  , edgeColStart }
 			);
 
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<2>(
 				{ pos2 - xdir * beamCoreSize,                       midtexx  , WT2->ystart, coreColStart },
 				{ pos2 - xdir * beamCoreSize + ydir * beamCoreSize, WT2->xend, WT2->ystart, coreColStart },
 				{ pos2 + xdir * beamCoreSize + ydir * beamCoreSize, WT2->xend, WT2->yend  , coreColStart },
@@ -173,14 +175,14 @@ void CBeamLaserProjectile::Draw()
 		}
 	} else {
 		if (validTextures[1]) {
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<1>(
 				{ pos1 - xdir * beamEdgeSize,                       WT1->xstart, WT1->ystart, edgeColStart },
 				{ pos2 - xdir * beamEdgeSize,                       WT1->xend  , WT1->ystart, edgeColEnd   },
 				{ pos2 + xdir * beamEdgeSize,                       WT1->xend  , WT1->yend  , edgeColEnd   },
 				{ pos1 + xdir * beamEdgeSize,                       WT1->xstart, WT1->yend  , edgeColStart }
 			);
 
-			AddEffectsQuad(
+			AddWeaponEffectsQuad<1>(
 				{ pos1 - xdir * beamCoreSize,                       WT1->xstart, WT1->ystart, coreColStart },
 				{ pos2 - xdir * beamCoreSize,                       WT1->xend  , WT1->ystart, coreColEnd   },
 				{ pos2 + xdir * beamCoreSize,                       WT1->xend  , WT1->yend  , coreColEnd   },
@@ -191,24 +193,20 @@ void CBeamLaserProjectile::Draw()
 
 	// draw flare
 	if (validTextures[3]) {
-		AddEffectsQuad(
+		AddWeaponEffectsQuad<3>(
 			{ pos1 - camera->GetRight() * flareEdgeSize - camera->GetUp() * flareEdgeSize, WT3->xstart, WT3->ystart, edgeColStart },
 			{ pos1 + camera->GetRight() * flareEdgeSize - camera->GetUp() * flareEdgeSize, WT3->xend,   WT3->ystart, edgeColStart },
 			{ pos1 + camera->GetRight() * flareEdgeSize + camera->GetUp() * flareEdgeSize, WT3->xend,   WT3->yend,   edgeColStart },
 			{ pos1 - camera->GetRight() * flareEdgeSize + camera->GetUp() * flareEdgeSize, WT3->xstart, WT3->yend,   edgeColStart }
 		);
 
-		AddEffectsQuad(
+		AddWeaponEffectsQuad<3>(
 			{ pos1 - camera->GetRight() * flareCoreSize - camera->GetUp() * flareCoreSize, WT3->xstart, WT3->ystart, coreColStart },
 			{ pos1 + camera->GetRight() * flareCoreSize - camera->GetUp() * flareCoreSize, WT3->xend,   WT3->ystart, coreColStart },
 			{ pos1 + camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xend,   WT3->yend,   coreColStart },
 			{ pos1 - camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xstart, WT3->yend,   coreColStart }
 		);
 	}
-
-	#undef WT3
-	#undef WT2
-	#undef WT1
 }
 
 void CBeamLaserProjectile::DrawOnMinimap() const

@@ -79,10 +79,12 @@ void CExplosiveProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	UpdateWeaponAnimParams();
+
 	uint8_t col[4] = {0};
 
 	const WeaponDef::Visuals& wdVisuals = weaponDef->visuals;
-	const AtlasedTexture* tex = wdVisuals.texture1;
+	const auto* tex = wdVisuals.texture1;
 
 	if (wdVisuals.colorMap != nullptr) {
 		wdVisuals.colorMap->GetColor(col, curTime);
@@ -116,7 +118,7 @@ void CExplosiveProjectile::Draw()
 		col[2] = stageDecay * col[2];
 		col[3] = stageDecay * col[3];
 
-		AddEffectsQuad(
+		AddWeaponEffectsQuad<1>(
 			{ stagePos - xdirCam - ydirCam, tex->xstart, tex->ystart, col },
 			{ stagePos + xdirCam - ydirCam, tex->xend,   tex->ystart, col },
 			{ stagePos + xdirCam + ydirCam, tex->xend,   tex->yend,   col },

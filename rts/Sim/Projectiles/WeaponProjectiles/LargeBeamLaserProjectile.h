@@ -33,9 +33,6 @@ private:
 	float scrollspeed;
 	float pulseSpeed;
 	float decay;
-
-	AtlasedTexture beamtex;
-	AtlasedTexture sidetex;
 };
 
 #endif // LARGE_BEAM_LASER_PROJECTILE_H

@@ -276,6 +276,25 @@ void CWeaponProjectile::Update()
 	UpdateInterception();
 }
 
+void CWeaponProjectile::UpdateWeaponAnimParams()
+{
+	assert(weaponDef);
+	if (!validTextures[0])
+		return;
+
+	if (validTextures[1])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[0],      animProgress   );
+
+	if (validTextures[2])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[1], extraAnimProgress[0]);
+
+	if (validTextures[3])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[2], extraAnimProgress[1]);
+
+	if (validTextures[4])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[3], extraAnimProgress[2]);
+}
+
 
 void CWeaponProjectile::UpdateInterception()
 {

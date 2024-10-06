@@ -84,25 +84,30 @@ void CExpGenSpawnable::UpdateRotation()
 
 void CExpGenSpawnable::UpdateAnimParams()
 {
+	UpdateAnimParamsImpl(animParams, animProgress);
+}
+
+void CExpGenSpawnable::UpdateAnimParamsImpl(const float3& ap, float& p)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (static_cast<int>(animParams.x) <= 1 && static_cast<int>(animParams.y) <= 1) {
-		animProgress = 0.0f;
+	if (static_cast<int>(ap.x) <= 1 && static_cast<int>(ap.y) <= 1) {
+		p = 0.0f;
 		return;
 	}
 
 	const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
-	const float animSpeed = math::fabs(animParams.z);
-	if (animParams.z < 0.0f) {
+	const float animSpeed = math::fabs(ap.z);
+	if (ap.z < 0.0f) {
 		#if 0
-			animProgress = math::fmod(t, 2.0f * animSpeed) / animSpeed;
-			if (animProgress > 1.0)
-				animProgress = 2.0f - animProgress;
+			p = math::fmod(t, 2.0f * animSpeed) / animSpeed;
+			if (p > 1.0)
+				p = 2.0f - p;
 		#else
-			animProgress = 1.0f - math::fabs(math::fmod(t, 2.0f * animSpeed) / animSpeed - 1.0f);
+			p = 1.0f - math::fabs(math::fmod(t, 2.0f * animSpeed) / animSpeed - 1.0f);
 		#endif
 	}
 	else {
-		animProgress = math::fmod(t, animSpeed) / animSpeed;
+		p = math::fmod(t, animSpeed) / animSpeed;
 	}
 }
 
@@ -217,6 +222,11 @@ CExpGenSpawnable* CExpGenSpawnable::CreateSpawnable(int spawnableID)
 
 void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const
 {
+	AddEffectsQuadImpl(tl, tr, br, bl, animParams, animProgress);
+}
+
+void CExpGenSpawnable::AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl, const float3& ap, const float& p)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	float minS = std::numeric_limits<float>::max()   ; float minT = std::numeric_limits<float>::max()   ;
 	float maxS = std::numeric_limits<float>::lowest(); float maxT = std::numeric_limits<float>::lowest();
@@ -230,7 +240,34 @@ void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr
 	auto& rb = GetPrimaryRenderBuffer();
 
 	const auto uvInfo = float4{ minS, minT, maxS - minS, maxT - minT };
-	const auto animInfo = float3{ animParams.x, animParams.y, animProgress };
+	const auto animInfo = float3{ ap.x, ap.y, p };
+	constexpr float layer = 0.0f; //for future texture arrays
+
+	//pos, uvw, uvmm, col
+	rb.AddQuadTriangles(
+		{ tl.pos, float3{ tl.s, tl.t, layer }, uvInfo, animInfo, tl.c },
+		{ tr.pos, float3{ tr.s, tr.t, layer }, uvInfo, animInfo, tr.c },
+		{ br.pos, float3{ br.s, br.t, layer }, uvInfo, animInfo, br.c },
+		{ bl.pos, float3{ bl.s, bl.t, layer }, uvInfo, animInfo, bl.c }
+	);
+}
+
+void CExpGenSpawnable::AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	float minS = std::numeric_limits<float>::max()   ; float minT = std::numeric_limits<float>::max()   ;
+	float maxS = std::numeric_limits<float>::lowest(); float maxT = std::numeric_limits<float>::lowest();
+	std::invoke([&](auto&&... arg) {
+		((minS = std::min(minS, arg.s)), ...);
+		((minT = std::min(minT, arg.t)), ...);
+		((maxS = std::max(maxS, arg.s)), ...);
+		((maxT = std::max(maxT, arg.t)), ...);
+	}, tl, tr, br, bl);
+
+	auto& rb = GetPrimaryRenderBuffer();
+
+	const auto uvInfo = float4{ minS, minT, maxS - minS, maxT - minT };
+	static constexpr auto animInfo = float3{ 1.0f, 1.0f , 0.0f };
 	constexpr float layer = 0.0f; //for future texture arrays
 
 	//pos, uvw, uvmm, col

@@ -70,6 +70,8 @@ void CEmgProjectile::Draw()
 	if (!validTextures[0])
 		return;
 
+	UpdateWeaponAnimParams();
+
 	const uint8_t col[4] {
 		(uint8_t)(color.x * intensity * 255),
 		(uint8_t)(color.y * intensity * 255),
@@ -77,11 +79,13 @@ void CEmgProjectile::Draw()
 		(uint8_t)(          intensity * 255)
 	};
 
-	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   col },
-		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   col }
+	const auto* tex = weaponDef->visuals.texture1;
+
+	AddWeaponEffectsQuad<1>(
+		{ drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, tex->xstart, tex->ystart, col },
+		{ drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, tex->xend,   tex->ystart, col },
+		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, tex->xend,   tex->yend,   col },
+		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, tex->xstart, tex->yend,   col }
 	);
 }
 
