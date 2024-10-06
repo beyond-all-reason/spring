@@ -2,6 +2,7 @@
 
 #include "GuiHandler.h"
 
+#include <algorithm>
 #include <Rml/Backends/RmlUi_Backend.h>
 #include "CommandColors.h"
 #include "KeyBindings.h"
@@ -2254,25 +2255,36 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 				return defaultRet;
 			}
 
-			// Create options based on inputs, which will include shift if the user
-			// intends to enqueue.
 			char options = CreateOptions(button);
 
-			if (!preview) {
-				// In the case of a line or rectangle of buildings, we must give multiple commands.
-				// This method returns one command, so we give all but the last build
-				// command here, as it will be returned.
-				//
-				// TODO: Handle proper ordering when holding space.
-				for (auto beg = buildInfos.cbegin(), end = --buildInfos.cend(); beg != end; ++beg) {
-					GiveCommand(beg->CreateCommand(options));
+			// Queue front if meta is held and shift is not.
+			bool isFront =
+				(options & META_KEY) != 0 &&
+				(options & SHIFT_KEY) == 0;
 
-					// If shift was not held, act like it is so the queueing succeeds.
-					options |= SHIFT_KEY;
+			// Front commands must be provided in reverse order.
+			if (isFront) {
+				std::reverse(buildInfos.begin(), buildInfos.end());
+			}
+
+			// Last command must be returned.
+			BuildInfo lastBuildInfo = buildInfos.back();
+			buildInfos.pop_back();
+
+			// Give all but last command immediately.
+			if (!preview) {
+				for (const BuildInfo& buildInfo : buildInfos) {
+					GiveCommand(buildInfo.CreateCommand(options));
+
+					// Ensure each subsequent command is enqueued. If not they will
+					// replace the one before it.
+					if (!isFront) {
+						options |= SHIFT_KEY;
+					}
 				}
 			}
 
-			return CheckCommand((buildInfos.back()).CreateCommand(options));
+			return CheckCommand(lastBuildInfo.CreateCommand(options));
 		}
 
 		case CMDTYPE_ICON_UNIT: {
