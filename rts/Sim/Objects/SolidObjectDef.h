@@ -74,6 +74,7 @@ public:
 
 	CollisionVolume collisionVolume;
 	CollisionVolume selectionVolume;
+	float boxSelectionRadius;
 
 	SolidObjectDecalDef decalDef;
 

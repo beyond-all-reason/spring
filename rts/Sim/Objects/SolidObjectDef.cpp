@@ -52,6 +52,7 @@ SolidObjectDef::SolidObjectDef()
 	, health(0.0f)
 	, mass(0.0f)
 	, crushResistance(0.0f)
+	, boxSelectionRadius(0.0f)
 
 	, collidable(false)
 	, selectable(true)
