@@ -2223,18 +2223,18 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 			if (unitdef == nullptr)
 				return Command(CMD_STOP);
 
-			const BuildInfo bi(unitdef, cameraPos + mouseDir * dist, buildFacing);
-
-			if (button == SDL_BUTTON_LEFT) {
+			// Update buildInfos.
+			{
 				const float3 camTracePos = mouse->buttons[SDL_BUTTON_LEFT].camPos;
 				const float3 camTraceDir = mouse->buttons[SDL_BUTTON_LEFT].dir;
 
 				const float traceDist = camera->GetFarPlaneDist() * 1.4f;
 				const float isectDist = CGround::LineGroundWaterCol(camTracePos, camTraceDir, traceDist, unitdef->floatOnWater, false);
 
-				GetBuildPositions(BuildInfo(unitdef, camTracePos + camTraceDir * isectDist, buildFacing), bi, cameraPos, mouseDir);
-			} else {
-				GetBuildPositions(bi, bi, cameraPos, mouseDir);
+				const BuildInfo startInfo(unitdef, camTracePos + camTraceDir * isectDist, buildFacing);
+				const BuildInfo endInfo(unitdef, cameraPos + mouseDir * dist, buildFacing);
+
+				GetBuildPositions(startInfo, endInfo, cameraPos, mouseDir);
 			}
 
 			if (buildInfos.empty())
