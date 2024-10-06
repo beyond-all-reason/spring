@@ -185,6 +185,7 @@ CWeaponProjectile::~CWeaponProjectile()
 void CWeaponProjectile::Explode(
 	CUnit* hitUnit,
 	CFeature* hitFeature,
+	CWeapon* hitWeapon,
 	float3 impactPos,
 	float3 impactDir
 ) {
@@ -197,6 +198,7 @@ void CWeaponProjectile::Explode(
 		.owner                = owner(),
 		.hitUnit              = hitUnit,
 		.hitFeature           = hitFeature,
+		.hitWeapon            = hitWeapon,
 		.craterAreaOfEffect   = damages->craterAreaOfEffect,
 		.damageAreaOfEffect   = damages->damageAreaOfEffect,
 		.edgeEffectiveness    = damages->edgeEffectiveness,
@@ -222,50 +224,66 @@ void CWeaponProjectile::Explode(
 void CWeaponProjectile::Collision()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	Collision((CFeature*) nullptr);
+
+	float3 impactPos = pos;
+	float3 impactDir = speed;
+	if (hitscan) {
+		impactPos = targetPos;
+		impactDir = targetPos - startPos;
+	};
+
+	Explode(nullptr, nullptr, nullptr, impactPos, impactDir);
 }
 
 void CWeaponProjectile::Collision(CFeature* feature)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	assert(feature);
 	float3 impactPos = pos;
 	float3 impactDir = speed;
 
-	if (feature != nullptr) {
-		if (hitscan) {
-			impactPos = feature->pos;
-			impactDir = targetPos - startPos;
-		}
-
-		if (gsRNG.NextFloat() < weaponDef->fireStarter)
-			feature->StartFire();
-
-	} else {
-		if (hitscan) {
-			impactPos = targetPos;
-			impactDir = targetPos - startPos;
-		}
+	if (hitscan) {
+		impactPos = feature->pos;
+		impactDir = targetPos - startPos;
 	}
 
-	Explode(nullptr, feature, impactPos, impactDir);
+	if (gsRNG.NextFloat() < weaponDef->fireStarter)
+		feature->StartFire();
+
+	Explode(nullptr, feature, nullptr, impactPos, impactDir);
 }
 
 void CWeaponProjectile::Collision(CUnit* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	assert(unit);
 	float3 impactPos = pos;
 	float3 impactDir = speed;
 
-	if (unit != nullptr) {
-		if (hitscan) {
-			impactPos = unit->pos;
-			impactDir = targetPos - startPos;
-		}
-	} else {
-		assert(false);
+	if (hitscan) {
+		impactPos = unit->pos;
+		impactDir = targetPos - startPos;
 	}
 
-	Explode(unit, nullptr, impactPos, impactDir);
+	Explode(unit, nullptr, nullptr, impactPos, impactDir);
+}
+
+void CWeaponProjectile::Collision(CWeapon* weapon)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	assert(weapon);
+	float3 impactPos = pos;
+	float3 impactDir = speed;
+
+	if (hitscan) {
+		impactPos = weapon->owner ? weapon->owner->pos : pos;
+		impactDir = targetPos - startPos;
+	}
+
+	Explode(nullptr, nullptr, weapon, impactPos, impactDir);
 }
 
 void CWeaponProjectile::Update()
@@ -294,15 +312,32 @@ void CWeaponProjectile::UpdateInterception()
 	if (owner() == nullptr)
 		targetPos = po->pos + po->speed;
 
+	static auto GetWeapon = [](const CWeaponProjectile* po) -> CWeapon* {
+		const auto* poOwner = po->owner();
+		if (!poOwner)
+			return nullptr;
+
+		if (po->weaponNum < 0 || po->weaponNum >= poOwner->weapons.size())
+			return nullptr;
+
+		return poOwner->weapons[po->weaponNum];
+	};
+
 	if (hitscan) {
 		if (ClosestPointOnLine(startPos, targetPos, po->pos).SqDistance(po->pos) < Square(weaponDef->collisionSize)) {
-			po->Collision();
+			if (auto* weapon = GetWeapon(po); weapon)
+				po->Collision(weapon);
+			else
+				po->Collision();
 			Collision();
 		}
 	} else {
 		// FIXME: if (pos.SqDistance(po->pos) < Square(weaponDef->collisionSize)) {
 		if (pos.SqDistance(po->pos) < Square(damages->damageAreaOfEffect)) {
-			po->Collision();
+			if (auto* weapon = GetWeapon(po); weapon)
+				po->Collision(weapon);
+			else
+				po->Collision();
 			Collision();
 		}
 	}
@@ -363,7 +398,18 @@ void CWeaponProjectile::UpdateGroundBounce()
 		// SetPosition(bounceHitPos + speed * (1.0f - bounceParams.z));
 		SetPosition(bounceHitPos + dir * moveDistance);
 
-		explGenHandler.GenExplosion(weaponDef->bounceExplosionGeneratorID, bounceHitPos, bounceNormal, speed.w, 1.0f, 1.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(
+			weaponDef->bounceExplosionGeneratorID,
+			bounceHitPos,
+			bounceNormal,
+			speed.w,
+			1.0f,
+			1.0f,
+			owner(),
+			nullptr,
+			nullptr,
+			nullptr
+		);
 
 		bounced = false;
 	}

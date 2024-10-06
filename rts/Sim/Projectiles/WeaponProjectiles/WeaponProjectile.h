@@ -12,8 +12,6 @@ struct ProjectileParams;
 class CVertexArray;
 class DynDamageArray;
 
-
-
 /**
  * Base class for all projectiles originating from a weapon or having
  * weapon-properties. Uses data from a weapon definition.
@@ -25,10 +23,11 @@ public:
 	CWeaponProjectile(const ProjectileParams& params);
 	~CWeaponProjectile() override;
 
-	virtual void Explode(CUnit* hitUnit, CFeature* hitFeature, float3 impactPos, float3 impactDir);
+	virtual void Explode(CUnit* hitUnit, CFeature* hitFeature, CWeapon* hitWeapon, float3 impactPos, float3 impactDir);
 	void Collision() override;
 	void Collision(CFeature* feature) override;
 	void Collision(CUnit* unit) override;
+	void Collision(CWeapon* weapon) override;
 	void Update() override;
 	/// @return 0=unaffected, 1=instant repulse, 2=gradual repulse
 	virtual int ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed) { return 0; }
