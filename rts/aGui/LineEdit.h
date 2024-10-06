@@ -4,7 +4,6 @@
 #define LINE_EDIT_H
 
 #include <string>
-#include <slimsig/slimsig.h>
 
 #include "GuiElement.h"
 
@@ -25,7 +24,7 @@ public:
 	void SetFocus(bool focus);
 	void SetCrypt(bool focus);
 
-	slimsig::signal<void (void)> DefaultAction;
+	OnClickVoidType DefaultAction;
 
 private:
 	virtual void DrawSelf();

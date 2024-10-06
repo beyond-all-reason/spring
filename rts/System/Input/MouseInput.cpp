@@ -27,8 +27,6 @@
 #include "System/MainDefines.h"
 #include "System/SafeUtil.h"
 
-#include <functional>
-
 #include <SDL_events.h>
 #include <SDL_hints.h>
 #include <SDL_syswm.h>
@@ -36,10 +34,9 @@
 
 IMouseInput* mouseInput = nullptr;
 
-
 IMouseInput::IMouseInput(bool relModeWarp)
 {
-	inputCon = input.AddHandler(std::bind(&IMouseInput::HandleSDLMouseEvent, this, std::placeholders::_1));
+	inputCon = input.AddHandler([this](const SDL_Event& event) { return this->HandleSDLMouseEvent(event); });
 	#ifndef HEADLESS
 	// Windows 10 FCU (Fall Creators Update) causes spurious SDL_MOUSEMOTION
 	// events to be generated with SDL_HINT_MOUSE_RELATIVE_MODE_WARP enabled
@@ -62,7 +59,6 @@ IMouseInput::~IMouseInput()
 	#ifndef HEADLESS
 	SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "0");
 	#endif
-	inputCon.disconnect();
 }
 
 

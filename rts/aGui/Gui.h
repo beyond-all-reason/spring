@@ -4,7 +4,6 @@
 #define GUI_H
 
 #include <list>
-#include <slimsig/connection.h>
 #include "System/Input/InputHandler.h"
 
 union SDL_Event;
@@ -30,9 +29,9 @@ public:
 
 	bool MouseOverElement(const GuiElement*, int x, int y) const;
 
-private:
 	bool HandleEvent(const SDL_Event& ev);
-	InputHandler::SignalType::connection_type inputCon;
+private:
+	InputHandler::HandlerTokenT inputCon;
 
 	struct GuiItem
 	{

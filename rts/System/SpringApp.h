@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "System/Log/ConsoleSink.h"
+#include "System/Input/InputHandler.h"
 
 class ClientSetup;
 class CGameController;
@@ -68,6 +69,8 @@ private:
 	/* Member instead of global to avoid catching unrelated early messages.
 	 * In particular, modes like `spring -p` want a clean output log without library chaff. */
 	ConsoleSinkRegistrator consoleSink;
+
+	InputHandler::HandlerTokenT inputToken;
 };
 
 /**

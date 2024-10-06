@@ -1,7 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "System/Input/InputHandler.h"
-
 #include <functional>
 #include <iostream>
 #include <chrono>
@@ -272,7 +270,7 @@ bool SpringApp::Init()
 	CInfoConsole::InitStatic();
 	CMouseHandler::InitStatic();
 
-	input.AddHandler(std::bind(&SpringApp::MainEventHandler, this, std::placeholders::_1));
+	inputToken = input.AddHandler([this](const SDL_Event& event) { return SpringApp::MainEventHandler(event); });
 
 	// Global structures
 	gs->Init();

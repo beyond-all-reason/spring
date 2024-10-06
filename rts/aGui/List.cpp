@@ -159,7 +159,7 @@ bool List::MouseUpdate(int x, int y)
 		{
 			if (nCurIndex == place && (clickedTime + spring_msecs(250)) > spring_now())
 			{
-				FinishSelection.emit();
+				FinishSelection();
 			}
 			clickedTime = spring_now();
 			place = nCurIndex;
@@ -430,7 +430,7 @@ bool List::KeyPressed(int k, bool isRepeat)
 		query = query.substr(0, query.length() - 1);
 		return Filter(true);
 	} else if (k == SDLK_RETURN) {
-		FinishSelection.emit();
+		FinishSelection();
 		return true;
 	} else if ((k & ~0xFF) != 0) {
 		// This prevents isalnum from asserting on msvc debug crt

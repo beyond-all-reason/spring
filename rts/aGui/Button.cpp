@@ -74,8 +74,8 @@ bool Button::HandleEventSelf(const SDL_Event& ev)
 					&& MouseOver(ev.button.x, ev.button.y)
 					&& clicked)
 			{
-				if (!Clicked.empty()) {
-					Clicked.emit();
+				if (Clicked) {
+					Clicked();
 				} else {
 					LOG_L(L_WARNING, "Button %s clicked without callback", label.c_str());
 				}

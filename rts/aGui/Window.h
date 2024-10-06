@@ -4,7 +4,6 @@
 #define WINDOW_H
 
 #include <string>
-#include <slimsig/slimsig.h>
 
 #include "GuiElement.h"
 
@@ -16,7 +15,7 @@ public:
 	Window(const std::string& title = "", GuiElement* parent = NULL);
 
 	virtual void AddChild(GuiElement* elem);
-	slimsig::signal<void (void)> WantClose;
+	OnClickVoidType WantClose;
 
 protected:
 	std::string title;

@@ -54,7 +54,7 @@ SelectionWidget::SelectionWidget(agui::GuiElement* parent) : agui::GuiElement(pa
 
 	agui::HorizontalLayout* modL = new agui::HorizontalLayout(vl);
 	mod = new agui::Button("Select", modL);
-	mod->Clicked.connect(std::bind(&SelectionWidget::ShowModList, this));
+	mod->Clicked = std::bind(&SelectionWidget::ShowModList, this);
 	mod->SetSize(0.1f, 0.00f, true);
 
 	userDemo = NoDemoSelect;
@@ -70,12 +70,12 @@ SelectionWidget::SelectionWidget(agui::GuiElement* parent) : agui::GuiElement(pa
 
 	agui::HorizontalLayout* mapL = new agui::HorizontalLayout(vl);
 	map = new agui::Button("Select", mapL);
-	map->Clicked.connect(std::bind(&SelectionWidget::ShowMapList, this));
+	map->Clicked = std::bind(&SelectionWidget::ShowMapList, this);
 	map->SetSize(0.1f, 0.00f, true);
 
 	agui::HorizontalLayout* scriptL = new agui::HorizontalLayout(vl);
 	script = new agui::Button("Select", scriptL);
-	script->Clicked.connect(std::bind(&SelectionWidget::ShowScriptList, this));
+	script->Clicked = std::bind(&SelectionWidget::ShowScriptList, this);
 	script->SetSize(0.1f, 0.00f, true);
 
 	modT = new agui::TextElement(userMod, modL);
@@ -97,8 +97,8 @@ void SelectionWidget::ShowDemoList(const std::function<void(const std::string&)>
 		return;
 
 	curSelect = new ListSelectWnd("Select demo");
-	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectDemo, this, std::placeholders::_1));
-	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
+	curSelect->Selected = std::bind(&SelectionWidget::SelectDemo, this, std::placeholders::_1);
+	curSelect->WantClose = std::bind(&SelectionWidget::CleanWindow, this);
 
 	const std::string cwd = FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd());
 	const std::string dir = FileSystem::EnsurePathSepAtEnd("demos");
@@ -117,8 +117,8 @@ void SelectionWidget::ShowSavegameList(const std::function<void(const std::strin
 		return;
 
 	curSelect = new ListSelectWnd("Select savegame");
-	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectSavegame, this, std::placeholders::_1));
-	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
+	curSelect->Selected = std::bind(&SelectionWidget::SelectSavegame, this, std::placeholders::_1);
+	curSelect->WantClose = std::bind(&SelectionWidget::CleanWindow, this);
 
 	const std::string cwd = FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd());
 	const std::string dir = FileSystem::EnsurePathSepAtEnd("Saves");
@@ -151,8 +151,8 @@ void SelectionWidget::ShowModList()
 		return;
 
 	curSelect = new ListSelectWnd("Select game");
-	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectMod, this, std::placeholders::_1));
-	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
+	curSelect->Selected = std::bind(&SelectionWidget::SelectMod, this, std::placeholders::_1);
+	curSelect->WantClose = std::bind(&SelectionWidget::CleanWindow, this);
 
 	std::vector<CArchiveScanner::ArchiveData> found = archiveScanner->GetPrimaryMods();
 	std::sort(found.begin(), found.end(), [](const CArchiveScanner::ArchiveData& a, const CArchiveScanner::ArchiveData& b) {
@@ -172,8 +172,8 @@ void SelectionWidget::ShowMapList()
 		return;
 
 	curSelect = new ListSelectWnd("Select map");
-	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectMap, this, std::placeholders::_1));
-	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
+	curSelect->Selected = std::bind(&SelectionWidget::SelectMap, this, std::placeholders::_1);
+	curSelect->WantClose = std::bind(&SelectionWidget::CleanWindow, this);
 
 	std::vector<std::string> arFound = archiveScanner->GetMaps();
 	std::sort(arFound.begin(), arFound.end(), doj::alphanum_less<std::string>());
@@ -243,8 +243,8 @@ void SelectionWidget::ShowScriptList()
 		return;
 
 	curSelect = new ListSelectWnd("Select script");
-	curSelect->Selected.connect(std::bind(&SelectionWidget::SelectScript, this, std::placeholders::_1));
-	curSelect->WantClose.connect(std::bind(&SelectionWidget::CleanWindow, this));
+	curSelect->Selected = std::bind(&SelectionWidget::SelectScript, this, std::placeholders::_1);
+	curSelect->WantClose = std::bind(&SelectionWidget::CleanWindow, this);
 
 	for (const std::string& scriptName: availableScripts) {
 		curSelect->list->AddItem(scriptName, "");
