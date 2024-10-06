@@ -1253,6 +1253,9 @@ float CGameHelper::GetBuildHeight(const float3& pos, const UnitDef* unitdef, boo
 }
 
 
+/**
+ * @param feature Deprecated, just pass nullptr.
+ */
 CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const BuildInfo& buildInfo,
 	CFeature*& feature,
