@@ -4,7 +4,6 @@
 #define BUTTON_H
 
 #include <string>
-#include <slimsig/slimsig.h>
 
 #include "GuiElement.h"
 
@@ -18,7 +17,7 @@ public:
 
 	void Label(const std::string& label);
 
-	slimsig::signal<void (void)> Clicked;
+	OnClickVoidType Clicked;
 
 private:
 	virtual void DrawSelf();
