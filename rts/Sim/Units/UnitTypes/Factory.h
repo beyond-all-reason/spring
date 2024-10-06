@@ -34,7 +34,7 @@ public:
 	/// supply the build piece to speed up
 	float3 CalcBuildPos(int buildPiece = -1);
 
-	void KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed);
+	void KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID);
 	void PreInit(const UnitLoadParams& params);
 	bool ChangeTeam(int newTeam, ChangeType type);
 

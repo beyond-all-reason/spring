@@ -45,7 +45,7 @@ void GeneralMoveSystem::Update() {
             // this unit is not coming back, kill it now without any death
             // sequence (s.t. deathScriptFinished becomes true immediately)
             if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
-                unit->ForcedKillUnit(nullptr, false, true);
+                unit->ForcedKillUnit(nullptr, false, true, -CSolidObject::DAMAGE_KILLED_OOB);
 
             #ifndef NDEBUG
             unit->SanityCheck();

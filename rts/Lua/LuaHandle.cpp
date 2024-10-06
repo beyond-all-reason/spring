@@ -1092,8 +1092,9 @@ void CLuaHandle::UnitReverseBuilt(const CUnit* unit)
  * @number attackerID
  * @number attackerDefID
  * @number attackerTeam
+ * @number weaponDefID
  */
-void CLuaHandle::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
+void CLuaHandle::UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID)
 {
 	LUA_CALL_IN_CHECK(L);
 	luaL_checkstack(L, 9, __func__);
@@ -1105,13 +1106,15 @@ void CLuaHandle::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
 
-	static constexpr int argCount = 3 + 3;
+	static constexpr int argCount = 3 + 3 + 1;
 
 	lua_pushnumber(L, unit->id);
 	lua_pushnumber(L, unit->unitDef->id);
 	lua_pushnumber(L, unit->team);
 
 	LuaUtils::PushAttackerInfo(L, attacker);
+
+	lua_pushnumber(L, weaponDefID);
 
 	// call the routine
 	RunCallInTraceback(L, cmdStr, argCount, 0, traceBack.GetErrFuncIdx(), false);
