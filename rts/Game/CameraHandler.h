@@ -8,6 +8,7 @@
 #include <string>
 
 #include "Camera/CameraController.h"
+#include "Game/Camera/DollyController.h"
 #include "System/UnorderedMap.hpp"
 #include "Console.h"
 
@@ -26,9 +27,41 @@ public:
 		CAMERA_MODE_ROTOVERHEAD = 3,
 		CAMERA_MODE_FREE        = 4,
 		CAMERA_MODE_OVERVIEW    = 5,
-		CAMERA_MODE_DUMMY       = 6,
-		CAMERA_MODE_LAST        = 7,
+		CAMERA_MODE_DOLLY       = 6,
+		CAMERA_MODE_DUMMY       = 7,
+		CAMERA_MODE_LAST        = 8,
 	};
+	enum {
+		CAMERA_TRANSITION_MODE_EXP_DECAY = 0,
+		CAMERA_TRANSITION_MODE_SPRING_DAMPENED = 1,
+		CAMERA_TRANSITION_MODE_TIMED_SPRING_DAMPENED = 2,
+		CAMERA_TRANSITION_MODE_LERP_SMOOTHED = 3,
+	};
+
+	struct CamTransitionState {
+		float3 startPos;
+		float3 tweenPos;
+		float3 startRot;
+		float3 tweenRot;
+
+		float startFOV = 0.0f;
+		float tweenFOV = 0.0f;
+
+		float timeStart = 0.0f;
+		float timeEnd = 0.0f;
+
+		// spring dampened transitions
+		float3 posVelocity;
+		float3 rotVelocity;
+		float fovVelocity;
+		float lastTime;
+
+		// configurable parameters
+		float timeFactor = 0.0f;
+		float timeExponent = 0.0f;
+		float halflife = 0.0f;
+	};
+
 
 public:
 	CCameraHandler();
@@ -52,12 +85,14 @@ public:
 	void Kill();
 	void InitControllers();
 	void KillControllers();
-	void UpdateController(CPlayer* player, bool fpsMode, bool fsEdgeMove, bool wnEdgeMove);
+	void UpdateController(CPlayer* player, bool fpsMode);
 
 	void SetCameraMode(unsigned int mode);
 	void SetCameraMode(const std::string& mode);
 	void PushMode();
 	void PopMode();
+
+	void ConfigNotify(const std::string& key, const std::string& value);
 
 	void SetTransitionParams(float factor, float expon) {
 		camTransState.timeFactor   = factor;
@@ -98,6 +133,8 @@ public:
 	const CCameraController& GetCurrentController() const { return *(camControllers[currCamCtrlNum]); }
 	      CCameraController& GetCurrentController()       { return *(camControllers[currCamCtrlNum]); }
 
+	CDollyController& GetDollyController() { return *(static_cast<CDollyController*>(camControllers[CAMERA_MODE_DOLLY])); }
+
 	const std::array<CCameraController*, CAMERA_MODE_LAST>& GetControllers() const { return camControllers; }
 
 private:
@@ -106,24 +143,12 @@ private:
 
 private:
 	unsigned int currCamCtrlNum = CAMERA_MODE_DUMMY;
-
-	struct CamTransitionState {
-		float3 startPos;
-		float3 tweenPos;
-		float3 startRot;
-		float3 tweenRot;
-
-		float startFOV = 0.0f;
-		float tweenFOV = 0.0f;
-
-		float timeStart = 0.0f;
-		float timeEnd = 0.0f;
-		// configurable parameters
-		float timeFactor = 0.0f;
-		float timeExponent = 0.0f;
-	};
+	unsigned int currCamTransitionNum = CAMERA_TRANSITION_MODE_EXP_DECAY;
 
 	CamTransitionState camTransState;
+
+	bool windowedEdgeMove = false;
+	bool fullscreenEdgeMove = false;
 
 	// last controller is a dummy
 	std::array<CCameraController*, CAMERA_MODE_LAST> camControllers;

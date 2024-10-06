@@ -16,6 +16,7 @@ float halflife_to_damping(float halflife, float eps)
 
 float fast_negexp(float x)
 {
+	assert(x >= 0);
 	return 1.0f / (1.0f + x + 0.48f*x*x + 0.235f*x*x*x);
 }
 

@@ -220,6 +220,8 @@ class LuaUnsyncedRead {
 		static int UnitIconGetDraw(lua_State* L);
 
 		static int GetSyncedGCInfo(lua_State* L);
+
+		static int SolveNURBSCurve(lua_State* L);
 };
 
 
