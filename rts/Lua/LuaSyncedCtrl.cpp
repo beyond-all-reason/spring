@@ -333,6 +333,8 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(UnitWeaponFire);
 	REGISTER_LUA_CFUNC(UnitWeaponHoldFire);
 
+	REGISTER_LUA_CFUNC(ForceUnitCollisionUpdate);
+
 	REGISTER_LUA_CFUNC(UnitAttach);
 	REGISTER_LUA_CFUNC(UnitDetach);
 	REGISTER_LUA_CFUNC(UnitDetachFromAir);
@@ -6469,6 +6471,32 @@ int LuaSyncedCtrl::UnitWeaponHoldFire(lua_State* L)
 	return 0;
 }
 
+/*** Prevent collision checks from working on outdated data
+ *
+ * There's a rare edge case that requires units to be in specific positions
+ * and being shot by specific weapons but which can result in shots ghosting
+ * through the unit. This is because the unit's collision volume is stale.
+ * The `movement.unitQuadPositionUpdateRate` modrule controls this behaviour
+ * and can guarantee 100% correctness if set to 1, but the default value is 3
+ * and large-scale games generally don't want to set it so low. This function
+ * lets you guarantee success for important weapons regardless of how high
+ * the normal update rate is set.
+ *
+ * @function Spring.ForceUnitCollisionUpdate
+ * @number unitID
+ * @treturn nil
+ */
+int LuaSyncedCtrl::ForceUnitCollisionUpdate(lua_State* L)
+{
+	const auto* const unit = ParseUnit(L, __func__, 1);
+	if (!unit)
+		return 0;
+	if (!unit->moveType)
+		return 0;
+
+	unit->moveType->UpdateCollisionMap(true);
+	return 0;
+}
 
 /***
  *
