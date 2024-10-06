@@ -124,7 +124,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetPlayerRulesParam);
 	REGISTER_LUA_CFUNC(GetPlayerRulesParams);
-	
+
 	REGISTER_LUA_CFUNC(GetMapOption);
 	REGISTER_LUA_CFUNC(GetMapOptions);
 	REGISTER_LUA_CFUNC(GetModOption);
@@ -224,6 +224,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitRadius);
 	REGISTER_LUA_CFUNC(GetUnitBuildeeRadius);
 	REGISTER_LUA_CFUNC(GetUnitMass);
+
+	REGISTER_LUA_CFUNC(GetUnitTransformMatrix);
 	REGISTER_LUA_CFUNC(GetUnitPosition);
 	REGISTER_LUA_CFUNC(GetUnitBasePosition);
 	REGISTER_LUA_CFUNC(GetUnitVectors);
@@ -294,6 +296,8 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeatureHealth);
 	REGISTER_LUA_CFUNC(GetFeatureHeight);
 	REGISTER_LUA_CFUNC(GetFeatureRadius);
+
+	REGISTER_LUA_CFUNC(GetFeatureTransformMatrix);
 	REGISTER_LUA_CFUNC(GetFeaturePosition);
 	REGISTER_LUA_CFUNC(GetFeatureMass);
 	REGISTER_LUA_CFUNC(GetFeatureRotation);
@@ -494,6 +498,25 @@ static int GetSolidObjectMass(lua_State* L, const CSolidObject* o)
 	lua_pushnumber(L, o->mass);
 
 	return 1;
+}
+
+static int GetSolidObjectTransformMatrix(lua_State *L, const CSolidObject *o) {
+	if (o == nullptr)
+		return 0;
+
+	CMatrix44f m = o->GetTransformMatrix(CLuaHandle::GetHandleSynced(L));
+
+	if (luaL_optboolean(L, 2, false))
+		m = m.InvertAffine();
+
+	for (int i = 0; i < 16; i += 4) {
+		lua_pushnumber(L, m[i + 0]);
+		lua_pushnumber(L, m[i + 1]);
+		lua_pushnumber(L, m[i + 2]);
+		lua_pushnumber(L, m[i + 3]);
+	}
+
+	return 16;
 }
 
 static int GetSolidObjectPosition(lua_State* L, const CSolidObject* o, bool isFeature)
@@ -4302,6 +4325,34 @@ int LuaSyncedRead::GetUnitMass(lua_State* L)
 	return (GetSolidObjectMass(L, ParseInLosUnit(L, __func__, 1)));
 }
 
+
+/***
+ *
+ * @function Spring.GetUnitTransformMatrix
+ * @number unitID
+ * @boolean invert translate and rotate transformations
+ * @treturn number|nil m11 nil when unitID cannot be parsed
+ * @treturn number m12
+ * @treturn number m13
+ * @treturn number m14
+ * @treturn number m21
+ * @treturn number m22
+ * @treturn number m23
+ * @treturn number m24
+ * @treturn number m31
+ * @treturn number m32
+ * @treturn number m33
+ * @treturn number m34
+ * @treturn number m41
+ * @treturn number m42
+ * @treturn number m43
+ * @treturn number m44
+ */
+int LuaSyncedRead::GetUnitTransformMatrix(lua_State *L)
+{
+	return (GetSolidObjectTransformMatrix(L, ParseUnit(L, __func__, 1)));
+}
+
 /***
  *
  * @function Spring.GetUnitPosition
@@ -6566,6 +6617,33 @@ int LuaSyncedRead::GetFeatureMass(lua_State* L)
 
 /***
  *
+ * @function Spring.GetFeatureTransformMatrix
+ * @number featureID
+ * @boolean invert translate and rotate transformations
+ * @treturn number|nil m11 nil when featureID cannot be parsed
+ * @treturn number m12
+ * @treturn number m13
+ * @treturn number m14
+ * @treturn number m21
+ * @treturn number m22
+ * @treturn number m23
+ * @treturn number m24
+ * @treturn number m31
+ * @treturn number m32
+ * @treturn number m33
+ * @treturn number m34
+ * @treturn number m41
+ * @treturn number m42
+ * @treturn number m43
+ * @treturn number m44
+ */
+int LuaSyncedRead::GetFeatureTransformMatrix(lua_State *L)
+{
+	return (GetSolidObjectTransformMatrix(L, ParseFeature(L, __func__, 1)));
+}
+
+/***
+ *
  * @function Spring.GetFeaturePosition
  * @number featureID
  */
@@ -8246,7 +8324,10 @@ static int GetSolidObjectPieceMatrix(lua_State* L, const CSolidObject* o)
 	if (lmp == nullptr)
 		return 0;
 
-	const CMatrix44f& mat = lmp->GetModelSpaceMatrix();
+	CMatrix44f mat = lmp->GetModelSpaceMatrix();
+
+	if (luaL_optboolean(L, 3, false))
+		mat = mat.InvertAffine();
 
 	for (float mi: mat.m) {
 		lua_pushnumber(L, mi);
@@ -8380,6 +8461,7 @@ int LuaSyncedRead::GetUnitPieceDirection(lua_State* L) {
  *
  * @function Spring.GetUnitPieceMatrix
  * @number unitID
+ * @boolean invert translate and rotate transformations
  * @treturn number|nil m11
  * @treturn number m12
  * @treturn number m13
@@ -8494,6 +8576,7 @@ int LuaSyncedRead::GetFeaturePieceDirection(lua_State* L) {
  *
  * @function Spring.GetFeaturePieceMatrix
  * @number featureID
+ * @boolean invert translate and rotate transformations
  * @treturn number|nil m11
  * @treturn number m12
  * @treturn number m13
