@@ -18,7 +18,7 @@ public:
 	void MouseWheelMove(float move, const float3& newDir) override {}
 
 	float3 SwitchFrom() const override { return ZeroVector; }
-	void SwitchTo(const int, const bool) override {}
+	void SwitchTo(const CCameraController*, const bool) override {}
 };
 
 #endif
