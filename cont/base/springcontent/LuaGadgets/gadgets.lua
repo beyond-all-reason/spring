@@ -1411,9 +1411,9 @@ function gadgetHandler:UnitReverseBuilt(unitID, unitDefID, unitTeam)
 end
 
 
-function gadgetHandler:UnitConstructionDecayed(unitID, unitDefID, unitTeam, part)
+function gadgetHandler:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
   for _,g in r_ipairs(self.UnitConstructionDecayedList) do
-    g:UnitConstructionDecayed(unitID, unitDefID, unitTeam, part)
+    g:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
   end
 end
 

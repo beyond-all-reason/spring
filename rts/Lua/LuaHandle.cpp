@@ -1089,13 +1089,15 @@ void CLuaHandle::UnitReverseBuilt(const CUnit* unit)
  * @number unitID
  * @number unitDefID
  * @number unitTeam
+ * @number timeSinceLastBuild
+ * @number iterationPeriod
  * @number part
  */
-void CLuaHandle::UnitConstructionDecayed(const CUnit* unit, float part)
+void CLuaHandle::UnitConstructionDecayed(const CUnit* unit, float timeSinceLastBuild, float iterationPeriod, float part)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L);
-	luaL_checkstack(L, 7, __func__);
+	luaL_checkstack(L, 9, __func__);
 	const LuaUtils::ScopedDebugTraceBack traceBack(L);
 
 	static const LuaHashString cmdStr(__func__);
@@ -1105,10 +1107,12 @@ void CLuaHandle::UnitConstructionDecayed(const CUnit* unit, float part)
 	lua_pushnumber(L, unit->id);
 	lua_pushnumber(L, unit->unitDef->id);
 	lua_pushnumber(L, unit->team);
+	lua_pushnumber(L, timeSinceLastBuild);
+	lua_pushnumber(L, iterationPeriod);
 	lua_pushnumber(L, part);
 
 	// call the routine
-	RunCallInTraceback(L, cmdStr, 4, 0, traceBack.GetErrFuncIdx(), false);
+	RunCallInTraceback(L, cmdStr, 6, 0, traceBack.GetErrFuncIdx(), false);
 }
 
 

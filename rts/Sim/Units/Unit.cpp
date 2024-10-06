@@ -1001,7 +1001,8 @@ void CUnit::SlowUpdate()
 	}
 
 	if (beingBuilt) {
-		if (modInfo.constructionDecay && (lastNanoAdd < (gs->frameNum - modInfo.constructionDecayTime))) {
+		const auto framesSinceLastNanoAdd = gs->frameNum - lastNanoAdd;
+		if (modInfo.constructionDecay && (modInfo.constructionDecayTime < framesSinceLastNanoAdd)) {
 			float buildDecay = buildTime * modInfo.constructionDecaySpeed;
 
 			buildDecay = 1.0f / std::max(0.001f, buildDecay);
@@ -1012,7 +1013,11 @@ void CUnit::SlowUpdate()
 
 			AddMetal(cost.metal * buildDecay, false);
 
-			eventHandler.UnitConstructionDecayed(this, buildDecay);
+			eventHandler.UnitConstructionDecayed(this
+				, INV_GAME_SPEED * framesSinceLastNanoAdd
+				, INV_GAME_SPEED * UNIT_SLOWUPDATE_RATE
+				, buildDecay
+			);
 
 			if (health <= 0.0f || buildProgress <= 0.0f)
 				KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_CONSTRUCTION_DECAY);

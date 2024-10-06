@@ -1854,9 +1854,9 @@ function widgetHandler:UnitReverseBuilt(unitID, unitDefID, unitTeam)
 end
 
 
-function widgetHandler:UnitConstructionDecayed(unitID, unitDefID, unitTeam, part)
+function widgetHandler:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
   for _,w in ipairs(self.UnitConstructionDecayedList) do
-    w:UnitConstructionDecayed(unitID, unitDefID, unitTeam, part)
+    w:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
   end
   return
 end
