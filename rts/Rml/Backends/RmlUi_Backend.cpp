@@ -102,7 +102,7 @@ public:
 	Rml::Context* debug_host_context = nullptr;
 	Rml::Context* clicked_context = nullptr;
 
-	InputHandler::SignalType::connection_type inputCon;
+	InputHandler::HandlerTokenT inputCon;
 	CRmlInputReceiver inputReceiver;
 
 	bool initialized = false;
