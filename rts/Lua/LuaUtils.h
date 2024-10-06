@@ -202,6 +202,8 @@ class LuaUtils {
 		static const TObj* IdToObject(int id, const char* func = nullptr);
 		template<typename TObj>
 		static const TObj* SolIdToObject(int id, const char* func = nullptr);
+
+		static void TracyRemoveAlsoExtras(char *script);
 };
 
 

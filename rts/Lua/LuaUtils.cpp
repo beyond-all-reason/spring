@@ -32,6 +32,7 @@
 	#define SCOPED_TIMER(x)
 #endif
 
+#include <tracy/TracyLua.hpp>
 
 static const int maxDepth = 16;
 
@@ -1798,3 +1799,45 @@ void LuaUtils::PushAttackerInfo(lua_State* L, const CUnit* const attacker)
 	lua_pushnil(L);
 }
 #endif
+
+
+void LuaUtils::TracyRemoveAlsoExtras(char* script)
+{
+	// tracy's built-in remover; does not handle our local TracyExtra functions
+	tracy::LuaRemove(script);
+
+#ifndef TRACY_ENABLE
+	// Our extras are handled manually below, the same way Tracy does.
+	// Code is on BSD-3 licence, (c) 2017 Bartosz Taudul aka wolfpld
+
+	const auto FindEnd = [] (char *ptr) {
+		unsigned int cnt = 1;
+		while (cnt) {
+			     if (*ptr == '(') ++ cnt;
+			else if (*ptr == ')') -- cnt;
+			++ ptr;
+		}
+		return ptr;
+	};
+
+	const auto Wipe = [&script, FindEnd] (size_t offset) {
+		const auto end = FindEnd(script + offset);
+		memset(script, ' ', end - script);
+		script = end;
+	};
+
+	while (*script) {
+		if (strncmp(script, "tracy.LuaTracyPlot", 18)) {
+			++ script;
+			continue;
+		}
+
+		if (!strncmp(script + 18, "Config(", 7))
+			Wipe(18 + 7);
+		else if (!strncmp(script + 18, "(", 1))
+			Wipe(18 + 1);
+		else
+			script += 18;
+	}
+#endif
+}
