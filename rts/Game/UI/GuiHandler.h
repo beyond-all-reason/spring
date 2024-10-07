@@ -83,6 +83,7 @@ public:
 	bool GetInvertQueueKey() const { return invertQueueKey; }
 	void SetInvertQueueKey(bool value) { invertQueueKey = value; }
 	bool GetQueueKeystate() const;
+	bool IsBatchBuildEnabled() const;
 
 	bool GetGatherMode() const { return gatherMode; }
 	void SetGatherMode(bool value) { gatherMode = value; }
@@ -220,9 +221,11 @@ private:
 	bool needShift = false;
 	bool showingMetal = false;
 	bool autoShowMetal = false;
-	bool invertQueueKey = false;
 	bool activeMousePress = false;
 	bool forceLayoutUpdate = false;
+
+	bool invertQueueKey = false;
+	bool holdQueueKeyToBatchBuild = true;
 
 	bool dropShadows = true;
 	bool useOptionLEDs = true;

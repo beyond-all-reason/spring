@@ -62,6 +62,7 @@
 
 CONFIG(bool, MiniMapMarker).defaultValue(true).headlessValue(false);
 CONFIG(bool, InvertQueueKey).defaultValue(false);
+CONFIG(bool, HoldQueueKeyToBatchBuild).defaultValue(true);
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -81,6 +82,7 @@ CGuiHandler::CGuiHandler()
 
 	miniMapMarker = configHandler->GetBool("MiniMapMarker");
 	invertQueueKey = configHandler->GetBool("InvertQueueKey");
+	holdQueueKeyToBatchBuild = configHandler->GetBool("HoldQueueKeyToBatchBuild");
 
 
 	autoShowMetal = mapInfo->gui.autoShowMetal;
@@ -101,6 +103,12 @@ bool CGuiHandler::GetQueueKeystate() const
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (!invertQueueKey && KeyInput::GetKeyModState(KMOD_SHIFT)) ||
 	       (invertQueueKey && !KeyInput::GetKeyModState(KMOD_SHIFT));
+}
+
+bool CGuiHandler::IsBatchBuildEnabled() const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	return !holdQueueKeyToBatchBuild || GetQueueKeystate();
 }
 
 
@@ -1754,6 +1762,16 @@ bool CGuiHandler::ProcessLocalActions(const Action& action)
 		LOG("commands.size() = " _STPF_, commands.size());
 		return true;
 	}
+	else if (action.command == "queuetobatch") {
+		if (action.extra.empty()) {
+			holdQueueKeyToBatchBuild = !holdQueueKeyToBatchBuild;
+		} else {
+			holdQueueKeyToBatchBuild = !!atoi(action.extra.c_str());
+		}
+		needShift = false;
+		configHandler->Set("HoldQueueKeyToBatchBuild", holdQueueKeyToBatchBuild ? 1 : 0);
+		return true;
+	}
 	else if (action.command == "invqueuekey") {
 		if (action.extra.empty()) {
 			invertQueueKey = !invertQueueKey;
@@ -2215,7 +2233,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 
 		case CMDTYPE_ICON_BUILDING: {
 			const UnitDef* unitDef = unitDefHandler->GetUnitDefByID(-commands[inCommand].id);
-			GetBuildPositions(unitDef, cameraPos, mouseDir, true);
+			GetBuildPositions(unitDef, cameraPos, mouseDir, IsBatchBuildEnabled());
 
 			// Remove any invalid placements.
 			// Awful syntax from: https://stackoverflow.com/a/17270869/317135
@@ -3834,7 +3852,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 		if (buildeeDef != nullptr) {
 
 			const auto& button = mouse->buttons[SDL_BUTTON_LEFT];
-			GetBuildPositions(buildeeDef, tracePos, traceDir, button.pressed);
+			GetBuildPositions(buildeeDef, tracePos, traceDir, button.pressed && IsBatchBuildEnabled());
 
 			for (const BuildInfo& bi: buildInfos) {
 				const float3& buildPos = bi.pos;
