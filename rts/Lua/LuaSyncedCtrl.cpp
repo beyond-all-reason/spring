@@ -428,10 +428,10 @@ static bool ParseProjectileParams(lua_State* L, ProjectileParams& params, const 
 	params.teamID = teamHandler.GaiaTeamID();
 
 	for (lua_pushnil(L); lua_next(L, tblIdx) != 0; lua_pop(L, 1)) {
-		if (!lua_israwstring(L, -2))
+		if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX))
 			continue;
 
-		const char* key = lua_tostring(L, -2);
+		const char* key = lua_tostring(L, LUA_TABLE_KEY_INDEX);
 
 		if (lua_istable(L, -1)) {
 			float array[3] = {0.0f, 0.0f, 0.0f};
@@ -449,34 +449,34 @@ static bool ParseProjectileParams(lua_State* L, ProjectileParams& params, const 
 			continue;
 		}
 
-		if (lua_isnumber(L, -1)) {
+		if (lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
 			switch (hashString(key)) {
-				case hashString("owner" ): { params.ownerID   = lua_toint(L, -1)                        ; } break;
-				case hashString("weapon"): { params.weaponNum = lua_toint(L, -1) - LUA_WEAPON_BASE_INDEX; } break;
-				case hashString("team"  ): { params.teamID    = lua_toint(L, -1)                        ; } break;
+				case hashString("owner" ): { params.ownerID   = lua_toint(L, LUA_TABLE_VALUE_INDEX)                        ; } break;
+				case hashString("weapon"): { params.weaponNum = lua_toint(L, LUA_TABLE_VALUE_INDEX) - LUA_WEAPON_BASE_INDEX; } break;
+				case hashString("team"  ): { params.teamID    = lua_toint(L, LUA_TABLE_VALUE_INDEX)                        ; } break;
 
-				case hashString("ttl"): { params.ttl = lua_tofloat(L, -1); } break;
+				case hashString("ttl"): { params.ttl = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); } break;
 
-				case hashString("gravity" ): { params.gravity  = lua_tofloat(L, -1); } break;
-				case hashString("tracking"): { params.tracking = lua_tofloat(L, -1); } break;
+				case hashString("gravity" ): { params.gravity  = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); } break;
+				case hashString("tracking"): { params.tracking = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); } break;
 
-				case hashString("maxRange"): { params.maxRange = lua_tofloat(L, -1); } break;
-				case hashString("upTime"  ): { params.upTime   = lua_tofloat(L, -1); } break;
+				case hashString("maxRange"): { params.maxRange = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); } break;
+				case hashString("upTime"  ): { params.upTime   = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); } break;
 
-				case hashString("startAlpha"): { params.startAlpha = lua_tofloat(L, -1); } break;
-				case hashString("endAlpha"  ): { params.endAlpha   = lua_tofloat(L, -1); } break;
+				case hashString("startAlpha"): { params.startAlpha = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); } break;
+				case hashString("endAlpha"  ): { params.endAlpha   = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); } break;
 			}
 
 			continue;
 		}
 
-		if (lua_isstring(L, -1)) {
+		if (lua_isstring(L, LUA_TABLE_VALUE_INDEX)) {
 			switch (hashString(key)) {
 				case hashString("model"): {
-					params.model = modelLoader.LoadModel(lua_tostring(L, -1));
+					params.model = modelLoader.LoadModel(lua_tostring(L, LUA_TABLE_VALUE_INDEX));
 				} break;
 				case hashString("cegtag"): {
-					params.cegID = explGenHandler.LoadGeneratorID(lua_tostring(L, -1));
+					params.cegID = explGenHandler.LoadGeneratorID(lua_tostring(L, LUA_TABLE_VALUE_INDEX));
 				} break;
 			}
 
@@ -510,10 +510,10 @@ static void ParseUnitMap(lua_State* L, const char* caller,
 		luaL_error(L, "%s(): error parsing unit map", caller);
 
 	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
-		if (!lua_israwnumber(L, -2))
+		if (!lua_israwnumber(L, LUA_TABLE_KEY_INDEX))
 			continue;
 
-		CUnit* unit = ParseUnit(L, __func__, -2);
+		CUnit* unit = ParseUnit(L, __func__, LUA_TABLE_KEY_INDEX);
 
 		if (unit == nullptr)
 			continue; // bad pointer
@@ -530,10 +530,10 @@ static void ParseUnitArray(lua_State* L, const char* caller,
 		luaL_error(L, "%s(): error parsing unit array", caller);
 
 	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
-		if (!lua_israwnumber(L, -2) || !lua_isnumber(L, -1)) // avoid 'n'
+		if (!lua_israwnumber(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) // avoid 'n'
 			continue;
 
-		CUnit* unit = ParseUnit(L, __func__, -1);
+		CUnit* unit = ParseUnit(L, __func__, LUA_TABLE_VALUE_INDEX);
 
 		if (unit == nullptr)
 			continue; // bad pointer
@@ -549,10 +549,10 @@ static void ParseUnitDefArray(lua_State* L, const char* caller,
 		luaL_error(L, "%s(): error parsing unitdef array", caller);
 
 	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
-		if (!lua_israwnumber(L, -2) || !lua_isnumber(L, -1)) // avoid 'n'
+		if (!lua_israwnumber(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) // avoid 'n'
 			continue;
 
-		const UnitDef* ud = unitDefHandler->GetUnitDefByID(luaL_checkint(L, -1));
+		const UnitDef* ud = unitDefHandler->GetUnitDefByID(luaL_checkint(L, LUA_TABLE_VALUE_INDEX));
 
 		if (ud == nullptr)
 			continue; // bad pointer
@@ -946,10 +946,10 @@ int LuaSyncedCtrl::GameOver(lua_State* L)
 	static const int tableIdx = 1;
 
 	for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-		if (!lua_israwnumber(L, -1))
+		if (!lua_israwnumber(L, LUA_TABLE_VALUE_INDEX))
 			continue;
 
-		const unsigned char allyTeamID = lua_toint(L, -1);
+		const unsigned char allyTeamID = lua_toint(L, LUA_TABLE_VALUE_INDEX);
 
 		if (!teamHandler.ValidAllyTeam(allyTeamID))
 			continue;
@@ -1086,11 +1086,11 @@ int LuaSyncedCtrl::UseTeamResource(lua_State* L)
 		constexpr int tableIdx = 2;
 
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (!lua_israwstring(L, -2) || !lua_isnumber(L, -1))
+			if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
 				continue;
 
-			const char* key = lua_tostring(L, -2);
-			const float value = lua_tofloat(L, -1);
+			const char* key = lua_tostring(L, LUA_TABLE_KEY_INDEX);
+			const float value = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
 
 			switch (key[0]) {
 				case 'm': { metal  = std::max(0.0f, value); } break;
@@ -1327,14 +1327,14 @@ void SetRulesParam(lua_State* L, const char* caller, int offset,
 
 		for (lua_pushnil(L); lua_next(L, losIndex) != 0; lua_pop(L, 1)) {
 			// ignore if the value is false
-			if (!luaL_optboolean(L, -1, true))
+			if (!luaL_optboolean(L, LUA_TABLE_VALUE_INDEX, true))
 				continue;
 
 			// read the losType from the key
-			if (!lua_isstring(L, -2))
+			if (!lua_isstring(L, LUA_TABLE_KEY_INDEX))
 				continue;
 
-			switch (hashString(lua_tostring(L, -2))) {
+			switch (hashString(lua_tostring(L, LUA_TABLE_KEY_INDEX))) {
 				case hashString("public" ): { losMask |= LuaRulesParams::RULESPARAMLOS_PUBLIC;  } break;
 				case hashString("inlos"  ): { losMask |= LuaRulesParams::RULESPARAMLOS_INLOS;   } break;
 				case hashString("typed"  ): { losMask |= LuaRulesParams::RULESPARAMLOS_TYPED;   } break;
@@ -1808,18 +1808,18 @@ int LuaSyncedCtrl::SetUnitCosts(lua_State* L)
 	constexpr int tableIdx = 2;
 
 	for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-		if (!lua_israwstring(L, -2) || !lua_isnumber(L, -1))
+		if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
 			continue;
 
-		switch (hashString(lua_tolstring(L, -2, nullptr))) {
+		switch (hashString(lua_tolstring(L, LUA_TABLE_KEY_INDEX, nullptr))) {
 			case hashString("buildTime"): {
-				unit->buildTime = std::max(1.0f, lua_tofloat(L, -1));
+				unit->buildTime = std::max(1.0f, lua_tofloat(L, LUA_TABLE_VALUE_INDEX));
 			} break;
 			case hashString("metalCost"): {
-				unit->cost.metal = std::max(1.0f, lua_tofloat(L, -1));
+				unit->cost.metal = std::max(1.0f, lua_tofloat(L, LUA_TABLE_VALUE_INDEX));
 			} break;
 			case hashString("energyCost"): {
-				unit->cost.energy = std::max(1.0f, lua_tofloat(L, -1));
+				unit->cost.energy = std::max(1.0f, lua_tofloat(L, LUA_TABLE_VALUE_INDEX));
 			} break;
 			default: {
 			} break;
@@ -1919,10 +1919,10 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
 		constexpr int tableIdx = 2;
 
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (!lua_israwstring(L, -2) || !lua_isnumber(L, -1))
+			if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
 				continue;
 
-			SetUnitResourceParam(unit, lua_tostring(L, -2), lua_tofloat(L, -1));
+			SetUnitResourceParam(unit, lua_tostring(L, LUA_TABLE_KEY_INDEX), lua_tofloat(L, LUA_TABLE_VALUE_INDEX));
 		}
 	}
 	else {
@@ -1976,18 +1976,18 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 		constexpr int tableIdx = 2;
 
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (!lua_israwstring(L, -2) || !lua_isnumber(L, -1))
+			if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
 				continue;
 
-			switch (hashString(lua_tolstring(L, -2, nullptr))) {
+			switch (hashString(lua_tolstring(L, LUA_TABLE_KEY_INDEX, nullptr))) {
 				case hashString("health"): {
-					unit->health = std::min(unit->maxHealth, lua_tofloat(L, -1));
+					unit->health = std::min(unit->maxHealth, lua_tofloat(L, LUA_TABLE_VALUE_INDEX));
 				} break;
 				case hashString("capture"): {
-					unit->captureProgress = lua_tofloat(L, -1);
+					unit->captureProgress = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
 				} break;
 				case hashString("paralyze"): {
-					const float argValue = lua_tofloat(L, -1);
+					const float argValue = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
 					const float refValue = modInfo.paralyzeOnMaxHealth? unit->maxHealth: unit->health;
 
 					if ((unit->paralyzeDamage = std::max(0.0f, argValue)) > refValue) {
@@ -1997,7 +1997,7 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 					}
 				} break;
 				case hashString("build"): {
-					if ((unit->buildProgress = lua_tofloat(L, -1)) >= 1.0f)
+					if ((unit->buildProgress = lua_tofloat(L, LUA_TABLE_VALUE_INDEX)) >= 1.0f)
 						unit->FinishedBuilding(false);
 				} break;
 				default: {
@@ -2213,8 +2213,8 @@ int LuaSyncedCtrl::SetUnitWeaponState(lua_State* L)
 	if (lua_istable(L, 3)) {
 		// {key1 = value1, ...}
 		for (lua_pushnil(L); lua_next(L, 3) != 0; lua_pop(L, 1)) {
-			if (lua_israwstring(L, -2) && lua_isnumber(L, -1)) {
-				SetSingleUnitWeaponState(L, weapon, -2);
+			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
+				SetSingleUnitWeaponState(L, weapon, LUA_TABLE_KEY_INDEX);
 			}
 		}
 	} else {
@@ -2361,8 +2361,8 @@ int LuaSyncedCtrl::SetUnitWeaponDamages(lua_State* L)
 	if (lua_istable(L, 3)) {
 		// {key1 = value1, ...}
 		for (lua_pushnil(L); lua_next(L, 3) != 0; lua_pop(L, 1)) {
-			if ((lua_isnumber(L, -2) || lua_israwstring(L, -2)) && lua_isnumber(L, -1)) {
-				SetSingleDynDamagesKey(L, damages, -2);
+			if ((lua_isnumber(L, LUA_TABLE_KEY_INDEX) || lua_israwstring(L, LUA_TABLE_KEY_INDEX)) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
+				SetSingleDynDamagesKey(L, damages, LUA_TABLE_KEY_INDEX);
 			}
 		}
 	} else {
@@ -2474,12 +2474,12 @@ static unsigned char ParseLosBits(lua_State* L, int index, unsigned char bits)
 
 	if (lua_istable(L, index)) {
 		for (lua_pushnil(L); lua_next(L, index) != 0; lua_pop(L, 1)) {
-			if (!lua_israwstring(L, -2)) { luaL_error(L, "bad key type");   }
-			if (!lua_isboolean(L, -1))   { luaL_error(L, "bad value type"); }
+			if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX)) { luaL_error(L, "bad key type");   }
+			if (!lua_isboolean(L, LUA_TABLE_VALUE_INDEX))   { luaL_error(L, "bad value type"); }
 
-			const bool set = lua_toboolean(L, -1);
+			const bool set = lua_toboolean(L, LUA_TABLE_VALUE_INDEX);
 
-			switch (hashString(lua_tostring(L, -2))) {
+			switch (hashString(lua_tostring(L, LUA_TABLE_KEY_INDEX))) {
 				case hashString("los"): {
 					if (set) { bits |=  LOS_INLOS; }
 					else     { bits &= ~LOS_INLOS; }
@@ -2887,8 +2887,8 @@ int LuaSyncedCtrl::SetUnitNanoPieces(lua_State* L)
 	luaL_checktype(L, 2, LUA_TTABLE);
 
 	for (lua_pushnil(L); lua_next(L, 2) != 0; lua_pop(L, 1)) {
-		if (lua_israwnumber(L, -1)) {
-			const int modelPieceNum = lua_toint(L, -1) - 1; //lua 1-indexed, c++ 0-indexed
+		if (lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+			const int modelPieceNum = lua_toint(L, LUA_TABLE_VALUE_INDEX) - 1; //lua 1-indexed, c++ 0-indexed
 
 			if (unit->localModel.HasPiece(modelPieceNum)) {
 				nanoPieces->push_back(modelPieceNum);
@@ -4030,8 +4030,8 @@ int LuaSyncedCtrl::UseUnitResource(lua_State* L)
 		constexpr int tableIdx = 2;
 
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (lua_israwstring(L, -2) && lua_isnumber(L, -1)) {
-				const char* key = lua_tostring(L, -2);
+			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
+				const char* key = lua_tostring(L, LUA_TABLE_KEY_INDEX);
 				const float val = std::max(0.0f, lua_tofloat(L, -1));
 
 				switch (key[0]) {
@@ -5052,8 +5052,8 @@ int LuaSyncedCtrl::SetProjectileDamages(lua_State* L)
 	if (lua_istable(L, 3)) {
 		// {key1 = value1, ...}
 		for (lua_pushnil(L); lua_next(L, 3) != 0; lua_pop(L, 1)) {
-			if (lua_israwstring(L, -2) && lua_isnumber(L, -1)) {
-				SetSingleDynDamagesKey(L, damages, -2);
+			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
+				SetSingleDynDamagesKey(L, damages, LUA_TABLE_KEY_INDEX);
 			}
 		}
 	} else {
@@ -6706,8 +6706,8 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 			if (lua_istable(L, index + 1)) {
 				// {key1 = value1, ...}
 				for (lua_pushnil(L); lua_next(L, index) != 0; lua_pop(L, 1)) {
-					if ((lua_isnumber(L, -2) || lua_israwstring(L, -2)) && lua_isnumber(L, -1)) {
-						SetSingleDamagesKey(L, damages, -2);
+					if ((lua_isnumber(L, LUA_TABLE_KEY_INDEX) || lua_israwstring(L, LUA_TABLE_KEY_INDEX)) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
+						SetSingleDamagesKey(L, damages, LUA_TABLE_KEY_INDEX);
 					}
 				}
 			} else {
@@ -7086,7 +7086,7 @@ static bool ParseCommandDescription(lua_State* L, int table,
 	}
 
 	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
-		if (!lua_israwstring(L, -2))
+		if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX))
 			continue;
 
 		const string key = lua_tostring(L, -2);

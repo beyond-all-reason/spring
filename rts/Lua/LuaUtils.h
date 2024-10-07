@@ -35,6 +35,8 @@
 
 struct SolidObjectDef;
 struct SCommandDescription;
+static constexpr int LUA_TABLE_VALUE_INDEX = -1;
+static constexpr int LUA_TABLE_KEY_INDEX = -2;
 
 namespace Json{
 	class Value;
