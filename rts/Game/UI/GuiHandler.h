@@ -59,6 +59,8 @@ public:
 		return GetCommand(mouseX, mouseY, buttonHint, preview, camera->GetPos(), mouse->dir);
 	}
 	Command GetCommand(int mouseX, int mouseY, int buttonHint, bool preview, const float3& cameraPos, const float3& mouseDir);
+
+	size_t GetBuildPositions(const UnitDef* unitDef, float3 endCamPos, float3 endMouseDir, bool isMultiBuild);
 	/// startInfo.def has to be endInfo.def
 	size_t GetBuildPositions(const BuildInfo& startInfo, const BuildInfo& endInfo, const float3& cameraPos, const float3& mouseDir);
 

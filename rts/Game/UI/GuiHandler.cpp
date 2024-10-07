@@ -2214,29 +2214,8 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 		}
 
 		case CMDTYPE_ICON_BUILDING: {
-			const UnitDef* unitdef = unitDefHandler->GetUnitDefByID(-commands[inCommand].id);
-			const float dist = CGround::LineGroundWaterCol(cameraPos, mouseDir, camera->GetFarPlaneDist() * 1.4f, unitdef->floatOnWater, false);
-
-			if (dist < 0.0f)
-				return defaultRet;
-
-
-			if (unitdef == nullptr)
-				return Command(CMD_STOP);
-
-			// Update buildInfos.
-			{
-				const float3 camTracePos = mouse->buttons[SDL_BUTTON_LEFT].camPos;
-				const float3 camTraceDir = mouse->buttons[SDL_BUTTON_LEFT].dir;
-
-				const float traceDist = camera->GetFarPlaneDist() * 1.4f;
-				const float isectDist = CGround::LineGroundWaterCol(camTracePos, camTraceDir, traceDist, unitdef->floatOnWater, false);
-
-				const BuildInfo startInfo(unitdef, camTracePos + camTraceDir * isectDist, buildFacing);
-				const BuildInfo endInfo(unitdef, cameraPos + mouseDir * dist, buildFacing);
-
-				GetBuildPositions(startInfo, endInfo, cameraPos, mouseDir);
-			}
+			const UnitDef* unitDef = unitDefHandler->GetUnitDefByID(-commands[inCommand].id);
+			GetBuildPositions(unitDef, cameraPos, mouseDir, true);
 
 			// Remove any invalid placements.
 			// Awful syntax from: https://stackoverflow.com/a/17270869/317135
@@ -2507,6 +2486,45 @@ static void FillRowOfBuildPos(const BuildInfo& startInfo, float x, float z, floa
 	}
 }
 
+size_t CGuiHandler::GetBuildPositions(const UnitDef* unitDef, float3 cameraPos, float3 mouseDir, bool isBatchBuild) {
+	// Unit def is required for build info.
+	if (unitDef == nullptr) {
+		buildInfos.clear();
+		return 0;
+	}
+
+	const float maxTraceDist = camera->GetFarPlaneDist() * 1.4f;
+
+	// Cast end position.
+	float endDist = CGround::LineGroundWaterCol(cameraPos, mouseDir, maxTraceDist, unitDef->floatOnWater, false);
+	if (endDist <= 0) {
+		buildInfos.clear();
+		return 0;
+	}
+
+	const BuildInfo endInfo(unitDef, cameraPos + mouseDir * endDist, buildFacing);
+
+	BuildInfo startInfo;
+
+	if (isBatchBuild) {
+		// Cast start position.
+		const auto& button = mouse->buttons[SDL_BUTTON_LEFT];
+		const float3 startCameraPos = button.camPos;
+		const float3 startMouseDir = button.dir;
+		float startDist = CGround::LineGroundWaterCol(startCameraPos, startMouseDir, maxTraceDist, unitDef->floatOnWater, false);
+		if (startDist <= 0) {
+			buildInfos.clear();
+			return 0;
+		}
+
+		startInfo = BuildInfo(unitDef, startCameraPos + startMouseDir * startDist, buildFacing);
+	} else {
+		startInfo = endInfo;
+	}
+
+	// Get positions between.
+	return GetBuildPositions(startInfo, endInfo, cameraPos, mouseDir);
+}
 
 size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInfo& endInfo, const float3& cameraPos, const float3& mouseDir)
 {
@@ -3717,7 +3735,6 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 
 	// draw the ranges for the unit that is being pointed at
 	const CUnit* pointeeUnit = nullptr;
-	const UnitDef* buildeeDef = nullptr;
 
 	const float maxTraceDist = camera->GetFarPlaneDist() * 1.4f;
 	      float rayTraceDist = -1.0f;
@@ -3811,83 +3828,70 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 			}
 		}
 
-		buildeeDef = unitDefHandler->GetUnitDefByID(-commands[inCommand].id);
 
+		// Draw building preview.
+		const UnitDef* buildeeDef = unitDefHandler->GetUnitDefByID(-commands[inCommand].id);
 		if (buildeeDef != nullptr) {
-			if ((rayTraceDist = CGround::LineGroundWaterCol(tracePos, traceDir, maxTraceDist, buildeeDef->floatOnWater, false)) > 0.0f) {
-				// get the build information
-				const float3 cPos = tracePos + traceDir * rayTraceDist;
 
-				const CMouseHandler::ButtonPressEvt& bp = mouse->buttons[SDL_BUTTON_LEFT];
-				if (bp.pressed) {
-					const float bpDist = CGround::LineGroundWaterCol(bp.camPos, bp.dir, maxTraceDist, buildeeDef->floatOnWater, false);
-					const float3 bPos = bp.camPos + bp.dir * bpDist;
-					const BuildInfo cInfo = BuildInfo(buildeeDef, cPos, buildFacing);
-					const BuildInfo bInfo = BuildInfo(buildeeDef, bPos, buildFacing);
-					GetBuildPositions(bInfo, cInfo, tracePos, traceDir);
-				} else {
-					const BuildInfo bi(buildeeDef, cPos, buildFacing);
-					GetBuildPositions(bi, bi, tracePos, traceDir);
+			const auto& button = mouse->buttons[SDL_BUTTON_LEFT];
+			GetBuildPositions(buildeeDef, tracePos, traceDir, button.pressed);
+
+			for (const BuildInfo& bi: buildInfos) {
+				const float3& buildPos = bi.pos;
+
+				DrawUnitDefRanges(nullptr, buildeeDef, buildPos);
+
+				// draw (primary) weapon range
+				if (buildeeDef->HasWeapons()) {
+					glDisable(GL_DEPTH_TEST);
+					glBallisticCircle(buildeeDef->weapons[0].def, { cmdColors.rangeAttack }, 40, buildPos, { buildeeDef->weapons[0].def->range, buildeeDef->weapons[0].def->heightmod, mapInfo->map.gravity });
+					glEnable(GL_DEPTH_TEST);
 				}
 
+				// draw extraction range
+				if (buildeeDef->extractRange > 0.0f) {
+					glSurfaceCircle(buildPos, buildeeDef->extractRange, { cmdColors.rangeExtract }, 40);
+				}
 
-				for (const BuildInfo& bi: buildInfos) {
-					const float3& buildPos = bi.pos;
+				// draw interceptor range
+				const WeaponDef* wd = buildeeDef->stockpileWeaponDef;
+				if ((wd != nullptr) && wd->interceptor) {
+					glSurfaceCircle(buildPos, wd->coverageRange, { cmdColors.rangeInterceptorOn }, 40);
+				}
 
-					DrawUnitDefRanges(nullptr, buildeeDef, buildPos);
+				{
+					buildCommands.clear();
 
-					// draw (primary) weapon range
-					if (buildeeDef->HasWeapons()) {
-						glDisable(GL_DEPTH_TEST);
-						glBallisticCircle(buildeeDef->weapons[0].def, { cmdColors.rangeAttack }, 40, buildPos, { buildeeDef->weapons[0].def->range, buildeeDef->weapons[0].def->heightmod, mapInfo->map.gravity });
-						glEnable(GL_DEPTH_TEST);
-					}
+					const Command c = bi.CreateCommand();
 
-					// draw extraction range
-					if (buildeeDef->extractRange > 0.0f) {
-						glSurfaceCircle(buildPos, buildeeDef->extractRange, { cmdColors.rangeExtract }, 40);
-					}
+					for (const int unitID: selectedUnitsHandler.selectedUnits) {
+						const CUnit* su = unitHandler.GetUnit(unitID);
+						const CCommandAI* cai = su->commandAI;
 
-					// draw interceptor range
-					const WeaponDef* wd = buildeeDef->stockpileWeaponDef;
-					if ((wd != nullptr) && wd->interceptor) {
-						glSurfaceCircle(buildPos, wd->coverageRange, { cmdColors.rangeInterceptorOn }, 40);
-					}
-
-					{
-						buildCommands.clear();
-
-						const Command c = bi.CreateCommand();
-
-						for (const int unitID: selectedUnitsHandler.selectedUnits) {
-							const CUnit* su = unitHandler.GetUnit(unitID);
-							const CCommandAI* cai = su->commandAI;
-
-							for (const Command& cmd: cai->GetOverlapQueued(c)) {
-								buildCommands.push_back(cmd);
-							}
+						for (const Command& cmd: cai->GetOverlapQueued(c)) {
+							buildCommands.push_back(cmd);
 						}
 					}
+				}
 
-					if (unitDrawer->ShowUnitBuildSquare(bi, buildCommands)) {
-						glColor4f(0.7f, 1.0f, 1.0f, 0.4f);
-					} else {
-						glColor4f(1.0f, 0.5f, 0.5f, 0.4f);
-					}
+				if (unitDrawer->ShowUnitBuildSquare(bi, buildCommands)) {
+					glColor4f(0.7f, 1.0f, 1.0f, 0.4f);
+				} else {
+					glColor4f(1.0f, 0.5f, 0.5f, 0.4f);
+				}
 
-					if (!onMiniMap) {
-						ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
+				if (!onMiniMap) {
+					ScopedModelDrawerImpl<CUnitDrawer> legacy(true, false);
 
-						glPushMatrix();
-						glLoadIdentity();
-						glTranslatef3(buildPos);
-						glRotatef(bi.buildFacing * 90.0f, 0.0f, 1.0f, 0.0f);
+					glPushMatrix();
+					glLoadIdentity();
+					glTranslatef3(buildPos);
+					glRotatef(bi.buildFacing * 90.0f, 0.0f, 1.0f, 0.0f);
 
-						unitDrawer->DrawIndividualDefAlpha(bi.def, gu->myTeam, false);
+					unitDrawer->DrawIndividualDefAlpha(bi.def, gu->myTeam, false);
 
-						glPopMatrix();
-						glBlendFunc((GLenum)cmdColors.SelectedBlendSrc(), (GLenum)cmdColors.SelectedBlendDst());
-					}
+					glPopMatrix();
+					glBlendFunc((GLenum)cmdColors.SelectedBlendSrc(), (GLenum)cmdColors.SelectedBlendDst());
 				}
 			}
 		}
