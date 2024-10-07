@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <algorithm>
+#include <bit>
 #include <utility>
 #include <cstring>
 #include <memory>
@@ -16,7 +17,6 @@
 
 #include "Bitmap.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/bitops.h"
 #include "System/ScopedFPUSettings.h"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
@@ -1689,8 +1689,9 @@ uint32_t CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32
 	// jcnossen: Some drivers return "2.0" as a version string,
 	// but switch to software rendering for non-power-of-two textures.
 	// GL_ARB_texture_non_power_of_two indicates that the hardware will actually support it.
-	if (!globalRendering->supportNonPowerOfTwoTex && (xsize != next_power_of_2(xsize) || ysize != next_power_of_2(ysize))) {
-		CBitmap bm = CreateRescaled(next_power_of_2(xsize), next_power_of_2(ysize));
+	const bool isPowerOfTwo = std::has_single_bit <uint32_t> (xsize) && std::has_single_bit <uint32_t> (ysize);
+	if (!globalRendering->supportNonPowerOfTwoTex && !isPowerOfTwo) {
+		CBitmap bm = CreateRescaled(std::bit_ceil <uint32_t> (xsize), std::bit_ceil <uint32_t> (ysize));
 		return bm.CreateTexture(aniso, mipmaps);
 	}
 

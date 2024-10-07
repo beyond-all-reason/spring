@@ -1074,7 +1074,7 @@ static bool GLUniformArray(lua_State* L, UniformFunc uf, ParseArrayFunc pf)
 {
 	const GLuint loc = luaL_checkint(L, 1);
 
-	switch (next_power_of_2(luaL_optint(L, 4, 32))) {
+	switch (std::bit_ceil <uint32_t> (luaL_optint(L, 4, 32))) {
 		case (1 <<  3): { type array[1 <<  3] = {type(0)}; uf(loc, pf(L, 3, array, 1 <<  3), &array[0]); return true; } break;
 		case (1 <<  4): { type array[1 <<  4] = {type(0)}; uf(loc, pf(L, 3, array, 1 <<  4), &array[0]); return true; } break;
 		case (1 <<  5): { type array[1 <<  5] = {type(0)}; uf(loc, pf(L, 3, array, 1 <<  5), &array[0]); return true; } break;
