@@ -40,7 +40,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: bazel-remote-data-overlay
-          key: pr-bazel-remote-data
+          key: pr-bazel-remote-data-${{ matrix.system }}
       - name: Mount bazel remote overlay
         id: mount-overlay
         if: github.event_name == 'pull_request'
@@ -108,6 +108,7 @@ jobs:
 
           EOF
       - name: Save
+        if: github.event_name != 'pull_request'
         uses: namespace-actions/upload-artifact@v0
         with:
           name: output-${{ matrix.system }}
@@ -119,7 +120,9 @@ jobs:
           docker stop remote-cache
       - name: Unmount bazel remote overlay
         if: always() && steps.mount-overlay.outcome == 'success'
-        run: sudo fusermount -u bazel-remote-data
+        run: |
+          sudo fusermount -u bazel-remote-data
+          ls bazel-remote-data-overlay
       - name: Save pull request's bazel remote cache overlay
         id: pr-cache-save
         if: always() && steps.pr-cache-restore.outcome == 'success'
