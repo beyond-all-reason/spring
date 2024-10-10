@@ -1,0 +1,132 @@
+name: Build Engine
+on:
+  workflow_dispatch:
+    inputs:
+      recache:
+        description: "Recache ccache build objects"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "36 00 * * *"
+  pull_request:
+jobs:
+  build-engine:
+    strategy:
+      matrix:
+        system:
+          - amd64-linux
+          - amd64-windows
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-cache
+      - nscloud-cache-tag-engine-${{ matrix.system }}
+      - nscloud-cache-size-20gb
+      - nscloud-git-mirror-5gb
+      - nscloud-exp-container-image-cache
+    steps:
+      - name: Checkout code
+        uses: namespacelabs/nscloud-checkout-action@v5
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          dissociate: true
+          path: src
+      - name: Setup ccache cache
+        uses: namespacelabs/nscloud-cache-action@v1
+        with:
+          path: bazel-remote-data
+      - name: Restore pull request's bazel remote cache overlay
+        id: pr-cache-restore
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: bazel-remote-data-overlay
+          key: pr-bazel-remote-data-${{ matrix.system }}
+      - name: Mount bazel remote overlay
+        id: mount-overlay
+        if: github.event_name == 'pull_request'
+        run: |
+          sudo apt-get install --yes fuse-overlayfs
+          mkdir overlay-workdir bazel-remote-data-overlay
+          sudo fuse-overlayfs -o lowerdir=bazel-remote-data,upperdir=bazel-remote-data-overlay,workdir=overlay-workdir bazel-remote-data
+      - name: Start remote ccache fetcher
+        env:
+          BAZEL_REMOTE_S3_ENDPOINT: ${{ vars.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          BAZEL_REMOTE_S3_BUCKET: ${{ vars.R2_BUCKET_BUILD_CACHE }}
+          BAZEL_REMOTE_S3_ACCESS_KEY_ID: ${{ github.event_name == 'pull_request' && vars.R2_RO_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
+          BAZEL_REMOTE_S3_SECRET_ACCESS_KEY: ${{ github.event_name == 'pull_request' && vars.R2_RO_ACCESS_KEY_SECRET || secrets.R2_ACCESS_KEY_SECRET }}
+        run: |
+          docker network create --driver bridge engine-build
+          docker run -d --rm \
+            -v /etc/passwd:/etc/passwd:ro \
+            -v /etc/group:/etc/group:ro \
+            --user=$(id -u):$(id -g) \
+            -v $(pwd)/bazel-remote-data/:/data \
+            --network engine-build \
+            --name remote-cache \
+            -e BAZEL_REMOTE_S3_ENDPOINT \
+            -e BAZEL_REMOTE_S3_BUCKET \
+            -e BAZEL_REMOTE_S3_ACCESS_KEY_ID \
+            -e BAZEL_REMOTE_S3_SECRET_ACCESS_KEY \
+            docker.io/buchgr/bazel-remote-cache:v2.4.4 \
+            --dir /data \
+            --s3.auth_method access_key \
+            --s3.region auto \
+            --max_size 5 \
+            --num_uploaders ${{ github.event_name == 'pull_request' && '0' || '100' }} \
+            --disable_http_ac_validation
+
+          cat > remote_ccache.conf <<EOF
+          max_size = 10G
+          cache_dir = /build/cache
+          remote_storage = http://remote-cache:8080|layout=bazel
+          remote_only = true
+          EOF
+      - name: Pull builder image
+        run: docker pull ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest
+      - name: Build
+        # Instead of manually running docker, it would be cool to just run whole GitHub actions
+        # in container, but unfortunately ubuntu 18.04 is just too old to be able to do it ;(.
+        run: |
+          mkdir -p artifacts
+          docker run -i --rm \
+            -v /etc/passwd:/etc/passwd:ro \
+            -v /etc/group:/etc/group:ro \
+            --user="$(id -u):$(id -g)" \
+            -v $(pwd)/src:/build/src:ro \
+            -v $(pwd)/remote_ccache.conf:/build/ccache.conf:ro \
+            -v $(pwd)/artifacts:/build/artifacts:rw \
+            -e CCACHE_${{ inputs.recache && 'RECACHE' || 'NORECACHE' }}=1 \
+            --network engine-build \
+            --name builder \
+            ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest \
+            bash <<EOF
+          set -e
+          cd /build/src/docker-build-v2/scripts
+          ./build.sh
+          ./split-debug-info.sh
+          ./package.sh
+
+          EOF
+      - name: Save
+        if: github.event_name != 'pull_request'
+        uses: namespace-actions/upload-artifact@v0
+        with:
+          name: output-${{ matrix.system }}
+          path: ./artifacts
+      - name: Stop docker containers
+        if: always()
+        run: |
+          docker stop builder || true
+          docker stop remote-cache
+      - name: Unmount bazel remote overlay
+        if: always() && steps.mount-overlay.outcome == 'success'
+        run: |
+          sudo fusermount -u bazel-remote-data
+          ls bazel-remote-data-overlay
+      - name: Save pull request's bazel remote cache overlay
+        id: pr-cache-save
+        if: always() && steps.pr-cache-restore.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: bazel-remote-data-overlay
+          key: ${{ steps.pr-cache-restore.outputs.cache-primary-key }}
