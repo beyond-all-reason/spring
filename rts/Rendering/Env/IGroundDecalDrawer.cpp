@@ -57,25 +57,50 @@ void IGroundDecalDrawer::Init()
 void IGroundDecalDrawer::FreeInstance()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (singleton != &nullDecalDrawer)
+	if (singleton != &nullDecalDrawer) {
 		spring::SafeDelete(singleton);
+		singleton = &nullDecalDrawer;
+	}
 }
 
+
+void IGroundDecalDrawer::SetDecalLevel(int newDecalLevel)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	if (decalLevel == newDecalLevel)
+		return;
+
+	decalLevel = newDecalLevel;
+
+	if (groundDecals != &nullDecalDrawer)
+		FreeInstance();
+
+	groundDecals = GetInstance();
+
+	configHandler->Set("GroundDecals", decalLevel);
+}
 
 void IGroundDecalDrawer::SetDrawDecals(bool v)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	if (v == GetDrawDecals())
+		return;
+
 	if (v) {
 		decalLevel =  std::abs(decalLevel);
+		decalLevel =  std::max(decalLevel, 1); //turn on in case decalLevel is 0
 	} else {
 		decalLevel = -std::abs(decalLevel);
 	}
 
-	if (groundDecals == &nullDecalDrawer) {
-		groundDecals = GetInstance();
-	}
+	if (groundDecals != &nullDecalDrawer)
+		FreeInstance();
 
-	groundDecals->OnDecalLevelChanged();
+	groundDecals = GetInstance();
+
+	configHandler->Set("GroundDecals", decalLevel);
 }
 
 void NullGroundDecalDrawer::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
