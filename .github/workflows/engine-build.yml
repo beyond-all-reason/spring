@@ -47,7 +47,7 @@ jobs:
         run: |
           sudo apt-get install --yes fuse-overlayfs
           mkdir overlay-workdir bazel-remote-data-overlay
-          sudo fuse-overlayfs -o lowerdir=bazel-remote-data,upperdir=bazel-remote-data-overlay,workdir=overlay-workdir bazel-remote-data
+          sudo fuse-overlayfs -o lowerdir=bazel-remote-data,upperdir=bazel-remote-data-overlay,workdir=overlay-workdir bazel-remote-data-merged
       - name: Start remote ccache fetcher
         env:
           BAZEL_REMOTE_S3_ENDPOINT: ${{ vars.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
@@ -60,7 +60,7 @@ jobs:
             -v /etc/passwd:/etc/passwd:ro \
             -v /etc/group:/etc/group:ro \
             --user=$(id -u):$(id -g) \
-            -v $(pwd)/bazel-remote-data/:/data \
+            -v $(pwd)/bazel-remote-data${{ github.event_name == 'pull_request' && '-merged' || '' }}/:/data \
             --network engine-build \
             --name remote-cache \
             -e BAZEL_REMOTE_S3_ENDPOINT \
@@ -121,7 +121,7 @@ jobs:
       - name: Unmount bazel remote overlay
         if: always() && steps.mount-overlay.outcome == 'success'
         run: |
-          sudo fusermount -u bazel-remote-data
+          sudo fusermount -u bazel-remote-data-merged
           ls bazel-remote-data-overlay
       - name: Save pull request's bazel remote cache overlay
         id: pr-cache-save
