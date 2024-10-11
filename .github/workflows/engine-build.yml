@@ -46,7 +46,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           sudo apt-get install --yes fuse-overlayfs
-          mkdir overlay-workdir bazel-remote-data-overlay
+          mkdir -p overlay-workdir bazel-remote-data-overlay
           sudo fuse-overlayfs -o lowerdir=bazel-remote-data,upperdir=bazel-remote-data-overlay,workdir=overlay-workdir bazel-remote-data-merged
       - name: Start remote ccache fetcher
         env:
