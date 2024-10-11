@@ -840,7 +840,7 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 			thisGlyph.texCord       = IGlyphRect(texpos [0], texpos [1], texpos [2] - texpos [0], texpos [3] - texpos [1]);
 			thisGlyph.shadowTexCord = IGlyphRect(texpos2[0], texpos2[1], texpos2[2] - texpos2[0], texpos2[3] - texpos2[1]);
 
-			const size_t glyphIdx = reinterpret_cast<size_t>(atlasAlloc.GetEntryData(glyphName));
+			const size_t glyphIdx = glyphNameToIdx[glyphName];
 
 			assert(glyphIdx < atlasGlyphs.size());
 
@@ -851,6 +851,7 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 		}
 
 		atlasAlloc.clear();
+		glyphNameToIdx.clear();
 		atlasGlyphs.clear();
 	}
 
@@ -926,8 +927,9 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	// store glyph bitmap (index) in allocator until the next LoadWantedGlyphs call
 	atlasGlyphs.emplace_back(slot->bitmap.buffer, width, height, 1);
 
-	atlasAlloc.AddEntry(IntToString(ch)       , int2(width         , height         ), reinterpret_cast<void*>(atlasGlyphs.size() - 1));
-	atlasAlloc.AddEntry(IntToString(ch) + "sh", int2(width + olSize, height + olSize)                                                 );
+	atlasAlloc.AddEntry(IntToString(ch)       , int2(width         , height         ));
+	atlasAlloc.AddEntry(IntToString(ch) + "sh", int2(width + olSize, height + olSize));
+	glyphNameToIdx[IntToString(ch)] = atlasGlyphs.size() - 1;
 #endif
 }
 

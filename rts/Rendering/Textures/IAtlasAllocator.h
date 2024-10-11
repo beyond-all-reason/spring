@@ -18,17 +18,15 @@ class IAtlasAllocator
 public:
 	struct SAtlasEntry
 	{
-		SAtlasEntry() : data(nullptr) {}
-		SAtlasEntry(const int2 _size, std::string _name, void* _data = nullptr)
+		SAtlasEntry() = default;
+		SAtlasEntry(const int2 _size, std::string _name)
 			: size(_size)
 			, name(std::move(_name))
-			, data(_data)
 		{}
 
 		int2 size;
 		std::string name;
 		float4 texCoords;
-		void* data;
 	};
 public:
 	IAtlasAllocator() = default;
@@ -40,25 +38,17 @@ public:
 public:
 	virtual bool Allocate() = 0;
 	virtual int GetNumTexLevels() const = 0;
+	virtual int GetReqNumTexLevels() const = 0;
 	void SetMaxTexLevel(int maxLevels) { numLevels = maxLevels; };
 public:
-	void AddEntry(const std::string& name, int2 size, void* data = nullptr)
+	void AddEntry(const std::string& name, int2 size)
 	{
 		minDim = argmin(minDim, size.x, size.y);
-		entries[name] = SAtlasEntry(size, name, data);
+		entries[name] = SAtlasEntry(size, name);
 	}
 
-	float4 GetEntry(const std::string& name)
-	{
-		return entries[name].texCoords;
-	}
-
-	void*& GetEntryData(const std::string& name)
-	{
-		return entries[name].data;
-	}
-
-	const spring::unordered_map<std::string, SAtlasEntry>& GetEntries() const { return entries; }
+	const auto& GetEntry(const std::string& name) { return entries[name].texCoords; }
+	const auto& GetEntries() const { return entries; }
 
 	float4 GetTexCoords(const std::string& name)
 	{
@@ -77,10 +67,7 @@ public:
 		return uv;
 	}
 
-	bool contains(const std::string& name) const
-	{
-		return entries.contains(name);
-	}
+	bool contains(const std::string& name) const { return entries.contains(name); }
 
 	//! note: it doesn't clear the atlas! it only clears the entry db!
 	void clear()

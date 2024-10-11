@@ -377,6 +377,7 @@ void CUnit::PostInit(const CUnit* builder)
 		commandAI->GiveCommand(Command(CMD_FIRE_STATE, 0, fireState));
 	}
 
+	UpdateRenderParams();
 	eventHandler.RenderUnitPreCreated(this);
 
 	// Lua might call SetUnitHealth within UnitCreated
@@ -1920,7 +1921,6 @@ bool CUnit::SetGroup(CGroup* newGroup, bool fromFactory, bool autoSelect)
 const CGroup* CUnit::GetGroup() const { return uiGroupHandlers[team].GetUnitGroup(id); }
       CGroup* CUnit::GetGroup()       { return uiGroupHandlers[team].GetUnitGroup(id); }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -2837,6 +2837,11 @@ short CUnit::GetTransporteeWantedHeading(const CUnit* unit) const {
 	return (GetHeadingFromFacing(unit->buildFacing));
 }
 
+void CUnit::UpdateRenderParams()
+{
+	definedIconName = unitDef->iconName;
+}
+
 /******************************************************************************/
 /******************************************************************************/
 
@@ -3002,7 +3007,8 @@ CR_REG_METADATA(CUnit, (
 
 	CR_MEMBER(selfDCountdown),
 
-	CR_MEMBER_UN(myIcon),
+	CR_MEMBER(definedIconName),
+	CR_MEMBER_UN(currentIconIndex),
 	CR_MEMBER_UN(drawIcon),
 
 	CR_MEMBER(transportedUnits),

@@ -159,13 +159,14 @@ CUnitDrawerData::~CUnitDrawerData()
 			lgb.clear();
 		}
 	}
-
-	unitsByIcon.clear();
 }
 
 void CUnitDrawerData::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	icon::iconHandler.Update();
+
 	iconSizeBase = std::max(1.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
@@ -243,14 +244,13 @@ void CUnitDrawerData::UpdateGhostedBuildings()
 	}
 }
 
-const icon::CIconData* CUnitDrawerData::GetUnitIcon(const CUnit* unit)
+void CUnitDrawerData::UpdateCurrentUnitIcon(CUnit* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
 	const unsigned short prevMask = (LOS_PREVLOS | LOS_CONTRADAR);
 
-	const UnitDef* unitDef = unit->unitDef;
-	const icon::CIconData* iconData = nullptr;
+	const auto* unitDef = unit->unitDef;
 
 	// use the unit's custom icon if we can currently see it,
 	// or have seen it before and did not lose contact since
@@ -258,46 +258,17 @@ const icon::CIconData* CUnitDrawerData::GetUnitIcon(const CUnit* unit)
 	unitVisible |= gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit() && (losStatus & LOS_PREVLOS);
 	const bool customIcon = (unitVisible || gu->spectatingFullView);
 
-	if (customIcon)
-		return (unitDef->iconType.GetIconData());
-
-	if ((losStatus & LOS_INRADAR) != 0)
-		iconData = icon::iconHandler.GetDefaultIconData();
-
-	return iconData;
+	unit->currentIconIndex = customIcon ? icon::iconHandler.GetIconIdx(unit->definedIconName) : icon::iconHandler.GetDefaultIconIdx();
 }
 
-void CUnitDrawerData::UpdateUnitDefMiniMapIcons(const UnitDef* ud)
+void CUnitDrawerData::UpdateUnitIconsByUnitDef(const UnitDef* ud)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (int teamNum = 0; teamNum < teamHandler.ActiveTeams(); teamNum++) {
-		for (const CUnit* unit : unitHandler.GetUnitsByTeamAndDef(teamNum, ud->id)) {
-			UpdateUnitIcon(unit, true, false);
+		for (auto* unit : unitHandler.GetUnitsByTeamAndDef(teamNum, ud->id)) {
+			UpdateCurrentUnitIcon(unit);
 		}
 	}
-}
-
-void CUnitDrawerData::UpdateUnitIcon(const CUnit* unit, bool forced, bool killed)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	CUnit* u = const_cast<CUnit*>(unit);
-
-	icon::CIconData* oldIcon = unit->myIcon;
-	icon::CIconData* newIcon = const_cast<icon::CIconData*>(GetUnitIcon(unit));
-
-	u->myIcon = nullptr;
-
-	if (!killed) {
-		if ((oldIcon != newIcon) || forced) {
-			spring::VectorErase(unitsByIcon[oldIcon], unit);
-			unitsByIcon[newIcon].push_back(unit);
-		}
-
-		u->myIcon = newIcon;
-		return;
-	}
-
-	spring::VectorErase(unitsByIcon[oldIcon], unit);
 }
 
 void CUnitDrawerData::UpdateUnitIconState(CUnit* unit)
@@ -337,13 +308,12 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	}
 
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
-	bool useDefaultIcon = (unit->myIcon == icon::iconHandler.GetDefaultIconData());
 
-	const icon::CIconData* iconData = useDefaultIcon ? icon::iconHandler.GetDefaultIconData() : unit->unitDef->iconType.GetIconData();
+	const auto& iconData = icon::iconHandler.GetIconData(unit->currentIconIndex);
 
-	float iconSizeMult = iconData->GetSize();
-	if (iconData->GetRadiusAdjust() && !useDefaultIcon)
-		iconSizeMult *= (unit->radius / iconData->GetRadiusScale());
+	float iconSizeMult = iconData.GetSize();
+	if (iconData.GetRadiusAdjust())
+		iconSizeMult *= (unit->radius / iconData.GetRadiusScale());
 	iconSizeMult = (iconSizeMult - 1) * 0.75 + 1;
 
 	float limit = iconSizeBase / 2 * iconSizeMult;
@@ -357,8 +327,7 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 
 	unit->iconRadius = unit->radius * ((limit * 0.9) / std::abs(pos.x - radiusPos.x)); // used for clicking on iconified units (world space!!!)
 
-	if (!(losStatus & LOS_INLOS) && !gu->spectatingFullView) // no LOS on unit
-	{
+	if (!(losStatus & LOS_INLOS) && !gu->spectatingFullView) { // no LOS on unit
 		unit->SetIsIcon(losStatus & LOS_INRADAR); // draw icon if unit is on radar
 		return;
 	}
@@ -458,7 +427,7 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 bool CUnitDrawerData::DrawAsIconByDistance(const CUnit* unit, const float sqUnitCamDist) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float sqIconDistMult = unit->unitDef->iconType->GetDistanceSqr();
+	const auto& sqIconDistMult = icon::iconHandler.GetIconData(unit->currentIconIndex).GetDistanceSq();
 	const float realIconLength = iconLength * sqIconDistMult;
 
 	if (useDistToGroundForIcons)
@@ -574,7 +543,7 @@ void CUnitDrawerData::RenderUnitCreated(const CUnit* unit, int cloaked)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(std::find(unsortedObjects.begin(), unsortedObjects.end(), unit) != unsortedObjects.end());
-	UpdateUnitIcon(unit, false, false);
+	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
 }
 
 void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
@@ -621,7 +590,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 	}
 
 	DelObject(unit, true);
-	UpdateUnitIcon(unit, false, true);
+	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
 
 	LuaObjectDrawer::SetObjectLOD(u, LUAOBJ_UNIT, 0);
 }
@@ -632,7 +601,7 @@ void CUnitDrawerData::UnitEnteredRadar(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateUnitIcon(unit, false, false);
+	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
 }
 
 void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
@@ -646,7 +615,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateUnitIcon(unit, false, false);
+	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
 }
 
 void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
@@ -660,21 +629,5 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateUnitIcon(unit, false, false);
-}
-
-void CUnitDrawerData::PlayerChanged(int playerNum)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (playerNum != gu->myPlayerNum)
-		return;
-
-	for (auto& [icon, units] : unitsByIcon) {
-		units.clear();
-	}
-
-	for (CUnit* unit : unsortedObjects) {
-		// force an erase (no-op) followed by an insert
-		UpdateUnitIcon(unit, true, false);
-	}
+	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
 }

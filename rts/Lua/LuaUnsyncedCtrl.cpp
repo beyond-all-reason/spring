@@ -2197,6 +2197,10 @@ int LuaUnsyncedCtrl::SetFeatureSelectionVolumeData(lua_State* L)
  * @number[opt] size
  * @number[opt] dist
  * @number[opt] radAdjust
+ * @number[opt=0.0] u0
+ * @number[opt=0.0] v0
+ * @number[opt=1.0] u1
+ * @number[opt=1.0] v1
  *
  * @treturn ?nil|bool added
  */
@@ -2213,7 +2217,13 @@ int LuaUnsyncedCtrl::AddUnitIcon(lua_State* L)
 
 	const bool   radAdjust = luaL_optboolean(L, 5, false);
 
-	lua_pushboolean(L, icon::iconHandler.AddIcon(iconName, texName, size, dist, radAdjust));
+	const float  u0 = luaL_optnumber(L, 6, 0.0f);
+	const float  v0 = luaL_optnumber(L, 7, 0.0f);
+
+	const float  u1 = luaL_optnumber(L, 8, 1.0f);
+	const float  v1 = luaL_optnumber(L, 9, 1.0f);
+
+	lua_pushboolean(L, icon::iconHandler.AddIcon(1, iconName, texName, size, dist, radAdjust, u0, v0, u1, v1));
 	return 1;
 }
 
@@ -2271,11 +2281,19 @@ int LuaUnsyncedCtrl::SetUnitDefIcon(lua_State* L)
 	if (ud == nullptr)
 		return 0;
 
-	ud->iconType = icon::iconHandler.GetIcon(luaL_checksstring(L, 2));
+	const auto iconName = luaL_checksstring(L, 2);
+	const auto& [found, _] = icon::iconHandler.FindIconIdx(iconName);
+
+	if (!found) {
+		luaL_error(L, "Invalid icon name \"%s\"", iconName.c_str());
+		return 0;
+	}
+
+	ud->iconName = iconName;
 
 	// set decoys to the same icon
 	if (ud->decoyDef != nullptr)
-		ud->decoyDef->iconType = ud->iconType;
+		ud->decoyDef->iconName = ud->iconName;
 
 	// spring::unordered_map<int, std::vector<int> >
 	const auto& decoyMap = unitDefHandler->GetDecoyDefIDs();
@@ -2286,11 +2304,11 @@ int LuaUnsyncedCtrl::SetUnitDefIcon(lua_State* L)
 
 		for (const int decoyDefID: decoySet) {
 			const UnitDef* decoyDef = unitDefHandler->GetUnitDefByID(decoyDefID);
-			decoyDef->iconType = ud->iconType;
+			decoyDef->iconName = ud->iconName;
 		}
 	}
 
-	unitDrawer->UpdateUnitDefMiniMapIcons(ud);
+	unitDrawer->UpdateUnitIconsByUnitDef(ud);
 	return 0;
 }
 

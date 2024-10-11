@@ -222,13 +222,18 @@ bool CQuadtreeAtlasAlloc::Allocate()
 	return !failure;
 }
 
+int CQuadtreeAtlasAlloc::GetReqNumTexLevels() const
+{
+	if (!root) return 0;
+	return std::bit_width(static_cast<uint32_t>(root->GetMinSize()));
+}
 
 int CQuadtreeAtlasAlloc::GetNumTexLevels() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!root) return 0;
 	return std::min(
-		std::bit_width(static_cast<uint32_t>(root->GetMinSize())),
+		GetReqNumTexLevels(),
 		numLevels
 	);
 }

@@ -78,7 +78,7 @@ struct VA_TYPE_N {
 		return v;
 	}
 	auto operator* (float t) const {
-		VA_TYPE_N v = *this;
+		auto v = *this;
 		v.pos *= t;
 		v.n *= t; v.n.ANormalize();
 
@@ -133,7 +133,7 @@ struct VA_TYPE_T {
 		return v;
 	}
 	auto operator* (float t) const {
-		VA_TYPE_T v = *this;
+		auto v = *this;
 		v.pos *= t;
 		v.s *= t;
 		v.t *= t;
@@ -160,7 +160,7 @@ struct VA_TYPE_T4 {
 		return v;
 	}
 	auto operator* (float t) const {
-		VA_TYPE_T4 v = *this;
+		auto v = *this;
 		v.pos *= t;
 		v.uv *= t;
 		return v;
@@ -191,7 +191,7 @@ struct VA_TYPE_TN {
 		return v;
 	}
 	auto operator* (float t) const {
-		VA_TYPE_TN v = *this;
+		auto v = *this;
 		v.pos *= t;
 		v.s *= t;
 		v.t *= t;
@@ -224,10 +224,46 @@ struct VA_TYPE_TC {
 		return v;
 	}
 	auto operator* (float t) const {
-		VA_TYPE_TC v = *this;
+		auto v = *this;
 		v.pos *= t;
 		v.s *= t;
 		v.t *= t;
+		v.c *= t;
+		return v;
+	}
+
+	static std::array<AttributeDef, 3> attributeDefs;
+};
+struct VA_TYPE_TC3 {
+	using MY_VA_TYPE = VA_TYPE_TC3;
+	float3 pos;
+	float  s, t, u;
+	SColor c;
+
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos += o.pos;
+		v.s += o.s;
+		v.t += o.t;
+		v.u += o.u;
+		v.c += o.c;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.pos -= o.pos;
+		v.s -= o.s;
+		v.t -= o.t;
+		v.u -= o.u;
+		v.c -= o.c;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
+		v.pos *= t;
+		v.s *= t;
+		v.t *= t;
+		v.u *= t;
 		v.c *= t;
 		return v;
 	}
@@ -261,7 +297,7 @@ struct VA_TYPE_PROJ {
 		return v;
 	}
 	auto operator* (float t) const {
-		VA_TYPE_PROJ v = *this;
+		auto v = *this;
 		v.pos *= t;
 		v.uvw *= t;
 		v.uvInfo *= t;
@@ -436,15 +472,55 @@ struct VA_TYPE_2DTC {
 	static std::array<AttributeDef, 3> attributeDefs;
 };
 
+struct VA_TYPE_2DTC3 {
+	using MY_VA_TYPE = VA_TYPE_2DTC3;
+	float  x, y;
+	float  s, t, u;
+	SColor c;
+
+	auto operator+(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x += o.x;
+		v.y += o.y;
+		v.s += o.s;
+		v.t += o.t;
+		v.u += o.u;
+		v.c += o.c;
+		return v;
+	}
+	auto operator-(MY_VA_TYPE const& o) const {
+		auto v = *this;
+		v.x -= o.x;
+		v.y -= o.y;
+		v.s -= o.s;
+		v.t -= o.t;
+		v.u -= o.u;
+		v.c -= o.c;
+		return v;
+	}
+	auto operator* (float t) const {
+		auto v = *this;
+		v.x *= t;
+		v.y *= t;
+		v.s *= t;
+		v.t *= t;
+		v.u *= u;
+		v.c *= t;
+		return v;
+	}
+
+	static std::array<AttributeDef, 3> attributeDefs;
+};
+
 // number of elements (bytes / sizeof(float)) per vertex
-constexpr size_t VA_SIZE_0    = (sizeof(VA_TYPE_0) / sizeof(float));
-constexpr size_t VA_SIZE_C    = (sizeof(VA_TYPE_C) / sizeof(float));
-constexpr size_t VA_SIZE_N    = (sizeof(VA_TYPE_N) / sizeof(float));
-constexpr size_t VA_SIZE_T    = (sizeof(VA_TYPE_T) / sizeof(float));
-constexpr size_t VA_SIZE_TN   = (sizeof(VA_TYPE_TN) / sizeof(float));
-constexpr size_t VA_SIZE_TC   = (sizeof(VA_TYPE_TC) / sizeof(float));
-constexpr size_t VA_SIZE_T4C  = (sizeof(VA_TYPE_PROJ) / sizeof(float));
-constexpr size_t VA_SIZE_TNT  = (sizeof(VA_TYPE_TNT) / sizeof(float));
-constexpr size_t VA_SIZE_2D0  = (sizeof(VA_TYPE_2D0) / sizeof(float));
-constexpr size_t VA_SIZE_2DT  = (sizeof(VA_TYPE_2DT) / sizeof(float));
-constexpr size_t VA_SIZE_2DTC = (sizeof(VA_TYPE_2DTC) / sizeof(float));
+constexpr size_t VA_SIZE_0     = (sizeof(VA_TYPE_0) / sizeof(float));
+constexpr size_t VA_SIZE_C     = (sizeof(VA_TYPE_C) / sizeof(float));
+constexpr size_t VA_SIZE_N     = (sizeof(VA_TYPE_N) / sizeof(float));
+constexpr size_t VA_SIZE_T     = (sizeof(VA_TYPE_T) / sizeof(float));
+constexpr size_t VA_SIZE_TN    = (sizeof(VA_TYPE_TN) / sizeof(float));
+constexpr size_t VA_SIZE_TC    = (sizeof(VA_TYPE_TC) / sizeof(float));
+constexpr size_t VA_SIZE_T4C   = (sizeof(VA_TYPE_PROJ) / sizeof(float));
+constexpr size_t VA_SIZE_TNT   = (sizeof(VA_TYPE_TNT) / sizeof(float));
+constexpr size_t VA_SIZE_2D0   = (sizeof(VA_TYPE_2D0) / sizeof(float));
+constexpr size_t VA_SIZE_2DT   = (sizeof(VA_TYPE_2DT) / sizeof(float));
+constexpr size_t VA_SIZE_2DTC  = (sizeof(VA_TYPE_2DTC) / sizeof(float));

@@ -5,7 +5,6 @@
 
 #include <vector>
 
-#include "Rendering/Icon.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GuiSoundSet.h"
 #include "Sim/Objects/SolidObject.h"
@@ -262,7 +261,7 @@ public:
 	const WeaponDef* selfdExpWeaponDef;
 
 	mutable UnitDefImage* buildPic;
-	mutable icon::CIcon iconType;
+	mutable std::string iconName;
 
 	int selfDCountdown;
 
