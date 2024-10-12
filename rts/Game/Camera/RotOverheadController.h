@@ -19,16 +19,19 @@ public:
 	void MouseWheelMove(float move, const float3& newDir) { MouseWheelMove(move); }
 
 	void SetPos(const float3& newPos);
+	void SetRot(const float3& newRot) { rot = newRot; };
 
 	float3 SwitchFrom() const;
-	void SwitchTo(const int oldCam, const bool showText);
+	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
+	float3 GetRot() const { return rot; }
 
 	void Update();
 
 private:
+	float3 rot;
 	float mouseScale;
 	float oldHeight;
 	bool clampToMap;

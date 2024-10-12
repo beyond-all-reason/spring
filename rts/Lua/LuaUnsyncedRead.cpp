@@ -72,6 +72,7 @@
 #include "System/StringUtil.h"
 #include "System/Misc/SpringTime.h"
 #include "System/ScopedResource.h"
+#include "System/Math/NURBS.h"
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)
 	#include "System/Sound/OpenAL/EFX.h"
@@ -299,6 +300,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(UnitIconGetDraw);
 
 	REGISTER_LUA_CFUNC(GetSyncedGCInfo);
+	REGISTER_LUA_CFUNC(SolveNURBSCurve);
 
 	return true;
 }
@@ -4855,5 +4857,37 @@ int LuaUnsyncedRead::GetSyncedGCInfo(lua_State* L) {
 	}
 
 	lua_pushnumber(L, lua_gc(syncedL, LUA_GCCOUNT, 0));
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SolveNURBSCurve
+ * @number groupID
+ * @treturn nil|{[number],...} unitIDs
+ */
+int LuaUnsyncedRead::SolveNURBSCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	int segments = luaL_checkint(L, 4);
+
+	const auto result = NURBS::SolveNURBSCurve(degree, cpoints, knots, segments);
+
+	lua_createtable(L, result.size(), 0);
+	for (size_t i = 0; const auto &x : result) {
+		lua_pushnumber(L, x.x);
+		lua_rawseti(L, -2, ++i);
+		lua_pushnumber(L, x.y);
+		lua_rawseti(L, -2, ++i);
+		lua_pushnumber(L, x.z);
+		lua_rawseti(L, -2, ++i);
+	}
 	return 1;
 }
