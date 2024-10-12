@@ -235,15 +235,15 @@ public:
 
 
 	// these transform a point or vector to object-space
-	float3 GetObjectSpaceVec(const float3& v) const { return (      (frontdir * v.z) - (rightdir * v.x) + (updir * v.y)); }
-	float3 GetObjectSpacePos(const float3& p) const { return (pos + (frontdir * p.z) - (rightdir * p.x) + (updir * p.y)); }
+	float3 GetObjectSpaceVec(const float3& v) const { return (      (frontdir * v.z) + (rightdir * v.x) + (updir * v.y)); }
+	float3 GetObjectSpacePos(const float3& p) const { return (pos + (frontdir * p.z) + (rightdir * p.x) + (updir * p.y)); }
 
 	// note: requires drawPos to have been set first
 	float3 GetObjectSpaceDrawPos(const float3& p) const { return (drawPos + GetObjectSpaceVec(p)); }
 
 	// unsynced mid-{position,vector}s
-	float3 GetMdlDrawMidPos() const { return (GetObjectSpaceDrawPos(localModel.GetRelMidPos())); }
-	float3 GetObjDrawMidPos() const { return (GetObjectSpaceDrawPos(              relMidPos  )); }
+	float3 GetMdlDrawMidPos() const { return (GetObjectSpaceDrawPos(WORLD_TO_OBJECT_SPACE * localModel.GetRelMidPos())); }
+	float3 GetObjDrawMidPos() const { return (GetObjectSpaceDrawPos(WORLD_TO_OBJECT_SPACE *               relMidPos  )); }
 
 
 	int2 GetMapPos() const { return (GetMapPos(pos)); }
