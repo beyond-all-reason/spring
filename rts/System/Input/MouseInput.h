@@ -4,7 +4,6 @@
 #define MOUSE_INPUT_H
 
 #include <SDL_events.h>
-#include <slimsig/connection.h>
 #include "System/Input/InputHandler.h"
 
 #include "System/type2.h"
@@ -33,7 +32,7 @@ public:
 
 protected:
 	int2 mousepos;
-	InputHandler::SignalType::connection_type inputCon;
+	InputHandler::HandlerTokenT inputCon;
 };
 
 extern IMouseInput* mouseInput;
