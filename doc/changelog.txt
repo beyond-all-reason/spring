@@ -43,6 +43,7 @@ Lua:
 
 Misc:
 - Fixed broken test. https://github.com/beyond-all-reason/spring/pull/1545
+- New `OverheadMinZoomDistance` and `CamSpringMinZoomDistance` ConfigFloats to set minimum camera zoom distances for their respective cameras.
 
 Pathing:
  - HAPFS uses the raw move found in the ground movement code, rather than its on version, which addresses several
