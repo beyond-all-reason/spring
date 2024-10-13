@@ -1,0 +1,9 @@
+name: Test Namespace.so worker
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: nscloud-ubuntu-24.04-amd64-2x2
+    steps:
+      - name: Test
+        run: echo "ok"
