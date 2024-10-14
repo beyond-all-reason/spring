@@ -58,10 +58,11 @@ class CKeyBindings : public CommandReceiver
 
 	protected:
 		void BuildHotkeyMap();
+		void RebuildActionLists();
 		void DebugActionList(const ActionList& actionList) const;
 
-		void AddActionToKeyMap(KeyMap& bindings, Action& action);
-		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
+		bool AddActionToKeyMap(KeyMap& bindings, Action& action);
+		bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
 
 		bool Bind(const std::string& keystring, const std::string& action);
 		bool UnBind(const std::string& keystring, const std::string& action);
@@ -70,7 +71,8 @@ class CKeyBindings : public CommandReceiver
 		bool SetFakeMetaKey(const std::string& keystring);
 		bool AddKeySymbol(const std::string& keysym, const std::string& code);
 
-		static bool RemoveCommandFromList(ActionList& al, const std::string& command);
+		bool RemoveCommandFromList(ActionList& al, const std::string& command);
+		bool RemoveActionFromStack(Action* action);
 
 		bool FileSave(FILE* file) const;
 
@@ -80,6 +82,7 @@ class CKeyBindings : public CommandReceiver
 		KeyMap codeBindings;
 		KeyMap scanBindings;
 		ActionMap hotkeys;
+		std::vector<Action*> actionStack;
 		std::vector<std::string> loadStack;
 		int bindingsCount;
 

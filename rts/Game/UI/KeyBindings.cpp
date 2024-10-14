@@ -400,7 +400,11 @@ const ActionList & CKeyBindings::GetActionList(const CKeySet& ks, bool forceAny)
 	RECOIL_DETAILED_TRACY_ZONE;
 	static ActionList empty;
 
-	if (ks.Key() < 0)
+	const int key = ks.Key();
+
+	// We use -1 for 'none' when matching pure modifier keysets
+	// 0 == SDLK_UNKNOWN == SDL_SCAN_UNKNOWN
+	if (key < -1 || key == 0)
 		return empty;
 
 	const auto & bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
@@ -490,6 +494,13 @@ ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, unsigned char 
 	scanChain.emplace_back(CKeySet(scanCode, modifiers, CKeySet::KSScanCode));
 
 	return GetActionList(codeChain, scanChain);
+}
+
+
+// When an internal state of the engine changes the way keysets are parsed, we
+// need to reparse them from their user issues keysets
+void CKeyBindings::RebuildActionLists() {
+
 }
 
 
@@ -599,7 +610,7 @@ static bool ParseKeyChain(std::string keystr, CKeyChain* kc, const size_t pos = 
 }
 
 
-void CKeyBindings::AddActionToKeyMap(KeyMap& bindings, Action& action)
+bool CKeyBindings::AddActionToKeyMap(KeyMap& bindings, Action& action)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CKeySet& ks = action.keyChain.back();
@@ -620,12 +631,16 @@ void CKeyBindings::AddActionToKeyMap(KeyMap& bindings, Action& action)
 		});
 
 		// check if the command is already bound to the given keyset
-		if (it == std::end(al)) {
-			// not yet bound, push it
-			action.bindingIndex = ++bindingsCount;
-			al.push_back(action);
-		}
+		if (it != std::end(al)) {
+      return false;
+    }
+
+    // not yet bound, push it
+    action.bindingIndex = ++bindingsCount;
+    al.push_back(action);
 	}
+
+  return true;
 }
 
 
@@ -653,7 +668,10 @@ bool CKeyBindings::Bind(const std::string& keystr, const std::string& line)
 		ks.SetAnyBit();
 
 	KeyMap& bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
-	AddActionToKeyMap(bindings, action);
+
+	if (AddActionToKeyMap(bindings, action)) {
+    actionStack.push_back(&action);
+  }
 
 	return true;
 }
@@ -678,7 +696,7 @@ bool CKeyBindings::UnBind(const std::string& keystr, const std::string& command)
 		return false;
 
 	ActionList& al = it->second;
-	const bool success = RemoveCommandFromList(al, command);
+  const bool success = RemoveCommandFromList(al, command);
 
 	if (al.empty())
 		bindings.erase(it);
@@ -707,6 +725,7 @@ bool CKeyBindings::UnBindKeyset(const std::string& keystr)
 		return false;
 
 	bindings.erase(it);
+
 	return true;
 }
 
@@ -781,6 +800,23 @@ bool CKeyBindings::AddKeySymbol(const std::string& keysym, const std::string& co
 }
 
 
+bool CKeyBindings::RemoveActionFromStack(Action* action) {
+	auto it = actionStack.begin();
+
+	while (it != actionStack.end()) {
+    if (*it.base() == action) {
+      actionStack.erase(it);
+
+      return true;
+    } else {
+      it++;
+    }
+  }
+
+  return false;
+}
+
+
 bool CKeyBindings::RemoveCommandFromList(ActionList& al, const std::string& command)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -790,6 +826,7 @@ bool CKeyBindings::RemoveCommandFromList(ActionList& al, const std::string& comm
 
 	while (it != al.end()) {
 		if (it->command == command) {
+      RemoveActionFromStack(it.base());
 			it = al.erase(it);
 			success = true;
 		} else {
@@ -927,6 +964,7 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 	else if (command == "unbindall") {
 		codeBindings.clear();
 		scanBindings.clear();
+    actionStack.clear();
 		keyCodes.Reset();
 		scanCodes.Reset();
 		bindingsCount = 0;
