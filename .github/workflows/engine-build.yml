@@ -41,15 +41,24 @@ jobs:
           - amd64-linux
           - amd64-windows
     runs-on:
+      # Run on 8 core, 16GiB ubuntu 24.04 machine.
       - nscloud-ubuntu-24.04-amd64-8x16-with-cache
+      # Mount named cache volume `engine-${{ matrix.system }}`.
       - nscloud-cache-tag-engine-${{ matrix.system }}
+      # The cache volume should be 20GiB (minimal size).
       - nscloud-cache-size-20gb
+      # Also cache the git checkouts in datacenter local namespace git mirror
+      # to speed them up.
       - nscloud-git-mirror-5gb
+      # Also cache docker pulls in volume so images don't have to be pulled
+      # and unpacked every time.
       - nscloud-exp-container-image-cache
     steps:
       - name: Checkout code
         uses: namespacelabs/nscloud-checkout-action@v5
         with:
+          # We fetch full history because engine automatic version naming uses
+          # that.
           fetch-depth: 0
           submodules: recursive
           dissociate: true
@@ -107,6 +116,9 @@ jobs:
               --disable_http_ac_validation \
               --http_address 127.0.0.1:8085 \
               --access_log_level none &
+          # The magic URL below in wait-on is a special "empty object" cache
+          # address that is always present, and exists exactly for the purpose
+          # of health checking.
           wait-on: |
             http-get://127.0.0.1:8085/cas/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
       - name: Pull builder image
@@ -144,6 +156,7 @@ jobs:
         if: always() && steps.mount-overlay.outcome == 'success'
         run: |
           sudo fusermount -u bazel-remote-data-merged
+          # Overlayfs depends on xattrs etc so we need to package it ourselves.
           sudo tar --acls --xattrs --xattrs-include='*' -cf bazel-remote-data-overlay.tar bazel-remote-data-overlay
       - name: Save pull request's bazel remote cache overlay
         id: pr-cache-save

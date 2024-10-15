@@ -1,3 +1,6 @@
+# We pick ubuntu 18 instead of newer one because we are dynamically linking
+# to glibc and a few other libraries and we want to keep compatibility for as
+# many users as possible.
 FROM docker.io/ubuntu:18.04
 ENV ENGINE_PLATFORM=amd64-linux
 
