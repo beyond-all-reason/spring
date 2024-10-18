@@ -1,0 +1,89 @@
+---
+layout: default
+title: Engine
+permalink: ldoc/modules/Engine.html
+description: Engine constants
+parent: Lua API
+table: 0x55e500ef3250
+---
+
+{% raw %}
+    <h1>Module <code>Engine</code></h1>
+    <p>Engine constants</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaConstEngine.cpp">rts/Lua/LuaConstEngine.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Tables">Tables</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Engine">Engine</a>
+            </dt>
+            <dd>
+              Engine specific information
+            </dd>
+        </dl>
+
+      <h2 id="Tables" class="section-header ">
+        Tables
+      </h2>
+
+        <h3 id="Engine">
+          Engine
+        </h3>
+        <p>Engine specific information</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>version</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    Returns the same as <code>spring  *sync-version</code>, e.g. "92"
+                 </li>
+                 <li>
+                   <code>versionFull</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>versionPatchSet</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>buildFlags</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    (unsynced only) Gets additional engine buildflags, e.g. "OMP" or "MT-Sim DEBUG"
+                 </li>
+                 <li>
+                   <code>FeatureSupport</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    table containing various engine features as keys; use for cross-version compat
+                 </li>
+                 <li>
+                   <code>wordSize</code>
+                   <strong><span class="type">number</span></strong>
+                    indicates the build type and is either 32 or 64 (or 0 in synced code)
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+
+{% endraw %}

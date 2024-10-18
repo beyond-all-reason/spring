@@ -1,0 +1,196 @@
+---
+layout: default
+title: RBO
+permalink: ldoc/modules/RBO.html
+description: RBO
+parent: Lua API
+table: 0x55e500ceb960
+---
+
+{% raw %}
+    <h1>Module <code>RBO</code></h1>
+    <p>RBO</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaRBOs.cpp">rts/Lua/LuaRBOs.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Functions">Functions</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#gl.CreateRBO">gl.CreateRBO</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#gl.DeleteRBO">gl.DeleteRBO</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Tables">Tables</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#rbo">rbo</a>
+            </dt>
+            <dd>
+              User Data RBO
+            </dd>
+        </dl>
+
+      <h2 id="Functions" class="section-header ">
+        Functions
+      </h2>
+
+        <h3 id="gl.CreateRBO">
+          gl.CreateRBO(xsize, ysize, data)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>xsize</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ysize</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+             <li><span class="parameter">data</span>
+
+
+               <ul>
+                 <li>
+                   <code>target</code>
+                   <strong><span class="type">number</span></strong>
+                    <code>GL_RENDERBUFFER_EXT</code>
+                 </li>
+                 <li>
+                   <code>format</code>
+                   <strong><span class="type">number</span></strong>
+                    <code>GL_RGBA</code>
+                 </li>
+                 <li>
+                   <code>samples</code>
+                   <strong><span class="type">number</span></strong>
+                    any number here will result in creation of multisampled RBO
+                   (<em>optional</em>)
+                 </li>
+             </li></ul>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="gl.DeleteRBO">
+          gl.DeleteRBO(rbo)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>rbo</code>
+                   <strong><a class="type" href="../modules/RBO.html#rbo">rbo</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Tables" class="section-header ">
+        Tables
+      </h2>
+
+        <h3 id="rbo">
+          rbo
+        </h3>
+        <p>User Data RBO</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>target</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>format</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>xsize</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ysize</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>valid</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>samples</code>
+                   <strong><span class="type">number</span></strong>
+                    will return globalRendering->msaaLevel for multisampled RBO or 0 otherwise
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+
+{% endraw %}
