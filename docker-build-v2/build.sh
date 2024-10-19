@@ -2,19 +2,50 @@
 
 set -e -u -o pipefail
 
-if [[ "$#" -lt 1 || ! "$1" =~ ^(windows|linux)$ ]]; then
-    echo "USAGE: $0 {windows|linux} [cmake_flag...]"
-    exit 1
+USAGE="Usage: $0 [--help] [--configure|--compile] {windows|linux} [cmake_flag...]"
+export CONFIGURE=true
+export COMPILE=true
+OS=
+for arg in "$@"; do
+  case $arg in
+    --configure)
+      CONFIGURE=true
+      COMPILE=false
+      shift
+      ;;
+    --compile)
+      CONFIGURE=false
+      COMPILE=true
+      shift
+      ;;
+    --help)
+      echo $USAGE
+      echo "Options:"
+      echo "  --help       print this help message"
+      echo "  --configure  only configure, don't compile"
+      echo "  --compile    only compile, don't configure"
+      exit 0
+      ;;
+    windows|linux)
+      OS="$arg"
+      shift
+      ;;
+    *)
+      break
+  esac
+done
+if [[ -z $OS ]]; then
+  echo $USAGE
+  exit 1
 fi
-os="$1"
 
 cd "$(dirname "$(readlink -f "$0")")/.."
-mkdir -p build-$os .cache/ccache-$os
+mkdir -p build-$OS .cache/ccache-$OS
 
 # Use localy build image if available, and pull from upstream if not
-image=recoil-build-amd64-$os:latest
+image=recoil-build-amd64-$OS:latest
 if [[ -z "$(docker images -q $image 2> /dev/null)" ]]; then
-  image=ghcr.io/beyond-all-reason/recoil-build-amd64-$os:latest
+  image=ghcr.io/beyond-all-reason/recoil-build-amd64-$OS:latest
   docker pull $image > /dev/null
 fi
 
@@ -23,7 +54,15 @@ docker run -it --rm \
     -v /etc/group:/etc/group:ro \
     --user=$(id -u):$(id -g) \
     -v $(pwd):/build/src:ro \
-    -v $(pwd)/.cache/ccache-$os:/build/cache:rw \
-    -v $(pwd)/build-$os:/build/out:rw \
+    -v $(pwd)/.cache/ccache-$OS:/build/cache:rw \
+    -v $(pwd)/build-$OS:/build/out:rw \
+    -e CONFIGURE \
+    -e COMPILE \
     $image \
-    bash /build/src/docker-build-v2/scripts/build.sh "${@:2}"
+    bash -c '
+set -e
+echo "$@"
+cd /build/src/docker-build-v2/scripts
+$CONFIGURE && ./configure.sh "$@"
+$COMPILE && ./compile.sh
+' -- "$@"

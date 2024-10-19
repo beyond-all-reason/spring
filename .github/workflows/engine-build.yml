@@ -142,7 +142,8 @@ jobs:
             bash <<EOF
           set -e
           cd /build/src/docker-build-v2/scripts
-          ./build.sh
+          ./configure.sh
+          ./compile.sh
           ./split-debug-info.sh
           ./package.sh
 

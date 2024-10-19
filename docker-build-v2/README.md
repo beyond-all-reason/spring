@@ -8,8 +8,12 @@ build scripts.
 To execute build locally use `build.sh` script
 
 ```console
-$ docker-build-v2/build.sh
-USAGE: docker-build-v2/build.sh {windows|linux} [cmake_flag...]
+$ docker-build-v2/build.sh --help
+Usage: docker-build-v2/build.sh [--help] [--configure|--compile] {windows|linux} [cmake_flag...]
+Options:
+  --help       print this help message
+  --configure  only configure, don't compile
+  --compile    only compile, don't configure
 ```
 
 For example
@@ -36,6 +40,12 @@ headless:
 
 ```shell
 docker-build-v2/build.sh linux -DBUILD_spring-headless=OFF -DTRACY_ENABLE=ON
+```
+
+To list all cmake options and their values run:
+
+```shell
+docker-build-v2/build.sh --configure linux -LH
 ```
 
 ### Custom Docker image
