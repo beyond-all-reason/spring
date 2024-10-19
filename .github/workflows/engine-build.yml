@@ -1,0 +1,172 @@
+# Engine CI workflow that compiles engine using build-docker-v2 scripts with
+# https://namespace.so/ GitHub Actions Runners.
+#
+# The worklow has multiple layers of caching for ccache compilation objects:
+#
+# - Local cache on runner's machine SSD disk, very efficient but prone to
+#   cache misses when workflow can't be scheduled next to the storage
+# - Remote, higher latency, S3 based storage using Cloudflare R2 bucket
+# - For pull requests only: GitHub Actions Cache archive build by mounting
+#   overlay filesystem on top of two other read-only caches (because pull
+#   requests can't have write access for security reasons) to reduce build
+#   times for subsequent pushes to the same PR branch.
+#
+# Because ccache can't use S3 based storage directly, we are leveraging
+# bazel-remote project that supports it, and ccache supports storing artifacts
+# in bazel remote caching HTTP layout.
+
+name: Build Engine v2
+on:
+  workflow_dispatch:
+    inputs:
+      recache:
+        description: "Recache ccache build objects"
+        type: boolean
+        default: false
+  # TODO: Uncomment after it's merged and docker images are availabe
+  # pull_request:
+  #   paths-ignore:
+  #     - 'doc/**'
+  # push:
+  #   branches:
+  #     - master
+  #     # TODO: add release branches once their naming is finalized
+  #   paths-ignore:
+  #     - 'doc/**'
+jobs:
+  build-engine:
+    if: github.repository == 'beyond-all-reason/spring' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        system:
+          - amd64-linux
+          - amd64-windows
+    runs-on:
+      # Run on 8 core, 16GiB ubuntu 24.04 machine.
+      - nscloud-ubuntu-24.04-amd64-8x16-with-cache
+      # Mount named cache volume `engine-${{ matrix.system }}`.
+      - nscloud-cache-tag-engine-${{ matrix.system }}
+      # The cache volume should be 20GiB (minimal size).
+      - nscloud-cache-size-20gb
+      # Also cache the git checkouts in datacenter local namespace git mirror
+      # to speed them up.
+      - nscloud-git-mirror-5gb
+      # Also cache docker pulls in volume so images don't have to be pulled
+      # and unpacked every time.
+      - nscloud-exp-container-image-cache
+    steps:
+      - name: Checkout code
+        uses: namespacelabs/nscloud-checkout-action@v5
+        with:
+          # We fetch full history because engine automatic version naming uses
+          # that.
+          fetch-depth: 0
+          submodules: recursive
+          dissociate: true
+          path: src
+      - name: Setup ccache cache
+        uses: namespacelabs/nscloud-cache-action@v1
+        with:
+          path: |
+            bazel-remote-data
+            tools
+      - name: Restore pull request's bazel remote cache overlay
+        id: pr-cache-restore
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: bazel-remote-data-overlay.tar
+          key: pr-bazel-remote-data-${{ matrix.system }}-${{ github.run_id }}
+          restore-keys: pr-bazel-remote-data-${{ matrix.system }}-
+      - name: Mount bazel remote overlay
+        id: mount-overlay
+        if: github.event_name == 'pull_request'
+        run: |
+          sudo apt-get install --yes fuse-overlayfs
+          sudo tar --acls --xattrs --xattrs-include='*' -xf bazel-remote-data-overlay.tar || mkdir bazel-remote-data-overlay
+          mkdir -p overlay-workdir bazel-remote-data-merged
+          sudo fuse-overlayfs -o lowerdir=bazel-remote-data,upperdir=bazel-remote-data-overlay,workdir=overlay-workdir bazel-remote-data-merged
+      - name: Start remote ccache fetcher
+        uses: JarvusInnovations/background-action@2428e7b970a846423095c79d43f759abf979a635  # v1.0.7
+        env:
+          BAZEL_REMOTE_S3_ENDPOINT: ${{ vars.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          BAZEL_REMOTE_S3_BUCKET: ${{ vars.R2_BUCKET_BUILD_CACHE }}
+          BAZEL_REMOTE_S3_ACCESS_KEY_ID: ${{ github.event_name == 'pull_request' && vars.R2_RO_ACCESS_KEY_ID || vars.R2_ACCESS_KEY_ID }}
+          BAZEL_REMOTE_S3_SECRET_ACCESS_KEY: ${{ github.event_name == 'pull_request' && vars.R2_RO_ACCESS_KEY_SECRET || secrets.R2_ACCESS_KEY_SECRET }}
+        with:
+          run: |
+            if ! sha256sum --status -c <<< "8679a76074b1408a95d2b3ec0f5b1a6d0c20500cfc24c3a87ef08c1b60200f8c tools/bazel-remote"; then
+              curl -L https://github.com/buchgr/bazel-remote/releases/download/v2.4.4/bazel-remote-2.4.4-linux-x86_64 -o bazel-remote
+              chmod +x bazel-remote
+              mv bazel-remote tools/bazel-remote
+            fi
+
+            cat > remote_ccache.conf <<EOF
+            max_size = 10G
+            cache_dir = /build/cache
+            remote_storage = http://127.0.0.1:8085|layout=bazel
+            remote_only = true
+            EOF
+
+            tools/bazel-remote \
+              --dir bazel-remote-data${{ github.event_name == 'pull_request' && '-merged' || '' }} \
+              --s3.auth_method access_key \
+              --s3.region auto \
+              --max_size 5 \
+              --num_uploaders ${{ github.event_name == 'pull_request' && '0' || '100' }} \
+              --disable_http_ac_validation \
+              --http_address 127.0.0.1:8085 \
+              --access_log_level none &
+          # The magic URL below in wait-on is a special "empty object" cache
+          # address that is always present, and exists exactly for the purpose
+          # of health checking.
+          wait-on: |
+            http-get://127.0.0.1:8085/cas/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      - name: Pull builder image
+        run: docker pull ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest
+      - name: Build
+        # Instead of manually running docker, it would be cool to just run whole GitHub actions
+        # in container, but unfortunately ubuntu 18.04 is just too old to be able to do it ;(.
+        run: |
+          mkdir -p artifacts
+          docker run -i --rm \
+            -v /etc/passwd:/etc/passwd:ro \
+            -v /etc/group:/etc/group:ro \
+            --user="$(id -u):$(id -g)" \
+            -v $(pwd)/src:/build/src:ro \
+            -v $(pwd)/remote_ccache.conf:/build/ccache.conf:ro \
+            -v $(pwd)/artifacts:/build/artifacts:rw \
+            -e CCACHE_${{ inputs.recache && 'RECACHE' || 'NORECACHE' }}=1 \
+            --network host \
+            ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest \
+            bash <<EOF
+          set -e
+          cd /build/src/docker-build-v2/scripts
+          ./configure.sh
+          ./compile.sh
+          ./split-debug-info.sh
+          ./package.sh
+
+          EOF
+      # TODO: Commented as this step is at the moment useless because artifacts
+      # are neither publickly accesible nor used in any next steps so for now
+      # it's more of an example that needs to be changed to something useful.
+      # - name: Save
+      #   if: github.event_name != 'pull_request'
+      #   uses: namespace-actions/upload-artifact@v0
+      #   with:
+      #     name: output-${{ matrix.system }}
+      #     path: ./artifacts
+      - name: Unmount bazel remote overlay
+        if: always() && steps.mount-overlay.outcome == 'success'
+        run: |
+          sudo fusermount -u bazel-remote-data-merged
+          # Overlayfs depends on xattrs etc so we need to package it ourselves.
+          sudo tar --acls --xattrs --xattrs-include='*' -cf bazel-remote-data-overlay.tar bazel-remote-data-overlay
+      - name: Save pull request's bazel remote cache overlay
+        id: pr-cache-save
+        if: always() && steps.pr-cache-restore.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: bazel-remote-data-overlay.tar
+          key: ${{ steps.pr-cache-restore.outputs.cache-primary-key }}
