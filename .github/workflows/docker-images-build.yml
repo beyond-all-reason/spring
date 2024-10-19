@@ -14,6 +14,7 @@ on:
       - 'docker-build-v2/amd64-windows/**'
 jobs:
   build-images:
+    if: github.repository == 'beyond-all-reason/spring' || github.event_name == 'workflow_dispatch'
     name: Build ${{ matrix.system }} docker image
     runs-on: ubuntu-latest
     strategy:
