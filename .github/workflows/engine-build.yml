@@ -23,16 +23,15 @@ on:
         description: "Recache ccache build objects"
         type: boolean
         default: false
-  # TODO: Uncomment after it's merged and docker images are availabe
-  # pull_request:
-  #   paths-ignore:
-  #     - 'doc/**'
-  # push:
-  #   branches:
-  #     - master
-  #     # TODO: add release branches once their naming is finalized
-  #   paths-ignore:
-  #     - 'doc/**'
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+  push:
+    branches:
+      - master
+      # TODO: add release branches once their naming is finalized
+    paths-ignore:
+      - 'doc/**'
 jobs:
   build-engine:
     if: github.repository == 'beyond-all-reason/spring' || github.event_name == 'workflow_dispatch'

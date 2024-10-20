@@ -46,7 +46,7 @@ mkdir -p build-$OS .cache/ccache-$OS
 image=recoil-build-amd64-$OS:latest
 if [[ -z "$(docker images -q $image 2> /dev/null)" ]]; then
   image=ghcr.io/beyond-all-reason/recoil-build-amd64-$OS:latest
-  docker pull $image > /dev/null
+  docker pull $image
 fi
 
 docker run -it --rm \
