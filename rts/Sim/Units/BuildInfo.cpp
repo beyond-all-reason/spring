@@ -21,6 +21,12 @@ BuildInfo::BuildInfo(const UnitDef* def, const float3& pos, int facing)
 	, buildFacing(std::abs(facing) % NUM_FACINGS)
 {}
 
+BuildInfo::BuildInfo(int unitDefId, const float3& pos, int facing)
+	: def(unitDefHandler->GetUnitDefByID(unitDefId))
+	, pos(pos)
+	, buildFacing(std::abs(facing) % NUM_FACINGS)
+{}
+
 BuildInfo::BuildInfo(const std::string& name, const float3& pos, int facing)
 	: def(unitDefHandler->GetUnitDefByName(name))
 	, pos(pos)

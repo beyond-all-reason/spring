@@ -171,6 +171,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(AddWorldUnit);
 
 	REGISTER_LUA_CFUNC(DrawUnitCommands);
+	REGISTER_LUA_CFUNC(AddBuildSquare);
+	REGISTER_LUA_CFUNC(RemoveBuildSquare);
 
 	REGISTER_LUA_CFUNC(SetTeamColor);
 
@@ -3378,6 +3380,93 @@ int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)
 	if (guihandler != nullptr)
 		guihandler->SetBuildFacing(luaL_checkint(L, 1));
 
+	return 0;
+}
+
+
+// FIXME: move to LuaUtils, but currently it produces error
+// "error: undefined reference to 'BuildInfo::BuildInfo(int, float3 const&, int)'"
+static BuildInfo ParseBuildInfo(
+	lua_State* L,
+	const char* caller,
+	int idx
+) {
+	int unitDefID = luaL_checkinteger(L, idx);
+	float3 pos = {
+		luaL_checkfloat(L, idx+1),
+		luaL_checkfloat(L, idx+2),
+		luaL_checkfloat(L, idx+3),
+	};
+	int facing = luaL_checkinteger(L, idx+4);
+
+	return BuildInfo(unitDefID, pos, facing);
+}
+
+
+static LuaBuildSquareOptions ParseBuildSquareOptions(
+	lua_State* L,
+	const char* caller,
+	const int idx
+) {
+	LuaBuildSquareOptions opts;
+	if (lua_istable(L, idx)) {
+		for (lua_pushnil(L); lua_next(L, idx) != 0; lua_pop(L, 1)) {
+			// "key" = value (table format of CommandNotify)
+			// ignore the "coded" key; not a boolean value
+			if (lua_israwstring(L, -2)) {
+				if (lua_isboolean(L, -1)) {
+					const bool value = lua_toboolean(L, -1);
+					switch (hashString(lua_tostring(L, -2))) {
+						case hashString("unbuildable"):
+							opts.unbuildable = value;
+							break;
+					}
+				}
+			}
+		}
+	} else if (!lua_isnone(L, idx) && !lua_isnil(L, idx)) {
+		luaL_error(L, "%s(): bad options-argument type", caller);
+	}
+	return opts;
+}
+
+
+/***
+ *
+ * @function Spring.AddBuildSquare
+ * @number unitDefID
+ * @number x
+ * @number y
+ * @number z
+ * @number facing
+ * @bool[opt] unbuildable
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::AddBuildSquare(lua_State* L)
+{
+	BuildInfo buildInfo = ParseBuildInfo(L, __func__, 1);
+	LuaBuildSquareOptions opts = ParseBuildSquareOptions(L, __func__, 6);
+
+	unitDrawer->AddLuaBuildSquare(buildInfo, opts);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.RemoveBuildSquare
+ * @number unitDefID
+ * @number x
+ * @number y
+ * @number z
+ * @number facing
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::RemoveBuildSquare(lua_State* L)
+{
+	BuildInfo buildInfo = ParseBuildInfo(L, __func__, 1);
+
+	unitDrawer->RemoveLuaBuildSquare(buildInfo);
 	return 0;
 }
 

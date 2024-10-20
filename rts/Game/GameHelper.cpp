@@ -1283,6 +1283,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	// const float buildHeight = GetBuildHeight(testPos, buildInfo.def, synced);
 	// const float modelHeight = (model != nullptr) ? math::fabs(model->height) : 10.0f;
 
+	// FIXME this call is probably useless, we can assume that any caller already assigned it correctly
 	sqrPos.y = GetBuildHeight(testPos, buildInfo.def, synced);
 
 	BuildSquareStatus testStatus = BUILDSQUARE_OPEN;

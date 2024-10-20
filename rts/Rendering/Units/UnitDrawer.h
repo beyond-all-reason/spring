@@ -6,9 +6,11 @@
 
 #include "Rendering/Common/ModelDrawer.h"
 #include "Rendering/Common/ModelDrawerState.hpp"
+#include "Rendering/Units/UnitDrawerCache.h"
 #include "Rendering/Units/UnitDrawerData.h"
 #include "Rendering/GL/LightHandler.h"
 #include "Game/UI/CursorIcons.h"
+#include "System/Color.h"
 #include "System/type2.h"
 #include "Sim/Units/CommandAI/Command.h"
 
@@ -77,6 +79,10 @@ public:
 	        bool ShowUnitBuildSquare(const BuildInfo& buildInfo) const { return ShowUnitBuildSquare(buildInfo, std::vector<Command>()); }
 	virtual bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const = 0;
 
+	virtual void AddLuaBuildSquare(const BuildInfo& buildInfo, LuaBuildSquareOptions& opts) = 0;
+	virtual void RemoveLuaBuildSquare(const BuildInfo& buildInfo) = 0;
+	virtual void ShowLuaBuildSquare() = 0;
+
 	virtual void DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const = 0;
 protected:
 	static bool ShouldDrawOpaqueUnit(CUnit* u, uint8_t thisPassMask);
@@ -144,6 +150,9 @@ public:
 	void DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const override;
 
 	bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const override;
+	void AddLuaBuildSquare(const BuildInfo& buildInfo, LuaBuildSquareOptions& opts) override;
+	void RemoveLuaBuildSquare(const BuildInfo& buildInfo) override;
+	void ShowLuaBuildSquare() override;
 	void DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const override;
 
 	void DrawUnitMiniMapIcons() const override;
@@ -185,7 +194,7 @@ protected:
 	void PopIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const;
 	void PopIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const;
 protected:
-
+	LuaBuildSquareTasksMap luaBuildSquareTasks;
 };
 
 class CUnitDrawerFFP  final : public CUnitDrawerLegacy {};

@@ -77,6 +77,12 @@ public:
 	const float* buildBox;
 	const float* allyBuildBox;
 	const float* mouseBox;
+	const float* buildableSquare;
+	const float* unbuildableSquare;
+	const float* featureSquare;
+	const float* illegalSquare;
+	const float* underwaterStart;
+	const float* underwaterEnd;
 
 	// for command queue rendering
 	const float* start;
@@ -156,6 +162,12 @@ private:
 		buildBoxIndex,
 		allyBuildBoxIndex,
 		mouseBoxIndex,
+		buildableSquareIndex,
+		unbuildableSquareIndex,
+		featureSquareIndex,
+		illegalSquareIndex,
+		underwaterStartIndex,
+		underwaterEndIndex,
 
 		ColorCount
 	};
