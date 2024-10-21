@@ -77,6 +77,9 @@ public:
 	        bool ShowUnitBuildSquare(const BuildInfo& buildInfo) const { return ShowUnitBuildSquare(buildInfo, std::vector<Command>()); }
 	virtual bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const = 0;
 
+	virtual bool AddLuaBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) = 0;
+	virtual void ShowLuaBuildSquare() = 0;
+
 	virtual void DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const = 0;
 protected:
 	static bool ShouldDrawOpaqueUnit(CUnit* u, uint8_t thisPassMask);
@@ -144,6 +147,8 @@ public:
 	void DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const override;
 
 	bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const override;
+	bool AddLuaBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) override;
+	void ShowLuaBuildSquare() override;
 	void DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const override;
 
 	void DrawUnitMiniMapIcons() const override;
@@ -185,7 +190,11 @@ protected:
 	void PopIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const;
 	void PopIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const;
 protected:
-
+	std::vector<float3> luaBuildableSquares;
+	std::vector<float3> luaUnbuildableSquares;
+	std::vector<float3> luaFeatureSquares;
+	std::vector<float3> luaIllegalSquares;
+	std::vector<float3> luaBuildPos;
 };
 
 class CUnitDrawerFFP  final : public CUnitDrawerLegacy {};

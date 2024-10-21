@@ -1183,7 +1183,6 @@ void CUnitDrawerLegacy::DrawIndividualDefAlpha(const SolidObjectDef* objectDef, 
 bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//TODO: make this a lua callin!
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1331,6 +1330,192 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 	// glDisable(GL_BLEND);
 
 	return canBuild;
+}
+
+bool CUnitDrawerLegacy::AddLuaBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) {
+	CFeature* feature = nullptr;
+
+	struct BuildCache {
+		uint64_t key;
+		int createFrame;
+		bool canBuild;
+		std::vector<float3> buildableSquares; // buildable squares
+		std::vector<float3> featureSquares; // occupied squares
+		std::vector<float3> illegalSquares; // non-buildable squares
+	};
+
+	static std::vector<BuildCache> buildCache;
+
+	const float3& pos = buildInfo.pos;
+
+	uint64_t hashKey = spring::LiteHash(pos);
+	hashKey = spring::hash_combine(spring::LiteHash(buildInfo.buildFacing), hashKey);
+	/*
+	for (const auto& cmd : commands) {
+		const BuildInfo bc(cmd);
+		spring::hash_combine(spring::LiteHash(bc), hash);
+	}
+	*/
+
+	// the chosen number here is arbitrary, feel free to fine balance.
+	static constexpr int CACHE_VALIDITY_PERIOD = GAME_SPEED / 5;
+	std::erase_if(buildCache, [](const BuildCache& bc) {
+		return gs->frameNum - bc.createFrame >= CACHE_VALIDITY_PERIOD;
+	});
+
+	const float x1 = std::floor(pos.x - (buildInfo.GetXSize() * 0.5f * SQUARE_SIZE));
+	const float x2 = x1 + (buildInfo.GetXSize() * SQUARE_SIZE);
+	const float z1 = std::floor(pos.z - (buildInfo.GetZSize() * 0.5f * SQUARE_SIZE));
+	const float z2 = z1 + (buildInfo.GetZSize() * SQUARE_SIZE);
+	const float h = CGameHelper::GetBuildHeight(pos, buildInfo.def, false);
+
+	luaBuildPos.push_back(float3{x1, h, z1});
+	luaBuildPos.push_back(float3{x2, h, z2});
+
+	auto buildCacheItem = std::find_if(buildCache.begin(), buildCache.end(), [hashKey](const BuildCache& bc) {
+		return bc.key == hashKey;
+	});
+
+	if (buildCacheItem == buildCache.end()) {
+		buildCache.emplace_back();
+		buildCacheItem = buildCache.end()-1;
+
+		buildCacheItem->key = hashKey;
+		buildCacheItem->createFrame = gs->frameNum;
+		buildCacheItem->canBuild = CGameHelper::TestUnitBuildSquare(
+			buildInfo,
+			feature,
+			-1,
+			false,
+			&buildCacheItem->buildableSquares,
+			&buildCacheItem->featureSquares,
+			&buildCacheItem->illegalSquares,
+			&commands
+		);
+	}
+
+	bool canBuild = buildCacheItem->canBuild;
+	if (canBuild) {
+	luaBuildableSquares.insert(luaBuildableSquares.end(),
+		buildCacheItem->buildableSquares.begin(),
+		buildCacheItem->buildableSquares.end());
+	} else {
+	luaUnbuildableSquares.insert(luaUnbuildableSquares.end(),
+		buildCacheItem->buildableSquares.begin(),
+		buildCacheItem->buildableSquares.end());
+	}
+	luaFeatureSquares.insert(luaFeatureSquares.end(),
+		buildCacheItem->featureSquares.begin(),
+		buildCacheItem->featureSquares.end());
+	luaIllegalSquares.insert(luaIllegalSquares.end(),
+		buildCacheItem->illegalSquares.begin(),
+		buildCacheItem->illegalSquares.end());
+
+	return canBuild;
+}
+
+void CUnitDrawerLegacy::ShowLuaBuildSquare() {
+	if (luaBuildableSquares.empty() && luaUnbuildableSquares.empty() && luaFeatureSquares.empty() && luaIllegalSquares.empty()) {
+		return;
+	}
+
+	RECOIL_DETAILED_TRACY_ZONE;
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_TEXTURE_2D);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	static constexpr std::array<float, 4> buildColorT  = { 0.0f, 0.9f, 0.0f, 0.7f };
+	static constexpr std::array<float, 4> buildColorF  = { 0.9f, 0.8f, 0.0f, 0.7f };
+	static constexpr std::array<float, 4> featureColor = { 0.9f, 0.8f, 0.0f, 0.7f };
+	static constexpr std::array<float, 4> illegalColor = { 0.9f, 0.0f, 0.0f, 0.7f };
+
+	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
+
+	auto& sh = rb.GetShader();
+
+	sh.Enable();
+
+	const float* color = &buildColorT[0];
+	for (const auto& buildableSquare : luaBuildableSquares) {
+		rb.AddQuadLines(
+			{ buildableSquare                                      , color },
+			{ buildableSquare + float3(SQUARE_SIZE, 0, 0          ), color },
+			{ buildableSquare + float3(SQUARE_SIZE, 0, SQUARE_SIZE), color },
+			{ buildableSquare + float3(0          , 0, SQUARE_SIZE), color }
+		);
+	}
+
+	color = &buildColorF[0];
+	for (const auto& unbuildableSquare : luaUnbuildableSquares) {
+		rb.AddQuadLines(
+			{ unbuildableSquare                                      , color },
+			{ unbuildableSquare + float3(SQUARE_SIZE, 0, 0          ), color },
+			{ unbuildableSquare + float3(SQUARE_SIZE, 0, SQUARE_SIZE), color },
+			{ unbuildableSquare + float3(0          , 0, SQUARE_SIZE), color }
+		);
+	}
+
+	color = &featureColor[0];
+	for (const auto& featureSquare : luaFeatureSquares) {
+		rb.AddQuadLines(
+			{ featureSquare                                      , color },
+			{ featureSquare + float3(SQUARE_SIZE, 0, 0          ), color },
+			{ featureSquare + float3(SQUARE_SIZE, 0, SQUARE_SIZE), color },
+			{ featureSquare + float3(0          , 0, SQUARE_SIZE), color }
+		);
+	}
+
+	color = &illegalColor[0];
+	for (const auto& illegalSquare : luaIllegalSquares) {
+		rb.AddQuadLines(
+			{ illegalSquare                                      , color },
+			{ illegalSquare + float3(SQUARE_SIZE, 0, 0          ), color },
+			{ illegalSquare + float3(SQUARE_SIZE, 0, SQUARE_SIZE), color },
+			{ illegalSquare + float3(0          , 0, SQUARE_SIZE), color }
+		);
+	}
+	rb.Submit(GL_LINES);
+
+	for (int i=0; i<luaBuildPos.size(); i+=2) {
+		float3 pos1 = luaBuildPos[i];
+		float3 pos2 = luaBuildPos[i+1];
+		float x1 = pos1.x, x2 = pos2.x;
+		float z1 = pos1.z, z2 = pos2.z;
+		float h = pos1.y;
+
+		if (h < 0.0f) {
+			constexpr uint8_t s[] = { 0,   0, 255, 128 }; // start color
+			constexpr uint8_t e[] = { 0, 128, 255, 255 }; // end color
+
+			rb.AddVertex({ float3(x1, h, z1), s }); rb.AddVertex({ float3(x1, 0.f, z1), e });
+			rb.AddVertex({ float3(x1, h, z2), s }); rb.AddVertex({ float3(x1, 0.f, z2), e });
+			rb.AddVertex({ float3(x2, h, z2), s }); rb.AddVertex({ float3(x2, 0.f, z2), e });
+			rb.AddVertex({ float3(x2, h, z1), s }); rb.AddVertex({ float3(x2, 0.f, z1), e });
+			rb.Submit(GL_LINES);
+
+			rb.AddVertex({ float3(x1, 0.0f, z1), e });
+			rb.AddVertex({ float3(x1, 0.0f, z2), e });
+			rb.AddVertex({ float3(x2, 0.0f, z2), e });
+			rb.AddVertex({ float3(x2, 0.0f, z1), e });
+			rb.Submit(GL_LINE_LOOP);
+		}
+	}
+
+	sh.Disable();
+
+
+	glEnable(GL_DEPTH_TEST);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	// glDisable(GL_BLEND);
+
+	luaBuildableSquares.clear();
+	luaUnbuildableSquares.clear();
+	luaFeatureSquares.clear();
+	luaIllegalSquares.clear();
+	luaBuildPos.clear();
 }
 
 void CUnitDrawerLegacy::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const

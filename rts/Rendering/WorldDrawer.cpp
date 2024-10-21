@@ -462,6 +462,7 @@ void CWorldDrawer::DrawMiscObjects() const
 
 	mouse->DrawSelectionBox();
 	guihandler->DrawMapStuff(false);
+	unitDrawer->ShowLuaBuildSquare();
 
 	if (globalRendering->drawMapMarks && !game->hideInterface) {
 		inMapDrawerView->Draw();

@@ -171,6 +171,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(AddWorldUnit);
 
 	REGISTER_LUA_CFUNC(DrawUnitCommands);
+	REGISTER_LUA_CFUNC(DrawBuildSquare);
 
 	REGISTER_LUA_CFUNC(SetTeamColor);
 
@@ -3379,6 +3380,54 @@ int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)
 		guihandler->SetBuildFacing(luaL_checkint(L, 1));
 
 	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.DrawBuildSquare
+ * @tparam {number,...} unitArray
+ * @tparam {cmdSpec,...} cmdArray
+ * @treturn {bool,...} canBuild
+ */
+int LuaUnsyncedCtrl::DrawBuildSquare(lua_State* L)
+{
+	vector<int> unitIDs;
+	ParseUnitArray(L, __func__, 1, unitIDs);
+
+	vector<Command> commands;
+	LuaUtils::ParseCommandArray(L, __func__, 2, commands);
+
+	vector<bool> canBuildVector(commands.size());
+
+	bool isQueued = !commands.empty() && (commands[0].GetOpts() & SHIFT_KEY);
+	vector<Command> conflicting;
+
+	for (int i=0; i<commands.size(); i++) {
+		Command cmd = commands[i];
+		if (cmd.GetID() >= 0) continue;
+
+		if (isQueued) {
+			conflicting.clear();
+			for (const int unitID: unitIDs) {
+				const CUnit* su = unitHandler.GetUnit(unitID);
+				const CCommandAI* cai = su->commandAI;
+				vector<Command> overlap = cai->GetOverlapQueued(cmd);
+				conflicting.insert(conflicting.end(), overlap.begin(), overlap.end());
+			}
+		}
+
+		canBuildVector[i] = unitDrawer->AddLuaBuildSquare(BuildInfo(cmd), conflicting);
+	}
+
+	lua_createtable(L, canBuildVector.size(), 0);
+	for (int i=0; i<canBuildVector.size(); i++) {
+		lua_pushboolean(L, canBuildVector[i]);
+		lua_rawseti(L, -2, 1 + i);
+	}
+
+	// TODO push canBuilds
+	return 1;
 }
 
 
