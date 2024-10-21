@@ -1,0 +1,47 @@
+name: Feature request
+description: Create a feature request
+title: '[Feature]: '
+labels: ['enhancement']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time in making a Feature Request.
+
+        - This repository is maintained by volunteers, it may take a while for them to come back to you.
+        - Remember to include sufficient details and context.
+        - If you have multiple Idea's or suggestions, please submit them in separate issues.
+        - We accept pull request. If you know how to fix it - go ahead!
+  - type: textarea
+    id: describe
+    attributes:
+      label: Describe the Feature
+      description: A clear and concise description of what the feature is.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected Behavior
+      description: If applicable, a clear and concise description of what you expect to happen in various scenario's.
+    validations:
+      required: false
+  - type: textarea
+    id: images
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your feature.
+    validations:
+      required: false
+  - type: textarea
+    id: Additional
+    attributes:
+      label: Additional context
+      description: Add any other context about the feature here.
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        _This feature request will be read by people that are unable to look into your thoughts - this request is all they have to determine the viability of the feature. The more precise your request, the easier it becomes for us to help you._
