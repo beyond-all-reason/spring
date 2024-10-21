@@ -43,7 +43,7 @@
    },
    "airmesh" : {
       "arguments" : {},
-      "cheatRequired" : false,
+      "cheatRequired" : true,
       "command" : "airmesh",
       "description" : "Show/Hide the smooth air-mesh map overlay"
    },
@@ -209,11 +209,23 @@
       "command" : "DebugPath",
       "description" : "Enable/Disable drawing of pathfinder debug-data"
    },
+   "debugshadowfrustum" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugShadowFrustum",
+      "description" : "Enable/Disable drawing of shadow frustum shape"
+   },
    "debugtraceray" : {
       "arguments" : {},
       "cheatRequired" : false,
       "command" : "DebugTraceRay",
       "description" : "Enable/Disable drawing of traceray debug-data"
+   },
+   "debugvisibility" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugVisibility",
+      "description" : "Enable/Disable drawing of visible terrain"
    },
    "decguiopacity" : {
       "arguments" : {},
@@ -237,13 +249,7 @@
       "arguments" : {},
       "cheatRequired" : true,
       "command" : "Destroy",
-      "description" : "Destroys one or multiple units by unit-ID, instantly"
-   },
-   "desync" : {
-      "arguments" : {},
-      "cheatRequired" : false,
-      "command" : "Desync",
-      "description" : "Redirects command /Desync to its synced processor"
+      "description" : "Destroys one or multiple units by unitID immediately"
    },
    "disticon" : {
       "arguments" : {},
@@ -409,8 +415,10 @@
    },
    "group" : {
       "arguments" : {
-         "<n>" : "Select group <n>",
+         "<n>" : "Select group <n>, also focuses on second call (deprecated)",
          "add <n>" : "Add current selected units to group <n>",
+         "focus <n>" : "Focus camera on group <n>",
+         "select <n>" : "Select group <n>",
          "selectadd <n>" : "Add members from group <n> to currently selected units",
          "selectclear <n>" : "Remove members from group <n> from currently selected units",
          "selecttoggle <n>" : "Toggle members from group <n> from currently selected units",
@@ -835,6 +843,12 @@
       "command" : "ReloadTextures",
       "description" : "Reloads textures"
    },
+   "remove" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Remove",
+      "description" : "Removes one or multiple units by unitID immediately, bypassing death sequence"
+   },
    "resbar" : {
       "arguments" : {},
       "cheatRequired" : false,
@@ -1071,7 +1085,7 @@
    "track" : {
       "arguments" : {
          "" : "Toggles tracking",
-         "<on|off>" : "Set tracking <on|off>"
+         "<on|off>" : "Set tracking <on|off> <unitID unitID ...>"
       },
       "cheatRequired" : false,
       "command" : "Track",

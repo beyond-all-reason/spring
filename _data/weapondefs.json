@@ -2,14 +2,15 @@
   "WeaponDefs": {
     "name": {
       "internalName": "description",
-      "description": "The descriptive name of the weapon as listed in FPS mode.",
-      "defaultValue": Weapon,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "The descriptive name of the weapon, for GUI purposes.",
+      "defaultValue": "Weapon",
+      "type": "std::string"
     },
     "weaponType": {
       "internalName": "type",
-      "defaultValue": Cannon,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "Sets weapon type, which is a bundle of behaviours and visuals (check other tags). Available types (sorted from the most general):\nCannon - ballistic projectile, defaults to 'plasma ball' visuals\nLaserCannon - non-ballistic projectile, defaults to 'slow laser' visuals (think stormtroopers)\nBeamLaser - hitscan weapon, laser visuals\nMissileLauncher - potentially homing projectile, leaves a smoke trail\nTorpedoLauncher - missile that can't exit water by default\nStarburstLauncher - missile with a vertical ascent phase at the beginning\nAircraftBomb - resolves into Torpedo or Cannon, but has support for being dropped by a bomber plane\nFlame - non-ballistic projectile, has a sprite which expands\nLightningCannon - hitscan weapon, lightning visuals\nMelee - just applies damage. No frontswing though\nDGun - deprecated, a fiery ball projectile. Has a lot of hardcoded visuals but does NOT convey 'dgun' mechanics. Prefer Cannon instead\nEmgCannon - deprecated, a version of Laser or Flame with crappy visuals\nRifle - deprecated, more or less equivalent to invisible Lightning\n",
+      "defaultValue": "Cannon",
+      "type": "std::string"
     },
     "id": {
       "internalName": "tdfId",
@@ -17,97 +18,131 @@
       "type": "int"
     },
     "customParams": {
+      "description": "A table of arbitrary string key-value pairs, for use by Lua gadgets (no engine meaning)",
       "type": "table"
     },
     "avoidFriendly": {
+      "description": "Does the weapon avoid shooting if there's allies in the way? Note that an ally can run into the projectile and it will still explode - use `collideFriendly` to avoid that",
       "defaultValue": 1,
       "type": "bool"
     },
     "avoidFeature": {
+      "description": "Does the weapon avoid shooting if there's features in the way? See remarks at `avoidFriendly`",
       "defaultValue": 1,
       "type": "bool"
     },
     "avoidNeutral": {
+      "description": "Does the weapon avoid shooting if there's neutrals in the way? Note this does not mean Gaia! See also remarks at `avoidFriendly`",
       "defaultValue": 0,
       "type": "bool"
     },
     "avoidGround": {
+      "description": "Does the weapon avoid shooting if terrain would block it? See remarks at `avoidFriendly`",
       "defaultValue": 1,
       "type": "bool"
     },
     "avoidCloaked": {
+      "description": "Does the weapon avoid shooting if there's cloaked (incl. revealed, but not decloaked) units in the way? See remarks at `avoidFriendly`",
       "defaultValue": 0,
       "type": "bool"
     },
     "collideEnemy": {
+      "description": "Does the projectile collide with enemies? Use to make sure it hits the ground, or for buffs targeting allies. Note that targeting will always target enemies anyway, and never allies. Also note there is no corresponding `avoidEnemy`",
       "defaultValue": 1,
       "type": "bool"
     },
     "collideFriendly": {
+      "description": "Does the projectile collide with allies? Note that the unit will still shoot if there are allies in the way, which is controlled separately via `avoidFriendly`.",
       "defaultValue": 1,
       "type": "bool"
     },
     "collideFeature": {
+      "description": "Does the projectile collide with features? See remarks at `collideFriendly`",
       "defaultValue": 1,
       "type": "bool"
     },
     "collideNeutral": {
+      "description": "Does the projectile collide with neutrals? Note this does not mean Gaia! See also remarks at `collideFriendly`",
+      "defaultValue": 1,
+      "type": "bool"
+    },
+    "collideFireBase": {
+      "description": "Does the projectile collide with its firebase, i.e. a transport holding the unit? Put it on marines' weapons to let them shoot out of a bunker while remaining in its colvol. There is no corresponding `avoidFirebase`.",
+      "defaultValue": 0,
+      "type": "bool"
+    },
+    "collideNonTarget": {
+      "description": "Does the projectile ghost through everything that isn't its target (incl. other enemies)? Combine with `tracks` and `impactOnly` for 'starcraft' style weapons that are largely just graphics. There is no corresponding `avoidNonTarget`.",
       "defaultValue": 1,
       "type": "bool"
     },
     "collideGround": {
+      "description": "Does the projectile collide with terrain? See remarks at `collideFriendly`",
+      "defaultValue": 1,
+      "type": "bool"
+    },
+    "collideCloaked": {
+      "description": "Does the projectile collide with cloaked (includes revealed but not decloaked) units? See remarks at `collideFriendly`",
       "defaultValue": 1,
       "type": "bool"
     },
     "damage": {
+      "description": "Damage table, indexed by armor class name",
       "type": "table"
     },
     "damage.default": {
+      "description": "The default damage used in absence of explicit per-armorclass value",
       "defaultValue": 1,
       "type": "float"
     },
-    "size": {
-      "type": "float"
-    },
     "explosionSpeed": {
+      "description": "How fast does the shockwave propagate? Note that units cannot actually dodge the shockwave (they are tagged immediately and just damaged after a delay)",
       "type": "float"
     },
     "impactOnly": {
+      "description": "Does the projectile only damage a single thing it hits? Mostly equivalent to having 0 AoE without the issues with 0. Also removes cratering.",
       "defaultValue": 0,
       "type": "bool"
     },
     "noSelfDamage": {
+      "description": "Is the unit unable to damage itself with the weapon?",
       "defaultValue": 0,
       "type": "bool"
     },
     "noExplode": {
+      "description": "The projectile will not be removed when exploding and instead continue on. It will keep exploding every sim frame while inside a collision volume, massively multiplying nominal damage.",
       "defaultValue": 0,
       "type": "bool"
     },
     "burnblow": {
       "internalName": "selfExplode",
+      "description": "For LaserCannon, expire when reaching the target (at max range otherwise). For Cannon, explode when reaching the target (keep falling otherwise). For Missile/Starburst/TorpedoLauncher, explode when running out of fuel (fall down otherwise).",
       "defaultValue": 0,
       "type": "bool"
     },
     "damageAreaOfEffect": {
       "fallbackName": "areaOfEffect",
+      "description": "The diameter (not radius!) for damage. Cratering controlled separately. Also the collision radius for projectile-based interceptors.",
       "defaultValue": 8,
       "scaleValue": 0.5,
       "scaleValueString": "0.5f",
       "type": "float"
     },
     "edgeEffectiveness": {
+      "description": "Exponent for a magic formula describing splash damage falloff. The damage always drops down to 0, this tag just controls how large the 'core' is. Can be negative for a very core-centric explosion. 0 is linear falloff with radius. 1 is no falloff.",
       "defaultValue": 0,
       "maximumValue": 1,
       "type": "float"
     },
     "collisionSize": {
+      "description": "Width for hitscan interceptors. Supposed to be collision radius for others but it's broken at the moment",
       "defaultValue": 0.05,
       "type": "float"
     },
     "weaponVelocity": {
       "internalName": "projectilespeed",
       "fallbackName": "maxVelocity",
+      "description": "Maximum speed in elmo/s (won't accelerate further on its own)",
       "defaultValue": 0,
       "minimumValue": 0.01,
       "scaleValue": 0.0333333,
@@ -115,6 +150,7 @@
       "type": "float"
     },
     "startvelocity": {
+      "description": "Initial projectile speed in elmo/s",
       "defaultValue": 0,
       "minimumValue": 0.01,
       "scaleValue": 0.0333333,
@@ -123,6 +159,7 @@
     },
     "weaponacceleration": {
       "fallbackName": "acceleration",
+      "description": "Acceleration in elmo/s^2",
       "defaultValue": 0,
       "scaleValue": 0.00111111,
       "scaleValueString": "1.0f / (GAME_SPEED * GAME_SPEED)",
@@ -130,95 +167,116 @@
     },
     "reloadTime": {
       "internalName": "reload",
+      "description": "Reload time between bursts, in seconds. Note that reloadTime starts to count down from the first round fired, not the last, so if (reloadTime < burst * burstRate) the weapon will fire continuously.",
       "defaultValue": 1,
       "type": "float"
     },
     "burstRate": {
       "internalName": "salvodelay",
+      "description": "Delay between shots within a burst, in seconds",
       "defaultValue": 0.1,
       "type": "float"
     },
     "burst": {
       "internalName": "salvosize",
+      "description": "Shots per burst. Cannot be used by #BeamLaser unless `beamburst` is used which comes with caveats.",
       "defaultValue": 1,
       "type": "int"
     },
     "projectiles": {
       "internalName": "projectilespershot",
+      "description": "Projectiles per shot. Best used in conjunction with `sprayAngle` or changing the firing piece in script using ShotX as otherwise they'll all be clumped up in one blob.",
       "defaultValue": 1,
       "type": "int"
     },
     "waterBounce": {
+      "description": "Bounces when hitting the water surface?",
       "defaultValue": 0,
       "type": "bool"
     },
     "groundBounce": {
+      "description": "Bounces when hitting terrain?",
       "defaultValue": 0,
       "type": "bool"
     },
     "bounceSlip": {
+      "description": "Horizontal velocity multiplier on bounce",
       "defaultValue": 1,
       "type": "float"
     },
     "bounceRebound": {
+      "description": "Vertical velocity multiplier on bounce",
       "defaultValue": 1,
       "type": "float"
     },
     "numBounce": {
+      "description": "How many bounces can the weapon do? Explodes on impact when cannot bounce anymore",
       "defaultValue": -1,
       "type": "int"
     },
     "impulseFactor": {
+      "description": "A multiplier to base impulse (knockback). For most weapons, base impulse is equal to applied damage. For #Melee weapons the base impulse is the hitting unit's mass.",
       "defaultValue": 1,
       "type": "float"
     },
     "impulseBoost": {
+      "description": "A flat bonus to impulse.",
       "defaultValue": 0,
       "type": "float"
     },
     "craterMult": {
       "fallbackName": "impulseFactor",
+      "description": "A multiplier to cratering strength. Applies after all other modifiers.",
       "defaultValue": 1,
       "type": "float"
     },
     "craterBoost": {
+      "description": "A flat modifier to cratering strength, applies second-last (after reduction due to altitude).",
       "defaultValue": 0,
       "type": "float"
     },
     "craterAreaOfEffect": {
       "fallbackName": "areaOfEffect",
+      "description": "Diameter of terrain deformation. Damage to units controlled separately. Keep in mind about the inner half of this is the hole, and the outer half is the raised (!) rim",
       "defaultValue": 8,
       "scaleValue": 0.5,
       "scaleValueString": "0.5f",
       "type": "float"
     },
     "waterweapon": {
+      "description": "Can the projectile travel underwater? Ability to fire underwater controlled separately via `fireSubmersed`",
       "defaultValue": 0,
       "type": "bool"
     },
     "submissile": {
+      "description": "Torpedo only. Lets torpedoes exit the water and be a missile. Lets underwater launchers shoot out-of-water targets (out-of-water launchers still cannot - use Missile instead of Torpedo for that).",
       "defaultValue": 0,
       "type": "bool"
     },
     "fireSubmersed": {
       "fallbackName": "waterweapon",
+      "description": "Can the weapon fire underwater? Requires `waterweapon`.",
       "defaultValue": 0,
       "type": "bool"
     },
     "commandfire": {
       "internalName": "manualfire",
+      "description": "Does the weapon respond to the manual fire command instead of regular attack?",
       "defaultValue": 0,
       "type": "bool"
     },
     "range": {
+      "description": "Maximum targeting range. Ballistic weapons can resolve lower due to physics. Some weapons can also fly past that range if they miss.",
       "defaultValue": 10,
       "type": "float"
     },
     "heightmod": {
+      "description": "Multiplies height difference to target, for targeting purposes. When lower than 1, the targeting volume becomes elongated vertically and the unit can target further high than normal (useful to make terrain and aircraft less punishing). At 0, the height difference component becomes completely ignored.",
       "defaultValue": 0.2,
       "type": "float"
     },
     "targetBorder": {
+      "description": "1/-1 will target the close/far edge of the colvol (instead of center). Matters for huge colvols and/or small ranges",
       "defaultValue": 0,
       "minimumValue": -1,
       "maximumValue": 1,
@@ -226,6 +284,7 @@
     },
     "cylinderTargeting": {
       "fallbackName": "cylinderTargetting",
+      "description": "Makes targeting happen in a cylinder. The height is range times this value. Zero means use the usual range (spherical or ballistic)",
       "defaultValue": 0,
       "minimumValue": 0,
       "maximumValue": 128,
@@ -237,11 +296,13 @@
       "type": "bool"
     },
     "fixedLauncher": {
+      "description": "Missile/Torpedo/Starburst only. The projectile will start aimed at the direction of the aiming piece, which is not necessarily towards the target",
       "defaultValue": 0,
       "type": "bool"
     },
     "tolerance": {
       "internalName": "maxAngle",
+      "description": "For `turret = false` only. Firing cone width, in the 16-bit legacy angular unit.",
       "defaultValue": 3000,
       "scaleValue": 9.58738e-05,
       "scaleValueString": "TAANG2RAD",
@@ -249,70 +310,83 @@
     },
     "firetolerance": {
       "internalName": "maxFireAngle",
+      "description": "Angle above which reaim (script `AimWeapon`) is forced outside the usual time-based reaim. In the legacy 16-bit angular units.",
       "defaultValue": 3640,
       "scaleValue": 9.58738e-05,
       "scaleValueString": "TAANG2RAD",
       "type": "float"
     },
     "highTrajectory": {
+      "description": "0: low trajectory, 1: high trajectory, 2: the unit will have a state toggle for the player to pick",
       "defaultValue": 2,
       "type": "int"
     },
     "trajectoryHeight": {
+      "description": "Missile/Torpedo only. Causes the missile to fly in an arc. The value is the fraction of target distance as extra arc height (e.g. at 1.0 the arc is as tall as it is long).",
       "defaultValue": 0,
       "type": "float"
     },
     "tracks": {
+      "description": "Missile/Torpedo/Starburst only. Does the projectile track its target (i.e. homing)? Requires a positive `turnRate`.",
       "defaultValue": 0,
       "type": "bool"
     },
     "wobble": {
+      "description": "Missile only. Missiles will turn towards random directions (new direction rolled every 16 sim frames). In legacy angular units per second.",
       "defaultValue": 0,
       "scaleValue": 3.19579e-06,
       "scaleValueString": "float(TAANG2RAD) / GAME_SPEED",
       "type": "float"
     },
     "dance": {
+      "description": "Missile only. Missiles will randomly shift up to this many elmos, perpendicular to their movement direction. Movement period is hardcoded to 8 sim frames",
       "defaultValue": 0,
       "scaleValue": 0.0333333,
       "scaleValueString": "1.0f / GAME_SPEED",
       "type": "float"
     },
     "gravityAffected": {
+      "description": "#DGun weapon type only. Is the dgun projectile affected by gravity? Aiming won't take this into account.",
       "defaultValue": 0,
       "type": "bool"
     },
     "myGravity": {
+      "description": "Overrides the map gravity for ballistic weapons. The default of 0.0 disables the tag in favour of map gravity.",
       "defaultValue": 0,
       "type": "float"
     },
     "canAttackGround": {
+      "description": "Can the unit target ground? Only units otherwise. Note, features are not directly targetable either way.",
       "defaultValue": 1,
       "type": "bool"
     },
     "weaponTimer": {
       "internalName": "uptime",
+      "description": "StarburstLauncher only. Seconds of vertical ascent",
       "defaultValue": 0,
       "type": "float"
     },
     "flighttime": {
-      "description": "Flighttime of missiles in seconds.",
+      "description": "Lifetime of the projectile, in seconds. Missile/Torpedo/Starburst projectiles 'lose fuel' and fall down; Cannons explode; others fade away",
       "defaultValue": 0,
       "scaleValue": 30,
       "scaleValueString": "GAME_SPEED",
       "type": "float"
     },
     "turnrate": {
+      "description": "For projectiles with `tracks`, in COB angular units (65536 is tau) per second. Also the turn rate for Starburst when they stop ascending and turn towards target (regardless of homing).",
       "defaultValue": 0,
       "scaleValue": 3.19579e-06,
       "scaleValueString": "float(TAANG2RAD) / GAME_SPEED",
       "type": "float"
     },
     "heightBoostFactor": {
+      "description": "#Cannon weapon type only. Controls the ballistic range gain/loss for height difference; larger means higher effect of range difference. -1 is derived some magic formula. Hard to tell how this stacks with `heightMod`.",
       "defaultValue": -1,
       "type": "float"
     },
     "proximityPriority": {
+      "description": "Importance of distance when picking targets. Higher means closer units are preferred more; negative values make weapons prefer distant targets.",
       "defaultValue": 1,
       "type": "float"
     },
@@ -322,59 +396,71 @@
       "type": "bool"
     },
     "accuracy": {
+      "description": "How INaccurate are entire bursts? Larger is worse, 0 is perfect accuracy. This is an angle, so long range shots are always less likely to hit than close range given same target and inaccuracy. Can improve with unit XP.",
       "defaultValue": 0,
       "tagFunction": "math::sin(x * math::PI / 0xafff)",
       "type": "float"
     },
     "sprayAngle": {
+      "description": "How inaccurate are individual projectiles in a burst?",
       "defaultValue": 0,
       "tagFunction": "math::sin(x * math::PI / 0xafff)",
       "type": "float"
     },
     "movingAccuracy": {
       "fallbackName": "accuracy",
+      "description": "Same as `accuracy` but applies when the unit is moving.",
       "defaultValue": 0,
       "tagFunction": "math::sin(x * math::PI / 0xafff)",
       "type": "float"
     },
     "targetMoveError": {
+      "description": "Fraction of target speed per second added as a random error. E.g. if target moves at 50 elmo/s and targetMoveError is 0.5 then a random vector of length up to 25 will be added to the target position",
       "defaultValue": 0,
       "type": "float"
     },
     "leadLimit": {
+      "description": "Maximum distance in elmos the unit will lead a moving target. Less than zero is unlimited.",
       "defaultValue": -1,
       "type": "float"
     },
     "leadBonus": {
+      "description": "If `leadLimit` is not unlimited, add this value multiplied by raw unit XP (not limXP) to the limit.",
       "defaultValue": 0,
       "type": "float"
     },
     "predictBoost": {
+      "description": "How well the unit leads its targets. Between 0 and 1. At pb=0 it will over- or under-estimate target speed by between 0-2x its actual value. At pb=1 it will estimate speed perfectly. Keep in mind `leadLimit` can still make it undershoot.",
       "defaultValue": 0,
       "type": "float"
     },
     "ownerExpAccWeight": {
+      "description": "How much does accuracy (but not sprayAngle!) improve with unit limXP? Multiplier for limXP which is then subtracted as a fraction (for example at limXP=0.4 and ownerExpAccWeight=2, the weapon only has 1-(0.4*2) = 20% of original inaccuracy.",
       "type": "float"
     },
     "minIntensity": {
-      "description": "The minimum percentage the weapon's damage can fall-off to over its range. Setting to 1.0 will disable fall off entirely. Unrelated to the visual-only intensity tag.",
+      "description": "BeamLaser only. The minimum percentage the weapon's damage can fall-off to over its range. Setting to 1.0 will disable fall off entirely. Unrelated to the visual-only `intensity`. Largely a duplicate of `dynDamageExp`.",
       "defaultValue": 0,
       "type": "float"
     },
     "duration": {
+      "description": "#LaserCannon only. The visual-only length of the projectile as a fraction of the per-second projectile speed.",
       "defaultValue": 0.05,
       "type": "float"
     },
     "beamtime": {
+      "description": "#BeamLaser only. The laser maintains it beam for this many seconds, spreading its damage over that time.",
       "defaultValue": 1,
       "type": "float"
     },
     "beamburst": {
+      "description": "#BeamLaser only. Lets a laser use burst mechanics, but sets `beamtime` to the duration of 1 sim frame.",
       "defaultValue": 0,
       "type": "bool"
     },
     "beamTTL": {
       "internalName": "beamLaserTTL",
+      "description": "BeamLaser and LightningCannon only. Linger time of the visual sprite, in sim frames.",
       "defaultValue": 0,
       "type": "int"
     },
@@ -384,24 +470,25 @@
       "type": "bool"
     },
     "largeBeamLaser": {
+      "description": "BeamLaser only. Enables some extra fancy texturing (NOT size). Check other Beamlaser tags for 'large'.",
       "defaultValue": 0,
       "type": "bool"
     },
     "sizeGrowth": {
+      "description": "#Flamethrower only. Visual-only radius growth in elmos per sim frame.",
       "defaultValue": 0.5,
       "type": "float"
     },
     "flameGfxTime": {
+      "description": "#Flamethrower only. Multiplier of the total range for visuals purposes. For example at 1.2, the visual will extend 20% further than max range. Should be >= 1. Exposed back to WeaponDefs as `duration` (same as the unrelated #LaserCannon tag)",
       "type": "float"
     },
     "metalPerShot": {
-      "internalName": "metalcost",
-      "defaultValue": 0,
+      "description": "Metal cost per shot. For stockpile weapons this is consumed over time, immediately on shot otherwise.",
       "type": "float"
     },
     "energyPerShot": {
-      "internalName": "energycost",
-      "defaultValue": 0,
+      "description": "Energy cost per shot. For stockpile weapons this is consumed over time, immediately on shot otherwise.",
       "type": "float"
     },
     "fireStarter": {
@@ -447,7 +534,7 @@
       "type": "int"
     },
     "interceptedByShieldType": {
-      "description": "",
+      "description": "Bitmask representing the types of shields that this weapon can intercept. Each digit of binary that is set to one means that a shield with the corresponding digit in its shieldInterceptType tag will be hit by this weapon.",
       "type": "unsigned int"
     },
     "coverage": {
@@ -620,121 +707,202 @@
       "internalName": "shieldArmorTypeName",
       "fallbackName": "shieldArmorType",
       "description": "Specifies the armorclass of the shield; you can input either an armorclass name OR a unitdef name to share that unit's armorclass",
-      "defaultValue": default,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "defaultValue": "default",
+      "type": "std::string"
     },
     "model": {
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "Name of a 3D model. Otherwise uses 2D sprites",
+      "defaultValue": "",
+      "type": "std::string"
+    },
+    "size": {
+      "description": "Size of the 2D visual sprite, if the weapon has no 'model' set.",
+      "type": "float"
+    },
+    "scarGlowColorMap": {
+      "description": "A colormap (set of RGBA tuples) for the scar decal. Will smoothly fade between these colours over its lifetime.",
+      "defaultValue": "",
+      "type": "std::string"
+    },
+    "scarIndices": {
+      "description": "A table of indices to the scar table in resources.lua",
+      "type": "table"
     },
     "explosionScar": {
+      "description": "Does the explosion leave a scar decal on the ground?",
       "defaultValue": 1,
       "type": "bool"
     },
+    "scarDiameter": {
+      "description": "Diameter of the scar decal",
+      "defaultValue": -1,
+      "type": "float"
+    },
+    "scarAlpha": {
+      "description": "Initial opacity of the scar decal (0-1)",
+      "defaultValue": 0,
+      "type": "float"
+    },
+    "scarGlow": {
+      "description": "Initial glow intensity of the scar decal (0-1)",
+      "defaultValue": 0,
+      "type": "float"
+    },
+    "scarTtl": {
+      "description": "Duration of the scar decal, in seconds",
+      "defaultValue": 0,
+      "type": "float"
+    },
+    "scarGlowTtl": {
+      "description": "Duration of the glow of the scar, in seconds",
+      "defaultValue": 0,
+      "type": "float"
+    },
+    "scarDotElimination": {
+      "description": "Specifies the exponent of dot product of projection vector and current terrain normal vector, this is used to remove to remove scar projection from surfaces that usually should not receive the ground scar effect, the exponent controls the degree of elimination. The default 0.0 means there will be no elimination at all.",
+      "defaultValue": 0,
+      "type": "float"
+    },
+    "scarProjVector": {
+      "description": "Forced direction of a ground scar projection (you can think of this technique as if the scar image was projected onto the ground from the cinema projector at certain world-space vector). If all zeroes, it will use ground normals. Realistically this should either be left at default, or set to {0, 1, 0} for orbital-type weapons",
+      "defaultValue": [ 0, 0, 0 ],
+      "type": "float4"
+    },
+    "scarColorTint": {
+      "description": "Color tint for explosion scar decal. Scaled so that 0.5 is no change, 1.0 is twice as bright.",
+      "defaultValue": [ 0.5, 0.5, 0.5 ],
+      "type": "float4"
+    },
     "alwaysVisible": {
+      "description": "Is the projectile visible regardless of sight?",
       "defaultValue": 0,
       "type": "bool"
     },
     "cameraShake": {
       "fallbackName": "damage.default",
+      "description": "Passed to the wupget:ShockFront callin as the first argument, intended for shaking the camera on particularly strong hits. Same scale as damage.",
       "defaultValue": 0,
       "minimumValue": 0,
       "type": "float"
     },
     "smokeTrail": {
+      "description": "MissileLauncher only. Does it leave a smoke trail ribbon?",
       "defaultValue": 0,
       "type": "bool"
     },
     "smokeTrailCastShadow": {
+      "description": "Does the smoke trail cast shadow?",
       "defaultValue": 1,
       "type": "bool"
     },
     "smokePeriod": {
+      "description": "Smoke trail update rate - the trail ribbon will make a new vertex this many sim frames. Use for high turn-rate homing missiles to prevent jagged edges. Smaller is smoother but more performance-heavy.",
       "defaultValue": 8,
       "type": "int"
     },
     "smokeTime": {
+      "description": "Smoke trail linger duration, in sim frames",
       "defaultValue": 60,
       "type": "int"
     },
     "smokeSize": {
+      "description": "Smoke trail size multiplier",
       "defaultValue": 7,
       "type": "float"
     },
     "smokeColor": {
+      "description": "Smoke trail brightness multiplier",
       "defaultValue": 0.65,
       "type": "float"
     },
     "castShadow": {
+      "description": "Does the projectile itself cast shadow?",
       "defaultValue": 1,
       "type": "bool"
     },
     "sizeDecay": {
+      "description": "#Cannon only. See `stages`. Size reduction per stage, as a fraction of the first stage",
       "defaultValue": 0,
       "type": "float"
     },
     "alphaDecay": {
+      "description": "#Cannon only. See `stages`. Alpha reduction for the last stage (interpolated linearly for the others).",
       "defaultValue": 1,
       "type": "float"
     },
     "separation": {
+      "description": "#Cannon only. See `stages`. Multiplier for the default distance between stages",
       "defaultValue": 1,
       "type": "float"
     },
     "noGap": {
+      "description": "#Cannon only. Makes `separation` adjust to take `sizeDecay` into account so `stages` stay adjacent.",
       "defaultValue": 1,
       "type": "bool"
     },
     "stages": {
+      "description": "#Cannon only. If `model` is not set then draw this many 2D sprites to simulate a sort of motion blur.",
       "defaultValue": 5,
       "type": "int"
     },
     "lodDistance": {
+      "description": "LaserCannon only. Distance at which rendering is simplified, without the rounded ends",
       "defaultValue": 1000,
       "type": "int"
     },
     "thickness": {
+      "description": "LaserCannon, BeamLaser and Lightning only. How thicc is the laser?",
       "defaultValue": 2,
       "type": "float"
     },
     "coreThickness": {
+      "description": "BeamLaser and LaserCannon only. Thickness of the inner core as a fraction of full thickness (0-1). Just to get a secondary color via `rgbColor2`.",
       "defaultValue": 0.25,
       "type": "float"
     },
     "laserFlareSize": {
+      "description": "BeamLaser only. Size of the flare visual effect at emit point, in elmos",
       "defaultValue": 15,
       "type": "float"
     },
     "tileLength": {
+      "description": "'Large' BeamLaser only. Length in elmos of a repeated texture tile for the beam. Regular BeamLaser just has a single stretched tile.",
       "defaultValue": 200,
       "type": "float"
     },
     "scrollSpeed": {
+      "description": "'Large' BeamLaser only. Speed in elmo/s at which the tiled beam texture shifts.",
       "defaultValue": 5,
       "type": "float"
     },
     "pulseSpeed": {
+      "description": "'Large' BeamLaser only. Frequency of beam pulsation (fade to zero alpha and back) in hertz",
       "defaultValue": 1,
       "type": "float"
     },
     "beamDecay": {
+      "description": "BeamLaser only. Controls the fadeout (multiplier for alpha per sim frame)",
       "defaultValue": 1,
       "type": "float"
     },
     "falloffRate": {
+      "description": "LaserCannon with `hardStop = false` only. How much, as a fraction, the laser fades per sim frame beyond max range. Capped to be 0.2 or above (ie. will never take more than 5 sim frames to fade completely)",
       "defaultValue": 0.5,
       "type": "float"
     },
     "hardstop": {
       "internalName": "laserHardStop",
+      "description": "LaserCannon only. If true, lasers get 'eaten up' at max range. Otherwise they continue on and fade away according to `intensityFalloff` (but can't collide anymore).",
       "defaultValue": 0,
       "type": "bool"
     },
     "rgbColor": {
+      "description": "Color of the sprite, when not using a model. #EmgCannon has a different default of 0.9/0.9/0.2.",
       "defaultValue": [ 1, 0.5, 0 ],
       "type": "float3"
     },
     "rgbColor2": {
+      "description": "BeamLaser and LaserCannon only. The color of the inner core of the sprite, see `coreThickness`.",
       "defaultValue": [ 1, 1, 1 ],
       "type": "float3"
     },
@@ -744,74 +912,88 @@
       "type": "float"
     },
     "colormap": {
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "A series of RGBA tuples. If the projectile is a sprite then it will shift over these colours over its lifetime",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "textures.1": {
       "internalName": "textures1",
       "fallbackName": "texture1",
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "When not using a model, sprite texture for AircraftBomb, Cannon, EMG, Flame; main beam texture for LaserCannon, BeamLaser, Lightning; flare texture for Missile, Starburst; dome for Shield. Note that DGun has a hardcoded texture.",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "textures.2": {
       "internalName": "textures2",
       "fallbackName": "texture2",
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "The end-of-beam texture for LaserCannon and BeamLaser (half of texture for each end); smoketrail for Missile and Starburst. Note that Torpedo has a hardcoded trail.",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "textures.3": {
       "internalName": "textures3",
       "fallbackName": "texture3",
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "Flare for non-'large' BeamLaser, or directional muzzle exhaust for 'large'; flame exhaust for Starburst.",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "textures.4": {
       "internalName": "textures4",
       "fallbackName": "texture4",
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "Flare for 'large' BeamLaser.",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "cegTag": {
       "description": "The name, without prefixes, of a CEG to be emitted by the projectile each frame.",
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "defaultValue": "",
+      "type": "std::string"
     },
     "explosionGenerator": {
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "The name, with prefix, of a CEG to be emitted on impact",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "bounceExplosionGenerator": {
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "The name, with prefix, of a CEG to be emitted when bouncing",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "soundTrigger": {
+      "description": "Does the weapon produce the shooting sound only once for the whole burst? If false, for each shot in a burst.",
       "type": "bool"
     },
     "soundStart": {
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "The sound emitted when shooting the weapon.",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "soundHitDry": {
       "fallbackName": "soundHit",
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "The sound emitted when hitting outside water. Note that a #BeamLaser will play this once per sim frame.",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "soundHitWet": {
       "fallbackName": "soundHit",
-      "defaultValue": ,
-      "type": "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >"
+      "description": "The sound emitted when hitting in water. Note that a #BeamLaser will play this once per sim frame.",
+      "defaultValue": "",
+      "type": "std::string"
     },
     "soundStartVolume": {
+      "description": "Sound volume of the shot. -1 means autogenerated from damage.",
       "defaultValue": -1,
       "type": "float"
     },
     "soundHitDryVolume": {
       "fallbackName": "soundHitVolume",
+      "description": "Sound volume of the impact, outside water. -1 means autogenerate from damage.",
       "defaultValue": -1,
       "type": "float"
     },
     "soundHitWetVolume": {
       "fallbackName": "soundHitVolume",
+      "description": "Sound volume of the impact, inside water. -1 means autogenerate from damage.",
       "defaultValue": -1,
       "type": "float"
     }

@@ -1,0 +1,558 @@
+---
+layout: default
+title: VAO
+permalink: ldoc/classes/VAO.html
+description: Vertex Array Object
+parent: Lua API
+table: 0x55f836b14d30
+---
+
+{% raw %}
+    <h1>Class <code>VAO</code></h1>
+    <p>Vertex Array Object</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="../modules/LuaVAO.html#gl.GetVAO">LuaVAO.GetVAO</a></li>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaVAOImpl.cpp">rts/Lua/LuaVAOImpl.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Methods">Methods</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#VAO:Delete">VAO:Delete</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#VAO:AttachVertexBuffer">VAO:AttachVertexBuffer</a>
+            </dt>
+            <dd>
+              Attachs a VBO to be used as a vertex buffer
+            </dd>
+            <dt>
+              <a href="#VAO:AttachInstanceBuffer">VAO:AttachInstanceBuffer</a>
+            </dt>
+            <dd>
+              Attachs a VBO to be used as an instance buffer
+            </dd>
+            <dt>
+              <a href="#VAO:AttachIndexBuffer">VAO:AttachIndexBuffer</a>
+            </dt>
+            <dd>
+              Attachs a VBO to be used as an index buffer
+            </dd>
+            <dt>
+              <a href="#VAO:DrawArrays">VAO:DrawArrays</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#VAO:DrawElements">VAO:DrawElements</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#VAO:AddUnitsToSubmission">VAO:AddUnitsToSubmission</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#VAO:AddFeaturesToSubmission">VAO:AddFeaturesToSubmission</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#VAO:AddUnitDefsToSubmission">VAO:AddUnitDefsToSubmission</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#VAO:AddFeatureDefsToSubmission">VAO:AddFeatureDefsToSubmission</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#VAO:RemoveFromSubmission">VAO:RemoveFromSubmission</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#VAO:Submit">VAO:Submit</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+
+      <h2 id="Methods" class="section-header ">
+        Methods
+      </h2>
+
+        <h3 id="VAO:Delete">
+          VAO:Delete()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:AttachVertexBuffer">
+          VAO:AttachVertexBuffer(vbo)
+        </h3>
+        <p>Attachs a VBO to be used as a vertex buffer</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>vbo</code>
+                   <strong><a class="type" href="../classes/VBO.html#">VBO</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:AttachInstanceBuffer">
+          VAO:AttachInstanceBuffer(vbo)
+        </h3>
+        <p>Attachs a VBO to be used as an instance buffer</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>vbo</code>
+                   <strong><a class="type" href="../classes/VBO.html#">VBO</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:AttachIndexBuffer">
+          VAO:AttachIndexBuffer(vbo)
+        </h3>
+        <p>Attachs a VBO to be used as an index buffer</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>vbo</code>
+                   <strong><a class="type" href="../classes/VBO.html#">VBO</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:DrawArrays">
+          VAO:DrawArrays(glEnum[, vertexCount[, vertexFirst[, instanceCount[, instanceFirst]]]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>glEnum</code>
+                   <strong><span class="type">number</span></strong>
+                    primitivesMode
+                 </li>
+                 <li>
+                   <code>vertexCount</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>vertexFirst</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>instanceCount</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>instanceFirst</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:DrawElements">
+          VAO:DrawElements(glEnum[, drawCount[, baseIndex[, instanceCount[, baseVertex[, baseInstance]]]]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>glEnum</code>
+                   <strong><span class="type">number</span></strong>
+                    primitivesMode
+                 </li>
+                 <li>
+                   <code>drawCount</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>baseIndex</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>instanceCount</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>baseVertex</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>baseInstance</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:AddUnitsToSubmission">
+          VAO:AddUnitsToSubmission(unitIDs)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitIDs</code>
+                   <strong><span class="type">number</span> or <span class="type">{number,...}</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              submittedCount</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:AddFeaturesToSubmission">
+          VAO:AddFeaturesToSubmission(featureIDs)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureIDs</code>
+                   <strong><span class="type">number</span> or <span class="type">{number,...}</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              submittedCount</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:AddUnitDefsToSubmission">
+          VAO:AddUnitDefsToSubmission(unitDefIDs)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitDefIDs</code>
+                   <strong><span class="type">number</span> or <span class="type">{number,...}</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              submittedCount</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:AddFeatureDefsToSubmission">
+          VAO:AddFeatureDefsToSubmission(featureDefIDs)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureDefIDs</code>
+                   <strong><span class="type">number</span> or <span class="type">{number,...}</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              submittedCount</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:RemoveFromSubmission">
+          VAO:RemoveFromSubmission(index)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>index</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="VAO:Submit">
+          VAO:Submit()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+
+{% endraw %}

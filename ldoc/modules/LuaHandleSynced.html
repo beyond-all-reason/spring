@@ -1,0 +1,2274 @@
+---
+layout: default
+title: LuaHandleSynced
+permalink: ldoc/modules/LuaHandleSynced.html
+description: Callins, functions called by the Engine (Synced)
+parent: Lua API
+table: 0x55f836e237c0
+---
+
+{% raw %}
+    <h1>Module <code>LuaHandleSynced</code></h1>
+    <p>Callins, functions called by the Engine (Synced)</p>
+    <p>
+
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaHandleSynced.cpp">rts/Lua/LuaHandleSynced.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Misc">Misc </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#RecvFromSynced">RecvFromSynced</a>
+            </dt>
+            <dd>
+              Receives data sent via <code>SendToUnsynced</code> callout.
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Custom_Object_Rendering">Custom Object Rendering </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#DrawUnit">DrawUnit</a>
+            </dt>
+            <dd>
+              For custom rendering of units
+            </dd>
+            <dt>
+              <a href="#DrawFeature">DrawFeature</a>
+            </dt>
+            <dd>
+              For custom rendering of features
+            </dd>
+            <dt>
+              <a href="#DrawShield">DrawShield</a>
+            </dt>
+            <dd>
+              For custom rendering of shields.
+            </dd>
+            <dt>
+              <a href="#DrawProjectile">DrawProjectile</a>
+            </dt>
+            <dd>
+              For custom rendering of weapon (&amp; other) projectiles
+            </dd>
+            <dt>
+              <a href="#DrawMaterial">DrawMaterial</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#CommandFallback">CommandFallback</a>
+            </dt>
+            <dd>
+              Called when the unit reaches an unknown command in its queue (i.e.
+            </dd>
+            <dt>
+              <a href="#AllowCommand">AllowCommand</a>
+            </dt>
+            <dd>
+              Called when the command is given, before the unit's queue is altered.
+            </dd>
+            <dt>
+              <a href="#AllowUnitCreation">AllowUnitCreation</a>
+            </dt>
+            <dd>
+              Called just before unit is created.
+            </dd>
+            <dt>
+              <a href="#AllowUnitTransfer">AllowUnitTransfer</a>
+            </dt>
+            <dd>
+              Called just before a unit is transferred to a different team.
+            </dd>
+            <dt>
+              <a href="#AllowUnitBuildStep">AllowUnitBuildStep</a>
+            </dt>
+            <dd>
+              Called just before a unit progresses its build percentage.
+            </dd>
+            <dt>
+              <a href="#AllowUnitCaptureStep">AllowUnitCaptureStep</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#AllowUnitTransport">AllowUnitTransport</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#AllowUnitTransportLoad">AllowUnitTransportLoad</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#AllowUnitTransportUnload">AllowUnitTransportUnload</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#AllowUnitCloak">AllowUnitCloak</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#AllowUnitCloak">AllowUnitCloak</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#AllowUnitKamikaze">AllowUnitKamikaze</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#AllowFeatureCreation">AllowFeatureCreation</a>
+            </dt>
+            <dd>
+              Called just before feature is created.
+            </dd>
+            <dt>
+              <a href="#AllowFeatureBuildStep">AllowFeatureBuildStep</a>
+            </dt>
+            <dd>
+              Called just before a feature changes its build percentage.
+            </dd>
+            <dt>
+              <a href="#AllowResourceLevel">AllowResourceLevel</a>
+            </dt>
+            <dd>
+              Called when a team sets the sharing level of a resource.
+            </dd>
+            <dt>
+              <a href="#AllowResourceTransfer">AllowResourceTransfer</a>
+            </dt>
+            <dd>
+              Called just before resources are transferred between players.
+            </dd>
+            <dt>
+              <a href="#AllowDirectUnitControl">AllowDirectUnitControl</a>
+            </dt>
+            <dd>
+              Determines if this unit can be controlled directly in FPS view.
+            </dd>
+            <dt>
+              <a href="#AllowBuilderHoldFire">AllowBuilderHoldFire</a>
+            </dt>
+            <dd>
+              Called when a construction unit wants to "use his nano beams".
+            </dd>
+            <dt>
+              <a href="#AllowStartPosition">AllowStartPosition</a>
+            </dt>
+            <dd>
+              Whether a start position should be allowed
+            </dd>
+            <dt>
+              <a href="#MoveCtrlNotify">MoveCtrlNotify</a>
+            </dt>
+            <dd>
+              Enable both Spring.MoveCtrl.SetCollideStop and Spring.MoveCtrl.SetTrackGround to enable this call-in.
+            </dd>
+            <dt>
+              <a href="#TerraformComplete">TerraformComplete</a>
+            </dt>
+            <dd>
+              Called when pre-building terrain levelling terraforms are completed (c.f.
+            </dd>
+            <dt>
+              <a href="#UnitPreDamaged">UnitPreDamaged</a>
+            </dt>
+            <dd>
+              Called before damage is applied to the unit, allows fine control over how much damage and impulse is applied.
+            </dd>
+            <dt>
+              <a href="#FeaturePreDamaged">FeaturePreDamaged</a>
+            </dt>
+            <dd>
+              Called before damage is applied to the feature.
+            </dd>
+            <dt>
+              <a href="#ShieldPreDamaged">ShieldPreDamaged</a>
+            </dt>
+            <dd>
+              Called before any engine shield-vs-projectile logic executes.
+            </dd>
+            <dt>
+              <a href="#AllowWeaponTargetCheck">AllowWeaponTargetCheck</a>
+            </dt>
+            <dd>
+              Determines if this weapon can automatically generate targets itself.
+            </dd>
+            <dt>
+              <a href="#AllowWeaponTarget">AllowWeaponTarget</a>
+            </dt>
+            <dd>
+              Controls blocking of a specific target from being considered during a weapon's periodic auto-targeting sweep.
+            </dd>
+            <dt>
+              <a href="#AllowWeaponInterceptTarget">AllowWeaponInterceptTarget</a>
+            </dt>
+            <dd>
+              Controls blocking of a specific intercept target from being considered during an interceptor weapon's periodic auto-targeting sweep.
+            </dd>
+        </dl>
+
+      <h2 id="Misc" class="section-header has-description">
+        Misc
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="RecvFromSynced">
+          RecvFromSynced(arg1, arg2, argn)
+        </h3>
+        <p>Receives data sent via `SendToUnsynced` callout.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>arg1</code>
+                   <strong><span class="type">any</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>arg2</code>
+                   <strong><span class="type">any</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>argn</code>
+                   <strong><span class="type">any</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Custom_Object_Rendering" class="section-header has-description">
+        Custom Object Rendering
+      </h2>
+
+        <p> For the following calls drawMode can be one of the following, notDrawing = 0, normalDraw = 1, shadowDraw = 2, reflectionDraw = 3, refractionDraw = 4, and finally gameDeferredDraw = 5 which was added in 102.0.</p>
+        <h3 id="DrawUnit">
+          DrawUnit(unitID, drawMode)
+        </h3>
+        <p>For custom rendering of units</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>drawMode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              suppressEngineDraw</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="DrawFeature">
+          DrawFeature(featureID, drawMode)
+        </h3>
+        <p>For custom rendering of features</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>drawMode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              suppressEngineDraw</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="DrawShield">
+          DrawShield(featureID, weaponID, drawMode)
+        </h3>
+        <p>For custom rendering of shields.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>weaponID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>drawMode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              suppressEngineDraw</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="DrawProjectile">
+          DrawProjectile(projectileID, drawMode)
+        </h3>
+        <p>For custom rendering of weapon (& other) projectiles</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>projectileID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>drawMode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              suppressEngineDraw</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="DrawMaterial">
+          DrawMaterial(uuid, drawMode)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>uuid</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>drawMode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              suppressEngineDraw</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="CommandFallback">
+          CommandFallback(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag)
+        </h3>
+        <p>Called when the unit reaches an unknown command in its queue (i.e.</p>
+        <div class="code-example">
+        <p>
+           one not handled by the engine).
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdParams</code>
+                   <strong><span class="type">{number,...}</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdOptions</code>
+                   <strong><span class="type">cmdOptions</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdTag</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">boolean</span></strong>
+              whether to remove the command from the queue</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowCommand">
+          AllowCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOptions, cmdTag, synced, fromLua)
+        </h3>
+        <p>Called when the command is given, before the unit's queue is altered.</p>
+        <div class="code-example">
+        <p>
+
+
+ The queue remains untouched when a command is blocked, whether it would be queued or replace the queue.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdParams</code>
+                   <strong><span class="type">{number,...}</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdOptions</code>
+                   <strong><span class="type">cmdOptions</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdTag</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>synced</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>fromLua</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether it should be let into the queue.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitCreation">
+          AllowUnitCreation(unitDefID, builderID, builderTeam, x, y, z, facing)
+        </h3>
+        <p>Called just before unit is created.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>builderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>builderTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>z</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>facing</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              allow, bool dropOrder</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitTransfer">
+          AllowUnitTransfer(unitID, unitDefID, oldTeam, newTeam, capture)
+        </h3>
+        <p>Called just before a unit is transferred to a different team.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>oldTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>newTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>capture</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the transfer is permitted.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitBuildStep">
+          AllowUnitBuildStep(builderID, builderTeam, unitID, unitDefID, part)
+        </h3>
+        <p>Called just before a unit progresses its build percentage.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>builderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>builderTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>part</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the build makes progress.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitCaptureStep">
+          AllowUnitCaptureStep(builderID, builderTeam, unitID, unitDefID, part)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>builderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>builderTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>part</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the capture makes progress.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitTransport">
+          AllowUnitTransport(transporterID, transporterUnitDefID, transporterTeam, transporteeID, transporteeUnitDefID, transporteeTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>transporterID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporterUnitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporterTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeUnitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the transport is allowed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitTransportLoad">
+          AllowUnitTransportLoad(transporterID, transporterUnitDefID, transporterTeam, transporteeID, transporteeUnitDefID, transporteeTeam, x, y, z)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>transporterID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporterUnitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporterTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeUnitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>z</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the transport load is allowed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitTransportUnload">
+          AllowUnitTransportUnload(transporterID, transporterUnitDefID, transporterTeam, transporteeID, transporteeUnitDefID, transporteeTeam, x, y, z)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>transporterID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporterUnitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporterTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeUnitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transporteeTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>z</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the transport unload is allowed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitCloak">
+          AllowUnitCloak(unitID[, enemyID])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>enemyID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether unit is allowed to cloak</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitCloak">
+          AllowUnitCloak(unitID[, objectID[, weaponNum]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>objectID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>weaponNum</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether unit is allowed to decloak</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowUnitKamikaze">
+          AllowUnitKamikaze(unitID, targetID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>targetID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether unit is allowed to selfd</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowFeatureCreation">
+          AllowFeatureCreation(featureDefID, teamID, x, y, z)
+        </h3>
+        <p>Called just before feature is created.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>z</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the creation is permitted</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowFeatureBuildStep">
+          AllowFeatureBuildStep(builderID, builderTeam, featureID, featureDefID, part)
+        </h3>
+        <p>Called just before a feature changes its build percentage.</p>
+        <div class="code-example">
+        <p>
+
+
+ Note that this is also called for resurrecting features, and for refilling features with resources before resurrection.
+ On reclaim the part values are negative, and on refill and ressurect they are positive.
+ Part is the percentage the feature be built or reclaimed per frame.
+ Eg. for a 30 workertime builder, that's a build power of 1 per frame.
+ For a 50 buildtime feature reclaimed by this builder, part will be 100/-50(/1) = -2%, or -0.02 numerically.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>builderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>builderTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>featureDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>part</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the change is permitted</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowResourceLevel">
+          AllowResourceLevel(teamID, res, level)
+        </h3>
+        <p>Called when a team sets the sharing level of a resource.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>res</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>level</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the sharing level is permitted</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowResourceTransfer">
+          AllowResourceTransfer(oldTeamID, newTeamID, res, amount)
+        </h3>
+        <p>Called just before resources are transferred between players.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>oldTeamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>newTeamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>res</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>amount</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the transfer is permitted.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowDirectUnitControl">
+          AllowDirectUnitControl(unitID, unitDefID, unitTeam, playerID)
+        </h3>
+        <p>Determines if this unit can be controlled directly in FPS view.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              allow</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowBuilderHoldFire">
+          AllowBuilderHoldFire(unitID, unitDefID, action)
+        </h3>
+        <p>Called when a construction unit wants to "use his nano beams".</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>action</code>
+                   <strong><span class="type">number</span></strong>
+                    one of following:</p>
+
+<p>   -1 Build
+   CMD.REPAIR Repair
+   CMD.RECLAIM Reclaim
+   CMD.RESTORE Restore
+   CMD.RESURRECT Resurrect
+   CMD.CAPTURE Capture
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              actionAllowed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowStartPosition">
+          AllowStartPosition(playerID, teamID, readyState, clampedX, clampedY, clampedZ, rawX, rawY, rawZ)
+        </h3>
+        <p>Whether a start position should be allowed</p>
+        <div class="code-example">
+        <p>
+
+
+ clamped{X,Y,Z} are the coordinates clamped into start-boxes, raw is where player tried to place their marker.
+
+ The readyState can be any one of:
+
+     0 - player picked a position,
+     1 - player clicked ready,
+     2 - player pressed ready OR the game was force-started (player did not click ready, but is now forcibly readied) or
+     3 - the player failed to load.
+     The default 'failed to choose' start-position is the north-west point of their startbox, or (0,0,0) if they do not have a startbox.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>readyState</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>clampedX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>clampedY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>clampedZ</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>rawX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>rawY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>rawZ</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              allow</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="MoveCtrlNotify">
+          MoveCtrlNotify(unitID, unitDefID, unitTeam, data)
+        </h3>
+        <p>Enable both Spring.MoveCtrl.SetCollideStop and Spring.MoveCtrl.SetTrackGround to enable this call-in.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>data</code>
+                   <strong><span class="type">number</span></strong>
+                    was supposed to indicate the type of notification but currently never has a value other than 1 ("unit hit the ground").
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              whether or not the unit should remain script-controlled (false) or return to engine controlled movement (true).</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="TerraformComplete">
+          TerraformComplete(unitID, unitDefID, unitTeam, buildUnitID, buildUnitDefID, buildUnitTeam)
+        </h3>
+        <p>Called when pre-building terrain levelling terraforms are completed (c.f.</p>
+        <div class="code-example">
+        <p>
+           levelGround)
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>buildUnitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>buildUnitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>buildUnitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              if true the current build order is terminated</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="UnitPreDamaged">
+          UnitPreDamaged(unitID, unitDefID, unitTeam, damage, paralyzer[, weaponDefID[, projectileID[, attackerID[, attackerDefID[, attackerTeam]]]]])
+        </h3>
+        <p>Called before damage is applied to the unit, allows fine control over how much damage and impulse is applied.</p>
+        <div class="code-example">
+        <p>
+
+
+ Called after every damage modification (even `HitByWeaponId`) but before the damage is applied
+
+ expects two numbers returned by lua code:
+ 1st is stored under *newDamage if newDamage != NULL
+ 2nd is stored under *impulseMult if impulseMult != NULL
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>damage</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>paralyzer</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>weaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+                    Synced Only
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>projectileID</code>
+                   <strong><span class="type">number</span></strong>
+                    Synced Only
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>attackerID</code>
+                   <strong><span class="type">number</span></strong>
+                    Synced Only
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>attackerDefID</code>
+                   <strong><span class="type">number</span></strong>
+                    Synced Only
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>attackerTeam</code>
+                   <strong><span class="type">number</span></strong>
+                    Synced Only
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+              number newDamage, number impulseMult</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="FeaturePreDamaged">
+          FeaturePreDamaged(featureID, featureDefID, featureTeam, damage, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)
+        </h3>
+        <p>Called before damage is applied to the feature.</p>
+        <div class="code-example">
+        <p>
+
+
+ Allows fine control over how much damage and impulse is applied.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>featureDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>featureTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>damage</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>weaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>projectileID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              newDamage</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              impulseMult</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="ShieldPreDamaged">
+          ShieldPreDamaged(projectileID, projectileOwnerID, shieldWeaponNum, shieldCarrierID, bounceProjectile, beamEmitterWeaponNum, beamEmitterUnitID, startX, startY, startZ, hitX, hitY, hitZ)
+        </h3>
+        <p>Called before any engine shield-vs-projectile logic executes.</p>
+        <div class="code-example">
+        <p>
+
+
+ If the weapon is a hitscan type (BeamLaser or LightningCanon) then proID is nil and beamEmitterWeaponNum and beamEmitterUnitID are populated instead.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>projectileID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>projectileOwnerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>shieldWeaponNum</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>shieldCarrierID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>bounceProjectile</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>beamEmitterWeaponNum</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>beamEmitterUnitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>startX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>startY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>startZ</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>hitX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>hitY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>hitZ</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              if true the gadget handles the collision event and the engine does not remove the projectile</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowWeaponTargetCheck">
+          AllowWeaponTargetCheck(attackerID, attackerWeaponNum, attackerWeaponDefID)
+        </h3>
+        <p>Determines if this weapon can automatically generate targets itself.</p>
+        <div class="code-example">
+        <p>
+           See also commandFire weaponDef tag.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>attackerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerWeaponNum</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerWeaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              allowCheck</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              ignoreCheck</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowWeaponTarget">
+          AllowWeaponTarget(attackerID, targetID, attackerWeaponNum, attackerWeaponDefID, defPriority)
+        </h3>
+        <p>Controls blocking of a specific target from being considered during a weapon's periodic auto-targeting sweep.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>attackerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>targetID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerWeaponNum</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerWeaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>defPriority</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              allowed</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              the new priority for this target (if you don't want to change it, return defPriority). Lower priority targets are targeted first.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AllowWeaponInterceptTarget">
+          AllowWeaponInterceptTarget(interceptorUnitID, interceptorWeaponID, targetProjectileID)
+        </h3>
+        <p>Controls blocking of a specific intercept target from being considered during an interceptor weapon's periodic auto-targeting sweep.</p>
+        <div class="code-example">
+        <p>
+
+
+ Only called for weaponDefIDs registered via Script.SetWatchWeapon.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>interceptorUnitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>interceptorWeaponID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>targetProjectileID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              allowed</li>
+          </ol>
+
+
+
+        </div>
+
+{% endraw %}
