@@ -1,0 +1,41 @@
+name: Engine Crash
+description: Post crash logs with translated stack traces
+title: EngineCrash [EngineVersion] at [last sane source line]
+labels: ['bug']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! This template will help you with creating a report that we can use to understand the bug.
+          - This repository is maintained by volunteers, it may take a while for them to come back to you.
+          - Remember to include sufficient details and context.
+          - If you have multiple questions, suggestions, or bugs, please submit them in separate issues.
+          - We accept pull request. If you know how to fix it - go ahead!
+  - type: textarea
+    attributes:
+      label: URL of infolog.txt
+      description: Please Provide the crash log located for the engine.
+      placeholder: https://server3.beyondallreason.info/teiserver/reports/infolog/8117
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Engine Version
+      description: Please Provide the Version of the engine the crash happened on.
+      placeholder: 105.1.1-1354-g72b2d55 bar
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Stack Trace
+      description: Translated Stack Trace with links
+      placeholder: Translated goes here, with links!
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
+    validations:
+      required: false

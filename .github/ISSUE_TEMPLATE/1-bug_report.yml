@@ -1,0 +1,51 @@
+name: Bug Report
+description: Create a report to describe a bug
+title: '[Bug]: '
+labels: ['bug']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! This template will help you with creating a report that we can use to understand the bug.
+
+        - This repository is maintained by volunteers, it may take a while for them to come back to you.
+        - Remember to include sufficient details and context.
+        - If you have multiple questions, suggestions, or bugs, please submit them in separate issues.
+        - We accept pull request. If you know how to fix it - go ahead!
+
+        Please provide the following details about the issue you encountered.
+  - type: markdown
+    attributes:
+      value: Provide a clear & concise details about the bug.
+  - type: textarea
+    id: describe
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is. Do not forget to append the game logs.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduce the bug
+      description: A clear and concise set of instructions on how to reproduce the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem.
+    validations:
+      required: false
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other context about the problem here.
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: _This bug report will be read by people that have not experienced the bug themselves - this report is all they have to investigate. The more precise your report, the easier it becomes for us to help you._
