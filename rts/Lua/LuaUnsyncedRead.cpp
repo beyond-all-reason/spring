@@ -148,8 +148,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeatureNoDraw);
 	REGISTER_LUA_CFUNC(GetFeatureEngineDrawMask);
 	REGISTER_LUA_CFUNC(GetFeatureAlwaysUpdateMatrix);
-	REGISTER_LUA_CFUNC(GetFeatureAlwaysUpdateMatrix);
 	REGISTER_LUA_CFUNC(GetFeatureDrawFlag);
+	REGISTER_LUA_CFUNC(GetFeatureSelectionVolumeData);
 
 	REGISTER_LUA_CFUNC(GetUnitTransformMatrix);
 	REGISTER_LUA_CFUNC(GetFeatureTransformMatrix);
