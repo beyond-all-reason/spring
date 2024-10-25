@@ -293,11 +293,14 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 #  So req. checks are done in the build target's CMakeLists.txt.
 find_package(SDL2)
 
+# We don't actually install this in a way that's findable with windows ATM
+if (NOT WIN32)
+	find_package_static(PNG 1.6.37 REQUIRED)	# needed for engineCommonLibraries
+endif()
 find_package_static(DevIL)
 if    (PREFER_STATIC_LIBS)
 	# dependencies of DevIL
 	find_package_static(JPEG REQUIRED)
-	find_package_static(PNG REQUIRED)
 	find_package_static(TIFF REQUIRED)
 	find_package_static(GIF REQUIRED)
 endif (PREFER_STATIC_LIBS)

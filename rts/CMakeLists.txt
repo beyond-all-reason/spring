@@ -86,7 +86,12 @@ if    (UNIX AND NOT MINGW)
 endif (UNIX AND NOT MINGW)
 
 find_package_static(ZLIB 1.2.7 REQUIRED)
-list(APPEND engineCommonLibraries ${IL_LIBRARIES} ${JPEG_LIBRARY} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${GIF_LIBRARY})
+list(APPEND engineCommonLibraries ${IL_LIBRARIES} ${JPEG_LIBRARY})
+
+if (NOT WIN32)
+	list(APPEND engineCommonLibraries PNG::PNG)
+endif()
+list(APPEND engineCommonLibraries ${TIFF_LIBRARY} ${GIF_LIBRARY})
 list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB Tracy::TracyClient)
 list(APPEND engineCommonLibraries lua luasocket archives assimp
 	gflags_nothreads_static)
