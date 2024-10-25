@@ -1,4 +1,4 @@
-# Downloaded from: http://websvn.kde.org/trunk/KDE/kdelibs/cmake/modules/
+# Downloaded from: https://github.com/KDE/kdelibs/blob/KDE/4.14/cmake/modules/FindOggVorbis.cmake
 # License: see the accompanying COPYING-CMAKE-SCRIPTS file
 #
 # Modifications:
@@ -27,10 +27,6 @@
 
 include (CheckLibraryExists)
 
-if (VORBIS_INCLUDE_DIR AND OGG_INCLUDE_DIR AND OGG_LIBRARY AND VORBIS_LIBRARY AND VORBISFILE_LIBRARY)
-	set (OggVorbis_FIND_QUIETLY TRUE)
-endif (VORBIS_INCLUDE_DIR AND OGG_INCLUDE_DIR AND OGG_LIBRARY AND VORBIS_LIBRARY AND VORBISFILE_LIBRARY)
-
 find_path(VORBIS_INCLUDE_DIR vorbis/vorbisfile.h)
 find_path(OGG_INCLUDE_DIR ogg/ogg.h)
 
@@ -39,63 +35,64 @@ find_library(VORBIS_LIBRARY NAMES libvorbis vorbis vorbis-0)
 find_library(VORBISFILE_LIBRARY NAMES libvorbisfile vorbisfile vorbisfile-3)
 find_library(VORBISENC_LIBRARY NAMES libvorbisenc vorbisenc vorbisenc-2 libvorbis vorbis)
 
+mark_as_advanced(VORBIS_INCLUDE_DIR OGG_INCLUDE_DIR
+                 OGG_LIBRARY VORBIS_LIBRARY VORBISFILE_LIBRARY VORBISENC_LIBRARY)
+
 
 if (VORBIS_INCLUDE_DIR AND VORBIS_LIBRARY AND VORBISFILE_LIBRARY AND VORBISENC_LIBRARY)
-   set(OGGVORBIS_FOUND TRUE)
-
+   
    set(OGGVORBIS_LIBRARIES ${OGG_LIBRARY} ${VORBIS_LIBRARY} ${VORBISFILE_LIBRARY} ${VORBISENC_LIBRARY})
-
+   
    set(_CMAKE_REQUIRED_LIBRARIES_TMP ${CMAKE_REQUIRED_LIBRARIES})
    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OGGVORBIS_LIBRARIES})
    check_library_exists(vorbis vorbis_bitrate_addblock "" HAVE_LIBVORBISENC2)
    set(CMAKE_REQUIRED_LIBRARIES ${_CMAKE_REQUIRED_LIBRARIES_TMP})
-
+   
    if (HAVE_LIBVORBISENC2)
       set (OGGVORBIS_VERSION 2)
    else (HAVE_LIBVORBISENC2)
       set (OGGVORBIS_VERSION 1)
    endif (HAVE_LIBVORBISENC2)
 
-else (VORBIS_INCLUDE_DIR AND VORBIS_LIBRARY AND VORBISFILE_LIBRARY AND VORBISENC_LIBRARY)
-   set (OGGVORBIS_VERSION)
-   set(OGGVORBIS_FOUND FALSE)
 endif (VORBIS_INCLUDE_DIR AND VORBIS_LIBRARY AND VORBISFILE_LIBRARY AND VORBISENC_LIBRARY)
 
 
-if (OGGVORBIS_FOUND)
-   if (NOT OggVorbis_FIND_QUIETLY)
-      message(STATUS "Found OggVorbis: ${OGGVORBIS_LIBRARIES}")
-   endif (NOT OggVorbis_FIND_QUIETLY)
-else (OGGVORBIS_FOUND)
-   if (OggVorbis_FIND_REQUIRED)
-      message(FATAL_ERROR "Could NOT find OggVorbis libraries")
-   endif (OggVorbis_FIND_REQUIRED)
-   if (NOT OggVorbis_FIND_QUITELY)
-      message(STATUS "Could NOT find OggVorbis libraries")
-   endif (NOT OggVorbis_FIND_QUITELY)
-endif (OGGVORBIS_FOUND)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(OggVorbis REQUIRED_VARS VORBIS_LIBRARY OGG_LIBRARY VORBISFILE_LIBRARY VORBISENC_LIBRARY
+                                  VORBIS_INCLUDE_DIR OGG_INCLUDE_DIR)
 
-mark_as_advanced(VORBIS_INCLUDE_DIR OGG_INCLUDE_DIR OGG_LIBRARY VORBIS_LIBRARY VORBISFILE_LIBRARY VORBISENC_LIBRARY)
-
-#check_include_files(vorbis/vorbisfile.h HAVE_VORBISFILE_H)
-#check_library_exists(ogg ogg_page_version "" HAVE_LIBOGG)
-#check_library_exists(vorbis vorbis_info_init "" HAVE_LIBVORBIS)
-#check_library_exists(vorbisfile ov_open "" HAVE_LIBVORBISFILE)
-#check_library_exists(vorbisenc vorbis_info_clear "" HAVE_LIBVORBISENC)
-#check_library_exists(vorbis vorbis_bitrate_addblock "" HAVE_LIBVORBISENC2)
-
-#if (HAVE_LIBOGG AND HAVE_VORBISFILE_H AND HAVE_LIBVORBIS AND HAVE_LIBVORBISFILE AND HAVE_LIBVORBISENC)
-#    message(STATUS "Ogg/Vorbis found")
-#    set (VORBIS_LIBS "-lvorbis -logg")
-#    set (VORBISFILE_LIBS "-lvorbisfile")
-#    set (VORBISENC_LIBS "-lvorbisenc")
-#    set (OGGVORBIS_FOUND TRUE)
-#    if (HAVE_LIBVORBISENC2)
-#        set (HAVE_VORBIS 2)
-#    else (HAVE_LIBVORBISENC2)
-#        set (HAVE_VORBIS 1)
-#    endif (HAVE_LIBVORBISENC2)
-#else (HAVE_LIBOGG AND HAVE_VORBISFILE_H AND HAVE_LIBVORBIS AND HAVE_LIBVORBISFILE AND HAVE_LIBVORBISENC)
-#    message(STATUS "Ogg/Vorbis not found")
-#endif (HAVE_LIBOGG AND HAVE_VORBISFILE_H AND HAVE_LIBVORBIS AND HAVE_LIBVORBISFILE AND HAVE_LIBVORBISENC)
-
+if (OggVorbis_FOUND)
+   if (NOT TARGET Ogg::ogg)
+      add_library(Ogg::ogg UNKNOWN IMPORTED)
+      
+      set_target_properties(Ogg::ogg PROPERTIES
+                            INTERFACE_INCLUDE_DIRECTORIES "${OGG_INCLUDE_DIR}"
+                            IMPORTED_LOCATION ${OGG_LIBRARY}
+      )
+   endif()
+   
+   if (NOT TARGET vorbis::vorbisenc)
+      add_library(vorbis::vorbisenc UNKNOWN IMPORTED)
+      
+      set_target_properties(vorbis::vorbisenc PROPERTIES
+                            IMPORTED_LOCATION ${VORBISENC_LIBRARY}
+      )
+   endif()
+   
+   if (NOT TARGET vorbis::vorbisfile)
+      add_library(vorbis::vorbisfile UNKNOWN IMPORTED)
+      
+      set_target_properties(vorbis::vorbisfile PROPERTIES
+                            IMPORTED_LOCATION ${VORBISFILE_LIBRARY}
+      )
+   endif()
+   
+   if (NOT TARGET vorbis::vorbis)
+      add_library(vorbis::vorbis UNKNOWN IMPORTED)
+      
+      set_target_properties(vorbis::vorbis PROPERTIES
+                            INTERFACE_INCLUDE_DIRECTORIES "${VORBIS_INCLUDE_DIR}"
+                            IMPORTED_LOCATION ${VORBIS_LIBRARY}
+      )
+   endif()
+endif()
