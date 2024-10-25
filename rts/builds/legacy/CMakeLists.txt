@@ -17,9 +17,9 @@ if("${SDL2_VERSION_STRING}" VERSION_LESS "2")
 endif()
 
 set(OpenGL_GL_PREFERENCE LEGACY)
-find_package_static(OpenGL REQUIRED)
+find_package_static(OpenGL 3.0 REQUIRED)
 find_package_static(GLEW 2.2.0 REQUIRED)
-list(APPEND engineLibraries ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} GLEW::GLEW)
+list(APPEND engineLibraries OpenGL::GL OpenGL::GLU GLEW::GLEW)
 
 find_fontconfig_hack()
 find_package_static(Fontconfig 2.11 REQUIRED)
