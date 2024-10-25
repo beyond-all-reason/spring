@@ -295,15 +295,13 @@ find_package(SDL2)
 
 # We don't actually install this in a way that's findable with windows ATM
 if (NOT WIN32)
-	find_package_static(PNG 1.6.37 REQUIRED)	# needed for engineCommonLibraries
+	# needed for engineCommonLibraries on linux
+	find_package_static(PNG 1.6.37 REQUIRED)
+	find_package_static(TIFF 4.1.0 REQUIRED)
+	find_package_static(JPEG 90 REQUIRED)
+	find_package_static(GIF 5.2.1 REQUIRED)
 endif()
-find_package_static(DevIL)
-if    (PREFER_STATIC_LIBS)
-	# dependencies of DevIL
-	find_package_static(JPEG REQUIRED)
-	find_package_static(TIFF REQUIRED)
-	find_package_static(GIF REQUIRED)
-endif (PREFER_STATIC_LIBS)
+find_package_static(DevIL 1.8.0 REQUIRED)
 
 if    (WIN32)
 	find_package(Windres REQUIRED)
