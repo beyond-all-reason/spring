@@ -18,9 +18,8 @@ endif()
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package_static(OpenGL REQUIRED)
-find_package_static(GLEW 1.5.1 REQUIRED)
-list(APPEND engineLibraries ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${GLEW_LIBRARIES})
-list(APPEND engineIncludes ${GLEW_INCLUDE_DIR})
+find_package_static(GLEW 2.2.0 REQUIRED)
+list(APPEND engineLibraries ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} GLEW::GLEW)
 
 find_package_static(FontConfig)
 if    (FONTCONFIG_FOUND)
