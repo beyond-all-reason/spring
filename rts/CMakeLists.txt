@@ -85,9 +85,9 @@ if    (UNIX AND NOT MINGW)
 	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 endif (UNIX AND NOT MINGW)
 
-find_package_static(ZLIB REQUIRED)
+find_package_static(ZLIB 1.2.7 REQUIRED)
 list(APPEND engineCommonLibraries ${IL_LIBRARIES} ${JPEG_LIBRARY} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${GIF_LIBRARY})
-list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY} Tracy::TracyClient)
+list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB Tracy::TracyClient)
 list(APPEND engineCommonLibraries lua luasocket archives assimp
 	gflags_nothreads_static)
 if(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
@@ -96,8 +96,6 @@ endif(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 if (ENABLE_STREFLOP)
 	list(APPEND engineCommonLibraries streflop)
 endif ()
-
-include_directories(${ZLIB_INCLUDE_DIR})
 
 if (WIN32)
 	list(APPEND engineCommonLibraries ${WIN32_LIBRARIES})
