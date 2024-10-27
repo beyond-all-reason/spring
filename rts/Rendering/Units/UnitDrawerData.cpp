@@ -244,7 +244,7 @@ void CUnitDrawerData::UpdateGhostedBuildings()
 	}
 }
 
-void CUnitDrawerData::UpdateCurrentUnitIcon(CUnit* unit)
+void CUnitDrawerData::UpdateCurrentUnitIcon(const CUnit* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
@@ -543,7 +543,7 @@ void CUnitDrawerData::RenderUnitCreated(const CUnit* unit, int cloaked)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(std::find(unsortedObjects.begin(), unsortedObjects.end(), unit) != unsortedObjects.end());
-	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
+	UpdateCurrentUnitIcon(unit);
 }
 
 void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
@@ -590,7 +590,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 	}
 
 	DelObject(unit, true);
-	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
+	UpdateCurrentUnitIcon(unit);
 
 	LuaObjectDrawer::SetObjectLOD(u, LUAOBJ_UNIT, 0);
 }
@@ -601,7 +601,7 @@ void CUnitDrawerData::UnitEnteredRadar(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
+	UpdateCurrentUnitIcon(unit);
 }
 
 void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
@@ -615,7 +615,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
+	UpdateCurrentUnitIcon(unit);
 }
 
 void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
@@ -629,5 +629,5 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
-	UpdateCurrentUnitIcon(const_cast<CUnit*>(unit));
+	UpdateCurrentUnitIcon(unit);
 }

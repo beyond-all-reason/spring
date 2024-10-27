@@ -139,7 +139,7 @@ public:
 protected:
 	void UpdateObjectDrawFlags(CSolidObject* o) const override;
 private:
-	void UpdateCurrentUnitIcon(CUnit* unit);
+	void UpdateCurrentUnitIcon(const CUnit* unit);
 
 	void UpdateTempDrawUnits(std::vector<TempDrawUnit>& tempDrawUnits);
 

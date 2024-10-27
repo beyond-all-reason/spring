@@ -555,8 +555,8 @@ public:
 
 	float iconRadius = 0.0f;
 
-	std::string definedIconName;
-	size_t currentIconIndex = size_t(-1); // icon::INVALID_ICON_INDEX;
+	mutable std::string definedIconName;
+	mutable size_t currentIconIndex = size_t(-1); // icon::INVALID_ICON_INDEX;
 
 	bool drawIcon = true;
 private:
