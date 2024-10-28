@@ -314,7 +314,7 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	float iconSizeMult = iconData.GetSize();
 	if (iconData.GetRadiusAdjust())
 		iconSizeMult *= (unit->radius / iconData.GetRadiusScale());
-	iconSizeMult = (iconSizeMult - 1) * 0.75 + 1;
+	iconSizeMult = iconSizeMult * 0.75f + 0.25f;
 
 	float limit = iconSizeBase / 2 * iconSizeMult;
 
@@ -334,7 +334,7 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 
 	// don't render unit's model if it is smaller than icon by 10% in screen space
 	// render it anyway in case icon isn't completely opaque (below FadeStart distance)
-	unit->SetIsIcon(iconZoomDist / iconSizeMult > iconFadeStart && std::abs(pos.x - radiusPos.x) < limit * 0.9);
+	unit->SetIsIcon(iconZoomDist > iconFadeStart * iconSizeMult && std::abs(pos.x - radiusPos.x) < limit * 0.9);
 }
 
 void CUnitDrawerData::UpdateDrawPos(CUnit* u)

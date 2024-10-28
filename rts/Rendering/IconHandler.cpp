@@ -181,6 +181,7 @@ void CIconHandler::Update()
 			bool res = bm.Load(*allFiles.begin());
 			assert(res);
 
+			glDeleteTextures(1, &atlasTextureIDs[i]);
 			atlasTextureIDs[i] = bm.CreateMipMapTexture();
 
 			const auto& uniqueSubTexMap = atlas.GetUniqueSubTexMap();
@@ -216,6 +217,7 @@ void CIconHandler::Update()
 		}
 
 		//atlas.DumpTexture();
+		glDeleteTextures(1, &atlasTextureIDs[i]);
 		atlasTextureIDs[i] = atlas.DisownTexture();
 
 		atlasNeedsUpdate.reset(i);
