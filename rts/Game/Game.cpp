@@ -1263,12 +1263,10 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	SCOPED_TIMER("Update");
 
 	// timings and frame interpolation
-	const spring_time deltaDrawFrameTime = currentTime - lastDrawFrameTime;
+	const spring_time deltaDrawFrameTime = currentTime - globalRendering->lastFrameStart;
 
 	const float modGameDeltaTimeSecs = mix(deltaDrawFrameTime.toMilliSecsf() * 0.001f, 0.01f, skipping);
 	const float unsyncedUpdateDeltaTime = (currentTime - lastUnsyncedUpdateTime).toSecsf();
-
-	lastDrawFrameTime = currentTime;
 
 	{
 		// update game timings
@@ -1599,6 +1597,8 @@ bool CGame::Draw() {
 
 	eventHandler.DbgTimingInfo(TIMING_VIDEO, currentTimePreDraw, currentTimePostDraw);
 	globalRendering->SetGLTimeStamp(CGlobalRendering::FRAME_END_TIME_QUERY_IDX);
+
+	lastDrawFrameTime = currentTimePostDraw;
 
 	return true;
 }
