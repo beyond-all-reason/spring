@@ -214,10 +214,6 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		font->glFormat(drawArea[0], drawArea[3], 0.7f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "ThreadPool (%.1f seconds :: %u threads)", MAX_THREAD_HIST_TIME, numThreads);
 	}
 	{
-		// need to lock; DrawTimeSlice pop_front()'s old entries from
-		// threadProf while ~ScopedMtTimer can modify it concurrently
-		profiler.ToggleLock(true);
-
 		// bars for each pool-thread profile
 		// Create a virtual row at the top to give some space to see the threads without the title getting in the way.
 		size_t i = 0;
@@ -229,8 +225,6 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 			drawArea2[3] = drawArea[1] + ((drawArea[3] - drawArea[1]) / numRows) * i - (4 * globalRendering->pixelY);
 			DrawTimeSlices(threadProf, maxTime, drawArea2, {1.0f, 0.0f, 0.0f, 0.6f});
 		}
-
-		profiler.ToggleLock(false);
 	}
 	{
 		// feeder
@@ -671,5 +665,18 @@ void ProfileDrawer::Update()
 	DiscardOldTimeSlices(swpFrames, curTime, maxTime);
 	DiscardOldTimeSlices(vidFrames, curTime, maxTime);
 	DiscardOldTimeSlices(simFrames, curTime, maxTime);
+
+	auto& profiler = CTimeProfiler::GetInstance();
+	const size_t numThreads = std::min(profiler.GetNumThreadProfiles(), (size_t)ThreadPool::GetNumThreads());
+	size_t i = 0;
+
+	// need to lock; DrawTimeSlice pop_front()'s old entries from
+	// threadProf while ~ScopedMtTimer can modify it concurrently
+	profiler.ToggleLock(true);
+	for (auto& threadProf: profiler.GetThreadProfiles()) {
+		if (i++ >= numThreads) break;
+		DiscardOldTimeSlices(threadProf, curTime, maxTime);
+	}
+	profiler.ToggleLock(false);
 }
 
