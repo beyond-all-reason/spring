@@ -333,6 +333,7 @@ void CTimeProfiler::RefreshProfilesRaw()
 
 void CTimeProfiler::CleanupOldThreadProfiles()
 {
+	#ifdef THREADPOOL
 	const spring_time curTime = spring_gettime();
 	const spring_time maxTime = spring_secs(MAX_THREAD_HIST_TIME);
 	const size_t numThreads = std::min(threadProfiles.size(), (size_t)ThreadPool::GetNumThreads());
@@ -344,6 +345,7 @@ void CTimeProfiler::CleanupOldThreadProfiles()
 			threadProf.pop_front();
 		}
 	}
+	#endif
 }
 
 const CTimeProfiler::TimeRecord& CTimeProfiler::GetTimeRecord(const char* name) const
