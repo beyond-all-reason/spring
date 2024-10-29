@@ -660,12 +660,14 @@ void ProfileDrawer::Update()
 	const spring_time curTime = spring_now();
 	const spring_time maxTime = spring_secs(MAX_THREAD_HIST_TIME);
 
+	// cleanup old frame records
 	DiscardOldTimeSlices(lgcFrames, curTime, maxTime);
 	DiscardOldTimeSlices(uusFrames, curTime, maxTime);
 	DiscardOldTimeSlices(swpFrames, curTime, maxTime);
 	DiscardOldTimeSlices(vidFrames, curTime, maxTime);
 	DiscardOldTimeSlices(simFrames, curTime, maxTime);
 
+	// cleanup old records from the ThreadProfiles
 	auto& profiler = CTimeProfiler::GetInstance();
 	const size_t numThreads = std::min(profiler.GetNumThreadProfiles(), (size_t)ThreadPool::GetNumThreads());
 	size_t i = 0;
