@@ -30,7 +30,6 @@
 
 ProfileDrawer* ProfileDrawer::instance = nullptr;
 
-static constexpr float MAX_THREAD_HIST_TIME = 0.5f; // secs
 static constexpr float MAX_FRAMES_HIST_TIME = 0.5f; // secs
 
 static constexpr float  MIN_X_COOR = 0.6f;
@@ -214,6 +213,12 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		font->glFormat(drawArea[0], drawArea[3], 0.7f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "ThreadPool (%.1f seconds :: %u threads)", MAX_THREAD_HIST_TIME, numThreads);
 	}
 	{
+		// Need to lock; CleanupOldThreadProfiles pop_front()'s old entries
+		// from threadProf while ~ScopedMtTimer can modify it concurrently.
+		// Also, TimeProfiler could cleanup too while we're doing this.
+		profiler.ToggleLock(true);
+		profiler.CleanupOldThreadProfiles();
+
 		// bars for each pool-thread profile
 		// Create a virtual row at the top to give some space to see the threads without the title getting in the way.
 		size_t i = 0;
@@ -225,6 +230,8 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 			drawArea2[3] = drawArea[1] + ((drawArea[3] - drawArea[1]) / numRows) * i - (4 * globalRendering->pixelY);
 			DrawTimeSlices(threadProf, maxTime, drawArea2, {1.0f, 0.0f, 0.0f, 0.6f});
 		}
+
+		profiler.ToggleLock(false);
 	}
 	{
 		// feeder
@@ -658,7 +665,7 @@ void ProfileDrawer::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const spring_time curTime = spring_now();
-	const spring_time maxTime = spring_secs(MAX_THREAD_HIST_TIME);
+	const spring_time maxTime = spring_secs(MAX_FRAMES_HIST_TIME);
 
 	// cleanup old frame records
 	DiscardOldTimeSlices(lgcFrames, curTime, maxTime);
@@ -667,18 +674,6 @@ void ProfileDrawer::Update()
 	DiscardOldTimeSlices(vidFrames, curTime, maxTime);
 	DiscardOldTimeSlices(simFrames, curTime, maxTime);
 
-	// cleanup old records from the ThreadProfiles
-	auto& profiler = CTimeProfiler::GetInstance();
-	const size_t numThreads = std::min(profiler.GetNumThreadProfiles(), (size_t)ThreadPool::GetNumThreads());
-	size_t i = 0;
-
-	// need to lock; DrawTimeSlice pop_front()'s old entries from
-	// threadProf while ~ScopedMtTimer can modify it concurrently
-	profiler.ToggleLock(true);
-	for (auto& threadProf: profiler.GetThreadProfiles()) {
-		if (i++ >= numThreads) break;
-		DiscardOldTimeSlices(threadProf, curTime, maxTime);
-	}
-	profiler.ToggleLock(false);
+	// old ThreadProfile records get cleaned up inside TimeProfiler and DrawThreadBarcode
 }
 
