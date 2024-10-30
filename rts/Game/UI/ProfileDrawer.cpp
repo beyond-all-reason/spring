@@ -215,7 +215,6 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 	{
 		// Need to lock; CleanupOldThreadProfiles pop_front()'s old entries
 		// from threadProf while ~ScopedMtTimer can modify it concurrently.
-		// Also, TimeProfiler could cleanup too while we're doing this.
 		profiler.ToggleLock(true);
 		profiler.CleanupOldThreadProfiles();
 
