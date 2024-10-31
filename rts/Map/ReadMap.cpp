@@ -191,6 +191,7 @@ void CReadMap::Serialize(creg::ISerializer* s)
 	SerializeMapChangesBeforeMatch(s);
 	SerializeMapChangesDuringMatch(s);
 	SerializeTypeMap(s);
+	SerializeMetalMap(s);
 }
 
 void CReadMap::SerializeMapChangesBeforeMatch(creg::ISerializer* s)
@@ -260,6 +261,19 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 	FreeInfoMap("type", iotm);
 }
 
+void CReadMap::SerializeMetalMap(creg::ISerializer* s)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	// Metal extraction map is updated by ExtractorBuildings.
+	assert(metalMap.GetSizeX()*metalMap.GetSizeZ() == (tbi.width * tbi.height));
+
+	float *const extractionMap = const_cast<float *const>(metalMap.GetExtractionMap());
+
+	const int width = metalMap.GetSizeX();
+	const int height = metalMap.GetSizeZ();
+
+	s->Serialize(extractionMap, width*height*sizeof(float));
+}
 
 void CReadMap::PostLoad()
 {
