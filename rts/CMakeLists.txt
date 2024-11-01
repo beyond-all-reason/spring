@@ -87,7 +87,7 @@ endif (UNIX AND NOT MINGW)
 find_package_static(ZLIB 1.2.7 REQUIRED)
 list(APPEND engineCommonLibraries DevIL::IL)
 
-if (NOT WIN32)
+if (PREFER_STATIC_LIBS)
 	list(APPEND engineCommonLibraries PNG::PNG TIFF::TIFF JPEG::JPEG GIF::GIF)
 endif()
 list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB Tracy::TracyClient)
