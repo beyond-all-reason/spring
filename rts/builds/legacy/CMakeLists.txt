@@ -9,12 +9,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 
 
 ### Assemble libraries
-find_package(SDL2 REQUIRED)
-set(engineIncludes ${SDL2_INCLUDE_DIR})
-set(engineLibraries ${SDL2_LIBRARY})
-if("${SDL2_VERSION_STRING}" VERSION_LESS "2")
-	message(FATAL_ERROR "Found SDL v${SDL2_VERSION_STRING} while 2 is required!")
-endif()
+find_package(SDL2 MODULE REQUIRED)
+set(engineLibraries SDL2::SDL2)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package_static(OpenGL 3.0 REQUIRED)
