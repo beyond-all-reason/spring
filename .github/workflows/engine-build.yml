@@ -147,15 +147,14 @@ jobs:
           ./package.sh
 
           EOF
-      # TODO: Commented as this step is at the moment useless because artifacts
-      # are neither publickly accesible nor used in any next steps so for now
-      # it's more of an example that needs to be changed to something useful.
-      # - name: Save
-      #   if: github.event_name != 'pull_request'
-      #   uses: namespace-actions/upload-artifact@v0
-      #   with:
-      #     name: output-${{ matrix.system }}
-      #     path: ./artifacts
+      # TODO: Switch to publickly accessible storage
+      - name: Save
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ matrix.system }}
+          path: ./artifacts
+          compression-level: 0  # already compressed
       - name: Unmount bazel remote overlay
         if: always() && steps.mount-overlay.outcome == 'success'
         run: |
