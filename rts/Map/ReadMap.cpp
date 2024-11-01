@@ -191,6 +191,7 @@ void CReadMap::Serialize(creg::ISerializer* s)
 	SerializeMapChangesBeforeMatch(s);
 	SerializeMapChangesDuringMatch(s);
 	SerializeTypeMap(s);
+	s->SerializeObjectInstance(&metalMap, metalMap.GetClass());
 }
 
 void CReadMap::SerializeMapChangesBeforeMatch(creg::ISerializer* s)
