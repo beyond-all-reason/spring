@@ -163,7 +163,6 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 		featureDrawer->DrawAlphaPass(true);
 		projectileDrawer->DrawAlpha(true, false, true, false);
 		// sun-disc does not blend well with water
-		// sky->DrawSun();
 
 		eventHandler.DrawWorldReflection();
 		glDisable(GL_CLIP_PLANE2);

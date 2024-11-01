@@ -309,15 +309,12 @@ void CWorldDrawer::Draw() const
 	camera->Update();
 
 	DrawOpaqueObjects();
-	ISky::GetSky()->Draw();
 	DrawAlphaObjects();
-
-	ISky::GetSky()->DrawSun();
-
 	{
 		SCOPED_TIMER("Draw::World::DrawWorld");
 		eventHandler.DrawWorld();
 	}
+
 
 	DrawMiscObjects();
 	DrawBelowWaterOverlay();
@@ -347,6 +344,12 @@ void CWorldDrawer::DrawOpaqueObjects() const
 			grassDrawer->Draw();
 		}
 		smoothHeightMeshDrawer->Draw(1.0f);
+	}
+
+	// not an opaque rendering, but makes sense to run after the terrain was rendered
+	{
+		const auto& sky = ISky::GetSky();
+		sky->Draw();
 	}
 
 	selectedUnitsHandler.Draw();
