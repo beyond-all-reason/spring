@@ -275,6 +275,8 @@ public:
 
 		std::vector<int> scarIdcs;
 
+		std::array<float3, 4> animParams;
+
 		bool explosionScar = true;
 		bool smokeTrail = false;
 		bool smokeTrailCastShadow = true;

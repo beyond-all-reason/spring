@@ -236,6 +236,10 @@ WEAPONTAG(float4, scarProjVector, visuals.scarProjVector).defaultValue(float4{0.
 WEAPONTAG(float4, scarColorTint, visuals.scarColorTint).defaultValue(float4{0.5f, 0.5f, 0.5f, 0.5f }).description("Color tint for explosion scar decal. Scaled so that 0.5 is no change, 1.0 is twice as bright.");
 WEAPONTAG(bool, alwaysVisible, visuals.alwaysVisible).defaultValue(false).description("Is the projectile visible regardless of sight?");
 WEAPONTAG(float, cameraShake).fallbackName("damage.default").defaultValue(0.0f).minimumValue(0.0f).description("Passed to the wupget:ShockFront callin as the first argument, intended for shaking the camera on particularly strong hits. Same scale as damage.");
+WEAPONTAG(float3, animParams1, visuals.animParams[0]).fallbackName("animParams").defaultValue(float3{ 1.0f, 1.0f, 30.0f }).description("Used to do flipbook style animation of texture1");
+WEAPONTAG(float3, animParams2, visuals.animParams[1]).fallbackName("animParams").defaultValue(float3{ 1.0f, 1.0f, 30.0f }).description("Used to do flipbook style animation of texture2");
+WEAPONTAG(float3, animParams3, visuals.animParams[2]).fallbackName("animParams").defaultValue(float3{ 1.0f, 1.0f, 30.0f }).description("Used to do flipbook style animation of texture3");
+WEAPONTAG(float3, animParams4, visuals.animParams[3]).fallbackName("animParams").defaultValue(float3{ 1.0f, 1.0f, 30.0f }).description("Used to do flipbook style animation of texture4");
 
 // Missile
 WEAPONTAG(bool, smokeTrail, visuals.smokeTrail).defaultValue(false).description("MissileLauncher only. Does it leave a smoke trail ribbon?");
