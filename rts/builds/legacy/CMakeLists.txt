@@ -55,7 +55,6 @@ list(APPEND engineLibraries RmlUi::Debugger)
 list(APPEND engineLibraries lunasvg)
 
 ### Assemble external incude dirs
-list(APPEND engineIncludes ${OPENAL_INCLUDE_DIR})
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/cereal/include)
