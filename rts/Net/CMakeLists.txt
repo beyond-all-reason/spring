@@ -6,7 +6,6 @@ make_global_var(sources_engine_NetServer
 		"${CMAKE_CURRENT_SOURCE_DIR}/Protocol/BaseNetProtocol.cpp"
 	)
 set(sources_engine_NetClient
-		"${CMAKE_CURRENT_SOURCE_DIR}/Protocol/NetStructs.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Protocol/NetProtocol.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/NetCommands.cpp"
 	)

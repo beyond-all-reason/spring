@@ -9,7 +9,6 @@
 #include "StringSerializer.h"
 
 #include "Net/Protocol/BaseNetProtocol.h"
-#include "Net/Protocol/NetStructs.h"
 #include "System/LoadSave/DemoReader.h"
 #include "System/Net/RawPacket.h"
 #include "Sim/Units/CommandAI/Command.h"
@@ -41,10 +40,6 @@ void WriteTeamstatHistory(CDemoReader& reader, unsigned team, const std::string&
 int main (int argc, char* argv[])
 {
 	std::string filename;
-
-	NetStruct<NETMSG_QUIT> ns("fuck off");
-	auto sp = ns.ToSharedPacket();
-	auto bns = BaseNetStruct::FromSharedPacket(sp);
 
 	gflags::SetUsageMessage(std::string("Usage: ") + argv[0] + " [options] path_to_demo.sdfz");
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
