@@ -294,13 +294,6 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 find_package(SDL2)
 
 find_package_static(DevIL 1.8.0 REQUIRED)
-if (PREFER_STATIC_LIBS)
-	# needed for engineCommonLibraries on linux
-	find_package_static(PNG 1.6.37 REQUIRED)
-	find_package_static(TIFF 4.1.0 REQUIRED)
-	find_package_static(JPEG 90 REQUIRED)
-	find_package_static(GIF 5.2.1 REQUIRED)
-endif()
 
 if    (WIN32)
 	find_package(Windres REQUIRED)
