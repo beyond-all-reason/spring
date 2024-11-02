@@ -59,12 +59,12 @@ set(demoToolSpringSources
 
 list(APPEND demoToolSpringSources ${PLATFORM_SRCS})
 
-add_executable(demotool EXCLUDE_FROM_ALL DemoTool ${demoToolSpringSources})
+add_executable(demotool EXCLUDE_FROM_ALL DemoTool.cpp ${demoToolSpringSources})
 if (MINGW)
 	# To enable console output/force a console window to open
 	set_target_properties(demotool PROPERTIES LINK_FLAGS "-Wl,-subsystem,console")
 endif (MINGW)
-#add_definitions(-DNOT_USING_CREG)
+
 target_link_libraries(demotool
 		${SPRING_MINIZIP_LIBRARY}
 		gflags_nothreads_static
