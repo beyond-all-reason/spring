@@ -194,6 +194,7 @@ void CCameraHandler::Init()
 void CCameraHandler::Kill()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	configHandler->RemoveObserver(this);
 	KillControllers();
 }
 
