@@ -218,6 +218,7 @@ struct SUnitDestroyedEvent {
 	 * or the attacker is not visible and cheat events are off
 	 */
 	int attacker;
+	int weaponDefID;
 }; //$ EVENT_UNIT_DESTROYED INTERFACES:Unit(unit),UnitLifeState()
 
 /**

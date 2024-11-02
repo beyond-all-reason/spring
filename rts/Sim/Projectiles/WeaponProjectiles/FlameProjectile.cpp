@@ -11,6 +11,8 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CFlameProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CFlameProjectile,(
@@ -40,6 +42,7 @@ CFlameProjectile::CFlameProjectile(const ProjectileParams& params): CWeaponProje
 
 void CFlameProjectile::Collision()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3& norm = CGround::GetNormal(pos.x, pos.z);
 	const float ns = speed.dot(norm);
 
@@ -51,6 +54,7 @@ void CFlameProjectile::Collision()
 
 void CFlameProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!luaMoveCtrl) {
 		SetPosition(pos + speed);
 		UpdateGroundBounce();
@@ -72,13 +76,16 @@ void CFlameProjectile::Update()
 
 void CFlameProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
+
+	UpdateWeaponAnimParams();
 
 	unsigned char col[4];
 	weaponDef->visuals.colorMap->GetColor(col, curTime);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<1>(
 		{ drawPos - camera->GetRight() * radius - camera->GetUp() * radius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, col },
 		{ drawPos + camera->GetRight() * radius - camera->GetUp() * radius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, col },
 		{ drawPos + camera->GetRight() * radius + camera->GetUp() * radius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   col },
@@ -88,6 +95,7 @@ void CFlameProjectile::Draw()
 
 int CFlameProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -102,5 +110,6 @@ int CFlameProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, 
 
 int CFlameProjectile::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 1 * validTextures[0];
 }

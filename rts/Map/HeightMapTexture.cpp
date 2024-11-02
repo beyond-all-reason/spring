@@ -10,9 +10,12 @@
 
 #include <cstring>
 
+#include "System/Misc/TracyDefs.h"
+
 HeightMapTexture* heightMapTexture = nullptr;
 HeightMapTexture::HeightMapTexture(): CEventClient("[HeightMapTexture]", 2718965, false)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.AddClient(this);
 	Init();
 }
@@ -20,6 +23,7 @@ HeightMapTexture::HeightMapTexture(): CEventClient("[HeightMapTexture]", 2718965
 
 HeightMapTexture::~HeightMapTexture()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Kill();
 	eventHandler.RemoveClient(this);
 }
@@ -27,9 +31,8 @@ HeightMapTexture::~HeightMapTexture()
 
 void HeightMapTexture::Init()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(readMap != nullptr);
-	if (!GLEW_ARB_texture_float || !GLEW_ARB_texture_non_power_of_two)
-		return;
 
 	// corner-heightmap dimensions
 	xSize = mapDims.mapxp1;
@@ -57,6 +60,7 @@ void HeightMapTexture::Init()
 
 void HeightMapTexture::Kill()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &texID);
 
 	texID = 0;

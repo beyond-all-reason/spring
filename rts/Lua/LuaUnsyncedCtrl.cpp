@@ -2,6 +2,7 @@
 
 #include "LuaUnsyncedCtrl.h"
 
+#include "Game/Camera/DollyController.h"
 #include "LuaConfig.h"
 #include "LuaInclude.h"
 #include "LuaHandle.h"
@@ -158,6 +159,17 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetCameraState);
 	REGISTER_LUA_CFUNC(SetCameraTarget);
 
+	REGISTER_LUA_CFUNC(RunDollyCamera);
+	REGISTER_LUA_CFUNC(PauseDollyCamera);
+	REGISTER_LUA_CFUNC(ResumeDollyCamera);
+	REGISTER_LUA_CFUNC(SetDollyCameraMode);
+	REGISTER_LUA_CFUNC(SetDollyCameraPosition);
+	REGISTER_LUA_CFUNC(SetDollyCameraCurve);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookCurve);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookPosition);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookUnit);
+	REGISTER_LUA_CFUNC(SetDollyCameraRelativeMode);
+
 	REGISTER_LUA_CFUNC(DeselectUnit);
 	REGISTER_LUA_CFUNC(DeselectUnitMap);
 	REGISTER_LUA_CFUNC(DeselectUnitArray);
@@ -228,6 +240,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetConfigString);
 
 	REGISTER_LUA_CFUNC(CreateDir);
+	REGISTER_LUA_CFUNC(AllocateTable);
 
 	REGISTER_LUA_CFUNC(SendCommands);
 	REGISTER_LUA_CFUNC(GiveOrder);
@@ -312,8 +325,11 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetGroundDecalQuadPosAndHeight);
 	REGISTER_LUA_CFUNC(SetGroundDecalRotation);
 	REGISTER_LUA_CFUNC(SetGroundDecalTexture);
+	REGISTER_LUA_CFUNC(SetGroundDecalTextureParams);
 	REGISTER_LUA_CFUNC(SetGroundDecalAlpha);
 	REGISTER_LUA_CFUNC(SetGroundDecalNormal);
+	REGISTER_LUA_CFUNC(SetGroundDecalTint);
+	REGISTER_LUA_CFUNC(SetGroundDecalMisc);
 	REGISTER_LUA_CFUNC(SetGroundDecalCreationFrame);
 
 	REGISTER_LUA_CFUNC(SDLSetTextInputRect);
@@ -1136,7 +1152,7 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 	if (mouse == nullptr)
 		return 0;
 
-	const float4 targetPos = {
+	float4 targetPos = {
 		luaL_checkfloat(L, 1),
 		luaL_checkfloat(L, 2),
 		luaL_checkfloat(L, 3),
@@ -1148,16 +1164,12 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 		luaL_optfloat(L, 7, (camera->GetDir()).z),
 	};
 
-	if (targetPos.w >= 0.0f) {
-		camHandler->CameraTransition(targetPos.w);
-		camHandler->GetCurrentController().SetPos(targetPos);
-		camHandler->GetCurrentController().SetDir(targetDir);
-	} else {
-		// no transition, bypass controller
-		camera->SetPos(targetPos);
-		camera->SetDir(targetDir);
-		// camera->Update();
+	if (targetPos.w < 0.0f) {
+		targetPos.w = 0.0f;
 	}
+	camHandler->GetCurrentController().SetPos(targetPos);
+	camHandler->GetCurrentController().SetDir(targetDir);
+	camHandler->CameraTransition(targetPos.w);
 
 	return 0;
 }
@@ -1223,14 +1235,161 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 		luaL_error(L, "[%s([ stateTable[, camTransTime[, transTimeFactor[, transTimeExpon] ] ] ])] incorrect arguments", __func__);
 
 	camHandler->SetTransitionParams(luaL_optfloat(L, 3, camHandler->GetTransitionTimeFactor()), luaL_optfloat(L, 4, camHandler->GetTransitionTimeExponent()));
-	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
 
 	const bool retval = camHandler->SetState(hasState ? ParseCamStateMap(L, 1) : camHandler->GetState());
+	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
 	const bool synced = CLuaHandle::GetHandleSynced(L);
 
 	// always push false in synced
 	lua_pushboolean(L, retval && !synced);
 	return 1;
+}
+
+/*** Runs Dolly Camera
+ * @number runtime in milliseconds
+ *
+ */
+int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
+{
+	float runtime = luaL_checkfloat(L, 1);
+
+	camHandler->GetDollyController().Run(runtime);
+
+	return 0;
+}
+
+/*** Pause Dolly Camera
+ * @number [percent] of the total runtime to pause at, 0 to 1 inclusive
+ *
+ */
+int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
+{
+	float percent = luaL_optfloat(L, 1, -1);
+
+	camHandler->GetDollyController().Pause(percent);
+
+	return 0;
+}
+
+/*** Resume Dolly Camera
+ *
+ */
+int LuaUnsyncedCtrl::ResumeDollyCamera(lua_State* L)
+{
+	camHandler->GetDollyController().Resume();
+
+	return 0;
+}
+
+/*** Sets Dolly Camera Position
+ * @number x
+ * @number y
+ * @number z
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
+{
+	float x = luaL_checkfloat(L, 1);
+	float y = luaL_checkfloat(L, 2);
+	float z = luaL_checkfloat(L, 3);
+
+	camHandler->GetDollyController().SetPosition(float3{x, y, z});
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement Curve
+ * @number degree
+ * @
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	camHandler->GetDollyController().SetNURBS(degree, cpoints, knots);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement mode
+ * @number mode 1=static position, 2=nurbs curve
+ * @
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
+{
+	int mode = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetMode(mode);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement curve to world relative or look target relative
+ * @number relativeMode 1=world, 2=look target
+ */
+int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
+{
+	int mode = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetRelativeMode(mode);
+
+	return 0;
+}
+
+
+/*** Sets Dolly Camera Look Curve
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_CURVE);
+	camHandler->GetDollyController().SetLookCurve(degree, cpoints, knots);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera Look Position
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
+{
+	int x = luaL_checkint(L, 1);
+	int y = luaL_checkint(L, 2);
+	int z = luaL_checkint(L, 3);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_POSITION);
+	camHandler->GetDollyController().SetLookPosition(float3(x, y, z));
+
+	return 0;
+}
+
+/*** Sets target unit for Dolly Camera to look towards
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
+{
+	int unitid = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_UNIT);
+	camHandler->GetDollyController().SetLookUnit(unitid);
+
+	return 0;
 }
 
 
@@ -2036,7 +2195,7 @@ int LuaUnsyncedCtrl::SetUnitLeaveTracks(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	unit->leaveTracks = lua_toboolean(L, 2);
+	groundDecals->SetUnitLeaveTracks(unit, lua_toboolean(L, 2));
 	return 0;
 }
 
@@ -2437,6 +2596,29 @@ int LuaUnsyncedCtrl::CreateDir(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.AllocateTable
+ * @number narr hint for count of array elements
+ * @number nrec hint for count of record elements
+ * @treturn table
+ */
+int LuaUnsyncedCtrl::AllocateTable(lua_State* L)
+{
+	int narr = luaL_optinteger(L, 1, 0);
+	int nrec = luaL_optinteger(L, 2, 0);
+
+	if (narr < 0) {
+		narr = 0;
+	}
+	if (nrec < 0) {
+		nrec = 0;
+	}
+
+	lua_createtable(L, narr, nrec);
+
+	return 1;
+}
 
 
 
@@ -2654,7 +2836,7 @@ int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
  *
  * @function Spring.ReplaceMouseCursor
  * @string oldFileName
- * @string newFileName 
+ * @string newFileName
  * @bool[opt=false] hotSpotTopLeft
  * @treturn ?nil|bool assigned
  */
@@ -3549,7 +3731,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
  * @number x
  * @number y
  * @number z
- * @treturn nil 
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
 {
@@ -4598,13 +4780,36 @@ int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.SetGroundDecalTextureParams
+ * @number decalID
+ * @number texWrapDistance[opt=currTexWrapDistance] if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
+ * @number texTraveledDistance[opt=currTexTraveledDistance] shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
+ * @treturn nil|bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalTextureParams(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	decal->uvWrapDistance     = luaL_optfloat(L, 2, decal->uvWrapDistance);
+	decal->uvTraveledDistance = luaL_optfloat(L, 3, decal->uvTraveledDistance);
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
 
 /***
  *
  * @function Spring.SetGroundDecalAlpha
  * @number decalID
  * @number[opt=currAlpha] alpha Between 0 and 1
- * @number[opt=currAlphaFalloff] alphaFalloff Between 0 and 1, per frame
+ * @number[opt=currAlphaFalloff] alphaFalloff Between 0 and 1, per second
  * @treturn bool decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
@@ -4616,7 +4821,7 @@ int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
 	}
 
 	decal->alpha = luaL_optfloat(L, 2, decal->alpha);
-	decal->alphaFalloff = luaL_optfloat(L, 3, decal->alphaFalloff);
+	decal->alphaFalloff = luaL_optfloat(L, 3, decal->alphaFalloff * GAME_SPEED) / GAME_SPEED;
 
 	lua_pushboolean(L, true);
 	return 1;
@@ -4649,6 +4854,68 @@ int LuaUnsyncedCtrl::SetGroundDecalNormal(lua_State* L)
 	forcedNormal.SafeNormalize();
 
 	decal->forcedNormal = forcedNormal;
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetGroundDecalTint
+ * Sets the tint of the ground decal. Color = 2 * textureColor * tintColor
+ * Respectively a color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
+ * @number decalID
+ * @number[opt=curTintColR] tintColR
+ * @number[opt=curTintColG] tintColG
+ * @number[opt=curTintColB] tintColB
+ * @number[opt=curTintColA] tintColA
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalTint(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	float4 tintColor = decal->tintColor;
+	tintColor.r = luaL_optfloat(L, 2, tintColor.r);
+	tintColor.g = luaL_optfloat(L, 3, tintColor.g);
+	tintColor.b = luaL_optfloat(L, 4, tintColor.b);
+	tintColor.a = luaL_optfloat(L, 5, tintColor.a);
+
+	decal->tintColor = SColor{ tintColor };
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetGroundDecalMisc
+ * Sets varios secondary parameters of a decal
+ * @number decalID
+ * @number[opt=curValue] dotElimExp pow(max(dot(decalProjVector, SurfaceNormal), 0.0), dotElimExp), used to reduce decal artifacts on surfaces non-collinear with the projection vector
+ * @number[opt=curValue] refHeight
+ * @number[opt=curValue] minHeight
+ * @number[opt=curValue] maxHeight
+ * @number[opt=curValue] forceHeightMode in case forceHeightMode==1.0 ==> force relative height: midPoint.y = refHeight + clamp(midPoint.y - refHeight, minHeight); forceHeightMode==2.0 ==> force absolute height: midPoint.y = midPoint.y, clamp(midPoint.y, minHeight, maxHeight); other forceHeightMode values do not enforce the height of the center position
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalMisc(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	decal->dotElimExp = luaL_optfloat(L, 2, decal->dotElimExp);
+	decal->refHeight = luaL_optfloat(L, 3, decal->refHeight);
+	decal->minHeight = luaL_optfloat(L, 4, decal->minHeight);
+	decal->maxHeight = luaL_optfloat(L, 5, decal->maxHeight);
+	decal->forceHeightMode = luaL_optfloat(L, 6, decal->forceHeightMode);
 
 	lua_pushboolean(L, true);
 	return 1;
@@ -4739,8 +5006,8 @@ int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
  *
  * @function Spring.SetWindowGeometry
  * @number displayIndex
- * @number winPosX
- * @number winPosY
+ * @number winRelPosX
+ * @number winRelPosY
  * @number winSizeX
  * @number winSizeY
  * @bool fullScreen

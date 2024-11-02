@@ -137,6 +137,15 @@ Upload() has tons of options to upload only selected attribute, do partial uploa
 Upload(tableData, optionalAttribIdx, optionalElementOffset, optionalLuaStartIndex, optionalLuaFinishIndex).
 Ask for extended description when you master basic upload!
 
+### Performance Notes
+
+The Upload function as shown above allows updating contiguous blocks of the VBO, which can allow for batched updating of some or all elements of a VBO.
+Generally, uploading a single element takes about 5us for 5 vec4's of data. However, we have found that in general, if you want to update more than about 20% of the contents of a VBO, it is faster to just upload the whole VBO instead of partial updates. 
+
+See the code here for the benchmark: 
+
+https://gist.github.com/Beherith/c965cff2a81253e37aed25f4db0c0fce
+
 
 ### Drawing with VAOs
 ```lua

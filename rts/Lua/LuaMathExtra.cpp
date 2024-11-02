@@ -6,6 +6,8 @@
 #include "LuaInclude.h"
 #include "LuaUtils.h"
 
+#include "System/Misc/TracyDefs.h"
+
 static const lua_Number POWERS_OF_TEN[] = {1.0f, 10.0f, 100.0f, 1000.0f, 10000.0f, 100000.0f, 1000000.0f, 10000000.0f};
 
 /******************************************************************************
@@ -24,6 +26,7 @@ bool LuaMathExtra::PushEntries(lua_State* L)
 	LuaPushNamedCFunc(L, "round",  round);
 	LuaPushNamedCFunc(L, "erf",    erf);
 	LuaPushNamedCFunc(L, "smoothstep", smoothstep);
+	LuaPushNamedCFunc(L, "normalize", normalize);
 	return true;
 }
 
@@ -40,6 +43,7 @@ bool LuaMathExtra::PushEntries(lua_State* L)
  * @treturn number sqrt(x*x+y*y)
  */
 int LuaMathExtra::hypot(lua_State* L) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	lua_pushnumber(L, math::hypot(luaL_checknumber_noassert(L, 1), luaL_checknumber_noassert(L, 2)));
 	return 1;
 }
@@ -55,6 +59,7 @@ int LuaMathExtra::hypot(lua_State* L) {
  * @treturn number diagonal
  */
 int LuaMathExtra::diag(lua_State* L) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	lua_Number res = 0.0f;
 
 	for (int i = lua_gettop(L); i >= 1; i--) {
@@ -72,6 +77,7 @@ int LuaMathExtra::diag(lua_State* L) {
  * @treturn number clamped
  */
 int LuaMathExtra::clamp(lua_State* L) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const lua_Number lbound = luaL_checknumber_noassert(L, 2);
 	const lua_Number ubound = luaL_checknumber_noassert(L, 3);
 
@@ -87,6 +93,7 @@ int LuaMathExtra::clamp(lua_State* L) {
  * @treturn number sign
  */
 int LuaMathExtra::sgn(lua_State* L) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const lua_Number x = luaL_checknumber_noassert(L, 1);
 
 	if (x != 0.0f) {
@@ -109,6 +116,7 @@ int LuaMathExtra::sgn(lua_State* L) {
  * @treturn number (x+(y-x)*a)
  */
 int LuaMathExtra::mix(lua_State* L) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const lua_Number x = luaL_checknumber_noassert(L, 1);
 	const lua_Number y = luaL_checknumber_noassert(L, 2);
 	const lua_Number a = luaL_checknumber_noassert(L, 3);
@@ -126,6 +134,7 @@ int LuaMathExtra::mix(lua_State* L) {
  * @treturn number rounded
  */
 int LuaMathExtra::round(lua_State* L) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const lua_Number x = luaL_checknumber_noassert(L, 1);
 
 	if (lua_gettop(L) > 1) {
@@ -154,6 +163,7 @@ int LuaMathExtra::round(lua_State* L) {
  * @treturn number erf
  */
 int LuaMathExtra::erf(lua_State* L) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	lua_pushnumber(L, math::erf(luaL_checknumber_noassert(L, 1)));
 	return 1;
 }
@@ -170,8 +180,44 @@ int LuaMathExtra::erf(lua_State* L) {
  * @treturn number smoothstep
  */
 int LuaMathExtra::smoothstep(lua_State* L) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	lua_pushnumber(L, ::smoothstep(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3)));
 	return 1;
+}
+
+
+/*** Returns the normalize vector of an given vector.
+ *
+ * @function math.normalize
+ * @number x1
+ * @number[opt] x2
+ * @number[opt] xN and so on
+ * @treturn number normalized1
+ * @treturn number normalized2 and so on
+ */
+int LuaMathExtra::normalize(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	lua_Number res = 0.0f;
+	const int param = lua_gettop(L);
+	for (int i = param; i >= 1; i--) {
+		res += Square(luaL_checknumber_noassert(L, i));
+	}
+	if likely(res > float3::nrm_eps())
+		res = math::sqrt(res);
+	else
+	{
+		for (int i = 1; i <= param; ++i) {
+			lua_pushnumber(L, 0);
+		}
+		return param;
+	}
+	for (int i = 1; i <= param; ++i) {
+		float tmp = luaL_checknumber_noassert(L, i);
+		tmp = tmp / res;
+		lua_pushnumber(L, tmp);
+	}
+	return param;
 }
 
 /******************************************************************************/

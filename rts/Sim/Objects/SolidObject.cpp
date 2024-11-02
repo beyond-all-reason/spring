@@ -12,6 +12,8 @@
 #include "Game/GameHelper.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 int CSolidObject::deletingRefID = -1;
 
 
@@ -83,6 +85,7 @@ CR_REG_METADATA(CSolidObject,
 
 void CSolidObject::PostLoad()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((model = GetDef()->LoadModel()) == nullptr)
 		return;
 
@@ -92,8 +95,11 @@ void CSolidObject::PostLoad()
 
 void CSolidObject::UpdatePhysicalState(float eps)
 {
-	const float gh = CGround::GetHeightReal(pos.x, pos.z);
-	const float wh = std::max(gh, 0.0f);
+	RECOIL_DETAILED_TRACY_ZONE;
+	const float waterLevel = CGround::GetWaterLevel(pos.x, pos.z);
+	const float groundHeight = CGround::GetHeightReal(pos.x, pos.z);
+	// Get height of whichever surface is higher between ground and water
+	const float topSurfaceHeight = std::max(groundHeight, waterLevel);
 
 	unsigned int ps = physicalState;
 
@@ -109,13 +115,13 @@ void CSolidObject::UpdatePhysicalState(float eps)
 	//   the height property is used for much fewer purposes
 	//   than radius, so less reliable for determining state
 	#define MASK_NOAIR (PSTATE_BIT_ONGROUND | PSTATE_BIT_INWATER | PSTATE_BIT_UNDERWATER | PSTATE_BIT_UNDERGROUND)
-	ps |= (PSTATE_BIT_ONGROUND    * ((   pos.y -         gh) <=  eps));
-	ps |= (PSTATE_BIT_INWATER     * ((   pos.y             ) <= 0.0f));
+	ps |= (PSTATE_BIT_ONGROUND    * ((   pos.y -         groundHeight) <=  eps));
+	ps |= (PSTATE_BIT_INWATER     * ((   pos.y             ) <= waterLevel));
 //	ps |= (PSTATE_BIT_UNDERWATER  * ((   pos.y +     height) <  0.0f));
-//	ps |= (PSTATE_BIT_UNDERGROUND * ((   pos.y +     height) <    gh));
-	ps |= (PSTATE_BIT_UNDERWATER  * ((midPos.y +     radius) <  0.0f));
-	ps |= (PSTATE_BIT_UNDERGROUND * ((midPos.y +     radius) <    gh));
-	ps |= (PSTATE_BIT_INAIR       * ((   pos.y -         wh) >   eps));
+//	ps |= (PSTATE_BIT_UNDERGROUND * ((   pos.y +     height) <    groundHeight));
+	ps |= (PSTATE_BIT_UNDERWATER  * ((midPos.y +     radius) <  waterLevel));
+	ps |= (PSTATE_BIT_UNDERGROUND * ((midPos.y +     radius) <    groundHeight));
+	ps |= (PSTATE_BIT_INAIR       * ((   pos.y -         topSurfaceHeight) >   eps));
 	ps |= (PSTATE_BIT_INAIR       * ((    ps   & MASK_NOAIR) ==    0));
 	#undef MASK_NOAIR
 
@@ -125,7 +131,7 @@ void CSolidObject::UpdatePhysicalState(float eps)
 	// fails then A and B *must* both be false
 	//
 	// problem case: pos.y < eps (but > 0) &&
-	// gh < -eps causes ONGROUND and INAIR to
+	// groundHeight < -eps causes ONGROUND and INAIR to
 	// both be false but INWATER will fail too
 	#if 0
 	assert((IsInAir() != IsOnGround()) || IsInWater());
@@ -137,6 +143,7 @@ void CSolidObject::UpdatePhysicalState(float eps)
 
 bool CSolidObject::SetVoidState()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsInVoid())
 		return false;
 
@@ -156,6 +163,7 @@ bool CSolidObject::SetVoidState()
 
 bool CSolidObject::ClearVoidState()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsInVoid())
 		return false;
 
@@ -171,6 +179,7 @@ bool CSolidObject::ClearVoidState()
 
 void CSolidObject::UpdateVoidState(bool set)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (set) {
 		SetVoidState();
 	} else {
@@ -183,12 +192,14 @@ void CSolidObject::UpdateVoidState(bool set)
 
 void CSolidObject::SetMass(float newMass)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	mass = std::clamp(newMass, MINIMUM_MASS, MAXIMUM_MASS);
 }
 
 
 void CSolidObject::UnBlock()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsBlocking())
 		return;
 
@@ -198,6 +209,7 @@ void CSolidObject::UnBlock()
 
 void CSolidObject::Block()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// no point calling this if object is not
 	// collidable in principle, but simplifies
 	// external code to allow it
@@ -233,7 +245,7 @@ bool CSolidObject::FootPrintOnGround() const {
 	for (int z = hmFpr.z1; z <= hmFpr.z2; ++z) {
 		const float* hPtr = CGround::GetApproximateHeightUnsafePtr(hmFpr.x1, z, true);
 		for (int x = hmFpr.x1; x <= hmFpr.x2; ++x) {
-			const auto heightAboveWaterHere = std::max(*hPtr, 0.0f);
+			const auto heightAboveWaterHere = std::max(*hPtr, CGround::GetWaterLevel(x, z));
 			if ((pos.y - SQUARE_SIZE) <= heightAboveWaterHere)
 				return true;
 			hPtr++;
@@ -246,6 +258,7 @@ bool CSolidObject::FootPrintOnGround() const {
 
 YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const YardMapStatus* blockMap = GetBlockMap();
 	if (blockMap == nullptr)
 		return YARDMAP_OPEN;
@@ -280,6 +293,7 @@ YardMapStatus CSolidObject::GetGroundBlockingMaskAtPos(float3 gpos) const
 
 int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int2 mp;
 
 	mp.x = (int(position.x /*+ SQUARE_SIZE / 2*/) / SQUARE_SIZE) - (xsize / 2);
@@ -292,6 +306,7 @@ int2 CSolidObject::GetMapPosStatic(const float3& position, int xsize, int zsize)
 
 float3 CSolidObject::GetDragAccelerationVec(float atmosphericDensity, float waterDensity, float dragCoeff, float frictionCoeff) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// KISS: use the cross-sectional area of a sphere, object shapes are complex
 	// this is a massive over-estimation so pretend the radius is in centimeters
 	// other units as normal: mass in kg, speed in elmos/frame, density in kg/m^3
@@ -336,6 +351,7 @@ float3 CSolidObject::GetDragAccelerationVec(float atmosphericDensity, float wate
 
 float3 CSolidObject::GetWantedUpDir(bool useGroundNormal, bool useObjectNormal, float dirSmoothing) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 groundUp = CGround::GetSmoothNormal(pos.x, pos.z);
 	const float3 curUpDir = float3{updir};
 	const float3 objectUp = mix(UpVector, curUpDir, useObjectNormal);
@@ -349,6 +365,7 @@ float3 CSolidObject::GetWantedUpDir(bool useGroundNormal, bool useObjectNormal, 
 
 void CSolidObject::SetDirVectorsEuler(const float3 angles)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CMatrix44f matrix;
 
 	// our system is left-handed, so R(X)R(Y)R(Z) is really T(R(-Z)R(-Y)R(-X))
@@ -364,12 +381,14 @@ void CSolidObject::SetFacingFromHeading() { buildFacing = GetFacingFromHeading(h
 
 void CSolidObject::UpdateDirVectors(bool useGroundNormal, bool useObjectNormal, float dirSmoothing)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 uDir = GetWantedUpDir(useGroundNormal, useObjectNormal, dirSmoothing);
 	UpdateDirVectors(uDir);
 }
 
 void CSolidObject::UpdateDirVectors(const float3& uDir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// set initial rotation of the object around updir=UpVector first
 	const float3 fDir = GetVectorFromHeading(heading);
 
@@ -386,6 +405,7 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 
 void CSolidObject::ForcedSpin(const float3& zdir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// new front-direction should be normalized
 	assert(math::fabsf(zdir.SqLength() - 1.0f) <= float3::cmp_eps());
 
@@ -409,6 +429,7 @@ void CSolidObject::ForcedSpin(const float3& zdir)
 
 void CSolidObject::Kill(CUnit* killer, const float3& impulse, bool crushed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateVoidState(false);
 	DoDamage(DamageArray(health + 1.0f), impulse, killer, crushed? -DAMAGE_EXTSOURCE_CRUSHED: -DAMAGE_EXTSOURCE_KILLED, -1);
 }

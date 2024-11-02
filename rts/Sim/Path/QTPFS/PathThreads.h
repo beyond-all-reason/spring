@@ -51,6 +51,7 @@ namespace QTPFS {
 
         T& InsertINode(int nodeId) {
             assert(size_t(nodeId) < sparseIndex.size());
+            assert( sparseIndex[nodeId] == 0 );
             InsertAtIndex(T(nodeId), nodeId);
             return operator[](nodeId);
         }
@@ -64,10 +65,12 @@ namespace QTPFS {
 
         auto& operator[](const size_t i) {
             assert(i < sparseIndex.size());
+            assert( sparseIndex[i] != 0 );
             return denseData[sparseIndex[i]];
         }
         const auto& operator[](const size_t i) const {
             assert(i < sparseIndex.size());
+            assert( sparseIndex[i] != 0 );
             return denseData[sparseIndex[i]];
         }
 

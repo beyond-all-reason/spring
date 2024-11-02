@@ -1,17 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 // must be included before streflop! else we get streflop/cmath resolve conflicts in its hash implementation files
+#include <bit>
 #include <vector>
 #include "NamedTextures.h"
 
 #include "Rendering/GL/myGL.h"
 #include "Bitmap.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/bitops.h"
 #include "System/type2.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedMap.hpp"
+
+#include "System/Misc/TracyDefs.h"
 
 
 
@@ -29,6 +31,7 @@ namespace CNamedTextures {
 
 	void Init()
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		texInfoMap.clear();
 		texInfoMap.reserve(128);
 		texInfoVec.clear();
@@ -42,6 +45,7 @@ namespace CNamedTextures {
 
 	void Kill(bool shutdown)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		decltype(texInfoMap) tempMap;
 
 		const std::lock_guard<spring::recursive_mutex> lck(mutex);
@@ -64,6 +68,7 @@ namespace CNamedTextures {
 
 	void Reload()
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		const std::lock_guard<spring::recursive_mutex> lck(mutex); //needed?
 
 		for (const auto& [texName, texIdx] : texInfoMap) {
@@ -80,6 +85,7 @@ namespace CNamedTextures {
 
 	static void InsertTex(const std::string& texName, const TexInfo& texInfo, bool loadTex)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		// caller (GenInsertTex) already has lock
 		if (!loadTex)
 			waitingTextures.push_back(texName);
@@ -97,6 +103,7 @@ namespace CNamedTextures {
 
 	static TexInfo GenTex(bool bindTex, bool persistTex)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		GLuint texID = 0;
 		glGenTextures(1, &texID);
 
@@ -111,6 +118,7 @@ namespace CNamedTextures {
 
 	static void GenInsertTex(const std::string& texName, const TexInfo& texInfo, bool genTex, bool bindTex, bool loadTex, bool persistTex)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		const std::lock_guard<spring::recursive_mutex> lck(mutex);
 
 		if (!genTex) {
@@ -123,6 +131,7 @@ namespace CNamedTextures {
 
 	static bool EraseTex(const std::string& texName)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		const std::lock_guard<spring::recursive_mutex> lck(mutex);
 
 		const auto it = texInfoMap.find(texName);
@@ -145,6 +154,7 @@ namespace CNamedTextures {
 
 	static bool Load(const std::string& texName, unsigned int texID, bool genInsert)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		// strip off the qualifiers
 		std::string filename = texName;
 		bool border  = false;
@@ -231,9 +241,6 @@ namespace CNamedTextures {
 			if (greyed) bitmap.MakeGrayScale();
 			if (tint)   bitmap.Tint(tintColor);
 
-			const int xbits = count_bits_set(bitmap.xsize);
-			const int ybits = count_bits_set(bitmap.ysize);
-
 			// make the texture
 			glBindTexture(GL_TEXTURE_2D, texID);
 
@@ -256,9 +263,10 @@ namespace CNamedTextures {
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				}
 
-				//! Note: NPOTs + nearest filtering seems broken on ATIs
-				if ((xbits != 1 || ybits != 1) && (!GLEW_ARB_texture_non_power_of_two || (globalRendering->amdHacks && nearest)))
-					bitmap = bitmap.CreateRescaled(next_power_of_2(bitmap.xsize),next_power_of_2(bitmap.ysize));
+				// verify if still broken
+				if (globalRendering->amdHacks && nearest) {
+					bitmap = bitmap.CreateRescaled(std::bit_ceil <uint32_t>(bitmap.xsize), std::bit_ceil <uint32_t>(bitmap.ysize));
+				}
 
 				glTexImage2D(GL_TEXTURE_2D, 0, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, int(border), bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
 			} else {
@@ -266,12 +274,7 @@ namespace CNamedTextures {
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-				if ((xbits == 1 && ybits == 1) || GLEW_ARB_texture_non_power_of_two) {
-					glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-				} else {
-					//! glu auto resizes to next POT
-					gluBuild2DMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-				}
+				glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
 			}
 
 			if (aniso && GLEW_EXT_texture_filter_anisotropic)
@@ -299,6 +302,7 @@ namespace CNamedTextures {
 
 	static bool GenLoadTex(const std::string& texName)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		GLuint texID = 0;
 		glGenTextures(1, &texID);
 		return (Load(texName, texID));
@@ -307,6 +311,7 @@ namespace CNamedTextures {
 
 	bool Bind(const std::string& texName)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		if (texName.empty())
 			return false;
 
@@ -334,6 +339,7 @@ namespace CNamedTextures {
 
 	void Update()
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		if (waitingTextures.empty())
 			return;
 
@@ -357,6 +363,7 @@ namespace CNamedTextures {
 
 	bool Free(const std::string& texName)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		if (texName.empty())
 			return false;
 
@@ -366,6 +373,7 @@ namespace CNamedTextures {
 
 	size_t GetInfoIndex(const std::string& texName)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		const auto it = texInfoMap.find(texName);
 
 		if (it != texInfoMap.end())
@@ -377,6 +385,7 @@ namespace CNamedTextures {
 	const TexInfo* GetInfo(size_t texIdx) { return &texInfoVec[texIdx]; }
 	const TexInfo* GetInfo(const std::string& texName, bool forceLoad, bool persist, bool secondaryGLContext)
 	{
+	RECOIL_DETAILED_TRACY_ZONE;
 		if (texName.empty())
 			return nullptr;
 

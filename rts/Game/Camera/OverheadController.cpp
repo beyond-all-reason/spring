@@ -15,12 +15,15 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Input/KeyInput.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(float, MiddleClickScrollSpeed).defaultValue(0.01f);
 CONFIG(int, OverheadScrollSpeed).defaultValue(10);
 CONFIG(float, OverheadTiltSpeed).defaultValue(1.0f);
 CONFIG(bool, OverheadEnabled).defaultValue(true).headlessValue(false);
 CONFIG(float, OverheadFOV).defaultValue(45.0f);
-CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("float multiplier for maximum overhead camera height");
+CONFIG(float, OverheadMinZoomDistance).defaultValue(60.0f).description("Minimum camera zoom distance");
+CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("Float multiplier for maximum overhead camera zoom distance");
 CONFIG(float, CamOverheadFastScale).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult.");
 
 static const float angleStep = math::HALFPI / 14.0f;
@@ -35,35 +38,41 @@ COverheadController::COverheadController()
 	, oldAltHeight(height)
 
 	, maxHeight(10000.0f)
+	, minHeight(60.0f)
 	, angle(DEFAULT_ANGLE)
 {
-	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMaxHeightFactor", "CamOverheadFastScale"});
+	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMinZoomDistance", "OverheadMaxHeightFactor", "CamOverheadFastScale"});
 	ConfigUpdate();
 }
 
 COverheadController::~COverheadController()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	configHandler->RemoveObserver(this);
 }
 
 void COverheadController::ConfigUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	middleClickScrollSpeed = configHandler->GetFloat("MiddleClickScrollSpeed");
 	scrollSpeed = configHandler->GetInt("OverheadScrollSpeed") * 0.1f;
 	tiltSpeed = configHandler->GetFloat("OverheadTiltSpeed");
 	enabled = configHandler->GetBool("OverheadEnabled");
 	fov = configHandler->GetFloat("OverheadFOV");
+	minHeight = configHandler->GetFloat("OverheadMinZoomDistance");
 	maxHeight = 9.5f * std::max(mapDims.mapx, mapDims.mapy) * configHandler->GetFloat("OverheadMaxHeightFactor");
 	fastScale = configHandler->GetFloat("CamOverheadFastScale");
 }
 
 void COverheadController::ConfigNotify(const std::string & key, const std::string & value)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
 }
 
 void COverheadController::KeyMove(float3 move)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (flipped) {
 		move.x = -move.x;
 		move.y = -move.y;
@@ -78,6 +87,7 @@ void COverheadController::KeyMove(float3 move)
 
 void COverheadController::MouseMove(float3 move)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// z is the speed modifier, in practice invertMouse{0,1} => move.z{-1,1}
 	move.x *= move.z;
 	move.y *= move.z;
@@ -99,12 +109,14 @@ void COverheadController::MouseMove(float3 move)
 
 void COverheadController::ScreenEdgeMove(float3 move)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	KeyMove(move);
 }
 
 
 void COverheadController::MouseWheelMove(float move, const float3& newDir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (move == 0.0f)
 		return;
 
@@ -149,7 +161,12 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 			if ((wantedPos.y + (dir.y * newHeight)) < 0.0f)
 				newHeight = -wantedPos.y / yDirClamp;
 
-			if (newHeight < maxHeight) {
+			if(newHeight < minHeight) {
+				wantedPos = cpos + newDir * (height - minHeight);
+				newHeight = minHeight;
+			}
+
+			if(height > minHeight) {
 				height = newHeight;
 				pos = wantedPos + dir * height;
 			}
@@ -184,11 +201,12 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 
 void COverheadController::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos.x = std::clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
 	pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);
 
-	height = std::clamp(height, 60.0f, maxHeight);
+	height = std::clamp(height, minHeight, maxHeight);
 	angle = std::clamp(angle, 0.01f, math::HALFPI);
 
 	dir = float3(0.0f, -fastmath::cos(angle), flipped ? fastmath::sin(angle) : -fastmath::sin(angle));
@@ -198,22 +216,40 @@ void COverheadController::Update()
 
 void COverheadController::SetPos(const float3& newPos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos = newPos;
 	Update();
 }
 
 
-void COverheadController::SwitchTo(const int oldCam, const bool showText)
+void COverheadController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText)
 		LOG("Switching to Overhead (TA) style camera");
 
-	angle = DEFAULT_ANGLE;
+	float3 oldPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov"){
+		pos = oldPos + dir * height;
+		Update();
+		return;
+	}
+
+	dir = oldCam->GetDir();
+	if (dir.y > 0) {
+		dir.y = -.5;
+		dir.Normalize();
+	}
+	height = DistanceToGround(oldPos, dir, 0);
+	pos = oldPos + dir * height;
+
+	angle = math::PI - CCamera::GetRotFromDir(dir).x;
 	Update();
 }
 
 void COverheadController::GetState(StateMap& sm) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 
 	sm["height"]  = height;
@@ -223,6 +259,7 @@ void COverheadController::GetState(StateMap& sm) const
 
 bool COverheadController::SetState(const StateMap& sm)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 
 	SetStateFloat(sm, "height", height);

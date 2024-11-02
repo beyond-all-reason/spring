@@ -30,6 +30,8 @@
 #include "System/StringUtil.h"
 #include "System/Threading/ThreadPool.h" // for_mt
 
+#include "System/Misc/TracyDefs.h"
+
 #define ENABLE_NETLOG_CHECKSUM 1
 
 static constexpr int BLOCK_UPDATE_DELAY_FRAMES = GAME_SPEED / 2;
@@ -45,10 +47,12 @@ PCMemPool pcMemPool;
 // PEMemPool peMemPool;
 
 static const std::string GetPathCacheDir() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (FileSystem::GetCacheDir() + FileSystemAbstraction::GetNativePathSeparator() + "paths" + FileSystemAbstraction::GetNativePathSeparator());
 }
 
 static const std::string GetCacheFileName(const std::string& fileHashCode, const std::string& peFileName, const std::string& mapFileName) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (GetPathCacheDir() + mapFileName + "." + peFileName + "-" + fileHashCode + ".zip");
 }
 
@@ -56,12 +60,14 @@ void PathingState::KillStatic() { pathingStates = 0; }
 
 PathingState::PathingState()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pathCache[0] = nullptr;
 	pathCache[1] = nullptr;
 }
 
 void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* parentState, unsigned int _BLOCK_SIZE, const std::string& peFileName, const std::string& mapFileName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	BLOCK_SIZE = _BLOCK_SIZE;
 	BLOCK_PIXEL_SIZE = BLOCK_SIZE * SQUARE_SIZE;
 
@@ -89,6 +95,7 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 	AllocStateBuffer();
 
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 		pathFinders = pathFinderlist;
 		BLOCKS_TO_UPDATE = (SQUARES_TO_UPDATE) / (BLOCK_SIZE * BLOCK_SIZE) + 1;
 
@@ -162,6 +169,7 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 
 void PathingState::Terminate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (pathCache[0] != nullptr)
 		pcMemPool.free(pathCache[0]);
 	
@@ -186,6 +194,7 @@ void PathingState::Terminate()
 
 void PathingState::AllocStateBuffer()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instanceIndex >= nodeStateBuffers.size())
 		nodeStateBuffers.emplace_back();
 
@@ -198,12 +207,14 @@ void PathingState::AllocStateBuffer()
 
 bool PathingState::RemoveCacheFile(const std::string& peFileName, const std::string& mapFileName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (FileSystem::Remove(GetCacheFileName(IntToString(fileHashCode, "%x"), peFileName, mapFileName)));
 }
 
 
 void PathingState::InitEstimator(const std::string& peFileName, const std::string& mapFileName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int numThreads = ThreadPool::GetNumThreads();
 	//LOG("TK PathingState::InitEstimator: %d threads available", numThreads);
 
@@ -255,6 +266,7 @@ void PathingState::InitEstimator(const std::string& peFileName, const std::strin
 
 void PathingState::InitBlocks()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// TK NOTE: moveDefHandler.GetNumMoveDefs() == 47
 	blockStates.peNodeOffsets.resize(moveDefHandler.GetNumMoveDefs());
 	for (unsigned int idx = 0; idx < moveDefHandler.GetNumMoveDefs(); idx++) {
@@ -267,6 +279,7 @@ void PathingState::InitBlocks()
 __FORCE_ALIGN_STACK__
 void PathingState::CalcOffsetsAndPathCosts(unsigned int threadNum, spring::barrier* pathBarrier)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// reset FPU state for synced computations
 	//streflop::streflop_init<streflop::Simple>();
 
@@ -288,6 +301,7 @@ void PathingState::CalcOffsetsAndPathCosts(unsigned int threadNum, spring::barri
 
 void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int threadNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 blockPos = BlockIdxToPos(blockIdx);
 
 	if (threadNum == 0 && blockIdx >= nextOffsetMessageIdx) {
@@ -299,7 +313,7 @@ void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int thr
 		const MoveDef* md = moveDefHandler.GetMoveDefByPathType(i);
 
 		//LOG("TK PathingState::InitBlocks: blockStates.peNodeOffsets %d now %d looking up %d", i, blockStates.peNodeOffsets[md->pathType].size(), blockIdx);
-		blockStates.peNodeOffsets[md->pathType][blockIdx] = FindBlockPosOffset(*md, blockPos.x, blockPos.y);
+		blockStates.peNodeOffsets[md->pathType][blockIdx] = FindBlockPosOffset(*md, blockPos.x, blockPos.y, threadNum);
 		// LOG("UPDATED blockStates.peNodeOffsets[%d][%d] = (%d, %d) : (%d, %d)"
 		// 		, md->pathType, blockIdx
 		// 		, blockStates.peNodeOffsets[md->pathType][blockIdx].x, blockStates.peNodeOffsets[md->pathType][blockIdx].y
@@ -310,8 +324,9 @@ void PathingState::CalculateBlockOffsets(unsigned int blockIdx, unsigned int thr
 /**
  * Move around the blockPos a bit, so we `surround` unpassable blocks.
  */
-int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blockX, unsigned int blockZ) const
+int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int blockX, unsigned int blockZ, int threadNum) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// lower corner position of block
 	const unsigned int lowerX = blockX * BLOCK_SIZE;
 	const unsigned int lowerZ = blockZ * BLOCK_SIZE;
@@ -319,26 +334,6 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 
 	int2 bestPos(lowerX + (BLOCK_SIZE >> 1), lowerZ + (BLOCK_SIZE >> 1));
 	float bestCost = std::numeric_limits<float>::max();
-
-	// search for an accessible position within this block
-	/*for (unsigned int z = 0; z < BLOCK_SIZE; ++z) {
-		for (unsigned int x = 0; x < BLOCK_SIZE; ++x) {
-			const float speedMod = CMoveMath::GetPosSpeedMod(moveDef, lowerX + x, lowerZ + z);
-			const bool curblock = (speedMod == 0.0f) || CMoveMath::IsBlockedStructure(moveDef, lowerX + x, lowerZ + z, nullptr);
-
-			if (!curblock) {
-				const float dx = x - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float dz = z - (float)(BLOCK_SIZE - 1) * 0.5f;
-				const float cost = (dx * dx + dz * dz) + (blockArea / (0.001f + speedMod));
-
-				if (cost < bestCost) {
-					bestCost = cost;
-					bestPos.x = lowerX + x;
-					bestPos.y = lowerZ + z;
-				}
-			}
-		}
-	}*/
 
 	// same as above, but with squares sorted by their baseCost
 	// s.t. we can exit early when a square exceeds our current
@@ -356,7 +351,8 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 		if (cost >= bestCost)
 			continue;
 
-		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr)) {
+		if (!CMoveMath::IsBlockedStructure(moveDef, blockPos.x, blockPos.y, nullptr, threadNum)
+				&& !moveDef.IsInExitOnly(blockPos.x, blockPos.y)) {
 			bestCost = cost;
 			bestPos  = blockPos;
 		}
@@ -368,6 +364,7 @@ int2 PathingState::FindBlockPosOffset(const MoveDef& moveDef, unsigned int block
 
 void PathingState::EstimatePathCosts(unsigned int blockIdx, unsigned int threadNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 blockPos = BlockIdxToPos(blockIdx);
 
 	if (threadNum == 0 && blockIdx >= nextCostMessageIdx) {
@@ -392,21 +389,19 @@ void PathingState::EstimatePathCosts(unsigned int blockIdx, unsigned int threadN
  */
 void PathingState::CalcVertexPathCosts(const MoveDef& moveDef, int2 block, unsigned int threadNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// see GetBlockVertexOffset(); costs are bi-directional and only
 	// calculated for *half* the outgoing edges (while costs for the
 	// other four directions are stored at the adjacent vertices)
 	auto idx = BlockPosToIdx(block);
-	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_LEFT_MASK)
-		CalcVertexPathCost(moveDef, block, PATHDIR_LEFT,     threadNum);
+	const uint8_t nodeLinksObsoleteFlags = blockStates.nodeLinksObsoleteFlags[idx]
+								  		 & (moveDef.allowDirectionalPathing) ? PATH_DIRECTIONS_MASK : PATH_DIRECTIONS_HALF_MASK;
 
-	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_LEFT_UP_MASK)
-		CalcVertexPathCost(moveDef, block, PATHDIR_LEFT_UP,  threadNum);
-
-	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_UP_MASK)
-		CalcVertexPathCost(moveDef, block, PATHDIR_UP,       threadNum);
-
-	if (blockStates.nodeLinksObsoleteFlags[idx] & PATHDIR_RIGHT_UP_MASK)
-		CalcVertexPathCost(moveDef, block, PATHDIR_RIGHT_UP, threadNum);
+	int pathdir = 0;
+	for (int checkBit = 1; checkBit <= PATHDIR_LEFT_DOWN_MASK; checkBit <<= 1, ++pathdir) {
+		if (nodeLinksObsoleteFlags & checkBit)
+			CalcVertexPathCost(moveDef, block, pathdir, threadNum);
+	}
 }
 
 void PathingState::CalcVertexPathCost(
@@ -415,6 +410,7 @@ void PathingState::CalcVertexPathCost(
 	unsigned int pathDir,
 	unsigned int threadNum
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 childBlockPos = parentBlockPos + PE_DIRECTION_VECTORS[pathDir];
 
 	const unsigned int parentBlockIdx = BlockPosToIdx(parentBlockPos);
@@ -466,8 +462,8 @@ void PathingState::CalcVertexPathCost(
 	// note: PE itself should ensure this never happens to begin with?
 	//
 	// blocked goal positions are always early-outs (no searching needed)
-	const bool strtBlocked = ((CMoveMath::IsBlocked(moveDef, startPos, nullptr) & CMoveMath::BLOCK_STRUCTURE) != 0);
-	const bool goalBlocked = pfDef.IsGoalBlocked(moveDef, CMoveMath::BLOCK_STRUCTURE, nullptr);
+	const bool strtBlocked = ((CMoveMath::IsBlocked(moveDef, startPos, nullptr, threadNum) & CMoveMath::BLOCK_STRUCTURE) != 0);
+	const bool goalBlocked = pfDef.IsGoalBlocked(moveDef, CMoveMath::BLOCK_STRUCTURE, nullptr, threadNum);
 
 	if (strtBlocked || goalBlocked) {
 		vertexCosts[vertexCostIdx] = PATHCOST_INFINITY;
@@ -482,24 +478,7 @@ void PathingState::CalcVertexPathCost(
 	pfDef.dirIndependent  = true;
 
 	IPath::Path path;
-	//const IPath::SearchResult result = pathFinders[threadNum].GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
-
-	IPath::SearchResult result;
-	{
-		//pathFinders[threadNum]->testedBlocks = 0;
-		//SCOPED_TIMER("AAA_IPathFinder::GetPath");
-		// if (vertexCostIdx == 27290 && moveDef.pathType == 8){
-		// 	TEST_ACTIVE = true;
-		// 	LOG("Allow Raw %d", (int)pfDef.allowRawPath);
-		// }
-		result = pathFinders[threadNum]->GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
-		
-		// if (TEST_ACTIVE){
-		// 	LOG("TK PathingState::CalcVertexPathCost parent %d, child %d PathCost %f (result: %d) vertexId %d, tested %d, blks %d [MoveType %d : %d]"
-		// 	, parentBlockIdx, childBlockIdx, path.pathCost, result, vertexCostIdx, pathFinders[threadNum]->testedBlocks, BLOCK_SIZE, moveDef.pathType, moveDef.xsize);
-		// 	TEST_ACTIVE = false;
-		// }
-	}
+	IPath::SearchResult result = pathFinders[threadNum]->GetPath(moveDef, pfDef, nullptr, startPos, path, MAX_SEARCHED_NODES_PF >> 2);
 
 	// store the result
 	if (result == IPath::Ok) {
@@ -515,6 +494,7 @@ void PathingState::CalcVertexPathCost(
  */
 bool PathingState::ReadFile(const std::string& peFileName, const std::string& mapFileName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string hashHexString = IntToString(fileHashCode, "%x");
 	const std::string cacheFileName = GetCacheFileName(hashHexString, peFileName, mapFileName);
 
@@ -583,6 +563,7 @@ bool PathingState::ReadFile(const std::string& peFileName, const std::string& ma
  */
 bool PathingState::WriteFile(const std::string& peFileName, const std::string& mapFileName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// we need this directory to exist
 	if (!FileSystem::CreateDirectory(GetPathCacheDir()))
 		return false;
@@ -633,6 +614,7 @@ bool PathingState::WriteFile(const std::string& peFileName, const std::string& m
  */
 void PathingState::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pathCache[0]->Update();
 	pathCache[1]->Update();
 
@@ -672,6 +654,7 @@ void PathingState::Update()
 
 void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int numMoveDefs = moveDefHandler.GetNumMoveDefs();
 
 	if (numMoveDefs == 0)
@@ -725,22 +708,10 @@ void PathingState::UpdateVertexPathCosts(int blocksToUpdate)
 				const SingleBlock sb = consumedBlocks[n];
 				const int blockN = BlockPosToIdx(sb.blockPos);
 				const MoveDef* currBlockMD = sb.moveDef;
-				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y);
+				blockStates.peNodeOffsets[currBlockMD->pathType][blockN] = FindBlockPosOffset(*currBlockMD, sb.blockPos.x, sb.blockPos.y, ThreadPool::GetThreadNum());
 			};
 
-
 		for_mt(0, consumedBlocks.size(), updateOffset);
-
-		// for (int n=0; n<consumedBlocks.size(); n++){
-		// 	const SingleBlock sb = consumedBlocks[n];
-		// 	const int blockN = BlockPosToIdx(sb.blockPos);
-		// 	const MoveDef* currBlockMD = sb.moveDef;
-		// 	LOG("UPDATED consumed blockStates.peNodeOffsets[%d][%d] = (%d, %d) :(%d, %d)"
-		// 		, currBlockMD->pathType, blockN
-		// 		, blockStates.peNodeOffsets[currBlockMD->pathType][blockN].x
-		// 		, blockStates.peNodeOffsets[currBlockMD->pathType][blockN].y
-		// 		, sb.blockPos.x, sb.blockPos.y);
-		// }
 	}
 
 	{
@@ -782,44 +753,59 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 	const int startZ = std::clamp(lowerZ, 0, int(mapDimensionsInBlocks.y - 1));
 	const int endZ   = std::clamp(upperZ, 0, int(mapDimensionsInBlocks.y - 1));
 
+	bool pathingDirectional = pathManager->AllowDirectionalPathing();
+
 	// LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
+
+	constexpr uint32_t ALL_LINKS = PATH_DIRECTIONS_MASK;
+	constexpr uint32_t MASK_REMOVE_LEFT = ~(PATHDIR_LEFT_MASK | PATHDIR_LEFT_UP_MASK | PATHDIR_LEFT_DOWN_MASK);
+	constexpr uint32_t MASK_REMOVE_RIGHT = ~(PATHDIR_RIGHT_MASK | PATHDIR_RIGHT_UP_MASK| PATHDIR_RIGHT_DOWN_MASK);
+	constexpr uint32_t MASK_REMOVE_UP = ~(PATHDIR_UP_MASK | PATHDIR_LEFT_UP_MASK | PATHDIR_RIGHT_UP_MASK);
+	constexpr uint32_t MASK_REMOVE_DOWN = ~(PATHDIR_DOWN_MASK | PATHDIR_LEFT_DOWN_MASK | PATHDIR_RIGHT_DOWN_MASK);
+
+	constexpr uint32_t activeLinks[] = {
+		ALL_LINKS & MASK_REMOVE_LEFT  & MASK_REMOVE_UP,
+		ALL_LINKS                     & MASK_REMOVE_UP,
+		ALL_LINKS & MASK_REMOVE_RIGHT & MASK_REMOVE_UP,
+		ALL_LINKS & MASK_REMOVE_LEFT,
+		ALL_LINKS,
+		ALL_LINKS & MASK_REMOVE_RIGHT,
+		ALL_LINKS & MASK_REMOVE_LEFT  & MASK_REMOVE_DOWN,
+		ALL_LINKS                     & MASK_REMOVE_DOWN,
+		ALL_LINKS & MASK_REMOVE_RIGHT & MASK_REMOVE_DOWN,
+	};
+
+	auto getIdxFromZ = [&](int z){
+			if (z == lowerZ) return 0;
+			else if (z == upperZ) return 6;
+			else return 3;
+	};
+	auto getIdxFromX = [&](int x){
+			if (x == lowerX) return 0;
+			else if (x == upperX) return 2;
+			else return 1;
+	};
 
 	// mark the blocks inside the rectangle, enqueue them
 	// from upper to lower because of the placement of the
 	// bi-directional vertices
 	for (int z = endZ; z >= startZ; z--) {
 		for (int x = endX; x >= startX; x--) {
-			// the upper left corner won't have any flags assigned
-			if (x==upperX && z==upperZ)
-				continue;
-
 			const int idx = BlockPosToIdx(int2(x, z));
-
 			std::uint8_t blockOrigLinkFlags = blockStates.nodeLinksObsoleteFlags[idx];
-			if ((blockOrigLinkFlags & PATH_DIRECTIONS_HALF_MASK) == PATH_DIRECTIONS_HALF_MASK) 
+
+			uint8_t linkType = getIdxFromZ(z) + getIdxFromX(x);
+			blockStates.nodeLinksObsoleteFlags[idx] = uint8_t(activeLinks[linkType]);
+			if (!pathingDirectional) 
+				blockStates.nodeLinksObsoleteFlags[idx] &= PATH_DIRECTIONS_HALF_MASK;
+
+			if (blockStates.nodeLinksObsoleteFlags[idx] == blockOrigLinkFlags)
 				continue;
 
 			//if ((blockStates.nodeMask[idx] & PATHOPT_OBSOLETE) != 0)
 			//	continue;
 
-// [t=00:05:48.829407][f=0000630] [Path] MapChanged: clamped to [14, 43] -> [16, 44]
-// [t=00:05:48.829430][f=0000630] [Path] MapChanged: [15, 44] result is 0f
-// [t=00:05:48.829453][f=0000630] [Path] MapChanged: [14, 44] result is 01
-// [t=00:05:48.829463][f=0000630] [Path] MapChanged: [16, 43] result is 08
-// [t=00:05:48.829472][f=0000630] [Path] MapChanged: [15, 43] result is 04
-// [t=00:05:48.829482][f=0000630] [Path] MapChanged: [14, 43] result is 02
-
-			const bool leftUpSpecificIgnoreBlocks  = (x==upperX-1 & z==lowerZ) | (x==lowerX & z==upperZ);
-			const bool rightUpSpecificIgnoreBlocks = (x==lowerX+1 & z==lowerZ) /* | (x==upperX & z==upperZ)*/;
-
 			//LOG("%s: [%d, %d] lower is %02x", __func__, x, z, blockOrigLinkFlags);
-
-			blockStates.nodeLinksObsoleteFlags[idx]
-				|=  (z > lowerZ) * (x < upperX)                   * PATHDIR_LEFT_MASK
-				 +  (x < upperX) * (!leftUpSpecificIgnoreBlocks)  * PATHDIR_LEFT_UP_MASK
-				 +  (x > lowerX) * (x < upperX)                   * PATHDIR_UP_MASK
-				 +  (x > lowerX) * (!rightUpSpecificIgnoreBlocks) * PATHDIR_RIGHT_UP_MASK;
-
 			//LOG("%s: clamped to [%d, %d] -> [%d, %d]", __func__, lowerX, lowerZ, upperX, upperZ);
 			//LOG("%s: [%d, %d] result is %02x", __func__, x, z, blockStates.nodeLinksObsoleteFlags[idx]);
 
@@ -835,6 +821,7 @@ void PathingState::MapChanged(unsigned int x1, unsigned int z1, unsigned int x2,
 
 std::uint32_t PathingState::CalcChecksum() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::uint32_t chksum = 0;
 	std::uint64_t nbytes = vertexCosts.size() * sizeof(float);
 	std::uint64_t offset = 0;
@@ -909,12 +896,14 @@ std::uint32_t PathingState::CalcChecksum() const
 
 void PathingState::AddCache(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::lock_guard<std::mutex> lock(cacheAccessLock);
 	pathCache[synced]->AddPath(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
 
 void PathingState::AddPathForCurrentFrame(const IPath::Path* path, const IPath::SearchResult result, const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//const std::lock_guard<std::mutex> lock(cacheAccessLock);
 	//pathCache[synced]->AddPathForCurrentFrame(path, result, strtBlock, goalBlock, goalRadius, pathType);
 }
@@ -929,6 +918,7 @@ void PathingState::PromotePathForCurrentFrame(
 		const bool synced
 	)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int2 strtBlock = {int(startPosition.x / BLOCK_PIXEL_SIZE), int(startPosition.z / BLOCK_PIXEL_SIZE)};;
 	int2 goalBlock = {int(goalPosition.x / BLOCK_PIXEL_SIZE), int(goalPosition.z / BLOCK_PIXEL_SIZE)};
 
@@ -937,6 +927,7 @@ void PathingState::PromotePathForCurrentFrame(
 
 std::uint32_t PathingState::CalcHash(const char* caller) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int hmChecksum = readMap->CalcHeightmapChecksum();
 	const unsigned int tmChecksum = readMap->CalcTypemapChecksum();
 	const unsigned int mdChecksum = moveDefHandler.GetCheckSum();

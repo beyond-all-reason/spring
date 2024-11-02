@@ -21,6 +21,8 @@
 #include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(int, Water)
 .defaultValue(IWater::WATER_RENDERER_REFLECTIVE)
 .safemodeValue(IWater::WATER_RENDERER_BASIC)
@@ -38,10 +40,12 @@ IWater::IWater()
 }
 
 void IWater::ExplosionOccurred(const CExplosionParams& event) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	AddExplosion(event.pos, event.damages.GetDefault(), event.craterAreaOfEffect);
 }
 
 void IWater::SetModelClippingPlane(const double* planeEq) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glLoadIdentity();
 	glClipPlane(GL_CLIP_PLANE2, planeEq);
@@ -50,10 +54,11 @@ void IWater::SetModelClippingPlane(const double* planeEq) {
 
 void IWater::SetWater(int rendererMode)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static std::array<bool, NUM_WATER_RENDERERS> allowedModes = {
 		true,
 		GLEW_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/water.fp"),
-		GLEW_ARB_fragment_program && GLEW_ARB_texture_float && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/waterDyn.fp"),
+		GLEW_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/waterDyn.fp"),
 		GLEW_ARB_fragment_program && GLEW_ARB_texture_rectangle,
 		GLEW_ARB_shading_language_100 && GLEW_ARB_fragment_shader && GLEW_ARB_vertex_shader,
 	};
@@ -129,6 +134,7 @@ void IWater::SetWater(int rendererMode)
 
 
 void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool drawSky) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	game->SetDrawMode(CGame::gameReflectionDraw);
 
 	{
@@ -155,9 +161,8 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 		// transparent
 		unitDrawer->DrawAlphaPass(true);
 		featureDrawer->DrawAlphaPass(true);
-		projectileDrawer->DrawAlpha(true, true, false);
+		projectileDrawer->DrawAlpha(true, false, true, false);
 		// sun-disc does not blend well with water
-		// sky->DrawSun();
 
 		eventHandler.DrawWorldReflection();
 		glDisable(GL_CLIP_PLANE2);
@@ -169,6 +174,7 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 }
 
 void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool drawSky) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	game->SetDrawMode(CGame::gameRefractionDraw);
 
 	{
@@ -194,7 +200,7 @@ void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool d
 		// transparent
 		unitDrawer->DrawAlphaPass(false, true);
 		featureDrawer->DrawAlphaPass(false, true);
-		projectileDrawer->DrawAlpha(false, false, true);
+		projectileDrawer->DrawAlpha(false, true, false, true);
 
 		eventHandler.DrawWorldRefraction();
 		glDisable(GL_CLIP_PLANE2);

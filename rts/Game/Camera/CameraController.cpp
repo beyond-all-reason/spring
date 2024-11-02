@@ -3,9 +3,12 @@
 
 #include "CameraController.h"
 #include "Game/Camera.h"
+#include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/Config/ConfigHandler.h"
+
+#include "System/Misc/TracyDefs.h"
 
 
 CONFIG(float, UseDistToGroundForIcons).defaultValue(0.95f);
@@ -13,6 +16,7 @@ CONFIG(float, UseDistToGroundForIcons).defaultValue(0.95f);
 
 CCameraController::CCameraController()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// switchVal:
 	// * 1.0 = 0 degree  = overview
 	// * 0.0 = 90 degree = first person
@@ -28,10 +32,12 @@ CCameraController::CCameraController()
 }
 
 float3 CCameraController::GetRot() const { return CCamera::GetRotFromDir(GetDir()); }
+void CCameraController::SetRot(const float3& newRot) { dir = CCamera::GetFwdFromRot(newRot); }
 
 
 bool CCameraController::SetStateBool(const StateMap& sm, const std::string& name, bool& var)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const StateMap::const_iterator it = sm.find(name);
 
 	if (it != sm.cend()) {
@@ -44,6 +50,7 @@ bool CCameraController::SetStateBool(const StateMap& sm, const std::string& name
 
 bool CCameraController::SetStateFloat(const StateMap& sm, const std::string& name, float& var)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const StateMap::const_iterator it = sm.find(name);
 
 	if (it != sm.cend()) {
@@ -73,6 +80,7 @@ bool CCameraController::GetUseDistToGroundForIcons() {
 
 bool CCameraController::SetState(const StateMap& sm)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetStateFloat(sm, "fov", fov);
 
 	SetStateFloat(sm, "px", pos.x);
@@ -88,6 +96,7 @@ bool CCameraController::SetState(const StateMap& sm)
 
 void CCameraController::GetState(StateMap& sm) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	sm["fov"] = fov;
 
 	sm["px"] = pos.x;
@@ -99,3 +108,14 @@ void CCameraController::GetState(StateMap& sm) const
 	sm["dz"] = dir.z;
 }
 
+float CCameraController::DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
+
+	// if the direction is not pointing towards the map we use provided xz plane as heuristic
+	if (newGroundDist <= 0.0f) {
+		newGroundDist = CGround::LinePlaneCol(from, dir, 150000.0f, fallbackPlaneHeight);
+	}
+
+	return newGroundDist;
+}

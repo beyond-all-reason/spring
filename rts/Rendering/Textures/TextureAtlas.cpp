@@ -19,6 +19,8 @@
 
 #include <cstring>
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(int, MaxTextureAtlasSizeX).defaultValue(4096).minimumValue(512).maximumValue(32768).description("The max X size of the projectile and Lua texture atlasses");
 CONFIG(int, MaxTextureAtlasSizeY).defaultValue(4096).minimumValue(512).maximumValue(32768).description("The max Y size of the projectile and Lua texture atlasses");
 
@@ -42,6 +44,7 @@ CTextureAtlas::CTextureAtlas(uint32_t allocType_, int32_t atlasSizeX_, int32_t a
 
 CTextureAtlas::~CTextureAtlas()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (freeTexture) {
 		glDeleteTextures(1, &atlasTexID);
 		atlasTexID = 0u;
@@ -55,6 +58,7 @@ CTextureAtlas::~CTextureAtlas()
 
 void CTextureAtlas::ReinitAllocator()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	spring::SafeDelete(atlasAllocator);
 
 	switch (allocType) {
@@ -68,12 +72,12 @@ void CTextureAtlas::ReinitAllocator()
 	atlasSizeX = std::min(globalRendering->maxTextureSize, (atlasSizeX > 0) ? atlasSizeX : configHandler->GetInt("MaxTextureAtlasSizeX"));
 	atlasSizeY = std::min(globalRendering->maxTextureSize, (atlasSizeY > 0) ? atlasSizeY : configHandler->GetInt("MaxTextureAtlasSizeY"));
 
-	atlasAllocator->SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
 	atlasAllocator->SetMaxSize(atlasSizeX, atlasSizeY);
 }
 
 size_t CTextureAtlas::AddTex(std::string texName, int xsize, int ysize, TextureType texType)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	memTextures.emplace_back();
 	MemTex& tex = memTextures.back();
 
@@ -92,6 +96,7 @@ size_t CTextureAtlas::AddTex(std::string texName, int xsize, int ysize, TextureT
 
 size_t CTextureAtlas::AddTexFromMem(std::string texName, int xsize, int ysize, TextureType texType, const void* data)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const size_t texIdx = AddTex(std::move(texName), xsize, ysize, texType);
 
 	MemTex& tex = memTextures[texIdx];
@@ -102,6 +107,7 @@ size_t CTextureAtlas::AddTexFromMem(std::string texName, int xsize, int ysize, T
 
 size_t CTextureAtlas::AddTexFromFile(std::string texName, const std::string& file)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	StringToLowerInPlace(texName);
 
 	// if the file is already loaded, use that instead
@@ -128,6 +134,7 @@ size_t CTextureAtlas::AddTexFromFile(std::string texName, const std::string& fil
 
 bool CTextureAtlas::Finalize()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (initialized && !reloadable)
 		return true;
 
@@ -143,21 +150,25 @@ bool CTextureAtlas::Finalize()
 
 const uint32_t CTextureAtlas::GetTexTarget() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return GL_TEXTURE_2D; // just constant for now
 }
 
 int CTextureAtlas::GetNumTexLevels() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return atlasAllocator->GetNumTexLevels();
 }
 
 void CTextureAtlas::SetMaxTexLevel(int maxLevels)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	atlasAllocator->SetMaxTexLevel(maxLevels);
 }
 
 bool CTextureAtlas::CreateTexture()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 atlasSize = atlasAllocator->GetAtlasSize();
 	const int numLevels = atlasAllocator->GetNumTexLevels();
 
@@ -233,21 +244,25 @@ bool CTextureAtlas::CreateTexture()
 
 void CTextureAtlas::BindTexture()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glBindTexture(GL_TEXTURE_2D, atlasTexID);
 }
 
 bool CTextureAtlas::TextureExists(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (textures.find(StringToLower(name)) != textures.end());
 }
 
 const spring::unordered_map<std::string, IAtlasAllocator::SAtlasEntry>& CTextureAtlas::GetTextures() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return atlasAllocator->GetEntries();
 }
 
 void CTextureAtlas::ReloadTextures()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!reloadable) {
 		LOG_L(L_ERROR, "[CTextureAtlas::%s] Attempting to reload non-reloadable texture atlas name=\"%s\"", __func__, name.c_str());
 		return;
@@ -295,6 +310,7 @@ void CTextureAtlas::ReloadTextures()
 
 void CTextureAtlas::DumpTexture(const char* newFileName) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!initialized)
 		return;
 
@@ -307,6 +323,7 @@ void CTextureAtlas::DumpTexture(const char* newFileName) const
 
 AtlasedTexture& CTextureAtlas::GetTexture(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (TextureExists(name))
 		return textures[StringToLower(name)];
 
@@ -316,6 +333,7 @@ AtlasedTexture& CTextureAtlas::GetTexture(const std::string& name)
 
 AtlasedTexture& CTextureAtlas::GetTextureWithBackup(const std::string& name, const std::string& backupName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (TextureExists(name))
 		return textures[StringToLower(name)];
 
@@ -327,6 +345,7 @@ AtlasedTexture& CTextureAtlas::GetTextureWithBackup(const std::string& name, con
 
 std::string CTextureAtlas::GetTextureName(AtlasedTexture* tex)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (texToName.empty()) {
 		for (auto& kv : textures)
 			texToName[&kv.second] = kv.first;
@@ -336,6 +355,7 @@ std::string CTextureAtlas::GetTextureName(AtlasedTexture* tex)
 }
 
 int2 CTextureAtlas::GetSize() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return (atlasAllocator->GetAtlasSize());
 }
 

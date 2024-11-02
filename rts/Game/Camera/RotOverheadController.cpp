@@ -12,6 +12,8 @@
 
 #include "Game/CameraHandler.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(float, RotOverheadMouseScale).defaultValue(0.01f);
 CONFIG(int, RotOverheadScrollSpeed).defaultValue(10);
 CONFIG(bool, RotOverheadEnabled).defaultValue(true).headlessValue(false);
@@ -19,8 +21,9 @@ CONFIG(float, RotOverheadFOV).defaultValue(45.0f);
 CONFIG(bool, RotOverheadClampMap).defaultValue(true).headlessValue(true);
 
 
-CRotOverheadController::CRotOverheadController(): oldHeight(500.0f)
+CRotOverheadController::CRotOverheadController(): oldHeight(500.0f), rot(2.677f, 0.0f, 0.0f)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	mouseScale  = configHandler->GetFloat("RotOverheadMouseScale");
 	scrollSpeed = configHandler->GetInt("RotOverheadScrollSpeed") * 0.1f;
 	enabled     = configHandler->GetBool("RotOverheadEnabled");
@@ -31,6 +34,7 @@ CRotOverheadController::CRotOverheadController(): oldHeight(500.0f)
 
 void CRotOverheadController::KeyMove(float3 move)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	move *= math::sqrt(move.z) * 400;
 
 	float3 flatForward = camera->GetDir();
@@ -46,23 +50,9 @@ void CRotOverheadController::KeyMove(float3 move)
 
 void CRotOverheadController::MouseMove(float3 move)
 {
-	// use local dir state so CameraHandler can create smooth transition between
-	// current camera rot and desired
-	auto rot = CCamera::GetRotFromDir(dir);
+	RECOIL_DETAILED_TRACY_ZONE;
 	rot.x = std::clamp(rot.x + mouseScale * move.y * move.z, math::PI * 0.4999f, math::PI * 0.9999f);
-
-	float new_rot_y = ClampRad(rot.y + mouseScale * move.x + math::PI) - math::PI;
-	float cam_rot_y = camera->GetRot().y;
-	bool over_half_rot_y = (GetRadAngleToward(cam_rot_y, new_rot_y) *
-			GetRadAngleToward(cam_rot_y , rot.y) > 0.0f) &&
-			(fabsf(GetRadAngleToward(cam_rot_y, rot.y)) > math::HALFPI);
-
-	if (!over_half_rot_y) {
-		// pending rotation can't be over 180deg as CameraHandler will smooth it
-		// in the opposite direction
-		rot.y = new_rot_y;
-	}
-
+	rot.y += mouseScale * move.x ;
 	dir = CCamera::GetFwdFromRot(rot);
 	Update();
 }
@@ -70,12 +60,14 @@ void CRotOverheadController::MouseMove(float3 move)
 
 void CRotOverheadController::ScreenEdgeMove(float3 move)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	KeyMove(move);
 }
 
 
 void CRotOverheadController::MouseWheelMove(float move)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float gheight = CGround::GetHeightAboveWater(pos.x, pos.z, false);
 	float height = pos.y - gheight;
 
@@ -87,6 +79,7 @@ void CRotOverheadController::MouseWheelMove(float move)
 
 void CRotOverheadController::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (clampToMap) {
 		pos.x = std::clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
 		pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
@@ -103,6 +96,7 @@ void CRotOverheadController::Update()
 
 void CRotOverheadController::SetPos(const float3& newPos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetPos(newPos);
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + oldHeight;
 	Update();
@@ -111,20 +105,31 @@ void CRotOverheadController::SetPos(const float3& newPos)
 
 float3 CRotOverheadController::SwitchFrom() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return pos;
 }
 
 
-void CRotOverheadController::SwitchTo(const int oldCam, const bool showText)
+void CRotOverheadController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText) {
 		LOG("Switching to Rotatable overhead camera");
 	}
+	float3 newPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov") {
+		pos = float3(newPos.x, pos.y, newPos.z);
+		Update();
+		return;
+	}
+	pos = newPos;
+	rot = oldCam->GetRot();
 }
 
 
 void CRotOverheadController::GetState(StateMap& sm) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 
 	sm["oldHeight"] = oldHeight;
@@ -133,6 +138,7 @@ void CRotOverheadController::GetState(StateMap& sm) const
 
 bool CRotOverheadController::SetState(const StateMap& sm)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 
 	SetStateFloat(sm, "oldHeight", oldHeight);

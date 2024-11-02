@@ -17,4 +17,9 @@ void log_console_colorizedOutput(bool enable);
 } // extern "C"
 #endif
 
+struct ConsoleSinkRegistrator {
+    ConsoleSinkRegistrator();
+    ~ConsoleSinkRegistrator();
+};
+
 #endif // LOG_CONSOLE_SINK_H

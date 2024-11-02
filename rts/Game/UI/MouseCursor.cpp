@@ -2,9 +2,9 @@
 
 
 #include <array>
+#include <bit>
 #include <cstring>
 
-#include "System/bitops.h"
 #include "CommandColors.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
@@ -20,6 +20,8 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/SimpleParser.h"
+
+#include "System/Misc/TracyDefs.h"
 
 CMouseCursor::CMouseCursor(const std::string& name_, HotSpot hs)
 	: name(name_)
@@ -46,6 +48,7 @@ CMouseCursor::CMouseCursor(const std::string& name_, HotSpot hs)
 
 CMouseCursor::~CMouseCursor()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (hwCursor != nullptr) {
 		hwCursor->Kill();
 		IHardwareCursor::Free(hwCursor);
@@ -89,6 +92,7 @@ CMouseCursor& CMouseCursor::operator = (CMouseCursor&& mc) noexcept {
 
 bool CMouseCursor::Build(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int lastFrame = 1000;
 
 	hwCursor = IHardwareCursor::Alloc(hwCursorMem);
@@ -104,6 +108,7 @@ bool CMouseCursor::Build(const std::string& name)
 
 bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string specFileName = "anims/" + name + ".txt";
 
 	if (!CFileHandler::FileExists(specFileName, SPRING_VFS_RAW_FIRST))
@@ -181,6 +186,7 @@ bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 
 bool CMouseCursor::BuildFromFileNames(const std::string& name, int lastFrame)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// find the image file type to use
 	const char* ext = "";
 	const char* exts[] = {"png", "tga", "bmp"};
@@ -213,6 +219,7 @@ bool CMouseCursor::BuildFromFileNames(const std::string& name, int lastFrame)
 
 float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2& winScale) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (winCoors.z > 1.0f || frames.empty())
 		return { 0.0f, 0.0f, 0.0f, 0.0f };
 
@@ -237,6 +244,7 @@ float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2&
 }
 bool CMouseCursor::LoadDummyImage()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ImageData id;
 	CBitmap bn;
 
@@ -258,6 +266,7 @@ bool CMouseCursor::LoadDummyImage()
 
 bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!CFileHandler::FileExists(name, SPRING_VFS_RAW_FIRST))
 		return false;
 
@@ -282,8 +291,8 @@ bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 	}
 
 
-	const int nx = next_power_of_2(b.xsize);
-	const int ny = next_power_of_2(b.ysize);
+	const int nx = std::bit_ceil <uint32_t> (b.xsize);
+	const int ny = std::bit_ceil <uint32_t> (b.ysize);
 
 	if (b.xsize != nx || b.ysize != ny) {
 		CBitmap bn;
@@ -309,6 +318,7 @@ bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 
 void CMouseCursor::Draw(int x, int y, float scale) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (frames.empty())
 		return;
 
@@ -359,6 +369,7 @@ void CMouseCursor::Draw(int x, int y, float scale) const
 
 void CMouseCursor::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (frames.empty())
 		return;
 
@@ -378,6 +389,7 @@ void CMouseCursor::Update()
 
 void CMouseCursor::BindTexture() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (frames.empty())
 		return;
 
@@ -389,12 +401,14 @@ void CMouseCursor::BindTexture() const
 
 void CMouseCursor::BindHwCursor() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(hwCursor != nullptr);
 	hwCursor->Bind();
 }
 
 void CMouseCursor::UpdateHwCursor() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
     assert(hwCursor != nullptr);
     hwCursor->Update(animTime);
 }

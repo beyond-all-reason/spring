@@ -8,16 +8,16 @@
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 IInfoTextureHandler* infoTextureHandler = nullptr;
 
 
 void IInfoTextureHandler::Create()
 {
-	if (
-		globalRendering->supportNonPowerOfTwoTex &&
-		FBO::IsSupported()
-	) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (FBO::IsSupported()) {
 		try {
 			infoTextureHandler = new CInfoTextureHandler();
 		} catch (const opengl_error& glerr) {

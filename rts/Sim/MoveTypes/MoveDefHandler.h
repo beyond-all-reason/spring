@@ -41,21 +41,24 @@ struct MoveDef {
 	MoveDef& operator = (const MoveDef& moveDef) = delete;
 	MoveDef& operator = (MoveDef&& moveDef) = default;
 
+	// nearestSquare is given a meaningful value only when the result is true.
 	bool DoRawSearch(
 		const CSolidObject* collider,
+		const MoveDef* md,
 		const float3 startPos,
 		const float3 endPos,
-		const float3 testMoveDir,
+		float goalRadius,
 		bool testTerrain,
 		bool testObjects,
 		bool centerOnly,
 		float* minSpeedModPtr,
 		int* maxBlockBitPtr,
+		int2* nearestSquare,
 		int thread = 0
-	);
+	) const;
 	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
 	bool TestMoveSquareRange(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery& collider,
 		const float3 rangeMins,
 		const float3 rangeMaxs,
 		const float3 testMoveDir,
@@ -67,7 +70,7 @@ struct MoveDef {
 		int thread = 0
 	) const;
 	bool TestMoveSquare(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery& collider,
 		const float3 testMovePos,
 		const float3 testMoveDir,
 		bool testTerrain = true,
@@ -86,6 +89,9 @@ struct MoveDef {
 		int thread
 	) const;
 
+	bool IsInExitOnly(float3 testMovePos) const;
+	bool IsInExitOnly(int x, int z) const;
+
 	// aircraft and buildings defer to UnitDef::floatOnWater
 	bool FloatOnWater() const { return (speedModClass == MoveDef::Hover || speedModClass == MoveDef::Ship); }
 
@@ -98,6 +104,10 @@ struct MoveDef {
 	float GetDepthMod(float height) const;
 
 	unsigned int CalcCheckSum() const;
+
+	bool IsComplexSubmersible() const {
+		return isSubmersible && overrideUnitWaterline;
+	};
 
 	static float GetDefaultMinWaterDepth() { return -1e6f; }
 	static float GetDefaultMaxWaterDepth() { return +1e6f; }
@@ -173,6 +183,13 @@ struct MoveDef {
 	/// are we supposed to be a purely sub-surface ship?
 	bool isSubmarine = false;
 
+	// can this unit completely submerge in water?
+	bool isSubmersible = false;
+
+	/// If false, this forces the use of simple underwater collisions, which can cause some pathing issues for
+	/// amphibious units. i.e. they are blocked by obstacles above and below the water regardless of height.
+	bool overrideUnitWaterline = true;
+
 	/// do we try to pathfind around squares blocked by mobile units?
 	///
 	/// this also serves as a padding byte for alignment so compiler
@@ -180,7 +197,9 @@ struct MoveDef {
 	/// otherwise, since they are never initialized)
 	bool avoidMobilesOnPath = true;
 	bool allowTerrainCollisions = true;
+	bool allowDirectionalPathing = false;
 	bool allowRawMovement = false;
+	bool preferShortestPath = false;
 
 	/// do we leave heat and avoid any left by others?
 	bool heatMapping = true;
@@ -198,6 +217,7 @@ public:
 	constexpr static size_t MAX_MOVE_DEFS = 256;
 
 	void Init(LuaParser* defsParser);
+	void PostSimInit();
 	void Kill() {
 		nameMap.clear(); // never iterated
 

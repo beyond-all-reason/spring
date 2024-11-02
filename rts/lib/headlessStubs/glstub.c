@@ -26,6 +26,7 @@ GLAPI void APIENTRY glFramebufferTexture2D(GLenum target, GLenum attachment, GLe
 GLAPI void APIENTRY glFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
 GLAPI void APIENTRY glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
 GLAPI void APIENTRY glFramebufferTextureLayerEXT(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
+GLAPI void APIENTRY glGetFramebufferParameteriv (GLenum target, GLenum pname, GLint *params) {}
 
 
 GLAPI void APIENTRY glDrawBuffers(GLsizei n, const GLenum *bufs) {}

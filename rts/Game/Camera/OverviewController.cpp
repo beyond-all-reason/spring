@@ -10,9 +10,12 @@
 #include "Game/Camera.h"
 #include "System/Config/ConfigHandler.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(bool, CamOverviewDynamicRotation).defaultValue(false).description("Transition from different camera preserves rotation");
 
 static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov, bool cameraSideways) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr float marginForUI = 1.037f; // leave some space for UI outside of map edges
 	static constexpr float maxHeight = 25000.0f;
 	const float fovCoefficient = 1.0f/math::tan(fov * math::DEG_TO_RAD) * marginForUI;
@@ -25,10 +28,12 @@ static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov, bool 
 }
 
 static float GetClosestRightAngle(float angle) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return std::round(angle/math::HALFPI) * math::HALFPI;
 }
 
 static bool CameraPointingSideways(float angle) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return std::lround(angle/math::HALFPI) % 2;
 }
 
@@ -37,6 +42,7 @@ COverviewController::COverviewController() :
 	dynamicRotation(false),
 	camRotY(CCameraController::GetRot().y)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	enabled = false;
 
 	dir = float3(0.0f, -1.0f, -0.001f).ANormalize();
@@ -50,11 +56,13 @@ COverviewController::COverviewController() :
 
 COverviewController::~COverviewController()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	configHandler->RemoveObserver(this);
 }
 
 float3 COverviewController::SwitchFrom() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 mdir = mouse->dir;
 	const float3 rpos = pos + mdir * CGround::LineGroundCol(pos, pos + mdir * 50000.0f, false);
 
@@ -65,6 +73,7 @@ float3 COverviewController::SwitchFrom() const
 }
 
 float3 COverviewController::GetRot() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 defaultRot = CCameraController::GetRot();
 	if (!this->dynamicRotation)
 	{
@@ -74,8 +83,9 @@ float3 COverviewController::GetRot() const {
 	return {defaultRot.x, GetClosestRightAngle(camRotY), defaultRot.z};
 }
 
-void COverviewController::SwitchTo(const int oldCam, const bool showText)
+void COverviewController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText)
 		LOG("Switching to Overview style camera");
 
@@ -84,19 +94,21 @@ void COverviewController::SwitchTo(const int oldCam, const bool showText)
 		minimap->SetMinimized(true);
 	}
 
-	camRotY = CCamera::GetActive()->GetRot().y;
+	camRotY = oldCam->GetRot().y;
 
-	bool cameraSideways = CameraPointingSideways(GetRot().y);
+	bool cameraSideways = CameraPointingSideways(oldCam->GetRot().y);
 	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov/2.0, cameraSideways);
 }
 
 void COverviewController::GetState(StateMap& sm) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 }
 
 bool COverviewController::SetState(const StateMap& sm)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// CCameraController::SetState(sm);
 	// always centered, allow only for FOV change
 	SetStateFloat(sm, "fov", fov);
@@ -105,10 +117,12 @@ bool COverviewController::SetState(const StateMap& sm)
 
 void COverviewController::ConfigUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	dynamicRotation = configHandler->GetBool("CamOverviewDynamicRotation");
 }
 
 void COverviewController::ConfigNotify(const std::string & key, const std::string & value)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
 }

@@ -4,6 +4,7 @@
 
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Path/QTPFS/Components/Path.h"
+#include "Sim/Path/QTPFS/Components/RemoveDeadPaths.h"
 #include "Sim/Path/QTPFS/PathManager.h"
 #include "Sim/Path/QTPFS/Registry.h"
 
@@ -12,12 +13,15 @@
 #include "System/TimeProfiler.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 using namespace SystemGlobals;
 using namespace QTPFS;
 
 
 void RequeuePathsSystem::Init()
 {
+    RECOIL_DETAILED_TRACY_ZONE;
     systemUtils.OnUpdate().connect<&RequeuePathsSystem::Update>();
 }
 
@@ -33,10 +37,10 @@ void RequeuePathsSystem::Update()
             requeueSearch = false;
 
             // The path is already scheduled to be requeued.
-            bool dirtyPath = registry.any_of<PathIsDirty>(pathEntity);
+            bool dirtyPath = registry.any_of<PathIsDirty, PathDelayedDelete>(pathEntity);
             if (dirtyPath) { continue; }
 
-            pm->RequeueSearch(&registry.get<IPath>(pathEntity), true, false);
+            pm->RequeueSearch(&registry.get<IPath>(pathEntity), true, false, true);
             registry.emplace_or_replace<PathUpdatedCounterIncrease>(pathEntity);
             
         }
@@ -44,5 +48,6 @@ void RequeuePathsSystem::Update()
 }
 
 void RequeuePathsSystem::Shutdown() {
+    RECOIL_DETAILED_TRACY_ZONE;
     systemUtils.OnUpdate().disconnect<&RequeuePathsSystem::Update>();
 }

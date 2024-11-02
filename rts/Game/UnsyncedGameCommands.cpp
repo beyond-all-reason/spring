@@ -2818,17 +2818,23 @@ class GroundDecalsActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GroundDecalsActionExecutor() : IUnsyncedActionExecutor(
 		"GroundDecals",
-		"Enable/Disable ground-decal rendering."
+		"Enable/Disable ground-decal rendering"
 	) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		bool drawDecals = IGroundDecalDrawer::GetDrawDecals();
+		if (action.GetArgs().empty()) {
+			IGroundDecalDrawer::SetDrawDecals(!IGroundDecalDrawer::GetDrawDecals()); //inverse
+		}
+		else {
+			bool failed;
+			auto dl = StringToInt(action.GetArgs(), &failed);
+			if (!failed)
+				IGroundDecalDrawer::SetDrawDecals(static_cast<bool>(dl));
+		}
 
-		InverseOrSetBool(drawDecals, action.GetArgs());
-		IGroundDecalDrawer::SetDrawDecals(drawDecals);
-
-		LogSystemStatus("Ground-decal rendering", IGroundDecalDrawer::GetDrawDecals());
+		static constexpr const char* fmt = "Ground-decal rendering %s";
+		LOG(fmt, IGroundDecalDrawer::GetDrawDecals() ? "enabled" : "disabled");
 		return true;
 	}
 };
@@ -3165,7 +3171,7 @@ public:
 
 	bool Execute(const UnsyncedAction& action) const final {
 		InverseOrSetBool(CUnitDrawer::IconHideWithUI(), action.GetArgs());
-		configHandler->Set("IconsHideWithUI", CUnitDrawer::IconHideWithUI() ? 1 : 0);
+		configHandler->Set("UnitIconsHideWithUI", CUnitDrawer::IconHideWithUI() ? 1 : 0);
 		LogSystemStatus("Hide unit icons with UI: ", CUnitDrawer::IconHideWithUI());
 		return true;
 	}
@@ -3219,7 +3225,7 @@ public:
 
 class AirMeshActionExecutor: public IUnsyncedActionExecutor {
 public:
-	AirMeshActionExecutor(): IUnsyncedActionExecutor("airmesh", "Show/Hide the smooth air-mesh map overlay") {
+	AirMeshActionExecutor(): IUnsyncedActionExecutor("airmesh", "Show/Hide the smooth air-mesh map overlay", true) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {

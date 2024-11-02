@@ -97,7 +97,8 @@ namespace QTPFS {
 			, hCostMult(0.0f)
 			, haveFullPath(false)
 			, havePartPath(false)
-
+			, pathOwner(nullptr)
+			, tryPathRepair(false)
 			{}
 		PathSearch(unsigned int pathSearchType)
 			: PathSearch()
@@ -111,7 +112,9 @@ namespace QTPFS {
 			const CSolidObject* owner
 		);
 		void InitializeThread(SearchThreadData* threadData);
+		void PreLoadNode(uint32_t dir, uint32_t nodeId, uint32_t prevNodeId, const float2& netPoint, uint32_t stepIndex);
 		void LoadPartialPath(IPath* path);
+		void LoadRepairPath();
 		bool Execute(unsigned int searchStateOffset = 0);
 		void Finalize(IPath* path);
 		bool SharedFinalize(const IPath* srcPath, IPath* dstPath);
@@ -126,6 +129,8 @@ namespace QTPFS {
 		int GetPathType() const { return pathType; }
 
 		void SetGoalDistance(float dist) { goalDistance = dist; }
+
+		const CSolidObject* Getowner() const { return pathOwner; }
 
 	private:
 		struct DirectionalSearchData {
@@ -143,10 +148,20 @@ namespace QTPFS {
 			SearchNode *srcSearchNode, *tgtSearchNode;
 			float3 srcPoint, tgtPoint;
 			SearchNode *minSearchNode;
+			SearchNode *repairPathRealSrcSearchNode;
 		};
 
-		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData);
+		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData, const float3& srcPoint);
 		void UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx);
+
+		void InitSearchNodeData(QTPFS::SearchNode *curSearchNode, QTPFS::INode *curNode) const {
+			curSearchNode->xmin = curNode->xmin();
+			curSearchNode->xmax = curNode->xmax();
+			curSearchNode->zmin = curNode->zmin();
+			curSearchNode->zmax = curNode->zmax();
+			curSearchNode->nodeNumber = curNode->GetNodeNumber();
+		}
+
 
 		void IterateNodes(unsigned int searchDir);
 		void IterateNodeNeighbors(const INode* curNode, unsigned int searchDir);
@@ -175,8 +190,11 @@ namespace QTPFS {
 		const PathHashType GenerateHash2(uint32_t p1, uint32_t p2) const;
 
 		const PathHashType GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
-		const std::uint32_t GenerateVirtualNodeNumber(const INode* startNode, int nodeMaxSize, int x, int z) const;
 
+		public:
+		static const std::uint32_t GenerateVirtualNodeNumber(const QTPFS::NodeLayer& nodeLayer, const INode* startNode, int nodeMaxSize, int x, int z, uint32_t* depth = nullptr);
+
+		private:
 		QTPFS::SearchThreadData* searchThreadData;
 
 		// Identifies the layer, target quad and source quad for a search query so that similar
@@ -204,6 +222,8 @@ namespace QTPFS {
 
 		float2 netPoints[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
 		float3 goalPos;
+		float3 searchLimitMins;
+		float3 searchLimitMaxs;
 
 		float gDists[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
 		float hDists[QTPFS_MAX_NETPOINTS_PER_NODE_EDGE];
@@ -232,16 +252,20 @@ public:
 		bool synced = false;
 		bool pathRequestWaiting = false;
 		bool doPartialSearch = false;
+		bool tryPathRepair = false;
 		bool rejectPartialSearch = false;
 		bool allowPartialSearch = false;
 		bool expectIncompletePartialSearch = false;
 		bool searchEarlyDrop = false;
 		bool initialized = false;
 		bool partialReverseTrace = false;
+		bool doPathRepair = false;
 
 		bool fwdPathConnected = false;
 		bool bwdPathConnected = false;
 		bool useFwdPathOnly = false;
+
+		// int postLoadRepairPathIndexOverride = 0;
 
 		static float MAP_RELATIVE_MAX_NODES_SEARCHED;
 		static int MAP_MAX_NODES_SEARCHED;

@@ -3,19 +3,21 @@
 #pragma once
 
 #include "Decals/GroundDecal.h"
+#include "System/creg/creg.h"
 
 class CSolidObject;
 class GhostSolidObject;
 
 class IGroundDecalDrawer
 {
+	CR_DECLARE(IGroundDecalDrawer)
 public:
-	static bool GetDrawDecals() { return (decalLevel > 0); }
+	static bool GetDrawDecals() { return hasDecals; }
 	static void SetDrawDecals(bool v);
 
 	static void Init();
 	static void FreeInstance();
-	static IGroundDecalDrawer* singleton;
+	static inline IGroundDecalDrawer* singleton = nullptr;
 
 public:
 	virtual void ReloadTextures() = 0;
@@ -32,6 +34,8 @@ public:
 	virtual const std::vector<std::string> GetDecalTextures(bool mainTex) const = 0;
 	virtual const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const = 0;
 
+	virtual void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) = 0;
+
 	virtual void AddSolidObject(const CSolidObject* object) = 0;
 	virtual void ForceRemoveSolidObject(const CSolidObject* object) = 0;
 
@@ -44,16 +48,16 @@ public:
 	virtual ~IGroundDecalDrawer() {}
 
 protected:
-	virtual void OnDecalLevelChanged() = 0;
-protected:
 	std::vector<GroundDecal> decals;
-	static int decalLevel;
+	static inline bool hasDecals = false;
+	static constexpr auto DECAL_LEVEL_MULT = 3;
 };
 
 
 
 class NullGroundDecalDrawer: public IGroundDecalDrawer
 {
+	CR_DECLARE_DERIVED(NullGroundDecalDrawer)
 public:
 	void ReloadTextures() override {}
 	void DumpAtlasTextures() override {}
@@ -66,8 +70,6 @@ public:
 	void GhostDestroyed(const GhostSolidObject* gb) override {}
 	void GhostCreated(const CSolidObject* object, const GhostSolidObject* gb) override {}
 
-	void OnDecalLevelChanged() override {}
-
 	uint32_t CreateLuaDecal() override { return 0; }
 	bool DeleteLuaDecal(uint32_t id) override { return false; }
 	      GroundDecal* GetDecalById(uint32_t id)       override { return nullptr; }
@@ -76,6 +78,8 @@ public:
 	std::string GetDecalTexture(uint32_t id, bool mainTex) const override { return ""; }
 	const std::vector<std::string> GetDecalTextures(bool mainTex) const override { return {}; }
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override { return nullptr; }
+
+	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override;
 };
 
 

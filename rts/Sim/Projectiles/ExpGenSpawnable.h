@@ -42,7 +42,12 @@ protected:
 	void UpdateRotation();
 	void UpdateAnimParams();
 
+	void UpdateAnimParamsImpl(const float3& ap, float& p);
+
 	void AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const;
+
+	static void AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl, const float3& ap, const float& p);
+	static void AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl);
 
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
 

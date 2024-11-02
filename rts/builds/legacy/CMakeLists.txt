@@ -36,6 +36,7 @@ if    (FONTCONFIG_FOUND)
 	endif (PREFER_STATIC_LIBS)
 endif (FONTCONFIG_FOUND)
 
+# !!! If you change freetype resolution here, change it also in rts/lib
 find_freetype_hack() # hack to find different named freetype.dll
 find_package_static(Freetype REQUIRED)
 foreach(f ${FREETYPE_INCLUDE_DIRS})
@@ -53,10 +54,7 @@ if (APPLE)
 	list(APPEND engineLibraries ${COREFOUNDATION_LIBRARY})
 endif (APPLE)
 
-if    (USE_LIBSQUISH)
-	list(APPEND engineLibraries squish rgetc1)
-endif (USE_LIBSQUISH)
-
+list(APPEND engineLibraries squish rgetc1)
 list(APPEND engineLibraries ${sound-impl})
 list(APPEND engineLibraries engineSystemNet)
 list(APPEND engineLibraries ${engineCommonLibraries})
@@ -64,6 +62,9 @@ list(APPEND engineLibraries ${engineCommonLibraries})
 list(APPEND engineLibraries ${SPRING_SIM_LIBRARIES})
 list(APPEND engineLibraries engineSim)
 list(APPEND engineLibraries pr-downloader)
+list(APPEND engineLibraries RmlUi::Core)
+list(APPEND engineLibraries RmlUi::Debugger)
+list(APPEND engineLibraries lunasvg)
 
 ### Assemble external incude dirs
 list(APPEND engineIncludes ${OPENAL_INCLUDE_DIR})

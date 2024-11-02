@@ -18,7 +18,6 @@ public:
 
 	void Update() override {};
 	void Draw() override;
-	void DrawSun() override { /*no separate draw is possible here*/ };
 
 	void UpdateSunDir() override {}
 	void UpdateSkyTexture() override {}

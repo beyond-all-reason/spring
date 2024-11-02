@@ -3,8 +3,6 @@
 #include "BlankMapGenerator.h"
 #include "Map/SMF/SMFFormat.h"
 #include "Map/SMF/SMFReadMap.h"
-#include "Rendering/GlobalRendering.h"
-#include "Rendering/GL/myGL.h"
 #include "System/FileSystem/Archives/VirtualArchive.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/FileSystem/FileHandler.h"
@@ -13,23 +11,30 @@
 #include "System/FileSystem/VFSHandler.h"
 #include "System/Log/ILog.h"
 
+#include "lib/squish/squish.h"
+
 #include <string>
+#include <array>
+#include <vector>
+#include <algorithm>
 #include <cstring> // strcpy,memset
 #include <sstream>
+
+#include "System/Misc/TracyDefs.h"
 
 CBlankMapGenerator::CBlankMapGenerator(const CGameSetup* setup)
 	: setup(setup)
 	, mapSize(1, 1)
 	, mapHeight(50)
-	, mapColor(0x00, 0xFF, 0x00)
+	, mapColor{.r = 0x00, .g = 0xFF, .b = 0x00, .a = 0xFF }
 {
 	const auto& mapOpts = setup->GetMapOptionsCont();
 
 	for (const auto& mapOpt: mapOpts) {
-		LOG_L(L_WARNING, "[MapGen::%s] mapOpt<%s,%s>", __func__, mapOpt.first.c_str(), mapOpt.second.c_str());
+		LOG_L(L_INFO, "[MapGen::%s] mapOpt<%s,%s>", __func__, mapOpt.first.c_str(), mapOpt.second.c_str());
 	}
 	for (const auto& modOpt: setup->GetModOptionsCont()) {
-		LOG_L(L_WARNING, "[MapGen::%s] modOpt<%s,%s>", __func__, modOpt.first.c_str(), modOpt.second.c_str());
+		LOG_L(L_INFO, "[MapGen::%s] modOpt<%s,%s>", __func__, modOpt.first.c_str(), modOpt.second.c_str());
 	}
 
 	// `new_map` are legacy keys; see the comment at InitBlank in GameSetup
@@ -68,15 +73,16 @@ CBlankMapGenerator::CBlankMapGenerator(const CGameSetup* setup)
 	const auto blankMapB = mapOpts.try_get("blank_map_color_b");
 	if (blankMapR && blankMapG && blankMapB) {
 		try {
-			std::get <0> (mapColor) = std::stoi(*blankMapR);
-			std::get <1> (mapColor) = std::stoi(*blankMapG);
-			std::get <2> (mapColor) = std::stoi(*blankMapB);
+			mapColor.r = std::stoi(*blankMapR);
+			mapColor.g = std::stoi(*blankMapG);
+			mapColor.b = std::stoi(*blankMapB);
 		} catch (...) { }
 	}
 }
 
 void CBlankMapGenerator::Generate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// create archive for map
 	CVirtualArchive* archive = virtualArchiveFactory->AddArchive(setup->mapName);
 
@@ -95,6 +101,7 @@ void CBlankMapGenerator::Generate()
 
 void CBlankMapGenerator::GenerateMap()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	mapDescription = "Blank Map";
 
 	startPositions.emplace_back(20, 20);
@@ -103,6 +110,7 @@ void CBlankMapGenerator::GenerateMap()
 
 void CBlankMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	SMFHeader smfHeader;
 	MapTileHeader smfTile;
 	MapFeatureHeader smfFeature;
@@ -202,6 +210,7 @@ void CBlankMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 
 void CBlankMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//Open template mapinfo.lua
 	const std::string luaTemplate = "mapgenerator/mapinfo_template.lua";
 	CFileHandler fh(luaTemplate, SPRING_VFS_PWD_ALL);
@@ -230,6 +239,7 @@ void CBlankMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 
 void CBlankMapGenerator::GenerateSMT(CVirtualFile* fileSMT)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr int32_t TILE_SIZE = 32;
 	constexpr int32_t TILE_BPP = 3;
 
@@ -241,57 +251,39 @@ void CBlankMapGenerator::GenerateSMT(CVirtualFile* fileSMT)
 	smtHeader.tileSize = TILE_SIZE;
 	smtHeader.compressionType = 1;
 
-	uint8_t tileData[TILE_SIZE * TILE_SIZE * 3];
-	int32_t tilePos = 0;
-	for (int32_t x = 0; x < TILE_SIZE; x++) {
-		for (int32_t y = 0; y < TILE_SIZE; y++) {
-			tileData[tilePos++] = std::get <0> (mapColor);
-			tileData[tilePos++] = std::get <1> (mapColor);
-			tileData[tilePos++] = std::get <2> (mapColor);
-		}
+	std::array<MapColor, 4 * 4> rgbaBlock;
+	std::fill(rgbaBlock.begin(), rgbaBlock.end(), mapColor);
+
+	// DXT1 block size is 8 bytes
+	std::array<uint8_t, 8> dxt1Block;
+
+	squish::Compress(reinterpret_cast<const squish::u8*>(rgbaBlock.data()), dxt1Block.data(), squish::kDxt1);
+	std::vector<uint8_t> tileDataDXT(smtHeader.numTiles * SMALL_TILE_SIZE);
+
+	for (auto it = tileDataDXT.begin(); it != tileDataDXT.end(); it += dxt1Block.size()) {
+		std::copy(dxt1Block.begin(), dxt1Block.end(), it);
 	}
-
-	glClearErrors("MapGen", __func__, globalRendering->glDebugErrors);
-	GLuint tileTex;
-	glGenTextures(1, &tileTex);
-	glBindTexture(GL_TEXTURE_2D, tileTex);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, TILE_SIZE, TILE_SIZE, 0, GL_RGB, GL_UNSIGNED_BYTE, tileData);
-	glGenerateMipmapEXT(GL_TEXTURE_2D);
-
-	int32_t dxtImageOffset = 0;
-	int32_t dxtImageSize = 512;
-	int8_t tileDataDXT[SMALL_TILE_SIZE];
-	for (int32_t i = 0; i < 4; i++) {
-		glGetCompressedTexImage(GL_TEXTURE_2D, i, tileDataDXT + dxtImageOffset);
-
-		dxtImageOffset += dxtImageSize;
-		dxtImageSize /= 4;
-	}
-
-	glDeleteTextures(1, &tileTex);
-
-	if (glGetError() != GL_NO_ERROR)
-		throw content_error("Error generating map - texture generation not supported");
 
 	int32_t writePosition = 0;
-	fileSMT->buffer.resize(sizeof smtHeader + smtHeader.numTiles * SMALL_TILE_SIZE);
+	fileSMT->buffer.resize(sizeof(smtHeader) + smtHeader.numTiles * SMALL_TILE_SIZE);
 
-	std::memcpy(fileSMT->buffer.data() + writePosition, &smtHeader, sizeof smtHeader);
-	writePosition += sizeof smtHeader;
+	std::memcpy(fileSMT->buffer.data() + writePosition, &smtHeader, sizeof(smtHeader));
+	writePosition += sizeof(smtHeader);
 
 	for (int32_t i = 0; i < smtHeader.numTiles; ++i) {
-		std::memcpy(fileSMT->buffer.data() + writePosition, tileDataDXT, SMALL_TILE_SIZE);
+		std::memcpy(fileSMT->buffer.data() + writePosition, tileDataDXT.data(), SMALL_TILE_SIZE);
 		writePosition += SMALL_TILE_SIZE;
 	}
 }
 
 void CBlankMapGenerator::AppendToBuffer(CVirtualFile* file, const void* data, int size)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	file->buffer.insert(file->buffer.end(), (std::uint8_t*)data, (std::uint8_t*)data + size);
 }
 
 void CBlankMapGenerator::SetToBuffer(CVirtualFile* file, const void* data, int size, int position)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::copy((std::uint8_t*)data, (std::uint8_t*)data + size, file->buffer.begin() + position);
 }

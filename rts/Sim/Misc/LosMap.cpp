@@ -15,8 +15,6 @@
 
 constexpr float LOS_BONUS_HEIGHT = 5.0f;
 
-
-
 static std::array<std::vector<float>, ThreadPool::MAX_THREADS> RADIUS_ISQRT_TABLES;
 
 static std::array<std::vector<float>, ThreadPool::MAX_THREADS> RAYCAST_ANGLE_TABLES;
@@ -25,12 +23,14 @@ static std::array<std::vector< char>, ThreadPool::MAX_THREADS> LOSRAY_SQUARE_TAB
 
 static float isqrtTableLookup(unsigned r, int threadNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(r < RADIUS_ISQRT_TABLES[threadNum].size());
 	return RADIUS_ISQRT_TABLES[threadNum][r];
 }
 
 static void isqrtTableExpand(unsigned r, int threadNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& isqrtTable = RADIUS_ISQRT_TABLES[threadNum];
 
 	if (r < isqrtTable.size())
@@ -73,6 +73,7 @@ void MidpointCircleAlgo(int radius, const F& func)
 template<typename F>
 void MidpointCircleAlgoPerLine(int radius, const F& func)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	int x = radius;
 	int y = 0;
 	int decisionOver2 = 1 - x;
@@ -152,6 +153,7 @@ static std::array<CLosTableHelper, ThreadPool::MAX_THREADS> losTableHelpers;
 
 void CLosTableHelper::GenerateForLosSize(size_t losSize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// guard against insane sight distances
 	assert(losSize < losTables.size());
 
@@ -181,6 +183,7 @@ void CLosTableHelper::GenerateForLosSize(size_t losSize)
  */
 CLosTableHelper::LosTable CLosTableHelper::GetLosRays(const int radius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<int2> circlePoints = GetCircleSurface(radius);
 
 	LosTable losRays;
@@ -205,6 +208,7 @@ CLosTableHelper::LosTable CLosTableHelper::GetLosRays(const int radius)
  */
 std::vector<int2> CLosTableHelper::GetCircleSurface(const int radius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Midpoint circle algorithm
 	// returns the surface points of a circle (without duplicates)
 	std::vector<int2> circlePoints;
@@ -231,6 +235,7 @@ std::vector<int2> CLosTableHelper::GetCircleSurface(const int radius)
  */
 void CLosTableHelper::AddMissing(LosTable& losRays, const std::vector<int2>& circlePoints, const int radius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<char> image((radius + 1) * (radius + 1), 0);
 
 	const auto setpixel = [&](const int2 p) { image[p.y * (radius + 1) + p.x] = true; };
@@ -277,6 +282,7 @@ void CLosTableHelper::AddMissing(LosTable& losRays, const std::vector<int2>& cir
  */
 CLosTableHelper::LosLine CLosTableHelper::GetRay(int xf, int yf)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(xf >= 0);
 	assert(yf >= 0);
 
@@ -305,6 +311,7 @@ CLosTableHelper::LosLine CLosTableHelper::GetRay(int xf, int yf)
 
 void CLosTableHelper::Debug(const LosTable& losRays, const std::vector<int2>& points, int radius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// only one should be included (the other one is generated via mirroring)
 	assert(losRays.front().back() == int2(radius, 0));
 	assert(losRays.back().back() != int2(0, radius));
@@ -404,6 +411,7 @@ void CLosTableHelper::Debug(const LosTable& losRays, const std::vector<int2>& po
 
 void CLosMap::AddCircle(SLosInstance* instance, int amount)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	MidpointCircleAlgoPerLine(instance->radius, [&](int width, int y) {
 		const unsigned y_ = instance->basePos.y + y;
 
@@ -421,6 +429,7 @@ void CLosMap::AddCircle(SLosInstance* instance, int amount)
 
 void CLosMap::AddRaycast(SLosInstance* instance, int amount)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& losSquares = instance->squares;
 
 	if (losSquares.empty() || losSquares[0].length == SLosInstance::EMPTY_RLE.length)
@@ -461,6 +470,7 @@ void CLosMap::AddRaycast(SLosInstance* instance, int amount)
 
 void CLosMap::PrepareRaycast(SLosInstance* instance) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!instance->squares.empty())
 		return;
 
@@ -478,6 +488,7 @@ void CLosMap::PrepareRaycast(SLosInstance* instance) const
 
 void CLosMap::LosAdd(SLosInstance* li) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto MAP_SQUARE_FULLRES = [&](int2 pos) {
 		float2 fpos = pos;
 		fpos += 0.5f;
@@ -520,6 +531,7 @@ inline void CastLos(
 	int losRadius,
 	int threadNum
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const size_t oidx = ToAngleMapIdx(off, losRadius);
 
 	// angle to square is smaller than current max-angle, so not visible
@@ -544,6 +556,7 @@ inline void CastLos(
 
 void CLosMap::AddSquaresToInstance(SLosInstance* li, const std::vector<char>& losRaySquares) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int2 pos   = li->basePos;
 	const int radius = li->radius;
 
@@ -574,6 +587,7 @@ void CLosMap::AddSquaresToInstance(SLosInstance* li, const std::vector<char>& lo
 
 void CLosMap::UnsafeLosAdd(SLosInstance* li) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// How does it work?
 	// We spawn rays (those created by CLosTableHelper::GenerateForLosSize), and cast them
 	// on the heightmap. Meaning we compute the angle to the given squares and compare them
@@ -670,6 +684,7 @@ void CLosMap::UnsafeLosAdd(SLosInstance* li) const
 
 void CLosMap::SafeLosAdd(SLosInstance* li) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// see above
 	const int threadNum = ThreadPool::GetThreadNum();
 

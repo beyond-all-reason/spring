@@ -20,6 +20,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CMissileProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CMissileProjectile,(
@@ -66,6 +68,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 	, oldDir(dir)
 	, smokeTrail(nullptr)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_MISSILE_PROJECTILE;
 
 
@@ -101,6 +104,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 
 void CMissileProjectile::Collision()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -110,6 +114,7 @@ void CMissileProjectile::Collision()
 
 void CMissileProjectile::Collision(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -119,6 +124,7 @@ void CMissileProjectile::Collision(CUnit* unit)
 
 void CMissileProjectile::Collision(CFeature* feature)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
 		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
@@ -128,6 +134,7 @@ void CMissileProjectile::Collision(CFeature* feature)
 
 void CMissileProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* own = owner();
 
 	if (--ttl > 0) {
@@ -260,6 +267,7 @@ void CMissileProjectile::Update()
 }
 
 float3 CMissileProjectile::UpdateTargeting() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 targetVel;
 
 	if (!weaponDef->tracks || target == nullptr)
@@ -293,6 +301,7 @@ float3 CMissileProjectile::UpdateTargeting() {
 }
 
 void CMissileProjectile::UpdateWobble() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!isWobbling)
 		return;
 
@@ -311,6 +320,7 @@ void CMissileProjectile::UpdateWobble() {
 }
 
 void CMissileProjectile::UpdateDance() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!isDancing)
 		return;
 
@@ -325,25 +335,30 @@ void CMissileProjectile::UpdateDance() {
 
 inline float CMissileProjectile::GetSmokeSize() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeSize;
 }
 
 inline float CMissileProjectile::GetSmokeColor() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeColor;
 }
 
 inline int CMissileProjectile::GetSmokeTime() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokeTime;
 }
 
 inline int CMissileProjectile::GetSmokePeriod() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return weaponDef->visuals.smokePeriod;
 }
 
 void CMissileProjectile::UpdateGroundBounce() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return;
 
@@ -361,23 +376,29 @@ void CMissileProjectile::UpdateGroundBounce() {
 
 void CMissileProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[1])
 		return;
+
+	UpdateWeaponAnimParams();
 
 	// rocket flare
 	const SColor lightYellow(255, 210, 180, 1);
 	const float fsize = radius * 0.4f;
 
-	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, lightYellow },
-		{ drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, lightYellow },
-		{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   lightYellow },
-		{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   lightYellow }
+	const auto* WT1 = weaponDef->visuals.texture1;
+
+	AddWeaponEffectsQuad<1>(
+		{ drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, WT1->xstart, WT1->ystart, lightYellow },
+		{ drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, WT1->xend,   WT1->ystart, lightYellow },
+		{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, WT1->xend,   WT1->yend,   lightYellow },
+		{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, WT1->xstart, WT1->yend,   lightYellow }
 	);
 }
 
 int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -403,5 +424,6 @@ int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce
 
 int CMissileProjectile::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 1 * validTextures[0];
 }

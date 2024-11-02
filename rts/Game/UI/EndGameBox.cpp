@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <cmath>
 #include "EndGameBox.h"
 
 #include "MouseHandler.h"
@@ -11,7 +12,6 @@
 #include "Game/Players/PlayerHandler.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GL/glExtra.h"
-#include "Rendering/GL/RenderBuffers.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/TeamStatistics.h"
@@ -20,10 +20,13 @@
 #include <cstdio>
 #include <sstream>
 
+#include "System/Misc/TracyDefs.h"
+
 using std::sprintf;
 
 
 static std::string FloatToSmallString(float num, float mul = 1) {
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	char c[50];
 
@@ -75,6 +78,11 @@ CEndGameBox::CEndGameBox(const std::vector<unsigned char>& winningAllyTeams)
 	difBox.x2 = 0.38f;
 	difBox.y2 = 0.663f;
 
+	graphScaleBox.x1 = 0.50f;
+	graphScaleBox.y1 = 0.02f;
+	graphScaleBox.x2 = 0.58f;
+	graphScaleBox.y2 = 0.043f;
+
 	CBitmap bm;
 	if (!bm.Load("bitmaps/graphPaper.bmp"))
 		bm.AllocDummy(SColor(255, 255, 255, 255));
@@ -84,6 +92,7 @@ CEndGameBox::CEndGameBox(const std::vector<unsigned char>& winningAllyTeams)
 
 CEndGameBox::~CEndGameBox()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (graphTex != 0)
 		glDeleteTextures(1, &graphTex);
 
@@ -93,6 +102,7 @@ CEndGameBox::~CEndGameBox()
 
 bool CEndGameBox::MousePress(int x, int y, int button)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return false;
 
@@ -116,6 +126,9 @@ bool CEndGameBox::MousePress(int x, int y, int button)
 	if (InBox(mx, my, box + difBox))
 		moveBox = false;
 
+	if (InBox(mx, my, box + graphScaleBox))
+		moveBox = false;
+
 	const float bxmin = box.x1 + 0.01f ;
 	const float bxmax = box.x1 + 0.12f ;
 	const float bymin = box.y1 + 0.571f - (stats.size() * 0.02f);
@@ -129,6 +142,7 @@ bool CEndGameBox::MousePress(int x, int y, int button)
 
 void CEndGameBox::MouseMove(int x, int y, int dx, int dy, int button)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return;
 
@@ -142,6 +156,7 @@ void CEndGameBox::MouseMove(int x, int y, int dx, int dy, int button)
 
 void CEndGameBox::MouseRelease(int x, int y, int button)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return;
 
@@ -168,6 +183,8 @@ void CEndGameBox::MouseRelease(int x, int y, int button)
 	if (InBox(mx, my, box + difBox))
 		dispMode = 2;
 
+	if (InBox(mx, my, box + graphScaleBox))
+		logScale = !logScale;
 
 	if (dispMode <= 0)
 		return;
@@ -191,6 +208,7 @@ void CEndGameBox::MouseRelease(int x, int y, int button)
 
 bool CEndGameBox::IsAbove(int x, int y)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return false;
 
@@ -201,6 +219,7 @@ bool CEndGameBox::IsAbove(int x, int y)
 
 void CEndGameBox::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return;
 
@@ -243,6 +262,12 @@ void CEndGameBox::Draw()
 		if (InBox(mx, my, box + difBox))
 			gleDrawQuadC(box + difBox, SColor{0.7f, 0.2f, 0.2f, guiAlpha}, rbC);
 
+		if (dispMode != 0){
+			if (InBox(mx, my, box + graphScaleBox))
+				gleDrawQuadC(box + graphScaleBox, SColor{0.7f, 0.2f, 0.2f, guiAlpha}, rbC);
+			else if (logScale)
+				gleDrawQuadC(box + graphScaleBox, SColor{0.2f, 0.2f, 0.7f, guiAlpha}, rbC);
+		}
 	}
 	{
 		// draw boxes
@@ -257,6 +282,9 @@ void CEndGameBox::Draw()
 	font->glPrint(box.x1 + playerBox.x1 + 0.015f, box.y1 + playerBox.y1 + 0.005f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Player stats");
 	font->glPrint(box.x1 +    sumBox.x1 + 0.015f, box.y1 +    sumBox.y1 + 0.005f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Team stats");
 	font->glPrint(box.x1 +    difBox.x1 + 0.015f, box.y1 +    difBox.y1 + 0.005f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Team delta stats");
+	if (dispMode != 0){
+		font->glPrint(box.x1 + graphScaleBox.x1 + 0.015f, box.y1 + graphScaleBox.y1 + 0.005f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Log scale");
+	}
 
 	if (winners.empty()) {
 		font->glPrint(box.x1 + 0.25f, box.y1 + 0.65f, 1.0f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Game result was undecided");
@@ -391,6 +419,8 @@ void CEndGameBox::Draw()
 		} else {
 			maxy = std::max(stats[stat1].maxdif, (stat2 != -1) ? stats[stat2].maxdif : 0) / TeamStatistics::statsPeriod;
 		}
+		if (logScale)
+			maxy = std::log(maxy);
 
 		const size_t numPoints = stats[0].values[0].size();
 
@@ -404,7 +434,11 @@ void CEndGameBox::Draw()
 			const int secs = int(a * labelValueScale * (numPoints - 1) * TeamStatistics::statsPeriod) % 60;
 			const int mins = int(a * labelValueScale * (numPoints    ) * TeamStatistics::statsPeriod) / 60;
 
-			font->glPrint(box.x1 + 0.12f, box.y1 + 0.07f + (a * labelPosScale), 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, FloatToSmallString(maxy * labelValueScale * a));
+			float yLabelNum = maxy *  labelValueScale * a;
+			if (logScale)
+			  yLabelNum = std::pow(10, yLabelNum);
+
+			font->glPrint(box.x1 + 0.12f, box.y1 + 0.07f + (a * labelPosScale), 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, FloatToSmallString(yLabelNum));
 			font->glFormat(box.x1 + 0.135f + (a * labelPosScale), box.y1 + 0.057f, 0.8f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%02i:%02i", mins, secs);
 		}
 
@@ -428,23 +462,7 @@ void CEndGameBox::Draw()
 
 			{
 				const std::vector<float>& statValues = stats[stat1].values[teamNum];
-
-				for (size_t a = 0, n = numPoints - 1; a < n; ++a) {
-					float v0 = 0.0f;
-					float v1 = 0.0f;
-
-					if (dispMode == 1) {
-						v0 = statValues[a    ];
-						v1 = statValues[a + 1];
-					} else if (a > 0) {
-						// deltas
-						v0 = (statValues[a    ] - statValues[a - 1]) / TeamStatistics::statsPeriod;
-						v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
-					}
-
-					rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, team->color});
-					rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, team->color});
-				}
+				addVertices(rbC, statValues, numPoints, scalex, scaley, team->color);
 			}
 
 			if (stat2 != -1) {
@@ -453,21 +471,7 @@ void CEndGameBox::Draw()
 				// ditto
 				// glLineStipple(3, 0x5555);
 
-				for (size_t a = 0, n = numPoints - 1; a < n; ++a) {
-					float v0 = 0.0f;
-					float v1 = 0.0f;
-
-					if (dispMode == 1) {
-						v0 = statValues[a    ];
-						v1 = statValues[a + 1];
-					} else if (a > 0) {
-						v0 = (statValues[a    ] - statValues[a - 1]) / TeamStatistics::statsPeriod;
-						v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
-					}
-
-					rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, team->color});
-					rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, team->color});
-				}
+				addVertices(rbC, statValues, numPoints, scalex, scaley, team->color);
 			}
 		}
 
@@ -480,8 +484,31 @@ void CEndGameBox::Draw()
 	font->DrawBuffered();
 }
 
+void CEndGameBox::addVertices(TypedRenderBuffer<VA_TYPE_C> &rbC, const std::vector<float>& statValues, size_t numPoints, float scalex, float scaley, const uint8_t (&color)[4])
+{
+	float v0 = 0.0f;
+	for (size_t a = 0, n = numPoints - 1; a < n; ++a) {
+		float v1 = 0.0f;
+
+		if (dispMode == 1) {
+			v1 = statValues[a + 1];
+		} else {
+			// deltas
+			v1 = (statValues[a + 1] - statValues[a    ]) / TeamStatistics::statsPeriod;
+		}
+		if (logScale){
+			v1 = v1 <= 1.0f ? 1.0f : v1;
+			v1 = std::log(v1);
+		}
+		rbC.AddVertex({{box.x1 + 0.15f + (a    ) * scalex, box.y1 + 0.08f + v0 * scaley, 0.0f}, color});
+		rbC.AddVertex({{box.x1 + 0.15f + (a + 1) * scalex, box.y1 + 0.08f + v1 * scaley, 0.0f}, color});
+		v0 = v1;
+	}
+}
+
 std::string CEndGameBox::GetTooltip(int x, int y)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enabledMode == 0)
 		return "";
 
@@ -509,6 +536,7 @@ std::string CEndGameBox::GetTooltip(int x, int y)
 
 void CEndGameBox::FillTeamStats()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	stats.clear();
 	stats.reserve(23);
 

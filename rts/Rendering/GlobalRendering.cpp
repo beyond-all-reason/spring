@@ -15,7 +15,6 @@
 #include "Rendering/GL/FBO.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
-#include "System/bitops.h"
 #include "System/EventHandler.h"
 #include "System/type2.h"
 #include "System/TimeProfiler.h"
@@ -38,7 +37,7 @@
 #include <SDL_syswm.h>
 #include <SDL_rect.h>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(bool, DebugGL).defaultValue(false).description("Enables GL debug-context and output. (see GL_ARB_debug_output)");
 CONFIG(bool, DebugGLStacktraces).defaultValue(false).description("Create a stacktrace when an OpenGL error occurs");
@@ -178,7 +177,6 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(amdHacks),
 	CR_IGNORED(supportPersistentMapping),
 	CR_IGNORED(supportExplicitAttribLoc),
-	CR_IGNORED(supportNonPowerOfTwoTex),
 	CR_IGNORED(supportTextureQueryLOD),
 	CR_IGNORED(supportMSAAFrameBuffer),
 	CR_IGNORED(supportDepthBufferBitDepth),
@@ -305,7 +303,6 @@ CGlobalRendering::CGlobalRendering()
 
 	, supportPersistentMapping(false)
 	, supportExplicitAttribLoc(false)
-	, supportNonPowerOfTwoTex(false)
 	, supportTextureQueryLOD(false)
 	, supportMSAAFrameBuffer(false)
 	, supportDepthBufferBitDepth(16)
@@ -539,7 +536,9 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		if (softGL != nullptr)
 			LOG_L(L_WARNING, "MSAALevel > 0 and LIBGL_ALWAYS_SOFTWARE set, this will very likely crash!");
 
-		make_even_number(msaaLevel);
+		// has to be even
+		if (msaaLevel % 2 == 1)
+			++msaaLevel;
 	}
 
 	if ((sdlWindow = CreateSDLWindow(title)) == nullptr)
@@ -729,6 +728,8 @@ void CGlobalRendering::CheckGLExtensions()
 	if (!GLEW_ARB_multitexture       ) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " multitexture ");
 	if (!GLEW_ARB_texture_env_combine) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_env_combine ");
 	if (!GLEW_ARB_texture_compression) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_compression ");
+	if (!GLEW_ARB_texture_float)       ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_float ");
+	if (!GLEW_ARB_texture_non_power_of_two) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_non_power_of_two ");
 
 	if (extMsg[0] == 0)
 		return;
@@ -789,10 +790,7 @@ void CGlobalRendering::SetGLSupportFlags()
 	supportExplicitAttribLoc = GLEW_ARB_explicit_attrib_location;
 	supportExplicitAttribLoc &= (configHandler->GetInt("ForceDisableExplicitAttribLocs") == 0);
 
-	// ATI's x-series doesn't support NPOTs, hd-series does
-	supportNonPowerOfTwoTex = GLEW_ARB_texture_non_power_of_two /* && (!haveAMD || (glRenderer.find(" x") == std::string::npos && glRenderer.find(" 9") == std::string::npos))*/;
 	supportTextureQueryLOD = GLEW_ARB_texture_query_lod;
-
 
 	for (size_t n = 0; (n < sizeof(globalRenderingInfo.glVersionShort) && globalRenderingInfo.glVersion[n] != 0); n++) {
 		if ((globalRenderingInfo.glVersionShort[n] = globalRenderingInfo.glVersion[n]) == ' ') {
@@ -973,7 +971,6 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tNVX GPU mem-info support  : %i", glewIsExtensionSupported("GL_NVX_gpu_memory_info"));
 	LOG("\tATI GPU mem-info support  : %i", glewIsExtensionSupported("GL_ATI_meminfo"));
 	LOG("\tTexture clamping to edge  : %i", glewIsExtensionSupported("GL_EXT_texture_edge_clamp"));
-	LOG("\tNPOT-texture support      : %i (%i)", supportNonPowerOfTwoTex, glewIsExtensionSupported("GL_ARB_texture_non_power_of_two"));
 	LOG("\tS3TC/DXT1 texture support : %i/%i", glewIsExtensionSupported("GL_EXT_texture_compression_s3tc"), glewIsExtensionSupported("GL_EXT_texture_compression_dxt1"));
 	LOG("\ttexture query-LOD support : %i (%i)", supportTextureQueryLOD, glewIsExtensionSupported("GL_ARB_texture_query_lod"));
 	LOG("\tMSAA frame-buffer support : %i (%i)", supportMSAAFrameBuffer, glewIsExtensionSupported("GL_EXT_framebuffer_multisample"));
@@ -1173,12 +1170,14 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 
 	SDL_RestoreWindow(window);
 	SDL_SetWindowMinimumSize(window, minRes.x, minRes.y);
+
 	SDL_SetWindowPosition(window, winPosX, winPosY);
 	SDL_SetWindowSize(window, newRes.x, newRes.y);
-	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
 
 	if (SDL_SetWindowFullscreen(window, (borderless ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
 		LOG("[GR::%s][4][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
+
+	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
 
 	if (newRes == maxRes)
 		SDL_MaximizeWindow(window);

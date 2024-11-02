@@ -13,6 +13,8 @@
 #include "System/creg/DefTypes.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CBitmapMuzzleFlame, CProjectile, )
 
 CR_REG_METADATA(CBitmapMuzzleFlame,
@@ -50,6 +52,7 @@ CBitmapMuzzleFlame::CBitmapMuzzleFlame()
 
 void CBitmapMuzzleFlame::Serialize(creg::ISerializer* s)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::string sideName, frontName;
 	if (s->IsWriting()) {
 		sideName = projectileDrawer->textureAtlas->GetTextureName(sideTexture);
@@ -65,6 +68,7 @@ void CBitmapMuzzleFlame::Serialize(creg::ISerializer* s)
 
 void CBitmapMuzzleFlame::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateRotation();
 	UpdateAnimParams();
 
@@ -133,11 +137,13 @@ void CBitmapMuzzleFlame::Draw()
 
 void CBitmapMuzzleFlame::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe |= ((ttl--) == 0);
 }
 
 void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Init(owner, offset);
 
 	invttl = 1.0f / ttl;
@@ -147,12 +153,14 @@ void CBitmapMuzzleFlame::Init(const CUnit* owner, const float3& offset)
 
 int CBitmapMuzzleFlame::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 2 * IsValidTexture(sideTexture) + 1 * IsValidTexture(frontTexture);
 }
 
 
 bool CBitmapMuzzleFlame::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 

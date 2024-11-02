@@ -15,6 +15,9 @@
 #include "System/SafeUtil.h"
 #include "System/Config/ConfigHandler.h"
 
+#include "System/Misc/TracyDefs.h"
+
+CONFIG(bool, AnimationMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded execution of animation ticks");
 
 static CCobEngine gCobEngine;
 static CCobFileHandler gCobFileHandler;
@@ -36,6 +39,7 @@ CR_REG_METADATA(CUnitScriptEngine, (
 
 
 void CUnitScriptEngine::InitStatic() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	cobEngine = &gCobEngine;
 	cobFileHandler = &gCobFileHandler;
 	unitScriptEngine = &gUnitScriptEngine;
@@ -46,6 +50,7 @@ void CUnitScriptEngine::InitStatic() {
 }
 
 void CUnitScriptEngine::KillStatic() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	cobEngine->Kill();
 	cobFileHandler->Kill();
 	unitScriptEngine->Kill();
@@ -59,6 +64,7 @@ void CUnitScriptEngine::KillStatic() {
 
 void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CCobFile* oldScriptFile = cobFileHandler->GetScriptFile(udef->scriptName);
 
 	if (oldScriptFile == nullptr) {
@@ -101,6 +107,7 @@ void CUnitScriptEngine::ReloadScripts(const UnitDef* udef)
 
 void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance == currentScript)
 		return;
 
@@ -109,6 +116,7 @@ void CUnitScriptEngine::AddInstance(CUnitScript* instance)
 
 void CUnitScriptEngine::RemoveInstance(CUnitScript* instance)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance == currentScript)
 		return;
 
@@ -121,11 +129,29 @@ void CUnitScriptEngine::Tick(int deltaTime)
 
 	cobEngine->Tick(deltaTime);
 
-	ImplTickMT(deltaTime);
+	using ImplFunctionT = decltype(&CUnitScriptEngine::ImplTickST);
+	static constexpr ImplFunctionT ImplFunctions[] = { &CUnitScriptEngine::ImplTickST, &CUnitScriptEngine::ImplTickMT };
+	// TODO: remove the conditional once it's proven to be sync safe
+	(this->*ImplFunctions[configHandler->GetBool("AnimationMT")])(deltaTime);
 
 	currentScript = nullptr;
 }
 
+void CUnitScriptEngine::ImplTickST(int deltaTime)
+{
+	ZoneScopedN("CUnitScriptEngine::ImplTickST");
+	// tick all (COB or LUS) script instances that have registered themselves as animating
+	for (size_t i = 0; i < animating.size(); ) {
+		currentScript = animating[i];
+
+		if (!currentScript->Tick(deltaTime)) {
+			animating[i] = animating.back();
+			animating.pop_back();
+			continue;
+		}
+		i++;
+	}
+}
 void CUnitScriptEngine::ImplTickMT(int deltaTime)
 {
 	ZoneScopedN("CUnitScriptEngine::ImplTickMT");

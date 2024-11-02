@@ -9,6 +9,8 @@
 #include "Sim/Units/Unit.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CFlameThrower, CWeapon, )
 
 CR_REG_METADATA(CFlameThrower,(
@@ -19,6 +21,7 @@ CR_REG_METADATA(CFlameThrower,(
 
 void CFlameThrower::FireImpl(const bool scriptCall)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 dir = currentTargetPos - weaponMuzzlePos;
 
 	const float dist = dir.LengthNormalize();

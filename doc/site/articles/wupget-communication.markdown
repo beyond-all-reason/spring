@@ -32,10 +32,13 @@ i.e. it is the one accessible directly by the engine to be called from the outsi
 * this only works if the global in question is a function, and you won't receive any return values
 * you could put "normal" vars there, but it is discouraged (use `GG`/`WG`)
 * the main use case for this is calling events "native style" where you do `Script.LuaXYZ.UnitDamaged` which is then handled by the wupget handler and distributed to individual wupgets
-* you can (and should) use the function notation to check if the function you're about to call exists, i.e. always do:
+* it is safe to call functions this way even if there is nothing on the other side.
+You can use the function notation to check whether anything is linked though, e.g. for optimisation:
 ```lua
 if Script.LuaXYZ("Bla") then
+  local args = ExpensiveCalculation()
   Script.LuaXYZ.Bla(args)
+end
 ```
 * other examples of events you could add: nuclear launch detected, language changed in settings, metal spot added at runtime.
 
@@ -71,7 +74,15 @@ end
 * it only copies basic types (tables, strings, numbers, bools). No functions, metatables and whatnot
 * generally not recommended. Listen to the same events as synced and build the table in parallel
 
+### With the outside, unsynced
+* there's `/luaui foo` for a player to pass data to LuaUI.
+* LuaUI and LuaMenu have a socket API to communicate with the outside.
+
+### With the outside, synced
+* arbitrary setup data can be passed in the startscript as modoptions and player/team/AI custom keys. This would be done by the lobby or autohost.
+* players, incl. the autohost, can use `/luarules foo` commands to send arbitrary data to the synced state. Lua sees the autohost as playerID 255.
+* if the autohost uses [a dedicated instance (as opposed to headless)]({{ site.baseurl }}{% link guides/headless-and-dedi.markdown %}), players can send messages back to the autohost via whispers (`/wByNum 255 foo`) for non-sensitive data.
+
 ### Others
 * a game can designate some other regular table for globals. For example many games put useful functions in `Spring.Utilities` which is not actually a native part of the `Spring` table.
-* two environments could include the same file to get the same functions, LuaUI can also read arbitrary files.
-* LuaUI has access to sockets for communication with the outside.
+* two environments could include the same file to get the same data (in contents but not identity). LuaUI and LuaMenu can also read arbitrary files (outside the VFS).

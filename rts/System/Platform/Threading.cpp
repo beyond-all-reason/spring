@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Threading.h"
-#include "System/bitops.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/CpuID.h"
 
@@ -27,7 +26,7 @@
 	#include "Linux/ThreadSupport.h"
 #endif
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 namespace Threading {
 #ifndef _WIN32

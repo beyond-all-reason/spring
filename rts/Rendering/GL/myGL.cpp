@@ -27,6 +27,8 @@
 #include "System/Platform/MessageBox.h"
 #include "fmt/printf.h"
 
+#include "System/Misc/TracyDefs.h"
+
 #define SDL_BPP(fmt) SDL_BITSPERPIXEL((fmt))
 
 static std::array<CVertexArray, 2> vertexArrays;
@@ -38,6 +40,7 @@ static int currentVertexArray = 0;
 
 CVertexArray* GetVertexArray()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	currentVertexArray = (currentVertexArray + 1) % vertexArrays.size();
 	return &vertexArrays[currentVertexArray];
 }
@@ -47,6 +50,7 @@ CVertexArray* GetVertexArray()
 
 bool CheckAvailableVideoModes()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// Get available fullscreen/hardware modes
 	const int numDisplays = SDL_GetNumVideoDisplays();
 
@@ -118,6 +122,7 @@ bool CheckAvailableVideoModes()
 #ifndef HEADLESS
 static bool GetVideoMemInfoNV(GLint* memInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if (defined(GLEW_NVX_gpu_memory_info))
 	if (!GLEW_NVX_gpu_memory_info)
 		return false;
@@ -132,6 +137,7 @@ static bool GetVideoMemInfoNV(GLint* memInfo)
 
 static bool GetVideoMemInfoATI(GLint* memInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if (defined(GLEW_ATI_meminfo))
 	if (!GLEW_ATI_meminfo)
 		return false;
@@ -154,6 +160,7 @@ static bool GetVideoMemInfoATI(GLint* memInfo)
 
 static bool GetVideoMemInfoMESA(GLint* memInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if (defined(GLX_MESA_query_renderer))
 	if (!GLXEW_MESA_query_renderer)
 		return false;
@@ -180,6 +187,7 @@ static bool GetVideoMemInfoMESA(GLint* memInfo)
 
 bool GetAvailableVideoRAM(GLint* memory, const char* glVendor)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#ifdef HEADLESS
 	return false;
 	#else
@@ -207,6 +215,7 @@ bool GetAvailableVideoRAM(GLint* memory, const char* glVendor)
 
 bool ShowDriverWarning(const char* glVendor)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(glVendor != nullptr);
 
 	const std::string& _glVendor = StringToLower(glVendor);
@@ -236,6 +245,7 @@ bool ShowDriverWarning(const char* glVendor)
 
 void WorkaroundATIPointSizeBug()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!globalRendering->amdHacks)
 		return;
 
@@ -253,6 +263,7 @@ void WorkaroundATIPointSizeBug()
 
 void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& tp)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto texBind = GL::TexBind(target, textureID);
 
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_INTERNAL_FORMAT, &tp.intFmt);
@@ -260,16 +271,34 @@ void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureP
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &tp.sizeY);
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH, &tp.sizeZ);
 
-	tp.isDepth = false;
+	tp.isNormalizedDepth = false;
+	tp.prefDataType = GL_UNSIGNED_BYTE;
 	tp.bpp = 0;
 	tp.chNum = 0;
+
+	switch (tp.intFmt)
 	{
+	case GL_LUMINANCE32F_ARB: [[fallthrough]];
+	case GL_INTENSITY32F_ARB: {
+		tp.bpp = 32;
+		tp.chNum = 1;
+		tp.prefDataType = GL_FLOAT;
+	} break;
+	default: {
 		GLint _cbits;
 		glGetTexLevelParameteriv(target, level, GL_TEXTURE_RED_SIZE  , &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
 		glGetTexLevelParameteriv(target, level, GL_TEXTURE_GREEN_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
 		glGetTexLevelParameteriv(target, level, GL_TEXTURE_BLUE_SIZE , &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
 		glGetTexLevelParameteriv(target, level, GL_TEXTURE_ALPHA_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
-		glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) { tp.chNum++; tp.isDepth = true; }
+		glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) { tp.chNum++; tp.isNormalizedDepth = true; tp.prefDataType = GL_FLOAT; }
+
+		if (tp.chNum > 0) {
+			if (auto bytesPerChannel = tp.bpp / tp.chNum; bytesPerChannel == 4)
+				tp.prefDataType = GL_UNSIGNED_INT;
+			else if (bytesPerChannel == 2)
+				tp.prefDataType = GL_UNSIGNED_SHORT;
+		}
+	} break;
 	}
 
 	{
@@ -289,43 +318,27 @@ void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureP
 	}
 }
 
+
 void glSaveTexture(const GLuint textureID, const char* filename, int level)
 {
 	TextureParameters params;
 	glSpringGetTexParams(GL_TEXTURE_2D, textureID, 0, params);
 
 	CBitmap bmp;
-	GLenum extFormat = params.isDepth ? GL_DEPTH_COMPONENT : CBitmap::GetExtFmt(params.chNum);
-	GLenum dataType = params.isDepth ? GL_FLOAT : GL_UNSIGNED_BYTE;
+	GLenum extFormat = params.isNormalizedDepth ? GL_DEPTH_COMPONENT : CBitmap::GetExtFmt(params.chNum);
 
-	int2 imageSize {
-		std::max(params.sizeX >> level, 1),
-		std::max(params.sizeY >> level, 1)
-	};
-
-	bmp.Alloc(imageSize.x, imageSize.y, params.chNum, dataType);
+	bmp.Alloc(params.sizeX, params.sizeY, params.chNum, params.prefDataType);
 
 	{
-		GLint ra = CBitmap::ExtFmtToChannels(extFormat);
-		GLint ca;
-		glGetIntegerv(GL_PACK_ALIGNMENT, &ca);
-
-		if (ra != ca)
-			glPixelStorei(GL_PACK_ALIGNMENT, (ra == 4) ? 4 : 1);
-
 		auto texBind = GL::TexBind(GL_TEXTURE_2D, textureID);
-		glGetTexImage(GL_TEXTURE_2D, level, extFormat, dataType, bmp.GetRawMem());
-
-		if (ra != ca)
-			glPixelStorei(GL_PACK_ALIGNMENT, ca);
+		glGetTexImage(GL_TEXTURE_2D, level, extFormat, params.prefDataType, bmp.GetRawMem());
 	}
 
-	if (params.isDepth) {
+	if (params.isNormalizedDepth) {
 		//doesn't work, TODO: fix
 		bmp.SaveFloat(filename);
 	}
 	else {
-		assert(params.bpp >= 24);
 		bmp.Save(filename, params.bpp < 32);
 	}
 }
@@ -333,6 +346,7 @@ void glSaveTexture(const GLuint textureID, const char* filename, int level)
 
 void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #ifdef GLEW_ARB_multi_bind
 	if (GLEW_ARB_multi_bind) {
 		glBindTextures(first, count, textures);
@@ -352,6 +366,7 @@ void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures)
 
 void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (levels <= 0)
 		levels = std::bit_width(static_cast<uint32_t>(std::max({ width , height })));
 
@@ -376,6 +391,7 @@ void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLs
 
 void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (levels <= 0)
 		levels = std::bit_width(static_cast<uint32_t>(std::max({ width , height, depth })));
 
@@ -401,6 +417,7 @@ void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLs
 
 void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (globalRendering->compressTextures) {
 		switch (internalFormat) {
 			case 4:
@@ -442,6 +459,7 @@ bool glSpringBlitImages(
 	GLuint dstName, GLenum dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ,
 	GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	TextureParameters srcTexParams;
 	TextureParameters dstTexParams;
 	glSpringGetTexParams(srcTarget, srcName, srcLevel, srcTexParams);
@@ -557,6 +575,7 @@ bool glSpringBlitImages(
 
 void glSpringMatrix2dProj(const int sizex, const int sizey)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluOrtho2D(0,sizex,0,sizey);
@@ -569,6 +588,7 @@ void glSpringMatrix2dProj(const int sizex, const int sizey)
 
 void ClearScreen()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -599,6 +619,7 @@ static unsigned int LoadProgram(GLenum, const char*, const char*);
 
 bool ProgramStringIsNative(GLenum target, const char* filename)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// clear any current GL errors so that the following check is valid
 	glClearErrors("GL", __func__, globalRendering->glDebugErrors);
 
@@ -624,6 +645,7 @@ bool ProgramStringIsNative(GLenum target, const char* filename)
  */
 static bool CheckParseErrors(GLenum target, const char* filename, const char* program)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	GLint errorPos = -1;
 	GLint isNative =  0;
 
@@ -688,6 +710,7 @@ static bool CheckParseErrors(GLenum target, const char* filename, const char* pr
 
 static unsigned int LoadProgram(GLenum target, const char* filename, const char* program_type)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	GLuint ret = 0;
 
 	if (!GLEW_ARB_vertex_program)
@@ -725,11 +748,13 @@ static unsigned int LoadProgram(GLenum target, const char* filename, const char*
 
 unsigned int LoadVertexProgram(const char* filename)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return LoadProgram(GL_VERTEX_PROGRAM_ARB, filename, "vertex");
 }
 
 unsigned int LoadFragmentProgram(const char* filename)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	return LoadProgram(GL_FRAGMENT_PROGRAM_ARB, filename, "fragment");
 }
@@ -748,6 +773,7 @@ void glSafeDeleteProgram(GLuint program)
 
 void glClearErrors(const char* cls, const char* fnc, bool verbose)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (verbose) {
 		for (int count = 0, error = 0; ((error = glGetError()) != GL_NO_ERROR) && (count < 10000); count++) {
 			LOG_L(L_ERROR, "[GL::%s][%s::%s][frame=%u] count=%04d error=0x%x", __func__, cls, fnc, globalRendering->drawFrame, count, error);
@@ -762,6 +788,7 @@ void glClearErrors(const char* cls, const char* fnc, bool verbose)
 
 void SetTexGen(const float scaleX, const float scaleZ, const float offsetX, const float offsetZ)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const GLfloat planeX[] = {scaleX, 0.0f,   0.0f,  offsetX};
 	const GLfloat planeZ[] = {  0.0f, 0.0f, scaleZ,  offsetZ};
 

@@ -10,6 +10,8 @@
 
 #include "Rendering/GlobalRendering.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 IVideoCapturing* IVideoCapturing::GetInstance()
 {
@@ -25,12 +27,14 @@ IVideoCapturing* IVideoCapturing::GetInstance()
 
 void IVideoCapturing::FreeInstance()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetCapturing(false);
 }
 
 
 bool IVideoCapturing::SetCapturing(bool enable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool isCapturing = GetInstance()->IsCapturing();
 
 	if (!isCapturing && enable) {

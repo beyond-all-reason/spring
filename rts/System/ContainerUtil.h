@@ -8,53 +8,12 @@
 #include <vector>
 
 namespace spring {
-	template<typename T, typename TV>
-	static auto find(T& c, const TV& v) -> decltype(c.end())
-	{
-		return std::find(c.begin(), c.end(), v);
-	}
-
-	template<typename T, typename UnaryPredicate>
-	static void MapEraseIf(T& c, UnaryPredicate p)
-	{
-		for (auto it = c.begin(); it != c.end(); ) {
-			if (p(*it)) it = c.erase(it);
-			else ++it;
-		}
-	}
-
-	template<typename ForwardIt, typename T, typename Compare>
-	ForwardIt BinarySearch(ForwardIt first, ForwardIt last, const T& value, Compare comp)
+	template<typename ForwardIt, typename T, typename Compare = std::less <>>
+	ForwardIt BinarySearch(ForwardIt first, ForwardIt last, const T& value, Compare comp = {})
 	{
 		first = std::lower_bound(first, last, value, comp);
 		return (!(first == last) && !(comp(value, *first))) ? first : last;
 	}
-
-	template<typename ForwardIt, typename T>
-	ForwardIt BinarySearch(ForwardIt first, ForwardIt last, const T& value)
-	{
-		first = std::lower_bound(first, last, value);
-		return (!(first == last) && !(value < *first)) ? first : last;
-	}
-
-	template<typename T, typename UnaryPredicate>
-	static bool VectorEraseAllIf(std::vector<T>& v, UnaryPredicate p)
-	{
-		bool b = false;
-		for (size_t i = 0; i < v.size(); /*NOOP*/) {
-			if (p(v[i])) {
-				v[i] = std::move(v.back());
-				v.pop_back();
-				b = true;
-			}
-			else {
-				++i;
-			}
-		}
-
-		return b;
-	}
-
 
 	template<typename T, typename UnaryPredicate>
 	static bool VectorEraseIf(std::vector<T>& v, UnaryPredicate p)
@@ -94,23 +53,8 @@ namespace spring {
 		return true;
 	}
 
-	template<typename T, typename UniqPred>
-	static void VectorUnique(std::vector<T>& v) {
-		for (size_t i = 0; i < v.size(); i++) {
-			for (size_t j = i + 1; j < v.size(); /*NOOP*/) {
-				if (v[i] == v[j]) {
-					v[j] = std::move(v.back());
-					v.pop_back();
-				}
-				else {
-					j++;
-				}
-			}
-		}
-	}
-
-	template<typename T, typename UniqPred>
-	static void VectorUnique(std::vector<T>& v, UniqPred uniqPred) {
+	template<typename T, typename UniqPred = std::equal_to <>>
+	static void VectorUnique(std::vector<T>& v, UniqPred uniqPred = {}) {
 		for (size_t i = 0; i < v.size(); i++) {
 			for (size_t j = i + 1; j < v.size(); /*NOOP*/) {
 				if (uniqPred(v[i], v[j])) {
@@ -124,27 +68,11 @@ namespace spring {
 		}
 	}
 
-	template<typename T, typename SortPred>
-	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred)
-	{
-		std::sort(v.begin(), v.end(), sortPred);
-		auto last = std::unique(v.begin(), v.end());
-		v.erase(last, v.end());
-	}
-
-	template<typename T, typename SortPred, typename UniqPred>
-	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred, UniqPred uniqPred)
+	template<typename T, typename SortPred = std::less <>, typename UniqPred = std::equal_to <>>
+	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred = {}, UniqPred uniqPred = {})
 	{
 		std::sort(v.begin(), v.end(), sortPred);
 		auto last = std::unique(v.begin(), v.end(), uniqPred);
-		v.erase(last, v.end());
-	}
-
-	template<typename T>
-	static void VectorSortUnique(std::vector<T>& v)
-	{
-		std::sort(v.begin(), v.end());
-		auto last = std::unique(v.begin(), v.end());
 		v.erase(last, v.end());
 	}
 
