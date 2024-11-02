@@ -2,18 +2,27 @@
 
 set -e -u -o pipefail
 
-USAGE="Usage: $0 [--help] [--configure|--compile] {windows|linux} [cmake_flag...]"
+USAGE="Usage: $0 [--help] [--deps|--configure|--compile] {windows|linux} [cmake_flag...]"
+export DEPS=true
 export CONFIGURE=true
 export COMPILE=true
-OS=
+export OS=
 for arg in "$@"; do
   case $arg in
+    --deps)
+      DEPS=true
+      CONFIGURE=false
+      COMPILE=false
+      shift
+      ;;
     --configure)
+      DEPS=false
       CONFIGURE=true
       COMPILE=false
       shift
       ;;
     --compile)
+      DEPS=false
       CONFIGURE=false
       COMPILE=true
       shift
@@ -22,6 +31,7 @@ for arg in "$@"; do
       echo $USAGE
       echo "Options:"
       echo "  --help       print this help message"
+      echo "  --deps       only install conan dependencies, don't configure or compile"
       echo "  --configure  only configure, don't compile"
       echo "  --compile    only compile, don't configure"
       exit 0
@@ -40,7 +50,9 @@ if [[ -z $OS ]]; then
 fi
 
 cd "$(dirname "$(readlink -f "$0")")/.."
-mkdir -p build-$OS .cache/ccache-$OS
+mkdir -p build-$OS .cache/ccache-$OS .conan2-$OS/profiles
+cp docker-build-v2/conan_profile .conan2-$OS/profiles
+cp docker-build-v2/amd64-$OS/conan_build_profile .conan2-$OS/profiles
 
 # Use localy build image if available, and pull from upstream if not
 image=recoil-build-amd64-$OS:latest
@@ -50,20 +62,22 @@ if [[ -z "$(docker images -q $image 2> /dev/null)" ]]; then
 fi
 
 docker run -it --rm \
-    -v /etc/passwd:/etc/passwd:ro \
-    -v /etc/group:/etc/group:ro \
-    --user=$(id -u):$(id -g) \
     -v $(pwd):/build/src:ro \
     -v $(pwd)/.cache/ccache-$OS:/build/cache:rw \
     -v $(pwd)/build-$OS:/build/out:rw \
+    -v $(pwd)/.conan2-$OS:/build/.conan2:rw \
     -e CONFIGURE \
     -e COMPILE \
+    -e OS \
     $image \
     bash -c '
 set -e
 echo "$@"
 cd /build/src/docker-build-v2/scripts
+$DEPS && ./graph-deps.sh "$@"
+$DEPS && ./deps.sh "$@"
 $CONFIGURE && ./configure.sh "$@"
+export OS
 if $COMPILE; then
   ./compile.sh
   # When compiling for windows, we must strip debug info because windows does

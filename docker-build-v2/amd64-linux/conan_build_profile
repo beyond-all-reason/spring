@@ -1,0 +1,12 @@
+[settings]
+arch=x86_64
+build_type=RelWithDebInfo
+compiler=gcc
+compiler.cppstd=gnu20
+compiler.libcxx=libstdc++11
+compiler.version=13
+os=Linux
+
+[conf]
+tools.build:compiler_executables={'c': '/usr/bin/gcc-13', 'cpp': '/usr/bin/g++13' }
+user.cmake.cmake_layout:build_folder=/build/out

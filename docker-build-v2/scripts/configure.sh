@@ -7,5 +7,6 @@ cmake --fresh -S /build/src -B /build/out \
     -DCMAKE_BUILD_TYPE=RELWITHDEBINFO \
     -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O3 -g -DNDEBUG" \
     -DCMAKE_C_FLAGS_RELWITHDEBINFO="-O3 -g -DNDEBUG" \
+    -DCMAKE_TOOLCHAIN_FILE="conan/conan_toolchain.cmake"
     -G Ninja \
     "$@"
