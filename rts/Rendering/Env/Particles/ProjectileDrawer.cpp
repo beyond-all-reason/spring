@@ -737,15 +737,17 @@ void CProjectileDrawer::DrawOpaque(bool drawReflection, bool drawRefraction)
 	glDisable(GL_FOG);
 }
 
-void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflection, bool drawRefraction)
+void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction)
 {
 	ZoneScopedN("ProjectileDrawer::DrawAlpha");
 
 	static constexpr std::array<float, 4> clipPlanes[] {
+		{ 0.0f,  0.0f, 0.0f, 0.0f}, // never used
 		{ 0.0f, -1.0f, 0.0f, 0.0f},
 		{ 0.0f,  1.0f, 0.0f, 0.0f},
 		{ 0.0f,  0.0f, 0.0f, 1.0f}
 	};
+	const auto& clipPlane = clipPlanes[1U * drawBelowWater + 2U * drawAboveWater];
 
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
@@ -801,14 +803,14 @@ void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflec
 			ClipDistance<0>(GL_TRUE)
 		);
 
+		eventHandler.DrawWorldPreParticles(drawAboveWater, drawBelowWater, drawReflection, drawRefraction);
+
 		auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
-		if (!rb.ShouldSubmit()) {
-			eventHandler.DrawWorldPreParticles();
+		if (!rb.ShouldSubmit())
 			return;
-		}
 
 		const bool needSoften = (wantSoften > 0) && !drawReflection && !drawRefraction;
-		eventHandler.DrawWorldPreParticles();
+
 
 		glActiveTexture(GL_TEXTURE0); textureAtlas->BindTexture();
 
@@ -822,8 +824,6 @@ void CProjectileDrawer::DrawAlpha(AlphaWaterRenderingStage awrs, bool drawReflec
 		const auto& sky = ISky::GetSky();
 
 		fxShader->Enable();
-
-		const auto& clipPlane = clipPlanes[awrs];
 
 		fxShader->SetUniform("clipPlane", clipPlane[0], clipPlane[1], clipPlane[2], clipPlane[3]);
 		fxShader->SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f);

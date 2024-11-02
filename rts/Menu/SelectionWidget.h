@@ -34,28 +34,28 @@ public:
 
 		agui::VerticalLayout* modWindowLayout = new agui::VerticalLayout(this);
 		list = new agui::List(modWindowLayout);
-		list->FinishSelection.connect(std::bind(&ListSelectWnd::SelectButton, this));
+		list->FinishSelection = std::bind(&ListSelectWnd::SelectButton, this);
 		agui::HorizontalLayout* buttons = new agui::HorizontalLayout(modWindowLayout);
 		buttons->SetSize(0.0f, 0.04f, true);
 		agui::Button* select = new agui::Button("Select", buttons);
-		select->Clicked.connect(std::bind(&ListSelectWnd::SelectButton, this));
+		select->Clicked = std::bind(&ListSelectWnd::SelectButton, this);
 		agui::Button* cancel = new agui::Button("Close", buttons);
-		cancel->Clicked.connect(std::bind(&ListSelectWnd::CancelButton, this));
+		cancel->Clicked = std::bind(&ListSelectWnd::CancelButton, this);
 		GeometryChange();
 	}
 
-	slimsig::signal<void (std::string)> Selected;
+	OnClickStringType Selected;
 	agui::List* list;
 
 private:
 	void SelectButton()
 	{
 		list->SetFocus(false);
-		Selected.emit(list->GetCurrentItem());
+		Selected(list->GetCurrentItem());
 	}
 	void CancelButton()
 	{
-		WantClose.emit();
+		WantClose();
 	}
 };
 

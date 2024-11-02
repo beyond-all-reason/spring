@@ -158,8 +158,7 @@ bool CLegacyAtlasAlloc::Allocate()
 		}
 	}
 
-	if (npot)
-		atlasSize = max;
+	atlasSize = max;
 
 	return success;
 }

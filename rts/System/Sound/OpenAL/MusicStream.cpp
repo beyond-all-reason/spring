@@ -1,36 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #include "MusicStream.h"
 
-#include "System/FileSystem/FileHandler.h"
 #include "System/Sound/SoundLog.h"
 #include "System/SafeUtil.h"
 #include "ALShared.h"
 #include "VorbisShared.h"
-#include "System/Sound/OpenAL/OggDecoder.h"
-#include "System/Sound/OpenAL/Mp3Decoder.h"
 
-#include <cstring> //memset
 #include <filesystem>
 #include <string_view>
 #include <variant>
 
-// NOTE:
-//   this buffer gets recycled by each new stream, across *all* audio-channels
-//   as a result streams are limited to only ever being played within a single
-//   channel (currently BGMusic), but cause far less memory fragmentation
-// TODO:
-//   can easily be fixed if necessary by giving each channel its own index and
-//   passing that along to the callbacks via COggStream{::Play}
-// CFileHandler fileBuffers[NUM_AUDIO_CHANNELS];
-static CFileHandler fileBuffer("", "");
 
-// FIXME these parts of MusicStream are outside the class because every instance
-// of CSoundSource has a copy of MusicStream class but only one is ever active
-static std::variant<OggDecoder, Mp3Decoder> decoder;
-
-
-MusicStream::MusicStream(ALuint _source)
-	: source(_source)
+MusicStream::MusicStream()
+	: buffers{}
+	, source(0)
 	, format(AL_FORMAT_MONO16)
 	, stopped(true)
 	, paused(false)
@@ -38,7 +21,6 @@ MusicStream::MusicStream(ALuint _source)
 	, lastTick(spring_nulltime)
 	, totalTime(0.0f)
 {
-	std::fill(buffers.begin(), buffers.end(), 0);
 }
 
 MusicStream::~MusicStream()
@@ -46,32 +28,8 @@ MusicStream::~MusicStream()
 	Stop();
 }
 
-
-MusicStream& MusicStream::operator=(MusicStream&& rhs) noexcept
-{
-	if (this != &rhs) {
-		std::swap(pcmDecodeBuffer, rhs.pcmDecodeBuffer);
-
-		for (auto i = 0; i < buffers.size(); ++i) {
-			std::swap(buffers[i], rhs.buffers[i]);
-		}
-
-		std::swap(source, rhs.source);
-		std::swap(format, rhs.format);
-
-		std::swap(stopped, rhs.stopped);
-		std::swap(paused, rhs.paused);
-
-		std::swap(msecsPlayed, rhs.msecsPlayed);
-		std::swap(lastTick, rhs.lastTick);
-		std::swap(totalTime, rhs.totalTime);
-	}
-
-	return *this;
-}
-
 // open a music stream from a given file and start playing it
-void MusicStream::Play(const std::string& path, float volume)
+void MusicStream::Play(const std::string& path, float volume, ALuint src)
 {
 	// we're already playing another stream
 	if (!stopped)
@@ -85,6 +43,8 @@ void MusicStream::Play(const std::string& path, float volume)
 		return;
 	}
 
+	source = src;
+
 	if (fileBuffer.GetFileExt() == std::string_view{"mp3"}) {
 		decoder = Mp3Decoder();
 	} else {
@@ -93,7 +53,6 @@ void MusicStream::Play(const std::string& path, float volume)
 	}
 
 	if (!fileBuffer.IsBuffered()) {
-		// TODO move buffer to class scope
 		auto& buf = fileBuffer.GetBuffer();
 		buf.resize(fileBuffer.FileSize());
 		fileBuffer.Read(buf.data(), fileBuffer.FileSize());
@@ -138,11 +97,12 @@ void MusicStream::Stop()
 	ReleaseBuffers();
 
 	msecsPlayed = spring_nulltime;
+	totalTime = 0.0f;
 	lastTick = spring_gettime();
 
-	source = 0;
 	format = 0;
-	totalTime = 0.0f;
+	stopped = true;
+	paused = false;
 
 	assert(!Valid());
 }
@@ -150,8 +110,8 @@ void MusicStream::Stop()
 // clean up the OpenAL resources
 void MusicStream::ReleaseBuffers()
 {
-	stopped = true;
-	paused = false;
+	if (!source)
+		return;
 
 #if 0
 	EmptyBuffers();
@@ -167,6 +127,10 @@ void MusicStream::ReleaseBuffers()
 	alDeleteBuffers(2, buffers.data());
 	CheckError("[MusicStream::ReleaseBuffers][2]");
 	std::fill(buffers.begin(), buffers.end(), 0);
+
+	source = 0;
+	assert(!Valid());
+	assert(IsFinished());
 }
 
 
@@ -176,13 +140,19 @@ bool MusicStream::StartPlaying()
 {
 	msecsPlayed = spring_nulltime;
 	lastTick = spring_gettime();
-
-	if (!DecodeStream(buffers[0]) || !DecodeStream(buffers[1])) {
-		// streaming very small file is not possible if we use 2 buffers
+	
+	if (!DecodeStream(buffers[0])) {
 		return false;
 	}
-
-	alSourceQueueBuffers(source, 2, buffers.data());
+	
+	int numDecodedStreams = 1;
+	if (DecodeStream(buffers[1])) {
+		++numDecodedStreams;
+	} else {
+		// small file or broken stream
+	}
+	
+	alSourceQueueBuffers(source, numDecodedStreams, buffers.data());
 
 	// CheckError returns true if *no* error occurred
 	if (!CheckError("[MusicStream::StartPlaying][1]"))
@@ -248,7 +218,8 @@ void MusicStream::Update()
 		// releasing buffers is only allowed once the source has actually
 		// stopped playing, since it might still be reading from the last
 		// decoded chunk
-		if (UpdateBuffers(), !IsPlaying())
+		UpdateBuffers();
+		if (!IsPlaying())
 			ReleaseBuffers();
 
 		msecsPlayed += (tick - lastTick);

@@ -11,6 +11,8 @@
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
 
+#include <bit>
+
 CModInfo modInfo;
 
 void CModInfo::ResetState()
@@ -327,5 +329,8 @@ void CModInfo::Init(const std::string& modFileName)
 		if ((airMipLevel < 0) || (airMipLevel > 30))
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
 	}
+
+	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))
+		throw content_error("quadFieldQuadSizeInElmos modrule has to be a power of 2");
 }
 

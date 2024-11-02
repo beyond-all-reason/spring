@@ -7,6 +7,7 @@
 #include "Rendering/Textures/TextureFormat.h"
 #include <algorithm>
 #include <tuple>
+#include <array>
 
 
 // Get gl parameter values into a homogenous GL-typed variable (single or array)
@@ -65,6 +66,23 @@ inline ResultTupleType FetchEffectualStateAttribValues(ParamNames... paramNames)
 
 	IndexDispatcher([args = std::forward_as_tuple(paramNames...), &resultTuple](auto idx) {
 		glGetAny(std::get<idx>(args), &std::get<idx>(resultTuple));
+	});
+
+	return resultTuple;
+}
+
+template<class ResultTupleType, glEnumType ParamName>
+inline ResultTupleType FetchEffectualStateAttribValues(ParamName paramName)
+{
+	ResultTupleType resultTuple;
+
+	using ArrType = std::tuple_element_t<0, ResultTupleType>;
+	std::array<ArrType, std::tuple_size_v<ResultTupleType>> arr;
+	glGetAny(paramName, arr.data(), arr.size());
+
+	auto IndexDispatcher = spring::make_index_dispatcher<std::tuple_size_v<ResultTupleType>>();
+	IndexDispatcher([&arr, &resultTuple](auto idx) {
+		std::get<idx>(resultTuple) = arr[idx];
 	});
 
 	return resultTuple;

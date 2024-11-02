@@ -151,7 +151,7 @@ namespace QTPFS {
 			SearchNode *repairPathRealSrcSearchNode;
 		};
 
-		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData);
+		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData, const float3& srcPoint);
 		void UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx);
 
 		void InitSearchNodeData(QTPFS::SearchNode *curSearchNode, QTPFS::INode *curNode) const {

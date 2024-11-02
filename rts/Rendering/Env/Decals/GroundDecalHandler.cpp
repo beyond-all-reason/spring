@@ -130,7 +130,7 @@ CGroundDecalHandler::CGroundDecalHandler()
 
 	instVBO = VBO(GL_ARRAY_BUFFER, false, false);
 
-	decals.reserve(decalLevel * 16384);
+	decals.reserve(1 << 16);
 	decalsUpdateList.Reserve(decals.capacity());
 
 	nextId = 0;
@@ -610,15 +610,15 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 		std::clamp(2.0f * ei.damage / 255.0f, 0.8f, 1.0f);
 
 	const float scarTTL = (vi.scarTtl > 0.0f) ?
-		decalLevel * GAME_SPEED * vi.scarTtl :
-		std::clamp(decalLevel * ei.damage * 3.0f, 15.0f, decalLevel * 1800.0f);
+		GAME_SPEED * vi.scarTtl :
+		std::clamp(DECAL_LEVEL_MULT * 3.0f * ei.damage, 15.0f, DECAL_LEVEL_MULT * 1800.0f);
 
 	const float glow = (vi.scarGlow > 0.0f) ?
 		vi.scarGlow :
 		std::clamp(2.0f * ei.damage / 255.0f, 0.0f, 1.0f);
 
 	const float glowTTL = (vi.scarGlowTtl > 0.0f) ?
-		decalLevel * GAME_SPEED * vi.scarGlowTtl :
+		GAME_SPEED * vi.scarGlowTtl :
 		60.0f;
 
 	const float alphaDecay = 1.0f / scarTTL;
@@ -691,10 +691,10 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 	if (vi.scarGlowColorMap && !vi.scarGlowColorMap->Empty()) {
 		auto idcs = vi.scarGlowColorMap->GetIndices(0.0f);
-		idToCmInfo.emplace(decal.info.id, std::make_tuple(vi.scarGlowColorMap, idcs));
+		idToCmInfo[decal.info.id] = std::make_tuple(vi.scarGlowColorMap, idcs);
 	}
 
-	idToPos.emplace(decal.info.id, decals.size() - 1);
+	idToPos[decal.info.id] = decals.size() - 1;
 	decalsUpdateList.EmplaceBackUpdate();
 }
 
@@ -921,8 +921,8 @@ void CGroundDecalHandler::MoveSolidObject(const CSolidObject* object, const floa
 	});
 
 	decalsUpdateList.EmplaceBackUpdate();
-	idToPos.emplace(decal.info.id, decals.size() - 1);
-	decalOwners.emplace(object, decals.size() - 1);
+	idToPos[decal.info.id] = decals.size() - 1;
+	decalOwners[object] = decals.size() - 1;
 }
 
 void CGroundDecalHandler::RemoveSolidObject(const CSolidObject* object, const GhostSolidObject* gb)
@@ -1021,7 +1021,7 @@ uint32_t CGroundDecalHandler::CreateLuaDecal()
 		.glowColorMap = { SColor{0.0f, 0.0f, 0.0f, 0.0f}, SColor{0.0f, 0.0f, 0.0f, 0.0f} }
 	});
 	decalsUpdateList.EmplaceBackUpdate();
-	idToPos.emplace(decal.info.id, decals.size() - 1);
+	idToPos[decal.info.id] = decals.size() - 1;
 
 	return decal.info.id;
 }
@@ -1042,7 +1042,6 @@ bool CGroundDecalHandler::DeleteLuaDecal(uint32_t id)
 
 	decal.MarkInvalid();
 	decalsUpdateList.SetUpdate(it->second);
-	freeIds.push_back(decal.info.id);
 
 	return true;
 }
@@ -1205,7 +1204,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 	const SolidObjectDecalDef& decalDef = unitDef->decalDef;
 
-	const float trackLifeTime = decalLevel * GAME_SPEED * decalDef.trackDecalStrength;
+	const float trackLifeTime = DECAL_LEVEL_MULT * GAME_SPEED * decalDef.trackDecalStrength;
 	if (trackLifeTime <= 0.0f)
 		return;
 
@@ -1269,8 +1268,8 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 		mm = {};
 
-		decalOwners.emplace(unit, decals.size() - 1);
-		idToPos.emplace(decal.info.id, decals.size() - 1);
+		decalOwners[unit] = decals.size() - 1;
+		idToPos[decal.info.id] = decals.size() - 1;
 		decalsUpdateList.EmplaceBackUpdate();
 
 		return;
@@ -1359,7 +1358,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 	// replace the old entry
 	decalOwners[unit] = decals.size() - 1;
 
-	idToPos.emplace(newDecal.info.id, decals.size() - 1);
+	idToPos[newDecal.info.id], decals.size() - 1;
 	decalsUpdateList.EmplaceBackUpdate();
 }
 

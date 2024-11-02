@@ -51,7 +51,8 @@ struct TextureParameters {
 	GLint bpp;
 	GLint chNum;
 	GLint imageSize;
-	GLboolean isDepth;
+	GLint prefDataType;
+	GLboolean isNormalizedDepth;
 	GLboolean isCompressed;
 };
 

@@ -70,7 +70,6 @@
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
-#include "System/bitops.h"
 #include "System/MainDefines.h"
 #include "System/SpringMath.h"
 #include "System/FileSystem/FileHandler.h"
@@ -317,9 +316,6 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileDirection);
 	REGISTER_LUA_CFUNC(GetProjectileVelocity);
 	REGISTER_LUA_CFUNC(GetProjectileGravity);
-	REGISTER_LUA_CFUNC(GetProjectileSpinAngle);
-	REGISTER_LUA_CFUNC(GetProjectileSpinSpeed);
-	REGISTER_LUA_CFUNC(GetProjectileSpinVec);
 	REGISTER_LUA_CFUNC(GetPieceProjectileParams);
 	REGISTER_LUA_CFUNC(GetProjectileTarget);
 	REGISTER_LUA_CFUNC(GetProjectileIsIntercepted);
@@ -329,7 +325,6 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileAllyTeamID);
 	REGISTER_LUA_CFUNC(GetProjectileType);
 	REGISTER_LUA_CFUNC(GetProjectileDefID);
-	REGISTER_LUA_CFUNC(GetProjectileName);
 	REGISTER_LUA_CFUNC(GetProjectileDamages);
 
 	REGISTER_LUA_CFUNC(IsPosInMap);
@@ -910,7 +905,7 @@ int LuaSyncedRead::GetGameFrame(lua_State* L)
  */
 int LuaSyncedRead::GetGameSeconds(lua_State* L)
 {
-	lua_pushnumber(L, gs->GetLuaSimFrame() / (1.0f * GAME_SPEED));
+	lua_pushnumber(L, gs->GetLuaSimFrame() * INV_GAME_SPEED);
 	return 1;
 }
 
@@ -2739,10 +2734,10 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 		const int tableIdx = 2;
 
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (!lua_isnumber(L, -1))
+			if (!lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
 				continue;
 
-			InsertSearchUnitDefs(unitDefHandler->GetUnitDefByID(lua_toint(L, -1)), allied);
+			InsertSearchUnitDefs(unitDefHandler->GetUnitDefByID(lua_toint(L, LUA_TABLE_VALUE_INDEX)), allied);
 		}
 	} else {
 		luaL_error(L, "Incorrect arguments to GetTeamUnitsByDefs()");
@@ -4666,10 +4661,17 @@ int LuaSyncedRead::GetUnitCurrentBuildPower(lua_State* L)
 }
 
 
-/***
+/*** Get a unit's carried resources
  *
  * @function Spring.GetUnitHarvestStorage
+ *
+ * Checks resources being carried internally by the unit.
+ *
  * @number unitID
+ * @treturn number storedMetal
+ * @treturn number maxStoredMetal
+ * @treturn number storedEnergy
+ * @treturn number maxStoredEnergy
  */
 int LuaSyncedRead::GetUnitHarvestStorage(lua_State* L)
 {
@@ -4717,10 +4719,15 @@ int LuaSyncedRead::GetUnitBuildParams(lua_State* L)
 	return 0;
 }
 
-/***
+/*** Is builder in build stance
  *
  * @function Spring.GetUnitInBuildStance
+ *
+ * Checks if a builder is in build stance, i.e. can create nanoframes.
+ * Returns nil for non-builders.
+ *
  * @number unitID
+ * @treturn bool inBuildStance
  */
 int LuaSyncedRead::GetUnitInBuildStance(lua_State* L)
 {
@@ -4738,10 +4745,19 @@ int LuaSyncedRead::GetUnitInBuildStance(lua_State* L)
 	return 1;
 }
 
-/***
+/*** Get construction FX attachment points
  *
  * @function Spring.GetUnitNanoPieces
+ *
+ * Returns an array of pieces which represent construction
+ * points. Default engine construction FX (nano spray) will
+ * originate there.
+ *
+ * Only works on builders and factories, returns nil (NOT empty table)
+ * for other units.
+ *
  * @number unitID
+ * @return pieceArray {pieceID, pieceID, ...}
  */
 int LuaSyncedRead::GetUnitNanoPieces(lua_State* L)
 {
@@ -4784,10 +4800,15 @@ int LuaSyncedRead::GetUnitNanoPieces(lua_State* L)
 }
 
 
-/***
+/*** Get the transport carrying the unit
  *
  * @function Spring.GetUnitTransporter
+ *
+ * Returns the unit ID of the transport, if any.
+ * Returns nil if the unit is not being transported.
+ *
  * @number unitID
+ * @treturn number|nil transportUnitID
  */
 int LuaSyncedRead::GetUnitTransporter(lua_State* L)
 {
@@ -4803,10 +4824,15 @@ int LuaSyncedRead::GetUnitTransporter(lua_State* L)
 }
 
 
-/***
+/*** Get units being transported
  *
  * @function Spring.GetUnitIsTransporting
+ *
+ * Returns an array of unitIDs being transported by this unit.
+ * Returns nil (NOT an empty array) for units that are not transports.
+ *
  * @number unitID
+ * @return transporteeArray {unitID, unitID, ...}
  */
 int LuaSyncedRead::GetUnitIsTransporting(lua_State* L)
 {
@@ -4833,6 +4859,9 @@ int LuaSyncedRead::GetUnitIsTransporting(lua_State* L)
  *
  * @function Spring.GetUnitShieldState
  * @number unitID
+ * @number[opt] weaponNum Optional if the unit has just one shield
+ * @treturn number isEnabled Warning, number not bool. 0 or 1
+ * @treturn number currentPower
  */
 int LuaSyncedRead::GetUnitShieldState(lua_State* L)
 {
@@ -4917,10 +4946,16 @@ int LuaSyncedRead::GetUnitFlanking(lua_State* L)
 }
 
 
-/***
+/*** Get a unit's engagement range
  *
  * @function Spring.GetUnitMaxRange
+ *
+ * Returns the range at which a unit will stop to engage.
+ * By default this is the highest among the unit's weapon ranges (hence name),
+ * but can be changed dynamically. Also note that unarmed units ignore this.
+ *
  * @number unitID
+ * @treturn number maxRange
  */
 int LuaSyncedRead::GetUnitMaxRange(lua_State* L)
 {
@@ -4940,10 +4975,36 @@ int LuaSyncedRead::GetUnitMaxRange(lua_State* L)
 ******************************************************************************/
 
 
-/***
+/*** Check the state of a unit's weapon
  *
  * @function Spring.GetUnitWeaponState
+ *
+ * Available states to poll:
+ *   "reloadFrame" (frame on which the weapon will be ready to fire),
+ *   "reloadSpeed" (reload time in seconds),
+ *   "range" (in elmos),
+ *   "autoTargetRangeBoost" (predictive aiming range buffer, in elmos),
+ *   "projectileSpeed" (in elmos/frame),
+ *   "reloadTimeXP" (reload time after XP bonus, in seconds),
+ *   "reaimTime" (frames between AimWeapon calls),
+ *   "burst" (shots in a burst),
+ *   "burstRate" (delay between shots in a burst, in seconds),
+ *   "projectiles" (projectiles per shot),
+ *   "salvoLeft" (shots remaining in ongoing burst),
+ *   "nextSalvo" (simframe of the next shot in an ongoing burst),
+ *   "accuracy" (INaccuracy after XP bonus),
+ *   "sprayAngle" (spray angle after XP bonus),
+ *   "targetMoveError" (extra inaccuracy against moving targets, after XP bonus)
+ *   "avoidFlags" (bitmask for targeting avoidance),
+ *   "collisionFlags" (bitmask for collisions).
+ *
+ * The state "salvoError" is an exception and returns a table: {x, y, z},
+ * which represents the inaccuracy error of the ongoing burst.
+ *
  * @number unitID
+ * @number weaponNum
+ * @string stateName
+ * @return number stateValue
  */
 int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 {
@@ -4975,10 +5036,7 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 		} break;
 
 		case hashString("reloadTime"): {
-			// SetUnitWeaponState sets reloadTime to int(value * GAME_SPEED);
-			// divide by 1.0 here since reloadTime / GAME_SPEED would itself
-			// be an integer division
-			lua_pushnumber(L, (weapon->reloadTime / 1.0f) / GAME_SPEED);
+			lua_pushnumber(L, weapon->reloadTime * INV_GAME_SPEED);
 		} break;
 		case hashString("reloadTimeXP"): {
 			// reloadSpeed is affected by unit experience
@@ -5010,7 +5068,10 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 			lua_pushnumber(L, weapon->salvoSize);
 		} break;
 		case hashString("burstRate"): {
-			lua_pushnumber(L, float(weapon->salvoDelay) / GAME_SPEED);
+			lua_pushnumber(L, weapon->salvoDelay * INV_GAME_SPEED);
+		} break;
+		case hashString("windup"): {
+			lua_pushnumber(L, float(weapon->salvoWindup) / GAME_SPEED);
 		} break;
 
 		case hashString("projectiles"): {
@@ -6816,14 +6877,6 @@ int LuaSyncedRead::GetProjectileGravity(lua_State* L)
 	return 1;
 }
 
-int LuaSyncedRead::GetProjectileSpinAngle(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // FIXME: DELETE ME
-int LuaSyncedRead::GetProjectileSpinSpeed(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // FIXME: DELETE ME
-int LuaSyncedRead::GetProjectileSpinVec(lua_State* L) {
-	lua_pushnumber(L, 0.0f);
-	lua_pushnumber(L, 0.0f);
-	lua_pushnumber(L, 0.0f);
-	return 3;
-} // FIXME: DELETE ME
 
 
 /***
@@ -7100,46 +7153,6 @@ int LuaSyncedRead::GetProjectileDamages(lua_State* L)
 }
 
 
-/***
- *
- * @function Spring.GetProjectileName
- *
- * It is recommended to rather use GetProjectileDefID for indexing purposes.
- *
- * @number projectileID
- * @treturn nil|string
- *
- * @see Spring.GetProjectileDefID
- */
-int LuaSyncedRead::GetProjectileName(lua_State* L)
-{
-	const CProjectile* pro = ParseProjectile(L, __func__, 1);
-
-	if (pro == nullptr)
-		return 0;
-
-	if (pro->weapon) {
-		const CWeaponProjectile* wpro = static_cast<const CWeaponProjectile*>(pro);
-
-		if (wpro != nullptr && wpro->GetWeaponDef() != nullptr) {
-			// maybe CWeaponProjectile derivatives
-			// should have actual names themselves?
-			lua_pushsstring(L, wpro->GetWeaponDef()->name);
-			return 1;
-		}
-	}
-	if (pro->piece) {
-		const CPieceProjectile* ppro = static_cast<const CPieceProjectile*>(pro);
-
-		if (ppro != nullptr && ppro->omp != nullptr) {
-			lua_pushsstring(L, ppro->omp->name);
-			return 1;
-		}
-	}
-
-	// neither weapon nor piece likely means the projectile is CExpGenSpawner, should we return any name in this case?
-	return 0;
-}
 
 
 /******************************************************************************

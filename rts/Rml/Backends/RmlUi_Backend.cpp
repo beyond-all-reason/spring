@@ -102,7 +102,7 @@ public:
 	Rml::Context* debug_host_context = nullptr;
 	Rml::Context* clicked_context = nullptr;
 
-	InputHandler::SignalType::connection_type inputCon;
+	InputHandler::HandlerTokenT inputCon;
 	CRmlInputReceiver inputReceiver;
 
 	bool initialized = false;
@@ -357,6 +357,9 @@ void RmlGui::RenderFrame()
 	}
 
 #ifndef HEADLESS
+	if (state->contexts.empty())
+		return;
+
 	RmlGui::BeginFrame();
 	// render back-to-front so that index 0 is atop index 1 and so on
 	for (auto& context: std::ranges::reverse_view(state->contexts)) {

@@ -3,11 +3,12 @@
 #ifndef SOLID_OBJECT_H
 #define SOLID_OBJECT_H
 
+#include <bit>
+
 #include "WorldObject.h"
 #include "Lua/LuaRulesParams.h"
 #include "Rendering/Models/3DModel.h"
 #include "Sim/Misc/CollisionVolume.h"
-#include "System/bitops.h"
 #include "System/Matrix44f.h"
 #include "System/type2.h"
 #include "System/Ecs/EcsMain.h"
@@ -90,14 +91,36 @@ public:
 		CSTATE_BIT_QUADMAPRAYS  = (1 << 2),
 	};
 	enum DamageType {
-		DAMAGE_EXPLOSION_WEAPON  = 0, // weapon-projectile that triggered GameHelper::Explosion (weaponDefID >= 0)
-		DAMAGE_EXPLOSION_DEBRIS  = 1, // piece-projectile that triggered GameHelper::Explosion (weaponDefID < 0)
-		DAMAGE_COLLISION_GROUND  = 2, // ground collision
-		DAMAGE_COLLISION_OBJECT  = 3, // object collision
-		DAMAGE_EXTSOURCE_FIRE    = 4,
-		DAMAGE_EXTSOURCE_WATER   = 5, // lava/acid/etc
-		DAMAGE_EXTSOURCE_KILLED  = 6,
-		DAMAGE_EXTSOURCE_CRUSHED = 7,
+		DAMAGE_EXPLOSION_WEAPON    = 0, // weapon-projectile that triggered GameHelper::Explosion (weaponDefID >= 0)
+		DAMAGE_EXPLOSION_DEBRIS    = 1, // piece-projectile that triggered GameHelper::Explosion (weaponDefID < 0)
+		DAMAGE_COLLISION_GROUND    = 2, // ground collision
+		DAMAGE_COLLISION_OBJECT    = 3, // object collision
+		DAMAGE_EXTSOURCE_FIRE      = 4,
+		DAMAGE_EXTSOURCE_WATER     = 5, // lava/acid/etc
+		DAMAGE_EXTSOURCE_KILLED    = 6,
+		DAMAGE_EXTSOURCE_CRUSHED   = 7,
+		DAMAGE_AIRCRAFT_CRASHED    = 8,
+		DAMAGE_NEGATIVE_HEALTH     = 9,
+		DAMAGE_SELFD_EXPIRED       = 10,
+		DAMAGE_KILLED_CHEAT        = 11,
+		DAMAGE_RECLAIMED           = 12,
+		DAMAGE_KILLED_OOB          = 13,
+		DAMAGE_TRANSPORT_KILLED    = 14,
+		DAMAGE_FACTORY_KILLED      = 15,
+		DAMAGE_FACTORY_CANCEL      = 16,
+		DAMAGE_UNIT_SCRIPT         = 17,
+		DAMAGE_KAMIKAZE_ACTIVATED  = 18,
+		DAMAGE_CONSTRUCTION_DECAY  = 19,
+		DAMAGE_TURNED_INTO_FEATURE = 20,
+
+		// Keep killed by Lua as last index here. This will be exposed as
+		// lowest index for games. As we keep killed by Lua as lowest index,
+		// games can introduce their own damage types by doing code like
+		//
+		//      envTypes.CullingStrike      = envTypes.KilledByLua - 1
+		//      envTypes.SummonTimerExpired = envTypes.KilledByLua - 2
+		//
+		DAMAGE_KILLED_LUA = 21
 	};
 
 	virtual ~CSolidObject() {}
@@ -220,10 +243,8 @@ public:
 	float3 GetObjectSpaceDrawPos(const float3& p) const { return (drawPos + GetObjectSpaceVec(p)); }
 
 	// unsynced mid-{position,vector}s
-	float3 GetMdlDrawMidPos() const { return (GetObjectSpaceDrawPos(localModel.GetRelMidPos())); }
-	float3 GetObjDrawMidPos() const { return (GetObjectSpaceDrawPos(              relMidPos  )); }
-	float3 GetMdlDrawRelMidPos() const { return (GetObjectSpaceVec(localModel.GetRelMidPos())); }
-	float3 GetObjDrawRelMidPos() const { return (GetObjectSpaceVec(              relMidPos  )); }
+	float3 GetMdlDrawMidPos() const { return (GetObjectSpaceDrawPos(WORLD_TO_OBJECT_SPACE * localModel.GetRelMidPos())); }
+	float3 GetObjDrawMidPos() const { return (GetObjectSpaceDrawPos(WORLD_TO_OBJECT_SPACE *               relMidPos  )); }
 
 
 	int2 GetMapPos() const { return (GetMapPos(pos)); }
@@ -262,8 +283,8 @@ public:
 	bool    HasPhysicalStateBit(unsigned int bit) const { return ((physicalState & bit) != 0); }
 	void    SetPhysicalStateBit(unsigned int bit) { unsigned int ps = physicalState; ps |= ( bit); physicalState = static_cast<PhysicalState>(ps); }
 	void  ClearPhysicalStateBit(unsigned int bit) { unsigned int ps = physicalState; ps &= (~bit); physicalState = static_cast<PhysicalState>(ps); }
-	void   PushPhysicalStateBit(unsigned int bit) { UpdatePhysicalStateBit(1u << (32u - bits_ffs(bit)), HasPhysicalStateBit(bit)); }
-	void    PopPhysicalStateBit(unsigned int bit) { UpdatePhysicalStateBit(bit, HasPhysicalStateBit(1u << (32u - bits_ffs(bit)))); }
+	void   PushPhysicalStateBit(unsigned int bit) { UpdatePhysicalStateBit(1u << (31u - std::countr_zero(bit)), HasPhysicalStateBit(bit)); }
+	void    PopPhysicalStateBit(unsigned int bit) { UpdatePhysicalStateBit(bit, HasPhysicalStateBit(1u << (31u - std::countr_zero(bit)))); }
 	bool UpdatePhysicalStateBit(unsigned int bit, bool set) {
 		if (set) {
 			SetPhysicalStateBit(bit);
@@ -276,8 +297,8 @@ public:
 	bool    HasCollidableStateBit(unsigned int bit) const { return ((collidableState & bit) != 0); }
 	void    SetCollidableStateBit(unsigned int bit) { unsigned int cs = collidableState; cs |= ( bit); collidableState = static_cast<CollidableState>(cs); }
 	void  ClearCollidableStateBit(unsigned int bit) { unsigned int cs = collidableState; cs &= (~bit); collidableState = static_cast<CollidableState>(cs); }
-	void   PushCollidableStateBit(unsigned int bit) { UpdateCollidableStateBit(1u << (32u - bits_ffs(bit)), HasCollidableStateBit(bit)); }
-	void    PopCollidableStateBit(unsigned int bit) { UpdateCollidableStateBit(bit, HasCollidableStateBit(1u << (32u - bits_ffs(bit)))); }
+	void   PushCollidableStateBit(unsigned int bit) { UpdateCollidableStateBit(1u << (31u - std::countr_zero(bit)), HasCollidableStateBit(bit)); }
+	void    PopCollidableStateBit(unsigned int bit) { UpdateCollidableStateBit(bit, HasCollidableStateBit(1u << (31u - std::countr_zero(bit)))); }
 	bool UpdateCollidableStateBit(unsigned int bit, bool set) {
 		if (set) {
 			SetCollidableStateBit(bit);

@@ -195,11 +195,14 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 			const QTPFS::IPath::PathNodeData& firstCleanNode = pathToRepair->GetNode(firstCleanNodeId);
 
 			// if ((searchID == 7340095 || searchID == 10485810) /*&& pathOwner != nullptr && pathOwner->id == 30809 */){
-			// 	LOG("%s: goodRecord %d [%x] g=%d (%d,%d)-(%d,%d) [%f,%f]", __func__
+			// if (pathOwner != nullptr && pathOwner->id == 1502) {
+			// 	LOG("%s: goodRecord %d [%x] g=%d (%d,%d)-(%d,%d) [%f,%f] firstCleanNode=%d of %d", __func__
 			// 		, firstCleanNode.nodeId, firstCleanNode.nodeNumber
 			// 		, int(!firstCleanNode.IsNodeBad())
 			// 		, firstCleanNode.xmin, firstCleanNode.zmin, firstCleanNode.xmax, firstCleanNode.zmax
 			// 		, firstCleanNode.netPoint.x, firstCleanNode.netPoint.y
+			// 		, pathToRepair->GetFirstNodeIdOfCleanPath()
+			// 		, pathToRepair->GetGoodNodeCount()
 			// 		);
 			// }
 
@@ -491,9 +494,11 @@ void QTPFS::PathSearch::LoadRepairPath() {
 	SearchNode& searchNode = bwdSearchNodes[nodeId];
 	bwd.repairPathRealSrcSearchNode = &searchNode;
 
-	// Check wether the repair is starting on the clean path.
+	// This should always be true.
 	if (bwdSearchNodes.isSet(fwd.srcSearchNode->GetIndex())) {
 		const QTPFS::SearchNode& bwdNode = bwdSearchNodes[fwd.srcSearchNode->index];
+
+		// Check wether the repair is starting on the clean path.
 		if (bwdNode.GetStepIndex() > 0) {
 			const float2& edgePoint = bwdNode.GetNeighborEdgeTransitionPoint();
 			const float3 newTgtPoint{edgePoint.x, 0.f, edgePoint.y};
@@ -567,11 +572,18 @@ void QTPFS::PathSearch::InitStartingSearchNodes() {
 
 		// Path repair holds the reverse source node in a different place. We use a nearer node to speed up the search
 		// so that we are only search for a path in the damaged area, rather than the whole map.
-		auto* srcNode = ( doPathRepair && (i == SearchThreadData::SEARCH_BACKWARD) )
-				? data.repairPathRealSrcSearchNode : data.srcSearchNode;
+		auto* srcNode = data.srcSearchNode;
 
-		ResetState(srcNode, data);
-		UpdateNode(srcNode, nullptr, 0);
+		// In a path repair the backwards start point is linked to the rest of the original path that we want to keep.
+		// Don't clear the previous node otherwise the clean/kept path won't be unwind.
+		bool keepPrevNode = (doPathRepair && i == SearchThreadData::SEARCH_BACKWARD);
+		QTPFS::SearchNode *prevNode = (keepPrevNode) ? srcNode->GetPrevNode() : nullptr;
+		float3 srcPoint = (keepPrevNode)
+			? float3(srcNode->GetNeighborEdgeTransitionPoint().x, 0.f, srcNode->GetNeighborEdgeTransitionPoint().y)
+			: data.srcPoint;
+
+		ResetState(srcNode, data, srcPoint);
+		UpdateNode(srcNode, prevNode, 0);
 
 		auto* curNode = nodeLayer->GetPoolNode(data.srcSearchNode->GetIndex());
 		CopyNodeBoundaries(*data.srcSearchNode, *curNode);
@@ -601,7 +613,8 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 			break;
 	}
 
-	adjustedGoalDistance = goalDistance * hCostMult;
+	// Path repair is special in that we are fully linking paths, no early out is permitted.
+	adjustedGoalDistance = (doPathRepair) ? -1.f : goalDistance * hCostMult;
 }
 
 void QTPFS::PathSearch::RemoveOutdatedOpenNodesFromQueue(int searchDir) {
@@ -1081,10 +1094,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	assert(fwd.srcSearchNode != nullptr);
 
 	if (doPathRepair) {
-		// Put this back so that the follow on request searches to the full target endpoint.
-		fwd.tgtPoint = goalPos;
-
-		// Move the backwards source node to where it would be if this was complete path search, rtaher than a repair.
+		// Move the backwards source node to where it would be if this was complete path search, rather than a repair.
 		bwd.srcSearchNode = bwd.repairPathRealSrcSearchNode;
 	
 		if (!haveFullPath) {
@@ -1222,13 +1232,13 @@ bool QTPFS::PathSearch::ExecuteRawSearch() {
 }
 
 
-void QTPFS::PathSearch::ResetState(SearchNode* node, struct DirectionalSearchData& searchData) {
+void QTPFS::PathSearch::ResetState(SearchNode* node, struct DirectionalSearchData& searchData, const float3& srcPoint) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// will be copied into srcNode by UpdateNode()
-	netPoints[0] = {searchData.srcPoint.x, searchData.srcPoint.z};
+	netPoints[0] = {srcPoint.x, srcPoint.z};
 
 	gDists[0] = 0.0f;
-	hDists[0] = searchData.srcPoint.distance(searchData.tgtPoint);
+	hDists[0] = srcPoint.distance(searchData.tgtPoint);
 	gCosts[0] = 0.0f;
 	hCosts[0] = hDists[0] * hCostMult;
 

@@ -6,7 +6,6 @@
 #include <vector>
 #include <memory>
 
-#include "System/bitops.h"
 #include "System/MemPoolTypes.h"
 #include "System/UnorderedMap.hpp"
 

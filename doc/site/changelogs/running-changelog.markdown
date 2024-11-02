@@ -6,46 +6,75 @@ permalink: changelogs/running-changelog
 author: sprunk
 ---
 
-This is the changelog **since version 2511**.
+This is the changelog **since version 2590**.
 
 # Caveats
 These are the entries which may require special attention when migrating:
-* removed the `movement.allowDirectionalPathing` modrule. Pathing is now always directional. All known games had directional pathing enabled already.
-* unitdef `waterline` is now ignored if the unit has a movedef, and is taken from the movedef via its new `waterline` def, unless the movedef sets the new `overrideUnitWaterline` boolean def to false.
+* explicitly specified weapon def `scarTTL` value is now the actual TTL.
+Previously it was multiplied by the ground decals level springsetting,
+which defaults to 3, so if you had tweaked scars they may turn out to have
+significantly different TTL now.
+* weapons with `groundBounce = true` will now bounce even if `numBounces`
+is left undefined. This is because `numBounces = -1`, which is the default
+value, will now result in infinite bounces as intended instead of 0.
+* a bunch of changes in damage and death Lua events, see below.
 
 # Features
 
-### Movement
-* removed the `movement.allowDirectionalPathing` modrule. Pathing is now always directional, i.e. going downhill does not incur a speed penalty. All known games had directional pathing enabled already.
-* added `allowDirectionalPathing` boolean movedef entry, default false. Allows the HAPFS (aka legacy) pathfinder to take direction into account. If false, it will avoid going downhill to the same extent as climbing that slope uphill (note that this is the previous behaviour). Does not apply to QTPFS, which cannot use directional pathing.
-* added `preferShortestPath` boolean movedef entry, default false. Makes the QTPFS pathfinder ignore speed modifiers (from any source: typemap, slope, water) when deciding the path. Still avoids 0% modifiers (i.e. won't try to move across completely unpathable terrain). Does not apply to HAPFS, which cannot use this and will always take speed modifiers into account.
-* added `waterline` numerical entry to movedef - how deep the unit sits in water, in elmos, similar to the existing unit def waterline. Defaults to 1 for ships, to the unit width (according to the movedef footprint, converted to elmos) for submarines, and 0 for everything else. Overrides the existing `waterline` from the unit def by default.
-* added `overrideUnitWaterline` boolean entry to movedef, defaults to true. If set to false, it will use the unit def waterline after all.
-* added `separationDistance` numerical movedef entry, default 0. Treated as extra radius for the purposes of colliding with other mobiles during movement (i.e. doesn't apply to impulse-based collisions or to pathing near buildings/terrain). Use to loosen up tight formations without affecting where the unit can path.
+### Death events
+* `wupget:UnitDestroyed` will pass the builder as the killer if a unit gets reclaimed. Note that
+reclaim still does not generate `UnitDamaged` events.
+* `wupget:UnitDestroyed` now receives a 7th argument, weaponDefID, with the cause of death.
+Widgets receive this info regardless of LoS on the attacker (no new hax, `UnitDamaged` already did this).
+* the weaponDefID above is never `nil`, all causes of death are attributable including things like
+"was being built in a factory, got cancelled" or "died automatically due to `isFeature` def tag".
+Added a bunch of `Game.envDamageTypes` constants for this purpose. See the table at the bottom of the page.
+* the 1000000 damage that applies to units being transported in a non-`releaseHeld` transport when it
+dies for non-selfD reasons will now be attributed to the new `TransportKilled` damage type in `UnitDamaged`,
+previously was `Killed`.
 
-### Yardmaps
-* added 'u' yardmap tile: not buildable, but pathable. Good replacement for indoor 'y'.
-* added 'e' yardmap tile: not buildable, exit-only. Units cannot path from a normal tile to an exit-only tile (but pathing between adjacent exit-only tiles is fine).
-Decent for factory construction areas, but keep in mind it only affects ground units (not aircraft, not wrecks, etc) and even ground units can still enter such tiles via non-pathing means (e.g. via impulse).
+### Misc Lua
+* add `math.normalize(x1, x2, ...) → numbers xn1, xn2, ...`. Normalizes a vector. Can have any dimensions (pass and receive each as a separate value).
+Returns a zero vector if passed a zero vector.
+* `wupget:DrawWorldPreParticles` now has four boolean parameters depending on which phase is being drawn: above water, below water, reflection, refraction.
+They aren't mutually exclusive.
+* add `Spring.AllocateTable(arraySlots, hashSlots) → {}`. Returns an empty table with more space allocated.
+Use as a microoptimisation when you have a big table which you are going to populate with a known number of elements, for example `#UnitDefs`.
+* add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
+to the `unitQuadPositionUpdateRate` modrule, which may leave them unable to be hit by some weapons when moving. Call this for targets of important
+weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value greater than 1 to ensure reliable hit detection.
+* `pairs()` now looks at the `__pairs` metamethod in tables, same as in Lua 5.2.
 
-### Smooth mesh
-* added `Spring.RebuildSmoothMesh() → nil` synced callout to immediately rebuild the smooth mesh.
-* added `system.smoothMeshResDivider` numerical modrule, default 2. Reduces the resolution of the smoothmesh. Increase to get better performance at the cost of worse accuracy.
-* added `system.smoothMeshSmoothRadius` numerical modrule, default 40. The radius for smoothing, in elmos.
+### Defs
+* add `windup` weapon def tag. Delay in seconds before the first projectile of a salvo appears. Has the same mechanics as burst.
 
-### Lua wupget API
-* added `Spring.RebuildSmoothMesh() → nil`, see above.
-* added `Spring.GetUnitPhysicalState(unitID) → number bitmask`. See engine source for the meanings of bits. Only available to synced.
-* added `Spring.GetUnitArrayCentroid({unitID, unitID, ...}) → numbers x, y, z`. Returns the centroid (average position), or nil if the array is empty.
-* added `Spring.GetUnitMapCentroid({[unitID] = any, [unitID] = any, ...}) → numbers x, y, z`. Ditto but the unitIDs are keys instead of values in the accepted table.
-* added `Spring.GetUnitCosts(unitID) → number buildTime, number metal, number energy`.
-* added `Spring.GetUnitCostTable(unitID) → { metal = number, energy = number }, number buildTime`. Note that buildtime is not a regular resource and is returned separately.
-* added `Spring.GetTeamDamageStats(teamID) → number damageDealt, number damageReceived`. Same as the values already available from `Spring.GetTeamStatsHistory`, but without most of the overhead.
+## Fixes
+* fix draw position for asymmetric models, they no longer disappear when not appropriate.
+* fix streaming very small sound files.
+* fix `Spring.SetCameraTarget` reverting to the old position.
+* the `quadFieldQuadSizeInElmos` modrule now only accepts powers of two instead of breaking at the edges of the map.
 
-### Misc and fixes
-* something happened to terraforming rate (via restore command, or ground flattening before construction).
-* lots of general performance improvements.
-* fixed the stack warning spam if `wupget:UnitArrivedAtGoal` was defined.
-* fixed factory UnitDefs being able to have `canAssist` set to true
-* fixed mouse not warping correctly (when using `Spring.WarpMouse`) on Unix/Wayland
-* fixed invalid corpse names being left unsanitized in UnitDefs `corpse`
+### Death damage types listing
+
+| Game.envDamageTypes.??? | Description                                                                                                                                                       |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AircraftCrashed         | Aircraft hitting the ground                                                                                                                                       |
+| Kamikaze                | Unit exploding due to its kamikaze ability                                                                                                                        |
+| SelfD                   | Unit exploding after a self-D command and countdown                                                                                                               |
+| ConstructionDecay       | Abandoned nanoframe disappearing (the process itself is HP removal)                                                                                               |
+| Reclaimed               | Killed via reclaim (the process itself is HP removal)                                                                                                             |
+| TurnedIntoFeature       | Unit dying on completion, without explosion, due to `isFeature` def tag                                                                                           |
+| TransportKilled         | Unit was in transport which had no `releaseHeld`. If the transport was not self-destructed, the unit also receives 1000000 damage of this type before dying.      |
+| FactoryKilled           | Unit was being built in a factory which died. No direct way to discern how exactly the factory died currently, you'll have to wait for the factory's death event. |
+| FactoryCancel           | Unit was being built in a factory but the order was cancelled.                                                                                                    |
+| UnitScript              | COB unit script ordered the unit's death. Note that LUS has access to normal kill/damage interfaces instead.                                                      |
+| SetNegativeHealth       | A unit had less than 0 health for non-damage reasons (e.g. Lua set it so).                                                                                        |
+| OutOfBounds             | A unit was thrown way out of map bounds.                                                                                                                          |
+| KilledByCheat           | The `/remove` or `/destroy` commands were used.                                                                                                                   |
+| KilledByLua             | Default cause of death when using `Spring.DestroyUnit`.                                                                                                           |
+
+`KilledByLua` is guaranteed to be the "last" value, so you can define your own custom damage types via e.g.
+```
+Game.envDamageTypes.CullingStrike      = Game.KilledByLua - 1
+Game.envDamageTypes.SummonTimerExpired = Game.KilledByLua - 2
+```

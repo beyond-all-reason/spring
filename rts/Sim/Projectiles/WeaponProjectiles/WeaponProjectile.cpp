@@ -276,6 +276,25 @@ void CWeaponProjectile::Update()
 	UpdateInterception();
 }
 
+void CWeaponProjectile::UpdateWeaponAnimParams()
+{
+	assert(weaponDef);
+	if (!validTextures[0])
+		return;
+
+	if (validTextures[1])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[0],      animProgress   );
+
+	if (validTextures[2])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[1], extraAnimProgress[0]);
+
+	if (validTextures[3])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[2], extraAnimProgress[1]);
+
+	if (validTextures[4])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[3], extraAnimProgress[2]);
+}
+
 
 void CWeaponProjectile::UpdateInterception()
 {
@@ -316,9 +335,12 @@ void CWeaponProjectile::UpdateGroundBounce()
 	// projectile is not allowed to bounce on either surface
 	if (!weaponDef->groundBounce && !weaponDef->waterBounce)
 		return;
+
 	// maximum number of bounce already reached?
-	if ((bounces + 1) > weaponDef->numBounce)
+	if (weaponDef->numBounce != -1 // infinite
+	&&  bounces >= weaponDef->numBounce)
 		return;
+
 	if (luaMoveCtrl)
 		return;
 	if (ttl <= 0) {

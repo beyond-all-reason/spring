@@ -9,7 +9,12 @@ InputHandler::InputHandler() = default;
 
 void InputHandler::PushEvent(const SDL_Event& ev)
 {
-	sig.emit(ev);
+	for (const auto& eventHandler : eventHandlers) {
+		if (eventHandler) {
+			if (eventHandler(ev))
+				break;
+		}
+	}
 }
 
 void InputHandler::PushEvents()
@@ -25,8 +30,16 @@ void InputHandler::PushEvents()
 	}
 }
 
-
-InputHandler::SignalType::connection_type InputHandler::AddHandler(SignalType::callback handler)
+InputHandler::HandlerTokenT InputHandler::AddHandler(InputHandler::HandlerFuncT func)
 {
-	return sig.connect(handler);
+	for (size_t i = 0; i < eventHandlers.size(); ++i) {
+		if (eventHandlers[i] == nullptr) {
+			eventHandlers[i] = func;
+			return InputHandler::HandlerTokenT{ *this, i};
+		}
+	}
+	eventHandlers.emplace_back(func);
+	return InputHandler::HandlerTokenT{ *this, eventHandlers.size() - 1 };
 }
+
+

@@ -863,7 +863,8 @@ void CGame::ClientReadNet()
 						commands.push_back(cmd);
 					}
 
-					assert(aiInstID == MAX_AIS);
+					if (aiInstID != MAX_AIS)
+						throw netcode::UnpackPacketException("Invalid AI instance ID");
 
 					// apply the "AI" commands (which actually originate from LuaUnsyncedCtrl)
 					if (pairwise) {

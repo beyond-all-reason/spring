@@ -53,7 +53,7 @@ public:
 
 	virtual bool Update() = 0;
 	virtual void SlowUpdate();
-	void UpdateCollisionMap();
+	void UpdateCollisionMap(bool force = false);
 	void UpdateGroundBlockMap();
 
 	virtual bool IsSkidding() const { return false; }

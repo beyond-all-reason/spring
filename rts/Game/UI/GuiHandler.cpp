@@ -3798,14 +3798,10 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 					const float3 bPos = bp.camPos + bp.dir * bpDist;
 					const BuildInfo cInfo = BuildInfo(buildeeDef, cPos, buildFacing);
 					const BuildInfo bInfo = BuildInfo(buildeeDef, bPos, buildFacing);
-
-					buildColors.clear();
-					buildColors.reserve(GetBuildPositions(bInfo, cInfo, tracePos, traceDir));
+					GetBuildPositions(bInfo, cInfo, tracePos, traceDir);
 				} else {
 					const BuildInfo bi(buildeeDef, cPos, buildFacing);
-
-					buildColors.clear();
-					buildColors.reserve(GetBuildPositions(bi, bi, tracePos, traceDir));
+					GetBuildPositions(bi, bi, tracePos, traceDir);
 				}
 
 

@@ -80,7 +80,7 @@ bool CLuaHandle::devMode = false;
  * For now, to use these addons in a widget, prepend widget: and, for a gadget, prepend gadget:. For example,
  *
  *    function widget:UnitCreated(unitID, unitDefID, unitTeam, builderID)
- *        ...  
+ *        ...
  *    end
  *
  * Some functions may differ between (synced) gadget and widgets; those are in the [Synced - Unsynced Shared](#Synced___Unsynced_Shared) section. Essentially the reason is that all information should be available to synced (game logic controlling) gadgets, but restricted to unsynced gadget/widget (e.g. information about an enemy unit only detected via radar and not yet in LOS). In such cases the full (synced) param list is documented.
@@ -1083,6 +1083,39 @@ void CLuaHandle::UnitReverseBuilt(const CUnit* unit)
 }
 
 
+/*** Called when a unit being built starts decaying.
+ *
+ * @function UnitConstructionDecayed
+ * @number unitID
+ * @number unitDefID
+ * @number unitTeam
+ * @number timeSinceLastBuild
+ * @number iterationPeriod
+ * @number part
+ */
+void CLuaHandle::UnitConstructionDecayed(const CUnit* unit, float timeSinceLastBuild, float iterationPeriod, float part)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 9, __func__);
+	const LuaUtils::ScopedDebugTraceBack traceBack(L);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+	lua_pushnumber(L, timeSinceLastBuild);
+	lua_pushnumber(L, iterationPeriod);
+	lua_pushnumber(L, part);
+
+	// call the routine
+	RunCallInTraceback(L, cmdStr, 6, 0, traceBack.GetErrFuncIdx(), false);
+}
+
+
 /*** Called when a unit is destroyed.
  *
  * @function UnitDestroyed
@@ -1092,8 +1125,9 @@ void CLuaHandle::UnitReverseBuilt(const CUnit* unit)
  * @number attackerID
  * @number attackerDefID
  * @number attackerTeam
+ * @number weaponDefID
  */
-void CLuaHandle::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
+void CLuaHandle::UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID)
 {
 	LUA_CALL_IN_CHECK(L);
 	luaL_checkstack(L, 9, __func__);
@@ -1105,13 +1139,15 @@ void CLuaHandle::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
 
-	static constexpr int argCount = 3 + 3;
+	static constexpr int argCount = 3 + 3 + 1;
 
 	lua_pushnumber(L, unit->id);
 	lua_pushnumber(L, unit->unitDef->id);
 	lua_pushnumber(L, unit->team);
 
 	LuaUtils::PushAttackerInfo(L, attacker);
+
+	lua_pushnumber(L, weaponDefID);
 
 	// call the routine
 	RunCallInTraceback(L, cmdStr, argCount, 0, traceBack.GetErrFuncIdx(), false);
@@ -1153,7 +1189,7 @@ void CLuaHandle::UnitTaken(const CUnit* unit, int oldTeam, int newTeam)
  * @number unitID
  * @number unitDefID
  * @number newTeam
- * @number oldTeam 
+ * @number oldTeam
  */
 void CLuaHandle::UnitGiven(const CUnit* unit, int oldTeam, int newTeam)
 {
@@ -2530,11 +2566,6 @@ DRAW_CALLIN(DrawWorldPreUnit)
 DRAW_CALLIN(DrawPreDecals)
 
 /***
- * @function DrawWorldPreParticles
- */
-DRAW_CALLIN(DrawWorldPreParticles)
-
-/***
  * @function DrawWaterPost
  */
 DRAW_CALLIN(DrawWaterPost)
@@ -2614,6 +2645,37 @@ DRAW_CALLIN(DrawShadowUnitsLua)
  *
  */
 DRAW_CALLIN(DrawShadowFeaturesLua)
+
+/***
+ * DrawWorldPreParticles is called multiples times per draw frame.
+ * Each call has a different permutation of values for drawAboveWater, drawBelowWater, drawReflection, and drawRefraction.
+ *
+ * @function DrawWorldPreParticles
+ * @bool drawAboveWater
+ * @bool drawBelowWater
+ * @bool drawReflection
+ * @bool drawRefraction
+ */
+void CLuaHandle::DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 6, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushboolean(L, drawAboveWater);
+	lua_pushboolean(L, drawBelowWater);
+	lua_pushboolean(L, drawReflection);
+	lua_pushboolean(L, drawRefraction);
+
+	LuaOpenGL::SetDrawingEnabled(L, true);
+
+	RunCallIn(L, cmdStr, 4, 0);
+
+	LuaOpenGL::SetDrawingEnabled(L, false);
+}
 
 inline void CLuaHandle::DrawScreenCommon(const LuaHashString& cmdStr)
 {
@@ -3459,7 +3521,7 @@ bool CLuaHandle::MapDrawCmd(int playerID, int type,
 
 
 /***
- * 
+ *
  * @function GameSetup
  * @string state
  * @bool ready

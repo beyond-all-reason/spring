@@ -57,7 +57,7 @@ public:
 	void UnitIdle(int unitId);
 	void UnitCreated(int unitId, int builderId);
 	void UnitFinished(int unitId);
-	void UnitDestroyed(int unitId, int attackerUnitId);
+	void UnitDestroyed(int unitId, int attackerUnitId, int weaponDefID);
 	void UnitDamaged(int unitId, int attackerUnitId, float damage, const float3& dir, int weaponDefId, bool paralyzer);
 	void UnitMoveFailed(int unitId);
 	void UnitGiven(int unitId, int oldTeam, int newTeam);
