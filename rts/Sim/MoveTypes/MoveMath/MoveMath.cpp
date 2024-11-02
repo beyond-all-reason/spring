@@ -56,7 +56,7 @@ float CMoveMath::yLevel(const MoveDef& moveDef, int xSqr, int zSqr)
 		case MoveDef::Tank: // fall-through
 		case MoveDef::KBot:  { return (CGround::GetHeightReal      (xSqr * SQUARE_SIZE, zSqr * SQUARE_SIZE) + 10.0f); } break;
 		case MoveDef::Hover: { return (CGround::GetHeightAboveWater(xSqr * SQUARE_SIZE, zSqr * SQUARE_SIZE) + 10.0f); } break;
-		case MoveDef::Ship:  { return (                                                                        0.0f); } break;
+		case MoveDef::Ship:  { return (CGround::GetWaterLevel(xSqr * SQUARE_SIZE, zSqr * SQUARE_SIZE)); } break;
 	}
 
 	return 0.0f;
@@ -69,7 +69,7 @@ float CMoveMath::yLevel(const MoveDef& moveDef, const float3& pos)
 		case MoveDef::Tank: // fall-through
 		case MoveDef::KBot:  { return (CGround::GetHeightReal      (pos.x, pos.z) + 10.0f); } break;
 		case MoveDef::Hover: { return (CGround::GetHeightAboveWater(pos.x, pos.z) + 10.0f); } break;
-		case MoveDef::Ship:  { return (                                              0.0f); } break;
+		case MoveDef::Ship:  { return (CGround::GetWaterLevel(pos.x, pos.z)); } break;
 	}
 
 	return 0.0f;
