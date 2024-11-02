@@ -71,5 +71,6 @@ target_link_libraries(demotool
 		7zip
 		${ZLIB_LIBRARY}
 		${PLATFORM_LIBS}
+		Tracy::TracyClient
 	)
 add_dependencies(demotool generateVersionFiles)

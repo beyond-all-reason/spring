@@ -31,8 +31,9 @@ public:
     SharedPacket ToSharedPacket() const;
     static std::unique_ptr<BaseNetStruct> FromSharedPacket(SharedPacket sp);
 protected:
-    virtual const NetStructDefinition& GetNetStructDefinition() const { return NetStructDefinition{}; }
+    virtual const NetStructDefinition& GetNetStructDefinition() const { return DEFAULT; }
 private:
+    static const inline auto DEFAULT = NetStructDefinition{};
     uint8_t packetType;
 };
 
