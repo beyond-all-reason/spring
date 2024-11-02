@@ -796,7 +796,11 @@ void SpringApp::Reload(const std::string script)
 
 	matricesMemStorage.Reset();
 	gu->ResetState();
+
+	ENTER_SYNCED_CODE();
 	gs->ResetState();
+	LEAVE_SYNCED_CODE();
+
 	// will be reconstructed from given script
 	gameSetup->ResetState();
 
