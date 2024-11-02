@@ -4774,8 +4774,16 @@ int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
 {
+	size_t atlasIndex = 0;
+	if (auto t = lua_type(L, 3); t == LUA_TBOOLEAN) {
+		atlasIndex = static_cast<size_t>(!lua_toboolean(L, 3));
+	}
+	else if (t == LUA_TNUMBER) {
+		atlasIndex = static_cast<size_t>(lua_tonumber(L, 3));
+	}
+
 	lua_pushboolean(L,
-		groundDecals->SetDecalTexture(luaL_checkint(L, 1), luaL_checksstring(L, 2), luaL_optboolean(L, 3, false))
+		groundDecals->SetDecalTexture(luaL_checkint(L, 1), luaL_checksstring(L, 2), atlasIndex)
 	);
 	return 1;
 }
