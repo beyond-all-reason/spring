@@ -12,7 +12,6 @@ add_definitions(-DNO_SOUND)
 remove_definitions(-DAVI_CAPTURING)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
-include_directories(${OPENAL_INCLUDE_DIR})
 
 find_package(OpenGL 3.0 REQUIRED)
 
