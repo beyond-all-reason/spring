@@ -386,7 +386,7 @@ void CGame::Load(const std::string& mapFileName)
 		LoadDefs(defsParser);
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][1] forced quit with exception \"%s\"", __func__, e.what());
+		LOG_L(L_ERROR, "[Game::%s][1] forced quit with exception \"%s\"", __func__, e.what());
 
 		defsParser = &nullDefsParser;
 		defsParser->Execute();
@@ -404,7 +404,7 @@ void CGame::Load(const std::string& mapFileName)
 		PreLoadRendering();
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
+		LOG_L(L_ERROR, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 
@@ -416,7 +416,7 @@ void CGame::Load(const std::string& mapFileName)
 		PostLoadRendering();
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
+		LOG_L(L_ERROR, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 	if (!forcedQuit) {
@@ -426,7 +426,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadInterface();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][4] forced quit with exception \"%s\"", __func__, e.what());
+			LOG_L(L_ERROR, "[Game::%s][4] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -438,7 +438,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadFinalize();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][5] forced quit with exception \"%s\"", __func__, e.what());
+			LOG_L(L_ERROR, "[Game::%s][5] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -450,7 +450,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadLua(saveFileHandler != nullptr, false);
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][6] forced quit with exception \"%s\"", __func__, e.what());
+			LOG_L(L_ERROR, "[Game::%s][6] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -496,7 +496,7 @@ void CGame::Load(const std::string& mapFileName)
 			CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, msgBuf);
 		}
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
+		LOG_L(L_ERROR, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 
@@ -507,7 +507,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadSkirmishAIs();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
+			LOG_L(L_ERROR, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
