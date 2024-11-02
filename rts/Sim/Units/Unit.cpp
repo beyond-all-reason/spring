@@ -229,6 +229,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 
 	localModel.SetModel(model = unitDef->LoadModel());
+	localModel.owningObject = this;
 
 	collisionVolume = unitDef->collisionVolume;
 	selectionVolume = unitDef->selectionVolume;

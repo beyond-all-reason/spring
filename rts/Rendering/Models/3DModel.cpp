@@ -7,6 +7,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
+#include "Sim/Objects/SolidObject.h"
 #include "System/Exceptions.h"
 #include "System/SafeUtil.h"
 
@@ -32,6 +33,9 @@ CR_REG_METADATA(LocalModelPiece, (
 	CR_MEMBER(localModel),
 	CR_MEMBER(children),
 
+	CR_MEMBER(pseudoWorldSpacePosition),
+	CR_MEMBER(pseudoWorldSpaceRotation),
+
 	// reload
 	CR_IGNORED(original),
 
@@ -49,7 +53,8 @@ CR_REG_METADATA(LocalModel, (
 
 	CR_MEMBER(boundingVolume),
 	CR_IGNORED(luaMaterialData),
-	CR_MEMBER(needsBoundariesRecalc)
+	CR_MEMBER(needsBoundariesRecalc),
+	CR_MEMBER(owningObject)
 ))
 
 
@@ -497,10 +502,7 @@ void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 
 	if (updateChildMatrices) {
 		modelSpaceMat = pieceSpaceMat;
-
-		if (parent != nullptr) {
-			modelSpaceMat >>= parent->modelSpaceMat;
-		}
+		ApplyParentMatrix(modelSpaceMat);
 	}
 
 	for (auto& child : children) {
@@ -519,8 +521,10 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 	pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
 	modelSpaceMat = pieceSpaceMat;
 
-	if (parent != nullptr)
-		modelSpaceMat >>= parent->modelSpaceMat;
+	ApplyParentMatrix(modelSpaceMat);
+	if (pseudoWorldSpacePosition || pseudoWorldSpaceRotation) {
+		UpdateChildMatricesRec(false);
+	}
 }
 
 
@@ -536,7 +540,7 @@ void LocalModelPiece::Draw() const
 	assert(original);
 
 	glPushMatrix();
-	glMultMatrixf(GetModelSpaceMatrix());
+	glMultMatrixf(GetDrawModelSpaceMatrix());
 	S3DModelHelpers::BindLegacyAttrVBOs();
 	original->DrawElements();
 	S3DModelHelpers::UnbindLegacyAttrVBOs();
@@ -553,7 +557,7 @@ void LocalModelPiece::DrawLOD(uint32_t lod) const
 		return;
 
 	glPushMatrix();
-	glMultMatrixf(GetModelSpaceMatrix());
+	glMultMatrixf(GetDrawModelSpaceMatrix());
 	if (const auto ldl = lodDispLists[lod]; ldl == 0) {
 		S3DModelHelpers::BindLegacyAttrVBOs();
 		original->DrawElements();
@@ -588,6 +592,55 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 	emitPos = GetModelSpaceMatrix() *        original->GetEmitPos()        * WORLD_TO_OBJECT_SPACE;
 	emitDir = GetModelSpaceMatrix() * float4(original->GetEmitDir(), 0.0f) * WORLD_TO_OBJECT_SPACE;
 	return true;
+}
+
+void LocalModelPiece::ApplyParentMatrix(CMatrix44f &inOutMat) const {
+	if (parent != nullptr) {
+		inOutMat >>= parent->modelSpaceMat;
+	}
+
+	if likely(!((pseudoWorldSpacePosition || pseudoWorldSpaceRotation) && localModel->owningObject != nullptr)) {
+		return;
+	}
+
+	// useObjDrawPos is only ever turned on briefly by the GetDrawModelSpaceMatrix() function
+	// AND only if pseudoWorldSpacePosition is turned on
+	const auto invWorldMat = localModel->owningObject->GetTransformMatrix(!useObjDrawPos, true).InvertAffine();
+
+	if (pseudoWorldSpacePosition) {
+		inOutMat.SetPos(invWorldMat * pos);
+	}
+
+	if (pseudoWorldSpaceRotation) {
+		inOutMat.SetX(invWorldMat.GetX());
+		inOutMat.SetY(invWorldMat.GetY());
+		inOutMat.SetZ(invWorldMat.GetZ());
+		inOutMat.RotateEulerYXZ(-rot);
+	}
+
+	// never be clean
+	// world space position and rotation are almost always changing
+	// so it may not be worth it to skip this section
+	// via keeping track of the previous matrix and testing for changes
+	dirty = true;
+	SetGetCustomDirty(true);
+
+	for (LocalModelPiece* child: children) {
+		if (child->dirty)
+			continue;
+		child->SetDirty();
+	}
+}
+
+const CMatrix44f LocalModelPiece::GetDrawModelSpaceMatrix() const {
+	if likely(!pseudoWorldSpacePosition || localModel->owningObject == nullptr) {
+		return GetModelSpaceMatrix();
+	}
+
+	useObjDrawPos = true;
+	UpdateParentMatricesRec();
+	useObjDrawPos = false;
+	return modelSpaceMat;
 }
 
 /******************************************************************************/

@@ -80,7 +80,7 @@ static inline void DrawCollisionVolume(const CollisionVolume* vol)
 static void DrawUnitDebugPieceTree(const LocalModelPiece* lmp, const LocalModelPiece* lap, int lapf)
 {
 	glPushMatrix();
-		glMultMatrixf(lmp->GetModelSpaceMatrix());
+		glMultMatrixf(lmp->GetDrawModelSpaceMatrix());
 
 		if (lmp->GetScriptVisible() && !lmp->GetCollisionVolume()->IgnoreHits()) {
 			if ((lmp == lap) && (lapf > 0 && ((gs->frameNum - lapf) < 150))) {
@@ -118,7 +118,7 @@ static void DrawObjectDebugPieces(const CSolidObject* o)
 			glColor3f((1.0f - (hitDeltaTime / 150.0f)), 0.0f, 0.0f);
 
 		glPushMatrix();
-		glMultMatrixf(lmp->GetModelSpaceMatrix());
+		glMultMatrixf(lmp->GetDrawModelSpaceMatrix());
 		// factors in the volume offsets
 		DrawCollisionVolume(lmpVol);
 		glPopMatrix();
