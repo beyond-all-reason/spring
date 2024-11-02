@@ -40,7 +40,7 @@ private:
 	float GetAzimuth() const;
 	float MoveAzimuth(float move);
 
-	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& scaledMode);
+	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 	inline float ZoomOut(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 
 	void SmoothCamHeight(const float3& prevPos);
@@ -50,6 +50,7 @@ private:
 
 	float curDist; // current zoom-out distance
 	const float maxDist; // maximum zoom-out distance
+	float minDist; // minimum zoom-in distance
 	float oldDist;
 	float fastScaleMove;
 	float fastScaleMousewheel;
