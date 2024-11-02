@@ -1488,11 +1488,12 @@ namespace {
 			case hashString("tif"): [[fallthrough]];
 			case hashString("tiff"): { success = ilSave(IL_TIF, p); } break;
 			case hashString("dds"): { success = ilSave(IL_DDS, p); } break;
-			case hashString("raw"): { success = ilSave(IL_RAW, p); } break;
 			case hashString("pbm"): [[fallthrough]];
 			case hashString("pgm"): [[fallthrough]];
 			case hashString("ppm"): [[fallthrough]];
 			case hashString("pnm"): { success = ilSave(IL_PNM, p); } break;
+			case hashString("hdr"): { success = ilSave(IL_HDR, p); } break;
+			case hashString("raw"): { success = ilSave(IL_RAW, p); } break;
 		}
 
 		assert(ilGetError() == IL_NO_ERROR);
