@@ -223,6 +223,12 @@ void ClampRad(float* f);
 float3 ClampRad(float3 v);
 
 /**
+ * @brief Clamps a radian angle between -pi and pi
+ * @param v float3 value to clamp
+ */
+float3 ClampRadPrincipal(float3 v);
+
+/**
  * @brief Shortest angle in radians
  * @param f1 float first compare value
  * @param f2 float first compare value

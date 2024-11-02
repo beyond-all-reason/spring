@@ -367,20 +367,25 @@ void CFreeController::SetPos(const float3& newPos)
 float3 CFreeController::SwitchFrom() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float x = max(0.1f, min(float3::maxxpos - 0.1f, pos.x));
-	const float z = max(0.1f, min(float3::maxzpos - 0.1f, pos.z));
-	return {x, CGround::GetHeightAboveWater(x, z, false) + 5.0f, z};
+	return pos;
 }
 
 
-void CFreeController::SwitchTo(const int oldCam, const bool showText)
+void CFreeController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText)
 		LOG("Switching to Free style camera");
-
 	prevVel  = ZeroVector;
 	prevAvel = ZeroVector;
+	float3 newPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov") {
+		pos = float3(newPos.x, pos.y, newPos.z);
+		Update();
+		return;
+	}
+	rot = oldCam->GetRot();
+	pos = newPos;
 }
 
 

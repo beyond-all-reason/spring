@@ -249,6 +249,9 @@ void CUnitTracker::SetCam()
 	if (lastFollowUnit != 0 && unitHandler.GetUnitUnsafe(lastFollowUnit) == nullptr) {
 		timeOut = 1;
 		lastFollowUnit = 0;
+	} else {
+		oldCamDir = camera->GetDir();
+		oldCamPos = camera->GetPos();
 	}
 
 	if (timeOut > 0) {
