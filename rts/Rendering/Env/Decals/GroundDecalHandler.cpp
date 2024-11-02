@@ -130,7 +130,7 @@ CGroundDecalHandler::CGroundDecalHandler()
 
 	instVBO = VBO(GL_ARRAY_BUFFER, false, false);
 
-	decals.reserve(decalLevel * 16384);
+	decals.reserve(1 << 16);
 	decalsUpdateList.Reserve(decals.capacity());
 
 	nextId = 0;
@@ -611,7 +611,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 	const float scarTTL = (vi.scarTtl > 0.0f) ?
 		GAME_SPEED * vi.scarTtl :
-		std::clamp(decalLevel * ei.damage * 3.0f, 15.0f, decalLevel * 1800.0f);
+		std::clamp(DECAL_LEVEL_MULT * 3.0f * ei.damage, 15.0f, DECAL_LEVEL_MULT * 1800.0f);
 
 	const float glow = (vi.scarGlow > 0.0f) ?
 		vi.scarGlow :
@@ -1204,7 +1204,7 @@ void CGroundDecalHandler::AddTrack(const CUnit* unit, const float3& newPos, bool
 
 	const SolidObjectDecalDef& decalDef = unitDef->decalDef;
 
-	const float trackLifeTime = decalLevel * GAME_SPEED * decalDef.trackDecalStrength;
+	const float trackLifeTime = DECAL_LEVEL_MULT * GAME_SPEED * decalDef.trackDecalStrength;
 	if (trackLifeTime <= 0.0f)
 		return;
 

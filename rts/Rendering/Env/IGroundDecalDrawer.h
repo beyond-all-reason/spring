@@ -12,14 +12,12 @@ class IGroundDecalDrawer
 {
 	CR_DECLARE(IGroundDecalDrawer)
 public:
-	static bool GetDrawDecals() { return (decalLevel > 0); }
-	static int GetDecalLevel() { return decalLevel; }
-	static void SetDecalLevel(int newDecalLevel);
+	static bool GetDrawDecals() { return hasDecals; }
 	static void SetDrawDecals(bool v);
 
 	static void Init();
 	static void FreeInstance();
-	static IGroundDecalDrawer* singleton;
+	static inline IGroundDecalDrawer* singleton = nullptr;
 
 public:
 	virtual void ReloadTextures() = 0;
@@ -51,7 +49,8 @@ public:
 
 protected:
 	std::vector<GroundDecal> decals;
-	static int decalLevel;
+	static inline bool hasDecals = false;
+	static constexpr auto DECAL_LEVEL_MULT = 3;
 };
 
 

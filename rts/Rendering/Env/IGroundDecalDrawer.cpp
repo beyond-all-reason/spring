@@ -11,12 +11,7 @@
 #include "System/Misc/TracyDefs.h"
 
 
-CONFIG(int, GroundDecals).defaultValue(3).headlessValue(0).description("Controls whether ground decals underneath buildings and ground scars from explosions will be rendered. Values >1 define how long such decals will stay.");
-
-static NullGroundDecalDrawer nullDecalDrawer;
-IGroundDecalDrawer* IGroundDecalDrawer::singleton = &nullDecalDrawer;
-int IGroundDecalDrawer::decalLevel = 0;
-
+CONFIG(bool, GroundDecals).defaultValue(true).headlessValue(false).description("Controls whether ground decals underneath buildings, unit tracks & footprints as well as ground scars from explosions will be rendered.");
 
 CR_BIND_INTERFACE(IGroundDecalDrawer)
 CR_REG_METADATA(IGroundDecalDrawer, (
@@ -26,81 +21,41 @@ CR_REG_METADATA(IGroundDecalDrawer, (
 CR_BIND_DERIVED(NullGroundDecalDrawer, IGroundDecalDrawer, )
 CR_REG_METADATA(NullGroundDecalDrawer,  )
 
-static IGroundDecalDrawer* GetInstance()
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	IGroundDecalDrawer* instance = &nullDecalDrawer;
-	if (!IGroundDecalDrawer::GetDrawDecals()) {
-		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "null");
-		return instance;
-	}
-
-	if (instance == &nullDecalDrawer) {
-		instance = new CGroundDecalHandler();
-		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "standard");
-	}
-
-	return instance;
-}
-
-
 void IGroundDecalDrawer::Init()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	decalLevel = configHandler->GetInt("GroundDecals");
-
-	FreeInstance();
-	singleton = GetInstance();
+	SetDrawDecals(configHandler->GetBool("GroundDecals"));
 }
 
 
 void IGroundDecalDrawer::FreeInstance()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (singleton != &nullDecalDrawer) {
+	if (singleton)
 		spring::SafeDelete(singleton);
-		singleton = &nullDecalDrawer;
-	}
-}
-
-
-void IGroundDecalDrawer::SetDecalLevel(int newDecalLevel)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-
-	if (decalLevel == newDecalLevel)
-		return;
-
-	decalLevel = newDecalLevel;
-
-	if (groundDecals != &nullDecalDrawer)
-		FreeInstance();
-
-	groundDecals = GetInstance();
-
-	configHandler->Set("GroundDecals", decalLevel);
 }
 
 void IGroundDecalDrawer::SetDrawDecals(bool v)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
-	if (v == GetDrawDecals())
+	if (singleton && v == GetDrawDecals())
 		return;
 
-	if (v) {
-		decalLevel =  std::abs(decalLevel);
-		decalLevel =  std::max(decalLevel, 1); //turn on in case decalLevel is 0
-	} else {
-		decalLevel = -std::abs(decalLevel);
+	FreeInstance();
+
+	hasDecals = v;
+	assert(!singleton);
+	if (IGroundDecalDrawer::GetDrawDecals()) {
+		singleton = new CGroundDecalHandler();
+		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "standard");
+	}
+	else {
+		singleton = new NullGroundDecalDrawer();
+		LOG_L(L_INFO, "Loaded DecalsDrawer: %s", "null");
 	}
 
-	if (groundDecals != &nullDecalDrawer)
-		FreeInstance();
-
-	groundDecals = GetInstance();
-
-	configHandler->Set("GroundDecals", decalLevel);
+	configHandler->Set("GroundDecals", hasDecals);
 }
 
 void NullGroundDecalDrawer::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)

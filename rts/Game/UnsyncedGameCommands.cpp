@@ -2818,7 +2818,7 @@ class GroundDecalsActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GroundDecalsActionExecutor() : IUnsyncedActionExecutor(
 		"GroundDecals",
-		"Enable/Disable ground-decal rendering or set its level"
+		"Enable/Disable ground-decal rendering"
 	) {
 	}
 
@@ -2830,11 +2830,11 @@ public:
 			bool failed;
 			auto dl = StringToInt(action.GetArgs(), &failed);
 			if (!failed)
-				IGroundDecalDrawer::SetDecalLevel(dl);
+				IGroundDecalDrawer::SetDrawDecals(static_cast<bool>(dl));
 		}
 
-		static constexpr const char* fmt = "Ground-decal rendering %s, decal level = %d";
-		LOG(fmt, IGroundDecalDrawer::GetDrawDecals() ? "enabled" : "disabled", IGroundDecalDrawer::GetDecalLevel());
+		static constexpr const char* fmt = "Ground-decal rendering %s";
+		LOG(fmt, IGroundDecalDrawer::GetDrawDecals() ? "enabled" : "disabled");
 		return true;
 	}
 };
