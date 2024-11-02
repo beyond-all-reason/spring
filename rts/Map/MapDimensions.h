@@ -3,8 +3,8 @@
 #ifndef MAPDIMENSIONS_H
 #define MAPDIMENSIONS_H
 
+#include <bit>
 #include <cassert>
-#include "System/bitops.h"
 #include "System/creg/creg_cond.h"
 
 struct MapDimensions {
@@ -44,8 +44,8 @@ public:
 		hmapx = mapx >> 1;
 		hmapy = mapy >> 1;
 
-		pwr2mapx = next_power_of_2(mapx);
-		pwr2mapy = next_power_of_2(mapy);
+		pwr2mapx = std::bit_ceil <uint32_t> (mapx);
+		pwr2mapy = std::bit_ceil <uint32_t> (mapy);
 
 		mapSquares = mapx * mapy;
 	}

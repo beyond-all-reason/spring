@@ -2,7 +2,7 @@
 
 ### Get the engine sources
 
-    git clone https://github.com/beyond-all-reason/spring -b BAR105 --recursive
+    git clone https://github.com/beyond-all-reason/spring --recursive
 
 Recoil is a fork and continuation of an RTS [engine](https://github.com/spring/spring) version 105.0
 
@@ -19,7 +19,7 @@ You can use a pre-compiled binary, usually, you want to use an installer or a pa
 
 Detailed instructions for how to compile Recoil can be found [here](https://github.com/beyond-all-reason/spring/wiki/Building-and-developing-engine-without-docker) or [here](https://github.com/beyond-all-reason/spring/wiki/SpringRTS-Build-Environment-(Docker))
 
-Use `BAR105` as the primary branch.
+Use `master` as the primary branch.
 
 Verify you're seeing tags:
 
@@ -41,10 +41,11 @@ git remote add upstream git@github.com:beyond-all-reason/spring.git
 git fetch --all --tags
 ```
 
-Check out the BAR105 branch in this case:
+Make sure `master` is pointing to upstream `master`:
 
 ```bash
-git checkout upstream/BAR105 -b BAR105
+git checkout master
+git branch -u upstream/master
 ```
 
 The most simple set of commands will be:

@@ -213,7 +213,7 @@ public:
 			CUnit *unit = unitHandler.GetUnit(unitId);
 
 			if (unit != nullptr) {
-				unit->KillUnit(nullptr, false, !this->runDeathScript);
+				unit->KillUnit(nullptr, false, !this->runDeathScript, -CSolidObject::DAMAGE_KILLED_CHEAT);
 			} else {
 				LOG("[%s] Wrong unitID: %i", this->GetCommand().c_str(), unitId);
 			}

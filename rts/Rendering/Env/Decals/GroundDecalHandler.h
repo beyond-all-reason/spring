@@ -70,8 +70,6 @@ public:
 public:
 	CGroundDecalHandler();
 	~CGroundDecalHandler() override;
-
-	void OnDecalLevelChanged() override {}
 private:
 	struct AddExplosionInfo {
 		float3 pos;

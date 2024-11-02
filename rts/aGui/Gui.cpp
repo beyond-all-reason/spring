@@ -3,7 +3,6 @@
 #include "System/Input/InputHandler.h"
 #include "Gui.h"
 
-#include <functional>
 #include <SDL_events.h>
 
 #include "GuiElement.h"
@@ -17,7 +16,7 @@ namespace agui
 
 Gui::Gui()
 {
-	inputCon = input.AddHandler(std::bind(&Gui::HandleEvent, this, std::placeholders::_1));
+	inputCon = input.AddHandler([this](const SDL_Event& event) { return this->HandleEvent(event); });
 }
 
 #ifdef HEADLESS
@@ -81,7 +80,6 @@ void Gui::Clean() {
 
 Gui::~Gui() {
 	Clean();
-	inputCon.disconnect();
 }
 
 void Gui::AddElement(GuiElement* elem, bool asBackground)

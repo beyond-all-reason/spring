@@ -333,9 +333,13 @@ static void HandleUnitCollisionsAux(
 				// }
 			}
 
+			// Several large units can end up surrounding a waypoint and block each other from touching it, because it
+			// sits diagonally from all of them and outside their radius.
+			// Adding an extra diagonal distance compensation will allow such large units to "touch" the waypoint.
+			constexpr float adjustForDiagonal = 1.45f;
 			float separationDist = std::max(collider->unitDef->separationDistance, collidee->unitDef->separationDistance);
-			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, gmtCollider->GetOwnerRadius() + separationDist)
-										|| gmtCollider->IsAtGoalPos(collidee->pos, gmtCollidee->GetOwnerRadius() + separationDist));
+			const bool triggerArrived = (gmtCollider->IsAtGoalPos(collider->pos, (gmtCollider->GetOwnerRadius() + separationDist)*adjustForDiagonal)
+										|| gmtCollider->IsAtGoalPos(collidee->pos, (gmtCollidee->GetOwnerRadius() + separationDist)*adjustForDiagonal));
 			if (triggerArrived) {
 				gmtCollider->TriggerCallArrived();
 			} else {
@@ -344,8 +348,7 @@ static void HandleUnitCollisionsAux(
 				const float3& currWaypoint = gmtCollider->GetCurrWayPoint();
 				const float collideeToCurrDistSq = currWaypoint.SqDistance2D(collidee->pos);
 				const float collideeGoalRadius = gmtCollidee->GetOwnerRadius();
-
-				if (collideeToCurrDistSq <= Square(collideeGoalRadius+separationDist)) {
+				if (collideeToCurrDistSq <= Square((collideeGoalRadius+separationDist)*adjustForDiagonal)) {
 					gmtCollider->TriggerSkipWayPoint();
 					return;
 				}
@@ -361,7 +364,6 @@ static void HandleUnitCollisionsAux(
 		} break;
 	}
 }
-
 
 
 static float3 CalcSpeedVectorInclGravity(const CUnit* owner, const CGroundMoveType* mt, float hAcc, float vAcc) {
@@ -510,6 +512,10 @@ CGroundMoveType::CGroundMoveType(CUnit* owner):
 
 	flatFrontDir = (owner->frontdir * XZVector).Normalize();
 
+	// Override the unit size, it should match the MoveDef's to avoid conflicts elsewhere in the code.
+	owner->xsize = md->xsize;
+	owner->zsize = md->zsize;
+
 	Connect();
 }
 
@@ -530,6 +536,13 @@ void CGroundMoveType::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	pathController = GMTDefaultPathController(owner);
+
+	// If the active moveType is not set to default ground move (i.e. is on scripted move type) then skip.
+	if ((uint8_t *)owner->moveType != owner->amtMemBuffer) {
+		// Safety measure to clear the path id.
+		pathID = 0;
+		return;
+	}
 
 	Connect();
 
@@ -691,6 +704,9 @@ bool CGroundMoveType::Update()
 		owner->unloadingTransportId = -1;
 		owner->requestRemoveUnloadTransportId = false;
 	}
+
+	// Collisions can change waypoint states (y); though they won't move them (xz).
+	SyncWaypoints();
 
 	// do nothing at all if we are inside a transport
 	if (owner->GetTransporter() != nullptr) return false;
@@ -921,8 +937,8 @@ void CGroundMoveType::StartMoving(float3 moveGoalPos, float moveGoalRadius) {
 	// set the new goal
 	goalPos = moveGoalPos * XZVector;
 
-	float mapx = mapDims.mapx * SQUARE_SIZE;
-	float mapz = mapDims.mapy * SQUARE_SIZE;
+	float mapx = mapDims.mapxm1 * SQUARE_SIZE;
+	float mapz = mapDims.mapym1 * SQUARE_SIZE;
 
 	// Sanitize the move command.
 	if (goalPos.x < 0.f)  { goalPos.x = 0.f; }
@@ -3301,6 +3317,7 @@ void CGroundMoveType::UpdatePos(const CUnit* unit, const float3& moveDir, float3
 
 	MoveTypes::CheckCollisionQuery virtualObject(unit);
 	MoveDefs::CollisionQueryStateTrack queryState;
+
 	const bool isSubmersible = md->IsComplexSubmersible();
 	if (!isSubmersible)
 		virtualObject.DisableHeightChecks();

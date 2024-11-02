@@ -9,6 +9,7 @@
 #include "UnitDefHandler.h"
 #include "UnitDef.h"
 #include "Lua/LuaParser.h"
+#include "Sim/Features/FeatureDefHandler.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
@@ -231,3 +232,20 @@ void CUnitDefHandler::SetNoCost(bool value)
 	}
 }
 
+void CUnitDefHandler::SanitizeUnitDefs()
+{
+	for (auto &ud : unitDefsVector) {
+		// Factories cannot assist another builder
+		if (ud.IsFactoryUnit())
+			ud.canAssist = false;
+
+		// Make sure the wreck name refers to an existent feature
+		if (ud.wreckName != "") {
+			const auto* const wreckFeatureDef = featureDefHandler->GetFeatureDef(ud.wreckName);
+			if (wreckFeatureDef == nullptr) {
+				// warning message already produced by GetFeatureDef
+				ud.wreckName = "";
+			}
+		}
+	}
+}

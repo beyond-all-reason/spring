@@ -11,6 +11,8 @@
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
 
+#include <bit>
+
 CModInfo modInfo;
 
 void CModInfo::ResetState()
@@ -40,14 +42,14 @@ void CModInfo::ResetState()
 	}
 	{
 		constructionDecay      = true;
-		constructionDecayTime  = 1000;
-		constructionDecaySpeed = 1.0f;
+		constructionDecayTime  = int(6.66 * GAME_SPEED);
+		constructionDecaySpeed = 0.03f;
 	}
 	{
 		debrisDamage = 50.0f;
 	}
 	{
-		multiReclaim                   = 1;
+		multiReclaim                   = 0;
 		reclaimMethod                  = 1;
 		reclaimUnitMethod              = 1;
 		reclaimUnitEnergyCostFactor    = 0.0f;
@@ -63,35 +65,35 @@ void CModInfo::ResetState()
 		captureEnergyCostFactor   = 0.0f;
 	}
 	{
-		unitExpMultiplier  = 0.0f;
-		unitExpPowerScale  = 0.0f;
-		unitExpHealthScale = 0.0f;
-		unitExpReloadScale = 0.0f;
+		unitExpMultiplier  = 1.0f;
+		unitExpPowerScale  = 1.0f;
+		unitExpHealthScale = 0.7f;
+		unitExpReloadScale = 0.4f;
 	}
 	{
 		paralyzeDeclineRate = 40.0f;
 		paralyzeOnMaxHealth = true;
 	}
 	{
-		transportGround            = 1;
-		transportHover             = 0;
-		transportShip              = 0;
-		transportAir               = 0;
+		transportGround = true;
+		transportHover  = false;
+		transportShip   = false;
+		transportAir    = false;
 		targetableTransportedUnits = 0;
 	}
 	{
-		fireAtKilled   = 0;
-		fireAtCrashing = 0;
+		fireAtKilled   = false;
+		fireAtCrashing = false;
 	}
 	{
-		flankingBonusModeDefault = 0;
+		flankingBonusModeDefault = 1;
 		flankingBonusMaxDefault = 1.9f;
 		flankingBonusMinDefault = 0.9f;
 	}
 	{
-		losMipLevel = 0;
-		airMipLevel = 0;
-		radarMipLevel = 0;
+		losMipLevel = 1;
+		airMipLevel = 1;
+		radarMipLevel = 2;
 
 		requireSonarUnderWater = true;
 		alwaysVisibleOverridesCloaked = false;
@@ -99,10 +101,10 @@ void CModInfo::ResetState()
 		separateJammers = true;
 	}
 	{
-		featureVisibility = FEATURELOS_NONE;
+		featureVisibility = FEATURELOS_ALL;
 	}
 	{
-		pathFinderSystem = NOPFS_TYPE;
+		pathFinderSystem = HAPFS_TYPE;
 		pfRawDistMult    = 1.25f;
 		pfUpdateRateScale = 1.f;
 		pfRepathDelayInFrames = 60;
@@ -157,7 +159,7 @@ void CModInfo::Init(const std::string& modFileName)
 		// system
 		const LuaTable& system = root.SubTable("system");
 
-		pathFinderSystem = std::clamp(system.GetInt("pathFinderSystem", HAPFS_TYPE), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
+		pathFinderSystem = std::clamp(system.GetInt("pathFinderSystem", pathFinderSystem), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
 		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
 		pfUpdateRateScale = system.GetFloat("pathFinderUpdateRateScale", pfUpdateRateScale);
 		pfRepathDelayInFrames = std::clamp(system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames), 0, 300);
@@ -205,8 +207,8 @@ void CModInfo::Init(const std::string& modFileName)
 		const LuaTable& constructionTbl = root.SubTable("construction");
 
 		constructionDecay = constructionTbl.GetBool("constructionDecay", constructionDecay);
-		constructionDecayTime = (int)(constructionTbl.GetFloat("constructionDecayTime", 6.66) * GAME_SPEED);
-		constructionDecaySpeed = std::max(constructionTbl.GetFloat("constructionDecaySpeed", 0.03), 0.01f);
+		constructionDecayTime = (int)(constructionTbl.GetFloat("constructionDecayTime", (float)constructionDecayTime / GAME_SPEED) * GAME_SPEED);
+		constructionDecaySpeed = std::max(constructionTbl.GetFloat("constructionDecaySpeed", constructionDecaySpeed), 0.01f);
 	}
 
 	{
@@ -218,7 +220,7 @@ void CModInfo::Init(const std::string& modFileName)
 		// reclaim
 		const LuaTable& reclaimTbl = root.SubTable("reclaim");
 
-		multiReclaim  = reclaimTbl.GetInt("multiReclaim",  0);
+		multiReclaim  = reclaimTbl.GetInt("multiReclaim",  multiReclaim);
 		reclaimMethod = reclaimTbl.GetInt("reclaimMethod", reclaimMethod);
 		reclaimUnitMethod = reclaimTbl.GetInt("unitMethod", reclaimUnitMethod);
 		reclaimUnitEnergyCostFactor = reclaimTbl.GetFloat("unitEnergyCostFactor", reclaimUnitEnergyCostFactor);
@@ -258,45 +260,45 @@ void CModInfo::Init(const std::string& modFileName)
 		// fire-at-dead-units
 		const LuaTable& fireAtDeadTbl = root.SubTable("fireAtDead");
 
-		fireAtKilled   = fireAtDeadTbl.GetBool("fireAtKilled", bool(fireAtKilled));
-		fireAtCrashing = fireAtDeadTbl.GetBool("fireAtCrashing", bool(fireAtCrashing));
+		fireAtKilled   = fireAtDeadTbl.GetBool("fireAtKilled", fireAtKilled);
+		fireAtCrashing = fireAtDeadTbl.GetBool("fireAtCrashing", fireAtCrashing);
 	}
 
 	{
 		// transportability
 		const LuaTable& transportTbl = root.SubTable("transportability");
 
-		transportAir    = transportTbl.GetBool("transportAir",    bool(transportAir   ));
-		transportShip   = transportTbl.GetBool("transportShip",   bool(transportShip  ));
-		transportHover  = transportTbl.GetBool("transportHover",  bool(transportHover ));
-		transportGround = transportTbl.GetBool("transportGround", bool(transportGround));
+		transportAir    = transportTbl.GetBool("transportAir",    transportAir   );
+		transportShip   = transportTbl.GetBool("transportShip",   transportShip  );
+		transportHover  = transportTbl.GetBool("transportHover",  transportHover );
+		transportGround = transportTbl.GetBool("transportGround", transportGround);
 
-		targetableTransportedUnits = transportTbl.GetBool("targetableTransportedUnits", bool(targetableTransportedUnits));
+		targetableTransportedUnits = transportTbl.GetBool("targetableTransportedUnits", targetableTransportedUnits);
 	}
 
 	{
 		// experience
 		const LuaTable& experienceTbl = root.SubTable("experience");
 
-		unitExpMultiplier  = experienceTbl.GetFloat("experienceMult", 1.0f);
-		unitExpPowerScale  = experienceTbl.GetFloat(    "powerScale", 1.0f);
-		unitExpHealthScale = experienceTbl.GetFloat(   "healthScale", 0.7f);
-		unitExpReloadScale = experienceTbl.GetFloat(   "reloadScale", 0.4f);
+		unitExpMultiplier  = experienceTbl.GetFloat("experienceMult", unitExpMultiplier);
+		unitExpPowerScale  = experienceTbl.GetFloat(    "powerScale", unitExpPowerScale);
+		unitExpHealthScale = experienceTbl.GetFloat(   "healthScale", unitExpHealthScale);
+		unitExpReloadScale = experienceTbl.GetFloat(   "reloadScale", unitExpReloadScale);
 	}
 
 	{
 		// flanking bonus
 		const LuaTable& flankingBonusTbl = root.SubTable("flankingBonus");
-		flankingBonusModeDefault = flankingBonusTbl.GetInt("defaultMode", 1);
-		flankingBonusMaxDefault = flankingBonusTbl.GetFloat("defaultMax", 1.9f);
-		flankingBonusMinDefault = flankingBonusTbl.GetFloat("defaultMin", 0.9f);
+		flankingBonusModeDefault = flankingBonusTbl.GetInt("defaultMode", flankingBonusModeDefault);
+		flankingBonusMaxDefault = flankingBonusTbl.GetFloat("defaultMax", flankingBonusMaxDefault);
+		flankingBonusMinDefault = flankingBonusTbl.GetFloat("defaultMin", flankingBonusMinDefault);
 	}
 
 	{
 		// feature visibility
 		const LuaTable& featureLOS = root.SubTable("featureLOS");
 
-		featureVisibility = featureLOS.GetInt("featureVisibility", FEATURELOS_ALL);
+		featureVisibility = featureLOS.GetInt("featureVisibility", featureVisibility);
 		featureVisibility = std::clamp(featureVisibility, int(FEATURELOS_NONE), int(FEATURELOS_ALL));
 	}
 
@@ -312,11 +314,11 @@ void CModInfo::Init(const std::string& modFileName)
 
 		// losMipLevel is used as index to readMap->mipHeightmaps,
 		// so the maximum value is CReadMap::numHeightMipMaps - 1
-		losMipLevel = los.GetInt("losMipLevel", 1);
+		losMipLevel = los.GetInt("losMipLevel", losMipLevel);
 		// airLosMipLevel doesn't have such restrictions, it's just
 		// used in various bitshifts with signed integers
-		airMipLevel = los.GetInt("airMipLevel", 1);
-		radarMipLevel = los.GetInt("radarMipLevel", 2);
+		airMipLevel = los.GetInt("airMipLevel", airMipLevel);
+		radarMipLevel = los.GetInt("radarMipLevel", radarMipLevel);
 
 		if ((losMipLevel < 0) || (losMipLevel > 6))
 			throw content_error("Sensors\\Los\\LosMipLevel out of bounds. The minimum value is 0. The maximum value is 6.");
@@ -327,5 +329,8 @@ void CModInfo::Init(const std::string& modFileName)
 		if ((airMipLevel < 0) || (airMipLevel > 30))
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
 	}
+
+	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))
+		throw content_error("quadFieldQuadSizeInElmos modrule has to be a power of 2");
 }
 

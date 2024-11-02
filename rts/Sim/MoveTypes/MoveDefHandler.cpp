@@ -4,6 +4,7 @@
 #include "Lua/LuaParser.h"
 #include "Map/MapInfo.h"
 #include "MoveMath/MoveMath.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Misc/ModInfo.h"
@@ -46,6 +47,7 @@ CR_REG_METADATA(MoveDef, (
 
 	CR_MEMBER(followGround),
 	CR_MEMBER(isSubmarine),
+	CR_MEMBER(isSubmersible),
 
 	CR_MEMBER(avoidMobilesOnPath),
 	CR_MEMBER(allowTerrainCollisions),
@@ -328,7 +330,7 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	}
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
-
+	isSubmersible = (isSubmarine || (followGround && depth > height));
 	allowDirectionalPathing = moveDefTable.GetBool("allowDirectionalPathing", allowDirectionalPathing);
 	preferShortestPath = moveDefTable.GetBool("preferShortestPath", preferShortestPath);
 }
@@ -455,6 +457,44 @@ bool MoveDef::DoRawSearch(
 		return result;
 	};
 
+	auto walkPathFwdOnly = [startBlock, endBlock, diffBlk, &StepFunc, goalRadiusSq, nearestSquare](auto& f) -> bool {
+		bool result = false;
+
+		const int2 fwdStepDir = int2{(endBlock.x > startBlock.x), (endBlock.y > startBlock.y)} * 2 - int2{1, 1};
+
+		int blkStepCtr = diffBlk.x + diffBlk.y;
+		int2 fwdStepErr = {diffBlk.x - diffBlk.y, diffBlk.x - diffBlk.y};
+		int2 fwdTestBlk = startBlock;
+
+		for (blkStepCtr += 1; blkStepCtr > 0; blkStepCtr -= 1) {
+			// Check forward search.
+			result = f(fwdTestBlk.x, fwdTestBlk.y);
+			if (!result) {
+				break;
+			} else {
+				// Forward search has got close enough, drop out early.
+				float dist = float((endBlock).DistanceSq(fwdTestBlk)*Square(SQUARE_SIZE));
+				if (dist < goalRadiusSq) {
+					if (nearestSquare != nullptr) {
+						// Move the nearest square further out if the unit would hit an exit only zone sooner
+						float origDist = float((endBlock).DistanceSq(*nearestSquare)*Square(SQUARE_SIZE));
+						if (dist > origDist)
+							*nearestSquare = fwdTestBlk;
+					}
+					break;
+				}
+			}
+
+			StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
+
+			// skip if exactly crossing a vertex (in either direction)
+			blkStepCtr -= (fwdStepErr.y == 0);
+			fwdStepErr.y  = fwdStepErr.x;
+		}
+
+		return result;
+	};
+
 	float minSpeedMod = std::numeric_limits<float>::max();
 	int   maxBlockBit = CMoveMath::BLOCK_NONE;
 
@@ -508,11 +548,24 @@ bool MoveDef::DoRawSearch(
 		maxBlockBit = blockBits;
 		return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 	};
+	
+	// Keep track of the exit only status on the path. A unit starting in exit only is allowed to leave, but it is not
+	// permitted to enter an exit only square if the path has left an exit-only zone or never started in exit-only.
+	bool curExitOnlyState = true;
+	auto exitOnlytest = [this, &curExitOnlyState](int x, int z) -> bool {
+		bool canProceed = true;
+		bool nextExitOnlyState = IsInExitOnly(x, z);
+		if (!curExitOnlyState)
+			canProceed = !nextExitOnlyState;
+
+		curExitOnlyState = nextExitOnlyState;
+		return (canProceed);
+	};
 
 	auto test = [this, testTerrain, testObjects, &terrainTest, &objectsTest](int x, int z) {
 		return (!testTerrain || terrainTest(x, z)) && (!testObjects || objectsTest(x, z));
 	};
-	const bool retTestMove = walkPath(test);
+	const bool retTestMove = walkPath(test) && walkPathFwdOnly(exitOnlytest);
 
 	// don't use std::min or |= because the ptr values might be garbage
 	if (minSpeedModPtr != nullptr) *minSpeedModPtr = minSpeedMod;
@@ -632,11 +685,39 @@ bool MoveDef::TestMovePositionForObjects(
 	const int zmax = zmid + zsizeh;
 
 	const CMoveMath::BlockType blockBits = CMoveMath::RangeIsBlockedTempNum(xmin, xmax, zmin, zmax, collider, magicNum, thread);
+	if (blockBits & CMoveMath::BLOCK_STRUCTURE)
+		return false;
 
-	return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
+	if (!collider->inExitOnlyZone) {
+		auto createHelper = [&](const MoveTypes::CheckCollisionQuery* collider) {
+			if (collider->pos.y != MoveTypes::CheckCollisionQuery::POS_Y_UNAVAILABLE)
+				return ObjectCollisionMapHelper(*this, collider->pos.y);
+			return ObjectCollisionMapHelper(*this);
+		};
+		const ObjectCollisionMapHelper object = createHelper(collider);
+		return !CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax, object);
+	}
+
+	return true;
+	// return ((blockBits & CMoveMath::BLOCK_STRUCTURE) == 0);
 }
 
+bool MoveDef::IsInExitOnly(const float3 testMovePos) const {
+	const int xmid = int(testMovePos.x / SQUARE_SIZE);
+	const int zmid = int(testMovePos.z / SQUARE_SIZE);
 
+	return IsInExitOnly(xmid, zmid);
+}
+
+bool MoveDef::IsInExitOnly(int xmid, int zmid) const {
+	const int xmin = std::max(xmid - xsizeh, 0);
+	const int zmin = std::max(zmid - zsizeh, 0);
+	const int xmax = std::min(xmid + xsizeh, mapDims.mapxm1);
+	const int zmax = std::min(zmid + zsizeh, mapDims.mapym1);
+
+	const ObjectCollisionMapHelper object;
+	return CMoveMath::RangeHasExitOnly(xmin, xmax, zmin, zmax, object);
+}
 
 
 float MoveDef::CalcFootPrintMinExteriorRadius(float scale) const { return ((math::sqrt((xsize * xsize + zsize * zsize)) * 0.5f * SQUARE_SIZE) * scale); }

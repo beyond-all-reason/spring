@@ -1028,6 +1028,12 @@ bool CLuaUnitScript::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(StopSpin);
 	REGISTER_LUA_CFUNC(Turn);
 	REGISTER_LUA_CFUNC(Move);
+	REGISTER_LUA_CFUNC(MultiSetPieceVisibility);
+	REGISTER_LUA_CFUNC(MultiSpin);
+	REGISTER_LUA_CFUNC(MultiStopSpin);
+	REGISTER_LUA_CFUNC(MultiTurn);
+	REGISTER_LUA_CFUNC(MultiMove);
+	REGISTER_LUA_CFUNC(MultiExplode);
 	REGISTER_LUA_CFUNC(IsInTurn);
 	REGISTER_LUA_CFUNC(IsInMove);
 	REGISTER_LUA_CFUNC(IsInSpin);
@@ -1466,6 +1472,56 @@ int CLuaUnitScript::Move(lua_State* L)
 	return 0;
 }
 
+
+// Do not call with a function that returns values to lua
+int CLuaUnitScript::MultiExec(lua_State *L, int (*const func)(lua_State*), const int expectedArgs) {
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	int numArgs = lua_gettop(L);
+	if (numArgs % expectedArgs != 0 && numArgs > 0) {
+		luaL_error(L, "%s(): requires a multiple of %d arguments", __func__, expectedArgs);
+		return 0;
+	}
+	while(numArgs > 0) {
+		func(L);
+		for(int x = expectedArgs; x > 0; x--) {
+			lua_replace(L, x);
+		}
+		numArgs -= expectedArgs;
+	}
+
+	return 0;
+}
+
+int CLuaUnitScript::MultiSetPieceVisibility(lua_State* L)
+{
+	return MultiExec(L, &SetPieceVisibility, 2);
+}
+
+int CLuaUnitScript::MultiSpin(lua_State* L)
+{
+	return MultiExec(L, &Spin, 4);
+}
+
+int CLuaUnitScript::MultiStopSpin(lua_State* L)
+{
+	return MultiExec(L, &StopSpin, 3);
+}
+
+int CLuaUnitScript::MultiTurn(lua_State* L)
+{
+	return MultiExec(L, &Turn, 4);
+}
+
+int CLuaUnitScript::MultiExplode(lua_State* L)
+{
+	return MultiExec(L, &Explode, 2);
+}
+
+int CLuaUnitScript::MultiMove(lua_State* L)
+{
+	return MultiExec(L, &Move, 4);
+}
 
 int CLuaUnitScript::IsInAnimation(lua_State* L, const char* caller, AnimType type)
 {

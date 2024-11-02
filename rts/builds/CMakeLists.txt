@@ -90,8 +90,6 @@ if    (WIN32)
 	if (MSVC)
 		# Make sure we disable the default manifest generation to prevent conflicts
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
-		# Hack to build spring with two different 7z implementations :(
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
 	endif()
 endif (WIN32)
 

@@ -122,7 +122,7 @@ float CNetProtocol::GetPacketTime(int frameNum) const
 	if (frameNum < 0)
 		return gu->gameTime;
 
-	return (gu->startTime + frameNum / (1.0f * GAME_SPEED));
+	return (gu->startTime + frameNum * INV_GAME_SPEED);
 }
 
 

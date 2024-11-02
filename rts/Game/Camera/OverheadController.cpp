@@ -222,13 +222,28 @@ void COverheadController::SetPos(const float3& newPos)
 }
 
 
-void COverheadController::SwitchTo(const int oldCam, const bool showText)
+void COverheadController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText)
 		LOG("Switching to Overhead (TA) style camera");
 
-	angle = DEFAULT_ANGLE;
+	float3 oldPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov"){
+		pos = oldPos + dir * height;
+		Update();
+		return;
+	}
+
+	dir = oldCam->GetDir();
+	if (dir.y > 0) {
+		dir.y = -.5;
+		dir.Normalize();
+	}
+	height = DistanceToGround(oldPos, dir, 0);
+	pos = oldPos + dir * height;
+
+	angle = math::PI - CCamera::GetRotFromDir(dir).x;
 	Update();
 }
 

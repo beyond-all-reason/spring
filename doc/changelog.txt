@@ -39,6 +39,7 @@ Lua:
    https://github.com/beyond-all-reason/spring/pull/1342
  - Fix #1523, `Spring.UnitArrivedAtGoal` stack issue with warning spam.
    https://github.com/beyond-all-reason/spring/pull/1546
+ - DrawWorldPreParticles is now has parameters describing the particular phase it is called within a draw frame.
 
 Misc:
 - Fixed broken test. https://github.com/beyond-all-reason/spring/pull/1545
@@ -130,6 +131,7 @@ Lua:
  - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
  - Lua C Macros (cast and registry) prefixed lua_ to fix compilation issues.
  - Protect Spring.GetGroupUnitsCount from crashing when given an invalid group id.
+ - Add new variadic variants for some Lua unit script functions: MultiTurn, MultiMove, MultiSpin, etc.
 
 
 Game Setup:

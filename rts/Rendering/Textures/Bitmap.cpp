@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <algorithm>
+#include <bit>
 #include <utility>
 #include <cstring>
 #include <memory>
@@ -16,7 +17,6 @@
 
 #include "Bitmap.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/bitops.h"
 #include "System/ScopedFPUSettings.h"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
@@ -1488,11 +1488,12 @@ namespace {
 			case hashString("tif"): [[fallthrough]];
 			case hashString("tiff"): { success = ilSave(IL_TIF, p); } break;
 			case hashString("dds"): { success = ilSave(IL_DDS, p); } break;
-			case hashString("raw"): { success = ilSave(IL_RAW, p); } break;
 			case hashString("pbm"): [[fallthrough]];
 			case hashString("pgm"): [[fallthrough]];
 			case hashString("ppm"): [[fallthrough]];
 			case hashString("pnm"): { success = ilSave(IL_PNM, p); } break;
+			case hashString("hdr"): { success = ilSave(IL_HDR, p); } break;
+			case hashString("raw"): { success = ilSave(IL_RAW, p); } break;
 		}
 
 		assert(ilGetError() == IL_NO_ERROR);
@@ -1685,14 +1686,6 @@ uint32_t CBitmap::CreateTexture(float aniso, float lodBias, bool mipmaps, uint32
 
 	if (GetMemSize() == 0)
 		return 0;
-
-	// jcnossen: Some drivers return "2.0" as a version string,
-	// but switch to software rendering for non-power-of-two textures.
-	// GL_ARB_texture_non_power_of_two indicates that the hardware will actually support it.
-	if (!globalRendering->supportNonPowerOfTwoTex && (xsize != next_power_of_2(xsize) || ysize != next_power_of_2(ysize))) {
-		CBitmap bm = CreateRescaled(next_power_of_2(xsize), next_power_of_2(ysize));
-		return bm.CreateTexture(aniso, mipmaps);
-	}
 
 	if (texID == 0)
 		glGenTextures(1, &texID);

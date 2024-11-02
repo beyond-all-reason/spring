@@ -4,6 +4,7 @@
 
 #include "SpringController.h"
 #include "Game/Camera.h"
+#include "Game/Camera/CameraController.h"
 #include "Game/CameraHandler.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
@@ -11,6 +12,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
+#include "System/MathConstants.h"
 #include "System/SpringMath.h"
 #include "System/Input/KeyInput.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
@@ -38,16 +40,6 @@ CONFIG(float, CamSpringFastScaleMouseMove).defaultValue(3.0f / 10.0f).descriptio
 CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
 CONFIG(int,   CamSpringTrackMapHeightMode).defaultValue(HeightTracking::Terrain).description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smoothmesh");
 
-static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
-	RECOIL_DETAILED_TRACY_ZONE;
-	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
-
-	// if the direction is not pointing towards the map we use provided xz plane as heuristic
-	if (newGroundDist <= 0.0f)
-		newGroundDist = CGround::LinePlaneCol(from, dir, 150000.0f, fallbackPlaneHeight);
-
-	return newGroundDist;
-}
 
 CSpringController::CSpringController()
 	: rot(2.677f, 0.0f, 0.0f)
@@ -329,8 +321,9 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 void CSpringController::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	pos.ClampInMap();
 
+	pos.x = std::clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
+	pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
 	pos.y = CGround::GetHeightReal(pos.x, pos.z, false); // always focus on the ground
 	rot.x = std::clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
 
@@ -395,16 +388,28 @@ float3 CSpringController::GetPos() const
 }
 
 
-void CSpringController::SwitchTo(const int oldCam, const bool showText)
+void CSpringController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText)
 		LOG("Switching to Spring style camera");
 
-	if (oldCam == CCameraHandler::CAMERA_MODE_OVERVIEW)
+	if (oldCam->GetName() == "ov") {
+		pos = oldCam->SwitchFrom();
+		rot = ClampRadPrincipal(rot);
+		Update();
 		return;
+	}
 
-	rot = camera->GetRot() * XZVector;
+	rot = oldCam->GetRot();
+	// old camera is looking above horizon, so set back below horizon
+	if (rot.x <= math::HALFPI) {
+		rot.x = math::PI * .75;
+	}
+	dir = CCamera::GetFwdFromRot(rot);
+	float3 oldPos = oldCam->SwitchFrom();
+	curDist = DistanceToGround(oldPos, dir, 0);
+	pos = oldPos + dir * curDist;
 }
 
 

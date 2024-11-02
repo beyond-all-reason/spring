@@ -415,7 +415,7 @@ float CGround::LineGroundWaterCol(const float3 pos, const float3 dir, float len,
 	if (!testWater)
 		return terraDist;
 
-	const float waterDist = LinePlaneCol(pos, dir, len, 0.0f);
+	const float waterDist = LinePlaneCol(pos, dir, len, GetWaterLevel(pos.x, pos.z, synced));
 	if (waterDist < 0.0f)
 		return terraDist;
 
@@ -461,7 +461,7 @@ const float* CGround::GetApproximateHeightUnsafePtr(int x, int z, bool synced)
 float CGround::GetHeightAboveWater(float x, float z, bool synced)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return std::max(0.0f, GetHeightReal(x, z, synced));
+	return std::max(0.0f, GetHeightReal(x, z, synced) - GetWaterLevel(x, z, synced));
 }
 
 float CGround::GetHeightReal(float x, float z, bool synced)

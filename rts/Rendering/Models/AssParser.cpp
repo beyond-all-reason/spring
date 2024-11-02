@@ -1324,7 +1324,7 @@ static std::string FindTexture(std::string testTextureFile, const std::string& m
 		return fallback;
 
 	// blender denotes relative paths with "//..", remove it
-	if (testTextureFile.find("//..") == 0)
+	if (testTextureFile.starts_with("//.."))
 		testTextureFile = testTextureFile.substr(4);
 
 	if (CFileHandler::FileExists(testTextureFile, SPRING_VFS_ZIP_FIRST))

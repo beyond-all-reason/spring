@@ -331,7 +331,7 @@ void CEngineOutHandler::UnitCaptured(const CUnit& unit, int oldTeam, int newTeam
 	}
 }
 
-void CEngineOutHandler::UnitDestroyed(const CUnit& destroyed, const CUnit* attacker) {
+void CEngineOutHandler::UnitDestroyed(const CUnit& destroyed, const CUnit* attacker, int weaponDefID) {
 	AI_SCOPED_TIMER();
 
 	const int destroyedId = destroyed.id;
@@ -348,7 +348,7 @@ void CEngineOutHandler::UnitDestroyed(const CUnit& destroyed, const CUnit* attac
 			if (attackerInLosOrRadar || hostSkirmishAIs[aiID].CheatEventsEnabled())
 				visibleAttackerId = attackerId;
 
-			hostSkirmishAIs[aiID].UnitDestroyed(destroyedId, visibleAttackerId);
+			hostSkirmishAIs[aiID].UnitDestroyed(destroyedId, visibleAttackerId, weaponDefID);
 		}
 	}
 

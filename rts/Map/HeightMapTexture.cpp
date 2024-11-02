@@ -33,8 +33,6 @@ void HeightMapTexture::Init()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(readMap != nullptr);
-	if (!GLEW_ARB_texture_float || !GLEW_ARB_texture_non_power_of_two)
-		return;
 
 	// corner-heightmap dimensions
 	xSize = mapDims.mapxp1;
