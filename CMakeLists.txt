@@ -293,14 +293,7 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 #  So req. checks are done in the build target's CMakeLists.txt.
 find_package(SDL2)
 
-find_package_static(DevIL)
-if    (PREFER_STATIC_LIBS)
-	# dependencies of DevIL
-	find_package_static(JPEG REQUIRED)
-	find_package_static(PNG REQUIRED)
-	find_package_static(TIFF REQUIRED)
-	find_package_static(GIF REQUIRED)
-endif (PREFER_STATIC_LIBS)
+find_package_static(DevIL 1.8.0 REQUIRED)
 
 if    (WIN32)
 	find_package(Windres REQUIRED)

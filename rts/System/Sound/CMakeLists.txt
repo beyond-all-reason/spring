@@ -46,8 +46,7 @@ if    (NOT NO_SOUND)
 
 	find_package_static(OpenAL REQUIRED)
 	include_directories(${OPENAL_INCLUDE_DIR})
-	find_package_static(OggVorbis REQUIRED)
-	include_directories(${OGG_INCLUDE_DIR} ${VORBIS_INCLUDE_DIR})
+	find_package_static(OggVorbis 1.3.4 REQUIRED)
 
 	find_package(SDL2 REQUIRED)
 	include_directories(${SDL2_INCLUDE_DIR})
@@ -56,7 +55,7 @@ if    (NOT NO_SOUND)
 	include_directories(${CMAKE_SOURCE_DIR}/include/AL)
 
 	add_library(sound STATIC EXCLUDE_FROM_ALL ${soundSources})
-	target_link_libraries(sound ${VORBISFILE_LIBRARY} ${VORBIS_LIBRARY} ${OGG_LIBRARY})
+	target_link_libraries(sound vorbis::vorbisfile vorbis::vorbis Ogg::ogg)
 	target_link_libraries(sound ${OPENAL_LIBRARY})
 	target_link_libraries(sound Tracy::TracyClient)
 endif (NOT NO_SOUND)

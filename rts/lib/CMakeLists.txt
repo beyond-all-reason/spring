@@ -91,7 +91,7 @@ endif()
 # correct version as picked by the engine.
 # !!! If you change freetype resolution here, change it also in rts/builds/legacy
 find_freetype_hack() # hack to find different named freetype.dll
-find_package_static(Freetype REQUIRED)
+find_package_static(Freetype 2.8.1 REQUIRED)
 
 # lunasvg does not expect number constants to be floats, so we undo this cmake flag for its compilation
 string(REPLACE "-fsingle-precision-constant" "" NEW_CMAKE_FLAGS ${CMAKE_CXX_FLAGS})
