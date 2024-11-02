@@ -6,6 +6,7 @@
 #include <cassert>
 #include <array>
 #include <utility>
+#include <format>
 
 #include "System/BranchPrediction.h"
 #include "lib/streflop/streflop_cond.h"
@@ -803,6 +804,10 @@ public:
 
 	static constexpr float cmp_eps() { return 1e-04f; }
 	static constexpr float nrm_eps() { return 1e-12f; }
+
+	std::string str() const {
+		return std::format("float3({:.3f}, {:.3f}, {:.3f})", x, y, z);
+	}
 
 	/**
 	 * @brief max x pos
