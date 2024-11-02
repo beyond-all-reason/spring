@@ -2734,10 +2734,10 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 		const int tableIdx = 2;
 
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (!lua_isnumber(L, -1))
+			if (!lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
 				continue;
 
-			InsertSearchUnitDefs(unitDefHandler->GetUnitDefByID(lua_toint(L, -1)), allied);
+			InsertSearchUnitDefs(unitDefHandler->GetUnitDefByID(lua_toint(L, LUA_TABLE_VALUE_INDEX)), allied);
 		}
 	} else {
 		luaL_error(L, "Incorrect arguments to GetTeamUnitsByDefs()");
