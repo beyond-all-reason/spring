@@ -74,6 +74,9 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 
 	curSpeedMods.resize(xsize * zsize,  0);
 	curSpeedBins.resize(xsize * zsize, -1);
+
+	MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
+	useShortestPath = md->preferShortestPath;
 }
 
 void QTPFS::NodeLayer::Clear() {
@@ -98,8 +101,8 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 
 	MoveTypes::CheckCollisionQuery virtualObject(md);
 	MoveDefs::CollisionQueryStateTrack queryState;
-	const bool isSubmersible = (md->isSubmarine ||
-							   (md->followGround && md->depth > md->height));
+
+	const bool isSubmersible = md->IsComplexSubmersible();
 	if (!isSubmersible) {
 		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits, threadData.threadId);
 	}
@@ -386,6 +389,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 			if (zmax <= childNode->zmin()) { continue; }
 			if (zmin >= childNode->zmax()) { continue; }
 			if (childNode->AllSquaresImpassable()) { continue; }
+			if (childNode->IsExitOnly()) { continue; }
 
 			tmpNodes.emplace_back(childNode);
 		}

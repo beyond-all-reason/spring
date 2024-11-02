@@ -12,7 +12,6 @@
 #include "Rendering/Env/MapRendering.h"
 #include "SMF/SMFReadMap.h"
 #include "Game/LoadScreen.h"
-#include "System/bitops.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
@@ -191,6 +190,7 @@ void CReadMap::Serialize(creg::ISerializer* s)
 	SerializeMapChangesBeforeMatch(s);
 	SerializeMapChangesDuringMatch(s);
 	SerializeTypeMap(s);
+	s->SerializeObjectInstance(&metalMap, metalMap.GetClass());
 }
 
 void CReadMap::SerializeMapChangesBeforeMatch(creg::ISerializer* s)

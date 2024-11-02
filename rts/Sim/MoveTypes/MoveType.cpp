@@ -84,10 +84,10 @@ void AMoveType::SlowUpdate()
 	UpdateGroundBlockMap();
 }
 
-void AMoveType::UpdateCollisionMap()
+void AMoveType::UpdateCollisionMap(bool force)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
+	if (!force && ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate))
 		return;
 
 	if (owner->pos != oldCollisionUpdatePos){

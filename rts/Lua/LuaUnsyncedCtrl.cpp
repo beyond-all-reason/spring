@@ -228,6 +228,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetConfigString);
 
 	REGISTER_LUA_CFUNC(CreateDir);
+	REGISTER_LUA_CFUNC(AllocateTable);
 
 	REGISTER_LUA_CFUNC(SendCommands);
 	REGISTER_LUA_CFUNC(GiveOrder);
@@ -1139,7 +1140,7 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 	if (mouse == nullptr)
 		return 0;
 
-	const float4 targetPos = {
+	float4 targetPos = {
 		luaL_checkfloat(L, 1),
 		luaL_checkfloat(L, 2),
 		luaL_checkfloat(L, 3),
@@ -1151,16 +1152,12 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 		luaL_optfloat(L, 7, (camera->GetDir()).z),
 	};
 
-	if (targetPos.w >= 0.0f) {
-		camHandler->CameraTransition(targetPos.w);
-		camHandler->GetCurrentController().SetPos(targetPos);
-		camHandler->GetCurrentController().SetDir(targetDir);
-	} else {
-		// no transition, bypass controller
-		camera->SetPos(targetPos);
-		camera->SetDir(targetDir);
-		// camera->Update();
+	if (targetPos.w < 0.0f) {
+		targetPos.w = 0.0f;
 	}
+	camHandler->GetCurrentController().SetPos(targetPos);
+	camHandler->GetCurrentController().SetDir(targetDir);
+	camHandler->CameraTransition(targetPos.w);
 
 	return 0;
 }
@@ -2440,6 +2437,29 @@ int LuaUnsyncedCtrl::CreateDir(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.AllocateTable
+ * @number narr hint for count of array elements
+ * @number nrec hint for count of record elements
+ * @treturn table
+ */
+int LuaUnsyncedCtrl::AllocateTable(lua_State* L)
+{
+	int narr = luaL_optinteger(L, 1, 0);
+	int nrec = luaL_optinteger(L, 2, 0);
+
+	if (narr < 0) {
+		narr = 0;
+	}
+	if (nrec < 0) {
+		nrec = 0;
+	}
+
+	lua_createtable(L, narr, nrec);
+
+	return 1;
+}
 
 
 
@@ -4827,8 +4847,8 @@ int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
  *
  * @function Spring.SetWindowGeometry
  * @number displayIndex
- * @number winPosX
- * @number winPosY
+ * @number winRelPosX
+ * @number winRelPosY
  * @number winSizeX
  * @number winSizeY
  * @bool fullScreen

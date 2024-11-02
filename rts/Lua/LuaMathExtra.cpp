@@ -26,6 +26,7 @@ bool LuaMathExtra::PushEntries(lua_State* L)
 	LuaPushNamedCFunc(L, "round",  round);
 	LuaPushNamedCFunc(L, "erf",    erf);
 	LuaPushNamedCFunc(L, "smoothstep", smoothstep);
+	LuaPushNamedCFunc(L, "normalize", normalize);
 	return true;
 }
 
@@ -182,6 +183,41 @@ int LuaMathExtra::smoothstep(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	lua_pushnumber(L, ::smoothstep(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3)));
 	return 1;
+}
+
+
+/*** Returns the normalize vector of an given vector.
+ *
+ * @function math.normalize
+ * @number x1
+ * @number[opt] x2
+ * @number[opt] xN and so on
+ * @treturn number normalized1
+ * @treturn number normalized2 and so on
+ */
+int LuaMathExtra::normalize(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	lua_Number res = 0.0f;
+	const int param = lua_gettop(L);
+	for (int i = param; i >= 1; i--) {
+		res += Square(luaL_checknumber_noassert(L, i));
+	}
+	if likely(res > float3::nrm_eps())
+		res = math::sqrt(res);
+	else
+	{
+		for (int i = 1; i <= param; ++i) {
+			lua_pushnumber(L, 0);
+		}
+		return param;
+	}
+	for (int i = 1; i <= param; ++i) {
+		float tmp = luaL_checknumber_noassert(L, i);
+		tmp = tmp / res;
+		lua_pushnumber(L, tmp);
+	}
+	return param;
 }
 
 /******************************************************************************/

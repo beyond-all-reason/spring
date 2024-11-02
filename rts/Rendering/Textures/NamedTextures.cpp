@@ -1,13 +1,13 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 // must be included before streflop! else we get streflop/cmath resolve conflicts in its hash implementation files
+#include <bit>
 #include <vector>
 #include "NamedTextures.h"
 
 #include "Rendering/GL/myGL.h"
 #include "Bitmap.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/bitops.h"
 #include "System/type2.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/SpringThreading.h"
@@ -241,9 +241,6 @@ namespace CNamedTextures {
 			if (greyed) bitmap.MakeGrayScale();
 			if (tint)   bitmap.Tint(tintColor);
 
-			const int xbits = count_bits_set(bitmap.xsize);
-			const int ybits = count_bits_set(bitmap.ysize);
-
 			// make the texture
 			glBindTexture(GL_TEXTURE_2D, texID);
 
@@ -266,9 +263,10 @@ namespace CNamedTextures {
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				}
 
-				//! Note: NPOTs + nearest filtering seems broken on ATIs
-				if ((xbits != 1 || ybits != 1) && (!GLEW_ARB_texture_non_power_of_two || (globalRendering->amdHacks && nearest)))
-					bitmap = bitmap.CreateRescaled(next_power_of_2(bitmap.xsize),next_power_of_2(bitmap.ysize));
+				// verify if still broken
+				if (globalRendering->amdHacks && nearest) {
+					bitmap = bitmap.CreateRescaled(std::bit_ceil <uint32_t>(bitmap.xsize), std::bit_ceil <uint32_t>(bitmap.ysize));
+				}
 
 				glTexImage2D(GL_TEXTURE_2D, 0, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, int(border), bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
 			} else {
@@ -276,12 +274,7 @@ namespace CNamedTextures {
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-				if ((xbits == 1 && ybits == 1) || GLEW_ARB_texture_non_power_of_two) {
-					glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-				} else {
-					//! glu auto resizes to next POT
-					gluBuild2DMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-				}
+				glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
 			}
 
 			if (aniso && GLEW_EXT_texture_filter_anisotropic)

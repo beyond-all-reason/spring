@@ -40,11 +40,6 @@ static constexpr uint32_t squareMobileBlockBits =
 	uint32_t(MMBT::BLOCK_MOBILE     ) |
 	uint32_t(MMBT::BLOCK_MOVING     );
 
-static constexpr CPathFinder::BlockCheckFunc blockCheckFuncs[2] = {
-	CMoveMath::IsBlockedNoSpeedModCheckThreadUnsafe, // alias for RangeIsBlocked
-	CMoveMath::IsBlockedNoSpeedModCheck // same as RangeIsBlocked without tempNum test
-};
-
 // both indexed by PATHOPT* bitmasks
 static constexpr float PF_DIRECTION_COSTS[] = {
 	0.0f       ,
@@ -131,7 +126,6 @@ void CPathFinder::Init(bool threadSafe)
 	RECOIL_DETAILED_TRACY_ZONE;
 	IPathFinder::Init(1);
 
-	blockCheckFunc = blockCheckFuncs[threadSafe];
 	dummyCacheItem = CPathCache::CacheItem{IPath::Error, {}, {-1, -1}, {-1, -1}, -1.0f, -1};
 }
 
@@ -145,81 +139,18 @@ IPath::SearchResult CPathFinder::DoRawSearch(
 	if (!moveDef.allowRawMovement)
 		return IPath::Error;
 
-	// {bool printMoveInfo = (owner != nullptr) && (selectedUnitsHandler.selectedUnits.size() == 1)
-    //     && (selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end());
-    // if (printMoveInfo) {
-    //     LOG("%s Block Size [%d] raw search started", __func__, BLOCK_SIZE);
-    // }}
+	int curThread = ThreadPool::GetThreadNum();
 
 	const int2 strtBlk = BlockIdxToPos(mStartBlockIdx);
 	const int2 goalBlk = {int(pfDef.goalSquareX), int(pfDef.goalSquareZ)};
-	const int2 diffBlk = {std::abs(goalBlk.x - strtBlk.x), std::abs(goalBlk.y - strtBlk.y)};
-	// has not been set yet, DoSearch is called after us
-	// const int2 goalBlk = BlockIdxToPos(mGoalBlockIdx);
 
-	if ((Square(diffBlk.x) + Square(diffBlk.y)) > Square(pfDef.maxRawPathLen))
-		return IPath::Error;
+	const float3 startPoint(strtBlk.x * SQUARE_SIZE, 0.f, strtBlk.y * SQUARE_SIZE);
+	const float3 goalPoint(goalBlk.x * SQUARE_SIZE, 0.f, goalBlk.y * SQUARE_SIZE);
 
-	int curThread = ThreadPool::GetThreadNum();
+	bool haveFullPath = moveDef.DoRawSearch( owner, &moveDef, startPoint, goalPoint, 0
+						 				   , true, true, false, nullptr, nullptr, nullptr, curThread);
 
-	const/*expr*/ auto StepFunc = [](const int2& dir, const int2& dif, int2& pos, int2& err) {
-		pos.x += (dir.x * (err.y >= 0));
-		pos.y += (dir.y * (err.y <= 0));
-		err.x -= (dif.y * (err.y >= 0));
-		err.x += (dif.x * (err.y <= 0));
-	};
-
-	const int2 fwdStepDir = int2{(goalBlk.x > strtBlk.x), (goalBlk.y > strtBlk.y)} * 2 - int2{1, 1};
-	const int2 revStepDir = int2{(strtBlk.x > goalBlk.x), (strtBlk.y > goalBlk.y)} * 2 - int2{1, 1};
-
-	int2 blkStepCtr = {diffBlk.x + diffBlk.y, diffBlk.x + diffBlk.y};
-	int2 fwdStepErr = {diffBlk.x - diffBlk.y, diffBlk.x - diffBlk.y};
-	int2 revStepErr = fwdStepErr;
-	int2 fwdTestBlk = strtBlk;
-	int2 revTestBlk = goalBlk;
-
-	int2 prevFwdTestBlk = {-1, -1};
-	int2 prevRevTestBlk = {-1, -1};
-
-	// test bidirectionally so bad goal-squares cause early exits
-	// NOTE:
-	//   no need for integration with backtracking in FinishSearch
-	//   the final "path" only contains startPos which is consumed
-	//   immediately, after which NextWayPoint keeps returning the
-	//   goal until owner reaches it
-	for (blkStepCtr += int2{1, 1}; (blkStepCtr.x > 0 && blkStepCtr.y > 0); blkStepCtr -= int2{1, 1}) {
-		{
-			if ((CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, prevFwdTestBlk, fwdTestBlk, owner, curThread) & MMBT::BLOCK_STRUCTURE) != 0)
-				return IPath::Error;
-			if (CMoveMath::GetPosSpeedMod(moveDef, fwdTestBlk.x, fwdTestBlk.y) <= pfDef.minRawSpeedMod)
-				return IPath::Error;
-		}
-
-		{
-			if ((CMoveMath::IsBlockedNoSpeedModCheckDiff(moveDef, prevRevTestBlk, revTestBlk, owner, curThread) & MMBT::BLOCK_STRUCTURE) != 0)
-				return IPath::Error;
-			if (CMoveMath::GetPosSpeedMod(moveDef, revTestBlk.x, revTestBlk.y) <= pfDef.minRawSpeedMod)
-				return IPath::Error;
-		}
-
-		// NOTE: for odd-length paths, center square is tested twice
-		if ((std::abs(fwdTestBlk.x - revTestBlk.x) <= 1) && (std::abs(fwdTestBlk.y - revTestBlk.y) <= 1))
-			break;
-
-		prevFwdTestBlk = fwdTestBlk;
-		prevRevTestBlk = revTestBlk;
-
-		StepFunc(fwdStepDir, diffBlk * 2, fwdTestBlk, fwdStepErr);
-		StepFunc(revStepDir, diffBlk * 2, revTestBlk, revStepErr);
-
-		// skip if exactly crossing a vertex (in either direction)
-		blkStepCtr.x -= (fwdStepErr.y == 0);
-		blkStepCtr.y -= (revStepErr.y == 0);
-		fwdStepErr.y  = fwdStepErr.x;
-		revStepErr.y  = revStepErr.x;
-	}
-
-	return IPath::Ok;
+	return (haveFullPath) ? IPath::Ok : IPath::Error;
 }
 
 IPath::SearchResult CPathFinder::DoSearch(
@@ -304,7 +235,7 @@ void CPathFinder::TestNeighborSquares(
 	const int2 squarePos = square->nodePos;
 
 	const bool startSquareExpanded = (openBlocks.empty() && testedBlocks < 8);
-	const bool startSquareBlocked = (startSquareExpanded && (blockCheckFunc(moveDef, squarePos.x, squarePos.y, owner) & MMBT::BLOCK_STRUCTURE) != 0);
+	const bool startSquareBlocked = (startSquareExpanded && (CMoveMath::IsBlockedNoSpeedModCheck(moveDef, squarePos.x, squarePos.y, owner, thread) & MMBT::BLOCK_STRUCTURE) != 0);
 
 	// precompute structure-blocked state and speedmod for all neighbors
 	for (SquareState& sqState: ngbStates) {
@@ -330,8 +261,7 @@ void CPathFinder::TestNeighborSquares(
 			continue;
 		}
 
-
-		if (!pfDef.dirIndependent) {
+		if (moveDef.allowDirectionalPathing) {
 			sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y, PF_DIRECTION_VECTORS_3D[optDir]);
 		} else {
 			// PE search; use positional speed-mods since PE assumes path-costs
@@ -341,7 +271,8 @@ void CPathFinder::TestNeighborSquares(
 			//
 			// only close node if search is directionally independent, since it
 			// might still be entered from another (better) direction otherwise
-			if ((sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y)) == 0.0f) {
+			sqState.speedMod = CMoveMath::GetPosSpeedMod(moveDef, ngbSquareCoors.x, ngbSquareCoors.y);
+			if (sqState.speedMod == 0.0f) {
 				blockStates.nodeMask[ngbSquareIdx] |= PATHOPT_CLOSED;
 				dirtyBlocks.push_back(ngbSquareIdx);
 			}
@@ -442,6 +373,12 @@ bool CPathFinder::TestBlock(
 	assert((blockStatus & MMBT::BLOCK_STRUCTURE) == 0);
 	assert(speedMod != 0.0f);
 
+	const bool exitOnlyStatus = moveDef.IsInExitOnly(square.x, square.y);
+	if (!parentSquare->exitOnly && exitOnlyStatus) {
+		// Can't enter this way.
+		return true;
+	}
+
 	if (pfDef.testMobile && moveDef.avoidMobilesOnPath) {
 		switch (blockStatus & squareMobileBlockBits) {
 			case (uint32_t(MMBT::BLOCK_MOBILE_BUSY) | uint32_t(MMBT::BLOCK_MOBILE) | uint32_t(MMBT::BLOCK_MOVING)):   // 111
@@ -499,6 +436,7 @@ bool CPathFinder::TestBlock(
 		os->gCost   = gCost;
 		os->nodePos = square;
 		os->nodeNum = sqrIdx;
+		os->exitOnly = exitOnlyStatus;
 	openBlocks.push(os);
 
 	blockStates.SetMaxCost(NODE_COST_F, std::max(blockStates.GetMaxCost(NODE_COST_F), fCost));

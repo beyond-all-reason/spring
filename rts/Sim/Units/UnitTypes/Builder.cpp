@@ -105,14 +105,12 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	range3D = unitDef->buildRange3D;
 	buildDistance = (params.unitDef)->buildDistance;
 
-	constexpr float scale = (1.0f / GAME_SPEED);
-
-	buildSpeed     = scale * unitDef->buildSpeed;
-	repairSpeed    = scale * unitDef->repairSpeed;
-	reclaimSpeed   = scale * unitDef->reclaimSpeed;
-	resurrectSpeed = scale * unitDef->resurrectSpeed;
-	captureSpeed   = scale * unitDef->captureSpeed;
-	terraformSpeed = scale * unitDef->terraformSpeed;
+	buildSpeed     = INV_GAME_SPEED * unitDef->buildSpeed;
+	repairSpeed    = INV_GAME_SPEED * unitDef->repairSpeed;
+	reclaimSpeed   = INV_GAME_SPEED * unitDef->reclaimSpeed;
+	resurrectSpeed = INV_GAME_SPEED * unitDef->resurrectSpeed;
+	captureSpeed   = INV_GAME_SPEED * unitDef->captureSpeed;
+	terraformSpeed = INV_GAME_SPEED * unitDef->terraformSpeed;
 
 	CUnit::PreInit(params);
 }
@@ -156,25 +154,23 @@ bool CBuilder::UpdateTerraform(const Command&)
 
 	assert(!mapDamage->Disabled());
 
-	static constexpr int b = 3;
-
 	const auto SmoothBorders = [this, heightmap, &terraformScale]() {
 		// smooth the x-borders
 		for (int z = tz1; z <= tz2; z++) {
-			for (int x = 1; x <= 3; x++) {
-				if (tx1 - 3 >= 0) {
+			for (int x = 1; x <= TERRA_SMOOTHING_RADIUS; x++) {
+				if (tx1 - TERRA_SMOOTHING_RADIUS >= 0) {
 					const float ch3 = heightmap[z * mapDims.mapxp1 + tx1];
 					const float ch = heightmap[z * mapDims.mapxp1 + tx1 - x];
-					const float ch2 = heightmap[z * mapDims.mapxp1 + tx1 - 3];
-					const float amount = ((ch3 * (3 - x) + ch2 * x) / 3 - ch) * terraformScale;
+					const float ch2 = heightmap[z * mapDims.mapxp1 + tx1 - TERRA_SMOOTHING_RADIUS];
+					const float amount = ((ch3 * (TERRA_SMOOTHING_RADIUS - x) + ch2 * x) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight(z * mapDims.mapxp1 + tx1 - x, amount);
 				}
-				if (tx2 + 3 < mapDims.mapx) {
+				if (tx2 + TERRA_SMOOTHING_RADIUS < mapDims.mapx) {
 					const float ch3 = heightmap[z * mapDims.mapxp1 + tx2];
 					const float ch = heightmap[z * mapDims.mapxp1 + tx2 + x];
-					const float ch2 = heightmap[z * mapDims.mapxp1 + tx2 + 3];
-					const float amount = ((ch3 * (3 - x) + ch2 * x) / 3 - ch) * terraformScale;
+					const float ch2 = heightmap[z * mapDims.mapxp1 + tx2 + TERRA_SMOOTHING_RADIUS];
+					const float amount = ((ch3 * (TERRA_SMOOTHING_RADIUS - x) + ch2 * x) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight(z * mapDims.mapxp1 + tx2 + x, amount);
 				}
@@ -182,21 +178,21 @@ bool CBuilder::UpdateTerraform(const Command&)
 		}
 
 		// smooth the z-borders
-		for (int z = 1; z <= 3; z++) {
+		for (int z = 1; z <= TERRA_SMOOTHING_RADIUS; z++) {
 			for (int x = tx1; x <= tx2; x++) {
-				if ((tz1 - 3) >= 0) {
+				if ((tz1 - TERRA_SMOOTHING_RADIUS) >= 0) {
 					const float ch3 = heightmap[(tz1)*mapDims.mapxp1 + x];
 					const float ch = heightmap[(tz1 - z) * mapDims.mapxp1 + x];
-					const float ch2 = heightmap[(tz1 - 3) * mapDims.mapxp1 + x];
-					const float adjust = ((ch3 * (3 - z) + ch2 * z) / 3 - ch) * terraformScale;
+					const float ch2 = heightmap[(tz1 - TERRA_SMOOTHING_RADIUS) * mapDims.mapxp1 + x];
+					const float adjust = ((ch3 * (TERRA_SMOOTHING_RADIUS - z) + ch2 * z) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight((tz1 - z) * mapDims.mapxp1 + x, adjust);
 				}
-				if ((tz2 + 3) < mapDims.mapy) {
+				if ((tz2 + TERRA_SMOOTHING_RADIUS) < mapDims.mapy) {
 					const float ch3 = heightmap[(tz2)*mapDims.mapxp1 + x];
 					const float ch = heightmap[(tz2 + z) * mapDims.mapxp1 + x];
-					const float ch2 = heightmap[(tz2 + 3) * mapDims.mapxp1 + x];
-					const float adjust = ((ch3 * (3 - z) + ch2 * z) / 3 - ch) * terraformScale;
+					const float ch2 = heightmap[(tz2 + TERRA_SMOOTHING_RADIUS) * mapDims.mapxp1 + x];
+					const float adjust = ((ch3 * (TERRA_SMOOTHING_RADIUS - z) + ch2 * z) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight((tz2 + z) * mapDims.mapxp1 + x, adjust);
 				}
@@ -228,11 +224,9 @@ bool CBuilder::UpdateTerraform(const Command&)
 				}
 			}
 			SmoothBorders();
-			mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 
 			if (curBuildee->terraformLeft <= 0.0f) {
 				terraforming = false;
-
 				curBuildee->groundLevelled = true;
 
 				if (eventHandler.TerraformComplete(this, curBuildee)) {
@@ -262,11 +256,9 @@ bool CBuilder::UpdateTerraform(const Command&)
 			}
 		}
 		SmoothBorders();
-		mapDamage->RecalcArea(tx1 - b, tx2 + b, tz1 - b, tz2 + b);
 
 		if (myTerraformLeft <= 0.0f) {
 			terraforming = false;
-
 			StopBuild();
 		}
 	} break;
@@ -565,9 +557,11 @@ void CBuilder::Update()
 
 void CBuilder::SlowUpdate()
 {
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (terraforming)
-		mapDamage->RecalcArea(tx1, tx2, tz1, tz2);
+  RECOIL_DETAILED_TRACY_ZONE;
+	if (terraforming) {
+		constexpr int tsr = TERRA_SMOOTHING_RADIUS;
+		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
+	}
 
 	CUnit::SlowUpdate();
 }
@@ -710,6 +704,11 @@ void CBuilder::StopBuild(bool callScript)
 	helpTerraform = nullptr;
 	curResurrect = nullptr;
 	curCapture = nullptr;
+
+	if (terraforming) {
+		constexpr int tsr = TERRA_SMOOTHING_RADIUS;
+		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
+	}
 
 	terraforming = false;
 

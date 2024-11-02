@@ -132,6 +132,7 @@ UnitDef::UnitDef()
 	, minWaterDepth(0.0f)
 	, maxWaterDepth(0.0f)
 	, upDirSmoothing(0.0f)
+	, separationDistance(0.0f)
 	, pathType(-1U)
 	, armoredMultiple(0.0f)
 	, armorType(0)
@@ -308,8 +309,8 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	};
 	makesMetal   = udTable.GetFloat("makesMetal", 0.0f);
 
-	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
-	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
+	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
+	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
 	idleTime     = udTable.GetInt("idleTime", 600);
 
 	health = udTable.GetFloat("health", udTable.GetFloat("maxDamage", 100.0f));
@@ -353,6 +354,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	terraformSpeed = udTable.GetFloat("terraformSpeed", buildSpeed);
 
 	upDirSmoothing = std::clamp(udTable.GetFloat("upDirSmoothing", 0.0f), 0.0f, 0.95f);
+	separationDistance = std::max(udTable.GetInt("separationDistance", 0), 0);
 
 	reclaimable  = udTable.GetBool("reclaimable",  true);
 	capturable   = udTable.GetBool("capturable",   true);
@@ -377,6 +379,15 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	canReclaim   = udTable.GetBool("canReclaim",   builder) && (  reclaimSpeed > 0.0f);
 	canCapture   = udTable.GetBool("canCapture",     false) && (  captureSpeed > 0.0f);
 	canResurrect = udTable.GetBool("canResurrect",   false) && (resurrectSpeed > 0.0f);
+
+	/* Note that a mobile builder with canAssist = false will be able
+	 * to place a nanoframe and pour buildpower into it, but will not
+	 * be able to resume building if interrupted for any reason (with
+	 * the exception of the wait command). It will be unable to pour
+	 * buildpower into a nanoframe placed by another unit. It will be
+	 * unable to repair an incomplete nanoframe or place a nanoframe
+	 * on top of an existing nanoframe, even if it is the exact same
+	 * structure in the exact same location. */
 	canAssist    = udTable.GetBool("canAssist",    builder);
 
 	canBeAssisted = udTable.GetBool("canBeAssisted", true);
@@ -821,7 +832,8 @@ void UnitDef::CreateYardMap(std::string&& yardMapStr)
 			case 'c': { defYardMap[ymCopyIdx - 1] = YARDMAP_YARD;                         } break;
 			case 'i': { defYardMap[ymCopyIdx - 1] = YARDMAP_YARDINV;                      } break;
 			case 'b': { defYardMap[ymCopyIdx - 1] = YARDMAP_BUILDONLY;                    } break;
-//			case 'w': { defYardMap[ymCopyIdx - 1] = YARDMAP_WALKABLE;                     } break; // TODO?
+			case 'u': { defYardMap[ymCopyIdx - 1] = YARDMAP_UNBUILDABLE;                  } break;
+			case 'e': { defYardMap[ymCopyIdx - 1] = YARDMAP_EXITONLY;                     } break;
 			case 'w':
 			case 'x':
 			case 'f':

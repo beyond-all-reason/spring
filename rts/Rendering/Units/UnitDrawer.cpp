@@ -1220,7 +1220,7 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 
 	// the chosen number here is arbitrary, feel free to fine balance.
 	static constexpr int CACHE_VALIDITY_PERIOD = GAME_SPEED / 5;
-	spring::VectorEraseAllIf(buildCache, [](const BuildCache& bc) {
+	std::erase_if(buildCache, [](const BuildCache& bc) {
 		return gs->frameNum - bc.createFrame >= CACHE_VALIDITY_PERIOD;
 	});
 

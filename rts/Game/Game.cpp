@@ -2,6 +2,8 @@
 
 #include "Rendering/GL/myGL.h"
 
+#include <Rml/Backends/RmlUi_Backend.h>
+#include <RmlUi/Core.h>
 #include "Game.h"
 #include "Camera.h"
 #include "CameraHandler.h"
@@ -70,6 +72,7 @@
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/BuildingMaskMap.h"
@@ -295,6 +298,7 @@ CGame::~CGame()
 	ENTER_SYNCED_CODE();
 	LOG("[Game::%s][1]", __func__);
 
+	RmlGui::Shutdown();
 	helper->Kill();
 	KillLua(true);
 	KillMisc();
@@ -382,7 +386,7 @@ void CGame::Load(const std::string& mapFileName)
 		LoadDefs(defsParser);
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][1] forced quit with exception \"%s\"", __func__, e.what());
+		LOG_L(L_ERROR, "[Game::%s][1] forced quit with exception \"%s\"", __func__, e.what());
 
 		defsParser = &nullDefsParser;
 		defsParser->Execute();
@@ -400,7 +404,7 @@ void CGame::Load(const std::string& mapFileName)
 		PreLoadRendering();
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
+		LOG_L(L_ERROR, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 
@@ -412,7 +416,7 @@ void CGame::Load(const std::string& mapFileName)
 		PostLoadRendering();
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
+		LOG_L(L_ERROR, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 	if (!forcedQuit) {
@@ -422,7 +426,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadInterface();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][4] forced quit with exception \"%s\"", __func__, e.what());
+			LOG_L(L_ERROR, "[Game::%s][4] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -434,7 +438,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadFinalize();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][5] forced quit with exception \"%s\"", __func__, e.what());
+			LOG_L(L_ERROR, "[Game::%s][5] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -446,7 +450,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadLua(saveFileHandler != nullptr, false);
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][6] forced quit with exception \"%s\"", __func__, e.what());
+			LOG_L(L_ERROR, "[Game::%s][6] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -492,7 +496,7 @@ void CGame::Load(const std::string& mapFileName)
 			CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, msgBuf);
 		}
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
+		LOG_L(L_ERROR, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 
@@ -503,7 +507,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadSkirmishAIs();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
+			LOG_L(L_ERROR, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -537,6 +541,7 @@ void CGame::LoadMap(const std::string& mapFileName)
 		// half size; building positions are snapped to multiples of BUILD_SQUARE_SIZE
 		buildingMaskMap.Init(mapDims.hmapx * mapDims.hmapy);
 		groundBlockingObjectMap.Init(mapDims.mapSquares);
+		yardmapStatusEffectsMap.InitNewYardmapStatusEffectsMap();
 	}
 
 	LEAVE_SYNCED_CODE();
@@ -633,7 +638,7 @@ void CGame::PreLoadSimulation(LuaParser* defsParser)
 	ENTER_SYNCED_CODE();
 
 	loadscreen->SetLoadMessage("Creating Smooth Height Mesh");
-	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), 2, 40);
+	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), modInfo.smoothMeshResDivider, modInfo.smoothMeshSmoothRadius);
 
 	loadscreen->SetLoadMessage("Creating QuadField & CEGs");
 	moveDefHandler.Init(defsParser);
@@ -696,12 +701,16 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	//   checksum (over heightmap + blockmap, not raw archive)
 	mapDamage = IMapDamage::InitMapDamage();
 	pathManager = IPathManager::GetInstance(modInfo.pathFinderSystem);
+	moveDefHandler.PostSimInit();
 
 	// load map-specific features
 	loadscreen->SetLoadMessage("Initializing Map Features");
 	featureDefHandler->LoadFeatureDefsFromMap();
 	if (saveFileHandler == nullptr)
 		featureHandler.LoadFeaturesFromMap();
+
+	// must be called after features are all loaded
+	unitDefHandler->SanitizeUnitDefs();
 
 	envResHandler.LoadTidal(mapInfo->map.tidalStrength);
 	envResHandler.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);
@@ -822,6 +831,8 @@ void CGame::LoadInterface()
 		GameSetupDrawer::Disable();
 		GameSetupDrawer::Enable();
 	}
+
+	RmlGui::Initialize();
 }
 
 void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
@@ -1099,6 +1110,9 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
 
+	if (RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat))
+		return 0;
+
 	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, lastActionList))
 		return 0;
 
@@ -1139,6 +1153,9 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 int CGame::KeyReleased(int keyCode, int scanCode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (RmlGui::ProcessKeyReleased(keyCode, scanCode))
+		return 0;
+
 	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
 		return 0;
 
@@ -1174,6 +1191,9 @@ int CGame::KeyMapChanged()
 int CGame::TextInput(const std::string& utf8Text)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (RmlGui::ProcessTextInput(utf8Text))
+		return 0;
+
 	if (eventHandler.TextInput(utf8Text))
 		return 0;
 
@@ -1243,12 +1263,10 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	SCOPED_TIMER("Update");
 
 	// timings and frame interpolation
-	const spring_time deltaDrawFrameTime = currentTime - lastDrawFrameTime;
+	const spring_time deltaDrawFrameTime = currentTime - globalRendering->lastFrameStart;
 
 	const float modGameDeltaTimeSecs = mix(deltaDrawFrameTime.toMilliSecsf() * 0.001f, 0.01f, skipping);
 	const float unsyncedUpdateDeltaTime = (currentTime - lastUnsyncedUpdateTime).toSecsf();
-
-	lastDrawFrameTime = currentTime;
 
 	{
 		// update game timings
@@ -1385,7 +1403,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 
 	}
 
-	const bool forceUpdate = (unsyncedUpdateDeltaTime >= (1.0f / GAME_SPEED));
+	const bool forceUpdate = (unsyncedUpdateDeltaTime >= INV_GAME_SPEED);
 
 	lastSimFrame = gs->frameNum;
 
@@ -1467,6 +1485,7 @@ bool CGame::Draw() {
 	if (UpdateUnsynced(currentTimePreUpdate))
 		return false;
 
+	RmlGui::Update();
 	const spring_time currentTimePreDraw = spring_gettime();
 
 	SCOPED_SPECIAL_TIMER("Draw");
@@ -1554,6 +1573,7 @@ bool CGame::Draw() {
 		DrawInputReceivers();
 		DrawInputText();
 		DrawInterfaceWidgets();
+		RmlGui::RenderFrame();
 		mouse->DrawCursor();
 
 		eventHandler.DrawScreenPost();
@@ -1577,6 +1597,8 @@ bool CGame::Draw() {
 
 	eventHandler.DbgTimingInfo(TIMING_VIDEO, currentTimePreDraw, currentTimePostDraw);
 	globalRendering->SetGLTimeStamp(CGlobalRendering::FRAME_END_TIME_QUERY_IDX);
+
+	lastDrawFrameTime = currentTimePostDraw;
 
 	return true;
 }
@@ -2039,7 +2061,7 @@ void CGame::StartSkip(int toFrame) {
 	}
 
 	skipTotalFrames = skipEndFrame - skipStartFrame;
-	skipSeconds = skipTotalFrames / float(GAME_SPEED);
+	skipSeconds = skipTotalFrames * INV_GAME_SPEED;
 
 	skipSoundmute = sound->IsMuted();
 	if (!skipSoundmute)

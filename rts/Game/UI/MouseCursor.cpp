@@ -2,9 +2,9 @@
 
 
 #include <array>
+#include <bit>
 #include <cstring>
 
-#include "System/bitops.h"
 #include "CommandColors.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/myGL.h"
@@ -291,8 +291,8 @@ bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 	}
 
 
-	const int nx = next_power_of_2(b.xsize);
-	const int ny = next_power_of_2(b.ysize);
+	const int nx = std::bit_ceil <uint32_t> (b.xsize);
+	const int ny = std::bit_ceil <uint32_t> (b.ysize);
 
 	if (b.xsize != nx || b.ysize != ny) {
 		CBitmap bn;

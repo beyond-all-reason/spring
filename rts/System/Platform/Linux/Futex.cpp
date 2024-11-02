@@ -2,12 +2,16 @@
 
 #include "Futex.h"
 #include <cstdlib>
-#include <linux/futex.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <climits>
 #include <algorithm>
 
+#ifndef __OpenBSD__
+#include <linux/futex.h>
+#else
+#include <sys/futex.h>
+#endif
 
 spring_futex::spring_futex() noexcept
 {
@@ -20,6 +24,14 @@ spring_futex::~spring_futex()
 	mtx = 0;
 }
 
+static inline long do_futex (uint32_t *mtx, int op, uint32_t value, const struct timespec *timeout)
+{
+#ifndef __OpenBSD__
+	return syscall(SYS_futex, mtx, op, value, timeout, NULL, 0);
+#else
+	return futex(mtx, op, value, timeout, NULL);
+#endif
+}
 
 void spring_futex::lock()
 {
@@ -29,7 +41,7 @@ void spring_futex::lock()
 
 	do {
 		if ((c == 2) || __sync_val_compare_and_swap(&mtx, 1, 2) != 0)
-			syscall(SYS_futex, &mtx, FUTEX_WAIT_PRIVATE, 2, NULL, NULL, 0);
+			do_futex(&mtx, FUTEX_WAIT, 2, NULL);
 	} while((c = __sync_val_compare_and_swap(&mtx, 0, 2)) != 0);
 }
 
@@ -44,7 +56,7 @@ void spring_futex::unlock()
 {
 	if (__sync_fetch_and_sub(&mtx, 1) != 1) {
 		mtx = 0;
-		syscall(SYS_futex, &mtx, FUTEX_WAKE_PRIVATE, 4, NULL, NULL, 0);
+		do_futex(&mtx, FUTEX_WAKE, 4, NULL);
 	}
 }
 
@@ -125,7 +137,7 @@ void linux_signal::wait()
 	const int g = gen.load(); // our gen
 	sleepers++;
 	while ((g - (m = mtx)) >= 0) {
-		syscall(SYS_futex, &mtx, FUTEX_WAIT_PRIVATE, m, NULL, NULL, 0);
+		do_futex(&mtx, FUTEX_WAIT, m, NULL);
 	}
 	sleepers--;
 }
@@ -144,7 +156,7 @@ void linux_signal::wait_for(spring_time t)
 	const spring_time endTimer = spring_now() + t;
 
 	while (((g - (m = mtx)) >= 0) && (spring_now() < endTimer)) {
-		syscall(SYS_futex, &mtx, FUTEX_WAIT_PRIVATE, m, &linux_t, NULL, 0);
+		do_futex(&mtx, FUTEX_WAIT, m, &linux_t);
 	}
 	sleepers--;
 }
@@ -156,6 +168,6 @@ void linux_signal::notify_all(const int min_sleepers)
 		return;
 
 	mtx = gen++;
-	syscall(SYS_futex, &mtx, FUTEX_WAKE_PRIVATE, INT_MAX, NULL, NULL, 0);
+	do_futex(&mtx, FUTEX_WAKE, INT_MAX, NULL);
 }
 

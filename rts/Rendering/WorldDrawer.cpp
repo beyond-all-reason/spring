@@ -309,15 +309,12 @@ void CWorldDrawer::Draw() const
 	camera->Update();
 
 	DrawOpaqueObjects();
-	ISky::GetSky()->Draw();
 	DrawAlphaObjects();
-
-	ISky::GetSky()->DrawSun();
-
 	{
 		SCOPED_TIMER("Draw::World::DrawWorld");
 		eventHandler.DrawWorld();
 	}
+
 
 	DrawMiscObjects();
 	DrawBelowWaterOverlay();
@@ -349,6 +346,12 @@ void CWorldDrawer::DrawOpaqueObjects() const
 		smoothHeightMeshDrawer->Draw(1.0f);
 	}
 
+	// not an opaque rendering, but makes sense to run after the terrain was rendered
+	{
+		const auto& sky = ISky::GetSky();
+		sky->Draw();
+	}
+
 	selectedUnitsHandler.Draw();
 	eventHandler.DrawWorldPreUnit();
 
@@ -378,14 +381,18 @@ void CWorldDrawer::DrawAlphaObjects() const
 	static const double belowPlaneEq[4] = {0.0f, -1.0f, 0.0f, 0.0f};
 	static const double abovePlaneEq[4] = {0.0f,  1.0f, 0.0f, 0.0f};
 
+	const bool hasWaterRendering = globalRendering->drawWater && readMap->HasVisibleWater();
+
 	{
 		SCOPED_TIMER("Draw::World::Models::Alpha");
 		// clip in model-space
-		glPushMatrix();
-		glLoadIdentity();
-		glClipPlane(GL_CLIP_PLANE3, belowPlaneEq);
-		glPopMatrix();
-		glEnable(GL_CLIP_PLANE3);
+		if (hasWaterRendering) {
+			glPushMatrix();
+			glLoadIdentity();
+			glClipPlane(GL_CLIP_PLANE3, belowPlaneEq);
+			glPopMatrix();
+			glEnable(GL_CLIP_PLANE3);
+		}
 
 		// draw alpha-objects below water surface (farthest)
 		unitDrawer->DrawAlphaPass(false);
@@ -393,13 +400,17 @@ void CWorldDrawer::DrawAlphaObjects() const
 	}
 	{
 		SCOPED_TIMER("Draw::World::Projectiles");
-		projectileDrawer->DrawAlpha(false, false, false);
+		projectileDrawer->DrawAlpha(!hasWaterRendering, true, false, false);
 
-		glDisable(GL_CLIP_PLANE3);
+		if (hasWaterRendering)
+			glDisable(GL_CLIP_PLANE3);
 	}
 
+	if (!hasWaterRendering)
+		return;
+
 	// draw water (in-between)
-	if (globalRendering->drawWater && !mapRendering->voidWater) {
+	{
 		SCOPED_TIMER("Draw::World::Water");
 
 		const auto& water = IWater::GetWater();
@@ -425,7 +436,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 	}
 	{
 		SCOPED_TIMER("Draw::World::Projectiles");
-		projectileDrawer->DrawAlpha(true, false, false);
+		projectileDrawer->DrawAlpha(true, false, false, false);
 
 		glDisable(GL_CLIP_PLANE3);
 	}

@@ -961,7 +961,7 @@ bool CHoverAirMoveType::Update()
 			UpdateAirPhysics();
 
 			if ((CGround::GetHeightAboveWater(owner->pos.x, owner->pos.z) + 5.0f + owner->radius) > owner->pos.y) {
-				owner->ForcedKillUnit(nullptr, true, false);
+				owner->ForcedKillUnit(nullptr, true, false, -CSolidObject::DAMAGE_AIRCRAFT_CRASHED);
 			} else {
 				#define SPIN_DIR(o) ((o->id & 1) * 2 - 1)
 				wantedHeading = GetHeadingFromVector(owner->rightdir.x * SPIN_DIR(owner), owner->rightdir.z * SPIN_DIR(owner));
@@ -1006,7 +1006,7 @@ bool CHoverAirMoveType::CanLandAt(const float3& pos) const
 	if (!pos.IsInBounds())
 		return false;
 
-	if ((CGround::GetApproximateHeight(pos) < 0.0f) && ((mapInfo->water.damage > 0.0f) || !(floatOnWater || canSubmerge)))
+	if ((CGround::GetApproximateHeight(pos) < CGround::GetWaterLevel(pos.x, pos.z)) && ((mapInfo->water.damage > 0.0f) || !(floatOnWater || canSubmerge)))
 		return false;
 
 	const int2 os = {owner->xsize, owner->zsize};
@@ -1124,7 +1124,7 @@ bool CHoverAirMoveType::HandleCollisions(bool checkCollisions)
 		}
 
 		if (hitBuilding && owner->IsCrashing()) {
-			owner->ForcedKillUnit(nullptr, true, false);
+			owner->ForcedKillUnit(nullptr, true, false, -CSolidObject::DAMAGE_AIRCRAFT_CRASHED);
 			return true;
 		}
 

@@ -18,6 +18,7 @@ class LuaMathExtra {
 		static int round(lua_State* L);
 		static int erf(lua_State* L);
 		static int smoothstep(lua_State* L);
+		static int normalize(lua_State* L);
 };
 
 #endif /* LUA_MATH_EXTRA_H */

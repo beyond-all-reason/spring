@@ -28,7 +28,7 @@ void GeneralMoveSystem::Update() {
     RECOIL_DETAILED_TRACY_ZONE;
     auto view = Sim::registry.view<GeneralMoveType>();
 	{
-        SCOPED_TIMER("Sim::Unit::MoveType::5::UpdateST");
+        SCOPED_TIMER("Sim::Unit::MoveType::5::Update");
         view.each([](GeneralMoveType& unitId){
             CUnit* unit = unitHandler.GetUnit(unitId.value);
             AMoveType* moveType = unit->moveType;
@@ -45,7 +45,7 @@ void GeneralMoveSystem::Update() {
             // this unit is not coming back, kill it now without any death
             // sequence (s.t. deathScriptFinished becomes true immediately)
             if (!unit->pos.IsInBounds() && (unit->speed.w > MAX_UNIT_SPEED))
-                unit->ForcedKillUnit(nullptr, false, true);
+                unit->ForcedKillUnit(nullptr, false, true, -CSolidObject::DAMAGE_KILLED_OOB);
 
             #ifndef NDEBUG
             unit->SanityCheck();

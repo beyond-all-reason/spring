@@ -82,7 +82,7 @@ void CUnitTracker::SetMode(int mode)
 void CUnitTracker::Track(std::vector<int>&& unitIDs)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	spring::VectorEraseAllIf(unitIDs, IsInvalidUnitForSelection);
+	std::erase_if(unitIDs, IsInvalidUnitForSelection);
 
 	if (!unitIDs.empty())
 		selectedUnitsHandler.ClearSelected();

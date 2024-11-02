@@ -30,6 +30,47 @@ Spring changelog
 
 -- BAR105 NEXT ---------------------------------------------------
 
+(since release 2511)
+
+Lua:
+ - add `Spring.GetUnitPhysicalState(number unitID) -> Gets the unit's PhysicalState bitmask.
+   https://github.com/beyond-all-reason/spring/pull/1528
+ - add `Spring.RebuildSmoothMesh` to force an immediate build of the complete Air Smooth Mesh.
+   https://github.com/beyond-all-reason/spring/pull/1342
+ - Fix #1523, `Spring.UnitArrivedAtGoal` stack issue with warning spam.
+   https://github.com/beyond-all-reason/spring/pull/1546
+ - DrawWorldPreParticles is now has parameters describing the particular phase it is called within a draw frame.
+
+Misc:
+- Fixed broken test. https://github.com/beyond-all-reason/spring/pull/1545
+
+Pathing:
+ - HAPFS uses the raw move found in the ground movement code, rather than its on version, which addresses several
+   issues. https://github.com/beyond-all-reason/spring/pull/1402
+ - HAPFS uses more detailed checks on unit movement to better follow chnages in the submerged state to give paths
+   that will avoid units getting stuck on underwater obstacles. https://github.com/beyond-all-reason/spring/pull/1402
+ - `movement.allowDirectionalPathing` when enabled now allows HAPFS to use directionality in its pathing algorithm.
+   https://github.com/beyond-all-reason/spring/pull/1402
+ - `movement.preferShortestPath` when enabled allows QTPFS to use the shortest path, rather than the fastest path.
+   https://github.com/beyond-all-reason/spring/pull/1402
+
+Sim:
+ - Added: `system.smoothMeshResDivider` and `system.smoothMeshSmoothRadius` to control the behaviour of the Air Smooth
+   Mesh. https://github.com/beyond-all-reason/spring/pull/1341
+ - Added: `float separationDistance` to unitDef, so that units try to keep separationDistance elmos away from each
+   other. This avoids having to increase the unit's movedef size, which has other additional consequences.
+   https://github.com/beyond-all-reason/spring/pull/1358
+ - Terraform activities are now done at slow update rate, rather than every frame. This is back to original behaviour.
+   An extra step is added at the end of the job to guarantee that the last of the terrain changes are processed and not
+   missed. https://github.com/beyond-all-reason/spring/pull/1360/
+ - `CGroundMoveType::ChangeHeading` now avoid updating the unit if no rotation is neccessary.
+   https://github.com/beyond-all-reason/spring/pull/1382
+
+UI:
+ - SDL updates in preparation for RmlUI. https://github.com/beyond-all-reason/spring/pull/1419
+
+
+
 (since release 1544)
 
 Lua:
