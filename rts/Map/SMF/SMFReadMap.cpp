@@ -18,7 +18,6 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "System/bitops.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
@@ -378,9 +377,6 @@ void CSMFReadMap::CreateNormalTex()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	normalsTex.SetRawSize(int2(mapDims.mapxp1, mapDims.mapyp1));
-
-	if (!globalRendering->supportNonPowerOfTwoTex)
-		normalsTex.SetRawSize(int2(next_power_of_2(mapDims.mapxp1), next_power_of_2(mapDims.mapyp1)));
 
 	glGenTextures(1, normalsTex.GetIDPtr());
 	glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());

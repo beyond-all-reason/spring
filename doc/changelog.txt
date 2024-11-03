@@ -43,6 +43,7 @@ Lua:
 
 Misc:
 - Fixed broken test. https://github.com/beyond-all-reason/spring/pull/1545
+- New `OverheadMinZoomDistance` and `CamSpringMinZoomDistance` ConfigFloats to set minimum camera zoom distances for their respective cameras.
 
 Pathing:
  - HAPFS uses the raw move found in the ground movement code, rather than its on version, which addresses several
@@ -130,6 +131,7 @@ Lua:
  - add `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> Set a unit's PhysicalState.
  - Lua C Macros (cast and registry) prefixed lua_ to fix compilation issues.
  - Protect Spring.GetGroupUnitsCount from crashing when given an invalid group id.
+ - Add new variadic variants for some Lua unit script functions: MultiTurn, MultiMove, MultiSpin, etc.
 
 
 Game Setup:

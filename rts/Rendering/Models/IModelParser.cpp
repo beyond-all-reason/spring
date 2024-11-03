@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <string_view>
+#include <fmt/printf.h>
 
 #include "IModelParser.h"
 #include "3DOParser.h"
@@ -18,7 +19,6 @@
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 #include "System/Exceptions.h"
-#include "System/MainDefines.h" // SNPRINTF
 #include "System/SafeUtil.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/ContainerUtil.h"
@@ -110,7 +110,6 @@ static void LoadDummyModel(S3DModel& model, int id)
 	LoadDummyModel(model);
 }
 
-
 static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelPiece)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -165,10 +164,10 @@ void CModelLoader::InitParsers() const
 void CModelLoader::Kill()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	LogErrors();
 	KillModels();
 	KillParsers();
 
+	errors.clear();
 	cache.clear();
 	parsers.clear();
 }
@@ -248,23 +247,19 @@ void CModelLoader::LogErrors()
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
+	// block any preload threads from modifying <errors>
+	auto lock = CModelsLock::GetScopedLock();
 	if (errors.empty())
 		return;
 
-	// block any preload threads from modifying <errors>
-	// doing the empty-check outside lock should be fine
-	auto lock = CModelsLock::GetScopedLock();
-
-	for (const auto& pair: errors) {
-		char buf[1024];
-
-		SNPRINTF(buf, sizeof(buf), "could not load model \"%s\" (reason: %s)", pair.first.c_str(), pair.second.c_str());
-		LOG_L(L_ERROR, "%s", buf);
-		CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, buf);
+	for (const auto& [modelName, reason]: errors) {
+		std::string errStr = fmt::sprintf("[FATAL ERROR]: could not load model \"%s\" (reason: %s)", modelName, reason);
+		LOG_L(L_ERROR, "%s", errStr.c_str());
+		CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_FATAL, errStr.c_str());
 	}
-	assert(false);
 
 	errors.clear();
+	throw content_error("[CModelLoader] couldn't load one or many models");
 }
 
 
@@ -413,27 +408,18 @@ IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const std::string& path)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	IModelParser* parser = GetFormatParser(FileSystem::GetExtension(path));
-
-	if (parser == nullptr) {
-		LOG_L(L_ERROR, "could not find a parser for model \"%s\" (unknown format?)", name.c_str());
-		LoadDummyModel(model);
-		return;
-	}
-
 	try {
+		auto* parser = GetFormatParser(FileSystem::GetExtension(path));
+		if (parser == nullptr)
+			throw content_error(fmt::sprintf("could not find a parser for model \"%s\" (unknown format?)", name));
+
 		parser->Load(model, path);
 		if (model.numPieces > 254)
 			throw content_error("A model has too many pieces (>254)" + path);
 
 	} catch (const content_error& ex) {
-		{
-			auto lock = CModelsLock::GetScopedLock();
-			errors.emplace_back(name, ex.what());
-		}
-
-		LoadDummyModel(model);
-		return;
+		auto lock = CModelsLock::GetScopedLock();
+		errors.emplace_back(name, ex.what());
 	}
 }
 

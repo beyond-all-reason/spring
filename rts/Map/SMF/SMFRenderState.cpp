@@ -220,27 +220,12 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 
 	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
 
-	if (isAdv)
-		currShader->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
-
-	currShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());
-
-	currShader->Enable();
-	currShader->SetUniform("mapHeights", readMap->GetCurrMinHeight(), readMap->GetCurrMaxHeight());
-	currShader->SetUniform("infoTexIntensityMul", float(infoTextureHandler->InMetalMode()) + 1.0f);
-
-	if (isAdv) {
-		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
-		if (shadowHandler.ShadowsLoaded())
-			currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
-	}
-
 	// already on the MV stack at this point
 	glLoadIdentity();
 	glMultMatrixf(camera->GetViewMatrix());
 
 	if (isAdv && shadowHandler.ShadowsLoaded()) {
-		shadowHandler.SetupShadowTexSampler(GL_TEXTURE4);
+		shadowHandler.SetupShadowTexSampler(GL_TEXTURE4, true);
 		glActiveTexture(GL_TEXTURE19); glBindTexture(GL_TEXTURE_2D, shadowHandler.GetColorTextureID());
 	}
 
@@ -269,6 +254,21 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 	}
 
 	glActiveTexture(GL_TEXTURE0);
+
+	if (isAdv)
+		currShader->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
+
+	currShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());
+
+	currShader->Enable();
+	currShader->SetUniform("mapHeights", readMap->GetCurrMinHeight(), readMap->GetCurrMaxHeight());
+	currShader->SetUniform("infoTexIntensityMul", float(infoTextureHandler->InMetalMode()) + 1.0f);
+
+	if (isAdv) {
+		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
+		if (shadowHandler.ShadowsLoaded())
+			currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
+	}
 }
 
 void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
@@ -279,16 +279,44 @@ void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const 
 		return;
 	}
 
+	currShader->Disable();
+
 	const auto shaderStage = (drawPass == DrawPass::TerrainDeferred) ? GLSL_SHADER_DFR_ADV : GLSL_SHADER_FWD_ADV;
 	const bool isAdv = CanUseAdvShading(smfGroundDrawer, shaderStage);
 
+	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
+
 	if (isAdv && shadowHandler.ShadowsLoaded()) {
-		glActiveTexture(GL_TEXTURE4);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+		shadowHandler.ResetShadowTexSampler(GL_TEXTURE4, true);
+		glActiveTexture(GL_TEXTURE19); glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE14); glBindTexture(GL_TEXTURE_2D, 0);
+
+	if (isAdv) {
+		glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE6); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE7); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE8); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE9); glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, 0);
+		glActiveTexture(GL_TEXTURE10); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE11); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE12); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE13); glBindTexture(GL_TEXTURE_2D, 0);
+
+		for (int i = 0; i < CSMFReadMap::NUM_SPLAT_DETAIL_NORMALS; i++) {
+			if (smfMap->GetSplatNormalTexture(i) != 0) {
+				glActiveTexture(GL_TEXTURE15 + i); glBindTexture(GL_TEXTURE_2D, 0);
+			}
+		}
+	}
+	else {
+		glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	glActiveTexture(GL_TEXTURE0);
-	currShader->Disable();
 }
 
 void SMFRenderStateGLSL::SetSquareTexGen(const int sqx, const int sqy) const {

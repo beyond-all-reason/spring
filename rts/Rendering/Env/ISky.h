@@ -21,7 +21,6 @@ public:
 	virtual void UpdateSkyTexture() = 0;
 
 	virtual void Draw() = 0;
-	virtual void DrawSun() = 0;
 
 	virtual void SetLuaTexture(const MapTextureData& td) {}
 

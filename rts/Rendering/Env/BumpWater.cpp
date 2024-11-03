@@ -22,7 +22,6 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/TextureAtlas.h"
-#include "System/bitops.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FastMath.h"
 #include "System/SpringMath.h"
@@ -35,6 +34,7 @@
 #include "System/StringUtil.h"
 
 #include "System/Misc/TracyDefs.h"
+#include <bit>
 
 using std::string;
 using std::vector;
@@ -204,7 +204,7 @@ void CBumpWater::InitResources(bool loadShader)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// LOAD USER CONFIGS
-	reflTexSize  = next_power_of_2(configHandler->GetInt("BumpWaterTexSizeReflection"));
+	reflTexSize  = std::bit_ceil <uint32_t> (configHandler->GetInt("BumpWaterTexSizeReflection"));
 	reflection   = configHandler->GetInt("BumpWaterReflection");
 	refraction   = configHandler->GetInt("BumpWaterRefraction");
 	anisotropy   = configHandler->GetFloat("BumpWaterAnisotropy");
@@ -319,14 +319,6 @@ void CBumpWater::InitResources(bool loadShader)
 
 
 	// CREATE TEXTURES
-	if ((refraction > 0) || depthCopy) {
-		// ATIs do not have GLSL support for texrects
-		if (!globalRendering->supportNonPowerOfTwoTex) {
-			screenTextureX = next_power_of_2(screenTextureX);
-			screenTextureY = next_power_of_2(screenTextureY);
-		}
-	}
-
 	if (refraction > 0) {
 		// CREATE REFRACTION TEXTURE
 		glGenTextures(1, &refractTexture);

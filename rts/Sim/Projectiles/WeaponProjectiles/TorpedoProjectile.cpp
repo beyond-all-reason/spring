@@ -172,6 +172,8 @@ void CTorpedoProjectile::Draw()
 	if (model != nullptr)
 		return;
 
+	//UpdateWeaponAnimParams();
+
 	float3 r = dir.cross(UpVector);
 
 	if (r.SqLength() < 0.001f)
@@ -183,56 +185,56 @@ void CTorpedoProjectile::Draw()
 	const float w = 2;
 	const SColor col(60, 60, 100, 255);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos + (r * w),             texx, texy, col },
 		{ drawPos + (u * w),             texx, texy, col },
 		{ drawPos + (u * w) + (dir * h), texx, texy, col },
 		{ drawPos + (r * w) + (dir * h), texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos + (u * w),             texx, texy, col },
 		{ drawPos - (r * w),             texx, texy, col },
 		{ drawPos - (r * w) + (dir * h), texx, texy, col },
 		{ drawPos + (u * w) + (dir * h), texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos - (r * w),             texx, texy, col },
 		{ drawPos - (u * w),             texx, texy, col },
 		{ drawPos - (u * w) + (dir * h), texx, texy, col },
 		{ drawPos - (r * w) + (dir * h), texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos - (u * w),             texx, texy, col },
 		{ drawPos + (r * w),             texx, texy, col },
 		{ drawPos + (r * w) + (dir * h), texx, texy, col },
 		{ drawPos - (u * w) + (dir * h), texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos + (r * w) + (dir * h), texx, texy, col },
 		{ drawPos + (u * w) + (dir * h), texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos + (u * w) + (dir * h), texx, texy, col },
 		{ drawPos - (r * w) + (dir * h), texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos - (r * w) + (dir * h), texx, texy, col },
 		{ drawPos - (u * w) + (dir * h), texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col }
 	);
 
-	AddEffectsQuad(
+	AddWeaponEffectsQuad<0>(
 		{ drawPos - (u * w) + (dir * h), texx, texy, col },
 		{ drawPos + (r * w) + (dir * h), texx, texy, col },
 		{ drawPos + (dir * h * 1.2f),    texx, texy, col },

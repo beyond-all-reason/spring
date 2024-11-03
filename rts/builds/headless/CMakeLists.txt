@@ -14,7 +14,7 @@ remove_definitions(-DAVI_CAPTURING)
 set(OpenGL_GL_PREFERENCE LEGACY)
 include_directories(${OPENAL_INCLUDE_DIR})
 
-find_package(OpenGL REQUIRED)
+find_package(OpenGL 3.0 REQUIRED)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 

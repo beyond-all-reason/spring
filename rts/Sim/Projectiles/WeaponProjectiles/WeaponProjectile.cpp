@@ -276,6 +276,25 @@ void CWeaponProjectile::Update()
 	UpdateInterception();
 }
 
+void CWeaponProjectile::UpdateWeaponAnimParams()
+{
+	assert(weaponDef);
+	if (!validTextures[0])
+		return;
+
+	if (validTextures[1])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[0],      animProgress   );
+
+	if (validTextures[2])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[1], extraAnimProgress[0]);
+
+	if (validTextures[3])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[2], extraAnimProgress[1]);
+
+	if (validTextures[4])
+		UpdateAnimParamsImpl(weaponDef->visuals.animParams[3], extraAnimProgress[2]);
+}
+
 
 void CWeaponProjectile::UpdateInterception()
 {
@@ -338,7 +357,7 @@ void CWeaponProjectile::UpdateGroundBounce()
 		// actually happens after this frame and should schedule a bounce
 		// for the next
 		const float groundDist = (weaponDef->groundBounce)? CGround::LineGroundCol(pos, pos + speed): -1.0f;
-		const float  waterDist = (weaponDef->waterBounce)? CGround::LinePlaneCol(pos, dir, speed.w, 0.0f): -1.0f;
+		const float  waterDist = (weaponDef->waterBounce)? CGround::LinePlaneCol(pos, dir, speed.w, CGround::GetWaterLevel(pos.x, pos.z)): -1.0f;
 		const float bounceDist = std::min(mix(groundDist, speed.w * 10000.0f, groundDist < 0.0f), mix(waterDist, speed.w * 10000.0f, waterDist < 0.0f));
 
 		if ((bounced = (bounceDist >= 0.0f && bounceDist <= speed.w))) {

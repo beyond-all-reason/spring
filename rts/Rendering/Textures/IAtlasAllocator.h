@@ -35,8 +35,6 @@ public:
 	virtual ~IAtlasAllocator() {}
 
 	void SetMaxSize(int xsize, int ysize) { maxsize = int2(xsize, ysize); }
-	void SetNonPowerOfTwo(bool nonPowerOfTwo) { npot = nonPowerOfTwo; }
-
 public:
 	virtual bool Allocate() = 0;
 	virtual int GetNumTexLevels() const = 0;
@@ -101,8 +99,6 @@ protected:
 	int2 maxsize = {2048, 2048};
 	int numLevels = std::numeric_limits<int>::max();
 	int minDim = std::numeric_limits<int>::max();
-
-	bool npot = false;
 };
 
 #endif // IATLAS_ALLOC_H

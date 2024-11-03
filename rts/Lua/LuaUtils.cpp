@@ -677,6 +677,29 @@ int LuaUtils::ParseStringVector(lua_State* L, int index, vector<string>& vec)
 	}
 }
 
+int LuaUtils::ParseFloat4Vector(lua_State* L, int index, vector<float4>& vec)
+{
+	if (!lua_istable(L, index) || lua_objlen(L,index) % 4 != 0)
+		return -1;
+
+	vec.clear();
+
+	for (int i = 0, absIdx = PosAbsLuaIndex(L, index); ; i += 4) {
+		lua_rawgeti(L, absIdx, (i + 4));
+		lua_rawgeti(L, absIdx, (i + 3));
+		lua_rawgeti(L, absIdx, (i + 2));
+		lua_rawgeti(L, absIdx, (i + 1));
+
+		if (lua_isnumber(L, -1) && lua_isnumber(L, -2) && lua_isnumber(L, -3) && lua_isnumber(L, -4)) {
+			vec.push_back(float4(lua_tofloat(L, -1), lua_tofloat(L, -2), lua_tofloat(L, -3), lua_tofloat(L, -4)));
+			lua_pop(L, 4);
+			continue;
+		}
+
+		lua_pop(L, 1);
+		return i;
+	}
+}
 
 #if !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
 

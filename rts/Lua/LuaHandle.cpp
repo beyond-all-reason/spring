@@ -265,10 +265,8 @@ int CLuaHandle::XCall(lua_State* srcState, const char* funcName)
 
 	// push the function
 	const LuaHashString funcHash(funcName);
-	if (!funcHash.GetGlobalFunc(L)) {
-		LOG_L(L_WARNING, "[LuaHandle::%s] tried to cross-call unlinked Script.%s.%s()", __func__, name.c_str(), funcName);
+	if (!funcHash.GetGlobalFunc(L))
 		return 0;
-	}
 
 	int retCount;
 
@@ -1080,6 +1078,39 @@ void CLuaHandle::UnitReverseBuilt(const CUnit* unit)
 	RECOIL_DETAILED_TRACY_ZONE;
 	static const LuaHashString cmdStr(__func__);
 	UnitCallIn(cmdStr, unit);
+}
+
+
+/*** Called when a unit being built starts decaying.
+ *
+ * @function UnitConstructionDecayed
+ * @number unitID
+ * @number unitDefID
+ * @number unitTeam
+ * @number timeSinceLastBuild
+ * @number iterationPeriod
+ * @number part
+ */
+void CLuaHandle::UnitConstructionDecayed(const CUnit* unit, float timeSinceLastBuild, float iterationPeriod, float part)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 9, __func__);
+	const LuaUtils::ScopedDebugTraceBack traceBack(L);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+	lua_pushnumber(L, timeSinceLastBuild);
+	lua_pushnumber(L, iterationPeriod);
+	lua_pushnumber(L, part);
+
+	// call the routine
+	RunCallInTraceback(L, cmdStr, 6, 0, traceBack.GetErrFuncIdx(), false);
 }
 
 

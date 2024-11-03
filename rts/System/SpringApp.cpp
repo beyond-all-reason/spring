@@ -59,7 +59,6 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
-#include "System/bitops.h"
 #include "System/ScopedResource.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
@@ -273,7 +272,9 @@ bool SpringApp::Init()
 	inputToken = input.AddHandler([this](const SDL_Event& event) { return SpringApp::MainEventHandler(event); });
 
 	// Global structures
+	ENTER_SYNCED_CODE();
 	gs->Init();
+	LEAVE_SYNCED_CODE();
 	gu->Init();
 
 	// GUIs
@@ -795,7 +796,11 @@ void SpringApp::Reload(const std::string script)
 
 	matricesMemStorage.Reset();
 	gu->ResetState();
+
+	ENTER_SYNCED_CODE();
 	gs->ResetState();
+	LEAVE_SYNCED_CODE();
+
 	// will be reconstructed from given script
 	gameSetup->ResetState();
 

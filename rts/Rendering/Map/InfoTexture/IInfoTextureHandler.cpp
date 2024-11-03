@@ -17,10 +17,7 @@ IInfoTextureHandler* infoTextureHandler = nullptr;
 void IInfoTextureHandler::Create()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (
-		globalRendering->supportNonPowerOfTwoTex &&
-		FBO::IsSupported()
-	) {
+	if (FBO::IsSupported()) {
 		try {
 			infoTextureHandler = new CInfoTextureHandler();
 		} catch (const opengl_error& glerr) {

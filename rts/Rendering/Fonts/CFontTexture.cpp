@@ -34,7 +34,6 @@
 #include "System/TimeProfiler.h"
 #include "System/UnorderedMap.hpp"
 #include "System/float4.h"
-#include "System/bitops.h"
 #include "System/ContainerUtil.h"
 #include "System/ScopedResource.h"
 #include "fmt/format.h"
@@ -553,7 +552,6 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	, wantedTexHeight(0)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	atlasAlloc.SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
 	atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
 
 	atlasGlyphs.reserve(1024);

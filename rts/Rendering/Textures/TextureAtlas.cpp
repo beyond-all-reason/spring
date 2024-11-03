@@ -72,7 +72,6 @@ void CTextureAtlas::ReinitAllocator()
 	atlasSizeX = std::min(globalRendering->maxTextureSize, (atlasSizeX > 0) ? atlasSizeX : configHandler->GetInt("MaxTextureAtlasSizeX"));
 	atlasSizeY = std::min(globalRendering->maxTextureSize, (atlasSizeY > 0) ? atlasSizeY : configHandler->GetInt("MaxTextureAtlasSizeY"));
 
-	atlasAllocator->SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
 	atlasAllocator->SetMaxSize(atlasSizeX, atlasSizeY);
 }
 

@@ -16,6 +16,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/Textures/Bitmap.h"
+#include "Rendering/Textures/TextureFormat.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/TexBind.h"
 #include "System/Log/ILog.h"
@@ -271,16 +272,34 @@ void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureP
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &tp.sizeY);
 	glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH, &tp.sizeZ);
 
-	tp.isDepth = false;
+	tp.isNormalizedDepth = false;
+	tp.prefDataType = GL_UNSIGNED_BYTE;
 	tp.bpp = 0;
 	tp.chNum = 0;
+
+	switch (tp.intFmt)
 	{
+	case GL_LUMINANCE32F_ARB: [[fallthrough]];
+	case GL_INTENSITY32F_ARB: {
+		tp.bpp = 32;
+		tp.chNum = 1;
+		tp.prefDataType = GL_FLOAT;
+	} break;
+	default: {
 		GLint _cbits;
 		glGetTexLevelParameteriv(target, level, GL_TEXTURE_RED_SIZE  , &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
 		glGetTexLevelParameteriv(target, level, GL_TEXTURE_GREEN_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
 		glGetTexLevelParameteriv(target, level, GL_TEXTURE_BLUE_SIZE , &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
 		glGetTexLevelParameteriv(target, level, GL_TEXTURE_ALPHA_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) tp.chNum++;
-		glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) { tp.chNum++; tp.isDepth = true; }
+		glGetTexLevelParameteriv(target, level, GL_TEXTURE_DEPTH_SIZE, &_cbits); tp.bpp += _cbits; if (_cbits > 0) { tp.chNum++; tp.isNormalizedDepth = true; tp.prefDataType = GL_FLOAT; }
+
+		if (tp.chNum > 0) {
+			if (auto bytesPerChannel = tp.bpp / tp.chNum; bytesPerChannel == 4)
+				tp.prefDataType = GL_UNSIGNED_INT;
+			else if (bytesPerChannel == 2)
+				tp.prefDataType = GL_UNSIGNED_SHORT;
+		}
+	} break;
 	}
 
 	{
@@ -300,44 +319,27 @@ void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureP
 	}
 }
 
+
 void glSaveTexture(const GLuint textureID, const char* filename, int level)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
 	TextureParameters params;
 	glSpringGetTexParams(GL_TEXTURE_2D, textureID, 0, params);
 
 	CBitmap bmp;
-	GLenum extFormat = params.isDepth ? GL_DEPTH_COMPONENT : CBitmap::GetExtFmt(params.chNum);
-	GLenum dataType = params.isDepth ? GL_FLOAT : GL_UNSIGNED_BYTE;
+	GLenum extFormat = params.isNormalizedDepth ? GL_DEPTH_COMPONENT : CBitmap::GetExtFmt(params.chNum);
 
-	int2 imageSize {
-		std::max(params.sizeX >> level, 1),
-		std::max(params.sizeY >> level, 1)
-	};
-
-	bmp.Alloc(imageSize.x, imageSize.y, params.chNum, dataType);
+	bmp.Alloc(params.sizeX, params.sizeY, params.chNum, params.prefDataType);
 
 	{
-		GLint ra = CBitmap::ExtFmtToChannels(extFormat);
-		GLint ca;
-		glGetIntegerv(GL_PACK_ALIGNMENT, &ca);
-
-		if (ra != ca)
-			glPixelStorei(GL_PACK_ALIGNMENT, (ra == 4) ? 4 : 1);
-
 		auto texBind = GL::TexBind(GL_TEXTURE_2D, textureID);
-		glGetTexImage(GL_TEXTURE_2D, level, extFormat, dataType, bmp.GetRawMem());
-
-		if (ra != ca)
-			glPixelStorei(GL_PACK_ALIGNMENT, ca);
+		glGetTexImage(GL_TEXTURE_2D, level, extFormat, params.prefDataType, bmp.GetRawMem());
 	}
 
-	if (params.isDepth) {
+	if (params.isNormalizedDepth) {
 		//doesn't work, TODO: fix
 		bmp.SaveFloat(filename);
 	}
 	else {
-		assert(params.bpp >= 24);
 		bmp.Save(filename, params.bpp < 32);
 	}
 }
@@ -372,15 +374,9 @@ void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLs
 	if (GLEW_ARB_texture_storage) {
 		glTexStorage2D(target, levels, internalFormat, width, height);
 	} else {
-		GLenum format = GL_RGBA, type = GL_UNSIGNED_BYTE;
-		switch (internalFormat) {
-		case GL_RGBA8: format = GL_RGBA;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_RGB8:  format = GL_RGB;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_RG8:   format = GL_RG;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_R8:    format = GL_RED;/* type = GL_UNSIGNED_BYTE;*/ break;
-		default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
-			break;
-		}
+		auto format = GL::GetInternalFormatDataFormat(internalFormat);
+		auto type   = GL::GetInternalFormatDataType(internalFormat);
+
 		for (int level = 0; level < levels; ++level)
 			glTexImage2D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), 0, format, type, nullptr);
 	}
@@ -397,15 +393,9 @@ void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLs
 	if (GLEW_ARB_texture_storage) {
 		glTexStorage3D(target, levels, internalFormat, width, height, depth);
 	} else {
-		GLenum format = GL_RGBA, type = GL_UNSIGNED_BYTE;
-		switch (internalFormat) {
-		case GL_RGBA8: format = GL_RGBA;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_RGB8:  format = GL_RGB;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_RG8:   format = GL_RG;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_R8:    format = GL_RED;/* type = GL_UNSIGNED_BYTE;*/ break;
-		default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
-			break;
-		}
+		auto format = GL::GetInternalFormatDataFormat(internalFormat);
+		auto type   = GL::GetInternalFormatDataType(internalFormat);
+
 		for (int level = 0; level < levels; ++level)
 			glTexImage3D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), std::max(depth >> level, 1), 0, format, type, nullptr);
 	}

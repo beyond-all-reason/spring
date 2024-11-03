@@ -43,7 +43,6 @@ include_directories(BEFORE lib/lua/include)
 include_directories(${CMAKE_SOURCE_DIR}/include/AL)
 include_directories(${SPRING_MINIZIP_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${IL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/cereal/include)
 
 
@@ -85,9 +84,10 @@ if    (UNIX AND NOT MINGW)
 	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 endif (UNIX AND NOT MINGW)
 
-find_package_static(ZLIB REQUIRED)
-list(APPEND engineCommonLibraries ${IL_LIBRARIES} ${JPEG_LIBRARY} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${GIF_LIBRARY})
-list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY} Tracy::TracyClient)
+find_package_static(ZLIB 1.2.7 REQUIRED)
+list(APPEND engineCommonLibraries DevIL::IL)
+
+list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB Tracy::TracyClient)
 list(APPEND engineCommonLibraries lua luasocket archives assimp
 	gflags_nothreads_static)
 if(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
@@ -96,8 +96,6 @@ endif(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 if (ENABLE_STREFLOP)
 	list(APPEND engineCommonLibraries streflop)
 endif ()
-
-include_directories(${ZLIB_INCLUDE_DIR})
 
 if (WIN32)
 	list(APPEND engineCommonLibraries ${WIN32_LIBRARIES})
@@ -119,16 +117,11 @@ endif (USE_TCMALLOC AND TCMALLOC_LIBRARY)
 
 
 if(UNIX AND NOT (CMAKE_SYSTEM_NAME MATCHES "OpenBSD"))
-	find_package_static(Libunwind REQUIRED)
+	find_package_static(Libunwind 1.4.0 REQUIRED)
 	prefer_static_libs()
 	find_library(LZMA_LIBRARY lzma)
 	unprefer_static_libs()
-	list(APPEND engineCommonLibraries ${LIBUNWIND_LIBRARIES} ${LZMA_LIBRARY})
-	if(LIBUNWIND_FOUND)
-		message(STATUS "Found libunwind libraries at ${LIBUNWIND_LIBRARIES}")
-	else()
-		message(FATAL_ERROR "Couldn't find libunwind")
-	endif()
+	list(APPEND engineCommonLibraries libunwind::libunwind ${LZMA_LIBRARY})
 endif()
 
 

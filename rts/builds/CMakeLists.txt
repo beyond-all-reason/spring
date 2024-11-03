@@ -89,7 +89,7 @@ if    (WIN32)
 
 	if (MSVC)
 		# Make sure we disable the default manifest generation to prevent conflicts
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO /NODEFAULTLIB:LIBCMT")
 	endif()
 endif (WIN32)
 
