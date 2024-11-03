@@ -42,7 +42,7 @@ CInfoTextureCombiner::CInfoTextureCombiner()
 	// counter this, GL_RGBA16 would be another solution, but needs twice
 	// as much texture memory + bandwidth.
 	// Also GL3.x enforces that GL_RGB10_A2 must be renderable.
-	glSpringTexStorage2D(GL_TEXTURE_2D, -1, GL_RGB10_A2, texSize.x, texSize.y);
+	RecoilTexStorage2D(GL_TEXTURE_2D, -1, GL_RGB10_A2, texSize.x, texSize.y);
 
 	if (FBO::IsSupported()) {
 		fbo.Bind();

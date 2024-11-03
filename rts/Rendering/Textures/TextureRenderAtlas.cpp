@@ -263,7 +263,7 @@ bool CTextureRenderAtlas::Finalize()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		glSpringTexStorage2D(GL_TEXTURE_2D, levels, glInternalType, as.x, as.y);
+		RecoilTexStorage2D(GL_TEXTURE_2D, levels, glInternalType, as.x, as.y);
 	}
 	{
 		using namespace GL::State;

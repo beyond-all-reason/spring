@@ -262,7 +262,7 @@ void WorkaroundATIPointSizeBug()
 
 /******************************************************************************/
 
-void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& tp)
+void RecoilGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& tp)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	auto texBind = GL::TexBind(target, textureID);
@@ -323,7 +323,7 @@ void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureP
 void glSaveTexture(const GLuint textureID, const char* filename, int level)
 {
 	TextureParameters params;
-	glSpringGetTexParams(GL_TEXTURE_2D, textureID, 0, params);
+	RecoilGetTexParams(GL_TEXTURE_2D, textureID, 0, params);
 
 	CBitmap bmp;
 	GLenum extFormat = params.isNormalizedDepth ? GL_DEPTH_COMPONENT : CBitmap::GetExtFmt(params.chNum);
@@ -344,28 +344,7 @@ void glSaveTexture(const GLuint textureID, const char* filename, int level)
 	}
 }
 
-
-void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-#ifdef GLEW_ARB_multi_bind
-	if (GLEW_ARB_multi_bind) {
-		glBindTextures(first, count, textures);
-	} else
-#endif
-	{
-		for (int i = 0; i < count; ++i) {
-			const GLuint texture = (textures == nullptr) ? 0 : textures[i];
-			glActiveTexture(GL_TEXTURE0 + first + i);
-			glBindTexture(GL_TEXTURE_2D, texture);
-		}
-		glActiveTexture(GL_TEXTURE0);
-
-	}
-}
-
-
-void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height)
+void RecoilTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (levels <= 0)
@@ -384,7 +363,7 @@ void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLs
 	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
 }
 
-void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth)
+void RecoilTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (levels <= 0)
@@ -404,7 +383,7 @@ void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLs
 }
 
 
-void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data, int32_t levels)
+void RecoilBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data, int32_t levels)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
@@ -427,7 +406,7 @@ void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei wid
 	if (levels <= 0)
 		levels = std::bit_width(static_cast<uint32_t>(std::max(width , height)));
 
-	// cannot use glTexStorage2D/glSpringTexStorage2D as they don't support GL_COMPRESSED textures
+	// cannot use glTexStorage2D/RecoilTexStorage2D as they don't support GL_COMPRESSED textures
 	glTexImage2D(target, 0, internalFormat, width, height, 0, format, type, data);
 	for (int level = 1; level < levels; ++level)
 		glTexImage2D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), 0, format, type, nullptr);
@@ -452,8 +431,8 @@ bool glSpringBlitImages(
 	RECOIL_DETAILED_TRACY_ZONE;
 	TextureParameters srcTexParams;
 	TextureParameters dstTexParams;
-	glSpringGetTexParams(srcTarget, srcName, srcLevel, srcTexParams);
-	glSpringGetTexParams(dstTarget, dstName, dstLevel, dstTexParams);
+	RecoilGetTexParams(srcTarget, srcName, srcLevel, srcTexParams);
+	RecoilGetTexParams(dstTarget, dstName, dstLevel, dstTexParams);
 	const bool sameIntFormat = (srcTexParams.intFmt == dstTexParams.intFmt);
 	const bool fineDims = (srcWidth <= dstTexParams.sizeX && srcHeight <= dstTexParams.sizeY);
 
@@ -561,18 +540,6 @@ bool glSpringBlitImages(
 
 	return result;
 }
-
-
-void glSpringMatrix2dProj(const int sizex, const int sizey)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluOrtho2D(0,sizex,0,sizey);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-}
-
 
 /******************************************************************************/
 
@@ -772,27 +739,3 @@ void glClearErrors(const char* cls, const char* fnc, bool verbose)
 		for (int count = 0; (glGetError() != GL_NO_ERROR) && (count < 10000); count++);
 	}
 }
-
-
-/******************************************************************************/
-
-void SetTexGen(const float scaleX, const float scaleZ, const float offsetX, const float offsetZ)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	const GLfloat planeX[] = {scaleX, 0.0f,   0.0f,  offsetX};
-	const GLfloat planeZ[] = {  0.0f, 0.0f, scaleZ,  offsetZ};
-
-	//BUG: Nvidia drivers take the current texcoord into account when TexGen is used!
-	// You MUST reset the coords before using TexGen!
-	//glMultiTexCoord4f(target, 1.0f,1.0f,1.0f,1.0f);
-
-	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-	glTexGenfv(GL_S, GL_EYE_PLANE, planeX);
-	glEnable(GL_TEXTURE_GEN_S);
-
-	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-	glTexGenfv(GL_T, GL_EYE_PLANE, planeZ);
-	glEnable(GL_TEXTURE_GEN_T);
-}
-
-/******************************************************************************/

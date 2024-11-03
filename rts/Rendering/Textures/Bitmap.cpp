@@ -1711,7 +1711,7 @@ uint32_t CBitmap::CreateTexture(const TextureCreationParams& tcp) const
 	if (tcp.aniso > 0.0f)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, tcp.aniso);
 
-	glBuildMipmaps(GL_TEXTURE_2D, GetIntFmt(), xsize, ysize, GetExtFmt(), dataType, GetRawMem(), numLevels);
+	RecoilBuildMipmaps(GL_TEXTURE_2D, GetIntFmt(), xsize, ysize, GetExtFmt(), dataType, GetRawMem(), numLevels);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
