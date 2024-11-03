@@ -127,6 +127,7 @@ void CModInfo::ResetState()
 		allowEnginePlayerlist = true;
 	}
 	{
+		// make windChangeReportPeriod equal to EnvResourceHandler::WIND_UPDATE_RATE = 15 * GAME_SPEED;
 		windChangeReportPeriod = 15 * GAME_SPEED;
 	}
 }
