@@ -130,7 +130,7 @@ void C3DOTextureHandler::Init()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  numLevels - 1);
 
 		if (numLevels > 1) {
-			glBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex1.data()); //FIXME disable texcompression
+			RecoilBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex1.data()); //FIXME disable texcompression
 		} else {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, bigtex1.data());
 		}
@@ -145,7 +145,7 @@ void C3DOTextureHandler::Init()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  numLevels - 1);
 
 		if (numLevels > 0) {
-			glBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex2.data()); //FIXME disable texcompression
+			RecoilBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex2.data()); //FIXME disable texcompression
 		} else {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, bigtex2.data());
 		}
