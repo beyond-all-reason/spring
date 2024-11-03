@@ -124,7 +124,10 @@ protected:
 	void Update() const override;
 };
 
-class CUnitDrawerLegacy : public CUnitDrawerBase {
+class CUnitDrawerGLSL : public CUnitDrawerBase {
+public:
+	CUnitDrawerGLSL();
+	~CUnitDrawerGLSL() override;
 public:
 	void Draw(bool drawReflection, bool drawRefraction = false) const override {
 		DrawImpl<true, LuaObjType::LUAOBJ_UNIT>(drawReflection, drawRefraction);
@@ -184,16 +187,10 @@ protected:
 	void PopIndividualOpaqueState(const CUnit* unit, bool deferredPass) const;
 	void PopIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const;
 	void PopIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const;
-protected:
-
 };
 
-class CUnitDrawerFFP  final : public CUnitDrawerLegacy {};
-class CUnitDrawerARB  final : public CUnitDrawerLegacy {};
-class CUnitDrawerGLSL final : public CUnitDrawerLegacy {};
-
 //TODO remove CUnitDrawerLegacy inheritance
-class CUnitDrawerGL4 final : public CUnitDrawerLegacy {
+class CUnitDrawerGL4 final : public CUnitDrawerGLSL {
 public:
 	void Draw(bool drawReflection, bool drawRefraction = false) const override {
 		DrawImpl<false, LuaObjType::LUAOBJ_UNIT>(drawReflection, drawRefraction);

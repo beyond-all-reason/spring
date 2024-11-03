@@ -16,6 +16,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/Textures/Bitmap.h"
+#include "Rendering/Textures/TextureFormat.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/TexBind.h"
 #include "System/Log/ILog.h"
@@ -373,15 +374,9 @@ void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLs
 	if (GLEW_ARB_texture_storage) {
 		glTexStorage2D(target, levels, internalFormat, width, height);
 	} else {
-		GLenum format = GL_RGBA, type = GL_UNSIGNED_BYTE;
-		switch (internalFormat) {
-		case GL_RGBA8: format = GL_RGBA;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_RGB8:  format = GL_RGB;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_RG8:   format = GL_RG;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_R8:    format = GL_RED;/* type = GL_UNSIGNED_BYTE;*/ break;
-		default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
-			break;
-		}
+		auto format = GL::GetInternalFormatDataFormat(internalFormat);
+		auto type   = GL::GetInternalFormatDataType(internalFormat);
+
 		for (int level = 0; level < levels; ++level)
 			glTexImage2D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), 0, format, type, nullptr);
 	}
@@ -398,15 +393,9 @@ void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLs
 	if (GLEW_ARB_texture_storage) {
 		glTexStorage3D(target, levels, internalFormat, width, height, depth);
 	} else {
-		GLenum format = GL_RGBA, type = GL_UNSIGNED_BYTE;
-		switch (internalFormat) {
-		case GL_RGBA8: format = GL_RGBA;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_RGB8:  format = GL_RGB;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_RG8:   format = GL_RG;/* type = GL_UNSIGNED_BYTE;*/ break;
-		case GL_R8:    format = GL_RED;/* type = GL_UNSIGNED_BYTE;*/ break;
-		default: /*LOG_L(L_ERROR, "[%s] Couldn't detect format type for %i", __FUNCTION__, internalFormat);*/
-			break;
-		}
+		auto format = GL::GetInternalFormatDataFormat(internalFormat);
+		auto type   = GL::GetInternalFormatDataType(internalFormat);
+
 		for (int level = 0; level < levels; ++level)
 			glTexImage3D(target, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), std::max(depth >> level, 1), 0, format, type, nullptr);
 	}
