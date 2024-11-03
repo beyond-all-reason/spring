@@ -127,7 +127,7 @@ void CModInfo::ResetState()
 		allowEnginePlayerlist = true;
 	}
 	{
-		windChangeReportPeriod = 0;
+		windChangeReportPeriod = 15 * GAME_SPEED;
 	}
 }
 
@@ -336,7 +336,7 @@ void CModInfo::Init(const std::string& modFileName)
 		//misc
 		const LuaTable& misc = root.SubTable("misc");
 
-		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", 0.0f) * GAME_SPEED));
+		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", static_cast<float>(windChangeReportPeriod) / GAME_SPEED) * GAME_SPEED));
 	}
 
 	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))
