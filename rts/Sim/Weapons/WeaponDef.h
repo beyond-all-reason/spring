@@ -104,7 +104,6 @@ public:
 	int projectilespershot;
 
 	int id;
-	int tdfId;                  ///< the id= tag in the tdf
 
 	bool isNulled;
 	bool turret;

@@ -43,7 +43,6 @@ WEAPONTAG(std::string, type).externalName("weaponType").defaultValue("Cannon")
 	"EmgCannon - deprecated, a version of Laser or Flame with crappy visuals\n"
 	"Rifle - deprecated, more or less equivalent to invisible Lightning\n"
 );
-WEAPONTAG(int, tdfId).externalName("id").defaultValue(0);
 WEAPONDUMMYTAG(table, customParams).description("A table of arbitrary string key-value pairs, for use by Lua gadgets (no engine meaning)");
 
 // Collision & Avoidance
