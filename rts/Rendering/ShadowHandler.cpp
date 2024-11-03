@@ -366,7 +366,7 @@ bool CShadowHandler::InitFBOAndTextures()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, preset.filterMode);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, preset.filterMode);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); //no mips
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 0); //no mips
 
 		const int depthBits = std::min(globalRendering->supportDepthBufferBitDepth, 24);
 		const GLint depthFormat = CGlobalRendering::DepthBitsToFormat(depthBits);
@@ -386,7 +386,7 @@ bool CShadowHandler::InitFBOAndTextures()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, preset.filterMode);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, preset.filterMode);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); //no mips
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 0); //no mips
 		// TODO: Figure out if mips make sense here.
 
 		if (static_cast<bool>(shadowColorMode)) {

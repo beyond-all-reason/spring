@@ -498,7 +498,8 @@ DebugDrawerAI::TexSet::Texture::Texture(int w, int h, const float* data):
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexImage2D(GL_TEXTURE_2D, 0, intFormat, w, h, 0, extFormat, dataType, data);
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, intFormat, w, h);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, extFormat, dataType, data);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
