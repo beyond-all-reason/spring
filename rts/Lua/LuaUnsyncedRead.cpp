@@ -72,6 +72,7 @@
 #include "System/StringUtil.h"
 #include "System/Misc/SpringTime.h"
 #include "System/ScopedResource.h"
+#include "System/Math/NURBS.h"
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)
 	#include "System/Sound/OpenAL/EFX.h"
@@ -148,8 +149,8 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeatureNoDraw);
 	REGISTER_LUA_CFUNC(GetFeatureEngineDrawMask);
 	REGISTER_LUA_CFUNC(GetFeatureAlwaysUpdateMatrix);
-	REGISTER_LUA_CFUNC(GetFeatureAlwaysUpdateMatrix);
 	REGISTER_LUA_CFUNC(GetFeatureDrawFlag);
+	REGISTER_LUA_CFUNC(GetFeatureSelectionVolumeData);
 
 	REGISTER_LUA_CFUNC(GetUnitTransformMatrix);
 	REGISTER_LUA_CFUNC(GetFeatureTransformMatrix);
@@ -299,6 +300,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(UnitIconGetDraw);
 
 	REGISTER_LUA_CFUNC(GetSyncedGCInfo);
+	REGISTER_LUA_CFUNC(SolveNURBSCurve);
 
 	return true;
 }
@@ -4053,6 +4055,16 @@ int LuaUnsyncedRead::GetUnitGroup(lua_State* L)
 	return 1;
 }
 
+static inline const CGroup* GetGroupFromArg(lua_State* L, int arg)
+{
+	const int groupID = luaL_checkint(L, arg);
+	const auto& groupHandler = uiGroupHandlers[gu->myTeam];
+
+	if (!groupHandler.HasGroup(groupID))
+		return nullptr;
+
+	return groupHandler.GetGroup(groupID);
+}
 
 /***
  *
@@ -4062,12 +4074,9 @@ int LuaUnsyncedRead::GetUnitGroup(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnits(lua_State* L)
 {
-	const int groupID = luaL_checkint(L, 1);
-
-	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
-		return 0; // nils
-
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
+	const auto group = GetGroupFromArg(L, 1);
+	if (!group)
+		return 0;
 
 	PushNumberContainerAsArray(L, group->units);
 	return 1;
@@ -4082,12 +4091,9 @@ int LuaUnsyncedRead::GetGroupUnits(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnitsSorted(lua_State* L)
 {
-	const int groupID = luaL_checkint(L, 1);
-
-	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
-		return 0; // nils
-
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
+	const auto group = GetGroupFromArg(L, 1);
+	if (!group)
+		return 0;
 
 	PushUnitListSortedByDef(L, group->units);
 	return 1;
@@ -4102,12 +4108,9 @@ int LuaUnsyncedRead::GetGroupUnitsSorted(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnitsCounts(lua_State* L)
 {
-	const int groupID = luaL_checkint(L, 1);
-
-	if (!uiGroupHandlers[gu->myTeam].HasGroup(groupID))
-		return 0; // nils
-
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(groupID);
+	const auto group = GetGroupFromArg(L, 1);
+	if (!group)
+		return 0;
 
 	PushSparseUnitTallyByDef(L, group->units);
 	return 1;
@@ -4122,7 +4125,9 @@ int LuaUnsyncedRead::GetGroupUnitsCounts(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroupUnitsCount(lua_State* L)
 {
-	const CGroup* group = uiGroupHandlers[gu->myTeam].GetGroup(luaL_checkint(L, 1));
+	const auto group = GetGroupFromArg(L, 1);
+	if (!group)
+		return 0;
 
 	lua_pushnumber(L, group->units.size());
 	return 1;
@@ -4852,5 +4857,37 @@ int LuaUnsyncedRead::GetSyncedGCInfo(lua_State* L) {
 	}
 
 	lua_pushnumber(L, lua_gc(syncedL, LUA_GCCOUNT, 0));
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SolveNURBSCurve
+ * @number groupID
+ * @treturn nil|{[number],...} unitIDs
+ */
+int LuaUnsyncedRead::SolveNURBSCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	int segments = luaL_checkint(L, 4);
+
+	const auto result = NURBS::SolveNURBSCurve(degree, cpoints, knots, segments);
+
+	lua_createtable(L, result.size(), 0);
+	for (size_t i = 0; const auto &x : result) {
+		lua_pushnumber(L, x.x);
+		lua_rawseti(L, -2, ++i);
+		lua_pushnumber(L, x.y);
+		lua_rawseti(L, -2, ++i);
+		lua_pushnumber(L, x.z);
+		lua_rawseti(L, -2, ++i);
+	}
 	return 1;
 }

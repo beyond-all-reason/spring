@@ -6,6 +6,7 @@
 #include <limits>
 #include <array>
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 
 static constexpr float PATHCOST_INFINITY = std::numeric_limits<float>::infinity();
 
@@ -72,7 +73,7 @@ static constexpr unsigned int PATH_DIRECTIONS_HALF_MASK = 0x0f;
 
 
 static constexpr unsigned int PATHDIR_CARDINALS[4] = {PATHDIR_LEFT, PATHDIR_RIGHT, PATHDIR_UP, PATHDIR_DOWN};
-static constexpr unsigned int PATH_DIRECTION_VERTICES = PATH_DIRECTIONS >> 1;
+static constexpr unsigned int PATH_DIRECTION_VERTICES = PATH_DIRECTIONS;
 static constexpr unsigned int PATH_NODE_SPACING = 2;
 
 // note: because the spacing between nodes is 2 (not 1) we
@@ -172,15 +173,17 @@ static constexpr unsigned int PathOpt2PathDir(unsigned int pathOptDir) { return 
 // transition costs between vertices are bi-directional
 // (cost(A-->B) == cost(A<--B)) so we only need to store
 // (PATH_DIRECTIONS >> 1) values
-static inline int GetBlockVertexOffset(unsigned int pathDir, unsigned int numBlocks) {
+static inline int GetBlockVertexOffset(const MoveDef& md, unsigned int pathDir, unsigned int numBlocks) {
 	int bvo = pathDir;
 
-	switch (pathDir) {
-		case PATHDIR_RIGHT:      { bvo = int(PATHDIR_LEFT    ) -                                         PATH_DIRECTION_VERTICES; } break;
-		case PATHDIR_RIGHT_DOWN: { bvo = int(PATHDIR_LEFT_UP ) - (numBlocks * PATH_DIRECTION_VERTICES) - PATH_DIRECTION_VERTICES; } break;
-		case PATHDIR_DOWN:       { bvo = int(PATHDIR_UP      ) - (numBlocks * PATH_DIRECTION_VERTICES)                          ; } break;
-		case PATHDIR_LEFT_DOWN:  { bvo = int(PATHDIR_RIGHT_UP) - (numBlocks * PATH_DIRECTION_VERTICES) + PATH_DIRECTION_VERTICES; } break;
-		default: {} break;
+	if (!md.allowDirectionalPathing) {
+		switch (pathDir) {
+			case PATHDIR_RIGHT:      { bvo = int(PATHDIR_LEFT    ) -                                         PATH_DIRECTION_VERTICES; } break;
+			case PATHDIR_RIGHT_DOWN: { bvo = int(PATHDIR_LEFT_UP ) - (numBlocks * PATH_DIRECTION_VERTICES) - PATH_DIRECTION_VERTICES; } break;
+			case PATHDIR_DOWN:       { bvo = int(PATHDIR_UP      ) - (numBlocks * PATH_DIRECTION_VERTICES)                          ; } break;
+			case PATHDIR_LEFT_DOWN:  { bvo = int(PATHDIR_RIGHT_UP) - (numBlocks * PATH_DIRECTION_VERTICES) + PATH_DIRECTION_VERTICES; } break;
+			default: {} break;
+		}
 	}
 
 	return bvo;

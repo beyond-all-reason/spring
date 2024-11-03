@@ -5,6 +5,7 @@
 
 #include <vector>
 
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Path/IPathManager.h"
 #include "NodeLayer.h"
 #include "PathCache.h"
@@ -46,6 +47,8 @@ namespace QTPFS {
 
 		bool PathUpdated(unsigned int pathID) override;
 		void ClearPathUpdated(unsigned int pathID) override;
+
+		bool AllowShortestPath() override { return true; }
 
 		void TerrainChange(unsigned int x1, unsigned int z1,  unsigned int x2, unsigned int z2, unsigned int type) override;
 		void Update() override;
@@ -141,7 +144,8 @@ namespace QTPFS {
 		unsigned int RequeueSearch(
 			IPath* oldPath,
 			const bool allowRawSearch,
-			const bool allowPartialSearch
+			const bool allowPartialSearch,
+			const bool allowRepair
 		);
 
 	private:

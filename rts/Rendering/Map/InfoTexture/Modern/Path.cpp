@@ -263,6 +263,7 @@ void CPathTexture::Update()
 		});
 	} else if (md != nullptr) {
 		for_mt(start, updateProcess, [&](const int y) {
+			int thread = ThreadPool::GetThreadNum();
 			for (int x = 0; x < texSize.x; ++x) {
 				const int2 sq = int2(x << 1, y << 1);
 				const int idx = y * texSize.x + x;
@@ -270,10 +271,10 @@ void CPathTexture::Update()
 				float scale = 1.0f;
 
 				if (losFullView || losHandler->InLos(SquareToFloat3(sq), gu->myAllyTeam)) {
-					if (CMoveMath::IsBlocked(*md, sq.x,     sq.y    , nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-					if (CMoveMath::IsBlocked(*md, sq.x + 1, sq.y    , nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-					if (CMoveMath::IsBlocked(*md, sq.x,     sq.y + 1, nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-					if (CMoveMath::IsBlocked(*md, sq.x + 1, sq.y + 1, nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+					if (CMoveMath::IsBlocked(*md, sq.x,     sq.y    , nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+					if (CMoveMath::IsBlocked(*md, sq.x + 1, sq.y    , nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+					if (CMoveMath::IsBlocked(*md, sq.x,     sq.y + 1, nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+					if (CMoveMath::IsBlocked(*md, sq.x + 1, sq.y + 1, nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
 				}
 
 				// NOTE: raw speedmods are not necessarily clamped to [0, 1]

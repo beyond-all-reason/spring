@@ -135,11 +135,11 @@ std::string CKeySet::GetCodeString() const
 bool CKeySet::ParseModifier(std::string& s, const std::string& token, const std::string& abbr)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (s.find(token) == 0) {
+	if (s.starts_with(token)) {
 		s.erase(0, token.size());
 		return true;
 	}
-	if (s.find(abbr) == 0) {
+	if (s.starts_with(abbr)) {
 		s.erase(0, abbr.size());
 		return true;
 	}

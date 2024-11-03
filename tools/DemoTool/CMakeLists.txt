@@ -9,11 +9,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 
 set(ENGINE_SRC_ROOT_DIR "${CMAKE_SOURCE_DIR}/rts")
 
+find_package(ZLIB REQUIRED)
+
 include_directories(${ENGINE_SRC_ROOT_DIR})
 include_directories(${CMAKE_BINARY_DIR}/src-generated/engine)
 include_directories(${gflags_BINARY_DIR}/include)
 
 add_definitions(-DTOOLS)
+
+set(PLATFORM_SRCS "")
+set(PLATFORM_LIBS "")
+
+if     (WIN32)
+	list(APPEND PLATFORM_SRCS "${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/WinVersion.cpp")
+
+	list(APPEND PLATFORM_LIBS "iphlpapi")
+elseif (UNIX)
+	list(APPEND PLATFORM_LIBS "${CMAKE_DL_LIBS}")
+endif  (WIN32)
 
 set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/Game/GameVersion.cpp
@@ -23,6 +36,9 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/FileSystem.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/FileSystemAbstraction.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/FileSystem/GZFileHandler.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/Platform/Misc.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/CRC.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/Sync/SHA512.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/StringUtil.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Net/RawPacket.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoReader.cpp
@@ -34,17 +50,26 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/Log/LogSinkHandler.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Log/LogUtil.c
 	${ENGINE_SRC_ROOT_DIR}/System/Log/ConsoleSink.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c
+	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c	
+	${ENGINE_SRC_ROOT_DIR}/System/creg/Serializer.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/creg/VarTypes.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/creg/creg.cpp
 )
+
+list(APPEND demoToolSpringSources ${PLATFORM_SRCS})
 
 add_executable(demotool EXCLUDE_FROM_ALL DemoTool.cpp ${demoToolSpringSources})
 if (MINGW)
 	# To enable console output/force a console window to open
 	set_target_properties(demotool PROPERTIES LINK_FLAGS "-Wl,-subsystem,console")
 endif (MINGW)
-add_definitions(-DNOT_USING_CREG)
+
 target_link_libraries(demotool
 		${SPRING_MINIZIP_LIBRARY}
 		gflags_nothreads_static
+		7zip
+		${ZLIB_LIBRARY}
+		${PLATFORM_LIBS}
+		Tracy::TracyClient
 	)
 add_dependencies(demotool generateVersionFiles)

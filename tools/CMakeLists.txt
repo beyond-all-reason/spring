@@ -2,10 +2,6 @@
 add_subdirectory(unitsync)
 add_subdirectory(DemoTool)
 
-if (WITH_MAPCOMPILER)
-	add_subdirectory(mapcompile)
-endif(WITH_MAPCOMPILER)
-
 if    (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/pr-downloader/CMakeLists.txt")
 	message(FATAL_ERROR "${CMAKE_CURRENT_SOURCE_DIR}/pr-downloader/ is missing, please run\n git submodule init && git submodule update")
 endif ()

@@ -34,14 +34,15 @@
 
 static std::vector<const QTPFS::QTNode*> visibleNodes;
 
-static constexpr unsigned char LINK_COLOR[4] = {1 * 255, 0 * 255, 1 * 255, 1 * 128};
-static constexpr unsigned char PATH_COLOR[4] = {0 * 255, 0 * 255, 1 * 255, 1 * 255};
-static constexpr unsigned char BAD_PATH_COLOR[4] = {1 * 255, 0 * 255, 0 * 255, 1 * 255};
-static constexpr unsigned char INCOMPLETE_PATH_COLOR[4] = {1 * 255, 1 * 255, 0 * 255, 1 * 128};
-static constexpr unsigned char NODE_COLORS[3][4] = {
-	{1 * 255, 0 * 255, 0 * 255, 1 * 255}, // red --> blocked
-	{0 * 255, 1 * 255, 0 * 255, 1 * 255}, // green --> passable
-	{0 * 255, 0 * 255, 1 *  64, 1 *  64}, // light blue --> pushed
+static constexpr unsigned char LINK_COLOR[4]            = {255,   0, 255, 128};
+static constexpr unsigned char PATH_COLOR[4]            = {  0,   0, 255, 255};
+static constexpr unsigned char BAD_PATH_COLOR[4]        = {255,   0,   0, 255};
+static constexpr unsigned char INCOMPLETE_PATH_COLOR[4] = {255, 255,   0, 128};
+static constexpr unsigned char NODE_COLORS[4][4] = {
+	{255,   0,   0, 255}, // red --> blocked
+	{  0, 255,   0, 255}, // green --> passable
+	{255, 127,   0, 255}, // orange --> exit only
+	{  0,   0,  64,  64}, // light blue --> pushed
 };
 
 
@@ -80,7 +81,7 @@ void QTPFSPathDrawer::DrawAll() const {
 
 		sh.Enable();
 
-		DrawNodes(rb, visibleNodes, nodeLayer);
+		DrawNodes(md, rb, visibleNodes, nodeLayer);
 		DrawPaths(md, rb);
 
 		sh.Disable();
@@ -92,9 +93,10 @@ void QTPFSPathDrawer::DrawAll() const {
 	glPopAttrib();
 }
 
-void QTPFSPathDrawer::DrawNodes(TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes, const QTPFS::NodeLayer& nodeLayer) const {
+void QTPFSPathDrawer::DrawNodes(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>& rb, const std::vector<const QTPFS::QTNode*>& nodes, const QTPFS::NodeLayer& nodeLayer) const {
 	for (const QTPFS::QTNode* node: nodes) {
-		DrawNodeW(node, rb, &NODE_COLORS[!node->AllSquaresImpassable()][0], 0.f);
+		int nodeColour = node->AllSquaresImpassable() ? 0 : node->IsExitOnly() ? 2 : 1;
+		DrawNodeW(md, node, rb, &NODE_COLORS[nodeColour][0], 0.f);
 	}
 
 	glLineWidth(2.0f);
@@ -118,9 +120,9 @@ void QTPFSPathDrawer::DrawCosts(const std::vector<const QTPFS::QTNode*>& nodes) 
 			continue;
 
 		font->SetTextColor(0.0f, 0.0f, 0.0f, 1.0f);
-		// font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
+		font->glWorldPrint(pos, 5.0f, FloatToString(node->GetMoveCost(), "%8.2f"));
 		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetNodeNumber(), "%08x"));
-		font->glWorldPrint(pos, 5.0f, IntToString(node->GetIndex(), "%d"));
+		// font->glWorldPrint(pos, 5.0f, IntToString(node->GetDepth(), "%d"));
 	}
 
 	font->DrawWorldBuffered();
@@ -156,7 +158,7 @@ void QTPFSPathDrawer::DrawPaths(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>&
 	for (const auto& pathEntity : pathView) {
 		const auto* path = &pathView.get<QTPFS::IPath>(pathEntity);
 		if (path->GetPathType() == md->pathType)
-			DrawPath(path, rb);
+			DrawPath(md, path, rb);
 	}
 
 	{
@@ -194,7 +196,14 @@ void QTPFSPathDrawer::DrawPaths(const MoveDef* md, TypedRenderBuffer<VA_TYPE_C>&
 	#endif
 }
 
-void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TYPE_C>& rb) const {
+void QTPFSPathDrawer::DrawPath(const MoveDef* md, const QTPFS::IPath* path, TypedRenderBuffer<VA_TYPE_C>& rb) const {
+	constexpr auto getHeight = [](const MoveDef* md, float x, float z) {
+		if (md->FloatOnWater())
+			return CGround::GetHeightAboveWater(x, z, false);
+		else
+			return CGround::GetHeightReal(x, z, false);
+	};
+
 	for (unsigned int n = 0; n < path->NumPoints() - 1; n++) {
 		float3 p0 = path->GetPoint(n + 0);
 		float3 p1 = path->GetPoint(n + 1);
@@ -210,8 +219,8 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 		if (!camera->InView(p0) && !camera->InView(p1))
 			continue;
 
-		p0.y = CGround::GetHeightReal(p0.x, p0.z, false);
-		p1.y = CGround::GetHeightReal(p1.x, p1.z, false);
+		p0.y = getHeight(md, p0.x, p0.z);
+		p1.y = getHeight(md, p1.x, p1.z);
 
 		// if (path->GetSearchTime().toMilliSecsi() < 10LL) {
 			rb.AddVertex({p0, PATH_COLOR});
@@ -234,8 +243,8 @@ void QTPFSPathDrawer::DrawPath(const QTPFS::IPath* path, TypedRenderBuffer<VA_TY
 			assert(p1 != float3());
 
 			if (camera->InView(p0) || camera->InView(p1)) {
-				p0.y = CGround::GetHeightReal(p0.x, p0.z, false);
-				p1.y = CGround::GetHeightReal(p1.x, p1.z, false);
+				p0.y = getHeight(md, p0.x, p0.z);
+				p1.y = getHeight(md, p1.x, p1.z);
 
 				rb.AddVertex({p0, INCOMPLETE_PATH_COLOR});
 				rb.AddVertex({p1, INCOMPLETE_PATH_COLOR});
@@ -328,11 +337,18 @@ void QTPFSPathDrawer::DrawNode(const QTPFS::QTNode* node, TypedRenderBuffer<VA_T
 	);
 }
 
-void QTPFSPathDrawer::DrawNodeW(const QTPFS::QTNode* node, TypedRenderBuffer<VA_TYPE_C>& rb, const unsigned char* color, float sizeAdj) const {
-	const float3 v0 = float3(xminw - sizeAdj, CGround::GetHeightReal(xminw, zminw, false) + 4.0f, zminw - sizeAdj);
-	const float3 v1 = float3(xmaxw + sizeAdj, CGround::GetHeightReal(xmaxw, zminw, false) + 4.0f, zminw - sizeAdj);
-	const float3 v2 = float3(xmaxw + sizeAdj, CGround::GetHeightReal(xmaxw, zmaxw, false) + 4.0f, zmaxw + sizeAdj);
-	const float3 v3 = float3(xminw - sizeAdj, CGround::GetHeightReal(xminw, zmaxw, false) + 4.0f, zmaxw + sizeAdj);
+void QTPFSPathDrawer::DrawNodeW(const MoveDef* md, const QTPFS::QTNode* node, TypedRenderBuffer<VA_TYPE_C>& rb, const unsigned char* color, float sizeAdj) const {
+	constexpr auto getHeight = [](const MoveDef* md, float x, float z) {
+		if (md->FloatOnWater())
+			return CGround::GetHeightAboveWater(x, z, false);
+		else
+			return CGround::GetHeightReal(x, z, false);
+	};
+	
+	const float3 v0 = float3(xminw - sizeAdj, getHeight(md, xminw, zminw) + 4.0f, zminw - sizeAdj);
+	const float3 v1 = float3(xmaxw + sizeAdj, getHeight(md, xmaxw, zminw) + 4.0f, zminw - sizeAdj);
+	const float3 v2 = float3(xmaxw + sizeAdj, getHeight(md, xmaxw, zmaxw) + 4.0f, zmaxw + sizeAdj);
+	const float3 v3 = float3(xminw - sizeAdj, getHeight(md, xminw, zmaxw) + 4.0f, zmaxw + sizeAdj);
 
 	rb.AddVertex({v0, color});
 	rb.AddVertex({v1, color});

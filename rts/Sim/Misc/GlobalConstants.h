@@ -36,6 +36,7 @@ static constexpr float ELMOS_TO_METERS = 1.0f / SQUARE_SIZE;
  * Defines the game-/sim-frames per second.
  */
 static constexpr int GAME_SPEED = 30;
+static constexpr float INV_GAME_SPEED = 1.0f / GAME_SPEED;
 
 /**
  * @brief unit SlowUpdate rate

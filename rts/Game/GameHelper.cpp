@@ -16,8 +16,10 @@
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/DamageArray.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
+#include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/ModInfo.h"
@@ -761,7 +763,7 @@ size_t CGameHelper::GenerateWeaponTargets(const CWeapon* weapon, const CUnit* av
 				}
 
 				if (targetLOSState & LOS_PREVLOS) {
-					targetPriority /= (damageMul * targetUnit->power * (0.7f + gsRNG.NextFloat() * 0.6f));
+					targetPriority /= (damageMul * targetUnit->power);
 					targetPriority *= tgtPriorityMults[((targetUnit->category & weapon->badTargetCategory) != 0) * 2];
 					targetPriority *= tgtPriorityMults[(targetUnit->IsCrashing()) * 3];
 					targetPriority *= tgtPriorityMults[(targetUnit == lastAttacker) * 4];
@@ -932,10 +934,13 @@ void CGameHelper::BuggerOffRectangle(const float3& mins, const float3& maxs, boo
 	const int allyTeamId = teamHandler.AllyTeam(teamId);
 
 	for (CUnit* u : *qfQuery.units) {
-		if (u->moveDef == nullptr) { continue; }
+		if (u->unitDef->IsImmobileUnit()) { continue; }
 
-		const float footPrintX = (u->moveDef->xsizeh+1)*SQUARE_SIZE;
-		const float footPrintZ = (u->moveDef->zsizeh+1)*SQUARE_SIZE;
+		// apparently air units may not have a move def.
+		const bool useMoveDef = (u->moveDef != nullptr);
+
+		const float footPrintX = ((useMoveDef ? u->moveDef->xsizeh : u->xsize/2) + 1) * SQUARE_SIZE;
+		const float footPrintZ = ((useMoveDef ? u->moveDef->zsizeh : u->zsize/2) + 1) * SQUARE_SIZE;
 
 		if (u->pos.x + footPrintX < mins.x) { continue; }
 		if (u->pos.z + footPrintZ < mins.z) { continue; }
@@ -1432,10 +1437,18 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 	if (!buildingMaskMap.TestTileMaskUnsafe(sqx >> 1, sqz >> 1, unitDef->buildingMask))
 		return BUILDSQUARE_BLOCKED;
 
-
 	BuildSquareStatus ret = BUILDSQUARE_OPEN;
 	const int yardxpos = unsigned(pos.x) / SQUARE_SIZE;
 	const int yardypos = unsigned(pos.z) / SQUARE_SIZE;
+	const int2 yardpos = { yardxpos, yardypos };
+	const int ymIdx = GetYardMapIndex(buildInfo.buildFacing, yardpos, xrange, zrange);
+
+	if (yardmapStatusEffectsMap.AreAnyFlagsSet(sqx, sqz, YardmapStatusEffectsMap::BLOCK_BUILDING)) {
+		bool isStackable = (!unitDef->yardmap.empty() && unitDef->yardmap[ymIdx] <= YardmapStates::YARDMAP_STACKABLE);
+		if ( !isStackable && (synced || ((allyteam < 0) || losHandler->InLos(pos, allyteam))) ) {
+			return BUILDSQUARE_BLOCKED;
+		}
+	}
 
 	CSolidObject* so = groundBlockingObjectMap.GroundBlocked(yardxpos, yardypos);
 
@@ -1460,10 +1473,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 			assert(u);
 			if ((allyteam < 0) || (u->losStatus[allyteam] & LOS_INLOS)) {
 				if (so->immobile) {
-
-					const int2 yardpos = { yardxpos, yardypos };
-					const int ymIdx = GetYardMapIndex(buildInfo.buildFacing, yardpos, xrange, zrange);
-
 					bool isStackable = (!unitDef->yardmap.empty() && unitDef->yardmap[ymIdx] <= YardmapStates::YARDMAP_GEOSTACKABLE);
 					ret = isStackable ? BUILDSQUARE_OPEN :
 							(TestBlockSquareForBuildOnly(so, yardpos) ? BUILDSQUARE_OPEN : BUILDSQUARE_BLOCKED);
@@ -1489,8 +1498,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestBuildSquare(
 			}
 			#endif
 
-			if (moveDef != nullptr && CMoveMath::IsNonBlocking(*moveDef, so, nullptr))
-				ret = BUILDSQUARE_OPEN;
+			if (moveDef != nullptr) {
+				MoveTypes::CheckCollisionQuery collisionQuery(moveDef, pos);
+				if (CMoveMath::IsNonBlocking(so, &collisionQuery))
+					ret = BUILDSQUARE_OPEN;
+			}
 
 			#if 0
 			if (synced)

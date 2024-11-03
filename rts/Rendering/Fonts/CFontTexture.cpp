@@ -34,7 +34,6 @@
 #include "System/TimeProfiler.h"
 #include "System/UnorderedMap.hpp"
 #include "System/float4.h"
-#include "System/bitops.h"
 #include "System/ContainerUtil.h"
 #include "System/ScopedResource.h"
 #include "fmt/format.h"
@@ -553,7 +552,6 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	, wantedTexHeight(0)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	atlasAlloc.SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
 	atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
 
 	atlasGlyphs.reserve(1024);
@@ -648,7 +646,7 @@ void CFontTexture::KillFonts()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// check unused fonts
-	spring::VectorEraseAllIf(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
+	std::erase_if(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
 
 	assert(allFonts.empty());
 	allFonts = {}; //just in case
@@ -660,7 +658,7 @@ void CFontTexture::Update() {
 	auto lock = CFontTexture::sync.GetScopedLock();
 
 	// check unused fonts
-	spring::VectorEraseAllIf(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
+	std::erase_if(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
 
 	static std::vector<std::shared_ptr<CFontTexture>> fontsToUpdate;
 	fontsToUpdate.clear();

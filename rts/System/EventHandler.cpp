@@ -691,7 +691,6 @@ DRAW_CALLIN(Genesis)
 DRAW_CALLIN(World)
 DRAW_CALLIN(WorldPreUnit)
 DRAW_CALLIN(PreDecals)
-DRAW_CALLIN(WorldPreParticles)
 DRAW_CALLIN(WaterPost)
 DRAW_CALLIN(WorldShadow)
 DRAW_CALLIN(ShadowPassTransparent)
@@ -952,6 +951,12 @@ void CEventHandler::MetalMapChanged(const int x, const int z)
 {
 	ZoneScoped;
 	ITERATE_EVENTCLIENTLIST(MetalMapChanged, x, z);
+}
+
+void CEventHandler::DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(DrawWorldPreParticles, drawAboveWater, drawBelowWater, drawReflection, drawRefraction);
 }
 
 void CEventHandler::DrawOpaqueUnitsLua(bool deferredPass, bool drawReflection, bool drawRefraction)

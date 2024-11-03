@@ -17,7 +17,7 @@ jobs:
       - name: Checkout Source Repository
         uses: actions/checkout@v2
         with:
-          ref: BAR105
+          ref: master
       - name: Generate Dynamic Content
         run: |
           bash doc/site/_scripts/get_release_data.sh
@@ -39,8 +39,8 @@ jobs:
         id: site-changes
         if: steps.check-ghpages.outputs.exists == 'true'
         run: |
-          git diff --stat origin/gh-pages BAR105:doc/site
-          git diff --quiet origin/gh-pages BAR105:doc/site && (echo "modified=false" > $GITHUB_OUTPUT) || (echo "modified=true" > $GITHUB_OUTPUT)
+          git diff --stat origin/gh-pages master:doc/site
+          git diff --quiet origin/gh-pages master:doc/site && (echo "modified=false" > $GITHUB_OUTPUT) || (echo "modified=true" > $GITHUB_OUTPUT)
       - name: Push gh-pages # Only push gh-pages if doc/site/ was changed or ldoc did changes
         if: steps.check-ghpages.outputs.exists == 'false' || steps.site-changes.outputs.modified == 'true'
         run: |

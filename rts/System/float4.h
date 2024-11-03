@@ -103,6 +103,11 @@ struct float4 : public float3
 		return (x * f.x) + (y * f.y) + (z * f.z) + (w * f.w);
 	}
 
+	std::string str() const {
+		return std::format("float4({:.3f}, {:.3f}, {:.3f}, {:.3f})", x, y, z, w);
+	}
+
+
 	/// Allows implicit conversion to float* (for passing to gl functions)
 	operator const float* () const { return reinterpret_cast<const float*>(&x); }
 	operator       float* ()       { return reinterpret_cast<      float*>(&x); }

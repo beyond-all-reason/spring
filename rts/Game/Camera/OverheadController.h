@@ -24,9 +24,10 @@ public:
 	void Update();
 	float3 GetPos() const { return (pos - dir * height); }
 	void SetPos(const float3& newPos);
+	void SetRot(const float3& newRot) { angle = std::clamp(math::PI - newRot.x, 0.01f, math::HALFPI); }
 
-	float3 SwitchFrom() const { return pos; }
-	void SwitchTo(const int oldCam, const bool showText);
+	float3 SwitchFrom() const { return GetPos(); }
+	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
@@ -44,6 +45,7 @@ private:
 	float oldAltHeight;
 
 	float maxHeight;
+	float minHeight;
 	float tiltSpeed;
 	float angle;
 

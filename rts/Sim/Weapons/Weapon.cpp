@@ -52,6 +52,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(projectilesPerShot),
 	CR_MEMBER(nextSalvo),
 	CR_MEMBER(salvoLeft),
+	CR_MEMBER(salvoWindup),
 
 	CR_MEMBER(range),
 	CR_MEMBER(projectileSpeed),
@@ -108,7 +109,8 @@ CR_REG_METADATA(CWeapon, (
 
 	CR_MEMBER(weaponAimAdjustPriority),
 	CR_MEMBER(fastAutoRetargeting),
-	CR_MEMBER(fastQueryPointUpdate)
+	CR_MEMBER(fastQueryPointUpdate),
+	CR_MEMBER(burstControlWhenOutOfArc)
 ))
 
 
@@ -136,6 +138,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	projectilesPerShot(1),
 	nextSalvo(0),
 	salvoLeft(0),
+	salvoWindup(0),
 
 	range(1.0f),
 	projectileSpeed(1.0f),
@@ -187,7 +190,8 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 
 	weaponAimAdjustPriority(1.f),
 	fastAutoRetargeting(false),
-	fastQueryPointUpdate(false)
+	fastQueryPointUpdate(false),
+	burstControlWhenOutOfArc(0)
 {
 	assert(weaponMemPool.alloced(this));
 }
@@ -485,7 +489,7 @@ void CWeapon::UpdateFire()
 	reloadStatus = gs->frameNum + int(reloadTime / owner->reloadSpeed);
 
 	salvoLeft = salvoSize;
-	nextSalvo = gs->frameNum;
+	nextSalvo = gs->frameNum + salvoWindup;
 	salvoError = gsRNG.NextVector() * (owner->IsMoving()? weaponDef->movingAccuracy: accuracyError);
 
 	owner->lastMuzzleFlameSize = muzzleFlareSize;
@@ -528,6 +532,42 @@ void CWeapon::UpdateSalvo()
 
 	salvoLeft--;
 	nextSalvo = gs->frameNum + salvoDelay;
+
+	if (burstControlWhenOutOfArc) {
+		bool haveTarget = HaveTarget();
+		bool targetInArc = haveTarget;
+		if (targetInArc && weaponDef->maxFireAngle > -1.0f) {
+			const float3 currentTargetDir = (currentTargetPos - aimFromPos).SafeNormalize2D();
+			const float3 simpleWeaponDir = float3(weaponDir).SafeNormalize2D();
+
+			if (simpleWeaponDir.dot2D(currentTargetDir) < weaponDef->maxFireAngle)
+				targetInArc = false;
+		}
+
+		if (!targetInArc || !CheckAimingAngle()) {
+			if (burstControlWhenOutOfArc == UnitDefWeapon::BURST_CONTROL_OUT_OF_ARC_HOLD) {
+				// Hold fire, but continue to aim towards the target.
+				UpdateWeaponPieces(false); // calls script->QueryWeapon()
+				UpdateWeaponVectors();
+
+				// Special case needed here if the last shot of the salvo has been cancelled.
+				if (salvoLeft == 0) {
+					owner->script->EndBurst(weaponNum);
+
+					const bool searchForNewTarget = (currentTarget == owner->curTarget);
+					owner->commandAI->WeaponFired(this, searchForNewTarget, false);
+				}
+				return;
+			} else {
+				// Fire indiscriminately wherever the the weapon is pointing.
+				// currentTargetPos gets restored every frame in Update(), so we can change it here without breaking aiming
+				// when the target is back in arc. If we don't have a target, then the currentTargetPos will be pointing at
+				// the last target point and so can be left.
+				if (haveTarget)
+					currentTargetPos = aimFromPos + (weaponDir * range);
+			}
+		}
+	}
 
 	// Decloak
 	if (owner->unitDef->decloakOnFire)
@@ -930,9 +970,9 @@ bool CWeapon::TestTarget(const float3 tgtPos, const SWeaponTarget& trg) const
 				return false;
 			if ((trg.unit->category & onlyTargetCategory) == 0)
 				return false;
-			if (trg.unit->isDead && modInfo.fireAtKilled == 0)
+			if (trg.unit->isDead && !modInfo.fireAtKilled)
 				return false;
-			if (trg.unit->IsCrashing() && modInfo.fireAtCrashing == 0)
+			if (trg.unit->IsCrashing() && !modInfo.fireAtCrashing)
 				return false;
 			if ((trg.unit->losStatus[owner->allyteam] & (LOS_INLOS | LOS_INRADAR)) == 0)
 				return false;

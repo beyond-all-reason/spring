@@ -19,6 +19,7 @@
  * @string versionFull 
  * @string versionPatchSet 
  * @string buildFlags (unsynced only) Gets additional engine buildflags, e.g. "OMP" or "MT-Sim DEBUG"
+ * @string FeatureSupport table containing various engine features as keys; use for cross-version compat
  * @number wordSize indicates the build type and is either 32 or 64 (or 0 in synced code)
  */
 
@@ -35,6 +36,14 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 	#else
 	LuaPushNamedNumber(L, "wordSize", (!CLuaHandle::GetHandleSynced(L))? Platform::NativeWordSize() * 8: 0);
 	#endif
+
+
+	lua_pushliteral(L, "FeatureSupport");
+	lua_createtable(L, 0, 2);
+		LuaPushNamedBool(L, "hasExitOnlyYardmaps", true);
+		LuaPushNamedNumber(L, "rmlUiApiVersion", 1);
+	lua_rawset(L, -3);
+
 	return true;
 }
 

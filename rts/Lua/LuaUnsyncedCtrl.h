@@ -34,6 +34,16 @@ class LuaUnsyncedCtrl {
 
 		static int SetCameraState(lua_State* L);
 		static int SetCameraTarget(lua_State* L);
+		static int RunDollyCamera(lua_State* L);
+		static int PauseDollyCamera(lua_State* L);
+		static int ResumeDollyCamera(lua_State* L);
+		static int SetDollyCameraPosition(lua_State* L);
+		static int SetDollyCameraMode(lua_State* L);
+		static int SetDollyCameraCurve(lua_State* L);
+		static int SetDollyCameraLookPosition(lua_State* L);
+		static int SetDollyCameraLookUnit(lua_State* L);
+		static int SetDollyCameraLookCurve(lua_State* L);
+		static int SetDollyCameraRelativeMode(lua_State* L);
 
 		static int DeselectUnit(lua_State* L);
 		static int DeselectUnitMap(lua_State* L);
@@ -107,6 +117,7 @@ class LuaUnsyncedCtrl {
 		static int SetConfigString(lua_State* L);
 
 		static int CreateDir(lua_State* L);
+		static int AllocateTable(lua_State* L);
 
 		static int Reload(lua_State* L);
 		static int Restart(lua_State* L);

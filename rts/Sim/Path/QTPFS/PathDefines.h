@@ -10,7 +10,9 @@
 #define QTPFS_SMOOTH_PATHS
 // #define QTPFS_CONSERVATIVE_NODE_SPLITS
 // #define QTPFS_DEBUG_NODE_HEAP
+
 #define QTPFS_CORNER_CONNECTED_NODES
+
 // #define QTPFS_SLOW_ACCURATE_TESSELATION
 // #define QTPFS_ORTHOPROJECTED_EDGE_TRANSITIONS
 #define QTPFS_ENABLE_MICRO_OPTIMIZATION_HACKS
@@ -32,6 +34,11 @@
 #define QTPFS_SHARE_PATH_MIN_SIZE 2
 #define QTPFS_SHARE_PATH_MAX_SIZE 16
 #define QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE 32
+
+#define QTPFS_MAP_DAMAGE_SIZE 16
+
+// Though there are four quads per level, having nothing is like a 5th state. So 3 bits, not 2, is needed per level.
+#define QTPFS_NODE_NUMBER_SHIFT_STEP 3
 
 namespace QTPFS {
     constexpr int SEARCH_DIRS = 2;

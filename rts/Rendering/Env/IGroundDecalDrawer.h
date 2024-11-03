@@ -12,12 +12,12 @@ class IGroundDecalDrawer
 {
 	CR_DECLARE(IGroundDecalDrawer)
 public:
-	static bool GetDrawDecals() { return (decalLevel > 0); }
+	static bool GetDrawDecals() { return hasDecals; }
 	static void SetDrawDecals(bool v);
 
 	static void Init();
 	static void FreeInstance();
-	static IGroundDecalDrawer* singleton;
+	static inline IGroundDecalDrawer* singleton = nullptr;
 
 public:
 	virtual void ReloadTextures() = 0;
@@ -48,10 +48,9 @@ public:
 	virtual ~IGroundDecalDrawer() {}
 
 protected:
-	virtual void OnDecalLevelChanged() = 0;
-protected:
 	std::vector<GroundDecal> decals;
-	static int decalLevel;
+	static inline bool hasDecals = false;
+	static constexpr auto DECAL_LEVEL_MULT = 3;
 };
 
 
@@ -70,8 +69,6 @@ public:
 
 	void GhostDestroyed(const GhostSolidObject* gb) override {}
 	void GhostCreated(const CSolidObject* object, const GhostSolidObject* gb) override {}
-
-	void OnDecalLevelChanged() override {}
 
 	uint32_t CreateLuaDecal() override { return 0; }
 	bool DeleteLuaDecal(uint32_t id) override { return false; }

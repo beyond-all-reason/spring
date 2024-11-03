@@ -6,87 +6,75 @@ permalink: changelogs/running-changelog
 author: sprunk
 ---
 
-This is the changelog **since version 2314**.
+This is the changelog **since version 2590**.
 
 # Caveats
 These are the entries which may require special attention when migrating:
-* some animations are now multi-threaded. It shouldn't cause desyncs, but an `AnimationMT` springsetting has been provided to disable it, just in case. See below.
-* when building the engine via CMake, only native C++ AIs are now built by default.
-* ground decals may behave a bit different because there's a new implementation.
-* ground decals may no longer work on potato hardware.
-* instead of 4 default explosion decals in basecontent, there's 2 new normal-mapped ones. Might want to produce more for variety and/or check your `gamedata/resources.lua` to see if you're referencing them.
+* explicitly specified weapon def `scarTTL` value is now the actual TTL.
+Previously it was multiplied by the ground decals level springsetting,
+which defaults to 3, so if you had tweaked scars they may turn out to have
+significantly different TTL now.
+* weapons with `groundBounce = true` will now bounce even if `numBounces`
+is left undefined. This is because `numBounces = -1`, which is the default
+value, will now result in infinite bounces as intended instead of 0.
+* a bunch of changes in damage and death Lua events, see below.
 
 # Features
-* The `select` action now composes `IdMatches` filters as *OR* statements see [The select command]({{ site.baseurl }}{% link articles/select-command.markdown %}#idmatches_string) for further reference.
-* added a new optional boolean parameter to `Spring.GetUnitHeading`, default false. If true, the value returned is in radians instead of the TA 16-bit angular unit.
-* added a new callin, `GameFramePost(number frame)`. This is the last callin in a sim frame (regular `GameFrame` is the first).
-Use for batching events that happened during the frame to be sent to unsynced for use in draw frames before the next sim frame.
-* added `Spring.GetTeamMaxUnits(teamID) -> number maxUnits, number? currentUnits`. The second value is only returned if you have read access to that team (max is public).
-There is currently no corresponding Set.
-* added `GAME/ShowServerName` startscript entry. If not empty, the initial connection screen's "Connecting to: X" message will display the value of that option instead of the host's IP.
-* added `Spring.GetModOption(string key) -> string? value`. Returns a single modoption; replaces the `Spring.GetModOptions().foo` pattern for greater performance.
-* added `Spring.GetMapOption(string key) -> string? value`, ditto for a single mapoption.
-* add a `Patrolling` selection filter. Applies to units that have a Patrol command among the first 4 commands (remember Patrol prepends Fight, which itself prepends Attack).
-* the `SpringDataRoot` springsetting now accepts multiple data root paths. Split them via ';' (on Windows) or ':' (elsewhere).
-* `Spring.GetUnitWorkerTask` now works on factories.
-* major performance (incl. loading time and Lua memory usage) improvements.
-* further Tracy instrumentation.
 
-### New ground decals
-* added normal mapping to all decals (explosion scars, building plates, tank tracks).
-Name the normalmap the same as the base decal but with `_normal` at the end., e.g. when you use `scar1.tga` as a decal diffuse/alpha, use `scar1_normal.tga` as a normal map texture.
-* alpha channel of normal map is now used for explosion decal glow. Scales with weapon damage. Full opacity (255) represents the hottest part.
-* added a Lua interface to create and edit decals. Check the [control](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedCtrl.html#Decals)
-and [read](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Decals) parts in the API listings.
-* added a shader interface for decal rendering. No documentation of uniforms/attributes/etc seems to exist at the moment,
-but you can look up the default shader implementation ([fragment](https://github.com/beyond-all-reason/spring/blob/BAR105/cont/base/springcontent/shaders/GLSL/GroundDecalsFragProg.glsl), [vertex](https://github.com/beyond-all-reason/spring/blob/BAR105/cont/base/springcontent/shaders/GLSL/GroundDecalsVertProg.glsl)).
+### Death events
+* `wupget:UnitDestroyed` will pass the builder as the killer if a unit gets reclaimed. Note that
+reclaim still does not generate `UnitDamaged` events.
+* `wupget:UnitDestroyed` now receives a 7th argument, weaponDefID, with the cause of death.
+Widgets receive this info regardless of LoS on the attacker (no new hax, `UnitDamaged` already did this).
+* the weaponDefID above is never `nil`, all causes of death are attributable including things like
+"was being built in a factory, got cancelled" or "died automatically due to `isFeature` def tag".
+Added a bunch of `Game.envDamageTypes` constants for this purpose. See the table at the bottom of the page.
+* the 1000000 damage that applies to units being transported in a non-`releaseHeld` transport when it
+dies for non-selfD reasons will now be attributed to the new `TransportKilled` damage type in `UnitDamaged`,
+previously was `Killed`.
 
-### More interfaces in `defs.lua`
-The following functions are now available in the `defs.lua` phase:
-* `Spring.GetMapOption` (new, see above)
-* `Spring.GetModOption` (new, see above)
-* `Spring.GetTeamLuaAI`
-* `Spring.GetTeamList`
-* `Spring.GetGaiaTeamID`
-* `Spring.GetPlayerList`
-* `Spring.GetAllyTeamList`
-* `Spring.GetTeamInfo`
-* `Spring.GetAllyTeamInfo`
-* `Spring.GetAIInfo`
-* `Spring.GetTeamAllyTeamID`
-* `Spring.AreTeamsAllied`
-* `Spring.ArePlayersAllied`
-* `Spring.GetSideData`
+### Misc Lua
+* add `math.normalize(x1, x2, ...) → numbers xn1, xn2, ...`. Normalizes a vector. Can have any dimensions (pass and receive each as a separate value).
+Returns a zero vector if passed a zero vector.
+* `wupget:DrawWorldPreParticles` now has four boolean parameters depending on which phase is being drawn: above water, below water, reflection, refraction.
+They aren't mutually exclusive.
+* add `Spring.AllocateTable(arraySlots, hashSlots) → {}`. Returns an empty table with more space allocated.
+Use as a microoptimisation when you have a big table which you are going to populate with a known number of elements, for example `#UnitDefs`.
+* add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
+to the `unitQuadPositionUpdateRate` modrule, which may leave them unable to be hit by some weapons when moving. Call this for targets of important
+weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value greater than 1 to ensure reliable hit detection.
+* `pairs()` now looks at the `__pairs` metamethod in tables, same as in Lua 5.2.
 
-### Water
-* add `Spring.GetWaterLevel(x, z) -> number waterHeight`. Similar to `Spring.GetGroundHeight` except returns the height of water at that spot.
-Currently water height is 0 everywhere. Use where appropriate to be future-proof for when Recoil gets dynamic water, or just to give a name to the otherwise magic constant.
-* add `Spring.GetWaterPlaneLevel() -> number waterPlaneHeight`. Ditto, except encodes that you expect the water to be a flat plane.
-Use as above but where you have no x/z coordinates.
+### Defs
+* add `windup` weapon def tag. Delay in seconds before the first projectile of a salvo appears. Has the same mechanics as burst.
 
-### Interpolated game seconds
-* added `Spring.GetGameSecondsInterpolated() -> number` function to unsynced Lua.
-Unlike `GetGameSeconds` it flows during rendering. Unlike `GetDrawSeconds` its flow reflects gamespeed (incl. stopping when paused).
-And unlike `GetGameFrame` and `GetFrameTimeOffset` it is in a natural unit instead of the technical frame abstraction.
-* shaders: changed the `timeInfo.z` uniform from draw frame number to interpolated game seconds.
+## Fixes
+* fix draw position for asymmetric models, they no longer disappear when not appropriate.
+* fix streaming very small sound files.
+* fix `Spring.SetCameraTarget` reverting to the old position.
+* the `quadFieldQuadSizeInElmos` modrule now only accepts powers of two instead of breaking at the edges of the map.
 
-### Skidding
-* units will skid if hit with impulses sufficiently large in the direction opposite their movement vector. Previously units would only skid on large impulses that hit their sides.
-* added `Spring.SetUnitPhysicalStateBit(number unitID, number stateBit) -> nil`, for setting a unit's physical state bit. Gotta use magic constants for bits at the moment.
-Use for example to unattach units from the grounds and trigger skidding.
-* added unit def: `rollingResistanceCoefficient`, used to reduce a unit's speed when exceeding their normal max speed. Defaults to 0.05.
-* added unit def: `groundFrictionCoefficient`, used to reduce a unit's speed when skidding. Defaults to 0.01.
-* added unit def: `atmosphericDragCoefficient`, reduces a unit's speed when skidding and exceeding speed maximum. Defaults to 1.0.
+### Death damage types listing
 
-### Debugging tools
-* `/debugcolvol` now also draws the selection volume, in green.
-* `/track 1 unitID unitID unitID` lets you specify units to track via the command. If no unitID is given it still behaves the old way and uses the current selection.
-* added an `AnimationMT` boolean springsetting. Defaults to true. Set to false if there's desync problems. Will be removed after some time, when MT animations prove to be sync-safe.
-* COB piece errors say the culprit's unit def name (since the same script can be shared by many units, with different piece lists).
+| Game.envDamageTypes.??? | Description                                                                                                                                                       |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AircraftCrashed         | Aircraft hitting the ground                                                                                                                                       |
+| Kamikaze                | Unit exploding due to its kamikaze ability                                                                                                                        |
+| SelfD                   | Unit exploding after a self-D command and countdown                                                                                                               |
+| ConstructionDecay       | Abandoned nanoframe disappearing (the process itself is HP removal)                                                                                               |
+| Reclaimed               | Killed via reclaim (the process itself is HP removal)                                                                                                             |
+| TurnedIntoFeature       | Unit dying on completion, without explosion, due to `isFeature` def tag                                                                                           |
+| TransportKilled         | Unit was in transport which had no `releaseHeld`. If the transport was not self-destructed, the unit also receives 1000000 damage of this type before dying.      |
+| FactoryKilled           | Unit was being built in a factory which died. No direct way to discern how exactly the factory died currently, you'll have to wait for the factory's death event. |
+| FactoryCancel           | Unit was being built in a factory but the order was cancelled.                                                                                                    |
+| UnitScript              | COB unit script ordered the unit's death. Note that LUS has access to normal kill/damage interfaces instead.                                                      |
+| SetNegativeHealth       | A unit had less than 0 health for non-damage reasons (e.g. Lua set it so).                                                                                        |
+| OutOfBounds             | A unit was thrown way out of map bounds.                                                                                                                          |
+| KilledByCheat           | The `/remove` or `/destroy` commands were used.                                                                                                                   |
+| KilledByLua             | Default cause of death when using `Spring.DestroyUnit`.                                                                                                           |
 
-# Fixes
-* inserting (via `CMD.INSERT`) a "build unit" command to a factory with a SHIFT and/or CTRL modifier (i.e. x5/20) will now work correctly (previously ignored and went x1).
-* fix an issue where a unit that kills something via `SFX.FIRE_WEAPON` would sometimes continue to shoot at the location it was standing at at the time.
-* fixed `VFS` functions that deal with file paths being exceedingly slow.
-* fixed `Spring.GetTeamUnitsByDefs` revealing much more information than it should.
-* `Spring.GetUnitWeaponState(unitID, "burstRate")` now correctly returns fractional values (was only full integers before).
+`KilledByLua` is guaranteed to be the "last" value, so you can define your own custom damage types via e.g.
+```
+Game.envDamageTypes.CullingStrike      = Game.KilledByLua - 1
+Game.envDamageTypes.SummonTimerExpired = Game.KilledByLua - 2
+```

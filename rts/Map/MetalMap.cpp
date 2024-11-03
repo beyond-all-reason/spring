@@ -12,9 +12,9 @@
 CR_BIND(CMetalMap, )
 
 CR_REG_METADATA(CMetalMap,(
-	CR_MEMBER(metalScale),
-	CR_MEMBER(sizeX),
-	CR_MEMBER(sizeZ),
+	CR_IGNORED(metalScale),
+	CR_IGNORED(sizeX),
+	CR_IGNORED(sizeZ),
 
 	CR_IGNORED(texturePalette),
 	CR_MEMBER(distributionMap),

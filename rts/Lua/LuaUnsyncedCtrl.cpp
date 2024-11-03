@@ -2,6 +2,7 @@
 
 #include "LuaUnsyncedCtrl.h"
 
+#include "Game/Camera/DollyController.h"
 #include "LuaConfig.h"
 #include "LuaInclude.h"
 #include "LuaHandle.h"
@@ -158,6 +159,17 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetCameraState);
 	REGISTER_LUA_CFUNC(SetCameraTarget);
 
+	REGISTER_LUA_CFUNC(RunDollyCamera);
+	REGISTER_LUA_CFUNC(PauseDollyCamera);
+	REGISTER_LUA_CFUNC(ResumeDollyCamera);
+	REGISTER_LUA_CFUNC(SetDollyCameraMode);
+	REGISTER_LUA_CFUNC(SetDollyCameraPosition);
+	REGISTER_LUA_CFUNC(SetDollyCameraCurve);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookCurve);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookPosition);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookUnit);
+	REGISTER_LUA_CFUNC(SetDollyCameraRelativeMode);
+
 	REGISTER_LUA_CFUNC(DeselectUnit);
 	REGISTER_LUA_CFUNC(DeselectUnitMap);
 	REGISTER_LUA_CFUNC(DeselectUnitArray);
@@ -228,6 +240,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetConfigString);
 
 	REGISTER_LUA_CFUNC(CreateDir);
+	REGISTER_LUA_CFUNC(AllocateTable);
 
 	REGISTER_LUA_CFUNC(SendCommands);
 	REGISTER_LUA_CFUNC(GiveOrder);
@@ -1139,7 +1152,7 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 	if (mouse == nullptr)
 		return 0;
 
-	const float4 targetPos = {
+	float4 targetPos = {
 		luaL_checkfloat(L, 1),
 		luaL_checkfloat(L, 2),
 		luaL_checkfloat(L, 3),
@@ -1151,16 +1164,12 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 		luaL_optfloat(L, 7, (camera->GetDir()).z),
 	};
 
-	if (targetPos.w >= 0.0f) {
-		camHandler->CameraTransition(targetPos.w);
-		camHandler->GetCurrentController().SetPos(targetPos);
-		camHandler->GetCurrentController().SetDir(targetDir);
-	} else {
-		// no transition, bypass controller
-		camera->SetPos(targetPos);
-		camera->SetDir(targetDir);
-		// camera->Update();
+	if (targetPos.w < 0.0f) {
+		targetPos.w = 0.0f;
 	}
+	camHandler->GetCurrentController().SetPos(targetPos);
+	camHandler->GetCurrentController().SetDir(targetDir);
+	camHandler->CameraTransition(targetPos.w);
 
 	return 0;
 }
@@ -1226,14 +1235,161 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 		luaL_error(L, "[%s([ stateTable[, camTransTime[, transTimeFactor[, transTimeExpon] ] ] ])] incorrect arguments", __func__);
 
 	camHandler->SetTransitionParams(luaL_optfloat(L, 3, camHandler->GetTransitionTimeFactor()), luaL_optfloat(L, 4, camHandler->GetTransitionTimeExponent()));
-	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
 
 	const bool retval = camHandler->SetState(hasState ? ParseCamStateMap(L, 1) : camHandler->GetState());
+	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
 	const bool synced = CLuaHandle::GetHandleSynced(L);
 
 	// always push false in synced
 	lua_pushboolean(L, retval && !synced);
 	return 1;
+}
+
+/*** Runs Dolly Camera
+ * @number runtime in milliseconds
+ *
+ */
+int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
+{
+	float runtime = luaL_checkfloat(L, 1);
+
+	camHandler->GetDollyController().Run(runtime);
+
+	return 0;
+}
+
+/*** Pause Dolly Camera
+ * @number [percent] of the total runtime to pause at, 0 to 1 inclusive
+ *
+ */
+int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
+{
+	float percent = luaL_optfloat(L, 1, -1);
+
+	camHandler->GetDollyController().Pause(percent);
+
+	return 0;
+}
+
+/*** Resume Dolly Camera
+ *
+ */
+int LuaUnsyncedCtrl::ResumeDollyCamera(lua_State* L)
+{
+	camHandler->GetDollyController().Resume();
+
+	return 0;
+}
+
+/*** Sets Dolly Camera Position
+ * @number x
+ * @number y
+ * @number z
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
+{
+	float x = luaL_checkfloat(L, 1);
+	float y = luaL_checkfloat(L, 2);
+	float z = luaL_checkfloat(L, 3);
+
+	camHandler->GetDollyController().SetPosition(float3{x, y, z});
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement Curve
+ * @number degree
+ * @
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	camHandler->GetDollyController().SetNURBS(degree, cpoints, knots);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement mode
+ * @number mode 1=static position, 2=nurbs curve
+ * @
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
+{
+	int mode = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetMode(mode);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement curve to world relative or look target relative
+ * @number relativeMode 1=world, 2=look target
+ */
+int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
+{
+	int mode = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetRelativeMode(mode);
+
+	return 0;
+}
+
+
+/*** Sets Dolly Camera Look Curve
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_CURVE);
+	camHandler->GetDollyController().SetLookCurve(degree, cpoints, knots);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera Look Position
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
+{
+	int x = luaL_checkint(L, 1);
+	int y = luaL_checkint(L, 2);
+	int z = luaL_checkint(L, 3);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_POSITION);
+	camHandler->GetDollyController().SetLookPosition(float3(x, y, z));
+
+	return 0;
+}
+
+/*** Sets target unit for Dolly Camera to look towards
+ *
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
+{
+	int unitid = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_UNIT);
+	camHandler->GetDollyController().SetLookUnit(unitid);
+
+	return 0;
 }
 
 
@@ -2440,6 +2596,29 @@ int LuaUnsyncedCtrl::CreateDir(lua_State* L)
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.AllocateTable
+ * @number narr hint for count of array elements
+ * @number nrec hint for count of record elements
+ * @treturn table
+ */
+int LuaUnsyncedCtrl::AllocateTable(lua_State* L)
+{
+	int narr = luaL_optinteger(L, 1, 0);
+	int nrec = luaL_optinteger(L, 2, 0);
+
+	if (narr < 0) {
+		narr = 0;
+	}
+	if (nrec < 0) {
+		nrec = 0;
+	}
+
+	lua_createtable(L, narr, nrec);
+
+	return 1;
+}
 
 
 
@@ -2657,7 +2836,7 @@ int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
  *
  * @function Spring.ReplaceMouseCursor
  * @string oldFileName
- * @string newFileName 
+ * @string newFileName
  * @bool[opt=false] hotSpotTopLeft
  * @treturn ?nil|bool assigned
  */
@@ -3552,7 +3731,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
  * @number x
  * @number y
  * @number z
- * @treturn nil 
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
 {
@@ -4827,8 +5006,8 @@ int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
  *
  * @function Spring.SetWindowGeometry
  * @number displayIndex
- * @number winPosX
- * @number winPosY
+ * @number winRelPosX
+ * @number winRelPosY
  * @number winSizeX
  * @number winSizeY
  * @bool fullScreen

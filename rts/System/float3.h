@@ -5,6 +5,8 @@
 
 #include <cassert>
 #include <array>
+#include <utility>
+#include <format>
 
 #include "System/BranchPrediction.h"
 #include "lib/streflop/streflop_cond.h"
@@ -595,6 +597,14 @@ public:
 		y = 0.0f; return LengthNormalize();
 	}
 
+	/**
+	 * Decomposes into normalized dir and length
+	 */
+	std::pair <float3, float> GetNormalized() const {
+		float3 copy = *this;
+		const float length = copy.LengthNormalize();
+		return {std::move(copy), length};
+	}
 
 	/**
 	 * @brief normalizes the vector using one of Normalize implementations
@@ -794,6 +804,10 @@ public:
 
 	static constexpr float cmp_eps() { return 1e-04f; }
 	static constexpr float nrm_eps() { return 1e-12f; }
+
+	std::string str() const {
+		return std::format("float3({:.3f}, {:.3f}, {:.3f})", x, y, z);
+	}
 
 	/**
 	 * @brief max x pos

@@ -82,6 +82,7 @@ public:
 
 	int salvosize;
 	float salvodelay;
+	int salvoWindup;
 	float reload;
 	float beamtime;
 	bool beamburst;
@@ -272,6 +273,8 @@ public:
 		float4 scarColorTint = float4{ 0.5f, 0.5f, 0.5f, 0.5f };
 
 		std::vector<int> scarIdcs;
+
+		std::array<float3, 4> animParams;
 
 		bool explosionScar = true;
 		bool smokeTrail = false;

@@ -108,16 +108,19 @@ public:
 	virtual float3 GetRot() const;
 
 	virtual void SetPos(const float3& newPos) { pos = newPos; }
+	virtual void SetRot(const float3& newRot);
 	virtual void SetDir(const float3& newDir) { dir = newDir; }
 	virtual bool DisableTrackingByKey() { return true; }
 
 	// return the position to send to new controllers SetPos
 	virtual float3 SwitchFrom() const = 0;
-	virtual void SwitchTo(const int oldCam, const bool showText = true) = 0;
+	virtual void SwitchTo(const CCameraController* oldCam, const bool showText = true) = 0;
 
 	virtual void GetState(StateMap& sm) const;
 	virtual bool SetState(const StateMap& sm);
 	virtual void SetTrackingInfo(const float3& pos, float radius) { SetPos(pos); }
+
+	static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight);
 
 	/**
 	 * Whether the camera's distance to the ground or to the units

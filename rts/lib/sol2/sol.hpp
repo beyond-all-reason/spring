@@ -6375,7 +6375,8 @@ namespace sol {
 			static_assert(std::is_constructible<T, Args&&...>::value, "T must be constructible with Args");
 
 			*this = nullopt;
-			this->construct(std::forward<Args>(args)...);
+			new (static_cast<void*>(this)) optional(std::in_place, std::forward<Args>(args)...);
+			return **this;
 		}
 
 		/// Swaps this optional with the other.
@@ -9146,7 +9147,7 @@ namespace sol {
 
 	inline int push_type_panic_string(lua_State* L, int index, type expected, type actual, string_view message, string_view aux_message) noexcept {
 		const char* err = message.size() == 0
-		     ? (aux_message.size() == 0 ? "stack index %d, expected %s, received %s" : "stack index %d, expected %s, received %s: %s")
+		     ? (aux_message.size() == 0 ? "stack index %d, expected %s, received %s" : "stack index %d, expected %s, received %s: %s%s")
 		     : "stack index %d, expected %s, received %s: %s %s";
 		const char* type_name = expected == type::poly ? "anything" : lua_typename(L, static_cast<int>(expected));
 		{

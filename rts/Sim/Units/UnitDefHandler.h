@@ -60,6 +60,8 @@ public:
 
 	int NumPushResistantUnitDefs() const { return numPushResistantUnitDefs; }
 
+	void SanitizeUnitDefs();
+
 protected:
 	void UnitDefLoadSounds(UnitDef*, const LuaTable&);
 	void LoadSounds(const LuaTable&, GuiSoundSet&, const std::string& soundName);
