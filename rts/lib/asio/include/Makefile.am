@@ -70,7 +70,6 @@ nobase_include_HEADERS = \
 	asio/detail/buffered_stream_storage.hpp \
 	asio/detail/buffer_resize_guard.hpp \
 	asio/detail/buffer_sequence_adapter.hpp \
-	asio/detail/bulk_executor_op.hpp \
 	asio/detail/call_stack.hpp \
 	asio/detail/chrono.hpp \
 	asio/detail/chrono_time_traits.hpp \
@@ -100,14 +99,9 @@ nobase_include_HEADERS = \
 	asio/detail/fenced_block.hpp \
 	asio/detail/functional.hpp \
 	asio/detail/future.hpp \
-	asio/detail/gcc_arm_fenced_block.hpp \
-	asio/detail/gcc_hppa_fenced_block.hpp \
-	asio/detail/gcc_sync_fenced_block.hpp \
-	asio/detail/gcc_x86_fenced_block.hpp \
 	asio/detail/global.hpp \
 	asio/detail/handler_alloc_helpers.hpp \
 	asio/detail/handler_cont_helpers.hpp \
-	asio/detail/handler_invoke_helpers.hpp \
 	asio/detail/handler_tracking.hpp \
 	asio/detail/handler_type_requirements.hpp \
 	asio/detail/handler_work.hpp \
@@ -199,7 +193,6 @@ nobase_include_HEADERS = \
 	asio/detail/kqueue_reactor.hpp \
 	asio/detail/limits.hpp \
 	asio/detail/local_free_on_block_exit.hpp \
-	asio/detail/macos_fenced_block.hpp \
 	asio/detail/memory.hpp \
 	asio/detail/mutex.hpp \
 	asio/detail/non_const_lvalue.hpp \
@@ -271,7 +264,6 @@ nobase_include_HEADERS = \
 	asio/detail/socket_option.hpp \
 	asio/detail/socket_select_interrupter.hpp \
 	asio/detail/socket_types.hpp \
-	asio/detail/solaris_fenced_block.hpp \
 	asio/detail/source_location.hpp \
 	asio/detail/static_mutex.hpp \
 	asio/detail/std_event.hpp \
@@ -298,14 +290,12 @@ nobase_include_HEADERS = \
 	asio/detail/tss_ptr.hpp \
 	asio/detail/type_traits.hpp \
 	asio/detail/utility.hpp \
-	asio/detail/variadic_templates.hpp \
 	asio/detail/wait_handler.hpp \
 	asio/detail/wait_op.hpp \
 	asio/detail/winapp_thread.hpp \
 	asio/detail/wince_thread.hpp \
 	asio/detail/win_event.hpp \
 	asio/detail/win_fd_set_adapter.hpp \
-	asio/detail/win_fenced_block.hpp \
 	asio/detail/win_global.hpp \
 	asio/detail/win_iocp_file_service.hpp \
 	asio/detail/win_iocp_handle_read_op.hpp \
@@ -356,38 +346,16 @@ nobase_include_HEADERS = \
 	asio/execution/bad_executor.hpp \
 	asio/execution/blocking.hpp \
 	asio/execution/blocking_adaptation.hpp \
-	asio/execution/bulk_execute.hpp \
-	asio/execution/bulk_guarantee.hpp \
-	asio/execution/connect.hpp \
 	asio/execution/context.hpp \
 	asio/execution/context_as.hpp \
-	asio/execution/detail/as_invocable.hpp \
-	asio/execution/detail/as_operation.hpp \
-	asio/execution/detail/as_receiver.hpp \
-	asio/execution/detail/bulk_sender.hpp \
-	asio/execution/detail/submit_receiver.hpp \
-	asio/execution/detail/void_receiver.hpp \
-	asio/execution/execute.hpp \
 	asio/execution/executor.hpp \
 	asio/execution/impl/bad_executor.ipp \
-	asio/execution/impl/receiver_invocation_error.ipp \
 	asio/execution/invocable_archetype.hpp \
 	asio/execution/mapping.hpp \
 	asio/execution/occupancy.hpp \
-	asio/execution/operation_state.hpp \
 	asio/execution/outstanding_work.hpp \
 	asio/execution/prefer_only.hpp \
-	asio/execution/receiver.hpp \
-	asio/execution/receiver_invocation_error.hpp \
 	asio/execution/relationship.hpp \
-	asio/execution/schedule.hpp \
-	asio/execution/scheduler.hpp \
-	asio/execution/sender.hpp \
-	asio/execution/set_done.hpp \
-	asio/execution/set_error.hpp \
-	asio/execution/set_value.hpp \
-	asio/execution/start.hpp \
-	asio/execution/submit.hpp \
 	asio/executor.hpp \
 	asio/executor_work_guard.hpp \
 	asio/experimental/append.hpp \
@@ -440,9 +408,7 @@ nobase_include_HEADERS = \
 	asio/generic/raw_protocol.hpp \
 	asio/generic/seq_packet_protocol.hpp \
 	asio/generic/stream_protocol.hpp \
-	asio/handler_alloc_hook.hpp \
 	asio/handler_continuation_hook.hpp \
-	asio/handler_invoke_hook.hpp \
 	asio/high_resolution_timer.hpp \
 	asio.hpp \
 	asio/impl/any_completion_executor.ipp \
@@ -466,7 +432,6 @@ nobase_include_HEADERS = \
 	asio/impl/execution_context.ipp \
 	asio/impl/executor.hpp \
 	asio/impl/executor.ipp \
-	asio/impl/handler_alloc_hook.ipp \
 	asio/impl/io_context.hpp \
 	asio/impl/io_context.ipp \
 	asio/impl/multiple_exceptions.ipp \
@@ -615,12 +580,7 @@ nobase_include_HEADERS = \
 	asio/thread.hpp \
 	asio/thread_pool.hpp \
 	asio/time_traits.hpp \
-	asio/traits/bulk_execute_free.hpp \
-	asio/traits/bulk_execute_member.hpp \
-	asio/traits/connect_free.hpp \
-	asio/traits/connect_member.hpp \
 	asio/traits/equality_comparable.hpp \
-	asio/traits/execute_free.hpp \
 	asio/traits/execute_member.hpp \
 	asio/traits/prefer_free.hpp \
 	asio/traits/prefer_member.hpp \
@@ -631,21 +591,9 @@ nobase_include_HEADERS = \
 	asio/traits/require_concept_member.hpp \
 	asio/traits/require_free.hpp \
 	asio/traits/require_member.hpp \
-	asio/traits/schedule_free.hpp \
-	asio/traits/schedule_member.hpp \
-	asio/traits/set_done_free.hpp \
-	asio/traits/set_done_member.hpp \
-	asio/traits/set_error_free.hpp \
-	asio/traits/set_error_member.hpp \
-	asio/traits/set_value_free.hpp \
-	asio/traits/set_value_member.hpp \
-	asio/traits/start_free.hpp \
-	asio/traits/start_member.hpp \
 	asio/traits/static_query.hpp \
 	asio/traits/static_require.hpp \
 	asio/traits/static_require_concept.hpp \
-	asio/traits/submit_free.hpp \
-	asio/traits/submit_member.hpp \
 	asio/ts/buffer.hpp \
 	asio/ts/executor.hpp \
 	asio/ts/internet.hpp \
