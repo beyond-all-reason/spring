@@ -2,13 +2,14 @@
 #pragma once
 
 #include <vector>
-#include <array>
 
 #include "Sim/Units/BuildInfo.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/float3.h"
+#include "System/UnorderedMap.hpp"
 
 struct LuaBuildSquareOptions {
+	int cacheValidity = 0;
 	bool unbuildable = false;
 };
 
@@ -38,8 +39,8 @@ struct LuaBuildSquareTaskKey {
 };
 
 struct LuaBuildSquareTaskHash {
-	std::size_t operator()(const LuaBuildSquareTaskKey& buildKey) const;
+	uint32_t operator()(const LuaBuildSquareTaskKey& buildKey) const;
 	bool operator()(const LuaBuildSquareTaskKey& buildKey1, const LuaBuildSquareTaskKey& buildKey2) const;
 };
 
-using LuaBuildSquareTasksMap = std::unordered_map<LuaBuildSquareTaskKey, LuaBuildSquareTask, LuaBuildSquareTaskHash, LuaBuildSquareTaskHash>;
+using LuaBuildSquareTasksMap = spring::unordered_map<LuaBuildSquareTaskKey, LuaBuildSquareTask, LuaBuildSquareTaskHash, LuaBuildSquareTaskHash>;

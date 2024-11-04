@@ -1364,7 +1364,8 @@ void CUnitDrawerGLSL::RemoveLuaBuildSquare(const BuildInfo& buildInfo) {
 		luaBuildSquareTasks.erase(it);
 	} else if (task.cacheUntil == 0) {
 		// mark it for later erase
-		task.cacheUntil = gs->frameNum + CACHE_VALIDITY_PERIOD;
+		int validity = task.opts.cacheValidity > 0 ? task.opts.cacheValidity : CACHE_VALIDITY_PERIOD;
+		task.cacheUntil = gs->frameNum + validity;
 	}
 }
 

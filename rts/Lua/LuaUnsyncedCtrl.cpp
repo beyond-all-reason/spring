@@ -183,8 +183,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(AddWorldUnit);
 
 	REGISTER_LUA_CFUNC(DrawUnitCommands);
-	REGISTER_LUA_CFUNC(AddBuildSquare);
-	REGISTER_LUA_CFUNC(RemoveBuildSquare);
+	REGISTER_LUA_CFUNC(AddUnitBuildSquare);
+	REGISTER_LUA_CFUNC(RemoveUnitBuildSquare);
 
 	REGISTER_LUA_CFUNC(SetTeamColor);
 
@@ -3570,16 +3570,14 @@ static LuaBuildSquareOptions ParseBuildSquareOptions(
 	LuaBuildSquareOptions opts;
 	if (lua_istable(L, idx)) {
 		for (lua_pushnil(L); lua_next(L, idx) != 0; lua_pop(L, 1)) {
-			// "key" = value (table format of CommandNotify)
-			// ignore the "coded" key; not a boolean value
 			if (lua_israwstring(L, -2)) {
-				if (lua_isboolean(L, -1)) {
-					const bool value = lua_toboolean(L, -1);
-					switch (hashString(lua_tostring(L, -2))) {
-						case hashString("unbuildable"):
-							opts.unbuildable = value;
-							break;
-					}
+				switch (hashString(lua_tostring(L, -2))) {
+					case hashString("unbuildable"):
+						opts.unbuildable = luaL_checkboolean(L, -1);
+						break;
+					case hashString("cacheValidity"):
+						opts.cacheValidity = int(luaL_checkfloat(L, -1) * GAME_SPEED);
+						break;
 				}
 			}
 		}
@@ -3592,7 +3590,7 @@ static LuaBuildSquareOptions ParseBuildSquareOptions(
 
 /***
  *
- * @function Spring.AddBuildSquare
+ * @function Spring.AddUnitBuildSquare
  * @number unitDefID
  * @number x
  * @number y
@@ -3601,7 +3599,7 @@ static LuaBuildSquareOptions ParseBuildSquareOptions(
  * @bool[opt] unbuildable
  * @treturn nil
  */
-int LuaUnsyncedCtrl::AddBuildSquare(lua_State* L)
+int LuaUnsyncedCtrl::AddUnitBuildSquare(lua_State* L)
 {
 	BuildInfo buildInfo = ParseBuildInfo(L, __func__, 1);
 	LuaBuildSquareOptions opts = ParseBuildSquareOptions(L, __func__, 6);
@@ -3613,7 +3611,7 @@ int LuaUnsyncedCtrl::AddBuildSquare(lua_State* L)
 
 /***
  *
- * @function Spring.RemoveBuildSquare
+ * @function Spring.RemoveUnitBuildSquare
  * @number unitDefID
  * @number x
  * @number y
@@ -3621,7 +3619,7 @@ int LuaUnsyncedCtrl::AddBuildSquare(lua_State* L)
  * @number facing
  * @treturn nil
  */
-int LuaUnsyncedCtrl::RemoveBuildSquare(lua_State* L)
+int LuaUnsyncedCtrl::RemoveUnitBuildSquare(lua_State* L)
 {
 	BuildInfo buildInfo = ParseBuildInfo(L, __func__, 1);
 

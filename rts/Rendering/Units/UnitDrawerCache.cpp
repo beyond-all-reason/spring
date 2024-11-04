@@ -5,8 +5,8 @@
 #include "System/HashSpec.h"
 #include "System/SpringHash.h"
 
-std::size_t LuaBuildSquareTaskHash::operator()(const LuaBuildSquareTaskKey& buildKey) const {
-	std::size_t hashKey = spring::LiteHash(buildKey.unitDefId);
+uint32_t LuaBuildSquareTaskHash::operator()(const LuaBuildSquareTaskKey& buildKey) const {
+	uint32_t hashKey = spring::LiteHash(buildKey.unitDefId);
 	hashKey = spring::hash_combine(spring::LiteHash(buildKey.x), hashKey);
 	hashKey = spring::hash_combine(spring::LiteHash(buildKey.z), hashKey);
 	hashKey = spring::hash_combine(spring::LiteHash(buildKey.facing), hashKey);
