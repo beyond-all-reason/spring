@@ -9,6 +9,7 @@
 #include "Game/Players/PlayerHandler.h"
 #include "Map/Ground.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
@@ -689,13 +690,14 @@ void CSelectedUnitsHandlerAI::SelectCircleUnits(
 		return;
 
 	const CPlayer* p = playerHandler.Player(playerNum);
+	const int allyTeam = teamHandler.AllyTeam(p->team);
+	const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(allyTeam);
 
 	QuadFieldQuery qfQuery;
-	quadField.GetUnitsExact(qfQuery, pos, radius, false);
+	quadField.GetUnitsExact(qfQuery, pos, radius+allyTeamError, false);
 
 	const float radiusSqr = radius * radius;
 	const unsigned int count = qfQuery.units->size();
-	const int allyTeam = teamHandler.AllyTeam(p->team);
 
 	units.reserve(count);
 
@@ -708,9 +710,9 @@ void CSelectedUnitsHandlerAI::SelectCircleUnits(
 			continue;
 		if (!(unit->losStatus[allyTeam] & (LOS_INLOS | LOS_INRADAR)))
 			continue;
-
-		const float dx = (pos.x - unit->midPos.x);
-		const float dz = (pos.z - unit->midPos.z);
+		const float3 errorPos = unit->GetErrorPos(allyTeam);
+		const float dx = (pos.x - errorPos.x);
+		const float dz = (pos.z - errorPos.z);
 
 		if (((dx * dx) + (dz * dz)) > radiusSqr)
 			continue;
