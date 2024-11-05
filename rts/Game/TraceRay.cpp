@@ -406,7 +406,7 @@ float GuiTraceRay(
 	CollisionQuery cq;
 
 	QuadFieldQuery qfQuery;
-	quadField.GetQuadsOnRay(qfQuery, start, dir, length);
+	quadField.GetQuadsOnRay(qfQuery, start, dir, minRayLength);
 
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
