@@ -329,6 +329,93 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 }
 
 
+void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length, float width)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	dir.AssertNaNs();
+	start.AssertNaNs();
+
+	auto& queryQuads = *(qfq.quads = tempQuads[qfq.threadOwner].ReserveVector());
+
+	const float3 to = start + (dir * length);
+
+	const bool noXdir = (math::floor(start.x * invQuadSize.x) == math::floor(to.x * invQuadSize.x));
+	const bool noZdir = (math::floor(start.z * invQuadSize.y) == math::floor(to.z * invQuadSize.y));
+
+
+	// special case
+	if (noXdir && noZdir) {
+		queryQuads.push_back(WorldPosToQuadFieldIdx(start));
+		assert(static_cast<unsigned>(queryQuads.back()) < baseQuads.size());
+		return;
+	}
+
+	// prevent div0
+	if (noZdir) {
+		int startX = std::clamp <int> (start.x * invQuadSize.x, 0, numQuadsX - 1);
+		int finalX = std::clamp <int> (   to.x * invQuadSize.x, 0, numQuadsX - 1);
+
+		if (finalX < startX)
+			std::swap(startX, finalX);
+
+		assert(finalX < numQuadsX);
+
+		const int row = std::clamp <int> (start.z * invQuadSize.y, 0, numQuadsZ - 1) * numQuadsX;
+
+		for (unsigned x = startX; x <= finalX; x++) {
+			queryQuads.push_back(row + x);
+			assert(static_cast<unsigned>(queryQuads.back()) < baseQuads.size());
+		}
+
+		return;
+	}
+
+
+	// iterate z-range; compute which columns (x) are touched for each row (z)
+	float startZuc = start.z * invQuadSize.y;
+	float finalZuc =    to.z * invQuadSize.y;
+
+	if (finalZuc < startZuc)
+		std::swap(startZuc, finalZuc);
+
+	const int startZ = std::clamp <int> (startZuc, 0, numQuadsZ - 1);
+	const int finalZ = std::clamp <int> (finalZuc, 0, numQuadsZ - 1);
+
+	assert(finalZ < quadSizeZ);
+
+	const float invDirZ = 1.0f / dir.z;
+
+	for (int z = startZ; z <= finalZ; z++) {
+		float t0 = ((z    ) * quadSizeZ - start.z) * invDirZ;
+		float t1 = ((z + 1) * quadSizeZ - start.z) * invDirZ;
+
+		if ((startZuc < 0 && z == 0) || (startZuc >= numQuadsZ && z == finalZ))
+			t0 = ((startZuc    ) * quadSizeZ - start.z) * invDirZ;
+
+		if ((finalZuc < 0 && z == 0) || (finalZuc >= numQuadsZ && z == finalZ))
+			t1 = ((finalZuc + 1) * quadSizeZ - start.z) * invDirZ;
+
+		t0 = std::clamp(t0, 0.0f, length);
+		t1 = std::clamp(t1, 0.0f, length);
+
+		unsigned startX = std::clamp <int> ((dir.x * t0 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
+		unsigned finalX = std::clamp <int> ((dir.x * t1 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
+
+		if (finalX < startX)
+			std::swap(startX, finalX);
+
+		assert(finalX < numQuadsX);
+
+		const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
+
+		for (unsigned x = startX; x <= finalX; x++) {
+			queryQuads.push_back(row + x);
+			assert(static_cast<unsigned>(queryQuads.back()) < baseQuads.size());
+		}
+	}
+}
+
+
 
 #ifndef UNIT_TEST
 bool CQuadField::InsertUnitIf(CUnit* unit, const float3& wpos)

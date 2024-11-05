@@ -96,6 +96,7 @@ public:
 	void GetQuads(QuadFieldQuery& qfq, float3 pos, float radius);
 	void GetQuadsRectangle(QuadFieldQuery& qfq, const float3& mins, const float3& maxs);
 	void GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length);
+	void GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length, float width);
 
 	void GetUnitsAndFeaturesColVol(
 		const float3& pos,
