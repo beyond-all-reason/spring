@@ -343,8 +343,9 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 	const bool noXdir = (math::floor(baseStart.x * invQuadSize.x) == math::floor(baseTo.x * invQuadSize.x));
 	const bool noZdir = (math::floor(baseStart.z * invQuadSize.y) == math::floor(baseTo.z * invQuadSize.y));
 
-	// special cases, prevent div0
+	// special cases, prevent div0.
 	if (noZdir) {
+		// both cases just result in rectangles.
 		int startX, finalX, centerZ;
 		if (noXdir) {
 			const int centerQuadIdx = WorldPosToQuadFieldIdx(baseStart);
@@ -367,8 +368,8 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 		startX = std::max <int> (startX - marginX, 0);
 		finalX = std::min <int> (finalX + marginX, numQuadsX-1);
 
-		const int startZ = std::max <int> (centerZ - marginZ , 0);
-		const int finalZ = std::min <int> (centerZ + marginZ , numQuadsZ - 1);
+		const int startZ = std::max <int> (centerZ - marginZ, 0);
+		const int finalZ = std::min <int> (centerZ + marginZ, numQuadsZ - 1);
 
 		for (int z = startZ; z <= finalZ; z++) {
 			const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
@@ -380,16 +381,16 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 		return;
 	}
 
+	// iterate z-range; compute which columns (x) are touched for each row (z)
 	const float sqrt2 = math::sqrt(2.0f);	// to account for radius vs square side
 	const float3 normDirPlanar = float3(dir.x, 0, dir.z).UnsafeNormalize();	// we already checked for unsafe cases before
 
-	// Start and stop a bit further to account for width
+	// start and stop a bit further to account for width
 	const float3 start = baseStart - normDirPlanar * width * sqrt2;
 	const float3 to = baseTo + normDirPlanar * width * sqrt2;
 
 	const unsigned int marginX = math::ceil(std::abs(width * sqrt2 * normDirPlanar.x * invQuadSize.x));
 
-	// iterate z-range; compute which columns (x) are touched for each row (z)
 	float startZuc = start.z * invQuadSize.y;
 	float finalZuc =    to.z * invQuadSize.y;
 
@@ -421,8 +422,6 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 
 		if (finalX < startX)
 			std::swap(startX, finalX);
-
-		assert(finalX < numQuadsX);
 
 		const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
 		startX = std::max <int> (startX - marginX, 0);
