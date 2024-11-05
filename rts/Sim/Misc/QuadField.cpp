@@ -329,47 +329,65 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 }
 
 
-void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length, float width)
+// Test with wide ray that also extends width at the extremes.
+void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart, const float3& dir, float length, float width)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	dir.AssertNaNs();
-	start.AssertNaNs();
+	baseStart.AssertNaNs();
 
 	auto& queryQuads = *(qfq.quads = tempQuads[qfq.threadOwner].ReserveVector());
 
-	const float3 to = start + (dir * length);
+	const float3 baseTo = baseStart + (dir * length);
 
-	const bool noXdir = (math::floor(start.x * invQuadSize.x) == math::floor(to.x * invQuadSize.x));
-	const bool noZdir = (math::floor(start.z * invQuadSize.y) == math::floor(to.z * invQuadSize.y));
+	const bool noXdir = (math::floor(baseStart.x * invQuadSize.x) == math::floor(baseTo.x * invQuadSize.x));
+	const bool noZdir = (math::floor(baseStart.z * invQuadSize.y) == math::floor(baseTo.z * invQuadSize.y));
 
-
-	// special case
-	if (noXdir && noZdir) {
-		queryQuads.push_back(WorldPosToQuadFieldIdx(start));
-		assert(static_cast<unsigned>(queryQuads.back()) < baseQuads.size());
-		return;
-	}
-
-	// prevent div0
+	// special cases, prevent div0
 	if (noZdir) {
-		int startX = std::clamp <int> (start.x * invQuadSize.x, 0, numQuadsX - 1);
-		int finalX = std::clamp <int> (   to.x * invQuadSize.x, 0, numQuadsX - 1);
+		int startX, finalX, centerZ;
+		if (noXdir) {
+			const int centerQuadIdx = WorldPosToQuadFieldIdx(baseStart);
 
-		if (finalX < startX)
-			std::swap(startX, finalX);
+			startX = finalX = centerQuadIdx % numQuadsX;
+			centerZ = centerQuadIdx / numQuadsX;
+		} else {
+			startX = std::clamp <int> (baseStart.x * invQuadSize.x, 0, numQuadsX - 1);
+			finalX = std::clamp <int> (   baseTo.x * invQuadSize.x, 0, numQuadsX - 1);
 
-		assert(finalX < numQuadsX);
+			if (finalX < startX)
+				std::swap(startX, finalX);
 
-		const int row = std::clamp <int> (start.z * invQuadSize.y, 0, numQuadsZ - 1) * numQuadsX;
-
-		for (unsigned x = startX; x <= finalX; x++) {
-			queryQuads.push_back(row + x);
-			assert(static_cast<unsigned>(queryQuads.back()) < baseQuads.size());
+			centerZ = std::clamp <int> (baseStart.z * invQuadSize.y, 0, numQuadsZ - 1);
 		}
 
+		const int marginX = math::ceil(width * invQuadSize.x);
+		const int marginZ = math::ceil(width * invQuadSize.y);
+
+		startX = std::max <int> (startX - marginX, 0);
+		finalX = std::min <int> (finalX + marginX, numQuadsX-1);
+
+		const int startZ = std::max <int> (centerZ - marginZ , 0);
+		const int finalZ = std::min <int> (centerZ + marginZ , numQuadsZ - 1);
+
+		for (int z = startZ; z <= finalZ; z++) {
+			const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
+			for (unsigned x = startX; x <= finalX; x++) {
+				queryQuads.push_back(row + x);
+				assert(static_cast<unsigned>(queryQuads.back()) < baseQuads.size());
+			}
+		}
 		return;
 	}
 
+	const float sqrt2 = math::sqrt(2.0f);	// to account for radius vs square side
+	const float3 normDirPlanar = float3(dir.x, 0, dir.z).UnsafeNormalize();	// we already checked for unsafe cases before
+
+	// Start and stop a bit further to account for width
+	const float3 start = baseStart - normDirPlanar * width * sqrt2;
+	const float3 to = baseTo + normDirPlanar * width * sqrt2;
+
+	const unsigned int marginX = math::ceil(std::abs(width * sqrt2 * normDirPlanar.x * invQuadSize.x));
 
 	// iterate z-range; compute which columns (x) are touched for each row (z)
 	float startZuc = start.z * invQuadSize.y;
@@ -407,6 +425,8 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 		assert(finalX < numQuadsX);
 
 		const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
+		startX = std::max <int> (startX - marginX, 0);
+		finalX = std::min <int> (finalX + marginX, numQuadsX-1);
 
 		for (unsigned x = startX; x <= finalX; x++) {
 			queryQuads.push_back(row + x);

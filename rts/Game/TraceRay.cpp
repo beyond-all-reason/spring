@@ -406,7 +406,12 @@ float GuiTraceRay(
 	CollisionQuery cq;
 
 	QuadFieldQuery qfQuery;
-	quadField.GetQuadsOnRay(qfQuery, start, dir, length);
+	if (useRadar) {
+		const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(gu->myAllyTeam);
+		quadField.GetQuadsOnWideRay(qfQuery, start, dir, length, allyTeamError);
+	} else {
+		quadField.GetQuadsOnRay(qfQuery, start, dir, length);
+	}
 
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
