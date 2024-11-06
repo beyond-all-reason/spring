@@ -29,7 +29,7 @@ GLsizei FBO::maxSamples = -1;
  */
 bool FBO::IsSupported()
 {
-	return (GLEW_EXT_framebuffer_object);
+	return (GLAD_GL_EXT_framebuffer_object);
 }
 
 
@@ -332,7 +332,7 @@ void FBO::Unbind()
 bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, const std::array<int, 4>& dstRect, uint32_t mask, uint32_t filter)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!GLEW_EXT_framebuffer_blit)
+	if (!GLAD_GL_EXT_framebuffer_blit)
 		return false;
 
 	if (srcRect[2] - srcRect[0] <= 0 || srcRect[3] - srcRect[1] <= 0)
@@ -432,7 +432,7 @@ void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum
 	} else if (texTarget == GL_TEXTURE_3D) {
 		glFramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_3D, texId, mipLevel, zSlice);
 	} else if (texTarget == GL_TEXTURE_CUBE_MAP || texTarget == GL_TEXTURE_2D_ARRAY) {
-		if (GLEW_VERSION_3_2)
+		if (GLAD_GL_VERSION_3_2)
 			glFramebufferTexture(GL_FRAMEBUFFER_EXT, attachment, texId, mipLevel); //attach the whole texture
 	} else {
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, texTarget, texId, mipLevel);
@@ -537,11 +537,11 @@ GLsizei FBO::GetMaxSamples()
 	if (maxSamples == -1) {
 		bool multisampleExtensionFound = false;
 
-	#ifdef GLEW_EXT_framebuffer_multisample
-		multisampleExtensionFound = multisampleExtensionFound || (GLEW_EXT_framebuffer_multisample && GLEW_EXT_framebuffer_blit);
+	#ifdef GLAD_GL_EXT_framebuffer_multisample
+		multisampleExtensionFound = multisampleExtensionFound || (GLAD_GL_EXT_framebuffer_multisample && GLAD_GL_EXT_framebuffer_blit);
 	#endif
-	#ifdef GLEW_ARB_framebuffer_object
-		multisampleExtensionFound = multisampleExtensionFound || GLEW_ARB_framebuffer_object;
+	#ifdef GLAD_GL_ARB_framebuffer_object
+		multisampleExtensionFound = multisampleExtensionFound || GLAD_GL_ARB_framebuffer_object;
 	#endif
 
 		if (multisampleExtensionFound) {

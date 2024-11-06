@@ -49,7 +49,7 @@ bool LuaFBOs::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ActiveFBO);
 	REGISTER_LUA_CFUNC(RawBindFBO);
 
-	if (GLEW_EXT_framebuffer_blit)
+	if (GLAD_GL_EXT_framebuffer_blit)
 		REGISTER_LUA_CFUNC(BlitFBO);
 
 	return true;
@@ -337,7 +337,7 @@ void LuaFBOs::AttachObjectTexTarget(const char* funcName, GLenum fboTarget, GLen
 	case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
 	case GL_TEXTURE_CUBE_MAP: [[fallthrough]];
 	case GL_TEXTURE_3D: {
-		if (!GLEW_VERSION_3_2) {
+		if (!GLAD_GL_VERSION_3_2) {
 			throw opengl_error(fmt::format("[LuaFBO::{}] Using of the attachment target {} requires OpenGL >= 3.2", funcName, texTarget));
 		}
 
@@ -394,7 +394,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 		glDrawBuffer((GLenum)lua_toint(L, index));
 		return true;
 	}
-	if (lua_istable(L, index) && GLEW_ARB_draw_buffers) {
+	if (lua_istable(L, index) && GLAD_GL_ARB_draw_buffers) {
 		int buffers[32] = {GL_NONE};
 		const int count = LuaUtils::ParseIntArray(L, index, buffers, sizeof(buffers) / sizeof(buffers[0]));
 
@@ -675,7 +675,7 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 
 /******************************************************************************/
 
-/*** needs `GLEW_EXT_framebuffer_blit`
+/*** needs `GLAD_GL_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
  * @number x0Src
@@ -689,7 +689,7 @@ int LuaFBOs::RawBindFBO(lua_State* L)
  * @number[opt=GL_COLOR_BUFFER_BIT] mask
  * @number[opt=GL_NEAREST] filter
  */
-/*** needs `GLEW_EXT_framebuffer_blit`
+/*** needs `GLAD_GL_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
  * @tparam fbo fboSrc

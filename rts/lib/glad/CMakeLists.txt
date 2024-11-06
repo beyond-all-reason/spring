@@ -1,0 +1,1 @@
+ADD_LIBRARY(glad STATIC EXCLUDE_FROM_ALL "glad.c")
