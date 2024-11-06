@@ -1177,14 +1177,14 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 
 /***
  *
- * @function Spring.SetCameraTarget
+ * @function Spring.SetCameraOffset
  *
- * @number px[opt=0]
- * @number py[opt=0]
- * @number pz[opt=0]
- * @number tx[opt=0]
- * @number ty[opt=0]
- * @number tz[opt=0]
+ * @number[opt=0] posX
+ * @number[opt=0] posY
+ * @number[opt=0] posZ
+ * @number[opt=0] tiltX
+ * @number[opt=0] tiltY
+ * @number[opt=0] tiltZ
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
@@ -1246,8 +1246,10 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 }
 
 /*** Runs Dolly Camera
- * @number runtime in milliseconds
  *
+ * @function Spring.RunDollyCamera
+ * @number runtime in milliseconds
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
 {
@@ -1259,8 +1261,10 @@ int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
 }
 
 /*** Pause Dolly Camera
- * @number [percent] of the total runtime to pause at, 0 to 1 inclusive
  *
+ * @function Spring.PauseDollyCamera
+ * @number fraction fraction of the total runtime to pause at, 0 to 1 inclusive
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
 {
@@ -1273,6 +1277,8 @@ int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
 
 /*** Resume Dolly Camera
  *
+ * @function Spring.ResumeDollyCamera
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::ResumeDollyCamera(lua_State* L)
 {
@@ -1282,10 +1288,12 @@ int LuaUnsyncedCtrl::ResumeDollyCamera(lua_State* L)
 }
 
 /*** Sets Dolly Camera Position
+ *
+ * @function Spring.SetDollyCameraPosition
  * @number x
  * @number y
  * @number z
- *
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
 {
@@ -1299,9 +1307,12 @@ int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
 }
 
 /*** Sets Dolly Camera movement Curve
- * @number degree
- * @
  *
+ * @function Spring.SetDollyCameraCurve
+ * @number degree
+ * @table cpoints
+ * @table knots
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
 {
@@ -1319,9 +1330,10 @@ int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
 }
 
 /*** Sets Dolly Camera movement mode
- * @number mode 1=static position, 2=nurbs curve
- * @
  *
+ * @function Spring.SetDollyCameraMode
+ * @number mode 1 static position, 2 nurbs curve
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
 {
@@ -1333,7 +1345,10 @@ int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
 }
 
 /*** Sets Dolly Camera movement curve to world relative or look target relative
- * @number relativeMode 1=world, 2=look target
+ *
+ * @function Spring.SetDollyCameraRelativeMode
+ * @number relativeMode 1 world, 2 look target
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
 {
@@ -1347,6 +1362,11 @@ int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
 
 /*** Sets Dolly Camera Look Curve
  *
+ * @function Spring.SetDollyCameraLookCurve
+ * @number degree
+ * @table cpoints
+ * @table knots
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
 {
@@ -1366,6 +1386,11 @@ int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
 
 /*** Sets Dolly Camera Look Position
  *
+ * @function Spring.SetDollyCameraLookPosition
+ * @number x
+ * @number y
+ * @number z
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
 {
@@ -1381,6 +1406,9 @@ int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
 
 /*** Sets target unit for Dolly Camera to look towards
  *
+ * @function Spring.SetDollyCameraLookUnit
+ * @number unitID the unit to look at
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
 {
