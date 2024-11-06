@@ -293,7 +293,7 @@ static void CopyShaderState_Uniforms(GLuint newProgID, GLuint oldProgID, Shader:
 static void CopyShaderState_UniformBlocks(GLuint newProgID, GLuint oldProgID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!GLEW_ARB_uniform_buffer_object)
+	if (!GLAD_GL_ARB_uniform_buffer_object)
 		return;
 
 	GLint numUniformBlocks, maxNameLength = 0;
@@ -329,7 +329,7 @@ static void CopyShaderState_ShaderStorage(GLuint newProgID, GLuint oldProgID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 #ifdef GL_ARB_program_interface_query
-	if (!GLEW_ARB_program_interface_query)
+	if (!GLAD_GL_ARB_program_interface_query)
 		return;
 
 	GLint numUniformBlocks, maxNameLength = 0;
@@ -402,7 +402,7 @@ static void CopyShaderState_TransformFeedback(GLuint newProgID, GLuint oldProgID
 	RECOIL_DETAILED_TRACY_ZONE;
 #ifdef GL_ARB_transform_feedback3
 	//FIXME find out what extensions are really needed
-	if (!GLEW_ARB_transform_feedback3)
+	if (!GLAD_GL_ARB_transform_feedback3)
 		return;
 
 	GLint bufferMode, numVaryings = 0, maxNameLength = 0;
@@ -463,7 +463,7 @@ static void CopyShaderState_Geometry(GLuint newProgID, GLuint oldProgID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 #if defined(GL_ARB_geometry_shader4) && defined(GL_ARB_get_program_binary)
-	if (!GLEW_ARB_geometry_shader4)
+	if (!GLAD_GL_ARB_geometry_shader4)
 		return;
 	// "GL_INVALID_OPERATION is generated if pname is GL_GEOMETRY_VERTICES_OUT,
 	// GL_GEOMETRY_INPUT_TYPE, or GL_GEOMETRY_OUTPUT_TYPE, and program does not

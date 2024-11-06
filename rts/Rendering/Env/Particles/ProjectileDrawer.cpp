@@ -442,7 +442,7 @@ bool CProjectileDrawer::CheckSoftenExt()
 	RECOIL_DETAILED_TRACY_ZONE;
 	static bool result =
 		FBO::IsSupported() &&
-		GLEW_EXT_framebuffer_blit; //eval once
+		GLAD_GL_EXT_framebuffer_blit; //eval once
 	return result;
 }
 

@@ -8,7 +8,7 @@
 bool VAO::IsSupported()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	static bool supported = GLEW_ARB_vertex_array_object;
+	static bool supported = GLAD_GL_ARB_vertex_array_object;
 	return supported;
 }
 

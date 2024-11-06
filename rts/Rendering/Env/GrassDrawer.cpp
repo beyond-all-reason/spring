@@ -223,7 +223,7 @@ CGrassDrawer::CGrassDrawer()
 		}
 
 		// needed to create the far tex
-		if (!GLEW_EXT_framebuffer_blit) {
+		if (!GLAD_GL_EXT_framebuffer_blit) {
 			grassOff = true;
 			return;
 		}

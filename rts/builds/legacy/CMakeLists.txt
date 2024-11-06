@@ -14,8 +14,7 @@ set(engineLibraries SDL2::SDL2)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package_static(OpenGL 3.0 REQUIRED)
-find_package_static(GLEW 2.2.0 REQUIRED)
-list(APPEND engineLibraries OpenGL::GL OpenGL::GLU GLEW::GLEW)
+list(APPEND engineLibraries OpenGL::GL OpenGL::GLU)
 
 find_fontconfig_hack()
 find_package_static(Fontconfig 2.11 REQUIRED)
@@ -58,6 +57,7 @@ list(APPEND engineLibraries lunasvg)
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/cereal/include)
+list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/glad/include)
 
 include_directories(${engineIncludes})
 
