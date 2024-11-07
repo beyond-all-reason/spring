@@ -1310,8 +1310,8 @@ int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
  *
  * @function Spring.SetDollyCameraCurve
  * @number degree
- * @table cpoints
- * @table knots
+ * @tparam table cpoints
+ * @tparam table knots
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
@@ -1364,8 +1364,8 @@ int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
  *
  * @function Spring.SetDollyCameraLookCurve
  * @number degree
- * @table cpoints
- * @table knots
+ * @tparam table cpoints
+ * @tparam table knots
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
