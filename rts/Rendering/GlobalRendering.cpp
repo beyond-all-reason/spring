@@ -569,6 +569,8 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 	if ((glContext = CreateGLContext(minCtx)) == nullptr)
 		return false;
 
+	gladLoadGL();
+
 	if (!CheckGLContextVersion(minCtx)) {
 		handleerror(nullptr, "minimum required OpenGL version not supported, aborting", "ERROR", MBF_OK | MBF_EXCL);
 		return false;
@@ -614,7 +616,6 @@ void CGlobalRendering::KillSDL() const {
 }
 
 void CGlobalRendering::PostInit() {
-	gladLoadGL();
 	// glewInit sets GL_INVALID_ENUM, get rid of it
 	glGetError();
 
