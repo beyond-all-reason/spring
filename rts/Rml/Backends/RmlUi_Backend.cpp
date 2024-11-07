@@ -308,6 +308,34 @@ void RmlGui::OnContextDestroy(Rml::Context* context)
 	state->contexts.erase(std::ranges::find(state->contexts, context));
 }
 
+Rml::Context* RmlGui::GetOrCreateContext(const std::string& name)
+{
+	if (!RmlInitialized()) {
+		return nullptr;
+	}
+	
+	Rml::Context* context = Rml::GetContext(name);
+	if (context == nullptr) {
+		context = Rml::CreateContext(name, {0, 0});
+	} else if (state->contexts_to_remove.contains(context)) {
+		state->contexts_to_remove.erase(context);
+	}
+	
+	return context;
+}
+
+Rml::Context* RmlGui::GetContext(const std::string& name) {
+	if (!RmlInitialized()) {
+		return nullptr;
+	}
+
+	Rml::Context* context = Rml::GetContext(name);
+	if (context != nullptr && !state->contexts_to_remove.contains(context)) {
+		return context;
+	}
+	return nullptr;
+}
+
 void RmlGui::MarkContextForRemoval(Rml::Context *context) {
 	if (!RmlInitialized() || context == nullptr) {
 		return;
