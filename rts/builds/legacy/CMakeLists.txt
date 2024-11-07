@@ -56,13 +56,14 @@ list(APPEND engineLibraries pr-downloader)
 list(APPEND engineLibraries RmlUi::Core)
 list(APPEND engineLibraries RmlUi::Debugger)
 list(APPEND engineLibraries lunasvg)
+list(APPEND engineLibraries glad)
 
 ### Assemble external incude dirs
 list(APPEND engineIncludes ${OPENAL_INCLUDE_DIR})
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/cereal/include)
-list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/glad/include)
+#list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/)
 
 include_directories(${engineIncludes})
 
