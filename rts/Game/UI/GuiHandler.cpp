@@ -3611,11 +3611,8 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 						const float3 camTraceDir = mouse->buttons[button].dir;
 
 						const float traceDist = camera->GetFarPlaneDist() * 1.4f;
-						float innerDist = CGround::LineGroundCol(camTracePos, camTracePos + camTraceDir * traceDist, false);
-						float outerDist = -1.0f;
-
-						if (innerDist < 0.0f) // in case area center is out of map
-							innerDist = CGround::LinePlaneCol(camTracePos, camTraceDir, traceDist, CGround::GetWaterPlaneLevel());
+						const float innerDist = CGround::LineGroundCol(camTracePos, camTracePos + camTraceDir * traceDist, false);
+						      float outerDist = -1.0f;
 
 						if (innerDist < 0.0f)
 							break;
@@ -3747,14 +3744,17 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 				glEnable(GL_DEPTH_TEST);
 			}
 			// draw decloak distance
-			if (pointeeUnit->decloakDistance > 0.0f) {
-				if (pointeeUnit->unitDef->decloakSpherical && globalRendering->drawDebug) {
-					CMatrix44f mat;
-					mat.Translate(unit->midPos);
-					mat.RotateX(90.0f * math::DEG_TO_RAD);
-					mat.Scale(OnesVector * pointeeUnit->decloakDistance);
-
-					GL::shapes.DrawWireSphere(16, 16, mat, cmdColors.rangeDecloak);
+			if (unit->decloakDistance > 0.0f) {
+				glColor4fv(cmdColors.rangeDecloak);
+				if (unit->unitDef->decloakSpherical && globalRendering->drawDebug) {
+					glPushMatrix();
+					glTranslatef(unit->midPos.x, unit->midPos.y, unit->midPos.z);
+					glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+					//GLUquadricObj* q = gluNewQuadric();
+					//gluQuadricDrawStyle(q, GLU_LINE);
+					//gluSphere(q, unit->decloakDistance, 10, 10);
+					//gluDeleteQuadric(q);
+					glPopMatrix();
 				} else { // cylindrical
 					glSurfaceCircle(unit->pos, unit->decloakDistance, { cmdColors.rangeDecloak }, 40);
 				}
