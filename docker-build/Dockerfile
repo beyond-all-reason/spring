@@ -36,7 +36,7 @@ RUN apt-get update;apt-get install -y \
         sed \
         unzip \
         wget \
-        xz-utils 
+        xz-utils
 
 # Install MXE and build cross-compile windows gcc
 RUN cd /; \
@@ -49,7 +49,7 @@ RUN cd /; \
 # Main Image
 FROM ubuntu:18.04
 
-ARG cmake_version=3.25.*
+ARG cmake_version=3.27.*
 ARG ccache_version="v4.5.1"
 
 COPY --from=mxe /mxe /mxe
