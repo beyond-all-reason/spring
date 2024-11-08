@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.27)
 cmake_policy(SET CMP0060 OLD) #causes link errors on Linux otherwise
 cmake_policy(SET CMP0065 OLD) #we need binaries compiled with -rdynamic for BARb to work (cause unknown https://github.com/beyond-all-reason/spring/issues/405)
 
