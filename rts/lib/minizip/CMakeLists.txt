@@ -13,9 +13,9 @@ else   (MINIZIP_FOUND)
 	# Build our own minizip library
 	
 	set(miniZipSources
-			"unzip"
-			"zip"
-			"ioapi"
+			"unzip.c"
+			"zip.c"
+			"ioapi.c"
 		)
 
 	add_definitions(-DNOCRYPT -DNOUNCRYPT)
