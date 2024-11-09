@@ -1357,8 +1357,9 @@ void CUnitDrawerGLSL::RemoveLuaBuildSquare(const BuildInfo& buildInfo) {
 
 	LuaBuildSquareTaskKey buildKey(buildInfo);
 	auto it = luaBuildSquareTasks.find(buildKey);
+	if (it == luaBuildSquareTasks.end()) return;
+	
 	LuaBuildSquareTask& task = it->second;
-
 	if (task.cacheUntil < 0) {
 		// nothing computed yet, no point keeping it in cache
 		luaBuildSquareTasks.erase(it);
@@ -1402,7 +1403,8 @@ void CUnitDrawerGLSL::ShowLuaBuildSquare() {
 	for (auto it = luaBuildSquareTasks.begin(); it != luaBuildSquareTasks.end(); ) {
 		LuaBuildSquareTask& task = it->second;
 		// should be uncached
-		if (task.cacheUntil > gs->frameNum) {
+		if (task.cacheUntil > 0 && task.cacheUntil < gs->frameNum) {
+
 			it = luaBuildSquareTasks.erase(it);
 			continue;
 		}

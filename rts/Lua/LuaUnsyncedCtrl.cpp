@@ -3556,10 +3556,23 @@ static BuildInfo ParseBuildInfo(
 		luaL_checkfloat(L, idx+2),
 		luaL_checkfloat(L, idx+3),
 	};
-	int facing = luaL_checkinteger(L, idx+4);
+	int facing = LuaUtils::ParseFacing(L, __func__, idx+4);
 
-	return BuildInfo(unitDefID, pos, facing);
+	BuildInfo buildInfo = BuildInfo(unitDefID, pos, facing);
+	if (buildInfo.def == nullptr) {
+		luaL_error(L, "%s(): invalid unitDefID", caller);
+	}
+	return buildInfo;
 }
+
+
+/*** Build Square Options params
+ *
+ * @table buildSquareOptions
+ *
+ * @bool[opt] unbuildable Show the building as unbuildable
+ * @number[opt] cacheValidity How long to keep in cache after removal for faster reuse (in seconds)
+ */
 
 
 static LuaBuildSquareOptions ParseBuildSquareOptions(
@@ -3596,12 +3609,20 @@ static LuaBuildSquareOptions ParseBuildSquareOptions(
  * @number y
  * @number z
  * @number facing
- * @bool[opt] unbuildable
+ * @tparam[opt] buildSquareOptions options
  * @treturn nil
+ * 
+ * x and z are assumed to be valid building positions
+ * y is assumed to be Spring.GroundHeight(x, z)
+ * Unit build squares are cached using (unitDefID, x, z, facing) key
+ * Passing a different y will force to compute the squares again
+ * 
  */
 int LuaUnsyncedCtrl::AddUnitBuildSquare(lua_State* L)
 {
 	BuildInfo buildInfo = ParseBuildInfo(L, __func__, 1);
+	if (buildInfo.def == nullptr) return 0;
+
 	LuaBuildSquareOptions opts = ParseBuildSquareOptions(L, __func__, 6);
 
 	unitDrawer->AddLuaBuildSquare(buildInfo, opts);
@@ -3618,10 +3639,15 @@ int LuaUnsyncedCtrl::AddUnitBuildSquare(lua_State* L)
  * @number z
  * @number facing
  * @treturn nil
+ * 
+ * Unit build squares are cached using (unitDefID, x, z, facing) key
+ * y is ignored when removing unit build squares
+ * 
  */
 int LuaUnsyncedCtrl::RemoveUnitBuildSquare(lua_State* L)
 {
 	BuildInfo buildInfo = ParseBuildInfo(L, __func__, 1);
+	if (buildInfo.def == nullptr) return 0;
 
 	unitDrawer->RemoveLuaBuildSquare(buildInfo);
 	return 0;
