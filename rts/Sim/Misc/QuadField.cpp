@@ -345,7 +345,8 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 
 	// special cases, prevent div0.
 	if (noZdir) {
-		// both cases just result in rectangles.
+		// Both nozdir+noxdir and noxdir result in rectangles with slightly different
+		// bounds.
 		int startX, finalX, centerZ;
 		if (noXdir) {
 			const int centerQuadIdx = WorldPosToQuadFieldIdx(baseStart);
@@ -372,7 +373,7 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 		const int finalZ = std::min <int> (centerZ + marginZ, numQuadsZ - 1);
 
 		for (int z = startZ; z <= finalZ; z++) {
-			const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
+			const int row = z * numQuadsX;
 			for (unsigned x = startX; x <= finalX; x++) {
 				queryQuads.push_back(row + x);
 				assert(static_cast<unsigned>(queryQuads.back()) < baseQuads.size());
@@ -380,16 +381,20 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 		}
 		return;
 	}
-
 	// iterate z-range; compute which columns (x) are touched for each row (z)
-	const float sqrt2 = math::sqrt(2.0f);	// to account for radius vs square side
-	const float3 normDirPlanar = float3(dir.x, 0, dir.z).UnsafeNormalize();	// we already checked for unsafe cases before
+	const float3 normDirPlanar = float3(dir.x, 0.0, dir.z).UnsafeNormalize();  // we already checked for unsafe cases before
+	const float widthFactor = std::abs(normDirPlanar.z / dir.z) * width;
 
-	// start and stop a bit further to account for width
-	const float3 start = baseStart - normDirPlanar * width * sqrt2;
-	const float3 to = baseTo + normDirPlanar * width * sqrt2;
+	// Start and stop a bit further to account for width
+	const float3 start = baseStart - dir * widthFactor;
+	const float3 to = baseTo + dir * widthFactor;
+	length = (to - start).Length();
 
-	const unsigned int marginX = math::ceil(std::abs(width * sqrt2 * normDirPlanar.x * invQuadSize.x));
+	// taking normDirPlanar.z since we want perpendicular proportion
+	const unsigned int marginX = math::ceil(std::abs(width * normDirPlanar.z * invQuadSize.x));
+
+	// From here on, basically a copy of the same section of GetQuadsOnRay, just here
+	// mangling startX and finalX with marginX just before pushing each row.
 
 	float startZuc = start.z * invQuadSize.y;
 	float finalZuc =    to.z * invQuadSize.y;
@@ -422,6 +427,8 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 
 		if (finalX < startX)
 			std::swap(startX, finalX);
+
+		assert(finalX < numQuadsX);
 
 		const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
 		startX = std::max <int> (startX - marginX, 0);
