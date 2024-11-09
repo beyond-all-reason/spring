@@ -735,15 +735,17 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 		return;
 
 	const CPlayer* p = playerHandler.Player(playerNum);
+	const int allyTeam = teamHandler.AllyTeam(p->team);
+	const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(allyTeam);
 
 	const float3 mins(std::min(pos0.x, pos1.x), 0.0f, std::min(pos0.z, pos1.z));
 	const float3 maxs(std::max(pos0.x, pos1.x), 0.0f, std::max(pos0.z, pos1.z));
 
 	QuadFieldQuery qfQuery;
-	quadField.GetUnitsExact(qfQuery, mins, maxs);
+	quadField.GetUnitsExact(qfQuery, {mins.x - allyTeamError, 0, mins.z - allyTeamError},
+			                 {maxs.x + allyTeamError, 0, maxs.z + allyTeamError});
 
 	const unsigned int count = qfQuery.units->size();
-	const int allyTeam = teamHandler.AllyTeam(p->team);
 
 	units.reserve(count);
 
@@ -755,6 +757,12 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 		if (unit->allyteam == allyTeam)
 			continue;
 		if (!(unit->losStatus[allyTeam] & (LOS_INLOS | LOS_INRADAR)))
+			continue;
+		const float3 errorPos = unit->GetErrorPos(allyTeam);
+
+		if (errorPos.x < mins.x || errorPos.x > maxs.x)
+			continue;
+		if (errorPos.z < mins.z || errorPos.z > maxs.z)
 			continue;
 
 		units.push_back(unit->id);
