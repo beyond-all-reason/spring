@@ -403,10 +403,12 @@ float GuiTraceRay(
 	if (groundOnly)
 		return minRayLength;
 
+	const float maxRayLength = minRayLength < 0.0 ? length : minRayLength;
+
 	CollisionQuery cq;
 
 	QuadFieldQuery qfQuery;
-	quadField.GetQuadsOnRay(qfQuery, start, dir, minRayLength);
+	quadField.GetQuadsOnRay(qfQuery, start, dir, maxRayLength);
 
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
