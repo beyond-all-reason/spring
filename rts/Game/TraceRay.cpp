@@ -406,14 +406,25 @@ float GuiTraceRay(
 	if (groundOnly)
 		return minRayLength;
 
-	const float maxRayLength = minRayLength < 0.0 ? length : minRayLength;
+	// set maximum ray until ground intersection taking lenience into account later
+	float maxRayLength;
+	if (minRayLength >= 0.0) {
+		// normal intersection
+		maxRayLength = minRayLength;
+	} else if (waterRayLength >= 0.0) {
+		// out of map we still want to intersect somewhere if possible
+		maxRayLength = waterRayLength;
+	} else {
+		// pointing upwards
+		maxRayLength = length;
+	}
 	const float lenienceBuffer = configHandler->GetFloat("SelectThroughGround");
-	const float lenientRayLength = std::min(maxRayLength + lenienceBuffer, length);
+	maxRayLength = std::min(maxRayLength + lenienceBuffer, length);
 
 	CollisionQuery cq;
 
 	QuadFieldQuery qfQuery;
-	quadField.GetQuadsOnRay(qfQuery, start, dir, lenientRayLength);
+	quadField.GetQuadsOnRay(qfQuery, start, dir, maxRayLength);
 
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
@@ -500,7 +511,7 @@ float GuiTraceRay(
 		}
 	}
 
-	if ((minRayLength > 0.0f) && (lenientRayLength < minIngressDist)) {
+	if ((minRayLength > 0.0f) && (maxRayLength < minIngressDist)) {
 		minIngressDist = minRayLength;
 
 		hitUnit    = nullptr;
