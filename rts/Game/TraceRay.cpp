@@ -18,12 +18,15 @@
 #include "Sim/Units/UnitTypes/Factory.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/WeaponDef.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/SpringMath.h"
 
 #include <algorithm>
 #include <vector>
 
 #include "System/Misc/TracyDefs.h"
+
+CONFIG(float, SelectThroughGround).defaultValue(200.0f).minimumValue(0.0f).description("Sets how far beyond the ground to allow selecting objects.");
 
 //////////////////////////////////////////////////////////////////////
 // Local/Helper functions
@@ -404,11 +407,13 @@ float GuiTraceRay(
 		return minRayLength;
 
 	const float maxRayLength = minRayLength < 0.0 ? length : minRayLength;
+	const float lenienceBuffer = configHandler->GetFloat("SelectThroughGround");
+	const float lenientRayLength = std::min(maxRayLength + lenienceBuffer, length);
 
 	CollisionQuery cq;
 
 	QuadFieldQuery qfQuery;
-	quadField.GetQuadsOnRay(qfQuery, start, dir, maxRayLength);
+	quadField.GetQuadsOnRay(qfQuery, start, dir, lenientRayLength);
 
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
@@ -495,7 +500,7 @@ float GuiTraceRay(
 		}
 	}
 
-	if ((minRayLength > 0.0f) && ((minRayLength + 200.0f) < minIngressDist)) {
+	if ((minRayLength > 0.0f) && (lenientRayLength < minIngressDist)) {
 		minIngressDist = minRayLength;
 
 		hitUnit    = nullptr;
