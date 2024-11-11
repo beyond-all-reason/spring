@@ -4,6 +4,7 @@
 #include "glExtra.h"
 #include "RenderBuffers.h"
 #include "VertexArray.h"
+
 #include "Map/Ground.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDef.h"
@@ -205,7 +206,6 @@ void glBallisticCircleLua(const WeaponDef* weaponDef, const SColor& color, uint3
 	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircleLua(nullptr, weaponDef, color, resolution, center, params);
 }
-
 
 /******************************************************************************/
 
@@ -438,4 +438,269 @@ void glWireSphere(uint32_t* listID, uint32_t numRows, uint32_t numCols) {
 
 	glPopAttrib();
 	glEndList();
+}
+
+void GL::Shapes::Init()
+{
+	assert(!shader);
+	assert(solidSpheresMap.empty());
+	assert(allObjects.empty());
+}
+
+void GL::Shapes::Kill()
+{
+	solidSpheresMap.clear();
+	allObjects.clear();
+	shaderHandler->ReleaseProgramObjects("[GL::Shapes]");
+	shader = nullptr;
+}
+
+Shader::IProgramObject* GL::Shapes::GetShader()
+{
+	if unlikely(!shader) {
+		shader = shaderHandler->CreateProgramObject("[GL::Shapes]", "Default");
+		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ShapesVertProg.glsl", "", GL_VERTEX_SHADER));
+		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ShapesFragProg.glsl", "", GL_FRAGMENT_SHADER));
+		shader->BindAttribLocation("vertexPos", 0);
+		shader->Link();
+
+		shader->Enable();
+		shader->SetUniform("meshColor", 0.0f, 0.0f, 0.0f, 0.0f);
+		shader->SetUniformMatrix4x4("viewProjMat", false, CMatrix44f::Identity().m);
+		shader->SetUniformMatrix4x4("worldMat", false, CMatrix44f::Identity().m);
+		shader->Disable();
+
+		shader->Validate();
+	}
+	return shader;
+}
+
+void GL::Shapes::DrawSolidSphere(uint32_t numRows, uint32_t numCols)
+{
+#ifndef HEADLESS
+	auto it = solidSpheresMap.find(std::make_tuple(numRows, numCols));
+	if (it == solidSpheresMap.end())
+		it = CreateSolidSphere(numRows, numCols);
+
+	const auto& [vao, vertVBO, indxVBO] = allObjects[it->second];
+
+	vao.Bind();
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indxVBO.GetSize() / sizeof(uint32_t)), GL_UNSIGNED_INT, nullptr);
+	vao.Unbind();
+#endif // !HEADLESS
+}
+
+void GL::Shapes::DrawWireSphere(uint32_t numRows, uint32_t numCols)
+{
+#ifndef HEADLESS
+	auto it = wireSpheresMap.find(std::make_tuple(numRows, numCols));
+	if (it == wireSpheresMap.end())
+		it = CreateWireSphere(numRows, numCols);
+
+	const auto& [vao, vertVBO, indxVBO] = allObjects[it->second];
+
+	vao.Bind();
+	glDrawElements(GL_LINES, static_cast<GLsizei>(indxVBO.GetSize() / sizeof(uint32_t)), GL_UNSIGNED_INT, nullptr);
+	vao.Unbind();
+#endif // !HEADLESS
+}
+
+void GL::Shapes::EnableAttribs() const
+{
+	glEnableVertexAttribArray(0);
+	glVertexAttribDivisor(0, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(float3), 0);
+}
+
+void GL::Shapes::DisableAttribs() const
+{
+	glDisableVertexAttribArray(0);
+	glVertexAttribDivisor(0, 0);
+}
+
+auto GL::Shapes::CreateSolidSphere(uint32_t numRows, uint32_t numCols) -> decltype(solidSpheresMap)::iterator
+{
+	std::vector<float3  > verts; verts.resize ((numRows + 1) * numCols);
+	std::vector<uint32_t> indcs; indcs.reserve((numCols + 1) * 3 * 2 + (numRows - 2) * numCols * 6);
+
+	for (uint32_t row = 0; row <= numRows; row++) {
+		for (uint32_t col = 0; col < numCols; col++) {
+			const float a = (col * (math::TWOPI / numCols));
+			const float b = (row * (math::PI    / numRows));
+
+			float3& v = verts[row * numCols + col];
+
+			v.x = std::cos(a) * std::sin(b);
+			v.y = std::sin(a) * std::sin(b);
+			v.z = std::cos(b);
+		}
+	}
+
+	// top slice
+	for (uint32_t col = 0; col <= numCols; col++) {
+		const auto i = 1 * numCols + ((col + 0) % numCols);
+		const auto j = 1 * numCols + ((col + 1) % numCols);
+
+		indcs.push_back(0);
+		indcs.push_back(i);
+		indcs.push_back(j);
+	}
+
+	// bottom slice
+	for (uint32_t col = 0; col <= numCols; col++) {
+		const auto i = ((numRows - 1) * numCols) + ((col + 0) % numCols);
+		const auto j = ((numRows - 1) * numCols) + ((col + 1) % numCols);
+
+		indcs.push_back(static_cast<uint32_t>(verts.size() - 1));
+		indcs.push_back(i);
+		indcs.push_back(j);
+	}
+
+	// middle slices
+	for (uint32_t row = 1; row < (numRows - 1); row++) {
+		for (uint32_t col = 0; col < numCols; col++) {
+			const auto i0 = (row + 0) * numCols + (col + 0);
+			const auto i1 = (row + 1) * numCols + (col + 0);
+			const auto i2 = (row + 0) * numCols + (col + 1) % numCols;
+			const auto i3 = (row + 1) * numCols + (col + 1) % numCols;
+
+			indcs.push_back(i0);
+			indcs.push_back(i1);
+			indcs.push_back(i2);
+
+			indcs.push_back(i2);
+			indcs.push_back(i3);
+			indcs.push_back(i1);
+		}
+	}
+
+	auto& [vao, vertVBO, indxVBO] = allObjects.emplace_back(
+		VAO{ },
+		VBO{ GL_ARRAY_BUFFER, false },
+		VBO{ GL_ELEMENT_ARRAY_BUFFER, false }
+	);
+
+	vao.Bind();
+
+	vertVBO.Bind();
+	vertVBO.New(verts, GL_STATIC_DRAW);
+	indxVBO.Bind();
+	indxVBO.New(indcs, GL_STATIC_DRAW);
+
+	EnableAttribs();
+
+	vao.Unbind();
+
+	vertVBO.Unbind();
+	indxVBO.Unbind();
+
+	DisableAttribs();
+
+	return solidSpheresMap.emplace(
+		std::make_tuple(numRows, numCols),
+		allObjects.size() - 1
+	).first;
+}
+
+auto GL::Shapes::CreateWireSphere(uint32_t numRows, uint32_t numCols) -> decltype(wireSpheresMap)::iterator
+{
+	std::vector<float3  > verts; verts.resize((numRows + 1)* numCols);
+	std::vector<uint32_t> indcs; indcs.reserve((numCols + 1) * 6 * 2 + (numRows - 2) * numCols * 8);
+
+	for (uint32_t row = 0; row <= numRows; row++) {
+		for (uint32_t col = 0; col < numCols; col++) {
+			const float a = (col * (math::TWOPI / numCols));
+			const float b = (row * (math::PI / numRows));
+
+			float3& v = verts[row * numCols + col];
+
+			v.x = std::cos(a) * std::sin(b);
+			v.y = std::sin(a) * std::sin(b);
+			v.z = std::cos(b);
+		}
+	}
+
+	// top slice
+	for (uint32_t col = 0; col <= numCols; col++) {
+		const auto i = 1 * numCols + ((col + 0) % numCols);
+		const auto j = 1 * numCols + ((col + 1) % numCols);
+
+		indcs.push_back(0);
+		indcs.push_back(i);
+
+		indcs.push_back(i);
+		indcs.push_back(j);
+
+		indcs.push_back(j);
+		indcs.push_back(0);
+	}
+
+	// bottom slice
+	for (uint32_t col = 0; col <= numCols; col++) {
+		const auto i = ((numRows - 1) * numCols) + ((col + 0) % numCols);
+		const auto j = ((numRows - 1) * numCols) + ((col + 1) % numCols);
+
+		indcs.push_back(static_cast<uint32_t>(verts.size() - 1));
+		indcs.push_back(i);
+
+		indcs.push_back(i);
+		indcs.push_back(j);
+
+		indcs.push_back(j);
+		indcs.push_back(static_cast<uint32_t>(verts.size() - 1));
+	}
+
+	// middle slices
+	for (uint32_t row = 1; row < (numRows - 1); row++) {
+		for (uint32_t col = 0; col < numCols; col++) {
+			const auto i0 = (row + 0) * numCols + (col + 0);
+			const auto i1 = (row + 1) * numCols + (col + 0);
+			const auto i2 = (row + 0) * numCols + (col + 1) % numCols;
+			const auto i3 = (row + 1) * numCols + (col + 1) % numCols;
+
+			indcs.push_back(i0);
+			indcs.push_back(i1);
+
+			indcs.push_back(i1);
+			indcs.push_back(i3);
+
+			indcs.push_back(i3);
+			indcs.push_back(i2);
+
+			indcs.push_back(i2);
+			indcs.push_back(i0);
+		}
+	}
+
+	auto& [vao, vertVBO, indxVBO] = allObjects.emplace_back(
+		VAO{ },
+		VBO{ GL_ARRAY_BUFFER, false },
+		VBO{ GL_ELEMENT_ARRAY_BUFFER, false }
+	);
+
+	vao.Bind();
+
+	vertVBO.Bind();
+	vertVBO.New(verts, GL_STATIC_DRAW);
+	indxVBO.Bind();
+	indxVBO.New(indcs, GL_STATIC_DRAW);
+
+	EnableAttribs();
+
+	vao.Unbind();
+
+	vertVBO.Unbind();
+	indxVBO.Unbind();
+
+	DisableAttribs();
+
+	return wireSpheresMap.emplace(
+		std::make_tuple(numRows, numCols),
+		allObjects.size() - 1
+	).first;
+}
+
+
+namespace GL {
+	Shapes shapes;
 }

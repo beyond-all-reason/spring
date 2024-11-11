@@ -3725,17 +3725,21 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 				glEnable(GL_DEPTH_TEST);
 			}
 			// draw decloak distance
-			if (unit->decloakDistance > 0.0f) {
-				glColor4fv(cmdColors.rangeDecloak);
-				if (unit->unitDef->decloakSpherical && globalRendering->drawDebug) {
-					glPushMatrix();
-					glTranslatef(unit->midPos.x, unit->midPos.y, unit->midPos.z);
-					glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-					GLUquadricObj* q = gluNewQuadric();
-					gluQuadricDrawStyle(q, GLU_LINE);
-					gluSphere(q, unit->decloakDistance, 10, 10);
-					gluDeleteQuadric(q);
-					glPopMatrix();
+			if (pointeeUnit->decloakDistance > 0.0f) {
+				if (pointeeUnit->unitDef->decloakSpherical && globalRendering->drawDebug) {
+					CMatrix44f mat;
+					mat.Translate(unit->midPos);
+					mat.RotateX(90.0f * math::DEG_TO_RAD);
+					mat.Scale(OnesVector * pointeeUnit->decloakDistance);
+
+					auto* shader = GL::shapes.GetShader();
+					auto shToken = shader->EnableScoped();
+
+					shader->SetUniform4v("meshColor", cmdColors.rangeDecloak);
+					shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
+					shader->SetUniformMatrix4x4("worldMat", false, mat.m);
+
+					GL::shapes.DrawWireSphere(16, 16);
 				} else { // cylindrical
 					glSurfaceCircle(unit->pos, unit->decloakDistance, { cmdColors.rangeDecloak }, 40);
 				}

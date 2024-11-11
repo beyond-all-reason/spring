@@ -27,7 +27,7 @@ public:
 
 	int GetProjectilesCount() const override;
 
-	static void CreateSphere(
+	static void CreateSolidSphere(
 		const CUnit* owner,
 		int ttl,
 		float alpha,
