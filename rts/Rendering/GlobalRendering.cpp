@@ -13,6 +13,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GL/glExtra.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
 #include "System/EventHandler.h"
@@ -365,6 +366,7 @@ void CGlobalRendering::PreKill()
 {
 	UniformConstants::GetInstance().Kill(); //unsafe to kill in ~CGlobalRendering()
 	RenderBuffer::KillStatic();
+	GL::shapes.Kill();
 	CShaderHandler::FreeInstance();
 }
 
@@ -629,6 +631,7 @@ void CGlobalRendering::PostInit() {
 	ModelUniformData::Init();
 	glGenQueries(glTimerQueries.size(), glTimerQueries.data());
 	RenderBuffer::InitStatic();
+	GL::shapes.Init();
 
 	UpdateTimer();
 }
@@ -1661,7 +1664,6 @@ void CGlobalRendering::InitGLState()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	LoadViewport();
-	gluPerspective(45.0f, aspectRatio, minViewRange, maxViewRange);
 
 	// this does not accomplish much
 	// SwapBuffers(true, true);
@@ -1670,8 +1672,10 @@ void CGlobalRendering::InitGLState()
 
 void CGlobalRendering::ToggleMultisampling() const
 {
-	static constexpr std::array<void(*)(), 2> ToggleFuncs = { []() { glDisable(GL_MULTISAMPLE); }, []() { glEnable(GL_MULTISAMPLE); } };
-	ToggleFuncs[msaaLevel > 0]();
+	if (msaaLevel > 0)
+		glEnable(GL_MULTISAMPLE);
+	else
+		glDisable(GL_MULTISAMPLE);
 }
 
 bool CGlobalRendering::CheckShaderGL4() const
@@ -1710,18 +1714,18 @@ void main()
 	fragColor = vec4(1.0, 1.0, 1.0, vFloat);
 }
 )";
+	auto testShader = Shader::GLSLProgramObject("[GL-TestShader]");
+	// testShader.Release() as part of the ~GLSLProgramObject() will delete GLSLShaderObject's
+	testShader.AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
+	testShader.AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
 
-	auto testShader = std::make_unique<Shader::GLSLProgramObject>("[GL-TestShader]");
-	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
-	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
-	testShader->SetLogReporting(false); //no need to spam guinea pig shader errors
-	testShader->Link();
-	testShader->Enable();
-	testShader->Disable();
-	testShader->Validate();
+	testShader.SetLogReporting(false); //no need to spam guinea pig shader errors
+	testShader.Link();
+	testShader.Enable();
+	testShader.Disable();
+	testShader.Validate();
 
-	return testShader->IsValid();
-	//no need for explicit destuction here
+	return testShader.IsValid();
 #else
 	return false;
 #endif

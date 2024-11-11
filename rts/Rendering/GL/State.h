@@ -25,7 +25,8 @@
 namespace GL
 {
 
-template<auto DedicatedGLFuncPtrPtr, GLenum... GLParamNames> class StateAttribute {
+template<auto DedicatedGLFuncPtrPtr, GLenum... GLParamNames>
+class StateAttribute {
 private:
 	using GLParamsType = spring::func_ptr_signature_t<DedicatedGLFuncPtrPtr, GLboolean>;
 	using StatusType = bool;
@@ -48,6 +49,37 @@ public:
 		if (value != newValue) {
 			value = newValue;
 			glSetAny<DedicatedGLFuncPtrPtr, GLParamNames...>(newValue.second);
+		}
+		return *this;
+	}
+
+private:
+	ValueType value;
+};
+
+template<>
+class StateAttribute<&glPolygonMode, GL_POLYGON_MODE> {
+private:
+	using StatusType = bool;
+	static constexpr StatusType Unknown = false;
+	static constexpr StatusType WasUnknown = false;
+
+public:
+	using ValueType = std::pair<StatusType, GLenum>;
+
+	inline StateAttribute() : value(Unknown, 0) {};
+
+	inline operator ValueType() const
+	{
+		return (value.first != Unknown)
+			? value
+			: ValueType(WasUnknown, FetchEffectualStateAttribValue<GLenum>(GL_POLYGON_MODE));
+	}
+	inline StateAttribute& operator=(const ValueType& newValue)
+	{
+		if (value != newValue) {
+			value = newValue;
+			glPolygonMode(GL_FRONT_AND_BACK, newValue.second);
 		}
 		return *this;
 	}

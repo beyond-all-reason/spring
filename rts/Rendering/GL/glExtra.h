@@ -2,8 +2,13 @@
 
 #pragma once
 
+#include <tuple>
+
 #include "myGL.h"
+#include "VAO.h"
+#include "VBO.h"
 #include "RenderBuffers.h"
+#include "System/UnorderedMap.hpp"
 
 /*
  *  Draw a circle / rectangle on top of the top surface (ground/water).
@@ -36,4 +41,28 @@ template<typename TQuad, typename TColor, typename TRenderBuffer> void gleDrawQu
 		{ {quad.x2, quad.y2, 0.0f}, color }, //br
 		{ {quad.x1, quad.y2, 0.0f}, color }  //bl
 	);
+}
+
+namespace GL {
+	class Shapes {
+	public:
+		void Init();
+		void Kill();
+		Shader::IProgramObject* GetShader();
+		void DrawSolidSphere(uint32_t numRows, uint32_t numCols);
+		void DrawWireSphere(uint32_t numRows, uint32_t numCols);
+	private:
+		// add other shapes if needed
+		spring::unordered_map<std::tuple<uint32_t, uint32_t>, size_t> solidSpheresMap;
+		spring::unordered_map<std::tuple<uint32_t, uint32_t>, size_t> wireSpheresMap;
+		std::vector<std::tuple<VAO, VBO, VBO>> allObjects;
+		Shader::IProgramObject* shader = nullptr;
+	private:
+		void EnableAttribs() const;
+		void DisableAttribs() const;
+		auto CreateSolidSphere(uint32_t numRows, uint32_t numCols) -> decltype(solidSpheresMap)::iterator;
+		auto CreateWireSphere(uint32_t numRows, uint32_t numCols) -> decltype(wireSpheresMap)::iterator;
+	};
+
+	extern Shapes shapes;
 }

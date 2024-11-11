@@ -9,6 +9,7 @@
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/GL/SubState.h"
 #include "Rendering/Models/3DModel.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/CollisionVolume.h"
@@ -130,31 +131,40 @@ static void DrawObjectDebugPieces(const CSolidObject* o)
 
 
 
-static inline void DrawObjectMidAndAimPos(const CSolidObject* o)
+static inline void DrawObjectMidAndAimPos(const CSolidObject* o, CMatrix44f& m)
 {
-	GLUquadricObj* q = gluNewQuadric();
-	glDisable(GL_DEPTH_TEST);
+	using namespace GL::State;
+	auto state = GL::SubState(
+		DepthTest(GL_FALSE)
+	);
+
+	auto* shader = GL::shapes.GetShader();
+	auto shToken = shader->EnableScoped();
+
+	shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
 
 	if (o->aimPos != o->midPos) {
 		// draw the aim-point
-		glPushMatrix();
-		glTranslatef3(o->relAimPos);
-		glColor4f(1.0f, 0.0f, 0.0f, 0.35f);
-		gluQuadricDrawStyle(q, GLU_FILL);
-		gluSphere(q, 2.0f, 5, 5);
-		glPopMatrix();
+		m.Translate(o->relAimPos);
+		m.Scale(2.0f);
+
+		shader->SetUniformMatrix4x4("worldMat", false, m.m);
+		shader->SetUniform("meshColor", 1.0f, 0.0f, 0.0f, 0.35f);
+
+		GL::shapes.DrawSolidSphere(5, 5);
+
+		//undo
+		m.Scale(0.5f);
+		m.Translate(-o->relAimPos);
 	}
 
 	{
-		// draw the mid-point, keep this transform on the stack
-		glTranslatef3(o->relMidPos);
-		glColor4f(1.0f, 0.0f, 1.0f, 0.35f);
-		gluQuadricDrawStyle(q, GLU_FILL);
-		gluSphere(q, 2.0f, 5, 5);
+		// draw the mid-point, keep this transform baked in the matrix
+		m.Translate(o->relMidPos);
+		shader->SetUniform("meshColor", 1.0f, 0.0f, 1.0f, 0.35f);
+		shader->SetUniformMatrix4x4("worldMat", false, m.m);
+		GL::shapes.DrawSolidSphere(5, 5);
 	}
-
-	glEnable(GL_DEPTH_TEST);
-	gluDeleteQuadric(q);
 }
 
 
@@ -170,9 +180,11 @@ static inline void DrawFeatureColVol(const CFeature* f)
 	if (!camera->InView(f->pos, f->GetDrawRadius()))
 		return;
 
+	CMatrix44f m = f->GetTransformMatrix(false);
+
 	glPushMatrix();
-		glMultMatrixf(f->GetTransformMatrixRef(false));
-		DrawObjectMidAndAimPos(f);
+		DrawObjectMidAndAimPos(f, m);
+		glMultMatrixf(m.m);
 
 		glColorf4(DEFAULT_SELVOL_COLOR);
 		DrawCollisionVolume(&f->selectionVolume);
@@ -212,43 +224,61 @@ static inline void DrawUnitColVol(const CUnit* u)
 
 	const CollisionVolume* v = &u->collisionVolume;
 
-	GLUquadricObj* q = gluNewQuadric();
-	gluQuadricDrawStyle(q, GLU_FILL);
-	glDisable(GL_DEPTH_TEST);
+	auto* shader = GL::shapes.GetShader();
+	{
+		using namespace GL::State;
+		auto state = GL::SubState(
+			DepthTest(GL_FALSE)
+		);
 
-	for (const CWeapon* w: u->weapons) {
-		glPushMatrix();
-		glTranslatef3(w->aimFromPos);
-		glColor4f(1.0f, 1.0f, 0.0f, 0.4f);
-		gluSphere(q, 1.0f, 5, 5);
-		glPopMatrix();
+		auto token = shader->EnableScoped();
+		shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
 
-		glPushMatrix();
-		glTranslatef3(w->weaponMuzzlePos);
-		if (w->HaveTarget()) {
-			glColor4f(1.0f, 0.8f, 0.0f, 0.4f);
-		} else {
-			glColor4f(1.0f, 0.0f, 0.0f, 0.4f);
-		}
-		gluSphere(q, 1.0f, 5, 5);
-		glPopMatrix();
+		CMatrix44f wm;
 
-		if (w->HaveTarget()) {
-			glPushMatrix();
-			glTranslatef3(w->GetCurrentTargetPos());
-			glColor4f(1.0f, 0.8f, 0.0f, 0.4f);
-			gluSphere(q, 1.0f, 5, 5);
-			glPopMatrix();
+		for (const CWeapon* w : u->weapons) {
+			wm.Translate(w->aimFromPos);
+
+			shader->SetUniform("meshColor", 1.0f, 1.0f, 0.0f, 0.4f);
+			shader->SetUniformMatrix4x4("worldMat", false, wm.m);
+			GL::shapes.DrawSolidSphere(5, 5);
+
+			//undo
+			wm.Translate(-w->aimFromPos);
+
+			wm.Translate(w->weaponMuzzlePos);
+
+			if (w->HaveTarget()) {
+				shader->SetUniform("meshColor", 1.0f, 0.8f, 0.0f, 0.4f);
+			}
+			else {
+				shader->SetUniform("meshColor", 1.0f, 0.0f, 0.0f, 0.4f);
+			}
+			shader->SetUniformMatrix4x4("worldMat", false, wm.m);
+			GL::shapes.DrawSolidSphere(5, 5);
+
+			//undo
+			wm.Translate(-w->weaponMuzzlePos);
+
+			if (w->HaveTarget()) {
+				wm.Translate(w->GetCurrentTargetPos());
+
+				shader->SetUniform("meshColor", 1.0f, 0.8f, 0.0f, 0.4f);
+				shader->SetUniformMatrix4x4("worldMat", false, wm.m);
+				GL::shapes.DrawSolidSphere(5, 5);
+
+				//undo
+				wm.Translate(-w->GetCurrentTargetPos());
+			}
 		}
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	gluDeleteQuadric(q);
 
-
+	CMatrix44f um = u->GetTransformMatrix(false);
 	glPushMatrix();
-		glMultMatrixf(u->GetTransformMatrix(false));
-		DrawObjectMidAndAimPos(u);
+		DrawObjectMidAndAimPos(u, um);
+		glMultMatrixf(um.m);
 
 		glColorf4(DEFAULT_SELVOL_COLOR);
 		DrawCollisionVolume(&u->selectionVolume);
