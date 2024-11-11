@@ -39,7 +39,7 @@ namespace spring {
 	template<>
 	struct synced_hash<uint64_t> {
 	public:
-		uint32_t operator()(const int64_t& i) const
+		uint32_t operator()(const uint64_t& i) const
 		{
 			return static_cast<uint32_t>(i) ^ static_cast<uint32_t>(i >> 32);
 		}
