@@ -18,15 +18,13 @@
 #include "Sim/Units/UnitTypes/Factory.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/WeaponDef.h"
-#include "System/Config/ConfigHandler.h"
+#include "System/GlobalConfig.h"
 #include "System/SpringMath.h"
 
 #include <algorithm>
 #include <vector>
 
 #include "System/Misc/TracyDefs.h"
-
-CONFIG(float, SelectThroughGround).defaultValue(200.0f).minimumValue(0.0f).description("Sets how far beyond the ground to allow selecting objects.");
 
 //////////////////////////////////////////////////////////////////////
 // Local/Helper functions
@@ -418,8 +416,7 @@ float GuiTraceRay(
 		// pointing upwards
 		maxRayLength = length;
 	}
-	const float lenienceBuffer = configHandler->GetFloat("SelectThroughGround");
-	maxRayLength = std::min(maxRayLength + lenienceBuffer, length);
+	maxRayLength = std::min(maxRayLength + globalConfig.selectThroughGround, length);
 
 	CollisionQuery cq;
 
