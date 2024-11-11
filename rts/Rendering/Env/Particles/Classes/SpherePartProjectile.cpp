@@ -120,7 +120,7 @@ int CSpherePartProjectile::GetProjectilesCount() const
 	return 4 * 4;
 }
 
-void CSpherePartProjectile::CreateSolidSphere(const CUnit* owner, int ttl, float alpha, float expansionSpeed, float3 pos, float3 color)
+void CSpherePartProjectile::CreateSphere(const CUnit* owner, int ttl, float alpha, float expansionSpeed, float3 pos, float3 color)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (int y = 0; y < 16; y += 4) {
@@ -160,7 +160,7 @@ void CSpherePartSpawner::Init(const CUnit* owner, const float3& offset)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CProjectile::Init(owner, offset);
 	deleteMe = true;
-	CSpherePartProjectile::CreateSolidSphere(owner, ttl, alpha, expansionSpeed, pos, color);
+	CSpherePartProjectile::CreateSphere(owner, ttl, alpha, expansionSpeed, pos, color);
 }
 
 int CSpherePartSpawner::GetProjectilesCount() const

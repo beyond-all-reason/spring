@@ -586,7 +586,7 @@ bool CStdExplosionGenerator::Explosion(
 	}
 
 	if (radius > 40.0f && damage > 12.0f) {
-		CSpherePartProjectile::CreateSolidSphere(
+		CSpherePartProjectile::CreateSphere(
 			owner,
 			5.0f + int(sqrtDmg * 0.7f),
 			std::min(0.7f, damage * 0.02f),
