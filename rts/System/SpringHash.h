@@ -83,13 +83,18 @@ namespace spring {
 			if constexpr (std::is_integral_v<T>) {
 				return static_cast<uint32_t>(s);
 			} else {
-				static_assert(std::is_trivially_copyable_v<T>, "synced_hash not auto-implemented for this type");
+				static_assert(std::has_unique_object_representations_v<T>, "synced_hash not auto-implemented for this type");
 				return std::bit_cast<uint32_t>(s);
 			}
-		}
-		else {
-			static_assert(std::is_trivially_copyable_v<T>, "synced_hash not auto-implemented for this type");
-			return LiteHash(s);
+		} else {
+			if constexpr (std::is_pointer_v<T>) {
+				synced_hash<uintptr_t> h;
+				return h(std::bit_cast<uintptr_t>(s));
+			}
+			else {
+				static_assert(std::has_unique_object_representations_v<T>, "synced_hash not auto-implemented for this type");
+				return LiteHash(s);
+			}
 		}
 	}
 }
