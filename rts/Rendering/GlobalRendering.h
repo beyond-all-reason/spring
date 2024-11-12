@@ -222,6 +222,7 @@ public:
 	 * Level of multisample anti-aliasing
 	 */
 	int msaaLevel;
+	float minSampleShadingRate;
 
 	/**
 	 * @brief maxTextureSize
