@@ -23,7 +23,7 @@ class CUnitDrawer : public CModelDrawerBase<CUnitDrawerData, CUnitDrawer>
 {
 public:
 	static void InitStatic();
-	//static void KillStatic(bool reload); //use base
+	static void KillStatic(bool reload);
 	//static void UpdateStatic(); //use base
 public:
 	// Interface with CUnitDrawerData
@@ -67,7 +67,7 @@ public:
 
 	// Icons Minimap
 	virtual void DrawUnitMiniMapIcons() const = 0;
-	        void UpdateUnitDefMiniMapIcons(const UnitDef* ud) { modelDrawerData->UpdateUnitDefMiniMapIcons(ud); }
+	        void UpdateUnitIconsByUnitDef(const UnitDef* ud) { modelDrawerData->UpdateUnitIconsByUnitDef(ud); }
 
 	// Icons Map
 	virtual void DrawUnitIcons() const = 0;
@@ -84,6 +84,9 @@ protected:
 	static bool ShouldDrawUnitShadow(CUnit* u);
 
 	virtual void DrawGhostedBuildings(int modelType) const = 0;
+protected:
+	inline static Shader::IProgramObject* icons2DShader;
+	inline static Shader::IProgramObject* icons3DShader;
 private:
 	inline static std::array<CUnitDrawer*, ModelDrawerTypes::MODEL_DRAWER_CNT> unitDrawers = {};
 public:
@@ -93,13 +96,6 @@ public:
 		BUILDSTAGE_FILL = 2,
 		BUILDSTAGE_NONE = 3,
 		BUILDSTAGE_CNT = 4,
-	};
-	enum ModelShaderProgram {
-		MODEL_SHADER_NOSHADOW_STANDARD = 0, ///< model shader (V+F) without self-shadowing
-		MODEL_SHADER_SHADOWED_STANDARD = 1, ///< model shader (V+F) with    self-shadowing
-		MODEL_SHADER_NOSHADOW_DEFERRED = 2, ///< deferred version of MODEL_SHADER_NOSHADOW (GLSL-only)
-		MODEL_SHADER_SHADOWED_DEFERRED = 3, ///< deferred version of MODEL_SHADER_SHADOW   (GLSL-only)
-		MODEL_SHADER_COUNT = 4,
 	};
 };
 

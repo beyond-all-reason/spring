@@ -16,7 +16,7 @@
 
 class CUnit;
 namespace icon {
-	class CIconData;
+	class IconData;
 }
 
 namespace Shader {
@@ -117,9 +117,7 @@ protected:
 	void DrawMinimizedButtonQuad() const;
 	void DrawMinimizedButtonLoop() const;
 
-	void DrawUnitHighlight(const CUnit* unit);
 	void DrawCircle(TypedRenderBuffer<VA_TYPE_C>& rb, const float3& pos, SColor color, float radius) const;
-	const icon::CIconData* GetUnitIcon(const CUnit* unit, float& scale) const;
 
 	void UpdateTextureCache();
 	void ResizeTextureCache();

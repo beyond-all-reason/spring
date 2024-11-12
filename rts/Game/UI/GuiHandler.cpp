@@ -2761,27 +2761,6 @@ static inline bool BindUnitTexByString(const std::string& str)
 	return true;
 }
 
-
-static inline bool BindIconTexByString(const std::string& str)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	char* endPtr;
-	const char* startPtr = str.c_str() + 1; // skip the '^'
-	const int unitDefID = (int)strtol(startPtr, &endPtr, 10);
-
-	if (endPtr == startPtr)
-		return false; // bad unitID spec
-
-	const UnitDef* ud = unitDefHandler->GetUnitDefByID(unitDefID);
-
-	if (ud == nullptr)
-		return false;
-
-	ud->iconType->BindTexture();
-	return true;
-}
-
-
 static inline bool BindLuaTexByString(const std::string& str)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -2819,9 +2798,6 @@ static bool BindTextureString(const std::string& str)
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (str[0] == '#')
 		return BindUnitTexByString(str);
-
-	if (str[0] == '^')
-		return BindIconTexByString(str);
 
 	if (str[0] == LuaTextures::prefix) // '!'
 		return BindLuaTexByString(str);

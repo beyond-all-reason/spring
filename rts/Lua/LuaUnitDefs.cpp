@@ -278,8 +278,8 @@ static int SafeIconType(lua_State* L, const void* data)
 {
 	// the iconType is unsynced because LuaUI has SetUnitDefIcon()
 	if (!CLuaHandle::GetHandleSynced(L)) {
-		const icon::CIcon& iconType = *((const icon::CIcon*)data);
-		lua_pushsstring(L, iconType->GetName());
+		const auto& iconName = *((const std::string*)data);
+		lua_pushsstring(L, iconName);
 		return 1;
 	}
 	return 0;
@@ -599,7 +599,7 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_FUNCTION("moveDef",            ud.pathType,           MoveDefTable);
 	ADD_FUNCTION("shieldWeaponDef",    ud.shieldWeaponDef,    WeaponDefToID);
 	ADD_FUNCTION("stockpileWeaponDef", ud.stockpileWeaponDef, WeaponDefToID);
-	ADD_FUNCTION("iconType",           ud.iconType,           SafeIconType);
+	ADD_FUNCTION("iconType",           ud.iconName,           SafeIconType);
 	ADD_FUNCTION("collisionVolume",    ud.collisionVolume,    ColVolTable);
 	ADD_FUNCTION("selectionVolume",    ud.selectionVolume,    ColVolTable);
 
