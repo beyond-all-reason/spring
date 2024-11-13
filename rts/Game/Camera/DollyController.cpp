@@ -7,6 +7,7 @@
 #include "Game/Camera.h"
 #include "Game/Camera/CameraController.h"
 #include "Game/CameraHandler.h"
+#include "Game/GlobalUnsynced.h"
 #include "Game/UI/MouseHandler.h"
 #include "Map/ReadMap.h"
 #include "Sim/Units/Unit.h"
@@ -109,7 +110,7 @@ void CDollyController::Update()
 		dir = (lookT - pos).Normalize();
 	} else if (lookMode == DOLLY_LOOKMODE_UNIT) {
 		CUnit* unit = unitHandler.GetUnit(lookUnit);
-		if (unit != nullptr) {
+		if (unit != nullptr && unit->IsInLosForAllyTeam(gu->myAllyTeam)) {
 			pos += unit->drawPos * relative;
 			dir = (unit->drawPos - pos).Normalize();
 		}

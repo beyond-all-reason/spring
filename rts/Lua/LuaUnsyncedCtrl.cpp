@@ -1263,7 +1263,7 @@ int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
 /*** Pause Dolly Camera
  *
  * @function Spring.PauseDollyCamera
- * @number fraction fraction of the total runtime to pause at, 0 to 1 inclusive
+ * @number fraction fraction of the total runtime to pause at, 0 to 1 inclusive. A null value pauses at current percent
  * @treturn nil
  */
 int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
@@ -1310,7 +1310,7 @@ int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
  *
  * @function Spring.SetDollyCameraCurve
  * @number degree
- * @tparam table cpoints
+ * @tparam table cpoints NURBS control point positions {{x,y,z,weight}, ...}
  * @tparam table knots
  * @treturn nil
  */
@@ -1364,7 +1364,7 @@ int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
  *
  * @function Spring.SetDollyCameraLookCurve
  * @number degree
- * @tparam table cpoints
+ * @tparam table cpoints NURBS control point positions {{x,y,z,weight}, ...}
  * @tparam table knots
  * @treturn nil
  */
@@ -1394,9 +1394,9 @@ int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
 {
-	int x = luaL_checkint(L, 1);
-	int y = luaL_checkint(L, 2);
-	int z = luaL_checkint(L, 3);
+	float x = luaL_checkfloat(L, 1);
+	float y = luaL_checkfloat(L, 2);
+	float z = luaL_checkfloat(L, 3);
 
 	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_POSITION);
 	camHandler->GetDollyController().SetLookPosition(float3(x, y, z));
