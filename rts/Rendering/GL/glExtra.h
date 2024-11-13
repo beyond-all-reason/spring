@@ -49,19 +49,26 @@ namespace GL {
 		void Init();
 		void Kill();
 		Shader::IProgramObject* GetShader();
+		void DrawSolidSphere(uint32_t numRows, uint32_t numCols, const CMatrix44f& m, const float* color);
+		void DrawWireSphere(uint32_t numRows, uint32_t numCols, const CMatrix44f& m, const float* color);
+		void DrawWireCylinder(uint32_t numDivs, const CMatrix44f& m, const float* color);
 		void DrawSolidSphere(uint32_t numRows, uint32_t numCols);
 		void DrawWireSphere(uint32_t numRows, uint32_t numCols);
+		void DrawWireCylinder(uint32_t numDivs);
 	private:
 		// add other shapes if needed
 		spring::unordered_map<std::tuple<uint32_t, uint32_t>, size_t> solidSpheresMap;
 		spring::unordered_map<std::tuple<uint32_t, uint32_t>, size_t> wireSpheresMap;
+		spring::unordered_map<uint32_t, size_t> wireCylindersMap;
 		std::vector<std::tuple<VAO, VBO, VBO>> allObjects;
 		Shader::IProgramObject* shader = nullptr;
 	private:
-		void EnableAttribs() const;
-		void DisableAttribs() const;
+		static void EnableAttribs();
+		static void DisableAttribs();
+		size_t CreateGLObjects(const std::vector<float3>& verts, const std::vector<uint32_t>& indcs);
 		auto CreateSolidSphere(uint32_t numRows, uint32_t numCols) -> decltype(solidSpheresMap)::iterator;
 		auto CreateWireSphere(uint32_t numRows, uint32_t numCols) -> decltype(wireSpheresMap)::iterator;
+		auto CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersMap)::iterator;
 	};
 
 	extern Shapes shapes;

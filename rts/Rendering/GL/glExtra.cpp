@@ -6,6 +6,7 @@
 #include "VertexArray.h"
 
 #include "Map/Ground.h"
+#include "Game/Camera.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/SpringMath.h"
@@ -475,6 +476,48 @@ Shader::IProgramObject* GL::Shapes::GetShader()
 	return shader;
 }
 
+void GL::Shapes::DrawSolidSphere(uint32_t numRows, uint32_t numCols, const CMatrix44f& m, const float* color)
+{
+#ifndef HEADLESS
+	auto* shader = GL::shapes.GetShader();
+	auto shToken = shader->EnableScoped();
+
+	shader->SetUniform4v("meshColor", color);
+	shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
+	shader->SetUniformMatrix4x4("worldMat", false, m.m);
+
+	DrawSolidSphere(numRows, numCols);
+#endif
+}
+
+void GL::Shapes::DrawWireSphere(uint32_t numRows, uint32_t numCols, const CMatrix44f& m, const float* color)
+{
+#ifndef HEADLESS
+	auto* shader = GL::shapes.GetShader();
+	auto shToken = shader->EnableScoped();
+
+	shader->SetUniform4v("meshColor", color);
+	shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
+	shader->SetUniformMatrix4x4("worldMat", false, m.m);
+
+	DrawWireSphere(numRows, numCols);
+#endif
+}
+
+void GL::Shapes::DrawWireCylinder(uint32_t numDivs, const CMatrix44f& m, const float* color)
+{
+#ifndef HEADLESS
+	auto* shader = GL::shapes.GetShader();
+	auto shToken = shader->EnableScoped();
+
+	shader->SetUniform4v("meshColor", color);
+	shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
+	shader->SetUniformMatrix4x4("worldMat", false, m.m);
+
+	DrawWireCylinder(numDivs);
+#endif
+}
+
 void GL::Shapes::DrawSolidSphere(uint32_t numRows, uint32_t numCols)
 {
 #ifndef HEADLESS
@@ -505,17 +548,61 @@ void GL::Shapes::DrawWireSphere(uint32_t numRows, uint32_t numCols)
 #endif // !HEADLESS
 }
 
-void GL::Shapes::EnableAttribs() const
+void GL::Shapes::DrawWireCylinder(uint32_t numDivs)
+{
+#ifndef HEADLESS
+	auto it = wireCylindersMap.find(numDivs);
+	if (it == wireCylindersMap.end())
+		it = CreateWireCylinder(numDivs);
+
+	const auto& [vao, vertVBO, indxVBO] = allObjects[it->second];
+
+	vao.Bind();
+	glDrawElements(GL_LINES, static_cast<GLsizei>(indxVBO.GetSize() / sizeof(uint32_t)), GL_UNSIGNED_INT, nullptr);
+	vao.Unbind();
+#endif // !HEADLESS
+}
+
+void GL::Shapes::EnableAttribs()
 {
 	glEnableVertexAttribArray(0);
 	glVertexAttribDivisor(0, 0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(float3), 0);
 }
 
-void GL::Shapes::DisableAttribs() const
+void GL::Shapes::DisableAttribs()
 {
 	glDisableVertexAttribArray(0);
 	glVertexAttribDivisor(0, 0);
+}
+
+size_t GL::Shapes::CreateGLObjects(
+	const std::vector<float3>& verts,
+	const std::vector<uint32_t>& indcs
+) {
+	auto& [vao, vertVBO, indxVBO] = allObjects.emplace_back(
+		VAO{ },
+		VBO{ GL_ARRAY_BUFFER, false },
+		VBO{ GL_ELEMENT_ARRAY_BUFFER, false }
+	);
+
+	vao.Bind();
+
+	vertVBO.Bind();
+	vertVBO.New(verts, GL_STATIC_DRAW);
+	indxVBO.Bind();
+	indxVBO.New(indcs, GL_STATIC_DRAW);
+
+	EnableAttribs();
+
+	vao.Unbind();
+
+	vertVBO.Unbind();
+	indxVBO.Unbind();
+
+	DisableAttribs();
+
+	return allObjects.size() - 1;
 }
 
 auto GL::Shapes::CreateSolidSphere(uint32_t numRows, uint32_t numCols) -> decltype(solidSpheresMap)::iterator
@@ -574,31 +661,9 @@ auto GL::Shapes::CreateSolidSphere(uint32_t numRows, uint32_t numCols) -> declty
 		}
 	}
 
-	auto& [vao, vertVBO, indxVBO] = allObjects.emplace_back(
-		VAO{ },
-		VBO{ GL_ARRAY_BUFFER, false },
-		VBO{ GL_ELEMENT_ARRAY_BUFFER, false }
-	);
-
-	vao.Bind();
-
-	vertVBO.Bind();
-	vertVBO.New(verts, GL_STATIC_DRAW);
-	indxVBO.Bind();
-	indxVBO.New(indcs, GL_STATIC_DRAW);
-
-	EnableAttribs();
-
-	vao.Unbind();
-
-	vertVBO.Unbind();
-	indxVBO.Unbind();
-
-	DisableAttribs();
-
 	return solidSpheresMap.emplace(
 		std::make_tuple(numRows, numCols),
-		allObjects.size() - 1
+		CreateGLObjects(verts, indcs)
 	).first;
 }
 
@@ -672,31 +737,79 @@ auto GL::Shapes::CreateWireSphere(uint32_t numRows, uint32_t numCols) -> decltyp
 		}
 	}
 
-	auto& [vao, vertVBO, indxVBO] = allObjects.emplace_back(
-		VAO{ },
-		VBO{ GL_ARRAY_BUFFER, false },
-		VBO{ GL_ELEMENT_ARRAY_BUFFER, false }
-	);
-
-	vao.Bind();
-
-	vertVBO.Bind();
-	vertVBO.New(verts, GL_STATIC_DRAW);
-	indxVBO.Bind();
-	indxVBO.New(indcs, GL_STATIC_DRAW);
-
-	EnableAttribs();
-
-	vao.Unbind();
-
-	vertVBO.Unbind();
-	indxVBO.Unbind();
-
-	DisableAttribs();
-
 	return wireSpheresMap.emplace(
 		std::make_tuple(numRows, numCols),
-		allObjects.size() - 1
+		CreateGLObjects(verts, indcs)
+	).first;
+}
+
+auto GL::Shapes::CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersMap)::iterator
+{
+	std::vector<float3  > verts; verts.resize(2 + numDivs * 2);
+	std::vector<uint32_t> indcs; indcs.reserve(numDivs * 2);
+
+	// front end-cap
+	for (unsigned int n = 0; n <= numDivs; n++) {
+		const unsigned int i = 2 + (n + 0) % numDivs;
+		const unsigned int j = 2 + (n + 1) % numDivs;
+
+		verts[i].x = std::cos(i * (math::TWOPI / numDivs));
+		verts[i].y = std::sin(i * (math::TWOPI / numDivs));
+		verts[i].z = 0.0f;
+
+		indcs.push_back(0);
+		indcs.push_back(i);
+
+		indcs.push_back(i);
+		indcs.push_back(j);
+
+		indcs.push_back(j);
+		indcs.push_back(0);
+	}
+
+	// back end-cap
+	for (unsigned int n = 0; n <= numDivs; n++) {
+		const unsigned int i = 2 + (n + 0) % numDivs;
+		const unsigned int j = 2 + (n + 1) % numDivs;
+
+		verts[i + numDivs].x = verts[i].x;
+		verts[i + numDivs].y = verts[i].y;
+		verts[i + numDivs].z = 1.0f;
+
+		indcs.push_back(1);
+		indcs.push_back(i + numDivs);
+
+		indcs.push_back(i + numDivs);
+		indcs.push_back(j + numDivs);
+
+		indcs.push_back(j + numDivs);
+		indcs.push_back(1);
+	}
+
+
+	// sides
+	for (unsigned int n = 0; n < numDivs; n++) {
+		const unsigned int i0 = 2 + (n + 0);
+		const unsigned int i1 = 2 + (n + 0) + numDivs;
+		const unsigned int i2 = 2 + (n + 1) % numDivs;
+		const unsigned int i3 = 2 + (n + 1) % numDivs + numDivs;
+
+		indcs.push_back(i0);
+		indcs.push_back(i1);
+
+		indcs.push_back(i1);
+		indcs.push_back(i3);
+
+		indcs.push_back(i3);
+		indcs.push_back(i2);
+
+		indcs.push_back(i2);
+		indcs.push_back(i0);
+	}
+
+	return wireCylindersMap.emplace(
+		numDivs,
+		CreateGLObjects(verts, indcs)
 	).first;
 }
 
