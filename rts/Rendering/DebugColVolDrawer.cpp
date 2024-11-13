@@ -329,30 +329,20 @@ namespace DebugColVolDrawer
 		if (!enable)
 			return;
 
-		glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
-			glDisable(GL_LIGHTING);
-			glDisable(GL_LIGHT0);
-			glDisable(GL_LIGHT1);
-			glDisable(GL_CULL_FACE);
-			glDisable(GL_TEXTURE_2D);
-			// glDisable(GL_BLEND);
-			glDisable(GL_ALPHA_TEST);
-			glDisable(GL_FOG);
-			glDisable(GL_CLIP_PLANE0);
-			glDisable(GL_CLIP_PLANE1);
+		using namespace GL::State;
+		auto state = GL::SubState(
+			Culling(GL_FALSE),
+			AlphaTest(GL_FALSE),
+			ClipDistance<0>(GL_FALSE), // ClipDistance<0> is same as ClipPlane<0> could have been
+			ClipDistance<1>(GL_FALSE),
+			Blending(GL_TRUE),
+			BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA),
+			DepthMask(GL_TRUE),
+			LineWidth(2.0f)
+		);
 
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			glLineWidth(2.0f);
-			glDepthMask(GL_TRUE);
-
-			static CDebugColVolQuadDrawer drawer;
-
-			drawer.ResetState();
-			readMap->GridVisibility(nullptr, &drawer, 1e9, CQuadField::BASE_QUAD_SIZE / SQUARE_SIZE);
-
-			glLineWidth(1.0f);
-		glPopAttrib();
+		static CDebugColVolQuadDrawer drawer;
+		drawer.ResetState();
+		readMap->GridVisibility(nullptr, &drawer, 1e9, CQuadField::BASE_QUAD_SIZE / SQUARE_SIZE);
 	}
 }
