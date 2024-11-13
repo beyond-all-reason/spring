@@ -33,7 +33,7 @@ public:
 
 	CMatrix44f& LoadIdentity() { return (*this = CMatrix44f()); }
 
-	void SetUpVector(const float3 up);
+	void SetUpVector(const float3& up);
 	CMatrix44f& RotateX(float angle); // (pitch) angle in radians
 	CMatrix44f& RotateY(float angle); // (  yaw) angle in radians
 	CMatrix44f& RotateZ(float angle); // ( roll) angle in radians
@@ -45,11 +45,17 @@ public:
 	CMatrix44f& Translate(const float x, const float y, const float z);
 	CMatrix44f& Translate(const float3 pos) { return Translate(pos.x, pos.y, pos.z); }
 	CMatrix44f& Scale(const float3 scales);
+	CMatrix44f& Scale(float scaleX, float scaleY, float scaleZ) { return Scale(float3{ scaleX, scaleY, scaleZ }); }
 
 	void SetPos(const float3 pos) { m[12] = pos.x; m[13] = pos.y; m[14] = pos.z; }
 	void SetX  (const float3 dir) { m[ 0] = dir.x; m[ 1] = dir.y; m[ 2] = dir.z; }
 	void SetY  (const float3 dir) { m[ 4] = dir.x; m[ 5] = dir.y; m[ 6] = dir.z; }
 	void SetZ  (const float3 dir) { m[ 8] = dir.x; m[ 9] = dir.y; m[10] = dir.z; }
+	void SetXYZ(const CMatrix44f& other) {
+		std::copy(&other.m[0], &other.m[0] + 3, &m[0]);
+		std::copy(&other.m[4], &other.m[4] + 3, &m[4]);
+		std::copy(&other.m[8], &other.m[8] + 3, &m[8]);
+	}
 
 	float3& GetPos() { return col[3]; }
 	const float3& GetPos() const { return col[3]; }

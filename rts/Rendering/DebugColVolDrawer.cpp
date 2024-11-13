@@ -20,21 +20,27 @@
 #include "Sim/Weapons/Weapon.h"
 #include "System/UnorderedSet.hpp"
 
-static constexpr float4 DEFAULT_COLVOL_COLOR = float4(0.45f, 0.00f, 0.45f, 0.35f); // purple
+static constexpr float4 DEFAULT_COLVOL_COLOR = float4(0.45f, 0.00f, 0.45f, 0.35f); // purple (light)
 static constexpr float4 DEFAULT_SELVOL_COLOR = float4(0.00f, 0.45f, 0.00f, 0.20f); // dark green
-static unsigned int volumeDisplayListIDs[] = {0, 0, 0, 0, 0};
+static constexpr float4 DEFAULT_TARGET_COLOR = float4(1.00f, 0.80f, 0.00f, 0.40f); // yellowish
+static constexpr float4 DEFAULT_MUZZLE_COLOR = float4(1.00f, 0.00f, 0.00f, 0.40f); // red
+static constexpr float4 DEFAULT_AIMFRM_COLOR = float4(1.00f, 1.00f, 0.00f, 0.40f); // yellow
+static constexpr float4 DEFAULT_AIMPOS_COLOR = float4(1.00f, 0.00f, 0.00f, 0.35f); // red
+static constexpr float4 DEFAULT_MIDPOS_COLOR = float4(1.00f, 0.00f, 1.00f, 0.35f); // purple (dark)
+static constexpr float4 DEFAULT_SHIELD_COLOR = float4(0.00f, 0.00f, 0.60f, 0.35f); // bluish
+static constexpr float4 DEFAULT_CUSTCV_COLOR = float4(0.50f, 0.50f, 0.50f, 0.35f); // grey
+static constexpr float4 DEFAULT_BUGOFF_COLOR = float4(0.00f, 1.00f, 1.00f, 0.35f); // cyan
 
-static inline void DrawCollisionVolume(const CollisionVolume* vol)
+static inline void DrawCollisionVolume(const CollisionVolume* vol, const CMatrix44f& mSrc, const float4& color)
 {
-	glPushMatrix();
-
+	CMatrix44f m = mSrc;
 	switch (vol->GetVolumeType()) {
 		case CollisionVolume::COLVOL_TYPE_ELLIPSOID:
 		case CollisionVolume::COLVOL_TYPE_SPHERE: {
 			// scaled sphere is special case of ellipsoid: radius, slices, stacks
-			glTranslatef(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-			glScalef(vol->GetHScale(0), vol->GetHScale(1), vol->GetHScale(2));
-			glWireSphere(&volumeDisplayListIDs[0], 20, 20);
+			m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
+			m.Scale(vol->GetHScale(0), vol->GetHScale(1), vol->GetHScale(2));
+			GL::shapes.DrawWireSphere(20, 20, m, color);
 		} break;
 		case CollisionVolume::COLVOL_TYPE_CYLINDER: {
 			// scaled cylinder: base-radius, top-radius, height, slices, stacks
@@ -44,94 +50,61 @@ static inline void DrawCollisionVolume(const CollisionVolume* vol)
 			// height of the cylinder equals the unit's full major axis)
 			switch (vol->GetPrimaryAxis()) {
 				case CollisionVolume::COLVOL_AXIS_X: {
-					glTranslatef(-(vol->GetHScale(0)), 0.0f, 0.0f);
-					glTranslatef(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-					glScalef(vol->GetScale(0), vol->GetHScale(1), vol->GetHScale(2));
-					glRotatef( 90.0f, 0.0f, 1.0f, 0.0f);
+					m.Translate(-(vol->GetHScale(0)), 0.0f, 0.0f);
+					m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
+					m.Scale(vol->GetScale(0), vol->GetHScale(1), vol->GetHScale(2));
+					m.RotateY( 90.0f * math::DEG_TO_RAD);
 				} break;
 				case CollisionVolume::COLVOL_AXIS_Y: {
-					glTranslatef(0.0f, -(vol->GetHScale(1)), 0.0f);
-					glTranslatef(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-					glScalef(vol->GetHScale(0), vol->GetScale(1), vol->GetHScale(2));
-					glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+					m.Translate(0.0f, -(vol->GetHScale(1)), 0.0f);
+					m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
+					m.Scale(vol->GetHScale(0), vol->GetScale(1), vol->GetHScale(2));
+					m.RotateX(-90.0f * math::DEG_TO_RAD);
 				} break;
 				case CollisionVolume::COLVOL_AXIS_Z: {
-					glTranslatef(0.0f, 0.0f, -(vol->GetHScale(2)));
-					glTranslatef(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-					glScalef(vol->GetHScale(0), vol->GetHScale(1), vol->GetScale(2));
+					m.Translate(0.0f, 0.0f, -(vol->GetHScale(2)));
+					m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
+					m.Scale(vol->GetHScale(0), vol->GetHScale(1), vol->GetScale(2));
 				} break;
 			}
-
-			glWireCylinder(&volumeDisplayListIDs[1], 20, 1.0f);
+			GL::shapes.DrawWireCylinder(20, m, color);
 		} break;
 		case CollisionVolume::COLVOL_TYPE_BOX: {
 			// scaled cube: length, width, height
-			glTranslatef(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-			glScalef(vol->GetScale(0), vol->GetScale(1), vol->GetScale(2));
-			glWireCube(&volumeDisplayListIDs[2]);
+			m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
+			m.Scale(vol->GetScale(0), vol->GetScale(1), vol->GetScale(2));
+			GL::shapes.DrawWireBox(m, color);
 		} break;
 	}
-
-	glPopMatrix();
 }
 
-
-
-/*
-static void DrawUnitDebugPieceTree(const LocalModelPiece* lmp, const LocalModelPiece* lap, int lapf)
+static void DrawObjectDebugPieces(const CSolidObject* o, const float4& defColor)
 {
-	glPushMatrix();
-		glMultMatrixf(lmp->GetModelSpaceMatrix());
+	const CMatrix44f mo = o->GetTransformMatrix(false);
 
-		if (lmp->GetScriptVisible() && !lmp->GetCollisionVolume()->IgnoreHits()) {
-			if ((lmp == lap) && (lapf > 0 && ((gs->frameNum - lapf) < 150))) {
-				glColor3f((1.0f - ((gs->frameNum - lapf) / 150.0f)), 0.0f, 0.0f);
-			}
-
-			// factors in the volume offsets
-			DrawCollisionVolume(lmp->GetCollisionVolume());
-
-			if ((lmp == lap) && (lapf > 0 && ((gs->frameNum - lapf) < 150))) {
-				glColorf3(DEFAULT_COLVOL_COLOR);
-			}
-		}
-	glPopMatrix();
-
-	for (unsigned int i = 0; i < lmp->children.size(); i++) {
-		DrawUnitDebugPieceTree(lmp->children[i], lap, lapf);
-	}
-}
-*/
-
-static void DrawObjectDebugPieces(const CSolidObject* o)
-{
 	const int hitDeltaTime = gs->frameNum - o->pieceHitFrames[true];
 	const int setFadeColor = (o->pieceHitFrames[true] > 0 && hitDeltaTime < 150);
 
-	for (unsigned int n = 0; n < o->localModel.pieces.size(); n++) {
+	for (uint32_t n = 0; n < o->localModel.pieces.size(); n++) {
 		const LocalModelPiece* lmp = o->localModel.GetPiece(n);
 		const CollisionVolume* lmpVol = lmp->GetCollisionVolume();
 
 		if (!lmp->GetScriptVisible() || lmpVol->IgnoreHits())
 			continue;
 
-		if (setFadeColor && lmp == o->hitModelPieces[true])
-			glColor3f((1.0f - (hitDeltaTime / 150.0f)), 0.0f, 0.0f);
+		float4 curColor = (setFadeColor && lmp == o->hitModelPieces[true]) ?
+			float4{ (1.0f - (hitDeltaTime / 150.0f)), 0.0f, 0.0f, 1.0f } :
+			defColor;
 
-		glPushMatrix();
-		glMultMatrixf(lmp->GetModelSpaceMatrix());
+		const CMatrix44f mp = mo * lmp->GetModelSpaceMatrix();
 		// factors in the volume offsets
-		DrawCollisionVolume(lmpVol);
-		glPopMatrix();
-
-		if (setFadeColor && lmp == o->hitModelPieces[true])
-			glColorf4(DEFAULT_COLVOL_COLOR);
+		DrawCollisionVolume(lmpVol, mp, curColor);
 	}
 }
 
 
 
-static inline void DrawObjectMidAndAimPos(const CSolidObject* o, CMatrix44f& m)
+static inline void DrawObjectMidAndAimPos(const CSolidObject* o)
 {
 	using namespace GL::State;
 	auto state = GL::SubState(
@@ -141,6 +114,8 @@ static inline void DrawObjectMidAndAimPos(const CSolidObject* o, CMatrix44f& m)
 	auto* shader = GL::shapes.GetShader();
 	auto shToken = shader->EnableScoped();
 
+	auto m = o->GetTransformMatrix(false);
+
 	shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
 
 	if (o->aimPos != o->midPos) {
@@ -149,7 +124,7 @@ static inline void DrawObjectMidAndAimPos(const CSolidObject* o, CMatrix44f& m)
 		m.Scale(2.0f);
 
 		shader->SetUniformMatrix4x4("worldMat", false, m.m);
-		shader->SetUniform("meshColor", 1.0f, 0.0f, 0.0f, 0.35f);
+		shader->SetUniform4v("meshColor", &DEFAULT_AIMPOS_COLOR.x);
 
 		GL::shapes.DrawSolidSphere(5, 5);
 
@@ -157,13 +132,13 @@ static inline void DrawObjectMidAndAimPos(const CSolidObject* o, CMatrix44f& m)
 		m.Scale(0.5f);
 		m.Translate(-o->relAimPos);
 	}
-
 	{
 		// draw the mid-point, keep this transform baked in the matrix
 		m.Translate(o->relMidPos);
-		shader->SetUniform("meshColor", 1.0f, 0.0f, 1.0f, 0.35f);
+		shader->SetUniform4v("meshColor", &DEFAULT_MIDPOS_COLOR.x);
 		shader->SetUniformMatrix4x4("worldMat", false, m.m);
 		GL::shapes.DrawSolidSphere(5, 5);
+		// last thing, no need to undo
 	}
 }
 
@@ -180,37 +155,27 @@ static inline void DrawFeatureColVol(const CFeature* f)
 	if (!camera->InView(f->pos, f->GetDrawRadius()))
 		return;
 
-	CMatrix44f m = f->GetTransformMatrix(false);
+	CMatrix44f fm(f->midPos);
+	fm.SetXYZ(f->GetTransformMatrixRef(false));
 
-	glPushMatrix();
-		DrawObjectMidAndAimPos(f, m);
-		glMultMatrixf(m.m);
+	DrawObjectMidAndAimPos(f);
+	DrawCollisionVolume(&f->selectionVolume, fm, DEFAULT_SELVOL_COLOR);
 
-		glColorf4(DEFAULT_SELVOL_COLOR);
-		DrawCollisionVolume(&f->selectionVolume);
-
-		glColorf4(DEFAULT_COLVOL_COLOR);
-		if (v->DefaultToPieceTree()) {
-			// draw only the piece volumes for less clutter
-			// note: relMidPos transform is on the stack at this
-			// point but all piece-positions are relative to pos
-			// --> undo it
-			glTranslatef3(-f->relMidPos);
-			DrawObjectDebugPieces(f);
-			glTranslatef3(f->relMidPos);
-		} else {
-			if (!v->IgnoreHits()) {
-				DrawCollisionVolume(v);
-			}
+	if (v->DefaultToPieceTree()) {
+		DrawObjectDebugPieces(f, DEFAULT_COLVOL_COLOR);
+	} else {
+		if (!v->IgnoreHits()) {
+			DrawCollisionVolume(v, fm, DEFAULT_COLVOL_COLOR);
 		}
+	}
 
-		if (v->HasCustomType() || v->HasCustomProp(f->radius)) {
-			// assume this is a custom volume; draw radius-sphere next to it
-			glColor4f(0.5f, 0.5f, 0.5f, 0.35f);
-			glScalef(f->radius, f->radius, f->radius);
-			glWireSphere(&volumeDisplayListIDs[0], 20, 20);
-		}
-	glPopMatrix();
+	if (v->HasCustomType() || v->HasCustomProp(f->radius)) {
+		// assume this is a custom volume; draw radius-sphere next to it
+		CMatrix44f m = fm;
+		m.Scale(f->radius);
+
+		GL::shapes.DrawWireSphere(20, 20, m, DEFAULT_CUSTCV_COLOR);
+	}
 }
 
 static inline void DrawUnitColVol(const CUnit* u)
@@ -234,131 +199,97 @@ static inline void DrawUnitColVol(const CUnit* u)
 		auto token = shader->EnableScoped();
 		shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
 
-		CMatrix44f wm;
 
 		for (const CWeapon* w : u->weapons) {
-			wm.Translate(w->aimFromPos);
-
-			shader->SetUniform("meshColor", 1.0f, 1.0f, 0.0f, 0.4f);
-			shader->SetUniformMatrix4x4("worldMat", false, wm.m);
-			GL::shapes.DrawSolidSphere(5, 5);
-
-			//undo
-			wm.Translate(-w->aimFromPos);
-
-			wm.Translate(w->weaponMuzzlePos);
-
-			if (w->HaveTarget()) {
-				shader->SetUniform("meshColor", 1.0f, 0.8f, 0.0f, 0.4f);
-			}
-			else {
-				shader->SetUniform("meshColor", 1.0f, 0.0f, 0.0f, 0.4f);
-			}
-			shader->SetUniformMatrix4x4("worldMat", false, wm.m);
-			GL::shapes.DrawSolidSphere(5, 5);
-
-			//undo
-			wm.Translate(-w->weaponMuzzlePos);
-
-			if (w->HaveTarget()) {
-				wm.Translate(w->GetCurrentTargetPos());
-
-				shader->SetUniform("meshColor", 1.0f, 0.8f, 0.0f, 0.4f);
-				shader->SetUniformMatrix4x4("worldMat", false, wm.m);
+			{
+				CMatrix44f m{ w->aimFromPos };
+				shader->SetUniform4v("meshColor", &DEFAULT_AIMFRM_COLOR.x);
+				shader->SetUniformMatrix4x4("worldMat", false, m.m);
 				GL::shapes.DrawSolidSphere(5, 5);
+			}
+			{
+				CMatrix44f m{ w->weaponMuzzlePos };
+				if (w->HaveTarget()) {
+					shader->SetUniform4v("meshColor", &DEFAULT_TARGET_COLOR.x);
+				}
+				else {
+					shader->SetUniform4v("meshColor", &DEFAULT_MUZZLE_COLOR.x);
+				}
+				shader->SetUniformMatrix4x4("worldMat", false, m.m);
+				GL::shapes.DrawSolidSphere(5, 5);
+			}
 
-				//undo
-				wm.Translate(-w->GetCurrentTargetPos());
+			if (w->HaveTarget()) {
+				CMatrix44f m{ w->GetCurrentTargetPos() };
+
+				shader->SetUniform4v("meshColor", &DEFAULT_TARGET_COLOR.x);
+				shader->SetUniformMatrix4x4("worldMat", false, m.m);
+				GL::shapes.DrawSolidSphere(5, 5);
 			}
 		}
 	}
 
-	glEnable(GL_DEPTH_TEST);
+	{
+		using namespace GL::State;
+		auto state = GL::SubState(
+			DepthTest(GL_TRUE)
+		);
 
-	CMatrix44f um = u->GetTransformMatrix(false);
-	glPushMatrix();
-		DrawObjectMidAndAimPos(u, um);
-		glMultMatrixf(um.m);
+		DrawObjectMidAndAimPos(u);
 
-		glColorf4(DEFAULT_SELVOL_COLOR);
-		DrawCollisionVolume(&u->selectionVolume);
+		CMatrix44f um(u->midPos);
+		um.SetXYZ(u->GetTransformMatrix(false));
+		DrawCollisionVolume(&u->selectionVolume, um, DEFAULT_SELVOL_COLOR);
 
-		glColorf4(DEFAULT_COLVOL_COLOR);
 		if (v->DefaultToPieceTree()) {
-			// draw only the piece volumes for less clutter
-			// note: relMidPos transform is on the stack at this
-			// point but all piece-positions are relative to pos
-			// --> undo it
-			glTranslatef3(-u->relMidPos);
-			DrawObjectDebugPieces(u);
-			glTranslatef3(u->relMidPos);
+			DrawObjectDebugPieces(u, DEFAULT_COLVOL_COLOR);
 		} else {
 			if (!v->IgnoreHits()) {
 				const int hitDeltaTime = gs->frameNum - u->lastAttackFrame;
 				const int setFadeColor = (u->lastAttackFrame > 0 && hitDeltaTime < 150);
 
 				// make it fade red under attack
-				if (setFadeColor)
-					glColor3f(1.0f - (hitDeltaTime / 150.0f), 0.0f, 0.0f);
+				const float4 curColor = setFadeColor ?
+					float4{ 1.0f - (hitDeltaTime / 150.0f), 0.0f, 0.0f, 1.0f } :
+					DEFAULT_COLVOL_COLOR;
 
-				// if drawing this, disable the DrawObjectMidAndAimPos call
-				// DrawCollisionVolume((u->localModel).GetBoundingVolume());
-				DrawCollisionVolume(v);
-
-				if (setFadeColor)
-					glColorf4(DEFAULT_COLVOL_COLOR);
+				DrawCollisionVolume(v, um, curColor);
 			}
 		}
 		if (u->shieldWeapon != nullptr) {
 			const CPlasmaRepulser* shieldWeapon = static_cast<const CPlasmaRepulser*>(u->shieldWeapon);
 			const CollisionVolume* shieldColVol = &shieldWeapon->collisionVolume;
 
-			glColor4f(0.0f, 0.0f, 0.6f, 0.35f);
-
-			glPopMatrix();
-			glPushMatrix();
-			glMultMatrixf(CMatrix44f{shieldWeapon->weaponMuzzlePos});
-			DrawCollisionVolume(shieldColVol);
-			glPopMatrix();
-			glPushMatrix();
-			glMultMatrixf(u->GetTransformMatrix(false));
+			const CMatrix44f m{ shieldWeapon->weaponMuzzlePos };
+			DrawCollisionVolume(shieldColVol, m, DEFAULT_SHIELD_COLOR);
 		}
 
 		if (v->HasCustomType() || v->HasCustomProp(u->radius)) {
 			// assume this is a custom volume; draw radius-sphere next to it
-			glColor4f(0.5f, 0.5f, 0.5f, 0.35f);
-			glPushMatrix();
-			glScalef(u->radius, u->radius, u->radius);
-			glWireSphere(&volumeDisplayListIDs[0], 20, 20);
-			glPopMatrix();
+			CMatrix44f m = um;
+			m.Scale(u->radius);
+			GL::shapes.DrawWireSphere(20, 20, m, DEFAULT_CUSTCV_COLOR);
 		}
 
 		if (const CFactory* f = dynamic_cast<const CFactory*>(u)) {
 			if (f->boPerform) {
-				glColor4f(0.0f, 1.0f, 1.0f, 0.35f);
-
-				glPushMatrix();
-
 				float3 boRelDir = (f->boRelHeading == 0) ? FwdVector : GetVectorFromHeading(f->boRelHeading % SPRING_MAX_HEADING);
 				float3 boPos = f->pos + boRelDir * f->boOffset;
 
-				glTranslatef3(boPos - f->pos); //because of glMultMatrixf(u->GetTransformMatrix(false));
+				CMatrix44f boMat(boPos);
 
 				if (f->boSherical) {
-					glScalef(f->boRadius, f->boRadius, f->boRadius);
-					glWireSphere(&volumeDisplayListIDs[3], 20, 20);
+					boMat.Scale(f->boRadius);
+					GL::shapes.DrawWireSphere(20, 20, boMat, DEFAULT_BUGOFF_COLOR);
 				}
 				else {
-					glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
-					glScalef(f->boRadius, f->boRadius, 1.0f);
-					glWireCylinder(&volumeDisplayListIDs[4], 20, 20.0f);
+					boMat.RotateX(-90.0f * math::DEG_TO_RAD);
+					boMat.Scale(f->boRadius, f->boRadius, 20.0f);
+					GL::shapes.DrawWireCylinder(20, boMat, DEFAULT_BUGOFF_COLOR);
 				}
-
-				glPopMatrix();
 			}
 		}
-
-	glPopMatrix();
+	}
 }
 
 

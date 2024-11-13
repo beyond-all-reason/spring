@@ -3732,14 +3732,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 					mat.RotateX(90.0f * math::DEG_TO_RAD);
 					mat.Scale(OnesVector * pointeeUnit->decloakDistance);
 
-					auto* shader = GL::shapes.GetShader();
-					auto shToken = shader->EnableScoped();
-
-					shader->SetUniform4v("meshColor", cmdColors.rangeDecloak);
-					shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
-					shader->SetUniformMatrix4x4("worldMat", false, mat.m);
-
-					GL::shapes.DrawWireSphere(16, 16);
+					GL::shapes.DrawWireSphere(16, 16, mat, cmdColors.rangeDecloak);
 				} else { // cylindrical
 					glSurfaceCircle(unit->pos, unit->decloakDistance, { cmdColors.rangeDecloak }, 40);
 				}
