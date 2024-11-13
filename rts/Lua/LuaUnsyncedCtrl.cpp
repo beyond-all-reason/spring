@@ -1310,7 +1310,7 @@ int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
  *
  * @function Spring.SetDollyCameraCurve
  * @number degree
- * @tparam table cpoints
+ * @tparam table cpoints NURBS control point positions {{x,y,z,weight}, ...}
  * @tparam table knots
  * @treturn nil
  */
