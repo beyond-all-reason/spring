@@ -640,6 +640,7 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 	// TODO check if the command is in the map first, for more commands
 	switch (cmdID) {
 		case CMD_MOVE:
+		case CMD_AREA_ATTACK:
 		case CMD_RECLAIM:
 		case CMD_REPAIR:
 		case CMD_RESURRECT:
