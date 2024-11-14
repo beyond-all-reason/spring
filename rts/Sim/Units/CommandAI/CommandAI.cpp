@@ -640,8 +640,6 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 	// TODO check if the command is in the map first, for more commands
 	switch (cmdID) {
 		case CMD_MOVE:
-		case CMD_ATTACK:
-		case CMD_AREA_ATTACK:
 		case CMD_RECLAIM:
 		case CMD_REPAIR:
 		case CMD_RESURRECT:
@@ -700,8 +698,6 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 				const CUnit* attackee = GetCommandUnit(c, 0);
 
 				if (attackee == nullptr)
-					return false;
-				if (!attackee->pos.IsInBounds())
 					return false;
 			} else {
 				AdjustGroundAttackCommand(c, fromSynced, aiOrder);
