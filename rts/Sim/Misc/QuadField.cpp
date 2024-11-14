@@ -330,18 +330,18 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 
 
 // Test with wide ray that also extends width at the extremes.
-void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart, const float3& dir, float length, float width)
+void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length, float width)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	dir.AssertNaNs();
-	baseStart.AssertNaNs();
+	start.AssertNaNs();
 
 	auto& queryQuads = *(qfq.quads = tempQuads[qfq.threadOwner].ReserveVector());
 
-	const float3 baseTo = baseStart + (dir * length);
+	const float3 baseTo = start + (dir * length);
 
-	const bool noXdir = (math::floor(baseStart.x * invQuadSize.x) == math::floor(baseTo.x * invQuadSize.x));
-	const bool noZdir = (math::floor(baseStart.z * invQuadSize.y) == math::floor(baseTo.z * invQuadSize.y));
+	const bool noXdir = (math::floor(start.x * invQuadSize.x) == math::floor(baseTo.x * invQuadSize.x));
+	const bool noZdir = (math::floor(start.z * invQuadSize.y) == math::floor(baseTo.z * invQuadSize.y));
 
 	// special cases, prevent div0.
 	if (noZdir) {
@@ -349,18 +349,18 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 		// bounds.
 		int startX, finalX, centerZ;
 		if (noXdir) {
-			const int centerQuadIdx = WorldPosToQuadFieldIdx(baseStart);
+			const int centerQuadIdx = WorldPosToQuadFieldIdx(start);
 
 			startX = finalX = centerQuadIdx % numQuadsX;
 			centerZ = centerQuadIdx / numQuadsX;
 		} else {
-			startX = std::clamp <int> (baseStart.x * invQuadSize.x, 0, numQuadsX - 1);
-			finalX = std::clamp <int> (   baseTo.x * invQuadSize.x, 0, numQuadsX - 1);
+			startX = std::clamp <int> ( start.x * invQuadSize.x, 0, numQuadsX - 1);
+			finalX = std::clamp <int> (baseTo.x * invQuadSize.x, 0, numQuadsX - 1);
 
 			if (finalX < startX)
 				std::swap(startX, finalX);
 
-			centerZ = std::clamp <int> (baseStart.z * invQuadSize.y, 0, numQuadsZ - 1);
+			centerZ = std::clamp <int> (start.z * invQuadSize.y, 0, numQuadsZ - 1);
 		}
 
 		const int marginX = math::ceil(width * invQuadSize.x);
@@ -386,7 +386,6 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 	const float widthFactor = std::abs(normDirPlanar.z / dir.z) * width;
 
 	// Start and stop a bit further to account for width
-	const float3 start = baseStart - dir * widthFactor;
 	const float3 to = baseTo + dir * widthFactor;
 	length = (to - start).Length();
 
