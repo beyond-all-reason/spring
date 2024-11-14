@@ -391,10 +391,10 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 	length = (to - start).Length();
 
 	// taking normDirPlanar.z since we want perpendicular proportion
-	const unsigned int marginX = math::ceil(std::abs(width * normDirPlanar.z * invQuadSize.x));
+	const unsigned int mapMarginX = std::abs(width * normDirPlanar.z);
 
-	// From here on, basically a copy of the same section of GetQuadsOnRay, just here
-	// mangling startX and finalX with marginX just before pushing each row.
+	// From here on, basically a copy of the same section of GetQuadsOnRay, just here extending
+	// startX and finalX with mapMarginX before converting to quad indexes and pushing each row.
 
 	float startZuc = start.z * invQuadSize.y;
 	float finalZuc =    to.z * invQuadSize.y;
@@ -422,17 +422,16 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 		t0 = std::clamp(t0, 0.0f, length);
 		t1 = std::clamp(t1, 0.0f, length);
 
-		unsigned startX = std::clamp <int> ((dir.x * t0 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
-		unsigned finalX = std::clamp <int> ((dir.x * t1 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
+		unsigned mapStartX = dir.x * t0 + start.x;
+		unsigned mapFinalX = dir.x * t1 + start.x;
 
-		if (finalX < startX)
-			std::swap(startX, finalX);
+		if (mapFinalX < mapStartX)
+			std::swap(mapStartX, mapFinalX);
 
-		assert(finalX < numQuadsX);
+		const unsigned startX = std::clamp <int> ((mapStartX - mapMarginX) * invQuadSize.x, 0, numQuadsX - 1);
+		const unsigned finalX = std::clamp <int> ((mapFinalX + mapMarginX) * invQuadSize.x, 0, numQuadsX - 1);
 
 		const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
-		startX = std::max <int> (startX - marginX, 0);
-		finalX = std::min <int> (finalX + marginX, numQuadsX-1);
 
 		for (unsigned x = startX; x <= finalX; x++) {
 			queryQuads.push_back(row + x);
