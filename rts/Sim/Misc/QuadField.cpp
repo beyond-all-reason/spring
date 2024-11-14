@@ -391,7 +391,7 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 	length = (to - start).Length();
 
 	// taking normDirPlanar.z since we want perpendicular proportion
-	const unsigned int mapMarginX = std::abs(width * normDirPlanar.z);
+	const float mapMarginX = std::abs(width * normDirPlanar.z);
 
 	// From here on, basically a copy of the same section of GetQuadsOnRay, just here extending
 	// startX and finalX with mapMarginX before converting to quad indexes and pushing each row.
@@ -422,8 +422,8 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& baseStart,
 		t0 = std::clamp(t0, 0.0f, length);
 		t1 = std::clamp(t1, 0.0f, length);
 
-		unsigned mapStartX = dir.x * t0 + start.x;
-		unsigned mapFinalX = dir.x * t1 + start.x;
+		float mapStartX = dir.x * t0 + start.x;
+		float mapFinalX = dir.x * t1 + start.x;
 
 		if (mapFinalX < mapStartX)
 			std::swap(mapStartX, mapFinalX);
