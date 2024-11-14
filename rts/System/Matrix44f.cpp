@@ -447,7 +447,7 @@ float4 CMatrix44f::operator* (const float4 v) const
 }
 
 
-void CMatrix44f::SetUpVector(const float3 up)
+void CMatrix44f::SetUpVector(const float3& up)
 {
 	float3 zdir(m[8], m[9], m[10]);
 	float3 xdir(zdir.cross(up));
