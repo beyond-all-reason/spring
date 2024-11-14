@@ -340,47 +340,27 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 
 	const float3 baseTo = start + (dir * length);
 
-	const bool noXdir = (math::floor(start.x * invQuadSize.x) == math::floor(baseTo.x * invQuadSize.x));
 	const bool noZdir = (math::floor(start.z * invQuadSize.y) == math::floor(baseTo.z * invQuadSize.y));
 
-	// special cases, prevent div0.
+	// special case, prevent div0.
 	if (noZdir) {
-		// Both nozdir+noxdir and noxdir result in rectangles with slightly different
-		// bounds.
-		int startX, finalX, centerZ;
-		if (noXdir) {
-			const int centerQuadIdx = WorldPosToQuadFieldIdx(start);
+		// Having noZdir will roughly result in a rectangle.
+		float startX = start.x;
+		float finalX = baseTo.x;
+		if (finalX < startX)
+			std::swap(startX, finalX);
 
-			startX = finalX = centerQuadIdx % numQuadsX;
-			centerZ = centerQuadIdx / numQuadsX;
-		} else {
-			startX = std::clamp <int> ( start.x * invQuadSize.x, 0, numQuadsX - 1);
-			finalX = std::clamp <int> (baseTo.x * invQuadSize.x, 0, numQuadsX - 1);
+		float startZ = start.z;
+		float finalZ = baseTo.z;
+		if (finalZ < startZ)
+			std::swap(startZ, finalZ);
 
-			if (finalX < startX)
-				std::swap(startX, finalX);
+		const float3 mins(startX - width, 0, startZ - width);
+		const float3 maxs(finalX + width, 0, finalZ + width);
 
-			centerZ = std::clamp <int> (start.z * invQuadSize.y, 0, numQuadsZ - 1);
-		}
-
-		const int marginX = math::ceil(width * invQuadSize.x);
-		const int marginZ = math::ceil(width * invQuadSize.y);
-
-		startX = std::max <int> (startX - marginX, 0);
-		finalX = std::min <int> (finalX + marginX, numQuadsX-1);
-
-		const int startZ = std::max <int> (centerZ - marginZ, 0);
-		const int finalZ = std::min <int> (centerZ + marginZ, numQuadsZ - 1);
-
-		for (int z = startZ; z <= finalZ; z++) {
-			const int row = z * numQuadsX;
-			for (unsigned x = startX; x <= finalX; x++) {
-				queryQuads.push_back(row + x);
-				assert(static_cast<unsigned>(queryQuads.back()) < baseQuads.size());
-			}
-		}
-		return;
+		return GetQuadsRectangle(qfq, mins, maxs);
 	}
+
 	// iterate z-range; compute which columns (x) are touched for each row (z)
 	const float3 normDirPlanar = float3(dir.x, 0.0, dir.z).UnsafeNormalize();  // we already checked for unsafe cases before
 	const float widthFactor = std::abs(normDirPlanar.z / dir.z) * width;
