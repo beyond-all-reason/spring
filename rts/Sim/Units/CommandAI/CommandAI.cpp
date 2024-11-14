@@ -717,9 +717,8 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 
 			if (!ud->canGuard)
 				return false;
-			if (owner && !owner->pos.IsInBounds())
-				return false;
-			if (guardee && !guardee->pos.IsInBounds())
+			// Allow guarding out of map units only if both are builders to avoid plane hacks.
+			if (guardee && !(guardee->unitDef->IsBuilderUnit() && ud->IsBuilderUnit()) && !guardee->pos.IsInBounds())
 				return false;
 		} break;
 
