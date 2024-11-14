@@ -2376,8 +2376,11 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 				const float3 camTraceDir = mouse->buttons[button].dir;
 
 				const float traceDist = camera->GetFarPlaneDist() * 1.4f;
-				const float innerDist = CGround::LineGroundCol(camTracePos, camTracePos + camTraceDir * traceDist, false);
-				      float outerDist = -1.0f;
+				float innerDist = CGround::LineGroundCol(camTracePos, camTracePos + camTraceDir * traceDist, false);
+				float outerDist = -1.0f;
+
+				if (innerDist < 0.0f)
+					innerDist = CGround::LinePlaneCol(camTracePos, camTraceDir, traceDist, CGround::GetWaterPlaneLevel());
 
 				if (innerDist < 0.0f)
 					return defaultRet;
@@ -3592,8 +3595,11 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 						const float3 camTraceDir = mouse->buttons[button].dir;
 
 						const float traceDist = camera->GetFarPlaneDist() * 1.4f;
-						const float innerDist = CGround::LineGroundCol(camTracePos, camTracePos + camTraceDir * traceDist, false);
-						      float outerDist = -1.0f;
+						float innerDist = CGround::LineGroundCol(camTracePos, camTracePos + camTraceDir * traceDist, false);
+						float outerDist = -1.0f;
+
+						if (innerDist < 0.0f)
+							innerDist = CGround::LinePlaneCol(camTracePos, camTraceDir, traceDist, CGround::GetWaterPlaneLevel());
 
 						if (innerDist < 0.0f)
 							break;
