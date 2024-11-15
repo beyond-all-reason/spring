@@ -460,7 +460,7 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 		if (family)
 			FcPatternAddString(pattern, FC_FAMILY, family);
-		if (foundry && strcmp("UKWN", reinterpret_cast<char*>(foundry)) != 0 && !strcmp("ukwn", reinterpret_cast<char*>(foundry)) != 0)
+		if (foundry && strcmp("UKWN", reinterpret_cast<char*>(foundry)) != 0 && strcmp("ukwn", reinterpret_cast<char*>(foundry)) != 0)
 			FcPatternAddString(pattern, FC_FOUNDRY, foundry);
 	}
 
