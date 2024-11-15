@@ -2379,7 +2379,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 				float innerDist = CGround::LineGroundCol(camTracePos, camTracePos + camTraceDir * traceDist, false);
 				float outerDist = -1.0f;
 
-				if (innerDist < 0.0f)
+				if (innerDist < 0.0f) // in case area center is out of map
 					innerDist = CGround::LinePlaneCol(camTracePos, camTraceDir, traceDist, CGround::GetWaterPlaneLevel());
 
 				if (innerDist < 0.0f)
@@ -3598,7 +3598,7 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 						float innerDist = CGround::LineGroundCol(camTracePos, camTracePos + camTraceDir * traceDist, false);
 						float outerDist = -1.0f;
 
-						if (innerDist < 0.0f)
+						if (innerDist < 0.0f) // in case area center is out of map
 							innerDist = CGround::LinePlaneCol(camTracePos, camTraceDir, traceDist, CGround::GetWaterPlaneLevel());
 
 						if (innerDist < 0.0f)
