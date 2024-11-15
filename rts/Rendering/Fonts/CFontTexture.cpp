@@ -120,7 +120,7 @@ public:
 				return;
 			}
 
-			config = FcConfigCreate();
+			config = FcInitLoadConfigAndFonts();
 			if (!config)
 				return;
 
@@ -192,7 +192,6 @@ public:
 
 		FcConfigAppFontClear(GetFCConfig());
 		FcConfigAppFontAddDir(GetFCConfig(), reinterpret_cast<const FcChar8*>("fonts"));
-		FcConfigAppFontAddDir(GetFCConfig(), reinterpret_cast<const FcChar8*>(osFontsDir));
 
 		{
 			auto dirs = FcConfigGetCacheDirs(GetFCConfig());
