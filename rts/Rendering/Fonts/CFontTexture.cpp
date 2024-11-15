@@ -292,6 +292,16 @@ bool FtLibraryHandlerProxy::CheckGenFontConfigFull(bool console)
 /*******************************************************************************/
 
 #ifndef HEADLESS
+static bool IsFoundryOkay(std::string_view foundry)
+{
+        /* These foundry codes are defaults from some editors and can make pattern
+	 * search fail to provide proper results on the first items.
+         */
+        if (foundry.starts_with(std::string_view{"UKWN"}) || foundry.starts_with(std::string_view{"ukwn"}))
+                return false;
+        return true;
+}
+
 static inline uint64_t GetKerningHash(char32_t lchar, char32_t rchar)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -460,7 +470,7 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 		if (family)
 			FcPatternAddString(pattern, FC_FAMILY, family);
-		if (foundry && strcmp("UKWN", reinterpret_cast<char*>(foundry)) != 0 && strcmp("ukwn", reinterpret_cast<char*>(foundry)) != 0)
+		if (foundry && IsFoundryOkay(reinterpret_cast<const char*>(foundry)))
 			FcPatternAddString(pattern, FC_FOUNDRY, foundry);
 	}
 
