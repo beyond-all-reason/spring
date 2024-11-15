@@ -714,8 +714,6 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 				return false;
 		} break;
 		case CMD_GUARD: {
-			const CUnit* guardee = GetCommandUnit(c, 0);
-
 			if (!ud->canGuard)
 				return false;
 		} break;
