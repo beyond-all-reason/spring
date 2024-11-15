@@ -701,6 +701,9 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 				if (attackee == nullptr)
 					return false;
 			} else {
+				if (c.GetNumParams() > 3 && c.GetParam(3) == 0 && !IsCommandInMap(c))
+					return false; // don't allow direct ground attack out of map
+
 				AdjustGroundAttackCommand(c, fromSynced, aiOrder);
 			}
 		} break;
