@@ -85,6 +85,9 @@ if (TRACY_ENABLE)
 	option(RMLUI_TRACY_PROFILING "Enable RmlUi profiling with Tracy." ON)
 	# We have our own memory profiling, never enable RmlUi one.
 	set(RMLUI_TRACY_MEMORY_PROFILING OFF CACHE BOOL "Enable RmlUi tracy profiling")
+	
+	# Disable the additional RmlUI multiconfig configuration as it only applies to RmlUI
+	set(RMLUI_TRACY_CONFIGURATION OFF CACHE BOOL "" FORCE)
 endif()
 
 # We resolve freetype here to make sure RmlUi find_package picks the same
