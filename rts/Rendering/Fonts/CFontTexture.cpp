@@ -292,16 +292,6 @@ bool FtLibraryHandlerProxy::CheckGenFontConfigFull(bool console)
 /*******************************************************************************/
 
 #ifndef HEADLESS
-static bool IsFoundryOkay(std::string_view foundry)
-{
-        /* These foundry codes are defaults from some editors and can make pattern
-	 * search fail to provide proper results on the first items.
-         */
-        if (foundry.starts_with(std::string_view{"UKWN"}) || foundry.starts_with(std::string_view{"ukwn"}))
-                return false;
-        return true;
-}
-
 static inline uint64_t GetKerningHash(char32_t lchar, char32_t rchar)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -436,7 +426,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 		FcBool outline = FcFalse;
 
 		FcChar8* family = nullptr;
-		FcChar8* foundry = nullptr;
 
 		const FcChar8* ftname = reinterpret_cast<const FcChar8*>("not used");
 
@@ -457,7 +446,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 			FcPatternGetDouble( origPattern, FC_PIXEL_SIZE, 0, &pixelSize);
 
 			FcPatternGetString( origPattern, FC_FAMILY , 0, &family );
-			FcPatternGetString( origPattern, FC_FOUNDRY, 0, &foundry);
 
 		}
 
@@ -470,8 +458,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 		if (family)
 			FcPatternAddString(pattern, FC_FAMILY, family);
-		if (foundry && IsFoundryOkay(reinterpret_cast<const char*>(foundry)))
-			FcPatternAddString(pattern, FC_FOUNDRY, foundry);
 	}
 
 	FcDefaultSubstitute(pattern);
