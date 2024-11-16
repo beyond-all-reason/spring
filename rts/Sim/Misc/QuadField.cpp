@@ -20,7 +20,7 @@
 
 #include "System/Misc/TracyDefs.h"
 
-#ifdef DEBUG_QUADFIELD
+#ifdef DEBUG_DRAW_QUADFIELD
 	#include "Rendering/LineDrawer.h"
 	#include "Map/Ground.h"
 #endif
@@ -949,7 +949,7 @@ void CQuadField::GetUnitsAndFeaturesColVol(
 	}
 }
 
-#ifdef DEBUG_QUADFIELD
+#ifdef DEBUG_DRAW_QUADFIELD
 void QuadField::DrawQuad(unsigned i, const float4 color) {
 	const int qx = i % numQuadsX;
 	const int qz = i / numQuadsX;
@@ -968,6 +968,6 @@ void QuadField::DrawQuad(unsigned i, const float4 color) {
 	lineDrawer.DrawLine({x0, h, y0}, color);
 	lineDrawer.FinishPath();
 }
-#endif // DEBUG_QUADFIELD
+#endif // DEBUG_DRAW_QUADFIELD
 
 #endif // UNIT_TEST

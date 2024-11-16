@@ -411,7 +411,7 @@ float GuiTraceRay(
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
 
-		#ifdef DEBUG_QUADFIELD
+		#ifdef DEBUG_DRAW_QUADFIELD
 		quadField.DrawQuad(quadIdx, {1.0, 1.0, 1.0, 1.0});
 		#endif
 

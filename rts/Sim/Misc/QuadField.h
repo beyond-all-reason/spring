@@ -234,9 +234,9 @@ public:
 
 	constexpr static unsigned int BASE_QUAD_SIZE = 128;
 
-#ifdef DEBUG_QUADFIELD
+#ifdef DEBUG_DRAW_QUADFIELD
 	void DrawQuad(unsigned i, const float4 color);
-#endif
+#endif // DEBUG_DRAW_QUADFIELD
 
 private:
 	int2 WorldPosToQuadField(const float3 p) const;

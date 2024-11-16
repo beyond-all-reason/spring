@@ -712,7 +712,7 @@ void CSelectedUnitsHandler::Draw()
 	glDepthMask(true);
 	glEnable(GL_TEXTURE_2D);
 
-	#ifdef DEBUG_QUADFIELD
+	#ifdef DEBUG_DRAW_QUADFIELD
 	const float4 quadColor = {0.4, 1.0, 0.4, 1.0};
 	for (const int unitID: selectedUnits) {
 		const CUnit* su = unitHandler.GetUnit(unitID);
@@ -720,7 +720,7 @@ void CSelectedUnitsHandler::Draw()
 			quadField.DrawQuad(qIdx, quadColor);
 		}
 	}
-	#endif
+	#endif // DEBUG_DRAW_QUADFIELD
 }
 
 
