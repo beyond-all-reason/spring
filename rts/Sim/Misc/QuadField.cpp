@@ -20,6 +20,11 @@
 
 #include "System/Misc/TracyDefs.h"
 
+#ifdef DEBUG_QUADFIELD
+	#include "Rendering/LineDrawer.h"
+	#include "Map/Ground.h"
+#endif
+
 CR_BIND(CQuadField, )
 CR_REG_METADATA(CQuadField, (
 	CR_MEMBER(baseQuads),
@@ -943,4 +948,26 @@ void CQuadField::GetUnitsAndFeaturesColVol(
 		}
 	}
 }
+
+#ifdef DEBUG_QUADFIELD
+void QuadField::DrawQuad(unsigned i, const float4 color) {
+	const int qx = i % numQuadsX;
+	const int qz = i / numQuadsX;
+
+	const float x_0 = qx * quadSizeX;
+	const float y_0 = qz * quadSizeZ;
+	const float x_1 = x_0 + quadSizeX;
+	const float y_1 = y_0 + quadSizeZ;
+
+	const float h = CGround::GetHeightReal((x_0 + x_1) / 2.0, (y_0 + y_1) / 2.0, false);
+
+	lineDrawer.StartPath({x0, h, y0}, color);
+	lineDrawer.DrawLine({x1, h, y0}, color);
+	lineDrawer.DrawLine({x1, h, y1}, color);
+	lineDrawer.DrawLine({x0, h, y1}, color);
+	lineDrawer.DrawLine({x0, h, y0}, color);
+	lineDrawer.FinishPath();
+}
+#endif // DEBUG_QUADFIELD
+
 #endif // UNIT_TEST

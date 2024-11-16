@@ -411,6 +411,10 @@ float GuiTraceRay(
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
 
+		#ifdef DEBUG_QUADFIELD
+		quadField.DrawQuad(quadIdx, {1.0, 1.0, 1.0, 1.0});
+		#endif
+
 		// Unit Intersection
 		for (const CUnit* u: quad.units) {
 			const bool unitIsEnemy = !teamHandler.Ally(u->allyteam, gu->myAllyTeam);
