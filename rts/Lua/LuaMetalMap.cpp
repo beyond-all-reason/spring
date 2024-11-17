@@ -12,7 +12,6 @@
 
 /******************************************************************************
  * Metal Map Lua API
- * @module MetalMap
  * @see rts/Lua/LuaMetalMap.cpp
 ******************************************************************************/
 
@@ -52,10 +51,10 @@ int LuaMetalMap::GetMetalAmount(lua_State* L)
 
 /***
  * @function Spring.SetMetalAmount
- * @number x in worldspace/16.
- * @number z in worldspace/16.
- * @number metalAmount must be between 0 and 255*maxMetal (with maxMetal from the .smd or mapinfo.lua).
- * @treturn nil
+ * @param x number in worldspace/16.
+ * @param z number in worldspace/16.
+ * @param metalAmount number must be between 0 and 255*maxMetal (with maxMetal from the .smd or mapinfo.lua).
+ * @return nil
  *
  *
  */

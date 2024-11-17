@@ -86,7 +86,6 @@ CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValu
 /******************************************************************************
  * Lua OpenGL API
  *
- * @module OpenGL
  *
  * @see rts/Lua/LuaOpenGL.cpp
 ******************************************************************************/
@@ -1292,11 +1291,11 @@ int LuaOpenGL::EndText(lua_State* L)
 /***
  *
  * @function gl.Text
- * @string text
- * @number x
- * @number y
- * @number size
- * @string[opt] options concatenated string of option characters.
+ * @param text string
+ * @param x number
+ * @param y number
+ * @param size number
+ * @param options string? concatenated string of option characters.
  *
  *   - horizontal alignment:
  *     - 'c' = center
@@ -1314,7 +1313,7 @@ int LuaOpenGL::EndText(lua_State* L)
  *     - 's' = shadow
  *   - other:
  *     - 'n' = don't round vertex coords to nearest integer (font may get blurry)
- * @treturn nil
+ * @return nil
  */
 int LuaOpenGL::Text(lua_State* L)
 {
@@ -2529,12 +2528,12 @@ int LuaOpenGL::MemoryBarrier(lua_State* L)
 /***
  *
  * @function gl.Color
- * @tparam number|{number,number,number,number} r red when number, rgba
+ * @param r number|{number,number,number,number} red when number, rgba
  * quadruple or rgb triple otherwise
- * @number[opt] g
- * @number[opt] b
- * @number[opt] a
- * @treturn nil
+ * @param g number?
+ * @param b number?
+ * @param a number?
+ * @return nil
  */
 int LuaOpenGL::Color(lua_State* L)
 {
