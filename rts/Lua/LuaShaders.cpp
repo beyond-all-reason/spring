@@ -31,7 +31,6 @@ float fltUniformArrayBuf[1024] = {0.0f};
 
 /******************************************************************************
  * Shader creation and management
- * @module Shaders
  *
  * These functions are ONLY available if the graphics adapter supports GLSL.
  * Please test in your scripts if one of them exists before you use them. In headless mode, the gl. callouts are nil.
@@ -199,7 +198,7 @@ bool LuaShaders::DeleteProgram(Program& p)
 /*** Returns the shader compilation error log. This is empty if the shader linking failed, in that case, check your in/out blocks and ensure they match.
  *
  * @function gl.GetShaderLog
- * @treturn string infoLog
+ * @return string infoLog
  */
 int LuaShaders::GetShaderLog(lua_State* L)
 {
@@ -553,8 +552,8 @@ GLint LuaShaders::GetUniformLocation(LuaShaders::Program* p, const char* name)
 /*** Create a shader from shaderParams table:
  *
  * @function gl.CreateShader ( table shaderParams )
- * @tparam table shaderParams
- * @treturn number shaderID
+ * @param shaderParams table
+ * @return number shaderID
  *
  *    ({[ vertex   = "glsl code" ,]
  *      [ tcs      = "glsl code" ,]
@@ -745,8 +744,8 @@ int LuaShaders::CreateShader(lua_State* L)
 /*** Deletes a shader identified by shaderID
  *
  * @function gl.DeleteShader
- * @number shaderID
- * @treturn nil
+ * @param shaderID number
+ * @return nil
  */
 int LuaShaders::DeleteShader(lua_State* L)
 {
@@ -763,8 +762,8 @@ int LuaShaders::DeleteShader(lua_State* L)
 /*** Binds a shader program identified by shaderID. Pass 0 to disable the shader. Returns wether the shader was successfully bound.
  *
  * @function gl.UseShader
- * @number shaderID
- * @treturn bool linked
+ * @param shaderID number
+ * @return boolean linked
  */
 int LuaShaders::UseShader(lua_State* L)
 {
@@ -798,12 +797,12 @@ int LuaShaders::UseShader(lua_State* L)
  * Can be used in NON-drawing events (to update uniforms etc.)!
  *
  * @function gl.ActiveShader
- * @number shaderID
+ * @param shaderID number
  * @func func
- * @tparam[opt] any arg1
- * @tparam[opt] any arg2
- * @tparam[opt] any argn
- * @treturn nil
+ * @tparam? any arg1
+ * @tparam? any arg2
+ * @tparam? any argn
+ * @return nil
  */
 int LuaShaders::ActiveShader(lua_State* L)
 {
@@ -881,8 +880,8 @@ static const char* UniformTypeString(GLenum type)
 /*** Query the active (actually used) uniforms of a shader and identify their names, types (float, int, uint) and sizes (float, vec4, ...).
  *
  * @function gl.GetActiveUniforms
- * @number shaderID
- * @treturn table `ActiveUniforms = { { name = "name", type = "type", length = number length, size = number size }, ...}`
+ * @param shaderID number
+ * @return table `ActiveUniforms = { { name = "name", type = "type", length = number length, size = number size }, ...}`
  */
 int LuaShaders::GetActiveUniforms(lua_State* L)
 {
@@ -914,9 +913,9 @@ int LuaShaders::GetActiveUniforms(lua_State* L)
 /*** Returns the locationID of a shaders uniform. Needed for changing uniform values with @function gl.Uniform.
  *
  * @function gl.GetUniformLocation
- * @number shaderID
- * @string name
- * @treturn number locationID
+ * @param shaderID number
+ * @param name string
+ * @return number locationID
  */
 int LuaShaders::GetUniformLocation(lua_State* L)
 {
@@ -991,12 +990,12 @@ int LuaShaders::SetFeatureBufferUniforms(lua_State* L) { return SetObjectBufferU
 /*** Sets the uniform float value at the locationID for the currently active shader. Shader must be activated before setting uniforms.
  *
  * @function gl.Uniform
- * @number locationID|string uniformName
- * @number f1
- * @number[opt] f2
- * @number[opt] f3
- * @number[opt] f4
- * @treturn nil
+ * @param locationID number|string uniformName
+ * @param f1 number
+ * @param f2 number?
+ * @param f3 number?
+ * @param f4 number?
+ * @return nil
  */
 int LuaShaders::Uniform(lua_State* L)
 {
@@ -1031,12 +1030,12 @@ int LuaShaders::Uniform(lua_State* L)
 /*** Sets the uniform int value at the locationID for the currently active shader. Shader must be activated before setting uniforms.
  *
  * @function gl.UniformInt
- * @number locationID|string uniformName
- * @number int1
- * @number[opt] int2
- * @number[opt] int3
- * @number[opt] int4
- * @treturn nil
+ * @param locationID number|string uniformName
+ * @param int1 number
+ * @param int2 number?
+ * @param int3 number?
+ * @param int4 number?
+ * @return nil
  */
 int LuaShaders::UniformInt(lua_State* L)
 {
@@ -1094,10 +1093,10 @@ static bool GLUniformArray(lua_State* L, UniformFunc uf, ParseArrayFunc pf)
 /*** Sets the an array of uniform values at the locationID for the currently active shader. Shader must be activated before setting uniforms. Type can be one of {1 = int, 2 = float, 3 = float matrix}.
  *
  * @function gl.UniformArray
- * @number locationID|string uniformName
- * @number type
- * @tparam table uniforms Array up to 1024 elements
- * @treturn nil
+ * @param locationID number|string uniformName
+ * @param type number
+ * @param uniforms table Array up to 1024 elements
+ * @return nil
  */
 int LuaShaders::UniformArray(lua_State* L)
 {
@@ -1140,12 +1139,12 @@ int LuaShaders::UniformArray(lua_State* L)
 /*** Sets the a uniform mat4 locationID for the currently active shader. Shader must be activated before setting uniforms. Can set one one common matrix like shadow, or by passing 16 additional numbers for the matrix.
  *
  * @function gl.UniformMatrix
- * @number locationID|string uniformName
- * @tparam ?string|number m1 "shadows" | "camera" | "caminv" | "camprj"
- * @number[opt] m2
- * @number[opt] mn
- * @number[opt] m16
- * @treturn nil
+ * @param locationID number|string uniformName
+ * @param m1 ?string|number "shadows" | "camera" | "caminv" | "camprj"
+ * @param m2 number?
+ * @param mn number?
+ * @param m16 number?
+ * @return nil
  */
 int LuaShaders::UniformMatrix(lua_State* L)
 {
@@ -1229,8 +1228,8 @@ int LuaShaders::UniformSubroutine(lua_State* L)
  *
  * Return the GLSL compliant definition of UniformMatricesBuffer(idx=0) or UniformParamsBuffer(idx=1) structure.
  *
- * @number index
- * @treturn string glslDefinition
+ * @param index number
+ * @return string glslDefinition
  */
 int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
 {
@@ -1251,8 +1250,8 @@ int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
  *
  * Return the GLSL compliant definition of ModelUniformData structure (per Unit/Feature buffer available on GPU)
  *
- * @number index
- * @treturn string glslDefinition
+ * @param index number
+ * @return string glslDefinition
  */
 int LuaShaders::GetEngineModelUniformDataDef(lua_State* L)
 {
@@ -1266,10 +1265,10 @@ int LuaShaders::GetEngineModelUniformDataDef(lua_State* L)
 /*** Sets the Geometry shader parameters for shaderID. Needed by geometry shader programs (check the opengl GL_ARB_geometry_shader4 extension for glProgramParameteri)
  *
  * @function gl.SetGeometryShaderParameter
- * @number shaderID
- * @number param
- * @number number
- * @treturn nil
+ * @param shaderID number
+ * @param param number
+ * @param number number
+ * @return nil
  */
 int LuaShaders::SetGeometryShaderParameter(lua_State* L)
 {
@@ -1296,9 +1295,9 @@ int LuaShaders::SetGeometryShaderParameter(lua_State* L)
  * Needed by tesselation shader programs (check the opengl GL_ARB_tessellation_shader extension for glProgramParameteri)
  *
  * @function gl.SetTesselationShaderParameter
- * @number param
- * @number number
- * @treturn nil
+ * @param param number
+ * @param number number
+ * @return nil
  */
 int LuaShaders::SetTesselationShaderParameter(lua_State* L)
 {

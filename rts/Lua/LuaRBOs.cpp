@@ -13,7 +13,6 @@
 
 /******************************************************************************
  * RBO
- * @module RBO
  * @see rts/Lua/LuaRBOs.cpp
 ******************************************************************************/
 
@@ -140,22 +139,22 @@ int LuaRBOs::meta_newindex(lua_State* L)
 /***
  * User Data RBO
  * @table rbo
- * @number target
- * @number format
- * @number xsize
- * @number ysize
- * @bool valid
- * @number samples will return globalRendering->msaaLevel for multisampled RBO or 0 otherwise
+ * @param target number
+ * @param format number
+ * @param xsize number
+ * @param ysize number
+ * @param valid boolean
+ * @param samples number will return globalRendering->msaaLevel for multisampled RBO or 0 otherwise
  */
 
 /***
  * @function gl.CreateRBO
- * @number xsize
- * @number ysize
- * @tparam table data
- * @number data.target `GL_RENDERBUFFER_EXT`
- * @number data.format `GL_RGBA`
- * @number[opt] data.samples any number here will result in creation of multisampled RBO
+ * @param xsize number
+ * @param ysize number
+ * @param data table
+ * @param data number.target `GL_RENDERBUFFER_EXT`
+ * @param data number.format `GL_RGBA`
+ * @param data number?.samples any number here will result in creation of multisampled RBO
  */
 int LuaRBOs::CreateRBO(lua_State* L)
 {
@@ -228,7 +227,7 @@ int LuaRBOs::CreateRBO(lua_State* L)
 
 /***
  * @function gl.DeleteRBO
- * @tparam rbo rbo
+ * @param rbo rbo
  */
 int LuaRBOs::DeleteRBO(lua_State* L)
 {
