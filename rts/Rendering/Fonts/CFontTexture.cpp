@@ -182,14 +182,6 @@ public:
 			return false;
 		}
 
-		char osFontsDir[8192];
-
-		#ifdef _WIN32
-			ExpandEnvironmentStrings("%WINDIR%\\fonts", osFontsDir, sizeof(osFontsDir)); // expands %HOME% etc.
-		#else
-			strncpy(osFontsDir, "/etc/fonts/", sizeof(osFontsDir));
-		#endif
-
 		FcConfigAppFontClear(GetFCConfig());
 		FcConfigAppFontAddDir(GetFCConfig(), reinterpret_cast<const FcChar8*>("fonts"));
 
@@ -204,11 +196,11 @@ public:
 		}
 
 		if (FtLibraryHandler::CheckFontConfig()) {
-			LOG_MSG("[%s] fontconfig for directory \"%s\" up to date", false, __func__, osFontsDir);
+			LOG_MSG("[%s] fontconfig up to date", false, __func__);
 			return true;
 		}
 
-		LOG_MSG("[%s] creating fontconfig for directory \"%s\"", false, __func__, osFontsDir);
+		LOG_MSG("[%s] creating fontconfig", false, __func__);
 
 		return FcConfigBuildFonts(GetFCConfig());
 	#endif
