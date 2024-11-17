@@ -120,6 +120,7 @@ public:
 				return;
 			}
 
+			FcConfigEnableHome(FcFalse);
 			config = FcInitLoadConfigAndFonts();
 			if (!config)
 				return;
