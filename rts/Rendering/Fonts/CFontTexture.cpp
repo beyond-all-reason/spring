@@ -188,8 +188,7 @@ public:
 		{
 			auto dirs = FcConfigGetCacheDirs(GetFCConfig());
 			FcStrListFirst(dirs);
-			for (FcChar8* dir = FcStrListNext(dirs), *prevDir = nullptr; dir != nullptr && dir != prevDir; ) {
-				prevDir = dir;
+			for (FcChar8* dir = FcStrListNext(dirs); dir != nullptr; dir = FcStrListNext(dirs)) {
 				LOG_MSG("[%s] Using Fontconfig cache dir \"%s\"", false, __func__, dir);
 			}
 			FcStrListDone(dirs);
