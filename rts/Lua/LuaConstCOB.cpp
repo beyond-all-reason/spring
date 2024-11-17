@@ -11,7 +11,6 @@
 
 /******************************************************************************
  * COB constants
- * @module COB
  * @see rts/Lua/LuaConstCOB.cpp
 ******************************************************************************/
 
@@ -22,83 +21,83 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 
 	/*** @table COB
 	 *
-	 * @number ACTIVATION
-	 * @number STANDINGMOVEORDERS
-	 * @number STANDINGFIREORDERS
-	 * @number HEALTH
-	 * @number INBUILDSTANCE
-	 * @number BUSY
-	 * @number PIECE_XZ
-	 * @number PIECE_Y
-	 * @number UNIT_XZ
-	 * @number UNIT_Y
-	 * @number UNIT_HEIGHT
-	 * @number XZ_ATAN
-	 * @number XZ_HYPOT
-	 * @number ATAN
-	 * @number HYPOT
-	 * @number GROUND_HEIGHT
-	 * @number BUILD_PERCENT_LEFT
-	 * @number YARD_OPEN
-	 * @number BUGGER_OFF
-	 * @number ARMORED
-	 * @number IN_WATER
-	 * @number CURRENT_SPEED
-	 * @number VETERAN_LEVEL
-	 * @number ON_ROAD
-	 * @number MAX_ID
-	 * @number MY_ID
-	 * @number UNIT_TEAM
-	 * @number UNIT_BUILD_PERCENT_LEFT
-	 * @number UNIT_ALLIED
-	 * @number MAX_SPEED
-	 * @number CLOAKED
-	 * @number WANT_CLOAK
-	 * @number GROUND_WATER_HEIGHT
-	 * @number UPRIGHT
-	 * @number POW
-	 * @number PRINT
-	 * @number HEADING
-	 * @number TARGET_ID
-	 * @number LAST_ATTACKER_ID
-	 * @number LOS_RADIUS
-	 * @number AIR_LOS_RADIUS
-	 * @number RADAR_RADIUS
-	 * @number JAMMER_RADIUS
-	 * @number SONAR_RADIUS
-	 * @number SONAR_JAM_RADIUS
-	 * @number SEISMIC_RADIUS
-	 * @number DO_SEISMIC_PING
-	 * @number CURRENT_FUEL
-	 * @number TRANSPORT_ID
-	 * @number SHIELD_POWER
-	 * @number STEALTH
-	 * @number CRASHING
-	 * @number CHANGE_TARGET
-	 * @number CEG_DAMAGE
-	 * @number COB_ID
-	 * @number PLAY_SOUND
-	 * @number KILL_UNIT
-	 * @number ALPHA_THRESHOLD
-	 * @number SET_WEAPON_UNIT_TARGET
-	 * @number SET_WEAPON_GROUND_TARGET
-	 * @number SONAR_STEALTH
-	 * @number REVERSING
-	 * @number FLANK_B_MODE
-	 * @number FLANK_B_DIR
-	 * @number FLANK_B_MOBILITY_ADD
-	 * @number FLANK_B_MAX_DAMAGE
-	 * @number FLANK_B_MIN_DAMAGE
-	 * @number WEAPON_RELOADSTATE
-	 * @number WEAPON_RELOADTIME
-	 * @number WEAPON_ACCURACY
-	 * @number WEAPON_SPRAY
-	 * @number WEAPON_RANGE
-	 * @number WEAPON_PROJECTILE_SPEED
-	 * @number MIN
-	 * @number MAX
-	 * @number ABS
-	 * @number GAME_FRAME 
+	 * @param ACTIVATION number
+	 * @param STANDINGMOVEORDERS number
+	 * @param STANDINGFIREORDERS number
+	 * @param HEALTH number
+	 * @param INBUILDSTANCE number
+	 * @param BUSY number
+	 * @param PIECE_XZ number
+	 * @param PIECE_Y number
+	 * @param UNIT_XZ number
+	 * @param UNIT_Y number
+	 * @param UNIT_HEIGHT number
+	 * @param XZ_ATAN number
+	 * @param XZ_HYPOT number
+	 * @param ATAN number
+	 * @param HYPOT number
+	 * @param GROUND_HEIGHT number
+	 * @param BUILD_PERCENT_LEFT number
+	 * @param YARD_OPEN number
+	 * @param BUGGER_OFF number
+	 * @param ARMORED number
+	 * @param IN_WATER number
+	 * @param CURRENT_SPEED number
+	 * @param VETERAN_LEVEL number
+	 * @param ON_ROAD number
+	 * @param MAX_ID number
+	 * @param MY_ID number
+	 * @param UNIT_TEAM number
+	 * @param UNIT_BUILD_PERCENT_LEFT number
+	 * @param UNIT_ALLIED number
+	 * @param MAX_SPEED number
+	 * @param CLOAKED number
+	 * @param WANT_CLOAK number
+	 * @param GROUND_WATER_HEIGHT number
+	 * @param UPRIGHT number
+	 * @param POW number
+	 * @param PRINT number
+	 * @param HEADING number
+	 * @param TARGET_ID number
+	 * @param LAST_ATTACKER_ID number
+	 * @param LOS_RADIUS number
+	 * @param AIR_LOS_RADIUS number
+	 * @param RADAR_RADIUS number
+	 * @param JAMMER_RADIUS number
+	 * @param SONAR_RADIUS number
+	 * @param SONAR_JAM_RADIUS number
+	 * @param SEISMIC_RADIUS number
+	 * @param DO_SEISMIC_PING number
+	 * @param CURRENT_FUEL number
+	 * @param TRANSPORT_ID number
+	 * @param SHIELD_POWER number
+	 * @param STEALTH number
+	 * @param CRASHING number
+	 * @param CHANGE_TARGET number
+	 * @param CEG_DAMAGE number
+	 * @param COB_ID number
+	 * @param PLAY_SOUND number
+	 * @param KILL_UNIT number
+	 * @param ALPHA_THRESHOLD number
+	 * @param SET_WEAPON_UNIT_TARGET number
+	 * @param SET_WEAPON_GROUND_TARGET number
+	 * @param SONAR_STEALTH number
+	 * @param REVERSING number
+	 * @param FLANK_B_MODE number
+	 * @param FLANK_B_DIR number
+	 * @param FLANK_B_MOBILITY_ADD number
+	 * @param FLANK_B_MAX_DAMAGE number
+	 * @param FLANK_B_MIN_DAMAGE number
+	 * @param WEAPON_RELOADSTATE number
+	 * @param WEAPON_RELOADTIME number
+	 * @param WEAPON_ACCURACY number
+	 * @param WEAPON_SPRAY number
+	 * @param WEAPON_RANGE number
+	 * @param WEAPON_PROJECTILE_SPEED number
+	 * @param MIN number
+	 * @param MAX number
+	 * @param ABS number
+	 * @param GAME_FRAME number 
 	 */
 
 	PUSH_COB(ACTIVATION);
@@ -205,16 +204,16 @@ bool LuaConstSFX::PushEntries(lua_State* L)
 	 *
 	 * @table SFX
 	 *
-	 * @number SHATTER
-	 * @number EXPLODE
-	 * @number EXPLODE_ON_HIT
-	 * @number FALL
-	 * @number SMOKE
-	 * @number FIRE
-	 * @number NONE
-	 * @number NO_CEG_TRAIL
-	 * @number NO_HEATCLOUD
-	 * @number RECURSIVE
+	 * @param SHATTER number
+	 * @param EXPLODE number
+	 * @param EXPLODE_ON_HIT number
+	 * @param FALL number
+	 * @param SMOKE number
+	 * @param FIRE number
+	 * @param NONE number
+	 * @param NO_CEG_TRAIL number
+	 * @param NO_HEATCLOUD number
+	 * @param RECURSIVE number
 	 */
 	LuaPushNamedNumber(L, "SHATTER", PF_Shatter);
 	LuaPushNamedNumber(L, "EXPLODE", PF_Explode);
@@ -231,16 +230,16 @@ bool LuaConstSFX::PushEntries(lua_State* L)
 	 *
 	 * @table SFX
 	 *
-	 * @number VTOL
-	 * @number WAKE
-	 * @number REVERSE_WAKE
-	 * @number WHITE_SMOKE
-	 * @number BLACK_SMOKE
-	 * @number BUBBLE
-	 * @number CEG
-	 * @number FIRE_WEAPON
-	 * @number DETONATE_WEAPON
-	 * @number GLOBAL
+	 * @param VTOL number
+	 * @param WAKE number
+	 * @param REVERSE_WAKE number
+	 * @param WHITE_SMOKE number
+	 * @param BLACK_SMOKE number
+	 * @param BUBBLE number
+	 * @param CEG number
+	 * @param FIRE_WEAPON number
+	 * @param DETONATE_WEAPON number
+	 * @param GLOBAL number
 	 */
 	LuaPushNamedNumber(L, "VTOL",            SFX_VTOL);
 	LuaPushNamedNumber(L, "WAKE",            SFX_WAKE);

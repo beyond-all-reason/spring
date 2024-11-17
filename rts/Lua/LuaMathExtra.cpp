@@ -12,7 +12,6 @@ static const lua_Number POWERS_OF_TEN[] = {1.0f, 10.0f, 100.0f, 1000.0f, 10000.0
 
 /******************************************************************************
  * math extensions
- * @module MathExtra
  * @see rts/Lua/LuaMathExtra.cpp
 ******************************************************************************/
 
@@ -38,9 +37,9 @@ bool LuaMathExtra::PushEntries(lua_State* L)
 /*** Returns the length of hypotenuse of right angle triangle with sides x and y, equivalent to sqrt(x*x + y*y), but has better numerical stability and internally handles intermediate overflows/underflows, but is also slower.
  *
  * @function math.hypot
- * @number x
- * @number y
- * @treturn number sqrt(x*x+y*y)
+ * @param x number
+ * @param y number
+ * @return number sqrt(x*x+y*y)
  */
 int LuaMathExtra::hypot(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -52,11 +51,11 @@ int LuaMathExtra::hypot(lua_State* L) {
 /*** Returns the length of the diagonal of an n-dimensional box (or the length of an n-component vector). Rather quick method that does not handle intermediate overflows/underflows nor is made for numerical stability.
  *
  * @function math.diag
- * @number x1
- * @number[opt] x2
- * @number[opt] x3
- * @number[opt] xn and so on
- * @treturn number diagonal
+ * @param x1 number
+ * @param x2 number?
+ * @param x3 number?
+ * @param xn number? and so on
+ * @return number diagonal
  */
 int LuaMathExtra::diag(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -74,7 +73,7 @@ int LuaMathExtra::diag(lua_State* L) {
 /*** Returns x clamped to min and max boundaries.
  *
  * @function math.clamp ( number x, number min, number max )
- * @treturn number clamped
+ * @return number clamped
  */
 int LuaMathExtra::clamp(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -89,8 +88,8 @@ int LuaMathExtra::clamp(lua_State* L) {
 /*** Returns 0 if x == 0, 1 if x > 0, -1 if x < 0
  *
  * @function math.sgn
- * @number x
- * @treturn number sign
+ * @param x number
+ * @return number sign
  */
 int LuaMathExtra::sgn(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -110,10 +109,10 @@ int LuaMathExtra::sgn(lua_State* L) {
 /*** Returns linear interpolation between x and y with ratio a (x+(y-x)*a).
  *
  * @function math.mix
- * @number x
- * @number y
- * @number a
- * @treturn number (x+(y-x)*a)
+ * @param x number
+ * @param y number
+ * @param a number
+ * @return number (x+(y-x)*a)
  */
 int LuaMathExtra::mix(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -129,9 +128,9 @@ int LuaMathExtra::mix(lua_State* L) {
 /*** Returns x rounded to n decimals, if n is omitted or <=0, rounds to nearest integer. Note that Spring's Lua interpreter uses 32-bit floats for all numbers so max. precision is ~7 decimal digits.
  *
  * @function math.round
- * @number x
- * @number decimals
- * @treturn number rounded
+ * @param x number
+ * @param decimals number
+ * @return number rounded
  */
 int LuaMathExtra::round(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -159,8 +158,8 @@ int LuaMathExtra::round(lua_State* L) {
 /*** Returns erf(x), the Gauss error function, between -1 and 1.
  *
  * @function math.erf
- * @number x
- * @treturn number erf
+ * @param x number
+ * @return number erf
  */
 int LuaMathExtra::erf(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -174,10 +173,10 @@ int LuaMathExtra::erf(lua_State* L) {
  * @function math.smoothstep
  * Clamps and rescales v to a value between [0; 1] based on the edges and then applies the smoothstep function.
  * For example math.smoothstep(10, 25, 15) is 0.259, because 15 is 0.333 of the way from 10 to 25, and smoothstep(0.333) is 0.259
- * @number edge0
- * @number edge1
- * @number v
- * @treturn number smoothstep
+ * @param edge0 number
+ * @param edge1 number
+ * @param v number
+ * @return number smoothstep
  */
 int LuaMathExtra::smoothstep(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -189,11 +188,11 @@ int LuaMathExtra::smoothstep(lua_State* L) {
 /*** Returns the normalize vector of an given vector.
  *
  * @function math.normalize
- * @number x1
- * @number[opt] x2
- * @number[opt] xN and so on
- * @treturn number normalized1
- * @treturn number normalized2 and so on
+ * @param x1 number
+ * @param x2 number?
+ * @param xN number? and so on
+ * @return number normalized1
+ * @return number normalized2 and so on
  */
 int LuaMathExtra::normalize(lua_State* L)
 {

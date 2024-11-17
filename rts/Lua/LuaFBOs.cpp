@@ -22,7 +22,6 @@
 
 /******************************************************************************
  * FBO
- * @module FBO
  * @see rts/Lua/LuaFBOs.cpp
 ******************************************************************************/
 
@@ -417,28 +416,28 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 /***
  * User Data FBO
  * @table fbo
- * @tparam attachment depth
- * @tparam attachment stencil
- * @tparam attachment color0
- * @tparam attachment color1
- * @tparam attachment color2
- * @tparam attachment colorn
- * @tparam attachment color15
- * @tparam table drawbuffers `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
- * @tparam table readbuffer `GL_COLOR_ATTACHMENT0_EXT`
+ * @param depth attachment
+ * @param stencil attachment
+ * @param color0 attachment
+ * @param color1 attachment
+ * @param color2 attachment
+ * @param colorn attachment
+ * @param color15 attachment
+ * @param drawbuffers table `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
+ * @param readbuffer table `GL_COLOR_ATTACHMENT0_EXT`
  */
 
 /***
  * @function gl.CreateFBO
  * @param data
- * @tparam attachment data.depth
- * @tparam attachment data.stencil
- * @tparam attachment data.color0
- * @tparam attachment data.color1
- * @tparam attachment data.color2
- * @tparam attachment data.colorn
- * @tparam attachment data.color15
- * @tparam table data.drawbuffers `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
+ * @param data.depth attachment
+ * @param data.stencil attachment
+ * @param data.color0 attachment
+ * @param data.color1 attachment
+ * @param data.color2 attachment
+ * @param data.colorn attachment
+ * @param data.color15 attachment
+ * @param data.drawbuffers table `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
  */
 int LuaFBOs::CreateFBO(lua_State* L)
 {
@@ -513,7 +512,7 @@ int LuaFBOs::CreateFBO(lua_State* L)
 /***
  * @function gl.DeleteFBO
  * This doesn't delete the attached objects!
- * @tparam fbo fbo
+ * @param fbo fbo
  */
 int LuaFBOs::DeleteFBO(lua_State* L)
 {
@@ -529,10 +528,10 @@ int LuaFBOs::DeleteFBO(lua_State* L)
 
 /***
  * @function gl.IsValidFBO
- * @tparam fbo fbo
- * @number[opt] target
- * @treturn bool valid
- * @treturn ?number status
+ * @param fbo fbo
+ * @param target number?
+ * @return boolean valid
+ * @return ?number status
  */
 int LuaFBOs::IsValidFBO(lua_State* L)
 {
@@ -571,13 +570,13 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 
 /***
  * @function gl.ActiveFBO
- * @tparam fbo fbo
- * @number[opt] target
- * @bool[opt] identities
- * @func[opt] lua_function
- * @param[opt] arg1
- * @param[opt] arg2
- * @param[opt] argn
+ * @param fbo fbo
+ * @param target number?
+ * @param identities boolean?
+ * @func? lua_function
+ * @param? arg1
+ * @param? arg2
+ * @param? argn
  */
 int LuaFBOs::ActiveFBO(lua_State* L)
 {
@@ -678,32 +677,32 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 /*** needs `GLEW_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
- * @number x0Src
- * @number y0Src
- * @number x1Src
- * @number y1Src
- * @number x0Dst
- * @number y0Dst
- * @number x1Dst
- * @number y1Dst
- * @number[opt=GL_COLOR_BUFFER_BIT] mask
- * @number[opt=GL_NEAREST] filter
+ * @param x0Src number
+ * @param y0Src number
+ * @param x1Src number
+ * @param y1Src number
+ * @param x0Dst number
+ * @param y0Dst number
+ * @param x1Dst number
+ * @param y1Dst number
+ * @param mask number? (Default: GL_COLOR_BUFFER_BIT)
+ * @param filter number? (Default: GL_NEAREST)
  */
 /*** needs `GLEW_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
- * @tparam fbo fboSrc
- * @number x0Src
- * @number y0Src
- * @number x1Src
- * @number y1Src
- * @tparam fbo fboDst
- * @number x0Dst
- * @number y0Dst
- * @number x1Dst
- * @number y1Dst
- * @number[opt=GL_COLOR_BUFFER_BIT] mask
- * @number[opt=GL_NEAREST] filter
+ * @param fboSrc fbo
+ * @param x0Src number
+ * @param y0Src number
+ * @param x1Src number
+ * @param y1Src number
+ * @param fboDst fbo
+ * @param x0Dst number
+ * @param y0Dst number
+ * @param x1Dst number
+ * @param y1Dst number
+ * @param mask number? (Default: GL_COLOR_BUFFER_BIT)
+ * @param filter number? (Default: GL_NEAREST)
  */
 int LuaFBOs::BlitFBO(lua_State* L)
 {

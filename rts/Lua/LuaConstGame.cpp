@@ -25,65 +25,64 @@
 
 /******************************************************************************
  * Game constants
- * @module Game
  * @see rts/Lua/LuaConstGame.cpp
 ******************************************************************************/
 
 /*** Game specific information
  *
  * @table Game
- * @number maxUnits
- * @number maxTeams
- * @number maxPlayers
- * @number squareSize Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates. The resolution of height, yard and type maps.
- * @number metalMapSquareSize The resolution of metalmap (for use in API such as Spring.GetMetalAmount etc.)
- * @number gameSpeed
- * @number startPosType
- * @bool ghostedBuildings
- * @string mapChecksum
- * @string modChecksum
- * @bool mapDamage
- * @string mapName
- * @string mapDescription = string Game.mapHumanName
- * @number mapHardness
- * @number mapX
- * @number mapY
- * @number mapSizeX in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
- * @number mapSizeZ in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
- * @number gravity
- * @number tidal
- * @number windMin
- * @number windMax
- * @number extractorRadius
- * @number waterDamage
- * @tparam table envDamageTypes Containing {def}IDs of environmental-damage sources
- * @string gameName
- * @string gameShortName
- * @string gameVersion
- * @string gameMutator
- * @string gameDesc
- * @bool requireSonarUnderWater
- * @number transportAir
- * @number transportShip
- * @number transportHover
- * @number transportGround
- * @number fireAtKilled
- * @number fireAtCrashing
- * @bool constructionDecay
- * @bool reclaimAllowEnemies
- * @bool reclaimAllowAllies
- * @number constructionDecayTime
- * @number constructionDecaySpeed
- * @number multiReclaim
- * @number reclaimMethod
- * @number reclaimUnitMethod
- * @number reclaimUnitEnergyCostFactor
- * @number reclaimUnitEfficiency
- * @number reclaimFeatureEnergyCostFactor
- * @number repairEnergyCostFactor
- * @number resurrectEnergyCostFactor
- * @number captureEnergyCostFactor
- * @tparam table springCategories
+ * @param maxUnits number
+ * @param maxTeams number
+ * @param maxPlayers number
+ * @param squareSize number Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates. The resolution of height, yard and type maps.
+ * @param metalMapSquareSize number The resolution of metalmap (for use in API such as Spring.GetMetalAmount etc.)
+ * @param gameSpeed number
+ * @param startPosType number
+ * @param ghostedBuildings boolean
+ * @param mapChecksum string
+ * @param modChecksum string
+ * @param mapDamage boolean
+ * @param mapName string
+ * @param mapDescription string = string Game.mapHumanName
+ * @param mapHardness number
+ * @param mapX number
+ * @param mapY number
+ * @param mapSizeX number in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+ * @param mapSizeZ number in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+ * @param gravity number
+ * @param tidal number
+ * @param windMin number
+ * @param windMax number
+ * @param extractorRadius number
+ * @param waterDamage number
+ * @param envDamageTypes table Containing {def}IDs of environmental-damage sources
+ * @param gameName string
+ * @param gameShortName string
+ * @param gameVersion string
+ * @param gameMutator string
+ * @param gameDesc string
+ * @param requireSonarUnderWater boolean
+ * @param transportAir number
+ * @param transportShip number
+ * @param transportHover number
+ * @param transportGround number
+ * @param fireAtKilled number
+ * @param fireAtCrashing number
+ * @param constructionDecay boolean
+ * @param reclaimAllowEnemies boolean
+ * @param reclaimAllowAllies boolean
+ * @param constructionDecayTime number
+ * @param constructionDecaySpeed number
+ * @param multiReclaim number
+ * @param reclaimMethod number
+ * @param reclaimUnitMethod number
+ * @param reclaimUnitEnergyCostFactor number
+ * @param reclaimUnitEfficiency number
+ * @param reclaimFeatureEnergyCostFactor number
+ * @param repairEnergyCostFactor number
+ * @param resurrectEnergyCostFactor number
+ * @param captureEnergyCostFactor number
+ * @param springCategories table
  *     example: {
  *       ["vtol"]         = 0,  ["special"]      = 1,  ["noweapon"]     = 2,
  *       ["notair"]       = 3,  ["notsub"]       = 4,  ["all"]          = 5,
@@ -97,7 +96,7 @@
  *       ["kamikaze"]     = 27, ["minelayer"]    = 28, ["notstructure"] = 29,
  *       ["air"]          = 30
  *     }
- * @tparam table armorTypes (bidirectional)
+ * @param armorTypes table (bidirectional)
  *     example: {
  *       [1]  = amphibious,   [2] = anniddm,     [3] = antibomber,
  *       [4]  = antifighter,  [5] = antiraider,  [6] = atl,

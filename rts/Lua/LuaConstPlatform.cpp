@@ -9,39 +9,38 @@
 
 /******************************************************************************
  * Platform constants
- * @module Platform
  * @see rts/Lua/LuaConstPlatform.cpp
 ******************************************************************************/
 
 /*** Platform specific information
  *
  * @table Platform
- * @string gpu full GPU device name
- * @string gpuVendor one of "Nvidia", "Intel", "ATI", "Mesa", "Unknown"
- * @string glVersionShort major.minor.buildNumber
- * @string glslVersionShort major.minor
- * @string glVersion full version
- * @string glVendor
- * @string glRenderer
- * @string glslVersion full version
- * @string glewVersion
- * @string osName full name of the OS
- * @string osFamily one of "Windows", "Linux", "MacOSX", "FreeBSD", "Unknown"
- * @number numDisplays
- * @number gpuMemorySize size of total GPU memory in MBs; only available for "Nvidia", (rest are 0)
- * @number sdlVersionCompiledMajor
- * @number sdlVersionCompiledMinor
- * @number sdlVersionCompiledPatch
- * @number sdlVersionLinkedMajor
- * @number sdlVersionLinkedMinor
- * @number sdlVersionLinkedPatch
- * @number totalRAM Total physical system RAM in MBs.
- * @bool glSupportNonPowerOfTwoTex
- * @bool glSupportTextureQueryLOD
- * @bool glSupport24bitDepthBuffer
- * @bool glSupportRestartPrimitive
- * @bool glSupportClipSpaceControl
- * @bool glSupportFragDepthLayout
+ * @param gpu string full GPU device name
+ * @param gpuVendor string one of "Nvidia", "Intel", "ATI", "Mesa", "Unknown"
+ * @param glVersionShort string major.minor.buildNumber
+ * @param glslVersionShort string major.minor
+ * @param glVersion string full version
+ * @param glVendor string
+ * @param glRenderer string
+ * @param glslVersion string full version
+ * @param glewVersion string
+ * @param osName string full name of the OS
+ * @param osFamily string one of "Windows", "Linux", "MacOSX", "FreeBSD", "Unknown"
+ * @param numDisplays number
+ * @param gpuMemorySize number size of total GPU memory in MBs; only available for "Nvidia", (rest are 0)
+ * @param sdlVersionCompiledMajor number
+ * @param sdlVersionCompiledMinor number
+ * @param sdlVersionCompiledPatch number
+ * @param sdlVersionLinkedMajor number
+ * @param sdlVersionLinkedMinor number
+ * @param sdlVersionLinkedPatch number
+ * @param totalRAM number Total physical system RAM in MBs.
+ * @param glSupportNonPowerOfTwoTex boolean
+ * @param glSupportTextureQueryLOD boolean
+ * @param glSupport24bitDepthBuffer boolean
+ * @param glSupportRestartPrimitive boolean
+ * @param glSupportClipSpaceControl boolean
+ * @param glSupportFragDepthLayout boolean
  */
 
 bool LuaConstPlatform::PushEntries(lua_State* L)

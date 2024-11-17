@@ -109,7 +109,7 @@ inline void LuaVBOImpl::InstanceBufferCheckAndFormatCheck(int attrID, const char
 /***
  *
  * @function VBO:Delete
- * @treturn nil
+ * @return nil
  */
 void LuaVBOImpl::Delete()
 {
@@ -479,8 +479,8 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
  * This is important for when you call VBO:Upload, you need to make sure you
  * enter your data into the Lua array correctly.
  *
- * @number size the maximum number of elements this VBO can have.
- * @tparam number|{{number,number,number,number,number},...} attribs
+ * @param size number the maximum number of elements this VBO can have.
+ * @param attribs number|{number,number,number,number,number}[]
  *
  * When number, the maximum number of elements this VBO can have.
  *
@@ -501,7 +501,7 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
  *   first, normalized will make sure data is normalized.
  *   Optional attrib, defaults to false.
  *
- * @treturn nil
+ * @return nil
  *
  * @usage terrainVertexVBO:Define(numPoints, { {id = 0, name = "pos", size = 2}, })
  * @see GL.OpenGL_Data_Types
@@ -557,9 +557,9 @@ void LuaVBOImpl::Define(const int elementsCount, const sol::optional<sol::object
 /***
  *
  * @function VBO:GetBufferSize
- * @treturn number elementsCount
- * @treturn number bufferSizeInBytes
- * @treturn number size
+ * @return number elementsCount
+ * @return number bufferSizeInBytes
+ * @return number size
  */
 std::tuple<uint32_t, uint32_t, uint32_t> LuaVBOImpl::GetBufferSize()
 {
@@ -574,19 +574,19 @@ std::tuple<uint32_t, uint32_t, uint32_t> LuaVBOImpl::GetBufferSize()
 /*** Uploads the data (array of floats) into the VBO
  *
  * @function VBO:Upload
- * @tparam {number,...} vboData a lua array of values to upload into the
+ * @param vboData number[] a lua array of values to upload into the
  * VBO
- * @number[opt=-1] attributeIndex If supplied with non-default value then the
+ * @param attributeIndex number? (Default: -1) If supplied with non-default value then the
  * data from vboData will only be used to upload the data to this particular
  * attribute.
  * The whole vboData is expected to contain only attributeIndex data.
  * Otherwise all attributes get updated sequentially across attributes and elements.
- * @number[opt=0] elemOffset which VBO element to start uploading data from Lua array into
- * @number[opt=0] luaStartIndex start uploading from that element in supplied Lua array
- * @number[opt] luaFinishIndex consider this element the last element in Lua array
- * @treturn {number, ...} indexData
- * @treturn number elemOffset
- * @treturn number|{number,number,number,number} attrID
+ * @param elemOffset number? (Default: 0) which VBO element to start uploading data from Lua array into
+ * @param luaStartIndex number? (Default: 0) start uploading from that element in supplied Lua array
+ * @param luaFinishIndex number? consider this element the last element in Lua array
+ * @return {number, ...} indexData
+ * @return number elemOffset
+ * @return number|{number,number,number,number} attrID
  * @usage
  * vbo:Upload(posArray, 0, 1)
  * -- 0 is offset into vbo (on GPU) in this case no offset
@@ -640,14 +640,14 @@ size_t LuaVBOImpl::Upload(const sol::stack_table& luaTblData, sol::optional<int>
 /***
  *
  * @function VBO:Download
- * @number[opt=-1] attributeIndex when supplied with non-default value: only data
+ * @param attributeIndex number? (Default: -1) when supplied with non-default value: only data
  * from specified attribute will be downloaded - otherwise all attributes are
  * downloaded
- * @number[opt=0] elementOffset download data starting from this element
- * @number[opt] elementCount number of elements to download
- * @bool[opt=false] forceGPURead force downloading the data from GPU buffer as opposed
+ * @param elementOffset number? (Default: 0) download data starting from this element
+ * @param elementCount number? number of elements to download
+ * @param forceGPURead boolean? (Default: false) force downloading the data from GPU buffer as opposed
  * to using shadow RAM buffer
- * @treturn {{number,...},...} vboData
+ * @return {number,...}[] vboData
  */
 sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(sol::optional<int> attribIdxOpt, sol::optional<int> elemOffsetOpt, sol::optional<int> elemCountOpt, sol::optional<bool> forceGPUReadOpt)
 {
@@ -1152,7 +1152,7 @@ size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, uint32_t elemOffs
  *
  * Also fills in VBO definition data as they're set for engine models (no need to do VBO:Define()).
  *
- * @treturn nil|number buffer size in bytes
+ * @return nil|number buffer size in bytes
  */
 size_t LuaVBOImpl::ModelsVBO()
 {
@@ -1174,13 +1174,13 @@ size_t LuaVBOImpl::ModelsVBO()
  * global per unit/feature uniform SSBO (unused for Unit/FeatureDefs), as
  * well as some auxiliary data ushc as draw flags and team index.
  *
- * @tparam number|{number,...} unitDefIDs
- * @number attrID
- * @number[opt] teamIdOpt
- * @number[opt] elementOffset
- * @treturn {number,number,number,number} instanceData
- * @treturn number elementOffset
- * @treturn attrID
+ * @param unitDefIDs number|number[]
+ * @param attrID number
+ * @param teamIdOpt number?
+ * @param elementOffset number?
+ * @return {number,number,number,number} instanceData
+ * @return number elementOffset
+ * @return attrID
  * @usage
  * Data Layout
  *
@@ -1212,13 +1212,13 @@ size_t LuaVBOImpl::InstanceDataFromUnitDefIDs(const sol::stack_table& ids, int a
  * global per unit/feature uniform SSBO (unused for Unit/FeatureDefs), as
  * well as some auxiliary data ushc as draw flags and team index.
  *
- * @tparam number|{number,...} featureDefIDs
- * @number attrID
- * @number[opt] teamIdOpt
- * @number[opt] elementOffset
- * @treturn {number,number,number,number} instanceData
- * @treturn number elementOffset
- * @treturn attrID
+ * @param featureDefIDs number|number[]
+ * @param attrID number
+ * @param teamIdOpt number?
+ * @param elementOffset number?
+ * @return {number,number,number,number} instanceData
+ * @return number elementOffset
+ * @return attrID
  * @usage
  * Data Layout
  *
@@ -1250,13 +1250,13 @@ size_t LuaVBOImpl::InstanceDataFromFeatureDefIDs(const sol::stack_table& ids, in
  * global per unit/feature uniform SSBO (unused for Unit/FeatureDefs), as
  * well as some auxiliary data ushc as draw flags and team index.
  *
- * @tparam number|{number,...} unitIDs
- * @number attrID
- * @number[opt] teamIdOpt
- * @number[opt] elementOffset
- * @treturn {number,number,number,number} instanceData
- * @treturn number elementOffset
- * @treturn attrID
+ * @param unitIDs number|number[]
+ * @param attrID number
+ * @param teamIdOpt number?
+ * @param elementOffset number?
+ * @return {number,number,number,number} instanceData
+ * @return number elementOffset
+ * @return attrID
  * @usage
  * Data Layout
  *
@@ -1286,13 +1286,13 @@ size_t LuaVBOImpl::InstanceDataFromUnitIDs(const sol::stack_table& ids, int attr
  * global per unit/feature uniform SSBO (unused for Unit/FeatureDefs), as
  * well as some auxiliary data ushc as draw flags and team index.
  *
- * @tparam number|{number,...} featureIDs
- * @number attrID
- * @number[opt] teamIdOpt
- * @number[opt] elementOffset
- * @treturn {number,number,number,number} instanceData
- * @treturn number elementOffset
- * @treturn attrID
+ * @param featureIDs number|number[]
+ * @param attrID number
+ * @param teamIdOpt number?
+ * @param elementOffset number?
+ * @return {number,number,number,number} instanceData
+ * @return number elementOffset
+ * @return attrID
  */
 size_t LuaVBOImpl::InstanceDataFromFeatureIDs(int id, int attrID, sol::optional<int> elemOffsetOpt)
 {
@@ -1308,13 +1308,13 @@ size_t LuaVBOImpl::InstanceDataFromFeatureIDs(const sol::stack_table& ids, int a
 /***
  *
  * @function VBO:MatrixDataFromProjectileIDs
- * @tparam number|{number,...} projectileIDs
- * @number attrID
- * @number[opt] teamIdOpt
- * @number[opt] elementOffset
- * @treturn {number, ...} matDataVec 4x4 matrix
- * @treturn number elemOffset
- * @treturn number|{number,number,number,number} attrID
+ * @param projectileIDs number|number[]
+ * @param attrID number
+ * @param teamIdOpt number?
+ * @param elementOffset number?
+ * @return {number, ...} matDataVec 4x4 matrix
+ * @return number elemOffset
+ * @return number|{number,number,number,number} attrID
  */
 size_t LuaVBOImpl::MatrixDataFromProjectileIDs(int id, int attrID, sol::optional<int> elemOffsetOpt)
 {
@@ -1395,12 +1395,12 @@ int LuaVBOImpl::BindBufferRangeImpl(GLuint bindingIndex,  const sol::optional<in
  * https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBindBufferRange.xhtml
  * except offset and size are specified in number of elements / element indices.
  *
- * @tparam number index should be in the range between
+ * @param index number should be in the range between
  * `5 < index < GL_MAX_UNIFORM_BUFFER_BINDINGS` value (usually 31)
- * @number[opt] elementOffset
- * @number[opt] elementCount
- * @number[opt] target glEnum
- * @treturn number bindingIndex when successful, -1 otherwise
+ * @param elementOffset number?
+ * @param elementCount number?
+ * @param target number? glEnum
+ * @return number bindingIndex when successful, -1 otherwise
  */
 int LuaVBOImpl::BindBufferRange(const GLuint index, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt)
 {
@@ -1411,11 +1411,11 @@ int LuaVBOImpl::BindBufferRange(const GLuint index, const sol::optional<int> ele
 /***
  *
  * @function VBO:UnbindBufferRange
- * @tparam number index
- * @number[opt] elementOffset
- * @number[opt] elementCount
- * @number[opt] target glEnum
- * @treturn number bindingIndex when successful, -1 otherwise
+ * @param index number
+ * @param elementOffset number?
+ * @param elementCount number?
+ * @param target number? glEnum
+ * @return number bindingIndex when successful, -1 otherwise
  */
 int LuaVBOImpl::UnbindBufferRange(const GLuint index, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt)
 {
@@ -1426,7 +1426,7 @@ int LuaVBOImpl::UnbindBufferRange(const GLuint index, const sol::optional<int> e
 /*** Logs the definition of the VBO to the console
  *
  * @function VBO:DumpDefinition
- * @treturn nil
+ * @return nil
  */
 void LuaVBOImpl::DumpDefinition()
 {
