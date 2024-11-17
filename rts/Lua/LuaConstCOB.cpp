@@ -19,85 +19,85 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 {
 #define PUSH_COB(cmd) LuaPushNamedNumber(L, #cmd, cmd)
 
-	/*** @table COB
-	 *
-	 * @param ACTIVATION number
-	 * @param STANDINGMOVEORDERS number
-	 * @param STANDINGFIREORDERS number
-	 * @param HEALTH number
-	 * @param INBUILDSTANCE number
-	 * @param BUSY number
-	 * @param PIECE_XZ number
-	 * @param PIECE_Y number
-	 * @param UNIT_XZ number
-	 * @param UNIT_Y number
-	 * @param UNIT_HEIGHT number
-	 * @param XZ_ATAN number
-	 * @param XZ_HYPOT number
-	 * @param ATAN number
-	 * @param HYPOT number
-	 * @param GROUND_HEIGHT number
-	 * @param BUILD_PERCENT_LEFT number
-	 * @param YARD_OPEN number
-	 * @param BUGGER_OFF number
-	 * @param ARMORED number
-	 * @param IN_WATER number
-	 * @param CURRENT_SPEED number
-	 * @param VETERAN_LEVEL number
-	 * @param ON_ROAD number
-	 * @param MAX_ID number
-	 * @param MY_ID number
-	 * @param UNIT_TEAM number
-	 * @param UNIT_BUILD_PERCENT_LEFT number
-	 * @param UNIT_ALLIED number
-	 * @param MAX_SPEED number
-	 * @param CLOAKED number
-	 * @param WANT_CLOAK number
-	 * @param GROUND_WATER_HEIGHT number
-	 * @param UPRIGHT number
-	 * @param POW number
-	 * @param PRINT number
-	 * @param HEADING number
-	 * @param TARGET_ID number
-	 * @param LAST_ATTACKER_ID number
-	 * @param LOS_RADIUS number
-	 * @param AIR_LOS_RADIUS number
-	 * @param RADAR_RADIUS number
-	 * @param JAMMER_RADIUS number
-	 * @param SONAR_RADIUS number
-	 * @param SONAR_JAM_RADIUS number
-	 * @param SEISMIC_RADIUS number
-	 * @param DO_SEISMIC_PING number
-	 * @param CURRENT_FUEL number
-	 * @param TRANSPORT_ID number
-	 * @param SHIELD_POWER number
-	 * @param STEALTH number
-	 * @param CRASHING number
-	 * @param CHANGE_TARGET number
-	 * @param CEG_DAMAGE number
-	 * @param COB_ID number
-	 * @param PLAY_SOUND number
-	 * @param KILL_UNIT number
-	 * @param ALPHA_THRESHOLD number
-	 * @param SET_WEAPON_UNIT_TARGET number
-	 * @param SET_WEAPON_GROUND_TARGET number
-	 * @param SONAR_STEALTH number
-	 * @param REVERSING number
-	 * @param FLANK_B_MODE number
-	 * @param FLANK_B_DIR number
-	 * @param FLANK_B_MOBILITY_ADD number
-	 * @param FLANK_B_MAX_DAMAGE number
-	 * @param FLANK_B_MIN_DAMAGE number
-	 * @param WEAPON_RELOADSTATE number
-	 * @param WEAPON_RELOADTIME number
-	 * @param WEAPON_ACCURACY number
-	 * @param WEAPON_SPRAY number
-	 * @param WEAPON_RANGE number
-	 * @param WEAPON_PROJECTILE_SPEED number
-	 * @param MIN number
-	 * @param MAX number
-	 * @param ABS number
-	 * @param GAME_FRAME number 
+	/***
+	 * @enum COB
+	 * @field ACTIVATION number 
+	 * @field STANDINGMOVEORDERS number 
+	 * @field STANDINGFIREORDERS number 
+	 * @field HEALTH number 
+	 * @field INBUILDSTANCE number 
+	 * @field BUSY number 
+	 * @field PIECE_XZ number 
+	 * @field PIECE_Y number 
+	 * @field UNIT_XZ number 
+	 * @field UNIT_Y number 
+	 * @field UNIT_HEIGHT number 
+	 * @field XZ_ATAN number 
+	 * @field XZ_HYPOT number 
+	 * @field ATAN number 
+	 * @field HYPOT number 
+	 * @field GROUND_HEIGHT number 
+	 * @field BUILD_PERCENT_LEFT number 
+	 * @field YARD_OPEN number 
+	 * @field BUGGER_OFF number 
+	 * @field ARMORED number 
+	 * @field IN_WATER number 
+	 * @field CURRENT_SPEED number 
+	 * @field VETERAN_LEVEL number 
+	 * @field ON_ROAD number 
+	 * @field MAX_ID number 
+	 * @field MY_ID number 
+	 * @field UNIT_TEAM number 
+	 * @field UNIT_BUILD_PERCENT_LEFT number 
+	 * @field UNIT_ALLIED number 
+	 * @field MAX_SPEED number 
+	 * @field CLOAKED number 
+	 * @field WANT_CLOAK number 
+	 * @field GROUND_WATER_HEIGHT number 
+	 * @field UPRIGHT number 
+	 * @field POW number 
+	 * @field PRINT number 
+	 * @field HEADING number 
+	 * @field TARGET_ID number 
+	 * @field LAST_ATTACKER_ID number 
+	 * @field LOS_RADIUS number 
+	 * @field AIR_LOS_RADIUS number 
+	 * @field RADAR_RADIUS number 
+	 * @field JAMMER_RADIUS number 
+	 * @field SONAR_RADIUS number 
+	 * @field SONAR_JAM_RADIUS number 
+	 * @field SEISMIC_RADIUS number 
+	 * @field DO_SEISMIC_PING number 
+	 * @field CURRENT_FUEL number 
+	 * @field TRANSPORT_ID number 
+	 * @field SHIELD_POWER number 
+	 * @field STEALTH number 
+	 * @field CRASHING number 
+	 * @field CHANGE_TARGET number 
+	 * @field CEG_DAMAGE number 
+	 * @field COB_ID number 
+	 * @field PLAY_SOUND number 
+	 * @field KILL_UNIT number 
+	 * @field ALPHA_THRESHOLD number 
+	 * @field SET_WEAPON_UNIT_TARGET number 
+	 * @field SET_WEAPON_GROUND_TARGET number 
+	 * @field SONAR_STEALTH number 
+	 * @field REVERSING number 
+	 * @field FLANK_B_MODE number 
+	 * @field FLANK_B_DIR number 
+	 * @field FLANK_B_MOBILITY_ADD number 
+	 * @field FLANK_B_MAX_DAMAGE number 
+	 * @field FLANK_B_MIN_DAMAGE number 
+	 * @field WEAPON_RELOADSTATE number 
+	 * @field WEAPON_RELOADTIME number 
+	 * @field WEAPON_ACCURACY number 
+	 * @field WEAPON_SPRAY number 
+	 * @field WEAPON_RANGE number 
+	 * @field WEAPON_PROJECTILE_SPEED number 
+	 * @field MIN number 
+	 * @field MAX number 
+	 * @field ABS number 
+	 * @field GAME_FRAME  number 
 	 */
 
 	PUSH_COB(ACTIVATION);
@@ -200,20 +200,68 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 
 bool LuaConstSFX::PushEntries(lua_State* L)
 {
-	/*** Piece Flags for Spring.UnitScript.Explode
-	 *
-	 * @table SFX
-	 *
-	 * @param SHATTER number
-	 * @param EXPLODE number
-	 * @param EXPLODE_ON_HIT number
-	 * @param FALL number
-	 * @param SMOKE number
-	 * @param FIRE number
-	 * @param NONE number
-	 * @param NO_CEG_TRAIL number
-	 * @param NO_HEATCLOUD number
-	 * @param RECURSIVE number
+	/*** 
+	 * @enum SFX
+	 * 
+	 * @field SHATTER number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field EXPLODE number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field EXPLODE_ON_HIT number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field FALL number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field SMOKE number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field FIRE number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field NONE number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field NO_CEG_TRAIL number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field NO_HEATCLOUD number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field RECURSIVE number
+	 * Piece Flag for `Spring.UnitScript.Explode`
+	 * 
+	 * @field VTOL number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field WAKE number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field REVERSE_WAKE number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field WHITE_SMOKE number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field BLACK_SMOKE number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field BUBBLE number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field CEG number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field FIRE_WEAPON number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field DETONATE_WEAPON number 
+	 * For `Spring.UnitScript.EmitSfx`.
+	 * 
+	 * @field GLOBAL number 
+	 * For `Spring.UnitScript.EmitSfx`.
 	 */
 	LuaPushNamedNumber(L, "SHATTER", PF_Shatter);
 	LuaPushNamedNumber(L, "EXPLODE", PF_Explode);
@@ -226,21 +274,6 @@ bool LuaConstSFX::PushEntries(lua_State* L)
 	LuaPushNamedNumber(L, "NO_HEATCLOUD", PF_NoHeatCloud);
 	LuaPushNamedNumber(L, "RECURSIVE", PF_Recursive);
 
-	/*** For Spring.UnitScript.EmitSfx
-	 *
-	 * @table SFX
-	 *
-	 * @param VTOL number
-	 * @param WAKE number
-	 * @param REVERSE_WAKE number
-	 * @param WHITE_SMOKE number
-	 * @param BLACK_SMOKE number
-	 * @param BUBBLE number
-	 * @param CEG number
-	 * @param FIRE_WEAPON number
-	 * @param DETONATE_WEAPON number
-	 * @param GLOBAL number
-	 */
 	LuaPushNamedNumber(L, "VTOL",            SFX_VTOL);
 	LuaPushNamedNumber(L, "WAKE",            SFX_WAKE);
 	LuaPushNamedNumber(L, "REVERSE_WAKE",    SFX_REVERSE_WAKE);
