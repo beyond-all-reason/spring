@@ -25,6 +25,8 @@ bool LuaFonts::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(LoadFont);
 	REGISTER_LUA_CFUNC(DeleteFont);
+	REGISTER_LUA_CFUNC(AddFallbackFont);
+	REGISTER_LUA_CFUNC(ClearFallbackFonts);
 
 	return true;
 }
@@ -205,6 +207,22 @@ int LuaFonts::DeleteFont(lua_State* L)
 	return meta_gc(L);
 }
 
+int LuaFonts::AddFallbackFont(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	const bool f = CFontTexture::AddFallbackFont(luaL_checkstring(L, 1));
+	lua_pushboolean(L, f);
+	return 1;
+}
+
+int LuaFonts::ClearFallbackFonts(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	CFontTexture::ClearFallbackFonts();
+	return 0;
+}
 
 /******************************************************************************/
 /******************************************************************************/

@@ -113,6 +113,8 @@ public:
 	static void InitFonts();
 	static void KillFonts();
 	static void Update();
+	static bool AddFallbackFont(const std::string& fontfile);
+	static void ClearFallbackFonts();
 
 	inline static spring::WrappedSyncRecursiveMutex sync = {};
 protected:
