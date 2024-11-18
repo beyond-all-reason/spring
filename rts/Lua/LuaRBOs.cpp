@@ -138,23 +138,28 @@ int LuaRBOs::meta_newindex(lua_State* L)
 
 /***
  * User Data RBO
- * @table rbo
- * @param target number
- * @param format number
- * @param xsize number
- * @param ysize number
- * @param valid boolean
- * @param samples number will return globalRendering->msaaLevel for multisampled RBO or 0 otherwise
+ * @class RBO
+ * @field target GLenum
+ * @field format GLenum
+ * @field xsize integer
+ * @field ysize integer
+ * @field valid boolean
+ * @field samples integer will return globalRendering->msaaLevel for multisampled RBO or 0 otherwise
+ */
+
+/**
+ * @class CreateRBOData
+ * @field target GLenum
+ * @field format GLenum
+ * @field samples number? any number here will result in creation of multisampled RBO
  */
 
 /***
  * @function gl.CreateRBO
- * @param xsize number
- * @param ysize number
- * @param data table
- * @param data number.target `GL_RENDERBUFFER_EXT`
- * @param data number.format `GL_RGBA`
- * @param data number?.samples any number here will result in creation of multisampled RBO
+ * @param xsize integer
+ * @param ysize integer
+ * @param data CreateRBOData
+ * @return RBO
  */
 int LuaRBOs::CreateRBO(lua_State* L)
 {
@@ -227,7 +232,7 @@ int LuaRBOs::CreateRBO(lua_State* L)
 
 /***
  * @function gl.DeleteRBO
- * @param rbo rbo
+ * @param rbo RBO
  */
 int LuaRBOs::DeleteRBO(lua_State* L)
 {
