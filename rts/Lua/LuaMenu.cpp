@@ -371,7 +371,7 @@ bool CLuaMenu::Disable()
 
 /*** Called whenever LuaMenu is on with no game loaded.
  *
- * @function ActivateMenu()
+ * @function ActivateMenu
  */
 void CLuaMenu::ActivateMenu(const std::string& msg)
 {
@@ -392,7 +392,7 @@ void CLuaMenu::ActivateMenu(const std::string& msg)
 
 /*** Called whenever LuaMenu is on with a game loaded.
  *
- * @function ActivateGame()
+ * @function ActivateGame
  */
 void CLuaMenu::ActivateGame()
 {
@@ -412,7 +412,7 @@ void CLuaMenu::ActivateGame()
 
 /*** Enables Draw{Genesis,Screen,ScreenPost} callins if true is returned, otherwise they are called once every 30 seconds. Only active when a game isn't running.
  *
- * @function AllowDraw()
+ * @function AllowDraw
  * @return boolean allowDraw
  */
 bool CLuaMenu::AllowDraw()
