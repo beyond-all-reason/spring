@@ -1287,9 +1287,11 @@ int LuaOpenGL::EndText(lua_State* L)
 	return 0;
 }
 
+/**
+ * @table gl
+ */
 
 /***
- *
  * @function gl.Text
  * @param text string
  * @param x number
@@ -2526,14 +2528,19 @@ int LuaOpenGL::MemoryBarrier(lua_State* L)
 ******************************************************************************/
 
 /***
- *
  * @function gl.Color
- * @param r number|{number,number,number,number} red when number, rgba
- * quadruple or rgb triple otherwise
- * @param g number?
- * @param b number?
- * @param a number?
- * @return nil
+ * @param r number Red
+ * @param g number Green
+ * @param b number Blue
+ * @param a number? Alpha (Default: 1.0f)
+ */
+/***
+ * @function gl.Color
+ * @param rgbs [number,number,number,number] Red, green, blue, alpha
+ */
+/***
+ * @function gl.Color
+ * @param rgb [number,number,number] Red, green, blue
  */
 int LuaOpenGL::Color(lua_State* L)
 {
