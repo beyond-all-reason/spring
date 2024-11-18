@@ -16,23 +16,23 @@
 
 /*** Note, the CMDTYPE[] table is bidirectional. That means: CMDTYPE[CMDTYPE.ICON] := "CMDTYPE_ICON"
  *
- * @table CMDTYPE
- * @param ICON number expect 0 parameters in return
- * @param ICON_MODE number expect 1 parameter in return (number selected mode)
- * @param ICON_MAP number expect 3 parameters in return (mappos)
- * @param ICON_AREA number expect 4 parameters in return (mappos+radius)
- * @param ICON_UNIT number expect 1 parameters in return (unitid)
- * @param ICON_UNIT_OR_MAP number expect 1 parameters in return (unitid) or 3 parameters in return (mappos)
- * @param ICON_FRONT number expect 3 or 6 parameters in return (middle and right side of front if a front was defined)
- * @param COMBO_BOX number expect 1 parameter in return (number selected option)
- * @param ICON_UNIT_OR_AREA number expect 1 parameter in return (unitid) or 4 parameters in return (mappos+radius)
- * @param ICON_UNIT_FEATURE_OR_AREA number expect 1 parameter in return (unitid or Game.maxUnits+featureid) or 4 parameters in return (mappos+radius)
- * @param ICON_BUILDING number expect 3 parameters in return (mappos)
- * @param ICON_UNIT_OR_RECTANGLE number expect 1 parameter in return (unitid) or 3 parameters in return (mappos) or 6 parameters in return (startpos+endpos)
- * @param NUMBER number expect 1 parameter in return (number)
- * @param CUSTOM number used with CMD_INTERNAL
- * @param NEXT number next command page used with CMD_INTERNAL
- * @param PREV number previous command page used with CMD_INTERNAL
+ * @enum CMDTYPE
+ * @field ICON number expect 0 parameters in return
+ * @field ICON_MODE number expect 1 parameter in return (number selected mode)
+ * @field ICON_MAP number expect 3 parameters in return (mappos)
+ * @field ICON_AREA number expect 4 parameters in return (mappos+radius)
+ * @field ICON_UNIT number expect 1 parameters in return (unitid)
+ * @field ICON_UNIT_OR_MAP number expect 1 parameters in return (unitid) or 3 parameters in return (mappos)
+ * @field ICON_FRONT number expect 3 or 6 parameters in return (middle and right side of front if a front was defined)
+ * @field COMBO_BOX number expect 1 parameter in return (number selected option)
+ * @field ICON_UNIT_OR_AREA number expect 1 parameter in return (unitid) or 4 parameters in return (mappos+radius)
+ * @field ICON_UNIT_FEATURE_OR_AREA number expect 1 parameter in return (unitid or Game.maxUnits+featureid) or 4 parameters in return (mappos+radius)
+ * @field ICON_BUILDING number expect 3 parameters in return (mappos)
+ * @field ICON_UNIT_OR_RECTANGLE number expect 1 parameter in return (unitid) or 3 parameters in return (mappos) or 6 parameters in return (startpos+endpos)
+ * @field NUMBER number expect 1 parameter in return (number)
+ * @field CUSTOM number used with CMD_INTERNAL
+ * @field NEXT number next command page used with CMD_INTERNAL
+ * @field PREV number previous command page used with CMD_INTERNAL
  */
 
 bool LuaConstCMDTYPE::PushEntries(lua_State* L)
