@@ -1292,12 +1292,16 @@ int LuaSyncedCtrl::ShareTeamResource(lua_State* L)
 
 /***
  * Parameters for los access
+ * 
  *
  * If one condition is fulfilled all beneath it are too (e.g. if an unit is in
  * LOS it can read params with `inradar=true` even if the param has
  * `inlos=false`) All GameRulesParam are public, TeamRulesParams can just be
  * `private`,`allied` and/or `public` You can read RulesParams from any Lua
  * enviroments! With those losAccess policies you can limit their access.
+ *
+ * All GameRulesParam are public, TeamRulesParams can just be `private`,`allied` and/or `public`
+ * You can read RulesParams from any Lua enviroments! With those losAccess policies you can limit their access.
  *
  * NOTE: Need to explicitly declare `public` scope here to prevent LLS from
  * detecting field names as access modifiers.
