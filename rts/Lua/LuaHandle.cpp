@@ -1238,7 +1238,7 @@ void CLuaHandle::UnitIdle(const CUnit* unit)
  * @param unitTeam integer
  * @param cmdID number
  * @param cmdParams table
- * @param options cmdOpts
+ * @param options CommandOptions
  * @param cmdTag number
  */
 void CLuaHandle::UnitCommand(const CUnit* unit, const Command& command, int playerNum, bool fromSynced, bool fromLua)
@@ -1272,7 +1272,7 @@ void CLuaHandle::UnitCommand(const CUnit* unit, const Command& command, int play
  * @param unitTeam integer
  * @param cmdID number
  * @param cmdParams table
- * @param options cmdOpts
+ * @param options CommandOptions
  * @param cmdTag number
  */
 void CLuaHandle::UnitCmdDone(const CUnit* unit, const Command& command)
@@ -3331,7 +3331,7 @@ string CLuaHandle::GetTooltip(int x, int y)
 
 /*** Parameters for command options
  *
- * @class cmdOpts
+ * @class CommandOptions
  *
  * @field coded integer
  * @field alt boolean
@@ -3373,7 +3373,7 @@ void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
  * @function CommandNotify
  * @param cmdID integer
  * @param cmdParams table
- * @param options cmdOpts
+ * @param options CommandOptions
  * @return boolean Returning true deletes the command and does not send it through the network.
  */
 bool CLuaHandle::CommandNotify(const Command& cmd)

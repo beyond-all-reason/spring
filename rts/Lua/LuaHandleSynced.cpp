@@ -570,7 +570,7 @@ bool CSyncedLuaHandle::SyncedActionFallback(const std::string& msg, int playerID
  * @param unitTeam integer
  * @param cmdID integer
  * @param cmdParams number[]
- * @param cmdOptions cmdOptions
+ * @param cmdOptions CommandOptions
  * @param cmdTag number
  * @return boolean whether to remove the command from the queue
  */
@@ -606,7 +606,7 @@ bool CSyncedLuaHandle::CommandFallback(const CUnit* unit, const Command& cmd)
  * @param unitTeam integer
  * @param cmdID integer
  * @param cmdParams number[]
- * @param cmdOptions cmdOptions
+ * @param cmdOptions CommandOptions
  * @param cmdTag number
  * @param synced boolean
  * @param fromLua boolean
