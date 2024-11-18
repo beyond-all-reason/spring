@@ -25,17 +25,17 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/*** @table GL
 	 *
-	 * @param POINTS number
-	 * @param LINES number
-	 * @param LINE_LOOP number
-	 * @param LINE_STRIP number
-	 * @param TRIANGLES number
-	 * @param TRIANGLE_STRIP number
-	 * @param TRIANGLE_FAN number
-	 * @param QUADS number
-	 * @param QUAD_STRIP number
-	 * @param POLYGON number
-	 * @param PATCHES number
+	 * @field POINTS number
+	 * @field LINES number
+	 * @field LINE_LOOP number
+	 * @field LINE_STRIP number
+	 * @field TRIANGLES number
+	 * @field TRIANGLE_STRIP number
+	 * @field TRIANGLE_FAN number
+	 * @field QUADS number
+	 * @field QUAD_STRIP number
+	 * @field POLYGON number
+	 * @field PATCHES number
 	 */
 	PUSH_GL(POINTS);
 	PUSH_GL(LINES);
@@ -61,14 +61,14 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/*** @table GL
 	 *
-	 * @param ZERO number
-	 * @param ONE number
-	 * @param SRC_COLOR number
-	 * @param ONE_MINUS_SRC_COLOR number
-	 * @param SRC_ALPHA number
-	 * @param ONE_MINUS_SRC_ALPHA number
-	 * @param DST_ALPHA number
-	 * @param ONE_MINUS_DST_ALPHA number
+	 * @field ZERO number
+	 * @field ONE number
+	 * @field SRC_COLOR number
+	 * @field ONE_MINUS_SRC_COLOR number
+	 * @field SRC_ALPHA number
+	 * @field ONE_MINUS_SRC_ALPHA number
+	 * @field DST_ALPHA number
+	 * @field ONE_MINUS_DST_ALPHA number
 	 */
 	PUSH_GL(ZERO);
 	PUSH_GL(ONE);
@@ -86,22 +86,22 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 /***
  * @table GL
- * @param ZERO number
- * @param ONE number
- * @param SRC_COLOR number
- * @param ONE_MINUS_SRC_COLOR number
- * @param SRC_ALPHA number
- * @param ONE_MINUS_SRC_ALPHA number
- * @param DST_ALPHA number
- * @param ONE_MINUS_DST_ALPHA number
- * @param DST_COLOR number
- * @param ONE_MINUS_DST_COLOR number
- * @param SRC_ALPHA_SATURATE number
- * @param FUNC_ADD number
- * @param FUNC_SUBTRACT number
- * @param FUNC_REVERSE_SUBTRACT number
- * @param MIN number
- * @param MAX number
+ * @field ZERO number
+ * @field ONE number
+ * @field SRC_COLOR number
+ * @field ONE_MINUS_SRC_COLOR number
+ * @field SRC_ALPHA number
+ * @field ONE_MINUS_SRC_ALPHA number
+ * @field DST_ALPHA number
+ * @field ONE_MINUS_DST_ALPHA number
+ * @field DST_COLOR number
+ * @field ONE_MINUS_DST_COLOR number
+ * @field SRC_ALPHA_SATURATE number
+ * @field FUNC_ADD number
+ * @field FUNC_SUBTRACT number
+ * @field FUNC_REVERSE_SUBTRACT number
+ * @field MIN number
+ * @field MAX number
  */
 	PUSH_GL(DST_COLOR);
 	PUSH_GL(ONE_MINUS_DST_COLOR);
@@ -120,14 +120,14 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 /*** @table GL
  *
- * @param NEVER number
- * @param LESS number
- * @param EQUAL number
- * @param LEQUAL number
- * @param GREATER number
- * @param NOTEQUAL number
- * @param GEQUAL number
- * @param ALWAYS number
+ * @field NEVER number
+ * @field LESS number
+ * @field EQUAL number
+ * @field LEQUAL number
+ * @field GREATER number
+ * @field NOTEQUAL number
+ * @field GEQUAL number
+ * @field ALWAYS number
  */
 	PUSH_GL(NEVER);
 	PUSH_GL(LESS);
@@ -145,22 +145,22 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 /***
  * @table GL
- * @param CLEAR number
- * @param AND number
- * @param AND_REVERSE number
- * @param COPY number
- * @param AND_INVERTED number
- * @param NOOP number
- * @param XOR number
- * @param OR number
- * @param NOR number
- * @param EQUIV number
- * @param INVERT number
- * @param OR_REVERSE number
- * @param COPY_INVERTED number
- * @param OR_INVERTED number
- * @param NAND number
- * @param SET number
+ * @field CLEAR number
+ * @field AND number
+ * @field AND_REVERSE number
+ * @field COPY number
+ * @field AND_INVERTED number
+ * @field NOOP number
+ * @field XOR number
+ * @field OR number
+ * @field NOR number
+ * @field EQUIV number
+ * @field INVERT number
+ * @field OR_REVERSE number
+ * @field COPY_INVERTED number
+ * @field OR_INVERTED number
+ * @field NAND number
+ * @field SET number
  */
 	PUSH_GL(CLEAR);
 	PUSH_GL(AND);
@@ -186,9 +186,9 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param BACK number
-	 * @param FRONT number
-	 * @param FRONT_AND_BACK number
+	 * @field BACK number
+	 * @field FRONT number
+	 * @field FRONT_AND_BACK number
 	 */
 	PUSH_GL(BACK);
 	PUSH_GL(FRONT);
@@ -201,9 +201,9 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param POINT number
-	 * @param LINE number
-	 * @param FILL number
+	 * @field POINT number
+	 * @field LINE number
+	 * @field FILL number
 	 */
 	PUSH_GL(POINT);
 	PUSH_GL(LINE);
@@ -216,10 +216,10 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param DEPTH_BUFFER_BIT number
-	 * @param ACCUM_BUFFER_BIT number
-	 * @param STENCIL_BUFFER_BIT number
-	 * @param COLOR_BUFFER_BIT number
+	 * @field DEPTH_BUFFER_BIT number
+	 * @field ACCUM_BUFFER_BIT number
+	 * @field STENCIL_BUFFER_BIT number
+	 * @field COLOR_BUFFER_BIT number
 	 */
 	PUSH_GL(DEPTH_BUFFER_BIT);
 	PUSH_GL(ACCUM_BUFFER_BIT);
@@ -233,8 +233,8 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param FLAT number
-	 * @param SMOOTH number
+	 * @field FLAT number
+	 * @field SMOOTH number
 	 */
 	PUSH_GL(FLAT);
 	PUSH_GL(SMOOTH);
@@ -246,9 +246,9 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param MODELVIEW number
-	 * @param PROJECTION number
-	 * @param TEXTURE number
+	 * @field MODELVIEW number
+	 * @field PROJECTION number
+	 * @field TEXTURE number
 	 */
 	PUSH_GL(MODELVIEW);
 	PUSH_GL(PROJECTION);
@@ -261,12 +261,12 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param NEAREST number
-	 * @param LINEAR number
-	 * @param NEAREST_MIPMAP_NEAREST number
-	 * @param LINEAR_MIPMAP_NEAREST number
-	 * @param NEAREST_MIPMAP_LINEAR number
-	 * @param LINEAR_MIPMAP_LINEAR number
+	 * @field NEAREST number
+	 * @field LINEAR number
+	 * @field NEAREST_MIPMAP_NEAREST number
+	 * @field LINEAR_MIPMAP_NEAREST number
+	 * @field NEAREST_MIPMAP_LINEAR number
+	 * @field LINEAR_MIPMAP_LINEAR number
 	 */
 	PUSH_GL(NEAREST);
 	PUSH_GL(LINEAR);
@@ -282,11 +282,11 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param REPEAT number
-	 * @param MIRRORED_REPEAT number
-	 * @param CLAMP number
-	 * @param CLAMP_TO_EDGE number
-	 * @param CLAMP_TO_BORDER number
+	 * @field REPEAT number
+	 * @field MIRRORED_REPEAT number
+	 * @field CLAMP number
+	 * @field CLAMP_TO_EDGE number
+	 * @field CLAMP_TO_BORDER number
 	 */
 	PUSH_GL(REPEAT);
 	PUSH_GL(MIRRORED_REPEAT);
@@ -301,13 +301,13 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param TEXTURE_ENV number
-	 * @param TEXTURE_ENV_MODE number
-	 * @param TEXTURE_ENV_COLOR number
-	 * @param MODULATE number
-	 * @param DECAL number
-	 * @param BLEND number
-	 * @param REPLACE number
+	 * @field TEXTURE_ENV number
+	 * @field TEXTURE_ENV_MODE number
+	 * @field TEXTURE_ENV_COLOR number
+	 * @field MODULATE number
+	 * @field DECAL number
+	 * @field BLEND number
+	 * @field REPLACE number
 	 */
 	PUSH_GL(TEXTURE_ENV);
 	PUSH_GL(TEXTURE_ENV_MODE);
@@ -329,18 +329,18 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param TEXTURE_GEN_MODE number
-	 * @param EYE_PLANE number
-	 * @param OBJECT_PLANE number
-	 * @param EYE_LINEAR number
-	 * @param OBJECT_LINEAR number
-	 * @param SPHERE_MAP number
-	 * @param NORMAL_MAP number
-	 * @param REFLECTION_MAP number
-	 * @param S number
-	 * @param T number
-	 * @param R number
-	 * @param Q number
+	 * @field TEXTURE_GEN_MODE number
+	 * @field EYE_PLANE number
+	 * @field OBJECT_PLANE number
+	 * @field EYE_LINEAR number
+	 * @field OBJECT_LINEAR number
+	 * @field SPHERE_MAP number
+	 * @field NORMAL_MAP number
+	 * @field REFLECTION_MAP number
+	 * @field S number
+	 * @field T number
+	 * @field R number
+	 * @field Q number
 	 */
 	PUSH_GL(TEXTURE_GEN_MODE);
 	PUSH_GL(EYE_PLANE);
@@ -362,27 +362,27 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param CURRENT_BIT number
-	 * @param POINT_BIT number
-	 * @param LINE_BIT number
-	 * @param POLYGON_BIT number
-	 * @param POLYGON_STIPPLE_BIT number
-	 * @param PIXEL_MODE_BIT number
-	 * @param LIGHTING_BIT number
-	 * @param FOG_BIT number
-	 * @param DEPTH_BUFFER_BIT number
-	 * @param ACCUM_BUFFER_BIT number
-	 * @param STENCIL_BUFFER_BIT number
-	 * @param VIEWPORT_BIT number
-	 * @param TRANSFORM_BIT number
-	 * @param ENABLE_BIT number
-	 * @param COLOR_BUFFER_BIT number
-	 * @param HINT_BIT number
-	 * @param EVAL_BIT number
-	 * @param LIST_BIT number
-	 * @param TEXTURE_BIT number
-	 * @param SCISSOR_BIT number
-	 * @param ALL_ATTRIB_BITS number
+	 * @field CURRENT_BIT number
+	 * @field POINT_BIT number
+	 * @field LINE_BIT number
+	 * @field POLYGON_BIT number
+	 * @field POLYGON_STIPPLE_BIT number
+	 * @field PIXEL_MODE_BIT number
+	 * @field LIGHTING_BIT number
+	 * @field FOG_BIT number
+	 * @field DEPTH_BUFFER_BIT number
+	 * @field ACCUM_BUFFER_BIT number
+	 * @field STENCIL_BUFFER_BIT number
+	 * @field VIEWPORT_BIT number
+	 * @field TRANSFORM_BIT number
+	 * @field ENABLE_BIT number
+	 * @field COLOR_BUFFER_BIT number
+	 * @field HINT_BIT number
+	 * @field EVAL_BIT number
+	 * @field LIST_BIT number
+	 * @field TEXTURE_BIT number
+	 * @field SCISSOR_BIT number
+	 * @field ALL_ATTRIB_BITS number
 	 */
 	PUSH_GL(CURRENT_BIT);
 	PUSH_GL(POINT_BIT);
@@ -414,11 +414,11 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param FOG_HINT number
-	 * @param LINE_SMOOTH_HINT number
-	 * @param POINT_SMOOTH_HINT number
-	 * @param POLYGON_SMOOTH_HINT number
-	 * @param PERSPECTIVE_CORRECTION_HINT number
+	 * @field FOG_HINT number
+	 * @field LINE_SMOOTH_HINT number
+	 * @field POINT_SMOOTH_HINT number
+	 * @field POLYGON_SMOOTH_HINT number
+	 * @field PERSPECTIVE_CORRECTION_HINT number
 	 */
 	PUSH_GL(FOG_HINT);
 	PUSH_GL(PERSPECTIVE_CORRECTION_HINT);
@@ -430,9 +430,9 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param DONT_CARE number
-	 * @param FASTEST number
-	 * @param NICEST number
+	 * @field DONT_CARE number
+	 * @field FASTEST number
+	 * @field NICEST number
 	 */
 	PUSH_GL(DONT_CARE);
 	PUSH_GL(FASTEST);
@@ -445,16 +445,16 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param AMBIENT number
-	 * @param DIFFUSE number
-	 * @param SPECULAR number
-	 * @param POSITION number
-	 * @param SPOT_DIRECTION number
-	 * @param SPOT_EXPONENT number
-	 * @param SPOT_CUTOFF number
-	 * @param CONSTANT_ATTENUATION number
-	 * @param LINEAR_ATTENUATION number
-	 * @param QUADRATIC_ATTENUATION number
+	 * @field AMBIENT number
+	 * @field DIFFUSE number
+	 * @field SPECULAR number
+	 * @field POSITION number
+	 * @field SPOT_DIRECTION number
+	 * @field SPOT_EXPONENT number
+	 * @field SPOT_CUTOFF number
+	 * @field CONSTANT_ATTENUATION number
+	 * @field LINEAR_ATTENUATION number
+	 * @field QUADRATIC_ATTENUATION number
 	 */
 	PUSH_GL(AMBIENT);
 	PUSH_GL(DIFFUSE);
@@ -474,11 +474,11 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param VERTEX_SHADER number
-	 * @param TESS_CONTROL_SHADER number
-	 * @param TESS_EVALUATION_SHADER number
-	 * @param GEOMETRY_SHADER number
-	 * @param FRAGMENT_SHADER number
+	 * @field VERTEX_SHADER number
+	 * @field TESS_CONTROL_SHADER number
+	 * @field TESS_EVALUATION_SHADER number
+	 * @field GEOMETRY_SHADER number
+	 * @field FRAGMENT_SHADER number
 	 */
 	PUSH_GL(VERTEX_SHADER);
 	PUSH_GL(TESS_CONTROL_SHADER);
@@ -493,9 +493,9 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param GEOMETRY_INPUT_TYPE number
-	 * @param GEOMETRY_OUTPUT_TYPE number
-	 * @param GEOMETRY_VERTICES_OUT number
+	 * @field GEOMETRY_INPUT_TYPE number
+	 * @field GEOMETRY_OUTPUT_TYPE number
+	 * @field GEOMETRY_VERTICES_OUT number
 	 */
 	PUSH_GL(GEOMETRY_INPUT_TYPE_EXT);
 	PUSH_GL(GEOMETRY_OUTPUT_TYPE_EXT);
@@ -508,9 +508,9 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param PATCH_VERTICES number
-	 * @param PATCH_DEFAULT_OUTER_LEVEL number
-	 * @param PATCH_DEFAULT_INNER_LEVEL number
+	 * @field PATCH_VERTICES number
+	 * @field PATCH_DEFAULT_OUTER_LEVEL number
+	 * @field PATCH_DEFAULT_INNER_LEVEL number
 	 */
 	PUSH_GL(PATCH_VERTICES);
 	PUSH_GL(PATCH_DEFAULT_OUTER_LEVEL);
@@ -523,17 +523,17 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param BYTE number
-	 * @param UNSIGNED_BYTE number
-	 * @param SHORT number
-	 * @param UNSIGNED_SHORT number
-	 * @param INT number
-	 * @param UNSIGNED_INT number
-	 * @param FLOAT number
-	 * @param FLOAT_VEC4 number
-	 * @param INT_VEC4 number
-	 * @param UNSIGNED_INT_VEC4 number
-	 * @param FLOAT_MAT4 number
+	 * @field BYTE number
+	 * @field UNSIGNED_BYTE number
+	 * @field SHORT number
+	 * @field UNSIGNED_SHORT number
+	 * @field INT number
+	 * @field UNSIGNED_INT number
+	 * @field FLOAT number
+	 * @field FLOAT_VEC4 number
+	 * @field INT_VEC4 number
+	 * @field UNSIGNED_INT_VEC4 number
+	 * @field FLOAT_MAT4 number
 	 */
 	PUSH_GL(BYTE);
 	PUSH_GL(UNSIGNED_BYTE);
@@ -554,10 +554,10 @@ bool LuaConstGL::PushEntries(lua_State* L)
 
 	/***
 	 * @table GL
-	 * @param ELEMENT_ARRAY_BUFFER number
-	 * @param ARRAY_BUFFER number
-	 * @param UNIFORM_BUFFER number
-	 * @param SHADER_STORAGE_BUFFER number
+	 * @field ELEMENT_ARRAY_BUFFER number
+	 * @field ARRAY_BUFFER number
+	 * @field UNIFORM_BUFFER number
+	 * @field SHADER_STORAGE_BUFFER number
 	 *
 	 */
 	PUSH_GL(ELEMENT_ARRAY_BUFFER);
