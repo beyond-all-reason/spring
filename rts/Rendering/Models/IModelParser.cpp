@@ -410,12 +410,16 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 	RECOIL_DETAILED_TRACY_ZONE;
 	try {
 		auto* parser = GetFormatParser(FileSystem::GetExtension(path));
-		if (parser == nullptr)
+		if (parser == nullptr) {
+			LoadDummyModel(model);
 			throw content_error(fmt::sprintf("could not find a parser for model \"%s\" (unknown format?)", name));
+		}
 
 		parser->Load(model, path);
-		if (model.numPieces > 254)
+		if (model.numPieces > 254) {
+			LoadDummyModel(model);
 			throw content_error("A model has too many pieces (>254)" + path);
+		}
 
 	} catch (const content_error& ex) {
 		auto lock = CModelsLock::GetScopedLock();
