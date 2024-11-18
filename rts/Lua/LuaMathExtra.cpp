@@ -34,12 +34,15 @@ bool LuaMathExtra::PushEntries(lua_State* L)
 /******************************************************************************/
 
 
-/*** Returns the length of hypotenuse of right angle triangle with sides x and y, equivalent to sqrt(x*x + y*y), but has better numerical stability and internally handles intermediate overflows/underflows, but is also slower.
+/***
+ * Returns the length of hypotenuse of right angle triangle with sides x and y,
+ * equivalent to `sqrt(x*x + y*y)`, but has better numerical stability and
+ * internally handles intermediate overflows/underflows, but is also slower.
  *
  * @function math.hypot
  * @param x number
  * @param y number
- * @return number sqrt(x*x+y*y)
+ * @return number `sqrt(x*x+y*y)`
  */
 int LuaMathExtra::hypot(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -48,13 +51,14 @@ int LuaMathExtra::hypot(lua_State* L) {
 }
 
 
-/*** Returns the length of the diagonal of an n-dimensional box (or the length of an n-component vector). Rather quick method that does not handle intermediate overflows/underflows nor is made for numerical stability.
+/***
+ * Returns the length of the diagonal of an n-dimensional box (or the length of
+ * an n-component vector). Rather quick method that does not handle intermediate
+ * overflows/underflows nor is made for numerical stability.
  *
  * @function math.diag
- * @param x1 number
- * @param x2 number?
- * @param x3 number?
- * @param xn number? and so on
+ * @param x number
+ * @param ... number
  * @return number diagonal
  */
 int LuaMathExtra::diag(lua_State* L) {
@@ -72,7 +76,10 @@ int LuaMathExtra::diag(lua_State* L) {
 
 /*** Returns x clamped to min and max boundaries.
  *
- * @function math.clamp ( number x, number min, number max )
+ * @function math.clamp
+ * @param value number
+ * @param min number
+ * @param max number
  * @return number clamped
  */
 int LuaMathExtra::clamp(lua_State* L) {
@@ -125,7 +132,10 @@ int LuaMathExtra::mix(lua_State* L) {
 }
 
 
-/*** Returns x rounded to n decimals, if n is omitted or <=0, rounds to nearest integer. Note that Spring's Lua interpreter uses 32-bit floats for all numbers so max. precision is ~7 decimal digits.
+/***
+ * Returns x rounded to n decimals, if n is omitted or <=0, rounds to nearest
+ * integer. Note that Spring's Lua interpreter uses 32-bit floats for all
+ * numbers so max. precision is ~7 decimal digits.
  *
  * @function math.round
  * @param x number
@@ -188,11 +198,9 @@ int LuaMathExtra::smoothstep(lua_State* L) {
 /*** Returns the normalize vector of an given vector.
  *
  * @function math.normalize
- * @param x1 number
- * @param x2 number?
- * @param xN number? and so on
- * @return number normalized1
- * @return number normalized2 and so on
+ * @param x number
+ * @param ... number
+ * @return number ... normalized
  */
 int LuaMathExtra::normalize(lua_State* L)
 {
