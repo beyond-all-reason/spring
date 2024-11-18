@@ -2949,7 +2949,7 @@ bool CLuaHandle::KeyMapChanged()
 
 /*** Key Modifier Params
  *
- * @class mods
+ * @class KeyModifiers
  *
  * @field right boolean Right mouse key pressed
  * @field alt boolean Alt key pressed
@@ -2965,7 +2965,7 @@ bool CLuaHandle::KeyMapChanged()
  * Return true if you don't want other callins or the engine to also receive this keypress. A list of key codes can be seen at the SDL wiki.
  *
  * @param keyCode number
- * @param mods mods
+ * @param mods KeyModifiers
  * @param isRepeat boolean If you want an action to occur only once check for isRepeat == false.
  * @param label boolean the name of the key
  * @param utf32char number (deprecated) always 0
@@ -3031,7 +3031,7 @@ bool CLuaHandle::KeyPress(int keyCode, int scanCode, bool isRepeat)
  * @function KeyRelease
  *
  * @param keyCode number
- * @param mods mods
+ * @param mods KeyModifiers
  * @param label boolean the name of the key
  * @param utf32char number (deprecated) always 0
  * @param scanCode number
