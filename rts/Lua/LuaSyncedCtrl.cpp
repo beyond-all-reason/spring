@@ -5789,7 +5789,7 @@ int LuaSyncedCtrl::SetHeightMap(lua_State* L)
  * end)
  * ```
  *
- * @func lua_function
+ * @param luaFunction function
  * @param arg number
  * @param ... number
  * @return integer? absTotalHeightMapAmountChanged
@@ -6046,7 +6046,7 @@ int LuaSyncedCtrl::SetOriginalHeightMap(lua_State* L)
  *
  * Cannot recurse on itself
  *
- * @func heightMapFunc
+ * @param heightMapFunc function
  * @return nil
  */
 int LuaSyncedCtrl::SetOriginalHeightMapFunc(lua_State* L)
@@ -6289,11 +6289,10 @@ int LuaSyncedCtrl::SetSmoothMesh(lua_State* L)
 
 /***
  * @function Spring.SetSmoothMeshFunc
- * @param lua_function function
- * @param arg1 any?
- * @param arg2 any?
- * @param argn any?
- * @return number? The absolute change in smooth mesh amount.
+ * @param luaFunction function
+ * @param arg any?
+ * @param ... any?
+ * @return number? absTotalHeightMapAmountChanged
  */
 int LuaSyncedCtrl::SetSmoothMeshFunc(lua_State* L)
 {
