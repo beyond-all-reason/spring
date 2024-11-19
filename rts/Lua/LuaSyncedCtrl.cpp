@@ -4818,13 +4818,6 @@ int LuaSyncedCtrl::SetFeaturePieceVisible(lua_State* L)
 ******************************************************************************/
 
 /***
- * @class float3
- * @field x number
- * @field y number
- * @field z number
- */
-
-/***
  * @class ProjectileParams
  * @field pos float3
  * @field speed float3
@@ -5206,17 +5199,6 @@ int LuaSyncedCtrl::SetProjectileCEG(lua_State* L)
  * @section giveorder
  * Options can also be a bitmask; e.g. 0 instead of an empty table (can avoid performance hit on table creation)
  * See `Constants.CMD` for relevant constants.
- */
-
-
-
-/***
- * Used when assigning multiple commands at once
- * 
- * @class Command
- * @field cmdID integer
- * @field params number[]
- * @field options CommandOptions
  */
 
 
@@ -7121,25 +7103,6 @@ static bool ParseCommandDescription(lua_State* L, int table,
 
 	return true;
 }
-
-
-/***
- * @class CommandDescription
- * 
- * @field id integer?
- * @field type integer?
- * @field name string?
- * @field action string?
- * @field tooltip string?
- * @field texture string?
- * @field cursor string?
- * @field queueing boolean?
- * @field hidden boolean?
- * @field disabled boolean?
- * @field showUnique boolean?
- * @field onlyTexture boolean?
- * @field params table<string, string>?
- */ 
 
 /***
  * @function Spring.EditUnitCmdDesc

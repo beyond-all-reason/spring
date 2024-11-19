@@ -464,7 +464,7 @@ static size_t PushSparseUnitTallyByDef(lua_State *const L, const T &v)
  *
  * @function Spring.IsReplay
  *
- * @return ?nil|boolean isReplay
+ * @return boolean? isReplay
  */
 int LuaUnsyncedRead::IsReplay(lua_State* L)
 {
@@ -477,7 +477,7 @@ int LuaUnsyncedRead::IsReplay(lua_State* L)
  *
  * @function Spring.GetReplayLength
  *
- * @return ?nil|number timeInSeconds
+ * @return number? timeInSeconds
  */
 int LuaUnsyncedRead::GetReplayLength(lua_State* L)
 {
@@ -536,7 +536,7 @@ int LuaUnsyncedRead::GetMenuName(lua_State* L)
  * @return number max_dt
  * @return number time_pct
  * @return number peak_pct
- * @return ?nil|table<number,number> frameData where key is the frame index and value is duration
+ * @return table<number,number>? frameData Table where key is the frame index and value is duration.
  */
 int LuaUnsyncedRead::GetProfilerTimeRecord(lua_State* L)
 {
@@ -688,15 +688,10 @@ static void PushTimer(lua_State* L, const spring_time& time, bool microseconds)
 	lua_pushlightuserdata(L, reinterpret_cast<void*>(p));
 }
 
-/***
- * @type Timer
- */
-
-
 /*** Get a timer with millisecond resolution
  *
  * @function Spring.GetTimer
- * @return Timer
+ * @return integer
  */
 int LuaUnsyncedRead::GetTimer(lua_State* L)
 {
@@ -708,7 +703,7 @@ int LuaUnsyncedRead::GetTimer(lua_State* L)
 /*** Get a timer with microsecond resolution
  *
  * @function Spring.GetTimerMicros
- * @return Timer
+ * @return integer
  */
 int LuaUnsyncedRead::GetTimerMicros(lua_State* L)
 {
@@ -724,7 +719,7 @@ int LuaUnsyncedRead::GetTimerMicros(lua_State* L)
  * This should give better results for camera interpolations
  *
  * @param lastFrameTime boolean? (Default: false) whether to use last frame time instead of last frame start
- * @return Timer
+ * @return integer
  */
 int LuaUnsyncedRead::GetFrameTimer(lua_State* L)
 {
@@ -740,8 +735,8 @@ int LuaUnsyncedRead::GetFrameTimer(lua_State* L)
 /***
  *
  * @function Spring.DiffTimers
- * @param endTimer Timer
- * @param startTimer Timer
+ * @param endTimer integer
+ * @param startTimer integer
  * @param returnMs boolean? (Default: false) whether to return `timeAmount` in milliseconds as opposed to seconds
  * @param fromMicroSecs boolean? (Default: false) whether timers are in microseconds instead of milliseconds
  * @return number timeAmount
@@ -914,10 +909,10 @@ int LuaUnsyncedRead::GetWindowDisplayMode(lua_State* L)
  * @return number windowBorderLeft in px
  * @return number windowBorderBottom in px
  * @return number windowBorderRight in px
- * @return ?nil|number screenUsableSizeX in px
- * @return ?nil|number screenUsableSizeY in px
- * @return ?nil|number screenUsablePosX in px
- * @return ?nil|number screenUsablePosY in px
+ * @return number? screenUsableSizeX in px
+ * @return number? screenUsableSizeY in px
+ * @return number? screenUsablePosX in px
+ * @return number? screenUsablePosY in px
  */
 int LuaUnsyncedRead::GetScreenGeometry(lua_State* L)
 {
@@ -1028,10 +1023,10 @@ int LuaUnsyncedRead::GetMiniMapDualScreen(lua_State* L)
  *
  * Returns nil when selection box is inactive
  *
- * @return ?nil|number left
- * @return ?nil|number top
- * @return ?nil|number right
- * @return ?nil|number bottom
+ * @return number? left
+ * @return number? top
+ * @return number? right
+ * @return number? bottom
  *
  * @see Spring.GetUnitsInScreenRectangle
  */
@@ -1125,7 +1120,7 @@ int LuaUnsyncedRead::GetDrawFrame(lua_State* L)
  * When draw frames are not integer multiples of sim frames, some interpolation
  * happens, and this timeoffset shows how far along it is.
  *
- * @return nil|number offset of the current draw frame from the last sim frame, expressed in fractions of a frame
+ * @return number? offset of the current draw frame from the last sim frame, expressed in fractions of a frame
  */
 int LuaUnsyncedRead::GetFrameTimeOffset(lua_State* L)
 {
@@ -1149,7 +1144,7 @@ int LuaUnsyncedRead::GetGameSecondsInterpolated(lua_State* L)
  *
  * @function Spring.GetLastUpdateSeconds
  *
- * @return nil|number lastUpdateSeconds
+ * @return number? lastUpdateSeconds
  */
 int LuaUnsyncedRead::GetLastUpdateSeconds(lua_State* L)
 {
@@ -1180,8 +1175,8 @@ int LuaUnsyncedRead::GetVideoCapturingMode(lua_State* L)
 /***
  *
  * @function Spring.IsUnitAllied
- * @param unitID number
- * @return nil|boolean isAllied nil with unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? isAllied nil with unitID cannot be parsed
  */
 int LuaUnsyncedRead::IsUnitAllied(lua_State* L)
 {
@@ -1204,8 +1199,8 @@ int LuaUnsyncedRead::IsUnitAllied(lua_State* L)
 /***
  *
  * @function Spring.IsUnitSelected
- * @param unitID number
- * @return nil|boolean isSelected nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? isSelected nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::IsUnitSelected(lua_State* L)
 {
@@ -1222,8 +1217,8 @@ int LuaUnsyncedRead::IsUnitSelected(lua_State* L)
 /***
  *
  * @function Spring.GetUnitLuaDraw
- * @param unitID number
- * @return nil|boolean draw nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? draw nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::GetUnitLuaDraw(lua_State* L)
 {
@@ -1233,8 +1228,8 @@ int LuaUnsyncedRead::GetUnitLuaDraw(lua_State* L)
 /***
  *
  * @function Spring.GetUnitNoDraw
- * @param unitID number
- * @return nil|boolean nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::GetUnitNoDraw(lua_State* L)
 {
@@ -1244,8 +1239,8 @@ int LuaUnsyncedRead::GetUnitNoDraw(lua_State* L)
 /***
  *
  * @function Spring.GetUnitEngineDrawMask
- * @param unitID number
- * @return nil|boolean nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::GetUnitEngineDrawMask(lua_State* L)
 {
@@ -1255,8 +1250,8 @@ int LuaUnsyncedRead::GetUnitEngineDrawMask(lua_State* L)
 /***
  *
  * @function Spring.GetUnitAlwaysUpdateMatrix
- * @param unitID number
- * @return nil|boolean nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::GetUnitAlwaysUpdateMatrix(lua_State* L)
 {
@@ -1272,8 +1267,8 @@ int LuaUnsyncedRead::GetUnitAlwaysUpdateMatrix(lua_State* L)
 /***
  *
  * @function Spring.GetUnitDrawFlag
- * @param unitID number
- * @return nil|number nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return number? nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::GetUnitDrawFlag(lua_State* L)
 {
@@ -1289,8 +1284,8 @@ int LuaUnsyncedRead::GetUnitDrawFlag(lua_State* L)
 /***
  *
  * @function Spring.GetUnitNoMinimap
- * @param unitID number
- * @return nil|boolean nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::GetUnitNoMinimap(lua_State* L)
 {
@@ -1306,8 +1301,8 @@ int LuaUnsyncedRead::GetUnitNoMinimap(lua_State* L)
 /***
  *
  * @function Spring.GetUnitNoSelect
- * @param unitID number
- * @return nil|boolean nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::GetUnitNoSelect(lua_State* L)
 {
@@ -1324,8 +1319,9 @@ int LuaUnsyncedRead::GetUnitNoSelect(lua_State* L)
 /***
  *
  * @function Spring.UnitIconGetDraw
- * @param unitID number
- * @param nil nil|boolean when unitID is invalid
+ * @param unitID integer
+ * @return boolean? drawIcon
+ * `true` if icon is being drawn, `nil` when unitID is invalid, otherwise `false`.
  */
 int LuaUnsyncedRead::UnitIconGetDraw(lua_State* L) {
 	CUnit* unit = ParseUnit(L, __func__, 1);
@@ -1341,8 +1337,8 @@ int LuaUnsyncedRead::UnitIconGetDraw(lua_State* L) {
 /***
  *
  * @function Spring.GetUnitSelectionVolumeData
- * @param unitID number
- * @return number|nil scaleX nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return number? scaleX nil when unitID cannot be parsed
  * @return number scaleY
  * @return number scaleZ
  * @return number offsetX
@@ -1351,7 +1347,7 @@ int LuaUnsyncedRead::UnitIconGetDraw(lua_State* L) {
  * @return number volumeType
  * @return number useContHitTest
  * @return number getPrimaryAxis
- * @return boolean   ignoreHits
+ * @return boolean ignoreHits
  */
 int LuaUnsyncedRead::GetUnitSelectionVolumeData(lua_State* L)
 {
@@ -1368,8 +1364,8 @@ int LuaUnsyncedRead::GetUnitSelectionVolumeData(lua_State* L)
 /***
  *
  * @function Spring.GetFeatureLuaDraw
- * @param featureID number
- * @return nil|boolean nil when featureID cannot be parsed
+ * @param featureID integer
+ * @return boolean? nil when featureID cannot be parsed
  */
 int LuaUnsyncedRead::GetFeatureLuaDraw(lua_State* L)
 {
@@ -1379,8 +1375,8 @@ int LuaUnsyncedRead::GetFeatureLuaDraw(lua_State* L)
 /***
  *
  * @function Spring.GetFeatureNoDraw
- * @param featureID number
- * @return nil|boolean nil when featureID cannot be parsed
+ * @param featureID integer
+ * @return boolean? nil when featureID cannot be parsed
  */
 int LuaUnsyncedRead::GetFeatureNoDraw(lua_State* L)
 {
@@ -1390,8 +1386,8 @@ int LuaUnsyncedRead::GetFeatureNoDraw(lua_State* L)
 /***
  *
  * @function Spring.GetFeatureEngineDrawMask
- * @param featureID number
- * @return nil|boolean nil when featureID cannot be parsed
+ * @param featureID integer
+ * @return boolean? nil when featureID cannot be parsed
  */
 int LuaUnsyncedRead::GetFeatureEngineDrawMask(lua_State* L)
 {
@@ -1401,8 +1397,8 @@ int LuaUnsyncedRead::GetFeatureEngineDrawMask(lua_State* L)
 /***
  *
  * @function Spring.GetFeatureAlwaysUpdateMatrix
- * @param featureID number
- * @return nil|boolean nil when featureID cannot be parsed
+ * @param featureID integer
+ * @return boolean? nil when featureID cannot be parsed
  */
 int LuaUnsyncedRead::GetFeatureAlwaysUpdateMatrix(lua_State* L)
 {
@@ -1418,8 +1414,8 @@ int LuaUnsyncedRead::GetFeatureAlwaysUpdateMatrix(lua_State* L)
 /***
  *
  * @function Spring.GetFeatureDrawFlag
- * @param featureID number
- * @return nil|number nil when featureID cannot be parsed
+ * @param featureID integer
+ * @return number? nil when featureID cannot be parsed
  */
 int LuaUnsyncedRead::GetFeatureDrawFlag(lua_State* L)
 {
@@ -1435,8 +1431,8 @@ int LuaUnsyncedRead::GetFeatureDrawFlag(lua_State* L)
 /***
  *
  * @function Spring.GetFeatureSelectionVolumeData
- * @param featureID number
- * @return number|nil scaleX nil when unitID cannot be parsed
+ * @param featureID integer
+ * @return number? scaleX nil when unitID cannot be parsed
  * @return number scaleY
  * @return number scaleZ
  * @return number offsetX
@@ -1445,7 +1441,7 @@ int LuaUnsyncedRead::GetFeatureDrawFlag(lua_State* L)
  * @return number volumeType
  * @return number useContHitTest
  * @return number getPrimaryAxis
- * @return boolean   ignoreHits
+ * @return boolean ignoreHits
  */
 int LuaUnsyncedRead::GetFeatureSelectionVolumeData(lua_State* L)
 {
@@ -1484,8 +1480,8 @@ static int GetObjectTransformMatrix(const CSolidObject* o, lua_State* L)
 /***
  *
  * @function Spring.GetUnitTransformMatrix
- * @param unitID number
- * @return number|nil m11 nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return number? m11 nil when unitID cannot be parsed
  * @return number m12
  * @return number m13
  * @return number m14
@@ -1508,8 +1504,8 @@ int LuaUnsyncedRead::GetUnitTransformMatrix(lua_State* L) { return (GetObjectTra
 /***
  *
  * @function Spring.GetFeatureTransformMatrix
- * @param featureID number
- * @return number|nil m11 nil when featureID cannot be parsed
+ * @param featureID integer
+ * @return number? m11 nil when featureID cannot be parsed
  * @return number m12
  * @return number m13
  * @return number m14
@@ -1538,8 +1534,8 @@ int LuaUnsyncedRead::GetFeatureTransformMatrix(lua_State* L) { return (GetObject
 /***
  *
  * @function Spring.IsUnitInView
- * @param unitID number
- * @return nil|boolean inView nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? inView nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::IsUnitInView(lua_State* L)
 {
@@ -1556,10 +1552,10 @@ int LuaUnsyncedRead::IsUnitInView(lua_State* L)
 /***
  *
  * @function Spring.IsUnitVisible
- * @param unitID number
+ * @param unitID integer
  * @param radius number? unitRadius when not specified
  * @param checkIcon boolean
- * @return nil|boolean isVisible nil when unitID cannot be parsed
+ * @return boolean? isVisible nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::IsUnitVisible(lua_State* L)
 {
@@ -1598,8 +1594,8 @@ int LuaUnsyncedRead::IsUnitVisible(lua_State* L)
 /***
  *
  * @function Spring.IsUnitIcon
- * @param unitID number
- * @return nil|boolean isUnitIcon nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return boolean? isUnitIcon nil when unitID cannot be parsed
  */
 int LuaUnsyncedRead::IsUnitIcon(lua_State* L)
 {
@@ -1666,9 +1662,9 @@ int LuaUnsyncedRead::IsSphereInView(lua_State* L)
 /***
  *
  * @function Spring.GetUnitViewPosition
- * @param unitID number
+ * @param unitID integer
  * @param midPos boolean? (Default: false)
- * @return number|nil x nil when unitID cannot be parsed
+ * @return number? x nil when unitID cannot be parsed
  * @return number y
  * @return number z
  */
@@ -1761,7 +1757,7 @@ public:
 /***
  *
  * @function Spring.GetVisibleUnits
- * @param teamID number? (Default: -1)
+ * @param teamID integer? (Default: -1)
  * @param radius number? (Default: 30)
  * @param icons boolean? (Default: true)
  * @return nil|number[] unitIDs
@@ -1859,7 +1855,7 @@ int LuaUnsyncedRead::GetVisibleUnits(lua_State* L)
 /***
  *
  * @function Spring.GetVisibleFeatures
- * @param teamID number? (Default: -1)
+ * @param teamID integer? (Default: -1)
  * @param radius number? (Default: 30)
  * @param icons boolean? (Default: true)
  * @param geos boolean? (Default: true)
@@ -1940,7 +1936,7 @@ int LuaUnsyncedRead::GetVisibleFeatures(lua_State* L)
 /***
  *
  * @function Spring.GetVisibleProjectiles
- * @param allyTeamID number? (Default: -1)
+ * @param allyTeamID integer? (Default: -1)
  * @param addSyncedProjectiles boolean? (Default: true)
  * @param addWeaponProjectiles boolean? (Default: true)
  * @param addPieceProjectiles boolean? (Default: true)
@@ -2374,7 +2370,7 @@ int LuaUnsyncedRead::GetSelectedUnits(lua_State* L)
  *
  * @function Spring.GetSelectedUnitsSorted
  * @return table<number,number[]> where keys are unitDefIDs and values are unitIDs
- * @return n the number of unitDefIDs
+ * @return integer the number of unitDefIDs
  */
 int LuaUnsyncedRead::GetSelectedUnitsSorted(lua_State* L)
 {
@@ -2390,7 +2386,7 @@ int LuaUnsyncedRead::GetSelectedUnitsSorted(lua_State* L)
  * @function Spring.GetSelectedUnitsCounts
  *
  * @return table<number,number> unitsCounts where keys are unitDefIDs and values are counts
- * @return n the number of unitDefIDs
+ * @return integer the number of unitDefIDs
  */
 int LuaUnsyncedRead::GetSelectedUnitsCounts(lua_State* L)
 {
@@ -2446,7 +2442,7 @@ int LuaUnsyncedRead::IsGUIHidden(lua_State* L)
 /***
  *
  * @function Spring.HaveShadows
- * @return shadowsLoaded
+ * @return boolean shadowsLoaded
  */
 int LuaUnsyncedRead::HaveShadows(lua_State* L)
 {
@@ -2488,7 +2484,7 @@ int LuaUnsyncedRead::GetWaterMode(lua_State* L)
 /***
  *
  * @function Spring.GetMapDrawMode
- * @return nil|string "normal"|"height"|"metal"|"pathTraversability"|"los"
+ * @return "normal"|"height"|"metal"|"pathTraversability"|"los"
  */
 int LuaUnsyncedRead::GetMapDrawMode(lua_State* L)
 {
@@ -2522,7 +2518,7 @@ int LuaUnsyncedRead::GetMapDrawMode(lua_State* L)
  * @param lodMin number
  * @param luaTexName string
  * @param lodMax number? (Default: lodMin)
- * @return nil|boolean success
+ * @return boolean? success
  */
 int LuaUnsyncedRead::GetMapSquareTexture(lua_State* L)
 {
@@ -2571,19 +2567,13 @@ int LuaUnsyncedRead::GetMapSquareTexture(lua_State* L)
 	return 1;
 }
 
-
-/*** Color triple (RGB)
- * @table rgb
- * @param r number
- * @param g number
- * @param b number
- */
-
-
 /***
- *
  * @function Spring.GetLosViewColors
- * @return { always=rgb, LOS=rgb, radar=rgb, jam=rgb, radar2=rgb }
+ * @return rgb always
+ * @return rgb LOS
+ * @return rgb radar
+ * @return rgb jam
+ * @return rgb radar2
  */
 int LuaUnsyncedRead::GetLosViewColors(lua_State* L)
 {
@@ -2629,10 +2619,11 @@ int LuaUnsyncedRead::GetNanoProjectileParams(lua_State* L)
 }
 
 
-/*** Get available cameras
- *
+/***
+ * Get available cameras.
+ * 
  * @function Spring.GetCameraNames
- * @return {[string] = number} where keys are names and values are indices
+ * @return table<string, number> Table where where keys are names and values are indices.
  */
 int LuaUnsyncedRead::GetCameraNames(lua_State* L)
 {
@@ -2649,40 +2640,16 @@ int LuaUnsyncedRead::GetCameraNames(lua_State* L)
 	return 1;
 }
 
-
-/*** Parameters for camera state
- *
- * @table camState
- *
- * Highly dependent on the type of the current camera controller
- *
- * @param name string "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
- * @param mode number the camera mode: 0 (fps), 1 (ta), 2 (spring), 3 (rot), 4 (free), 5 (ov), 6 (dummy)
- * @param fov number
- * @param px number Position X of the ground point in screen center
- * @param py number Position Y of the ground point in screen center
- * @param pz number Position Z of the ground point in screen center
- * @param dx number Camera direction vector X
- * @param dy number Camera direction vector Y
- * @param dz number Camera direction vector Z
- * @param rx number Camera rotation angle on X axis (spring)
- * @param ry number Camera rotation angle on Y axis (spring)
- * @param rz number Camera rotation angle on Z axis (spring)
- * @param angle number Camera rotation angle on X axis (aka tilt/pitch) (ta)
- * @param flipped number -1 for when south is down, 1 for when north is down (ta)
- * @param dist number Camera distance from the ground (spring)
- * @param height number Camera distance from the ground (ta)
- * @param oldHeight number Camera distance from the ground, cannot be changed (rot)
- */
-
-
 /***
- *
  * @function Spring.GetCameraState
- * @param useReturns boolean? (Default: true) when true return multiple values instead of table
- * @return any|camState ret1
- * @return any|nil ret2
- * @return any|nil retn
+ * @param useReturns false
+ * @return CameraState cameraState
+ */
+/***
+ * @function Spring.GetCameraState
+ * @param useReturns true? (Default: `true`) Return multiple values instead of a table.
+ * @return "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy" name
+ * @return any Fields depending on current controller mode.
  */
 int LuaUnsyncedRead::GetCameraState(lua_State* L)
 {
@@ -2750,11 +2717,10 @@ int LuaUnsyncedRead::GetCameraState(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetCameraPosition
- * @return posX
- * @return posY
- * @return posZ
+ * @return number posX
+ * @return number posY
+ * @return number posZ
  */
 int LuaUnsyncedRead::GetCameraPosition(lua_State* L)
 {
@@ -2765,11 +2731,10 @@ int LuaUnsyncedRead::GetCameraPosition(lua_State* L)
 }
 
 /***
- *
  * @function Spring.GetCameraDirection
- * @return dirX
- * @return dirY
- * @return dirZ
+ * @return number dirX
+ * @return number dirY
+ * @return number dirZ
  */
 int LuaUnsyncedRead::GetCameraDirection(lua_State* L)
 {
@@ -2780,11 +2745,10 @@ int LuaUnsyncedRead::GetCameraDirection(lua_State* L)
 }
 
 /***
- *
  * @function Spring.GetCameraRotation
- * @return rotX in radians
- * @return rotY in radians
- * @return rotZ in radians
+ * @return number rotX in radians
+ * @return number rotY in radians
+ * @return number rotZ in radians
  */
 int LuaUnsyncedRead::GetCameraRotation(lua_State* L)
 {
@@ -2795,7 +2759,6 @@ int LuaUnsyncedRead::GetCameraRotation(lua_State* L)
 }
 
 /***
- *
  * @function Spring.GetCameraFOV
  * @return number vFOV
  * @return number hFOV
@@ -2807,19 +2770,20 @@ int LuaUnsyncedRead::GetCameraFOV(lua_State* L)
 	return 2;
 }
 
-
-/*** Cartesian triple (XYZ)
- * @table xyz
- * @param x number
- * @param y number
- * @param z number
+/**
+ * @class CameraVectors
+ * @field forward xyz
+ * @field up xyz
+ * @field right xyz
+ * @field topFrustumPlane xyz
+ * @field botFrustumPlane xyz
+ * @field lftFrustumPlane xyz
+ * @field rgtFrustumPlane xyz
  */
 
-
 /***
- *
  * @function Spring.GetCameraVectors
- * @return { forward = xyz, up = xyz, right = xyz, topFrustumPlane = xyz, botFrustumPlane = xyz, lftFrustumPlane = xyz, rgtFrustumPlane = xyz }
+ * @return CameraVectors
  */
 int LuaUnsyncedRead::GetCameraVectors(lua_State* L)
 {
@@ -2850,9 +2814,9 @@ int LuaUnsyncedRead::GetCameraVectors(lua_State* L)
  * @param x number
  * @param y number
  * @param z number
- * @return viewPortX
- * @return viewPortY
- * @return viewPortZ
+ * @return number viewPortX
+ * @return number viewPortY
+ * @return number viewPortZ
  */
 int LuaUnsyncedRead::WorldToScreenCoords(lua_State* L)
 {
@@ -2998,9 +2962,9 @@ int LuaUnsyncedRead::TraceScreenRay(lua_State* L)
  * @function Spring.GetPixelDir
  * @param x number
  * @param y number
- * @return dirX
- * @return dirY
- * @return dirZ
+ * @return number dirX
+ * @return number dirY
+ * @return number dirZ
  */
 int LuaUnsyncedRead::GetPixelDir(lua_State* L)
 {
@@ -3051,11 +3015,11 @@ static bool AddPlayerToRoster(lua_State* L, int playerID, bool onlyActivePlayers
 /***
  *
  * @function Spring.GetTeamColor
- * @param teamID number
- * @return nil|number r factor from 0 to 1
- * @return nil|number g factor from 0 to 1
- * @return nil|number b factor from 0 to 1
- * @return nil|number a factor from 0 to 1
+ * @param teamID integer
+ * @return number? r factor from 0 to 1
+ * @return number? g factor from 0 to 1
+ * @return number? b factor from 0 to 1
+ * @return number? a factor from 0 to 1
  */
 int LuaUnsyncedRead::GetTeamColor(lua_State* L)
 {
@@ -3078,11 +3042,11 @@ int LuaUnsyncedRead::GetTeamColor(lua_State* L)
 /***
  *
  * @function Spring.GetTeamOrigColor
- * @param teamID number
- * @return nil|number r factor from 0 to 1
- * @return nil|number g factor from 0 to 1
- * @return nil|number b factor from 0 to 1
- * @return nil|number a factor from 0 to 1
+ * @param teamID integer
+ * @return number? r factor from 0 to 1
+ * @return number? g factor from 0 to 1
+ * @return number? b factor from 0 to 1
+ * @return number? a factor from 0 to 1
  */
 int LuaUnsyncedRead::GetTeamOrigColor(lua_State* L)
 {
@@ -3105,7 +3069,7 @@ int LuaUnsyncedRead::GetTeamOrigColor(lua_State* L)
 /***
  *
  * @function Spring.GetDrawSeconds
- * @return time in seconds
+ * @return integer Time in seconds
  */
 int LuaUnsyncedRead::GetDrawSeconds(lua_State* L)
 {
@@ -3283,9 +3247,9 @@ int LuaUnsyncedRead::GetGameState(lua_State* L)
 /***
  *
  * @function Spring.GetActiveCommand
- * @return nil|number cmdIndex
- * @return nil|number cmdID
- * @return nil|number cmdType
+ * @return number? cmdIndex
+ * @return number? cmdID
+ * @return number? cmdType
  * @return nil|string cmdName
  */
 int LuaUnsyncedRead::GetActiveCommand(lua_State* L)
@@ -3312,9 +3276,9 @@ int LuaUnsyncedRead::GetActiveCommand(lua_State* L)
 /***
  *
  * @function Spring.GetDefaultCommand
- * @return nil|number cmdIndex
- * @return nil|number cmdID
- * @return nil|number cmdType
+ * @return number? cmdIndex
+ * @return number? cmdID
+ * @return number? cmdType
  * @return nil|string cmdName
  */
 int LuaUnsyncedRead::GetDefaultCommand(lua_State* L)
@@ -3338,33 +3302,10 @@ int LuaUnsyncedRead::GetDefaultCommand(lua_State* L)
 	return 4;
 }
 
-
-/*** Command Description
- *
- * @table cmdDesc
- *
- * Contains data about a command
- *
- * @param id number
- * @param type number
- * @param name string
- * @param action string
- * @param tooltip string
- * @param texture string
- * @param cursor string
- * @param queueing boolean
- * @param hidden boolean
- * @param disabled boolean
- * @param showUnique boolean
- * @param onlyTexture boolean
- * @param params string[]
- */
-
-
 /***
  *
  * @function Spring.GetActiveCmdDescs
- * @return cmdDesc[] cmdDescs
+ * @return CommandDescription[] cmdDescs
  */
 int LuaUnsyncedRead::GetActiveCmdDescs(lua_State* L)
 {
@@ -3393,8 +3334,8 @@ int LuaUnsyncedRead::GetActiveCmdDescs(lua_State* L)
 /***
  *
  * @function Spring.GetActiveCmdDesc
- * @param cmdIndex number
- * @return nil|cmdDesc
+ * @param cmdIndex integer
+ * @return CommandDescription?
  */
 int LuaUnsyncedRead::GetActiveCmdDesc(lua_State* L)
 {
@@ -3417,8 +3358,8 @@ int LuaUnsyncedRead::GetActiveCmdDesc(lua_State* L)
 /***
  *
  * @function Spring.GetCmdDescIndex
- * @param cmdID number
- * @return nil|number cmdDescIndex
+ * @param cmdID integer
+ * @return integer? cmdDescIndex
  */
 int LuaUnsyncedRead::GetCmdDescIndex(lua_State* L)
 {
@@ -3442,9 +3383,17 @@ int LuaUnsyncedRead::GetCmdDescIndex(lua_State* L)
 /******************************************************************************/
 
 /***
+ * @alias Facing
+ * | 0 # South
+ * | 1 # East
+ * | 2 # North
+ * | 3 # West
+ */
+
+/***
  *
  * @function Spring.GetBuildFacing
- * @return number buildFacing
+ * @return Facing buildFacing
  */
 int LuaUnsyncedRead::GetBuildFacing(lua_State* L)
 {
@@ -3654,10 +3603,9 @@ int LuaUnsyncedRead::GetLastMessagePositions(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetConsoleBuffer
  * @param maxLines number
- * @return nil|{text=string,priority=number}[] pair array of (text, priority)
+ * @return { text: string, priority: integer }[] buffer
  */
 int LuaUnsyncedRead::GetConsoleBuffer(lua_State* L)
 {
@@ -3691,7 +3639,6 @@ int LuaUnsyncedRead::GetConsoleBuffer(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetCurrentTooltip
  * @return string tooltip
  */
@@ -3709,7 +3656,6 @@ int LuaUnsyncedRead::GetCurrentTooltip(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetKeyFromScanSymbol
  * @param scanSymbol string
  * @return string keyName
@@ -3841,7 +3787,7 @@ int LuaUnsyncedRead::GetPressedScans(lua_State* L)
 /***
  *
  * @function Spring.GetInvertQueueKey
- * @return nil|number queueKey
+ * @return number? queueKey
  */
 int LuaUnsyncedRead::GetInvertQueueKey(lua_State* L)
 {
@@ -3898,24 +3844,23 @@ int LuaUnsyncedRead::GetScanSymbol(lua_State* L)
 }
 
 
-/*** Keybinding spec
- *
- * @table keybindingSpec
+/***
+ * Keybinding
  *
  * Contains data about a keybinding
- *
- * @param command string
- * @param extra string
- * @param boundWith string
+ * 
+ * @class KeyBinding
+ * @field command string
+ * @field extra string
+ * @field boundWith string
  */
 
 
 /***
- *
  * @function Spring.GetKeyBindings
  * @param keySet1 string? filters keybindings bound to this keyset
  * @param keySet2 string? OR bound to this keyset
- * @return keybindingSpec[]
+ * @return KeyBinding[]
  */
 int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 {
@@ -3968,7 +3913,7 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
  *
  * @function Spring.GetActionHotKeys
  * @param actionName string
- * @return nil|string[] hotkeys
+ * @return string[]? hotkeys
  */
 int LuaUnsyncedRead::GetActionHotKeys(lua_State* L)
 {
@@ -4033,8 +3978,8 @@ int LuaUnsyncedRead::GetSelectedGroup(lua_State* L)
 /***
  *
  * @function Spring.GetUnitGroup
- * @param unitID number
- * @return nil|number groupID
+ * @param unitID integer
+ * @return number? groupID
  */
 int LuaUnsyncedRead::GetUnitGroup(lua_State* L)
 {
@@ -4068,7 +4013,7 @@ static inline const CGroup* GetGroupFromArg(lua_State* L, int arg)
 /***
  *
  * @function Spring.GetGroupUnits
- * @param groupID number
+ * @param groupID integer
  * @return nil|number[] unitIDs
  */
 int LuaUnsyncedRead::GetGroupUnits(lua_State* L)
@@ -4085,7 +4030,7 @@ int LuaUnsyncedRead::GetGroupUnits(lua_State* L)
 /***
  *
  * @function Spring.GetGroupUnitsSorted
- * @param groupID number
+ * @param groupID integer
  * @return nil|table<number,number[]> where keys are unitDefIDs and values are unitIDs
  */
 int LuaUnsyncedRead::GetGroupUnitsSorted(lua_State* L)
@@ -4102,7 +4047,7 @@ int LuaUnsyncedRead::GetGroupUnitsSorted(lua_State* L)
 /***
  *
  * @function Spring.GetGroupUnitsCounts
- * @param groupID number
+ * @param groupID integer
  * @return nil|table<number,number> where keys are unitDefIDs and values are counts
  */
 int LuaUnsyncedRead::GetGroupUnitsCounts(lua_State* L)
@@ -4119,8 +4064,8 @@ int LuaUnsyncedRead::GetGroupUnitsCounts(lua_State* L)
 /***
  *
  * @function Spring.GetGroupUnitsCount
- * @param groupID number
- * @return nil|number groupSize
+ * @param groupID integer
+ * @return number? groupSize
  */
 int LuaUnsyncedRead::GetGroupUnitsCount(lua_State* L)
 {
@@ -4139,19 +4084,18 @@ int LuaUnsyncedRead::GetGroupUnitsCount(lua_State* L)
 ******************************************************************************/
 
 
-/*** Roster spec
- *
- * @table rosterSpec
+/*** Roster
  *
  * Contains data about a player
- *
- * @param name string
- * @param playerID number
- * @param teamID number
- * @param allyTeamID number
- * @param spectator boolean
- * @param cpuUsage number in order to find the progress, use: cpuUsage&0x1 if it's PC or BO, cpuUsage& 0xFE to get path res, (cpuUsage>>8)*1000 for the progress
- * @param pingTime number if -1, the player is pathfinding
+ * 
+ * @class Roster
+ * @field name string
+ * @field playerID integer
+ * @field teamID integer
+ * @field allyTeamID integer
+ * @field spectator boolean
+ * @field cpuUsage number in order to find the progress, use: cpuUsage&0x1 if it's PC or BO, cpuUsage& 0xFE to get path res, (cpuUsage>>8)*1000 for the progress
+ * @field pingTime number if -1, the player is pathfinding
  */
 
 
@@ -4160,7 +4104,7 @@ int LuaUnsyncedRead::GetGroupUnitsCount(lua_State* L)
  * @function Spring.GetPlayerRoster
  * @param sortType number? return unsorted if unspecified. Disabled = 0, Allies = 1, TeamID = 2, PlayerName = 3, PlayerCPU = 4, PlayerPing = 5
  * @param showPathingPlayers boolean? (Default: false)
- * @return nil|rosterSpec[] playerTable
+ * @return Roster[]? playerTable
  */
 int LuaUnsyncedRead::GetPlayerRoster(lua_State* L)
 {
@@ -4194,8 +4138,8 @@ int LuaUnsyncedRead::GetPlayerRoster(lua_State* L)
 /***
  *
  * @function Spring.GetPlayerTraffic
- * @param playerID number
- * @param packetID number?
+ * @param playerID integer
+ * @param packetID integer?
  * @return number traffic
  */
 int LuaUnsyncedRead::GetPlayerTraffic(lua_State* L)
@@ -4246,8 +4190,8 @@ int LuaUnsyncedRead::GetPlayerTraffic(lua_State* L)
 /***
  *
  * @function Spring.GetPlayerStatistics
- * @param playerID number
- * @return nil|number mousePixels nil when invalid playerID
+ * @param playerID integer
+ * @return number? mousePixels nil when invalid playerID
  * @return number mouseClicks
  * @return number keyPresses
  * @return number numCommands
@@ -4281,29 +4225,28 @@ int LuaUnsyncedRead::GetPlayerStatistics(lua_State* L)
 ******************************************************************************/
 
 
-/*** Configuration spec
- *
- * @table configSpec
+/*** Configuration
  *
  * Contains data about a configuration, only name and type are guaranteed
- *
- * @param name string
- * @param type string
- * @param description string
- * @param defaultValue string
- * @param minimumValue string
- * @param maximumValue string
- * @param safemodeValue string
- * @param declarationFile string
- * @param declarationLine string
- * @param readOnly boolean
+ * 
+ * @class Configuration
+ * @field name string
+ * @field type string
+ * @field description string
+ * @field defaultValue string
+ * @field minimumValue string
+ * @field maximumValue string
+ * @field safemodeValue string
+ * @field declarationFile string
+ * @field declarationLine string
+ * @field readOnly boolean
  */
 
 
 /***
  *
  * @function Spring.GetConfigParams
- * @return configSpec[]
+ * @return Configuration[]
  */
 int LuaUnsyncedRead::GetConfigParams(lua_State* L)
 {
@@ -4379,7 +4322,7 @@ int LuaUnsyncedRead::GetConfigParams(lua_State* L)
  * @function Spring.GetConfigInt
  * @param name string
  * @tparam[opt=0] number|nil default
- * @return nil|number configInt
+ * @return number? configInt
  */
 int LuaUnsyncedRead::GetConfigInt(lua_State* L)
 {
@@ -4400,7 +4343,7 @@ int LuaUnsyncedRead::GetConfigInt(lua_State* L)
  * @function Spring.GetConfigFloat
  * @param name string
  * @tparam[opt=0] number|nil default
- * @return nil|number configFloat
+ * @return number? configFloat
  */
 int LuaUnsyncedRead::GetConfigFloat(lua_State* L)
 {
@@ -4421,7 +4364,7 @@ int LuaUnsyncedRead::GetConfigFloat(lua_State* L)
  * @function Spring.GetConfigString
  * @param name string
  * @tparam[opt=""] string|nil default
- * @return nil|number configString
+ * @return number? configString
  */
 int LuaUnsyncedRead::GetConfigString(lua_State* L)
 {
@@ -4502,8 +4445,8 @@ int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalMiddlePos
- * @param decalID number
- * @return nil|number posX
+ * @param decalID integer
+ * @return number? posX
  * @return number posZ
  */
 int LuaUnsyncedRead::GetGroundDecalMiddlePos(lua_State* L)
@@ -4523,8 +4466,8 @@ int LuaUnsyncedRead::GetGroundDecalMiddlePos(lua_State* L)
 /***
  *
  * @function Spring.GetDecalQuadPos
- * @param decalID number
- * @return nil|number posTL.x
+ * @param decalID integer
+ * @return number? posTL.x
  * @return number posTL.z
  * @return number posTR.x
  * @return number posTR.z
@@ -4556,8 +4499,8 @@ int LuaUnsyncedRead::GetGroundDecalQuadPos(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalSizeAndHeight
- * @param decalID number
- * @return nil|number sizeX
+ * @param decalID integer
+ * @return number? sizeX
  * @return number sizeY
  * @return number projCubeHeight
  */
@@ -4580,8 +4523,8 @@ int LuaUnsyncedRead::GetGroundDecalSizeAndHeight(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalRotation
- * @param decalID number
- * @return nil|number rotation in radians
+ * @param decalID integer
+ * @return number? rotation in radians
  */
 int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
 {
@@ -4599,7 +4542,7 @@ int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalTexture
- * @param decalID number
+ * @param decalID integer
  * @param isMainTex boolean? (Default: true) If false, it gets the normals/glow map
  * @return nil|string texture
  */
@@ -4629,8 +4572,8 @@ int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalTextureParams
- * @param decalID number
- * @return nil|number texWrapDistance if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
+ * @param decalID integer
+ * @return number? texWrapDistance if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
  * @return number texTraveledDistance shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
  */
 int LuaUnsyncedRead::GetGroundDecalTextureParams(lua_State* L)
@@ -4650,8 +4593,8 @@ int LuaUnsyncedRead::GetGroundDecalTextureParams(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalAlpha
- * @param decalID number
- * @return nil|number alpha Between 0 and 1
+ * @param decalID integer
+ * @return number? alpha Between 0 and 1
  * @return number alphaFalloff Between 0 and 1, per second
  */
 int LuaUnsyncedRead::GetGroundDecalAlpha(lua_State* L)
@@ -4673,8 +4616,8 @@ int LuaUnsyncedRead::GetGroundDecalAlpha(lua_State* L)
  *
  * If all three equal 0, the decal follows the normals of ground at midpoint
  *
- * @param decalID number
- * @return nil|number normal.x
+ * @param decalID integer
+ * @return number? normal.x
  * @return number normal.y
  * @return number normal.z
  */
@@ -4697,8 +4640,8 @@ int LuaUnsyncedRead::GetGroundDecalNormal(lua_State* L)
  * @function Spring.GetGroundDecalTint
  * Gets the tint of the ground decal.
  * A color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
- * @param decalID number
- * @return nil|number tintR
+ * @param decalID integer
+ * @return number? tintR
  * @return number tintG
  * @return number tintB
  * @return number tintA
@@ -4723,8 +4666,8 @@ int LuaUnsyncedRead::GetGroundDecalTint(lua_State* L)
  *
  * @function Spring.GetGroundDecalMisc
  * Returns less important parameters of a ground decal
- * @param decalID number
- * @return nil|number dotElimExp
+ * @param decalID integer
+ * @return number? dotElimExp
  * @return number refHeight
  * @return number minHeight
  * @return number maxHeight
@@ -4751,8 +4694,8 @@ int LuaUnsyncedRead::GetGroundDecalMisc(lua_State* L)
  *
  * Min can be not equal to max for "gradient" style decals, e.g. unit tracks
  *
- * @param decalID number
- * @return nil|number creationFrameMin
+ * @param decalID integer
+ * @return number? creationFrameMin
  * @return number creationFrameMax
  */
 int LuaUnsyncedRead::GetGroundDecalCreationFrame(lua_State* L)
@@ -4772,8 +4715,8 @@ int LuaUnsyncedRead::GetGroundDecalCreationFrame(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalOwner
- * @param decalID number
- * @return nil|number unitID|number featureID(+MAX_UNITS)
+ * @param decalID integer
+ * @return number? unitID|number featureID(+MAX_UNITS)
  */
 int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 {
@@ -4793,7 +4736,7 @@ int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 /***
  *
  * @function Spring.GetGroundDecalType
- * @param decalID number
+ * @param decalID integer
  * @return nil|string type "explosion"|"plate"|"lua"|"track"|"unknown"
  */
 int LuaUnsyncedRead::GetGroundDecalType(lua_State* L)
@@ -4836,7 +4779,7 @@ int LuaUnsyncedRead::GetGroundDecalType(lua_State* L)
  *
  * @function Spring.GetSyncedGCInfo
  * @param collectGC boolean? (Default: false) collect before returning metric
- * @return nil|number GC values are expressed in Kbytes: #bytes/2^10
+ * @return number? GC values are expressed in Kbytes: #bytes/2^10
  */
 int LuaUnsyncedRead::GetSyncedGCInfo(lua_State* L) {
 	if (luaRules == nullptr)
@@ -4862,8 +4805,8 @@ int LuaUnsyncedRead::GetSyncedGCInfo(lua_State* L) {
 /***
  *
  * @function Spring.SolveNURBSCurve
- * @param groupID number
- * @return nil|number[] unitIDs
+ * @param groupID integer
+ * @return number[]? unitIDs
  */
 int LuaUnsyncedRead::SolveNURBSCurve(lua_State* L)
 {
