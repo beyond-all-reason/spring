@@ -1000,6 +1000,10 @@ int LuaSyncedCtrl::SetWind(lua_State* L)
  */
 
 /**
+ * @alias StorageName "metalStorage"|"energyStorage"|"ms"|"es"
+ */
+	
+/**
  * @alias ResourceUsage table<ResourceName, number>
  */
 
@@ -1044,7 +1048,7 @@ int LuaSyncedCtrl::AddTeamResource(lua_State* L)
  *
  * @function Spring.UseTeamResource
  * @param teamID integer
- * @param type "metal"|"energy" Resource type.
+ * @param type ResourceName Resource type.
  * @param amount number Amount of resource to use.
  * @return boolean hadEnough
  * True if enough of the resource type was available and was consumed, otherwise false.
@@ -1138,7 +1142,7 @@ int LuaSyncedCtrl::UseTeamResource(lua_State* L)
 /***
  * @function Spring.SetTeamResource
  * @param teamID integer
- * @param resource ResourceName
+ * @param resource ResourceName|StorageName
  * @param amount number
  * @return nil
  */
@@ -1189,7 +1193,7 @@ int LuaSyncedCtrl::SetTeamResource(lua_State* L)
  *
  * @function Spring.SetTeamShareLevel
  * @param teamID integer
- * @param type string "metal" | "energy"
+ * @param type ResourceName
  * @param amount number
  * @return nil
  */
@@ -1225,9 +1229,9 @@ int LuaSyncedCtrl::SetTeamShareLevel(lua_State* L)
 /*** Transfers resources between two teams.
  *
  * @function Spring.ShareTeamResource
- * @param teamID_src number
- * @param teamID_recv number
- * @param type string "metal" | "energy"
+ * @param teamID_src integer
+ * @param teamID_recv integer
+ * @param type ResourceName
  * @param amount number
  * @return nil
  */
