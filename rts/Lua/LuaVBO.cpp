@@ -120,11 +120,6 @@ LuaVBOs::~LuaVBOs()
 }
 
 /***
- * VBO reference
- * @class VBO
- */
-
-/***
  * @alias GLBufferType
  * | GLenum.ARRAY_BUFFER
  * | GLenum.ELEMENT_ARRAY_BUFFER
