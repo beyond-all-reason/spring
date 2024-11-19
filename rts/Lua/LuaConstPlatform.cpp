@@ -18,7 +18,7 @@
  * @field gpu string Full GPU device name
  * @field gpuVendor "Nvidia"|"Intel"|"ATI"|"Mesa"|"Unknown"
  * @field glVersionShort string `major.minor.buildNumber`
- * @field glslVersionShort strin `major.minor`
+ * @field glslVersionShort string `major.minor`
  * @field glVersion string Full version
  * @field glVendor string
  * @field glRenderer string
