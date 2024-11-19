@@ -15,14 +15,14 @@
 
 #include "LuaUtils.h"
 
-
-/******************************************************************************
+/***
  * Vertex Array Object
- * @classmod VAO
- *
+ * 
+ * @class VAO
+ * @table VAO
  * @see LuaVAO.GetVAO
  * @see rts/Lua/LuaVAOImpl.cpp
-******************************************************************************/
+ */
 
 
 LuaVAOImpl::LuaVAOImpl()
