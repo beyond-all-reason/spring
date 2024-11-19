@@ -458,13 +458,13 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
 
 /**
  * @alias VBODataType
- * | GLenum.BYTE
- * | GLenum.UNSIGNED_BYTE
- * | GLenum.SHORT
- * | GLenum.UNSIGNED_SHORT
- * | GLenum.INT
- * | GLenum.UNSIGNED_INT
- * | GLenum.FLOAT
+ * | GL.BYTE
+ * | GL.UNSIGNED_BYTE
+ * | GL.SHORT
+ * | GL.UNSIGNED_SHORT
+ * | GL.INT
+ * | GL.UNSIGNED_INT
+ * | GL.FLOAT
  */
 
 /**
