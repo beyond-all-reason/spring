@@ -3328,20 +3328,6 @@ string CLuaHandle::GetTooltip(int x, int y)
 	return retval;
 }
 
-
-/*** Parameters for command options
- *
- * @class CommandOptions
- *
- * @field coded integer
- * @field alt boolean
- * @field ctrl boolean
- * @field shift boolean
- * @field right boolean
- * @field meta boolean
- * @field internal boolean
- */
-
 /*** Called when a command is issued.
  *
  * @function ActiveCommandChanged
