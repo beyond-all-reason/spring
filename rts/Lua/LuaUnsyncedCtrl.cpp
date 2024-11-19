@@ -119,21 +119,6 @@
 ******************************************************************************/
 
 
-/*** Color triple (RGB)
- * @class rgb
- * @field r number
- * @field g number
- * @field b number
- */
-
-/*** Color quadruple (RGBA)
- * @class rgba
- * @field r number
- * @field g number
- * @field b number
- * @field a number
- */
-
 bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 {
 	REGISTER_LUA_CFUNC(Ping);

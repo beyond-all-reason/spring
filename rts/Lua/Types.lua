@@ -1,0 +1,14 @@
+---Color triple (RGB)
+---
+---@class rgb
+---@field r number
+---@field g number
+---@field b number
+
+---Color quadruple (RGBA)
+---
+---@class rgba
+---@field r number
+---@field g number
+---@field b number
+---@field a number
