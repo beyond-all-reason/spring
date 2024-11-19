@@ -526,7 +526,7 @@ int LuaFBOs::DeleteFBO(lua_State* L)
 /***
  * @function gl.IsValidFBO
  * @param fbo Fbo
- * @param target GLenum?
+ * @param target GL?
  * @return boolean valid
  * @return number? status
  */
@@ -568,7 +568,7 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 /***
  * @function gl.ActiveFBO
  * @param fbo Fbo
- * @param target GLenum?
+ * @param target GL?
  * @param identities boolean?
  * @param lua_function function?
  * @param arg1 any?
@@ -643,14 +643,14 @@ int LuaFBOs::ActiveFBO(lua_State* L)
  * 
  * @function gl.RawBindFBO
  * @param fbo nil
- * @param target GLenum? (Default: `GL_FRAMEBUFFER_EXT`)
+ * @param target GL? (Default: `GL_FRAMEBUFFER_EXT`)
  * @param rawFboId integer? (Default: 0)
  * @return nil
  */
 /**
  * @function gl.RawBindFBO
  * @param fbo Fbo
- * @param target GLenum? (Default: `fbo.target`)
+ * @param target GL? (Default: `fbo.target`)
  * @return number previouslyBoundRawFboId
  */
 int LuaFBOs::RawBindFBO(lua_State* L)

@@ -24,8 +24,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	 */
 
 	/***
-	 * @enum GLenum
-	 * @table GL
+	 * @enum GL
 	 *
 	 * @field POINTS number
 	 * @field LINES number

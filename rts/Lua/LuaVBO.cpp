@@ -121,10 +121,10 @@ LuaVBOs::~LuaVBOs()
 
 /***
  * @alias GLBufferType
- * | GLenum.ARRAY_BUFFER
- * | GLenum.ELEMENT_ARRAY_BUFFER
- * | GLenum.UNIFORM_BUFFER
- * | GLenum.SHADER_STORAGE_BUFFER
+ * | GL.ARRAY_BUFFER
+ * | GL.ELEMENT_ARRAY_BUFFER
+ * | GL.UNIFORM_BUFFER
+ * | GL.SHADER_STORAGE_BUFFER
  */
 
 
@@ -140,13 +140,16 @@ LuaVBOs::~LuaVBOs()
  * 
  * @param bufferType GLBufferType? (Default: GL.ARRAY_BUFFER)
  *
- * Defaults to `GL.ARRAY_BUFFER`, which you should use for vertex data, and
- * `GL.ELEMENT_ARRAY_BUFFER` should be used for vertex indices.
+ * Use `GL.ARRAY_BUFFER` for vertex data and
+ * `GL.ELEMENT_ARRAY_BUFFER` for vertex indices.
  * 
  * @param freqUpdated boolean? (Default: true)
+ * 
  * `true` to updated frequently, `false` to update only once.
  * 
- * @return VBO? The VBO ref on success, or nil if not supported or an error occurred.
+ * @return VBO? VBO
+ * 
+ * The VBO ref on success, or nil if not supported or an error occurred.
  * 
  * @see GL.OpenGL_Buffer_Types
  */

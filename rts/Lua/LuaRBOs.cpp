@@ -139,8 +139,8 @@ int LuaRBOs::meta_newindex(lua_State* L)
 /***
  * User Data RBO
  * @class RBO
- * @field target GLenum
- * @field format GLenum
+ * @field target GL
+ * @field format GL
  * @field xsize integer
  * @field ysize integer
  * @field valid boolean
@@ -149,8 +149,8 @@ int LuaRBOs::meta_newindex(lua_State* L)
 
 /**
  * @class CreateRBOData
- * @field target GLenum
- * @field format GLenum
+ * @field target GL
+ * @field format GL
  * @field samples number? any number here will result in creation of multisampled RBO
  */
 
