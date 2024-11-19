@@ -513,23 +513,32 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 	}
 
 	// search fonts that fit our request
+	typedef std::unique_ptr<FcFontSet, decltype(&FcFontSetDestroy)> ScopedFcFontSet;
+
+	int nFonts = 0;
+	bool loadMore = true;
 	FcResult res;
-	FcFontSet *sets[] = { FtLibraryHandler::GetGameFontSet(),
-			      FcConfigGetFonts(FtLibraryHandler::GetFCConfig(), FcSetApplication),
-			      FcConfigGetFonts(FtLibraryHandler::GetFCConfig(), FcSetSystem) };
-	auto fs = spring::ScopedResource(
-		FcFontSetSort(FtLibraryHandler::GetFCConfig(), sets, 3, pattern, FcFalse, nullptr, &res),
-		[](FcFontSet* f) { if (f) FcFontSetDestroy(f); }
-	);
 
-	if (fs == nullptr)
-		return nullptr;
-	if (res != FcResultMatch)
-		return nullptr;
+	// first search game fonts
+	FcFontSet *sets[] = { FtLibraryHandler::GetGameFontSet() };
+	ScopedFcFontSet fs(FcFontSetSort(FtLibraryHandler::GetFCConfig(), sets, 1, pattern, FcFalse, nullptr, &res), &FcFontSetDestroy);
 
-	// iterate returned font list
-	for (int i = 0; i < fs->nfont; ++i) {
-		const FcPattern* font = fs->fonts[i];
+	if (fs != nullptr && res == FcResultMatch)
+		nFonts = fs->nfont;
+
+	// iterate returned font list, and perform system font search when in need of more fonts
+	int i = 0;
+	while (i < nFonts || loadMore) {
+		if (i == nFonts) {
+			// now search system fonts
+			fs = ScopedFcFontSet(FcFontSort(FtLibraryHandler::GetFCConfig(), pattern, FcFalse, nullptr, &res), &FcFontSetDestroy);
+			if (fs == nullptr || res != FcResultMatch)
+				return nullptr;
+			loadMore = false;
+			nFonts = fs->nfont;
+			i = 0;
+		}
+		const FcPattern* font = fs->fonts[i++];
 
 		FcChar8* cFilename = nullptr;
 		FcResult r = FcPatternGetString(font, FC_FILE, 0, &cFilename);
