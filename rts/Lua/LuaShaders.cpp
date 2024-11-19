@@ -917,12 +917,22 @@ static const char* UniformTypeString(GLenum type)
 	}
 }
 
+/***
+ * @class ActiveUniform
+ * @field name string
+ * @field type string String name of `GL_*` constant.
+ * @field length integer The character length of `name`.
+ * @field size integer
+ * @field location GL
+ */
 
-/*** Query the active (actually used) uniforms of a shader and identify their names, types (float, int, uint) and sizes (float, vec4, ...).
+/***
+ * Query the active (actually used) uniforms of a shader and identify their
+ * names, types (float, int, uint) and sizes (float, vec4, ...).
  *
  * @function gl.GetActiveUniforms
  * @param shaderID integer
- * @return table `ActiveUniforms = { { name = "name", type = "type", length = number length, size = number size }, ...}`
+ * @return ActiveUniform[] activeUniforms
  */
 int LuaShaders::GetActiveUniforms(lua_State* L)
 {
@@ -951,12 +961,14 @@ int LuaShaders::GetActiveUniforms(lua_State* L)
 }
 
 
-/*** Returns the locationID of a shaders uniform. Needed for changing uniform values with @function gl.Uniform.
+/***
+ * Returns the locationID of a shaders uniform. Needed for changing uniform
+ * values with function `gl.Uniform`.
  *
  * @function gl.GetUniformLocation
  * @param shaderID integer
  * @param name string
- * @return integer locationID
+ * @return GL locationID
  */
 int LuaShaders::GetUniformLocation(lua_State* L)
 {
@@ -1033,7 +1045,7 @@ int LuaShaders::SetFeatureBufferUniforms(lua_State* L) { return SetObjectBufferU
  * shader. Shader must be activated before setting uniforms.
  *
  * @function gl.Uniform
- * @param locationID integer|string uniformName
+ * @param locationID GL|string uniformName
  * @param f1 number
  * @param f2 number?
  * @param f3 number?
