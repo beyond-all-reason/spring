@@ -6,6 +6,13 @@
       "?",
       "?.lua"
   ],
+  "workspace.library": [
+    // Only add the generator output as "library" to prevent it from being
+    // modified by refactor commands.
+    //
+    // Refactoring is valid on the hand-written library files.
+    "rts/Lua/library/generated"
+	],
   "runtime.special": {
       "VFS.Include": "require",
       "include": "require",
