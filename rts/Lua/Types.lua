@@ -108,3 +108,13 @@
 ---@field showUnique boolean?
 ---@field onlyTexture boolean?
 ---@field params table<string, string>?
+
+--------------------------------------------------------------------------------
+-- Resources
+--------------------------------------------------------------------------------
+
+---@alias ResourceName "metal"|"energy"|"m"|"e"
+
+---@alias StorageName "metalStorage"|"energyStorage"|"ms"|"es"
+
+---@alias ResourceUsage table<ResourceName, number>

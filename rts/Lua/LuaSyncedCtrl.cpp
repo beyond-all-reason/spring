@@ -995,18 +995,6 @@ int LuaSyncedCtrl::SetWind(lua_State* L)
 	return 0;
 }
 
-/**
- * @alias ResourceName "metal"|"energy"|"m"|"e"
- */
-
-/**
- * @alias StorageName "metalStorage"|"energyStorage"|"ms"|"es"
- */
-	
-/**
- * @alias ResourceUsage table<ResourceName, number>
- */
-
 /*** Adds metal or energy resources to the specified team.
  *
  * @function Spring.AddTeamResource

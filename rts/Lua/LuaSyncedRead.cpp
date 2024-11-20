@@ -1893,7 +1893,7 @@ int LuaSyncedRead::GetTeamUnitStats(lua_State* L)
  *
  * @function Spring.GetTeamResourceStats
  * @param teamID integer
- * @param resource string one of "m(etal)?|e(nergy)?"
+ * @param resource ResourceName
  * @return number? used
  * @return number produced
  * @return number excessed
