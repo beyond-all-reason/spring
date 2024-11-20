@@ -961,12 +961,15 @@ int LuaSyncedRead::GetWind(lua_State* L)
  * The advantage of it is that it can be read from anywhere (even from LuaUI and AIs!)
 ******************************************************************************/
 
+/**
+ * @class RulesParams : table<string, integer>
+ */
 
 /***
  *
  * @function Spring.GetGameRulesParams
  *
- * @return [string] = number[] rulesParams map with rules names as key and values as values
+ * @return RulesParams rulesParams map with rules names as key and values as values
  */
 int LuaSyncedRead::GetGameRulesParams(lua_State* L)
 {
@@ -981,7 +984,7 @@ int LuaSyncedRead::GetGameRulesParams(lua_State* L)
  *
  * @param teamID integer
  *
- * @return [string] = number[] rulesParams map with rules names as key and values as values
+ * @return RulesParams rulesParams map with rules names as key and values as values
  */
 int LuaSyncedRead::GetTeamRulesParams(lua_State* L)
 {
@@ -1007,7 +1010,7 @@ int LuaSyncedRead::GetTeamRulesParams(lua_State* L)
  *
  * @param playerID integer
  *
- * @return [string] = number[] rulesParams map with rules names as key and values as values
+ * @return RulesParams rulesParams map with rules names as key and values as values
  */
 int LuaSyncedRead::GetPlayerRulesParams(lua_State* L)
 {
@@ -1076,7 +1079,7 @@ static int GetUnitRulesParamLosMask(lua_State* L, const CUnit* unit)
  *
  * @param unitID integer
  *
- * @return [string] = number[] rulesParams map with rules names as key and values as values
+ * @return RulesParams rulesParams map with rules names as key and values as values
  */
 int LuaSyncedRead::GetUnitRulesParams(lua_State* L)
 {
@@ -1094,7 +1097,7 @@ int LuaSyncedRead::GetUnitRulesParams(lua_State* L)
  *
  * @param featureID integer
  *
- * @return [string] = number[] rulesParams map with rules names as key and values as values
+ * @return RulesParams rulesParams map with rules names as key and values as values
  */
 int LuaSyncedRead::GetFeatureRulesParams(lua_State* L)
 {
