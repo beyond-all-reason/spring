@@ -423,6 +423,7 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 
 	} catch (const content_error& ex) {
 		auto lock = CModelsLock::GetScopedLock();
+		LoadDummyModel(model);
 		errors.emplace_back(name, ex.what());
 	}
 }
