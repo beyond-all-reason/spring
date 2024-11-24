@@ -48,7 +48,7 @@ else ()
 TARGET_LINK_LIBRARIES(lua)
 endif ()
 
-target_link_libraries(lua GLEW::GLEW)
+target_link_libraries(lua $<COMPILE_ONLY:GLEW::GLEW>)
 target_include_directories(lua PUBLIC include)
 
 if (UNIX)

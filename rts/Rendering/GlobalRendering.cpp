@@ -13,6 +13,7 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GL/glExtra.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
 #include "System/EventHandler.h"
@@ -45,6 +46,7 @@ CONFIG(bool, DebugGLStacktraces).defaultValue(false).description("Create a stack
 CONFIG(int, GLContextMajorVersion).defaultValue(3).minimumValue(3).maximumValue(4);
 CONFIG(int, GLContextMinorVersion).defaultValue(0).minimumValue(0).maximumValue(5);
 CONFIG(int, MSAALevel).defaultValue(0).minimumValue(0).maximumValue(32).description("Enables multisample anti-aliasing; 'level' is the number of samples used.");
+CONFIG(float, MinSampleShadingRate).defaultValue(0.0f).minimumValue(0.0f).maximumValue(1.0f).description("A value of 1.0 indicates that each sample in the framebuffer should be independently shaded. A value of 0.0 effectively allows the GL to ignore sample rate shading. Any value between 0.0 and 1.0 allows the GL to shade only a subset of the total samples within each covered fragment.");
 
 CONFIG(int, ForceDisablePersistentMapping).defaultValue(0).minimumValue(0).maximumValue(1);
 CONFIG(int, ForceDisableExplicitAttribLocs).defaultValue(0).minimumValue(0).maximumValue(1);
@@ -161,6 +163,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(forceSwapBuffers),
 
 	CR_IGNORED(msaaLevel),
+	CR_IGNORED(minSampleShadingRate),
 	CR_IGNORED(maxTextureSize),
 	CR_IGNORED(maxFragShSlots),
 	CR_IGNORED(maxCombShSlots),
@@ -273,6 +276,7 @@ CGlobalRendering::CGlobalRendering()
 
 	// fallback
 	, msaaLevel(configHandler->GetInt("MSAALevel"))
+	, minSampleShadingRate(configHandler->GetFloat("MinSampleShadingRate"))
 	, maxTextureSize(2048)
 	, maxFragShSlots(8)
 	, maxCombShSlots(8)
@@ -365,6 +369,7 @@ void CGlobalRendering::PreKill()
 {
 	UniformConstants::GetInstance().Kill(); //unsafe to kill in ~CGlobalRendering()
 	RenderBuffer::KillStatic();
+	GL::shapes.Kill();
 	CShaderHandler::FreeInstance();
 }
 
@@ -629,6 +634,7 @@ void CGlobalRendering::PostInit() {
 	ModelUniformData::Init();
 	glGenQueries(glTimerQueries.size(), glTimerQueries.data());
 	RenderBuffer::InitStatic();
+	GL::shapes.Init();
 
 	UpdateTimer();
 }
@@ -1657,11 +1663,18 @@ void CGlobalRendering::InitGLState()
 	msaaLevel *= CheckGLMultiSampling();
 	ToggleMultisampling();
 
+	if(msaaLevel > 0 && minSampleShadingRate > 0.0f) {
+		// Enable sample shading
+		glEnable(GL_SAMPLE_SHADING_ARB);
+		if (GLEW_VERSION_4_0) {
+			glMinSampleShading(minSampleShadingRate); 
+		}
+	}
+
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	LoadViewport();
-	gluPerspective(45.0f, aspectRatio, minViewRange, maxViewRange);
 
 	// this does not accomplish much
 	// SwapBuffers(true, true);
@@ -1670,8 +1683,10 @@ void CGlobalRendering::InitGLState()
 
 void CGlobalRendering::ToggleMultisampling() const
 {
-	static constexpr std::array<void(*)(), 2> ToggleFuncs = { []() { glDisable(GL_MULTISAMPLE); }, []() { glEnable(GL_MULTISAMPLE); } };
-	ToggleFuncs[msaaLevel > 0]();
+	if (msaaLevel > 0)
+		glEnable(GL_MULTISAMPLE);
+	else
+		glDisable(GL_MULTISAMPLE);
 }
 
 bool CGlobalRendering::CheckShaderGL4() const
@@ -1710,18 +1725,18 @@ void main()
 	fragColor = vec4(1.0, 1.0, 1.0, vFloat);
 }
 )";
+	auto testShader = Shader::GLSLProgramObject("[GL-TestShader]");
+	// testShader.Release() as part of the ~GLSLProgramObject() will delete GLSLShaderObject's
+	testShader.AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
+	testShader.AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
 
-	auto testShader = std::make_unique<Shader::GLSLProgramObject>("[GL-TestShader]");
-	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
-	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
-	testShader->SetLogReporting(false); //no need to spam guinea pig shader errors
-	testShader->Link();
-	testShader->Enable();
-	testShader->Disable();
-	testShader->Validate();
+	testShader.SetLogReporting(false); //no need to spam guinea pig shader errors
+	testShader.Link();
+	testShader.Enable();
+	testShader.Disable();
+	testShader.Validate();
 
-	return testShader->IsValid();
-	//no need for explicit destuction here
+	return testShader.IsValid();
 #else
 	return false;
 #endif

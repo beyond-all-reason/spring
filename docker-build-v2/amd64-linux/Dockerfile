@@ -33,7 +33,7 @@ RUN git clone --depth 1 --branch v1.5.6 https://github.com/facebook/zstd.git \
 
 RUN pip3 install --upgrade pip \
  && pip3 install scikit-build \
- && pip3 install cmake==3.25.*
+ && pip3 install cmake==3.27.*
 
 WORKDIR /build
 RUN mkdir src cache out artifacts && chmod a+rwx cache out artifacts

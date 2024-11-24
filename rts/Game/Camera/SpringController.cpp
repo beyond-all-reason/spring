@@ -31,7 +31,7 @@ namespace {
 CONFIG(bool,  CamSpringEnabled).defaultValue(true).headlessValue(false);
 CONFIG(int,   CamSpringScrollSpeed).defaultValue(10);
 CONFIG(float, CamSpringFOV).defaultValue(45.0f);
-CONFIG(float, CamSpringMinZoomDistance).defaultValue(20.0f).description("Minimum camera zoom distance");
+CONFIG(float, CamSpringMinZoomDistance).defaultValue(20.0f).description("Minimum camera zoom distance, note this is the distance from frustrum location to the ground in the direction of view");
 CONFIG(bool,  CamSpringLockCardinalDirections).defaultValue(true).description("Whether cardinal directions should be `locked` for a short time when rotating.");
 CONFIG(bool,  CamSpringZoomInToMousePos).defaultValue(true);
 CONFIG(bool,  CamSpringZoomOutFromMousePos).defaultValue(false);

@@ -142,7 +142,7 @@ namespace Shader {
 
 		void SetLogReporting(bool b, bool shObjects = true);
 
-		ShaderEnabledToken EnableScoped() {
+		[[nodiscard]] ShaderEnabledToken EnableScoped() {
 			return ShaderEnabledToken(this);
 		}
 		virtual void Enable();

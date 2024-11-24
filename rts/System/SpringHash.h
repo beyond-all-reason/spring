@@ -8,6 +8,7 @@
 #include <string>
 #include <type_traits>
 #include <memory>
+#include <bit>
 
 namespace spring {
 	static inline uint32_t LiteHash(const void* p, unsigned size, uint32_t cs0 = 0) {
@@ -38,7 +39,7 @@ namespace spring {
 	template<>
 	struct synced_hash<uint64_t> {
 	public:
-		uint32_t operator()(const int64_t& i) const
+		uint32_t operator()(const uint64_t& i) const
 		{
 			return static_cast<uint32_t>(i) ^ static_cast<uint32_t>(i >> 32);
 		}
@@ -64,18 +65,38 @@ namespace spring {
 		}
 	};
 
+	template<typename ... Ts>
+	struct synced_hash<std::tuple<Ts ...>> {
+	public:
+		uint32_t operator()(const std::tuple<Ts ...>& t) const
+		{
+			uint32_t result = 0;
+			std::apply([&result]<typename ... Tss>(const Tss&... args) { ((result ^= synced_hash<Tss>()(args)), ...); }, t);
+			return result;
+		}
+	};
+
 	// Best effort implementation for types not covered explicitly
 	template<typename T>
 	inline uint32_t synced_hash<T>::operator()(const T& s) const {
-		if constexpr (std::is_integral<T>::value && sizeof(T) <= sizeof(uint32_t)) {
-			return static_cast<uint32_t>(s);
-		}
-		else {
-			static_assert(std::has_unique_object_representations<T>::value, "synced_hash not auto-implemented for this type");
-			return LiteHash(s);
+		if constexpr (sizeof(T) <= sizeof(uint32_t)) {
+			if constexpr (std::is_integral_v<T>) {
+				return static_cast<uint32_t>(s);
+			} else {
+				static_assert(std::has_unique_object_representations_v<T>, "synced_hash not auto-implemented for this type");
+				return std::bit_cast<uint32_t>(s);
+			}
+		} else {
+			if constexpr (std::is_pointer_v<T>) {
+				synced_hash<uintptr_t> h;
+				return h(std::bit_cast<uintptr_t>(s));
+			}
+			else {
+				static_assert(std::has_unique_object_representations_v<T>, "synced_hash not auto-implemented for this type");
+				return LiteHash(s);
+			}
 		}
 	}
-
 }
 
 #endif //_SPRING_HASH_H_
