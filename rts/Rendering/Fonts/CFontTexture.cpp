@@ -120,7 +120,8 @@ public:
 				return;
 			}
 
-			config = FcConfigCreate();
+			FcConfigEnableHome(FcFalse);
+			config = FcInitLoadConfigAndFonts();
 			if (!config)
 				return;
 
@@ -182,34 +183,24 @@ public:
 			return false;
 		}
 
-		char osFontsDir[8192];
-
-		#ifdef _WIN32
-			ExpandEnvironmentStrings("%WINDIR%\\fonts", osFontsDir, sizeof(osFontsDir)); // expands %HOME% etc.
-		#else
-			strncpy(osFontsDir, "/etc/fonts/", sizeof(osFontsDir));
-		#endif
-
 		FcConfigAppFontClear(GetFCConfig());
 		FcConfigAppFontAddDir(GetFCConfig(), reinterpret_cast<const FcChar8*>("fonts"));
-		FcConfigAppFontAddDir(GetFCConfig(), reinterpret_cast<const FcChar8*>(osFontsDir));
 
 		{
 			auto dirs = FcConfigGetCacheDirs(GetFCConfig());
 			FcStrListFirst(dirs);
-			for (FcChar8* dir = FcStrListNext(dirs), *prevDir = nullptr; dir != nullptr && dir != prevDir; ) {
-				prevDir = dir;
+			for (FcChar8* dir = FcStrListNext(dirs); dir != nullptr; dir = FcStrListNext(dirs)) {
 				LOG_MSG("[%s] Using Fontconfig cache dir \"%s\"", false, __func__, dir);
 			}
 			FcStrListDone(dirs);
 		}
 
 		if (FtLibraryHandler::CheckFontConfig()) {
-			LOG_MSG("[%s] fontconfig for directory \"%s\" up to date", false, __func__, osFontsDir);
+			LOG_MSG("[%s] fontconfig up to date", false, __func__);
 			return true;
 		}
 
-		LOG_MSG("[%s] creating fontconfig for directory \"%s\"", false, __func__, osFontsDir);
+		LOG_MSG("[%s] creating fontconfig", false, __func__);
 
 		return FcConfigBuildFonts(GetFCConfig());
 	#endif
@@ -427,7 +418,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 		FcBool outline = FcFalse;
 
 		FcChar8* family = nullptr;
-		FcChar8* foundry = nullptr;
 
 		const FcChar8* ftname = reinterpret_cast<const FcChar8*>("not used");
 
@@ -448,7 +438,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 			FcPatternGetDouble( origPattern, FC_PIXEL_SIZE, 0, &pixelSize);
 
 			FcPatternGetString( origPattern, FC_FAMILY , 0, &family );
-			FcPatternGetString( origPattern, FC_FOUNDRY, 0, &foundry);
 
 		}
 
@@ -461,8 +450,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 		if (family)
 			FcPatternAddString(pattern, FC_FAMILY, family);
-		if (foundry)
-			FcPatternAddString(pattern, FC_FOUNDRY, foundry);
 	}
 
 	FcDefaultSubstitute(pattern);
