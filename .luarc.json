@@ -3,8 +3,8 @@
   "runtime.version": "Lua 5.1",
   "completion.requireSeparator": "/",
   "runtime.path": [
-      "?",
-      "?.lua"
+    "?",
+    "?.lua"
   ],
   "workspace.library": [
     // Only add the generator output as "library" to prevent it from being
@@ -14,8 +14,8 @@
     "rts/Lua/library/generated"
 	],
   "runtime.special": {
-      "VFS.Include": "require",
-      "include": "require",
-      "shard_include": "require"
+    "VFS.Include": "require",
+    "include": "require",
+    "shard_include": "require"
   }
 }
