@@ -1156,7 +1156,7 @@ bool CGuiHandler::TryTarget(const SCommandDescription& cmdDesc) const
 
 	const float viewRange = camera->GetFarPlaneDist() * 1.4f;
 	const float3 rayOrigin = camera->NearTheaterIntersection(mouse->dir, viewRange);
-	const float dist = TraceRay::GuiTraceRay(rayOrigin, mouse->dir, viewRange, NULL, targetUnit, targetFeature, true);
+	const float dist = TraceRay::GuiTraceRay(rayOrigin, mouse->dir, viewRange, nullptr, targetUnit, targetFeature, true);
 	const float3 groundPos = rayOrigin + mouse->dir * dist;
 
 	if (dist <= 0.0f)
@@ -2354,7 +2354,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 				const CFeature* feature = nullptr;
 				const float viewRange = camera->GetFarPlaneDist() * 1.4f;
 				const float3 rayOrigin = camera->NearTheaterIntersection(mouseDir, viewRange);
-				const float dist2 = TraceRay::GuiTraceRay(rayOrigin, mouseDir, viewRange, NULL, unit, feature, true);
+				const float dist2 = TraceRay::GuiTraceRay(rayOrigin, mouseDir, viewRange, nullptr, unit, feature, true);
 
 				if (dist2 > (camera->GetFarPlaneDist() * 1.4f - 300) && (commands[tempInCommand].type != CMDTYPE_ICON_UNIT_FEATURE_OR_AREA))
 					return defaultRet;
