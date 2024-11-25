@@ -28,6 +28,7 @@ public:
 
 	void Update();
 	bool AddUnit(CUnit* unit);
+	void MovedUnit(CUnit* unit);
 
 	bool CanAddUnit(int id) const {
 		// do we want to be assigned a random ID and are any left in pool?
@@ -46,6 +47,7 @@ public:
 	unsigned int CalcMaxUnits() const;
 
 	float MaxUnitRadius() const { return maxUnitRadius; }
+	float MaxUnitAltitude() const { return maxUnitAltitude; }
 
 	/// Returns true if a unit of type unitID can be built, false otherwise
 	bool CanBuildUnit(const UnitDef* unitdef, int team) const;
@@ -114,6 +116,10 @@ private:
 	///< largest radius of any unit added so far (some
 	///< spatial query filters in GameHelper use this)
 	float maxUnitRadius = 0.0f;
+
+	///< highest altitude of any unit added so far
+	///< (ray tracing uses this in some cases)
+	float maxUnitAltitude = 0.0f;
 
 	bool inUpdateCall = false;
 };

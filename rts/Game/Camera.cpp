@@ -13,6 +13,7 @@
 #include "System/float3.h"
 #include "System/Matrix44f.h"
 #include "System/Config/ConfigHandler.h"
+#include "Sim/Units/UnitHandler.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -773,11 +774,10 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	return v;
 }
 
-float3 CCamera::PointToMaxUnitAltitude(const float3& point, const float rayLength)
+float3 CCamera::PointToMaxUnitAltitude(const float3& point, const float rayLength, const float maxAltitude)
 {
-	const float maxAltitude = 500.0; // account for max aircraft height above ground
 	const float3 dir = (point-pos).Normalize();
-	float dist = CGround::LinePlaneCol(pos, dir, rayLength, readMap->GetCurrMaxHeight()+maxAltitude);
+	float dist = CGround::LinePlaneCol(pos, dir, rayLength, maxAltitude);
 	if (dist > 0.0)
 		return pos + dir*dist;
 	return point;
@@ -785,8 +785,11 @@ float3 CCamera::PointToMaxUnitAltitude(const float3& point, const float rayLengt
 
 float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength)
 {
-	const float3 fv1 = PointToMaxUnitAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBL), rayLength);
-	const float3 fv2 = PointToMaxUnitAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBR), rayLength);
+	const float maxAltitude = std::max(unitHandler.MaxUnitAltitude(), readMap->GetCurrMaxHeight());
+	if (pos.y < maxAltitude)
+		return pos;
+	const float3 fv1 = PointToMaxUnitAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBL), rayLength, maxAltitude);
+	const float3 fv2 = PointToMaxUnitAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBR), rayLength, maxAltitude);
 	float3 midFv = (fv1+fv2)/2.0;
 	midFv.y = pos.y;
 

@@ -221,7 +221,7 @@ public:
 		return (forward.dot(objPos - pos));
 	}
 
-	float3 PointToMaxUnitAltitude(const float3& point, const float rayLength);
+	float3 PointToMaxUnitAltitude(const float3& point, const float rayLength, const float maxAltitude);
 	float3 NearTheaterIntersection(const float3& dir, const float rayLength);
 
 	/*

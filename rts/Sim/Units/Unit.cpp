@@ -531,6 +531,7 @@ void CUnit::ForcedMove(const float3& newPos)
 
 	eventHandler.UnitMoved(this);
 	quadField.MovedUnit(this);
+	unitHandler.MovedUnit(this);
 }
 
 
@@ -741,6 +742,7 @@ void CUnit::UpdateTransportees()
 		// see ::AttachUnit
 		if (transportee->IsStunned()) {
 			quadField.MovedUnit(transportee);
+			unitHandler.MovedUnit(transportee);
 		}
 	}
 }
