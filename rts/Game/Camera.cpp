@@ -774,13 +774,15 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	return v;
 }
 
-float3 CCamera::PointToMaxUnitAltitude(const float3& point, const float rayLength, const float maxAltitude) const
+bool CCamera::TracePointToMaxAltitude(const float3& point, const float rayLength, const float maxAltitude, float3& result) const
 {
 	const float3 dir = (point-pos).Normalize();
 	float dist = CGround::LinePlaneCol(pos, dir, rayLength, maxAltitude);
-	if (dist > 0.0)
-		return pos + dir*dist;
-	return point;
+	if (dist > 0.0) {
+		result = pos + dir*dist;
+		return true;
+	}
+	return false;
 }
 
 float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength) const
@@ -788,8 +790,13 @@ float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength
 	const float maxAltitude = std::max(unitHandler.MaxUnitAltitude(), readMap->GetCurrMaxHeight());
 	if (pos.y < maxAltitude)
 		return pos;
-	const float3 fv1 = PointToMaxUnitAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBL), rayLength, maxAltitude);
-	const float3 fv2 = PointToMaxUnitAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBR), rayLength, maxAltitude);
+
+	float3 fv1, fv2;
+	const bool res1 = TracePointToMaxAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBL), rayLength, maxAltitude, fv1);
+	const bool res2 = TracePointToMaxAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBR), rayLength, maxAltitude, fv2);
+	if (!res1 || !res2)
+		return pos;
+
 	float3 midFv = (fv1+fv2)/2.0;
 	midFv.y = pos.y;
 
