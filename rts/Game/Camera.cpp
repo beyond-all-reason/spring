@@ -774,7 +774,7 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	return v;
 }
 
-float3 CCamera::PointToMaxUnitAltitude(const float3& point, const float rayLength, const float maxAltitude)
+float3 CCamera::PointToMaxUnitAltitude(const float3& point, const float rayLength, const float maxAltitude) const
 {
 	const float3 dir = (point-pos).Normalize();
 	float dist = CGround::LinePlaneCol(pos, dir, rayLength, maxAltitude);
@@ -783,7 +783,7 @@ float3 CCamera::PointToMaxUnitAltitude(const float3& point, const float rayLengt
 	return point;
 }
 
-float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength)
+float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength) const
 {
 	const float maxAltitude = std::max(unitHandler.MaxUnitAltitude(), readMap->GetCurrMaxHeight());
 	if (pos.y < maxAltitude)
@@ -800,10 +800,10 @@ float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength
 	const float4 nearTheaterPlane = float4(norm.x, norm.y, norm.z, d);
 
 	// intersection
-	float3 xpos;
-	const bool res = RayAndPlaneIntersection(pos, pos+dir*rayLength, nearTheaterPlane, false, xpos);
+	float3 intersection;
+	const bool res = RayAndPlaneIntersection(pos, pos+dir*rayLength, nearTheaterPlane, false, intersection);
 	if (res)
-		return xpos;
+		return intersection;
 	return pos;
 }
 
