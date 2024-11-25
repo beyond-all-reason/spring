@@ -34,6 +34,11 @@ if(DEBUG_GLSTATE)
 	add_definitions(-DDEBUG_GLSTATE)
 endif()
 
+option(DEBUG_DRAW_QUADFIELD "enable DEBUG_DRAW_QUADFIELD" FALSE)
+if(DEBUG_DRAW_QUADFIELD)
+	add_definitions(-DDEBUG_DRAW_QUADFIELD)
+endif()
+
 ### give error when not found
 find_package_static(DevIL REQUIRED)
 
