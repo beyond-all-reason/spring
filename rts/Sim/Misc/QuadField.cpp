@@ -336,8 +336,6 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 	dir.AssertNaNs();
 	start.AssertNaNs();
 
-	auto& queryQuads = *(qfq.quads = tempQuads[qfq.threadOwner].ReserveVector());
-
 	const float3 baseTo = start + (dir * length);
 
 	const bool noZdir = (math::floor(start.z * invQuadSize.y) == math::floor(baseTo.z * invQuadSize.y));
@@ -360,6 +358,8 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 
 		return GetQuadsRectangle(qfq, mins, maxs);
 	}
+
+	auto& queryQuads = *(qfq.quads = tempQuads[qfq.threadOwner].ReserveVector());
 
 	// iterate z-range; compute which columns (x) are touched for each row (z)
 	const float3 normDirPlanar = float3(dir.x, 0.0, dir.z).UnsafeNormalize();  // we already checked for unsafe cases before
