@@ -12,6 +12,9 @@
 #include "System/creg/creg_cond.h"
 #include "System/float3.h"
 #include "System/type2.h"
+#ifdef DEBUG_DRAW_QUADFIELD
+	#include "System/float4.h"
+#endif
 
 class CUnit;
 class CFeature;

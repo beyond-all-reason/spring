@@ -45,6 +45,9 @@
 
 #include "System/Misc/TracyDefs.h"
 
+#ifdef DEBUG_DRAW_QUADFIELD
+	#include "Sim/Misc/QuadField.h"
+#endif
 
 
 CONFIG(bool, BuildIconsFirst).defaultValue(false);

@@ -412,7 +412,7 @@ float GuiTraceRay(
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
 
 		#ifdef DEBUG_DRAW_QUADFIELD
-		quadField.DrawQuad(quadIdx, {1.0, 1.0, 1.0, 1.0});
+		quadField.DrawQuad(quadIdx, float4(1.0, 1.0, 1.0, 1.0));
 		#endif
 
 		// Unit Intersection

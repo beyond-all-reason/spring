@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+
 #include <algorithm>
 
 #include "QuadField.h"
@@ -950,22 +951,22 @@ void CQuadField::GetUnitsAndFeaturesColVol(
 }
 
 #ifdef DEBUG_DRAW_QUADFIELD
-void QuadField::DrawQuad(unsigned i, const float4 color) {
+void CQuadField::DrawQuad(unsigned i, const float4 color) {
 	const int qx = i % numQuadsX;
 	const int qz = i / numQuadsX;
 
-	const float x_0 = qx * quadSizeX;
-	const float y_0 = qz * quadSizeZ;
-	const float x_1 = x_0 + quadSizeX;
-	const float y_1 = y_0 + quadSizeZ;
+	const float x0 = qx * quadSizeX;
+	const float y0 = qz * quadSizeZ;
+	const float x1 = x0 + quadSizeX;
+	const float y1 = y0 + quadSizeZ;
 
-	const float h = CGround::GetHeightReal((x_0 + x_1) / 2.0, (y_0 + y_1) / 2.0, false);
+	const float h = CGround::GetHeightReal((x0 + x1) / 2.0, (y0 + y1) / 2.0, false);
 
-	lineDrawer.StartPath({x0, h, y0}, color);
-	lineDrawer.DrawLine({x1, h, y0}, color);
-	lineDrawer.DrawLine({x1, h, y1}, color);
-	lineDrawer.DrawLine({x0, h, y1}, color);
-	lineDrawer.DrawLine({x0, h, y0}, color);
+	lineDrawer.StartPath(float3(x0, h, y0), color);
+	lineDrawer.DrawLine(float3(x1, h, y0), color);
+	lineDrawer.DrawLine(float3(x1, h, y1), color);
+	lineDrawer.DrawLine(float3(x0, h, y1), color);
+	lineDrawer.DrawLine(float3(x0, h, y0), color);
 	lineDrawer.FinishPath();
 }
 #endif // DEBUG_DRAW_QUADFIELD
