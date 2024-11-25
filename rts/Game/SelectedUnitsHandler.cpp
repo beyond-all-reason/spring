@@ -716,11 +716,13 @@ void CSelectedUnitsHandler::Draw()
 	glEnable(GL_TEXTURE_2D);
 
 	#ifdef DEBUG_DRAW_QUADFIELD
-	const float4 quadColor = {0.4, 1.0, 0.4, 1.0};
-	for (const int unitID: selectedUnits) {
-		const CUnit* su = unitHandler.GetUnit(unitID);
-		for(const int qIdx: su->quads) {
-			quadField.DrawQuad(qIdx, quadColor);
+	if (globalRendering->drawDebugQuadField) {
+		const float4 quadColor = {0.4, 1.0, 0.4, 1.0};
+		for (const int unitID: selectedUnits) {
+			const CUnit* su = unitHandler.GetUnit(unitID);
+			for(const int qIdx: su->quads) {
+				quadField.DrawQuad(qIdx, quadColor);
+			}
 		}
 	}
 	#endif // DEBUG_DRAW_QUADFIELD

@@ -1549,6 +1549,21 @@ public:
 	}
 };
 
+class DebugQuadFieldActionExecutor : public IUnsyncedActionExecutor {
+public:
+	DebugQuadFieldActionExecutor() : IUnsyncedActionExecutor("DebugQuadField", "Draw quadfield sectors around GuiTraceRay and selected units") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		#ifdef DEBUG_DRAW_QUADFIELD
+		LogSystemStatus("quadfield debug", globalRendering->drawDebugQuadField = !globalRendering->drawDebugQuadField);
+		#else
+		LOG("/debugquadfield not compiled into engine!");
+		#endif
+		return true;
+	}
+};
+
 class DrawSkyActionExecutor : public IUnsyncedActionExecutor {
 public:
 	DrawSkyActionExecutor() : IUnsyncedActionExecutor("DrawSky", "Whether to actually draw sky") {
@@ -3950,6 +3965,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<PauseActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugCubeMapActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<DebugQuadFieldActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DrawSkyActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLErrorsActionExecutor>());

@@ -110,6 +110,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_MEMBER(drawDebug),
 	CR_MEMBER(drawDebugTraceRay),
 	CR_MEMBER(drawDebugCubeMap),
+	CR_MEMBER(drawDebugQuadField),
 
 	CR_MEMBER(glDebug),
 	CR_MEMBER(glDebugErrors),
@@ -291,6 +292,7 @@ CGlobalRendering::CGlobalRendering()
 	, drawDebug(false)
 	, drawDebugTraceRay(false)
 	, drawDebugCubeMap(false)
+	, drawDebugQuadField(false)
 
 	, glDebug(configHandler->GetBool("DebugGL"))
 	, glDebugErrors(false)
