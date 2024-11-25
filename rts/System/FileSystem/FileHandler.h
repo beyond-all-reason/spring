@@ -7,6 +7,7 @@
 #include <string>
 #include <fstream>
 #include <cinttypes>
+#include <mio/mmap.hpp>
 
 #include "VFSModes.h"
 
@@ -52,9 +53,6 @@ public:
 
 	std::vector<std::uint8_t>& GetBuffer() { return fileBuffer; }
 
-	static bool InReadDir(const std::string& path);
-	static bool InWriteDir(const std::string& path);
-
 	static std::vector<std::string> FindFiles(const std::string& path, const std::string& pattern);
 	static std::vector<std::string> DirList(const std::string& path, const std::string& pattern, const std::string& modes, bool recursive);
 	static std::vector<std::string> SubDirs(const std::string& path, const std::string& pattern, const std::string& modes, bool recursive);
@@ -76,7 +74,6 @@ protected:
 	static bool InsertVFSDirs(std::vector<std::string>& dirSet, const std::string& path, const std::string& pattern, bool recursive, int section);
 
 	std::string fileName;
-	std::ifstream ifs;
 	std::vector<std::uint8_t> fileBuffer;
 
 	int filePos = 0;

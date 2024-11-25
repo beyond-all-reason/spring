@@ -55,6 +55,9 @@ list(APPEND engineCommonLibraries "prd::base64")
 ### smmalloc
 list(APPEND engineCommonLibraries "smmalloc")
 
+### mapped files(mio)
+list(APPEND engineCommonLibraries "mio::mio")
+
 ### Assemble common libraries
 add_subdirectory(System/Sound)
 if    (NO_SOUND)
