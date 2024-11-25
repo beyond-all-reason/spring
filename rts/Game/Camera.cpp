@@ -773,6 +773,37 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	return v;
 }
 
+float3 CCamera::PointToMaxUnitAltitude(const float3& point, const float rayLength)
+{
+	const float maxAltitude = 500.0; // account for max aircraft height above ground
+	const float3 dir = (point-pos).Normalize();
+	float dist = CGround::LinePlaneCol(pos, dir, rayLength, readMap->GetCurrMaxHeight()+maxAltitude);
+	if (dist > 0.0)
+		return pos + dir*dist;
+	return point;
+}
+
+float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength)
+{
+	const float3 fv1 = PointToMaxUnitAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBL), rayLength);
+	const float3 fv2 = PointToMaxUnitAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBR), rayLength);
+	float3 midFv = (fv1+fv2)/2.0;
+	midFv.y = pos.y;
+
+	// vertical plane from frustum intersection to max height
+	const float3 p = fv1;
+	const float3 norm = midFv-pos;
+	const float d = -(norm.x+p.x+norm.y*p.y+norm.z*p.z);
+	const float4 nearTheaterPlane = float4(norm.x, norm.y, norm.z, d);
+
+	// intersection
+	float3 xpos;
+	const bool res = RayAndPlaneIntersection(pos, pos+dir*rayLength, nearTheaterPlane, false, xpos);
+	if (res)
+		return xpos;
+	return pos;
+}
+
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-points-and-spheres/
 bool CCamera::Frustum::IntersectSphere(float3 p, float radius, uint8_t testMask) const
 {

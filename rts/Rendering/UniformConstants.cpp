@@ -275,9 +275,10 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 		const float3 pxlDir = camPlayer->CalcPixelDir(wx, wy);
 
 		// trace for player's allyteam
-		const float traceDist = TraceRay::GuiTraceRay(camPos, pxlDir, rawRange, nullptr, unit, feature, true, false, true);
+		const float3 rayOrigin = camPlayer->NearTheaterIntersection(pxlDir, rawRange);
+		const float traceDist = TraceRay::GuiTraceRay(rayOrigin, pxlDir, rawRange, nullptr, unit, feature, true, false, true);
 
-		const float3 tracePos = camPos + (pxlDir * traceDist);
+		const float3 tracePos = rayOrigin + (pxlDir * traceDist);
 
 		if (unit)
 			updateBuffer->mouseWorldPos = float4{ unit->drawPos, 1.0f };

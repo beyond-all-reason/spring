@@ -569,7 +569,9 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 			const CUnit* unit = nullptr;
 			const CFeature* feature = nullptr;
 
-			TraceRay::GuiTraceRay(camera->GetPos(), dir, camera->GetFarPlaneDist() * 1.4f, nullptr, unit, feature, false);
+			const float viewRange = camera->GetFarPlaneDist() * 1.4f;
+			const float3 rayOrigin = camera->NearTheaterIntersection(dir, viewRange);
+			TraceRay::GuiTraceRay(rayOrigin, dir, viewRange, nullptr, unit, feature, false);
 			lastClicked = unit;
 
 			const bool selectType = (bp.lastRelease >= (gu->gameTime - doubleClickTime) && unit == _lastClicked);
@@ -701,8 +703,9 @@ std::string CMouseHandler::GetCurrentTooltip() const
 	const CUnit* unit = nullptr;
 	const CFeature* feature = nullptr;
 
+	const float3 rayOrigin = camera->NearTheaterIntersection(dir, range);
 	{
-		dist = TraceRay::GuiTraceRay(camera->GetPos(), dir, range, nullptr, unit, feature, true, false, true);
+		dist = TraceRay::GuiTraceRay(rayOrigin, dir, range, nullptr, unit, feature, true, false, true);
 
 		if (unit    != nullptr) return CTooltipConsole::MakeUnitString(unit);
 		if (feature != nullptr) return CTooltipConsole::MakeFeatureString(feature);
@@ -714,7 +717,7 @@ std::string CMouseHandler::GetCurrentTooltip() const
 		return selTip;
 
 	if (dist <= range)
-		return CTooltipConsole::MakeGroundString(camera->GetPos() + (dir * dist));
+		return CTooltipConsole::MakeGroundString(rayOrigin + (dir * dist));
 
 	return "";
 }

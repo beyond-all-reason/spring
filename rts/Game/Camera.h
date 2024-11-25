@@ -221,6 +221,9 @@ public:
 		return (forward.dot(objPos - pos));
 	}
 
+	float3 PointToMaxUnitAltitude(const float3& point), const float rayLength;
+	float3 NearTheaterIntersection(const float3& dir, const float rayLength);
+
 	/*
 	float ProjectedDistanceShadow(const float3& objPos, const float3& sunDir) const {
 		// FIXME: fix it, cap it for shallow shadows?
