@@ -793,7 +793,7 @@ float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength
 	// vertical plane from frustum intersection to max height
 	const float3 p = fv1;
 	const float3 norm = midFv-pos;
-	const float d = -(norm.x+p.x+norm.y*p.y+norm.z*p.z);
+	const float d = -(norm.x*p.x+norm.y*p.y+norm.z*p.z);
 	const float4 nearTheaterPlane = float4(norm.x, norm.y, norm.z, d);
 
 	// intersection
