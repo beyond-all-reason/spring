@@ -20,7 +20,6 @@ You can replace these functions before migrating, and known existing games have 
 * removed the recently added `Spring.MakeGLDBQuery` and `Spring.GetGLDBQuery`.
 
 ### Behaviour changes
-* failure to load a model now results in a crash. This avoids a potential desync down the road.
 * QTPFS had a major overhaul, with multiple modrule changes and behaviour changes. See the section below.
 * many invalid def entries now cause the unit to be rejected; on the other hand, many (in particular, metal cost and weapon damage) can now be 0. Watch out for division by 0!
 Check the "def validity checks" section below for details.
