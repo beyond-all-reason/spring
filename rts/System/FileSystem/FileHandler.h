@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <span>
 #include <cinttypes>
 #include <mio/mmap.hpp>
 
@@ -60,8 +61,8 @@ public:
 	static std::string AllowModes(const std::string& modes, const std::string& allowed);
 	static std::string ForbidModes(const std::string& modes, const std::string& forbidden);
 
-
 protected:
+	std::span<const uint8_t> GetSpan() const;
 
 	virtual bool TryReadFromPWD(const std::string& fileName);
 	virtual bool TryReadFromRawFS(const std::string& fileName);
@@ -74,7 +75,9 @@ protected:
 	static bool InsertVFSDirs(std::vector<std::string>& dirSet, const std::string& path, const std::string& pattern, bool recursive, int section);
 
 	std::string fileName;
-	std::vector<std::uint8_t> fileBuffer;
+	std::vector<uint8_t> fileBuffer;
+
+	std::unique_ptr<mio::ummap_source> mmap;
 
 	int filePos = 0;
 	int fileSize = -1;
