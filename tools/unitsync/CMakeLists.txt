@@ -14,6 +14,7 @@ list(APPEND unitsync_libs ${CMAKE_DL_LIBS})
 list(APPEND unitsync_libs 7zip prd::jsoncpp lua headlessStubs archives)
 list(APPEND unitsync_libs ZLIB::ZLIB)
 list(APPEND unitsync_libs ${SPRING_MINIZIP_LIBRARY})
+list(APPEND unitsync_libs mio::mio)
 
 ### smmalloc
 list(APPEND unitsync_libs "smmalloc")

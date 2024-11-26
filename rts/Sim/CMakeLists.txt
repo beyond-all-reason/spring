@@ -157,6 +157,7 @@ add_library(engineSim STATIC
 target_include_directories(engineSim
 	PRIVATE ${SDL2_INCLUDE_DIR})
 target_link_libraries(engineSim Tracy::TracyClient)
+target_link_libraries(engineSim mio::mio)
 
 if( CMAKE_COMPILER_IS_GNUCXX)
 	# FIXME: hack to avoid linkers to remove not referenced symbols. required because of
