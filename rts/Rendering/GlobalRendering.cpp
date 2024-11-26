@@ -346,7 +346,8 @@ CGlobalRendering::CGlobalRendering()
 		"XResolutionWindowed",
 		"YResolutionWindowed",
 		"WindowPosX",
-		"WindowPosY"
+		"WindowPosY",
+		"MinSampleShadingRate"
 	});
 	SetDualScreenParams();
 }
@@ -1195,6 +1196,16 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& value)
 {
 	LOG("[GR::%s][1] key=%s val=%s", __func__, key.c_str(), value.c_str());
+
+	if (key == "MinSampleShadingRate") {
+		auto newMSSR = configHandler->GetFloat("MinSampleShadingRate");
+
+		if (minSampleShadingRate != newMSSR) {
+			minSampleShadingRate = newMSSR;
+			SetMinSampleShadingRate();
+		}
+	}
+
 	if (key == "DualScreenMode" || key == "DualScreenMiniMapOnLeft") {
 		SetDualScreenParams();
 		UpdateGLGeometry();
@@ -1663,13 +1674,7 @@ void CGlobalRendering::InitGLState()
 	msaaLevel *= CheckGLMultiSampling();
 	ToggleMultisampling();
 
-	if(msaaLevel > 0 && minSampleShadingRate > 0.0f) {
-		// Enable sample shading
-		glEnable(GL_SAMPLE_SHADING_ARB);
-		if (GLEW_VERSION_4_0) {
-			glMinSampleShading(minSampleShadingRate); 
-		}
-	}
+	SetMinSampleShadingRate();
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1754,6 +1759,20 @@ int CGlobalRendering::DepthBitsToFormat(int bits)
 		return GL_DEPTH_COMPONENT32;
 	default:
 		return GL_DEPTH_COMPONENT; //should never hit this
+	}
+}
+
+void CGlobalRendering::SetMinSampleShadingRate()
+{
+	if (msaaLevel > 0 && minSampleShadingRate > 0.0f) {
+		// Enable sample shading
+		glEnable(GL_SAMPLE_SHADING_ARB);
+		if (GLEW_VERSION_4_0) {
+			glMinSampleShading(minSampleShadingRate);
+		}
+	}
+	else {
+		glDisable(GL_SAMPLE_SHADING_ARB);
 	}
 }
 
