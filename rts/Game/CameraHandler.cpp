@@ -566,6 +566,7 @@ void CCameraHandler::SetCameraMode(unsigned int newMode)
 	// clamp rotations so that the camera doesnt spin excessively to get to the new rotation
 	camera->SetRot(ClampRadPrincipal(camera->GetRot()));
 	oldCamCtrl->SetRot(ClampRadPrincipal(oldCamCtrl->GetRot()));
+	oldCamCtrl->Update();
 
 	newCamCtrl->SwitchTo(oldCamCtrl);
 	newCamCtrl->Update();
