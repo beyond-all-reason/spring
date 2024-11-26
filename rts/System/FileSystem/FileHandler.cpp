@@ -77,10 +77,18 @@ bool CFileHandler::TryReadFromPWD(const string& fileName)
 		return false;
 
 	fileSize = entry.file_size();
-	if (fileSize == 0)
-		return false;
 
 	mmap = std::make_unique<mio::ummap_source>(fileName);
+	if (!mmap->is_open()) {
+		mmap = nullptr;
+		return false;
+	}
+
+	if (!mmap->is_mapped()) {
+		mmap = nullptr;
+		return false;
+	}
+
 	if (mmap->size() != fileSize) {
 		mmap = nullptr;
 		return false;
@@ -107,10 +115,18 @@ bool CFileHandler::TryReadFromRawFS(const string& fileName)
 		return false;
 
 	fileSize = entry.file_size();
-	if (fileSize == 0)
-		return false;
 
 	mmap = std::make_unique<mio::ummap_source>(rawpath);
+	if (!mmap->is_open()) {
+		mmap = nullptr;
+		return false;
+	}
+
+	if (!mmap->is_mapped()) {
+		mmap = nullptr;
+		return false;
+	}
+
 	if (mmap->size() != fileSize) {
 		mmap = nullptr;
 		return false;
