@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <memory>
 #include <span>
 #include <cinttypes>
 #include <mio/mmap.hpp>

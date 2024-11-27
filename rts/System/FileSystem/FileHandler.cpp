@@ -133,9 +133,8 @@ bool CFileHandler::TryReadFromRawFS(const string& fileName)
 	}
 
 	return true;
-#else
-	return false;
 #endif
+	return false;
 }
 
 
@@ -152,9 +151,8 @@ bool CFileHandler::TryReadFromVFS(const string& fileName, int section)
 		fileSize = fileBuffer.size();
 		return true;
 	}
-#else
-	return false;
 #endif
+	return false;
 }
 
 
