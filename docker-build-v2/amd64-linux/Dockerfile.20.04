@@ -1,6 +1,6 @@
-# We pick ubuntu 18 instead of newer one because we are dynamically linking
-# to glibc and a few other libraries and we want to keep compatibility for as
-# many users as possible.
+# Ubuntu 20.04 docker environment for building spring.
+# Not used for distribution atm, but can be used in case the 18.04 gives you problems
+# with newer distros or want to experiment.
 FROM docker.io/ubuntu:20.04
 ENV ENGINE_PLATFORM=amd64-linux
 
