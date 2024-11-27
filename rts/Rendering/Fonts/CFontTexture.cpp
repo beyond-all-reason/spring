@@ -747,7 +747,7 @@ void CFontTexture::ClearFallbackFonts()
 {
 #if defined(USE_FONTCONFIG) && !defined(HEADLESS)
 	if (!FtLibraryHandler::UseFontConfig())
-		return false;
+		return;
 
 	FtLibraryHandler::ClearFallbackPattern();
 	FtLibraryHandler::ClearGameFontSet();
