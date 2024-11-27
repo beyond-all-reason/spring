@@ -192,7 +192,7 @@ CFeature* CFeatureHandler::CreateWreckage(const FeatureLoadParams& cparams)
 
 void CFeatureHandler::RecalculateMaxAltitude()
 {
-	if (maxFeatureAltitude < std::max(readMap->GetCurrMaxHeight, unitHandler.MaxUnitAltitude()))
+	if (maxFeatureAltitude < std::max(readMap->GetCurrMaxHeight(), unitHandler.MaxUnitAltitude()))
 		return;
 
 	maxFeatureAltitude = readMap->GetCurrMaxHeight();
