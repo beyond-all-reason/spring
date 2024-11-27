@@ -481,6 +481,7 @@ void CFeature::ForcedMove(const float3& newPos)
 	UpdateTransformAndPhysState();
 
 	eventHandler.FeatureMoved(this, oldPos);
+	featureHandler.MovedFeature(this);
 
 	// insert into managers
 	quadField.AddFeature(this);
@@ -596,6 +597,7 @@ bool CFeature::UpdatePosition()
 	// use an exact comparison for the y-component (gravity is small)
 	if (!pos.equals(oldPos, float3(float3::cmp_eps(), 0.0f, float3::cmp_eps()))) {
 		eventHandler.FeatureMoved(this, oldPos);
+		featureHandler.MovedFeature(this);
 		return true;
 	}
 

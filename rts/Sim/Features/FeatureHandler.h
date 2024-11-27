@@ -59,11 +59,14 @@ public:
 	bool TryFreeFeatureID(int id);
 	bool AddFeature(CFeature* feature);
 	void DeleteFeature(CFeature* feature);
+	void MovedFeature(const CFeature* feature);
 
 	void LoadFeaturesFromMap();
 
 	void SetFeatureUpdateable(CFeature* feature);
 	void TerrainChanged(int x1, int y1, int x2, int y2);
+
+	float MaxFeatureAltitude() const { return maxFeatureAltitude; }
 
 	const spring::unordered_set<int>& GetActiveFeatureIDs() const { return activeFeatureIDs; }
 
@@ -88,6 +91,12 @@ private:
 	std::vector<int> deletedFeatureIDs;
 	std::vector<CFeature*> features;
 	std::vector<CFeature*> updateFeatures;
+
+	///< highest altitude of any feature added so far
+	///< (ray tracing uses this in some cases)
+	float maxFeatureAltitude = 0.0f;
+
+	void RecalculateMaxAltitude();
 };
 
 extern CFeatureHandler featureHandler;

@@ -10,6 +10,7 @@
 #include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Units/CommandAI/BuilderCAI.h"
+#include "Sim/Units/UnitHandler.h"
 #include "System/creg/STL_Set.h"
 #include "System/EventHandler.h"
 #include "System/TimeProfiler.h"
@@ -39,6 +40,7 @@ void CFeatureHandler::Init() {
 	features.resize(MAX_FEATURES, nullptr);
 	activeFeatureIDs.reserve(MAX_FEATURES); // internal table size must be constant
 	featureMemPool.reserve(128);
+	maxFeatureAltitude = readMap->GetCurrMaxHeight();
 
 	idPool.Clear();
 	idPool.Expand(0, MAX_FEATURES);
@@ -58,6 +60,7 @@ void CFeatureHandler::Kill() {
 	deletedFeatureIDs.clear();
 	features.clear();
 	updateFeatures.clear();
+	maxFeatureAltitude = std::numeric_limits<float>::lowest();
 }
 
 
@@ -141,6 +144,7 @@ bool CFeatureHandler::AddFeature(CFeature* feature)
 
 	InsertActiveFeature(feature);
 	SetFeatureUpdateable(feature);
+	MovedFeature(feature);
 	return true;
 }
 
@@ -186,6 +190,19 @@ CFeature* CFeatureHandler::CreateWreckage(const FeatureLoadParams& cparams)
 }
 
 
+void CFeatureHandler::RecalculateMaxAltitude()
+{
+	if (maxFeatureAltitude < std::max(readMap->GetCurrMaxHeight, unitHandler.MaxUnitAltitude()))
+		return;
+
+	maxFeatureAltitude = readMap->GetCurrMaxHeight();
+
+        for (const int featureID: activeFeatureIDs) {
+                CFeature* f = features[featureID];
+		MovedFeature(f);
+	}
+}
+
 
 void CFeatureHandler::Update()
 {
@@ -202,6 +219,9 @@ void CFeatureHandler::Update()
 		const auto& iter = std::remove_if(updateFeatures.begin(), updateFeatures.end(), pred);
 
 		updateFeatures.erase(iter, updateFeatures.end());
+	}
+	if ((gs->frameNum & 62) == 0) {
+		RecalculateMaxAltitude();
 	}
 }
 
@@ -287,3 +307,9 @@ void CFeatureHandler::TerrainChanged(int x1, int y1, int x2, int y2)
 	}
 }
 
+void CFeatureHandler::MovedFeature(const CFeature* feature)
+{
+	const CollisionVolume& cv = feature->selectionVolume;
+	const float top = cv.GetWorldSpacePos(feature).y + cv.GetBoundingRadius();
+	maxFeatureAltitude = std::max(top, maxFeatureAltitude);
+}

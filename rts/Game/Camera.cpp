@@ -13,6 +13,7 @@
 #include "System/float3.h"
 #include "System/Matrix44f.h"
 #include "System/Config/ConfigHandler.h"
+#include "Sim/Features/FeatureHandler.h"
 #include "Sim/Units/UnitHandler.h"
 
 #include "System/Misc/TracyDefs.h"
@@ -787,7 +788,8 @@ bool CCamera::TracePointToMaxAltitude(const float3& point, const float rayLength
 
 float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength) const
 {
-	const float maxAltitude = std::max(unitHandler.MaxUnitAltitude(), readMap->GetCurrMaxHeight());
+	float maxAltitude = std::max(unitHandler.MaxUnitAltitude(), readMap->GetCurrMaxHeight());
+	maxAltitude = std::max(maxAltitude, featureHandler.MaxFeatureAltitude());
 	if (pos.y < maxAltitude)
 		return pos;
 
