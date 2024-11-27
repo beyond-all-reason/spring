@@ -221,7 +221,7 @@ public:
 		return (forward.dot(objPos - pos));
 	}
 
-	bool TracePointToMaxAltitude(const float3& point, const float rayLength, const float maxAltitude, float3& result) const;
+	std::optional<float3> TracePointToMaxAltitude(const float3& point, const float rayLength, const float maxAltitude) const;
 	float3 NearTheaterIntersection(const float3& dir, const float rayLength) const;
 
 	/*

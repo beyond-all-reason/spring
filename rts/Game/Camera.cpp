@@ -775,35 +775,36 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	return v;
 }
 
-bool CCamera::TracePointToMaxAltitude(const float3& point, const float rayLength, const float maxAltitude, float3& result) const
+std::optional<float3> CCamera::TracePointToMaxAltitude(const float3& point, const float rayLength, const float maxAltitude) const
 {
+	// ray from camera position to point, intersecting with the maxAltitude horizontal plane.
 	const float3 dir = (point-pos).Normalize();
-	float dist = CGround::LinePlaneCol(pos, dir, rayLength, maxAltitude);
+	const float dist = CGround::LinePlaneCol(pos, dir, rayLength, maxAltitude);
 	if (dist > 0.0) {
-		result = pos + dir*dist;
-		return true;
+		return pos + dir*dist;
 	}
-	return false;
+	return std::nullopt;
 }
 
 float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength) const
 {
-	float maxAltitude = std::max(unitHandler.MaxUnitAltitude(), readMap->GetCurrMaxHeight());
-	maxAltitude = std::max(maxAltitude, featureHandler.MaxFeatureAltitude());
+	// intersect the frustum with max altitude to get the optimal ray start.
+
+	// max unit and feature altitudes are always at least map MaxHeight.
+	const float maxAltitude = std::max <float> (unitHandler.MaxUnitAltitude(), featureHandler.MaxFeatureAltitude());
 	if (pos.y < maxAltitude)
 		return pos;
 
-	float3 fv1, fv2;
-	const bool res1 = TracePointToMaxAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBL), rayLength, maxAltitude, fv1);
-	const bool res2 = TracePointToMaxAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBR), rayLength, maxAltitude, fv2);
-	if (!res1 || !res2)
+	const auto fv1 = TracePointToMaxAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBL), rayLength, maxAltitude);
+	const auto fv2 = TracePointToMaxAltitude(GetFrustumVert(CCamera::FRUSTUM_POINT_FBR), rayLength, maxAltitude);
+	if (!fv1 || !fv2)
 		return pos;
 
-	float3 midFv = (fv1+fv2)/2.0;
+	float3 midFv = (fv1.value()+fv2.value())/2.0;
 	midFv.y = pos.y;
 
 	// vertical plane from frustum intersection to max height
-	const float3 p = fv1;
+	const float3 p = fv1.value();
 	const float3 norm = midFv-pos;
 	const auto d = -norm.dot(p);
 	const float4 nearTheaterPlane = float4(norm.x, norm.y, norm.z, d);
