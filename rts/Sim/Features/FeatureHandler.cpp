@@ -220,7 +220,7 @@ void CFeatureHandler::Update()
 
 		updateFeatures.erase(iter, updateFeatures.end());
 	}
-	if ((gs->frameNum & 62) == 0) {
+	if ((gs->frameNum & 63) == 0) {
 		RecalculateMaxAltitude();
 	}
 }
