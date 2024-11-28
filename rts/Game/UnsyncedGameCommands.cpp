@@ -1551,7 +1551,7 @@ public:
 
 class DebugQuadFieldActionExecutor : public IUnsyncedActionExecutor {
 public:
-	DebugQuadFieldActionExecutor() : IUnsyncedActionExecutor("DebugQuadField", "Draw quadfield sectors around GuiTraceRay and selected units") {
+	DebugQuadFieldActionExecutor() : IUnsyncedActionExecutor("DebugQuadField", "Draw quadfield sectors around GuiTraceRay and selected units", true) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {

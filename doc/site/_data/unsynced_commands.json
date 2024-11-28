@@ -181,7 +181,7 @@
    },
    "debugquadfield" : {
       "arguments" : {},
-      "cheatRequired" : false,
+      "cheatRequired" : true,
       "command" : "DebugQuadField",
       "description" : "Draw quadfield sectors around GuiTraceRay and selected units (only if compiled into engine)"
    },
