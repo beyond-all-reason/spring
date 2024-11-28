@@ -16,6 +16,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <cerrno>
+#include <filesystem>
+#include <chrono>
+#include <fmt/printf.h>
 #include <cstring>
 #include "System/SpringRegex.h"
 #include "System/Platform/Misc.h"
@@ -176,6 +179,7 @@ bool FileSystemAbstraction::IsReadableFile(const std::string& file)
 
 unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& file)
 {
+#if 0
 	struct stat info;
 
 	if (stat(file.c_str(), &info) != 0) {
@@ -184,6 +188,17 @@ unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& f
 	}
 
 	return info.st_mtime;
+#else
+	std::error_code ec;
+	auto fileTime = std::filesystem::last_write_time(file, ec);
+	if (ec) {
+		LOG_L(L_WARNING, "[FSA::%s] error '%s' getting last modification time of file '%s'", __func__, ec.message().c_str(), file.c_str());
+		return 0;
+	}
+
+	using namespace std::chrono;
+	return duration_cast<seconds>(file_clock::to_utc(fileTime).time_since_epoch()).count();
+#endif
 }
 
 std::string FileSystemAbstraction::GetFileModificationDate(const std::string& file)
@@ -193,12 +208,10 @@ std::string FileSystemAbstraction::GetFileModificationDate(const std::string& fi
 	if (t == 0)
 		return "";
 
-	const struct tm* clk = std::gmtime(&t);
-	const char* fmt = "%d%02d%02d%02d%02d%02d";
+	//const struct tm* clk = std::gmtime(&t);
+	const auto* clk = std::localtime(&t);
 
-	char buf[67];
-	SNPRINTF(buf, sizeof(buf), fmt, 1900 + clk->tm_year, clk->tm_mon + 1, clk->tm_mday, clk->tm_hour, clk->tm_min, clk->tm_sec);
-	return buf;
+	return fmt::sprintf("%d%02d%02d%02d%02d%02d", 1900 + clk->tm_year, clk->tm_mon + 1, clk->tm_mday, clk->tm_hour, clk->tm_min, clk->tm_sec);
 }
 
 
