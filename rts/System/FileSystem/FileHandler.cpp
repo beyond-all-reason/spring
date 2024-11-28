@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <filesystem>
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -48,6 +49,13 @@ CFileHandler::CFileHandler(const string& fileName, const string& modes)
 
 /******************************************************************************/
 
+std::span<const uint8_t> CFileHandler::GetSpan() const
+{
+	return mmap ?
+		std::span(mmap->data(), mmap->size()) :
+		std::span(fileBuffer.data(), fileBuffer.size());
+}
+
 bool CFileHandler::TryReadFromPWD(const string& fileName)
 {
 #ifndef TOOLS
@@ -57,15 +65,36 @@ bool CFileHandler::TryReadFromPWD(const string& fileName)
 #else
 	const std::string fullpath(fileName);
 #endif
-	ifs.open(fullpath.c_str(), std::ios::in | std::ios::binary);
-	if (ifs && !ifs.bad() && ifs.is_open()) {
-		ifs.seekg(0, std::ios_base::end);
-		fileSize = ifs.tellg();
-		ifs.seekg(0, std::ios_base::beg);
-		return true;
+	std::error_code ec;
+	std::filesystem::directory_entry entry(fileName, ec);
+	if (ec)
+		return false;
+
+	if (!entry.exists())
+		return false;
+
+	if (!entry.is_regular_file())
+		return false;
+
+	fileSize = entry.file_size();
+
+	mmap = std::make_unique<mio::ummap_source>(fileName);
+	if (!mmap->is_open()) {
+		mmap = nullptr;
+		return false;
 	}
-	ifs.close();
-	return false;
+
+	if (!mmap->is_mapped()) {
+		mmap = nullptr;
+		return false;
+	}
+
+	if (mmap->size() != fileSize) {
+		mmap = nullptr;
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -73,15 +102,38 @@ bool CFileHandler::TryReadFromRawFS(const string& fileName)
 {
 #ifndef TOOLS
 	const string rawpath = dataDirsAccess.LocateFile(fileName);
-	ifs.open(rawpath.c_str(), std::ios::in | std::ios::binary);
-	if (ifs && !ifs.bad() && ifs.is_open()) {
-		ifs.seekg(0, std::ios_base::end);
-		fileSize = ifs.tellg();
-		ifs.seekg(0, std::ios_base::beg);
-		return true;
+
+	std::error_code ec;
+	std::filesystem::directory_entry entry(rawpath, ec);
+	if (ec)
+		return false;
+
+	if (!entry.exists())
+		return false;
+
+	if (!entry.is_regular_file())
+		return false;
+
+	fileSize = entry.file_size();
+
+	mmap = std::make_unique<mio::ummap_source>(rawpath);
+	if (!mmap->is_open()) {
+		mmap = nullptr;
+		return false;
 	}
+
+	if (!mmap->is_mapped()) {
+		mmap = nullptr;
+		return false;
+	}
+
+	if (mmap->size() != fileSize) {
+		mmap = nullptr;
+		return false;
+	}
+
+	return true;
 #endif
-	ifs.close();
 	return false;
 }
 
@@ -128,7 +180,7 @@ void CFileHandler::Close()
 	fileSize = -1;
 	loadCode = -3;
 
-	ifs.close();
+	mmap = nullptr;
 	fileBuffer.clear();
 }
 
@@ -168,20 +220,20 @@ bool CFileHandler::FileExists(const std::string& filePath, const std::string& mo
 
 int CFileHandler::Read(void* buf, int length)
 {
-	if (ifs.is_open()) {
-		ifs.read(static_cast<char*>(buf), length);
-		return ifs.gcount();
-	}
-
-	if (fileBuffer.empty())
+	if (fileSize <= 0)
 		return 0;
+
+	if (fileBuffer.empty() && !mmap)
+		return 0;
+
+	const auto span = GetSpan();
 
 	if ((length + filePos) > fileSize)
 		length = fileSize - filePos;
 
 	if (length > 0) {
-		assert(fileBuffer.size() >= (filePos + length));
-		memcpy(buf, &fileBuffer[filePos], length);
+		assert(span.size() >= (filePos + length));
+		std::memcpy(buf, span.data() + filePos, length);
 		filePos += length;
 	}
 
@@ -210,17 +262,6 @@ int CFileHandler::ReadString(void* buf, int length)
 
 void CFileHandler::Seek(int length, std::ios_base::seekdir where)
 {
-	if (ifs.is_open()) {
-		// Status bits must be cleared before seeking, otherwise it might fail
-		// in the common case of EOF
-		// http://en.cppreference.com/w/cpp/io/basic_istream/seekg
-		ifs.clear();
-		ifs.seekg(length, where);
-		return;
-	}
-	if (fileBuffer.empty())
-		return;
-
 	switch (where) {
 		case std::ios_base::beg: { filePos = length; } break;
 		case std::ios_base::cur: { filePos += length; } break;
@@ -231,21 +272,12 @@ void CFileHandler::Seek(int length, std::ios_base::seekdir where)
 
 bool CFileHandler::Eof() const
 {
-	if (ifs.is_open())
-		return ifs.eof();
-
-	if (!fileBuffer.empty())
-		return (filePos >= fileSize);
-
-	return true;
+	return (filePos >= fileSize);
 }
 
 
 int CFileHandler::GetPos()
 {
-	if (ifs.is_open())
-		return ifs.tellg();
-
 	return filePos;
 }
 

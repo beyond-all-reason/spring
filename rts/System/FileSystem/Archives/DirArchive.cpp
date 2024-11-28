@@ -4,7 +4,9 @@
 #include "DirArchive.h"
 
 #include <assert.h>
-#include <fstream>
+#include <filesystem>
+
+#include <mio/mmap.hpp>
 
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
@@ -47,18 +49,29 @@ bool CDirArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
 	assert(IsFileId(fid));
 
 	const std::string rawpath = dataDirsAccess.LocateFile(dirName + searchFiles[fid]);
-	std::ifstream ifs(rawpath.c_str(), std::ios::in | std::ios::binary);
 
-	if (ifs.bad() || !ifs.is_open())
+	std::error_code ec;
+	std::filesystem::directory_entry entry(rawpath, ec);
+	if (ec)
 		return false;
 
-	ifs.seekg(0, std::ios_base::end);
-	buffer.resize(ifs.tellg());
-	ifs.seekg(0, std::ios_base::beg);
-	ifs.clear();
+	if (!entry.exists())
+		return false;
 
-	if (!buffer.empty())
-		ifs.read((char*)&buffer[0], buffer.size());
+	if (!entry.is_regular_file())
+		return false;
+
+	mio::ummap_source mmap(rawpath);
+	if (!mmap.is_open()) {
+		return false;
+	}
+
+	if (!mmap.is_mapped()) {
+		return false;
+	}
+
+	buffer.resize(mmap.size());
+	std::memcpy(buffer.data(), mmap.data(), mmap.size());
 
 	return true;
 }
@@ -69,12 +82,23 @@ void CDirArchive::FileInfo(unsigned int fid, std::string& name, int& size) const
 
 	name = searchFiles[fid];
 	const std::string rawPath = dataDirsAccess.LocateFile(dirName + name);
-	std::ifstream ifs(rawPath.c_str(), std::ios::in | std::ios::binary);
+	std::error_code ec;
+	std::filesystem::directory_entry entry(rawPath, ec);
 
-	if (!ifs.bad() && ifs.is_open()) {
-		ifs.seekg(0, std::ios_base::end);
-		size = ifs.tellg();
-	} else {
+	if (ec) {
 		size = 0;
+		return;
 	}
+
+	if (!entry.exists()) {
+		size = 0;
+		return;
+	}
+
+	if (!entry.is_regular_file()) {
+		size = 0;
+		return;
+	}
+
+	size = entry.file_size();
 }

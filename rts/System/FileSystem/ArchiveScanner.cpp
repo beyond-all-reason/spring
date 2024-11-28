@@ -604,11 +604,11 @@ std::string CArchiveScanner::SearchMapFile(const IArchive* ar, std::string& erro
 
 	// check for smf and if the uncompression of important files is too costy
 	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
-		const std::pair<std::string, int>& info = ar->FileInfo(fid);
-		const std::string& ext = FileSystem::GetExtension(StringToLower(info.first));
+		const auto& [name, size] = ar->FileInfo(fid);
+		const auto ext = FileSystem::GetExtension(StringToLower(name));
 
 		if (ext == "smf")
-			return info.first;
+			return name;
 	}
 
 	return "";
@@ -870,9 +870,9 @@ bool CArchiveScanner::CheckCachedData(const std::string& fullName, unsigned& mod
 
 bool CArchiveScanner::ScanArchiveLua(IArchive* ar, const std::string& fileName, ArchiveInfo& ai, std::string& err)
 {
-	std::vector<std::uint8_t> buf;
-
-	if (!ar->GetFile(fileName, buf) || buf.empty()) {
+	// use the same buffer to avoid allocation costs for every invocation
+	scanArchiveBuffer.clear();
+	if (!ar->GetFile(fileName, scanArchiveBuffer) || scanArchiveBuffer.empty()) {
 		err = "Error reading " + fileName;
 
 		if (ar->GetArchiveFile().find(".sdp") != std::string::npos)
@@ -882,7 +882,7 @@ bool CArchiveScanner::ScanArchiveLua(IArchive* ar, const std::string& fileName, 
 	}
 
 	// NB: skips LuaConstGame::PushEntries(L) since that would invoke ScanArchive again
-	LuaParser p(std::string((char*)(buf.data()), buf.size()), SPRING_VFS_ZIP);
+	LuaParser p(std::string((char*)(scanArchiveBuffer.data()), scanArchiveBuffer.size()), SPRING_VFS_ZIP);
 
 	if (!p.Execute()) {
 		err = "Error in " + fileName + ": " + p.GetErrorLog();

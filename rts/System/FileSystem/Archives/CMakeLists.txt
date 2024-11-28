@@ -17,6 +17,7 @@ add_library(archives STATIC
 )
 
 target_link_libraries(archives
+	mio::mio
 	7zip
 	${SPRING_MINIZIP_LIBRARY}
 )
