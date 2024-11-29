@@ -213,11 +213,6 @@ unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& f
 		return 0;
 	}
 
-	auto local_field = *std::gmtime(&info.st_mtime);
-	local_field.tm_isdst = 1;
-	auto utc = std::mktime(&local_field);
-	auto utc_field = *std::gmtime(&utc);
-
 	return info.st_mtime;
 #endif
 }
