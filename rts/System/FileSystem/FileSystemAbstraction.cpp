@@ -176,6 +176,36 @@ bool FileSystemAbstraction::IsReadableFile(const std::string& file)
 
 unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& file)
 {
+#ifdef _WIN32
+	auto h = CreateFileA(file.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	if (h == INVALID_HANDLE_VALUE) {
+		LOG_L(L_WARNING, "[FSA::%s] error '%s' getting last modification time of file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), file.c_str());
+		return 0;
+	}
+	if (FILETIME ft; GetFileTime(h, nullptr, nullptr, &ft)) {
+		SYSTEMTIME stUTC;
+		FileTimeToSystemTime(&ft, &stUTC);
+
+		struct tm tm;
+		memset(&tm, 0, sizeof(tm)); // Initialize to zero
+
+		tm.tm_year = stUTC.wYear - 1900;
+		tm.tm_mon = stUTC.wMonth - 1;
+		tm.tm_mday = stUTC.wDay;
+		tm.tm_hour = stUTC.wHour;
+		tm.tm_min = stUTC.wMinute;
+		tm.tm_sec = stUTC.wSecond;
+		tm.tm_isdst = 0;
+
+		CloseHandle(h);
+		return static_cast<unsigned int>(std::mktime(&tm));
+	}
+	else {
+		LOG_L(L_WARNING, "[FSA::%s] error '%s' getting last modification time of file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), file.c_str());
+		CloseHandle(h);
+		return 0;
+	}
+#else
 	struct stat info;
 
 	if (stat(file.c_str(), &info) != 0) {
@@ -183,7 +213,13 @@ unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& f
 		return 0;
 	}
 
+	auto local_field = *std::gmtime(&info.st_mtime);
+	local_field.tm_isdst = 1;
+	auto utc = std::mktime(&local_field);
+	auto utc_field = *std::gmtime(&utc);
+
 	return info.st_mtime;
+#endif
 }
 
 std::string FileSystemAbstraction::GetFileModificationDate(const std::string& file)
@@ -265,12 +301,7 @@ bool FileSystemAbstraction::DeleteFile(const std::string& file)
 #ifdef _WIN32
 	if (DirExists(file)) {
 		if (!RemoveDirectory(StripTrailingSlashes(file).c_str())) {
-			LPSTR messageBuffer = nullptr;
-			FormatMessageA(
-				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-				nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &messageBuffer, 0, nullptr);
-			LOG_L(L_WARNING, "[FSA::%s] error '%s' deleting directory '%s'", __func__, messageBuffer, file.c_str());
-			LocalFree(messageBuffer);
+			LOG_L(L_WARNING, "[FSA::%s] error '%s' deleting directory '%s'", __func__, Platform::GetLastErrorAsString().c_str(), file.c_str());
 			return false;
 		}
 		return true;
