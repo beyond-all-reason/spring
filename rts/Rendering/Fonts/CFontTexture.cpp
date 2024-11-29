@@ -858,9 +858,7 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	const auto iter = std::find_if(glyphs.begin(), glyphs.end(), pred);
 
 	if (iter != glyphs.end()) {
-		auto& glyph = glyphs[ch];
-		glyph = iter->second;
-		glyph.letter = ch;
+		glyphs[ch] = iter->second;
 		return;
 	}
 
