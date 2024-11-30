@@ -829,6 +829,8 @@ bool CFontTexture::ClearGlyphs(ClearGlyphMode clearMode) {
 	if (!changed)
 		return false;
 
+	kerningPrecached = {};
+
 	if (clearMode == ClearGlyphMode::full) {
 		// clear all glyps
 		glyphs.clear();
