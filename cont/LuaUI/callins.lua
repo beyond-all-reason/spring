@@ -94,6 +94,8 @@ CallInsList = {
 	"DrawScreen",
 	"DrawInMiniMap",
 
+	"FontsChanged",
+
 	"SunChanged",
 
 	"Explosion",

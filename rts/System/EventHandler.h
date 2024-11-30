@@ -242,6 +242,7 @@ class CEventHandler
 
 		bool GroupChanged(int groupID);
 
+		void FontsChanged();
 		bool GameSetup(const std::string& state, bool& ready,
 		               const std::vector< std::pair<int, std::string> >& playerStates);
 		void DownloadQueued(int ID, const string& archiveName, const string& archiveType);

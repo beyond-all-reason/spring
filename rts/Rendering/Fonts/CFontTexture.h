@@ -105,6 +105,12 @@ It works only and only with UTF32 chars
 class CFontTexture
 {
 public:
+	enum class ClearGlyphMode: unsigned int {
+		none = 0,
+		fast = 1,
+		full = 2
+	};
+
 	friend class CglFontRenderer;
 	friend class CglShaderFontRenderer;
 	friend class CglNoShaderFontRenderer;
@@ -113,8 +119,9 @@ public:
 	static void InitFonts();
 	static void KillFonts();
 	static void Update();
-	static bool AddFallbackFont(const std::string& fontfile);
-	static void ClearFallbackFonts();
+	static bool AddFallbackFont(const std::string& fontfile, ClearGlyphMode clearMode);
+	static void ClearFallbackFonts(ClearGlyphMode clearMode);
+	static void ClearAllGlyphs(ClearGlyphMode clearMode);
 
 	inline static spring::WrappedSyncRecursiveMutex sync = {};
 protected:
@@ -147,12 +154,15 @@ protected:
 private:
 	void CreateTexture(const int width, const int height);
 	void LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned index);
+	bool ClearGlyphs(ClearGlyphMode clearMode);
+	void PreloadGlyphs();
 protected:
 	float GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl);
 protected:
 	static inline std::vector<std::weak_ptr<CFontTexture>> allFonts = {};
 
 	static inline const GlyphInfo dummyGlyph = GlyphInfo();
+	static inline ClearGlyphMode needClearGlyphs = ClearGlyphMode::none;
 
 	std::array<float, 128 * 128> kerningPrecached = {}; // contains ASCII kerning
 
@@ -199,6 +209,7 @@ private:
 public:
 	auto GetGlyphs() const -> const decltype(glyphs) { return glyphs; }
 	auto GetGlyphs()       ->       decltype(glyphs) { return glyphs; }
+
 };
 
 #endif // CFONTTEXTURE_H

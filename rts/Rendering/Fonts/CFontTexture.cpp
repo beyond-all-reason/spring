@@ -23,6 +23,7 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
+#include "System/EventHandler.h"
 #include "System/Log/ILog.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/Threading/ThreadPool.h"
@@ -648,7 +649,19 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	CreateTexture(32, 32);
 
 	// precache ASCII glyphs & kernings (save them in kerningPrecached array for better lvl2 cpu cache hitrate)
+	PreloadGlyphs();
 
+#endif
+}
+
+/***
+ *
+ * Preloads standard alphabet glyphs for a font
+ */
+void CFontTexture::PreloadGlyphs()
+{
+#ifndef HEADLESS
+	FT_Face face = *shFace;
 	//preload Glyphs
 	LoadWantedGlyphs(32, 127);
 	for (char32_t i = 32; i < 127; ++i) {
@@ -665,6 +678,7 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 		}
 	}
 #endif
+
 }
 
 CFontTexture::~CFontTexture()
@@ -677,8 +691,14 @@ CFontTexture::~CFontTexture()
 #endif
 }
 
-
-bool CFontTexture::AddFallbackFont(const std::string& fontfile)
+/***
+ *
+ * Add a fallback font
+ *
+ * @param fontfile VFS path for the font
+ * @param clearMode ClearGlyphMode
+ */
+bool CFontTexture::AddFallbackFont(const std::string& fontfile, ClearGlyphMode clearMode)
 {
 #if defined(USE_FONTCONFIG) && !defined(HEADLESS)
 	if (!FtLibraryHandler::CanUseFontConfig())
@@ -728,13 +748,22 @@ bool CFontTexture::AddFallbackFont(const std::string& fontfile)
 		LOG_L(L_WARNING, "[%s] could not add priority for %s", __func__, fontfile.c_str());
 		return false;
 	}
+
+	needClearGlyphs = clearMode;
+
 	return true;
 #else
 	return false;
 #endif
 }
 
-void CFontTexture::ClearFallbackFonts()
+/***
+ *
+ * Clears fontconfig fallbacks
+ *
+ * @param clearMode ClearGlyphMode
+ */
+void CFontTexture::ClearFallbackFonts(ClearGlyphMode clearMode)
 {
 #if defined(USE_FONTCONFIG) && !defined(HEADLESS)
 	if (!FtLibraryHandler::CanUseFontConfig())
@@ -742,6 +771,84 @@ void CFontTexture::ClearFallbackFonts()
 
 	FtLibraryHandler::ClearFallbackPattern();
 	FtLibraryHandler::ClearGameFontSet();
+	needClearGlyphs = clearMode;
+#endif
+}
+
+/***
+ *
+ * Clears all glyphs for all fonts
+ *
+ * @param clearMode ClearGlyphMode
+ */
+void CFontTexture::ClearAllGlyphs(ClearGlyphMode clearMode) {
+#ifndef HEADLESS
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (clearMode == ClearGlyphMode::none)
+		return;
+
+	bool changed = false;
+	for (const auto& ft : allFonts) {
+		auto lf = ft.lock();
+		changed |= lf->ClearGlyphs(clearMode);
+	}
+	if (changed)
+		eventHandler.FontsChanged();
+
+	needClearGlyphs = ClearGlyphMode::none;
+#endif
+}
+
+/***
+ *
+ * Clears all glyphs for a font
+ *
+ * @param clearMode ClearGlyphMode
+ */
+bool CFontTexture::ClearGlyphs(ClearGlyphMode clearMode) {
+#ifndef HEADLESS
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	bool changed = false;
+
+	// Invalidate glyphs coming from other fonts, or those with the 'not found' glyph.
+	for (const auto& g : glyphs) {
+		if (g.second.face->face != shFace->face || g.second.index == 0) {
+			if (clearMode == ClearGlyphMode::fast) {
+				// in 'fast' clear mode, clear just extraneus glyphs.
+				// this can be easier to manage for the application initially, since
+				// old glyphs still work, but also means the atlas will keep
+				// filling up.
+				glyphs.erase(g.first);
+			}
+			changed = true;
+		}
+	}
+
+	failedAttemptsToReplace.clear();
+
+	if (!changed)
+		return false;
+
+	if (clearMode == ClearGlyphMode::full) {
+		// clear all glyps
+		glyphs.clear();
+
+		// refresh the atlasAlloc to reset coordinates
+		atlasAlloc.clear(); // just in case
+		atlasAlloc = CRowAtlasAlloc();
+		atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
+
+		// clear atlases
+		ReallocAtlases(false);
+
+		// preload standard glyphs
+		PreloadGlyphs();
+
+		// signal need to update texture
+		++curTextureUpdate;
+	}
+	return true;
 #endif
 }
 
@@ -773,6 +880,8 @@ void CFontTexture::Update() {
 
 	static std::vector<std::shared_ptr<CFontTexture>> fontsToUpdate;
 	fontsToUpdate.clear();
+
+	ClearAllGlyphs(needClearGlyphs);
 
 	for (const auto& font : allFonts) {
 		auto lf = font.lock();

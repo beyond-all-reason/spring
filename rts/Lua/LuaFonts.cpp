@@ -207,35 +207,79 @@ int LuaFonts::DeleteFont(lua_State* L)
 	return meta_gc(L);
 }
 
+/*** Helper to parse the glyph clear mode */
+CFontTexture::ClearGlyphMode ParseGlyphClearMode(lua_State* L, int index)
+{
+	static const constexpr auto fastMode = hashString("fast");
+	static const constexpr auto noneMode = hashString("none");
+
+	const std::string& clearStr = luaL_optstring(L, index, "");
+
+	CFontTexture::ClearGlyphMode clearMode;
+	switch(hashString(clearStr)) {
+		case noneMode:
+			clearMode = CFontTexture::ClearGlyphMode::none;
+			break;
+		case fastMode:
+			clearMode = CFontTexture::ClearGlyphMode::fast;
+			break;
+		default:
+			clearMode = CFontTexture::ClearGlyphMode::full;
+	}
+	return clearMode;
+}
+
 /*** Adds a fallback font for the font rendering engine.
  *
  * Fonts added first will have higher priority.
  * When a glyph isn't found when rendering a font, the fallback fonts
  * will be searched first, otherwise os fonts will be used.
  *
+ * This will also clear caches, depending on the 'clearMode':
+ *  - full: Clear all glyphs, textures will be invalidated.
+ *  - fast: Only clears some glyphs, but doesn't free space from atlases.
+ *  - none: Skip clearing anything.
+ *
+ * The application should listen for the unsynced 'FontsUpdated' callin so
+ * modules can clear any already reserved display lists or other relevant
+ * caches.
+ *
+ * Note the cache clearing and calling won't be done at the time of calling this
+ * method, but later, on the Update cycle (before other Update and Draw callins).
+ *
+ *
  * @function gl.AddFallbackFont
  * @string filePath VFS path to the file, for example "fonts/myfont.ttf"
+ * @string clearMode full|fast|none, default: full
  * @treturn bool success
  */
 int LuaFonts::AddFallbackFont(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
-	const bool f = CFontTexture::AddFallbackFont(luaL_checkstring(L, 1));
+	const auto font = luaL_checkstring(L, 1);
+	auto clearMode = ParseGlyphClearMode(L, 2);
+
+	const bool f = CFontTexture::AddFallbackFont(font, clearMode);
 	lua_pushboolean(L, f);
 	return 1;
 }
 
 /*** Clears all fallback fonts.
  *
+ * See note at 'AddFallbackFont' about 'clearMode' usage.
+ *
  * @function gl.ClearFallbackFonts
+ * @string clearMode full|fast|none, default: full
  * @treturn nil
  */
 int LuaFonts::ClearFallbackFonts(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
-	CFontTexture::ClearFallbackFonts();
+	auto clearMode = ParseGlyphClearMode(L, 1);
+
+	CFontTexture::ClearFallbackFonts(clearMode);
 	return 0;
 }
 

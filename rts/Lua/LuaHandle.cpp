@@ -2428,6 +2428,27 @@ void CLuaHandle::ViewResize()
 	RunCallIn(L, cmdStr, 1, 0);
 }
 
+/*** Called whenever fonts are updated. Signals the game display lists
+ *   and other caches should be discarded.
+ *
+ * Gets called before other Update and Draw callins.
+ *
+ * @function FontsChanged
+ */
+void CLuaHandle::FontsChanged()
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 2, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	RunCallIn(L, cmdStr, 0, 0);
+}
+
 /***
  * @function SunChanged
  */
@@ -2868,6 +2889,7 @@ void CLuaHandle::GameProgress(int frameNum)
 	// call the routine
 	RunCallIn(L, cmdStr, 1, 0);
 }
+
 
 void CLuaHandle::Pong(uint8_t pingTag, const spring_time pktSendTime, const spring_time pktRecvTime)
 {
