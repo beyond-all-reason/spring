@@ -678,7 +678,6 @@ void CFontTexture::PreloadGlyphs()
 		}
 	}
 #endif
-
 }
 
 CFontTexture::~CFontTexture()

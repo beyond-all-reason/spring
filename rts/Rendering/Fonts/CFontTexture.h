@@ -209,7 +209,6 @@ private:
 public:
 	auto GetGlyphs() const -> const decltype(glyphs) { return glyphs; }
 	auto GetGlyphs()       ->       decltype(glyphs) { return glyphs; }
-
 };
 
 #endif // CFONTTEXTURE_H

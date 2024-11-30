@@ -2890,7 +2890,6 @@ void CLuaHandle::GameProgress(int frameNum)
 	RunCallIn(L, cmdStr, 1, 0);
 }
 
-
 void CLuaHandle::Pong(uint8_t pingTag, const spring_time pktSendTime, const spring_time pktRecvTime)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
