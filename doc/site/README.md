@@ -15,12 +15,12 @@ Navigate to http://localhost:4000/spring
 
 ## Generating LDoc
 
-Have [LDoc](https://github.com/lunarmodules/LDoc) installed or available at your `$PATH`.
+Have [Lua Language Server](https://luals.github.io/) installed or available at your `$PATH`.
 
-Inside `doc/LDoc` run:
+Inside `doc/site` run:
 
 ```bash
-ldoc -c config.ld .
+lua-language-server --configpath .luarc.doc.json --doc ../.. --doc_out_path _data
 ```
 
 Keep in mind to see changes on the site you might have to restart jekyll.
