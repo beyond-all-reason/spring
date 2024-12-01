@@ -521,7 +521,7 @@ void CGame::Load(const std::string& mapFileName)
 		spring::exitCode = spring::EXIT_CODE_NOLOAD;
 
 	if (!contentErrors.empty())
-		ErrorMessageBox(fmt::format("Errors:\n{}", fmt::join(contentErrors, "\n")).c_str(), "Recoil: caught content_error(s)", MBF_OK | MBF_EXCL);
+		ErrorMessageBox(fmt::format("Errors:\n{}", fmt::join(contentErrors, "\n")).c_str(), "Recoil: caught content_error(s)", MBF_OK | MBF_CRASH);
 
 	loadDone = true;
 	globalQuit = globalQuit | forcedQuit;
