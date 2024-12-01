@@ -818,10 +818,16 @@ float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength
 	const float4 nearTheaterPlane = float4(norm.x, norm.y, norm.z, d);
 
 	// intersection
-	float3 intersection;
-	const bool res = RayAndPlaneIntersection(pos, pos+dir*rayLength, nearTheaterPlane, false, intersection);
-	if (res)
-		return intersection;
+	float3 rayIntersection;
+	float3 topFrustumIntersection;
+
+	// both the ray and cam to ftl need to intersect the plane to make sure we're not looking down, in that
+	// case results wouldn't be correct and also we wouldn't gain anything.
+	const bool rayRes = RayAndPlaneIntersection(pos, pos+dir*rayLength, nearTheaterPlane, false, rayIntersection);
+	const bool tfRes = RayAndPlaneIntersection(pos, ftl, nearTheaterPlane, false, topFrustumIntersection);
+	if (rayRes && tfRes) {
+		return rayIntersection;
+	}
 	return pos;
 }
 
