@@ -1764,6 +1764,7 @@ int CGlobalRendering::DepthBitsToFormat(int bits)
 
 void CGlobalRendering::SetMinSampleShadingRate()
 {
+#ifdef GLEW_ARB_sample_shading
 	if (msaaLevel > 0 && minSampleShadingRate > 0.0f) {
 		// Enable sample shading
 		glEnable(GL_SAMPLE_SHADING_ARB);
@@ -1774,6 +1775,7 @@ void CGlobalRendering::SetMinSampleShadingRate()
 	else {
 		glDisable(GL_SAMPLE_SHADING_ARB);
 	}
+#endif
 }
 
 bool CGlobalRendering::SetWindowMinMaximized(bool maximize) const
