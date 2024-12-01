@@ -101,7 +101,7 @@ static GLuint LoadTexture(const string& filename, const float anisotropy = 0.0f,
 	if (!bm.Load(filename))
 		throw content_error("[" LOG_SECTION_BUMP_WATER "] Could not load texture from file " + filename);
 
-	const unsigned int texID = bm.CreateMipMapTexture(anisotropy);
+	const auto texID = bm.CreateMipMapTexture(anisotropy);
 
 	if (sizeY != nullptr) {
 		*sizeX = bm.xsize;
@@ -177,7 +177,6 @@ static TypedRenderBuffer<VA_TYPE_0> GenWaterPlaneBuffer(bool radial)
 CBumpWater::CBumpWater()
 
 	: CEventClient("[CBumpWater]", 271923, false)
-	, target(GL_TEXTURE_2D)
 	, screenTextureX(globalRendering->viewSizeX)
 	, screenTextureY(globalRendering->viewSizeY)
 	, refractTexture(0)
@@ -254,14 +253,10 @@ void CBumpWater::InitResources(bool loadShader)
 		glBindTexture(GL_TEXTURE_2D, coastTexture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F_ARB, mapDims.mapx, mapDims.mapy, 0, GL_RGBA, GL_FLOAT, NULL);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5, mapDims.mapx, mapDims.mapy, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-		//glGenerateMipmapEXT(GL_TEXTURE_2D);
-
+		RecoilTexStorage2D(GL_TEXTURE_2D, 0, GL_RGB5, mapDims.mapx, mapDims.mapy);
 
 		{
 			blurShader = shaderHandler->CreateProgramObject("[BumpWater]", "CoastBlurShader");
@@ -322,14 +317,14 @@ void CBumpWater::InitResources(bool loadShader)
 	if (refraction > 0) {
 		// CREATE REFRACTION TEXTURE
 		glGenTextures(1, &refractTexture);
-		glBindTexture(target, refractTexture);
-		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glBindTexture(GL_TEXTURE_2D, refractTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-		glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		glTexImage2D(target, 0, GL_RGBA8, screenTextureX, screenTextureY, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, screenTextureX, screenTextureY);
 	}
 
 	if (reflection > 0) {
@@ -345,17 +340,18 @@ void CBumpWater::InitResources(bool loadShader)
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, reflTexSize, reflTexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+		RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, reflTexSize, reflTexSize);
 	}
 
 	if (depthCopy) {
 		// CREATE DEPTH TEXTURE
 		glGenTextures(1, &depthTexture);
-		glBindTexture(target, depthTexture);
-		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		GLuint depthFormat = CGlobalRendering::DepthBitsToFormat(globalRendering->supportDepthBufferBitDepth);
-		glTexImage2D(target, 0, depthFormat, screenTextureX, screenTextureY, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		RecoilTexStorage2D(GL_TEXTURE_2D, 1, depthFormat, screenTextureX, screenTextureY);
 	}
 
 	if (dynWaves) {
@@ -374,8 +370,8 @@ void CBumpWater::InitResources(bool loadShader)
 		if (anisotropy > 0.0f) {
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
 		}
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, normalTextureX, normalTextureY, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glGenerateMipmapEXT(GL_TEXTURE_2D);
+
+		RecoilTexStorage2D(GL_TEXTURE_2D, 0, GL_RGBA8, normalTextureX, normalTextureY);
 	}
 
 	// CREATE FBOs
@@ -394,7 +390,7 @@ void CBumpWater::InitResources(bool loadShader)
 		if (refraction > 0) {
 			refractFBO.Bind();
 			refractFBO.CreateRenderBuffer(GL_DEPTH_ATTACHMENT_EXT, depthRBOFormat, screenTextureX, screenTextureY);
-			refractFBO.AttachTexture(refractTexture,target);
+			refractFBO.AttachTexture(refractTexture, GL_TEXTURE_2D);
 			if (!refractFBO.CheckStatus("BUMPWATER(refraction)")) {
 				refraction = 0;
 			}
@@ -706,10 +702,9 @@ void CBumpWater::UpdateCoastmap(const bool initialize)
 	glBindTexture(GL_TEXTURE_2D, coastUpdateTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, coastTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -794,9 +789,7 @@ void CBumpWater::UpdateCoastmap(const bool initialize)
 	// generate mipmaps
 	//glActiveTexture(GL_TEXTURE0);
 	//glBindTexture(GL_TEXTURE_2D, coastTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-	glGenerateMipmapEXT(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// delete UpdateAtlas
 	glActiveTexture(GL_TEXTURE1);
@@ -804,8 +797,10 @@ void CBumpWater::UpdateCoastmap(const bool initialize)
 	glDeleteTextures(1, &coastUpdateTexture);
 	coastmapAtlasRects.clear();
 
-	globalRendering->LoadViewport();
 	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	globalRendering->LoadViewport();
 }
 
 
@@ -889,7 +884,7 @@ void CBumpWater::UpdateDynWaves(const bool initialize)
 	dynWavesFBO.Unbind();
 
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
-	glGenerateMipmapEXT(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 
@@ -905,14 +900,14 @@ void CBumpWater::Draw()
 
 	if (refraction == 1) {
 		// _SCREENCOPY_ REFRACT TEXTURE
-		glBindTexture(target, refractTexture);
-		glCopyTexSubImage2D(target, 0, 0, 0, globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+		glBindTexture(GL_TEXTURE_2D, refractTexture);
+		glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
 	}
 
 	if (depthCopy) {
 		// _SCREENCOPY_ DEPTH TEXTURE
-		glBindTexture(target, depthTexture);
-		glCopyTexSubImage2D(target, 0, 0, 0, globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
 	}
 
 	glDisable(GL_ALPHA_TEST);
@@ -947,9 +942,9 @@ void CBumpWater::Draw()
 	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, caustTextures[causticTexNum]);
 	glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, foamTexture);
 	glActiveTexture(GL_TEXTURE4); glBindTexture(GL_TEXTURE_2D, reflectTexture);
-	glActiveTexture(GL_TEXTURE5); glBindTexture(target,        refractTexture);
+	glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, refractTexture);
 	glActiveTexture(GL_TEXTURE6); glBindTexture(GL_TEXTURE_2D, coastTexture);
-	glActiveTexture(GL_TEXTURE7); glBindTexture(target,        depthTexture);
+	glActiveTexture(GL_TEXTURE7); glBindTexture(GL_TEXTURE_2D, depthTexture);
 	glActiveTexture(GL_TEXTURE8); glBindTexture(GL_TEXTURE_2D, waveRandTexture);
 	//glActiveTexture(GL_TEXTURE9); see above
 	glActiveTexture(GL_TEXTURE10); glBindTexture(GL_TEXTURE_2D, infoTextureHandler->GetCurrentInfoTexture());

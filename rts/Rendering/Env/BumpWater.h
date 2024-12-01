@@ -83,7 +83,6 @@ private:
 	int  normalTextureX; ///< needed for dynamic waves
 	int  normalTextureY;
 
-	GLuint target; ///< for screen copies (color/depth), can be GL_TEXTURE_RECTANGLE (nvidia) or GL_TEXTURE_2D (others)
 	int  screenTextureX;
 	int  screenTextureY;
 
