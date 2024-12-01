@@ -422,6 +422,7 @@ void CArchiveScanner::Clear()
 	brokenArchivesIndex.clear();
 	brokenArchivesIndex.reserve(16);
 	cachefile.clear();
+	numFilesHashed.store(0);
 }
 
 void CArchiveScanner::Reload()
@@ -927,8 +928,6 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
  */
 bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, ArchiveInfo& archiveInfo)
 {
-	assert(Threading::IsMainThread());
-
 	// try to open an archive
 	std::unique_ptr<IArchive> ar(archiveLoader.OpenArchive(archiveName));
 
@@ -940,8 +939,10 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	std::vector<std::string> fileNames;
 	std::vector<sha512::raw_digest> fileHashes;
 	static std::array<std::vector<std::uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
-	for (auto& fileBuffer : fileBuffers)
+	for (auto& fileBuffer : fileBuffers) {
+		fileBuffer.reserve(1 << 20);
 		fileBuffer.clear();
+	}
 
 	fileNames.reserve(ar->NumFiles());
 	fileHashes.reserve(ar->NumFiles());
@@ -965,22 +966,27 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	std::vector<std::shared_ptr<std::future<void>>> tasks;
 	tasks.reserve(fileNames.size());
 
-	std::counting_semaphore sem(4);
+	// decrease spinning disk thrashing a little bit.
+	std::counting_semaphore sem(std::max(ThreadPool::GetNumThreads() >> 1, 1));
+
+	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
+		const auto& fileName = fileNames[fidx];
+		auto& fileHash = fileHashes[fidx];
+		auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
+		fileBuffer.clear();
+
+		sem.acquire();
+		ar->GetFile(fileName, fileBuffer);
+		sem.release();
+
+		if (!fileBuffer.empty())
+			sha512::calc_digest(fileBuffer.data(), fileBuffer.size(), fileHash.data());
+
+		numFilesHashed.fetch_add(1);
+	};
 
 	for (size_t i = 0; i < fileNames.size(); ++i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
-
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash, &sem]() -> void {
-			auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
-			sem.acquire();
-			ar->GetFile(fileName, fileBuffer);
-			sem.release();
-
-			if (!fileBuffer.empty())
-				sha512::calc_digest(fileBuffer.data(), fileBuffer.size(), fileHash.data());
-		};
-		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask)));
+		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, i));
 	}
 
 	const auto erasePredicate = [](decltype(tasks)::value_type item) {
@@ -990,8 +996,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	while (!tasks.empty()) {
 		std::erase_if(tasks, erasePredicate);
-		spring::UnfreezeSpring(WDT_MAIN);
-		spring_sleep(spring_msecs(10));
+		spring_sleep(spring_msecs(1));
 	}
 #else
 	for_mt(0, fileNames.size(), [&](const int i) {

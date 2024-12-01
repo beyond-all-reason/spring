@@ -40,6 +40,7 @@
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/VFSHandler.h"
+#include "System/FileSystem/Misc.hpp"
 #include "System/LoadSave/DemoRecorder.h"
 #include "System/LoadSave/DemoReader.h"
 #include "System/LoadSave/LoadSaveHandler.h"
@@ -49,6 +50,7 @@
 #include "System/Platform/errorhandler.h"
 #include "System/Platform/Misc.h"
 #include "System/Sync/SyncedPrimitiveBase.h"
+#include "System/Misc/UnfreezeSpring.h"
 #include "lib/luasocket/src/restrictions.h"
 #ifdef SYNCDEBUG
 	#include "System/Sync/SyncDebugger.h"
@@ -242,6 +244,78 @@ void CPreGame::AddModArchivesToVFS(const CGameSetup* setup)
 	modFileName = archiveScanner->ArchiveFromName(setup->modName);
 }
 
+sha512::raw_digest CPreGame::GetArchiveCompleteChecksumBytesWithSplashScreen(const std::string& archiveName, const spring_time& start, const std::string& bitmapFileName)
+{
+	//can't use ThreadPool::Enqueue as nested calls to ThreadPool::Enqueue don't seem to work well
+	auto future = std::async(std::launch::async, [&archiveName]() { return archiveScanner->GetArchiveCompleteChecksumBytes(archiveName); });
+#ifndef HEADLESS
+
+	VA_TYPE_2DT quadElems[] = {
+		{0.0f, 1.0f,  0.0f, 0.0f},
+		{0.0f, 0.0f,  0.0f, 1.0f},
+		{1.0f, 0.0f,  1.0f, 1.0f},
+		{1.0f, 1.0f,  1.0f, 0.0f},
+	};
+
+	CBitmap bmp;
+	if (!bmp.Load(bitmapFileName)) {
+		bmp.AllocDummy({ 0, 0, 0, 255 });
+		quadElems[0].x = 0.5f - 0.125f * 0.5f; quadElems[0].y = 0.5f + 0.125f * 0.5f * globalRendering->aspectRatio;
+		quadElems[1].x = 0.5f - 0.125f * 0.5f; quadElems[1].y = 0.5f - 0.125f * 0.5f * globalRendering->aspectRatio;
+		quadElems[2].x = 0.5f + 0.125f * 0.5f; quadElems[2].y = 0.5f - 0.125f * 0.5f * globalRendering->aspectRatio;
+		quadElems[3].x = 0.5f + 0.125f * 0.5f; quadElems[3].y = 0.5f + 0.125f * 0.5f * globalRendering->aspectRatio;
+	}
+
+	auto texID = bmp.CreateTexture();
+
+	static constexpr const unsigned int fontFlags = FONT_NORM | FONT_SCALE;
+	static constexpr const float4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	static constexpr const float4 coors = { 0.5f, 0.175f, 0.8f, 0.04f }; // x, y, scale, spacing
+	static constexpr const char* caption = "[Performing necessary checksum calculations]";
+	auto texWidth = font->GetTextWidth(caption) * globalRendering->pixelX * font->GetSize() * coors.z;
+#endif
+
+	using namespace std::chrono_literals;
+	while (future.wait_for(10ms) != std::future_status::ready) {
+#ifndef HEADLESS
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
+		rb.AssertSubmission();
+		auto& sh = rb.GetShader();
+
+		rb.AddQuadTriangles(
+			{ quadElems[0].x, quadElems[0].y, quadElems[0].s, quadElems[0].t },
+			{ quadElems[1].x, quadElems[1].y, quadElems[1].s, quadElems[1].t },
+			{ quadElems[2].x, quadElems[2].y, quadElems[2].s, quadElems[2].t },
+			{ quadElems[3].x, quadElems[3].y, quadElems[3].s, quadElems[3].t }
+		);
+
+		glBindTexture(GL_TEXTURE_2D, texID);
+		sh.Enable();
+		rb.DrawElements(GL_TRIANGLES);
+		sh.Disable();
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		font->Begin();
+		font->SetTextColor(color.x, color.y, color.z, color.w);
+		font->glFormat(coors.x - texWidth * 0.5f, coors.y - (coors.w * coors.z * 0.0f), coors.z, fontFlags, caption);
+		font->glFormat(coors.x - texWidth * 0.5f, coors.y - (coors.w * coors.z * 1.0f), coors.z, fontFlags, "* Scanning archive named: %s", archiveName);
+		font->glFormat(coors.x - texWidth * 0.5f, coors.y - (coors.w * coors.z * 2.0f), coors.z, fontFlags, "* Dependent files checked: %u", archiveScanner->GetNumFilesHashed());
+		font->glFormat(coors.x - texWidth * 0.5f, coors.y - (coors.w * coors.z * 3.0f), coors.z, fontFlags, "* Time Elapsed: %.1fms", (spring_now() - start).toMilliSecsf());
+		font->End();
+
+		globalRendering->SwapBuffers(true, true);
+#endif
+		spring::UnfreezeSpring(WDT_MAIN);
+	}
+#ifndef HEADLESS
+	glDeleteTextures(1, &texID);
+#endif
+	return future.get();
+}
+
+
 
 void CPreGame::StartServer(const std::string& setupscript)
 {
@@ -276,12 +350,16 @@ void CPreGame::StartServer(const std::string& setupscript)
 	// (Which is OK, since unitsync does not have map options available either.)
 	startGameSetup->LoadStartPositions();
 
+	const auto splashScreenFiles = FileSystemMisc::GetSplashScreenFiles();
+	const auto& splashScreenFile = splashScreenFiles[guRNG.NextInt(splashScreenFiles.size())];
 	{
-		const std::string& modArchive = archiveScanner->ArchiveFromName(startGameSetup->modName);
-		const std::string& mapArchive = archiveScanner->ArchiveFromName(startGameSetup->mapName);
+		auto start = spring_now();
+		archiveScanner->ResetNumFilesHashed();
+		const std::string mapArchive = archiveScanner->ArchiveFromName(startGameSetup->mapName);
+		const auto mapChecksum = GetArchiveCompleteChecksumBytesWithSplashScreen(mapArchive, start, splashScreenFile);
 
-		const sha512::raw_digest& mapChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(mapArchive);
-		const sha512::raw_digest& modChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(modArchive);
+		const std::string modArchive = archiveScanner->ArchiveFromName(startGameSetup->modName);
+		const auto modChecksum = GetArchiveCompleteChecksumBytesWithSplashScreen(modArchive, start, splashScreenFile);
 
 		startGameData->SetMapChecksum(mapChecksum.data());
 		startGameData->SetModChecksum(modChecksum.data());
