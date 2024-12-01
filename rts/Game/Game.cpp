@@ -125,6 +125,7 @@
 #include "System/Log/ILog.h"
 #include "System/Platform/Misc.h"
 #include "System/Platform/Watchdog.h"
+#include "System/Platform/errorhandler.h"
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
 #include "System/Sync/DumpState.h"
@@ -361,6 +362,8 @@ void CGame::Load(const std::string& mapFileName)
 
 	ZoneScoped;
 
+	std::vector<std::string> contentErrors;
+
 	auto& globalQuit = gu->globalQuit;
 	bool  forcedQuit = false;
 
@@ -377,6 +380,7 @@ void CGame::Load(const std::string& mapFileName)
 		LoadDefs(defsParser);
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
+		contentErrors.emplace_back(e.what());
 		LOG_L(L_ERROR, "[Game::%s][1] forced quit with exception \"%s\"", __func__, e.what());
 
 		defsParser = &nullDefsParser;
@@ -395,6 +399,7 @@ void CGame::Load(const std::string& mapFileName)
 		PreLoadRendering();
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
+		contentErrors.emplace_back(e.what());
 		LOG_L(L_ERROR, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
@@ -407,6 +412,7 @@ void CGame::Load(const std::string& mapFileName)
 		PostLoadRendering();
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
+		contentErrors.emplace_back(e.what());
 		LOG_L(L_ERROR, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
@@ -417,6 +423,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadInterface();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
+			contentErrors.emplace_back(e.what());
 			LOG_L(L_ERROR, "[Game::%s][4] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
@@ -429,6 +436,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadFinalize();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
+			contentErrors.emplace_back(e.what());
 			LOG_L(L_ERROR, "[Game::%s][5] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
@@ -441,6 +449,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadLua(saveFileHandler != nullptr, false);
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
+			contentErrors.emplace_back(e.what());
 			LOG_L(L_ERROR, "[Game::%s][6] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
@@ -487,6 +496,7 @@ void CGame::Load(const std::string& mapFileName)
 			CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, msgBuf);
 		}
 	} catch (const content_error& e) {
+		contentErrors.emplace_back(e.what());
 		LOG_L(L_ERROR, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
@@ -498,6 +508,7 @@ void CGame::Load(const std::string& mapFileName)
 			LoadSkirmishAIs();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
+			contentErrors.emplace_back(e.what());
 			LOG_L(L_ERROR, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
@@ -508,6 +519,9 @@ void CGame::Load(const std::string& mapFileName)
 
 	if (forcedQuit)
 		spring::exitCode = spring::EXIT_CODE_NOLOAD;
+
+	if (!contentErrors.empty())
+		ErrorMessageBox(fmt::format("Errors:\n{}", fmt::join(contentErrors, "\n")).c_str(), "Recoil: caught content_error(s)", MBF_OK | MBF_EXCL);
 
 	loadDone = true;
 	globalQuit = globalQuit | forcedQuit;
