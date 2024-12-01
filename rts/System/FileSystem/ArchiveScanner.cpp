@@ -929,6 +929,7 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
 bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, ArchiveInfo& archiveInfo)
 {
 	// try to open an archive
+	bool isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
 	std::unique_ptr<IArchive> ar(archiveLoader.OpenArchive(archiveName));
 
 	if (ar == nullptr)
@@ -967,7 +968,8 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	tasks.reserve(fileNames.size());
 
 	// decrease spinning disk thrashing a little bit.
-	std::counting_semaphore sem(std::max(ThreadPool::GetNumThreads() >> 1, 1));
+	const auto numParallelFileReads = std::max(isOnSpinningDisk ? ThreadPool::GetNumThreads() >> 1 : ThreadPool::GetNumThreads(), 1);
+	std::counting_semaphore sem(numParallelFileReads);
 
 	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
 		const auto& fileName = fileNames[fidx];
