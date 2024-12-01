@@ -11,7 +11,7 @@ This is the changelog **since version 2590**.
 # Caveats
 These are the entries which may require special attention when migrating:
 * missing models crash the game in order to avoid desyncs (for real this time).
-No pop-up, must look for error messages in the infolog.
+There's a pop-up, for external detection look for error messages in the infolog.
 * a bunch of changes in Lua events for damage and death, see below.
 * moved sky rendering right after the terrain rendering and before `DrawWorldPreUnit`.
 This will affect things drawn in the pre-unit layer by wupgets.
@@ -22,6 +22,9 @@ instead of going back to the rotation/position it was last in when in that mode.
 * weapons with `groundBounce = true` will now bounce even if `numBounces`
 is left undefined. This is because `numBounces = -1`, which is the default
 value, will now result in infinite bounces as intended instead of 0.
+* `GroundDecals` springsetting is now a boolean. The previous semantic of that
+parameter serving as a decal duration multiplier is gone. Use the new `scarTTL`
+weapon def tag to increase durations if needed.
 * explicitly specified weapon def `scarTTL` value is now the actual TTL.
 Previously it was multiplied by the ground decals level springsetting,
 which defaults to 3, so if you had tweaked scars they may turn out to have
@@ -35,6 +38,11 @@ is now mandatory. Apparently these were all common 15 years ago already so shoul
 be safe even for relative potatoes.
 * removed `tdfID` from weapon defs, including the WeaponDefs table. Any remaining
 interfaces receive the weaponDefID instead.
+* files in an archive's root folder with a name starting with dot are now ignored
+for the purpose of checksum (as if `springignore.txt` had `\..*` on the first row,
+this cannot be overridden)
+* archive scanner version changed to 17, won't be able to reuse an old archive cache.
+Expect a rescan of archives.
 
 
 # Features
@@ -137,6 +145,17 @@ units adjust if their movedef changes at runtime.
 * weapon defs now have a new `animParamsN` (N = 1-4) tag for flipbook animations for given texture 1-4, same format as CEGs (three numbers: sprite count X, Y, and duration).
 * removed `tdfID` from weapons.
 
+### Archive scanning
+* fixed timezone changes (e.g. daylight saving time) causing a complete archive rescan on Windows.
+* the loadscreen now shows more info when scanning archives.
+* files in an archive's root folder with a name starting with dot are now ignored
+for the purpose of checksum (as if `springignore.txt` had `\..*` on the first row,
+this cannot be overridden)
+* archive scanner version changed to 17, won't be able to reuse an old archive cache.
+Expect a rescan of archives.
+* optimize performance when scanning files on a HDD.
+* fixed the archive scanner sometimes failing due to having more files opened in parallel than the OS allows.
+
 ### Misc
 * add `SelectThroughGround` float springsetting. Controls how far through ground you can single-click a unit. Default is 200, in elmos (same behaviour as previous).
 * add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
@@ -154,6 +173,7 @@ weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value
 * fix `Spring.GetFeatureSelectionVolumeData` missing from the API since about 105-800ish.
 * fix `/groundDecals` not enabling decals if they were disabled at engine startup.
 * fix rightclicking and area-commands sometimes failing to include radar dots if they wobbled too far from real position.
+* fix a crash when loading unknown glyphs from a font.
 * fix runtime metalmap adjustments not being saved/loaded (would use map default).
 * fix metal extractors not being saved/loaded correctly (would allow duplicates).
 * fix an issue where sometimes `C:\a\_temp\msys\msys64\var\cache\fontconfig` would be created on the user's disk.
