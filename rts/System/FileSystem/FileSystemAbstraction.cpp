@@ -26,6 +26,7 @@
 	#include <sstream>
 	#include <unistd.h>
 	#include <ctime>
+	#include <fstream>
 #else
 	#include <windows.h>
 	#include <io.h>
