@@ -695,9 +695,8 @@ CFontTexture::~CFontTexture()
  * Add a fallback font
  *
  * @param fontfile VFS path for the font
- * @param clearMode ClearGlyphMode
  */
-bool CFontTexture::AddFallbackFont(const std::string& fontfile, ClearGlyphMode clearMode)
+bool CFontTexture::AddFallbackFont(const std::string& fontfile)
 {
 #if defined(USE_FONTCONFIG) && !defined(HEADLESS)
 	if (!FtLibraryHandler::CanUseFontConfig())
@@ -748,7 +747,7 @@ bool CFontTexture::AddFallbackFont(const std::string& fontfile, ClearGlyphMode c
 		return false;
 	}
 
-	needClearGlyphs = clearMode;
+	needsClearGlyphs = true;
 
 	return true;
 #else
@@ -759,10 +758,8 @@ bool CFontTexture::AddFallbackFont(const std::string& fontfile, ClearGlyphMode c
 /***
  *
  * Clears fontconfig fallbacks
- *
- * @param clearMode ClearGlyphMode
  */
-void CFontTexture::ClearFallbackFonts(ClearGlyphMode clearMode)
+void CFontTexture::ClearFallbackFonts()
 {
 #if defined(USE_FONTCONFIG) && !defined(HEADLESS)
 	if (!FtLibraryHandler::CanUseFontConfig())
@@ -770,7 +767,8 @@ void CFontTexture::ClearFallbackFonts(ClearGlyphMode clearMode)
 
 	FtLibraryHandler::ClearFallbackPattern();
 	FtLibraryHandler::ClearGameFontSet();
-	needClearGlyphs = clearMode;
+
+	needsClearGlyphs = true;
 #endif
 }
 
@@ -780,7 +778,7 @@ void CFontTexture::ClearFallbackFonts(ClearGlyphMode clearMode)
  *
  * @param clearMode ClearGlyphMode
  */
-void CFontTexture::ClearAllGlyphs(ClearGlyphMode clearMode) {
+void CFontTexture::ClearAllGlyphs(bool clearMode) {
 #ifndef HEADLESS
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (clearMode == ClearGlyphMode::none)
@@ -789,22 +787,20 @@ void CFontTexture::ClearAllGlyphs(ClearGlyphMode clearMode) {
 	bool changed = false;
 	for (const auto& ft : allFonts) {
 		auto lf = ft.lock();
-		changed |= lf->ClearGlyphs(clearMode);
+		changed |= lf->ClearGlyphs();
 	}
 	if (changed)
 		eventHandler.FontsChanged();
 
-	needClearGlyphs = ClearGlyphMode::none;
+	needsClearGlyphs = false;
 #endif
 }
 
 /***
  *
  * Clears all glyphs for a font
- *
- * @param clearMode ClearGlyphMode
  */
-bool CFontTexture::ClearGlyphs(ClearGlyphMode clearMode) {
+bool CFontTexture::ClearGlyphs() {
 #ifndef HEADLESS
 	RECOIL_DETAILED_TRACY_ZONE;
 
@@ -813,25 +809,16 @@ bool CFontTexture::ClearGlyphs(ClearGlyphMode clearMode) {
 	// Invalidate glyphs coming from other fonts, or those with the 'not found' glyph.
 	for (const auto& g : glyphs) {
 		if (g.second.face->face != shFace->face || g.second.index == 0) {
-			if (clearMode == ClearGlyphMode::fast) {
-				// in 'fast' clear mode, clear just extraneus glyphs.
-				// this can be easier to manage for the application initially, since
-				// old glyphs still work, but also means the atlas will keep
-				// filling up.
-				glyphs.erase(g.first);
-			}
 			changed = true;
 		}
 	}
 
+	// Always clear failed attempts in case we have any cache here.
 	failedAttemptsToReplace.clear();
 
-	if (!changed)
-		return false;
+	if (changed) {
+		kerningPrecached = {};
 
-	kerningPrecached = {};
-
-	if (clearMode == ClearGlyphMode::full) {
 		// clear all glyps
 		glyphs.clear();
 
@@ -882,7 +869,8 @@ void CFontTexture::Update() {
 	static std::vector<std::shared_ptr<CFontTexture>> fontsToUpdate;
 	fontsToUpdate.clear();
 
-	ClearAllGlyphs(needClearGlyphs);
+	if (needsClearGlyphs)
+		ClearAllGlyphs();
 
 	for (const auto& font : allFonts) {
 		auto lf = font.lock();
