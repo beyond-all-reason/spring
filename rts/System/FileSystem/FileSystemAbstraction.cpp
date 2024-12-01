@@ -234,7 +234,7 @@ std::string FileSystemAbstraction::GetFileModificationDate(const std::string& fi
 
 bool FileSystemAbstraction::IsPathOnSpinningDisk(const std::string& path)
 {
-#ifndef _WIN32
+#ifdef _WIN32
 	std::string volumePath; volumePath.resize(64);
 	if (!::GetVolumePathNameA(path.c_str(), volumePath.data(), volumePath.size())) {
 		LOG_L(L_WARNING, "[%s] GetVolumePathNameA error: '%s'", __func__, Platform::GetLastErrorAsString().c_str());
