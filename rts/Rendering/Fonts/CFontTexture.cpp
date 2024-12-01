@@ -775,14 +775,10 @@ void CFontTexture::ClearFallbackFonts()
 /***
  *
  * Clears all glyphs for all fonts
- *
- * @param clearMode ClearGlyphMode
  */
-void CFontTexture::ClearAllGlyphs(bool clearMode) {
+void CFontTexture::ClearAllGlyphs() {
 #ifndef HEADLESS
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (clearMode == ClearGlyphMode::none)
-		return;
 
 	bool changed = false;
 	for (const auto& ft : allFonts) {
