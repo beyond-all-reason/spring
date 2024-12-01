@@ -800,7 +800,7 @@ float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength
 	const auto ftl = GetFrustumVert(CCamera::FRUSTUM_POINT_FTL);
 
 	// check the bottom frustum is parallel to ground and lower than the top frustum
-	if ((std::abs(fbl.y-fbr.y) > std::numeric_limits<float>::epsilon()) || (fbl.y >= ftl.y))
+	if ((std::abs(fbl.y-fbr.y) > std::abs(fbl.y/100000.0)) || (fbl.y >= ftl.y))
 		return pos;
 
 	const auto fv1 = TracePointToMaxAltitude(fbl, rayLength, maxAltitude);
