@@ -910,6 +910,8 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
 	IFileFilter* ignore = IFileFilter::Create();
 	std::vector<std::uint8_t> buf;
 
+	ignore->AddRuleRegex("^\\..*$");
+
 	// this automatically splits lines
 	if (ar->GetFile("springignore.txt", buf) && !buf.empty())
 		ignore->AddRule(std::string((char*)(&buf[0]), buf.size()));

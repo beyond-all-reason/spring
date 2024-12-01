@@ -17,6 +17,7 @@ using std::vector;
 class CFileFilter : public IFileFilter
 {
 public:
+	void AddRuleRegex(const string& rule) override;
 	void AddRule(const string& rule) override;
 	bool Match(const string& filename) const override;
 
@@ -39,6 +40,12 @@ IFileFilter* IFileFilter::Create()
 	return new CFileFilter();
 }
 
+
+void CFileFilter::AddRuleRegex(const string& rule)
+{
+	auto& r = rules.emplace_back();
+	r.regex = spring::regex(rule, spring::regex::icase);
+}
 
 /** @brief Add a filtering rule.
 
