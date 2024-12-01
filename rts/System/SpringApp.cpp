@@ -80,6 +80,7 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/FileSystemInitializer.h"
+#include "System/FileSystem/Misc.hpp"
 #include "System/Input/KeyInput.h"
 #include "System/Input/MouseInput.h"
 #include "System/LoadSave/LoadSaveHandler.h"
@@ -376,19 +377,11 @@ bool SpringApp::InitFileSystem()
 	// FileSystem is mostly self-contained, don't need locks
 	// (at this point neither the platform CWD nor data-dirs
 	// have been set yet by FSI, can only use absolute paths)
-	const std::string cwd = FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd());
-	const std::string ssd = FileSystem::EnsurePathSepAtEnd(configHandler->GetString("SplashScreenDir"));
-
-	std::vector<std::string> splashScreenFiles = dataDirsAccess.FindFiles(FileSystem::IsAbsolutePath(ssd)? ssd: cwd + ssd, "*.{png,jpg}", 0);
-
-	if (splashScreenFiles.empty()) {
-		auto logoPath = FileSystem::EnsurePathSepAtEnd(FileSystem::GetNormalizedPath(FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetSpringExecutableDir()) + "base"));
-		splashScreenFiles = dataDirsAccess.FindFiles(logoPath, "*.{png,jpg}", 0);
-	}
 
 	spring::thread fsInitThread(FileSystemInitializer::InitializeThr, &ret);
 
 	#ifndef HEADLESS
+	const auto splashScreenFiles = FileSystemMisc::GetSplashScreenFiles();
 	if (!splashScreenFiles.empty()) {
 		ShowSplashScreen(splashScreenFiles[ guRNG.NextInt(splashScreenFiles.size()) ], SpringVersion::GetFull(), [&]() { return (FileSystemInitializer::Initialized()); });
 	} else {

@@ -8,6 +8,7 @@
 
 #include "GameController.h"
 #include "System/Misc/SpringTime.h"
+#include "System/Sync/SHA512.hpp"
 
 class ILoadSaveHandler;
 class GameData;
@@ -50,6 +51,8 @@ public:
 	int KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
 
 private:
+	sha512::raw_digest GetArchiveCompleteChecksumBytesWithSplashScreen(const std::string& archiveName, const spring_time& start, const std::string& bitmapFileName);
+
 	void AddMapArchivesToVFS(const CGameSetup* setup);
 	void AddModArchivesToVFS(const CGameSetup* setup);
 
