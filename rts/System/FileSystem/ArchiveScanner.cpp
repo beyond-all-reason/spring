@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdio>
 #include <memory>
+#include <semaphore>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -962,12 +963,20 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	std::vector<std::shared_ptr<std::future<void>>> tasks;
 	tasks.reserve(fileNames.size());
 
+	std::counting_semaphore sem(4);
+
 	for (size_t i = 0; i < fileNames.size(); ++i) {
 		const auto& fileName = fileNames[i];
 		      auto& fileHash = fileHashes[i];
 
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
+		auto ComputeHashesTask = [&ar, &fileName, &fileHash, &sem]() -> void {
+			auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
+			sem.acquire();
+			ar->GetFile(fileName, fileBuffer);
+			sem.release();
+
+			if (!fileBuffer.empty())
+				sha512::calc_digest(fileBuffer.data(), fileBuffer.size(), fileHash.data());
 		};
 		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask)));
 	}
