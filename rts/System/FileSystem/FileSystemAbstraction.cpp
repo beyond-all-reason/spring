@@ -236,7 +236,7 @@ std::string FileSystemAbstraction::GetFileModificationDate(const std::string& fi
 
 bool FileSystemAbstraction::IsPathOnSpinningDisk(const std::string& path)
 {
-#ifdef _WIN32
+#ifndef _WIN32
 	std::string volumePath; volumePath.resize(64);
 	if (!::GetVolumePathNameA(path.c_str(), volumePath.data(), volumePath.size())) {
 		LOG_L(L_WARNING, "[%s] GetVolumePathNameA error: '%s'", __func__, Platform::GetLastErrorAsString().c_str());
@@ -294,7 +294,7 @@ bool FileSystemAbstraction::IsPathOnSpinningDisk(const std::string& path)
 
 	// we need the physical disk
 	std::string devName; devName.resize(1024);
-	if (readlink(fmt::format("/sys/dev/block/{}:{}", static_cast<int>(info.st_dev >> 8), 0).c_str(), devName.data(), devName.size()) > 0) {
+	if (readlink(fmt::format("/sys/dev/block/{}:{}", info.st_dev >> 8, 0).c_str(), devName.data(), devName.size()) > 0) {
 		devName.resize(strlen(devName.c_str()));
 	}
 	else {
