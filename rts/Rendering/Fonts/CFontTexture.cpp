@@ -681,7 +681,7 @@ CFontTexture::~CFontTexture()
 bool CFontTexture::AddFallbackFont(const std::string& fontfile)
 {
 #if defined(USE_FONTCONFIG) && !defined(HEADLESS)
-	if (!FtLibraryHandler::UseFontConfig())
+	if (!FtLibraryHandler::CanUseFontConfig())
 		return false;
 
 	FcFontSet *set = FtLibraryHandler::GetGameFontSet();
@@ -737,7 +737,7 @@ bool CFontTexture::AddFallbackFont(const std::string& fontfile)
 void CFontTexture::ClearFallbackFonts()
 {
 #if defined(USE_FONTCONFIG) && !defined(HEADLESS)
-	if (!FtLibraryHandler::UseFontConfig())
+	if (!FtLibraryHandler::CanUseFontConfig())
 		return;
 
 	FtLibraryHandler::ClearFallbackPattern();
