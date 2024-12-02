@@ -18,6 +18,7 @@
 #include <cerrno>
 #include <cstring>
 #include <fmt/printf.h>
+#include <fmt/format.h>
 #include "System/SpringRegex.h"
 #include "System/Platform/Misc.h"
 
@@ -281,55 +282,47 @@ bool FileSystemAbstraction::IsPathOnSpinningDisk(const std::string& path)
 	struct stat info;
 
 	if (stat(path.c_str(), &info) != 0) {
-		LOG_L(L_WARNING, "[%s] Error '%s' getting the device file name for path '%s'", __func__, Platform::GetLastErrorAsString().c_str(), path.c_str());
+		LOG_L(L_WARNING, "[%s] Error '%s' getting stat() for file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), path.c_str());
 		return true;
 	}
 
-	std::string devId = fmt::sprintf("%d:%d ", static_cast<int>(info.st_dev >> 8), static_cast<int>(info.st_dev & 0xFF));
+	// the partition
+	// devId: (info.st_dev >> 8) : (info.st_dev & 0xFF));
 
-	std::ifstream mif("/proc/self/mountinfo", std::ios::in);
-	if (mif.bad() || !mif.is_open()) {
-		LOG_L(L_WARNING, "[%s] Failed to open /proc/self/mountinfo", __func__);
+	// the physical disk
+	// devId: (info.st_dev >> 8) : (0));
+
+	// we need the physical disk
+	std::string devName; devName.resize(1024);
+	if (readlink(fmt::format("/sys/dev/block/{}:{}", static_cast<int>(info.st_dev >> 8), 0).c_str(), devName.data(), devName.size()) > 0) {
+		devName.resize(strlen(devName.c_str()));
+	}
+	else {
+		LOG_L(L_WARNING, "[%s] Error '%s' getting readlink() for file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), path.c_str());
 		return true;
 	}
 
-	std::string devStr;
-	while (std::getline(mif, devStr)) {
-		if (devStr.find(devId) == std::string::npos)
-			continue;
-
-		auto di = devStr.find('-');
-		if (di == std::string::npos)
-			continue;
-
-		devStr = devStr.substr(di + 1);
-
-		auto ds = devStr.find("/dev/");
-		if (ds == std::string::npos)
-			continue;
-
-		auto de = devStr.find(' ', ds + 5);
-		if (de == std::string::npos)
-			continue;
-
-		devStr = devStr.substr(ds + 5, de - ds - 5);
-
-		auto lastNonNum = devStr.find_last_not_of("0123456789");
-		devStr = devStr.substr(0, lastNonNum + 1);
-
-		std::string rotFileName = fmt::format("/sys/block/{}/queue/rotational", devStr);
-		std::ifstream rotf(rotFileName, std::ios::in);
-		if (rotf.bad() || !rotf.is_open()) {
-			LOG_L(L_WARNING, "[%s] Failed to open %s", __func__, rotFileName.c_str());
-			return true;
-		}
-
-		int rotational = 1;
-		rotf >> rotational;
-		return static_cast<bool>(rotational);
+	auto ss = devName.rfind('/');
+	if (ss == std::string::npos) {
+		LOG_L(L_WARNING, "[%s] Error finding the device name for file '%s'", __func__, devName.c_str());
+		return true;
 	}
 
-	return true;
+	devName = devName.substr(ss + 1);
+	std::string rotFileName = fmt::format("/sys/block/{}/queue/rotational", devName);
+
+	std::ifstream rotf(rotFileName, std::ios::in);
+	if (rotf.bad() || !rotf.is_open()) {
+		LOG_L(L_WARNING, "[%s] Error '%s' opening file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), rotFileName.c_str());
+		return true;
+	}
+
+	char rot = '\0';
+	if (!rotf.read(&rot, 1)) {
+		LOG_L(L_WARNING, "[%s] Error '%s' reading file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), rotFileName.c_str());
+		return true;
+	}
+	return rot == '1';
 #endif
 }
 
