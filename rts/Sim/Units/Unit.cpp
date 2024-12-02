@@ -337,9 +337,10 @@ void CUnit::PostInit(const CUnit* builder)
 	UpdateCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS, unitDef->collidable && (!immobile || !unitDef->canKamikaze));
 	Block();
 
-	// done in UnitFinished() instead
-	//if (unitDef->windGenerator > 0.0f)
-	//	envResHandler.AddGenerator(this);
+	// done once again in UnitFinished() too
+	// but keep the old behavior for compatibility purposes
+	if (unitDef->windGenerator > 0.0f)
+		envResHandler.AddGenerator(this);
 
 	UpdateTerrainType();
 	UpdatePhysicalState(0.1f);
@@ -432,8 +433,12 @@ void CUnit::FinishedBuilding(bool postInit)
 	// Sets the frontdir in sync with heading.
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
 
-	if (unitDef->windGenerator > 0.0f)
+	if (unitDef->windGenerator > 0.0f) {
+		// trigger sending the wind update by removing
+		envResHandler.DelGenerator(this);
+		//  and adding back this windgen
 		envResHandler.AddGenerator(this);
+	}
 
 	eventHandler.UnitFinished(this);
 	eoh->UnitFinished(*this);
