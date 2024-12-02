@@ -5,6 +5,7 @@
 #include "GlobalSynced.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
+#include "Sim/Misc/ModInfo.h"
 #include "System/ContainerUtil.h"
 #include "System/SpringMath.h"
 
@@ -61,7 +62,16 @@ void EnvResourceHandler::LoadWind(float minStrength, float maxStrength)
 	minWindStrength = std::min(minStrength, maxStrength);
 	maxWindStrength = std::max(minStrength, maxStrength);
 
-	curWindVec = mix(curWindDir * GetAverageWindStrength(), RgtVector * GetAverageWindStrength(), curWindDir == RgtVector);
+	// generate initial wind direction
+	float strength = 0.0f;
+
+	do {
+		curWindDir.x = gsRNG.NextFloat();
+		curWindDir.z = gsRNG.NextFloat();
+		strength = curWindDir.LengthNormalize2D();
+	} while (strength == 0.0f);
+
+	curWindVec = curWindDir * GetAverageWindStrength();
 	oldWindVec = curWindVec;
 }
 
@@ -102,32 +112,33 @@ void EnvResourceHandler::Update()
 
 		// normalize and clamp s.t. minWindStrength <= strength <= maxWindStrength
 		newWindVec /= newStrength;
-		newWindVec *= (newStrength = std::clamp(newStrength, minWindStrength, maxWindStrength));
-
-		// update generators
-		for (const int unitID: allGeneratorIDs) {
-			(unitHandler.GetUnit(unitID))->UpdateWind(newWindVec.x, newWindVec.z, newStrength);
-		}
-	} else {
-		const float mod = smoothstep(0.0f, 1.0f, windDirTimer / float(WIND_UPDATE_RATE));
-
-		// blend between old & new wind directions
-		// note: generators added on simframes when timer is 0
-		// do not receive a snapshot of the blended direction
-		curWindVec = mix(oldWindVec, newWindVec, mod);
-		curWindStrength = curWindVec.LengthNormalize();
-
-		curWindDir = curWindVec;
-		curWindVec = curWindDir * (curWindStrength = std::clamp(curWindStrength, minWindStrength, maxWindStrength));
-
-		for (const int unitID: newGeneratorIDs) {
-			// make newly added generators point in direction of wind
-			(unitHandler.GetUnit(unitID))->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
-			allGeneratorIDs.push_back(unitID);
-		}
-
-		newGeneratorIDs.clear();
+		newStrength = std::clamp(newStrength, minWindStrength, maxWindStrength);
+		newWindVec *= newStrength;
 	}
+
+	const float mod = smoothstep(0.0f, 1.0f, windDirTimer / float(WIND_UPDATE_RATE));
+
+	// blend between old & new wind directions
+	curWindVec = mix(oldWindVec, newWindVec, mod);
+	curWindStrength = std::clamp(curWindVec.LengthNormalize(), minWindStrength, maxWindStrength);
+
+	curWindDir = curWindVec;
+	curWindVec = curWindDir * curWindStrength;
+
+	if (const auto& wcrp = modInfo.windChangeReportPeriod; wcrp > 0 && gs->frameNum % wcrp == 0) {
+		// update generators every modInfo.windChangeReportPeriod frames
+		for (auto unitID : allGeneratorIDs) {
+			unitHandler.GetUnit(unitID)->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
+		}
+	}
+
+	// needs to be done immediately to rotate the generator according to the wind direction correctly
+	for (auto unitID : newGeneratorIDs) {
+		// make newly added generators point in direction of wind
+		unitHandler.GetUnit(unitID)->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
+		allGeneratorIDs.push_back(unitID);
+	}
+	newGeneratorIDs.clear();
 
 	windDirTimer = (windDirTimer + 1) % (WIND_UPDATE_RATE + 1);
 }

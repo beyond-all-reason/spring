@@ -232,6 +232,9 @@ public:
 
 	bool allowTake;
 	bool allowEnginePlayerlist;
+
+	// how often to report wind speed/direction to wind gens
+	int windChangeReportPeriod;
 };
 
 extern CModInfo modInfo;
