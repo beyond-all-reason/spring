@@ -153,7 +153,7 @@ public:
 			FcConfigEnableHome(FcFalse);
 			config = FcInitLoadConfigAndFonts();
 			if (!config) {
-				LOG_MSG(errprefix.c_str(), true);
+				LOG_MSG("%s", true, errprefix);
 				FcFini();
 				return false;
 			}
