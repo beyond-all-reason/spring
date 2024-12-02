@@ -832,8 +832,8 @@ bool CFontTexture::ClearGlyphs() {
 		// signal need to update texture
 		++curTextureUpdate;
 	}
-	return true;
 #endif
+	return true;
 }
 
 void CFontTexture::InitFonts()
