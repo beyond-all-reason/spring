@@ -91,14 +91,14 @@ public:
 	{
 		const FT_Error error = FT_Init_FreeType(&lib);
 
-		FT_Int version[3];
-		FT_Library_Version(lib, &version[0], &version[1], &version[2]);
+		if (error != 0) {
+			FT_Int version[3];
+			FT_Library_Version(lib, &version[0], &version[1], &version[2]);
 
-		std::string msg = fmt::sprintf("%s::FreeTypeInit (version %d.%d.%d)", __func__, version[0], version[1], version[2]);
-		std::string err = fmt::sprintf("[%s] FT_Init_FreeType failure \"%s\"", __func__, GetFTError(error));
-
-		if (error != 0)
+			std::string err = fmt::sprintf("[%s] FT_Init_FreeType failure (version %d.%d.%d) \"%s\"",
+						       __func__, version[0], version[1], version[2], GetFTError(error));
 			throw std::runtime_error(err);
+		}
 	}
 
 	~FtLibraryHandler() {
