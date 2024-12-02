@@ -149,8 +149,12 @@ public:
 			return;
 
 		FcConfigDestroy(config);
-		FcFontSetDestroy(gameFontSet);
-		FcPatternDestroy(fallbackPattern);
+		if (gameFontSet) {
+			FcFontSetDestroy(gameFontSet);
+		}
+		if (fallbackPattern) {
+			FcPatternDestroy(fallbackPattern);
+		}
 		FcFini();
 		config = nullptr;
 		#endif
