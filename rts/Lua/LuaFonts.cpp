@@ -213,7 +213,7 @@ int LuaFonts::DeleteFont(lua_State* L)
  * When a glyph isn't found when rendering a font, the fallback fonts
  * will be searched first, otherwise os fonts will be used.
  *
- * The application should listen for the unsynced 'FontsUpdated' callin so
+ * The application should listen for the unsynced 'FontsChanged' callin so
  * modules can clear any already reserved display lists or other relevant
  * caches.
  *
@@ -237,7 +237,7 @@ int LuaFonts::AddFallbackFont(lua_State* L)
 
 /*** Clears all fallback fonts.
  *
- * See the note at 'AddFallbackFont' about the 'FontsUpdated' callin,
+ * See the note at 'AddFallbackFont' about the 'FontsChanged' callin,
  * it also applies when calling this method.
  *
  * @function gl.ClearFallbackFonts
