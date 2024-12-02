@@ -142,27 +142,31 @@ public:
 			FcBool res;
 			std::string errprefix = fmt::sprintf("[%s] Fontconfig(version %d.%d.%d) failed to initialize", __func__, FC_MAJOR, FC_MINOR, FC_REVISION);
 
-			// library init
-			res = FcInit();
-			if (!res) {
-				LOG_MSG("%s failed to initialize", true, errprefix);
-				return false;
-			}
-
 			// init configuration
 			FcConfigEnableHome(FcFalse);
-			config = FcInitLoadConfigAndFonts();
-			if (!config) {
-				LOG_MSG("%s", true, errprefix);
-				FcFini();
-				return false;
-			}
+			config = FcConfigCreate();
 
-			// add local cache
+			// add local cache in case fontconfig one can't be used
 			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
 			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue);
 			if (!res) {
 				LOG_MSG("%s cache", true, errprefix);
+				InitFailed();
+				return false;
+			}
+
+			// load system configuration
+			res = FcConfigParseAndLoad(config, 0, true);
+			if (!res) {
+				LOG_MSG("%s config", true, errprefix);
+				InitFailed();
+				return false;
+			}
+
+			// build system fonts
+			res = FcConfigBuildFonts(config);
+			if (!res) {
+				LOG_MSG("%s build fonts", true, errprefix);
 				InitFailed();
 				return false;
 			}
