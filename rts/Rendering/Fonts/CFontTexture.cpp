@@ -172,7 +172,7 @@ public:
 			}
 
 			// init app fonts dir
-			res = FcConfigAppFontAddDir(GetFCConfig(), reinterpret_cast<const FcChar8*>("fonts"));
+			res = FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
 			if (!res) {
 				LOG_MSG("%s font dir", true, errprefix);
 				InitFailed();
@@ -180,7 +180,7 @@ public:
 			}
 
 			// print cache dirs
-			auto dirs = FcConfigGetCacheDirs(GetFCConfig());
+			auto dirs = FcConfigGetCacheDirs(config);
 			FcStrListFirst(dirs);
 			for (FcChar8* dir = FcStrListNext(dirs); dir != nullptr; dir = FcStrListNext(dirs)) {
 				LOG_MSG("[%s] Using Fontconfig cache dir \"%s\"", false, __func__, dir);
