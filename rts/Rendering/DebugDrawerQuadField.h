@@ -11,7 +11,8 @@ class DebugDrawerQuadField : public CEventClient
 {
 public:
 	// CEventClient interface
-	virtual void Update() override;
+	virtual void DrawInMiniMapBackground() override;
+	virtual void DrawWorldPreUnit() override;
 
 	static void SetEnabled(bool enable);
 	static bool IsEnabled() { return (instance != nullptr); }
@@ -25,6 +26,7 @@ private:
 	void DrawSelectionQuads() const;
 	void DrawMouseRayQuads() const;
 	void DrawCamera() const;
+	void DrawAll() const;
 
 	static DebugDrawerQuadField* instance;
 };

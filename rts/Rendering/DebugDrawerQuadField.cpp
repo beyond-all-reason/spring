@@ -44,7 +44,19 @@ void DebugDrawerQuadField::SetEnabled(bool enable)
 	instance = new DebugDrawerQuadField();
 }
 
-void DebugDrawerQuadField::Update()
+void DebugDrawerQuadField::DrawWorldPreUnit()
+{
+	// lineDrawer cleans up after drawing, so we need to queue lines
+	// before minimap and world drawing.
+	DrawAll();
+}
+
+void DebugDrawerQuadField::DrawInMiniMapBackground()
+{
+	DrawAll();
+}
+
+void DebugDrawerQuadField::DrawAll() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
