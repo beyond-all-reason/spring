@@ -519,6 +519,30 @@ namespace Platform
 	uint32_t NativeWordSize() { return (sizeof(void*)); }
 	uint32_t SystemWordSize() { return ((Is32BitEmulation())? 8: NativeWordSize()); }
 
+	std::string GetLastErrorAsString()
+	{
+#ifdef _WIN32
+		return GetLastErrorAsString(GetLastError());
+#else
+		return GetLastErrorAsString(errno);
+#endif
+	}
+
+	std::string GetLastErrorAsString(uint32_t errCode)
+	{
+#ifdef _WIN32
+		LPSTR messageBuffer = nullptr;
+		size_t size = ::FormatMessageA(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			nullptr, errCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, nullptr);
+		std::string retVal(messageBuffer, size);
+		::LocalFree(messageBuffer);
+		return retVal;
+#else
+		return std::string(strerror(errCode));
+#endif
+	}
+
 	int SetEnvironment(const char* name, const char* value, int overwrite)
 	{
 #ifdef _WIN32

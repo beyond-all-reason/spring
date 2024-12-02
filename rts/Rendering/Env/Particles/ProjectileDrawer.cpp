@@ -108,6 +108,9 @@ void CProjectileDrawer::Init() {
 	ParseAtlasTextures(true, resProjTexturesTable, blockedTexNames, textureAtlas);
 	ParseAtlasTextures(true, resGroundFXTexturesTable, blockedTexNames, groundFXAtlas);
 
+	textureAtlas->SetMaxTexLevel(4);
+	groundFXAtlas->SetMaxTexLevel(4);
+
 	int smokeTexCount = -1;
 
 	{

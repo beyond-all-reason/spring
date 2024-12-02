@@ -12,6 +12,7 @@
 
 #include "System/CRC.h"
 #include "System/StringUtil.h"
+#include "System/Platform/Misc.h"
 #include "System/Log/ILog.h"
 
 static Byte kUtf8Limits[5] = {0xC0, 0xE0, 0xF0, 0xF8, 0xFC};
@@ -114,27 +115,6 @@ static inline const char* GetErrorStr(int err)
 	return "Unknown error";
 }
 
-static inline const char* GetSystemErrorStr(WRes wres)
-{
-	static char buf[16384];
-
-	memset(buf, 0, sizeof(buf));
-	strncpy(buf, strerror(wres), sizeof(buf) - 1);
-
-#ifdef USE_WINDOWS_FILE
-	LPSTR messageBuffer = nullptr;
-	size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-								 nullptr, wres, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &messageBuffer, 0, nullptr);
-
-	memset(buf, 0, sizeof(buf));
-	memcpy(buf, messageBuffer, std::min(sizeof(buf), strlen(static_cast<char*>(messageBuffer))));
-
-	LocalFree(messageBuffer);
-#endif
-
-	return buf;
-}
-
 CSevenZipArchive::CSevenZipArchive(const std::string& name)
 	: CBufferedArchive(name, false)
 	, allocImp({SzAlloc, SzFree})
@@ -146,7 +126,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 
 	const WRes wres = InFile_Open(&archiveStream.file, name.c_str());
 	if (wres) {
-		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s (%i)", __func__, name.c_str(), GetSystemErrorStr(wres), (int) wres);
+		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s (%i)", __func__, name.c_str(), Platform::GetLastErrorAsString(wres).c_str(), (int)wres);
 		return;
 	}
 

@@ -65,6 +65,8 @@ CONFIG(bool, DumpGameStateOnDesync).defaultValue(true).description("Enable writi
 CONFIG(float, MinSimDrawBalance).defaultValue(0.15f).description("Percent of the time for simulation is minimum spend for drawing. E.g. if set to 0.15 then 15% of the total cpu time is exclusively reserved for drawing.");
 CONFIG(int, MinDrawFPS).defaultValue(2).description("Defines how many frames per second should minimally be rendered. To reach this number we will delay simframes.");
 
+CONFIG(float, SelectThroughGround).defaultValue(200.0f).minimumValue(0.0f).description("How far beyond the ground to allow selecting objects.");
+
 void GlobalConfig::Init()
 {
 	// Recommended semantics for "expert" type config values:
@@ -98,6 +100,8 @@ void GlobalConfig::Init()
 	minDrawFPS = configHandler->GetInt("MinDrawFPS");
 
 	teamHighlight = configHandler->GetInt("TeamHighlight");
+
+	selectThroughGround = configHandler->GetFloat("SelectThroughGround");
 }
 #endif
 

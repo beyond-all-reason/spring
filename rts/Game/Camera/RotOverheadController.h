@@ -4,6 +4,7 @@
 #define _ROTOH_CONTROLLER_H
 
 #include "CameraController.h"
+#include "Game/Camera.h"
 
 class CRotOverheadController : public CCameraController
 {
@@ -27,6 +28,7 @@ public:
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
 	float3 GetRot() const { return rot; }
+	float3 GetDir() const {	return CCamera::GetFwdFromRot(rot); }
 
 	void Update();
 

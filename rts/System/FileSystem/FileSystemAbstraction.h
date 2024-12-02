@@ -120,6 +120,12 @@ public:
 	 */
 	static std::string GetFileModificationDate(const std::string& file);
 
+	/**
+	 * Returns if the file or directory reside on spinning disk
+	 * @return true if on a spinning disk
+	 */
+	static bool IsPathOnSpinningDisk(const std::string& path);
+
 	static char GetNativePathSeparator();
 	static bool IsAbsolutePath(const std::string& path);
 

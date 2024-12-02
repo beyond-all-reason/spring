@@ -7,6 +7,7 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <atomic>
 
 #include "System/Info.h"
 #include "System/Sync/SHA512.hpp"
@@ -154,8 +155,9 @@ public:
 	std::string MapNameToMapFile(const std::string& versionedMapName) const;
 	ArchiveData GetArchiveData(const std::string& versionedName) const;
 	ArchiveData GetArchiveDataByArchive(const std::string& archive) const;
-
-
+public:
+	uint32_t GetNumFilesHashed() const { return numFilesHashed.load(); }
+	void ResetNumFilesHashed() { numFilesHashed.store(0); }
 private:
 	struct ArchiveInfo {
 		ArchiveInfo() {
@@ -237,6 +239,8 @@ private:
 	static bool CheckCompression(const IArchive* ar, const std::string& fullName, std::string& error);
 
 private:
+	std::atomic<uint32_t> numFilesHashed{0};
+
 	spring::unordered_map<std::string, size_t> archiveInfosIndex;
 	spring::unordered_map<std::string, size_t> brokenArchivesIndex;
 

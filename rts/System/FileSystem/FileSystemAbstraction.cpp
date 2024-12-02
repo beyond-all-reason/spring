@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <cerrno>
 #include <cstring>
+#include <fmt/printf.h>
 #include "System/SpringRegex.h"
 #include "System/Platform/Misc.h"
 
@@ -25,11 +26,13 @@
 	#include <sstream>
 	#include <unistd.h>
 	#include <ctime>
+	#include <fstream>
 #else
 	#include <windows.h>
 	#include <io.h>
 	#include <direct.h>
 	#include <fstream>
+	#include <winioctl.h>
 	// Win-API redefines these, which breaks things
 	#if defined(CreateDirectory)
 		#undef CreateDirectory
@@ -176,6 +179,36 @@ bool FileSystemAbstraction::IsReadableFile(const std::string& file)
 
 unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& file)
 {
+#ifdef _WIN32
+	auto h = CreateFileA(file.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	if (h == INVALID_HANDLE_VALUE) {
+		LOG_L(L_WARNING, "[FSA::%s] error '%s' getting last modification time of file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), file.c_str());
+		return 0;
+	}
+	if (FILETIME ft; GetFileTime(h, nullptr, nullptr, &ft)) {
+		SYSTEMTIME stUTC;
+		FileTimeToSystemTime(&ft, &stUTC);
+
+		struct tm tm;
+		memset(&tm, 0, sizeof(tm)); // Initialize to zero
+
+		tm.tm_year = stUTC.wYear - 1900;
+		tm.tm_mon = stUTC.wMonth - 1;
+		tm.tm_mday = stUTC.wDay;
+		tm.tm_hour = stUTC.wHour;
+		tm.tm_min = stUTC.wMinute;
+		tm.tm_sec = stUTC.wSecond;
+		tm.tm_isdst = 0;
+
+		CloseHandle(h);
+		return static_cast<unsigned int>(std::mktime(&tm));
+	}
+	else {
+		LOG_L(L_WARNING, "[FSA::%s] error '%s' getting last modification time of file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), file.c_str());
+		CloseHandle(h);
+		return 0;
+	}
+#else
 	struct stat info;
 
 	if (stat(file.c_str(), &info) != 0) {
@@ -184,6 +217,7 @@ unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& f
 	}
 
 	return info.st_mtime;
+#endif
 }
 
 std::string FileSystemAbstraction::GetFileModificationDate(const std::string& file)
@@ -194,13 +228,110 @@ std::string FileSystemAbstraction::GetFileModificationDate(const std::string& fi
 		return "";
 
 	const struct tm* clk = std::gmtime(&t);
-	const char* fmt = "%d%02d%02d%02d%02d%02d";
 
-	char buf[67];
-	SNPRINTF(buf, sizeof(buf), fmt, 1900 + clk->tm_year, clk->tm_mon + 1, clk->tm_mday, clk->tm_hour, clk->tm_min, clk->tm_sec);
-	return buf;
+	return fmt::sprintf("%d%02d%02d%02d%02d%02d", 1900 + clk->tm_year, clk->tm_mon + 1, clk->tm_mday, clk->tm_hour, clk->tm_min, clk->tm_sec);
 }
 
+
+bool FileSystemAbstraction::IsPathOnSpinningDisk(const std::string& path)
+{
+#ifdef _WIN32
+	std::string volumePath; volumePath.resize(64);
+	if (!::GetVolumePathNameA(path.c_str(), volumePath.data(), volumePath.size())) {
+		LOG_L(L_WARNING, "[%s] GetVolumePathNameA error: '%s'", __func__, Platform::GetLastErrorAsString().c_str());
+		return true;
+	}
+
+	std::string volumeName; volumeName.resize(1024);
+	if (!::GetVolumeNameForVolumeMountPointA(volumePath.data(), volumeName.data(), volumeName.size())) {
+		LOG_L(L_WARNING, "[%s] GetVolumeNameForVolumeMountPointA error: '%s'", __func__, Platform::GetLastErrorAsString().c_str());
+		return true;
+	}
+
+	auto length = strlen(volumeName.c_str());
+	if (length && volumeName[length - 1] == L'\\')
+		volumeName[length - 1] = L'\0';
+
+	HANDLE volHandle = ::CreateFileA(volumeName.data(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	if (volHandle == INVALID_HANDLE_VALUE) {
+		LOG_L(L_WARNING, "[%s] CreateFileA error: '%s'", __func__, Platform::GetLastErrorAsString().c_str());
+		return true;
+	}
+
+	if (volHandle == INVALID_HANDLE_VALUE) {
+		LOG_L(L_WARNING, "[%s] GetVolumeHandleForFile error: '%s'", __func__, Platform::GetLastErrorAsString().c_str());
+		return true;
+	}
+
+	STORAGE_PROPERTY_QUERY query{};
+	query.PropertyId = StorageDeviceSeekPenaltyProperty;
+	query.QueryType = PropertyStandardQuery;
+	DWORD bytesWritten;
+	DEVICE_SEEK_PENALTY_DESCRIPTOR result{};
+
+	if (!::DeviceIoControl(volHandle, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &result, sizeof(result), &bytesWritten, nullptr) || bytesWritten != sizeof(result))
+	{
+		LOG_L(L_WARNING, "[%s] DeviceIoControl error: '%s'", __func__, Platform::GetLastErrorAsString().c_str());
+		CloseHandle(volHandle);
+		return true;
+	}
+	CloseHandle(volHandle);
+	return result.IncursSeekPenalty;
+#else
+	struct stat info;
+
+	if (stat(path.c_str(), &info) != 0) {
+		LOG_L(L_WARNING, "[%s] Error '%s' getting the device file name for path '%s'", __func__, Platform::GetLastErrorAsString().c_str(), path.c_str());
+		return true;
+	}
+
+	std::string devId = fmt::sprintf("%d:%d ", static_cast<int>(info.st_dev >> 8), static_cast<int>(info.st_dev & 0xFF));
+
+	std::ifstream mif("/proc/self/mountinfo", std::ios::in);
+	if (mif.bad() || !mif.is_open()) {
+		LOG_L(L_WARNING, "[%s] Failed to open /proc/self/mountinfo", __func__);
+		return true;
+	}
+
+	std::string devStr;
+	while (std::getline(mif, devStr)) {
+		if (devStr.find(devId) == std::string::npos)
+			continue;
+
+		auto di = devStr.find('-');
+		if (di == std::string::npos)
+			continue;
+
+		devStr = devStr.substr(di + 1);
+
+		auto ds = devStr.find("/dev/");
+		if (ds == std::string::npos)
+			continue;
+
+		auto de = devStr.find(' ', ds + 5);
+		if (de == std::string::npos)
+			continue;
+
+		devStr = devStr.substr(ds + 5, de - ds - 5);
+
+		auto lastNonNum = devStr.find_last_not_of("0123456789");
+		devStr = devStr.substr(0, lastNonNum + 1);
+
+		std::string rotFileName = fmt::format("/sys/block/{}/queue/rotational", devStr);
+		std::ifstream rotf(rotFileName, std::ios::in);
+		if (rotf.bad() || !rotf.is_open()) {
+			LOG_L(L_WARNING, "[%s] Failed to open %s", __func__, rotFileName.c_str());
+			return true;
+		}
+
+		int rotational = 1;
+		rotf >> rotational;
+		return static_cast<bool>(rotational);
+	}
+
+	return true;
+#endif
+}
 
 char FileSystemAbstraction::GetNativePathSeparator()
 {
@@ -265,12 +396,7 @@ bool FileSystemAbstraction::DeleteFile(const std::string& file)
 #ifdef _WIN32
 	if (DirExists(file)) {
 		if (!RemoveDirectory(StripTrailingSlashes(file).c_str())) {
-			LPSTR messageBuffer = nullptr;
-			FormatMessageA(
-				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-				nullptr, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &messageBuffer, 0, nullptr);
-			LOG_L(L_WARNING, "[FSA::%s] error '%s' deleting directory '%s'", __func__, messageBuffer, file.c_str());
-			LocalFree(messageBuffer);
+			LOG_L(L_WARNING, "[FSA::%s] error '%s' deleting directory '%s'", __func__, Platform::GetLastErrorAsString().c_str(), file.c_str());
 			return false;
 		}
 		return true;

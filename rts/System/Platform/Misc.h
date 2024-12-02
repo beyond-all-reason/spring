@@ -100,6 +100,9 @@ namespace Platform
 	uint32_t NativeWordSize(); // compiled process code
 	uint32_t SystemWordSize(); // host operating system
 
+	std::string GetLastErrorAsString();
+	std::string GetLastErrorAsString(uint32_t errCode);
+
 
 	/**
 	 * Executes a native binary, file and args have to be not escaped!

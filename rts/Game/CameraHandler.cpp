@@ -351,6 +351,9 @@ void CameraTransitionTimedSpringDampened(const CCameraController* currCam, CCame
 	} else if (nsecs > 0.0f) {
 		camTransState.timeEnd = nsecs * 1000.0f * camTransState.timeFactor;
 		camTransState.timeStart = nsecs * 1000.0f * camTransState.timeFactor;
+		camTransState.startPos = camera->GetPos();
+		camTransState.startRot = camera->GetRot();
+		camTransState.startFOV = camera->GetVFOV();
 	}
 }
 
@@ -556,7 +559,6 @@ void CCameraHandler::SetCameraMode(unsigned int newMode)
 		currCamCtrlNum = newMode;
 		return;
 	}
-	CameraTransition(1.0f);
 
 	CCameraController* oldCamCtrl = camControllers[                 oldMode];
 	CCameraController* newCamCtrl = camControllers[currCamCtrlNum = newMode];
@@ -564,9 +566,11 @@ void CCameraHandler::SetCameraMode(unsigned int newMode)
 	// clamp rotations so that the camera doesnt spin excessively to get to the new rotation
 	camera->SetRot(ClampRadPrincipal(camera->GetRot()));
 	oldCamCtrl->SetRot(ClampRadPrincipal(oldCamCtrl->GetRot()));
+	oldCamCtrl->Update();
 
 	newCamCtrl->SwitchTo(oldCamCtrl);
 	newCamCtrl->Update();
+	CameraTransition(1.0f);
 }
 
 void CCameraHandler::SetCameraMode(const std::string& modeName)
