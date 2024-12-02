@@ -189,8 +189,13 @@ CLuaUI::~CLuaUI()
 
 void CLuaUI::InitLuaSocket(lua_State* L) {
 	std::string code;
-	std::string filename = "socket.lua";
-	CFileHandler f(filename);
+	std::string filename = "LuaSocket/socket.lua";
+	CFileHandler f(filename, SPRING_VFS_BASE);
+
+	if (!f.FileExists()) {
+		LOG_L(L_ERROR, "Error loading %s (file does not exist)", filename.c_str());
+		return;
+	}
 
 	LUA_OPEN_LIB(L, luaopen_socket_core);
 
