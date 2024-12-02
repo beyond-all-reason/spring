@@ -11,6 +11,7 @@
 #include "UnitTypes/Factory.h"
 
 #include "CommandAI/BuilderCAI.h"
+#include "Map/ReadMap.h"
 #include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
@@ -55,6 +56,7 @@ CR_REG_METADATA(CUnitHandler, (
 
 	CR_MEMBER(maxUnits),
 	CR_MEMBER(maxUnitRadius),
+	CR_MEMBER_UN(maxUnitAltitude),
 
 	CR_MEMBER(inUpdateCall)
 ))
@@ -115,6 +117,7 @@ void CUnitHandler::Init() {
 		// other team in the respective allyteam
 		maxUnits = CalcMaxUnits();
 		maxUnitRadius = 0.0f;
+		maxUnitAltitude = readMap->GetCurrMaxHeight();
 	}
 	{
 		activeSlowUpdateUnit = 0;
@@ -170,6 +173,7 @@ void CUnitHandler::Kill()
 	{
 		maxUnits = 0;
 		maxUnitRadius = 0.0f;
+		maxUnitAltitude = std::numeric_limits<float>::lowest();
 	}
 }
 
@@ -236,6 +240,7 @@ bool CUnitHandler::AddUnit(CUnit* unit)
 	spring::VectorInsertUnique(GetUnitsByTeamAndDef(unit->team, unit->unitDef->id), unit, false);
 
 	maxUnitRadius = std::max(unit->radius, maxUnitRadius);
+	MovedUnit(unit);
 	return true;
 }
 
@@ -408,6 +413,7 @@ void CUnitHandler::UpdateUnits()
 {
 	SCOPED_TIMER("Sim::Unit::Update");
 
+	maxUnitAltitude = readMap->GetCurrMaxHeight();
 	size_t activeUnitCount = activeUnits.size();
 	for (size_t i = 0; i < activeUnitCount; ++i) {
 		CUnit* unit = activeUnits[i];
@@ -415,6 +421,7 @@ void CUnitHandler::UpdateUnits()
 		unit->SanityCheck();
 		unit->Update();
 		unit->moveType->UpdateCollisionMap();
+		MovedUnit(unit);
 		// unsynced; done on-demand when drawing unit
 		// unit->UpdateLocalModel();
 		unit->SanityCheck();
@@ -514,3 +521,9 @@ unsigned int CUnitHandler::CalcMaxUnits() const
 	return n;
 }
 
+void CUnitHandler::MovedUnit(const CUnit* unit)
+{
+	const CollisionVolume& cv = unit->selectionVolume;
+	const float top = cv.GetWorldSpacePos(unit).y + cv.GetBoundingRadius();
+	maxUnitAltitude = std::max(top, maxUnitAltitude);
+}

@@ -2952,10 +2952,15 @@ int LuaUnsyncedRead::TraceScreenRay(lua_State* L)
 	const float3 pxlDir = camera->CalcPixelDir(wx, wy);
 
 	// trace for player's allyteam
-	const float traceDist = TraceRay::GuiTraceRay(camPos, pxlDir, rawRange, nullptr, unit, feature, true, onlyCoords, ignoreWater);
+	float3 rayOrigin;
+	if (onlyCoords)
+		rayOrigin = camPos;
+	else
+		rayOrigin = camera->NearTheaterIntersection(pxlDir, rawRange);
+	const float traceDist = TraceRay::GuiTraceRay(rayOrigin, pxlDir, rawRange, nullptr, unit, feature, true, onlyCoords, ignoreWater);
 	const float planeDist = CGround::LinePlaneCol(camPos, pxlDir, rawRange, luaL_optnumber(L, newArgIdx, 0.0f));
 
-	const float3 tracePos = camPos + (pxlDir * traceDist);
+	const float3 tracePos = rayOrigin + (pxlDir * traceDist);
 	const float3 planePos = camPos + (pxlDir * planeDist); // backup (for includeSky and onlyCoords)
 
 	if ((traceDist < 0.0f || traceDist > badRange) && unit == nullptr && feature == nullptr) {
