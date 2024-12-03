@@ -158,9 +158,7 @@ public:
 			// load system configuration
 			res = FcConfigParseAndLoad(config, 0, true);
 			if (!res) {
-				LOG_MSG("%s config", true, errprefix.c_str());
-				InitFailed();
-				return false;
+				LOG_MSG("%s config, you will miss system fallback fonts", false, errprefix.c_str());
 			}
 
 			// build system fonts
