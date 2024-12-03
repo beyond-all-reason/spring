@@ -144,7 +144,13 @@ public:
 
 			// init configuration
 			FcConfigEnableHome(FcFalse);
-			config = FcConfigCreate();
+
+			// init everything
+			config = FcInitLoadConfigAndFonts();
+			if (!config) {
+				LOG_MSG("%s config and fonts", true, errprefix.c_str());
+				return false;
+			}
 
 			// add local cache in case fontconfig one can't be used
 			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
@@ -154,6 +160,9 @@ public:
 				InitFailed();
 				return false;
 			}
+
+			/* alternative initialization
+			config = FcConfigCreate();
 
 			// load system configuration
 			res = FcConfigParseAndLoad(config, 0, true);
@@ -167,7 +176,7 @@ public:
 				LOG_MSG("%s build fonts", true, errprefix.c_str());
 				InitFailed();
 				return false;
-			}
+			}*/
 
 			// init app fonts dir
 			res = FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
