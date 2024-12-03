@@ -105,7 +105,7 @@ public:
 		FT_Done_FreeType(lib);
 
 		#ifdef USE_FONTCONFIG
-		if (!CanUseFontConfig())
+		if (!config)
 			return;
 
 		FcConfigDestroy(config);
