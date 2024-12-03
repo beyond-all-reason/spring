@@ -143,37 +143,38 @@ float3 DebugDrawerQuadField::TraceToMaxHeight(float3 start, float3 point, float 
 	const float3 dir = (point-start).Normalize();
 	const float maxHeight = readMap->GetCurrMaxHeight();
 
-	const float rayLength = CGround::LinePlaneCol(start, dir, length, maxHeight);
-	if (rayLength < 0.0)
+	const float dist = CGround::LinePlaneCol(start, dir, length, maxHeight);
+	if (dist < 0.0)
 		return start;
 
-	return start + dir * rayLength;
+	return start + dir * dist;
 }
 
 void DebugDrawerQuadField::DrawCamera() const
 {
 	// draw some camera information we can use to find a better ray start.
-	const float viewRange = camera->GetFarPlaneDist() * 1.4f;
-	const float3 pos = camera->GetPos();
-	const float3 mouseDir = mouse->dir;
+	const float3 start = camera->GetPos();
+	const float3 dir = mouse->dir;
+	const float length = camera->GetFarPlaneDist() * 1.4f;
+
 	constexpr float w = 100;
 	constexpr auto camColor   = float4(1.0, 1.0, 1.0, 0.8);
 	constexpr auto frustColor = float4(1.0, 0.5, 0.5, 1.0);
 
 	// draw camera position
-	DrawRect(pos, w, w, camColor);
+	DrawRect(start, w, w, camColor);
 
 	// intersection of frustum to map max height
 	for(int i=0; i<4; i++) {
 		auto fv = camera->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL+i);
-		DrawRect(TraceToMaxHeight(pos, fv, viewRange), w, w, camColor);
+		DrawRect(TraceToMaxHeight(start, fv, length), w, w, camColor);
 	}
 
 	// draw intersection of near frustum to mouse ray
 	// note: seems to be the same as camPos
 	float3 intersection;
 	float4 nearPlane = camera->GetFrustumPlane(CCamera::FRUSTUM_PLANE_NEA);
-	bool res = RayAndPlaneIntersection(pos, pos + mouseDir * viewRange, nearPlane, false, intersection);
+	bool res = RayAndPlaneIntersection(start, start + dir * length, nearPlane, false, intersection);
 	if (res)
 		DrawRect(intersection, w*0.9, w*0.9, frustColor);
 }
