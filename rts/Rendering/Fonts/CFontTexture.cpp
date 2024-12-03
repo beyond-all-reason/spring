@@ -144,39 +144,45 @@ public:
 
 			// init configuration
 			FcConfigEnableHome(FcFalse);
-
-			// init everything
-			config = FcInitLoadConfigAndFonts();
-			if (!config) {
-				LOG_MSG("%s config and fonts", true, errprefix.c_str());
-				return false;
-			}
-
-			// add local cache in case fontconfig one can't be used
-			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
-			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue);
-			if (!res) {
-				LOG_MSG("%s cache", true, errprefix.c_str());
-				InitFailed();
-				return false;
-			}
-
-			/* alternative initialization
 			config = FcConfigCreate();
 
-			// load system configuration
-			res = FcConfigParseAndLoad(config, 0, true);
-			if (!res) {
-				LOG_MSG("%s config, you will miss system fallback fonts", false, errprefix.c_str());
-			}
+			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
 
-			// build system fonts
-			res = FcConfigBuildFonts(config);
-			if (!res) {
-				LOG_MSG("%s build fonts", true, errprefix.c_str());
-				InitFailed();
-				return false;
-			}*/
+			// Load system configuration.
+			// passing 0 here so fc will use the default os config file if possible.
+			res = FcConfigParseAndLoad(config, 0, true);
+			if (res) {
+				LOG_MSG("[%s] Using Fontconfig light init", false, __func__);
+
+				// add local cache in front
+				FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue);
+
+				// build system fonts
+				res = FcConfigBuildFonts(config);
+				if (!res) {
+					LOG_MSG("%s fonts", true, errprefix.c_str());
+					InitFailed();
+					return false;
+				}
+			} else {
+				// Can't load step by step to use our cache, so retry with general
+				// fontconfig init method, that has a few extra fallbacks.
+				// this path is actually taken by windows.
+
+				// Init everything. Normally this would be enough, but the method before
+				// accounts for situations where system config is borked due to incompatible
+				// lib and system config files.
+				FcConfig *fcConfig = FcInitLoadConfigAndFonts();
+				if (fcConfig) {
+					FcConfigDestroy(config); // release previous config
+					config = fcConfig;
+
+					// add our cache at the back of the new config.
+					FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue);
+				} else {
+					LOG_MSG("%s config and fonts. No system fallbacks will be available", false, errprefix.c_str());
+				}
+			}
 
 			// init app fonts dir
 			res = FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
