@@ -14,11 +14,25 @@ class CQuaternion
 public:
 	CR_DECLARE_STRUCT(CQuaternion)
 public:
-	constexpr CQuaternion() : q() {}
-	constexpr CQuaternion(const float4& q) : q(q) {}
-	constexpr CQuaternion(float real, const float3& imag) : q{ imag, real } {}
-	constexpr CQuaternion(float x, float y, float z, float s) : q(x, y, z, s) {}
-
+	constexpr CQuaternion() = default;
+	constexpr CQuaternion(const float4& q)
+		: x(q.x)
+		, y(q.y)
+		, z(q.z)
+		, r(q.w)
+	{}
+	constexpr CQuaternion(const float3& imag, float real)
+		: x(imag.x)
+		, y(imag.y)
+		, z(imag.z)
+		, r(real)
+	{}
+	constexpr CQuaternion(float xi, float yi, float zi, float real)
+		: x(xi)
+		, y(yi)
+		, z(zi)
+		, r(real)
+	{}
 	CQuaternion(const CQuaternion& q) { *this = q; };
 	CQuaternion(CQuaternion&& q) noexcept { *this = std::move(q); }
 public:
@@ -29,9 +43,9 @@ public:
 
 	static std::tuple<float3, CQuaternion, float3> DecomposeIntoTRS(const CMatrix44f& mat);
 public:
-	bool Normalized() const { return q.Normalized(); };
+	bool Normalized() const;
 	CQuaternion& Normalize();
-	constexpr CQuaternion& Conjugate() { q.x = -q.x; q.y = -q.y; q.z = -q.z; return *this; };
+	constexpr CQuaternion& Conjugate() { x = -x; y = -y; z = -z; return *this; }
 	CQuaternion& Inverse();
 
 	float4 ToAxisAndAngle() const;
@@ -40,28 +54,33 @@ public:
 	CQuaternion& operator= (const CQuaternion&) = default;
 	CQuaternion& operator= (CQuaternion&&) = default;
 
-	constexpr CQuaternion operator-() const { return CQuaternion(-q); };
+	constexpr CQuaternion operator-() const { return CQuaternion(-x, -y, -z, -r); }
 
-	CQuaternion operator*(float a) const { return CQuaternion(q * a); };
-	CQuaternion operator/(float a) const { return CQuaternion(q / a); };
+	CQuaternion operator*(float a) const {
+		return CQuaternion(x * a, y * a, z * a, r * a);
+	}
+	CQuaternion operator/(float a) const {
+		const float ainv = 1.0f / a;
+		return CQuaternion(x * ainv, y * ainv, z * ainv, r * ainv);
+	}
 
 	CQuaternion operator+(const CQuaternion& rhs) const {
-		return CQuaternion(q + rhs.q);
+		return CQuaternion(x + rhs.x, y + rhs.y, z + rhs.z, r + rhs.r);
 	}
 	CQuaternion operator-(const CQuaternion& rhs) const {
-		return CQuaternion(q - rhs.q);
+		return CQuaternion(x - rhs.x, y - rhs.y, z - rhs.z, r - rhs.r);
 	}
 
 	CQuaternion operator*(const CQuaternion& rhs) const;
+	CQuaternion& operator*=(float f);
 
-	bool operator==(CQuaternion& rhs) const { return q == rhs.q; } //aproximate
-	bool operator!=(CQuaternion& rhs) const { return q != rhs.q; } //aproximate
+	bool operator==(CQuaternion& rhs) const; //aproximate
+	bool operator!=(CQuaternion& rhs) const { return !operator==(rhs); } //aproximate
 private:
-	float dot(const CQuaternion& rhs) const { return q.dot(rhs.q); }
 	float SqNorm() const;
 public:
 	static CQuaternion Lerp (const CQuaternion& q1, const CQuaternion& q2, const float a);
 	static CQuaternion SLerp(const CQuaternion& q1, const CQuaternion& q2, const float a);
 public:
-	float4 q;
+	float x, y, z, r;
 };
