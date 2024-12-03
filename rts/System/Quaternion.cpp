@@ -11,7 +11,12 @@
 // https://github.com/g-truc/glm/blob/master/glm/ext/quaternion_common.inl
 
 CR_BIND(CQuaternion, )
-CR_REG_METADATA(CQuaternion, CR_MEMBER(q))
+CR_REG_METADATA(CQuaternion, (
+	CR_MEMBER(x),
+	CR_MEMBER(y),
+	CR_MEMBER(z),
+	CR_MEMBER(r)
+))
 
 /// <summary>
 /// Quaternion from Euler angles
@@ -30,12 +35,10 @@ CQuaternion CQuaternion::MakeFrom(const float3& euler)
 	const float cz = math::cos(a3);
 
 	return CQuaternion(
-		cx * cy * cz + sx * sy * sz,
-		float3(
-			 cy * cz * sx - cx * sy * sz,
-			 cx * cz * sy + cy * sx * sz,
-			-cz * sx * sy + cx * cy * sz
-		)
+		cy * cz * sx - cx * sy * sz,
+		cx * cz * sy + cy * sx * sz,
+		cx * cy * sz - cz * sx * sy,
+		cx * cy * cz + sx * sy * sz
 	);
 }
 
@@ -47,7 +50,7 @@ CQuaternion CQuaternion::MakeFrom(float angle, const float3& axis)
 	assert(axis.Normalized());
 
 	const float a = 0.5f * angle;
-	return CQuaternion(math::cos(a), axis * math::sin(a));
+	return CQuaternion(axis * math::sin(a), math::cos(a));
 }
 
 /// <summary>
@@ -57,7 +60,7 @@ CQuaternion CQuaternion::MakeFrom(const float3& v1, const float3& v2)
 {
 	float dp = v1.dot(v2);
 	if unlikely(v1.same(v2)) {
-		return CQuaternion(0.0f, v1);
+		return CQuaternion(v1, 0.0f);
 	}
 	else if unlikely(v1.same(-v2)) {
 		float3 v;
@@ -68,7 +71,7 @@ CQuaternion CQuaternion::MakeFrom(const float3& v1, const float3& v2)
 		else															// if z ~= 0
 			v = { 0.0f, 0.0f, 1.0f };
 
-		return CQuaternion(math::HALFPI, v);
+		return CQuaternion(v, math::HALFPI);
 	}
 	else {
 		float3 u1 = v1; u1.Normalize();
@@ -76,7 +79,7 @@ CQuaternion CQuaternion::MakeFrom(const float3& v1, const float3& v2)
 
 		float3 v = u1.cross(u2);				// compute rotation axis
 		float angle = math::acosf(u1.dot(u2));	// rotation angle
-		return CQuaternion(angle * 0.5f, v);	// half angle
+		return CQuaternion(v, angle * 0.5f);	// half angle
 	}
 }
 
@@ -93,48 +96,43 @@ CQuaternion CQuaternion::MakeFrom(const CMatrix44f& mat)
 		const float s = 0.5f * math::isqrt(trace + 1.0f);
 
 		return CQuaternion(
-			0.25f / s,
-			s * float3(
-				(mat.md[1][2] - mat.md[2][1]),
-				(mat.md[2][0] - mat.md[0][2]),
-				(mat.md[0][1] - mat.md[1][0])
-			)
+			s * (mat.md[1][2] - mat.md[2][1]),
+			s * (mat.md[2][0] - mat.md[0][2]),
+			s * (mat.md[0][1] - mat.md[1][0]),
+			0.25f / s
 		);
 	}
 	else if (mat.md[0][0] > mat.md[1][1] && mat.md[0][0] > mat.md[2][2]) {
 		const float s = 2.0f * math::sqrt(1.0f + mat.md[0][0] - mat.md[1][1] - mat.md[2][2]);
+		const float invs = 1.0f / s;
 
 		return CQuaternion(
-			(mat.md[1][2] - mat.md[2][1]) / s,
-			float3(
-				0.25f * s,
-				(mat.md[1][0] + mat.md[0][1]) / s,
-				(mat.md[2][0] + mat.md[0][2]) / s
-			)
+			0.25f * s,
+			(mat.md[1][0] + mat.md[0][1]) * invs,
+			(mat.md[2][0] + mat.md[0][2]) * invs,
+			(mat.md[1][2] - mat.md[2][1]) * invs
 		);
 	}
 	else if (mat.md[1][1] > mat.md[2][2]) {
 		const float s = 2.0f * math::sqrt(1.0f + mat.md[1][1] - mat.md[0][0] - mat.md[2][2]);
+		const float invs = 1.0f / s;
 
 		return CQuaternion(
-			(mat.md[2][0] - mat.md[0][2]) / s,
-			float3(
-				(mat.md[1][0] + mat.md[0][1]) / s,
-				0.25f * s,
-				(mat.md[2][1] + mat.md[1][2]) / s
-			)
+			(mat.md[1][0] + mat.md[0][1]) * invs,
+			0.25f * s,
+			(mat.md[2][1] + mat.md[1][2]) * invs,
+			(mat.md[2][0] - mat.md[0][2]) * invs
 		);
 	}
 	else {
 		const float s = 2.0f * math::sqrt(1.0f + mat.md[2][2] - mat.md[0][0] - mat.md[1][1]);
+		const float invs = 1.0f / s;
 
 		return CQuaternion(
-			(mat.md[0][1] - mat.md[1][0]) / s,
-			float3(
-				(mat.md[2][0] + mat.md[0][2]) / s,
-				(mat.md[2][1] + mat.md[1][2]) / s,
-				0.25f * s
-			)
+			(mat.md[2][0] + mat.md[0][2]) * invs,
+			(mat.md[2][1] + mat.md[1][2]) * invs,
+			0.25f * s,
+			(mat.md[0][1] - mat.md[1][0]) * invs
 		);
 	}
 }
@@ -173,13 +171,18 @@ std::tuple<float3, CQuaternion, float3>  CQuaternion::DecomposeIntoTRS(const CMa
 }
 
 
+bool CQuaternion::Normalized() const
+{
+	return math::fabs(1.0f - (r * r + x * x + y * y + z * z)) <= float3::cmp_eps();
+}
+
 CQuaternion& CQuaternion::Normalize()
 {
 	const float sqn = SqNorm();
 	if unlikely(sqn < float3::nrm_eps())
 		return *this;
 
-	q *= math::isqrt(sqn);
+	*this *= math::isqrt(sqn);
 
 	return *this;
 }
@@ -190,8 +193,8 @@ CQuaternion& CQuaternion::Normalize()
 float4 CQuaternion::ToAxisAndAngle() const
 {
 	return float4(
-		static_cast<float3>(q) * math::isqrt(std::max(0.0f, 1.0f - q.w * q.w)),
-		2.0f * math::acos(std::clamp(q.w, -1.0f, 1.0f))
+		float3(x, y, z) * math::isqrt(std::max(0.0f, 1.0f - r * r)),
+		2.0f * math::acos(std::clamp(r, -1.0f, 1.0f))
 	);
 }
 
@@ -200,20 +203,20 @@ float4 CQuaternion::ToAxisAndAngle() const
 /// </summary>
 CMatrix44f CQuaternion::ToRotMatrix() const
 {
-	const float qxx = q.x * q.x;
-	const float qyy = q.y * q.y;
-	const float qzz = q.z * q.z;
-	const float qxz = q.x * q.z;
-	const float qxy = q.x * q.y;
-	const float qyz = q.y * q.z;
-	const float qwx = q.w * q.x;
-	const float qwy = q.w * q.y;
-	const float qwz = q.w * q.z;
+	const float qxx = x * x;
+	const float qyy = y * y;
+	const float qzz = z * z;
+	const float qxz = x * z;
+	const float qxy = x * y;
+	const float qyz = y * z;
+	const float qrx = r * x;
+	const float qry = r * y;
+	const float qrz = r * z;
 
 	return CMatrix44f(
-		1.0f - 2.0f * (qyy + qzz), 2.0f * (qxy - qwz)       , 2.0f * (qxz + qwy)       , 0.0f,
-		2.0f * (qxy + qwz)       , 1.0f - 2.0f * (qxx + qzz), 2.0f * (qyz - qwx)       , 0.0f,
-		2.0f * (qxz - qwy)       , 2.0f * (qyz + qwx)       , 1.0f - 2.0f * (qxx + qyy), 0.0f,
+		1.0f - 2.0f * (qyy + qzz), 2.0f * (qxy - qrz)       , 2.0f * (qxz + qry)       , 0.0f,
+		2.0f * (qxy + qrz)       , 1.0f - 2.0f * (qxx + qzz), 2.0f * (qyz - qrx)       , 0.0f,
+		2.0f * (qxz - qry)       , 2.0f * (qyz + qrx)       , 1.0f - 2.0f * (qxx + qyy), 0.0f,
 		0.0f                     , 0.0f                     , 0.0f                     , 1.0f
 	);
 }
@@ -230,17 +233,41 @@ CQuaternion& CQuaternion::Inverse()
 
 CQuaternion CQuaternion::operator*(const CQuaternion& rhs) const
 {
-	const float3& limag =     q;
-	const float3& rimag = rhs.q;
+	std::array<float, 3> crossProduct = {
+		(y * rhs.z) - (z * rhs.y),
+		(z * rhs.x) - (x * rhs.z),
+		(x * rhs.y) - (y * rhs.x)
+	};
 
 	return CQuaternion(
-		q.w * rhs.q.w - limag.dot(rimag),
-		q.w * rimag + rhs.q.w * limag + limag.cross(rimag)
+		r * rhs.x + rhs.r * x + crossProduct[0],
+		r * rhs.y + rhs.r * y + crossProduct[1],
+		r * rhs.z + rhs.r * z + crossProduct[2],
+		r * rhs.r - (x * rhs.x + y * rhs.y + z * rhs.z)
 	);
 }
 
+CQuaternion& CQuaternion::operator*=(float f)
+{
+	x *= f;
+	y *= f;
+	z *= f;
+	r *= f;
+
+	return *this;
+}
+
+bool CQuaternion::operator==(CQuaternion& rhs) const
+{
+	return
+		epscmp(x, rhs.x, float3::cmp_eps()) &&
+		epscmp(y, rhs.y, float3::cmp_eps()) &&
+		epscmp(z, rhs.z, float3::cmp_eps()) &&
+		epscmp(r, rhs.r, float3::cmp_eps());
+}
+
 float CQuaternion::SqNorm() const {
-	return q.SqLength();
+	return (x * x + y * y + z * z + r * r);
 }
 
 CQuaternion CQuaternion::Lerp(const CQuaternion& q1, const CQuaternion& q2, const float a) {
@@ -253,7 +280,8 @@ CQuaternion CQuaternion::SLerp(const CQuaternion& q1, const CQuaternion& q2_, co
 	else if (a == 1.0f)
 		return q2_;
 
-	float cosTheta = q1.dot(q2_);
+	// dot product
+	float cosTheta = (q1.x * q2_.x + q1.y * q2_.y + q1.z * q2_.z);
 
 	const float s = Sign(cosTheta);
 
@@ -263,13 +291,23 @@ CQuaternion CQuaternion::SLerp(const CQuaternion& q1, const CQuaternion& q2_, co
 	if unlikely(cosTheta > 1.0f - float3::cmp_eps()) {
 		// Linear interpolation
 		return CQuaternion(
-			mix(q1.q, q2.q, a)
+			mix(q1.x, q2.x, a),
+			mix(q1.y, q2.y, a),
+			mix(q1.z, q2.z, a),
+			mix(q1.r, q2.r, a)
 		);
 	} else {
 		// Essential Mathematics, page 467
 		const float angle = math::acos(cosTheta);
+		const float s1 = math::sin((1.0f - a) * angle);
+		const float s2 = math::sin((       a) * angle);
+
+		const float invsin = 1.0f / math::sin(angle);
 		return CQuaternion(
-			(math::sin((1.0f - a) * angle) * q1.q + math::sin(a * angle) * q2.q) / math::sin(angle)
+			(s1 * q1.x + s2 * q2.x) * invsin,
+			(s1 * q1.y + s2 * q2.y) * invsin,
+			(s1 * q1.z + s2 * q2.z) * invsin,
+			(s1 * q1.r + s2 * q2.r) * invsin
 		);
 	}
 }
