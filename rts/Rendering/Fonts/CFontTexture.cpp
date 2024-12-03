@@ -150,7 +150,7 @@ public:
 			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
 			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue);
 			if (!res) {
-				LOG_MSG("%s cache", true, errprefix);
+				LOG_MSG("%s cache", true, errprefix.c_str());
 				InitFailed();
 				return false;
 			}
@@ -158,7 +158,7 @@ public:
 			// load system configuration
 			res = FcConfigParseAndLoad(config, 0, true);
 			if (!res) {
-				LOG_MSG("%s config", true, errprefix);
+				LOG_MSG("%s config", true, errprefix.c_str());
 				InitFailed();
 				return false;
 			}
@@ -166,7 +166,7 @@ public:
 			// build system fonts
 			res = FcConfigBuildFonts(config);
 			if (!res) {
-				LOG_MSG("%s build fonts", true, errprefix);
+				LOG_MSG("%s build fonts", true, errprefix.c_str());
 				InitFailed();
 				return false;
 			}
@@ -174,7 +174,7 @@ public:
 			// init app fonts dir
 			res = FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
 			if (!res) {
-				LOG_MSG("%s font dir", true, errprefix);
+				LOG_MSG("%s font dir", true, errprefix.c_str());
 				InitFailed();
 				return false;
 			}
