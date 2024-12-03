@@ -159,7 +159,6 @@ void DebugDrawerQuadField::DrawCamera() const
 	constexpr float w = 100;
 	constexpr auto camColor   = float4(1.0, 1.0, 1.0, 0.8);
 	constexpr auto frustColor = float4(1.0, 0.5, 0.5, 1.0);
-	constexpr auto altColor   = float4(0.5, 0.5, 1.0, 1.0);
 
 	// draw camera position
 	DrawRect(pos, w, w, camColor);
