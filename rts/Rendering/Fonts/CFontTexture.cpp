@@ -375,7 +375,7 @@ static std::shared_ptr<FontFace> LoadFontFace(const std::string& fontfile)
 	return std::make_shared<FontFace>(face.Release(), fontMem);
 }
 
-static std::shared_ptr<FontFace> GetRenderFontFace(const std::string& fontfile, const int size)
+static std::shared_ptr<FontFace> GetRenderFontFace(const std::string& fontfile, int size)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(CFontTexture::sync.GetThreadSafety() || Threading::IsMainThread());
@@ -394,6 +394,9 @@ static std::shared_ptr<FontFace> GetRenderFontFace(const std::string& fontfile, 
 	std::shared_ptr<FontFace> facePtr = LoadFontFace(fontfile);
 
 	// set render size
+	if (!FT_IS_SCALABLE(facePtr->face) && facePtr->face->num_fixed_sizes >= 1)
+		size = static_cast<unsigned int>(facePtr->face->available_sizes[0].y_ppem / 64.0);
+
 	if ((error = FT_Set_Pixel_Sizes(facePtr->face, 0, size)) != 0) {
 		throw content_error(fmt::format("FT_Set_Pixel_Sizes failed: {}", GetFTError(error)));
 	}
@@ -595,6 +598,8 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	, texHeight(0)
 	, wantedTexWidth(0)
 	, wantedTexHeight(0)
+	, needsColor(false)
+	, isColor(false)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
@@ -625,10 +630,18 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 
 	static constexpr int FT_INTERNAL_DPI = 64;
 	normScale = 1.0f / (fontSize * FT_INTERNAL_DPI);
+	float pixScale = 1.0;
+	bool canScale = false;
 
 	if (!FT_IS_SCALABLE(shFace->face)) {
-		LOG_L(L_WARNING, "[%s] %s is not scalable", __func__, fontfile.c_str());
-		normScale = 1.0f;
+		if (shFace->face->num_fixed_sizes > 0) {
+			pixScale = std::floor(1.0 / (shFace->face->available_sizes[0].y_ppem * normScale));
+			canScale = true;
+		} else {
+			LOG_L(L_WARNING, "[%s] %s is not scalable and not reported sizes", __func__, fontfile.c_str());
+			normScale = 1.0f;
+		}
+
 	}
 
 	if (!FT_HAS_KERNING(face)) {
@@ -645,8 +658,15 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	if (lineHeight <= 0)
 		lineHeight = 1.25 * (face->bbox.yMax - face->bbox.yMin);
 
+	// TODO: untested
+	if (canScale) {
+		fontDescender = fontDescender*(pixScale/normScale);
+		//fontDescender = fontDescender*pixScale ??
+		lineHeight = lineHeight*pixScale;
+	}
+
 	// has to be done before first GetGlyph() call!
-	CreateTexture(32, 32);
+	CreateTexture(32, 32, true);
 
 	// precache ASCII glyphs & kernings (save them in kerningPrecached array for better lvl2 cpu cache hitrate)
 	PreloadGlyphs();
@@ -662,6 +682,9 @@ void CFontTexture::PreloadGlyphs()
 {
 #ifndef HEADLESS
 	FT_Face face = *shFace;
+	// don't preload for non alphanumeric
+	if (!FT_Get_Char_Index(face, 65))
+		return;
 	//preload Glyphs
 	LoadWantedGlyphs(32, 127);
 	for (char32_t i = 32; i < 127; ++i) {
@@ -674,6 +697,7 @@ void CFontTexture::PreloadGlyphs()
 			if (FT_HAS_KERNING(face))
 				FT_Get_Kerning(face, lgl.index, rgl.index, FT_KERNING_DEFAULT, &kerning);
 
+			// TODO: likely need rescaling for not rescalable fonts
 			kerningPrecached[hash] = advance + normScale * kerning.x;
 		}
 	}
@@ -920,6 +944,7 @@ float CFontTexture::GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl)
 	// load & cache
 	FT_Vector kerning;
 	FT_Get_Kerning(*lgl.face, lgl.index, rgl.index, FT_KERNING_DEFAULT, &kerning);
+	// TODO: likely need rescaling for not rescalable fonts
 	return (kerningDynamic[hash] = lgl.advance + normScale * kerning.x);
 #else
 	return 0;
@@ -1021,8 +1046,23 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 		if ((atlasUpdate.xsize != wantedTexWidth) || (atlasUpdate.ysize != wantedTexHeight))
 			atlasUpdate = atlasUpdate.CanvasResize(wantedTexWidth, wantedTexHeight, false);
 
-		if (atlasUpdateShadow.Empty())
-			atlasUpdateShadow.Alloc(wantedTexWidth, wantedTexHeight, 1);
+		if (needsColor && !isColor) {
+			CBitmap newAtlas = {};
+			newAtlas.Alloc(wantedTexWidth, wantedTexHeight, needsColor ? 4 : 1);
+			newAtlas.CopySubImage(atlasUpdate, 0, 0);
+			atlasUpdate = newAtlas;
+		}
+
+		if (atlasUpdateShadow.Empty()) {
+			atlasUpdateShadow.Alloc(wantedTexWidth, wantedTexHeight, needsColor ? 4 : 1);
+		} else if (needsColor && !isColor) {
+			if ((atlasUpdateShadow.xsize != wantedTexWidth) || (atlasUpdateShadow.ysize != wantedTexHeight))
+				atlasUpdateShadow = atlasUpdateShadow.CanvasResize(wantedTexWidth, wantedTexHeight, false);
+			CBitmap newAtlas = {};
+			newAtlas.Alloc(wantedTexWidth, wantedTexHeight, needsColor ? 4 : 1);
+			newAtlas.CopySubImage(atlasUpdateShadow, 0, 0);
+			atlasUpdateShadow = newAtlas;
+		}
 
 		if ((atlasUpdateShadow.xsize != wantedTexWidth) || (atlasUpdateShadow.ysize != wantedTexHeight))
 			atlasUpdateShadow = atlasUpdateShadow.CanvasResize(wantedTexWidth, wantedTexHeight, false);
@@ -1087,10 +1127,17 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	glyph.letter = ch;
 
 	// load glyph
-	if (FT_Load_Glyph(*f, index, FT_LOAD_RENDER) != 0)
+	auto flags = FT_LOAD_RENDER;
+	if (FT_HAS_COLOR(f->face)) {
+		flags |= FT_LOAD_COLOR;
+	}
+	if (FT_Load_Glyph(*f, index, flags) != 0)
 		LOG_L(L_ERROR, "Couldn't load glyph %d", ch);
 
 	FT_GlyphSlot slot = f->face->glyph;
+
+	if (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA)
+		needsColor = true;
 
 	const float xbearing = slot->metrics.horiBearingX * normScale;
 	const float ybearing = slot->metrics.horiBearingY * normScale;
@@ -1108,36 +1155,54 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	if (glyph.advance == 0 && glyph.size.w > 0)
 		glyph.advance = glyph.size.w;
 
-	const int width  = slot->bitmap.width;
-	const int height = slot->bitmap.rows;
+	int width  = slot->bitmap.width;
+	int height = slot->bitmap.rows;
 	const int olSize = 2 * outlineSize;
+	const int channels = slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA ? 4 : 1;
 
-	if (width <= 0 || height <= 0)
-		return;
-
-	if (slot->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY) {
+	if (slot->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY && slot->bitmap.pixel_mode != FT_PIXEL_MODE_BGRA) {
 		LOG_L(L_ERROR, "invalid pixeldata mode");
 		return;
 	}
 
-	if (slot->bitmap.pitch != width) {
-		LOG_L(L_ERROR, "invalid pitch");
+	if (slot->bitmap.pitch != width*channels) {
+		LOG_L(L_ERROR, "invalid pitch %d %d", slot->bitmap.pitch, width);
 		return;
 	}
 
 	// store glyph bitmap (index) in allocator until the next LoadWantedGlyphs call
-	atlasGlyphs.emplace_back(slot->bitmap.buffer, width, height, 1);
+	if (!FT_IS_SCALABLE(f->face)) {
+		CBitmap temp = CBitmap(slot->bitmap.buffer, width, height, channels);
+		const float pixSize = static_cast<float>(f->face->available_sizes[0].y_ppem);
+		const float ratio = 1.0/(pixSize*normScale);
+
+		width = std::floor(width*ratio);
+		height = std::floor(height*ratio);
+		glyph.advance = glyph.advance*ratio;
+		glyph.descender = glyph.descender*ratio;
+		glyph.size.y = glyph.size.y*ratio;
+		glyph.size.y = ybearing*ratio - fontDescender;
+		glyph.size.x = glyph.size.x*ratio;
+		glyph.size.w = glyph.size.w*ratio;
+		glyph.size.h = glyph.size.h*ratio;
+		glyph.height = glyph.height*ratio;
+
+		atlasGlyphs.emplace_back(temp.CreateRescaled(width, height));
+	}
+	else
+		atlasGlyphs.emplace_back(slot->bitmap.buffer, width, height, channels);
 
 	atlasAlloc.AddEntry(IntToString(ch)       , int2(width         , height         ), reinterpret_cast<void*>(atlasGlyphs.size() - 1));
 	atlasAlloc.AddEntry(IntToString(ch) + "sh", int2(width + olSize, height + olSize)                                                 );
 #endif
 }
 
-void CFontTexture::CreateTexture(const int width, const int height)
+void CFontTexture::CreateTexture(const int width, const int height, const bool init)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
-	glGenTextures(1, &glyphAtlasTextureID);
+	if (init)
+		glGenTextures(1, &glyphAtlasTextureID);
 	glBindTexture(GL_TEXTURE_2D, glyphAtlasTextureID);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1158,29 +1223,38 @@ void CFontTexture::CreateTexture(const int width, const int height)
 #ifdef SUPPORT_AMD_HACKS_HERE
 	constexpr GLint swizzleMaskF[] = { GL_ALPHA, GL_ALPHA, GL_ALPHA, GL_ALPHA };
 	constexpr GLint swizzleMaskD[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskF);
+	if (needsColor)
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskD);
+	else
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskF);
 #endif
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
+	if (needsColor)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, 1, 1, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
+	else
 #ifdef SUPPORT_AMD_HACKS_HERE
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 1, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 1, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, nullptr);
 #else
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 1, 1, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 1, 1, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 #endif
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 #ifdef SUPPORT_AMD_HACKS_HERE
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskD);
+	if (!needsColor)
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskD);
 #endif
 
-	atlasUpdate = {};
-	atlasUpdate.Alloc(texWidth = wantedTexWidth = width, texHeight = wantedTexHeight = height, 1);
+	if (init) {
+		atlasUpdate = {};
+		atlasUpdate.Alloc(texWidth = wantedTexWidth = width, texHeight = wantedTexHeight = height, needsColor ? 4 : 1);
 
-	atlasUpdateShadow = {};
-	atlasUpdateShadow.Alloc(width, height, 1);
+		atlasUpdateShadow = {};
+		atlasUpdateShadow.Alloc(width, height, needsColor ? 4 : 1);
+	}
 #endif
 }
 
@@ -1214,8 +1288,8 @@ void CFontTexture::ReallocAtlases(bool pre)
 	}
 
 	// NB: pool has already been wiped here, do not return memory to it but just realloc
-	atlasUpdate.Alloc(atlasDim.x, atlasDim.y, 1);
-	atlasUpdateShadow.Alloc(atlasUDim.x, atlasUDim.y, 1);
+	atlasUpdate.Alloc(atlasDim.x, atlasDim.y, needsColor ? 4 : 1);
+	atlasUpdateShadow.Alloc(atlasUDim.x, needsColor ? 4 : 1);
 
 	memcpy(atlasUpdate.GetRawMem(), atlasMem.data(), atlasMem.size());
 	memcpy(atlasUpdateShadow.GetRawMem(), atlasShadowMem.data(), atlasShadowMem.size());
@@ -1272,6 +1346,11 @@ void CFontTexture::UpdateGlyphAtlasTexture()
 	// no need to lock, MT safe
 	if (!GlyphAtlasTextureNeedsUpdate())
 		return;
+	if (needsColor && !isColor) {
+		CreateTexture(32, 32, false);
+		isColor = true;
+		needsTextureUpload = true;
+	}
 
 	lastTextureUpdate = curTextureUpdate;
 	texWidth  = wantedTexWidth;
@@ -1282,10 +1361,12 @@ void CFontTexture::UpdateGlyphAtlasTexture()
 		atlasUpdateShadow.Blur(outlineSize, outlineWeight);
 		assert((atlasUpdate.xsize * atlasUpdate.ysize) % sizeof(int) == 0);
 
+		const int channels = needsColor ? 4 : 1;
+
 		const int* src = reinterpret_cast<const int*>(atlasUpdateShadow.GetRawMem());
 		      int* dst = reinterpret_cast<      int*>(atlasUpdate.GetRawMem());
 
-		const int size = (atlasUpdate.xsize * atlasUpdate.ysize) / sizeof(int);
+		const int size = (atlasUpdate.xsize * atlasUpdate.ysize * channels) / sizeof(int);
 
 		assert(atlasUpdateShadow.GetMemSize() / sizeof(int) == size);
 		assert(atlasUpdate.GetMemSize() / sizeof(int) == size);
@@ -1316,6 +1397,9 @@ void CFontTexture::UploadGlyphAtlasTextureImpl()
 
 	// update texture atlas
 	glBindTexture(GL_TEXTURE_2D, glyphAtlasTextureID);
+	if (needsColor)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_BGRA,  GL_UNSIGNED_BYTE, atlasUpdate.GetRawMem());
+	else
 	#ifdef SUPPORT_AMD_HACKS_HERE
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, texWidth, texHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlasUpdate.GetRawMem());
 	#else
