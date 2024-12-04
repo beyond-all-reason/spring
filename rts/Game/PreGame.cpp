@@ -171,10 +171,9 @@ int CPreGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 void CPreGame::AsyncExecute(CPreGame::AsyncExecFuncType execFunc, const std::string& argument)
 {
 	pendingTask = std::async(std::launch::async,
-		[execFunc, this](const std::string& argument) {
+		[execFunc, argument/*copy the argument explicitly*/, this]() {
 			return std::invoke(execFunc, this, argument);
-		},
-		argument /*will make a copy for thread safety*/
+		}
 	);
 }
 
@@ -427,7 +426,7 @@ void CPreGame::UpdateClientNet()
 				// etc. (not if we are joining mid-game as an extra player), see
 				// NETMSG_SETPLAYERNUM
 				pendingTask = std::async(std::launch::async,
-					[this](auto packet) { GameDataReceived(packet); },
+					&CPreGame::GameDataReceived, this,
 					packet
 				);
 			} break;
