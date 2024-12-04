@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cfloat>
+#include <functional>
 
 #include <SDL_keycode.h>
 
@@ -40,7 +41,6 @@
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/VFSHandler.h"
-#include "System/FileSystem/Misc.hpp"
 #include "System/LoadSave/DemoRecorder.h"
 #include "System/LoadSave/DemoReader.h"
 #include "System/LoadSave/LoadSaveHandler.h"
@@ -168,37 +168,57 @@ int CPreGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	return 0;
 }
 
+void CPreGame::AsyncExecute(CPreGame::AsyncExecFuncType execFunc, const std::string& argument)
+{
+	pendingTask = std::async(std::launch::async,
+		[execFunc, argument/*copy the argument explicitly*/, this]() {
+			return std::invoke(execFunc, this, argument);
+		}
+	);
+}
 
 bool CPreGame::Draw()
 {
+#ifndef HEADLESS
 	RECOIL_DETAILED_TRACY_ZONE;
-	spring_msecs(10).sleep(true);
+	spring_msecs(10).sleep(true); // 100 fps
+
 	ClearScreen();
 
+	static constexpr const float4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
 	font->Begin();
+	font->SetTextColor(color.x, color.y, color.z, color.w);
 
 	if (!clientNet->Connected()) {
 		if (clientSetup->isHost)
-			font->glFormat(0.5f, 0.48f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server to start");
+			font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server to start");
 		else
-			font->glFormat(0.5f, 0.48f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Connecting to server (%ds)", (spring_gettime() - connectTimer).toSecsi());
+			font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Connecting to server (%ds)", (spring_gettime() - connectTimer).toSecsi());
 	} else {
-		font->glPrint(0.5f, 0.48f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server response");
+		font->glPrint(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server response");
 	}
 	if (clientSetup->showServerName.empty()) {
-		font->glFormat(0.60f, 0.40f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientNet->ConnectionStr().c_str());
-		font->glFormat(0.60f, 0.35f, 1.0f, FONT_SCALE | FONT_NORM, "User name: %s", clientSetup->myPlayerName.c_str());
+		font->glFormat(0.60f, 0.50f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientNet->ConnectionStr().c_str());
+		font->glFormat(0.60f, 0.45f, 1.0f, FONT_SCALE | FONT_NORM, "User name: %s", clientSetup->myPlayerName.c_str());
 	}
 	else {
-		font->glFormat(0.60f, 0.40f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientSetup->showServerName.c_str());
+		font->glFormat(0.60f, 0.50f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientSetup->showServerName.c_str());
 	}
-	font->glFormat(0.5f,0.25f,0.8f,FONT_CENTER | FONT_SCALE | FONT_NORM, "Press SHIFT + ESC to quit");
+
+	if (archiveScanner->GetNumFilesHashed() > 0) {
+		font->glFormat(0.60f, 0.35f, 1.0f, FONT_SCALE | FONT_NORM, "[Performing necessary checksum calculations]");
+		font->glFormat(0.60f, 0.30f, 1.0f, FONT_SCALE | FONT_NORM, "Number of files checked: %u", archiveScanner->GetNumFilesHashed());
+	}
+
+	font->glFormat(0.5f, 0.15f, 0.8f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Press SHIFT + ESC to quit");
+
 	// credits
-	font->glFormat(0.5f,0.06f,1.0f,FONT_CENTER | FONT_SCALE | FONT_NORM, "Spring %s", SpringVersion::GetFull().c_str());
-	font->glPrint(0.5f,0.02f,0.6f,FONT_CENTER | FONT_SCALE | FONT_NORM, "This program is distributed under the GNU General Public License, see doc/LICENSE for more info");
+	font->glFormat(0.5f, 0.06f, 1.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Recoil %s", SpringVersion::GetFull().c_str());
+	font->glPrint(0.5f, 0.02f, 0.6f, FONT_CENTER | FONT_SCALE | FONT_NORM, "This program is distributed under the GNU General Public License, see doc/LICENSE for more info");
 
 	font->End();
-
+#endif
 	return true;
 }
 
@@ -244,79 +264,6 @@ void CPreGame::AddModArchivesToVFS(const CGameSetup* setup)
 	modFileName = archiveScanner->ArchiveFromName(setup->modName);
 }
 
-sha512::raw_digest CPreGame::GetArchiveCompleteChecksumBytesWithSplashScreen(const std::string& archiveName, const spring_time& start, const std::string& bitmapFileName)
-{
-	//can't use ThreadPool::Enqueue as nested calls to ThreadPool::Enqueue don't seem to work well
-	auto future = std::async(std::launch::async, [&archiveName]() { return archiveScanner->GetArchiveCompleteChecksumBytes(archiveName); });
-#ifndef HEADLESS
-
-	VA_TYPE_2DT quadElems[] = {
-		{0.0f, 1.0f,  0.0f, 0.0f},
-		{0.0f, 0.0f,  0.0f, 1.0f},
-		{1.0f, 0.0f,  1.0f, 1.0f},
-		{1.0f, 1.0f,  1.0f, 0.0f},
-	};
-
-	CBitmap bmp;
-	if (!bmp.Load(bitmapFileName)) {
-		bmp.AllocDummy({ 0, 0, 0, 255 });
-		quadElems[0].x = 0.5f - 0.125f * 0.5f; quadElems[0].y = 0.5f + 0.125f * 0.5f * globalRendering->aspectRatio;
-		quadElems[1].x = 0.5f - 0.125f * 0.5f; quadElems[1].y = 0.5f - 0.125f * 0.5f * globalRendering->aspectRatio;
-		quadElems[2].x = 0.5f + 0.125f * 0.5f; quadElems[2].y = 0.5f - 0.125f * 0.5f * globalRendering->aspectRatio;
-		quadElems[3].x = 0.5f + 0.125f * 0.5f; quadElems[3].y = 0.5f + 0.125f * 0.5f * globalRendering->aspectRatio;
-	}
-
-	auto texID = bmp.CreateTexture();
-
-	static constexpr const unsigned int fontFlags = FONT_NORM | FONT_SCALE;
-	static constexpr const float4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	static constexpr const float4 coors = { 0.5f, 0.175f, 0.8f, 0.04f }; // x, y, scale, spacing
-	static constexpr const char* caption = "[Performing necessary checksum calculations]";
-	auto texWidth = font->GetTextWidth(caption) * globalRendering->pixelX * font->GetSize() * coors.z;
-#endif
-
-	using namespace std::chrono_literals;
-	while (future.wait_for(10ms) != std::future_status::ready) {
-#ifndef HEADLESS
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
-		rb.AssertSubmission();
-		auto& sh = rb.GetShader();
-
-		rb.AddQuadTriangles(
-			{ quadElems[0].x, quadElems[0].y, quadElems[0].s, quadElems[0].t },
-			{ quadElems[1].x, quadElems[1].y, quadElems[1].s, quadElems[1].t },
-			{ quadElems[2].x, quadElems[2].y, quadElems[2].s, quadElems[2].t },
-			{ quadElems[3].x, quadElems[3].y, quadElems[3].s, quadElems[3].t }
-		);
-
-		glBindTexture(GL_TEXTURE_2D, texID);
-		sh.Enable();
-		rb.DrawElements(GL_TRIANGLES);
-		sh.Disable();
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		font->Begin();
-		font->SetTextColor(color.x, color.y, color.z, color.w);
-		font->glFormat(coors.x - texWidth * 0.5f, coors.y - (coors.w * coors.z * 0.0f), coors.z, fontFlags, caption);
-		font->glFormat(coors.x - texWidth * 0.5f, coors.y - (coors.w * coors.z * 1.0f), coors.z, fontFlags, "* Scanning archive named: %s", archiveName);
-		font->glFormat(coors.x - texWidth * 0.5f, coors.y - (coors.w * coors.z * 2.0f), coors.z, fontFlags, "* Dependent files checked: %u", archiveScanner->GetNumFilesHashed());
-		font->glFormat(coors.x - texWidth * 0.5f, coors.y - (coors.w * coors.z * 3.0f), coors.z, fontFlags, "* Time Elapsed: %.1fms", (spring_now() - start).toMilliSecsf());
-		font->End();
-
-		globalRendering->SwapBuffers(true, true);
-#endif
-		spring::UnfreezeSpring(WDT_MAIN);
-	}
-#ifndef HEADLESS
-	glDeleteTextures(1, &texID);
-#endif
-	return future.get();
-}
-
-
-
 void CPreGame::StartServer(const std::string& setupscript)
 {
 	assert(gameServer == nullptr);
@@ -350,16 +297,13 @@ void CPreGame::StartServer(const std::string& setupscript)
 	// (Which is OK, since unitsync does not have map options available either.)
 	startGameSetup->LoadStartPositions();
 
-	const auto splashScreenFiles = FileSystemMisc::GetSplashScreenFiles();
-	const auto& splashScreenFile = splashScreenFiles[guRNG.NextInt(splashScreenFiles.size())];
 	{
-		auto start = spring_now();
 		archiveScanner->ResetNumFilesHashed();
 		const std::string mapArchive = archiveScanner->ArchiveFromName(startGameSetup->mapName);
-		const auto mapChecksum = GetArchiveCompleteChecksumBytesWithSplashScreen(mapArchive, start, splashScreenFile);
+		const auto mapChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(mapArchive);
 
 		const std::string modArchive = archiveScanner->ArchiveFromName(startGameSetup->modName);
-		const auto modChecksum = GetArchiveCompleteChecksumBytesWithSplashScreen(modArchive, start, splashScreenFile);
+		const auto modChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(modArchive);
 
 		startGameData->SetMapChecksum(mapChecksum.data());
 		startGameData->SetModChecksum(modChecksum.data());
@@ -386,6 +330,9 @@ void CPreGame::UpdateClientNet()
 	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME move this code to a external file and move that to rts/Net/
 
+	if (HasPendingAsyncTask())
+		return;
+
 	clientNet->Update();
 
 	if (clientNet->CheckTimeout(0, true)) {
@@ -404,7 +351,7 @@ void CPreGame::UpdateClientNet()
 
 	std::shared_ptr<const netcode::RawPacket> packet;
 
-	while ((packet = clientNet->GetData(gs->frameNum))) {
+	while (!HasPendingAsyncTask() && (packet = clientNet->GetData(gs->frameNum))) {
 		const unsigned char* inbuf = packet->data;
 
 		if (packet->length <= 0) {
@@ -478,7 +425,10 @@ void CPreGame::UpdateClientNet()
 				// server first sends this to let us know about teams, allyteams
 				// etc. (not if we are joining mid-game as an extra player), see
 				// NETMSG_SETPLAYERNUM
-				GameDataReceived(packet);
+				pendingTask = std::async(std::launch::async,
+					&CPreGame::GameDataReceived, this,
+					packet
+				);
 			} break;
 
 			case NETMSG_SETPLAYERNUM: {
@@ -596,6 +546,7 @@ void CPreGame::ReadDataFromDemo(const std::string& demoName)
 void CPreGame::GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet)
 {
 	SCOPED_ONCE_TIMER("PreGame::GameDataReceived");
+	ENTER_SYNCED_CODE(); // because of async execution
 
 	try {
 		// in demos, gameData is first new'ed in ReadDataFromDemo()
@@ -639,6 +590,8 @@ void CPreGame::GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet
 		if (!teamHandler.IsValidAllyTeam(teamHandler.AllyTeam(player->team)))
 			throw content_error("Invalid allyteam in game-data");
 	}
+
+	archiveScanner->ResetNumFilesHashed();
 
 	// load archives into VFS
 	AddMapArchivesToVFS(gameSetup);
@@ -703,5 +656,21 @@ void CPreGame::GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet
 
 		LOG("[PreGame::%s] recording demo to \"%s\"", __func__, (clientNet->GetDemoRecorder()->GetName()).c_str());
 	}
+
+	LEAVE_SYNCED_CODE();
+}
+
+bool CPreGame::HasPendingAsyncTask()
+{
+	if (!pendingTask.valid())
+		return false;
+
+	using namespace std::chrono_literals;
+	if (pendingTask.wait_for(0ms) != std::future_status::ready)
+		return true;
+
+	pendingTask.get();
+	pendingTask = {};
+	return false;
 }
 
