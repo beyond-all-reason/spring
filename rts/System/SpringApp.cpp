@@ -553,7 +553,8 @@ CGameController* SpringApp::LoadSaveFile(const std::string& saveFile)
 	clientSetup->isHost = true;
 
 	pregame = new CPreGame(clientSetup);
-	pregame->LoadSaveFile(saveFile);
+	pregame->AsyncExecute(&CPreGame::LoadSaveFile, saveFile);
+	//pregame->LoadSaveFile(saveFile);
 	return pregame;
 }
 
@@ -564,7 +565,8 @@ CGameController* SpringApp::LoadDemoFile(const std::string& demoFile)
 	clientSetup->myPlayerName += " (spec)";
 
 	pregame = new CPreGame(clientSetup);
-	pregame->LoadDemoFile(demoFile);
+	pregame->AsyncExecute(&CPreGame::LoadDemoFile, demoFile);
+	//pregame->LoadDemoFile(demoFile);
 	return pregame;
 }
 
@@ -594,8 +596,10 @@ CGameController* SpringApp::RunScript(const std::string& buf)
 
 	pregame = new CPreGame(clientSetup);
 
-	if (clientSetup->isHost)
-		pregame->LoadSetupScript(buf);
+	if (clientSetup->isHost) {
+		pregame->AsyncExecute(&CPreGame::LoadSetupScript, buf);
+		//pregame->LoadSetupScript(buf);
+	}
 
 	return pregame;
 }
