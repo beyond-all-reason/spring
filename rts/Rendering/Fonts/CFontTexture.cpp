@@ -1056,10 +1056,8 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 		if (atlasUpdateShadow.Empty()) {
 			atlasUpdateShadow.Alloc(wantedTexWidth, wantedTexHeight, needsColor ? 4 : 1);
 		} else if (needsColor && !isColor) {
-			if ((atlasUpdateShadow.xsize != wantedTexWidth) || (atlasUpdateShadow.ysize != wantedTexHeight))
-				atlasUpdateShadow = atlasUpdateShadow.CanvasResize(wantedTexWidth, wantedTexHeight, false);
 			CBitmap newAtlas = {};
-			newAtlas.Alloc(wantedTexWidth, wantedTexHeight, needsColor ? 4 : 1);
+			newAtlas.Alloc(atlasUpdateShadow.xsize, atlasUpdateShadow.ysize, needsColor ? 4 : 1);
 			newAtlas.CopySubImage(atlasUpdateShadow, 0, 0);
 			atlasUpdateShadow = newAtlas;
 		}
@@ -1234,7 +1232,7 @@ void CFontTexture::CreateTexture(const int width, const int height, const bool i
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
 	if (needsColor)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, 1, 1, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
 	else
 #ifdef SUPPORT_AMD_HACKS_HERE
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 1, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, nullptr);
@@ -1346,11 +1344,9 @@ void CFontTexture::UpdateGlyphAtlasTexture()
 	// no need to lock, MT safe
 	if (!GlyphAtlasTextureNeedsUpdate())
 		return;
-	if (needsColor && !isColor) {
-		CreateTexture(32, 32, false);
-		isColor = true;
+
+	if (needsColor && !isColor)
 		needsTextureUpload = true;
-	}
 
 	lastTextureUpdate = curTextureUpdate;
 	texWidth  = wantedTexWidth;
@@ -1394,11 +1390,16 @@ void CFontTexture::UploadGlyphAtlasTextureImpl()
 #ifndef HEADLESS
 	if (!GlyphAtlasTextureNeedsUpload())
 		return;
+	if (needsColor && !isColor) {
+		CreateTexture(32, 32, false);
+		isColor = true;
+		needsTextureUpload = true;
+	}
 
 	// update texture atlas
 	glBindTexture(GL_TEXTURE_2D, glyphAtlasTextureID);
 	if (needsColor)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_BGRA,  GL_UNSIGNED_BYTE, atlasUpdate.GetRawMem());
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texHeight, 0, GL_BGRA,  GL_UNSIGNED_BYTE, atlasUpdate.GetRawMem());
 	else
 	#ifdef SUPPORT_AMD_HACKS_HERE
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, texWidth, texHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlasUpdate.GetRawMem());
