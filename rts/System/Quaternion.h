@@ -9,7 +9,7 @@
 #include "System/float4.h"
 #include "System/Matrix44f.h"
 
-class CQuaternion
+class alignas(16) CQuaternion
 {
 public:
 	CR_DECLARE_STRUCT(CQuaternion)

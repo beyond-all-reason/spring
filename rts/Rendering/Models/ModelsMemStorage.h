@@ -6,60 +6,53 @@
 
 #include "ModelsMemStorageDefs.h"
 #include "ModelsLock.h"
-#include "System/Matrix44f.h"
+#include "System/Transform.hpp"
 #include "System/MemPoolTypes.h"
 #include "System/FreeListMap.h"
 #include "System/Threading/SpringThreading.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Objects/SolidObjectDef.h"
 
-class MatricesMemStorage : public StablePosAllocator<CMatrix44f> {
+class TransformMemStorage : public StablePosAllocator<Transform> {
 public:
-	explicit MatricesMemStorage()
-		: StablePosAllocator<CMatrix44f>(INIT_NUM_ELEMS)
+	explicit TransformMemStorage()
+		: StablePosAllocator<Transform>(INIT_NUM_ELEMS)
 		, dirtyMap(INIT_NUM_ELEMS, BUFFERING)
 	{}
 	void Reset() override {
 		assert(Threading::IsMainThread());
-		StablePosAllocator<CMatrix44f>::Reset();
+		StablePosAllocator<Transform>::Reset();
 		dirtyMap.resize(GetSize(), BUFFERING);
 	}
 
 	size_t Allocate(size_t numElems) override {
 		auto lock = CModelsLock::GetScopedLock();
-		size_t res = StablePosAllocator<CMatrix44f>::Allocate(numElems);
+		size_t res = StablePosAllocator<Transform>::Allocate(numElems);
 		dirtyMap.resize(GetSize(), BUFFERING);
 
 		return res;
 	}
-	void Free(size_t firstElem, size_t numElems, const CMatrix44f* T0 = nullptr) override {
+	void Free(size_t firstElem, size_t numElems, const Transform* T0 = nullptr) override {
 		auto lock = CModelsLock::GetScopedLock();
-		StablePosAllocator<CMatrix44f>::Free(firstElem, numElems, T0);
+		StablePosAllocator<Transform>::Free(firstElem, numElems, T0);
 		dirtyMap.resize(GetSize(), BUFFERING);
 	}
 
-	const CMatrix44f& operator[](std::size_t idx) const override
+	const Transform& operator[](std::size_t idx) const override
 	{
 		auto lock = CModelsLock::GetScopedLock();
-		return StablePosAllocator<CMatrix44f>::operator[](idx);
+		return StablePosAllocator<Transform>::operator[](idx);
 	}
-	CMatrix44f& operator[](std::size_t idx) override
+	Transform& operator[](std::size_t idx) override
 	{
 		auto lock = CModelsLock::GetScopedLock();
-		return StablePosAllocator<CMatrix44f>::operator[](idx);
+		return StablePosAllocator<Transform>::operator[](idx);
 	}
 private:
 	std::vector<uint8_t> dirtyMap;
 public:
-	const decltype(dirtyMap)& GetDirtyMap() const
-	{
-		return dirtyMap;
-	}
-	decltype(dirtyMap)& GetDirtyMap()
-	{
-		return dirtyMap;
-	}
-
+	const auto& GetDirtyMap() const { return dirtyMap; }
+	auto& GetDirtyMap() { return dirtyMap; }
 	void SetAllDirty();
 public:
 	//need to update buffer with matrices BUFFERING times, because the actual buffer is made of BUFFERING number of parts
@@ -68,31 +61,31 @@ private:
 	static constexpr int INIT_NUM_ELEMS = 1 << 16u;
 };
 
-extern MatricesMemStorage matricesMemStorage;
+extern TransformMemStorage transformMemStorage;
 
 
 ////////////////////////////////////////////////////////////////////
 
-class ScopedMatricesMemAlloc {
+class ScopedTransformMemAlloc {
 public:
-	ScopedMatricesMemAlloc() : ScopedMatricesMemAlloc(0u) {};
-	ScopedMatricesMemAlloc(std::size_t numElems_)
+	ScopedTransformMemAlloc() : ScopedTransformMemAlloc(0u) {};
+	ScopedTransformMemAlloc(std::size_t numElems_)
 		: numElems{numElems_}
 	{
-		firstElem = matricesMemStorage.Allocate(numElems);
+		firstElem = transformMemStorage.Allocate(numElems);
 	}
 
-	ScopedMatricesMemAlloc(const ScopedMatricesMemAlloc&) = delete;
-	ScopedMatricesMemAlloc(ScopedMatricesMemAlloc&& smma) noexcept { *this = std::move(smma); }
+	ScopedTransformMemAlloc(const ScopedTransformMemAlloc&) = delete;
+	ScopedTransformMemAlloc(ScopedTransformMemAlloc&& smma) noexcept { *this = std::move(smma); }
 
-	~ScopedMatricesMemAlloc() {
-		if (firstElem == MatricesMemStorage::INVALID_INDEX)
+	~ScopedTransformMemAlloc() {
+		if (firstElem == TransformMemStorage::INVALID_INDEX)
 			return;
 
-		matricesMemStorage.Free(firstElem, numElems, &CMatrix44f::Zero());
+		transformMemStorage.Free(firstElem, numElems, &Transform::Zero());
 	}
 
-	bool Valid() const { return firstElem != MatricesMemStorage::INVALID_INDEX;	}
+	bool Valid() const { return firstElem != TransformMemStorage::INVALID_INDEX;	}
 	std::size_t GetOffset(bool assertInvalid = true) const {
 		if (assertInvalid)
 			assert(Valid());
@@ -100,8 +93,8 @@ public:
 		return firstElem;
 	}
 
-	ScopedMatricesMemAlloc& operator= (const ScopedMatricesMemAlloc&) = delete;
-	ScopedMatricesMemAlloc& operator= (ScopedMatricesMemAlloc&& smma) noexcept {
+	ScopedTransformMemAlloc& operator= (const ScopedTransformMemAlloc&) = delete;
+	ScopedTransformMemAlloc& operator= (ScopedTransformMemAlloc&& smma) noexcept {
 		//swap to prevent dealloc on dying object, yet enable destructor to do its thing on valid object
 		std::swap(firstElem, smma.firstElem);
 		std::swap(numElems , smma.numElems );
@@ -109,27 +102,27 @@ public:
 		return *this;
 	}
 
-	const CMatrix44f& operator[](std::size_t offset) const {
+	const auto& operator[](std::size_t offset) const {
 		assert(firstElem != MatricesMemStorage::INVALID_INDEX);
 		assert(offset >= 0 && offset < numElems);
 
-		return matricesMemStorage[firstElem + offset];
+		return transformMemStorage[firstElem + offset];
 	}
-	CMatrix44f& operator[](std::size_t offset) {
+	auto& operator[](std::size_t offset) {
 		assert(firstElem != MatricesMemStorage::INVALID_INDEX);
 		assert(offset >= 0 && offset < numElems);
 
-		matricesMemStorage.GetDirtyMap().at(firstElem + offset) = MatricesMemStorage::BUFFERING;
-		return matricesMemStorage[firstElem + offset];
+		transformMemStorage.GetDirtyMap().at(firstElem + offset) = TransformMemStorage::BUFFERING;
+		return transformMemStorage[firstElem + offset];
 	}
 public:
-	static const ScopedMatricesMemAlloc& Dummy() {
-		static ScopedMatricesMemAlloc dummy;
+	static const auto& Dummy() {
+		static ScopedTransformMemAlloc dummy;
 
 		return dummy;
 	};
 private:
-	std::size_t firstElem = MatricesMemStorage::INVALID_INDEX;
+	std::size_t firstElem = TransformMemStorage::INVALID_INDEX;
 	std::size_t numElems  = 0u;
 };
 
