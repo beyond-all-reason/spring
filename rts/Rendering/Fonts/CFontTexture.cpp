@@ -1287,7 +1287,7 @@ void CFontTexture::ReallocAtlases(bool pre)
 
 	// NB: pool has already been wiped here, do not return memory to it but just realloc
 	atlasUpdate.Alloc(atlasDim.x, atlasDim.y, needsColor ? 4 : 1);
-	atlasUpdateShadow.Alloc(atlasUDim.x, needsColor ? 4 : 1);
+	atlasUpdateShadow.Alloc(atlasUDim.x, atlasUDim.y, needsColor ? 4 : 1);
 
 	memcpy(atlasUpdate.GetRawMem(), atlasMem.data(), atlasMem.size());
 	memcpy(atlasUpdateShadow.GetRawMem(), atlasShadowMem.data(), atlasShadowMem.size());
