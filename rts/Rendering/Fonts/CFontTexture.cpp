@@ -146,16 +146,30 @@ public:
 			FcConfigEnableHome(FcFalse);
 			config = FcConfigCreate();
 
-			static constexpr const char* cacheDirFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
+			// we cant directly use the usual fontconfig methods because those won't let us have both first our cache
+			// and system fonts included. also linux actually has system config files that can be used by fontconfig.
 
-			// Load system configuration.
-			// passing 0 here so fc will use the default os config file if possible.
+			#ifdef _WIN32
+			// fontconfig will resolve the special keys here.
+			static constexpr const char* configFmt = R"(<fontconfig><dir>WINDOWSFONTDIR</dir><cachedir>fontcache</cachedir><cachedir>LOCAL_APPDATA_FONTCONFIG_CACHE</cachedir></fontconfig>)";
+			#else
+			static constexpr const char* configFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
+			#endif
+
+			#ifdef _WIN32
+			// Explicitly set the config with xml for windows.
+			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
+			#else
+			// Load system configuration (passing 0 here so fc will use the default os config file if possible).
 			res = FcConfigParseAndLoad(config, 0, true);
+			#endif
 			if (res) {
-				LOG_MSG("[%s] Using Fontconfig light init", false, __func__);
+				#ifndef _WIN32
+				// add local cache after system config for linux
+				FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
+				#endif
 
-				// add local cache in front
-				FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue);
+				LOG_MSG("[%s] Using Fontconfig light init", false, __func__);
 
 				// build system fonts
 				res = FcConfigBuildFonts(config);
@@ -167,7 +181,6 @@ public:
 			} else {
 				// Can't load step by step to use our cache, so retry with general
 				// fontconfig init method, that has a few extra fallbacks.
-				// this path is actually taken by windows.
 
 				// Init everything. Normally this would be enough, but the method before
 				// accounts for situations where system config is borked due to incompatible
@@ -178,7 +191,7 @@ public:
 					config = fcConfig;
 
 					// add our cache at the back of the new config.
-					FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(cacheDirFmt), FcTrue);
+					FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
 				} else {
 					LOG_MSG("%s config and fonts. No system fallbacks will be available", false, errprefix.c_str());
 				}
