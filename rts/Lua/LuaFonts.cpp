@@ -25,6 +25,8 @@ bool LuaFonts::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(LoadFont);
 	REGISTER_LUA_CFUNC(DeleteFont);
+	REGISTER_LUA_CFUNC(AddFallbackFont);
+	REGISTER_LUA_CFUNC(ClearFallbackFonts);
 
 	return true;
 }
@@ -205,6 +207,37 @@ int LuaFonts::DeleteFont(lua_State* L)
 	return meta_gc(L);
 }
 
+/*** Adds a fallback font for the font rendering engine.
+ *
+ * Fonts added first will have higher priority.
+ * When a glyph isn't found when rendering a font, the fallback fonts
+ * will be searched first, otherwise os fonts will be used.
+ *
+ * @function gl.AddFallbackFont
+ * @string filePath VFS path to the file, for example "fonts/myfont.ttf"
+ * @treturn bool success
+ */
+int LuaFonts::AddFallbackFont(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	const bool f = CFontTexture::AddFallbackFont(luaL_checkstring(L, 1));
+	lua_pushboolean(L, f);
+	return 1;
+}
+
+/*** Clears all fallback fonts.
+ *
+ * @function gl.ClearFallbackFonts
+ * @treturn nil
+ */
+int LuaFonts::ClearFallbackFonts(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	CFontTexture::ClearFallbackFonts();
+	return 0;
+}
 
 /******************************************************************************/
 /******************************************************************************/
