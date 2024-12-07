@@ -146,6 +146,7 @@ protected:
 	void UploadGlyphAtlasTexture();
 	void UploadGlyphAtlasTextureImpl();
 private:
+	void ClearAtlases(const int width, const int height);
 	void CreateTexture(const int width, const int height, const bool init);
 	void LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned index);
 	bool ClearGlyphs();

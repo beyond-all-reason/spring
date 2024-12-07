@@ -850,13 +850,8 @@ bool CFontTexture::ClearGlyphs() {
 		// clear all glyps
 		glyphs.clear();
 
-		// refresh the atlasAlloc to reset coordinates
-		atlasAlloc.clear(); // just in case
-		atlasAlloc = CRowAtlasAlloc();
-		atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
-
 		// clear atlases
-		ReallocAtlases(false);
+		ClearAtlases(32, 32);
 
 		// preload standard glyphs
 		PreloadGlyphs();
@@ -1322,6 +1317,27 @@ void CFontTexture::ReallocAtlases(bool pre)
 	atlasShadowMem = {};
 	atlasDim = {};
 	atlasUDim = {};
+#endif
+}
+
+void CFontTexture::ClearAtlases(const int width, const int height)
+{
+#ifndef HEADLESS
+	// refresh the atlasAlloc to reset coordinates
+	atlasAlloc = CRowAtlasAlloc();
+	atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
+
+	// clear atlases
+	wantedTexWidth = width;
+	wantedTexHeight = height;
+
+	atlasUpdate.Alloc(wantedTexWidth, wantedTexHeight);
+	atlasUpdateShadow = {};
+
+	if (!atlasGlyphs.empty())
+		LOG_L(L_WARNING, "[FontTexture::%s] discarding %u glyph bitmaps", __func__, uint32_t(atlasGlyphs.size()));
+
+	atlasGlyphs.clear();
 #endif
 }
 
