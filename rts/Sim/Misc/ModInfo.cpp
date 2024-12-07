@@ -214,7 +214,6 @@ void CModInfo::Init(const std::string& modFileName)
 		constructionDecay = constructionTbl.GetBool("constructionDecay", constructionDecay);
 		constructionDecayTime = (int)(constructionTbl.GetFloat("constructionDecayTime", (float)constructionDecayTime / GAME_SPEED) * GAME_SPEED);
 		constructionDecaySpeed = std::max(constructionTbl.GetFloat("constructionDecaySpeed", constructionDecaySpeed), 0.01f);
-		insertBuiltUnitMoveCommand = constructionTbl.GetBool("insertBuiltUnitMoveCommand", insertBuiltUnitMoveCommand);
 	}
 
 	{
@@ -336,10 +335,16 @@ void CModInfo::Init(const std::string& modFileName)
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
 	}
 	{
-		//misc
-		const LuaTable& misc = root.SubTable("misc");
+		// root level (with fallbacks in subtables)
 
-		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", static_cast<float>(windChangeReportPeriod) / GAME_SPEED) * GAME_SPEED));
+		const float wcrpSeconds = root.GetFloat(     "windChangeReportPeriod"
+		                        , root.GetFloat("misc.windChangeReportPeriod"
+		                        , windChangeReportPeriod * INV_GAME_SPEED));
+		windChangeReportPeriod = static_cast<int>(math::roundf(wcrpSeconds * GAME_SPEED));
+
+		insertBuiltUnitMoveCommand = root.GetBool(             "insertBuiltUnitMoveCommand"
+		                           , root.GetBool("construction.insertBuiltUnitMoveCommand"
+		                           , insertBuiltUnitMoveCommand));
 	}
 
 	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))
