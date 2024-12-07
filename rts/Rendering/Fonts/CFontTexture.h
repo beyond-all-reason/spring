@@ -112,6 +112,9 @@ public:
 	static void InitFonts();
 	static void KillFonts();
 	static void Update();
+	static bool AddFallbackFont(const std::string& fontfile);
+	static void ClearFallbackFonts();
+	static void ClearAllGlyphs();
 
 	inline static spring::WrappedSyncRecursiveMutex sync = {};
 protected:
@@ -133,6 +136,7 @@ public:
 	const GlyphInfo& GetGlyph(char32_t ch); //< Get a glyph
 public:
 	void ReallocAtlases(bool pre);
+	bool HasColor() const { return needsColor; }
 protected:
 	void LoadWantedGlyphs(char32_t begin, char32_t end);
 	void LoadWantedGlyphs(const std::vector<char32_t>& wanted);
@@ -142,14 +146,18 @@ protected:
 	void UploadGlyphAtlasTexture();
 	void UploadGlyphAtlasTextureImpl();
 private:
-	void CreateTexture(const int width, const int height);
+	void ClearAtlases(const int width, const int height);
+	void CreateTexture(const int width, const int height, const bool init);
 	void LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned index);
+	bool ClearGlyphs();
+	void PreloadGlyphs();
 protected:
 	float GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl);
 protected:
 	static inline std::vector<std::weak_ptr<CFontTexture>> allFonts = {};
 
 	static inline const GlyphInfo dummyGlyph = GlyphInfo();
+	static inline bool needsClearGlyphs = false;
 
 	std::array<float, 128 * 128> kerningPrecached = {}; // contains ASCII kerning
 
@@ -166,6 +174,8 @@ protected:
 	int texHeight;
 	int wantedTexWidth;
 	int wantedTexHeight;
+	bool needsColor;
+	bool isColor;
 
 	unsigned int glyphAtlasTextureID = 0;
 
