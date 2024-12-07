@@ -44,7 +44,7 @@ void ShowSplashScreen(
 		"[Initializing Virtual File System]",
 		"* archives scanned: %u",
 		"* scantime elapsed: %.1fms",
-		"Spring %s",
+		"Recoil %s",
 		"This program is distributed under the GNU General Public License, see doc/LICENSE for more information.",
 	};
 

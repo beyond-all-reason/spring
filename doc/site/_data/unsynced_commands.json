@@ -179,6 +179,12 @@
       "command" : "DebugCubeMap",
       "description" : "Use debug cubemap texture instead of the sky"
    },
+   "debugquadfield" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "DebugQuadField",
+      "description" : "Draw quadfield sectors around GuiTraceRay and selected units"
+   },
    "debugdrawai" : {
       "arguments" : {},
       "cheatRequired" : false,

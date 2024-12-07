@@ -5,6 +5,7 @@
 
 #include <string>
 #include <memory>
+#include <future>
 
 #include "GameController.h"
 #include "System/Misc/SpringTime.h"
@@ -50,9 +51,9 @@ public:
 
 	int KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
 
+	using AsyncExecFuncType = void (CPreGame::*)(const std::string&);
+	void AsyncExecute(AsyncExecFuncType execFunc, const std::string& argument);
 private:
-	sha512::raw_digest GetArchiveCompleteChecksumBytesWithSplashScreen(const std::string& archiveName, const spring_time& start, const std::string& bitmapFileName);
-
 	void AddMapArchivesToVFS(const CGameSetup* setup);
 	void AddModArchivesToVFS(const CGameSetup* setup);
 
@@ -67,6 +68,7 @@ private:
 
 	void GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet);
 
+	bool HasPendingAsyncTask();
 private:
 	/**
 	@brief GameData we received from server
@@ -75,6 +77,8 @@ private:
 	*/
 	std::shared_ptr<GameData> gameData;
 	std::shared_ptr<ClientSetup> clientSetup;
+
+	std::future<void> pendingTask;
 
 	std::string modFileName;
 	ILoadSaveHandler* saveFileHandler;

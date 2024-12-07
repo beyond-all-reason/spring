@@ -7,6 +7,13 @@
 #include <cassert>
 #include <vector>
 
+#include <version>
+#ifdef __cpp_lib_flat_set
+	#define VUS [[deprecated("VectorUniqueSorted/VectorSorted can be replaced with std::flat_set/flat_multiset")]]
+#else
+	#define VUS
+#endif
+
 namespace spring {
 	template<typename ForwardIt, typename T, typename Compare = std::less <>>
 	ForwardIt BinarySearch(ForwardIt first, ForwardIt last, const T& value, Compare comp = {})
@@ -42,7 +49,7 @@ namespace spring {
 	}
 
 	template<typename T, typename C>
-	static bool VectorEraseUniqueSorted(std::vector<T>& v, const T& e, const C& c)
+	VUS static bool VectorEraseUniqueSorted(std::vector<T>& v, const T& e, const C& c)
 	{
 		const auto iter = std::lower_bound(v.begin(), v.end(), e, c);
 
@@ -54,7 +61,7 @@ namespace spring {
 	}
 
 	template<typename T, typename UniqPred = std::equal_to <>>
-	static void VectorUnique(std::vector<T>& v, UniqPred uniqPred = {}) {
+	VUS static void VectorUnique(std::vector<T>& v, UniqPred uniqPred = {}) {
 		for (size_t i = 0; i < v.size(); i++) {
 			for (size_t j = i + 1; j < v.size(); /*NOOP*/) {
 				if (uniqPred(v[i], v[j])) {
@@ -69,7 +76,7 @@ namespace spring {
 	}
 
 	template<typename T, typename SortPred = std::less <>, typename UniqPred = std::equal_to <>>
-	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred = {}, UniqPred uniqPred = {})
+	VUS static void VectorSortUnique(std::vector<T>& v, SortPred sortPred = {}, UniqPred uniqPred = {})
 	{
 		std::sort(v.begin(), v.end(), sortPred);
 		auto last = std::unique(v.begin(), v.end(), uniqPred);
@@ -77,7 +84,7 @@ namespace spring {
 	}
 
 	template<typename T>
-	static bool VectorInsertUnique(std::vector<T>& v, const T& e, bool checkIfUnique = false)
+	VUS static bool VectorInsertUnique(std::vector<T>& v, const T& e, bool checkIfUnique = false)
 	{
 		// do not assume uniqueness, test for it
 		if (checkIfUnique && std::find(v.begin(), v.end(), e) != v.end())
@@ -90,7 +97,7 @@ namespace spring {
 	}
 
 	template<typename T, typename Pred>
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item, Pred pred)
+	VUS typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item, Pred pred)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
 	}
@@ -99,13 +106,13 @@ namespace spring {
 		typename T, typename Pred,
 		typename = typename std::enable_if_t<std::is_pointer_v<std::remove_cv_t<T>>>
 	>
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item, Pred pred)
+	VUS typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item, Pred pred)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
 	}
 
 	template<typename T>
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item)
+	VUS typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
 	}
@@ -114,13 +121,13 @@ namespace spring {
 		typename T,
 		typename = typename std::enable_if_t<std::is_pointer_v<std::remove_cv_t<T>>>
 	>
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item)
+	VUS typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
 	}
 
 	template<typename T, typename Pred>
-	static bool VectorInsertUniqueSorted(std::vector<T>& v, const T& e, Pred pred)
+	VUS static bool VectorInsertUniqueSorted(std::vector<T>& v, const T& e, Pred pred)
 	{
 		const auto iter = std::lower_bound(v.begin(), v.end(), e, pred);
 
@@ -134,6 +141,8 @@ namespace spring {
 	template<typename T>
 	static T VectorBackPop(std::vector<T>& v) { T e = std::move(v.back()); v.pop_back(); return e; }
 };
+
+#undef VUS
 
 #endif
 
