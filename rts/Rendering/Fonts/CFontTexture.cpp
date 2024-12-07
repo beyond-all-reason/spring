@@ -1167,7 +1167,7 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	}
 
 	if (slot->bitmap.pitch != width*channels) {
-		LOG_L(L_ERROR, "invalid pitch %d %d", slot->bitmap.pitch, width);
+		LOG_L(L_ERROR, "invalid pitch %d (width %d channels %d)", slot->bitmap.pitch, width, channels);
 		return;
 	}
 
