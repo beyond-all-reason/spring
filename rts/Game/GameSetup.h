@@ -219,6 +219,7 @@ public:
 	std::string reloadScript;
 	std::string demoName;
 
+	inline static bool forceOnlyLocal = false;
 private:
 	spring::unordered_map<int, int> playerRemap;
 	spring::unordered_map<int, int> teamRemap;
