@@ -1400,8 +1400,10 @@ void CGroundMoveType::ChangeHeading(short newHeading) {
 		return;
 
 	wantedHeading = newHeading;
-	if (owner->heading == wantedHeading)
+	if (owner->heading == wantedHeading) {
+		owner->UpdateDirVectors(!owner->upright && owner->IsOnGround(), owner->IsInAir(), owner->unitDef->upDirSmoothing);
 		return;
+	}
 
 	#if (MODEL_TURN_INERTIA == 0)
 	const short rawDeltaHeading = pathController.GetDeltaHeading(pathID, wantedHeading, owner->heading, turnRate);

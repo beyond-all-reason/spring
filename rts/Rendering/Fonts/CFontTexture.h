@@ -21,8 +21,7 @@ class CBitmap;
 class FtLibraryHandlerProxy {
 public:
 	static void InitFtLibrary();
-	static bool CheckGenFontConfigFast();
-	static bool CheckGenFontConfigFull(bool console);
+	static bool InitFontconfig(bool console);
 };
 
 

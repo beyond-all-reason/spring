@@ -65,6 +65,7 @@
 #include "Rendering/DebugColVolDrawer.h"
 #include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/DebugDrawerAI.h"
+#include "Rendering/DebugDrawerQuadField.h"
 #include "Rendering/IPathDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/HUDDrawer.h"
@@ -1545,6 +1546,19 @@ public:
 	bool Execute(const UnsyncedAction& action) const final {
 		globalRendering->drawDebugCubeMap = !globalRendering->drawDebugCubeMap;
 		ISky::SetSky();
+		return true;
+	}
+};
+
+class DebugQuadFieldActionExecutor : public IUnsyncedActionExecutor {
+public:
+	DebugQuadFieldActionExecutor() : IUnsyncedActionExecutor("DebugQuadField", "Draw quadfield sectors around GuiTraceRay and selected units") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		bool enabled = DebugDrawerQuadField::IsEnabled();
+		DebugDrawerQuadField::SetEnabled(!enabled);
+		LogSystemStatus("quadfield debug", !enabled);
 		return true;
 	}
 };
@@ -3950,6 +3964,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<PauseActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugCubeMapActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<DebugQuadFieldActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DrawSkyActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLErrorsActionExecutor>());

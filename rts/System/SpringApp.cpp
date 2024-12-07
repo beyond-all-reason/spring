@@ -329,9 +329,9 @@ bool SpringApp::InitPlatformLibs()
 bool SpringApp::InitFonts()
 {
 	FtLibraryHandlerProxy::InitFtLibrary();
-	FtLibraryHandlerProxy::CheckGenFontConfigFast();
+	FtLibraryHandlerProxy::InitFontconfig(false);
 	CFontTexture::InitFonts();
-	return CglFont::LoadConfigFonts() && FtLibraryHandlerProxy::CheckGenFontConfigFull(false);
+	return CglFont::LoadConfigFonts();
 /*
 	using namespace std::chrono_literals;
 	auto future = std::async(std::launch::async, []() {
@@ -478,7 +478,7 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 			spring_time::setstarttime(spring_time::gettime(true));
 		}
 		FtLibraryHandlerProxy::InitFtLibrary();
-		if (FtLibraryHandlerProxy::CheckGenFontConfigFull(true)) {
+		if (FtLibraryHandlerProxy::InitFontconfig(true)) {
 			printf("[FtLibraryHandler::GenFontConfig] is succesfull\n");
 			exit(spring::EXIT_CODE_SUCCESS);
 		}
@@ -553,7 +553,8 @@ CGameController* SpringApp::LoadSaveFile(const std::string& saveFile)
 	clientSetup->isHost = true;
 
 	pregame = new CPreGame(clientSetup);
-	pregame->LoadSaveFile(saveFile);
+	pregame->AsyncExecute(&CPreGame::LoadSaveFile, saveFile);
+	//pregame->LoadSaveFile(saveFile);
 	return pregame;
 }
 
@@ -564,7 +565,8 @@ CGameController* SpringApp::LoadDemoFile(const std::string& demoFile)
 	clientSetup->myPlayerName += " (spec)";
 
 	pregame = new CPreGame(clientSetup);
-	pregame->LoadDemoFile(demoFile);
+	pregame->AsyncExecute(&CPreGame::LoadDemoFile, demoFile);
+	//pregame->LoadDemoFile(demoFile);
 	return pregame;
 }
 
@@ -594,8 +596,10 @@ CGameController* SpringApp::RunScript(const std::string& buf)
 
 	pregame = new CPreGame(clientSetup);
 
-	if (clientSetup->isHost)
-		pregame->LoadSetupScript(buf);
+	if (clientSetup->isHost) {
+		pregame->AsyncExecute(&CPreGame::LoadSetupScript, buf);
+		//pregame->LoadSetupScript(buf);
+	}
 
 	return pregame;
 }
