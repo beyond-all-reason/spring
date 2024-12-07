@@ -117,7 +117,6 @@ class LuaUnsyncedCtrl {
 		static int SetConfigString(lua_State* L);
 
 		static int CreateDir(lua_State* L);
-		static int AllocateTable(lua_State* L);
 
 		static int Reload(lua_State* L);
 		static int Restart(lua_State* L);
