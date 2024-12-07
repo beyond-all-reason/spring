@@ -126,6 +126,10 @@ void CModInfo::ResetState()
 
 		allowEnginePlayerlist = true;
 	}
+	{
+		// make windChangeReportPeriod equal to EnvResourceHandler::WIND_UPDATE_RATE = 15 * GAME_SPEED;
+		windChangeReportPeriod = 15 * GAME_SPEED;
+	}
 }
 
 void CModInfo::Init(const std::string& modFileName)
@@ -328,6 +332,12 @@ void CModInfo::Init(const std::string& modFileName)
 
 		if ((airMipLevel < 0) || (airMipLevel > 30))
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
+	}
+	{
+		//misc
+		const LuaTable& misc = root.SubTable("misc");
+
+		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", static_cast<float>(windChangeReportPeriod) / GAME_SPEED) * GAME_SPEED));
 	}
 
 	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))

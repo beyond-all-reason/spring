@@ -204,7 +204,8 @@ void SelectMenu::Demo()
 		clientSetup->demoFile = userDemo;
 
 		pregame = new CPreGame(clientSetup);
-		pregame->LoadDemoFile(clientSetup->demoFile);
+		pregame->AsyncExecute(&CPreGame::LoadDemoFile, clientSetup->demoFile);
+		//pregame->LoadDemoFile(clientSetup->demoFile);
 
 		return (agui::gui->RmElement(this));
 	};
@@ -225,7 +226,8 @@ void SelectMenu::Load()
 		clientSetup->saveFile = userSave;
 
 		pregame = new CPreGame(clientSetup);
-		pregame->LoadSaveFile(clientSetup->saveFile);
+		pregame->AsyncExecute(&CPreGame::LoadSaveFile, clientSetup->saveFile);
+		//pregame->LoadSaveFile(clientSetup->saveFile);
 
 		return (agui::gui->RmElement(this));
 	};
@@ -257,7 +259,9 @@ void SelectMenu::Single()
 			selw->userScript.clear();
 
 		pregame = new CPreGame(clientSetup);
-		pregame->LoadSetupScript(StartScriptGen::CreateDefaultSetup(selw->userMap, selw->userMod, selw->userScript, clientSetup->myPlayerName));
+		auto f = &CPreGame::LoadSetupScript;
+		pregame->AsyncExecute(&CPreGame::LoadSetupScript, StartScriptGen::CreateDefaultSetup(selw->userMap, selw->userMod, selw->userScript, clientSetup->myPlayerName));
+		//pregame->LoadSetupScript(StartScriptGen::CreateDefaultSetup(selw->userMap, selw->userMod, selw->userScript, clientSetup->myPlayerName));
 		return (agui::gui->RmElement(this));
 	}
 }

@@ -7,6 +7,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/DebugVisibilityDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/DepthBufferCopy.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/DebugDrawerAI.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/DebugDrawerQuadField.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/QTPFSPathDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/HAPFSPathDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Env/AdvWater.cpp"
