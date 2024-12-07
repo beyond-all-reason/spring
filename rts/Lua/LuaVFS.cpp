@@ -172,7 +172,7 @@ int LuaVFS::Include(lua_State* L, bool synced)
  		lua_error(L);
 	}
 
-	tracy::LuaRemove(fileData.data());
+	LuaUtils::TracyRemoveAlsoExtras(fileData.data());
 	if ((luaError = luaL_loadbuffer(L, fileData.c_str(), fileData.size(), fileName.c_str())) != 0) {
 		const auto buf = fmt::format("[LuaVFS::{}(synced={})][loadbuf] file={} error={} ({}) cenv={} vfsmode={}", __func__, synced, fileName, luaError, lua_tostring(L, -1), hasCustomEnv, mode);
 		lua_pushlstring(L, buf.c_str(), buf.size());
@@ -229,6 +229,7 @@ int LuaVFS::LoadFile(lua_State* L, bool synced)
 
 	string data;
 	if (LoadFileWithModes(filename, data, GetModes(L, 2, synced)) == 1) {
+		LuaUtils::TracyRemoveAlsoExtras(data.data());
 		lua_pushsstring(L, data);
 		return 1;
 	}
