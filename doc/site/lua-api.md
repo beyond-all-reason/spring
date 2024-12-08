@@ -28,7 +28,16 @@ permalink: lua-api
 
 {% if row["defines"] %}
 {% assign defines = row["defines"][0] %}
+
+{% comment %}
+  defines.extends.rawdesc seems to have the description without inlined doc tags.
+{% endcomment %}
+{% if defines["extends"] %}
+{{ defines["extends"]["rawdesc"] }}
+{% else %}
 {{ defines["desc"] }}
+{% endif %}
+
 {% if defines["extends"] %}
 {% assign extends = defines["extends"] %}
 
