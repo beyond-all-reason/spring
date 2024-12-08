@@ -4,7 +4,9 @@ The recoil site is a jekyll application, usually hosted on github pages.
 
 ## Testing locally
 
-Have a reasonably recent version of Ruby. Inside `doc/site` run:
+Install Ruby 3.2.3 ([newer versions can cause problems](https://stackoverflow.com/a/77896791/317135)).
+
+Inside `doc/site` run:
 
 ```bash
 bundle
@@ -15,7 +17,7 @@ Navigate to http://localhost:4000/spring
 
 ## Generating LDoc
 
-Have [Lua Language Server](https://luals.github.io/) installed or available at your `$PATH`.
+Have [Lua Language Server](https://luals.github.io/) installed and available at your `$PATH`.
 
 Inside `doc/site` run:
 
