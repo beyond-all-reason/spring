@@ -39,7 +39,14 @@ struct PathNode {
 /// functor to define node priority
 struct lessCost {
 	inline bool operator() (const PathNode* x, const PathNode* y) const {
-		return (x->fCost == y->fCost) ? (x->gCost < y->gCost) : (x->fCost > y->fCost);
+		if (x->fCost == y->fCost) {
+			if (x->gCost == y->gCost)
+				// This is needed to guarantee that the sorting is stable.
+				return (x->nodeNum < y->nodeNum);
+			else
+				return (x->gCost < y->gCost);
+		} else
+			return (x->fCost > y->fCost);
 	}
 };
 

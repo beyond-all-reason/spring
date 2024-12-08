@@ -90,11 +90,25 @@ namespace QTPFS {
     };
 
     struct SearchQueueNode {
-		bool operator <  (const SearchQueueNode& n) const { return (heapPriority <  n.heapPriority); }
-		bool operator >  (const SearchQueueNode& n) const { return (heapPriority >  n.heapPriority); }
-		bool operator == (const SearchQueueNode& n) const { return (heapPriority == n.heapPriority); }
-		bool operator <= (const SearchQueueNode& n) const { return (heapPriority <= n.heapPriority); }
-		bool operator >= (const SearchQueueNode& n) const { return (heapPriority >= n.heapPriority); }
+        // Sorting Comparisons
+        // These need to guarantee stable ordering, even if the sorting algorithm itself is not stable.
+        bool operator <  (const SearchQueueNode& n) const {
+            if (heapPriority == n.heapPriority)
+                    return (nodeIndex > n.nodeIndex);
+                else
+                    return (heapPriority < n.heapPriority);
+            }
+            bool operator >  (const SearchQueueNode& n) const {
+                if (heapPriority == n.heapPriority)
+                    return (nodeIndex < n.nodeIndex);
+                else
+                    return (heapPriority > n.heapPriority);
+            }
+
+        // General Comparisons
+        bool operator == (const SearchQueueNode& n) const { return (heapPriority == n.heapPriority); }
+        bool operator <= (const SearchQueueNode& n) const { return (heapPriority <= n.heapPriority); }
+        bool operator >= (const SearchQueueNode& n) const { return (heapPriority >= n.heapPriority); }
 
         SearchQueueNode(int index, float newPriorty)
             : heapPriority(newPriorty)
