@@ -3,7 +3,7 @@
 
 #include "System/Misc/TracyDefs.h"
 
-TransformMemStorage transformMemStorage;
+MatricesMemStorage matricesMemStorage;
 ModelsUniformsStorage modelsUniformsStorage;
 
 ModelsUniformsStorage::ModelsUniformsStorage()
@@ -49,7 +49,7 @@ ModelUniformData& ModelsUniformsStorage::GetObjUniformsArray(const CWorldObject*
 	return storage[offset];
 }
 
-void TransformMemStorage::SetAllDirty()
+void MatricesMemStorage::SetAllDirty()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(Threading::IsMainThread());

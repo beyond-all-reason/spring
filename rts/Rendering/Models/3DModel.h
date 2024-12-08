@@ -406,7 +406,7 @@ struct S3DModel
 	float3 CalcDrawMidPos() const { return ((maxs + mins) * 0.5f); }
 	float3 GetDrawMidPos() const { return relMidPos; }
 
-	const auto& GetTransformAlloc() const { return transformAlloc; }
+	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
 public:
 	std::string name;
 	std::array<std::string, NUM_MODEL_TEXTURES> texs;
@@ -433,7 +433,7 @@ public:
 	LoadStatus loadStatus;
 	bool uploaded;
 private:
-	ScopedTransformMemAlloc transformAlloc;
+	ScopedMatricesMemAlloc matAlloc;
 };
 
 

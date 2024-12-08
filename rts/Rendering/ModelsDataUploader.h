@@ -7,7 +7,7 @@
 #include <functional>
 #include <memory>
 
-#include "System/Transform.hpp"
+#include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 #include "System/TypeToStr.h"
 #include "Rendering/GL/myGL.h"
@@ -69,7 +69,7 @@ protected:
 	std::unique_ptr<IStreamBuffer<T>> ssbo;
 };
 
-class TransformUploader : public TypedStorageBufferUploader<Transform, TransformUploader> {
+class MatrixUploader : public TypedStorageBufferUploader<CMatrix44f, MatrixUploader> {
 public:
 	void InitDerived();
 	void KillDerived();
@@ -105,5 +105,5 @@ private:
 	static constexpr uint32_t ELEM_COUNTI = 1u << 11;
 };
 
-#define transformUploader MatrixUploader::GetInstance()
+#define matrixUploader MatrixUploader::GetInstance()
 #define modelsUniformsUploader ModelsUniformsUploader::GetInstance()

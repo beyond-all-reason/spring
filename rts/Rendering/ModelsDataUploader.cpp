@@ -104,7 +104,7 @@ std::size_t TypedStorageBufferUploader<T, Derived>::GetProjectileElemOffset(int3
 	return GetElemOffsetImpl(projectileHandler.GetProjectileBySyncedID(syncedProjectileID));
 }
 
-void TransformUploader::InitDerived()
+void MatrixUploader::InitDerived()
 {
 	if (!globalRendering->haveGL4)
 		return;
@@ -117,13 +117,13 @@ void TransformUploader::InitDerived()
 	if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && !ssbo->IsValid()) {
 		// some potatoe driver overestimated its support for SB_PERSISTENTMAP
 		// Redo with good old SB_BUFFERSUBDATA
-		LOG_L(L_ERROR, "[TransformUploader::%s] OpenGL reported persistent mapping to be available, but initial mapping of buffer failed. Falling back.", __func__);
+		LOG_L(L_ERROR, "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but initial mapping of buffer failed. Falling back.", __func__);
 		KillImpl();
 		InitImpl(MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, MatricesMemStorage::BUFFERING);
 	}
 }
 
-void TransformUploader::KillDerived()
+void MatrixUploader::KillDerived()
 {
 	if (!globalRendering->haveGL4)
 		return;
@@ -131,43 +131,43 @@ void TransformUploader::KillDerived()
 	KillImpl();
 }
 
-void TransformUploader::UpdateDerived()
+void MatrixUploader::UpdateDerived()
 {
 	if (!globalRendering->haveGL4)
 		return;
 
-	SCOPED_TIMER("TransformUploader::Update");
+	SCOPED_TIMER("MatrixUploader::Update");
 	ssbo->UnbindBufferRange(bindingIdx);
 
 	auto lock = CModelsLock::GetScopedLock();
 
 	//resize
 	const uint32_t elemCount = GetElemsCount();
-	const uint32_t storageElemCount = transformMemStorage.GetSize();
+	const uint32_t storageElemCount = matricesMemStorage.GetSize();
 	if (storageElemCount > elemCount) {
 		const uint32_t newElemCount = AlignUp(storageElemCount, elemCountIncr);
 		LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u", className, __func__, "up", newElemCount, elemCount, storageElemCount);
 		ssbo->Resize(newElemCount);
 
 		if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && !ssbo->IsValid()) {
-			LOG_L(L_ERROR, "[TransformUploader::%s] OpenGL reported persistent mapping to be available, but mapping of buffer of %u size failed. Falling back.", __func__, uint32_t(newElemCount * sizeof(CMatrix44f)));
+			LOG_L(L_ERROR, "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but mapping of buffer of %u size failed. Falling back.", __func__, uint32_t(newElemCount * sizeof(CMatrix44f)));
 			KillImpl();
 			InitImpl(MATRIX_SSBO_BINDING_IDX, newElemCount, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, MatricesMemStorage::BUFFERING);
 		}
 
-		transformMemStorage.SetAllDirty(); //Resize doesn't copy the data
+		matricesMemStorage.SetAllDirty(); //Resize doesn't copy the data
 	}
 
 	//update on the GPU
-	const auto* clientPtr = transformMemStorage.GetData().data();
+	const CMatrix44f* clientPtr = matricesMemStorage.GetData().data();
 
 	constexpr bool ENABLE_UPLOAD_OPTIMIZATION = true;
 	if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && ENABLE_UPLOAD_OPTIMIZATION) {
-		const auto stt = transformMemStorage.GetDirtyMap().begin();
-		const auto fin = transformMemStorage.GetDirtyMap().end();
+		const auto stt = matricesMemStorage.GetDirtyMap().begin();
+		const auto fin = matricesMemStorage.GetDirtyMap().end();
 
-		auto beg = transformMemStorage.GetDirtyMap().begin();
-		auto end = transformMemStorage.GetDirtyMap().begin();
+		auto beg = matricesMemStorage.GetDirtyMap().begin();
+		auto end = matricesMemStorage.GetDirtyMap().begin();
 
 		static const auto dirtyPred = [](uint8_t m) -> bool { return m > 0u; };
 		while (beg != fin) {
@@ -178,8 +178,8 @@ void TransformUploader::UpdateDerived()
 				const uint32_t offs = static_cast<uint32_t>(std::distance(stt, beg));
 				const uint32_t size = static_cast<uint32_t>(std::distance(beg, end));
 
-				auto* mappedPtr = ssbo->Map(clientPtr, offs, size);
-				memcpy(mappedPtr, clientPtr + offs, size * sizeof(decltype(*mappedPtr)));
+				CMatrix44f* mappedPtr = ssbo->Map(clientPtr, offs, size);
+				memcpy(mappedPtr, clientPtr + offs, size * sizeof(CMatrix44f));
 				ssbo->Unmap();
 
 				std::transform(beg, end, beg, [](uint8_t v) { return (v - 1); }); //make it less dirty
@@ -189,8 +189,8 @@ void TransformUploader::UpdateDerived()
 		}
 	}
 	else {
-		const auto* clientPtr = transformMemStorage.GetData().data();
-		auto* mappedPtr = ssbo->Map(clientPtr, 0, storageElemCount);
+		const CMatrix44f* clientPtr = matricesMemStorage.GetData().data();
+		CMatrix44f* mappedPtr = ssbo->Map(clientPtr, 0, storageElemCount);
 
 		if (!ssbo->HasClientPtr())
 			memcpy(mappedPtr, clientPtr, storageElemCount * sizeof(CMatrix44f));
@@ -201,41 +201,41 @@ void TransformUploader::UpdateDerived()
 	ssbo->SwapBuffer();
 }
 
-std::size_t TransformUploader::GetDefElemOffsetImpl(const S3DModel* model) const
+std::size_t MatrixUploader::GetDefElemOffsetImpl(const S3DModel* model) const
 {
 	if (model == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr S3DModel", className, __func__);
-		return TransformMemStorage::INVALID_INDEX;
+		return MatricesMemStorage::INVALID_INDEX;
 	}
 
 	return model->GetMatAlloc().GetOffset(false);
 }
 
-std::size_t TransformUploader::GetDefElemOffsetImpl(const UnitDef* def) const
+std::size_t MatrixUploader::GetDefElemOffsetImpl(const UnitDef* def) const
 {
 	if (def == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr UnitDef", className, __func__);
-		return TransformMemStorage::INVALID_INDEX;
+		return MatricesMemStorage::INVALID_INDEX;
 	}
 
 	return GetDefElemOffsetImpl(def->LoadModel());
 }
 
-std::size_t TransformUploader::GetDefElemOffsetImpl(const FeatureDef* def) const
+std::size_t MatrixUploader::GetDefElemOffsetImpl(const FeatureDef* def) const
 {
 	if (def == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr FeatureDef", className, __func__);
-		return TransformMemStorage::INVALID_INDEX;
+		return MatricesMemStorage::INVALID_INDEX;
 	}
 
 	return GetDefElemOffsetImpl(def->LoadModel());
 }
 
-std::size_t TransformUploader::GetElemOffsetImpl(const CUnit* unit) const
+std::size_t MatrixUploader::GetElemOffsetImpl(const CUnit* unit) const
 {
 	if (unit == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CUnit", className, __func__);
-		return TransformMemStorage::INVALID_INDEX;
+		return MatricesMemStorage::INVALID_INDEX;
 	}
 
 	if (std::size_t offset = CUnitDrawer::GetMatricesMemAlloc(unit).GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
@@ -243,14 +243,14 @@ std::size_t TransformUploader::GetElemOffsetImpl(const CUnit* unit) const
 	}
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CUnit (id:%d)", className, __func__, unit->id);
-	return TransformMemStorage::INVALID_INDEX;
+	return MatricesMemStorage::INVALID_INDEX;
 }
 
-std::size_t TransformUploader::GetElemOffsetImpl(const CFeature* feature) const
+std::size_t MatrixUploader::GetElemOffsetImpl(const CFeature* feature) const
 {
 	if (feature == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CFeature", className, __func__);
-		return TransformMemStorage::INVALID_INDEX;
+		return MatricesMemStorage::INVALID_INDEX;
 	}
 
 	if (std::size_t offset = CFeatureDrawer::GetMatricesMemAlloc(feature).GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
@@ -258,24 +258,24 @@ std::size_t TransformUploader::GetElemOffsetImpl(const CFeature* feature) const
 	}
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CFeature (id:%d)", className, __func__, feature->id);
-	return TransformMemStorage::INVALID_INDEX;
+	return MatricesMemStorage::INVALID_INDEX;
 }
 
-std::size_t TransformUploader::GetElemOffsetImpl(const CProjectile* p) const
+std::size_t MatrixUploader::GetElemOffsetImpl(const CProjectile* p) const
 {
 	if (p == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CProjectile", className, __func__);
-		return TransformMemStorage::INVALID_INDEX;
+		return MatricesMemStorage::INVALID_INDEX;
 	}
 
 	if (!p->synced) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied non-synced CProjectile (id:%d)", className, __func__, p->id);
-		return TransformMemStorage::INVALID_INDEX;
+		return MatricesMemStorage::INVALID_INDEX;
 	}
 
 	if (!p->weapon || !p->piece) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied non-weapon or non-piece CProjectile (id:%d)", className, __func__, p->id);
-		return TransformMemStorage::INVALID_INDEX;
+		return MatricesMemStorage::INVALID_INDEX;
 	}
 	/*
 	if (std::size_t offset = p->GetMatAlloc().GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
@@ -284,10 +284,8 @@ std::size_t TransformUploader::GetElemOffsetImpl(const CProjectile* p) const
 	*/
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CProjectile (id:%d)", className, __func__, p->id);
-	return TransformMemStorage::INVALID_INDEX;
+	return MatricesMemStorage::INVALID_INDEX;
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ModelsUniformsUploader::InitDerived()
 {
