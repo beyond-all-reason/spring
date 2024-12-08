@@ -1,0 +1,440 @@
+---
+layout: default
+title: Game
+permalink: ldoc/modules/Game.html
+description: Game constants
+parent: Lua API
+table: 0x55a52e9f24b0
+---
+
+{% raw %}
+    <h1>Module <code>Game</code></h1>
+    <p>Game constants</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaConstGame.cpp">rts/Lua/LuaConstGame.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Tables">Tables</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Game">Game</a>
+            </dt>
+            <dd>
+              Game specific information
+            </dd>
+        </dl>
+
+      <h2 id="Tables" class="section-header ">
+        Tables
+      </h2>
+
+        <h3 id="Game">
+          Game
+        </h3>
+        <p>Game specific information</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>maxUnits</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>maxTeams</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>maxPlayers</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>squareSize</code>
+                   <strong><span class="type">number</span></strong>
+                    Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates. The resolution of height, yard and type maps.
+                 </li>
+                 <li>
+                   <code>metalMapSquareSize</code>
+                   <strong><span class="type">number</span></strong>
+                    The resolution of metalmap (for use in API such as Spring.GetMetalAmount etc.)
+                 </li>
+                 <li>
+                   <code>gameSpeed</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>startPosType</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ghostedBuildings</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mapChecksum</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>modChecksum</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mapDamage</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mapName</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mapDescription</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    = string Game.mapHumanName
+                 </li>
+                 <li>
+                   <code>mapHardness</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mapX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mapY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mapSizeX</code>
+                   <strong><span class="type">number</span></strong>
+                    in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+                 </li>
+                 <li>
+                   <code>mapSizeZ</code>
+                   <strong><span class="type">number</span></strong>
+                    in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+                 </li>
+                 <li>
+                   <code>gravity</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>tidal</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>windMin</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>windMax</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>extractorRadius</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>waterDamage</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>envDamageTypes</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+                    Containing {def}IDs of environmental-damage sources
+                 </li>
+                 <li>
+                   <code>gameName</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>gameShortName</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>gameVersion</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>gameMutator</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>gameDesc</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>requireSonarUnderWater</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transportAir</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transportShip</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transportHover</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transportGround</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>fireAtKilled</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>fireAtCrashing</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>constructionDecay</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>reclaimAllowEnemies</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>reclaimAllowAllies</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>constructionDecayTime</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>constructionDecaySpeed</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>multiReclaim</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>reclaimMethod</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>reclaimUnitMethod</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>reclaimUnitEnergyCostFactor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>reclaimUnitEfficiency</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>reclaimFeatureEnergyCostFactor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>repairEnergyCostFactor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>resurrectEnergyCostFactor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>captureEnergyCostFactor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>springCategories</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+
+
+<pre><code> example: {
+   ["vtol"]         = 0,  ["special"]      = 1,  ["noweapon"]     = 2,
+   ["notair"]       = 3,  ["notsub"]       = 4,  ["all"]          = 5,
+   ["weapon"]       = 6,  ["notship"]      = 7,  ["notland"]      = 8,
+   ["mobile"]       = 9,  ["kbot"]         = 10, ["antigator"]    = 11,
+   ["tank"]         = 12, ["plant"]        = 13, ["ship"]         = 14,
+   ["antiemg"]      = 15, ["antilaser"]    = 16, ["antiflame"]    = 17,
+   ["underwater"]   = 18, ["hover"]        = 19, ["phib"]         = 20,
+   ["constr"]       = 21, ["strategic"]    = 22, ["commander"]    = 23,
+   ["paral"]        = 24, ["jam"]          = 25, ["mine"]         = 26,
+   ["kamikaze"]     = 27, ["minelayer"]    = 28, ["notstructure"] = 29,
+   ["air"]          = 30
+ }
+</code></pre>
+
+                 </li>
+                 <li>
+                   <code>armorTypes</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+
+<p> (bidirectional)</p>
+<pre><code> example: {
+   [1]  = amphibious,   [2] = anniddm,     [3] = antibomber,
+   [4]  = antifighter,  [5] = antiraider,  [6] = atl,
+   [7]  = blackhydra,   [8] = bombers,     [9] = commanders,
+   [10] = crawlingbombs, ...
+
+   ["amphibious"]   = 1, ["anniddm"]    = 2, ["antibomber"] = 3
+   ["antifighter"]  = 4, ["antiraider"] = 5, ["atl"]        = 6
+   ["blackhydra"]   = 7, ["bombers"]    = 8, ["commanders"] = 9
+   ["crawlingbombs"]= 10, ...
+ }
+</code></pre>
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+
+{% endraw %}
