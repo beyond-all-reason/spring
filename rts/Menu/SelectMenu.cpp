@@ -259,7 +259,6 @@ void SelectMenu::Single()
 			selw->userScript.clear();
 
 		pregame = new CPreGame(clientSetup);
-		auto f = &CPreGame::LoadSetupScript;
 		pregame->AsyncExecute(&CPreGame::LoadSetupScript, StartScriptGen::CreateDefaultSetup(selw->userMap, selw->userMod, selw->userScript, clientSetup->myPlayerName));
 		//pregame->LoadSetupScript(StartScriptGen::CreateDefaultSetup(selw->userMap, selw->userMod, selw->userScript, clientSetup->myPlayerName));
 		return (agui::gui->RmElement(this));
