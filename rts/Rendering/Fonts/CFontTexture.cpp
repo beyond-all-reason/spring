@@ -829,10 +829,10 @@ void CFontTexture::ClearAllGlyphs() {
  * Clears all glyphs for a font
  */
 bool CFontTexture::ClearGlyphs() {
-#ifndef HEADLESS
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	bool changed = false;
+#ifndef HEADLESS
 
 	// Invalidate glyphs coming from other fonts, or those with the 'not found' glyph.
 	for (const auto& g : glyphs) {
@@ -860,7 +860,7 @@ bool CFontTexture::ClearGlyphs() {
 		++curTextureUpdate;
 	}
 #endif
-	return true;
+	return changed;
 }
 
 void CFontTexture::InitFonts()
