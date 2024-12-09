@@ -1332,6 +1332,7 @@ void CFontTexture::ClearAtlases(const int width, const int height)
 	wantedTexHeight = height;
 
 	atlasUpdate.Alloc(wantedTexWidth, wantedTexHeight);
+	atlasUpdateShadow.Alloc(1, 1);
 	atlasUpdateShadow = {};
 
 	if (!atlasGlyphs.empty())
