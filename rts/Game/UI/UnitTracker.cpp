@@ -6,14 +6,19 @@
 #include "Game/CameraHandler.h"
 #include "Game/Camera.h"
 #include "Game/SelectedUnitsHandler.h"
+#include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/LosHandler.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
+
+#include "System/Misc/TracyDefs.h"
 
 
 CUnitTracker unitTracker;
@@ -25,9 +30,25 @@ const char* CUnitTracker::modeNames[TrackModeCount] = {
 	"Extents"
 };
 
+bool IsInvalidUnitForSelection(int unitID) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	CUnit* u = unitHandler.GetUnit(unitID);
+	if (!u)
+		return true;
+
+	const bool canSeeAndSelect =
+		(losHandler->GetGlobalLOS(u->allyteam) ||
+		(gu->spectating && gu->spectatingFullView) ||
+		(u->losStatus[gu->myAllyTeam] & (LOS_INLOS | LOS_CONTRADAR)) != 0) &&
+		selectedUnitsHandler.CanISelectTeam(gu->GetMyPlayer(), u->team);
+
+	return !canSeeAndSelect;
+};
+
 
 void CUnitTracker::Disable()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	smoothedRight = RgtVector;
 	enabled = false;
 }
@@ -35,12 +56,14 @@ void CUnitTracker::Disable()
 
 int CUnitTracker::GetMode() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return trackMode;
 }
 
 
 void CUnitTracker::IncMode()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	trackMode = (trackMode + 1) % TrackModeCount;
 	LOG("TrackMode: %s", modeNames[trackMode]);
 }
@@ -48,6 +71,7 @@ void CUnitTracker::IncMode()
 
 void CUnitTracker::SetMode(int mode)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	trackMode = std::clamp(mode, 0, TrackModeCount - 1);
 	LOG("TrackMode: %s", modeNames[trackMode]);
 }
@@ -55,14 +79,24 @@ void CUnitTracker::SetMode(int mode)
 
 /******************************************************************************/
 
-void CUnitTracker::Track()
+void CUnitTracker::Track(std::vector<int>&& unitIDs)
 {
-	const auto& units = selectedUnitsHandler.selectedUnits;
+	RECOIL_DETAILED_TRACY_ZONE;
+	std::erase_if(unitIDs, IsInvalidUnitForSelection);
+
+	if (!unitIDs.empty())
+		selectedUnitsHandler.ClearSelected();
+
+	for (int unitID : unitIDs) {
+		selectedUnitsHandler.AddUnit(unitHandler.GetUnit(unitID));
+	}
+
+	const auto& su = selectedUnitsHandler.selectedUnits;
 
 	CleanTrackGroup();
 
 	if (trackedUnitIDs.empty()) {
-		if (units.empty()) {
+		if (su.empty()) {
 			Disable();
 		} else {
 			MakeTrackGroup();
@@ -73,7 +107,7 @@ void CUnitTracker::Track()
 		return;
 	}
 
-	if (!units.empty())
+	if (!su.empty())
 		MakeTrackGroup();
 
 	if (trackedUnitIDs.find(trackUnit) == trackedUnitIDs.end()) {
@@ -97,6 +131,7 @@ void CUnitTracker::Track()
 
 void CUnitTracker::MakeTrackGroup()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	smoothedRight = RgtVector;
 	trackedUnitIDs.clear();
 
@@ -105,19 +140,19 @@ void CUnitTracker::MakeTrackGroup()
 	}
 }
 
-
 void CUnitTracker::CleanTrackGroup()
 {
-	deadUnitIDs.clear();
-	deadUnitIDs.reserve(trackedUnitIDs.size());
+	RECOIL_DETAILED_TRACY_ZONE;
+	invalidUnitIDs.clear();
+	invalidUnitIDs.reserve(trackedUnitIDs.size());
 
 	for (const int unitID: trackedUnitIDs) {
-		if (unitHandler.GetUnitUnsafe(unitID) == nullptr)
-			deadUnitIDs.push_back(unitID);
+		if (IsInvalidUnitForSelection(unitID))
+			invalidUnitIDs.push_back(unitID);
 	}
 
-	for (const int deadUnitID: deadUnitIDs) {
-		trackedUnitIDs.erase(deadUnitID);
+	for (const int invalidUnitID : invalidUnitIDs) {
+		trackedUnitIDs.erase(invalidUnitID);
 	}
 
 	if (trackedUnitIDs.empty()) {
@@ -135,6 +170,7 @@ void CUnitTracker::CleanTrackGroup()
 
 void CUnitTracker::NextUnit()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (trackedUnitIDs.empty())
 		return;
 
@@ -156,6 +192,7 @@ void CUnitTracker::NextUnit()
 
 CUnit* CUnitTracker::GetTrackUnit()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CleanTrackGroup();
 
 	if (trackedUnitIDs.empty()) {
@@ -169,6 +206,7 @@ CUnit* CUnitTracker::GetTrackUnit()
 
 float3 CUnitTracker::CalcAveragePos() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 p;
 
 	for (const int unitID: trackedUnitIDs) {
@@ -181,6 +219,7 @@ float3 CUnitTracker::CalcAveragePos() const
 
 float3 CUnitTracker::CalcExtentsPos() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 minPos(+1e9f, +1e9f, +1e9f);
 	float3 maxPos(-1e9f, -1e9f, -1e9f);
 
@@ -199,6 +238,7 @@ float3 CUnitTracker::CalcExtentsPos() const
 
 void CUnitTracker::SetCam()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = GetTrackUnit();
 
 	if (u == nullptr) {
@@ -209,6 +249,9 @@ void CUnitTracker::SetCam()
 	if (lastFollowUnit != 0 && unitHandler.GetUnitUnsafe(lastFollowUnit) == nullptr) {
 		timeOut = 1;
 		lastFollowUnit = 0;
+	} else {
+		oldCamDir = camera->GetDir();
+		oldCamPos = camera->GetPos();
 	}
 
 	if (timeOut > 0) {

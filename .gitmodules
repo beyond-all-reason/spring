@@ -7,9 +7,6 @@
 [submodule "tools/pr-downloader"]
 	path = tools/pr-downloader
 	url = https://github.com/beyond-all-reason/pr-downloader
-[submodule "tools/SpringMapConvNG"]
-	path = tools/mapcompile
-	url = https://github.com/spring/SpringMapConvNG.git
 [submodule "AI/Skirmish/BARb"]
 	path = AI/Skirmish/BARb
 	url = https://github.com/rlcevg/CircuitAI.git
@@ -27,3 +24,12 @@
 [submodule "rts/lib/entt"]
 	path = rts/lib/entt
 	url = https://github.com/skypjack/entt
+[submodule "rts/lib/cereal"]
+	path = rts/lib/cereal
+	url = https://github.com/USCiLab/cereal.git
+[submodule "rts/lib/RmlUi"]
+	path = rts/lib/RmlUi
+	url = https://github.com/mikke89/RmlUi.git
+[submodule "rts/lib/lunasvg"]
+	path = rts/lib/lunasvg
+	url = https://github.com/sammycage/lunasvg.git

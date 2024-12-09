@@ -5085,11 +5085,10 @@ static void PushPixelData(lua_State* L, int fSize, const float*& data)
 		lua_pushnumber(L, *data);
 		data++;
 	} else {
-		lua_newtable(L);
+		lua_createtable(L, fSize, 0);
 		for (int e = 1; e <= fSize; e++) {
-			lua_pushnumber(L, e);
 			lua_pushnumber(L, *data);
-			lua_rawset(L, -3);
+			lua_rawseti(L, -2, e);
 			data++;
 		}
 	}

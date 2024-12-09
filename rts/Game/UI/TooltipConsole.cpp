@@ -24,6 +24,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CONFIG(std::string, TooltipGeometry).defaultValue("0.0 0.0 0.41 0.1");
 CONFIG(bool, TooltipOutlineFont).defaultValue(true).headlessValue(false);
@@ -54,6 +56,7 @@ CTooltipConsole::~CTooltipConsole()
 
 void CTooltipConsole::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled) {
 		return;
 	}
@@ -90,6 +93,7 @@ void CTooltipConsole::Draw()
 
 bool CTooltipConsole::IsAbove(int x, int y)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!enabled) {
 		return false;
 	}
@@ -121,8 +125,8 @@ static void GetDecoyResources(const CUnit* unit,
 	if (ud == nullptr)
 		return;
 
-	mMake += ud->metalMake;
-	eMake += ud->energyMake;
+	mMake += ud->resourceMake.metal;
+	eMake += ud->resourceMake.energy;
 	eMake += (ud->tidalGenerator * envResHandler.GetCurrentTidalStrength() * (ud->tidalGenerator > 0.0f));
 
 	bool active = ud->activateWhenBuilt;
@@ -137,7 +141,7 @@ static void GetDecoyResources(const CUnit* unit,
 				mMake += unit->metalExtract * (ud->extractsMetal / rd->extractsMetal);
 			}
 		}
-		mUse += ud->metalUpkeep;
+		mUse += ud->upkeep.metal;
 
 		if (ud->windGenerator > 0.0f) {
 			if (envResHandler.GetCurrentWindStrength() > ud->windGenerator) {
@@ -146,13 +150,14 @@ static void GetDecoyResources(const CUnit* unit,
 				eMake += envResHandler.GetCurrentWindStrength();
 			}
 		}
-		eUse += ud->energyUpkeep;
+		eUse += ud->upkeep.energy;
 	}
 }
 
 
 std::string CTooltipConsole::MakeUnitString(const CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	string custom = eventHandler.WorldTooltip(unit, nullptr, nullptr);
 	if (!custom.empty())
 		return custom;
@@ -204,6 +209,7 @@ std::string CTooltipConsole::MakeUnitString(const CUnit* unit)
 
 std::string CTooltipConsole::MakeUnitStatsString(const SUnitStats& stats)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	string s;
 	s.resize(512);
 	size_t charsPrinted = 0;
@@ -242,6 +248,7 @@ std::string CTooltipConsole::MakeUnitStatsString(const SUnitStats& stats)
 
 std::string CTooltipConsole::MakeFeatureString(const CFeature* feature)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	string custom = eventHandler.WorldTooltip(NULL, feature, NULL);
 	if (!custom.empty()) {
 		return custom;
@@ -271,6 +278,7 @@ std::string CTooltipConsole::MakeFeatureString(const CFeature* feature)
 
 std::string CTooltipConsole::MakeGroundString(const float3& pos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	string custom = eventHandler.WorldTooltip(NULL, NULL, &pos);
 	if (!custom.empty()) {
 		return custom;
@@ -320,6 +328,7 @@ SUnitStats::SUnitStats()
 
 void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const UnitDef* decoyDef = enemy ? unit->unitDef->decoyDef : nullptr;
 
 	++count;
@@ -348,7 +357,7 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 		health           += unit->health * healthScale;
 		maxHealth        += unit->maxHealth * healthScale;
 		experience        = (experience * (count - 1) + unit->experience) / count;
-		cost             += decoyDef->metal + (decoyDef->energy / 60.0f);
+		cost             += decoyDef->cost.metal + (decoyDef->cost.energy / 60.0f);
 		maxRange          = std::max(maxRange, decoyDef->maxWeaponRange);
 		metalMake        += metalMake_;
 		metalUse         += metalUse_;

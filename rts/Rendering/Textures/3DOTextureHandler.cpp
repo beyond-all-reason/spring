@@ -21,6 +21,8 @@
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -36,6 +38,7 @@ struct TexFile {
 
 void C3DOTextureHandler::Init()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<TexFile> texFiles = LoadTexFiles();
 
 	// TODO: make this use TextureAtlas directly
@@ -45,7 +48,6 @@ void C3DOTextureHandler::Init()
 	IAtlasAllocator* atlasAlloc = atlas.GetAllocator();
 
 	// NOTE: most Intels report maxTextureSize=2048, some even 1024 (!)
-	atlasAlloc->SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
 	atlasAlloc->SetMaxSize(std::min(globalRendering->maxTextureSize, 4096), std::min(globalRendering->maxTextureSize, 4096));
 
 	// default for 3DO primitives that point to non-existing textures
@@ -116,19 +118,19 @@ void C3DOTextureHandler::Init()
 		textures[texFile.name] = UnitTexture(texCoords);
 	}
 
-	const int maxMipMaps = atlasAlloc->GetMaxMipMaps();
+	const int numLevels = atlasAlloc->GetNumTexLevels();
 
 	{
 		glGenTextures(1, &atlas3do1);
 		glBindTexture(GL_TEXTURE_2D, atlas3do1);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (maxMipMaps > 0) ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (numLevels > 1) ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  maxMipMaps);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  numLevels - 1);
 
-		if (maxMipMaps > 0) {
-			glBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex1.data()); //FIXME disable texcompression
+		if (numLevels > 1) {
+			RecoilBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex1.data()); //FIXME disable texcompression
 		} else {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, bigtex1.data());
 		}
@@ -137,13 +139,13 @@ void C3DOTextureHandler::Init()
 		glGenTextures(1, &atlas3do2);
 		glBindTexture(GL_TEXTURE_2D, atlas3do2);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (maxMipMaps > 0) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (numLevels > 1) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  maxMipMaps);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  numLevels - 1);
 
-		if (maxMipMaps > 0) {
-			glBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex2.data()); //FIXME disable texcompression
+		if (numLevels > 0) {
+			RecoilBuildMipmaps(GL_TEXTURE_2D, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, GL_RGBA, GL_UNSIGNED_BYTE, bigtex2.data()); //FIXME disable texcompression
 		} else {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, curAtlasSize.x, curAtlasSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, bigtex2.data());
 		}
@@ -160,6 +162,7 @@ void C3DOTextureHandler::Init()
 
 void C3DOTextureHandler::Kill()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &atlas3do1);
 	glDeleteTextures(1, &atlas3do2);
 
@@ -172,6 +175,7 @@ void C3DOTextureHandler::Kill()
 
 std::vector<TexFile> C3DOTextureHandler::LoadTexFiles()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CFileHandler teamTexFile("unittextures/tatex/teamtex.txt");
 	CFileHandler paletteFile("unittextures/tatex/palette.pal");
 
@@ -226,6 +230,7 @@ std::vector<TexFile> C3DOTextureHandler::LoadTexFiles()
 
 C3DOTextureHandler::UnitTexture* C3DOTextureHandler::Get3DOTexture(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto tti = textures.find(name);
 
 	if (tti != textures.end())
@@ -237,6 +242,7 @@ C3DOTextureHandler::UnitTexture* C3DOTextureHandler::Get3DOTexture(const std::st
 
 TexFile C3DOTextureHandler::CreateTex(const std::string& name, const std::string& name2, bool teamcolor)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	TexFile texFile;
 	static constexpr float defaultAlpha = 30.0f / 255.0f;
 	texFile.tex.Load(name, defaultAlpha, 4, GL_UNSIGNED_BYTE, true);

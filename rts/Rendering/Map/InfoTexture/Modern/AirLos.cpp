@@ -9,6 +9,7 @@
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
 
 
 CAirLosTexture::CAirLosTexture()
@@ -24,7 +25,7 @@ CAirLosTexture::CAirLosTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glSpringTexStorage2D(GL_TEXTURE_2D, -1, GL_R8, texSize.x, texSize.y);
+	RecoilTexStorage2D(GL_TEXTURE_2D, -1, GL_R8, texSize.x, texSize.y);
 
 	infoTexPBO.Bind();
 	infoTexPBO.New(texSize.x * texSize.y * texChannels * 2, GL_STREAM_DRAW);
@@ -82,7 +83,7 @@ CAirLosTexture::CAirLosTexture()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glSpringTexStorage2D(GL_TEXTURE_2D, 1, GL_RG8, texSize.x, texSize.y);
+		RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RG8, texSize.x, texSize.y);
 	} else {
 		throw opengl_error("");
 	}
@@ -91,6 +92,7 @@ CAirLosTexture::CAirLosTexture()
 
 CAirLosTexture::~CAirLosTexture()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &uploadTex);
 	shaderHandler->ReleaseProgramObject("[CAirLosTexture]", "CAirLosTexture");
 }
@@ -98,6 +100,7 @@ CAirLosTexture::~CAirLosTexture()
 
 void CAirLosTexture::UpdateCPU()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	infoTexPBO.Bind();
 	auto infoTexMem = reinterpret_cast<unsigned char*>(infoTexPBO.MapBuffer());
 
@@ -123,6 +126,7 @@ void CAirLosTexture::UpdateCPU()
 
 void CAirLosTexture::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!fbo.IsValid() || !shader->IsValid() || uploadTex == 0)
 		return UpdateCPU();
 

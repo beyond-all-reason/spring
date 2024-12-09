@@ -57,7 +57,7 @@ static void save (LexState *ls, int c) {
     newsize = b->buffsize * 2;
     luaZ_resizebuffer(ls->L, b, newsize);
   }
-  b->buffer[b->n++] = cast(char, c);
+  b->buffer[b->n++] = lua_cast(char, c);
 }
 
 
@@ -77,7 +77,7 @@ void luaX_init (lua_State *L) {
 
 const char *luaX_token2str (LexState *ls, int token) {
   if (token < FIRST_RESERVED) {
-    lua_assert(token == cast(unsigned char, token));
+    lua_assert(token == lua_cast(unsigned char, token));
     return (iscntrl(token)) ? luaO_pushfstring(ls->L, "char(%d)", token) :
                               luaO_pushfstring(ls->L, "%c", token);
   }

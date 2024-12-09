@@ -15,7 +15,7 @@
 #include "System/StringHash.h"
 #include "System/UnorderedMap.hpp"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 // disable these for minimal profiling; all special
 // timers contribute even when profiler is disabled

@@ -12,15 +12,20 @@
 #include <vector>
 #include <sstream>
 #include <string>
-#include <typeinfo>
+#include <string_view>
 
 #include "Lua/LuaParser.h"
 #include "System/float3.h"
 #include "System/SpringMath.h"
+#include "System/UnorderedMap.hpp"
+#include "System/TypeToStr.h"
 
 // table placeholder (used for LuaTables)
 // example usage: DUMMYTAG(Defs, DefClass, table, customParams)
 struct table {};
+
+// Forward declaration for DefTagBuilder.
+class DefType;
 
 namespace {
 	static inline std::ostream& operator<<(std::ostream& os, const float3& point)
@@ -78,12 +83,10 @@ public:
 	const OptionalString& GetExternalName() const { return externalName; }
 	         std::string  GetInternalName() const { return key; }
 
-	const std::type_info& GetTypeInfo() const { return *typeInfo; }
-	static std::string GetTypeName(const std::type_info& typeInfo);
-
+	const std::string GetTypeName() const { return typeName; }
 protected:
 	const char* key;
-	const std::type_info* typeInfo;
+	std::string typeName;
 	OptionalString declarationFile;
 	OptionalInt declarationLine;
 	OptionalString externalName;
@@ -106,7 +109,7 @@ template<typename T>
 class DefTagTypedMetaData : public DefTagMetaData
 {
 public:
-	DefTagTypedMetaData(const char* k) { key = k; typeInfo = &typeid(T); }
+	DefTagTypedMetaData(const char* k) { key = k; typeName = std::string(spring::TypeToStr<T>()); }
 
 private:
 	template<typename T1, typename T2>
@@ -157,7 +160,7 @@ protected:
 
 
 /**
- * @brief Fluent interface to declare meta data of deftag
+ * @brief Fluent interface to customize meta data of deftag
  *
  * Uses method chaining so that a definition tag can be declared like this:
  *
@@ -174,21 +177,40 @@ template<typename T>
 class DefTagBuilder
 {
 public:
-	DefTagBuilder(DefTagTypedMetaData<T>* d) : data(d) {}
+	DefTagBuilder(DefType* dt, DefTagTypedMetaData<T>* d) : def(dt), data(d) {}
 
 	const DefTagMetaData* GetData() const { return data; }
 	operator T() const { return data->GetData(); }
 
+	// Finalizes all the customizations of the metadata for this deftag.
+	// Equivalent to .build() calls in fluent builders.
+	//
+	// No further method calls to the DefTagBuilder object should be made after
+	// AddTag().
+	void AddTag();
+
 #define MAKE_CHAIN_METHOD(property, type) \
-	DefTagBuilder& property(type const& x) { \
+	DefTagBuilder&& property(type const& x) && { \
 		data->property = x; \
-		return *this; \
+		return std::move(*this); \
 	}
 
 	typedef T (*TagFunc)(T x);
 	MAKE_CHAIN_METHOD(declarationFile, const char*);
 	MAKE_CHAIN_METHOD(declarationLine, int);
+	// It is underdefined for multiple tags to have the same externalName.
+	// In general, it is OK for multiple tags to have the same externalName in the
+	// same .cpp file.
+	//
+	// Within the same translation unit (roughly, the same .cpp file), values for
+	// a given externalName will be assigned to the first tag with that
+	// externalName. The 'first tag' refers to the first tag as appears in the
+	// source.
+	// If the same externalName is specified for a given DefTag across multiple
+	// translation units, the behavior is undefined and will lead to sync errors.
 	MAKE_CHAIN_METHOD(externalName, std::string);
+	// It is underdefined for multiple tags to have the same fallbackName. See
+	// externalName above.
 	MAKE_CHAIN_METHOD(fallbackName, std::string);
 	MAKE_CHAIN_METHOD(description, std::string);
 	MAKE_CHAIN_METHOD(defaultValue, T);
@@ -202,7 +224,27 @@ public:
 #undef MAKE_CHAIN_METHOD
 
 private:
+	DefType* def;
 	DefTagTypedMetaData<T>* data;
+	bool addTagCalled = false;
+};
+
+
+/**
+ * @brief Storage object for DefTagBuilder after all cusomtizations.
+ *
+ * The constructor ensures that a DefTagBuilder::AddTag is called after all
+ * customizations done by fluent calls are complete. This call order allows
+ * DefType::AddTagMetaData to see all changes to DefTagTypedMetaData done by the
+ * DefTagBuilder.
+ */
+class BuiltDefTag
+{
+public:
+	template <typename T>
+	BuiltDefTag(DefTagBuilder<T>&& builder) {
+		builder.AddTag();
+	}
 };
 
 
@@ -225,17 +267,16 @@ public:
 
 	const char* GetName() const { return name; }
 
-	template<typename T> DefTagBuilder<T> AddTag(const char* name) {
+	template<typename T> DefTagBuilder<T> AllocateTag(const char* name) {
 		DefTagTypedMetaData<T>* meta = AllocTagMetaData<T>(name);
-		AddTagMetaData(meta); //FIXME
-		return DefTagBuilder<T>(meta);
+		return DefTagBuilder<T>(this, meta);
 	}
 
 	template<typename T> T GetTag(const std::string& name) {
 		const DefTagMetaData* meta = GetMetaDataByInternalKey(name);
 	#ifdef DEBUG
 		assert(meta != nullptr);
-		CheckType(meta, typeid(T));
+		CheckType(meta, spring::TypeToStr<T>());
 	#endif
 		return static_cast<const DefTagTypedMetaData<T>*>(meta)->GetData(*luaTable);
 	}
@@ -261,6 +302,11 @@ private:
 	std::array<DefInitializer, 1024> defInitFuncs;
 	std::array<const DefTagMetaData*, 1024> tagMetaData;
 	std::array<uint8_t, 1024 * 1024 * 4> metaDataMem;
+
+	// All keys are lower case.
+	spring::unordered_map<std::string, const DefTagMetaData*> tagMetaDataByInternalName;
+	spring::unordered_map<std::string, const DefTagMetaData*> tagMetaDataByExternalName;
+	spring::unordered_map<std::string, const DefTagMetaData*> tagMetaDataByFallbackName;
 
 	unsigned int defInitFuncCnt = 0;
 	unsigned int tagMetaDataCnt = 0;
@@ -292,8 +338,20 @@ private:
 	const DefTagMetaData* GetMetaDataByInternalKey(const std::string& key);
 	const DefTagMetaData* GetMetaDataByExternalKey(const std::string& key);
 
-	static void CheckType(const DefTagMetaData* meta, const std::type_info& want);
+	static void CheckType(const DefTagMetaData* meta, const std::string_view otherTypeName);
+
+	template<typename F> friend class DefTagBuilder;
 };
+
+
+// N.B. Must be defined in the header in order to instantiate definition
+// templates.
+template <typename T>
+void DefTagBuilder<T>::AddTag() {
+	assert(!addTagCalled);
+	addTagCalled = true;
+	def->AddTagMetaData(data);
+}
 
 
 /**
@@ -315,7 +373,8 @@ private:
 			staticCheckType = Defs.GetTag<T>(#name); \
 		} \
 	} static MACRO_CONCAT(do_once_,name); \
-	static DefTagBuilder<T> deftag_##name = Defs.AddTag<T>(#name)
+	static BuiltDefTag deftag_##Defs##name = Defs. \
+			AllocateTag<T>(#name)
 
 #define tagFunction(fname) \
 	tagFunctionPtr(&tagFnc_##fname).tagFunctionStr(tagFncStr_##fname)
@@ -332,7 +391,8 @@ private:
 	DEFTAG_CNTER(Defs, DefClass, T, name, GETSECONDARG(unused ,##__VA_ARGS__, name))
 
 #define DUMMYTAG(Defs, T, name) \
-	static DefTagBuilder<T> MACRO_CONCAT(deftag_,__LINE__) = Defs.AddTag<T>(#name)
+	static BuiltDefTag MACRO_CONCAT(deftag_,__LINE__) = Defs. \
+			AllocateTag<T>(#name)
 
 #define TAGFUNCTION(name, T, function) \
 	static T tagFnc_##name(T x) { \

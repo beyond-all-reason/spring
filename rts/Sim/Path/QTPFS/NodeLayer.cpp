@@ -24,18 +24,21 @@ inline int __bsfd (int mask)
 #include "Node.h"
 
 #include "Map/MapInfo.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
+#include "Sim/Objects/SolidObject.h"
 #include "System/SpringMath.h"
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 unsigned int QTPFS::NodeLayer::NUM_SPEEDMOD_BINS;
 float        QTPFS::NodeLayer::MIN_SPEEDMOD_VALUE;
 float        QTPFS::NodeLayer::MAX_SPEEDMOD_VALUE;
 
 void QTPFS::NodeLayer::InitStatic() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	NUM_SPEEDMOD_BINS  = std::max(  1u, mapInfo->pfs.qtpfs_constants.numSpeedModBins);
 	MIN_SPEEDMOD_VALUE = std::max(0.0f, mapInfo->pfs.qtpfs_constants.minSpeedModVal);
 	MAX_SPEEDMOD_VALUE = std::min(8.0f, mapInfo->pfs.qtpfs_constants.maxSpeedModVal);
@@ -46,6 +49,7 @@ void QTPFS::NodeLayer::InitStatic() {
 
 
 void QTPFS::NodeLayer::Init(unsigned int layerNum) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert((QTPFS::NodeLayer::NUM_SPEEDMOD_BINS + 1) <= MaxSpeedBinTypeValue());
 
 	constexpr size_t initialNodeReserve = 256;
@@ -64,31 +68,44 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 		nodeIndcs.clear();
 		nodeIndcs.resize(POOL_TOTAL_SIZE);
 
-		std::for_each(nodeIndcs.begin(), nodeIndcs.end(), [&](const unsigned int& i) { nodeIndcs[&i - &nodeIndcs[0]] = &i - &nodeIndcs[0]; });
+		std::for_each(nodeIndcs.begin(), nodeIndcs.end(), [&](const unsigned int& i) { nodeIndcs[&i - &nodeIndcs[0]] = &i - &nodeIndcs[0]; assert((size_t)(&i - &nodeIndcs[0]) < nodeIndcs.size()); });
 		std::reverse(nodeIndcs.begin(), nodeIndcs.end());
 	}
 
 	curSpeedMods.resize(xsize * zsize,  0);
 	curSpeedBins.resize(xsize * zsize, -1);
+
+	MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
+	useShortestPath = md->preferShortestPath;
 }
 
 void QTPFS::NodeLayer::Clear() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	curSpeedMods.clear();
 	curSpeedBins.clear();
 }
 
 
 bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
 	unsigned int numClosedSquares = 0;
 	const SRectangle& r = threadData.areaUpdated;
 	const MoveDef* md = threadData.moveDef;
 
-	CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits);
-
 	auto &blockRect = threadData.areaMaxBlockBits;
 	auto &blockBits = threadData.maxBlockBits;
+
+	int tempNum = gs->GetMtTempNum(threadData.threadId);
+
+	MoveTypes::CheckCollisionQuery virtualObject(md);
+	MoveDefs::CollisionQueryStateTrack queryState;
+
+	const bool isSubmersible = md->IsComplexSubmersible();
+	if (!isSubmersible) {
+		CMoveMath::FloodFillRangeIsBlocked(*md, nullptr, threadData.areaMaxBlockBits, threadData.maxBlockBits, threadData.threadId);
+	}
 
 	auto rangeIsBlocked = [&blockRect, &blockBits](const MoveDef& md, int chmx, int chmz){
 		const int xmin = (chmx - md.xsizeh) - blockRect.x1;
@@ -110,6 +127,24 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 		return ret;
 	};
 
+	// Collisions around above/below water units is messy in the engine and trying to pass flags
+	// down through the multiple function calls will make it even messier. Creating a querying
+	// based on a virtual object, which can then be moved per query may be the simplest approach.
+	// We can't flood fill collision data like normal because the squares that collide can change
+	// as the unit's centre square's height changes.
+	auto submersibleRangeIsBlocked = [this, &virtualObject, &queryState, &tempNum, &threadData](const MoveDef& md, int chmx, int chmz){
+		const int xmin = (chmx - md.xsizeh);
+		const int zmin = (chmz - md.zsizeh);
+		const int xmax = (chmx + md.xsizeh);
+		const int zmax = (chmz + md.zsizeh);
+
+		md.UpdateCheckCollisionQuery(virtualObject, queryState, {chmx, chmz});
+		if (queryState.refreshCollisionCache)
+			tempNum = gs->GetMtTempNum(threadData.threadId);
+		
+		return CMoveMath::RangeIsBlockedHashedMt(xmin, xmax, zmin, zmax, &virtualObject, tempNum, threadData.threadId);
+	};
+
 	// divide speed-modifiers into bins
 	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
 		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
@@ -118,10 +153,11 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			const unsigned int recIdx = hmz * xsize + hmx;
 
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
-			const int chmx = std::clamp(int(hmx), md->xsizeh, r.x2 - md->xsizeh - 1);
-			const int chmz = std::clamp(int(hmz), md->zsizeh, r.z2 - md->zsizeh - 1);
-			const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
-			const int maxBlockBit = rangeIsBlocked(*md, chmx, chmz);
+			const int chmx = std::clamp(int(hmx), md->xsizeh, mapDims.mapxm1 + (-md->xsizeh));
+			const int chmz = std::clamp(int(hmz), md->zsizeh, mapDims.mapym1 + (-md->zsizeh));
+
+			int maxBlockBit = (!isSubmersible) ? rangeIsBlocked(*md, chmx, chmz)
+											  : submersibleRangeIsBlocked(*md, chmx, chmz);
 
 			// NOTE:
 			//   movetype code checks ONLY the *CENTER* square of a unit's footprint
@@ -137,9 +173,13 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			//   
 			// const int maxBlockBit = (luBlockBits == NULL)? CMoveMath::SquareIsBlocked(*md, hmx, hmz, NULL): (*luBlockBits)[recIdx];
 
+			float newAbsSpeedMod = 0.f;
+
 			#define NL QTPFS::NodeLayer
-			const float tmpAbsSpeedMod = std::clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
-			const float newAbsSpeedMod = tmpAbsSpeedMod * ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0);
+			if ((maxBlockBit & CMoveMath::BLOCK_STRUCTURE) == 0) {
+				const float minSpeedMod = CMoveMath::GetPosSpeedMod(*md, hmx, hmz);
+				newAbsSpeedMod = std::clamp(minSpeedMod, NL::MIN_SPEEDMOD_VALUE, NL::MAX_SPEEDMOD_VALUE);
+			}
 			const float newRelSpeedMod = std::clamp((newAbsSpeedMod - NL::MIN_SPEEDMOD_VALUE) / (NL::MAX_SPEEDMOD_VALUE - NL::MIN_SPEEDMOD_VALUE), 0.0f, 1.0f);
 			#undef NL
 
@@ -157,6 +197,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 
 
 QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float relSpeedMod) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE:
 	//     bins N and N+1 are reserved for modifiers <= min and >= max
 	//     respectively; blocked squares MUST be in their own category
@@ -173,6 +214,7 @@ QTPFS::SpeedBinType QTPFS::NodeLayer::GetSpeedModBin(float absSpeedMod, float re
 
 
 void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// account for the rim of nodes around the bounding box
 	// (whose neighbors also changed during re-tesselation)
 	const int xmin = std::max(ur.x1 - 1, 0), xmax = std::min(ur.x2 + 1, mapDims.mapx);
@@ -228,6 +270,7 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, Update
 
 
 void QTPFS::NodeLayer::GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	openNodes.clear();
 	nodesFound.clear();
 
@@ -277,6 +320,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 		, int2 referencePoint
 		, std::vector<INode*>& tmpNodes
 		) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	tmpNodes.clear();
 	INode* bestNode = nullptr;
 	uint64_t bestDistScore = std::numeric_limits<uint64_t>::max();
@@ -286,7 +330,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 
 	// The xmin (0), xmax (1), zmin (2), zmax (3) can be accessed by (index.)
 	// The these are the indicies needed to make the 4 corners of a quad.
-	const int2 cornerPoints[] =
+	constexpr int2 cornerPoints[] =
 		{ {0, 2}, {1, 2}
 		, {0, 3}, {1, 3}
 		};
@@ -308,12 +352,12 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 
 	auto getNodeScore = [referencePoint, &cornerPoints](const INode* curNode) -> uint64_t {
 		int2 midRef(curNode->xmid(), curNode->zmid());
-		int midDist = referencePoint.distanceSq(midRef);
+		int midDist = referencePoint.DistanceSq(midRef);
 		int closestPointDist = midDist;
 		int bestIndex = 0;
 		for (int i = 0; i < 4; ++i) {
 			int2 ref(curNode->point(cornerPoints[i].x), curNode->point(cornerPoints[i].y));
-			int dist = referencePoint.distanceSq(ref);
+			int dist = referencePoint.DistanceSq(ref);
 			if (dist < closestPointDist) {
 				closestPointDist = dist;
 				bestIndex = i;
@@ -345,6 +389,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 			if (zmax <= childNode->zmin()) { continue; }
 			if (zmin >= childNode->zmax()) { continue; }
 			if (childNode->AllSquaresImpassable()) { continue; }
+			if (childNode->IsExitOnly()) { continue; }
 
 			tmpNodes.emplace_back(childNode);
 		}
@@ -354,6 +399,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 }
 
 QTPFS::INode* QTPFS::NodeLayer::GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	INode* selectedNode = nullptr;
 	int length = rootNodeSize;
 	int iz = (areaToEncase.z1 / length) * xRootNodes;

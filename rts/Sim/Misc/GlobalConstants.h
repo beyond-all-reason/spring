@@ -36,6 +36,7 @@ static constexpr float ELMOS_TO_METERS = 1.0f / SQUARE_SIZE;
  * Defines the game-/sim-frames per second.
  */
 static constexpr int GAME_SPEED = 30;
+static constexpr float INV_GAME_SPEED = 1.0f / GAME_SPEED;
 
 /**
  * @brief unit SlowUpdate rate
@@ -55,7 +56,8 @@ static constexpr int TEAM_SLOWUPDATE_RATE = 30;
 /**
  * @brief max teams
  *
- * Defines the maximum number of teams as 255
+ * teamID is 8 bits in the network protocol, with 255
+ * reserved as a special value. This leaves 255 teams
  * (254 real teams, and an extra slot for the GAIA team).
  */
 static constexpr int MAX_TEAMS = 255;

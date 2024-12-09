@@ -16,9 +16,12 @@
 
 #include <string>
 
+#include "System/Misc/TracyDefs.h"
+
 
 void AviVideoCapturing::StopCapturing()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsCapturing())
 		return;
 
@@ -31,6 +34,7 @@ void AviVideoCapturing::StopCapturing()
 
 void AviVideoCapturing::StartCapturing()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (allowRecord) {
 		LOG_L(L_WARNING, "Video capturing is already running.");
 		return;
@@ -82,6 +86,7 @@ void AviVideoCapturing::StartCapturing()
 
 void AviVideoCapturing::RenderFrame()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!IsCapturing())
 		return;
 

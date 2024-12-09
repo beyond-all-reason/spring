@@ -1,10 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef TYPE2_H
-#define TYPE2_H
+#pragma once
 
 #include <array>
 #include "lib/streflop/streflop_cond.h"
+#include "System/BranchPrediction.h"
 #include "System/creg/creg_cond.h"
 #include "System/FastMath.h"
 
@@ -21,7 +21,9 @@ template<typename t> struct type2 {
 
 	type2<t> operator - () const { return (type2<t>(-x, -y)); }
 	type2<t> operator + (const type2<t>& v) const { return (type2<t>(x + v.x, y + v.y)); }
+	type2<t> operator + (const t& i) const        { return (type2<t>(x + i  , y + i  )); }
 	type2<t> operator - (const type2<t>& v) const { return (type2<t>(x - v.x, y - v.y)); }
+	type2<t> operator - (const t& i) const        { return (type2<t>(x - i  , y - i  )); }
 	type2<t> operator / (const type2<t>& v) const { return (type2<t>(x / v.x, y / v.y)); }
 	type2<t> operator / (const t& i) const        { return (type2<t>(x / i  , y / i  )); }
 	type2<t> operator * (const type2<t>& v) const { return (type2<t>(x * v.x, y * v.y)); }
@@ -36,16 +38,38 @@ template<typename t> struct type2 {
 	type2<t>& operator /= (const t& i) { x /= i; y /= i; return *this; }
 	type2<t>& operator /= (const type2<t>& v) { x /= v.x; y /= v.y; return *this; }
 
-	t distance(const type2<t>& f) const {
+	t Norm() const {
+		return t(math::sqrt(x*x + y*y));
+	}
+
+	float Dot(const type2<t>& f) const {
+		return x*f.x + y*f.y;
+	}
+
+	t Distance(const type2<t>& f) const {
 		const t dx = x - f.x;
 		const t dy = y - f.y;
 		return t(math::sqrt(dx*dx + dy*dy));
 	}
 
-	t distanceSq(const type2<t>& f) const {
+	t DistanceSq(const type2<t>& f) const {
 		const t dx = x - f.x;
 		const t dy = y - f.y;
 		return t(dx*dx + dy*dy);
+	}
+
+	type2<t>& SafeNormalize() {
+		static constexpr float NRM_EMS = 1e-12f;
+
+		const float sql = x*x + y*y;
+
+		if likely(sql > NRM_EMS) {
+			float isqrt = math::isqrt(sql);
+			x = t(x * isqrt);
+			y = t(y * isqrt);
+		}
+
+		return *this;
 	}
 
 	union {
@@ -83,5 +107,3 @@ using uint2 = type2<uint32_t>;
 using float2 = type2<float>;
 using short2 = type2<int16_t>;
 using ushort2 = type2<uint16_t>;
-
-#endif

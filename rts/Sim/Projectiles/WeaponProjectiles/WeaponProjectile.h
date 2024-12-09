@@ -5,9 +5,9 @@
 
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileParams.h" // easier to include this here
+#include "Sim/Weapons/WeaponDef.h"
 #include "WeaponProjectileTypes.h"
 
-struct WeaponDef;
 struct ProjectileParams;
 class CVertexArray;
 class DynDamageArray;
@@ -23,17 +23,23 @@ class CWeaponProjectile : public CProjectile
 	CR_DECLARE_DERIVED(CWeaponProjectile)
 public:
 	CWeaponProjectile(const ProjectileParams& params);
-	virtual ~CWeaponProjectile();
+	~CWeaponProjectile() override;
 
 	virtual void Explode(CUnit* hitUnit, CFeature* hitFeature, float3 impactPos, float3 impactDir);
-	virtual void Collision() override;
-	virtual void Collision(CFeature* feature) override;
-	virtual void Collision(CUnit* unit) override;
-	virtual void Update() override;
+	void Collision() override;
+	void Collision(CFeature* feature) override;
+	void Collision(CUnit* unit) override;
+	void Update() override;
+
+	void UpdateWeaponAnimParams();
+
+	template <uint32_t texIdx>
+	void AddWeaponEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const;
+
 	/// @return 0=unaffected, 1=instant repulse, 2=gradual repulse
 	virtual int ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed) { return 0; }
 
-	void DrawOnMinimap() override;
+	void DrawOnMinimap() const override;
 
 	// Why is this here? Here is why:
 	// ProjectileCreated(id) issues Spring.SpawnExplosion(), but the projectile(id) construction
@@ -41,7 +47,7 @@ public:
 	// "if (projectileHandler.GetParticleSaturation() < 1.0f)" is getting called as part of
 	// SpawnExplosion() flow and it cannot reach GetProjectilesCount() of derived classes, because
 	// their constructor is not done yet, thus this workaround
-	virtual int GetProjectilesCount() const override { 	return 1; }
+	int GetProjectilesCount() const override { 	return 1; }
 
 	void DependentDied(CObject* o) override;
 	void PostLoad();
@@ -99,6 +105,39 @@ protected:
 
 	float3 bounceHitPos;
 	float3 bounceParams;
+
+	std::array<float, 3> extraAnimProgress;
 };
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<0>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	AddEffectsQuadImpl(tl, tr, br, bl);
+}
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<1>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	//reuse animProgress
+	AddEffectsQuadImpl(tl, tr, br, bl, weaponDef->visuals.animParams[0], animProgress);
+}
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<2>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	AddEffectsQuadImpl(tl, tr, br, bl, weaponDef->visuals.animParams[1], extraAnimProgress[0]);
+}
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<3>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	AddEffectsQuadImpl(tl, tr, br, bl, weaponDef->visuals.animParams[2], extraAnimProgress[1]);
+}
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<4>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	AddEffectsQuadImpl(tl, tr, br, bl, weaponDef->visuals.animParams[3], extraAnimProgress[2]);
+}
 
 #endif /* WEAPON_PROJECTILE_H */

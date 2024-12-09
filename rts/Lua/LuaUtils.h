@@ -35,6 +35,8 @@
 
 struct SolidObjectDef;
 struct SCommandDescription;
+static constexpr int LUA_TABLE_VALUE_INDEX = -1;
+static constexpr int LUA_TABLE_KEY_INDEX = -2;
 
 namespace Json{
 	class Value;
@@ -166,6 +168,8 @@ class LuaUtils {
 		                            vector<float>& vec);
 		static int ParseStringVector(lua_State* L, int tableIndex,
 		                             vector<string>& vec);
+		static int ParseFloat4Vector(lua_State* L, int tableIndex,
+		                            vector<float4>& vec);
 
 		static void PushStringVector(lua_State* L, const vector<string>& vec);
 
@@ -216,9 +220,9 @@ static void PushObjectDefProxyTable(
 	const ObjectDefType* def
 ) {
 	lua_pushnumber(L, def->id);
-	lua_newtable(L); { // the proxy table
+	lua_createtable(L, 0, iterFuncsSize); { // the proxy table
 
-		lua_newtable(L); // the metatable
+		lua_createtable(L, 0, indxFuncsSize); // the metatable
 
 		for (size_t n = 0; n < indxFuncsSize; n++) {
 			indxOpers[n].Push(L);

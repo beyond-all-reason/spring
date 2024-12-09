@@ -21,8 +21,7 @@ class CBitmap;
 class FtLibraryHandlerProxy {
 public:
 	static void InitFtLibrary();
-	static bool CheckGenFontConfigFast();
-	static bool CheckGenFontConfigFull(bool console);
+	static bool InitFontconfig(bool console);
 };
 
 
@@ -110,6 +109,7 @@ public:
 	friend class CglNoShaderFontRenderer;
 	friend class CglNullFontRenderer;
 
+	static void InitFonts();
 	static void KillFonts();
 	static void Update();
 
@@ -173,14 +173,15 @@ protected:
 
 	std::unique_ptr<CglFontRenderer> fontRenderer;
 private:
-	int curTextureUpdate = 0;
 #ifndef HEADLESS
+	int curTextureUpdate = 0;
 	int lastTextureUpdate = 0;
 	bool needsTextureUpload = true;
+	inline static int maxFontTries = 0;
 #endif
 	std::shared_ptr<FontFace> shFace;
 
-	spring::unordered_set<char32_t> failedToFind;
+	spring::unordered_map<char32_t, int> failedAttemptsToReplace;
 	spring::unordered_map<char32_t, GlyphInfo> glyphs; // UTF32 -> GlyphInfo
 	spring::unordered_map<uint64_t, float> kerningDynamic; // contains unicode kerning
 

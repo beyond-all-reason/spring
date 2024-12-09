@@ -52,6 +52,7 @@ set(test_Log_sources
 
 set(test_common_libraries
 	cpuid
+	Tracy::TracyClient
 )
 
 add_custom_target(tests)
@@ -158,7 +159,6 @@ endif()
 			"${ENGINE_SOURCE_DIR}/System/float3.cpp"
 			"${ENGINE_SOURCE_DIR}/System/float4.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Misc/SpringTime.cpp"
-			"${ENGINE_SOURCE_DIR}/System/StringHash.cpp"
 			"${ENGINE_SOURCE_DIR}/System/TimeProfiler.cpp"
 			${sources_engine_System_Threading}
 			${test_Log_sources}
@@ -178,7 +178,6 @@ endif()
 			"${ENGINE_SOURCE_DIR}/System/Matrix44f.cpp"
 			"${ENGINE_SOURCE_DIR}/System/float3.cpp"
 			"${ENGINE_SOURCE_DIR}/System/float4.cpp"
-			"${ENGINE_SOURCE_DIR}/System/StringHash.cpp"
 			"${ENGINE_SOURCE_DIR}/System/TimeProfiler.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Misc/SpringTime.cpp"
 			${sources_engine_System_Threading}
@@ -214,7 +213,6 @@ endif()
 	set(test_src
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/Misc/testSpringTime.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Misc/SpringTime.cpp"
-			"${ENGINE_SOURCE_DIR}/System/StringHash.cpp"
 			"${ENGINE_SOURCE_DIR}/System/TimeProfiler.cpp"
 			${sources_engine_System_Threading}
 			${test_Log_sources}
@@ -329,6 +327,7 @@ endif()
 
 	set(test_flags "-DUNITSYNC")
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
+	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 	add_dependencies(test_${test_name} springcontent.sdz)
 
 ################################################################################
@@ -360,7 +359,6 @@ endif()
 	set(test_src
 			"${CMAKE_CURRENT_SOURCE_DIR}/other/testMutex.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Misc/SpringTime.cpp"
-			"${ENGINE_SOURCE_DIR}/System/StringHash.cpp"
 			"${ENGINE_SOURCE_DIR}/System/TimeProfiler.cpp"
 			${sources_engine_System_Threading}
 			${test_Log_sources}
@@ -408,19 +406,20 @@ endif()
 			"${CMAKE_CURRENT_SOURCE_DIR}/other/testPrintf.cpp"
 			"${ENGINE_SOURCE_DIR}/Lua/LuaMemPool.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Misc/SpringTime.cpp"
-			"${ENGINE_SOURCE_DIR}/System/StringHash.cpp"
 			"${ENGINE_SOURCE_DIR}/System/TimeProfiler.cpp"
 			${sources_engine_System_Threading}
 			${test_Log_sources}
 		)
 	set(test_libs
 			streflop
+			smmalloc
 			lua
 			${WINMM_LIBRARY}
 			headlessStubs
 		)
 	set(test_flags "-DNOT_USING_CREG -DSTREFLOP_SSE -DBUILDING_AI")
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
+	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/lua/include)
 
 
@@ -430,7 +429,6 @@ endif()
 	set(test_src
 			"${CMAKE_CURRENT_SOURCE_DIR}/engine/System/testSQRT.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Misc/SpringTime.cpp"
-			"${ENGINE_SOURCE_DIR}/System/StringHash.cpp"
 			"${ENGINE_SOURCE_DIR}/System/TimeProfiler.cpp"
 			${sources_engine_System_Threading}
 			${test_Log_sources}
@@ -471,9 +469,11 @@ endif()
 	set(test_libs
 			lua
 			headlessStubs
+			smmalloc
 		)
 	set(test_flags "-DNOT_USING_STREFLOP")
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
+	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/lua/include)
 
 ################################################################################
@@ -483,6 +483,9 @@ endif()
 			"${CMAKE_CURRENT_SOURCE_DIR}/other/testMemPoolTypes.cpp"
 			${test_Log_sources}
 		)
+	set(test_libs
+		""
+	)
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
 	target_include_directories(test_${test_name} PRIVATE ${ENGINE_SOURCE_DIR}/lib/)
 

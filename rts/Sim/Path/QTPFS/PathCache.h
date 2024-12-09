@@ -5,6 +5,7 @@
 
 #include <vector>
 
+#include "NodeLayer.h"
 #include "PathEnums.h"
 #include "Path.h"
 #include "System/UnorderedMap.hpp"
@@ -21,7 +22,16 @@ struct SRectangle;
 
 namespace QTPFS {
 	struct PathCache {
-		bool MarkDeadPaths(const SRectangle& r, int pathType);
+
+		struct DirtyPathDetail {
+			entt::entity pathEntity;
+			int autoRepathTrigger;
+			int nodesAreCleanFromNodeId;
+			bool clearSharing;
+			bool clearPath;
+		};
+
+		bool MarkDeadPaths(const SRectangle& r, const NodeLayer& nodeLayer);
 
 		void Init(int pathTypes) {
 			dirtyPaths.clear();
@@ -32,7 +42,7 @@ namespace QTPFS {
 			dirtyPaths[pathType].reserve(paths);
 		}
 
-		std::vector< std::vector<entt::entity> > dirtyPaths;
+		std::vector< std::vector<DirtyPathDetail> > dirtyPaths;
 	};
 }
 

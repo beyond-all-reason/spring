@@ -1,7 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "System/Input/InputHandler.h"
-
 #include <functional>
 #include <iostream>
 #include <chrono>
@@ -61,7 +59,6 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
-#include "System/bitops.h"
 #include "System/ScopedResource.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
@@ -83,6 +80,7 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/FileSystemInitializer.h"
+#include "System/FileSystem/Misc.hpp"
 #include "System/Input/KeyInput.h"
 #include "System/Input/MouseInput.h"
 #include "System/LoadSave/LoadSaveHandler.h"
@@ -109,6 +107,7 @@ CONFIG(unsigned, TextureMemPoolSize).defaultValue(512).minimumValue(0).descripti
 CONFIG(bool, UseLuaMemPools).defaultValue(true).description("Whether Lua VM memory allocations are made from pools.");
 CONFIG(bool, UseHighResTimer).defaultValue(false).description("On Windows, sets whether Spring will use low- or high-resolution timer functions for tasks like graphical interpolation between game frames.");
 CONFIG(bool, UseFontConfigLib).defaultValue(true).description("Whether the system fontconfig library (if present and enabled at compile-time) should be used for handling fonts.");
+CONFIG(int, MaxFontTries).defaultValue(5).description("Represents the maximum number of attempts to search for a glyph replacement using the FontConfig library (lower = foreign glyphs may fail to render, higher = searching for foreign glyphs can lag the game).");
 
 CONFIG(std::string, name).defaultValue(UnnamedPlayerName).description("Sets your name in the game. Since this is overridden by lobbies with your lobby username when playing, it usually only comes up when viewing replays or starting the engine directly for testing purposes.");
 CONFIG(std::string, DefaultStartScript).defaultValue("").description("filename of script.txt to use when no command line parameters are specified.");
@@ -271,10 +270,12 @@ bool SpringApp::Init()
 	CInfoConsole::InitStatic();
 	CMouseHandler::InitStatic();
 
-	input.AddHandler(std::bind(&SpringApp::MainEventHandler, this, std::placeholders::_1));
+	inputToken = input.AddHandler([this](const SDL_Event& event) { return SpringApp::MainEventHandler(event); });
 
 	// Global structures
+	ENTER_SYNCED_CODE();
 	gs->Init();
+	LEAVE_SYNCED_CODE();
 	gu->Init();
 
 	// GUIs
@@ -300,7 +301,7 @@ bool SpringApp::Init()
 
 bool SpringApp::InitPlatformLibs()
 {
-#if !(defined(_WIN32) || defined(__APPLE__) || defined(HEADLESS))
+#if !(defined(_WIN32) || defined(__APPLE__) || defined(HEADLESS)) || defined(__OpenBSD__)
 	// MUST run before any other X11 call (including
 	// those by SDL) to make calls to X11 threadsafe
 	if (!XInitThreads()) {
@@ -328,8 +329,9 @@ bool SpringApp::InitPlatformLibs()
 bool SpringApp::InitFonts()
 {
 	FtLibraryHandlerProxy::InitFtLibrary();
-	FtLibraryHandlerProxy::CheckGenFontConfigFast();
-	return CglFont::LoadConfigFonts() && FtLibraryHandlerProxy::CheckGenFontConfigFull(false);
+	FtLibraryHandlerProxy::InitFontconfig(false);
+	CFontTexture::InitFonts();
+	return CglFont::LoadConfigFonts();
 /*
 	using namespace std::chrono_literals;
 	auto future = std::async(std::launch::async, []() {
@@ -375,19 +377,11 @@ bool SpringApp::InitFileSystem()
 	// FileSystem is mostly self-contained, don't need locks
 	// (at this point neither the platform CWD nor data-dirs
 	// have been set yet by FSI, can only use absolute paths)
-	const std::string cwd = FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetCwd());
-	const std::string ssd = FileSystem::EnsurePathSepAtEnd(configHandler->GetString("SplashScreenDir"));
-
-	std::vector<std::string> splashScreenFiles = dataDirsAccess.FindFiles(FileSystem::IsAbsolutePath(ssd)? ssd: cwd + ssd, "*.{png,jpg}", 0);
-
-	if (splashScreenFiles.empty()) {
-		auto logoPath = FileSystem::EnsurePathSepAtEnd(FileSystem::GetNormalizedPath(FileSystem::EnsurePathSepAtEnd(FileSystemAbstraction::GetSpringExecutableDir()) + "base"));
-		splashScreenFiles = dataDirsAccess.FindFiles(logoPath, "*.{png,jpg}", 0);
-	}
 
 	spring::thread fsInitThread(FileSystemInitializer::InitializeThr, &ret);
 
 	#ifndef HEADLESS
+	const auto splashScreenFiles = FileSystemMisc::GetSplashScreenFiles();
 	if (!splashScreenFiles.empty()) {
 		ShowSplashScreen(splashScreenFiles[ guRNG.NextInt(splashScreenFiles.size()) ], SpringVersion::GetFull(), [&]() { return (FileSystemInitializer::Initialized()); });
 	} else {
@@ -484,7 +478,7 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 			spring_time::setstarttime(spring_time::gettime(true));
 		}
 		FtLibraryHandlerProxy::InitFtLibrary();
-		if (FtLibraryHandlerProxy::CheckGenFontConfigFull(true)) {
+		if (FtLibraryHandlerProxy::InitFontconfig(true)) {
 			printf("[FtLibraryHandler::GenFontConfig] is succesfull\n");
 			exit(spring::EXIT_CODE_SUCCESS);
 		}
@@ -559,7 +553,8 @@ CGameController* SpringApp::LoadSaveFile(const std::string& saveFile)
 	clientSetup->isHost = true;
 
 	pregame = new CPreGame(clientSetup);
-	pregame->LoadSaveFile(saveFile);
+	pregame->AsyncExecute(&CPreGame::LoadSaveFile, saveFile);
+	//pregame->LoadSaveFile(saveFile);
 	return pregame;
 }
 
@@ -570,7 +565,8 @@ CGameController* SpringApp::LoadDemoFile(const std::string& demoFile)
 	clientSetup->myPlayerName += " (spec)";
 
 	pregame = new CPreGame(clientSetup);
-	pregame->LoadDemoFile(demoFile);
+	pregame->AsyncExecute(&CPreGame::LoadDemoFile, demoFile);
+	//pregame->LoadDemoFile(demoFile);
 	return pregame;
 }
 
@@ -600,8 +596,10 @@ CGameController* SpringApp::RunScript(const std::string& buf)
 
 	pregame = new CPreGame(clientSetup);
 
-	if (clientSetup->isHost)
-		pregame->LoadSetupScript(buf);
+	if (clientSetup->isHost) {
+		pregame->AsyncExecute(&CPreGame::LoadSetupScript, buf);
+		//pregame->LoadSetupScript(buf);
+	}
 
 	return pregame;
 }
@@ -795,7 +793,11 @@ void SpringApp::Reload(const std::string script)
 
 	matricesMemStorage.Reset();
 	gu->ResetState();
+
+	ENTER_SYNCED_CODE();
 	gs->ResetState();
+	LEAVE_SYNCED_CODE();
+
 	// will be reconstructed from given script
 	gameSetup->ResetState();
 

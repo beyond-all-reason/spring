@@ -52,6 +52,8 @@
 
 #include "System/Threading/ThreadPool.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(int, UnitIconDist).defaultValue(200).headlessValue(0);
 CONFIG(float, UnitIconScaleUI).defaultValue(1.0f).minimumValue(0.1f).maximumValue(10.0f);
 CONFIG(float, UnitIconFadeStart).defaultValue(3000.0f).minimumValue(1.0f).maximumValue(10000.0f);
@@ -122,6 +124,7 @@ public:
 
 void CUnitDrawer::InitStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CModelDrawerBase<CUnitDrawerData, CUnitDrawer>::InitStatic();
 
 	LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
@@ -136,6 +139,7 @@ void CUnitDrawer::InitStatic()
 
 bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* u, uint8_t thisPassMask)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (u == ((thisPassMask == DrawFlags::SO_REFLEC_FLAG) ? nullptr : (gu->GetMyPlayer())->fpsController.GetControllee()))
 		return false;
 
@@ -171,6 +175,7 @@ bool CUnitDrawer::ShouldDrawOpaqueUnit(CUnit* u, uint8_t thisPassMask)
 
 bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* u, uint8_t thisPassMask)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(u);
 	assert(u->model);
 
@@ -203,6 +208,7 @@ bool CUnitDrawer::ShouldDrawAlphaUnit(CUnit* u, uint8_t thisPassMask)
 
 bool CUnitDrawer::ShouldDrawUnitShadow(CUnit* u)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(u);
 	assert(u->model);
 
@@ -231,16 +237,24 @@ void CUnitDrawerBase::Update() const
 
 /***********************************************************************/
 
-void CUnitDrawerLegacy::DrawUnitModel(const CUnit* unit, bool noLuaCall) const
+CUnitDrawerGLSL::CUnitDrawerGLSL()
+{}
+
+CUnitDrawerGLSL::~CUnitDrawerGLSL()
+{}
+
+void CUnitDrawerGLSL::DrawUnitModel(const CUnit* unit, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!noLuaCall && unit->luaDraw && eventHandler.DrawUnit(unit))
 		return;
 
 	unit->localModel.Draw();
 }
 
-void CUnitDrawerLegacy::DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool noNanoDraw = lodCall || !unit->beingBuilt || !unit->unitDef->showNanoFrame;
 	const bool shadowPass = shadowHandler.InShadowPass();
 
@@ -273,8 +287,9 @@ void CUnitDrawerLegacy::DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uin
 	}
 }
 
-void CUnitDrawerLegacy::DrawUnitTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawUnitTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glMultMatrixf(unit->GetTransformMatrix());
 
@@ -283,8 +298,9 @@ void CUnitDrawerLegacy::DrawUnitTrans(const CUnit* unit, uint32_t preList, uint3
 	glPopMatrix();
 }
 
-void CUnitDrawerLegacy::DrawUnitMiniMapIcons() const
+void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DTC>();
 	rb.AssertSubmission();
 
@@ -376,8 +392,9 @@ void CUnitDrawerLegacy::DrawUnitMiniMapIcons() const
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void CUnitDrawerLegacy::DrawUnitIcons() const
+void CUnitDrawerGLSL::DrawUnitIcons() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 #if 0
 	if (game->hideInterface && modelDrawerData->iconHideWithUI)
 		return;
@@ -470,8 +487,9 @@ void CUnitDrawerLegacy::DrawUnitIcons() const
 	glPopAttrib();
 }
 
-void CUnitDrawerLegacy::DrawUnitIconsScreen() const
+void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (game->hideInterface && modelDrawerData->iconHideWithUI)
 		return;
 
@@ -567,8 +585,9 @@ void CUnitDrawerLegacy::DrawUnitIconsScreen() const
 	glPopAttrib();
 }
 
-void CUnitDrawerLegacy::DrawObjectsShadow(int modelType) const
+void CUnitDrawerGLSL::DrawObjectsShadow(int modelType) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
@@ -584,8 +603,9 @@ void CUnitDrawerLegacy::DrawObjectsShadow(int modelType) const
 	}
 }
 
-void CUnitDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
+void CUnitDrawerGLSL::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_OPAQUE_FLAG +
 		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
@@ -605,8 +625,9 @@ void CUnitDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection, bo
 	}
 }
 
-void CUnitDrawerLegacy::DrawAlphaObjects(int modelType, bool drawReflection, bool drawRefraction) const
+void CUnitDrawerGLSL::DrawAlphaObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
 		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
@@ -630,8 +651,9 @@ void CUnitDrawerLegacy::DrawAlphaObjects(int modelType, bool drawReflection, boo
 		DrawGhostedBuildings(modelType);
 }
 
-void CUnitDrawerLegacy::DrawOpaqueObjectsAux(int modelType) const
+void CUnitDrawerGLSL::DrawOpaqueObjectsAux(int modelType) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpOpaqueUnits = modelDrawerData->GetTempOpaqueDrawUnits(modelType);
 
 	// NOTE: not type-sorted
@@ -643,8 +665,9 @@ void CUnitDrawerLegacy::DrawOpaqueObjectsAux(int modelType) const
 	}
 }
 
-void CUnitDrawerLegacy::DrawAlphaObjectsAux(int modelType) const
+void CUnitDrawerGLSL::DrawAlphaObjectsAux(int modelType) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpAlphaUnits = modelDrawerData->GetTempAlphaDrawUnits(modelType);
 
 	// NOTE: not type-sorted
@@ -657,8 +680,9 @@ void CUnitDrawerLegacy::DrawAlphaObjectsAux(int modelType) const
 	}
 }
 
-void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
+void CUnitDrawerGLSL::DrawGhostedBuildings(int modelType) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& deadGhostedBuildings = modelDrawerData->GetDeadGhostBuildings(gu->myAllyTeam, modelType);
 	const auto& liveGhostedBuildings = modelDrawerData->GetLiveGhostBuildings(gu->myAllyTeam, modelType);
 
@@ -676,7 +700,6 @@ void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 
 			dgb->GetModel()->DrawStatic();
 			glPopMatrix();
-			dgb->lastDrawFrame = globalRendering->drawFrame;
 		}
 	}
 
@@ -685,8 +708,9 @@ void CUnitDrawerLegacy::DrawGhostedBuildings(int modelType) const
 	}
 }
 
-void CUnitDrawerLegacy::DrawOpaqueUnit(CUnit* unit, uint8_t thisPassMask) const
+void CUnitDrawerGLSL::DrawOpaqueUnit(CUnit* unit, uint8_t thisPassMask) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!ShouldDrawOpaqueUnit(unit, thisPassMask))
 		return;
 
@@ -695,14 +719,16 @@ void CUnitDrawerLegacy::DrawOpaqueUnit(CUnit* unit, uint8_t thisPassMask) const
 	DrawUnitTrans(unit, 0, 0, false, false);
 }
 
-void CUnitDrawerLegacy::DrawUnitShadow(CUnit* unit) const
+void CUnitDrawerGLSL::DrawUnitShadow(CUnit* unit) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (ShouldDrawUnitShadow(unit))
 		DrawUnitTrans(unit, 0, 0, false, false);
 }
 
-void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, uint8_t thisPassMask, bool drawGhostBuildingsPass) const
+void CUnitDrawerGLSL::DrawAlphaUnit(CUnit* unit, int modelType, uint8_t thisPassMask, bool drawGhostBuildingsPass) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!drawGhostBuildingsPass && !ShouldDrawAlphaUnit(unit, thisPassMask))
 		return;
 
@@ -759,8 +785,9 @@ void CUnitDrawerLegacy::DrawAlphaUnit(CUnit* unit, int modelType, uint8_t thisPa
 	}
 }
 
-void CUnitDrawerLegacy::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const
+void CUnitDrawerGLSL::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glTranslatef3(unit.pos);
 	glRotatef(unit.rotation * math::RAD_TO_DEG, 0.0f, 1.0f, 0.0f);
@@ -777,8 +804,9 @@ void CUnitDrawerLegacy::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& un
 	glPopMatrix();
 }
 
-void CUnitDrawerLegacy::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const
+void CUnitDrawerGLSL::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glTranslatef3(unit.pos);
 	glRotatef(unit.rotation * math::RAD_TO_DEG, 0.0f, 1.0f, 0.0f);
@@ -795,8 +823,9 @@ void CUnitDrawerLegacy::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& uni
 	glPopMatrix();
 }
 
-void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUnit& unit) const
+void CUnitDrawerGLSL::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUnit& unit) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!unit.drawBorder)
 		return;
 
@@ -835,8 +864,9 @@ void CUnitDrawerLegacy::DrawAlphaAIUnitBorder(const CUnitDrawerData::TempDrawUni
 	glEnable(GL_TEXTURE_2D);
 }
 
-void CUnitDrawerLegacy::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 stageBounds = { 0.0f, unit->model->CalcDrawHeight(), unit->buildProgress };
 
 	// draw-height defaults to maxs.y - mins.y, but can be overridden for non-3DO models
@@ -885,8 +915,9 @@ void CUnitDrawerLegacy::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool no
 	glPopAttrib();
 }
 
-void CUnitDrawerLegacy::DrawModelWireBuildStageShadow(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawModelWireBuildStageShadow(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (globalRendering->amdHacks) {
 		glDisable(GL_CLIP_PLANE0);
 		glDisable(GL_CLIP_PLANE1);
@@ -908,8 +939,9 @@ void CUnitDrawerLegacy::DrawModelWireBuildStageShadow(const CUnit* unit, const d
 	}
 }
 
-void CUnitDrawerLegacy::DrawModelFlatBuildStageShadow(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawModelFlatBuildStageShadow(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glLoadIdentity();
 	glClipPlane(GL_CLIP_PLANE0, upperPlane);
@@ -919,13 +951,15 @@ void CUnitDrawerLegacy::DrawModelFlatBuildStageShadow(const CUnit* unit, const d
 	DrawUnitModel(unit, noLuaCall);
 }
 
-void CUnitDrawerLegacy::DrawModelFillBuildStageShadow(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawModelFillBuildStageShadow(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	DrawUnitModel(unit, noLuaCall);
 }
 
-void CUnitDrawerLegacy::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const S3DModel* model = unit->model;
 	const    CTeam* team = teamHandler.Team(unit->team);
 	const   SColor  color = team->color;
@@ -986,8 +1020,9 @@ void CUnitDrawerLegacy::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool no
 	glPopAttrib();
 }
 
-void CUnitDrawerLegacy::DrawModelWireBuildStageOpaque(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawModelWireBuildStageOpaque(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (globalRendering->amdHacks) {
 		glDisable(GL_CLIP_PLANE0);
 		glDisable(GL_CLIP_PLANE1);
@@ -1006,16 +1041,18 @@ void CUnitDrawerLegacy::DrawModelWireBuildStageOpaque(const CUnit* unit, const d
 	}
 }
 
-void CUnitDrawerLegacy::DrawModelFlatBuildStageOpaque(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawModelFlatBuildStageOpaque(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glClipPlane(GL_CLIP_PLANE0, upperPlane);
 	glClipPlane(GL_CLIP_PLANE1, lowerPlane);
 
 	DrawUnitModel(unit, noLuaCall);
 }
 
-void CUnitDrawerLegacy::DrawModelFillBuildStageOpaque(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawModelFillBuildStageOpaque(const CUnit* unit, const double* upperPlane, const double* lowerPlane, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (globalRendering->amdHacks)
 		glDisable(GL_CLIP_PLANE0);
 	else
@@ -1027,9 +1064,10 @@ void CUnitDrawerLegacy::DrawModelFillBuildStageOpaque(const CUnit* unit, const d
 	glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
-void CUnitDrawerLegacy::PushIndividualOpaqueState(const CUnit* unit, bool deferredPass) const { PushIndividualOpaqueState(unit->model, unit->team, deferredPass); }
-void CUnitDrawerLegacy::PushIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const
+void CUnitDrawerGLSL::PushIndividualOpaqueState(const CUnit* unit, bool deferredPass) const { PushIndividualOpaqueState(unit->model, unit->team, deferredPass); }
+void CUnitDrawerGLSL::PushIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// these are not handled by Setup*Drawing but CGame
 	// easier to assume they no longer have the correct
 	// values at this point
@@ -1042,30 +1080,34 @@ void CUnitDrawerLegacy::PushIndividualOpaqueState(const S3DModel* model, int tea
 	SetTeamColor(teamID);
 }
 
-void CUnitDrawerLegacy::PushIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const
+void CUnitDrawerGLSL::PushIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetupAlphaDrawing(deferredPass);
 	CModelDrawerHelper::PushModelRenderState(model);
 	SetTeamColor(teamID, IModelDrawerState::alphaValues.x);
 }
 
-void CUnitDrawerLegacy::PopIndividualOpaqueState(const CUnit* unit, bool deferredPass) const { PopIndividualOpaqueState(unit->model, unit->team, deferredPass); }
-void CUnitDrawerLegacy::PopIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const
+void CUnitDrawerGLSL::PopIndividualOpaqueState(const CUnit* unit, bool deferredPass) const { PopIndividualOpaqueState(unit->model, unit->team, deferredPass); }
+void CUnitDrawerGLSL::PopIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CModelDrawerHelper::PopModelRenderState(model);
 	ResetOpaqueDrawing(deferredPass);
 
 	glPopAttrib();
 }
 
-void CUnitDrawerLegacy::PopIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const
+void CUnitDrawerGLSL::PopIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CModelDrawerHelper::PopModelRenderState(model);
 	ResetAlphaDrawing(deferredPass);
 }
 
-void CUnitDrawerLegacy::DrawIndividual(const CUnit* unit, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawIndividual(const CUnit* unit, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (LuaObjectDrawer::DrawSingleObject(unit, LUAOBJ_UNIT /*, noLuaCall*/))
 		return;
 
@@ -1075,8 +1117,9 @@ void CUnitDrawerLegacy::DrawIndividual(const CUnit* unit, bool noLuaCall) const
 	PopIndividualOpaqueState(unit, false);
 }
 
-void CUnitDrawerLegacy::DrawIndividualNoTrans(const CUnit* unit, bool noLuaCall) const
+void CUnitDrawerGLSL::DrawIndividualNoTrans(const CUnit* unit, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (LuaObjectDrawer::DrawSingleObjectNoTrans(unit, LUAOBJ_UNIT /*, noLuaCall*/))
 		return;
 
@@ -1085,8 +1128,9 @@ void CUnitDrawerLegacy::DrawIndividualNoTrans(const CUnit* unit, bool noLuaCall)
 	PopIndividualOpaqueState(unit, false);
 }
 
-void CUnitDrawerLegacy::DrawIndividualDefOpaque(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen) const
+void CUnitDrawerGLSL::DrawIndividualDefOpaque(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const S3DModel* model = objectDef->LoadModel();
 
 	if (model == nullptr)
@@ -1117,8 +1161,9 @@ void CUnitDrawerLegacy::DrawIndividualDefOpaque(const SolidObjectDef* objectDef,
 	}
 }
 
-void CUnitDrawerLegacy::DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen) const
+void CUnitDrawerGLSL::DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const S3DModel* model = objectDef->LoadModel();
 
 	if (model == nullptr)
@@ -1141,8 +1186,9 @@ void CUnitDrawerLegacy::DrawIndividualDefAlpha(const SolidObjectDef* objectDef, 
 	}
 }
 
-bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const
+bool CUnitDrawerGLSL::ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//TODO: make this a lua callin!
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -1156,7 +1202,33 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 	std::vector<float3> featureSquares; // occupied squares
 	std::vector<float3> illegalSquares; // non-buildable squares
 
+	struct BuildCache {
+		uint64_t key;
+		int createFrame;
+		bool canBuild;
+		std::vector<float3> buildableSquares; // buildable squares
+		std::vector<float3> featureSquares; // occupied squares
+		std::vector<float3> illegalSquares; // non-buildable squares
+	};
+
+	static std::vector<BuildCache> buildCache;
+
 	const float3& pos = buildInfo.pos;
+
+	uint64_t hashKey = spring::LiteHash(pos);
+	hashKey = spring::hash_combine(spring::LiteHash(buildInfo.buildFacing), hashKey);
+	/*
+	for (const auto& cmd : commands) {
+		const BuildInfo bc(cmd);
+		spring::hash_combine(spring::LiteHash(bc), hash);
+	}
+	*/
+
+	// the chosen number here is arbitrary, feel free to fine balance.
+	static constexpr int CACHE_VALIDITY_PERIOD = GAME_SPEED / 5;
+	std::erase_if(buildCache, [](const BuildCache& bc) {
+		return gs->frameNum - bc.createFrame >= CACHE_VALIDITY_PERIOD;
+	});
 
 	const int x1 = pos.x - (buildInfo.GetXSize() * 0.5f * SQUARE_SIZE);
 	const int x2 = x1 + (buildInfo.GetXSize() * SQUARE_SIZE);
@@ -1166,16 +1238,36 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 
 	bool canBuild;
 
-	canBuild = !!CGameHelper::TestUnitBuildSquare(
-		buildInfo,
-		feature,
-		-1,
-		false,
-		&buildableSquares,
-		&featureSquares,
-		&illegalSquares,
-		&commands
-	);
+	const auto it = std::find_if(buildCache.begin(), buildCache.end(), [hashKey](const BuildCache& bc) {
+		return bc.key == hashKey;
+	});
+	if (it != buildCache.end()) {
+		buildableSquares.assign(it->buildableSquares.begin(), it->buildableSquares.end());
+		featureSquares.assign(it->featureSquares.begin(), it->featureSquares.end());
+		illegalSquares.assign(it->illegalSquares.begin(), it->illegalSquares.end());
+		canBuild = it->canBuild;
+	}
+	else {
+		canBuild = !!CGameHelper::TestUnitBuildSquare(
+			buildInfo,
+			feature,
+			-1,
+			false,
+			&buildableSquares,
+			&featureSquares,
+			&illegalSquares,
+			&commands
+		);
+		buildCache.emplace_back();
+		auto& buildCacheItem = buildCache.back();
+
+		buildCacheItem.key = hashKey;
+		buildCacheItem.canBuild = canBuild;
+		buildCacheItem.createFrame = gs->frameNum;
+		buildCacheItem.buildableSquares.assign(buildableSquares.begin(), buildableSquares.end());
+		buildCacheItem.featureSquares.assign(featureSquares.begin(), featureSquares.end());
+		buildCacheItem.illegalSquares.assign(illegalSquares.begin(), illegalSquares.end());
+	}
 
 	static constexpr std::array<float, 4> buildColorT  = { 0.0f, 0.9f, 0.0f, 0.7f };
 	static constexpr std::array<float, 4> buildColorF  = { 0.9f, 0.8f, 0.0f, 0.7f };
@@ -1247,8 +1339,9 @@ bool CUnitDrawerLegacy::ShowUnitBuildSquare(const BuildInfo& buildInfo, const st
 	return canBuild;
 }
 
-void CUnitDrawerLegacy::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const
+void CUnitDrawerGLSL::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (buildIcons.empty())
 		return;
 
@@ -1280,9 +1373,10 @@ void CUnitDrawerLegacy::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon
 
 /***********************************************************************/
 
-// CUnitDrawerLegacy::DrawBuildIcons is seemingly unbeatable in terms of FPS ?
+// CUnitDrawerGLSL::DrawBuildIcons is seemingly unbeatable in terms of FPS ?
 void CUnitDrawerGL4::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (buildIcons.empty())
 		return;
 
@@ -1345,6 +1439,7 @@ void CUnitDrawerGL4::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& 
 
 void CUnitDrawerGL4::DrawObjectsShadow(int modelType) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
 	auto& smv = S3DModelVAO::GetInstance();
@@ -1386,6 +1481,7 @@ void CUnitDrawerGL4::DrawObjectsShadow(int modelType) const
 
 void CUnitDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const uint8_t thisPassMask =
 		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_OPAQUE_FLAG +
 		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
@@ -1560,6 +1656,7 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, bool d
 
 void CUnitDrawerGL4::DrawAlphaObjectsAux(int modelType) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpAlphaUnits = modelDrawerData->GetTempAlphaDrawUnits(modelType);
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
@@ -1581,6 +1678,7 @@ void CUnitDrawerGL4::DrawAlphaObjectsAux(int modelType) const
 
 void CUnitDrawerGL4::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static CMatrix44f staticWorldMat;
 
 	staticWorldMat.LoadIdentity();
@@ -1605,6 +1703,7 @@ void CUnitDrawerGL4::DrawAlphaAIUnit(const CUnitDrawerData::TempDrawUnit& unit) 
 
 void CUnitDrawerGL4::DrawOpaqueObjectsAux(int modelType) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<CUnitDrawerData::TempDrawUnit>& tmpOpaqueUnits = modelDrawerData->GetTempOpaqueDrawUnits(modelType);
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
@@ -1626,6 +1725,7 @@ void CUnitDrawerGL4::DrawOpaqueObjectsAux(int modelType) const
 
 void CUnitDrawerGL4::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& unit) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static CMatrix44f staticWorldMat;
 
 	staticWorldMat.LoadIdentity();
@@ -1650,6 +1750,7 @@ void CUnitDrawerGL4::DrawOpaqueAIUnit(const CUnitDrawerData::TempDrawUnit& unit)
 
 void CUnitDrawerGL4::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& smv = S3DModelVAO::GetInstance();
 
 	const float3 stageBounds = { 0.0f, unit->model->CalcDrawHeight(), unit->buildProgress };
@@ -1725,6 +1826,7 @@ void CUnitDrawerGL4::DrawUnitModelBeingBuiltShadow(const CUnit* unit, bool noLua
 
 void CUnitDrawerGL4::DrawUnitModelBeingBuiltOpaque(const CUnit* unit, bool noLuaCall) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto& smv = S3DModelVAO::GetInstance();
 
 	const    CTeam* team = teamHandler.Team(unit->team);

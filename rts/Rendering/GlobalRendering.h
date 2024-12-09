@@ -222,6 +222,7 @@ public:
 	 * Level of multisample anti-aliasing
 	 */
 	int msaaLevel;
+	float minSampleShadingRate;
 
 	/**
 	 * @brief maxTextureSize
@@ -313,7 +314,6 @@ public:
 	 *
 	 * Especially some ATI cards report that they support NPOTs, but don't (or just very limited).
 	 */
-	bool supportNonPowerOfTwoTex;
 	bool supportTextureQueryLOD;
 
 	bool supportMSAAFrameBuffer;
@@ -395,6 +395,7 @@ public:
 	static constexpr uint32_t FRAME_REF_TIME_QUERY_IDX = 0;
 	static constexpr uint32_t FRAME_END_TIME_QUERY_IDX = NUM_OPENGL_TIMER_QUERIES - 1;
 private:
+	void SetMinSampleShadingRate();
 	bool SetWindowMinMaximized(bool maximize) const;
 private:
 	// double-buffered; results from frame N become available on frame N+1

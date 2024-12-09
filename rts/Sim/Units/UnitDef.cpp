@@ -20,6 +20,8 @@
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
+
 /******************************************************************************/
 
 UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef) {
@@ -56,6 +58,9 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 
 	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
 	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
+
+	// Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon 
+	burstControlWhenOutOfArc = weaponTable.GetInt("burstControlWhenOutOfArc", burstControlWhenOutOfArc);
 }
 
 
@@ -66,20 +71,17 @@ UnitDef::UnitDef()
 	: SolidObjectDef()
 	, cobID(-1)
 	, decoyDef(nullptr)
-	, metalUpkeep(0.0f)
-	, energyUpkeep(0.0f)
-	, metalMake(0.0f)
+	, upkeep(0.0f)
+	, resourceMake(0.0f)
 	, makesMetal(0.0f)
-	, energyMake(0.0f)
 	, buildTime(0.0f)
+	, buildeeBuildRadius(-1.f)
 	, extractsMetal(0.0f)
 	, extractRange(0.0f)
 	, windGenerator(0.0f)
 	, tidalGenerator(0.0f)
-	, metalStorage(0.0f)
-	, energyStorage(0.0f)
-	, harvestMetalStorage(0.0f)
-	, harvestEnergyStorage(0.0f)
+	, storage(0.0f)
+	, harvestStorage(0.0f)
 	, autoHeal(0.0f)
 	, idleAutoHeal(0.0f)
 	, idleTime(0)
@@ -122,11 +124,15 @@ UnitDef::UnitDef()
 	, stopToAttack(false)
 	, minCollisionSpeed(0.0f)
 	, slideTolerance(0.0f)
+	, rollingResistanceCoefficient(0.0f)
+	, groundFrictionCoefficient(0.0f)
+	, atmosphericDragCoefficient(0.0f)
 	, maxHeightDif(0.0f)
 	, waterline(0.0f)
 	, minWaterDepth(0.0f)
 	, maxWaterDepth(0.0f)
 	, upDirSmoothing(0.0f)
+	, separationDistance(0.0f)
 	, pathType(-1U)
 	, armoredMultiple(0.0f)
 	, armorType(0)
@@ -242,10 +248,8 @@ UnitDef::UnitDef()
 	, showNanoSpray(false)
 	, nanoColor(ZeroVector)
 	, maxThisUnit(0)
-	, realMetalCost(0.0f)
-	, realEnergyCost(0.0f)
-	, realMetalUpkeep(0.0f)
-	, realEnergyUpkeep(0.0f)
+	, realCost(0.0f)
+	, realUpkeep(0.0f)
 	, realBuildTime(0.0f)
 {
 	memset(&modelCEGTags[0], 0, sizeof(modelCEGTags));
@@ -261,6 +265,7 @@ UnitDef::UnitDef()
 
 UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// rely on default-ctor to initialize all members
 	*this = UnitDef();
 	this->id = id;
@@ -281,42 +286,52 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	buildPicName = udTable.GetString("buildPic", "");
 	decoyName = udTable.GetString("decoyFor", "");
 
-	metalStorage  = udTable.GetFloat("metalStorage",  0.0f);
-	energyStorage = udTable.GetFloat("energyStorage", 0.0f);
-	harvestMetalStorage  = udTable.GetFloat("harvestMetalStorage", udTable.GetFloat("harvestStorage", 0.0f));
-	harvestEnergyStorage = udTable.GetFloat("harvestEnergyStorage", 0.0f);
+	storage =
+		{ udTable.GetFloat( "metalStorage", 0.0f)
+		, udTable.GetFloat("energyStorage", 0.0f)
+	};
+	harvestStorage =
+		{ udTable.GetFloat("harvestMetalStorage", udTable.GetFloat("harvestStorage", 0.0f))
+		, udTable.GetFloat("harvestEnergyStorage", 0.0f)
+	};
 
 	extractsMetal  = udTable.GetFloat("extractsMetal",  0.0f);
 	windGenerator  = udTable.GetFloat("windGenerator",  0.0f);
 	tidalGenerator = udTable.GetFloat("tidalGenerator", 0.0f);
 
-	metalUpkeep  = udTable.GetFloat("metalUpkeep",  udTable.GetFloat("metalUse",  0.0f));
-	energyUpkeep = udTable.GetFloat("energyUpkeep", udTable.GetFloat("energyUse", 0.0f));
-	metalMake    = udTable.GetFloat("metalMake",  0.0f);
+	upkeep =
+		{ udTable.GetFloat( "metalUpkeep", udTable.GetFloat( "metalUse", 0.0f))
+		, udTable.GetFloat("energyUpkeep", udTable.GetFloat("energyUse", 0.0f))
+	};
+	resourceMake =
+		{ udTable.GetFloat( "metalMake", 0.0f)
+		, udTable.GetFloat("energyMake", 0.0f)
+	};
 	makesMetal   = udTable.GetFloat("makesMetal", 0.0f);
-	energyMake   = udTable.GetFloat("energyMake", 0.0f);
 
-	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
-	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED));
+	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
+	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
 	idleTime     = udTable.GetInt("idleTime", 600);
 
 	health = udTable.GetFloat("health", udTable.GetFloat("maxDamage", 100.0f));
 	if (health <= 0.0f)
 		throw content_error (unitName + ".health <= 0");
 
-	metal  = udTable.GetFloat("metalCost", udTable.GetFloat("buildCostMetal", 0.0f));
-	if (metal < 0.0f)
+	cost.metal = udTable.GetFloat("metalCost", udTable.GetFloat("buildCostMetal", 0.0f));
+	if (cost.metal < 0.0f)
 		throw content_error (unitName + ".metalCost < 0");
 
-	energy = udTable.GetFloat("energyCost", udTable.GetFloat("buildCostEnergy", 0.0f));
-	if (energy < 0.0f)
+	cost.energy = udTable.GetFloat("energyCost", udTable.GetFloat("buildCostEnergy", 0.0f));
+	if (cost.energy < 0.0f)
 		throw content_error (unitName + ".energyCost < 0");
 
 	buildTime = udTable.GetFloat("buildTime", 100.0f);
 	if (buildTime <= 0.0f)
 		throw content_error (unitName + ".buildTime <= 0");
 
-	mass = std::clamp(udTable.GetFloat("mass", metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
+	buildeeBuildRadius = udTable.GetFloat("buildeeBuildRadius", -1.f);
+
+	mass = std::clamp(udTable.GetFloat("mass", cost.metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
 	crushResistance = udTable.GetFloat("crushResistance", mass);
 
 	cobID = udTable.GetInt("cobID", -1);
@@ -339,6 +354,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	terraformSpeed = udTable.GetFloat("terraformSpeed", buildSpeed);
 
 	upDirSmoothing = std::clamp(udTable.GetFloat("upDirSmoothing", 0.0f), 0.0f, 0.95f);
+	separationDistance = std::max(udTable.GetInt("separationDistance", 0), 0);
 
 	reclaimable  = udTable.GetBool("reclaimable",  true);
 	capturable   = udTable.GetBool("capturable",   true);
@@ -363,6 +379,15 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	canReclaim   = udTable.GetBool("canReclaim",   builder) && (  reclaimSpeed > 0.0f);
 	canCapture   = udTable.GetBool("canCapture",     false) && (  captureSpeed > 0.0f);
 	canResurrect = udTable.GetBool("canResurrect",   false) && (resurrectSpeed > 0.0f);
+
+	/* Note that a mobile builder with canAssist = false will be able
+	 * to place a nanoframe and pour buildpower into it, but will not
+	 * be able to resume building if interrupted for any reason (with
+	 * the exception of the wait command). It will be unable to pour
+	 * buildpower into a nanoframe placed by another unit. It will be
+	 * unable to repair an incomplete nanoframe or place a nanoframe
+	 * on top of an existing nanoframe, even if it is the exact same
+	 * structure in the exact same location. */
 	canAssist    = udTable.GetBool("canAssist",    builder);
 
 	canBeAssisted = udTable.GetBool("canBeAssisted", true);
@@ -389,6 +414,9 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	waterline = udTable.GetFloat("waterline", 0.0f);
 	minCollisionSpeed = udTable.GetFloat("minCollisionSpeed", 1.0f);
 	slideTolerance = udTable.GetFloat("slideTolerance", 0.0f); // disabled
+	rollingResistanceCoefficient = udTable.GetFloat("rollingResistanceCoefficient", 0.05f);
+	groundFrictionCoefficient = udTable.GetFloat("groundFrictionCoefficient", 0.01f);
+	atmosphericDragCoefficient = udTable.GetFloat("atmosphericDragCoefficient", 1.0f);
 	pushResistant = udTable.GetBool("pushResistant", false);
 	selfDCountdown = udTable.GetInt("selfDestructCountdown", 5);
 
@@ -611,7 +639,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 		LOG_L(L_ERROR, "Couldn't find WeaponDef NOWEAPON and selfDestructAs for %s is missing!", unitName.c_str());
 	}
 
-	power = udTable.GetFloat("power", (metal + (energy / 60.0f)));
+	power = udTable.GetFloat("power", (cost.metal + (cost.energy / 60.0f)));
 
 	// Prevent a division by zero in experience calculations.
 	if (power < 1.0e-3f) {
@@ -696,6 +724,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 void UnitDef::ParseWeaponsTable(const LuaTable& weaponsTable)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const WeaponDef* noWeaponDef = weaponDefHandler->GetWeaponDef("NOWEAPON");
 
 	for (int k = 0, w = 0; w < MAX_WEAPONS_PER_UNIT; w++) {
@@ -757,6 +786,7 @@ void UnitDef::ParseWeaponsTable(const LuaTable& weaponsTable)
 
 void UnitDef::CreateYardMap(std::string&& yardMapStr)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// if a unit is immobile but does *not* have a yardmap
 	// defined, assume it is not supposed to be a building
 	// (so do not assign a default per facing)
@@ -802,7 +832,8 @@ void UnitDef::CreateYardMap(std::string&& yardMapStr)
 			case 'c': { defYardMap[ymCopyIdx - 1] = YARDMAP_YARD;                         } break;
 			case 'i': { defYardMap[ymCopyIdx - 1] = YARDMAP_YARDINV;                      } break;
 			case 'b': { defYardMap[ymCopyIdx - 1] = YARDMAP_BUILDONLY;                    } break;
-//			case 'w': { defYardMap[ymCopyIdx - 1] = YARDMAP_WALKABLE;                     } break; // TODO?
+			case 'u': { defYardMap[ymCopyIdx - 1] = YARDMAP_UNBUILDABLE;                  } break;
+			case 'e': { defYardMap[ymCopyIdx - 1] = YARDMAP_EXITONLY;                     } break;
 			case 'w':
 			case 'x':
 			case 'f':
@@ -835,29 +866,25 @@ void UnitDef::CreateYardMap(std::string&& yardMapStr)
 
 void UnitDef::SetNoCost(bool noCost)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (noCost) {
 		// initialized from UnitDefHandler::PushNewUnitDef
-		realMetalCost    = metal;
-		realEnergyCost   = energy;
-		realMetalUpkeep  = metalUpkeep;
-		realEnergyUpkeep = energyUpkeep;
+		realCost         = cost;
+		realUpkeep       = upkeep;
 		realBuildTime    = buildTime;
 
-		metal        =  1.0f;
-		energy       =  1.0f;
+		cost         =  1.0f;
 		buildTime    = 10.0f;
-		metalUpkeep  =  0.0f;
-		energyUpkeep =  0.0f;
+		upkeep       =  0.0f;
 	} else {
-		metal        = realMetalCost;
-		energy       = realEnergyCost;
+		cost         = realCost;
 		buildTime    = realBuildTime;
-		metalUpkeep  = realMetalUpkeep;
-		energyUpkeep = realEnergyUpkeep;
+		upkeep       = realUpkeep;
 	}
 }
 
 bool UnitDef::HasBomberWeapon(unsigned int idx) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// checked by Is*AirUnit
 	assert(HasWeapon(idx));
 	return (weapons[idx].def->IsAircraftWeapon());

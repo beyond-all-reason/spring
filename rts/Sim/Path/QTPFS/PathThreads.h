@@ -51,6 +51,7 @@ namespace QTPFS {
 
         T& InsertINode(int nodeId) {
             assert(size_t(nodeId) < sparseIndex.size());
+            assert( sparseIndex[nodeId] == 0 );
             InsertAtIndex(T(nodeId), nodeId);
             return operator[](nodeId);
         }
@@ -64,14 +65,16 @@ namespace QTPFS {
 
         auto& operator[](const size_t i) {
             assert(i < sparseIndex.size());
+            assert( sparseIndex[i] != 0 );
             return denseData[sparseIndex[i]];
         }
         const auto& operator[](const size_t i) const {
             assert(i < sparseIndex.size());
+            assert( sparseIndex[i] != 0 );
             return denseData[sparseIndex[i]];
         }
 
-        bool isSet(size_t i) {
+        bool isSet(size_t i) const {
             assert(i < sparseIndex.size());
             return (sparseIndex[i] != 0);
         }
@@ -109,14 +112,8 @@ namespace QTPFS {
 	struct SearchThreadData {
 
         static constexpr int SEARCH_FORWARD = 0;
-
-        #ifdef QTPFS_ENABLE_BIRECTIONAL_SEARCH
-        static constexpr int SEARCH_DIRECTIONS = 2;
-
         static constexpr int SEARCH_BACKWARD = 1;
-        #else
-        static constexpr int SEARCH_DIRECTIONS = 1;
-        #endif
+        static constexpr int SEARCH_DIRECTIONS = 2;
 
 		SparseData<SearchNode> allSearchedNodes[SEARCH_DIRECTIONS];
         SearchPriorityQueue openNodes[SEARCH_DIRECTIONS];
@@ -128,7 +125,9 @@ namespace QTPFS {
             /*,*/ : threadId(curThreadId)
 			{}
 
-        void ResetQueue() { ZoneScoped; for (int i=0; i<SEARCH_DIRECTIONS; ++i) while (!openNodes[i].empty()) openNodes[i].pop(); }
+        void ResetQueue() { ZoneScoped; for (int i=0; i<SEARCH_DIRECTIONS; ++i) ResetQueue(i); }
+
+        void ResetQueue(int i) { ZoneScoped; while (!openNodes[i].empty()) openNodes[i].pop(); }
 
 		void Init(size_t sparseSize, size_t denseSize) {
             constexpr size_t tmpNodeStoreInitialReserve = 128;
@@ -184,6 +183,21 @@ namespace QTPFS {
                                             , area.z2 + md.zsizeh);
             areaRelinked.ClampIn(mapRect);
             areaMaxBlockBits.ClampIn(mapRect);
+
+            // area must be at least big enough for the unit to be queried from its center point.
+            if (areaMaxBlockBits.GetWidth() < md.xsize){
+                if (areaMaxBlockBits.x1 == 0)
+                    areaMaxBlockBits.x2 = md.xsize;
+                else
+                    areaMaxBlockBits.x1 = mapRect.x2 - md.xsize;
+            }
+            if (areaMaxBlockBits.GetHeight() < md.zsize) {
+                if (areaMaxBlockBits.z1 == 0)
+                    areaMaxBlockBits.z2 = md.zsize;
+                else
+                    areaMaxBlockBits.z1 = mapRect.z2 - md.zsize;
+            }
+    
             maxBlockBits.reserve(areaMaxBlockBits.GetArea());
             relinkNodeGrid.reserve(areaRelinked.GetArea());
 

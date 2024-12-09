@@ -15,6 +15,8 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 using namespace SmoothHeightMeshNamespace;
 
@@ -35,6 +37,7 @@ SmoothHeightMesh smoothGround;
 
 static float Interpolate(float x, float y, const int maxx, const int maxy, const float res, const float* heightmap)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	x = std::clamp(x / res, 0.0f, (float)maxx);
 	y = std::clamp(y / res, 0.0f, (float)maxy);
 	const int sx = std::min((int)x, maxx - 1);
@@ -57,6 +60,7 @@ static float Interpolate(float x, float y, const int maxx, const int maxy, const
 
 void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Kill();
 
 	enabled = modInfo.enableSmoothMesh;
@@ -81,6 +85,7 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 }
 
 void SmoothHeightMesh::InitMapChangeTracking() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int damageTrackWidth = maxx / SAMPLES_PER_QUAD + (maxx % SAMPLES_PER_QUAD ? 1 : 0);
 	const int damageTrackHeight = maxy / SAMPLES_PER_QUAD + (maxy % SAMPLES_PER_QUAD ? 1 : 0);
 	const int damageTrackQuads = damageTrackWidth * damageTrackHeight;
@@ -91,6 +96,7 @@ void SmoothHeightMesh::InitMapChangeTracking() {
 }
 
 void SmoothHeightMesh::InitDataStructures() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(mesh.empty());
 	maximaMesh.resize(maxx * maxy, 0.0f);
 	mesh.resize(maxx * maxy, 0.0f);
@@ -103,6 +109,7 @@ void SmoothHeightMesh::InitDataStructures() {
 }
 
 void SmoothHeightMesh::Kill() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	while (!mapChangeTrack.damageQueue[0].empty()) { mapChangeTrack.damageQueue[0].pop(); }
 	while (!mapChangeTrack.damageQueue[1].empty()) { mapChangeTrack.damageQueue[1].pop(); }
 	while (!mapChangeTrack.horizontalBlurQueue.empty()) { mapChangeTrack.horizontalBlurQueue.pop(); }
@@ -116,35 +123,41 @@ void SmoothHeightMesh::Kill() {
 
 float SmoothHeightMesh::GetHeight(float x, float y)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!mesh.empty());
 	return Interpolate(x, y, maxx, maxy, fresolution, &mesh[0]);
 }
 
 float SmoothHeightMesh::GetHeightAboveWater(float x, float y)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!mesh.empty());
 	return std::max(0.0f, Interpolate(x, y, maxx, maxy, fresolution, &mesh[0]));
 }
 
 float SmoothHeightMesh::SetHeight(int index, float h)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(index < maxx*maxy);
 	return (mesh[index] = h);
 }
 
 float SmoothHeightMesh::AddHeight(int index, float h)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(index < maxx*maxy);
 	return (mesh[index] += h);
 }
 
 float SmoothHeightMesh::SetMaxHeight(int index, float h)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(index < maxx*maxy);
 	return (mesh[index] = std::max(h, mesh[index]));
 }
 
 inline static float GetRealGroundHeight(int x, int y, int resolution) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float* heightMap = readMap->GetCornerHeightMapSynced();
 	const int baseIndex = (x + y*mapDims.mapxp1)*resolution;
 
@@ -161,6 +174,7 @@ inline static void FindMaximumColumnHeights(
 	std::vector<float>& colsMaxima,
 	std::vector<int>& maximaRows
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// initialize the algorithm: find the maximum
 	// height per column and the corresponding row
 
@@ -195,6 +209,7 @@ inline static void FindRadialMaximum(
 	const std::vector<float>& colsMaxima,
 	      std::vector<float>& mesh
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int x = minx; x <= maxx; ++x) {
 		float maxRowHeight = -std::numeric_limits<float>::max();
 
@@ -251,6 +266,7 @@ inline static void AdvanceMaximas(
 	std::vector<float>& colsMaxima,
 	std::vector<int>& maximaRows
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// fix remaining maximums after a pass
 	const int miny = std::max(y - winSize, 0);
 	const int virtualRow = y + winSize;
@@ -298,6 +314,7 @@ inline static void BlurHorizontal(
 	const std::vector<float>& mesh,
 	      std::vector<float>& smoothed
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int lineSize = mapSize.x;
 	const int mapMaxX = mapSize.x - 1;
 
@@ -348,6 +365,7 @@ inline static void BlurVertical(
 	const std::vector<float>& mesh,
 	      std::vector<float>& smoothed
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// See BlurHorizontal for all the detailed comments.
 
 	const int lineSize = mapSize.x;
@@ -398,6 +416,7 @@ inline static void CheckInvariants(
 	const std::vector<float>& colsMaxima,
 	const std::vector<int>& maximaRows
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// check invariants - only for initial mesh creationgit reset HEAD~
 	if (y <= maxy) {
 		for (int x = 0; x <= maxx; ++x) {
@@ -416,6 +435,7 @@ inline static void CheckInvariants(
 
 
 void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
+	RECOIL_DETAILED_TRACY_ZONE;
 
 	if (!enabled) return;
 
@@ -453,6 +473,7 @@ inline static void CopyMeshPart
 		, const std::vector<float>& src
 		, std::vector<float>& dest
 		) {
+			RECOIL_DETAILED_TRACY_ZONE;
 	for (int y = min.y; y <= max.y; ++y) {
 		const int startIdx = min.x + y*mapx;
 		const int endIdx = max.x + y*mapx + 1;
@@ -462,6 +483,7 @@ inline static void CopyMeshPart
 
 
 inline static bool UpdateSmoothMeshRequired(SmoothHeightMesh::MapChangeTrack& mapChangeTrack) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const bool flushBuffer = !mapChangeTrack.activeBuffer;
 	const bool activeBuffer = mapChangeTrack.activeBuffer;
 	const bool currentWorkloadComplete = mapChangeTrack.damageQueue[flushBuffer].empty()
@@ -491,6 +513,7 @@ inline static bool UpdateSmoothMeshRequired(SmoothHeightMesh::MapChangeTrack& ma
 
 
 void SmoothHeightMesh::UpdateSmoothMeshMaximas(int2 damageMin, int2 damageMax) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const int winSize = smoothRadius / resolution;
 	const int blurSize = std::max(1, winSize / 2);
 	int2 map{maxx, maxy};

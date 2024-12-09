@@ -6,217 +6,155 @@ permalink: changelogs/running-changelog
 author: sprunk
 ---
 
-This is the changelog **since version 1775**.
+This is the changelog **since version 2590**.
 
 # Caveats
 These are the entries which may require special attention when migrating:
+* missing models crash the game in order to avoid desyncs (for real this time).
+There's a pop-up, for external detection look for error messages in the infolog.
+* a bunch of changes in Lua events for damage and death, see below.
+* moved sky rendering right after the terrain rendering and before `DrawWorldPreUnit`.
+This will affect things drawn in the pre-unit layer by wupgets.
+* changing camera mode (TA, rotatable overhead etc) now tries to keep rotation/position
+instead of going back to the rotation/position it was last in when in that mode.
+* allow the attack command onto units out of map. Ground-targeted still not allowed.
+* allow the guard command when either the guard or the guardee are out of map.
+* weapons with `groundBounce = true` will now bounce even if `numBounces`
+is left undefined. This is because `numBounces = -1`, which is the default
+value, will now result in infinite bounces as intended instead of 0.
+* `GroundDecals` springsetting is now a boolean. The previous semantic of that
+parameter serving as a decal duration multiplier is gone. Use the new `scarTTL`
+weapon def tag to increase durations if needed.
+* explicitly specified weapon def `scarTTL` value is now the actual TTL.
+Previously it was multiplied by the ground decals level springsetting,
+which defaults to 3, so if you had tweaked scars they may turn out to have
+significantly different TTL now.
+* live mobile units' footprint is now the size of their movedef. This affects
+things like responding to bugger-off, blocking construction, or the size of their
+built-in selection square. Note that unit defs are unaffected and that individual
+units adjust if their movedef changes at runtime.
+* support for non-power-of-2 textures, float textures, and frame buffer objects
+is now mandatory. Apparently these were all common 15 years ago already so should
+be safe even for relative potatoes.
+* removed `tdfID` from weapon defs, including the WeaponDefs table. Any remaining
+interfaces receive the weaponDefID instead.
+* files in an archive's root folder with a name starting with dot are now ignored
+for the purpose of checksum (as if `springignore.txt` had `\..*` on the first row,
+this cannot be overridden)
+* archive scanner version changed to 17, won't be able to reuse an old archive cache.
+Expect a rescan of archives.
 
-### Removals
-* removed `gl.GetMatrix` and the interface accessible from the returned matrix object. Apparently these were unused, so we offer no replacement guide at the moment.
-* removed `spairs`, `sipairs` and `snext`. These have been equivalent to the regular `pairs`, `ipairs` and `next` for years now, use the regular versions instead.
-You can replace these functions before migrating, and known existing games have already received patches to do so.
-* removed `VFS.MapArchive` and `VFS.UnmapArchive`. They were very sync-unsafe. Hopefully they will be back at some point, but no timeline is available yet. Use `VFS.UseArchive` in the meantime.
 
-### Behaviour changes
-* failure to load a model now results in a crash. This avoids a potential desync down the road.
-* QTPFS had a major overhaul, with multiple modrule changes and behaviour changes. See the section below.
-* many invalid def entries now cause the unit to be rejected; on the other hand, many (in particular, metal cost and weapon damage) can now be 0. Watch out for division by 0!
-Check the "def validity checks" section below for details.
-* nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
-* screenshots are postfixed with UTC timestamp instead of number.
-* add `SMFTextureStreaming` boolean springsetting, defaults to false. If true, dynamically load and unload SMF Diffuse textures, which saves VRAM, but worse performance and image quality.
-Previous behaviour was equivalent to `true`, so if you get VRAM issues try changing it.
-* it's now possible to play fixed and random start positions with more teams than the map specifies.
-The extras are considered to start in the (0, 0) corner and it is now up to the game to handle this case correctly.
-* the `movement.allowGroundUnitGravity` mod rule now defaults to `false`. All known games have an explicit value set, so this should only affect new games.
-* `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
-Use the `TeamChanged` call-in to make a replacement if you want it to be public.
-* manually shared units no longer receive the Stop command. Use the `UnitGiven` callin to get back the previous behaviour.
+# Features
 
-### Deprecation
-No changes yet, but these will happen in the future and possibly break things.
+### rmlUI
+RmlUI is here! It is a GUI framework that will let you create widgets using web technologies (html, css and all that nonsense).
+See [the reference](https://mikke89.github.io/RmlUiDoc/pages/lua_manual/api_reference.html) for the Lua API; it is available to LuaUI under the `RmlUi` global.
+Differences compared to upstream:
+* `context:LoadDocument(filepath, widget)` takes a second argument that is the widget itself,
+so that inline event handlers can call its functions like so: `onclick="widget:OnReloadClick()"`.
+* `document` is available too.
+* our data model is reactive only on the first depth level.
+All keys for reactivity are expected to exist at creation.
+Behaviour is unspecified if the same data model is "opened" repeatedly.
+* there is a custom html tag called `texture` that provides access to engine textures, e.g. `src="$heightmap"`
 
-* the `acceleration` and `brakeRate` unit def entries are scheduled for a unit change from elmo/frame to elmo/second. There is no change yet,
-but if you prefer not to have to add processing later you might want to change to `maxAcc` and `maxDec` respectively (which will stay elmo/frame).
-* the `CSphereParticleSpawner` (alias `simpleparticlespawner`) CEG class is scheduled for removal. It can be entirely drop-in replaced with `CSimpleParticleSystem` (alias `simpleparticlesystem`)
-since it has always had the same behaviour, just different internal implementation. Known games using the class will receive PRs before this happens.
+Look for upcoming examples in games, especially BAR.
+The API is currently v1 and may be subject to change, use the new `Engine.FeatureSupport.rmlUiApiVersion` var for compat (see below).
 
-# QTPFS
+### Feature support table
 
-The QTPFS pathfinder has received a large overhaul. There are major improvements in both quality (fewer cases of units getting stuck, cutting corners etc.)
-and performance (processing speed, memory use, even disk usage). Every facet of QTPFS should generally work better. Try it out!
+There is a new `Engine.FeatureSupport` table containing various feature support checks.
+Use for engine version compatibility, similar to existing `Script.IsEngineMinVersion`,
+except self-documenting and does not assume linear availability / commit numbering.
 
-* debug path drawer now draws into the minimap, showing the map damage updates waiting to be processed. The more intense the colour, the more layers (MoveTypes) that still need to process the change.
-* added modrule, `system.pfRepathDelayInFrames`, which controls how many frames at least must pass between checks for whether a unit is making enough progress to its current waypoint
-or whether a new path should be requested. Defaults to 60 (2 seconds). Adjust to find the right balance between how quickly units can get unstuck and how much CPU power is used.
-Smaller intervals increase the chance of slow units triggering unnecessary re-pathing requests, but reduces the chance that players may believe a unit is getting stuck and is not handling itself well.
-* added modrule, `system.pfRepathMaxRateInFrames`, which controls the minimum amount of frames that must pass before a unit is allowed to request a new path. By default, it is 150 frames (5 seconds).
-This is mostly for rate limiting and prevent excessive CPU wastage, because processing path requests are not cheap.
-* added modrule, `system.pfUpdateRateScale`. This is a multiplier for the update rate and defaults to 1. Increase to get faster updates but more CPU usage.
-* added modrule, `system.pfRawMoveSpeedThreshold`. Controls the speed modifier (which includes typemap boosts and up/down hill modifiers) under which units will never do raw move,
-regardless of distance etc. Defaults to 0, which means units will not try to raw-move into unpathable terrain (e.g. typemapped lava, cliffs, water). You can set it to some positive
-value to make them avoid pathable but very slow terrain (for example if you set it to 0.2 then they will not raw-move across terrain where they move at 20% speed or less, and will use
-normal pathing instead - which may still end up taking them through that path).
-* removed modrules: `system.pfForceUpdateSingleThreaded` and `system.pfForceSingleThreaded`. Multithreading has shown itself stable.
-* removed modrule: `system.pathFinderUpdateRate`, since `system.pfUpdateRateScale` now serves the same general role but has different units.
+So far contains two vars:
+* `rmlUiApiVersion` = `1`
+* `hasExitOnlyYardmaps` = `true`
 
-# Defs unification
+More will be added in the future as new features are added.
 
-Unit defs (i.e. `/units/*.lua`) and `UnitDefs` (in wupgets) referring to the same thing under different names and sometimes even different units of measurement has always been a point of confusion.
-Some of this has been alleviated, with a unified name being available for many mismatched keys. Usually it's one already existing on either "side" of the divide.
+### Death events
+* `wupget:UnitDestroyed` will pass the builder as the killer if a unit gets reclaimed. Note that
+reclaim still does not generate `UnitDamaged` events.
+* `wupget:UnitDestroyed` now receives a 7th argument, weaponDefID, with the cause of death.
+Widgets receive this info regardless of LoS on the attacker (no new hax, `UnitDamaged` already did this).
+* the weaponDefID above is never `nil`, all causes of death are attributable including things like
+"was being built in a factory, got cancelled" or "died automatically due to `isFeature` def tag".
+Added a bunch of `Game.envDamageTypes` constants for this purpose. See the table at the bottom of the page.
+* the 1000000 damage that applies to units being transported in a non-`releaseHeld` transport when it
+dies for non-selfD reasons will now be attributed to the new `TransportKilled` damage type in `UnitDamaged`,
+previously was `Killed`.
+* construction decay now produces an event: `wupget:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)`.
+Time and iteration period are in seconds, part is a fraction.
 
-## New def keys
-The following unit def keys now accept the same spelling as the ones exposed via `UnitDefs`.
-The old spelling still works (old → new).
-* metalUse → metalUpkeep
-* energyUse → energyUpkeep
-* buildCostMetal → metalCost
-* buildCostEnergy → energyCost
-* unitRestricted → maxThisUnit
-* name → humanName
+### Dolly camera
+Added a dolly camera that follows a predetermined path, activated via Lua.
+Added the following functions to the `Spring` table, check the main Lua API docs for their signatures and what they do:
+* `RunDollyCamera`
+* `PauseDollyCamera`
+* `ResumeDollyCamera`
+* `SetDollyCameraMode`
+* `SetDollyCameraPosition`
+* `SetDollyCameraCurve`
+* `SetDollyCameraLookCurve`
+* `SetDollyCameraLookPosition`
+* `SetDollyCameraLookUnit`
+* `SetDollyCameraRelativeMode`
+* `SolveNURBSCurve`
 
-These two also accept a new spelling, and both the old and new spellings are in elmo/frame.
-However, consider migrating to the new spellings ASAP because the original spellings will be
-changed to use elmo/s sometime in the future.
-* acceleration → maxAcc
-* brakeRate → maxDec
+### Other camera work
+* add `CamTransitionMode` integer springsetting to control how discrete camera movement is interpolated.
+0 - exponential decay, 1 - spring dampened, 2 - spring dampened timed, 3 - linear. Defaults to 0 - exponential decay.
+* add `CamSpringHalflife` float springsetting, the time in milliseconds at which the timed spring dampened interpolation mode should be approximately halfway towards the goal.
+* add `OverheadMinZoomDistance` and `CamSpringMinZoomDistance` float springsettings to set minimum camera zoom distances for their respective cameras. Note that this is the distance in the looking direction of the frustum and not height.
+* changing camera mode (TA, rotatable overhead etc) now tries to keep rotation/position
+instead of going back to the rotation/position it was last in when in that mode.
 
-The following unit def keys now accept a spelling and measurement unit
-as the one exposed via `UnitDefs` (old → new). The old spelling still works,
-and is still in the old measurement unit.
-* maxVelocity (elmo/frame) → speed (elmo/second)
-* maxReverseVelocity (elmo/frame) → rSpeed (elmo/second)
+### Out of map orders
+* allow centering area commands out of map.
+* allow the attack command onto units out of map. Ground-targeted still not allowed
+* allow the guard command when either the guard or the guardee are out of map
 
-The following unit def keys now accept a new spelling, which hasn't been previously
-available in `UnitDefs`, but which has also been added there in this update.
-Old spelling still works.
-* losEmitHeight → sightEmitHeight
-* cruiseAlt → cruiseAltitude
+### Lua microoptimisation
+* add `math.normalize(x1, x2, ...) → numbers xn1, xn2, ...`. Normalizes a vector. Can have any dimensions (pass and receive each as a separate value).
+Returns a zero vector if passed a zero vector.
+* add `Spring.AllocateTable(arraySlots, hashSlots) → {}`. Returns an empty table with more space allocated.
+Use as a microoptimisation when you have a big table which you are going to populate with a known number of elements, for example `#UnitDefs`.
+* `Script.LuaXYZ.Foo()` no longer produces a warning if there is no such function in the LuaXYZ environment. In practice this means you
+can avoid calling `Script.LuaXYZ("Foo")` each time, but it can still be a good idea e.g. to avoid needless calculation or to warn manually.
+* add variadic variants of LUS `Turn`, `Move`, `Spin`, `StopSpin`, `Explode`, and `SetPieceVisibility`, each has the same name with "Multi" prepended (so `MultiTurn` etc).
+These accept multiple full sets of arguments compared to the regular function so you can avoid extra function calls.
 
-Added `fastQueryPointUpdate` to weapon (note, this is the entry inside a unit def that also sets target categories and direction; NOT weapon def!).
-When enabled, the `QueryWeapon` family of functions in the script is called every frame (instead of every 15 in slow update). This fixes friendly fire for rapid-fire multi-barrel weapons.
+### Rendering
+* engine now draws the sky before the `wupget:DrawWorldPreUnit` layer.
+* `wupget:DrawWorldPreParticles` now has four boolean parameters depending on which phase is being drawn: above water, below water, reflection, refraction.
+They aren't mutually exclusive.
+* drawing now occurs once every 30s when minimized (was intended already but didn't actually happen).
+* add `MinSampleShadingRate` springsetting, float between 0 and 1, default 0. A value of 1 indicates that each sample in the framebuffer should be independently shaded. A value of 0 effectively allows rendering to ignore sample rate shading. Any value between 0 and 1 allows the GL to shade only a subset of the total samples within each covered fragment.
+* add new 'm' character to Lua texture options, which disables trilinear mipmap filtering for both DDS and uncompressed textures.
+* particles (incl. ground decals) now have 4 levels of mipmaps.
 
-## New `UnitDefs` members
-The following `UnitDefs` keys now accept the same spelling as the ones
-accepted for unit def files. The old spelling still works (old → new).
-* tooltip → description
-* wreckName → corpse
-* buildpicname → buildPic
-* canSelfD → canSelfDestruct
-* selfDCountdown → selfDestructCountdown
-* losRadius → sightDistance
-* airLosRadius → airSightDistance
-* radarRadius → radarDistance
-* jammerRadius → radarDistanceJam
-* sonarRadius → sonarDistance
-* sonarJamRadius → sonarDistanceJam
-* seismicRadius → seismicDistance
-* kamikazeDist → kamikazeDistance
-* targfac → isTargetingUpgrade
+### Defs
+* add `windup` weapon def tag. Delay in seconds before the first projectile of a salvo appears.
+Has the same mechanics as burst (obeys the recent out-of-arc tags and the delay can be set/read via burst Lua API).
+* live mobile units' footprint is now the size of their movedef. This affects
+things like responding to bugger-off, blocking construction, or the size of their
+built-in selection square. Note that unit defs are unaffected and that individual
+units adjust if their movedef changes at runtime.
+* weapon defs now have a new `animParamsN` (N = 1-4) tag for flipbook animations for given texture 1-4, same format as CEGs (three numbers: sprite count X, Y, and duration).
+* removed `tdfID` from weapons.
 
-The following keys receive a new spelling which hasn't previously been
-available for unit defs, but which has also been added in this update.
-Old spellings still work.
-* losHeight → sightEmitHeight
-* wantedHeight → cruiseAltitude
-
-Added the missing `radarEmitHeight` to UnitDefs. The unit def file key was also already `radarEmitHeight`.
-
-## Def validity checks
-
-Some invalid and/or missing defs are now handled differently.
-
-* negative values for health, (reverse) speed, and metal/energy/buildtime
-now cause the unit def to be rejected; previously each was clamped to 0.1
-* negative values for acceleration and brake rate now cause the unit def to
-be rejected; previously the absolute value was taken
-* values (0; 0.1) now allowed for health and buildtime (0 still prohibited)
-* values [0; 0.1) now allowed for metal cost (0 now allowed)
-* undefined metal cost now defaults to 0 instead of 1
-* undefined health and buildtime now each default to 100 instead of 0.1
-* weapon `edgeEffectiveness` can now be 1 (previously capped at 0.999)
-* unit armor multiplier (aka `damageModifier`) can now be 0 (previously capped at 0.0001)
-* damage in weapon defs can now be 0 (previously capped at 0.0001)
-* damage and armor can also be negative again (so that the target is healed),
-but keep in mind weapons will still always target enemies and never allies,
-so avoid using it outside of manually-triggered contexts, death explosions, and such
-
-### Deprecated UnitDefs removal
-
-All deprecated UnitDefs keys (who returned zero and produced a warning) have been removed, listed below:
-* techLevel
-* harvestStorage
-* extractSquare
-* canHover
-* drag
-* isAirBase
-* cloakTimeout
-* minx
-* miny
-* minz
-* maxx
-* maxy
-* maxz
-* midx
-* midy
-* midz
-
-# Features and fixes
-
-### Builder behaviour
-* nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
-* fixed builders not placing nanoframes from their maximum range.
-* units vacating a build area (aka "bugger off") will now try to use the fastest route out.
-* added `Spring.GetUnitWorkerTask(unitID) → cmdID, targetID`.  Similar to `Spring.GetUnitCurrentCommand`, but shows what the unit is actually doing,
-so will differ when the unit is guarding or out of range. Also resolves Build vs Repair. Only shows worker tasks (i.e. things related to nanolathing).
-* `gadget:AllowUnitCreation` now has two return values. The first one is still a boolean on whether to allow creating the unit (no change here).
-The new second value is a boolean, if the creation was not allowed, whether to drop the order (defaults to true, which is the previous behaviour).
-If set to false, the builder or factory will keep retrying.
-* added `Spring.GetUnitEffectiveBuildRange(unitID[, buildeeDefID]) → number`. Returns the effective build range for given builder towards the center of the prospective buildee,
-i.e. the same way engine measures build distance. Useful for setting the goal radius for raw move orders.
-This doesn't solve all known cases yet (doesn't handle features, or terraform) which are pending a solution; for now, the function returns just the build range if `buildeeDefID` is nil.
-* added `Spring.GetUnitIsBeingBuilt(unitID) → bool beingBuilt, number buildProgress`. Note that this doesn't bring new _capability_ because `buildProgress` was already available
-from the 5th return of `Spring.GetUnitHealth`, and `beingBuilt` from the 3rd return of `Spring.GetUnitIsStunned`, but it wasn't terribly convenient or intuitive.
-
-### Rules params
-* added player rules params. Controlled by the new interfaces: `Spring.SetPlayerRulesParam`, `GetPlayerRulesParam` and `GetPlayerRulesParams`,
-similar to other existing rules params. There's currently two visibility levels, public and private. A notable difference is that the private level
-is only visible to that player, not his allyteam, and not even his (comsharing) team; this is partially for technical reasons and can be changed if need be.
-Synced and specs see everything. Not yet available to the Skirmish AI interface.
-* added boolean value support to rules params, including the new player rules params.
-Skirmish AI and the unit rules param selection filter can read them via existing numerical interface as 0 and 1.
-
-### Map textures
-* added `SMFTextureStreaming` boolean springsetting, defaults to false. If true, dynamically load and unload SMF Diffuse textures, which saves VRAM, but worse performance and image quality.
-Previous behaviour was equivalent to `true`, so if you get VRAM issues try changing it.
-* added `SMFTextureLodBias` numerical springsetting, defaults to 0. In case `SMFTextureStreaming = false`, this parameter controls the sampling lod bias applied to diffuse texture.
-* added a 5th integer param to `Spring.GetMapSquareTexture(x, y, lodMin, texName[, lodMax = lodMin])`. It controls the max lod and defaults to the 3rd parameter,
-which is now the minimum (instead of being the final value).
-
-### FFA support
-* it's now possible to play fixed and random start positions with more teams than the map specifies.
-The extras are considered to start in the (0, 0) corner and it is now up to the game to handle this case correctly.
-* `/ally` no longer announces this to unrelated players via a console message. The affected players still see one.
-Use the `TeamChanged` call-in to make a replacement if you want it to be public.
-* added `system.allowEnginePlayerlist`, defaults to true. If false, the built-in `/info` playerlist won't display.
-Use for "anonymous players" modes in conjunction with `Spring.GetPlayerInfo` poisoning, or just to prevent ugliness.
-* added `Spring.SetAllyTeamStartBox(allyTeamID, xMin, zMin, xMax, zMax) → nil`, sets that allyteam's startbox edges, in elmos.
-
-### VFS
-* added a 4th boolean parameter to `VFS.DirList` and `VFS.SubDirs`, defaults to false. If set to true, the search is recursive.
-* fixed `VFS.SubDirs` applying the passed pattern to the whole paths instead of just the individual folder names in `VFS.RAW` mode.
-
-### Unit selection
-* added `Spring.DeselectUnit(unitID) → nil`.
-* added `Spring.SelectUnit(unitID[, bool append]]) → nil`, a single-unit version of `Spring.SelectUnit{Array,Map}` that doesn't require a table.
-The unitID can be nil.
-* added `Spring.DeselectUnitArray({[any] = unitID, [any] = unitID, ...}) → nil` and `Spring.DeselectUnitMap({[unitID] = any, [unitID] = any, ...}) → nil`.
-These are the counterparts to the existing `Spring.SelectUnitArray` and `Spring.SelectUnitMap`.
-* the table in `Spring.SelectUnitArray` can now have arbitrary keys. Previously they had to be numbers, but the table did not actually have to be an array.
-
-### Root pieces
-* added `Spring.GetModelRootPiece(modelName) → number pieceID` which returns the root piece.
-* added `Spring.GetUnitRootPiece(unitID) → number pieceID` and `Spring.GetFeatureRootPiece(featureID) → number pieceID`, likewise.
+### Archive scanning
+* fixed timezone changes (e.g. daylight saving time) causing a complete archive rescan on Windows.
+* the loadscreen now shows more info when scanning archives.
+* files in an archive's root folder with a name starting with dot are now ignored
+for the purpose of checksum (as if `springignore.txt` had `\..*` on the first row,
+this cannot be overridden)
+* archive scanner version changed to 17, won't be able to reuse an old archive cache.
+Expect a rescan of archives.
+* optimize performance when scanning files on a HDD.
+* fixed the archive scanner sometimes failing due to having more files opened in parallel than the OS allows.
 
 ### Graphical Lua interfaces
 * added `gl.ClearBuffer(slot, r,g,b,a) → nil`. `slot` can be "color0" to "color15", "depth", or "stencil".
@@ -225,43 +163,50 @@ Clears only the specified drawBuffer within multi-target FBO and correctly clear
 Reads a single pixel of a specified attachment with respect to its underlying type, correctly works for integer textures.
 * added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
 
-### Colored text
-* added an inline colour code `\254`, followed by 8 bytes: RGBARGBA, where the first four describe the following text colour and the next four the text's outline.
-* added the `Game.textColorCodes` table, containing the constants `Color` (`\255`), `ColorAndOutline` (the newly added `\254`), and `Reset` (`\008`).
+### Misc
+* add `SelectThroughGround` float springsetting. Controls how far through ground you can single-click a unit. Default is 200, in elmos (same behaviour as previous).
+* add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
+to the `unitQuadPositionUpdateRate` modrule, which may leave them unable to be hit by some weapons when moving. Call this for targets of important
+weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value greater than 1 to ensure reliable hit detection.
+* built-in endgame graphs have a toggle for log scale instead of linear.
+* `gl.SaveImage` can now save in the `.hdr` format (apparently).
+* `pairs()` now looks at the `__pairs` metamethod in tables, same as in Lua 5.2.
 
-### Miscellaneous additions
-* add `Spring.IsPosInMap(x, z) → bool inPlayArea, bool inMap`. Currently, both of the returned values are the same and just check whether the position
-is in the map's rectangle. Perhaps in the future, or if a game overrides the function, there will be cases of limited play area (think SupCom singleplayer
-map extension; 0 A.D. circular maps; or just an external decoration area).
-* add `Spring.GetFacingFromHeading(number heading) → number facing` and `Spring.GetHeadingFromFacing(number facing) → number heading` for unit conversion.
-* added `wupget:Unit{Entered,Left}Underwater(unitID, unitDefID, teamID) → nil`, similar to existing UnitEnteredWater.
-Note that EnteredWater happens when the unit dips its toes into the water while EnteredUnderwater is when it becomes completely submerged.
-* add new `/remove` cheat-only command, it removes selected units similar to `/destroy` except the units are just removed (no wreck, no death explosion).
-* added new startscript entry: `FixedRNGSeed`. Defaults to 0 which means to generate a random seed for synced RNG (current behaviour).
-Otherwise, given value is used as the seed. Use for reproducible runs (benchmarks, mission cutscenes...).
-* added `Script.DelayByFrames(frameDelay, function, args...)`. **Beware**, it's `Script`, not `Spring`! Runs `function(args...)` after a delay of the specified number of frames (at least 1).
-Multiple functions can be queued onto the same frame and run in the order they were added, just before that frame's `GameFrame` call-in. Use to avoid manual tracking in GameFrame.
-* added `Spring.GetUnitSeismicSignature(unitID) → number` and `Spring.SetUnitSeismicSignature(unitID, number newSignature) → nil`.
-* added `Spring.SetUnitShieldRechargeDelay(unitID, [weaponNum], [seconds]) → nil`. Resets a unit's shield regeneration delay.
-The weapon number is optional if the unit has a single shield. The timer value is also optional: if you leave it nil it will emulate a weapon hit.
-Note that a weapon hit (both via `nil` here, and "real" hits) will never decrease the remaining timer, though it can increase it.
-An explicit numerical value always sets the timer to that many seconds.
-* added the following `GL` constants for use in `gl.BlendEquation`: `FUNC_ADD`, `FUNC_SUBTRACT`, `FUNC_REVERSE_SUBTRACT`, `MIN` and `MAX`.
-* added `Spring.GetWindowDisplayMode() → number width, number height, number bitsPerPixel, number refreshRateHz, string pixelFormatName`.
-The pixel format name is something like, for example, "SDL_PIXELFORMAT_RGB565".
+## Fixes
+* fix draw position for asymmetric models, they no longer disappear when not appropriate.
+* fix streaming very small sound files.
+* fix `Spring.SetCameraTarget` reverting to the old position.
+* fix the `/iconsHideWithUI` command not saving the relevant springsetting properly.
+* fix `Spring.GetFeatureSelectionVolumeData` missing from the API since about 105-800ish.
+* fix `/groundDecals` not enabling decals if they were disabled at engine startup.
+* fix rightclicking and area-commands sometimes failing to include radar dots if they wobbled too far from real position.
+* fix a crash when loading unknown glyphs from a font.
+* fix runtime metalmap adjustments not being saved/loaded (would use map default).
+* fix metal extractors not being saved/loaded correctly (would allow duplicates).
+* fix an issue where sometimes `C:\a\_temp\msys\msys64\var\cache\fontconfig` would be created on the user's disk.
+* the `quadFieldQuadSizeInElmos` modrule now only accepts powers of two instead of breaking at the edges of the map.
 
-### Weapon fixes
-* fix `Cannon` type weapons aiming at the (0, 0) corner of the world if they can't find a physical firing solution due to target leading
-* fix `Cannon` type weapons being too lenient in friendly-fire avoidance when firing over allies
-* fix `MissileLauncher` weapons with high `trajectoryHeight` not performing ground and ally avoidance correctly
-* fix `MissileLauncher` weapons with high `trajectoryHeight`, zero `turnRate` and high `wobble` having an unstable trajectory and prematurely falling down when firing onto higher elevations
-* fix `DGun` weapon type projectile direction (previously shot at an angle that would be valid from the `AimFromWeapon` piece and not the `QueryWeapon` piece)
+### Death damage types listing
 
-### Miscellaneous fixes
-* fixed basecontent initial commander spawn gadget.
-* fixed basecontent action handler key press/release events.
-* fixed skirmish AI API getTeamResourcePull (used to return max storage instead).
-* `Spring.SetSunDirection` no longer causes broken shadows if you pass an unnormalized vector.
-* fixed being unable to drag-select units with `/specfullview 0`
-* fixed COB `SetMaxReloadTime` receiving a value 10% smaller than it was supposed to.
-* fix screenshots saved as PNG having an inflated file size via a redundant fully-opaque alpha channel.
+| Game.envDamageTypes.??? | Description                                                                                                                                                       |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AircraftCrashed         | Aircraft hitting the ground                                                                                                                                       |
+| Kamikaze                | Unit exploding due to its kamikaze ability                                                                                                                        |
+| SelfD                   | Unit exploding after a self-D command and countdown                                                                                                               |
+| ConstructionDecay       | Abandoned nanoframe disappearing (the process itself is HP removal)                                                                                               |
+| Reclaimed               | Killed via reclaim (the process itself is HP removal)                                                                                                             |
+| TurnedIntoFeature       | Unit dying on completion, without explosion, due to `isFeature` def tag                                                                                           |
+| TransportKilled         | Unit was in transport which had no `releaseHeld`. If the transport was not self-destructed, the unit also receives 1000000 damage of this type before dying.      |
+| FactoryKilled           | Unit was being built in a factory which died. No direct way to discern how exactly the factory died currently, you'll have to wait for the factory's death event. |
+| FactoryCancel           | Unit was being built in a factory but the order was cancelled.                                                                                                    |
+| UnitScript              | COB unit script ordered the unit's death. Note that LUS has access to normal kill/damage interfaces instead.                                                      |
+| SetNegativeHealth       | A unit had less than 0 health for non-damage reasons (e.g. Lua set it so).                                                                                        |
+| OutOfBounds             | A unit was thrown way out of map bounds.                                                                                                                          |
+| KilledByCheat           | The `/remove` or `/destroy` commands were used.                                                                                                                   |
+| KilledByLua             | Default cause of death when using `Spring.DestroyUnit`.                                                                                                           |
+
+`KilledByLua` is guaranteed to be the "last" value, so you can define your own custom damage types for Lua mechanics with a guarantee of no overlap via e.g.
+```
+Game.envDamageTypes.CullingStrike      = Game.KilledByLua - 1
+Game.envDamageTypes.SummonTimerExpired = Game.KilledByLua - 2
+```

@@ -10,6 +10,8 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CR_BIND_DERIVED(CEmgProjectile, CWeaponProjectile, )
 
 CR_REG_METADATA(CEmgProjectile,(
@@ -21,6 +23,7 @@ CR_REG_METADATA(CEmgProjectile,(
 
 CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectile(params)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EMG_PROJECTILE;
 
 	if (weaponDef != nullptr) {
@@ -38,6 +41,7 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 
 void CEmgProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// disable collisions when ttl reaches 0 since the
 	// projectile will travel far past its range while
 	// fading out
@@ -62,8 +66,11 @@ void CEmgProjectile::Update()
 
 void CEmgProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!validTextures[0])
 		return;
+
+	UpdateWeaponAnimParams();
 
 	const uint8_t col[4] {
 		(uint8_t)(color.x * intensity * 255),
@@ -72,16 +79,19 @@ void CEmgProjectile::Draw()
 		(uint8_t)(          intensity * 255)
 	};
 
-	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   col },
-		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   col }
+	const auto* tex = weaponDef->visuals.texture1;
+
+	AddWeaponEffectsQuad<1>(
+		{ drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, tex->xstart, tex->ystart, col },
+		{ drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, tex->xend,   tex->ystart, col },
+		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, tex->xend,   tex->yend,   col },
+		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, tex->xstart, tex->yend,   col }
 	);
 }
 
 int CEmgProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return 0;
 
@@ -97,5 +107,6 @@ int CEmgProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, fl
 
 int CEmgProjectile::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return 1 * validTextures[0];
 }

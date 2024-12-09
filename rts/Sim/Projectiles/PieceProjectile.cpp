@@ -22,6 +22,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 static constexpr int   SMOKE_TIME   = 40;
 static constexpr int   SMOKE_SIZE   = 14;
 static constexpr float SMOKE_COLOR  = 0.5f;
@@ -56,6 +58,7 @@ CPieceProjectile::CPieceProjectile(
 	omp((lmp != nullptr) ? lmp->original : nullptr),
 	smokeTrail(nullptr)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (owner != nullptr) {
 		const UnitDef* ud = owner->unitDef;
 
@@ -102,6 +105,7 @@ CPieceProjectile::CPieceProjectile(
 
 void CPieceProjectile::Collision()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Collision(nullptr, nullptr);
 	if (gsRNG.NextFloat() < 0.666f) { // give it a small chance to `ground bounce`
 		CProjectile::Collision();
@@ -118,6 +122,7 @@ void CPieceProjectile::Collision()
 
 void CPieceProjectile::Collision(CFeature* f)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Collision(nullptr, f);
 	CProjectile::Collision(f);
 }
@@ -125,6 +130,7 @@ void CPieceProjectile::Collision(CFeature* f)
 
 void CPieceProjectile::Collision(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Collision(unit, nullptr);
 	CProjectile::Collision(unit);
 }
@@ -138,22 +144,23 @@ void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 	if ((explFlags & PF_Explode) && (unit || feature)) {
 		const DamageArray damageArray(modInfo.debrisDamage);
 		const CExplosionParams params = {
-			pos,
-			ZeroVector,
-			damageArray,
-			nullptr,           // weaponDef
-			owner(),
-			unit,              // hitUnit
-			feature,           // hitFeature
-			0.0f,              // craterAreaOfEffect
-			5.0f,              // damageAreaOfEffect
-			0.0f,              // edgeEffectiveness
-			10.0f,             // explosionSpeed
-			1.0f,              // gfxMod
-			true,              // impactOnly
-			false,             // ignoreOwner
-			false,             // damageGround
-			static_cast<unsigned int>(id)
+			.pos                  = pos,
+			.dir                  = ZeroVector,
+			.damages              = damageArray,
+			.weaponDef            = nullptr,
+			.owner                = owner(),
+			.hitUnit              = unit,
+			.hitFeature           = feature,
+			.craterAreaOfEffect   = modInfo.debrisDamage * 0.25f,
+			.damageAreaOfEffect   = modInfo.debrisDamage * 0.5f,
+			.edgeEffectiveness    = 0.0f,
+			.explosionSpeed       = 10.0f,
+			.gfxMod               = 1.0f,
+			.maxGroundDeformation = 0.0f,
+			.impactOnly           = true,
+			.ignoreOwner          = false,
+			.damageGround         = false,
+			.projectileID         = static_cast<uint32_t>(id)
 		};
 
 		helper->Explosion(params);
@@ -183,6 +190,7 @@ void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 
 float3 CPieceProjectile::RandomVertexPos() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (omp == nullptr)
 		return ZeroVector;
 	#define rf guRNG.NextFloat()
@@ -192,12 +200,14 @@ float3 CPieceProjectile::RandomVertexPos() const
 
 float CPieceProjectile::GetDrawAngle() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return spinAngle + spinSpeed * globalRendering->timeOffset;
 }
 
 
 void CPieceProjectile::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!luaMoveCtrl) {
 		speed.y += mygravity;
 		SetVelocityAndSpeed(speed * 0.997f);
@@ -254,14 +264,16 @@ void CPieceProjectile::Update()
 }
 
 
-void CPieceProjectile::DrawOnMinimap()
+void CPieceProjectile::DrawOnMinimap() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	AddMiniMapVertices({ pos        , color4::red }, { pos + speed, color4::red });
 }
 
 
 void CPieceProjectile::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if ((explFlags & PF_Fire) == 0)
 		return;
 
@@ -288,5 +300,6 @@ void CPieceProjectile::Draw()
 
 int CPieceProjectile::GetProjectilesCount() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return NUM_TRAIL_PARTS;
 }

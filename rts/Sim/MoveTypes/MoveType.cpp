@@ -5,6 +5,8 @@
 
 #include "MoveType.h"
 #include "Map/Ground.h"
+#include "Components/MoveTypesComponents.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
@@ -14,6 +16,10 @@
 #include "System/SpringHash.h"
 
 #include "System/TimeProfiler.h"
+
+#include "System/Misc/TracyDefs.h"
+
+using namespace MoveTypes;
 
 CR_BIND_DERIVED_INTERFACE(AMoveType, CObject)
 CR_REG_METADATA(AMoveType, (
@@ -74,6 +80,24 @@ AMoveType::AMoveType(CUnit* owner):
 
 void AMoveType::SlowUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
+	UpdateGroundBlockMap();
+}
+
+void AMoveType::UpdateCollisionMap(bool force)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (!force && ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate))
+		return;
+
+	if (owner->pos != oldCollisionUpdatePos){
+		oldCollisionUpdatePos = owner->pos;
+		quadField.MovedUnit(owner);
+	}
+}
+
+void AMoveType::UpdateGroundBlockMap() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (owner->pos != oldSlowUpdatePos) {
 		const int newMapSquare = CGround::GetSquare(oldSlowUpdatePos = owner->pos);
 
@@ -92,23 +116,14 @@ void AMoveType::SlowUpdate()
 	}
 }
 
-void AMoveType::UpdateCollisionMap()
-{
-	if ((gs->frameNum + owner->id) % modInfo.unitQuadPositionUpdateRate)
-		return;
-
-	if (owner->pos != oldCollisionUpdatePos){
-		oldCollisionUpdatePos = owner->pos;
-		quadField.MovedUnit(owner);
-	}
-}
-
 void AMoveType::KeepPointingTo(CUnit* unit, float distance, bool aggressive)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	KeepPointingTo(float3(unit->pos), distance, aggressive);
 }
 
 float AMoveType::CalcStaticTurnRadius() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// calculate a rough turn radius (not based on current speed)
 	const float turnFrames = SPRING_CIRCLE_DIVS / std::max(owner->unitDef->turnRate, 1.0f);
 	const float turnRadius = (maxSpeedDef * turnFrames) / math::TWOPI;
@@ -119,6 +134,7 @@ float AMoveType::CalcStaticTurnRadius() const {
 
 
 bool AMoveType::SetMemberValue(unsigned int memberHash, void* memberValue) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#define          MAXSPEED_MEMBER_IDX 0
 	#define    MAXWANTEDSPEED_MEMBER_IDX 1
 	#define     MANEUVERLEASH_MEMBER_IDX 2
@@ -163,4 +179,14 @@ bool AMoveType::SetMemberValue(unsigned int memberHash, void* memberValue) {
 	}
 
 	return false;
+}
+
+void AMoveType::Connect() {
+	RECOIL_DETAILED_TRACY_ZONE;
+	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
+}
+
+void AMoveType::Disconnect() {
+	RECOIL_DETAILED_TRACY_ZONE;
+	Sim::registry.remove<GeneralMoveType>(owner->entityReference);
 }

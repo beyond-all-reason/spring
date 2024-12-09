@@ -14,6 +14,7 @@
 
 class CUnit;
 class CFeature;
+class CPlayer;
 struct SCommandDescription;
 
 class CSelectedUnitsHandler : public CObject
@@ -53,6 +54,7 @@ public:
 	std::string GetTooltip();
 	void SetCommandPage(int page);
 	void SendCommand(const Command& c);
+	void SendSelect();
 	void SendCommandsToUnits(const std::vector<int>& unitIDs, const std::vector<Command>& commands, bool pairwise = false);
 
 	bool CommandsChanged() const { return possibleCommandsChanged; }
@@ -68,6 +70,8 @@ public:
 
 	bool GetBoxSelectionHandledByEngine() const { return ubHandledByEngine; }
 	void SetBoxSelectionHandledByEngine(bool b) { ubHandledByEngine = b; }
+
+	static bool CanISelectTeam(const CPlayer* myPlayer, int teamID);
 private:
 	int selectedGroup = -1;
 	int soundMultiselID = 0;

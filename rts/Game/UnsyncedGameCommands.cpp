@@ -65,6 +65,7 @@
 #include "Rendering/DebugColVolDrawer.h"
 #include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/DebugDrawerAI.h"
+#include "Rendering/DebugDrawerQuadField.h"
 #include "Rendering/IPathDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/HUDDrawer.h"
@@ -875,7 +876,7 @@ public:
 			clientNet->Send(CBaseNetProtocol::Get().SendAIStateChanged(gu->myPlayerNum, skirmishAIId, SKIRMAISTATE_RELOADING));
 		}
 
-		LOG("Skirmish AI controlling team %i is beeing %sed ...", teamToKillId, actionName.c_str());
+		LOG("Skirmish AI controlling team %i is being %sed ...", teamToKillId, actionName.c_str());
 
 		return true;
 	}
@@ -966,7 +967,7 @@ public:
 			return WrongSyntax();
 		}
 		if (skirmishAIHandler.GetLocalSkirmishAIInCreation(teamToControlId) != nullptr) {
-			LOG_L(L_WARNING, "Team to control: there is already an AI beeing created for team: %i", teamToControlId);
+			LOG_L(L_WARNING, "Team to control: there is already an AI being created for team: %i", teamToControlId);
 			return WrongSyntax();
 		}
 
@@ -1233,7 +1234,9 @@ public:
 class GroupActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GroupActionExecutor() : IUnsyncedActionExecutor("Group", "Manage control groups", false, {
-			{"<n>", "Select group <n>"},
+			{"<n>", "Select group <n>, also focuses on second call (deprecated)"},
+			{"select <n>", "Select group <n>"},
+			{"focus <n>", "Focus camera on group <n>"},
 			{"set <n>", "Set current selected units as group <n>"},
 			{"add <n>", "Add current selected units to group <n>"},
 			{"unset", "Deassign control group for currently selected units"},
@@ -1375,15 +1378,31 @@ public:
 	TrackActionExecutor() : IUnsyncedActionExecutor("Track",
 			"Start/stop following the selected unit(s) with the camera", false, {
 			{"", "Toggles tracking"},
-			{"<on|off>", "Set tracking <on|off>"},
+			{"<on|off>", "Set tracking <on|off> <unitID unitID ...>"},
 			}) {}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
 		bool enableTracking = unitTracker.Enabled();
-		InverseOrSetBool(enableTracking, action.GetArgs());
+		std::vector<int> unitIDs = {};
+
+		switch (args.size())
+		{
+			case 0:
+				InverseOrSetBool(enableTracking, ""); break;
+			case 1:
+				InverseOrSetBool(enableTracking, args.at(0)); break;
+			default: {
+				InverseOrSetBool(enableTracking, args.at(0));
+				if (enableTracking) {
+					for (size_t i = 1; i < args.size(); ++i)
+						unitIDs.emplace_back(StringToInt(args.at(i)));
+				}
+			} break;
+		}
 
 		if (enableTracking)
-			unitTracker.Track();
+			unitTracker.Track(std::move(unitIDs));
 		else
 			unitTracker.Disable();
 
@@ -1527,6 +1546,19 @@ public:
 	bool Execute(const UnsyncedAction& action) const final {
 		globalRendering->drawDebugCubeMap = !globalRendering->drawDebugCubeMap;
 		ISky::SetSky();
+		return true;
+	}
+};
+
+class DebugQuadFieldActionExecutor : public IUnsyncedActionExecutor {
+public:
+	DebugQuadFieldActionExecutor() : IUnsyncedActionExecutor("DebugQuadField", "Draw quadfield sectors around GuiTraceRay and selected units") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		bool enabled = DebugDrawerQuadField::IsEnabled();
+		DebugDrawerQuadField::SetEnabled(!enabled);
+		LogSystemStatus("quadfield debug", !enabled);
 		return true;
 	}
 };
@@ -2800,17 +2832,23 @@ class GroundDecalsActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GroundDecalsActionExecutor() : IUnsyncedActionExecutor(
 		"GroundDecals",
-		"Enable/Disable ground-decal rendering."
+		"Enable/Disable ground-decal rendering"
 	) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		bool drawDecals = IGroundDecalDrawer::GetDrawDecals();
+		if (action.GetArgs().empty()) {
+			IGroundDecalDrawer::SetDrawDecals(!IGroundDecalDrawer::GetDrawDecals()); //inverse
+		}
+		else {
+			bool failed;
+			auto dl = StringToInt(action.GetArgs(), &failed);
+			if (!failed)
+				IGroundDecalDrawer::SetDrawDecals(static_cast<bool>(dl));
+		}
 
-		InverseOrSetBool(drawDecals, action.GetArgs());
-		IGroundDecalDrawer::SetDrawDecals(drawDecals);
-
-		LogSystemStatus("Ground-decal rendering", IGroundDecalDrawer::GetDrawDecals());
+		static constexpr const char* fmt = "Ground-decal rendering %s";
+		LOG(fmt, IGroundDecalDrawer::GetDrawDecals() ? "enabled" : "disabled");
 		return true;
 	}
 };
@@ -3147,7 +3185,7 @@ public:
 
 	bool Execute(const UnsyncedAction& action) const final {
 		InverseOrSetBool(CUnitDrawer::IconHideWithUI(), action.GetArgs());
-		configHandler->Set("IconsHideWithUI", CUnitDrawer::IconHideWithUI() ? 1 : 0);
+		configHandler->Set("UnitIconsHideWithUI", CUnitDrawer::IconHideWithUI() ? 1 : 0);
 		LogSystemStatus("Hide unit icons with UI: ", CUnitDrawer::IconHideWithUI());
 		return true;
 	}
@@ -3201,7 +3239,7 @@ public:
 
 class AirMeshActionExecutor: public IUnsyncedActionExecutor {
 public:
-	AirMeshActionExecutor(): IUnsyncedActionExecutor("airmesh", "Show/Hide the smooth air-mesh map overlay") {
+	AirMeshActionExecutor(): IUnsyncedActionExecutor("airmesh", "Show/Hide the smooth air-mesh map overlay", true) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
@@ -3579,6 +3617,10 @@ public:
 			projectileDrawer->textureAtlas->ReloadTextures();
 			projectileDrawer->groundFXAtlas->ReloadTextures();
 		};
+		auto decalFunc = []() {
+			LOG("Reloading Decal textures");
+			groundDecals->ReloadTextures();
+		};
 
 		std::array argsExec = {
 			ArgTuple(hashString("lua") , false, luaFunc),
@@ -3587,6 +3629,8 @@ public:
 			ArgTuple(hashString("smf") , false, smfFunc),
 			ArgTuple(hashString("cegs"), false, cegFunc),
 			ArgTuple(hashString("ceg") , false, cegFunc),
+			ArgTuple(hashString("decal")  , false, decalFunc),
+			ArgTuple(hashString("decals") , false, decalFunc),
 		};
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
@@ -3600,12 +3644,25 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
+		auto projFunc = []() {
+			LOG("Dumping projectile textures");
+			projectileDrawer->textureAtlas->DumpTexture("TextureAtlas");
+			projectileDrawer->groundFXAtlas->DumpTexture("GroundFXAtlas");
+		};
+		auto threeDoFunc = []() {
+			LOG("Dumping 3do atlas textures");
+			glSaveTexture(textureHandler3DO.GetAtlasTex1ID(), "3doTex1.png");
+			glSaveTexture(textureHandler3DO.GetAtlasTex2ID(), "3doTex2.png");
+		};
+		auto decalsFunc = []() {
+			LOG("Dumping decal atlas textures");
+			groundDecals->DumpAtlasTextures();
+		};
 		std::array argsExec = {
-			ArgTuple(hashString("proj"), false, []() {
-				LOG("Dumping projectile textures");
-				projectileDrawer->textureAtlas->DumpTexture("TextureAtlas");
-				projectileDrawer->groundFXAtlas->DumpTexture("GroundFXAtlas");
-			}),
+			ArgTuple(hashString("proj"), false, projFunc),
+			ArgTuple(hashString("3do"), false, threeDoFunc),
+			ArgTuple(hashString("decal"), false, decalsFunc),
+			ArgTuple(hashString("decals"), false, decalsFunc)
 		};
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
@@ -3907,6 +3964,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<PauseActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugCubeMapActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<DebugQuadFieldActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DrawSkyActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLErrorsActionExecutor>());

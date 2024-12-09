@@ -9,7 +9,7 @@
  * @brief PBO
  *
  * Pixelbuffer Object class (EXT_pixel_buffer_object).
- * WARNING: CANNOT BE USED IN COMBINATION WITH gluBuild2DMipmaps/glBuildMipmaps!!!
+ * WARNING: CANNOT BE USED IN COMBINATION WITH gluBuild2DMipmaps/RecoilBuildMipmaps!!!
  */
 class PBO : public VBO
 {

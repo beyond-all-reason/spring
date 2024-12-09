@@ -48,13 +48,17 @@ public:
 		runningThreadIDs.reserve(512);
 		waitingThreadIDs.reserve(512);
 
+		sleepingThreadIDs = {};
+
+		curThread = nullptr;
+
+		currentTime = 0;
 		threadCounter = 0;
 	}
 	void Kill() {
-		// threadInstances is never explicitly iterated, so
-		// calling clear_unordered_map (between reloads) is
-		// unnecessary here
-		threadInstances.clear();
+		// threadInstances is never explicitly iterated in the actual code,
+		// but iterated during sync dumps, so clean it with clear_unordered_map
+		spring::clear_unordered_map(threadInstances);
 		tickAddedThreads.clear();
 
 		runningThreadIDs.clear();
@@ -81,7 +85,6 @@ public:
 	bool RemoveThread(int threadID);
 	int AddThread(CCobThread&& thread);
 	int GenThreadID() { return (threadCounter++); }
-	int GetCurrentTime() const { return currentTime; }
 
 	void QueueAddThread(CCobThread&& thread) { tickAddedThreads.emplace_back(std::move(thread)); }
 	void QueueRemoveThread(int threadID) { tickRemovedThreads.emplace_back(threadID); }

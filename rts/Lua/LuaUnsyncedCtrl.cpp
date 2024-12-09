@@ -2,6 +2,7 @@
 
 #include "LuaUnsyncedCtrl.h"
 
+#include "Game/Camera/DollyController.h"
 #include "LuaConfig.h"
 #include "LuaInclude.h"
 #include "LuaHandle.h"
@@ -49,7 +50,6 @@
 #include "Rendering/Env/WaterRendering.h"
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
-#include "Rendering/Env/Decals/DecalsDrawerGL4.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"
@@ -158,6 +158,17 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetCameraState);
 	REGISTER_LUA_CFUNC(SetCameraTarget);
+
+	REGISTER_LUA_CFUNC(RunDollyCamera);
+	REGISTER_LUA_CFUNC(PauseDollyCamera);
+	REGISTER_LUA_CFUNC(ResumeDollyCamera);
+	REGISTER_LUA_CFUNC(SetDollyCameraMode);
+	REGISTER_LUA_CFUNC(SetDollyCameraPosition);
+	REGISTER_LUA_CFUNC(SetDollyCameraCurve);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookCurve);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookPosition);
+	REGISTER_LUA_CFUNC(SetDollyCameraLookUnit);
+	REGISTER_LUA_CFUNC(SetDollyCameraRelativeMode);
 
 	REGISTER_LUA_CFUNC(DeselectUnit);
 	REGISTER_LUA_CFUNC(DeselectUnitMap);
@@ -307,13 +318,18 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(PreloadSoundItem);
 	REGISTER_LUA_CFUNC(LoadModelTextures);
 
-	REGISTER_LUA_CFUNC(CreateDecal);
-	REGISTER_LUA_CFUNC(DestroyDecal);
-	REGISTER_LUA_CFUNC(SetDecalPos);
-	REGISTER_LUA_CFUNC(SetDecalSize);
-	REGISTER_LUA_CFUNC(SetDecalRotation);
-	REGISTER_LUA_CFUNC(SetDecalTexture);
-	REGISTER_LUA_CFUNC(SetDecalAlpha);
+	REGISTER_LUA_CFUNC(CreateGroundDecal);
+	REGISTER_LUA_CFUNC(DestroyGroundDecal);
+	REGISTER_LUA_CFUNC(SetGroundDecalPosAndDims);
+	REGISTER_LUA_CFUNC(SetGroundDecalQuadPosAndHeight);
+	REGISTER_LUA_CFUNC(SetGroundDecalRotation);
+	REGISTER_LUA_CFUNC(SetGroundDecalTexture);
+	REGISTER_LUA_CFUNC(SetGroundDecalTextureParams);
+	REGISTER_LUA_CFUNC(SetGroundDecalAlpha);
+	REGISTER_LUA_CFUNC(SetGroundDecalNormal);
+	REGISTER_LUA_CFUNC(SetGroundDecalTint);
+	REGISTER_LUA_CFUNC(SetGroundDecalMisc);
+	REGISTER_LUA_CFUNC(SetGroundDecalCreationFrame);
 
 	REGISTER_LUA_CFUNC(SDLSetTextInputRect);
 	REGISTER_LUA_CFUNC(SDLStartTextInput);
@@ -490,7 +506,7 @@ int LuaUnsyncedCtrl::Echo(lua_State* L)
  *   Possible values for logLevel are:
  *    "debug"   | LOG.DEBUG
  *    "info"    | LOG.INFO
- *    "notice"  | LOG.NOTICE (engine default) (new in Version 97)
+ *    "notice"  | LOG.NOTICE (engine default)
  *    "warning" | LOG.WARNING
  *    "error"   | LOG.ERROR
  *    "fatal"   | LOG.FATAL
@@ -1135,7 +1151,7 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 	if (mouse == nullptr)
 		return 0;
 
-	const float4 targetPos = {
+	float4 targetPos = {
 		luaL_checkfloat(L, 1),
 		luaL_checkfloat(L, 2),
 		luaL_checkfloat(L, 3),
@@ -1147,16 +1163,12 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 		luaL_optfloat(L, 7, (camera->GetDir()).z),
 	};
 
-	if (targetPos.w >= 0.0f) {
-		camHandler->CameraTransition(targetPos.w);
-		camHandler->GetCurrentController().SetPos(targetPos);
-		camHandler->GetCurrentController().SetDir(targetDir);
-	} else {
-		// no transition, bypass controller
-		camera->SetPos(targetPos);
-		camera->SetDir(targetDir);
-		// camera->Update();
+	if (targetPos.w < 0.0f) {
+		targetPos.w = 0.0f;
 	}
+	camHandler->GetCurrentController().SetPos(targetPos);
+	camHandler->GetCurrentController().SetDir(targetDir);
+	camHandler->CameraTransition(targetPos.w);
 
 	return 0;
 }
@@ -1164,14 +1176,14 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 
 /***
  *
- * @function Spring.SetCameraTarget
+ * @function Spring.SetCameraOffset
  *
- * @number px[opt=0]
- * @number py[opt=0]
- * @number pz[opt=0]
- * @number tx[opt=0]
- * @number ty[opt=0]
- * @number tz[opt=0]
+ * @number[opt=0] posX
+ * @number[opt=0] posY
+ * @number[opt=0] posZ
+ * @number[opt=0] tiltX
+ * @number[opt=0] tiltY
+ * @number[opt=0] tiltZ
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
@@ -1222,14 +1234,189 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 		luaL_error(L, "[%s([ stateTable[, camTransTime[, transTimeFactor[, transTimeExpon] ] ] ])] incorrect arguments", __func__);
 
 	camHandler->SetTransitionParams(luaL_optfloat(L, 3, camHandler->GetTransitionTimeFactor()), luaL_optfloat(L, 4, camHandler->GetTransitionTimeExponent()));
-	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
 
 	const bool retval = camHandler->SetState(hasState ? ParseCamStateMap(L, 1) : camHandler->GetState());
+	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
 	const bool synced = CLuaHandle::GetHandleSynced(L);
 
 	// always push false in synced
 	lua_pushboolean(L, retval && !synced);
 	return 1;
+}
+
+/*** Runs Dolly Camera
+ *
+ * @function Spring.RunDollyCamera
+ * @number runtime in milliseconds
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
+{
+	float runtime = luaL_checkfloat(L, 1);
+
+	camHandler->GetDollyController().Run(runtime);
+
+	return 0;
+}
+
+/*** Pause Dolly Camera
+ *
+ * @function Spring.PauseDollyCamera
+ * @number fraction fraction of the total runtime to pause at, 0 to 1 inclusive. A null value pauses at current percent
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
+{
+	float percent = luaL_optfloat(L, 1, -1);
+
+	camHandler->GetDollyController().Pause(percent);
+
+	return 0;
+}
+
+/*** Resume Dolly Camera
+ *
+ * @function Spring.ResumeDollyCamera
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::ResumeDollyCamera(lua_State* L)
+{
+	camHandler->GetDollyController().Resume();
+
+	return 0;
+}
+
+/*** Sets Dolly Camera Position
+ *
+ * @function Spring.SetDollyCameraPosition
+ * @number x
+ * @number y
+ * @number z
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
+{
+	float x = luaL_checkfloat(L, 1);
+	float y = luaL_checkfloat(L, 2);
+	float z = luaL_checkfloat(L, 3);
+
+	camHandler->GetDollyController().SetPosition(float3{x, y, z});
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement Curve
+ *
+ * @function Spring.SetDollyCameraCurve
+ * @number degree
+ * @tparam table cpoints NURBS control point positions {{x,y,z,weight}, ...}
+ * @tparam table knots
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	camHandler->GetDollyController().SetNURBS(degree, cpoints, knots);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement mode
+ *
+ * @function Spring.SetDollyCameraMode
+ * @number mode 1 static position, 2 nurbs curve
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
+{
+	int mode = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetMode(mode);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera movement curve to world relative or look target relative
+ *
+ * @function Spring.SetDollyCameraRelativeMode
+ * @number relativeMode 1 world, 2 look target
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
+{
+	int mode = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetRelativeMode(mode);
+
+	return 0;
+}
+
+
+/*** Sets Dolly Camera Look Curve
+ *
+ * @function Spring.SetDollyCameraLookCurve
+ * @number degree
+ * @tparam table cpoints NURBS control point positions {{x,y,z,weight}, ...}
+ * @tparam table knots
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
+{
+	int degree = luaL_checkint(L, 1);
+
+	std::vector<float4> cpoints{};
+	std::vector<float> knots{};
+
+	LuaUtils::ParseFloat4Vector(L, 2, cpoints);
+	LuaUtils::ParseFloatVector(L, 3, knots);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_CURVE);
+	camHandler->GetDollyController().SetLookCurve(degree, cpoints, knots);
+
+	return 0;
+}
+
+/*** Sets Dolly Camera Look Position
+ *
+ * @function Spring.SetDollyCameraLookPosition
+ * @number x
+ * @number y
+ * @number z
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
+{
+	float x = luaL_checkfloat(L, 1);
+	float y = luaL_checkfloat(L, 2);
+	float z = luaL_checkfloat(L, 3);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_POSITION);
+	camHandler->GetDollyController().SetLookPosition(float3(x, y, z));
+
+	return 0;
+}
+
+/*** Sets target unit for Dolly Camera to look towards
+ *
+ * @function Spring.SetDollyCameraLookUnit
+ * @number unitID the unit to look at
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
+{
+	int unitid = luaL_checkint(L, 1);
+
+	camHandler->GetDollyController().SetLookMode(CDollyController::DOLLY_LOOKMODE_UNIT);
+	camHandler->GetDollyController().SetLookUnit(unitid);
+
+	return 0;
 }
 
 
@@ -2035,7 +2222,7 @@ int LuaUnsyncedCtrl::SetUnitLeaveTracks(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	unit->leaveTracks = lua_toboolean(L, 2);
+	groundDecals->SetUnitLeaveTracks(unit, lua_toboolean(L, 2));
 	return 0;
 }
 
@@ -2437,8 +2624,6 @@ int LuaUnsyncedCtrl::CreateDir(lua_State* L)
 }
 
 
-
-
 /******************************************************************************
  * GUI
  * @section gui
@@ -2653,7 +2838,7 @@ int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
  *
  * @function Spring.ReplaceMouseCursor
  * @string oldFileName
- * @string newFileName 
+ * @string newFileName
  * @bool[opt=false] hotSpotTopLeft
  * @treturn ?nil|bool assigned
  */
@@ -3516,6 +3701,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 
 	const char* type = lua_tostring(L, 2);
 	if (type[0] == 'u') {
+		selectedUnitsHandler.SendSelect();
 		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 1, 0.0f, 0.0f));
 		selectedUnitsHandler.ClearSelected();
 		return 0;
@@ -3547,7 +3733,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
  * @number x
  * @number y
  * @number z
- * @treturn nil 
+ * @treturn nil
  */
 int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
 {
@@ -4447,18 +4633,14 @@ int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 
 /***
  *
- * @function Spring.CreateDecal
- * @treturn nil|number decalIndex
+ * @function Spring.CreateGroundDecal
+ * @treturn nil|number decalID
  */
-int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
+int LuaUnsyncedCtrl::CreateGroundDecal(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	const int idx = decalsGl4->CreateLuaDecal();
-	if (idx > 0) {
-		lua_pushnumber(L, idx);
+	const uint32_t id = groundDecals->CreateLuaDecal();
+	if (id > 0) {
+		lua_pushnumber(L, id);
 		return 1;
 	}
 	return 0;
@@ -4467,128 +4649,304 @@ int LuaUnsyncedCtrl::CreateDecal(lua_State* L)
 
 /***
  *
- * @function Spring.DestroyDecal
- * @number decalIndex
- * @treturn nil
+ * @function Spring.DestroyGroundDecal
+ * @number decalID
+ * @treturn bool delSuccess
  */
-int LuaUnsyncedCtrl::DestroyDecal(lua_State* L)
+int LuaUnsyncedCtrl::DestroyGroundDecal(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
-
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.Free();
-	return 0;
+	lua_pushboolean(L, groundDecals->DeleteLuaDecal(luaL_checkint(L, 1)));
+	return 1;
 }
 
 
 /***
  *
- * @function Spring.SetDecalPos
- * @number decalIndex
- * @number posX
- * @number posY
- * @number posZ
+ * @function Spring.SetGroundDecalPosAndDims
+ * @number decalID
+ * @number[opt=currMidPosX] midPosX
+ * @number[opt=currMidPosZ] midPosZ
+ * @number[opt=currSizeX] sizeX
+ * @number[opt=currSizeZ] sizeZ
+ * @number[opt=calculateProjCubeHeight] projCubeHeight
  * @treturn bool decalSet
  */
-int LuaUnsyncedCtrl::SetDecalPos(lua_State* L)
+int LuaUnsyncedCtrl::SetGroundDecalPosAndDims(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
-	const float3 newPos(luaL_checkfloat(L, 2),
-	luaL_checkfloat(L, 3),
-	luaL_checkfloat(L, 4));
+	const float2 midPointCurr = (decal->posTL + decal->posTR + decal->posBR + decal->posBL) * 0.25f;
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.pos = newPos;
-	lua_pushboolean(L, decal.InvalidateExtents());
+	const float2 midPoint {
+		luaL_optfloat(L, 2, midPointCurr.x),
+		luaL_optfloat(L, 3, midPointCurr.y)
+	};
+
+	const float sizex = luaL_optfloat(L, 4, (decal->posTL.Distance(decal->posTR) + decal->posBL.Distance(decal->posBR)) * 0.25f);
+	const float sizez = luaL_optfloat(L, 5, (decal->posTL.Distance(decal->posBL) + decal->posTR.Distance(decal->posBR)) * 0.25f);
+
+	const auto posTL = midPoint + float2(-sizex, -sizez);
+	const auto posTR = midPoint + float2( sizex, -sizez);
+	const auto posBR = midPoint + float2( sizex,  sizez);
+	const auto posBL = midPoint + float2(-sizex,  sizez);
+
+	decal->posTL = posTL;
+	decal->posTR = posTR;
+	decal->posBR = posBR;
+	decal->posBL = posBL;
+	decal->height = luaL_optfloat(L, 6, math::sqrt(sizex * sizex + sizez * sizez));
+
+	lua_pushboolean(L, true);
 	return 1;
 }
 
-
 /***
  *
- * @function Spring.SetDecalSize
- * @number decalIndex
- * @number sizeX
- * @number sizeY
+ * @function Spring.SetGroundDecalQuadPosAndHeight
+ *
+ * Use for non-rectangular decals
+ *
+ * @number decalID
+ * @number[opt=currPosTL.x] posTL.x
+ * @number[opt=currPosTL.z] posTL.z
+ * @number[opt=currPosTR.x] posTR.x
+ * @number[opt=currPosTR.z] posTR.z
+ * @number[opt=currPosBR.x] posBR.x
+ * @number[opt=currPosBR.z] posBR.z
+ * @number[opt=currPosBL.x] posBL.x
+ * @number[opt=currPosBL.z] posBL.z
+ * @number[opt=calculateProjCubeHeight] projCubeHeight
  * @treturn bool decalSet
  */
-int LuaUnsyncedCtrl::SetDecalSize(lua_State* L)
+int LuaUnsyncedCtrl::SetGroundDecalQuadPosAndHeight(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
-	const float2 newSize(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	decal->posTL = float2{ luaL_optfloat(L, 2, decal->posTL.x), luaL_optfloat(L, 3, decal->posTL.y) };
+	decal->posTR = float2{ luaL_optfloat(L, 4, decal->posTR.x), luaL_optfloat(L, 5, decal->posTR.y) };
+	decal->posBR = float2{ luaL_optfloat(L, 6, decal->posBR.x), luaL_optfloat(L, 7, decal->posBR.y) };
+	decal->posBL = float2{ luaL_optfloat(L, 8, decal->posBL.x), luaL_optfloat(L, 9, decal->posBL.y) };
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.size = newSize;
-	lua_pushboolean(L, decal.InvalidateExtents());
+	const float sizex = (decal->posTL.Distance(decal->posTR) + decal->posBL.Distance(decal->posBR)) * 0.25f;
+	const float sizez = (decal->posTL.Distance(decal->posBL) + decal->posTR.Distance(decal->posBR)) * 0.25f;
+
+	decal->height = luaL_optfloat(L, 10, math::sqrt(sizex * sizex + sizez * sizez));
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetGroundDecalRotation
+ * @number decalID
+ * @number[opt=random] rot in radians
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	decal->rot = luaL_optfloat(L, 2, guRNG.NextFloat() * math::TWOPI);
+
+	lua_pushboolean(L, true);
 	return 1;
 }
 
 
 /***
  *
- * @function Spring.SetDecalRotation
- * @number decalIndex
- * @number rot in radians
+ * @function Spring.SetGroundDecalTexture
+ * @number decalID
+ * @string textureName The texture has to be on the atlas which seems to mean it's defined as an explosion, unit tracks, or building plate decal on some unit already (no arbitrary textures)
+ * @bool[opt=true] isMainTex If false, it sets the normals/glow map
  * @treturn nil|bool decalSet
  */
-int LuaUnsyncedCtrl::SetDecalRotation(lua_State* L)
+int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	lua_pushboolean(L,
+		groundDecals->SetDecalTexture(luaL_checkint(L, 1), luaL_checksstring(L, 2), luaL_optboolean(L, 3, false))
+	);
+	return 1;
+}
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.rot = luaL_checkfloat(L, 2);
-	lua_pushboolean(L, decal.InvalidateExtents());
+/***
+ *
+ * @function Spring.SetGroundDecalTextureParams
+ * @number decalID
+ * @number texWrapDistance[opt=currTexWrapDistance] if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
+ * @number texTraveledDistance[opt=currTexTraveledDistance] shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
+ * @treturn nil|bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalTextureParams(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	decal->uvWrapDistance     = luaL_optfloat(L, 2, decal->uvWrapDistance);
+	decal->uvTraveledDistance = luaL_optfloat(L, 3, decal->uvTraveledDistance);
+
+	lua_pushboolean(L, true);
 	return 1;
 }
 
 
 /***
  *
- * @function Spring.SetDecalTexture
- * @number decalIndex
- * @string textureName
- * @treturn nil|bool decalSet
+ * @function Spring.SetGroundDecalAlpha
+ * @number decalID
+ * @number[opt=currAlpha] alpha Between 0 and 1
+ * @number[opt=currAlphaFalloff] alphaFalloff Between 0 and 1, per second
+ * @treturn bool decalSet
  */
-int LuaUnsyncedCtrl::SetDecalTexture(lua_State* L)
+int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.SetTexture(luaL_checksstring(L, 2));
-	decal.Invalidate();
-	return 0;
+	decal->alpha = luaL_optfloat(L, 2, decal->alpha);
+	decal->alphaFalloff = luaL_optfloat(L, 3, decal->alphaFalloff * GAME_SPEED) / GAME_SPEED;
+
+	lua_pushboolean(L, true);
+	return 1;
 }
-
 
 /***
  *
- * @function Spring.SetDecalAlpha
- * @number decalIndex
- * @number alpha
- * @treturn nil|bool decalSet
+ * @function Spring.SetGroundDecalNormal
+ * Sets projection cube normal to orient in 3D space.
+ * In case the normal (0,0,0) then normal is picked from the terrain
+ * @number decalID
+ * @number[opt=0] normalX
+ * @number[opt=0] normalY
+ * @number[opt=0] normalZ
+ * @treturn bool decalSet
  */
-int LuaUnsyncedCtrl::SetDecalAlpha(lua_State* L)
+int LuaUnsyncedCtrl::SetGroundDecalNormal(lua_State* L)
 {
-	auto decalsGl4 = dynamic_cast<CDecalsDrawerGL4*>(groundDecals);
-	if (decalsGl4 == nullptr)
-		return 0;
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
-	auto decal = decalsGl4->GetDecalByIdx(luaL_checkint(L, 1));
-	decal.alpha = luaL_checkfloat(L, 2);
-	decal.Invalidate();
-	return 0;
+	float3 forcedNormal{
+		luaL_optfloat(L, 2, 0.0f),
+		luaL_optfloat(L, 3, 0.0f),
+		luaL_optfloat(L, 4, 0.0f)
+	};
+	forcedNormal.SafeNormalize();
+
+	decal->forcedNormal = forcedNormal;
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetGroundDecalTint
+ * Sets the tint of the ground decal. Color = 2 * textureColor * tintColor
+ * Respectively a color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
+ * @number decalID
+ * @number[opt=curTintColR] tintColR
+ * @number[opt=curTintColG] tintColG
+ * @number[opt=curTintColB] tintColB
+ * @number[opt=curTintColA] tintColA
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalTint(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	float4 tintColor = decal->tintColor;
+	tintColor.r = luaL_optfloat(L, 2, tintColor.r);
+	tintColor.g = luaL_optfloat(L, 3, tintColor.g);
+	tintColor.b = luaL_optfloat(L, 4, tintColor.b);
+	tintColor.a = luaL_optfloat(L, 5, tintColor.a);
+
+	decal->tintColor = SColor{ tintColor };
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetGroundDecalMisc
+ * Sets varios secondary parameters of a decal
+ * @number decalID
+ * @number[opt=curValue] dotElimExp pow(max(dot(decalProjVector, SurfaceNormal), 0.0), dotElimExp), used to reduce decal artifacts on surfaces non-collinear with the projection vector
+ * @number[opt=curValue] refHeight
+ * @number[opt=curValue] minHeight
+ * @number[opt=curValue] maxHeight
+ * @number[opt=curValue] forceHeightMode in case forceHeightMode==1.0 ==> force relative height: midPoint.y = refHeight + clamp(midPoint.y - refHeight, minHeight); forceHeightMode==2.0 ==> force absolute height: midPoint.y = midPoint.y, clamp(midPoint.y, minHeight, maxHeight); other forceHeightMode values do not enforce the height of the center position
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalMisc(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	decal->dotElimExp = luaL_optfloat(L, 2, decal->dotElimExp);
+	decal->refHeight = luaL_optfloat(L, 3, decal->refHeight);
+	decal->minHeight = luaL_optfloat(L, 4, decal->minHeight);
+	decal->maxHeight = luaL_optfloat(L, 5, decal->maxHeight);
+	decal->forceHeightMode = luaL_optfloat(L, 6, decal->forceHeightMode);
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.SetGroundDecalCreationFrame
+ *
+ * Use separate min and max for "gradient" style decals such as tank tracks
+ *
+ * @number decalID
+ * @number[opt=currCreationFrameMin] creationFrameMin
+ * @number[opt=currCreationFrameMax] creationFrameMax
+ * @treturn bool decalSet
+ */
+int LuaUnsyncedCtrl::SetGroundDecalCreationFrame(lua_State* L)
+{
+	auto* decal = groundDecals->GetDecalById(luaL_checkint(L, 1));
+	if (!decal) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	decal->createFrameMin = luaL_optfloat(L, 2, decal->createFrameMin);
+	decal->createFrameMax = luaL_optfloat(L, 3, decal->createFrameMax);
+
+	lua_pushboolean(L, true);
+	return 1;
 }
 
 
@@ -4650,8 +5008,8 @@ int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
  *
  * @function Spring.SetWindowGeometry
  * @number displayIndex
- * @number winPosX
- * @number winPosY
+ * @number winRelPosX
+ * @number winRelPosY
  * @number winSizeX
  * @number winSizeY
  * @bool fullScreen
@@ -4837,14 +5195,13 @@ int LuaUnsyncedCtrl::SetClipboard(lua_State* L)
  *
  * Should be called after each widget/unsynced gadget is loaded in widget/gadget handler. Use it to draw screen updates and process windows events.
  *
- * @usage#
+ * @usage
  * local wantYield = Spring.Yield and Spring.Yield() -- nil check: not present in synced
  * for wupget in pairs(wupgetsToLoad) do
  *   loadWupget(wupget)
  *   wantYield = wantYield and Spring.Yield()
  * end
  *
- * @number sleep time in milliseconds.
  * @treturn bool when true caller should continue calling `Spring.Yield` during the widgets/gadgets load, when false it shouldn't call it any longer.
  */
 int LuaUnsyncedCtrl::Yield(lua_State* L)

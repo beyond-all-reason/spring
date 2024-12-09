@@ -4,6 +4,8 @@
 #include "Map/MetalMap.h"
 #include "Map/ReadMap.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 
 CMetalTexture::CMetalTexture()
@@ -21,11 +23,12 @@ CMetalTexture::CMetalTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glSpringTexStorage2D(GL_TEXTURE_2D, 1, GL_R8, texSize.x, texSize.y);
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_R8, texSize.x, texSize.y);
 }
 
 void CMetalTexture::Update()
 {
+	#include "System/Misc/TracyDefs.h"
 	assert(metalMap.GetSizeX() == texSize.x && metalMap.GetSizeZ() == texSize.y);
 
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -37,11 +40,13 @@ void CMetalTexture::Update()
 
 void CMetalTexture::MetalMapChanged(const int x, const int z)
 {
+	#include "System/Misc/TracyDefs.h"
 	metalMapChanged = true;
 }
 
 
 bool CMetalTexture::IsUpdateNeeded()
 {
+	#include "System/Misc/TracyDefs.h"
 	return metalMapChanged;
 }

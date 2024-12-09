@@ -65,13 +65,8 @@ endforeach()
 ADD_SUBDIRECTORY(assimp)
 target_compile_definitions(assimp PRIVATE -DASSIMP_BUILD_NO_OWN_ZLIB)
 
-if    (NOT HEADLESS_SYSTEM)
-
-	if    (USE_LIBSQUISH)
-		ADD_SUBDIRECTORY(rg-etc1)
-		ADD_SUBDIRECTORY(squish)
-	endif (USE_LIBSQUISH)
-endif (NOT HEADLESS_SYSTEM)
+ADD_SUBDIRECTORY(squish)
+ADD_SUBDIRECTORY(rg-etc1)
 
 option(TRACY_ENABLE "Enable tracy profiling" OFF)
 
@@ -85,3 +80,28 @@ option(TRACY_ON_DEMAND "Enable tracy profiling" ON)
 option(TRACY_PROFILE_MEMORY "Profile memory allocations" OFF)
 
 add_subdirectory(tracy)
+
+if (TRACY_ENABLE)
+	option(RMLUI_TRACY_PROFILING "Enable RmlUi profiling with Tracy." ON)
+	# We have our own memory profiling, never enable RmlUi one.
+	set(RMLUI_TRACY_MEMORY_PROFILING OFF CACHE BOOL "Enable RmlUi tracy profiling")
+	
+	# Disable the additional RmlUI multiconfig configuration as it only applies to RmlUI
+	set(RMLUI_TRACY_CONFIGURATION OFF CACHE BOOL "" FORCE)
+endif()
+
+# We resolve freetype here to make sure RmlUi find_package picks the same
+# correct version as picked by the engine.
+# !!! If you change freetype resolution here, change it also in rts/builds/legacy
+find_freetype_hack() # hack to find different named freetype.dll
+find_package_static(Freetype 2.8.1 REQUIRED)
+
+# lunasvg does not expect number constants to be floats, so we undo this cmake flag for its compilation
+string(REPLACE "-fsingle-precision-constant" "" NEW_CMAKE_FLAGS ${CMAKE_CXX_FLAGS})
+set(SAVED_CMAKE_FLAGS ${CMAKE_CXX_FLAGS})
+set(CMAKE_CXX_FLAGS ${NEW_CMAKE_FLAGS})
+add_subdirectory(lunasvg)
+set(CMAKE_CXX_FLAGS ${SAVED_CMAKE_FLAGS})
+
+option(RMLUI_SVG_PLUGIN "RmlUi with SVG support" ON)
+add_subdirectory(RmlUi)

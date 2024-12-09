@@ -574,9 +574,13 @@ std::vector<std::string> DataDirLocater::GetDataDirPaths() const
 	return dataDirPaths;
 }
 
-std::array<std::string, 5> DataDirLocater::GetDataDirRoots() const
+std::vector<std::string> DataDirLocater::GetDataDirRoots() const
 {
-	return {{"base", "maps", "games", "packages", configHandler->GetString("SpringDataRoot")}};
+	std::vector<std::string> dataDirRoots {"base", "maps", "games", "packages"};
+
+	SplitColonString(configHandler->GetString("SpringDataRoot"), [&](const std::string& dir) { dataDirRoots.push_back(dir); });
+
+	return dataDirRoots;
 }
 
 

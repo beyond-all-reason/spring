@@ -6,11 +6,14 @@
 #include <list>
 
 #include "fmt/format.h"
+#include "fmt/printf.h"
 
 #include "DumpState.h"
 
+#include "Game/Game.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
+#include "Game/GameVersion.h"
 #include "Net/GameServer.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/IModelParser.h"
@@ -30,10 +33,12 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
+#include "Sim/Units/UnitTypes/Builder.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "Map/ReadMap.h"
 #include "System/StringUtil.h"
+#include "System/FileSystem/ArchiveScanner.h"
 #include "System/Log/ILog.h"
 #include "System/SpringHash.h"
 
@@ -86,6 +91,21 @@ namespace {
 		}
 
 		return str.str();
+	}
+
+	inline std::string DumpSolidObjectID(const CSolidObject* so) {
+		std::string s = so ? std::to_string(so->id) : "(nullptr)";
+		s.append("\n");
+		return s;
+	}
+
+	inline std::string DumpGameID(const uint8_t* p) {
+		return fmt::sprintf(
+			"%02x%02x%02x%02x%02x%02x%02x%02x"
+			"%02x%02x%02x%02x%02x%02x%02x%02x",
+			p[0], p[1], p[ 2], p[ 3], p[ 4], p[ 5], p[ 6], p[ 7],
+			p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
+		);
 	}
 }
 
@@ -140,6 +160,8 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "maxFrame: " << gMaxFrameNum << "\n";
 			file << "randSeed: " << gsRNG.GetLastSeed() << "\n";
 			file << "initSeed: " << gsRNG.GetInitSeed() << "\n";
+			file << "  gameID: " << DumpGameID(game->gameID) << "\n";
+			file << " syncVer: " << SpringVersion::GetSync() << "\n";
 		}
 
 		LOG("[%s] using dump-file \"%s\"", __func__, name.c_str());
@@ -164,11 +186,13 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 
 	#define DUMP_MATH_CONST
 	#define DUMP_MODEL_DATA
+	#define DUMP_CS_DATA
 	#define DUMP_UNIT_DATA
 	#define DUMP_UNIT_PIECE_DATA
 	#define DUMP_UNIT_WEAPON_DATA
 	#define DUMP_UNIT_COMMANDAI_DATA
 	#define DUMP_UNIT_MOVETYPE_DATA
+	#define DUMP_UNIT_BUILDER_DATA
 	#define DUMP_UNIT_SCRIPT_DATA
 	#define DUMP_FEATURE_DATA
 	#define DUMP_PROJECTILE_DATA
@@ -207,6 +231,32 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	}
 	#endif
 
+	#ifdef DUMP_CS_DATA
+	if (gs->frameNum == gMinFrameNum) { //dump once
+		sha512::hex_digest hexDigest;
+		{
+			hexDigest = { 0 };
+			const auto mapCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->mapName);
+			sha512::dump_digest(mapCheckSum, hexDigest);
+			file << "\tmapCheckSum: " << std::string(hexDigest.data()) << "\n";
+		}
+		{
+			hexDigest = { 0 };
+			const auto modCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->modName);
+			sha512::dump_digest(modCheckSum, hexDigest);
+			file << "\tmodCheckSum: " << std::string(hexDigest.data()) << "\n";
+		}
+		/*
+		for (const auto& ari : archiveScanner->GetAllArchives()) {
+			hexDigest = { 0 };
+			const auto cs = archiveScanner->GetArchiveCompleteChecksumBytes(ari.GetNameVersioned());
+			sha512::dump_digest(cs, hexDigest);
+			file << "\tArchive: " << ari.GetNameVersioned() << " checkSum: " << std::string(hexDigest.data()) << "\n";
+		}
+		*/
+	}
+	#endif
+
 	#ifdef DUMP_MODEL_DATA
 	if (gs->frameNum == gMinFrameNum) { //dump once
 		// models no longer have same order and IDs across different runs due to MT preload.
@@ -225,7 +275,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			const auto& m = mv[smn.second];
 			file << "\t\tname: " << m.name << "\n";
 			file << "\t\tnumPieces: " << m.numPieces << "\n";
-			file << "\t\ttextureType: " << m.textureType << "\n";
+			//file << "\t\ttextureType: " << m.textureType << "\n";
 			file << "\t\tmodelType: " << m.type << "\n";
 			file << "\t\tradius: " << TapFloats(m.radius);
 			file << "\t\theight: " << TapFloats(m.height);
@@ -297,6 +347,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		file << "\t\t\tphysicalState: " << u->physicalState << "\n";
 		file << "\t\t\tfireState: " << u->fireState << ", moveState: " << u->moveState << "\n";
 		file << "\t\t\tpieces: " << pieces.size() << "\n";
+		file << "\t\t\tinBuildStance " << u->inBuildStance << "\n";
 
 		#ifdef DUMP_UNIT_PIECE_DATA
 		for (const LocalModelPiece& lmp: pieces) {
@@ -370,13 +421,37 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "\t\t\t\t\tcurrWayPoint: " << TapFloats(gmt->GetCurrWayPoint());
 			file << "\t\t\t\t\tnextWayPoint: " << TapFloats(gmt->GetNextWayPoint());
 		}
-
 		#endif
+
+		#ifdef DUMP_UNIT_BUILDER_DATA
+		if (const CBuilder* b = dynamic_cast<const CBuilder*>(u); b != nullptr) {
+			file << "\t\t\tThe unit is CBuilder:\n";
+			file << "\t\t\t\tcurResurrect: " << DumpSolidObjectID(b->curResurrect);
+			file << "\t\t\t\tlastResurrected: " << b->lastResurrected << "\n";
+			file << "\t\t\t\tcurBuild: " << DumpSolidObjectID(b->curBuild);
+			file << "\t\t\t\tcurCapture: " << DumpSolidObjectID(b->curCapture);
+			file << "\t\t\t\tcurReclaim: " << DumpSolidObjectID(b->curReclaim);
+			file << "\t\t\t\treclaimingUnit: " << (b->reclaimingUnit ? 1 : 0) << "\n";
+			file << "\t\t\t\thelpTerraform: " << DumpSolidObjectID(b->helpTerraform);
+			file << "\t\t\t\tterraforming: " << (b->terraforming ? 1 : 0) << "\n";
+			file << "\t\t\t\tterraformHelp: " << TapFloats(b->terraformHelp);
+			file << "\t\t\t\tmyTerraformLeft: " << TapFloats(b->myTerraformLeft);
+			file << "\t\t\t\tterraformType: " << std::to_string(b->terraformType) << "\n";
+			file << "\t\t\t\ttx1,tx2,tz1,tz2: " << b->tx1 << "," << b->tx2 << "," << b->tz1 << "," << b->tz2 << "\n";
+			file << "\t\t\t\tterraformCenter: " << TapFloats(b->terraformCenter);
+			file << "\t\t\t\tterraformRadius: " << TapFloats(b->terraformRadius);
+		}
+		#endif
+	}
+	file << "\tunitsToBeRemoved: " << unitHandler.GetUnitsToBeRemoved().size() << "\n";
+	for (auto* u : unitHandler.GetUnitsToBeRemoved()) {
+		file << "\t\tunitID: " << u->id << " (name: " << u->unitDef->name << ")\n";
 	}
 	#endif
 	#ifdef DUMP_UNIT_SCRIPT_DATA
 	{
 		file << "\tCobEngine:\n";
+		file << "\t\tcurrentTime: " << cobEngine->GetCurrTime();
 		file << "\t\tCobThreads: " << cobEngine->GetThreadInstances().size() << "\n";
 		for (const auto& [tid, thread] : cobEngine->GetThreadInstances()) {
 			auto ownerID = thread.cobInst->GetUnit() ? thread.cobInst->GetUnit()->id : -1;
@@ -577,6 +652,10 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	file.flush();
 	if (gs->frameNum == gMaxFrameNum)
 		file.close();
+
+	gMinFrameNum = -1;
+	gMaxFrameNum = -1;
+	gFramePeriod =  1;
 }
 
 void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
@@ -636,6 +715,8 @@ void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
 	if (gs->frameNum == gMaxFrameNum + 1) { //close the file and remove debug callback early next frame after gMaxFrameNum
 		gsRNG.SetDebug();
 		file.close();
+		gMinFrameNum = -1;
+		gMaxFrameNum = -1;
 	}
 	// check if the CURRENT frame lies within the bounds
 	if (gs->frameNum < gMinFrameNum)

@@ -14,11 +14,28 @@ public:
 	static float GetApproximateHeight(float x, float z, bool synced = true);
 	static float GetApproximateHeightUnsafe(int x, int z, bool synced = true);
 	static const float* GetApproximateHeightUnsafePtr(int x, int z, bool synced = true);
-	/// Returns the height at the specified position, cropped to a non-negative value
+	/// Returns the height above water at the specified position, cropped to a non-negative value
 	static float GetHeightAboveWater(float x, float z, bool synced = true);
 	/// Returns the real height at the specified position, can be below 0
 	static float GetHeightReal(float x, float z, bool synced = true);
 	static float GetOrigHeight(float x, float z);
+
+	static consteval float GetWaterPlaneLevel() {
+		/* Water plane height is hardcoded currently.
+		 * This function exists for future-proofing since
+		 * a dynamic water level is a common request, and
+		 * also to give a name (including in Lua) to the
+		 * otherwise-magic "0" constant. This function is
+		 * something of an afterthought so its use is not
+		 * exhaustive. Of course if you add dynamic water
+		 * then don't be afraid to remove `consteval`. */
+		return .0f;
+	}
+
+	static constexpr float GetWaterLevel(float x, float z, bool synced = true) {
+		// Water is a flat plane currently so is the same level regardless of XZ
+		return GetWaterPlaneLevel();
+	}
 
 	static float GetSlope(float x, float z, bool synced = true);
 	static const float3& GetNormal(float x, float z, bool synced = true);

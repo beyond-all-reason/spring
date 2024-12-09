@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <cstdio>
 
-#if defined(USE_LIBSQUISH) && !defined(HEADLESS)
+#if !defined(HEADLESS)
 	#include "lib/squish/squish.h"
 	#include "lib/rg-etc1/rg_etc1.h"
 #endif
@@ -32,6 +32,8 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/Platform/Watchdog.h"
 #include "System/Threading/ThreadPool.h" // for_mt
+
+#include "System/Misc/TracyDefs.h"
 
 using std::sprintf;
 
@@ -60,6 +62,7 @@ std::vector<float> CSMFGroundTextures::stretchFactors;
 
 CSMFGroundTextures::GroundSquare::~GroundSquare()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &textureIDs[RAW_TEX_IDX]);
 
 	textureIDs[RAW_TEX_IDX] = 0;
@@ -70,6 +73,7 @@ CSMFGroundTextures::GroundSquare::~GroundSquare()
 
 CSMFGroundTextures::CSMFGroundTextures(CSMFReadMap* rm): smfMap(rm)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	smfTextureStreaming = configHandler->GetBool("SMFTextureStreaming");
 	smfTextureLodBias = configHandler->GetFloat("SMFTextureLodBias");
 
@@ -84,6 +88,7 @@ CSMFGroundTextures::CSMFGroundTextures(CSMFReadMap* rm): smfMap(rm)
 
 void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	loadscreen->SetLoadMessage("Loading Map Tiles");
 
 	CFileHandler* ifs = file.GetFileHandler();
@@ -175,7 +180,7 @@ void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
 	}
 
 
-#if defined(USE_LIBSQUISH) && !defined(HEADLESS) && defined(GLEW_ARB_ES3_compatibility)
+#if !defined(HEADLESS) && defined(GLEW_ARB_ES3_compatibility)
 	if (RecompressTilesIfNeeded()) {
 		// Not all FOSS drivers support S3TC, use ETC1 for those if possible
 		// ETC2 is backward compatible with ETC1! GLEW doesn't have the ETC1 extension :<
@@ -189,6 +194,7 @@ void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
 
 void CSMFGroundTextures::LoadSquareTextures(const int mipLevel)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	loadscreen->SetLoadMessage("Loading Square Textures");
 
 	for (int y = 0; y < smfMap->numBigTexY; ++y) {
@@ -201,6 +207,7 @@ void CSMFGroundTextures::LoadSquareTextures(const int mipLevel)
 
 void CSMFGroundTextures::LoadSquareTexturesPersistent()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	loadscreen->SetLoadMessage("Loading Square Textures");
 
 	for (int y = 0; y < smfMap->numBigTexY; ++y) {
@@ -278,7 +285,7 @@ void CSMFGroundTextures::ConvolveHeightMap(const int mapWidth, const int mipLeve
 	}
 }
 
-#if defined(USE_LIBSQUISH) && !defined(HEADLESS) && defined(GLEW_ARB_ES3_compatibility)
+#if !defined(HEADLESS) && defined(GLEW_ARB_ES3_compatibility)
 // Not all FOSS drivers support S3TC, use ETC1 for those if possible
 bool CSMFGroundTextures::RecompressTilesIfNeeded()
 {
@@ -313,6 +320,7 @@ bool CSMFGroundTextures::RecompressTilesIfNeeded()
 
 inline bool CSMFGroundTextures::TexSquareInView(int btx, int bty) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CCamera* cam = CCameraHandler::GetActiveCamera();
 	const float* hm = readMap->GetCornerHeightMapUnsynced();
 
@@ -331,6 +339,7 @@ inline bool CSMFGroundTextures::TexSquareInView(int btx, int bty) const
 
 void CSMFGroundTextures::DrawUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!smfTextureStreaming)
 		return;
 
@@ -422,6 +431,7 @@ void CSMFGroundTextures::DrawUpdate()
 
 
 bool CSMFGroundTextures::SetSquareLuaTexture(int texSquareX, int texSquareY, int texID) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (texSquareX < 0 || texSquareX >= smfMap->numBigTexX) { return false; }
 	if (texSquareY < 0 || texSquareY >= smfMap->numBigTexY) { return false; }
 
@@ -431,13 +441,21 @@ bool CSMFGroundTextures::SetSquareLuaTexture(int texSquareX, int texSquareY, int
 		// free up some memory while the Lua texture is around
 		glDeleteTextures(1, square->GetTextureIDPtr());
 		square->SetRawTexture(0);
+		square->SetLuaTexture(texID);
+	}
+	else {
+		square->SetLuaTexture(0);
+		if (smfTextureStreaming)
+			LoadSquareTexture(texSquareX, texSquareY, square->GetMipLevel());
+		else
+			LoadSquareTexturePersistent(texSquareX, texSquareY);
 	}
 
-	square->SetLuaTexture(texID);
 	return square->HasLuaTexture();
 }
 
 bool CSMFGroundTextures::GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int lodMin, int lodMax) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (texSquareX < 0 || texSquareX >= smfMap->numBigTexX)
 		return false;
 	if (texSquareY < 0 || texSquareY >= smfMap->numBigTexY)
@@ -488,6 +506,7 @@ void CSMFGroundTextures::ExtractSquareTiles(
 	const int mipLevel,
 	GLint* tileBuf
 ) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (tileBuf == nullptr)
 		return;
 
@@ -524,6 +543,7 @@ void CSMFGroundTextures::ExtractSquareTiles(
 
 void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr GLenum ttarget = GL_TEXTURE_2D;
 	static constexpr GLbitfield access = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT;
 
@@ -567,6 +587,7 @@ void CSMFGroundTextures::LoadSquareTexture(int x, int y, int level)
 
 void CSMFGroundTextures::LoadSquareTexturePersistent(int x, int y)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr GLenum ttarget = GL_TEXTURE_2D;
 
 	GroundSquare* square = &squares[y * smfMap->numBigTexX + x];
@@ -606,6 +627,7 @@ void CSMFGroundTextures::LoadSquareTexturePersistent(int x, int y)
 
 void CSMFGroundTextures::BindSquareTexture(int texSquareX, int texSquareY)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(texSquareX >= 0);
 	assert(texSquareY >= 0);
 	assert(texSquareX < smfMap->numBigTexX);

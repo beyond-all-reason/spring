@@ -5,8 +5,11 @@
 #include "GlobalSynced.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
+#include "Sim/Misc/ModInfo.h"
 #include "System/ContainerUtil.h"
 #include "System/SpringMath.h"
+
+#include "System/Misc/TracyDefs.h"
 
 CR_BIND(EnvResourceHandler, )
 
@@ -34,6 +37,7 @@ EnvResourceHandler envResHandler;
 
 void EnvResourceHandler::ResetState()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	curTidalStrength = 0.0f;
 	curWindStrength = 0.0f;
 	minWindStrength = 0.0f;
@@ -54,20 +58,32 @@ void EnvResourceHandler::ResetState()
 
 void EnvResourceHandler::LoadWind(float minStrength, float maxStrength)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	minWindStrength = std::min(minStrength, maxStrength);
 	maxWindStrength = std::max(minStrength, maxStrength);
 
-	curWindVec = mix(curWindDir * GetAverageWindStrength(), RgtVector * GetAverageWindStrength(), curWindDir == RgtVector);
+	// generate initial wind direction
+	float strength = 0.0f;
+
+	do {
+		curWindDir.x = gsRNG.NextFloat();
+		curWindDir.z = gsRNG.NextFloat();
+		strength = curWindDir.LengthNormalize2D();
+	} while (strength == 0.0f);
+
+	curWindVec = curWindDir * GetAverageWindStrength();
 	oldWindVec = curWindVec;
 }
 
 
 bool EnvResourceHandler::AddGenerator(CUnit* u) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// duplicates should never happen, no need to check
 	return (spring::VectorInsertUnique(newGeneratorIDs, u->id));
 }
 
 bool EnvResourceHandler::DelGenerator(CUnit* u) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// id is never present in both
 	return (spring::VectorErase(newGeneratorIDs, u->id) || spring::VectorErase(allGeneratorIDs, u->id));
 }
@@ -76,6 +92,7 @@ bool EnvResourceHandler::DelGenerator(CUnit* u) {
 
 void EnvResourceHandler::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// zero-strength wind does not need updates
 	if (maxWindStrength <= 0.0f)
 		return;
@@ -95,32 +112,33 @@ void EnvResourceHandler::Update()
 
 		// normalize and clamp s.t. minWindStrength <= strength <= maxWindStrength
 		newWindVec /= newStrength;
-		newWindVec *= (newStrength = std::clamp(newStrength, minWindStrength, maxWindStrength));
-
-		// update generators
-		for (const int unitID: allGeneratorIDs) {
-			(unitHandler.GetUnit(unitID))->UpdateWind(newWindVec.x, newWindVec.z, newStrength);
-		}
-	} else {
-		const float mod = smoothstep(0.0f, 1.0f, windDirTimer / float(WIND_UPDATE_RATE));
-
-		// blend between old & new wind directions
-		// note: generators added on simframes when timer is 0
-		// do not receive a snapshot of the blended direction
-		curWindVec = mix(oldWindVec, newWindVec, mod);
-		curWindStrength = curWindVec.LengthNormalize();
-
-		curWindDir = curWindVec;
-		curWindVec = curWindDir * (curWindStrength = std::clamp(curWindStrength, minWindStrength, maxWindStrength));
-
-		for (const int unitID: newGeneratorIDs) {
-			// make newly added generators point in direction of wind
-			(unitHandler.GetUnit(unitID))->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
-			allGeneratorIDs.push_back(unitID);
-		}
-
-		newGeneratorIDs.clear();
+		newStrength = std::clamp(newStrength, minWindStrength, maxWindStrength);
+		newWindVec *= newStrength;
 	}
+
+	const float mod = smoothstep(0.0f, 1.0f, windDirTimer / float(WIND_UPDATE_RATE));
+
+	// blend between old & new wind directions
+	curWindVec = mix(oldWindVec, newWindVec, mod);
+	curWindStrength = std::clamp(curWindVec.LengthNormalize(), minWindStrength, maxWindStrength);
+
+	curWindDir = curWindVec;
+	curWindVec = curWindDir * curWindStrength;
+
+	if (const auto& wcrp = modInfo.windChangeReportPeriod; wcrp > 0 && gs->frameNum % wcrp == 0) {
+		// update generators every modInfo.windChangeReportPeriod frames
+		for (auto unitID : allGeneratorIDs) {
+			unitHandler.GetUnit(unitID)->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
+		}
+	}
+
+	// needs to be done immediately to rotate the generator according to the wind direction correctly
+	for (auto unitID : newGeneratorIDs) {
+		// make newly added generators point in direction of wind
+		unitHandler.GetUnit(unitID)->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
+		allGeneratorIDs.push_back(unitID);
+	}
+	newGeneratorIDs.clear();
 
 	windDirTimer = (windDirTimer + 1) % (WIND_UPDATE_RATE + 1);
 }

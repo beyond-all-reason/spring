@@ -49,15 +49,11 @@ namespace QTPFS {
 
 		const INode* GetNode(unsigned int x, unsigned int z) const {
 			ZoneScoped;
-			const INode* curNode = GetPoolNode(0);
-			int length = curNode->xsize(); // width/height is forced to be the same.
-			// int iz = ((z / length) + (int(z % length > 0))) * xRootNodes;
-			// int ix = (x / length) + (int(x % length > 0));
-			int iz = (z / length) * xRootNodes;
-			int ix = (x / length);
+			int iz = (z / rootNodeSize) * xRootNodes;
+			int ix = (x / rootNodeSize);
 			int i = iz + ix;
 
-			curNode = GetPoolNode(i);
+			const INode* curNode = GetPoolNode(i);
 
 			assert (curNode->xmin() <= x);
 			assert (curNode->xmax() >= x);
@@ -110,6 +106,15 @@ namespace QTPFS {
 			curNode->DeactivateNode();
 		}
 
+		void DecreaseOpenNodeCounter() { assert(numOpenNodes > 0); numOpenNodes -= (numOpenNodes > 0); }
+		void DecreaseClosedNodeCounter() { assert(numClosedNodes > 0); numClosedNodes -= (numClosedNodes > 0); }
+
+		void IncreaseOpenNodeCounter() { numOpenNodes++; }
+		void IncreaseClosedNodeCounter() { numClosedNodes++; }
+
+		unsigned int GetNumOpenNodes() const { return numOpenNodes; }
+		unsigned int GetNumClosedNodes() const { return numClosedNodes; }
+
 		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
 		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
 
@@ -158,6 +163,8 @@ namespace QTPFS {
 		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint, std::vector<INode*>& openNodes);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
+		bool UseShortestPath() { return useShortestPath; }
+
 	private:
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
@@ -186,6 +193,12 @@ public:
 			return GetPoolNode(i);
 		}
 
+		const QTNode* GetRootNode(int x, int z) const {
+			// This is fine, the class doesn't get modified in the process of the call.
+			// This call is to add const to the return value.
+			return const_cast<QTPFS::NodeLayer *>(this)->GetRootNode(x, z);
+		}
+
 public:
 
 		// NOTE:
@@ -200,6 +213,8 @@ private:
 		unsigned int layerNumber = 0;
 		unsigned int numLeafNodes = 0;
 		unsigned int updateCounter = 0;
+		unsigned int numOpenNodes = 0;
+		unsigned int numClosedNodes = 0;
 
 		int32_t maxNodesAlloced = 0;
 		int32_t numRootNodes = 0;
@@ -213,6 +228,7 @@ private:
 
 		float maxRelSpeedMod = 0.0f; // TODO: Remove these?
 		float avgRelSpeedMod = 0.0f;
+		bool useShortestPath = false;
 	};
 }
 

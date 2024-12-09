@@ -14,7 +14,7 @@ remove_definitions(-DAVI_CAPTURING)
 set(OpenGL_GL_PREFERENCE LEGACY)
 include_directories(${OPENAL_INCLUDE_DIR})
 
-find_package(OpenGL REQUIRED)
+find_package(OpenGL 3.0 REQUIRED)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
@@ -26,11 +26,16 @@ list(APPEND engineHeadlessLibraries ${engineCommonLibraries})
 #list(APPEND engineHeadlessLibraries engineaGui)
 list(APPEND engineHeadlessLibraries no-sound)
 list(APPEND engineHeadlessLibraries engineSim)
+list(APPEND engineHeadlessLibraries squish)
 list(APPEND engineHeadlessLibraries pr-downloader)
+list(APPEND engineHeadlessLibraries RmlUi::Core)
+list(APPEND engineHeadlessLibraries RmlUi::Debugger)
+list(APPEND engineHeadlessLibraries lunasvg)
 
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/assimp/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/slimsig/include)
+include_directories(${ENGINE_SRC_ROOT_DIR}/lib/cereal/include)
 
 
 ### Build the executable

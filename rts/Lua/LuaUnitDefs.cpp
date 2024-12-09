@@ -289,7 +289,7 @@ static int SafeIconType(lua_State* L, const void* data)
 static int CustomParamsTable(lua_State* L, const void* data)
 {
 	const spring::unordered_map<std::string, std::string>& params = *((const spring::unordered_map<std::string, std::string>*)data);
-	lua_newtable(L);
+	lua_createtable(L, 0, params.size());
 
 	for (const auto& param: params) {
 		lua_pushsstring(L, param.first);
@@ -305,7 +305,7 @@ static int BuildOptions(lua_State* L, const void* data)
 	const spring::unordered_map<int, std::string>& buildOptions = *((const spring::unordered_map<int, std::string>*)data);
 	const spring::unordered_map<std::string, int>& unitDefIDsMap = unitDefHandler->GetUnitDefIDs();
 
-	lua_newtable(L);
+	lua_createtable(L, buildOptions.size(), 0);
 	int count = 0;
 
 	for (const auto& buildOption: buildOptions) {
@@ -324,8 +324,8 @@ static int BuildOptions(lua_State* L, const void* data)
 
 static inline int BuildCategorySet(lua_State* L, const vector<string>& cats)
 {
-	lua_newtable(L);
 	const int count = (int)cats.size();
+	lua_createtable(L, 0, count);
 	for (int i = 0; i < count; i++) {
 		lua_pushsstring(L, cats[i]);
 		lua_pushboolean(L, true);
@@ -357,14 +357,19 @@ static int WeaponsTable(lua_State* L, const void* data)
 {
 	const auto& udWeapons = *reinterpret_cast<const decltype(UnitDef::weapons)*>(data);
 
-	lua_newtable(L);
+	// When LUA_WEAPON_BASE_INDEX is not 1, lua will resort to using the hash
+	// part to index table keys as we're no longer adding keys to the table
+	// following the sequence 1 to N for any N.
+	lua_createtable(L, 
+			LUA_WEAPON_BASE_INDEX == 1 ? udWeapons.size() : 0,
+			LUA_WEAPON_BASE_INDEX == 1 ? 0 : udWeapons.size());
 
 	for (size_t i = 0; i < udWeapons.size() && udWeapons[i].def != nullptr; i++) {
 		const UnitDefWeapon& udw = udWeapons[i];
 		const WeaponDef* wd = udw.def;
 
 		lua_pushnumber(L, i + LUA_WEAPON_BASE_INDEX);
-		lua_newtable(L); {
+		lua_createtable(L, 0, 10); {
 			HSTR_PUSH_NUMBER(L, "weaponDef",   wd->id);
 			HSTR_PUSH_NUMBER(L, "slavedTo",    udw.slavedTo - 1 + LUA_WEAPON_BASE_INDEX);
 			HSTR_PUSH_NUMBER(L, "maxAngleDif", udw.maxMainDirAngleDif);
@@ -397,7 +402,7 @@ static void PushGuiSoundSet(lua_State* L, const string& name,
 
 	for (int i = 0; i < soundCount; i++) {
 		lua_pushnumber(L, i + 1);
-		lua_newtable(L);
+		lua_createtable(L, 0, CLuaHandle::GetHandleSynced(L) ? 2 : 3);
 		const GuiSoundSetData& sound = soundSet.GetSoundData(i);
 		HSTR_PUSH_STRING(L, "name",   sound.name);
 		HSTR_PUSH_NUMBER(L, "volume", sound.volume);
@@ -413,7 +418,7 @@ static void PushGuiSoundSet(lua_State* L, const string& name,
 static int SoundsTable(lua_State* L, const void* data) {
 	const UnitDef::SoundStruct& sounds = *((const UnitDef::SoundStruct*) data);
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 10);
 	PushGuiSoundSet(L, "select",      sounds.select);
 	PushGuiSoundSet(L, "ok",          sounds.ok);
 	PushGuiSoundSet(L, "arrived",     sounds.arrived);
@@ -579,7 +584,7 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_DEPRECATED_FUNCTION("type", ud, ReturnEmptyString);
 	ADD_DEPRECATED_FUNCTION("maxSlope", ud, ReturnMinusOne);
 
-	ADD_FLOAT("totalEnergyOut", ud.energyMake);
+	ADD_FLOAT("totalEnergyOut", ud.resourceMake.energy);
 
 	ADD_FUNCTION("modCategories",      ud.categoryString,  CategorySetFromString);
 	ADD_FUNCTION("springCategories",   ud.category,        CategorySetFromBits);
@@ -684,23 +689,24 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 
 	ADD_INT("maxThisUnit", ud.maxThisUnit);
 
-	ADD_FLOAT("metalUpkeep",    ud.metalUpkeep);
-	ADD_FLOAT("energyUpkeep",   ud.energyUpkeep);
-	ADD_FLOAT("metalMake",      ud.metalMake);
+	ADD_FLOAT("metalUpkeep",    ud.upkeep.metal);
+	ADD_FLOAT("energyUpkeep",   ud.upkeep.energy);
+	ADD_FLOAT("metalMake",      ud.resourceMake.metal);
+	ADD_FLOAT("energyMake",     ud.resourceMake.energy);
 	ADD_FLOAT("makesMetal",     ud.makesMetal);
-	ADD_FLOAT("energyMake",     ud.energyMake);
-	ADD_FLOAT("metalCost",      ud.metal);
-	ADD_FLOAT("energyCost",     ud.energy);
+	ADD_FLOAT("metalCost",      ud.cost.metal);
+	ADD_FLOAT("energyCost",     ud.cost.energy);
 	ADD_FLOAT("buildTime",      ud.buildTime);
+	ADD_FLOAT("buildeeBuildRadius", ud.buildeeBuildRadius);
 	ADD_FLOAT("extractsMetal",  ud.extractsMetal);
 	ADD_FLOAT("extractRange",   ud.extractRange);
 	ADD_FLOAT("windGenerator",  ud.windGenerator);
 	ADD_FLOAT("tidalGenerator", ud.tidalGenerator);
-	ADD_FLOAT("metalStorage",   ud.metalStorage);
-	ADD_FLOAT("energyStorage",  ud.energyStorage);
+	ADD_FLOAT("metalStorage",   ud.storage.metal);
+	ADD_FLOAT("energyStorage",  ud.storage.energy);
 
-	ADD_FLOAT("harvestMetalStorage", ud.harvestMetalStorage);
-	ADD_FLOAT("harvestEnergyStorage", ud.harvestEnergyStorage);
+	ADD_FLOAT("harvestMetalStorage",  ud.harvestStorage.metal);
+	ADD_FLOAT("harvestEnergyStorage", ud.harvestStorage.energy);
 
 	ADD_FLOAT("power", ud.power);
 
@@ -742,6 +748,8 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 
 	ADD_FLOAT("minCollisionSpeed", ud.minCollisionSpeed);
 	ADD_FLOAT("slideTolerance",    ud.slideTolerance);
+	ADD_FLOAT("rollingResistanceCoefficient", ud.rollingResistanceCoefficient);
+	ADD_FLOAT("groundFrictionCoefficient", ud.groundFrictionCoefficient);
 
 	ADD_FLOAT("maxWeaponRange", ud.maxWeaponRange);
 	ADD_FLOAT("maxCoverage", ud.maxCoverage);
@@ -858,7 +866,7 @@ ADD_BOOL("canAttackWater",  canAttackWater); // CUSTOM
 	ADD_INT("highTrajectoryType", ud.highTrajectoryType);
 
 	ADD_BOOL( "leaveTracks",   ud.decalDef.leaveTrackDecals);
-	ADD_INT(  "trackType",     ud.decalDef.trackDecalType);
+	//ADD_INT(  "trackType",     ud.decalDef.trackDecalType);
 	ADD_FLOAT("trackWidth",    ud.decalDef.trackDecalWidth);
 	ADD_FLOAT("trackOffset",   ud.decalDef.trackDecalOffset);
 	ADD_FLOAT("trackStrength", ud.decalDef.trackDecalStrength);

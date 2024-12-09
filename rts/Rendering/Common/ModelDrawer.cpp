@@ -6,8 +6,11 @@
 #include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/LuaObjectDrawer.h"
 
+#include "System/Misc/TracyDefs.h"
+
 void CModelDrawerConcept::InitStatic()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (initialized)
 		return;
 
@@ -30,6 +33,7 @@ void CModelDrawerConcept::InitStatic()
 
 void CModelDrawerConcept::KillStatic(bool reload)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!initialized)
 		return;
 

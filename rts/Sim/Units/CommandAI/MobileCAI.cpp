@@ -15,6 +15,7 @@
 #include "Sim/MoveTypes/AAirMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
@@ -26,6 +27,8 @@
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 #include <assert.h>
+
+#include "System/Misc/TracyDefs.h"
 
 #define AUTO_GENERATE_ATTACK_ORDERS 1
 
@@ -74,6 +77,7 @@ CR_REG_METADATA(CMobileCAI, (
 	CR_MEMBER(lastCommandFrame),
 	CR_MEMBER(lastCloseInTry),
 	CR_MEMBER(lastBuggerOffTime),
+	CR_MEMBER(buggerOffAttempts),
 	CR_MEMBER(lastIdleCheck),
 
 	CR_PREALLOC(GetPreallocContainer)
@@ -257,6 +261,7 @@ CMobileCAI::~CMobileCAI()
 
 void CMobileCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!AllowedCommand(c, fromSynced))
 		return;
 
@@ -330,6 +335,7 @@ void CMobileCAI::GiveCommandReal(const Command& c, bool fromSynced)
 
 void CMobileCAI::SlowUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gs->paused) // Commands issued may invoke SlowUpdate when paused
 		return;
 
@@ -355,6 +361,7 @@ void CMobileCAI::SlowUpdate()
 */
 void CMobileCAI::Execute()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Command& c = commandQue.front();
 
 	switch (c.GetID()) {
@@ -381,6 +388,7 @@ void CMobileCAI::Execute()
 */
 void CMobileCAI::ExecuteMove(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const AMoveType* moveType = owner->moveType;
 
 	const float3& cmdPos = c.GetPos(0);
@@ -479,6 +487,7 @@ void CMobileCAI::ExecutePatrol(Command& c)
 */
 void CMobileCAI::ExecuteFight(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(c.IsInternalOrder() || owner->unitDef->canFight);
 
 	if (c.GetNumParams() == 1 && !owner->weapons.empty()) {
@@ -563,6 +572,7 @@ void CMobileCAI::ExecuteFight(Command& c)
 }
 
 bool CMobileCAI::IsValidTarget(const CUnit* enemy, CWeapon* weapon) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (enemy == nullptr)
 		return false;
 
@@ -598,6 +608,7 @@ bool CMobileCAI::IsValidTarget(const CUnit* enemy, CWeapon* weapon) const {
 */
 void CMobileCAI::ExecuteGuard(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(owner->unitDef->canGuard);
 	assert(c.GetNumParams() != 0);
 
@@ -656,6 +667,7 @@ void CMobileCAI::ExecuteGuard(Command& c)
 
 void CMobileCAI::ExecuteStop(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	StopMove();
 	return CCommandAI::ExecuteStop(c);
 }
@@ -665,6 +677,7 @@ void CMobileCAI::ExecuteStop(Command& c)
 
 void CMobileCAI::ExecuteObjectAttack(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool tryTargetRotate  = false;
 	bool tryTargetHeading = false;
 
@@ -788,6 +801,7 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 
 void CMobileCAI::ExecuteGroundAttack(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 attackPos = c.GetPos(0);
 	const float3 attackVec = attackPos - owner->pos;
 	const short  attackHeading = GetHeadingFromVector(attackVec.x, attackVec.z);
@@ -838,6 +852,7 @@ void CMobileCAI::ExecuteGroundAttack(Command& c)
 
 void CMobileCAI::ExecuteAttack(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(owner->unitDef->canAttack);
 
 	// limit how far away we fly based on our movestate
@@ -925,6 +940,7 @@ void CMobileCAI::ExecuteAttack(Command& c)
 
 int CMobileCAI::GetDefaultCmd(const CUnit* pointed, const CFeature*)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (pointed == nullptr)
 		return CMD_MOVE;
 
@@ -949,6 +965,7 @@ int CMobileCAI::GetDefaultCmd(const CUnit* pointed, const CFeature*)
 
 void CMobileCAI::SetGoal(const float3& pos, const float3& /*curPos*/, float goalRadius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// check if owner already has a move order to this position with the same radius
 	if (owner->moveType->IsMovingTowards(pos, goalRadius, true))
 		return;
@@ -959,6 +976,7 @@ void CMobileCAI::SetGoal(const float3& pos, const float3& /*curPos*/, float goal
 
 void CMobileCAI::SetGoal(const float3& pos, const float3& /*curPos*/, float goalRadius, float speed)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// check if owner already has a move order to this position with the same radius
 	if (owner->moveType->IsMovingTowards(pos, goalRadius, true))
 		return;
@@ -969,6 +987,7 @@ void CMobileCAI::SetGoal(const float3& pos, const float3& /*curPos*/, float goal
 
 bool CMobileCAI::SetFrontMoveCommandPos(const float3& pos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (commandQue.empty())
 		return false;
 	if ((commandQue.front()).GetID() != CMD_MOVE)
@@ -980,17 +999,20 @@ bool CMobileCAI::SetFrontMoveCommandPos(const float3& pos)
 
 void CMobileCAI::StopMove()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	owner->moveType->StopMoving();
 }
 
 void CMobileCAI::StopMoveAndKeepPointing(const float3& p, const float r, bool b)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	StopMove();
 	owner->moveType->KeepPointingTo(p, std::max(r, 10.f), b);
 }
 
 void CMobileCAI::BuggerOff(const float3& pos, float radius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (radius < 0.0f) {
 		// AttachUnit call
 		lastBuggerOffTime = gs->frameNum - BUGGER_OFF_TTL;
@@ -1009,6 +1031,10 @@ void CMobileCAI::BuggerOff(const float3& pos, float radius)
 
 void CMobileCAI::NonMoving()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (owner->moveDef == nullptr)
+		return;
+
 	if (owner->UsingScriptMoveType())
 		return;
 
@@ -1025,6 +1051,12 @@ void CMobileCAI::NonMoving()
 	// increase the target distance if continuing to fail to clear
 	float targetDistance = buggerOffRadius + owner->radius * (1.0f + 0.4f * buggerOffAttempts);
 
+	MoveTypes::CheckCollisionQuery colliderInfo(owner);
+	const bool isSubmersible = (owner->moveDef->isSubmarine ||
+								(owner->moveDef->followGround && owner->moveDef->depth > owner->moveDef->height));
+	if (!isSubmersible)
+		colliderInfo.DisableHeightChecks();
+
 	if (buggerOffAttempts < 4) {
 		// head in the opposite direction of the center. since the buggeroff is a circle,
 		// this is the shortest distance out. future optimization would be to make rectangular buggerOffs
@@ -1039,7 +1071,13 @@ void CMobileCAI::NonMoving()
 		constexpr float3 rotation45deg = {0.7071067811865475, 0, 0.7071067811865475};
 		for (int i = 0; i < 10; i++) {
 			buggerPos = buggerOffPos + buggerDirection * targetDistance;
-			if (owner->moveDef->TestMoveSquare(nullptr, buggerPos, buggerVec) && buggerPos.IsInMap()) {
+
+			// Height affects whether units in water collide or not, so the new y positions need
+			// to be considered or else we will get incorrect results.
+			if (isSubmersible)
+				colliderInfo.UpdateElevationForPos(buggerPos);
+
+			if (owner->moveDef->TestMoveSquare(colliderInfo, buggerPos, buggerVec) && buggerPos.IsInMap()) {
 				break;
 			}
 			if (i == 0) {
@@ -1067,6 +1105,7 @@ void CMobileCAI::NonMoving()
 
 void CMobileCAI::FinishCommand()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	SetTransportee(nullptr);
 
 	if (!commandQue[0].IsInternalOrder())
@@ -1090,6 +1129,7 @@ void CMobileCAI::FinishCommand()
 
 bool CMobileCAI::MobileAutoGenerateTarget()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME merge with CWeapon::AutoTarget()
 	assert(commandQue.empty());
 
@@ -1122,6 +1162,7 @@ bool CMobileCAI::MobileAutoGenerateTarget()
 
 bool CMobileCAI::GenerateAttackCmd()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!owner->unitDef->canAttack)
 		return false;
 
@@ -1195,11 +1236,13 @@ bool CMobileCAI::GenerateAttackCmd()
 }
 
 bool CMobileCAI::CanWeaponAutoTarget(const CWeapon* weapon) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// check if the weapon actually targets the unit's order-target
 	return (!tempOrder || weapon->GetCurrentTarget() != owner->curTarget || weapon->IsFastAutoRetargetingEnabled());
 }
 
 void CMobileCAI::StopSlowGuard() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!slowGuard)
 		return;
 
@@ -1212,6 +1255,7 @@ void CMobileCAI::StopSlowGuard() {
 }
 
 void CMobileCAI::StartSlowGuard(float speed) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (slowGuard)
 		return;
 
@@ -1234,6 +1278,7 @@ void CMobileCAI::StartSlowGuard(float speed) {
 
 void CMobileCAI::CalculateCancelDistance()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// clamp it a bit because the units don't have to turn at max speed
 	cancelDistance = std::clamp(Square(owner->moveType->CalcStaticTurnRadius() + (SQUARE_SIZE << 1)), 1024.0f, 2048.0f);
 }
@@ -1244,6 +1289,7 @@ void CMobileCAI::CalculateCancelDistance()
 
 
 void CMobileCAI::SetTransportee(CUnit* unit) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(unit == nullptr || owner->unitDef->IsTransportUnit());
 
 	if (!owner->unitDef->IsTransportUnit())
@@ -1277,6 +1323,7 @@ void CMobileCAI::SetTransportee(CUnit* unit) {
 
 void CMobileCAI::ExecuteLoadUnits(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (c.GetNumParams()) {
 		case 1: {
 			// load single unit
@@ -1425,6 +1472,7 @@ void CMobileCAI::ExecuteLoadUnits(Command& c)
 
 void CMobileCAI::ExecuteUnloadUnits(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (lastCommandFrame == gs->frameNum)
 		return;
 
@@ -1458,6 +1506,7 @@ void CMobileCAI::ExecuteUnloadUnits(Command& c)
 
 void CMobileCAI::ExecuteUnloadUnit(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (inCommand) {
 		if (!owner->script->IsBusy())
 			StopMoveAndFinishCommand();
@@ -1489,6 +1538,7 @@ void CMobileCAI::ExecuteUnloadUnit(Command& c)
 
 bool CMobileCAI::AllowedCommand(const Command& c, bool fromSynced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!CCommandAI::AllowedCommand(c, fromSynced))
 		return false;
 
@@ -1545,6 +1595,7 @@ bool CMobileCAI::AllowedCommand(const Command& c, bool fromSynced)
 
 bool CMobileCAI::FindEmptySpot(const CUnit* unloadee, const float3& center, float radius, float spread, float3& found, bool fromSynced)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const UnitDef* unitDef = owner->unitDef;
 
 	const float sqSpreadDiv = (spread * spread) / 100.0f;
@@ -1553,7 +1604,8 @@ bool CMobileCAI::FindEmptySpot(const CUnit* unloadee, const float3& center, floa
 	// radius is the size of the command unloading-zone (e.g. dragged by player);
 	// spread is the *minimum* distance between any pair of unloaded units which
 	// also has to respect radius
-	spread = std::clamp(spread, 1.0f * SQUARE_SIZE, radius);
+	radius = std::max(radius, static_cast<float>(SQUARE_SIZE));
+	spread = std::clamp(spread, static_cast<float>(SQUARE_SIZE), radius);
 
 	// more attempts for larger unloading zones
 	for (int a = 0; a < maxAttempts; ++a) {
@@ -1609,6 +1661,7 @@ bool CMobileCAI::FindEmptySpot(const CUnit* unloadee, const float3& center, floa
 
 CUnit* CMobileCAI::FindUnitToTransport(float3 center, float radius)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* bestUnit = nullptr;
 	float bestDist = std::numeric_limits<float>::max();
 
@@ -1643,6 +1696,7 @@ CUnit* CMobileCAI::FindUnitToTransport(float3 center, float radius)
 
 bool CMobileCAI::LoadStillValid(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (commandQue.size() < 2)
 		return false;
 
@@ -1670,6 +1724,7 @@ bool CMobileCAI::LoadStillValid(CUnit* unit)
 
 bool CMobileCAI::SpotIsClear(float3 pos, CUnit* unloadee)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// check slope and depth constraints
 	if (!owner->CanLoadUnloadAtPos(pos, unloadee))
 		return false;
@@ -1683,6 +1738,7 @@ bool CMobileCAI::SpotIsClear(float3 pos, CUnit* unloadee)
 
 bool CMobileCAI::SpotIsClearIgnoreSelf(float3 pos, CUnit* unloadee)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// check slope and depth constraints
 	if (!owner->CanLoadUnloadAtPos(pos, unloadee))
 		return false;
@@ -1708,6 +1764,7 @@ bool CMobileCAI::SpotIsClearIgnoreSelf(float3 pos, CUnit* unloadee)
 
 bool CMobileCAI::FindEmptyDropSpots(float3 startpos, float3 endpos, std::vector<float3>& dropSpots)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (dynamic_cast<CHoverAirMoveType*>(owner->moveType) == nullptr)
 		return false;
 
@@ -1744,6 +1801,7 @@ bool CMobileCAI::FindEmptyDropSpots(float3 startpos, float3 endpos, std::vector<
 
 void CMobileCAI::UnloadUnits_Land(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& transportees = owner->transportedUnits;
 	const CUnit* transportee = nullptr;
 
@@ -1775,6 +1833,7 @@ void CMobileCAI::UnloadUnits_Land(Command& c)
 
 void CMobileCAI::UnloadUnits_Drop(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto& transportees = owner->transportedUnits;
 
 	const float3 startingDropPos = c.GetPos(0);
@@ -1804,6 +1863,7 @@ void CMobileCAI::UnloadUnits_Drop(Command& c)
 
 void CMobileCAI::UnloadUnits_LandFlood(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 pos = c.GetPos(0);
 	float3 found;
 
@@ -1830,6 +1890,7 @@ void CMobileCAI::UnloadUnits_LandFlood(Command& c)
 
 void CMobileCAI::UnloadLand(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// default unload
 	CUnit* transportee = nullptr;
 	CHoverAirMoveType* am = nullptr;
@@ -1925,6 +1986,7 @@ void CMobileCAI::UnloadLand(Command& c)
 
 void CMobileCAI::UnloadDrop(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 pos = c.GetPos(0);
 
 	// head towards goal
@@ -1960,6 +2022,7 @@ void CMobileCAI::UnloadDrop(Command& c)
 
 void CMobileCAI::UnloadLandFlood(Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// land, then release all units at once
 	CUnit* transportee = nullptr;
 

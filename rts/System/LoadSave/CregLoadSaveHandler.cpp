@@ -19,6 +19,8 @@
 #include "Net/GameServer.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Units/UnitDrawer.h"
+#include "Rendering/Env/Decals/GroundDecalHandler.h"
+#include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Misc/BuildingMaskMap.h"
@@ -30,6 +32,7 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/CommandAI/CommandDescription.h"
 #include "Sim/Units/Scripts/CobEngine.h"
@@ -89,6 +92,7 @@ void CGameStateCollector::Serialize(creg::ISerializer* s)
 	s->SerializeObjectInstance(&interceptHandler, interceptHandler.GetClass());
 	s->SerializeObjectInstance(CCategoryHandler::Instance(), CCategoryHandler::Instance()->GetClass());
 	s->SerializeObjectInstance(&groundBlockingObjectMap, groundBlockingObjectMap.GetClass());
+	s->SerializeObjectInstance(&yardmapStatusEffectsMap, yardmapStatusEffectsMap.GetClass());
 	s->SerializeObjectInstance(&buildingMaskMap, buildingMaskMap.GetClass());
 	s->SerializeObjectInstance(&projectileHandler, projectileHandler.GetClass());
 	CPlasmaRepulser::SerializeShieldSegmentCollectionPool(s);
@@ -107,6 +111,7 @@ void CGameStateCollector::Serialize(creg::ISerializer* s)
 	mapType->Serialize(s, &CSplitLuaHandle::gameParams);
 
 	s->SerializeObjectInstance(CUnitDrawer::modelDrawerData->GetSavedData(), CUnitDrawer::modelDrawerData->GetSavedData()->GetClass());
+	//s->SerializeObjectInstance(groundDecals, groundDecals->GetClass());
 }
 
 
@@ -265,6 +270,8 @@ void CCregLoadSaveHandler::SaveGame(const std::string& path)
 
 
 		{
+			Sim::SaveComponents(oss);
+
 			creg::COutputStreamSerializer os;
 
 			// save lua state first as lua unit scripts depend on it
@@ -369,6 +376,8 @@ void CCregLoadSaveHandler::LoadGame()
 #ifdef USING_CREG
 	ENTER_SYNCED_CODE();
 	{
+		Sim::LoadComponents(iss);
+
 		creg::CInputStreamSerializer inputStream;
 
 		// load lua state first, as lua unit scripts depend on it

@@ -141,6 +141,13 @@ public:
 	 * rendered. To reach this number we will delay simframes.
 	 */
 	int minDrawFPS;
+
+	/**
+	 * @brief selection ground penetration
+	 *
+	 * Defines how far beyond the ground to allow selecting objects.
+	 */
+	float selectThroughGround;
 };
 
 extern GlobalConfig globalConfig;

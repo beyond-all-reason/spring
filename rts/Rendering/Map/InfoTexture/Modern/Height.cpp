@@ -12,6 +12,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 // currently defined in HeightLinePalette.cpp
 //CONFIG(bool, ColorElev).defaultValue(true).description("If heightmap (default hotkey [F1]) should be colored or not.");
@@ -34,7 +36,7 @@ CHeightTexture::CHeightTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glSpringTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, texSize.x, texSize.y);
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, texSize.x, texSize.y);
 
 	glGenTextures(1, &paletteTex);
 	glBindTexture(GL_TEXTURE_2D, paletteTex);
@@ -42,7 +44,7 @@ CHeightTexture::CHeightTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glSpringTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 256, 2);
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 256, 2);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 1, GL_RGBA, GL_UNSIGNED_BYTE, &CHeightLinePalette::paletteColored[0].r);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 256, 1, GL_RGBA, GL_UNSIGNED_BYTE, &CHeightLinePalette::paletteBlackAndWhite[0].r);
 
@@ -106,6 +108,7 @@ CHeightTexture::CHeightTexture()
 
 void CHeightTexture::UpdateCPU()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const SColor* extraTexPal = CHeightLinePalette::GetData();
 	const float* heightMap = readMap->GetCornerHeightMapUnsynced();
 
@@ -132,6 +135,7 @@ void CHeightTexture::UpdateCPU()
 
 CHeightTexture::~CHeightTexture()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &paletteTex);
 	shaderHandler->ReleaseProgramObject("[CHeightTexture]", "CHeightTexture");
 }
@@ -139,6 +143,7 @@ CHeightTexture::~CHeightTexture()
 
 void CHeightTexture::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	needUpdate = false;
 
 	if (!fbo.IsValid() || !shader->IsValid() || (heightMapTexture->GetTextureID() == 0))
@@ -172,11 +177,13 @@ void CHeightTexture::Update()
 
 void CHeightTexture::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	needUpdate = true;
 }
 
 
 bool CHeightTexture::IsUpdateNeeded()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return needUpdate;
 }

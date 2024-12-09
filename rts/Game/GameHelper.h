@@ -41,6 +41,8 @@ struct CExplosionParams {
 	float explosionSpeed;
 	float gfxMod;
 
+	mutable float maxGroundDeformation;
+
 	bool impactOnly;
 	bool ignoreOwner;
 	bool damageGround;
@@ -79,6 +81,7 @@ public:
 	static CUnit* GetClosestEnemyAircraft(const CUnit* excludeUnit, const float3& pos, float searchRadius, int searchAllyteam);
 
 	static void BuggerOff(const float3& pos, float radius, bool spherical, bool forced, int teamId, const CUnit* excludeUnit);
+	static void BuggerOffRectangle(const float3& mins, const float3& maxs, bool forced, int teamId, const CUnit* excludeUnit);
 	static void BuggerOff(const float3& pos, float radius, bool spherical, bool forced, int teamId, const CUnit* excludeUnit, const std::vector<const UnitDef*> excludeUnitDefs);
 	static float3 Pos2BuildPos(const BuildInfo& buildInfo, bool synced);
 	static float4 BuildPosToRect(const float3& midPoint, int facing, int xsize, int zsize);
@@ -119,10 +122,6 @@ public:
 		const std::vector<Command>* commands = nullptr,
 		int threadOwner = 0
 	);
-	static inline void InvalidateUnitBuildSquareCache(const BuildInfo& bi, int allyTeamID, bool synced) {
-		auto key = TestUnitBuildSquareCache::GetCacheKey(bi, allyTeamID, synced);
-		TestUnitBuildSquareCache::Invalidate(key);
-	}
 
 	static float GetBuildHeight(const float3& pos, const UnitDef* unitdef, bool synced = true);
 	static Command GetBuildCommand(const float3& pos, const float3& dir);
@@ -202,108 +201,10 @@ private:
 		DamageArray damage;
 		float3 impulse;
 	};
-	template<bool synced>
-	class TestUnitBuildSquareCacheEventsListener : public CEventClient {
-	public:
-		TestUnitBuildSquareCacheEventsListener();
-		~TestUnitBuildSquareCacheEventsListener() override;
-
-		bool WantsEvent(const std::string& eventName) override {
-			return
-				(eventName == "FeatureDestroyed") ||
-				(eventName == "FeatureMoved");
-		}
-		bool GetFullRead() const override { return synced; }
-		//int GetReadAllyTeam() const override { return AllAccessTeam; }
-
-		void FeatureDestroyed(const CFeature* feature) override { TestUnitBuildSquareCache::Invalidate(feature); }
-		void FeatureMoved(const CFeature* feature, const float3& oldpos) override { TestUnitBuildSquareCache::Invalidate(feature); }
-	};
-	struct TestUnitBuildSquareCache {
-		TestUnitBuildSquareCache(
-			int createFrame_,
-			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
-			CFeature* feature_,
-			CGameHelper::BuildSquareStatus result_,
-			std::vector<float3> canbuildpos_,
-			std::vector<float3> featurepos_,
-			std::vector<float3> nobuildpos_)
-			: createFrame(createFrame_)
-			, key(std::move(key_))
-			, feature(feature_)
-			, result(result_)
-			, canbuildpos(canbuildpos_)
-			, featurepos(featurepos_)
-			, nobuildpos(nobuildpos_)
-		{};
-		TestUnitBuildSquareCache(
-			int createFrame_,
-			std::tuple<bool, float3, int, int, const UnitDef*>&& key_,
-			CFeature* feature_,
-			CGameHelper::BuildSquareStatus result_)
-			: createFrame(createFrame_)
-			, key(std::move(key_))
-			, feature(feature_)
-			, result(result_)
-		{};
-
-		static void ClearStaleItems(bool synced);
-
-		using KeyT = std::tuple<bool, float3, int, int, const UnitDef*>;
-		static KeyT GetCacheKey(const BuildInfo& buildInfo, int allyTeamID, bool synced);
-		static inline std::vector<TestUnitBuildSquareCache>::iterator GetCacheItem(const KeyT& key, bool& found) {
-			auto it = std::find_if(testUnitBuildSquareCache.begin(), testUnitBuildSquareCache.end(), [&key](const auto& item) {
-				return item.key == key;
-			});
-			found = (it != testUnitBuildSquareCache.end());
-			return it;
-		}
-		static inline void SaveToCache(int frame, KeyT&& key, CFeature* f, CGameHelper::BuildSquareStatus bss) {
-			testUnitBuildSquareCache.emplace_back(
-				frame,
-				std::move(key),
-				f,
-				bss
-			);
-		}
-		static inline void SaveToCache(int frame, KeyT&& key, CFeature* f, CGameHelper::BuildSquareStatus bss
-			, const std::vector<float3>& canbuildpos
-			, const std::vector<float3>& featurepos
-			, const std::vector<float3>& nobuildpos) {
-			testUnitBuildSquareCache.emplace_back(
-				frame,
-				std::move(key),
-				f,
-				bss,
-				canbuildpos,
-				featurepos,
-				nobuildpos
-			);
-		}
-		static void Invalidate(const KeyT& key);
-		static void Invalidate(const CFeature* feature);
-
-		int createFrame;
-		std::tuple<bool, float3, int, int, const UnitDef*> key;
-		CFeature* feature;
-		CGameHelper::BuildSquareStatus result;
-		std::vector<float3> canbuildpos;
-		std::vector<float3> featurepos;
-		std::vector<float3> nobuildpos;
-
-		/* synced, unsynced. Unsynced is arbitrary, but being 166ms
-		 * seems like a good tradeoff between not evicting cache value
-		 * too quickly and not to stale the state for too long. */
-		static constexpr int CACHE_VALIDITY_PERIOD[] = { 1, GAME_SPEED / 5 };
-
-		static std::vector<TestUnitBuildSquareCache> testUnitBuildSquareCache;
-	};
-
+	
 	std::array<std::vector<WaitingDamage>, 128> waitingDamages;
 	static_assert (std::has_single_bit(std::tuple_size_v <decltype(waitingDamages)>), "Size is used in bit hax and must be 2^N");
 
-	std::unique_ptr<TestUnitBuildSquareCacheEventsListener< true>>   syncedCacheListener;
-	std::unique_ptr<TestUnitBuildSquareCacheEventsListener<false>> unsyncedCacheListener;
 public:
 	std::vector<int> targetUnitIDs; // GetEnemyUnits{NoLosTest}
 	std::vector<std::pair<float, CUnit*>> targetPairs; // GenerateWeaponTargets

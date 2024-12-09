@@ -36,7 +36,7 @@ public:
 
 	void Update() override;
 	void Draw() override;
-	void DrawOnMinimap() override;
+	void DrawOnMinimap() const override;
 	void Collision() override;
 	void Collision(CUnit* unit) override;
 	void Collision(CFeature* f) override;

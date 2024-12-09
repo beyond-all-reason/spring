@@ -25,11 +25,13 @@ TileFileHeader for details.
 #define SMF_MAPFORMAT_H
 
 /// Size in bytes of a single tile in the .smt
-#define SMALL_TILE_SIZE 680
-/// Size in bytes of the minimap (all 9 mipmap levels) in the .smf
-#define MINIMAP_SIZE 699048
+static constexpr size_t SMALL_TILE_SIZE = (512 >> 0) + (512 >> 2) + (512 >> 4) + (512 >> 6);
+
 /// Number of mipmap levels stored in the file
-#define MINIMAP_NUM_MIPMAP 9
+static constexpr size_t MINIMAP_NUM_MIPMAP = 9;
+
+/// Size in bytes of the minimap (all 9 mipmap levels) in the .smf
+static constexpr size_t MINIMAP_SIZE = 699048;
 
 /**
 @brief Spring Map File (.smf) main header

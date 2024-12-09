@@ -4,11 +4,13 @@
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <bit>
 
 #include "QuadtreeAtlasAlloc.h"
 #include "System/Exceptions.h"
-#include "System/bitops.h"
 #include "System/Log/ILog.h"
+
+#include "System/Misc/TracyDefs.h"
 
 static int NODE_MIN_SIZE = 8;
 
@@ -59,6 +61,7 @@ struct QuadTreeNode {
 
 QuadTreeNode* QuadTreeNode::FindPosInQuadTree(int xsize, int ysize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (used)
 		return nullptr;
 
@@ -107,18 +110,21 @@ QuadTreeNode* QuadTreeNode::FindPosInQuadTree(int xsize, int ysize)
 
 CQuadtreeAtlasAlloc::CQuadtreeAtlasAlloc()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	root = nullptr;
 }
 
 
 CQuadtreeAtlasAlloc::~CQuadtreeAtlasAlloc()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	delete root;
 }
 
 
 QuadTreeNode* CQuadtreeAtlasAlloc::FindPosInQuadTree(int xsize, int ysize)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	QuadTreeNode* node = root->FindPosInQuadTree(xsize, ysize);
 	while (!node) {
 		if (root->size >= maxsize.x) {
@@ -144,6 +150,7 @@ QuadTreeNode* CQuadtreeAtlasAlloc::FindPosInQuadTree(int xsize, int ysize)
 
 bool CQuadtreeAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const size_t area1 = std::max(tex1->size.x, tex1->size.y);
 	const size_t area2 = std::max(tex2->size.x, tex2->size.y);
 
@@ -160,6 +167,7 @@ bool CQuadtreeAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry*
 
 bool CQuadtreeAtlasAlloc::Allocate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (root == nullptr) {
 		root = new QuadTreeNode();
 		root->posx = 0;
@@ -214,8 +222,12 @@ bool CQuadtreeAtlasAlloc::Allocate()
 }
 
 
-int CQuadtreeAtlasAlloc::GetMaxMipMaps()
+int CQuadtreeAtlasAlloc::GetNumTexLevels() const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!root) return 0;
-	return bits_ffs(root->GetMinSize());
+	return std::min(
+		std::bit_width(static_cast<uint32_t>(root->GetMinSize())),
+		numLevels
+	);
 }

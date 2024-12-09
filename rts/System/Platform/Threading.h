@@ -203,7 +203,7 @@ namespace Threading {
 namespace Threading {
 	bool NativeThreadIdsEqual(const NativeThreadId thID1, const NativeThreadId thID2)
 	{
-	#ifdef __APPLE__
+	#if defined(__APPLE__) || defined(__OpenBSD__)
 		// quote from the pthread_equal manpage:
 		// Implementations may choose to define a thread ID as a structure.
 		// This allows additional flexibility and robustness over using an int.

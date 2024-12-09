@@ -24,73 +24,136 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_AUTOHOST_INTERFACE)
 namespace {
 
 /**
- * @enum EVENT Which events can be sent to the autohost
- *   (in brackets: parameters, where uchar means unsigned char and "string"
- *   means plain ascii text)
+ * @enum EVENT Which events can be sent to the autohost.
+ *
+ * Each packet from engine to autohost interface starts with a byte that
+ * indicated the type of the message. Below in brackets we describe the data
+ * associated with each message.
+ *
+ * char[] are *not* delimited in any way e.g. by '\0', so they can be used only
+ * as a last element of the UDP packet.
  */
 enum EVENT
 {
-	/// Server has started ()
+	/**
+	 * Server has started
+	 *
+	 *   ()
+	 */
 	SERVER_STARTED = 0,
 
-	/// Server is about to exit ()
+	/**
+	 * Server is about to exit
+	 *
+	 *   ()
+	 */
 	SERVER_QUIT = 1,
 
-	/// Game starts ()
+	/**
+	 * Game starts
+	 *
+	 *   (uint32 msgsize, uint8[16] gameId, char[] demoName)
+	 */
 	SERVER_STARTPLAYING = 2,
 
-	/// Game has ended ()
+	/**
+	 * Game has ended
+	 *
+	 *   (uint8 player, uint8 msgsize, uint8[msgsize - 3] winningAllyTeamss)
+	 */
 	SERVER_GAMEOVER = 3,
 
-	/// An information message from server (string message)
+	/**
+	 * An information message from server
+	 *
+	 *   (char[] message)
+	 */
 	SERVER_MESSAGE = 4,
 
-	/// Server gave out a warning (string warningmessage)
+	/**
+	 * A warning message from server
+	 *
+	 *   (char[] warningmessage)
+	 */
 	SERVER_WARNING = 5,
 
-	/// Player has joined the game (uchar playernumber, string name)
+	/**
+	 * Player has joined the game
+	 *
+	 *   (uint8 playernumber, char[] name)
+	 */
 	PLAYER_JOINED = 10,
 
 	/**
-	 * Player has left (uchar playernumber, uchar reason
-	 * (0: lost connection, 1: left, 2: kicked) )
+	 * Player has left
+	 *
+	 *   (uint8 playernumber, uint8 reason)
+	 *
+	 * Reason:
+	 *   - 0: lost connection
+	 *   - 1: left
+	 *   - 2: kicked
 	 */
 	PLAYER_LEFT = 11,
 
 	/**
 	 * Player has updated its ready-state
-	 * (uchar playernumber, uchar state
-	 * (0: not ready, 1: ready, 2: state not changed) )
+	 *
+	 *   (uint8 playernumber, uint8 state)
+	 *
+	 * State:
+	 *   - 0: not ready
+	 *   - 1: ready
+	 *   - 2: forced
+	 *   - 3: failed to ready (in engine code it says it's not clear if possible)
 	 */
 	PLAYER_READY = 12,
 
 	/**
-	 * @brief Player has sent a chat message
-	 *   (uchar playernumber, uchar destination, string text)
+	 * Player has sent a chat message
 	 *
-	 * Destination can be any of: a playernumber [0-32]
-	 * static const int TO_ALLIES = 127;
-	 * static const int TO_SPECTATORS = 126;
-	 * static const int TO_EVERYONE = 125;
-	 * (copied from Game/ChatMessage.h)
+	 *   (uint8 playernumber, uint8 destination, char[] text)
+	 *
+	 * Destination can be any of:
+	 *   - a playernumber
+	 *   - TO_ALLIES = 252
+	 *   - TO_SPECTATORS = 253
+	 *   - TO_EVERYONE = 254
+	 *   - TO_SERVER = 255
+	 *
+	 * Enum values from rts/Game/ChatMessage.h, value of 255 is a SERVER_PLAYER
+	 * through out the engine. Engine doesn't do anything special with this
+	 * message, it's just forwarded, which allows AutoHost implementations to
+	 * use them for some purposes, e.g. ZK:
+	 * https://github.com/ZeroK-RTS/Zero-K/blob/8bd789594153d8a37ef7c6fa0e2827d85ae82a64/LuaRules/Gadgets/awards.lua#L556
+	 * https://github.com/ZeroK-RTS/Zero-K-Infrastructure/blob/c1b0aa21aeedb9f0b7d3fc51837135691e50afe8/Shared/LobbyClient/DedicatedServer.cs#L433
 	 */
 	PLAYER_CHAT = 13,
 
-	/// Player has been defeated (uchar playernumber)
+	/**
+	 * Player has been defeated
+	 *
+	 *   (uint8 playernumber)
+	 */
 	PLAYER_DEFEATED = 14,
 
 	/**
-	 * @brief Message sent by lua script
+	 * Message sent by Lua script
 	 *
-	 * (uchar playernumber, uint16_t script, uint8_t mode, uint8_t[X] data)
-	 * (X = space left in packet)
+	 *   (uint8 magic = 50, uint16 msgsize, uint8 playernumber, uint16 script, uint8 uiMode, uint8[msgsize - 8] data)
+	 *
+	 * The message data is a straight copy of the whole NETMSG_LUAMSG packet
+	 * including the magic 50 byte. Take a look at CBaseNetProtocol::SendLuaMsg
+	 * function and all of it's callers to see how it's constructed.
 	 */
 	GAME_LUAMSG = 20,
 
 	/**
-	 * @brief team statistics
-	 * @see CTeam::Statistics for a reference of how to read them
-	 * (uchar teamnumber), CTeam::Statistics(in binary form)
+	 * Team statistics
+	 *
+	 *   (uint8 teamnumber, TeamStatistics stats)
+	 *
+	 * TeamStatistics is object as defined in rts/Sim/Misc/TeamStatistics.h
 	 */
 	GAME_TEAMSTAT = NETMSG_TEAMSTAT, // should be 60
 };

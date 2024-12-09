@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef PROJECTILE_DRAWER_HDR
-#define PROJECTILE_DRAWER_HDR
+#pragma once
 
 #include <array>
+#include <memory>
 
 #include "Sim/Projectiles/Projectile.h"
 #include "Rendering/GL/myGL.h"
@@ -12,6 +12,7 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/ModelRenderContainer.h"
+#include "Rendering/DepthBufferCopy.h"
 #include "System/EventClient.h"
 #include "System/UnorderedSet.hpp"
 
@@ -33,11 +34,17 @@ public:
 	void Init();
 	void Kill();
 
-	void Draw(bool drawReflection, bool drawRefraction = false);
+	void UpdateDrawFlags();
+
+	void DrawOpaque(bool drawReflection, bool drawRefraction = false);
+	void DrawAlpha(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction);
+
 	void DrawProjectilesMiniMap();
+
 	void DrawGroundFlashes();
-	void DrawShadowPassOpaque();
-	void DrawShadowPassTransparent();
+
+	void DrawShadowOpaque();
+	void DrawShadowTransparent();
 
 	void LoadWeaponTextures();
 	void UpdateTextures();
@@ -46,16 +53,13 @@ public:
 	bool WantsEvent(const std::string& eventName) {
 		return
 			(eventName == "RenderProjectileCreated") ||
-			(eventName == "RenderProjectileDestroyed") ||
-			(eventName == "ViewResize");
+			(eventName == "RenderProjectileDestroyed");
 	}
 	bool GetFullRead() const { return true; }
 	int GetReadAllyTeam() const { return AllAccessTeam; }
 
 	void RenderProjectileCreated(const CProjectile* projectile);
 	void RenderProjectileDestroyed(const CProjectile* projectile);
-
-	void ViewResize() override;
 
 	unsigned int NumSmokeTextures() const { return (smokeTextures.size()); }
 
@@ -70,8 +74,7 @@ public:
 		return
 			CheckSoftenExt() &&
 			fxShaders[1] && fxShaders[1]->IsValid() &&
-			depthTexture != 0u &&
-			depthFBO && depthFBO->IsValid();
+			depthBufferCopy->IsValid(false);
 	};
 
 	int EnableSoften(int b) { return CanDrawSoften() ? (wantSoften = std::clamp(b, 0, WANT_SOFTEN_COUNT - 1)) : 0; }
@@ -79,8 +82,6 @@ public:
 
 	int EnableDrawOrder(int b) { return wantDrawOrder = b; }
 	int ToggleDrawOrder() { return EnableDrawOrder((wantDrawOrder + 1) % 2); }
-
-	void CopyDepthBufferToTexture();
 
 	const AtlasedTexture* GetSmokeTexture(unsigned int i) const { return smokeTextures[i]; }
 
@@ -125,6 +126,7 @@ public:
 	AtlasedTexture* seismictex = nullptr;
 public:
 	static bool CanDrawProjectile(const CProjectile* pro, int allyTeam);
+	static bool ShouldDrawProjectile(const CProjectile* pro, uint8_t thisPassMask);
 private:
 	static void ParseAtlasTextures(const bool, const LuaTable&, spring::unordered_set<std::string>&, CTextureAtlas*);
 
@@ -132,13 +134,7 @@ private:
 	void DrawProjectilesShadow(int modelType);
 	void DrawFlyingPieces(int modelType) const;
 
-	void DrawProjectilesSet(const std::vector<CProjectile*>& projectiles, bool drawReflection, bool drawRefraction);
-	static void DrawProjectilesSetShadow(const std::vector<CProjectile*>& projectiles);
-
-	void DrawProjectileNow(CProjectile* projectile, bool drawReflection, bool drawRefraction);
-
-	static void DrawProjectileShadow(CProjectile* projectile);
-	static bool DrawProjectileModel(const CProjectile* projectile);
+	static void DrawProjectileModel(const CProjectile* projectile);
 
 	void UpdatePerlin();
 	static void GenerateNoiseTex(unsigned int tex);
@@ -162,30 +158,26 @@ private:
 
 	std::vector<const AtlasedTexture*> smokeTextures;
 
-	/// projectiles without a model, e.g. nano-particles
-	std::vector<CProjectile*> modellessProjectiles;
-	/// projectiles with a model
+	/// projectiles container {modelless, model}
+	std::array<std::vector<CProjectile*>, 2> renderProjectiles;
+
+	/// projectiles with a model, binned by model type and textures
 	std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> modelRenderers;
 
-	/// used to render particle effects in back-to-front order
-	std::vector<CProjectile*> sortedProjectiles;
-	std::vector<CProjectile*> unsortedProjectiles;
+	/// used to render particle effects in back-to-front order. {unsorted, sorted}
+	std::array<std::vector<CProjectile*>, 2> drawParticles;
 
 	bool drawSorted = true;
 
-	GLuint depthTexture = 0u;
-	FBO* depthFBO = nullptr;
 	std::array<Shader::IProgramObject*, 2> fxShaders = { nullptr };
 	Shader::IProgramObject* fsShadowShader = nullptr;
-
-	uint32_t lastDrawFrame = 0; //normal, reflection
 
 	constexpr static int WANT_SOFTEN_COUNT = 2;
 	int wantSoften = 0;
 
 	bool wantDrawOrder = true;
+
+	std::unique_ptr<ScopedDepthBufferCopy> sdbc;
 };
 
 extern CProjectileDrawer* projectileDrawer;
-
-#endif // PROJECTILE_DRAWER_HDR

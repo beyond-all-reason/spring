@@ -99,12 +99,12 @@ bool CLuaRules::AddUnsyncedCode(lua_State* L)
 	lua_getglobal(L, "Spring");
 
 	lua_pushliteral(L, "UnitRendering");
-	lua_newtable(L);
+	lua_createtable(L, 0, 17);
 	LuaObjectRendering<LUAOBJ_UNIT>::PushEntries(L);
 	lua_rawset(L, -3);
 
 	lua_pushliteral(L, "FeatureRendering");
-	lua_newtable(L);
+	lua_createtable(L, 0, 17);
 	LuaObjectRendering<LUAOBJ_FEATURE>::PushEntries(L);
 	lua_rawset(L, -3);
 

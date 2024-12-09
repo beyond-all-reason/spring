@@ -8,16 +8,21 @@
 #include "RefractWater.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
-#include "System/bitops.h"
+
+#include <bit>
+
+#include "System/Misc/TracyDefs.h"
 
 void CRefractWater::InitResources(bool loadShader)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CAdvWater::InitResources(false);
 	LoadGfx();
 }
 
 void CRefractWater::FreeResources()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (subSurfaceTex) {
 		glDeleteTextures(1, &subSurfaceTex);
 		subSurfaceTex = 0;
@@ -26,6 +31,7 @@ void CRefractWater::FreeResources()
 
 void CRefractWater::LoadGfx()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// valid because GL_TEXTURE_RECTANGLE_ARB = GL_TEXTURE_RECTANGLE_EXT
 	if (GLEW_ARB_texture_rectangle || GLEW_EXT_texture_rectangle) {
 		target = GL_TEXTURE_RECTANGLE_ARB;
@@ -42,13 +48,14 @@ void CRefractWater::LoadGfx()
 		glTexImage2D(target, 0, 3, globalRendering->viewSizeX, globalRendering->viewSizeY, 0, GL_RGB, GL_INT, 0);
 		waterFP = LoadFragmentProgram("ARB/waterRefractTR.fp");
 	} else {
-		glTexImage2D(target, 0, 3, next_power_of_2(globalRendering->viewSizeX), next_power_of_2(globalRendering->viewSizeY), 0, GL_RGB, GL_INT, 0);
+		glTexImage2D(target, 0, 3, std::bit_ceil <uint32_t> (globalRendering->viewSizeX), std::bit_ceil <uint32_t> (globalRendering->viewSizeY), 0, GL_RGB, GL_INT, 0);
 		waterFP = LoadFragmentProgram("ARB/waterRefractT2D.fp");
 	}
 }
 
 void CRefractWater::Draw()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!waterRendering->forceRendering && !readMap->HasVisibleWater())
 		return;
 
@@ -68,8 +75,8 @@ void CRefractWater::Draw()
 	} else {
 		float v[] = { 10.0f, 10.0f, 0.0f, 0.0f };
 		glProgramEnvParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, v);
-		v[0] = 1.0f / next_power_of_2(globalRendering->viewSizeX);
-		v[1] = 1.0f / next_power_of_2(globalRendering->viewSizeY);
+		v[0] = 1.0f / std::bit_ceil <uint32_t> (globalRendering->viewSizeX);
+		v[1] = 1.0f / std::bit_ceil <uint32_t> (globalRendering->viewSizeY);
 		glProgramEnvParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, v);
 	}
 	CAdvWater::Draw(false);
@@ -86,6 +93,7 @@ void CRefractWater::Draw()
 
 void CRefractWater::SetupWaterDepthTex()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	glActiveTextureARB(GL_TEXTURE3_ARB);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, readMap->GetShadingTexture()); // the shading texture has water depth encoded in alpha

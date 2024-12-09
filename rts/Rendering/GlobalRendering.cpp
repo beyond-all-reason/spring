@@ -13,9 +13,9 @@
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GL/glExtra.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
-#include "System/bitops.h"
 #include "System/EventHandler.h"
 #include "System/type2.h"
 #include "System/TimeProfiler.h"
@@ -38,7 +38,7 @@
 #include <SDL_syswm.h>
 #include <SDL_rect.h>
 
-#include <tracy/Tracy.hpp>
+#include "System/Misc/TracyDefs.h"
 
 CONFIG(bool, DebugGL).defaultValue(false).description("Enables GL debug-context and output. (see GL_ARB_debug_output)");
 CONFIG(bool, DebugGLStacktraces).defaultValue(false).description("Create a stacktrace when an OpenGL error occurs");
@@ -46,6 +46,7 @@ CONFIG(bool, DebugGLStacktraces).defaultValue(false).description("Create a stack
 CONFIG(int, GLContextMajorVersion).defaultValue(3).minimumValue(3).maximumValue(4);
 CONFIG(int, GLContextMinorVersion).defaultValue(0).minimumValue(0).maximumValue(5);
 CONFIG(int, MSAALevel).defaultValue(0).minimumValue(0).maximumValue(32).description("Enables multisample anti-aliasing; 'level' is the number of samples used.");
+CONFIG(float, MinSampleShadingRate).defaultValue(0.0f).minimumValue(0.0f).maximumValue(1.0f).description("A value of 1.0 indicates that each sample in the framebuffer should be independently shaded. A value of 0.0 effectively allows the GL to ignore sample rate shading. Any value between 0.0 and 1.0 allows the GL to shade only a subset of the total samples within each covered fragment.");
 
 CONFIG(int, ForceDisablePersistentMapping).defaultValue(0).minimumValue(0).maximumValue(1);
 CONFIG(int, ForceDisableExplicitAttribLocs).defaultValue(0).minimumValue(0).maximumValue(1);
@@ -162,6 +163,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(forceSwapBuffers),
 
 	CR_IGNORED(msaaLevel),
+	CR_IGNORED(minSampleShadingRate),
 	CR_IGNORED(maxTextureSize),
 	CR_IGNORED(maxFragShSlots),
 	CR_IGNORED(maxCombShSlots),
@@ -178,7 +180,6 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(amdHacks),
 	CR_IGNORED(supportPersistentMapping),
 	CR_IGNORED(supportExplicitAttribLoc),
-	CR_IGNORED(supportNonPowerOfTwoTex),
 	CR_IGNORED(supportTextureQueryLOD),
 	CR_IGNORED(supportMSAAFrameBuffer),
 	CR_IGNORED(supportDepthBufferBitDepth),
@@ -275,6 +276,7 @@ CGlobalRendering::CGlobalRendering()
 
 	// fallback
 	, msaaLevel(configHandler->GetInt("MSAALevel"))
+	, minSampleShadingRate(configHandler->GetFloat("MinSampleShadingRate"))
 	, maxTextureSize(2048)
 	, maxFragShSlots(8)
 	, maxCombShSlots(8)
@@ -305,7 +307,6 @@ CGlobalRendering::CGlobalRendering()
 
 	, supportPersistentMapping(false)
 	, supportExplicitAttribLoc(false)
-	, supportNonPowerOfTwoTex(false)
 	, supportTextureQueryLOD(false)
 	, supportMSAAFrameBuffer(false)
 	, supportDepthBufferBitDepth(16)
@@ -345,7 +346,8 @@ CGlobalRendering::CGlobalRendering()
 		"XResolutionWindowed",
 		"YResolutionWindowed",
 		"WindowPosX",
-		"WindowPosY"
+		"WindowPosY",
+		"MinSampleShadingRate"
 	});
 	SetDualScreenParams();
 }
@@ -368,6 +370,7 @@ void CGlobalRendering::PreKill()
 {
 	UniformConstants::GetInstance().Kill(); //unsafe to kill in ~CGlobalRendering()
 	RenderBuffer::KillStatic();
+	GL::shapes.Kill();
 	CShaderHandler::FreeInstance();
 }
 
@@ -539,7 +542,9 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		if (softGL != nullptr)
 			LOG_L(L_WARNING, "MSAALevel > 0 and LIBGL_ALWAYS_SOFTWARE set, this will very likely crash!");
 
-		make_even_number(msaaLevel);
+		// has to be even
+		if (msaaLevel % 2 == 1)
+			++msaaLevel;
 	}
 
 	if ((sdlWindow = CreateSDLWindow(title)) == nullptr)
@@ -630,6 +635,7 @@ void CGlobalRendering::PostInit() {
 	ModelUniformData::Init();
 	glGenQueries(glTimerQueries.size(), glTimerQueries.data());
 	RenderBuffer::InitStatic();
+	GL::shapes.Init();
 
 	UpdateTimer();
 }
@@ -729,6 +735,9 @@ void CGlobalRendering::CheckGLExtensions()
 	if (!GLEW_ARB_multitexture       ) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " multitexture ");
 	if (!GLEW_ARB_texture_env_combine) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_env_combine ");
 	if (!GLEW_ARB_texture_compression) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_compression ");
+	if (!GLEW_ARB_texture_float)       ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_float ");
+	if (!GLEW_ARB_texture_non_power_of_two) ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " texture_non_power_of_two ");
+	if (!GLEW_ARB_framebuffer_object)       ptr += snprintf(ptr, sizeof(extMsg) - (ptr - extMsg), " framebuffer_object ");
 
 	if (extMsg[0] == 0)
 		return;
@@ -789,10 +798,7 @@ void CGlobalRendering::SetGLSupportFlags()
 	supportExplicitAttribLoc = GLEW_ARB_explicit_attrib_location;
 	supportExplicitAttribLoc &= (configHandler->GetInt("ForceDisableExplicitAttribLocs") == 0);
 
-	// ATI's x-series doesn't support NPOTs, hd-series does
-	supportNonPowerOfTwoTex = GLEW_ARB_texture_non_power_of_two /* && (!haveAMD || (glRenderer.find(" x") == std::string::npos && glRenderer.find(" 9") == std::string::npos))*/;
 	supportTextureQueryLOD = GLEW_ARB_texture_query_lod;
-
 
 	for (size_t n = 0; (n < sizeof(globalRenderingInfo.glVersionShort) && globalRenderingInfo.glVersion[n] != 0); n++) {
 		if ((globalRenderingInfo.glVersionShort[n] = globalRenderingInfo.glVersion[n]) == ' ') {
@@ -973,7 +979,6 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tNVX GPU mem-info support  : %i", glewIsExtensionSupported("GL_NVX_gpu_memory_info"));
 	LOG("\tATI GPU mem-info support  : %i", glewIsExtensionSupported("GL_ATI_meminfo"));
 	LOG("\tTexture clamping to edge  : %i", glewIsExtensionSupported("GL_EXT_texture_edge_clamp"));
-	LOG("\tNPOT-texture support      : %i (%i)", supportNonPowerOfTwoTex, glewIsExtensionSupported("GL_ARB_texture_non_power_of_two"));
 	LOG("\tS3TC/DXT1 texture support : %i/%i", glewIsExtensionSupported("GL_EXT_texture_compression_s3tc"), glewIsExtensionSupported("GL_EXT_texture_compression_dxt1"));
 	LOG("\ttexture query-LOD support : %i (%i)", supportTextureQueryLOD, glewIsExtensionSupported("GL_ARB_texture_query_lod"));
 	LOG("\tMSAA frame-buffer support : %i (%i)", supportMSAAFrameBuffer, glewIsExtensionSupported("GL_EXT_framebuffer_multisample"));
@@ -1173,12 +1178,14 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 
 	SDL_RestoreWindow(window);
 	SDL_SetWindowMinimumSize(window, minRes.x, minRes.y);
+
 	SDL_SetWindowPosition(window, winPosX, winPosY);
 	SDL_SetWindowSize(window, newRes.x, newRes.y);
-	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
 
 	if (SDL_SetWindowFullscreen(window, (borderless ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
 		LOG("[GR::%s][4][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
+
+	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
 
 	if (newRes == maxRes)
 		SDL_MaximizeWindow(window);
@@ -1189,6 +1196,16 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 void CGlobalRendering::ConfigNotify(const std::string& key, const std::string& value)
 {
 	LOG("[GR::%s][1] key=%s val=%s", __func__, key.c_str(), value.c_str());
+
+	if (key == "MinSampleShadingRate") {
+		auto newMSSR = configHandler->GetFloat("MinSampleShadingRate");
+
+		if (minSampleShadingRate != newMSSR) {
+			minSampleShadingRate = newMSSR;
+			SetMinSampleShadingRate();
+		}
+	}
+
 	if (key == "DualScreenMode" || key == "DualScreenMiniMapOnLeft") {
 		SetDualScreenParams();
 		UpdateGLGeometry();
@@ -1657,11 +1674,12 @@ void CGlobalRendering::InitGLState()
 	msaaLevel *= CheckGLMultiSampling();
 	ToggleMultisampling();
 
+	SetMinSampleShadingRate();
+
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	LoadViewport();
-	gluPerspective(45.0f, aspectRatio, minViewRange, maxViewRange);
 
 	// this does not accomplish much
 	// SwapBuffers(true, true);
@@ -1670,8 +1688,10 @@ void CGlobalRendering::InitGLState()
 
 void CGlobalRendering::ToggleMultisampling() const
 {
-	static constexpr std::array<void(*)(), 2> ToggleFuncs = { []() { glDisable(GL_MULTISAMPLE); }, []() { glEnable(GL_MULTISAMPLE); } };
-	ToggleFuncs[msaaLevel > 0]();
+	if (msaaLevel > 0)
+		glEnable(GL_MULTISAMPLE);
+	else
+		glDisable(GL_MULTISAMPLE);
 }
 
 bool CGlobalRendering::CheckShaderGL4() const
@@ -1710,18 +1730,18 @@ void main()
 	fragColor = vec4(1.0, 1.0, 1.0, vFloat);
 }
 )";
+	auto testShader = Shader::GLSLProgramObject("[GL-TestShader]");
+	// testShader.Release() as part of the ~GLSLProgramObject() will delete GLSLShaderObject's
+	testShader.AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
+	testShader.AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
 
-	auto testShader = std::make_unique<Shader::GLSLProgramObject>("[GL-TestShader]");
-	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
-	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
-	testShader->SetLogReporting(false); //no need to spam guinea pig shader errors
-	testShader->Link();
-	testShader->Enable();
-	testShader->Disable();
-	testShader->Validate();
+	testShader.SetLogReporting(false); //no need to spam guinea pig shader errors
+	testShader.Link();
+	testShader.Enable();
+	testShader.Disable();
+	testShader.Validate();
 
-	return testShader->IsValid();
-	//no need for explicit destuction here
+	return testShader.IsValid();
 #else
 	return false;
 #endif
@@ -1740,6 +1760,22 @@ int CGlobalRendering::DepthBitsToFormat(int bits)
 	default:
 		return GL_DEPTH_COMPONENT; //should never hit this
 	}
+}
+
+void CGlobalRendering::SetMinSampleShadingRate()
+{
+#ifdef GLEW_ARB_sample_shading
+	if (msaaLevel > 0 && minSampleShadingRate > 0.0f) {
+		// Enable sample shading
+		glEnable(GL_SAMPLE_SHADING_ARB);
+		if (GLEW_VERSION_4_0) {
+			glMinSampleShading(minSampleShadingRate);
+		}
+	}
+	else {
+		glDisable(GL_SAMPLE_SHADING_ARB);
+	}
+#endif
 }
 
 bool CGlobalRendering::SetWindowMinMaximized(bool maximize) const

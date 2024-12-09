@@ -107,6 +107,7 @@ local flexCallIns = {
   'GameOver',
   'GamePaused',
   'GameFrame',
+  'GameFramePost',
   'GameProgress',
   'GameSetup',
   'TeamDied',
@@ -122,6 +123,7 @@ local flexCallIns = {
   'UnitFinished',
   'UnitFromFactory',
   'UnitReverseBuilt',
+  'UnitConstructionDecayed',
   'UnitDestroyed',
   'RenderUnitDestroyed',
   'UnitTaken',
@@ -720,9 +722,10 @@ local function SafeWrapWidget(widget)
     if (widget[ciName]) then
       widget[ciName] = SafeWrapFunc(widget[ciName], ciName)
     end
-    if (widget.Initialize) then
-      widget.Initialize = SafeWrapFunc(widget.Initialize, 'Initialize')
-    end
+  end
+
+  if (widget.Initialize) then
+    widget.Initialize = SafeWrapFunc(widget.Initialize, 'Initialize')
   end
 end
 
@@ -1743,6 +1746,14 @@ function widgetHandler:GameFrame(frameNum)
 end
 
 
+function widgetHandler:GameFramePost(frameNum)
+  for _,w in ipairs(self.GameFramePostList) do
+    w:GameFramePost(frameNum)
+  end
+  return
+end
+
+
 function widgetHandler:ShockFront(power, dx, dy, dz)
   for _,w in ipairs(self.ShockFrontList) do
     w:ShockFront(power, dx, dy, dz)
@@ -1838,6 +1849,14 @@ end
 function widgetHandler:UnitReverseBuilt(unitID, unitDefID, unitTeam)
   for _,w in ipairs(self.UnitReverseBuiltList) do
     w:UnitReverseBuilt(unitID, unitDefID, unitTeam)
+  end
+  return
+end
+
+
+function widgetHandler:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
+  for _,w in ipairs(self.UnitConstructionDecayedList) do
+    w:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
   end
   return
 end

@@ -22,6 +22,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/StringUtil.h"
 
+#include "System/Misc/TracyDefs.h"
+
 static constexpr float SMF_TEXSQUARE_SIZE = 1024.0f;
 
 
@@ -33,6 +35,7 @@ ISMFRenderState* ISMFRenderState::GetInstance(bool luaShaders, bool noop) {
 }
 
 bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::string names[GLSL_SHADER_COUNT] = {
 		"SMFShaderGLSL-Forward-Std",
 		"SMFShaderGLSL-Forward-Adv",
@@ -64,6 +67,7 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 }
 
 void SMFRenderStateGLSL::Kill() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
 		// make sure SH deletes only the wrapper objects; programs are managed by LuaShaders
 		for (uint32_t n = GLSL_SHADER_FWD_STD; n < GLSL_SHADER_COUNT; n++) {
@@ -82,6 +86,7 @@ void SMFRenderStateGLSL::Update(
 	const CSMFGroundDrawer* smfGroundDrawer,
 	const LuaMapShaderData* luaMapShaderData
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
 		assert(luaMapShaderData != nullptr);
 
@@ -189,16 +194,19 @@ void SMFRenderStateGLSL::Update(
 }
 
 bool SMFRenderStateGLSL::HasValidShader(const DrawPass::e& drawPass) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	Shader::IProgramObject* shader = (drawPass == DrawPass::TerrainDeferred) ? glslShaders[GLSL_SHADER_DFR_ADV] : currShader;
 	return (shader != nullptr && shader->IsValid());
 }
 
 bool SMFRenderStateGLSL::CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_DFR_ADV);
 }
 
 void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
 		// use raw, GLSLProgramObject::Enable also calls RecompileIfNeeded
 		currShader->EnableRaw();
@@ -212,26 +220,12 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 
 	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
 
-	if (isAdv)
-		currShader->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
-
-	currShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());
-
-	currShader->Enable();
-	currShader->SetUniform("mapHeights", readMap->GetCurrMinHeight(), readMap->GetCurrMaxHeight());
-	currShader->SetUniform("infoTexIntensityMul", float(infoTextureHandler->InMetalMode()) + 1.0f);
-
-	if (isAdv) {
-		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
-		currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
-	}
-
 	// already on the MV stack at this point
 	glLoadIdentity();
 	glMultMatrixf(camera->GetViewMatrix());
 
 	if (isAdv && shadowHandler.ShadowsLoaded()) {
-		shadowHandler.SetupShadowTexSampler(GL_TEXTURE4);
+		shadowHandler.SetupShadowTexSampler(GL_TEXTURE4, true);
 		glActiveTexture(GL_TEXTURE19); glBindTexture(GL_TEXTURE_2D, shadowHandler.GetColorTextureID());
 	}
 
@@ -260,34 +254,80 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 	}
 
 	glActiveTexture(GL_TEXTURE0);
+
+	if (isAdv)
+		currShader->SetFlag("HAVE_SHADOWS", shadowHandler.ShadowsLoaded());
+
+	currShader->SetFlag("HAVE_INFOTEX", infoTextureHandler->IsEnabled());
+
+	currShader->Enable();
+	currShader->SetUniform("mapHeights", readMap->GetCurrMinHeight(), readMap->GetCurrMaxHeight());
+	currShader->SetUniform("infoTexIntensityMul", float(infoTextureHandler->InMetalMode()) + 1.0f);
+
+	if (isAdv) {
+		currShader->SetUniform3v("cameraPos", &camera->GetPos()[0]);
+		if (shadowHandler.ShadowsLoaded())
+			currShader->SetUniformMatrix4x4("shadowMat", false, shadowHandler.GetShadowMatrixRaw());
+	}
 }
 
 void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
 		glActiveTexture(GL_TEXTURE0);
 		currShader->DisableRaw();
 		return;
 	}
 
+	currShader->Disable();
+
 	const auto shaderStage = (drawPass == DrawPass::TerrainDeferred) ? GLSL_SHADER_DFR_ADV : GLSL_SHADER_FWD_ADV;
 	const bool isAdv = CanUseAdvShading(smfGroundDrawer, shaderStage);
 
+	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
+
 	if (isAdv && shadowHandler.ShadowsLoaded()) {
-		glActiveTexture(GL_TEXTURE4);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+		shadowHandler.ResetShadowTexSampler(GL_TEXTURE4, true);
+		glActiveTexture(GL_TEXTURE19); glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE14); glBindTexture(GL_TEXTURE_2D, 0);
+
+	if (isAdv) {
+		glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE6); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE7); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE8); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE9); glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, 0);
+		glActiveTexture(GL_TEXTURE10); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE11); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE12); glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE13); glBindTexture(GL_TEXTURE_2D, 0);
+
+		for (int i = 0; i < CSMFReadMap::NUM_SPLAT_DETAIL_NORMALS; i++) {
+			if (smfMap->GetSplatNormalTexture(i) != 0) {
+				glActiveTexture(GL_TEXTURE15 + i); glBindTexture(GL_TEXTURE_2D, 0);
+			}
+		}
+	}
+	else {
+		glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	glActiveTexture(GL_TEXTURE0);
-	currShader->Disable();
 }
 
 void SMFRenderStateGLSL::SetSquareTexGen(const int sqx, const int sqy) const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// needs to be set even for Lua shaders, is unknowable otherwise
 	// (works because SMFGroundDrawer::SetupBigSquare always calls us)
 	currShader->SetUniform("texSquare", sqx, sqy);
 }
 
 void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (drawPass == DrawPass::TerrainDeferred) {
 		currShader = glslShaders[GLSL_SHADER_DFR_ADV];
 		return;
@@ -301,6 +341,7 @@ void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawe
 
 void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(currShader && !currShader->IsBound());
 
 	for (uint32_t n = GLSL_SHADER_FWD_ADV; n < GLSL_SHADER_COUNT; n++) {
@@ -316,5 +357,6 @@ void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 
 bool SMFRenderStateGLSL::CanUseAdvShading(const CSMFGroundDrawer* smfGroundDrawer, ShaderStage shStage) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return smfGroundDrawer->UseAdvShading() && glslShaders[shStage]->IsValid();
 }

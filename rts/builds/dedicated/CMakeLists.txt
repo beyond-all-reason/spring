@@ -23,10 +23,15 @@ set(ENGINE_SRC_ROOT_DIR "${CMAKE_SOURCE_DIR}/rts")
 list(APPEND engineDedicatedLibraries cpuid)
 list(APPEND engineDedicatedLibraries ${Boost_REGEX_LIBRARY})
 list(APPEND engineDedicatedLibraries lua archives 7zip prd::jsoncpp
-	${SPRING_MINIZIP_LIBRARY} ${ZLIB_LIBRARY} gflags_nothreads_static Tracy::TracyClient)
+	${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB gflags_nothreads_static Tracy::TracyClient)
 list(APPEND engineDedicatedLibraries headlessStubs engineSystemNet)
-list(APPEND engineDedicatedLibraries ${LIBUNWIND_LIBRARIES})
+if(UNIX AND NOT (CMAKE_SYSTEM_NAME MATCHES "OpenBSD"))
+	list(APPEND engineDedicatedLibraries libunwind::libunwind)
+endif()
 list(APPEND engineDedicatedLibraries ${LZMA_LIBRARY})
+
+### base64 from pr-downloader
+list(APPEND engineDedicatedLibraries "prd::base64")
 
 ### smmalloc
 list(APPEND engineDedicatedLibraries "smmalloc")
@@ -44,9 +49,9 @@ if    (UNIX AND NOT MINGW)
 	list(APPEND engineDedicatedLibraries ${CMAKE_DL_LIBS})
 
 	# Needed for backtrace* on some systems
-	if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+	if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 		list(APPEND engineDedicatedLibraries execinfo)
-	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 endif (UNIX AND NOT MINGW)
 
 find_package(SDL2 REQUIRED)
@@ -161,7 +166,7 @@ add_executable(engine-dedicated
 		${sources_engine_System_Log_sinkFile}
 		${sources_engine_System_Log_sinkOutputDebugString}
 		${ENGINE_ICON}
-		main
+		main.cpp
 	)
 target_link_libraries(engine-dedicated ${engineDedicatedLibraries})
 if    (MINGW)

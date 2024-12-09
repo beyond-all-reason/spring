@@ -21,6 +21,8 @@
 #include "System/TemplateUtils.hpp"
 #include "Sim/Misc/GlobalSynced.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CR_BIND_DERIVED_INTERFACE_POOL(CExpGenSpawnable, CWorldObject, projMemPool.allocMem, projMemPool.freeMem)
 CR_REG_METADATA(CExpGenSpawnable, (
@@ -42,6 +44,7 @@ CExpGenSpawnable::CExpGenSpawnable(const float3& pos, const float3& spd)
 	, rotVel{ 0 }
 	, createFrame{ 0 }
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(projMemPool.alloced(this));
 }
 
@@ -51,16 +54,19 @@ CExpGenSpawnable::CExpGenSpawnable()
 	, rotVel{ 0 }
 	, createFrame{ 0 }
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(projMemPool.alloced(this));
 }
 
 CExpGenSpawnable::~CExpGenSpawnable()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(projMemPool.mapped(this));
 }
 
 void CExpGenSpawnable::Init(const CUnit* owner, const float3& offset)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	createFrame = gs->frameNum;
 	rotParams *= float3(math::DEG_TO_RAD / GAME_SPEED, math::DEG_TO_RAD / (GAME_SPEED * GAME_SPEED), math::DEG_TO_RAD);
 
@@ -69,6 +75,7 @@ void CExpGenSpawnable::Init(const CUnit* owner, const float3& offset)
 
 void CExpGenSpawnable::UpdateRotation()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
 	// rotParams.y is acceleration in angle per frame^2
 	rotVel = rotParams.x + rotParams.y * t;
@@ -77,29 +84,36 @@ void CExpGenSpawnable::UpdateRotation()
 
 void CExpGenSpawnable::UpdateAnimParams()
 {
-	if (static_cast<int>(animParams.x) <= 1 && static_cast<int>(animParams.y) <= 1) {
-		animProgress = 0.0f;
+	UpdateAnimParamsImpl(animParams, animProgress);
+}
+
+void CExpGenSpawnable::UpdateAnimParamsImpl(const float3& ap, float& p)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (static_cast<int>(ap.x) <= 1 && static_cast<int>(ap.y) <= 1) {
+		p = 0.0f;
 		return;
 	}
 
 	const float t = (gs->frameNum - createFrame + globalRendering->timeOffset);
-	const float animSpeed = math::fabs(animParams.z);
-	if (animParams.z < 0.0f) {
+	const float animSpeed = math::fabs(ap.z);
+	if (ap.z < 0.0f) {
 		#if 0
-			animProgress = math::fmod(t, 2.0f * animSpeed) / animSpeed;
-			if (animProgress > 1.0)
-				animProgress = 2.0f - animProgress;
+			p = math::fmod(t, 2.0f * animSpeed) / animSpeed;
+			if (p > 1.0)
+				p = 2.0f - p;
 		#else
-			animProgress = 1.0f - math::fabs(math::fmod(t, 2.0f * animSpeed) / animSpeed - 1.0f);
+			p = 1.0f - math::fabs(math::fmod(t, 2.0f * animSpeed) / animSpeed - 1.0f);
 		#endif
 	}
 	else {
-		animProgress = math::fmod(t, animSpeed) / animSpeed;
+		p = math::fmod(t, animSpeed) / animSpeed;
 	}
 }
 
 bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	static const unsigned int memberHashes[] = {
 		spring::LiteHash(          "pos",  sizeof(          "pos") - 1, 0),
 		spring::LiteHash(        "speed",  sizeof(        "speed") - 1, 0),
@@ -120,12 +134,14 @@ bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 
 TypedRenderBuffer<VA_TYPE_PROJ>& CExpGenSpawnable::GetPrimaryRenderBuffer()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	return RenderBuffer::GetTypedRenderBuffer<VA_TYPE_PROJ>();
 }
 
 template<typename Spawnable>
 CExpGenSpawnable::SpawnableTuple GetSpawnableEntryImpl()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CExpGenSpawnable::SpawnableTuple entry{};
 
 	return std::make_tuple(
@@ -155,6 +171,7 @@ std::make_tuple( \
 
 void CExpGenSpawnable::InitSpawnables()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto funcTuple = MAKE_FUNCTIONS_TUPLE(GetSpawnableEntryImpl);
 	static_assert(std::tuple_size<decltype(funcTuple)>::value == spawnables.size());
 
@@ -170,6 +187,7 @@ void CExpGenSpawnable::InitSpawnables()
 
 bool CExpGenSpawnable::GetSpawnableMemberInfo(const std::string& spawnableName, SExpGenSpawnableMemberInfo& memberInfo)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto it = std::find_if(spawnables.begin(), spawnables.end(), [&spawnableName](const auto& entry) {
 		return std::get<0>(entry) == spawnableName;
 	});
@@ -182,6 +200,7 @@ bool CExpGenSpawnable::GetSpawnableMemberInfo(const std::string& spawnableName, 
 
 int CExpGenSpawnable::GetSpawnableID(const std::string& spawnableName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	auto it = std::find_if(spawnables.begin(), spawnables.end(), [&spawnableName](const auto& entry) {
 		return std::get<0>(entry) == spawnableName;
 	});
@@ -194,6 +213,7 @@ int CExpGenSpawnable::GetSpawnableID(const std::string& spawnableName)
 
 CExpGenSpawnable* CExpGenSpawnable::CreateSpawnable(int spawnableID)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (spawnableID < 0 || spawnableID > spawnables.size() - 1)
 		return nullptr;
 
@@ -202,6 +222,12 @@ CExpGenSpawnable* CExpGenSpawnable::CreateSpawnable(int spawnableID)
 
 void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const
 {
+	AddEffectsQuadImpl(tl, tr, br, bl, animParams, animProgress);
+}
+
+void CExpGenSpawnable::AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl, const float3& ap, const float& p)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
 	float minS = std::numeric_limits<float>::max()   ; float minT = std::numeric_limits<float>::max()   ;
 	float maxS = std::numeric_limits<float>::lowest(); float maxT = std::numeric_limits<float>::lowest();
 	std::invoke([&](auto&&... arg) {
@@ -214,7 +240,34 @@ void CExpGenSpawnable::AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr
 	auto& rb = GetPrimaryRenderBuffer();
 
 	const auto uvInfo = float4{ minS, minT, maxS - minS, maxT - minT };
-	const auto animInfo = float3{ animParams.x, animParams.y, animProgress };
+	const auto animInfo = float3{ ap.x, ap.y, p };
+	constexpr float layer = 0.0f; //for future texture arrays
+
+	//pos, uvw, uvmm, col
+	rb.AddQuadTriangles(
+		{ tl.pos, float3{ tl.s, tl.t, layer }, uvInfo, animInfo, tl.c },
+		{ tr.pos, float3{ tr.s, tr.t, layer }, uvInfo, animInfo, tr.c },
+		{ br.pos, float3{ br.s, br.t, layer }, uvInfo, animInfo, br.c },
+		{ bl.pos, float3{ bl.s, bl.t, layer }, uvInfo, animInfo, bl.c }
+	);
+}
+
+void CExpGenSpawnable::AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	float minS = std::numeric_limits<float>::max()   ; float minT = std::numeric_limits<float>::max()   ;
+	float maxS = std::numeric_limits<float>::lowest(); float maxT = std::numeric_limits<float>::lowest();
+	std::invoke([&](auto&&... arg) {
+		((minS = std::min(minS, arg.s)), ...);
+		((minT = std::min(minT, arg.t)), ...);
+		((maxS = std::max(maxS, arg.s)), ...);
+		((maxT = std::max(maxT, arg.t)), ...);
+	}, tl, tr, br, bl);
+
+	auto& rb = GetPrimaryRenderBuffer();
+
+	const auto uvInfo = float4{ minS, minT, maxS - minS, maxT - minT };
+	static constexpr auto animInfo = float3{ 1.0f, 1.0f , 0.0f };
 	constexpr float layer = 0.0f; //for future texture arrays
 
 	//pos, uvw, uvmm, col

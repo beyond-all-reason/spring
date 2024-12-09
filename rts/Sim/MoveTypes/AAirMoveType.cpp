@@ -17,6 +17,8 @@
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 using namespace MoveTypes;
 
 CR_BIND_DERIVED_INTERFACE(AAirMoveType, AMoveType)
@@ -83,6 +85,7 @@ AAirMoveType::EmitCrashTrailFunc amtEmitCrashTrailFuncs[2] = {
 
 AAirMoveType::AAirMoveType(CUnit* unit): AMoveType(unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// creg
 	if (unit == nullptr)
 		return;
@@ -115,6 +118,7 @@ AAirMoveType::AAirMoveType(CUnit* unit): AMoveType(unit)
 
 
 bool AAirMoveType::UseSmoothMesh() const {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!useSmoothMesh)
 		return false;
 
@@ -130,6 +134,7 @@ bool AAirMoveType::UseSmoothMesh() const {
 }
 
 void AAirMoveType::DependentDied(CObject* o) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (o == lastCollidee) {
 		lastCollidee = nullptr;
 		collisionState = COLLISION_NOUNIT;
@@ -137,6 +142,7 @@ void AAirMoveType::DependentDied(CObject* o) {
 }
 
 bool AAirMoveType::Update() {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE: useHeading is never true by default for aircraft (AAirMoveType
 	// forces it to false, while only CUnit::{Attach,Detach}Unit manipulate
 	// it specifically for HoverAirMoveType's)
@@ -151,6 +157,7 @@ bool AAirMoveType::Update() {
 
 void AAirMoveType::UpdateLanded()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// while an aircraft is being built we do not adjust its
 	// position, because the builder might be a tall platform
 	if (owner->beingBuilt)
@@ -174,7 +181,7 @@ void AAirMoveType::UpdateLanded()
 		owner->speed.y = 0.0f;
 	}
 
-	owner->SetVelocityAndSpeed(owner->speed + owner->GetDragAccelerationVec(float4(0.0f, 0.0f, 0.0f, 0.1f)));
+	owner->SetVelocityAndSpeed(owner->speed + owner->GetDragAccelerationVec(0.0f, 0.0f, 0.0f, 0.1f));
 	owner->Move(UpVector * (std::max(curHeight, minHeight) - owner->pos.y), true);
 	owner->Move(owner->speed, true);
 	// match the terrain normal
@@ -184,6 +191,7 @@ void AAirMoveType::UpdateLanded()
 
 void AAirMoveType::LandAt(float3 pos, float distanceSq)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (distanceSq < 0.0f)
 		distanceSq = Square(BrakingDistance(maxSpeed, decRate));
 
@@ -203,6 +211,7 @@ void AAirMoveType::LandAt(float3 pos, float distanceSq)
 
 void AAirMoveType::UpdateLandingHeight(float newWantedHeight)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	wantedHeight = newWantedHeight;
 	reservedLandingPos.y = wantedHeight + amtGetGroundHeightFuncs[owner->unitDef->canSubmerge](reservedLandingPos.x, reservedLandingPos.z);
 }
@@ -210,6 +219,7 @@ void AAirMoveType::UpdateLandingHeight(float newWantedHeight)
 
 void AAirMoveType::UpdateLanding()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const float3& pos = owner->pos;
 
 	const float radius = std::max(owner->radius, 10.0f);
@@ -228,6 +238,7 @@ void AAirMoveType::UpdateLanding()
 
 void AAirMoveType::CheckForCollision()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (!collide)
 		return;
 

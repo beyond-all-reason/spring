@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdio>
 #include <memory>
+#include <semaphore>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,6 +39,7 @@
 #define LOG_SECTION_ARCHIVESCANNER "ArchiveScanner"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
 
+#define ACRHIVE_CHECKSUM_DUMP 1
 
 /*
  * The archive scanner is used to find stuff in archives
@@ -52,7 +54,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
  * but mapping them all, every time to make the list is)
  */
 
-constexpr static int INTERNAL_VER = 16;
+constexpr static int INTERNAL_VER = 17;
 
 
 /*
@@ -420,6 +422,7 @@ void CArchiveScanner::Clear()
 	brokenArchivesIndex.clear();
 	brokenArchivesIndex.reserve(16);
 	cachefile.clear();
+	numFilesHashed.store(0);
 }
 
 void CArchiveScanner::Reload()
@@ -442,7 +445,7 @@ void CArchiveScanner::ScanAllDirs()
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 
 	const std::vector<std::string>& dataDirPaths = dataDirLocater.GetDataDirPaths();
-	const std::array<std::string, 5>& dataDirRoots = dataDirLocater.GetDataDirRoots();
+	const std::vector<std::string>& dataDirRoots = dataDirLocater.GetDataDirRoots();
 
 	std::vector<std::string> scanDirs;
 	scanDirs.reserve(dataDirPaths.size() * dataDirRoots.size());
@@ -908,6 +911,8 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
 	IFileFilter* ignore = IFileFilter::Create();
 	std::vector<std::uint8_t> buf;
 
+	ignore->AddRuleRegex("^\\..*$");
+
 	// this automatically splits lines
 	if (ar->GetFile("springignore.txt", buf) && !buf.empty())
 		ignore->AddRule(std::string((char*)(&buf[0]), buf.size()));
@@ -923,9 +928,8 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
  */
 bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, ArchiveInfo& archiveInfo)
 {
-	assert(Threading::IsMainThread());
-
 	// try to open an archive
+	bool isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
 	std::unique_ptr<IArchive> ar(archiveLoader.OpenArchive(archiveName));
 
 	if (ar == nullptr)
@@ -936,8 +940,10 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	std::vector<std::string> fileNames;
 	std::vector<sha512::raw_digest> fileHashes;
 	static std::array<std::vector<std::uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
-	for (auto& fileBuffer : fileBuffers)
+	for (auto& fileBuffer : fileBuffers) {
+		fileBuffer.reserve(1 << 20);
 		fileBuffer.clear();
+	}
 
 	fileNames.reserve(ar->NumFiles());
 	fileHashes.reserve(ar->NumFiles());
@@ -961,14 +967,28 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	std::vector<std::shared_ptr<std::future<void>>> tasks;
 	tasks.reserve(fileNames.size());
 
-	for (size_t i = 0; i < fileNames.size(); ++i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
+	// decrease spinning disk thrashing a little bit.
+	const auto numParallelFileReads = std::max(isOnSpinningDisk ? ThreadPool::GetNumThreads() >> 1 : ThreadPool::GetNumThreads(), 1);
+	std::counting_semaphore sem(numParallelFileReads);
 
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
-		};
-		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask)));
+	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
+		const auto& fileName = fileNames[fidx];
+		auto& fileHash = fileHashes[fidx];
+		auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
+		fileBuffer.clear();
+
+		sem.acquire();
+		ar->GetFile(fileName, fileBuffer);
+		sem.release();
+
+		if (!fileBuffer.empty())
+			sha512::calc_digest(fileBuffer.data(), fileBuffer.size(), fileHash.data());
+
+		numFilesHashed.fetch_add(1);
+	};
+
+	for (size_t i = 0; i < fileNames.size(); ++i) {
+		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, i));
 	}
 
 	const auto erasePredicate = [](decltype(tasks)::value_type item) {
@@ -977,9 +997,8 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	};
 
 	while (!tasks.empty()) {
-		spring::VectorEraseAllIf(tasks, erasePredicate);
-		spring::UnfreezeSpring(WDT_MAIN);
-		spring_sleep(spring_msecs(10));
+		std::erase_if(tasks, erasePredicate);
+		spring_sleep(spring_msecs(1));
 	}
 #else
 	for_mt(0, fileNames.size(), [&](const int i) {
@@ -1431,7 +1450,18 @@ std::string CArchiveScanner::MapNameToMapFile(const std::string& versionedMapNam
 	return versionedMapName;
 }
 
+void DumpArchiveChecksum(const std::string& lcName, const sha512::raw_digest& cs) {
+#if ACRHIVE_CHECKSUM_DUMP == 1
+	{
+		sha512::hex_digest hexHash;
+		hexHash.fill(0);
 
+		sha512::dump_digest(cs, hexHash);
+
+		LOG_L(L_INFO, "[CAS::GASCB] Archive file=\"%s\" cs=\"%s\"", lcName.c_str(), &hexHash[0]);
+	}
+#endif
+}
 
 sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::string& filePath)
 {
@@ -1442,16 +1472,19 @@ sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::str
 	// cache will be rewritten on reload/shutdown)
 	ScanArchive(filePath, true);
 
-	const std::string& lcName = StringToLower(FileSystem::GetFilename(filePath));
+	const std::string lcName = StringToLower(FileSystem::GetFilename(filePath));
 	const auto aiIter = archiveInfosIndex.find(lcName);
 
 	sha512::raw_digest checksum;
 	std::fill(checksum.begin(), checksum.end(), 0);
 
-	if (aiIter == archiveInfosIndex.end())
+	if (aiIter == archiveInfosIndex.end()) {
+		DumpArchiveChecksum(lcName, checksum); //cs is 0
 		return checksum;
+	}
 
 	std::memcpy(checksum.data(), archiveInfos[aiIter->second].checksum, sha512::SHA_LEN);
+	DumpArchiveChecksum(lcName, checksum);
 	return checksum;
 }
 
@@ -1464,7 +1497,7 @@ sha512::raw_digest CArchiveScanner::GetArchiveCompleteChecksumBytes(const std::s
 		const std::string& archiveName = ArchiveFromName(depName);
 		const std::string  archivePath = GetArchivePath(archiveName) + archiveName;
 
-		const sha512::raw_digest& archiveChecksum = GetArchiveSingleChecksumBytes(archivePath);
+		const sha512::raw_digest archiveChecksum = GetArchiveSingleChecksumBytes(archivePath);
 
 		for (uint8_t i = 0; i < sha512::SHA_LEN; i++) {
 			checksum[i] ^= archiveChecksum[i];

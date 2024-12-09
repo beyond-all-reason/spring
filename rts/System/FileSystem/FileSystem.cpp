@@ -5,6 +5,8 @@
  */
 #include "FileSystem.h"
 
+#include <filesystem>
+
 #include "Game/GameVersion.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/Win/win32.h"
@@ -215,32 +217,8 @@ std::string FileSystem::GetExtension(const std::string& path)
 	return "";
 }
 
-
 std::string FileSystem::GetNormalizedPath(const std::string& path) {
-
-	std::string normalizedPath = StringReplace(path, "\\", "/"); // convert to POSIX path separators
-
-	normalizedPath = StringReplace(normalizedPath, "/./", "/");
-
-	try {
-		normalizedPath = spring::regex_replace(normalizedPath, spring::regex("[/]{2,}"), {"/"});
-	} catch (const spring::regex_error& e) {
-		LOG_L(L_WARNING, "[%s][1] regex exception \"%s\" (code=%d)", __func__, e.what(), int(e.code()));
-	}
-
-	try {
-		normalizedPath = spring::regex_replace(normalizedPath, spring::regex("[^/]+[/][.]{2}"), {""});
-	} catch (const spring::regex_error& e) {
-		LOG_L(L_WARNING, "[%s][2] regex exception \"%s\" (code=%d)", __func__, e.what(), int(e.code()));
-	}
-
-	try {
-		normalizedPath = spring::regex_replace(normalizedPath, spring::regex("[/]{2,}"), {"/"});
-	} catch (const spring::regex_error& e) {
-		LOG_L(L_WARNING, "[%s][3] regex exception \"%s\" (code=%d)", __func__, e.what(), int(e.code()));
-	}
-
-	return normalizedPath; // maybe use FixSlashes here
+	return std::filesystem::path(path).lexically_normal().generic_string();
 }
 
 std::string& FileSystem::FixSlashes(std::string& path)

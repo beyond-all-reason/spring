@@ -30,6 +30,7 @@ CALLIN_LIST = {
 	"GameStart",
 	"GameOver",
 	"GameFrame",
+	"GameFramePost", -- Called after all other Sim operations are completed
 	"GamePaused",
 	"GameProgress",
 	"GameID",
@@ -48,6 +49,7 @@ CALLIN_LIST = {
 	"UnitFinished",
 	"UnitFromFactory",
 	"UnitReverseBuilt",
+	"UnitConstructionDecayed",
 	"UnitDestroyed",
 	"RenderUnitDestroyed",
 	"UnitExperience",

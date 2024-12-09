@@ -3,11 +3,12 @@
 #ifndef SOLID_OBJECT_H
 #define SOLID_OBJECT_H
 
+#include <bit>
+
 #include "WorldObject.h"
 #include "Lua/LuaRulesParams.h"
 #include "Rendering/Models/3DModel.h"
 #include "Sim/Misc/CollisionVolume.h"
-#include "System/bitops.h"
 #include "System/Matrix44f.h"
 #include "System/type2.h"
 #include "System/Ecs/EcsMain.h"
@@ -18,7 +19,6 @@
 struct MoveDef;
 struct LocalModelPiece;
 struct SolidObjectDef;
-struct SolidObjectGroundDecal;
 
 class DamageArray;
 class CUnit;
@@ -32,30 +32,20 @@ enum TerrainChangeTypes {
 	TERRAINCHANGE_OBJECT_DELETED       = 5,
 };
 
-enum DrawFlags : uint8_t {
-	SO_NODRAW_FLAG = 0, // must be 0
-	SO_OPAQUE_FLAG = 1,
-	SO_ALPHAF_FLAG = 2,
-	SO_REFLEC_FLAG = 4,
-	SO_REFRAC_FLAG = 8,
-	SO_SHOPAQ_FLAG = 16,
-	SO_SHTRAN_FLAG = 32,
-	SO_DRICON_FLAG = 128,
-};
-
 enum YardmapStates {
 	YARDMAP_OPEN         = 0,    // always free      (    walkable      buildable)
 	YARDMAP_STACKABLE    = 1,    // can be built on top of YARDMAP_BLOCKED
 	YARDMAP_GEOSTACKABLE = 2,    // can be built on top of YARDMAP_BLOCKED and needs GEO
 	YARDMAP_YARD         = 4,    // walkable when yard is open
 	YARDMAP_YARDINV      = 8,    // walkable when yard is closed
-//	YARDMAP_WALKABLE     = 16,   // open for walk    (    walkable, not buildable)
-	YARDMAP_BUILDONLY	 = 32,	 // open for build   (not walkable,     buildable)
-	YARDMAP_BLOCKED      = 0xFF & ~YARDMAP_YARDINV, // always block     (not walkable, not buildable)
+	YARDMAP_UNBUILDABLE  = 16,   // open for walk    (    walkable, not buildable)
+	YARDMAP_BUILDONLY	 = 32,	 // open for build   (not walkable,     buildable)	
+	YARDMAP_EXITONLY     = 64,   // closed for walk into, closed for build
+	YARDMAP_BLOCKED      = 0xFF & ~(YARDMAP_YARDINV|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE), // always block     (not walkable, not buildable)
 
 	// helpers
-	YARDMAP_YARDBLOCKED  = YARDMAP_YARD,
-	YARDMAP_YARDFREE     = ~YARDMAP_YARD,
+	YARDMAP_YARDBLOCKED  = (YARDMAP_YARD|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE),
+	YARDMAP_YARDFREE     = ~(YARDMAP_YARD|YARDMAP_EXITONLY|YARDMAP_UNBUILDABLE),
 	YARDMAP_GEO          = YARDMAP_BLOCKED,
 };
 typedef Bitwise::BitwiseEnum<YardmapStates> YardMapStatus;
@@ -67,7 +57,7 @@ public:
 	CR_DECLARE_DERIVED(CSolidObject)
 
 
-	virtual const SolidObjectDef* GetDef() const = 0;
+	virtual const SolidObjectDef* GetDef() const { return nullptr; };
 
 	enum PhysicalState {
 		// NOTE:
@@ -101,14 +91,36 @@ public:
 		CSTATE_BIT_QUADMAPRAYS  = (1 << 2),
 	};
 	enum DamageType {
-		DAMAGE_EXPLOSION_WEAPON  = 0, // weapon-projectile that triggered GameHelper::Explosion (weaponDefID >= 0)
-		DAMAGE_EXPLOSION_DEBRIS  = 1, // piece-projectile that triggered GameHelper::Explosion (weaponDefID < 0)
-		DAMAGE_COLLISION_GROUND  = 2, // ground collision
-		DAMAGE_COLLISION_OBJECT  = 3, // object collision
-		DAMAGE_EXTSOURCE_FIRE    = 4,
-		DAMAGE_EXTSOURCE_WATER   = 5, // lava/acid/etc
-		DAMAGE_EXTSOURCE_KILLED  = 6,
-		DAMAGE_EXTSOURCE_CRUSHED = 7,
+		DAMAGE_EXPLOSION_WEAPON    = 0, // weapon-projectile that triggered GameHelper::Explosion (weaponDefID >= 0)
+		DAMAGE_EXPLOSION_DEBRIS    = 1, // piece-projectile that triggered GameHelper::Explosion (weaponDefID < 0)
+		DAMAGE_COLLISION_GROUND    = 2, // ground collision
+		DAMAGE_COLLISION_OBJECT    = 3, // object collision
+		DAMAGE_EXTSOURCE_FIRE      = 4,
+		DAMAGE_EXTSOURCE_WATER     = 5, // lava/acid/etc
+		DAMAGE_EXTSOURCE_KILLED    = 6,
+		DAMAGE_EXTSOURCE_CRUSHED   = 7,
+		DAMAGE_AIRCRAFT_CRASHED    = 8,
+		DAMAGE_NEGATIVE_HEALTH     = 9,
+		DAMAGE_SELFD_EXPIRED       = 10,
+		DAMAGE_KILLED_CHEAT        = 11,
+		DAMAGE_RECLAIMED           = 12,
+		DAMAGE_KILLED_OOB          = 13,
+		DAMAGE_TRANSPORT_KILLED    = 14,
+		DAMAGE_FACTORY_KILLED      = 15,
+		DAMAGE_FACTORY_CANCEL      = 16,
+		DAMAGE_UNIT_SCRIPT         = 17,
+		DAMAGE_KAMIKAZE_ACTIVATED  = 18,
+		DAMAGE_CONSTRUCTION_DECAY  = 19,
+		DAMAGE_TURNED_INTO_FEATURE = 20,
+
+		// Keep killed by Lua as last index here. This will be exposed as
+		// lowest index for games. As we keep killed by Lua as lowest index,
+		// games can introduce their own damage types by doing code like
+		//
+		//      envTypes.CullingStrike      = envTypes.KilledByLua - 1
+		//      envTypes.SummonTimerExpired = envTypes.KilledByLua - 2
+		//
+		DAMAGE_KILLED_LUA = 21
 	};
 
 	virtual ~CSolidObject() {}
@@ -118,7 +130,7 @@ public:
 	virtual bool AddBuildPower(CUnit* builder, float amount) { return false; }
 	virtual void DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID, int projectileID) {}
 
-	virtual void ApplyImpulse(const float3& impulse) { SetVelocity(speed + impulse); }
+	virtual void ApplyImpulse(const float3& impulse) { SetVelocityAndSpeed(speed + impulse); }
 
 	virtual void Kill(CUnit* killer, const float3& impulse, bool crushed);
 	virtual int GetBlockingMapID() const { return -1; }
@@ -178,7 +190,7 @@ public:
 	void UpdateDirVectors(const float3& uDir);
 
 	CMatrix44f ComposeMatrix(const float3& p) const { return (CMatrix44f(p, -rightdir, updir, frontdir)); }
-	virtual CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const = 0;
+	virtual CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const { return CMatrix44f(); };
 
 	const CollisionVolume* GetCollisionVolume(const LocalModelPiece* lmp) const {
 		if (lmp == nullptr)
@@ -231,10 +243,8 @@ public:
 	float3 GetObjectSpaceDrawPos(const float3& p) const { return (drawPos + GetObjectSpaceVec(p)); }
 
 	// unsynced mid-{position,vector}s
-	float3 GetMdlDrawMidPos() const { return (GetObjectSpaceDrawPos(localModel.GetRelMidPos())); }
-	float3 GetObjDrawMidPos() const { return (GetObjectSpaceDrawPos(              relMidPos  )); }
-	float3 GetMdlDrawRelMidPos() const { return (GetObjectSpaceVec(localModel.GetRelMidPos())); }
-	float3 GetObjDrawRelMidPos() const { return (GetObjectSpaceVec(              relMidPos  )); }
+	float3 GetMdlDrawMidPos() const { return (GetObjectSpaceDrawPos(WORLD_TO_OBJECT_SPACE * localModel.GetRelMidPos())); }
+	float3 GetObjDrawMidPos() const { return (GetObjectSpaceDrawPos(WORLD_TO_OBJECT_SPACE *               relMidPos  )); }
 
 
 	int2 GetMapPos() const { return (GetMapPos(pos)); }
@@ -243,7 +253,7 @@ public:
 
 	float2 GetFootPrint(float scale) const { return {xsize * scale, zsize * scale}; }
 
-	float3 GetDragAccelerationVec(const float4& params) const;
+	float3 GetDragAccelerationVec(float atmosphericDensity, float waterDensity, float dragCoeff, float frictionCoeff) const;
 	float3 GetWantedUpDir(bool useGroundNormal, bool useObjectNormal, float dirSmoothing) const;
 
 	float GetDrawRadius() const override { return (localModel.GetDrawRadius()); }
@@ -273,8 +283,8 @@ public:
 	bool    HasPhysicalStateBit(unsigned int bit) const { return ((physicalState & bit) != 0); }
 	void    SetPhysicalStateBit(unsigned int bit) { unsigned int ps = physicalState; ps |= ( bit); physicalState = static_cast<PhysicalState>(ps); }
 	void  ClearPhysicalStateBit(unsigned int bit) { unsigned int ps = physicalState; ps &= (~bit); physicalState = static_cast<PhysicalState>(ps); }
-	void   PushPhysicalStateBit(unsigned int bit) { UpdatePhysicalStateBit(1u << (32u - bits_ffs(bit)), HasPhysicalStateBit(bit)); }
-	void    PopPhysicalStateBit(unsigned int bit) { UpdatePhysicalStateBit(bit, HasPhysicalStateBit(1u << (32u - bits_ffs(bit)))); }
+	void   PushPhysicalStateBit(unsigned int bit) { UpdatePhysicalStateBit(1u << (31u - std::countr_zero(bit)), HasPhysicalStateBit(bit)); }
+	void    PopPhysicalStateBit(unsigned int bit) { UpdatePhysicalStateBit(bit, HasPhysicalStateBit(1u << (31u - std::countr_zero(bit)))); }
 	bool UpdatePhysicalStateBit(unsigned int bit, bool set) {
 		if (set) {
 			SetPhysicalStateBit(bit);
@@ -287,8 +297,8 @@ public:
 	bool    HasCollidableStateBit(unsigned int bit) const { return ((collidableState & bit) != 0); }
 	void    SetCollidableStateBit(unsigned int bit) { unsigned int cs = collidableState; cs |= ( bit); collidableState = static_cast<CollidableState>(cs); }
 	void  ClearCollidableStateBit(unsigned int bit) { unsigned int cs = collidableState; cs &= (~bit); collidableState = static_cast<CollidableState>(cs); }
-	void   PushCollidableStateBit(unsigned int bit) { UpdateCollidableStateBit(1u << (32u - bits_ffs(bit)), HasCollidableStateBit(bit)); }
-	void    PopCollidableStateBit(unsigned int bit) { UpdateCollidableStateBit(bit, HasCollidableStateBit(1u << (32u - bits_ffs(bit)))); }
+	void   PushCollidableStateBit(unsigned int bit) { UpdateCollidableStateBit(1u << (31u - std::countr_zero(bit)), HasCollidableStateBit(bit)); }
+	void    PopCollidableStateBit(unsigned int bit) { UpdateCollidableStateBit(bit, HasCollidableStateBit(1u << (31u - std::countr_zero(bit)))); }
 	bool UpdateCollidableStateBit(unsigned int bit, bool set) {
 		if (set) {
 			SetCollidableStateBit(bit);
@@ -304,11 +314,6 @@ public:
 
 	virtual void SetMass(float newMass);
 
-	void ResetDrawFlag() { drawFlag = DrawFlags::SO_NODRAW_FLAG; }
-	void SetDrawFlag(DrawFlags f) { drawFlag  =  f; }
-	void AddDrawFlag(DrawFlags f) { drawFlag |=  f; }
-	void DelDrawFlag(DrawFlags f) { drawFlag &= ~f; }
-	bool HasDrawFlag(DrawFlags f) const { return (drawFlag & f) == f; }
 private:
 	void SetMidPos(const float3& mp, bool relative) {
 		if (relative) {
@@ -327,6 +332,7 @@ private:
 
 	float3 GetMidPos() const { return (GetObjectSpacePos(relMidPos)); }
 	float3 GetAimPos() const { return (GetObjectSpacePos(relAimPos)); }
+
 public:
 	float health = 0.0f;
 	float maxHealth = 1.0f;
@@ -402,8 +408,6 @@ public:
 	///< pieces that were last hit by a {[0] := unsynced, [1] := synced} projectile
 	const LocalModelPiece* hitModelPieces[2];
 
-	SolidObjectGroundDecal* groundDecal = nullptr;
-
 	///< object-local {z,x,y}-axes (in WS)
 	SyncedFloat3 frontdir =  FwdVector;
 	SyncedFloat3 rightdir = -RgtVector;
@@ -429,8 +433,7 @@ public:
 	///< drawPos + relMidPos (unsynced)
 	float3 drawMidPos;
 
-	uint8_t drawFlag = DrawFlags::SO_NODRAW_FLAG;
-	uint8_t previousDrawFlag = DrawFlags::SO_NODRAW_FLAG;
+	bool objectUsable = true;
 
 	/**
 	 * @brief mod controlled parameters

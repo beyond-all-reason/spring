@@ -11,7 +11,7 @@
 #include "System/float3.h"
 #include "System/Misc/SpringTime.h"
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__OpenBSD__)
 // defined in X11/X.h
 #undef KeyPress
 #undef KeyRelease
@@ -114,6 +114,7 @@ class CEventClient
 		virtual void GameOver(const std::vector<unsigned char>& winningAllyTeams) {}
 		virtual void GamePaused(int playerID, bool paused) {}
 		virtual void GameFrame(int gameFrame) {}
+		virtual void GameFramePost(int gameFrame) {}
 		virtual void GameID(const unsigned char* gameID, unsigned int numBytes) {}
 
 		virtual void TeamDied(int teamID) {}
@@ -125,8 +126,9 @@ class CEventClient
 		virtual void UnitCreated(const CUnit* unit, const CUnit* builder) {}
 		virtual void UnitFinished(const CUnit* unit) {}
 		virtual void UnitReverseBuilt(const CUnit* unit) {}
+		virtual void UnitConstructionDecayed(const CUnit* unit, float timeSinceLastBuild, float iterationPeriod, float part) {}
 		virtual void UnitFromFactory(const CUnit* unit, const CUnit* factory, bool userOrders) {}
-		virtual void UnitDestroyed(const CUnit* unit, const CUnit* attacker) {}
+		virtual void UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID) {}
 		virtual void UnitTaken(const CUnit* unit, int oldTeam, int newTeam) {}
 		virtual void UnitGiven(const CUnit* unit, int oldTeam, int newTeam) {}
 
@@ -172,6 +174,7 @@ class CEventClient
 		virtual bool UnitFeatureCollision(const CUnit* collider, const CFeature* collidee) { return false; }
 		virtual void UnitMoved(const CUnit* unit) {}
 		virtual void UnitMoveFailed(const CUnit* unit) {}
+		virtual void UnitArrivedAtGoal(const CUnit* unit) {}
 
 		virtual void FeatureCreated(const CFeature* feature) {}
 		virtual void FeatureDestroyed(const CFeature* feature) {}
@@ -326,7 +329,7 @@ class CEventClient
 		virtual void DrawWorld() {}
 		virtual void DrawWorldPreUnit() {}
 		virtual void DrawPreDecals() {}
-		virtual void DrawWorldPreParticles() {}
+		virtual void DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction) {}
 		virtual void DrawWaterPost() {}
 		virtual void DrawWorldShadow() {}
 		virtual void DrawShadowPassTransparent() {}

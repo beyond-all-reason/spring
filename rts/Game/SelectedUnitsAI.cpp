@@ -9,6 +9,7 @@
 #include "Game/Players/PlayerHandler.h"
 #include "Map/Ground.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
@@ -19,6 +20,8 @@
 #include "Net/Protocol/NetProtocol.h"
 
 #include <algorithm>
+
+#include "System/Misc/TracyDefs.h"
 
 static constexpr int CMDPARAM_MOVE_X = 0;
 static constexpr int CMDPARAM_MOVE_Y = 1;
@@ -36,6 +39,7 @@ CSelectedUnitsHandlerAI selectedUnitsAI;
 
 inline void CSelectedUnitsHandlerAI::SetUnitWantedMaxSpeedNet(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	AMoveType* mt = unit->moveType;
 
 	if (!mt->UseWantedSpeed(false))
@@ -50,6 +54,7 @@ inline void CSelectedUnitsHandlerAI::SetUnitWantedMaxSpeedNet(CUnit* unit)
 
 inline void CSelectedUnitsHandlerAI::SetUnitGroupWantedMaxSpeedNet(CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	AMoveType* mt = unit->moveType;
 
 	if (!mt->UseWantedSpeed(true))
@@ -64,6 +69,7 @@ inline void CSelectedUnitsHandlerAI::SetUnitGroupWantedMaxSpeedNet(CUnit* unit)
 
 static inline bool MayRequireSetMaxSpeedCommand(const Command& c)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	switch (c.GetID()) {
 		// this is not a complete list
 		case CMD_STOP:
@@ -81,6 +87,7 @@ static inline bool MayRequireSetMaxSpeedCommand(const Command& c)
 
 bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	assert(playerHandler.IsValidPlayer(playerNum));
 
 	const CPlayer* netPlayer = playerHandler.Player(playerNum);
@@ -268,6 +275,7 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 // Calculate the outer limits and the center of the group coordinates.
 //
 void CSelectedUnitsHandlerAI::CalculateGroupData(int playerNum, bool queueing) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	float3 sumCoor;
 	float3 minCoor =  OnesVector * 100000.0f;
 	float3 maxCoor = -OnesVector * 100000.0f;
@@ -316,6 +324,7 @@ void CSelectedUnitsHandlerAI::CalculateGroupData(int playerNum, bool queueing) {
 
 void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	// called when releasing the mouse; accompanies GuiHandler::DrawFormationFrontOrder
 	formationCenterPos = c->GetPos(0);
 	formationRightPos = c->GetPos(3);
@@ -477,6 +486,7 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 
 void CSelectedUnitsHandlerAI::CreateUnitOrder(std::vector< std::pair<float, int> >& out, int playerNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<int>& playerUnitIDs = selectedUnitsHandler.netSelected[playerNum];
 
 	out.clear();
@@ -492,7 +502,7 @@ void CSelectedUnitsHandlerAI::CreateUnitOrder(std::vector< std::pair<float, int>
 
 		// give weaponless units a long range to make them go to the back
 		const float range = (unit->maxRange < 1.0f)? 2000: unit->maxRange;
-		const float value = ((ud->metal * 60) + ud->energy) / ud->health * range;
+		const float value = ud->power / ud->health * range;
 
 		out.emplace_back(value, unitID);
 	}
@@ -509,6 +519,7 @@ float3 CSelectedUnitsHandlerAI::MoveToPos(
 	std::vector<std::pair<int, Command> >* frontcmds,
 	bool* newline
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	#if 0
 	const int rowNum = posNum / formationNumColumns;
 	const int colNum = posNum - rowNum * formationNumColumns;
@@ -548,6 +559,7 @@ float3 CSelectedUnitsHandlerAI::MoveToPos(
 
 bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	bool ret = false;
 
 	// reuse for sorting targets, no overlap with MakeFormationFrontOrder
@@ -671,19 +683,21 @@ void CSelectedUnitsHandlerAI::SelectCircleUnits(
 	int playerNum,
 	std::vector<int>& units
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	units.clear();
 
 	if (!playerHandler.IsValidPlayer(playerNum))
 		return;
 
 	const CPlayer* p = playerHandler.Player(playerNum);
+	const int allyTeam = teamHandler.AllyTeam(p->team);
+	const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(allyTeam);
 
 	QuadFieldQuery qfQuery;
-	quadField.GetUnitsExact(qfQuery, pos, radius, false);
+	quadField.GetUnitsExact(qfQuery, pos, radius+allyTeamError, false);
 
 	const float radiusSqr = radius * radius;
 	const unsigned int count = qfQuery.units->size();
-	const int allyTeam = teamHandler.AllyTeam(p->team);
 
 	units.reserve(count);
 
@@ -696,9 +710,9 @@ void CSelectedUnitsHandlerAI::SelectCircleUnits(
 			continue;
 		if (!(unit->losStatus[allyTeam] & (LOS_INLOS | LOS_INRADAR)))
 			continue;
-
-		const float dx = (pos.x - unit->midPos.x);
-		const float dz = (pos.z - unit->midPos.z);
+		const float3 errorPos = unit->GetErrorPos(allyTeam);
+		const float dx = (pos.x - errorPos.x);
+		const float dz = (pos.z - errorPos.z);
 
 		if (((dx * dx) + (dz * dz)) > radiusSqr)
 			continue;
@@ -714,21 +728,24 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 	int playerNum,
 	std::vector<int>& units
 ) {
+	RECOIL_DETAILED_TRACY_ZONE;
 	units.clear();
 
 	if (!playerHandler.IsValidPlayer(playerNum))
 		return;
 
 	const CPlayer* p = playerHandler.Player(playerNum);
+	const int allyTeam = teamHandler.AllyTeam(p->team);
+	const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(allyTeam);
 
 	const float3 mins(std::min(pos0.x, pos1.x), 0.0f, std::min(pos0.z, pos1.z));
 	const float3 maxs(std::max(pos0.x, pos1.x), 0.0f, std::max(pos0.z, pos1.z));
 
 	QuadFieldQuery qfQuery;
-	quadField.GetUnitsExact(qfQuery, mins, maxs);
+	quadField.GetUnitsExact(qfQuery, {mins.x - allyTeamError, 0, mins.z - allyTeamError},
+			                 {maxs.x + allyTeamError, 0, maxs.z + allyTeamError});
 
 	const unsigned int count = qfQuery.units->size();
-	const int allyTeam = teamHandler.AllyTeam(p->team);
 
 	units.reserve(count);
 
@@ -741,6 +758,12 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 			continue;
 		if (!(unit->losStatus[allyTeam] & (LOS_INLOS | LOS_INRADAR)))
 			continue;
+		const float3 errorPos = unit->GetErrorPos(allyTeam);
+
+		if (errorPos.x < mins.x || errorPos.x > maxs.x)
+			continue;
+		if (errorPos.z < mins.z || errorPos.z > maxs.z)
+			continue;
 
 		units.push_back(unit->id);
 	}
@@ -749,6 +772,7 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 
 float3 CSelectedUnitsHandlerAI::LastQueuePosition(const CUnit* unit)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const CCommandQueue& queue = unit->commandAI->commandQue;
 
 	for (auto it = queue.rbegin(); it != queue.rend(); ++it) {

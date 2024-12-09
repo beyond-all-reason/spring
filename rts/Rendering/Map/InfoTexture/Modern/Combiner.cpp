@@ -10,6 +10,8 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
+#include "System/Misc/TracyDefs.h"
+
 
 CONFIG(bool, HighResInfoTexture).defaultValue(true).description("Use full heightmap resolution info texture (true), or half resolution (false)");
 
@@ -40,7 +42,7 @@ CInfoTextureCombiner::CInfoTextureCombiner()
 	// counter this, GL_RGBA16 would be another solution, but needs twice
 	// as much texture memory + bandwidth.
 	// Also GL3.x enforces that GL_RGB10_A2 must be renderable.
-	glSpringTexStorage2D(GL_TEXTURE_2D, -1, GL_RGB10_A2, texSize.x, texSize.y);
+	RecoilTexStorage2D(GL_TEXTURE_2D, -1, GL_RGB10_A2, texSize.x, texSize.y);
 
 	if (FBO::IsSupported()) {
 		fbo.Bind();
@@ -64,12 +66,14 @@ CInfoTextureCombiner::CInfoTextureCombiner()
 
 CInfoTextureCombiner::~CInfoTextureCombiner()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	shaderHandler->ReleaseProgramObject("[CInfoTextureCombiner]", "CInfoTextureCombiner");
 }
 
 
 void CInfoTextureCombiner::SwitchMode(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (name.empty()) {
 		disabled = true;
 
@@ -93,6 +97,7 @@ void CInfoTextureCombiner::SwitchMode(const std::string& name)
 
 bool CInfoTextureCombiner::CreateShader(const std::string& filename, const bool clear, const float4 clearColor)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (clear) {
 		// clear
 		fbo.Bind();
@@ -115,6 +120,7 @@ bool CInfoTextureCombiner::CreateShader(const std::string& filename, const bool 
 
 void CInfoTextureCombiner::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	shader->Enable();
 	fbo.Bind();
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);

@@ -35,8 +35,8 @@ public:
 	bool GetFullRead() const override { return true; }
 	int  GetReadAllyTeam() const override { return AllAccessTeam; }
 protected:
-	static constexpr int MT_CHUNK_OR_MIN_CHUNK_SIZE_SMMA = -128;
-	static constexpr int MT_CHUNK_OR_MIN_CHUNK_SIZE_UPDT = -256;
+	static constexpr int MT_CHUNK_OR_MIN_CHUNK_SIZE_SMMA = 128;
+	static constexpr int MT_CHUNK_OR_MIN_CHUNK_SIZE_UPDT = 256;
 };
 
 

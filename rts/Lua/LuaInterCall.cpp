@@ -108,7 +108,7 @@ static int PushCallHandler(lua_State* L, int luaInstance, const string& name)
 	int* ptr = (int*) lua_newuserdata(L, sizeof(int));
 	*ptr = luaInstance;
 	{ // create metatable of the userdata
-		lua_newtable(L); {
+		lua_createtable(L, 0, 3); {
 			lua_pushliteral(L, "__index");
 			lua_pushvalue(L, -3); //userdata
 			lua_pushcclosure(L,  IndexHook, 1);
@@ -144,6 +144,11 @@ bool LuaInterCall::PushEntriesUnsynced(lua_State* L)
 	return true;
 }
 
+bool LuaInterCall::PushEntriesLuaUI(lua_State* L)
+{
+	PushCallHandler(L, LUA_UI,    "LuaUI");
+	return true;
+}
 
 /******************************************************************************/
 /******************************************************************************/

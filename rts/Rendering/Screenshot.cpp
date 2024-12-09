@@ -17,7 +17,7 @@
 
 #undef CreateDirectory
 
-CONFIG(int, ScreenshotCounter).deprecated(true);
+CONFIG(int, ScreenshotCounter).description("Deprecated, does nothing, but not marked as such to keep compatibility with older engine versions").defaultValue(0);
 
 struct FunctionArgs
 {

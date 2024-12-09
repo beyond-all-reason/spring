@@ -178,6 +178,7 @@ template<class T> constexpr T Blend(const T v1, const T v2, const float a) { ret
 int Round(const float f) _const _warn_unused_result;
 
 template<class T> constexpr T Square(const T x) { return x*x; }
+template<class T> constexpr T SignedSquare(const T x) { return x * std::abs(x); }
 // NOTE: '>' instead of '>=' s.t. Sign(int(true)) != Sign(int(false)) --> zero is negative!
 template<class T> constexpr T Sign(const T v) { return ((v > T(0)) * T(2) - T(1)); }
 
@@ -220,6 +221,12 @@ void ClampRad(float* f);
  * @param v float3 value to clamp
  */
 float3 ClampRad(float3 v);
+
+/**
+ * @brief Clamps a radian angle between -pi and pi
+ * @param v float3 value to clamp
+ */
+float3 ClampRadPrincipal(float3 v);
 
 /**
  * @brief Shortest angle in radians

@@ -14,12 +14,14 @@
 #include <cctype>
 #include <cstring>
 
+#include "System/Misc/TracyDefs.h"
+
 
 //The following structure is taken from http://visualta.tauniverse.com/Downloads/ta-cob-fmt.txt
 //Information on missing fields from Format_Cob.pas
 typedef struct tagCOBHeader
 {
-	int VersionSignature;
+	int VersionSignature; // 4 for TA, 6 for TA:K
 	int NumberOfScripts;
 	int NumberOfPieces;
 	int TotalScriptLen;
@@ -87,6 +89,7 @@ static std::vector<uint8_t> cobFileData;
 
 CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	name.assign(scriptName);
 	scriptIndex.fill(-1);
 
@@ -201,6 +204,7 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 
 int CCobFile::GetFunctionId(const std::string& name)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	const auto i = scriptMap.find(name);
 
 	if (i != scriptMap.end())

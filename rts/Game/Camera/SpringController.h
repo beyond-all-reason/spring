@@ -23,11 +23,12 @@ public:
 
 	void Update();
 	void SetPos(const float3& newPos) { pos = newPos; Update(); }
+	void SetRot(const float3& newRot) { rot = newRot; Update(); }
 	float3 GetPos() const;
 	float3 GetRot() const { return (float3(rot.x, GetAzimuth(), 0.0f)); }
 
-	float3 SwitchFrom() const { return pos; }
-	void SwitchTo(const int oldCam, const bool showText);
+	float3 SwitchFrom() const { return GetPos(); }
+	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
@@ -39,7 +40,7 @@ private:
 	float GetAzimuth() const;
 	float MoveAzimuth(float move);
 
-	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& scaledMode);
+	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 	inline float ZoomOut(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 
 	void SmoothCamHeight(const float3& prevPos);
@@ -49,6 +50,7 @@ private:
 
 	float curDist; // current zoom-out distance
 	const float maxDist; // maximum zoom-out distance
+	float minDist; // minimum zoom-in distance
 	float oldDist;
 	float fastScaleMove;
 	float fastScaleMousewheel;

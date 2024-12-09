@@ -14,6 +14,10 @@ The changelog since release 105-861 **until minor release 105-902**, which happe
 ## Features and fixes
 
 ### GLDB queries
+
+{: .warning }
+> This feature only existed until release 105-2314 and is now removed.
+
 Add `Spring.MakeGLDBQuery(bool forced) → bool ok` to create a query to the OpenGL drivers database. There's generally only one query at a time allowed, forcing rewrites it.
 
 Add `Spring.GetGLDBQuery(bool blocking)` to receive the results of the query made with the call above.

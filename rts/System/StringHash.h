@@ -1,14 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef STRING_HASH_H
-#define STRING_HASH_H
+#pragma once
 
 #include <cstdint>
-
-[[nodiscard]] uint32_t HashString(const char* s, size_t n);
-[[nodiscard]] static inline uint32_t HashString(const std::string& s) { return (HashString(s.c_str(), s.size())); }
-
-
 
 [[nodiscard]] constexpr uint32_t hashString(const char* str, uint32_t length = -1u, uint32_t hash = 5381u)
 {
@@ -20,10 +14,11 @@
 	return ((*str) != 0 && length > 0) ? hashStringLower(str + 1, length - 1, hash + (hash << 5) + (*str + ('a' - 'A') * (*str >= 'A' && *str <= 'Z'))) : hash;
 }
 
+[[nodiscard]] constexpr uint32_t hashString(const std::string& str, uint32_t hash = 5381u) noexcept { return hashString(str.c_str(), str.length(), hash); }
+
 [[nodiscard]] constexpr uint32_t operator"" _hs(const char* str, std::size_t) noexcept {
 	return hashString(str);
 }
-
 
 template<uint32_t length, uint32_t step = (length >> 5) + 1, uint32_t idx = length, uint32_t stop = length % step>
 struct compileTimeHasher {
@@ -41,6 +36,3 @@ struct compileTimeHasher<length, step, idx, idx> {
 };
 
 #define COMPILE_TIME_HASH(str) compileTimeHasher<sizeof(str) - 1>::hash(str)
-
-#endif
-

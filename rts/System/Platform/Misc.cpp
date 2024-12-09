@@ -247,7 +247,7 @@ namespace Platform
 		// this will only be used if moduleFilePath stays empty
 		const char* error = nullptr;
 
-	#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+	#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 		#ifdef __APPLE__
 		#define SHARED_LIBRARY_EXTENSION "dylib"
 		#else
@@ -381,6 +381,8 @@ namespace Platform
 		return "Linux";
 		#elif defined(__FreeBSD__)
 		return "FreeBSD";
+		#elif defined(__OpenBSD__)
+		return "OpenBSD";
 		#elif defined(__APPLE__)
 		return "MacOS";
 		#else
@@ -516,6 +518,30 @@ namespace Platform
 
 	uint32_t NativeWordSize() { return (sizeof(void*)); }
 	uint32_t SystemWordSize() { return ((Is32BitEmulation())? 8: NativeWordSize()); }
+
+	std::string GetLastErrorAsString()
+	{
+#ifdef _WIN32
+		return GetLastErrorAsString(GetLastError());
+#else
+		return GetLastErrorAsString(errno);
+#endif
+	}
+
+	std::string GetLastErrorAsString(uint32_t errCode)
+	{
+#ifdef _WIN32
+		LPSTR messageBuffer = nullptr;
+		size_t size = ::FormatMessageA(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			nullptr, errCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, nullptr);
+		std::string retVal(messageBuffer, size);
+		::LocalFree(messageBuffer);
+		return retVal;
+#else
+		return std::string(strerror(errCode));
+#endif
+	}
 
 	int SetEnvironment(const char* name, const char* value, int overwrite)
 	{

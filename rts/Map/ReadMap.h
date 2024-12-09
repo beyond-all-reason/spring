@@ -166,6 +166,7 @@ public:
 	const float* GetMapFileHeightMapSynced() const { return &mapFileHeightMap[0]; }
 	const float* GetOriginalHeightMapSynced() const { return &originalHeightMap[0]; }
 	const float* GetCenterHeightMapSynced() const { return &centerHeightMap[0]; }
+	const float* GetMaxHeightMapSynced() const { return &maxHeightMap[0]; }
 	const float* GetMIPHeightMapSynced(unsigned int mip) const { return mipPointerHeightMaps[mip]; }
 	const float* GetSlopeMapSynced() const { return &slopeMap[0]; }
 	const uint8_t* GetTypeMapSynced() const { return &typeMap[0]; }
@@ -261,6 +262,7 @@ protected:
 	static std::vector<float> originalHeightMap;        //< size: (mapx+1)*(mapy+1) (per vertex) [SYNCED, does NOT update on terrain deformation]
 	static std::vector<float> centerHeightMap;          //< size: (mapx  )*(mapy  ) (per face) [SYNCED, updates on terrain deformation]
 	static std::array<std::vector<float>, numHeightMipMaps - 1> mipCenterHeightMaps;
+	static std::vector<float> maxHeightMap;			// map for sea/hover to catch coast lines with sharp vertical changes so they don't try to climb the cliff.
 
 	/**
 	 * array of pointers to heightmaps in different resolutions

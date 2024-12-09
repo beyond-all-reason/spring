@@ -11,6 +11,8 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
+#include "System/Misc/TracyDefs.h"
+
 CONFIG(int, FPSScrollSpeed).defaultValue(10);
 CONFIG(float, FPSMouseScale).defaultValue(0.01f);
 CONFIG(bool, FPSEnabled).defaultValue(true);
@@ -18,8 +20,9 @@ CONFIG(float, FPSFOV).defaultValue(45.0f);
 CONFIG(bool, FPSClampPos).defaultValue(true);
 
 
-CFPSController::CFPSController(): oldHeight(300.0f)
+CFPSController::CFPSController(): oldHeight(300.0f), rot(2.677f, 0.0f, 0.0f)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
 	dir = camera->GetDir();
 
@@ -28,11 +31,13 @@ CFPSController::CFPSController(): oldHeight(300.0f)
 
 CFPSController::~CFPSController()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	configHandler->RemoveObserver(this);
 }
 
 void CFPSController::ConfigUpdate()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	scrollSpeed = configHandler->GetInt("FPSScrollSpeed") * 0.1f;
 	mouseScale = configHandler->GetFloat("FPSMouseScale");
 	enabled = configHandler->GetBool("FPSEnabled");
@@ -42,12 +47,14 @@ void CFPSController::ConfigUpdate()
 
 void CFPSController::ConfigNotify(const std::string& key, const std::string& value)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
 }
 
 
 void CFPSController::KeyMove(float3 move)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	move *= move.z * 400;
 	pos  += (camera->GetDir() * move.y + camera->GetRight() * move.x) * scrollSpeed;
 	Update();
@@ -56,15 +63,16 @@ void CFPSController::KeyMove(float3 move)
 
 void CFPSController::MouseMove(float3 move)
 {
-	camera->SetRotY(camera->GetRot().y + mouseScale * move.x);
-	camera->SetRotX(std::clamp(camera->GetRot().x + mouseScale * move.y * move.z, 0.01f, math::PI * 0.99f));
-	dir = camera->GetDir();
+	RECOIL_DETAILED_TRACY_ZONE;
+	rot.y += mouseScale * move.x;
+	rot.x = std::clamp(rot.x + mouseScale * move.y * move.z, 0.01f, math::PI * 0.99f);
 	Update();
 }
 
 
 void CFPSController::MouseWheelMove(float move, const float3& newDir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	pos += (newDir * move);
 	Update();
 }
@@ -72,6 +80,7 @@ void CFPSController::MouseWheelMove(float move, const float3& newDir)
 
 void CFPSController::Update()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (gu->fpsMode || !clampPos)
 		return;
 
@@ -95,6 +104,7 @@ void CFPSController::Update()
 
 void CFPSController::SetPos(const float3& newPos)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetPos(newPos);
 
 	if (!gu->fpsMode)
@@ -106,21 +116,39 @@ void CFPSController::SetPos(const float3& newPos)
 
 void CFPSController::SetDir(const float3& newDir)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	dir = newDir;
-	Update();
+	rot = CCamera::GetRotFromDir(newDir);
+}
+
+void CFPSController::SetRot(const float3& newRot)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	rot = newRot;
+	dir = CCamera::GetFwdFromRot(newRot);
 }
 
 
-void CFPSController::SwitchTo(const int oldCam, const bool showText)
+void CFPSController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText) {
 		LOG("Switching to FPS style camera");
 	}
+	float3 newPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov") {
+		pos = float3(newPos.x, pos.y, newPos.z);
+		Update();
+		return;
+	}
+	rot = oldCam->GetRot();
+	pos = newPos;
 }
 
 
 void CFPSController::GetState(StateMap& sm) const
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 	sm["oldHeight"] = oldHeight;
 }
@@ -128,6 +156,7 @@ void CFPSController::GetState(StateMap& sm) const
 
 bool CFPSController::SetState(const StateMap& sm)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 	SetStateFloat(sm, "oldHeight", oldHeight);
 

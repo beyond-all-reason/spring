@@ -12,6 +12,8 @@
 #include "System/Platform/errorhandler.h"
 #endif
 
+#include "System/Misc/TracyDefs.h"
+
 
 CONFIG(std::string, HostIPDefault).defaultValue("localhost").dedicatedValue("").description("Default IP to use for hosting if not specified in script.txt");
 CONFIG(int, HostPortDefault).defaultValue(8452).minimumValue(0).maximumValue(65535).description("Default Port to use for hosting if not specified in script.txt");
@@ -26,6 +28,7 @@ ClientSetup::ClientSetup()
 
 void ClientSetup::SanityCheck()
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (myPlayerName.empty())
 		myPlayerName = UnnamedPlayerName;
 
@@ -35,6 +38,7 @@ void ClientSetup::SanityCheck()
 
 void ClientSetup::LoadFromStartScript(const std::string& setup)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
 	TdfParser file(setup.c_str(), setup.length());
 
 	if (!file.SectionExist("GAME")) {
@@ -43,11 +47,11 @@ void ClientSetup::LoadFromStartScript(const std::string& setup)
 	}
 
 	// Technical parameters
-	file.GetDef(hostIP,       hostIP, "GAME\\HostIP");
-	file.GetDef(hostPort,     IntToString(hostPort), "GAME\\HostPort");
-
-	file.GetDef(myPlayerName, "", "GAME\\MyPlayerName");
-	file.GetDef(myPasswd,     "", "GAME\\MyPasswd");
+	file.GetDef(hostIP,         hostIP, "GAME\\HostIP");
+	file.GetDef(hostPort,       IntToString(hostPort), "GAME\\HostPort");
+	file.GetDef(showServerName, "", "GAME\\ShowServerName");
+	file.GetDef(myPlayerName,   "", "GAME\\MyPlayerName");
+	file.GetDef(myPasswd,       "", "GAME\\MyPasswd");
 
 	if (!file.GetValue(isHost, "GAME\\IsHost"))
 		LOG_L(L_WARNING, "[ClientSetup::%s] IsHost-entry missing from setup-script; assuming this is a client", __func__);

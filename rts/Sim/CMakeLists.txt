@@ -4,6 +4,7 @@
 add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Helper.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Registry.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/SaveLoadUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/Feature.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/FeatureDef.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Features/FeatureDefHandler.cpp"
@@ -37,6 +38,7 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/TeamHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/TeamStatistics.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/Wind.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/YardmapStatusEffectsMap.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/AAirMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/StrafeAirMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/GroundMoveType.cpp"
@@ -52,6 +54,8 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/HoverAirMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Systems/GeneralMoveSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Systems/GroundMoveSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Systems/UnitTrapCheckSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/Utils/UnitTrapCheckUtils.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/SolidObject.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/SolidObjectDef.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Objects/WorldObject.cpp"
@@ -61,8 +65,9 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/PathSearch.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/PathManager.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/Registry.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/Systems/PathMaxSpeedModSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/Systems/PathSpeedModInfoSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/Systems/RemoveDeadPathsSystem.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Path/QTPFS/Systems/RequeuePathsSystem.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/HAPFS/IPathFinder.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/HAPFS/PathCache.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Path/HAPFS/PathEstimator.cpp"
@@ -150,7 +155,7 @@ add_library(engineSim STATIC
 	)
 
 target_include_directories(engineSim
-	PRIVATE ${GLEW_INCLUDE_DIR} ${SDL2_INCLUDE_DIR})
+	PRIVATE ${SDL2_INCLUDE_DIR})
 target_link_libraries(engineSim Tracy::TracyClient)
 
 if( CMAKE_COMPILER_IS_GNUCXX)

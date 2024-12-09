@@ -1,8 +1,7 @@
 SET(headlessStubsSources
-		"glewstub"
-		"glstub"
-		"glustub"
-		"sdlstub"
+		"glewstub.c"
+		"glstub.c"
+		"sdlstub.c"
 	)
 
 FIND_PACKAGE(SDL2 REQUIRED)

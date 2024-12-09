@@ -96,6 +96,8 @@ public:
 	bool StopAttackingAllyTeam(const int ally);
 
 	bool IsFastAutoRetargetingEnabled() const { return fastAutoRetargeting; }
+	void UpdateWeaponErrorVector();
+	void UpdateWeaponVectors();
 
 protected:
 	virtual void FireImpl(const bool scriptCall) {}
@@ -107,7 +109,6 @@ protected:
 	static bool TargetInWater(const float3 tgtPos, const SWeaponTarget&);
 
 	void UpdateWeaponPieces(const bool updateAimFrom = true);
-	void UpdateWeaponVectors();
 	float3 GetLeadVec(const CUnit* unit) const;
 
 private:
@@ -149,6 +150,7 @@ public:
 	int projectilesPerShot;                 // number of projectiles per shot
 	int nextSalvo;                          // when the next shot in the current salvo will fire
 	int salvoLeft;                          // number of shots left in current salvo
+	int salvoWindup;                        // delay before first shot (in frames)
 
 	float range;
 	float projectileSpeed;
@@ -202,6 +204,7 @@ public:
 	float weaponAimAdjustPriority;
 	bool fastAutoRetargeting;
 	bool fastQueryPointUpdate;
+	unsigned int burstControlWhenOutOfArc;
 
 protected:
 	SWeaponTarget currentTarget;

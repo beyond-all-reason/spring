@@ -18,7 +18,7 @@ public:
 
 	void Update() override;
 	void Draw() override;
-	void DrawOnMinimap() override;
+	void DrawOnMinimap() const override;
 
 	int GetProjectilesCount() const override;
 
@@ -33,9 +33,6 @@ private:
 	float scrollspeed;
 	float pulseSpeed;
 	float decay;
-
-	AtlasedTexture beamtex;
-	AtlasedTexture sidetex;
 };
 
 #endif // LARGE_BEAM_LASER_PROJECTILE_H

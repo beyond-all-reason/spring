@@ -4,6 +4,7 @@
 #define MOVEDEF_HANDLER_H
 
 #include <array>
+#include <limits>
 #include <string>
 
 #include "System/float3.h"
@@ -16,6 +17,18 @@ class CSolidObject;
 class CUnit;
 class LuaTable;
 
+namespace MoveTypes {
+	class CheckCollisionQuery;
+}
+
+namespace MoveDefs {
+	struct CollisionQueryStateTrack {
+		float lastPosY = std::numeric_limits<float>::infinity();
+		int lastInWater = -2;
+		int lastWaterCollisions = -2;
+		bool refreshCollisionCache = false;
+	};
+}
 
 struct MoveDef {
 	CR_DECLARE_STRUCT(MoveDef)
@@ -28,20 +41,24 @@ struct MoveDef {
 	MoveDef& operator = (const MoveDef& moveDef) = delete;
 	MoveDef& operator = (MoveDef&& moveDef) = default;
 
+	// nearestSquare is given a meaningful value only when the result is true.
 	bool DoRawSearch(
 		const CSolidObject* collider,
+		const MoveDef* md,
 		const float3 startPos,
 		const float3 endPos,
-		const float3 testMoveDir,
+		float goalRadius,
 		bool testTerrain,
 		bool testObjects,
 		bool centerOnly,
 		float* minSpeedModPtr,
 		int* maxBlockBitPtr,
+		int2* nearestSquare,
 		int thread = 0
-	);
+	) const;
+	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
 	bool TestMoveSquareRange(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery& collider,
 		const float3 rangeMins,
 		const float3 rangeMaxs,
 		const float3 testMoveDir,
@@ -53,7 +70,7 @@ struct MoveDef {
 		int thread = 0
 	) const;
 	bool TestMoveSquare(
-		const CSolidObject* collider,
+		const MoveTypes::CheckCollisionQuery& collider,
 		const float3 testMovePos,
 		const float3 testMoveDir,
 		bool testTerrain = true,
@@ -65,6 +82,15 @@ struct MoveDef {
 	) const {
 		return (TestMoveSquareRange(collider, testMovePos, testMovePos, testMoveDir, testTerrain, testObjects, centerOnly, minSpeedModPtr, maxBlockBitPtr, thread));
 	}
+	bool TestMovePositionForObjects(
+		const MoveTypes::CheckCollisionQuery* collider,
+		const float3 testMovePos,
+		int magicNum,
+		int thread
+	) const;
+
+	bool IsInExitOnly(float3 testMovePos) const;
+	bool IsInExitOnly(int x, int z) const;
 
 	// aircraft and buildings defer to UnitDef::floatOnWater
 	bool FloatOnWater() const { return (speedModClass == MoveDef::Hover || speedModClass == MoveDef::Ship); }
@@ -78,6 +104,10 @@ struct MoveDef {
 	float GetDepthMod(float height) const;
 
 	unsigned int CalcCheckSum() const;
+
+	bool IsComplexSubmersible() const {
+		return isSubmersible && overrideUnitWaterline;
+	};
 
 	static float GetDefaultMinWaterDepth() { return -1e6f; }
 	static float GetDefaultMaxWaterDepth() { return +1e6f; }
@@ -127,9 +157,11 @@ struct MoveDef {
 	/// controls movement and (un-)loading constraints
 	float depth = 0.0f;
 	float depthModParams[DEPTHMOD_NUM_PARAMS];
+	float height = 0.0f;
 	float maxSlope = 1.0f;
 	float slopeMod = 0.0f;
 	float crushStrength = 0.0f;
+	float waterline = 0.0f;
 
 	// PF speedmod-multipliers for squares blocked by mobile units
 	// (which can respectively be "idle" == non-moving and have no
@@ -151,6 +183,13 @@ struct MoveDef {
 	/// are we supposed to be a purely sub-surface ship?
 	bool isSubmarine = false;
 
+	// can this unit completely submerge in water?
+	bool isSubmersible = false;
+
+	/// If false, this forces the use of simple underwater collisions, which can cause some pathing issues for
+	/// amphibious units. i.e. they are blocked by obstacles above and below the water regardless of height.
+	bool overrideUnitWaterline = true;
+
 	/// do we try to pathfind around squares blocked by mobile units?
 	///
 	/// this also serves as a padding byte for alignment so compiler
@@ -158,7 +197,9 @@ struct MoveDef {
 	/// otherwise, since they are never initialized)
 	bool avoidMobilesOnPath = true;
 	bool allowTerrainCollisions = true;
+	bool allowDirectionalPathing = false;
 	bool allowRawMovement = false;
+	bool preferShortestPath = false;
 
 	/// do we leave heat and avoid any left by others?
 	bool heatMapping = true;
@@ -176,6 +217,7 @@ public:
 	constexpr static size_t MAX_MOVE_DEFS = 256;
 
 	void Init(LuaParser* defsParser);
+	void PostSimInit();
 	void Kill() {
 		nameMap.clear(); // never iterated
 
@@ -189,12 +231,18 @@ public:
 	unsigned int GetNumMoveDefs() const { return mdCounter; }
 	unsigned int GetCheckSum() const { return mdChecksum; }
 
+	int GetLargestFootPrintXSize() { return largestSize; };
+	int GetLargestFootPrintSizeH() { return largestSizeH; };
+
 private:
 	std::array<MoveDef, MAX_MOVE_DEFS> moveDefs;
 	spring::unordered_map<unsigned int, int> nameMap;
 
 	unsigned int mdCounter = 0;
 	unsigned int mdChecksum = 0;
+
+	int largestSize = 0;
+	int largestSizeH = 0;
 };
 
 extern MoveDefHandler moveDefHandler;

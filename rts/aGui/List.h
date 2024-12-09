@@ -5,7 +5,6 @@
 
 #include <string>
 #include <vector>
-#include <slimsig/slimsig.h>
 
 #include "GuiElement.h"
 #include "System/Misc/SpringTime.h"
@@ -43,7 +42,7 @@ public:
 	int cancelPlace;
 	std::string tooltip;
 
-	slimsig::signal<void (void)> FinishSelection; // Return or Double-Click
+	OnClickVoidType FinishSelection; // Return or Double-Click
 	void SetFocus(bool focus);
 	void RefreshQuery();
 
