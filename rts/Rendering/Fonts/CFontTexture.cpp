@@ -606,6 +606,9 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	// precache ASCII glyphs & kernings (save them in kerningPrecached array for better lvl2 cpu cache hitrate)
 
 	//preload Glyphs
+	// if given face doesn't contain alphanumerics, don't preload it
+	if (!FT_Get_Char_Index(face, 'a'))
+		return;
 	LoadWantedGlyphs(32, 127);
 	for (char32_t i = 32; i < 127; ++i) {
 		const auto& lgl = GetGlyph(i);
