@@ -4161,6 +4161,7 @@ namespace Impl {
 
 int LuaOpenGL::ClearBuffer(lua_State* L)
 {
+#ifndef HEADLESS
 	CheckDrawingEnabled(L, __func__);
 
 	GLenum bufferType;
@@ -4221,6 +4222,7 @@ int LuaOpenGL::ClearBuffer(lua_State* L)
 		break;
 	}
 
+#endif // HEADLESS
 	return 0;
 }
 
