@@ -54,7 +54,6 @@ public:
 	int32_t GetIntFmt() const;
 	int32_t GetExtFmt() const { return GetExtFmt(channels); }
 	static int32_t GetExtFmt(uint32_t ch);
-	static int32_t ExtFmtToChannels(int32_t extFmt);
 	static uint32_t GetDataTypeSize(uint32_t glType);
 	uint32_t GetDataTypeSize() const { return GetDataTypeSize(dataType); }
 

@@ -156,6 +156,13 @@ Expect a rescan of archives.
 * optimize performance when scanning files on a HDD.
 * fixed the archive scanner sometimes failing due to having more files opened in parallel than the OS allows.
 
+### Graphical Lua interfaces
+* added `gl.ClearBuffer(slot, r,g,b,a) → nil`. `slot` can be "color0" to "color15", "depth", or "stencil".
+Clears only the specified drawBuffer within multi-target FBO and correctly clears integer textures.
+* added `gl.ReadAttachmentPixel(slot, x,y) → attachmentPixel`. `slot` can be "color0" to "color15" or "depth".
+Reads a single pixel of a specified attachment with respect to its underlying type, correctly works for integer textures.
+* added `GL.DEPTH_COMPONENT{16,24,32,32F}` constants.
+
 ### Misc
 * add `SelectThroughGround` float springsetting. Controls how far through ground you can single-click a unit. Default is 200, in elmos (same behaviour as previous).
 * add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according

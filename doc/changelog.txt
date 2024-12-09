@@ -40,6 +40,11 @@ Lua:
  - Fix #1523, `Spring.UnitArrivedAtGoal` stack issue with warning spam.
    https://github.com/beyond-all-reason/spring/pull/1546
  - DrawWorldPreParticles is now has parameters describing the particular phase it is called within a draw frame.
+ - add `gl.ClearBuffer(slot, r,g,b,a)`. `slot` can be "color0" to "color15", "depth" or "stencil".
+   Clears only specified drawBuffer within multi-target FBO and correctly clears integer textures.
+ - add `gl.ReadAttachmentPixel(slot, x,y)`. `slot` can be "color0" to "color15" or "depth".
+   Reads a single pixel of a specified attachment with respect to its underlying type, correctly works
+   for integer textures.
 
 Misc:
 - Fixed broken test. https://github.com/beyond-all-reason/spring/pull/1545

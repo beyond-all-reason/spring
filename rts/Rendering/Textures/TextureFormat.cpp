@@ -108,6 +108,32 @@ GLenum GL::GetInternalFormatDataType(GLenum internalFormat) {
 	return dataType;
 }
 
+GLenum GL::GetInternalFormatUserType(GLenum internalFormat) {
+	GLenum userType;
+	switch (internalFormat) {
+		case GL_R8UI:
+		case GL_RG8UI:
+		case GL_RGBA8UI: {
+			userType = GL_UNSIGNED_BYTE;
+		} break;
+		case GL_R16UI:
+		case GL_RG16UI:
+		case GL_RGBA16UI:
+		case GL_RGB10_A2UI: {
+			userType = GL_UNSIGNED_SHORT;
+		} break;
+		case GL_R32UI:
+		case GL_RG32UI:
+		case GL_RGBA32UI: {
+			userType = GL_UNSIGNED_INT;
+		} break;
+		default: {
+			userType = GL_FLOAT;
+		} break;
+	}
+	return userType;
+}
+
 GLenum GL::GetBindingQueryFromTarget(GLenum target) {
 	switch (target) {
 		case GL_TEXTURE_1D:                   return GL_TEXTURE_BINDING_1D;
@@ -123,4 +149,45 @@ GLenum GL::GetBindingQueryFromTarget(GLenum target) {
 		default: break;
 	}
 	return 0;
+}
+
+GLsizei GL::GetPixelFormatSize(GLenum format) {
+	GLsizei size;
+	switch (format) {
+		case GL_RED:
+		case GL_RED_INTEGER:
+		case GL_GREEN:
+		case GL_GREEN_INTEGER:
+		case GL_BLUE:
+		case GL_BLUE_INTEGER:
+		case GL_ALPHA:
+		case GL_ALPHA_INTEGER:
+		case GL_LUMINANCE:
+		case GL_COLOR_INDEX:
+		case GL_STENCIL_INDEX:
+		case GL_DEPTH_COMPONENT: {
+			size = 1;
+		} break;
+		case GL_RG:
+		case GL_RG_INTEGER:
+		case GL_LUMINANCE_ALPHA: {
+			size = 2;
+		} break;
+		case GL_RGB:
+		case GL_RGB_INTEGER:
+		case GL_BGR:
+		case GL_BGR_INTEGER: {
+			size = 3;
+		} break;
+		case GL_RGBA:
+		case GL_RGBA_INTEGER:
+		case GL_BGRA:
+		case GL_BGRA_INTEGER: {
+			size = 4;
+		} break;
+		default: {
+			size = 0;
+		} break;
+	}
+	return size;
 }

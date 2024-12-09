@@ -18,6 +18,7 @@
 #include "Bitmap.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/TexBind.h"
+#include "Rendering/Textures/TextureFormat.h"
 #include "System/ScopedFPUSettings.h"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
@@ -1146,32 +1147,6 @@ int32_t CBitmap::GetExtFmt(uint32_t ch)
 	return extFormats[ch];
 }
 
-int32_t CBitmap::ExtFmtToChannels(int32_t extFmt)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	// IL_COLOUR_INDEX is transformed elsewhere
-
-	switch (extFmt) {
-	case GL_DEPTH_COMPONENT: [[fallthrough]];
-	case GL_LUMINANCE: [[fallthrough]];
-	case GL_ALPHA: [[fallthrough]];
-	case GL_RED:
-		return 1;
-	case GL_LUMINANCE_ALPHA: [[fallthrough]];
-	case GL_RG:
-		return 2;
-	case GL_BGR: [[fallthrough]];
-	case GL_RGB:
-		return 3;
-	case GL_BGRA: [[fallthrough]];
-	case GL_RGBA:
-		return 4;
-	default:
-		assert(false);
-		return 0;
-	}
-}
-
 #ifndef HEADLESS
 int32_t CBitmap::GetIntFmt() const
 {
@@ -1378,7 +1353,8 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 				ILenum dstFormat;
 				if (reqChannel == 0) {
 					dstFormat = currFormat;
-					channels = ExtFmtToChannels(dstFormat);
+					channels = GL::GetPixelFormatSize(dstFormat);
+					assert(channels);
 				}
 				else {
 					dstFormat = GetExtFmt(reqChannel);

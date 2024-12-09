@@ -175,6 +175,8 @@ namespace State {
 
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (FrameBufferSRBG, GL_FRAMEBUFFER_SRGB);
 
+	ATTRIBUTE_TYPE_DEFS            (ReadBuffer, GL_READ_BUFFER);
+
 	extern std::tuple<
 		ATTRIBUTE(PolygonMode),
 		ATTRIBUTE(PolygonOffsetFill),
@@ -222,7 +224,8 @@ namespace State {
 		ATTRIBUTE(AlphaToOne),
 		ATTRIBUTE(CubemapSeamless),
 		ATTRIBUTE(PointSize),
-		ATTRIBUTE(FrameBufferSRBG)
+		ATTRIBUTE(FrameBufferSRBG),
+		ATTRIBUTE(ReadBuffer)
 	> Attributes;
 };
 

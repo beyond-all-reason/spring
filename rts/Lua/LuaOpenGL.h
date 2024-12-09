@@ -183,6 +183,7 @@ class LuaOpenGL {
 		static int ResetState(lua_State* L);
 		static int ResetMatrices(lua_State* L);
 		static int Clear(lua_State* L);
+		static int ClearBuffer(lua_State* L);
 		static int SwapBuffers(lua_State* L);
 
 		static int Lighting(lua_State* L);
@@ -338,6 +339,7 @@ class LuaOpenGL {
 		static int Finish(lua_State* L);
 
 		static int ReadPixels(lua_State* L);
+		static int ReadAttachmentPixel(lua_State* L);
 		static int SaveImage(lua_State* L);
 
 		static int CreateQuery(lua_State* L);
