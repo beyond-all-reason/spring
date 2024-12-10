@@ -9,12 +9,19 @@
 #include "System/float4.h"
 #include "System/Matrix44f.h"
 
+struct Transform;
+
 class alignas(16) CQuaternion
 {
 public:
 	CR_DECLARE_STRUCT(CQuaternion)
 public:
-	constexpr CQuaternion() = default;
+	constexpr CQuaternion()
+		: x(0.0f)
+		, y(0.0f)
+		, z(0.0f)
+		, r(1.0f)
+	{}
 	constexpr CQuaternion(const float4& q)
 		: x(q.x)
 		, y(q.y)
@@ -33,8 +40,8 @@ public:
 		, z(zi)
 		, r(real)
 	{}
-	CQuaternion(const CQuaternion& q) { *this = q; };
-	CQuaternion(CQuaternion&& q) noexcept { *this = std::move(q); }
+	constexpr CQuaternion(const CQuaternion& q) = default;
+	constexpr CQuaternion(CQuaternion&& q) noexcept = default;
 public:
 	static CQuaternion MakeFrom(const float3& euler);
 	static CQuaternion MakeFrom(float angle, const float3& axis);
@@ -46,13 +53,17 @@ public:
 	bool Normalized() const;
 	CQuaternion& Normalize();
 	constexpr CQuaternion& Conjugate() { x = -x; y = -y; z = -z; return *this; }
-	CQuaternion& Inverse();
+	CQuaternion  Inverse() const;
+	CQuaternion& InverseInPlace();
 
 	float4 ToAxisAndAngle() const;
 	CMatrix44f ToRotMatrix() const;
+
+	float3 Rotate(const float3& v) const;
+	float4 Rotate(const float4& v) const;
 public:
-	CQuaternion& operator= (const CQuaternion&) = default;
-	CQuaternion& operator= (CQuaternion&&) = default;
+	constexpr CQuaternion& operator= (const CQuaternion&) = default;
+	constexpr CQuaternion& operator= (CQuaternion&&) noexcept = default;
 
 	constexpr CQuaternion operator-() const { return CQuaternion(-x, -y, -z, -r); }
 

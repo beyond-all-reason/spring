@@ -13,6 +13,7 @@
 #include "Rendering/GL/VBO.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/Matrix44f.h"
+#include "System/Transform.hpp"
 #include "System/type2.h"
 #include "System/float4.h"
 #include "System/SafeUtil.h"
@@ -146,9 +147,9 @@ struct S3DModelPiece {
 		parent = nullptr;
 		colvol = {};
 
-		bposeMatrix.LoadIdentity();
-		bposeInvMatrix.LoadIdentity();
-		bakedMatrix.LoadIdentity();
+		bposeTransform.LoadIdentity();
+		bposeInvTransform.LoadIdentity();
+		bakedTransform.LoadIdentity();
 
 		offset = ZeroVector;
 		goffset = ZeroVector;
@@ -185,16 +186,9 @@ public:
 	void CreateShatterPieces();
 	void Shatter(float, int, int, int, const float3, const float3, const CMatrix44f&) const;
 
-	void SetPieceMatrix(const CMatrix44f& m) {
-		bposeMatrix = m * ComposeTransform(offset, ZeroVector, scales);
-		bposeInvMatrix = bposeMatrix.InvertAffine();
-
-		for (S3DModelPiece* c: children) {
-			c->SetPieceMatrix(bposeMatrix);
-		}
-	}
+	void SetPieceTransform(const Transform& tra);
 	void SetBakedMatrix(const CMatrix44f& m) {
-		bakedMatrix = m;
+		bakedTransform.FromMatrix(m);
 		hasBakedMat = !m.IsIdentity();
 		assert(m.IsOrthoNormal());
 	}
@@ -209,7 +203,7 @@ public:
 		m.SetPos(t);
 
 		if (hasBakedMat)
-			m *= bakedMatrix;
+			m *= bakedTransform.ToMatrix();
 
 		// default Spring rotation-order [YPR=Y,X,Z]
 		m.RotateEulerYXZ(-r);
@@ -240,9 +234,9 @@ public:
 	S3DModelPiece* parent = nullptr;
 	CollisionVolume colvol;
 
-	CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
-	CMatrix44f bposeInvMatrix;   /// Inverse of bind-pose transform, including baked rots
-	CMatrix44f bakedMatrix;      /// baked local-space rotations
+	Transform bposeTransform;    /// bind-pose transform, including baked rots
+	Transform bposeInvTransform; /// Inverse of bind-pose transform, including baked rots
+	Transform bakedTransform;    /// baked local-space rotations
 
 	float3 offset;               /// local (piece-space) offset wrt. parent piece
 	float3 goffset;              /// global (model-space) offset wrt. root piece
@@ -355,22 +349,7 @@ struct S3DModel
 		S3DModelHelpers::UnbindLegacyAttrVBOs();
 	}
 
-	void SetPieceMatrices() {
-		pieceObjects[0]->SetPieceMatrix(CMatrix44f());
-
-		// use this occasion and copy bpose matrices
-		for (size_t i = 0; i < pieceObjects.size(); ++i) {
-			const auto* po = pieceObjects[i];
-			matAlloc[0         + i] = po->bposeMatrix;
-		}
-
-		// use this occasion and copy inverse bpose matrices
-		// store them right after all bind pose matrices
-		for (size_t i = 0; i < pieceObjects.size(); ++i) {
-			const auto* po = pieceObjects[i];
-			matAlloc[numPieces + i] = po->bposeInvMatrix;
-		}
-	}
+	void SetPieceMatrices();
 
 	void FlattenPieceTree(S3DModelPiece* root) {
 		assert(root != nullptr);

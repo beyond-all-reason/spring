@@ -142,6 +142,8 @@ CQuaternion CQuaternion::MakeFrom(const CMatrix44f& mat)
 /// </summary>
 std::tuple<float3, CQuaternion, float3>  CQuaternion::DecomposeIntoTRS(const CMatrix44f& mat)
 {
+	assert(mat.IsRotOrRotTranMatrix());
+
 	CMatrix44f tmpMat = mat;
 	float4& t0 = tmpMat.col[0];
 	float4& t1 = tmpMat.col[1];
@@ -213,15 +215,43 @@ CMatrix44f CQuaternion::ToRotMatrix() const
 	const float qry = r * y;
 	const float qrz = r * z;
 
+#if 0
 	return CMatrix44f(
 		1.0f - 2.0f * (qyy + qzz), 2.0f * (qxy - qrz)       , 2.0f * (qxz + qry)       , 0.0f,
 		2.0f * (qxy + qrz)       , 1.0f - 2.0f * (qxx + qzz), 2.0f * (qyz - qrx)       , 0.0f,
 		2.0f * (qxz - qry)       , 2.0f * (qyz + qrx)       , 1.0f - 2.0f * (qxx + qyy), 0.0f,
 		0.0f                     , 0.0f                     , 0.0f                     , 1.0f
 	);
+#else
+	return CMatrix44f(
+		1.0f - 2.0f * (qyy + qzz), 2.0f * (qxy + qrz)       , 2.0f * (qxz - qry)       , 0.0f,
+		2.0f * (qxy - qrz)       , 1.0f - 2.0f * (qxx + qzz), 2.0f * (qyz + qrx)       , 0.0f,
+		2.0f * (qxz + qry)       , 2.0f * (qyz - qrx)       , 1.0f - 2.0f * (qxx + qyy), 0.0f,
+		0.0f                     , 0.0f                     , 0.0f                     , 1.0f
+	);
+#endif
 }
 
-CQuaternion& CQuaternion::Inverse()
+float3 CQuaternion::Rotate(const float3& v) const
+{
+	const auto vRotQ = (*this) * CQuaternion(v, 0.0f) * this->Inverse();
+	return float3{ vRotQ.x, vRotQ.y, vRotQ.z };
+}
+
+float4 CQuaternion::Rotate(const float4& v) const
+{
+	const auto vRotQ = (*this) * CQuaternion(v, 0.0f) * this->Inverse();
+	return float4{ vRotQ.x, vRotQ.y, vRotQ.z, 0.0f };
+}
+
+CQuaternion CQuaternion::Inverse() const
+{
+	CQuaternion inv = *this;
+	inv.InverseInPlace();
+	return inv;
+}
+
+CQuaternion& CQuaternion::InverseInPlace()
 {
 	const float sqn = SqNorm();
 	if unlikely(sqn < float3::nrm_eps())
