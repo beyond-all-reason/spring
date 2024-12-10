@@ -1,0 +1,80 @@
+---
+layout: default
+title: MetalMap
+permalink: ldoc/modules/MetalMap.html
+description: Metal Map Lua API
+parent: Lua API
+table: 0x55662dc36b70
+---
+
+{% raw %}
+    <h1>Module <code>MetalMap</code></h1>
+    <p>Metal Map Lua API</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaMetalMap.cpp">rts/Lua/LuaMetalMap.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Functions">Functions</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.SetMetalAmount">Spring.SetMetalAmount</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+
+      <h2 id="Functions" class="section-header ">
+        Functions
+      </h2>
+
+        <h3 id="Spring.SetMetalAmount">
+          Spring.SetMetalAmount(x, z, metalAmount)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+                    in worldspace/16.
+                 </li>
+                 <li>
+                   <code>z</code>
+                   <strong><span class="type">number</span></strong>
+                    in worldspace/16.
+                 </li>
+                 <li>
+                   <code>metalAmount</code>
+                   <strong><span class="type">number</span></strong>
+                    must be between 0 and 255*maxMetal (with maxMetal from the .smd or mapinfo.lua).
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+
+{% endraw %}

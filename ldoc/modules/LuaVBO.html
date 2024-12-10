@@ -1,0 +1,93 @@
+---
+layout: default
+title: LuaVBO
+permalink: ldoc/modules/LuaVBO.html
+description:
+
+
+parent: Lua API
+table: 0x55662dd89810
+---
+
+{% raw %}
+    <h1>Module <code>LuaVBO</code></h1>
+    <p>
+
+</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaVBO.cpp">rts/Lua/LuaVBO.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Functions">Functions</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#gl.GetVBO">gl.GetVBO</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+
+      <h2 id="Functions" class="section-header ">
+        Functions
+      </h2>
+
+        <h3 id="gl.GetVBO">
+          gl.GetVBO([bufferType=GL.ARRAY_BUFFER[, freqUpdated=true]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>bufferType</code>
+                   <strong><span class="type">number</span></strong>
+                    one of [<code>GL.ARRAY_BUFFER</code>,
+ <code>GL.ELEMENT_ARRAY_BUFFER</code>, <code>GL.UNIFORM_BUFFER</code>, <code>GL.SHADER_STORAGE_BUFFER</code>].</p>
+
+<p> Defaults to <code>GL.ARRAY_BUFFER</code>, which you should use for vertex data, and
+ <code>GL.ELEMENT_ARRAY_BUFFER</code> should be used for vertex indices.
+                   (<em>default</em> GL.ARRAY_BUFFER)
+                 </li>
+                 <li>
+                   <code>freqUpdated</code>
+                   <strong><span class="type">bool</span></strong>
+                    whether should be updated frequently, when false
+ will be updated only once
+                   (<em>default</em> true)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="../classes/VBO.html#">VBO</a></strong>
+              the VBO ref on success, nil if not supported/or other error</li>
+          </ol>
+
+
+          <h4 class="no_anchor">See also:</h4>
+          <ul>
+              <li><a href="../modules/GL.html#OpenGL_Buffer_Types">OpenGL Buffer Types</a></li>
+          </ul>
+
+          <h4 class="no_anchor">Usage:</h4>
+          <ul>
+            <li><pre class="example"><span class="keyword">local</span> myVBO = gl.GetVBO()
+<span class="keyword">if</span> myVBO == <span class="keyword">nil</span> <span class="keyword">then</span> Spring.Echo(<span class="string">"Failed to get VBO"</span>) <span class="keyword">end</span></pre></li>
+          </ul>
+        </div>
+
+{% endraw %}
