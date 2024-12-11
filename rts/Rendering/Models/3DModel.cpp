@@ -78,7 +78,7 @@ void S3DModelPiece::DrawStaticLegacy(bool bind, bool bindPosMat) const
 
 	if (bindPosMat) {
 		glPushMatrix();
-		glMultMatrixf(bposeMatrix);
+		glMultMatrixf(bposeTransform.ToMatrix());
 		DrawElements();
 		glPopMatrix();
 	}
@@ -240,6 +240,21 @@ void S3DModelPiece::Shatter(float pieceChance, int modelType, int texType, int t
 	const   int2 renderParams = {texType, team};
 
 	projectileHandler.AddFlyingPiece(modelType, this, m, pos, speed, pieceParams, renderParams);
+}
+
+void S3DModelPiece::SetPieceTransform(const Transform& tra)
+{
+	bposeTransform = tra * Transform{
+		CQuaternion(),
+		offset,
+		scales
+	};
+
+	bposeInvTransform = bposeTransform.InvertAffine();
+
+	for (S3DModelPiece* c : children) {
+		c->SetPieceTransform(bposeTransform);
+	}
 }
 
 
@@ -628,4 +643,22 @@ size_t S3DModel::FindPieceOffset(const std::string& name) const
 		return size_t(-1);
 
 	return std::distance(pieceObjects.begin(), it);
+}
+
+void S3DModel::SetPieceMatrices()
+{
+	pieceObjects[0]->SetPieceTransform(Transform());
+
+	// use this occasion and copy bpose matrices
+	for (size_t i = 0; i < pieceObjects.size(); ++i) {
+		const auto* po = pieceObjects[i];
+		matAlloc[0         + i] = po->bposeTransform.ToMatrix();
+	}
+
+	// use this occasion and copy inverse bpose matrices
+	// store them right after all bind pose matrices
+	for (size_t i = 0; i < pieceObjects.size(); ++i) {
+		const auto* po = pieceObjects[i];
+		matAlloc[numPieces + i] = po->bposeInvTransform.ToMatrix();
+	}
 }

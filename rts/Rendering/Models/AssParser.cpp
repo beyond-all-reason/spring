@@ -142,8 +142,8 @@ struct SPseudoAssPiece {
 
 	S3DModelPiece* parent;
 
-	CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
-	CMatrix44f bakedMatrix;      /// baked local-space rotations
+	Transform bposeTransform;    /// bind-pose transform, including baked rots
+	Transform bakedTransform;    /// baked local-space rotations
 
 	float3 offset;               /// local (piece-space) offset wrt. parent piece
 	float3 goffset;              /// global (model-space) offset wrt. root piece
@@ -153,7 +153,7 @@ struct SPseudoAssPiece {
 
 	// copy of S3DModelPiece::SetBakedMatrix()
 	void SetBakedMatrix(const CMatrix44f& m) {
-		bakedMatrix = m;
+		bakedTransform.FromMatrix(m);
 		hasBakedMat = !m.IsIdentity();
 		assert(m.IsOrthoNormal());
 	}
@@ -169,7 +169,7 @@ struct SPseudoAssPiece {
 		m.SetPos(t);
 
 		if (hasBakedMat)
-			m *= bakedMatrix;
+			m *= bakedTransform.ToMatrix();
 
 		// default Spring rotation-order [YPR=Y,X,Z]
 		m.RotateEulerYXZ(-r);
@@ -177,11 +177,9 @@ struct SPseudoAssPiece {
 		return m;
 	}
 
-	// copy of S3DModelPiece::SetPieceMatrix()
+	// copy of S3DModelPiece::SetPieceTransform()
 	// except there's no need to do it recursively
-	void SetPieceMatrix(const CMatrix44f& parentBPoseMat) {
-		bposeMatrix = parentBPoseMat * ComposeTransform(offset, ZeroVector, scales);
-	}
+	void SetPieceTransform(const Transform& tra);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -792,8 +790,8 @@ const std::vector<CMatrix44f> CAssParser::GetMeshBoneMatrices(const aiScene* sce
 	std::vector<CMatrix44f> meshBoneMatrices;
 
 	for (auto& meshPP : meshPPs) {
-		meshPP.SetPieceMatrix(meshPP.parent->bposeMatrix);
-		meshBoneMatrices.emplace_back(meshPP.bposeMatrix);
+		meshPP.SetPieceTransform(meshPP.parent->bposeTransform);
+		meshBoneMatrices.emplace_back(meshPP.bposeTransform.ToMatrix());
 	}
 
 	return meshBoneMatrices;
@@ -1043,7 +1041,7 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 		if (!piece->HasGeometryData())
 			continue;
 
-		const auto invMat = piece->bposeMatrix.InvertAffine();
+		const auto invMat = piece->bposeTransform.ToMatrix().InvertAffine();
 		for (auto& vert : piece->vertices) {
 			vert.pos      = (invMat * float4{ vert.pos     , 1.0f }).xyz;
 			vert.normal   = (invMat * float4{ vert.normal  , 0.0f }).xyz;
@@ -1118,7 +1116,7 @@ void CAssParser::ReparentCompleteMeshesToBones(S3DModel* model, const std::vecto
 		if (!piece->HasGeometryData())
 			continue;
 
-		const auto invMat = piece->bposeMatrix.InvertAffine();
+		const auto invMat = piece->bposeTransform.ToMatrix().InvertAffine();
 		for (auto& vert : piece->vertices) {
 			vert.pos      = (invMat * float4{ vert.pos     , 1.0f }).xyz;
 			vert.normal   = (invMat * float4{ vert.normal  , 0.0f }).xyz;
@@ -1401,3 +1399,11 @@ void CAssParser::FindTextures(
 	model->texs[1] = FindTexture(modelTable.GetString("tex2", ""), modelPath, model->texs[1]);
 }
 
+void SPseudoAssPiece::SetPieceTransform(const Transform& tra)
+{
+	bposeTransform = tra * Transform{
+		CQuaternion(),
+		offset,
+		scales
+	};
+}

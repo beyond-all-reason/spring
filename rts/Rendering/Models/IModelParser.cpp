@@ -224,7 +224,7 @@ void CModelLoader::PreloadModel(const std::string& modelName)
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	//NB: do preload in any case
-	if (ThreadPool::HasThreads()) {
+	if (ThreadPool::HasThreads() && false) {
 
 		// if already in cache, thread just returns early
 		// not spawning the thread at all would be better but still
