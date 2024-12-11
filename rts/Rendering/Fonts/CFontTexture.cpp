@@ -152,7 +152,7 @@ public:
 			static constexpr const char* configFmt = R"(<fontconfig><dir>%s</dir><cachedir>fontcache</cachedir></fontconfig>)";
 			std::string configFmtVar = fmt::sprintf(configFmt, osFontsDir.data());
 
-			FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt.c_str()), FcTrue);
+			FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmtVar.c_str()), FcTrue);
 
 			FcConfigBuildFonts(config);
 			#else
