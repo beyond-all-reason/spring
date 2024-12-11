@@ -308,15 +308,6 @@ CMatrix44f& CMatrix44f::Scale(const float3& scales)
 	return *this;
 }
 
-CMatrix44f& CMatrix44f::FromTQS(const float3& pos, const CQuaternion& quat, const float3& scale)
-{
-	*this = quat.ToRotMatrix();
-	this->Scale(scale);
-	this->Translate(pos);
-
-	return *this;
-}
-
 CMatrix44f& CMatrix44f::Translate(const float x, const float y, const float z)
 {
 	m[12] += (x*m[0] + y*m[4] + z*m[ 8]);

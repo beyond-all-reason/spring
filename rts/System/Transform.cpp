@@ -33,8 +33,9 @@ CMatrix44f Transform::ToMatrix() const
 	m.Translate(t);
 	m.Scale(s);
 #else
-	CMatrix44f m; m.FromTQS(t, r, s);
-	return m;
+	CMatrix44f m = r.ToRotMatrix();
+	m.Scale(s);
+	m.Translate(t);
 #endif
 #ifdef _DEBUG
 	//auto [t_, r_, s_] = CQuaternion::DecomposeIntoTRS(m);

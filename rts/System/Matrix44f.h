@@ -9,7 +9,6 @@
 #include "System/float3.h"
 #include "System/float4.h"
 
-class CQuaternion;
 class CMatrix44f
 {
 public:
@@ -51,7 +50,6 @@ public:
 	CMatrix44f& Translate(const float3& pos) { return Translate(pos.x, pos.y, pos.z); }
 	CMatrix44f& Scale(const float3& scales);
 	CMatrix44f& Scale(float scaleX, float scaleY, float scaleZ) { return Scale(float3{ scaleX, scaleY, scaleZ }); }
-	CMatrix44f& FromTQS(const float3& pos, const CQuaternion& quat, const float3& scale);
 
 	void SetPos(const float3 pos) { m[12] = pos.x; m[13] = pos.y; m[14] = pos.z; }
 	void SetX  (const float3 dir) { m[ 0] = dir.x; m[ 1] = dir.y; m[ 2] = dir.z; }
