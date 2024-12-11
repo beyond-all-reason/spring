@@ -151,14 +151,17 @@ public:
 
 			#ifdef _WIN32
 			// fontconfig will resolve the special keys here.
-			static constexpr const char* configFmt = R"(<fontconfig><dir>WINDOWSFONTDIR</dir><cachedir>fontcache</cachedir><cachedir>LOCAL_APPDATA_FONTCONFIG_CACHE</cachedir></fontconfig>)";
+			std::array<char, 4096> osFontsDir;
+			ExpandEnvironmentStrings("%WINDIR%\\fonts", osFontsDir.data(), osFontsDir.size()); // expands %HOME% etc.
+			static constexpr const char* configFmt = R"(<fontconfig><dir>%s</dir><cachedir>fontcache</cachedir></fontconfig>)";
+			std::string configFmtVar = fmt::sprintf(configFmt, osFontsDir.data());
 			#else
 			static constexpr const char* configFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
 			#endif
 
 			#ifdef _WIN32
 			// Explicitly set the config with xml for windows.
-			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
+			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmtVar.c_str()), FcTrue);
 			#else
 			// Load system configuration (passing 0 here so fc will use the default os config file if possible).
 			res = FcConfigParseAndLoad(config, 0, true);
