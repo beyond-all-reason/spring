@@ -150,8 +150,10 @@ public:
 			// and system fonts included. also linux actually has system config files that can be used by fontconfig.
 
 			#ifdef _WIN32
-			std::array<char, 4096> osFontsDir;
-			ExpandEnvironmentStrings("%WINDIR%\\fonts", osFontsDir.data(), osFontsDir.size()); // expands %HOME% etc.
+			static constexpr auto winFontPath = "%WINDIR%\\fonts";
+			const int neededSize = ExpandEnvironmentStrings(winFontPath, nullptr, 0);
+			std::vector <char> osFontsDir (neededSize);
+			ExpandEnvironmentStrings(winFontPath, osFontsDir.data(), osFontsDir.size());
 			static constexpr const char* configFmt = R"(<fontconfig><dir>%s</dir><cachedir>fontcache</cachedir></fontconfig>)";
 			std::string configFmtVar = fmt::sprintf(configFmt, osFontsDir.data());
 			#else
