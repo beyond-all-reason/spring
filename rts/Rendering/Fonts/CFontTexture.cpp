@@ -157,6 +157,7 @@ public:
 			std::string configFmtVar = fmt::sprintf(configFmt, osFontsDir.data());
 			#else
 			static constexpr const char* configFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
+			std::string configFmtVar = configFmt;
 			#endif
 
 			#ifdef _WIN32
@@ -169,7 +170,7 @@ public:
 			if (res) {
 				#ifndef _WIN32
 				// add local cache after system config for linux
-				FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
+				FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmtVar.c_str()), FcTrue);
 				#endif
 
 				LOG_MSG("[%s] Using Fontconfig light init", false, __func__);
@@ -194,7 +195,7 @@ public:
 					config = fcConfig;
 
 					// add our cache at the back of the new config.
-					FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
+					FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmtVar.c_str()), FcTrue);
 				} else {
 					LOG_MSG("%s config and fonts. No system fallbacks will be available", false, errprefix.c_str());
 				}
