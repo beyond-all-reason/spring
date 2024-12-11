@@ -154,7 +154,6 @@ public:
 
 			FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt.c_str()), FcTrue);
 
-			FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
 			FcConfigBuildFonts(config);
 			#else
 
