@@ -28,9 +28,14 @@ void Transform::FromMatrix(const CMatrix44f& mat)
 CMatrix44f Transform::ToMatrix() const
 {
 	// TODO check the sequence
+#if 0
 	CMatrix44f m = r.ToRotMatrix();
 	m.Translate(t);
 	m.Scale(s);
+#else
+	CMatrix44f m; m.FromTQS(t, r, s);
+	return m;
+#endif
 #ifdef _DEBUG
 	//auto [t_, r_, s_] = CQuaternion::DecomposeIntoTRS(m);
 
