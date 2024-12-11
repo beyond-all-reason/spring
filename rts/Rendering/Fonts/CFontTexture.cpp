@@ -150,15 +150,20 @@ public:
 			// and system fonts included. also linux actually has system config files that can be used by fontconfig.
 
 			#ifdef _WIN32
-			// fontconfig will resolve the special keys here.
-			static constexpr const char* configFmt = R"(<fontconfig><dir>WINDOWSFONTDIR</dir><cachedir>fontcache</cachedir><cachedir>LOCAL_APPDATA_FONTCONFIG_CACHE</cachedir></fontconfig>)";
+			static constexpr auto winFontPath = "%WINDIR%\\fonts";
+			const int neededSize = ExpandEnvironmentStrings(winFontPath, nullptr, 0);
+			std::vector <char> osFontsDir (neededSize);
+			ExpandEnvironmentStrings(winFontPath, osFontsDir.data(), osFontsDir.size());
+
+			static constexpr const char* configFmt = R"(<fontconfig><dir>%s</dir><cachedir>fontcache</cachedir></fontconfig>)";
+			const std::string configFmtVar = fmt::sprintf(configFmt, osFontsDir.data());
 			#else
-			static constexpr const char* configFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
+			const std::string configFmtVar = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
 			#endif
 
 			#ifdef _WIN32
 			// Explicitly set the config with xml for windows.
-			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
+			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmtVar.c_str()), FcTrue);
 			#else
 			// Load system configuration (passing 0 here so fc will use the default os config file if possible).
 			res = FcConfigParseAndLoad(config, 0, true);
@@ -166,7 +171,7 @@ public:
 			if (res) {
 				#ifndef _WIN32
 				// add local cache after system config for linux
-				FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
+				FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmtVar.c_str()), FcTrue);
 				#endif
 
 				LOG_MSG("[%s] Using Fontconfig light init", false, __func__);
@@ -191,7 +196,7 @@ public:
 					config = fcConfig;
 
 					// add our cache at the back of the new config.
-					FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
+					FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmtVar.c_str()), FcTrue);
 				} else {
 					LOG_MSG("%s config and fonts. No system fallbacks will be available", false, errprefix.c_str());
 				}
