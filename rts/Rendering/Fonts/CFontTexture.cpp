@@ -154,8 +154,9 @@ public:
 			const int neededSize = ExpandEnvironmentStrings(winFontPath, nullptr, 0);
 			std::vector <char> osFontsDir (neededSize);
 			ExpandEnvironmentStrings(winFontPath, osFontsDir.data(), osFontsDir.size());
+
 			static constexpr const char* configFmt = R"(<fontconfig><dir>%s</dir><cachedir>fontcache</cachedir></fontconfig>)";
-			std::string configFmtVar = fmt::sprintf(configFmt, osFontsDir.data());
+			const std::string configFmtVar = fmt::sprintf(configFmt, osFontsDir.data());
 			#else
 			const std::string configFmtVar = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
 			#endif
