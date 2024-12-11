@@ -1,0 +1,330 @@
+---
+layout: default
+title: BitOps
+permalink: ldoc/modules/BitOps.html
+description: math bit extensions
+parent: Lua API
+table: 0x55770279a6b0
+---
+
+{% raw %}
+    <h1>Module <code>BitOps</code></h1>
+    <p>math bit extensions</p>
+    <p>
+
+
+<p> Note: there are no bit shift. Use those Lua functions instead for 24 bits bitshift
+ 24 bits because only the 24 bits of the mantissa can be easily used in a 32 bit float
+ bitshift functions (&lt;<, >> equivalent)</p>
+
+
+<pre>
+<span class="comment">-- left shift
+</span><span class="keyword">local</span> <span class="keyword">function</span> lsh(value,shift)
+    <span class="keyword">return</span> (value*(<span class="number">2</span>^shift)) % <span class="number">2</span>^<span class="number">24</span>
+<span class="keyword">end</span>
+
+<span class="comment">-- right shift
+</span><span class="keyword">local</span> <span class="keyword">function</span> rsh(value,shift)
+    <span class="keyword">return</span> <span class="global">math</span>.floor(value/<span class="number">2</span>^shift) % <span class="number">2</span>^<span class="number">24</span>
+<span class="keyword">end</span>
+</pre>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaBitOps.cpp">rts/Lua/LuaBitOps.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Functions">Functions</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#math.bit_or">math.bit_or</a>
+            </dt>
+            <dd>
+              Returns the bitwise OR of all arguments.
+            </dd>
+            <dt>
+              <a href="#math.bit_and">math.bit_and</a>
+            </dt>
+            <dd>
+              Returns the bitwise AND of all arguments.
+            </dd>
+            <dt>
+              <a href="#math.bit_xor">math.bit_xor</a>
+            </dt>
+            <dd>
+              Returns the bitwise XOR of all arguments.
+            </dd>
+            <dt>
+              <a href="#math.bit_inv">math.bit_inv</a>
+            </dt>
+            <dd>
+              Returns the bitwise NOT of the 24 bit integer argument.
+            </dd>
+            <dt>
+              <a href="#math.bit_bits">math.bit_bits</a>
+            </dt>
+            <dd>
+              Set each of the bits of a 24 bit integer.
+            </dd>
+        </dl>
+
+      <h2 id="Functions" class="section-header ">
+        Functions
+      </h2>
+
+        <h3 id="math.bit_or">
+          math.bit_or(a1, a2[, a3[, an]])
+        </h3>
+        <p>Returns the bitwise OR of all arguments.</p>
+        <div class="code-example">
+        <p>
+           Only use up to 24 bit integers.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>a1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a3</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>an</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              i</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.bit_and">
+          math.bit_and(a1, a2[, a3[, an]])
+        </h3>
+        <p>Returns the bitwise AND of all arguments.</p>
+        <div class="code-example">
+        <p>
+           Only use up to 24 bit integers.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>a1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a3</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>an</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              i</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.bit_xor">
+          math.bit_xor(a1, a2[, a3[, an]])
+        </h3>
+        <p>Returns the bitwise XOR of all arguments.</p>
+        <div class="code-example">
+        <p>
+           Only use up to 24 bit integers.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>a1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a3</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>an</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              i</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.bit_inv">
+          math.bit_inv(a1)
+        </h3>
+        <p>Returns the bitwise NOT of the 24 bit integer argument.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>a1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              i</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.bit_bits">
+          math.bit_bits(a1, a2[, a3[, an]])
+        </h3>
+        <p>Set each of the bits of a 24 bit integer.</p>
+        <div class="code-example">
+        <p>
+           Returns result = result OR (1 << a1) OR (1 << a2) OR ...;)
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>a1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a3</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>an</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              i</li>
+          </ol>
+
+
+
+        </div>
+
+{% endraw %}

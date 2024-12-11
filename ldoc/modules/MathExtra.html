@@ -1,0 +1,439 @@
+---
+layout: default
+title: MathExtra
+permalink: ldoc/modules/MathExtra.html
+description: math extensions
+parent: Lua API
+table: 0x557702849990
+---
+
+{% raw %}
+    <h1>Module <code>MathExtra</code></h1>
+    <p>math extensions</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaMathExtra.cpp">rts/Lua/LuaMathExtra.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Functions">Functions</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#math.hypot">math.hypot</a>
+            </dt>
+            <dd>
+              Returns the length of hypotenuse of right angle triangle with sides x and y, equivalent to sqrt(x<em>x + y</em>y), but has better numerical stability and internally handles intermediate overflows/underflows, but is also slower.
+            </dd>
+            <dt>
+              <a href="#math.diag">math.diag</a>
+            </dt>
+            <dd>
+              Returns the length of the diagonal of an n-dimensional box (or the length of an n-component vector).
+            </dd>
+            <dt>
+              <a href="#math.clamp">math.clamp</a>
+            </dt>
+            <dd>
+              Returns x clamped to min and max boundaries.
+            </dd>
+            <dt>
+              <a href="#math.sgn">math.sgn</a>
+            </dt>
+            <dd>
+              Returns 0 if x == 0, 1 if x > 0, -1 if x &lt; 0
+            </dd>
+            <dt>
+              <a href="#math.mix">math.mix</a>
+            </dt>
+            <dd>
+              Returns linear interpolation between x and y with ratio a (x+(y-x)*a).
+            </dd>
+            <dt>
+              <a href="#math.round">math.round</a>
+            </dt>
+            <dd>
+              Returns x rounded to n decimals, if n is omitted or &lt;=0, rounds to nearest integer.
+            </dd>
+            <dt>
+              <a href="#math.erf">math.erf</a>
+            </dt>
+            <dd>
+              Returns erf(x), the Gauss error function, between -1 and 1.
+            </dd>
+            <dt>
+              <a href="#math.smoothstep">math.smoothstep</a>
+            </dt>
+            <dd>
+              Applies the smoothstep function
+            </dd>
+            <dt>
+              <a href="#math.normalize">math.normalize</a>
+            </dt>
+            <dd>
+              Returns the normalize vector of an given vector.
+            </dd>
+        </dl>
+
+      <h2 id="Functions" class="section-header ">
+        Functions
+      </h2>
+
+        <h3 id="math.hypot">
+          math.hypot(x, y)
+        </h3>
+        <p>Returns the length of hypotenuse of right angle triangle with sides x and y, equivalent to sqrt(x*x + y*y), but has better numerical stability and internally handles intermediate overflows/underflows, but is also slower.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              sqrt(x<em>x+y</em>y)</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.diag">
+          math.diag(x1[, x2[, x3[, xn]]])
+        </h3>
+        <p>Returns the length of the diagonal of an n-dimensional box (or the length of an n-component vector).</p>
+        <div class="code-example">
+        <p>
+           Rather quick method that does not handle intermediate overflows/underflows nor is made for numerical stability.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>x2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>x3</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>xn</code>
+                   <strong><span class="type">number</span></strong>
+                    and so on
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              diagonal</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.clamp">
+          math.clamp()
+        </h3>
+        <p>Returns x clamped to min and max boundaries.</p>
+        <div class="code-example">
+        <p>
+           ( number x, number min, number max )
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              clamped</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.sgn">
+          math.sgn(x)
+        </h3>
+        <p>Returns 0 if x == 0, 1 if x > 0, -1 if x < 0</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              sign</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.mix">
+          math.mix(x, y, a)
+        </h3>
+        <p>Returns linear interpolation between x and y with ratio a (x+(y-x)*a).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>a</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              (x+(y-x)*a)</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.round">
+          math.round(x, decimals)
+        </h3>
+        <p>Returns x rounded to n decimals, if n is omitted or <=0, rounds to nearest integer.</p>
+        <div class="code-example">
+        <p>
+           Note that Spring's Lua interpreter uses 32-bit floats for all numbers so max. precision is ~7 decimal digits.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>decimals</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              rounded</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.erf">
+          math.erf(x)
+        </h3>
+        <p>Returns erf(x), the Gauss error function, between -1 and 1.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              erf</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.smoothstep">
+          math.smoothstep(edge0, edge1, v)
+        </h3>
+        <p>Applies the smoothstep function</p>
+        <div class="code-example">
+        <p>
+
+ Clamps and rescales v to a value between [0; 1] based on the edges and then applies the smoothstep function.
+ For example math.smoothstep(10, 25, 15) is 0.259, because 15 is 0.333 of the way from 10 to 25, and smoothstep(0.333) is 0.259
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>edge0</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>edge1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>v</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              smoothstep</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="math.normalize">
+          math.normalize(x1[, x2[, xN]])
+        </h3>
+        <p>Returns the normalize vector of an given vector.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>x2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>xN</code>
+                   <strong><span class="type">number</span></strong>
+                    and so on
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              normalized1</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              normalized2 and so on</li>
+          </ol>
+
+
+
+        </div>
+
+{% endraw %}

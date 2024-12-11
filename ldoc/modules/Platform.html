@@ -1,0 +1,212 @@
+---
+layout: default
+title: Platform
+permalink: ldoc/modules/Platform.html
+description: Platform constants
+parent: Lua API
+table: 0x5577026b96c0
+---
+
+{% raw %}
+    <h1>Module <code>Platform</code></h1>
+    <p>Platform constants</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaConstPlatform.cpp">rts/Lua/LuaConstPlatform.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Tables">Tables</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Platform">Platform</a>
+            </dt>
+            <dd>
+              Platform specific information
+            </dd>
+        </dl>
+
+      <h2 id="Tables" class="section-header ">
+        Tables
+      </h2>
+
+        <h3 id="Platform">
+          Platform
+        </h3>
+        <p>Platform specific information</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>gpu</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    full GPU device name
+                 </li>
+                 <li>
+                   <code>gpuVendor</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    one of "Nvidia", "Intel", "ATI", "Mesa", "Unknown"
+                 </li>
+                 <li>
+                   <code>glVersionShort</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    major.minor.buildNumber
+                 </li>
+                 <li>
+                   <code>glslVersionShort</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    major.minor
+                 </li>
+                 <li>
+                   <code>glVersion</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    full version
+                 </li>
+                 <li>
+                   <code>glVendor</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>glRenderer</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>glslVersion</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    full version
+                 </li>
+                 <li>
+                   <code>glewVersion</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>osName</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    full name of the OS
+                 </li>
+                 <li>
+                   <code>osFamily</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    one of "Windows", "Linux", "MacOSX", "FreeBSD", "Unknown"
+                 </li>
+                 <li>
+                   <code>numDisplays</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>gpuMemorySize</code>
+                   <strong><span class="type">number</span></strong>
+                    size of total GPU memory in MBs; only available for "Nvidia", (rest are 0)
+                 </li>
+                 <li>
+                   <code>sdlVersionCompiledMajor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>sdlVersionCompiledMinor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>sdlVersionCompiledPatch</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>sdlVersionLinkedMajor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>sdlVersionLinkedMinor</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>sdlVersionLinkedPatch</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>glSupportNonPowerOfTwoTex</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>glSupportTextureQueryLOD</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>glSupport24bitDepthBuffer</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>glSupportRestartPrimitive</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>glSupportClipSpaceControl</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>glSupportFragDepthLayout</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+
+{% endraw %}

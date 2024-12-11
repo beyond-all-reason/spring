@@ -1,0 +1,7159 @@
+---
+layout: default
+title: UnsyncedRead
+permalink: ldoc/modules/UnsyncedRead.html
+description: Callouts to get state
+parent: Lua API
+table: 0x55770260dc10
+---
+
+{% raw %}
+    <h1>Module <code>UnsyncedRead</code></h1>
+    <p>Callouts to get state</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaUnsyncedRead.cpp">rts/Lua/LuaUnsyncedRead.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Decals">Decals </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetAllGroundDecals">Spring.GetAllGroundDecals</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalMiddlePos">Spring.GetGroundDecalMiddlePos</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetDecalQuadPos">Spring.GetDecalQuadPos</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalSizeAndHeight">Spring.GetGroundDecalSizeAndHeight</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalRotation">Spring.GetGroundDecalRotation</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalTexture">Spring.GetGroundDecalTexture</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetDecalTextures">Spring.GetDecalTextures</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.SetGroundDecalTextureParams">Spring.SetGroundDecalTextureParams</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalAlpha">Spring.GetGroundDecalAlpha</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalNormal">Spring.GetGroundDecalNormal</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalTint">Spring.GetGroundDecalTint</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalMisc">Spring.GetGroundDecalMisc</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalCreationFrame">Spring.GetGroundDecalCreationFrame</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalOwner">Spring.GetGroundDecalOwner</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroundDecalType">Spring.GetGroundDecalType</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Misc">Misc </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetUnitTransformMatrix">Spring.GetUnitTransformMatrix</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetFeatureTransformMatrix">Spring.GetFeatureTransformMatrix</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetSyncedGCInfo">Spring.GetSyncedGCInfo</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.SolveNURBSCurve">Spring.SolveNURBSCurve</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Replay">Replay </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.IsReplay">Spring.IsReplay</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetReplayLength">Spring.GetReplayLength</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Game_Menu_Name">Game/Menu Name </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetGameName">Spring.GetGameName</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetMenuName">Spring.GetMenuName</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Profiling">Profiling </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetProfilerTimeRecord">Spring.GetProfilerTimeRecord</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetProfilerRecordNames">Spring.GetProfilerRecordNames</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetLuaMemUsage">Spring.GetLuaMemUsage</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetVidMemUsage">Spring.GetVidMemUsage</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Class_Timer">Class Timer </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetTimer">Spring.GetTimer</a>
+            </dt>
+            <dd>
+              Get a timer with millisecond resolution
+            </dd>
+            <dt>
+              <a href="#Spring.GetTimerMicros">Spring.GetTimerMicros</a>
+            </dt>
+            <dd>
+              Get a timer with microsecond resolution
+            </dd>
+            <dt>
+              <a href="#Spring.GetFrameTimer">Spring.GetFrameTimer</a>
+            </dt>
+            <dd>
+              Get a timer for the start of the frame
+            </dd>
+            <dt>
+              <a href="#Spring.DiffTimers">Spring.DiffTimers</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Screen_Rendering_Info">Screen/Rendering Info </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetNumDisplays">Spring.GetNumDisplays</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetViewGeometry">Spring.GetViewGeometry</a>
+            </dt>
+            <dd>
+              Get main view geometry (map and game rendering)
+            </dd>
+            <dt>
+              <a href="#Spring.GetDualViewGeometry">Spring.GetDualViewGeometry</a>
+            </dt>
+            <dd>
+              Get dual view geometry (minimap when enabled)
+            </dd>
+            <dt>
+              <a href="#Spring.GetWindowGeometry">Spring.GetWindowGeometry</a>
+            </dt>
+            <dd>
+              Get main window geometry
+            </dd>
+            <dt>
+              <a href="#Spring.GetWindowDisplayMode">Spring.GetWindowDisplayMode</a>
+            </dt>
+            <dd>
+              Get main window display mode
+            </dd>
+            <dt>
+              <a href="#Spring.GetScreenGeometry">Spring.GetScreenGeometry</a>
+            </dt>
+            <dd>
+              Get screen geometry
+            </dd>
+            <dt>
+              <a href="#Spring.GetMiniMapGeometry">Spring.GetMiniMapGeometry</a>
+            </dt>
+            <dd>
+              Get minimap geometry
+            </dd>
+            <dt>
+              <a href="#Spring.GetMiniMapRotation">Spring.GetMiniMapRotation</a>
+            </dt>
+            <dd>
+              Get minimap rotation
+            </dd>
+            <dt>
+              <a href="#Spring.GetMiniMapDualScreen">Spring.GetMiniMapDualScreen</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetSelectionBox">Spring.GetSelectionBox</a>
+            </dt>
+            <dd>
+              Get vertices from currently active selection box
+            </dd>
+            <dt>
+              <a href="#Spring.GetDrawSelectionInfo">Spring.GetDrawSelectionInfo</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.IsAboveMiniMap">Spring.IsAboveMiniMap</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetDrawFrame">Spring.GetDrawFrame</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetFrameTimeOffset">Spring.GetFrameTimeOffset</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetLastUpdateSeconds">Spring.GetLastUpdateSeconds</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetVideoCapturingMode">Spring.GetVideoCapturingMode</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Unit_attributes">Unit attributes </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.IsUnitAllied">Spring.IsUnitAllied</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.IsUnitSelected">Spring.IsUnitSelected</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitLuaDraw">Spring.GetUnitLuaDraw</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitNoDraw">Spring.GetUnitNoDraw</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitEngineDrawMask">Spring.GetUnitEngineDrawMask</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitAlwaysUpdateMatrix">Spring.GetUnitAlwaysUpdateMatrix</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitDrawFlag">Spring.GetUnitDrawFlag</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitNoMinimap">Spring.GetUnitNoMinimap</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitNoSelect">Spring.GetUnitNoSelect</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.UnitIconGetDraw">Spring.UnitIconGetDraw</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitSelectionVolumeData">Spring.GetUnitSelectionVolumeData</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Feature_attributes">Feature attributes </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetFeatureLuaDraw">Spring.GetFeatureLuaDraw</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetFeatureNoDraw">Spring.GetFeatureNoDraw</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetFeatureEngineDrawMask">Spring.GetFeatureEngineDrawMask</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetFeatureAlwaysUpdateMatrix">Spring.GetFeatureAlwaysUpdateMatrix</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetFeatureDrawFlag">Spring.GetFeatureDrawFlag</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetFeatureSelectionVolumeData">Spring.GetFeatureSelectionVolumeData</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Inview">Inview </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.IsUnitInView">Spring.IsUnitInView</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.IsUnitVisible">Spring.IsUnitVisible</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.IsUnitIcon">Spring.IsUnitIcon</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.IsAABBInView">Spring.IsAABBInView</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.IsSphereInView">Spring.IsSphereInView</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitViewPosition">Spring.GetUnitViewPosition</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetVisibleUnits">Spring.GetVisibleUnits</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetVisibleFeatures">Spring.GetVisibleFeatures</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetVisibleProjectiles">Spring.GetVisibleProjectiles</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetRenderUnits">Spring.GetRenderUnits</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetRenderUnitsDrawFlagChanged">Spring.GetRenderUnitsDrawFlagChanged</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetRenderFeatures">Spring.GetRenderFeatures</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetRenderFeaturesDrawFlagChanged">Spring.GetRenderFeaturesDrawFlagChanged</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.ClearUnitsPreviousDrawFlag">Spring.ClearUnitsPreviousDrawFlag</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.ClearFeaturesPreviousDrawFlag">Spring.ClearFeaturesPreviousDrawFlag</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitsInScreenRectangle">Spring.GetUnitsInScreenRectangle</a>
+            </dt>
+            <dd>
+              Get units inside a rectangle area on the map
+            </dd>
+            <dt>
+              <a href="#Spring.GetFeaturesInScreenRectangle">Spring.GetFeaturesInScreenRectangle</a>
+            </dt>
+            <dd>
+              Get features inside a rectangle area on the map
+            </dd>
+            <dt>
+              <a href="#Spring.GetLocalPlayerID">Spring.GetLocalPlayerID</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetLocalTeamID">Spring.GetLocalTeamID</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetLocalAllyTeamID">Spring.GetLocalAllyTeamID</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetSpectatingState">Spring.GetSpectatingState</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetSelectedUnits">Spring.GetSelectedUnits</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetSelectedUnitsSorted">Spring.GetSelectedUnitsSorted</a>
+            </dt>
+            <dd>
+              Get selected units aggregated by unitDefID
+            </dd>
+            <dt>
+              <a href="#Spring.GetSelectedUnitsCounts">Spring.GetSelectedUnitsCounts</a>
+            </dt>
+            <dd>
+              Get an aggregate count of selected units per unitDefID
+            </dd>
+            <dt>
+              <a href="#Spring.GetSelectedUnitsCount">Spring.GetSelectedUnitsCount</a>
+            </dt>
+            <dd>
+              Returns the amount of selected units
+            </dd>
+            <dt>
+              <a href="#Spring.GetBoxSelectionByEngine">Spring.GetBoxSelectionByEngine</a>
+            </dt>
+            <dd>
+              Get if selection box is handled by engine
+            </dd>
+            <dt>
+              <a href="#Spring.IsGUIHidden">Spring.IsGUIHidden</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.HaveShadows">Spring.HaveShadows</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.HaveAdvShading">Spring.HaveAdvShading</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetWaterMode">Spring.GetWaterMode</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetMapDrawMode">Spring.GetMapDrawMode</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetMapSquareTexture">Spring.GetMapSquareTexture</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#rgb">rgb</a>
+            </dt>
+            <dd>
+              Color triple (RGB)
+            </dd>
+            <dt>
+              <a href="#Spring.GetLosViewColors">Spring.GetLosViewColors</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetNanoProjectileParams">Spring.GetNanoProjectileParams</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetCameraNames">Spring.GetCameraNames</a>
+            </dt>
+            <dd>
+              Get available cameras
+            </dd>
+            <dt>
+              <a href="#camState">camState</a>
+            </dt>
+            <dd>
+              Parameters for camera state
+            </dd>
+            <dt>
+              <a href="#Spring.GetCameraState">Spring.GetCameraState</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetCameraPosition">Spring.GetCameraPosition</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetCameraDirection">Spring.GetCameraDirection</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetCameraRotation">Spring.GetCameraRotation</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetCameraFOV">Spring.GetCameraFOV</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#xyz">xyz</a>
+            </dt>
+            <dd>
+              Cartesian triple (XYZ)
+            </dd>
+            <dt>
+              <a href="#Spring.GetCameraVectors">Spring.GetCameraVectors</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.WorldToScreenCoords">Spring.WorldToScreenCoords</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.TraceScreenRay">Spring.TraceScreenRay</a>
+            </dt>
+            <dd>
+              Get information about a ray traced from screen to world position
+            </dd>
+            <dt>
+              <a href="#Spring.GetPixelDir">Spring.GetPixelDir</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetTeamColor">Spring.GetTeamColor</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetTeamOrigColor">Spring.GetTeamOrigColor</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetDrawSeconds">Spring.GetDrawSeconds</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Sound">Sound </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetSoundStreamTime">Spring.GetSoundStreamTime</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetSoundEffectParams">Spring.GetSoundEffectParams</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Game_Speed">Game Speed </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetFPS">Spring.GetFPS</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGameSpeed">Spring.GetGameSpeed</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGameState">Spring.GetGameState</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Commands">Commands </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetActiveCommand">Spring.GetActiveCommand</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetDefaultCommand">Spring.GetDefaultCommand</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#cmdDesc">cmdDesc</a>
+            </dt>
+            <dd>
+              Command Description
+            </dd>
+            <dt>
+              <a href="#Spring.GetActiveCmdDescs">Spring.GetActiveCmdDescs</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetActiveCmdDesc">Spring.GetActiveCmdDesc</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetCmdDescIndex">Spring.GetCmdDescIndex</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetBuildFacing">Spring.GetBuildFacing</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetBuildSpacing">Spring.GetBuildSpacing</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGatherMode">Spring.GetGatherMode</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetActivePage">Spring.GetActivePage</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Mouse_State">Mouse State </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetMouseState">Spring.GetMouseState</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetMouseCursor">Spring.GetMouseCursor</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetMouseStartPosition">Spring.GetMouseStartPosition</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Text">Text </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetClipboard">Spring.GetClipboard</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.IsUserWriting">Spring.IsUserWriting</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Console">Console </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetLastMessagePositions">Spring.GetLastMessagePositions</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetConsoleBuffer">Spring.GetConsoleBuffer</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetCurrentTooltip">Spring.GetCurrentTooltip</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Key_Input">Key Input </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetKeyFromScanSymbol">Spring.GetKeyFromScanSymbol</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetKeyState">Spring.GetKeyState</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetModKeyState">Spring.GetModKeyState</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetPressedKeys">Spring.GetPressedKeys</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetPressedScans">Spring.GetPressedScans</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetInvertQueueKey">Spring.GetInvertQueueKey</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetKeyCode">Spring.GetKeyCode</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetKeySymbol">Spring.GetKeySymbol</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetScanSymbol">Spring.GetScanSymbol</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#keybindingSpec">keybindingSpec</a>
+            </dt>
+            <dd>
+              Keybinding spec
+            </dd>
+            <dt>
+              <a href="#Spring.GetKeyBindings">Spring.GetKeyBindings</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetActionHotKeys">Spring.GetActionHotKeys</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Unit_Groups">Unit Groups </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Spring.GetGroupList">Spring.GetGroupList</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetSelectedGroup">Spring.GetSelectedGroup</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetUnitGroup">Spring.GetUnitGroup</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroupUnits">Spring.GetGroupUnits</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroupUnitsSorted">Spring.GetGroupUnitsSorted</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroupUnitsCounts">Spring.GetGroupUnitsCounts</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetGroupUnitsCount">Spring.GetGroupUnitsCount</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Team_Player_Info">Team/Player Info </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#rosterSpec">rosterSpec</a>
+            </dt>
+            <dd>
+              Roster spec
+            </dd>
+            <dt>
+              <a href="#Spring.GetPlayerRoster">Spring.GetPlayerRoster</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetPlayerTraffic">Spring.GetPlayerTraffic</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetPlayerStatistics">Spring.GetPlayerStatistics</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Configuration">Configuration </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#configSpec">configSpec</a>
+            </dt>
+            <dd>
+              Configuration spec
+            </dd>
+            <dt>
+              <a href="#Spring.GetConfigParams">Spring.GetConfigParams</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetConfigInt">Spring.GetConfigInt</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetConfigFloat">Spring.GetConfigFloat</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetConfigString">Spring.GetConfigString</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#Spring.GetLogSections">Spring.GetLogSections</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+
+      <h2 id="Decals" class="section-header has-description">
+        Decals
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetAllGroundDecals">
+          Spring.GetAllGroundDecals()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">{[number],...}</span></strong>
+              decalIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalMiddlePos">
+          Spring.GetGroundDecalMiddlePos(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              posX</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              posZ</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetDecalQuadPos">
+          Spring.GetDecalQuadPos(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              posTL.x</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              posTL.z</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              posTR.x</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              posTR.z</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              posBR.x</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              posBR.z</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              posBL.x</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              posBL.z</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalSizeAndHeight">
+          Spring.GetGroundDecalSizeAndHeight(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              sizeX</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              sizeY</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              projCubeHeight</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalRotation">
+          Spring.GetGroundDecalRotation(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              rotation in radians</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalTexture">
+          Spring.GetGroundDecalTexture(decalID[, isMainTex=true])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>isMainTex</code>
+                   <strong><span class="type">bool</span></strong>
+                    If false, it gets the normals/glow map
+                   (<em>default</em> true)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              texture</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetDecalTextures">
+          Spring.GetDecalTextures([isMainTex=true])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>isMainTex</code>
+                   <strong><span class="type">bool</span></strong>
+                    If false, it gets the texture for normals/glow maps
+                   (<em>default</em> true)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">{[string],...}</a></strong>
+              textureNames All textures on the atlas and available for use in SetGroundDecalTexture</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.SetGroundDecalTextureParams">
+          Spring.SetGroundDecalTextureParams(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              texWrapDistance if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              texTraveledDistance shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalAlpha">
+          Spring.GetGroundDecalAlpha(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              alpha Between 0 and 1</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              alphaFalloff Between 0 and 1, per second</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalNormal">
+          Spring.GetGroundDecalNormal(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+
+ If all three equal 0, the decal follows the normals of ground at midpoint
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              normal.x</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              normal.y</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              normal.z</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalTint">
+          Spring.GetGroundDecalTint(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+ Gets the tint of the ground decal.
+ A color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              tintR</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              tintG</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              tintB</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              tintA</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalMisc">
+          Spring.GetGroundDecalMisc(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+ Returns less important parameters of a ground decal
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              dotElimExp</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              refHeight</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              minHeight</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              maxHeight</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              forceHeightMode</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalCreationFrame">
+          Spring.GetGroundDecalCreationFrame(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+
+ Min can be not equal to max for "gradient" style decals, e.g. unit tracks
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              creationFrameMin</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              creationFrameMax</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalOwner">
+          Spring.GetGroundDecalOwner(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              unitID|number featureID(+MAX_UNITS)</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroundDecalType">
+          Spring.GetGroundDecalType(decalID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>decalID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              type "explosion"|"plate"|"lua"|"track"|"unknown"</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Misc" class="section-header has-description">
+        Misc
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetUnitTransformMatrix">
+          Spring.GetUnitTransformMatrix(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span> or <span class="type">nil</span></strong>
+              m11 nil when unitID cannot be parsed</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m12</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m13</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m14</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m21</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m22</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m23</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m24</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m31</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m32</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m33</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m34</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m41</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m42</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m43</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m44</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFeatureTransformMatrix">
+          Spring.GetFeatureTransformMatrix(featureID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span> or <span class="type">nil</span></strong>
+              m11 nil when featureID cannot be parsed</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m12</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m13</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m14</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m21</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m22</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m23</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m24</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m31</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m32</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m33</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m34</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m41</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m42</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m43</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              m44</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSyncedGCInfo">
+          Spring.GetSyncedGCInfo([collectGC=false])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>collectGC</code>
+                   <strong><span class="type">bool</span></strong>
+                    collect before returning metric
+                   (<em>default</em> false)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              GC values are expressed in Kbytes: #bytes/2^10</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.SolveNURBSCurve">
+          Spring.SolveNURBSCurve(groupID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>groupID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number],...}</span></strong>
+              unitIDs</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Replay" class="section-header has-description">
+        Replay
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.IsReplay">
+          Spring.IsReplay()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              isReplay</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetReplayLength">
+          Spring.GetReplayLength()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              timeInSeconds</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Game_Menu_Name" class="section-header has-description">
+        Game/Menu Name
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetGameName">
+          Spring.GetGameName()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              name</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetMenuName">
+          Spring.GetMenuName()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              name name .. version from Modinfo.lua. E.g. "Spring: 1944 test-5640-ac2d15b".</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Profiling" class="section-header has-description">
+        Profiling
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetProfilerTimeRecord">
+          Spring.GetProfilerTimeRecord(profilerName[, frameData=false])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>profilerName</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>frameData</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> false)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              total in ms</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              current in ms</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              max_dt</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              time_pct</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              peak_pct</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number]=number,...}</span></strong>
+              frameData where key is the frame index and value is duration</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetProfilerRecordNames">
+          Spring.GetProfilerRecordNames()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">{string,...}</a></strong>
+              profilerNames</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetLuaMemUsage">
+          Spring.GetLuaMemUsage()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              luaHandleAllocedMem in kilobytes</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              luaHandleNumAllocs divided by 1000</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              luaGlobalAllocedMem in kilobytes</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              luaGlobalNumAllocs divided by 1000</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              luaUnsyncedGlobalAllocedMem in kilobytes</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              luaUnsyncedGlobalNumAllocs divided by 1000</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              luaSyncedGlobalAllocedMem in kilobytes</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              luaSyncedGlobalNumAllocs divided by 1000</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetVidMemUsage">
+          Spring.GetVidMemUsage()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              usedMem in MB</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              availableMem in MB</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Class_Timer" class="section-header ">
+        Class Timer
+      </h2>
+
+        <h3 id="Spring.GetTimer">
+          Spring.GetTimer()
+        </h3>
+        <p>Get a timer with millisecond resolution</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="../modules/UnsyncedRead.html#Timer">Timer</a></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetTimerMicros">
+          Spring.GetTimerMicros()
+        </h3>
+        <p>Get a timer with microsecond resolution</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="../modules/UnsyncedRead.html#Timer">Timer</a></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFrameTimer">
+          Spring.GetFrameTimer([lastFrameTime=false])
+        </h3>
+        <p>Get a timer for the start of the frame</p>
+        <div class="code-example">
+        <p>
+
+
+ This should give better results for camera interpolations
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>lastFrameTime</code>
+                   <strong><span class="type">bool</span></strong>
+                    whether to use last frame time instead of last frame start
+                   (<em>default</em> false)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="../modules/UnsyncedRead.html#Timer">Timer</a></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.DiffTimers">
+          Spring.DiffTimers(endTimer, startTimer[, returnMs=false[, fromMicroSecs=false]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>endTimer</code>
+                   <strong><a class="type" href="../modules/UnsyncedRead.html#Timer">Timer</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>startTimer</code>
+                   <strong><a class="type" href="../modules/UnsyncedRead.html#Timer">Timer</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>returnMs</code>
+                   <strong><span class="type">bool</span></strong>
+                    whether to return <code>timeAmount</code> in milliseconds as opposed to seconds
+                   (<em>default</em> false)
+                 </li>
+                 <li>
+                   <code>fromMicroSecs</code>
+                   <strong><span class="type">bool</span></strong>
+                    whether timers are in microseconds instead of milliseconds
+                   (<em>default</em> false)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              timeAmount</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Screen_Rendering_Info" class="section-header has-description">
+        Screen/Rendering Info
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetNumDisplays">
+          Spring.GetNumDisplays()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              numDisplays as returned by <code>SDL_GetNumVideoDisplays</code></li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetViewGeometry">
+          Spring.GetViewGeometry()
+        </h3>
+        <p>Get main view geometry (map and game rendering)</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              viewSizeX in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              viewSizeY in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              viewPosX offset from leftmost screen left border in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              viewPosY offset from bottommost screen bottom border in px</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetDualViewGeometry">
+          Spring.GetDualViewGeometry()
+        </h3>
+        <p>Get dual view geometry (minimap when enabled)</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              dualViewSizeX in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              dualViewSizeY in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              dualViewPosX offset from leftmost screen left border in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              dualViewPosY offset from bottommost screen bottom border in px</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetWindowGeometry">
+          Spring.GetWindowGeometry()
+        </h3>
+        <p>Get main window geometry</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              winSizeX in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              winSizeY in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              winPosX in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              winPosY in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              windowBorderTop in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              windowBorderLeft in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              windowBorderBottom in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              windowBorderRight in px</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetWindowDisplayMode">
+          Spring.GetWindowDisplayMode()
+        </h3>
+        <p>Get main window display mode</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              width in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              height in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              bits per pixel</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              refresh rate in Hz</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetScreenGeometry">
+          Spring.GetScreenGeometry([displayIndex=-1[, queryUsable=false]])
+        </h3>
+        <p>Get screen geometry</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>displayIndex</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> -1)
+                 </li>
+                 <li>
+                   <code>queryUsable</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> false)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              screenSizeX in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              screenSizeY in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              screenPosX in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              screenPosY in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              windowBorderTop in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              windowBorderLeft in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              windowBorderBottom in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              windowBorderRight in px</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              screenUsableSizeX in px</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              screenUsableSizeY in px</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              screenUsablePosX in px</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              screenUsablePosY in px</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetMiniMapGeometry">
+          Spring.GetMiniMapGeometry()
+        </h3>
+        <p>Get minimap geometry</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              minimapPosX in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              minimapPosY in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              minimapSizeX in px</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              minimapSizeY in px</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              minimized</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              maximized</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetMiniMapRotation">
+          Spring.GetMiniMapRotation()
+        </h3>
+        <p>Get minimap rotation</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              amount in radians</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetMiniMapDualScreen">
+          Spring.GetMiniMapDualScreen()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a> or <span class="type">false</span></strong>
+              position "left"|"right" when dual screen is enabled, false when not</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSelectionBox">
+          Spring.GetSelectionBox()
+        </h3>
+        <p>Get vertices from currently active selection box</p>
+        <div class="code-example">
+        <p>
+
+
+ Returns nil when selection box is inactive
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              left</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              top</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              right</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              bottom</li>
+          </ol>
+
+
+          <h4 class="no_anchor">See also:</h4>
+          <ul>
+              <li><a href="../modules/UnsyncedRead.html#Spring.GetUnitsInScreenRectangle">Spring.GetUnitsInScreenRectangle</a></li>
+          </ul>
+
+        </div>
+        <h3 id="Spring.GetDrawSelectionInfo">
+          Spring.GetDrawSelectionInfo()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.IsAboveMiniMap">
+          Spring.IsAboveMiniMap(x, y)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              isAbove</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetDrawFrame">
+          Spring.GetDrawFrame()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              low_16bit</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              high_16bit</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFrameTimeOffset">
+          Spring.GetFrameTimeOffset()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+
+ Ideally, when running 30hz sim, and 60hz rendering, the draw frames should
+ have and offset of either 0.0 frames, or 0.5 frames.
+
+ When draw frames are not integer multiples of sim frames, some interpolation
+ happens, and this timeoffset shows how far along it is.
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              offset of the current draw frame from the last sim frame, expressed in fractions of a frame</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetLastUpdateSeconds">
+          Spring.GetLastUpdateSeconds()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              lastUpdateSeconds</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetVideoCapturingMode">
+          Spring.GetVideoCapturingMode()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              allowRecord</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Unit_attributes" class="section-header has-description">
+        Unit attributes
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.IsUnitAllied">
+          Spring.IsUnitAllied(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              isAllied nil with unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.IsUnitSelected">
+          Spring.IsUnitSelected(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              isSelected nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitLuaDraw">
+          Spring.GetUnitLuaDraw(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              draw nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitNoDraw">
+          Spring.GetUnitNoDraw(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitEngineDrawMask">
+          Spring.GetUnitEngineDrawMask(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitAlwaysUpdateMatrix">
+          Spring.GetUnitAlwaysUpdateMatrix(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitDrawFlag">
+          Spring.GetUnitDrawFlag(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitNoMinimap">
+          Spring.GetUnitNoMinimap(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitNoSelect">
+          Spring.GetUnitNoSelect(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.UnitIconGetDraw">
+          Spring.UnitIconGetDraw(unitID, nil)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>nil</code>
+                   <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+                    when unitID is invalid
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitSelectionVolumeData">
+          Spring.GetUnitSelectionVolumeData(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span> or <span class="type">nil</span></strong>
+              scaleX nil when unitID cannot be parsed</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              scaleY</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              scaleZ</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              offsetX</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              offsetY</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              offsetZ</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              volumeType</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              useContHitTest</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              getPrimaryAxis</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              ignoreHits</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Feature_attributes" class="section-header has-description">
+        Feature attributes
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetFeatureLuaDraw">
+          Spring.GetFeatureLuaDraw(featureID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when featureID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFeatureNoDraw">
+          Spring.GetFeatureNoDraw(featureID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when featureID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFeatureEngineDrawMask">
+          Spring.GetFeatureEngineDrawMask(featureID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when featureID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFeatureAlwaysUpdateMatrix">
+          Spring.GetFeatureAlwaysUpdateMatrix(featureID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              nil when featureID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFeatureDrawFlag">
+          Spring.GetFeatureDrawFlag(featureID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              nil when featureID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFeatureSelectionVolumeData">
+          Spring.GetFeatureSelectionVolumeData(featureID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span> or <span class="type">nil</span></strong>
+              scaleX nil when unitID cannot be parsed</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              scaleY</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              scaleZ</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              offsetX</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              offsetY</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              offsetZ</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              volumeType</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              useContHitTest</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              getPrimaryAxis</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              ignoreHits</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Inview" class="section-header has-description">
+        Inview
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.IsUnitInView">
+          Spring.IsUnitInView(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              inView nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.IsUnitVisible">
+          Spring.IsUnitVisible(unitID[, radius], checkIcon)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>radius</code>
+                   <strong><span class="type">number</span></strong>
+                    unitRadius when not specified
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>checkIcon</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              isVisible nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.IsUnitIcon">
+          Spring.IsUnitIcon(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              isUnitIcon nil when unitID cannot be parsed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.IsAABBInView">
+          Spring.IsAABBInView(minX, minY, minZ, maxX, maxY, maxZ)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>minX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>minY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>minZ</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>maxX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>maxY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>maxZ</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              inView</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.IsSphereInView">
+          Spring.IsSphereInView(posX, posY, posZ[, radius=0])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>posX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>posY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>posZ</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>radius</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> 0)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              inView</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitViewPosition">
+          Spring.GetUnitViewPosition(unitID[, midPos=false])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>midPos</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> false)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span> or <span class="type">nil</span></strong>
+              x nil when unitID cannot be parsed</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              y</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              z</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetVisibleUnits">
+          Spring.GetVisibleUnits([teamID=-1[, radius=30[, icons=true]]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> -1)
+                 </li>
+                 <li>
+                   <code>radius</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> 30)
+                 </li>
+                 <li>
+                   <code>icons</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> true)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number],...}</span></strong>
+              unitIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetVisibleFeatures">
+          Spring.GetVisibleFeatures([teamID=-1[, radius=30[, icons=true[, geos=true]]]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> -1)
+                 </li>
+                 <li>
+                   <code>radius</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> 30)
+                 </li>
+                 <li>
+                   <code>icons</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> true)
+                 </li>
+                 <li>
+                   <code>geos</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> true)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number],...}</span></strong>
+              featureIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetVisibleProjectiles">
+          Spring.GetVisibleProjectiles([allyTeamID=-1[, addSyncedProjectiles=true[, addWeaponProjectiles=true[, addPieceProjectiles=true]]]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>allyTeamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> -1)
+                 </li>
+                 <li>
+                   <code>addSyncedProjectiles</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> true)
+                 </li>
+                 <li>
+                   <code>addWeaponProjectiles</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> true)
+                 </li>
+                 <li>
+                   <code>addPieceProjectiles</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> true)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number],...}</span></strong>
+              projectileIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetRenderUnits">
+          Spring.GetRenderUnits()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="Spring.GetRenderUnitsDrawFlagChanged">
+          Spring.GetRenderUnitsDrawFlagChanged()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="Spring.GetRenderFeatures">
+          Spring.GetRenderFeatures()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="Spring.GetRenderFeaturesDrawFlagChanged">
+          Spring.GetRenderFeaturesDrawFlagChanged()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="Spring.ClearUnitsPreviousDrawFlag">
+          Spring.ClearUnitsPreviousDrawFlag()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.ClearFeaturesPreviousDrawFlag">
+          Spring.ClearFeaturesPreviousDrawFlag()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitsInScreenRectangle">
+          Spring.GetUnitsInScreenRectangle(left, top, right, bottom[, allegiance=-1])
+        </h3>
+        <p>Get units inside a rectangle area on the map</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>left</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>top</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>right</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>bottom</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allegiance</code>
+                   <strong><span class="type">number</span></strong>
+                    teamID when > 0, when &lt; 0 one of AllUnits = -1, MyUnits = -2, AllyUnits = -3, EnemyUnits = -4
+                   (<em>default</em> -1)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number],...}</span></strong>
+              unitIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetFeaturesInScreenRectangle">
+          Spring.GetFeaturesInScreenRectangle(left, top, right, bottom)
+        </h3>
+        <p>Get features inside a rectangle area on the map</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>left</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>top</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>right</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>bottom</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number],...}</span></strong>
+              featureIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetLocalPlayerID">
+          Spring.GetLocalPlayerID()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              playerID</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetLocalTeamID">
+          Spring.GetLocalTeamID()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              teamID</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetLocalAllyTeamID">
+          Spring.GetLocalAllyTeamID()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              allyTeamID</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSpectatingState">
+          Spring.GetSpectatingState()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              spectating</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              spectatingFullView</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              spectatingFullSelect</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSelectedUnits">
+          Spring.GetSelectedUnits()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">{[number],...}</span></strong>
+              unitIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSelectedUnitsSorted">
+          Spring.GetSelectedUnitsSorted()
+        </h3>
+        <p>Get selected units aggregated by unitDefID</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">{[number]={number,...},...}</span></strong>
+              where keys are unitDefIDs and values are unitIDs</li>
+              <li>
+                <strong><span class="type">n</span></strong>
+              the number of unitDefIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSelectedUnitsCounts">
+          Spring.GetSelectedUnitsCounts()
+        </h3>
+        <p>Get an aggregate count of selected units per unitDefID</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">{[number]=number,...}</span></strong>
+              unitsCounts where keys are unitDefIDs and values are counts</li>
+              <li>
+                <strong><span class="type">n</span></strong>
+              the number of unitDefIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSelectedUnitsCount">
+          Spring.GetSelectedUnitsCount()
+        </h3>
+        <p>Returns the amount of selected units</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              selectedUnitsCount</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetBoxSelectionByEngine">
+          Spring.GetBoxSelectionByEngine()
+        </h3>
+        <p>Get if selection box is handled by engine</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              when true engine won't select units inside selection box when released</li>
+          </ol>
+
+
+          <h4 class="no_anchor">See also:</h4>
+          <ul>
+              <li><a href="../modules/UnsyncedRead.html#Spring.GetSelectionBox">Spring.GetSelectionBox</a></li>
+          </ul>
+
+        </div>
+        <h3 id="Spring.IsGUIHidden">
+          Spring.IsGUIHidden()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.HaveShadows">
+          Spring.HaveShadows()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">shadowsLoaded</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.HaveAdvShading">
+          Spring.HaveAdvShading()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              useAdvShading</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              groundUseAdvShading</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetWaterMode">
+          Spring.GetWaterMode()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              waterRendererID</li>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              waterRendererName</li>
+          </ol>
+
+
+          <h4 class="no_anchor">See also:</h4>
+          <ul>
+              <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Rendering/Env/IWater.h">rts/Rendering/Env/IWater.h</a></li>
+          </ul>
+
+        </div>
+        <h3 id="Spring.GetMapDrawMode">
+          Spring.GetMapDrawMode()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              "normal"|"height"|"metal"|"pathTraversability"|"los"</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetMapSquareTexture">
+          Spring.GetMapSquareTexture(texSquareX, texSquareY, lodMin, luaTexName[, lodMax=lodMin])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>texSquareX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>texSquareY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>lodMin</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>luaTexName</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>lodMax</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> lodMin)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">bool</span></strong>
+              success</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="rgb">
+          rgb
+        </h3>
+        <p>Color triple (RGB)</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>r</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>g</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>b</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Spring.GetLosViewColors">
+          Spring.GetLosViewColors()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">{</span></strong>
+              always=rgb, LOS=rgb, radar=rgb, jam=rgb, radar2=rgb }</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetNanoProjectileParams">
+          Spring.GetNanoProjectileParams()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              rotVal in degrees</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              rotVel in degrees</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              rotAcc in degrees</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              rotValRng in degrees</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              rotVelRng in degrees</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              rotAccRng in degrees</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetCameraNames">
+          Spring.GetCameraNames()
+        </h3>
+        <p>Get available cameras</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">{[string]</a></strong>
+              = number} where keys are names and values are indices</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="camState">
+          camState
+        </h3>
+        <p>Parameters for camera state</p>
+        <div class="code-example">
+        <p>
+
+
+ Highly dependent on the type of the current camera controller
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
+                 </li>
+                 <li>
+                   <code>mode</code>
+                   <strong><span class="type">number</span></strong>
+                    the camera mode: 0 (fps), 1 (ta), 2 (spring), 3 (rot), 4 (free), 5 (ov), 6 (dummy)
+                 </li>
+                 <li>
+                   <code>fov</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>px</code>
+                   <strong><span class="type">number</span></strong>
+                    Position X of the ground point in screen center
+                 </li>
+                 <li>
+                   <code>py</code>
+                   <strong><span class="type">number</span></strong>
+                    Position Y of the ground point in screen center
+                 </li>
+                 <li>
+                   <code>pz</code>
+                   <strong><span class="type">number</span></strong>
+                    Position Z of the ground point in screen center
+                 </li>
+                 <li>
+                   <code>dx</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera direction vector X
+                 </li>
+                 <li>
+                   <code>dy</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera direction vector Y
+                 </li>
+                 <li>
+                   <code>dz</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera direction vector Z
+                 </li>
+                 <li>
+                   <code>rx</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera rotation angle on X axis (spring)
+                 </li>
+                 <li>
+                   <code>ry</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera rotation angle on Y axis (spring)
+                 </li>
+                 <li>
+                   <code>rz</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera rotation angle on Z axis (spring)
+                 </li>
+                 <li>
+                   <code>angle</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera rotation angle on X axis (aka tilt/pitch) (ta)
+                 </li>
+                 <li>
+                   <code>flipped</code>
+                   <strong><span class="type">number</span></strong>
+                    -1 for when south is down, 1 for when north is down (ta)
+                 </li>
+                 <li>
+                   <code>dist</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera distance from the ground (spring)
+                 </li>
+                 <li>
+                   <code>height</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera distance from the ground (ta)
+                 </li>
+                 <li>
+                   <code>oldHeight</code>
+                   <strong><span class="type">number</span></strong>
+                    Camera distance from the ground, cannot be changed (rot)
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Spring.GetCameraState">
+          Spring.GetCameraState([useReturns=true])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>useReturns</code>
+                   <strong><span class="type">bool</span></strong>
+                    when true return multiple values instead of table
+                   (<em>default</em> true)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">any</span> or <a class="type" href="../modules/UnsyncedRead.html#camState">camState</a></strong>
+              ret1</li>
+              <li>
+                <strong><span class="type">any</span> or <span class="type">nil</span></strong>
+              ret2</li>
+              <li>
+                <strong><span class="type">any</span> or <span class="type">nil</span></strong>
+              retn</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetCameraPosition">
+          Spring.GetCameraPosition()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">posX</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">posY</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">posZ</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetCameraDirection">
+          Spring.GetCameraDirection()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">dirX</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">dirY</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">dirZ</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetCameraRotation">
+          Spring.GetCameraRotation()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">rotX</span></strong>
+              in radians</li>
+              <li>
+                <strong><span class="type">rotY</span></strong>
+              in radians</li>
+              <li>
+                <strong><span class="type">rotZ</span></strong>
+              in radians</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetCameraFOV">
+          Spring.GetCameraFOV()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              vFOV</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              hFOV</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="xyz">
+          xyz
+        </h3>
+        <p>Cartesian triple (XYZ)</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>z</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Spring.GetCameraVectors">
+          Spring.GetCameraVectors()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">{</span></strong>
+              forward = xyz, up = xyz, right = xyz, topFrustumPlane = xyz, botFrustumPlane = xyz, lftFrustumPlane = xyz, rgtFrustumPlane = xyz }</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.WorldToScreenCoords">
+          Spring.WorldToScreenCoords(x, y, z)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>z</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">viewPortX</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">viewPortY</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">viewPortZ</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.TraceScreenRay">
+          Spring.TraceScreenRay(screenX, screenY[, onlyCoords=false[, useMinimap=false[, includeSky=false[, ignoreWater=false[, heightOffset=0]]]]])
+        </h3>
+        <p>Get information about a ray traced from screen to world position</p>
+        <div class="code-example">
+        <p>
+
+
+ Extended to allow a custom plane, parameters are (0, 1, 0, D=0) where D is the offset D can be specified in the third argument (if all the bools are false) or in the seventh (as shown).
+
+ Intersection coordinates are returned in t[4],t[5],t[6] when the ray goes offmap and includeSky is true), or when no unit or feature is hit (or onlyCoords is true).
+
+ This will only work for units & objects with the default collission sphere. Per Piece collission and custom collission objects are not supported.
+
+ The unit must be selectable, to appear to a screen trace ray.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>screenX</code>
+                   <strong><span class="type">number</span></strong>
+                    position on x axis in mouse coordinates (origin on left border of view)
+                 </li>
+                 <li>
+                   <code>screenY</code>
+                   <strong><span class="type">number</span></strong>
+                    position on y axis in mouse coordinates (origin on top border of view)
+                 </li>
+                 <li>
+                   <code>onlyCoords</code>
+                   <strong><span class="type">bool</span></strong>
+                    return only description (1st return value) and coordinates (2nd return value)
+                   (<em>default</em> false)
+                 </li>
+                 <li>
+                   <code>useMinimap</code>
+                   <strong><span class="type">bool</span></strong>
+                    if position arguments are contained by minimap, use the minimap corresponding world position
+                   (<em>default</em> false)
+                 </li>
+                 <li>
+                   <code>includeSky</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> false)
+                 </li>
+                 <li>
+                   <code>ignoreWater</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> false)
+                 </li>
+                 <li>
+                   <code>heightOffset</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>default</em> 0)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              description of traced position</li>
+              <li>
+                <strong><span class="type">nil</span>, <span class="type">number</span>, <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a> or <a class="type" href="../modules/UnsyncedRead.html#xyz">xyz</a></strong>
+              unitID or feature, position triple when onlyCoords=true</li>
+              <li>
+                <strong><span class="type">nil</span>, <span class="type">number</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              featureID or ground</li>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="../modules/UnsyncedRead.html#xyz">xyz</a></strong>
+              coords</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetPixelDir">
+          Spring.GetPixelDir(x, y)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">dirX</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">dirY</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">dirZ</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetTeamColor">
+          Spring.GetTeamColor(teamID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              r factor from 0 to 1</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              g factor from 0 to 1</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              b factor from 0 to 1</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              a factor from 0 to 1</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetTeamOrigColor">
+          Spring.GetTeamOrigColor(teamID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              r factor from 0 to 1</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              g factor from 0 to 1</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              b factor from 0 to 1</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              a factor from 0 to 1</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetDrawSeconds">
+          Spring.GetDrawSeconds()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">time</span></strong>
+              in seconds</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Sound" class="section-header has-description">
+        Sound
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetSoundStreamTime">
+          Spring.GetSoundStreamTime()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              playTime</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              time</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSoundEffectParams">
+          Spring.GetSoundEffectParams()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+      <h2 id="Game_Speed" class="section-header has-description">
+        Game Speed
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetFPS">
+          Spring.GetFPS()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              fps</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGameSpeed">
+          Spring.GetGameSpeed()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              wantedSpeedFactor</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              speedFactor</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              paused</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGameState">
+          Spring.GetGameState([maxLatency=500])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>maxLatency</code>
+                   <strong><span class="type">number</span></strong>
+                    used for <code>isSimLagging</code> return parameter
+                   (<em>default</em> 500)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              doneLoading</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              isSavedGame</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              isClientPaused</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              isSimLagging</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Commands" class="section-header has-description">
+        Commands
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetActiveCommand">
+          Spring.GetActiveCommand()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              cmdIndex</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              cmdID</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              cmdType</li>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              cmdName</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetDefaultCommand">
+          Spring.GetDefaultCommand()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              cmdIndex</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              cmdID</li>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              cmdType</li>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              cmdName</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="cmdDesc">
+          cmdDesc
+        </h3>
+        <p>Command Description</p>
+        <div class="code-example">
+        <p>
+
+
+ Contains data about a command
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>id</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>type</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>action</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>tooltip</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>texture</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cursor</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>queueing</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>hidden</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>disabled</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>showUnique</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>onlyTexture</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>params</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">{[string],...}</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Spring.GetActiveCmdDescs">
+          Spring.GetActiveCmdDescs()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="../modules/UnsyncedRead.html#cmdDesc">{[cmdDesc],...}</a></strong>
+              cmdDescs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetActiveCmdDesc">
+          Spring.GetActiveCmdDesc(cmdIndex)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>cmdIndex</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="../modules/UnsyncedRead.html#cmdDesc">cmdDesc</a></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetCmdDescIndex">
+          Spring.GetCmdDescIndex(cmdID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>cmdID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              cmdDescIndex</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetBuildFacing">
+          Spring.GetBuildFacing()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              buildFacing</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetBuildSpacing">
+          Spring.GetBuildSpacing()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              buildSpacing</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGatherMode">
+          Spring.GetGatherMode()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              gatherMode</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetActivePage">
+          Spring.GetActivePage()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              activePage</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              maxPage</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Mouse_State" class="section-header has-description">
+        Mouse State
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetMouseState">
+          Spring.GetMouseState()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              x</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              y</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              lmbPressed left mouse button pressed</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              mmbPressed middle mouse button pressed</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              rmbPressed right mouse button pressed</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              offscreen</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              mmbScroll</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetMouseCursor">
+          Spring.GetMouseCursor()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              cursorName</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              cursorScale</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetMouseStartPosition">
+          Spring.GetMouseStartPosition(button)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>button</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              x</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              y</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              camPosX</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              camPosY</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              camPosZ</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              dirX</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              dirY</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              dirZ</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Text" class="section-header has-description">
+        Text
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetClipboard">
+          Spring.GetClipboard()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              text</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.IsUserWriting">
+          Spring.IsUserWriting()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Console" class="section-header has-description">
+        Console
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetLastMessagePositions">
+          Spring.GetLastMessagePositions()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="../modules/UnsyncedRead.html#xyz">{xyz,...}</a></strong>
+              message positions</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetConsoleBuffer">
+          Spring.GetConsoleBuffer(maxLines)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>maxLines</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{{text=string,priority=number},...}</span></strong>
+              pair array of (text, priority)</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetCurrentTooltip">
+          Spring.GetCurrentTooltip()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              tooltip</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Key_Input" class="section-header has-description">
+        Key Input
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetKeyFromScanSymbol">
+          Spring.GetKeyFromScanSymbol(scanSymbol)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>scanSymbol</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              keyName</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetKeyState">
+          Spring.GetKeyState(keyCode)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>keyCode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              pressed</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetModKeyState">
+          Spring.GetModKeyState()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              alt</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              ctrl</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              meta</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              shift</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetPressedKeys">
+          Spring.GetPressedKeys()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">{[number</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string]=true,...}</a></strong>
+              where keys are keyCodes or key names</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetPressedScans">
+          Spring.GetPressedScans()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">{[number</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string]=true,...}</a></strong>
+              where keys are scanCodes or scan names</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetInvertQueueKey">
+          Spring.GetInvertQueueKey()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              queueKey</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetKeyCode">
+          Spring.GetKeyCode(keySym)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>keySym</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              keyCode</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetKeySymbol">
+          Spring.GetKeySymbol(keyCode)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>keyCode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              keyCodeName</li>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              keyCodeDefaultName name when there are not aliases</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetScanSymbol">
+          Spring.GetScanSymbol(scanCode)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>scanCode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              scanCodeName</li>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              scanCodeDefaultName name when there are not aliases</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="keybindingSpec">
+          keybindingSpec
+        </h3>
+        <p>Keybinding spec</p>
+        <div class="code-example">
+        <p>
+
+
+ Contains data about a keybinding
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>command</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>extra</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>boundWith</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Spring.GetKeyBindings">
+          Spring.GetKeyBindings([keySet1[, keySet2]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>keySet1</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    filters keybindings bound to this keyset
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>keySet2</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    OR bound to this keyset
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="../modules/UnsyncedRead.html#keybindingSpec">{[keybindingSpec],...}</a></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetActionHotKeys">
+          Spring.GetActionHotKeys(actionName)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>actionName</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">{[string],...}</a></strong>
+              hotkeys</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Unit_Groups" class="section-header has-description">
+        Unit Groups
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Spring.GetGroupList">
+          Spring.GetGroupList()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number]=number,...}</span></strong>
+              where keys are groupIDs and values are counts</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetSelectedGroup">
+          Spring.GetSelectedGroup()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              groupID -1 when no group selected</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetUnitGroup">
+          Spring.GetUnitGroup(unitID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              groupID</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroupUnits">
+          Spring.GetGroupUnits(groupID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>groupID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number],...}</span></strong>
+              unitIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroupUnitsSorted">
+          Spring.GetGroupUnitsSorted(groupID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>groupID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number]={[number],...},...}</span></strong>
+              where keys are unitDefIDs and values are unitIDs</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroupUnitsCounts">
+          Spring.GetGroupUnitsCounts(groupID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>groupID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">{[number]=number,...}</span></strong>
+              where keys are unitDefIDs and values are counts</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetGroupUnitsCount">
+          Spring.GetGroupUnitsCount(groupID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>groupID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              groupSize</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Team_Player_Info" class="section-header has-description">
+        Team/Player Info
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="rosterSpec">
+          rosterSpec
+        </h3>
+        <p>Roster spec</p>
+        <div class="code-example">
+        <p>
+
+
+ Contains data about a player
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allyTeamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>spectator</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cpuUsage</code>
+                   <strong><span class="type">number</span></strong>
+                    in order to find the progress, use: cpuUsage&amp;0x1 if it's PC or BO, cpuUsage&amp; 0xFE to get path res, (cpuUsage>>8)*1000 for the progress
+                 </li>
+                 <li>
+                   <code>pingTime</code>
+                   <strong><span class="type">number</span></strong>
+                    if -1, the player is pathfinding
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Spring.GetPlayerRoster">
+          Spring.GetPlayerRoster([sortType[, showPathingPlayers=false]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>sortType</code>
+                   <strong><span class="type">number</span></strong>
+                    return unsorted if unspecified. Disabled = 0, Allies = 1, TeamID = 2, PlayerName = 3, PlayerCPU = 4, PlayerPing = 5
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>showPathingPlayers</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                   (<em>default</em> false)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <a class="type" href="../modules/UnsyncedRead.html#rosterSpec">{[rosterSpec],...}</a></strong>
+              playerTable</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetPlayerTraffic">
+          Spring.GetPlayerTraffic(playerID, packetID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>packetID</code>
+                   <strong><span class="type">number</span></strong>
+                   [opt]
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              traffic</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetPlayerStatistics">
+          Spring.GetPlayerStatistics(playerID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              mousePixels nil when invalid playerID</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              mouseClicks</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              keyPresses</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              numCommands</li>
+              <li>
+                <strong><span class="type">number</span></strong>
+              unitCommands</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Configuration" class="section-header has-description">
+        Configuration
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="configSpec">
+          configSpec
+        </h3>
+        <p>Configuration spec</p>
+        <div class="code-example">
+        <p>
+
+
+ Contains data about a configuration, only name and type are guaranteed
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>type</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>description</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>defaultValue</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>minimumValue</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>maximumValue</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>safemodeValue</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>declarationFile</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>declarationLine</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>readOnly</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Spring.GetConfigParams">
+          Spring.GetConfigParams()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="../modules/UnsyncedRead.html#configSpec">{[configSpec],...}</a></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetConfigInt">
+          Spring.GetConfigInt(name[, default=0])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>default</code>
+                   <strong><span class="type">number</span> or <span class="type">nil</span></strong>
+
+
+
+                   (<em>default</em> 0)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              configInt</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetConfigFloat">
+          Spring.GetConfigFloat(name[, default=0])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>default</code>
+                   <strong><span class="type">number</span> or <span class="type">nil</span></strong>
+
+
+
+                   (<em>default</em> 0)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              configFloat</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetConfigString">
+          Spring.GetConfigString(name[, default=""])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>default</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a> or <span class="type">nil</span></strong>
+
+
+
+                   (<em>default</em> "")
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span> or <span class="type">number</span></strong>
+              configString</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Spring.GetLogSections">
+          Spring.GetLogSections()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">{[string]=number,...}</a></strong>
+              sections where keys are names and loglevel are values. E.g. <code>{ &quot;KeyBindings&quot; = LOG.INFO, &quot;Font&quot; = LOG.INFO, &quot;Sound&quot; = LOG.WARNING, ... }</code></li>
+          </ol>
+
+
+
+        </div>
+
+{% endraw %}
