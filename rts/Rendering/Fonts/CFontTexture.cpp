@@ -146,28 +146,28 @@ public:
 			FcConfigEnableHome(FcFalse);
 			config = FcConfigCreate();
 
+			#ifdef _WIN32
+			std::array<char, 4096> osFontsDir;
+			ExpandEnvironmentStrings("%WINDIR%\\fonts", osFontsDir.data(), osFontsDir.size()); // expands %HOME% etc.
+			static constexpr const char* configFmt = R"(<fontconfig><dir>%s</dir><cachedir>fontcache</cachedir></fontconfig>)";
+			std::string configFmtVar = fmt::sprintf(configFmt, osFontsDir.data());
+
+			FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt.c_str()), FcTrue);
+
+			FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
+			FcConfigBuildFonts(config);
+			#else
+
 			// we cant directly use the usual fontconfig methods because those won't let us have both first our cache
 			// and system fonts included. also linux actually has system config files that can be used by fontconfig.
 
-			#ifdef _WIN32
-			// fontconfig will resolve the special keys here.
-			static constexpr const char* configFmt = R"(<fontconfig><dir>WINDOWSFONTDIR</dir><cachedir>fontcache</cachedir><cachedir>LOCAL_APPDATA_FONTCONFIG_CACHE</cachedir></fontconfig>)";
-			#else
 			static constexpr const char* configFmt = R"(<fontconfig><cachedir>fontcache</cachedir></fontconfig>)";
-			#endif
 
-			#ifdef _WIN32
-			// Explicitly set the config with xml for windows.
-			res = FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
-			#else
 			// Load system configuration (passing 0 here so fc will use the default os config file if possible).
 			res = FcConfigParseAndLoad(config, 0, true);
-			#endif
 			if (res) {
-				#ifndef _WIN32
 				// add local cache after system config for linux
 				FcConfigParseAndLoadFromMemory(config, reinterpret_cast<const FcChar8*>(configFmt), FcTrue);
-				#endif
 
 				LOG_MSG("[%s] Using Fontconfig light init", false, __func__);
 
@@ -196,6 +196,7 @@ public:
 					LOG_MSG("%s config and fonts. No system fallbacks will be available", false, errprefix.c_str());
 				}
 			}
+			#endif
 
 			// init app fonts dir
 			res = FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
