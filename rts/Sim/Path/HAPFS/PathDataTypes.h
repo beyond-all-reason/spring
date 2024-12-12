@@ -37,16 +37,10 @@ struct PathNode {
 
 
 /// functor to define node priority
+/// This needs to guarantee that the sorting is stable.
 struct lessCost {
 	inline bool operator() (const PathNode* x, const PathNode* y) const {
-		if (x->fCost == y->fCost) {
-			if (x->gCost == y->gCost)
-				// This is needed to guarantee that the sorting is stable.
-				return (x->nodeNum < y->nodeNum);
-			else
-				return (x->gCost < y->gCost);
-		} else
-			return (x->fCost > y->fCost);
+		return std::tie(x->fCost, x->gCost, x->nodeNum) > std::tie(y->fCost, y->gCost, y->nodeNum);
 	}
 };
 
