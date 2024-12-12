@@ -2908,6 +2908,7 @@ int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 //   unit
 //   readTeam   for MY_UNIT_TEST
 //   allegiance for SIMPLE_TEAM_TEST and VISIBLE_TEAM_TEST
+//   readAllyTeam for ALLY_UNIT_TEST and ENEMY_UNIT_TEST
 //   readAllyTeam, fullRead for UNIT_ERROR_POS
 
 #define NULL_TEST  ;  // always passes
@@ -2926,10 +2927,10 @@ int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 	if (unit->team != readTeam) { continue; }
 
 #define ALLY_UNIT_TEST \
-	if (unit->allyteam != CLuaHandle::GetHandleReadAllyTeam(L)) { continue; }
+	if (unit->allyteam != readAllyTeam) { continue; }
 
 #define ENEMY_UNIT_TEST \
-	if (unit->allyteam == CLuaHandle::GetHandleReadAllyTeam(L)) { continue; } \
+	if (unit->allyteam == readAllyTeam) { continue; } \
 	if (!LuaUtils::IsUnitVisible(L, unit)) { continue; }
 
 #define UNIT_POS \
@@ -3332,12 +3333,12 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 			}
 		}
 		else if (allegiance == LuaUtils::AllyUnits) {
-			if (CLuaHandle::GetHandleReadAllyTeam(L) == teamHandler.AllyTeam(team)) {
+			if (readAllyTeam == teamHandler.AllyTeam(team)) {
 				LOOP_UNIT_CONTAINER(NULL_TEST, UNIT_POS PLANES_TEST, false);
 			}
 		}
 		else if (allegiance == LuaUtils::EnemyUnits) {
-			if (CLuaHandle::GetHandleReadAllyTeam(L) != teamHandler.AllyTeam(team)) {
+			if (readAllyTeam != teamHandler.AllyTeam(team)) {
 				LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS PLANES_TEST, false);
 			}
 		}
