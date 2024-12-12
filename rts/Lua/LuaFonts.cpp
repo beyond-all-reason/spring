@@ -221,7 +221,7 @@ int LuaFonts::DeleteFont(lua_State* L)
  * but later, on the Update cycle (before other Update and Draw callins).
  *
  * @function gl.AddFallbackFont
- * @string filePath VFS path to the file, for example "fonts/myfont.ttf"
+ * @string filePath VFS path to the file, for example "fonts/myfont.ttf". Uses VFS.RAW_FIRST access mode.
  * @treturn bool success
  */
 int LuaFonts::AddFallbackFont(lua_State* L)
