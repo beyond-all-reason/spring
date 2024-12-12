@@ -267,6 +267,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitBlocking);
 	REGISTER_LUA_CFUNC(GetUnitMoveTypeData);
 
+	REGISTER_LUA_CFUNC(GetUnitCommandCount);
 	REGISTER_LUA_CFUNC(GetUnitCommands);
 	REGISTER_LUA_CFUNC(GetUnitCurrentCommand);
 	REGISTER_LUA_CFUNC(GetFactoryCounts);
@@ -6061,6 +6062,11 @@ int LuaSyncedRead::GetUnitCommands(lua_State* L)
 		// *get wants the actual commands
 		PackCommandQueue(L, *queue, numCmds);
 	} else {
+		static bool deprecatedMsgDone = false;
+		if (!deprecatedMsgDone) {
+			LOG_L(L_WARNING, "Getting the command count using GetUnitCommands/GetCommandQueue is deprecated. Please use Spring.GetUnitCommandCount instead.");
+			deprecatedMsgDone = true;
+		}
 		// *get just wants the queue's size
 		lua_pushnumber(L, queue->size());
 	}
@@ -6104,6 +6110,26 @@ int LuaSyncedRead::GetFactoryCommands(lua_State* L)
 	return 1;
 }
 
+/*** Get the number of commands in a units queue.
+ *
+ * @number unitID
+ */
+int LuaSyncedRead::GetUnitCommandCount(lua_State* L)
+{
+	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	const CCommandAI* commandAI = unit->commandAI;
+
+	const CFactoryCAI* factoryCAI = dynamic_cast<const CFactoryCAI*>(commandAI);
+	const CCommandQueue* queue = (factoryCAI == nullptr)? &commandAI->commandQue : &factoryCAI->newUnitCommands;
+
+	lua_pushnumber(L, queue->size());
+
+	return 1;
+}
 
 /***
  *
