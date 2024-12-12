@@ -191,10 +191,15 @@ bool CPreGame::Draw()
 	font->SetTextColor(color.x, color.y, color.z, color.w);
 
 	if (!clientNet->Connected()) {
-		if (clientSetup->isHost)
-			font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server to start");
-		else
+		if (clientSetup->isHost) {
+			if (clientSetup->hostIP == "localhost")
+				font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for game to start");
+			else
+				font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server to start");
+		}
+		else {
 			font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Connecting to server (%ds)", (spring_gettime() - connectTimer).toSecsi());
+		}
 	} else {
 		font->glPrint(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server response");
 	}
