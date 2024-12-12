@@ -40,7 +40,7 @@ struct PathNode {
 /// This needs to guarantee that the sorting is stable.
 struct lessCost {
 	inline bool operator() (const PathNode* x, const PathNode* y) const {
-		return std::tie(x->fCost, x->gCost, x->nodeNum) > std::tie(y->fCost, y->gCost, y->nodeNum);
+		return std::tie(x->fCost, y->gCost, x->nodeNum) > std::tie(y->fCost, x->gCost, y->nodeNum);
 	}
 };
 
