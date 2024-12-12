@@ -5977,6 +5977,10 @@ static void PackCommandQueue(lua_State* L, const CCommandQueue& commands, size_t
 /***
  *
  * @function Spring.GetUnitCurrentCommand
+ *
+ * @number unitID Unit id.
+ * @number cmdIndex Command index to get. If negative will count from the end of the queue,
+ * for example -1 will be the last command.
  */
 int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 {
@@ -5989,10 +5993,15 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 	const CFactoryCAI* factoryCAI = dynamic_cast<const CFactoryCAI*>(commandAI);
 	const CCommandQueue* queue = (factoryCAI == nullptr)? &commandAI->commandQue : &factoryCAI->newUnitCommands;
 
-	// - 1 to convert from lua index to C index
-	const unsigned int cmdIndex = luaL_optint(L, 2, 1) - 1;
+	unsigned int cmdIndex = luaL_optint(L, 2, 1);
+	if (cmdIndex > 0) {
+		// - 1 to convert from lua index to C index
+		cmdIndex -= 1;
+	} else {
+		cmdIndex = queue->size()-cmdIndex;
+	}
 
-	if (cmdIndex >= queue->size())
+	if (cmdIndex >= queue->size() || cmdIndex < 0)
 		return 0;
 
 	const Command& cmd = queue->at(cmdIndex);
