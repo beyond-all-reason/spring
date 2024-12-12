@@ -103,10 +103,7 @@ namespace QTPFS {
     /// Needs to guarantee stable ordering, even if the sorting algorithm itself is not stable.
     struct ShouldMoveTowardsBottomOfPriorityQueue {
         inline bool operator() (const SearchQueueNode& lhs, const SearchQueueNode& rhs) const {
-            if (lhs.heapPriority == rhs.heapPriority)
-                return (lhs.nodeIndex < rhs.nodeIndex);
-            else
-                return (lhs.heapPriority > rhs.heapPriority);
+            return std::tie(lhs.heapPriority, lhs.nodeIndex) > std::tie(rhs.heapPriority, rhs.nodeIndex);
         }
     };
 
