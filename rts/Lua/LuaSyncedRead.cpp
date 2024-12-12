@@ -269,6 +269,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetUnitCommands);
 	REGISTER_LUA_CFUNC(GetUnitCurrentCommand);
+	REGISTER_LUA_CFUNC(GetUnitCurrentCommandID);
 	REGISTER_LUA_CFUNC(GetFactoryCounts);
 	REGISTER_LUA_CFUNC(GetFactoryCommands);
 
@@ -6005,6 +6006,41 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 		lua_pushnumber(L, cmd.GetParam(i));
 
 	return 3 + numParams;
+}
+
+/*** Get the cmdID for a specific command in a units queue.
+ *
+ * @number unitID
+ * @number cmdIndex Command index to get. If negative will count from the end of the queue,
+ * for example -1 will be the last command.
+ * @treturn number cmdID
+ */
+int LuaSyncedRead::GetUnitCurrentCommandID(lua_State* L)
+{
+	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	const CCommandAI* commandAI = unit->commandAI; // never null
+	const CFactoryCAI* factoryCAI = dynamic_cast<const CFactoryCAI*>(commandAI);
+	const CCommandQueue* queue = (factoryCAI == nullptr)? &commandAI->commandQue : &factoryCAI->newUnitCommands;
+
+	// - 1 to convert from lua index to C index
+	unsigned int cmdIndex = luaL_optint(L, 2, 1);
+	if (cmdIndex > 0) {
+		// - 1 to convert from lua index to C index
+		cmdIndex -= 1;
+	} else {
+		cmdIndex = queue->size()-cmdIndex;
+	}
+	if (cmdIndex >= queue->size() || cmdIndex < 0)
+		return 0;
+
+	const Command& cmd = queue->at(cmdIndex);
+	lua_pushnumber(L, cmd.GetID());
+
+	return 1;
 }
 
 
