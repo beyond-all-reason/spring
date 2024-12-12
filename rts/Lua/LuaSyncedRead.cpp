@@ -6027,7 +6027,7 @@ int LuaSyncedRead::GetUnitCurrentCommandID(lua_State* L)
 	const CCommandQueue* queue = (factoryCAI == nullptr)? &commandAI->commandQue : &factoryCAI->newUnitCommands;
 
 	// - 1 to convert from lua index to C index
-	unsigned int cmdIndex = luaL_optint(L, 2, 1);
+	int cmdIndex = luaL_optint(L, 2, 1);
 	if (cmdIndex > 0) {
 		// - 1 to convert from lua index to C index
 		cmdIndex -= 1;
