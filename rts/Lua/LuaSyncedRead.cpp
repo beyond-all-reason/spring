@@ -2909,6 +2909,7 @@ int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 //   readTeam   for MY_UNIT_TEST
 //   allegiance for SIMPLE_TEAM_TEST and VISIBLE_TEAM_TEST
 //   readAllyTeam for ALLY_UNIT_TEST and ENEMY_UNIT_TEST
+//   readAllyTeam, fullRead for UNIT_ERROR_POS
 
 #define NULL_TEST  ;  // always passes
 
@@ -2935,6 +2936,23 @@ int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 #define UNIT_POS \
 	const float3& p = unit->midPos;
 
+#define UNIT_ERROR_POS \
+	float3 p = unit->midPos; \
+	if (!LuaUtils::IsAllyUnit(L, unit)) \
+		p += unit->GetLuaErrorVector(readAllyTeam, fullRead);
+
+
+/* Apply team error to planar mins/maxs boxes */
+void ApplyPlanarTeamError(lua_State* L, int allegiance, float3& mins, float3& maxs) {
+	if ((allegiance >= 0 && !LuaUtils::IsAlliedTeam(L, allegiance)) ||
+	   !(allegiance == LuaUtils::MyUnits || allegiance == LuaUtils::AllyUnits)) {
+		const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+		const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(readAllyTeam);
+		const float3 allyTeamError3(allyTeamError, 0.0f, allyTeamError);
+		mins -= allyTeamError3;
+		maxs += allyTeamError3;
+	}
+}
 
 /***
  *
@@ -2966,6 +2984,9 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 	if ((x < xmin) || (x > xmax)) continue; \
 	if ((z < zmin) || (z > zmax)) continue;
 
+	if (!fullRead)
+		ApplyPlanarTeamError(L, allegiance, mins, maxs);
+
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
 	const auto& units = (*qfQuery.units);
@@ -2974,7 +2995,7 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
 			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, NULL_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_POS RECTANGLE_TEST, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_ERROR_POS RECTANGLE_TEST, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
@@ -2985,10 +3006,10 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, NULL_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_POS RECTANGLE_TEST, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_ERROR_POS RECTANGLE_TEST, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS RECTANGLE_TEST, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS RECTANGLE_TEST, true);
 	}
 
 	return 1;
@@ -3033,6 +3054,9 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 	BOX_TEST \
 	RECTANGLE_TEST
 
+	if (!fullRead)
+		ApplyPlanarTeamError(L, allegiance, mins, maxs);
+
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
 	const auto& units = (*qfQuery.units);
@@ -3041,7 +3065,7 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
 			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, UNIT_POS BOX_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_POS BOX_TEST_FULL, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_ERROR_POS BOX_TEST_FULL, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
@@ -3052,10 +3076,10 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, UNIT_POS BOX_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_POS BOX_TEST_FULL, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_ERROR_POS BOX_TEST_FULL, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS BOX_TEST_FULL, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS BOX_TEST_FULL, true);
 	}
 
 	return 1;
@@ -3092,6 +3116,9 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 		continue;                               \
 	}                                           \
 
+	if (!fullRead)
+		ApplyPlanarTeamError(L, allegiance, mins, maxs);
+
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
 	const auto& units = (*qfQuery.units);
@@ -3100,7 +3127,7 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
 			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, UNIT_POS CYLINDER_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_POS CYLINDER_TEST, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_ERROR_POS CYLINDER_TEST, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
@@ -3111,10 +3138,10 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, UNIT_POS CYLINDER_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_POS CYLINDER_TEST, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_ERROR_POS CYLINDER_TEST, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS CYLINDER_TEST, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS CYLINDER_TEST, true);
 	}
 
 	return 1;
@@ -3156,6 +3183,9 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 		continue;                                 \
 	}                                           \
 
+	if (!fullRead)
+		ApplyPlanarTeamError(L, allegiance, mins, maxs);
+
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
 	const auto& units = (*qfQuery.units);
@@ -3164,7 +3194,7 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
 			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, UNIT_POS SPHERE_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_POS SPHERE_TEST, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_ERROR_POS SPHERE_TEST, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
@@ -3175,10 +3205,10 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, UNIT_POS SPHERE_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_POS SPHERE_TEST, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_ERROR_POS SPHERE_TEST, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS SPHERE_TEST, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS SPHERE_TEST, true);
 	}
 
 	return 1;
@@ -3280,7 +3310,7 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 				if (LuaUtils::IsAlliedTeam(L, allegiance)) {
 					LOOP_UNIT_CONTAINER(NULL_TEST, UNIT_POS PLANES_TEST, false);
 				} else {
-					LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS PLANES_TEST, false);
+					LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS PLANES_TEST, false);
 				}
 			}
 		}
@@ -3296,14 +3326,14 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 		}
 		else if (allegiance == LuaUtils::EnemyUnits) {
 			if (readAllyTeam != teamHandler.AllyTeam(team)) {
-				LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS PLANES_TEST, false);
+				LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS PLANES_TEST, false);
 			}
 		}
 		else { // AllUnits
 			if (LuaUtils::IsAlliedTeam(L, team)) {
 				LOOP_UNIT_CONTAINER(NULL_TEST, UNIT_POS PLANES_TEST, false);
 			} else {
-				LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS PLANES_TEST, false);
+				LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS PLANES_TEST, false);
 			}
 		}
 	}
