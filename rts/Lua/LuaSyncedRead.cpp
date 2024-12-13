@@ -3058,14 +3058,7 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 
 #define BOX_TEST_FULL             \
 	BOX_TEST                        \
-	const float x = p.x;            \
-	if ((x < xmin) || (x > xmax)) { \
-		continue;               \
-	}                               \
-	const float z = p.z;            \
-	if ((z < zmin) || (z > zmax)) { \
-		continue;               \
-	}
+	RECTANGLE_TEST
 
 	if (!fullRead)
 		ApplyPlanarTeamError(L, allegiance, mins, maxs);
