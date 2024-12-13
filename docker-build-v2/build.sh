@@ -61,8 +61,22 @@ if [[ -z "$(docker images -q $image 2> /dev/null)" ]]; then
   docker pull $image
 fi
 
+# Podman assigns root id to the user so trying to set the user
+# Won't work
+check_is_podman() {
+  docker --version | grep -c "podman version"
+}
+set_usr_args=""
+if [[ "$(check_is_podman)" -eq 0 ]]; then
+  echo "Using non-emulated docker"
+  set_usr_args="-v /etc/passwd:/etc/passwd:ro \
+    -v /etc/group:/etc/group:ro \
+    --user=$(id -u):$(id -g)"
+fi
+
 docker run -it --rm \
     -v $(pwd):/build/src:ro \
+    ${set_usr_args} \
     -v $(pwd)/.cache/ccache-$OS:/build/cache:rw \
     -v $(pwd)/build-$OS:/build/out:rw \
     -v $(pwd)/.conan2-$OS:/build/.conan2:rw \
