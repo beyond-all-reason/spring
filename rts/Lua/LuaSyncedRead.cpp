@@ -2960,7 +2960,11 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
 	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
-#define RECTANGLE_TEST ; // no test, GetUnitsExact is sufficient
+#define RECTANGLE_TEST \
+	const float x = p.x; \
+	const float z = p.z; \
+	if ((x < xmin) || (x > xmax)) continue; \
+	if ((z < zmin) || (z > zmax)) continue;
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
@@ -3025,6 +3029,10 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 		continue;                     \
 	}
 
+#define BOX_TEST_FULL \
+	BOX_TEST \
+	RECTANGLE_TEST
+
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
 	const auto& units = (*qfQuery.units);
@@ -3033,7 +3041,7 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
 			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, UNIT_POS BOX_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_POS BOX_TEST, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_POS BOX_TEST_FULL, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
@@ -3044,10 +3052,10 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, UNIT_POS BOX_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_POS BOX_TEST, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_POS BOX_TEST_FULL, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS BOX_TEST, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_POS BOX_TEST_FULL, true);
 	}
 
 	return 1;
