@@ -2949,8 +2949,8 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 	const float xmax = luaL_checkfloat(L, 3);
 	const float zmax = luaL_checkfloat(L, 4);
 
-	const float3 mins(xmin, 0.0f, zmin);
-	const float3 maxs(xmax, 0.0f, zmax);
+	float3 mins(xmin, 0.0f, zmin);
+	float3 maxs(xmax, 0.0f, zmax);
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
@@ -3006,8 +3006,8 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 	const float ymax = luaL_checkfloat(L, 5);
 	const float zmax = luaL_checkfloat(L, 6);
 
-	const float3 mins(xmin, 0.0f, zmin);
-	const float3 maxs(xmax, 0.0f, zmax);
+	float3 mins(xmin, 0.0f, zmin);
+	float3 maxs(xmax, 0.0f, zmax);
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 7);
 
@@ -3061,8 +3061,8 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 	const float radius = luaL_checkfloat(L, 3);
 	const float radSqr = (radius * radius);
 
-	const float3 mins(x - radius, 0.0f, z - radius);
-	const float3 maxs(x + radius, 0.0f, z + radius);
+	float3 mins(x - radius, 0.0f, z - radius);
+	float3 maxs(x + radius, 0.0f, z + radius);
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 4);
 
@@ -3122,8 +3122,8 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 	const float radSqr = (radius * radius);
 
 	const float3 pos(x, y, z);
-	const float3 mins(x - radius, 0.0f, z - radius);
-	const float3 maxs(x + radius, 0.0f, z + radius);
+	float3 mins(x - radius, 0.0f, z - radius);
+	float3 maxs(x + radius, 0.0f, z + radius);
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
