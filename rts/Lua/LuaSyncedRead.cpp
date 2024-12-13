@@ -2965,17 +2965,17 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	if (allegiance >= 0) {
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
-			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, RECTANGLE_TEST, true);
+			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, NULL_TEST, true);
 		} else {
 			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, RECTANGLE_TEST, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
 		const int readTeam = CLuaHandle::GetHandleReadTeam(L);
-		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, RECTANGLE_TEST, true);
+		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, NULL_TEST, true);
 	}
 	else if (allegiance == LuaUtils::AllyUnits) {
-		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, RECTANGLE_TEST, true);
+		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, NULL_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
 		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, RECTANGLE_TEST, true);
