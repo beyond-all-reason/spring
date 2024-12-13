@@ -2955,6 +2955,7 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 #define RECTANGLE_TEST ; // no test, GetUnitsExact is sufficient
 
@@ -3013,6 +3014,7 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 7);
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 #define BOX_TEST                  \
 	const float y = unit->midPos.y; \
@@ -3069,6 +3071,7 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 4);
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 #define CYLINDER_TEST                         \
 	const float3& p = unit->midPos;             \
@@ -3131,6 +3134,7 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 #define SPHERE_TEST                           \
 	const float3& p = unit->midPos;             \
@@ -3256,6 +3260,7 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 
 	const int readTeam = CLuaHandle::GetHandleReadTeam(L);
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 	lua_newtable(L);
 
