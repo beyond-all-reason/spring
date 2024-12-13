@@ -2978,8 +2978,6 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
 	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
-#define NULL_TEST ; // no test, GetUnitsExact is sufficient
-
 #define RECTANGLE_TEST            \
 	const float x = p.x;            \
 	const float z = p.z;            \
