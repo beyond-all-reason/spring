@@ -3182,12 +3182,11 @@ struct Plane {
 };
 
 
-static inline bool UnitInPlanes(const CUnit* unit, const vector<Plane>& planes)
+static inline bool UnitInPlanes(const float3& pos, const float radius, const vector<Plane>& planes)
 {
-	const float3& pos = unit->midPos;
 	for (const Plane& p: planes) {
 		const float dist = (pos.x * p.x) + (pos.y * p.y) + (pos.z * p.z) + p.d;
-		if ((dist - unit->radius) > 0.0f) {
+		if ((dist - radius) > 0.0f) {
 			return false; // outside
 		}
 	}
@@ -3255,7 +3254,7 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 	}
 
 #define PLANES_TEST                    \
-	if (!UnitInPlanes(unit, planes)) { \
+	if (!UnitInPlanes(p, unit->radius, planes)) { \
 		continue;                      \
 	}
 
