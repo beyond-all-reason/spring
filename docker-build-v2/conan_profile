@@ -9,4 +9,6 @@ os=Linux
 
 [conf]
 tools.build:compiler_executables={'c': '/usr/bin/gcc-13', 'cpp': '/usr/bin/g++-13' }
+tools.cmake.cmaketoolchain:user_toolchain+=/build/toolchain.cmake
 user.cmake.cmake_layout:build_folder=/build/out
+tools.build.cross_building:cross_build=True

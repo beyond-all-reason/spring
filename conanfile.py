@@ -41,8 +41,12 @@ class RecoilConan(ConanFile):
         self.requires("ogg/1.3.5")
         self.requires("vorbis/1.3.7")
         self.requires("sdl/2.0.20")
+        self.requires("libcurl/7.88.1")
+        self.requires("openal-soft/1.23.1")
 
     def configure(self):
+        self.options["glew"].with_glu = "system"
+        self.options["openal-soft"].shared = True
         if self.settings.os == "Linux":
             self.options["sdl"].wayland = False # Disable wayland build for now
             self.options["sdl"].pulse = False

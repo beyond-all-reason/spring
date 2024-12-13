@@ -156,6 +156,9 @@ add_library(engineSim STATIC
 
 target_link_libraries(engineSim SDL2::SDL2 Tracy::TracyClient)
 
+find_package_static(GLEW 2.2.0 REQUIRED)
+target_link_libraries(engineSim $<COMPILE_ONLY:GLEW::GLEW>)
+
 if( CMAKE_COMPILER_IS_GNUCXX)
 	# FIXME: hack to avoid linkers to remove not referenced symbols. required because of
 	# https://springrts.com/mantis/view.php?id=4511

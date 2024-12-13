@@ -9,9 +9,10 @@ RUN apt-get update \
  && add-apt-repository ppa:ubuntu-toolchain-r/test --yes \
  && apt-get update \
  && apt-get install --no-install-recommends --yes \
-    curl gcc-13 g++-13 git ninja-build curl p7zip-full python3.8 python3.8-distutils \
+    curl gcc-13 g++-13 git ninja-build p7zip-full python3.8 python3.8-distutils \
     xz-utils build-essential \
     libgl-dev \
+    libglu-dev \
     xorg-dev \
     libxcb1-dev \
     libxcb-util-dev \
@@ -53,7 +54,7 @@ RUN git clone --depth 1 --branch v1.5.6 https://github.com/facebook/zstd.git \
 RUN pip3 install --upgrade pip \
  && pip3 install scikit-build \
  && pip3 install cmake==3.27.* \
- && pip3 install conan==2.9.1
+ && pip3 install conan==2.10.2
 
 WORKDIR /build
 RUN mkdir src cache out artifacts && chmod a+rwx cache out artifacts

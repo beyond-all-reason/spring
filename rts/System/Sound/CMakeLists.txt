@@ -46,7 +46,8 @@ if    (NOT NO_SOUND)
 
 	find_package_static(OpenAL 1.18.2 REQUIRED)
 	find_package_static(OggVorbis 1.3.4 REQUIRED)
-
+	
+	find_package_static(GLEW 2.2.0 REQUIRED)
 	find_package(SDL2 MODULE REQUIRED)
 
 	include_directories(${CMAKE_SOURCE_DIR}/include/)
@@ -57,4 +58,5 @@ if    (NOT NO_SOUND)
 	target_link_libraries(sound vorbis::vorbisfile vorbis::vorbis Ogg::ogg)
 	target_link_libraries(sound OpenAL::OpenAL)
 	target_link_libraries(sound Tracy::TracyClient)
+	target_link_libraries(sound $<COMPILE_ONLY:GLEW::GLEW>)
 endif (NOT NO_SOUND)
