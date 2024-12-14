@@ -230,8 +230,8 @@ int LuaFonts::AddFallbackFont(lua_State* L)
 
 	const auto font = luaL_checkstring(L, 1);
 
-	const bool f = CFontTexture::AddFallbackFont(font);
-	lua_pushboolean(L, f);
+	const bool res = CFontTexture::AddFallbackFont(font);
+	lua_pushboolean(L, res);
 	return 1;
 }
 
