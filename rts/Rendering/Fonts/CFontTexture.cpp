@@ -90,7 +90,7 @@ public:
 		, lib(nullptr)
 		#ifdef USE_FONTCONFIG
 		, gameFontSet(nullptr)
-		, fallbackPattern(nullptr)
+		, basePattern(nullptr)
 		#endif // USE_FONTCONFIG
 	{
 		const FT_Error error = FT_Init_FreeType(&lib);
@@ -116,8 +116,8 @@ public:
 		if (gameFontSet) {
 			FcFontSetDestroy(gameFontSet);
 		}
-		if (fallbackPattern) {
-			FcPatternDestroy(fallbackPattern);
+		if (basePattern) {
+			FcPatternDestroy(basePattern);
 		}
 		FcFini();
 		config = nullptr;
@@ -208,7 +208,7 @@ public:
 			}
 
 			gameFontSet = FcFontSetCreate();
-			fallbackPattern = FcPatternCreate();
+			basePattern = FcPatternCreate();
 
 			// init app fonts dir
 			res = FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
@@ -269,16 +269,16 @@ public:
 	static FcFontSet *GetGameFontSet() {
 		return singleton->gameFontSet;
 	}
-	static FcPattern *GetFallbackPattern() {
-		return singleton->fallbackPattern;
+	static FcPattern *GetBasePattern() {
+		return singleton->basePattern;
 	}
 	static void ClearGameFontSet() {
 		FcFontSetDestroy(singleton->gameFontSet);
 		singleton->gameFontSet = FcFontSetCreate();
 	}
-	static void ClearFallbackPattern() {
-		FcPatternDestroy(singleton->fallbackPattern);
-		singleton->fallbackPattern = FcPatternCreate();
+	static void ClearBasePattern() {
+		FcPatternDestroy(singleton->basePattern);
+		singleton->basePattern = FcPatternCreate();
 	}
 	#endif
 private:
@@ -286,7 +286,7 @@ private:
 	FT_Library lib;
 	#ifdef USE_FONTCONFIG
 	FcFontSet *gameFontSet;
-	FcPattern *fallbackPattern;
+	FcPattern *basePattern;
 	#endif
 
 	static inline std::unique_ptr<FtLibraryHandler> singleton = nullptr;
@@ -449,7 +449,7 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 	// create properties of the wanted font starting from our priorities pattern.
 	auto pattern = spring::ScopedResource(
-		FcPatternDuplicate(FtLibraryHandler::GetFallbackPattern()),
+		FcPatternDuplicate(FtLibraryHandler::GetBasePattern()),
 		[](FcPattern* p) { if (p) FcPatternDestroy(p); }
 	);
 
@@ -730,8 +730,8 @@ bool CFontTexture::AddFallbackFont(const std::string& fontfile)
 	// Add to priority fonts pattern
 	FcChar8* family = nullptr;
 	if (FcPatternGetString( pattern, FC_FAMILY , 0, &family ) == FcResultMatch) {
-		FcPattern *fallbackPattern = FtLibraryHandler::GetFallbackPattern();
-		FcPatternAddString(fallbackPattern, FC_FAMILY, family);
+		FcPattern *basePattern = FtLibraryHandler::GetBasePattern();
+		FcPatternAddString(basePattern, FC_FAMILY, family);
 	} else {
 		LOG_L(L_WARNING, "[%s] could not add priority for %s", __func__, fontfile.c_str());
 		return false;
@@ -748,7 +748,7 @@ void CFontTexture::ClearFallbackFonts()
 	if (!FtLibraryHandler::CanUseFontConfig())
 		return;
 
-	FtLibraryHandler::ClearFallbackPattern();
+	FtLibraryHandler::ClearBasePattern();
 	FtLibraryHandler::ClearGameFontSet();
 #endif
 }
