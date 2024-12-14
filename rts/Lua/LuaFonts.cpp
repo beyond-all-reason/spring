@@ -221,8 +221,8 @@ int LuaFonts::AddFallbackFont(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
-	const bool f = CFontTexture::AddFallbackFont(luaL_checkstring(L, 1));
-	lua_pushboolean(L, f);
+	const bool res = CFontTexture::AddFallbackFont(luaL_checkstring(L, 1));
+	lua_pushboolean(L, res);
 	return 1;
 }
 
