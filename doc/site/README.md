@@ -17,6 +17,24 @@ Navigate to http://localhost:4000/spring
 
 ## Generating Lua API data
 
+### Updating the Lua definition files
+
+First install `lua-doc-extractor`:
+
+```bash
+npm install -g rhys-vdw/lua-doc-extractor
+```
+
+At root, run:
+
+```bash
+cd rts/Lua/
+rm -rf library/generated
+npx lua-doc-extractor *.cpp --dest library/generated
+```
+
+### Export API data
+
 Have [Lua Language Server](https://luals.github.io/) installed and available at your `$PATH`.
 
 At root, run:
