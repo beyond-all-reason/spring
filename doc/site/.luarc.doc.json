@@ -22,7 +22,8 @@
     "utf8": "disable"
   },
   "workspace.ignoreDir": [
-    "cont"
+    "cont",
+    "lib"
   ],
   "runtime.path": [
     "?",
