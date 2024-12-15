@@ -51,7 +51,7 @@ permalink: lua-api
 
 ## {{row["name"]}} <small>{{type}}</small>
 {% if defines.extends.view %}
-```
+```lua
 {{ defines.extends.view | newline_to_br | strip_newlines | split: '<br />' | first }}
 ```
 {% endif %}
