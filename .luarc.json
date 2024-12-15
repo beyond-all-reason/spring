@@ -2,9 +2,32 @@
   "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
   "runtime.version": "Lua 5.1",
   "completion.requireSeparator": "/",
+  "runtime.builtin": {
+    "basic": "disable",
+    "bit": "disable",
+    "bit32": "disable",
+    "builtin": "disable",
+    "coroutine": "disable",
+    "debug": "disable",
+    "ffi": "disable",
+    "io": "disable",
+    "jit": "disable",
+    "math": "disable",
+    "os": "disable",
+    "package": "disable",
+    "string": "disable",
+    "table": "disable",
+    "table.clear": "disable",
+    "table.new": "disable",
+    "utf8": "disable"
+  },
   "runtime.path": [
     "?",
     "?.lua"
+  ],
+  "workspace.ignoreDir": [
+    "cont",
+    "lib"
   ],
   "workspace.library": [
     // Only add the generator output as "library" to prevent it from being
