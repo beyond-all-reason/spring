@@ -22,8 +22,6 @@ permalink: lua-api
 </ul>
 {% endcomment %}
 
----
-
 {% for row in site.data.doc %}
 
 {% assign defines = row["defines"][0] %}
