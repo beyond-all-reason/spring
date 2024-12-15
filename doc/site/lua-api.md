@@ -11,18 +11,20 @@ permalink: lua-api
 
 ## Table of Contents
 
+{% comment %}
 <ul>
-{% for row in site.data.lua_api %}
+{% for row in site.data.doc %}
 <li>
 {{ row["name"] }} <br>
 <p>{{ row["defines"][0]["desc"] }}</p>
 </li>
 {% endfor %}
 </ul>
+{% endcomment %}
 
 <hr>
 
-{% for row in site.data.lua_api %}
+{% for row in site.data.doc %}
 
 <h2>{{row["name"]}}</h2>
 
