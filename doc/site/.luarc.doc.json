@@ -21,6 +21,9 @@
     "table.new": "disable",
     "utf8": "disable"
   },
+  "workspace.ignoreDir": [
+    "cont"
+  ],
   "runtime.path": [
     "?",
     "?.lua"
