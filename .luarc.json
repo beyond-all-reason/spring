@@ -27,7 +27,8 @@
   ],
   "workspace.ignoreDir": [
     "cont",
-    "lib"
+    "lib",
+    "tools"
   ],
   "workspace.library": [
     // Only add the generator output as "library" to prevent it from being
