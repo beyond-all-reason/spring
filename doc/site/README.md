@@ -15,14 +15,16 @@ bundle exec jekyll build && bundle exec jekyll serve
 
 Navigate to http://localhost:4000/spring
 
-## Generating LDoc
+## Generating Lua API data
 
 Have [Lua Language Server](https://luals.github.io/) installed and available at your `$PATH`.
 
-Inside `doc/site` run:
+At root, run:
 
 ```bash
-lua-language-server --configpath .luarc.doc.json --doc ../.. --doc_out_path _data
+lua-language-server --doc . --doc_out_path doc/site/_data
 ```
+
+Note: Running this using LLS 3.13.4 from a subdirectory with a relative path seems to cause duplicate class fields to be generated. Presumably a bug in LLS.
 
 Keep in mind to see changes on the site you might have to restart jekyll.
