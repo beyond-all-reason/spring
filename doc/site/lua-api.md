@@ -50,7 +50,13 @@ permalink: lua-api
 {% endcomment %}
 
 ## {{row["name"]}} <small>{{type}}</small>
-{% if defines.extends.view %}
+{% if defines.type == 'doc.class' %}
+  {% comment %} Do nothing, classes just have their name as the view. {% endcomment %}
+{% elsif row.type != 'variable' and defines.view %}
+```lua
+{{ defines.view | newline_to_br | strip_newlines | split: '<br />' | first }}
+```
+{% elsif defines.extends.view %}
 ```lua
 {{ defines.extends.view | newline_to_br | strip_newlines | split: '<br />' | first }}
 ```
@@ -88,7 +94,7 @@ permalink: lua-api
 
 
 {% for arg in extends.args %}
-1. <b>{{ arg.name }}</b> `{{ arg.view }}` {% if arg.desc %} — {{arg.desc}} {% endif %}
+1. <b>{{ arg.name }}</b> `{{ arg.view }}` {% if arg.desc %} — {{ arg.desc }} {% endif %}
 {% endfor %}
 
 {% endif %}
