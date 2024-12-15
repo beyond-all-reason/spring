@@ -9,9 +9,9 @@ permalink: lua-api
 
 # Lua API
 
+{% comment %}
 ## Table of Contents
 
-{% comment %}
 <ul>
 {% for row in site.data.doc %}
 <li>
@@ -22,54 +22,86 @@ permalink: lua-api
 </ul>
 {% endcomment %}
 
-<hr>
+---
 
 {% for row in site.data.doc %}
 
-<h2>{{row["name"]}}</h2>
-
-{% if row["defines"] %}
 {% assign defines = row["defines"][0] %}
 
 {% comment %}
-  defines.extends.rawdesc seems to have the description without inlined doc tags.
+  Determine the type of the item. This is complicated by functions being defined
+  as `variables` which are extending a function.
 {% endcomment %}
-{% if defines["extends"] %}
-{{ defines["extends"]["rawdesc"] }}
-{% else %}
-{{ defines["desc"] }}
+
+{% assign type = row.type %}
+{% if type == "variable" %}
+  {% assign type = defines.extends.type %}
 {% endif %}
+
+---
+
+{% comment %}
+  --- Header ---
+
+  Render the name of item, including its type.
+  Then render the first line of its "view" - the raw code definition. This will
+  show the full function signature without its return values (which are on
+  subsequent lines).
+{% endcomment %}
+
+## {{row["name"]}} <small>{{type}}</small>
+{% if defines.extends.view %}
+```
+{{ defines.extends.view | newline_to_br | strip_newlines | split: '<br />' | first }}
+```
+{% endif %}
+
+{% comment %}
+  --- Description ---
+
+  `defines.extends.rawdesc` seems to have the description without inlined doc
+  tags. However it is not always available.
+{% endcomment %}
+
+{% if defines.extends %}
+{{ defines.extends.rawdesc }}
+{% else %}
+{{ defines.desc }}
+{% endif %}
+
+{% if row.fields and row.fields != empty %}
+### Fields
+
+
+{% for field in row.fields %}
+- <b>{{ field.name }}</b> `{{ field.extends.view }}` {% if field.rawdesc %} — {{field.rawdesc}} {% endif %}
+{% endfor %}
+
+{% endif %}
+
 
 {% if defines["extends"] %}
 {% assign extends = defines["extends"] %}
 
-<h3>Params</h3>
+{% if extends["args"] and extends["args"] != empty %}
+## Params
 
-{% if extends["args"] %}
 
-<ul>
-{% for arg in extends["args"] %}
-  <li>
-    {{ arg["name"] }} <b>{{ arg["view"] }}</b> {% if arg["rawdesc"] %}: {{arg["rawdesc"]}} {% endif %}
-  </li>
+{% for arg in extends.args %}
+1. <b>{{ arg.name }}</b> `{{ arg.view }}` {% if arg.desc %} — {{arg.desc}} {% endif %}
 {% endfor %}
-</ul>
 
 {% endif %}
 
-<h3>Returns</h3>
+{% if extends["returns"] and extends["returns"] != empty %}
 
-{% if extends["returns"] %}
+### Returns
 
-<dl>
 {% for return in extends["returns"] %}
-  <dt>{{return["name"]}} <b>{{ return["view"] }}</b></dt>
-  <dd>{{return["rawdesc"]}}</dd>
+1. `{{ return["view"] }}` <b>{{return["name"]}}</b> {% if return["rawdesc"] %} — {{return["rawdesc"]}} {% endif %}
 {% endfor %}
-</dl>
 {% endif %}
 
-{% endif %}
 {% endif %}
 
 {% endfor %}
