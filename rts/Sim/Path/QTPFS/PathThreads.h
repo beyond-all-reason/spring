@@ -90,12 +90,6 @@ namespace QTPFS {
     };
 
     struct SearchQueueNode {
-		bool operator <  (const SearchQueueNode& n) const { return (heapPriority <  n.heapPriority); }
-		bool operator >  (const SearchQueueNode& n) const { return (heapPriority >  n.heapPriority); }
-		bool operator == (const SearchQueueNode& n) const { return (heapPriority == n.heapPriority); }
-		bool operator <= (const SearchQueueNode& n) const { return (heapPriority <= n.heapPriority); }
-		bool operator >= (const SearchQueueNode& n) const { return (heapPriority >= n.heapPriority); }
-
         SearchQueueNode(int index, float newPriorty)
             : heapPriority(newPriorty)
             , nodeIndex(index)
@@ -105,9 +99,18 @@ namespace QTPFS {
         int nodeIndex;
     };
 
+    /// Functor to define node priority.
+    /// Needs to guarantee stable ordering, even if the sorting algorithm itself is not stable.
+    struct ShouldMoveTowardsBottomOfPriorityQueue {
+        inline bool operator() (const SearchQueueNode& lhs, const SearchQueueNode& rhs) const {
+            return std::tie(lhs.heapPriority, lhs.nodeIndex) > std::tie(rhs.heapPriority, rhs.nodeIndex);
+        }
+    };
+
+
     // Reminder that std::priority does comparisons to push element back to the bottom. So using
-    // std::greater here means the smallest value will be top()
-    typedef std::priority_queue<SearchQueueNode, std::vector<SearchQueueNode>, std::greater<SearchQueueNode>> SearchPriorityQueue;
+    // ShouldMoveTowardsBottomOfPriorityQueue here means the smallest value will be top()
+    typedef std::priority_queue<SearchQueueNode, std::vector<SearchQueueNode>, ShouldMoveTowardsBottomOfPriorityQueue> SearchPriorityQueue;
 
 	struct SearchThreadData {
 
