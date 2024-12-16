@@ -227,7 +227,9 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(AddUnitIcon);
 	REGISTER_LUA_CFUNC(FreeUnitIcon);
-	REGISTER_LUA_CFUNC(UnitIconSetDraw);
+	REGISTER_LUA_CFUNC(UnitIconSetDraw); // deprecated
+	REGISTER_LUA_CFUNC(SetUnitIconDraw);
+
 
 	REGISTER_LUA_CFUNC(ExtractModArchiveFile);
 
@@ -2425,11 +2427,31 @@ int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
 /***
  *
  * @function Spring.UnitIconSetDraw
+ * Deprecated: use Spring.SetUnitIconDraw instead.
+ * @see Spring.SetUnitIconDraw
  * @number unitID
  * @bool drawIcon
  * @treturn nil
  */
 int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
+{
+	static bool deprecatedMsgDone = false;
+	if (!deprecatedMsgDone) {
+		LOG_L(L_WARNING, "Spring.UnitIconSetDraw is deprecated. Please use Spring.SetUnitIconDraw instead.");
+		deprecatedMsgDone = true;
+	}
+	return LuaUnsyncedCtrl::SetUnitIconDraw(L);
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitIconDraw
+ * @number unitID
+ * @bool drawIcon
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitIconDraw(lua_State* L)
 {
 	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
 
