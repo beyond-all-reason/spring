@@ -62,7 +62,7 @@ void CGameHelper::Kill()
 
 void CGameHelper::Update()
 {
-	RECOIL_DETAILED_TRACY_ZONE;
+	ZoneScopedC(tracy::Color::Goldenrod);
 	const int wdIdx = gs->frameNum & (waitingDamages.size() - 1);
 
 	// need to use explicit indexing because CUnit::DoDamage
