@@ -96,7 +96,7 @@ static void DrawObjectDebugPieces(const CSolidObject* o, const float4& defColor)
 			float4{ (1.0f - (hitDeltaTime / 150.0f)), 0.0f, 0.0f, 1.0f } :
 			defColor;
 
-		const CMatrix44f mp = mo * lmp->GetModelSpaceMatrix();
+		const CMatrix44f mp = mo * lmp->GetModelSpaceTransform().ToMatrix();
 		// factors in the volume offsets
 		DrawCollisionVolume(lmpVol, mp, curColor);
 	}
