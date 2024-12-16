@@ -39,7 +39,8 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 
 
 	lua_pushliteral(L, "FeatureSupport");
-	lua_createtable(L, 0, 2);
+	lua_createtable(L, 0, 3);
+		LuaPushNamedBool(L, "NegativeGetUnitCurrentCommand", true);
 		LuaPushNamedBool(L, "hasExitOnlyYardmaps", true);
 		LuaPushNamedNumber(L, "rmlUiApiVersion", 1);
 	lua_rawset(L, -3);
