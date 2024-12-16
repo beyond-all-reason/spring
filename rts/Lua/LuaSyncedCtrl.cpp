@@ -3524,7 +3524,13 @@ int LuaSyncedCtrl::SetUnitSensorRadius(lua_State* L)
 }
 
 
-/***
+/*** Sets a unit's radar wobble
+ *
+ * Controls how much a unit's radar dot will wobble. Note that setting
+ * this above the allyTeam's default wobble may result in the edgemost
+ * dot positions failing to register in ray traces, i.e. things like
+ * native "is under cursor" checks and some Lua interfaces.
+ *
  * @function Spring.SetUnitPosErrorParams
  * @number unitID
  * @number posErrorVectorX
