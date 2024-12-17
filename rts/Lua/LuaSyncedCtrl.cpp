@@ -353,7 +353,8 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetNoPause);
 	REGISTER_LUA_CFUNC(SetExperienceGrade);
 
-	REGISTER_LUA_CFUNC(SetRadarErrorParams);
+	REGISTER_LUA_CFUNC(SetAllyTeamRadarErrorParams);
+	REGISTER_LUA_CFUNC(SetBaseRadarErrorParams);
 
 	if (!LuaSyncedMoveCtrl::PushMoveCtrl(L))
 		return false;
@@ -6990,23 +6991,32 @@ int LuaSyncedCtrl::SetExperienceGrade(lua_State* L)
 
 /***
  *
- * @function Spring.SetRadarErrorParams
+ * @function Spring.SetAllyTeamRadarErrorParams
  * @number allyTeamID
  * @number allyteamErrorSize
- * @number[opt] baseErrorSize
- * @number[opt] baseErrorMult
  * @treturn nil
  */
-int LuaSyncedCtrl::SetRadarErrorParams(lua_State* L)
+int LuaSyncedCtrl::SetAllyTeamRadarErrorParams(lua_State* L)
 {
 	const int allyTeamID = lua_tonumber(L, 1);
-
 	if (!teamHandler.IsValidAllyTeam(allyTeamID))
 		return 0;
 
 	losHandler->SetAllyTeamRadarErrorSize(allyTeamID, luaL_checknumber(L, 2));
-	losHandler->SetBaseRadarErrorSize(luaL_optnumber(L, 3, losHandler->GetBaseRadarErrorSize()));
-	losHandler->SetBaseRadarErrorMult(luaL_optnumber(L, 4, losHandler->GetBaseRadarErrorMult()));
+	return 0;
+}
+
+/***
+ *
+ * @function Spring.SetBaseRadarErrorParams
+ * @number[opt] baseErrorSize
+ * @number[opt] baseErrorMult
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetBaseRadarErrorParams(lua_State* L)
+{
+	losHandler->SetBaseRadarErrorSize(luaL_optnumber(L, 1, losHandler->GetBaseRadarErrorSize()));
+	losHandler->SetBaseRadarErrorMult(luaL_optnumber(L, 2, losHandler->GetBaseRadarErrorMult()));
 	return 0;
 }
 

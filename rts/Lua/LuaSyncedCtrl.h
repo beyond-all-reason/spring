@@ -247,7 +247,8 @@ class LuaSyncedCtrl
 		static int SetNoPause(lua_State* L);
 		static int SetExperienceGrade(lua_State* L);
 
-		static int SetRadarErrorParams(lua_State* L);
+		static int SetBaseRadarErrorParams(lua_State* L);
+		static int SetAllyTeamRadarErrorParams(lua_State* L);
 };
 
 

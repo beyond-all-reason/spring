@@ -289,7 +289,9 @@ class LuaSyncedRead {
 		static int GetFeaturePiecePosDir(lua_State* L);
 		static int GetFeaturePieceMatrix(lua_State* L);
 
-		static int GetRadarErrorParams(lua_State* L);
+		static int GetRadarErrorParams(lua_State* L); // deprecated, same as GetAllyTeamRadarErrorParams
+		static int GetAllyTeamRadarErrorParams(lua_State* L);
+		static int GetBaseRadarErrorParams(lua_State* L);
 
 		static int TraceRay(lua_State* L);           //TODO: not implemented
 		static int TraceRayUnits(lua_State* L);      //TODO: not implemented
