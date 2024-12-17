@@ -51,6 +51,27 @@ void main() {
 }
 )";
 
+static constexpr const char* fsFontColor330 = R"(
+#version 150
+
+uniform sampler2D tex;
+
+in Data{
+	vec4 vCol;
+	vec2 vUV;
+};
+
+out vec4 outColor;
+
+void main() {
+	vec2 texSize = vec2(textureSize(tex, 0));
+
+	outColor = texture(tex, vUV / texSize);
+	outColor = outColor*vCol;
+}
+)";
+
+
 ////////////////////////////////////////////
 
 static constexpr const char* vsFont130 = R"(
@@ -85,6 +106,22 @@ void main() {
 	gl_FragColor = vec4(vCol.r, vCol.g, vCol.b, vCol.a * alpha);
 }
 )";
+static constexpr const char* fsFontColor130 = R"(
+#version 130
+
+uniform sampler2D tex;
+
+in vec4 vCol;
+in vec2 vUV;
+
+void main() {
+	vec2 texSize = vec2(textureSize(tex, 0));
+
+	float4 col = texture(tex, vUV / texSize);
+	gl_FragColor = vCol*col;
+}
+)";
+
 ////////////////////////////////////////////
 
 CglShaderFontRenderer::CglShaderFontRenderer()
@@ -101,11 +138,14 @@ CglShaderFontRenderer::CglShaderFontRenderer()
 	// can't use shaderHandler here because it invalidates the objects on reload
 	// but fonts are expected to be available all the time
 	fontShader = std::make_unique<Shader::GLSLProgramObject>("[GL-Font]");
+	fontShaderColor = std::make_unique<Shader::GLSLProgramObject>("[GL-Font]");
 
 	LOG("[CglFont::%s] Creating Font shaders: GLEW_ARB_explicit_attrib_location = %s", __func__, globalRendering->supportExplicitAttribLoc ? "true" : "false");
 	if (globalRendering->supportExplicitAttribLoc) {
 		fontShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsFont330));
 		fontShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsFont330));
+		fontShaderColor->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsFont330));
+		fontShaderColor->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsFontColor330));
 	}
 	else {
 		fontShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsFont130));
@@ -113,6 +153,12 @@ CglShaderFontRenderer::CglShaderFontRenderer()
 		fontShader->BindAttribLocation("pos", 0);
 		fontShader->BindAttribLocation("uv" , 1);
 		fontShader->BindAttribLocation("col", 2);
+		fontShaderColor->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsFont130));
+		fontShaderColor->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsFontColor130));
+		fontShaderColor->BindAttribLocation("pos", 0);
+		fontShaderColor->BindAttribLocation("uv" , 1);
+		fontShaderColor->BindAttribLocation("col", 2);
+
 	}
 	fontShader->Link();
 	fontShader->Enable();
@@ -120,6 +166,13 @@ CglShaderFontRenderer::CglShaderFontRenderer()
 	fontShader->Disable();
 	fontShader->Validate();
 	assert(fontShader->IsValid());
+
+	fontShaderColor->Link();
+	fontShaderColor->Enable();
+	fontShaderColor->SetUniform("tex", 0);
+	fontShaderColor->Disable();
+	fontShaderColor->Validate();
+	assert(fontShaderColor->IsValid());
 }
 
 CglShaderFontRenderer::~CglShaderFontRenderer()
@@ -130,6 +183,7 @@ CglShaderFontRenderer::~CglShaderFontRenderer()
 		return;
 
 	fontShader = nullptr; // fontShader->Release() is called implicitly
+	fontShaderColor = nullptr; // fontShader->Release() is called implicitly
 }
 
 void CglShaderFontRenderer::AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl)
@@ -177,13 +231,20 @@ void CglShaderFontRenderer::PushGLState(const CglFont& fnt)
 
 	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgID);
 
-	fontShader->Enable();
+	if (fnt.HasColor()) {
+		fontShaderColor->Enable();
+	}
+	else
+		fontShader->Enable();
 }
 
-void CglShaderFontRenderer::PopGLState()
+void CglShaderFontRenderer::PopGLState(const CglFont& fnt)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	fontShader->Disable();
+	if (fnt.HasColor())
+		fontShaderColor->Disable();
+	else
+		fontShader->Disable();
 
 	if (currProgID > 0)
 		glUseProgram(currProgID);
@@ -323,7 +384,7 @@ void CglNoShaderFontRenderer::PushGLState(const CglFont& fnt)
 	glBindTexture(GL_TEXTURE_2D, fnt.GetTexture());
 }
 
-void CglNoShaderFontRenderer::PopGLState()
+void CglNoShaderFontRenderer::PopGLState(const CglFont& fnt)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glBindTexture(GL_TEXTURE_2D, 0);

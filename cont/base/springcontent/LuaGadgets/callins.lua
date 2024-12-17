@@ -167,6 +167,8 @@ CALLIN_LIST = {
 	"DrawProjectile",
 	"DrawMaterial",
 
+	"FontsChanged",
+
 	"SunChanged",
 
 	-- unsynced message callins

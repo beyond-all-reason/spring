@@ -23,6 +23,7 @@
 #include "Rendering/Textures/Bitmap.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
+#include "System/EventHandler.h"
 #include "System/Log/ILog.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/Threading/ThreadPool.h"
@@ -88,6 +89,10 @@ public:
 	FtLibraryHandler()
 		: config(nullptr)
 		, lib(nullptr)
+		#ifdef USE_FONTCONFIG
+		, gameFontSet(nullptr)
+		, basePattern(nullptr)
+		#endif // USE_FONTCONFIG
 	{
 		const FT_Error error = FT_Init_FreeType(&lib);
 
@@ -109,6 +114,12 @@ public:
 			return;
 
 		FcConfigDestroy(config);
+		if (gameFontSet) {
+			FcFontSetDestroy(gameFontSet);
+		}
+		if (basePattern) {
+			FcPatternDestroy(basePattern);
+		}
 		FcFini();
 		config = nullptr;
 		#endif
@@ -202,6 +213,9 @@ public:
 				}
 			}
 
+			gameFontSet = FcFontSetCreate();
+			basePattern = FcPatternCreate();
+
 			// init app fonts dir
 			res = FcConfigAppFontAddDir(config, reinterpret_cast<const FcChar8*>("fonts"));
 			if (!res) {
@@ -257,9 +271,29 @@ public:
 	static inline bool CanUseFontConfig() {
 		return GetFCConfig() != nullptr;
 	}
+	#ifdef USE_FONTCONFIG
+	static FcFontSet *GetGameFontSet() {
+		return singleton->gameFontSet;
+	}
+	static FcPattern *GetBasePattern() {
+		return singleton->basePattern;
+	}
+	static void ClearGameFontSet() {
+		FcFontSetDestroy(singleton->gameFontSet);
+		singleton->gameFontSet = FcFontSetCreate();
+	}
+	static void ClearBasePattern() {
+		FcPatternDestroy(singleton->basePattern);
+		singleton->basePattern = FcPatternCreate();
+	}
+	#endif
 private:
 	FcConfig* config;
 	FT_Library lib;
+	#ifdef USE_FONTCONFIG
+	FcFontSet *gameFontSet;
+	FcPattern *basePattern;
+	#endif
 
 	static inline std::unique_ptr<FtLibraryHandler> singleton = nullptr;
 };
@@ -306,19 +340,11 @@ static inline uint64_t GetKerningHash(char32_t lchar, char32_t rchar)
 	return (static_cast<uint64_t>(lchar) << 32) | static_cast<uint64_t>(rchar); // 64bit used
 }
 
-static std::shared_ptr<FontFace> GetFontFace(const std::string& fontfile, const int size)
+static std::shared_ptr<FontFace> LoadFontFace(const std::string& fontfile)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(CFontTexture::sync.GetThreadSafety() || Threading::IsMainThread());
 	auto lock = CFontTexture::sync.GetScopedLock();
-
-	//TODO add support to load fonts by name (needs fontconfig)
-
-	const auto fontKey = fontfile + IntToString(size);
-	const auto fontIt = fontFaceCache.find(fontKey);
-
-	if (fontIt != fontFaceCache.end() && !fontIt->second.expired())
-		return fontIt->second.lock();
 
 	// get the file (no need to cache, takes too little time)
 	std::string fontPath(fontfile);
@@ -359,17 +385,40 @@ static std::shared_ptr<FontFace> GetFontFace(const std::string& fontfile, const 
 		throw content_error(fmt::format("FT_New_Face failed: {}", GetFTError(error)));
 	}
 
+	return std::make_shared<FontFace>(face.Release(), fontMem);
+}
+
+static std::shared_ptr<FontFace> GetRenderFontFace(const std::string& fontfile, int size)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	assert(CFontTexture::sync.GetThreadSafety() || Threading::IsMainThread());
+	auto lock = CFontTexture::sync.GetScopedLock();
+
+	//TODO add support to load fonts by name (needs fontconfig)
+
+	FT_Error error;
+
+	const auto fontKey = fontfile + IntToString(size);
+	const auto fontIt = fontFaceCache.find(fontKey);
+
+	if (fontIt != fontFaceCache.end() && !fontIt->second.expired())
+		return fontIt->second.lock();
+
+	std::shared_ptr<FontFace> facePtr = LoadFontFace(fontfile);
+
 	// set render size
-	if ((error = FT_Set_Pixel_Sizes(face, 0, size)) != 0) {
+	if (!FT_IS_SCALABLE(facePtr->face) && facePtr->face->num_fixed_sizes >= 1)
+		size = static_cast<unsigned int>(facePtr->face->available_sizes[0].y_ppem / 64.0);
+
+	if ((error = FT_Set_Pixel_Sizes(facePtr->face, 0, size)) != 0) {
 		throw content_error(fmt::format("FT_Set_Pixel_Sizes failed: {}", GetFTError(error)));
 	}
 
 	// select unicode charmap
-	if ((error = FT_Select_Charmap(face, FT_ENCODING_UNICODE)) != 0) {
+	if ((error = FT_Select_Charmap(facePtr->face, FT_ENCODING_UNICODE)) != 0) {
 		throw content_error(fmt::format("FT_Select_Charmap failed: {}", GetFTError(error)));
 	}
-
-	return (fontFaceCache[fontKey] = std::make_shared<FontFace>(face.Release(), fontMem)).lock();
+	return (fontFaceCache[fontKey] = facePtr).lock();
 }
 #endif
 
@@ -407,9 +456,9 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 		FcCharSetAddChar(cset, c);
 	}
 
-	// create properties of the wanted font
+	// create properties of the wanted font starting from our priorities pattern.
 	auto pattern = spring::ScopedResource(
-		FcPatternCreate(),
+		FcPatternDuplicate(FtLibraryHandler::GetBasePattern()),
 		[](FcPattern* p) { if (p) FcPatternDestroy(p); }
 	);
 
@@ -472,20 +521,32 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 	}
 
 	// search fonts that fit our request
+	typedef std::unique_ptr<FcFontSet, decltype(&FcFontSetDestroy)> ScopedFcFontSet;
+
+	int nFonts = 0;
+	bool loadMore = true;
 	FcResult res;
-	auto fs = spring::ScopedResource(
-		FcFontSort(FtLibraryHandler::GetFCConfig(), pattern, FcFalse, nullptr, &res),
-		[](FcFontSet* f) { if (f) FcFontSetDestroy(f); }
-	);
 
-	if (fs == nullptr)
-		return nullptr;
-	if (res != FcResultMatch)
-		return nullptr;
+	// first search game fonts
+	FcFontSet *sets[] = { FtLibraryHandler::GetGameFontSet() };
+	ScopedFcFontSet fs(FcFontSetSort(FtLibraryHandler::GetFCConfig(), sets, 1, pattern, FcFalse, nullptr, &res), &FcFontSetDestroy);
 
-	// iterate returned font list
-	for (int i = 0; i < fs->nfont; ++i) {
-		const FcPattern* font = fs->fonts[i];
+	if (fs != nullptr && res == FcResultMatch)
+		nFonts = fs->nfont;
+
+	// iterate returned font list, and perform system font search when in need of more fonts
+	int i = 0;
+	while (i < nFonts || loadMore) {
+		if (i == nFonts) {
+			// now search system fonts
+			fs = ScopedFcFontSet(FcFontSort(FtLibraryHandler::GetFCConfig(), pattern, FcFalse, nullptr, &res), &FcFontSetDestroy);
+			if (fs == nullptr || res != FcResultMatch)
+				return nullptr;
+			loadMore = false;
+			nFonts = fs->nfont;
+			i = 0;
+		}
+		const FcPattern* font = fs->fonts[i++];
 
 		FcChar8* cFilename = nullptr;
 		FcResult r = FcPatternGetString(font, FC_FILE, 0, &cFilename);
@@ -498,7 +559,7 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 			continue;
 
 		try {
-			auto face = GetFontFace(filename, origSize);
+			auto face = GetRenderFontFace(filename, origSize);
 
 			if (blackList.find(GetFaceKey(*face)) != blackList.cend())
 				continue;
@@ -550,6 +611,8 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	, texHeight(0)
 	, wantedTexWidth(0)
 	, wantedTexHeight(0)
+	, needsColor(false)
+	, isColor(false)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
@@ -566,7 +629,7 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 #ifndef HEADLESS
 
 	try {
-		shFace = GetFontFace(fontfile, fontSize);
+		shFace = GetRenderFontFace(fontfile, fontSize);
 	}
 	catch (content_error& ex) {
 		LOG_L(L_ERROR, "[%s] %s (s=%d): %s", __func__, fontfile.c_str(), fontSize, ex.what());
@@ -580,10 +643,18 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 
 	static constexpr int FT_INTERNAL_DPI = 64;
 	normScale = 1.0f / (fontSize * FT_INTERNAL_DPI);
+	float pixScale = 1.0;
+	bool canScale = false;
 
 	if (!FT_IS_SCALABLE(shFace->face)) {
-		LOG_L(L_WARNING, "[%s] %s is not scalable", __func__, fontfile.c_str());
-		normScale = 1.0f;
+		if (shFace->face->num_fixed_sizes > 0) {
+			pixScale = std::floor(1.0 / (shFace->face->available_sizes[0].y_ppem * normScale));
+			canScale = true;
+		} else {
+			LOG_L(L_WARNING, "[%s] %s is not scalable and not reported sizes", __func__, fontfile.c_str());
+			normScale = 1.0f;
+		}
+
 	}
 
 	if (!FT_HAS_KERNING(face)) {
@@ -600,11 +671,33 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	if (lineHeight <= 0)
 		lineHeight = 1.25 * (face->bbox.yMax - face->bbox.yMin);
 
+	// TODO: untested
+	if (canScale) {
+		fontDescender = fontDescender*(pixScale/normScale);
+		//fontDescender = fontDescender*pixScale ??
+		lineHeight = lineHeight*pixScale;
+	}
+
 	// has to be done before first GetGlyph() call!
-	CreateTexture(32, 32);
+	CreateTexture(32, 32, true);
 
 	// precache ASCII glyphs & kernings (save them in kerningPrecached array for better lvl2 cpu cache hitrate)
+	PreloadGlyphs();
 
+#endif
+}
+
+/***
+ *
+ * Preloads standard alphabet glyphs for a font
+ */
+void CFontTexture::PreloadGlyphs()
+{
+#ifndef HEADLESS
+	FT_Face face = *shFace;
+	// don't preload for non alphanumeric
+	if (!FT_Get_Char_Index(face, 65))
+		return;
 	//preload Glyphs
 	// if given face doesn't contain alphanumerics, don't preload it
 	if (!FT_Get_Char_Index(face, 'a'))
@@ -620,6 +713,7 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 			if (FT_HAS_KERNING(face))
 				FT_Get_Kerning(face, lgl.index, rgl.index, FT_KERNING_DEFAULT, &kerning);
 
+			// TODO: likely need rescaling for not rescalable fonts
 			kerningPrecached[hash] = advance + normScale * kerning.x;
 		}
 	}
@@ -636,6 +730,146 @@ CFontTexture::~CFontTexture()
 #endif
 }
 
+/***
+ *
+ * Add a fallback font
+ *
+ * @param fontfile VFS path for the font
+ */
+bool CFontTexture::AddFallbackFont(const std::string& fontfile)
+{
+#if defined(USE_FONTCONFIG) && !defined(HEADLESS)
+	if (!FtLibraryHandler::CanUseFontConfig())
+		return false;
+
+	FcFontSet *set = FtLibraryHandler::GetGameFontSet();
+
+	// Check if font already loaded
+	for (int i=0; set && i < set->nfont; ++i) {
+		FcPattern* font = set->fonts[i];
+		FcChar8 *file;
+		if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch) {
+			if (fontfile.compare(reinterpret_cast<const char*>(file)) == 0) {
+				return true;
+			}
+		}
+	}
+
+	// Load font face
+	std::shared_ptr<FontFace> facePtr;
+	try {
+		facePtr = LoadFontFace(fontfile);
+	} catch (content_error& ex) {
+		LOG_L(L_ERROR, "[%s] \"%s\": %s", __func__, fontfile.c_str(), ex.what());
+		return false;
+	}
+
+	// Add fontconfig configuration
+	FT_Face face = *facePtr;
+
+	// Store pattern
+	FcPattern* pattern = FcFreeTypeQueryFace(face, reinterpret_cast<const FcChar8*>(fontfile.c_str()), 0, NULL);
+	if (!FcFontSetAdd(set, pattern))
+	{
+		LOG_L(L_WARNING, "[%s] could not add pattern for %s", __func__, fontfile.c_str());
+		return false;
+	}
+	// needed?:
+	//FcConfigSubstitute(FtLibraryHandler::GetFCConfig(), pattern, FcMatchScan);
+
+	// Add to priority fonts pattern
+	FcChar8* family = nullptr;
+	if (FcPatternGetString( pattern, FC_FAMILY , 0, &family ) == FcResultMatch) {
+		FcPattern *basePattern = FtLibraryHandler::GetBasePattern();
+		FcPatternAddString(basePattern, FC_FAMILY, family);
+	} else {
+		LOG_L(L_WARNING, "[%s] could not add priority for %s", __func__, fontfile.c_str());
+		return false;
+	}
+
+	needsClearGlyphs = true;
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+/***
+ *
+ * Clears fontconfig fallbacks
+ */
+void CFontTexture::ClearFallbackFonts()
+{
+#if defined(USE_FONTCONFIG) && !defined(HEADLESS)
+	if (!FtLibraryHandler::CanUseFontConfig())
+		return;
+
+	FtLibraryHandler::ClearBasePattern();
+	FtLibraryHandler::ClearGameFontSet();
+
+	needsClearGlyphs = true;
+#endif
+}
+
+/***
+ *
+ * Clears all glyphs for all fonts
+ */
+void CFontTexture::ClearAllGlyphs() {
+#ifndef HEADLESS
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	bool changed = false;
+	for (const auto& ft : allFonts) {
+		auto lf = ft.lock();
+		changed |= lf->ClearGlyphs();
+	}
+	if (changed)
+		eventHandler.FontsChanged();
+
+	needsClearGlyphs = false;
+#endif
+}
+
+/***
+ *
+ * Clears all glyphs for a font
+ */
+bool CFontTexture::ClearGlyphs() {
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	bool changed = false;
+#ifndef HEADLESS
+
+	// Invalidate glyphs coming from other fonts, or those with the 'not found' glyph.
+	for (const auto& g : glyphs) {
+		if (g.second.face->face != shFace->face || g.second.index == 0) {
+			changed = true;
+		}
+	}
+
+	// Always clear failed attempts in case we have any cache here.
+	failedAttemptsToReplace.clear();
+
+	if (changed) {
+		kerningPrecached = {};
+
+		// clear all glyps
+		glyphs.clear();
+
+		// clear atlases
+		ClearAtlases(32, 32);
+
+		// preload standard glyphs
+		PreloadGlyphs();
+
+		// signal need to update texture
+		++curTextureUpdate;
+	}
+#endif
+	return changed;
+}
 
 void CFontTexture::InitFonts()
 {
@@ -665,6 +899,9 @@ void CFontTexture::Update() {
 
 	static std::vector<std::shared_ptr<CFontTexture>> fontsToUpdate;
 	fontsToUpdate.clear();
+
+	if (needsClearGlyphs)
+		ClearAllGlyphs();
 
 	for (const auto& font : allFonts) {
 		auto lf = font.lock();
@@ -718,6 +955,7 @@ float CFontTexture::GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl)
 	// load & cache
 	FT_Vector kerning;
 	FT_Get_Kerning(*lgl.face, lgl.index, rgl.index, FT_KERNING_DEFAULT, &kerning);
+	// TODO: likely need rescaling for not rescalable fonts
 	return (kerningDynamic[hash] = lgl.advance + normScale * kerning.x);
 #else
 	return 0;
@@ -819,8 +1057,21 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 		if ((atlasUpdate.xsize != wantedTexWidth) || (atlasUpdate.ysize != wantedTexHeight))
 			atlasUpdate = atlasUpdate.CanvasResize(wantedTexWidth, wantedTexHeight, false);
 
-		if (atlasUpdateShadow.Empty())
-			atlasUpdateShadow.Alloc(wantedTexWidth, wantedTexHeight, 1);
+		if (needsColor && !isColor) {
+			CBitmap newAtlas = {};
+			newAtlas.Alloc(wantedTexWidth, wantedTexHeight, needsColor ? 4 : 1);
+			newAtlas.CopySubImage(atlasUpdate, 0, 0);
+			atlasUpdate = newAtlas;
+		}
+
+		if (atlasUpdateShadow.Empty()) {
+			atlasUpdateShadow.Alloc(wantedTexWidth, wantedTexHeight, needsColor ? 4 : 1);
+		} else if (needsColor && !isColor) {
+			CBitmap newAtlas = {};
+			newAtlas.Alloc(atlasUpdateShadow.xsize, atlasUpdateShadow.ysize, needsColor ? 4 : 1);
+			newAtlas.CopySubImage(atlasUpdateShadow, 0, 0);
+			atlasUpdateShadow = newAtlas;
+		}
 
 		if ((atlasUpdateShadow.xsize != wantedTexWidth) || (atlasUpdateShadow.ysize != wantedTexHeight))
 			atlasUpdateShadow = atlasUpdateShadow.CanvasResize(wantedTexWidth, wantedTexHeight, false);
@@ -885,10 +1136,17 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	glyph.letter = ch;
 
 	// load glyph
-	if (FT_Load_Glyph(*f, index, FT_LOAD_RENDER) != 0)
+	auto flags = FT_LOAD_RENDER;
+	if (FT_HAS_COLOR(f->face)) {
+		flags |= FT_LOAD_COLOR;
+	}
+	if (FT_Load_Glyph(*f, index, flags) != 0)
 		LOG_L(L_ERROR, "Couldn't load glyph %d", ch);
 
 	FT_GlyphSlot slot = f->face->glyph;
+
+	if (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA)
+		needsColor = true;
 
 	const float xbearing = slot->metrics.horiBearingX * normScale;
 	const float ybearing = slot->metrics.horiBearingY * normScale;
@@ -906,36 +1164,54 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	if (glyph.advance == 0 && glyph.size.w > 0)
 		glyph.advance = glyph.size.w;
 
-	const int width  = slot->bitmap.width;
-	const int height = slot->bitmap.rows;
+	int width  = slot->bitmap.width;
+	int height = slot->bitmap.rows;
 	const int olSize = 2 * outlineSize;
+	const int channels = slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA ? 4 : 1;
 
-	if (width <= 0 || height <= 0)
-		return;
-
-	if (slot->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY) {
+	if (slot->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY && slot->bitmap.pixel_mode != FT_PIXEL_MODE_BGRA) {
 		LOG_L(L_ERROR, "invalid pixeldata mode");
 		return;
 	}
 
-	if (slot->bitmap.pitch != width) {
-		LOG_L(L_ERROR, "invalid pitch");
+	if (slot->bitmap.pitch != width*channels) {
+		LOG_L(L_ERROR, "invalid pitch %d (width %d channels %d)", slot->bitmap.pitch, width, channels);
 		return;
 	}
 
 	// store glyph bitmap (index) in allocator until the next LoadWantedGlyphs call
-	atlasGlyphs.emplace_back(slot->bitmap.buffer, width, height, 1);
+	if (!FT_IS_SCALABLE(f->face)) {
+		CBitmap temp = CBitmap(slot->bitmap.buffer, width, height, channels);
+		const float pixSize = static_cast<float>(f->face->available_sizes[0].y_ppem);
+		const float ratio = 1.0/(pixSize*normScale);
+
+		width = std::floor(width*ratio);
+		height = std::floor(height*ratio);
+		glyph.advance = glyph.advance*ratio;
+		glyph.descender = glyph.descender*ratio;
+		glyph.size.y = glyph.size.y*ratio;
+		glyph.size.y = ybearing*ratio - fontDescender;
+		glyph.size.x = glyph.size.x*ratio;
+		glyph.size.w = glyph.size.w*ratio;
+		glyph.size.h = glyph.size.h*ratio;
+		glyph.height = glyph.height*ratio;
+
+		atlasGlyphs.emplace_back(temp.CreateRescaled(width, height));
+	}
+	else
+		atlasGlyphs.emplace_back(slot->bitmap.buffer, width, height, channels);
 
 	atlasAlloc.AddEntry(IntToString(ch)       , int2(width         , height         ), reinterpret_cast<void*>(atlasGlyphs.size() - 1));
 	atlasAlloc.AddEntry(IntToString(ch) + "sh", int2(width + olSize, height + olSize)                                                 );
 #endif
 }
 
-void CFontTexture::CreateTexture(const int width, const int height)
+void CFontTexture::CreateTexture(const int width, const int height, const bool init)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
-	glGenTextures(1, &glyphAtlasTextureID);
+	if (init)
+		glGenTextures(1, &glyphAtlasTextureID);
 	glBindTexture(GL_TEXTURE_2D, glyphAtlasTextureID);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -956,29 +1232,38 @@ void CFontTexture::CreateTexture(const int width, const int height)
 #ifdef SUPPORT_AMD_HACKS_HERE
 	constexpr GLint swizzleMaskF[] = { GL_ALPHA, GL_ALPHA, GL_ALPHA, GL_ALPHA };
 	constexpr GLint swizzleMaskD[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskF);
+	if (needsColor)
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskD);
+	else
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskF);
 #endif
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
+	if (needsColor)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
+	else
 #ifdef SUPPORT_AMD_HACKS_HERE
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 1, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 1, 1, 0, GL_ALPHA, GL_UNSIGNED_BYTE, nullptr);
 #else
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 1, 1, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 1, 1, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 #endif
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 #ifdef SUPPORT_AMD_HACKS_HERE
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskD);
+	if (!needsColor)
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMaskD);
 #endif
 
-	atlasUpdate = {};
-	atlasUpdate.Alloc(texWidth = wantedTexWidth = width, texHeight = wantedTexHeight = height, 1);
+	if (init) {
+		atlasUpdate = {};
+		atlasUpdate.Alloc(texWidth = wantedTexWidth = width, texHeight = wantedTexHeight = height, needsColor ? 4 : 1);
 
-	atlasUpdateShadow = {};
-	atlasUpdateShadow.Alloc(width, height, 1);
+		atlasUpdateShadow = {};
+		atlasUpdateShadow.Alloc(width, height, needsColor ? 4 : 1);
+	}
 #endif
 }
 
@@ -1012,8 +1297,8 @@ void CFontTexture::ReallocAtlases(bool pre)
 	}
 
 	// NB: pool has already been wiped here, do not return memory to it but just realloc
-	atlasUpdate.Alloc(atlasDim.x, atlasDim.y, 1);
-	atlasUpdateShadow.Alloc(atlasUDim.x, atlasUDim.y, 1);
+	atlasUpdate.Alloc(atlasDim.x, atlasDim.y, needsColor ? 4 : 1);
+	atlasUpdateShadow.Alloc(atlasUDim.x, atlasUDim.y, needsColor ? 4 : 1);
 
 	memcpy(atlasUpdate.GetRawMem(), atlasMem.data(), atlasMem.size());
 	memcpy(atlasUpdateShadow.GetRawMem(), atlasShadowMem.data(), atlasShadowMem.size());
@@ -1040,6 +1325,28 @@ void CFontTexture::ReallocAtlases(bool pre)
 	atlasShadowMem = {};
 	atlasDim = {};
 	atlasUDim = {};
+#endif
+}
+
+void CFontTexture::ClearAtlases(const int width, const int height)
+{
+#ifndef HEADLESS
+	// refresh the atlasAlloc to reset coordinates
+	atlasAlloc = CRowAtlasAlloc();
+	atlasAlloc.SetMaxSize(globalRendering->maxTextureSize, globalRendering->maxTextureSize);
+
+	// clear atlases
+	wantedTexWidth = width;
+	wantedTexHeight = height;
+
+	atlasUpdate.Alloc(wantedTexWidth, wantedTexHeight, needsColor ? 4 : 1);
+	atlasUpdateShadow.Alloc(1, 1, needsColor ? 4 : 1);
+	atlasUpdateShadow = {};
+
+	if (!atlasGlyphs.empty())
+		LOG_L(L_WARNING, "[FontTexture::%s] discarding %u glyph bitmaps", __func__, uint32_t(atlasGlyphs.size()));
+
+	atlasGlyphs.clear();
 #endif
 }
 
@@ -1071,6 +1378,9 @@ void CFontTexture::UpdateGlyphAtlasTexture()
 	if (!GlyphAtlasTextureNeedsUpdate())
 		return;
 
+	if (needsColor && !isColor)
+		needsTextureUpload = true;
+
 	lastTextureUpdate = curTextureUpdate;
 	texWidth  = wantedTexWidth;
 	texHeight = wantedTexHeight;
@@ -1080,10 +1390,12 @@ void CFontTexture::UpdateGlyphAtlasTexture()
 		atlasUpdateShadow.Blur(outlineSize, outlineWeight);
 		assert((atlasUpdate.xsize * atlasUpdate.ysize) % sizeof(int) == 0);
 
+		const int channels = needsColor ? 4 : 1;
+
 		const int* src = reinterpret_cast<const int*>(atlasUpdateShadow.GetRawMem());
 		      int* dst = reinterpret_cast<      int*>(atlasUpdate.GetRawMem());
 
-		const int size = (atlasUpdate.xsize * atlasUpdate.ysize) / sizeof(int);
+		const int size = (atlasUpdate.xsize * atlasUpdate.ysize * channels) / sizeof(int);
 
 		assert(atlasUpdateShadow.GetMemSize() / sizeof(int) == size);
 		assert(atlasUpdate.GetMemSize() / sizeof(int) == size);
@@ -1111,9 +1423,17 @@ void CFontTexture::UploadGlyphAtlasTextureImpl()
 #ifndef HEADLESS
 	if (!GlyphAtlasTextureNeedsUpload())
 		return;
+	if (needsColor && !isColor) {
+		CreateTexture(32, 32, false);
+		isColor = true;
+		needsTextureUpload = true;
+	}
 
 	// update texture atlas
 	glBindTexture(GL_TEXTURE_2D, glyphAtlasTextureID);
+	if (needsColor)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texHeight, 0, GL_BGRA,  GL_UNSIGNED_BYTE, atlasUpdate.GetRawMem());
+	else
 	#ifdef SUPPORT_AMD_HACKS_HERE
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, texWidth, texHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlasUpdate.GetRawMem());
 	#else

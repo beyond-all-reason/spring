@@ -25,6 +25,8 @@ bool LuaFonts::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(LoadFont);
 	REGISTER_LUA_CFUNC(DeleteFont);
+	REGISTER_LUA_CFUNC(AddFallbackFont);
+	REGISTER_LUA_CFUNC(ClearFallbackFonts);
 
 	return true;
 }
@@ -205,6 +207,49 @@ int LuaFonts::DeleteFont(lua_State* L)
 	return meta_gc(L);
 }
 
+/*** Adds a fallback font for the font rendering engine.
+ *
+ * Fonts added first will have higher priority.
+ * When a glyph isn't found when rendering a font, the fallback fonts
+ * will be searched first, otherwise os fonts will be used.
+ *
+ * The application should listen for the unsynced 'FontsChanged' callin so
+ * modules can clear any already reserved display lists or other relevant
+ * caches.
+ *
+ * Note the callin won't be executed at the time of calling this method,
+ * but later, on the Update cycle (before other Update and Draw callins).
+ *
+ * @function gl.AddFallbackFont
+ * @string filePath VFS path to the file, for example "fonts/myfont.ttf". Uses VFS.RAW_FIRST access mode.
+ * @treturn bool success
+ */
+int LuaFonts::AddFallbackFont(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	const auto font = luaL_checkstring(L, 1);
+
+	const bool res = CFontTexture::AddFallbackFont(font);
+	lua_pushboolean(L, res);
+	return 1;
+}
+
+/*** Clears all fallback fonts.
+ *
+ * See the note at 'AddFallbackFont' about the 'FontsChanged' callin,
+ * it also applies when calling this method.
+ *
+ * @function gl.ClearFallbackFonts
+ * @treturn nil
+ */
+int LuaFonts::ClearFallbackFonts(lua_State* L)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	CFontTexture::ClearFallbackFonts();
+	return 0;
+}
 
 /******************************************************************************/
 /******************************************************************************/

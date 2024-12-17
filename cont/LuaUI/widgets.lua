@@ -169,6 +169,7 @@ local flexCallIns = {
   'DrawScreenEffects',
   'DrawScreenPost',
   'DrawInMiniMap',
+  'FontsChanged',
   'SunChanged',
   'RecvSkirmishAIMessage',
 }
@@ -2164,6 +2165,18 @@ end
 function widgetHandler:DownloadProgress(id, downloaded, total)
   for _,w in ipairs(self.DownloadProgressList) do
     w:DownloadProgress(id, downloaded, total)
+  end
+end
+
+
+--------------------------------------------------------------------------------
+--
+--  Font call-ins
+--
+
+function widgetHandler:FontsChaged()
+  for _,w in ripairs(self.FontsChangedList) do
+    w:FontsChanged()
   end
 end
 
