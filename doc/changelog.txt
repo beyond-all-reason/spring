@@ -159,6 +159,7 @@ Misc:
  - Fix when a client that takes too long to connect can potentially trigger a desync.
    https://github.com/beyond-all-reason/spring/issues/1406
  - Prevent logging general log information before the game engine has started. https://github.com/beyond-all-reason/spring/issues/683
+ - New modinfo setting to skip issuing newly created units a move command off of the factory pad: insertBuiltUnitMoveCommand.
 
 Sim:
  - Improved performance of long-range path finding requests (TKPFS)

@@ -44,6 +44,7 @@ void CModInfo::ResetState()
 		constructionDecay      = true;
 		constructionDecayTime  = int(6.66 * GAME_SPEED);
 		constructionDecaySpeed = 0.03f;
+		insertBuiltUnitMoveCommand = true;
 	}
 	{
 		debrisDamage = 50.0f;
@@ -213,6 +214,7 @@ void CModInfo::Init(const std::string& modFileName)
 		constructionDecay = constructionTbl.GetBool("constructionDecay", constructionDecay);
 		constructionDecayTime = (int)(constructionTbl.GetFloat("constructionDecayTime", (float)constructionDecayTime / GAME_SPEED) * GAME_SPEED);
 		constructionDecaySpeed = std::max(constructionTbl.GetFloat("constructionDecaySpeed", constructionDecaySpeed), 0.01f);
+		insertBuiltUnitMoveCommand = constructionTbl.GetBool("insertBuiltUnitMoveCommand", insertBuiltUnitMoveCommand);
 	}
 
 	{

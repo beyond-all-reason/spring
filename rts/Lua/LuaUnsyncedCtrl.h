@@ -103,6 +103,7 @@ class LuaUnsyncedCtrl {
 
 		static int AddUnitIcon(lua_State* L);
 		static int FreeUnitIcon(lua_State* L);
+		static int SetUnitIconDraw(lua_State* L);
 		static int UnitIconSetDraw(lua_State* L);
 
 		static int ExtractModArchiveFile(lua_State* L);
@@ -117,7 +118,6 @@ class LuaUnsyncedCtrl {
 		static int SetConfigString(lua_State* L);
 
 		static int CreateDir(lua_State* L);
-		static int AllocateTable(lua_State* L);
 
 		static int Reload(lua_State* L);
 		static int Restart(lua_State* L);

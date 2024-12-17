@@ -69,6 +69,8 @@ public:
 	int constructionDecayTime;
 	/// How fast do they decay?
 	float constructionDecaySpeed;
+	/// When units are created, issue a move command off of the factory pad.
+	bool insertBuiltUnitMoveCommand;
 
 	// Damage behaviour
 	/// unit pieces flying off (usually on death)

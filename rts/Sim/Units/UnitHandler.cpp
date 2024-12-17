@@ -284,7 +284,7 @@ bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 
 void CUnitHandler::DeleteUnits()
 {
-	RECOIL_DETAILED_TRACY_ZONE;
+	ZoneScopedC(tracy::Color::Goldenrod);
 	while (!unitsToBeRemoved.empty()) {
 		DeleteUnit(unitsToBeRemoved.back());
 		unitsToBeRemoved.pop_back();
@@ -343,7 +343,7 @@ void CUnitHandler::UpdateUnitMoveTypes()
 
 void CUnitHandler::UpdateUnitLosStates()
 {
-	ZoneScoped;
+	ZoneScopedC(tracy::Color::Goldenrod);
 	for (CUnit* unit: activeUnits) {
 		for (int at = 0; at < teamHandler.ActiveAllyTeams(); ++at) {
 			unit->UpdateLosStatus(at);
