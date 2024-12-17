@@ -44,6 +44,12 @@ this cannot be overridden)
 * archive scanner version changed to 17, won't be able to reuse an old archive cache.
 Expect a rescan of archives.
 
+### Deprecation notice
+* renamed `Spring.UnitIconSetDraw` to `Spring.SetUnitIconDraw`. Old spelling will
+still work for a while but is deprecated.
+* there is now `Spring.GetUnitCommandCount(unitID)` to get a unit's queue size.
+`Spring.GetUnitCommands(unitID, 0)` and the equivalent `Spring.GetCommandQueue`
+will still work for a while but are deprecated.
 
 # Features
 
@@ -68,9 +74,10 @@ There is a new `Engine.FeatureSupport` table containing various feature support 
 Use for engine version compatibility, similar to existing `Script.IsEngineMinVersion`,
 except self-documenting and does not assume linear availability / commit numbering.
 
-So far contains two vars:
+So far contains three vars:
 * `rmlUiApiVersion` = `1`
 * `hasExitOnlyYardmaps` = `true`
+* `NegativeGetUnitCurrentCommand` = `true`
 
 More will be added in the future as new features are added.
 
@@ -119,12 +126,28 @@ instead of going back to the rotation/position it was last in when in that mode.
 ### Lua microoptimisation
 * add `math.normalize(x1, x2, ...) → numbers xn1, xn2, ...`. Normalizes a vector. Can have any dimensions (pass and receive each as a separate value).
 Returns a zero vector if passed a zero vector.
-* add `Spring.AllocateTable(arraySlots, hashSlots) → {}`. Returns an empty table with more space allocated.
+* add `table.new(arraySlots, hashSlots) → {}`. Returns an empty table with more space allocated.
 Use as a microoptimisation when you have a big table which you are going to populate with a known number of elements, for example `#UnitDefs`.
 * `Script.LuaXYZ.Foo()` no longer produces a warning if there is no such function in the LuaXYZ environment. In practice this means you
 can avoid calling `Script.LuaXYZ("Foo")` each time, but it can still be a good idea e.g. to avoid needless calculation or to warn manually.
 * add variadic variants of LUS `Turn`, `Move`, `Spin`, `StopSpin`, `Explode`, and `SetPieceVisibility`, each has the same name with "Multi" prepended (so `MultiTurn` etc).
 These accept multiple full sets of arguments compared to the regular function so you can avoid extra function calls.
+
+### Lua orders
+* add `Spring.GetUnitCommandCount(unitID) → number commandCount`. Use in place of `Spring.GetUnitCommands(unitID, 0)`.
+* `Spring.GetUnitCurrentCommand(unitID, -n)` now grabs the Nth command from the last.
+* added `Engine.FeatureSupport.NegativeGetUnitCurrentCommand` bool for forward compatibility with the above.
+* add `/debugquadfield` command to debug GUI trace ray interaction with ground quads.
+
+### Fonts
+* optimized font loading.
+* fix a crash when loading unknown glyphs from a font.
+* fix an issue where sometimes `C:\a\_temp\msys\msys64\var\cache\fontconfig` would be created on the user's disk.
+
+### Unit spatial queries
+* add `SelectThroughGround` float springsetting. Controls how far through ground you can single-click a unit. Default is 200, in elmos (same behaviour as previous).
+* `Spring.GetUnitsInRectangle` and similar functions now correctly grab wobbly radar dots.
+* fix rightclicking and area-commands sometimes failing to include radar dots if they wobbled too far from real position.
 
 ### Rendering
 * engine now draws the sky before the `wupget:DrawWorldPreUnit` layer.
@@ -134,6 +157,7 @@ They aren't mutually exclusive.
 * add `MinSampleShadingRate` springsetting, float between 0 and 1, default 0. A value of 1 indicates that each sample in the framebuffer should be independently shaded. A value of 0 effectively allows rendering to ignore sample rate shading. Any value between 0 and 1 allows the GL to shade only a subset of the total samples within each covered fragment.
 * add new 'm' character to Lua texture options, which disables trilinear mipmap filtering for both DDS and uncompressed textures.
 * particles (incl. ground decals) now have 4 levels of mipmaps.
+* fix draw position for asymmetric models, they no longer disappear when not appropriate.
 
 ### Defs
 * add `windup` weapon def tag. Delay in seconds before the first projectile of a salvo appears.
@@ -156,16 +180,25 @@ Expect a rescan of archives.
 * optimize performance when scanning files on a HDD.
 * fixed the archive scanner sometimes failing due to having more files opened in parallel than the OS allows.
 
+### Wind
+* add `misc.windChangeReportPeriod` modrule, seconds. Windgens receive the "wind updated" event this many seconds. Defaults to 15s (previous behaviour).
+* windgens now also receive the event when they are finished.
+* wind now starts in a random direction instead of East... always to the East.
+
 ### Misc
-* add `SelectThroughGround` float springsetting. Controls how far through ground you can single-click a unit. Default is 200, in elmos (same behaviour as previous).
+* add `construction.insertBuiltUnitMoveCommand` boolean modrule, defaults to true. If false, units won't receive a move order when exiting factory (make sure to use bugger off).
 * add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
 to the `unitQuadPositionUpdateRate` modrule, which may leave them unable to be hit by some weapons when moving. Call this for targets of important
 weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value greater than 1 to ensure reliable hit detection.
+* renamed `Spring.UnitIconSetDraw` to `Spring.SetUnitIconDraw`. Old spelling will still work for a while but is deprecated.
 * built-in endgame graphs have a toggle for log scale instead of linear.
 * `gl.SaveImage` can now save in the `.hdr` format (apparently).
 * `pairs()` now looks at the `__pairs` metamethod in tables, same as in Lua 5.2.
+* the "scanning archives" screen at init reports more info.
+* improved Tracy coverage and made zone coloring more coherent.
 
 ## Fixes
+* fix a possible pathing desync, especially on builds compiled for OpenBSD.
 * fix draw position for asymmetric models, they no longer disappear when not appropriate.
 * fix streaming very small sound files.
 * fix `Spring.SetCameraTarget` reverting to the old position.
