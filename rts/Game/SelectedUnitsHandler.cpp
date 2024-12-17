@@ -489,7 +489,7 @@ void CSelectedUnitsHandler::SelectGroup(int num)
 		}
 	}
 
-	if (selectedUnits.size()) {
+	if (!selectedUnits.empty()) {
 		selectionChanged = true;
 		possibleCommandsChanged = true;
 	}
