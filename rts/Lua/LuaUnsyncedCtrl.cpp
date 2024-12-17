@@ -227,7 +227,9 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(AddUnitIcon);
 	REGISTER_LUA_CFUNC(FreeUnitIcon);
-	REGISTER_LUA_CFUNC(UnitIconSetDraw);
+	REGISTER_LUA_CFUNC(UnitIconSetDraw); // deprecated
+	REGISTER_LUA_CFUNC(SetUnitIconDraw);
+
 
 	REGISTER_LUA_CFUNC(ExtractModArchiveFile);
 
@@ -240,7 +242,6 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetConfigString);
 
 	REGISTER_LUA_CFUNC(CreateDir);
-	REGISTER_LUA_CFUNC(AllocateTable);
 
 	REGISTER_LUA_CFUNC(SendCommands);
 	REGISTER_LUA_CFUNC(GiveOrder);
@@ -2426,11 +2427,31 @@ int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
 /***
  *
  * @function Spring.UnitIconSetDraw
+ * Deprecated: use Spring.SetUnitIconDraw instead.
+ * @see Spring.SetUnitIconDraw
  * @number unitID
  * @bool drawIcon
  * @treturn nil
  */
 int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
+{
+	static bool deprecatedMsgDone = false;
+	if (!deprecatedMsgDone) {
+		LOG_L(L_WARNING, "Spring.UnitIconSetDraw is deprecated. Please use Spring.SetUnitIconDraw instead.");
+		deprecatedMsgDone = true;
+	}
+	return LuaUnsyncedCtrl::SetUnitIconDraw(L);
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitIconDraw
+ * @number unitID
+ * @bool drawIcon
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitIconDraw(lua_State* L)
 {
 	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
 
@@ -2623,31 +2644,6 @@ int LuaUnsyncedCtrl::CreateDir(lua_State* L)
 	lua_pushboolean(L, FileSystem::CreateDirectory(dir));
 	return 1;
 }
-
-/***
- *
- * @function Spring.AllocateTable
- * @number narr hint for count of array elements
- * @number nrec hint for count of record elements
- * @treturn table
- */
-int LuaUnsyncedCtrl::AllocateTable(lua_State* L)
-{
-	int narr = luaL_optinteger(L, 1, 0);
-	int nrec = luaL_optinteger(L, 2, 0);
-
-	if (narr < 0) {
-		narr = 0;
-	}
-	if (nrec < 0) {
-		nrec = 0;
-	}
-
-	lua_createtable(L, narr, nrec);
-
-	return 1;
-}
-
 
 
 /******************************************************************************

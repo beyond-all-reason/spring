@@ -654,8 +654,14 @@ void CProjectileDrawer::DrawProjectilesMiniMap()
 		glDisable(GL_PROGRAM_POINT_SIZE);
 
 	sh.Enable();
-	CProjectile::GetMiniMapLinesRB().DrawArrays(GL_LINES);
-	CProjectile::GetMiniMapPointsRB().DrawArrays(GL_POINTS);
+	{
+		ZoneScopedN("DrawProjectilesMiniMap::MiniMapLinesRB");
+		CProjectile::GetMiniMapLinesRB().DrawArrays(GL_LINES);
+	}
+	{
+		ZoneScopedN("DrawProjectilesMiniMap::MiniMapPointsRB");
+		CProjectile::GetMiniMapPointsRB().DrawArrays(GL_POINTS);
+	}
 	sh.Disable();
 
 	if (pntsz)
