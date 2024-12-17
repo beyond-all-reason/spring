@@ -39,6 +39,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
+#include "Sim/Misc/CollisionHandler.h"
 #include "Sim/MoveTypes/StrafeAirMoveType.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
@@ -379,6 +380,10 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeaturePieceDirection);
 	REGISTER_LUA_CFUNC(GetFeaturePiecePosDir);
 	REGISTER_LUA_CFUNC(GetFeaturePieceMatrix);
+
+	REGISTER_LUA_CFUNC(TraceRayFeatures);
+	REGISTER_LUA_CFUNC(TraceRayGround);
+	REGISTER_LUA_CFUNC(TraceRayUnits);
 
 	REGISTER_LUA_CFUNC(GetRadarErrorParams);
 
@@ -8670,8 +8675,134 @@ int LuaSyncedRead::GetUnitScriptNames(lua_State* L)
 
 	return 1;
 }
+/***
+ *
+ * @function Spring.TraceRayUnits
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @number traceLength
+ * @treturn {{len, Id},...}
+ */
 
+int LuaSyncedRead::TraceRayUnits(lua_State* L) //returns the list of units that an raytrace has hit
+{
+	float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	float3 dir(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
+	float traceLength = luaL_checkfloat(L, 7);
+	QuadFieldQuery qfQuery;
+	quadField.GetQuadsOnRay(qfQuery, pos, dir, traceLength);
+	CollisionQuery cq;
+	int num = 0;
+	lua_newtable(L);
+	for (const int quadIdx : *qfQuery.quads) {
+		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
 
+		for (CUnit* u : quad.units) {
+
+			if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+				continue;
+
+			if (CCollisionHandler::DetectHit(u, u->GetTransformMatrix(true), pos, pos + dir * traceLength, &cq, true)) {
+				const float len = cq.GetHitPosDist(pos, dir);
+				lua_newtable(L);
+				lua_pushnumber(L, len);
+				lua_rawseti(L, -2, 1);
+				lua_pushnumber(L, u->id);
+				lua_rawseti(L, -2, 2);
+				lua_rawseti(L, -2, num + 1);
+				num++;
+			}
+		}
+	}
+	return 1;
+}
+/***
+ *
+ * @function Spring.TraceRayFeatures
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @number traceLength
+ * @treturn {{len, Id},...}
+ */
+int LuaSyncedRead::TraceRayFeatures(lua_State* L) //returns the list of features that an raytrace has hit
+{
+	float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	float3 dir(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
+	float traceLength = luaL_checkfloat(L, 7);
+	QuadFieldQuery qfQuery;
+	quadField.GetQuadsOnRay(qfQuery, pos, dir, traceLength);
+	CollisionQuery cq;
+	int num = 0;
+	lua_newtable(L);
+	for (const int quadIdx : *qfQuery.quads) {
+		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
+
+		for (CFeature* f : quad.features) {
+			if (!f->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+				continue;
+
+			if (CCollisionHandler::DetectHit(f, f->GetTransformMatrix(true), pos, pos + dir * traceLength, &cq, true)) {
+				const float len = cq.GetHitPosDist(pos, dir);
+				lua_newtable(L);
+				lua_pushnumber(L, len);
+				lua_rawseti(L, -2, 1);
+				lua_pushnumber(L, f->id);
+				lua_rawseti(L, -2, 2);
+				lua_rawseti(L, -2, num + 1);
+				num++;
+			}
+		}
+	}
+	return 1;
+}
+/***
+ *
+ * @function Spring.TraceRayGround
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @number traceLength
+ * @bool[opt=false] ignoreWater
+ * @treturn nil|len
+ * @treturn number     posX
+ * @treturn number     posY
+ * @treturn number     posZ
+ */
+int LuaSyncedRead::TraceRayGround(lua_State* L)
+{
+	float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	float3 dir(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
+	float traceLength = luaL_checkfloat(L, 7);
+	float3 normDir = dir.Normalize();
+	auto result2 = pos + normDir * traceLength;
+	const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength, CLuaHandle::GetHandleSynced(L));
+	const float waterRayLength = CGround::LinePlaneCol(pos, normDir, traceLength, CGround::GetWaterPlaneLevel());
+	const bool ignoreWater = luaL_optboolean(L, 8, false);
+	if (-1.0f == groundLength)
+		return 0;
+	if (traceLength > groundLength && groundLength > 0.0f) {
+		traceLength = groundLength;
+	}
+	if (!ignoreWater && waterRayLength != -1.0f)
+		traceLength = std::min(traceLength, waterRayLength);
+	lua_pushnumber(L, traceLength);
+	auto result = pos + normDir * traceLength;
+	lua_pushnumber(L, result.x);
+	lua_pushnumber(L, result.y);
+	lua_pushnumber(L, result.z);
+	return 4;
+}
 /******************************************************************************
  * Misc
  *
