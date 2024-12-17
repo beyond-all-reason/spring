@@ -20,6 +20,7 @@ struct BuildInfo
 {
 	BuildInfo();
 	BuildInfo(const UnitDef* def, const float3& pos, int buildFacing);
+	BuildInfo(int unitDefId, const float3& pos, int facing);
 	BuildInfo(const std::string& name, const float3& pos, int facing);
 	BuildInfo(const Command& c) { Parse(c); }
 
