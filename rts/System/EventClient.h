@@ -361,6 +361,8 @@ class CEventClient
 		virtual void DrawShadowUnitsLua() {}
 		virtual void DrawShadowFeaturesLua() {}
 
+		virtual void FontsChanged() {}
+
 		virtual void GameProgress(int gameFrame);
 
 		virtual void DrawLoadScreen();
