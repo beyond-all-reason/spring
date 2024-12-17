@@ -139,9 +139,9 @@ public:
 	bool DeleteLuaDecal(uint32_t id) override;
 	      GroundDecal* GetDecalById(uint32_t id)       override;
 	const GroundDecal* GetDecalById(uint32_t id) const override;
-	bool SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex) override;
-	std::string GetDecalTexture(uint32_t id, bool mainTex) const override;
-	const std::vector<std::string> GetDecalTextures(bool mainTex) const override;
+	bool SetDecalTexture(uint32_t id, const std::string& texName, size_t altasIndex) override;
+	std::string GetDecalTexture(uint32_t id, size_t altasIndex) const override;
+	std::vector<std::string> GetDecalTextures(size_t altasIndex) const override;
 	const CSolidObject* GetDecalSolidObjectOwner(uint32_t id) const override;
 
 	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override;
@@ -156,7 +156,7 @@ private:
 	void GenerateAtlasTextures();
 	void ReloadDecalShaders();
 
-	void AddTexToAtlas(const std::string& name, const std::string& filename, bool mainTex, bool convertOldBMP);
+	void AddTexToAtlas(const std::string& name, const std::string& filename, size_t atlasIndex, bool convertOldBMP);
 
 	void AddTrack(const CUnit* unit, const float3& newPos, bool forceEval = false);
 
@@ -184,8 +184,7 @@ private:
 	};
 	int maxUniqueScars;
 
-	std::unique_ptr<CTextureRenderAtlas> atlasMain;
-	std::unique_ptr<CTextureRenderAtlas> atlasNorm;
+	std::array<std::unique_ptr<CTextureRenderAtlas>, GroundDecal::TexOffsetType::TO_TYPE_COUNT> atlases;
 
 	Shader::IProgramObject* decalShader;
 
