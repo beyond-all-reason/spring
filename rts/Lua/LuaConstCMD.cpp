@@ -48,7 +48,6 @@
  * @param ATTACK 20
  * @param AREA_ATTACK 21
  * @param GUARD 25
- * @param AISELECT 30
  * @param OPT_SHIFT 32
  * @param GROUPSELECT 35
  * @param GROUPADD 36
@@ -123,7 +122,6 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	PUSH_CMD(ATTACK);
 	PUSH_CMD(AREA_ATTACK);
 	PUSH_CMD(GUARD);
-	PUSH_CMD(AISELECT);
 	PUSH_CMD(GROUPSELECT);
 	PUSH_CMD(GROUPADD);
 	PUSH_CMD(GROUPCLEAR);
