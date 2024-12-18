@@ -19,7 +19,7 @@ struct TextureCreationParams {
 	float aniso = 0.0f;
 	float lodBias = 0.0f;
 	uint32_t texID = 0;
-	int32_t reqNumLevels = 0;
+	int32_t reqNumLevels = 1;
 	bool linearMipMapFilter = true;
 	bool linearTextureFilter = true;
 	uint32_t GetMinFilter(int32_t numLevels) const;
