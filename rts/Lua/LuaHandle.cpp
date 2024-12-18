@@ -13,6 +13,7 @@
 #include "LuaBitOps.h"
 #include "LuaMathExtra.h"
 #include "LuaTableExtra.h"
+#include "LuaTracyExtra.h"
 #include "LuaUtils.h"
 #include "LuaZip.h"
 #include "Game/Game.h"
@@ -149,6 +150,11 @@ CLuaHandle::CLuaHandle(const string& _name, int _order, bool _userMode, bool _sy
 
 	// register tracy functions in global scope
 	tracy::LuaRegister(L);
+	#ifdef TRACY_ENABLE
+		lua_getglobal(L, "tracy");
+		LuaTracyExtra::PushEntries(L);
+		lua_pop(L, 1);
+	#endif
 }
 
 
@@ -498,7 +504,7 @@ bool CLuaHandle::LoadCode(lua_State* L, std::string code, const string& debug)
 
 	const LuaUtils::ScopedDebugTraceBack traceBack(L);
 
-	tracy::LuaRemove(code.data());
+	LuaUtils::TracyRemoveAlsoExtras(code.data());
 	const int error = luaL_loadbuffer(L, code.c_str(), code.size(), debug.c_str());
 
 	if (error != 0) {
