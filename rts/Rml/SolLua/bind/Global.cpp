@@ -75,7 +75,7 @@ namespace Rml::SolLua
 		{
 			return Rml::RegisterEventType(type, interruptible, bubbles, Rml::DefaultActionPhase::None);
 		}
-
+		
 		auto removeContext(Rml::Context* context) {
 			RmlGui::MarkContextForRemoval(context);
 		}
@@ -107,7 +107,7 @@ namespace Rml::SolLua
 			"CreateContext", [slp](const Rml::String& name) {
 				// context will be resized right away by other code
 				// send {0, 0} in to avoid triggering a pointless resize event in the Rml code
-				auto context = Rml::CreateContext(name, {0, 0});
+				auto context = RmlGui::GetOrCreateContext(name);
 				if (context != nullptr) {
 					slp->AddContextTracking(context);
 				}
@@ -124,7 +124,7 @@ namespace Rml::SolLua
 			),
 			//"RegisterTag",
 			//--
-			"GetContext", sol::resolve<Rml::Context* (const Rml::String&)>(&Rml::GetContext),
+			"GetContext", sol::resolve<Rml::Context* (const Rml::String&)>(&RmlGui::GetContext),
 			"RegisterEventType", sol::overload(&functions::registerEventType4, &functions::registerEventType3),
 			"AddTranslationString", [translationTable](const Rml::String& key, const Rml::String& translation, sol::this_state s) {
 				return translationTable->addTranslation(key, translation);

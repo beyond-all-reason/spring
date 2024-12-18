@@ -73,6 +73,9 @@ namespace RmlGui
 
 	void OnContextCreate(Rml::Context* context);
 	void OnContextDestroy(Rml::Context* context);
+	
+	Rml::Context* GetOrCreateContext(const std::string& name);
+	Rml::Context* GetContext(const std::string& name);
 	void MarkContextForRemoval(Rml::Context* context);
 
 	void BeginFrame();
