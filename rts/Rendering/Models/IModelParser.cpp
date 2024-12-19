@@ -370,7 +370,7 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 
 	const auto erasePredicate = [](decltype(preloadFutures)::value_type item) {
 		using namespace std::chrono_literals;
-		return item->wait_for(0ms) == std::future_status::ready;
+		return item.wait_for(0ms) == std::future_status::ready;
 	};
 
 	// collect completed futures
