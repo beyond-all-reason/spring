@@ -1,0 +1,5073 @@
+---
+layout: default
+title: LuaHandle
+permalink: ldoc/modules/LuaHandle.html
+description: Callins, functions called by the Engine
+parent: Lua API
+table: 0x556bba356020
+---
+
+{% raw %}
+    <h1>Module <code>LuaHandle</code></h1>
+    <p>Callins, functions called by the Engine</p>
+    <p>
+
+
+<p> This page is future looking to unified widget/gadget (aka "addon") handler, which may yet be some way off, c.f. the changelog.</p>
+
+<p> Related Sourcecode: <a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaHandle.cpp">LuaHandle.cpp</a></p>
+
+<p> For now, to use these addons in a widget, prepend widget: and, for a gadget, prepend gadget:. For example,</p>
+
+
+<pre>
+<span class="keyword">function</span> widget:UnitCreated(unitID, unitDefID, unitTeam, builderID)
+    ...
+<span class="keyword">end</span>
+</pre>
+
+<p> Some functions may differ between (synced) gadget and widgets; those are in the <a href="#Synced___Unsynced_Shared">Synced - Unsynced Shared</a> section. Essentially the reason is that all information should be available to synced (game logic controlling) gadgets, but restricted to unsynced gadget/widget (e.g. information about an enemy unit only detected via radar and not yet in LOS). In such cases the full (synced) param list is documented.</p>
+
+<p> Attention: some callins will only work on the unsynced portion of the gadget. Due to the type-unsafe nature of lua parsing, those callins not firing up might be hard to trace. This document will be continuously updated to properly alert about those situations.</p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaHandle.cpp">rts/Lua/LuaHandle.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Teams">Teams </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#TeamDied">TeamDied</a>
+            </dt>
+            <dd>
+              Called when a team dies (see <code>Spring.KillTeam</code>).
+            </dd>
+            <dt>
+              <a href="#TeamChanged">TeamChanged</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#PlayerChanged">PlayerChanged</a>
+            </dt>
+            <dd>
+              Called whenever a player's status changes e.g.
+            </dd>
+            <dt>
+              <a href="#PlayerAdded">PlayerAdded</a>
+            </dt>
+            <dd>
+              Called whenever a new player joins the game.
+            </dd>
+            <dt>
+              <a href="#PlayerRemoved">PlayerRemoved</a>
+            </dt>
+            <dd>
+              Called whenever a player is removed from the game.
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Projectiles">Projectiles </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#ProjectileCreated">ProjectileCreated</a>
+            </dt>
+            <dd>
+              Called when the projectile is created.
+            </dd>
+            <dt>
+              <a href="#ProjectileDestroyed">ProjectileDestroyed</a>
+            </dt>
+            <dd>
+              Called when the projectile is destroyed.
+            </dd>
+            <dt>
+              <a href="#Explosion">Explosion</a>
+            </dt>
+            <dd>
+              Called when an explosion occurs.
+            </dd>
+            <dt>
+              <a href="#StockpileChanged">StockpileChanged</a>
+            </dt>
+            <dd>
+              Called when a units stockpile of weapons increases or decreases.
+            </dd>
+            <dt>
+              <a href="#RecvLuaMsg">RecvLuaMsg</a>
+            </dt>
+            <dd>
+              Receives messages from unsynced sent via <code>Spring.SendLuaRulesMsg</code> or <code>Spring.SendLuaUIMsg</code>.
+            </dd>
+            <dt>
+              <a href="#Save">Save</a>
+            </dt>
+            <dd>
+              Called when a chat command '/save' or '/savegame' is received.
+            </dd>
+            <dt>
+              <a href="#UnsyncedHeightMapUpdate">UnsyncedHeightMapUpdate</a>
+            </dt>
+            <dd>
+              Called when the unsynced copy of the height-map is altered.
+            </dd>
+            <dt>
+              <a href="#Update">Update</a>
+            </dt>
+            <dd>
+              Called for every draw frame (including when the game is paused) and at least once per sim frame except when catching up.
+            </dd>
+            <dt>
+              <a href="#ViewResize">ViewResize</a>
+            </dt>
+            <dd>
+              Called whenever the window is resized.
+            </dd>
+            <dt>
+              <a href="#FontsChanged">FontsChanged</a>
+            </dt>
+            <dd>
+              Called whenever fonts are updated.
+            </dd>
+            <dt>
+              <a href="#SunChanged">SunChanged</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DefaultCommand">DefaultCommand</a>
+            </dt>
+            <dd>
+              Used to set the default command when a unit is selected.
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Features">Features </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#FeatureCreated">FeatureCreated</a>
+            </dt>
+            <dd>
+              Called when a feature is created.
+            </dd>
+            <dt>
+              <a href="#FeatureDestroyed">FeatureDestroyed</a>
+            </dt>
+            <dd>
+              Called when a feature is destroyed.
+            </dd>
+            <dt>
+              <a href="#FeatureDamaged">FeatureDamaged</a>
+            </dt>
+            <dd>
+              Called when a feature is damaged.
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Common">Common </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#Initialize">Initialize</a>
+            </dt>
+            <dd>
+              Called when the addon is (re)loaded.
+            </dd>
+            <dt>
+              <a href="#LoadCode">LoadCode</a>
+            </dt>
+            <dd>
+              Called when the game is (re)loaded.
+            </dd>
+            <dt>
+              <a href="#Shutdown">Shutdown</a>
+            </dt>
+            <dd>
+              Called when the addon or the game is shutdown.
+            </dd>
+            <dt>
+              <a href="#GotChatMsg">GotChatMsg</a>
+            </dt>
+            <dd>
+              Called when a player issues a UI command e.g.
+            </dd>
+            <dt>
+              <a href="#Load">Load</a>
+            </dt>
+            <dd>
+              Called after <a href="../modules/LuaHandle.html#GamePreload">GamePreload</a> and before <a href="../modules/LuaHandle.html#GameStart">GameStart</a>.
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Game">Game </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GamePreload">GamePreload</a>
+            </dt>
+            <dd>
+              Called before the 0 gameframe.
+            </dd>
+            <dt>
+              <a href="#GameStart">GameStart</a>
+            </dt>
+            <dd>
+              Called upon the start of the game.
+            </dd>
+            <dt>
+              <a href="#GameOver">GameOver</a>
+            </dt>
+            <dd>
+              Called when the game ends
+            </dd>
+            <dt>
+              <a href="#GamePaused">GamePaused</a>
+            </dt>
+            <dd>
+              Called when the game is paused.
+            </dd>
+            <dt>
+              <a href="#GameFrame">GameFrame</a>
+            </dt>
+            <dd>
+              Called for every game simulation frame (30 per second).
+            </dd>
+            <dt>
+              <a href="#GameFramePost">GameFramePost</a>
+            </dt>
+            <dd>
+              Called at the end of every game simulation frame
+            </dd>
+            <dt>
+              <a href="#GameID">GameID</a>
+            </dt>
+            <dd>
+              Called once to deliver the gameID
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Units">Units </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#UnitCreated">UnitCreated</a>
+            </dt>
+            <dd>
+              Called at the moment the unit is created.
+            </dd>
+            <dt>
+              <a href="#UnitFinished">UnitFinished</a>
+            </dt>
+            <dd>
+              Called at the moment the unit is completed.
+            </dd>
+            <dt>
+              <a href="#UnitFromFactory">UnitFromFactory</a>
+            </dt>
+            <dd>
+              Called when a factory finishes construction of a unit.
+            </dd>
+            <dt>
+              <a href="#UnitReverseBuilt">UnitReverseBuilt</a>
+            </dt>
+            <dd>
+              Called when a living unit becomes a nanoframe again.
+            </dd>
+            <dt>
+              <a href="#UnitConstructionDecayed">UnitConstructionDecayed</a>
+            </dt>
+            <dd>
+              Called when a unit being built starts decaying.
+            </dd>
+            <dt>
+              <a href="#UnitDestroyed">UnitDestroyed</a>
+            </dt>
+            <dd>
+              Called when a unit is destroyed.
+            </dd>
+            <dt>
+              <a href="#UnitTaken">UnitTaken</a>
+            </dt>
+            <dd>
+              Called when a unit is transferred between teams.
+            </dd>
+            <dt>
+              <a href="#UnitGiven">UnitGiven</a>
+            </dt>
+            <dd>
+              Called when a unit is transferred between teams.
+            </dd>
+            <dt>
+              <a href="#UnitIdle">UnitIdle</a>
+            </dt>
+            <dd>
+              Called when a unit is idle (empty command queue).
+            </dd>
+            <dt>
+              <a href="#UnitCommand">UnitCommand</a>
+            </dt>
+            <dd>
+              Called after when a unit accepts a command, after <code>AllowCommand</code> returns true.
+            </dd>
+            <dt>
+              <a href="#UnitCmdDone">UnitCmdDone</a>
+            </dt>
+            <dd>
+              Called when a unit completes a command.
+            </dd>
+            <dt>
+              <a href="#UnitDamaged">UnitDamaged</a>
+            </dt>
+            <dd>
+              Called when a unit is damaged (after UnitPreDamaged).
+            </dd>
+            <dt>
+              <a href="#UnitStunned">UnitStunned</a>
+            </dt>
+            <dd>
+              Called when a unit changes its stun status.
+            </dd>
+            <dt>
+              <a href="#UnitExperience">UnitExperience</a>
+            </dt>
+            <dd>
+              Called when a unit gains experience greater or equal to the minimum limit set by calling <code>Spring.SetExperienceGrade</code>.
+            </dd>
+            <dt>
+              <a href="#UnitHarvestStorageFull">UnitHarvestStorageFull</a>
+            </dt>
+            <dd>
+              Called when a unit's harvestStorage is full (according to its unitDef's entry).
+            </dd>
+            <dt>
+              <a href="#UnitSeismicPing">UnitSeismicPing</a>
+            </dt>
+            <dd>
+              Called when a unit emits a seismic ping.
+            </dd>
+            <dt>
+              <a href="#UnitEnteredRadar">UnitEnteredRadar</a>
+            </dt>
+            <dd>
+              Called when a unit enters radar of an allyteam.
+            </dd>
+            <dt>
+              <a href="#UnitEnteredLos">UnitEnteredLos</a>
+            </dt>
+            <dd>
+              Called when a unit enters LOS of an allyteam.
+            </dd>
+            <dt>
+              <a href="#UnitLeftRadar">UnitLeftRadar</a>
+            </dt>
+            <dd>
+              Called when a unit leaves radar of an allyteam.
+            </dd>
+            <dt>
+              <a href="#UnitLeftLos">UnitLeftLos</a>
+            </dt>
+            <dd>
+              Called when a unit leaves LOS of an allyteam.
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Transport">Transport </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#UnitLoaded">UnitLoaded</a>
+            </dt>
+            <dd>
+              Called when a unit is loaded by a transport.
+            </dd>
+            <dt>
+              <a href="#UnitUnloaded">UnitUnloaded</a>
+            </dt>
+            <dd>
+              Called when a unit is unloaded by a transport.
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Unit_Interactions">Unit Interactions </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#UnitEnteredUnderwater">UnitEnteredUnderwater</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#UnitEnteredWater">UnitEnteredWater</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#UnitLeftAir">UnitLeftAir</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#UnitLeftUnderwater">UnitLeftUnderwater</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#UnitLeftWater">UnitLeftWater</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#UnitEnteredAir">UnitEnteredAir</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#UnitCloaked">UnitCloaked</a>
+            </dt>
+            <dd>
+              Called when a unit cloaks.
+            </dd>
+            <dt>
+              <a href="#UnitDecloaked">UnitDecloaked</a>
+            </dt>
+            <dd>
+              Called when a unit decloaks.
+            </dd>
+            <dt>
+              <a href="#UnitUnitCollision">UnitUnitCollision</a>
+            </dt>
+            <dd>
+              Called when two units collide.
+            </dd>
+            <dt>
+              <a href="#UnitFeatureCollision">UnitFeatureCollision</a>
+            </dt>
+            <dd>
+              Called when a unit collides with a feature.
+            </dd>
+            <dt>
+              <a href="#UnitMoveFailed">UnitMoveFailed</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#UnitArrivedAtGoal">UnitArrivedAtGoal</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#RenderUnitDestroyed">RenderUnitDestroyed</a>
+            </dt>
+            <dd>
+              Called just before a unit is invalid, after it finishes its death animation.
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Draw__Functions">Draw* Functions </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#DrawGenesis">DrawGenesis</a>
+            </dt>
+            <dd>
+              Use this callin to update textures, shaders, etc.
+            </dd>
+            <dt>
+              <a href="#DrawWorld">DrawWorld</a>
+            </dt>
+            <dd>
+              Spring draws command queues, 'map stuff', and map marks.
+            </dd>
+            <dt>
+              <a href="#DrawWorldPreUnit">DrawWorldPreUnit</a>
+            </dt>
+            <dd>
+              Spring draws units, features, some water types, cloaked units, and the sun.
+            </dd>
+            <dt>
+              <a href="#DrawPreDecals">DrawPreDecals</a>
+            </dt>
+            <dd>
+              Called before decals are drawn
+            </dd>
+            <dt>
+              <a href="#DrawWaterPost">DrawWaterPost</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawShadowPassTransparent">DrawShadowPassTransparent</a>
+            </dt>
+            <dd>
+              Invoked after semi-transparent shadows pass is about to conclude
+            </dd>
+            <dt>
+              <a href="#DrawWorldShadow">DrawWorldShadow</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawWorldReflection">DrawWorldReflection</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawWorldRefraction">DrawWorldRefraction</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawGroundPreForward">DrawGroundPreForward</a>
+            </dt>
+            <dd>
+              Runs at the start of the forward pass when a custom map shader has been assigned via <code>Spring.SetMapShader</code> (convenient for setting uniforms).
+            </dd>
+            <dt>
+              <a href="#DrawGroundPostForward">DrawGroundPostForward</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawGroundPreDeferred">DrawGroundPreDeferred</a>
+            </dt>
+            <dd>
+              Runs at the start of the deferred pass when a custom map shader has been assigned via <code>Spring.SetMapShader</code> (convenient for setting uniforms).
+            </dd>
+            <dt>
+              <a href="#DrawGroundDeferred">DrawGroundDeferred</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawGroundPostDeferred">DrawGroundPostDeferred</a>
+            </dt>
+            <dd>
+              This runs at the end of its respective deferred pass.
+            </dd>
+            <dt>
+              <a href="#DrawUnitsPostDeferred">DrawUnitsPostDeferred</a>
+            </dt>
+            <dd>
+              Runs at the end of the unit deferred pass.
+            </dd>
+            <dt>
+              <a href="#DrawFeaturesPostDeferred">DrawFeaturesPostDeferred</a>
+            </dt>
+            <dd>
+              Runs at the end of the feature deferred pass to inform Lua code it should make use of the $model<em>gbuffer</em>* textures before another pass overwrites them (and to allow proper blending with e.g.
+            </dd>
+            <dt>
+              <a href="#DrawShadowUnitsLua">DrawShadowUnitsLua</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawShadowFeaturesLua">DrawShadowFeaturesLua</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawWorldPreParticles">DrawWorldPreParticles</a>
+            </dt>
+            <dd>
+              DrawWorldPreParticles is called multiples times per draw frame.
+            </dd>
+            <dt>
+              <a href="#DrawScreen">DrawScreen</a>
+            </dt>
+            <dd>
+              Also available to LuaMenu.
+            </dd>
+            <dt>
+              <a href="#DrawScreenEffects">DrawScreenEffects</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawScreenPost">DrawScreenPost</a>
+            </dt>
+            <dd>
+              Similar to DrawScreenEffects, this can be used to alter the contents of a frame after it has been completely rendered (i.e.
+            </dd>
+            <dt>
+              <a href="#DrawInMinimap">DrawInMinimap</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#DrawInMinimapBackground">DrawInMinimapBackground</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GameProgress">GameProgress</a>
+            </dt>
+            <dd>
+              Called every 60 frames, calculating delta between <a href="../modules/LuaHandle.html#GameFrame">GameFrame</a> and <a href="../modules/LuaHandle.html#GameProgress">GameProgress</a>.
+            </dd>
+            <dt>
+              <a href="#KeyMapChanged">KeyMapChanged</a>
+            </dt>
+            <dd>
+              Called when the keymap changes
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Input">Input </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#mods">mods</a>
+            </dt>
+            <dd>
+              Key Modifier Params
+            </dd>
+            <dt>
+              <a href="#KeyPress">KeyPress</a>
+            </dt>
+            <dd>
+              Called repeatedly when a key is pressed down.
+            </dd>
+            <dt>
+              <a href="#KeyRelease">KeyRelease</a>
+            </dt>
+            <dd>
+              Called when the key is released.
+            </dd>
+            <dt>
+              <a href="#TextInput">TextInput</a>
+            </dt>
+            <dd>
+              Called whenever a key press results in text input.
+            </dd>
+            <dt>
+              <a href="#TextEditing">TextEditing</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#MousePress">MousePress</a>
+            </dt>
+            <dd>
+              Called when a mouse button is pressed.
+            </dd>
+            <dt>
+              <a href="#MouseRelease">MouseRelease</a>
+            </dt>
+            <dd>
+              Called when a mouse button is released.
+            </dd>
+            <dt>
+              <a href="#MouseMove">MouseMove</a>
+            </dt>
+            <dd>
+              Called when the mouse is moved.
+            </dd>
+            <dt>
+              <a href="#MouseWheel">MouseWheel</a>
+            </dt>
+            <dd>
+              Called when the mouse wheel is moved.
+            </dd>
+            <dt>
+              <a href="#IsAbove">IsAbove</a>
+            </dt>
+            <dd>
+              Called every <a href="../modules/LuaHandle.html#Update">Update</a>.
+            </dd>
+            <dt>
+              <a href="#GetTooltip">GetTooltip</a>
+            </dt>
+            <dd>
+              Called when <code>Spring.IsAbove</code> returns true.
+            </dd>
+            <dt>
+              <a href="#cmdOpts">cmdOpts</a>
+            </dt>
+            <dd>
+              Parameters for command options
+            </dd>
+            <dt>
+              <a href="#CommandNotify">CommandNotify</a>
+            </dt>
+            <dd>
+              Called when a command is issued.
+            </dd>
+            <dt>
+              <a href="#AddConsoleLine">AddConsoleLine</a>
+            </dt>
+            <dd>
+              Called when text is entered into the console (e.g.
+            </dd>
+            <dt>
+              <a href="#GroupChanged">GroupChanged</a>
+            </dt>
+            <dd>
+              Called when a unit is added to or removed from a control group.
+            </dd>
+            <dt>
+              <a href="#WorldTooltip">WorldTooltip</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#MapDrawCmd">MapDrawCmd</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GameSetup">GameSetup</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#RecvSkirmishAIMessage">RecvSkirmishAIMessage</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Downloads">Downloads </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#DownloadQueued">DownloadQueued</a>
+            </dt>
+            <dd>
+              Called when a Pr-downloader download is queued
+            </dd>
+            <dt>
+              <a href="#DownloadStarted">DownloadStarted</a>
+            </dt>
+            <dd>
+              Called when a Pr-downloader download is started via VFS.DownloadArchive.
+            </dd>
+            <dt>
+              <a href="#DownloadFinished">DownloadFinished</a>
+            </dt>
+            <dd>
+              Called when a Pr-downloader download finishes successfully.
+            </dd>
+            <dt>
+              <a href="#DownloadFailed">DownloadFailed</a>
+            </dt>
+            <dd>
+              Called when a Pr-downloader download fails to complete.
+            </dd>
+            <dt>
+              <a href="#DownloadProgress">DownloadProgress</a>
+            </dt>
+            <dd>
+              Called incrementally during a Pr-downloader download.
+            </dd>
+        </dl>
+
+      <h2 id="Teams" class="section-header has-description">
+        Teams
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="TeamDied">
+          TeamDied(teamID)
+        </h3>
+        <p>Called when a team dies (see `Spring.KillTeam`).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="TeamChanged">
+          TeamChanged(teamID)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>teamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="PlayerChanged">
+          PlayerChanged(playerID)
+        </h3>
+        <p>Called whenever a player's status changes e.g.</p>
+        <div class="code-example">
+        <p>
+           becoming a spectator.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="PlayerAdded">
+          PlayerAdded(playerID)
+        </h3>
+        <p>Called whenever a new player joins the game.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="PlayerRemoved">
+          PlayerRemoved(playerID, reason)
+        </h3>
+        <p>Called whenever a player is removed from the game.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>reason</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Projectiles" class="section-header has-description">
+        Projectiles
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="ProjectileCreated">
+          ProjectileCreated(proID, proOwnerID, weaponDefID)
+        </h3>
+        <p>Called when the projectile is created.</p>
+        <div class="code-example">
+        <p>
+
+
+ Note that weaponDefID is missing if the projectile is spawned as part of a burst, but `Spring.GetProjectileDefID` and `Spring.GetProjectileName` still work in callin scope using proID.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>proID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>proOwnerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>weaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="ProjectileDestroyed">
+          ProjectileDestroyed(proID, ownerID, proWeaponDefID)
+        </h3>
+        <p>Called when the projectile is destroyed.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>proID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ownerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>proWeaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Explosion">
+          Explosion(weaponDefID, px, py, pz, attackerID, projectileID)
+        </h3>
+        <p>Called when an explosion occurs.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>weaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>px</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>py</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>pz</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>projectileID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+              bool noGfx if then no graphical effects are drawn by the engine for this explosion.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="StockpileChanged">
+          StockpileChanged(unitID, unitDefID, unitTeam, weaponNum, oldCount, newCount)
+        </h3>
+        <p>Called when a units stockpile of weapons increases or decreases.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>weaponNum</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>oldCount</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>newCount</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="RecvLuaMsg">
+          RecvLuaMsg(msg, playerID)
+        </h3>
+        <p>Receives messages from unsynced sent via `Spring.SendLuaRulesMsg` or `Spring.SendLuaUIMsg`.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>msg</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Save">
+          Save(zip)
+        </h3>
+        <p>Called when a chat command '/save' or '/savegame' is received.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>zip</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+                    a userdatum representing the savegame zip file. See Lua_SaveLoad.
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnsyncedHeightMapUpdate">
+          UnsyncedHeightMapUpdate()
+        </h3>
+        <p>Called when the unsynced copy of the height-map is altered.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">x1</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">z1</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">x2</span></strong>
+
+
+</li>
+              <li>
+                <strong><span class="type">z2</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="Update">
+          Update(dt)
+        </h3>
+        <p>Called for every draw frame (including when the game is paused) and at least once per sim frame except when catching up.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>dt</code>
+                   <strong><span class="type">number</span></strong>
+                    the time since the last update.
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="ViewResize">
+          ViewResize(viewSizeX, viewSizeY)
+        </h3>
+        <p>Called whenever the window is resized.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>viewSizeX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>viewSizeY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="FontsChanged">
+          FontsChanged()
+        </h3>
+        <p>Called whenever fonts are updated.</p>
+        <div class="code-example">
+        <p>
+           Signals the game display lists
+   and other caches should be discarded.
+
+ Gets called before other Update and Draw callins.
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="SunChanged">
+          SunChanged()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DefaultCommand">
+          DefaultCommand(type, id)
+        </h3>
+        <p>Used to set the default command when a unit is selected.</p>
+        <div class="code-example">
+        <p>
+           First parameter is the type of the object pointed at (either "unit or "feature") and the second is its unitID or featureID respectively.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>type</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    "unit" | "feature"
+                 </li>
+                 <li>
+                   <code>id</code>
+                   <strong><span class="type">int</span></strong>
+                    unitID | featureID
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Features" class="section-header has-description">
+        Features
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="FeatureCreated">
+          FeatureCreated(featureID, allyTeamID)
+        </h3>
+        <p>Called when a feature is created.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allyTeamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="FeatureDestroyed">
+          FeatureDestroyed(featureID, allyTeamID)
+        </h3>
+        <p>Called when a feature is destroyed.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allyTeamID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="FeatureDamaged">
+          FeatureDamaged(featureID, featureDefID, featureTeam, damage, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)
+        </h3>
+        <p>Called when a feature is damaged.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>featureID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>featureDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>featureTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>damage</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>weaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>projectileID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Common" class="section-header has-description">
+        Common
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="Initialize">
+          Initialize()
+        </h3>
+        <p>Called when the addon is (re)loaded.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="LoadCode">
+          LoadCode()
+        </h3>
+        <p>Called when the game is (re)loaded.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="Shutdown">
+          Shutdown()
+        </h3>
+        <p>Called when the addon or the game is shutdown.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="GotChatMsg">
+          GotChatMsg(msg, playerID)
+        </h3>
+        <p>Called when a player issues a UI command e.g.</p>
+        <div class="code-example">
+        <p>
+           types /foo or /luarules foo.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>msg</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="Load">
+          Load(zipReader)
+        </h3>
+        <p>Called after `GamePreload` and before `GameStart`.</p>
+        <div class="code-example">
+        <p>
+           See Lua_SaveLoad.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>zipReader</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Game" class="section-header ">
+        Game
+      </h2>
+
+        <h3 id="GamePreload">
+          GamePreload()
+        </h3>
+        <p>Called before the 0 gameframe.</p>
+        <div class="code-example">
+        <p>
+
+
+ Is not called when a saved game is loaded.
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="GameStart">
+          GameStart()
+        </h3>
+        <p>Called upon the start of the game.</p>
+        <div class="code-example">
+        <p>
+
+
+ Is not called when a saved game is loaded.
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="GameOver">
+          GameOver(winningAllyTeams)
+        </h3>
+        <p>Called when the game ends</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>winningAllyTeams</code>
+                   <strong><span class="type">{number,...}</span></strong>
+                    list of winning allyTeams, if empty the game result was undecided (like when dropping from an host).
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GamePaused">
+          GamePaused(playerID, paused)
+        </h3>
+        <p>Called when the game is paused.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>paused</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GameFrame">
+          GameFrame(frame)
+        </h3>
+        <p>Called for every game simulation frame (30 per second).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>frame</code>
+                   <strong><span class="type">number</span></strong>
+                    Starts at frame 1
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GameFramePost">
+          GameFramePost(frame)
+        </h3>
+        <p>Called at the end of every game simulation frame</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>frame</code>
+                   <strong><span class="type">number</span></strong>
+                    Starts at frame 1
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GameID">
+          GameID(gameID)
+        </h3>
+        <p>Called once to deliver the gameID</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>gameID</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    encoded in hex.
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Units" class="section-header ">
+        Units
+      </h2>
+
+        <h3 id="UnitCreated">
+          UnitCreated(unitID, unitDefID, unitTeam[, builderID])
+        </h3>
+        <p>Called at the moment the unit is created.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>builderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitFinished">
+          UnitFinished(unitID, unitDefID, unitTeam)
+        </h3>
+        <p>Called at the moment the unit is completed.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitFromFactory">
+          UnitFromFactory(unitID, unitDefID, unitTeam, factID, factDefID, userOrders)
+        </h3>
+        <p>Called when a factory finishes construction of a unit.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>factID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>factDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>userOrders</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitReverseBuilt">
+          UnitReverseBuilt(unitID, unitDefID, unitTeam)
+        </h3>
+        <p>Called when a living unit becomes a nanoframe again.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitConstructionDecayed">
+          UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
+        </h3>
+        <p>Called when a unit being built starts decaying.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>timeSinceLastBuild</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>iterationPeriod</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>part</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitDestroyed">
+          UnitDestroyed(unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam, weaponDefID)
+        </h3>
+        <p>Called when a unit is destroyed.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>weaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitTaken">
+          UnitTaken(unitID, unitDefID, oldTeam, newTeam)
+        </h3>
+        <p>Called when a unit is transferred between teams.</p>
+        <div class="code-example">
+        <p>
+           This is called before `UnitGiven` and in that moment unit is still assigned to the oldTeam.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>oldTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>newTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitGiven">
+          UnitGiven(unitID, unitDefID, newTeam, oldTeam)
+        </h3>
+        <p>Called when a unit is transferred between teams.</p>
+        <div class="code-example">
+        <p>
+           This is called after `UnitTaken` and in that moment unit is assigned to the newTeam.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>newTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>oldTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitIdle">
+          UnitIdle(unitID, unitDefID, unitTeam)
+        </h3>
+        <p>Called when a unit is idle (empty command queue).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitCommand">
+          UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, options, cmdTag)
+        </h3>
+        <p>Called after when a unit accepts a command, after `AllowCommand` returns true.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdParams</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>options</code>
+                   <strong><a class="type" href="../modules/LuaHandle.html#cmdOpts">cmdOpts</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdTag</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitCmdDone">
+          UnitCmdDone(unitID, unitDefID, unitTeam, cmdID, cmdParams, options, cmdTag)
+        </h3>
+        <p>Called when a unit completes a command.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdParams</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>options</code>
+                   <strong><a class="type" href="../modules/LuaHandle.html#cmdOpts">cmdOpts</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdTag</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitDamaged">
+          UnitDamaged(unitID, unitDefID, unitTeam, damage, paralyzer, weaponDefID, projectileID, attackerID, attackerDefID, attackerTeam)
+        </h3>
+        <p>Called when a unit is damaged (after UnitPreDamaged).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>damage</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>paralyzer</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>weaponDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>projectileID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>attackerTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitStunned">
+          UnitStunned(unitID, unitDefID, unitTeam, stunned)
+        </h3>
+        <p>Called when a unit changes its stun status.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>stunned</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitExperience">
+          UnitExperience(unitID, unitDefID, unitTeam, experience, oldExperience)
+        </h3>
+        <p>Called when a unit gains experience greater or equal to the minimum limit set by calling `Spring.SetExperienceGrade`.</p>
+        <div class="code-example">
+        <p>
+
+
+ Should be called more reliably with small values of experience grade.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>experience</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>oldExperience</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitHarvestStorageFull">
+          UnitHarvestStorageFull(unitID, unitDefID, unitTeam)
+        </h3>
+        <p>Called when a unit's harvestStorage is full (according to its unitDef's entry).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitSeismicPing">
+          UnitSeismicPing(x, y, z, strength, allyTeam, unitID, unitDefID)
+        </h3>
+        <p>Called when a unit emits a seismic ping.</p>
+        <div class="code-example">
+        <p>
+
+
+ See `seismicSignature`.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>z</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>strength</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allyTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitEnteredRadar">
+          UnitEnteredRadar(unitID, unitTeam, allyTeam, unitDefID)
+        </h3>
+        <p>Called when a unit enters radar of an allyteam.</p>
+        <div class="code-example">
+        <p>
+
+
+ Also called when a unit enters LOS without any radar coverage.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allyTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitEnteredLos">
+          UnitEnteredLos(unitID, unitTeam, allyTeam, unitDefID)
+        </h3>
+        <p>Called when a unit enters LOS of an allyteam.</p>
+        <div class="code-example">
+        <p>
+
+
+ Its called after the unit is in LOS, so you can query that unit.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allyTeam</code>
+                   <strong><span class="type">number</span></strong>
+                    who's LOS the unit entered.
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitLeftRadar">
+          UnitLeftRadar(unitID, unitTeam, allyTeam, unitDefID)
+        </h3>
+        <p>Called when a unit leaves radar of an allyteam.</p>
+        <div class="code-example">
+        <p>
+
+
+ Also called when a unit leaves LOS without any radar coverage.
+ For widgets, this is called just after a unit leaves radar coverage, so widgets cannot get the position of units that left their radar.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allyTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitLeftLos">
+          UnitLeftLos(unitID, unitTeam, allyTeam, unitDefID)
+        </h3>
+        <p>Called when a unit leaves LOS of an allyteam.</p>
+        <div class="code-example">
+        <p>
+
+
+ For widgets, this one is called just before the unit leaves los, so you can still get the position of a unit that left los.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>allyTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Transport" class="section-header has-description">
+        Transport
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="UnitLoaded">
+          UnitLoaded(unitID, unitDefID, unitTeam, transportID, transportTeam)
+        </h3>
+        <p>Called when a unit is loaded by a transport.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transportID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transportTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitUnloaded">
+          UnitUnloaded(unitID, unitDefID, unitTeam, transportID, transportTeam)
+        </h3>
+        <p>Called when a unit is unloaded by a transport.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transportID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>transportTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Unit_Interactions" class="section-header has-description">
+        Unit Interactions
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="UnitEnteredUnderwater">
+          UnitEnteredUnderwater(unitID, unitDefID, unitTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitEnteredWater">
+          UnitEnteredWater(unitID, unitDefID, unitTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitLeftAir">
+          UnitLeftAir(unitID, unitDefID, unitTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitLeftUnderwater">
+          UnitLeftUnderwater(unitID, unitDefID, unitTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitLeftWater">
+          UnitLeftWater(unitID, unitDefID, unitTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitEnteredAir">
+          UnitEnteredAir(unitID, unitDefID, unitTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitCloaked">
+          UnitCloaked(unitID, unitDefID, unitTeam)
+        </h3>
+        <p>Called when a unit cloaks.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitDecloaked">
+          UnitDecloaked(unitID, unitDefID, unitTeam)
+        </h3>
+        <p>Called when a unit decloaks.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitUnitCollision">
+          UnitUnitCollision(colliderID, collideeID)
+        </h3>
+        <p>Called when two units collide.</p>
+        <div class="code-example">
+        <p>
+
+
+ Both units must be registered with `Script.SetWatchUnit`.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>colliderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>collideeID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitFeatureCollision">
+          UnitFeatureCollision(colliderID, collideeID)
+        </h3>
+        <p>Called when a unit collides with a feature.</p>
+        <div class="code-example">
+        <p>
+
+
+ The unit must be registered with `Script.SetWatchUnit` and the feature registered with `Script.SetWatchFeature`.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>colliderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>collideeID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitMoveFailed">
+          UnitMoveFailed(unitID, unitDefID, unitTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="UnitArrivedAtGoal">
+          UnitArrivedAtGoal(unitID, unitDefID, unitTeam)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="RenderUnitDestroyed">
+          RenderUnitDestroyed(unitID, unitDefID, unitTeam)
+        </h3>
+        <p>Called just before a unit is invalid, after it finishes its death animation.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>unitID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitDefID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>unitTeam</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Draw__Functions" class="section-header has-description">
+        Draw* Functions
+      </h2>
+
+        <p> Inside the Draw* functions, you can use the Lua OpenGL Api to draw graphics.</p>
+
+<p> Avoid doing heavy calculations inside these callins; ideally, do the calculations elsewhere and use Draw callins only for drawing.</p>
+        <h3 id="DrawGenesis">
+          DrawGenesis()
+        </h3>
+        <p>Use this callin to update textures, shaders, etc.</p>
+        <div class="code-example">
+        <p>
+
+
+ Doesn't render to screen!
+ Also available to LuaMenu.
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawWorld">
+          DrawWorld()
+        </h3>
+        <p>Spring draws command queues, 'map stuff', and map marks.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawWorldPreUnit">
+          DrawWorldPreUnit()
+        </h3>
+        <p>Spring draws units, features, some water types, cloaked units, and the sun.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawPreDecals">
+          DrawPreDecals()
+        </h3>
+        <p>Called before decals are drawn</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawWaterPost">
+          DrawWaterPost()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawShadowPassTransparent">
+          DrawShadowPassTransparent()
+        </h3>
+        <p>Invoked after semi-transparent shadows pass is about to conclude</p>
+        <div class="code-example">
+        <p>
+
+
+ This callin has depth and color buffer of shadowmap bound via FBO as well as the FFP state to do "semi-transparent" shadows pass (traditionally only used to draw shadows of shadow casting semi-transparent particles). Can be used to draw nice colored shadows.
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawWorldShadow">
+          DrawWorldShadow()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawWorldReflection">
+          DrawWorldReflection()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawWorldRefraction">
+          DrawWorldRefraction()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawGroundPreForward">
+          DrawGroundPreForward()
+        </h3>
+        <p>Runs at the start of the forward pass when a custom map shader has been assigned via `Spring.SetMapShader` (convenient for setting uniforms).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawGroundPostForward">
+          DrawGroundPostForward()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawGroundPreDeferred">
+          DrawGroundPreDeferred()
+        </h3>
+        <p>Runs at the start of the deferred pass when a custom map shader has been assigned via `Spring.SetMapShader` (convenient for setting uniforms).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawGroundDeferred">
+          DrawGroundDeferred()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawGroundPostDeferred">
+          DrawGroundPostDeferred()
+        </h3>
+        <p>This runs at the end of its respective deferred pass.</p>
+        <div class="code-example">
+        <p>
+
+
+ Allows proper frame compositing (with ground flashes/decals/foliage/etc, which are drawn between it and `DrawWorldPreUnit`) via `gl.CopyToTexture`.
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawUnitsPostDeferred">
+          DrawUnitsPostDeferred()
+        </h3>
+        <p>Runs at the end of the unit deferred pass.</p>
+        <div class="code-example">
+        <p>
+
+
+ Informs Lua code it should make use of the $model_gbuffer_* textures before another pass overwrites them (and to allow proper blending with e.g. cloaked objects which are drawn between these events and DrawWorld via gl.CopyToTexture). N.B. The *PostDeferred events are only sent (and only have a real purpose) if forward drawing is disabled.
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawFeaturesPostDeferred">
+          DrawFeaturesPostDeferred()
+        </h3>
+        <p>Runs at the end of the feature deferred pass to inform Lua code it should make use of the $model_gbuffer_* textures before another pass overwrites them (and to allow proper blending with e.g.</p>
+        <div class="code-example">
+        <p>
+           cloaked objects which are drawn between these events and DrawWorld via gl.CopyToTexture). N.B. The *PostDeferred events are only sent (and only have a real purpose) if forward drawing is disabled.
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawShadowUnitsLua">
+          DrawShadowUnitsLua()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawShadowFeaturesLua">
+          DrawShadowFeaturesLua()
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+
+
+
+
+        </div>
+        <h3 id="DrawWorldPreParticles">
+          DrawWorldPreParticles(drawAboveWater, drawBelowWater, drawReflection, drawRefraction)
+        </h3>
+        <p>DrawWorldPreParticles is called multiples times per draw frame.</p>
+        <div class="code-example">
+        <p>
+
+ Each call has a different permutation of values for drawAboveWater, drawBelowWater, drawReflection, and drawRefraction.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>drawAboveWater</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>drawBelowWater</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>drawReflection</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>drawRefraction</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DrawScreen">
+          DrawScreen(viewSizeX, viewSizeY)
+        </h3>
+        <p>Also available to LuaMenu.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>viewSizeX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>viewSizeY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DrawScreenEffects">
+          DrawScreenEffects(viewSizeX, viewSizeY)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>viewSizeX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>viewSizeY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DrawScreenPost">
+          DrawScreenPost(viewSizeX, viewSizeY)
+        </h3>
+        <p>Similar to DrawScreenEffects, this can be used to alter the contents of a frame after it has been completely rendered (i.e.</p>
+        <div class="code-example">
+        <p>
+           World, MiniMap, Menu, UI).
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>viewSizeX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>viewSizeY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DrawInMinimap">
+          DrawInMinimap(sx, sy)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>sx</code>
+                   <strong><span class="type">number</span></strong>
+                    relative to the minimap's position and scale.
+                 </li>
+                 <li>
+                   <code>sy</code>
+                   <strong><span class="type">number</span></strong>
+                    relative to the minimap's position and scale.
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DrawInMinimapBackground">
+          DrawInMinimapBackground(sx, sy)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>sx</code>
+                   <strong><span class="type">number</span></strong>
+                    relative to the minimap's position and scale.
+                 </li>
+                 <li>
+                   <code>sy</code>
+                   <strong><span class="type">number</span></strong>
+                    relative to the minimap's position and scale.
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GameProgress">
+          GameProgress(serverFrameNum)
+        </h3>
+        <p>Called every 60 frames, calculating delta between `GameFrame` and `GameProgress`.</p>
+        <div class="code-example">
+        <p>
+
+
+ Can give an ETA about catching up with simulation for mid-game join players.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>serverFrameNum</code>
+                   <strong><span class="type">int</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="KeyMapChanged">
+          KeyMapChanged()
+        </h3>
+        <p>Called when the keymap changes</p>
+        <div class="code-example">
+        <p>
+
+
+ Can be caused due to a change in language or keyboard
+        </p>
+
+
+
+
+
+
+        </div>
+      <h2 id="Input" class="section-header ">
+        Input
+      </h2>
+
+        <h3 id="mods">
+          mods
+        </h3>
+        <p>Key Modifier Params</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>right</code>
+                   <strong><span class="type">bool</span></strong>
+                    Right mouse key pressed
+                 </li>
+                 <li>
+                   <code>alt</code>
+                   <strong><span class="type">bool</span></strong>
+                    Alt key pressed
+                 </li>
+                 <li>
+                   <code>ctrl</code>
+                   <strong><span class="type">bool</span></strong>
+                    Ctrl key pressed
+                 </li>
+                 <li>
+                   <code>shift</code>
+                   <strong><span class="type">bool</span></strong>
+                    Shift key pressed
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="KeyPress">
+          KeyPress(keyCode, mods, isRepeat, label, utf32char, scanCode, actionList)
+        </h3>
+        <p>Called repeatedly when a key is pressed down.</p>
+        <div class="code-example">
+        <p>
+
+
+ Return true if you don't want other callins or the engine to also receive this keypress. A list of key codes can be seen at the SDL wiki.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>keyCode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mods</code>
+                   <strong><a class="type" href="../modules/LuaHandle.html#mods">mods</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>isRepeat</code>
+                   <strong><span class="type">bool</span></strong>
+                    If you want an action to occur only once check for isRepeat == false.
+                 </li>
+                 <li>
+                   <code>label</code>
+                   <strong><span class="type">bool</span></strong>
+                    the name of the key
+                 </li>
+                 <li>
+                   <code>utf32char</code>
+                   <strong><span class="type">number</span></strong>
+                    (deprecated) always 0
+                 </li>
+                 <li>
+                   <code>scanCode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>actionList</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+                    the list of actions for this keypress
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">boolean</span></strong>
+              halt whether to halt the chain for consumers of the keypress</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="KeyRelease">
+          KeyRelease(keyCode, mods, label, utf32char, scanCode, actionList)
+        </h3>
+        <p>Called when the key is released.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>keyCode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>mods</code>
+                   <strong><a class="type" href="../modules/LuaHandle.html#mods">mods</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>label</code>
+                   <strong><span class="type">bool</span></strong>
+                    the name of the key
+                 </li>
+                 <li>
+                   <code>utf32char</code>
+                   <strong><span class="type">number</span></strong>
+                    (deprecated) always 0
+                 </li>
+                 <li>
+                   <code>scanCode</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>actionList</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+                    the list of actions for this keyrelease
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="TextInput">
+          TextInput(utf8char)
+        </h3>
+        <p>Called whenever a key press results in text input.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>utf8char</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="TextEditing">
+          TextEditing(utf8, start, length)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>utf8</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>start</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>length</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="MousePress">
+          MousePress(x, y, button)
+        </h3>
+        <p>Called when a mouse button is pressed.</p>
+        <div class="code-example">
+        <p>
+
+
+ The button parameter supports up to 7 buttons. Must return true for `MouseRelease` and other functions to be called.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>button</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">boolean</span></strong>
+              becomeMouseOwner</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="MouseRelease">
+          MouseRelease(x, y, button)
+        </h3>
+        <p>Called when a mouse button is released.</p>
+        <div class="code-example">
+        <p>
+
+
+ Please note that in order to have Spring call `Spring.MouseRelease`, you need to have a `Spring.MousePress` call-in in the same addon that returns true.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>button</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">boolean</span></strong>
+              becomeMouseOwner</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="MouseMove">
+          MouseMove(x, y, dx, dy, button)
+        </h3>
+        <p>Called when the mouse is moved.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+                    final x position
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+                    final y position
+                 </li>
+                 <li>
+                   <code>dx</code>
+                   <strong><span class="type">number</span></strong>
+                    distance travelled in x
+                 </li>
+                 <li>
+                   <code>dy</code>
+                   <strong><span class="type">number</span></strong>
+                    distance travelled in y
+                 </li>
+                 <li>
+                   <code>button</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="MouseWheel">
+          MouseWheel(up, value)
+        </h3>
+        <p>Called when the mouse wheel is moved.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>up</code>
+                   <strong><span class="type">bool</span></strong>
+                    the direction
+                 </li>
+                 <li>
+                   <code>value</code>
+                   <strong><span class="type">number</span></strong>
+                    the amount travelled
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="IsAbove">
+          IsAbove(x, y)
+        </h3>
+        <p>Called every `Update`.</p>
+        <div class="code-example">
+        <p>
+
+
+ Must return true for `Mouse*` events and `Spring.GetToolTip` to be called.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+              boolean isAbove</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="GetTooltip">
+          GetTooltip(x, y)
+        </h3>
+        <p>Called when `Spring.IsAbove` returns true.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+              string tooltip</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="cmdOpts">
+          cmdOpts
+        </h3>
+        <p>Parameters for command options</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>coded</code>
+                   <strong><span class="type">int</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>alt</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ctrl</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>shift</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>right</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>meta</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>internal</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="CommandNotify">
+          CommandNotify(cmdID, cmdParams, options)
+        </h3>
+        <p>Called when a command is issued.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>cmdID</code>
+                   <strong><span class="type">int</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>cmdParams</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>options</code>
+                   <strong><a class="type" href="../modules/LuaHandle.html#cmdOpts">cmdOpts</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">boolean</span></strong>
+              Returning true deletes the command and does not send it through the network.</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="AddConsoleLine">
+          AddConsoleLine(msg, priority)
+        </h3>
+        <p>Called when text is entered into the console (e.g.</p>
+        <div class="code-example">
+        <p>
+           `Spring.Echo`).
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>msg</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>priority</code>
+                   <strong><span class="type">int</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GroupChanged">
+          GroupChanged(groupID)
+        </h3>
+        <p>Called when a unit is added to or removed from a control group.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>groupID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="WorldTooltip">
+          WorldTooltip(ttType, data1[, data2[, data3]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>ttType</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    "unit" | "feature" | "ground" | "selection"
+                 </li>
+                 <li>
+                   <code>data1</code>
+                   <strong><span class="type">number</span></strong>
+                    unitID | featureID | posX
+                 </li>
+                 <li>
+                   <code>data2</code>
+                   <strong><span class="type">number</span></strong>
+                    posY
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>data3</code>
+                   <strong><span class="type">number</span></strong>
+                    posZ
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              newTooltip</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="MapDrawCmd">
+          MapDrawCmd(playerID, type, posX, posY, posZ, data4[, pos2Y[, pos2Z]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>playerID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>type</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+                    "point" | "line" | "erase"
+                 </li>
+                 <li>
+                   <code>posX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>posY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>posZ</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>data4</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a> or <span class="type">number</span></strong>
+                    point: label, erase: radius, line: pos2X
+                 </li>
+                 <li>
+                   <code>pos2Y</code>
+                   <strong><span class="type">number</span></strong>
+                    when type is line
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>pos2Z</code>
+                   <strong><span class="type">number</span></strong>
+                    when type is line
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GameSetup">
+          GameSetup(state, ready, playerStates)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>state</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ready</code>
+                   <strong><span class="type">bool</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>playerStates</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              success</li>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              newReady</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="RecvSkirmishAIMessage">
+          RecvSkirmishAIMessage(aiTeam, dataStr)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>aiTeam</code>
+                   <strong><span class="type">int</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>dataStr</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Downloads" class="section-header ">
+        Downloads
+      </h2>
+
+        <h3 id="DownloadQueued">
+          DownloadQueued(id, name, type)
+        </h3>
+        <p>Called when a Pr-downloader download is queued</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>id</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>type</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DownloadStarted">
+          DownloadStarted(id)
+        </h3>
+        <p>Called when a Pr-downloader download is started via VFS.DownloadArchive.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>id</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DownloadFinished">
+          DownloadFinished(id)
+        </h3>
+        <p>Called when a Pr-downloader download finishes successfully.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>id</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DownloadFailed">
+          DownloadFailed(id, errorID)
+        </h3>
+        <p>Called when a Pr-downloader download fails to complete.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>id</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>errorID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="DownloadProgress">
+          DownloadProgress(id, downloaded, total)
+        </h3>
+        <p>Called incrementally during a Pr-downloader download.</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>id</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>downloaded</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>total</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+
+{% endraw %}
