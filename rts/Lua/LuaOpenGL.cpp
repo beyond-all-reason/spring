@@ -5791,7 +5791,7 @@ Write the lua interfaces for glPushDebugGroup and glPopDebugGroup
 // Check that the label is a valid string
 // Write a a docstring as well as a comment
 // Write a lua interface for this function: 
-
+// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPushDebugGroup.xhtml
 /**
  * @function gl.PushDebugGroup
  * @param source GLenum Specifies the source of the debug group.
@@ -5800,13 +5800,26 @@ Write the lua interfaces for glPushDebugGroup and glPopDebugGroup
  * @treturn nil
  */
 int LuaOpenGL::PushDebugGroup(lua_State* L) {
-    GLenum source = (GLenum)luaL_checkinteger(L, 1);
-    GLuint id = (GLuint)luaL_checkinteger(L, 2);
-    const char* message = luaL_checkstring(L, 3);
+	GLenum source = (GLenum)luaL_checkinteger(L, 1);
+	GLuint id = (GLuint)luaL_checkinteger(L, 2);
+	const char* message = luaL_checkstring(L, 3);
 
-    glPushDebugGroup(source, id, -1, message);
+	if (source != GL_DEBUG_SOURCE_APPLICATION && source != GL_DEBUG_SOURCE_THIRD_PARTY) {
+		luaL_error(L, "Invalid source value for gl.PushDebugGroup");
+		return 0;
+	}
 
-    return 0;
+	GLint maxLength;
+	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLength);
+
+	if (strlen(message) >= maxLength) {
+		luaL_error(L, "Message length exceeds GL_MAX_DEBUG_MESSAGE_LENGTH");
+		return 0;
+	}
+
+	glPushDebugGroup(source, id, -1, message);
+
+	return 0;
 }
 
 /**
