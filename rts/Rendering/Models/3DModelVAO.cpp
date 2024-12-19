@@ -29,7 +29,7 @@ void S3DModelVAO::EnableAttribs(bool inst) const
 		glVertexAttribPointer (2, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, sTangent    ));
 		glVertexAttribPointer (3, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, tTangent    ));
 		glVertexAttribPointer (4, 4, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[0]));
-		glVertexAttribIPointer(5, 2, GL_UNSIGNED_INT,        sizeof(SVertexData), (const void*)offsetof(SVertexData, boneIDs     ));
+		glVertexAttribIPointer(5, 3, GL_UNSIGNED_INT,        sizeof(SVertexData), (const void*)offsetof(SVertexData, boneIDsLow  ));
 	}
 	else {
 		for (int i = 6; i <= 6; ++i) {
@@ -293,14 +293,14 @@ bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint
 
 	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs and models. Don't check for validity
 
-	uint8_t numPieces = 0;
+	uint16_t numPieces = 0;
 	size_t bposeIndex = 0;
 	if constexpr (std::is_same<TObj, S3DModel>::value) {
-		numPieces = static_cast<uint8_t>(obj->numPieces);
+		numPieces = static_cast<uint16_t>(obj->numPieces);
 		bposeIndex = matrixUploader.GetElemOffset(obj);
 	}
 	else {
-		numPieces = static_cast<uint8_t>(obj->model->numPieces);
+		numPieces = static_cast<uint16_t>(obj->model->numPieces);
 		bposeIndex = matrixUploader.GetElemOffset(obj->model);
 	}
 
@@ -420,14 +420,14 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 
 	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs. Don't check for validity
 
-	uint8_t numPieces = 0;
+	uint16_t numPieces = 0;
 	size_t bposeIndex = 0;
 	if constexpr (std::is_same<TObj, S3DModel>::value) {
-		numPieces = static_cast<uint8_t>(obj->numPieces);
+		numPieces = static_cast<uint16_t>(obj->numPieces);
 		bposeIndex = matrixUploader.GetElemOffset(obj);
 	}
 	else {
-		numPieces = static_cast<uint8_t>(obj->model->numPieces);
+		numPieces = static_cast<uint16_t>(obj->model->numPieces);
 		bposeIndex = matrixUploader.GetElemOffset(obj->model);
 	}
 
