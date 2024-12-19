@@ -605,6 +605,10 @@ GLAPI void APIENTRY glDepthRange(GLdouble nearVal, GLdouble farVal) {}
 GLAPI void APIENTRY  glBeginConditionalRender(GLuint id, GLenum mode) {}
 GLAPI void APIENTRY  glEndConditionalRender(void) {}
 
+GLAPI void APIENTRY  glObjectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar *label) {}
+GLAPI void APIENTRY  glPushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar *message) {}
+GLAPI void APIENTRY  glPopDebugGroup() {}
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

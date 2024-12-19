@@ -5661,5 +5661,162 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
 	return 0;
 }
 
+
+
+/*
+void glObjectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar *label);
+Parameters
+
+    identifier:
+        Specifies the type of object being labeled. Possible values include:
+            GL_BUFFER: Buffer object.
+            GL_SHADER: Shader object.
+            GL_PROGRAM: Program object.
+            GL_VERTEX_ARRAY: Vertex array object (VAO).
+            GL_QUERY: Query object.
+            GL_PROGRAM_PIPELINE: Program pipeline object.
+            GL_TRANSFORM_FEEDBACK: Transform feedback object.
+            GL_TEXTURE: Texture object.
+            GL_RENDERBUFFER: Renderbuffer object.
+            GL_FRAMEBUFFER: Framebuffer object.
+
+    name:
+        Specifies the name or ID of the object to label (e.g., the result of glGenBuffers, glCreateShader, etc.).
+
+    length:
+        Specifies the length of the label string. If -1, the function treats the string as null-terminated.
+
+    label:
+        A null-terminated string containing the label to be assigned to the object.
+
+Notes
+
+    Length Handling:
+        If you provide -1 as the length, OpenGL assumes the label is null-terminated.
+        Otherwise, you must specify the exact length of the label string.
+
+    Debugging Tools:
+        The label appears in OpenGL debug outputs and tools like RenderDoc, Nsight, or apitrace.
+        This makes it easier to trace operations and diagnose issues related to specific OpenGL objects.
+
+    Portability:
+        Supported in OpenGL 4.3 and later.
+        Also available with the KHR_debug extension in earlier versions of OpenGL (if supported).
+		*/
+// Ensure that identifier is a valid GLenum
+// The length should be passed as -1 because the strings are null terminated
+// Check that the GLuint name refers to a valid openGL object
+// Check that the label is a valid string
+// Write a a docstring as well as a comment
+// Write a lua interface for this function: 
+// void glObjectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar *label);
+
+/**
+ * @function gl.ObjectLabel
+ * @param identifier GLenum Specifies the type of object being labeled.
+ * @param name GLuint Specifies the name or ID of the object to label.
+ * @param label string A null-terminated string containing the label to be assigned to the object.
+ * @treturn nil
+ */
+int LuaOpenGL::ObjectLabel(lua_State* L) {
+    GLenum identifier = (GLenum)luaL_checkinteger(L, 1);
+    GLuint name = (GLuint)luaL_checkinteger(L, 2);
+    const char* label = luaL_checkstring(L, 3);
+
+    // Ensure that identifier is a valid GLenum
+    // The length should be passed as -1 because the strings are null terminated
+    // Check that the GLuint name refers to a valid openGL object
+    // Check that the label is a valid string
+    glObjectLabel(identifier, name, -1, label);
+
+    return 0;
+}
+
+/*
+
+`glPushDebugGroup` is a function in the OpenGL API that helps developers debug and profile OpenGL applications. It is part of the `KHR_debug` extension, which is integrated into the core OpenGL since version 4.3.
+
+### Purpose
+`glPushDebugGroup` allows you to group a set of OpenGL commands into a named debug group. This helps in identifying and organizing sections of code in the debug output, making it easier to diagnose and analyze rendering issues.
+
+### Function Prototype
+```c
+void glPushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar *message);
+```
+
+### Parameters
+1. **`source`**: Specifies the source of the debug group. Common values include:
+   - `GL_DEBUG_SOURCE_APPLICATION`: Indicates that the debug group is defined by the application.
+   - `GL_DEBUG_SOURCE_THIRD_PARTY`: Indicates that the group is defined by external tools or libraries.
+
+2. **`id`**: A numeric identifier for the group. This can be any value that uniquely identifies the group within the scope of the source.
+
+3. **`length`**: The length of the `message` string. If this is `-1`, the string is assumed to be null-terminated.
+
+4. **`message`**: A human-readable string describing the debug group. This message is used in debugging tools or logs.
+
+### Example Usage
+```c
+glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Render Scene");
+
+// OpenGL commands for rendering the scene
+glDrawArrays(GL_TRIANGLES, 0, 36);
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+glPopDebugGroup(); // End of the debug group
+```
+
+### Notes
+- Each `glPushDebugGroup` must be matched with a corresponding `glPopDebugGroup`.
+- The function adds a new debug group to the debug output stack. Groups can be nested for better organization.
+- Debug groups are particularly useful when analyzing rendering performance or diagnosing errors in tools like OpenGL Debug Output or profilers.
+
+### Benefits
+1. **Organized Debugging**: Clearly marks and groups commands for easier traceability.
+2. **Better Profiling**: Tools can provide insights into specific debug groups.
+3. **Improved Diagnostics**: Helps isolate and identify problematic sections of code.
+
+### Availability
+- OpenGL 4.3 or later.
+- Requires the `KHR_debug` extension in earlier versions of OpenGL (if supported).
+
+By using `glPushDebugGroup`, you can make debugging and profiling OpenGL applications much more structured and efficient.
+
+Write the lua interfaces for glPushDebugGroup and glPopDebugGroup
+ */
+
+// Ensure that identifier is a valid GLenum
+// The length should be passed as -1 because the strings are null terminated
+// Check that the GLuint name refers to a valid openGL object
+// Check that the label is a valid string
+// Write a a docstring as well as a comment
+// Write a lua interface for this function: 
+
+/**
+ * @function gl.PushDebugGroup
+ * @param source GLenum Specifies the source of the debug group.
+ * @param id GLuint A numeric identifier for the group.
+ * @param message string A human-readable string describing the debug group.
+ * @treturn nil
+ */
+int LuaOpenGL::PushDebugGroup(lua_State* L) {
+    GLenum source = (GLenum)luaL_checkinteger(L, 1);
+    GLuint id = (GLuint)luaL_checkinteger(L, 2);
+    const char* message = luaL_checkstring(L, 3);
+
+    glPushDebugGroup(source, id, -1, message);
+
+    return 0;
+}
+
+/**
+ * @function gl.PopDebugGroup
+ * @treturn nil
+ */
+int LuaOpenGL::PopDebugGroup(lua_State* L) {
+    glPopDebugGroup();
+    return 0;
+}
+
 /******************************************************************************/
 /******************************************************************************/
