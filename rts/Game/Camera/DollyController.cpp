@@ -124,6 +124,8 @@ void CDollyController::Update()
 		newRot.y += math::TWOPI * Sign(ydiff);
 	}
 	rot = newRot;
+	/* Note, even an epsilon value here will make the camera
+	 * fail to track when smoothness is set high enough */
 	camHandler->CameraTransition(0.0f);
 }
 
