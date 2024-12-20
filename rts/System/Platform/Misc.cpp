@@ -462,6 +462,18 @@ namespace Platform
 	}
 	#endif
 
+	uint64_t TotalRAM() {
+#ifdef _WIN32
+		MEMORYSTATUSEX status;
+		status.dwLength = sizeof(status);
+		GlobalMemoryStatusEx(&status);
+		return status.ullTotalPhys;
+#else
+		long pages = sysconf(_SC_PHYS_PAGES);
+		long page_size = sysconf(_SC_PAGE_SIZE);
+		return pages * page_size;
+#endif
+	}
 
 	std::string GetSysInfoHash() {
 		std::vector<uint8_t> sysInfo;
