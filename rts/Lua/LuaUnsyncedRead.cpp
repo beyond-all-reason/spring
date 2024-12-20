@@ -3143,7 +3143,7 @@ int LuaUnsyncedRead::GetSoundDevices(lua_State* L)
 
 	lua_createtable(L, 0, devices.size());
 
-	for(int i; i < devices.size(); ++i) {
+	for (size_t i = 0; i < devices.size(); ++i) {
 		std::string &device = devices[i];
 
                 lua_createtable(L, 0, 1); {
