@@ -124,7 +124,7 @@ void CDollyController::Update()
 		newRot.y += math::TWOPI * Sign(ydiff);
 	}
 	rot = newRot;
-	camHandler->CameraTransition(0.01f);
+	camHandler->CameraTransition(0.0f);
 }
 
 void CDollyController::SwitchTo(const CCameraController* oldCam, const bool showText)
