@@ -3122,10 +3122,20 @@ int LuaUnsyncedRead::GetDrawSeconds(lua_State* L)
  * @section sound
 ******************************************************************************/
 
+/*** Sound device spec
+ *
+ * @table soundDeviceSpec
+ *
+ * Contains data about a sound device
+ *
+ * @string name
+ */
+
+
 /***
  *
  * @function Spring.GetSoundDevices
- * @treturn {[string],...} deviceNames Array of device names
+ * @treturn {[soundDeviceSpec],...} devices Sound devices
  */
 int LuaUnsyncedRead::GetSoundDevices(lua_State* L)
 {
@@ -3135,8 +3145,14 @@ int LuaUnsyncedRead::GetSoundDevices(lua_State* L)
 
 	for(int i; i < devices.size(); ++i) {
 		std::string &device = devices[i];
-		lua_pushsstring(L, device);
-		lua_rawseti(L, -2, i);
+
+                lua_createtable(L, 0, 1); {
+			lua_pushliteral(L, "name");
+	                lua_pushsstring(L, device);
+	                lua_rawset(L, -3);
+		}
+
+                lua_rawseti(L, -2, i);
 	}
 
 	return 1;
