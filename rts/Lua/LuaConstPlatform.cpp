@@ -109,7 +109,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "hwConfig", Platform::GetHardwareStr());
 	LuaPushNamedNumber(L, "cpuLogicalCores", Threading::GetLogicalCpuCores());
 	LuaPushNamedNumber(L, "cpuPhysicalCores", Threading::GetPhysicalCpuCores());
-	LuaPushNamedNumber(L, "totalMemory", Platform::TotalRAM());
+	LuaPushNamedNumber(L, "totalMemory", Platform::TotalRAM()/1e6);
 
 	LuaPushNamedString(L, "sysInfoHash", Platform::GetSysInfoHash());
 	LuaPushNamedString(L, "macAddrHash", Platform::GetMacAddrHash());
