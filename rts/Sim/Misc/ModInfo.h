@@ -237,6 +237,9 @@ public:
 
 	// how often to report wind speed/direction to wind gens
 	int windChangeReportPeriod;
+
+	// selection behaviour
+	bool selectableKilled;
 };
 
 extern CModInfo modInfo;

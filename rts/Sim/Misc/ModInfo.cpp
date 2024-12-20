@@ -131,6 +131,9 @@ void CModInfo::ResetState()
 		// make windChangeReportPeriod equal to EnvResourceHandler::WIND_UPDATE_RATE = 15 * GAME_SPEED;
 		windChangeReportPeriod = 15 * GAME_SPEED;
 	}
+	{
+		selectableKilled = true;
+	}
 }
 
 void CModInfo::Init(const std::string& modFileName)
@@ -340,6 +343,10 @@ void CModInfo::Init(const std::string& modFileName)
 		const LuaTable& misc = root.SubTable("misc");
 
 		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", static_cast<float>(windChangeReportPeriod) / GAME_SPEED) * GAME_SPEED));
+	}
+	{
+		//selection
+		selectableKilled = root.GetBool("selectableKilled", selectableKilled);
 	}
 
 	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))

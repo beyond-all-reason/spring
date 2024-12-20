@@ -481,9 +481,11 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 	ReleaseTransportees(attacker, selfDestruct, reclaimed);
 
 	// release from selection
-	noSelect = true;
-	if (isSelected)
-		selectedUnitsHandler.RemoveUnit(this);
+	if (!modInfo.selectableKilled) {
+		noSelect = true;
+		if (isSelected)
+			selectedUnitsHandler.RemoveUnit(this);
+	}
 
 	// pre-destruction event; unit may be kept around for its death sequence
 	eventHandler.UnitDestroyed(this, attacker, weaponDefID);
