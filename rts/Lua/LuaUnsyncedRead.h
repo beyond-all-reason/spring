@@ -136,6 +136,7 @@ class LuaUnsyncedRead {
 
 		static int GetSoundStreamTime(lua_State* L);
 		static int GetSoundEffectParams(lua_State* L);
+		static int GetSoundDevices(lua_State* L);
 
 		static int GetFPS(lua_State* L);
 		static int GetGameSpeed(lua_State* L);
