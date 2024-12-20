@@ -34,6 +34,7 @@
  * @number sdlVersionLinkedMajor
  * @number sdlVersionLinkedMinor
  * @number sdlVersionLinkedPatch
+ * @number totalMemory Total physical system RAM in MBs.
  * @bool glSupportNonPowerOfTwoTex
  * @bool glSupportTextureQueryLOD
  * @bool glSupport24bitDepthBuffer
