@@ -481,6 +481,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 	ReleaseTransportees(attacker, selfDestruct, reclaimed);
 
 	// release from selection
+	noSelect = true;
 	if (isSelected)
 		selectedUnitsHandler.RemoveUnit(this);
 
