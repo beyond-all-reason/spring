@@ -254,10 +254,10 @@ void AutohostInterface::SendStartPlaying(const unsigned char* gameID, const std:
 		throw std::runtime_error("Path to demofile too long.");
 
 	const std::uint32_t msgsize =
-			1                                            // SERVER_STARTPLAYING
+			1                                          // SERVER_STARTPLAYING
 			+ sizeof(std::uint32_t)                    // msgsize
 			+ 16 * sizeof(std::uint8_t)                // gameID
-			+ demoName.size();                           // is 0, if demo recording is off!
+			+ demoName.size();                         // is 0, if demo recording is off!
 
 	std::vector<std::uint8_t> buffer(msgsize);
 	unsigned int pos = 0;
@@ -271,7 +271,7 @@ void AutohostInterface::SendStartPlaying(const unsigned char* gameID, const std:
 		buffer[pos++] = gameID[i];
 	}
 
-	strncpy((char*)(&buffer[pos]), demoName.c_str(), demoName.size());
+	std::copy(demoName.begin(), demoName.end(), &buffer[pos]);
 	assert(int(pos + demoName.size()) == int(msgsize));
 
 	Send(asio::buffer(buffer));
@@ -294,11 +294,11 @@ void AutohostInterface::SendGameOver(uchar playerNum, const std::vector<uchar>& 
 void AutohostInterface::SendPlayerJoined(uchar playerNum, const std::string& name)
 {
 	if (autohost.is_open()) {
-		unsigned msgsize = 2 * sizeof(uchar) + name.size();
+		const auto msgsize = 2 * sizeof(uchar) + name.size();
 		std::vector<std::uint8_t> buffer(msgsize);
 		buffer[0] = PLAYER_JOINED;
 		buffer[1] = playerNum;
-		strncpy((char*)(&buffer[2]), name.c_str(), name.size());
+		std::copy(name.begin(), name.end(), &buffer[2]);
 
 		Send(asio::buffer(buffer));
 	}
@@ -321,12 +321,12 @@ void AutohostInterface::SendPlayerReady(uchar playerNum, uchar readyState)
 void AutohostInterface::SendPlayerChat(uchar playerNum, uchar destination, const std::string& chatmsg)
 {
 	if (autohost.is_open()) {
-		const unsigned msgsize = 3 * sizeof(uchar) + chatmsg.size();
+		const auto msgsize = 3 * sizeof(uchar) + chatmsg.size();
 		std::vector<std::uint8_t> buffer(msgsize);
 		buffer[0] = PLAYER_CHAT;
 		buffer[1] = playerNum;
 		buffer[2] = destination;
-		strncpy((char*)(&buffer[3]), chatmsg.c_str(), chatmsg.size());
+		std::copy(chatmsg.begin(), chatmsg.end(), &buffer[3]);
 
 		Send(asio::buffer(buffer));
 	}
@@ -342,10 +342,10 @@ void AutohostInterface::SendPlayerDefeated(uchar playerNum)
 void AutohostInterface::Message(const std::string& message)
 {
 	if (autohost.is_open()) {
-		const unsigned msgsize = sizeof(uchar) + message.size();
+		const auto msgsize = sizeof(uchar) + message.size();
 		std::vector<std::uint8_t> buffer(msgsize);
 		buffer[0] = SERVER_MESSAGE;
-		strncpy((char*)(&buffer[1]), message.c_str(), message.size());
+		std::copy(message.begin(), message.end(), &buffer[1]);
 
 		Send(asio::buffer(buffer));
 	}
@@ -354,10 +354,10 @@ void AutohostInterface::Message(const std::string& message)
 void AutohostInterface::Warning(const std::string& message)
 {
 	if (autohost.is_open()) {
-		const unsigned msgsize = sizeof(uchar) + message.size();
+		const auto msgsize = sizeof(uchar) + message.size();
 		std::vector<std::uint8_t> buffer(msgsize);
 		buffer[0] = SERVER_WARNING;
-		strncpy((char*)(&buffer[1]), message.c_str(), message.size());
+		std::copy(message.begin(), message.end(), &buffer[1]);
 
 		Send(asio::buffer(buffer));
 	}
