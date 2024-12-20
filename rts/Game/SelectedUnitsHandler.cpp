@@ -397,7 +397,7 @@ void CSelectedUnitsHandler::AddUnit(CUnit* unit)
 	if (trans != nullptr && trans->unitDef->IsTransportUnit() && !trans->unitDef->isFirePlatform)
 		return;
 
-	if (unit->noSelect)
+	if (unit->noSelect || unit->isDead)
 		return;
 
 	if (selectedUnits.insert(unit->id).second)
@@ -475,7 +475,7 @@ void CSelectedUnitsHandler::SelectGroup(int num)
 	for (const int unitID: group->units) {
 		CUnit* u = unitHandler.GetUnit(unitID);
 
-		if (!u->noSelect) {
+		if (!u->noSelect && !u->isDead) {
 			u->isSelected = true;
 			selectedUnits.insert(u->id);
 			AddDeathDependence(u, DEPENDENCE_SELECTED);
