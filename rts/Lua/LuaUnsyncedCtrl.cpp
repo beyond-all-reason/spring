@@ -3729,7 +3729,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 		return 0;
 	}
 
-	if ((args < 3) || !lua_isnumber(L, 3))
+	if (!lua_isnumber(L, 3))
 		luaL_error(L, "Incorrect third argument to ShareResources() for the specified resource");
 
 	if (type[0] == 'm') {
