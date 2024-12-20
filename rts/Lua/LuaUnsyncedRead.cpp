@@ -3152,7 +3152,7 @@ int LuaUnsyncedRead::GetSoundDevices(lua_State* L)
 	                lua_rawset(L, -3);
 		}
 
-                lua_rawseti(L, -2, i);
+                lua_rawseti(L, -2, i + 1);
 	}
 
 	return 1;
