@@ -318,6 +318,7 @@ Rml::Context* RmlGui::GetOrCreateContext(const std::string& name)
 	if (context == nullptr) {
 		context = Rml::CreateContext(name, {0, 0});
 	} else if (state->contexts_to_remove.contains(context)) {
+		// can happen if name reused on the same frame
 		state->contexts_to_remove.erase(context);
 	}
 	
