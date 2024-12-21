@@ -555,6 +555,7 @@ GLint LuaShaders::GetUniformLocation(LuaShaders::Program* p, const char* name)
  * @function gl.CreateShader ( table shaderParams )
  * @tparam table shaderParams
  * @treturn number shaderID
+ * @treturn number glProgID
  *
  *    ({[ vertex   = "glsl code" ,]
  *      [ tcs      = "glsl code" ,]
@@ -738,7 +739,8 @@ int LuaShaders::CreateShader(lua_State* L)
 
 	// note: index, not raw ID
 	lua_pushnumber(L, shaders.AddProgram(p));
-	return 1;
+	lua_pushnumber(L, (int) prog);
+	return 2;
 }
 
 

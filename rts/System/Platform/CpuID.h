@@ -10,6 +10,7 @@
 #endif
 
 #include <cstdint>
+#include <string>
 
 namespace springproc {
 	_noinline void ExecCPUID(unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d);
@@ -44,6 +45,7 @@ namespace springproc {
 		    cores. */
 		int GetNumPhysicalCores() const { return numPhysicalCores; }
 		int GetNumLogicalCores() const { return numLogicalCores; }
+		std::string GetCPUBrand() const { return cpuid_brand; }
 
 		/** Total number of physical processor dies in the system. */
 		int GetTotalNumPackages() const { return totalNumPackages; }
@@ -70,6 +72,8 @@ namespace springproc {
 		uint64_t affinityMaskOfCores[MAX_PROCESSORS];
 		uint64_t affinityMaskOfPackages[MAX_PROCESSORS];
 		uint64_t availableProceesorAffinityMask;
+
+		std::string cpuid_brand;
 
 		////////////////////////
 		// Intel specific fields

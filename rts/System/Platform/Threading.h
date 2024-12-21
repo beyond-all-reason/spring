@@ -124,6 +124,8 @@ namespace Threading {
 	int GetLogicalCpuCores();  /// physical + hyperthreading
 	bool HasHyperThreading();
 
+	std::string GetCPUBrand();
+
 	/**
 	 * Inform the OS kernel that we are a cpu-intensive task
 	 */
