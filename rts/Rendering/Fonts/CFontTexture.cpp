@@ -1170,7 +1170,7 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	const int channels = slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA ? 4 : 1;
 
 	if (slot->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY && slot->bitmap.pixel_mode != FT_PIXEL_MODE_BGRA) {
-		LOG_L(L_ERROR, "invalid pixeldata mode");
+		LOG_L(L_ERROR, "invalid pixeldata mode %d %d", slot->bitmap.pixel_mode, FT_HAS_COLOR(f->face));
 		return;
 	}
 
