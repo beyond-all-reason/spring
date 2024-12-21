@@ -64,7 +64,8 @@ bool LuaVBOs::PushEntries(lua_State* L)
 		"UnbindBufferRange", &LuaVBOImpl::UnbindBufferRange,
 
 		"DumpDefinition", &LuaVBOImpl::DumpDefinition,
-		"GetBufferSize", &LuaVBOImpl::GetBufferSize
+		"GetBufferSize", &LuaVBOImpl::GetBufferSize,
+		"GetID", &LuaVBOImpl::GetID
 	);
 
 	gl.set("VBO", sol::lua_nil); // don't want this to be accessible directly without gl.GetVBO
