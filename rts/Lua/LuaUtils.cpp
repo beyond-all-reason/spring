@@ -980,6 +980,10 @@ static bool ParseCommandOptions(
 		return true;
 	}
 
+	if (lua_isnoneornil(L, idx)) {
+		return true;
+	}
+
 	if (lua_istable(L, idx)) {
 		for (lua_pushnil(L); lua_next(L, idx) != 0; lua_pop(L, 1)) {
 			// "key" = value (table format of CommandNotify)
@@ -1080,8 +1084,8 @@ Command LuaUtils::ParseCommand(lua_State* L, const char* caller, int idIndex)
 
 				cmd.PushParam(lua_tofloat(L, -1));
 			}
-		} else {
-			luaL_error(L, "%s(): bad param (expected table or number)", caller);
+		} else if (!lua_isnoneornil(L, paramTableIdx)) {
+			luaL_error(L, "%s(): bad param (expected table, number or nil)", caller);
 		}
 	}
 
@@ -1124,8 +1128,8 @@ Command LuaUtils::ParseCommandTable(lua_State* L, const char* caller, int tableI
 
 				cmd.PushParam(lua_tofloat(L, -1));
 			}
-		} else {
-			luaL_error(L, "%s(): bad param (expected table or number)", caller);
+		} else if (!lua_isnil(L, -1)) {
+			luaL_error(L, "%s(): bad param (expected table, number or nil)", caller);
 		}
 
 		lua_pop(L, 1);
