@@ -480,19 +480,18 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 	// release attached units
 	ReleaseTransportees(attacker, selfDestruct, reclaimed);
 
+	// pre-destruction event; unit may be kept around for its death sequence
+	eventHandler.UnitDestroyed(this, attacker, weaponDefID);
+	eoh->UnitDestroyed(*this, attacker, weaponDefID);
+
 	// release from selection
 	if (!modInfo.selectableKilled) {
 		noSelect = true;
 		if (isSelected)
 			selectedUnitsHandler.RemoveUnit(this);
+
+		SetGroup(nullptr);
 	}
-
-	// pre-destruction event; unit may be kept around for its death sequence
-	eventHandler.UnitDestroyed(this, attacker, weaponDefID);
-	eoh->UnitDestroyed(*this, attacker, weaponDefID);
-
-	// Will be called in the destructor again, but this can not hurt
-	SetGroup(nullptr);
 
 	if (unitDef->windGenerator > 0.0f)
 		envResHandler.DelGenerator(this);
