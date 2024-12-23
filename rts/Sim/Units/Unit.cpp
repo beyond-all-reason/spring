@@ -484,8 +484,14 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 	eventHandler.UnitDestroyed(this, attacker, weaponDefID);
 	eoh->UnitDestroyed(*this, attacker, weaponDefID);
 
-	// Will be called in the destructor again, but this can not hurt
-	SetGroup(nullptr);
+	// release from selection
+	if (!modInfo.selectableKilled) {
+		noSelect = true;
+		if (isSelected)
+			selectedUnitsHandler.RemoveUnit(this);
+
+		SetGroup(nullptr);
+	}
 
 	if (unitDef->windGenerator > 0.0f)
 		envResHandler.DelGenerator(this);
