@@ -184,6 +184,7 @@ local callInLists = {
   'Shutdown',
   'Update',
   'TextCommand',
+  'ActiveCommandSet',
   'CommandNotify',
   'AddConsoleLine',
   'ViewResize',
@@ -1179,6 +1180,13 @@ function widgetHandler:ConfigureLayout(command)
     end
   end
   return false
+end
+
+
+function widgetHandler:ActiveCommandSet(id, cmdType)
+  for _,w in ipairs(self.ActiveCommandSetList) do
+    w:ActiveCommandSet(id, cmdType)
+  end
 end
 
 

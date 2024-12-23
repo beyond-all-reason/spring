@@ -542,6 +542,7 @@ void CGuiHandler::RevertToCmdDesc(const SCommandDescription& cmdDesc,
                                   bool defaultCommand, bool samePage)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	int newInCommand = inCommand;
 	for (size_t a = 0; a < commands.size(); ++a) {
 		if (commands[a].id != cmdDesc.id)
 			continue;
@@ -551,7 +552,7 @@ void CGuiHandler::RevertToCmdDesc(const SCommandDescription& cmdDesc,
 			return;
 		}
 
-		inCommand = a;
+		newInCommand = a;
 
 		if (commands[a].type == CMDTYPE_ICON_BUILDING) {
 			const UnitDef* ud = unitDefHandler->GetUnitDefByID(-commands[a].id);
@@ -564,13 +565,14 @@ void CGuiHandler::RevertToCmdDesc(const SCommandDescription& cmdDesc,
 			continue;
 
 		for (int ii = 0; ii < iconsCount; ii++) {
-			if (inCommand != icons[ii].commandsID)
+			if (newInCommand != icons[ii].commandsID)
 				continue;
 
 			activePage = std::min(maxPage, (ii / iconsPerPage));
 			selectedUnitsHandler.SetCommandPage(activePage);
 		}
 	}
+	SetActiveCommandIndex(newInCommand);
 }
 
 
@@ -598,7 +600,7 @@ void CGuiHandler::LayoutIcons(bool useSelectionPage)
 		useSelectionPage = useSelectionPage && !samePage;
 
 		// reset some of our state
-		inCommand = -1;
+		SetActiveCommandIndex(-1);
 		defaultCmdMemory = -1;
 		forceLayoutUpdate = false;
 
@@ -1042,7 +1044,7 @@ void CGuiHandler::Update()
 	{
 		if (!invertQueueKey && (needShift && !KeyInput::GetKeyModState(KMOD_SHIFT))) {
 			SetShowingMetal(false);
-			inCommand = -1;
+			SetActiveCommandIndex(-1);
 			needShift = false;
 		}
 	}
@@ -1215,7 +1217,7 @@ bool CGuiHandler::MousePress(int x, int y, int button)
 				}
 			}
 			if (button == SDL_BUTTON_RIGHT)
-				inCommand = defaultCmdMemory = -1;
+				SetActiveCommandIndex(defaultCmdMemory = -1);
 			return true;
 		}
 		else if (minimap && minimap->IsAbove(x, y)) {
@@ -1226,7 +1228,7 @@ bool CGuiHandler::MousePress(int x, int y, int button)
 			if (invertQueueKey && (button == SDL_BUTTON_RIGHT) &&
 				!mouse->buttons[SDL_BUTTON_LEFT].pressed) { // for rocker gestures
 					SetShowingMetal(false);
-					inCommand = -1;
+					SetActiveCommandIndex(-1);
 					needShift = false;
 					return false;
 			}
@@ -1263,7 +1265,7 @@ void CGuiHandler::MouseRelease(int x, int y, int button, const float3& cameraPos
 
 	if (!invertQueueKey && needShift && !KeyInput::GetKeyModState(KMOD_SHIFT)) {
 		SetShowingMetal(false);
-		inCommand = -1;
+		SetActiveCommandIndex(-1);
 		needShift = false;
 	}
 
@@ -1282,7 +1284,7 @@ void CGuiHandler::MouseRelease(int x, int y, int button, const float3& cameraPos
 
 	if ((button == SDL_BUTTON_RIGHT) && (iconCmd == -1)) {
 		// right click -> set the default cmd
-		inCommand = defaultCmdMemory;
+		SetActiveCommandIndex(defaultCmdMemory);
 		defaultCmdMemory = -1;
 	}
 
@@ -1320,11 +1322,11 @@ bool CGuiHandler::SetActiveCommand(int cmdIndex, bool rightMouseButton)
 
 	if (cmdIndex < 0) {
 		// cancel the current command
-		inCommand = -1;
 		defaultCmdMemory = -1;
 		needShift = false;
 		activeMousePress = false;
 		SetShowingMetal(false);
+		SetActiveCommandIndex(-1);
 		return true;
 	}
 
@@ -1370,14 +1372,14 @@ bool CGuiHandler::SetActiveCommand(int cmdIndex, bool rightMouseButton)
 		case CMDTYPE_ICON_UNIT_OR_AREA:
 		case CMDTYPE_ICON_UNIT_OR_RECTANGLE:
 		case CMDTYPE_ICON_UNIT_FEATURE_OR_AREA: {
-			inCommand = cmdIndex;
+			SetActiveCommandIndex(cmdIndex);
 			SetShowingMetal(false);
 			activeMousePress = false;
 			break;
 		}
 		case CMDTYPE_ICON_BUILDING: {
 			const UnitDef* ud = unitDefHandler->GetUnitDefByID(-cd.id);
-			inCommand = cmdIndex;
+			SetActiveCommandIndex(cmdIndex);
 			SetShowingMetal(ud->extractsMetal > 0);
 			activeMousePress = false;
 			break;
@@ -1448,6 +1450,17 @@ bool CGuiHandler::SetActiveCommand(int cmdIndex, int button,
 	return retval;
 }
 
+void CGuiHandler::SetActiveCommandIndex(int newIndex)
+{
+	if (inCommand != newIndex) {
+		inCommand = newIndex;
+		if (inCommand < commands.size())
+			eventHandler.ActiveCommandSet(&commands[inCommand]);
+		else
+			eventHandler.ActiveCommandSet(nullptr);
+
+	}
+}
 
 int CGuiHandler::IconAtPos(int x, int y) // GetToolTip --> IconAtPos
 {
@@ -1841,13 +1854,13 @@ bool CGuiHandler::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyCode == SDLK_ESCAPE && activeMousePress) {
 		activeMousePress = false;
-		inCommand = -1;
 		SetShowingMetal(false);
+		SetActiveCommandIndex(-1);
 		return true;
 	}
 	if (keyCode == SDLK_ESCAPE && inCommand >= 0) {
-		inCommand=-1;
 		SetShowingMetal(false);
+		SetActiveCommandIndex(-1);
 		return true;
 	}
 
@@ -1891,6 +1904,8 @@ bool CGuiHandler::SetActiveCommand(const Action& action,
 	if (ProcessLocalActions(action)) {
 		return true;
 	}
+
+	int newInCommand = inCommand;
 
 	// See if we have a positional icon command
 	int iconCmd = -1;
@@ -2009,7 +2024,7 @@ bool CGuiHandler::SetActiveCommand(const Action& action,
 				SetShowingMetal(false);
 				actionOffset = actionIndex;
 				lastKeySet = ks;
-				inCommand = a;
+				newInCommand = a;
 				break;
 			}
 			case CMDTYPE_ICON_BUILDING: {
@@ -2017,7 +2032,7 @@ bool CGuiHandler::SetActiveCommand(const Action& action,
 				SetShowingMetal(ud->extractsMetal > 0);
 				actionOffset = actionIndex;
 				lastKeySet = ks;
-				inCommand = a;
+				newInCommand = a;
 				break;
 			}
 			case CMDTYPE_NEXT: {
@@ -2041,9 +2056,10 @@ bool CGuiHandler::SetActiveCommand(const Action& action,
 			default:{
 				lastKeySet.Reset();
 				SetShowingMetal(false);
-				inCommand = a;
+				newInCommand = a;
 			}
 		}
+		SetActiveCommandIndex(newInCommand);
 		return true; // we used the command
 	}
 
@@ -2063,7 +2079,7 @@ void CGuiHandler::FinishCommand(int button)
 		needShift = true;
 	} else {
 		SetShowingMetal(false);
-		inCommand = -1;
+		SetActiveCommandIndex(-1);
 	}
 }
 
@@ -2185,7 +2201,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 
 	if (size_t(tempInCommand) >= commands.size()) {
 		if (!preview)
-			inCommand = -1;
+			SetActiveCommandIndex(-1);
 
 		return Command(CMD_STOP);
 	}

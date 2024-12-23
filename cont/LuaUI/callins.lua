@@ -15,6 +15,7 @@ CallInsList = {
 	"Shutdown",
 	"LayoutButtons",
 	"ConfigureLayout",
+	"ActiveCommandSet",
 	"CommandNotify",
 
 	"KeyMapChanged",

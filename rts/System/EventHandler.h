@@ -234,6 +234,7 @@ class CEventHandler
 
 		void DefaultCommand(const CUnit* unit, const CFeature* feature, int& cmd);
 
+		void ActiveCommandSet(const SCommandDescription *cmdDesc);
 		bool CommandNotify(const Command& cmd);
 
 		bool AddConsoleLine(const std::string& msg, const std::string& section, int level);
