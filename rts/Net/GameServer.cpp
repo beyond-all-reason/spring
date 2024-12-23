@@ -57,6 +57,8 @@
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 
+#include "System/Misc/TracyDefs.h"
+
 #ifndef DEDICATED
 #include "lib/luasocket/src/restrictions.h"
 #endif
