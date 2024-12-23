@@ -795,6 +795,7 @@ float CGameServer::GetDemoTime() const {
 
 void CGameServer::Update()
 {
+	ZoneScopedN("CGameServer::Update");
 	const float tdif = spring_tomsecs(spring_gettime() - lastUpdate) * 0.001f;
 
 	gameTime += tdif;
@@ -1942,6 +1943,7 @@ void CGameServer::HandleConnectionAttempts()
 
 void CGameServer::ServerReadNet()
 {
+	ZoneScopedN("CGameServer::ServerReadNet");
 	// handle new connections
 	HandleConnectionAttempts();
 
@@ -2571,6 +2573,7 @@ bool CGameServer::HasFinished() const
 
 void CGameServer::CreateNewFrame(bool fromServerThread, bool fixedFrameTime)
 {
+	ZoneScopedN("CGameServer::CreateNewFrame");
 	if (demoReader != nullptr) {
 		CheckSync();
 		SendDemoData(-1);

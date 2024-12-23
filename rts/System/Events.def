@@ -235,9 +235,7 @@
 	SETUP_EVENT(DbgTimingInfo,   MANAGED_BIT | UNSYNCED_BIT) // informs about video-/sim-frame start & end times
 	SETUP_EVENT(Pong,            MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(MetalMapChanged, MANAGED_BIT)
-
-	SETUP_EVENT(UpdateTimeOffset,   MANAGED_BIT | UNSYNCED_BIT) // informs about video-/sim-frame start & end times
-
+	SETUP_EVENT(UpdateTimeOffset,   MANAGED_BIT | UNSYNCED_BIT) // calculates timeOffset for the next draw frame
 
 #ifndef SETUP_EVENT
 	#pragma pop_macro("SETUP_EVENT")
