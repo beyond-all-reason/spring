@@ -234,8 +234,9 @@ int LuaPathFinder::RequestPath(lua_State* L)
 
 	const float radius = luaL_optfloat(L, 8, 8.0f);
 
-	const bool synced = CLuaHandle::GetHandleSynced(L);
-	const int pathID = pathManager->RequestPath(nullptr, moveDef, start, end, radius, synced);
+	// Synced requests are batched, deferred, and linked to a unit; so straight up Lua calls cannot make them. However,
+	// it is perfectly safe for synced Lua code to make an unsynced pathing request.
+	const int pathID = pathManager->RequestPath(nullptr, moveDef, start, end, radius, false);
 
 	if (pathID == 0)
 		return 0;
