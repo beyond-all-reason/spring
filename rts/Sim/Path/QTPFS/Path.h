@@ -353,7 +353,18 @@ namespace QTPFS {
 		// shared path searches.
 		PathHashType virtualHash = BAD_HASH;
 		float radius = 0.f;
+
+		// Whether this AFFECTS synced state (like heatmaps and whatnot).
+		// It NEVER DEPENDS on unsynced state so even an "unsynced" call
+		// is safe to make from synced.
+		//
+		// Additionally, synced calls are batched and deferred.
+		//
+		// In practice, this means calls from actual unit movement usually
+		// set this to synced, and Lua calls (which need to know results
+		// immediately but don't yet involve any unit movement) unsynced.
 		bool synced = true;
+
 		bool haveFullPath = true;
 		bool havePartialPath = false;
 		bool boundingBoxOverride = false;
