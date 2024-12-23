@@ -236,6 +236,8 @@
 	SETUP_EVENT(Pong,            MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(MetalMapChanged, MANAGED_BIT)
 
+	SETUP_EVENT(UpdateTimeOffset,   MANAGED_BIT | UNSYNCED_BIT) // informs about video-/sim-frame start & end times
+
 
 #ifndef SETUP_EVENT
 	#pragma pop_macro("SETUP_EVENT")

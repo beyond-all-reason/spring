@@ -3545,7 +3545,7 @@ bool CLuaHandle::MapDrawCmd(int playerID, int type,
 	return retval;
 }
 
-
+/*** Called at the start of each update, to determine what the timeOffset should be. 
  *
  * @function UpdateTimeOffset
  * @number timeOffset
