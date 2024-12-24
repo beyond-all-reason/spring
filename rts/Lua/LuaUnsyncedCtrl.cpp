@@ -2205,6 +2205,9 @@ int LuaUnsyncedCtrl::SetUnitNoSelect(lua_State* L)
 		if (selUnits.find(unit->id) != selUnits.end()) {
 			selectedUnitsHandler.RemoveUnit(unit);
 		}
+
+		// also remove from selection group
+		unit->SetGroup(nullptr);
 	}
 	return 0;
 }
