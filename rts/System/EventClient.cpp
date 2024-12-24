@@ -80,7 +80,7 @@ void CEventClient::DownloadProgress(int ID, long downloaded, long total) {}
 bool CEventClient::IsAbove(int x, int y) { return false; }
 std::string CEventClient::GetTooltip(int x, int y) { return ""; }
 
-void CEventClient::ActiveCommandSet(const SCommandDescription* cmdDesc) {}
+void CEventClient::ActiveCommandChanged(const SCommandDescription* cmdDesc) {}
 bool CEventClient::CommandNotify(const Command& cmd) { return false; }
 
 bool CEventClient::AddConsoleLine(const std::string& msg, const std::string& section, int level) { return false; }

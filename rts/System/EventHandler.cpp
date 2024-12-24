@@ -762,10 +762,10 @@ template<typename T, typename F, typename... A> std::string ControlReverseIterat
 	return {};
 }
 
-void CEventHandler::ActiveCommandSet(const SCommandDescription* cmdDesc)
+void CEventHandler::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 {
 	ZoneScoped;
-	ITERATE_EVENTCLIENTLIST(ActiveCommandSet, cmdDesc);
+	ITERATE_EVENTCLIENTLIST(ActiveCommandChanged, cmdDesc);
 }
 
 bool CEventHandler::CommandNotify(const Command& cmd)

@@ -3338,12 +3338,12 @@ string CLuaHandle::GetTooltip(int x, int y)
 
 /*** Called when a command is issued.
  *
- * @function ActiveCommandSet
+ * @function ActiveCommandChanged
  * @int cmdID|nil
  * @tparam table|nil cmdParams
  * @tparam cmdOpts|nil options
  */
-void CLuaHandle::ActiveCommandSet(const SCommandDescription* cmdDesc)
+void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L, false);

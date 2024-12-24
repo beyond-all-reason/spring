@@ -302,7 +302,7 @@ class CEventClient
 
 		virtual bool DefaultCommand(const CUnit* unit, const CFeature* feature, int& cmd);
 
-		virtual void ActiveCommandSet(const SCommandDescription* cmdDesc);
+		virtual void ActiveCommandChanged(const SCommandDescription* cmdDesc);
 		virtual bool CommandNotify(const Command& cmd);
 
 		virtual bool AddConsoleLine(const std::string& msg, const std::string& section, int level);
