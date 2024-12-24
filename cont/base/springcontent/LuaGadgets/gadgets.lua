@@ -1844,9 +1844,9 @@ function gadgetHandler:DefaultCommand(type, id, cmd)
   end
 end
 
-function gadgetHandler:ActiveCommandSet(id, cmdType)
-  for _,g in r_ipairs(self.ActiveCommandSetList) do
-    g:ActiveCommandSet(id, cmdType)
+function gadgetHandler:ActiveCommandChanged(id, cmdType)
+  for _,g in r_ipairs(self.ActiveCommandChangedList) do
+    g:ActiveCommandChanged(id, cmdType)
   end
 end
 

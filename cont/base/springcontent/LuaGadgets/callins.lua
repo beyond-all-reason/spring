@@ -176,7 +176,7 @@ CALLIN_LIST = {
 	"RecvSkirmishAIMessage",
 
 	"DefaultCommand",
-	"ActiveCommandSet",
+	"ActiveCommandChanged",
 	"CommandNotify",
 
 	"ViewResize", -- FIXME ?
