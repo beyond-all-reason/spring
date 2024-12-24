@@ -2187,6 +2187,7 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
  * @function Spring.SetUnitNoSelect
  * @number unitID
  * @bool unitNoSelect whether unit can be selected or not
+ * @bool [opt]doGroups also remove from groups
  * @treturn nil
  */
 int LuaUnsyncedCtrl::SetUnitNoSelect(lua_State* L)
@@ -2205,7 +2206,13 @@ int LuaUnsyncedCtrl::SetUnitNoSelect(lua_State* L)
 		if (selUnits.find(unit->id) != selUnits.end()) {
 			selectedUnitsHandler.RemoveUnit(unit);
 		}
+
+		// also remove from groups if requested
+		bool doGroups = luaL_optboolean(L, 3, false);
+		if (doGroups)
+			unit->SetGroup(nullptr);
 	}
+
 	return 0;
 }
 
