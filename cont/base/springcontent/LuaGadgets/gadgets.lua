@@ -1844,6 +1844,12 @@ function gadgetHandler:DefaultCommand(type, id, cmd)
   end
 end
 
+function gadgetHandler:ActiveCommandChanged(id, cmdType)
+  for _,g in r_ipairs(self.ActiveCommandChangedList) do
+    g:ActiveCommandChanged(id, cmdType)
+  end
+end
+
 function gadgetHandler:CommandNotify(id, params, options)
   for _,g in r_ipairs(self.CommandNotifyList) do
     if (g:CommandNotify(id, params, options)) then
