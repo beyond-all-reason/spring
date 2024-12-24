@@ -1010,21 +1010,27 @@ void CGuiHandler::ConvertCommands(std::vector<SCommandDescription>& cmds)
 }
 
 
-void CGuiHandler::SetShowingMetal(bool show)
+void CGuiHandler::SetShowingMetal(const SCommandDescription* cmdDesc)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!show) {
-		if (showingMetal) {
-			infoTextureHandler->DisableCurrentMode();
-			showingMetal = false;
-		}
-	} else {
-		if (autoShowMetal) {
-			if (infoTextureHandler->GetMode() != "metal") {
-				infoTextureHandler->SetMode("metal");
-				showingMetal = true;
-			}
-		}
+	if (!autoShowMetal || cmdDesc == nullptr) {
+		return;
+	}
+	bool show = false;
+	if (cmdDesc->type == CMDTYPE_ICON_BUILDING) {
+		const UnitDef* ud = unitDefHandler->GetUnitDefByID(-cmdDesc->id);
+		show = ud->extractsMetal > 0;
+	}
+
+	if (showingMetal && !show)
+	{
+		infoTextureHandler->DisableCurrentMode();
+		showingMetal = false;
+	}
+	else if (!showingMetal && infoTextureHandler->GetMode() != "metal")
+	{
+		infoTextureHandler->SetMode("metal");
+		showingMetal = true;
 	}
 }
 
@@ -1441,14 +1447,10 @@ void CGuiHandler::SetActiveCommandIndex(int newIndex)
 	if (inCommand != newIndex) {
 		inCommand = newIndex;
 		if (inCommand < commands.size()) {
-			const auto& cmd = commands[inCommand];
-			if (cmd.type == CMDTYPE_ICON_BUILDING) {
-				const UnitDef* ud = unitDefHandler->GetUnitDefByID(-cmd.id);
-				SetShowingMetal(ud->extractsMetal > 0);
-			}
-			eventHandler.ActiveCommandChanged(&cmd);
+			SetShowingMetal(&commands[inCommand]);
+			eventHandler.ActiveCommandChanged(&commands[inCommand]);
 		} else {
-			SetShowingMetal(false);
+			SetShowingMetal(nullptr);
 			eventHandler.ActiveCommandChanged(nullptr);
 		}
 

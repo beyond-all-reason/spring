@@ -123,7 +123,7 @@ private:
 	unsigned char CreateOptions(bool rightMouseButton);
 	unsigned char CreateOptions(int button);
 	void FinishCommand(int button);
-	void SetShowingMetal(bool show);
+	void SetShowingMetal(const SCommandDescription *cmdDesc);
 	float GetNumberInput(const SCommandDescription& cmdDesc) const;
 
 	void ProcessFrontPositions(float3& pos0, const float3& pos1);
