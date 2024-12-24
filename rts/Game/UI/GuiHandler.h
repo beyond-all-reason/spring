@@ -175,6 +175,7 @@ public:
 	int inCommand = -1;
 	int buildFacing = FACING_SOUTH;
 	int buildSpacing = 0;
+	bool autoShowMetal = false;
 
 private:
 	int maxPage = 0;
@@ -218,7 +219,6 @@ private:
 
 	bool needShift = false;
 	bool showingMetal = false;
-	bool autoShowMetal = false;
 	bool invertQueueKey = false;
 	bool activeMousePress = false;
 	bool forceLayoutUpdate = false;
