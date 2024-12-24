@@ -107,9 +107,19 @@ std::string UDPListener::TryBindSocket(int port, std::shared_ptr<asio::ip::udp::
 	return errorMsg;
 }
 
-void UDPListener::Update() {
-	netservice.poll();
-
+void UDPListener::Update(int loopSleepTime) {
+	if (loopSleepTime == 0)
+		netservice.poll();
+	else {
+		fd_set rset;
+		FD_ZERO(&rset);
+		FD_SET(socket->native_handle(), &rset);
+		timeval to = {
+			loopSleepTime / 1000u, 			// long tv_sec
+			(loopSleepTime % 1000u) * 1000u // long tv_usec
+		};
+		::select(1, &rset, nullptr, nullptr, &to);
+	}
 	size_t bytesAvailable = 0;
 
 	while ((bytesAvailable = socket->available()) > 0) {

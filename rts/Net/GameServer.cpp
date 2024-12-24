@@ -2717,10 +2717,11 @@ void CGameServer::UpdateLoop()
 		Threading::SetAffinity(~0);
 
 		while (!quitServer) {
-			spring_msecs(loopSleepTime).sleep(true);
 
 			if (udpListener != nullptr)
-				udpListener->Update();
+				udpListener->Update(loopSleepTime);
+			else
+				spring_msecs(loopSleepTime).sleep(true);
 
 			std::lock_guard<spring::recursive_mutex> scoped_lock(gameServerMutex);
 			ServerReadNet();

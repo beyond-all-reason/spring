@@ -52,8 +52,9 @@ public:
 	 * @brief Run this from time to time
 	 * Recieve data from the socket and hand it to the associated UDPConnection,
 	 * or open a new UDPConnection. It also Updates all of its connections.
+	 * Sleeps for loopSleepTime is desired. This is needed for windows because min sleep there is 1/64th second
 	 */
-	void Update();
+	void Update(int loopSleepTime = 0);
 
 	/**
 	 * Set if we are accepting new connections
@@ -75,6 +76,7 @@ public:
 	void RejectConnection() { waiting.pop(); }
 	void UpdateConnections(); // Updates connections when the endpoint has been reconnected
 
+	auto& GetSocket() { return socket; }
 private:
 	/**
 	 * @brief Do we accept packets from unknown sources?
