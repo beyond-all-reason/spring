@@ -58,6 +58,7 @@
 #include "System/Threading/SpringThreading.h"
 
 #include "System/Misc/TracyDefs.h"
+#include "System/TimeProfiler.h"
 
 #ifndef DEDICATED
 #include "lib/luasocket/src/restrictions.h"
@@ -65,11 +66,16 @@
 
 #define ALLOW_DEMO_GODMODE
 
+//#define DEBUG_SERVERSYNCGAMETIMING // uncomment to enable debug output for serverSyncGameTiming
+const char* const tracyFrameTimeLeft = "FrameTimeLeft";
+const char* const tracyDrawSimRatio = "DrawSimRatio2";
+
 using netcode::RawPacket;
 
 
 CONFIG(int, AutohostPort).defaultValue(0).description("Which port should the engine listen on for Autohost interfact connections.");
 CONFIG(int, ServerSleepTime).defaultValue(5).description("Number of milliseconds to sleep per tick for the server thread. Lower values have marginally higher CPU load, while high values can introduce additional latency.");
+CONFIG(bool, ServerSyncGameTiming).defaultValue(false).description("Makes the server thread attempt to sync up simframe generation timing in local and demo games with the Games simframe consumption timing. (issue frames ~3ms before consumption)");
 CONFIG(int, SpeedControl).defaultValue(1).minimumValue(1).maximumValue(2)
 	.description("Sets how server adjusts speed according to player's load (CPU), 1: use average, 2: use highest");
 CONFIG(bool, AllowSpectatorJoin).defaultValue(true).dedicatedValue(false).description("allow any unauthenticated clients to join as spectator with any name, name will be prefixed with ~");
@@ -257,6 +263,14 @@ void CGameServer::Initialize()
 	}
 
 	loopSleepTime = configHandler->GetInt("ServerSleepTime");
+	serverSyncGameTiming = configHandler->GetBool("ServerSyncGameTiming");
+	vSync = configHandler->GetInt("VSync"); // THIS MIGHT BE VERY DANGEROUS, SEE verticalSync->WrapNotifyOnChange
+	configHandler->NotifyOnChange(this, {
+		"ServerSleepTime",
+		"ServerSyncGameTiming",
+		"VSync"
+	});
+	
 	linkMinPacketSize = globalConfig.linkIncomingMaxPacketRate > 0 ? (globalConfig.linkIncomingSustainedBandwidth / globalConfig.linkIncomingMaxPacketRate) : 1;
 
 	lastNewFrameTick = spring_gettime();
@@ -280,6 +294,13 @@ void CGameServer::Initialize()
 			Broadcast(CBaseNetProtocol::Get().SendRandSeed(myGameSetup->fixedRNGSeed));
 		}
 	}
+}
+
+void CGameServer::ConfigNotify(const std::string& key, const std::string& value)
+{
+	vSync = configHandler->GetInt("VSync");
+	loopSleepTime = configHandler->GetInt("ServerSleepTime");
+	serverSyncGameTiming= configHandler->GetBool("ServerSyncGameTiming");
 }
 
 void CGameServer::PostLoad(int newServerFrameNum)
@@ -2607,16 +2628,62 @@ void CGameServer::CreateNewFrame(bool fromServerThread, bool fixedFrameTime)
 	}
 
 	if (!fixedFrameTime) {
-		spring_time currentTick = spring_gettime();
-		spring_time timeElapsed = currentTick - lastNewFrameTick;
+		spring_time currentTick = spring_gettime();  // Right now, in spring-ticks
+		spring_time timeElapsed = currentTick - lastNewFrameTick; // how long has elapsed since we previously called CreateNewFrame
 
+		spring_time lastSimFrameStartTime = gu->lastSimFrameStartTime; // When the last sim frame was actually started by game thread
+
+		// Cap the max time we are behind to 200ms
 		if (timeElapsed > spring_msecs(200))
 			timeElapsed = spring_msecs(200);
 
+		// frameTimeLeft is mostly negative, and each time we add how much time has passed since last CreateNewFrame
 		frameTimeLeft += ((GAME_SPEED * 0.001f) * internalSpeed * timeElapsed.toMilliSecsf());
 		lastNewFrameTick = currentTick;
+		// If frameTimeLeft goes positive, we are overdue for ciel(frameTimeLeft) frames
 		numNewFrames = (frameTimeLeft > 0.0f)? int(math::ceil(frameTimeLeft)): 0;
 		frameTimeLeft -= numNewFrames;
+
+		#ifndef HEADLESS
+			// We add our special case, because we want to avoid issueing a new simframe right around lastSimFrameStartTime
+			float timeFromNextExpectedSimMs = (currentTick - lastSimFrameStartTime).toMilliSecsf();
+			timeFromNextExpectedSimMs = timeFromNextExpectedSimMs - (1000.0f / GAME_SPEED) / std::clamp(internalSpeed, 0.45f, 2.1f);
+			if ((numNewFrames == 1) && (serverSyncGameTiming) && (vSync != 0)){
+
+				// we just inserted a single frame. if we happened to insert it in the expected window +-2ms, then hurry up by 1ms
+				timeFromNextExpectedSimMs = (currentTick - lastSimFrameStartTime).toMilliSecsf();
+
+				float simFramePeriodms =  (1000.0f / GAME_SPEED) / std::clamp(internalSpeed, 0.4f, 2.1f); // Usually 33.3 ms
+				// ok very good. Now if our internalSpeed is near 1, then try your absolute best to converge the net messages to the target of  (lastSimFrameStartTime + (1000/GAME_SPEED * internalSpeed) ) = 3ms
+				// this number is positive if we are issuing the sim frame too late
+				// ideally this number is about -2 ms
+				timeFromNextExpectedSimMs = timeFromNextExpectedSimMs - simFramePeriodms;
+				if (internalSpeed >= 0.45 && internalSpeed <= 2.1){
+					if (timeFromNextExpectedSimMs > -2.0) {
+						frameTimeLeft += 2.0 * simFramePeriodms/2000.0f;
+						TracyMessageL("Hurrying up Gameserver");
+					}
+					if (timeFromNextExpectedSimMs < -4.0) {
+						frameTimeLeft -= simFramePeriodms/2000.0f;
+						TracyMessageL("Slowing down Gameserver");
+					}
+				}
+
+			}
+			{
+			#ifdef DEBUG_SERVERSYNCGAMETIMING
+				char msgBuf[512];
+
+				SNPRINTF(msgBuf, sizeof(msgBuf), "timeElapsed=%fms frameTimeLeft=%f internalSpeed=%f numNewFrames=%u timeFromNextExpectedSimMs=%fms, lastsim=%f, ct = %f",
+					timeElapsed.toMilliSecsf(), frameTimeLeft, internalSpeed, numNewFrames,timeFromNextExpectedSimMs, 
+					(lastSimFrameStartTime).toMilliSecsf(), currentTick.toMilliSecsf());
+
+				TracyMessage(msgBuf, sizeof(msgBuf));
+				TracyPlot(tracyFrameTimeLeft,frameTimeLeft);
+			#endif
+			}
+		#endif
+
 
 		if (logDebugMessages) {
 			LOG_L(
@@ -2662,6 +2729,9 @@ void CGameServer::CreateNewFrame(bool fromServerThread, bool fixedFrameTime)
 
 		for (unsigned int i = 0; i < numNewFrames; ++i) {
 			++serverFrameNum;
+			#ifdef DEBUG_SERVERSYNCGAMETIME
+				TracyMessageL("CGameServer::CreateNewFrame::NewFrameCreated");
+			#endif
 
 			// Send out new frame messages.
 			if ((serverFrameNum % serverKeyframeInterval) == 0) {

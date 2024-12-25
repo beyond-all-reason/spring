@@ -109,6 +109,8 @@ public:
 	}
 
 	std::string GetPlayerNames(const std::vector<int>& indices) const;
+	
+	void ConfigNotify(const std::string& key, const std::string& value);
 
 	const std::shared_ptr<const ClientSetup> GetClientSetup() const { return myClientSetup; }
 	const std::shared_ptr<const    GameData> GetGameData() const { return myGameData; }
@@ -249,6 +251,8 @@ private:
 	int medianPing = 0;
 	int curSpeedCtrl = 0;
 	int loopSleepTime = 0;
+	bool serverSyncGameTiming = false;
+	int vSync = 0;
 
 
 	int serverFrameNum = -1;
