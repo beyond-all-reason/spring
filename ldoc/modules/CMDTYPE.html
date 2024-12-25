@@ -1,0 +1,136 @@
+---
+layout: default
+title: CMDTYPE
+permalink: ldoc/modules/CMDTYPE.html
+description: Command type constants
+parent: Lua API
+table: 0x56379e655020
+---
+
+{% raw %}
+    <h1>Module <code>CMDTYPE</code></h1>
+    <p>Command type constants</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaConstCMDTYPE.cpp">rts/Lua/LuaConstCMDTYPE.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Tables">Tables</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#CMDTYPE">CMDTYPE</a>
+            </dt>
+            <dd>
+              Note, the CMDTYPE[] table is bidirectional.
+            </dd>
+        </dl>
+
+      <h2 id="Tables" class="section-header ">
+        Tables
+      </h2>
+
+        <h3 id="CMDTYPE">
+          CMDTYPE
+        </h3>
+        <p>Note, the CMDTYPE[] table is bidirectional.</p>
+        <div class="code-example">
+        <p>
+           That means: CMDTYPE[CMDTYPE.ICON] := "CMDTYPE_ICON"
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>ICON</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 0 parameters in return
+                 </li>
+                 <li>
+                   <code>ICON_MODE</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 1 parameter in return (number selected mode)
+                 </li>
+                 <li>
+                   <code>ICON_MAP</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 3 parameters in return (mappos)
+                 </li>
+                 <li>
+                   <code>ICON_AREA</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 4 parameters in return (mappos+radius)
+                 </li>
+                 <li>
+                   <code>ICON_UNIT</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 1 parameters in return (unitid)
+                 </li>
+                 <li>
+                   <code>ICON_UNIT_OR_MAP</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 1 parameters in return (unitid) or 3 parameters in return (mappos)
+                 </li>
+                 <li>
+                   <code>ICON_FRONT</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 3 or 6 parameters in return (middle and right side of front if a front was defined)
+                 </li>
+                 <li>
+                   <code>COMBO_BOX</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 1 parameter in return (number selected option)
+                 </li>
+                 <li>
+                   <code>ICON_UNIT_OR_AREA</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 1 parameter in return (unitid) or 4 parameters in return (mappos+radius)
+                 </li>
+                 <li>
+                   <code>ICON_UNIT_FEATURE_OR_AREA</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 1 parameter in return (unitid or Game.maxUnits+featureid) or 4 parameters in return (mappos+radius)
+                 </li>
+                 <li>
+                   <code>ICON_BUILDING</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 3 parameters in return (mappos)
+                 </li>
+                 <li>
+                   <code>ICON_UNIT_OR_RECTANGLE</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 1 parameter in return (unitid) or 3 parameters in return (mappos) or 6 parameters in return (startpos+endpos)
+                 </li>
+                 <li>
+                   <code>NUMBER</code>
+                   <strong><span class="type">number</span></strong>
+                    expect 1 parameter in return (number)
+                 </li>
+                 <li>
+                   <code>CUSTOM</code>
+                   <strong><span class="type">number</span></strong>
+                    used with CMD_INTERNAL
+                 </li>
+                 <li>
+                   <code>NEXT</code>
+                   <strong><span class="type">number</span></strong>
+                    next command page used with CMD_INTERNAL
+                 </li>
+                 <li>
+                   <code>PREV</code>
+                   <strong><span class="type">number</span></strong>
+                    previous command page used with CMD_INTERNAL
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+
+{% endraw %}
