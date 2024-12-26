@@ -3033,6 +3033,7 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(iconRadius),
 
 	CR_MEMBER(stunned),
+	CR_MEMBER_UN(noGroup),
 
 //	CR_MEMBER(expMultiplier),
 //	CR_MEMBER(expPowerScale),
