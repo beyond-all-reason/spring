@@ -390,12 +390,6 @@ EXPORT(int) skirmishAiCallback_Engine_executeCommand(
 			SetCommonCmdParams(&cmd, rc, unitId, groupId);
 			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
 		} break;
-		case COMMAND_UNIT_AI_SELECT: {
-			SAiSelectUnitCommand cmd;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
 		case COMMAND_UNIT_GROUP_ADD: {
 			SGroupAddUnitCommand cmd;
 			cmd.toGroupId = (int) rc->params[0];
