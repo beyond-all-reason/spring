@@ -1013,11 +1013,13 @@ void CGuiHandler::ConvertCommands(std::vector<SCommandDescription>& cmds)
 void CGuiHandler::SetShowingMetal(const SCommandDescription* cmdDesc)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!autoShowMetal || cmdDesc == nullptr) {
+	if (!autoShowMetal) {
 		return;
 	}
 	bool show = false;
-	if (cmdDesc->type == CMDTYPE_ICON_BUILDING) {
+	if (cmdDesc == nullptr)
+		show = false;
+	else if (cmdDesc->type == CMDTYPE_ICON_BUILDING) {
 		const UnitDef* ud = unitDefHandler->GetUnitDefByID(-cmdDesc->id);
 		show = ud->extractsMetal > 0;
 	}
