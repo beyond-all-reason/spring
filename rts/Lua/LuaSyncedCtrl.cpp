@@ -5019,7 +5019,7 @@ int LuaSyncedCtrl::SetProjectileTarget(lua_State* L)
 /***
  * @function Spring.SetProjectileTimeToLive
  * @number projectileID
- * @number flightTime
+ * @number ttl remaining time to live in frames
  * @treturn nil
  */
 int LuaSyncedCtrl::SetProjectileTimeToLive(lua_State* L)
