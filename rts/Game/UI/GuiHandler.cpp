@@ -1016,6 +1016,14 @@ void CGuiHandler::SetShowingMetal(const SCommandDescription* cmdDesc)
 	if (!autoShowMetal) {
 		return;
 	}
+	if (autoShowMetal) {
+		static bool deprecatedMsgDone = false;
+		if (!deprecatedMsgDone) {
+			LOG_L(L_WARNING, "AutoShowMetal is deprecated. Please enable manually from lua instead (see #1092).");
+			deprecatedMsgDone = true;
+		}
+	}
+
 	bool show = false;
 	if (cmdDesc == nullptr)
 		show = false;
