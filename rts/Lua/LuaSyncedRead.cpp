@@ -39,6 +39,7 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
+#include "Sim/Misc/CollisionHandler.h"
 #include "Sim/MoveTypes/StrafeAirMoveType.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
@@ -379,6 +380,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeaturePieceDirection);
 	REGISTER_LUA_CFUNC(GetFeaturePiecePosDir);
 	REGISTER_LUA_CFUNC(GetFeaturePieceMatrix);
+
+	REGISTER_LUA_CFUNC(TraceRayGroundInDirection);
+	REGISTER_LUA_CFUNC(TraceRayGroundBetweenPositions);
 
 	REGISTER_LUA_CFUNC(GetRadarErrorParams);
 
@@ -8669,6 +8673,80 @@ int LuaSyncedRead::GetUnitScriptNames(lua_State* L)
 	}
 
 	return 1;
+}
+
+static int TraceRayGroundImpl(lua_State *const L, const float3 &pos, const float3 &dir, const float maxLen, const bool testWater)
+{
+	const float rayLength = CGround::LineGroundWaterCol(pos, dir, maxLen, testWater, CLuaHandle::GetHandleSynced(L));
+	if (rayLength == -1.0f)
+		return 0;
+
+	const auto collisionSpot = pos + dir * rayLength; // FIXME: would be nice if the CGround:: functions returned this so we wouldn't have to recalculate
+
+	lua_pushnumber(L, rayLength);
+	lua_pushnumber(L, collisionSpot.x);
+	lua_pushnumber(L, collisionSpot.y);
+	lua_pushnumber(L, collisionSpot.z);
+	return 4;
+}
+
+/*** Checks for a ground collision in given direction
+ *
+ * @function Spring.TraceRayGroundInDirection
+ *
+ * Checks if there is surface (ground, optionally water) towards a vector
+ * and returns the distance to the closest hit and its position, if any.
+ *
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @bool[opt=true] testWater
+ * @treturn number rayLength
+ * @treturn number posX
+ * @treturn number posY
+ * @treturn number posZ
+ */
+int LuaSyncedRead::TraceRayGroundInDirection(lua_State* L)
+{
+	const float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	const auto dir = float3(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6)).Normalize();
+	const float maxLen = luaL_optfloat(L, 7, 999999.f);
+	const bool testWater = luaL_optboolean(L, 8, true);
+
+	return TraceRayGroundImpl(L, pos, dir, maxLen, testWater);
+}
+
+/*** Checks for a ground collision between two positions
+ *
+ * @function Spring.TraceRayGroundBetweenPositions
+ *
+ * Checks if there is surface (ground, optionally water) between two positions
+ * and returns the distance to the closest hit and its position, if any.
+ *
+ * @number startX
+ * @number startY
+ * @number startZ
+ * @number endX
+ * @number endY
+ * @number endZ
+ * @bool[opt=true] testWater
+ * @treturn number rayLength
+ * @treturn number posX
+ * @treturn number posY
+ * @treturn number posZ
+ */
+int LuaSyncedRead::TraceRayGroundBetweenPositions(lua_State* L)
+{
+	const float3 start (luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	const float3 end (luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
+	const bool testWater = luaL_optboolean(L, 7, true);
+
+	const auto [dir, length] = (end - start).GetNormalized();
+
+	return TraceRayGroundImpl(L, start, dir, length, testWater);
 }
 
 
