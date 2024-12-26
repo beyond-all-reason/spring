@@ -427,6 +427,7 @@ void CSelectedUnitsHandler::RemoveUnit(CUnit* unit)
 		selectedGroup = -1;
 		unit->isSelected = false;
 	}
+	assert(!unit->isSelected);
 }
 
 
