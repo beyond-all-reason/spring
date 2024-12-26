@@ -5017,6 +5017,28 @@ int LuaSyncedCtrl::SetProjectileTarget(lua_State* L)
 
 
 /***
+ * @function Spring.SetProjectileTimeToLive
+ * @number projectileID
+ * @number flightTime
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetProjectileTimeToLive(lua_State* L)
+{
+	CProjectile* proj = ParseProjectile(L, __func__, 1);
+
+	const int newTimeToLive = luaL_checkint(L, 2);
+
+	if (proj == nullptr || !proj->weapon)
+		return 0;
+
+	CWeaponProjectile* wproj = static_cast<CWeaponProjectile*>(proj);
+
+	wproj->SetTimeToLive(newTimeToLive);
+	return 0;
+}
+
+
+/***
  * @function Spring.SetProjectileIsIntercepted
  * @number projectileID
  * @treturn nil
