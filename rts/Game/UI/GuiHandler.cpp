@@ -1454,7 +1454,7 @@ void CGuiHandler::SetActiveCommandIndex(int newIndex)
 {
 	if (inCommand != newIndex) {
 		inCommand = newIndex;
-		if (inCommand < commands.size())
+		if (inCommand >= 0 && inCommand < commands.size())
 			eventHandler.ActiveCommandChanged(&commands[inCommand]);
 		else
 			eventHandler.ActiveCommandChanged(nullptr);
