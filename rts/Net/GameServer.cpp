@@ -66,7 +66,7 @@
 
 #define ALLOW_DEMO_GODMODE
 
-//#define DEBUG_SERVERSYNCGAMETIMING // uncomment to enable debug output for serverSyncGameTiming
+#define DEBUG_SERVERSYNCGAMETIMING // uncomment to enable debug output for serverSyncGameTiming
 const char* const tracyFrameTimeLeft = "FrameTimeLeft";
 const char* const tracyDrawSimRatio = "DrawSimRatio2";
 
@@ -2658,7 +2658,9 @@ void CGameServer::CreateNewFrame(bool fromServerThread, bool fixedFrameTime)
 				// this number is positive if we are issuing the sim frame too late
 				// ideally this number is about -2 ms
 				timeFromNextExpectedSimMs = timeFromNextExpectedSimMs - simFramePeriodms;
+				TracyPlot("timeFromNextExpectedSimMs", timeFromNextExpectedSimMs);
 				if (internalSpeed >= 0.45 && internalSpeed <= 2.1){
+				
 					if (timeFromNextExpectedSimMs > -2.0) {
 						frameTimeLeft += 2.0 * simFramePeriodms/2000.0f;
 						TracyMessageL("Hurrying up Gameserver");
@@ -2670,7 +2672,7 @@ void CGameServer::CreateNewFrame(bool fromServerThread, bool fixedFrameTime)
 				}
 
 			}
-			{
+			
 			#ifdef DEBUG_SERVERSYNCGAMETIMING
 				char msgBuf[512];
 
@@ -2680,8 +2682,12 @@ void CGameServer::CreateNewFrame(bool fromServerThread, bool fixedFrameTime)
 
 				TracyMessage(msgBuf, sizeof(msgBuf));
 				TracyPlot(tracyFrameTimeLeft,frameTimeLeft);
+				TracyPlot("timeFromNextExpectedSimMs",timeFromNextExpectedSimMs);
+				TracyPlot("tracyTimeElapsed",timeElapsed.toMilliSecsf());
+
+	
 			#endif
-			}
+			
 		#endif
 
 
@@ -2731,6 +2737,7 @@ void CGameServer::CreateNewFrame(bool fromServerThread, bool fixedFrameTime)
 			++serverFrameNum;
 			#ifdef DEBUG_SERVERSYNCGAMETIME
 				TracyMessageL("CGameServer::CreateNewFrame::NewFrameCreated");
+				ZoneScopedN("CGameServer::CreateNewFrame::NewFrameCreated");
 			#endif
 
 			// Send out new frame messages.
