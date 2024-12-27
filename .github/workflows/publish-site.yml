@@ -13,7 +13,13 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install --fix-missing -y lua-ldoc lua-markdown jq p7zip-full libsdl2-2.0-0 libopenal1
+          sudo apt-get install --fix-missing -y jq p7zip-full libsdl2-2.0-0 libopenal1
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+      - name: Install Lua Language Server
+        run: |
+          brew install lua-language-server
       - name: Checkout Source Repository
         uses: actions/checkout@v2
         with:
@@ -23,13 +29,23 @@ jobs:
           bash doc/site/_scripts/get_release_data.sh
           bash doc/site/_scripts/get_engine_data.sh
           git add -f doc/site/_data
-      - name: Run LDoc
+      # This step should be removed when https://github.com/LuaLS/lua-language-server/issues/2977 is resolved.
+      - name: Disable global libaries from Lua config
         run: |
-          ldoc -c doc/LDoc/config.ld .
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git add -f doc/site/ldoc
+          cp doc/site/.luarc.doc.json .luarc.json
+      - name: Export Lua data using Lua Language Server
+        run: |
+          lua-language-server --doc . --doc_out_path doc/site/_data
+          git add -f doc/site/_data
+      - name: Commit changes
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           git commit -m "Update doc/site"
+      # This step should be removed when https://github.com/LuaLS/lua-language-server/issues/2977 is resolved.
+      - name: Discard changes to Lua config
+        run: |
+          git checkout -- .luarc.json
       - name: Check if gh-pages exists
         id: check-ghpages
         run: |
