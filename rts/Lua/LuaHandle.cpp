@@ -3347,7 +3347,7 @@ void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 3, __func__);
+	luaL_checkstack(L, 5, __func__);
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
