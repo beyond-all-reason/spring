@@ -43,6 +43,8 @@ for the purpose of checksum (as if `springignore.txt` had `\..*` on the first ro
 this cannot be overridden)
 * archive scanner version changed to 17, won't be able to reuse an old archive cache.
 Expect a rescan of archives.
+* the default value for the `TooltipGeometry` springsetting has the Y coordinate moved from 0 to 0.125.
+* default tooltip now has income and harvest storage for each resource in its own line.
 
 ### Deprecation notice
 * renamed `Spring.UnitIconSetDraw` to `Spring.SetUnitIconDraw`. Old spelling will
@@ -140,11 +142,19 @@ These accept multiple full sets of arguments compared to the regular function so
 * add `/debugquadfield` command to debug GUI trace ray interaction with ground quads.
 
 ### Fonts
+* added `Spring.AddFallbackFont(string path) → bool ok`, lets you specify fallback fonts in case whatever font is being used does not have some glyphs.
+You can use multiple, they're searched in the order they were added.
+* added `Spring.ClearFallbackFonts() → nil`, clears fallback fonts.
+* added `wupget:FontsChanged() → nil` unsynced callin, notifies Lua when the set of fonts change so that you can regenerate bitmaps containing text and whatnot.
 * optimized font loading.
 * fix a crash when loading unknown glyphs from a font.
 * fix an issue where sometimes `C:\a\_temp\msys\msys64\var\cache\fontconfig` would be created on the user's disk.
 
-### Unit spatial queries
+### Spatial queries
+* add `Spring.TraceRayGroundInDirection(startX, startY, startZ, dirX, dirY, dirZ, maxLength = inf, bool checkWater = true) → distance, x, y, z`.
+Checks for ground (or water surface) in given direction, and returns the first collision. The dir doesn't need to be normalized.
+* add `Spring.TraceRayGroundBetweenPositions(xA, yA, zA, xB, yB, zB, bool checkWater = true) → distance, x, y, z`.
+Checks for ground (or water surface) between points A and B.
 * add `SelectThroughGround` float springsetting. Controls how far through ground you can single-click a unit. Default is 200, in elmos (same behaviour as previous).
 * `Spring.GetUnitsInRectangle` and similar functions now correctly grab wobbly radar dots.
 * fix rightclicking and area-commands sometimes failing to include radar dots if they wobbled too far from real position.
@@ -185,6 +195,12 @@ Expect a rescan of archives.
 * windgens now also receive the event when they are finished.
 * wind now starts in a random direction instead of East... always to the East.
 
+### Tracy profiling
+* add `tracy.LuaTracyPlotConfig(string plotName, string type = "Number"|"Memory"|"Percentage", bool stepwise = true, bool fill = false, integer colorBGR = 0xFFFFFF) → nil`,
+lets you create a Tracy plot and configure its looks.
+* add `tracy.LuaTracyPlot(string plotName, number value) → nil`, lets you fill up values for the plot.
+* improved Tracy coverage and made zone coloring more coherent.
+
 ### Misc
 * add `construction.insertBuiltUnitMoveCommand` boolean modrule, defaults to true. If false, units won't receive a move order when exiting factory (make sure to use bugger off).
 * add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
@@ -195,7 +211,8 @@ weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value
 * `gl.SaveImage` can now save in the `.hdr` format (apparently).
 * `pairs()` now looks at the `__pairs` metamethod in tables, same as in Lua 5.2.
 * the "scanning archives" screen at init reports more info.
-* improved Tracy coverage and made zone coloring more coherent.
+* the default value for the `TooltipGeometry` springsetting has the Y coordinate moved from 0 to 0.125.
+* default tooltip now has income and harvest storage for each resource in its own line.
 
 ## Fixes
 * fix a possible pathing desync, especially on builds compiled for OpenBSD.
