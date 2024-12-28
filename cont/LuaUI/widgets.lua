@@ -2174,7 +2174,7 @@ end
 --  Font call-ins
 --
 
-function widgetHandler:FontsChaged()
+function widgetHandler:FontsChanged()
   for _,w in ripairs(self.FontsChangedList) do
     w:FontsChanged()
   end
