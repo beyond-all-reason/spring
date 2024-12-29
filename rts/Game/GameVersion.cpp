@@ -27,7 +27,7 @@ const std::string& GetMajor()
 
 const std::string& GetMinor()
 {
-	static const std::string minor = "0";
+	static const std::string minor = SPRING_VERSION_ENGINE_MINOR;
 	return minor;
 }
 

@@ -116,7 +116,7 @@ public:
 	~CArchiveScanner();
 
 public:
-	const std::string& GetFilepath() const { return cachefile; }
+	const std::string& GetFilepath() const { return cacheFile; }
 
 	static const char* GetMapHelperContentName() { return "Map Helper v1"; }
 	static const char* GetSpringBaseContentName() { return "Spring content v1"; }
@@ -188,6 +188,9 @@ private:
 	};
 
 private:
+	void ReadCache();
+	void WriteCache();
+
 	ArchiveInfo& GetAddArchiveInfo(const std::string& lcfn);
 	BrokenArchive& GetAddBrokenArchive(const std::string& lcfn);
 
@@ -204,7 +207,7 @@ private:
 	std::string SearchMapFile(const IArchive* ar, std::string& error);
 
 
-	void ReadCacheData(const std::string& filename);
+	bool ReadCacheData(const std::string& filename);
 	void WriteCacheData(const std::string& filename);
 
 	IFileFilter* CreateIgnoreFilter(IArchive* ar);
@@ -247,7 +250,7 @@ private:
 	std::vector<ArchiveInfo> archiveInfos;
 	std::vector<BrokenArchive> brokenArchives;
 
-	std::string cachefile;
+	std::string cacheFile;
 
 	bool isDirty = false;
 	bool isInScan = false;
