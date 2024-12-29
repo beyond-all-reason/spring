@@ -83,7 +83,6 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(typeMap),
 	*/
 
-	CR_IGNORED(sharedCenterNormals),
 	CR_IGNORED(sharedSlopeMaps),
 
 	CR_IGNORED(unsyncedHeightMapUpdates),
@@ -260,9 +259,6 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 void CReadMap::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	sharedCenterNormals[0] = &centerNormalsUnsynced[0];
-	sharedCenterNormals[1] = &centerNormalsSynced[0];
-
 	sharedSlopeMaps[0] = &slopeMap[0]; // NO UNSYNCED VARIANT
 	sharedSlopeMaps[1] = &slopeMap[0];
 
@@ -366,9 +362,6 @@ void CReadMap::Initialize()
 	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
 
 	{
-		sharedCenterNormals[0] = &centerNormalsUnsynced[0];
-		sharedCenterNormals[1] = &centerNormalsSynced[0];
-
 		sharedSlopeMaps[0] = &slopeMap[0]; // NO UNSYNCED VARIANT
 		sharedSlopeMaps[1] = &slopeMap[0];
 	}
@@ -912,6 +905,16 @@ const float3* CReadMap::GetSharedFaceNormals(bool synced) const
 	};
 
 	return sharedFaceNormals[synced];
+}
+
+const float3* CReadMap::GetSharedCenterNormals(bool synced) const
+{
+	std::array sharedCenterNormals {
+		centerNormalsUnsynced.data(),
+		centerNormalsSynced.data()
+	};
+
+	return sharedCenterNormals[synced];
 }
 
 void CReadMap::CopySyncedToUnsynced()
