@@ -150,6 +150,7 @@ namespace springproc {
 
 		for (int group = 0; group < system.num_cpu_types; ++group) {
 			cpu_id_t cpu_id = system.cpu_types[group];
+			cpuid_brand = std::string(cpu_id.brand_str);
 			switch(cpu_id.purpose) {
 			case PURPOSE_GENERAL:
 			case PURPOSE_PERFORMANCE:

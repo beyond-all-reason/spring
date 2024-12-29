@@ -213,6 +213,10 @@ namespace Threading {
 		return springproc::CPUID::GetInstance().GetNumPhysicalCores();
 	}
 
+	std::string GetCPUBrand() {
+		return springproc::CPUID::GetInstance().GetCPUBrand();
+	}
+
 	bool HasHyperThreading() { return (GetLogicalCpuCores() > GetPhysicalCpuCores()); }
 
 
