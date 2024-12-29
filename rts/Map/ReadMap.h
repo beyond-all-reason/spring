@@ -177,17 +177,17 @@ public:
 	const float3* GetVisVertexNormalsUnsynced() const { return &visVertexNormals[0]; }
 
 	/// synced versions
-	const float* GetCornerHeightMapSynced() const { return sharedCornerHeightMaps[true]; }
+	const float* GetCornerHeightMapSynced() const { return cornerHeightMapSynced.data(); }
 	const float3* GetFaceNormalsSynced()    const { return sharedFaceNormals[true]; }
 	const float3* GetCenterNormalsSynced()  const { return sharedCenterNormals[true]; }
 	/// unsynced versions
-	const float* GetCornerHeightMapUnsynced() const { return sharedCornerHeightMaps[false]; }
+	const float* GetCornerHeightMapUnsynced() const { return cornerHeightMapUnsynced.data(); }
 	const float3* GetFaceNormalsUnsynced()    const { return sharedFaceNormals[false]; }
 	const float3* GetCenterNormalsUnsynced()  const { return sharedCenterNormals[false]; }
 
 
 	/// shared interface
-	const float* GetSharedCornerHeightMap(bool synced) const { return sharedCornerHeightMaps[synced]; }
+	const float* GetSharedCornerHeightMap(bool synced) const;
 	const float* GetSharedCenterHeightMap(bool synced) const { return sharedCenterHeightMaps[synced]; }
 	const float3* GetSharedFaceNormals(bool synced) const { return sharedFaceNormals[synced]; }
 	const float3* GetSharedCenterNormals(bool synced) const { return sharedCenterNormals[synced]; }
@@ -283,7 +283,6 @@ protected:
 private:
 	// these combine the various synced and unsynced arrays
 	// for branch-less access: [0] = !synced, [1] = synced
-	const float* sharedCornerHeightMaps[2];
 	const float* sharedCenterHeightMaps[2];
 	const float3* sharedFaceNormals[2];
 	const float3* sharedCenterNormals[2];

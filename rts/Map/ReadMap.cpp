@@ -83,7 +83,6 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(typeMap),
 	*/
 
-	CR_IGNORED(sharedCornerHeightMaps),
 	CR_IGNORED(sharedCenterHeightMaps),
 	CR_IGNORED(sharedFaceNormals),
 	CR_IGNORED(sharedCenterNormals),
@@ -263,9 +262,6 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 void CReadMap::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	sharedCornerHeightMaps[0] = &cornerHeightMapUnsynced[0];
-	sharedCornerHeightMaps[1] = &cornerHeightMapSynced[0];
-
 	sharedCenterHeightMaps[0] = &centerHeightMap[0]; // NO UNSYNCED VARIANT
 	sharedCenterHeightMaps[1] = &centerHeightMap[0];
 
@@ -378,9 +374,6 @@ void CReadMap::Initialize()
 	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
 
 	{
-		sharedCornerHeightMaps[0] = &cornerHeightMapUnsynced[0];
-		sharedCornerHeightMaps[1] = &cornerHeightMapSynced[0];
-
 		sharedCenterHeightMaps[0] = &centerHeightMap[0]; // NO UNSYNCED VARIANT
 		sharedCenterHeightMaps[1] = &centerHeightMap[0];
 
@@ -907,6 +900,16 @@ namespace {
 	void CopySyncedToUnsyncedImpl(const std::vector<T>& src, std::vector<T>& dst) {
 		std::copy(src.begin(), src.end(), dst.begin());
 	};
+}
+
+const float* CReadMap::GetSharedCornerHeightMap(bool synced) const
+{
+	std::array sharedCornerHeightMaps {
+		cornerHeightMapUnsynced.data(),
+		cornerHeightMapSynced.data()
+	};
+
+	return sharedCornerHeightMaps[synced];
 }
 
 void CReadMap::CopySyncedToUnsynced()
