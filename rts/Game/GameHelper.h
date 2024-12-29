@@ -15,6 +15,8 @@
 #include <bit>
 #include <vector>
 #include <memory>
+#include <variant>
+#include <type_traits>
 
 class CUnit;
 class CWeapon;
@@ -25,6 +27,55 @@ struct UnitDef;
 struct MoveDef;
 struct BuildInfo;
 
+class ExplosionHitObject {
+private:
+	using VariantType = std::variant<void*, CUnit*, CFeature*, CWeapon*>;
+public:
+	ExplosionHitObject()
+		: hitObject(static_cast<void*>(nullptr))
+	{}
+	ExplosionHitObject(std::nullptr_t)
+		: hitObject(static_cast<void*>(nullptr))
+	{}
+
+	template<typename... PT>
+	ExplosionHitObject(PT ... p)
+		: ExplosionHitObject()
+	{
+		((*this = p), ...);
+	}
+
+	template<typename T>
+	void operator=(T* p) {
+		static_assert(std::is_constructible_v<VariantType, T*>);
+
+		if (p == nullptr)
+			return;
+
+		hitObject = p;
+	}
+
+	void operator=(void* p) {
+		hitObject = p;
+	}
+
+	template<typename T>
+	T* GetTyped() const {
+		if (!std::holds_alternative<T*>(hitObject))
+			return static_cast<T*>(nullptr);
+
+		return std::get<T*>(hitObject);
+	}
+
+	template<typename T, typename E = std::enable_if_t<std::is_constructible_v<VariantType, T*>>>
+	bool HasStored() const { return std::holds_alternative<T*>(hitObject); }
+
+	template<typename T, std::false_type>
+	bool HasStored() const;
+private:
+	VariantType hitObject;
+};
+
 struct CExplosionParams {
 	const float3 pos;
 	const float3 dir;
@@ -33,9 +84,7 @@ struct CExplosionParams {
 
 	CUnit* owner;
 
-	CUnit* hitUnit;
-	CFeature* hitFeature;
-	CWeapon* hitWeapon;
+	ExplosionHitObject hitObject;
 
 	float craterAreaOfEffect;
 	float damageAreaOfEffect; // radius

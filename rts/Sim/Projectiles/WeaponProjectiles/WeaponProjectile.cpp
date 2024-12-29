@@ -196,9 +196,7 @@ void CWeaponProjectile::Explode(
 		.damages              = damageArray,
 		.weaponDef            = weaponDef,
 		.owner                = owner(),
-		.hitUnit              = hitUnit,
-		.hitFeature           = hitFeature,
-		.hitWeapon            = hitWeapon,
+		.hitObject            = ExplosionHitObject(hitUnit, hitFeature, hitWeapon),
 		.craterAreaOfEffect   = damages->craterAreaOfEffect,
 		.damageAreaOfEffect   = damages->damageAreaOfEffect,
 		.edgeEffectiveness    = damages->edgeEffectiveness,
@@ -425,9 +423,7 @@ void CWeaponProjectile::UpdateGroundBounce()
 			1.0f,
 			1.0f,
 			owner(),
-			nullptr,
-			nullptr,
-			nullptr
+			ExplosionHitObject()
 		);
 
 		bounced = false;

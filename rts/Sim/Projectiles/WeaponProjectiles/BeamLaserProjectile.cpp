@@ -98,9 +98,7 @@ void CBeamLaserProjectile::Update()
 			flaresize,
 			0.0f,
 			owner(),
-			nullptr,
-			nullptr,
-			nullptr
+			ExplosionHitObject()
 		);
 	}
 

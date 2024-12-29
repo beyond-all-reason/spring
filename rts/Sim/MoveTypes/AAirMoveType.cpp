@@ -71,9 +71,7 @@ static inline void AAMTEmitCustomTrail(CUnit* owner, unsigned int id) {
 		0.0f,
 		1.0f,
 		owner,
-		nullptr,
-		nullptr,
-		nullptr
+		ExplosionHitObject()
 	);
 }
 

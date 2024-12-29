@@ -62,9 +62,7 @@ void CExplosiveProjectile::Update()
 				damages->damageAreaOfEffect,
 				0.0f,
 				owner(),
-				nullptr,
-				nullptr,
-				nullptr
+				ExplosionHitObject()
 			);
 	}
 

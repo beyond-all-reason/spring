@@ -74,9 +74,7 @@ CPieceProjectile::CPieceProjectile(
 				0.0f,
 				0.0f,
 				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
+				ExplosionHitObject()
 			);
 		}
 
@@ -160,9 +158,7 @@ void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 			.damages              = damageArray,
 			.weaponDef            = nullptr,
 			.owner                = owner(),
-			.hitUnit              = unit,
-			.hitFeature           = feature,
-			.hitWeapon            = nullptr,
+			.hitObject            = ExplosionHitObject(unit, feature),
 			.craterAreaOfEffect   = modInfo.debrisDamage * 0.25f,
 			.damageAreaOfEffect   = modInfo.debrisDamage * 0.5f,
 			.edgeEffectiveness    = 0.0f,
@@ -240,9 +236,7 @@ void CPieceProjectile::Update()
 			0.0f,
 			0.0f,
 			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			ExplosionHitObject()
 		);
 		return;
 	}

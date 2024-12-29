@@ -157,9 +157,7 @@ void CFireBallProjectile::TickSparks()
 		(numSparks > 0)? sparks[0].size: 0.0f,
 		0.0f,
 		owner(),
-		nullptr,
-		nullptr,
-		nullptr
+		ExplosionHitObject()
 	);
 }
 

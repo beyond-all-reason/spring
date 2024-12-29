@@ -9,6 +9,7 @@
 #include "Rendering/GroundFlashInfo.h"
 #include "System/UnorderedMap.hpp"
 #include "System/Threading/SpringThreading.h"
+#include "Game/GameHelper.h"
 
 #define CEG_PREFIX_STRING "custom:"
 
@@ -68,9 +69,7 @@ public:
 		float radius,
 		float gfxMod,
 		CUnit* owner,
-		CUnit* hitUnit,
-		CFeature* hitFeature,
-		CWeapon* hitWeapon,
+		ExplosionHitObject hitObject,
 		bool withMutex = false
 	);
 
@@ -109,9 +108,7 @@ public:
 		float radius,
 		float gfxMod,
 		CUnit* owner,
-		CUnit* hitUnit,
-		CFeature* hitFeature,
-		CWeapon* hitWeapon,
+		ExplosionHitObject hitObject,
 		bool withMutex = false
 	) { return false; }
 
@@ -138,9 +135,7 @@ public:
 		float radius,
 		float gfxMod,
 		CUnit* owner,
-		CUnit* hitUnit,
-		CFeature* hitFeature,
-		CWeapon* hitWeapon,
+		ExplosionHitObject hitObject,
 		bool withMutex
 	) override;
 };
@@ -187,9 +182,7 @@ public:
 		float radius,
 		float gfxMod,
 		CUnit* owner,
-		CUnit* hitUnit,
-		CFeature* hitFeature,
-		CWeapon* hitWeapon,
+		ExplosionHitObject hitObject,
 		bool withMutex
 	) override;
 

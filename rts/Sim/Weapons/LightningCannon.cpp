@@ -69,6 +69,7 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 	if (hitUnit != nullptr)
 		hitUnit->SetLastHitPiece(hitColQuery.GetHitPiece(), gs->frameNum);
 
+	assert(1 * (!!hitUnit) + 1 * (!!hitFeature) + 1 * (!!hitShield) <= 1);
 
 	const DamageArray& damageArray = damages->GetDynamicDamages(weaponMuzzlePos, currentTargetPos);
 	const CExplosionParams params = {
@@ -77,9 +78,7 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 		.damages              = damageArray,
 		.weaponDef            = weaponDef,
 		.owner                = owner,
-		.hitUnit              = hitUnit,
-		.hitFeature           = hitFeature,
-		.hitWeapon            = hitShield,
+		.hitObject            = ExplosionHitObject(hitUnit, hitFeature, hitShield),
 		.craterAreaOfEffect   = damages->craterAreaOfEffect,
 		.damageAreaOfEffect   = damages->damageAreaOfEffect,
 		.edgeEffectiveness    = damages->edgeEffectiveness,

@@ -365,9 +365,7 @@ bool CExplosionGeneratorHandler::GenExplosion(
 	float radius,
 	float gfxMod,
 	CUnit* owner,
-	CUnit* hitUnit,
-	CFeature* hitFeature,
-	CWeapon* hitWeapon,
+	ExplosionHitObject hitObject,
 	bool withMutex
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -383,9 +381,7 @@ bool CExplosionGeneratorHandler::GenExplosion(
 		radius,
 		gfxMod,
 		owner,
-		hitUnit,
-		hitFeature,
-		hitWeapon,
+		hitObject,
 		withMutex
 	);
 }
@@ -399,9 +395,7 @@ bool CStdExplosionGenerator::Explosion(
 	float radius,
 	float gfxMod,
 	CUnit* owner,
-	CUnit* hitUnit,
-	CFeature* hitFeature,
-	CWeapon* hitWeapon,
+	ExplosionHitObject hitObject,
 	bool withMutex
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -984,15 +978,15 @@ bool CCustomExplosionGenerator::Explosion(
 	float radius,
 	float gfxMod,
 	CUnit* owner,
-	CUnit* hitUnit,
-	CFeature* hitFeature,
-	CWeapon* hitWeapon,
+	ExplosionHitObject hitObject,
 	bool withMutex
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned int flags = GetFlagsFromHeight(pos.y, CGround::GetHeightReal(pos.x, pos.z));
 
-	const bool   unitCollision = (hitUnit != nullptr);
+	auto* hitWeapon = hitObject.GetTyped<CWeapon>();
+
+	const bool   unitCollision = hitObject.HasStored<CUnit>();
 	const bool shieldCollision = (dynamic_cast<CPlasmaRepulser*>(hitWeapon) != nullptr);
 	const bool groundExplosion = ((flags & CEG_SPWF_GROUND) != 0);
 
@@ -1034,7 +1028,7 @@ bool CCustomExplosionGenerator::Explosion(
 	if (groundExplosion && (groundFlash.ttl > 0) && (groundFlash.flashSize > 1))
 		projMemPool.alloc<CStandardGroundFlash>(pos, groundFlash);
 
-	if (expGenParams.useDefaultExplosions)
+	if (expGenParams.useDefaultExplosions) {
 		return (explGenHandler.GenExplosion(
 			CExplosionGeneratorHandler::EXPGEN_ID_STANDARD,
 			pos,
@@ -1043,10 +1037,9 @@ bool CCustomExplosionGenerator::Explosion(
 			radius,
 			gfxMod,
 			owner,
-			hitUnit,
-			hitFeature,
-			hitWeapon
+			hitObject
 		));
+	}
 
 	return true;
 }

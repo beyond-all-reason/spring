@@ -88,9 +88,7 @@ void CLaserProjectile::UpdateIntensity() {
 			intensity,
 			0.0f,
 			owner(),
-			nullptr,
-			nullptr,
-			nullptr
+			ExplosionHitObject()
 		);
 		return;
 	}

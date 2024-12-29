@@ -622,9 +622,7 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 					1.0f,
 					0.0f,
 					unit,
-					nullptr,
-					nullptr,
-					nullptr
+					ExplosionHitObject()
 				);
 				return true;
 			}
@@ -639,9 +637,7 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 					1.0f,
 					0.0f,
 					unit,
-					nullptr,
-					nullptr,
-					nullptr
+					ExplosionHitObject()
 				);
 				return true;
 			}
@@ -700,9 +696,7 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 					.damages              = *weapon->damages,
 					.weaponDef            = weaponDef,
 					.owner                = unit,
-					.hitUnit              = nullptr,
-					.hitFeature           = nullptr,
-					.hitWeapon            = nullptr,
+					.hitObject            = ExplosionHitObject(),
 					.craterAreaOfEffect   = weapon->damages->craterAreaOfEffect,
 					.damageAreaOfEffect   = weapon->damages->damageAreaOfEffect,
 					.edgeEffectiveness    = weapon->damages->edgeEffectiveness,

@@ -63,9 +63,7 @@ void CEmgProjectile::Update()
 			intensity,
 			0.0f,
 			owner(),
-			nullptr,
-			nullptr,
-			nullptr
+			ExplosionHitObject()
 		);
 	}
 

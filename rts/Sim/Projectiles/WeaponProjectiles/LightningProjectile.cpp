@@ -55,9 +55,7 @@ void CLightningProjectile::Update()
 			displacements1[0],
 			0.0f,
 			owner(),
-			nullptr,
-			nullptr,
-			nullptr
+			ExplosionHitObject()
 		);
 	}
 

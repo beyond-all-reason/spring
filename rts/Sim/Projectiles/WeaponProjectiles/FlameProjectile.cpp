@@ -79,9 +79,7 @@ void CFlameProjectile::Update()
 		0.0f,
 		0.0f,
 		owner(),
-		nullptr,
-		nullptr,
-		nullptr
+		ExplosionHitObject()
 	);
 }
 
