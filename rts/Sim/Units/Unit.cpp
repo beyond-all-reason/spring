@@ -1940,6 +1940,22 @@ const CGroup* CUnit::GetGroup() const { return uiGroupHandlers[team].GetUnitGrou
 /******************************************************************************/
 /******************************************************************************/
 
+void CUnit::TurnIntoNanoframe()
+{
+	if (beingBuilt)
+		return;
+
+	beingBuilt = true;
+	SetStorage(0.0f);
+
+	// make sure neighbor extractors update
+	const auto extractor = dynamic_cast <CExtractorBuilding*> (this);
+	if (extractor != nullptr)
+		extractor->ResetExtraction();
+
+	eventHandler.UnitReverseBuilt(this);
+}
+
 bool CUnit::AddBuildPower(CUnit* builder, float amount)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -2050,17 +2066,8 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		}
 
 		// turn reclaimee into nanoframe (even living units)
-		if ((modInfo.reclaimUnitMethod == 0) && !beingBuilt) {
-			beingBuilt = true;
-			SetStorage(0.0f);
-
-			// make sure neighbor extractors update
-			CExtractorBuilding* extractor = dynamic_cast<CExtractorBuilding*>(this);
-			if (extractor != nullptr)
-				extractor->ResetExtraction();
-
-			eventHandler.UnitReverseBuilt(this);
-		}
+		if (modInfo.reclaimUnitMethod == 0)
+			TurnIntoNanoframe();
 
 		// reduce health & resources
 		health = postHealth;
