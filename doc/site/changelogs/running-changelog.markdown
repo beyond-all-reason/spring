@@ -187,6 +187,7 @@ for the purpose of checksum (as if `springignore.txt` had `\..*` on the first ro
 this cannot be overridden)
 * archive scanner version changed to 17, won't be able to reuse an old archive cache.
 Expect a rescan of archives.
+* rescan now only happens on internal archive scanner version changes, and not on any engine version change.
 * optimize performance when scanning files on a HDD.
 * fixed the archive scanner sometimes failing due to having more files opened in parallel than the OS allows.
 
@@ -206,6 +207,7 @@ lets you create a Tracy plot and configure its looks.
 * add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
 to the `unitQuadPositionUpdateRate` modrule, which may leave them unable to be hit by some weapons when moving. Call this for targets of important
 weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value greater than 1 to ensure reliable hit detection.
+* add `Spring.SetProjectileTimeToLive(projID, number framesTTL) → nil`, sets the remaining time in simframes.
 * renamed `Spring.UnitIconSetDraw` to `Spring.SetUnitIconDraw`. Old spelling will still work for a while but is deprecated.
 * built-in endgame graphs have a toggle for log scale instead of linear.
 * `gl.SaveImage` can now save in the `.hdr` format (apparently).
@@ -217,6 +219,7 @@ weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value
 ## Fixes
 * fix a possible pathing desync, especially on builds compiled for OpenBSD.
 * fix draw position for asymmetric models, they no longer disappear when not appropriate.
+* fix `Spring.GetUnitWeaponHaveFreeLineOfFire` not respecting source XYZ for Cannon type weapons.
 * fix streaming very small sound files.
 * fix `Spring.SetCameraTarget` reverting to the old position.
 * fix the `/iconsHideWithUI` command not saving the relevant springsetting properly.
