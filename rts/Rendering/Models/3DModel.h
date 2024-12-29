@@ -83,7 +83,7 @@ struct SVertexData {
 	float3 tTangent;
 	float2 texCoords[NUM_MODEL_UVCHANNS];
 	std::array<uint8_t, 4> boneIDsLow;
-	std::array<uint8_t , 4> boneWeights;
+	std::array<uint8_t, 4> boneWeights;
 	std::array<uint8_t, 4> boneIDsHigh;
 
 	static constexpr std::array<uint8_t, 4> DEFAULT_BONEIDS_HIGH = { 255, 255, 255, 255 };
