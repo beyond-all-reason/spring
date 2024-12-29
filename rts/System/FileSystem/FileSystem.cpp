@@ -6,6 +6,7 @@
 #include "FileSystem.h"
 
 #include <filesystem>
+#include <fmt/format.h>
 
 #include "Game/GameVersion.h"
 #include "System/Log/ILog.h"
@@ -271,9 +272,14 @@ const std::string& FileSystem::GetCacheDir()
 	// release builds must however also *never* use the
 	// same directory as any previous development build
 	// (regardless of branch), so keep caches separate
-	static const std::string cacheType[2] = {"dev-", "rel-"};
-	static const std::string cacheVersion = SpringVersion::GetMajor() + cacheType[SpringVersion::IsRelease()] + SpringVersion::GetBranch();
-	static const std::string cacheDir = EnsurePathSepAtEnd(GetCacheBaseDir()) + cacheVersion;
+
+	static const std::string cacheDir = fmt::format("{}{}-{}-{}",
+		EnsurePathSepAtEnd(GetCacheBaseDir()),
+		SpringVersion::GetMajor(),
+		SpringVersion::IsRelease() ? "rel" : "dev",
+		SpringVersion::GetBranch()
+	);
+
 	return cacheDir;
 }
 
