@@ -127,6 +127,9 @@ std::vector<float> CReadMap::slopeMap;
 std::vector<uint8_t> CReadMap::typeMap;
 std::vector<float3> CReadMap::centerNormals2D;
 
+std::vector<float> CReadMap::cornerHeightMapSynced;
+std::vector<float> CReadMap::cornerHeightMapUnsynced;
+
 std::vector<uint8_t> CReadMap::  syncedHeightMapDigests;
 std::vector<uint8_t> CReadMap::unsyncedHeightMapDigests;
 
@@ -636,10 +639,12 @@ void CReadMap::UpdateCenterHeightmap(const SRectangle& rect, bool initialize) co
 				heightmapSynced[idxBL] +
 				heightmapSynced[idxBR];
 			centerHeightMap[index] = height * 0.25f;
-			maxHeightMap[index] = std::max
-					( std::max(heightmapSynced[idxTL], heightmapSynced[idxTR])
-					, std::max(heightmapSynced[idxBL], heightmapSynced[idxBR])
-					);
+			maxHeightMap[index] = std::max({
+				heightmapSynced[idxTL],
+				heightmapSynced[idxTR],
+				heightmapSynced[idxBL],
+				heightmapSynced[idxBR]
+			});
 		}
 	}, 256);
 }

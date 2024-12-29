@@ -271,16 +271,18 @@ protected:
 	 */
 	std::array<float*, numHeightMipMaps> mipPointerHeightMaps;
 
-	static std::vector<float3> visVertexNormals;      //< size:  (mapx + 1) * (mapy + 1), contains one vertex normal per corner-heightmap pixel [UNSYNCED]
-	static std::vector<float3> faceNormalsSynced;     //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [SYNCED]
-	static std::vector<float3> faceNormalsUnsynced;   //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [UNSYNCED]
-	static std::vector<float3> centerNormalsSynced;   //< size:   mapx      *  mapy     , contains 1 interpolated normal per quad, same as (facenormal0+facenormal1).Normalize()) [SYNCED]
-	static std::vector<float3> centerNormalsUnsynced;
+	static std::vector<float3> visVertexNormals;       //< size:  (mapx + 1) * (mapy + 1), contains one vertex normal per corner-heightmap pixel [UNSYNCED]
+	static std::vector<float3> faceNormalsSynced;      //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [SYNCED]
+	static std::vector<float3> faceNormalsUnsynced;    //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [UNSYNCED]
+	static std::vector<float3> centerNormalsSynced;    //< size:   mapx      *  mapy     , contains 1 interpolated normal per quad, same as (facenormal0+facenormal1).Normalize()) [SYNCED]
+	static std::vector<float3> centerNormalsUnsynced;  //< size:   mapx      *  mapy
 
-	static std::vector<float> slopeMap;               //< size: (mapx/2)    * (mapy/2)  , same as 1.0 - interpolate(centernomal[i]).y [SYNCED]
-	static std::vector<uint8_t> typeMap;
-	static std::vector<float3> centerNormals2D;
+	static std::vector<float> slopeMap;                //< size: (mapx/2)    * (mapy/2)  , same as 1.0 - interpolate(centernomal[i]).y [SYNCED]
+	static std::vector<uint8_t> typeMap;               //< size: (mapx/2)    * (mapy/2)
+	static std::vector<float3> centerNormals2D;        //< size:   mapx      *  mapy
 
+	static std::vector<float> cornerHeightMapSynced;   //< size:  (mapx + 1) * (mapy + 1)
+	static std::vector<float> cornerHeightMapUnsynced; //< size:  (mapx + 1) * (mapy + 1)
 
 	CRectangleOverlapHandler unsyncedHeightMapUpdates;
 

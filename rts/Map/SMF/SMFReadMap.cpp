@@ -43,9 +43,6 @@ CONFIG(float, SSMFTexAniso).defaultValue(4.0f).minimumValue(0.0f);
 
 CSMFMapFile CSMFReadMap::mapFile;
 
-std::vector<float> CSMFReadMap::cornerHeightMapSynced;
-std::vector<float> CSMFReadMap::cornerHeightMapUnsynced;
-
 std::vector<unsigned char> CSMFReadMap::shadingTexBuffer;
 std::vector<unsigned char> CSMFReadMap::waterHeightColors;
 
@@ -134,9 +131,6 @@ void CSMFReadMap::LoadHeightMap()
 	cornerHeightMapSynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1)); //mapDims.mapxp1, mapDims.mapyp1 are not available here
 	cornerHeightMapUnsynced.clear();
 	cornerHeightMapUnsynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1));
-
-	heightMapSyncedPtr   = &cornerHeightMapSynced;
-	heightMapUnsyncedPtr = &cornerHeightMapUnsynced;
 
 	const float minHgt = mapInfo->smf.minHeightOverride ? mapInfo->smf.minHeight : header.minHeight;
 	const float maxHgt = mapInfo->smf.maxHeightOverride ? mapInfo->smf.maxHeight : header.maxHeight;
