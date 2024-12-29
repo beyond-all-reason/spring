@@ -249,11 +249,6 @@ public:
 	static constexpr int numHeightMipMaps = 7;
 	static constexpr int32_t PATCH_SIZE = 128;
 protected:
-	// these point to the actual heightmap data
-	// which is allocated by subclass instances
-	std::vector<float>* heightMapSyncedPtr = nullptr;      //< size: (mapx+1)*(mapy+1) (per vertex) [SYNCED, updates on terrain deformation]
-	std::vector<float>* heightMapUnsyncedPtr = nullptr;    //< size: (mapx+1)*(mapy+1) (per vertex) [UNSYNCED]
-
 	std::vector<float>* originalHeightMapPtr = nullptr;
 
 	// note: intentionally declared static, s.t. repeated reloading to the same
@@ -321,7 +316,7 @@ extern MapDimensions mapDims;
 
 inline float CReadMap::AddHeight(const int idx, const float a) { return SetHeight(idx, a, 1); }
 inline float CReadMap::SetHeight(const int idx, const float h, const int add) {
-	return SetHeightValue((*heightMapSyncedPtr)[idx], idx, h, add);
+	return SetHeightValue(cornerHeightMapSynced[idx], idx, h, add);
 }
 
 inline float CReadMap::AddOriginalHeight(const int idx, const float a) { return SetOriginalHeight(idx, a, 1); }

@@ -66,8 +66,6 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(boundingRadius),
 	CR_IGNORED(mapChecksum),
 
-	CR_IGNORED(heightMapSyncedPtr),
-	CR_IGNORED(heightMapUnsyncedPtr),
 	CR_IGNORED(originalHeightMapPtr),
 
 	/*
@@ -267,8 +265,8 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 void CReadMap::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	sharedCornerHeightMaps[0] = &(*heightMapUnsyncedPtr)[0];
-	sharedCornerHeightMaps[1] = &(*heightMapSyncedPtr)[0];
+	sharedCornerHeightMaps[0] = &cornerHeightMapUnsynced[0];
+	sharedCornerHeightMaps[1] = &cornerHeightMapSynced[0];
 
 	sharedCenterHeightMaps[0] = &centerHeightMap[0]; // NO UNSYNCED VARIANT
 	sharedCenterHeightMaps[1] = &centerHeightMap[0];
@@ -383,13 +381,11 @@ void CReadMap::Initialize()
 	visVertexNormals.clear();
 	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
 
-	assert(heightMapSyncedPtr != nullptr);
-	assert(heightMapUnsyncedPtr != nullptr);
 	assert(originalHeightMapPtr != nullptr);
 
 	{
-		sharedCornerHeightMaps[0] = &(*heightMapUnsyncedPtr)[0];
-		sharedCornerHeightMaps[1] = &(*heightMapSyncedPtr)[0];
+		sharedCornerHeightMaps[0] = &cornerHeightMapUnsynced[0];
+		sharedCornerHeightMaps[1] = &cornerHeightMapSynced[0];
 
 		sharedCenterHeightMaps[0] = &centerHeightMap[0]; // NO UNSYNCED VARIANT
 		sharedCenterHeightMaps[1] = &centerHeightMap[0];
@@ -601,8 +597,8 @@ void CReadMap::UpdateTempHeightBoundsSIMD(size_t idxBeg, size_t idxEnd)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	tempHeightBounds.xy = xsimd::reduce(
-		heightMapSyncedPtr->begin() + idxBeg,
-		heightMapSyncedPtr->begin() + idxEnd,
+		cornerHeightMapSynced.begin() + idxBeg,
+		cornerHeightMapSynced.begin() + idxEnd,
 		tempHeightBounds.xy,
 		MinOp{}, MaxOp{}
 	);
@@ -638,7 +634,9 @@ void CReadMap::UpdateCenterHeightmap(const SRectangle& rect, bool initialize) co
 				heightmapSynced[idxTR] +
 				heightmapSynced[idxBL] +
 				heightmapSynced[idxBR];
+
 			centerHeightMap[index] = height * 0.25f;
+
 			maxHeightMap[index] = std::max({
 				heightmapSynced[idxTL],
 				heightmapSynced[idxTR],
@@ -920,7 +918,7 @@ namespace {
 void CReadMap::CopySyncedToUnsynced()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	CopySyncedToUnsyncedImpl(*heightMapSyncedPtr, *heightMapUnsyncedPtr);
+	CopySyncedToUnsyncedImpl(cornerHeightMapSynced, cornerHeightMapUnsynced);
 	CopySyncedToUnsyncedImpl(faceNormalsSynced, faceNormalsUnsynced);
 	CopySyncedToUnsyncedImpl(centerNormalsSynced, centerNormalsUnsynced);
 	eventHandler.UnsyncedHeightMapUpdate(SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
