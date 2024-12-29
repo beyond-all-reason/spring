@@ -83,8 +83,6 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(typeMap),
 	*/
 
-	CR_IGNORED(sharedSlopeMaps),
-
 	CR_IGNORED(unsyncedHeightMapUpdates),
 
 	/*
@@ -259,9 +257,6 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 void CReadMap::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	sharedSlopeMaps[0] = &slopeMap[0]; // NO UNSYNCED VARIANT
-	sharedSlopeMaps[1] = &slopeMap[0];
-
 	mipPointerHeightMaps.fill(nullptr);
 	mipPointerHeightMaps[0] = &centerHeightMap[0];
 
@@ -360,11 +355,6 @@ void CReadMap::Initialize()
 
 	visVertexNormals.clear();
 	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
-
-	{
-		sharedSlopeMaps[0] = &slopeMap[0]; // NO UNSYNCED VARIANT
-		sharedSlopeMaps[1] = &slopeMap[0];
-	}
 
 	InitHeightBounds();
 
@@ -915,6 +905,12 @@ const float3* CReadMap::GetSharedCenterNormals(bool synced) const
 	};
 
 	return sharedCenterNormals[synced];
+}
+
+const float* CReadMap::GetSharedSlopeMap(bool synced) const
+{
+	// always and only synced
+	return slopeMap.data();
 }
 
 void CReadMap::CopySyncedToUnsynced()

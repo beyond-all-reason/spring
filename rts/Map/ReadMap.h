@@ -163,18 +163,18 @@ public:
 
 
 	/// synced only
-	const float* GetMapFileHeightMapSynced() const { return &mapFileHeightMap[0]; }
-	const float* GetOriginalHeightMapSynced() const { return &originalHeightMap[0]; }
-	const float* GetCenterHeightMapSynced() const { return &centerHeightMap[0]; }
-	const float* GetMaxHeightMapSynced() const { return &maxHeightMap[0]; }
+	const float* GetMapFileHeightMapSynced() const { return mapFileHeightMap.data(); }
+	const float* GetOriginalHeightMapSynced() const { return originalHeightMap.data(); }
+	const float* GetCenterHeightMapSynced() const { return centerHeightMap.data(); }
+	const float* GetMaxHeightMapSynced() const { return maxHeightMap.data(); }
 	const float* GetMIPHeightMapSynced(unsigned int mip) const { return mipPointerHeightMaps[mip]; }
-	const float* GetSlopeMapSynced() const { return &slopeMap[0]; }
-	const uint8_t* GetTypeMapSynced() const { return &typeMap[0]; }
-	      uint8_t* GetTypeMapSynced()       { return &typeMap[0]; }
-	const float3* GetCenterNormals2DSynced()  const { return &centerNormals2D[0]; }
+	const float* GetSlopeMapSynced() const { return slopeMap.data(); }
+	const uint8_t* GetTypeMapSynced() const { return typeMap.data(); }
+	      uint8_t* GetTypeMapSynced()       { return typeMap.data(); }
+	const float3* GetCenterNormals2DSynced()  const { return centerNormals2D.data(); }
 
 	/// unsynced only
-	const float3* GetVisVertexNormalsUnsynced() const { return &visVertexNormals[0]; }
+	const float3* GetVisVertexNormalsUnsynced() const { return visVertexNormals.data(); }
 
 	/// synced versions
 	const float* GetCornerHeightMapSynced() const { return cornerHeightMapSynced.data(); }
@@ -191,7 +191,7 @@ public:
 	const float* GetSharedCenterHeightMap(bool synced) const;
 	const float3* GetSharedFaceNormals(bool synced) const;
 	const float3* GetSharedCenterNormals(bool synced) const;
-	const float* GetSharedSlopeMap(bool synced) const { return sharedSlopeMaps[synced]; }
+	const float* GetSharedSlopeMap(bool synced) const;
 
 	// Misc
 	void CopySyncedToUnsynced();
@@ -246,7 +246,7 @@ private:
 
 public:
 	/// number of heightmap mipmaps, including full resolution
-	static constexpr int numHeightMipMaps = 7;
+	static constexpr int NUM_HM_LODS = 7;
 	static constexpr int32_t PATCH_SIZE = 128;
 protected:
 	// note: intentionally declared static, s.t. repeated reloading to the same
@@ -254,7 +254,7 @@ protected:
 	static std::vector<float> mapFileHeightMap;			// raw heightMap unmodified from the map file
 	static std::vector<float> originalHeightMap;        //< size: (mapx+1)*(mapy+1) (per vertex) [SYNCED, does NOT update on terrain deformation]
 	static std::vector<float> centerHeightMap;          //< size: (mapx  )*(mapy  ) (per face) [SYNCED, updates on terrain deformation]
-	static std::array<std::vector<float>, numHeightMipMaps - 1> mipCenterHeightMaps;
+	static std::array<std::vector<float>, NUM_HM_LODS - 1> mipCenterHeightMaps;
 	static std::vector<float> maxHeightMap;			// map for sea/hover to catch coast lines with sharp vertical changes so they don't try to climb the cliff.
 
 	/**
@@ -262,7 +262,7 @@ protected:
 	 * mipPointerHeightMaps[0  ] is full resolution (centerHeightMap)
 	 * mipPointerHeightMaps[n+1] is half resolution of mipPointerHeightMaps[n] (mipCenterHeightMaps[n - 1])
 	 */
-	std::array<float*, numHeightMipMaps> mipPointerHeightMaps;
+	std::array<float*, NUM_HM_LODS> mipPointerHeightMaps;
 
 	static std::vector<float3> visVertexNormals;       //< size:  (mapx + 1) * (mapy + 1), contains one vertex normal per corner-heightmap pixel [UNSYNCED]
 	static std::vector<float3> faceNormalsSynced;      //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [SYNCED]
@@ -281,10 +281,6 @@ protected:
 
 	std::vector<float3> unsyncedHeightInfo; // per 128x128 HM patch
 private:
-	// these combine the various synced and unsynced arrays
-	// for branch-less access: [0] = !synced, [1] = synced
-	const float* sharedSlopeMaps[2];
-
 	/// these are not "digests", just simple rolling counters
 	/// for each LOS-map square the counter value indicates how many times
 	/// the synced heightmap block of squares corresponding to it has been
