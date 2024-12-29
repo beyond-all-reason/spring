@@ -45,6 +45,11 @@ public:
 		((*this = p), ...);
 	}
 
+	ExplosionHitObject(ExplosionHitObject&&) noexcept = delete;
+	ExplosionHitObject(const ExplosionHitObject&) = delete;
+	ExplosionHitObject& operator=(ExplosionHitObject&&) noexcept = delete;
+	ExplosionHitObject& operator=(const ExplosionHitObject&) = delete;
+
 	template<typename T>
 	void operator=(T* p) {
 		static_assert(std::is_constructible_v<VariantType, T*>);

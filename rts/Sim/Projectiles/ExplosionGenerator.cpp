@@ -365,7 +365,7 @@ bool CExplosionGeneratorHandler::GenExplosion(
 	float radius,
 	float gfxMod,
 	CUnit* owner,
-	ExplosionHitObject hitObject,
+	const ExplosionHitObject& hitObject,
 	bool withMutex
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -395,7 +395,7 @@ bool CStdExplosionGenerator::Explosion(
 	float radius,
 	float gfxMod,
 	CUnit* owner,
-	ExplosionHitObject hitObject,
+	const ExplosionHitObject& hitObject,
 	bool withMutex
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -978,7 +978,7 @@ bool CCustomExplosionGenerator::Explosion(
 	float radius,
 	float gfxMod,
 	CUnit* owner,
-	ExplosionHitObject hitObject,
+	const ExplosionHitObject& hitObject,
 	bool withMutex
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;

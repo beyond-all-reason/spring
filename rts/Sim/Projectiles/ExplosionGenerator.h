@@ -69,7 +69,7 @@ public:
 		float radius,
 		float gfxMod,
 		CUnit* owner,
-		ExplosionHitObject hitObject,
+		const ExplosionHitObject& hitObject,
 		bool withMutex = false
 	);
 
@@ -108,7 +108,7 @@ public:
 		float radius,
 		float gfxMod,
 		CUnit* owner,
-		ExplosionHitObject hitObject,
+		const ExplosionHitObject& hitObject,
 		bool withMutex = false
 	) { return false; }
 
@@ -135,7 +135,7 @@ public:
 		float radius,
 		float gfxMod,
 		CUnit* owner,
-		ExplosionHitObject hitObject,
+		const ExplosionHitObject& hitObject,
 		bool withMutex
 	) override;
 };
@@ -182,7 +182,7 @@ public:
 		float radius,
 		float gfxMod,
 		CUnit* owner,
-		ExplosionHitObject hitObject,
+		const ExplosionHitObject& hitObject,
 		bool withMutex
 	) override;
 
