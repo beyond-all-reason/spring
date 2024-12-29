@@ -249,8 +249,6 @@ public:
 	static constexpr int numHeightMipMaps = 7;
 	static constexpr int32_t PATCH_SIZE = 128;
 protected:
-	std::vector<float>* originalHeightMapPtr = nullptr;
-
 	// note: intentionally declared static, s.t. repeated reloading to the same
 	// (or any smaller) map does not fragment the heap which invites bad_alloc's
 	static std::vector<float> mapFileHeightMap;			// raw heightMap unmodified from the map file
@@ -321,7 +319,7 @@ inline float CReadMap::SetHeight(const int idx, const float h, const int add) {
 
 inline float CReadMap::AddOriginalHeight(const int idx, const float a) { return SetOriginalHeight(idx, a, 1); }
 inline float CReadMap::SetOriginalHeight(const int idx, const float h, const int add) {
-	return SetHeightValue((*originalHeightMapPtr)[idx], idx, h, add);
+	return SetHeightValue(originalHeightMap[idx], idx, h, add);
 }
 
 inline float CReadMap::SetHeightValue(float& heightRef, const int idx, const float h, const int add) {

@@ -66,8 +66,6 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(boundingRadius),
 	CR_IGNORED(mapChecksum),
 
-	CR_IGNORED(originalHeightMapPtr),
-
 	/*
 	CR_IGNORED(originalHeightMap),
 	CR_IGNORED(centerHeightMap),
@@ -362,8 +360,6 @@ void CReadMap::Initialize()
 	mipPointerHeightMaps.fill(nullptr);
 	mipPointerHeightMaps[0] = &centerHeightMap[0];
 
-	originalHeightMapPtr = &originalHeightMap;
-
 	for (int i = 1; i < numHeightMipMaps; i++) {
 		mipCenterHeightMaps[i - 1].clear();
 		mipCenterHeightMaps[i - 1].resize((mapDims.mapx >> i) * (mapDims.mapy >> i));
@@ -380,8 +376,6 @@ void CReadMap::Initialize()
 
 	visVertexNormals.clear();
 	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
-
-	assert(originalHeightMapPtr != nullptr);
 
 	{
 		sharedCornerHeightMaps[0] = &cornerHeightMapUnsynced[0];
