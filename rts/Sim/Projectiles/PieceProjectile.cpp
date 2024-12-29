@@ -66,7 +66,16 @@ CPieceProjectile::CPieceProjectile(
 			cegID = guRNG.NextInt(ud->GetPieceExpGenCount());
 			cegID = ud->GetPieceExpGenID(cegID);
 
-			explGenHandler.GenExplosion(cegID, pos, speed, 100, 0.0f, 0.0f, nullptr, nullptr);
+			explGenHandler.GenExplosion(
+				cegID,
+				pos,
+				speed,
+				100.0f,
+				0.0f,
+				0.0f,
+				nullptr,
+				ExplosionHitObject()
+			);
 		}
 
 		model = owner->model;
@@ -149,8 +158,7 @@ void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 			.damages              = damageArray,
 			.weaponDef            = nullptr,
 			.owner                = owner(),
-			.hitUnit              = unit,
-			.hitFeature           = feature,
+			.hitObject            = ExplosionHitObject(unit, feature),
 			.craterAreaOfEffect   = modInfo.debrisDamage * 0.25f,
 			.damageAreaOfEffect   = modInfo.debrisDamage * 0.5f,
 			.edgeEffectiveness    = 0.0f,
@@ -220,7 +228,16 @@ void CPieceProjectile::Update()
 
 	if ((explFlags & PF_NoCEGTrail) == 0) {
 		// TODO: pass a more sensible ttl to the CEG (age-related?)
-		explGenHandler.GenExplosion(cegID, pos, speed, 100, 0.0f, 0.0f, nullptr, nullptr);
+		explGenHandler.GenExplosion(
+			cegID,
+			pos,
+			speed,
+			100,
+			0.0f,
+			0.0f,
+			nullptr,
+			ExplosionHitObject()
+		);
 		return;
 	}
 
