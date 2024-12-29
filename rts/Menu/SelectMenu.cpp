@@ -150,7 +150,7 @@ SelectMenu::SelectMenu(std::shared_ptr<ClientSetup> setup)
 		menu->SetPos(0.1, 0.5);
 		menu->SetSize(0.4, 0.4);
 		menu->SetBorder(1.2f);
-		/*agui::TextElement* title = */new agui::TextElement("Spring " + SpringVersion::GetFull(), menu); // will be deleted in menu
+		/*agui::TextElement* title = */new agui::TextElement("Recoil " + SpringVersion::GetFull(), menu); // will be deleted in menu
 		Button* testGame = new Button("Test Game", menu);
 		testGame->Clicked = std::bind(&SelectMenu::Single, this);
 

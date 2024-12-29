@@ -90,7 +90,7 @@ namespace SpringVersion
 	/**
 	 * The basic part of a spring version.
 	 * This may only be used for sync-checking if IsRelease() returns true.
-	 * @return "Major.PatchSet" or "Major.PatchSet.1"
+	 * @return "Major.Minor" or "Major.Minor.PatchSet"
 	 * @see GetSync
 	 */
 	extern const std::string& Get();
