@@ -188,7 +188,7 @@ public:
 
 	/// shared interface
 	const float* GetSharedCornerHeightMap(bool synced) const;
-	const float* GetSharedCenterHeightMap(bool synced) const { return sharedCenterHeightMaps[synced]; }
+	const float* GetSharedCenterHeightMap(bool synced) const;
 	const float3* GetSharedFaceNormals(bool synced) const { return sharedFaceNormals[synced]; }
 	const float3* GetSharedCenterNormals(bool synced) const { return sharedCenterNormals[synced]; }
 	const float* GetSharedSlopeMap(bool synced) const { return sharedSlopeMaps[synced]; }
@@ -283,7 +283,6 @@ protected:
 private:
 	// these combine the various synced and unsynced arrays
 	// for branch-less access: [0] = !synced, [1] = synced
-	const float* sharedCenterHeightMaps[2];
 	const float3* sharedFaceNormals[2];
 	const float3* sharedCenterNormals[2];
 	const float* sharedSlopeMaps[2];
