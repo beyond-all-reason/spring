@@ -56,7 +56,7 @@ void CExpGenSpawner::Update()
 			0.0f,
 			0.0f,
 			owner(),
-			nullptr,
+			ExplosionHitObject(),
 			true
 		);
 }
