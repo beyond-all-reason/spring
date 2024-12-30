@@ -163,11 +163,11 @@ public:
 
 
 	/// synced only
-	const float* GetMapFileHeightMapSynced() const { return mapFileHeightMap.data(); }
+	const float* GetUnmodifiedHeightMapSynced() const { return unmodifiedHeightMap.data(); }
 	const float* GetOriginalHeightMapSynced() const { return originalHeightMap.data(); }
-	const float* GetCenterHeightMapSynced() const { return centerHeightMap.data(); }
+	const float* GetCenterHeightMapSynced() const { return centerHeightMapLods[0].data(); }
+	const float* GetCenterHeightMapSyncedLod(uint32_t lod) const { return centerHeightMapLods[lod].data(); }
 	const float* GetMaxHeightMapSynced() const { return maxHeightMap.data(); }
-	const float* GetMIPHeightMapSynced(unsigned int mip) const { return mipPointerHeightMaps[mip]; }
 	const float* GetSlopeMapSynced() const { return slopeMap.data(); }
 	const uint8_t* GetTypeMapSynced() const { return typeMap.data(); }
 	      uint8_t* GetTypeMapSynced()       { return typeMap.data(); }
@@ -251,18 +251,13 @@ public:
 protected:
 	// note: intentionally declared static, s.t. repeated reloading to the same
 	// (or any smaller) map does not fragment the heap which invites bad_alloc's
-	static std::vector<float> mapFileHeightMap;			// raw heightMap unmodified from the map file
+	static std::vector<float> unmodifiedHeightMap;			// raw heightMap unmodified from the map file
 	static std::vector<float> originalHeightMap;        //< size: (mapx+1)*(mapy+1) (per vertex) [SYNCED, does NOT update on terrain deformation]
-	static std::vector<float> centerHeightMap;          //< size: (mapx  )*(mapy  ) (per face) [SYNCED, updates on terrain deformation]
-	static std::array<std::vector<float>, NUM_HM_LODS - 1> mipCenterHeightMaps;
 	static std::vector<float> maxHeightMap;			// map for sea/hover to catch coast lines with sharp vertical changes so they don't try to climb the cliff.
 
-	/**
-	 * array of pointers to heightmaps in different resolutions
-	 * mipPointerHeightMaps[0  ] is full resolution (centerHeightMap)
-	 * mipPointerHeightMaps[n+1] is half resolution of mipPointerHeightMaps[n] (mipCenterHeightMaps[n - 1])
-	 */
-	std::array<float*, NUM_HM_LODS> mipPointerHeightMaps;
+	//< size: (mapx  )*(mapy  ) (per face) [SYNCED, updates on terrain deformation]
+	// every next LOD is 2x2 smaller
+	static std::array<std::vector<float>, NUM_HM_LODS> centerHeightMapLods;
 
 	static std::vector<float3> visVertexNormals;       //< size:  (mapx + 1) * (mapy + 1), contains one vertex normal per corner-heightmap pixel [UNSYNCED]
 	static std::vector<float3> faceNormalsSynced;      //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [SYNCED]
