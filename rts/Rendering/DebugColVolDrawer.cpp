@@ -53,13 +53,13 @@ static inline void DrawCollisionVolume(const CollisionVolume* vol, const CMatrix
 					m.Translate(-(vol->GetHScale(0)), 0.0f, 0.0f);
 					m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
 					m.Scale(vol->GetScale(0), vol->GetHScale(1), vol->GetHScale(2));
-					m.RotateY( 90.0f * math::DEG_TO_RAD);
+					m.RotateY(-90.0f * math::DEG_TO_RAD);
 				} break;
 				case CollisionVolume::COLVOL_AXIS_Y: {
 					m.Translate(0.0f, -(vol->GetHScale(1)), 0.0f);
 					m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
 					m.Scale(vol->GetHScale(0), vol->GetScale(1), vol->GetHScale(2));
-					m.RotateX(-90.0f * math::DEG_TO_RAD);
+					m.RotateX( 90.0f * math::DEG_TO_RAD);
 				} break;
 				case CollisionVolume::COLVOL_AXIS_Z: {
 					m.Translate(0.0f, 0.0f, -(vol->GetHScale(2)));
