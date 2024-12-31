@@ -33,6 +33,7 @@ set(FILES
 	bitmaps/circles.tga
 	bitmaps/explo.tga
 	bitmaps/waterbump.png
+	bitmaps/waterbump_4tiles.dds
 	bitmaps/groundring.tga
 	bitmaps/guiicon_move.bmp
 	bitmaps/detailtex2.bmp
