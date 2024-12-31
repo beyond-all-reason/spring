@@ -8,19 +8,25 @@
 
 /******************************************************************************
  * Engine constants
- * @module Engine
  * @see rts/Lua/LuaConstEngine.cpp
 ******************************************************************************/
 
-/*** Engine specific information
+/***
+ * @class FeatureSupport
+ * @field hasExitOnlyYardmaps boolean
+ * @field rmlUiApiVersion integer
+ */
+
+/***
+ * Engine specific information.
  *
  * @table Engine
- * @string version Returns the same as `spring  *sync-version`, e.g. "92"
- * @string versionFull 
- * @string versionPatchSet 
- * @string buildFlags (unsynced only) Gets additional engine buildflags, e.g. "OMP" or "MT-Sim DEBUG"
- * @string FeatureSupport table containing various engine features as keys; use for cross-version compat
- * @number wordSize indicates the build type and is either 32 or 64 (or 0 in synced code)
+ * @field version string Returns the same as `spring  *sync-version`, e.g. "92"
+ * @field versionFull string
+ * @field versionPatchSet string
+ * @field buildFlags string (unsynced only) Gets additional engine buildflags, e.g. "OMP" or "MT-Sim DEBUG"
+ * @field FeatureSupport FeatureSupport table containing various engine features as keys; use for cross-version compat
+ * @field wordSize number indicates the build type and is either 32 or 64 (or 0 in synced code)
  */
 
 bool LuaConstEngine::PushEntries(lua_State* L)

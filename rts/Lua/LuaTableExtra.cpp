@@ -4,9 +4,7 @@
 #include "LuaUtils.h"
 
 /******************************************************************************
- * table extensions
- * @module TableExtra
- * @see rts/Lua/LuaTableExtra.cpp
+ * Table extensions
 ******************************************************************************/
 
 /*** Returns a table with preallocated memory
@@ -17,9 +15,9 @@
  * such as one for each UnitDef, by avoiding reallocation.
  *
  * @function table.new
- * @number nArray hint for count of array elements
- * @number nHashed hint for count of hashtable elements
- * @treturn table
+ * @param nArray number hint for count of array elements
+ * @param nHashed number hint for count of hashtable elements
+ * @return table
  */
 static int TableExtra_new(lua_State* L)
 {

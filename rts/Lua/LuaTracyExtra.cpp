@@ -29,15 +29,19 @@ static const std::string& GetImmanentPlotName(const char *plotName)
 	return *tracyLuaPlots.emplace(plotName).first;
 }
 
+/**
+ * Tracy extensions
+ * @table tracy
+ */
+
 /*** Configure custom appearance for a Tracy plot for use in debugging or profiling
  *
  * @function tracy.LuaTracyPlotConfig
- * @string plotName name of the plot to customize
- * @string[opt="Number"] plotFormatType "Number"|"Percentage"|"Memory"
- * @bool[opt=true] stepwise stepwise chart
- * @bool[opt=false] fill whether to fill color
- * @number[opt=0xFFFFFF] color uint32 number as BGR color
- * @treturn nil
+ * @param plotName string name of the plot to customize
+ * @param plotFormatType "Number"|"Percentage"|"Memory"|nil (Default: `"Number"`)
+ * @param stepwise boolean? (Default: `true`) stepwise chart
+ * @param fill boolean? (Default: `false`) whether to fill color
+ * @param color integer? (Default: `0xFFFFFF`) uint32 number as BGR color
  */
 
 static int LuaTracyPlotConfig(lua_State* L)
@@ -63,9 +67,8 @@ static int LuaTracyPlotConfig(lua_State* L)
 /*** Update a Tracy plot with a value
  *
  * @function tracy.LuaTracyPlot
- * @string plotName which LuaPlot should be updated
- * @number plotValue the number to show on the Tracy plot
- * @treturn nil
+ * @param plotName string Which LuaPlot should be updated
+ * @param plotValue number the number to show on the Tracy plot
  */
 static int LuaTracyPlot(lua_State* L)
 {
@@ -75,12 +78,6 @@ static int LuaTracyPlot(lua_State* L)
 	TracyPlot(GetImmanentPlotName(plotName).c_str(), plotValue);
 	return 0;
 }
-
-/******************************************************************************
- * tracy extensions
- * @module TracyExtra
- * @see rts/Lua/LuaTracyExtra.cpp
-******************************************************************************/
 
 bool LuaTracyExtra::PushEntries(lua_State* L)
 {
