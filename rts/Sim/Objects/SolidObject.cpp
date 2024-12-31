@@ -352,7 +352,7 @@ float3 CSolidObject::GetDragAccelerationVec(float atmosphericDensity, float wate
 float3 CSolidObject::GetWantedUpDir(bool useGroundNormal, bool useObjectNormal, float dirSmoothing) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float3 groundUp = CGround::GetSmoothNormal(pos.x, pos.z);
+	const float3 groundUp = CGround::GetSmoothNormal(pos.x, pos.z, true, 3);
 	const float3 curUpDir = float3{updir};
 	const float3 objectUp = mix(UpVector, curUpDir, useObjectNormal);
 	const float3 targetUp = mix(objectUp, groundUp, useGroundNormal);

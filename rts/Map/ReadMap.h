@@ -177,9 +177,9 @@ public:
 	const float3* GetVisVertexNormalsUnsynced() const { return visVertexNormals.data(); }
 
 	/// synced versions
-	const float* GetCornerHeightMapSynced() const { return cornerHeightMapSynced.data(); }
+	const float* GetCornerHeightMapSynced() const { return cornerHeightMapSyncedLods[0].data(); }
 	const float3* GetFaceNormalsSynced()    const { return faceNormalsSynced.data(); }
-	const float3* GetCenterNormalsSynced()  const { return centerNormalsSynced.data(); }
+	const float3* GetCenterNormalsSynced()  const { return centerNormalsSyncedLods[0].data(); }
 
 	/// unsynced versions
 	const float* GetCornerHeightMapUnsynced() const { return cornerHeightMapUnsynced.data(); }
@@ -187,10 +187,10 @@ public:
 	const float3* GetCenterNormalsUnsynced()  const { return centerNormalsUnsynced.data(); }
 
 	/// shared interface
-	const float* GetSharedCornerHeightMap(bool synced) const;
+	const float* GetSharedCornerHeightMap(bool synced, uint32_t atLod = 0) const;
 	const float* GetSharedCenterHeightMap(bool synced) const;
 	const float3* GetSharedFaceNormals(bool synced) const;
-	const float3* GetSharedCenterNormals(bool synced) const;
+	const float3* GetSharedCenterNormals(bool synced, uint32_t atLod = 0) const;
 	const float* GetSharedSlopeMap(bool synced) const;
 
 	// Misc
@@ -234,9 +234,11 @@ private:
 	void UpdateHeightBounds(int syncFrame);
 	void UpdateTempHeightBoundsSIMD(size_t begin, size_t end);
 
+	void UpdateLodCornerHeightmaps(const SRectangle& rect, bool initialize) const;
 	void UpdateCenterHeightmap(const SRectangle& rect, bool initialize) const;
-	void UpdateMipHeightmaps(const SRectangle& rect, bool initialize);
+	void UpdateLodHeightmaps(const SRectangle& rect, bool initialize);
 	void UpdateFaceNormals(const SRectangle& rect, bool initialize);
+	void UpdateLodCenterNormals(const SRectangle& rect, bool initialize);
 	void UpdateSlopemap(const SRectangle& rect, bool initialize);
 
 	inline void HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect);
@@ -245,8 +247,9 @@ private:
 	float SetHeightValue(float& heightRef, const int idx, const float h, const int add = 0);
 
 public:
-	/// number of heightmap mipmaps, including full resolution
-	static constexpr int NUM_HM_LODS = 7;
+	static constexpr int NUM_CNT_HM_LODS = 7;
+	static constexpr int NUM_CNT_NM_LODS = 7;
+	static constexpr int NUM_CRN_HM_LODS = 7;
 	static constexpr int32_t PATCH_SIZE = 128;
 protected:
 	// note: intentionally declared static, s.t. repeated reloading to the same
@@ -257,19 +260,24 @@ protected:
 
 	//< size: (mapx  )*(mapy  ) (per face) [SYNCED, updates on terrain deformation]
 	// every next LOD is 2x2 smaller
-	static std::array<std::vector<float>, NUM_HM_LODS> centerHeightMapLods;
+	static std::array<std::vector<float>, NUM_CNT_HM_LODS> centerHeightMapLods;
 
 	static std::vector<float3> visVertexNormals;       //< size:  (mapx + 1) * (mapy + 1), contains one vertex normal per corner-heightmap pixel [UNSYNCED]
 	static std::vector<float3> faceNormalsSynced;      //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [SYNCED]
 	static std::vector<float3> faceNormalsUnsynced;    //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [UNSYNCED]
-	static std::vector<float3> centerNormalsSynced;    //< size:   mapx      *  mapy     , contains 1 interpolated normal per quad, same as (facenormal0+facenormal1).Normalize()) [SYNCED]
+
+	//< size:   mapx      *  mapy     , contains 1 interpolated normal per quad, same as (facenormal0+facenormal1).Normalize()) [SYNCED]
+	// every next LOD is 2x2 smaller
+	static std::array<std::vector<float3>, NUM_CNT_NM_LODS> centerNormalsSyncedLods;
 	static std::vector<float3> centerNormalsUnsynced;  //< size:   mapx      *  mapy
 
 	static std::vector<float> slopeMap;                //< size: (mapx/2)    * (mapy/2)  , same as 1.0 - interpolate(centernomal[i]).y [SYNCED]
 	static std::vector<uint8_t> typeMap;               //< size: (mapx/2)    * (mapy/2)
 	static std::vector<float3> centerNormals2D;        //< size:   mapx      *  mapy
 
-	static std::vector<float> cornerHeightMapSynced;   //< size:  (mapx + 1) * (mapy + 1)
+	//< size:  (mapx + 1) * (mapy + 1)
+	// every next LOD is 2x2 smaller
+	static std::array<std::vector<float>, NUM_CRN_HM_LODS> cornerHeightMapSyncedLods;
 	static std::vector<float> cornerHeightMapUnsynced; //< size:  (mapx + 1) * (mapy + 1)
 
 	CRectangleOverlapHandler unsyncedHeightMapUpdates;
@@ -301,7 +309,7 @@ extern MapDimensions mapDims;
 
 inline float CReadMap::AddHeight(const int idx, const float a) { return SetHeight(idx, a, 1); }
 inline float CReadMap::SetHeight(const int idx, const float h, const int add) {
-	return SetHeightValue(cornerHeightMapSynced[idx], idx, h, add);
+	return SetHeightValue(cornerHeightMapSyncedLods[0][idx], idx, h, add);
 }
 
 inline float CReadMap::AddOriginalHeight(const int idx, const float a) { return SetOriginalHeight(idx, a, 1); }

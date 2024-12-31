@@ -321,18 +321,18 @@ void CModInfo::Init(const std::string& modFileName)
 		separateJammers = sensors.GetBool("separateJammers", separateJammers);
 
 		// losMipLevel is used as index to readMap->mipHeightmaps,
-		// so the maximum value is CReadMap::NUM_HM_LODS - 1
+		// so the maximum value is CReadMap::NUM_CNT_HM_LODS - 1
 		losMipLevel = los.GetInt("losMipLevel", losMipLevel);
 		// airLosMipLevel doesn't have such restrictions, it's just
 		// used in various bitshifts with signed integers
 		airMipLevel = los.GetInt("airMipLevel", airMipLevel);
 		radarMipLevel = los.GetInt("radarMipLevel", radarMipLevel);
 
-		if ((losMipLevel < 0) || (losMipLevel > CReadMap::NUM_HM_LODS - 1))
-			throw content_error(fmt::format("Sensors\\Los\\LosMipLevel out of bounds. The minimum value is 0. The maximum value is {}.", CReadMap::NUM_HM_LODS - 1));
+		if ((losMipLevel < 0) || (losMipLevel > CReadMap::NUM_CNT_HM_LODS - 1))
+			throw content_error(fmt::format("Sensors\\Los\\LosMipLevel out of bounds. The minimum value is 0. The maximum value is {}.", CReadMap::NUM_CNT_HM_LODS - 1));
 
-		if ((radarMipLevel < 0) || (radarMipLevel > CReadMap::NUM_HM_LODS - 1))
-			throw content_error(fmt::format("Sensors\\Los\\RadarMipLevel out of bounds. The minimum value is 0. The maximum value is {}.", CReadMap::NUM_HM_LODS - 1));
+		if ((radarMipLevel < 0) || (radarMipLevel > CReadMap::NUM_CNT_HM_LODS - 1))
+			throw content_error(fmt::format("Sensors\\Los\\RadarMipLevel out of bounds. The minimum value is 0. The maximum value is {}.", CReadMap::NUM_CNT_HM_LODS - 1));
 
 		if ((airMipLevel < 0) || (airMipLevel > 30))
 			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
