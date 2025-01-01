@@ -6,30 +6,11 @@
 #endif
 #include "glewstub.h"
 
-#undef GL_GLEXT_LEGACY
-#define GL_GLEXT_PROTOTYPES
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-//#include <stdio.h>
-
-const GLubyte* glewGetString(GLenum name) {
-	//printf( "glewGetString()"  );
-	if (name == GLAD_GL_VERSION) {
-		return (const GLubyte*) "spring headless stub GLEW version";
-	} else {
-		return (const GLubyte*) "GL_ARB_multitexture GL_ARB_texture_env_combine GL_ARB_texture_compression";
-	}
-}
-
-GLboolean glewIsSupported(const char* name) { return GL_FALSE; }
-GLboolean glewIsExtensionSupported(const char* name) { return GL_FALSE; }
-
-GLenum glewInit() {
-   //printf( "glewInit()\n"  );
-
+int gladLoadGL(void) {
    return 0;
 }
 
