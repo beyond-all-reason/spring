@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _GLAD_GL_STUB_H_
-#define _GLAD_GL_STUB_H_
+#pragma once
 
 #undef GL_GLEXT_LEGACY
 #define GL_GLEXT_PROTOTYPES
@@ -109,16 +108,8 @@ extern "C" {
 
 #define GLXEW_SGI_video_sync GL_FALSE
 
-GLenum glewInit();
-
-const GLubyte* glewGetString(GLenum name);
-
-GLboolean glewIsSupported(const char* name);
-GLboolean glewIsExtensionSupported(const char* name);
+int gladLoadGL(void);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
-#endif // _GLAD_GL_STUB_H_
-
