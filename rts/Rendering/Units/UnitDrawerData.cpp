@@ -504,7 +504,15 @@ void CUnitDrawerData::SetUnitDefImage(const UnitDef* unitDef, const std::string&
 		}
 	}
 
-	unitImage->textureID = bitmap.CreateTexture();
+	unitImage->textureID = bitmap.CreateTexture(TextureCreationParams{
+		.aniso = 0.0f,
+		.lodBias = 0.0f,
+		.texID = 0,
+		.reqNumLevels = 1,
+		.linearMipMapFilter = false,
+		.linearTextureFilter = true
+	});
+
 	unitImage->imageSizeX = bitmap.xsize;
 	unitImage->imageSizeY = bitmap.ysize;
 }
