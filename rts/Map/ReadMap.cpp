@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <cstring> // memcpy
 
+#include <fmt/printf.h>
+
 #include "xsimd/xsimd.hpp"
 #include "ReadMap.h"
 #include "MapDamage.h"
@@ -66,16 +68,11 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(boundingRadius),
 	CR_IGNORED(mapChecksum),
 
-	CR_IGNORED(heightMapSyncedPtr),
-	CR_IGNORED(heightMapUnsyncedPtr),
-	CR_IGNORED(originalHeightMapPtr),
-
 	/*
 	CR_IGNORED(originalHeightMap),
 	CR_IGNORED(centerHeightMap),
-	CR_IGNORED(mipCenterHeightMaps),
+	CR_IGNORED(centerHeightMapLods),
 	*/
-	CR_IGNORED(mipPointerHeightMaps),
 	/*
 	CR_IGNORED(visVertexNormals),
 	CR_IGNORED(faceNormalsSynced),
@@ -86,12 +83,6 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(slopeMap),
 	CR_IGNORED(typeMap),
 	*/
-
-	CR_IGNORED(sharedCornerHeightMaps),
-	CR_IGNORED(sharedCenterHeightMaps),
-	CR_IGNORED(sharedFaceNormals),
-	CR_IGNORED(sharedCenterNormals),
-	CR_IGNORED(sharedSlopeMaps),
 
 	CR_IGNORED(unsyncedHeightMapUpdates),
 
@@ -111,21 +102,24 @@ CReadMap* readMap = nullptr;
 
 MapDimensions mapDims;
 
-std::vector<float> CReadMap::mapFileHeightMap;
+std::vector<float> CReadMap::unmodifiedHeightMap;
 std::vector<float> CReadMap::originalHeightMap;
-std::vector<float> CReadMap::centerHeightMap;
 std::vector<float> CReadMap::maxHeightMap;
-std::array<std::vector<float>, CReadMap::numHeightMipMaps - 1> CReadMap::mipCenterHeightMaps;
+std::array<std::vector<float>, CReadMap::NUM_CNT_HM_LODS> CReadMap::centerHeightMapLods;
 
 std::vector<float3> CReadMap::visVertexNormals;
 std::vector<float3> CReadMap::faceNormalsSynced;
 std::vector<float3> CReadMap::faceNormalsUnsynced;
-std::vector<float3> CReadMap::centerNormalsSynced;
+
+std::array<std::vector<float3>, CReadMap::NUM_CNT_NM_LODS> CReadMap::centerNormalsSyncedLods;
 std::vector<float3> CReadMap::centerNormalsUnsynced;
 
 std::vector<float> CReadMap::slopeMap;
 std::vector<uint8_t> CReadMap::typeMap;
 std::vector<float3> CReadMap::centerNormals2D;
+
+std::array<std::vector<float>, CReadMap::NUM_CRN_HM_LODS> CReadMap::cornerHeightMapSyncedLods;
+std::vector<float> CReadMap::cornerHeightMapUnsynced;
 
 std::vector<uint8_t> CReadMap::  syncedHeightMapDigests;
 std::vector<uint8_t> CReadMap::unsyncedHeightMapDigests;
@@ -196,7 +190,7 @@ void CReadMap::Serialize(creg::ISerializer* s)
 void CReadMap::SerializeMapChangesBeforeMatch(creg::ISerializer* s)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	SerializeMapChanges(s, GetMapFileHeightMapSynced(), const_cast<float*>(GetOriginalHeightMapSynced()));
+	SerializeMapChanges(s, GetUnmodifiedHeightMapSynced(), const_cast<float*>(GetOriginalHeightMapSynced()));
 }
 
 void CReadMap::SerializeMapChangesDuringMatch(creg::ISerializer* s)
@@ -264,29 +258,10 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 void CReadMap::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	sharedCornerHeightMaps[0] = &(*heightMapUnsyncedPtr)[0];
-	sharedCornerHeightMaps[1] = &(*heightMapSyncedPtr)[0];
-
-	sharedCenterHeightMaps[0] = &centerHeightMap[0]; // NO UNSYNCED VARIANT
-	sharedCenterHeightMaps[1] = &centerHeightMap[0];
-
-	sharedFaceNormals[0] = &faceNormalsUnsynced[0];
-	sharedFaceNormals[1] = &faceNormalsSynced[0];
-
-	sharedCenterNormals[0] = &centerNormalsUnsynced[0];
-	sharedCenterNormals[1] = &centerNormalsSynced[0];
-
-	sharedSlopeMaps[0] = &slopeMap[0]; // NO UNSYNCED VARIANT
-	sharedSlopeMaps[1] = &slopeMap[0];
-
-	mipPointerHeightMaps.fill(nullptr);
-	mipPointerHeightMaps[0] = &centerHeightMap[0];
-
-	for (int i = 1; i < numHeightMipMaps; i++) {
-		mipCenterHeightMaps[i - 1].clear();
-		mipCenterHeightMaps[i - 1].resize((mapDims.mapx >> i) * (mapDims.mapy >> i));
-
-		mipPointerHeightMaps[i] = &mipCenterHeightMaps[i - 1][0];
+	// needed? needed more?
+	for (int i = 0; i < centerHeightMapLods.size(); i++) {
+		centerHeightMapLods[i].clear();
+		centerHeightMapLods[i].resize((mapDims.mapx >> i) * (mapDims.mapy >> i));
 	}
 
 	hmUpdated = true;
@@ -315,8 +290,7 @@ void CReadMap::Initialize()
 	boundingRadius = math::sqrt(Square(mapDims.mapx * SQUARE_SIZE) + Square(mapDims.mapy * SQUARE_SIZE)) * 0.5f;
 
 	{
-		char loadMsg[512];
-		const char* fmtString = "Loading Map (%u MB)";
+		//TODO revise & fix
 		unsigned int reqMemFootPrintKB =
 			((( mapDims.mapxp1)   * mapDims.mapyp1  * 2     * sizeof(float))         / 1024) +   // cornerHeightMap{Synced, Unsynced}
 			((( mapDims.mapxp1)   * mapDims.mapyp1  *         sizeof(float))         / 1024) +   // originalHeightMap
@@ -330,44 +304,41 @@ void CReadMap::Initialize()
 			((  mapDims.hmapx     * mapDims.hmapy           * sizeof(float))         / 1024) +   // MetalMap::extractionMap
 			((  mapDims.hmapx     * mapDims.hmapy           * sizeof(unsigned char)) / 1024);    // MetalMap::metalMap
 
-		// mipCenterHeightMaps[i]
-		for (int i = 1; i < numHeightMipMaps; i++) {
+		for (int i = 0; i < cornerHeightMapSyncedLods.size(); i++) {
+			// cornerHeightMapSyncedLods[i]
 			reqMemFootPrintKB += ((((mapDims.mapx >> i) * (mapDims.mapy >> i)) * sizeof(float)) / 1024);
 		}
 
-		sprintf(loadMsg, fmtString, reqMemFootPrintKB / 1024);
-		loadscreen->SetLoadMessage(loadMsg);
+		for (int i = 0; i < centerNormalsSyncedLods.size(); i++) {
+			// centerNormalsSyncedLods[i]
+			reqMemFootPrintKB += ((((mapDims.mapx >> i) * (mapDims.mapy >> i)) * sizeof(float3)) / 1024);
+		}
+
+		loadscreen->SetLoadMessage(fmt::sprintf("Loading Map (%u MB)", reqMemFootPrintKB / 1024));
 	}
 
-	mapFileHeightMap.clear();
-	mapFileHeightMap.resize(mapDims.mapxp1 * mapDims.mapyp1);
+	unmodifiedHeightMap.clear();
+	unmodifiedHeightMap.resize(mapDims.mapxp1 * mapDims.mapyp1);
 	originalHeightMap.clear();
 	originalHeightMap.resize(mapDims.mapxp1 * mapDims.mapyp1);
 	faceNormalsSynced.clear();
 	faceNormalsSynced.resize(mapDims.mapx * mapDims.mapy * 2);
 	faceNormalsUnsynced.clear();
 	faceNormalsUnsynced.resize(mapDims.mapx * mapDims.mapy * 2);
-	centerNormalsSynced.clear();
-	centerNormalsSynced.resize(mapDims.mapx * mapDims.mapy);
 	centerNormalsUnsynced.clear();
 	centerNormalsUnsynced.resize(mapDims.mapx * mapDims.mapy);
 	centerNormals2D.clear();
 	centerNormals2D.resize(mapDims.mapx * mapDims.mapy);
-	centerHeightMap.clear();
-	centerHeightMap.resize(mapDims.mapx * mapDims.mapy);
 	maxHeightMap.clear();
 	maxHeightMap.resize(mapDims.mapx * mapDims.mapy);
 
-	mipPointerHeightMaps.fill(nullptr);
-	mipPointerHeightMaps[0] = &centerHeightMap[0];
-
-	originalHeightMapPtr = &originalHeightMap;
-
-	for (int i = 1; i < numHeightMipMaps; i++) {
-		mipCenterHeightMaps[i - 1].clear();
-		mipCenterHeightMaps[i - 1].resize((mapDims.mapx >> i) * (mapDims.mapy >> i));
-
-		mipPointerHeightMaps[i] = &mipCenterHeightMaps[i - 1][0];
+	for (int i = 0; i < centerHeightMapLods.size(); i++) {
+		centerHeightMapLods[i].clear();
+		centerHeightMapLods[i].resize((mapDims.mapx >> i) * (mapDims.mapy >> i));
+	}
+	for (int i = 0; i < centerNormalsSyncedLods.size(); i++) {
+		centerNormalsSyncedLods[i].clear();
+		centerNormalsSyncedLods[i].resize((mapDims.mapx >> i) * (mapDims.mapy >> i));
 	}
 
 	slopeMap.clear();
@@ -379,27 +350,6 @@ void CReadMap::Initialize()
 
 	visVertexNormals.clear();
 	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
-
-	assert(heightMapSyncedPtr != nullptr);
-	assert(heightMapUnsyncedPtr != nullptr);
-	assert(originalHeightMapPtr != nullptr);
-
-	{
-		sharedCornerHeightMaps[0] = &(*heightMapUnsyncedPtr)[0];
-		sharedCornerHeightMaps[1] = &(*heightMapSyncedPtr)[0];
-
-		sharedCenterHeightMaps[0] = &centerHeightMap[0]; // NO UNSYNCED VARIANT
-		sharedCenterHeightMaps[1] = &centerHeightMap[0];
-
-		sharedFaceNormals[0] = &faceNormalsUnsynced[0];
-		sharedFaceNormals[1] = &faceNormalsSynced[0];
-
-		sharedCenterNormals[0] = &centerNormalsUnsynced[0];
-		sharedCenterNormals[1] = &centerNormalsSynced[0];
-
-		sharedSlopeMaps[0] = &slopeMap[0]; // NO UNSYNCED VARIANT
-		sharedSlopeMaps[1] = &slopeMap[0];
-	}
 
 	InitHeightBounds();
 
@@ -427,7 +377,7 @@ void CReadMap::InitHeightBounds()
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float* heightmap = GetCornerHeightMapSynced();
 	for (int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); ++i) {
-		mapFileHeightMap[i] = heightmap[i];
+		unmodifiedHeightMap[i] = heightmap[i];
 	}
 
 	LoadOriginalHeightMapAndChecksum();
@@ -495,7 +445,7 @@ unsigned int CReadMap::CalcTypemapChecksum()
 
 void CReadMap::UpdateDraw(bool firstCall)
 {
-	SCOPED_TIMER("Update::ReadMap::UHM");
+	SCOPED_TIMER("Update::ReadMap::UD");
 
 	if (unsyncedHeightMapUpdates.empty())
 		return;
@@ -522,7 +472,8 @@ void CReadMap::UpdateDraw(bool firstCall)
 
 void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
+	SCOPED_TIMER("Update::ReadMap::UHMS");
+
 	const bool initialize = (hgtMapRect == SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
 
 	const int2 mins = {hgtMapRect.x1 - 1, hgtMapRect.z1 - 1};
@@ -536,9 +487,11 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
 	const SRectangle centerRect = {std::max(mins.x, 0), std::max(mins.y, 0),  std::min(maxs.x, mapDims.mapxm1),  std::min(maxs.y, mapDims.mapym1)};
 	const SRectangle cornerRect = {std::max(mins.x, 0), std::max(mins.y, 0),  std::min(maxs.x, mapDims.mapx  ),  std::min(maxs.y, mapDims.mapy  )};
 
+	UpdateLodCornerHeightmaps(cornerRect, initialize);
 	UpdateCenterHeightmap(centerRect, initialize);
-	UpdateMipHeightmaps(centerRect, initialize);
+	UpdateLodHeightmaps(centerRect, initialize);
 	UpdateFaceNormals(centerRect, initialize);
+	UpdateLodCenterNormals(centerRect, initialize); // must happen after UpdateFaceNormals()!
 	UpdateSlopemap(centerRect, initialize); // must happen after UpdateFaceNormals()!
 
 	// push the unsynced update; initial one without LOS check
@@ -598,8 +551,8 @@ void CReadMap::UpdateTempHeightBoundsSIMD(size_t idxBeg, size_t idxEnd)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	tempHeightBounds.xy = xsimd::reduce(
-		heightMapSyncedPtr->begin() + idxBeg,
-		heightMapSyncedPtr->begin() + idxEnd,
+		cornerHeightMapSyncedLods[0].begin() + idxBeg,
+		cornerHeightMapSyncedLods[0].begin() + idxEnd,
 		tempHeightBounds.xy,
 		MinOp{}, MaxOp{}
 	);
@@ -615,6 +568,59 @@ void CReadMap::UpdateHeightBounds()
 
 	currHeightBounds.x = tempHeightBounds.x;
 	currHeightBounds.y = tempHeightBounds.y;
+}
+
+void CReadMap::UpdateLodCornerHeightmaps(const SRectangle& rect, bool initialize) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	static constexpr std::array GAUSSIAN_KERNEL_WEIGHTS { 4.0f, 2.0f, 1.0f };
+
+	for (int i = 1; i < cornerHeightMapSyncedLods.size(); i++) {
+		SRectangle nxtRect {
+			rect.x1 >> i,
+			rect.z1 >> i,
+			rect.x2 >> i,
+			rect.z2 >> i
+		};
+
+		// bounds (inclusive)
+		const int cmapx = (mapDims.mapx >> (i - 1));
+		const int cmapz = (mapDims.mapy >> (i - 1));
+
+		const int cmapxp1 = cmapx + 1;
+		const int nmapxp1 = (mapDims.mapx >> (i + 0)) + 1;
+
+		const auto* curLod = cornerHeightMapSyncedLods[i - 1].data();
+		      auto* nxtLod = cornerHeightMapSyncedLods[i + 0].data();
+
+		for (int nz = nxtRect.z1; nz <= nxtRect.z2; ++nz) {
+			int cz = nz << 1;
+			for (int nx = nxtRect.x1; nx <= nxtRect.x2; ++nx) {
+				int cx = nx << 1;
+
+				float h = 0.0f;
+				float c = 0.0f;
+
+				// 3x3 Gaussian with bounds checking
+				for (int dx = -1; dx <= 1; dx++) {
+					int cdx = cx + dx;
+					for (int dz = -1; dz <= 1; dz++) {
+						int cdz = cz + dz;
+						if (cdx >= 0 && cdx <= cmapx && cdz >= 0 && cdz <= cmapz) {
+							const float w = GAUSSIAN_KERNEL_WEIGHTS[std::abs(dx) + std::abs(dz)];
+							h += curLod[cdx + cdz * cmapxp1] * w;
+							//h += cornerHeightMapSyncedLods[i - 1].at(cdx + cdz * cmapxp1) * w;
+							c += w;
+						}
+					}
+				}
+
+				nxtLod[nx + nz * nmapxp1] = h / c;
+				//cornerHeightMapSyncedLods[i + 0].at(nx + nz * nmapxp1) = h / c;
+			}
+		}
+	}
 }
 
 void CReadMap::UpdateCenterHeightmap(const SRectangle& rect, bool initialize) const
@@ -635,20 +641,25 @@ void CReadMap::UpdateCenterHeightmap(const SRectangle& rect, bool initialize) co
 				heightmapSynced[idxTR] +
 				heightmapSynced[idxBL] +
 				heightmapSynced[idxBR];
-			centerHeightMap[index] = height * 0.25f;
-			maxHeightMap[index] = std::max
-					( std::max(heightmapSynced[idxTL], heightmapSynced[idxTR])
-					, std::max(heightmapSynced[idxBL], heightmapSynced[idxBR])
-					);
+
+			centerHeightMapLods[0][index] = height * 0.25f;
+
+			maxHeightMap[index] = std::max({
+				heightmapSynced[idxTL],
+				heightmapSynced[idxTR],
+				heightmapSynced[idxBL],
+				heightmapSynced[idxBR]
+			});
 		}
 	}, 256);
 }
 
 
-void CReadMap::UpdateMipHeightmaps(const SRectangle& rect, bool initialize)
+void CReadMap::UpdateLodHeightmaps(const SRectangle& rect, bool initialize)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (int i = 0; i < numHeightMipMaps - 1; i++) {
+
+	for (int i = 0; i < centerHeightMapLods.size() - 1; i++) {
 		const int hmapx = mapDims.mapx >> i;
 
 		const int sx = (rect.x1 >> i) & (~1);
@@ -656,17 +667,17 @@ void CReadMap::UpdateMipHeightmaps(const SRectangle& rect, bool initialize)
 		const int sy = (rect.z1 >> i) & (~1);
 		const int ey = (rect.z2 >> i);
 
-		float* topMipMap = mipPointerHeightMaps[i    ];
-		float* subMipMap = mipPointerHeightMaps[i + 1];
+		const float* curLod = centerHeightMapLods[i + 0].data();
+		      float* nxtLod = centerHeightMapLods[i + 1].data();
 
 		for (int y = sy; y < ey; y += 2) {
 			for (int x = sx; x < ex; x += 2) {
 				const float height =
-					topMipMap[(x    ) + (y    ) * hmapx] +
-					topMipMap[(x    ) + (y + 1) * hmapx] +
-					topMipMap[(x + 1) + (y    ) * hmapx] +
-					topMipMap[(x + 1) + (y + 1) * hmapx];
-				subMipMap[(x / 2) + (y / 2) * hmapx / 2] = height * 0.25f;
+					curLod[(x    ) + (y    ) * hmapx] +
+					curLod[(x    ) + (y + 1) * hmapx] +
+					curLod[(x + 1) + (y    ) * hmapx] +
+					curLod[(x + 1) + (y + 1) * hmapx];
+				nxtLod[(x / 2) + (y / 2) * hmapx / 2] = height * 0.25f;
 			}
 		}
 	}
@@ -729,16 +740,59 @@ void CReadMap::UpdateFaceNormals(const SRectangle& rect, bool initialize)
 			faceNormalsSynced[(y * mapDims.mapx + x) * 2    ] = fnTL;
 			faceNormalsSynced[(y * mapDims.mapx + x) * 2 + 1] = fnBR;
 			// square-normal
-			centerNormalsSynced[y * mapDims.mapx + x] = (fnTL + fnBR).Normalize();
+			centerNormalsSyncedLods[0][y * mapDims.mapx + x] = (fnTL + fnBR).Normalize();
 			centerNormals2D[y * mapDims.mapx + x] = (fnTL + fnBR).Normalize2D();
 
 			if (initialize) {
 				faceNormalsUnsynced[(y * mapDims.mapx + x) * 2    ] = faceNormalsSynced[(y * mapDims.mapx + x) * 2    ];
 				faceNormalsUnsynced[(y * mapDims.mapx + x) * 2 + 1] = faceNormalsSynced[(y * mapDims.mapx + x) * 2 + 1];
-				centerNormalsUnsynced[y * mapDims.mapx + x] = centerNormalsSynced[y * mapDims.mapx + x];
+				centerNormalsUnsynced[y * mapDims.mapx + x] = centerNormalsSyncedLods[0][y * mapDims.mapx + x];
 			}
 		}
 	}, 64);
+}
+
+void CReadMap::UpdateLodCenterNormals(const SRectangle& rect, bool initialize)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	for (int i = 1; i < centerNormalsSyncedLods.size(); i++) {
+		const int nmapx = mapDims.mapx >> (i + 0);
+		const int nmapz = mapDims.mapx >> (i + 0);
+		const int cmapx = mapDims.mapx >> (i - 1);
+
+		SRectangle nxtRect{
+			std::max((rect.x1 >> i) - 1,     0),
+			std::max((rect.z1 >> i) - 1,     0),
+			std::min((rect.x2 >> i) + 1, nmapx),
+			std::min((rect.z2 >> i) + 1, nmapz),
+		};
+
+		const auto* curLod = centerNormalsSyncedLods[i - 1].data();
+		      auto* nxtLod = centerNormalsSyncedLods[i + 0].data();
+
+		for (int nz = nxtRect.z1; nz < nxtRect.z2; ++nz) {
+			int cz = nz << 1;
+			for (int nx = nxtRect.x1; nx < nxtRect.x2; ++nx) {
+				int cx = nx << 1;
+				
+				nxtLod[nx + nz * nmapx] = (
+					curLod[(cx + 0) + (cz + 0) * cmapx] +
+					curLod[(cx + 1) + (cz + 0) * cmapx] +
+					curLod[(cx + 0) + (cz + 1) * cmapx] +
+					curLod[(cx + 1) + (cz + 1) * cmapx]
+				).Normalize();
+				/*
+				centerNormalsSyncedLods[i + 0].at(nx + nz * nmapx) = (
+					centerNormalsSyncedLods[i - 1].at((cx + 0) + (cz + 0) * cmapx) +
+					centerNormalsSyncedLods[i - 1].at((cx + 1) + (cz + 0) * cmapx) +
+					centerNormalsSyncedLods[i - 1].at((cx + 0) + (cz + 1) * cmapx) +
+					centerNormalsSyncedLods[i - 1].at((cx + 1) + (cz + 1) * cmapx)
+				).Normalize();
+				*/
+			}
+		}
+	}
 }
 
 
@@ -912,12 +966,54 @@ namespace {
 	};
 }
 
+const float* CReadMap::GetSharedCornerHeightMap(bool synced, uint32_t atLod) const
+{
+	std::array sharedCornerHeightMaps {
+		cornerHeightMapUnsynced.data(),
+		cornerHeightMapSyncedLods[atLod].data()
+	};
+
+	return sharedCornerHeightMaps[synced];
+}
+
+const float* CReadMap::GetSharedCenterHeightMap(bool synced) const
+{
+	// always and only synced
+	return centerHeightMapLods[0].data();
+}
+
+const float3* CReadMap::GetSharedFaceNormals(bool synced) const
+{
+	std::array sharedFaceNormals {
+		faceNormalsUnsynced.data(),
+		faceNormalsSynced.data()
+	};
+
+	return sharedFaceNormals[synced];
+}
+
+const float3* CReadMap::GetSharedCenterNormals(bool synced, uint32_t atLod) const
+{
+	std::array sharedCenterNormals {
+		centerNormalsUnsynced.data(),
+		centerNormalsSyncedLods[atLod].data()
+	};
+
+	return sharedCenterNormals[synced];
+}
+
+const float* CReadMap::GetSharedSlopeMap(bool synced) const
+{
+	// always and only synced
+	return slopeMap.data();
+}
+
 void CReadMap::CopySyncedToUnsynced()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	CopySyncedToUnsyncedImpl(*heightMapSyncedPtr, *heightMapUnsyncedPtr);
+	CopySyncedToUnsyncedImpl(cornerHeightMapSyncedLods[0], cornerHeightMapUnsynced);
 	CopySyncedToUnsyncedImpl(faceNormalsSynced, faceNormalsUnsynced);
-	CopySyncedToUnsyncedImpl(centerNormalsSynced, centerNormalsUnsynced);
+	CopySyncedToUnsyncedImpl(centerNormalsSyncedLods[0], centerNormalsUnsynced);
 	eventHandler.UnsyncedHeightMapUpdate(SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
 }
 

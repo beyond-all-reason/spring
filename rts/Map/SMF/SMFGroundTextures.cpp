@@ -222,7 +222,7 @@ void CSMFGroundTextures::ConvolveHeightMap(const int mapWidth, const int mipLeve
 {
 	SCOPED_ONCE_TIMER("CSMFGroundTextures::ConvolveHeightMap");
 
-	const float* hdata = readMap->GetMIPHeightMapSynced(mipLevel);
+	const float* hdata = readMap->GetCenterHeightMapSyncedLod(mipLevel);
 	const int mx = mapWidth >> mipLevel;
 
 	const int nbx = smfMap->numBigTexX;

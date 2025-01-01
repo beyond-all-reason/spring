@@ -40,7 +40,7 @@ public:
 	static float GetSlope(float x, float z, bool synced = true);
 	static const float3& GetNormal(float x, float z, bool synced = true);
 	static const float3& GetNormalAboveWater(float x, float z, bool synced = true);
-	static float3 GetSmoothNormal(float x, float z, bool synced = true);
+	static float3 GetSmoothNormal(float x, float z, bool synced = true, uint32_t atLod = 0);
 
 	static float GetApproximateHeight(const float3& p, bool synced = true) { return (GetApproximateHeight(p.x, p.z, synced)); }
 	static float GetHeightAboveWater(const float3& p, bool synced = true) { return (GetHeightAboveWater(p.x, p.z, synced)); }
@@ -50,7 +50,7 @@ public:
 	static float GetSlope(const float3& p, bool synced = true) { return (GetSlope(p.x, p.z, synced)); }
 	static const float3& GetNormal(const float3& p, bool synced = true) { return (GetNormal(p.x, p.z, synced)); }
 	static const float3& GetNormalAboveWater(const float3& p, bool synced = true) { return (GetNormalAboveWater(p.x, p.z, synced)); }
-	static float3 GetSmoothNormal(const float3& p, bool synced = true) { return (GetSmoothNormal(p.x, p.z, synced)); }
+	static float3 GetSmoothNormal(const float3& p, bool synced = true, uint32_t atLod = 0) { return (GetSmoothNormal(p.x, p.z, synced, atLod)); }
 
 
 	static float LineGroundCol(float3 from, float3 to, bool synced = true);

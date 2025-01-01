@@ -508,14 +508,19 @@ float CGround::GetSlope(float x, float z, bool synced)
 }
 
 
-float3 CGround::GetSmoothNormal(float x, float z, bool synced)
+float3 CGround::GetSmoothNormal(float x, float z, bool synced, uint32_t atLod)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const int sx = std::clamp(int(math::floor(x / SQUARE_SIZE)), 1, mapDims.mapx - 2);
-	const int sz = std::clamp(int(math::floor(z / SQUARE_SIZE)), 1, mapDims.mapy - 2);
 
-	const float dx = (x / SQUARE_SIZE) - sx;
-	const float dz = (z / SQUARE_SIZE) - sz;
+	const int LOD_SQUARE_SIZE = SQUARE_SIZE << atLod;
+	const int lmapx = mapDims.mapx >> atLod;
+	const int lmapy = mapDims.mapx >> atLod;
+
+	const int sx = std::clamp(int(math::floor(x / LOD_SQUARE_SIZE)), 1, lmapx - 2);
+	const int sz = std::clamp(int(math::floor(z / LOD_SQUARE_SIZE)), 1, lmapy - 2);
+
+	const float dx = (x / LOD_SQUARE_SIZE) - sx;
+	const float dz = (z / LOD_SQUARE_SIZE) - sz;
 
 	int sx2;
 	int sz2;
@@ -541,14 +546,14 @@ float3 CGround::GetSmoothNormal(float x, float z, bool synced)
 	const float ifz = 1.0f - fz;
 	const float ifx = 1.0f - fx;
 
-	const float3* normalMap = readMap->GetSharedCenterNormals(synced);
+	const float3* normalMap = readMap->GetSharedCenterNormals(synced, atLod);
 
-	const float3& n1 = normalMap[sz  * mapDims.mapx + sx ] * ifx * ifz;
-	const float3& n2 = normalMap[sz  * mapDims.mapx + sx2] *  fx * ifz;
-	const float3& n3 = normalMap[sz2 * mapDims.mapx + sx ] * ifx *  fz;
-	const float3& n4 = normalMap[sz2 * mapDims.mapx + sx2] *  fx *  fz;
+	const float3 n1 = normalMap[sz  * lmapx + sx ] * ifx * ifz;
+	const float3 n2 = normalMap[sz  * lmapx + sx2] *  fx * ifz;
+	const float3 n3 = normalMap[sz2 * lmapx + sx ] * ifx *  fz;
+	const float3 n4 = normalMap[sz2 * lmapx + sx2] *  fx *  fz;
 
-	return ((n1 + n2 + n3 + n4).Normalize());
+	return (n1 + n2 + n3 + n4).Normalize();
 }
 
 

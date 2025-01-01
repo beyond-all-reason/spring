@@ -5935,7 +5935,7 @@ int LuaSyncedCtrl::RevertOriginalHeightMap(lua_State* L)
 	int x1, x2, z1, z2;
 	ParseMapParams(L, __func__, origFactor, x1, z1, x2, z2);
 
-	const float* origMap = readMap->GetMapFileHeightMapSynced();
+	const float* origMap = readMap->GetUnmodifiedHeightMapSynced();
 	const float* currMap = readMap->GetOriginalHeightMapSynced();
 
 	if (origFactor == 1.0f) {

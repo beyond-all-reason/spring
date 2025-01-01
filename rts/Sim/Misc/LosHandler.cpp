@@ -95,7 +95,7 @@ void ILosType::Init(const int mipLevel_, LosType type_)
 	losMaps.resize(teamHandler.ActiveAllyTeams());
 
 	const float* ctrHeightMap = readMap->GetCenterHeightMapSynced();
-	const float* mipHeightMap = readMap->GetMIPHeightMapSynced(mipLevel_);
+	const float* mipHeightMap = readMap->GetCenterHeightMapSyncedLod(mipLevel_);
 
 	for (CLosMap& losMap: losMaps) {
 		losMap.Init(size, int2(mapDims.mapx, mapDims.mapy), ctrHeightMap, mipHeightMap, type == LOS_TYPE_LOS);

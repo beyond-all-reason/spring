@@ -197,9 +197,6 @@ private:
 	// note: intentionally declared static (see ReadMap)
 	static CSMFMapFile mapFile;
 
-	static std::vector<float> cornerHeightMapSynced;
-	static std::vector<float> cornerHeightMapUnsynced;
-
 	static std::vector<unsigned char> shadingTexBuffer;
 	static std::vector<unsigned char> waterHeightColors;
 
