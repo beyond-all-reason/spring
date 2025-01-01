@@ -949,11 +949,23 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
 bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, ArchiveInfo& archiveInfo)
 {
 	// try to open an archive
-	bool isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
 	std::unique_ptr<IArchive> ar(archiveLoader.OpenArchive(archiveName));
 
 	if (ar == nullptr)
 		return false;
+
+	int numParallelFileReads = 1; // compressed archives have a mutex, can't read files in parallel
+
+	if (ar->GetType() == ARCHIVE_TYPE_SDD) {
+		if (bool isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName); isOnSpinningDisk) {
+			// decrease spinning disk thrashing, read using one thread only
+			numParallelFileReads = 1;
+		} else {
+			numParallelFileReads = ThreadPool::GetNumThreads();
+		}
+	}
+
+	numParallelFileReads = std::max(numParallelFileReads, 1);
 
 	// load ignore list, and insert all files to check in lowercase format
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
@@ -987,8 +999,6 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	std::vector<std::shared_ptr<std::future<void>>> tasks;
 	tasks.reserve(fileNames.size());
 
-	// decrease spinning disk thrashing a little bit.
-	const auto numParallelFileReads = std::max(isOnSpinningDisk ? ThreadPool::GetNumThreads() >> 1 : ThreadPool::GetNumThreads(), 1);
 	std::counting_semaphore sem(numParallelFileReads);
 
 	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
