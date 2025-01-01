@@ -6,10 +6,13 @@
 #include "Lua/LuaParser.h"
 #include "Lua/LuaSyncedRead.h"
 #include "Lua/LuaAllocState.h"
+#include "Map/ReadMap.h"
 #include "System/Log/ILog.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
+
+#include "lib/fmt/format.h"
 
 #include <bit>
 
@@ -318,22 +321,10 @@ void CModInfo::Init(const std::string& modFileName)
 		decloakRequiresLineOfSight = sensors.GetBool("decloakRequiresLineOfSight", decloakRequiresLineOfSight);
 		separateJammers = sensors.GetBool("separateJammers", separateJammers);
 
-		// losMipLevel is used as index to readMap->mipHeightmaps,
-		// so the maximum value is CReadMap::numHeightMipMaps - 1
 		losMipLevel = los.GetInt("losMipLevel", losMipLevel);
-		// airLosMipLevel doesn't have such restrictions, it's just
-		// used in various bitshifts with signed integers
 		airMipLevel = los.GetInt("airMipLevel", airMipLevel);
 		radarMipLevel = los.GetInt("radarMipLevel", radarMipLevel);
 
-		if ((losMipLevel < 0) || (losMipLevel > 6))
-			throw content_error("Sensors\\Los\\LosMipLevel out of bounds. The minimum value is 0. The maximum value is 6.");
-
-		if ((radarMipLevel < 0) || (radarMipLevel > 6))
-			throw content_error("Sensors\\Los\\RadarMipLevel out of bounds. The minimum value is 0. The maximum value is 6.");
-
-		if ((airMipLevel < 0) || (airMipLevel > 30))
-			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
 	}
 	{
 		//misc
@@ -341,6 +332,18 @@ void CModInfo::Init(const std::string& modFileName)
 
 		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", static_cast<float>(windChangeReportPeriod) / GAME_SPEED) * GAME_SPEED));
 	}
+
+	// Hard checks
+	static constexpr int MAX_HEIGHT_BASED_MIP_LEVEL = CReadMap::numHeightMipMaps - 1;
+	if ((losMipLevel < 0) || (losMipLevel > MAX_HEIGHT_BASED_MIP_LEVEL))
+		throw content_error(fmt::format("Sensors\\Los\\LosMipLevel out of bounds (integer 0-{})", MAX_HEIGHT_BASED_MIP_LEVEL));
+
+	if ((radarMipLevel < 0) || (radarMipLevel > MAX_HEIGHT_BASED_MIP_LEVEL))
+		throw content_error(fmt::format("Sensors\\Los\\RadarMipLevel out of bounds (integer 0-{})", MAX_HEIGHT_BASED_MIP_LEVEL));
+
+	static constexpr int MAX_AIR_MIP_LEVEL = 30; // no logical limit, but it's used in various bit-shifts
+	if ((airMipLevel < 0) || (airMipLevel > MAX_AIR_MIP_LEVEL))
+		throw content_error(fmt::format("Sensors\\Los\\AirLosMipLevel out of bounds (integer 0-{})", MAX_AIR_MIP_LEVEL));
 
 	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))
 		throw content_error("quadFieldQuadSizeInElmos modrule has to be a power of 2");
