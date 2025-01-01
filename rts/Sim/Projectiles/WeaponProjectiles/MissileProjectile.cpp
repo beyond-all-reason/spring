@@ -71,6 +71,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_MISSILE_PROJECTILE;
 
+	mygravity = mix(mygravity, params.gravity, params.gravity != 0.0f);
 
 	if (model != nullptr)
 		SetRadiusAndHeight(model);

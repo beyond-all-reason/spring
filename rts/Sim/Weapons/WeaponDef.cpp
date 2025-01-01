@@ -117,7 +117,7 @@ WEAPONTAG(bool, tracks).defaultValue(false).description("Missile/Torpedo/Starbur
 WEAPONTAG(float, wobble).defaultValue(0.0f).scaleValue(TAANG2RAD * INV_GAME_SPEED).description("Missile only. Missiles will turn towards random directions (new direction rolled every 16 sim frames). In legacy angular units per second.");
 WEAPONTAG(float, dance).defaultValue(0.0f).scaleValue(1.0f / GAME_SPEED).description("Missile only. Missiles will randomly shift up to this many elmos, perpendicular to their movement direction. Movement period is hardcoded to 8 sim frames");
 WEAPONTAG(bool, gravityAffected).defaultValue(false).description("#DGun weapon type only. Is the dgun projectile affected by gravity? Aiming won't take this into account.");
-WEAPONTAG(float, myGravity).defaultValue(0.0f).description("Overrides the map gravity for ballistic weapons. The default of 0.0 disables the tag in favour of map gravity.");
+WEAPONTAG(float, myGravity).defaultValue(0.0f).description("Overrides the map gravity for ballistic weapons and missiles. Missiles only affected once flightTime expired. The default of 0.0 disables the tag in favour of map gravity.");
 WEAPONTAG(bool, canAttackGround).defaultValue(true).description("Can the unit target ground? Only units otherwise. Note, features are not directly targetable either way.");
 WEAPONTAG(float, uptime).externalName("weaponTimer").defaultValue(0.0f).description("StarburstLauncher only. Seconds of vertical ascent");
 WEAPONDUMMYTAG(float, flighttime).defaultValue(0).scaleValue(GAME_SPEED).description("Lifetime of the projectile, in seconds. Missile/Torpedo/Starburst projectiles 'lose fuel' and fall down; Cannons explode; others fade away"); // needs to be written as int and read as float
