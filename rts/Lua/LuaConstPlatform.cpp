@@ -2,6 +2,7 @@
 
 #include "LuaConstPlatform.h"
 #include "LuaUtils.h"
+#include "System/Platform/Hardware.h"
 #include "System/Platform/Misc.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"

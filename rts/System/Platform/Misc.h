@@ -96,7 +96,6 @@ namespace Platform
 	bool Is32BitEmulation();
 	bool IsRunningInDebugger();
 
-	uint64_t TotalRAM();
 	uint64_t FreeDiskSpace(const std::string& path);
 	uint32_t NativeWordSize(); // compiled process code
 	uint32_t SystemWordSize(); // host operating system
