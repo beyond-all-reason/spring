@@ -8,7 +8,7 @@
 #include <SDL.h>
 #if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
 // need this for glXQueryCurrentRendererIntegerMESA (glxext)
-#include <GL/glxew.h>
+#include <glad/glad_glx.h>
 #endif
 
 #include "myGL.h"

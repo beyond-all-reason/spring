@@ -3,7 +3,6 @@
 #ifndef _MY_GL_H
 #define _MY_GL_H
 
-#define GLAD_GL_STATIC
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
