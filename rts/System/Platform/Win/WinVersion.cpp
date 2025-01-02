@@ -326,6 +326,7 @@ std::string windows::GetHardwareString()
 		oss << "cannot open key with processor data; ";
 	}
 
+	constexpr int div = 1024 * 1024;
 	oss << (Platform::TotalRAM() / div) << "MB RAM, ";
 	oss << (Platform::TotalPageFile() / div) << "MB pagefile";
 	return oss.str();
