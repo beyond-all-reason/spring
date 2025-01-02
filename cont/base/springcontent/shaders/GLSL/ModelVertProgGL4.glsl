@@ -5,12 +5,12 @@ layout (location = 1) in vec3 normal;
 layout (location = 2) in vec3 T;
 layout (location = 3) in vec3 B;
 layout (location = 4) in vec4 uv;
-layout (location = 5) in uvec2 bonesInfo; //boneIDs, boneWeights
+layout (location = 5) in uvec3 bonesInfo; //boneIDsLow, boneWeights, boneIDsHigh
 
 layout (location = 6) in uvec4 instData;
 // u32 matOffset
 // u32 uniOffset
-// u32 {teamIdx, drawFlag, unused, numPieces}
+// u32 {teamIdx, drawFlag, numPiecesH, numPiecesL}, note numPiecesH then numPiecesL
 // u32 bposeMatOffset
 
 layout(std140, binding = 0) uniform UniformMatrixBuffer {
@@ -145,7 +145,7 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 		float(GetUnpackedValue(bonesInfo.y, 3)) / 255.0
 	);
 
-	uint b0 = GetUnpackedValue(bonesInfo.x, 0); //first boneID
+	uint b0 = GetUnpackedValue(bonesInfo.x, 0) + (GetUnpackedValue(bonesInfo.z, 0) << 8u); //first boneID
 	mat4 b0BoneMat = mat[instData.x + b0 + uint(!staticModel)];
 	mat3 b0NormMat = mat3(b0BoneMat);
 
@@ -163,14 +163,14 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 	msNormal   *= weights[0];
 	wSum       += weights[0];
 
-	uint numPieces = GetUnpackedValue(instData.z, 3);
+	uint numPieces = (GetUnpackedValue(instData.z, 2) << 8u) + GetUnpackedValue(instData.z, 3);
 	mat4 bposeMat    = mat[instData.w + b0];
 
 	// Vertex[ModelSpace,BoneX] = PieceMat[BoneX] * InverseBindPosMat[BoneX] * BindPosMat[Bone0] * Vertex[Bone0]
 	for (uint bi = 1; bi < 3; ++bi) {
-		uint bID = GetUnpackedValue(bonesInfo.x, bi);
+		uint bID = GetUnpackedValue(bonesInfo.x, bi) + (GetUnpackedValue(bonesInfo.z, bi) << 8u);
 
-		if (bID == 0xFFu || weights[bi] == 0.0)
+		if (bID == 0xFFFFu || weights[bi] == 0.0)
 			continue;
 
 		mat4 bposeInvMat = mat[instData.w + numPieces + bID];

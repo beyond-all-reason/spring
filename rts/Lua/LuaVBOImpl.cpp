@@ -778,17 +778,16 @@ void LuaVBOImpl::UpdateModelsVBOElementCount()
 }
 
 /*
-	float3 pos;
-	float3 normal = UpVector;
-	float3 sTangent;
-	float3 tTangent;
+	vec3 pos;
+	vec3 normal = UpVector;
+	vec3 sTangent;
+	vec3 tTangent;
 
 	// TODO:
 	//   with pieceIndex this struct is no longer 64 bytes in size which ATI's prefer
 	//   support an arbitrary number of channels, would be easy but overkill (for now)
 	float2 texCoords[NUM_MODEL_UVCHANNS];
-
-	uint32_t pieceIndex = 0;
+	uvec3 in uvec3 bonesInfo;
 */
 size_t LuaVBOImpl::ModelsVBOImpl()
 {
@@ -851,12 +850,12 @@ size_t LuaVBOImpl::ModelsVBOImpl()
 		// uint32_t pieceIndex
 		this->bufferAttribDefs[5] = {
 			GL_UNSIGNED_INT, //type
-			2, //size
+			3, //size
 			GL_FALSE, //normalized
 			"bonesInfo", //name
-			offsetof(SVertexData, boneIDs), //pointer
+			offsetof(SVertexData, boneIDsLow), //pointer
 			sizeof(uint32_t), //typeSizeInBytes
-			2 * sizeof(uint32_t) //strideSizeInBytes
+			3 * sizeof(uint32_t) //strideSizeInBytes
 		};
 
 		this->attributesCount = 6;
@@ -999,14 +998,14 @@ SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint8_t de
 		drawFlags = obj->drawFlag;
 	}
 
-	uint8_t numPieces = 0;
+	uint16_t numPieces = 0;
 	size_t bposeIndex = 0;
 	if constexpr (std::is_same<TObj, S3DModel>::value) {
-		numPieces = static_cast<uint8_t>(obj->numPieces);
+		numPieces = static_cast<uint16_t>(obj->numPieces);
 		bposeIndex = matrixUploader.GetElemOffset(obj);
 	}
 	else {
-		numPieces = static_cast<uint8_t>(obj->model->numPieces);
+		numPieces = static_cast<uint16_t>(obj->model->numPieces);
 		bposeIndex = matrixUploader.GetElemOffset(obj->model);
 	}
 
