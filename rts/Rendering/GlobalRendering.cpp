@@ -570,6 +570,9 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		return false;
 
 	gladLoadGL();
+#if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
+	gladLoadGLX();
+#endif
 
 	if (!CheckGLContextVersion(minCtx)) {
 		handleerror(nullptr, "minimum required OpenGL version not supported, aborting", "ERROR", MBF_OK | MBF_EXCL);
@@ -604,6 +607,10 @@ void CGlobalRendering::DestroyWindowAndContext() {
 
 	sdlWindow = nullptr;
 	glContext = nullptr;
+
+#if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
+	gladUnloadGLX();
+#endif
 }
 
 void CGlobalRendering::KillSDL() const {
