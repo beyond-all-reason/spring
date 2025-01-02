@@ -29,27 +29,10 @@
 
 #include "lib/fmt/format.h"
 
-CONFIG(int,  Shadows)
-	.defaultValue(1)
-	.headlessValue(-1)
-	.minimumValue(-1)
-	.safemodeValue(-1)
-	.description("Sets whether shadows are rendered.\n-1:=forceoff, 0:=off, 1:=full, 2:=fast (skip terrain)\nYou can also specify sum of required \"mask\" values: 2:=terrain, 4:=solid models, 8:=particles, 16:=grass");
-
-CONFIG(int,  ShadowMapSize)
-	.defaultValue(CShadowHandler::DEF_SHADOWMAP_SIZE)
-	.minimumValue(CShadowHandler::MIN_SHADOWMAP_SIZE)
-	.maximumValue(CShadowHandler::MAX_SHADOWMAP_SIZE)
-	.description("Sets the resolution of shadow cascades.\nHigher numbers increase quality at the cost of performance.");
-
-CONFIG(int, ShadowMapCascades)
-	.defaultValue(CShadowHandler::DEF_SHADOWMAP_CASCADES)
-	.minimumValue(CShadowHandler::MIN_SHADOWMAP_CASCADES)
-	.maximumValue(CShadowHandler::MAX_SHADOWMAP_CASCADES)
-	.description("Value > 1 switch on N x cascades Cascaded Shadow Mapping.\nCSM is proportionally expensive (especially in VRAM ammounts required)");
-
-CONFIG(int,  ShadowProjectionMode).deprecated(true);
-CONFIG(bool, ShadowColorMode).deprecated(true);
+CONFIG(int, Shadows).defaultValue(2).headlessValue(-1).minimumValue(-1).safemodeValue(-1).description("Sets whether shadows are rendered.\n-1:=forceoff, 0:=off, 1:=full, 2:=fast (skip terrain)"); //FIXME document bitmask
+CONFIG(int, ShadowMapSize).defaultValue(CShadowHandler::DEF_SHADOWMAP_SIZE).minimumValue(32).description("Sets the resolution of shadows. Higher numbers increase quality at the cost of performance.");
+CONFIG(int, ShadowProjectionMode).defaultValue(CShadowHandler::SHADOWPROMODE_CAM_CENTER);
+CONFIG(bool, ShadowColorMode).defaultValue(true).description("Whether the colorbuffer of shadowmap FBO is RGB vs greyscale(to conserve some VRAM)");
 
 CShadowHandler shadowHandler;
 
@@ -57,19 +40,22 @@ void CShadowHandler::Reload(const char* argv)
 {
 	int nextShadowConfig = (shadowConfig + 1) & 0xF;
 	int nextShadowMapSize = shadowMapSize;
-	int nextShadowMapCascades = shadowMapCascades;
+	int nextShadowProMode = shadowProMode;
+	int nextShadowColorMode = shadowColorMode;
 
 	if (argv != nullptr)
-		(void) sscanf(argv, "%i %i %i", &nextShadowConfig, &nextShadowMapSize, &nextShadowMapCascades);
+		(void) sscanf(argv, "%i %i %i %i", &nextShadowConfig, &nextShadowMapSize, &nextShadowProMode, &nextShadowColorMode);
 
 	// do nothing without a parameter change
-	if (nextShadowConfig == shadowConfig && nextShadowMapSize == shadowMapSize && nextShadowMapCascades == shadowMapCascades)
+	if (nextShadowConfig == shadowConfig && nextShadowMapSize == shadowMapSize && nextShadowProMode == shadowProMode && nextShadowColorMode == shadowColorMode)
 		return;
 
+	configHandler->Set("Shadows", nextShadowConfig & 0xF);
+	configHandler->Set("ShadowMapSize", std::clamp(nextShadowMapSize, int(MIN_SHADOWMAP_SIZE), int(MAX_SHADOWMAP_SIZE)));
+	configHandler->Set("ShadowProjectionMode", std::clamp(nextShadowProMode, int(SHADOWPROMODE_MAP_CENTER), int(SHADOWPROMODE_MIX_CAMMAP)));
+	configHandler->Set("ShadowColorMode", static_cast<bool>(nextShadowColorMode));
+
 	Kill();
-	configHandler->Set("Shadows", nextShadowConfig);
-	configHandler->Set("ShadowMapSize", nextShadowMapSize);
-	configHandler->Set("ShadowMapCSM", nextShadowMapCascades);
 	Init();
 }
 
@@ -80,7 +66,10 @@ void CShadowHandler::Init()
 
 	shadowConfig  = configHandler->GetInt("Shadows");
 	shadowMapSize = configHandler->GetInt("ShadowMapSize");
-	shadowMapCascades = configHandler->GetBool("ShadowMapCSM");
+	// disabled; other option usually produces worse resolution
+	shadowProMode = configHandler->GetInt("ShadowProjectionMode");
+	//shadowProMode = SHADOWPROMODE_CAM_CENTER;
+	shadowColorMode = configHandler->GetInt("ShadowColorMode");
 	shadowGenBits = SHADOWGEN_BIT_NONE;
 
 	shadowsLoaded = false;
@@ -145,17 +134,10 @@ void CShadowHandler::Update()
 	SetShadowCamera(shadCam);
 }
 
-uint32_t CShadowHandler::GetTextureType() const
-{
-	return shadowMapCascades > 1 ? GL_TEXTURE_2D_ARRAY: GL_TEXTURE_2D;
-}
-
 void CShadowHandler::SaveShadowMapTextures() const
 {
-	for (size_t i = 0; i < shadowMapCascades; ++i) {
-		glSaveTexture(shadowDepthTextures[i], fmt::format("smDepth_{}_{}.png", globalRendering->drawFrame, i).c_str());
-		glSaveTexture(shadowColorTextures[i], fmt::format("smColor_{}_{}.png", globalRendering->drawFrame, i).c_str());
-	}
+	glSaveTexture(shadowDepthTexture, fmt::format("smDepth_{}.png", globalRendering->drawFrame).c_str());
+	glSaveTexture(shadowColorTexture, fmt::format("smColor_{}.png", globalRendering->drawFrame).c_str());
 }
 
 void CShadowHandler::DrawFrustumDebug() const
@@ -194,20 +176,16 @@ void CShadowHandler::DrawFrustumDebug() const
 }
 
 void CShadowHandler::FreeFBOAndTextures() {
-
-	for (size_t i = 0; i < shadowMapCascades; ++i) {
-
-		if (shadowFBOs[i].IsValid()) {
-			shadowFBOs[i].Bind();
-			shadowFBOs[i].DetachAll();
-			shadowFBOs[i].Unbind();
-		}
-
-		shadowFBOs[i].Kill();
-
-		glDeleteTextures(1, &shadowDepthTextures[i]); shadowDepthTextures[i] = 0;
-		glDeleteTextures(1, &shadowColorTextures[i]); shadowColorTextures[i] = 0;
+	if (smOpaqFBO.IsValid()) {
+		smOpaqFBO.Bind();
+		smOpaqFBO.DetachAll();
+		smOpaqFBO.Unbind();
 	}
+
+	smOpaqFBO.Kill();
+
+	glDeleteTextures(1, &shadowDepthTexture); shadowDepthTexture = 0;
+	glDeleteTextures(1, &shadowColorTexture); shadowColorTexture = 0;
 }
 
 
@@ -351,10 +329,10 @@ bool CShadowHandler::InitFBOAndTextures()
 	//create dummy textures / FBO in case shadowConfig is 0
 	const int realShTexSize = shadowConfig > 0 ? shadowMapSize : 1;
 
-	// shadowFBOs is no-op constructed, has to be initialized manually
-	shadowFBOs.Init(false);
+	// smOpaqFBO is no-op constructed, has to be initialized manually
+	smOpaqFBO.Init(false);
 
-	if (!shadowFBOs.IsValid()) {
+	if (!smOpaqFBO.IsValid()) {
 		LOG_L(L_ERROR, "[%s] framebuffer not valid", __func__);
 		return false;
 	}
@@ -374,8 +352,8 @@ bool CShadowHandler::InitFBOAndTextures()
 	bool status = false;
 	for (const auto& preset : presets)
 	{
-		if (FBO::GetCurrentBoundFBO() == shadowFBOs.GetId())
-			shadowFBOs.DetachAll();
+		if (FBO::GetCurrentBoundFBO() == smOpaqFBO.GetId())
+			smOpaqFBO.DetachAll();
 
 		//depth
 		glDeleteTextures(1, &shadowDepthTexture);
@@ -411,23 +389,31 @@ bool CShadowHandler::InitFBOAndTextures()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); //no mips
 		// TODO: Figure out if mips make sense here.
 
-		// seems like GL_RGB8 has enough precision
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, realShTexSize, realShTexSize, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-		static constexpr GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
-		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+		if (static_cast<bool>(shadowColorMode)) {
+			// seems like GL_RGB8 has enough precision
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, realShTexSize, realShTexSize, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+			static constexpr GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
+			glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 
+		}
+		else {
+			// Conserve VRAM
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, realShTexSize, realShTexSize, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+			static constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
+			glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+		}
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// Mesa complains about an incomplete FBO if calling Bind before TexImage (?)
-		shadowFBOs.Bind();
-		shadowFBOs.AttachTexture(shadowDepthTexture, GL_TEXTURE_2D, GL_DEPTH_ATTACHMENT);
-		shadowFBOs.AttachTexture(shadowColorTexture, GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0);
+		smOpaqFBO.Bind();
+		smOpaqFBO.AttachTexture(shadowDepthTexture, GL_TEXTURE_2D, GL_DEPTH_ATTACHMENT);
+		smOpaqFBO.AttachTexture(shadowColorTexture, GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0);
 
 		glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
 
 		// test the FBO
-		status = shadowFBOs.CheckStatus(preset.name);
+		status = smOpaqFBO.CheckStatus(preset.name);
 
 		if (status) //exit on the first occasion
 			break;
@@ -439,7 +425,7 @@ bool CShadowHandler::InitFBOAndTextures()
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	shadowFBOs.Unbind();
+	smOpaqFBO.Unbind();
 
 	// revert to FBO = 0 default
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -557,8 +543,6 @@ void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 	//   we can omit inverting X (does not impact VC) or disable PD face-culling
 	//   or just let objects end up behind znear since InView only tests against
 	//   zfar
-
-	/*
 	viewMatrix[SHADOWMAT_TYPE_CULLING].LoadIdentity();
 	viewMatrix[SHADOWMAT_TYPE_CULLING].SetX(lightMatrix.GetX());
 	viewMatrix[SHADOWMAT_TYPE_CULLING].SetY(lightMatrix.GetY());
@@ -575,7 +559,6 @@ void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 	viewMatrix[SHADOWMAT_TYPE_DRAWING].Transpose();
 	viewMatrix[SHADOWMAT_TYPE_DRAWING].SetPos(viewMatrix[SHADOWMAT_TYPE_DRAWING] * -projMidPos[2]);
 	viewMatrix[SHADOWMAT_TYPE_DRAWING].SetPos(viewMatrix[SHADOWMAT_TYPE_DRAWING].GetPos() + scaleMatrix.GetPos()); // add z-bias
-	*/
 }
 
 void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
@@ -593,6 +576,12 @@ void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
 	shadowCam->UpdateLoadViewport(0, 0, realShTexSize, realShTexSize);
 	// load matrices into gl_{ModelView,Projection}Matrix
 	shadowCam->Update({false, false, false, false, false});
+
+	// next set matrices needed for SP visibility culling (these
+	// are *NEVER* loaded into gl_{ModelView,Projection}Matrix!)
+	shadowCam->SetProjMatrix(projMatrix[SHADOWMAT_TYPE_CULLING]);
+	shadowCam->SetViewMatrix(viewMatrix[SHADOWMAT_TYPE_CULLING]);
+	shadowCam->UpdateFrustum();
 }
 
 
@@ -641,7 +630,7 @@ void CShadowHandler::CreateShadows()
 	//   we unbind later in WorldDrawer::GenerateIBLTextures() to save render
 	//   context switches (which are one of the slowest OpenGL operations!)
 	//   together with VP restoration
-	shadowFBOs.Bind();
+	smOpaqFBO.Bind();
 
 	glDisable(GL_BLEND);
 	glDisable(GL_LIGHTING);
@@ -675,7 +664,7 @@ void CShadowHandler::CreateShadows()
 
 void CShadowHandler::EnableColorOutput(bool enable) const
 {
-	assert(FBO::GetCurrentBoundFBO() == shadowFBOs.front().GetId() || FBO::GetCurrentBoundFBO() == shadowFBOs.back().GetId());
+	assert(FBO::GetCurrentBoundFBO() == smOpaqFBO.GetId());
 
 	const GLboolean b = static_cast<GLboolean>(enable);
 	glColorMask(b, b, b, GL_FALSE);
@@ -707,7 +696,23 @@ float4 CShadowHandler::GetShadowProjectionScales(CCamera* playerCam, const CMatr
 	//   become less sharp as the viewing volume increases (through eg.camera
 	//   rotations) and geometry can be omitted in some cases
 	//
-	projScales.x = GetOrthoProjectedFrustumRadius(playerCam, lightViewMat, projMidPos[2]);
+	switch (shadowProMode) {
+		case SHADOWPROMODE_CAM_CENTER: {
+			projScales.x = GetOrthoProjectedFrustumRadius(playerCam, lightViewMat, projMidPos[2]);
+		} break;
+		case SHADOWPROMODE_MAP_CENTER: {
+			projScales.x = GetOrthoProjectedMapRadius(-lightViewMat.GetZ(), projMidPos[2]);
+		} break;
+		case SHADOWPROMODE_MIX_CAMMAP: {
+			projRadius.x = GetOrthoProjectedFrustumRadius(playerCam, lightViewMat, projMidPos[0]);
+			projRadius.y = GetOrthoProjectedMapRadius(-lightViewMat.GetZ(), projMidPos[1]);
+			projScales.x = std::min(projRadius.x, projRadius.y);
+
+			// pick the center position (0 or 1) for which radius is smallest
+			projMidPos[2] = projMidPos[projRadius.x >= projRadius.y];
+		} break;
+	}
+
 	projScales.y = projScales.x;
 	#if 0
 	projScales.z = cam->GetNearPlaneDist();
@@ -718,6 +723,61 @@ float4 CShadowHandler::GetShadowProjectionScales(CCamera* playerCam, const CMatr
 	projScales.w = readMap->GetBoundingRadius() * 2.0f;
 	#endif
 	return projScales;
+}
+
+float CShadowHandler::GetOrthoProjectedMapRadius(const float3& sunDir, float3& projPos) {
+	// to fit the map inside the frustum, we need to know
+	// the distance from one corner to its opposing corner
+	//
+	// this distance is maximal when the sun direction is
+	// orthogonal to the diagonal, but in other cases we
+	// can gain some precision by projecting the diagonal
+	// onto a vector orthogonal to the sun direction and
+	// using the length of that projected vector instead
+	//
+	const float maxMapDiameter = readMap->GetBoundingRadius() * 2.0f;
+	static float curMapDiameter = 0.0f;
+
+	// recalculate pos only if the sun-direction has changed
+	if (sunProjDir != sunDir) {
+		sunProjDir = sunDir;
+
+		float3 sunDirXZ = (sunDir * XZVector).ANormalize();
+		float3 mapVerts[2];
+
+		if (sunDirXZ.x >= 0.0f) {
+			if (sunDirXZ.z >= 0.0f) {
+				// use diagonal vector from top-right to bottom-left
+				mapVerts[0] = float3(mapDims.mapx * SQUARE_SIZE, 0.0f,                       0.0f);
+				mapVerts[1] = float3(                      0.0f, 0.0f, mapDims.mapy * SQUARE_SIZE);
+			} else {
+				// use diagonal vector from top-left to bottom-right
+				mapVerts[0] = float3(                      0.0f, 0.0f,                       0.0f);
+				mapVerts[1] = float3(mapDims.mapx * SQUARE_SIZE, 0.0f, mapDims.mapy * SQUARE_SIZE);
+			}
+		} else {
+			if (sunDirXZ.z >= 0.0f) {
+				// use diagonal vector from bottom-right to top-left
+				mapVerts[0] = float3(mapDims.mapx * SQUARE_SIZE, 0.0f, mapDims.mapy * SQUARE_SIZE);
+				mapVerts[1] = float3(                      0.0f, 0.0f,                       0.0f);
+			} else {
+				// use diagonal vector from bottom-left to top-right
+				mapVerts[0] = float3(                      0.0f, 0.0f, mapDims.mapy * SQUARE_SIZE);
+				mapVerts[1] = float3(mapDims.mapx * SQUARE_SIZE, 0.0f,                       0.0f);
+			}
+		}
+
+		const float3 v1 = (mapVerts[1] - mapVerts[0]).ANormalize();
+		const float3 v2 = float3(-sunDirXZ.z, 0.0f, sunDirXZ.x);
+
+		curMapDiameter = maxMapDiameter * v2.dot(v1);
+
+		projPos.x = (mapDims.mapx * SQUARE_SIZE) * 0.5f;
+		projPos.z = (mapDims.mapy * SQUARE_SIZE) * 0.5f;
+		projPos.y = CGround::GetHeightReal(projPos.x, projPos.z, false);
+	}
+
+	return curMapDiameter;
 }
 
 float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const CMatrix44f& lightViewMat, float3& centerPos) {
