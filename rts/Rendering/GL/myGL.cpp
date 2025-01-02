@@ -163,19 +163,11 @@ static bool GetVideoMemInfoMESA(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	#if (defined(GLX_MESA_query_renderer))
-	if (!GLXEW_MESA_query_renderer)
-		return false;
-
-	typedef PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC QCRIProc;
-
-	static const GLubyte* qcriProcName = (const GLubyte*) "glXQueryCurrentRendererIntegerMESA";
-	static const QCRIProc qcriProcAddr = (QCRIProc) glXGetProcAddress(qcriProcName);
-
-	if (qcriProcAddr == nullptr)
+	if (!GLAD_GLX_MESA_query_renderer)
 		return false;
 
 	// note: unlike the others, this value is returned in megabytes
-	qcriProcAddr(GLX_RENDERER_VIDEO_MEMORY_MESA, reinterpret_cast<unsigned int*>(&memInfo[0]));
+	glad_glXQueryCurrentRendererIntegerMESA(GLX_RENDERER_VIDEO_MEMORY_MESA, reinterpret_cast<unsigned int*>(&memInfo[0]));
 
 	memInfo[0] *= 1024;
 	memInfo[1] = memInfo[0];
