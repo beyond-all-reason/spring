@@ -92,9 +92,11 @@ set(main_files
 	"${ENGINE_SRC_ROOT}/System/StringUtil.cpp"
 	)
 if (WIN32)
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/Hardware.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/WinVersion.cpp")
 else (WIN32)
-        list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/Hardware.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
 endif (WIN32)
 
 set(unitsync_files
