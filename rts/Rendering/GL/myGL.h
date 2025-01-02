@@ -16,11 +16,7 @@
 	#undef WINGDIAPI
 #else
 	#include <glad/glad.h>
-	#if (!defined(_WIN32) && !defined(__APPLE__))
-		// need this for glXQueryCurrentRendererIntegerMESA (glxext)
-		#include <glad/glad_glx.h>
-	#endif
-#endif // defined(HEADLESS)
+#endif
 
 
 #include "System/float3.h"

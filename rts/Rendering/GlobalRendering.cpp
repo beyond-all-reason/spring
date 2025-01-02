@@ -14,6 +14,7 @@
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/glxHandler.h"
 #include "Rendering/UniformConstants.h"
 #include "Rendering/Fonts/glFont.h"
 #include "System/EventHandler.h"
@@ -570,12 +571,7 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		return false;
 
 	gladLoadGL();
-#if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
-	SDL_SysWMinfo vmInfo;
-	SDL_GetWindowWMInfo(sdlWindow, &vmInfo);
-	if (vmInfo.subsystem == SDL_SYSWM_X11)
-		gladLoadGLX(vmInfo.info.x11.display, 0);
-#endif
+	GLX::Load(sdlWindow);
 
 	if (!CheckGLContextVersion(minCtx)) {
 		handleerror(nullptr, "minimum required OpenGL version not supported, aborting", "ERROR", MBF_OK | MBF_EXCL);
@@ -611,12 +607,7 @@ void CGlobalRendering::DestroyWindowAndContext() {
 	sdlWindow = nullptr;
 	glContext = nullptr;
 
-#if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
-	SDL_SysWMinfo vmInfo;
-	SDL_GetWindowWMInfo(sdlWindow, &vmInfo);
-	if (vmInfo.subsystem == SDL_SYSWM_X11)
-		gladUnloadGLX();
-#endif
+	GLX::Unload();
 }
 
 void CGlobalRendering::KillSDL() const {
