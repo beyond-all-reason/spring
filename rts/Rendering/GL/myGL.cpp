@@ -9,6 +9,7 @@
 
 #include "myGL.h"
 #include "VertexArray.h"
+#include "glxHandler.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/Textures/Bitmap.h"
@@ -158,19 +159,7 @@ static bool GetVideoMemInfoATI(GLint* memInfo)
 static bool GetVideoMemInfoMESA(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if (defined(GLX_MESA_query_renderer))
-	if (!GLAD_GLX_MESA_query_renderer)
-		return false;
-
-	// note: unlike the others, this value is returned in megabytes
-	glad_glXQueryCurrentRendererIntegerMESA(GLX_RENDERER_VIDEO_MEMORY_MESA, reinterpret_cast<unsigned int*>(&memInfo[0]));
-
-	memInfo[0] *= 1024;
-	memInfo[1] = memInfo[0];
-	return true;
-	#else
-	return false;
-	#endif
+	return GLX::GetVideoMemInfoMESA(memInfo);
 }
 #endif
 
