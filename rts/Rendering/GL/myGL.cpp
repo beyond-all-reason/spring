@@ -177,9 +177,12 @@ bool GetAvailableVideoRAM(GLint* memory, const char* glVendor)
 		case 'X': { if (!GetVideoMemInfoMESA(memInfo)) return false; } break; // "X.org"
 		case 'M': { if (!GetVideoMemInfoMESA(memInfo)) return false; } break; // "Mesa"
 		case 'V': { if (!GetVideoMemInfoMESA(memInfo)) return false; } break; // "VMware" (also ships a Mesa variant)
-		case 'I': {                                    return false; } break; // "Intel"
-		case 'T': {                                    return false; } break; // "Tungsten" (old, acquired by VMware)
-		default : {                                    return false; } break;
+		case 'I': {                                    return false; } [[fallthrough]]; // "Intel"
+		default: {
+			// try everything
+			if (!(GetVideoMemInfoNV(memInfo) || GetVideoMemInfoATI(memInfo) || GetVideoMemInfoMESA(memInfo)))
+				return false;
+		} break;
 	}
 
 	// callers assume [0]=total and [1]=free
