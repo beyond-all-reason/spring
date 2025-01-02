@@ -18,6 +18,10 @@ class CCamera;
 class CShadowHandler
 {
 public:
+	CShadowHandler()
+		:smOpaqFBO(true)
+	{}
+
 	void Init();
 	void Kill();
 	void Reload(const char* argv);
@@ -48,11 +52,6 @@ public:
 		DEF_SHADOWMAP_SIZE =  2048,
 		MAX_SHADOWMAP_SIZE = 16384,
 	};
-	enum ShadowMapCascades {
-		MIN_SHADOWMAP_CASCADES = 1,
-		DEF_SHADOWMAP_CASCADES = 1,
-		MAX_SHADOWMAP_CASCADES = 8,
-	};
 
 	enum ShadowGenProgram {
 		SHADOWGEN_PROGRAM_MODEL      = 0,
@@ -62,19 +61,27 @@ public:
 		SHADOWGEN_PROGRAM_COUNT      = 4,
 	};
 
+	enum ShadowMatrixType {
+		SHADOWMAT_TYPE_CULLING = 0,
+		SHADOWMAT_TYPE_DRAWING = 1,
+	};
+
 	Shader::IProgramObject* GetShadowGenProg(ShadowGenProgram p) {
 		return shadowGenProgs[p];
 	}
 
-	const CMatrix44f& GetShadowViewMatrix(size_t cascade = 0) const { return  viewMatrices[cascade]; }
-	const CMatrix44f& GetShadowProjMatrix(size_t cascade = 0) const { return  projMatrices[cascade]; }
+	const CMatrix44f& GetShadowMatrix   (unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  viewMatrix[idx];      }
+	const      float* GetShadowMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
+
+	const CMatrix44f& GetShadowViewMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  viewMatrix[idx]; }
+	const CMatrix44f& GetShadowProjMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  projMatrix[idx]; }
+	const      float* GetShadowViewMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
+	const      float* GetShadowProjMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &projMatrix[idx].m[0]; }
 
 	const float4& GetShadowParams() const { return shadowTexProjCenter; }
 
-	uint32_t GetShadowTextureID(size_t cascade = 0) const { return shadowDepthTextures[cascade]; }
-	uint32_t GetColorTextureID(size_t cascade = 0) const { return shadowColorTextures[cascade]; }
-
-	uint32_t GetTextureType() const;
+	uint32_t GetShadowTextureID() const { return shadowDepthTexture; }
+	uint32_t GetColorTextureID() const { return shadowColorTexture; }
 
 	static bool ShadowsInitialized() { return firstInit; }
 	static bool ShadowsSupported() { return shadowsSupported; }
@@ -100,13 +107,16 @@ private:
 	float4 GetShadowProjectionScales(CCamera*, const CMatrix44f&);
 	float3 CalcShadowProjectionPos(CCamera*, float3*);
 
+	float GetOrthoProjectedMapRadius(const float3&, float3&);
 	float GetOrthoProjectedFrustumRadius(CCamera*, const CMatrix44f&, float3&);
 
 public:
 	int shadowConfig;
 	int shadowMapSize;
-	int shadowMapCascades;
 	int shadowGenBits;
+	int shadowProMode;
+	int shadowColorMode;
+
 private:
 	bool shadowsLoaded = false;
 	bool inShadowPass = false;
@@ -125,13 +135,13 @@ private:
 	float4 shadowProjScales;
 
 	// culling and drawing versions of both matrices
-	CMatrix44f projMatrices[MAX_SHADOWMAP_CASCADES];
-	CMatrix44f viewMatrices[MAX_SHADOWMAP_CASCADES];
+	CMatrix44f projMatrix[2];
+	CMatrix44f viewMatrix[2];
 
-	std::array<uint32_t, MAX_SHADOWMAP_CASCADES> shadowDepthTextures;
-	std::array<uint32_t, MAX_SHADOWMAP_CASCADES> shadowColorTextures;
+	uint32_t shadowDepthTexture;
+	uint32_t shadowColorTexture;
 
-	std::array<FBO, MAX_SHADOWMAP_CASCADES> shadowFBOs;
+	FBO smOpaqFBO;
 
 	/// xmid, ymid, p17, p18
 	static constexpr float4 shadowTexProjCenter = {
