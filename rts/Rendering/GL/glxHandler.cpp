@@ -11,13 +11,21 @@ void GLX::Load(SDL_Window* window)
 
 	SDL_SysWMinfo info;
 	SDL_VERSION(&info.version);
-	if (SDL_GetWindowWMInfo(window, &info))
-		supported = (info.subsystem == SDL_SYSWM_X11);
-
-	if (!supported)
+	if (!SDL_GetWindowWMInfo(window, &info))
 		return;
 
-	gladLoadGLX(info.info.x11.display, 0);
+	switch (info.subsystem)
+	{
+	case SDL_SYSWM_X11: {
+		Display* display = info.info.x11.display;
+		supported = static_cast<bool>(gladLoadGLX(display, DefaultScreen(display)));
+	} break;
+	case SDL_SYSWM_WAYLAND: {
+		supported = static_cast<bool>(gladLoadGLX(nullptr, 0));
+	} break;
+	default:
+		break;
+	}
 }
 
 void GLX::Unload()
