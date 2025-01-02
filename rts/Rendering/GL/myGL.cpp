@@ -121,7 +121,7 @@ bool CheckAvailableVideoModes()
 static bool GetVideoMemInfoNV(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if (defined(GLAD_GL_NVX_gpu_memory_info))
+	#if (defined(GL_NVX_gpu_memory_info))
 	if (!GLAD_GL_NVX_gpu_memory_info)
 		return false;
 
@@ -136,7 +136,7 @@ static bool GetVideoMemInfoNV(GLint* memInfo)
 static bool GetVideoMemInfoATI(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if (defined(GLAD_GL_ATI_meminfo))
+	#if (defined(GL_ATI_meminfo))
 	if (!GLAD_GL_ATI_meminfo)
 		return false;
 
