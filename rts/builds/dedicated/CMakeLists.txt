@@ -127,8 +127,11 @@ set(system_files
 	${ENGINE_SRC_ROOT_DIR}/System/float4.cpp
 	)
 if    (WIN32)
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/Hardware.cpp)
 	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/WinVersion.cpp)
-endif (WIN32)
+else  ()
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Linux/Hardware.cpp)
+endif ()
 
 set(engineDedicatedSources
 	${system_files}
