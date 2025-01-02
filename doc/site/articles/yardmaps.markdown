@@ -24,12 +24,15 @@ yyoyy
 ```
 
 And here's what happens if you try to place another of the same type on top. Notice how the `y` area does not produce conflicts.
+
 ![image]({{ site.baseurl }}/assets/guides/article-yardmap-solars-1.png)
 
 Here's how it looks if you try to place things on top:
+
 ![image]({{ site.baseurl }}/assets/guides/article-yardmap-solars-2.png)
 
 Essentially, the building is shaped like this (mock-up):
+
 ![image]({{ site.baseurl }}/assets/guides/article-yardmap-solars-3.png)
 
 ### Yardmap characters
