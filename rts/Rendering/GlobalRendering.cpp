@@ -571,7 +571,10 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 
 	gladLoadGL();
 #if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
-	gladLoadGLX();
+	SDL_SysWMinfo vmInfo;
+	SDL_GetWindowWMInfo(sdlWindow, &vmInfo);
+	if (vmInfo.subsystem == SDL_SYSWM_X11)
+		gladLoadGLX(vmInfo.info.x11.display, 0);
 #endif
 
 	if (!CheckGLContextVersion(minCtx)) {
@@ -609,7 +612,10 @@ void CGlobalRendering::DestroyWindowAndContext() {
 	glContext = nullptr;
 
 #if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
-	gladUnloadGLX();
+	SDL_SysWMinfo vmInfo;
+	SDL_GetWindowWMInfo(sdlWindow, &vmInfo);
+	if (vmInfo.subsystem == SDL_SYSWM_X11)
+		gladUnloadGLX();
 #endif
 }
 
