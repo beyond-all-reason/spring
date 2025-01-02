@@ -6,10 +6,6 @@
 #include <bit>
 
 #include <SDL.h>
-#if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
-// need this for glXQueryCurrentRendererIntegerMESA (glxext)
-#include <glad/glad_glx.h>
-#endif
 
 #include "myGL.h"
 #include "VertexArray.h"
