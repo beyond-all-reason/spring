@@ -193,7 +193,7 @@ void CShadowHandler::FreeFBOAndTextures() {
 void CShadowHandler::LoadProjectionMatrix(const CCamera* shadowCam)
 {
 	const CMatrix44f& ccm = shadowCam->GetClipControlMatrix();
-	      CMatrix44f& spm = projMatrix;
+	      CMatrix44f& spm = projMatrix[SHADOWMAT_TYPE_DRAWING];
 
 	// same as glOrtho(-1, 1,  -1, 1,  -1, 1); just inverts Z
 	// spm.LoadIdentity();
@@ -495,7 +495,7 @@ static CMatrix44f ComposeLightMatrix(const CCamera* playerCam, const ISkyLight* 
 	CMatrix44f lightMatrix;
 
 	// sun direction is in world-space, invert it
-	float3 zDir = -float3(light->GetLightDir().xyz);
+	float3 zDir = -float3(light->GetLightDir());
 
 	// Try to rotate LM's X and Y around Z direction to fit playerCam tightest
 
@@ -510,8 +510,6 @@ static CMatrix44f ComposeLightMatrix(const CCamera* playerCam, const ISkyLight* 
 		}
 	}
 
-	xDir = UpVector;
-
 	// orthonormalize
 	xDir = (xDir - xDir.dot(zDir) * zDir).ANormalize();
 	float3 yDir = xDir.cross(zDir).ANormalize();
@@ -519,7 +517,6 @@ static CMatrix44f ComposeLightMatrix(const CCamera* playerCam, const ISkyLight* 
 	lightMatrix.SetZ(zDir);
 	lightMatrix.SetY(yDir);
 	lightMatrix.SetX(xDir);
-	//lightMatrix.Transpose();
 
 	return lightMatrix;
 }
@@ -530,172 +527,38 @@ static CMatrix44f ComposeScaleMatrix(const float4 scales)
 	return (CMatrix44f(FwdVector * 0.5f, RgtVector / scales.x, UpVector / scales.y, FwdVector / scales.w));
 }
 
-namespace Impl {
-	CMatrix44f LookAtRH(const float3& eye, const float3& center, const float3& up)
-	{
-		const auto f = (center - eye).Normalize();
-		const auto s = f.cross(up).Normalize();
-		const auto u = s.cross(f);
-
-		CMatrix44f Result;
-		Result.md[0][0] = s.x;
-		Result.md[1][0] = s.y;
-		Result.md[2][0] = s.z;
-		Result.md[0][1] = u.x;
-		Result.md[1][1] = u.y;
-		Result.md[2][1] = u.z;
-		Result.md[0][2] = -f.x;
-		Result.md[1][2] = -f.y;
-		Result.md[2][2] = -f.z;
-		Result.md[3][0] = -s.dot(eye);
-		Result.md[3][1] = -u.dot(eye);
-		Result.md[3][2] =  f.dot(eye);
-		return Result;
-	}
-
-	CMatrix44f LookAtLH(const float3& eye, const float3& center, const float3& up)
-	{
-		const auto f = (center - eye).Normalize();
-		const auto s = up.cross(f).Normalize();
-		const auto u = f.cross(s);
-
-		CMatrix44f Result;
-		Result.md[0][0] = s.x;
-		Result.md[1][0] = s.y;
-		Result.md[2][0] = s.z;
-		Result.md[0][1] = u.x;
-		Result.md[1][1] = u.y;
-		Result.md[2][1] = u.z;
-		Result.md[0][2] = f.x;
-		Result.md[1][2] = f.y;
-		Result.md[2][2] = f.z;
-		Result.md[3][0] = -s.dot(eye);
-		Result.md[3][1] = -u.dot(eye);
-		Result.md[3][2] = -f.dot(eye);
-		return Result;
-	}
-
-	CMatrix44f InitTranslationTransform(float x, float y, float z)
-	{
-		CMatrix44f m;
-		m.md[0][0] = 1.0f; m.md[0][1] = 0.0f; m.md[0][2] = 0.0f; m.md[0][3] = x;
-		m.md[1][0] = 0.0f; m.md[1][1] = 1.0f; m.md[1][2] = 0.0f; m.md[1][3] = y;
-		m.md[2][0] = 0.0f; m.md[2][1] = 0.0f; m.md[2][2] = 1.0f; m.md[2][3] = z;
-		m.md[3][0] = 0.0f; m.md[3][1] = 0.0f; m.md[3][2] = 0.0f; m.md[3][3] = 1.0f;
-
-#if 1
-		m.Transpose();
-#endif
-
-		return m;
-	}
-
-	CMatrix44f InitCameraTransform(const float3& Target, const float3& Up)
-	{
-		float3 N = Target;
-		N.Normalize();
-
-		float3 UpNorm = Up;
-		UpNorm.Normalize();
-
-		float3 U;
-		U = UpNorm.cross(N);
-		U.Normalize();
-
-		float3 V = N.cross(U);
-
-		CMatrix44f m;
-
-		m.md[0][0] = U.x;   m.md[0][1] = U.y;   m.md[0][2] = U.z;   m.md[0][3] = 0.0f;
-		m.md[1][0] = V.x;   m.md[1][1] = V.y;   m.md[1][2] = V.z;   m.md[1][3] = 0.0f;
-		m.md[2][0] = N.x;   m.md[2][1] = N.y;   m.md[2][2] = N.z;   m.md[2][3] = 0.0f;
-		m.md[3][0] = 0.0f;  m.md[3][1] = 0.0f;  m.md[3][2] = 0.0f;  m.md[3][3] = 1.0f;
-
-		m.Transpose();
-#if 0
-		// transpose
-		{
-			std::swap(m.md[1][0], m.md[0][1]);
-			std::swap(m.md[2][0], m.md[0][2]);
-			std::swap(m.md[3][0], m.md[0][3]);
-
-			std::swap(m.md[0][1], m.md[1][0]);
-			std::swap(m.md[2][1], m.md[1][2]);
-			std::swap(m.md[3][1], m.md[1][3]);
-
-			std::swap(m.md[0][2], m.md[2][0]);
-			std::swap(m.md[1][2], m.md[2][1]);
-			std::swap(m.md[3][2], m.md[2][3]);
-
-			std::swap(m.md[0][3], m.md[3][0]);
-			std::swap(m.md[1][3], m.md[3][1]);
-			std::swap(m.md[2][3], m.md[3][2]);
-		}
-#endif
-
-		return m;
-	}
-
-
-	CMatrix44f InitCameraTransform(const float3& Pos, const float3& Target, const float3& Up)
-	{
-		CMatrix44f CameraTranslation = InitTranslationTransform(-Pos.x, -Pos.y, -Pos.z);
-
-		CMatrix44f CameraRotateTrans = InitCameraTransform(Target, Up);
-
-		CameraTranslation.m[3] = 0.0f;
-		CameraTranslation.m[7] = 0.0f;
-
-		CameraRotateTrans.m[3] = 0.0f;
-		CameraRotateTrans.m[7] = 0.0f;
-
-		return CameraRotateTrans * CameraTranslation;
-	}
-}
-
 void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 {
-	static std::array<float3, 8> frustumPoints;
+	const CMatrix44f lightMatrix = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
+	const CMatrix44f scaleMatrix = ComposeScaleMatrix(shadowProjScales = GetShadowProjectionScales(playerCam, lightMatrix));
 
-	//auto lightViewMat = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
+	// KISS; define only the world-to-light transform (P[CULLING] is unused anyway)
+	//
+	// we have two options: either place the camera such that it *looks at* projMidPos
+	// (along lightMatrix.GetZ()) or such that it is *at or behind* projMidPos looking
+	// in the inverse direction (the latter is chosen here since this matrix determines
+	// the shadow-camera's position and thereby terrain tessellation shadow-LOD)
+	// NOTE:
+	//   should be -X-Z, but particle-quads are sensitive to right being flipped
+	//   we can omit inverting X (does not impact VC) or disable PD face-culling
+	//   or just let objects end up behind znear since InView only tests against
+	//   zfar
+	viewMatrix[SHADOWMAT_TYPE_CULLING].LoadIdentity();
+	viewMatrix[SHADOWMAT_TYPE_CULLING].SetX(lightMatrix.GetX());
+	viewMatrix[SHADOWMAT_TYPE_CULLING].SetY(lightMatrix.GetY());
+	viewMatrix[SHADOWMAT_TYPE_CULLING].SetZ(lightMatrix.GetZ());
+	viewMatrix[SHADOWMAT_TYPE_CULLING].SetPos(projMidPos[2]);
 
-	const auto projMidPos = CalcShadowProjectionPos(playerCam, frustumPoints);
-
-	const auto lightDir = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
-
-	CMatrix44f lightViewMat;
-	lightViewMat = Impl::LookAtLH(projMidPos - lightDir, projMidPos, UpVector);
-	//lightViewMat.SetPos(projMidPos);
-
-	lightViewMat = Impl::InitCameraTransform(projMidPos, lightDir, UpVector);
-
-	lightViewMat = CMatrix44f::LookAtView(projMidPos - lightDir, projMidPos, 0.0f);
-
-	lightViewMat = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
-	lightViewMat.Transpose();
-	lightViewMat.SetPos(lightViewMat * -projMidPos);
-
-	mins = float3(std::numeric_limits<float>::max());
-	maxs = float3(std::numeric_limits<float>::lowest());
-
-	for (auto& frustumPoint : frustumPoints) {
-		frustumPoint = lightViewMat * frustumPoint;
-
-		mins = float3::min(mins, frustumPoint);
-		maxs = float3::max(maxs, frustumPoint);
-	}
-
-	mins.z = 0.0f;
-	maxs.z = readMap->GetBoundingRadius() * 2.0f;
-
-	mins = float3{ 0.0f };
-	maxs = float3{ maxs.z };
-
-	viewMatrix = lightViewMat;
-	projMatrix = CMatrix44f::ClipOrthoProj(mins.x, maxs.x, mins.y, maxs.y, -maxs.z, -mins.z, globalRendering->supportClipSpaceControl);
-	//projMatrix = CMatrix44f::ClipOrthoProj(0, maxs.z, 0, maxs.z, 0, maxs.z, globalRendering->supportClipSpaceControl);
-
-	viewProjMatrix = projMatrix * viewMatrix;
+	// shaders need this form, projection into SM-space is done by shadow2DProj()
+	// note: ShadowGenVertProg is a special case because it does not use uniforms
+	viewMatrix[SHADOWMAT_TYPE_DRAWING].LoadIdentity();
+	viewMatrix[SHADOWMAT_TYPE_DRAWING].SetX(lightMatrix.GetX());
+	viewMatrix[SHADOWMAT_TYPE_DRAWING].SetY(lightMatrix.GetY());
+	viewMatrix[SHADOWMAT_TYPE_DRAWING].SetZ(lightMatrix.GetZ());
+	viewMatrix[SHADOWMAT_TYPE_DRAWING].Scale(float3(scaleMatrix[0], scaleMatrix[5], scaleMatrix[10])); // extract (X.x, Y.y, Z.z)
+	viewMatrix[SHADOWMAT_TYPE_DRAWING].Transpose();
+	viewMatrix[SHADOWMAT_TYPE_DRAWING].SetPos(viewMatrix[SHADOWMAT_TYPE_DRAWING] * -projMidPos[2]);
+	viewMatrix[SHADOWMAT_TYPE_DRAWING].SetPos(viewMatrix[SHADOWMAT_TYPE_DRAWING].GetPos() + scaleMatrix.GetPos()); // add z-bias
 }
 
 void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
@@ -703,24 +566,24 @@ void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
 	const int realShTexSize = shadowConfig > 0 ? shadowMapSize : 1;
 
 	// first set matrices needed by shaders (including ShadowGenVertProg)
-	shadowCam->SetProjMatrix(projMatrix);
-	shadowCam->SetViewMatrix(viewMatrix);
-
-	float4 shadowProjScales{
-		maxs.x - mins.x,
-		maxs.y - mins.y,
-		-maxs.z,
-		-mins.z
-	};
+	shadowCam->SetProjMatrix(projMatrix[SHADOWMAT_TYPE_DRAWING]);
+	shadowCam->SetViewMatrix(viewMatrix[SHADOWMAT_TYPE_DRAWING]);
 
 	shadowCam->SetAspectRatio(shadowProjScales.x / shadowProjScales.y);
-	// convert xy-lenght to half-lenght
+	// convert xy-diameter to radius
 	shadowCam->SetFrustumScales(shadowProjScales * float4(0.5f, 0.5f, 1.0f, 1.0f));
 	shadowCam->UpdateFrustum();
 	shadowCam->UpdateLoadViewport(0, 0, realShTexSize, realShTexSize);
 	// load matrices into gl_{ModelView,Projection}Matrix
 	shadowCam->Update({false, false, false, false, false});
+
+	// next set matrices needed for SP visibility culling (these
+	// are *NEVER* loaded into gl_{ModelView,Projection}Matrix!)
+	shadowCam->SetProjMatrix(projMatrix[SHADOWMAT_TYPE_CULLING]);
+	shadowCam->SetViewMatrix(viewMatrix[SHADOWMAT_TYPE_CULLING]);
+	shadowCam->UpdateFrustum();
 }
+
 
 void CShadowHandler::SetupShadowTexSampler(unsigned int texUnit, bool enable) const
 {
@@ -808,7 +671,162 @@ void CShadowHandler::EnableColorOutput(bool enable) const
 }
 
 
-float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, std::array<float3, 8>& frustumPoints)
+
+float4 CShadowHandler::GetShadowProjectionScales(CCamera* playerCam, const CMatrix44f& lightViewMat) {
+	float4 projScales;
+	float2 projRadius;
+
+	// NOTE:
+	//   the xy-scaling factors from CalcMinMaxView do not change linearly
+	//   or smoothly with camera movements, creating visible artefacts (eg.
+	//   large jumps in shadow resolution)
+	//
+	//   therefore, EITHER use "fixed" scaling values such that the entire
+	//   map barely fits into the sun's frustum (by pretending it is embedded
+	//   in a sphere and taking its diameter), OR variable scaling such that
+	//   everything that can be seen by the camera maximally fills the sun's
+	//   frustum (choice of projection-style is left to the user and can be
+	//   changed at run-time)
+	//
+	//   the first option means larger maps will have more blurred/aliased
+	//   shadows if the depth buffer is kept at the same size, but no (map)
+	//   geometry is ever omitted
+	//
+	//   the second option means shadows have higher average resolution, but
+	//   become less sharp as the viewing volume increases (through eg.camera
+	//   rotations) and geometry can be omitted in some cases
+	//
+	switch (shadowProMode) {
+		case SHADOWPROMODE_CAM_CENTER: {
+			projScales.x = GetOrthoProjectedFrustumRadius(playerCam, lightViewMat, projMidPos[2]);
+		} break;
+		case SHADOWPROMODE_MAP_CENTER: {
+			projScales.x = GetOrthoProjectedMapRadius(-lightViewMat.GetZ(), projMidPos[2]);
+		} break;
+		case SHADOWPROMODE_MIX_CAMMAP: {
+			projRadius.x = GetOrthoProjectedFrustumRadius(playerCam, lightViewMat, projMidPos[0]);
+			projRadius.y = GetOrthoProjectedMapRadius(-lightViewMat.GetZ(), projMidPos[1]);
+			projScales.x = std::min(projRadius.x, projRadius.y);
+
+			// pick the center position (0 or 1) for which radius is smallest
+			projMidPos[2] = projMidPos[projRadius.x >= projRadius.y];
+		} break;
+	}
+
+	projScales.y = projScales.x;
+	#if 0
+	projScales.z = cam->GetNearPlaneDist();
+	projScales.w = cam->GetFarPlaneDist();
+	#else
+	// prefer slightly tighter fixed bounds
+	projScales.z = 0.0f;
+	projScales.w = readMap->GetBoundingRadius() * 2.0f;
+	#endif
+	return projScales;
+}
+
+float CShadowHandler::GetOrthoProjectedMapRadius(const float3& sunDir, float3& projPos) {
+	// to fit the map inside the frustum, we need to know
+	// the distance from one corner to its opposing corner
+	//
+	// this distance is maximal when the sun direction is
+	// orthogonal to the diagonal, but in other cases we
+	// can gain some precision by projecting the diagonal
+	// onto a vector orthogonal to the sun direction and
+	// using the length of that projected vector instead
+	//
+	const float maxMapDiameter = readMap->GetBoundingRadius() * 2.0f;
+	static float curMapDiameter = 0.0f;
+
+	// recalculate pos only if the sun-direction has changed
+	if (sunProjDir != sunDir) {
+		sunProjDir = sunDir;
+
+		float3 sunDirXZ = (sunDir * XZVector).ANormalize();
+		float3 mapVerts[2];
+
+		if (sunDirXZ.x >= 0.0f) {
+			if (sunDirXZ.z >= 0.0f) {
+				// use diagonal vector from top-right to bottom-left
+				mapVerts[0] = float3(mapDims.mapx * SQUARE_SIZE, 0.0f,                       0.0f);
+				mapVerts[1] = float3(                      0.0f, 0.0f, mapDims.mapy * SQUARE_SIZE);
+			} else {
+				// use diagonal vector from top-left to bottom-right
+				mapVerts[0] = float3(                      0.0f, 0.0f,                       0.0f);
+				mapVerts[1] = float3(mapDims.mapx * SQUARE_SIZE, 0.0f, mapDims.mapy * SQUARE_SIZE);
+			}
+		} else {
+			if (sunDirXZ.z >= 0.0f) {
+				// use diagonal vector from bottom-right to top-left
+				mapVerts[0] = float3(mapDims.mapx * SQUARE_SIZE, 0.0f, mapDims.mapy * SQUARE_SIZE);
+				mapVerts[1] = float3(                      0.0f, 0.0f,                       0.0f);
+			} else {
+				// use diagonal vector from bottom-left to top-right
+				mapVerts[0] = float3(                      0.0f, 0.0f, mapDims.mapy * SQUARE_SIZE);
+				mapVerts[1] = float3(mapDims.mapx * SQUARE_SIZE, 0.0f,                       0.0f);
+			}
+		}
+
+		const float3 v1 = (mapVerts[1] - mapVerts[0]).ANormalize();
+		const float3 v2 = float3(-sunDirXZ.z, 0.0f, sunDirXZ.x);
+
+		curMapDiameter = maxMapDiameter * v2.dot(v1);
+
+		projPos.x = (mapDims.mapx * SQUARE_SIZE) * 0.5f;
+		projPos.z = (mapDims.mapy * SQUARE_SIZE) * 0.5f;
+		projPos.y = CGround::GetHeightReal(projPos.x, projPos.z, false);
+	}
+
+	return curMapDiameter;
+}
+
+float CShadowHandler::GetOrthoProjectedFrustumRadius(CCamera* playerCam, const CMatrix44f& lightViewMat, float3& centerPos) {
+	float3 frustumPoints[8];
+
+	#if 0
+	{
+		float sqRadius = 0.0f;
+		projPos = CalcShadowProjectionPos(playerCam, &frustumPoints[0]);
+
+		// calculate radius of the minimally-bounding sphere around projected frustum
+		for (unsigned int n = 0; n < 8; n++) {
+			sqRadius = std::max(sqRadius, (frustumPoints[n] - projPos).SqLength());
+		}
+
+		const float maxMapDiameter = readMap->GetBoundingRadius() * 2.0f;
+		const float frustumDiameter = std::sqrt(sqRadius) * 2.0f;
+
+		return (std::min(maxMapDiameter, frustumDiameter));
+	}
+	#else
+	{
+		CMatrix44f lightViewCenterMat;
+		lightViewCenterMat.SetX(lightViewMat.GetX());
+		lightViewCenterMat.SetY(lightViewMat.GetY());
+		lightViewCenterMat.SetZ(lightViewMat.GetZ());
+		centerPos = CalcShadowProjectionPos(playerCam, &frustumPoints[0]);
+		lightViewCenterMat.SetPos(centerPos);
+
+		// find projected width along {x,z}-axes (.x := min, .y := max)
+		float2 xbounds = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+		float2 zbounds = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+
+		for (unsigned int n = 0; n < 8; n++) {
+			frustumPoints[n] = lightViewCenterMat * frustumPoints[n];
+
+			xbounds.x = std::min(xbounds.x, frustumPoints[n].x);
+			xbounds.y = std::max(xbounds.y, frustumPoints[n].x);
+			zbounds.x = std::min(zbounds.x, frustumPoints[n].z);
+			zbounds.y = std::max(zbounds.y, frustumPoints[n].z);
+		}
+
+		// factor in z-bounds to prevent clipping
+		return (std::min(readMap->GetBoundingRadius() * 2.0f, std::max(xbounds.y - xbounds.x, zbounds.y - zbounds.x)));
+	}
+	#endif
+}
+
+float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, float3* frustumPoints)
 {
 	static constexpr float T1 = 100.0f;
 	static constexpr float T2 = 200.0f;
@@ -823,9 +841,6 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, std::array<fl
 	};
 
 	for (int i = 0; i < 4; ++i) {
-		//frustumPoints[    i] = playerCam->GetFrustumVert(    i);
-		//frustumPoints[4 + i] = playerCam->GetFrustumVert(4 + i);
-
 		//near quadrilateral
 		ClipRayByPlanes(frustumPoints[4 + i], frustumPoints[i], clipPlanes);
 		//far quadrilateral

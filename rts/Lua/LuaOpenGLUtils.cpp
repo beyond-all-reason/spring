@@ -169,7 +169,7 @@ const CMatrix44f* LuaOpenGLUtils::GetNamedMatrix(const char* name)
 {
 	switch (GetLuaMatrixType(name)) {
 		case LUAMATRICES_SHADOW:
-			return &shadowHandler.GetShadowViewProjMatrix();
+			return &shadowHandler.GetShadowMatrix();
 		case LUAMATRICES_VIEW:
 			return &camera->GetViewMatrix();
 		case LUAMATRICES_VIEWINVERSE:
