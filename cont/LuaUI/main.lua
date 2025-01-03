@@ -97,6 +97,10 @@ function ConfigureLayout(command)
   return widgetHandler:ConfigureLayout(command)
 end
 
+function ActiveCommandChanged(id, cmdType)
+  return widgetHandler:ActiveCommandChanged(id, cmdType)
+end
+
 function CommandNotify(id, params, options)
   return widgetHandler:CommandNotify(id, params, options)
 end
