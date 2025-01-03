@@ -5,6 +5,7 @@
 
 #include <array>
 #include <limits>
+#include <tuple>
 
 #include "Rendering/GL/FBO.h"
 #include "System/float4.h"
@@ -61,22 +62,13 @@ public:
 		SHADOWGEN_PROGRAM_COUNT      = 4,
 	};
 
-	enum ShadowMatrixType {
-		SHADOWMAT_TYPE_CULLING = 0,
-		SHADOWMAT_TYPE_DRAWING = 1,
-	};
-
 	Shader::IProgramObject* GetShadowGenProg(ShadowGenProgram p) {
 		return shadowGenProgs[p];
 	}
 
-	const CMatrix44f& GetShadowMatrix   (unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  viewMatrix[idx];      }
-	const      float* GetShadowMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
-
-	const CMatrix44f& GetShadowViewMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  viewMatrix[idx]; }
-	const CMatrix44f& GetShadowProjMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  projMatrix[idx]; }
-	const      float* GetShadowViewMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
-	const      float* GetShadowProjMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &projMatrix[idx].m[0]; }
+	const CMatrix44f& GetShadowViewProjMatrix() const { return viewProjMatrix; }
+	const CMatrix44f& GetShadowViewMatrix() const { return  viewMatrix; }
+	const CMatrix44f& GetShadowProjMatrix() const { return  projMatrix; }
 
 	const float4& GetShadowParams() const { return shadowTexProjCenter; }
 
@@ -104,12 +96,7 @@ private:
 	void SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam);
 	void SetShadowCamera(CCamera* shadowCam);
 
-	float4 GetShadowProjectionScales(CCamera*, const CMatrix44f&);
-	float3 CalcShadowProjectionPos(CCamera*, float3*);
-
-	float GetOrthoProjectedMapRadius(const float3&, float3&);
-	float GetOrthoProjectedFrustumRadius(CCamera*, const CMatrix44f&, float3&);
-
+	float3 CalcShadowProjectionPos(CCamera* playerCam, std::array<float3, 8>& frustumPoints);
 public:
 	int shadowConfig;
 	int shadowMapSize;
@@ -129,14 +116,12 @@ private:
 	// to write the (FBO) depth-buffer texture
 	std::array<Shader::IProgramObject*, SHADOWGEN_PROGRAM_COUNT> shadowGenProgs;
 
-	float3 projMidPos[2 + 1];
-	float3 sunProjDir;
+	float3 mins;
+	float3 maxs;
 
-	float4 shadowProjScales;
-
-	// culling and drawing versions of both matrices
-	CMatrix44f projMatrix[2];
-	CMatrix44f viewMatrix[2];
+	CMatrix44f projMatrix;
+	CMatrix44f viewMatrix;
+	CMatrix44f viewProjMatrix;
 
 	uint32_t shadowDepthTexture;
 	uint32_t shadowColorTexture;
