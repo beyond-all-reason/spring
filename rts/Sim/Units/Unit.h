@@ -555,6 +555,8 @@ public:
 	bool leaveTracks = false;
 
 	bool isSelected = false;
+	// if true, unit can not be added to groups by a player (UNSYNCED)
+	bool noGroup = false;
 
 	float iconRadius = 0.0f;
 

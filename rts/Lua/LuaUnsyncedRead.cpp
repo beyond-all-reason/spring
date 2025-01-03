@@ -141,6 +141,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitNoDraw);
 	REGISTER_LUA_CFUNC(GetUnitEngineDrawMask);
 	REGISTER_LUA_CFUNC(GetUnitNoMinimap);
+	REGISTER_LUA_CFUNC(GetUnitNoGroup);
 	REGISTER_LUA_CFUNC(GetUnitNoSelect);
 	REGISTER_LUA_CFUNC(GetUnitAlwaysUpdateMatrix);
 	REGISTER_LUA_CFUNC(GetUnitDrawFlag);
@@ -1301,6 +1302,23 @@ int LuaUnsyncedRead::GetUnitNoMinimap(lua_State* L)
 		return 0;
 
 	lua_pushboolean(L, unit->noMinimap);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.GetUnitNoGroup
+ * @number unitID
+ * @treturn nil|bool nil when unitID cannot be parsed
+ */
+int LuaUnsyncedRead::GetUnitNoGroup(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushboolean(L, unit->noGroup);
 	return 1;
 }
 
