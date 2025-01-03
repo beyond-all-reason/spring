@@ -121,6 +121,7 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "squareSize", SQUARE_SIZE);
 		LuaPushNamedNumber(L, "metalMapSquareSize", METAL_MAP_SQUARE_SIZE);
 		LuaPushNamedNumber(L, "buildSquareSize", BUILD_SQUARE_SIZE);
+		LuaPushNamedNumber(L, "buildGridResolution", BUILD_GRID_RESOLUTION);
 		LuaPushNamedNumber(L, "footprintScale", SPRING_FOOTPRINT_SCALE);
 	}
 

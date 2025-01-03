@@ -986,6 +986,8 @@ float3 CGameHelper::Pos2BuildPos(const BuildInfo& buildInfo, bool synced)
 	RECOIL_DETAILED_TRACY_ZONE;
 	float3 pos;
 
+	static_assert(BUILD_GRID_RESOLUTION == 2);
+
 	// snap build-positions to 16-elmo grid
 	if (buildInfo.GetXSize() & 2)
 		pos.x = math::floor((buildInfo.pos.x              ) / BUILD_SQUARE_SIZE) * BUILD_SQUARE_SIZE + SQUARE_SIZE;
@@ -1124,6 +1126,11 @@ float3 CGameHelper::ClosestBuildPos(
 		const int zsqr  = static_cast<int>(wzpos / SQUARE_SIZE);
 		const int xsize = bi.GetXSize();
 		const int zsize = bi.GetZSize();
+
+		/* I'm not sure which of these two the `2` below represents,
+		 * maybe it even assumes both are the same? */
+		static_assert(BUILD_GRID_RESOLUTION == 2);
+		static_assert(SPRING_FOOTPRINT_SCALE == 2);
 
 		int xmin = std::max(           0, xsqr - (xsize    ) / 2 - minDistance);
 		int zmin = std::max(           0, zsqr - (zsize    ) / 2 - minDistance);
