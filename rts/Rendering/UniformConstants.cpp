@@ -177,8 +177,8 @@ void UniformConstants::UpdateMatricesImpl(UniformMatricesBuffer* updateBuffer)
 	updateBuffer->cameraProjInv = camPlayer->GetProjectionMatrixInverse();
 	updateBuffer->cameraViewProjInv = camPlayer->GetViewProjectionMatrixInverse();
 
-	updateBuffer->shadowView = shadowHandler.GetShadowViewMatrix(CShadowHandler::SHADOWMAT_TYPE_DRAWING);
-	updateBuffer->shadowProj = shadowHandler.GetShadowProjMatrix(CShadowHandler::SHADOWMAT_TYPE_DRAWING);
+	updateBuffer->shadowView = shadowHandler.GetShadowViewMatrix();
+	updateBuffer->shadowProj = shadowHandler.GetShadowProjMatrix();
 	updateBuffer->shadowViewProj = updateBuffer->shadowProj * updateBuffer->shadowView;
 
 	{
