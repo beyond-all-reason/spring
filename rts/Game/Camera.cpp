@@ -355,12 +355,14 @@ void CCamera::UpdateViewRange()
 
 bool CCamera::InView(const float3& point, float radius) const
 {
+	return true;
 	RECOIL_DETAILED_TRACY_ZONE;
 	return frustum.IntersectSphere(point, radius, inViewPlanesMask);
 }
 
 bool CCamera::InView(const AABB& aabb) const
 {
+	return true;
 	RECOIL_DETAILED_TRACY_ZONE;
 	return InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb, inViewPlanesMask);
 }
