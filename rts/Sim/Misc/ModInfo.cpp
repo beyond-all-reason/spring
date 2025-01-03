@@ -34,7 +34,7 @@ void CModInfo::ResetState()
 		allowUnitCollisionOverlap  = true;
 		allowSepAxisCollisionTest  = false;
 		allowGroundUnitGravity     = false;
-		allowHoverUnitStrafing     = true;
+		allowHoverUnitStrafing     = false;
 
 		maxCollisionPushMultiplier = std::numeric_limits<float>::infinity();
 		unitQuadPositionUpdateRate = 3;
@@ -200,7 +200,7 @@ void CModInfo::Init(const std::string& modFileName)
 		allowUnitCollisionOverlap = movementTbl.GetBool("allowUnitCollisionOverlap", allowUnitCollisionOverlap);
 		allowSepAxisCollisionTest = movementTbl.GetBool("allowSepAxisCollisionTest", allowSepAxisCollisionTest);
 		allowGroundUnitGravity = movementTbl.GetBool("allowGroundUnitGravity", allowGroundUnitGravity);
-		allowHoverUnitStrafing = movementTbl.GetBool("allowHoverUnitStrafing", (pathFinderSystem == QTPFS_TYPE));
+		allowHoverUnitStrafing = movementTbl.GetBool("allowHoverUnitStrafing", allowHoverUnitStrafing);
 		maxCollisionPushMultiplier = movementTbl.GetFloat("maxCollisionPushMultiplier", maxCollisionPushMultiplier);
 		unitQuadPositionUpdateRate = std::clamp(movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate), 1, 15);
 		groundUnitCollisionAvoidanceUpdateRate = std::clamp(movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate), 1, 15);
