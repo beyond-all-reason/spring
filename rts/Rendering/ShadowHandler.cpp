@@ -657,23 +657,22 @@ void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 {
 	static std::array<float3, 8> frustumPoints;
 
-	//auto lightViewMat = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
-
 	const auto projMidPos = CalcShadowProjectionPos(playerCam, frustumPoints);
 
-	const auto lightDir = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
-
 	CMatrix44f lightViewMat;
-	lightViewMat = Impl::LookAtLH(projMidPos - lightDir, projMidPos, UpVector);
-	//lightViewMat.SetPos(projMidPos);
+	{
+		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
+		float3 xAxis = float3(1, 0, 0);
+		xAxis = (xAxis - xAxis.dot(zAxis) * zAxis).Normalize();
+		float3 yAxis = zAxis.cross(xAxis);
 
-	lightViewMat = Impl::InitCameraTransform(projMidPos, lightDir, UpVector);
+		lightViewMat.col[0] = float4{ xAxis.x, yAxis.x, zAxis.x, 0.0f };
+		lightViewMat.col[1] = float4{ xAxis.y, yAxis.y, zAxis.y, 0.0f };
+		lightViewMat.col[2] = float4{ xAxis.z, yAxis.z, zAxis.z, 0.0f };
+		lightViewMat.col[3] = float4{ -xAxis.dot(projMidPos), -yAxis.dot(projMidPos), -zAxis.dot(projMidPos), 1.0f };
+		//lightViewMat.col[3] = float4{ 0.0f, 0.0f, 0.0f, 1.0f };
+	}
 
-	lightViewMat = CMatrix44f::LookAtView(projMidPos - lightDir, projMidPos, 0.0f);
-
-	lightViewMat = ComposeLightMatrix(playerCam, ISky::GetSky()->GetLight());
-	lightViewMat.Transpose();
-	lightViewMat.SetPos(lightViewMat * -projMidPos);
 
 	mins = float3(std::numeric_limits<float>::max());
 	maxs = float3(std::numeric_limits<float>::lowest());
@@ -685,11 +684,13 @@ void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 		maxs = float3::max(maxs, frustumPoint);
 	}
 
+	/*
 	mins.z = 0.0f;
 	maxs.z = readMap->GetBoundingRadius() * 2.0f;
 
 	mins = float3{ 0.0f };
 	maxs = float3{ maxs.z };
+	*/
 
 	viewMatrix = lightViewMat;
 	projMatrix = CMatrix44f::ClipOrthoProj(mins.x, maxs.x, mins.y, maxs.y, -maxs.z, -mins.z, globalRendering->supportClipSpaceControl);
