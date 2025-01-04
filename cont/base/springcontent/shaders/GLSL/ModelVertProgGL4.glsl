@@ -83,8 +83,13 @@ layout(std140, binding = 1) uniform UniformParamsBuffer {
 	vec4 teamColor[255]; //all team colors
 };
 
-layout(std140, binding = 0) readonly buffer MatrixBuffer {
-	mat4 mat[];
+struct Transform {
+	vec4 quat;
+	vec4 trSc;
+};
+
+layout(std140, binding = 0) readonly buffer TransformBuffer {
+	Transform transforms[];
 };
 
 uniform int cameraMode = 0;
@@ -114,7 +119,7 @@ out Data {
 };
 out float gl_ClipDistance[3];
 
-#line 1117
+#line 1122
 
 void TransformPlayerCam(vec4 worldPos) {
 	gl_Position = cameraViewProj * worldPos;
@@ -132,6 +137,37 @@ uint GetUnpackedValue(uint packedValue, uint byteNum) {
 	return (packedValue >> (8u * byteNum)) & 0xFFu;
 }
 
+vec4 MultiplyQuat(vec4 a, vec4 b)
+{
+    return vec4(a.w * b.w - dot(a.w, b.w), a.w * b.xyz + b.w * a.xyz + cross(a.xyz, b.xyz));
+}
+
+vec3 RotateByQuaternion(vec4 q, vec3 v) {
+	return 2.0f * dot(q.xyz, v) * q.xyz + (q.w * q.w - dot(q.xyz, q.xyz)) * v + 2.0 * q.w * cross(q.xyz, v);
+}
+
+vec4 RotateByQuaternion(vec4 q, vec4 v) {
+	return vec4(RotateByQuaternion(q, v.xyz), v.w);
+}
+
+vec3 ApplyTransform(Transform tra, vec3 v) {
+	return RotateByQuaternion(tra.quat, v * tra.trSc.w) + tra.trSc.xyz;
+}
+
+vec4 ApplyTransform(Transform tra, vec4 v) {
+	return vec4(ApplyTransform(tra, v.xyz), v.w);
+}
+
+Transform ApplyTransform(Transform parentTra, Transform childTra) {
+	return Transform(
+		MultiplyQuat(parentTra.quat, childTra.quat),
+		vec4(
+			parentTra.trSc.xyz + RotateByQuaternion(parentTra.quat, parentTra.trSc.w * childTra.trSc.xyz),
+			parentTra.trSc.w * childTra.trSc.w
+		)
+	);
+}
+
 void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 {
 	bool staticModel = (matrixMode > 0);
@@ -146,13 +182,12 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 	);
 
 	uint b0 = GetUnpackedValue(bonesInfo.x, 0); //first boneID
-	mat4 b0BoneMat = mat[instData.x + b0 + uint(!staticModel)];
-	mat3 b0NormMat = mat3(b0BoneMat);
+	Transform b0BoneTra = transforms[instData.x + b0 + uint(!staticModel)];
 
-	weights[0] *= b0BoneMat[3][3];
+	weights[0] *= step(0.0, b0BoneTra.trSc.w);
 
-	msPosition = b0BoneMat * piecePos;
-	msNormal   = b0NormMat * normal;
+	msPosition = ApplyTransform(b0BoneTra, piecePos);
+	msNormal   = RotateByQuaternion(b0BoneTra.quat, normal);
 
 	if (staticModel || weights[0] == 1.0)
 		return;
@@ -164,7 +199,7 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 	wSum       += weights[0];
 
 	uint numPieces = GetUnpackedValue(instData.z, 3);
-	mat4 bposeMat    = mat[instData.w + b0];
+	Transform bposeTra = transforms[instData.w + b0];
 
 	// Vertex[ModelSpace,BoneX] = PieceMat[BoneX] * InverseBindPosMat[BoneX] * BindPosMat[Bone0] * Vertex[Bone0]
 	for (uint bi = 1; bi < 3; ++bi) {
@@ -173,16 +208,15 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 		if (bID == 0xFFu || weights[bi] == 0.0)
 			continue;
 
-		mat4 bposeInvMat = mat[instData.w + numPieces + bID];
-		mat4 boneMat     = mat[instData.x +        1u + bID];
+		Transform bposeInvTra = transforms[instData.w + numPieces + bID];
+		Transform boneTra     = transforms[instData.x +        1u + bID];
 
-		weights[bi] *= boneMat[3][3];
+		weights[bi] *= step(0.0, boneTra.trSc.w);
 
-		mat4 skinMat = boneMat * bposeInvMat * bposeMat;
-		mat3 normMat = mat3(skinMat);
+		Transform skinTra = ApplyTransform(ApplyTransform(boneTra, bposeInvTra), bposeTra);
 
-		msPosition += skinMat * piecePos * weights[bi];
-		msNormal   += normMat * normal   * weights[bi];
+		msPosition += ApplyTransform(skinTra, piecePos * weights[bi]);
+		msNormal   += RotateByQuaternion(skinTra.quat, normal * weights[bi]);
 		wSum       += weights[bi];
 	}
 
@@ -194,14 +228,15 @@ void main(void)
 {
 	bool staticModel = (matrixMode > 0);
 
-	mat4 worldMatrix = staticModel ? staticModelMatrix : mat[instData.x]; //don't cover ARRAY_MATMODE yet
+	//mat4 worldMatrix = staticModel ? staticModelMatrix : mat[instData.x]; //don't cover ARRAY_MATMODE yet
+	Transform worldTra = transforms[instData.x]; //don't cover ARRAY_MATMODE yet
 
 	vec4 modelPos;
 	vec3 modelNormal;
 	GetModelSpaceVertex(modelPos, modelNormal);
 
-	worldPos = worldMatrix * modelPos;
-	worldNormal = mat3(worldMatrix) * modelNormal;
+	worldPos = ApplyTransform(worldTra, modelPos);
+	worldNormal = RotateByQuaternion(worldTra.quat, modelNormal);
 
 	gl_ClipDistance[0] = dot(modelPos, clipPlane0); //upper construction clip plane
 	gl_ClipDistance[1] = dot(modelPos, clipPlane1); //lower construction clip plane

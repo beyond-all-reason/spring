@@ -736,8 +736,11 @@ void CGame::PreLoadRendering()
 	geometricObjects = new CGeometricObjects();
 
 	// load components that need to exist before PostLoadSimulation
-	matrixUploader.Init();
-	modelsUniformsUploader.Init();
+	modelUniformsStorage.Init();
+	//transformsMemStorage.Init(); // Add?
+
+	transformsUploader.Init();
+	modelUniformsUploader.Init();
 	worldDrawer.InitPre();
 }
 
@@ -997,8 +1000,9 @@ void CGame::KillRendering()
 	icon::iconHandler.Kill();
 	spring::SafeDelete(geometricObjects);
 	worldDrawer.Kill();
-	matrixUploader.Kill();
-	modelsUniformsUploader.Kill();
+
+	transformsUploader.Kill();
+	modelUniformsUploader.Kill();
 }
 
 void CGame::KillInterface()
@@ -1040,6 +1044,9 @@ void CGame::KillSimulation()
 	featureHandler.Kill(); // depends on unitHandler (via ~CFeature)
 	unitHandler.Kill();
 	projectileHandler.Kill();
+
+	modelUniformsStorage.Kill();
+	//transformsMemStorage.Kill(); //Add?
 
 	LOG("[Game::%s][3]", __func__);
 	IPathManager::FreeInstance(pathManager);
@@ -1470,8 +1477,8 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	shadowHandler.Update();
 	{
 		worldDrawer.Update(newSimFrame);
-		matrixUploader.Update();
-		modelsUniformsUploader.Update();
+		transformsUploader.Update();
+		modelUniformsUploader.Update();
 	}
 
 	mouse->UpdateCursorCameraDir(); // make sure mouse->dir is in sync with camera

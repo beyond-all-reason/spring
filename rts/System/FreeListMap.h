@@ -53,6 +53,7 @@ namespace spring {
 			values[id] = TVal{};
 		}
 
+		bool empty() const { return values.empty(); }
 		void resize(std::size_t sz) { values.resize(sz); }
 		void reserve(std::size_t sz) { values.reserve(sz); }
 		void clear() {
@@ -194,6 +195,7 @@ namespace spring {
 			return it->second;
 		}
 
+		bool empty() const { return vault.empty(); }
 		void reserve(std::size_t sz) { vault.reserve(sz); }
 		void clear() {
 			vault.clear();
