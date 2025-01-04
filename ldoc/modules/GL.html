@@ -1,0 +1,3185 @@
+---
+layout: default
+title: GL
+permalink: ldoc/modules/GL.html
+description: OpenGL Constants
+parent: Lua API
+table: 0x5607335346b0
+---
+
+{% raw %}
+    <h1>Module <code>GL</code></h1>
+    <p>OpenGL Constants</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaConstGL.cpp">rts/Lua/LuaConstGL.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Drawing_Primitives">Drawing Primitives </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#BlendingFactorDest">BlendingFactorDest </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#BlendingFactorSrc">BlendingFactorSrc </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#AlphaFunction_and_DepthFunction">AlphaFunction and DepthFunction </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#LogicOp">LogicOp </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Culling">Culling </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#PolygonMode">PolygonMode </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Clear_Bits">Clear Bits </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#ShadeModel">ShadeModel </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#MatrixMode">MatrixMode </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Texture_Filtering">Texture Filtering </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Texture_Clamping">Texture Clamping </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Texture_Environment">Texture Environment </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_TEXTURE_FILTER_CONTROL">GL_TEXTURE_FILTER_CONTROL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_TEXTURE_LOD_BIAS">GL_TEXTURE_LOD_BIAS</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Texture_Generation">Texture Generation </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#glPushAttrib___bits">glPushAttrib() bits </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#glHint___targets">glHint() targets </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#glHint___modes">glHint() modes </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Light_Specification">Light Specification </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Shader_Types">Shader Types </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Geometry_Shader_Parameters">Geometry Shader Parameters </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Tesselation_control_shader_parameters">Tesselation control shader parameters </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#OpenGL_Data_Types">OpenGL Data Types </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#OpenGL_Buffer_Types">OpenGL Buffer Types </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL">GL</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#FBO_Attachments">FBO Attachments </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT0_EXT">GL_COLOR_ATTACHMENT0_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT1_EXT">GL_COLOR_ATTACHMENT1_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT2_EXT">GL_COLOR_ATTACHMENT2_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT3_EXT">GL_COLOR_ATTACHMENT3_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT4_EXT">GL_COLOR_ATTACHMENT4_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT5_EXT">GL_COLOR_ATTACHMENT5_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT6_EXT">GL_COLOR_ATTACHMENT6_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT7_EXT">GL_COLOR_ATTACHMENT7_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT8_EXT">GL_COLOR_ATTACHMENT8_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT9_EXT">GL_COLOR_ATTACHMENT9_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT10_EXT">GL_COLOR_ATTACHMENT10_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT11_EXT">GL_COLOR_ATTACHMENT11_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT12_EXT">GL_COLOR_ATTACHMENT12_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT13_EXT">GL_COLOR_ATTACHMENT13_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT14_EXT">GL_COLOR_ATTACHMENT14_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_COLOR_ATTACHMENT15_EXT">GL_COLOR_ATTACHMENT15_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_DEPTH_ATTACHMENT_EXT">GL_DEPTH_ATTACHMENT_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_STENCIL_ATTACHMENT_EXT">GL_STENCIL_ATTACHMENT_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Not_included__but_useful_texture_Formats">Not included, but useful texture Formats </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL_RGBA16F_ARB">GL_RGBA16F_ARB</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_RGBA32F_ARB">GL_RGBA32F_ARB</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_DEPTH_COMPONENT">GL_DEPTH_COMPONENT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Not_included__but_useful_RBO_Formats">Not included, but useful RBO Formats </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL_RGB">GL_RGB</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_RGBA">GL_RGBA</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_DEPTH_COMPONENT">GL_DEPTH_COMPONENT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_STENCIL_INDEX">GL_STENCIL_INDEX</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Not_included__but_useful_FBO_Targets">Not included, but useful FBO Targets </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL_FRAMEBUFFER_EXT">GL_FRAMEBUFFER_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_READ_FRAMEBUFFER_EXT">GL_READ_FRAMEBUFFER_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_DRAW_FRAMEBUFFER_EXT">GL_DRAW_FRAMEBUFFER_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Not_included__but_useful_FBO_Status">Not included, but useful FBO Status </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#GL_FRAMEBUFFER_COMPLETE_EXT">GL_FRAMEBUFFER_COMPLETE_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT">GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT">GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT">GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT">GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT">GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT">GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT">GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_UNSUPPORTED_EXT">GL_FRAMEBUFFER_UNSUPPORTED_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#GL_FRAMEBUFFER_STATUS_ERROR_EXT">GL_FRAMEBUFFER_STATUS_ERROR_EXT</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+
+      <h2 id="Drawing_Primitives" class="section-header ">
+        Drawing Primitives
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>POINTS</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINES</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINE_LOOP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINE_STRIP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TRIANGLES</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TRIANGLE_STRIP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TRIANGLE_FAN</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>QUADS</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>QUAD_STRIP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>POLYGON</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>PATCHES</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="BlendingFactorDest" class="section-header ">
+        BlendingFactorDest
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>ZERO</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SRC_COLOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE_MINUS_SRC_COLOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SRC_ALPHA</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE_MINUS_SRC_ALPHA</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>DST_ALPHA</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE_MINUS_DST_ALPHA</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="BlendingFactorSrc" class="section-header ">
+        BlendingFactorSrc
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>ZERO</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SRC_COLOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE_MINUS_SRC_COLOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SRC_ALPHA</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE_MINUS_SRC_ALPHA</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>DST_ALPHA</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE_MINUS_DST_ALPHA</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>DST_COLOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ONE_MINUS_DST_COLOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SRC_ALPHA_SATURATE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FUNC_ADD</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FUNC_SUBTRACT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FUNC_REVERSE_SUBTRACT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>MIN</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>MAX</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="AlphaFunction_and_DepthFunction" class="section-header ">
+        AlphaFunction and DepthFunction
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>NEVER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LESS</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>EQUAL</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LEQUAL</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>GREATER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>NOTEQUAL</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>GEQUAL</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ALWAYS</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="LogicOp" class="section-header ">
+        LogicOp
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>CLEAR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>AND</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>AND_REVERSE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>COPY</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>AND_INVERTED</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>NOOP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>XOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>OR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>NOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>EQUIV</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>INVERT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>OR_REVERSE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>COPY_INVERTED</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>OR_INVERTED</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>NAND</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SET</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Culling" class="section-header ">
+        Culling
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>BACK</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FRONT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FRONT_AND_BACK</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="PolygonMode" class="section-header ">
+        PolygonMode
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>POINT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FILL</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Clear_Bits" class="section-header ">
+        Clear Bits
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>DEPTH_BUFFER_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ACCUM_BUFFER_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>STENCIL_BUFFER_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>COLOR_BUFFER_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="ShadeModel" class="section-header ">
+        ShadeModel
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>FLAT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SMOOTH</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="MatrixMode" class="section-header ">
+        MatrixMode
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>MODELVIEW</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>PROJECTION</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TEXTURE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Texture_Filtering" class="section-header ">
+        Texture Filtering
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>NEAREST</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINEAR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>NEAREST_MIPMAP_NEAREST</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINEAR_MIPMAP_NEAREST</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>NEAREST_MIPMAP_LINEAR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINEAR_MIPMAP_LINEAR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Texture_Clamping" class="section-header ">
+        Texture Clamping
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>REPEAT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>MIRRORED_REPEAT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>CLAMP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>CLAMP_TO_EDGE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>CLAMP_TO_BORDER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Texture_Environment" class="section-header ">
+        Texture Environment
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>TEXTURE_ENV</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TEXTURE_ENV_MODE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TEXTURE_ENV_COLOR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>MODULATE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>DECAL</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>BLEND</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>REPLACE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_TEXTURE_FILTER_CONTROL">
+          GL_TEXTURE_FILTER_CONTROL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_TEXTURE_FILTER_CONTROL</code>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_TEXTURE_LOD_BIAS">
+          GL_TEXTURE_LOD_BIAS
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_TEXTURE_LOD_BIAS</code>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Texture_Generation" class="section-header ">
+        Texture Generation
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>TEXTURE_GEN_MODE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>EYE_PLANE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>OBJECT_PLANE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>EYE_LINEAR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>OBJECT_LINEAR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SPHERE_MAP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>NORMAL_MAP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>REFLECTION_MAP</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>S</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>T</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>R</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>Q</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="glPushAttrib___bits" class="section-header ">
+        glPushAttrib() bits
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>CURRENT_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>POINT_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINE_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>POLYGON_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>POLYGON_STIPPLE_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>PIXEL_MODE_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LIGHTING_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FOG_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>DEPTH_BUFFER_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ACCUM_BUFFER_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>STENCIL_BUFFER_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>VIEWPORT_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TRANSFORM_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ENABLE_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>COLOR_BUFFER_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>HINT_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>EVAL_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LIST_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TEXTURE_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SCISSOR_BIT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ALL_ATTRIB_BITS</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="glHint___targets" class="section-header ">
+        glHint() targets
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>FOG_HINT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINE_SMOOTH_HINT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>POINT_SMOOTH_HINT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>POLYGON_SMOOTH_HINT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>PERSPECTIVE_CORRECTION_HINT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="glHint___modes" class="section-header ">
+        glHint() modes
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>DONT_CARE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FASTEST</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>NICEST</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Light_Specification" class="section-header ">
+        Light Specification
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>AMBIENT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>DIFFUSE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SPECULAR</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>POSITION</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SPOT_DIRECTION</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SPOT_EXPONENT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SPOT_CUTOFF</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>CONSTANT_ATTENUATION</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>LINEAR_ATTENUATION</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>QUADRATIC_ATTENUATION</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Shader_Types" class="section-header ">
+        Shader Types
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>VERTEX_SHADER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TESS_CONTROL_SHADER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>TESS_EVALUATION_SHADER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>GEOMETRY_SHADER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FRAGMENT_SHADER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Geometry_Shader_Parameters" class="section-header ">
+        Geometry Shader Parameters
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>GEOMETRY_INPUT_TYPE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>GEOMETRY_OUTPUT_TYPE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>GEOMETRY_VERTICES_OUT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Tesselation_control_shader_parameters" class="section-header ">
+        Tesselation control shader parameters
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>PATCH_VERTICES</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>PATCH_DEFAULT_OUTER_LEVEL</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>PATCH_DEFAULT_INNER_LEVEL</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="OpenGL_Data_Types" class="section-header ">
+        OpenGL Data Types
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>BYTE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>UNSIGNED_BYTE</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SHORT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>UNSIGNED_SHORT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>INT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>UNSIGNED_INT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FLOAT</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FLOAT_VEC4</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>INT_VEC4</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>UNSIGNED_INT_VEC4</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>FLOAT_MAT4</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="OpenGL_Buffer_Types" class="section-header ">
+        OpenGL Buffer Types
+      </h2>
+
+        <h3 id="GL">
+          GL
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Fields:</h4>
+           <ol>
+                 <li>
+                   <code>ELEMENT_ARRAY_BUFFER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>ARRAY_BUFFER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>UNIFORM_BUFFER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>SHADER_STORAGE_BUFFER</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="FBO_Attachments" class="section-header has-description">
+        FBO Attachments
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="GL_COLOR_ATTACHMENT0_EXT">
+          GL_COLOR_ATTACHMENT0_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT0_EXT</code>
+                    0x8CE0
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT1_EXT">
+          GL_COLOR_ATTACHMENT1_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT1_EXT</code>
+                    0x8CE1
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT2_EXT">
+          GL_COLOR_ATTACHMENT2_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT2_EXT</code>
+                    0x8CE2
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT3_EXT">
+          GL_COLOR_ATTACHMENT3_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT3_EXT</code>
+                    0x8CE3
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT4_EXT">
+          GL_COLOR_ATTACHMENT4_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT4_EXT</code>
+                    0x8CE4
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT5_EXT">
+          GL_COLOR_ATTACHMENT5_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT5_EXT</code>
+                    0x8CE5
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT6_EXT">
+          GL_COLOR_ATTACHMENT6_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT6_EXT</code>
+                    0x8CE6
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT7_EXT">
+          GL_COLOR_ATTACHMENT7_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT7_EXT</code>
+                    0x8CE7
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT8_EXT">
+          GL_COLOR_ATTACHMENT8_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT8_EXT</code>
+                    0x8CE8
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT9_EXT">
+          GL_COLOR_ATTACHMENT9_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT9_EXT</code>
+                    0x8CE9
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT10_EXT">
+          GL_COLOR_ATTACHMENT10_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT10_EXT</code>
+                    0x8CEA
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT11_EXT">
+          GL_COLOR_ATTACHMENT11_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT11_EXT</code>
+                    0x8CEB
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT12_EXT">
+          GL_COLOR_ATTACHMENT12_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT12_EXT</code>
+                    0x8CEC
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT13_EXT">
+          GL_COLOR_ATTACHMENT13_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT13_EXT</code>
+                    0x8CED
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT14_EXT">
+          GL_COLOR_ATTACHMENT14_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT14_EXT</code>
+                    0x8CEE
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_COLOR_ATTACHMENT15_EXT">
+          GL_COLOR_ATTACHMENT15_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_COLOR_ATTACHMENT15_EXT</code>
+                    0x8CEF
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_DEPTH_ATTACHMENT_EXT">
+          GL_DEPTH_ATTACHMENT_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_DEPTH_ATTACHMENT_EXT</code>
+                    0x8D00
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_STENCIL_ATTACHMENT_EXT">
+          GL_STENCIL_ATTACHMENT_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_STENCIL_ATTACHMENT_EXT</code>
+                    0x8D20
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Not_included__but_useful_texture_Formats" class="section-header has-description">
+        Not included, but useful texture Formats
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="GL_RGBA16F_ARB">
+          GL_RGBA16F_ARB
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_RGBA16F_ARB</code>
+                    0x881A
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_RGBA32F_ARB">
+          GL_RGBA32F_ARB
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_RGBA32F_ARB</code>
+                    0x8814
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_DEPTH_COMPONENT">
+          GL_DEPTH_COMPONENT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_DEPTH_COMPONENT</code>
+                    0x1902
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Not_included__but_useful_RBO_Formats" class="section-header has-description">
+        Not included, but useful RBO Formats
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="GL_RGB">
+          GL_RGB
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_RGB</code>
+                    0x1907
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_RGBA">
+          GL_RGBA
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_RGBA</code>
+                    0x1908
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_DEPTH_COMPONENT">
+          GL_DEPTH_COMPONENT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_DEPTH_COMPONENT</code>
+                    0x1902
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_STENCIL_INDEX">
+          GL_STENCIL_INDEX
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_STENCIL_INDEX</code>
+                    0x1901
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Not_included__but_useful_FBO_Targets" class="section-header has-description">
+        Not included, but useful FBO Targets
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="GL_FRAMEBUFFER_EXT">
+          GL_FRAMEBUFFER_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_EXT</code>
+                    0x8D40
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_READ_FRAMEBUFFER_EXT">
+          GL_READ_FRAMEBUFFER_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_READ_FRAMEBUFFER_EXT</code>
+                    0x8CA8
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_DRAW_FRAMEBUFFER_EXT">
+          GL_DRAW_FRAMEBUFFER_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_DRAW_FRAMEBUFFER_EXT</code>
+                    0x8CA9
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+      <h2 id="Not_included__but_useful_FBO_Status" class="section-header has-description">
+        Not included, but useful FBO Status
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="GL_FRAMEBUFFER_COMPLETE_EXT">
+          GL_FRAMEBUFFER_COMPLETE_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_COMPLETE_EXT</code>
+                    0x8CD5
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT">
+          GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT</code>
+                    0x8CD6
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT">
+          GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT</code>
+                    0x8CD7
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT">
+          GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT</code>
+                    0x8CD8
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT">
+          GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT</code>
+                    0x8CD9
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT">
+          GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT</code>
+                    0x8CDA
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT">
+          GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT</code>
+                    0x8CDB
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT">
+          GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT</code>
+                    0x8CDC
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_UNSUPPORTED_EXT">
+          GL_FRAMEBUFFER_UNSUPPORTED_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_UNSUPPORTED_EXT</code>
+                    0x8CDD
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+        <h3 id="GL_FRAMEBUFFER_STATUS_ERROR_EXT">
+          GL_FRAMEBUFFER_STATUS_ERROR_EXT
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <ol>
+                 <li>
+                   <code>GL_FRAMEBUFFER_STATUS_ERROR_EXT</code>
+                    0x8CDE
+                 </li>
+           </ol>
+
+
+
+
+        </div>
+
+{% endraw %}
