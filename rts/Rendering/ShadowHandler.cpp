@@ -126,8 +126,14 @@ void CShadowHandler::Kill()
 
 void CShadowHandler::Update()
 {
+	if (freezeFrustum)
+		return;
+
 	CCamera* playCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
 	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
+
+	for (size_t i = 0; i < frustumPoints.size(); ++i)
+		frustumPoints[i] = playCam->GetFrustumVert(i);
 
 	CalcShadowMatrices(playCam, shadCam);
 }
@@ -138,7 +144,7 @@ void CShadowHandler::SaveShadowMapTextures() const
 	glSaveTexture(shadowColorTexture, fmt::format("smColor_{}.png", globalRendering->drawFrame).c_str());
 }
 
-void CShadowHandler::DrawFrustumDebug() const
+void CShadowHandler::DrawFrustumDebugMiniMap() const
 {
 	if (!debugFrustum || !shadowsLoaded)
 		return;
@@ -148,20 +154,30 @@ void CShadowHandler::DrawFrustumDebug() const
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_0>();
 	rb.AssertSubmission();
 
-	rb.AddVertices({ { shadCam->GetFrustumVert(0) }, { shadCam->GetFrustumVert(1) } }); // NBL - NBR
-	rb.AddVertices({ { shadCam->GetFrustumVert(1) }, { shadCam->GetFrustumVert(2) } }); // NBR - NTR
-	rb.AddVertices({ { shadCam->GetFrustumVert(2) }, { shadCam->GetFrustumVert(3) } }); // NTR - NTL
-	rb.AddVertices({ { shadCam->GetFrustumVert(3) }, { shadCam->GetFrustumVert(0) } }); // NTL - NBL
+	const auto ntl = VA_TYPE_0{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL) };
+	const auto ntr = VA_TYPE_0{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR) };
+	const auto nbr = VA_TYPE_0{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR) };
+	const auto nbl = VA_TYPE_0{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL) };
 
-	rb.AddVertices({ { shadCam->GetFrustumVert(3) }, { shadCam->GetFrustumVert(7) } }); // NTL - FTL
-	rb.AddVertices({ { shadCam->GetFrustumVert(2) }, { shadCam->GetFrustumVert(6) } }); // NTR - FTR
-	rb.AddVertices({ { shadCam->GetFrustumVert(0) }, { shadCam->GetFrustumVert(4) } }); // NBL - FBL
-	rb.AddVertices({ { shadCam->GetFrustumVert(1) }, { shadCam->GetFrustumVert(5) } }); // NBR - FBR
+	const auto ftl = VA_TYPE_0{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL) };
+	const auto ftr = VA_TYPE_0{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR) };
+	const auto fbr = VA_TYPE_0{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR) };
+	const auto fbl = VA_TYPE_0{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL) };
 
-	rb.AddVertices({ { shadCam->GetFrustumVert(4) }, { shadCam->GetFrustumVert(5) } }); // FBL - FBR
-	rb.AddVertices({ { shadCam->GetFrustumVert(5) }, { shadCam->GetFrustumVert(6) } }); // FBR - FTR
-	rb.AddVertices({ { shadCam->GetFrustumVert(6) }, { shadCam->GetFrustumVert(7) } }); // FTR - FTL
-	rb.AddVertices({ { shadCam->GetFrustumVert(7) }, { shadCam->GetFrustumVert(4) } }); // FTL - FBL
+	rb.AddVertices({ nbl, nbr }); // NBL - NBR
+	rb.AddVertices({ nbr, ntr }); // NBR - NTR
+	rb.AddVertices({ ntr, ntl }); // NTR - NTL
+	rb.AddVertices({ ntl, nbl }); // NTL - NBL
+
+	rb.AddVertices({ ntl, ftl }); // NTL - FTL
+	rb.AddVertices({ ntr, ftr }); // NTR - FTR
+	rb.AddVertices({ nbl, fbl }); // NBL - FBL
+	rb.AddVertices({ nbr, fbr }); // NBR - FBR
+
+	rb.AddVertices({ fbl, fbr }); // FBL - FBR
+	rb.AddVertices({ fbr, ftr }); // FBR - FTR
+	rb.AddVertices({ ftr, ftl }); // FTR - FTL
+	rb.AddVertices({ ftl, fbl }); // FTL - FBL
 
 	auto& sh = rb.GetShader();
 	glLineWidth(2.0f);
@@ -169,6 +185,85 @@ void CShadowHandler::DrawFrustumDebug() const
 	sh.SetUniform("ucolor", 0.0f, 0.0f, 1.0f, 1.0f);
 	rb.DrawArrays(GL_LINES);
 	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	sh.Disable();
+	glLineWidth(1.0f);
+}
+
+void CShadowHandler::DrawFrustumDebugMap() const
+{
+	if (!debugFrustum || !shadowsLoaded || !freezeFrustum)
+		return;
+
+	static constexpr SColor NEAR_PLANE_COL = SColor{ 255,   0,   0, 255 };
+	static constexpr SColor  FAR_PLANE_COL = SColor{ 0  , 255,   0, 255 };
+	static constexpr SColor PLAYER_CAM_COL = SColor{ 255, 255, 255, 255 };
+
+	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
+	rb.AssertSubmission();
+
+	// shadow frustum
+	{
+		const auto ntl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL), NEAR_PLANE_COL };
+		const auto ntr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR), NEAR_PLANE_COL };
+		const auto nbr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR), NEAR_PLANE_COL };
+		const auto nbl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL), NEAR_PLANE_COL };
+
+		const auto ftl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL),  FAR_PLANE_COL };
+		const auto ftr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR),  FAR_PLANE_COL };
+		const auto fbr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR),  FAR_PLANE_COL };
+		const auto fbl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL),  FAR_PLANE_COL };
+
+		rb.AddVertices({ nbl, nbr }); // NBL - NBR
+		rb.AddVertices({ nbr, ntr }); // NBR - NTR
+		rb.AddVertices({ ntr, ntl }); // NTR - NTL
+		rb.AddVertices({ ntl, nbl }); // NTL - NBL
+
+		rb.AddVertices({ ntl, ftl }); // NTL - FTL
+		rb.AddVertices({ ntr, ftr }); // NTR - FTR
+		rb.AddVertices({ nbl, fbl }); // NBL - FBL
+		rb.AddVertices({ nbr, fbr }); // NBR - FBR
+
+		rb.AddVertices({ fbl, fbr }); // FBL - FBR
+		rb.AddVertices({ fbr, ftr }); // FBR - FTR
+		rb.AddVertices({ ftr, ftl }); // FTR - FTL
+		rb.AddVertices({ ftl, fbl }); // FTL - FBL
+	}
+
+	// player camera frustum
+	{
+		const auto ntl = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_NTL], PLAYER_CAM_COL };
+		const auto ntr = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_NTR], PLAYER_CAM_COL };
+		const auto nbr = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_NBR], PLAYER_CAM_COL };
+		const auto nbl = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_NBL], PLAYER_CAM_COL };
+
+		const auto ftl = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_FTL], PLAYER_CAM_COL };
+		const auto ftr = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_FTR], PLAYER_CAM_COL };
+		const auto fbr = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_FBR], PLAYER_CAM_COL };
+		const auto fbl = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_FBL], PLAYER_CAM_COL };
+
+		rb.AddVertices({ nbl, nbr }); // NBL - NBR
+		rb.AddVertices({ nbr, ntr }); // NBR - NTR
+		rb.AddVertices({ ntr, ntl }); // NTR - NTL
+		rb.AddVertices({ ntl, nbl }); // NTL - NBL
+
+		rb.AddVertices({ ntl, ftl }); // NTL - FTL
+		rb.AddVertices({ ntr, ftr }); // NTR - FTR
+		rb.AddVertices({ nbl, fbl }); // NBL - FBL
+		rb.AddVertices({ nbr, fbr }); // NBR - FBR
+
+		rb.AddVertices({ fbl, fbr }); // FBL - FBR
+		rb.AddVertices({ fbr, ftr }); // FBR - FTR
+		rb.AddVertices({ ftr, ftl }); // FTR - FTL
+		rb.AddVertices({ ftl, fbl }); // FTL - FBL
+	}
+
+	auto& sh = rb.GetShader();
+	glLineWidth(8.0f);
+	sh.Enable();
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	rb.DrawArrays(GL_LINES);
 	sh.Disable();
 	glLineWidth(1.0f);
 }
@@ -633,8 +728,6 @@ namespace Impl {
 
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
-	static std::array<float3, 8> frustumPoints;
-
 	float2 mapDimsWS = float2{
 		static_cast<float>(mapDims.mapx * SQUARE_SIZE),
 		static_cast<float>(mapDims.mapy * SQUARE_SIZE)
@@ -647,50 +740,66 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 	worldBounds.Combine(unitDrawer->GetObjectsBounds());
 	worldBounds.Combine(featureDrawer->GetObjectsBounds());
 
-	const auto projMidPos = CalcShadowProjectionPos(playerCam, worldBounds, frustumPoints);
+	const auto projMidPos = CalcShadowProjectionPos(playerCam, worldBounds);
 
-	// construct viewMatrix
+	float3 camPos;
+	// construct Camera World Matrix & View Matrix
 	{
+		CMatrix44f camWorldMat;
+
 		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
 		float3 xAxis = float3(1, 0, 0);
 		xAxis = (xAxis - xAxis.dot(zAxis) * zAxis).Normalize();
 		float3 yAxis = zAxis.cross(xAxis);
 
-		float3 camPos;
-		bool hit = RayHitsAABB(worldBounds, projMidPos, zAxis, &camPos);
-		assert(hit);
-
-		viewMatrix.SetPos(camPos);
-
-		viewMatrix.SetX(xAxis);
-		viewMatrix.SetY(yAxis);
-		viewMatrix.SetZ(zAxis);
+		camWorldMat.SetX(xAxis);
+		camWorldMat.SetY(yAxis);
+		camWorldMat.SetZ(zAxis);
 
 		// convert camera "world" matrix into camera view matrix
 		// https://www.3dgep.com/understanding-the-view-matrix/
-		viewMatrix.InvertAffineInPlace();
+		viewMatrix = camWorldMat.InvertAffine();
+		// viewMatrix position will be added a bit later
+
+		AABB worldBoundsLS;
+		for (const auto& cornerPointLS : worldBounds.GetCorners(viewMatrix)) {
+			worldBoundsLS.AddPoint(cornerPointLS);
+		}
+
+		//bool hit = RayHitsAABB(worldBoundsLS, camWorldMat * projMidPos, zAxis, &camPos);
+		bool hit = RayHitsAABB(worldBoundsLS, viewMatrix * projMidPos, viewMatrix * zAxis, &camPos);
+		//assert(hit);
+
+		// convert back to world-space
+		camPos = camWorldMat * camPos;
+
+		// do the camWorldMat.InvertAffine(); for the position part
+		viewMatrix.col[3] = float4{ -xAxis.dot(camPos), -yAxis.dot(camPos), -zAxis.dot(camPos), 1.0f };
+
+		camWorldMat = viewMatrix.InvertAffine(); // sanity check
+		assert(camPos == camWorldMat.GetPos());
 	}
 
+	float camToProjPosDist = camPos.distance(projMidPos);
 
 	lightAABB.Reset();
 
-	for (auto& frustumPoint : frustumPoints) {
-		frustumPoint = viewMatrix * frustumPoint;
-		lightAABB.AddPoint(frustumPoint);
+	for (size_t i = 0; i < 4; ++i) {
+		lightAABB.AddPoint(viewMatrix * frustumPoints[4 + i]);
 	}
+	lightAABB.AddPoint(viewMatrix * playerCam->GetPos());
 
-	for (const auto& cornerPoint : worldBounds.GetCorners(viewMatrix)) {
-		lightAABB.mins.z = std::min(cornerPoint.z, lightAABB.mins.z);
-		lightAABB.maxs.z = std::max(cornerPoint.z, lightAABB.maxs.z);
-	}
+	//lightAABB.AddPoint(viewMatrix * projMidPos);
+	//lightAABB.AddPoint(viewMatrix *     camPos);
 
-	/*
-	mins.z = 0.0f;
-	maxs.z = readMap->GetBoundingRadius() * 2.0f;
+	//lightAABB.maxs.z = camToProjPosDist;
+	//lightAABB.mins.z = 0.0f;
 
-	mins = float3{ 0.0f };
-	maxs = float3{ maxs.z };
-	*/
+	lightAABB.maxs.z = std::max(lightAABB.maxs.z, (viewMatrix * projMidPos).z);
+	lightAABB.mins.z = std::min(lightAABB.mins.z, (viewMatrix * projMidPos).z);
+
+	lightAABB.maxs.z = std::max(lightAABB.maxs.z, (viewMatrix * camPos).z);
+	lightAABB.mins.z = std::min(lightAABB.mins.z, (viewMatrix * camPos).z);
 
 	projMatrix = CMatrix44f::ClipOrthoProj(
 		lightAABB.mins.x, lightAABB.maxs.x,
@@ -716,7 +825,7 @@ void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
 		lightAABB.maxs.x - lightAABB.mins.x,
 		lightAABB.maxs.y - lightAABB.mins.y,
 		0.0f,
-		-(lightAABB.maxs.z - lightAABB.mins.z) // forward vector is looking to the light (not from), so invert the sign
+		-(lightAABB.maxs.z - lightAABB.mins.z) // shadowCam->forward is looking towards the light, so make far plane negative
 	};
 
 	// convert xy-length to half-length
@@ -813,36 +922,35 @@ void CShadowHandler::EnableColorOutput(bool enable) const
 }
 
 
-float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds, std::array<float3, 8>& frustumPoints)
+float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds)
 {
 	float3 projPos;
-	for (int i = 0; i < 8; ++i)
-		frustumPoints[i] = playerCam->GetFrustumVert(i);
+	//for (int i = 0; i < 8; ++i)
+	//	frustumPoints[i] = playerCam->GetFrustumVert(i);
 
 	const std::initializer_list<float4> clipPlanes = {
-		float4{-UpVector,  (worldBounds.maxs.y) },
-		float4{ UpVector, -(worldBounds.mins.y) },
+		float4{-UpVector ,  (worldBounds.maxs.y) },
+		float4{ UpVector , -(worldBounds.mins.y) },
+		float4{-RgtVector,  (worldBounds.maxs.x) },
+		float4{ RgtVector, -(worldBounds.mins.x) },
+		float4{-FwdVector,  (worldBounds.maxs.z) },
+		float4{ FwdVector, -(worldBounds.mins.z) },
 	};
 
 	for (int i = 0; i < 4; ++i) {
-		//frustumPoints[    i] = playerCam->GetFrustumVert(    i);
-		//frustumPoints[4 + i] = playerCam->GetFrustumVert(4 + i);
-
-		//near quadrilateral
-		ClipRayByPlanes(frustumPoints[4 + i], frustumPoints[i], clipPlanes);
-		//far quadrilateral
-		ClipRayByPlanes(frustumPoints[i], frustumPoints[4 + i], clipPlanes);
-
+		ClipRayByPlanes(playerCam->GetPos(), frustumPoints[4 + i], clipPlanes);
+		/*
 		//hard clamp xz
 		frustumPoints[    i].x = std::clamp(frustumPoints[    i].x, worldBounds.mins.x, worldBounds.maxs.x);
 		frustumPoints[    i].z = std::clamp(frustumPoints[    i].z, worldBounds.mins.z, worldBounds.maxs.z);
 		frustumPoints[4 + i].x = std::clamp(frustumPoints[4 + i].x, worldBounds.mins.x, worldBounds.maxs.x);
 		frustumPoints[4 + i].z = std::clamp(frustumPoints[4 + i].z, worldBounds.mins.z, worldBounds.maxs.z);
+		*/
 
-		projPos += frustumPoints[i] + frustumPoints[4 + i];
+		projPos += frustumPoints[4 + i];
 	}
-
-	projPos *= 0.125f;
+	projPos += playerCam->GetPos();
+	projPos *= 0.2f;
 
 	return projPos;
 }

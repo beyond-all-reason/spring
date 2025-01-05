@@ -182,8 +182,11 @@ void main() {
 	//   float mapL =  0.0 + viewMat[3][2];
 	// if changed like that viewMat[3][2] value makes no difference
 
-	float mapH =  8000.0;
-	float mapL =  -8000.0;
+	//float mapH =  8000.0;
+	//float mapL =  -8000.0;
+
+	mins = vec3(-4810.36572, -2034.89722, -4188.22119);
+	maxs = vec3(2452.54297, 2018.78809, -192.620117);
 
 	//mat4 projMat = createOrthographicMatrix(-0.5 * bounds, 0.5 * bounds, -0.5 * bounds, 0.5 * bounds, -mapH, -mapL);
 

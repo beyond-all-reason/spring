@@ -3375,6 +3375,18 @@ public:
 	}
 };
 
+class FreezeShadowFrustum : public IUnsyncedActionExecutor {
+public:
+	FreezeShadowFrustum() : IUnsyncedActionExecutor("FreezeShadowFrustum", "Disable/Enable shadow frustum update") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		InverseOrSetBool(shadowHandler.FreezeFrustumRef(), action.GetArgs());
+		LogSystemStatus("shadow frustum freeze", shadowHandler.FreezeFrustumRef());
+		return true;
+	}
+};
+
 class CrashActionExecutor : public IUnsyncedActionExecutor {
 public:
 	CrashActionExecutor() : IUnsyncedActionExecutor("Crash", "Invoke an artificial crash through a NULL-pointer dereference (SIGSEGV)", true) {
@@ -3988,6 +4000,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<DebugPathDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugTraceRayDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugShadowFrustum>());
+	AddActionExecutor(AllocActionExecutor<FreezeShadowFrustum>());
 	AddActionExecutor(AllocActionExecutor<MuteActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundChannelEnableActionExecutor>());
