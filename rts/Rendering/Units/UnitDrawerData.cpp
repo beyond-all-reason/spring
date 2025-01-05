@@ -203,6 +203,12 @@ void CUnitDrawerData::Update()
 			updateBody(unit);
 	}
 
+	objectsBounds.Reset();
+	for (CUnit* u : unsortedObjects) {
+		objectsBounds.AddPoint(u->drawMidPos - u->GetDrawRadius());
+		objectsBounds.AddPoint(u->drawMidPos + u->GetDrawRadius());
+	}
+
 	if ((useDistToGroundForIcons = (camHandler->GetCurrentController()).GetUseDistToGroundForIcons())) {
 		const float3& camPos = camera->GetPos();
 		// use the height at the current camera position

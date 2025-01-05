@@ -109,6 +109,12 @@ void CFeatureDrawerData::Update()
 			UpdateCommon(f);
 		}
 	}
+
+	objectsBounds.Reset();
+	for (CFeature* f : unsortedObjects) {
+		objectsBounds.AddPoint(f->drawMidPos - f->GetDrawRadius());
+		objectsBounds.AddPoint(f->drawMidPos + f->GetDrawRadius());
+	}
 }
 
 bool CFeatureDrawerData::IsAlpha(const CFeature* co) const
