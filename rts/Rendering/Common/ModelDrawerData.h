@@ -64,6 +64,8 @@ private:
 	void UpdateObjectSMMA(const T* o);
 	void UpdateObjectUniforms(const T* o);
 public:
+	const auto& GetObjectsBounds() const { return objectsBounds; }
+
 	const std::vector<T*>& GetUnsortedObjects() const { return unsortedObjects; }
 	const ModelRenderContainer<T>& GetModelRenderer(int modelType) const { return modelRenderers[modelType]; }
 
@@ -81,6 +83,8 @@ protected:
 
 	std::vector<T*> unsortedObjects;
 	std::unordered_map<T*, ScopedMatricesMemAlloc> matricesMemAllocs;
+
+	AABB objectsBounds;
 
 	bool& mtModelDrawer;
 };

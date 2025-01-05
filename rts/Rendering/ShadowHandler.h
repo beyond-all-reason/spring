@@ -10,6 +10,7 @@
 #include "Rendering/GL/FBO.h"
 #include "System/float4.h"
 #include "System/Matrix44f.h"
+#include "System/AABB.hpp"
 
 namespace Shader {
 	struct IProgramObject;
@@ -90,13 +91,12 @@ private:
 	bool InitFBOAndTextures();
 
 	void DrawShadowPasses();
-	void LoadProjectionMatrix(const CCamera* shadowCam);
 	void LoadShadowGenShaders();
 
-	void SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam);
+	void CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam);
 	void SetShadowCamera(CCamera* shadowCam);
 
-	float3 CalcShadowProjectionPos(CCamera* playerCam, std::array<float3, 8>& frustumPoints);
+	float3 CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds, std::array<float3, 8>& frustumPoints);
 public:
 	int shadowConfig;
 	int shadowMapSize;
@@ -116,8 +116,7 @@ private:
 	// to write the (FBO) depth-buffer texture
 	std::array<Shader::IProgramObject*, SHADOWGEN_PROGRAM_COUNT> shadowGenProgs;
 
-	float3 mins;
-	float3 maxs;
+	AABB lightAABB;
 
 	CMatrix44f projMatrix;
 	CMatrix44f viewMatrix;

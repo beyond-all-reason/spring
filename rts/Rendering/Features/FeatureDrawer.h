@@ -17,6 +17,7 @@ public:
 	static void InitStatic();
 	//static void KillStatic(bool reload); will use base
 	//static void UpdateStatic();
+	static const auto& GetObjectsBounds() { return modelDrawerData->GetObjectsBounds(); }
 public:
 	// DrawFeature*
 	virtual void DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const = 0;

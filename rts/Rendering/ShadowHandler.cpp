@@ -13,6 +13,7 @@
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/GL/FBO.h"
@@ -111,8 +112,6 @@ void CShadowHandler::Init()
 	if (tmpFirstInit)
 		shadowsSupported = true;
 
-	LoadProjectionMatrix(CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW));
-
 	if (shadowConfig > 0)
 		LoadShadowGenShaders();
 }
@@ -130,8 +129,7 @@ void CShadowHandler::Update()
 	CCamera* playCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
 	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
 
-	SetShadowMatrix(playCam, shadCam);
-	SetShadowCamera(shadCam);
+	CalcShadowMatrices(playCam, shadCam);
 }
 
 void CShadowHandler::SaveShadowMapTextures() const
@@ -186,26 +184,6 @@ void CShadowHandler::FreeFBOAndTextures() {
 
 	glDeleteTextures(1, &shadowDepthTexture); shadowDepthTexture = 0;
 	glDeleteTextures(1, &shadowColorTexture); shadowColorTexture = 0;
-}
-
-
-
-void CShadowHandler::LoadProjectionMatrix(const CCamera* shadowCam)
-{
-	const CMatrix44f& ccm = shadowCam->GetClipControlMatrix();
-	      CMatrix44f& spm = projMatrix;
-
-	// same as glOrtho(-1, 1,  -1, 1,  -1, 1); just inverts Z
-	// spm.LoadIdentity();
-	// spm.SetZ(-FwdVector);
-
-	// same as glOrtho(0, 1,  0, 1,  0, -1); maps [0,1] to [-1,1]
-	spm.LoadIdentity();
-	spm.Translate(-OnesVector);
-	spm.Scale(OnesVector * 2.0f);
-
-	// if using ZTO clip-space, cancel out the above remap for Z
-	spm = ccm * spm;
 }
 
 void CShadowHandler::LoadShadowGenShaders()
@@ -653,35 +631,67 @@ namespace Impl {
 	}
 }
 
-void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
+void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
 	static std::array<float3, 8> frustumPoints;
 
-	const auto projMidPos = CalcShadowProjectionPos(playerCam, frustumPoints);
+	float2 mapDimsWS = float2{
+		static_cast<float>(mapDims.mapx * SQUARE_SIZE),
+		static_cast<float>(mapDims.mapy * SQUARE_SIZE)
+	};
 
-	CMatrix44f lightViewMat;
+	AABB worldBounds;
+	worldBounds.mins = float3{ 0.0f        , readMap->GetCurrMinHeight(),         0.0f };
+	worldBounds.maxs = float3{ mapDimsWS.x , readMap->GetCurrMaxHeight(),  mapDimsWS.y };
+
+	worldBounds.Combine(unitDrawer->GetObjectsBounds());
+	worldBounds.Combine(featureDrawer->GetObjectsBounds());
+
+	const auto projMidPos = CalcShadowProjectionPos(playerCam, worldBounds, frustumPoints);
+
+	// construct viewMatrix
 	{
 		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
 		float3 xAxis = float3(1, 0, 0);
 		xAxis = (xAxis - xAxis.dot(zAxis) * zAxis).Normalize();
 		float3 yAxis = zAxis.cross(xAxis);
 
-		lightViewMat.col[0] = float4{ xAxis.x, yAxis.x, zAxis.x, 0.0f };
-		lightViewMat.col[1] = float4{ xAxis.y, yAxis.y, zAxis.y, 0.0f };
-		lightViewMat.col[2] = float4{ xAxis.z, yAxis.z, zAxis.z, 0.0f };
-		lightViewMat.col[3] = float4{ -xAxis.dot(projMidPos), -yAxis.dot(projMidPos), -zAxis.dot(projMidPos), 1.0f };
-		//lightViewMat.col[3] = float4{ 0.0f, 0.0f, 0.0f, 1.0f };
+
+
+		float3 t0s = (worldBounds.mins - projMidPos) / zAxis;
+		float3 t1s = (worldBounds.maxs - projMidPos) / zAxis;
+
+		float3 tMins = float3::min(t0s, t1s);
+		float3 tMaxs = float3::max(t0s, t1s);
+
+		float tMin = std::max({ tMins.x, tMins.y, tMins.z });
+		float tMax = std::min({ tMaxs.x, tMaxs.y, tMaxs.z });
+
+		assert(tMin < tMax);
+
+		float3 camPos = projMidPos + tMax * zAxis;
+		viewMatrix.SetPos(camPos);
+
+		viewMatrix.SetX(xAxis);
+		viewMatrix.SetY(yAxis);
+		viewMatrix.SetZ(zAxis);
+
+		// convert camera "world" matrix into camera view matrix
+		// https://www.3dgep.com/understanding-the-view-matrix/
+		viewMatrix.InvertAffineInPlace();
 	}
 
 
-	mins = float3(std::numeric_limits<float>::max());
-	maxs = float3(std::numeric_limits<float>::lowest());
+	lightAABB.Reset();
 
 	for (auto& frustumPoint : frustumPoints) {
-		frustumPoint = lightViewMat * frustumPoint;
+		frustumPoint = viewMatrix * frustumPoint;
+		lightAABB.AddPoint(frustumPoint);
+	}
 
-		mins = float3::min(mins, frustumPoint);
-		maxs = float3::max(maxs, frustumPoint);
+	for (const auto& cornerPoint : worldBounds.GetCorners(viewMatrix)) {
+		lightAABB.mins.z = std::min(cornerPoint.z, lightAABB.mins.z);
+		lightAABB.maxs.z = std::max(cornerPoint.z, lightAABB.maxs.z);
 	}
 
 	/*
@@ -692,9 +702,12 @@ void CShadowHandler::SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam)
 	maxs = float3{ maxs.z };
 	*/
 
-	viewMatrix = lightViewMat;
-	projMatrix = CMatrix44f::ClipOrthoProj(mins.x, maxs.x, mins.y, maxs.y, -maxs.z, -mins.z, globalRendering->supportClipSpaceControl);
-	//projMatrix = CMatrix44f::ClipOrthoProj(0, maxs.z, 0, maxs.z, 0, maxs.z, globalRendering->supportClipSpaceControl);
+	projMatrix = CMatrix44f::ClipOrthoProj(
+		lightAABB.mins.x, lightAABB.maxs.x,
+		lightAABB.mins.y, lightAABB.maxs.y,
+		-lightAABB.maxs.z, -lightAABB.mins.z,
+		globalRendering->supportClipSpaceControl
+	);
 
 	viewProjMatrix = projMatrix * viewMatrix;
 }
@@ -707,11 +720,17 @@ void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
 	shadowCam->SetProjMatrix(projMatrix);
 	shadowCam->SetViewMatrix(viewMatrix);
 
+	auto viewMatrixInv = viewMatrix.InvertAffine();
+	shadowCam->SetPos(viewMatrixInv.GetPos());
+	shadowCam->right   = viewMatrixInv.GetX();
+	shadowCam->up      = viewMatrixInv.GetY();
+	shadowCam->forward = viewMatrixInv.GetZ();
+
 	float4 shadowProjScales{
-		maxs.x - mins.x,
-		maxs.y - mins.y,
-		-maxs.z,
-		-mins.z
+		lightAABB.maxs.x - lightAABB.mins.x,
+		lightAABB.maxs.y - lightAABB.mins.y,
+		-lightAABB.maxs.z,
+		-lightAABB.mins.z
 	};
 
 	shadowCam->SetAspectRatio(shadowProjScales.x / shadowProjScales.y);
@@ -719,8 +738,9 @@ void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
 	shadowCam->SetFrustumScales(shadowProjScales * float4(0.5f, 0.5f, 1.0f, 1.0f));
 	shadowCam->UpdateFrustum();
 	shadowCam->UpdateLoadViewport(0, 0, realShTexSize, realShTexSize);
+
 	// load matrices into gl_{ModelView,Projection}Matrix
-	shadowCam->Update({false, false, false, false, false});
+	shadowCam->Update({ false, false, false, false, false });
 }
 
 void CShadowHandler::SetupShadowTexSampler(unsigned int texUnit, bool enable) const
@@ -781,11 +801,8 @@ void CShadowHandler::CreateShadows()
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-
-	//flickers without it. Why?
-	SetShadowCamera(CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW));
-
 	CCamera* prvCam = CCameraHandler::GetSetActiveCamera(CCamera::CAMTYPE_SHADOW);
+	SetShadowCamera(camera); // shadowCam here
 
 	if (ISky::GetSky()->GetLight()->GetLightIntensity() > 0.0f)
 		DrawShadowPasses();
@@ -809,18 +826,15 @@ void CShadowHandler::EnableColorOutput(bool enable) const
 }
 
 
-float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, std::array<float3, 8>& frustumPoints)
+float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds, std::array<float3, 8>& frustumPoints)
 {
-	static constexpr float T1 = 100.0f;
-	static constexpr float T2 = 200.0f;
-
 	float3 projPos;
 	for (int i = 0; i < 8; ++i)
 		frustumPoints[i] = playerCam->GetFrustumVert(i);
 
 	const std::initializer_list<float4> clipPlanes = {
-		float4{-UpVector,  (readMap->GetCurrMaxHeight() + T1) },
-		float4{ UpVector, -(readMap->GetCurrMinHeight() - T1) },
+		float4{-UpVector,  (worldBounds.maxs.y) },
+		float4{ UpVector, -(worldBounds.mins.y) },
 	};
 
 	for (int i = 0; i < 4; ++i) {
@@ -833,10 +847,10 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, std::array<fl
 		ClipRayByPlanes(frustumPoints[i], frustumPoints[4 + i], clipPlanes);
 
 		//hard clamp xz
-		frustumPoints[    i].x = std::clamp(frustumPoints[    i].x, -T2, mapDims.mapx * SQUARE_SIZE + T2);
-		frustumPoints[    i].z = std::clamp(frustumPoints[    i].z, -T2, mapDims.mapy * SQUARE_SIZE + T2);
-		frustumPoints[4 + i].x = std::clamp(frustumPoints[4 + i].x, -T2, mapDims.mapx * SQUARE_SIZE + T2);
-		frustumPoints[4 + i].z = std::clamp(frustumPoints[4 + i].z, -T2, mapDims.mapy * SQUARE_SIZE + T2);
+		frustumPoints[    i].x = std::clamp(frustumPoints[    i].x, worldBounds.mins.x, worldBounds.maxs.x);
+		frustumPoints[    i].z = std::clamp(frustumPoints[    i].z, worldBounds.mins.z, worldBounds.maxs.z);
+		frustumPoints[4 + i].x = std::clamp(frustumPoints[4 + i].x, worldBounds.mins.x, worldBounds.maxs.x);
+		frustumPoints[4 + i].z = std::clamp(frustumPoints[4 + i].z, worldBounds.mins.z, worldBounds.maxs.z);
 
 		projPos += frustumPoints[i] + frustumPoints[4 + i];
 	}

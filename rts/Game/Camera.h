@@ -160,17 +160,7 @@ public:
 
 	void SetClipCtrlMatrix(const CMatrix44f& mat) { clipControlMatrix = mat; }
 	void SetProjMatrix(const CMatrix44f& mat) { projectionMatrix = mat; }
-	void SetViewMatrix(const CMatrix44f& mat) {
-		viewMatrix = mat;
-
-		// FIXME: roll-angle might not be 0
-		pos = viewMatrix.GetPos();
-		rot = GetRotFromDir(viewMatrix.GetZ());
-
-		forward = viewMatrix.GetZ();
-		right   = viewMatrix.GetX();
-		up      = viewMatrix.GetY();
-	}
+	void SetViewMatrix(const CMatrix44f& mat);
 
 	const CMatrix44f& GetViewMatrix() const { return viewMatrix; }
 	const CMatrix44f& GetViewMatrixInverse() const { return viewMatrixInverse; }
