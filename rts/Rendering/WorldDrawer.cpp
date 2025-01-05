@@ -469,6 +469,8 @@ void CWorldDrawer::DrawMiscObjects() const
 	if (globalRendering->drawMapMarks && !game->hideInterface) {
 		inMapDrawerView->Draw();
 	}
+
+	shadowHandler.DrawFrustumDebugMap();
 }
 
 

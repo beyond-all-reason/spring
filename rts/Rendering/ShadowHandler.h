@@ -83,9 +83,11 @@ public:
 	bool InShadowPass() const { return inShadowPass; }
 
 	void SaveShadowMapTextures() const;
-	void DrawFrustumDebug() const;
+	void DrawFrustumDebugMiniMap() const;
+	void DrawFrustumDebugMap() const;
 
 	bool& DebugFrustumRef() { return debugFrustum; }
+	bool& FreezeFrustumRef() { return freezeFrustum; }
 private:
 	void FreeFBOAndTextures();
 	bool InitFBOAndTextures();
@@ -96,7 +98,7 @@ private:
 	void CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam);
 	void SetShadowCamera(CCamera* shadowCam);
 
-	float3 CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds, std::array<float3, 8>& frustumPoints);
+	float3 CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds);
 public:
 	int shadowConfig;
 	int shadowMapSize;
@@ -107,10 +109,14 @@ public:
 private:
 	bool shadowsLoaded = false;
 	bool inShadowPass = false;
+
 	bool debugFrustum = false;
+	bool freezeFrustum = false;
 
 	inline static bool firstInit = true;
 	inline static bool shadowsSupported = false;
+
+	std::array<float3, 8> frustumPoints;
 
 	// these project geometry into light-space
 	// to write the (FBO) depth-buffer texture
