@@ -18,6 +18,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <ranges>
 
 #include <cassert>
 #include <cstring>
@@ -49,8 +50,7 @@ CONFIG(int, LogRepeatLimit)
 static spring::unordered_map<std::string, int> GetEnabledSections() {
 	spring::unordered_map<std::string, int> sectionLevelMap;
 
-	std::string enabledSections = ",";
-	std::string envSections = ",";
+	std::string enabledSections = "";
 
 #if defined(UNITSYNC)
 	#if defined(DEBUG)
@@ -64,16 +64,15 @@ static spring::unordered_map<std::string, int> GetEnabledSections() {
 	#endif
 	#if !defined(DEBUG)
 	// Always show at least INFO level of these sections
-	enabledSections += "Sound:35,VFS:30";
+	enabledSections += "Sound:35,VFS:30,";
 	#endif
 	enabledSections += StringToLower(configHandler->GetString("LogSections"));
+	enabledSections += ",";
 #endif
 
-	if (getenv("SPRING_LOG_SECTIONS") != nullptr) {
+	if (auto envVar = getenv("SPRING_LOG_SECTIONS"); envVar != nullptr) {
 		// allow disabling all sections from the env var by setting it to "none"
-		envSections += getenv("SPRING_LOG_SECTIONS");
-		envSections = StringToLower(envSections);
-
+		std::string envSections = StringToLower(envVar);
 		if (envSections == "none") {
 			enabledSections = "";
 		} else {
@@ -84,38 +83,28 @@ static spring::unordered_map<std::string, int> GetEnabledSections() {
 	enabledSections = StringToLower(enabledSections);
 	enabledSections = StringStrip(enabledSections, " \t\n\r");
 
-	// make the last "section:level" substring findable
-	if (!enabledSections.empty() && enabledSections.back() != ',')
-		enabledSections += ",";
+	for (const auto& subView: enabledSections | std::views::split(',')) {
+		auto sub = std::string_view(subView.begin(), subView.end());
+		if (sub.empty())
+			continue;
 
-	// n=1 because <enabledSections> always starts with a ',' (if non-empty)
-	for (size_t n = 1; n < enabledSections.size(); ) {
-		const size_t k = enabledSections.find(',', n);
-
-		if (k != std::string::npos) {
-			const std::string& sub = enabledSections.substr(n, k - n);
-
-			if (!sub.empty()) {
-				const size_t sepChr = sub.find(':');
-
-				const std::string& logSec = (sepChr != std::string::npos)? sub.substr(         0,            sepChr): sub;
-				const std::string& logLvl = (sepChr != std::string::npos)? sub.substr(sepChr + 1, std::string::npos):  "";
-
-				if (!logLvl.empty()) {
-					sectionLevelMap[logSec] = StringToInt(logLvl);
-				} else {
-					#if defined(DEBUG)
-					sectionLevelMap[logSec] = LOG_LEVEL_DEBUG;
-					#else
-					sectionLevelMap[logSec] = DEFAULT_LOG_LEVEL;
-					#endif
-
-				}
-			}
-
-			n = k + 1;
+		std::string logSec, logLvl;
+		if (const size_t sepChr = sub.find(':'); sepChr != std::string_view::npos) {
+			logSec = sub.substr(0, sepChr);
+			logLvl = sub.substr(sepChr + 1, std::string_view::npos);
 		} else {
-			n = k;
+			logSec = sub;
+			logLvl = "";
+		}
+
+		if (!logLvl.empty()) {
+			sectionLevelMap[logSec] = StringToInt(logLvl);
+		} else {
+			#if defined(DEBUG)
+			sectionLevelMap[logSec] = LOG_LEVEL_DEBUG;
+			#else
+			sectionLevelMap[logSec] = DEFAULT_LOG_LEVEL;
+			#endif
 		}
 	}
 
