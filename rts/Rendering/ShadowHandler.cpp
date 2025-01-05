@@ -656,20 +656,10 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		xAxis = (xAxis - xAxis.dot(zAxis) * zAxis).Normalize();
 		float3 yAxis = zAxis.cross(xAxis);
 
+		float3 camPos;
+		bool hit = RayHitsAABB(worldBounds, projMidPos, zAxis, &camPos);
+		assert(hit);
 
-
-		float3 t0s = (worldBounds.mins - projMidPos) / zAxis;
-		float3 t1s = (worldBounds.maxs - projMidPos) / zAxis;
-
-		float3 tMins = float3::min(t0s, t1s);
-		float3 tMaxs = float3::max(t0s, t1s);
-
-		float tMin = std::max({ tMins.x, tMins.y, tMins.z });
-		float tMax = std::min({ tMaxs.x, tMaxs.y, tMaxs.z });
-
-		assert(tMin < tMax);
-
-		float3 camPos = projMidPos + tMax * zAxis;
 		viewMatrix.SetPos(camPos);
 
 		viewMatrix.SetX(xAxis);
@@ -720,27 +710,24 @@ void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
 	shadowCam->SetProjMatrix(projMatrix);
 	shadowCam->SetViewMatrix(viewMatrix);
 
-	auto viewMatrixInv = viewMatrix.InvertAffine();
-	shadowCam->SetPos(viewMatrixInv.GetPos());
-	shadowCam->right   = viewMatrixInv.GetX();
-	shadowCam->up      = viewMatrixInv.GetY();
-	shadowCam->forward = viewMatrixInv.GetZ();
-
+	// scales are in a space relative to the camera position and along worldspace camera's principal vectors
+	// while lightAABB is in camera view space, so need to use relative (max - min) values
 	float4 shadowProjScales{
 		lightAABB.maxs.x - lightAABB.mins.x,
 		lightAABB.maxs.y - lightAABB.mins.y,
-		-lightAABB.maxs.z,
-		-lightAABB.mins.z
+		0.0f,
+		-(lightAABB.maxs.z - lightAABB.mins.z) // forward vector is looking to the light (not from), so invert the sign
 	};
 
-	shadowCam->SetAspectRatio(shadowProjScales.x / shadowProjScales.y);
-	// convert xy-lenght to half-lenght
+	// convert xy-length to half-length
 	shadowCam->SetFrustumScales(shadowProjScales * float4(0.5f, 0.5f, 1.0f, 1.0f));
 	shadowCam->UpdateFrustum();
 	shadowCam->UpdateLoadViewport(0, 0, realShTexSize, realShTexSize);
 
 	// load matrices into gl_{ModelView,Projection}Matrix
 	shadowCam->Update({ false, false, false, false, false });
+
+	shadowCam->SetAspectRatio(shadowProjScales.x / shadowProjScales.y);
 }
 
 void CShadowHandler::SetupShadowTexSampler(unsigned int texUnit, bool enable) const

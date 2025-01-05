@@ -714,14 +714,14 @@ void CCamera::SetViewMatrix(const CMatrix44f& mat)
 {
 	viewMatrix = mat;
 
-	// FIXME: roll-angle might not be 0
-	rot = GetRotFromDir(viewMatrix.GetZ());
-
 	auto viewMatrixInv = mat.InvertAffine();
 	pos = viewMatrixInv.GetPos();
 	forward = viewMatrixInv.GetZ();
 	right = viewMatrixInv.GetX();
 	up = viewMatrixInv.GetY();
+
+	// FIXME: roll-angle might not be 0
+	rot = GetRotFromDir(viewMatrixInv.GetZ()); //? viewMatrix or viewMatrixInv?
 }
 
 float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
