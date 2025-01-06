@@ -94,7 +94,6 @@ class LuaSyncedCtrl
 		static int SetUnitUseAirLos(lua_State* L);
 		static int SetUnitResourcing(lua_State* L);
 		static int SetUnitStorage(lua_State* L);
-		static int GetUnitStorage(lua_State* L);
 		static int SetUnitMetalExtraction(lua_State* L);
 		static int SetUnitHarvestStorage(lua_State* L);
 		static int SetUnitBuildSpeed(lua_State* L);

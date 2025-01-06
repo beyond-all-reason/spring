@@ -165,7 +165,6 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitCosts);
 	REGISTER_LUA_CFUNC(SetUnitResourcing);
 	REGISTER_LUA_CFUNC(SetUnitStorage);
-	REGISTER_LUA_CFUNC(GetUnitStorage);
 	REGISTER_LUA_CFUNC(SetUnitTooltip);
 	REGISTER_LUA_CFUNC(SetUnitHealth);
 	REGISTER_LUA_CFUNC(SetUnitMaxHealth);
@@ -2004,24 +2003,6 @@ int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
 	}
 
 	return 0;
-}
-
-/***
- * @function Spring.GetUnitStorage
- * @number unitID
- * @treturn number Unit's metal storage
- * @treturn number Unit's energy storage
- */
-int LuaSyncedCtrl::GetUnitStorage(lua_State* L)
-{
-	CUnit* unit = ParseUnit(L, __func__, 1);
-
-	if (unit == nullptr)
-		return 0;
-
-	lua_pushnumber(L, unit->storage.metal);
-	lua_pushnumber(L, unit->storage.energy);
-	return 2;
 }
 
 
