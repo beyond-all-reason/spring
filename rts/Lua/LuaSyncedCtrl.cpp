@@ -1893,20 +1893,25 @@ static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
 	//
 	//         metal | energy
 
+	// Hmmm wondering if there is a way to do it without copy.
+	// unit->SetStorage expects the old storage not to be tampered with
+	SResourcePack newStorage = unit->storage;
+
 	switch (name[0]) {
 		case 'm': {
-			unit->storage.metal  = value; return true;
+			newStorage.metal  = value;
 		} break;
 
 		case 'e': {
-			unit->storage.energy = value; return true;
+			newStorage.energy = value;
 		} break;
 
 		default: {
-		} break;
+			return false;
+		}
 	}
-
-	return false;
+	unit->SetStorage(unit->storage);
+	return true;
 }
 
 
@@ -1999,6 +2004,24 @@ int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
 	}
 
 	return 0;
+}
+
+/***
+ * @function Spring.GetUnitStorage
+ * @number unitID
+ * @treturn number Unit's metal storage
+ * @treturn number Unit's energy storage
+ */
+int LuaSyncedCtrl::GetUnitStorage(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->storage.metal);
+	lua_pushnumber(L, unit->storage.energy);
+	return 1;
 }
 
 
