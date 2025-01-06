@@ -1895,8 +1895,6 @@ static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
 	//
 	//         metal | energy
 
-	// Hmmm wondering if there is a way to do it without copy.
-	// unit->SetStorage expects the old storage not to be tampered with
 	std::cout << "Received call to set storage: " << name[0] << ": " << value << std::endl;
 	SResourcePack newStorage = unit->storage;
 
