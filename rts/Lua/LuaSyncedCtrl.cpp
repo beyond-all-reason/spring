@@ -1,5 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-
+#include <iostream>
 #include <vector>
 #include <cctype>
 
@@ -164,6 +164,8 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetUnitCosts);
 	REGISTER_LUA_CFUNC(SetUnitResourcing);
+	REGISTER_LUA_CFUNC(SetUnitStorage);
+	REGISTER_LUA_CFUNC(GetUnitStorage);
 	REGISTER_LUA_CFUNC(SetUnitTooltip);
 	REGISTER_LUA_CFUNC(SetUnitHealth);
 	REGISTER_LUA_CFUNC(SetUnitMaxHealth);
@@ -1895,6 +1897,7 @@ static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
 
 	// Hmmm wondering if there is a way to do it without copy.
 	// unit->SetStorage expects the old storage not to be tampered with
+	std::cout << "Received call to set storage: " << name[0] << ": " << value << std::endl;
 	SResourcePack newStorage = unit->storage;
 
 	switch (name[0]) {
@@ -1911,6 +1914,7 @@ static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
 		}
 	}
 	unit->SetStorage(unit->storage);
+	std::cout << "Done set storage: " << name[0] << ": " << value << std::endl;
 	return true;
 }
 
@@ -1982,6 +1986,7 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
  */
 int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
 {
+	std::cout << "Received call to Set Unit Storage\n";
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
@@ -2003,6 +2008,7 @@ int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
 		luaL_error(L, "Incorrect arguments to SetUnitStorage");
 	}
 
+	std::cout << "Done call to Set Unit Storage\n";
 	return 0;
 }
 
@@ -2021,7 +2027,7 @@ int LuaSyncedCtrl::GetUnitStorage(lua_State* L)
 
 	lua_pushnumber(L, unit->storage.metal);
 	lua_pushnumber(L, unit->storage.energy);
-	return 1;
+	return 2;
 }
 
 
