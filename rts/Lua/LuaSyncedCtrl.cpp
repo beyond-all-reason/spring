@@ -1,5 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-#include <iostream>
+
 #include <vector>
 #include <cctype>
 
@@ -1895,7 +1895,6 @@ static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
 	//
 	//         metal | energy
 
-	std::cout << "Received call to set storage: " << name[0] << ": " << value << std::endl;
 	SResourcePack newStorage = unit->storage;
 
 	switch (name[0]) {
@@ -1911,8 +1910,7 @@ static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
 			return false;
 		}
 	}
-	unit->SetStorage(unit->storage);
-	std::cout << "Done set storage: " << name[0] << ": " << value << std::endl;
+	unit->SetStorage(newStorage);
 	return true;
 }
 
@@ -1984,7 +1982,6 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
  */
 int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
 {
-	std::cout << "Received call to Set Unit Storage\n";
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
@@ -2006,7 +2003,6 @@ int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
 		luaL_error(L, "Incorrect arguments to SetUnitStorage");
 	}
 
-	std::cout << "Done call to Set Unit Storage\n";
 	return 0;
 }
 
