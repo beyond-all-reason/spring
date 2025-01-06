@@ -116,8 +116,7 @@ private:
 	inline static bool firstInit = true;
 	inline static bool shadowsSupported = false;
 
-	// copy of frustum points of CCamera::CAMTYPE_PLAYER
-	std::array<float3, 8> frustumPoints;
+	std::vector<std::pair<float3, float3>> clippedWorldCube;
 
 	// these project geometry into light-space
 	// to write the (FBO) depth-buffer texture

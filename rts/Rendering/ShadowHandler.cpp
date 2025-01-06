@@ -5,6 +5,7 @@
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/GameVersion.h"
+#include "Game/Game.h"
 #include "Map/BaseGroundDrawer.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
@@ -132,9 +133,6 @@ void CShadowHandler::Update()
 	CCamera* playCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
 	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
 
-	for (size_t i = 0; i < frustumPoints.size(); ++i)
-		frustumPoints[i] = playCam->GetFrustumVert(i);
-
 	CalcShadowMatrices(playCam, shadCam);
 }
 
@@ -202,6 +200,7 @@ void CShadowHandler::DrawFrustumDebugMap() const
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 	rb.AssertSubmission();
+	auto& sh = rb.GetShader();
 
 	// shadow frustum
 	{
@@ -231,36 +230,21 @@ void CShadowHandler::DrawFrustumDebugMap() const
 		rb.AddVertices({ ftl, fbl }); // FTL - FBL
 	}
 
-	// player camera frustum
+	glLineWidth(8.0f);
+	sh.Enable();
+	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+	rb.DrawArrays(GL_LINES);
+	sh.Disable();
+
+	// clipped world cube
 	{
-		const auto ntl = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_NTL], PLAYER_CAM_COL };
-		const auto ntr = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_NTR], PLAYER_CAM_COL };
-		const auto nbr = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_NBR], PLAYER_CAM_COL };
-		const auto nbl = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_NBL], PLAYER_CAM_COL };
-
-		const auto ftl = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_FTL], PLAYER_CAM_COL };
-		const auto ftr = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_FTR], PLAYER_CAM_COL };
-		const auto fbr = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_FBR], PLAYER_CAM_COL };
-		const auto fbl = VA_TYPE_C{ frustumPoints[CCamera::FRUSTUM_POINT_FBL], PLAYER_CAM_COL };
-
-		rb.AddVertices({ nbl, nbr }); // NBL - NBR
-		rb.AddVertices({ nbr, ntr }); // NBR - NTR
-		rb.AddVertices({ ntr, ntl }); // NTR - NTL
-		rb.AddVertices({ ntl, nbl }); // NTL - NBL
-
-		rb.AddVertices({ ntl, ftl }); // NTL - FTL
-		rb.AddVertices({ ntr, ftr }); // NTR - FTR
-		rb.AddVertices({ nbl, fbl }); // NBL - FBL
-		rb.AddVertices({ nbr, fbr }); // NBR - FBR
-
-		rb.AddVertices({ fbl, fbr }); // FBL - FBR
-		rb.AddVertices({ fbr, ftr }); // FBR - FTR
-		rb.AddVertices({ ftr, ftl }); // FTR - FTL
-		rb.AddVertices({ ftl, fbl }); // FTL - FBL
+		for (const auto& [p0, p1] : clippedWorldCube) {
+			rb.AddVertices({ { p0, PLAYER_CAM_COL }, { p1, PLAYER_CAM_COL } });
+		}
 	}
 
-	auto& sh = rb.GetShader();
-	glLineWidth(8.0f);
+
+	glLineWidth(4.0f);
 	sh.Enable();
 	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
 	rb.DrawArrays(GL_LINES);
@@ -604,14 +588,86 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		static_cast<float>(mapDims.mapy * SQUARE_SIZE)
 	};
 
-	AABB worldBounds;
-	worldBounds.mins = float3{ 0.0f        , readMap->GetCurrMinHeight(),         0.0f };
-	worldBounds.maxs = float3{ mapDimsWS.x , readMap->GetCurrMaxHeight(),  mapDimsWS.y };
+	const auto& worldBounds = game->GetWorldBounds();
 
-	worldBounds.Combine(unitDrawer->GetObjectsBounds());
-	worldBounds.Combine(featureDrawer->GetObjectsBounds());
+	//const auto projMidPos = CalcShadowProjectionPos(playerCam, worldBounds);
+	float3 projMidPos;
+	{
+		using Line = std::pair<float3, float3>;
+		using Face = std::vector<Line>;
+		using Polygon = std::vector<Face>;
 
-	const auto projMidPos = CalcShadowProjectionPos(playerCam, worldBounds);
+		const auto wcs = worldBounds.GetCorners();
+
+		Polygon worldCube {
+			// Front Face (clockwise)
+			{{{wcs[0], wcs[2]}, {wcs[2], wcs[6]}, {wcs[6], wcs[4]}, {wcs[4], wcs[0]}}},
+
+			// Back Face (counter-clockwise)
+			{{{wcs[1], wcs[3]}, {wcs[3], wcs[7]}, {wcs[7], wcs[5]}, {wcs[5], wcs[1]}}},
+
+			// Left Face (clockwise)
+			{{{wcs[0], wcs[1]}, {wcs[1], wcs[5]}, {wcs[5], wcs[4]}, {wcs[4], wcs[0]}}},
+
+			// Right Face (counter-clockwise)
+			{{{wcs[2], wcs[3]}, {wcs[3], wcs[7]}, {wcs[7], wcs[6]}, {wcs[6], wcs[2]}}},
+
+			// Top Face (clockwise)
+			{{{wcs[4], wcs[6]}, {wcs[6], wcs[7]}, {wcs[7], wcs[5]}, {wcs[5], wcs[4]}}},
+
+			// Bottom Face (counter-clockwise)
+			{{{wcs[0], wcs[2]}, {wcs[2], wcs[3]}, {wcs[3], wcs[1]}, {wcs[1], wcs[0]}}}
+		};
+
+		Polygon worldCubeNew;
+		for (size_t i = 0; i < 6; ++i) {
+			const auto& clipPlane = playerCam->GetFrustumPlane(i);
+			for (const auto& face : worldCube) {
+				Face newFace;
+				std::vector<float3> clippedPoints;
+				for (const auto& [p0, p1] : face) {
+					const float d0 = clipPlane.dot(p0) + clipPlane.w;
+					const float d1 = clipPlane.dot(p1) + clipPlane.w;
+					if (d0 < 0 && d1 < 0)
+						continue;
+
+					if (float3 pClipped; d0 < 0) {
+						RayAndPlaneIntersection(p0, p1, clipPlane, false, pClipped);
+						newFace.emplace_back(Line(pClipped, p1));
+						clippedPoints.emplace_back(pClipped);
+					} else if (d1 < 0) {
+						RayAndPlaneIntersection(p1, p0, clipPlane, false, pClipped);
+						newFace.emplace_back(Line(p0, pClipped));
+						clippedPoints.emplace_back(pClipped);
+					} else { // both on the positive side
+						newFace.emplace_back(Line(p0, p1));
+					}
+				}
+
+				for (size_t i = 0; i < clippedPoints.size(); ++i) {
+					newFace.emplace_back(Line(clippedPoints[i], clippedPoints[(i + 1) % clippedPoints.size()]));
+				}
+
+				if (!newFace.empty())
+					worldCubeNew.emplace_back(std::move(newFace));
+			}
+			std::swap(worldCubeNew, worldCube);
+			worldCubeNew.clear();
+		}
+
+		clippedWorldCube.clear();
+		size_t count = 0;
+		for (const auto& face : worldCube) {
+			for (const auto& [p0, p1] : face) {
+				clippedWorldCube.emplace_back(p0, p1);
+				projMidPos += p0;
+				projMidPos += p1;
+				count += 2;
+			}
+		}
+
+		projMidPos /= count;
+	}
 
 	float3 camPos;
 	// construct Camera World Matrix & View Matrix
@@ -653,8 +709,9 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 
 	lightAABB.Reset();
 
-	for (size_t i = 0; i < 4; ++i) {
-		lightAABB.AddPoint(viewMatrix * frustumPoints[4 + i]);
+	for (const auto& [p0, p1] : clippedWorldCube) {
+		lightAABB.AddPoint(viewMatrix * p0);
+		lightAABB.AddPoint(viewMatrix * p1);
 	}
 	lightAABB.AddPoint(viewMatrix * playerCam->GetPos());
 
@@ -784,6 +841,7 @@ void CShadowHandler::EnableColorOutput(bool enable) const
 float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds)
 {
 	float3 projPos;
+#if 0
 	//for (int i = 0; i < 8; ++i)
 	//	frustumPoints[i] = playerCam->GetFrustumVert(i);
 
@@ -810,6 +868,6 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const AABB& w
 	}
 	projPos += playerCam->GetPos();
 	projPos *= 0.2f;
-
+#endif
 	return projPos;
 }

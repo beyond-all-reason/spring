@@ -99,21 +99,13 @@ void CFeatureDrawerData::Update()
 	if (mtModelDrawer) {
 		for_mt_chunk(0, unsortedObjects.size(), [this](const int k) {
 			CFeature* f = unsortedObjects[k];
-			UpdateDrawPos(f);
 			UpdateCommon(f);
 		}, CModelDrawerDataConcept::MT_CHUNK_OR_MIN_CHUNK_SIZE_UPDT);
 	}
 	else {
 		for (CFeature* f : unsortedObjects) {
-			UpdateDrawPos(f);
 			UpdateCommon(f);
 		}
-	}
-
-	objectsBounds.Reset();
-	for (CFeature* f : unsortedObjects) {
-		objectsBounds.AddPoint(f->drawMidPos - f->GetDrawRadius());
-		objectsBounds.AddPoint(f->drawMidPos + f->GetDrawRadius());
 	}
 }
 
@@ -209,9 +201,10 @@ void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 	}
 }
 
-void CFeatureDrawerData::UpdateDrawPos(CFeature* f)
+void CFeatureDrawerData::UpdateDrawPos(CSolidObject* o) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	CFeature* f = static_cast<CFeature*>(o);
 	f->drawPos    = f->GetDrawPos(globalRendering->timeOffset);
 	f->drawMidPos = f->GetMdlDrawMidPos();
 }

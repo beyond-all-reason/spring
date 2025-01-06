@@ -106,6 +106,7 @@ public:
 	void SetDrawMode(GameDrawMode mode) { gameDrawMode = mode; }
 	GameDrawMode GetDrawMode() const { return gameDrawMode; }
 
+	const auto& GetWorldBounds() const { return worldDrawer.GetWorldBounds(); }
 private:
 	bool Draw() override;
 	bool Update() override;

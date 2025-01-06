@@ -1470,6 +1470,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		unitTracker.SetCam();
 
 	camera->Update();
+	worldDrawer.PreUpdate(); // shadowHandler.Update() needs up-to-date worldBounds
 	shadowHandler.Update();
 	{
 		worldDrawer.Update(newSimFrame);

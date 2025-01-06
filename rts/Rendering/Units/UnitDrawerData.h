@@ -143,6 +143,7 @@ public:
 	const spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> >& GetUnitsByIcon() const { return unitsByIcon; }
 protected:
 	void UpdateObjectDrawFlags(CSolidObject* o) const override;
+	void UpdateDrawPos(CSolidObject* o) const override;
 private:
 	const icon::CIconData* GetUnitIcon(const CUnit* unit);
 
@@ -151,7 +152,6 @@ private:
 	void UpdateUnitIcon(const CUnit* unit, bool forced, bool killed);
 	void UpdateUnitIconState(CUnit* unit);
 	void UpdateUnitIconStateScreen(CUnit* unit);
-	static void UpdateDrawPos(CUnit* unit);
 
 	/// Returns true if the given unit should be drawn as icon in the current frame.
 	bool DrawAsIconByDistance(const CUnit* unit, const float sqUnitCamDist) const;

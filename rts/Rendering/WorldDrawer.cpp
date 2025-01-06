@@ -208,6 +208,24 @@ void CWorldDrawer::Kill()
 
 
 
+void CWorldDrawer::PreUpdate()
+{
+	worldBounds.Reset();
+
+	float2 mapDimsWS = float2{
+		static_cast<float>(mapDims.mapx * SQUARE_SIZE),
+		static_cast<float>(mapDims.mapy * SQUARE_SIZE)
+	};
+	worldBounds.mins = float3{ 0.0f        , readMap->GetCurrMinHeight(),         0.0f };
+	worldBounds.maxs = float3{ mapDimsWS.x , readMap->GetCurrMaxHeight(),  mapDimsWS.y };
+
+	unitDrawer->UpdateObjectsBounds();
+	featureDrawer->UpdateObjectsBounds();
+
+	worldBounds.Combine(unitDrawer->GetObjectsBounds());
+	worldBounds.Combine(featureDrawer->GetObjectsBounds());
+}
+
 void CWorldDrawer::Update(bool newSimFrame)
 {
 	SCOPED_TIMER("Update::WorldDrawer");
@@ -241,7 +259,7 @@ void CWorldDrawer::Update(bool newSimFrame)
 		modelLoader.LogErrors();
 	}
 
-	numUpdates += 1;
+	numUpdates++;
 }
 
 
