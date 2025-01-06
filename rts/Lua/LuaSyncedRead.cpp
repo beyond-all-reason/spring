@@ -4227,7 +4227,7 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
  */
 int LuaSyncedRead::GetUnitStorage(lua_State* L)
 {
-	const CUnit* unit = ParseUnit(L, __func__, 1);
+	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
 
 	if (unit == nullptr)
 		return 0;
