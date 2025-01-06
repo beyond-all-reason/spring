@@ -203,12 +203,6 @@ void CUnitDrawerData::Update()
 			updateBody(unit);
 	}
 
-	objectsBounds.Reset();
-	for (CUnit* u : unsortedObjects) {
-		objectsBounds.AddPoint(u->drawMidPos - u->GetDrawRadius());
-		objectsBounds.AddPoint(u->drawMidPos + u->GetDrawRadius());
-	}
-
 	if ((useDistToGroundForIcons = (camHandler->GetCurrentController()).GetUseDistToGroundForIcons())) {
 		const float3& camPos = camera->GetPos();
 		// use the height at the current camera position
@@ -374,9 +368,10 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	unit->SetIsIcon(iconZoomDist / iconSizeMult > iconFadeStart && std::abs(pos.x - radiusPos.x) < limit * 0.9);
 }
 
-void CUnitDrawerData::UpdateDrawPos(CUnit* u)
+void CUnitDrawerData::UpdateDrawPos(CSolidObject* o) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	CUnit* u = static_cast<CUnit*>(o);
 	const CUnit* t = u->GetTransporter();
 
 	if (t != nullptr) {

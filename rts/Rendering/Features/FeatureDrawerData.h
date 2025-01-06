@@ -28,8 +28,7 @@ public:
 	bool IsAlpha(const CFeature* co) const override;
 protected:
 	void UpdateObjectDrawFlags(CSolidObject* o) const override;
-private:
-	static void UpdateDrawPos(CFeature* f);
+	void UpdateDrawPos(CSolidObject* o) const override;
 public:
 	float featureDrawDistance;
 	float featureFadeDistance;
