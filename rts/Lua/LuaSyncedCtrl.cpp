@@ -1887,6 +1887,29 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 }
 
 
+static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
+{
+	// [m|e]
+	//
+	//         metal | energy
+
+	switch (name[0]) {
+		case 'm': {
+			unit->storage.metal  = value; return true;
+		} break;
+
+		case 'e': {
+			unit->storage.energy = value; return true;
+		} break;
+
+		default: {
+		} break;
+	}
+
+	return false;
+}
+
+
 /***
  * Unit Resourcing
  * @section unitresourcing
@@ -1927,6 +1950,52 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
 	}
 	else {
 		luaL_error(L, "Incorrect arguments to SetUnitResourcing");
+	}
+
+	return 0;
+}
+
+
+/***
+ * Unit Storage
+ * @section unitstorage
+ */
+
+/***
+ * @function Spring.SetUnitStorage
+ * @number unitID
+ * @string res
+ * @number amount
+ * @treturn nil
+ */
+
+/***
+ * @function Spring.SetUnitStorage
+ * @number unitID
+ * @tparam {[string]=number,...} res keys are: "[m|e]" metal | energy. Values are amounts
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	if (lua_israwstring(L, 2)) {
+		SetUnitStorageParam(unit, lua_tostring(L, 2), luaL_checkfloat(L, 3));
+	} else if (lua_istable(L, 2)) {
+		constexpr int tableIdx = 2;
+
+		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
+			if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
+				continue;
+
+			SetUnitStorageParam(unit, lua_tostring(L, LUA_TABLE_KEY_INDEX), lua_tofloat(L, LUA_TABLE_VALUE_INDEX));
+		}
+	}
+	else {
+		luaL_error(L, "Incorrect arguments to SetUnitStorage");
 	}
 
 	return 0;
