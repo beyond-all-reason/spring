@@ -80,7 +80,7 @@ owners of this repository before making a change.
 [Zero-K]: https://zero-k.info
 [Spring]: https://github.com/spring/spring
 [Metal Factions]: https://metalfactions.pt
-[Total Atomic Power]: https://github.com/FluidPlay/TAPv3
+[Total Atomic Power]: http://fluidplay.co/index.php/games/tap
 [Tech Annihilation]: https://github.com/techannihilation/TA
 [105 tree]: https://github.com/spring/spring/releases/tag/105.0.1
 [Discord server]: https://discord.gg/GUpRg6Wz3e
