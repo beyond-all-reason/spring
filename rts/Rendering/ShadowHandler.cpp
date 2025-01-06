@@ -597,135 +597,6 @@ static CMatrix44f ComposeLightMatrix(const CCamera* playerCam, const ISkyLight* 
 	return lightMatrix;
 }
 
-static CMatrix44f ComposeScaleMatrix(const float4 scales)
-{
-	// note: T is z-bias, scales.z is z-near
-	return (CMatrix44f(FwdVector * 0.5f, RgtVector / scales.x, UpVector / scales.y, FwdVector / scales.w));
-}
-
-namespace Impl {
-	CMatrix44f LookAtRH(const float3& eye, const float3& center, const float3& up)
-	{
-		const auto f = (center - eye).Normalize();
-		const auto s = f.cross(up).Normalize();
-		const auto u = s.cross(f);
-
-		CMatrix44f Result;
-		Result.md[0][0] = s.x;
-		Result.md[1][0] = s.y;
-		Result.md[2][0] = s.z;
-		Result.md[0][1] = u.x;
-		Result.md[1][1] = u.y;
-		Result.md[2][1] = u.z;
-		Result.md[0][2] = -f.x;
-		Result.md[1][2] = -f.y;
-		Result.md[2][2] = -f.z;
-		Result.md[3][0] = -s.dot(eye);
-		Result.md[3][1] = -u.dot(eye);
-		Result.md[3][2] =  f.dot(eye);
-		return Result;
-	}
-
-	CMatrix44f LookAtLH(const float3& eye, const float3& center, const float3& up)
-	{
-		const auto f = (center - eye).Normalize();
-		const auto s = up.cross(f).Normalize();
-		const auto u = f.cross(s);
-
-		CMatrix44f Result;
-		Result.md[0][0] = s.x;
-		Result.md[1][0] = s.y;
-		Result.md[2][0] = s.z;
-		Result.md[0][1] = u.x;
-		Result.md[1][1] = u.y;
-		Result.md[2][1] = u.z;
-		Result.md[0][2] = f.x;
-		Result.md[1][2] = f.y;
-		Result.md[2][2] = f.z;
-		Result.md[3][0] = -s.dot(eye);
-		Result.md[3][1] = -u.dot(eye);
-		Result.md[3][2] = -f.dot(eye);
-		return Result;
-	}
-
-	CMatrix44f InitTranslationTransform(float x, float y, float z)
-	{
-		CMatrix44f m;
-		m.md[0][0] = 1.0f; m.md[0][1] = 0.0f; m.md[0][2] = 0.0f; m.md[0][3] = x;
-		m.md[1][0] = 0.0f; m.md[1][1] = 1.0f; m.md[1][2] = 0.0f; m.md[1][3] = y;
-		m.md[2][0] = 0.0f; m.md[2][1] = 0.0f; m.md[2][2] = 1.0f; m.md[2][3] = z;
-		m.md[3][0] = 0.0f; m.md[3][1] = 0.0f; m.md[3][2] = 0.0f; m.md[3][3] = 1.0f;
-
-#if 1
-		m.Transpose();
-#endif
-
-		return m;
-	}
-
-	CMatrix44f InitCameraTransform(const float3& Target, const float3& Up)
-	{
-		float3 N = Target;
-		N.Normalize();
-
-		float3 UpNorm = Up;
-		UpNorm.Normalize();
-
-		float3 U;
-		U = UpNorm.cross(N);
-		U.Normalize();
-
-		float3 V = N.cross(U);
-
-		CMatrix44f m;
-
-		m.md[0][0] = U.x;   m.md[0][1] = U.y;   m.md[0][2] = U.z;   m.md[0][3] = 0.0f;
-		m.md[1][0] = V.x;   m.md[1][1] = V.y;   m.md[1][2] = V.z;   m.md[1][3] = 0.0f;
-		m.md[2][0] = N.x;   m.md[2][1] = N.y;   m.md[2][2] = N.z;   m.md[2][3] = 0.0f;
-		m.md[3][0] = 0.0f;  m.md[3][1] = 0.0f;  m.md[3][2] = 0.0f;  m.md[3][3] = 1.0f;
-
-		m.Transpose();
-#if 0
-		// transpose
-		{
-			std::swap(m.md[1][0], m.md[0][1]);
-			std::swap(m.md[2][0], m.md[0][2]);
-			std::swap(m.md[3][0], m.md[0][3]);
-
-			std::swap(m.md[0][1], m.md[1][0]);
-			std::swap(m.md[2][1], m.md[1][2]);
-			std::swap(m.md[3][1], m.md[1][3]);
-
-			std::swap(m.md[0][2], m.md[2][0]);
-			std::swap(m.md[1][2], m.md[2][1]);
-			std::swap(m.md[3][2], m.md[2][3]);
-
-			std::swap(m.md[0][3], m.md[3][0]);
-			std::swap(m.md[1][3], m.md[3][1]);
-			std::swap(m.md[2][3], m.md[3][2]);
-		}
-#endif
-
-		return m;
-	}
-
-
-	CMatrix44f InitCameraTransform(const float3& Pos, const float3& Target, const float3& Up)
-	{
-		CMatrix44f CameraTranslation = InitTranslationTransform(-Pos.x, -Pos.y, -Pos.z);
-
-		CMatrix44f CameraRotateTrans = InitCameraTransform(Target, Up);
-
-		CameraTranslation.m[3] = 0.0f;
-		CameraTranslation.m[7] = 0.0f;
-
-		CameraRotateTrans.m[3] = 0.0f;
-		CameraRotateTrans.m[7] = 0.0f;
-
-		return CameraRotateTrans * CameraTranslation;
-	}
-}
-
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
 	float2 mapDimsWS = float2{
@@ -766,9 +637,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 			worldBoundsLS.AddPoint(cornerPointLS);
 		}
 
-		//bool hit = RayHitsAABB(worldBoundsLS, camWorldMat * projMidPos, zAxis, &camPos);
-		bool hit = RayHitsAABB(worldBoundsLS, viewMatrix * projMidPos, viewMatrix * zAxis, &camPos);
-		//assert(hit);
+		bool hit = RayHitsAABB(worldBoundsLS, viewMatrix * projMidPos, float3{ 0, 0, 1 }, &camPos);
 
 		// convert back to world-space
 		camPos = camWorldMat * camPos;
@@ -789,23 +658,13 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 	}
 	lightAABB.AddPoint(viewMatrix * playerCam->GetPos());
 
-	//lightAABB.AddPoint(viewMatrix * projMidPos);
-	//lightAABB.AddPoint(viewMatrix *     camPos);
-
-	//lightAABB.maxs.z = camToProjPosDist;
-	//lightAABB.mins.z = 0.0f;
-
-	lightAABB.maxs.z = std::max(lightAABB.maxs.z, (viewMatrix * projMidPos).z);
-	lightAABB.mins.z = std::min(lightAABB.mins.z, (viewMatrix * projMidPos).z);
-
-	lightAABB.maxs.z = std::max(lightAABB.maxs.z, (viewMatrix * camPos).z);
-	lightAABB.mins.z = std::min(lightAABB.mins.z, (viewMatrix * camPos).z);
+	lightAABB.maxs.z = 0.0f; // @camPos
 
 	projMatrix = CMatrix44f::ClipOrthoProj(
-		lightAABB.mins.x, lightAABB.maxs.x,
-		lightAABB.mins.y, lightAABB.maxs.y,
+		 lightAABB.mins.x,  lightAABB.maxs.x,
+		 lightAABB.mins.y,  lightAABB.maxs.y,
 		-lightAABB.maxs.z, -lightAABB.mins.z,
-		globalRendering->supportClipSpaceControl
+		 globalRendering->supportClipSpaceControl
 	);
 
 	viewProjMatrix = projMatrix * viewMatrix;
@@ -931,10 +790,10 @@ float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const AABB& w
 	const std::initializer_list<float4> clipPlanes = {
 		float4{-UpVector ,  (worldBounds.maxs.y) },
 		float4{ UpVector , -(worldBounds.mins.y) },
-		float4{-RgtVector,  (worldBounds.maxs.x) },
-		float4{ RgtVector, -(worldBounds.mins.x) },
-		float4{-FwdVector,  (worldBounds.maxs.z) },
-		float4{ FwdVector, -(worldBounds.mins.z) },
+		//float4{-RgtVector,  (worldBounds.maxs.x) },
+		//float4{ RgtVector, -(worldBounds.mins.x) },
+		//float4{-FwdVector,  (worldBounds.maxs.z) },
+		//float4{ FwdVector, -(worldBounds.mins.z) },
 	};
 
 	for (int i = 0; i < 4; ++i) {
