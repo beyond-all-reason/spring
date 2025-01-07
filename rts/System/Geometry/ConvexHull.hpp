@@ -3,12 +3,36 @@
 #include <vector>
 #include <optional>
 #include <type_traits>
+#include <memory_resource>
+#include <functional>
 
 #include "System/float4.h"
 
 namespace ConvexHull {
+	class Allocator {
+	public:
+		Allocator();
+		Allocator(size_t allocMemBytes);
+		~Allocator();
+
+		void ClearAllocations();
+
+		auto& GetAllocator() { return allocator; }
+	private:
+		std::vector<std::byte> buffer;
+		// std::pmr::monotonic_buffer_resource cannot be copied / moved
+		alignas(std::pmr::monotonic_buffer_resource) std::byte pmrMem[sizeof(std::pmr::monotonic_buffer_resource)];
+		std::pmr::polymorphic_allocator<std::byte> allocator{ reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0])};
+	};
+
 	class Face {
 	public:
+		Face()
+			: allocRef(std::ref(defaultAllocator))
+		{}
+		Face(Allocator& allocator_)
+			: allocRef(std::ref(allocator_))
+		{}
 		Face& AddPoint(const float3& pnt) {
 			points.emplace_back(pnt);
 			CondSetPlane();
@@ -51,18 +75,27 @@ namespace ConvexHull {
 	private:
 		void CondSetPlane();
 	private:
+		Allocator defaultAllocator;
+		std::reference_wrapper<Allocator> allocRef;
+
 		std::optional<float4> plane;
-		std::vector<float3> points; // last == first
+		std::pmr::vector<float3> points{ allocRef.get().GetAllocator() };
 	};
 
 	class Polygon {
 	public:
+		Polygon()
+			: allocRef(std::ref(defaultAllocator))
+		{}
+		Polygon(Allocator& allocator_)
+			: allocRef(std::ref(allocator_))
+		{}
 		Face& AddFace() {
-			return faces.emplace_back();
+			return faces.emplace_back(allocRef.get());
 		}
 		template<typename Iterable>
 		Face& AddFace(Iterable&& iterable) {
-			auto& face = faces.emplace_back();
+			auto& face = faces.emplace_back(allocRef.get());
 			for (auto&& item : iterable) {
 				face.AddPoint(std::forward<std::remove_cv_t<decltype(item)>>(item));
 			}
@@ -71,7 +104,7 @@ namespace ConvexHull {
 		}
 		template<typename ... Item>
 		Face& AddFace(Item&& ... item) {
-			auto& face = faces.emplace_back();
+			auto& face = faces.emplace_back(allocRef.get());
 			(face.AddPoint(std::forward<Item>(item)), ...);
 
 			return face;
@@ -84,7 +117,9 @@ namespace ConvexHull {
 
 		const float3 GetMiddlePos() const;
 	private:
-		std::vector<Face> faces;
+		Allocator defaultAllocator;
+		std::reference_wrapper<Allocator> allocRef;
+
+		std::pmr::vector<Face> faces{ allocRef.get().GetAllocator() };
 	};
 }
-

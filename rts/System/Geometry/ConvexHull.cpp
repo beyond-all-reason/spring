@@ -2,12 +2,39 @@
 
 #include <numeric>
 #include "System/SpringMath.h"
-#include "System/ContainerUtil.h"
+
+ConvexHull::Allocator::Allocator()
+{
+	(void) new (pmrMem) std::pmr::monotonic_buffer_resource();
+}
+
+ConvexHull::Allocator::Allocator(size_t allocMemBytes)
+{
+	buffer.resize(allocMemBytes);
+	(void) new (pmrMem) std::pmr::monotonic_buffer_resource(buffer.data(), buffer.size());
+}
+
+ConvexHull::Allocator::~Allocator()
+{
+	static const auto CallDestructor = []<typename T>(T* ptr) {
+		if (ptr == nullptr)
+			return;
+
+		ptr->~T();
+	};
+
+	CallDestructor(reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0]));
+}
+
+void ConvexHull::Allocator::ClearAllocations()
+{
+	(reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0]))->release();
+}
 
 ConvexHull::Polygon& ConvexHull::Polygon::ClipByInPlace(const Polygon& pc)
 {
-	static std::vector<Face> newFaces;
-	static std::vector<float3> newPoints;
+	std::pmr::vector<Face> newFaces(allocRef.get().GetAllocator());
+	std::pmr::vector<float3> newPoints(allocRef.get().GetAllocator());
 
     for (const auto& clippingFace : pc.GetFaces()) {
 		if (!clippingFace.HasPlane())
@@ -26,7 +53,7 @@ ConvexHull::Polygon& ConvexHull::Polygon::ClipByInPlace(const Polygon& pc)
 				continue;
 			}
 			
-			Face newFace;
+			Face newFace(allocRef.get());
 			newFace.SetPlane(clippedFace.GetPlane());
 
 			const auto& clippedPoints = clippedFace.GetPoints();
@@ -72,7 +99,7 @@ ConvexHull::Polygon& ConvexHull::Polygon::ClipByInPlace(const Polygon& pc)
 		}
 
 		if (newPoints.size() >= 3) {
-			Face newFace;
+			Face newFace(allocRef.get());
 			newFace.SetPlane(clippingFacePlane);
 			newFace.AddPoints(std::move(newPoints));
 			if (newFace.Sanitize())
@@ -109,10 +136,7 @@ const float3 ConvexHull::Polygon::GetMiddlePos() const
 		count += points.size();
 	}
 
-	if (count > 0)
-		return midPos / count;
-	else
-		return float3{};
+	return midPos / count;
 }
 
 bool ConvexHull::Face::IsValidFast() const
@@ -173,8 +197,12 @@ bool ConvexHull::Face::Sanitize()
 		return (rhs - lhs).SqLength() <= 1.0f;
 	};
 
-	// put vertices in radial order and dedup them
-	spring::VectorSortUnique(points, SortPred, UniqPred);
+	// put vertices in radial order
+	std::sort(points.begin(), points.end(), SortPred);
+
+	// and dedup them
+	points.erase(std::unique(points.begin(), points.end(), UniqPred), points.end());
+
 
 	// remove points on the straight line
 	for (size_t i0 = 0; i0 < points.size() - 1; /*NOOP*/) {

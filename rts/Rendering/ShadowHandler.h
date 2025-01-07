@@ -97,8 +97,6 @@ private:
 
 	void CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam);
 	void SetShadowCamera(CCamera* shadowCam);
-
-	float3 CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds);
 public:
 	int shadowConfig;
 	int shadowMapSize;
