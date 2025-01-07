@@ -21,6 +21,7 @@ namespace Geometry {
 	private:
 		std::vector<std::byte> buffer;
 		// std::pmr::monotonic_buffer_resource cannot be copied / moved
+		// what else less insane could be done to store it?
 		alignas(std::pmr::monotonic_buffer_resource) std::byte pmrMem[sizeof(std::pmr::monotonic_buffer_resource)];
 		std::pmr::polymorphic_allocator<std::byte> allocator{ reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0])};
 	};
@@ -94,10 +95,10 @@ namespace Geometry {
 			return faces.emplace_back(allocRef.get());
 		}
 		template<typename Iterable>
-		Face& AddFace(Iterable&& iterable) {
+		Face& AddFace(Iterable&& points) {
 			auto& face = faces.emplace_back(allocRef.get());
-			for (auto&& item : iterable) {
-				face.AddPoint(std::forward<std::remove_cv_t<decltype(item)>>(item));
+			for (auto&& point : points) {
+				face.AddPoint(std::forward<std::remove_cv_t<decltype(point)>>(point));
 			}
 
 			return face;
