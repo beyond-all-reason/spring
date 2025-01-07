@@ -297,6 +297,8 @@ void CProjectileHandler::DestroyProjectile(CProjectile* p)
 	eventHandler.RenderProjectileDestroyed(p);
 
 	if (p->synced) {
+		//modelUniformsStorage.DelObject(p);
+
 		eventHandler.ProjectileDestroyed(p, p->GetAllyteamID());
 
 		projectiles[true].Del(p->id);

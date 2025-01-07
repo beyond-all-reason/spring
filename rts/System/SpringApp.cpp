@@ -791,7 +791,8 @@ void SpringApp::Reload(const std::string script)
 
 	LOG("[SpringApp::%s][10]", __func__);
 
-	matricesMemStorage.Reset();
+	transformsMemStorage.Reset();
+	modelUniformsStorage.Reset();
 	gu->ResetState();
 
 	ENTER_SYNCED_CODE();
