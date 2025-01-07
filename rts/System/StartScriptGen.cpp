@@ -18,20 +18,26 @@ namespace StartScriptGen {
 //  Interface
 //
 
-std::string CreateMinimalSetup(const std::string& game, const std::string& map)
-{
+
+/**
+	* helper function that covers the fields that need to be set for every minimal or default startup-script
+	* 
+	* @param game resolved name of the game
+	* @param map resolved name of the map
+	* @return a minimal config section containing general required fields
+	*/
+TdfParser::TdfSection CreateMinmalSetupSections(const std::string& map, const std::string& game) {
 	const std::string playername = configHandler->GetString("name");
 	TdfParser::TdfSection setup;
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
-
-	g->add_name_value("Mapname", ArchiveNameResolver::GetMap(map));
-	g->add_name_value("Gametype", ArchiveNameResolver::GetGame(game));
-
-	TdfParser::TdfSection* modopts = g->construct_subsection("MODOPTIONS");
-	modopts->AddPair("MinimalSetup", 1); //use for ingame detecting this type of start
+	g->add_name_value("Mapname", map);
+	g->add_name_value("Gametype", game);
 
 	g->AddPair("IsHost", 1);
 	g->add_name_value("MyPlayerName", playername);
+
+	// we do not need to set any modoptions here (yet), but we still create the section in the script for later
+	g->construct_subsection("MODOPTIONS");
 
 	TdfParser::TdfSection* player0 = g->construct_subsection("PLAYER0");
 	player0->add_name_value("Name", playername);
@@ -43,7 +49,16 @@ std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 
 	TdfParser::TdfSection* ally0 = g->construct_subsection("ALLYTEAM0");
 	ally0->AddPair("NumAllies", 0);
+	return setup;
+}
 
+std::string CreateMinimalSetup(const std::string& game, const std::string& map)
+{
+	TdfParser::TdfSection setup 
+		= CreateMinmalSetupSections(ArchiveNameResolver::GetMap(map), ArchiveNameResolver::GetGame(game));	
+	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
+	TdfParser::TdfSection* modopts = g->construct_subsection("MODOPTIONS");
+	modopts->AddPair("MinimalSetup", 1); //use for ingame detecting this type of start
 
 	std::ostringstream str;
 	setup.print(str);
@@ -55,20 +70,9 @@ std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 std::string CreateDefaultSetup(const std::string& map, const std::string& game, const std::string& ai,
 			const std::string& playername)
 {
-	TdfParser::TdfSection setup;
+	TdfParser::TdfSection setup = CreateMinmalSetupSections(map, game);	
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
-	g->add_name_value("Mapname", map);
-	g->add_name_value("Gametype", game);
-
-	// we do not need to set any modoptions here (yet), but we still create the section in the script for later
-	g->construct_subsection("MODOPTIONS");
-
-	g->AddPair("IsHost", 1);
-	g->add_name_value("MyPlayerName", playername);
-
-	TdfParser::TdfSection* player0 = g->construct_subsection("PLAYER0");
-	player0->add_name_value("Name", playername);
-	player0->AddPair("Team", 0);
+	
 
 	const bool isSkirmishAITestScript = CAIScriptHandler::Instance().IsSkirmishAITestScript(ai);
 	if (isSkirmishAITestScript) {
@@ -91,10 +95,6 @@ std::string CreateDefaultSetup(const std::string& map, const std::string& game, 
 		player1->AddPair("Team", 1);
 	}
 
-	TdfParser::TdfSection* team0 = g->construct_subsection("TEAM0");
-	team0->AddPair("TeamLeader", 0);
-	team0->AddPair("AllyTeam", 0);
-
 	TdfParser::TdfSection* team1 = g->construct_subsection("TEAM1");
 	if (isSkirmishAITestScript || !ai.empty()) {
 		team1->AddPair("TeamLeader", 0);
@@ -102,9 +102,6 @@ std::string CreateDefaultSetup(const std::string& map, const std::string& game, 
 		team1->AddPair("TeamLeader", 1);
 	}
 	team1->AddPair("AllyTeam", 1);
-
-	TdfParser::TdfSection* ally0 = g->construct_subsection("ALLYTEAM0");
-	ally0->AddPair("NumAllies", 0);
 
 	TdfParser::TdfSection* ally1 = g->construct_subsection("ALLYTEAM1");
 	ally1->AddPair("NumAllies", 0);
