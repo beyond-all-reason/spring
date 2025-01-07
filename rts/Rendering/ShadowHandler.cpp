@@ -548,39 +548,26 @@ void CShadowHandler::DrawShadowPasses()
 	inShadowPass = false;
 }
 
-static CMatrix44f ComposeLightMatrix(const CCamera* playerCam, const ISkyLight* light)
-{
-	CMatrix44f lightMatrix;
-
-	// sun direction is in world-space, invert it
-	float3 zDir = -float3(light->GetLightDir().xyz);
-
-	// Try to rotate LM's X and Y around Z direction to fit playerCam tightest
-
-	// find the most orthogonal vector to zDir and call it xDir
-	float minDot = 1.0f;
-	float3 xDir;
-	for (const auto* dir : { &playerCam->forward, &playerCam->right, &playerCam->up }) {
-		const float dp = zDir.dot(*dir);
-		if (math::fabs(dp) < minDot) {
-			xDir = std::copysign(1.0f, dp) * (*dir);
-			minDot = math::fabs(dp);
+namespace Impl {
+	float3 GetLightXDir(const CCamera* playerCam, const float3 toLightDir)
+	{
+		// Try to rotate LM's X and Y around Z direction to fit playerCam tightest
+		// find the most orthogonal vector to zDir and call it xDir
+		float minDot = 1.0f;
+		float3 xDir;
+		for (const auto* dir : { &playerCam->forward, &playerCam->right, &playerCam->up }) {
+			const float dp = toLightDir.dot(*dir);
+			if (math::fabs(dp) < minDot) {
+				xDir = *dir;
+				minDot = math::fabs(dp);
+			}
 		}
+
+		xDir = (xDir - xDir.dot(toLightDir) * toLightDir).Normalize();
+
+		return xDir;
 	}
-
-	xDir = UpVector;
-
-	// orthonormalize
-	xDir = (xDir - xDir.dot(zDir) * zDir).ANormalize();
-	float3 yDir = xDir.cross(zDir).ANormalize();
-
-	lightMatrix.SetZ(zDir);
-	lightMatrix.SetY(yDir);
-	lightMatrix.SetX(xDir);
-	//lightMatrix.Transpose();
-
-	return lightMatrix;
-}
+};
 
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
@@ -590,172 +577,41 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 	};
 
 	const auto& worldBounds = game->GetWorldBounds();
-	/*
-	//const auto projMidPos = CalcShadowProjectionPos(playerCam, worldBounds);
 	float3 projMidPos;
 	{
-		using Line = std::pair<float3, float3>;
-		using Face = std::vector<Line>;
-		using Polygon = std::vector<Face>;
-
+		// 1 Meg should be enough?
+		static ConvexHull::Allocator allocator(1 * 1024 * 1024);
 		const auto wcs = worldBounds.GetCorners();
+		{
+			ConvexHull::Polygon worldCube(allocator);
 
-		Polygon worldCube {
-			// Front Face (clockwise)
-			{{{wcs[0], wcs[2]}, {wcs[2], wcs[6]}, {wcs[6], wcs[4]}, {wcs[4], wcs[0]}}},
+			// Left Face
+			worldCube.AddFace(wcs[0], wcs[1], wcs[5], wcs[4]);
+			// Right Face
+			worldCube.AddFace(wcs[2], wcs[6], wcs[7], wcs[3]);
+			// Near Face
+			worldCube.AddFace(wcs[0], wcs[4], wcs[6], wcs[2]);
+			// Far Face
+			worldCube.AddFace(wcs[1], wcs[3], wcs[7], wcs[5]);
+			// Top Face
+			worldCube.AddFace(wcs[4], wcs[5], wcs[7], wcs[6]);
+			// Bottom Face
+			worldCube.AddFace(wcs[0], wcs[2], wcs[3], wcs[1]);
 
-			// Back Face (counter-clockwise)
-			{{{wcs[1], wcs[3]}, {wcs[3], wcs[7]}, {wcs[7], wcs[5]}, {wcs[5], wcs[1]}}},
+			ConvexHull::Polygon cameraFrustum(allocator);
 
-			// Left Face (clockwise)
-			{{{wcs[0], wcs[1]}, {wcs[1], wcs[5]}, {wcs[5], wcs[4]}, {wcs[4], wcs[0]}}},
+			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_LFT));
+			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_RGT));
+			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_BOT));
+			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_TOP));
+			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_NEA));
+			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_FAR));
 
-			// Right Face (counter-clockwise)
-			{{{wcs[2], wcs[3]}, {wcs[3], wcs[7]}, {wcs[7], wcs[6]}, {wcs[6], wcs[2]}}},
-
-			// Top Face (clockwise)
-			{{{wcs[4], wcs[6]}, {wcs[6], wcs[7]}, {wcs[7], wcs[5]}, {wcs[5], wcs[4]}}},
-
-			// Bottom Face (counter-clockwise)
-			{{{wcs[0], wcs[2]}, {wcs[2], wcs[3]}, {wcs[3], wcs[1]}, {wcs[1], wcs[0]}}}
-		};
-
-		Polygon worldCubeNew;
-		for (size_t i = 0; i < 6; ++i) {
-			const auto& clipPlane = playerCam->GetFrustumPlane(i);
-			for (const auto& face : worldCube) {
-				Face newFace;
-				std::vector<float3> clippedPoints;
-				for (const auto& [p0, p1] : face) {
-					const float d0 = clipPlane.dot(p0) + clipPlane.w;
-					const float d1 = clipPlane.dot(p1) + clipPlane.w;
-					if (d0 < 0 && d1 < 0)
-						continue;
-
-					if (float3 pClipped; d0 < 0) {
-						RayAndPlaneIntersection(p0, p1, clipPlane, false, pClipped);
-						newFace.emplace_back(Line(pClipped, p1));
-						clippedPoints.emplace_back(pClipped);
-					} else if (d1 < 0) {
-						RayAndPlaneIntersection(p1, p0, clipPlane, false, pClipped);
-						newFace.emplace_back(Line(p0, pClipped));
-						clippedPoints.emplace_back(pClipped);
-					} else { // both on the positive side
-						newFace.emplace_back(Line(p0, p1));
-					}
-				}
-
-				for (size_t i = 0; i < clippedPoints.size(); ++i) {
-					newFace.emplace_back(Line(clippedPoints[i], clippedPoints[(i + 1) % clippedPoints.size()]));
-				}
-
-				if (!newFace.empty())
-					worldCubeNew.emplace_back(std::move(newFace));
-			}
-			std::swap(worldCubeNew, worldCube);
-			worldCubeNew.clear();
+			worldCube.ClipByInPlace(cameraFrustum);
+			projMidPos = worldCube.GetMiddlePos();
+			clippedWorldCube = worldCube.GetAllLines();
 		}
-
-		clippedWorldCube.clear();
-		size_t count = 0;
-		for (const auto& face : worldCube) {
-			for (const auto& [p0, p1] : face) {
-				clippedWorldCube.emplace_back(p0, p1);
-				projMidPos += p0;
-				projMidPos += p1;
-				count += 2;
-			}
-		}
-
-		projMidPos /= count;
-	}
-	*/
-	float3 projMidPos;
-	{
-		const auto wcs = worldBounds.GetCorners();
-
-		ConvexHull::Polygon worldCube;
-
-		// Left Face (counterclockwise)
-		worldCube.AddFace(wcs[0], wcs[1], wcs[5], wcs[4]);
-		// Right Face (clockwise)
-		worldCube.AddFace(wcs[2], wcs[6], wcs[7], wcs[3]);
-		// Near Face (counterclockwise)
-		worldCube.AddFace(wcs[0], wcs[4], wcs[6], wcs[2]);
-		// Far Face (clockwise)
-		worldCube.AddFace(wcs[1], wcs[3], wcs[7], wcs[5]);
-		// Top Face (counterclockwise)
-		worldCube.AddFace(wcs[4], wcs[5], wcs[7], wcs[6]);
-		// Bottom Face (clockwise)
-		worldCube.AddFace(wcs[0], wcs[2], wcs[3], wcs[1]);
-
-		ConvexHull::Polygon cameraFrustum;
-		/*
-		// Left Face (counterclockwise, reversed)
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_LFT)).AddPoints(
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL)
-		);
-		//assert(cameraFrustum.GetFaces().back().IsValid());
-
-		// Right Face (clockwise, reversed)
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_RGT)).AddPoints(
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR)
-		);
-		//assert(cameraFrustum.GetFaces().back().IsValid());
-
-		// Bottom Face (clockwise, reversed)
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_BOT)).AddPoints(
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL)
-		);
-		//assert(cameraFrustum.GetFaces().back().IsValid());
-
-		// Top Face (counterclockwise, reversed)
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_TOP)).AddPoints(
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR)
-		);
-		//assert(cameraFrustum.GetFaces().back().IsValid());
-
-		// Near Face (counterclockwise, reversed)
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_NEA)).AddPoints(
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL)
-		);
-		//assert(cameraFrustum.GetFaces().back().IsValid());
-
-		// Far Face (clockwise, reversed)
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_FAR)).AddPoints(
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL),
-			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR)
-		);
-		//assert(cameraFrustum.GetFaces().back().IsValid());
-		*/
-
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_LFT));
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_RGT));
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_BOT));
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_TOP));
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_NEA));
-		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_FAR));
-
-		worldCube.ClipByInPlace(cameraFrustum);
-		projMidPos = worldCube.GetMiddlePos();
-		clippedWorldCube = worldCube.GetAllLines();
+		allocator.ClearAllocations();
 	}
 
 	float3 camPos;
@@ -764,8 +620,12 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		CMatrix44f camWorldMat;
 
 		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
+#if 0
 		float3 xAxis = float3(1, 0, 0);
 		xAxis = (xAxis - xAxis.dot(zAxis) * zAxis).Normalize();
+#else
+		float3 xAxis = Impl::GetLightXDir(playerCam, zAxis);
+#endif
 		float3 yAxis = zAxis.cross(xAxis);
 
 		camWorldMat.SetX(xAxis);
@@ -924,39 +784,4 @@ void CShadowHandler::EnableColorOutput(bool enable) const
 
 	const GLboolean b = static_cast<GLboolean>(enable);
 	glColorMask(b, b, b, GL_FALSE);
-}
-
-
-float3 CShadowHandler::CalcShadowProjectionPos(CCamera* playerCam, const AABB& worldBounds)
-{
-	float3 projPos;
-#if 0
-	//for (int i = 0; i < 8; ++i)
-	//	frustumPoints[i] = playerCam->GetFrustumVert(i);
-
-	const std::initializer_list<float4> clipPlanes = {
-		float4{-UpVector ,  (worldBounds.maxs.y) },
-		float4{ UpVector , -(worldBounds.mins.y) },
-		//float4{-RgtVector,  (worldBounds.maxs.x) },
-		//float4{ RgtVector, -(worldBounds.mins.x) },
-		//float4{-FwdVector,  (worldBounds.maxs.z) },
-		//float4{ FwdVector, -(worldBounds.mins.z) },
-	};
-
-	for (int i = 0; i < 4; ++i) {
-		ClipRayByPlanes(playerCam->GetPos(), frustumPoints[4 + i], clipPlanes);
-		/*
-		//hard clamp xz
-		frustumPoints[    i].x = std::clamp(frustumPoints[    i].x, worldBounds.mins.x, worldBounds.maxs.x);
-		frustumPoints[    i].z = std::clamp(frustumPoints[    i].z, worldBounds.mins.z, worldBounds.maxs.z);
-		frustumPoints[4 + i].x = std::clamp(frustumPoints[4 + i].x, worldBounds.mins.x, worldBounds.maxs.x);
-		frustumPoints[4 + i].z = std::clamp(frustumPoints[4 + i].z, worldBounds.mins.z, worldBounds.maxs.z);
-		*/
-
-		projPos += frustumPoints[4 + i];
-	}
-	projPos += playerCam->GetPos();
-	projPos *= 0.2f;
-#endif
-	return projPos;
 }
