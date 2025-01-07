@@ -28,6 +28,7 @@
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -2863,7 +2864,10 @@ int LuaSyncedCtrl::SetUnitStaticRadarGhost(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
+	bool prevValue = unit->staticRadarGhost;
 	unit->SetStaticRadarGhost(luaL_checkboolean(L, 2));
+	if (prevValue != unit->staticRadarGhost)
+		unitDrawer->SetUnitStaticRadarGhost(unit);
 	return 0;
 }
 

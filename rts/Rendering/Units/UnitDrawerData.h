@@ -64,6 +64,8 @@ public:
 	void UnitLeftLos(const CUnit* unit, int allyTeam) override;
 
 	void PlayerChanged(int playerNum) override;
+	void UpdateGhosts(const CUnit* unit, const bool addNewGhost);
+	void SetUnitStaticRadarGhost(const CUnit* unit);
 public:
 	class TempDrawUnit {
 		CR_DECLARE_STRUCT(TempDrawUnit)
