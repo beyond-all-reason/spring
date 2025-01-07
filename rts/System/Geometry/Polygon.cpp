@@ -141,7 +141,7 @@ const float3 Geometry::Polygon::GetMiddlePos() const
 
 bool Geometry::Face::IsValidFast() const
 {
-	return points.size() >= 3 && plane.has_value();
+	return points.size() >= 3 && HasPlane();
 }
 
 bool Geometry::Face::IsValid() const
