@@ -23,6 +23,7 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/Geometry/ConvexHull.hpp"
 #include "System/EventHandler.h"
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
@@ -589,7 +590,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 	};
 
 	const auto& worldBounds = game->GetWorldBounds();
-
+	/*
 	//const auto projMidPos = CalcShadowProjectionPos(playerCam, worldBounds);
 	float3 projMidPos;
 	{
@@ -667,6 +668,94 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		}
 
 		projMidPos /= count;
+	}
+	*/
+	float3 projMidPos;
+	{
+		const auto wcs = worldBounds.GetCorners();
+
+		ConvexHull::Polygon worldCube;
+
+		// Left Face (counterclockwise)
+		worldCube.AddFace(wcs[0], wcs[1], wcs[5], wcs[4]);
+		// Right Face (clockwise)
+		worldCube.AddFace(wcs[2], wcs[6], wcs[7], wcs[3]);
+		// Near Face (counterclockwise)
+		worldCube.AddFace(wcs[0], wcs[4], wcs[6], wcs[2]);
+		// Far Face (clockwise)
+		worldCube.AddFace(wcs[1], wcs[3], wcs[7], wcs[5]);
+		// Top Face (counterclockwise)
+		worldCube.AddFace(wcs[4], wcs[5], wcs[7], wcs[6]);
+		// Bottom Face (clockwise)
+		worldCube.AddFace(wcs[0], wcs[2], wcs[3], wcs[1]);
+
+		ConvexHull::Polygon cameraFrustum;
+		/*
+		// Left Face (counterclockwise, reversed)
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_LFT)).AddPoints(
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL)
+		);
+		//assert(cameraFrustum.GetFaces().back().IsValid());
+
+		// Right Face (clockwise, reversed)
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_RGT)).AddPoints(
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR)
+		);
+		//assert(cameraFrustum.GetFaces().back().IsValid());
+
+		// Bottom Face (clockwise, reversed)
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_BOT)).AddPoints(
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL)
+		);
+		//assert(cameraFrustum.GetFaces().back().IsValid());
+
+		// Top Face (counterclockwise, reversed)
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_TOP)).AddPoints(
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR)
+		);
+		//assert(cameraFrustum.GetFaces().back().IsValid());
+
+		// Near Face (counterclockwise, reversed)
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_NEA)).AddPoints(
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL)
+		);
+		//assert(cameraFrustum.GetFaces().back().IsValid());
+
+		// Far Face (clockwise, reversed)
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_FAR)).AddPoints(
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL),
+			playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR)
+		);
+		//assert(cameraFrustum.GetFaces().back().IsValid());
+		*/
+
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_LFT));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_RGT));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_BOT));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_TOP));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_NEA));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_FAR));
+
+		worldCube.ClipByInPlace(cameraFrustum);
+		projMidPos = worldCube.GetMiddlePos();
+		clippedWorldCube = worldCube.GetAllLines();
 	}
 
 	float3 camPos;

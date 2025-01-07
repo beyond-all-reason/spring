@@ -1,70 +1,120 @@
 #include "ConvexHull.hpp"
+
+#include <numeric>
 #include "System/SpringMath.h"
+#include "System/ContainerUtil.h"
 
 ConvexHull::Polygon& ConvexHull::Polygon::ClipByInPlace(const Polygon& pc)
 {
 	static std::vector<Face> newFaces;
+	static std::vector<float3> newPoints;
 
     for (const auto& clippingFace : pc.GetFaces()) {
-		if (!clippingFace.IsValid())
+		if (!clippingFace.HasPlane())
 			continue;
+
+		const auto& clippingFacePlane = clippingFace.GetPlane();
+		newPoints.clear(); // points to form a new plane
 
 		for (const auto& clippedFace : GetFaces()) {
 			if (!clippedFace.IsValid())
 				continue;
 
-			std::pair<float3, float3> intersectionLine; // <direction, point>
-			if (!IntersectPlanes(clippingFace.GetPlane(), clippedFace.GetPlane(), intersectionLine))
+			const auto& clippedFacePlane = clippedFace.GetPlane();
+			if (epscmp(std::fabs(clippingFacePlane.dot(clippedFacePlane)), 1.0f, 1e-3f)) {
+				// almost parallel or anti-parallel, skip
 				continue;
+			}
+			
+			Face newFace;
+			newFace.SetPlane(clippedFace.GetPlane());
 
-			// figure out .w sign
-			float4 intersectionLineEquation{ intersectionLine.first, -intersectionLine.first.dot(intersectionLine.second) };
-
-			float3 clippedP0{ std::numeric_limits<float>::infinity() };
-			float3 clippedP1{ std::numeric_limits<float>::infinity() };
-
-			// find exact line in the clipped face matching intersectionLine
 			const auto& clippedPoints = clippedFace.GetPoints();
 			for (size_t i0 = 0; i0 < clippedPoints.size(); ++i0) {
 				size_t i1 = (i0 + 1) % clippedPoints.size();
 				const auto& p0 = clippedPoints[i0];
 				const auto& p1 = clippedPoints[i1];
 
-				float3 p10 = (p1 - p0);
-				const auto l = p10.Length();
-				if (epscmp(l, 0.0f, float3::cmp_eps()))
+				const float d0 = clippingFacePlane.dot(p0) + clippingFacePlane.w;
+				const float d1 = clippingFacePlane.dot(p1) + clippingFacePlane.w;
+				if (d0 < 0 && d1 < 0)
 					continue;
 
-				p10 /= l;
+				// Note: RayAndPlaneIntersection is unreliable when p0 or p1 lays on the plane
+				// due to precision errors, so copy the code here, but remove sanity checks
+				const float3 p01 = p1 - p0;
+				const float denom = clippingFacePlane.dot(p01);
 
-				float4 lineEquation{ p10, -p10.dot(p0) };
+				float3 px;
+				if (d0 < 0) {
+					const float t = -(clippingFacePlane.dot(p0) + clippingFacePlane.w) / denom;
+					px = p0 + p01 * t;
+					assert(epscmp(clippingFacePlane.dot(px) + clippingFacePlane.w, 0.0f, 0.1f));
+					newFace.AddPoint(px);
+					newPoints.emplace_back(px);
+				} else {
+					newFace.AddPoint(p0);
+				}
 
-				if (lineEquation != intersectionLineEquation)
-					continue;
-
-				if (lineEquation.dot4(p0) > lineEquation.dot4(clippedP0))
-					clippedP0 = p0;
-
-				if (lineEquation.dot4(p1) < lineEquation.dot4(clippedP1))
-					clippedP0 = p0;
+				if (d1 < 0) {
+					const float t =  (clippingFacePlane.dot(p1) + clippingFacePlane.w) / denom;
+					px = p1 - p01 * t;
+					assert(epscmp(clippingFacePlane.dot(px) + clippingFacePlane.w, 0.0f, 0.1f));
+					newFace.AddPoint(px);
+					newPoints.emplace_back(px);
+				} else {
+					newFace.AddPoint(p1);
+				}
 			}
-			/*
-			const auto& clippingPoints = clippingFace.GetPoints();
-			for (size_t i0 = 0; i0 < clippingPoints.size(); ++i0) {
-				size_t i1 = (i0 + 1) % clippingPoints.size();
-				const auto& p0 = clippingPoints[i0];
-				const auto& p1 = clippingPoints[i1];
-			}
-			*/
+
+			if (newFace.Sanitize())
+				newFaces.emplace_back(std::move(newFace));
 		}
 
+		if (newPoints.size() >= 3) {
+			Face newFace;
+			newFace.SetPlane(clippingFacePlane);
+			newFace.AddPoints(std::move(newPoints));
+			if (newFace.Sanitize())
+				newFaces.emplace_back(std::move(newFace));
+		}
+		std::swap(faces, newFaces);
+		newFaces.clear();
     }
+
     return *this;
+}
+
+std::vector<std::pair<float3, float3>> ConvexHull::Polygon::GetAllLines() const
+{
+	std::vector<std::pair<float3, float3>> allLines;
+	for (const auto& face : GetFaces()) {
+		const auto& points = face.GetPoints();
+		for (size_t i0 = 0; i0 < points.size(); ++i0) {
+			size_t i1 = (i0 + 1) % points.size();
+			allLines.emplace_back(points[i0], points[i1]);
+		}
+	}
+
+	return allLines;
+}
+
+const float3 ConvexHull::Polygon::GetMiddlePos() const
+{
+	size_t count = 0;
+	float3 midPos { 0.0f };
+	for (const auto& face : GetFaces()) {
+		const auto& points = face.GetPoints();
+		midPos += std::reduce(points.begin(), points.end());
+		count += points.size();
+	}
+
+	return midPos / count;
 }
 
 bool ConvexHull::Face::IsValidFast() const
 {
-	return points.size() >= 3;
+	return points.size() >= 3 && plane.has_value();
 }
 
 bool ConvexHull::Face::IsValid() const
@@ -72,17 +122,17 @@ bool ConvexHull::Face::IsValid() const
 	if (!IsValidFast())
 		return false;
 
-	for (size_t i0 = 1; i0 < points.size(); ++i0) {
+	for (size_t i0 = 0; i0 < points.size() - 1; ++i0) {
 		size_t i1 = (i0 + 1) % points.size();
 		size_t i2 = (i0 + 2) % points.size();
 
 		const float3 u = points[i0] - points[i1];
 		const float3 v = points[i2] - points[i1];
 		if (epscmp(u.SqLength(), 0.0f, float3::cmp_eps()) || epscmp(v.SqLength(), 0.0f, float3::cmp_eps()))
-			continue;
+			return false;
 
 		const float3 n = v.cross(u).UnsafeANormalize();
-		const float  d = -n.dot(points[1]);
+		const float  d = -n.dot(points[i1]);
 
 		if (plane != float4{ n, d })
 			return false;
@@ -91,9 +141,75 @@ bool ConvexHull::Face::IsValid() const
 	return true;
 }
 
-inline void ConvexHull::Face::CondSetPlane()
+bool ConvexHull::Face::Sanitize()
 {
-	if (points.size() == 3) {
+	if (!IsValidFast())
+		return false;
+
+	const float3 midPoint = std::reduce(points.begin(), points.end()) / points.size();
+
+	const auto& normal = GetPlane();
+	//const float3 ref = normal.cross(*points.begin() - midPoint).Normalize();
+	const float3 ref = (*points.begin() - midPoint);
+
+	const auto SortPred = [&ref, &midPoint, &normal](const auto& lhs, const auto& rhs) {
+		//const float dl = ref.dot(normal.cross(lhs - midPoint).Normalize());
+		//const float dr = ref.dot(normal.cross(rhs - midPoint).Normalize());
+		const auto lhsVec = (lhs - midPoint);
+		const auto rhsVec = (rhs - midPoint);
+
+		const auto sl = normal.dot(ref.cross(lhsVec));
+		const auto cl = ref.dot(lhsVec);
+		auto al = math::atan2f(sl, cl);
+
+		const auto sr = normal.dot(ref.cross(rhsVec));
+		const auto cr = ref.dot(rhsVec);
+		auto ar = math::atan2f(sr, cr);
+
+		return al < ar;
+	};
+	const auto UniqPred = [](const auto& lhs, const auto& rhs) {
+		return (rhs - lhs).SqLength() <= 1.0f;
+	};
+
+	// put vertices in radial order and dedup them
+	spring::VectorSortUnique(points, SortPred, UniqPred);
+
+	// remove points on the straight line
+	for (size_t i0 = 0; i0 < points.size() - 1; /*NOOP*/) {
+		size_t i1 = (i0 + 1) % points.size();
+		size_t i2 = (i0 + 2) % points.size();
+
+		const float3 u = (points[i0] - points[i1]).Normalize();
+		const float3 v = (points[i2] - points[i1]).Normalize();
+		if (epscmp(u.dot(v), 1.0f, 1e-3f)) {
+			points.erase(points.begin() + i1); // remove point in the middle			
+		} else {
+			++i0;
+		}
+	}
+
+	if (!IsValidFast())
+		return false;
+
+	const float3 u = points[0] - points[1];
+	const float3 v = points[2] - points[1];
+	const float3 n = v.cross(u).UnsafeANormalize();
+	if (GetPlane().dot(n) < 0.0f) {
+		// change the winding to the required
+		std::reverse(points.begin(), points.end());
+
+		const float3 u = points[0] - points[1];
+		const float3 v = points[2] - points[1];
+		const float3 n = v.cross(u).UnsafeANormalize();
+	}
+
+	return IsValid();
+}
+
+void ConvexHull::Face::CondSetPlane()
+{
+	if (points.size() == 3 && !plane.has_value()) {
 		const float3 u = points[0] - points[1];
 		const float3 v = points[2] - points[1];
 		const float3 n = v.cross(u).UnsafeANormalize();
