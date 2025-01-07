@@ -18,6 +18,7 @@ public:
 	void GenerateIBLTextures() const;
 	void ResetMVPMatrices() const;
 
+	// In-map space + all units/feature only
 	const auto& GetWorldBounds() const { return worldBounds; }
 private:
 	void DrawOpaqueObjects() const;
