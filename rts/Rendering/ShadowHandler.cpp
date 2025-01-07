@@ -23,7 +23,7 @@
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Geometry/ConvexHull.hpp"
+#include "System/Geometry/Polygon.hpp"
 #include "System/EventHandler.h"
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
@@ -580,10 +580,10 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 	float3 projMidPos;
 	{
 		// 1 Meg should be enough?
-		static ConvexHull::Allocator allocator(1 * 1024 * 1024);
+		static Geometry::Allocator allocator(1 * 1024 * 1024);
 		const auto wcs = worldBounds.GetCorners();
 		{
-			ConvexHull::Polygon worldCube(allocator);
+			Geometry::Polygon worldCube(allocator);
 
 			// Left Face
 			worldCube.AddFace(wcs[0], wcs[1], wcs[5], wcs[4]);
@@ -598,7 +598,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 			// Bottom Face
 			worldCube.AddFace(wcs[0], wcs[2], wcs[3], wcs[1]);
 
-			ConvexHull::Polygon cameraFrustum(allocator);
+			Geometry::Polygon cameraFrustum(allocator);
 
 			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_LFT));
 			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_RGT));

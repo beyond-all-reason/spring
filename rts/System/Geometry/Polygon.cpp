@@ -1,20 +1,20 @@
-#include "ConvexHull.hpp"
+#include "Polygon.hpp"
 
 #include <numeric>
 #include "System/SpringMath.h"
 
-ConvexHull::Allocator::Allocator()
+Geometry::Allocator::Allocator()
 {
 	(void) new (pmrMem) std::pmr::monotonic_buffer_resource();
 }
 
-ConvexHull::Allocator::Allocator(size_t allocMemBytes)
+Geometry::Allocator::Allocator(size_t allocMemBytes)
 {
 	buffer.resize(allocMemBytes);
 	(void) new (pmrMem) std::pmr::monotonic_buffer_resource(buffer.data(), buffer.size());
 }
 
-ConvexHull::Allocator::~Allocator()
+Geometry::Allocator::~Allocator()
 {
 	static const auto CallDestructor = []<typename T>(T* ptr) {
 		if (ptr == nullptr)
@@ -26,12 +26,12 @@ ConvexHull::Allocator::~Allocator()
 	CallDestructor(reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0]));
 }
 
-void ConvexHull::Allocator::ClearAllocations()
+void Geometry::Allocator::ClearAllocations()
 {
 	(reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0]))->release();
 }
 
-ConvexHull::Polygon& ConvexHull::Polygon::ClipByInPlace(const Polygon& pc)
+Geometry::Polygon& Geometry::Polygon::ClipByInPlace(const Polygon& pc)
 {
 	std::pmr::vector<Face> newFaces(allocRef.get().GetAllocator());
 	std::pmr::vector<float3> newPoints(allocRef.get().GetAllocator());
@@ -112,7 +112,7 @@ ConvexHull::Polygon& ConvexHull::Polygon::ClipByInPlace(const Polygon& pc)
     return *this;
 }
 
-std::vector<std::pair<float3, float3>> ConvexHull::Polygon::GetAllLines() const
+std::vector<std::pair<float3, float3>> Geometry::Polygon::GetAllLines() const
 {
 	std::vector<std::pair<float3, float3>> allLines;
 	for (const auto& face : GetFaces()) {
@@ -126,7 +126,7 @@ std::vector<std::pair<float3, float3>> ConvexHull::Polygon::GetAllLines() const
 	return allLines;
 }
 
-const float3 ConvexHull::Polygon::GetMiddlePos() const
+const float3 Geometry::Polygon::GetMiddlePos() const
 {
 	size_t count = 0;
 	float3 midPos { 0.0f };
@@ -139,12 +139,12 @@ const float3 ConvexHull::Polygon::GetMiddlePos() const
 	return midPos / count;
 }
 
-bool ConvexHull::Face::IsValidFast() const
+bool Geometry::Face::IsValidFast() const
 {
 	return points.size() >= 3 && plane.has_value();
 }
 
-bool ConvexHull::Face::IsValid() const
+bool Geometry::Face::IsValid() const
 {
 	if (!IsValidFast())
 		return false;
@@ -168,7 +168,7 @@ bool ConvexHull::Face::IsValid() const
 	return true;
 }
 
-bool ConvexHull::Face::Sanitize()
+bool Geometry::Face::Sanitize()
 {
 	if (!IsValidFast())
 		return false;
@@ -236,7 +236,7 @@ bool ConvexHull::Face::Sanitize()
 	return IsValid();
 }
 
-void ConvexHull::Face::CondSetPlane()
+void Geometry::Face::CondSetPlane()
 {
 	if (points.size() == 3 && !plane.has_value()) {
 		const float3 u = points[0] - points[1];
