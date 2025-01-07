@@ -41,7 +41,6 @@ CONFIG(int, CamFrameTimeCorrection)
 CCamera::CCamera(uint32_t cameraType, uint32_t projectionType)
 	: camType(cameraType)
 	, projType(projectionType)
-	, inViewPlanesMask((camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F) // 0x3F - all planes, 0xF - all planes but NEAR/FAR
 {
 	assert(cameraType < CAMTYPE_COUNT);
 
@@ -60,8 +59,6 @@ void CCamera::SetCamType(uint32_t ct)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	camType = ct;
-	// 0x3F - all planes, 0xF - all planes but NEAR/FAR
-	inViewPlanesMask = (camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F;
 }
 
 void CCamera::InitConfigNotify(){
@@ -355,16 +352,14 @@ void CCamera::UpdateViewRange()
 
 bool CCamera::InView(const float3& point, float radius) const
 {
-	return true;
 	RECOIL_DETAILED_TRACY_ZONE;
-	return frustum.IntersectSphere(point, radius, inViewPlanesMask);
+	return frustum.IntersectSphere(point, radius);
 }
 
 bool CCamera::InView(const AABB& aabb) const
 {
-	return true;
 	RECOIL_DETAILED_TRACY_ZONE;
-	return InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb, inViewPlanesMask);
+	return InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb);
 }
 
 #if 0
@@ -789,13 +784,10 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 }
 
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-points-and-spheres/
-bool CCamera::Frustum::IntersectSphere(float3 p, float radius, uint8_t testMask) const
+bool CCamera::Frustum::IntersectSphere(float3 p, float radius) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
-		if ((testMask & (1 << i)) == 0)
-			continue;
-
 		const auto& plane = planes[i];
 		const float dist = plane.dot(p) + plane.w;
 		if (dist < -radius)
@@ -867,13 +859,10 @@ bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 */
 
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
-bool CCamera::Frustum::IntersectAABB(const AABB& b, uint8_t testMask) const
+bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
-		if ((testMask & (1 << i)) == 0)
-			continue;
-
 		const auto& plane = planes[i];
 		if (plane.dot(b.GetVertexP(plane)) + plane.w < 0)
 			return false; // outside

@@ -78,8 +78,8 @@ public:
 
 	struct Frustum {
 	public:
-		bool IntersectSphere(float3 p, float radius, uint8_t testMask) const;
-		bool IntersectAABB(const AABB& b, uint8_t testMask = 0x3F) const;
+		bool IntersectSphere(float3 p, float radius) const;
+		bool IntersectAABB(const AABB& b) const;
 
 	public:
 		// corners
@@ -296,8 +296,6 @@ private:
 	uint32_t camType = -1u;
 	// PROJTYPE_*
 	uint32_t projType = -1u;
-
-	uint8_t inViewPlanesMask;
 
 	bool movState[10]; // fwd, back, left, right, up, down, fast, slow, tilt, reset
 	bool rotState[4]; // unused
