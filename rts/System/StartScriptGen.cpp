@@ -28,7 +28,6 @@ std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 	g->add_name_value("Gametype", ArchiveNameResolver::GetGame(game));
 
 	TdfParser::TdfSection* modopts = g->construct_subsection("MODOPTIONS");
-	modopts->AddPair("MaxSpeed", 20);
 	modopts->AddPair("MinimalSetup", 1); //use for ingame detecting this type of start
 
 	g->AddPair("IsHost", 1);
@@ -56,19 +55,16 @@ std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 std::string CreateDefaultSetup(const std::string& map, const std::string& game, const std::string& ai,
 			const std::string& playername)
 {
-	//FIXME:: duplicate code with CreateMinimalSetup
 	TdfParser::TdfSection setup;
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
 	g->add_name_value("Mapname", map);
 	g->add_name_value("Gametype", game);
 
-	TdfParser::TdfSection* modopts = g->construct_subsection("MODOPTIONS");
-	modopts->AddPair("MaxSpeed", 20);
+	// we do not need to set any modoptions here (yet), but we still create the section in the script for later
+	g->construct_subsection("MODOPTIONS");
 
 	g->AddPair("IsHost", 1);
 	g->add_name_value("MyPlayerName", playername);
-
-	g->AddPair("NoHelperAIs", configHandler->GetBool("NoHelperAIs"));
 
 	TdfParser::TdfSection* player0 = g->construct_subsection("PLAYER0");
 	player0->add_name_value("Name", playername);
