@@ -109,7 +109,10 @@ const float3 ConvexHull::Polygon::GetMiddlePos() const
 		count += points.size();
 	}
 
-	return midPos / count;
+	if (count > 0)
+		return midPos / count;
+	else
+		return float3{};
 }
 
 bool ConvexHull::Face::IsValidFast() const
@@ -149,24 +152,22 @@ bool ConvexHull::Face::Sanitize()
 	const float3 midPoint = std::reduce(points.begin(), points.end()) / points.size();
 
 	const auto& normal = GetPlane();
-	//const float3 ref = normal.cross(*points.begin() - midPoint).Normalize();
 	const float3 ref = (*points.begin() - midPoint);
 
 	const auto SortPred = [&ref, &midPoint, &normal](const auto& lhs, const auto& rhs) {
-		//const float dl = ref.dot(normal.cross(lhs - midPoint).Normalize());
-		//const float dr = ref.dot(normal.cross(rhs - midPoint).Normalize());
 		const auto lhsVec = (lhs - midPoint);
 		const auto rhsVec = (rhs - midPoint);
 
-		const auto sl = normal.dot(ref.cross(lhsVec));
-		const auto cl = ref.dot(lhsVec);
-		auto al = math::atan2f(sl, cl);
+		const auto lDet = normal.dot(ref.cross(lhsVec));
+		const auto lDot = ref.dot(lhsVec);
+		auto lAngle = math::atan2f(lDet, lDot);
 
-		const auto sr = normal.dot(ref.cross(rhsVec));
-		const auto cr = ref.dot(rhsVec);
-		auto ar = math::atan2f(sr, cr);
+		const auto rDet = normal.dot(ref.cross(rhsVec));
+		const auto rDot = ref.dot(rhsVec);
+		auto rAngle = math::atan2f(rDet, rDot);
 
-		return al < ar;
+		// TODO: figure out the way to compare angles without atan2
+		return lAngle < rAngle;
 	};
 	const auto UniqPred = [](const auto& lhs, const auto& rhs) {
 		return (rhs - lhs).SqLength() <= 1.0f;
