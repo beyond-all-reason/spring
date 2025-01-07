@@ -567,11 +567,6 @@ namespace Impl {
 
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
-	float2 mapDimsWS = float2{
-		static_cast<float>(mapDims.mapx * SQUARE_SIZE),
-		static_cast<float>(mapDims.mapy * SQUARE_SIZE)
-	};
-
 	const auto& worldBounds = game->GetWorldBounds();
 	float3 projMidPos;
 	{
@@ -645,9 +640,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 
 		// do the camWorldMat.InvertAffine(); for the position part
 		viewMatrix.col[3] = float4{ -xAxis.dot(camPos), -yAxis.dot(camPos), -zAxis.dot(camPos), 1.0f };
-
-		camWorldMat = viewMatrix.InvertAffine(); // sanity check
-		assert(camPos == camWorldMat.GetPos());
+		assert(viewMatrix.col[3].CheckNaNs());
 	}
 
 	float camToProjPosDist = camPos.distance(projMidPos);

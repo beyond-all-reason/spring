@@ -303,19 +303,26 @@ void CCamera::LoadViewport() const
 void CCamera::UpdateViewRange()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if 0
-	// horizon-probe direction
-	const float3 hpPixelDir = (forward * XZVector + UpVector * -0.01f).Normalize();
 
-	const float3 tlPixelDir = CalcPixelDir(                         0,                          0);
-	const float3 trPixelDir = CalcPixelDir(globalRendering->viewSizeX,                          0);
-	const float3 brPixelDir = CalcPixelDir(globalRendering->viewSizeX, globalRendering->viewSizeY);
-	const float3 blPixelDir = CalcPixelDir(                         0, globalRendering->viewSizeY);
-	#endif
+	/*
+	const auto& worldBounds = game->GetWorldBounds();
+	for (const auto& corner : worldBounds.GetCorners()) {
+		const float zValue = (viewMatrix * corner).z;
+		minMax.x = std::min(minMax.x, zValue);
+		minMax.y = std::max(minMax.y, zValue);
+	}
 
-	#if 0
-	constexpr float SQ_MAX_VIEW_RANGE = Square(CGlobalRendering::MAX_VIEW_RANGE);
-	#endif
+	// this is super precise but the view range is not enough to
+	// capture extended effects like endless ocean (which can be detected)
+	// or Lua map extension plates (which the engine has no idea about)
+	//
+	// glEnable(GL_DEPTH_CLAMP) is a nice solution, but makes distant areas
+	// flicker due to z-fighting
+
+	frustum.scales.w = std::min(-minMax.x, globalRendering->maxViewRange);
+	frustum.scales.z = std::max(-minMax.y, globalRendering->minViewRange);
+	*/
+
 	constexpr float ZFAR_ZNEAR_FACTOR = 0.001f;
 
 	const float maxEdgeDistX = std::max(pos.x, float3::maxxpos - pos.x);
@@ -325,26 +332,12 @@ void CCamera::UpdateViewRange()
 
 	float wantedViewRange = 0.0f;
 
-	#if 0
-	// only pick horizon probe-dir if between bottom and top planes
-	if (hpPixelDir.y >= (blPixelDir.y + brPixelDir.y) * 0.5f && hpPixelDir.y <= (tlPixelDir.y + trPixelDir.y) * 0.5f)
-		wantedViewRange = CGround::LinePlaneCol(pos, hpPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight);
-	#endif
-
 	// camera-height dependence (i.e. TAB-view)
 	wantedViewRange = std::max(wantedViewRange, (pos.y - std::max(0.0f, mapMinHeight)) * 2.0f);
 	// view-angle dependence (i.e. FPS-view)
 	// forward normally points down, so 1-min(0, dot(f,u))
 	// will be >= 1 and increase the effective maxEdgeDist
 	wantedViewRange = std::max(wantedViewRange, (1.0f - std::min(0.0f, forward.dot(UpVector))) * maxEdgeDist);
-
-	#if 0
-	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, tlPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, trPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, brPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, blPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = std::clamp(wantedViewRange, CGlobalRendering::MIN_ZNEAR_DIST, CGlobalRendering::MAX_VIEW_RANGE);
-	#endif
 
 	frustum.scales.z = std::max(wantedViewRange * ZFAR_ZNEAR_FACTOR, globalRendering->minViewRange);
 	frustum.scales.w = std::min(wantedViewRange                    , globalRendering->maxViewRange);
