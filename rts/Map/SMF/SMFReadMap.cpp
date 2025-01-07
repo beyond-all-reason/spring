@@ -43,9 +43,6 @@ CONFIG(float, SSMFTexAniso).defaultValue(4.0f).minimumValue(0.0f);
 
 CSMFMapFile CSMFReadMap::mapFile;
 
-std::vector<float> CSMFReadMap::cornerHeightMapSynced;
-std::vector<float> CSMFReadMap::cornerHeightMapUnsynced;
-
 std::vector<unsigned char> CSMFReadMap::shadingTexBuffer;
 std::vector<unsigned char> CSMFReadMap::waterHeightColors;
 
@@ -130,18 +127,20 @@ void CSMFReadMap::LoadHeightMap()
 	RECOIL_DETAILED_TRACY_ZONE;
 	const SMFHeader& header = mapFile.GetHeader();
 
-	cornerHeightMapSynced.clear();
-	cornerHeightMapSynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1)); //mapDims.mapxp1, mapDims.mapyp1 are not available here
+	// TODO: move
+	for (int i = 0; i < cornerHeightMapSyncedLods.size(); i++) {
+		cornerHeightMapSyncedLods[i].clear();
+		cornerHeightMapSyncedLods[i].resize(((mapDims.mapx >> i) + 1) * ((mapDims.mapy >> i) + 1));
+	}
+
+	// TODO: move
 	cornerHeightMapUnsynced.clear();
 	cornerHeightMapUnsynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1));
-
-	heightMapSyncedPtr   = &cornerHeightMapSynced;
-	heightMapUnsyncedPtr = &cornerHeightMapUnsynced;
 
 	const float minHgt = mapInfo->smf.minHeightOverride ? mapInfo->smf.minHeight : header.minHeight;
 	const float maxHgt = mapInfo->smf.maxHeightOverride ? mapInfo->smf.maxHeight : header.maxHeight;
 
-	float* cornerHeightMapSyncedData = cornerHeightMapSynced.data();
+	float* cornerHeightMapSyncedData = cornerHeightMapSyncedLods[0].data();
 	float* cornerHeightMapUnsyncedData = cornerHeightMapUnsynced.data();
 
 	// FIXME:
@@ -149,6 +148,8 @@ void CSMFReadMap::LoadHeightMap()
 	//     PushVisibleHeightMapUpdate --> (next UpdateDraw) UpdateHeightMapUnsynced(0, 0, mapDims.mapx, mapDims.mapy)
 	//     initializes the UHM a second time
 	//     merge them some way so UHM & shadingtex is available from the time readMap got created
+
+	// TODO: remove uHeightMap nonsense
 	mapFile.ReadHeightmap(cornerHeightMapSyncedData, cornerHeightMapUnsyncedData, minHgt, (maxHgt - minHgt) / 65536.0f);
 }
 
@@ -436,14 +437,14 @@ void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 			const int idx0 = (z * mapDims.mapxp1 + (update.x1    ));
 			const int idx1 = (z * mapDims.mapxp1 + (update.x2 + 1));
 			std::copy(
-				cornerHeightMapSynced.begin() + idx0,
-				cornerHeightMapSynced.begin() + idx1,
+				cornerHeightMapSyncedLods[0].begin() + idx0,
+				cornerHeightMapSyncedLods[0].begin() + idx1,
 				cornerHeightMapUnsynced.begin() + idx0
 			);
 		}
 	}
 
-	const auto& shm = cornerHeightMapSynced;
+	const auto& shm = cornerHeightMapSyncedLods[0];
 	auto& vvn = visVertexNormals;
 
 	const int W = mapDims.mapxp1;
@@ -545,7 +546,7 @@ void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 
 	const auto& sfn = faceNormalsSynced;
 	      auto& ufn = faceNormalsUnsynced;
-	const auto& scn = centerNormalsSynced;
+	const auto& scn = centerNormalsSyncedLods[0];
 	      auto& ucn = centerNormalsUnsynced;
 
 	const float* heightmapUnsynced = GetCornerHeightMapUnsynced();
