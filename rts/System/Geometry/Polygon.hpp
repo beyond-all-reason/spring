@@ -8,7 +8,7 @@
 
 #include "System/float4.h"
 
-namespace ConvexHull {
+namespace Geometry {
 	class Allocator {
 	public:
 		Allocator();
