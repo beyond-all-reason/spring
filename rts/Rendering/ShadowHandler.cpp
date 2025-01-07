@@ -32,10 +32,22 @@
 
 #include "lib/fmt/format.h"
 
-CONFIG(int, Shadows).defaultValue(2).headlessValue(-1).minimumValue(-1).safemodeValue(-1).description("Sets whether shadows are rendered.\n-1:=forceoff, 0:=off, 1:=full, 2:=fast (skip terrain)"); //FIXME document bitmask
-CONFIG(int, ShadowMapSize).defaultValue(CShadowHandler::DEF_SHADOWMAP_SIZE).minimumValue(32).description("Sets the resolution of shadows. Higher numbers increase quality at the cost of performance.");
-CONFIG(int, ShadowProjectionMode).defaultValue(CShadowHandler::SHADOWPROMODE_CAM_CENTER);
-CONFIG(bool, ShadowColorMode).defaultValue(true).description("Whether the colorbuffer of shadowmap FBO is RGB vs greyscale(to conserve some VRAM)");
+CONFIG(int, Shadows).defaultValue(2).headlessValue(-1).minimumValue(-1).safemodeValue(-1).description(R"(
+Sets whether shadows are rendered.
+Use numbers:
+	-1:=forceoff, 0:=off, 1:=full
+Or use bitmask combination to disable particular parts of shadows rendering:
+	2:=shadows for terrain, 4:=shadows for solid models, 8:=semitransparent shadows for particles, 16:=grass
+)");
+
+CONFIG(int, ShadowMapSize)
+	.defaultValue(CShadowHandler::DEF_SHADOWMAP_SIZE)
+	.minimumValue(CShadowHandler::MIN_SHADOWMAP_SIZE)
+	.maximumValue(CShadowHandler::MAX_SHADOWMAP_SIZE)
+	.description("Sets the resolution of shadows. Higher numbers increase quality at the cost of performance.");
+
+CONFIG(int, ShadowProjectionMode).deprecated(true);
+CONFIG(bool, ShadowColorMode).deprecated(true);
 
 CShadowHandler shadowHandler;
 
@@ -43,20 +55,16 @@ void CShadowHandler::Reload(const char* argv)
 {
 	int nextShadowConfig = (shadowConfig + 1) & 0xF;
 	int nextShadowMapSize = shadowMapSize;
-	int nextShadowProMode = shadowProMode;
-	int nextShadowColorMode = shadowColorMode;
 
 	if (argv != nullptr)
-		(void) sscanf(argv, "%i %i %i %i", &nextShadowConfig, &nextShadowMapSize, &nextShadowProMode, &nextShadowColorMode);
+		(void) sscanf(argv, "%i %i", &nextShadowConfig, &nextShadowMapSize);
 
 	// do nothing without a parameter change
-	if (nextShadowConfig == shadowConfig && nextShadowMapSize == shadowMapSize && nextShadowProMode == shadowProMode && nextShadowColorMode == shadowColorMode)
+	if (nextShadowConfig == shadowConfig && nextShadowMapSize == shadowMapSize)
 		return;
 
 	configHandler->Set("Shadows", nextShadowConfig & 0xF);
-	configHandler->Set("ShadowMapSize", std::clamp(nextShadowMapSize, int(MIN_SHADOWMAP_SIZE), int(MAX_SHADOWMAP_SIZE)));
-	configHandler->Set("ShadowProjectionMode", std::clamp(nextShadowProMode, int(SHADOWPROMODE_MAP_CENTER), int(SHADOWPROMODE_MIX_CAMMAP)));
-	configHandler->Set("ShadowColorMode", static_cast<bool>(nextShadowColorMode));
+	configHandler->Set("ShadowMapSize", nextShadowMapSize);
 
 	Kill();
 	Init();
@@ -69,10 +77,6 @@ void CShadowHandler::Init()
 
 	shadowConfig  = configHandler->GetInt("Shadows");
 	shadowMapSize = configHandler->GetInt("ShadowMapSize");
-	// disabled; other option usually produces worse resolution
-	shadowProMode = configHandler->GetInt("ShadowProjectionMode");
-	//shadowProMode = SHADOWPROMODE_CAM_CENTER;
-	shadowColorMode = configHandler->GetInt("ShadowColorMode");
 	shadowGenBits = SHADOWGEN_BIT_NONE;
 
 	shadowsLoaded = false;
@@ -447,19 +451,11 @@ bool CShadowHandler::InitFBOAndTextures()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0); //no mips
 		// TODO: Figure out if mips make sense here.
 
-		if (static_cast<bool>(shadowColorMode)) {
-			// seems like GL_RGB8 has enough precision
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, realShTexSize, realShTexSize, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-			static constexpr GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
-			glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+		// seems like GL_RGB8 has enough precision
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, realShTexSize, realShTexSize, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+		static constexpr GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 
-		}
-		else {
-			// Conserve VRAM
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, realShTexSize, realShTexSize, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-			static constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
-			glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-		}
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// Mesa complains about an incomplete FBO if calling Bind before TexImage (?)

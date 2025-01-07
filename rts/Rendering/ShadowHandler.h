@@ -44,11 +44,6 @@ public:
 		SHADOWGEN_BIT_PROJ  = 8,
 		SHADOWGEN_BIT_TREE  = 16,
 	};
-	enum ShadowProjectionMode {
-		SHADOWPROMODE_MAP_CENTER = 0, // use center of map-geometry as projection target (constant res.)
-		SHADOWPROMODE_CAM_CENTER = 1, // use center of camera-frustum as projection target (variable res.)
-		SHADOWPROMODE_MIX_CAMMAP = 2, // use whichever mode maximizes resolution this frame
-	};
 	enum ShadowMapSizes {
 		MIN_SHADOWMAP_SIZE =   512,
 		DEF_SHADOWMAP_SIZE =  2048,
@@ -101,9 +96,6 @@ public:
 	int shadowConfig;
 	int shadowMapSize;
 	int shadowGenBits;
-	int shadowProMode;
-	int shadowColorMode;
-
 private:
 	bool shadowsLoaded = false;
 	bool inShadowPass = false;
