@@ -3344,6 +3344,32 @@ string CLuaHandle::GetTooltip(int x, int y)
 
 /*** Called when a command is issued.
  *
+ * @function ActiveCommandChanged
+ * @tparam nil|number cmdID
+ * @tparam nil|number cmdType
+ */
+void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 5, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	if (cmdDesc) {
+		lua_pushnumber(L, cmdDesc->id);
+		lua_pushnumber(L, cmdDesc->type);
+
+		// call the function
+		RunCallIn(L, cmdStr, 2, 0);
+	} else {
+		RunCallIn(L, cmdStr, 0, 0);
+	}
+}
+
+/*** Called when a command is issued.
+ *
  * @function CommandNotify
  * @int cmdID
  * @tparam table cmdParams
