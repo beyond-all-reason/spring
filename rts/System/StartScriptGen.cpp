@@ -9,8 +9,6 @@
 #include "System/Log/ILog.h"
 
 
-CONFIG(bool, NoHelperAIs).defaultValue(false);
-
 namespace StartScriptGen {
 
 //////////////////////////////////////////////////////////////////////////////
@@ -26,18 +24,14 @@ namespace StartScriptGen {
 	* @param map resolved name of the map
 	* @return a minimal config section containing general required fields
 	*/
-TdfParser::TdfSection CreateMinmalSetupSections(const std::string& map, const std::string& game) {
+void CreateMinimalSetupSections(TdfParser::TdfSection& setup, const std::string& map, const std::string& game) {
 	const std::string playername = configHandler->GetString("name");
-	TdfParser::TdfSection setup;
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
 	g->add_name_value("Mapname", map);
 	g->add_name_value("Gametype", game);
 
 	g->AddPair("IsHost", 1);
 	g->add_name_value("MyPlayerName", playername);
-
-	// we do not need to set any modoptions here (yet), but we still create the section in the script for later
-	g->construct_subsection("MODOPTIONS");
 
 	TdfParser::TdfSection* player0 = g->construct_subsection("PLAYER0");
 	player0->add_name_value("Name", playername);
@@ -49,13 +43,13 @@ TdfParser::TdfSection CreateMinmalSetupSections(const std::string& map, const st
 
 	TdfParser::TdfSection* ally0 = g->construct_subsection("ALLYTEAM0");
 	ally0->AddPair("NumAllies", 0);
-	return setup;
 }
 
 std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 {
-	TdfParser::TdfSection setup 
-		= CreateMinmalSetupSections(ArchiveNameResolver::GetMap(map), ArchiveNameResolver::GetGame(game));	
+	TdfParser::TdfSection setup;
+	CreateMinimalSetupSections(setup, ArchiveNameResolver::GetMap(map), ArchiveNameResolver::GetGame(game));
+	// section already present, using this method to get acces to GAME section
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
 	TdfParser::TdfSection* modopts = g->construct_subsection("MODOPTIONS");
 	modopts->AddPair("MinimalSetup", 1); //use for ingame detecting this type of start
@@ -70,7 +64,9 @@ std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 std::string CreateDefaultSetup(const std::string& map, const std::string& game, const std::string& ai,
 			const std::string& playername)
 {
-	TdfParser::TdfSection setup = CreateMinmalSetupSections(map, game);	
+	TdfParser::TdfSection setup;
+	CreateMinimalSetupSections(setup, map, game);
+	// section already present, using this method to get acces to GAME section
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
 	
 
