@@ -156,7 +156,7 @@ bool CKeySet::Parse(const std::string& token, bool showerror)
 
 	// parse the modifiers
 	while (!s.empty()) {
-		if (ParseModifier(s, "up+",    "u+")) { LOG_L(L_WARNING, "KeySet: Up modifier is deprecated"); } else
+		if (ParseModifier(s, "up+",    "u+")) { LOG_L(L_DEPRECATED, "KeySet: Up modifier is deprecated"); } else
 		if (ParseModifier(s, "any+",   "*+")) { modifiers |= KS_ANYMOD; } else
 		if (ParseModifier(s, "alt+",   "a+")) { modifiers |= KS_ALT; } else
 		if (ParseModifier(s, "ctrl+",  "c+")) { modifiers |= KS_CTRL; } else

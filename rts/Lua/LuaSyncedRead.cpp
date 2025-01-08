@@ -6130,7 +6130,7 @@ int LuaSyncedRead::GetUnitCommands(lua_State* L)
 	} else {
 		static bool deprecatedMsgDone = false;
 		if (!deprecatedMsgDone) {
-			LOG_L(L_WARNING, "Getting the command count using GetUnitCommands/GetCommandQueue is deprecated. Please use Spring.GetUnitCommandCount instead.");
+			LOG_L(L_DEPRECATED, "Getting the command count using GetUnitCommands/GetCommandQueue is deprecated. Please use Spring.GetUnitCommandCount instead.");
 			deprecatedMsgDone = true;
 		}
 		// *get just wants the queue's size

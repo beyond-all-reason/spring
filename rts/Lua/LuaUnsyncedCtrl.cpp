@@ -2438,7 +2438,7 @@ int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
 {
 	static bool deprecatedMsgDone = false;
 	if (!deprecatedMsgDone) {
-		LOG_L(L_WARNING, "Spring.UnitIconSetDraw is deprecated. Please use Spring.SetUnitIconDraw instead.");
+		LOG_L(L_DEPRECATED, "Spring.UnitIconSetDraw is deprecated. Please use Spring.SetUnitIconDraw instead.");
 		deprecatedMsgDone = true;
 	}
 	return LuaUnsyncedCtrl::SetUnitIconDraw(L);
