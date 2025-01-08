@@ -3710,7 +3710,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 		return 0;
 
 	const int args = lua_gettop(L); // number of arguments
-	if ((args < 2) || !lua_isnumber(L, 1) || !lua_isstring(L, 2) || ((args >= 3) && !lua_isnumber(L, 3)))
+	if ((args < 2) || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		luaL_error(L, "Incorrect arguments to ShareResources()");
 
 	const int teamID = lua_toint(L, 1);
@@ -3729,8 +3729,8 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 		return 0;
 	}
 
-	if (args < 3)
-		return 0;
+	if (!lua_isnumber(L, 3))
+		luaL_error(L, "Incorrect third argument to ShareResources() for the specified resource");
 
 	if (type[0] == 'm') {
 		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 0, lua_tofloat(L, 3), 0.0f));
