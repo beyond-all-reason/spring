@@ -10,12 +10,13 @@
  *
  * Aims:
  * - Support a fixed set of severities levels:
- *   * L_DEBUG   : fine-grained information that is most useful to debug
- *   * L_INFO    : same as L_NOTICE just that it is surpressed on RELEASE builds when a non-default logSection is set
- *   * L_NOTICE  : default log level (always outputed)
- *   * L_WARNING : potentially harmful situations
- *   * L_ERROR   : errors that might still allow the application to keep running
- *   * L_FATAL   : very severe errors that will lead the application to abort
+ *   * L_DEBUG      : fine-grained information that is most useful to debug
+ *   * L_INFO       : same as L_NOTICE just that it is surpressed on RELEASE builds when a non-default logSection is set
+ *   * L_NOTICE     : default log level (always outputed)
+ *   * L_DEPRECATED : deprecation messages
+ *   * L_WARNING    : potentially harmful situations
+ *   * L_ERROR      : errors that might still allow the application to keep running
+ *   * L_FATAL      : very severe errors that will lead the application to abort
  *   (the "L_" prefix is required for disambiguation from other symbols)
  * - Support arbitrary sections (strings).
  * - Allow to set the minimum severity level

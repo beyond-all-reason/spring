@@ -506,12 +506,13 @@ int LuaUnsyncedCtrl::Echo(lua_State* L)
  * @string section
  * @tparam ?number|string logLevel
  *   Possible values for logLevel are:
- *    "debug"   | LOG.DEBUG
- *    "info"    | LOG.INFO
- *    "notice"  | LOG.NOTICE (engine default)
- *    "warning" | LOG.WARNING
- *    "error"   | LOG.ERROR
- *    "fatal"   | LOG.FATAL
+ *    "debug"        | LOG.DEBUG
+ *    "info"         | LOG.INFO
+ *    "notice"       | LOG.NOTICE (engine default)
+ *    "deprecated"   | LOG.DEPRECATED
+ *    "warning"      | LOG.WARNING
+ *    "error"        | LOG.ERROR
+ *    "fatal"        | LOG.FATAL
  * @string logMessage1
  * @string[opt] logMessage2
  * @string[opt] logMessagen
