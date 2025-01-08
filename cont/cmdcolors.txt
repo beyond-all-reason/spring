@@ -37,7 +37,18 @@ useQueueIcons     1
 queueIconAlpha    0.5   
 queueIconScale    1.0
 
+// If set to 0, the first order in a unit's drawn queue
+// will have the `start` color defined below emanating
+// from the unit. Subsequent orders use order color.
+// If set to 1, behaviour depends on `useRestartColor`.
 useColorRestarts  1
+
+// If set to 1, every order in a unit's drawn queue will
+// use the `restart` color defined below emanating from the
+// unit's side of the order, the destination will use the
+// color of the order.
+// If set to 0, it always uses the order's color, but the
+// unit's side has alpha multiplied by `restartAlpha`.
 useRestartColor   0
 restartAlpha      1.0
 

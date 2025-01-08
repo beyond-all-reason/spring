@@ -20,10 +20,12 @@ Set(D10 "[0-9]") # matches a decimal digit
 Set(D16 "[0-9a-f]") # matches a (lower-case) hexadecimal digit
 
 # Matches the engine major version part
-# Releases that do NOT preserve sync show a change here (see release branch)
 Set(VERSION_REGEX_MAJOR "${D10}+")
 Set(VERSION_REGEX_MAJOR_MATCH_EXAMPLES "\"83\", \"90\", \"999\"")
 
+# Matches the engine minor version part
+Set(VERSION_REGEX_MINOR "${D10}+")
+Set(VERSION_REGEX_MINOR_MATCH_EXAMPLES "\"83\", \"90\", \"999\"")
 
 # Matches the engine patchSet version part
 # Releases that preserve sync show a change here (see hotfix branch)
@@ -31,7 +33,7 @@ Set(VERSION_REGEX_PATCH "${D10}+")
 Set(VERSION_REGEX_PATCH_MATCH_EXAMPLES "\"0\", \"5\", \"999\"")
 
 # Matches the engine dev version postfix (".1-<#commits>-g<SHA1> <branch>")
-Set(VERSION_REGEX_DEV_POSTFIX "[.]1-(${D10}+)-g(${D16}+) ([^ ]+)")
+Set(VERSION_REGEX_DEV_POSTFIX "-(${D10}+)-g(${D16}+) ([^ ]+)")
 Set(VERSION_REGEX_DEV_POSTFIX_MATCH_EXAMPLES "\".1-13-g1234aaf develop\", \".1-1354-g1234567 release\"")
 
 
@@ -42,7 +44,7 @@ Set(VERSION_REGEX_DEV_POSTFIX_MATCH_EXAMPLES "\".1-13-g1234aaf develop\", \".1-1
 # \\3 : Commits since last release, for example "2302"
 # \\4 : First 7 digits of the current commit's SHA1, for example "6d3a71e"
 # \\5 : Git branch, for example "develop"
-Set(VERSION_REGEX_RELEASE "(${VERSION_REGEX_MAJOR})[.](${VERSION_REGEX_PATCH})")
+Set(VERSION_REGEX_RELEASE "(${VERSION_REGEX_MAJOR})[.](${VERSION_REGEX_MINOR})[.](${VERSION_REGEX_PATCH})")
 Set(VERSION_REGEX_RELEASE_MATCH_EXAMPLES "\"83.0\", \"84.1\"")
 Set(VERSION_REGEX_DEV "${VERSION_REGEX_RELEASE}${VERSION_REGEX_DEV_POSTFIX}")
 Set(VERSION_REGEX_DEV_MATCH_EXAMPLES "\"83.0.1-13-g1234aaf develop\", \"84.1.1-1354-g1234567 release\"")
@@ -55,20 +57,23 @@ Set(VERSION_REGEX_ANY_MATCH_EXAMPLES "83.0" "84.1" "83.0.1-13-g1234aaf develop" 
 # sample version: "83.2.1-2302-g6d3a71e develop"
 # sample output:
 #   - ${varPrefix}_MAJOR     "83"
+#   - ${varPrefix}_MINOR     "1"
 #   - ${varPrefix}_PATCH_SET "2"
 #   - ${varPrefix}_COMMITS   "2302"
 #   - ${varPrefix}_HASH      "6d3a71e"
 #   - ${varPrefix}_BRANCH    "develop"
 Macro    (parse_spring_version varPrefix version)
 	catch_regex_group("${VERSION_REGEX_ANY}" 1 "${varPrefix}_MAJOR"     "${version}")
-	catch_regex_group("${VERSION_REGEX_ANY}" 2 "${varPrefix}_PATCH_SET" "${version}")
-	catch_regex_group("${VERSION_REGEX_DEV}" 3 "${varPrefix}_COMMITS"   "${version}")
-	catch_regex_group("${VERSION_REGEX_DEV}" 4 "${varPrefix}_HASH"      "${version}")
-	catch_regex_group("${VERSION_REGEX_DEV}" 5 "${varPrefix}_BRANCH"    "${version}")
+	catch_regex_group("${VERSION_REGEX_ANY}" 2 "${varPrefix}_MINOR"     "${version}")
+	catch_regex_group("${VERSION_REGEX_ANY}" 3 "${varPrefix}_PATCH_SET" "${version}")
+	catch_regex_group("${VERSION_REGEX_DEV}" 4 "${varPrefix}_COMMITS"   "${version}")
+	catch_regex_group("${VERSION_REGEX_DEV}" 5 "${varPrefix}_HASH"      "${version}")
+	catch_regex_group("${VERSION_REGEX_DEV}" 6 "${varPrefix}_BRANCH"    "${version}")
 EndMacro (parse_spring_version)
 
 Macro    (PrintParsedSpringVersion varPrefix)
 	Message("  major:     ${${varPrefix}_MAJOR}")
+	Message("  minor:     ${${varPrefix}_MINOR}")
 	Message("  patch-set: ${${varPrefix}_PATCH_SET}")
 	Message("  commits:   ${${varPrefix}_COMMITS}")
 	Message("  hash:      ${${varPrefix}_HASH}")
@@ -85,8 +90,8 @@ EndMacro (PrintParsedSpringVersion)
 #   - commits  "2302"
 #   - hash     "6d3a71e"
 # sample output: "0.82.7.1-2302-g6d3a71e"
-Macro    (create_spring_version_string res_var major patchSet commits hash branch)
-	Set(${res_var} "${major}.${patchSet}")
+Macro    (create_spring_version_string res_var major minor patchSet commits hash branch)
+	Set(${res_var} "${major}.${minor}.${patchSet}")
 	If     (NOT "${commits}" STREQUAL "")
 		Set(${res_var} "${${res_var}}-${commits}-g${hash} ${branch}")
 	EndIf  ()

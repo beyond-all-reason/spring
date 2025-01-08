@@ -76,11 +76,6 @@ int toInternalUnitCommandTopic(int aiCmdTopic, const void* sUnitCommandData) {
 			internalUnitCommandTopic = CMD_GUARD;
 			break;
 		}
-		case COMMAND_UNIT_AI_SELECT:
-		{
-			internalUnitCommandTopic = CMD_AISELECT;
-			break;
-		}
 		case COMMAND_UNIT_GROUP_ADD:
 		{
 			internalUnitCommandTopic = CMD_GROUPADD;
@@ -309,11 +304,6 @@ int extractAICommandTopic(const Command* engineCmd, int maxUnits) {
 		case CMD_GUARD:
 		{
 			aiCommandTopic = COMMAND_UNIT_GUARD;
-			break;
-		}
-		case CMD_AISELECT:
-		{
-			aiCommandTopic = COMMAND_UNIT_AI_SELECT;
 			break;
 		}
 		case CMD_GROUPADD:

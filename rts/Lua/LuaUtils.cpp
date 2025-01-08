@@ -32,6 +32,7 @@
 	#define SCOPED_TIMER(x)
 #endif
 
+#include <tracy/TracyLua.hpp>
 
 static const int maxDepth = 16;
 
@@ -529,26 +530,11 @@ int LuaUtils::IsEngineMinVersion(lua_State* L)
 	const int minMinorVer = luaL_optint(L, 2, 0);
 	const int minCommits  = luaL_optint(L, 3, 0);
 
-	if (StringToInt(SpringVersion::GetMajor()) < minMajorVer) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	if (StringToInt(SpringVersion::GetMajor()) == minMajorVer) {
-		if (StringToInt(SpringVersion::GetMinor()) < minMinorVer) {
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		if (StringToInt(SpringVersion::GetCommits()) < minCommits) {
-			lua_pushboolean(L, false);
-			return 1;
-		}
-	}
-
-	lua_pushboolean(L, true);
+	lua_pushboolean(L,
+		std::tuple(StringToInt(SpringVersion::GetMajor()), StringToInt(SpringVersion::GetMinor()), StringToInt(SpringVersion::GetCommits())) >=
+		std::tie(minMajorVer, minMinorVer, minCommits)
+	);
 	return 1;
-
 }
 
 /******************************************************************************/
@@ -980,6 +966,10 @@ static bool ParseCommandOptions(
 		return true;
 	}
 
+	if (lua_isnoneornil(L, idx)) {
+		return true;
+	}
+
 	if (lua_istable(L, idx)) {
 		for (lua_pushnil(L); lua_next(L, idx) != 0; lua_pop(L, 1)) {
 			// "key" = value (table format of CommandNotify)
@@ -1080,8 +1070,8 @@ Command LuaUtils::ParseCommand(lua_State* L, const char* caller, int idIndex)
 
 				cmd.PushParam(lua_tofloat(L, -1));
 			}
-		} else {
-			luaL_error(L, "%s(): bad param (expected table or number)", caller);
+		} else if (!lua_isnoneornil(L, paramTableIdx)) {
+			luaL_error(L, "%s(): bad param (expected table, number or nil)", caller);
 		}
 	}
 
@@ -1124,8 +1114,8 @@ Command LuaUtils::ParseCommandTable(lua_State* L, const char* caller, int tableI
 
 				cmd.PushParam(lua_tofloat(L, -1));
 			}
-		} else {
-			luaL_error(L, "%s(): bad param (expected table or number)", caller);
+		} else if (!lua_isnil(L, -1)) {
+			luaL_error(L, "%s(): bad param (expected table, number or nil)", caller);
 		}
 
 		lua_pop(L, 1);
@@ -1821,3 +1811,49 @@ void LuaUtils::PushAttackerInfo(lua_State* L, const CUnit* const attacker)
 	lua_pushnil(L);
 }
 #endif
+
+
+void LuaUtils::TracyRemoveAlsoExtras(char* script)
+{
+	// tracy's built-in remover; does not handle our local TracyExtra functions
+	tracy::LuaRemove(script);
+
+#ifndef TRACY_ENABLE
+	// Our extras are handled manually below, the same way Tracy does.
+	// Code is on BSD-3 licence, (c) 2017 Bartosz Taudul aka wolfpld
+
+	const auto FindEnd = [] (char *ptr) {
+		unsigned int cnt = 1;
+		while (cnt) {
+			     if (*ptr == '(') ++ cnt;
+			else if (*ptr == ')') -- cnt;
+			++ ptr;
+		}
+		return ptr;
+	};
+
+	const auto Wipe = [&script, FindEnd] (size_t offset) {
+		const auto end = FindEnd(script + offset);
+		memset(script, ' ', end - script);
+		script = end;
+	};
+
+	while (*script) {
+		if (strncmp(script, "tracy.LuaTracyPlot", 18)) {
+			++ script;
+			continue;
+		}
+
+		/* The numbers are (sub)string lengths. Perhaps there could be
+		 * system to magically generate optimal searches from a set of
+		 * strings with long common prefixes, but for now it's manual.
+		 * Keep upstreamability in mind though (that's why strcmp). */
+		if (!strncmp(script + 18, "Config(", 7))
+			Wipe(18 + 7);
+		else if (!strncmp(script + 18, "(", 1))
+			Wipe(18 + 1);
+		else
+			script += 18;
+	}
+#endif
+}

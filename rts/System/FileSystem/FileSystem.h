@@ -127,6 +127,7 @@ public:
 
 	static const std::string& GetCacheBaseDir();
 	static const std::string& GetCacheDir();
+	static const std::string& GetOldCacheDir();
 };
 
 #endif // !FILE_SYSTEM_H

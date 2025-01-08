@@ -308,6 +308,35 @@ void RmlGui::OnContextDestroy(Rml::Context* context)
 	state->contexts.erase(std::ranges::find(state->contexts, context));
 }
 
+Rml::Context* RmlGui::GetOrCreateContext(const std::string& name)
+{
+	if (!RmlInitialized()) {
+		return nullptr;
+	}
+	
+	Rml::Context* context = Rml::GetContext(name);
+	if (context == nullptr) {
+		context = Rml::CreateContext(name, {0, 0});
+	} else {
+		// can happen if name reused on the same frame
+		state->contexts_to_remove.erase(context);
+	}
+	
+	return context;
+}
+
+Rml::Context* RmlGui::GetContext(const std::string& name) {
+	if (!RmlInitialized()) {
+		return nullptr;
+	}
+
+	Rml::Context* context = Rml::GetContext(name);
+	if (context != nullptr && !state->contexts_to_remove.contains(context)) {
+		return context;
+	}
+	return nullptr;
+}
+
 void RmlGui::MarkContextForRemoval(Rml::Context *context) {
 	if (!RmlInitialized() || context == nullptr) {
 		return;
@@ -326,16 +355,14 @@ void RmlGui::Update()
 	for (const auto& context : state->contexts) {
 		context->Update();
 	}
-
+	
+	// move clicked context to top
 	if (state->clicked_context) {
-		auto context_pos = std::ranges::find(state->contexts, state->clicked_context);
-		if (context_pos != state->contexts.end()) {
-			// debug context is always to be on top
-			auto start = state->contexts.begin() + (state->debug_host_context ? 1 : 0);
-			if (context_pos != start) {
-				state->contexts.erase(context_pos);
-				state->contexts.insert(start, state->clicked_context);
-			}
+		// debug context is always to be at index 0 so it renders on top
+		auto start = state->contexts.begin() + (state->debug_host_context ? 1 : 0);
+		auto context_pos = std::ranges::find(start, state->contexts.end(), state->clicked_context);
+		if (context_pos != start && context_pos != state->contexts.end()) {
+			std::ranges::rotate(start, context_pos, context_pos + 1);
 		}
 		state->clicked_context = nullptr;
 	}

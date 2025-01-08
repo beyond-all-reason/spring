@@ -14,6 +14,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
+#include "Sim/Misc/ResourceHandler.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
 #include "Sim/Units/Unit.h"
@@ -25,9 +26,10 @@
 #include "System/StringUtil.h"
 
 #include "System/Misc/TracyDefs.h"
+#include <format>
 
 
-CONFIG(std::string, TooltipGeometry).defaultValue("0.0 0.0 0.41 0.1");
+CONFIG(std::string, TooltipGeometry).defaultValue("0.0 0.125 0.41 0.1");
 CONFIG(bool, TooltipOutlineFont).defaultValue(true).headlessValue(false);
 
 CTooltipConsole* tooltip = NULL;
@@ -116,18 +118,18 @@ bool CTooltipConsole::IsAbove(int x, int y)
 
 
 static void GetDecoyResources(const CUnit* unit,
-                              float& mMake, float& mUse,
-                              float& eMake, float& eUse)
+                              SResourcePack& make,
+                              SResourcePack& use)
 {
-	mMake = mUse = eMake = eUse = 0.0f;
+	make = use = 0.0f;
+
 	const UnitDef* rd = unit->unitDef;;
 	const UnitDef* ud = rd->decoyDef;
 	if (ud == nullptr)
 		return;
 
-	mMake += ud->resourceMake.metal;
-	eMake += ud->resourceMake.energy;
-	eMake += (ud->tidalGenerator * envResHandler.GetCurrentTidalStrength() * (ud->tidalGenerator > 0.0f));
+	make += ud->resourceMake;
+	make.energy += (ud->tidalGenerator * envResHandler.GetCurrentTidalStrength() * (ud->tidalGenerator > 0.0f));
 
 	bool active = ud->activateWhenBuilt;
 	if (rd->onoffable && ud->onoffable) {
@@ -135,22 +137,21 @@ static void GetDecoyResources(const CUnit* unit,
 	}
 
 	if (active) {
-		mMake += ud->makesMetal;
+		make.metal += ud->makesMetal;
 		if (ud->extractsMetal > 0.0f) {
 			if (rd->extractsMetal > 0.0f) {
-				mMake += unit->metalExtract * (ud->extractsMetal / rd->extractsMetal);
+				make.metal += unit->metalExtract * (ud->extractsMetal / rd->extractsMetal);
 			}
 		}
-		mUse += ud->upkeep.metal;
+		use += ud->upkeep;
 
 		if (ud->windGenerator > 0.0f) {
 			if (envResHandler.GetCurrentWindStrength() > ud->windGenerator) {
-				eMake += ud->windGenerator;
+				make.energy += ud->windGenerator;
 			} else {
-				eMake += envResHandler.GetCurrentWindStrength();
+				make.energy += envResHandler.GetCurrentWindStrength();
 			}
 		}
-		eUse += ud->upkeep.energy;
 	}
 }
 
@@ -211,37 +212,26 @@ std::string CTooltipConsole::MakeUnitStatsString(const SUnitStats& stats)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	string s;
-	s.resize(512);
-	size_t charsPrinted = 0;
+	s.reserve(512);
 
-	charsPrinted += SNPRINTF(&s[charsPrinted], 512 - charsPrinted, "\nHealth %.0f/%.0f", stats.health, stats.maxHealth);
-	charsPrinted = std::min<size_t>(512, charsPrinted);
+	s += std::format
+		( "\nHealth {:.0f}/{:.0f}"
+		  "\nExperience {:.2f} Cost {:.0f} Range {:.0f}"
+		, stats.health, stats.maxHealth
+		, stats.experience, stats.cost, stats.maxRange
+	);
 
-	if (stats.harvestMetalMax > 0.0f || stats.harvestEnergyMax > 0.0f) {
-		charsPrinted += SNPRINTF(&s[charsPrinted], 512 - charsPrinted,
-			"\nExperience %.2f Cost %.0f Range %.0f\n"
-			BLUE "Metal: "  GREEN "%.1f" GREY "/" RED "-%.1f"
-			GREY " ("  GREEN "%.1f" GREY "/" BLUE "%.1f" GREY ") "
-			BLUE "Energy: " GREEN "%.1f" GREY "/" RED "-%.1f"
-			GREY " ("  GREEN "%.1f" GREY "/" BLUE "%.1f" GREY ")\x08",
-			stats.experience, stats.cost, stats.maxRange,
-			stats.metalMake,     stats.metalUse,
-			stats.harvestMetal,  stats.harvestMetalMax,
-			stats.energyMake,    stats.energyUse,
-			stats.harvestEnergy, stats.harvestEnergyMax);
-		charsPrinted = std::min<size_t>(512, charsPrinted);
-	} else {
-		charsPrinted += SNPRINTF(&s[charsPrinted], 512 - charsPrinted,
-			"\nExperience %.2f Cost %.0f Range %.0f\n"
-			BLUE "Metal: "  GREEN "%.1f" GREY "/" RED "-%.1f "
-			BLUE "Energy: " GREEN "%.1f" GREY "/" RED "-%.1f\x08",
-			stats.experience, stats.cost, stats.maxRange,
-			stats.metalMake,  stats.metalUse,
-			stats.energyMake, stats.energyUse);
-		charsPrinted = std::min<size_t>(512, charsPrinted);
+	for (int i = 0; i < SResourcePack::MAX_RESOURCES; ++i) {
+		s += std::format("\n" BLUE "{}: " GREEN "+{:.1f}" GREY "/" RED "-{:.1f}"
+			, resourceHandler->GetResource(i)->name, stats.resourceMake[i], stats.resourceUse[i]
+		);
+		if (stats.resourceHarvestMax[i] > 0.0f) {
+			s += std::format(GREY " (" GREEN "{:.1f}" GREY "/" BLUE "{:.1f}" GREY ")"
+				, stats.resourceHarvest[i], stats.resourceHarvestMax[i]
+			);
+		}
 	}
-
-	s.resize(charsPrinted);
+	s += '\x08';
 	return s;
 }
 
@@ -314,14 +304,10 @@ SUnitStats::SUnitStats()
 , experience(0.0f)
 , cost(0.0f)
 , maxRange(0.0f)
-, metalMake(0.0f)
-, metalUse(0.0f)
-, energyMake(0.0f)
-, energyUse(0.0f)
-, harvestMetal(0.0f)
-, harvestMetalMax(0.0f)
-, harvestEnergy(0.0f)
-, harvestEnergyMax(0.0f)
+, resourceMake(0.0f)
+, resourceUse(0.0f)
+, resourceHarvest(0.0f)
+, resourceHarvestMax(0.0f)
 , count(0)
 {}
 
@@ -339,33 +325,25 @@ void SUnitStats::AddUnit(const CUnit* unit, bool enemy)
 		experience        = (experience * (count - 1) + unit->experience) / count; // average xp
 		cost             += unit->cost.metal + (unit->cost.energy / 60.0f);
 		maxRange          = std::max(maxRange, unit->maxRange);
-		metalMake        += unit->resourcesMake.metal;
-		metalUse         += unit->resourcesUse.metal;
-		energyMake       += unit->resourcesMake.energy;
-		energyUse        += unit->resourcesUse.energy;
-		harvestMetal     += unit->harvested.metal;
-		harvestMetalMax  += unit->harvestStorage.metal;
-		harvestEnergy    += unit->harvested.energy;
-		harvestEnergyMax += unit->harvestStorage.energy;
+		resourceMake     += unit->resourcesMake;
+		resourceUse      += unit->resourcesUse;
+		resourceHarvest  += unit->harvested;
+		resourceHarvestMax += unit->harvestStorage;
 	} else {
 		// display adjusted decoy stats
 		const float healthScale = (decoyDef->health / unit->unitDef->health);
 
-		float metalMake_, metalUse_, energyMake_, energyUse_;
-		GetDecoyResources(unit, metalMake_, metalUse_, energyMake_, energyUse_);
+		SResourcePack make_, use_;
+		GetDecoyResources(unit, make_, use_);
 
 		health           += unit->health * healthScale;
 		maxHealth        += unit->maxHealth * healthScale;
 		experience        = (experience * (count - 1) + unit->experience) / count;
 		cost             += decoyDef->cost.metal + (decoyDef->cost.energy / 60.0f);
 		maxRange          = std::max(maxRange, decoyDef->maxWeaponRange);
-		metalMake        += metalMake_;
-		metalUse         += metalUse_;
-		energyMake       += energyMake_;
-		energyUse        += energyUse_;
-		//harvestMetal     += unit->harvested.metal;
-		//harvestMetalMax  += unit->harvestStorage.metal;
-		//harvestEnergy    += unit->harvested.energy;
-		//harvestEnergyMax += unit->harvestStorage.energy;
+		resourceMake     += make_;
+		resourceUse      += use_;
+		//resourceHarvest    += unit->harvested;
+		//resourceHarvestMax += unit->harvestStorage;
 	}
 }
