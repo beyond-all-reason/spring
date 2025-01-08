@@ -17,8 +17,8 @@
 #define LOG_LEVEL_DEBUG      20
 #define LOG_LEVEL_INFO       30
 #define LOG_LEVEL_NOTICE     35
-#define LOG_LEVEL_DEPRECATED 40
-#define LOG_LEVEL_WARNING    45
+#define LOG_LEVEL_DEPRECATED 37
+#define LOG_LEVEL_WARNING    40
 #define LOG_LEVEL_ERROR      50
 #define LOG_LEVEL_FATAL      60
 
