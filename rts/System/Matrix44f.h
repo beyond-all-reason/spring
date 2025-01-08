@@ -147,8 +147,7 @@ public:
 		return m;
 	}
 	static CMatrix44f ClipControl(bool enabled) {
-		static constexpr std::array cc = {0.0f, 1.0f};
-		return (ClipControl(cc[enabled]));
+		return (ClipControl(static_cast<float>(enabled)));
 	}
 	static CMatrix44f LookAtView(const float3& eye, const float3& center, const float3& up = UpVector);
 	static CMatrix44f LookAtView(const float3& eye, const float3& center, const float roll = 0.0f) { return LookAtView(eye, center, float3{std::sin(roll), std::cos(roll), 0.0}); }

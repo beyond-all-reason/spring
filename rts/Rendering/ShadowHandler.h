@@ -21,7 +21,7 @@ class CShadowHandler
 {
 public:
 	CShadowHandler()
-		:smOpaqFBO(true)
+		:shadowsFBO(true)
 	{}
 
 	void Init();
@@ -121,7 +121,7 @@ private:
 	uint32_t shadowDepthTexture;
 	uint32_t shadowColorTexture;
 
-	FBO smOpaqFBO;
+	FBO shadowsFBO;
 
 	/// xmid, ymid, p17, p18
 	static constexpr float4 shadowTexProjCenter = {

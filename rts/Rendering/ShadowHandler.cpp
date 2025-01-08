@@ -19,6 +19,7 @@
 #include "Rendering/Env/ISky.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/GL/SubState.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/GL/RenderBuffers.h"
@@ -258,13 +259,13 @@ void CShadowHandler::DrawFrustumDebugMap() const
 }
 
 void CShadowHandler::FreeFBOAndTextures() {
-	if (smOpaqFBO.IsValid()) {
-		smOpaqFBO.Bind();
-		smOpaqFBO.DetachAll();
-		smOpaqFBO.Unbind();
+	if (shadowsFBO.IsValid()) {
+		shadowsFBO.Bind();
+		shadowsFBO.DetachAll();
+		shadowsFBO.Unbind();
 	}
 
-	smOpaqFBO.Kill();
+	shadowsFBO.Kill();
 
 	glDeleteTextures(1, &shadowDepthTexture); shadowDepthTexture = 0;
 	glDeleteTextures(1, &shadowColorTexture); shadowColorTexture = 0;
@@ -391,10 +392,10 @@ bool CShadowHandler::InitFBOAndTextures()
 	//create dummy textures / FBO in case shadowConfig is 0
 	const int realShTexSize = shadowConfig > 0 ? shadowMapSize : 1;
 
-	// smOpaqFBO is no-op constructed, has to be initialized manually
-	smOpaqFBO.Init(false);
+	// shadowsFBO is no-op constructed, has to be initialized manually
+	shadowsFBO.Init(false);
 
-	if (!smOpaqFBO.IsValid()) {
+	if (!shadowsFBO.IsValid()) {
 		LOG_L(L_ERROR, "[%s] framebuffer not valid", __func__);
 		return false;
 	}
@@ -414,8 +415,8 @@ bool CShadowHandler::InitFBOAndTextures()
 	bool status = false;
 	for (const auto& preset : presets)
 	{
-		if (FBO::GetCurrentBoundFBO() == smOpaqFBO.GetId())
-			smOpaqFBO.DetachAll();
+		if (FBO::GetCurrentBoundFBO() == shadowsFBO.GetId())
+			shadowsFBO.DetachAll();
 
 		//depth
 		glDeleteTextures(1, &shadowDepthTexture);
@@ -459,15 +460,15 @@ bool CShadowHandler::InitFBOAndTextures()
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// Mesa complains about an incomplete FBO if calling Bind before TexImage (?)
-		smOpaqFBO.Bind();
-		smOpaqFBO.AttachTexture(shadowDepthTexture, GL_TEXTURE_2D, GL_DEPTH_ATTACHMENT);
-		smOpaqFBO.AttachTexture(shadowColorTexture, GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0);
+		shadowsFBO.Bind();
+		shadowsFBO.AttachTexture(shadowDepthTexture, GL_TEXTURE_2D, GL_DEPTH_ATTACHMENT);
+		shadowsFBO.AttachTexture(shadowColorTexture, GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0);
 
 		glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
 
 		// test the FBO
-		status = smOpaqFBO.CheckStatus(preset.name);
+		status = shadowsFBO.CheckStatus(preset.name);
 
 		if (status) //exit on the first occasion
 			break;
@@ -479,7 +480,7 @@ bool CShadowHandler::InitFBOAndTextures()
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	smOpaqFBO.Unbind();
+	shadowsFBO.Unbind();
 
 	// revert to FBO = 0 default
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -491,16 +492,11 @@ void CShadowHandler::DrawShadowPasses()
 {
 	inShadowPass = true;
 
-	glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	glPushAttrib(GL_POLYGON_BIT);
+
+	EnableColorOutput(false);
 
 	eventHandler.DrawWorldShadow();
-
-	EnableColorOutput(true);
-	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	EnableColorOutput(false);
 
 	if ((shadowGenBits & SHADOWGEN_BIT_TREE) != 0) {
 		grassDrawer->DrawShadow();
@@ -628,9 +624,16 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		viewMatrix = camWorldMat.InvertAffine();
 		// viewMatrix position will be added a bit later
 
+		/*
+		// no longer the best way, since the addition of clippedWorldCube, camPos will be too far in the sky
 		AABB worldBoundsLS;
 		for (const auto& cornerPointLS : worldBounds.GetCorners(viewMatrix)) {
 			worldBoundsLS.AddPoint(cornerPointLS);
+		}
+		*/
+		AABB worldBoundsLS;
+		for (const auto& [pnt, _] : clippedWorldCube) {
+			worldBoundsLS.AddPoint(viewMatrix * pnt);
 		}
 
 		bool hit = RayHitsAABB(worldBoundsLS, viewMatrix * projMidPos, float3{ 0, 0, 1 }, &camPos);
@@ -734,22 +737,28 @@ void CShadowHandler::ResetShadowTexSamplerRaw() const
 
 void CShadowHandler::CreateShadows()
 {
+	using namespace GL::State;
+	auto state = GL::SubState(
+		Blending(GL_FALSE),
+		Lighting(GL_FALSE),
+		Texture2D(GL_FALSE),
+		ShadeModel(GL_FLAT),
+		DepthMask(GL_TRUE),
+		DepthTest(GL_TRUE),
+		CullFace(GL_BACK),
+		Culling(GL_TRUE)
+	);
+
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
 	// NOTE:
 	//   we unbind later in WorldDrawer::GenerateIBLTextures() to save render
 	//   context switches (which are one of the slowest OpenGL operations!)
 	//   together with VP restoration
-	smOpaqFBO.Bind();
+	shadowsFBO.Bind();
 
-	glDisable(GL_BLEND);
-	glDisable(GL_LIGHTING);
-	glDisable(GL_ALPHA_TEST);
-	glDisable(GL_TEXTURE_2D);
-
-	glShadeModel(GL_FLAT);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	CCamera* prvCam = CCameraHandler::GetSetActiveCamera(CCamera::CAMTYPE_SHADOW);
 	SetShadowCamera(camera); // shadowCam here
@@ -769,7 +778,7 @@ void CShadowHandler::CreateShadows()
 
 void CShadowHandler::EnableColorOutput(bool enable) const
 {
-	assert(FBO::GetCurrentBoundFBO() == smOpaqFBO.GetId());
+	assert(FBO::GetCurrentBoundFBO() == shadowsFBO.GetId());
 
 	const GLboolean b = static_cast<GLboolean>(enable);
 	glColorMask(b, b, b, GL_FALSE);
