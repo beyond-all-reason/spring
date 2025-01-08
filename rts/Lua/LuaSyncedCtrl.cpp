@@ -5237,8 +5237,8 @@ int LuaSyncedCtrl::SetProjectileCEG(lua_State* L)
  * Used when assigning multiple commands at once
  *
  * @number cmdID
- * @tparam {number,...} params
- * @tparam cmdOpts options
+ * @tparam {number,...}|nil params
+ * @tparam cmdOpts|nil options
  */
 
 
@@ -5267,8 +5267,8 @@ int LuaSyncedCtrl::UnitFinishCommand(lua_State* L)
  * @function Spring.GiveOrderToUnit
  * @number unitID
  * @number cmdID
- * @tparam {number,...} params
- * @tparam cmdOpts options
+ * @tparam {number,...}|nil params
+ * @tparam cmdOpts|nil options
  * @treturn bool unitOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
@@ -5303,8 +5303,8 @@ int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
  * @function Spring.GiveOrderToUnitMap
  * @tparam {[number]=table,...} unitMap table with unitIDs as keys
  * @number cmdID
- * @tparam {number,...} params
- * @tparam cmdOpts options
+ * @tparam {number,...}|nil params
+ * @tparam cmdOpts|nil options
  * @treturn number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
@@ -5346,8 +5346,8 @@ int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
  * @function Spring.GiveOrderToUnitArray
  * @tparam {number,...} unitIDs
  * @number cmdID
- * @tparam {number,...} params
- * @tparam cmdOpts options
+ * @tparam {number,...}|nil params
+ * @tparam cmdOpts|nil options
  * @treturn number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)
