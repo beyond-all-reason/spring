@@ -195,6 +195,7 @@ private:
 	std::vector<CBitmap> atlasGlyphs;
 
 	CRowAtlasAlloc atlasAlloc;
+	spring::unordered_map<std::string, size_t> glyphNameToIdx;
 
 	CBitmap atlasUpdate;
 	CBitmap atlasUpdateShadow;

@@ -209,7 +209,7 @@ void CGroundDecalHandler::AddTexToAtlas(const std::string& name, const std::stri
 	try {
 		const auto& [bm, fn] = LoadTexture(filename, convertOldBMP);
 		const auto& decalAtlas = (mainTex ? atlasMain : atlasNorm);
-		decalAtlas->AddTexFromBitmap(name, bm);
+		decalAtlas->AddTexFromBitmap(name, filename, bm);
 	}
 	catch (const content_error& err) {
 		LOG_L(L_WARNING, "%s", err.what());
@@ -341,11 +341,11 @@ void CGroundDecalHandler::AddFallbackTextures()
 	RECOIL_DETAILED_TRACY_ZONE;
 	{
 		const auto minDim = std::max(atlasMain->GetMinDim(), 32);
-		atlasMain->AddTex("%FB_MAIN%", minDim, minDim, SColor(255,   0,   0, 255));
+		atlasMain->AddTex("%FB_MAIN%", "%FB_MAIN%", minDim, minDim, SColor(255, 0, 0, 255));
 	}
 	{
 		const auto minDim = std::max(atlasNorm->GetMinDim(), 32);
-		atlasNorm->AddTex("%FB_NORM%", minDim, minDim, SColor(128, 128, 255,   0));
+		atlasNorm->AddTex("%FB_NORM%", "%FB_NORM%", minDim, minDim, SColor(128, 128, 255,   0));
 	}
 }
 
