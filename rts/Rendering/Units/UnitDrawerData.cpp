@@ -698,7 +698,7 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 	UpdateUnitIcon(unit, false, false);
 }
 
-void CUnitDrawerData::SetUnitLeavesGhost(const CUnit* unit, const bool leaveDeadGhost)
+void CUnitDrawerData::UnitLeavesGhostChanged(const CUnit* unit, const bool leaveDeadGhost)
 {
 	if (unit->leavesGhost)
 		return;

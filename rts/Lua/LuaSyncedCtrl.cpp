@@ -2869,7 +2869,7 @@ int LuaSyncedCtrl::SetUnitLeavesGhost(lua_State* L)
 	bool prevValue = unit->leavesGhost;
 	unit->SetLeavesGhost(luaL_checkboolean(L, 2));
 	if (prevValue != unit->leavesGhost)
-		unitDrawer->SetUnitLeavesGhost(unit, luaL_optboolean(L, 3, false));
+		unitDrawer->UnitLeavesGhostChanged(unit, luaL_optboolean(L, 3, false));
 	return 0;
 }
 

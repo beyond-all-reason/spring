@@ -65,7 +65,7 @@ public:
 
 	void PlayerChanged(int playerNum) override;
 	bool UpdateUnitGhosts(const CUnit* unit, const bool addNewGhost);
-	void SetUnitLeavesGhost(const CUnit* unit, const bool leaveDeadGhost);
+	void UnitLeavesGhostChanged(const CUnit* unit, const bool leaveDeadGhost);
 public:
 	class TempDrawUnit {
 		CR_DECLARE_STRUCT(TempDrawUnit)
