@@ -1892,7 +1892,7 @@ static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
 {
 	// [m|e]
 	//
-	//         metal | energy
+	// metal | energy
 
 	SResourcePack newStorage = unit->storage;
 
