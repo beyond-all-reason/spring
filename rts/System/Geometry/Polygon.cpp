@@ -218,20 +218,11 @@ bool Geometry::Face::Sanitize()
 		}
 	}
 
+	// and dedup again
+	points.erase(std::unique(points.begin(), points.end(), UniqPred), points.end());
+
 	if (!IsValidFast())
 		return false;
-
-	const float3 u = points[0] - points[1];
-	const float3 v = points[2] - points[1];
-	const float3 n = v.cross(u).UnsafeANormalize();
-	if (GetPlane().dot(n) < 0.0f) {
-		// change the winding to the required
-		std::reverse(points.begin(), points.end());
-
-		const float3 u = points[0] - points[1];
-		const float3 v = points[2] - points[1];
-		const float3 n = v.cross(u).UnsafeANormalize();
-	}
 
 	return IsValid();
 }

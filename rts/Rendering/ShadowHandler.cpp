@@ -601,7 +601,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		allocator.ClearAllocations();
 	}
 
-	float3 camPos;
+	float3 camPosLS;
 	// construct Camera World Matrix & View Matrix
 	{
 		CMatrix44f camWorldMat;
@@ -624,29 +624,18 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		viewMatrix = camWorldMat.InvertAffine();
 		// viewMatrix position will be added a bit later
 
-		/*
-		// no longer the best way, since the addition of clippedWorldCube, camPos will be too far in the sky
 		AABB worldBoundsLS;
 		for (const auto& cornerPointLS : worldBounds.GetCorners(viewMatrix)) {
 			worldBoundsLS.AddPoint(cornerPointLS);
 		}
-		*/
-		AABB worldBoundsLS;
-		for (const auto& [pnt, _] : clippedWorldCube) {
-			worldBoundsLS.AddPoint(viewMatrix * pnt);
-		}
 
-		bool hit = RayHitsAABB(worldBoundsLS, viewMatrix * projMidPos, float3{ 0, 0, 1 }, &camPos);
-
-		// convert back to world-space
-		camPos = camWorldMat * camPos;
+		bool hit = RayHitsAABB(worldBoundsLS, viewMatrix * projMidPos, float3{0,0,1}, &camPosLS);
 
 		// do the camWorldMat.InvertAffine(); for the position part
-		viewMatrix.col[3] = float4{ -xAxis.dot(camPos), -yAxis.dot(camPos), -zAxis.dot(camPos), 1.0f };
-		assert(viewMatrix.col[3].CheckNaNs());
+		//viewMatrix.col[3] = float4{ -xAxis.dot(camPos), -yAxis.dot(camPos), -zAxis.dot(camPos), 1.0f };
+		// same as above
+		viewMatrix.col[3] = float4{ -camPosLS, 1.0f };
 	}
-
-	float camToProjPosDist = camPos.distance(projMidPos);
 
 	lightAABB.Reset();
 
@@ -654,7 +643,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		lightAABB.AddPoint(viewMatrix * p0);
 		lightAABB.AddPoint(viewMatrix * p1);
 	}
-	lightAABB.AddPoint(viewMatrix * playerCam->GetPos());
+	//lightAABB.AddPoint(camPos);
 
 	lightAABB.maxs.z = 0.0f; // @camPos
 
