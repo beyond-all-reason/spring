@@ -168,7 +168,7 @@ public:
 	float seismicSignature;
 	bool stealth;
 	bool sonarStealth;
-	bool leavesRadarGhost;
+	bool leavesGhost;
 
 	bool  buildRange3D;
 	float buildDistance;

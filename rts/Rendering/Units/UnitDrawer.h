@@ -54,7 +54,7 @@ public:
 	static const std::vector<CUnit*>& GetUnsortedUnits() { return modelDrawerData->GetUnsortedObjects(); }
 
 	static void ClearPreviousDrawFlags() { modelDrawerData->ClearPreviousDrawFlags(); }
-	static void SetUnitStaticRadarGhost(const CUnit* unit, const bool leaveDeadGhost) { modelDrawerData->SetUnitStaticRadarGhost(unit, leaveDeadGhost); }
+	static void SetUnitLeavesGhost(const CUnit* unit, const bool leaveDeadGhost) { modelDrawerData->SetUnitLeavesGhost(unit, leaveDeadGhost); }
 public:
 	// DrawUnit*
 	virtual void DrawUnitNoTrans(const CUnit* unit, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall) const = 0;

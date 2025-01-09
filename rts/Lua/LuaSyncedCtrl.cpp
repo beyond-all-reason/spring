@@ -182,7 +182,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitStealth);
 	REGISTER_LUA_CFUNC(SetUnitSonarStealth);
 	REGISTER_LUA_CFUNC(SetUnitSeismicSignature);
-	REGISTER_LUA_CFUNC(SetUnitStaticRadarGhost);
+	REGISTER_LUA_CFUNC(SetUnitLeavesGhost);
 	REGISTER_LUA_CFUNC(SetUnitAlwaysVisible);
 	REGISTER_LUA_CFUNC(SetUnitUseAirLos);
 	REGISTER_LUA_CFUNC(SetUnitMetalExtraction);
@@ -2848,27 +2848,27 @@ int LuaSyncedCtrl::SetUnitSeismicSignature(lua_State* L)
 }
 
 /***
- * @function Spring.SetUnitStaticRadarGhost
+ * @function Spring.SetUnitLeavesGhost
  *
  * Set the radar ghost for the unit to have no drift.
- * Only for units where unitDef has leavesRadarGhost enabled.
+ * Only for units where unitDef has leavesGhost enabled.
  *
  * @number unitID
- * @bool staticRadarGhost
+ * @bool leavesGhost
  * @bool[opt] leaveDeadGhost leave a dead ghost behind if disabling and the unit had a live static ghost.
  * @treturn nil
  */
-int LuaSyncedCtrl::SetUnitStaticRadarGhost(lua_State* L)
+int LuaSyncedCtrl::SetUnitLeavesGhost(lua_State* L)
 {
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
 		return 0;
 
-	bool prevValue = unit->staticRadarGhost;
-	unit->SetStaticRadarGhost(luaL_checkboolean(L, 2));
-	if (prevValue != unit->staticRadarGhost)
-		unitDrawer->SetUnitStaticRadarGhost(unit, luaL_optboolean(L, 3, false));
+	bool prevValue = unit->leavesGhost;
+	unit->SetLeavesGhost(luaL_checkboolean(L, 2));
+	if (prevValue != unit->leavesGhost)
+		unitDrawer->SetUnitLeavesGhost(unit, luaL_optboolean(L, 3, false));
 	return 0;
 }
 

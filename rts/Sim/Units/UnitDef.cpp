@@ -106,7 +106,7 @@ UnitDef::UnitDef()
 	, seismicSignature(0.0f)
 	, stealth(false)
 	, sonarStealth(false)
-	, leavesRadarGhost(false)
+	, leavesGhost(false)
 	, buildRange3D(false)
 	, buildDistance(16.0f) // 16.0f is the minimum distance between two 1x1 units
 	, buildSpeed(0.0f)
@@ -659,7 +659,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	if (IsImmobileUnit())
 		CreateYardMap(udTable.GetString("yardMap", ""));
 
-	leavesRadarGhost   = udTable.GetBool("leavesRadarGhost", IsBuildingUnit());
+	leavesGhost   = udTable.GetBool("leavesGhost", IsBuildingUnit());
 
 	decalDef.Parse(udTable);
 
