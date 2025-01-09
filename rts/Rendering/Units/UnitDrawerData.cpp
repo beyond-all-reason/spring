@@ -256,7 +256,7 @@ const icon::CIconData* CUnitDrawerData::GetUnitIcon(const CUnit* unit)
 	// use the unit's custom icon if we can currently see it,
 	// or have seen it before and did not lose contact since
 	bool unitVisible = ((losStatus & (LOS_INLOS | LOS_INRADAR)) && ((losStatus & prevMask) == prevMask));
-	unitVisible |= gameSetup->ghostedBuildings && unit->leavesGhost && (losStatus & LOS_PREVLOS);
+	unitVisible |= unit->leavesGhost && (losStatus & LOS_PREVLOS);
 	const bool customIcon = (unitVisible || gu->spectatingFullView);
 
 	if (customIcon)
@@ -675,7 +675,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
-	if (gameSetup->ghostedBuildings && unit->leavesGhost)
+	if (unit->leavesGhost)
 		spring::VectorErase(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u);
 
 	if (allyTeam != gu->myAllyTeam)
@@ -689,7 +689,7 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
-	if (gameSetup->ghostedBuildings && unit->leavesGhost)
+	if (unit->leavesGhost)
 		spring::VectorInsertUnique(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u, true);
 
 	if (allyTeam != gu->myAllyTeam)

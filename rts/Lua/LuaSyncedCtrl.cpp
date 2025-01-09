@@ -2861,6 +2861,9 @@ int LuaSyncedCtrl::SetUnitSeismicSignature(lua_State* L)
  */
 int LuaSyncedCtrl::SetUnitLeavesGhost(lua_State* L)
 {
+	if (!gameSetup->ghostedBuildings)
+		return 0;
+
 	CUnit* unit = ParseUnit(L, __func__, 1);
 
 	if (unit == nullptr)
