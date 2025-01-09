@@ -207,6 +207,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitIsStunned);
 	REGISTER_LUA_CFUNC(GetUnitIsBeingBuilt);
 	REGISTER_LUA_CFUNC(GetUnitResources);
+	REGISTER_LUA_CFUNC(GetUnitStorage);
 	REGISTER_LUA_CFUNC(GetUnitCosts);
 	REGISTER_LUA_CFUNC(GetUnitCostTable);
 	REGISTER_LUA_CFUNC(GetUnitMetalExtraction);
@@ -4216,6 +4217,24 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 	lua_pushnumber(L, unit->resourcesMake.energy);
 	lua_pushnumber(L, unit->resourcesUse.energy);
 	return 4;
+}
+
+/***
+ * @function Spring.GetUnitStorage
+ * @number unitID
+ * @treturn number Unit's metal storage
+ * @treturn number Unit's energy storage
+ */
+int LuaSyncedRead::GetUnitStorage(lua_State* L)
+{
+	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->storage.metal);
+	lua_pushnumber(L, unit->storage.energy);
+	return 2;
 }
 
 /***
