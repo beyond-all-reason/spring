@@ -1303,6 +1303,7 @@ bool LuaUtils::PushLogEntries(lua_State* L)
 	PUSH_LOG_LEVEL(DEBUG);
 	PUSH_LOG_LEVEL(INFO);
 	PUSH_LOG_LEVEL(NOTICE);
+	PUSH_LOG_LEVEL(DEPRECATED);
 	PUSH_LOG_LEVEL(WARNING);
 	PUSH_LOG_LEVEL(ERROR);
 	PUSH_LOG_LEVEL(FATAL);
@@ -1315,14 +1316,20 @@ int LuaUtils::ParseLogLevel(lua_State* L, int index)
 		return (lua_tonumber(L, index));
 
 	if (lua_israwstring(L, index)) {
-		switch (lua_tostring(L, index)[0]) {
-			case 'D': case 'd': { return LOG_LEVEL_DEBUG  ; } break;
-			case 'I': case 'i': { return LOG_LEVEL_INFO   ; } break;
-			case 'N': case 'n': { return LOG_LEVEL_NOTICE ; } break;
-			case 'W': case 'w': { return LOG_LEVEL_WARNING; } break;
-			case 'E': case 'e': { return LOG_LEVEL_ERROR  ; } break;
-			case 'F': case 'f': { return LOG_LEVEL_FATAL  ; } break;
-			default           : {                           } break;
+		const char* logLevel = lua_tostring(L, index);
+		switch (logLevel[0]) {
+			case 'D': case 'd': {
+				if (strlen(logLevel) > 2 && (logLevel[2] == 'P' || logLevel[2] == 'p'))
+					return LOG_LEVEL_DEPRECATED;
+				else
+					return LOG_LEVEL_DEBUG;
+			} break;
+			case 'I': case 'i': { return LOG_LEVEL_INFO        ; } break;
+			case 'N': case 'n': { return LOG_LEVEL_NOTICE      ; } break;
+			case 'W': case 'w': { return LOG_LEVEL_WARNING     ; } break;
+			case 'E': case 'e': { return LOG_LEVEL_ERROR       ; } break;
+			case 'F': case 'f': { return LOG_LEVEL_FATAL       ; } break;
+			default           : {                                } break;
 		}
 	}
 

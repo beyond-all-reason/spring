@@ -46,6 +46,8 @@ static void log_sink_record_console(int level, const char* section, const char* 
 	if (colorizedOutput) {
 		if (level >= LOG_LEVEL_ERROR) {
 			fstr = "\033[90m%s\033[31m%s\033[39m\n";
+		} else if (level == LOG_LEVEL_DEPRECATED) {
+			fstr = "\033[90m%s\033[34m%s\033[39m\n";
 		} else if (level >= LOG_LEVEL_WARNING) {
 			fstr = "\033[90m%s\033[33m%s\033[39m\n";
 		} else {
