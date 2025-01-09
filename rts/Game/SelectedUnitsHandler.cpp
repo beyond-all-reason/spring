@@ -491,6 +491,7 @@ void CSelectedUnitsHandler::SelectGroup(int num)
 	}
 
 	if (!selectedUnits.empty()) {
+		// if ClearSelected changed anything then it already set these.
 		selectionChanged = true;
 		possibleCommandsChanged = true;
 	}
