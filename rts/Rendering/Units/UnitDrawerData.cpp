@@ -675,7 +675,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
-	if (gameSetup->ghostedBuildings && unit->unitDef->leavesRadarGhost)
+	if (gameSetup->ghostedBuildings && unit->staticRadarGhost)
 		spring::VectorErase(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u);
 
 	if (allyTeam != gu->myAllyTeam)
