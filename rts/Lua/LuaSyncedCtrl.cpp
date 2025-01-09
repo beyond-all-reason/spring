@@ -2855,6 +2855,7 @@ int LuaSyncedCtrl::SetUnitSeismicSignature(lua_State* L)
  *
  * @number unitID
  * @bool staticRadarGhost
+ * @bool[opt] leaveDeadGhost leave a dead ghost behind if disabling and the unit had a live static ghost.
  * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitStaticRadarGhost(lua_State* L)
@@ -2867,7 +2868,7 @@ int LuaSyncedCtrl::SetUnitStaticRadarGhost(lua_State* L)
 	bool prevValue = unit->staticRadarGhost;
 	unit->SetStaticRadarGhost(luaL_checkboolean(L, 2));
 	if (prevValue != unit->staticRadarGhost)
-		unitDrawer->SetUnitStaticRadarGhost(unit);
+		unitDrawer->SetUnitStaticRadarGhost(unit, luaL_optboolean(L, 3, false));
 	return 0;
 }
 

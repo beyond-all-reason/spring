@@ -698,12 +698,12 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 	UpdateUnitIcon(unit, false, false);
 }
 
-void CUnitDrawerData::SetUnitStaticRadarGhost(const CUnit* unit)
+void CUnitDrawerData::SetUnitStaticRadarGhost(const CUnit* unit, const bool leaveDeadGhost)
 {
 	if (unit->staticRadarGhost)
 		return;
 
-	if (UpdateUnitGhosts(unit, true))
+	if (UpdateUnitGhosts(unit, leaveDeadGhost))
 		UpdateUnitIcon(unit, false, true);
 }
 
