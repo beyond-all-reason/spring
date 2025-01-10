@@ -601,11 +601,9 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		allocator.ClearAllocations();
 	}
 
-	float3 camPosLS;
 	// construct Camera World Matrix & View Matrix
+	CMatrix44f camWorldMat;
 	{
-		CMatrix44f camWorldMat;
-
 		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
 #if 0
 		// align with the world's X axis
@@ -620,12 +618,15 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		camWorldMat.SetY(yAxis);
 		camWorldMat.SetZ(zAxis);
 
+		float3 camPos;
+		bool hit = RayHitsAABB(worldBounds, worldBounds.ClampInto(projMidPos), camWorldMat.GetZ(), camPos);
+		assert(hit);
+
+		camWorldMat.SetPos(camPos);
+
 		// convert camera "world" matrix into camera view matrix
 		// https://www.3dgep.com/understanding-the-view-matrix/
 		viewMatrix = camWorldMat.InvertAffine();
-		// viewMatrix position will be added later
-		// because it's hard to estimate correct camPos here
-		// only rough estimates are possible
 	}
 
 	lightAABB.Reset();

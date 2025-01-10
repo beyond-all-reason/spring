@@ -251,7 +251,7 @@ bool RayHitsSphere(const float4 sphere, const float3 p0, const float3 ray)
 	return px.distance(sphere.xyz) <= sphere.w;
 }
 
-bool RayHitsAABB(const AABB& aabb, const float3& p0, const float3& ray, float3* hitPos)
+bool RayHitsAABB(const AABB& aabb, const float3& p0, const float3& ray, float3& hitPos)
 {
 	float3 t0s = (aabb.mins - p0) / ray;
 	float3 t1s = (aabb.maxs - p0) / ray;
@@ -265,9 +265,7 @@ bool RayHitsAABB(const AABB& aabb, const float3& p0, const float3& ray, float3* 
 	if (tMin >= tMax)
 		return false;
 
-	if (hitPos)
-		*hitPos = p0 + tMax * ray;
-
+	hitPos = p0 + tMax * ray;
 	return true;
 }
 
@@ -283,7 +281,7 @@ bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& p
 		return false;
 
 	const float t = -(plane.dot(p0) + plane.w) / denom;
-	if (t < 0.0f || t > 1.0f)
+	if (t < 0.0f/* || t > 1.0f*/) // we only care abut the case when the intersection is behind p0
 		return false;
 
 	px = p0 + ray * t;

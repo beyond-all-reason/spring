@@ -45,6 +45,8 @@ public:
 		return (n == 3);
 	};
 
+	float3 ClampInto(const float3& pnt) const;
+
 	void CalcCorners(std::array<float3, 8>& verts) const { CalcCorners(CMatrix44f::Identity(), verts); }
 	void CalcCorners(float3 verts[8]) const { CalcCorners(CMatrix44f::Identity(), verts); }
 	void CalcCorners(const CMatrix44f& mat, float3 verts[8]) const {
