@@ -149,6 +149,8 @@ bool Geometry::Face::IsValid() const
 	if (!IsValidFast())
 		return false;
 
+	const auto& plane = GetPlane();
+
 	for (size_t i0 = 0; i0 < points.size() - 1; ++i0) {
 		size_t i1 = (i0 + 1) % points.size();
 		size_t i2 = (i0 + 2) % points.size();
@@ -161,7 +163,7 @@ bool Geometry::Face::IsValid() const
 		const float3 n = v.cross(u).UnsafeANormalize();
 		const float  d = -n.dot(points[i1]);
 
-		if (plane != float4{ n, d })
+		if (plane != n || !epscmp(plane.w, d, 0.01f))
 			return false;
 	}
 

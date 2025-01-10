@@ -608,6 +608,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 
 		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
 #if 0
+		// align with the world's X axis
 		float3 xAxis = float3(1, 0, 0);
 		xAxis = (xAxis - xAxis.dot(zAxis) * zAxis).Normalize();
 #else
@@ -622,28 +623,16 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		// convert camera "world" matrix into camera view matrix
 		// https://www.3dgep.com/understanding-the-view-matrix/
 		viewMatrix = camWorldMat.InvertAffine();
-		// viewMatrix position will be added a bit later
-
-		AABB worldBoundsLS;
-		for (const auto& cornerPointLS : worldBounds.GetCorners(viewMatrix)) {
-			worldBoundsLS.AddPoint(cornerPointLS);
-		}
-
-		bool hit = RayHitsAABB(worldBoundsLS, viewMatrix * projMidPos, float3{0,0,1}, &camPosLS);
-
-		// do the camWorldMat.InvertAffine(); for the position part
-		//viewMatrix.col[3] = float4{ -xAxis.dot(camPos), -yAxis.dot(camPos), -zAxis.dot(camPos), 1.0f };
-		// same as above
-		viewMatrix.col[3] = float4{ -camPosLS, 1.0f };
+		// viewMatrix position will be added later
+		// because it's hard to estimate correct camPos here
+		// only rough estimates are possible
 	}
 
 	lightAABB.Reset();
 
-	for (const auto& [p0, p1] : clippedWorldCube) {
+	for (const auto& [p0, _] : clippedWorldCube) {
 		lightAABB.AddPoint(viewMatrix * p0);
-		lightAABB.AddPoint(viewMatrix * p1);
 	}
-	//lightAABB.AddPoint(camPos);
 
 	lightAABB.maxs.z = 0.0f; // @camPos
 
