@@ -207,6 +207,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitIsStunned);
 	REGISTER_LUA_CFUNC(GetUnitIsBeingBuilt);
 	REGISTER_LUA_CFUNC(GetUnitResources);
+	REGISTER_LUA_CFUNC(GetUnitStorage);
 	REGISTER_LUA_CFUNC(GetUnitCosts);
 	REGISTER_LUA_CFUNC(GetUnitCostTable);
 	REGISTER_LUA_CFUNC(GetUnitMetalExtraction);
@@ -4219,6 +4220,24 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 }
 
 /***
+ * @function Spring.GetUnitStorage
+ * @number unitID
+ * @treturn number Unit's metal storage
+ * @treturn number Unit's energy storage
+ */
+int LuaSyncedRead::GetUnitStorage(lua_State* L)
+{
+	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->storage.metal);
+	lua_pushnumber(L, unit->storage.energy);
+	return 2;
+}
+
+/***
  * @function Spring.GetUnitCosts
  * @number unitID
  * @treturn nil|number buildTime
@@ -6130,7 +6149,7 @@ int LuaSyncedRead::GetUnitCommands(lua_State* L)
 	} else {
 		static bool deprecatedMsgDone = false;
 		if (!deprecatedMsgDone) {
-			LOG_L(L_WARNING, "Getting the command count using GetUnitCommands/GetCommandQueue is deprecated. Please use Spring.GetUnitCommandCount instead.");
+			LOG_L(L_DEPRECATED, "Getting the command count using GetUnitCommands/GetCommandQueue is deprecated. Please use Spring.GetUnitCommandCount instead.");
 			deprecatedMsgDone = true;
 		}
 		// *get just wants the queue's size
