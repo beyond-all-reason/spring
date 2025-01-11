@@ -677,11 +677,8 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		camWorldMat.SetY(yAxis);
 		camWorldMat.SetZ(zAxis);
 
-		float3 camPos;
-		bool hit = RayHitsAABB(worldBounds, worldBounds.ClampInto(projMidPos), camWorldMat.GetZ(), camPos);
-		assert(hit);
-
-		camWorldMat.SetPos(camPos);
+		// set this as camPos temporary
+		camWorldMat.SetPos(projMidPos);
 
 		// convert camera "world" matrix into camera view matrix
 		// https://www.3dgep.com/understanding-the-view-matrix/
@@ -701,19 +698,30 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		float3{ lightAABB.mins.x, lightAABB.maxs.y, 0.0f }
 	};
 
-	float lsExtraZ = 0.0f;
 	for (const auto& pnt : currNearPlaneRect) {
 		float3 hitPnt;
 		if (RayHitsAABB(worldBounds, camWorldMat * pnt, camWorldMat.GetZ(), hitPnt)) {
-			lsExtraZ = std::max(lsExtraZ, camWorldMat.GetZ().dot(camWorldMat.GetPos() - hitPnt));
-			lightAABB.AddPoint(viewMatrix * hitPnt); // expand
+			hitPnt = viewMatrix * hitPnt;
+			lightAABB.mins.z = std::min(lightAABB.mins.z, hitPnt.z);
+			lightAABB.maxs.z = std::max(lightAABB.maxs.z, hitPnt.z);
 		}
 	}
-	viewMatrix.col[3].z -= lsExtraZ; //move camPos futher away
+	for (const auto& cornerLS : worldBounds.GetCorners(viewMatrix)) {
+		if (lightAABB.mins.x > cornerLS.x || cornerLS.x > lightAABB.maxs.x || lightAABB.mins.y > cornerLS.y || cornerLS.y > lightAABB.maxs.y)
+			continue;
 
-	// shift AABB as well
-	lightAABB.mins.z -= lsExtraZ;
-	lightAABB.maxs.z -= lsExtraZ;
+		if (cornerLS.z <= 0.0f)
+			continue;
+
+		lightAABB.mins.z = std::min(lightAABB.mins.z, cornerLS.z);
+		lightAABB.maxs.z = std::max(lightAABB.maxs.z, cornerLS.z);		
+	}
+
+//	viewMatrix.col[3].z -= lsExtraZ; //move camPos futher away
+//
+//	// shift AABB as well
+//	lightAABB.mins.z -= lsExtraZ;
+//	lightAABB.maxs.z -= lsExtraZ;
 
 
 	projMatrix = CMatrix44f::ClipOrthoProj(
