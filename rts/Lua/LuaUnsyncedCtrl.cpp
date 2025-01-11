@@ -216,6 +216,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitEngineDrawMask);
 	REGISTER_LUA_CFUNC(SetUnitAlwaysUpdateMatrix);
 	REGISTER_LUA_CFUNC(SetUnitNoMinimap);
+	REGISTER_LUA_CFUNC(SetUnitNoGroup);
 	REGISTER_LUA_CFUNC(SetUnitNoSelect);
 	REGISTER_LUA_CFUNC(SetUnitLeaveTracks);
 	REGISTER_LUA_CFUNC(SetUnitSelectionVolumeData);
@@ -2179,6 +2180,29 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 		return 0;
 
 	unit->noMinimap = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.SetUnitNoGroup
+ * @number unitID
+ * @bool unitNoGroup whether unit can be added to selection groups
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitNoGroup(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->noGroup = luaL_checkboolean(L, 2);
+
+	if (unit->noGroup) {
+		unit->SetGroup(nullptr);
+	}
 	return 0;
 }
 
