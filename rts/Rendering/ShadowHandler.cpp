@@ -20,6 +20,7 @@
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/SubState.h"
+#include "Rendering/GL/glExtra.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/GL/RenderBuffers.h"
@@ -203,6 +204,11 @@ void CShadowHandler::DrawFrustumDebugMap() const
 	static constexpr SColor PLAYER_CAM_COL = SColor{ 255, 255, 255, 255 };
 
 	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
+	{
+		auto mat = shadCam->GetViewMatrixInverse();
+		mat.Scale(64.0f);
+		GL::shapes.DrawSolidSphere(5, 5, mat, float4{ 1, 0, 0, 1 });
+	}
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 	rb.AssertSubmission();
@@ -247,14 +253,14 @@ void CShadowHandler::DrawFrustumDebugMap() const
 		const auto corners = lightAABB.GetCorners(shadCam->GetViewMatrixInverse());
 
 		enum {
-			NBL = 0,
-			FBL = 1,
-			NBR = 2,
-			FBR = 3,
-			NTL = 4,
-			FTL = 5,
-			NTR = 6,
-			FTR = 7,
+			NBL = 1,
+			FBL = 0,
+			NBR = 3,
+			FBR = 2,
+			NTL = 5,
+			FTL = 4,
+			NTR = 7,
+			FTR = 6,
 		};
 
 		const auto ntl = VA_TYPE_C{ corners[NTL], NEAR_PLANE_COL };
