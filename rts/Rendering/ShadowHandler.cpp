@@ -214,6 +214,7 @@ void CShadowHandler::DrawFrustumDebugMap() const
 	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
+#if 1
 	// shadow frustum
 	{
 		const auto ntl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL), NEAR_PLANE_COL };
@@ -247,7 +248,7 @@ void CShadowHandler::DrawFrustumDebugMap() const
 	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
 	rb.DrawArrays(GL_LINES);
 	sh.Disable();
-
+#endif
 	// shadow frustum (alt)
 	{
 		const auto corners = lightAABB.GetCorners(shadCam->GetViewMatrixInverse());
@@ -602,6 +603,11 @@ void CShadowHandler::DrawShadowPasses()
 namespace Impl {
 	float3 GetLightXDir(const CCamera* playerCam, const float3 toLightDir)
 	{
+#if 0
+		// align with the world's X axis
+		float3 xAxis = float3(1, 0, 0);
+		return (xAxis - xAxis.dot(toLightDir) * toLightDir).Normalize();
+#else
 		// Try to rotate LM's X and Y around Z direction to fit playerCam tightest
 		// find the most orthogonal vector to zDir and call it xDir
 		float minDot = 1.0f;
@@ -617,13 +623,13 @@ namespace Impl {
 		xDir = (xDir - xDir.dot(toLightDir) * toLightDir).Normalize();
 
 		return xDir;
+#endif
 	}
 };
 
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
 	const auto& worldBounds = game->GetWorldBounds();
-	float3 projMidPos;
 	{
 		// 1 Meg should be enough?
 		static Geometry::Allocator allocator(1 * 1024 * 1024);
@@ -654,35 +660,28 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 			cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_FAR));
 
 			worldCube.ClipByInPlace(cameraFrustum);
-			projMidPos = worldCube.GetMiddlePos();
 			clippedWorldCube = worldCube.GetAllLines();
 		}
 		allocator.ClearAllocations();
 	}
 
 	// construct Camera World Matrix & View Matrix
-	CMatrix44f camWorldMat;
+	CMatrix44f viewMatrixInv;
 	{
 		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
-#if 0
-		// align with the world's X axis
-		float3 xAxis = float3(1, 0, 0);
-		xAxis = (xAxis - xAxis.dot(zAxis) * zAxis).Normalize();
-#else
 		float3 xAxis = Impl::GetLightXDir(playerCam, zAxis);
-#endif
 		float3 yAxis = zAxis.cross(xAxis);
 
-		camWorldMat.SetX(xAxis);
-		camWorldMat.SetY(yAxis);
-		camWorldMat.SetZ(zAxis);
+		viewMatrixInv.SetX(xAxis);
+		viewMatrixInv.SetY(yAxis);
+		viewMatrixInv.SetZ(zAxis);
 
 		// set this as camPos temporary
-		camWorldMat.SetPos(projMidPos);
+		//camWorldMat.SetPos(projMidPos);
 
 		// convert camera "world" matrix into camera view matrix
 		// https://www.3dgep.com/understanding-the-view-matrix/
-		viewMatrix = camWorldMat.InvertAffine();
+		viewMatrix = viewMatrixInv.InvertAffine();
 	}
 
 	lightAABB.Reset();
@@ -691,19 +690,29 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		lightAABB.AddPoint(viewMatrix * p);
 	}
 
+	float3 midPosLS = lightAABB.CalcCenter();
+	float3 camPos;
+	bool hit = RayHitsAABB(worldBounds, viewMatrixInv * midPosLS, viewMatrixInv.GetZ(), camPos);
+	assert(hit);
+	viewMatrixInv.SetPos(camPos);
+	viewMatrix.Translate(-camPos);
+
+	lightAABB.mins += viewMatrix.GetPos();
+	lightAABB.maxs += viewMatrix.GetPos();
+
 	std::array currNearPlaneRect{
-		float3{ lightAABB.mins.x, lightAABB.mins.y, 0.0f },
-		float3{ lightAABB.maxs.x, lightAABB.mins.y, 0.0f },
-		float3{ lightAABB.maxs.x, lightAABB.maxs.y, 0.0f },
-		float3{ lightAABB.mins.x, lightAABB.maxs.y, 0.0f }
+		float3{ lightAABB.mins.x, lightAABB.mins.y, lightAABB.maxs.z },
+		float3{ lightAABB.maxs.x, lightAABB.mins.y, lightAABB.maxs.z },
+		float3{ lightAABB.maxs.x, lightAABB.maxs.y, lightAABB.maxs.z },
+		float3{ lightAABB.mins.x, lightAABB.maxs.y, lightAABB.maxs.z }
 	};
 
+	float extraCamHeight = 0.0f;
 	for (const auto& pnt : currNearPlaneRect) {
 		float3 hitPnt;
-		if (RayHitsAABB(worldBounds, camWorldMat * pnt, camWorldMat.GetZ(), hitPnt)) {
+		if (RayHitsAABB(worldBounds, viewMatrixInv * pnt, viewMatrixInv.GetZ(), hitPnt)) {
 			hitPnt = viewMatrix * hitPnt;
-			lightAABB.mins.z = std::min(lightAABB.mins.z, hitPnt.z);
-			lightAABB.maxs.z = std::max(lightAABB.maxs.z, hitPnt.z);
+			extraCamHeight = std::max(extraCamHeight, hitPnt.z);
 		}
 	}
 	for (const auto& cornerLS : worldBounds.GetCorners(viewMatrix)) {
@@ -713,15 +722,16 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		if (cornerLS.z <= 0.0f)
 			continue;
 
-		lightAABB.mins.z = std::min(lightAABB.mins.z, cornerLS.z);
-		lightAABB.maxs.z = std::max(lightAABB.maxs.z, cornerLS.z);		
+		extraCamHeight = std::max(extraCamHeight, cornerLS.z);
 	}
 
-//	viewMatrix.col[3].z -= lsExtraZ; //move camPos futher away
-//
-//	// shift AABB as well
-//	lightAABB.mins.z -= lsExtraZ;
-//	lightAABB.maxs.z -= lsExtraZ;
+	// shift camera further away to account for corners of light frustum
+	viewMatrix.col[3].z -= extraCamHeight;
+
+	// translate mins.z accordingly
+	lightAABB.mins.z -= extraCamHeight;
+	// Move maxs.z to be at the camera position
+	lightAABB.maxs.z = 0.0f; // @ camPos
 
 
 	projMatrix = CMatrix44f::ClipOrthoProj(

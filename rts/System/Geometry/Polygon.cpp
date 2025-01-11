@@ -1,7 +1,10 @@
 #include "Polygon.hpp"
 
 #include <numeric>
+
 #include "System/SpringMath.h"
+#include "System/AABB.hpp"
+#include "System/Matrix44f.h"
 
 Geometry::Allocator::Allocator()
 {
@@ -31,6 +34,48 @@ void Geometry::Allocator::ClearAllocations()
 	(reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0]))->release();
 }
 
+void Geometry::Polygon::MakeFrom(const AABB& aabb)
+{
+	faces.clear();
+
+	/*
+		// bottom
+		float3{ mins.x, mins.y, mins.z },   //NBL
+		float3{ mins.x, mins.y, maxs.z },   //FBL
+		float3{ maxs.x, mins.y, mins.z },   //NBR
+		float3{ maxs.x, mins.y, maxs.z },   //FBR
+		// top
+		float3{ mins.x, maxs.y, mins.z },   //NTL
+		float3{ mins.x, maxs.y, maxs.z },   //FTL
+		float3{ maxs.x, maxs.y, mins.z },   //NTR
+		float3{ maxs.x, maxs.y, maxs.z }    //FTR
+	*/
+	const auto corners = aabb.GetCorners();
+
+	enum {
+		NBL = 0,
+		FBL = 1,
+		NBR = 2,
+		FBR = 3,
+		NTL = 4,
+		FTL = 5,
+		NTR = 6,
+		FTR = 7,
+	};
+
+	// Left Face
+	AddFace(corners[NTL], corners[NBL], corners[FBL], corners[FTL]);
+	// Right Face
+	AddFace(corners[NBR], corners[NTR], corners[FTR], corners[FBR]);
+	// Bottom Face
+	AddFace(corners[NBL], corners[NBR], corners[FBR], corners[FBL]);
+	// Top Face
+	AddFace(corners[NTR], corners[NTL], corners[FTL], corners[FTR]);
+	// Near Face
+	AddFace(corners[NTL], corners[NTR], corners[NBR], corners[NBL]);
+	// Far Face
+	AddFace(corners[FTR], corners[FTL], corners[FBL], corners[FBR]);
+}
 Geometry::Polygon& Geometry::Polygon::ClipByInPlace(const Polygon& pc)
 {
 	std::pmr::vector<Face> newFaces(allocRef.get().GetAllocator());
@@ -124,6 +169,30 @@ std::vector<float3> Geometry::Polygon::GetAllLines() const
 	}
 
 	return allLines;
+}
+
+AABB Geometry::Polygon::GetAABB() const
+{
+	AABB aabb;
+	for (const auto& face : GetFaces()) {
+		for (const auto& point : face.GetPoints()) {
+			aabb.AddPoint(point);
+		}
+	}
+
+	return aabb;
+}
+
+AABB Geometry::Polygon::GetAABB(const CMatrix44f& mat) const
+{
+	AABB aabb;
+	for (const auto& face : GetFaces()) {
+		for (const auto& point : face.GetPoints()) {
+			aabb.AddPoint(mat * point);
+		}
+	}
+
+	return aabb;
 }
 
 const float3 Geometry::Polygon::GetMiddlePos() const

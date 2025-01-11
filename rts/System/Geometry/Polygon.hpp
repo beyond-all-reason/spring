@@ -7,6 +7,9 @@
 #include <functional>
 
 #include "System/float4.h"
+#include "System/AABB.hpp"
+
+class CMatrix44f;
 
 namespace Geometry {
 	class Allocator {
@@ -94,6 +97,7 @@ namespace Geometry {
 		Face& AddFace() {
 			return faces.emplace_back(allocRef.get());
 		}
+		void MakeFrom(const AABB& aabb);
 		template<typename Iterable>
 		Face& AddFace(Iterable&& points) {
 			auto& face = faces.emplace_back(allocRef.get());
@@ -115,6 +119,8 @@ namespace Geometry {
 		Polygon  ClipBy(const Polygon& pc) { Polygon p = *this; p.ClipByInPlace(pc); return p; }
 
 		std::vector<float3> GetAllLines() const;
+		AABB GetAABB() const;
+		AABB GetAABB(const CMatrix44f& mat) const;
 
 		const float3 GetMiddlePos() const;
 	private:
