@@ -114,7 +114,7 @@ namespace Geometry {
 		Polygon& ClipByInPlace(const Polygon& pc);
 		Polygon  ClipBy(const Polygon& pc) { Polygon p = *this; p.ClipByInPlace(pc); return p; }
 
-		std::vector<std::pair<float3, float3>> GetAllLines() const;
+		std::vector<float3> GetAllLines() const;
 
 		const float3 GetMiddlePos() const;
 	private:

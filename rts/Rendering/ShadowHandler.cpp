@@ -242,17 +242,70 @@ void CShadowHandler::DrawFrustumDebugMap() const
 	rb.DrawArrays(GL_LINES);
 	sh.Disable();
 
+	// shadow frustum (alt)
+	{
+		const auto corners = lightAABB.GetCorners(shadCam->GetViewMatrixInverse());
+
+		enum {
+			NBL = 0,
+			FBL = 1,
+			NBR = 2,
+			FBR = 3,
+			NTL = 4,
+			FTL = 5,
+			NTR = 6,
+			FTR = 7,
+		};
+
+		const auto ntl = VA_TYPE_C{ corners[NTL], NEAR_PLANE_COL };
+		const auto ntr = VA_TYPE_C{ corners[NTR], NEAR_PLANE_COL };
+		const auto nbr = VA_TYPE_C{ corners[NBR], NEAR_PLANE_COL };
+		const auto nbl = VA_TYPE_C{ corners[NBL], NEAR_PLANE_COL };
+
+		const auto ftl = VA_TYPE_C{ corners[FTL],  FAR_PLANE_COL };
+		const auto ftr = VA_TYPE_C{ corners[FTR],  FAR_PLANE_COL };
+		const auto fbr = VA_TYPE_C{ corners[FBR],  FAR_PLANE_COL };
+		const auto fbl = VA_TYPE_C{ corners[FBL],  FAR_PLANE_COL };
+
+		rb.AddVertices({ nbl, nbr }); // NBL - NBR
+		rb.AddVertices({ nbr, ntr }); // NBR - NTR
+		rb.AddVertices({ ntr, ntl }); // NTR - NTL
+		rb.AddVertices({ ntl, nbl }); // NTL - NBL
+
+		rb.AddVertices({ ntl, ftl }); // NTL - FTL
+		rb.AddVertices({ ntr, ftr }); // NTR - FTR
+		rb.AddVertices({ nbl, fbl }); // NBL - FBL
+		rb.AddVertices({ nbr, fbr }); // NBR - FBR
+
+		rb.AddVertices({ fbl, fbr }); // FBL - FBR
+		rb.AddVertices({ fbr, ftr }); // FBR - FTR
+		rb.AddVertices({ ftr, ftl }); // FTR - FTL
+		rb.AddVertices({ ftl, fbl }); // FTL - FBL
+	}
+
+	glLineWidth(8.0f);
+	sh.Enable();
+	rb.DrawArrays(GL_LINES);
+	sh.Disable();
+
 	// clipped world cube
 	{
-		for (const auto& [p0, p1] : clippedWorldCube) {
-			rb.AddVertices({ { p0, PLAYER_CAM_COL }, { p1, PLAYER_CAM_COL } });
+		size_t frstIdx = 0;
+		for (size_t currIdx = 0; currIdx < clippedWorldCube.size() - 1; /*NOOP*/) {
+			size_t nextIdx = (currIdx + 1);
+			rb.AddVertices({ { clippedWorldCube[currIdx], PLAYER_CAM_COL}, { clippedWorldCube[nextIdx], PLAYER_CAM_COL} });
+			if (clippedWorldCube[frstIdx] == clippedWorldCube[nextIdx]) {
+				currIdx += 2; // skip one
+				frstIdx = currIdx;
+			} else {
+				currIdx += 1;
+			}
 		}
 	}
 
 
 	glLineWidth(4.0f);
 	sh.Enable();
-	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
 	rb.DrawArrays(GL_LINES);
 	sh.Disable();
 	glLineWidth(1.0f);
@@ -631,11 +684,31 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 
 	lightAABB.Reset();
 
-	for (const auto& [p0, _] : clippedWorldCube) {
-		lightAABB.AddPoint(viewMatrix * p0);
+	for (const auto& p : clippedWorldCube) {
+		lightAABB.AddPoint(viewMatrix * p);
 	}
 
-	lightAABB.maxs.z = 0.0f; // @camPos
+	std::array currNearPlaneRect{
+		float3{ lightAABB.mins.x, lightAABB.mins.y, 0.0f },
+		float3{ lightAABB.maxs.x, lightAABB.mins.y, 0.0f },
+		float3{ lightAABB.maxs.x, lightAABB.maxs.y, 0.0f },
+		float3{ lightAABB.mins.x, lightAABB.maxs.y, 0.0f }
+	};
+
+	float lsExtraZ = 0.0f;
+	for (const auto& pnt : currNearPlaneRect) {
+		float3 hitPnt;
+		if (RayHitsAABB(worldBounds, camWorldMat * pnt, camWorldMat.GetZ(), hitPnt)) {
+			lsExtraZ = std::max(lsExtraZ, camWorldMat.GetZ().dot(camWorldMat.GetPos() - hitPnt));
+			lightAABB.AddPoint(viewMatrix * hitPnt); // expand
+		}
+	}
+	viewMatrix.col[3].z -= lsExtraZ; //move camPos futher away
+
+	// shift AABB as well
+	lightAABB.mins.z -= lsExtraZ;
+	lightAABB.maxs.z -= lsExtraZ;
+
 
 	projMatrix = CMatrix44f::ClipOrthoProj(
 		 lightAABB.mins.x,  lightAABB.maxs.x,
@@ -654,6 +727,7 @@ void CShadowHandler::SetShadowCamera(CCamera* shadowCam)
 	// first set matrices needed by shaders (including ShadowGenVertProg)
 	shadowCam->SetProjMatrix(projMatrix);
 	shadowCam->SetViewMatrix(viewMatrix);
+	shadowCam->UpdateDerivedMatrices();
 
 	// scales are in a space relative to the camera position and along worldspace camera's principal vectors
 	// while lightAABB is in camera view space, so need to use relative (max - min) values

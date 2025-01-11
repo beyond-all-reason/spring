@@ -254,7 +254,11 @@ void CCamera::UpdateMatrices(uint32_t vsx, uint32_t vsy, float var)
 	// recalculate the view transform
 	viewMatrix = CMatrix44f::LookAtView(camPos, center, up);
 
+	UpdateDerivedMatrices();
+}
 
+void CCamera::UpdateDerivedMatrices()
+{
 	// create extra matrices (useful for shaders)
 	viewProjectionMatrix = projectionMatrix * viewMatrix;
 	viewMatrixInverse = viewMatrix.InvertAffine();

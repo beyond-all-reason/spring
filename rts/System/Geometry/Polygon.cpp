@@ -112,15 +112,15 @@ Geometry::Polygon& Geometry::Polygon::ClipByInPlace(const Polygon& pc)
     return *this;
 }
 
-std::vector<std::pair<float3, float3>> Geometry::Polygon::GetAllLines() const
+std::vector<float3> Geometry::Polygon::GetAllLines() const
 {
-	std::vector<std::pair<float3, float3>> allLines;
+	std::vector<float3> allLines;
 	for (const auto& face : GetFaces()) {
 		const auto& points = face.GetPoints();
-		for (size_t i0 = 0; i0 < points.size(); ++i0) {
-			size_t i1 = (i0 + 1) % points.size();
-			allLines.emplace_back(points[i0], points[i1]);
+		for (const auto& point : points) {
+			allLines.emplace_back(point);
 		}
+		allLines.emplace_back(points.front()); // close the loop
 	}
 
 	return allLines;

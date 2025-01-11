@@ -106,7 +106,7 @@ private:
 	inline static bool firstInit = true;
 	inline static bool shadowsSupported = false;
 
-	std::vector<std::pair<float3, float3>> clippedWorldCube;
+	std::vector<float3> clippedWorldCube;
 
 	// these project geometry into light-space
 	// to write the (FBO) depth-buffer texture

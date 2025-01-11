@@ -232,6 +232,7 @@ public:
 	void UpdateViewRange();
 	void UpdateFrustum();
 	void UpdateMatrices(uint32_t vsx, uint32_t vsy, float var);
+	void UpdateDerivedMatrices();
 	void UpdateViewPort(int px, int py, int sx, int sy);
 
 	void ConfigNotify(const std::string& key, const std::string& value);
