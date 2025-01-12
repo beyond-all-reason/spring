@@ -19,6 +19,11 @@ local function initMexes()
 end
 
 function widget:Initialize()
+  if Engine.FeatureSupport.noAutoShowMetal == nil then
+    -- engine doesn't yet have support for disabling autometal
+    widgetHandler:RemoveWidget()
+    return
+  end
   if Spring.SetAutoShowMetal then
     -- disable automatic showmetal control, check existance so this will
     -- keep working when AutoShowMetal gets removed from future engine version.
