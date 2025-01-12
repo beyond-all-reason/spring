@@ -211,7 +211,8 @@ const std::string& Get()
 
 const std::string& GetSync()
 {
-	return SPRING_VERSION_ENGINE;
+	static const std::string sync = SPRING_VERSION_ENGINE;
+	return sync;
 }
 
 const std::string& GetFull()
