@@ -1,0 +1,21 @@
+---
+layout: default
+---
+
+{{ content }}
+
+{% assign author = site.authors | where: 'short_name', page.author | first %}
+
+{% if author != nil %}
+{% assign contributor = site.github.contributors | where: 'login', author.github | first %}
+<hr>
+<p class="fw-500">
+Written by: <a href="https://github.com/{{author.github}}" target="_blank">{{author.short_name}}</a>
+
+{% if contributor != nil and contributor != false %}
+<p>
+<a href="{{ contributor.html_url }}"><img src="{{ contributor.avatar_url }}" width="64" height="64" alt="{{ contributor.login }}"></a>
+</p>
+{% endif %}
+</p>
+{% endif %}
