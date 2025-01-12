@@ -1887,12 +1887,26 @@ void CMobileCAI::UnloadUnits_LandFlood(Command& c)
 	StopMoveAndFinishCommand();
 }
 
+static constexpr CUnit* GetTransporteeFromUnloadOrder(const Command& c, const auto &transportees)
+{
+	if (transportees.empty())
+		return nullptr;
+
+	if (c.GetNumParams() < 4)
+		return transportees[0].unit;
+
+	const int transporteeID = c.GetParam(3);
+	for (const auto &transportee : transportees)
+		if (transportee.unit->id == transporteeID)
+			return transportee.unit;
+
+	return nullptr;
+}
 
 void CMobileCAI::UnloadLand(Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// default unload
-	CUnit* transportee = nullptr;
 	CHoverAirMoveType* am = nullptr;
 
 	float3 wantedPos = c.GetPos(0);
@@ -1901,25 +1915,10 @@ void CMobileCAI::UnloadLand(Command& c)
 
 	SetGoal(wantedPos, owner->pos);
 
-	if (c.GetNumParams() < 4) {
-		// unload the first transportee
-		transportee = transportees[0].unit;
-	} else {
-		const int unitID = c.GetParam(3);
-
-		// unload a specific transportee
-		for (const CUnit::TransportedUnit& tu: transportees) {
-			CUnit* carried = tu.unit;
-
-			if (unitID == carried->id) {
-				transportee = carried;
-				break;
-			}
-		}
-		if (transportee == nullptr) {
-			StopMoveAndFinishCommand();
-			return;
-		}
+	const auto transportee = GetTransporteeFromUnloadOrder(c, transportees);
+	if (transportee == nullptr) {
+		StopMoveAndFinishCommand(); // FIXME: UnloadLandFlood() has just FinishCommand here, is the difference meaningful?
+		return;
 	}
 
 	if (wantedPos.SqDistance2D(owner->pos) >= Square(owner->unitDef->loadingRadius * 0.9f))
@@ -2024,7 +2023,6 @@ void CMobileCAI::UnloadLandFlood(Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// land, then release all units at once
-	CUnit* transportee = nullptr;
 
 	float3 wantedPos = c.GetPos(0);
 
@@ -2032,23 +2030,10 @@ void CMobileCAI::UnloadLandFlood(Command& c)
 
 	SetGoal(wantedPos, owner->pos);
 
-	if (c.GetNumParams() < 4) {
-		transportee = transportees[0].unit;
-	} else {
-		const int unitID = c.GetParam(3);
-
-		for (const CUnit::TransportedUnit& tu: transportees) {
-			CUnit* carried = tu.unit;
-
-			if (unitID == carried->id) {
-				transportee = carried;
-				break;
-			}
-		}
-		if (transportee == nullptr) {
-			FinishCommand();
-			return;
-		}
+	const auto transportee = GetTransporteeFromUnloadOrder(c, transportees);
+	if (transportee == nullptr) {
+		FinishCommand(); // FIXME: UnloadLand() has StopMoveAndFinishCommand here, is the difference meaningful?
+		return;
 	}
 
 	if (wantedPos.SqDistance2D(owner->pos) < Square(owner->unitDef->loadingRadius * 0.9f)) {
