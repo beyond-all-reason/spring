@@ -148,10 +148,11 @@ can avoid calling `Script.LuaXYZ("Foo")` each time, but it can still be a good i
 These accept multiple full sets of arguments compared to the regular function so you can avoid extra function calls.
 
 ### Lua orders
+* add `wupget:ActiveCommandChanged(cmdID?, cmdType?) → nil`.
 * add `Spring.GetUnitCommandCount(unitID) → number commandCount`. Use in place of `Spring.GetUnitCommands(unitID, 0)`.
 * `Spring.GetUnitCurrentCommand(unitID, -n)` now grabs the Nth command from the last.
 * added `Engine.FeatureSupport.NegativeGetUnitCurrentCommand` bool for forward compatibility with the above.
-* add `/debugquadfield` command to debug GUI trace ray interaction with ground quads.
+* the `Spring.GiveOrder` family of functions now accept `nil` as params (same as `{}`) and options (same as `0`).
 
 ### Unit groups
 * units no longer removed from groups at the start of their death animation.
@@ -228,7 +229,6 @@ lets you create a Tracy plot and configure its looks.
 * add `construction.insertBuiltUnitMoveCommand` boolean modrule, defaults to true. If false, units won't receive a move order when exiting factory (make sure to use bugger off).
 * add `Spring.SetUnitStorage(unitID, "m"|"e", value) → nil`.
 * add `Spring.GetUnitStorage(unitID) → numbers metal, energy`.
-* the `Spring.GiveOrder` family of functions now accept `nil` as params (same as `{}`) and options (same as `0`).
 * added `Game.buildGridResolution`, number which is currently 2. This means that buildings created via native build orders
 are aligned to 2 squares.
 * add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
@@ -246,6 +246,7 @@ weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value
 * the default value for the `TooltipGeometry` springsetting has the Y coordinate moved from 0 to 0.125.
 * default tooltip now has income and harvest storage for each resource in its own line.
 * server no longer automatically forcestarts the game if there is nobody connected after 30s.
+* add `/debugquadfield` command to debug GUI trace ray interaction with ground quads.
 
 ## Fixes
 * fix a possible pathing desync, especially on builds compiled for OpenBSD.
