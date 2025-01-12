@@ -151,7 +151,7 @@ public:
 	int nextSalvo;                          // when the next shot in the current salvo will fire
 	int salvoLeft;                          // number of shots left in current salvo
 	int salvoWindup;                        // delay before first shot (in frames)
-	int ttl;								// flight time for missile type weapons
+	int ttl;                                // flight time for missile type weapons
 
 	float range;
 	float projectileSpeed;
