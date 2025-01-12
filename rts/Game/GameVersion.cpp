@@ -211,11 +211,7 @@ const std::string& Get()
 
 const std::string& GetSync()
 {
-	static const std::string sync = IsRelease()
-			? GetMajor() + "." + GetMinor() + "." + GetPatchSet()
-			: SPRING_VERSION_ENGINE;
-
-	return sync;
+	return SPRING_VERSION_ENGINE;
 }
 
 const std::string& GetFull()
