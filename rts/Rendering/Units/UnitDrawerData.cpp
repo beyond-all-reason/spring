@@ -635,9 +635,7 @@ bool CUnitDrawerData::UpdateUnitGhosts(const CUnit* unit, const bool addNewGhost
 			if (allyTeam == gu->myAllyTeam) {
 				unitsByIcon[u->myIcon].second.push_back(gso);
 			}
-			// remove prevlos for unit
-			if (u->losStatus[allyTeam] & LOS_PREVLOS)
-				u->losStatus[allyTeam] ^= LOS_PREVLOS;
+			u->losStatus[allyTeam] &= ~LOS_PREVLOS;
 			if (allyTeam == gu->myAllyTeam)
 				addedOwnAllyTeam = true;
 
