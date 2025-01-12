@@ -4221,7 +4221,7 @@ int LuaUnsyncedCtrl::GarbageCollectCtrl(lua_State* L) {
  */
 int LuaUnsyncedCtrl::SetAutoShowMetal(lua_State* L)
 {
-	guihandler->autoShowMetal = !!luaL_checkboolean(L, 1);
+	guihandler->autoShowMetal = luaL_checkboolean(L, 1);
 	return 0;
 }
 
