@@ -38,6 +38,13 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 	LuaPushNamedNumber(L, "wordSize", (!CLuaHandle::GetHandleSynced(L))? Platform::NativeWordSize() * 8: 0);
 
 
+	/* If possible, entries should be bools that resolve to false in the "old" version
+	 * and to true in the "new" version; this is because any version beforehand has it
+	 * "set" to nil which is booleanly false as well. This way games doing the check:
+	 *
+	 *  if Engine.FeatureSupport.Foo then
+	 *
+	 * will be compatible even on engines that don't yet know about the entry at all. */
 	lua_pushliteral(L, "FeatureSupport");
 	lua_createtable(L, 0, 3);
 		LuaPushNamedBool(L, "NegativeGetUnitCurrentCommand", true);
