@@ -190,5 +190,7 @@ void CWeaponLoader::InitWeapon(CUnit* owner, CWeapon* weapon, const UnitDefWeapo
 	weapon->fastAutoRetargeting = defWeapon->fastAutoRetargeting;
 	weapon->fastQueryPointUpdate = defWeapon->fastQueryPointUpdate;
 	weapon->burstControlWhenOutOfArc = defWeapon->burstControlWhenOutOfArc;
+
+	weapon->ttl = weaponDef->flighttime;
 }
 
