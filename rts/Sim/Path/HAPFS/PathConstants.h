@@ -19,7 +19,7 @@ static constexpr unsigned int MAX_SEARCHED_NODES_PE = MAX_SEARCHED_NODES;
 
 // PathManager distance thresholds (to use PF or PE)
 static constexpr float MAXRES_SEARCH_DISTANCE =  50.0f;
-static constexpr float MEDRES_SEARCH_DISTANCE = 100.0f;
+static constexpr float MEDRES_SEARCH_DISTANCE = 200.0f;
 // path-refinement lookahead distances (MED to MAX and LOW to MED)
 static const float MAXRES_SEARCH_DISTANCE_EXT = (MAXRES_SEARCH_DISTANCE * 0.4f) * SQUARE_SIZE;
 static const float MEDRES_SEARCH_DISTANCE_EXT = (MEDRES_SEARCH_DISTANCE * 0.4f) * SQUARE_SIZE;
@@ -33,7 +33,7 @@ static constexpr unsigned int MEDRES_PE_BLOCKSIZE = 16;
 static constexpr unsigned int LOWRES_PE_BLOCKSIZE = 32;
 
 static constexpr unsigned int SQUARES_TO_UPDATE = 8000;
-static constexpr unsigned int MAX_SEARCHED_NODES_ON_REFINE = 2000;
+static constexpr unsigned int MAX_SEARCHED_NODES_ON_REFINE = 8000;
 
 static constexpr unsigned int PATH_HEATMAP_XSCALE =  1; // wrt. mapDims.hmapx
 static constexpr unsigned int PATH_HEATMAP_ZSCALE =  1; // wrt. mapDims.hmapy
