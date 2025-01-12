@@ -295,6 +295,8 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	wantCloak |= unitDef->startCloaked;
 	decloakDistance = unitDef->decloakDistance;
 
+	leavesGhost = gameSetup->ghostedBuildings && unitDef->leavesGhost;
+
 	flankingBonusMode        = unitDef->flankingBonusMode;
 	flankingBonusDir         = unitDef->flankingBonusDir;
 	flankingBonusMobility    = unitDef->flankingBonusMobilityAdd * 1000;
@@ -540,6 +542,11 @@ void CUnit::ForcedMove(const float3& newPos)
 }
 
 
+void CUnit::SetLeavesGhost(bool newLeavesGhost)
+{
+	leavesGhost = newLeavesGhost;
+}
+
 
 float3 CUnit::GetErrorVector(int argAllyTeam) const
 {
@@ -552,7 +559,7 @@ float3 CUnit::GetErrorVector(int argAllyTeam) const
 	const int atSightMask = losStatus[argAllyTeam];
 
 	const int isVisible = 2 * ((atSightMask & LOS_INLOS  ) != 0 ||                  teamHandler.Ally(argAllyTeam, allyteam)); // in LOS or allied, no error
-	const int seenGhost = 4 * ((atSightMask & LOS_PREVLOS) != 0 && gameSetup->ghostedBuildings && unitDef->IsBuildingUnit()); // seen ghosted building, no error
+	const int seenGhost = 4 * ((atSightMask & LOS_PREVLOS) != 0 && leavesGhost); // seen ghosted immobiles, no error
 	const int isOnRadar = 8 * ((atSightMask & LOS_INRADAR) != 0                                                            ); // current radar contact
 
 	float errorMult = 0.0f;
@@ -3009,6 +3016,8 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(wantCloak),
 	CR_MEMBER(isCloaked),
 	CR_MEMBER(decloakDistance),
+
+	CR_MEMBER(leavesGhost),
 
 	CR_MEMBER(lastTerrainType),
 	CR_MEMBER(curTerrainType),
