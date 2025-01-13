@@ -423,7 +423,7 @@ void CUnit::FinishedBuilding(bool postInit)
 		soloBuilder = nullptr;
 	}
 
-	if (isDead)
+	if (isDead) // Lua can kill a freshy spawned unit in UnitCreated
 		return;
 
 	ChangeLos(realLosRadius, realAirLosRadius);
