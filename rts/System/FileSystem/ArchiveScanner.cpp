@@ -30,7 +30,6 @@
 #include "System/UnorderedMap.hpp"
 
 #if !defined(DEDICATED) && !defined(UNITSYNC)
-	#include "System/Misc/UnfreezeSpring.h"
 	#include "System/TimeProfiler.h"
 	#include "System/Platform/Watchdog.h"
 #endif
