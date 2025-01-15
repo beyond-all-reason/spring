@@ -32,12 +32,12 @@ namespace GL {
 
 	template<typename ReturnType = int>
 	static ReturnType glGetIntT(GLenum param) {
-		return (glGetT<decltype(&glGetIntegerv), GLint, ReturnType>(glGetIntegerv, param));
+		return (glGetT<decltype(glGetIntegerv), GLint, ReturnType>(glGetIntegerv, param));
 	}
 
 	template<typename ReturnType = float>
 	static ReturnType glGetFloatT(GLenum param) {
-		return (glGetT<decltype(&glGetFloatv), GLfloat, ReturnType>(glGetFloatv, param));
+		return (glGetT<decltype(glGetFloatv), GLfloat, ReturnType>(glGetFloatv, param));
 	};
 
 	class NamedSingleState {

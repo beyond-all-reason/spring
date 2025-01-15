@@ -33,7 +33,7 @@ void CRefractWater::LoadGfx()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// valid because GL_TEXTURE_RECTANGLE_ARB = GL_TEXTURE_RECTANGLE_EXT
-	if (GLEW_ARB_texture_rectangle || GLEW_EXT_texture_rectangle) {
+	if (GLAD_GL_ARB_texture_rectangle) {
 		target = GL_TEXTURE_RECTANGLE_ARB;
 	} else {
 		target = GL_TEXTURE_2D;

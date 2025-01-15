@@ -4,7 +4,6 @@
 remove_flag("-fsignaling-nans")
 
 INCLUDE_DIRECTORIES(BEFORE ../streflop include)
-find_package_static(GLEW 2.2.0 REQUIRED) #FIXME: LuaUser.cpp requires glew...
 
 SET(luaSources
 		"src/lapi.cpp"
@@ -48,7 +47,6 @@ else ()
 TARGET_LINK_LIBRARIES(lua)
 endif ()
 
-target_link_libraries(lua $<COMPILE_ONLY:GLEW::GLEW>)
 target_include_directories(lua PUBLIC include)
 
 if (UNIX)
