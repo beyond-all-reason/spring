@@ -436,7 +436,7 @@ void CUnit::FinishedBuilding(bool postInit)
 	// Sets the frontdir in sync with heading.
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
 
-	if (unitDef->windGenerator > 0.0f && !isDead) {
+	if (unitDef->windGenerator > 0.0f) {
 		// trigger sending the wind update by removing
 		envResHandler.DelGenerator(this);
 		//  and adding back this windgen
