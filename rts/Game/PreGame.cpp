@@ -172,7 +172,11 @@ void CPreGame::AsyncExecute(CPreGame::AsyncExecFuncType execFunc, const std::str
 {
 	pendingTask = std::async(std::launch::async,
 		[execFunc, argument/*copy the argument explicitly*/, this]() {
-			return std::invoke(execFunc, this, argument);
+			const auto InitStreflopAndExecute = [execFunc, argument/*copy the argument explicitly*/, this]() {
+				streflop::streflop_init<streflop::Simple>();
+				std::invoke(execFunc, this, argument);
+			};
+			std::invoke(InitStreflopAndExecute);
 		}
 	);
 }
