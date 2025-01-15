@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include <string>
+#include <limits>
 
 #include "ModelsMemStorage.h"
 #include "Lua/LuaObjectMaterial.h"
@@ -19,10 +20,12 @@
 #include "System/SpringMath.h"
 #include "System/creg/creg_cond.h"
 
-constexpr int MAX_MODEL_OBJECTS  = 3840;
-constexpr int AVG_MODEL_PIECES   = 16; // as it used to be
-constexpr int NUM_MODEL_TEXTURES = 2;
-constexpr int NUM_MODEL_UVCHANNS = 2;
+static constexpr int MAX_MODEL_OBJECTS  = 3840;
+static constexpr int AVG_MODEL_PIECES   = 16; // as it used to be
+static constexpr int NUM_MODEL_TEXTURES = 2;
+static constexpr int NUM_MODEL_UVCHANNS = 2;
+static constexpr int MAX_PIECES_PER_MODEL = std::numeric_limits<uint16_t>::max() - 1;
+static constexpr int INV_PIECE_NUM = MAX_PIECES_PER_MODEL + 1;
 
 static constexpr float3 DEF_MIN_SIZE( 10000.0f,  10000.0f,  10000.0f);
 static constexpr float3 DEF_MAX_SIZE(-10000.0f, -10000.0f, -10000.0f);
@@ -49,8 +52,10 @@ struct SVertexData {
 		tTangent = float3{};
 		texCoords[0] = float2{};
 		texCoords[1] = float2{};
-		boneIDs = DEFAULT_BONEIDS;
+		// boneIDs is initialized afterwards
+		boneIDsLow  = DEFAULT_BONEIDS_LOW;
 		boneWeights = DEFAULT_BONEWEIGHTS;
+		boneIDsHigh = DEFAULT_BONEIDS_HIGH;
 	}
 	SVertexData(
 		const float3& p,
@@ -67,8 +72,9 @@ struct SVertexData {
 		texCoords[0] = uv0;
 		texCoords[1] = uv1;
 		// boneIDs is initialized afterwards
-		boneIDs = DEFAULT_BONEIDS;
+		boneIDsLow  = DEFAULT_BONEIDS_LOW;
 		boneWeights = DEFAULT_BONEWEIGHTS;
+		boneIDsHigh = DEFAULT_BONEIDS_HIGH;
 	}
 
 	float3 pos;
@@ -76,19 +82,21 @@ struct SVertexData {
 	float3 sTangent;
 	float3 tTangent;
 	float2 texCoords[NUM_MODEL_UVCHANNS];
-	std::array<uint8_t, 4> boneIDs;
+	std::array<uint8_t, 4> boneIDsLow;
 	std::array<uint8_t, 4> boneWeights;
+	std::array<uint8_t, 4> boneIDsHigh;
 
-	static constexpr std::array<uint8_t, 4> DEFAULT_BONEIDS     = { 255, 255, 255, 255 };
-	static constexpr std::array<uint8_t, 4> DEFAULT_BONEWEIGHTS = { 255,   0,   0,   0 };
+	static constexpr std::array<uint8_t, 4> DEFAULT_BONEIDS_HIGH = { 255, 255, 255, 255 };
+	static constexpr std::array<uint8_t, 4> DEFAULT_BONEIDS_LOW  = { 255, 255, 255, 255 };
+	static constexpr std::array<uint8_t, 4> DEFAULT_BONEWEIGHTS  = { 255, 0  ,   0,   0 };
 
-	void SetBones(const std::vector<std::pair<uint8_t, float>>& bi) {
+	void SetBones(const std::vector<std::pair<uint16_t, float>>& bi) {
 		assert(bi.size() == 4);
-		boneIDs = {
-			bi[0].first,
-			bi[1].first,
-			bi[2].first,
-			bi[3].first
+		boneIDsLow = {
+			static_cast<uint8_t>((bi[0].first     ) & 0xFF),
+			static_cast<uint8_t>((bi[1].first     ) & 0xFF),
+			static_cast<uint8_t>((bi[2].first     ) & 0xFF),
+			static_cast<uint8_t>((bi[3].first     ) & 0xFF)
 		};
 
 		boneWeights = {
@@ -97,10 +105,15 @@ struct SVertexData {
 			(static_cast<uint8_t>(math::round(bi[2].second * 255.0f))),
 			(static_cast<uint8_t>(math::round(bi[3].second * 255.0f)))
 		};
+
+		boneIDsHigh = {
+			static_cast<uint8_t>((bi[0].first >> 8) & 0xFF),
+			static_cast<uint8_t>((bi[1].first >> 8) & 0xFF),
+			static_cast<uint8_t>((bi[2].first >> 8) & 0xFF),
+			static_cast<uint8_t>((bi[3].first >> 8) & 0xFF)
+		};
 	}
 };
-
-
 
 struct S3DModelPiecePart {
 public:

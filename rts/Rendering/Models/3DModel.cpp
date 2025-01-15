@@ -52,6 +52,7 @@ CR_REG_METADATA(LocalModel, (
 	CR_MEMBER(needsBoundariesRecalc)
 ))
 
+static_assert(sizeof(SVertexData) == (3 + 3 + 3 + 3 + 4 + 2 + 1) * 4);
 
 void S3DModelHelpers::BindLegacyAttrVBOs()
 {
@@ -250,9 +251,12 @@ void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 		return;
 
 
-	for (auto& v : vertices)
-		if (v.boneIDs == SVertexData::DEFAULT_BONEIDS)
-			v.boneIDs = { static_cast<uint8_t>(pieceIndex), 255, 255, 255 };
+	for (auto& v : vertices) {
+		if (v.boneIDsLow == SVertexData::DEFAULT_BONEIDS_LOW && v.boneIDsHigh == SVertexData::DEFAULT_BONEIDS_HIGH) {
+			v.boneIDsLow [0] = static_cast<uint8_t>((pieceIndex     ) & 0xFF);
+			v.boneIDsHigh[0] = static_cast<uint8_t>((pieceIndex >> 8) & 0xFF);
+		}
+	}
 }
 
 void S3DModelPiece::DrawElements(GLuint prim) const
