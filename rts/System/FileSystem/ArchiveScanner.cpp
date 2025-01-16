@@ -1052,7 +1052,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		}
 
 		#if !defined(DEDICATED) && !defined(UNITSYNC)
-		Watchdog::ClearTimer();
+		Watchdog::ClearTimer(WDT_MAIN);
 		#endif
 	}
 
