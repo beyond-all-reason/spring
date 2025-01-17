@@ -83,8 +83,7 @@ void FileSystemInitializer::InitializeTry()
 		CVFSHandler::SetGlobalInstance(new CVFSHandler("SpringVFS"));
 
 		initSuccess = true;
-	}
-	catch (const std::exception& ex) {
+	} catch (const std::exception& ex) {
 		// abort VFS-init thread
 		initFailure = true;
 
@@ -92,8 +91,7 @@ void FileSystemInitializer::InitializeTry()
 		// since it can already have early observers registered that
 		// do not remove themselves until exit
 		ErrorMessageBox(ex.what(), "Spring: caught std::exception", MBF_OK | MBF_EXCL);
-	}
-	catch (...) {
+	} catch (...) {
 		initFailure = true;
 
 		ErrorMessageBox("", "Spring: caught generic exception", MBF_OK | MBF_EXCL);
