@@ -403,15 +403,9 @@ if(NOT MSVC)
 endif(NOT MSVC)
 
 
-if(DEBUG_BUILD)
-        set(DEBUG_LUANAN_DEFAULT TRUE)
-else()
-        set(DEBUG_LUANAN_DEFAULT FALSE)
-endif()
-
-option(DEBUG_LUANAN "check for nans in lua" ${DEBUG_LUANAN_DEFAULT})
-if(DEBUG_LUANAN)
-        add_definitions(-DDEBUG_LUANAN)
+option(REPORT_LUANAN "report nans/infinities in lua" TRUE)
+if(REPORT_LUANAN)
+        add_definitions(-DREPORT_LUANAN)
 endif()
 
 

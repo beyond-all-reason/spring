@@ -14,6 +14,7 @@
 #include "lib/lua/src/lstate.h"
 #include "lib/streflop/streflop_cond.h"
 #include "System/Log/ILog.h"
+#include "System/BranchPrediction.h"
 
 
 
@@ -85,11 +86,12 @@ static inline int lua_toint(lua_State* L, int idx)
 static inline float lua_tofloat(lua_State* L, int idx)
 {
 	const float n = lua_tonumber(L, idx);
-#if defined(DEBUG_LUANAN)
+#if defined(REPORT_LUANAN)
 	// Note:
 	// luaL_argerror must be called from inside of lua, else it calls exit()
 	// so it can't be used in LuaParser::Get...() and similar
-	if (math::isinf(n) || math::isnan(n)) luaL_argerror(L, idx, "number expected, got NAN (check your code for div0)");
+	if unlikely(math::isinf(n)) luaL_argerror(L, idx, "number expected, got +-Inf (check your code for div0)");
+	if unlikely(math::isnan(n)) luaL_argerror(L, idx, "number expected, got +-NaN (check your code for div0)");
 #endif
 	return n;
 }
