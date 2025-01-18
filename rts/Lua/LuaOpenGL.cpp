@@ -5687,8 +5687,16 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
 
     // Ensure that identifier is a valid GLenum
     // The length should be passed as -1 because the strings are null terminated
-    // Check that the GLuint name refers to a valid openGL object
-    // Check that the label is a valid string
+
+	// Check that the GLuint name refers to a valid openGL object
+	if (!glIsBuffer(objectID) && !glIsShader(objectID) && !glIsProgram(objectID) &&
+		!glIsVertexArray(objectID) && !glIsQuery(objectID) && !glIsProgramPipeline(objectID) &&
+		!glIsTransformFeedback(objectID) && !glIsTexture(objectID) && !glIsRenderbuffer(objectID) &&
+		!glIsFramebuffer(objectID)) {
+		luaL_error(L, "Invalid OpenGL object ID");
+		return 0;
+	}
+
     glObjectLabel(identifier, objectID, -1, label);
 
     return 0;
