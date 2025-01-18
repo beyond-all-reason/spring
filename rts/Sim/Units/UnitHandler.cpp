@@ -465,6 +465,15 @@ void CUnitHandler::Update()
 	inUpdateCall = false;
 }
 
+void CUnitHandler::UpdatePostAnimation()
+{
+	SCOPED_TIMER("Sim::Unit::UpdatePostAnimation");
+
+	for (auto* unit : activeUnits) {
+		unit->UpdateTransportees();
+	}
+}
+
 
 
 void CUnitHandler::AddBuilderCAI(CBuilderCAI* b)

@@ -662,7 +662,7 @@ void CUnit::Update()
 
 	UpdatePhysicalState(0.1f);
 	UpdatePosErrorParams(true, false);
-	UpdateTransportees(); // none if already dead
+	//UpdateTransportees(); // none if already dead
 
 	if (beingBuilt)
 		return;

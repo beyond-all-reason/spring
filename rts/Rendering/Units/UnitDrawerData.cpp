@@ -374,10 +374,12 @@ void CUnitDrawerData::UpdateDrawPos(CUnit* u)
 	const CUnit* t = u->GetTransporter();
 
 	if (t != nullptr) {
-		u->drawPos = u->preFramePos + t->GetDrawDeltaPos(globalRendering->timeOffset);
+		//u->drawPos = u->preFramePos + t->GetDrawDeltaPos(globalRendering->timeOffset);
+		u->drawPos = u->pos + t->speed * globalRendering->timeOffset;
 	}
 	else {
-		u->drawPos = u->preFramePos + u->GetDrawDeltaPos(globalRendering->timeOffset);
+		u->drawPos = u->pos + u->speed * globalRendering->timeOffset;
+		//u->drawPos = u->preFramePos + u->GetDrawDeltaPos(globalRendering->timeOffset);
 	}
 
 	u->drawMidPos = u->GetMdlDrawMidPos();
