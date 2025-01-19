@@ -153,7 +153,6 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(atGoal),
 	CR_MEMBER(atEndOfPath),
 	CR_MEMBER(wantRepath),
-	CR_MEMBER(moveFailed),
 
 	CR_MEMBER(reversing),
 	CR_MEMBER(idling),
@@ -891,8 +890,8 @@ void CGroundMoveType::StartMovingRaw(const float3 moveGoalPos, float moveGoalRad
 	MoveTypes::CheckCollisionQuery collisionQuery(owner->moveDef, moveGoalPos);
 	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(collisionQuery, moveGoalPos, ZeroVector, true, true));
 
-	currWayPoint = goalPos;
-	nextWayPoint = goalPos;
+	earlyCurrWayPoint = currWayPoint = goalPos;
+	earlyNextWayPoint = nextWayPoint = goalPos;
 
 	atGoal = (moveGoalPos.SqDistance2D(owner->pos) < Square(goalRadius + extraRadius));
 	atEndOfPath = false;
@@ -991,7 +990,7 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 	LOG_L(L_DEBUG, "[%s] stopping engine for unit %i", __func__, owner->id);
 
 	if (!atGoal)
-		goalPos = (currWayPoint = Here());
+		earlyCurrWayPoint = (goalPos = (currWayPoint = Here()));
 
 	// this gets called under a variety of conditions (see MobileCAI)
 	// the most common case is a CMD_STOP being issued which means no
@@ -2062,13 +2061,12 @@ unsigned int CGroundMoveType::GetNewPath()
 		atEndOfPath = false;
 		lastWaypoint = false;
 
-		currWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
-		nextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+		earlyCurrWayPoint = currWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+		earlyNextWayPoint = nextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 
 		pathController.SetRealGoalPosition(newPathID, goalPos);
 		pathController.SetTempGoalPosition(newPathID, currWayPoint);
 	} else {
-		// moveFailed = true;
 		Fail(false);
 	}
 
@@ -3287,7 +3285,7 @@ bool CGroundMoveType::UpdateDirectControl()
 	float turnSign = 0.0f;
 
 	currWayPoint = owner->frontdir * XZVector * mix(100.0f, -100.0f, wantReverse);
-	currWayPoint = (owner->pos + currWayPoint).cClampInBounds();
+	earlyCurrWayPoint = currWayPoint = (owner->pos + currWayPoint).cClampInBounds();
 
 	if (unitCon.forward || unitCon.back) {
 		ChangeSpeed((maxSpeed * unitCon.forward) + (maxReverseSpeed * unitCon.back), wantReverse, true);
