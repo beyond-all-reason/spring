@@ -1071,19 +1071,6 @@ void CMiniMap::ResizeTextureCache()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	minimapTexSize = curDim;
-	multisampledFBO = (FBO::GetMaxSamples() > 1);
-
-	if (multisampledFBO) {
-		// multisampled FBO we are render to
-		fbo.Detach(GL_COLOR_ATTACHMENT0_EXT); // delete old RBO
-		fbo.CreateRenderBufferMultisample(GL_COLOR_ATTACHMENT0_EXT, GL_RGBA8, minimapTexSize.x, minimapTexSize.y, 4);
-		//fbo.CreateRenderBuffer(GL_DEPTH_ATTACHMENT_EXT, GL_DEPTH_COMPONENT16, minimapTexSize.x, minimapTexSize.y);
-
-		if (!fbo.CheckStatus("MINIMAP")) {
-			fbo.Detach(GL_COLOR_ATTACHMENT0_EXT);
-			multisampledFBO = false;
-		}
-	}
 
 	glDeleteTextures(1, &minimapTex);
 	glGenTextures(1, &minimapTex);
@@ -1091,28 +1078,16 @@ void CMiniMap::ResizeTextureCache()
 	glBindTexture(GL_TEXTURE_2D, minimapTex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, minimapTexSize.x, minimapTexSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-	if (multisampledFBO) {
-		// resolve FBO with attached final texture target
-		fboResolve.Bind();
-		fboResolve.AttachTexture(minimapTex);
+	fbo.Bind();
+	fbo.AttachTexture(minimapTex);
 
-		if (!fboResolve.CheckStatus("MINIMAP-RESOLVE")) {
-			renderToTexture = false;
-			return;
-		}
-	} else {
-		// directly render to texture without multisampling (fallback solution)
-		fbo.Bind();
-		fbo.AttachTexture(minimapTex);
-
-		if (!fbo.CheckStatus("MINIMAP-RESOLVE")) {
-			renderToTexture = false;
-			return;
-		}
+	if (!fbo.CheckStatus("MINIMAP-RESOLVE")) {
+		renderToTexture = false;
+		return;
 	}
 }
 
@@ -1145,12 +1120,6 @@ void CMiniMap::UpdateTextureCache()
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
-
-	// resolve multisampled FBO if there is one
-	if (multisampledFBO) {
-		const std::array rect = { 0, 0, minimapTexSize.x, minimapTexSize.y };
-		FBO::Blit(fbo.fboId, fboResolve.fboId, rect, rect, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-	}
 }
 
 
