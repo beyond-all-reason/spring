@@ -79,7 +79,7 @@ CONFIG(int, MiniMapRefreshRate).defaultValue(0).minimumValue(0).description("The
 CONFIG(bool, DualScreenMiniMapAspectRatio).defaultValue(true).description("Whether minimap preserves aspect ratio on dual screen mode.");
 
 CONFIG(bool, MiniMapCanFlip).defaultValue(false).description("Whether minimap inverts coordinates when camera Y rotation is between 90 and 270 degrees.");
-
+CONFIG(bool, MiniMapCrispy).defaultValue(false).description("Disables linear filtering on the minimap.");
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -110,7 +110,7 @@ CMiniMap::CMiniMap()
 
 	ConfigUpdate();
 
-	configHandler->NotifyOnChange(this, {"DualScreenMiniMapAspectRatio", "MiniMapCanFlip", "MiniMapDrawProjectiles", "MiniMapCursorScale", "MiniMapIcons", "MiniMapDrawCommands", "MiniMapButtonSize"});
+	configHandler->NotifyOnChange(this, {"DualScreenMiniMapAspectRatio", "MiniMapCanFlip", "MiniMapDrawProjectiles", "MiniMapCursorScale", "MiniMapIcons", "MiniMapDrawCommands", "MiniMapButtonSize", "MiniMapCrispy"});
 
 	UpdateGeometry();
 
@@ -197,6 +197,7 @@ void CMiniMap::ConfigUpdate()
 	drawCommands = configHandler->GetInt("MiniMapDrawCommands");
 	cursorScale = configHandler->GetFloat("MiniMapCursorScale");
 	useIcons = configHandler->GetBool("MiniMapIcons");
+	minimapCrispy = configHandler->GetBool("MiniMapCrispy");
 
 	minimapCanFlip = configHandler->GetBool("MiniMapCanFlip");
 	if (!minimapCanFlip)
@@ -210,6 +211,9 @@ void CMiniMap::ConfigNotify(const std::string& key, const std::string& value)
 
 	if (key == "DualScreenMiniMapAspectRatio")
 		UpdateGeometry();
+
+	if (key == "MiniMapCrispy")
+		ResizeTextureCache();
 }
 
 void CMiniMap::ParseGeometry(const string& geostr)
@@ -1071,6 +1075,20 @@ void CMiniMap::ResizeTextureCache()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	minimapTexSize = curDim;
+	// multisampledFBO = (FBO::GetMaxSamples() > 1 && globalRendering->minSampleShadingRate < 1.0f); // Only use FBO if MSAA is enabled. Disabled if SSAA is enabled.
+	GLint textureFilter = minimapCrispy ? GL_NEAREST : GL_LINEAR;
+
+	if (!minimapCrispy) {
+		// multisampled FBO we are render to
+		fbo.Detach(GL_COLOR_ATTACHMENT0_EXT); // delete old RBO
+		fbo.CreateRenderBufferMultisample(GL_COLOR_ATTACHMENT0_EXT, GL_RGBA8, minimapTexSize.x, minimapTexSize.y, 4);
+		//fbo.CreateRenderBuffer(GL_DEPTH_ATTACHMENT_EXT, GL_DEPTH_COMPONENT16, minimapTexSize.x, minimapTexSize.y);
+
+		if (!fbo.CheckStatus("MINIMAP")) {
+			fbo.Detach(GL_COLOR_ATTACHMENT0_EXT);
+			multisampledFBO = false;
+		}
+	}
 
 	glDeleteTextures(1, &minimapTex);
 	glGenTextures(1, &minimapTex);
@@ -1078,16 +1096,28 @@ void CMiniMap::ResizeTextureCache()
 	glBindTexture(GL_TEXTURE_2D, minimapTex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureFilter);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, minimapTexSize.x, minimapTexSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-	fbo.Bind();
-	fbo.AttachTexture(minimapTex);
+	if (!minimapCrispy) {
+		// resolve FBO with attached final texture target
+		fboResolve.Bind();
+		fboResolve.AttachTexture(minimapTex);
 
-	if (!fbo.CheckStatus("MINIMAP-RESOLVE")) {
-		renderToTexture = false;
-		return;
+		if (!fboResolve.CheckStatus("MINIMAP-RESOLVE")) {
+			renderToTexture = false;
+			return;
+		}
+	} else {
+		// directly render to texture without multisampling (fallback solution)
+		fbo.Bind();
+		fbo.AttachTexture(minimapTex);
+
+		if (!fbo.CheckStatus("MINIMAP-RESOLVE")) {
+			renderToTexture = false;
+			return;
+		}
 	}
 }
 
@@ -1120,6 +1150,12 @@ void CMiniMap::UpdateTextureCache()
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+
+	// resolve multisampled FBO if there is one
+	if (!minimapCrispy) {
+		const std::array rect = { 0, 0, minimapTexSize.x, minimapTexSize.y };
+		FBO::Blit(fbo.fboId, fboResolve.fboId, rect, rect, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	}
 }
 
 

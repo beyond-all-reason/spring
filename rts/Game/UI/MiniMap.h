@@ -164,6 +164,7 @@ protected:
 
 	bool renderToTexture = true;
 	bool multisampledFBO = false;
+	bool minimapCrispy = false;
 
 	struct IntBox {
 		bool Inside(int x, int y) const {
@@ -196,6 +197,7 @@ protected:
 	CMatrix44f projMats[3];
 
 	FBO fbo;
+	FBO fboResolve;
 	GLuint minimapTex = 0;
 	int2 minimapTexSize;
 
