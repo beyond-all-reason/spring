@@ -50,6 +50,7 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 		LuaPushNamedBool(L, "NegativeGetUnitCurrentCommand", true);
 		LuaPushNamedBool(L, "hasExitOnlyYardmaps", true);
 		LuaPushNamedNumber(L, "rmlUiApiVersion", 1);
+		LuaPushNamedBool(L, "noAutoShowMetal", false);
 	lua_rawset(L, -3);
 
 	return true;
