@@ -164,6 +164,7 @@ protected:
 
 	bool renderToTexture = true;
 	bool multisampledFBO = false;
+	bool minimapCrispy = false;
 
 	struct IntBox {
 		bool Inside(int x, int y) const {
