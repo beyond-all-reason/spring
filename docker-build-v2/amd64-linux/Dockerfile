@@ -9,12 +9,32 @@ RUN apt-get update \
  && add-apt-repository ppa:ubuntu-toolchain-r/test --yes \
  && apt-get update \
  && apt-get install --no-install-recommends --yes \
-    curl gcc-13 g++-13 git ninja-build curl p7zip-full python3-pip python3-setuptools \
-    libsdl2-dev libopenal-dev libfreetype6-dev libfontconfig1-dev \
+    curl gcc-13 g++-13 git ninja-build p7zip-full python3.8 python3.8-distutils \
+    xz-utils build-essential \
+    libgl-dev \
+    libglu-dev \
+    xorg-dev \
+    libxcb1-dev \
+    libxcb-util-dev \
+    libxcb-render-util0-dev \
+    libxcb-xkb-dev \
+    libxcb-icccm4-dev \
+    libxcb-image0-dev \
+    libxcb-keysyms1-dev \
+    libxcb-xinerama0-dev \
+    libxcb-cursor-dev \
+    libxcb-composite0-dev \
+    libxcb-ewmh-dev \
+    libxcb-res0-dev \
+    uuid-dev \
  && apt-get remove --purge --yes software-properties-common \
  && apt-get autoremove --purge --yes \
  && apt-get upgrade --yes \
  && rm -rf /var/lib/apt/lists/*
+
+# pip for python3.8
+RUN curl -L -O https://bootstrap.pypa.io/get-pip.py && python3.8 get-pip.py && rm get-pip.py
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 10
 
 # We need a newer ccache for compression support
 ARG CCACHE_VERSION="4.10.2"
@@ -33,16 +53,17 @@ RUN git clone --depth 1 --branch v1.5.6 https://github.com/facebook/zstd.git \
 
 RUN pip3 install --upgrade pip \
  && pip3 install scikit-build \
- && pip3 install cmake==3.27.*
+ && pip3 install cmake==3.27.* \
+ && pip3 install conan==2.10.2
 
 WORKDIR /build
 RUN mkdir src cache out artifacts && chmod a+rwx cache out artifacts
 
 # Fetch library dependencies and configure resolution
-RUN git clone --depth=1 https://github.com/beyond-all-reason/spring-static-libs.git -b 18.04 spring-static-libs
-ENV PKG_CONFIG_LIBDIR=/build/spring-static-libs/lib/pkgconfig
-ENV PKG_CONFIG="pkg-config --define-prefix --static"
-ENV CMAKE_PREFIX_PATH=/build/spring-static-libs/
+#RUN git clone --depth=1 https://github.com/beyond-all-reason/spring-static-libs.git -b 18.04 spring-static-libs
+#ENV PKG_CONFIG_LIBDIR=/build/spring-static-libs/lib/pkgconfig
+#ENV PKG_CONFIG="pkg-config --define-prefix --static"
+#ENV CMAKE_PREFIX_PATH=/build/spring-static-libs/
 ENV PREFER_STATIC_LIBS=TRUE
 
 # Set up default cmake toolchain
@@ -54,3 +75,4 @@ COPY ccache.conf .
 ENV CCACHE_CONFIGPATH=/build/ccache.conf
 ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
 ENV CMAKE_C_COMPILER_LAUNCHER=ccache
+ENV CONAN_HOME=/build/.conan2
