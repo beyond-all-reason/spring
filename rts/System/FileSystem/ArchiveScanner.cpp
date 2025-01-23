@@ -53,7 +53,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
  * but mapping them all, every time to make the list is)
  */
 
-constexpr static int INTERNAL_VER = 17;
+constexpr static int INTERNAL_VER = 18;
 
 
 /*
@@ -611,20 +611,9 @@ void CArchiveScanner::ReadCache()
 {
 	Clear();
 
-	const std::array<std::string, 2> cachePaths {
-		FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()   ) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua"),
-		FileSystem::EnsurePathSepAtEnd(FileSystem::GetOldCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua")
-	};
+	cacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua");
 
-	for (const auto& cachePath : cachePaths) {
-		if (ReadCacheData(cachePath)) {
-			break;
-		}
-	}
-
-	// file to write to in WriteCache()
-	cacheFile = cachePaths.front();
-
+	ReadCacheData(GetFilepath());
 	ScanAllDirs();
 }
 
@@ -980,13 +969,13 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	fileHashes.reserve(ar->NumFiles());
 
 	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
-		const std::pair<std::string, int>& info = ar->FileInfo(fid);
+		const auto& [filename, fileSize] = ar->FileInfo(fid);
 
-		if (ignore->Match(info.first))
+		if (ignore->Match(filename))
 			continue;
 
 		// create case-insensitive hashes
-		fileNames.push_back(StringToLower(info.first));
+		fileNames.push_back(StringToLower(filename));
 		fileHashes.emplace_back();
 	}
 
@@ -1000,20 +989,14 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	std::counting_semaphore sem(numParallelFileReads);
 
-	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
-		const auto& fileName = fileNames[fidx];
+	auto ComputeHashesTask = [&ar, &fileHashes, &sem, this](size_t fidx) -> void {
 		auto& fileHash = fileHashes[fidx];
 		auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
 		fileBuffer.clear();
 
 		sem.acquire();
-		ar->GetFile(fileName, fileBuffer);
+		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(fidx, fileHash.data(), fileBuffer)));
 		sem.release();
-
-		if (!fileBuffer.empty())
-			sha512::calc_digest(fileBuffer.data(), fileBuffer.size(), fileHash.data());
-
-		numFilesHashed.fetch_add(1);
 	};
 
 	for (size_t i = 0; i < fileNames.size(); ++i) {
