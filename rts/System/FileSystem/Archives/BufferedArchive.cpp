@@ -7,9 +7,6 @@
 
 #include <cassert>
 
-spring::mutex CBufferedArchive::archiveLock;
-
-
 CBufferedArchive::~CBufferedArchive()
 {
 	// filter archives for which only {map,mod}info.lua was accessed
@@ -21,7 +18,6 @@ CBufferedArchive::~CBufferedArchive()
 
 bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
 {
-	std::scoped_lock lck(archiveLock);
 	assert(IsFileId(fid));
 
 	int ret = 0;

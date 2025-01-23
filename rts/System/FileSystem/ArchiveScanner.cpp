@@ -25,6 +25,7 @@
 #include "System/Exceptions.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/FileSystem/RapidHandler.h"
+#include "System/FileSystem/Archives/PoolArchive.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedMap.hpp"
@@ -942,18 +943,29 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	if (ar == nullptr)
 		return false;
 
-	int numParallelFileReads = 1; // compressed archives have a mutex, can't read files in parallel
+	static constexpr int NUM_PARALLEL_FILE_READS_SD = 2;
+	int numParallelFileReads;
 
-	if (ar->GetType() == ARCHIVE_TYPE_SDD) {
-		if (bool isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName); isOnSpinningDisk) {
-			// decrease spinning disk thrashing, read using one thread only
-			numParallelFileReads = 1;
-		} else {
-			numParallelFileReads = ThreadPool::GetNumThreads();
-		}
+	switch (ar->GetType())
+	{
+	case ARCHIVE_TYPE_SDP: {
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveName));
+		// each file is one gzip instance, can MT
+		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+	} break;
+	case ARCHIVE_TYPE_SDD: {
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
+		// just a file, can MT
+		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+	} break;
+	case ARCHIVE_TYPE_SDZ: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	case ARCHIVE_TYPE_SD7: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	default: // just default to 1 thread
+		numParallelFileReads = 1;
+		break;
 	}
 
-	numParallelFileReads = std::max(numParallelFileReads, 1);
+	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
 
 	// load ignore list, and insert all files to check in lowercase format
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
@@ -968,7 +980,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	fileNames.reserve(ar->NumFiles());
 	fileHashes.reserve(ar->NumFiles());
 
-	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
+	for (unsigned fid = 0; fid < ar->NumFiles(); ++fid) {
 		const auto& [filename, fileSize] = ar->FileInfo(fid);
 
 		if (ignore->Match(filename))
