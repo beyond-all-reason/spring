@@ -133,6 +133,9 @@ void CRotOverheadController::GetState(StateMap& sm) const
 	CCameraController::GetState(sm);
 
 	sm["oldHeight"] = oldHeight;
+	sm["rx"]   = rot.x;
+	sm["ry"]   = rot.y;
+	sm["rz"]   = rot.z;
 }
 
 
@@ -142,6 +145,9 @@ bool CRotOverheadController::SetState(const StateMap& sm)
 	CCameraController::SetState(sm);
 
 	SetStateFloat(sm, "oldHeight", oldHeight);
+	SetStateFloat(sm, "rx",   rot.x);
+	SetStateFloat(sm, "ry",   rot.y);
+	SetStateFloat(sm, "rz",   rot.z);
 
 	return true;
 }
