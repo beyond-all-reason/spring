@@ -1045,12 +1045,11 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	}
 #else
 	for_mt(0, fileNames.size(), [&](const int i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
+		auto& fileHash = fileHashes[i];
+		auto ComputeHashesTask = [&ar, &fileHash](int fidx) -> void {
+			ar->CalcHash(fidx, fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
 		};
-		ComputeHashesTask();
+		ComputeHashesTask(i);
 	});
 #endif
 
