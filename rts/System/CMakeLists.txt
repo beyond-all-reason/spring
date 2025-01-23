@@ -127,11 +127,13 @@ make_global_var(sources_engine_System_Log_sinkOutputDebugString
 	)
 set(sources_engine_System_Platform_Linux
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/CrashHandler.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Hardware.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/SoLib.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/MessageBox.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/WindowManagerHelper.cpp"
 	)
 set(sources_engine_System_Platform_Mac
+		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Hardware.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/SoLib.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Mac/MessageBox.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Mac/CrashHandler.cpp"
@@ -141,6 +143,7 @@ set(sources_engine_System_Platform_Mac
 set(sources_engine_System_Platform_Windows
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CrashHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/DllLib.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/Hardware.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/MessageBox.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/seh.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/WinVersion.cpp"

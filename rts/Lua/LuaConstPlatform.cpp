@@ -2,6 +2,7 @@
 
 #include "LuaConstPlatform.h"
 #include "LuaUtils.h"
+#include "System/Platform/Hardware.h"
 #include "System/Platform/Misc.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
@@ -34,6 +35,7 @@
  * @number sdlVersionLinkedMajor
  * @number sdlVersionLinkedMinor
  * @number sdlVersionLinkedPatch
+ * @number totalRAM Total physical system RAM in MBs.
  * @bool glSupportNonPowerOfTwoTex
  * @bool glSupportTextureQueryLOD
  * @bool glSupport24bitDepthBuffer
@@ -109,6 +111,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "hwConfig", Platform::GetHardwareStr());
 	LuaPushNamedNumber(L, "cpuLogicalCores", Threading::GetLogicalCpuCores());
 	LuaPushNamedNumber(L, "cpuPhysicalCores", Threading::GetPhysicalCpuCores());
+	LuaPushNamedNumber(L, "totalRAM", Platform::TotalRAM()/1e6);
 
 	LuaPushNamedString(L, "sysInfoHash", Platform::GetSysInfoHash());
 	LuaPushNamedString(L, "macAddrHash", Platform::GetMacAddrHash());
