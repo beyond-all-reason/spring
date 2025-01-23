@@ -144,7 +144,7 @@ DEFINE_string   (map,                                      "",    "Specify the m
 DEFINE_string   (menu,                                     "",    "Specify a lua menu archive to be used by spring");
 DEFINE_string   (name,                                     "",    "Set your player name");
 DEFINE_bool     (oldmenu,                                  false, "Start the old menu");
-DEFINE_string_EX(calc_checksum,      "calc-checksum",      "",    "Calculate named archive checksum");
+DEFINE_string_EX(calc_checksum,      "calc-checksum",      "",    "Calculate named archive checksum and write to cache, cant run in parallel");
 
 /* Startscript sets the listening port number. Replays use the entire startscript, including the port number.
  * So normally if two games were originally played on the same port number, you can't watch their replays in
