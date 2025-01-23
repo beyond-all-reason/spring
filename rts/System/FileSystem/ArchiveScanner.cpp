@@ -612,7 +612,20 @@ void CArchiveScanner::ReadCache()
 {
 	Clear();
 
-	cacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua");
+	const auto oldCacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 1, "ArchiveCache%i.lua");
+	              cacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER    , "ArchiveCache%i.lua");
+
+	if (!FileSystem::FileExists(cacheFile)) {
+		// Try to save initial scanning of assets, but will have to redo hashing
+		// as the previous version had bugs in that area
+		if (ReadCacheData(oldCacheFile, true)) {
+			// nullify hashes
+			for (auto& ai : archiveInfos) {
+				memset(ai.checksum, 0, sizeof(ai.checksum));
+				isDirty = true;
+			}
+		}
+	}
 
 	ReadCacheData(GetFilepath());
 	ScanAllDirs();
@@ -944,7 +957,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		return false;
 
 #ifdef _WIN32
-	static constexpr int NUM_PARALLEL_FILE_READS_SD = 2;
+	static constexpr int NUM_PARALLEL_FILE_READS_SD = 4;
 #else
 	// Linux FS even on spinning disk seems far more tollerant to parallel reads, use all threads
 	const int NUM_PARALLEL_FILE_READS_SD = ThreadPool::GetNumThreads();
@@ -1061,7 +1074,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 }
 
 
-bool CArchiveScanner::ReadCacheData(const std::string& filename)
+bool CArchiveScanner::ReadCacheData(const std::string& filename, bool loadOldVersion)
 {
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 	if (!FileSystem::FileExists(filename)) {
@@ -1081,7 +1094,7 @@ bool CArchiveScanner::ReadCacheData(const std::string& filename)
 
 	// Do not load old version caches
 	const int ver = archiveCacheTbl.GetInt("internalver", (INTERNAL_VER + 1));
-	if (ver != INTERNAL_VER)
+	if (ver != INTERNAL_VER && !loadOldVersion)
 		return false;
 
 	for (int i = 1; archivesTbl.KeyExists(i); ++i) {

@@ -325,6 +325,8 @@ void CPreGame::StartServer(const std::string& setupscript)
 
 		LOG("[PreGame::%s]\n\tmod-checksum=%s\n\tmap-checksum=%s", __func__, modChecksumHex.data(), mapChecksumHex.data());
 		LOG("[PreGame::%s] Game/Map archives checksum acquisition took = %ld microseconds", __func__, (spring_gettime() - connectTimer).toMilliSecsi());
+
+		archiveScanner->WriteCache();
 	}
 
 	good_fpu_control_registers("before CGameServer creation");
