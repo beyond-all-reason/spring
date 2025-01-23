@@ -307,6 +307,7 @@ void CPreGame::StartServer(const std::string& setupscript)
 	startGameSetup->LoadStartPositions();
 
 	{
+		const auto st = spring_gettime();
 		archiveScanner->ResetNumFilesHashed();
 		const std::string mapArchive = archiveScanner->ArchiveFromName(startGameSetup->mapName);
 		const auto mapChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(mapArchive);
@@ -323,6 +324,7 @@ void CPreGame::StartServer(const std::string& setupscript)
 		sha512::dump_digest(modChecksum, modChecksumHex);
 
 		LOG("[PreGame::%s]\n\tmod-checksum=%s\n\tmap-checksum=%s", __func__, modChecksumHex.data(), mapChecksumHex.data());
+		LOG("[PreGame::%s] Game/Map archives checksum acquisition took = %ld microseconds", __func__, (spring_gettime() - connectTimer).toMilliSecsi());
 	}
 
 	good_fpu_control_registers("before CGameServer creation");
