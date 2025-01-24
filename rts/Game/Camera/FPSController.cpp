@@ -151,6 +151,9 @@ void CFPSController::GetState(StateMap& sm) const
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 	sm["oldHeight"] = oldHeight;
+	sm["rx"]   = rot.x;
+	sm["ry"]   = rot.y;
+	sm["rz"]   = rot.z;
 }
 
 
@@ -159,6 +162,9 @@ bool CFPSController::SetState(const StateMap& sm)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 	SetStateFloat(sm, "oldHeight", oldHeight);
+	SetStateFloat(sm, "rx",   rot.x);
+	SetStateFloat(sm, "ry",   rot.y);
+	SetStateFloat(sm, "rz",   rot.z);
 
 	return true;
 }
