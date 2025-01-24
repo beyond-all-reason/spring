@@ -703,6 +703,35 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/// @field GL_STENCIL_ATTACHMENT_EXT 0x8D20
 	PUSH_GL(STENCIL_ATTACHMENT_EXT);
 
+	
+/***
+ * OpenGL Object Types
+ * @section objecttypes
+ */
+
+	/***
+	 * @table GL
+	 * @number BUFFER
+	 * @number SHADER
+	 * @number PROGRAM
+	 * @number VERTEX_ARRAY
+	 * @number QUERY
+	 * @number PROGRAM_PIPELINE
+	 * @number TRANSFORM_FEEDBACK
+	 * @number RENDERBUFFER
+	 * @number FRAMEBUFFER
+	 */
+	PUSH_GL(BUFFER);
+	PUSH_GL(SHADER);
+	PUSH_GL(PROGRAM);
+	PUSH_GL(VERTEX_ARRAY);
+	PUSH_GL(QUERY);
+	PUSH_GL(PROGRAM_PIPELINE);
+	PUSH_GL(TRANSFORM_FEEDBACK);
+	PUSH_GL(RENDERBUFFER);
+	PUSH_GL(FRAMEBUFFER);
+
+
 	return true;
 }
 
