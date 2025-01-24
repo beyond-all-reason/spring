@@ -100,11 +100,6 @@ void CUnitHandler::Init() {
 	GeneralMoveSystem::Init();
 	UnitTrapCheckSystem::Init();
 
-	static_assert(sizeof(CBuilder) >= sizeof(CUnit             ), "");
-	static_assert(sizeof(CBuilder) >= sizeof(CBuilding         ), "");
-	static_assert(sizeof(CBuilder) >= sizeof(CExtractorBuilding), "");
-	static_assert(sizeof(CBuilder) >= sizeof(CFactory          ), "");
-
 	{
 		// set the global (runtime-constant) unit-limit as the sum
 		// of  all team unit-limits, which is *always* <= MAX_UNITS
