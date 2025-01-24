@@ -58,7 +58,7 @@ CONFIG(int, TeamHighlight)
 CONFIG(bool, UseNetMessageSmoothingBuffer).defaultValue(true).description("Buffer network packets for a few frames in an attempt to reduce lag from packet time variance. Introduces a fixed lag.");
 
 CONFIG(bool, LuaWritableConfigFile).defaultValue(true);
-CONFIG(bool, VFSCacheArchiveFiles).defaultValue(true);
+CONFIG(bool, VFSCacheArchiveFiles).deprecated(true);
 
 CONFIG(bool, DumpGameStateOnDesync).defaultValue(true).description("Enable writing clientgamestate and servergamestate dumps when a desync is detected");
 
@@ -92,7 +92,6 @@ void GlobalConfig::Init()
 
 	useNetMessageSmoothingBuffer = configHandler->GetBool("UseNetMessageSmoothingBuffer");
 	luaWritableConfigFile = configHandler->GetBool("LuaWritableConfigFile");
-	vfsCacheArchiveFiles = configHandler->GetBool("VFSCacheArchiveFiles");
 
 	dumpGameStateOnDesync = configHandler->GetBool("DumpGameStateOnDesync");
 

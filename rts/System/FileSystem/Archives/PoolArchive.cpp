@@ -48,7 +48,7 @@ static bool gz_really_read(gzFile file, voidp buf, uint32_t len)
 
 
 CPoolArchive::CPoolArchive(const std::string& name)
-	: CBufferedArchive(name)
+	: IArchive(name)
 {
 	memset(&dummyFileHash, 0, sizeof(dummyFileHash));
 
@@ -133,7 +133,7 @@ std::string CPoolArchive::GetPoolRootDirectory(const std::string& sdpName)
 	return poolRootDir;
 }
 
-int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
+bool CPoolArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 
