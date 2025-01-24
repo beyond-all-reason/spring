@@ -322,6 +322,8 @@ void CPreGame::StartServer(const std::string& setupscript)
 		sha512::dump_digest(mapChecksum, mapChecksumHex);
 		sha512::dump_digest(modChecksum, modChecksumHex);
 
+		archiveScanner->WriteCache(); // write the cache, useful in case the game loading crashes afterwards
+
 		LOG("[PreGame::%s]\n\tmod-checksum=%s\n\tmap-checksum=%s", __func__, modChecksumHex.data(), mapChecksumHex.data());
 	}
 

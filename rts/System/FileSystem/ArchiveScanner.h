@@ -147,6 +147,8 @@ public:
 	void Clear();
 	void Reload();
 
+	void WriteCache();
+
 	std::string ArchiveFromName(const std::string& versionedName) const;
 	std::string NameFromArchive(const std::string& archiveName) const;
 	std::string GameHumanNameFromArchive(const std::string& archiveName) const;
@@ -189,7 +191,6 @@ private:
 
 private:
 	void ReadCache();
-	void WriteCache();
 
 	ArchiveInfo& GetAddArchiveInfo(const std::string& lcfn);
 	BrokenArchive& GetAddBrokenArchive(const std::string& lcfn);
