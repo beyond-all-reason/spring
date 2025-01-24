@@ -120,7 +120,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 	, allocImp({SzAlloc, SzFree})
 	, allocTempImp({SzAllocTemp, SzFreeTemp})
 {
-	std::lock_guard<spring::mutex> lck(archiveLock);
+	std::scoped_lock lck(archiveLock);
 
 	constexpr const size_t kInputBufSize = (size_t)1 << 18;
 
@@ -179,7 +179,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 
 CSevenZipArchive::~CSevenZipArchive()
 {
-	std::lock_guard<spring::mutex> lck(archiveLock);
+	std::scoped_lock lck(archiveLock);
 
 	if (outBuffer != nullptr) {
 		IAlloc_Free(&allocImp, outBuffer);
@@ -193,7 +193,7 @@ CSevenZipArchive::~CSevenZipArchive()
 
 int CSevenZipArchive::GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer)
 {
-	// assert(archiveLock.locked());
+	std::scoped_lock lck(archiveLock);
 	assert(IsFileId(fid));
 
 	size_t offset = 0;

@@ -25,6 +25,7 @@
 #include "System/Exceptions.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/FileSystem/RapidHandler.h"
+#include "System/FileSystem/Archives/PoolArchive.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedMap.hpp"
@@ -53,7 +54,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
  * but mapping them all, every time to make the list is)
  */
 
-constexpr static int INTERNAL_VER = 17;
+constexpr static int INTERNAL_VER = 18;
 
 
 /*
@@ -611,20 +612,22 @@ void CArchiveScanner::ReadCache()
 {
 	Clear();
 
-	const std::array<std::string, 2> cachePaths {
-		FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()   ) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua"),
-		FileSystem::EnsurePathSepAtEnd(FileSystem::GetOldCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua")
-	};
+	const auto oldCacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 1, "ArchiveCache%i.lua");
+	              cacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER    , "ArchiveCache%i.lua");
 
-	for (const auto& cachePath : cachePaths) {
-		if (ReadCacheData(cachePath)) {
-			break;
+	if (!FileSystem::FileExists(cacheFile)) {
+		// Try to save initial scanning of assets, but will have to redo hashing
+		// as the previous version had bugs in that area
+		if (ReadCacheData(oldCacheFile, true)) {
+			// nullify hashes
+			for (auto& ai : archiveInfos) {
+				memset(ai.checksum, 0, sizeof(ai.checksum));
+				isDirty = true;
+			}
 		}
 	}
 
-	// file to write to in WriteCache()
-	cacheFile = cachePaths.front();
-
+	ReadCacheData(GetFilepath());
 	ScanAllDirs();
 }
 
@@ -953,18 +956,35 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	if (ar == nullptr)
 		return false;
 
-	int numParallelFileReads = 1; // compressed archives have a mutex, can't read files in parallel
+#ifdef _WIN32
+	static constexpr int NUM_PARALLEL_FILE_READS_SD = 4;
+#else
+	// Linux FS even on spinning disk seems far more tollerant to parallel reads, use all threads
+	const int NUM_PARALLEL_FILE_READS_SD = ThreadPool::GetNumThreads();
+#endif // _WIN32
 
-	if (ar->GetType() == ARCHIVE_TYPE_SDD) {
-		if (bool isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName); isOnSpinningDisk) {
-			// decrease spinning disk thrashing, read using one thread only
-			numParallelFileReads = 1;
-		} else {
-			numParallelFileReads = ThreadPool::GetNumThreads();
-		}
+	int numParallelFileReads;
+
+	switch (ar->GetType())
+	{
+	case ARCHIVE_TYPE_SDP: {
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveName));
+		// each file is one gzip instance, can MT
+		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+	} break;
+	case ARCHIVE_TYPE_SDD: {
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
+		// just a file, can MT
+		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+	} break;
+	case ARCHIVE_TYPE_SDZ: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	case ARCHIVE_TYPE_SD7: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	default: // just default to 1 thread
+		numParallelFileReads = 1;
+		break;
 	}
 
-	numParallelFileReads = std::max(numParallelFileReads, 1);
+	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
 
 	// load ignore list, and insert all files to check in lowercase format
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
@@ -979,14 +999,14 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	fileNames.reserve(ar->NumFiles());
 	fileHashes.reserve(ar->NumFiles());
 
-	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
-		const std::pair<std::string, int>& info = ar->FileInfo(fid);
+	for (unsigned fid = 0; fid < ar->NumFiles(); ++fid) {
+		const auto& [filename, fileSize] = ar->FileInfo(fid);
 
-		if (ignore->Match(info.first))
+		if (ignore->Match(filename))
 			continue;
 
 		// create case-insensitive hashes
-		fileNames.push_back(StringToLower(info.first));
+		fileNames.push_back(StringToLower(filename));
 		fileHashes.emplace_back();
 	}
 
@@ -1000,20 +1020,14 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	std::counting_semaphore sem(numParallelFileReads);
 
-	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
-		const auto& fileName = fileNames[fidx];
+	auto ComputeHashesTask = [&ar, &fileHashes, &sem, this](size_t fidx) -> void {
 		auto& fileHash = fileHashes[fidx];
 		auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
 		fileBuffer.clear();
 
 		sem.acquire();
-		ar->GetFile(fileName, fileBuffer);
+		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(fidx, fileHash.data(), fileBuffer)));
 		sem.release();
-
-		if (!fileBuffer.empty())
-			sha512::calc_digest(fileBuffer.data(), fileBuffer.size(), fileHash.data());
-
-		numFilesHashed.fetch_add(1);
 	};
 
 	for (size_t i = 0; i < fileNames.size(); ++i) {
@@ -1031,12 +1045,11 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	}
 #else
 	for_mt(0, fileNames.size(), [&](const int i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
+		auto& fileHash = fileHashes[i];
+		auto ComputeHashesTask = [&ar, &fileHash](int fidx) -> void {
+			ar->CalcHash(fidx, fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
 		};
-		ComputeHashesTask();
+		ComputeHashesTask(i);
 	});
 #endif
 
@@ -1060,7 +1073,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 }
 
 
-bool CArchiveScanner::ReadCacheData(const std::string& filename)
+bool CArchiveScanner::ReadCacheData(const std::string& filename, bool loadOldVersion)
 {
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 	if (!FileSystem::FileExists(filename)) {
@@ -1080,7 +1093,7 @@ bool CArchiveScanner::ReadCacheData(const std::string& filename)
 
 	// Do not load old version caches
 	const int ver = archiveCacheTbl.GetInt("internalver", (INTERNAL_VER + 1));
-	if (ver != INTERNAL_VER)
+	if (ver != INTERNAL_VER && !loadOldVersion)
 		return false;
 
 	for (int i = 1; archivesTbl.KeyExists(i); ++i) {
