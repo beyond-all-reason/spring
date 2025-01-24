@@ -153,9 +153,6 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeatureDrawFlag);
 	REGISTER_LUA_CFUNC(GetFeatureSelectionVolumeData);
 
-	REGISTER_LUA_CFUNC(GetUnitTransformMatrix);
-	REGISTER_LUA_CFUNC(GetFeatureTransformMatrix);
-
 	REGISTER_LUA_CFUNC(GetUnitViewPosition);
 
 	REGISTER_LUA_CFUNC(GetVisibleUnits);
@@ -1470,83 +1467,6 @@ int LuaUnsyncedRead::GetFeatureSelectionVolumeData(lua_State* L)
 {
 	return GetSolidObjectSelectionVolume(L, ParseFeature(L, __func__, 1));
 }
-
-
-
-static int GetObjectTransformMatrix(const CSolidObject* o, lua_State* L)
-{
-	if (o == nullptr)
-		return 0;
-
-	CMatrix44f m = o->GetTransformMatrix(false);
-
-	if (luaL_optboolean(L, 2, false))
-		m = m.InvertAffine();
-
-	for (int i = 0; i < 16; i += 4) {
-		lua_pushnumber(L, m[i + 0]);
-		lua_pushnumber(L, m[i + 1]);
-		lua_pushnumber(L, m[i + 2]);
-		lua_pushnumber(L, m[i + 3]);
-	}
-
-	return 16;
-}
-
-
-/******************************************************************************
- * Misc
- * @section misc
-******************************************************************************/
-
-
-/***
- *
- * @function Spring.GetUnitTransformMatrix
- * @number unitID
- * @treturn number|nil m11 nil when unitID cannot be parsed
- * @treturn number m12
- * @treturn number m13
- * @treturn number m14
- * @treturn number m21
- * @treturn number m22
- * @treturn number m23
- * @treturn number m24
- * @treturn number m31
- * @treturn number m32
- * @treturn number m33
- * @treturn number m34
- * @treturn number m41
- * @treturn number m42
- * @treturn number m43
- * @treturn number m44
- */
-int LuaUnsyncedRead::GetUnitTransformMatrix(lua_State* L) { return (GetObjectTransformMatrix(ParseUnit(L, __func__, 1), L)); }
-
-
-/***
- *
- * @function Spring.GetFeatureTransformMatrix
- * @number featureID
- * @treturn number|nil m11 nil when featureID cannot be parsed
- * @treturn number m12
- * @treturn number m13
- * @treturn number m14
- * @treturn number m21
- * @treturn number m22
- * @treturn number m23
- * @treturn number m24
- * @treturn number m31
- * @treturn number m32
- * @treturn number m33
- * @treturn number m34
- * @treturn number m41
- * @treturn number m42
- * @treturn number m43
- * @treturn number m44
- */
-int LuaUnsyncedRead::GetFeatureTransformMatrix(lua_State* L) { return (GetObjectTransformMatrix(ParseFeature(L, __func__, 1), L)); }
-
 
 /******************************************************************************
  * Inview

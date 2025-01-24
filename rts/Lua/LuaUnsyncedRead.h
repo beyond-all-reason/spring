@@ -72,9 +72,6 @@ class LuaUnsyncedRead {
 
 		static int GetFeatureSelectionVolumeData(lua_State* L);
 
-		static int GetUnitTransformMatrix(lua_State* L);
-		static int GetFeatureTransformMatrix(lua_State* L);
-
 		static int GetUnitViewPosition(lua_State* L);
 
 		static int GetVisibleUnits(lua_State* L);
