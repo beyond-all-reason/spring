@@ -168,6 +168,9 @@ void CDollyController::GetState(StateMap& sm) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
+	sm["rx"]   = rot.x;
+	sm["ry"]   = rot.y;
+	sm["rz"]   = rot.z;
 }
 
 bool CDollyController::SetState(const StateMap& sm)
