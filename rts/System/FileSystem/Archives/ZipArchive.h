@@ -4,9 +4,8 @@
 #define _ZIP_ARCHIVE_H
 
 #include "IArchiveFactory.h"
-#include "IArchive.h"
+#include "BufferedArchive.h"
 #include "minizip/unzip.h"
-#include "System/Threading/SpringThreading.h"
 
 #include <string>
 #include <vector>
@@ -28,7 +27,7 @@ private:
 /**
  * A zip compressed, single-file archive.
  */
-class CZipArchive : public IArchive
+class CZipArchive : public CBufferedArchive
 {
 public:
 	CZipArchive(const std::string& archiveName);
@@ -48,9 +47,9 @@ public:
 	}
 	#endif
 
-	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
-
 	static constexpr int MAX_THREADS = 32;
+protected:
+	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 private:
 	std::array<unzFile, MAX_THREADS> zipPerThread = {nullptr};
 

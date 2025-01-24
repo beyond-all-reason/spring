@@ -100,6 +100,13 @@ public:
 	bool luaWritableConfigFile = false;
 
 	/**
+	 * @brief vfsCacheArchiveFiles
+	 *
+	 * Whether the VFS should cache (BufferedArchive) files in memory
+	 */
+	bool vfsCacheArchiveFiles = true;
+
+	/**
 	 * @brief dumpGameStateOnDesync
 	 *
 	 * Whether the game state should be locally generated on all clients when

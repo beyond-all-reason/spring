@@ -12,8 +12,7 @@
 #include <7zFile.h>
 
 #include "IArchiveFactory.h"
-#include "IArchive.h"
-#include "System/Threading/SpringThreading.h"
+#include "BufferedArchive.h"
 
 /**
  * Creates LZMA/7zip compressed, single-file archives.
@@ -31,7 +30,7 @@ private:
 /**
  * An LZMA/7zip compressed, single-file archive.
  */
-class CSevenZipArchive : public IArchive
+class CSevenZipArchive : public CBufferedArchive
 {
 public:
 	CSevenZipArchive(const std::string& name);
@@ -42,10 +41,11 @@ public:
 	bool IsOpen() override { return isOpen; }
 
 	uint32_t NumFiles() const override { return (fileEntries.size()); }
-	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 	void FileInfo(uint32_t fid, std::string& name, int& size) const override;
 
 	static constexpr int MAX_THREADS = 32;
+protected:
+	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 private:
 	struct PerThreadData {
 		CFileInStream archiveStream;

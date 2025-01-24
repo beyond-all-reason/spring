@@ -5,6 +5,7 @@ include_directories(${SPRING_MINIZIP_INCLUDE_DIR})
 
 add_definitions(${PIC_FLAG})
 add_library(archives STATIC
+	BufferedArchive.cpp
 	DirArchive.cpp
 	IArchive.cpp
 	PoolArchive.cpp
