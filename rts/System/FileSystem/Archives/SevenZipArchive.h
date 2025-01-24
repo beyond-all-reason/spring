@@ -43,6 +43,8 @@ public:
 	void FileInfo(unsigned int fid, std::string& name, int& size) const override;
 
 private:
+	static inline spring::mutex archiveLock;
+
 	// actual data is in BufferedArchive
 	struct FileEntry {
 		int fp;

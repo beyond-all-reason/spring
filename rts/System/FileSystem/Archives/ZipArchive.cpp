@@ -19,7 +19,7 @@ IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const
 
 CZipArchive::CZipArchive(const std::string& archiveName): CBufferedArchive(archiveName)
 {
-	std::lock_guard<spring::mutex> lck(archiveLock);
+	std::scoped_lock lck(archiveLock);
 
 	if ((zip = unzOpen(archiveName.c_str())) == nullptr) {
 		LOG_L(L_ERROR, "[%s] error opening \"%s\"", __func__, archiveName.c_str());
@@ -63,7 +63,7 @@ CZipArchive::CZipArchive(const std::string& archiveName): CBufferedArchive(archi
 
 CZipArchive::~CZipArchive()
 {
-	std::lock_guard<spring::mutex> lck(archiveLock);
+	std::scoped_lock lck(archiveLock);
 
 	if (zip != nullptr) {
 		unzClose(zip);
@@ -86,6 +86,8 @@ void CZipArchive::FileInfo(unsigned int fid, std::string& name, int& size) const
 // than one file at a time
 int CZipArchive::GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer)
 {
+	std::scoped_lock lck(archiveLock);
+
 	// Prevent opening files on missing/invalid archives
 	if (zip == nullptr)
 		return -4;
