@@ -20,6 +20,7 @@
 #include "CommandAI/CommandAI.h"
 #include "CommandAI/FactoryCAI.h"
 #include "CommandAI/MobileCAI.h"
+#include "CommandAI/BuilderCaches.h"
 
 #include "ExternalAI/EngineOutHandler.h"
 #include "Game/GameHelper.h"
@@ -164,7 +165,7 @@ void CUnit::InitStatic()
 	SetExpReloadScale(modInfo.unitExpReloadScale);
 	SetExpGrade(0.0f);
 
-	CBuilderCAI::InitStatic();
+	CBuilderCaches::InitStatic();
 	unitToolTipMap.Clear();
 }
 
