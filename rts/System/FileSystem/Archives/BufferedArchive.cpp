@@ -33,7 +33,7 @@ bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buff
 
 	if (!globalConfig.vfsCacheArchiveFiles || noCache) {
 		if ((ret = GetFileImpl(fid, buffer)) != 1)
-			LOG_L(L_WARNING, "[BufferedArchive::%s(fid=%u)][noCache=%d,vfsCache=%d] name=%s ret=%d size=" _STPF_, __func__, fid, static_cast<int>(noCache), static_cast<int>(globalConfig.vfsCacheArchiveFiles), archiveFile.c_str(), ret, buffer.size());
+			LOG_L(L_ERROR, "[BufferedArchive::%s(fid=%u)][noCache=%d,vfsCache=%d] name=%s ret=%d size=" _STPF_, __func__, fid, static_cast<int>(noCache), static_cast<int>(globalConfig.vfsCacheArchiveFiles), archiveFile.c_str(), ret, buffer.size());
 
 		return (ret == 1);
 	}
@@ -56,7 +56,8 @@ bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buff
 		return true;
 	}
 
-	ret = (GetFileImpl(fid, buffer) == 1);
+	if ((ret = GetFileImpl(fid, buffer)) != 1)
+		LOG_L(L_ERROR, "[BufferedArchive::%s(fid=%u)][noCache=%d,vfsCache=%d] name=%s ret=%d size=" _STPF_, __func__, fid, static_cast<int>(noCache), static_cast<int>(globalConfig.vfsCacheArchiveFiles), archiveFile.c_str(), ret, buffer.size());
 
 	if (numAccessed == 2 && ret) {
 		fileData.assign(buffer.begin(), buffer.end());
