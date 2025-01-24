@@ -3,8 +3,6 @@
 #ifndef _BUFFERED_ARCHIVE_H
 #define _BUFFERED_ARCHIVE_H
 
-#include <atomic>
-#include <optional>
 #include <tuple>
 
 #include "IArchive.h"
@@ -21,17 +19,17 @@ public:
 		noCache = !cached;
 	}
 
-	virtual ~CBufferedArchive();
+	~CBufferedArchive() override;
 
-	virtual int GetType() const override { return ARCHIVE_TYPE_BUF; }
+	int GetType() const override { return ARCHIVE_TYPE_BUF; }
 
-	bool GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
+	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 
 protected:
-	virtual int GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer) = 0;
+	virtual int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) = 0;
 
 	// indexed by file-id
-	std::vector<std::tuple<std::atomic<uint32_t>, std::optional<std::vector<uint8_t>>>> fileCache;
+	std::vector<std::tuple<uint32_t, bool, std::vector<uint8_t>>> fileCache = {};
 private:
 	spring::spinlock mutex;
 	bool noCache = false;

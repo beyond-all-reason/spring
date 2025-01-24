@@ -136,10 +136,11 @@ private:
 	bool isOpen = false;
 
 	std::string poolRootDir;
-	std::array<uint8_t, sha512::SHA_LEN> dummyFileHash;
 
 	std::vector<FileData> files;
 	std::vector<FileStat> stats;
+
+	static constexpr std::array<uint8_t, sha512::SHA_LEN> dummyFileHash = { 0 };
 };
 
 #endif // _POOL_ARCHIVE_H

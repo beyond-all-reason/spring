@@ -50,8 +50,6 @@ static bool gz_really_read(gzFile file, voidp buf, uint32_t len)
 CPoolArchive::CPoolArchive(const std::string& name)
 	: CBufferedArchive(name)
 {
-	memset(&dummyFileHash, 0, sizeof(dummyFileHash));
-
 	char c_name[255];
 	uint8_t c_md5sum[16];
 	uint8_t c_crc32[4];
@@ -137,15 +135,15 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 
-	FileData* f = &files[fid];
-	FileStat* s = &stats[fid];
+	auto& f = files[fid];
+	auto& s = stats[fid];
 
 	constexpr const char table[] = "0123456789abcdef";
 	char c_hex[32];
 
 	for (int i = 0; i < 16; ++i) {
-		c_hex[2 * i    ] = table[(f->md5sum[i] >> 4) & 0xf];
-		c_hex[2 * i + 1] = table[ f->md5sum[i]       & 0xf];
+		c_hex[2 * i    ] = table[(f.md5sum[i] >> 4) & 0xf];
+		c_hex[2 * i + 1] = table[ f.md5sum[i]       & 0xf];
 	}
 
 	const std::string prefix(c_hex,      2);
@@ -158,7 +156,7 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 
 
 	buffer.clear();
-	buffer.resize(f->size);
+	buffer.resize(f.size);
 
 	const auto GzRead = [&f, &path, &buffer](bool report) -> int {
 		gzFile in = gzopen(path.c_str(), "rb");
@@ -173,7 +171,7 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 			const char* errgz = gzerror(in, &errnum);
 			const char* errsys = std::strerror(errnum);
 
-			LOG_L(L_ERROR, "[PoolArchive::%s] could not read file GZIP reason: \"%s\", SYSTEM reason: \"%s\" (bytesRead=%d fileSize=%u)", __func__, errgz, errsys, bytesRead, f->size);
+			LOG_L(L_ERROR, "[PoolArchive::%s] could not read file GZIP reason: \"%s\", SYSTEM reason: \"%s\" (bytesRead=%d fileSize=%u)", __func__, errgz, errsys, bytesRead, f.size);
 		}
 
 		gzclose(in);
@@ -196,7 +194,7 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 		std::this_thread::sleep_for(std::chrono::microseconds(100));
 	}
 
-	s->readTime = (spring_now() - startTime).toNanoSecsi();
+	s.readTime = (spring_now() - startTime).toNanoSecsi();
 
 	if (bytesRead != buffer.size()) {
 		LOG_L(L_ERROR, "[PoolArchive::%s] failed to read file \"%s\" after %d tries", __func__, path.c_str(), readRetries);
@@ -207,6 +205,6 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 		LOG_L(L_WARNING, "[PoolArchive::%s] could read file \"%s\" only after %d tries", __func__, path.c_str(), readTry);
 	}
 
-	sha512::calc_digest(buffer.data(), buffer.size(), f->shasum.data());
+	sha512::calc_digest(buffer.data(), buffer.size(), f.shasum.data());
 	return 1;
 }

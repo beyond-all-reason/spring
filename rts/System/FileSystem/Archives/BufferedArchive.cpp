@@ -9,8 +9,17 @@
 
 CBufferedArchive::~CBufferedArchive()
 {
-	// filter archives for which only {map,mod}info.lua was accessed
-	if (cacheSize <= 1 || fileCount <= 1)
+	size_t cacheSize = 0;
+	size_t fileCount = 0;
+
+	for (const auto& [numAccessed, gotBuffered, fileData] : fileCache) {
+		if (gotBuffered) {
+			cacheSize += fileData.size();
+			fileCount++;
+		}
+	}
+
+	if (fileCount <= 1 || cacheSize <= 1)
 		return;
 
 	LOG_L(L_INFO, "[%s][name=%s] %u bytes cached in %u files", __func__, archiveFile.c_str(), cacheSize, fileCount);
@@ -36,32 +45,23 @@ bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buff
 			fileCache.resize(NumFiles());
 	}
 
-	auto& [numAccessed, fileData] = fileCache[fid];
+	// numAccessed/gotBuffered are not atomic, and simultaneous access to the same fid will cause issues
+	// however, the access pattern is such that each thread accesses a different fid, so this should be fine
+	auto& [numAccessed, gotBuffered, fileData] = fileCache[fid];
 
 	numAccessed++;
 
-	if (!fb.populated) {
-		if (fb.numAccessed > 1) {
-			fb.exists = ((ret = GetFileImpl(fid, fb.data)) == 1);
-			fb.populated = true;
-
-			cacheSize += fb.data.size();
-			fileCount += fb.exists;
-		}
-		else { // most files are only accessed once, don't bother with those
-			ret = GetFileImpl(fid, buffer);
-			return (ret == 1);
-		}
+	if (gotBuffered) {
+		buffer.assign(fileData.begin(), fileData.end());
+		return true;
 	}
 
-	if (!fb.exists) {
-		LOG_L(L_WARNING, "[BufferedArchive::%s(fid=%u)][!fb.exists] name=%s ret=%d size=" _STPF_, __func__, fid, archiveFile.c_str(), ret, fb.data.size());
-		return false;
+	ret = (GetFileImpl(fid, buffer) == 1);
+
+	if (numAccessed == 2 && ret) {
+		fileData.assign(buffer.begin(), buffer.end());
+		gotBuffered = true;
 	}
-
-	buffer.resize(fb.data.size());
-
-	// TODO: zero-copy access
-	std::copy(fb.data.begin(), fb.data.end(), buffer.begin());
-	return true;
+	
+	return ret;
 }
