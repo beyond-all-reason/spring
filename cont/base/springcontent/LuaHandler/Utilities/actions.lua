@@ -209,11 +209,11 @@ local function KeyAction(press, _, _, isRepeat, _, actions)
 	else
 		actionSet = keyReleaseActions
 	end
-  for _,action in ipairs(actions) do
-    local cmd = action["command"]
-    local extra = action["extra"]
-    local args = splitBySpace(extra)
-    if (TryAction(actionSet, cmd, extra, args, isRepeat, not press, actions)) then
+	for _, action in ipairs(actions) do
+		local cmd = action["command"]
+		local extra = action["extra"]
+		local args = splitBySpace(extra)
+		if (TryAction(actionSet, cmd, extra, args, isRepeat, not press, actions)) then
 			return true
 		end
 	end

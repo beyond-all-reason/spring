@@ -220,7 +220,7 @@ function actionHandler:KeyAction(press, _, _, isRepeat, _, actions)
   else
     actionSet = self.keyReleaseActions
   end
-  for _,action in ipairs(actions) do
+  for _, action in ipairs(actions) do
     local cmd = action["command"]
     local extra = action["extra"]
     local args = splitBySpace(extra)
