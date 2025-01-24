@@ -9,20 +9,24 @@
 
 CBufferedArchive::~CBufferedArchive()
 {
-	size_t cacheSize = 0;
-	size_t fileCount = 0;
+	uint32_t   cachedSize = 0;
+	uint32_t uncachedSize = 0;
+	uint32_t fileCount = 0;
 
 	for (const auto& [numAccessed, gotBuffered, fileData] : fileCache) {
 		if (gotBuffered) {
-			cacheSize += fileData.size();
+			cachedSize += fileData.size();
 			fileCount++;
+		} else {
+			uncachedSize += fileData.size();
 		}
 	}
 
-	if (fileCount <= 1 || cacheSize <= 1)
-		return;
-
-	LOG_L(L_INFO, "[%s][name=%s] %u bytes cached in %u files", __func__, archiveFile.c_str(), cacheSize, fileCount);
+	LOG_L(L_INFO, "[%s][name=%s] %u bytes cached in %u files, %u bytes cached in %u files",
+		__func__, archiveFile.c_str(),
+		  cachedSize, fileCount,
+		uncachedSize, static_cast<uint32_t>(fileCache.size() - fileCount)
+	);
 }
 
 bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
@@ -59,10 +63,10 @@ bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buff
 	if ((ret = GetFileImpl(fid, buffer)) != 1)
 		LOG_L(L_ERROR, "[BufferedArchive::%s(fid=%u)][noCache=%d,vfsCache=%d] name=%s ret=%d size=" _STPF_, __func__, fid, static_cast<int>(noCache), static_cast<int>(globalConfig.vfsCacheArchiveFiles), archiveFile.c_str(), ret, buffer.size());
 
-	if (numAccessed == 2 && ret) {
+	if (numAccessed == 2 && (ret == 1)) {
 		fileData.assign(buffer.begin(), buffer.end());
 		gotBuffered = true;
 	}
 	
-	return ret;
+	return (ret == 1);
 }
