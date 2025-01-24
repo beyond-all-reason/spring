@@ -5,9 +5,10 @@
 
 #include <zlib.h>
 #include <cstring>
+#include <cassert>
 
 #include "IArchiveFactory.h"
-#include "BufferedArchive.h"
+#include "IArchive.h"
 
 
 /**
@@ -72,7 +73,7 @@ private:
  *
  * @author Chris Clearwater (det) <chris@detrino.org>
  */
-class CPoolArchive : public CBufferedArchive
+class CPoolArchive : public IArchive
 {
 public:
 	CPoolArchive(const std::string& name);
@@ -83,7 +84,7 @@ public:
 	bool IsOpen() override { return isOpen; }
 
 	unsigned NumFiles() const override { return (files.size()); }
-	void FileInfo(unsigned int fid, std::string& name, int& size) const override {
+	void FileInfo(uint32_t fid, std::string& name, int& size) const override {
 		assert(IsFileId(fid));
 		name = files[fid].name;
 		size = files[fid].size;
@@ -95,15 +96,15 @@ public:
 
 		// pool-entry hashes are not calculated until GetFileImpl, must check JIT
 		if (memcmp(fd.shasum.data(), dummyFileHash.data(), sizeof(fd.shasum)) == 0)
-			GetFileImpl(fid, fb);
+			GetFile(fid, fb);
 
 		memcpy(hash, fd.shasum.data(), sha512::SHA_LEN);
 		return (memcmp(fd.shasum.data(), dummyFileHash.data(), sizeof(fd.shasum)) != 0);
 	}
-	static std::string GetPoolRootDirectory(const std::string& sdpName);
-protected:
-	int GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
+	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 
+	static std::string GetPoolRootDirectory(const std::string& sdpName);
+private:
 	std::pair<uint64_t, uint64_t> GetSums() const {
 		std::pair<uint64_t, uint64_t> p;
 

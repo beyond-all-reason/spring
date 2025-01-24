@@ -1,6 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-
 #include "PoolArchive.h"
 
 #include <algorithm>
@@ -13,6 +12,8 @@
 
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/Threading/SpringThreading.h"
+#include "System/Misc/SpringTime.h"
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
 #include "System/Log/ILog.h"
@@ -39,14 +40,15 @@ static uint32_t parse_uint32(uint8_t c[4])
 	return i;
 }
 
-static bool gz_really_read(gzFile file, voidp buf, unsigned int len)
+static bool gz_really_read(gzFile file, voidp buf, uint32_t len)
 {
 	return (gzread(file, reinterpret_cast<char*>(buf), len) == len);
 }
 
 
 
-CPoolArchive::CPoolArchive(const std::string& name): CBufferedArchive(name)
+CPoolArchive::CPoolArchive(const std::string& name)
+	: IArchive(name)
 {
 	memset(&dummyFileHash, 0, sizeof(dummyFileHash));
 
@@ -131,7 +133,7 @@ std::string CPoolArchive::GetPoolRootDirectory(const std::string& sdpName)
 	return poolRootDir;
 }
 
-int CPoolArchive::GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer)
+bool CPoolArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 

@@ -979,8 +979,10 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		// just a file, can MT
 		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
 	} break;
-	case ARCHIVE_TYPE_SDZ: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
-	case ARCHIVE_TYPE_SD7: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	case ARCHIVE_TYPE_SDZ: [[fallthrough]];
+	case ARCHIVE_TYPE_SD7:
+		numParallelFileReads = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no longer mutex locked
+		break;
 	default: // just default to 1 thread
 		numParallelFileReads = 1;
 		break;
@@ -1037,7 +1039,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, i));
 	}
 
-	const auto erasePredicate = [](decltype(tasks)::value_type item) {
+	const auto erasePredicate = [](decltype(tasks)::value_type& item) {
 		using namespace std::chrono_literals;
 		return item.wait_for(0us) == std::future_status::ready;
 	};

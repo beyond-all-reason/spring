@@ -13,6 +13,7 @@
 #include "System/CRC.h"
 #include "System/StringUtil.h"
 #include "System/Platform/Misc.h"
+#include "System/Threading/ThreadPool.h"
 #include "System/Log/ILog.h"
 
 static Byte kUtf8Limits[5] = {0xC0, 0xE0, 0xF0, 0xF8, 0xFC};
@@ -115,47 +116,25 @@ static inline const char* GetErrorStr(int err)
 	return "Unknown error";
 }
 
+static_assert(ThreadPool::MAX_THREADS == CSevenZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
+
 CSevenZipArchive::CSevenZipArchive(const std::string& name)
-	: CBufferedArchive(name, false)
+	: IArchive(name)
 	, allocImp({SzAlloc, SzFree})
 	, allocTempImp({SzAllocTemp, SzFreeTemp})
 {
 	std::scoped_lock lck(archiveLock);
 
-	constexpr const size_t kInputBufSize = (size_t)1 << 18;
-
-	const WRes wres = InFile_Open(&archiveStream.file, name.c_str());
-	if (wres) {
-		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s (%i)", __func__, name.c_str(), Platform::GetLastErrorAsString(wres).c_str(), (int)wres);
-		return;
-	}
-
-	FileInStream_CreateVTable(&archiveStream);
-	archiveStream.wres = 0;
-
-	LookToRead2_CreateVTable(&lookStream, false);
-	lookStream.realStream = &archiveStream.vt;
-	lookStream.buf = static_cast<Byte*>(ISzAlloc_Alloc(&allocImp, kInputBufSize));
-	assert(lookStream.buf != NULL);
-	lookStream.bufSize = kInputBufSize;
-	LookToRead2_Init(&lookStream);
-
 	CRC::InitTable();
 
-	SzArEx_Init(&db);
+	OpenArchive(0);
 
-	const SRes res = SzArEx_Open(&db, &lookStream.vt, &allocImp, &allocTempImp);
-	if (res == SZ_OK) {
-		isOpen = true;
-	} else {
-		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s", __func__, name.c_str(), GetErrorStr(res));
-		return;
-	}
+	const auto& db = perThreadData[0]->db;
 
 	fileEntries.reserve(db.NumFiles);
 
 	// Get contents of archive and store name->int mapping
-	for (unsigned int i = 0; i < db.NumFiles; ++i) {
+	for (uint32_t i = 0; i < db.NumFiles; ++i) {
 		if (SzArEx_IsDir(&db, i)) {
 			continue;
 		}
@@ -181,38 +160,93 @@ CSevenZipArchive::~CSevenZipArchive()
 {
 	std::scoped_lock lck(archiveLock);
 
-	if (outBuffer != nullptr) {
-		IAlloc_Free(&allocImp, outBuffer);
-	}
 	if (isOpen) {
-		File_Close(&archiveStream.file);
+		for (auto& data : perThreadData) {
+			if (!data)
+				continue;
+
+			File_Close(&data->archiveStream.file);
+		}
 	}
-	ISzAlloc_Free(&allocImp, lookStream.buf);
-	SzArEx_Free(&db, &allocImp);
+	for (auto& data : perThreadData) {
+		if (!data)
+			continue;
+
+		if (data->outBuffer != nullptr) {
+			IAlloc_Free(&allocImp, data->outBuffer);
+		}
+		ISzAlloc_Free(&allocImp, data->lookStream.buf);
+		SzArEx_Free(&data->db, &allocImp);
+	}
 }
 
-int CSevenZipArchive::GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer)
+bool CSevenZipArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
-	std::scoped_lock lck(archiveLock);
 	assert(IsFileId(fid));
+
+	auto tnum = ThreadPool::GetThreadNum();
+
+	if (!perThreadData[tnum])
+		OpenArchive(tnum);
+
+	auto& db = perThreadData[tnum]->db;
+	auto& lookStream = perThreadData[tnum]->lookStream;
+	auto& outBuffer = perThreadData[tnum]->outBuffer;
 
 	size_t offset = 0;
 	size_t outSizeProcessed = 0;
 
+	UInt32 blockIndex = 0xFFFFFFFF;
+	size_t outBufferSize = 0;
+
 	if (SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer,
 	                   &outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp) != SZ_OK)
-		return 0;
+		return false;
 
 	buffer.resize(outSizeProcessed);
 	if (outSizeProcessed > 0) {
 		memcpy(buffer.data(), reinterpret_cast<char*>(outBuffer) + offset, outSizeProcessed);
 	}
-	return 1;
+	return true;
 }
 
-void CSevenZipArchive::FileInfo(unsigned int fid, std::string& name, int& size) const
+void CSevenZipArchive::FileInfo(uint32_t fid, std::string& name, int& size) const
 {
 	assert(IsFileId(fid));
 	name = fileEntries[fid].origName;
 	size = fileEntries[fid].size;
+}
+
+void CSevenZipArchive::OpenArchive(int tnum)
+{
+	perThreadData[tnum] = PerThreadData{};
+	auto& archiveStream = perThreadData[tnum]->archiveStream;
+
+	const WRes wres = InFile_Open(&archiveStream.file, archiveFile.c_str());
+	if (wres) {
+		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s (%i)", __func__, archiveFile.c_str(), Platform::GetLastErrorAsString(wres).c_str(), (int)wres);
+		return;
+	}
+
+	FileInStream_CreateVTable(&archiveStream);
+	archiveStream.wres = 0;
+
+	auto& lookStream = perThreadData[tnum]->lookStream;
+	LookToRead2_CreateVTable(&lookStream, false);
+	lookStream.realStream = &archiveStream.vt;
+	lookStream.buf = static_cast<Byte*>(ISzAlloc_Alloc(&allocImp, INPUT_BUF_SIZE));
+	assert(lookStream.buf != NULL);
+	lookStream.bufSize = INPUT_BUF_SIZE;
+	LookToRead2_Init(&lookStream);
+
+	auto& db = perThreadData[tnum]->db;
+	SzArEx_Init(&db);
+
+	const SRes res = SzArEx_Open(&db, &lookStream.vt, &allocImp, &allocTempImp);
+	if (res == SZ_OK) {
+		isOpen = true;
+	}
+	else {
+		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s", __func__, archiveFile.c_str(), GetErrorStr(res));
+	}
 }
