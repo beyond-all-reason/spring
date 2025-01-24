@@ -8,7 +8,7 @@
 #include <cassert>
 
 #include "IArchiveFactory.h"
-#include "IArchive.h"
+#include "BufferedArchive.h"
 
 
 /**
@@ -73,7 +73,7 @@ private:
  *
  * @author Chris Clearwater (det) <chris@detrino.org>
  */
-class CPoolArchive : public IArchive
+class CPoolArchive : public CBufferedArchive
 {
 public:
 	CPoolArchive(const std::string& name);
@@ -96,14 +96,14 @@ public:
 
 		// pool-entry hashes are not calculated until GetFileImpl, must check JIT
 		if (memcmp(fd.shasum.data(), dummyFileHash.data(), sizeof(fd.shasum)) == 0)
-			GetFile(fid, fb);
+			GetFileImpl(fid, fb);
 
 		memcpy(hash, fd.shasum.data(), sha512::SHA_LEN);
 		return (memcmp(fd.shasum.data(), dummyFileHash.data(), sizeof(fd.shasum)) != 0);
 	}
-	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
-
 	static std::string GetPoolRootDirectory(const std::string& sdpName);
+protected:
+	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 private:
 	std::pair<uint64_t, uint64_t> GetSums() const {
 		std::pair<uint64_t, uint64_t> p;

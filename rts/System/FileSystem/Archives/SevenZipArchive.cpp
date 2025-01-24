@@ -119,7 +119,7 @@ static inline const char* GetErrorStr(int err)
 static_assert(ThreadPool::MAX_THREADS == CSevenZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
 
 CSevenZipArchive::CSevenZipArchive(const std::string& name)
-	: IArchive(name)
+	: CBufferedArchive(name)
 	, allocImp({SzAlloc, SzFree})
 	, allocTempImp({SzAllocTemp, SzFreeTemp})
 {
@@ -180,7 +180,7 @@ CSevenZipArchive::~CSevenZipArchive()
 	}
 }
 
-bool CSevenZipArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
+int CSevenZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 
@@ -201,13 +201,13 @@ bool CSevenZipArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 
 	if (SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer,
 	                   &outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp) != SZ_OK)
-		return false;
+		return 0;
 
 	buffer.resize(outSizeProcessed);
 	if (outSizeProcessed > 0) {
 		memcpy(buffer.data(), reinterpret_cast<char*>(outBuffer) + offset, outSizeProcessed);
 	}
-	return true;
+	return 1;
 }
 
 void CSevenZipArchive::FileInfo(uint32_t fid, std::string& name, int& size) const

@@ -19,7 +19,7 @@ IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const
 static_assert(ThreadPool::MAX_THREADS == CZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
 
 CZipArchive::CZipArchive(const std::string& archiveName)
-	: IArchive(archiveName)
+	: CBufferedArchive(archiveName)
 {
 	std::scoped_lock lck(archiveLock);
 
@@ -91,7 +91,7 @@ void CZipArchive::FileInfo(unsigned int fid, std::string& name, int& size) const
 // To simplify things, files are always read completely into memory from
 // the zip-file, since zlib does not provide any way of reading more
 // than one file at a time
-bool CZipArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
+int CZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	unzFile& thisThreadZip = zipPerThread[ThreadPool::GetThreadNum()];
 	if (!thisThreadZip) {
@@ -100,7 +100,7 @@ bool CZipArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 
 	// Prevent opening files on missing/invalid archives
 	if (thisThreadZip == nullptr)
-		return false;
+		return -4;
 
 	// assert(archiveLock.locked());
 	assert(IsFileId(fid));
@@ -111,19 +111,19 @@ bool CZipArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	unzGetCurrentFileInfo(thisThreadZip, &fi, nullptr, 0, nullptr, 0, nullptr, 0);
 
 	if (unzOpenCurrentFile(thisThreadZip) != UNZ_OK)
-		return false;
+		return -3;
 
 	buffer.clear();
 	buffer.resize(fi.uncompressed_size);
 
-	bool ret = true;
+	int ret = 1;
 
 	if (!buffer.empty() && unzReadCurrentFile(thisThreadZip, buffer.data(), buffer.size()) != buffer.size())
-		ret = false;
+		ret -= 2;
 	if (unzCloseCurrentFile(thisThreadZip) == UNZ_CRCERROR)
-		ret = false;
+		ret -= 1;
 
-	if (!ret)
+	if (ret != 1)
 		buffer.clear();
 
 	return ret;
