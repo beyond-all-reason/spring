@@ -1248,6 +1248,15 @@ function gadgetHandler:AllowUnitKamikaze(unitID, targetID)
   return true
 end
 
+function gadgetHandler:AllowUnitChase(unitID, targetID)
+  for _,g in r_ipairs(self.AllowUnitChaseList) do
+    if (not g:AllowUnitChase(unitID, targetID)) then
+      return false
+    end
+  end
+
+  return true
+end
 
 function gadgetHandler:AllowFeatureBuildStep(builderID, builderTeam, featureID, featureDefID, part)
   for _,g in r_ipairs(self.AllowFeatureBuildStepList) do

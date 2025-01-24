@@ -673,7 +673,9 @@ void CMobileCAI::ExecuteStop(Command& c)
 }
 
 
-
+// debug print includes
+#include<iostream>
+#include<string>
 
 void CMobileCAI::ExecuteObjectAttack(Command& c)
 {
@@ -727,19 +729,29 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 	// in range with our biggest (?) weapon, so stop moving
 	// also make sure that we're not locked in close-in/in-range state
 	// loop due to rotates invoked by in-range or out-of-range states
+	std::cout << "Chase Logic: Frame: " << gs->frameNum << std::endl;
+	std::cout << "tryTargetRotate = " << tryTargetRotate << std::endl;
 	if (tryTargetRotate) {
-		const bool canChaseTarget = (!owner->unitDef->stopToAttack) && (owner->moveState != MOVESTATE_HOLDPOS);
-		const bool targetBehind = (targetMidPosVec.dot(orderTarget->speed) < 0.0f);
+		//(!tempOrder || (owner->moveState != MOVESTATE_HOLDPOS));
+		//ask game if we use should use below engine chase behavior
 
-		if (canChaseTarget && tryTargetHeading && targetBehind && !owner->unitDef->IsHoveringAirUnit()) {
-			SetGoal(owner->pos + (orderTarget->speed * 80), owner->pos, SQUARE_SIZE, orderTarget->speed.w * 1.1f);
-		} else {
-			StopMove();
+		//std::cout << "Chase Logic: Frame: " << gs->frameNum << std::endl;
+		if (eventHandler.AllowUnitChase(owner, orderTarget))
+		{
+			std::cout << "Chase Logic: Allowed" << std::endl;
+			const bool canChaseTarget = (!owner->unitDef->stopToAttack) && (owner->moveState != MOVESTATE_HOLDPOS);
+			const bool targetBehind = (targetMidPosVec.dot(orderTarget->speed) < 0.0f);
 
-			if (gs->frameNum > (lastCloseInTry + MAX_CLOSE_IN_RETRY_TICKS))
-				owner->moveType->KeepPointingTo(orderTarget->midPos, minPointingDist, true);
+			if (canChaseTarget && tryTargetHeading && targetBehind && !owner->unitDef->IsHoveringAirUnit()) {
+				SetGoal(owner->pos + (orderTarget->speed * 80), owner->pos, SQUARE_SIZE, orderTarget->speed.w * 1.1f);
+			}
+			else {
+				StopMove();
+
+				if (gs->frameNum > (lastCloseInTry + MAX_CLOSE_IN_RETRY_TICKS))
+					owner->moveType->KeepPointingTo(orderTarget->midPos, minPointingDist, true);
+			}
 		}
-
 		owner->AttackUnit(orderTgtInfo.unit, orderTgtInfo.isUserTarget, orderTgtInfo.isManualFire);
 		return;
 	}
@@ -778,9 +790,9 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 			goalDiff += orderTarget->pos;
 
 			SetGoal(goalDiff, owner->pos);
+			return;
 		}
 
-		return;
 	}
 
 	// not a temporary order or not on hold-position; close in on target more
@@ -868,6 +880,7 @@ void CMobileCAI::ExecuteAttack(Command& c)
 		}
 	}
 
+	std::cout << "inCommand = " << inCommand << std::endl;
 	if (!inCommand) {
 		switch (c.GetNumParams()) {
 			case 0: {
@@ -894,6 +907,7 @@ void CMobileCAI::ExecuteAttack(Command& c)
 				const float3 tgtPosDir = (tgtErrPos - owner->pos).Normalize();
 
 				// FIXME: don't call SetGoal() if target is already in range of some weapon?
+				std::cout << "Set Goal Line 1 Frame: " << gs->frameNum << std::endl;
 				SetGoal(tgtErrPos - tgtPosDir * CalcTargetRadius(targetUnit, targetUnit->radius, 1.0f), owner->pos);
 				SetOrderTarget(targetUnit);
 				owner->AttackUnit(targetUnit, !c.IsInternalOrder(), c.GetID() == CMD_MANUALFIRE);

@@ -216,6 +216,7 @@ class CEventClient
 		virtual bool AllowUnitCloak(const CUnit* unit, const CUnit* enemy) { return true; }
 		virtual bool AllowUnitDecloak(const CUnit* unit, const CSolidObject* object, const CWeapon* weapon) { return true; }
 		virtual bool AllowUnitKamikaze(const CUnit* unit, const CUnit* target, bool allowed) { return true; }
+		virtual bool AllowUnitChase(const CUnit* unit, const CUnit* target) { return true; }
 		virtual bool AllowFeatureCreation(const FeatureDef* featureDef, int allyTeamID, const float3& pos) { return true; }
 		virtual bool AllowFeatureBuildStep(const CUnit* builder, const CFeature* feature, float part) { return true; }
 		virtual bool AllowResourceLevel(int teamID, const string& type, float level) { return true; }
