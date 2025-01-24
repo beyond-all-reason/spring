@@ -19,4 +19,5 @@ add_library(archives STATIC
 target_link_libraries(archives
 	7zip
 	${SPRING_MINIZIP_LIBRARY}
+	Tracy::TracyClient
 )
