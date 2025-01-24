@@ -157,6 +157,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(CreateUnit);
 	REGISTER_LUA_CFUNC(DestroyUnit);
 	REGISTER_LUA_CFUNC(TransferUnit);
+	REGISTER_LUA_CFUNC(TransferUnitLimit);
 
 	REGISTER_LUA_CFUNC(CreateFeature);
 	REGISTER_LUA_CFUNC(DestroyFeature);
@@ -1748,9 +1749,10 @@ int LuaSyncedCtrl::DestroyUnit(lua_State* L)
 /***
  * @function Spring.TransferUnit
  * @number unitID
- * @number newTeamID
+ * @number newTeamId
  * @bool[opt=true] given if false, the unit is captured.
- * @treturn nil
+ * @bool[opt=false] adjustUnitLimit if true, sets newTeam.maxUnits++ and oldTeam.maxUnits-- before transfer
+ * @treturn bool successfulTransfer
  */
 int LuaSyncedCtrl::TransferUnit(lua_State* L)
 {
@@ -1760,29 +1762,99 @@ int LuaSyncedCtrl::TransferUnit(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	const int newTeam = luaL_checkint(L, 2);
-	if (!teamHandler.IsValidTeam(newTeam))
+	const int newTeamId = luaL_checkint(L, 2);
+	if (!teamHandler.IsValidTeam(newTeamId))
 		return 0;
 
-	const CTeam* team = teamHandler.Team(newTeam);
-	if (team == nullptr)
+	CTeam* newTeam = teamHandler.Team(newTeamId);
+	if (newTeam == nullptr)
 		return 0;
 
 	bool given = true;
 	if (FullCtrl(L) && lua_isboolean(L, 3))
 		given = lua_toboolean(L, 3);
 
+	bool adjustUnitLimit = false;
+	if (FullCtrl(L) && lua_isboolean(L, 4))
+		adjustUnitLimit = lua_toboolean(L, 4);
+
+	CTeam* oldTeam = teamHandler.Team(unit->team);
+	if (oldTeam == nullptr) {
+		return 0;
+	}
+
 	if (inTransferUnit >= MAX_CMD_RECURSION_DEPTH)
 		luaL_error(L, "TransferUnit() recursion is not permitted, max depth: %d", MAX_CMD_RECURSION_DEPTH);
 
 	++ inTransferUnit;
 	ASSERT_SYNCED(unit->id);
-	ASSERT_SYNCED((int)newTeam);
+	ASSERT_SYNCED(oldTeam->teamNum);
+	ASSERT_SYNCED((int)newTeamId);
 	ASSERT_SYNCED(given);
-	unit->ChangeTeam(newTeam, given ? CUnit::ChangeGiven
+	ASSERT_SYNCED(adjustUnitLimit);
+	if (adjustUnitLimit) {
+		newTeam->maxUnits++;
+		oldTeam->maxUnits--;
+	}
+	bool successfulTransfer = unit->ChangeTeam(newTeamId, given ? CUnit::ChangeGiven
 	                                : CUnit::ChangeCaptured);
+	if (adjustUnitLimit && !successfulTransfer) {
+		newTeam->maxUnits--;
+		oldTeam->maxUnits++;
+	}
 	-- inTransferUnit;
-	return 0;
+	
+	lua_pushboolean(L, successfulTransfer);
+	return 1;
+}
+
+
+/***
+ * @function Spring.TransferUnitLimit
+ * @number fromTeamID
+ * @number newTeamID
+ * @number transferAmnt
+ * @treturn bool successfulTransfer
+ */
+int LuaSyncedCtrl::TransferUnitLimit(lua_State* L)
+{
+	CheckAllowGameChanges(L);
+	
+	const int fromTeamID = luaL_checkint(L, 1);
+	if (!teamHandler.IsValidTeam(fromTeamID))
+		return 0;
+
+	const int newTeamID = luaL_checkint(L, 2);
+	if (!teamHandler.IsValidTeam(newTeamID))
+		return 0;
+
+	CTeam* fromTeam = teamHandler.Team(fromTeamID);
+	if (fromTeam == nullptr)
+		return 0;
+
+	CTeam* toTeam = teamHandler.Team(toTeamID);
+	if (toTeam == nullptr)
+		return 0;
+
+	const int transferAmnt = luaL_checkint(L, 3);
+	
+	// Make sure transferAmnt is in range
+	if (transferAmnt < fromTeam->maxUnits) {
+		luaL_error(L, "TransferUnitLimit(): transferAmnt > maxUnits");
+	}
+	if (transferAmnt < fromTeam->maxUnits - fromTeam->numUnits) {
+		luaL_error(L, "TransferUnitLimit(): transferAmnt too large; would result in numUnits > maxUnits");
+	}
+
+	bool success;
+	if (transferAmnt > 0) { 
+		success = teamHandler->TransferUnitLimit(fromTeam, toTeam, transferAmnt); 
+	} else { 
+		success = teamHandler->TransferUnitLimit(toTeam, fromTeam, -transferAmnt); 
+	}
+
+	lua_pushboolean(L, success);
+	return 1;
 }
 
 /******************************************************************************
