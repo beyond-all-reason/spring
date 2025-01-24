@@ -98,8 +98,6 @@ public:
 	int shadowMapSize;
 	int shadowGenBits;
 private:
-	static constexpr size_t NUM_CASCADES = 3;
-
 	bool shadowsLoaded = false;
 	bool inShadowPass = false;
 
@@ -116,8 +114,6 @@ private:
 	std::array<Shader::IProgramObject*, SHADOWGEN_PROGRAM_COUNT> shadowGenProgs;
 
 	AABB lightAABB;
-
-	std::array<float2, NUM_CASCADES> cameraSplits;
 
 	CMatrix44f projMatrix;
 	CMatrix44f viewMatrix;

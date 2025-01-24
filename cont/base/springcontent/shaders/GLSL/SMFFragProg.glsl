@@ -364,9 +364,8 @@ void main() {
 	#if !defined(DEFERRED_MODE) && defined(HAVE_SHADOWS)
 	{
 		vec4 vertexShadowPos = shadowMat * vertexWorldPos;
-		//vertexShadowPos.xyz /= vertexShadowPos.w;
+		vertexShadowPos.xyz /= vertexShadowPos.w;
 		vertexShadowPos.xy = vertexShadowPos.xy * 0.5 + 0.5;
-			//vertexShadowPos.xy += vec2(0.5);
 
 		// same as ARB shader: shadowCoeff = 1 - (1 - shadowCoeff) * groundShadowDensity
 		vec3 shadowColor = texture(shadowColorTex, vertexShadowPos.xy).rgb;

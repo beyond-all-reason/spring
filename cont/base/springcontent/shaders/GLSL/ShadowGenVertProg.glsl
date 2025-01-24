@@ -18,12 +18,11 @@ void main() {
 	float NdotL = clamp(dot(lightVertexNormal, vec3(0.0, 0.0, 1.0)), 0.0, 1.0);
 
 	//use old bias formula from GetShadowPCFRandom(), but this time to write down shadow depth map values
-	//const float cb = 1e-6;
-	//float bias = cb * tan(acos(NdotL));
-	//bias = clamp(bias, 0.0, 100.0 * cb);
+	const float cb = 1e-6;
+	float bias = cb * tan(acos(NdotL));
+	bias = clamp(bias, 0.0, 100.0 * cb);
 
-	//lightVertexPos.xy += vec2(0.5);
-	//lightVertexPos.z  += bias;
+	lightVertexPos.z  += bias;
 
 	gl_Position = gl_ProjectionMatrix * lightVertexPos;
 
