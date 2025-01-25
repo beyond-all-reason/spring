@@ -1,0 +1,806 @@
+---
+layout: default
+title: Shaders
+permalink: ldoc/modules/Shaders.html
+description: Shader creation and management
+parent: Lua API
+table: 0x55801f53ac20
+---
+
+{% raw %}
+    <h1>Module <code>Shaders</code></h1>
+    <p>Shader creation and management</p>
+    <p>
+
+
+<p> These functions are ONLY available if the graphics adapter supports GLSL.
+ Please test in your scripts if one of them exists before you use them. In headless mode, the gl. callouts are nil.</p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaShaders.cpp">rts/Lua/LuaShaders.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Functions">Functions</a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#gl.GetShaderLog">gl.GetShaderLog</a>
+            </dt>
+            <dd>
+              Returns the shader compilation error log.
+            </dd>
+            <dt>
+              <a href="#gl.CreateShader">gl.CreateShader</a>
+            </dt>
+            <dd>
+              Create a shader from shaderParams table:
+            </dd>
+            <dt>
+              <a href="#gl.DeleteShader">gl.DeleteShader</a>
+            </dt>
+            <dd>
+              Deletes a shader identified by shaderID
+            </dd>
+            <dt>
+              <a href="#gl.UseShader">gl.UseShader</a>
+            </dt>
+            <dd>
+              Binds a shader program identified by shaderID.
+            </dd>
+            <dt>
+              <a href="#gl.ActiveShader">gl.ActiveShader</a>
+            </dt>
+            <dd>
+              Binds a shader program identified by shaderID, and calls the Lua func with the specified arguments.
+            </dd>
+            <dt>
+              <a href="#gl.GetActiveUniforms">gl.GetActiveUniforms</a>
+            </dt>
+            <dd>
+              Query the active (actually used) uniforms of a shader and identify their names, types (float, int, uint) and sizes (float, vec4, ...).
+            </dd>
+            <dt>
+              <a href="#gl.GetUniformLocation">gl.GetUniformLocation</a>
+            </dt>
+            <dd>
+              Returns the locationID of a shaders uniform.
+            </dd>
+            <dt>
+              <a href="#gl.Uniform">gl.Uniform</a>
+            </dt>
+            <dd>
+              Sets the uniform float value at the locationID for the currently active shader.
+            </dd>
+            <dt>
+              <a href="#gl.UniformInt">gl.UniformInt</a>
+            </dt>
+            <dd>
+              Sets the uniform int value at the locationID for the currently active shader.
+            </dd>
+            <dt>
+              <a href="#gl.UniformArray">gl.UniformArray</a>
+            </dt>
+            <dd>
+              Sets the an array of uniform values at the locationID for the currently active shader.
+            </dd>
+            <dt>
+              <a href="#gl.UniformMatrix">gl.UniformMatrix</a>
+            </dt>
+            <dd>
+              Sets the a uniform mat4 locationID for the currently active shader.
+            </dd>
+            <dt>
+              <a href="#gl.GetEngineUniformBufferDef">gl.GetEngineUniformBufferDef</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#gl.GetEngineModelUniformDataDef">gl.GetEngineModelUniformDataDef</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+            <dt>
+              <a href="#gl.SetGeometryShaderParameter">gl.SetGeometryShaderParameter</a>
+            </dt>
+            <dd>
+              Sets the Geometry shader parameters for shaderID.
+            </dd>
+            <dt>
+              <a href="#gl.SetTesselationShaderParameter">gl.SetTesselationShaderParameter</a>
+            </dt>
+            <dd>
+              Sets the tesselation shader parameters for shaderID.
+            </dd>
+        </dl>
+
+      <h2 id="Functions" class="section-header ">
+        Functions
+      </h2>
+
+        <h3 id="gl.GetShaderLog">
+          gl.GetShaderLog()
+        </h3>
+        <p>Returns the shader compilation error log.</p>
+        <div class="code-example">
+        <p>
+           This is empty if the shader linking failed, in that case, check your in/out blocks and ensure they match.
+
+        </p>
+
+
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              infoLog</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.CreateShader">
+          gl.CreateShader(shaderParams)
+        </h3>
+        <p>Create a shader from shaderParams table:</p>
+        <div class="code-example">
+        <p>
+           ( table shaderParams )
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>shaderParams</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+
+<p> shaderID</p>
+
+<pre><code>({[ vertex   = "glsl code" ,]
+  [ tcs      = "glsl code" ,]
+  [ tes      = "glsl code" ,]
+  [ geometry = "glsl code" ,]
+  [ fragment = "glsl code" ,]
+  [ uniform       = { uniformName = number value, ...} ,] (specify a Lua array as an argument to uniformName to initialize GLSL arrays)
+  [ uniformInt    = { uniformName = number value, ...} ,] (specify a Lua array as an argument to uniformName to initialize GLSL arrays)
+  [ uniformFloat  = { uniformName = number value, ...} ,] (specify a Lua array as an argument to uniformName to initialize GLSL arrays)
+  [ uniformMatrix = { uniformName = number value, ...} ,]
+  [ geoInputType = number inType,]
+  [ geoOutputType = number outType,]
+  [ geoOutputVerts = number maxVerts,]
+  [ definitions = "string of shader #defines", ]
+})
+</code></pre>
+
+<ul>
+    <li>The "Vertex" or vertex-shader is your GLSL-Code as string, its written in a C-Dialect. This shader is busy deforming the geometry of a unit but it can not create new polygons. Use it for waves, wobbling surfaces etc.</li>
+    <li>The "Geometry" or Geometry-shader can create new vertices and vertice-stripes from points.</li>
+    <li>The "TCS" or Tesselation Control Shader controls how much tessellation a particular patch gets; it also defines the size of a patch, thus allowing it to augment data. It can also filter vertex data taken from the vertex shader. The main purpose of the TCS is to feed the tessellation levels to the Tessellation primitive generator stage, as well as to feed patch data (as its output values) to the Tessellation Evaluation Shader stage.</li>
+    <li>The "TES" or Tesselation Evaluation Shader takes the abstract patch generated by the tessellation primitive generation stage, as well as the actual vertex data for the entire patch, and generates a particular vertex from it. Each TES invocation generates a single vertex. It can also take per-patch data provided by the Tessellation Control Shader.</li>
+    <li>The "Fragment" or Fragment-shader (sometimes called pixel-Shader) is post processing the allready rendered picture (for example drawing stars on the sky)- remember textures are not always 2 dimensional pictures. They can contain information about the depth, or the third value marks areas and the strength at which these are processed.</li>
+    <li>The Uniforms are the values, you send along with the shader-program. To use them in the shader-program declare them like this: <code>uniform float frame;</code></li>
+</ul>
+
+<p> The engine will automatically fill in an appropriately named uniform for team colour if it is declared;</p>
+
+<pre><code>uniform vec4 teamColor;
+</code></pre>
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.DeleteShader">
+          gl.DeleteShader(shaderID)
+        </h3>
+        <p>Deletes a shader identified by shaderID</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>shaderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.UseShader">
+          gl.UseShader(shaderID)
+        </h3>
+        <p>Binds a shader program identified by shaderID.</p>
+        <div class="code-example">
+        <p>
+           Pass 0 to disable the shader. Returns wether the shader was successfully bound.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>shaderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">bool</span></strong>
+              linked</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.ActiveShader">
+          gl.ActiveShader(shaderID, func[, arg1[, arg2[, argn]]])
+        </h3>
+        <p>Binds a shader program identified by shaderID, and calls the Lua func with the specified arguments.</p>
+        <div class="code-example">
+        <p>
+
+
+ Can be used in NON-drawing events (to update uniforms etc.)!
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>shaderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>func</code>
+                   <strong><span class="type">function</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>arg1</code>
+                   <strong><span class="type">any</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>arg2</code>
+                   <strong><span class="type">any</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>argn</code>
+                   <strong><span class="type">any</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.GetActiveUniforms">
+          gl.GetActiveUniforms(shaderID)
+        </h3>
+        <p>Query the active (actually used) uniforms of a shader and identify their names, types (float, int, uint) and sizes (float, vec4, ...).</p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>shaderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+              <code>ActiveUniforms = { { name = &quot;name&quot;, type = &quot;type&quot;, length = number length, size = number size }, ...}</code></li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.GetUniformLocation">
+          gl.GetUniformLocation(shaderID, name)
+        </h3>
+        <p>Returns the locationID of a shaders uniform.</p>
+        <div class="code-example">
+        <p>
+           Needed for changing uniform values with @function gl.Uniform.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>shaderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>name</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">number</span></strong>
+              locationID</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.Uniform">
+          gl.Uniform(locationID, f1[, f2[, f3[, f4]]])
+        </h3>
+        <p>Sets the uniform float value at the locationID for the currently active shader.</p>
+        <div class="code-example">
+        <p>
+           Shader must be activated before setting uniforms.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>locationID</code>
+                   <strong><span class="type">number</span></strong>
+                   |string uniformName
+                 </li>
+                 <li>
+                   <code>f1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>f2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>f3</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>f4</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.UniformInt">
+          gl.UniformInt(locationID, int1[, int2[, int3[, int4]]])
+        </h3>
+        <p>Sets the uniform int value at the locationID for the currently active shader.</p>
+        <div class="code-example">
+        <p>
+           Shader must be activated before setting uniforms.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>locationID</code>
+                   <strong><span class="type">number</span></strong>
+                   |string uniformName
+                 </li>
+                 <li>
+                   <code>int1</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>int2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>int3</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>int4</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.UniformArray">
+          gl.UniformArray(locationID, type, uniforms)
+        </h3>
+        <p>Sets the an array of uniform values at the locationID for the currently active shader.</p>
+        <div class="code-example">
+        <p>
+           Shader must be activated before setting uniforms. Type can be one of {1 = int, 2 = float, 3 = float matrix}.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>locationID</code>
+                   <strong><span class="type">number</span></strong>
+                   |string uniformName
+                 </li>
+                 <li>
+                   <code>type</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>uniforms</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></strong>
+                    Array up to 1024 elements
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.UniformMatrix">
+          gl.UniformMatrix(locationID, m1[, m2[, mn[, m16]]])
+        </h3>
+        <p>Sets the a uniform mat4 locationID for the currently active shader.</p>
+        <div class="code-example">
+        <p>
+           Shader must be activated before setting uniforms. Can set one one common matrix like shadow, or by passing 16 additional numbers for the matrix.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>locationID</code>
+                   <strong><span class="type">number</span></strong>
+                   |string uniformName
+                 </li>
+                 <li>
+                   <code>m1</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a> or <span class="type">number</span></strong>
+                    "shadows" | "camera" | "caminv" | "camprj"
+                 </li>
+                 <li>
+                   <code>m2</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>mn</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>m16</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.GetEngineUniformBufferDef">
+          gl.GetEngineUniformBufferDef(index)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+
+ Return the GLSL compliant definition of UniformMatricesBuffer(idx=0) or UniformParamsBuffer(idx=1) structure.
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>index</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              glslDefinition</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.GetEngineModelUniformDataDef">
+          gl.GetEngineModelUniformDataDef(index)
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+
+ Return the GLSL compliant definition of ModelUniformData structure (per Unit/Feature buffer available on GPU)
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>index</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+              glslDefinition</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.SetGeometryShaderParameter">
+          gl.SetGeometryShaderParameter(shaderID, param, number)
+        </h3>
+        <p>Sets the Geometry shader parameters for shaderID.</p>
+        <div class="code-example">
+        <p>
+           Needed by geometry shader programs (check the opengl GL_ARB_geometry_shader4 extension for glProgramParameteri)
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>shaderID</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>param</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>number</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+        <h3 id="gl.SetTesselationShaderParameter">
+          gl.SetTesselationShaderParameter(param, number)
+        </h3>
+        <p>Sets the tesselation shader parameters for shaderID.</p>
+        <div class="code-example">
+        <p>
+
+
+ Needed by tesselation shader programs (check the opengl GL_ARB_tessellation_shader extension for glProgramParameteri)
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>param</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>number</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+
+{% endraw %}

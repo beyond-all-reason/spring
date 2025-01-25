@@ -1,0 +1,207 @@
+---
+layout: default
+title: OpenGL
+permalink: ldoc/modules/OpenGL.html
+description: Lua OpenGL API
+parent: Lua API
+table: 0x55801fb34e60
+---
+
+{% raw %}
+    <h1>Module <code>OpenGL</code></h1>
+    <p>Lua OpenGL API</p>
+    <p>
+
+<hr/>
+</p>
+      <h3>See also:</h3>
+      <ul>
+          <li><a href="https://github.com/beyond-all-reason/spring/blob/BAR105/rts/Lua/LuaOpenGL.cpp">rts/Lua/LuaOpenGL.cpp</a></li>
+      </ul>
+
+        <h2 class="no_anchor"><a href="#Text">Text </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#gl.Text">gl.Text</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+        <h2 class="no_anchor"><a href="#Draw_Basics">Draw Basics </a></h2>
+        <dl class="big-dt">
+            <dt>
+              <a href="#gl.Color">gl.Color</a>
+            </dt>
+            <dd>
+
+
+
+            </dd>
+        </dl>
+
+      <h2 id="Text" class="section-header has-description">
+        Text
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="gl.Text">
+          gl.Text(text, x, y, size[, options])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>text</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>x</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>y</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>size</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                 </li>
+                 <li>
+                   <code>options</code>
+                   <strong><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></strong>
+
+<p> concatenated string of option characters.</p>
+
+<ul>
+    <li>horizontal alignment:
+    <ul>
+        <li>'c' = center</li>
+        <li>'r' = right</li>
+    </ul></li>
+    <li>vertical alignment:
+    <ul>
+        <li>'a' = ascender</li>
+        <li>'t' = top</li>
+        <li>'v' = vertical center</li>
+        <li>'x' = baseline</li>
+        <li>'b' = bottom</li>
+        <li>'d' = descender</li>
+    </ul></li>
+    <li>decorations:
+    <ul>
+        <li>'o' = black outline</li>
+        <li>'O' = white outline</li>
+        <li>'s' = shadow</li>
+    </ul></li>
+    <li>other:
+    <ul>
+        <li>'n' = don't round vertex coords to nearest integer (font may get blurry)</li>
+    </ul></li>
+</ul>
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+      <h2 id="Draw_Basics" class="section-header has-description">
+        Draw Basics
+      </h2>
+
+        <p>
+
+<hr/>
+</p>
+        <h3 id="gl.Color">
+          gl.Color(r[, g[, b[, a]]])
+        </h3>
+        <p></p>
+        <div class="code-example">
+        <p>
+
+        </p>
+
+
+           <h4 class="no_anchor">Parameters:</h4>
+           <ol>
+                 <li>
+                   <code>r</code>
+                   <strong><span class="type">number</span> or <span class="type">{number,number,number,number}</span></strong>
+                    red when number, rgba
+ quadruple or rgb triple otherwise
+                 </li>
+                 <li>
+                   <code>g</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>b</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+                 <li>
+                   <code>a</code>
+                   <strong><span class="type">number</span></strong>
+
+
+
+                   (<em>optional</em>)
+                 </li>
+           </ol>
+
+      <h4 class="no_anchor">Returns:</h4>
+          <ol>
+              <li>
+                <strong><span class="type">nil</span></strong>
+
+
+</li>
+          </ol>
+
+
+
+        </div>
+
+{% endraw %}
