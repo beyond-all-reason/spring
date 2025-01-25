@@ -199,15 +199,16 @@ void CShadowHandler::DrawFrustumDebugMap() const
 	if (!debugFrustum || !shadowsLoaded || !freezeFrustum)
 		return;
 
-	static constexpr SColor NEAR_PLANE_COL = SColor{ 255,   0,   0, 255 };
-	static constexpr SColor  FAR_PLANE_COL = SColor{ 0  , 255,   0, 255 };
+	static constexpr SColor SHADOW_CAM_COL = SColor{ 255,   0,   0, 255 };
+	static constexpr SColor WORLD_BNDS_COL = SColor{ 0,   0, 255, 255 };
 	static constexpr SColor PLAYER_CAM_COL = SColor{ 255, 255, 255, 255 };
+	static constexpr SColor CLIPPD_CAM_COL = SColor{ 0, 255,   0, 255 };
 
 	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
 	{
 		auto mat = shadCam->GetViewMatrixInverse();
-		mat.Scale(64.0f);
-		GL::shapes.DrawSolidSphere(5, 5, mat, float4{ 1, 0, 0, 1 });
+		mat.Scale(32.0f);
+		GL::shapes.DrawSolidSphere(10, 10, mat, float4{ 1, 0, 0, 1 });
 	}
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
@@ -217,15 +218,15 @@ void CShadowHandler::DrawFrustumDebugMap() const
 #if 1
 	// shadow frustum
 	{
-		const auto ntl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL), NEAR_PLANE_COL };
-		const auto ntr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR), NEAR_PLANE_COL };
-		const auto nbr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR), NEAR_PLANE_COL };
-		const auto nbl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL), NEAR_PLANE_COL };
+		const auto ntl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL), SHADOW_CAM_COL };
+		const auto ntr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR), SHADOW_CAM_COL };
+		const auto nbr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR), SHADOW_CAM_COL };
+		const auto nbl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL), SHADOW_CAM_COL };
 
-		const auto ftl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL),  FAR_PLANE_COL };
-		const auto ftr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR),  FAR_PLANE_COL };
-		const auto fbr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR),  FAR_PLANE_COL };
-		const auto fbl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL),  FAR_PLANE_COL };
+		const auto ftl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL), SHADOW_CAM_COL };
+		const auto ftr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR), SHADOW_CAM_COL };
+		const auto fbr = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR), SHADOW_CAM_COL };
+		const auto fbl = VA_TYPE_C{ shadCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL), SHADOW_CAM_COL };
 
 		rb.AddVertices({ nbl, nbr }); // NBL - NBR
 		rb.AddVertices({ nbr, ntr }); // NBR - NTR
@@ -241,14 +242,14 @@ void CShadowHandler::DrawFrustumDebugMap() const
 		rb.AddVertices({ fbr, ftr }); // FBR - FTR
 		rb.AddVertices({ ftr, ftl }); // FTR - FTL
 		rb.AddVertices({ ftl, fbl }); // FTL - FBL
-	}
 
-	glLineWidth(8.0f);
-	sh.Enable();
-	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
-	rb.DrawArrays(GL_LINES);
-	sh.Disable();
-#endif
+		glLineWidth(8.0f);
+		sh.Enable();
+		sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+		rb.DrawArrays(GL_LINES);
+		sh.Disable();
+	}
+#else
 	// shadow frustum (alt)
 	{
 		const auto corners = lightAABB.GetCorners(shadCam->GetViewMatrixInverse());
@@ -288,19 +289,96 @@ void CShadowHandler::DrawFrustumDebugMap() const
 		rb.AddVertices({ fbr, ftr }); // FBR - FTR
 		rb.AddVertices({ ftr, ftl }); // FTR - FTL
 		rb.AddVertices({ ftl, fbl }); // FTL - FBL
+
+		glLineWidth(8.0f);
+		sh.Enable();
+		rb.DrawArrays(GL_LINES);
+		sh.Disable();
 	}
+#endif
+	// world bounds
+	{
+		const auto wcs = game->GetWorldBounds().GetCorners();
+		enum {
+			NBL = 1,
+			FBL = 0,
+			NBR = 3,
+			FBR = 2,
+			NTL = 5,
+			FTL = 4,
+			NTR = 7,
+			FTR = 6,
+		};
 
-	glLineWidth(8.0f);
-	sh.Enable();
-	rb.DrawArrays(GL_LINES);
-	sh.Disable();
+		const auto ntl = VA_TYPE_C{ wcs[NTL], WORLD_BNDS_COL };
+		const auto ntr = VA_TYPE_C{ wcs[NTR], WORLD_BNDS_COL };
+		const auto nbr = VA_TYPE_C{ wcs[NBR], WORLD_BNDS_COL };
+		const auto nbl = VA_TYPE_C{ wcs[NBL], WORLD_BNDS_COL };
 
+		const auto ftl = VA_TYPE_C{ wcs[FTL], WORLD_BNDS_COL };
+		const auto ftr = VA_TYPE_C{ wcs[FTR], WORLD_BNDS_COL };
+		const auto fbr = VA_TYPE_C{ wcs[FBR], WORLD_BNDS_COL };
+		const auto fbl = VA_TYPE_C{ wcs[FBL], WORLD_BNDS_COL };
+
+		rb.AddVertices({ nbl, nbr }); // NBL - NBR
+		rb.AddVertices({ nbr, ntr }); // NBR - NTR
+		rb.AddVertices({ ntr, ntl }); // NTR - NTL
+		rb.AddVertices({ ntl, nbl }); // NTL - NBL
+
+		rb.AddVertices({ ntl, ftl }); // NTL - FTL
+		rb.AddVertices({ ntr, ftr }); // NTR - FTR
+		rb.AddVertices({ nbl, fbl }); // NBL - FBL
+		rb.AddVertices({ nbr, fbr }); // NBR - FBR
+
+		rb.AddVertices({ fbl, fbr }); // FBL - FBR
+		rb.AddVertices({ fbr, ftr }); // FBR - FTR
+		rb.AddVertices({ ftr, ftl }); // FTR - FTL
+		rb.AddVertices({ ftl, fbl }); // FTL - FBL
+
+		glLineWidth(4.0f);
+		sh.Enable();
+		rb.DrawArrays(GL_LINES);
+		sh.Disable();
+	}
+	// player's camera frustum
+	{
+		const auto ntl = VA_TYPE_C{ playCamFrustum[CCamera::FRUSTUM_POINT_NTL], PLAYER_CAM_COL };
+		const auto ntr = VA_TYPE_C{ playCamFrustum[CCamera::FRUSTUM_POINT_NTR], PLAYER_CAM_COL };
+		const auto nbr = VA_TYPE_C{ playCamFrustum[CCamera::FRUSTUM_POINT_NBR], PLAYER_CAM_COL };
+		const auto nbl = VA_TYPE_C{ playCamFrustum[CCamera::FRUSTUM_POINT_NBL], PLAYER_CAM_COL };
+
+		const auto ftl = VA_TYPE_C{ playCamFrustum[CCamera::FRUSTUM_POINT_FTL], PLAYER_CAM_COL };
+		const auto ftr = VA_TYPE_C{ playCamFrustum[CCamera::FRUSTUM_POINT_FTR], PLAYER_CAM_COL };
+		const auto fbr = VA_TYPE_C{ playCamFrustum[CCamera::FRUSTUM_POINT_FBR], PLAYER_CAM_COL };
+		const auto fbl = VA_TYPE_C{ playCamFrustum[CCamera::FRUSTUM_POINT_FBL], PLAYER_CAM_COL };
+
+		rb.AddVertices({ nbl, nbr }); // NBL - NBR
+		rb.AddVertices({ nbr, ntr }); // NBR - NTR
+		rb.AddVertices({ ntr, ntl }); // NTR - NTL
+		rb.AddVertices({ ntl, nbl }); // NTL - NBL
+
+		rb.AddVertices({ ntl, ftl }); // NTL - FTL
+		rb.AddVertices({ ntr, ftr }); // NTR - FTR
+		rb.AddVertices({ nbl, fbl }); // NBL - FBL
+		rb.AddVertices({ nbr, fbr }); // NBR - FBR
+
+		rb.AddVertices({ fbl, fbr }); // FBL - FBR
+		rb.AddVertices({ fbr, ftr }); // FBR - FTR
+		rb.AddVertices({ ftr, ftl }); // FTR - FTL
+		rb.AddVertices({ ftl, fbl }); // FTL - FBL
+
+		glLineWidth(4.0f);
+		sh.Enable();
+		sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
+		rb.DrawArrays(GL_LINES);
+		sh.Disable();
+	}
 	// clipped world cube
 	{
 		size_t frstIdx = 0;
 		for (size_t currIdx = 0; currIdx < clippedWorldCube.size() - 1; /*NOOP*/) {
 			size_t nextIdx = (currIdx + 1);
-			rb.AddVertices({ { clippedWorldCube[currIdx], PLAYER_CAM_COL}, { clippedWorldCube[nextIdx], PLAYER_CAM_COL} });
+			rb.AddVertices({ { clippedWorldCube[currIdx], CLIPPD_CAM_COL}, { clippedWorldCube[nextIdx], CLIPPD_CAM_COL} });
 			if (clippedWorldCube[frstIdx] == clippedWorldCube[nextIdx]) {
 				currIdx += 2; // skip one
 				frstIdx = currIdx;
@@ -308,15 +386,95 @@ void CShadowHandler::DrawFrustumDebugMap() const
 				currIdx += 1;
 			}
 		}
+
+		glLineWidth(8.0f);
+		sh.Enable();
+		rb.DrawArrays(GL_LINES);
+		sh.Disable();
+		glLineWidth(1.0f);
+	}
+}
+/*
+void CShadowHandler::DumpFrustumData() const
+{
+	const auto& worldBounds = game->GetWorldBounds();
+	const CCamera* playerCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
+
+	const auto ntl = playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTL);
+	const auto ntr = playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NTR);
+	const auto nbr = playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBR);
+	const auto nbl = playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_NBL);
+
+	const auto ftl = playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTL);
+	const auto ftr = playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FTR);
+	const auto fbr = playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBR);
+	const auto fbl = playerCam->GetFrustumVert(CCamera::FRUSTUM_POINT_FBL);
+
+	std::ostringstream ss;
+
+	{
+		const auto wcs = worldBounds.GetCorners();
+
+		Geometry::Polygon worldCube;
+
+		// Left Face
+		worldCube.AddFace(wcs[0], wcs[1], wcs[5], wcs[4]);
+		// Right Face
+		worldCube.AddFace(wcs[2], wcs[6], wcs[7], wcs[3]);
+		// Near Face
+		worldCube.AddFace(wcs[0], wcs[4], wcs[6], wcs[2]);
+		// Far Face
+		worldCube.AddFace(wcs[1], wcs[3], wcs[7], wcs[5]);
+		// Top Face
+		worldCube.AddFace(wcs[4], wcs[5], wcs[7], wcs[6]);
+		// Bottom Face
+		worldCube.AddFace(wcs[0], wcs[2], wcs[3], wcs[1]);
+
+		Geometry::Polygon cameraFrustum;
+
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_LFT));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_RGT));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_BOT));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_TOP));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_NEA));
+		cameraFrustum.AddFace().SetPlane(playerCam->GetFrustumPlane(CCamera::FRUSTUM_PLANE_FAR));
+
+		worldCube.ClipByInPlace(cameraFrustum);
+
+		for (const auto& face : worldCube.GetFaces()) {
+			ss << "EdgeForm[Directive[Thick, Dashed, Yellow]], Opacity[0.2], Green, Polygon[{";
+			for (const auto& pnt : face.GetPoints()) {
+				ss << "{" << pnt.x << ", " << pnt.y << ", " << pnt.z << "}, ";
+			}
+			ss.seekp(-2, std::ios_base::end);
+			ss << "}],\n";
+		}
+		ss.seekp(-2, std::ios_base::end);
+		ss << '\0';
 	}
 
-
-	glLineWidth(4.0f);
-	sh.Enable();
-	rb.DrawArrays(GL_LINES);
-	sh.Disable();
-	glLineWidth(1.0f);
+	LOG(R"(
+Graphics3D[{
+{EdgeForm[Directive[Thick, Dashed, Blue]], Opacity[0], Cuboid[{%f, %f, %f}, {%f, %f, %f}]},
+{EdgeForm[Directive[Thick, Dashed, Red]], Opacity[0], Polygon[{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}}]},
+{EdgeForm[Directive[Thick, Dashed, Red]], Opacity[0], Polygon[{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}}]},
+{EdgeForm[Directive[Thick, Dashed, Red]], Opacity[0], Polygon[{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}}]},
+{EdgeForm[Directive[Thick, Dashed, Red]], Opacity[0], Polygon[{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}}]},
+{EdgeForm[Directive[Thick, Dashed, Red]], Opacity[0], Polygon[{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}}]},
+{EdgeForm[Directive[Thick, Dashed, Red]], Opacity[0], Polygon[{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}}]},
+%s
+}])"
+	, worldBounds.mins.x, worldBounds.mins.y, worldBounds.mins.z, worldBounds.maxs.x, worldBounds.maxs.y, worldBounds.maxs.z
+	, ntl.x, ntl.y, ntl.z, ntr.x, ntr.y, ntr.z, nbr.x, nbr.y, nbr.z, nbl.x, nbl.y, nbl.z
+	, ftl.x, ftl.y, ftl.z, ftr.x, ftr.y, ftr.z, fbr.x, fbr.y, fbr.z, fbl.x, fbl.y, fbl.z
+	, ntl.x, ntl.y, ntl.z, nbl.x, nbl.y, nbl.z, fbl.x, fbl.y, fbl.z, ftl.x, ftl.y, ftl.z
+	, ntr.x, ntr.y, ntr.z, nbr.x, nbr.y, nbr.z, fbr.x, fbr.y, fbr.z, ftr.x, ftr.y, ftr.z
+	, ntl.x, ntl.y, ntl.z, ntr.x, ntr.y, ntr.z, ftr.x, ftr.y, ftr.z, ftl.x, ftl.y, ftl.z
+	, nbl.x, nbl.y, nbl.z, nbr.x, nbr.y, nbr.z, fbr.x, fbr.y, fbr.z, fbl.x, fbl.y, fbl.z
+	, ss.str().c_str()
+	);
 }
+*/
 
 void CShadowHandler::FreeFBOAndTextures() {
 	if (shadowsFBO.IsValid()) {
@@ -629,6 +787,9 @@ namespace Impl {
 
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
+	// save the player's camera frustum verts in case we need them in CShadowHandler::DrawFrustumDebugMap()
+	playCamFrustum = playerCam->GetFrustum().verts;
+
 	const auto& worldBounds = game->GetWorldBounds();
 	{
 		// 1 Meg should be enough?
@@ -690,12 +851,18 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		lightAABB.AddPoint(viewMatrix * p);
 	}
 
-	float3 midPosLS = lightAABB.CalcCenter();
+	float3 lsMidPos = lightAABB.CalcCenter();
+	float3 lsDims = lightAABB.CalcScales();
+#if 0
 	float3 camPos;
-	bool hit = RayHitsAABB(worldBounds, viewMatrixInv * midPosLS, viewMatrixInv.GetZ(), camPos);
+	bool hit = RayHitsAABB(worldBounds, viewMatrixInv * lsMidPos, viewMatrixInv.GetZ(), camPos);
 	assert(hit);
 	viewMatrixInv.SetPos(camPos);
 	viewMatrix.Translate(-camPos);
+#else
+	viewMatrix.SetPos(-(lsMidPos + float3{ 0.0f, 0.0f, lsDims.z }));
+	viewMatrixInv.Translate(-viewMatrix.GetPos());
+#endif
 
 	lightAABB.mins += viewMatrix.GetPos();
 	lightAABB.maxs += viewMatrix.GetPos();

@@ -3387,6 +3387,19 @@ public:
 	}
 };
 
+/*
+class DumpShadowFrustum : public IUnsyncedActionExecutor {
+public:
+	DumpShadowFrustum() : IUnsyncedActionExecutor("DumpShadowFrustum", "Output shadows frustum culling data") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		shadowHandler.DumpFrustumData();
+		return true;
+	}
+};
+*/
+
 class CrashActionExecutor : public IUnsyncedActionExecutor {
 public:
 	CrashActionExecutor() : IUnsyncedActionExecutor("Crash", "Invoke an artificial crash through a NULL-pointer dereference (SIGSEGV)", true) {
@@ -4001,6 +4014,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<DebugTraceRayDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugShadowFrustum>());
 	AddActionExecutor(AllocActionExecutor<FreezeShadowFrustum>());
+	//AddActionExecutor(AllocActionExecutor<DumpShadowFrustum>());
 	AddActionExecutor(AllocActionExecutor<MuteActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundChannelEnableActionExecutor>());

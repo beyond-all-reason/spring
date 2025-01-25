@@ -83,6 +83,8 @@ public:
 
 	bool& DebugFrustumRef() { return debugFrustum; }
 	bool& FreezeFrustumRef() { return freezeFrustum; }
+
+	//void DumpFrustumData() const;
 private:
 	void FreeFBOAndTextures();
 	bool InitFBOAndTextures();
@@ -92,7 +94,6 @@ private:
 
 	void CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam);
 	void SetShadowCamera(CCamera* shadowCam);
-	void UpdateSplits();
 public:
 	int shadowConfig;
 	int shadowMapSize;
@@ -108,6 +109,7 @@ private:
 	inline static bool shadowsSupported = false;
 
 	std::vector<float3> clippedWorldCube;
+	std::array<float3, 8> playCamFrustum;
 
 	// these project geometry into light-space
 	// to write the (FBO) depth-buffer texture
