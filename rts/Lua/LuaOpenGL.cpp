@@ -5684,13 +5684,14 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
 	}
     GLuint objectID = (GLuint)luaL_checkinteger(L, 2);
     const char* label = luaL_checkstring(L, 3);
-
-	if (GLEW_KHR_debug){
-	    glObjectLabel(identifier, objectID, -1, label);
-	}
-	else {
-		luaL_error(L, "ObjectLabel requires GL_KHR_debug extension");
-	}
+	#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
+		if (GLEW_KHR_debug){
+			glObjectLabel(identifier, objectID, -1, label);
+		}
+		else {
+			luaL_error(L, "ObjectLabel requires GL_KHR_debug extension");
+		}
+	#endif
     return 0;
 }
 
@@ -5715,12 +5716,14 @@ int LuaOpenGL::PushDebugGroup(lua_State* L) {
 		luaL_error(L, "Message length exceeds GL_MAX_DEBUG_MESSAGE_LENGTH");
 		return 0;
 	}
-	if (GLEW_KHR_debug){
-		glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION: GL_DEBUG_SOURCE_THIRD_PARTY) , id, -1, message);
-	}
-	else {
-		luaL_error(L, "PushDebugGroup requires GL_KHR_debug extension");
-	}
+	#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
+		if (GLEW_KHR_debug){
+			glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION: GL_DEBUG_SOURCE_THIRD_PARTY) , id, -1, message);
+		}
+		else {
+			luaL_error(L, "PushDebugGroup requires GL_KHR_debug extension");
+		}
+	#endif
 	return 0;
 }
 
