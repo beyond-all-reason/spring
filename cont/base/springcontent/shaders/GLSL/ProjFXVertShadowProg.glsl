@@ -41,6 +41,5 @@ void main() {
 	vCol = color;
 
 	vec4 lightVertexPos = gl_ModelViewMatrix * vec4(pos, 1.0);
-	lightVertexPos.xy += vec2(0.5);
 	gl_Position = gl_ProjectionMatrix * lightVertexPos;
 }

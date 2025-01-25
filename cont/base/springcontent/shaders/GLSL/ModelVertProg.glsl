@@ -29,7 +29,8 @@ void main(void)
 
 #if (USE_SHADOWS == 1)
 	shadowVertexPos = shadowMatrix * vertexWorldPos;
-	shadowVertexPos.xy += vec2(0.5);
+	shadowVertexPos /= shadowVertexPos.w;
+	shadowVertexPos.xy = shadowVertexPos.xy * 0.5 + 0.5;
 #endif
 
 	gl_TexCoord[0].st = gl_MultiTexCoord0.st;
