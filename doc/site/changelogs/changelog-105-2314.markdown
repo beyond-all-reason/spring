@@ -20,11 +20,11 @@ You can replace these functions before migrating, and known existing games have 
 * removed the recently added `Spring.MakeGLDBQuery` and `Spring.GetGLDBQuery`.
 
 ### Behaviour changes
-* failure to load a model now results in a crash. This avoids a potential desync down the road.
 * QTPFS had a major overhaul, with multiple modrule changes and behaviour changes. See the section below.
 * many invalid def entries now cause the unit to be rejected; on the other hand, many (in particular, metal cost and weapon damage) can now be 0. Watch out for division by 0!
 Check the "def validity checks" section below for details.
 * nanoturret (immobile builder) build-range now only needs to reach the edge of the buildee's radius instead of its center. Mobile builders already worked this way.
+* raw move via `Spring.SetUnitMoveGoal` is now considered completed not only when the unit reaches its goal but also when it touches another unit who is at the goal. As of 105-2314 there is no easy way to detect that this happened.
 * screenshots are postfixed with UTC timestamp instead of number.
 * add `SMFTextureStreaming` boolean springsetting, defaults to false. If true, dynamically load and unload SMF Diffuse textures, which saves VRAM, but worse performance and image quality.
 Previous behaviour was equivalent to `true`, so if you get VRAM issues try changing it.

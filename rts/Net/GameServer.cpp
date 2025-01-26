@@ -789,7 +789,7 @@ void CGameServer::CheckSync()
 
 float CGameServer::GetDemoTime() const {
 	if (!gameHasStarted) return gameTime;
-	return (startTime + serverFrameNum / float(GAME_SPEED));
+	return (startTime + serverFrameNum * INV_GAME_SPEED);
 }
 
 
@@ -2136,10 +2136,14 @@ void CGameServer::CheckForGameStart(bool forced)
 {
 	assert(!gameHasStarted);
 	bool allReady = true;
+	// anyReady is needed for the case when *nodoby* is connected to the server yet, so in principle
+	// everybody that is, is ready. Without that logic the game will start after XX seconds (see below)
+	// without any players connected to the dedicated server, ignoring value of the InitialNetworkTimeout.
+	bool anyReady = false;
 
 	for (size_t a = static_cast<size_t>(myGameSetup->numDemoPlayers); a < players.size(); a++) {
 		if (players[a].myState == GameParticipant::UNCONNECTED && serverStartTime + spring_secs(30) < spring_gettime()) {
-			// autostart the game when 45 seconds have passed and everyone who managed to connect is ready
+			// autostart the game when 30 seconds have passed and everyone who managed to connect is ready
 			continue;
 		}
 		else if (players[a].myState < GameParticipant::INGAME) {
@@ -2148,13 +2152,15 @@ void CGameServer::CheckForGameStart(bool forced)
 		} else if (!players[a].spectator && teams[players[a].team].IsActive() && !players[a].IsReadyToStart() && demoReader == nullptr) {
 			allReady = false;
 			break;
+		} else {
+			anyReady = true;
 		}
 	}
 
 	// msecs to wait until the game starts after all players are ready
 	const spring_time gameStartDelay = spring_secs(myGameSetup->gameStartDelay);
 
-	if (allReady || forced) {
+	if ((allReady && anyReady) || forced) {
 		if (!spring_istime(readyTime)) {
 			readyTime = spring_gettime();
 

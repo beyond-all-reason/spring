@@ -37,7 +37,7 @@ public:
 	void UpdateDrawFlags();
 
 	void DrawOpaque(bool drawReflection, bool drawRefraction = false);
-	void DrawAlpha(bool drawAboveWater, bool drawReflection, bool drawRefraction);
+	void DrawAlpha(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction);
 
 	void DrawProjectilesMiniMap();
 

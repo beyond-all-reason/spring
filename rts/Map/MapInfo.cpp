@@ -216,7 +216,7 @@ void CMapInfo::ReadWater()
 	water.fluidDensity = wt.GetFloat("fluidDensity", 960.0f * 0.25f);
 	water.repeatX = wt.GetFloat("repeatX", 0.0f);
 	water.repeatY = wt.GetFloat("repeatY", 0.0f);
-	water.damage  = wt.GetFloat("damage",  0.0f) * ((float)UNIT_SLOWUPDATE_RATE / (float)GAME_SPEED);
+	water.damage  = wt.GetFloat("damage",  0.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
 
 	water.absorb    = wt.GetFloat3("absorb",    float3(0.0f, 0.0f, 0.0f));
 	water.baseColor = wt.GetFloat3("baseColor", float3(0.0f, 0.0f, 0.0f));
@@ -280,17 +280,17 @@ void CMapInfo::ReadWater()
 	}
 
 	FIND_MAP_TEXTURE(&water.normalTexture);
-	water.numTiles = std::clamp(wt.GetInt("numTiles", 1), 1, 16);
+	water.numTiles = std::clamp(wt.GetInt("numTiles", 4), 1, 16);
 	if (water.normalTexture.empty()) {
-		water.normalTexture = resGfxMaps.GetString("waternormaltex", "waterbump.png");
+		water.normalTexture = resGfxMaps.GetString("waternormaltex", "waterbump_4tiles.dds");
 		FIND_MAP_TEXTURE(&water.normalTexture, "bitmaps/");
 
-		// default texture is a TileSet of 3x3
+		// default texture is a TileSet of 4x4
 		// user-defined textures are expected to be 1x1 (no DynWaves possible)
-		water.numTiles = 3;
+		water.numTiles = 4;
 
 		if (resGfxMaps.KeyExists("waternormaltex")) {
-			water.numTiles = std::clamp(resGfxMaps.GetInt("numTiles", 1), 1, 16);
+			water.numTiles = std::clamp(resGfxMaps.GetInt("numTiles", 4), 1, 16);
 		}
 	}
 

@@ -77,7 +77,6 @@ CTextureRenderAtlas::CTextureRenderAtlas(
 	atlasSizeX = std::min(globalRendering->maxTextureSize, (atlasSizeX > 0) ? atlasSizeX : configHandler->GetInt("MaxTextureAtlasSizeX"));
 	atlasSizeY = std::min(globalRendering->maxTextureSize, (atlasSizeY > 0) ? atlasSizeY : configHandler->GetInt("MaxTextureAtlasSizeY"));
 
-	atlasAllocator->SetNonPowerOfTwo(globalRendering->supportNonPowerOfTwoTex);
 	atlasAllocator->SetMaxSize(atlasSizeX, atlasSizeY);
 
 	if (shaderRef == 0) {
@@ -264,7 +263,7 @@ bool CTextureRenderAtlas::Finalize()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		glSpringTexStorage2D(GL_TEXTURE_2D, levels, glInternalType, as.x, as.y);
+		RecoilTexStorage2D(GL_TEXTURE_2D, levels, glInternalType, as.x, as.y);
 	}
 	{
 		using namespace GL::State;

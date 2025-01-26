@@ -17,7 +17,7 @@
 
 
 #define luaM_reallocv(L,b,on,n,e) \
-	((cast(size_t, (n)+1) <= MAX_SIZET/(e)) ?  /* +1 to avoid warnings */ \
+	((lua_cast(size_t, (n)+1) <= MAX_SIZET/(e)) ?  /* +1 to avoid warnings */ \
 		luaM_realloc_(L, (b), (on)*(e), (n)*(e)) : \
 		luaM_toobig(L))
 
@@ -26,16 +26,16 @@
 #define luaM_freearray(L, b, n, t)   luaM_reallocv(L, (b), n, 0, sizeof(t))
 
 #define luaM_malloc(L,t)	luaM_realloc_(L, NULL, 0, (t))
-#define luaM_new(L,t)		cast(t *, luaM_malloc(L, sizeof(t)))
+#define luaM_new(L,t)		lua_cast(t *, luaM_malloc(L, sizeof(t)))
 #define luaM_newvector(L,n,t) \
-		cast(t *, luaM_reallocv(L, NULL, 0, n, sizeof(t)))
+		lua_cast(t *, luaM_reallocv(L, NULL, 0, n, sizeof(t)))
 
 #define luaM_growvector(L,v,nelems,size,t,limit,e) \
           if ((nelems)+1 > (size)) \
-            ((v)=cast(t *, luaM_growaux_(L,v,&(size),sizeof(t),limit,e)))
+            ((v)=lua_cast(t *, luaM_growaux_(L,v,&(size),sizeof(t),limit,e)))
 
 #define luaM_reallocvector(L, v,oldn,n,t) \
-   ((v)=cast(t *, luaM_reallocv(L, v, oldn, n, sizeof(t))))
+   ((v)=lua_cast(t *, luaM_reallocv(L, v, oldn, n, sizeof(t))))
 
 
 LUAI_FUNC void *luaM_realloc_ (lua_State *L, void *block, size_t oldsize,

@@ -153,11 +153,11 @@ std::string CKeySet::GetCodeString() const
 bool CKeySet::ParseModifier(std::string& s, const std::string& token, const std::string& abbr)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (s.find(token) == 0) {
+	if (s.starts_with(token)) {
 		s.erase(0, token.size());
 		return true;
 	}
-	if (s.find(abbr) == 0) {
+	if (s.starts_with(abbr)) {
 		s.erase(0, abbr.size());
 		return true;
 	}
@@ -174,7 +174,7 @@ bool CKeySet::Parse(const std::string& token, bool showerror)
 
 	// parse the modifiers
 	while (!s.empty()) {
-		if (ParseModifier(s, "up+",    "u+")) { LOG_L(L_WARNING, "KeySet: Up modifier is deprecated"); } else
+		if (ParseModifier(s, "up+",    "u+")) { LOG_L(L_DEPRECATED, "KeySet: Up modifier is deprecated"); } else
 		if (ParseModifier(s, "any+",   "*+")) { modifiers |= KS_ANYMOD; } else
 		if (ParseModifier(s, "alt+",   "a+")) { modifiers |= KS_ALT; } else
 		if (ParseModifier(s, "ctrl+",  "c+")) { modifiers |= KS_CTRL; } else

@@ -70,9 +70,9 @@ public:
 	PacketType SendShare(uint8_t playerNum, uint8_t shareTeam, uint8_t bShareUnits, float shareMetal, float shareEnergy);
 	PacketType SendSetShare(uint8_t playerNum, uint8_t myTeam, float metalShareFraction, float energyShareFraction);
 	PacketType SendGameOver(uint8_t playerNum, const std::vector<uint8_t>& winningAllyTeams);
-	PacketType SendMapErase(uint8_t playerNum, int16_t x, int16_t z);
-	PacketType SendMapDrawLine(uint8_t playerNum, int16_t x1, int16_t z1, int16_t x2, int16_t z2, bool);
-	PacketType SendMapDrawPoint(uint8_t playerNum, int16_t x, int16_t z, const std::string& label, bool);
+	PacketType SendMapErase(uint8_t playerNum, uint32_t x, uint32_t z);
+	PacketType SendMapDrawLine(uint8_t playerNum, uint32_t x1, uint32_t z1, uint32_t x2, uint32_t z2, bool);
+	PacketType SendMapDrawPoint(uint8_t playerNum, uint32_t x, uint32_t z, const std::string& label, bool);
 	PacketType SendSyncResponse(uint8_t playerNum, int32_t frameNum, uint32_t checksum);
 	PacketType SendSystemMessage(uint8_t playerNum, std::string message);
 	PacketType SendStartPos(uint8_t playerNum, uint8_t teamNum, uint8_t readyState, float x, float y, float z);

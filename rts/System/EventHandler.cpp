@@ -691,7 +691,6 @@ DRAW_CALLIN(Genesis)
 DRAW_CALLIN(World)
 DRAW_CALLIN(WorldPreUnit)
 DRAW_CALLIN(PreDecals)
-DRAW_CALLIN(WorldPreParticles)
 DRAW_CALLIN(WaterPost)
 DRAW_CALLIN(WorldShadow)
 DRAW_CALLIN(ShadowPassTransparent)
@@ -763,12 +762,17 @@ template<typename T, typename F, typename... A> std::string ControlReverseIterat
 	return {};
 }
 
+void CEventHandler::ActiveCommandChanged(const SCommandDescription* cmdDesc)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(ActiveCommandChanged, cmdDesc);
+}
+
 bool CEventHandler::CommandNotify(const Command& cmd)
 {
 	ZoneScoped;
 	return ControlReverseIterateDefTrue(listCommandNotify, &CEventClient::CommandNotify, cmd);
 }
-
 
 bool CEventHandler::KeyMapChanged()
 {
@@ -954,6 +958,12 @@ void CEventHandler::MetalMapChanged(const int x, const int z)
 	ITERATE_EVENTCLIENTLIST(MetalMapChanged, x, z);
 }
 
+void CEventHandler::DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(DrawWorldPreParticles, drawAboveWater, drawBelowWater, drawReflection, drawRefraction);
+}
+
 void CEventHandler::DrawOpaqueUnitsLua(bool deferredPass, bool drawReflection, bool drawRefraction)
 {
 	ZoneScoped;
@@ -988,6 +998,15 @@ void CEventHandler::DrawShadowFeaturesLua()
 {
 	ZoneScoped;
 	ITERATE_EVENTCLIENTLIST_NA(DrawShadowFeaturesLua);
+}
+
+/******************************************************************************/
+/******************************************************************************/
+
+void CEventHandler::FontsChanged()
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST_NA(FontsChanged);
 }
 
 /******************************************************************************/

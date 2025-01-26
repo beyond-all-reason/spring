@@ -1,13 +1,13 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 // must be included before streflop! else we get streflop/cmath resolve conflicts in its hash implementation files
+#include <bit>
 #include <vector>
 #include "NamedTextures.h"
 
 #include "Rendering/GL/myGL.h"
 #include "Bitmap.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/bitops.h"
 #include "System/type2.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/SpringThreading.h"
@@ -164,6 +164,7 @@ namespace CNamedTextures {
 		bool aniso   = false;
 		bool invert  = false;
 		bool greyed  = false;
+		bool mipnear = false;
 		bool tint    = false;
 		float tintColor[3];
 		bool resize  = false;
@@ -182,6 +183,7 @@ namespace CNamedTextures {
 				else if (ch == 'g') { greyed  = true; }
 				else if (ch == 'c') { clamped = true; }
 				else if (ch == 'b') { border  = true; }
+				else if (ch == 'm') { mipnear = true; }
 				else if (ch == 't') {
 					const char* cstr = filename.c_str() + p + 1;
 					const char* start = cstr;
@@ -233,18 +235,32 @@ namespace CNamedTextures {
 			return false;
 		}
 
+		const bool needMipMaps = (!(nearest || linear)) || mipnear;
+
+		TextureCreationParams tcp;
+		tcp.texID = texID;
+		tcp.linearMipMapFilter = !mipnear;
+		tcp.linearTextureFilter = !nearest;
+		tcp.reqNumLevels = needMipMaps ? 0 : 1;
+		if (aniso)
+			tcp.aniso = globalRendering->maxTexAnisoLvl;
+
 		if (bitmap.compressed) {
-			texID = bitmap.CreateDDSTexture(texID);
+			texID = bitmap.CreateDDSTexture(tcp);
 		} else {
 			if (resize) bitmap = bitmap.CreateRescaled(resizeDimensions.x,resizeDimensions.y);
 			if (invert) bitmap.InvertColors();
 			if (greyed) bitmap.MakeGrayScale();
 			if (tint)   bitmap.Tint(tintColor);
 
-			const int xbits = count_bits_set(bitmap.xsize);
-			const int ybits = count_bits_set(bitmap.ysize);
+			// verify if still broken
+			if (globalRendering->amdHacks && nearest) {
+				bitmap = bitmap.CreateRescaled(std::bit_ceil <uint32_t>(bitmap.xsize), std::bit_ceil <uint32_t>(bitmap.ysize));
+			}
 
-			// make the texture
+			texID = bitmap.CreateTexture(tcp);
+
+			// specify extra params
 			glBindTexture(GL_TEXTURE_2D, texID);
 
 			if (clamped) {
@@ -252,40 +268,12 @@ namespace CNamedTextures {
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			}
 
-			if (nearest || linear) {
-				if (border) {
-					GLfloat white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-					glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, white);
-				}
-
-				if (nearest) {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				} else {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				}
-
-				//! Note: NPOTs + nearest filtering seems broken on ATIs
-				if ((xbits != 1 || ybits != 1) && (!GLEW_ARB_texture_non_power_of_two || (globalRendering->amdHacks && nearest)))
-					bitmap = bitmap.CreateRescaled(next_power_of_2(bitmap.xsize),next_power_of_2(bitmap.ysize));
-
-				glTexImage2D(GL_TEXTURE_2D, 0, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, int(border), bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-			} else {
-				//! MIPMAPPING (default)
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-				if ((xbits == 1 && ybits == 1) || GLEW_ARB_texture_non_power_of_two) {
-					glBuildMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-				} else {
-					//! glu auto resizes to next POT
-					gluBuild2DMipmaps(GL_TEXTURE_2D, bitmap.GetIntFmt(), bitmap.xsize, bitmap.ysize, bitmap.GetExtFmt(), bitmap.dataType, bitmap.GetRawMem());
-				}
+			if (border) {
+				GLfloat white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+				glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, white);
 			}
 
-			if (aniso && GLEW_EXT_texture_filter_anisotropic)
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, globalRendering->maxTexAnisoLvl);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
 		texInfo.id    = texID;

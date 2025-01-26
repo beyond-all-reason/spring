@@ -121,6 +121,7 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "squareSize", SQUARE_SIZE);
 		LuaPushNamedNumber(L, "metalMapSquareSize", METAL_MAP_SQUARE_SIZE);
 		LuaPushNamedNumber(L, "buildSquareSize", BUILD_SQUARE_SIZE);
+		LuaPushNamedNumber(L, "buildGridResolution", BUILD_GRID_RESOLUTION);
 		LuaPushNamedNumber(L, "footprintScale", SPRING_FOOTPRINT_SCALE);
 	}
 
@@ -197,13 +198,13 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "resurrectEnergyCostFactor"     , modInfo.resurrectEnergyCostFactor);
 		LuaPushNamedNumber(L, "captureEnergyCostFactor"       , modInfo.captureEnergyCostFactor);
 
+		// Despite being bools, these are exposed to Lua as 0/1 for legacy reasons
 		LuaPushNamedNumber(L, "transportAir"   , modInfo.transportAir);
 		LuaPushNamedNumber(L, "transportShip"  , modInfo.transportShip);
 		LuaPushNamedNumber(L, "transportHover" , modInfo.transportHover);
 		LuaPushNamedNumber(L, "transportGround", modInfo.transportGround);
 		LuaPushNamedNumber(L, "fireAtKilled"   , modInfo.fireAtKilled);
 		LuaPushNamedNumber(L, "fireAtCrashing" , modInfo.fireAtCrashing);
-
 		LuaPushNamedNumber(L, "requireSonarUnderWater", modInfo.requireSonarUnderWater);
 
 		LuaPushNamedBool  (L, "paralyzeOnMaxHealth", modInfo.paralyzeOnMaxHealth);
@@ -259,14 +260,28 @@ bool LuaConstGame::PushEntries(lua_State* L)
 	{
 		// environmental damage types
 		lua_pushliteral(L, "envDamageTypes");
-		lua_createtable(L, 0, 7);
-			LuaPushNamedNumber(L, "Debris"         , -CSolidObject::DAMAGE_EXPLOSION_DEBRIS );
-			LuaPushNamedNumber(L, "GroundCollision", -CSolidObject::DAMAGE_COLLISION_GROUND );
-			LuaPushNamedNumber(L, "ObjectCollision", -CSolidObject::DAMAGE_COLLISION_OBJECT );
-			LuaPushNamedNumber(L, "Fire"           , -CSolidObject::DAMAGE_EXTSOURCE_FIRE   );
-			LuaPushNamedNumber(L, "Water"          , -CSolidObject::DAMAGE_EXTSOURCE_WATER  );
-			LuaPushNamedNumber(L, "Killed"         , -CSolidObject::DAMAGE_EXTSOURCE_KILLED );
-			LuaPushNamedNumber(L, "Crushed"        , -CSolidObject::DAMAGE_EXTSOURCE_CRUSHED);
+		lua_createtable(L, 0, 21);
+			LuaPushNamedNumber(L, "Debris"           , -CSolidObject::DAMAGE_EXPLOSION_DEBRIS   );
+			LuaPushNamedNumber(L, "GroundCollision"  , -CSolidObject::DAMAGE_COLLISION_GROUND   );
+			LuaPushNamedNumber(L, "ObjectCollision"  , -CSolidObject::DAMAGE_COLLISION_OBJECT   );
+			LuaPushNamedNumber(L, "Fire"             , -CSolidObject::DAMAGE_EXTSOURCE_FIRE     );
+			LuaPushNamedNumber(L, "Water"            , -CSolidObject::DAMAGE_EXTSOURCE_WATER    );
+			LuaPushNamedNumber(L, "Killed"           , -CSolidObject::DAMAGE_EXTSOURCE_KILLED   );
+			LuaPushNamedNumber(L, "Crushed"          , -CSolidObject::DAMAGE_EXTSOURCE_CRUSHED  );
+			LuaPushNamedNumber(L, "AircraftCrashed"  , -CSolidObject::DAMAGE_AIRCRAFT_CRASHED   );
+			LuaPushNamedNumber(L, "Kamikaze"         , -CSolidObject::DAMAGE_KAMIKAZE_ACTIVATED );
+			LuaPushNamedNumber(L, "SelfD"            , -CSolidObject::DAMAGE_SELFD_EXPIRED      );
+			LuaPushNamedNumber(L, "ConstructionDecay", -CSolidObject::DAMAGE_CONSTRUCTION_DECAY );
+			LuaPushNamedNumber(L, "Reclaimed"        , -CSolidObject::DAMAGE_RECLAIMED          );
+			LuaPushNamedNumber(L, "TurnedIntoFeature", -CSolidObject::DAMAGE_TURNED_INTO_FEATURE);
+			LuaPushNamedNumber(L, "TransportKilled"  , -CSolidObject::DAMAGE_TRANSPORT_KILLED   );
+			LuaPushNamedNumber(L, "FactoryKilled"    , -CSolidObject::DAMAGE_FACTORY_KILLED     );
+			LuaPushNamedNumber(L, "FactoryCancel"    , -CSolidObject::DAMAGE_FACTORY_CANCEL     );
+			LuaPushNamedNumber(L, "UnitScript"       , -CSolidObject::DAMAGE_UNIT_SCRIPT        );
+			LuaPushNamedNumber(L, "SetNegativeHealth", -CSolidObject::DAMAGE_NEGATIVE_HEALTH    );
+			LuaPushNamedNumber(L, "OutOfBounds"      , -CSolidObject::DAMAGE_KILLED_OOB         );
+			LuaPushNamedNumber(L, "KilledByCheat"    , -CSolidObject::DAMAGE_KILLED_CHEAT       );
+			LuaPushNamedNumber(L, "KilledByLua"      , -CSolidObject::DAMAGE_KILLED_LUA         );
 		lua_rawset(L, -3);
 	}
 	{

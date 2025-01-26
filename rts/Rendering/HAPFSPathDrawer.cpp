@@ -160,6 +160,8 @@ void HAPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 				if (md != nullptr) {
 					const bool los = (gs->cheatEnabled || gu->spectating);
 
+					int thread = ThreadPool::GetThreadNum();
+
 					for (int ty = starty; ty < endy; ++ty) {
 						for (int tx = 0; tx < mapDims.hmapx; ++tx) {
 							const int sqx = (tx << 1);
@@ -170,10 +172,10 @@ void HAPFSPathDrawer::UpdateExtraTexture(int extraTex, int starty, int endy, int
 							float scale = 1.0f;
 
 							if (los || losSqr) {
-								if (CMoveMath::IsBlocked(*md, sqx,     sqy    , nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-								if (CMoveMath::IsBlocked(*md, sqx + 1, sqy    , nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-								if (CMoveMath::IsBlocked(*md, sqx,     sqy + 1, nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
-								if (CMoveMath::IsBlocked(*md, sqx + 1, sqy + 1, nullptr) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+								if (CMoveMath::IsBlocked(*md, sqx,     sqy    , nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+								if (CMoveMath::IsBlocked(*md, sqx + 1, sqy    , nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+								if (CMoveMath::IsBlocked(*md, sqx,     sqy + 1, nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
+								if (CMoveMath::IsBlocked(*md, sqx + 1, sqy + 1, nullptr, thread) & CMoveMath::BLOCK_STRUCTURE) { scale -= 0.25f; }
 							}
 
 							// NOTE: raw speedmods are not necessarily clamped to [0, 1]
@@ -431,7 +433,7 @@ void HAPFSPathDrawer::Draw(const HAPFS::CPathEstimator* pe) const {
 					if (obz >= peNumBlocks.y) continue;
 
 					const int obBlockNr = obz * peNumBlocks.x + obx;
-					const int vertexNr = vertexBaseNr + blockNr * PATH_DIRECTION_VERTICES + GetBlockVertexOffset(dir, peNumBlocks.x);
+					const int vertexNr = vertexBaseNr + blockNr * PATH_DIRECTION_VERTICES + GetBlockVertexOffset(*md, dir, peNumBlocks.x);
 
 					const float rawCost = ps->GetVertexCosts()[vertexNr];
 					const float nrmCost = (rawCost * PATH_NODE_SPACING) / ps->BLOCK_SIZE;
@@ -492,7 +494,7 @@ void HAPFSPathDrawer::Draw(const HAPFS::CPathEstimator* pe) const {
 					if (obz >= peNumBlocks.y) continue;
 
 					const int obBlockNr = obz * peNumBlocks.x + obx;
-					const int vertexNr = vertexBaseNr + blockNr * PATH_DIRECTION_VERTICES + GetBlockVertexOffset(dir, peNumBlocks.x);
+					const int vertexNr = vertexBaseNr + blockNr * PATH_DIRECTION_VERTICES + GetBlockVertexOffset(*md, dir, peNumBlocks.x);
 
 					// rescale so numbers remain near 1.0 (more readable)
 					const float rawCost = ps->GetVertexCosts()[vertexNr];

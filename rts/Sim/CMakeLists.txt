@@ -38,6 +38,7 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/TeamHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/TeamStatistics.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/Wind.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/YardmapStatusEffectsMap.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/AAirMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/StrafeAirMoveType.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MoveTypes/GroundMoveType.cpp"
@@ -154,7 +155,7 @@ add_library(engineSim STATIC
 	)
 
 target_include_directories(engineSim
-	PRIVATE ${GLEW_INCLUDE_DIR} ${SDL2_INCLUDE_DIR})
+	PRIVATE ${SDL2_INCLUDE_DIR})
 target_link_libraries(engineSim Tracy::TracyClient)
 
 if( CMAKE_COMPILER_IS_GNUCXX)

@@ -69,6 +69,7 @@ class LuaSyncedRead {
 		static int GetTeamResources(lua_State* L);
 		static int GetTeamUnitStats(lua_State* L);
 		static int GetTeamResourceStats(lua_State* L);
+		static int GetTeamDamageStats(lua_State* L);
 		static int GetTeamRulesParam(lua_State* L);
 		static int GetTeamRulesParams(lua_State* L);
 		static int GetTeamStatsHistory(lua_State* L);
@@ -88,6 +89,9 @@ class LuaSyncedRead {
 		static int GetUnitsInSphere(lua_State* L);
 		static int GetUnitsInCylinder(lua_State* L);
 
+		static int GetUnitArrayCentroid(lua_State* L);
+		static int GetUnitMapCentroid(lua_State* L);
+
 		static int GetUnitNearestAlly(lua_State* L);
 		static int GetUnitNearestEnemy(lua_State* L);
 
@@ -106,7 +110,10 @@ class LuaSyncedRead {
 		static int GetUnitIsDead(lua_State* L);
 		static int GetUnitIsStunned(lua_State* L);
 		static int GetUnitIsBeingBuilt(lua_State* L);
+		static int GetUnitCosts(lua_State* L);
+		static int GetUnitCostTable(lua_State* L);
 		static int GetUnitResources(lua_State* L);
+		static int GetUnitStorage(lua_State* L);
 		static int GetUnitMetalExtraction(lua_State* L);
 		static int GetUnitExperience(lua_State* L);
 		static int GetUnitStates(lua_State* L);
@@ -163,6 +170,7 @@ class LuaSyncedRead {
 		static int GetUnitBlocking(lua_State* L);
 		static int GetUnitMoveTypeData(lua_State* L);
 
+		static int GetUnitCommandCount(lua_State* L);
 		static int GetUnitCommands(lua_State* L);
 		static int GetUnitCurrentCommand(lua_State* L);
 		static int GetFactoryCounts(lua_State* L);
@@ -218,9 +226,6 @@ class LuaSyncedRead {
 		static int GetProjectileDirection(lua_State* L);
 		static int GetProjectileVelocity(lua_State* L);
 		static int GetProjectileGravity(lua_State* L);
-		static int GetProjectileSpinAngle(lua_State* L); // DEPRECATED
-		static int GetProjectileSpinSpeed(lua_State* L); // DEPRECATED
-		static int GetProjectileSpinVec(lua_State* L); // DEPRECATED
 		static int GetPieceProjectileParams(lua_State* L);
 		static int GetProjectileTarget(lua_State* L);
 		static int GetProjectileIsIntercepted(lua_State* L);
@@ -231,7 +236,6 @@ class LuaSyncedRead {
 		static int GetProjectileType(lua_State* L);
 		static int GetProjectileDefID(lua_State* L);
 		static int GetProjectileDamages(lua_State* L);
-		static int GetProjectileName(lua_State* L); // DEPRECATE ME?
 
 		static int IsPosInMap(lua_State* L);
 		static int GetWaterPlaneLevel(lua_State* L);
@@ -291,7 +295,8 @@ class LuaSyncedRead {
 		static int TraceRay(lua_State* L);           //TODO: not implemented
 		static int TraceRayUnits(lua_State* L);      //TODO: not implemented
 		static int TraceRayFeatures(lua_State* L);   //TODO: not implemented
-		static int TraceRayGround(lua_State* L);     //TODO: not implemented
+		static int TraceRayGroundBetweenPositions(lua_State* L);
+		static int TraceRayGroundInDirection(lua_State* L);
 };
 
 #endif /* LUA_SYNCED_READ_H */

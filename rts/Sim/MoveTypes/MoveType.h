@@ -53,18 +53,14 @@ public:
 
 	virtual bool Update() = 0;
 	virtual void SlowUpdate();
-	void UpdateCollisionMap();
+	void UpdateCollisionMap(bool force = false);
 	void UpdateGroundBlockMap();
-
-	virtual void UpdatePreCollisionsMt() {};
-	virtual void UpdatePreCollisions() {};
-	virtual void UpdateCollisionDetections() {};
-	virtual void ProcessCollisionEvents() {};
 
 	virtual bool IsSkidding() const { return false; }
 	virtual bool IsFlying() const { return false; }
 	virtual bool IsReversing() const { return false; }
 	virtual bool IsPushResistant() const { return false; }
+	virtual bool IsPushResitanceBlockActive() const { return false; }
 
 	bool UseHeading(      ) const { return (useHeading    ); }
 	bool UseHeading(bool b)       { return (useHeading = b); }

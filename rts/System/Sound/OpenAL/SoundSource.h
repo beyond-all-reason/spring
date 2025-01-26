@@ -4,16 +4,17 @@
 #define SOUNDSOURCE_H
 
 #include <string>
+#include <memory>
 
 #include <al.h>
 
 #include "System/Misc/NonCopyable.h"
 #include "System/Misc/SpringTime.h"
 #include "System/float3.h"
-#include "MusicStream.h"
 
 class IAudioChannel;
 class SoundItem;
+class MusicStream;
 
 /**
  * @brief One soundsource wich can play some sounds
@@ -25,12 +26,11 @@ class CSoundSource
 public:
 	/// is ready after this
 	CSoundSource();
-	CSoundSource(CSoundSource&& src) { *this = std::move(src); }
+	CSoundSource(CSoundSource&& src);
 	CSoundSource(const CSoundSource& src) = delete;
-	~CSoundSource() { Delete(); }
+	~CSoundSource();
 
-	// sources don't ever need to actually move, just here to satisfy compiler
-	CSoundSource& operator = (CSoundSource&& src) { return *this; }
+	CSoundSource& operator = (CSoundSource&& src);
 	CSoundSource& operator = (const CSoundSource& src) = delete;
 
 	void Update();
@@ -46,7 +46,7 @@ public:
 	/// will stop a currently playing sound, if any
 	void Play(IAudioChannel* channel, SoundItem* item, float3 pos, float3 velocity, float volume, bool relative = false);
 	void PlayAsync(IAudioChannel* channel, size_t id, float3 pos, float3 velocity, float volume, float priority, bool relative = false);
-	void PlayStream(IAudioChannel* channel, const std::string& stream, float volume);
+	void PlayStream(IAudioChannel* channel, const std::string& file, float volume);
 	void StreamStop();
 	void StreamPause();
 	float GetStreamTime();
@@ -56,6 +56,8 @@ public:
 	static void SetHeightRolloffModifer(const float& mod) { heightRolloffModifier = mod; }
 
 private:
+	void swap(CSoundSource& other);
+
 	struct AsyncSoundItemData {
 		IAudioChannel* channel = nullptr;
 
@@ -72,13 +74,13 @@ private:
 
 	// light-weight SoundItem with only the data needed for playback
 	struct SoundItemData {
-		size_t id;
+		size_t id = 0;
 
-		unsigned int loopTime;
-		int priority;
+		unsigned int loopTime = 0;
+		int priority = 0;
 
-		float rndGain;
-		float rolloff;
+		float rndGain = 0.0f;
+		float rolloff = 0.0f;
 	};
 
 private:
@@ -89,21 +91,21 @@ private:
 	static float heightRolloffModifier;
 
 private:
-	ALuint id;
+	ALuint id = 0;
 
 	SoundItemData curPlayingItem;
 	AsyncSoundItemData asyncPlayItem;
 
-	IAudioChannel* curChannel;
-	MusicStream curStream;
+	IAudioChannel* curChannel = nullptr;
+	std::unique_ptr <MusicStream> curStream;
 
-	float curVolume;
-	spring_time loopStop;
-	bool in3D;
-	bool efxEnabled;
-	int efxUpdates;
+	float curVolume = 1.0f;
+	spring_time loopStop {1e9};
+	bool in3D = false;
+	bool efxEnabled = false;
+	int efxUpdates = 0;
 
-	ALfloat curHeightRolloffModifier;
+	ALfloat curHeightRolloffModifier = 1.0f;
 };
 
 #endif

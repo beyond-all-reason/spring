@@ -5,9 +5,11 @@
 
 #include <string>
 #include <memory>
+#include <future>
 
 #include "GameController.h"
 #include "System/Misc/SpringTime.h"
+#include "System/Sync/SHA512.hpp"
 
 class ILoadSaveHandler;
 class GameData;
@@ -49,6 +51,8 @@ public:
 
 	int KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
 
+	using AsyncExecFuncType = void (CPreGame::*)(const std::string&);
+	void AsyncExecute(AsyncExecFuncType execFunc, const std::string& argument);
 private:
 	void AddMapArchivesToVFS(const CGameSetup* setup);
 	void AddModArchivesToVFS(const CGameSetup* setup);
@@ -64,6 +68,7 @@ private:
 
 	void GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet);
 
+	bool HasPendingAsyncTask();
 private:
 	/**
 	@brief GameData we received from server
@@ -72,6 +77,8 @@ private:
 	*/
 	std::shared_ptr<GameData> gameData;
 	std::shared_ptr<ClientSetup> clientSetup;
+
+	std::future<void> pendingTask;
 
 	std::string modFileName;
 	ILoadSaveHandler* saveFileHandler;

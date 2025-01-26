@@ -4,6 +4,8 @@
 #define GUIELEMENT_H
 
 #include <vector>
+#include <string>
+#include <functional>
 #include <SDL_events.h>
 
 #include "System/Color.h"
@@ -13,6 +15,9 @@ namespace agui
 
 class GuiElement
 {
+public:
+	using OnClickVoidType = std::function<void(void)>;
+	using OnClickStringType = std::function<void(std::string)>;
 public:
 	GuiElement(GuiElement* parent = nullptr);
 	virtual ~GuiElement();

@@ -7,6 +7,7 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <atomic>
 
 #include "System/Info.h"
 #include "System/Sync/SHA512.hpp"
@@ -115,7 +116,7 @@ public:
 	~CArchiveScanner();
 
 public:
-	const std::string& GetFilepath() const { return cachefile; }
+	const std::string& GetFilepath() const { return cacheFile; }
 
 	static const char* GetMapHelperContentName() { return "Map Helper v1"; }
 	static const char* GetSpringBaseContentName() { return "Spring content v1"; }
@@ -146,6 +147,8 @@ public:
 	void Clear();
 	void Reload();
 
+	void WriteCache();
+
 	std::string ArchiveFromName(const std::string& versionedName) const;
 	std::string NameFromArchive(const std::string& archiveName) const;
 	std::string GameHumanNameFromArchive(const std::string& archiveName) const;
@@ -154,8 +157,9 @@ public:
 	std::string MapNameToMapFile(const std::string& versionedMapName) const;
 	ArchiveData GetArchiveData(const std::string& versionedName) const;
 	ArchiveData GetArchiveDataByArchive(const std::string& archive) const;
-
-
+public:
+	uint32_t GetNumFilesHashed() const { return numFilesHashed.load(); }
+	void ResetNumFilesHashed() { numFilesHashed.store(0); }
 private:
 	struct ArchiveInfo {
 		ArchiveInfo() {
@@ -186,6 +190,8 @@ private:
 	};
 
 private:
+	void ReadCache();
+
 	ArchiveInfo& GetAddArchiveInfo(const std::string& lcfn);
 	BrokenArchive& GetAddBrokenArchive(const std::string& lcfn);
 
@@ -202,7 +208,7 @@ private:
 	std::string SearchMapFile(const IArchive* ar, std::string& error);
 
 
-	void ReadCacheData(const std::string& filename);
+	bool ReadCacheData(const std::string& filename, bool loadOldVersion = false);
 	void WriteCacheData(const std::string& filename);
 
 	IFileFilter* CreateIgnoreFilter(IArchive* ar);
@@ -237,13 +243,15 @@ private:
 	static bool CheckCompression(const IArchive* ar, const std::string& fullName, std::string& error);
 
 private:
+	std::atomic<uint32_t> numFilesHashed{0};
+
 	spring::unordered_map<std::string, size_t> archiveInfosIndex;
 	spring::unordered_map<std::string, size_t> brokenArchivesIndex;
 
 	std::vector<ArchiveInfo> archiveInfos;
 	std::vector<BrokenArchive> brokenArchives;
 
-	std::string cachefile;
+	std::string cacheFile;
 
 	bool isDirty = false;
 	bool isInScan = false;

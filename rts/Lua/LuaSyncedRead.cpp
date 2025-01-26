@@ -39,12 +39,14 @@
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
+#include "Sim/Misc/CollisionHandler.h"
 #include "Sim/MoveTypes/StrafeAirMoveType.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
 #include "Sim/MoveTypes/HoverAirMoveType.h"
 #include "Sim/MoveTypes/ScriptMoveType.h"
 #include "Sim/MoveTypes/StaticMoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/Projectile.h"
@@ -69,7 +71,6 @@
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
-#include "System/bitops.h"
 #include "System/MainDefines.h"
 #include "System/SpringMath.h"
 #include "System/FileSystem/FileHandler.h"
@@ -156,6 +157,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetTeamResources);
 	REGISTER_LUA_CFUNC(GetTeamUnitStats);
 	REGISTER_LUA_CFUNC(GetTeamResourceStats);
+	REGISTER_LUA_CFUNC(GetTeamDamageStats);
 	REGISTER_LUA_CFUNC(GetTeamRulesParam);
 	REGISTER_LUA_CFUNC(GetTeamRulesParams);
 	REGISTER_LUA_CFUNC(GetTeamStatsHistory);
@@ -184,6 +186,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitsInSphere);
 	REGISTER_LUA_CFUNC(GetUnitsInCylinder);
 
+	REGISTER_LUA_CFUNC(GetUnitArrayCentroid);
+	REGISTER_LUA_CFUNC(GetUnitMapCentroid);
+
 	REGISTER_LUA_CFUNC(GetFeaturesInRectangle);
 	REGISTER_LUA_CFUNC(GetFeaturesInSphere);
 	REGISTER_LUA_CFUNC(GetFeaturesInCylinder);
@@ -202,6 +207,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitIsStunned);
 	REGISTER_LUA_CFUNC(GetUnitIsBeingBuilt);
 	REGISTER_LUA_CFUNC(GetUnitResources);
+	REGISTER_LUA_CFUNC(GetUnitStorage);
+	REGISTER_LUA_CFUNC(GetUnitCosts);
+	REGISTER_LUA_CFUNC(GetUnitCostTable);
 	REGISTER_LUA_CFUNC(GetUnitMetalExtraction);
 	REGISTER_LUA_CFUNC(GetUnitMaxRange);
 	REGISTER_LUA_CFUNC(GetUnitExperience);
@@ -261,6 +269,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitBlocking);
 	REGISTER_LUA_CFUNC(GetUnitMoveTypeData);
 
+	REGISTER_LUA_CFUNC(GetUnitCommandCount);
 	REGISTER_LUA_CFUNC(GetUnitCommands);
 	REGISTER_LUA_CFUNC(GetUnitCurrentCommand);
 	REGISTER_LUA_CFUNC(GetFactoryCounts);
@@ -310,9 +319,6 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileDirection);
 	REGISTER_LUA_CFUNC(GetProjectileVelocity);
 	REGISTER_LUA_CFUNC(GetProjectileGravity);
-	REGISTER_LUA_CFUNC(GetProjectileSpinAngle);
-	REGISTER_LUA_CFUNC(GetProjectileSpinSpeed);
-	REGISTER_LUA_CFUNC(GetProjectileSpinVec);
 	REGISTER_LUA_CFUNC(GetPieceProjectileParams);
 	REGISTER_LUA_CFUNC(GetProjectileTarget);
 	REGISTER_LUA_CFUNC(GetProjectileIsIntercepted);
@@ -322,7 +328,6 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetProjectileAllyTeamID);
 	REGISTER_LUA_CFUNC(GetProjectileType);
 	REGISTER_LUA_CFUNC(GetProjectileDefID);
-	REGISTER_LUA_CFUNC(GetProjectileName);
 	REGISTER_LUA_CFUNC(GetProjectileDamages);
 
 	REGISTER_LUA_CFUNC(IsPosInMap);
@@ -376,6 +381,9 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeaturePieceDirection);
 	REGISTER_LUA_CFUNC(GetFeaturePiecePosDir);
 	REGISTER_LUA_CFUNC(GetFeaturePieceMatrix);
+
+	REGISTER_LUA_CFUNC(TraceRayGroundInDirection);
+	REGISTER_LUA_CFUNC(TraceRayGroundBetweenPositions);
 
 	REGISTER_LUA_CFUNC(GetRadarErrorParams);
 
@@ -903,7 +911,7 @@ int LuaSyncedRead::GetGameFrame(lua_State* L)
  */
 int LuaSyncedRead::GetGameSeconds(lua_State* L)
 {
-	lua_pushnumber(L, gs->GetLuaSimFrame() / (1.0f * GAME_SPEED));
+	lua_pushnumber(L, gs->GetLuaSimFrame() * INV_GAME_SPEED);
 	return 1;
 }
 
@@ -1937,6 +1945,37 @@ int LuaSyncedRead::GetTeamResourceStats(lua_State* L)
 }
 
 
+/*** Gets team damage dealt/received totals
+ *
+ * @function Spring.GetTeamDamageStats
+ *
+ * Returns a team's damage stats. Note that all damage is counted,
+ * including self-inflicted and unconfirmed out-of-sight.
+ *
+ * @number teamID
+ * @treturn number damageDealt
+ * @treturn number damageReceived
+ */
+int LuaSyncedRead::GetTeamDamageStats(lua_State* L)
+{
+	const CTeam* team = ParseTeam(L, __func__, 1);
+	if (team == nullptr || game == nullptr)
+		return 0;
+
+	const int teamID = team->teamNum;
+
+	if (!LuaUtils::IsAlliedTeam(L, teamID) && !game->IsGameOver())
+		return 0;
+
+	const TeamStatistics& stats = team->GetCurrentStats();
+
+	lua_pushnumber(L, stats.damageDealt);
+	lua_pushnumber(L, stats.damageReceived);
+
+	return 2;
+}
+
+
 /*** @table teamStats
  * @number time
  * @number frame
@@ -2701,10 +2740,10 @@ int LuaSyncedRead::GetTeamUnitsByDefs(lua_State* L)
 		const int tableIdx = 2;
 
 		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (!lua_isnumber(L, -1))
+			if (!lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
 				continue;
 
-			InsertSearchUnitDefs(unitDefHandler->GetUnitDefByID(lua_toint(L, -1)), allied);
+			InsertSearchUnitDefs(unitDefHandler->GetUnitDefByID(lua_toint(L, LUA_TABLE_VALUE_INDEX)), allied);
 		}
 	} else {
 		luaL_error(L, "Incorrect arguments to GetTeamUnitsByDefs()");
@@ -2875,6 +2914,8 @@ int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 //   unit
 //   readTeam   for MY_UNIT_TEST
 //   allegiance for SIMPLE_TEAM_TEST and VISIBLE_TEAM_TEST
+//   readAllyTeam for ALLY_UNIT_TEST and ENEMY_UNIT_TEST
+//   readAllyTeam, fullRead for UNIT_ERROR_POS
 
 #define NULL_TEST  ;  // always passes
 
@@ -2892,12 +2933,32 @@ int LuaSyncedRead::GetTeamUnitCount(lua_State* L)
 	if (unit->team != readTeam) { continue; }
 
 #define ALLY_UNIT_TEST \
-	if (unit->allyteam != CLuaHandle::GetHandleReadAllyTeam(L)) { continue; }
+	if (unit->allyteam != readAllyTeam) { continue; }
 
 #define ENEMY_UNIT_TEST \
-	if (unit->allyteam == CLuaHandle::GetHandleReadAllyTeam(L)) { continue; } \
+	if (unit->allyteam == readAllyTeam) { continue; } \
 	if (!LuaUtils::IsUnitVisible(L, unit)) { continue; }
 
+#define UNIT_POS \
+	const float3& p = unit->midPos;
+
+#define UNIT_ERROR_POS \
+	float3 p = unit->midPos; \
+	if (!LuaUtils::IsAllyUnit(L, unit)) \
+		p += unit->GetLuaErrorVector(readAllyTeam, fullRead);
+
+
+/* Apply team error to planar mins/maxs boxes */
+void ApplyPlanarTeamError(lua_State* L, int allegiance, float3& mins, float3& maxs) {
+	if ((allegiance >= 0 && !LuaUtils::IsAlliedTeam(L, allegiance)) ||
+	   !(allegiance == LuaUtils::MyUnits || allegiance == LuaUtils::AllyUnits)) {
+		const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+		const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(readAllyTeam);
+		const float3 allyTeamError3(allyTeamError, 0.0f, allyTeamError);
+		mins -= allyTeamError3;
+		maxs += allyTeamError3;
+	}
+}
 
 /***
  *
@@ -2916,12 +2977,25 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 	const float xmax = luaL_checkfloat(L, 3);
 	const float zmax = luaL_checkfloat(L, 4);
 
-	const float3 mins(xmin, 0.0f, zmin);
-	const float3 maxs(xmax, 0.0f, zmax);
+	float3 mins(xmin, 0.0f, zmin);
+	float3 maxs(xmax, 0.0f, zmax);
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
+	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
-#define RECTANGLE_TEST ; // no test, GetUnitsExact is sufficient
+#define RECTANGLE_TEST            \
+	const float x = p.x;            \
+	const float z = p.z;            \
+	if ((x < xmin) || (x > xmax)) { \
+		continue;               \
+	}                               \
+	if ((z < zmin) || (z > zmax)) { \
+		continue;               \
+	}
+
+	if (!fullRead)
+		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
@@ -2929,23 +3003,23 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	if (allegiance >= 0) {
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
-			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, RECTANGLE_TEST, true);
+			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, NULL_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, RECTANGLE_TEST, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_ERROR_POS RECTANGLE_TEST, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
 		const int readTeam = CLuaHandle::GetHandleReadTeam(L);
-		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, RECTANGLE_TEST, true);
+		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, NULL_TEST, true);
 	}
 	else if (allegiance == LuaUtils::AllyUnits) {
-		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, RECTANGLE_TEST, true);
+		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, NULL_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, RECTANGLE_TEST, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_ERROR_POS RECTANGLE_TEST, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, RECTANGLE_TEST, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS RECTANGLE_TEST, true);
 	}
 
 	return 1;
@@ -2973,16 +3047,25 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 	const float ymax = luaL_checkfloat(L, 5);
 	const float zmax = luaL_checkfloat(L, 6);
 
-	const float3 mins(xmin, 0.0f, zmin);
-	const float3 maxs(xmax, 0.0f, zmax);
+	float3 mins(xmin, 0.0f, zmin);
+	float3 maxs(xmax, 0.0f, zmax);
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 7);
+	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 #define BOX_TEST                  \
-	const float y = unit->midPos.y; \
+	const float y = p.y;            \
 	if ((y < ymin) || (y > ymax)) { \
-		continue;                     \
+		continue;               \
 	}
+
+#define BOX_TEST_FULL             \
+	BOX_TEST                        \
+	RECTANGLE_TEST
+
+	if (!fullRead)
+		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
@@ -2990,23 +3073,23 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 
 	if (allegiance >= 0) {
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
-			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, BOX_TEST, true);
+			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, UNIT_POS BOX_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, BOX_TEST, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_ERROR_POS BOX_TEST_FULL, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
 		const int readTeam = CLuaHandle::GetHandleReadTeam(L);
-		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, BOX_TEST, true);
+		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, UNIT_POS BOX_TEST, true);
 	}
 	else if (allegiance == LuaUtils::AllyUnits) {
-		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, BOX_TEST, true);
+		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, UNIT_POS BOX_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, BOX_TEST, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_ERROR_POS BOX_TEST_FULL, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, BOX_TEST, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS BOX_TEST_FULL, true);
 	}
 
 	return 1;
@@ -3028,13 +3111,14 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 	const float radius = luaL_checkfloat(L, 3);
 	const float radSqr = (radius * radius);
 
-	const float3 mins(x - radius, 0.0f, z - radius);
-	const float3 maxs(x + radius, 0.0f, z + radius);
+	float3 mins(x - radius, 0.0f, z - radius);
+	float3 maxs(x + radius, 0.0f, z + radius);
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 4);
+	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 #define CYLINDER_TEST                         \
-	const float3& p = unit->midPos;             \
 	const float dx = (p.x - x);                 \
 	const float dz = (p.z - z);                 \
 	const float dist = ((dx * dx) + (dz * dz)); \
@@ -3042,29 +3126,32 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 		continue;                               \
 	}                                           \
 
+	if (!fullRead)
+		ApplyPlanarTeamError(L, allegiance, mins, maxs);
+
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
 	const auto& units = (*qfQuery.units);
 
 	if (allegiance >= 0) {
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
-			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, CYLINDER_TEST, true);
+			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, UNIT_POS CYLINDER_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, CYLINDER_TEST, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_ERROR_POS CYLINDER_TEST, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
 		const int readTeam = CLuaHandle::GetHandleReadTeam(L);
-		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, CYLINDER_TEST, true);
+		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, UNIT_POS CYLINDER_TEST, true);
 	}
 	else if (allegiance == LuaUtils::AllyUnits) {
-		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, CYLINDER_TEST, true);
+		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, UNIT_POS CYLINDER_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, CYLINDER_TEST, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_ERROR_POS CYLINDER_TEST, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, CYLINDER_TEST, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS CYLINDER_TEST, true);
 	}
 
 	return 1;
@@ -3089,13 +3176,14 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 	const float radSqr = (radius * radius);
 
 	const float3 pos(x, y, z);
-	const float3 mins(x - radius, 0.0f, z - radius);
-	const float3 maxs(x + radius, 0.0f, z + radius);
+	float3 mins(x - radius, 0.0f, z - radius);
+	float3 maxs(x + radius, 0.0f, z + radius);
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
+	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 #define SPHERE_TEST                           \
-	const float3& p = unit->midPos;             \
 	const float dx = (p.x - x);                 \
 	const float dy = (p.y - y);                 \
 	const float dz = (p.z - z);                 \
@@ -3105,29 +3193,32 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 		continue;                                 \
 	}                                           \
 
+	if (!fullRead)
+		ApplyPlanarTeamError(L, allegiance, mins, maxs);
+
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
 	const auto& units = (*qfQuery.units);
 
 	if (allegiance >= 0) {
 		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
-			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, SPHERE_TEST, true);
+			LOOP_UNIT_CONTAINER(SIMPLE_TEAM_TEST, UNIT_POS SPHERE_TEST, true);
 		} else {
-			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, SPHERE_TEST, true);
+			LOOP_UNIT_CONTAINER(VISIBLE_TEAM_TEST, UNIT_ERROR_POS SPHERE_TEST, true);
 		}
 	}
 	else if (allegiance == LuaUtils::MyUnits) {
 		const int readTeam = CLuaHandle::GetHandleReadTeam(L);
-		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, SPHERE_TEST, true);
+		LOOP_UNIT_CONTAINER(MY_UNIT_TEST, UNIT_POS SPHERE_TEST, true);
 	}
 	else if (allegiance == LuaUtils::AllyUnits) {
-		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, SPHERE_TEST, true);
+		LOOP_UNIT_CONTAINER(ALLY_UNIT_TEST, UNIT_POS SPHERE_TEST, true);
 	}
 	else if (allegiance == LuaUtils::EnemyUnits) {
-		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, SPHERE_TEST, true);
+		LOOP_UNIT_CONTAINER(ENEMY_UNIT_TEST, UNIT_ERROR_POS SPHERE_TEST, true);
 	}
 	else { // AllUnits
-		LOOP_UNIT_CONTAINER(VISIBLE_TEST, SPHERE_TEST, true);
+		LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS SPHERE_TEST, true);
 	}
 
 	return 1;
@@ -3139,12 +3230,11 @@ struct Plane {
 };
 
 
-static inline bool UnitInPlanes(const CUnit* unit, const vector<Plane>& planes)
+static inline bool UnitInPlanes(const float3& pos, const float radius, const vector<Plane>& planes)
 {
-	const float3& pos = unit->midPos;
 	for (const Plane& p: planes) {
 		const float dist = (pos.x * p.x) + (pos.y * p.y) + (pos.z * p.z) + p.d;
-		if ((dist - unit->radius) > 0.0f) {
+		if ((dist - radius) > 0.0f) {
 			return false; // outside
 		}
 	}
@@ -3212,11 +3302,13 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 	}
 
 #define PLANES_TEST                    \
-	if (!UnitInPlanes(unit, planes)) { \
+	if (!UnitInPlanes(p, unit->radius, planes)) { \
 		continue;                      \
 	}
 
 	const int readTeam = CLuaHandle::GetHandleReadTeam(L);
+	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 	lua_newtable(L);
 
@@ -3226,37 +3318,98 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 		if (allegiance >= 0) {
 			if (allegiance == team) {
 				if (LuaUtils::IsAlliedTeam(L, allegiance)) {
-					LOOP_UNIT_CONTAINER(NULL_TEST, PLANES_TEST, false);
+					LOOP_UNIT_CONTAINER(NULL_TEST, UNIT_POS PLANES_TEST, false);
 				} else {
-					LOOP_UNIT_CONTAINER(VISIBLE_TEST, PLANES_TEST, false);
+					LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS PLANES_TEST, false);
 				}
 			}
 		}
 		else if (allegiance == LuaUtils::MyUnits) {
 			if (readTeam == team) {
-				LOOP_UNIT_CONTAINER(NULL_TEST, PLANES_TEST, false);
+				LOOP_UNIT_CONTAINER(NULL_TEST, UNIT_POS PLANES_TEST, false);
 			}
 		}
 		else if (allegiance == LuaUtils::AllyUnits) {
-			if (CLuaHandle::GetHandleReadAllyTeam(L) == teamHandler.AllyTeam(team)) {
-				LOOP_UNIT_CONTAINER(NULL_TEST, PLANES_TEST, false);
+			if (readAllyTeam == teamHandler.AllyTeam(team)) {
+				LOOP_UNIT_CONTAINER(NULL_TEST, UNIT_POS PLANES_TEST, false);
 			}
 		}
 		else if (allegiance == LuaUtils::EnemyUnits) {
-			if (CLuaHandle::GetHandleReadAllyTeam(L) != teamHandler.AllyTeam(team)) {
-				LOOP_UNIT_CONTAINER(VISIBLE_TEST, PLANES_TEST, false);
+			if (readAllyTeam != teamHandler.AllyTeam(team)) {
+				LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS PLANES_TEST, false);
 			}
 		}
 		else { // AllUnits
 			if (LuaUtils::IsAlliedTeam(L, team)) {
-				LOOP_UNIT_CONTAINER(NULL_TEST, PLANES_TEST, false);
+				LOOP_UNIT_CONTAINER(NULL_TEST, UNIT_POS PLANES_TEST, false);
 			} else {
-				LOOP_UNIT_CONTAINER(VISIBLE_TEST, PLANES_TEST, false);
+				LOOP_UNIT_CONTAINER(VISIBLE_TEST, UNIT_ERROR_POS PLANES_TEST, false);
 			}
 		}
 	}
 
 	return 1;
+}
+
+
+static int GetUnitTableCentroid(lua_State *const L, const int indexWithinTable, const char *const caller)
+{
+	if (!lua_istable(L, 1))
+		luaL_error(L, "[%s] argument must be a table", caller);
+
+	float3 center {0.0f, 0.0f, 0.0f};
+	size_t count = 0;
+	for (lua_pushnil(L); lua_next(L, 1); lua_pop(L, 1)) {
+		const auto unit = ParseUnit(L, caller, indexWithinTable);
+		if (unit == nullptr)
+			continue;
+
+		center += unit->midPos;
+		++ count;
+	}
+
+	if (!count)
+		return 0;
+
+	center /= static_cast <float> (count);
+
+	lua_pushnumber(L, center.x);
+	lua_pushnumber(L, center.y);
+	lua_pushnumber(L, center.z);
+
+	return 3;
+}
+
+
+
+/*** Returns the centroid of an array of units
+ *
+ * Returns nil for an empty array
+ *
+ * @function Spring.GetUnitArrayCentroid
+ * @tparam table units { unitID, unitID, ... }
+ * @treturn number centerX
+ * @treturn number centerY
+ * @treturn number centerZ
+ */
+int LuaSyncedRead::GetUnitArrayCentroid(lua_State* L)
+{
+	return GetUnitTableCentroid(L, -1, __func__);
+}
+
+/*** Returns the centroid of a map of units
+ *
+ * Returns nil for an empty map
+ *
+ * @function Spring.GetUnitMapCentroid
+ * @tparam table units { [unitID] = true, [unitID] = true, ... }
+ * @treturn number centerX
+ * @treturn number centerY
+ * @treturn number centerZ
+ */
+int LuaSyncedRead::GetUnitMapCentroid(lua_State* L)
+{
+	return GetUnitTableCentroid(L, -2, __func__);
 }
 
 
@@ -4066,6 +4219,64 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 	return 4;
 }
 
+/***
+ * @function Spring.GetUnitStorage
+ * @number unitID
+ * @treturn number Unit's metal storage
+ * @treturn number Unit's energy storage
+ */
+int LuaSyncedRead::GetUnitStorage(lua_State* L)
+{
+	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->storage.metal);
+	lua_pushnumber(L, unit->storage.energy);
+	return 2;
+}
+
+/***
+ * @function Spring.GetUnitCosts
+ * @number unitID
+ * @treturn nil|number buildTime
+ * @treturn number metalCost
+ * @treturn number energyCost
+ */
+int LuaSyncedRead::GetUnitCosts(lua_State* L)
+{
+	const CUnit* const unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushnumber(L, unit->buildTime);
+	lua_pushnumber(L, unit->cost.metal);
+	lua_pushnumber(L, unit->cost.energy);
+	return 3;
+}
+/***
+ * @function Spring.GetUnitCostTable
+ * @number unitID
+ * @treturn nil|{ metal = number, energy = number }
+ * @treturn number buildTime
+ */
+int LuaSyncedRead::GetUnitCostTable(lua_State* L)
+{
+	const CUnit* const unit = ParseInLosUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+	lua_createtable(L, 0, 2);
+	lua_pushstring(L, "metal");
+	lua_pushnumber(L, unit->cost.metal);
+	lua_rawset(L, -3);
+	lua_pushstring(L, "energy");
+	lua_pushnumber(L, unit->cost.energy);
+	lua_rawset(L, -3);
+	lua_pushnumber(L, unit->buildTime);
+	return 2;
+}
+
 
 /***
  *
@@ -4527,10 +4738,17 @@ int LuaSyncedRead::GetUnitCurrentBuildPower(lua_State* L)
 }
 
 
-/***
+/*** Get a unit's carried resources
  *
  * @function Spring.GetUnitHarvestStorage
+ *
+ * Checks resources being carried internally by the unit.
+ *
  * @number unitID
+ * @treturn number storedMetal
+ * @treturn number maxStoredMetal
+ * @treturn number storedEnergy
+ * @treturn number maxStoredEnergy
  */
 int LuaSyncedRead::GetUnitHarvestStorage(lua_State* L)
 {
@@ -4578,10 +4796,15 @@ int LuaSyncedRead::GetUnitBuildParams(lua_State* L)
 	return 0;
 }
 
-/***
+/*** Is builder in build stance
  *
  * @function Spring.GetUnitInBuildStance
+ *
+ * Checks if a builder is in build stance, i.e. can create nanoframes.
+ * Returns nil for non-builders.
+ *
  * @number unitID
+ * @treturn bool inBuildStance
  */
 int LuaSyncedRead::GetUnitInBuildStance(lua_State* L)
 {
@@ -4599,10 +4822,19 @@ int LuaSyncedRead::GetUnitInBuildStance(lua_State* L)
 	return 1;
 }
 
-/***
+/*** Get construction FX attachment points
  *
  * @function Spring.GetUnitNanoPieces
+ *
+ * Returns an array of pieces which represent construction
+ * points. Default engine construction FX (nano spray) will
+ * originate there.
+ *
+ * Only works on builders and factories, returns nil (NOT empty table)
+ * for other units.
+ *
  * @number unitID
+ * @return pieceArray {pieceID, pieceID, ...}
  */
 int LuaSyncedRead::GetUnitNanoPieces(lua_State* L)
 {
@@ -4645,10 +4877,15 @@ int LuaSyncedRead::GetUnitNanoPieces(lua_State* L)
 }
 
 
-/***
+/*** Get the transport carrying the unit
  *
  * @function Spring.GetUnitTransporter
+ *
+ * Returns the unit ID of the transport, if any.
+ * Returns nil if the unit is not being transported.
+ *
  * @number unitID
+ * @treturn number|nil transportUnitID
  */
 int LuaSyncedRead::GetUnitTransporter(lua_State* L)
 {
@@ -4664,10 +4901,15 @@ int LuaSyncedRead::GetUnitTransporter(lua_State* L)
 }
 
 
-/***
+/*** Get units being transported
  *
  * @function Spring.GetUnitIsTransporting
+ *
+ * Returns an array of unitIDs being transported by this unit.
+ * Returns nil (NOT an empty array) for units that are not transports.
+ *
  * @number unitID
+ * @return transporteeArray {unitID, unitID, ...}
  */
 int LuaSyncedRead::GetUnitIsTransporting(lua_State* L)
 {
@@ -4694,6 +4936,9 @@ int LuaSyncedRead::GetUnitIsTransporting(lua_State* L)
  *
  * @function Spring.GetUnitShieldState
  * @number unitID
+ * @number[opt] weaponNum Optional if the unit has just one shield
+ * @treturn number isEnabled Warning, number not bool. 0 or 1
+ * @treturn number currentPower
  */
 int LuaSyncedRead::GetUnitShieldState(lua_State* L)
 {
@@ -4778,10 +5023,16 @@ int LuaSyncedRead::GetUnitFlanking(lua_State* L)
 }
 
 
-/***
+/*** Get a unit's engagement range
  *
  * @function Spring.GetUnitMaxRange
+ *
+ * Returns the range at which a unit will stop to engage.
+ * By default this is the highest among the unit's weapon ranges (hence name),
+ * but can be changed dynamically. Also note that unarmed units ignore this.
+ *
  * @number unitID
+ * @treturn number maxRange
  */
 int LuaSyncedRead::GetUnitMaxRange(lua_State* L)
 {
@@ -4801,10 +5052,36 @@ int LuaSyncedRead::GetUnitMaxRange(lua_State* L)
 ******************************************************************************/
 
 
-/***
+/*** Check the state of a unit's weapon
  *
  * @function Spring.GetUnitWeaponState
+ *
+ * Available states to poll:
+ *   "reloadFrame" (frame on which the weapon will be ready to fire),
+ *   "reloadSpeed" (reload time in seconds),
+ *   "range" (in elmos),
+ *   "autoTargetRangeBoost" (predictive aiming range buffer, in elmos),
+ *   "projectileSpeed" (in elmos/frame),
+ *   "reloadTimeXP" (reload time after XP bonus, in seconds),
+ *   "reaimTime" (frames between AimWeapon calls),
+ *   "burst" (shots in a burst),
+ *   "burstRate" (delay between shots in a burst, in seconds),
+ *   "projectiles" (projectiles per shot),
+ *   "salvoLeft" (shots remaining in ongoing burst),
+ *   "nextSalvo" (simframe of the next shot in an ongoing burst),
+ *   "accuracy" (INaccuracy after XP bonus),
+ *   "sprayAngle" (spray angle after XP bonus),
+ *   "targetMoveError" (extra inaccuracy against moving targets, after XP bonus)
+ *   "avoidFlags" (bitmask for targeting avoidance),
+ *   "collisionFlags" (bitmask for collisions).
+ *
+ * The state "salvoError" is an exception and returns a table: {x, y, z},
+ * which represents the inaccuracy error of the ongoing burst.
+ *
  * @number unitID
+ * @number weaponNum
+ * @string stateName
+ * @return number stateValue
  */
 int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 {
@@ -4836,10 +5113,7 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 		} break;
 
 		case hashString("reloadTime"): {
-			// SetUnitWeaponState sets reloadTime to int(value * GAME_SPEED);
-			// divide by 1.0 here since reloadTime / GAME_SPEED would itself
-			// be an integer division
-			lua_pushnumber(L, (weapon->reloadTime / 1.0f) / GAME_SPEED);
+			lua_pushnumber(L, weapon->reloadTime * INV_GAME_SPEED);
 		} break;
 		case hashString("reloadTimeXP"): {
 			// reloadSpeed is affected by unit experience
@@ -4871,7 +5145,10 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 			lua_pushnumber(L, weapon->salvoSize);
 		} break;
 		case hashString("burstRate"): {
-			lua_pushnumber(L, float(weapon->salvoDelay) / GAME_SPEED);
+			lua_pushnumber(L, weapon->salvoDelay * INV_GAME_SPEED);
+		} break;
+		case hashString("windup"): {
+			lua_pushnumber(L, float(weapon->salvoWindup) / GAME_SPEED);
 		} break;
 
 		case hashString("projectiles"): {
@@ -5777,6 +6054,10 @@ static void PackCommandQueue(lua_State* L, const CCommandQueue& commands, size_t
 /***
  *
  * @function Spring.GetUnitCurrentCommand
+ *
+ * @number unitID Unit id.
+ * @number cmdIndex Command index to get. If negative will count from the end of the queue,
+ * for example -1 will be the last command.
  */
 int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 {
@@ -5789,10 +6070,15 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 	const CFactoryCAI* factoryCAI = dynamic_cast<const CFactoryCAI*>(commandAI);
 	const CCommandQueue* queue = (factoryCAI == nullptr)? &commandAI->commandQue : &factoryCAI->newUnitCommands;
 
-	// - 1 to convert from lua index to C index
-	const unsigned int cmdIndex = luaL_optint(L, 2, 1) - 1;
+	int cmdIndex = luaL_optint(L, 2, 1);
+	if (cmdIndex > 0) {
+		// - 1 to convert from lua index to C index
+		cmdIndex -= 1;
+	} else {
+		cmdIndex = queue->size()-cmdIndex;
+	}
 
-	if (cmdIndex >= queue->size())
+	if (cmdIndex >= queue->size() || cmdIndex < 0)
 		return 0;
 
 	const Command& cmd = queue->at(cmdIndex);
@@ -5861,6 +6147,11 @@ int LuaSyncedRead::GetUnitCommands(lua_State* L)
 		// *get wants the actual commands
 		PackCommandQueue(L, *queue, numCmds);
 	} else {
+		static bool deprecatedMsgDone = false;
+		if (!deprecatedMsgDone) {
+			LOG_L(L_DEPRECATED, "Getting the command count using GetUnitCommands/GetCommandQueue is deprecated. Please use Spring.GetUnitCommandCount instead.");
+			deprecatedMsgDone = true;
+		}
 		// *get just wants the queue's size
 		lua_pushnumber(L, queue->size());
 	}
@@ -5904,6 +6195,26 @@ int LuaSyncedRead::GetFactoryCommands(lua_State* L)
 	return 1;
 }
 
+/*** Get the number of commands in a units queue.
+ *
+ * @number unitID
+ */
+int LuaSyncedRead::GetUnitCommandCount(lua_State* L)
+{
+	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	const CCommandAI* commandAI = unit->commandAI;
+
+	const CFactoryCAI* factoryCAI = dynamic_cast<const CFactoryCAI*>(commandAI);
+	const CCommandQueue* queue = (factoryCAI == nullptr)? &commandAI->commandQue : &factoryCAI->newUnitCommands;
+
+	lua_pushnumber(L, queue->size());
+
+	return 1;
+}
 
 /***
  *
@@ -6677,14 +6988,6 @@ int LuaSyncedRead::GetProjectileGravity(lua_State* L)
 	return 1;
 }
 
-int LuaSyncedRead::GetProjectileSpinAngle(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // FIXME: DELETE ME
-int LuaSyncedRead::GetProjectileSpinSpeed(lua_State* L) { lua_pushnumber(L, 0.0f); return 1; } // FIXME: DELETE ME
-int LuaSyncedRead::GetProjectileSpinVec(lua_State* L) {
-	lua_pushnumber(L, 0.0f);
-	lua_pushnumber(L, 0.0f);
-	lua_pushnumber(L, 0.0f);
-	return 3;
-} // FIXME: DELETE ME
 
 
 /***
@@ -6961,46 +7264,6 @@ int LuaSyncedRead::GetProjectileDamages(lua_State* L)
 }
 
 
-/***
- *
- * @function Spring.GetProjectileName
- *
- * It is recommended to rather use GetProjectileDefID for indexing purposes.
- *
- * @number projectileID
- * @treturn nil|string
- *
- * @see Spring.GetProjectileDefID
- */
-int LuaSyncedRead::GetProjectileName(lua_State* L)
-{
-	const CProjectile* pro = ParseProjectile(L, __func__, 1);
-
-	if (pro == nullptr)
-		return 0;
-
-	if (pro->weapon) {
-		const CWeaponProjectile* wpro = static_cast<const CWeaponProjectile*>(pro);
-
-		if (wpro != nullptr && wpro->GetWeaponDef() != nullptr) {
-			// maybe CWeaponProjectile derivatives
-			// should have actual names themselves?
-			lua_pushsstring(L, wpro->GetWeaponDef()->name);
-			return 1;
-		}
-	}
-	if (pro->piece) {
-		const CPieceProjectile* ppro = static_cast<const CPieceProjectile*>(pro);
-
-		if (ppro != nullptr && ppro->omp != nullptr) {
-			lua_pushsstring(L, ppro->omp->name);
-			return 1;
-		}
-	}
-
-	// neither weapon nor piece likely means the projectile is CExpGenSpawner, should we return any name in this case?
-	return 0;
-}
 
 
 /******************************************************************************
@@ -7396,8 +7659,10 @@ int LuaSyncedRead::TestMoveOrder(lua_State* L)
 		los = losHandler->InLos(pos, CLuaHandle::GetHandleReadAllyTeam(L));
 	}
 
-	if (los)
-		ret = moveDef->TestMoveSquare(nullptr, pos, dir, testTerrain, testObjects, centerOnly);
+	if (los){
+		MoveTypes::CheckCollisionQuery collisionQuery(moveDef, pos);
+		ret = moveDef->TestMoveSquare(collisionQuery, pos, dir, testTerrain, testObjects, centerOnly);
+	}
 
 	lua_pushboolean(L, ret);
 	return 1;
@@ -8427,6 +8692,80 @@ int LuaSyncedRead::GetUnitScriptNames(lua_State* L)
 	}
 
 	return 1;
+}
+
+static int TraceRayGroundImpl(lua_State *const L, const float3 &pos, const float3 &dir, const float maxLen, const bool testWater)
+{
+	const float rayLength = CGround::LineGroundWaterCol(pos, dir, maxLen, testWater, CLuaHandle::GetHandleSynced(L));
+	if (rayLength == -1.0f)
+		return 0;
+
+	const auto collisionSpot = pos + dir * rayLength; // FIXME: would be nice if the CGround:: functions returned this so we wouldn't have to recalculate
+
+	lua_pushnumber(L, rayLength);
+	lua_pushnumber(L, collisionSpot.x);
+	lua_pushnumber(L, collisionSpot.y);
+	lua_pushnumber(L, collisionSpot.z);
+	return 4;
+}
+
+/*** Checks for a ground collision in given direction
+ *
+ * @function Spring.TraceRayGroundInDirection
+ *
+ * Checks if there is surface (ground, optionally water) towards a vector
+ * and returns the distance to the closest hit and its position, if any.
+ *
+ * @number posX
+ * @number posY
+ * @number posZ
+ * @number dirX
+ * @number dirY
+ * @number dirZ
+ * @bool[opt=true] testWater
+ * @treturn number rayLength
+ * @treturn number posX
+ * @treturn number posY
+ * @treturn number posZ
+ */
+int LuaSyncedRead::TraceRayGroundInDirection(lua_State* L)
+{
+	const float3 pos(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	const auto dir = float3(luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6)).Normalize();
+	const float maxLen = luaL_optfloat(L, 7, 999999.f);
+	const bool testWater = luaL_optboolean(L, 8, true);
+
+	return TraceRayGroundImpl(L, pos, dir, maxLen, testWater);
+}
+
+/*** Checks for a ground collision between two positions
+ *
+ * @function Spring.TraceRayGroundBetweenPositions
+ *
+ * Checks if there is surface (ground, optionally water) between two positions
+ * and returns the distance to the closest hit and its position, if any.
+ *
+ * @number startX
+ * @number startY
+ * @number startZ
+ * @number endX
+ * @number endY
+ * @number endZ
+ * @bool[opt=true] testWater
+ * @treturn number rayLength
+ * @treturn number posX
+ * @treturn number posY
+ * @treturn number posZ
+ */
+int LuaSyncedRead::TraceRayGroundBetweenPositions(lua_State* L)
+{
+	const float3 start (luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
+	const float3 end (luaL_checkfloat(L, 4), luaL_checkfloat(L, 5), luaL_checkfloat(L, 6));
+	const bool testWater = luaL_optboolean(L, 7, true);
+
+	const auto [dir, length] = (end - start).GetNormalized();
+
+	return TraceRayGroundImpl(L, start, dir, length, testWater);
 }
 
 

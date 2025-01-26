@@ -15,18 +15,68 @@
 
 #include "System/TimeProfiler.h"
 
+#include "System/Log/ILog.h"
+
 class CSolidObject;
 
 namespace QTPFS {
 	struct IPath {
 		struct PathNodeData {
-			uint32_t nodeId;
+			uint32_t nodeId = -1U;
+			uint32_t nodeNumber = -1U;
 			float2 netPoint;
 			int pathPointIndex = -1;
 			int xmin = 0;
 			int zmin = 0;
 			int xmax = 0;
 			int zmax = 0;
+			bool badNode = false;
+
+			bool IsNodeBad() const { return badNode; }
+			void SetNodeBad(bool state) { badNode = state; }
+
+			int getWidth() const { return xmax - xmin; }
+
+			static constexpr int NEIGHBOUR_LEFT = 0x0;
+			static constexpr int NEIGHBOUR_RIGHT = 0x1;
+			static constexpr int NEIGHBOUR_TOP = 0x0;
+			static constexpr int NEIGHBOUR_BOTTOM = 0x2;
+			static constexpr int NEIGHBOUR_NO_TOUCH = 0x0;
+			static constexpr int NEIGHBOUR_LONGITUDE_TOUCH = 0x4;
+			static constexpr int NEIGHBOUR_LATITUDE_TOUCH = 0x8;
+
+			static constexpr int NEIGHBOUR_TOUCH = (NEIGHBOUR_LONGITUDE_TOUCH|NEIGHBOUR_LATITUDE_TOUCH);
+
+			static int GetLongitudeNeighbourSide(int neighbourRelationStatus) {
+				return (neighbourRelationStatus & NEIGHBOUR_RIGHT);
+			}
+
+			static int GetLatitudeNeighbourSide(int neighbourRelationStatus) {
+				return (neighbourRelationStatus & NEIGHBOUR_BOTTOM) >> 1;
+			}
+
+			static int IsNeighbourCorner(int neighbourRelationStatus) {
+				return (neighbourRelationStatus & NEIGHBOUR_TOUCH) == NEIGHBOUR_TOUCH;
+			}
+
+			static int IsNeighbourLongitude(int neighbourRelationStatus) {
+				return (neighbourRelationStatus & NEIGHBOUR_TOUCH) == NEIGHBOUR_LONGITUDE_TOUCH;
+			}
+
+			static int IsNeighbourLatitude(int neighbourRelationStatus) {
+				return (neighbourRelationStatus & NEIGHBOUR_TOUCH) == NEIGHBOUR_LATITUDE_TOUCH;
+			}
+
+			int GetNeighborRelationStatus(const PathNodeData& other) const {
+				bool top = (zmin == other.zmax);
+				bool bottom = (zmax == other.zmin);
+				bool left = (xmin == other.xmax);
+				bool right = (xmax == other.xmin);
+
+				return (NEIGHBOUR_BOTTOM * bottom) + (NEIGHBOUR_RIGHT * right)
+						+ (NEIGHBOUR_LONGITUDE_TOUCH * (left|right))
+						+ (NEIGHBOUR_LATITUDE_TOUCH  * (top|bottom));
+			}
 		};
 
 		IPath() {}
@@ -39,6 +89,7 @@ namespace QTPFS {
 
 			nextPointIndex = other.nextPointIndex;
 			numPathUpdates = other.numPathUpdates;
+			firstNodeIdOfCleanPath = other.firstNodeIdOfCleanPath;
 
 			hash   = other.hash;
 			virtualHash = other.virtualHash;
@@ -47,6 +98,7 @@ namespace QTPFS {
 			haveFullPath = other.haveFullPath;
 			havePartialPath = other.havePartialPath;
 			boundingBoxOverride = other.boundingBoxOverride;
+			isRawPath = other.isRawPath;
 			points = other.points;
 			nodes = other.nodes;
 
@@ -69,6 +121,7 @@ namespace QTPFS {
 
 			nextPointIndex = other.nextPointIndex;
 			numPathUpdates = other.numPathUpdates;
+			firstNodeIdOfCleanPath = other.firstNodeIdOfCleanPath;
 
 			hash   = other.hash;
 			virtualHash = other.virtualHash;
@@ -77,6 +130,7 @@ namespace QTPFS {
 			haveFullPath = other.haveFullPath;
 			havePartialPath = other.havePartialPath;
 			boundingBoxOverride = other.boundingBoxOverride;
+			isRawPath = other.isRawPath;
 			points = std::move(other.points);
 			nodes = std::move(other.nodes);
 
@@ -120,8 +174,9 @@ namespace QTPFS {
 			boundingBoxMins.z = 1e6f; boundingBoxMaxs.z = -1e6f;
 
 			const unsigned int begin = (nextPointIndex >= 2U) ? nextPointIndex - 2U : 0U;
-			const unsigned int end = (repathAtPointIndex > 0U) ? repathAtPointIndex + 1U : points.size();
-
+			// const unsigned int end = (repathAtPointIndex > 0U) ? repathAtPointIndex + 1U : points.size();
+			const unsigned int end = points.size();
+			
 			for (unsigned int n = begin; n < end; n++) {
 				boundingBoxMins.x = std::min(boundingBoxMins.x, points[n].x);
 				boundingBoxMins.z = std::min(boundingBoxMins.z, points[n].z);
@@ -187,18 +242,33 @@ namespace QTPFS {
 			if (index < repathAtPointIndex) repathAtPointIndex--;
 		}
 
-		void SetNode(unsigned int i, uint32_t nodeId, float2&& netpoint, int pointIdx) {
+		void SetNode(unsigned int i, uint32_t nodeId, uint32_t nodeNumber, float2&& netpoint, int pointIdx, bool isBad) {
 			nodes[i].netPoint = netpoint;
+			nodes[i].nodeNumber = nodeNumber;
 			nodes[i].nodeId = nodeId;
 			nodes[i].pathPointIndex = pointIdx;
+			nodes[i].SetNodeBad(isBad);
 		}
+
+		const PathNodeData& GetNode(unsigned int i) const {
+			return nodes[i];
+		};
+
+		void RemoveNode(size_t index) {
+			if (index >= nodes.size()) { return; }
+			unsigned int start = index, end = nodes.size() - 1;
+			for (unsigned int i = start; i < end; ++i) { nodes[i] = nodes[i+1]; }
+			nodes.pop_back();
+		}
+
 		void SetNodeBoundary(unsigned int i, int xmin, int zmin, int xmax, int zmax) {
 			nodes[i].xmin = xmin;
 			nodes[i].zmin = zmin;
 			nodes[i].xmax = xmax;
 			nodes[i].zmax = zmax;
 		}
-		const PathNodeData& GetNode(unsigned int i) const { return nodes[i]; };
+		// There are always (points - 1) valid path nodes.
+		uint32_t GetGoodNodeCount() const { return points.size() - 1; };
 
 		void SetSourcePoint(const float3& p) { /* checkPointInBounds(p); */ assert(points.size() >= 2); points[                0] = p; }
 		void SetTargetPoint(const float3& p) { /* checkPointInBounds(p); */ assert(points.size() >= 2); points[points.size() - 1] = p; }
@@ -257,6 +327,12 @@ namespace QTPFS {
 		float3 GetGoalPosition() const { return goalPosition; }
 		void SetGoalPosition(float3 point) { goalPosition = point; }
 
+		unsigned int GetFirstNodeIdOfCleanPath() const { return firstNodeIdOfCleanPath; }
+		void SetFirstNodeIdOfCleanPath(int nodeId) { firstNodeIdOfCleanPath = nodeId; }
+
+		bool IsRawPath() const { return isRawPath; }
+		void SetIsRawPath(bool enable) { isRawPath = enable; }
+
 	private:
 		unsigned int pathID = 0;
 		int pathType = 0;
@@ -264,6 +340,7 @@ namespace QTPFS {
 		unsigned int nextPointIndex = 0; // index of the next waypoint to be visited
 		unsigned int repathAtPointIndex = 0; // minimum index of the waypoint to trigger a repath.
 		unsigned int numPathUpdates = 0; // number of times this path was invalidated
+		unsigned int firstNodeIdOfCleanPath = 0;
 
 		// Identifies the layer, target quad and source quad for a search query so that similar
 		// searches can be combined.
@@ -276,10 +353,22 @@ namespace QTPFS {
 		// shared path searches.
 		PathHashType virtualHash = BAD_HASH;
 		float radius = 0.f;
+
+		// Whether this AFFECTS synced state (like heatmaps and whatnot).
+		// It NEVER DEPENDS on unsynced state so even an "unsynced" call
+		// is safe to make from synced.
+		//
+		// Additionally, synced calls are batched and deferred.
+		//
+		// In practice, this means calls from actual unit movement usually
+		// set this to synced, and Lua calls (which need to know results
+		// immediately but don't yet involve any unit movement) unsynced.
 		bool synced = true;
+
 		bool haveFullPath = true;
 		bool havePartialPath = false;
 		bool boundingBoxOverride = false;
+		bool isRawPath = false;
 
 		std::vector<float3> points;
 		std::vector<PathNodeData> nodes;

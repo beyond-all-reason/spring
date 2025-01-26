@@ -13,8 +13,8 @@ Recoil is a battle tested open-source RTS engine that, allied with a flexible
 Lua API, allows you to implement the perfect UI and mechanics for your game
 with the ability to support thousands of complex units simultaneously.
 
-Some of the games powered by Recoil: [Beyond All Reason], [ZeroK], [TA Prime]
-and [Metal Factions].
+Some of the games powered by Recoil: [Beyond All Reason], [Zero-K],
+[Total Atomic Power], [Tech Annihilation] and [Metal Factions].
 
 {: .fs-6 .fw-300 }
 
@@ -77,10 +77,11 @@ owners of this repository before making a change.
 [Recoil repo]: {{site.gh_edit_repository}}
 [GitHub issues]: {{site.gh_edit_repository}}/issues
 [Beyond All Reason]: https://beyondallreason.info
-[ZeroK]: https://zero-k.info
+[Zero-K]: https://zero-k.info
 [Spring]: https://github.com/spring/spring
 [Metal Factions]: https://metalfactions.pt
-[TA Prime]: https://www.fluidplay.co/tap.html
+[Total Atomic Power]: http://fluidplay.co/index.php/games/tap
+[Tech Annihilation]: https://github.com/techannihilation/TA
 [105 tree]: https://github.com/spring/spring/releases/tag/105.0.1
 [Discord server]: https://discord.gg/GUpRg6Wz3e
 [Spring Wiki]: https://springrts.com/wiki/Main_Page

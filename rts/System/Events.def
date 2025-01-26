@@ -37,13 +37,14 @@
 	SETUP_EVENT(PlayerAdded,   MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(PlayerRemoved, MANAGED_BIT | UNSYNCED_BIT)
 
-	SETUP_EVENT(UnitCreated,      MANAGED_BIT)
-	SETUP_EVENT(UnitFinished,     MANAGED_BIT)
-	SETUP_EVENT(UnitFromFactory,  MANAGED_BIT)
-	SETUP_EVENT(UnitReverseBuilt, MANAGED_BIT)
-	SETUP_EVENT(UnitDestroyed,    MANAGED_BIT)
-	SETUP_EVENT(UnitTaken,        MANAGED_BIT)
-	SETUP_EVENT(UnitGiven,        MANAGED_BIT)
+	SETUP_EVENT(UnitCreated,             MANAGED_BIT)
+	SETUP_EVENT(UnitFinished,            MANAGED_BIT)
+	SETUP_EVENT(UnitFromFactory,         MANAGED_BIT)
+	SETUP_EVENT(UnitReverseBuilt,        MANAGED_BIT)
+	SETUP_EVENT(UnitConstructionDecayed, MANAGED_BIT)
+	SETUP_EVENT(UnitDestroyed,           MANAGED_BIT)
+	SETUP_EVENT(UnitTaken,               MANAGED_BIT)
+	SETUP_EVENT(UnitGiven,               MANAGED_BIT)
 
 	SETUP_EVENT(UnitIdle,       MANAGED_BIT)
 	SETUP_EVENT(UnitCommand,    MANAGED_BIT)
@@ -75,6 +76,7 @@
 	SETUP_EVENT(UnitFeatureCollision, MANAGED_BIT | CONTROL_BIT)
 	SETUP_EVENT(UnitMoved,            MANAGED_BIT)
 	SETUP_EVENT(UnitMoveFailed,       MANAGED_BIT)
+	SETUP_EVENT(UnitArrivedAtGoal,    MANAGED_BIT)
 
 	SETUP_EVENT(FeatureCreated,   MANAGED_BIT)
 	SETUP_EVENT(FeatureDestroyed, MANAGED_BIT)
@@ -115,6 +117,7 @@
 
 	SETUP_EVENT(LastMessagePosition, MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DefaultCommand,      MANAGED_BIT | UNSYNCED_BIT | CONTROL_BIT)
+	SETUP_EVENT(ActiveCommandChanged,    MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(CommandNotify,       MANAGED_BIT | UNSYNCED_BIT | CONTROL_BIT)
 	SETUP_EVENT(AddConsoleLine,      MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(GroupChanged,        MANAGED_BIT | UNSYNCED_BIT)
@@ -155,6 +158,8 @@
 	SETUP_EVENT(DrawAlphaFeaturesLua,     MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawShadowUnitsLua,       MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawShadowFeaturesLua,    MANAGED_BIT | UNSYNCED_BIT)
+
+	SETUP_EVENT(FontsChanged,	      MANAGED_BIT | UNSYNCED_BIT)
 
 	SETUP_EVENT(RenderUnitPreCreated,     MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(RenderUnitCreated,      MANAGED_BIT | UNSYNCED_BIT)

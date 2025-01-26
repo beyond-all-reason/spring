@@ -22,6 +22,8 @@ class LuaFonts {
 	private: // call-outs
 		static int LoadFont(lua_State* L);
 		static int DeleteFont(lua_State* L);
+		static int AddFallbackFont(lua_State* L);
+		static int ClearFallbackFonts(lua_State* L);
 
 	private: // userdata call-outs
 		static int Print(lua_State* L);

@@ -640,7 +640,6 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 	// TODO check if the command is in the map first, for more commands
 	switch (cmdID) {
 		case CMD_MOVE:
-		case CMD_ATTACK:
 		case CMD_AREA_ATTACK:
 		case CMD_RECLAIM:
 		case CMD_REPAIR:
@@ -701,9 +700,12 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 
 				if (attackee == nullptr)
 					return false;
-				if (!attackee->pos.IsInBounds())
-					return false;
 			} else {
+				const bool isGroundTargeted = (c.GetNumParams() > 3 && c.GetParam(3) == 0)
+							      || c.GetNumParams() == 3;
+				if (isGroundTargeted && !IsCommandInMap(c))
+					return false; // don't allow direct ground attack out of map
+
 				AdjustGroundAttackCommand(c, fromSynced, aiOrder);
 			}
 		} break;
@@ -717,13 +719,7 @@ bool CCommandAI::AllowedCommand(const Command& c, bool fromSynced)
 				return false;
 		} break;
 		case CMD_GUARD: {
-			const CUnit* guardee = GetCommandUnit(c, 0);
-
 			if (!ud->canGuard)
-				return false;
-			if (owner && !owner->pos.IsInBounds())
-				return false;
-			if (guardee && !guardee->pos.IsInBounds())
 				return false;
 		} break;
 
@@ -1744,7 +1740,7 @@ void CCommandAI::UpdateStockpileIcon()
 	}
 }
 
-void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget)
+void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget, bool raiseEvent)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!inCommand || commandQue.empty())
@@ -1786,7 +1782,8 @@ void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget)
 	// if this fails, we need to take a copy at top instead of a reference
 	assert(&c == &commandQue.front());
 
-	eoh->WeaponFired(*owner, *(weapon->weaponDef));
+	if (raiseEvent)
+		eoh->WeaponFired(*owner, *(weapon->weaponDef));
 
 	if (!orderFinished)
 		return;

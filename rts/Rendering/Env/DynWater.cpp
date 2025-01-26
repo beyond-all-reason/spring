@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <bit>
 
 #include "DynWater.h"
 #include "WaterRendering.h"
@@ -22,7 +23,6 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/Log/ILog.h"
-#include "System/bitops.h"
 #include "System/Exceptions.h"
 
 #include "System/Misc/TracyDefs.h"
@@ -99,10 +99,10 @@ void CDynWater::InitResources(bool loadShader)
 	if (!foam.LoadGrayscale(waterRendering->foamTexture))
 		LOG_L(L_WARNING, "[%s] could not load grayscale foam-texture %s\n", __func__, waterRendering->foamTexture.c_str());
 
-	if ((count_bits_set(foam.xsize) != 1) || (count_bits_set(foam.ysize) != 1))
-		foam.CreateRescaled(next_power_of_2(foam.xsize), next_power_of_2(foam.ysize));
+	if (!std::has_single_bit <uint32_t> (foam.xsize) || !std::has_single_bit <uint32_t> (foam.ysize))
+		foam.CreateRescaled(std::bit_ceil <uint32_t> (foam.xsize), std::bit_ceil <uint32_t> (foam.ysize));
 
-	foamTex = foam.CreateTexture(0.0f, 0.0f, true);
+	foamTex = foam.CreateMipMapTexture(0.0f, 0.0f, 0);
 
 
 	if (ProgramStringIsNative(GL_VERTEX_PROGRAM_ARB, "ARB/waterDyn.vp")) {

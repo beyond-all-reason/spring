@@ -7,10 +7,12 @@
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Scripts/UnitScript.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -64,15 +66,15 @@ CFactory::CFactory()
 	, lastBuildUpdateFrame(-1)
 { }
 
-void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
+void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (curBuild != nullptr) {
-		curBuild->KillUnit(nullptr, false, true);
+		curBuild->KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_FACTORY_KILLED);
 		curBuild = nullptr;
 	}
 
-	CUnit::KillUnit(attacker, selfDestruct, reclaimed);
+	CUnit::KillUnit(attacker, selfDestruct, reclaimed, weaponDefID);
 }
 
 void CFactory::PreInit(const UnitLoadParams& params)
@@ -311,7 +313,7 @@ void CFactory::StopBuild()
 	if (curBuild) {
 		if (curBuild->beingBuilt) {
 			AddMetal(curBuild->cost.metal * curBuild->buildProgress, false);
-			curBuild->KillUnit(nullptr, false, true);
+			curBuild->KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_FACTORY_CANCEL);
 		}
 		DeleteDeathDependence(curBuild, DEPENDENCE_BUILD);
 	}
@@ -345,6 +347,7 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 	const float3 tempPos = pos + frontdir * searchRadius;
 
 	float3 foundPos = tempPos;
+	MoveTypes::CheckCollisionQuery colliderInfo(unit);
 
 	for (int i = 0; i < numSteps; ++i) {
 		const float a = searchRadius * math::cos(i * searchAngle);
@@ -364,8 +367,11 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 
 		if (!quadField.NoSolidsExact(testPos, unit->radius * 1.5f, 0xFFFFFFFF, CSolidObject::CSTATE_BIT_SOLIDOBJECTS))
 			continue;
-		if (unit->moveDef != nullptr && !unit->moveDef->TestMoveSquare(nullptr, testPos, ZeroVector, true, true))
-			continue;
+		if (unit->moveDef != nullptr) {
+			colliderInfo.UpdateElevationForPos(testPos);
+			if (!unit->moveDef->TestMoveSquare(colliderInfo, testPos, ZeroVector, true, true))
+				continue;
+		}
 
 		foundPos = testPos;
 		break;
@@ -389,8 +395,11 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 			if ((foundPos - pos).dot(frontdir) < 0.0f)
 				continue;
 
-			if (unit->moveDef != nullptr && !unit->moveDef->TestMoveSquare(nullptr, foundPos, ZeroVector, true, true))
-				continue;
+			if (unit->moveDef != nullptr) {
+				colliderInfo.UpdateElevationForPos(foundPos);
+				if (!unit->moveDef->TestMoveSquare(colliderInfo, foundPos, ZeroVector, true, true))
+					continue;
+			}
 
 			break;
 		}
@@ -435,7 +444,7 @@ void CFactory::AssignBuildeeOrders(CUnit* unit) {
 
 	Command c(CMD_MOVE);
 
-	if (!unit->unitDef->canfly) {
+	if (!unit->unitDef->canfly && modInfo.insertBuiltUnitMoveCommand) {
 		// HACK: when a factory has a rallypoint set far enough away
 		// to trigger the non-admissable path estimators, we want to
 		// avoid units getting stuck inside by issuing them an extra
@@ -464,7 +473,9 @@ void CFactory::AssignBuildeeOrders(CUnit* unit) {
 	}
 
 	if (unitCmdQue.empty()) {
-		unitCAI->GiveCommand(c);
+		if (modInfo.insertBuiltUnitMoveCommand) {
+			unitCAI->GiveCommand(c);
+		}
 
 		// copy factory orders for new unit
 		for (auto ci = factoryCmdQue.begin(); ci != factoryCmdQue.end(); ++ci) {
@@ -486,7 +497,7 @@ void CFactory::AssignBuildeeOrders(CUnit* unit) {
 
 			unitCAI->GiveCommand(c);
 		}
-	} else {
+	} else if (modInfo.insertBuiltUnitMoveCommand) {
 		unitCmdQue.push_front(c);
 	}
 }

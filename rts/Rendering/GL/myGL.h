@@ -51,19 +51,16 @@ struct TextureParameters {
 	GLint bpp;
 	GLint chNum;
 	GLint imageSize;
-	GLboolean isDepth;
+	GLint prefDataType;
+	GLboolean isNormalizedDepth;
 	GLboolean isCompressed;
 };
 
 static inline void glVertexf3(const float3& v)    { glVertex3f(v.r, v.g, v.b); }
 static inline void glColorf3(const float3& v)     { glColor3f(v.r, v.g, v.b); }
 static inline void glColorf4(const float4& v)     { glColor4f(v.r, v.g, v.b, v.a); }
-static inline void glNormalf3(const float3& v)    { glNormal3f(v.r, v.g, v.b); }
 static inline void glTranslatef3(const float3& v) { glTranslatef(v.r, v.g, v.b); }
-static inline void glSecondaryColorf3(const float3& v) { glSecondaryColor3f(v.r, v.g, v.b); }
 static inline void glColorf4(const float3& v, const float alpha) { glColor4f(v.r, v.g, v.b, alpha); }
-static inline void glUniformf3(const GLint location, const float3& v) { glUniform3f(location, v.r, v.g, v.b); }
-
 
 typedef   void   (*   glOrthoFuncPtr) (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near, GLdouble far);
 typedef   void   (*gluOrtho2DFuncPtr) (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top);
@@ -107,21 +104,18 @@ static constexpr  glFrustumFuncPtr  glFrustumFuncs[2] = {__spring_glFrustum_noCC
 
 
 void WorkaroundATIPointSizeBug();
-void SetTexGen(const float scaleX, const float scaleZ, const float offsetX, const float offsetZ);
 
-void glSpringGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& textureParameters);
 void glSaveTexture(const GLuint textureID, const char* filename, int level = 0);
-void glSpringBindTextures(GLuint first, GLsizei count, const GLuint* textures);
-void glSpringTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height);
-void glSpringTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth);
-void glBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data);
+
+void RecoilGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& textureParameters);
+void RecoilTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height);
+void RecoilTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth);
+void RecoilBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data, int32_t numLevels = 0);
 bool glSpringBlitImages(
 	GLuint srcName, GLenum srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ,
 	GLuint dstName, GLenum dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ,
 	GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth
 );
-
-void glSpringMatrix2dProj(const int sizex, const int sizey);
 
 void ClearScreen();
 

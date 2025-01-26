@@ -41,7 +41,6 @@ public:
 	std::string description;
 
 	// Movement behaviour
-	bool allowDirectionalPathing;    //< determines if ground speed going downhill != going uphill
 	bool allowAircraftToLeaveMap;    //< determines if gunships are allowed to leave map boundaries
 	bool allowAircraftToHitGround;   //< determines if aircraft (both types) can collide with terrain
 	bool allowPushingEnemyUnits;     //< determines if enemy (ground-)units can be pushed during collisions
@@ -70,6 +69,8 @@ public:
 	int constructionDecayTime;
 	/// How fast do they decay?
 	float constructionDecaySpeed;
+	/// When units are created, issue a move command off of the factory pad.
+	bool insertBuiltUnitMoveCommand;
 
 	// Damage behaviour
 	/// unit pieces flying off (usually on death)
@@ -127,22 +128,22 @@ public:
 
 
 	// Transportation behaviour
-	/// 0 = all ground units cannot be transported, 1 = all ground units can be transported (mass and size restrictions still apply). Defaults to 1.
-	int transportGround;
-	/// 0 = all hover units cannot be transported, 1 = all hover units can be transported (mass and size restrictions still apply). Defaults to 0.
-	int transportHover;
-	/// 0 = all naval units cannot be transported, 1 = all naval units can be transported (mass and size restrictions still apply). Defaults to 0.
-	int transportShip;
-	/// 0 = all air units cannot be transported, 1 = all air units can be transported (mass and size restrictions still apply). Defaults to 0.
-	int transportAir;
-	/// 0 = transported units cannot be manually or automatically targeted
-	int targetableTransportedUnits;
+	/// If false, every unit using a tank or kbot movedef gets `cantBeTransported = true` override in its unit def. Defaults to true.
+	bool transportGround;
+	/// If false, every unit using a hovercraft movedef gets `cantBeTransported = true` override in its unit def. Defaults to false.
+	bool transportHover;
+	/// If false, every unit using a ship movedef gets `cantBeTransported = true` override in its unit def. Defaults to false.
+	bool transportShip;
+	/// If false, every aircraft gets `cantBeTransported = true` override in its unit def. Defaults to false.
+	bool transportAir;
+	/// If false, transported units cannot be manually or automatically targeted
+	bool targetableTransportedUnits;
 
 	// Fire-on-dying-units behaviour
-	/// 1 = units fire at enemies running Killed() script, 0 = units ignore such enemies
-	int fireAtKilled;
-	/// 1 = units fire at crashing aircrafts, 0 = units ignore crashing aircrafts
-	int fireAtCrashing;
+	/// Do units fire at enemies running Killed() script?
+	bool fireAtKilled;
+	/// Do units fire at crashing aircraft?
+	bool fireAtCrashing;
 
 	/// 0=no flanking bonus;  1=global coords, mobile;  2=unit coords, mobile;  3=unit coords, locked
 	int flankingBonusModeDefault;
@@ -220,10 +221,22 @@ public:
 
 	bool enableSmoothMesh;
 
+	/// Reduce the resolution of the smooth mesh by the divider value. Increasing the value reduces
+	/// the accuracy of the smooth mesh, but improves performance. Minimum 1, default 2.
+	int smoothMeshResDivider;
+
+	/// Radius in heightmap squares to use the smooth the mesh gradients. Increasing value
+	/// increases the area that a given point uses to find the local heighest point, and the
+	/// distance of the slope. Default is 40.
+	int smoothMeshSmoothRadius;
+
 	int quadFieldQuadSizeInElmos;
 
 	bool allowTake;
 	bool allowEnginePlayerlist;
+
+	// how often to report wind speed/direction to wind gens
+	int windChangeReportPeriod;
 };
 
 extern CModInfo modInfo;

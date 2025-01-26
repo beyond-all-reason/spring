@@ -57,26 +57,26 @@ public:
 		HorizontalLayout* input = new HorizontalLayout(wndLayout);
 		/*agui::TextElement* label = */new agui::TextElement("Address:", input); // will be deleted in input
 		address = new agui::LineEdit(input);
-		address->DefaultAction.connect(std::bind(&ConnectWindow::Finish, this, true));
+		address->DefaultAction = std::bind(&ConnectWindow::Finish, this, true);
 		address->SetFocus(true);
 		address->SetContent(configHandler->GetString("address"));
 		HorizontalLayout* buttons = new HorizontalLayout(wndLayout);
 		Button* connect = new Button("Connect", buttons);
-		connect->Clicked.connect(std::bind(&ConnectWindow::Finish, this, true));
+		connect->Clicked = std::bind(&ConnectWindow::Finish, this, true);
 		Button* close = new Button("Close", buttons);
-		close->Clicked.connect(std::bind(&ConnectWindow::Finish, this, false));
+		close->Clicked = std::bind(&ConnectWindow::Finish, this, false);
 		GeometryChange();
 	}
 
-	slimsig::signal<void (std::string)> Connect;
+	OnClickStringType Connect;
 	agui::LineEdit* address;
 
 private:
 	void Finish(bool connect) {
 		if (connect)
-			Connect.emit(address->GetContent());
+			Connect(address->GetContent());
 		else
-			WantClose.emit();
+			WantClose();
 	};
 };
 
@@ -91,27 +91,27 @@ public:
 		HorizontalLayout* input = new HorizontalLayout(wndLayout);
 		/*agui::TextElement* value_label = */new agui::TextElement("Value:", input); // will be deleted in input
 		value = new agui::LineEdit(input);
-		value->DefaultAction.connect(std::bind(&SettingsWindow::Finish, this, true));
+		value->DefaultAction = std::bind(&SettingsWindow::Finish, this, true);
 		value->SetFocus(true);
 		if (configHandler->IsSet(name))
 			value->SetContent(configHandler->GetString(name));
 		HorizontalLayout* buttons = new HorizontalLayout(wndLayout);
 		Button* ok = new Button("OK", buttons);
-		ok->Clicked.connect(std::bind(&SettingsWindow::Finish, this, true));
+		ok->Clicked = std::bind(&SettingsWindow::Finish, this, true);
 		Button* close = new Button("Cancel", buttons);
-		close->Clicked.connect(std::bind(&SettingsWindow::Finish, this, false));
+		close->Clicked = std::bind(&SettingsWindow::Finish, this, false);
 		GeometryChange();
 	}
 
-	slimsig::signal<void (std::string)> OK;
+	OnClickStringType OK;
 	agui::LineEdit* value;
 
 private:
 	void Finish(bool set) {
 		if (set)
-			OK.emit(title + " = " + value->GetContent());
+			OK(title + " = " + value->GetContent());
 		else
-			WantClose.emit();
+			WantClose();
 	};
 };
 
@@ -150,25 +150,25 @@ SelectMenu::SelectMenu(std::shared_ptr<ClientSetup> setup)
 		menu->SetPos(0.1, 0.5);
 		menu->SetSize(0.4, 0.4);
 		menu->SetBorder(1.2f);
-		/*agui::TextElement* title = */new agui::TextElement("Spring " + SpringVersion::GetFull(), menu); // will be deleted in menu
+		/*agui::TextElement* title = */new agui::TextElement("Recoil " + SpringVersion::GetFull(), menu); // will be deleted in menu
 		Button* testGame = new Button("Test Game", menu);
-		testGame->Clicked.connect(std::bind(&SelectMenu::Single, this));
+		testGame->Clicked = std::bind(&SelectMenu::Single, this);
 
 		Button* playDemo = new Button("Play Demo", menu);
-		playDemo->Clicked.connect(std::bind(&SelectMenu::Demo, this));
+		playDemo->Clicked = std::bind(&SelectMenu::Demo, this);
 
 		Button* loadGame = new Button("Load Game", menu);
-		loadGame->Clicked.connect(std::bind(&SelectMenu::Load, this));
+		loadGame->Clicked = std::bind(&SelectMenu::Load, this);
 
 		userSetting = configHandler->GetString("LastSelectedSetting");
 		Button* editsettings = new Button("Edit Settings", menu);
-		editsettings->Clicked.connect(std::bind(&SelectMenu::ShowSettingsList, this));
+		editsettings->Clicked = std::bind(&SelectMenu::ShowSettingsList, this);
 
 		Button* directConnect = new Button("Direct Connect", menu);
-		directConnect->Clicked.connect(std::bind(&SelectMenu::ShowConnectWindow, this, true));
+		directConnect->Clicked = std::bind(&SelectMenu::ShowConnectWindow, this, true);
 
 		Button* quit = new Button("Quit", menu);
-		quit->Clicked.connect(std::bind(&SelectMenu::Quit, this));
+		quit->Clicked = std::bind(&SelectMenu::Quit, this);
 		background->GeometryChange();
 	}
 
@@ -204,7 +204,8 @@ void SelectMenu::Demo()
 		clientSetup->demoFile = userDemo;
 
 		pregame = new CPreGame(clientSetup);
-		pregame->LoadDemoFile(clientSetup->demoFile);
+		pregame->AsyncExecute(&CPreGame::LoadDemoFile, clientSetup->demoFile);
+		//pregame->LoadDemoFile(clientSetup->demoFile);
 
 		return (agui::gui->RmElement(this));
 	};
@@ -225,7 +226,8 @@ void SelectMenu::Load()
 		clientSetup->saveFile = userSave;
 
 		pregame = new CPreGame(clientSetup);
-		pregame->LoadSaveFile(clientSetup->saveFile);
+		pregame->AsyncExecute(&CPreGame::LoadSaveFile, clientSetup->saveFile);
+		//pregame->LoadSaveFile(clientSetup->saveFile);
 
 		return (agui::gui->RmElement(this));
 	};
@@ -257,7 +259,8 @@ void SelectMenu::Single()
 			selw->userScript.clear();
 
 		pregame = new CPreGame(clientSetup);
-		pregame->LoadSetupScript(StartScriptGen::CreateDefaultSetup(selw->userMap, selw->userMod, selw->userScript, clientSetup->myPlayerName));
+		pregame->AsyncExecute(&CPreGame::LoadSetupScript, StartScriptGen::CreateDefaultSetup(selw->userMap, selw->userMod, selw->userScript, clientSetup->myPlayerName));
+		//pregame->LoadSetupScript(StartScriptGen::CreateDefaultSetup(selw->userMap, selw->userMod, selw->userScript, clientSetup->myPlayerName));
 		return (agui::gui->RmElement(this));
 	}
 }
@@ -273,8 +276,8 @@ void SelectMenu::ShowConnectWindow(bool show)
 	if (show && !conWindow)
 	{
 		conWindow = new ConnectWindow();
-		conWindow->Connect.connect(std::bind(&SelectMenu::DirectConnect, this, std::placeholders::_1));
-		conWindow->WantClose.connect(std::bind(&SelectMenu::ShowConnectWindow, this, false));
+		conWindow->Connect = (std::bind(&SelectMenu::DirectConnect, this, std::placeholders::_1));
+		conWindow->WantClose = std::bind(&SelectMenu::ShowConnectWindow, this, false);
 	}
 	else if (!show && conWindow)
 	{
@@ -291,8 +294,8 @@ void SelectMenu::ShowSettingsWindow(bool show, std::string name)
 			settingsWindow = nullptr;
 		}
 		settingsWindow = new SettingsWindow(name);
-		settingsWindow->OK.connect(std::bind(&SelectMenu::ShowSettingsWindow, this, false, std::placeholders::_1));
-		settingsWindow->WantClose.connect(std::bind(&SelectMenu::ShowSettingsWindow, this, false, ""));
+		settingsWindow->OK = std::bind(&SelectMenu::ShowSettingsWindow, this, false, std::placeholders::_1);
+		settingsWindow->WantClose = std::bind(&SelectMenu::ShowSettingsWindow, this, false, "");
 	}
 	else if (!show && settingsWindow) {
 		agui::gui->RmElement(settingsWindow);
@@ -311,8 +314,8 @@ void SelectMenu::ShowSettingsList()
 {
 	if (curSelect == nullptr) {
 		curSelect = new ListSelectWnd("Select setting");
-		curSelect->Selected.connect(std::bind(&SelectMenu::SelectSetting, this, std::placeholders::_1));
-		curSelect->WantClose.connect(std::bind(&SelectMenu::CleanWindow, this));
+		curSelect->Selected = std::bind(&SelectMenu::SelectSetting, this, std::placeholders::_1);
+		curSelect->WantClose = std::bind(&SelectMenu::CleanWindow, this);
 	}
 	curSelect->list->RemoveAllItems();
 

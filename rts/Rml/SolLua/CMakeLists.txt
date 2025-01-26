@@ -1,0 +1,21 @@
+﻿set(sources_RmlSolLua
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/bind.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Colour.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Context.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Convert.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/DataModel.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Document.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Element.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/ElementDerived.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/ElementForm.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Event.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Global.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Vector.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaDataModel.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaDocument.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaEventListener.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaInstancer.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaPlugin.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/RmlSolLua.cpp"
+	PARENT_SCOPE
+)

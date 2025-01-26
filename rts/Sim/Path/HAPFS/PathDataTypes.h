@@ -20,6 +20,7 @@ struct PathNode {
 		, gCost(0.0f)
 		, nodeNum(0)
 		, nodePos(0, 0)
+		, exitOnly(false)
 	{}
 
 	float fCost;
@@ -27,6 +28,7 @@ struct PathNode {
 
 	int nodeNum;
 	ushort2 nodePos;
+	bool exitOnly;
 
 	inline bool operator <  (const PathNode& pn) const { return (fCost < pn.fCost); }
 	inline bool operator >  (const PathNode& pn) const { return (fCost > pn.fCost); }
@@ -35,9 +37,13 @@ struct PathNode {
 
 
 /// functor to define node priority
+/// This needs to guarantee that the sorting is stable.
 struct lessCost {
-	inline bool operator() (const PathNode* x, const PathNode* y) const {
-		return (x->fCost == y->fCost) ? (x->gCost < y->gCost) : (x->fCost > y->fCost);
+	inline bool operator() (const PathNode* lhs, const PathNode* rhs) const {
+		// fCost == gCost + hCost.
+		// When fCosts are the same, prioritize the node closest the goal. Since we don't have hCost to hand, we know
+		// that hCost == fCost - gCost. This is why we invert the left/right side for the gCost comparison.
+		return std::tie(lhs->fCost, rhs->gCost, lhs->nodeNum) > std::tie(rhs->fCost, lhs->gCost, rhs->nodeNum);
 	}
 };
 

@@ -71,6 +71,7 @@ CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponP
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_MISSILE_PROJECTILE;
 
+	mygravity = mix(mygravity, params.gravity, params.gravity != 0.0f);
 
 	if (model != nullptr)
 		SetRadiusAndHeight(model);
@@ -380,15 +381,19 @@ void CMissileProjectile::Draw()
 	if (!validTextures[1])
 		return;
 
+	UpdateWeaponAnimParams();
+
 	// rocket flare
 	const SColor lightYellow(255, 210, 180, 1);
 	const float fsize = radius * 0.4f;
 
-	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, lightYellow },
-		{ drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, lightYellow },
-		{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   lightYellow },
-		{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   lightYellow }
+	const auto* WT1 = weaponDef->visuals.texture1;
+
+	AddWeaponEffectsQuad<1>(
+		{ drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, WT1->xstart, WT1->ystart, lightYellow },
+		{ drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, WT1->xend,   WT1->ystart, lightYellow },
+		{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, WT1->xend,   WT1->yend,   lightYellow },
+		{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, WT1->xstart, WT1->yend,   lightYellow }
 	);
 }
 

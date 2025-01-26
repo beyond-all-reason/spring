@@ -154,6 +154,7 @@ void CWeaponLoader::InitWeapon(CUnit* owner, CWeapon* weapon, const UnitDefWeapo
 
 	weapon->salvoSize = weaponDef->salvosize;
 	weapon->salvoDelay = int(weaponDef->salvodelay * GAME_SPEED);
+	weapon->salvoWindup = weaponDef->salvoWindup;
 	weapon->projectilesPerShot = weaponDef->projectilespershot;
 
 	weapon->onlyForward = weaponDef->onlyForward;
@@ -188,5 +189,6 @@ void CWeaponLoader::InitWeapon(CUnit* owner, CWeapon* weapon, const UnitDefWeapo
 	weapon->weaponAimAdjustPriority = defWeapon->weaponAimAdjustPriority;
 	weapon->fastAutoRetargeting = defWeapon->fastAutoRetargeting;
 	weapon->fastQueryPointUpdate = defWeapon->fastQueryPointUpdate;
+	weapon->burstControlWhenOutOfArc = defWeapon->burstControlWhenOutOfArc;
 }
 

@@ -35,6 +35,8 @@
 
 struct SolidObjectDef;
 struct SCommandDescription;
+static constexpr int LUA_TABLE_VALUE_INDEX = -1;
+static constexpr int LUA_TABLE_KEY_INDEX = -2;
 
 namespace Json{
 	class Value;
@@ -166,6 +168,8 @@ class LuaUtils {
 		                            vector<float>& vec);
 		static int ParseStringVector(lua_State* L, int tableIndex,
 		                             vector<string>& vec);
+		static int ParseFloat4Vector(lua_State* L, int tableIndex,
+		                            vector<float4>& vec);
 
 		static void PushStringVector(lua_State* L, const vector<string>& vec);
 
@@ -202,6 +206,8 @@ class LuaUtils {
 		static const TObj* IdToObject(int id, const char* func = nullptr);
 		template<typename TObj>
 		static const TObj* SolIdToObject(int id, const char* func = nullptr);
+
+		static void TracyRemoveAlsoExtras(char *script);
 };
 
 

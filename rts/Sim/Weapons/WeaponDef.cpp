@@ -43,7 +43,6 @@ WEAPONTAG(std::string, type).externalName("weaponType").defaultValue("Cannon")
 	"EmgCannon - deprecated, a version of Laser or Flame with crappy visuals\n"
 	"Rifle - deprecated, more or less equivalent to invisible Lightning\n"
 );
-WEAPONTAG(int, tdfId).externalName("id").defaultValue(0);
 WEAPONDUMMYTAG(table, customParams).description("A table of arbitrary string key-value pairs, for use by Lua gadgets (no engine meaning)");
 
 // Collision & Avoidance
@@ -74,10 +73,11 @@ WEAPONTAG(float, edgeEffectiveness, damages.edgeEffectiveness).defaultValue(0.0f
 WEAPONTAG(float, collisionSize).defaultValue(0.05f).description("Width for hitscan interceptors. Supposed to be collision radius for others but it's broken at the moment");
 
 // Projectile Properties
-WEAPONTAG(float, projectilespeed).externalName("weaponVelocity").fallbackName("maxVelocity").defaultValue(0.0f).minimumValue(0.01f).scaleValue(1.0f / GAME_SPEED).description("Maximum speed in elmo/s (won't accelerate further on its own)");
-WEAPONTAG(float, startvelocity).defaultValue(0.0f).minimumValue(0.01f).scaleValue(1.0f / GAME_SPEED).description("Initial projectile speed in elmo/s");
-WEAPONTAG(float, weaponacceleration).fallbackName("acceleration").defaultValue(0.0f).scaleValue(1.0f / (GAME_SPEED * GAME_SPEED)).description("Acceleration in elmo/s^2");
+WEAPONTAG(float, projectilespeed).externalName("weaponVelocity").fallbackName("maxVelocity").defaultValue(0.0f).minimumValue(0.01f).scaleValue(INV_GAME_SPEED).description("Maximum speed in elmo/s (won't accelerate further on its own)");
+WEAPONTAG(float, startvelocity).defaultValue(0.0f).minimumValue(0.01f).scaleValue(INV_GAME_SPEED).description("Initial projectile speed in elmo/s");
+WEAPONTAG(float, weaponacceleration).fallbackName("acceleration").defaultValue(0.0f).scaleValue(INV_GAME_SPEED * INV_GAME_SPEED).description("Acceleration in elmo/s^2");
 WEAPONTAG(float, reload).externalName("reloadTime").defaultValue(1.0f).description("Reload time between bursts, in seconds. Note that reloadTime starts to count down from the first round fired, not the last, so if (reloadTime < burst * burstRate) the weapon will fire continuously.");
+WEAPONDUMMYTAG(float, salvoWindup).externalName("windup").description("Delay between firing and the first shot");
 WEAPONTAG(float, salvodelay).externalName("burstRate").defaultValue(0.1f).description("Delay between shots within a burst, in seconds");
 WEAPONTAG(int, salvosize).externalName("burst").defaultValue(1).description("Shots per burst. Cannot be used by #BeamLaser unless `beamburst` is used which comes with caveats.");
 WEAPONTAG(int, projectilespershot).externalName("projectiles").defaultValue(1).description("Projectiles per shot. Best used in conjunction with `sprayAngle` or changing the firing piece in script using ShotX as otherwise they'll all be clumped up in one blob.");
@@ -114,14 +114,14 @@ WEAPONDUMMYTAG(float, maxFireAngle).externalName("firetolerance").defaultValue(3
 WEAPONTAG(int, highTrajectory).defaultValue(2).description("0: low trajectory, 1: high trajectory, 2: the unit will have a state toggle for the player to pick");
 WEAPONTAG(float, trajectoryHeight).defaultValue(0.0f).description("Missile/Torpedo only. Causes the missile to fly in an arc. The value is the fraction of target distance as extra arc height (e.g. at 1.0 the arc is as tall as it is long).");
 WEAPONTAG(bool, tracks).defaultValue(false).description("Missile/Torpedo/Starburst only. Does the projectile track its target (i.e. homing)? Requires a positive `turnRate`.");
-WEAPONTAG(float, wobble).defaultValue(0.0f).scaleValue(float(TAANG2RAD) / GAME_SPEED).description("Missile only. Missiles will turn towards random directions (new direction rolled every 16 sim frames). In legacy angular units per second.");
+WEAPONTAG(float, wobble).defaultValue(0.0f).scaleValue(TAANG2RAD * INV_GAME_SPEED).description("Missile only. Missiles will turn towards random directions (new direction rolled every 16 sim frames). In legacy angular units per second.");
 WEAPONTAG(float, dance).defaultValue(0.0f).scaleValue(1.0f / GAME_SPEED).description("Missile only. Missiles will randomly shift up to this many elmos, perpendicular to their movement direction. Movement period is hardcoded to 8 sim frames");
 WEAPONTAG(bool, gravityAffected).defaultValue(false).description("#DGun weapon type only. Is the dgun projectile affected by gravity? Aiming won't take this into account.");
-WEAPONTAG(float, myGravity).defaultValue(0.0f).description("Overrides the map gravity for ballistic weapons. The default of 0.0 disables the tag in favour of map gravity.");
+WEAPONTAG(float, myGravity).defaultValue(0.0f).description("Overrides the map gravity for ballistic weapons and missiles. Missiles only affected once flightTime expired. The default of 0.0 disables the tag in favour of map gravity.");
 WEAPONTAG(bool, canAttackGround).defaultValue(true).description("Can the unit target ground? Only units otherwise. Note, features are not directly targetable either way.");
 WEAPONTAG(float, uptime).externalName("weaponTimer").defaultValue(0.0f).description("StarburstLauncher only. Seconds of vertical ascent");
 WEAPONDUMMYTAG(float, flighttime).defaultValue(0).scaleValue(GAME_SPEED).description("Lifetime of the projectile, in seconds. Missile/Torpedo/Starburst projectiles 'lose fuel' and fall down; Cannons explode; others fade away"); // needs to be written as int and read as float
-WEAPONTAG(float, turnrate).defaultValue(0.0f).scaleValue(float(TAANG2RAD) / GAME_SPEED).description("For projectiles with `tracks`, in COB angular units (65536 is tau) per second. Also the turn rate for Starburst when they stop ascending and turn towards target (regardless of homing).");
+WEAPONTAG(float, turnrate).defaultValue(0.0f).scaleValue(TAANG2RAD * INV_GAME_SPEED).description("For projectiles with `tracks`, in COB angular units (65536 is tau) per second. Also the turn rate for Starburst when they stop ascending and turn towards target (regardless of homing).");
 WEAPONTAG(float, heightBoostFactor).defaultValue(-1.0f).description("#Cannon weapon type only. Controls the ballistic range gain/loss for height difference; larger means higher effect of range difference. -1 is derived some magic formula. Hard to tell how this stacks with `heightMod`.");
 WEAPONTAG(float, proximityPriority).defaultValue(1.0f).description("Importance of distance when picking targets. Higher means closer units are preferred more; negative values make weapons prefer distant targets.");
 WEAPONTAG(bool, allowNonBlockingAim).defaultValue(false).description("When false, the weapon is blocked from firing until AimWeapon() returns.");
@@ -222,7 +222,7 @@ WEAPONTAG(std::string, shieldArmorTypeName).externalName("shield.armorType").fal
 // Unsynced (= Visuals)
 WEAPONTAG(std::string, model, visuals.modelName).defaultValue("").description("Name of a 3D model. Otherwise uses 2D sprites");
 WEAPONDUMMYTAG(float, size).description("Size of the 2D visual sprite, if the weapon has no 'model' set.");
-WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("");
+WEAPONTAG(std::string, scarGlowColorMap, visuals.scarGlowColorMapStr).defaultValue("").description("A colormap (set of RGBA tuples) for the scar decal. Will smoothly fade between these colours over its lifetime.");
 WEAPONDUMMYTAG(table, scarIndices).description("A table of indices to the scar table in resources.lua");
 WEAPONTAG(bool, explosionScar, visuals.explosionScar).defaultValue(true).description("Does the explosion leave a scar decal on the ground?");
 WEAPONTAG(float, scarDiameter, visuals.scarDiameter).defaultValue(-1.0f).description("Diameter of the scar decal");
@@ -230,11 +230,15 @@ WEAPONTAG(float, scarAlpha, visuals.scarAlpha).defaultValue(0.0f).description("I
 WEAPONTAG(float, scarGlow, visuals.scarGlow).defaultValue(0.0f).description("Initial glow intensity of the scar decal (0-1)");
 WEAPONTAG(float, scarTtl, visuals.scarTtl).defaultValue(0.0f).description("Duration of the scar decal, in seconds");
 WEAPONTAG(float, scarGlowTtl, visuals.scarGlowTtl).defaultValue(0.0f).description("Duration of the glow of the scar, in seconds");
-WEAPONTAG(float, scarDotElimination, visuals.scarDotElimination).defaultValue(0.0f);
-WEAPONTAG(float4, scarProjVector, visuals.scarProjVector).defaultValue(float4{0.0f});
+WEAPONTAG(float, scarDotElimination, visuals.scarDotElimination).defaultValue(0.0f).description("Specifies the exponent of dot product of projection vector and current terrain normal vector, this is used to remove to remove scar projection from surfaces that usually should not receive the ground scar effect, the exponent controls the degree of elimination. The default 0.0 means there will be no elimination at all.");
+WEAPONTAG(float4, scarProjVector, visuals.scarProjVector).defaultValue(float4{0.0f}).description("Forced direction of a ground scar projection (you can think of this technique as if the scar image was projected onto the ground from the cinema projector at certain world-space vector). If all zeroes, it will use ground normals. Realistically this should either be left at default, or set to {0, 1, 0} for orbital-type weapons");
 WEAPONTAG(float4, scarColorTint, visuals.scarColorTint).defaultValue(float4{0.5f, 0.5f, 0.5f, 0.5f }).description("Color tint for explosion scar decal. Scaled so that 0.5 is no change, 1.0 is twice as bright.");
 WEAPONTAG(bool, alwaysVisible, visuals.alwaysVisible).defaultValue(false).description("Is the projectile visible regardless of sight?");
 WEAPONTAG(float, cameraShake).fallbackName("damage.default").defaultValue(0.0f).minimumValue(0.0f).description("Passed to the wupget:ShockFront callin as the first argument, intended for shaking the camera on particularly strong hits. Same scale as damage.");
+WEAPONTAG(float3, animParams1, visuals.animParams[0]).fallbackName("animParams").defaultValue(float3{ 1.0f, 1.0f, 30.0f }).description("Used to do flipbook style animation of texture1");
+WEAPONTAG(float3, animParams2, visuals.animParams[1]).fallbackName("animParams").defaultValue(float3{ 1.0f, 1.0f, 30.0f }).description("Used to do flipbook style animation of texture2");
+WEAPONTAG(float3, animParams3, visuals.animParams[2]).fallbackName("animParams").defaultValue(float3{ 1.0f, 1.0f, 30.0f }).description("Used to do flipbook style animation of texture3");
+WEAPONTAG(float3, animParams4, visuals.animParams[3]).fallbackName("animParams").defaultValue(float3{ 1.0f, 1.0f, 30.0f }).description("Used to do flipbook style animation of texture4");
 
 // Missile
 WEAPONTAG(bool, smokeTrail, visuals.smokeTrail).defaultValue(false).description("MissileLauncher only. Does it leave a smoke trail ribbon?");
@@ -340,6 +344,7 @@ WeaponDef::WeaponDef(const LuaTable& wdTable, const std::string& name_, int id_)
 	shieldArmorType = damageArrayHandler.GetTypeFromName(shieldArmorTypeName);
 	flighttime = int(wdTable.GetFloat("flighttime", 0.0f) * GAME_SPEED);
 	maxFireAngle = math::cos(wdTable.GetFloat("firetolerance", 3640.0f) * TAANG2RAD);
+	salvoWindup = int(wdTable.GetFloat("windup", 0.0f) * GAME_SPEED);
 
 	collisionFlags = 0;
 	collisionFlags |= (Collision::NOENEMIES    * (!wdTable.GetBool("collideEnemy",      true)));

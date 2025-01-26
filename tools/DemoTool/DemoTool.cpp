@@ -135,7 +135,6 @@ void InitCommandNames()
 	REGISTER_CMD(CMD_ATTACK)
 	REGISTER_CMD(CMD_AREA_ATTACK)
 	REGISTER_CMD(CMD_GUARD)
-	REGISTER_CMD(CMD_AISELECT)
 	REGISTER_CMD(CMD_GROUPSELECT)
 	REGISTER_CMD(CMD_GROUPADD)
 	REGISTER_CMD(CMD_GROUPCLEAR)
@@ -356,16 +355,16 @@ void TrafficDump(CDemoReader& reader, bool trafficStats)
 				std::cout << "NETMSG_MAPDRAW Player:" << (int)buffer[2];
 				switch (buffer[3]) {
 					case MAPDRAW_POINT:
-						std::cout << " POINT x:" << *(int16_t*)&buffer[4] << " z:" << *(int16_t*)&buffer[6];
-						if (packet->length > 10) {
-							std::cout << " Msg: " << (char*)buffer+9;
+						std::cout << " POINT x:" << *(uint32_t*)&buffer[4] << " z:" << *(uint32_t*)&buffer[8];
+						if (packet->length > 16) {
+							std::cout << " Msg: " << (char*)buffer+13;
 						}
 						break;
 					case MAPDRAW_LINE:
-						std::cout << " LINE x1:" << *(int16_t*)&buffer[4] << " z1:" << *(int16_t*)&buffer[6] << " x2:" << *(int16_t*)&buffer[8] << " z2:" << *(int16_t*)&buffer[10];
+						std::cout << " LINE x1:" << *(uint32_t*)&buffer[4] << " z1:" << *(uint32_t*)&buffer[8] << " x2:" << *(uint32_t*)&buffer[12] << " z2:" << *(uint32_t*)&buffer[16];
 						break;
 					case MAPDRAW_ERASE:
-						std::cout << " ERASE x:" << *(int16_t*)&buffer[4] << " z:" << *(int16_t*)&buffer[6];
+						std::cout << " ERASE x:" << *(uint32_t*)&buffer[4] << " z:" << *(uint32_t*)&buffer[8];
 						break;
 				}
 				std::cout << std::endl;

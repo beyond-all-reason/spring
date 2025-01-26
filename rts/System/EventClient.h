@@ -26,6 +26,7 @@ class CWeapon;
 class CFeature;
 class CProjectile;
 struct Command;
+struct SCommandDescription;
 class IArchive;
 struct SRectangle;
 struct UnitDef;
@@ -126,8 +127,9 @@ class CEventClient
 		virtual void UnitCreated(const CUnit* unit, const CUnit* builder) {}
 		virtual void UnitFinished(const CUnit* unit) {}
 		virtual void UnitReverseBuilt(const CUnit* unit) {}
+		virtual void UnitConstructionDecayed(const CUnit* unit, float timeSinceLastBuild, float iterationPeriod, float part) {}
 		virtual void UnitFromFactory(const CUnit* unit, const CUnit* factory, bool userOrders) {}
-		virtual void UnitDestroyed(const CUnit* unit, const CUnit* attacker) {}
+		virtual void UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID) {}
 		virtual void UnitTaken(const CUnit* unit, int oldTeam, int newTeam) {}
 		virtual void UnitGiven(const CUnit* unit, int oldTeam, int newTeam) {}
 
@@ -173,6 +175,7 @@ class CEventClient
 		virtual bool UnitFeatureCollision(const CUnit* collider, const CFeature* collidee) { return false; }
 		virtual void UnitMoved(const CUnit* unit) {}
 		virtual void UnitMoveFailed(const CUnit* unit) {}
+		virtual void UnitArrivedAtGoal(const CUnit* unit) {}
 
 		virtual void FeatureCreated(const CFeature* feature) {}
 		virtual void FeatureDestroyed(const CFeature* feature) {}
@@ -299,6 +302,7 @@ class CEventClient
 
 		virtual bool DefaultCommand(const CUnit* unit, const CFeature* feature, int& cmd);
 
+		virtual void ActiveCommandChanged(const SCommandDescription* cmdDesc);
 		virtual bool CommandNotify(const Command& cmd);
 
 		virtual bool AddConsoleLine(const std::string& msg, const std::string& section, int level);
@@ -327,7 +331,7 @@ class CEventClient
 		virtual void DrawWorld() {}
 		virtual void DrawWorldPreUnit() {}
 		virtual void DrawPreDecals() {}
-		virtual void DrawWorldPreParticles() {}
+		virtual void DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction) {}
 		virtual void DrawWaterPost() {}
 		virtual void DrawWorldShadow() {}
 		virtual void DrawShadowPassTransparent() {}
@@ -358,6 +362,8 @@ class CEventClient
 		virtual void DrawAlphaFeaturesLua(bool drawReflection, bool drawRefraction) {}
 		virtual void DrawShadowUnitsLua() {}
 		virtual void DrawShadowFeaturesLua() {}
+
+		virtual void FontsChanged() {}
 
 		virtual void GameProgress(int gameFrame);
 

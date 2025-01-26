@@ -66,5 +66,6 @@ tracks/ComTrack.bmp    SJ
 tracks/StdTank.bmp     SJ
 wake.tga               Yeha
 waterbump.png          jK
+waterbump_4tiles.dds   Beherith
 caustics/*             jK (with GPL app: http://www.lysator.liu.se/~kand/caustics/)
 shorewaverand.png      jK

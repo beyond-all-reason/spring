@@ -58,7 +58,7 @@ extern "C" {
 #define GLEW_EXT_pixel_buffer_object GL_FALSE
 #define GLEW_ARB_map_buffer_range GL_FALSE
 #define GLEW_EXT_texture_filter_anisotropic GL_FALSE
-#define GLEW_ARB_texture_float GL_FALSE
+#define GLEW_ARB_texture_float GL_TRUE
 #define GLEW_ARB_texture_non_power_of_two GL_TRUE
 #define GLEW_ARB_texture_env_combine GL_TRUE
 #define GLEW_ARB_texture_rectangle GL_TRUE
@@ -91,7 +91,7 @@ extern "C" {
 #define GLEW_ARB_transform_feedback3 GL_FALSE
 #define GLEW_EXT_blend_equation_separate GL_FALSE
 #define GLEW_EXT_blend_func_separate GL_FALSE
-#define GLEW_ARB_framebuffer_object GL_FALSE
+#define GLEW_ARB_framebuffer_object GL_TRUE
 #define GLEW_ARB_shading_language_420pack GL_FALSE
 #define GLEW_ARB_buffer_storage GL_FALSE
 #define GLEW_ARB_draw_elements_base_vertex GL_FALSE

@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdio>
 #include <memory>
+#include <semaphore>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,12 +25,12 @@
 #include "System/Exceptions.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/FileSystem/RapidHandler.h"
+#include "System/FileSystem/Archives/PoolArchive.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedMap.hpp"
 
 #if !defined(DEDICATED) && !defined(UNITSYNC)
-	#include "System/Misc/UnfreezeSpring.h"
 	#include "System/TimeProfiler.h"
 	#include "System/Platform/Watchdog.h"
 #endif
@@ -53,7 +54,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
  * but mapping them all, every time to make the list is)
  */
 
-constexpr static int INTERNAL_VER = 16;
+constexpr static int INTERNAL_VER = 18;
 
 
 /*
@@ -388,19 +389,13 @@ static std::atomic<uint32_t> numScannedArchives{0};
 
 CArchiveScanner::CArchiveScanner()
 {
-	Clear();
-	// the "cache" dir is created in DataDirLocater
-	ReadCacheData(cachefile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua"));
-	ScanAllDirs();
+	ReadCache();
 }
 
 
 CArchiveScanner::~CArchiveScanner()
 {
-	if (!isDirty)
-		return;
-
-	WriteCacheData(GetFilepath());
+	WriteCache();
 }
 
 uint32_t CArchiveScanner::GetNumScannedArchives()
@@ -420,7 +415,8 @@ void CArchiveScanner::Clear()
 	brokenArchives.reserve(16);
 	brokenArchivesIndex.clear();
 	brokenArchivesIndex.reserve(16);
-	cachefile.clear();
+	cacheFile.clear();
+	numFilesHashed.store(0);
 }
 
 void CArchiveScanner::Reload()
@@ -429,13 +425,10 @@ void CArchiveScanner::Reload()
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 
 	// dtor
-	if (isDirty)
-		WriteCacheData(GetFilepath());
+	WriteCache();
 
 	// ctor
-	Clear();
-	ReadCacheData(cachefile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua"));
-	ScanAllDirs();
+	ReadCache();
 }
 
 void CArchiveScanner::ScanAllDirs()
@@ -614,6 +607,37 @@ std::string CArchiveScanner::SearchMapFile(const IArchive* ar, std::string& erro
 	return "";
 }
 
+
+void CArchiveScanner::ReadCache()
+{
+	Clear();
+
+	const auto oldCacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 1, "ArchiveCache%i.lua");
+	              cacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER    , "ArchiveCache%i.lua");
+
+	if (!FileSystem::FileExists(cacheFile)) {
+		// Try to save initial scanning of assets, but will have to redo hashing
+		// as the previous version had bugs in that area
+		if (ReadCacheData(oldCacheFile, true)) {
+			// nullify hashes
+			for (auto& ai : archiveInfos) {
+				memset(ai.checksum, 0, sizeof(ai.checksum));
+				isDirty = true;
+			}
+		}
+	}
+
+	ReadCacheData(GetFilepath());
+	ScanAllDirs();
+}
+
+void CArchiveScanner::WriteCache()
+{
+	if (!isDirty)
+		return;
+
+	WriteCacheData(GetFilepath());
+}
 
 CArchiveScanner::ArchiveInfo& CArchiveScanner::GetAddArchiveInfo(const std::string& lcfn)
 {
@@ -909,6 +933,8 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
 	IFileFilter* ignore = IFileFilter::Create();
 	std::vector<std::uint8_t> buf;
 
+	ignore->AddRuleRegex("^\\..*$");
+
 	// this automatically splits lines
 	if (ar->GetFile("springignore.txt", buf) && !buf.empty())
 		ignore->AddRule(std::string((char*)(&buf[0]), buf.size()));
@@ -924,33 +950,63 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
  */
 bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, ArchiveInfo& archiveInfo)
 {
-	assert(Threading::IsMainThread());
-
 	// try to open an archive
 	std::unique_ptr<IArchive> ar(archiveLoader.OpenArchive(archiveName));
 
 	if (ar == nullptr)
 		return false;
 
+#ifdef _WIN32
+	static constexpr int NUM_PARALLEL_FILE_READS_SD = 4;
+#else
+	// Linux FS even on spinning disk seems far more tollerant to parallel reads, use all threads
+	const int NUM_PARALLEL_FILE_READS_SD = ThreadPool::GetNumThreads();
+#endif // _WIN32
+
+	int numParallelFileReads;
+
+	switch (ar->GetType())
+	{
+	case ARCHIVE_TYPE_SDP: {
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveName));
+		// each file is one gzip instance, can MT
+		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+	} break;
+	case ARCHIVE_TYPE_SDD: {
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
+		// just a file, can MT
+		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+	} break;
+	case ARCHIVE_TYPE_SDZ: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	case ARCHIVE_TYPE_SD7: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	default: // just default to 1 thread
+		numParallelFileReads = 1;
+		break;
+	}
+
+	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
+
 	// load ignore list, and insert all files to check in lowercase format
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
 	std::vector<std::string> fileNames;
 	std::vector<sha512::raw_digest> fileHashes;
 	static std::array<std::vector<std::uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
-	for (auto& fileBuffer : fileBuffers)
+	for (auto& fileBuffer : fileBuffers) {
+		fileBuffer.reserve(1 << 20);
 		fileBuffer.clear();
+	}
 
 	fileNames.reserve(ar->NumFiles());
 	fileHashes.reserve(ar->NumFiles());
 
-	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
-		const std::pair<std::string, int>& info = ar->FileInfo(fid);
+	for (unsigned fid = 0; fid < ar->NumFiles(); ++fid) {
+		const auto& [filename, fileSize] = ar->FileInfo(fid);
 
-		if (ignore->Match(info.first))
+		if (ignore->Match(filename))
 			continue;
 
 		// create case-insensitive hashes
-		fileNames.push_back(StringToLower(info.first));
+		fileNames.push_back(StringToLower(filename));
 		fileHashes.emplace_back();
 	}
 
@@ -959,37 +1015,41 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 
 #if !defined(DEDICATED) && !defined(UNITSYNC)
-	std::vector<std::shared_ptr<std::future<void>>> tasks;
+	std::vector<std::shared_future<void>> tasks;
 	tasks.reserve(fileNames.size());
 
-	for (size_t i = 0; i < fileNames.size(); ++i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
+	std::counting_semaphore sem(numParallelFileReads);
 
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
-		};
-		tasks.emplace_back(std::move(ThreadPool::Enqueue(ComputeHashesTask)));
+	auto ComputeHashesTask = [&ar, &fileHashes, &sem, this](size_t fidx) -> void {
+		auto& fileHash = fileHashes[fidx];
+		auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
+		fileBuffer.clear();
+
+		sem.acquire();
+		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(fidx, fileHash.data(), fileBuffer)));
+		sem.release();
+	};
+
+	for (size_t i = 0; i < fileNames.size(); ++i) {
+		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, i));
 	}
 
 	const auto erasePredicate = [](decltype(tasks)::value_type item) {
 		using namespace std::chrono_literals;
-		return item->wait_for(0us) == std::future_status::ready;
+		return item.wait_for(0us) == std::future_status::ready;
 	};
 
 	while (!tasks.empty()) {
-		spring::VectorEraseAllIf(tasks, erasePredicate);
-		spring::UnfreezeSpring(WDT_MAIN);
-		spring_sleep(spring_msecs(10));
+		std::erase_if(tasks, erasePredicate);
+		spring_sleep(spring_msecs(1));
 	}
 #else
 	for_mt(0, fileNames.size(), [&](const int i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
+		auto& fileHash = fileHashes[i];
+		auto ComputeHashesTask = [&ar, &fileHash](int fidx) -> void {
+			ar->CalcHash(fidx, fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
 		};
-		ComputeHashesTask();
+		ComputeHashesTask(i);
 	});
 #endif
 
@@ -1005,7 +1065,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		}
 
 		#if !defined(DEDICATED) && !defined(UNITSYNC)
-		Watchdog::ClearTimer();
+		Watchdog::ClearTimer(WDT_MAIN);
 		#endif
 	}
 
@@ -1013,18 +1073,18 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 }
 
 
-void CArchiveScanner::ReadCacheData(const std::string& filename)
+bool CArchiveScanner::ReadCacheData(const std::string& filename, bool loadOldVersion)
 {
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 	if (!FileSystem::FileExists(filename)) {
 		LOG_L(L_INFO, "[AS::%s] ArchiveCache %s doesn't exist", __func__, filename.c_str());
-		return;
+		return false;
 	}
 
 	LuaParser p(filename, SPRING_VFS_RAW, SPRING_VFS_BASE);
 	if (!p.Execute()) {
 		LOG_L(L_ERROR, "[AS::%s] failed to parse ArchiveCache: %s", __func__, p.GetErrorLog().c_str());
-		return;
+		return false;
 	}
 
 	const LuaTable& archiveCacheTbl = p.GetRoot();
@@ -1033,8 +1093,8 @@ void CArchiveScanner::ReadCacheData(const std::string& filename)
 
 	// Do not load old version caches
 	const int ver = archiveCacheTbl.GetInt("internalver", (INTERNAL_VER + 1));
-	if (ver != INTERNAL_VER)
-		return;
+	if (ver != INTERNAL_VER && !loadOldVersion)
+		return false;
 
 	for (int i = 1; archivesTbl.KeyExists(i); ++i) {
 		const LuaTable& curArchiveTbl = archivesTbl.SubTable(i);
@@ -1091,6 +1151,8 @@ void CArchiveScanner::ReadCacheData(const std::string& filename)
 	}
 
 	isDirty = false;
+
+	return true;
 }
 
 static inline void SafeStr(FILE* out, const char* prefix, const std::string& str)

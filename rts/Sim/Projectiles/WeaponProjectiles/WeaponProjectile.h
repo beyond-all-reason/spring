@@ -5,9 +5,9 @@
 
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileParams.h" // easier to include this here
+#include "Sim/Weapons/WeaponDef.h"
 #include "WeaponProjectileTypes.h"
 
-struct WeaponDef;
 struct ProjectileParams;
 class CVertexArray;
 class DynDamageArray;
@@ -30,6 +30,12 @@ public:
 	void Collision(CFeature* feature) override;
 	void Collision(CUnit* unit) override;
 	void Update() override;
+
+	void UpdateWeaponAnimParams();
+
+	template <uint32_t texIdx>
+	void AddWeaponEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const;
+
 	/// @return 0=unaffected, 1=instant repulse, 2=gradual repulse
 	virtual int ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed) { return 0; }
 
@@ -59,6 +65,7 @@ public:
 	const WeaponDef* GetWeaponDef() const { return weaponDef; }
 
 	int GetTimeToLive() const { return ttl; }
+	void SetTimeToLive(int newTTL) { ttl = newTTL; }
 
 	void SetStartPos(const float3& newStartPos) { startPos = newStartPos; }
 	void SetTargetPos(const float3& newTargetPos) { targetPos = newTargetPos; }
@@ -99,6 +106,39 @@ protected:
 
 	float3 bounceHitPos;
 	float3 bounceParams;
+
+	std::array<float, 3> extraAnimProgress;
 };
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<0>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	AddEffectsQuadImpl(tl, tr, br, bl);
+}
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<1>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	//reuse animProgress
+	AddEffectsQuadImpl(tl, tr, br, bl, weaponDef->visuals.animParams[0], animProgress);
+}
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<2>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	AddEffectsQuadImpl(tl, tr, br, bl, weaponDef->visuals.animParams[1], extraAnimProgress[0]);
+}
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<3>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	AddEffectsQuadImpl(tl, tr, br, bl, weaponDef->visuals.animParams[2], extraAnimProgress[1]);
+}
+
+template <>
+inline void CWeaponProjectile::AddWeaponEffectsQuad<4>(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const {
+	assert(weaponDef);
+	AddEffectsQuadImpl(tl, tr, br, bl, weaponDef->visuals.animParams[3], extraAnimProgress[2]);
+}
 
 #endif /* WEAPON_PROJECTILE_H */

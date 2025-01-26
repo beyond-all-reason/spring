@@ -1411,14 +1411,23 @@ function gadgetHandler:UnitReverseBuilt(unitID, unitDefID, unitTeam)
 end
 
 
+function gadgetHandler:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
+  for _,g in r_ipairs(self.UnitConstructionDecayedList) do
+    g:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)
+  end
+end
+
+
 function gadgetHandler:UnitDestroyed(
   unitID,     unitDefID,     unitTeam,
-  attackerID, attackerDefID, attackerTeam
+  attackerID, attackerDefID, attackerTeam,
+  weaponDefID
 )
   for _,g in r_ipairs(self.UnitDestroyedList) do
     g:UnitDestroyed(
       unitID,     unitDefID,     unitTeam,
-      attackerID, attackerDefID, attackerTeam
+      attackerID, attackerDefID, attackerTeam,
+      weaponDefID
     )
   end
 end
@@ -1835,6 +1844,12 @@ function gadgetHandler:DefaultCommand(type, id, cmd)
   end
 end
 
+function gadgetHandler:ActiveCommandChanged(id, cmdType)
+  for _,g in r_ipairs(self.ActiveCommandChangedList) do
+    g:ActiveCommandChanged(id, cmdType)
+  end
+end
+
 function gadgetHandler:CommandNotify(id, params, options)
   for _,g in r_ipairs(self.CommandNotifyList) do
     if (g:CommandNotify(id, params, options)) then
@@ -2183,6 +2198,15 @@ end
 function gadgetHandler:Pong(pingTag, pktSendTime, pktRecvTime)
   for _,g in r_ipairs(self.PongList) do
     g:Pong(pingTag, pktSendTime, pktRecvTime)
+  end
+end
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+function gadgetHandler:FontsChanged()
+  for _,g in r_ipairs(self.FontsChangedList) do
+    g:FontsChanged()
   end
 end
 

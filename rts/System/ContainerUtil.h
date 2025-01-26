@@ -7,54 +7,20 @@
 #include <cassert>
 #include <vector>
 
+#include <version>
+#ifdef __cpp_lib_flat_set
+	#define VUS [[deprecated("VectorUniqueSorted/VectorSorted can be replaced with std::flat_set/flat_multiset")]]
+#else
+	#define VUS
+#endif
+
 namespace spring {
-	template<typename T, typename TV>
-	static auto find(T& c, const TV& v) -> decltype(c.end())
-	{
-		return std::find(c.begin(), c.end(), v);
-	}
-
-	template<typename T, typename UnaryPredicate>
-	static void MapEraseIf(T& c, UnaryPredicate p)
-	{
-		for (auto it = c.begin(); it != c.end(); ) {
-			if (p(*it)) it = c.erase(it);
-			else ++it;
-		}
-	}
-
-	template<typename ForwardIt, typename T, typename Compare>
-	ForwardIt BinarySearch(ForwardIt first, ForwardIt last, const T& value, Compare comp)
+	template<typename ForwardIt, typename T, typename Compare = std::less <>>
+	ForwardIt BinarySearch(ForwardIt first, ForwardIt last, const T& value, Compare comp = {})
 	{
 		first = std::lower_bound(first, last, value, comp);
 		return (!(first == last) && !(comp(value, *first))) ? first : last;
 	}
-
-	template<typename ForwardIt, typename T>
-	ForwardIt BinarySearch(ForwardIt first, ForwardIt last, const T& value)
-	{
-		first = std::lower_bound(first, last, value);
-		return (!(first == last) && !(value < *first)) ? first : last;
-	}
-
-	template<typename T, typename UnaryPredicate>
-	static bool VectorEraseAllIf(std::vector<T>& v, UnaryPredicate p)
-	{
-		bool b = false;
-		for (size_t i = 0; i < v.size(); /*NOOP*/) {
-			if (p(v[i])) {
-				v[i] = std::move(v.back());
-				v.pop_back();
-				b = true;
-			}
-			else {
-				++i;
-			}
-		}
-
-		return b;
-	}
-
 
 	template<typename T, typename UnaryPredicate>
 	static bool VectorEraseIf(std::vector<T>& v, UnaryPredicate p)
@@ -83,7 +49,7 @@ namespace spring {
 	}
 
 	template<typename T, typename C>
-	static bool VectorEraseUniqueSorted(std::vector<T>& v, const T& e, const C& c)
+	VUS static bool VectorEraseUniqueSorted(std::vector<T>& v, const T& e, const C& c)
 	{
 		const auto iter = std::lower_bound(v.begin(), v.end(), e, c);
 
@@ -94,23 +60,12 @@ namespace spring {
 		return true;
 	}
 
-	template<typename T, typename UniqPred>
-	static void VectorUnique(std::vector<T>& v) {
-		for (size_t i = 0; i < v.size(); i++) {
-			for (size_t j = i + 1; j < v.size(); /*NOOP*/) {
-				if (v[i] == v[j]) {
-					v[j] = std::move(v.back());
-					v.pop_back();
-				}
-				else {
-					j++;
-				}
-			}
-		}
-	}
-
-	template<typename T, typename UniqPred>
-	static void VectorUnique(std::vector<T>& v, UniqPred uniqPred) {
+	/* Removes globally and doesn't necessarily preserve order,
+	 * e.g. AABBCCAA -> ACB
+	 * This is unlike `std::unique` which works "locally",
+	 * e.g. AABBCCAA -> ABCA */
+	template<typename T, typename UniqPred = std::equal_to <>>
+	VUS static void VectorUnique(std::vector<T>& v, UniqPred uniqPred = {}) {
 		for (size_t i = 0; i < v.size(); i++) {
 			for (size_t j = i + 1; j < v.size(); /*NOOP*/) {
 				if (uniqPred(v[i], v[j])) {
@@ -124,16 +79,8 @@ namespace spring {
 		}
 	}
 
-	template<typename T, typename SortPred>
-	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred)
-	{
-		std::sort(v.begin(), v.end(), sortPred);
-		auto last = std::unique(v.begin(), v.end());
-		v.erase(last, v.end());
-	}
-
-	template<typename T, typename SortPred, typename UniqPred>
-	static void VectorSortUnique(std::vector<T>& v, SortPred sortPred, UniqPred uniqPred)
+	template<typename T, typename SortPred = std::less <>, typename UniqPred = std::equal_to <>>
+	VUS static void VectorSortUnique(std::vector<T>& v, SortPred sortPred = {}, UniqPred uniqPred = {})
 	{
 		std::sort(v.begin(), v.end(), sortPred);
 		auto last = std::unique(v.begin(), v.end(), uniqPred);
@@ -141,15 +88,7 @@ namespace spring {
 	}
 
 	template<typename T>
-	static void VectorSortUnique(std::vector<T>& v)
-	{
-		std::sort(v.begin(), v.end());
-		auto last = std::unique(v.begin(), v.end());
-		v.erase(last, v.end());
-	}
-
-	template<typename T>
-	static bool VectorInsertUnique(std::vector<T>& v, const T& e, bool checkIfUnique = false)
+	VUS static bool VectorInsertUnique(std::vector<T>& v, const T& e, bool checkIfUnique = false)
 	{
 		// do not assume uniqueness, test for it
 		if (checkIfUnique && std::find(v.begin(), v.end(), e) != v.end())
@@ -162,7 +101,7 @@ namespace spring {
 	}
 
 	template<typename T, typename Pred>
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item, Pred pred)
+	VUS typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item, Pred pred)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
 	}
@@ -171,13 +110,13 @@ namespace spring {
 		typename T, typename Pred,
 		typename = typename std::enable_if_t<std::is_pointer_v<std::remove_cv_t<T>>>
 	>
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item, Pred pred)
+	VUS typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item, Pred pred)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
 	}
 
 	template<typename T>
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item)
+	VUS typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T&& item)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
 	}
@@ -186,13 +125,13 @@ namespace spring {
 		typename T,
 		typename = typename std::enable_if_t<std::is_pointer_v<std::remove_cv_t<T>>>
 	>
-	typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item)
+	VUS typename std::vector<T>::iterator VectorInsertSorted(std::vector<T>& vec, T item)
 	{
 		return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
 	}
 
 	template<typename T, typename Pred>
-	static bool VectorInsertUniqueSorted(std::vector<T>& v, const T& e, Pred pred)
+	VUS static bool VectorInsertUniqueSorted(std::vector<T>& v, const T& e, Pred pred)
 	{
 		const auto iter = std::lower_bound(v.begin(), v.end(), e, pred);
 
@@ -206,6 +145,8 @@ namespace spring {
 	template<typename T>
 	static T VectorBackPop(std::vector<T>& v) { T e = std::move(v.back()); v.pop_back(); return e; }
 };
+
+#undef VUS
 
 #endif
 

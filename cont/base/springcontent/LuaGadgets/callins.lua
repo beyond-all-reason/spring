@@ -49,6 +49,7 @@ CALLIN_LIST = {
 	"UnitFinished",
 	"UnitFromFactory",
 	"UnitReverseBuilt",
+	"UnitConstructionDecayed",
 	"UnitDestroyed",
 	"RenderUnitDestroyed",
 	"UnitExperience",
@@ -166,6 +167,8 @@ CALLIN_LIST = {
 	"DrawProjectile",
 	"DrawMaterial",
 
+	"FontsChanged",
+
 	"SunChanged",
 
 	-- unsynced message callins
@@ -173,6 +176,7 @@ CALLIN_LIST = {
 	"RecvSkirmishAIMessage",
 
 	"DefaultCommand",
+	"ActiveCommandChanged",
 	"CommandNotify",
 
 	"ViewResize", -- FIXME ?

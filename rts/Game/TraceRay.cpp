@@ -18,6 +18,7 @@
 #include "Sim/Units/UnitTypes/Factory.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/WeaponDef.h"
+#include "System/GlobalConfig.h"
 #include "System/SpringMath.h"
 
 #include <algorithm>
@@ -388,7 +389,7 @@ float GuiTraceRay(
 	// ground and water-plane intersection
 	const float    guiRayLength = length;
 	const float groundRayLength = CGround::LineGroundCol(start, dir, guiRayLength, false);
-	const float  waterRayLength = CGround::LinePlaneCol(start, dir, guiRayLength, 0.0f);
+	const float  waterRayLength = CGround::LinePlaneCol(start, dir, guiRayLength, CGround::GetWaterPlaneLevel());
 
 	float minRayLength = groundRayLength;
 	float minIngressDist = length;
@@ -403,10 +404,29 @@ float GuiTraceRay(
 	if (groundOnly)
 		return minRayLength;
 
+	// set maximum ray until ground intersection taking lenience into account later
+	float maxRayLength;
+	if (minRayLength >= 0.0) {
+		// normal intersection
+		maxRayLength = minRayLength;
+	} else if (waterRayLength >= 0.0) {
+		// out of map we still want to intersect somewhere if possible
+		maxRayLength = waterRayLength;
+	} else {
+		// pointing upwards
+		maxRayLength = length;
+	}
+	maxRayLength = std::min(maxRayLength + globalConfig.selectThroughGround, length);
+
 	CollisionQuery cq;
 
 	QuadFieldQuery qfQuery;
-	quadField.GetQuadsOnRay(qfQuery, start, dir, length);
+	if (useRadar) {
+		const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(gu->myAllyTeam);
+		quadField.GetQuadsOnWideRay(qfQuery, start, dir, maxRayLength, allyTeamError);
+	} else {
+		quadField.GetQuadsOnRay(qfQuery, start, dir, maxRayLength);
+	}
 
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
@@ -493,7 +513,7 @@ float GuiTraceRay(
 		}
 	}
 
-	if ((minRayLength > 0.0f) && ((minRayLength + 200.0f) < minIngressDist)) {
+	if ((minRayLength > 0.0f) && (maxRayLength < minIngressDist)) {
 		minIngressDist = minRayLength;
 
 		hitUnit    = nullptr;

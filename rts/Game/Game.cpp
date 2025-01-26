@@ -2,6 +2,8 @@
 
 #include "Rendering/GL/myGL.h"
 
+#include <Rml/Backends/RmlUi_Backend.h>
+#include <RmlUi/Core.h>
 #include "Game.h"
 #include "Camera.h"
 #include "CameraHandler.h"
@@ -63,12 +65,14 @@
 #include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Sim/Ecs/Registry.h"
 #include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Misc/DamageArrayHandler.h"
+#include "Sim/Misc/YardmapStatusEffectsMap.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/BuildingMaskMap.h"
@@ -121,6 +125,7 @@
 #include "System/Log/ILog.h"
 #include "System/Platform/Misc.h"
 #include "System/Platform/Watchdog.h"
+#include "System/Platform/errorhandler.h"
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
 #include "System/Sync/DumpState.h"
@@ -134,9 +139,6 @@
 
 CONFIG(bool, GameEndOnConnectionLoss).defaultValue(true);
 // CONFIG(bool, LuaCollectGarbageOnSimFrame).defaultValue(true);
-
-CONFIG(bool, WindowedEdgeMove).defaultValue(true).description("Sets whether moving the mouse cursor to the screen edge will move the camera across the map.");
-CONFIG(bool, FullscreenEdgeMove).defaultValue(true).description("see WindowedEdgeMove, just for fullscreen mode");
 
 CONFIG(bool, ShowFPS).defaultValue(false).description("Displays current framerate.");
 CONFIG(bool, ShowClock).defaultValue(true).headlessValue(false).description("Displays a clock on the top-right corner of the screen showing the elapsed time of the current game.");
@@ -181,8 +183,6 @@ CR_REG_METADATA(CGame, (
 	CR_IGNORED(gameOver),
 
 	CR_IGNORED(gameDrawMode),
-	CR_IGNORED(windowedEdgeMove),
-	CR_IGNORED(fullscreenEdgeMove),
 	CR_MEMBER(showFPS),
 	CR_MEMBER(showClock),
 	CR_MEMBER(showSpeed),
@@ -244,10 +244,6 @@ CGame::CGame(const std::string& mapFileName, const std::string& modFileName, ILo
 	// set "Headless" in config overlay (not persisted)
 	configHandler->Set("Headless", (SpringVersion::IsHeadless()) ? 1 : 0, true);
 
-	//FIXME move to MouseHandler!
-	windowedEdgeMove   = configHandler->GetBool("WindowedEdgeMove");
-	fullscreenEdgeMove = configHandler->GetBool("FullscreenEdgeMove");
-
 	showFPS   = configHandler->GetBool("ShowFPS");
 	showClock = configHandler->GetBool("ShowClock");
 	showSpeed = configHandler->GetBool("ShowSpeed");
@@ -294,6 +290,7 @@ CGame::~CGame()
 	ENTER_SYNCED_CODE();
 	LOG("[Game::%s][1]", __func__);
 
+	RmlGui::Shutdown();
 	helper->Kill();
 	KillLua(true);
 	KillMisc();
@@ -365,6 +362,8 @@ void CGame::Load(const std::string& mapFileName)
 
 	ZoneScoped;
 
+	std::vector<std::string> contentErrors;
+
 	auto& globalQuit = gu->globalQuit;
 	bool  forcedQuit = false;
 
@@ -381,7 +380,8 @@ void CGame::Load(const std::string& mapFileName)
 		LoadDefs(defsParser);
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][1] forced quit with exception \"%s\"", __func__, e.what());
+		contentErrors.emplace_back(e.what());
+		LOG_L(L_ERROR, "[Game::%s][1] forced quit with exception \"%s\"", __func__, e.what());
 
 		defsParser = &nullDefsParser;
 		defsParser->Execute();
@@ -399,7 +399,8 @@ void CGame::Load(const std::string& mapFileName)
 		PreLoadRendering();
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
+		contentErrors.emplace_back(e.what());
+		LOG_L(L_ERROR, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 
@@ -411,7 +412,8 @@ void CGame::Load(const std::string& mapFileName)
 		PostLoadRendering();
 		Watchdog::ClearTimer(WDT_LOAD);
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
+		contentErrors.emplace_back(e.what());
+		LOG_L(L_ERROR, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 	if (!forcedQuit) {
@@ -421,7 +423,8 @@ void CGame::Load(const std::string& mapFileName)
 			LoadInterface();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][4] forced quit with exception \"%s\"", __func__, e.what());
+			contentErrors.emplace_back(e.what());
+			LOG_L(L_ERROR, "[Game::%s][4] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -433,7 +436,8 @@ void CGame::Load(const std::string& mapFileName)
 			LoadFinalize();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][5] forced quit with exception \"%s\"", __func__, e.what());
+			contentErrors.emplace_back(e.what());
+			LOG_L(L_ERROR, "[Game::%s][5] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -445,7 +449,8 @@ void CGame::Load(const std::string& mapFileName)
 			LoadLua(saveFileHandler != nullptr, false);
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][6] forced quit with exception \"%s\"", __func__, e.what());
+			contentErrors.emplace_back(e.what());
+			LOG_L(L_ERROR, "[Game::%s][6] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -491,7 +496,8 @@ void CGame::Load(const std::string& mapFileName)
 			CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, msgBuf);
 		}
 	} catch (const content_error& e) {
-		LOG_L(L_WARNING, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
+		contentErrors.emplace_back(e.what());
+		LOG_L(L_ERROR, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
 		forcedQuit = true;
 	}
 
@@ -502,7 +508,8 @@ void CGame::Load(const std::string& mapFileName)
 			LoadSkirmishAIs();
 			Watchdog::ClearTimer(WDT_LOAD);
 		} catch (const content_error& e) {
-			LOG_L(L_WARNING, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
+			contentErrors.emplace_back(e.what());
+			LOG_L(L_ERROR, "[Game::%s][8] forced quit with exception \"%s\"", __func__, e.what());
 			forcedQuit = true;
 		}
 	}
@@ -512,6 +519,9 @@ void CGame::Load(const std::string& mapFileName)
 
 	if (forcedQuit)
 		spring::exitCode = spring::EXIT_CODE_NOLOAD;
+
+	if (!contentErrors.empty())
+		ErrorMessageBox(fmt::format("Errors:\n{}", fmt::join(contentErrors, "\n")).c_str(), "Recoil: caught content_error(s)", MBF_OK | MBF_CRASH);
 
 	loadDone = true;
 	globalQuit = globalQuit | forcedQuit;
@@ -533,9 +543,13 @@ void CGame::LoadMap(const std::string& mapFileName)
 		helper->Init();
 		readMap = CReadMap::LoadMap(mapFileName);
 
-		// half size; building positions are snapped to multiples of BUILD_SQUARE_SIZE
+		/* Uses half-size grid because it *incorrectly* assumes
+		 * building positions are always snapped to the build grid. */
+		static_assert(BUILD_GRID_RESOLUTION == 2);
 		buildingMaskMap.Init(mapDims.hmapx * mapDims.hmapy);
+
 		groundBlockingObjectMap.Init(mapDims.mapSquares);
+		yardmapStatusEffectsMap.InitNewYardmapStatusEffectsMap();
 	}
 
 	LEAVE_SYNCED_CODE();
@@ -632,7 +646,7 @@ void CGame::PreLoadSimulation(LuaParser* defsParser)
 	ENTER_SYNCED_CODE();
 
 	loadscreen->SetLoadMessage("Creating Smooth Height Mesh");
-	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), 2, 40);
+	smoothGround.Init(int2(mapDims.mapx, mapDims.mapy), modInfo.smoothMeshResDivider, modInfo.smoothMeshSmoothRadius);
 
 	loadscreen->SetLoadMessage("Creating QuadField & CEGs");
 	moveDefHandler.Init(defsParser);
@@ -695,12 +709,16 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	//   checksum (over heightmap + blockmap, not raw archive)
 	mapDamage = IMapDamage::InitMapDamage();
 	pathManager = IPathManager::GetInstance(modInfo.pathFinderSystem);
+	moveDefHandler.PostSimInit();
 
 	// load map-specific features
 	loadscreen->SetLoadMessage("Initializing Map Features");
 	featureDefHandler->LoadFeatureDefsFromMap();
 	if (saveFileHandler == nullptr)
 		featureHandler.LoadFeaturesFromMap();
+
+	// must be called after features are all loaded
+	unitDefHandler->SanitizeUnitDefs();
 
 	envResHandler.LoadTidal(mapInfo->map.tidalStrength);
 	envResHandler.LoadWind(mapInfo->atmosphere.minWind, mapInfo->atmosphere.maxWind);
@@ -821,6 +839,8 @@ void CGame::LoadInterface()
 		GameSetupDrawer::Disable();
 		GameSetupDrawer::Enable();
 	}
+
+	RmlGui::Initialize();
 }
 
 void CGame::LoadLua(bool dryRun, bool onlyUnsynced)
@@ -913,6 +933,8 @@ void CGame::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	GameSetupDrawer::Disable();
+
+	Sim::systemUtils.NotifyPostLoad();
 
 	if (gameServer != nullptr) {
 		gameServer->PostLoad(gs->frameNum);
@@ -1096,6 +1118,9 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 
 	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
 
+	if (RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat))
+		return 0;
+
 	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, lastActionList))
 		return 0;
 
@@ -1136,6 +1161,9 @@ int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 int CGame::KeyReleased(int keyCode, int scanCode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (RmlGui::ProcessKeyReleased(keyCode, scanCode))
+		return 0;
+
 	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
 		return 0;
 
@@ -1171,6 +1199,9 @@ int CGame::KeyMapChanged()
 int CGame::TextInput(const std::string& utf8Text)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (RmlGui::ProcessTextInput(utf8Text))
+		return 0;
+
 	if (eventHandler.TextInput(utf8Text))
 		return 0;
 
@@ -1240,12 +1271,10 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	SCOPED_TIMER("Update");
 
 	// timings and frame interpolation
-	const spring_time deltaDrawFrameTime = currentTime - lastDrawFrameTime;
+	const spring_time deltaDrawFrameTime = currentTime - globalRendering->lastFrameStart;
 
 	const float modGameDeltaTimeSecs = mix(deltaDrawFrameTime.toMilliSecsf() * 0.001f, 0.01f, skipping);
 	const float unsyncedUpdateDeltaTime = (currentTime - lastUnsyncedUpdateTime).toSecsf();
-
-	lastDrawFrameTime = currentTime;
 
 	{
 		// update game timings
@@ -1292,7 +1321,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 	globalRendering->lastFrameStart = currentTime;
 	// Update the interpolation coefficient (globalRendering->timeOffset)
 	if (!gs->paused && !IsSimLagging() && !gs->PreSimFrame() && !videoCapturing->AllowRecord()) {
-		globalRendering->weightedSpeedFactor = 0.001f * gu->simFPS; 
+		globalRendering->weightedSpeedFactor = 0.001f * gu->simFPS;
 		globalRendering->lastTimeOffset = globalRendering->timeOffset;
 		globalRendering->timeOffset = (currentTime - lastFrameTime).toMilliSecsf() * globalRendering->weightedSpeedFactor;
 
@@ -1312,36 +1341,36 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		float CTO = globalRendering->timeOffset;
 
 		// This mode forces a strict time step of 0.5 simframes per draw frames. Only useful for testing @ 60hz
-		if (SmoothTimeOffset == -1) { 
+		if (SmoothTimeOffset == -1) {
 			if (newSimFrame) {
-				if (LTO > (1.0f - drawsimratio * strictness)) 
+				if (LTO > (1.0f - drawsimratio * strictness))
 					globalRendering->timeOffset = drawsimratio;
-				else 
+				else
 					globalRendering->timeOffset = 0.0f;
 			} else {
-				if (LTO > drawsimratio * strictness) 
+				if (LTO > drawsimratio * strictness)
 					globalRendering->timeOffset = std::fmin(LTO + drawsimratio * strictness, 1.0f);
 				else
 					globalRendering->timeOffset = std::fmin(drawsimratio * strictness, 1.0f);
 			}
 		}
 
-		// This mode tries to correct for the wrongly calculated timeOffset adaptively, 
-		// while trying to maintain a smooth interpolation rate 
+		// This mode tries to correct for the wrongly calculated timeOffset adaptively,
+		// while trying to maintain a smooth interpolation rate
 		// As frame rates dip below 45fps, this method is only marginally better than old method
 		// But that is heavily dependent on wether the load is sim or draw based.
 		// TODO: the camera smoothing still seems to take sim load into account heavily. So large sim loads jitter the camera quite a bit when moving
 		if (SmoothTimeOffset > 0){
 
-			// if we have a new sim frame, then check when the time and CTO of the previous draw frame was. 
+			// if we have a new sim frame, then check when the time and CTO of the previous draw frame was.
 			drawsimratio = std::fmin(drawsimratio, 1.0);  // Clamp it otherwise we will accumulate delay when < 30 FPS
 			float oldCTO = globalRendering->timeOffset;
 			float newCTO = globalRendering->timeOffset;
 
-			if (newSimFrame) { 
-				// newsimframe is a special case, as our new time offset is kind of wrong. 
+			if (newSimFrame) {
+				// newsimframe is a special case, as our new time offset is kind of wrong.
 				// What we want to know is when the last draw happened, and at what offset.
-				// There are two special cases here, if the last draw happened "on time", then we want to 'pull in' CTO to 0, 
+				// There are two special cases here, if the last draw happened "on time", then we want to 'pull in' CTO to 0,
 				// irrespective of the time spent in sim.
 				// If the last draw frame didnt happend on time, and had a large CTO, then we need to 'carry over' some time offset
 
@@ -1352,7 +1381,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 				}
 			}
 			else {
-				// On draw frames that dont have a preceding sim frame, we want to 'smooth' the CTO out a bit. 
+				// On draw frames that dont have a preceding sim frame, we want to 'smooth' the CTO out a bit.
 				// Otherwise, the sim frame is also calculated into the offset, making things jittery
 				if ((CTO - LTO < (drawsimratio) * strictness)) {
 					newCTO = std::fmin(LTO + drawsimratio * strictness, 1.3f);
@@ -1382,12 +1411,12 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 
 	}
 
-	const bool forceUpdate = (unsyncedUpdateDeltaTime >= (1.0f / GAME_SPEED));
+	const bool forceUpdate = (unsyncedUpdateDeltaTime >= INV_GAME_SPEED);
 
 	lastSimFrame = gs->frameNum;
 
 	// set camera
-	camHandler->UpdateController(playerHandler.Player(gu->myPlayerNum), gu->fpsMode, fullscreenEdgeMove, windowedEdgeMove);
+	camHandler->UpdateController(playerHandler.Player(gu->myPlayerNum), gu->fpsMode);
 
 	lineDrawer.UpdateLineStipple();
 
@@ -1464,6 +1493,7 @@ bool CGame::Draw() {
 	if (UpdateUnsynced(currentTimePreUpdate))
 		return false;
 
+	RmlGui::Update();
 	const spring_time currentTimePreDraw = spring_gettime();
 
 	SCOPED_SPECIAL_TIMER("Draw");
@@ -1551,6 +1581,7 @@ bool CGame::Draw() {
 		DrawInputReceivers();
 		DrawInputText();
 		DrawInterfaceWidgets();
+		RmlGui::RenderFrame();
 		mouse->DrawCursor();
 
 		eventHandler.DrawScreenPost();
@@ -1574,6 +1605,8 @@ bool CGame::Draw() {
 
 	eventHandler.DbgTimingInfo(TIMING_VIDEO, currentTimePreDraw, currentTimePostDraw);
 	globalRendering->SetGLTimeStamp(CGlobalRendering::FRAME_END_TIME_QUERY_IDX);
+
+	lastDrawFrameTime = currentTimePostDraw;
 
 	return true;
 }
@@ -1711,7 +1744,7 @@ void CGame::SimFrame() {
 
 	// note: starts at -1, first actual frame is 0
 	gs->frameNum += 1;
-	lastFrameTime = spring_gettime(); 
+	lastFrameTime = spring_gettime();
 	// This is not very ideal, as the timeoffset of each new draw frame is also calculated from this
 	// with a strange side effect: if the timeOffset was a high number, like 0.9, then this will force the next draw frame to have an offset of 0.0x
 	// What this means, is that in the case where we have frames to spare, and and over rendering, then the following can happen at 60hz:
@@ -1721,7 +1754,7 @@ void CGame::SimFrame() {
 	// drawframe timeoffset ~ 1.0 (1 extra draw!)
 	// simframe
 	// drawframe timeoffset ~ 0.0 // THIS is the problematic case, as visually, this frame is 'near identical' to the previously drawn one!
-	// simframe 
+	// simframe
 	// drawframe timeoffset ~ 0.0
 	// drawframe timeoffset ~ 0.5
 	// simframe
@@ -1854,6 +1887,10 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 			return;
 		}
 
+		// Force the connection to close if it hasn't been already to avoid the chance of starting the game in an
+		// desynced state.
+		clientNet->Close();
+
 		LOG_L(L_ERROR, "[%s] lost connection to server; terminating game", __func__);
 	} else {
 		// pass the winner info to the host in the case it's a dedicated server
@@ -1885,7 +1922,8 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 	record->SetWinningAllyTeams(winningAllyTeams);
 
 	// tell everybody about our APM, it's the most important statistic
-	clientNet->Send(CBaseNetProtocol::Get().SendPlayerStat(gu->myPlayerNum, playerHandler.Player(gu->myPlayerNum)->currentStats));
+	if (!timeout)
+		clientNet->Send(CBaseNetProtocol::Get().SendPlayerStat(gu->myPlayerNum, playerHandler.Player(gu->myPlayerNum)->currentStats));
 
 	for (int i = 0; i < numPlayers; ++i) {
 		record->SetPlayerStats(i, playerHandler.Player(i)->currentStats);
@@ -1893,7 +1931,8 @@ void CGame::GameEnd(const std::vector<unsigned char>& winningAllyTeams, bool tim
 	for (int i = 0; i < numTeams; ++i) {
 		const CTeam* team = teamHandler.Team(i);
 		record->SetTeamStats(i, team->statHistory);
-		clientNet->Send(CBaseNetProtocol::Get().SendTeamStat(team->teamNum, team->GetCurrentStats()));
+		if (!timeout)
+			clientNet->Send(CBaseNetProtocol::Get().SendTeamStat(team->teamNum, team->GetCurrentStats()));
 	}
 }
 
@@ -2030,7 +2069,7 @@ void CGame::StartSkip(int toFrame) {
 	}
 
 	skipTotalFrames = skipEndFrame - skipStartFrame;
-	skipSeconds = skipTotalFrames / float(GAME_SPEED);
+	skipSeconds = skipTotalFrames * INV_GAME_SPEED;
 
 	skipSoundmute = sound->IsMuted();
 	if (!skipSoundmute)

@@ -65,6 +65,7 @@
 #include "Rendering/DebugColVolDrawer.h"
 #include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/DebugDrawerAI.h"
+#include "Rendering/DebugDrawerQuadField.h"
 #include "Rendering/IPathDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/HUDDrawer.h"
@@ -1549,6 +1550,19 @@ public:
 	}
 };
 
+class DebugQuadFieldActionExecutor : public IUnsyncedActionExecutor {
+public:
+	DebugQuadFieldActionExecutor() : IUnsyncedActionExecutor("DebugQuadField", "Draw quadfield sectors around GuiTraceRay and selected units") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		bool enabled = DebugDrawerQuadField::IsEnabled();
+		DebugDrawerQuadField::SetEnabled(!enabled);
+		LogSystemStatus("quadfield debug", !enabled);
+		return true;
+	}
+};
+
 class DrawSkyActionExecutor : public IUnsyncedActionExecutor {
 public:
 	DrawSkyActionExecutor() : IUnsyncedActionExecutor("DrawSky", "Whether to actually draw sky") {
@@ -2534,8 +2548,23 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		// FIXME: same file for both?
-		CglFont::LoadCustomFonts(action.GetArgs(), action.GetArgs());
+		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
+		std::string newLargeFontFile;
+		std::string newSmallFontFile;
+		switch (args.size())
+		{
+		case 1: {
+			newSmallFontFile = std::move(args[0]);
+		} break;
+		case 2: {
+			newSmallFontFile = std::move(args[0]);
+			newLargeFontFile = std::move(args[1]);
+		} break;
+		default:
+			// nothing
+			break;
+		}
+		CglFont::LoadCustomFonts(newSmallFontFile, newLargeFontFile);
 		return true;
 	}
 };
@@ -2818,17 +2847,23 @@ class GroundDecalsActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GroundDecalsActionExecutor() : IUnsyncedActionExecutor(
 		"GroundDecals",
-		"Enable/Disable ground-decal rendering."
+		"Enable/Disable ground-decal rendering"
 	) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		bool drawDecals = IGroundDecalDrawer::GetDrawDecals();
+		if (action.GetArgs().empty()) {
+			IGroundDecalDrawer::SetDrawDecals(!IGroundDecalDrawer::GetDrawDecals()); //inverse
+		}
+		else {
+			bool failed;
+			auto dl = StringToInt(action.GetArgs(), &failed);
+			if (!failed)
+				IGroundDecalDrawer::SetDrawDecals(static_cast<bool>(dl));
+		}
 
-		InverseOrSetBool(drawDecals, action.GetArgs());
-		IGroundDecalDrawer::SetDrawDecals(drawDecals);
-
-		LogSystemStatus("Ground-decal rendering", IGroundDecalDrawer::GetDrawDecals());
+		static constexpr const char* fmt = "Ground-decal rendering %s";
+		LOG(fmt, IGroundDecalDrawer::GetDrawDecals() ? "enabled" : "disabled");
 		return true;
 	}
 };
@@ -3165,7 +3200,7 @@ public:
 
 	bool Execute(const UnsyncedAction& action) const final {
 		InverseOrSetBool(CUnitDrawer::IconHideWithUI(), action.GetArgs());
-		configHandler->Set("IconsHideWithUI", CUnitDrawer::IconHideWithUI() ? 1 : 0);
+		configHandler->Set("UnitIconsHideWithUI", CUnitDrawer::IconHideWithUI() ? 1 : 0);
 		LogSystemStatus("Hide unit icons with UI: ", CUnitDrawer::IconHideWithUI());
 		return true;
 	}
@@ -3219,7 +3254,7 @@ public:
 
 class AirMeshActionExecutor: public IUnsyncedActionExecutor {
 public:
-	AirMeshActionExecutor(): IUnsyncedActionExecutor("airmesh", "Show/Hide the smooth air-mesh map overlay") {
+	AirMeshActionExecutor(): IUnsyncedActionExecutor("airmesh", "Show/Hide the smooth air-mesh map overlay", true) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
@@ -3944,6 +3979,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<PauseActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugCubeMapActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<DebugQuadFieldActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DrawSkyActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugGLErrorsActionExecutor>());

@@ -157,7 +157,6 @@ CUnit::~CUnit()
 void CUnit::InitStatic()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// numerator was 2*UNIT_SLOWUPDATE_RATE/GAME_SPEED which equals 1 since 99.0
 	SetEmpDeclineRate(1.0f / modInfo.paralyzeDeclineRate);
 	SetExpMultiplier(modInfo.unitExpMultiplier);
 	SetExpPowerScale(modInfo.unitExpPowerScale);
@@ -246,6 +245,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 
 	SetVelocity(params.speed);
 	Move(preFramePos = params.pos.cClampInMap(), false);
+
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
 	SetMidAndAimPos(model->relMidPos, model->relMidPos, true);
 	SetRadiusAndHeight(model);
@@ -337,6 +337,8 @@ void CUnit::PostInit(const CUnit* builder)
 	UpdateCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS, unitDef->collidable && (!immobile || !unitDef->canKamikaze));
 	Block();
 
+	// done once again in UnitFinished() too
+	// but keep the old behavior for compatibility purposes
 	if (unitDef->windGenerator > 0.0f)
 		envResHandler.AddGenerator(this);
 
@@ -421,6 +423,9 @@ void CUnit::FinishedBuilding(bool postInit)
 		soloBuilder = nullptr;
 	}
 
+	if (isDead) // Lua can kill a freshy spawned unit in UnitCreated
+		return;
+
 	ChangeLos(realLosRadius, realAirLosRadius);
 
 	if (unitDef->activateWhenBuilt)
@@ -430,6 +435,13 @@ void CUnit::FinishedBuilding(bool postInit)
 
 	// Sets the frontdir in sync with heading.
 	UpdateDirVectors(!upright && IsOnGround(), false, 0.0f);
+
+	if (unitDef->windGenerator > 0.0f) {
+		// trigger sending the wind update by removing
+		envResHandler.DelGenerator(this);
+		//  and adding back this windgen
+		envResHandler.AddGenerator(this);
+	}
 
 	eventHandler.UnitFinished(this);
 	eoh->UnitFinished(*this);
@@ -446,21 +458,21 @@ void CUnit::FinishedBuilding(bool postInit)
 		f->blockHeightChanges = true;
 
 		UnBlock();
-		KillUnit(nullptr, false, true);
+		KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_TURNED_INTO_FEATURE);
 	}
 }
 
 
-void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
+void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsCrashing() && !beingBuilt)
 		return;
 
-	ForcedKillUnit(attacker, selfDestruct, reclaimed);
+	ForcedKillUnit(attacker, selfDestruct, reclaimed, weaponDefID);
 }
 
-void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
+void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead)
@@ -472,11 +484,8 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed)
 	ReleaseTransportees(attacker, selfDestruct, reclaimed);
 
 	// pre-destruction event; unit may be kept around for its death sequence
-	eventHandler.UnitDestroyed(this, attacker);
-	eoh->UnitDestroyed(*this, attacker);
-
-	// Will be called in the destructor again, but this can not hurt
-	SetGroup(nullptr);
+	eventHandler.UnitDestroyed(this, attacker, weaponDefID);
+	eoh->UnitDestroyed(*this, attacker, weaponDefID);
 
 	if (unitDef->windGenerator > 0.0f)
 		envResHandler.DelGenerator(this);
@@ -762,9 +771,9 @@ void CUnit::ReleaseTransportees(CUnit* attacker, bool selfDestruct, bool reclaim
 		if (!unitDef->releaseHeld) {
 			// we don't want transportees to leave a corpse
 			if (!selfDestruct)
-				transportee->DoDamage(DamageArray(1e6f), ZeroVector, nullptr, -DAMAGE_EXTSOURCE_KILLED, -1);
+				transportee->DoDamage(DamageArray(1e6f), ZeroVector, nullptr, -CSolidObject::DAMAGE_TRANSPORT_KILLED, -1);
 
-			transportee->KillUnit(attacker, selfDestruct, reclaimed);
+			transportee->KillUnit(attacker, selfDestruct, reclaimed, -CSolidObject::DAMAGE_TRANSPORT_KILLED);
 		} else {
 			// NOTE: game's responsibility to deal with edge-cases now
 			transportee->Move(transportee->pos.cClampInBounds(), false);
@@ -955,7 +964,7 @@ void CUnit::SlowUpdate()
 	DoWaterDamage();
 
 	if (health < 0.0f) {
-		KillUnit(nullptr, false, true);
+		KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_NEGATIVE_HEALTH);
 		return;
 	}
 
@@ -967,7 +976,7 @@ void CUnit::SlowUpdate()
 		// DoDamage) we potentially start decaying from a lower damage
 		// level and would otherwise be de-paralyzed more quickly than
 		// specified by <paralyzeTime>
-		paralyzeDamage -= ((modInfo.paralyzeOnMaxHealth? maxHealth: health) * (UNIT_SLOWUPDATE_RATE / float(GAME_SPEED)) * CUnit::empDeclineRate);
+		paralyzeDamage -= ((modInfo.paralyzeOnMaxHealth? maxHealth: health) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED) * CUnit::empDeclineRate);
 		paralyzeDamage = std::max(paralyzeDamage, 0.0f);
 	}
 
@@ -992,7 +1001,7 @@ void CUnit::SlowUpdate()
 	if (selfDCountdown > 0) {
 		if ((selfDCountdown -= 1) == 0) {
 			// avoid unfinished buildings making an explosion
-			KillUnit(nullptr, !beingBuilt, beingBuilt);
+			KillUnit(nullptr, !beingBuilt, beingBuilt, -CSolidObject::DAMAGE_SELFD_EXPIRED);
 			return;
 		}
 
@@ -1001,7 +1010,8 @@ void CUnit::SlowUpdate()
 	}
 
 	if (beingBuilt) {
-		if (modInfo.constructionDecay && (lastNanoAdd < (gs->frameNum - modInfo.constructionDecayTime))) {
+		const auto framesSinceLastNanoAdd = gs->frameNum - lastNanoAdd;
+		if (modInfo.constructionDecay && (modInfo.constructionDecayTime < framesSinceLastNanoAdd)) {
 			float buildDecay = buildTime * modInfo.constructionDecaySpeed;
 
 			buildDecay = 1.0f / std::max(0.001f, buildDecay);
@@ -1012,8 +1022,14 @@ void CUnit::SlowUpdate()
 
 			AddMetal(cost.metal * buildDecay, false);
 
+			eventHandler.UnitConstructionDecayed(this
+				, INV_GAME_SPEED * framesSinceLastNanoAdd
+				, INV_GAME_SPEED * UNIT_SLOWUPDATE_RATE
+				, buildDecay
+			);
+
 			if (health <= 0.0f || buildProgress <= 0.0f)
-				KillUnit(nullptr, false, true);
+				KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_CONSTRUCTION_DECAY);
 		}
 
 		ScriptDecloak(nullptr, nullptr);
@@ -1109,7 +1125,7 @@ void CUnit::SlowUpdateKamikaze(bool scanForTargets)
 				continue;
 
 			// (by default) self-destruct when target starts moving away from us, should maximize damage
-			KillUnit(nullptr, true, false);
+			KillUnit(nullptr, true, false, -CSolidObject::DAMAGE_KAMIKAZE_ACTIVATED);
 			return;
 		}
 	}
@@ -1133,7 +1149,7 @@ void CUnit::SlowUpdateKamikaze(bool scanForTargets)
 	if (!kill)
 		return;
 
-	KillUnit(nullptr, true, false);
+	KillUnit(nullptr, true, false, -CSolidObject::DAMAGE_KAMIKAZE_ACTIVATED);
 }
 
 
@@ -1333,7 +1349,7 @@ void CUnit::DoDamage(
 	if (health > 0.0f)
 		return;
 
-	KillUnit(attacker, false, false);
+	KillUnit(attacker, false, false, weaponDefID);
 
 	if (!isDead)
 		return;
@@ -2054,7 +2070,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 		if (killMe || buildProgress <= 0.0f || health <= 0.0f) {
 			health = 0.0f;
 			buildProgress = 0.0f;
-			KillUnit(nullptr, false, true);
+			KillUnit(builder, false, true, -CSolidObject::DAMAGE_RECLAIMED);
 			return false;
 		}
 
@@ -3017,6 +3033,7 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(iconRadius),
 
 	CR_MEMBER(stunned),
+	CR_MEMBER_UN(noGroup),
 
 //	CR_MEMBER(expMultiplier),
 //	CR_MEMBER(expPowerScale),

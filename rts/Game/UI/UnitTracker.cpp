@@ -82,7 +82,7 @@ void CUnitTracker::SetMode(int mode)
 void CUnitTracker::Track(std::vector<int>&& unitIDs)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	spring::VectorEraseAllIf(unitIDs, IsInvalidUnitForSelection);
+	std::erase_if(unitIDs, IsInvalidUnitForSelection);
 
 	if (!unitIDs.empty())
 		selectedUnitsHandler.ClearSelected();
@@ -249,6 +249,9 @@ void CUnitTracker::SetCam()
 	if (lastFollowUnit != 0 && unitHandler.GetUnitUnsafe(lastFollowUnit) == nullptr) {
 		timeOut = 1;
 		lastFollowUnit = 0;
+	} else {
+		oldCamDir = camera->GetDir();
+		oldCamPos = camera->GetPos();
 	}
 
 	if (timeOut > 0) {

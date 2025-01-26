@@ -343,6 +343,12 @@ static int NoGroundCollide(lua_State* L, const void* data)
 }
 
 
+static int FramesToSeconds(lua_State* L, const void* data)
+{
+	const auto frames = *reinterpret_cast <const int *> (data);
+	lua_pushnumber(L, frames * INV_GAME_SPEED);
+	return 1;
+}
 
 static inline int BuildCategorySet(lua_State* L, const vector<string>& cats)
 {
@@ -454,8 +460,6 @@ static bool InitParamMap()
 
 	ADD_INT("id", wd.id);
 
-	ADD_INT("tdfId", wd.tdfId);
-
 	ADD_STRING("name",        wd.name);
 	ADD_STRING("description", wd.description);
 
@@ -494,6 +498,7 @@ static bool InitParamMap()
 	ADD_INT("salvoSize",    wd.salvosize);
 	ADD_INT("projectiles",  wd.projectilespershot);
 	ADD_FLOAT("salvoDelay", wd.salvodelay);
+	ADD_FUNCTION("windup", wd.salvoWindup, FramesToSeconds);
 	ADD_FLOAT("reload",     wd.reload);
 	ADD_FLOAT("beamtime",   wd.beamtime);
 	ADD_BOOL("beamburst",   wd.beamburst);

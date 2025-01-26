@@ -21,8 +21,22 @@ static constexpr int SPRING_FOOTPRINT_SCALE = 2;
  *
  * Defines the size of 1 heightmap square as 8 elmos.
  */
-static constexpr int       SQUARE_SIZE =               8;
-static constexpr int BUILD_SQUARE_SIZE = SQUARE_SIZE * 2;
+static constexpr int SQUARE_SIZE = 8;
+
+/**
+ * @brief Building grid resolution
+ *
+ * Defines the resolution of the native build placement GUI, and maybe
+ * other related things.
+ *
+ * This probably makes the most sense to equal `SPRING_FOOTPRINT_SCALE`,
+ * but it doesn't have to be. It would be good to make it controllable
+ * by games at some point (modrule?), but there may be many assumptions
+ * elsewhere that this is equal to `SPRING_FOOTPRINT_SCALE` or to 2.
+ * Some are marked via static asserts but coverage is NOT comprehensive. */
+static constexpr int BUILD_GRID_RESOLUTION = SPRING_FOOTPRINT_SCALE;
+
+static constexpr int BUILD_SQUARE_SIZE = SQUARE_SIZE * BUILD_GRID_RESOLUTION;
 
 
 /**
@@ -36,6 +50,7 @@ static constexpr float ELMOS_TO_METERS = 1.0f / SQUARE_SIZE;
  * Defines the game-/sim-frames per second.
  */
 static constexpr int GAME_SPEED = 30;
+static constexpr float INV_GAME_SPEED = 1.0f / GAME_SPEED;
 
 /**
  * @brief unit SlowUpdate rate

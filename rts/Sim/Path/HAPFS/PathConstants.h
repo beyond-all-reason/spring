@@ -6,6 +6,7 @@
 #include <limits>
 #include <array>
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 
 static constexpr float PATHCOST_INFINITY = std::numeric_limits<float>::infinity();
 
@@ -18,7 +19,7 @@ static constexpr unsigned int MAX_SEARCHED_NODES_PE = MAX_SEARCHED_NODES;
 
 // PathManager distance thresholds (to use PF or PE)
 static constexpr float MAXRES_SEARCH_DISTANCE =  50.0f;
-static constexpr float MEDRES_SEARCH_DISTANCE = 100.0f;
+static constexpr float MEDRES_SEARCH_DISTANCE = 200.0f;
 // path-refinement lookahead distances (MED to MAX and LOW to MED)
 static const float MAXRES_SEARCH_DISTANCE_EXT = (MAXRES_SEARCH_DISTANCE * 0.4f) * SQUARE_SIZE;
 static const float MEDRES_SEARCH_DISTANCE_EXT = (MEDRES_SEARCH_DISTANCE * 0.4f) * SQUARE_SIZE;
@@ -32,7 +33,7 @@ static constexpr unsigned int MEDRES_PE_BLOCKSIZE = 16;
 static constexpr unsigned int LOWRES_PE_BLOCKSIZE = 32;
 
 static constexpr unsigned int SQUARES_TO_UPDATE = 8000;
-static constexpr unsigned int MAX_SEARCHED_NODES_ON_REFINE = 2000;
+static constexpr unsigned int MAX_SEARCHED_NODES_ON_REFINE = 8000;
 
 static constexpr unsigned int PATH_HEATMAP_XSCALE =  1; // wrt. mapDims.hmapx
 static constexpr unsigned int PATH_HEATMAP_ZSCALE =  1; // wrt. mapDims.hmapy
@@ -72,7 +73,7 @@ static constexpr unsigned int PATH_DIRECTIONS_HALF_MASK = 0x0f;
 
 
 static constexpr unsigned int PATHDIR_CARDINALS[4] = {PATHDIR_LEFT, PATHDIR_RIGHT, PATHDIR_UP, PATHDIR_DOWN};
-static constexpr unsigned int PATH_DIRECTION_VERTICES = PATH_DIRECTIONS >> 1;
+static constexpr unsigned int PATH_DIRECTION_VERTICES = PATH_DIRECTIONS;
 static constexpr unsigned int PATH_NODE_SPACING = 2;
 
 // note: because the spacing between nodes is 2 (not 1) we
@@ -172,15 +173,17 @@ static constexpr unsigned int PathOpt2PathDir(unsigned int pathOptDir) { return 
 // transition costs between vertices are bi-directional
 // (cost(A-->B) == cost(A<--B)) so we only need to store
 // (PATH_DIRECTIONS >> 1) values
-static inline int GetBlockVertexOffset(unsigned int pathDir, unsigned int numBlocks) {
+static inline int GetBlockVertexOffset(const MoveDef& md, unsigned int pathDir, unsigned int numBlocks) {
 	int bvo = pathDir;
 
-	switch (pathDir) {
-		case PATHDIR_RIGHT:      { bvo = int(PATHDIR_LEFT    ) -                                         PATH_DIRECTION_VERTICES; } break;
-		case PATHDIR_RIGHT_DOWN: { bvo = int(PATHDIR_LEFT_UP ) - (numBlocks * PATH_DIRECTION_VERTICES) - PATH_DIRECTION_VERTICES; } break;
-		case PATHDIR_DOWN:       { bvo = int(PATHDIR_UP      ) - (numBlocks * PATH_DIRECTION_VERTICES)                          ; } break;
-		case PATHDIR_LEFT_DOWN:  { bvo = int(PATHDIR_RIGHT_UP) - (numBlocks * PATH_DIRECTION_VERTICES) + PATH_DIRECTION_VERTICES; } break;
-		default: {} break;
+	if (!md.allowDirectionalPathing) {
+		switch (pathDir) {
+			case PATHDIR_RIGHT:      { bvo = int(PATHDIR_LEFT    ) -                                         PATH_DIRECTION_VERTICES; } break;
+			case PATHDIR_RIGHT_DOWN: { bvo = int(PATHDIR_LEFT_UP ) - (numBlocks * PATH_DIRECTION_VERTICES) - PATH_DIRECTION_VERTICES; } break;
+			case PATHDIR_DOWN:       { bvo = int(PATHDIR_UP      ) - (numBlocks * PATH_DIRECTION_VERTICES)                          ; } break;
+			case PATHDIR_LEFT_DOWN:  { bvo = int(PATHDIR_RIGHT_UP) - (numBlocks * PATH_DIRECTION_VERTICES) + PATH_DIRECTION_VERTICES; } break;
+			default: {} break;
+		}
 	}
 
 	return bvo;

@@ -93,6 +93,7 @@ class LuaSyncedCtrl
 		static int SetUnitAlwaysVisible(lua_State* L);
 		static int SetUnitUseAirLos(lua_State* L);
 		static int SetUnitResourcing(lua_State* L);
+		static int SetUnitStorage(lua_State* L);
 		static int SetUnitMetalExtraction(lua_State* L);
 		static int SetUnitHarvestStorage(lua_State* L);
 		static int SetUnitBuildSpeed(lua_State* L);
@@ -104,6 +105,7 @@ class LuaSyncedCtrl
 		static int SetUnitShieldRechargeDelay(lua_State* L);
 		static int SetUnitFlanking(lua_State* L);
 		static int SetUnitPhysicalStateBit(lua_State* L);
+		static int GetUnitPhysicalState(lua_State* L);
 		static int SetUnitTravel(lua_State* L);
 		static int SetUnitFuel(lua_State* L);
 		static int SetUnitMoveGoal(lua_State* L);
@@ -177,6 +179,7 @@ class LuaSyncedCtrl
 		static int SetProjectileVelocity(lua_State* L);
 		static int SetProjectileCollision(lua_State* L);
 		static int SetProjectileTarget(lua_State* L);
+		static int SetProjectileTimeToLive(lua_State* L);
 		static int SetProjectileIsIntercepted(lua_State* L);
 		static int SetProjectileDamages(lua_State* L);
 		static int SetProjectileIgnoreTrackingError(lua_State* L);
@@ -204,6 +207,8 @@ class LuaSyncedCtrl
 		static int SetOriginalHeightMap(lua_State* L);
 		static int SetOriginalHeightMapFunc(lua_State* L);
 
+		static int RebuildSmoothMesh(lua_State* L);
+
 		static int LevelSmoothMesh(lua_State* L);
 		static int AdjustSmoothMesh(lua_State* L);
 		static int RevertSmoothMesh(lua_State* L);
@@ -222,6 +227,8 @@ class LuaSyncedCtrl
 
 		static int UnitWeaponFire(lua_State* L);
 		static int UnitWeaponHoldFire(lua_State* L);
+
+		static int ForceUnitCollisionUpdate(lua_State* L);
 
 		static int UnitAttach(lua_State* L);
 		static int UnitDetach(lua_State* L);

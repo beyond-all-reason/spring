@@ -34,7 +34,7 @@ CMetalExtractionTexture::CMetalExtractionTexture()
 	//  to upload the CPU array directly to the GPU w/o any (slow) cpu-side
 	//  transformation. The transformation (0..1 range rescaling) happens
 	//  then on the gpu instead.
-	glSpringTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, texSize.x, texSize.y);
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, texSize.x, texSize.y);
 
 	if (FBO::IsSupported()) {
 		fbo.Bind();

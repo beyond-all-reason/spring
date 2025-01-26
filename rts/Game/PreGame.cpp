@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cfloat>
+#include <functional>
 
 #include <SDL_keycode.h>
 
@@ -49,6 +50,7 @@
 #include "System/Platform/errorhandler.h"
 #include "System/Platform/Misc.h"
 #include "System/Sync/SyncedPrimitiveBase.h"
+#include "System/Misc/UnfreezeSpring.h"
 #include "lib/luasocket/src/restrictions.h"
 #ifdef SYNCDEBUG
 	#include "System/Sync/SyncDebugger.h"
@@ -166,37 +168,66 @@ int CPreGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	return 0;
 }
 
+void CPreGame::AsyncExecute(CPreGame::AsyncExecFuncType execFunc, const std::string& argument)
+{
+	pendingTask = std::async(std::launch::async,
+		[execFunc, argument/*copy the argument explicitly*/, this]() {
+			const auto InitStreflopAndExecute = [execFunc, argument/*copy the argument explicitly*/, this]() {
+				streflop::streflop_init<streflop::Simple>();
+				std::invoke(execFunc, this, argument);
+			};
+			std::invoke(InitStreflopAndExecute);
+		}
+	);
+}
 
 bool CPreGame::Draw()
 {
+#ifndef HEADLESS
 	RECOIL_DETAILED_TRACY_ZONE;
-	spring_msecs(10).sleep(true);
+	spring_msecs(10).sleep(true); // 100 fps
+
 	ClearScreen();
 
+	static constexpr const float4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
 	font->Begin();
+	font->SetTextColor(color.x, color.y, color.z, color.w);
 
 	if (!clientNet->Connected()) {
-		if (clientSetup->isHost)
-			font->glFormat(0.5f, 0.48f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server to start");
-		else
-			font->glFormat(0.5f, 0.48f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Connecting to server (%ds)", (spring_gettime() - connectTimer).toSecsi());
+		if (clientSetup->isHost) {
+			if (clientSetup->hostIP == "localhost")
+				font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for game to start");
+			else
+				font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server to start");
+		}
+		else {
+			font->glFormat(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Connecting to server (%ds)", (spring_gettime() - connectTimer).toSecsi());
+		}
 	} else {
-		font->glPrint(0.5f, 0.48f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server response");
+		font->glPrint(0.5f, 0.60f, 2.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Waiting for server response");
 	}
 	if (clientSetup->showServerName.empty()) {
-		font->glFormat(0.60f, 0.40f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientNet->ConnectionStr().c_str());
-		font->glFormat(0.60f, 0.35f, 1.0f, FONT_SCALE | FONT_NORM, "User name: %s", clientSetup->myPlayerName.c_str());
+		font->glFormat(0.60f, 0.50f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientNet->ConnectionStr().c_str());
+		font->glFormat(0.60f, 0.45f, 1.0f, FONT_SCALE | FONT_NORM, "User name: %s", clientSetup->myPlayerName.c_str());
 	}
 	else {
-		font->glFormat(0.60f, 0.40f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientSetup->showServerName.c_str());
+		font->glFormat(0.60f, 0.50f, 1.0f, FONT_SCALE | FONT_NORM, "Connecting to: %s", clientSetup->showServerName.c_str());
 	}
-	font->glFormat(0.5f,0.25f,0.8f,FONT_CENTER | FONT_SCALE | FONT_NORM, "Press SHIFT + ESC to quit");
+
+	if (archiveScanner->GetNumFilesHashed() > 0) {
+		font->glFormat(0.60f, 0.35f, 1.0f, FONT_SCALE | FONT_NORM, "[Performing necessary checksum calculations]");
+		font->glFormat(0.60f, 0.30f, 1.0f, FONT_SCALE | FONT_NORM, "Number of files checked: %u", archiveScanner->GetNumFilesHashed());
+	}
+
+	font->glFormat(0.5f, 0.15f, 0.8f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Press SHIFT + ESC to quit");
+
 	// credits
-	font->glFormat(0.5f,0.06f,1.0f,FONT_CENTER | FONT_SCALE | FONT_NORM, "Spring %s", SpringVersion::GetFull().c_str());
-	font->glPrint(0.5f,0.02f,0.6f,FONT_CENTER | FONT_SCALE | FONT_NORM, "This program is distributed under the GNU General Public License, see doc/LICENSE for more info");
+	font->glFormat(0.5f, 0.06f, 1.0f, FONT_CENTER | FONT_SCALE | FONT_NORM, "Recoil %s", SpringVersion::GetFull().c_str());
+	font->glPrint(0.5f, 0.02f, 0.6f, FONT_CENTER | FONT_SCALE | FONT_NORM, "This program is distributed under the GNU General Public License, see doc/LICENSE for more info");
 
 	font->End();
-
+#endif
 	return true;
 }
 
@@ -242,7 +273,6 @@ void CPreGame::AddModArchivesToVFS(const CGameSetup* setup)
 	modFileName = archiveScanner->ArchiveFromName(setup->modName);
 }
 
-
 void CPreGame::StartServer(const std::string& setupscript)
 {
 	assert(gameServer == nullptr);
@@ -277,11 +307,13 @@ void CPreGame::StartServer(const std::string& setupscript)
 	startGameSetup->LoadStartPositions();
 
 	{
-		const std::string& modArchive = archiveScanner->ArchiveFromName(startGameSetup->modName);
-		const std::string& mapArchive = archiveScanner->ArchiveFromName(startGameSetup->mapName);
+		const auto st = spring_gettime();
+		archiveScanner->ResetNumFilesHashed();
+		const std::string mapArchive = archiveScanner->ArchiveFromName(startGameSetup->mapName);
+		const auto mapChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(mapArchive);
 
-		const sha512::raw_digest& mapChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(mapArchive);
-		const sha512::raw_digest& modChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(modArchive);
+		const std::string modArchive = archiveScanner->ArchiveFromName(startGameSetup->modName);
+		const auto modChecksum = archiveScanner->GetArchiveCompleteChecksumBytes(modArchive);
 
 		startGameData->SetMapChecksum(mapChecksum.data());
 		startGameData->SetModChecksum(modChecksum.data());
@@ -292,6 +324,9 @@ void CPreGame::StartServer(const std::string& setupscript)
 		sha512::dump_digest(modChecksum, modChecksumHex);
 
 		LOG("[PreGame::%s]\n\tmod-checksum=%s\n\tmap-checksum=%s", __func__, modChecksumHex.data(), mapChecksumHex.data());
+		LOG("[PreGame::%s] Game/Map archives checksum acquisition took = %ld microseconds", __func__, (spring_gettime() - connectTimer).toMilliSecsi());
+
+		archiveScanner->WriteCache();
 	}
 
 	good_fpu_control_registers("before CGameServer creation");
@@ -307,6 +342,9 @@ void CPreGame::UpdateClientNet()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	//FIXME move this code to a external file and move that to rts/Net/
+
+	if (HasPendingAsyncTask())
+		return;
 
 	clientNet->Update();
 
@@ -326,7 +364,7 @@ void CPreGame::UpdateClientNet()
 
 	std::shared_ptr<const netcode::RawPacket> packet;
 
-	while ((packet = clientNet->GetData(gs->frameNum))) {
+	while (!HasPendingAsyncTask() && (packet = clientNet->GetData(gs->frameNum))) {
 		const unsigned char* inbuf = packet->data;
 
 		if (packet->length <= 0) {
@@ -400,7 +438,10 @@ void CPreGame::UpdateClientNet()
 				// server first sends this to let us know about teams, allyteams
 				// etc. (not if we are joining mid-game as an extra player), see
 				// NETMSG_SETPLAYERNUM
-				GameDataReceived(packet);
+				pendingTask = std::async(std::launch::async,
+					&CPreGame::GameDataReceived, this,
+					packet
+				);
 			} break;
 
 			case NETMSG_SETPLAYERNUM: {
@@ -518,6 +559,7 @@ void CPreGame::ReadDataFromDemo(const std::string& demoName)
 void CPreGame::GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet)
 {
 	SCOPED_ONCE_TIMER("PreGame::GameDataReceived");
+	ENTER_SYNCED_CODE(); // because of async execution
 
 	try {
 		// in demos, gameData is first new'ed in ReadDataFromDemo()
@@ -561,6 +603,8 @@ void CPreGame::GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet
 		if (!teamHandler.IsValidAllyTeam(teamHandler.AllyTeam(player->team)))
 			throw content_error("Invalid allyteam in game-data");
 	}
+
+	archiveScanner->ResetNumFilesHashed();
 
 	// load archives into VFS
 	AddMapArchivesToVFS(gameSetup);
@@ -625,5 +669,21 @@ void CPreGame::GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet
 
 		LOG("[PreGame::%s] recording demo to \"%s\"", __func__, (clientNet->GetDemoRecorder()->GetName()).c_str());
 	}
+
+	LEAVE_SYNCED_CODE();
+}
+
+bool CPreGame::HasPendingAsyncTask()
+{
+	if (!pendingTask.valid())
+		return false;
+
+	using namespace std::chrono_literals;
+	if (pendingTask.wait_for(0ms) != std::future_status::ready)
+		return true;
+
+	pendingTask.get();
+	pendingTask = {};
+	return false;
 }
 

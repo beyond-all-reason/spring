@@ -77,38 +77,38 @@ enum OpMode {iABC, iABx, iAsBx};  /* basic instruction format */
 ** the following macros help to manipulate instructions
 */
 
-#define GET_OPCODE(i)	(cast(OpCode, ((i)>>POS_OP) & MASK1(SIZE_OP,0)))
+#define GET_OPCODE(i)	(lua_cast(OpCode, ((i)>>POS_OP) & MASK1(SIZE_OP,0)))
 #define SET_OPCODE(i,o)	((i) = (((i)&MASK0(SIZE_OP,POS_OP)) | \
-		((cast(Instruction, o)<<POS_OP)&MASK1(SIZE_OP,POS_OP))))
+		((lua_cast(Instruction, o)<<POS_OP)&MASK1(SIZE_OP,POS_OP))))
 
-#define GETARG_A(i)	(cast(int, ((i)>>POS_A) & MASK1(SIZE_A,0)))
+#define GETARG_A(i)	(lua_cast(int, ((i)>>POS_A) & MASK1(SIZE_A,0)))
 #define SETARG_A(i,u)	((i) = (((i)&MASK0(SIZE_A,POS_A)) | \
-		((cast(Instruction, u)<<POS_A)&MASK1(SIZE_A,POS_A))))
+		((lua_cast(Instruction, u)<<POS_A)&MASK1(SIZE_A,POS_A))))
 
-#define GETARG_B(i)	(cast(int, ((i)>>POS_B) & MASK1(SIZE_B,0)))
+#define GETARG_B(i)	(lua_cast(int, ((i)>>POS_B) & MASK1(SIZE_B,0)))
 #define SETARG_B(i,b)	((i) = (((i)&MASK0(SIZE_B,POS_B)) | \
-		((cast(Instruction, b)<<POS_B)&MASK1(SIZE_B,POS_B))))
+		((lua_cast(Instruction, b)<<POS_B)&MASK1(SIZE_B,POS_B))))
 
-#define GETARG_C(i)	(cast(int, ((i)>>POS_C) & MASK1(SIZE_C,0)))
+#define GETARG_C(i)	(lua_cast(int, ((i)>>POS_C) & MASK1(SIZE_C,0)))
 #define SETARG_C(i,b)	((i) = (((i)&MASK0(SIZE_C,POS_C)) | \
-		((cast(Instruction, b)<<POS_C)&MASK1(SIZE_C,POS_C))))
+		((lua_cast(Instruction, b)<<POS_C)&MASK1(SIZE_C,POS_C))))
 
-#define GETARG_Bx(i)	(cast(int, ((i)>>POS_Bx) & MASK1(SIZE_Bx,0)))
+#define GETARG_Bx(i)	(lua_cast(int, ((i)>>POS_Bx) & MASK1(SIZE_Bx,0)))
 #define SETARG_Bx(i,b)	((i) = (((i)&MASK0(SIZE_Bx,POS_Bx)) | \
-		((cast(Instruction, b)<<POS_Bx)&MASK1(SIZE_Bx,POS_Bx))))
+		((lua_cast(Instruction, b)<<POS_Bx)&MASK1(SIZE_Bx,POS_Bx))))
 
 #define GETARG_sBx(i)	(GETARG_Bx(i)-MAXARG_sBx)
-#define SETARG_sBx(i,b)	SETARG_Bx((i),cast(unsigned int, (b)+MAXARG_sBx))
+#define SETARG_sBx(i,b)	SETARG_Bx((i),lua_cast(unsigned int, (b)+MAXARG_sBx))
 
 
-#define CREATE_ABC(o,a,b,c)	((cast(Instruction, o)<<POS_OP) \
-			| (cast(Instruction, a)<<POS_A) \
-			| (cast(Instruction, b)<<POS_B) \
-			| (cast(Instruction, c)<<POS_C))
+#define CREATE_ABC(o,a,b,c)	((lua_cast(Instruction, o)<<POS_OP) \
+			| (lua_cast(Instruction, a)<<POS_A) \
+			| (lua_cast(Instruction, b)<<POS_B) \
+			| (lua_cast(Instruction, c)<<POS_C))
 
-#define CREATE_ABx(o,a,bc)	((cast(Instruction, o)<<POS_OP) \
-			| (cast(Instruction, a)<<POS_A) \
-			| (cast(Instruction, bc)<<POS_Bx))
+#define CREATE_ABx(o,a,bc)	((lua_cast(Instruction, o)<<POS_OP) \
+			| (lua_cast(Instruction, a)<<POS_A) \
+			| (lua_cast(Instruction, bc)<<POS_Bx))
 
 
 /*
@@ -208,7 +208,7 @@ OP_VARARG/*	A B	R(A), R(A+1), ..., R(A+B-1) = vararg		*/
 } OpCode;
 
 
-#define NUM_OPCODES	(cast(int, OP_VARARG) + 1)
+#define NUM_OPCODES	(lua_cast(int, OP_VARARG) + 1)
 
 
 
@@ -251,9 +251,9 @@ enum OpArgMask {
 
 LUAI_DATA const lu_byte luaP_opmodes[NUM_OPCODES];
 
-#define getOpMode(m)	(cast(enum OpMode, luaP_opmodes[m] & 3))
-#define getBMode(m)	(cast(enum OpArgMask, (luaP_opmodes[m] >> 4) & 3))
-#define getCMode(m)	(cast(enum OpArgMask, (luaP_opmodes[m] >> 2) & 3))
+#define getOpMode(m)	(lua_cast(enum OpMode, luaP_opmodes[m] & 3))
+#define getBMode(m)	(lua_cast(enum OpArgMask, (luaP_opmodes[m] >> 4) & 3))
+#define getCMode(m)	(lua_cast(enum OpArgMask, (luaP_opmodes[m] >> 2) & 3))
 #define testAMode(m)	(luaP_opmodes[m] & (1 << 6))
 #define testTMode(m)	(luaP_opmodes[m] & (1 << 7))
 

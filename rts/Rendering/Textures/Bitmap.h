@@ -15,6 +15,16 @@
 
 struct SDL_Surface;
 
+struct TextureCreationParams {
+	float aniso = 0.0f;
+	float lodBias = 0.0f;
+	uint32_t texID = 0;
+	int32_t reqNumLevels = 0;
+	bool linearMipMapFilter = true;
+	bool linearTextureFilter = true;
+	uint32_t GetMinFilter(int32_t numLevels) const;
+	uint32_t GetMagFilter() const;
+};
 
 class CBitmap {
 public:
@@ -39,6 +49,8 @@ public:
 	void Alloc(int w, int h) { Alloc(w, h, channels); }
 	void AllocDummy(const SColor fill = SColor(255, 0, 0, 255));
 
+	int32_t GetReqNumLevels() const;
+
 	int32_t GetIntFmt() const;
 	int32_t GetExtFmt() const { return GetExtFmt(channels); }
 	static int32_t GetExtFmt(uint32_t ch);
@@ -59,10 +71,9 @@ public:
 
 	bool Empty() const { return (memIdx == size_t(-1)); } // implies size=0
 
-	uint32_t CreateTexture(float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false, uint32_t texID = 0) const;
-	uint32_t CreateMipMapTexture(float aniso = 0.0f, float lodBias = 0.0f) const { return (CreateTexture(aniso, lodBias, true)); }
-	uint32_t CreateAnisoTexture(float aniso = 0.0f, float lodBias = 0.0f) const { return (CreateTexture(aniso, lodBias, false)); }
-	uint32_t CreateDDSTexture(uint32_t texID = 0, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) const;
+	uint32_t CreateTexture(const TextureCreationParams& tcp = TextureCreationParams{}) const;
+	uint32_t CreateMipMapTexture(float aniso = 0.0f, float lodBias = 0.0f, int32_t reqNumLevels = 0, uint32_t texID = 0) const;
+	uint32_t CreateDDSTexture(const TextureCreationParams& tcp = TextureCreationParams{}) const;
 
 	void CreateAlpha(uint8_t red, uint8_t green, uint8_t blue);
 	void ReplaceAlpha(float a = 1.0f);

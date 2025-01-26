@@ -65,8 +65,9 @@ class CEventHandler
 		void UnitCreated(const CUnit* unit, const CUnit* builder);
 		void UnitFinished(const CUnit* unit);
 		void UnitReverseBuilt(const CUnit* unit);
+		void UnitConstructionDecayed(const CUnit* unit, float timeSinceLastBuild, float iterationPeriod, float part);
 		void UnitFromFactory(const CUnit* unit, const CUnit* factory, bool userOrders);
-		void UnitDestroyed(const CUnit* unit, const CUnit* attacker);
+		void UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID);
 		void UnitTaken(const CUnit* unit, int oldTeam, int newTeam);
 		void UnitGiven(const CUnit* unit, int oldTeam, int newTeam);
 
@@ -119,6 +120,7 @@ class CEventHandler
 		bool UnitFeatureCollision(const CUnit* collider, const CFeature* collidee);
 		void UnitMoved(const CUnit* unit);
 		void UnitMoveFailed(const CUnit* unit);
+		void UnitArrivedAtGoal(const CUnit* unit);
 
 		void FeatureCreated(const CFeature* feature);
 		void FeatureDestroyed(const CFeature* feature);
@@ -232,6 +234,7 @@ class CEventHandler
 
 		void DefaultCommand(const CUnit* unit, const CFeature* feature, int& cmd);
 
+		void ActiveCommandChanged(const SCommandDescription *cmdDesc);
 		bool CommandNotify(const Command& cmd);
 
 		bool AddConsoleLine(const std::string& msg, const std::string& section, int level);
@@ -240,6 +243,7 @@ class CEventHandler
 
 		bool GroupChanged(int groupID);
 
+		void FontsChanged();
 		bool GameSetup(const std::string& state, bool& ready,
 		               const std::vector< std::pair<int, std::string> >& playerStates);
 		void DownloadQueued(int ID, const string& archiveName, const string& archiveType);
@@ -266,7 +270,7 @@ class CEventHandler
 		void DrawWorld();
 		void DrawWorldPreUnit();
 		void DrawPreDecals();
-		void DrawWorldPreParticles();
+		void DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction);
 		void DrawWaterPost();
 		void DrawWorldShadow();
 		void DrawShadowPassTransparent();
@@ -408,9 +412,9 @@ inline void CEventHandler::UnitCreated(const CUnit* unit, const CUnit* builder)
 }
 
 
-inline void CEventHandler::UnitDestroyed(const CUnit* unit, const CUnit* attacker)
+inline void CEventHandler::UnitDestroyed(const CUnit* unit, const CUnit* attacker, int weaponDefID)
 {
-	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitDestroyed, unit, attacker)
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitDestroyed, unit, attacker, weaponDefID)
 }
 
 #define UNIT_CALLIN_NO_PARAM(name)                                 \
@@ -431,6 +435,7 @@ UNIT_CALLIN_NO_PARAM(UnitReverseBuilt);
 UNIT_CALLIN_NO_PARAM(UnitFinished)
 UNIT_CALLIN_NO_PARAM(UnitIdle)
 UNIT_CALLIN_NO_PARAM(UnitMoveFailed)
+UNIT_CALLIN_NO_PARAM(UnitArrivedAtGoal)
 UNIT_CALLIN_NO_PARAM(UnitEnteredUnderwater)
 UNIT_CALLIN_NO_PARAM(UnitEnteredWater)
 UNIT_CALLIN_NO_PARAM(UnitEnteredAir)
@@ -461,6 +466,12 @@ UNIT_CALLIN_LOS_PARAM(LeftRadar)
 UNIT_CALLIN_LOS_PARAM(LeftLos)
 
 
+inline void CEventHandler::UnitConstructionDecayed(const CUnit* unit,
+                                                   float timeSinceLastBuild, float iterationPeriod,
+                                                   float part)
+{
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitConstructionDecayed, unit, timeSinceLastBuild, iterationPeriod, part)
+}
 
 inline void CEventHandler::UnitFromFactory(const CUnit* unit,
                                                const CUnit* factory,

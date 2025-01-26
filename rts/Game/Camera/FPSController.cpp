@@ -20,7 +20,7 @@ CONFIG(float, FPSFOV).defaultValue(45.0f);
 CONFIG(bool, FPSClampPos).defaultValue(true);
 
 
-CFPSController::CFPSController(): oldHeight(300.0f)
+CFPSController::CFPSController(): oldHeight(300.0f), rot(2.677f, 0.0f, 0.0f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
@@ -64,9 +64,8 @@ void CFPSController::KeyMove(float3 move)
 void CFPSController::MouseMove(float3 move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	camera->SetRotY(camera->GetRot().y + mouseScale * move.x);
-	camera->SetRotX(std::clamp(camera->GetRot().x + mouseScale * move.y * move.z, 0.01f, math::PI * 0.99f));
-	dir = camera->GetDir();
+	rot.y += mouseScale * move.x;
+	rot.x = std::clamp(rot.x + mouseScale * move.y * move.z, 0.01f, math::PI * 0.99f);
 	Update();
 }
 
@@ -119,16 +118,31 @@ void CFPSController::SetDir(const float3& newDir)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	dir = newDir;
-	Update();
+	rot = CCamera::GetRotFromDir(newDir);
+}
+
+void CFPSController::SetRot(const float3& newRot)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	rot = newRot;
+	dir = CCamera::GetFwdFromRot(newRot);
 }
 
 
-void CFPSController::SwitchTo(const int oldCam, const bool showText)
+void CFPSController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText) {
 		LOG("Switching to FPS style camera");
 	}
+	float3 newPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov") {
+		pos = float3(newPos.x, pos.y, newPos.z);
+		Update();
+		return;
+	}
+	rot = oldCam->GetRot();
+	pos = newPos;
 }
 
 
@@ -137,6 +151,9 @@ void CFPSController::GetState(StateMap& sm) const
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 	sm["oldHeight"] = oldHeight;
+	sm["rx"]   = rot.x;
+	sm["ry"]   = rot.y;
+	sm["rz"]   = rot.z;
 }
 
 
@@ -145,6 +162,9 @@ bool CFPSController::SetState(const StateMap& sm)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 	SetStateFloat(sm, "oldHeight", oldHeight);
+	SetStateFloat(sm, "rx",   rot.x);
+	SetStateFloat(sm, "ry",   rot.y);
+	SetStateFloat(sm, "rz",   rot.z);
 
 	return true;
 }

@@ -117,6 +117,7 @@ private:
 	void ConvertCommands(std::vector<SCommandDescription>& cmds);
 
 	int  FindInCommandPage();
+	void SetActiveCommandIndex(int newIndex);
 	void RevertToCmdDesc(const SCommandDescription& cmdDesc, bool defaultCommand, bool samePage);
 
 	unsigned char CreateOptions(bool rightMouseButton);
@@ -263,7 +264,6 @@ private:
 	// DrawMapStuff caches
 	std::vector<BuildInfo> buildInfos;
 	std::vector<Command> buildCommands;
-	std::vector<float4> buildColors;
 
 public:
 	std::vector<SCommandDescription> commands;

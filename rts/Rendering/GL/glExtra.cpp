@@ -4,7 +4,9 @@
 #include "glExtra.h"
 #include "RenderBuffers.h"
 #include "VertexArray.h"
+
 #include "Map/Ground.h"
+#include "Game/Camera.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/SpringMath.h"
@@ -206,7 +208,6 @@ void glBallisticCircleLua(const WeaponDef* weaponDef, const SColor& color, uint3
 	glBallisticCircleLua(nullptr, weaponDef, color, resolution, center, params);
 }
 
-
 /******************************************************************************/
 
 void glDrawVolume(DrawVolumeFunc drawFunc, const void* data)
@@ -242,143 +243,232 @@ void glDrawVolume(DrawVolumeFunc drawFunc, const void* data)
 	glEnable(GL_DEPTH_TEST);
 }
 
-
-
 /******************************************************************************/
 
-void glWireCube(uint32_t* listID) {
-	RECOIL_DETAILED_TRACY_ZONE;
-	static constexpr float3 vertices[8] = {
-		{ 0.5f,  0.5f,  0.5f},
-		{ 0.5f, -0.5f,  0.5f},
-		{-0.5f, -0.5f,  0.5f},
-		{-0.5f,  0.5f,  0.5f},
+void GL::Shapes::Init()
+{
+	assert(!shader);
 
-		{ 0.5f,  0.5f, -0.5f},
-		{ 0.5f, -0.5f, -0.5f},
-		{-0.5f, -0.5f, -0.5f},
-		{-0.5f,  0.5f, -0.5f},
-	};
+	assert(solidSpheresMap.empty());
+	assert(wireSpheresMap.empty());
+	assert(wireCylindersMap.empty());
+	assert(wireBoxIdx == size_t(-1));
 
-	if ((*listID) != 0) {
-		glCallList(*listID);
-		return;
-	}
-
-	glNewList(((*listID) = glGenLists(1)), GL_COMPILE);
-	glPushAttrib(GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	glBegin(GL_QUADS);
-		glVertex3f(vertices[0].x, vertices[0].y, vertices[0].z);
-		glVertex3f(vertices[1].x, vertices[1].y, vertices[1].z);
-		glVertex3f(vertices[2].x, vertices[2].y, vertices[2].z);
-		glVertex3f(vertices[3].x, vertices[3].y, vertices[3].z);
-
-		glVertex3f(vertices[4].x, vertices[4].y, vertices[4].z);
-		glVertex3f(vertices[5].x, vertices[5].y, vertices[5].z);
-		glVertex3f(vertices[6].x, vertices[6].y, vertices[6].z);
-		glVertex3f(vertices[7].x, vertices[7].y, vertices[7].z);
-	glEnd();
-	glBegin(GL_QUAD_STRIP);
-		glVertex3f(vertices[4].x, vertices[4].y, vertices[4].z);
-		glVertex3f(vertices[0].x, vertices[0].y, vertices[0].z);
-
-		glVertex3f(vertices[5].x, vertices[5].y, vertices[5].z);
-		glVertex3f(vertices[1].x, vertices[1].y, vertices[1].z);
-
-		glVertex3f(vertices[6].x, vertices[6].y, vertices[6].z);
-		glVertex3f(vertices[2].x, vertices[2].y, vertices[2].z);
-
-		glVertex3f(vertices[7].x, vertices[7].y, vertices[7].z);
-		glVertex3f(vertices[3].x, vertices[3].y, vertices[3].z);
-
-		glVertex3f(vertices[4].x, vertices[4].y, vertices[4].z);
-		glVertex3f(vertices[0].x, vertices[0].y, vertices[0].z);
-	glEnd();
-
-	glPopAttrib();
-	glEndList();
+	assert(allObjects.empty());
 }
 
-void glWireCylinder(uint32_t* listID, uint32_t numDivs, float zSize) {
-	RECOIL_DETAILED_TRACY_ZONE;
-	if ((*listID) != 0) {
-		glCallList(*listID);
-		return;
-	}
+void GL::Shapes::Kill()
+{
+	solidSpheresMap.clear();
+	wireSpheresMap.clear();
+	wireCylindersMap.clear();
+	wireBoxIdx = size_t(-1);
 
-	assert(numDivs > 2);
-	assert(zSize > 0.0f);
+	allObjects.clear();
 
-	std::vector<float3> vertices(numDivs * 2);
-
-	glNewList(((*listID) = glGenLists(1)), GL_COMPILE);
-	glPushAttrib(GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	// front end-cap
-	glBegin(GL_TRIANGLE_FAN);
-		glVertex3f(0.0f, 0.0f, 0.0f);
-
-		for (uint32_t n = 0; n <= numDivs; n++) {
-			const uint32_t i = n % numDivs;
-
-			vertices[i].x = std::cos(i * (math::TWOPI / numDivs));
-			vertices[i].y = std::sin(i * (math::TWOPI / numDivs));
-			vertices[i].z = 0.0f;
-
-			glVertex3f(vertices[i].x, vertices[i].y, vertices[i].z);
-		}
-	glEnd();
-
-	// back end-cap
-	glBegin(GL_TRIANGLE_FAN);
-		glVertex3f(0.0f, 0.0f, zSize);
-
-		for (uint32_t n = 0; n <= numDivs; n++) {
-			const uint32_t i = n % numDivs;
-
-			vertices[i + numDivs].x = vertices[i].x;
-			vertices[i + numDivs].y = vertices[i].y;
-			vertices[i + numDivs].z = zSize;
-
-			glVertex3f(vertices[i + numDivs].x, vertices[i + numDivs].y, vertices[i + numDivs].z);
-		}
-	glEnd();
-
-	glBegin(GL_QUAD_STRIP);
-		for (uint32_t n = 0; n < numDivs; n++) {
-			glVertex3f(vertices[n          ].x, vertices[n          ].y, vertices[n          ].z);
-			glVertex3f(vertices[n + numDivs].x, vertices[n + numDivs].y, vertices[n + numDivs].z);
-		}
-
-		glVertex3f(vertices[0          ].x, vertices[0          ].y, vertices[0          ].z);
-		glVertex3f(vertices[0 + numDivs].x, vertices[0 + numDivs].y, vertices[0 + numDivs].z);
-	glEnd();
-
-	glPopAttrib();
-	glEndList();
+	shaderHandler->ReleaseProgramObjects("[GL::Shapes]");
+	shader = nullptr;
 }
 
-void glWireSphere(uint32_t* listID, uint32_t numRows, uint32_t numCols) {
-	RECOIL_DETAILED_TRACY_ZONE;
-	if ((*listID) != 0) {
-		glCallList(*listID);
-		return;
+Shader::IProgramObject* GL::Shapes::GetShader()
+{
+	if unlikely(!shader) {
+		shader = shaderHandler->CreateProgramObject("[GL::Shapes]", "Default");
+		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ShapesVertProg.glsl", "", GL_VERTEX_SHADER));
+		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ShapesFragProg.glsl", "", GL_FRAGMENT_SHADER));
+		shader->BindAttribLocation("vertexPos", 0);
+		shader->Link();
+
+		shader->Enable();
+		shader->SetUniform("meshColor", 0.0f, 0.0f, 0.0f, 0.0f);
+		shader->SetUniformMatrix4x4("viewProjMat", false, CMatrix44f::Identity().m);
+		shader->SetUniformMatrix4x4("worldMat", false, CMatrix44f::Identity().m);
+		shader->Disable();
+
+		shader->Validate();
+	}
+	return shader;
+}
+
+void GL::Shapes::DrawSolidSphere(uint32_t numRows, uint32_t numCols, const CMatrix44f& m, const float* color)
+{
+#ifndef HEADLESS
+	auto shToken = FillShaderUniforms(m, color);
+	DrawSolidSphere(numRows, numCols);
+#endif
+}
+
+void GL::Shapes::DrawWireSphere(uint32_t numRows, uint32_t numCols, const CMatrix44f& m, const float* color)
+{
+#ifndef HEADLESS
+	auto shToken = FillShaderUniforms(m, color);
+	DrawWireSphere(numRows, numCols);
+#endif
+}
+
+void GL::Shapes::DrawWireCylinder(uint32_t numDivs, const CMatrix44f& m, const float* color)
+{
+#ifndef HEADLESS
+	auto shToken = FillShaderUniforms(m, color);
+	DrawWireCylinder(numDivs);
+#endif
+}
+
+void GL::Shapes::DrawWireBox(const CMatrix44f& m, const float* color)
+{
+#ifndef HEADLESS
+	auto shToken = FillShaderUniforms(m, color);
+	DrawWireBox();
+#endif
+}
+
+void GL::Shapes::DrawSolidSphere(uint32_t numRows, uint32_t numCols)
+{
+#ifndef HEADLESS
+	auto it = solidSpheresMap.find(std::make_tuple(numRows, numCols));
+	if (it == solidSpheresMap.end())
+		it = CreateSolidSphere(numRows, numCols);
+
+	const auto& [vao, vertVBO, indxVBO] = allObjects[it->second];
+
+	vao.Bind();
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indxVBO.GetSize() / sizeof(uint32_t)), GL_UNSIGNED_INT, nullptr);
+	vao.Unbind();
+#endif // !HEADLESS
+}
+
+void GL::Shapes::DrawWireSphere(uint32_t numRows, uint32_t numCols)
+{
+#ifndef HEADLESS
+	auto it = wireSpheresMap.find(std::make_tuple(numRows, numCols));
+	if (it == wireSpheresMap.end())
+		it = CreateWireSphere(numRows, numCols);
+
+	const auto& [vao, vertVBO, indxVBO] = allObjects[it->second];
+
+	vao.Bind();
+	glDrawElements(GL_LINES, static_cast<GLsizei>(indxVBO.GetSize() / sizeof(uint32_t)), GL_UNSIGNED_INT, nullptr);
+	vao.Unbind();
+#endif // !HEADLESS
+}
+
+void GL::Shapes::DrawWireCylinder(uint32_t numDivs)
+{
+#ifndef HEADLESS
+	auto it = wireCylindersMap.find(numDivs);
+	if (it == wireCylindersMap.end())
+		it = CreateWireCylinder(numDivs);
+
+	const auto& [vao, vertVBO, indxVBO] = allObjects[it->second];
+
+	vao.Bind();
+	glDrawElements(GL_LINES, static_cast<GLsizei>(indxVBO.GetSize() / sizeof(uint32_t)), GL_UNSIGNED_INT, nullptr);
+	vao.Unbind();
+#endif // !HEADLESS
+}
+
+void GL::Shapes::DrawWireBox()
+{
+#ifndef HEADLESS
+	if (wireBoxIdx == size_t(-1)) {
+		const std::vector<float3> BOX_VERTS = {
+			// bottom-face, ccw
+			float3{-0.5f, -0.5f,  0.5f},
+			float3{ 0.5f, -0.5f,  0.5f},
+			float3{ 0.5f, -0.5f, -0.5f},
+			float3{-0.5f, -0.5f, -0.5f},
+			// top-face, ccw
+			float3{-0.5f,  0.5f,  0.5f},
+			float3{ 0.5f,  0.5f,  0.5f},
+			float3{ 0.5f,  0.5f, -0.5f},
+			float3{-0.5f,  0.5f, -0.5f}
+		};
+
+		const std::vector<uint32_t> BOX_INDCS = {
+			0, 1, 1, 2, 2, 3, 3, 0, // bottom
+			4, 5, 5, 6, 6, 7, 7, 4, // top
+			0, 1, 1, 5, 5, 4, 4, 0, // front
+			1, 2, 2, 6, 6, 5, 5, 1, // right
+			2, 3, 3, 7, 7, 6, 6, 2, // back
+			3, 0, 0, 4, 4, 7, 7, 3  // left
+		};
+
+		wireBoxIdx = CreateGLObjects(BOX_VERTS, BOX_INDCS);
 	}
 
-	assert(numRows > 2);
-	assert(numCols > 2);
+	const auto& [vao, vertVBO, indxVBO] = allObjects[wireBoxIdx];
 
-	std::vector<float3> vertices((numRows + 1) * numCols);
+	vao.Bind();
+	glDrawElements(GL_LINES, static_cast<GLsizei>(indxVBO.GetSize() / sizeof(uint32_t)), GL_UNSIGNED_INT, nullptr);
+	vao.Unbind();
+#endif // !HEADLESS
+}
+
+Shader::ShaderEnabledToken GL::Shapes::FillShaderUniforms(const CMatrix44f& m, const float* color) const
+{
+	auto* shader = GL::shapes.GetShader();
+	auto shToken = shader->EnableScoped();
+
+	shader->SetUniform4v("meshColor", color);
+	shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
+	shader->SetUniformMatrix4x4("worldMat", false, m.m);
+
+	return shToken;
+}
+
+void GL::Shapes::EnableAttribs()
+{
+	glEnableVertexAttribArray(0);
+	glVertexAttribDivisor(0, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(float3), 0);
+}
+
+void GL::Shapes::DisableAttribs()
+{
+	glDisableVertexAttribArray(0);
+	glVertexAttribDivisor(0, 0);
+}
+
+size_t GL::Shapes::CreateGLObjects(
+	const std::vector<float3>& verts,
+	const std::vector<uint32_t>& indcs
+) {
+	auto& [vao, vertVBO, indxVBO] = allObjects.emplace_back(
+		VAO{ },
+		VBO{ GL_ARRAY_BUFFER, false },
+		VBO{ GL_ELEMENT_ARRAY_BUFFER, false }
+	);
+
+	vao.Bind();
+
+	vertVBO.Bind();
+	vertVBO.New(verts, GL_STATIC_DRAW);
+	indxVBO.Bind();
+	indxVBO.New(indcs, GL_STATIC_DRAW);
+
+	EnableAttribs();
+
+	vao.Unbind();
+
+	vertVBO.Unbind();
+	indxVBO.Unbind();
+
+	DisableAttribs();
+
+	return allObjects.size() - 1;
+}
+
+auto GL::Shapes::CreateSolidSphere(uint32_t numRows, uint32_t numCols) -> decltype(solidSpheresMap)::iterator
+{
+	std::vector<float3  > verts; verts.resize ((numRows + 1) * numCols);
+	std::vector<uint32_t> indcs; indcs.reserve((numCols + 1) * 3 * 2 + (numRows - 2) * numCols * 6);
 
 	for (uint32_t row = 0; row <= numRows; row++) {
 		for (uint32_t col = 0; col < numCols; col++) {
 			const float a = (col * (math::TWOPI / numCols));
 			const float b = (row * (math::PI    / numRows));
 
-			float3& v = vertices[row * numCols + col];
+			float3& v = verts[row * numCols + col];
 
 			v.x = std::cos(a) * std::sin(b);
 			v.y = std::sin(a) * std::sin(b);
@@ -386,56 +476,198 @@ void glWireSphere(uint32_t* listID, uint32_t numRows, uint32_t numCols) {
 		}
 	}
 
-	glNewList(((*listID) = glGenLists(1)), GL_COMPILE);
-	glPushAttrib(GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	const float3& v0 = vertices.front();
-	const float3& v1 = vertices.back();
-
 	// top slice
-	glBegin(GL_TRIANGLE_FAN);
-		glVertex3f(v0.x, v0.y, v0.z);
+	for (uint32_t col = 0; col <= numCols; col++) {
+		const auto i = 1 * numCols + ((col + 0) % numCols);
+		const auto j = 1 * numCols + ((col + 1) % numCols);
 
-		for (uint32_t col = 0; col <= numCols; col++) {
-			const uint32_t i = 1 * numCols + (col % numCols);
-			const float3& v = vertices[i];
-
-			glVertex3f(v.x, v.y, v.z);
-		}
-	glEnd();
-
-	// bottom slice
-	glBegin(GL_TRIANGLE_FAN);
-		glVertex3f(v1.x, v1.y, v1.z);
-
-		for (uint32_t col = 0; col <= numCols; col++) {
-			const uint32_t i = ((numRows - 1) * numCols) + (col % numCols);
-			const float3& v = vertices[i];
-
-			glVertex3f(v.x, v.y, v.z);
-		}
-	glEnd();
-
-	for (uint32_t row = 1; row < numRows - 1; row++) {
-		glBegin(GL_QUAD_STRIP);
-
-		for (uint32_t col = 0; col < numCols; col++) {
-			const float3& v0 = vertices[(row + 0) * numCols + col];
-			const float3& v1 = vertices[(row + 1) * numCols + col];
-
-			glVertex3f(v0.x, v0.y, v0.z);
-			glVertex3f(v1.x, v1.y, v1.z);
-		}
-
-		const float3& v0 = vertices[(row + 0) * numCols];
-		const float3& v1 = vertices[(row + 1) * numCols];
-
-		glVertex3f(v0.x, v0.y, v0.z);
-		glVertex3f(v1.x, v1.y, v1.z);
-		glEnd();
+		indcs.push_back(0);
+		indcs.push_back(i);
+		indcs.push_back(j);
 	}
 
-	glPopAttrib();
-	glEndList();
+	// bottom slice
+	for (uint32_t col = 0; col <= numCols; col++) {
+		const auto i = ((numRows - 1) * numCols) + ((col + 0) % numCols);
+		const auto j = ((numRows - 1) * numCols) + ((col + 1) % numCols);
+
+		indcs.push_back(static_cast<uint32_t>(verts.size() - 1));
+		indcs.push_back(i);
+		indcs.push_back(j);
+	}
+
+	// middle slices
+	for (uint32_t row = 1; row < (numRows - 1); row++) {
+		for (uint32_t col = 0; col < numCols; col++) {
+			const auto i0 = (row + 0) * numCols + (col + 0);
+			const auto i1 = (row + 1) * numCols + (col + 0);
+			const auto i2 = (row + 0) * numCols + (col + 1) % numCols;
+			const auto i3 = (row + 1) * numCols + (col + 1) % numCols;
+
+			indcs.push_back(i0);
+			indcs.push_back(i1);
+			indcs.push_back(i2);
+
+			indcs.push_back(i2);
+			indcs.push_back(i3);
+			indcs.push_back(i1);
+		}
+	}
+
+	return solidSpheresMap.emplace(
+		std::make_tuple(numRows, numCols),
+		CreateGLObjects(verts, indcs)
+	).first;
+}
+
+auto GL::Shapes::CreateWireSphere(uint32_t numRows, uint32_t numCols) -> decltype(wireSpheresMap)::iterator
+{
+	std::vector<float3  > verts; verts.resize((numRows + 1)* numCols);
+	std::vector<uint32_t> indcs; indcs.reserve((numCols + 1) * 6 * 2 + (numRows - 2) * numCols * 8);
+
+	for (uint32_t row = 0; row <= numRows; row++) {
+		for (uint32_t col = 0; col < numCols; col++) {
+			const float a = (col * (math::TWOPI / numCols));
+			const float b = (row * (math::PI / numRows));
+
+			float3& v = verts[row * numCols + col];
+
+			v.x = std::cos(a) * std::sin(b);
+			v.y = std::sin(a) * std::sin(b);
+			v.z = std::cos(b);
+		}
+	}
+
+	// top slice
+	for (uint32_t col = 0; col <= numCols; col++) {
+		const auto i = 1 * numCols + ((col + 0) % numCols);
+		const auto j = 1 * numCols + ((col + 1) % numCols);
+
+		indcs.push_back(0);
+		indcs.push_back(i);
+
+		indcs.push_back(i);
+		indcs.push_back(j);
+
+		indcs.push_back(j);
+		indcs.push_back(0);
+	}
+
+	// bottom slice
+	for (uint32_t col = 0; col <= numCols; col++) {
+		const auto i = ((numRows - 1) * numCols) + ((col + 0) % numCols);
+		const auto j = ((numRows - 1) * numCols) + ((col + 1) % numCols);
+
+		indcs.push_back(static_cast<uint32_t>(verts.size() - 1));
+		indcs.push_back(i);
+
+		indcs.push_back(i);
+		indcs.push_back(j);
+
+		indcs.push_back(j);
+		indcs.push_back(static_cast<uint32_t>(verts.size() - 1));
+	}
+
+	// middle slices
+	for (uint32_t row = 1; row < (numRows - 1); row++) {
+		for (uint32_t col = 0; col < numCols; col++) {
+			const auto i0 = (row + 0) * numCols + (col + 0);
+			const auto i1 = (row + 1) * numCols + (col + 0);
+			const auto i2 = (row + 0) * numCols + (col + 1) % numCols;
+			const auto i3 = (row + 1) * numCols + (col + 1) % numCols;
+
+			indcs.push_back(i0);
+			indcs.push_back(i1);
+
+			indcs.push_back(i1);
+			indcs.push_back(i3);
+
+			indcs.push_back(i3);
+			indcs.push_back(i2);
+
+			indcs.push_back(i2);
+			indcs.push_back(i0);
+		}
+	}
+
+	return wireSpheresMap.emplace(
+		std::make_tuple(numRows, numCols),
+		CreateGLObjects(verts, indcs)
+	).first;
+}
+
+auto GL::Shapes::CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersMap)::iterator
+{
+	std::vector<float3  > verts; verts.resize(2 + numDivs * 2);
+	std::vector<uint32_t> indcs; indcs.reserve(numDivs * 2);
+
+	// front end-cap
+	verts[0] = float3{ 0.0f, 0.0f, 0.0f };
+	for (unsigned int n = 0; n < numDivs; n++) {
+		const unsigned int i = 2 + (n + 0) % numDivs;
+		const unsigned int j = 2 + (n + 1) % numDivs;
+
+		verts[i].x = std::cos(i * (math::TWOPI / numDivs));
+		verts[i].y = std::sin(i * (math::TWOPI / numDivs));
+		verts[i].z = 0.0f;
+
+		indcs.push_back(0);
+		indcs.push_back(i);
+
+		indcs.push_back(i);
+		indcs.push_back(j);
+
+		indcs.push_back(j);
+		indcs.push_back(0);
+	}
+
+	// back end-cap
+	verts[1] = float3{ 0.0f, 0.0f, 1.0f };
+	for (unsigned int n = 0; n < numDivs; n++) {
+		const unsigned int i = 2 + (n + 0) % numDivs;
+		const unsigned int j = 2 + (n + 1) % numDivs;
+
+		verts[i + numDivs].x = verts[i].x;
+		verts[i + numDivs].y = verts[i].y;
+		verts[i + numDivs].z = 1.0f;
+
+		indcs.push_back(1);
+		indcs.push_back(i + numDivs);
+
+		indcs.push_back(i + numDivs);
+		indcs.push_back(j + numDivs);
+
+		indcs.push_back(j + numDivs);
+		indcs.push_back(1);
+	}
+
+	// sides
+	for (unsigned int n = 0; n < numDivs; n++) {
+		const unsigned int i0 = 2 + (n + 0);
+		const unsigned int i1 = 2 + (n + 0) + numDivs;
+		const unsigned int i2 = 2 + (n + 1) % numDivs;
+		const unsigned int i3 = 2 + (n + 1) % numDivs + numDivs;
+
+		indcs.push_back(i0);
+		indcs.push_back(i1);
+
+		indcs.push_back(i1);
+		indcs.push_back(i3);
+
+		indcs.push_back(i3);
+		indcs.push_back(i2);
+
+		indcs.push_back(i2);
+		indcs.push_back(i0);
+	}
+
+	return wireCylindersMap.emplace(
+		numDivs,
+		CreateGLObjects(verts, indcs)
+	).first;
+}
+
+
+namespace GL {
+	Shapes shapes;
 }

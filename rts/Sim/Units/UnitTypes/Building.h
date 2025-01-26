@@ -12,7 +12,9 @@ public:
 	CR_DECLARE(CBuilding)
 
 	CBuilding(): CUnit() { immobile = true; }
-	virtual ~CBuilding() {}
+
+	// Unblock is required here because the blockMap is not available during ~CUnit()
+	virtual ~CBuilding() { UnBlock(); };
 
 	void PostLoad();
 	void PreInit(const UnitLoadParams& params) override;

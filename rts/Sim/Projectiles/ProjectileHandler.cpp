@@ -191,6 +191,8 @@ void CProjectileHandler::UpdateProjectilesImpl()
 
 	// WARNING: same as above but for p->Update()
 	if constexpr (synced) {
+
+		SCOPED_TIMER("Sim::Projectiles::UpdateSyncedST");
 		for (size_t i = 0; i < pc.size(); ++i) {
 			CProjectile* p = pc[i];
 			assert(p != nullptr);
@@ -204,6 +206,7 @@ void CProjectileHandler::UpdateProjectilesImpl()
 		}
 	}
 	else {
+		SCOPED_TIMER("Sim::Projectiles::UpdateUnsyncedMT");
 		for_mt_chunk(0, pc.size(), [&pc](int i) {
 			CProjectile* p = pc[i];
 			assert(p != nullptr);
@@ -338,7 +341,7 @@ void CProjectileHandler::Update()
 
 	// precache part of particles count calculation that else becomes very heavy
 	{
-		ZoneScopedN("ProjectileHandler::CountParticles");
+		ZoneScopedNC("ProjectileHandler::CountParticles", tracy::Color::Goldenrod);
 		frameCurrentParticles = 0;
 
 		for (const CProjectile* p : projectiles[true]) {
@@ -605,11 +608,13 @@ void CProjectileHandler::CheckGroundCollisions(bool synced)
 		//   don't add p->radius to groundHeight, or most (esp. modelled)
 		//   projectiles will collide with the ground one or more frames
 		//   too early
-		const float gy = CGround::GetHeightReal(p->pos.x, p->pos.z);
+		const float px = p->pos.x;
 		const float py = p->pos.y;
+		const float pz = p->pos.z;
+		const float gy = CGround::GetHeightReal(px, pz);
 
 		const bool belowGround = (py < gy);
-		const bool insideWater = (py <= 0.0f);
+		const bool insideWater = (py <= CGround::GetWaterLevel(px, pz));
 
 		if (!belowGround && (!insideWater || p->ignoreWater))
 			continue;

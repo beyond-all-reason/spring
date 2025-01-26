@@ -54,7 +54,6 @@ public:
 		, energycost(0.0f)
 		, projectilespershot(0)
 		, id(0)
-		, tdfId(0)
 		, turret(false)
 		, onlyForward(false)
 		, fixedLauncher(false)
@@ -172,7 +171,6 @@ public:
 		, energycost(0.0f)
 		, projectilespershot(0)
 		, id(0)
-		, tdfId(0)
 		, turret(false)
 		, onlyForward(false)
 		, fixedLauncher(false)
@@ -305,7 +303,6 @@ public:
 	int projectilespershot;
 
 	int id;
-	int tdfId;                  ///< the id= tag in the tdf
 
 	bool turret;
 	bool onlyForward;

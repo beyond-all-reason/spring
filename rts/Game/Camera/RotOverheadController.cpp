@@ -21,7 +21,7 @@ CONFIG(float, RotOverheadFOV).defaultValue(45.0f);
 CONFIG(bool, RotOverheadClampMap).defaultValue(true).headlessValue(true);
 
 
-CRotOverheadController::CRotOverheadController(): oldHeight(500.0f)
+CRotOverheadController::CRotOverheadController(): oldHeight(500.0f), rot(2.677f, 0.0f, 0.0f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	mouseScale  = configHandler->GetFloat("RotOverheadMouseScale");
@@ -51,23 +51,8 @@ void CRotOverheadController::KeyMove(float3 move)
 void CRotOverheadController::MouseMove(float3 move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// use local dir state so CameraHandler can create smooth transition between
-	// current camera rot and desired
-	auto rot = CCamera::GetRotFromDir(dir);
 	rot.x = std::clamp(rot.x + mouseScale * move.y * move.z, math::PI * 0.4999f, math::PI * 0.9999f);
-
-	float new_rot_y = ClampRad(rot.y + mouseScale * move.x + math::PI) - math::PI;
-	float cam_rot_y = camera->GetRot().y;
-	bool over_half_rot_y = (GetRadAngleToward(cam_rot_y, new_rot_y) *
-			GetRadAngleToward(cam_rot_y , rot.y) > 0.0f) &&
-			(fabsf(GetRadAngleToward(cam_rot_y, rot.y)) > math::HALFPI);
-
-	if (!over_half_rot_y) {
-		// pending rotation can't be over 180deg as CameraHandler will smooth it
-		// in the opposite direction
-		rot.y = new_rot_y;
-	}
-
+	rot.y += mouseScale * move.x ;
 	dir = CCamera::GetFwdFromRot(rot);
 	Update();
 }
@@ -125,12 +110,20 @@ float3 CRotOverheadController::SwitchFrom() const
 }
 
 
-void CRotOverheadController::SwitchTo(const int oldCam, const bool showText)
+void CRotOverheadController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (showText) {
 		LOG("Switching to Rotatable overhead camera");
 	}
+	float3 newPos = oldCam->SwitchFrom();
+	if (oldCam->GetName() == "ov") {
+		pos = float3(newPos.x, pos.y, newPos.z);
+		Update();
+		return;
+	}
+	pos = newPos;
+	rot = oldCam->GetRot();
 }
 
 
@@ -140,6 +133,9 @@ void CRotOverheadController::GetState(StateMap& sm) const
 	CCameraController::GetState(sm);
 
 	sm["oldHeight"] = oldHeight;
+	sm["rx"]   = rot.x;
+	sm["ry"]   = rot.y;
+	sm["rz"]   = rot.z;
 }
 
 
@@ -149,6 +145,9 @@ bool CRotOverheadController::SetState(const StateMap& sm)
 	CCameraController::SetState(sm);
 
 	SetStateFloat(sm, "oldHeight", oldHeight);
+	SetStateFloat(sm, "rx",   rot.x);
+	SetStateFloat(sm, "ry",   rot.y);
+	SetStateFloat(sm, "rz",   rot.z);
 
 	return true;
 }
