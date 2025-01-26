@@ -83,18 +83,6 @@ void CScanCodes::Reset()
 	printableCodes.clear();
 	printableCodes.reserve(64);
 
-	// None is a special case we reserve for pure modifier keysets,
-	// e.g. Alt+Ctrl+sc_none
-	//
-	// Reason is that pure modifier keysets make it simpler to disambiguate all
-	// combinations of modifiers+keys, i.e. all these should be equal internally:
-	//
-	// Alt+ctrl == Ctrl+alt == Alt+Ctrl+sc_none == Ctrl+Alt+sc_none
-	//
-	// Users can still define their keysets without none, we perform the
-	// sanitization internally
-	AddPair("sc_none",      -1);
-
 	AddPair("sc_backspace", SDL_SCANCODE_BACKSPACE);
 	AddPair("sc_tab",       SDL_SCANCODE_TAB);
 	AddPair("sc_clear",     SDL_SCANCODE_CLEAR);

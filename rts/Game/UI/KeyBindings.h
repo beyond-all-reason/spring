@@ -58,6 +58,7 @@ class CKeyBindings : public CommandReceiver
 
 	protected:
 		void BuildHotkeyMap();
+		void ResetActionLists();
 		void RebuildActionLists();
 		void DebugActionList(const ActionList& actionList) const;
 

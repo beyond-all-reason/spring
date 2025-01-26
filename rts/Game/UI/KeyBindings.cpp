@@ -2,6 +2,8 @@
 
 #include <cstdio>
 #include <algorithm>
+#include <utility>
+#include <vector>
 
 #include "KeyBindings.h"
 #include "KeyCodes.h"
@@ -310,10 +312,7 @@ void CKeyBindings::Init()
 
 void CKeyBindings::Kill()
 {
-	codeBindings.clear();
-	scanBindings.clear();
-	hotkeys.clear();
-	loadStack.clear();
+	ResetActionLists();
 	statefulCommands.clear();
 
 	configHandler->RemoveObserver(this);
@@ -497,9 +496,33 @@ ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, unsigned char 
 }
 
 
+void CKeyBindings::ResetActionLists() {
+	codeBindings.clear();
+	scanBindings.clear();
+	actionStack.clear();
+	hotkeys.clear();
+	loadStack.clear();
+	bindingsCount = 0;
+}
+
+
 // When an internal state of the engine changes the way keysets are parsed, we
-// need to reparse them from their user issues keysets
+// need to rebuild keybindings with the original user issued keysets
 void CKeyBindings::RebuildActionLists() {
+	std::vector<std::pair<std::string, std::string>> previousBindings;
+
+	previousBindings.reserve(actionStack.size());
+	for(auto action : actionStack) {
+		previousBindings.push_back({action->boundWith, action->rawline});
+	};
+
+	ResetActionLists();
+
+	for(auto binding : previousBindings) {
+		Bind(binding.first, binding.second);
+	};
+
+	BuildHotkeyMap();
 }
 
 
@@ -770,10 +793,6 @@ bool CKeyBindings::SetFakeMetaKey(const std::string& keystr)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CKeySet ks;
-	if (StringToLower(keystr) == "none") {
-		fakeMetaKey = -1;
-		return true;
-	}
 	if (!ks.Parse(keystr)) {
 		LOG_L(L_WARNING, "SetFakeMetaKey: could not parse key: %s", keystr.c_str());
 		return false;
@@ -782,7 +801,13 @@ bool CKeyBindings::SetFakeMetaKey(const std::string& keystr)
 		LOG_L(L_WARNING, "SetFakeMetaKey: can't assign to scancode: %s", keystr.c_str());
 		return false;
 	}
+
+	const int previousFakeMetaKey = fakeMetaKey;
 	fakeMetaKey = ks.Key();
+
+	if (fakeMetaKey != previousFakeMetaKey)
+		RebuildActionLists();
+
 	return true;
 }
 
@@ -965,12 +990,9 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 		if (!UnBindKeyset(words[1])) { return false; }
 	}
 	else if (command == "unbindall") {
-		codeBindings.clear();
-		scanBindings.clear();
-		actionStack.clear();
+		ResetActionLists();
 		keyCodes.Reset();
 		scanCodes.Reset();
-		bindingsCount = 0;
 		Bind("enter", "chat"); // bare minimum
 
 		if (debugEnabled)
