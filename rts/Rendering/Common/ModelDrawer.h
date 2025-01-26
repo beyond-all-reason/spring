@@ -418,9 +418,6 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 
 	if constexpr (legacy) {
 		glColor3f(1.0f, 1.0f, 1.0f);
-		glPolygonOffset(1.0f, 1.0f);
-		glEnable(GL_POLYGON_OFFSET_FILL);
-
 		glAlphaFunc(GL_GREATER, 0.5f);
 		glEnable(GL_ALPHA_TEST);
 	}
@@ -455,7 +452,6 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 
 	if constexpr (legacy) {
 		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
 	ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);

@@ -98,6 +98,11 @@ public:
 	int shadowConfig;
 	int shadowMapSize;
 	int shadowGenBits;
+
+	float mapPolygonOffsetScale = 10.0f;
+	float mapPolygonOffsetUnits = 10000.0f;
+	float objPolygonOffsetScale = 5.0f;
+	float objPolygonOffsetUnits = 1000.0f;
 private:
 	bool shadowsLoaded = false;
 	bool inShadowPass = false;

@@ -710,22 +710,39 @@ void CShadowHandler::DrawShadowPasses()
 {
 	inShadowPass = true;
 
-	glPushAttrib(GL_POLYGON_BIT);
+	using namespace GL::State;
+	auto state = GL::SubState(
+		Blending(GL_FALSE),
+		Lighting(GL_FALSE),
+		Texture2D(GL_FALSE),
+		ShadeModel(GL_FLAT),
+		DepthMask(GL_TRUE),
+		DepthTest(GL_TRUE),
+		CullFace(GL_BACK),
+		Culling(GL_TRUE),
+		PolygonOffsetFill(GL_TRUE)
+	);
 
 	EnableColorOutput(false);
 
 	eventHandler.DrawWorldShadow();
 
-	if ((shadowGenBits & SHADOWGEN_BIT_TREE) != 0) {
-		grassDrawer->DrawShadow();
-	}
+	{
+		auto polyOffset = GL::SubState(
+			PolygonOffset(objPolygonOffsetScale, objPolygonOffsetUnits) // factor * DZ + r * units
+		);
 
-	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0){
-		projectileDrawer->DrawShadowOpaque();
-	}
-	if ((shadowGenBits & SHADOWGEN_BIT_MODEL) != 0) {
-		unitDrawer->DrawShadowPass();
-		featureDrawer->DrawShadowPass();
+		if ((shadowGenBits & SHADOWGEN_BIT_TREE) != 0) {
+			grassDrawer->DrawShadow();
+		}
+
+		if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
+			projectileDrawer->DrawShadowOpaque();
+		}
+		if ((shadowGenBits & SHADOWGEN_BIT_MODEL) != 0) {
+			unitDrawer->DrawShadowPass();
+			featureDrawer->DrawShadowPass();
+		}
 	}
 
 	// cull front-faces during the terrain shadow pass: sun direction
@@ -739,21 +756,28 @@ void CShadowHandler::DrawShadowPasses()
 	// also want to prevent overdraw in low-angle passes)
 	// glCullFace(GL_FRONT);
 
-	// Restore GL_BACK culling, because Lua shadow materials might
-	// have changed culling at their own discretion
-	glCullFace(GL_BACK);
-	if ((shadowGenBits & SHADOWGEN_BIT_MAP) != 0){
-		ZoneScopedN("Draw::World::CreateShadows::Terrain");
-		readMap->GetGroundDrawer()->DrawShadowPass();
+	{
+		auto polyOffset = GL::SubState(
+			PolygonOffset(mapPolygonOffsetScale, mapPolygonOffsetUnits) // factor * DZ + r * units
+		);
+
+		if ((shadowGenBits & SHADOWGEN_BIT_MAP) != 0) {
+			ZoneScopedN("Draw::World::CreateShadows::Terrain");
+			readMap->GetGroundDrawer()->DrawShadowPass();
+		}
 	}
 
 	//transparent pass, comes last
-	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
-		projectileDrawer->DrawShadowTransparent();
-		eventHandler.DrawShadowPassTransparent();
-	}
+	{
+		auto polyOffset = GL::SubState(
+			PolygonOffset(1.0f, 1.0f) // factor * DZ + r * units
+		);
 
-	glPopAttrib();
+		if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
+			projectileDrawer->DrawShadowTransparent();
+			eventHandler.DrawShadowPassTransparent();
+		}
+	}
 
 	inShadowPass = false;
 }
@@ -980,20 +1004,6 @@ void CShadowHandler::ResetShadowTexSamplerRaw() const
 
 void CShadowHandler::CreateShadows()
 {
-	using namespace GL::State;
-	auto state = GL::SubState(
-		Blending(GL_FALSE),
-		Lighting(GL_FALSE),
-		Texture2D(GL_FALSE),
-		ShadeModel(GL_FLAT),
-		DepthMask(GL_TRUE),
-		DepthTest(GL_TRUE),
-		CullFace(GL_BACK),
-		Culling(GL_TRUE)
-	);
-
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
 	// NOTE:
 	//   we unbind later in WorldDrawer::GenerateIBLTextures() to save render
 	//   context switches (which are one of the slowest OpenGL operations!)

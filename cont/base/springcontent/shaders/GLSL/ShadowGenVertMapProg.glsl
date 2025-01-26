@@ -35,11 +35,7 @@ void main() {
 	else
 		vertexWorldPos.y = borderMinHeight;
 	*/
-	vec4 lightVertexPos = gl_ModelViewMatrix * vertexWorldPos;
-
-	//lightVertexPos.z  -= 2e-3; // glEnable(GL_POLYGON_OFFSET_FILL); is in use
-
-	gl_Position = gl_ProjectionMatrix * lightVertexPos;
+	gl_Position = gl_ModelViewProjectionMatrix * vertexWorldPos;
 
 	gl_ClipVertex  = vertexWorldPos;
 	gl_TexCoord[0] = gl_MultiTexCoord0;

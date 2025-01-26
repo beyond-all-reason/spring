@@ -181,6 +181,7 @@ namespace State {
 
 	extern std::tuple<
 		ATTRIBUTE(PolygonMode),
+		ATTRIBUTE(PolygonOffset),
 		ATTRIBUTE(PolygonOffsetFill),
 		ATTRIBUTE(PolygonOffsetLine),
 		ATTRIBUTE(PolygonOffsetPoint),

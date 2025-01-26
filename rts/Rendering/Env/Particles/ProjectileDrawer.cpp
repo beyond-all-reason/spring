@@ -425,9 +425,9 @@ void CProjectileDrawer::UpdateDrawFlags()
 							p->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
 					} break;
 					case CCamera::CAMTYPE_SHADOW: {
-						if (p->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
+						if unlikely(hasModel)
 							p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-						else if (p->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+						else
 							p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
 					} break;
 				}

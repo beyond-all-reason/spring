@@ -95,29 +95,15 @@ out Data {
 };
 out float gl_ClipDistance[2];
 
-void TransformShadowCam(vec4 worldPos, vec3 worldNormal) {
-	vec4 lightVertexPos = shadowView * worldPos;
-	vec3 lightVertexNormal = normalize(mat3(shadowView) * worldNormal);
-
-	float NdotL = clamp(lightVertexNormal.z, 0.0, 1.0);
-
-	////use old bias formula from GetShadowPCFRandom(), but this time to write down shadow depth map values
-	const float cb = -1e-0;
-	float bias = cb * clamp(tan(acos(NdotL)), 0.0, 30.0);
-
-	lightVertexPos.z  += bias;
-
-	gl_Position = shadowProj * lightVertexPos;
-}
-
 #line 1115
 
 uint GetUnpackedValue(uint packedValue, uint byteNum) {
 	return (packedValue >> (8u * byteNum)) & 0xFFu;
 }
 
-void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
+vec4 GetModelSpaceVertex()
 {
+	vec4 msPosition;
 	vec4 piecePos = vec4(pos, 1.0);
 
 	vec4 weights = vec4(
@@ -134,15 +120,13 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 	weights[0] *= b0BoneMat[3][3];
 
 	msPosition = b0BoneMat * piecePos;
-	msNormal   = b0NormMat * normal;
 
 	if (weights[0] == 1.0)
-		return;
+		return msPosition;
 
 	float wSum = 0.0;
 
 	msPosition *= weights[0];
-	msNormal   *= weights[0];
 	wSum       += weights[0];
 
 	uint numPieces = (GetUnpackedValue(instData.z, 2) << 8u) + GetUnpackedValue(instData.z, 3);
@@ -164,29 +148,26 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 		mat3 normMat = mat3(skinMat);
 
 		msPosition += skinMat * piecePos * weights[bi];
-		msNormal   += normMat * normal   * weights[bi];
 		wSum       += weights[bi];
 	}
 
 	msPosition /= wSum;
-	msNormal   /= wSum;
+
+	return msPosition;
 }
 
 void main(void)
 {
 	mat4 worldMatrix = mat[instData.x];
 
-	vec4 modelPos;
-	vec3 modelNormal;
-	GetModelSpaceVertex(modelPos, modelNormal);
+	vec4 modelPos = GetModelSpaceVertex();
 
 	vec4 worldPos = worldMatrix * modelPos;
-	vec3 worldNormal = mat3(worldMatrix) * modelNormal;
 
 	gl_ClipDistance[0] = dot(modelPos, clipPlane0); //upper construction clip plane
 	gl_ClipDistance[1] = dot(modelPos, clipPlane1); //lower construction clip plane
 
 	uvCoord = uv;
 
-	TransformShadowCam(worldPos, worldNormal);
+	gl_Position = shadowViewProj * worldPos;
 }
