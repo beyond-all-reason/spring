@@ -759,7 +759,11 @@ bool CKeyBindings::UnBindAction(const std::string& command)
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (debugEnabled)
 		LOG("[CKeyBindings::%s] command=%s", __func__, command.c_str());
-	return RemoveActionFromKeyMap(command, codeBindings) || RemoveActionFromKeyMap(command, scanBindings);
+
+	const bool removedFromCodeBindings = RemoveActionFromKeyMap(command, codeBindings);
+	const bool removedFromScanBindings = RemoveActionFromKeyMap(command, scanBindings);
+
+	return removedFromCodeBindings || removedFromScanBindings;
 }
 
 
