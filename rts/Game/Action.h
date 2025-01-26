@@ -21,6 +21,6 @@ public:
 	CKeyChain   keyChain;     ///< the bound keychain/keyset
 };
 
-typedef std::vector<Action> ActionList;
+typedef std::vector<Action*> ActionList;
 
 #endif // ACTION_H
