@@ -52,7 +52,7 @@ static const CKeyBindings::ActionComparison compareActionByTriggerOrder = [](con
 
 
 static const CKeyBindings::ActionComparison compareActionByBindingOrder = [](const Action& a, const Action& b) {
-  return (a.bindingIndex < b.bindingIndex);
+	return (a.bindingIndex < b.bindingIndex);
 };
 
 const std::string CKeyBindings::DEFAULT_FILENAME = "uikeys.txt";
@@ -500,7 +500,6 @@ ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, unsigned char 
 // When an internal state of the engine changes the way keysets are parsed, we
 // need to reparse them from their user issues keysets
 void CKeyBindings::RebuildActionLists() {
-
 }
 
 
@@ -632,15 +631,15 @@ bool CKeyBindings::AddActionToKeyMap(KeyMap& bindings, Action& action)
 
 		// check if the command is already bound to the given keyset
 		if (it != std::end(al)) {
-      return false;
-    }
+			return false;
+		}
 
-    // not yet bound, push it
-    action.bindingIndex = ++bindingsCount;
-    al.push_back(action);
+		// not yet bound, push it
+		action.bindingIndex = ++bindingsCount;
+		al.push_back(action);
 	}
 
-  return true;
+	return true;
 }
 
 
@@ -670,8 +669,8 @@ bool CKeyBindings::Bind(const std::string& keystr, const std::string& line)
 	KeyMap& bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
 
 	if (AddActionToKeyMap(bindings, action)) {
-    actionStack.push_back(&action);
-  }
+		actionStack.push_back(&action);
+	}
 
 	return true;
 }
@@ -696,7 +695,7 @@ bool CKeyBindings::UnBind(const std::string& keystr, const std::string& command)
 		return false;
 
 	ActionList& al = it->second;
-  const bool success = RemoveCommandFromList(al, command);
+	const bool success = RemoveCommandFromList(al, command);
 
 	if (al.empty())
 		bindings.erase(it);
@@ -808,16 +807,16 @@ bool CKeyBindings::RemoveActionFromStack(Action* action) {
 	auto it = actionStack.begin();
 
 	while (it != actionStack.end()) {
-    if (*it.base() == action) {
-      actionStack.erase(it);
+		if (*it.base() == action) {
+			actionStack.erase(it);
 
-      return true;
-    } else {
-      it++;
-    }
-  }
+			return true;
+		} else {
+			it++;
+		}
+	}
 
-  return false;
+	return false;
 }
 
 
@@ -830,7 +829,7 @@ bool CKeyBindings::RemoveCommandFromList(ActionList& al, const std::string& comm
 
 	while (it != al.end()) {
 		if (it->command == command) {
-      RemoveActionFromStack(it.base());
+			RemoveActionFromStack(it.base());
 			it = al.erase(it);
 			success = true;
 		} else {
@@ -968,7 +967,7 @@ bool CKeyBindings::ExecuteCommand(const std::string& line)
 	else if (command == "unbindall") {
 		codeBindings.clear();
 		scanBindings.clear();
-    actionStack.clear();
+		actionStack.clear();
 		keyCodes.Reset();
 		scanCodes.Reset();
 		bindingsCount = 0;

@@ -76,7 +76,7 @@ class CKeyBindings : public CommandReceiver
 
 		bool FileSave(FILE* file) const;
 
-  protected:
+	protected:
 		const ActionList & GetActionList(const CKeySet& ks, bool forceAny) const;
 
 		KeyMap codeBindings;
