@@ -200,9 +200,9 @@ void CShadowHandler::DrawFrustumDebugMap() const
 		return;
 
 	static constexpr SColor SHADOW_CAM_COL = SColor{ 255,   0,   0, 255 };
-	static constexpr SColor WORLD_BNDS_COL = SColor{ 0,   0, 255, 255 };
+	static constexpr SColor WORLD_BNDS_COL = SColor{ 0,     0, 255, 255 };
 	static constexpr SColor PLAYER_CAM_COL = SColor{ 255, 255, 255, 255 };
-	static constexpr SColor CLIPPD_CAM_COL = SColor{ 0, 255,   0, 255 };
+	static constexpr SColor CLIPPD_CAM_COL = SColor{ 0,   255,   0, 255 };
 
 	CCamera* shadCam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
 	{
@@ -373,6 +373,7 @@ void CShadowHandler::DrawFrustumDebugMap() const
 		rb.DrawArrays(GL_LINES);
 		sh.Disable();
 	}
+
 	// clipped world cube
 	{
 		size_t frstIdx = 0;
