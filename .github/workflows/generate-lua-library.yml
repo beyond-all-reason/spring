@@ -61,6 +61,7 @@ jobs:
       - name: Update submodule
         working-directory: ./recoil/
         run: |
+          git submodule init recoil-lua-library
           git submodule update --remote --merge recoil-lua-library
 
       # Push the updated submodule reference.
