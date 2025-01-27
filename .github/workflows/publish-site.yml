@@ -31,6 +31,9 @@ jobs:
       - name: Disable global libaries from Lua config
         run: |
           cp doc/site/.luarc.doc.json .luarc.json
+      # NOTE: Running LLS 3.13.4 from a subdirectory with a relative path seems
+      # to cause duplicate class fields to be generated. Presumably a bug in
+      # LLS.
       - name: Export Lua data using Lua Language Server
         run: |
           lua-language-server --doc . --doc_out_path doc/site/_data

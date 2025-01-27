@@ -29,6 +29,4 @@ At root, run:
 lua-language-server --doc . --doc_out_path doc/site/_data
 ```
 
-Note: Running this using LLS 3.13.4 from a subdirectory with a relative path seems to cause duplicate class fields to be generated. Presumably a bug in LLS.
-
 Keep in mind to see changes on the site you might have to restart jekyll.
