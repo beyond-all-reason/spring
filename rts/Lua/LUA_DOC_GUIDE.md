@@ -1,4 +1,4 @@
-# Lua doc comments guide
+# Lua docs guide
 
 Lua documentation is generated from cpp files. These are automatically exported to be consumed by games that use Recoil (e.g. BAR). The types are compatible with [Lua Language Server](https://luals.github.io/), providing static analysis and intellisense.
 
@@ -20,7 +20,17 @@ int LuaUnsyncedRead::GetFeaturesInScreenRectangle(lua_State* L)
 }
 ```
 
-## Export
+## Extracting the library
+
+## The library
+
+The Lua library is a collection of type definitions that can be included in other projects (e.g. BAR). It is extracted from this codebase and written into [recoil-lua-library](https://github.com/rhys-vdw/recoil-lua-library) repo.
+
+This library is also included in this repo as a [submodule](/recoil-lua-library/).
+
+You should not modify the submodule directly as it is auto-generated.
+
+## Doc comments within CPP files
 
 Special comments blocks are parsed by [lua-doc-extractor]( https://github.com/rhys-vdw/lua-doc-extractor) and converted into [definition files](https://luals.github.io/wiki/definition-files/).
 
@@ -30,7 +40,38 @@ The body of the comment is translated literally, but some code generation is req
 
 Markdown is supported in all text.
 
-## Annotations
+### Authored library files
+
+Hand-authored library files exist in `Lua/Library/`. These are appropriate to use when a Lua type is used in multiple CPP files.
+
+All files under `Lua/Library/` are directly copied into the library when the workflow runs.
+
+### GitHub Workflow generation.
+
+Exporting the library is automated by the [Generate Lua library workflow](.github/workflows/generate-lua-library.yml). You can test it locally by following the same steps locally.
+
+See doc [README](/doc/site/README.md) for info on doc generation.
+
+### Manually generating the library
+
+To test extracting library files from CPP, you can run [lua-doc-extractor](https://github.com/rhys-vdw/lua-doc-extractor) locally.
+
+First install `lua-doc-extractor`:
+
+```bash
+npm install -g rhys-vdw/lua-doc-extractor
+```
+
+At root, run:
+
+```bash
+rm -rf recoil-lua-library/library/generated
+npx lua-doc-extractor *.cpp --dest recoil-lua-library/library/generated
+```
+
+Do not commit any files generated in this way, they will be regenerated automatically when your PR is merged.
+
+## Documenting the codebase
 
 [Full list of annotations](https://luals.github.io/wiki/annotations/).
 
@@ -107,7 +148,7 @@ An array with a mix of number and string.
 ### Function
 
 - Must start with `@function TableName.FunctionName`.
-- Can have any amount of description. This should be added after the first 
+- Can have any amount of description. This should be added after the first
 - Specify parameters with `@param parameterName type Description...`
 - Specify return type with `@return type name Description...`
 - For multiple returns use one per line.
@@ -118,15 +159,15 @@ An array with a mix of number and string.
 ```cpp
 /**
  * @function Math.Add
- * 
+ *
  * Add two integers together.
- * 
+ *
  * This function will add two numbers together and return the result.
- * 
+ *
  * ```lua
  * local totalHeight = Math.Add(legLength, upperBodyHeight)
  * ```
- * 
+ *
  * @param a integer The first number.
  * @param b integer The second number.
  * @returns integer result The sum of `a` and `b`.
@@ -142,9 +183,9 @@ Structured data is expressed as a class. This represents a table with expected k
 ```cpp
 /**
  * @class Color
- * 
+ *
  * Describes an RGB color value.
- * 
+ *
  * @field red number The red value.
  * @field green number The green value.
  * @field blue number The blue value.
@@ -184,17 +225,3 @@ A table of constants can also be expressed using `@field`:
 
 > [!NOTE]
 > A table is a global that can be accessed in Lua and not a type like `@class`.
-
-## Library files
-
-All files under `Lua/Library/` are available to the IDE.
-
-The `generated` folder is the result of exporting from cpp.
-
-If a type is used in multiple files, you can define it in `Lua/Library/Types.lua` (or any other file outside of the `generated`) folder.
-
-## Generation
-
-Exporting the library is automated by the [Generate Lua library workflow](.github/workflows/generate-lua-library.yml). You can test it locally by following the same steps locally.
-
-See doc [README](/doc/site/README.md) for info on doc generation.
