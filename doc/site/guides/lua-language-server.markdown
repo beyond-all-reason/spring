@@ -1,6 +1,6 @@
-# Lua docs guide
+# Lua Language Server
 
-Lua documentation is generated from cpp files. These are automatically exported to be consumed by games that use Recoil (e.g. BAR). The types are compatible with [Lua Language Server](https://luals.github.io/), providing static analysis and intellisense.
+Lua documentation is generated from `.cpp` files. These are automatically exported to be consumed by games that use Recoil (e.g. BAR). The types are compatible with [Lua Language Server](https://luals.github.io/), providing static analysis and intellisense.
 
 ```cpp
 /***

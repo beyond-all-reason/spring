@@ -15,23 +15,9 @@ bundle exec jekyll build && bundle exec jekyll serve
 
 Navigate to http://localhost:4000/spring
 
-## Generating Lua API data
+## Generating Lua API
 
-### Updating the Lua definition files
-
-First install `lua-doc-extractor`:
-
-```bash
-npm install -g rhys-vdw/lua-doc-extractor
-```
-
-At root, run:
-
-```bash
-cd rts/Lua/
-rm -rf library/generated
-npx lua-doc-extractor *.cpp --dest library/generated
-```
+See the [Lua Language Server](doc/site/guides/lua-language-server.markdown) guide for info on manually regenerating the Lua library.
 
 ### Export API data
 
