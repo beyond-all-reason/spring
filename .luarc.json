@@ -9,14 +9,12 @@
   "workspace.ignoreDir": [
     "cont",
     "lib",
-    "tools"
+    "tools",
+    // NOTE: Ignore these files because they are imported via the recoil-lua-library submodule.
+    "rts/Lua/library"
   ],
   "workspace.library": [
-    // Only add the generator output as "library" to prevent it from being
-    // modified by refactor commands.
-    //
-    // Refactoring is valid on the hand-written library files.
-    "rts/Lua/library/generated"
+    "recoil-lua-library"
 	],
   "runtime.special": {
     "VFS.Include": "require",
