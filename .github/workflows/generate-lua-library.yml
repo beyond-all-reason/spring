@@ -54,3 +54,20 @@ jobs:
           commit_message: |
             Update library
             Generated from https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+
+      # Always update submodule, even if there were no detected changes. This
+      # will help to ensure the library is at latest in the event that something
+      # went wrong in a previous run of this workflow.
+      - name: Update submodule
+        working-directory: ./recoil/
+        run: |
+          git submodule update --remote --merge recoil-lua-library
+
+      # Push the updated submodule reference.
+      - name: Push updated submodule
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          file_pattern: recoil-lua-library
+          repository: ./recoil
+          commit_message: |
+            Update Lua libary submodule
