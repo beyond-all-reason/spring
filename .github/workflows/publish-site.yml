@@ -36,6 +36,7 @@ jobs:
       # LLS.
       - name: Export Lua data using Lua Language Server
         run: |
+          git submodule init recoil-lua-library
           lua-language-server --doc . --doc_out_path doc/site/_data
           git add -f doc/site/_data
       - name: Commit changes
