@@ -22,15 +22,15 @@
  * Engine specific information.
  *
  * @table Engine
- * @param version string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise
- * @param versionFull string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise. Will also include (buildFlags), if there're any.
- * @param versionMajor string Major part of the named release version
- * @param versionMinor string Minor part of the named release version
- * @param versionPatchSet string Build numbert of the named release version
- * @param commitsNumber string Number of commits after the latest named release, non-zero indicates a "dev" build
- * @param buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
- * @param featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
- * @wordSize number Indicates the build type always 64 these days
+ * @field version string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise
+ * @field versionFull string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise. Will also include (buildFlags), if there're any.
+ * @field versionMajor string Major part of the named release version
+ * @field versionMinor string Minor part of the named release version
+ * @field versionPatchSet string Build numbert of the named release version
+ * @field commitsNumber string Number of commits after the latest named release, non-zero indicates a "dev" build
+ * @field buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
+ * @field featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
+ * @field wordSize number Indicates the build type always 64 these days
  */
 
 bool LuaConstEngine::PushEntries(lua_State* L)

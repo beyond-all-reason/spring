@@ -76,19 +76,19 @@
 ---
 ---@class CommandOptions
 ---@field coded integer
----@field alt boolean
----@field ctrl boolean
----@field shift boolean
----@field right boolean
----@field meta boolean
+---@field alt boolean Alt key pressed
+---@field ctrl boolean Ctrl key pressed
+---@field shift boolean Shift key pressed
+---@field right boolean Right mouse key pressed
+---@field meta boolean Meta key pressed (space)
 ---@field internal boolean
 
 ---Used when assigning multiple commands at once
 ---
 ---@class Command
 ---@field cmdID integer
----@field params number[]
----@field options CommandOptions
+---@field params number[]?
+---@field options CommandOptions?
 
 ---Command Description
 ---
