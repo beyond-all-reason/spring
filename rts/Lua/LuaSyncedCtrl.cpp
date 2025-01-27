@@ -1379,7 +1379,7 @@ void SetRulesParam(lua_State* L, const char* caller, int offset,
  * @function Spring.SetGameRulesParam
  * @param paramName string
  * @param paramValue ?number|string numeric paramValues in quotes will be converted to number.
- * @param? losAccess losAccess
+ * @param losAccess losAccess?
  * @return nil
  */
 int LuaSyncedCtrl::SetGameRulesParam(lua_State* L)
@@ -1394,7 +1394,7 @@ int LuaSyncedCtrl::SetGameRulesParam(lua_State* L)
  * @param teamID integer
  * @param paramName string
  * @param paramValue ?number|string numeric paramValues in quotes will be converted to number.
- * @param? losAccess losAccess
+ * @param losAccess losAccess?
  * @return nil
  */
 int LuaSyncedCtrl::SetTeamRulesParam(lua_State* L)
@@ -1412,7 +1412,7 @@ int LuaSyncedCtrl::SetTeamRulesParam(lua_State* L)
  * @param playerID integer
  * @param paramName string
  * @param paramValue ?number|string numeric paramValues in quotes will be converted to number.
- * @tparam? losAccess losAccess
+ * @param losAccess losAccess?
  * @return nil
  */
 int LuaSyncedCtrl::SetPlayerRulesParam(lua_State* L)
@@ -1436,7 +1436,7 @@ int LuaSyncedCtrl::SetPlayerRulesParam(lua_State* L)
  * @param unitID integer
  * @param paramName string
  * @param paramValue ?number|string numeric paramValues in quotes will be converted to number.
- * @tparam? losAccess losAccess
+ * @param losAccess losAccess?
  * @return nil
  */
 int LuaSyncedCtrl::SetUnitRulesParam(lua_State* L)
@@ -1456,7 +1456,7 @@ int LuaSyncedCtrl::SetUnitRulesParam(lua_State* L)
  * @param featureID integer
  * @param paramName string
  * @param paramValue ?number|string numeric paramValues in quotes will be converted to number.
- * @tparam? losAccess losAccess
+ * @param losAccess losAccess?
  * @return nil
  */
 int LuaSyncedCtrl::SetFeatureRulesParam(lua_State* L)
@@ -3932,7 +3932,7 @@ int LuaSyncedCtrl::SetFactoryBuggerOff(lua_State* L)
  * @param spherical boolean? (Default: true)
  * @param forced boolean? (Default: true)
  * @param excludeUnitID integer?
- * @tparam? number[] excludeUnitDefIDs
+ * @param excludeUnitDefIDs number[]?
  * @return nil
  */
 int LuaSyncedCtrl::BuggerOff(lua_State* L)
@@ -4500,7 +4500,7 @@ int LuaSyncedCtrl::SetFeatureResources(lua_State* L)
  *
  * @param featureID integer
  * @param unitDef string|number id or name
- * @tparam? string|number facing
+ * @param facing (string|number)?
  * @param progress number?
  * @return nil
  */

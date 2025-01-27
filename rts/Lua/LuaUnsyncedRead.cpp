@@ -1302,8 +1302,8 @@ int LuaUnsyncedRead::GetUnitNoMinimap(lua_State* L)
 /***
  *
  * @function Spring.GetUnitNoGroup
- * @number unitID
- * @treturn nil|bool nil when unitID cannot be parsed
+ * @param unitID integer
+ * @return nil|bool noGroup `nil` when `unitID` cannot be parsed.
  */
 int LuaUnsyncedRead::GetUnitNoGroup(lua_State* L)
 {
@@ -1320,7 +1320,7 @@ int LuaUnsyncedRead::GetUnitNoGroup(lua_State* L)
  *
  * @function Spring.GetUnitNoSelect
  * @param unitID integer
- * @return boolean? nil when unitID cannot be parsed
+ * @return boolean? noSelect `nil` when `unitID` cannot be parsed.
  */
 int LuaUnsyncedRead::GetUnitNoSelect(lua_State* L)
 {
@@ -2639,7 +2639,7 @@ int LuaUnsyncedRead::GetNanoProjectileParams(lua_State* L)
 
 /***
  * Get available cameras.
- * 
+ *
  * @function Spring.GetCameraNames
  * @return table<string, number> Table where where keys are names and values are indices.
  */
@@ -3866,7 +3866,7 @@ int LuaUnsyncedRead::GetScanSymbol(lua_State* L)
  * Keybinding
  *
  * Contains data about a keybinding
- * 
+ *
  * @class KeyBinding
  * @field command string
  * @field extra string
@@ -4105,7 +4105,7 @@ int LuaUnsyncedRead::GetGroupUnitsCount(lua_State* L)
 /*** Roster
  *
  * Contains data about a player
- * 
+ *
  * @class Roster
  * @field name string
  * @field playerID integer
@@ -4246,7 +4246,7 @@ int LuaUnsyncedRead::GetPlayerStatistics(lua_State* L)
 /*** Configuration
  *
  * Contains data about a configuration, only name and type are guaranteed
- * 
+ *
  * @class Configuration
  * @field name string
  * @field type string
@@ -4339,7 +4339,7 @@ int LuaUnsyncedRead::GetConfigParams(lua_State* L)
  *
  * @function Spring.GetConfigInt
  * @param name string
- * @tparam[opt=0] number|nil default
+ * @param default number? (Default: `0`)
  * @return number? configInt
  */
 int LuaUnsyncedRead::GetConfigInt(lua_State* L)
@@ -4360,7 +4360,7 @@ int LuaUnsyncedRead::GetConfigInt(lua_State* L)
  *
  * @function Spring.GetConfigFloat
  * @param name string
- * @tparam[opt=0] number|nil default
+ * @param default number? (Default: `0`)
  * @return number? configFloat
  */
 int LuaUnsyncedRead::GetConfigFloat(lua_State* L)
@@ -4381,7 +4381,7 @@ int LuaUnsyncedRead::GetConfigFloat(lua_State* L)
  *
  * @function Spring.GetConfigString
  * @param name string
- * @tparam[opt=""] string|nil default
+ * @param default string? (Default: `""`)
  * @return number? configString
  */
 int LuaUnsyncedRead::GetConfigString(lua_State* L)
