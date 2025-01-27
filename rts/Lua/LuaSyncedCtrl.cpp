@@ -1379,7 +1379,7 @@ void SetRulesParam(lua_State* L, const char* caller, int offset,
  * @function Spring.SetGameRulesParam
  * @param paramName string
  * @param paramValue ?number|string numeric paramValues in quotes will be converted to number.
- * @tparam? losAccess losAccess
+ * @param? losAccess losAccess
  * @return nil
  */
 int LuaSyncedCtrl::SetGameRulesParam(lua_State* L)
@@ -1394,7 +1394,7 @@ int LuaSyncedCtrl::SetGameRulesParam(lua_State* L)
  * @param teamID integer
  * @param paramName string
  * @param paramValue ?number|string numeric paramValues in quotes will be converted to number.
- * @tparam? losAccess losAccess
+ * @param? losAccess losAccess
  * @return nil
  */
 int LuaSyncedCtrl::SetTeamRulesParam(lua_State* L)

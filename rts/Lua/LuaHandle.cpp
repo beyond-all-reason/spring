@@ -3331,8 +3331,8 @@ string CLuaHandle::GetTooltip(int x, int y)
 /*** Called when a command is issued.
  *
  * @function ActiveCommandChanged
- * @tparam nil|number cmdID
- * @tparam nil|number cmdType
+ * @param nil|number cmdID
+ * @param nil|number cmdType
  */
 void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 {

@@ -1303,7 +1303,7 @@ static int PushAllOptions(lua_State* L, const auto &options)
  *
  * @param mapOption string
  *
- * @return string value of mapOption  
+ * @return string value of mapOption
  * */
 int LuaSyncedRead::GetMapOption(lua_State* L)
 {
@@ -1325,7 +1325,7 @@ int LuaSyncedRead::GetMapOptions(lua_State* L)
  *
  * @function Spring.GetModOption
  *
- * @param modOption string 
+ * @param modOption string
  *
  * @return string value of modOption in option map
  */
@@ -4223,9 +4223,9 @@ int LuaSyncedRead::GetUnitResources(lua_State* L)
 
 /***
  * @function Spring.GetUnitStorage
- * @number unitID
- * @treturn number Unit's metal storage
- * @treturn number Unit's energy storage
+ * @param unitID integer
+ * @return number Unit's metal storage
+ * @return number Unit's energy storage
  */
 int LuaSyncedRead::GetUnitStorage(lua_State* L)
 {
@@ -5569,7 +5569,7 @@ int LuaSyncedRead::GetUnitWeaponCanFire(lua_State* L)
  *
  * Note that this doesn't need to reflect the unit's Attack orders or such, and
  * that weapons can aim individually unless slaved.
- * 
+ *
  * @function Spring.GetUnitWeaponTarget
  * @param unitID integer
  * @param weaponNum integer
@@ -5581,7 +5581,7 @@ int LuaSyncedRead::GetUnitWeaponCanFire(lua_State* L)
  *
  * Note that this doesn't need to reflect the unit's Attack orders or such, and
  * that weapons can aim individually unless slaved.
- * 
+ *
  * @function Spring.GetUnitWeaponTarget
  * @param unitID integer
  * @param weaponNum integer
@@ -5594,7 +5594,7 @@ int LuaSyncedRead::GetUnitWeaponCanFire(lua_State* L)
  *
  * Note that this doesn't need to reflect the unit's Attack orders or such, and
  * that weapons can aim individually unless slaved.
- * 
+ *
  * @function Spring.GetUnitWeaponTarget
  * @param unitID integer
  * @param weaponNum integer
@@ -5607,7 +5607,7 @@ int LuaSyncedRead::GetUnitWeaponCanFire(lua_State* L)
  *
  * Note that this doesn't need to reflect the unit's Attack orders or such, and
  * that weapons can aim individually unless slaved.
- * 
+ *
  * @function Spring.GetUnitWeaponTarget
  * @param unitID integer
  * @param weaponNum integer
@@ -6111,8 +6111,8 @@ static void PackCommandQueue(lua_State* L, const CCommandQueue& commands, size_t
  *
  * @function Spring.GetUnitCurrentCommand
  *
- * @number unitID Unit id.
- * @number cmdIndex Command index to get. If negative will count from the end of the queue,
+ * @param unitID integer Unit id.
+ * @param cmdIndex integer Command index to get. If negative will count from the end of the queue,
  * for example -1 will be the last command.
  */
 int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
@@ -6151,7 +6151,7 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 
 /***
  * Get the commands for a unit.
- * 
+ *
  * @function Spring.GetUnitCommands
  *
  * Same as `Spring.GetCommandQueue`
@@ -6162,7 +6162,7 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
  */
 /**
  * Get the count of commands for a unit.
- * 
+ *
  * @function Spring.GetUnitCommands
  *
  * Same as `Spring.GetCommandQueue`
@@ -6170,7 +6170,7 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
  * @param unitID integer
  * @param count 0 Returns the number of commands in the units queue.
  * @return integer The number of commands in the unit queue.
- * 
+ *
  */
 int LuaSyncedRead::GetUnitCommands(lua_State* L)
 {
@@ -6241,7 +6241,7 @@ int LuaSyncedRead::GetFactoryCommands(lua_State* L)
 
 /*** Get the number of commands in a units queue.
  *
- * @number unitID
+ * @param unitID integer
  */
 int LuaSyncedRead::GetUnitCommandCount(lua_State* L)
 {
@@ -6378,7 +6378,7 @@ int LuaSyncedRead::GetFactoryCounts(lua_State* L)
 
 /***
  * Get the commands for a unit.
- * 
+ *
  * @function Spring.GetCommandQueue
  *
  * Same as `Spring.GetUnitCommands`
@@ -6389,7 +6389,7 @@ int LuaSyncedRead::GetFactoryCounts(lua_State* L)
  */
 /**
  * Get the count of commands for a unit.
- * 
+ *
  * @function Spring.GetCommandQueue
  *
  * Same as `Spring.GetUnitCommands`
@@ -6397,7 +6397,7 @@ int LuaSyncedRead::GetFactoryCounts(lua_State* L)
  * @param unitID integer
  * @param count 0 Returns the number of commands in the units queue.
  * @return integer The number of commands in the unit queue.
- * 
+ *
  */
 
 int LuaSyncedRead::GetCommandQueue(lua_State* L)
@@ -8002,7 +8002,7 @@ int LuaSyncedRead::IsPosInAirLos(lua_State* L)
  * @param raw true Return a bitmask.
  * @return integer? bitmask
  * A bitmask integer, or `nil` if `unitID` is invalid.
- * 
+ *
  * Bitmask bits:
  * - `1`: `LOS_INLOS` the unit is currently in the los of the allyteam,
  * - `2`: `LOS_INRADAR` the unit is currently in radar from the allyteam,
@@ -8786,17 +8786,17 @@ static int TraceRayGroundImpl(lua_State *const L, const float3 &pos, const float
  * Checks if there is surface (ground, optionally water) towards a vector
  * and returns the distance to the closest hit and its position, if any.
  *
- * @number posX
- * @number posY
- * @number posZ
- * @number dirX
- * @number dirY
- * @number dirZ
- * @bool[opt=true] testWater
- * @treturn number rayLength
- * @treturn number posX
- * @treturn number posY
- * @treturn number posZ
+ * @param posX number
+ * @param posY number
+ * @param posZ number
+ * @param dirX number
+ * @param dirY number
+ * @param dirZ number
+ * @param testWater boolean? (Default: `true`)
+ * @return number rayLength
+ * @return number posX
+ * @return number posY
+ * @return number posZ
  */
 int LuaSyncedRead::TraceRayGroundInDirection(lua_State* L)
 {
@@ -8815,17 +8815,17 @@ int LuaSyncedRead::TraceRayGroundInDirection(lua_State* L)
  * Checks if there is surface (ground, optionally water) between two positions
  * and returns the distance to the closest hit and its position, if any.
  *
- * @number startX
- * @number startY
- * @number startZ
- * @number endX
- * @number endY
- * @number endZ
- * @bool[opt=true] testWater
- * @treturn number rayLength
- * @treturn number posX
- * @treturn number posY
- * @treturn number posZ
+ * @param startX number
+ * @param startY number
+ * @param startZ number
+ * @param endX number
+ * @param endY number
+ * @param endZ number
+ * @param testWater boolean? (Default: `true`)
+ * @return number rayLength
+ * @return number posX
+ * @return number posY
+ * @return number posZ
  */
 int LuaSyncedRead::TraceRayGroundBetweenPositions(lua_State* L)
 {
