@@ -37,3 +37,26 @@ jobs:
         with:
           repository: ./recoil
           commit_message: Update LuaLS library
+
+      - name: Check out library repo
+        uses: actions/checkout@v4
+        with:
+          repository: rhys-vdw/recoil-lua-library
+          token: ${{ secrets.RECOIL_LUA_LIBRARY_GITHUB_TOKEN }}
+          path: library
+      
+      - name: Copy changes into library repo
+        run: |
+          rm -rf library/library
+          cp -r recoil/rts/Lua/library library
+
+      # Always try to update library repo (even if generation did not make changes).
+      # Hand-written files may have changed without generated output changing,
+      # and library may simply be out of date for whatever reason.
+      - name: Commit and push library repo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          repository: ./library
+          commit_message: |
+            Update library
+            Generated from https://github.com/${{ github.repository }}/commit/${{ github.sha }}
