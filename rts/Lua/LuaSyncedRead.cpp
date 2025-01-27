@@ -123,7 +123,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetPlayerRulesParam);
 	REGISTER_LUA_CFUNC(GetPlayerRulesParams);
-	
+
 	REGISTER_LUA_CFUNC(GetMapOption);
 	REGISTER_LUA_CFUNC(GetMapOptions);
 	REGISTER_LUA_CFUNC(GetModOption);
@@ -7736,7 +7736,7 @@ int LuaSyncedRead::TestMoveOrder(lua_State* L)
  * @param x number
  * @param y number
  * @param z number
- * @param facing 0|"s"|1|"e"|2|"n"|3|"w"
+ * @param facing Facing
  * @return BuildOrderBlockedStatus blocking
  * @return integer? featureID A reclaimable feature in the way.
  */

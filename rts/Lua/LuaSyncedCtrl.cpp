@@ -1292,7 +1292,7 @@ int LuaSyncedCtrl::ShareTeamResource(lua_State* L)
 
 /***
  * Parameters for los access
- * 
+ *
  *
  * If one condition is fulfilled all beneath it are too (e.g. if an unit is in
  * LOS it can read params with `inradar=true` even if the param has
@@ -1625,7 +1625,7 @@ int LuaSyncedCtrl::GetCOBScriptID(lua_State* L)
  * @param x number
  * @param y number
  * @param z number
- * @param facing string|number possible values for facing are: "south" | "s" | 0, "east" | "e" | 1, "north" | "n" | 2, "west" | "w" | 3
+ * @param facing Facing
  * @param teamID integer
  * @param build boolean? (Default: false) the unit is created in "being built" state with buildProgress = 0
  * @param flattenGround boolean? (Default: true) the unit flattens ground, if it normally does so
@@ -4490,18 +4490,10 @@ int LuaSyncedCtrl::SetFeatureResources(lua_State* L)
 /***
  * @function Spring.SetFeatureResurrect
  *
- * Second param can now be a number id instead of a string name, this also allows cancelling ressurection by passing -1.
- * The level of progress can now be set via the additional 4th param.
- * Possible values for facing are:
- * "south" | "s" | 0
- * "east" | "e" | 1
- * "north" | "n" | 2
- * "west" | "w" | 3
- *
  * @param featureID integer
- * @param unitDef string|number id or name
- * @param facing (string|number)?
- * @param progress number?
+ * @param unitDef string|integer Can be a number id or a string name, this allows cancelling ressurection by passing `-1`.
+ * @param facing Facing? (Default: `"south"`)
+ * @param progress number? Set the level of progress.
  * @return nil
  */
 int LuaSyncedCtrl::SetFeatureResurrect(lua_State* L)
