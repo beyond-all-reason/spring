@@ -232,6 +232,8 @@ void CWorldDrawer::Update(bool newSimFrame)
 	LuaObjectDrawer::Update(numUpdates == 0);
 	readMap->UpdateDraw(numUpdates == 0);
 
+	shadowHandler.Update();
+
 	if (globalRendering->drawGround) {
 		ZoneScopedN("GroundDrawer::Update");
 		(readMap->GetGroundDrawer())->Update();

@@ -228,6 +228,7 @@ public:
 
 	virtual int2 GetPatch(int hmx, int hmz) const = 0;
 	virtual const float3& GetUnsyncedHeightInfo(int patchX, int patchZ) const = 0;
+	virtual const float3& GetUnsyncedHeightInfoLod(size_t lod, int tileX, int tileZ) const = 0;
 private:
 	void InitHeightBounds();
 	void LoadOriginalHeightMapAndChecksum();
@@ -248,6 +249,7 @@ public:
 	/// number of heightmap mipmaps, including full resolution
 	static constexpr int numHeightMipMaps = 7;
 	static constexpr int32_t PATCH_SIZE = 128;
+	static constexpr size_t NUM_UH_INFO_LODS = 6;
 protected:
 	// these point to the actual heightmap data
 	// which is allocated by subclass instances
@@ -284,7 +286,7 @@ protected:
 
 	CRectangleOverlapHandler unsyncedHeightMapUpdates;
 
-	std::vector<float3> unsyncedHeightInfo; // per 128x128 HM patch
+	std::array<std::vector<float3>, NUM_UH_INFO_LODS> unsyncedHeightInfoLods; // from 4x4; 8x8; 16x16; 32x32; 64x64; 128x128
 private:
 	// these combine the various synced and unsynced arrays
 	// for branch-less access: [0] = !synced, [1] = synced

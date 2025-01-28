@@ -810,6 +810,7 @@ namespace Impl {
 	}
 };
 
+#if 0
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
 	// save the player's camera frustum verts in case we need them in CShadowHandler::DrawFrustumDebugMap()
@@ -900,6 +901,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 	};
 
 	float extraCamHeight = 0.0f;
+	/*
 	for (const auto& pnt : currNearPlaneRect) {
 		float3 hitPnt;
 		if (RayHitsAABB(worldBounds, viewMatrixInv * pnt, viewMatrixInv.GetZ(), hitPnt)) {
@@ -916,6 +918,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 
 		extraCamHeight = std::max(extraCamHeight, cornerLS.z);
 	}
+	*/
 
 	// shift camera further away to account for corners of light frustum
 	viewMatrix.col[3].z -= extraCamHeight;
@@ -924,6 +927,89 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 	lightAABB.mins.z -= extraCamHeight;
 	// Move maxs.z to be at the camera position
 	lightAABB.maxs.z = 0.0f; // @ camPos
+
+	projMatrix = CMatrix44f::ClipOrthoProj(
+		 lightAABB.mins.x,  lightAABB.maxs.x,
+		 lightAABB.mins.y,  lightAABB.maxs.y,
+		-lightAABB.maxs.z, -lightAABB.mins.z,
+		 globalRendering->supportClipSpaceControl
+	);
+
+	viewProjMatrix = projMatrix * viewMatrix;
+}
+#endif
+
+void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
+{
+	lightAABB.Reset();
+
+	// construct Camera World Matrix & View Matrix
+	CMatrix44f viewMatrixInv;
+	{
+		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
+		float3 xAxis = Impl::GetLightXDir(playerCam, zAxis);
+		float3 yAxis = zAxis.cross(xAxis);
+
+		viewMatrixInv.SetX(xAxis);
+		viewMatrixInv.SetY(yAxis);
+		viewMatrixInv.SetZ(zAxis);
+
+		// convert camera "world" matrix into camera view matrix
+		// https://www.3dgep.com/understanding-the-view-matrix/
+		viewMatrix = viewMatrixInv.InvertAffine();
+	}
+	{
+		std::array<AABB, ThreadPool::MAX_THREADS> mtLightAABBs = {};
+
+		const auto* hm = readMap->GetCornerHeightMapUnsynced();
+		for_mt_chunk(0, mapDims.mapxp1 * mapDims.mapyp1, [&mtLightAABBs, playerCam, hm, this](const int idx) {
+			auto& threadLightAABB = mtLightAABBs[ThreadPool::GetThreadNum()];
+			const float height = hm[idx];
+			const float3 wsPoint{
+				static_cast<float>((idx % mapDims.mapxp1) * SQUARE_SIZE),
+				height,
+				static_cast<float>((idx / mapDims.mapxp1) * SQUARE_SIZE)
+			};
+
+			const float3 lsPoint = viewMatrix * wsPoint;
+
+			if (playerCam->InView(wsPoint, 32.0f))
+				threadLightAABB.AddPoint(lsPoint);
+
+		});
+
+		for (auto& aabb : mtLightAABBs) {
+			lightAABB.Combine(aabb);
+			aabb.Reset();
+		}
+
+		for_mt_chunk(0, mapDims.mapxp1 * mapDims.mapyp1, [&mtLightAABBs, hm, this](const int idx) {
+			auto& threadLightAABB = mtLightAABBs[ThreadPool::GetThreadNum()];
+			const float height = hm[idx];
+			const float3 wsPoint{
+				static_cast<float>((idx % mapDims.mapxp1) * SQUARE_SIZE),
+				height,
+				static_cast<float>((idx / mapDims.mapxp1) * SQUARE_SIZE)
+			};
+
+			const float3 lsPoint = viewMatrix * wsPoint;
+
+			if (lightAABB.mins.x <= lsPoint.x && lsPoint.x <= lightAABB.maxs.x && lightAABB.mins.y <= lsPoint.y && lsPoint.y <= lightAABB.maxs.y)
+				threadLightAABB.AddPoint(lsPoint);
+
+		});
+
+		for (const auto& aabb : mtLightAABBs)
+			lightAABB.Combine(aabb);
+	}
+
+	float3 lsMidPos = lightAABB.CalcCenter();
+	float3 lsDims = lightAABB.CalcScales();
+
+	viewMatrix.SetPos(-(lsMidPos + float3{ 0.0f, 0.0f, lsDims.z }));
+
+	lightAABB.mins += viewMatrix.GetPos();
+	lightAABB.maxs += viewMatrix.GetPos();
 
 	projMatrix = CMatrix44f::ClipOrthoProj(
 		 lightAABB.mins.x,  lightAABB.maxs.x,

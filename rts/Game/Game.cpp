@@ -1472,7 +1472,6 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		unitTracker.SetCam();
 
 	camera->Update();
-	shadowHandler.Update();
 	{
 		worldDrawer.Update(newSimFrame);
 		matrixUploader.Update();

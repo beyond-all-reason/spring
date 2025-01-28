@@ -171,7 +171,6 @@ private:
 
 	float GetHeight(int2 pos);
 
-	void GenerateBorderIndices(CVertexArray* va);
 	void GenerateBorderVertices();
 private:
 	// depth of variance tree; should be near SQRT(PATCH_SIZE) + 1
