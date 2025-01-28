@@ -76,10 +76,16 @@ public:
 		MOVE_STATE_RTT = 10,  // rotate
 	};
 
+	enum IntersectionTestResult {
+		OUTSIDE   = 0,
+		INSIDE    = 1,
+		INTERSECT = 2,
+	};
+
 	struct Frustum {
 	public:
-		bool IntersectSphere(float3 p, float radius) const;
-		bool IntersectAABB(const AABB& b) const;
+		IntersectionTestResult IntersectSphere(float3 p, float radius) const;
+		IntersectionTestResult IntersectAABB(const AABB& b) const;
 
 	public:
 		// corners
@@ -141,9 +147,9 @@ public:
 	float3 CalcPixelDir(int x, int y) const;
 	float3 CalcViewPortCoordinates(const float3& objPos) const;
 
-	bool InView(const float3& point, float radius = 0.0f) const;
-	bool InView(const float3& mins, const float3& maxs) const { return InView(AABB{mins, maxs}); }
-	bool InView(const AABB& aabb) const;
+	IntersectionTestResult InView(const float3& point, float radius = 0.0f) const;
+	IntersectionTestResult InView(const float3& mins, const float3& maxs) const { return InView(AABB{mins, maxs}); }
+	IntersectionTestResult InView(const AABB& aabb) const;
 
 	void CalcFrustumLines(float miny, float maxy, float scale, bool neg = false);
 	void CalcFrustumLine(
