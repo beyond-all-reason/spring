@@ -29,7 +29,7 @@ jobs:
           const rel = await github.rest.repos.getRelease({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            release_id: context.payload.release.id ?? context.payload.inputs.releaseId
+            release_id: context.payload.release?.id ?? context.payload.inputs.releaseId
           });
           const engines = rel.data.assets
             .filter((a) => a.name.endsWith('64-minimal-portable.7z'))
