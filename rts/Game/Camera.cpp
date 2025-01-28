@@ -347,20 +347,16 @@ void CCamera::UpdateViewRange()
 	frustum.scales.w = std::min(wantedViewRange                    , globalRendering->maxViewRange);
 }
 
-CCamera::IntersectionTestResult CCamera::InView(const float3& point, float radius) const
+bool CCamera::InView(const float3& point, float radius) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return frustum.IntersectSphere(point, radius);
 }
 
-CCamera::IntersectionTestResult CCamera::InView(const AABB& aabb) const
+bool CCamera::InView(const AABB& aabb) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	auto res = InView(aabb.CalcCenter(), aabb.CalcRadius());
-	if (res == CCamera::IntersectionTestResult::INTERSECT)
-		res = frustum.IntersectAABB(aabb);
-
-	return res;
+	return InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb);
 }
 
 #if 0
@@ -785,19 +781,21 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 }
 
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-points-and-spheres/
-CCamera::IntersectionTestResult CCamera::Frustum::IntersectSphere(float3 p, float radius) const
+bool CCamera::Frustum::IntersectSphere(float3 p, float radius) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
 		const auto& plane = planes[i];
 		const float dist = plane.dot(p) + plane.w;
 		if (dist < -radius)
-			return CCamera::IntersectionTestResult::OUTSIDE;
+			return false; // outside
+		/*
 		else if (dist < radius)
-			return CCamera::IntersectionTestResult::INTERSECT;
+			return true;  // intersect
+		*/
 	}
 
-	return CCamera::IntersectionTestResult::INSIDE;
+	return true; // inside or intersect
 }
 
 /*
@@ -858,15 +856,17 @@ bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 */
 
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
-CCamera::IntersectionTestResult CCamera::Frustum::IntersectAABB(const AABB& b) const
+bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
 		const auto& plane = planes[i];
 		if (plane.dot(b.GetVertexP(plane)) + plane.w < 0)
-			return CCamera::IntersectionTestResult::OUTSIDE;
+			return false; // outside
+		/*
 		else if (plane.dot(b.GetVertexN(plane)) + plane.w < 0)
-			return CCamera::IntersectionTestResult::INTERSECT;
+			return true;  // intersects
+		*/
 	}
-	return CCamera::IntersectionTestResult::INSIDE;
+	return true; // inside or intersect
 }
