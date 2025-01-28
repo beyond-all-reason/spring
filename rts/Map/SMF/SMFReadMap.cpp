@@ -112,11 +112,11 @@ void CSMFReadMap::ParseHeader()
 	mapDims.mapx = header.mapx;
 	mapDims.mapy = header.mapy;
 
-	numBigTexX      = (header.mapx / bigSquareSize);
-	numBigTexY      = (header.mapy / bigSquareSize);
-	numSmallTexX    = (header.mapx / smallSquareSize);
-	numSmallTexY    = (header.mapy / smallSquareSize);
-	bigTexSize      = (SQUARE_SIZE * bigSquareSize);
+	numBigTexX      = (header.mapx / PATCH_SIZE);
+	numBigTexY      = (header.mapy / PATCH_SIZE);
+	numSmallTexX    = (header.mapx / SMALL_PATCH_SIZE);
+	numSmallTexY    = (header.mapy / SMALL_PATCH_SIZE);
+	bigTexSize      = (SQUARE_SIZE * PATCH_SIZE);
 	tileMapSizeX    = (header.mapx / tileScale);
 	tileMapSizeY    = (header.mapy / tileScale);
 	tileCount       = (header.mapx * header.mapy) / (tileScale * tileScale);
@@ -405,8 +405,6 @@ void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	static_assert(bigSquareSize == PATCH_SIZE, "");
-	static_assert(smallSquareSize == 4, "");
 
 	for (const auto& val : unsyncedHeightInfoLods[0]) {
 		assert(val.x == std::numeric_limits<float>::max());
@@ -420,9 +418,9 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 				continue;
 
 			unsyncedHeightInfoLods[0][pz * numSmallTexX + px].z = 0.0f;
-			for (uint32_t vz = 0; vz < smallSquareSize; ++vz) {
-				const size_t idx0 = (pz * smallSquareSize + vz) * mapDims.mapxp1 + px * smallSquareSize;
-				const size_t idx1 = idx0 + smallSquareSize;
+			for (uint32_t vz = 0; vz < SMALL_PATCH_SIZE; ++vz) {
+				const size_t idx0 = (pz * SMALL_PATCH_SIZE + vz) * mapDims.mapxp1 + px * SMALL_PATCH_SIZE;
+				const size_t idx1 = idx0 + SMALL_PATCH_SIZE;
 
 #if 0
 				// TODO: fix xsimd::reduce
@@ -453,7 +451,7 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 				);
 #endif
 			}
-			unsyncedHeightInfoLods[0][pz * numSmallTexX + px].z /= Square(smallSquareSize);
+			unsyncedHeightInfoLods[0][pz * numSmallTexX + px].z /= Square(SMALL_PATCH_SIZE);
 		}
 	}
 	//});
@@ -577,10 +575,10 @@ void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 void CSMFReadMap::UpdateHeightBoundsUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const uint32_t minTileX = std::max(update.x1 / smallSquareSize, (0               ));
-	const uint32_t minTileZ = std::max(update.z1 / smallSquareSize, (0               ));
-	const uint32_t maxTileX = std::min(update.x2 / smallSquareSize, (numSmallTexX - 1));
-	const uint32_t maxTileZ = std::min(update.z2 / smallSquareSize, (numSmallTexY - 1));
+	const uint32_t minTileX = std::max(update.x1 / SMALL_PATCH_SIZE, (0               ));
+	const uint32_t minTileZ = std::max(update.z1 / SMALL_PATCH_SIZE, (0               ));
+	const uint32_t maxTileX = std::min(update.x2 / SMALL_PATCH_SIZE, (numSmallTexX - 1));
+	const uint32_t maxTileZ = std::min(update.z2 / SMALL_PATCH_SIZE, (numSmallTexY - 1));
 
 	for (uint32_t pz = minTileZ; pz <= maxTileZ; ++pz) {
 		for (uint32_t px = minTileX; px <= maxTileX; ++px) {
