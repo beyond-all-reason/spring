@@ -62,7 +62,7 @@ CR_REG_METADATA(CReadMap, (
 	CR_IGNORED(initHeightBounds),
 	CR_IGNORED(tempHeightBounds),
 	CR_IGNORED(currHeightBounds),
-	CR_IGNORED(unsyncedHeightInfoLods),
+	CR_IGNORED(unsyncedHeightInfo),
 	CR_IGNORED(boundingRadius),
 	CR_IGNORED(mapChecksum),
 
@@ -410,31 +410,16 @@ void CReadMap::Initialize()
 	// InitHeightMapDigestVectors();
 	UpdateHeightMapSynced({0, 0, mapDims.mapx, mapDims.mapy});
 
-	for (size_t lod = 0; lod < unsyncedHeightInfoLods.size(); ++lod) {
-		auto& unsyncedHeightInfoLod = unsyncedHeightInfoLods[lod];
-		const auto tileSize = 4 << lod;
-		unsyncedHeightInfoLod.resize(
-			(mapDims.mapx / tileSize) * (mapDims.mapy / tileSize),
-			float3{
-				initHeightBounds.x,
-				initHeightBounds.y,
-				(initHeightBounds.y + initHeightBounds.x) * 0.5f
-			}
-		);
-	}
-
+	unsyncedHeightInfo.resize(
+		(mapDims.mapx / PATCH_SIZE) * (mapDims.mapy / PATCH_SIZE),
+		float3{
+			initHeightBounds.x,
+			initHeightBounds.y,
+			(initHeightBounds.y + initHeightBounds.x) * 0.5f
+		}
+	);
 	// FIXME: sky & skyLight aren't created yet (crashes in SMFReadMap.cpp)
 	// UpdateDraw(true);
-}
-
-const float3& CReadMap::GetUnsyncedHeightInfo(int patchX, int patchZ) const
-{
-	return unsyncedHeightInfoLods.back()[patchZ * (mapDims.mapx / PATCH_SIZE) + patchX];
-}
-
-const float3& CReadMap::GetUnsyncedHeightInfoLod(size_t lod, int tileX, int tileZ) const
-{
-	return unsyncedHeightInfoLods[lod][tileZ * ((mapDims.mapx / SMALL_PATCH_SIZE) << lod) + tileX];
 }
 
 void CReadMap::InitHeightBounds()

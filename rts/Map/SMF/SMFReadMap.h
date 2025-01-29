@@ -34,6 +34,7 @@ public:
 
 	void UpdateShadingTexture() override;
 	int2 GetPatch(int hmx, int hmz) const override;
+	const float3& GetUnsyncedHeightInfo(int patchX, int patchZ) const override { return unsyncedHeightInfo[patchZ * numBigTexX + patchX]; }
 public:
 	bool SetLuaTexture(const MapTextureData& td) override;
 
@@ -177,13 +178,12 @@ private:
 public:
 	// constants
 	static constexpr int tileScale     = 4;
+	static constexpr int bigSquareSize = 32 * tileScale;
 	static constexpr int NUM_SPLAT_DETAIL_NORMALS = 4;
 
 	// globals for SMFGround{Drawer, Textures}
 	int numBigTexX;
 	int numBigTexY;
-	int numSmallTexX;
-	int numSmallTexY;
 	int bigTexSize;
 	int tileMapSizeX;
 	int tileMapSizeY;

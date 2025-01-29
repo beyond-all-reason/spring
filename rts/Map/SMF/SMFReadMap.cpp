@@ -112,11 +112,9 @@ void CSMFReadMap::ParseHeader()
 	mapDims.mapx = header.mapx;
 	mapDims.mapy = header.mapy;
 
-	numBigTexX      = (header.mapx / PATCH_SIZE);
-	numBigTexY      = (header.mapy / PATCH_SIZE);
-	numSmallTexX    = (header.mapx / SMALL_PATCH_SIZE);
-	numSmallTexY    = (header.mapy / SMALL_PATCH_SIZE);
-	bigTexSize      = (SQUARE_SIZE * PATCH_SIZE);
+	numBigTexX      = (header.mapx / bigSquareSize);
+	numBigTexY      = (header.mapy / bigSquareSize);
+	bigTexSize      = (SQUARE_SIZE * bigSquareSize);
 	tileMapSizeX    = (header.mapx / tileScale);
 	tileMapSizeY    = (header.mapy / tileScale);
 	tileCount       = (header.mapx * header.mapy) / (tileScale * tileScale);
@@ -405,76 +403,25 @@ void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	static_assert(bigSquareSize == PATCH_SIZE, "");
 
-	for (const auto& val : unsyncedHeightInfoLods[0]) {
-		assert(val.x == std::numeric_limits<float>::max());
-	}
-
-	// update LOD 0 (4x4)
-	//for_mt_chunk(0, numSmallTexY, [this](const int pz) {
-	for (uint32_t pz = 0; pz < numSmallTexY; ++pz) {
-		for (uint32_t px = 0; px < numSmallTexX; ++px) {
-			if (unsyncedHeightInfoLods[0][pz * numSmallTexX + px].x != std::numeric_limits<float>::max())
+	for (uint32_t pz = 0; pz < numBigTexY; ++pz) {
+		for (uint32_t px = 0; px < numBigTexX; ++px) {
+			if (unsyncedHeightInfo[pz * numBigTexX + px].x != std::numeric_limits<float>::max())
 				continue;
 
-			unsyncedHeightInfoLods[0][pz * numSmallTexX + px].z = 0.0f;
-			for (uint32_t vz = 0; vz < SMALL_PATCH_SIZE; ++vz) {
-				const size_t idx0 = (pz * SMALL_PATCH_SIZE + vz) * mapDims.mapxp1 + px * SMALL_PATCH_SIZE;
-				const size_t idx1 = idx0 + SMALL_PATCH_SIZE;
+			for (uint32_t vz = 0; vz < bigSquareSize; ++vz) {
+				const size_t idx0 = (pz * bigSquareSize + vz) * mapDims.mapxp1 + px * bigSquareSize;
+				const size_t idx1 = idx0 + bigSquareSize + 1;
 
-#if 0
-				// TODO: fix xsimd::reduce
-				unsyncedHeightInfoLods[0][pz * numSmallTexX + px].arr = xsimd::reduce(
+				unsyncedHeightInfo[pz * numBigTexX + px].arr = xsimd::reduce(
 					cornerHeightMapUnsynced.data() + idx0,
 					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightInfoLods[0][pz * numSmallTexX + px].arr,
+					unsyncedHeightInfo[pz * numBigTexX + px].arr,
 					MinOp{}, MaxOp{}, PlusOp{}
 				);
-#else
-				unsyncedHeightInfoLods[0][pz * numSmallTexX + px].x = std::reduce(
-					cornerHeightMapUnsynced.data() + idx0,
-					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightInfoLods[0][pz * numSmallTexX + px].x,
-					MinOp{}
-				);
-				unsyncedHeightInfoLods[0][pz * numSmallTexX + px].y = std::reduce(
-					cornerHeightMapUnsynced.data() + idx0,
-					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightInfoLods[0][pz * numSmallTexX + px].y,
-					MaxOp{}
-				);
-				unsyncedHeightInfoLods[0][pz * numSmallTexX + px].z = std::reduce(
-					cornerHeightMapUnsynced.data() + idx0,
-					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightInfoLods[0][pz * numSmallTexX + px].z,
-					PlusOp{}
-				);
-#endif
 			}
-			unsyncedHeightInfoLods[0][pz * numSmallTexX + px].z /= Square(SMALL_PATCH_SIZE);
-		}
-	}
-	//});
-
-	// LODs 1-5 (8x8, 16x16, 32x32, 64x64, 128x128)
-	for (size_t lod = 1; lod < unsyncedHeightInfoLods.size(); ++lod) {
-		uint32_t numCurrTexX = numSmallTexX >> (lod    );
-		uint32_t numCurrTexZ = numSmallTexY >> (lod    );
-		uint32_t numPrevTexX = numSmallTexX >> (lod - 1);
-		uint32_t numPrevTexZ = numSmallTexY >> (lod - 1);
-
-		for (uint32_t pz = 0; pz < numCurrTexZ; ++pz) {
-			for (uint32_t px = 0; px < numCurrTexX; ++px) {
-				const auto& p00 = unsyncedHeightInfoLods[lod - 1][(2 * pz + 0) * numPrevTexX + (2 * px + 0)];
-				const auto& p10 = unsyncedHeightInfoLods[lod - 1][(2 * pz + 0) * numPrevTexX + (2 * px + 1)];
-				const auto& p01 = unsyncedHeightInfoLods[lod - 1][(2 * pz + 1) * numPrevTexX + (2 * px + 0)];
-				const auto& p11 = unsyncedHeightInfoLods[lod - 1][(2 * pz + 1) * numPrevTexX + (2 * px + 1)];
-
-				auto& lodValue = unsyncedHeightInfoLods[lod][pz * numCurrTexX + px];
-				lodValue.x = std::min({p00.x, p01.x, p10.x, p11.x});
-				lodValue.y = std::max({p00.y, p01.y, p10.y, p11.y});
-				lodValue.z = (p00.z + p01.z + p10.z + p11.z) * 0.25f;
-			}
+			unsyncedHeightInfo[pz * numBigTexX + px].z /= Square(bigSquareSize);
 		}
 	}
 }
@@ -575,14 +522,14 @@ void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 void CSMFReadMap::UpdateHeightBoundsUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const uint32_t minTileX = std::max(update.x1 / SMALL_PATCH_SIZE, (0               ));
-	const uint32_t minTileZ = std::max(update.z1 / SMALL_PATCH_SIZE, (0               ));
-	const uint32_t maxTileX = std::min(update.x2 / SMALL_PATCH_SIZE, (numSmallTexX - 1));
-	const uint32_t maxTileZ = std::min(update.z2 / SMALL_PATCH_SIZE, (numSmallTexY - 1));
+	const uint32_t minPatchX = std::max(update.x1 / bigSquareSize, (0             ));
+	const uint32_t minPatchZ = std::max(update.z1 / bigSquareSize, (0             ));
+	const uint32_t maxPatchX = std::min(update.x2 / bigSquareSize, (numBigTexX - 1));
+	const uint32_t maxPatchZ = std::min(update.z2 / bigSquareSize, (numBigTexY - 1));
 
-	for (uint32_t pz = minTileZ; pz <= maxTileZ; ++pz) {
-		for (uint32_t px = minTileX; px <= maxTileX; ++px) {
-			unsyncedHeightInfoLods[0][pz * numSmallTexX + px] = {
+	for (uint32_t pz = minPatchZ; pz <= maxPatchZ; ++pz) {
+		for (uint32_t px = minPatchX; px <= maxPatchX; ++px) {
+			unsyncedHeightInfo[pz * numBigTexX + px] = {
 				std::numeric_limits<float>::max(),
 				std::numeric_limits<float>::lowest(),
 				0.0f
