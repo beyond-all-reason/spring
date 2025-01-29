@@ -427,6 +427,16 @@ void CReadMap::Initialize()
 	// UpdateDraw(true);
 }
 
+const float3& CReadMap::GetUnsyncedHeightInfo(int patchX, int patchZ) const
+{
+	return unsyncedHeightInfoLods.back()[patchZ * (mapDims.mapx / PATCH_SIZE) + patchX];
+}
+
+const float3& CReadMap::GetUnsyncedHeightInfoLod(size_t lod, int tileX, int tileZ) const
+{
+	return unsyncedHeightInfoLods[lod][tileZ * ((mapDims.mapx / SMALL_PATCH_SIZE) << lod) + tileX];
+}
+
 void CReadMap::InitHeightBounds()
 {
 	RECOIL_DETAILED_TRACY_ZONE;

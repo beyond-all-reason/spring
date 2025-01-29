@@ -970,12 +970,6 @@ int2 CSMFReadMap::GetPatch(int hmx, int hmz) const
 	};
 }
 
-const float3& CSMFReadMap::GetUnsyncedHeightInfoLod(size_t lod, int tileX, int tileZ) const
-{
-	assert(lod < unsyncedHeightInfoLods.size());
-	return unsyncedHeightInfoLods[lod][tileX * (numSmallTexX << lod) + tileZ];
-}
-
 void CSMFReadMap::BindMiniMapTextures() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;

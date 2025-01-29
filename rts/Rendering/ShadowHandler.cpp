@@ -939,13 +939,152 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 }
 #endif
 
+namespace Impl {
+	void RecursiveInViewCheck(CCamera* playerCam, AABB& lightAABB, const CMatrix44f& lightMat, int lod, int currIdx) {
+		const auto& uhInfoLods = readMap->GetUnsyncedHeightInfoLods();
+
+		const int lodPatchSize = CReadMap::SMALL_PATCH_SIZE << lod;
+		const int lodNumX = mapDims.mapx / lodPatchSize;
+
+		const int currX = currIdx % lodNumX;
+		const int currZ = currIdx / lodNumX;
+
+		const int nextX = currX + 1;
+		const int nextZ = currZ + 1;
+
+		AABB aabb;
+		aabb.mins = float3{
+			static_cast<float>(currX * lodPatchSize * SQUARE_SIZE),
+			uhInfoLods[lod][currIdx].x,
+			static_cast<float>(currZ * lodPatchSize * SQUARE_SIZE)
+		};
+		aabb.maxs = float3{
+			static_cast<float>(nextX * lodPatchSize * SQUARE_SIZE),
+			uhInfoLods[lod][currIdx].y,
+			static_cast<float>(nextZ * lodPatchSize * SQUARE_SIZE)
+		};
+
+		const auto res = playerCam->InView(aabb);
+
+		if (res == CCamera::IntersectionTestResult::OUTSIDE)
+			return;
+
+		if (res == CCamera::IntersectionTestResult::INSIDE ) {
+			for (int z = currZ << lod; z < (nextZ << lod) - 1; ++z) {
+				for (int x = currX << lod; x < (nextX << lod) - 1; ++x) {
+					const int lodZeroIndex = z * (lodNumX << lod) + x;
+					aabb.mins = float3{
+						static_cast<float>((x + 0) * CReadMap::SMALL_PATCH_SIZE * SQUARE_SIZE),
+						uhInfoLods[0][lodZeroIndex].x,
+						static_cast<float>((z + 0) * CReadMap::SMALL_PATCH_SIZE * SQUARE_SIZE)
+					};
+					aabb.maxs = float3{
+						static_cast<float>((x + 1) * CReadMap::SMALL_PATCH_SIZE * SQUARE_SIZE),
+						uhInfoLods[0][lodZeroIndex].y,
+						static_cast<float>((z + 1) * CReadMap::SMALL_PATCH_SIZE * SQUARE_SIZE)
+					};
+
+					for (const auto& corner : aabb.GetCorners(lightMat)) {
+						lightAABB.AddPoint(corner);
+					}
+				}
+			}
+			return;
+		}
+
+		if (lod == 0) {
+			for (const auto& corner : aabb.GetCorners(lightMat)) {
+				lightAABB.AddPoint(corner);
+			}
+			return;
+		}
+
+		const int lodNextPatchSize = lodPatchSize >> 1;
+		const int lodNextNumX = lodNumX << 1;
+
+		const int nextLodBaseX = currX << 1;
+		const int nextLodBaseZ = currZ << 1;
+
+		RecursiveInViewCheck(playerCam, lightAABB, lightMat, lod - 1, (nextLodBaseZ + 0) * lodNextNumX + (nextLodBaseX + 0));
+		RecursiveInViewCheck(playerCam, lightAABB, lightMat, lod - 1, (nextLodBaseZ + 0) * lodNextNumX + (nextLodBaseX + 1));
+		RecursiveInViewCheck(playerCam, lightAABB, lightMat, lod - 1, (nextLodBaseZ + 1) * lodNextNumX + (nextLodBaseX + 0));
+		RecursiveInViewCheck(playerCam, lightAABB, lightMat, lod - 1, (nextLodBaseZ + 1) * lodNextNumX + (nextLodBaseX + 1));
+	}
+
+	void RecursiveInLightBoundsCheck(AABB& lightAABB, const CMatrix44f& lightMat, int lod, int currIdx) {
+		const auto& uhInfoLods = readMap->GetUnsyncedHeightInfoLods();
+
+		const int lodPatchSize = CReadMap::SMALL_PATCH_SIZE << lod;
+		const int lodNumX = mapDims.mapx / lodPatchSize;
+
+		const int currX = currIdx % lodNumX;
+		const int currZ = currIdx / lodNumX;
+
+		const int nextX = currX + 1;
+		const int nextZ = currZ + 1;
+
+		AABB wsPatchAABB;
+		wsPatchAABB.mins = float3{
+			static_cast<float>(currX * lodPatchSize * SQUARE_SIZE),
+			uhInfoLods[lod][currIdx].x,
+			static_cast<float>(currZ * lodPatchSize * SQUARE_SIZE)
+		};
+		wsPatchAABB.maxs = float3{
+			static_cast<float>(nextX * lodPatchSize * SQUARE_SIZE),
+			uhInfoLods[lod][currIdx].y,
+			static_cast<float>(nextZ * lodPatchSize * SQUARE_SIZE)
+		};
+
+		AABB lsPatchAABB;
+		for (const auto& corner : wsPatchAABB.GetCorners(lightMat)) {
+			lsPatchAABB.AddPoint(corner);
+		}
+
+		const bool inside =
+			lightAABB.mins.x <= lsPatchAABB.mins.x && lsPatchAABB.maxs.x <= lightAABB.maxs.x &&
+			lightAABB.mins.y <= lsPatchAABB.mins.y && lsPatchAABB.maxs.y <= lightAABB.maxs.y;
+
+		if (inside) {
+			lightAABB.mins.z = std::min(lightAABB.mins.z, lsPatchAABB.mins.z);
+			lightAABB.maxs.z = std::max(lightAABB.maxs.z, lsPatchAABB.maxs.z);
+			return;
+		}
+
+		const bool outsideOrOverlap =
+			AABB::RangeOverlap({ lightAABB.mins.x, lightAABB.maxs.x }, { lsPatchAABB.mins.x, lsPatchAABB.maxs.x }) &&
+			AABB::RangeOverlap({ lightAABB.mins.y, lightAABB.maxs.y }, { lsPatchAABB.mins.y, lsPatchAABB.maxs.y });
+
+		if (!outsideOrOverlap)
+			return;
+
+		if (lod == 0) {
+			lightAABB.mins.z = std::min(lightAABB.mins.z, lsPatchAABB.mins.z);
+			lightAABB.maxs.z = std::max(lightAABB.maxs.z, lsPatchAABB.maxs.z);
+			return;
+		}
+
+		const int lodNextPatchSize = lodPatchSize >> 1;
+		const int lodNextNumX = lodNumX << 1;
+
+		const int nextLodBaseX = currX << 1;
+		const int nextLodBaseZ = currZ << 1;
+
+		RecursiveInLightBoundsCheck(lightAABB, lightMat, lod - 1, (nextLodBaseZ + 0) * lodNextNumX + (nextLodBaseX + 0));
+		RecursiveInLightBoundsCheck(lightAABB, lightMat, lod - 1, (nextLodBaseZ + 0) * lodNextNumX + (nextLodBaseX + 1));
+		RecursiveInLightBoundsCheck(lightAABB, lightMat, lod - 1, (nextLodBaseZ + 1) * lodNextNumX + (nextLodBaseX + 0));
+		RecursiveInLightBoundsCheck(lightAABB, lightMat, lod - 1, (nextLodBaseZ + 1) * lodNextNumX + (nextLodBaseX + 1));
+	}
+};
+
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
+	SCOPED_TIMER("CShadowHandler::CalcShadowMatrices");
+
 	lightAABB.Reset();
 
-	// construct Camera World Matrix & View Matrix
-	CMatrix44f viewMatrixInv;
 	{
+		// construct Camera World Matrix & View Matrix
+		CMatrix44f viewMatrixInv;
 		float3 zAxis = float3{ ISky::GetSky()->GetLight()->GetLightDir().xyz };
 		float3 xAxis = Impl::GetLightXDir(playerCam, zAxis);
 		float3 yAxis = zAxis.cross(xAxis);
@@ -958,6 +1097,33 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		// https://www.3dgep.com/understanding-the-view-matrix/
 		viewMatrix = viewMatrixInv.InvertAffine();
 	}
+#if 1
+	{
+		const auto& uhInfoLods = readMap->GetUnsyncedHeightInfoLods();
+
+		std::array<AABB, ThreadPool::MAX_THREADS> mtLightAABBs = {};
+
+		for_mt_chunk(0, uhInfoLods.back().size(), [lod = uhInfoLods.size() - 1, &mtLightAABBs, playerCam, this](const int currIdx) {
+			Impl::RecursiveInViewCheck(playerCam, mtLightAABBs[ThreadPool::GetThreadNum()], viewMatrix, lod, currIdx);
+		});
+
+		for (size_t tNum = 0; tNum < ThreadPool::GetNumThreads(); ++tNum) {
+			lightAABB.Combine(mtLightAABBs[tNum]);
+		}
+
+		for (size_t tNum = 0; tNum < ThreadPool::GetNumThreads(); ++tNum) {
+			mtLightAABBs[tNum] = lightAABB;
+		}
+
+		for_mt_chunk(0, uhInfoLods.back().size(), [lod = uhInfoLods.size() - 1, &mtLightAABBs, this](const int currIdx) {
+			Impl::RecursiveInLightBoundsCheck(mtLightAABBs[ThreadPool::GetThreadNum()], viewMatrix, lod, currIdx);
+		});
+
+		for (size_t tNum = 0; tNum < ThreadPool::GetNumThreads(); ++tNum) {
+			lightAABB.Combine(mtLightAABBs[tNum]);
+		}
+	}
+#else
 	{
 		std::array<AABB, ThreadPool::MAX_THREADS> mtLightAABBs = {};
 
@@ -1002,6 +1168,7 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 		for (const auto& aabb : mtLightAABBs)
 			lightAABB.Combine(aabb);
 	}
+#endif
 
 	float3 lsMidPos = lightAABB.CalcCenter();
 	float3 lsDims = lightAABB.CalcScales();

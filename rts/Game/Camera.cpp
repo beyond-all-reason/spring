@@ -356,11 +356,15 @@ CCamera::IntersectionTestResult CCamera::InView(const float3& point, float radiu
 CCamera::IntersectionTestResult CCamera::InView(const AABB& aabb) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#if 0
 	auto res = InView(aabb.CalcCenter(), aabb.CalcRadius());
 	if (res == CCamera::IntersectionTestResult::INTERSECT)
 		res = frustum.IntersectAABB(aabb);
 
 	return res;
+#else
+	return frustum.IntersectAABB(aabb);
+#endif
 }
 
 #if 0
@@ -788,85 +792,34 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 CCamera::IntersectionTestResult CCamera::Frustum::IntersectSphere(float3 p, float radius) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	auto res = IntersectionTestResult::INSIDE;
+
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
 		const auto& plane = planes[i];
 		const float dist = plane.dot(p) + plane.w;
 		if (dist < -radius)
-			return CCamera::IntersectionTestResult::OUTSIDE;
+			return IntersectionTestResult::OUTSIDE;
 		else if (dist < radius)
-			return CCamera::IntersectionTestResult::INTERSECT;
+			res = IntersectionTestResult::INTERSECT;
 	}
 
-	return CCamera::IntersectionTestResult::INSIDE;
+	return res;
 }
-
-/*
-bool CCamera::Frustum::IntersectAABB(const AABB& b) const
-{
-	return true;
-
-	// edge axes and normals are identical for AABBs
-	constexpr float3 aabbPlanes[3] = {
-		RgtVector,
-		UpVector,
-		FwdVector
-	};
-
-	float3 aabbVerts[8];
-	float3 crossAxes[3 * 6];
-
-	b.CalcCorners(aabbVerts);
-
-	const auto IsSepAxis = [](const float3& axis, const float3* frustVerts, const float3* aabbVerts) {
-		float2 frustProjRange = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
-		float2  aabbProjRange = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
-
-		float frustProjDists[8];
-		float  aabbProjDists[8];
-
-		for (int i = 0; i < 8; i++) {
-			frustProjDists[i] = axis.dot(frustVerts[i]);
-
-			frustProjRange.x = std::min(frustProjRange.x, frustProjDists[i]);
-			frustProjRange.y = std::max(frustProjRange.y, frustProjDists[i]);
-
-			aabbProjDists[i] = axis.dot(aabbVerts[i]);
-
-			aabbProjRange.x = std::min(aabbProjRange.x, aabbProjDists[i]);
-			aabbProjRange.y = std::max(aabbProjRange.y, aabbProjDists[i]);
-		}
-
-		return (!AABB::RangeOverlap(frustProjRange, aabbProjRange));
-	};
-	const auto AxisTestPred = [&](const float3& testAxis) {
-		return (IsSepAxis(testAxis, &verts[0], aabbVerts));
-	};
-
-	if (std::find_if(&aabbPlanes[0], &aabbPlanes[0] + 3, AxisTestPred) != (&aabbPlanes[0] + 3))
-		return false;
-	if (std::find_if(&planes[0], &planes[0] + 6, AxisTestPred) != (&planes[0] + 6))
-		return false;
-
-	for (uint32_t i = 0; i < 3; i++) {
-		for (uint32_t j = 0; j < 6; j++) {
-			crossAxes[i * 6 + j] = (aabbPlanes[i].cross(edges[j])).SafeNormalize();
-		}
-	}
-
-	return (std::find_if(&crossAxes[0], &crossAxes[0] + 3 * 6, AxisTestPred) == (&crossAxes[0] + 3 * 6));
-}
-*/
 
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
 CCamera::IntersectionTestResult CCamera::Frustum::IntersectAABB(const AABB& b) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	auto res = IntersectionTestResult::INSIDE;
+
 	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
 		const auto& plane = planes[i];
 		if (plane.dot(b.GetVertexP(plane)) + plane.w < 0)
-			return CCamera::IntersectionTestResult::OUTSIDE;
+			return IntersectionTestResult::OUTSIDE;
 		else if (plane.dot(b.GetVertexN(plane)) + plane.w < 0)
-			return CCamera::IntersectionTestResult::INTERSECT;
+			res = IntersectionTestResult::INTERSECT;
 	}
-	return CCamera::IntersectionTestResult::INSIDE;
+	return res;
 }

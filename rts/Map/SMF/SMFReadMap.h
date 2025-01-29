@@ -34,8 +34,6 @@ public:
 
 	void UpdateShadingTexture() override;
 	int2 GetPatch(int hmx, int hmz) const override;
-	const float3& GetUnsyncedHeightInfo(int patchX, int patchZ) const override { return unsyncedHeightInfoLods.back()[patchZ * numBigTexX + patchX]; }
-	const float3& GetUnsyncedHeightInfoLod(size_t lod, int tileX, int tileZ) const override;
 public:
 	bool SetLuaTexture(const MapTextureData& td) override;
 
