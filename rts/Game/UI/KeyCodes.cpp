@@ -13,6 +13,7 @@
 
 CKeyCodes keyCodes;
 
+const int CKeyCodes::NONE = -1;
 
 int CKeyCodes::GetNormalizedSymbol(int sym)
 {
@@ -75,7 +76,7 @@ bool CKeyCodes::IsModifier(int code) const
 		case SDLK_RGUI:
 		case SDLK_LGUI:
 			if (keyBindings.GetFakeMetaKey() <= 0) {
-				return CKeySet::KS_META;
+				return true;
 			}
 	}
 
@@ -110,7 +111,7 @@ void CKeyCodes::Reset()
 	//
 	// Users can still define their keysets without none, we perform the
 	// sanitization internally
-	AddPair("none",      -1);
+	AddPair("none",      NONE);
 
 	AddPair("backspace", SDLK_BACKSPACE);
 	AddPair("tab",       SDLK_TAB);

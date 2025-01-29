@@ -1874,7 +1874,7 @@ bool CGuiHandler::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 		tmpActionOffset = 0;
 		lastKeySet.Reset();
 	}
-	else if (!ks.IsPureModifier()) {
+	else if (!ks.IsModifier()) {
 		// not a modifier
 		if ((ks == lastKeySet) && (ks.Key() >= 0)) {
 			actionOffset++;

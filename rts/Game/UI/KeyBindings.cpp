@@ -313,6 +313,7 @@ void CKeyBindings::Init()
 void CKeyBindings::Kill()
 {
 	ResetActionLists();
+	loadStack.clear();
 	statefulCommands.clear();
 
 	configHandler->RemoveObserver(this);
@@ -324,9 +325,16 @@ void CKeyBindings::Kill()
 void FilterByKeychain(const ActionList & in, const CKeyChain & kc, ActionList & out)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (const Action& action: in)
+	for (const Action& action: in) {
+		LOG_L(L_WARNING, "Checking action: %s - bound with %s | chain %s | fits %s", 
+				action.line.c_str(), 
+				action.boundWith.c_str(), 
+				action.keyChain.GetString().c_str(),
+				kc.GetString().c_str());
+
 		if (kc.fit(action.keyChain))
 			out.push_back(action);
+	}
 }
 
 
@@ -394,28 +402,29 @@ void MergeActionListsByTrigger(const ActionList& actionListA, const ActionList& 
 }
 
 
-const ActionList & CKeyBindings::GetActionList(const CKeySet& ks, bool forceAny) const
+const ActionList CKeyBindings::GetActionList(const CKeySet& ks) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	static ActionList empty;
+	ActionList merged;
 
-	const int key = ks.Key();
+	const int& key = ks.Key();
+	const bool& isKeyCode = ks.IsKeyCode();
 
 	// We use -1 for 'none' when matching pure modifier keysets
 	// 0 == SDLK_UNKNOWN == SDL_SCAN_UNKNOWN
-	if (key < -1 || key == 0)
-		return empty;
+	if (key <= 0 && (!isKeyCode || (key != CKeyCodes::NONE)))
+		return merged;
 
-	const auto & bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
+	const auto& bindings = isKeyCode ? codeBindings : scanBindings;
 
-	CKeySet toUse = ks;
-	if (forceAny) toUse.SetAnyBit();
+	for (const auto& p: bindings) {
+		const ActionList& al = p.second;
 
-	const auto it = bindings.find(toUse);
-	if (it != bindings.end())
-		return (it->second);
+		if (ks.fit(p.first))
+			merged.insert(merged.end(), al.begin(), al.end());
+	}
 
-	return empty;
+	return merged;
 }
 
 
@@ -427,11 +436,13 @@ ActionList CKeyBindings::GetActionList(const CKeyChain& kc) const
 	if (kc.empty())
 		return out;
 
-	const auto & al = GetActionList(kc.back(), false);
+	const auto& al = GetActionList(kc.back());
 	FilterByKeychain(al, kc, out);
 
 	if (!kc.back().AnyMod()) {
-		const auto & al = GetActionList(kc.back(), true);
+		CKeySet ks = kc.back();
+		ks.SetAnyBit();
+		const auto& al = GetActionList(ks);
 		FilterByKeychain(al, kc, out);
 	}
 
@@ -447,16 +458,25 @@ ActionList CKeyBindings::GetActionList(const CKeyChain& kc, const CKeyChain& sc)
 
 	// First get non-Any lists.
 	ActionList kList, sList;
-	if (!kc.back().AnyMod()) FilterByKeychain(GetActionList(kc.back(), false), kc, kList);
-	if (!sc.back().AnyMod()) FilterByKeychain(GetActionList(sc.back(), false), sc, sList);
+
+	const CKeySet codeKeyset = kc.back();
+	const CKeySet scanKeyset = sc.back();
+	if (!codeKeyset.AnyMod()) FilterByKeychain(GetActionList(codeKeyset), kc, kList);
+	if (!scanKeyset.AnyMod()) FilterByKeychain(GetActionList(scanKeyset), sc, sList);
 
 	MergeActionListsByTrigger(kList, sList, merged);
 
 	// Now do Any
 	kList.clear();
 	sList.clear();
-	FilterByKeychain(GetActionList(kc.back(), true), kc, kList);
-	FilterByKeychain(GetActionList(sc.back(), true), sc, sList);
+
+	CKeySet keyset = codeKeyset;
+	keyset.SetAnyBit();
+	FilterByKeychain(GetActionList(keyset), kc, kList);
+
+	keyset = scanKeyset;
+	keyset.SetAnyBit();
+	FilterByKeychain(GetActionList(keyset), sc, sList);
 
 	MergeActionListsByTrigger(kList, sList, merged);
 
@@ -499,9 +519,8 @@ ActionList CKeyBindings::GetActionList(int keyCode, int scanCode, unsigned char 
 void CKeyBindings::ResetActionLists() {
 	codeBindings.clear();
 	scanBindings.clear();
-	actionStack.clear();
+	// actionStack.clear();
 	hotkeys.clear();
-	loadStack.clear();
 	bindingsCount = 0;
 }
 
@@ -662,6 +681,15 @@ bool CKeyBindings::AddActionToKeyMap(KeyMap& bindings, Action& action)
 		al.push_back(action);
 	}
 
+	if (debugEnabled) {
+		LOG_L(L_WARNING,
+				"Added action %s bound with %s to ks %s",
+				action.line.c_str(),
+				action.boundWith.c_str(),
+				ks.GetString(true).c_str()
+				);
+	}
+
 	return true;
 }
 
@@ -692,7 +720,7 @@ bool CKeyBindings::Bind(const std::string& keystr, const std::string& line)
 	KeyMap& bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
 
 	if (AddActionToKeyMap(bindings, action)) {
-		actionStack.push_back(&action);
+		// actionStack.push_back(&action);
 	}
 
 	return true;
@@ -802,11 +830,11 @@ bool CKeyBindings::SetFakeMetaKey(const std::string& keystr)
 		return false;
 	}
 
-	const int previousFakeMetaKey = fakeMetaKey;
+	// const int previousFakeMetaKey = fakeMetaKey;
 	fakeMetaKey = ks.Key();
 
-	if (fakeMetaKey != previousFakeMetaKey)
-		RebuildActionLists();
+  // if (fakeMetaKey != previousFakeMetaKey)
+	// 	RebuildActionLists();
 
 	return true;
 }
@@ -887,6 +915,29 @@ void CKeyBindings::LoadDefaults()
 	for (const auto& b: defaultBindings) {
 		Bind(b.key, b.action);
 	}
+
+	LOG_L(L_WARNING, "Finished loading defaults!!!!!!!");
+	LOG_L(L_WARNING, "= codebindings");
+	for (const auto& p: codeBindings) {
+		auto kss = p.first.GetString(false);
+
+		for (const auto& a: p.second) {
+			LOG_L(L_WARNING, "  > %s (%s) -> %s", a.line.c_str(), a.boundWith.c_str(), kss.c_str());
+		}
+	}
+	LOG_L(L_WARNING, "= scanbindings");
+	for (const auto& p: scanBindings) {
+		auto kss = p.first.GetString(false);
+
+		for (const auto& a: p.second) {
+			LOG_L(L_WARNING, "  > %s (%s) -> %s", a.line.c_str(), a.boundWith.c_str(), kss.c_str());
+		}
+	}
+	// LOG_L(L_WARNING, "= actionstack");
+	// for(auto a : actionStack) {
+	// 	LOG_L(L_WARNING, "  > %s (%s) -> %s", a->line.c_str(), a->boundWith.c_str(), a->keyChain.GetString().c_str());
+	// };
+
 
 	buildHotkeyMap = tmpBuildHotkeyMap;
 }
