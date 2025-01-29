@@ -6,37 +6,24 @@
 #include "System/AABB.hpp"
 #include "System/Matrix44f.h"
 
-Geometry::Allocator::Allocator()
-{
-	(void) new (pmrMem) std::pmr::monotonic_buffer_resource();
-}
-
-Geometry::Allocator::Allocator(size_t allocMemBytes)
-{
-	buffer.resize(allocMemBytes);
-	(void) new (pmrMem) std::pmr::monotonic_buffer_resource(buffer.data(), buffer.size());
-}
-
-Geometry::Allocator::~Allocator()
-{
-	static const auto CallDestructor = []<typename T>(T* ptr) {
-		if (ptr == nullptr)
-			return;
-
-		ptr->~T();
+namespace {
+	enum {
+		NBL = 0,
+		FBL = 1,
+		NBR = 2,
+		FBR = 3,
+		NTL = 4,
+		FTL = 5,
+		NTR = 6,
+		FTR = 7,
 	};
-
-	CallDestructor(reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0]));
 }
 
-void Geometry::Allocator::ClearAllocations()
-{
-	(reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0]))->release();
-}
-
-void Geometry::Polygon::MakeFrom(const AABB& aabb)
+void Geometry::Polygon::MakeFrom(const std::array<float3, 8>& points)
 {
 	faces.clear();
+
+	// in alignment with AABB.GetCorners() ordering, i.e.
 
 	/*
 		// bottom
@@ -50,36 +37,32 @@ void Geometry::Polygon::MakeFrom(const AABB& aabb)
 		float3{ maxs.x, maxs.y, mins.z },   //NTR
 		float3{ maxs.x, maxs.y, maxs.z }    //FTR
 	*/
-	const auto corners = aabb.GetCorners();
-
-	enum {
-		NBL = 0,
-		FBL = 1,
-		NBR = 2,
-		FBR = 3,
-		NTL = 4,
-		FTL = 5,
-		NTR = 6,
-		FTR = 7,
-	};
 
 	// Left Face
-	AddFace(corners[NTL], corners[NBL], corners[FBL], corners[FTL]);
+	AddFace(points[NTL], points[NBL], points[FBL], points[FTL]);
 	// Right Face
-	AddFace(corners[NBR], corners[NTR], corners[FTR], corners[FBR]);
+	AddFace(points[NBR], points[NTR], points[FTR], points[FBR]);
 	// Bottom Face
-	AddFace(corners[NBL], corners[NBR], corners[FBR], corners[FBL]);
+	AddFace(points[NBL], points[NBR], points[FBR], points[FBL]);
 	// Top Face
-	AddFace(corners[NTR], corners[NTL], corners[FTL], corners[FTR]);
+	AddFace(points[NTR], points[NTL], points[FTL], points[FTR]);
 	// Near Face
-	AddFace(corners[NTL], corners[NTR], corners[NBR], corners[NBL]);
+	AddFace(points[NTL], points[NTR], points[NBR], points[NBL]);
 	// Far Face
-	AddFace(corners[FTR], corners[FTL], corners[FBL], corners[FBR]);
+	AddFace(points[FTR], points[FTL], points[FBL], points[FBR]);
 }
+
+void Geometry::Polygon::FlipFacesDirection()
+{
+	for (auto& face : faces) {
+		face.FlipDirection();
+	}
+}
+
 Geometry::Polygon& Geometry::Polygon::ClipByInPlace(const Polygon& pc)
 {
-	std::pmr::vector<Face> newFaces(allocRef.get().GetAllocator());
-	std::pmr::vector<float3> newPoints(allocRef.get().GetAllocator());
+	std::vector<Face> newFaces;
+	std::vector<float3> newPoints;
 
     for (const auto& clippingFace : pc.GetFaces()) {
 		if (!clippingFace.HasPlane())
@@ -98,7 +81,7 @@ Geometry::Polygon& Geometry::Polygon::ClipByInPlace(const Polygon& pc)
 				continue;
 			}
 			
-			Face newFace(allocRef.get());
+			Face newFace;
 			newFace.SetPlane(clippedFace.GetPlane());
 
 			const auto& clippedPoints = clippedFace.GetPoints();
@@ -144,13 +127,13 @@ Geometry::Polygon& Geometry::Polygon::ClipByInPlace(const Polygon& pc)
 		}
 
 		if (newPoints.size() >= 3) {
-			Face newFace(allocRef.get());
+			Face newFace;
 			newFace.SetPlane(clippingFacePlane);
 			newFace.AddPoints(std::move(newPoints));
 			if (newFace.Sanitize())
 				newFaces.emplace_back(std::move(newFace));
 		}
-		std::swap(faces, newFaces);
+		faces = std::move(newFaces);
 		newFaces.clear();
     }
 
@@ -237,6 +220,15 @@ bool Geometry::Face::IsValid() const
 	}
 
 	return true;
+}
+
+void Geometry::Face::FlipDirection()
+{
+	if (!HasPlane())
+		return;
+
+	plane = float4{ -plane->x, -plane->y, -plane->z, -plane->w };
+	Sanitize();
 }
 
 bool Geometry::Face::Sanitize()

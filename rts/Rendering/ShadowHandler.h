@@ -114,6 +114,7 @@ private:
 	inline static bool shadowsSupported = false;
 
 	std::vector<float3> clippedWorldCube;
+	std::vector<float3> clippedShadowCube;
 	std::array<float3, 8> playCamFrustum;
 
 	// these project geometry into light-space

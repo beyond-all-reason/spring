@@ -3,7 +3,6 @@
 #include <vector>
 #include <optional>
 #include <type_traits>
-#include <memory_resource>
 #include <functional>
 
 #include "System/float4.h"
@@ -12,31 +11,9 @@
 class CMatrix44f;
 
 namespace Geometry {
-	class Allocator {
-	public:
-		Allocator();
-		Allocator(size_t allocMemBytes);
-		~Allocator();
-
-		void ClearAllocations();
-
-		auto& GetAllocator() { return allocator; }
-	private:
-		std::vector<std::byte> buffer;
-		// std::pmr::monotonic_buffer_resource cannot be copied / moved
-		// what else less insane could be done to store it?
-		alignas(std::pmr::monotonic_buffer_resource) std::byte pmrMem[sizeof(std::pmr::monotonic_buffer_resource)];
-		std::pmr::polymorphic_allocator<std::byte> allocator{ reinterpret_cast<std::pmr::monotonic_buffer_resource*>(&pmrMem[0])};
-	};
-
 	class Face {
 	public:
-		Face()
-			: allocRef(std::ref(defaultAllocator))
-		{}
-		Face(Allocator& allocator_)
-			: allocRef(std::ref(allocator_))
-		{}
+		Face() = default;
 		Face& AddPoint(const float3& pnt) {
 			points.emplace_back(pnt);
 			CondSetPlane();
@@ -75,32 +52,29 @@ namespace Geometry {
 			return *this;
 		}
 
+		void FlipDirection();
+
 		bool Sanitize();
 	private:
 		void CondSetPlane();
 	private:
-		Allocator defaultAllocator;
-		std::reference_wrapper<Allocator> allocRef;
-
 		std::optional<float4> plane;
-		std::pmr::vector<float3> points{ allocRef.get().GetAllocator() };
+		std::vector<float3> points;
 	};
 
 	class Polygon {
 	public:
-		Polygon()
-			: allocRef(std::ref(defaultAllocator))
-		{}
-		Polygon(Allocator& allocator_)
-			: allocRef(std::ref(allocator_))
-		{}
+		Polygon() = default;
+
 		Face& AddFace() {
-			return faces.emplace_back(allocRef.get());
+			return faces.emplace_back();
 		}
-		void MakeFrom(const AABB& aabb);
+		void MakeFrom(const std::array<float3, 8>& points);
+		void MakeFrom(const AABB& aabb) { const auto corners = aabb.GetCorners(); MakeFrom(corners); }
+		void MakeFrom(const AABB& aabb, const CMatrix44f& mat) { const auto corners = aabb.GetCorners(mat); MakeFrom(corners); }
 		template<typename Iterable>
 		Face& AddFace(Iterable&& points) {
-			auto& face = faces.emplace_back(allocRef.get());
+			auto& face = faces.emplace_back();
 			for (auto&& point : points) {
 				face.AddPoint(std::forward<std::remove_cv_t<decltype(point)>>(point));
 			}
@@ -109,14 +83,17 @@ namespace Geometry {
 		}
 		template<typename ... Item>
 		Face& AddFace(Item&& ... item) {
-			auto& face = faces.emplace_back(allocRef.get());
+			auto& face = faces.emplace_back();
 			(face.AddPoint(std::forward<Item>(item)), ...);
 
 			return face;
 		}
 		const auto& GetFaces() const { return faces; }
+
+		void FlipFacesDirection();
+
 		Polygon& ClipByInPlace(const Polygon& pc);
-		Polygon  ClipBy(const Polygon& pc) { Polygon p = *this; p.ClipByInPlace(pc); return p; }
+		Polygon  ClipBy(const Polygon& pc) const { Polygon p = *this; p.ClipByInPlace(pc); return p; }
 
 		std::vector<float3> GetAllLines() const;
 		AABB GetAABB() const;
@@ -124,9 +101,6 @@ namespace Geometry {
 
 		const float3 GetMiddlePos() const;
 	private:
-		Allocator defaultAllocator;
-		std::reference_wrapper<Allocator> allocRef;
-
-		std::pmr::vector<Face> faces{ allocRef.get().GetAllocator() };
+		std::vector<Face> faces;
 	};
 }
