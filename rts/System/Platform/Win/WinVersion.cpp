@@ -67,6 +67,7 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 #define SM_SERVERR2 89
 #endif
 
+#include "System/Platform/Hardware.h"
 
 // from http://msdn.microsoft.com/en-us/library/ms724429(VS.85).aspx
 // Windows version table mapping (as of november 2018) is as follows:
@@ -325,13 +326,8 @@ std::string windows::GetHardwareString()
 		oss << "cannot open key with processor data; ";
 	}
 
-	MEMORYSTATUSEX statex;
 	constexpr int div = 1024 * 1024;
-	statex.dwLength = sizeof(statex);
-
-	GlobalMemoryStatusEx(&statex);
-
-	oss << (statex.ullTotalPhys / div) << "MB RAM, ";
-	oss << (statex.ullTotalPageFile / div) << "MB pagefile";
+	oss << (Platform::TotalRAM() / div) << "MB RAM, ";
+	oss << (Platform::TotalPageFile() / div) << "MB pagefile";
 	return oss.str();
 }
