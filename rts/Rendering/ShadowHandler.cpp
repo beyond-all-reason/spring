@@ -845,6 +845,9 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 	lightAABB.mins += viewMatrix.GetPos();
 	lightAABB.maxs += viewMatrix.GetPos();
 
+	// this is required when shadow camera position is roughly behind the player's camera
+	// in such cases without adjustment objects behind the near plane of the player's camera
+	// won't be included into the shadow cuboid bounds
 	float extraCamHeight = 0.0f;
 	{
 		AABB lightAABBExt = lightAABB;
@@ -855,22 +858,22 @@ void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 
 		Geometry::Polygon unclippedShadowCubePoly;
 		unclippedShadowCubePoly.MakeFrom(lightAABBExt, viewMatrixInv);
-		unclippedShadowCubePoly.FlipFacesDirection();
+		unclippedShadowCubePoly.FlipFacesDirection(); // figure out why it's needed
 
 		Geometry::Polygon clippedShadowCubePoly = worldCube.ClipBy(unclippedShadowCubePoly);
 		clippedShadowCube = clippedShadowCubePoly.GetAllLines();
 
-		// reuse lightAABBExt
+		// reuse lightAABBExt variable
 		lightAABBExt = clippedShadowCubePoly.GetAABB(viewMatrix);
 		extraCamHeight = std::max(extraCamHeight, lightAABBExt.maxs.z);
 	}
 
-	// shift camera further away to account for corners of light frustum
+	// shift camera further away to account for the calculation above
 	viewMatrix.col[3].z -= extraCamHeight;
 
 	// translate mins.z accordingly
 	lightAABB.mins.z -= extraCamHeight;
-	// Move maxs.z to be at the camera position
+	// Make sure maxs.z is at the camera position
 	lightAABB.maxs.z = 0.0f; // @ camPos
 
 	projMatrix = CMatrix44f::ClipOrthoProj(
