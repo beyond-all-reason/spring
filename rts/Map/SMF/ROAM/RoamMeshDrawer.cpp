@@ -166,7 +166,7 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 // [f=0002142] [RoamMeshDrawer] Skip:76 oldcam: 4334.830078:-259.387939:-259.387939 nowcam 5011.015137:-259.387939:1593.139526 dist=924793.375000
 
 // TODO:
-// unintialized memory read in Patch::IsVisible!
+// uninitialized memory read in Patch::IsVisible!
 
 // TODO tritreenodepool:
 // allow growth

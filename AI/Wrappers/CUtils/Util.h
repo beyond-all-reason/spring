@@ -24,7 +24,7 @@ extern "C" {
 
 #include <stdbool.h>
 
-// BEGINN: String realated functions
+// BEGIN: String related functions
 
 /**
  * Allocates fresh memory for storing a C string of the specified length.
@@ -34,7 +34,7 @@ char* util_allocStr(unsigned int length);
 /**
  * Allocates fresh memory and copies the supplied string into it.
  * @return  the freshly allocated memory containing the string,
- *          or NULL, if the arguemtn was NULL.
+ *          or NULL, if the argument was NULL.
  */
 char* util_allocStrCpy(const char* toCopy);
 
@@ -88,13 +88,13 @@ bool util_endsWith(const char* str, const char* suffix);
 
 bool util_strToBool(const char* str);
 
-// END: String realated functions
+// END: String related functions
 
 
-// BEGINN: File system realated functions
+// BEGIN: File system related functions
 
 /**
- * Checks whether a string contians an absolute path.
+ * Checks whether a string contains an absolute path.
  * The corresponding matcher-regexes are:
  * on Windows: "^.:(\\|/).*"
  * otherwise:  "^/.*"
@@ -192,7 +192,7 @@ bool util_findDir(const char* dirs[], unsigned int numDirs,
 int util_parsePropertiesFile(const char* propertiesFile,
 		const char* keys[], const char* values[], int maxProperties);
 
-// END: File system realated functions
+// END: File system related functions
 
 
 /**

@@ -152,7 +152,7 @@ public:
 
 	/**
 	 * Returns the maximum number of units to be in-game.
-	 * The maximum unit-ID is this vaue -1.
+	 * The maximum unit-ID is this value -1.
 	 */
 	virtual int GetMaxUnits() = 0;
 
@@ -469,12 +469,12 @@ public:
 	virtual float GetMetal() = 0;         ///< current metal level for team
 	virtual float GetMetalIncome() = 0;   ///< current metal income for team
 	virtual float GetMetalUsage() = 0;    ///< current metal usage for team
-	virtual float GetMetalStorage() = 0;  ///< curent metal storage capacity for team
+	virtual float GetMetalStorage() = 0;  ///< current metal storage capacity for team
 
 	virtual float GetEnergy() = 0;        ///< current energy level for team
 	virtual float GetEnergyIncome() = 0;  ///< current energy income for team
 	virtual float GetEnergyUsage() = 0;   ///< current energy usage for team
-	virtual float GetEnergyStorage() = 0; ///< curent energy storage capacity for team
+	virtual float GetEnergyStorage() = 0; ///< current energy storage capacity for team
 
 	virtual int GetFeatures(int *featureIds, int max) = 0;
 	virtual int GetFeatures(int *featureIds, int max, const float3& pos, float radius) = 0;

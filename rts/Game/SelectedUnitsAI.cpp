@@ -198,7 +198,7 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 		const float3 frontDir = ((pos - groupCenterCoor) * XZVector).ANormalize();
 		const float3  sideDir = frontDir.cross(UpVector);
 
-		// calculate so that the units form in an aproximate square
+		// calculate so that the units form in an approximate square
 		const float length = 100.0f + (math::sqrt((float)numSelectedUnits) * 32.0f);
 
 		// push back some extra params so it confer with a front move
@@ -456,7 +456,7 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 		float closestDistSq = std::numeric_limits<float>::infinity();
 		const auto cmdPos = allFrontMoveCommands[i].second.GetPos(0);
 
-		// find closest unit of the unit type selected for this move comamnd
+		// find closest unit of the unit type selected for this move command
 		for (size_t j = 0; j < unassignedUnits.size(); j++) {
 			const auto& unit = unassignedUnits[j];
 			if (unit.unitDefId == mixedUnitTypes[i]){

@@ -56,7 +56,7 @@ public:
 
 	/**
 	 * Contains either the current ping of the player to the game host,
-	 * or the value of the pathign flag.
+	 * or the value of the pathing flag.
 	 * @see PATHING_FLAG
 	 */
 	int ping = 0;

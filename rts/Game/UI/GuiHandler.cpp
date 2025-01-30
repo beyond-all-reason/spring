@@ -2898,7 +2898,7 @@ bool CGuiHandler::DrawTexture(const IconInfo& icon, const std::string& texName)
 	if (!BindTextureString(tex2))
 		return false;
 
-	assert(xscale<=0.5); //border >= 50% makes no sence
+	assert(xscale<=0.5); //border >= 50% makes no sense
 	assert(yscale<=0.5);
 
 	// calculate the scaled quad

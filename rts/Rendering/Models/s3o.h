@@ -21,7 +21,7 @@ struct Piece{
 	float yoffset;
 	float zoffset;
 
-	/// Swap byte order (endianess) for big-endian machines
+	/// Swap byte order (endianness) for big-endian machines
 	void swap()
 	{
 		swabDWordInPlace(name);
@@ -51,7 +51,7 @@ struct Vertex{
 	float texu;    ///< texture offset for vertex
 	float texv;
 	
-	/// Swap byte order (endianess) for big-endian machines
+	/// Swap byte order (endianness) for big-endian machines
 	void swap()
 	{
 		swabFloatInPlace(xpos);
@@ -79,7 +79,7 @@ struct S3OHeader{
 	int texture1;      ///< offset in file to char* filename of first texture
 	int texture2;      ///< offset in file to char* filename of second texture
 
-	/// Swap byte order (endianess) for big-endian machines
+	/// Swap byte order (endianness) for big-endian machines
 	void swap()
 	{
 		swabDWordInPlace(version);

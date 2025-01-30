@@ -42,7 +42,7 @@ fi
 cd "$(dirname "$(readlink -f "$0")")/.."
 mkdir -p build-$OS .cache/ccache-$OS
 
-# Use localy build image if available, and pull from upstream if not
+# Use locally build image if available, and pull from upstream if not
 image=recoil-build-amd64-$OS:latest
 if [[ -z "$(docker images -q $image 2> /dev/null)" ]]; then
   image=ghcr.io/beyond-all-reason/recoil-build-amd64-$OS:latest

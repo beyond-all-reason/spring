@@ -130,7 +130,7 @@ EXPORT(const char* ) GetDataDirectory(int index);
  *
  * Must be called before GetUnitCount(), GetUnitName(), ...
  *
- * Before caling this function, you will first need to load a game's archives
+ * Before calling this function, you will first need to load a game's archives
  * into the VFS using AddArchive() or AddAllArchives().
  *
  * @return always 0!
@@ -184,7 +184,7 @@ EXPORT(const char* ) GetFullUnitName(int unit);
  */
 EXPORT(void        ) AddArchive(const char* archiveName);
 /**
- * @brief Adds an achive and all its dependencies to the VFS
+ * @brief Adds an archive and all its dependencies to the VFS
  * @see AddArchive
  */
 EXPORT(void        ) AddAllArchives(const char* rootArchiveName);

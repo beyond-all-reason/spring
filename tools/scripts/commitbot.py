@@ -2,7 +2,7 @@
 #
 # Author: Tobi Vollebregt
 #
-# Very simple script which is ment to be used as SVN post-commit hook to inform
+# Very simple script which is meant to be used as SVN post-commit hook to inform
 # users of TASServer of commits.  It does this by logging in as a bot and
 # sending a summary of the commit (changed paths and log message) to certain
 # channels.  It can be configured in the code below.

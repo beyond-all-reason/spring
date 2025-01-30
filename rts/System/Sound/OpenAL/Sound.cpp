@@ -822,7 +822,7 @@ void CSound::UpdateListenerReal()
 	float3 velocityAvg = velocity * 0.6f + prevVelocity * 0.4f;
 	prevVelocity = velocityAvg;
 	velocityAvg *= ELMOS_TO_METERS;
-	velocityAvg.y *= 0.001f; //! scale vertical axis separatly (zoom with mousewheel is faster than speed of sound!)
+	velocityAvg.y *= 0.001f; //! scale vertical axis separately (zoom with mousewheel is faster than speed of sound!)
 	velocityAvg *= 0.15f;
 	alListener3f(AL_VELOCITY, velocityAvg.x, velocityAvg.y, velocityAvg.z);
 	*/

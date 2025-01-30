@@ -409,7 +409,7 @@ CMatrix44f CMatrix44f::operator+(const CMatrix44f& mat) const
 		r[i + 2] = m[i + 2] + mat[i + 2];
 		r[i + 3] = m[i + 3] + mat[i + 3];
 	}
-#else //brings spring's Matrix44 on par with Eigen in terms of perfomance
+#else //brings spring's Matrix44 on par with Eigen in terms of performance
 	#define ADD_COLUMN(col) \
 		 _mm_store_ps(&r.md[col][0], _mm_add_ps(_mm_load_ps(&md[col][0]), _mm_load_ps(&mat.md[col][0])))
 

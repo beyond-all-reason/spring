@@ -424,7 +424,7 @@ void QTPFS::PathSearch::LoadPartialPath(IPath* path) {
 				prevNodeId = node.nodeId;
 				prevNetPoint = node.netPoint;
 			}
-			// we don't need to set incomplete route step indicies becasue the reverse path
+			// we don't need to set incomplete route step indices because the reverse path
 			// explicitly doesn't capture the step index if it hits an early drop out.
 		});
 	}
@@ -498,7 +498,7 @@ void QTPFS::PathSearch::LoadRepairPath() {
 	if (bwdSearchNodes.isSet(fwd.srcSearchNode->GetIndex())) {
 		const QTPFS::SearchNode& bwdNode = bwdSearchNodes[fwd.srcSearchNode->index];
 
-		// Check wether the repair is starting on the clean path.
+		// Check whether the repair is starting on the clean path.
 		if (bwdNode.GetStepIndex() > 0) {
 			const float2& edgePoint = bwdNode.GetNeighborEdgeTransitionPoint();
 			const float3 newTgtPoint{edgePoint.x, 0.f, edgePoint.y};
@@ -599,7 +599,7 @@ void QTPFS::PathSearch::UpdateHcostMult() {
 	// and tgtPoint
 	switch (searchType) {
 		// This, by default, guarantees the best path, but underestimates distance costs considerabily.
-		// Searching more quads than neccessary is an impact to performance. So a slight increase to the
+		// Searching more quads than necessary is an impact to performance. So a slight increase to the
 		// hcost can be applied to help. Care needs to be taken because if it goes too far, then
 		// performance can drop further instead as the search shifts to best-first-search.
 		case PATH_SEARCH_ASTAR:
@@ -658,7 +658,7 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
 	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
 
-	/* These values have been chosen by testing and anlysis. They give a reasonable starting point
+	/* These values have been chosen by testing and analysis. They give a reasonable starting point
 	 * balancing performance gains against the chance that a poor path will result. I suspect these
 	 * can be improved, but this will need further stress testing.
 	 * 
@@ -888,7 +888,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			// goal is not reachable. UPDATE: not anymore, they are now always in effect due to
 			// several scenarios that impact performance.
 			// 1. Maps with huge islands.
-			// 2. Players wall off the map in PvE modes, create huge artifical islands.
+			// 2. Players wall off the map in PvE modes, create huge artificial islands.
 			if (fwdNodesSearched >= fwdNodeSearchLimit)
 				searchThreadData->ResetQueue(SearchThreadData::SEARCH_FORWARD);
 
@@ -1380,7 +1380,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
 	const float3  curPoint  = {curPoint2.x, 0.0f, curPoint2.y};
 
-	// Allow units to escape if starting in a closed node - a cost of inifinity would prevent them escaping.
+	// Allow units to escape if starting in a closed node - a cost of infinity would prevent them escaping.
 	const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
 
 	const std::vector<INode::NeighbourPoints>& nxtNodes = curNode->GetNeighbours();
@@ -1532,7 +1532,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 void QTPFS::PathSearch::Finalize(IPath* path) {
 	ZoneScoped;
 
-	// LOG("%s: [%p : %d] Finialize search.", __func__
+	// LOG("%s: [%p : %d] Finalize search.", __func__
 	// 		, &nodeLayer[path->GetPathType()]
 	// 		, path->GetPathType()
 	// 		);
@@ -2333,7 +2333,7 @@ void QTPFS::PathSearch::SmoothSharedPath(IPath* path) {
 		return i;
 	};
 
-	// First three points are indicies: 0, 1, 2
+	// First three points are indices: 0, 1, 2
 	int pi = 2;
 	int nodeIndex1 = 0;
 	int nodeIndex0 = getNextNodeIndex(nodeIndex1);

@@ -60,7 +60,7 @@ Unlike multiple read-folders, there is **only a single write-folder** (defaults 
 Writing is done by general Lua interfaces such as `io` and `os`, not `VFS`.
 
 A somewhat unorthodox way to pass (synced) content is **via modoptions**.
-Modoptions can **contain data** that gameside code can act upon, and if you're brave enough you can even **pass Lua code** as a modoption to be excuted.
+Modoptions can **contain data** that gameside code can act upon, and if you're brave enough you can even **pass Lua code** as a modoption to be executed.
 This is one of the ways to let people **run their local files in a synced way**, by just forwarding them as modoptions.
 
 ## VFS mode listing

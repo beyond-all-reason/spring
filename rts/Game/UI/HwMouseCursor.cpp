@@ -657,7 +657,7 @@ void HardwareCursorX11::PushImage(int xsize, int ysize, const void* mem)
 void HardwareCursorX11::SetDelay(float delay)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	cimages.back()->delay = (XcursorUInt)(delay*1000.0f); //in millseconds
+	cimages.back()->delay = (XcursorUInt)(delay*1000.0f); //in milliseconds
 }
 
 void HardwareCursorX11::PushFrame(int index, float delay)

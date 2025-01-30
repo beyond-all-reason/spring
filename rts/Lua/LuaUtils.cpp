@@ -397,7 +397,7 @@ static void LowerKeysReal(lua_State* L, spring::unsynced_set<const void*>& check
 		lua_pushvalue(L, -2); // the key
 		lua_pushnil(L);
 		lua_rawset(L, sourceTableIdx);
-		// does the lower case key alread exist in the table?
+		// does the lower case key already exist in the table?
 		lua_pushsstring(L, lowerKey);
 		lua_rawget(L, sourceTableIdx);
 

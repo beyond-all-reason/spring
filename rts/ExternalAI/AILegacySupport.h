@@ -17,7 +17,7 @@
 
 // GetValue() constants
 #define AIVAL_NUMDAMAGETYPES			1 // int
-#define AIVAL_MAP_CHECKSUM				3 // unsinged int
+#define AIVAL_MAP_CHECKSUM				3 // unsigned int
 #define AIVAL_DEBUG_MODE				4 // bool
 //#define AIVAL_GAME_MODE					5 // int // deprecated
 #define AIVAL_GAME_PAUSED				6 // bool

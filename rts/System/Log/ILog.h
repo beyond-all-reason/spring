@@ -11,8 +11,8 @@
  * Aims:
  * - Support a fixed set of severities levels:
  *   * L_DEBUG      : fine-grained information that is most useful to debug
- *   * L_INFO       : same as L_NOTICE just that it is surpressed on RELEASE builds when a non-default logSection is set
- *   * L_NOTICE     : default log level (always outputed)
+ *   * L_INFO       : same as L_NOTICE just that it is suppressed on RELEASE builds when a non-default logSection is set
+ *   * L_NOTICE     : default log level (always outputted)
  *   * L_DEPRECATED : deprecation messages
  *   * L_WARNING    : potentially harmful situations
  *   * L_ERROR      : errors that might still allow the application to keep running
@@ -54,7 +54,7 @@ extern "C" {
 extern bool log_frontend_isEnabled(int level, const char* section);
 
 /**
- * Allows the global filter to maintain a set of all setions used in the binary.
+ * Allows the global filter to maintain a set of all sections used in the binary.
  * This will be called once per each LOG*() line in the source.
  */
 extern void log_frontend_register_section(const char* section);

@@ -1261,7 +1261,7 @@ int LuaSyncedRead::GetFeatureRulesParam(lua_State* L)
  *
  * @section modmapoptions
  *
- * *Warning*: boolean values are not transfered from C to Lua correctly.
+ * *Warning*: boolean values are not transferred from C to Lua correctly.
  * For this reason the respective option has to be converted to a number
  * and checked accordingly via an IF statement as shown below:
  *
@@ -7765,7 +7765,7 @@ int LuaSyncedRead::TestBuildOrder(lua_State* L)
 	int retval = CGameHelper::TestUnitBuildSquare(bi, feature, CLuaHandle::GetHandleReadAllyTeam(L), CLuaHandle::GetHandleSynced(L));
 
 	// the output of TestUnitBuildSquare was changed after this API function was written
-	// keep backward-compability by mapping BUILDSQUARE_OPEN to BUILDSQUARE_RECLAIMABLE
+	// keep backward-compatibility by mapping BUILDSQUARE_OPEN to BUILDSQUARE_RECLAIMABLE
 	if (retval == CGameHelper::BUILDSQUARE_OPEN)
 		retval = CGameHelper::BUILDSQUARE_RECLAIMABLE;
 

@@ -181,7 +181,7 @@ void CMouseHandler::ReloadCursors()
 	AssignMouseCursor("DeathWait",    "cursorwait",       mCenter,  false); // backup
 
 	AssignMouseCursor("ManualFire",   "cursormanfire",    mCenter,  false);
-	AssignMouseCursor("ManualFire",   "cursordgun",       mCenter,  false); // backup (backward compability)
+	AssignMouseCursor("ManualFire",   "cursordgun",       mCenter,  false); // backup (backward compatibility)
 	AssignMouseCursor("ManualFire",   "cursorattack",     mCenter,  false); // backup
 
 	AssignMouseCursor("Fight",        "cursorfight",      mCenter,  false);
@@ -801,7 +801,7 @@ void CMouseHandler::HideMouse()
 	// signal that we are only interested in relative motion events when MMB-scrolling
 	// this way the mouse position will never change so it is also unnecessary to call
 	// SDL_WarpMouseInWindow and handle the associated wart of filtering motion events
-	// technically supercedes SDL_ShowCursor as well
+	// technically supersedes SDL_ShowCursor as well
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	const int2 viewMouseCenter = GetViewMouseCenter();

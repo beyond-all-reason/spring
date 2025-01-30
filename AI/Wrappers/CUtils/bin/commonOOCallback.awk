@@ -281,7 +281,7 @@ function part_getIndicesArgs(clsName_p, implClsName_p, params_p, metaComment_p, 
 	} else {
 
 		print("caution: possible problem with indices args of " implClsName_p);
-		# This is very hacky! may very well breack in the future.
+		# This is very hacky! may very well break in the future.
 		# use only first param, if there is one
 		indicesArgs_p = params_p;
 		sub(/,.*$/, "", indicesArgs_p);
@@ -312,7 +312,7 @@ function store_class(ancestors_s, clsName_s) {
 	if (!(ancestors_s in ancestors_class)) {
 		ancestors_class[ancestors_s] = clsName_s;
 	} else if (!match(ancestors_class[ancestors_s], "((^)|(,))" clsName_s "(($)|(,))")) {
-	#} else if (!match(ancestors_class[ancestors_s], clsName_s)) { # NO WRAPP
+	#} else if (!match(ancestors_class[ancestors_s], clsName_s)) { # NO WRAP
 		ancestors_class[ancestors_s] = ancestors_class[ancestors_s] "," clsName_s;
 	}
 }
