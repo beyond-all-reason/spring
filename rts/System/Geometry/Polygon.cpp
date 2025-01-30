@@ -236,26 +236,23 @@ bool Geometry::Face::Sanitize()
 	if (!IsValidFast())
 		return false;
 
-	const float3 midPoint = std::reduce(points.begin(), points.end()) / points.size();
+	const auto midPoint = std::reduce(points.begin(), points.end()) / points.size();
 
 	const auto& normal = GetPlane();
-	const float3 ref = (*points.begin() - midPoint);
+	const auto ref = static_cast<float3>(*points.begin() - midPoint);
 
-	const auto SortPred = [&ref, &midPoint, &normal](const auto& lhs, const auto& rhs) {
-		const auto lhsVec = (lhs - midPoint);
-		const auto rhsVec = (rhs - midPoint);
+	for (size_t i = 0; i < points.size(); ++i) {
+		const auto vec = static_cast<float3>(points[i]) - midPoint;
 
-		const auto lDet = normal.dot(ref.cross(lhsVec));
-		const auto lDot = ref.dot(lhsVec);
-		auto lAngle = math::atan2f(lDet, lDot);
+		const auto det = normal.dot(ref.cross(vec));
+		const auto dot = ref.dot(vec);
+		points[i].w = math::atan2f(det, dot);
+	}
 
-		const auto rDet = normal.dot(ref.cross(rhsVec));
-		const auto rDot = ref.dot(rhsVec);
-		auto rAngle = math::atan2f(rDet, rDot);
-
-		// TODO: figure out the way to compare angles without atan2
-		return lAngle < rAngle;
+	const auto SortPred = [](const auto& lhs, const auto& rhs) {
+		return lhs.w < rhs.w;
 	};
+
 	const auto UniqPred = [](const auto& lhs, const auto& rhs) {
 		return (rhs - lhs).SqLength() <= 1.0f;
 	};

@@ -790,6 +790,8 @@ namespace Impl {
 
 void CShadowHandler::CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam)
 {
+	SCOPED_TIMER("CShadowHandler::CalcShadowMatrices");
+
 	// save the player's camera frustum verts in case we need them in CShadowHandler::DrawFrustumDebugMap()
 	playCamFrustum = playerCam->GetFrustum().verts;
 

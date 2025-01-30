@@ -59,7 +59,7 @@ namespace Geometry {
 		void CondSetPlane();
 	private:
 		std::optional<float4> plane;
-		std::vector<float3> points;
+		std::vector<float4> points;
 	};
 
 	class Polygon {
