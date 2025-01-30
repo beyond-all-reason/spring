@@ -10,7 +10,7 @@
 
 
 /**
- * Possible live-cycle stati of a Skirmish AI instance.
+ * Possible live-cycle statuses of a Skirmish AI instance.
  */
 enum ESkirmishAIStatus {
 	SKIRMAISTATE_CONSTRUCTED  = 10,
@@ -23,7 +23,7 @@ enum ESkirmishAIStatus {
 
 /**
  * Stores all sync relevant data about a Skirmish AI instance,
- * which is comparable to a human player, as in the thing that controlls a team.
+ * which is comparable to a human player, as in the thing that controls a team.
  * This class is the AIs equivalent to the humans PlayerBase.
  * It is used on the Game-Server and on clients (as a base class).
  */

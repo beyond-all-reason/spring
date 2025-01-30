@@ -1,10 +1,10 @@
 #!/usr/bin/awk -f
 #
-# This awk script creates Java classes in OO style to wrapp the C style
+# This awk script creates Java classes in OO style to wrap the C style
 # JNI based AI Callback wrapper.
-# In other words, the output of this file wrapps:
+# In other words, the output of this file wraps:
 # com/springrts/ai/AICallback.java
-# which wrapps:
+# which wraps:
 # rts/ExternalAI/Interface/SSkirmishAICallback.h
 # and
 # rts/ExternalAI/Interface/AISCommands.h
@@ -653,7 +653,7 @@ function printMember(fullName_m, memName_m, additionalIndices_m) {
 		sub(/REF:MULTI:/, "ARRAY:", metaComment);
 	}
 
-	# remove additional indices from the outter params
+	# remove additional indices from the outer params
 	for (ai=1; ai <= addInds_size_m; ai++) {
 		_removed = sub(/[^,]+(, )?/, "", params);
 		if (!_removed && !part_isStatic(memName_m, metaComment)) {
@@ -822,8 +822,8 @@ function printMember(fullName_m, memName_m, additionalIndices_m) {
 				_hasRetInd = 1;
 			}
 			for (ai=1; ai <= (addInds_size_m-_hasRetInd); ai++) {
-				# Very hacky! too unmotivated for propper fix, sorry.
-				# propper fix would involve getting the parent of the wrapped
+				# Very hacky! too unmotivated for proper fix, sorry.
+				# proper fix would involve getting the parent of the wrapped
 				# class and using its additional indices
 				if ((functionName_m != "UnitDef_WeaponMount_getWeaponDef") && (functionName_m != "Unit_Weapon_getDef")) {
 					_wrappGetInst_params = _wrappGetInst_params ", " addInds_m[ai];
@@ -1183,7 +1183,7 @@ function wrappFunctionDef(funcDef, commentEolTot) {
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 # see: commonDoc.awk
 function canDeleteDocumentation() {
 	return isMultiLineFunc != 1;

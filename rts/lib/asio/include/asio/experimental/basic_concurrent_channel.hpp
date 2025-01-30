@@ -70,7 +70,7 @@ namespace detail {
  *   }
  * }
  *
- * void receive_loop(concurent_channel<void(error_code, int)>& ch)
+ * void receive_loop(concurrent_channel<void(error_code, int)>& ch)
  * {
  *   ch.async_receive(
  *       [&ch](error_code error, int i)

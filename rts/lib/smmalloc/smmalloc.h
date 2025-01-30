@@ -290,7 +290,7 @@ class Allocator
                 // try to swap node and head
                 if (head.compare_exchange_strong(headValue.u, nodeValue.u))
                 {
-                    // succes
+                    // success
                     break;
                 }
                 // can't swap values, head is changed (now headValue has new head loaded) try again
@@ -483,7 +483,7 @@ class Allocator
             // alloc new memory block and move memory
             void* p2 = Alloc(bytesCount, alignment);
 
-            // Assume that p is the pointer that is allocated by passing the zero size. No preserve memory conents is requried.
+            // Assume that p is the pointer that is allocated by passing the zero size. No preserve memory contents is required.
             if (IsReadable(p))
             {
                 // move the memory block to the new location
@@ -513,7 +513,7 @@ class Allocator
         if (__bucketIndex < bucketsCount)
         {
             void* p2 = Alloc(bytesCount, alignment);
-            // Assume that p is the pointer that is allocated by passing the zero size. No preserve memory conents is requried.
+            // Assume that p is the pointer that is allocated by passing the zero size. No preserve memory contents is required.
             if (IsReadable(p))
             {
                 size_t numBytes = GenericAllocator::GetUsableSpace(gAllocator, p);

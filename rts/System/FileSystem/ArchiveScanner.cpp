@@ -961,7 +961,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 #ifdef _WIN32
 	static constexpr int NUM_PARALLEL_FILE_READS_SD = 4;
 #else
-	// Linux FS even on spinning disk seems far more tollerant to parallel reads, use all threads
+	// Linux FS even on spinning disk seems far more tolerant to parallel reads, use all threads
 	const int NUM_PARALLEL_FILE_READS_SD = ThreadPool::GetNumThreads();
 #endif // _WIN32
 

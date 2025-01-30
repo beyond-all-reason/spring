@@ -270,7 +270,7 @@ public:
             // Specifies the file name of a texture
             CHUNK_MAPFILE   = 0xA300,
 
-            // Specifies whether a materail requires two-sided rendering
+            // Specifies whether a material requires two-sided rendering
             CHUNK_MAT_TWO_SIDE = 0xA081,
         // ********************************************************************
 

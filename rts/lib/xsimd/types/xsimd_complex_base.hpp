@@ -437,7 +437,7 @@ namespace xsimd
     }
 
     /**
-     * Initializes the values of the batch whith those of the real batch \c re.
+     * Initializes the values of the batch with those of the real batch \c re.
      * Imaginary parts are set to 0.
      */
     template <class X>
@@ -544,8 +544,8 @@ namespace xsimd
     }
 
     /**
-     * Substracts the batch \c rhs to \c this.
-     * @param rhs the batch to substract.
+     * Subtracts the batch \c rhs to \c this.
+     * @param rhs the batch to subtract.
      * @return a reference to \c this.
      */
     template <class X>
@@ -557,8 +557,8 @@ namespace xsimd
     }
 
     /**
-     * Substracts the scalar \c rhs to each value contained in \c this.
-     * @param rhs the scalar to substract.
+     * Subtracts the scalar \c rhs to each value contained in \c this.
+     * @param rhs the scalar to subtract.
      * @return a reference to \c this.
      */
     template <class X>
@@ -568,8 +568,8 @@ namespace xsimd
     }
 
     /**
-     * Substracts the real batch \c rhs to \c this.
-     * @param rhs the batch to substract.
+     * Subtracts the real batch \c rhs to \c this.
+     * @param rhs the batch to subtract.
      * @return a reference to \c this.
      */
     template <class X>
@@ -580,8 +580,8 @@ namespace xsimd
     }
 
     /**
-     * Substracts the real scalar \c rhs to each value contained in \c this.
-     * @param rhs the real scalar to substract.
+     * Subtracts the real scalar \c rhs to each value contained in \c this.
+     * @param rhs the real scalar to subtract.
      * @return a reference to \c this.
      */
     template <class X>

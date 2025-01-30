@@ -371,7 +371,7 @@ inline bool aiMatrix4x4t<TReal>::Equal(const aiMatrix4x4t<TReal>& m, TReal epsil
 // ----------------------------------------------------------------------------------------
 
 #define ASSIMP_MATRIX4_4_DECOMPOSE_PART		\
-	const aiMatrix4x4t<TReal>& _this = *this;/* Create alias for conveniance. */ \
+	const aiMatrix4x4t<TReal>& _this = *this;/* Create alias for convenience. */ \
 	\
 	/* extract translation */ \
 	pPosition.x = _this[0][3]; \

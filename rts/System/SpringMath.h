@@ -104,7 +104,7 @@ float3 SolveIntersectingPoint(int zeroCoord, int coord1, int coord2, const float
  * @brief Returns the intersection points of a ray with the map boundary (2d only)
  * @param start float3 the start point of the line
  * @param dir float3 direction of the ray
- * @return <near,far> std::pair<float,float> distance to the intersection points in mulitples of `dir`
+ * @return <near,far> std::pair<float,float> distance to the intersection points in multiples of `dir`
  */
 float2 GetMapBoundaryIntersectionPoints(const float3 start, const float3 dir) _pure _warn_unused_result;
 
@@ -245,7 +245,7 @@ float3 GetRadAngleToward(float3 v1, float3 v2);
 
 
 /**
- * @brief Checks if 2 radian values discribe the same angle
+ * @brief Checks if 2 radian values describe the same angle
  * @param f1 float* first compare value
  * @param f2 float* second compare value
  */

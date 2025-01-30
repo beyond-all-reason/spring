@@ -181,7 +181,7 @@ protected:
      {}
   };
 
-  // summarize a material in an convinient way.
+  // summarize a material in an convenient way.
   struct Material
   {
     std::string name;

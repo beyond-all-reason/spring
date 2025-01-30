@@ -1,4 +1,4 @@
-This is a heavily modified and shrinked version of zlib 1.2.3
+This is a heavily modified and shrunk version of zlib 1.2.3
 
 - Removed comments from zlib.h
 - Removed gzip/zip archive I/O

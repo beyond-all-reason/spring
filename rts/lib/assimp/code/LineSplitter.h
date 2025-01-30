@@ -78,7 +78,7 @@ public:
 
     // -----------------------------------------
     /** construct from existing stream reader
-    note: trim is *always* assumed true if skyp_empty_lines==true
+    note: trim is *always* assumed true if skip_empty_lines==true
     */
     LineSplitter(StreamReaderLE& stream, bool skip_empty_lines = true, bool trim = true)
     : idx( 0 )

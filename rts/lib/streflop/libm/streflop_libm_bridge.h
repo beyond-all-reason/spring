@@ -21,7 +21,7 @@
 
 // prevent inclusion of the main Math.h file
 // => the function symbol are not defined when compiling libm
-// => this adds a level of protection, a function inadvertantly using a wrong precision function is detected
+// => this adds a level of protection, a function inadvertently using a wrong precision function is detected
 #define STREFLOP_MATH_H
 
 // First define our custom types
@@ -304,7 +304,7 @@ template<> struct ExtendedConverter<16> {
 
 // SSE is best case, always plain types
 // X87 uses a wrapper for no denormals case
-// First member of struct guaranted aligned at mem location => OK
+// First member of struct guaranteed aligned at mem location => OK
 // Idem for SoftFloat wrapper, though endianity has to be checked explicitly
 #define SIMPLE_FROM_INT_PTR(x) *reinterpret_cast<Simple*>(x)
 #define CONST_SIMPLE_FROM_INT_PTR(x) *reinterpret_cast<const Simple*>(x)

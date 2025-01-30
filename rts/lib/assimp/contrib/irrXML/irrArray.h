@@ -189,7 +189,7 @@ public:
 
 
 
-	//! Assignement operator
+	//! Assignment operator
 	void operator=(const array<T>& other)
 	{
 		if (data)

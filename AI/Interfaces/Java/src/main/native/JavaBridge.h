@@ -9,7 +9,7 @@
 #define INT_AI          PKG_AI"AI"
 #define CLS_AI_CALLBACK PKG_AI"JniAICallback"
 
-// define path entry delimitter, used eg for the java class-path
+// define path entry delimiter, used eg for the java class-path
 #ifdef _WIN32
 #define ENTRY_DELIM ";"
 #else

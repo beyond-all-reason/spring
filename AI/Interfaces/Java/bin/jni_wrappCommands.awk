@@ -178,7 +178,7 @@ function printJavaEnd() {
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 # see: commonDoc.awk
 function canDeleteDocumentation() {
 	return isInsideEvtStruct != 1;

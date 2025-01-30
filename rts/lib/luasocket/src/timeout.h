@@ -11,7 +11,7 @@
 /* timeout control structure */
 typedef struct t_timeout_ {
     double block;          /* maximum time for blocking calls */
-    double total;          /* total number of miliseconds for operation */
+    double total;          /* total number of milliseconds for operation */
     double start;          /* time of start of operation */
 } t_timeout;
 typedef t_timeout *p_timeout;

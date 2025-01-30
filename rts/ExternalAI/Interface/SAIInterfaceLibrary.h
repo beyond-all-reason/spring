@@ -75,7 +75,7 @@ extern "C" {
 
 /**
  * [bool]
- * Whether the AI Interface suports dynamic (at runtime) lookup of available
+ * Whether the AI Interface supports dynamic (at runtime) lookup of available
  * Skirmish AIs through the list* functions, in addition to the ones defined
  * through AIInfo.lua files.
  * example: "0", "1", "false", "true"
@@ -112,7 +112,7 @@ struct SStaticGlobalData;
  * creates a new instance of this struct, and sets the member function
  * pointers to the addresses of the fitting functions exported
  * by the shared library. The functions of the AI Interface are then
- * allways called through this struct.
+ * always called through this struct.
  */
 struct SAIInterfaceLibrary {
 

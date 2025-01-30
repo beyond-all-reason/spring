@@ -88,7 +88,7 @@ EXPORT(bool             ) skirmishAiCallback_DataDirs_locatePath(int skirmishAII
 
 EXPORT(const char*      ) skirmishAiCallback_DataDirs_getWriteableDir(int skirmishAIId);
 
-// BEGINN misc callback functions
+// BEGIN misc callback functions
 EXPORT(int              ) skirmishAiCallback_Game_getCurrentFrame(int skirmishAIId);
 
 EXPORT(int              ) skirmishAiCallback_Game_getAiInterfaceVersion(int skirmishAIId);
@@ -146,7 +146,7 @@ EXPORT(const char*      ) skirmishAiCallback_Game_getRulesParamString(int skirmi
 // END misc callback functions
 
 
-// BEGINN OBJECT Cheats
+// BEGIN OBJECT Cheats
 EXPORT(bool             ) skirmishAiCallback_Cheats_isEnabled(int skirmishAIId);
 
 EXPORT(bool             ) skirmishAiCallback_Cheats_setEnabled(int skirmishAIId, bool enable);
@@ -158,7 +158,7 @@ EXPORT(bool             ) skirmishAiCallback_Cheats_isOnlyPassive(int skirmishAI
 // END OBJECT Cheats
 
 
-// BEGINN OBJECT Resource
+// BEGIN OBJECT Resource
 EXPORT(int              ) skirmishAiCallback_getResources(int skirmishAIId);
 
 EXPORT(int              ) skirmishAiCallback_getResourceByName(int skirmishAIId, const char* resourceName);
@@ -188,7 +188,7 @@ EXPORT(float            ) skirmishAiCallback_Economy_getExcess(int skirmishAIId,
 // END OBJECT Resource
 
 
-// BEGINN OBJECT File
+// BEGIN OBJECT File
 EXPORT(int              ) skirmishAiCallback_File_getSize(int skirmishAIId, const char* fileName);
 
 EXPORT(bool             ) skirmishAiCallback_File_getContent(int skirmishAIId, const char* fileName, void* buffer, int bufferLen);
@@ -200,7 +200,7 @@ EXPORT(bool             ) skirmishAiCallback_File_getContent(int skirmishAIId, c
 // END OBJECT File
 
 
-// BEGINN OBJECT UnitDef
+// BEGIN OBJECT UnitDef
 EXPORT(int              ) skirmishAiCallback_getUnitDefs(int skirmishAIId, int* unitDefIds, int unitDefIds_sizeMax);
 
 EXPORT(int              ) skirmishAiCallback_getUnitDefByName(int skirmishAIId, const char* unitName);
@@ -599,7 +599,7 @@ EXPORT(int              ) skirmishAiCallback_UnitDef_WeaponMount_getOnlyTargetCa
 
 
 
-// BEGINN OBJECT Unit
+// BEGIN OBJECT Unit
 EXPORT(int              ) skirmishAiCallback_Unit_getLimit(int skirmishAIId);
 
 EXPORT(int              ) skirmishAiCallback_Unit_getMax(int skirmishAIId);
@@ -717,7 +717,7 @@ EXPORT(int              ) skirmishAiCallback_Unit_getWeapon(int skirmishAIId, in
 // END OBJECT Unit
 
 
-// BEGINN OBJECT Team
+// BEGIN OBJECT Team
 EXPORT(bool             ) skirmishAiCallback_Team_hasAIController(int skirmishAIId, int teamId);
 
 EXPORT(int              ) skirmishAiCallback_getEnemyTeams(int skirmishAIId, int* teamIds, int teamIds_sizeMax);
@@ -731,7 +731,7 @@ EXPORT(const char*      ) skirmishAiCallback_Team_getRulesParamString(int skirmi
 // END OBJECT Team
 
 
-// BEGINN OBJECT Group
+// BEGIN OBJECT Group
 EXPORT(int              ) skirmishAiCallback_getGroups(int skirmishAIId, int* groupIds, int groupIds_sizeMax);
 
 EXPORT(int              ) skirmishAiCallback_Group_getSupportedCommands(int skirmishAIId, int groupId);
@@ -764,7 +764,7 @@ EXPORT(bool             ) skirmishAiCallback_Group_isSelected(int skirmishAIId, 
 
 
 
-// BEGINN OBJECT Mod
+// BEGIN OBJECT Mod
 EXPORT(const char*      ) skirmishAiCallback_Mod_getFileName(int skirmishAIId);
 
 EXPORT(int              ) skirmishAiCallback_Mod_getHash(int skirmishAIId);
@@ -835,7 +835,7 @@ EXPORT(bool             ) skirmishAiCallback_Mod_getRequireSonarUnderWater(int s
 
 
 
-// BEGINN OBJECT Map
+// BEGIN OBJECT Map
 EXPORT(int              ) skirmishAiCallback_Map_getChecksum(int skirmishAIId);
 
 EXPORT(void             ) skirmishAiCallback_Map_getStartPos(int skirmishAIId, float* return_posF3_out);
@@ -928,11 +928,11 @@ EXPORT(bool             ) skirmishAiCallback_Map_isPossibleToBuildAt(int skirmis
 
 EXPORT(void             ) skirmishAiCallback_Map_findClosestBuildSite(int skirmishAIId, int unitDefId, float* pos_posF3, float searchRadius, int minDist, int facing, float* return_posF3_out);
 
-// BEGINN OBJECT Map
+// BEGIN OBJECT Map
 
 
 
-// BEGINN OBJECT FeatureDef
+// BEGIN OBJECT FeatureDef
 EXPORT(int              ) skirmishAiCallback_getFeatureDefs(int skirmishAIId, int* featureDefIds, int featureDefIds_sizeMax);
 
 //int) skirmishAiCallback_FeatureDef_getId(int skirmishAIId, int featureDefId);
@@ -984,7 +984,7 @@ EXPORT(int              ) skirmishAiCallback_FeatureDef_getCustomParams(int skir
 // END OBJECT FeatureDef
 
 
-// BEGINN OBJECT Feature
+// BEGIN OBJECT Feature
 EXPORT(int              ) skirmishAiCallback_getFeatures(int skirmishAIId, int* featureIds, int featureIds_sizeMax);
 
 EXPORT(int              ) skirmishAiCallback_getFeaturesIn(int skirmishAIId, float* pos_posF3, float radius, bool spherical, int* featureIds, int featureIds_sizeMax);
@@ -1009,7 +1009,7 @@ EXPORT(short            ) skirmishAiCallback_Feature_getBuildingFacing(int skirm
 
 
 
-// BEGINN OBJECT WeaponDef
+// BEGIN OBJECT WeaponDef
 EXPORT(int              ) skirmishAiCallback_getWeaponDefs(int skirmishAIId);
 
 EXPORT(int              ) skirmishAiCallback_getWeaponDefByName(int skirmishAIId, const char* weaponDefName);
@@ -1246,7 +1246,7 @@ EXPORT(int              ) skirmishAiCallback_WeaponDef_getCustomParams(int skirm
 // END OBJECT WeaponDef
 
 
-// BEGINN OBJECT Weapon
+// BEGIN OBJECT Weapon
 EXPORT(int              ) skirmishAiCallback_Unit_Weapon_getDef(int skirmishAIId, int unitId, int weaponId);
 
 EXPORT(int              ) skirmishAiCallback_Unit_Weapon_getReloadFrame(int skirmishAIId, int unitId, int weaponId);

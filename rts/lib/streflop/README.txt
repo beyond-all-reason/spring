@@ -119,7 +119,7 @@ Apart for the bit representation of NaN values:
 
 - "Denormals x87 extended / Denormals Soft extended" should give the same results.
 
-- "Denormals SSE / Denormals x87" with the same precision may differ but only for some unfrequent occurences involving denormal numbers.
+- "Denormals SSE / Denormals x87" with the same precision may differ but only for some unfrequent occurrences involving denormal numbers.
 
 - All other configurations give different results.
 

@@ -133,7 +133,7 @@ void FindDegeneratesProcess::ExecuteOnMesh( aiMesh* mesh)
 
                     // NOTE: we set the removed vertex index to an unique value
                     // to make sure the developer gets notified when his
-                    // application attemps to access this data.
+                    // application attempts to access this data.
                     face.mIndices[face.mNumIndices] = 0xdeadbeef;
 
                     if(first)
@@ -201,7 +201,7 @@ evil_jump_outside:
         if (!mesh->mNumFaces) {
             // WTF!?
             // OK ... for completeness and because I'm not yet tired,
-            // let's write code that willl hopefully never be called
+            // let's write code that will hopefully never be called
             // (famous last words)
 
             // OK ... bad idea.

@@ -19,7 +19,7 @@ namespace CrashHandler {
 	/*
 	 * The following method breaks the Stacktrace() interface, but it is unavoidable since we need to provide the
 	 *   ucontext_t parameter to thread_unwind (and hence to libunwind) in order to work with the foreign thread.
-	 * The ucontext_t structure is embeded within Threading::ThreadControls under Linux.
+	 * The ucontext_t structure is embedded within Threading::ThreadControls under Linux.
 	 *
 	 * Imho this is a better solution than adding yet another optional parameter to the Stacktrace interface because
 	 *   the parameter is specific to the needs of one platform.

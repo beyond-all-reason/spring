@@ -671,7 +671,7 @@ float3 CPathManager::NextWayPoint(
 					break;
 				}
 				// direct to the nearest lower-res waypoint as a fallback until the path can be expanded.
-				// this creates the next step, so it will be checked very regulary until the path is
+				// this creates the next step, so it will be checked very regularly until the path is
 				// extended.
 				if (waypoint == noPathPoint) {
 					auto createTempWaypointFromLowerRes = [&createTempWaypoint, &callerPos, radius](IPath::Path& path) {

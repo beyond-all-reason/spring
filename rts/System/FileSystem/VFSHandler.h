@@ -107,7 +107,7 @@ public:
 
 	/**
 	 * Returns all the files in the given (virtual) directory without the
-	 * preceeding pathname.
+	 * preceding pathname.
 	 * @param dir raw directory path, for example "maps/" or "maps",
 	 *   case-insensitive
 	 */
@@ -115,7 +115,7 @@ public:
 
 	/**
 	 * Returns all the sub-directories in the given (virtual) directory without
-	 * the preceeding pathname.
+	 * the preceding pathname.
 	 * @param dir raw directory path, for example "maps/" or "maps",
 	 *   case-insensitive
 	 */

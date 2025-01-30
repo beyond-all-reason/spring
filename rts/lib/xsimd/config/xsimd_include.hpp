@@ -13,7 +13,7 @@
 
 #include "xsimd_instruction_set.hpp"
 
-// X86 intruction sets
+// X86 instruction sets
 #if XSIMD_X86_INSTR_SET >= XSIMD_X86_FMA3_VERSION // FMA3 and later
     #ifdef __GNUC__
         #include <x86intrin.h>         // x86intrin.h includes header files for whatever instruction

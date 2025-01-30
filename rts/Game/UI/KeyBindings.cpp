@@ -343,7 +343,7 @@ void MergeActionListsByTrigger(const ActionList& actionListA, const ActionList& 
 	//
 	// A duplicate is an action for which theres a correspondent and only one
 	// identical action present, but bound to a different key.
-	// This is guaranteed by the logic in ::Bind, which also imples it will
+	// This is guaranteed by the logic in ::Bind, which also implies it will
 	// invariably be the opposite of the action keytype (scancode<->keycode)
 	// Duplicates will not exist in a single list but would exist if both lists
 	// were merged without care.

@@ -634,9 +634,9 @@ private:
 
 
 	//! converts the text file into the desired format.
-	//! \param source: begin of the text (without byte order mark)
+	//! \param source: beginning of the text (without byte order mark)
 	//! \param pointerToStore: pointer to text data block which can be
-	//! stored or deleted based on the nesessary conversion.
+	//! stored or deleted based on the necessary conversion.
 	//! \param sizeWithoutHeader: Text size in characters without header
 	template<class src_char_type>
 	void convertTextData(src_char_type* source, char* pointerToStore, int sizeWithoutHeader)
@@ -752,7 +752,7 @@ private:
 				return false;
 
 		// if one (or both) of the strings was smaller then they
-		// are only equal if they have the same lenght
+		// are only equal if they have the same length
 		return (i == len) || (str1[i] == 0 && str2[i] == 0);
 	}
 

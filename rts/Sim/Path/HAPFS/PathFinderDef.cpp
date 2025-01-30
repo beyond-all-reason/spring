@@ -73,7 +73,7 @@ float CPathFinderDef::Heuristic(
 }
 
 
-// returns if the goal is inaccessable: this is
+// returns if the goal is inaccessible: this is
 // true if the goal area is "small" and blocked
 bool CPathFinderDef::IsGoalBlocked(const MoveDef& moveDef, const CMoveMath::BlockType& blockMask, const CSolidObject* owner, int threadNum) const {
 	RECOIL_DETAILED_TRACY_ZONE;

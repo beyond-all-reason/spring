@@ -604,7 +604,7 @@ void CGame::ClientReadNet()
 				}
 			}
 			case NETMSG_NEWFRAME: {
-				// This is alredy well covered in SimFrame so not adding scope.
+				// This is already well covered in SimFrame so not adding scope.
 				// ZoneScopedN("Net::NewFrame");
 
 				// Just a checkpoint for the speed factors plots.

@@ -3,7 +3,7 @@
 //  TODO: replace 'WordProperties' with regex/glob expressions
 //        ex: '/give [0-9]* [_0-9a-zA-Z]+'
 //        or even create a domain specific language
-//        ex: '/give <ammount> {unitname} <team-ID>'
+//        ex: '/give <amount> {unitname} <team-ID>'
 //        user-input: '/give 10 armcom 1'
 
 

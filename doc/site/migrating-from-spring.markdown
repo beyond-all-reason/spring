@@ -77,7 +77,7 @@ end
 The tables returned by
 [`Spring.GetSelectedUnitsSorted`](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Spring.GetSelectedUnitsSorted) and
 [`Spring.GetSelectedUnitsCounts`](https://beyond-all-reason.github.io/spring/ldoc/modules/UnsyncedRead.html#Spring.GetSelectedUnitsCounts)
-no longer have an additional `n` key with corresponding value containining the
+no longer have an additional `n` key with corresponding value containing the
 number of unitdefs.
 
 Instead use the second return value, e.g.:

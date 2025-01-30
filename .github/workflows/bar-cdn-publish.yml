@@ -1,4 +1,4 @@
-# Workflow for Beyond All Reaon, it only motifies BAR infra that a new engine
+# Workflow for Beyond All Reason, it only motifies BAR infra that a new engine
 # release was published.
 name: Publish Engine to BAR CDN
 on:

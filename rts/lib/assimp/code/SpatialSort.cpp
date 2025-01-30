@@ -57,7 +57,7 @@ using namespace Assimp;
 SpatialSort::SpatialSort( const aiVector3D* pPositions, unsigned int pNumPositions,
     unsigned int pElementOffset)
 
-    // define the reference plane. We choose some arbitrary vector away from all basic axises
+    // define the reference plane. We choose some arbitrary vector away from all basic axes
     // in the hope that no model spreads all its vertices along this plane.
     : mPlaneNormal(0.8523f, 0.34321f, 0.5736f)
 {
@@ -158,7 +158,7 @@ void SpatialSort::FindPositions( const aiVector3D& pPosition,
         index++;
 
     // Mow start iterating from there until the first position lays outside of the distance range.
-    // Add all positions inside the distance range within the given radius to the result aray
+    // Add all positions inside the distance range within the given radius to the result array
     std::vector<Entry>::const_iterator it = mPositions.begin() + index;
     const ai_real pSquared = pRadius*pRadius;
     while( it->mDistance < maxDist)
@@ -293,7 +293,7 @@ void SpatialSort::FindIdenticalPositions( const aiVector3D& pPosition,
         index++;
 
     // Now start iterating from there until the first position lays outside of the distance range.
-    // Add all positions inside the distance range within the tolerance to the result aray
+    // Add all positions inside the distance range within the tolerance to the result array
     std::vector<Entry>::const_iterator it = mPositions.begin() + index;
     while( ToBinary(it->mDistance) < maxDistBinary)
     {

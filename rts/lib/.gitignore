@@ -1,4 +1,4 @@
-# for easier maintainance this is up one level, so assimp can be more easily replaced
+# for easier maintenance this is up one level, so assimp can be more easily replaced
 # Directories
 /assimp/tools
 /assimp/contrib/cppunitassimp*

@@ -17,7 +17,7 @@ void log_framePrefixer_setFrameNumReference(int* frameNumReference);
 
 /**
  * Fills a string containing the frame number, if it is available.
- * Else fils in the empty string.
+ * Else fills in the empty string.
  * @return the number of chars written to the result buffer.
  */
 size_t log_framePrefixer_createPrefix(char* result, size_t resultSize);

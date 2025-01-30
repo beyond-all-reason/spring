@@ -193,7 +193,7 @@ public:
 	bool avoidCloaked;      // if true, try to avoid cloaked units while aiming
 
 	/**
-	 * If nonzero, targetting units will TryTarget at the edge of collision sphere
+	 * If nonzero, targeting units will TryTarget at the edge of collision sphere
 	 * (radius*tag value, [-1;1]) instead of its centre.
 	 */
 	float targetBorder;

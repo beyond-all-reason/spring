@@ -75,7 +75,7 @@ protected:
 };
 
 /**
-* old CSphereParticleSpawner (it used to spawns the particles as independant CProjectile objects)
+* old CSphereParticleSpawner (it used to spawns the particles as independent CProjectile objects)
 * has proven to be slower
 */
 class CSphereParticleSpawner : public CSimpleParticleSystem {

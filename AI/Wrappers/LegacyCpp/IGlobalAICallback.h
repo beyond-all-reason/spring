@@ -23,7 +23,7 @@ public:
 	virtual IAICheats* GetCheatInterface() = 0;
 
 	// use virtual instead of pure virtual,
-	// becuase pur evirtual is not well supported
+	// because pure virtual is not well supported
 	// among different OSs and compilers,
 	// and pure virtual has no advantage
 	// if we have other pure virtual functions

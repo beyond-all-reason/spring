@@ -51,7 +51,7 @@ int socket_waitfd(p_socket ps, int sw, p_timeout tm) {
     double t;
     if (timeout_iszero(tm)) return IO_TIMEOUT;  /* optimize timeout == 0 case */
     do {
-        /* must set bits within loop, because select may have modifed them */
+        /* must set bits within loop, because select may have modified them */
         rp = wp = NULL;
         if (sw & WAITFD_R) { FD_ZERO(&rfds); FD_SET(*ps, &rfds); rp = &rfds; }
         if (sw & WAITFD_W) { FD_ZERO(&wfds); FD_SET(*ps, &wfds); wp = &wfds; }

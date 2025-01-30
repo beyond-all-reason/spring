@@ -31,7 +31,7 @@ GNU C Compiler (`gcc') for several platforms.
 Limitations
 
 As supplied, SoftFloat requires an ISO/ANSI-style C compiler.  No attempt
-has been made to accomodate compilers that are not ISO-conformant.  Older
+has been made to accommodate compilers that are not ISO-conformant.  Older
 ``K&R-style'' compilers are not adequate for compiling SoftFloat.  All
 testing I have done so far has been with the GNU C Compiler.  Compilation
 with other compilers should be possible but has not been tested by me.

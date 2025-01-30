@@ -144,7 +144,7 @@ private:
 	/**
 	 * @brief Adds a single directory to the datadir handler.
 	 * Will only add the directory if it was not already added,
-	 * as lower index in the list of dirs means higher prefference,
+	 * as lower index in the list of dirs means higher preference,
 	 * adding it again would be pointless.
 	 */
 	void AddDir(const std::string& dir);
@@ -165,7 +165,7 @@ private:
 	/**
 	 * Determines whether a given path may be a data-dir for multiple engine
 	 * versions.
-	 * This is done by checking the precense of some dirs,
+	 * This is done by checking the presence of some dirs,
 	 * like "./maps/" and "./games/".
 	 * You may think of this as denoting multi-engine-version portable-mode.
 	 * This will return true on a default install on windows.

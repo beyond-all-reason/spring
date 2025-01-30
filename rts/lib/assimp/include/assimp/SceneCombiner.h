@@ -295,7 +295,7 @@ public:
      *
      *  @param Current node. This function is called recursively.
      *  @param prefix Prefix to be added to all nodes
-     *  @param len STring length
+     *  @param len String length
      */
     static void AddNodePrefixes(aiNode* node, const char* prefix,
         unsigned int len);

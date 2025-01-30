@@ -184,7 +184,7 @@ void CAdvWater::Draw(bool useBlending)
 
 	CVertexArray* va = GetVertexArray();
 	va->Initialize();
-	va->EnlargeArrays(5 * numDivs * (numDivs + 1) * 2, 5 * numDivs, VA_SIZE_TC); //! alloc room for all vertexes and strips
+	va->EnlargeArrays(5 * numDivs * (numDivs + 1) * 2, 5 * numDivs, VA_SIZE_TC); //! alloc room for all vertices and strips
 
 	for (int a = 0; a < 5; ++a) { //! CAUTION: loop count must match EnlargeArrays above
 		bool maxReached = false;

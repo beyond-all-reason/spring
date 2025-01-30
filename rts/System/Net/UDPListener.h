@@ -50,7 +50,7 @@ public:
 
 	/**
 	 * @brief Run this from time to time
-	 * Recieve data from the socket and hand it to the associated UDPConnection,
+	 * Receive data from the socket and hand it to the associated UDPConnection,
 	 * or open a new UDPConnection. It also Updates all of its connections.
 	 */
 	void Update();

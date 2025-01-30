@@ -104,7 +104,7 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, const NodeLayer& nodeL
 			return nodesOverlap;
 		} else {
 			// the rect is sized to either 16x16 or the size of the quad it is in, so if the current node is bigger
-			// than the damage rect, then it can't possibly be overlapping - (damaged nodes are never revisted by a
+			// than the damage rect, then it can't possibly be overlapping - (damaged nodes are never revisited by a
 			// path.)
 			return false;
 		}
@@ -286,7 +286,7 @@ bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, const NodeLayer& nodeL
 		}
 	}
 
-	// LOG("%s: pathType %d has %d entires at end", __func__, pathType, (int)dirtyPaths[pathType].size());
+	// LOG("%s: pathType %d has %d entries at end", __func__, pathType, (int)dirtyPaths[pathType].size());
 
 	return true;
 }

@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 /*
- * creg - Code compoment registration system
+ * creg - Code component registration system
  * Type matching using class templates (only class template support partial specialization)
  */
 

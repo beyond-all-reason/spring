@@ -40,4 +40,4 @@ private:
 
 static_assert(sizeof(ModelUniformData) == 128, "");
 static_assert(alignof(ModelUniformData) == 4, "");
-static_assert(sizeof(ModelUniformData::userDefined) % 4 == 0, ""); //due to GLSL std140 userDefined must be a mutiple of 4
+static_assert(sizeof(ModelUniformData::userDefined) % 4 == 0, ""); //due to GLSL std140 userDefined must be a multiple of 4

@@ -150,7 +150,7 @@ void GroundMoveSystem::Update() {
         });
 	}
 	{
-        // TODO: the vars are synced and that's what is stoping this being MT'ed.
+        // TODO: the vars are synced and that's what is stopping this being MT'ed.
         // Need an alternative method to support sync values that doesn't stop MT.
         // Same for change heading above as well.
         SCOPED_TIMER("Sim::Unit::MoveType::5::Update");

@@ -2,7 +2,7 @@
 
 /*
  * Do NOT include this file directly, but include the wrapper instead.
- * This prevents wastefull recompiling.
+ * This prevents wasteful recompiling.
  */
 
 #ifndef VERSION_GENERATED_H

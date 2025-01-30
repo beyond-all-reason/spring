@@ -19,7 +19,7 @@ in your writable spring data directory, eg at `~/.spring/script.txt`.
 
 Once you have a `script.txt`, simply copy it to another name, so that running
 SpringLobby again will not overwrite the old file. Now pass in the absolute path
-to that file on the `spring-headless` commmand-line.
+to that file on the `spring-headless` command-line.
 
 
 ## What is the license?

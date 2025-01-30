@@ -71,7 +71,7 @@ private:
 	 */
 	bool drawMode = false;
 	/**
-	 * Whether the point currently beeing drawn is one with label or not??? TODO check this
+	 * Whether the point currently being drawn is one with label or not??? TODO check this
 	 */
 	bool wantLabel = false;
 

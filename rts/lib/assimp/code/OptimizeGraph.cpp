@@ -346,7 +346,7 @@ void OptimizeGraphProcess::Execute( aiScene* pScene)
 }
 
 // ------------------------------------------------------------------------------------------------
-// Buidl a LUT of all instanced meshes
+// Build a LUT of all instanced meshes
 void OptimizeGraphProcess::FindInstancedMeshes (aiNode* pNode)
 {
     for (unsigned int i = 0; i < pNode->mNumMeshes;++i) {

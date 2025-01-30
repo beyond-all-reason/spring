@@ -98,7 +98,7 @@ MIME_API int luaopen_mime_core(lua_State *L)
 * Global Lua functions
 \*=========================================================================*/
 /*-------------------------------------------------------------------------*\
-* Incrementaly breaks a string into lines. The string can have CRLF breaks.
+* Incrementally breaks a string into lines. The string can have CRLF breaks.
 * A, n = wrp(l, B, length)
 * A is a copy of B, broken into lines of at most 'length' bytes. 
 * 'l' is how many bytes are left for the first line of B. 
@@ -158,7 +158,7 @@ static void b64setup(UC *b64unbase)
 }
 
 /*-------------------------------------------------------------------------*\
-* Acumulates bytes in input buffer until 3 bytes are available. 
+* Accumulates bytes in input buffer until 3 bytes are available. 
 * Translate the 3 bytes into Base64 form and append to buffer.
 * Returns new number of bytes in buffer.
 \*-------------------------------------------------------------------------*/
@@ -214,7 +214,7 @@ static size_t b64pad(const UC *input, size_t size,
 }
 
 /*-------------------------------------------------------------------------*\
-* Acumulates bytes in input buffer until 4 bytes are available. 
+* Accumulates bytes in input buffer until 4 bytes are available. 
 * Translate the 4 bytes from Base64 form and append to buffer.
 * Returns new number of bytes in buffer.
 \*-------------------------------------------------------------------------*/
@@ -235,7 +235,7 @@ static size_t b64decode(UC c, UC *input, size_t size,
         decoded[2] = (UC) (value & 0xff); value >>= 8;
         decoded[1] = (UC) (value & 0xff); value >>= 8;
         decoded[0] = (UC) value;
-        /* take care of paddding */
+        /* take care of padding */
         valid = (input[2] == '=') ? 1 : (input[3] == '=') ? 2 : 3; 
         luaL_addlstring(buffer, (char *) decoded, valid);
         return 0;
@@ -249,7 +249,7 @@ static size_t b64decode(UC c, UC *input, size_t size,
 * A is the encoded version of the largest prefix of C .. D that is
 * divisible by 3. B has the remaining bytes of C .. D, *without* encoding.
 * The easiest thing would be to concatenate the two strings and 
-* encode the result, but we can't afford that or Lua would dupplicate
+* encode the result, but we can't afford that or Lua would duplicate
 * every chunk we received.
 \*-------------------------------------------------------------------------*/
 static int mime_global_b64(lua_State *L)
@@ -337,7 +337,7 @@ static int mime_global_unb64(lua_State *L)
 * encoded lines must be no longer than 76 not counting CRLF
 * soft line-break are =CRLF
 * To encode one byte, we need to see the next two. 
-* Worst case is when we see a space, and wonder if a CRLF is comming
+* Worst case is when we see a space, and wonder if a CRLF is coming
 \*-------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------*\
 * Split quoted-printable characters into classes

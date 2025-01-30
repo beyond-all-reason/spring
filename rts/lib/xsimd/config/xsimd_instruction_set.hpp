@@ -212,7 +212,7 @@
  ***********************/
 
 // We haven't implemented any support for PPC, so we should
-// not enable detection for this instructoin set
+// not enable detection for this instruction set
 /*#define XSIMD_PPC_VMX_VERSION XSIMD_VERSION_NUMBER(1, 0, 0)
 #define XSIMD_PPC_VSX_VERSION XSIMD_VERSION_NUMBER(1, 1, 0)
 #define XSIMD_PPC_QPX_VERSION XSIMD_VERSION_NUMBER(2, 0, 0)

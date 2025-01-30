@@ -41,7 +41,7 @@ public class CallbackAIException extends RuntimeException implements AIException
 	}
 
 	/**
-	 * Returns the name of the method in which the exception ocurred.
+	 * Returns the name of the method in which the exception occurred.
 	 */
 	public String getMethodName() {
 		return methodName;

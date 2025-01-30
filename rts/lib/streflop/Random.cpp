@@ -371,7 +371,7 @@ template<> struct RandomIntRestrictor<64> {
         mask |= mask >> 32;
 
         // Draw only that number of bits, until a number is in the desired range [0,n]
-        // Worse case is number of loops proba descreasing in 1/2^nloops
+        // Worse case is number of loops proba decreasing in 1/2^nloops
         Type ret;
         do {
             ret = Accessor<64>::getRandomInt(state) & mask;

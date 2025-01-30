@@ -38,16 +38,16 @@ typedef int (*p_send) (
     void *ctx,          /* context needed by send */
     const char *data,   /* pointer to buffer with data to send */
     size_t count,       /* number of bytes to send from buffer */
-    size_t *sent,       /* number of bytes sent uppon return */
+    size_t *sent,       /* number of bytes sent upon return */
     p_timeout tm        /* timeout control */
 );
 
 /* interface to recv function */
 typedef int (*p_recv) (
     void *ctx,          /* context needed by recv */
-    char *data,         /* pointer to buffer where data will be writen */
+    char *data,         /* pointer to buffer where data will be written */
     size_t count,       /* number of bytes to receive into buffer */
-    size_t *got,        /* number of bytes received uppon return */
+    size_t *got,        /* number of bytes received upon return */
     p_timeout tm        /* timeout control */
 );
 

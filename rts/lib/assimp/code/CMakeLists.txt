@@ -39,7 +39,7 @@
 
 # Listing and grouping of all the source files.
 # 1) Set the file lists for each component
-# 2) Create a Source Group for each component, for IDE project orginization
+# 2) Create a Source Group for each component, for IDE project organization
 # 3) Add libassimp using the file lists (eliminates duplication of file names between
 #    source groups and library command)
 #

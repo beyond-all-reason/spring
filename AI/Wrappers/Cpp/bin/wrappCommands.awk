@@ -292,7 +292,7 @@ function printPointerAICommandWrapperEnd(outFile_wh) {
 }
 
 ################################################################################
-### BEGINN: parsing and saving the command struct documentation comments
+### BEGIN: parsing and saving the command struct documentation comments
 
 # end of doc comment
 /\*\// {
@@ -328,7 +328,7 @@ function printPointerAICommandWrapperEnd(outFile_wh) {
 	}
 }
 
-# beginn of doc comment
+# beginning of doc comment
 /^[ \t]*\/\*\*/ {
 
 	isInsideDocComment = 1;
@@ -351,7 +351,7 @@ function printPointerAICommandWrapperEnd(outFile_wh) {
 
 
 ################################################################################
-### BEGINN: parsing and saving the command structs
+### BEGIN: parsing and saving the command structs
 
 # end of struct S*Command
 /^}; \/\/ COMMAND_.*$/ {
@@ -386,7 +386,7 @@ function printPointerAICommandWrapperEnd(outFile_wh) {
 	}
 }
 
-# beginn of struct S*Command
+# beginning of struct S*Command
 /^struct S.*Command( \{)?/ {
 
 	isInsideCmdStruct = 1;

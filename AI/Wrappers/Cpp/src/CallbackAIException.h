@@ -23,7 +23,7 @@ public:
 	~CallbackAIException() throw() {};
 
 	/**
-	 * Returns the name of the method in which the exception ocurred.
+	 * Returns the name of the method in which the exception occurred.
 	 */
 	virtual const std::string& GetMethodName() const;
 }; // class CallbackAIException

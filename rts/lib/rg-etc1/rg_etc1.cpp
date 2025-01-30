@@ -6,7 +6,7 @@
 //
 // v1.04 - 5/15/14 - Fix signed vs. unsigned subtraction problem (noticed when compiled with gcc) in pack_etc1_block_init(). 
 //         This issue would cause an assert when this func. was called in debug. (Note this module was developed/testing with MSVC, 
-//         I still need to test it throughly when compiled with gcc.)
+//         I still need to test it thoroughly when compiled with gcc.)
 //
 // v1.03 - 5/12/13 - Initial public release
 #include "rg_etc1.h"

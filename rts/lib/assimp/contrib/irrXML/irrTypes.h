@@ -91,7 +91,7 @@ typedef unsigned short wchar_t;
 #endif
 
 //! Defines a small statement to work around a microsoft compiler bug.
-/** The microsft compiler 7.0 - 7.1 has a bug:
+/** The microsoft compiler 7.0 - 7.1 has a bug:
 When you call unmanaged code that returns a bool type value of false from managed code, 
 the return value may appear as true. See 
 http://support.microsoft.com/default.aspx?kbid=823071 for details. 

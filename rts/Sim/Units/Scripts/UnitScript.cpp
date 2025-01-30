@@ -245,7 +245,7 @@ void CUnitScript::TickAllAnims(int deltaTime)
 
 /**
 * @brief The single threaded second half of this function does the removal of finished animations,
-		and it also is responsible for unblocking the listeners and returning wether we have animations or not.
+		and it also is responsible for unblocking the listeners and returning whether we have animations or not.
 		This is not multi threaded as it guarantees that AnimFinished will be called in consistent order for
 		all anims for all participants of the simulation, and guarantees that the order of the animating
 		vector in CUnitScriptEngine::Tick is preserved.
@@ -390,7 +390,7 @@ void CUnitScript::Spin(int piece, int axis, float speed, float accel)
 		if (accel > 0.0f) {
 			ai->accel = accel;
 		} else {
-			// Go there instantly. Or have a defaul accel?
+			// Go there instantly. Or have a default accel?
 			ai->speed = speed;
 			ai->accel = 0.0f;
 		}

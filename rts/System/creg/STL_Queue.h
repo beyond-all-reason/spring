@@ -22,7 +22,7 @@ namespace creg {
 		return HackedQueue::Container(q);
 	}
 
-	// IType implemention for std::list
+	// IType implementation for std::list
 	template<class T, class S, class C>
 	struct PQueueType : public IType
 	{

@@ -785,7 +785,7 @@ static bool cpu_ident_apic_id(logical_cpu_t logical_cpu, struct cpu_raw_data_t* 
 
 	apic_info_t_constructor(apic_info, logical_cpu);
 
-	/* Only AMD and Intel x86 CPUs support Extended Processor Topology Eumeration */
+	/* Only AMD and Intel x86 CPUs support Extended Processor Topology Enumeration */
 	vendor = cpuid_vendor_identify(raw->basic_cpuid[0], vendor_str);
 	switch (vendor) {
 		case VENDOR_INTEL:
@@ -1143,7 +1143,7 @@ int cpu_identify_all(struct cpu_raw_data_array_t* raw_array, struct system_id_t*
 		}
 
 		/* Update logical CPU counters, physical CPU counters and cache instance in system->cpu_types
-		   Note: we need to differenciate two events:
+		   Note: we need to differentiate two events:
 		     - is_new_cpu_type (e.g. purpose was 'efficiency' during previous loop, and now purpose is 'performance')
 		     - is_last_item (i.e. this is the last iteration in raw_array->num_raw)
 		   In some cases, both events can occur during the same iteration, thus we have to update counters twice for the same logical_cpu.

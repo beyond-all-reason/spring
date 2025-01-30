@@ -676,7 +676,7 @@ struct STimeWaitUnitCommand {
 /**
  * Wait until another unit is dead, units will not wait on themselves.
  * Example:
- * A group of aircrafts waits for an enemy's anti-air defenses to die,
+ * A group of aircraft waits for an enemy's anti-air defenses to die,
  * before passing over their ruins to attack.
  */
 struct SDeathWaitUnitCommand {
@@ -699,7 +699,7 @@ struct SDeathWaitUnitCommand {
 }; //$ COMMAND_UNIT_WAIT_DEATH Unit_waitForDeathOf REF:toDieUnitId->Unit
 
 /**
- * Wait for a specific ammount of units.
+ * Wait for a specific amount of units.
  * Usually used with factories, but does work on groups without a factory too.
  * Example:
  * Pick a factory and give it a rallypoint, then add a SquadWait command
