@@ -146,7 +146,7 @@ jobs:
           docker-image: "${{ github.event.inputs.docker-image }}"
 
       - name: Upload Bin as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.run-docker-build.outputs.bin_name }}
           path: ${{ github.workspace }}/artifacts/${{ steps.run-docker-build.outputs.bin_name }}
@@ -154,14 +154,14 @@ jobs:
 
       - name: Upload Dbg Artifacts
         if: github.event.inputs.strip-symbols == 'true'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.run-docker-build.outputs.dbg_name }}
           path: ${{ github.workspace }}/artifacts/${{ steps.run-docker-build.outputs.dbg_name }}
           if-no-files-found: error
       
       - name: Upload Build Options Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: buildoptions_${{ matrix.config.os }}.txt
           path: ${{ github.workspace }}/artifacts/buildoptions_${{ matrix.config.os }}.txt
@@ -179,7 +179,7 @@ jobs:
           echo "Archived ccache size: $(du -h "${CACHE_FILENAME}" | cut -f1)"
 
       - name: Upload ccache Debug Data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: github.event.inputs.debug-ccache == 'true'
         with:
           name: ccache_debug_${{ matrix.config.os }}.tgz
