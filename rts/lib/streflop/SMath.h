@@ -296,7 +296,7 @@ enum
 	// Non-signaling NaN used for returning such results
 	// Standard lets a large room for implementing different kinds of NaN
 	// These NaN can be used for custom purposes
-	// Treated as an integer, the bit pattern here may be incremented to get at least 2^20 different NaN custom numbers!
+	// Threated as an integer, the bit pattern here may be incremented to get at least 2^20 different NaN custom numbers!
 	// Note that when switching the left-most bit to 1, you can get another bunch of negative NaNs, whatever this mean.
 	extern const Simple SimpleNaN;
 
@@ -498,7 +498,7 @@ enum
 	// Non-signaling NaN used for returning such results
 	// Standard lets a large room for implementing different kinds of NaN
 	// These NaN can be used for custom purposes
-	// Treated as an integer, the bit pattern here may be incremented to get at least 2^20 different NaN custom numbers!
+	// Threated as an integer, the bit pattern here may be incremented to get at least 2^20 different NaN custom numbers!
 	// Note that when switching the left-most bit to 1, you can get another bunch of negative NaNs, whatever this mean.
 	extern const Double DoubleNaN;
 
@@ -609,7 +609,7 @@ enum
 	// Non-signaling NaN used for returning such results
 	// Standard lets a large room for implementing different kinds of NaN
 	// These NaN can be used for custom purposes
-	// Treated as an integer, the bit pattern here may be incremented to get at least 2^20 different NaN custom numbers!
+	// Threated as an integer, the bit pattern here may be incremented to get at least 2^20 different NaN custom numbers!
 	// Note that when switching the left-most bit to 1, you can get another bunch of negative NaNs, whatever this mean.
 	extern const Extended ExtendedNaN;
 

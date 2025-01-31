@@ -211,9 +211,9 @@ void FindInstancesProcess::Execute( aiScene* pScene)
                     if (!configSpeedFlag) {
 
                         // It seems to be strange, but we really need to check whether the
-                        // bones are identical too. Although it's extremely improbable
+                        // bones are identical too. Although it's extremely unprobable
                         // that they're not if control reaches here, we need to deal
-                        // with improbable cases, too. It could still be that there are
+                        // with unprobable cases, too. It could still be that there are
                         // equal shapes which are deformed differently.
                         if (!CompareBones(orig,inst))
                             continue;

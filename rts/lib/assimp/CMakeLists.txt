@@ -293,7 +293,7 @@ ENDIF( SYSTEM_IRRXML )
 # ENDIF( NOT ASSIMP_BUILD_ZLIB )
 
 # IF( NOT ZLIB_FOUND )
-  # message(STATUS "compiling zlib from sources")
+  # message(STATUS "compiling zlib from souces")
   # INCLUDE(CheckIncludeFile)
   # INCLUDE(CheckTypeSize)
   # INCLUDE(CheckFunctionExists)

@@ -132,7 +132,7 @@ struct FileOffset {
 };
 
 // -------------------------------------------------------------------------------
-/** Dummy derivate of std::vector to be able to use it in templates simultaneously
+/** Dummy derivate of std::vector to be able to use it in templates simultaenously
  *  with std::shared_ptr, which takes only one template argument
  *  while std::vector takes three. Also we need to provide some special member
  *  functions of shared_ptr */
@@ -451,7 +451,7 @@ public:
      *  in BlenderScene.cpp and is machine-generated.
      *  Converters are used to quickly handle objects whose
      *  exact data type is a runtime-property and not yet
-     *  known at compile time (consider Object::data).*/
+     *  known at compile time (consier Object::data).*/
     void RegisterConverters();
 
 
@@ -656,7 +656,7 @@ public:
     /** Check whether a specific item is in the cache.
      *  @param s Data type of the item
      *  @param out Output pointer. Unchanged if the
-     *   cache doesn't know the item yet.
+     *   cache doens't know the item yet.
      *  @param ptr Item address to look for. */
     template <typename T> void get (
         const Structure& s,

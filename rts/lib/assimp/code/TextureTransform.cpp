@@ -87,7 +87,7 @@ void TextureTransformStep::PreProcessUVTransform(STransformVecInfo& info)
 {
     /*  This function tries to simplify the input UV transformation.
      *  That's very important as it allows us to reduce the number
-     *  of output UV channels. The order in which the transformations
+     *  of output UV channels. The oder in which the transformations
      *  are applied is - as always - scaling, rotation, translation.
      */
 
@@ -317,7 +317,7 @@ void TextureTransformStep::Execute( aiScene* pScene)
                     info.lockedPos = AI_TT_UV_IDX_LOCK_TBD;
                 }
 
-                // Get all corresponding meshes
+                // Get all coresponding meshes
                 for (unsigned int n = 0; n < pScene->mNumMeshes;++n)    {
                     aiMesh* mesh = pScene->mMeshes[n];
                     if (mesh->mMaterialIndex != i || !mesh->mTextureCoords[0])
@@ -541,7 +541,7 @@ void TextureTransformStep::Execute( aiScene* pScene)
                 m5.a3 += trl.x; m5.b3 += trl.y;
                 matrix = m2 * m4 * matrix * m3 * m5;
 
-                for (src = dest; src != end; ++src) { /* manual homogeneous divide */
+                for (src = dest; src != end; ++src) { /* manual homogenious divide */
                     src->z = 1.f;
                     *src = matrix * *src;
                     src->x /= src->z;

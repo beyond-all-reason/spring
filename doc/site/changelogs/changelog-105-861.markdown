@@ -93,7 +93,7 @@ Additionally:
 * weapon defs: add bool `castShadow`, for the projectile itself
 
 ### Camera tweaks
-* add integer springsetting `SmoothTimeOffset`. This attempts to smooth out the TimeOffset parameter that is used to calculated the tweened draw frames. Default 0, old behaviour. Recommended value of 2, this attempts to keep the actually timeoffset within 90% of the true time. Best with vsync on.
+* add integer springsetting `SmoothTimeOffset`. This attempts to smooth out the TimeOffset parameter that is used to calculated the tweened draw frames. Default 0, old behaviour. Recommended value of 2, this attempts to keep the actual timeoffset within 90% of the true time. Best with vsync on.
 * add boolean springsetting `CamFrameTimeCorrection`. Default false is the current behaviour, use true to get better interpolation during high load.
 
 ### Builders

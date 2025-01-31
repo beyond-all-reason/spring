@@ -5,7 +5,7 @@
 * LuaSocket toolkit (but completely independent from other modules)
 *
 * This provides support for simple exceptions in Lua. During the
-* development of the HTTP/FTP/SMTP support, it became apparent that
+* development of the HTTP/FTP/SMTP support, it became aparent that
 * error checking was taking a substantial amount of the coding. These
 * function greatly simplify the task of checking errors.
 *

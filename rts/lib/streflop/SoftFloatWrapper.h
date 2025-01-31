@@ -16,7 +16,7 @@
 /// This way, the user programs are clean from SoftFloat details
 
 /// Only the template declarations are done here
-/// The template instantiations for N = 4, 8, 10 are done in the CPP file
+/// The template instanciations for N = 4, 8, 10 are done in the CPP file
 /// this way, only these types will have defined symbols
 
 /// This file should be included from within a streflop namespace

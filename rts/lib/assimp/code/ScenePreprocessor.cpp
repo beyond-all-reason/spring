@@ -103,7 +103,7 @@ void ScenePreprocessor::ProcessMesh (aiMesh* mesh)
 
             aiVector3D* p = mesh->mTextureCoords[i], *end = p+mesh->mNumVertices;
 
-            // Ensure unused components are zeroed. This will make 1D texture channels work
+            // Ensure unsued components are zeroed. This will make 1D texture channels work
             // as if they were 2D channels .. just in case an application doesn't handle
             // this case
             if (2 == mesh->mNumUVComponents[i]) {

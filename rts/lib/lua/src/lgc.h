@@ -22,7 +22,7 @@
 
 
 /*
-** some useful bit tricks
+** some userful bit tricks
 */
 #define resetbits(x,m)	((x) &= lua_cast(lu_byte, ~(m)))
 #define setbits(x,m)	((x) |= (m))

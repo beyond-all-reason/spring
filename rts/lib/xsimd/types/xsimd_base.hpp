@@ -766,8 +766,8 @@ namespace xsimd
     }
 
     /**
-     * Subtracts the batch \c rhs to \c this.
-     * @param rhs the batch to subtract.
+     * Substracts the batch \c rhs to \c this.
+     * @param rhs the batch to substract.
      * @return a reference to \c this.
      */
     template <class X>
@@ -778,8 +778,8 @@ namespace xsimd
     }
 
     /**
-     * Subtracts the scalar \c rhs to each value contained in \c this.
-     * @param rhs the scalar to subtract.
+     * Substracts the scalar \c rhs to each value contained in \c this.
+     * @param rhs the scalar to substract.
      * @return a reference to \c this.
      */
     template <class X>

@@ -224,7 +224,7 @@ void ColladaParser::ReadStructure()
 }
 
 // ------------------------------------------------------------------------------------------------
-// Reads asset information such as coordinate system information and legal blah
+// Reads asset informations such as coordinate system informations and legal blah
 void ColladaParser::ReadAssetInfo()
 {
     if( mReader->isEmptyElement())

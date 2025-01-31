@@ -502,7 +502,7 @@ void SceneCombiner::MergeScenes(aiScene** _dest, aiScene* master,
             OffsetNodeMeshIndices(node,offset[duplicates[n]]);
 
             if (flags & AI_INT_MERGE_SCENE_DUPLICATES_DEEP_CPY) {
-                // (note:) they are already 'offsetted' by offset[duplicates[n]]
+                // (note:) they are already 'offseted' by offset[duplicates[n]]
                 OffsetNodeMeshIndices(node,offset[n] - offset[duplicates[n]]);
             }
         }

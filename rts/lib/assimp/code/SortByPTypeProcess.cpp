@@ -194,7 +194,7 @@ void SortByPTypeProcess::Execute( aiScene* pScene)
         bAnyChanges = true;
 
         // reuse our current mesh arrays for the submesh
-        // with the largest number of primitives
+        // with the largest numer of primitives
         unsigned int aiNumPerPType[4] = {0,0,0,0};
         aiFace* pFirstFace = mesh->mFaces;
         aiFace* const pLastFace = pFirstFace + mesh->mNumFaces;

@@ -532,7 +532,7 @@ public:
   }
 };
 
-/// A protocol-allocator type that may be rebound to obtain an allocator that
+/// A protoco-allocator type that may be rebound to obtain an allocator that
 /// forwards memory allocation operations through an instance of
 /// @c any_completion_handler.
 template <typename... Signatures>

@@ -136,7 +136,7 @@ void SplitLargeMeshesProcess_Triangle::UpdateNode(aiNode* pcNode,
     for (unsigned int b = 0; b < pcNode->mNumMeshes;++b)
         pcNode->mMeshes[b] = aiEntries[b];
 
-    // recursively update all other nodes
+    // recusively update all other nodes
     for (unsigned int i = 0; i < pcNode->mNumChildren;++i)
     {
         UpdateNode ( pcNode->mChildren[i], avList );

@@ -49,7 +49,7 @@ namespace xsimd
      * Computes the batch of nearest integer values to scalars in \c x (in
      * floating point format), rounding halfway cases away from zero, regardless
      * of the current rounding mode.
-     * @param x batch of floating point values.
+     * @param x batch of flaoting point values.
      * @return the batch of nearest integer values. 
      */
     template <class B>
@@ -61,7 +61,7 @@ namespace xsimd
     /**
      * Rounds the scalars in \c x to integer values (in floating point format), using
      * the current rounding mode.
-     * @param x batch of floating point values.
+     * @param x batch of flaoting point values.
      * @return the batch of nearest integer values.
      */
     template <class B>
@@ -70,7 +70,7 @@ namespace xsimd
     /**
      * Rounds the scalars in \c x to integer values (in floating point format), using
      * the current rounding mode.
-     * @param x batch of floating point values.
+     * @param x batch of flaoting point values.
      * @return the batch of rounded values.
      */
     template <class B>

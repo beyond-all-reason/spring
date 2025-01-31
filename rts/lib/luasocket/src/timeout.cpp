@@ -176,7 +176,7 @@ int timeout_meth_settimeout(lua_State *L, p_timeout tm) {
 * Test support functions
 \*=========================================================================*/
 /*-------------------------------------------------------------------------*\
-* Returns the time the system has been up, in seconds.
+* Returns the time the system has been up, in secconds.
 \*-------------------------------------------------------------------------*/
 static int timeout_lua_gettime(lua_State *L)
 {

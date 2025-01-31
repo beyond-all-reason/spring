@@ -42,7 +42,7 @@ typedef struct stringtable {
 
 
 /*
-** information about a call
+** informations about a call
 */
 typedef struct CallInfo {
   StkId base;  /* base for this function */
@@ -77,7 +77,7 @@ typedef struct global_State {
   GCObject *grayagain;  /* list of objects to be traversed atomically */
   GCObject *weak;  /* list of weak tables (to be cleared) */
   GCObject *tmudata;  /* last element of list of userdata to be GC */
-  Mbuffer buff;  /* temporary buffer for string concatenation */
+  Mbuffer buff;  /* temporary buffer for string concatentation */
   lu_mem GCthreshold;
   lu_mem totalbytes;  /* number of bytes currently allocated */
   lu_mem estimate;  /* an estimate of number of bytes actually in use */

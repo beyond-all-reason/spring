@@ -10,7 +10,7 @@ This directory contains (in addition to this file):
 
 - e_expf.c: The float exp in e_expf.c uses doubles internally since revision 1.2 in the libm-ieee754 CVS attic! This is the slower, but purely float version, that is rolled back from the CVS attic.
 
-- w_expf.c: A wrapper to expf that replaces the libm wrapper by a wrapper to the float only version.
+- w_expf.c: A wrapper to expf that replaces the libm wrapper by a wraper to the float only version.
 
 - (after compilation): flt-target dbl-target ldbl-target temporary files for the make process
 

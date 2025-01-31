@@ -363,7 +363,7 @@ public:
 
   /// Construct an async result from a given handler.
   /**
-   * When using a specialised async_result, the constructor has an opportunity
+   * When using a specalised async_result, the constructor has an opportunity
    * to initialise some state associated with the completion handler, which is
    * then returned from the initiating function.
    */
@@ -857,7 +857,7 @@ public:
  * alias @c type that denotes the completion signature of the asynchronous
  * operation initiated by the expression <tt>T(Args..., token)</tt> operation,
  * where @c token is an unspecified completion token type. If the asynchronous
- * operation does not have exactly one completion signature, the instantiation of
+ * operation does not have exactly one completion signature, the instantion of
  * the trait is well-formed but the member type alias @c type is omitted. If
  * the expression <tt>T(Args..., token)</tt> is not an asynchronous operation
  * then use of the trait is ill-formed.

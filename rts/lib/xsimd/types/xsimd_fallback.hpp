@@ -380,7 +380,7 @@ namespace xsimd
      * Boilerplate generators *
      **************************/
 
-// These macros all assume that T and N are in scope and have the meaning used in
+// These macros all asume that T and N are in scope and have the meaning used in
 // the definitions of batch and batch_bool.
 #define XSIMD_FALLBACK_MAPPING_LOOP(RESULT_TYPE, EXPRESSION)  \
     RESULT_TYPE<T, N> result;  \

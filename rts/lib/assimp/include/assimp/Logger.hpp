@@ -186,7 +186,7 @@ protected:
     // ----------------------------------------------------------------------
     /** @brief Called as a request to write a specific warn message
      *  @param  message Warn message. Never longer than
-     *    MAX_LOG_MESSAGE_LENGTH characters (excluding the '0').
+     *    MAX_LOG_MESSAGE_LENGTH characters (exluding the '0').
      *  @note  The message string is only valid until the scope of
      *    the function is left.
      */
@@ -195,7 +195,7 @@ protected:
     // ----------------------------------------------------------------------
     /** @brief Called as a request to write a specific error message
      *  @param  message Error message. Never longer than
-     *    MAX_LOG_MESSAGE_LENGTH characters (excluding the '0').
+     *    MAX_LOG_MESSAGE_LENGTH characters (exluding the '0').
      *  @note  The message string is only valid until the scope of
      *    the function is left.
      */

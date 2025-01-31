@@ -77,7 +77,7 @@ namespace Assimp
         /** Reads the structure of the file */
         void ReadStructure();
 
-        /** Reads asset information such as coordinate system information and legal blah */
+        /** Reads asset informations such as coordinate system informations and legal blah */
         void ReadAssetInfo();
 
         /** Reads the animation library */

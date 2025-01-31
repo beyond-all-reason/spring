@@ -200,7 +200,7 @@ namespace xsimd
      **********************************/
 
     /**
-     * @name Bitwise computed assignment
+     * @name Bitwise computed assignement
      */
     //@{
     /**

@@ -231,7 +231,7 @@ static void adjust_march_ic_multiplier(const struct cpu_id_t* id, int* numerator
 {
 	/*
 	 * for cpu_clock_by_ic: we need to know how many clocks does a typical ADDPS instruction
-	 * take, when issued in rapid succession without dependencies. The whole idea of
+	 * take, when issued in rapid succesion without dependencies. The whole idea of
 	 * cpu_clock_by_ic was that this is easy to determine, at least it was back in 2010. Now
 	 * it's getting progressively more hairy, but here are the current measurements:
 	 *

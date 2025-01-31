@@ -43,11 +43,11 @@ extern RandomState DefaultRandomState;
 /** Initialize the random number generator with the given seed.
 
     By default, the seed is taken from system time and printed out
-    so the experiment is reproducible by inputting the same seed again.
+    so the experiment is reproducible by inputing the same seed again.
 
     You can set here a previous seed to reproduce it.
 
-    This interface allows independence from the actual RNG used,
+    This interface allows independance from the actual RNG used,
     and/or system functions.
 
     The RNG used is the Mersenne twister implementation by the
@@ -222,7 +222,7 @@ STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(Extended)
     at the last moment.
 
     Note: An optional argument "secondary" may be specified, and in that case, a second number
-    independent from the first will be returned at negligible cost (in other words, by default, half the values
+    indepedent from the first will be returned at negligible cost (in other words, by default, half the values
     are thrown away)
 */
 template<typename a_type> a_type NRandom(a_type mean, a_type std_dev, a_type *secondary = 0, RandomState& state = DefaultRandomState);

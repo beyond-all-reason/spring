@@ -76,7 +76,7 @@ Version 0.5.0 (2020-05-23):
 	* Support for Ice Lake
 	* Support for Renoir
 	* Fix ThreadSanitizer report (#142)
-	* Better support of L1 instruction cache (--l1i-assoc, --l1i-cacheline)
+	* Better support of L1 intruction cache (--l1i-assoc, --l1i-cacheline)
 	* Support for Ivy Bridge-E (Xeon)
 	* Support up to 4 subleaf entries for CPUID leaf 0x8000001D and
 	  fix detection of L3 cache on Zen 2

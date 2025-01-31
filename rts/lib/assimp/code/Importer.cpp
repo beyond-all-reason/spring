@@ -189,7 +189,7 @@ Importer::~Importer()
     delete pimpl->mIOHandler;
     delete pimpl->mProgressHandler;
 
-    // Kill imported scene. Destructors should do that recursively
+    // Kill imported scene. Destructors should do that recursivly
     delete pimpl->mScene;
 
     // Delete shared post-processing data

@@ -952,7 +952,7 @@ void ColladaLoader::StoreSceneMaterials( aiScene* pScene)
 // Stores all animations
 void ColladaLoader::StoreAnimations( aiScene* pScene, const ColladaParser& pParser)
 {
-    // recursively collect all animations from the collada scene
+    // recursivly collect all animations from the collada scene
     StoreAnimations( pScene, pParser, &pParser.mAnims, "");
 
     // catch special case: many animations with the same length, each affecting only a single node.
@@ -1539,7 +1539,7 @@ void ColladaLoader::AddTexture ( aiMaterial& mat, const ColladaParser& pParser,
         _AI_MATKEY_TEXBLEND_BASE, type, idx);
 
     // UV source index ... if we didn't resolve the mapping, it is actually just
-    // a guess but it works in most cases. We search for the first occurrence of a
+    // a guess but it works in most cases. We search for the frst occurrence of a
     // number in the channel name. We assume it is the zero-based index into the
     // UV channel array of all corresponding meshes. It could also be one-based
     // for some exporters, but we won't care of it unless someone complains about.
@@ -1619,7 +1619,7 @@ void ColladaLoader::FillMaterials( const ColladaParser& pParser, aiScene* /*pSce
         mat.AddProperty( &effect.mRefractIndex, 1, AI_MATKEY_REFRACTI);
 
         // transparency, a very hard one. seemingly not all files are following the
-        // specification here (1.0 transparency => completely opaque)...
+        // specification here (1.0 transparency => completly opaque)...
         // therefore, we let the opportunity for the user to manually invert
         // the transparency if necessary and we add preliminary support for RGB_ZERO mode
         if(effect.mTransparency >= 0.f && effect.mTransparency <= 1.f) {
@@ -1799,7 +1799,7 @@ void ColladaLoader::ConvertPath (aiString& ss)
 {
     // TODO: collada spec, p 22. Handle URI correctly.
     // For the moment we're just stripping the file:// away to make it work.
-    // Windows doesn't seem to be able to find stuff like
+    // Windoes doesn't seem to be able to find stuff like
     // 'file://..\LWO\LWO2\MappingModes\earthSpherical.jpg'
     if (0 == strncmp(ss.data,"file://",7))
     {

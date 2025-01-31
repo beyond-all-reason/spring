@@ -401,4 +401,4 @@ void DefTagBuilder<T>::AddTag() {
 	static const std::string tagFncStr_##name = #function;
 
 
-#endif // DEFINITION_TAG_H
+#endif // DEFINTION_TAG_H

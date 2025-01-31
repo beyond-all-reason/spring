@@ -787,7 +787,7 @@ enum aiComponent
     "IMPORT_MD5_NO_ANIM_AUTOLOAD"
 
 // ---------------------------------------------------------------------------
-/** @brief Defines the beginning of the time range for which the LWS loader
+/** @brief Defines the begin of the time range for which the LWS loader
  *    evaluates animations and computes aiNodeAnim's.
  *
  * Assimp provides full conversion of LightWave's envelope system, including

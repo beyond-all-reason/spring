@@ -47,7 +47,7 @@
 
 
 /*
-@@ LUA_USE_POSIX includes all functionality listed as X/Open System
+@@ LUA_USE_POSIX includes all functionallity listed as X/Open System
 @* Interfaces Extension (XSI).
 ** CHANGE it (define it) if your system is XSI compatible.
 */
@@ -123,7 +123,7 @@
 @* template.
 @@ LUA_EXECDIR in a Windows path is replaced by the executable's
 @* directory.
-@@ LUA_IGMARK is a mark to ignore all before it when building the
+@@ LUA_IGMARK is a mark to ignore all before it when bulding the
 @* luaopen_ function name.
 ** CHANGE them if for some reason your system cannot use those
 ** characters. (E.g., if one of those characters is a common character

@@ -403,7 +403,7 @@ struct cpu_id_t {
 	/** Cache associativity for the L1 data cache. -1 if undetermined */
 	int32_t l1_data_assoc;
 
-	/** Cache associativity for the L1 instruction cache. -1 if undetermined */
+	/** Cache associativity for the L1 intruction cache. -1 if undetermined */
 	int32_t l1_instruction_assoc;
 
 	/** Cache associativity for the L2 cache. -1 if undetermined */
@@ -423,7 +423,7 @@ struct cpu_id_t {
 	/** Cache-line size for L1 data cache. -1 if undetermined */
 	int32_t l1_data_cacheline;
 
-	/** Cache-line size for L1 instruction cache. -1 if undetermined */
+	/** Cache-line size for L1 intruction cache. -1 if undetermined */
 	int32_t l1_instruction_cacheline;
 
 	/** Cache-line size for L2 cache. -1 if undetermined */
@@ -438,7 +438,7 @@ struct cpu_id_t {
 	/** Number of L1 data cache instances. -1 if undetermined */
 	int32_t l1_data_instances;
 
-	/** Number of L1 instruction cache instances. -1 if undetermined */
+	/** Number of L1 intruction cache instances. -1 if undetermined */
 	int32_t l1_instruction_instances;
 
 	/** Number of L2 cache instances. -1 if undetermined */
@@ -460,7 +460,7 @@ struct cpu_id_t {
 	 * | AMD    |      6 |     8 |     0 |   256 | (not available - will be ignored)     | "K6-2"                |
 	 * | Intel  |     15 |     2 |     5 |   512 | "Intel(R) Xeon(TM) CPU 2.40GHz"       | "Xeon (Prestonia)"    |
 	 * | Intel  |      6 |    15 |    11 |  4096 | "Intel(R) Core(TM)2 Duo CPU E6550..." | "Conroe (Core 2 Duo)" |
-	 * | AMD    |     15 |    35 |     2 |  1024 | "Dual Core AMD Opteron(tm) Process..." | "Opteron (Dual Core)" |
+	 * | AMD    |     15 |    35 |     2 |  1024 | "Dual Core AMD Opteron(tm) Proces..." | "Opteron (Dual Core)" |
 	 * +--------+--------+-------+-------+-------+---------------------------------------+-----------------------+
 	 * @endcode
 	 */
@@ -499,7 +499,7 @@ struct system_id_t {
 	/** Number of total L1 data cache instances. -1 if undetermined */
 	int32_t l1_data_total_instances;
 
-	/** Number of total L1 instruction cache instances. -1 if undetermined */
+	/** Number of total L1 intruction cache instances. -1 if undetermined */
 	int32_t l1_instruction_total_instances;
 
 	/** Number of total L2 cache instances. -1 if undetermined */
@@ -538,7 +538,7 @@ typedef enum {
 	CPU_FEATURE_DE,		/*!< Debugging extension */
 	CPU_FEATURE_PSE,	/*!< Page size extension */
 	CPU_FEATURE_TSC,	/*!< Time-stamp counter */
-	CPU_FEATURE_MSR,	/*!< Model-specific registers, RDMSR/WRMSR supported */
+	CPU_FEATURE_MSR,	/*!< Model-specific regsisters, RDMSR/WRMSR supported */
 	CPU_FEATURE_PAE,	/*!< Physical address extension */
 	CPU_FEATURE_MCE,	/*!< Machine check exception */
 	CPU_FEATURE_CX8,	/*!< CMPXCHG8B instruction supported */
@@ -640,7 +640,7 @@ typedef enum {
 	CPU_FEATURE_SHA_NI,	/*!< SHA-1/SHA-256 instructions */
 	CPU_FEATURE_AVX512BW,	/*!< AVX-512 Byte/Word granular insns */
 	CPU_FEATURE_AVX512VL,	/*!< AVX-512 128/256 vector length extensions */
-	CPU_FEATURE_SGX,	/*!< SGX extensions. Non-authoritative, check cpu_id_t::sgx::present to verify presence */
+	CPU_FEATURE_SGX,	/*!< SGX extensions. Non-autoritative, check cpu_id_t::sgx::present to verify presence */
 	CPU_FEATURE_RDSEED,	/*!< RDSEED instruction */
 	CPU_FEATURE_ADX,	/*!< ADX extensions (arbitrary precision) */
 	CPU_FEATURE_AVX512VNNI, /*!< AVX-512 Vector Neural Network Instructions */

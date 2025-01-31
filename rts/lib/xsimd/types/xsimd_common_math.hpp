@@ -18,7 +18,7 @@ namespace xsimd
 {
     /*********************************************
      * Some utility math operations shared       *
-     * across scalar version and fallback         *
+     * across scalar versio and fallback         *
      * versions                                  *
      *********************************************/
     namespace detail

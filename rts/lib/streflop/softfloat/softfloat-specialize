@@ -20,7 +20,7 @@ namespace streflop {
 namespace SoftFloat {
 
     // Here is the variable that controls sending real traps.
-    // Initialized to 0, see FPUSettings.h to check this masks all exceptions
+    // Initalized to 0, see FPUSettings.h to check this masks all exceptions
     int float_exception_realtraps = 0;
 
 /*============================================================================

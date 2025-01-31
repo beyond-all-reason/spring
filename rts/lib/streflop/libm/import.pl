@@ -66,7 +66,7 @@ if (-r "ldbl-96/s_nexttowardf.c") {unlink "ldbl-96/s_nexttowardf.c";}
 if (-r "ldbl-96/math_ldbl.h") {unlink "ldbl-96/math_ldbl.h";}
 
 # The float exp in e_expf.c uses doubles internally since revision 1.2 in the libm-ieee754 CVS attic!
-# Roll back to the slower, but purely float version, and also overwrite the wrapper by a wrapper to the float only version
+# Roll back to the slower, but purely float version, and also overwrite the wrapper by a wraper to the float only version
 system("cp -f w_expf.c e_expf.c flt-32");
 
 # convert .c => .cpp for clarity
@@ -181,7 +181,7 @@ foreach $f (@filelist) {
         s/float\.h/..\/streflop_libm_bridge.h/g;
         # errno.h falls back to system, remove it
         s/errno\.h/..\/streflop_libm_bridge.h/g;
-        # replace all occurrences of problematic union fields with objects
+        # replace all occurences of problematic union fields with objects
         # by proper C++ accessors
         s/\b(\.d(?!\[)\b|\.d\[(.*?)\])/.d($2)/g;
         s/\b(\.x(?!\[)\b|\.x\[(.*?)\])/.x($2)/g;
@@ -189,7 +189,7 @@ foreach $f (@filelist) {
         s/\b(->d(?!\[)\b|->d\[(.*?)\])/->d($2)/g;
         s/\b(->x(?!\[)\b|->x\[(.*?)\])/->x($2)/g;
         s/\b(->f(?!\[)\b|->f\[(.*?)\])/->f($2)/g; # ieee754.h
-        # Some more occurrences from arrays of such unions/structs
+        # Some more occurences from arrays of such unions/structs
         s/\]\.d\b/].d()/g;
         # named field C construct is invalid (C++ would initialize first union member)
         # and we replace unions by struct + accessor anyway
@@ -202,7 +202,7 @@ foreach $f (@filelist) {
         s/\bfloat\b/Simple/g;
         # Replace problematic int += double
         s/E(X|Y|Z)(.*?=.*?)ONE/E${1}${2}1/g;
-        # problematic ?: operator with different types. This simple check catches all problematic occurrences
+        # problematic ?: operator with different types. This simple check catches all problematic occurences
 #        if (/\?(.*?(\b0\.|\.0).*?:.*?|.*?:.*?(\b0\.|\.0).*?);/) {
 #            print "$f => ?$1;\n";
 #        }
@@ -238,7 +238,7 @@ foreach $f (@filelist) {
         # are using different instructions and the problem cannot be ignored (in these cases, there are differences from
         # soft float implementation)
         # Cannot replace by s/blah/$type($1)/g; because of static order initialization fiasco with wrapper types
-        # So use next best option to use literal type specification
+        # So use next best option to use litteral type specification
         # => this solves the problem for native types
         # => wrappers are OK thanks to the redefinitions of the operators
         s/\b((\d+\.\d*|\d*\.\d+)((e|E)[-+]?\d+)?)(f|F|l|L)?\b/$1$flit/g;
@@ -315,7 +315,7 @@ print FILE $importNotice;
 print FILE $content;
 close FILE;
 
-# math_private.h needs a special treatment to define the macros for the wrapper objects
+# math_private.h needs a special treatement to define the macros for the wrapper objects
 # The macros will be defined separately
 open(FILE,"<headers/math_private.h");
 my $flag=1;
@@ -447,7 +447,7 @@ close FILE;
 open(FILE,"<headers/features.h");
 @convert=();
 while(<FILE>) {
-    # comment out external includes
+    # commment out external includes
     s,(.*?#.*?include.*),//$1,;
     push @convert,$_;
 }
