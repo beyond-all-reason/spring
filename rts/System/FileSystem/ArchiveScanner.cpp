@@ -1015,22 +1015,23 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	// sort by filename
 	std::stable_sort(fileNames.begin(), fileNames.end());
 
-
-#if !defined(DEDICATED) && !defined(UNITSYNC)
-	std::vector<std::shared_future<void>> tasks;
-	tasks.reserve(fileNames.size());
-
 	std::counting_semaphore sem(numParallelFileReads);
 
-	auto ComputeHashesTask = [&ar, &fileHashes, &sem, this](size_t fidx) -> void {
+	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
+		const auto& fileName = fileNames[fidx];
 		auto& fileHash = fileHashes[fidx];
 		auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
 		fileBuffer.clear();
 
 		sem.acquire();
-		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(fidx, fileHash.data(), fileBuffer)));
+		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffer)));
 		sem.release();
 	};
+
+
+#if !defined(DEDICATED) && !defined(UNITSYNC)
+	std::vector<std::shared_future<void>> tasks;
+	tasks.reserve(fileNames.size());
 
 	for (size_t i = 0; i < fileNames.size(); ++i) {
 		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, i));
@@ -1047,10 +1048,6 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	}
 #else
 	for_mt(0, fileNames.size(), [&](const int i) {
-		auto& fileHash = fileHashes[i];
-		auto ComputeHashesTask = [&ar, &fileHash](int fidx) -> void {
-			ar->CalcHash(fidx, fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
-		};
 		ComputeHashesTask(i);
 	});
 #endif
