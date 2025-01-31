@@ -471,6 +471,11 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetWaterRendering);
 	REGISTER_LUA_CFUNC(GetMapRendering);
 
+	
+	REGISTER_LUA_CFUNC(ObjectLabel);
+	REGISTER_LUA_CFUNC(PushDebugGroup);
+	REGISTER_LUA_CFUNC(PopDebugGroup);
+
 	if (canUseShaders)
 		LuaShaders::PushEntries(L);
 
@@ -5659,6 +5664,74 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
 
 	luaL_error(L, "[%s] unknown key %s", __func__, key);
 	return 0;
+}
+
+
+/**
+ * @function gl.ObjectLabel labels an object for use with debugging tools
+ * @param objectTypeIdentifier GLenum Specifies the type of object being labeled.
+ * @param objectID GLuint Specifies the name or ID of the object to label.
+ * @param label string A null-terminated string containing the label to be assigned to the object.
+ * @treturn nil
+ */
+int LuaOpenGL::ObjectLabel(lua_State* L) {
+	GLenum identifier = (GLenum)luaL_checkinteger(L, 1);
+	if (identifier != GL_BUFFER && identifier != GL_SHADER && identifier != GL_PROGRAM &&
+		identifier != GL_VERTEX_ARRAY && identifier != GL_QUERY && identifier != GL_PROGRAM_PIPELINE &&
+		identifier != GL_TRANSFORM_FEEDBACK && identifier != GL_TEXTURE && identifier != GL_RENDERBUFFER &&
+		identifier != GL_FRAMEBUFFER) {
+		return 0;
+	}
+    GLuint objectID = (GLuint)luaL_checkinteger(L, 2);
+    const char* label = luaL_checkstring(L, 3);
+	#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
+		if (!GLEW_KHR_debug)
+			return 0;
+
+		glObjectLabel(identifier, objectID, -1, label);
+	#endif
+    return 0;
+}
+
+
+// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPushDebugGroup.xhtml
+/**
+ * @function gl.PushDebugGroup pushes a debug marker for nVidia nSight 2024.04, does not seem to work when FBO's are raw bound
+ * @param id GLuint A numeric identifier for the group.
+ * @param message string A human-readable string describing the debug group.
+ * @param source boolean true for GL_DEBUG_SOURCE_APPLICATION, false for GL_DEBUG_SOURCE_THIRD_PARTY. default false
+ * @treturn nil
+ */
+int LuaOpenGL::PushDebugGroup(lua_State* L) {
+	GLuint id = (GLuint)luaL_checkinteger(L, 1);
+	const char* message = luaL_checkstring(L, 2);
+	bool source = luaL_optboolean(L, 3, false);
+
+	GLint maxLength;
+	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLength);
+
+	if (strlen(message) >= maxLength) {
+		luaL_error(L, "Message length exceeds GL_MAX_DEBUG_MESSAGE_LENGTH");
+		return 0;
+	}
+	#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
+		if (GLEW_KHR_debug){
+			glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION: GL_DEBUG_SOURCE_THIRD_PARTY) , id, -1, message);
+		}
+		else {
+			luaL_error(L, "PushDebugGroup requires GL_KHR_debug extension");
+		}
+	#endif
+	return 0;
+}
+
+/**
+ * @function gl.PopDebugGroup
+ * @treturn nil
+ */
+int LuaOpenGL::PopDebugGroup(lua_State* L) {
+    glPopDebugGroup();
+    return 0;
 }
 
 /******************************************************************************/

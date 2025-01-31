@@ -52,6 +52,8 @@ public:
 	int UnbindBufferRange(const GLuint index, const sol::optional<int> elemOffsetOpt, const sol::optional<int> elemCountOpt, const sol::optional<GLenum> targetOpt);
 
 	void DumpDefinition();
+	uint32_t GetID();
+	
 public:
 	static bool Supported(GLenum target);
 private:
