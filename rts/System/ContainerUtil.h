@@ -60,6 +60,10 @@ namespace spring {
 		return true;
 	}
 
+	/* Removes globally and doesn't necessarily preserve order,
+	 * e.g. AABBCCAA -> ACB
+	 * This is unlike `std::unique` which works "locally",
+	 * e.g. AABBCCAA -> ABCA */
 	template<typename T, typename UniqPred = std::equal_to <>>
 	VUS static void VectorUnique(std::vector<T>& v, UniqPred uniqPred = {}) {
 		for (size_t i = 0; i < v.size(); i++) {

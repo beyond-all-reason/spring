@@ -2548,8 +2548,23 @@ public:
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		// FIXME: same file for both?
-		CglFont::LoadCustomFonts(action.GetArgs(), action.GetArgs());
+		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
+		std::string newLargeFontFile;
+		std::string newSmallFontFile;
+		switch (args.size())
+		{
+		case 1: {
+			newSmallFontFile = std::move(args[0]);
+		} break;
+		case 2: {
+			newSmallFontFile = std::move(args[0]);
+			newLargeFontFile = std::move(args[1]);
+		} break;
+		default:
+			// nothing
+			break;
+		}
+		CglFont::LoadCustomFonts(newSmallFontFile, newLargeFontFile);
 		return true;
 	}
 };

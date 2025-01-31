@@ -543,8 +543,11 @@ void CGame::LoadMap(const std::string& mapFileName)
 		helper->Init();
 		readMap = CReadMap::LoadMap(mapFileName);
 
-		// half size; building positions are snapped to multiples of BUILD_SQUARE_SIZE
+		/* Uses half-size grid because it *incorrectly* assumes
+		 * building positions are always snapped to the build grid. */
+		static_assert(BUILD_GRID_RESOLUTION == 2);
 		buildingMaskMap.Init(mapDims.hmapx * mapDims.hmapy);
+
 		groundBlockingObjectMap.Init(mapDims.mapSquares);
 		yardmapStatusEffectsMap.InitNewYardmapStatusEffectsMap();
 	}

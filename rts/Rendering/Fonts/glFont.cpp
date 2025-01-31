@@ -63,16 +63,18 @@ bool CglFont::LoadConfigFonts()
 bool CglFont::LoadCustomFonts(const std::string& smallFontFile, const std::string& largeFontFile)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	auto newLargeFont = CglFont::LoadFont(largeFontFile, false);
-	auto newSmallFont = CglFont::LoadFont(smallFontFile,  true);
+	if (auto newFont = CglFont::LoadFont(largeFontFile, false); newFont) {
+		font = newFont;
 
-	if (newLargeFont != nullptr && newSmallFont != nullptr) {
-		font = newLargeFont;
-		smallFont = newSmallFont;
+		LOG("[%s] loaded large font \"%s\"", __func__, newFont->GetFilePath().c_str());
+		configHandler->SetString(     "FontFile", newFont->GetFilePath());
+	}
 
-		LOG("[%s] loaded fonts \"%s\" and \"%s\"", __func__, smallFontFile.c_str(), largeFontFile.c_str());
-		configHandler->SetString(     "FontFile", largeFontFile);
-		configHandler->SetString("SmallFontFile", smallFontFile);
+	if (auto newFont = CglFont::LoadFont(smallFontFile, false); newFont) {
+		smallFont = newFont;
+
+		LOG("[%s] loaded small font \"%s\"", __func__, newFont->GetFilePath().c_str());
+		configHandler->SetString("SmallFontFile", newFont->GetFilePath());
 	}
 
 	return true;

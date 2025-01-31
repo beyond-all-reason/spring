@@ -831,7 +831,7 @@ const std::vector<CAssParser::MeshData> CAssParser::GetModelSpaceMeshes(const ai
 		meshVertexMapping.reserve(mesh->mNumVertices);
 
 		//bones info
-		std::vector<std::vector<std::pair<uint8_t, float>>> vertexWeights(mesh->mNumVertices);
+		std::vector<std::vector<std::pair<uint16_t, float>>> vertexWeights(mesh->mNumVertices);
 
 		for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; boneIndex++) {
 			const aiBone* bone = mesh->mBones[boneIndex];
@@ -840,8 +840,8 @@ const std::vector<CAssParser::MeshData> CAssParser::GetModelSpaceMeshes(const ai
 				const auto& vertWeight = bone->mWeights[weightIndex].mWeight;
 				const std::string boneName = std::string(bone->mName.data);
 
-				uint8_t boneID = spring::SafeCast<uint8_t>(model->FindPieceOffset(boneName));
-				assert(boneID < 255); // 255 - invalid piece
+				auto boneID = spring::SafeCast<uint16_t>(model->FindPieceOffset(boneName));
+				assert(boneID < INV_PIECE_NUM); // == INV_PIECE_NUM - invalid piece
 
 				vertexWeights[vertIndex].emplace_back(boneID, vertWeight);
 			}
@@ -966,6 +966,11 @@ const std::vector<CAssParser::MeshData> CAssParser::GetModelSpaceMeshes(const ai
 void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vector<CAssParser::MeshData>& meshes)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	auto GetBoneID = [](const SVertexData& vert, size_t wi) {
+		return vert.boneIDsLow[wi] | (vert.boneIDsHigh[wi] << 8);
+	};
+
 	for (const auto& [verts, indcs, numUVs] : meshes) {
 		for (size_t trID = 0; trID < indcs.size() / 3; ++trID) {
 			std::array<uint32_t, 256> boneWeights = { 0 };
@@ -974,7 +979,7 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 				const auto& vert = verts[indcs[trID * 3 + vi]];
 
 				for (size_t wi = 0; wi < 4; ++wi) {
-					boneWeights[vert.boneIDs[wi]] += vert.boneWeights[wi];
+					boneWeights[GetBoneID(vert, wi)] += vert.boneWeights[wi];
 				}
 			}
 
@@ -982,7 +987,7 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 				boneWeights.begin(),
 				std::max_element(boneWeights.begin(), boneWeights.end())
 			);
-			assert(maxWeightedBoneID < 255); // 255 - invalid bone
+			assert(maxWeightedBoneID < INV_PIECE_NUM); // INV_PIECE_NUM - invalid bone
 
 			auto* maxWeightedPiece = static_cast<SAssPiece*>(model->pieceObjects[maxWeightedBoneID]);
 			maxWeightedPiece->SetNumTexCoorChannels(std::max(maxWeightedPiece->GetNumTexCoorChannels(), numUVs));
@@ -1001,21 +1006,30 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 				// new vertex
 				if (itTargVec == pieceVerts.end()) {
 					// make sure maxWeightedBoneID comes first. It's a must, even if it doesn't exist in targVert.boneIDs!
-					if (targVert.boneIDs[0] != maxWeightedBoneID) {
-						auto it = std::find(targVert.boneIDs.begin() + 1, targVert.boneIDs.end(), maxWeightedBoneID);
-						if (it != targVert.boneIDs.end()) {
+					const auto boneID0 = GetBoneID(targVert, 0);
+					if (boneID0 != maxWeightedBoneID) {
+						size_t itPos = 0;
+						for (size_t jj = 1; jj < targVert.boneIDsLow.size(); ++jj) {
+							if (GetBoneID(targVert, jj) == maxWeightedBoneID) {
+								itPos = jj;
+								break;
+							}
+						}
+						if (itPos != 0) {
 							// swap maxWeightedBoneID so it comes first in the boneIDs array
-							const size_t itPos = std::distance(targVert.boneIDs.begin(), it);
-							std::swap(targVert.boneIDs[0], targVert.boneIDs[itPos]);
+							std::swap(targVert.boneIDsLow[0], targVert.boneIDsLow[itPos]);
 							std::swap(targVert.boneWeights[0], targVert.boneWeights[itPos]);
+							std::swap(targVert.boneIDsHigh[0], targVert.boneIDsHigh[itPos]);
 						}
 						else {
 							// maxWeightedBoneID doesn't even exist in this targVert
 							// replace the bone with the least weight with maxWeightedBoneID and swap it be first
-							targVert.boneIDs[3] = maxWeightedBoneID;
+							targVert.boneIDsLow[3]  = static_cast<uint8_t>((maxWeightedBoneID     ) & 0xFF);
 							targVert.boneWeights[3] = 0;
-							std::swap(targVert.boneIDs[0], targVert.boneIDs[3]);
+							targVert.boneIDsHigh[3] = static_cast<uint8_t>((maxWeightedBoneID >> 8) & 0xFF);
+							std::swap(targVert.boneIDsLow[0], targVert.boneIDsLow[3]);
 							std::swap(targVert.boneWeights[0], targVert.boneWeights[3]);
+							std::swap(targVert.boneIDsHigh[0], targVert.boneIDsHigh[3]);
 
 							// renormalize weights (optional but nice for debugging)
 							const float sumWeights = static_cast<float>(std::reduce(targVert.boneWeights.begin(), targVert.boneWeights.end())) / 255.0;
@@ -1056,11 +1070,16 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 void CAssParser::ReparentCompleteMeshesToBones(S3DModel* model, const std::vector<CAssParser::MeshData>& meshes)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	auto GetBoneID = [](const SVertexData& vert, size_t wi) {
+		return vert.boneIDsLow[wi] | (vert.boneIDsHigh[wi] << 8);
+	};
+
 	for (const auto& [verts, indcs, numUVs] : meshes) {
 		std::array<uint32_t, 256> boneWeights = { 0 };
 		for (const auto& vert : verts) {
 			for (size_t wi = 0; wi < 4; ++wi) {
-				boneWeights[vert.boneIDs[wi]] += vert.boneWeights[wi];
+				boneWeights[GetBoneID(vert, wi)] += vert.boneWeights[wi];
 			}
 		}
 		const auto maxWeightedBoneID = std::distance(
@@ -1081,21 +1100,30 @@ void CAssParser::ReparentCompleteMeshesToBones(S3DModel* model, const std::vecto
 			// Just copy mesh as is. Modelers and assimp should have done necessary dedup for us.
 
 			// make sure maxWeightedBoneID comes first. It's a must, even if it doesn't exist in targVert.boneIDs!
-			if (targVert.boneIDs[0] != maxWeightedBoneID) {
-				auto it = std::find(targVert.boneIDs.begin() + 1, targVert.boneIDs.end(), maxWeightedBoneID);
-				if (it != targVert.boneIDs.end()) {
+			const auto boneID0 = GetBoneID(targVert, 0);
+			if (boneID0 != maxWeightedBoneID) {
+				size_t itPos = 0;
+				for (size_t jj = 1; jj < targVert.boneIDsLow.size(); ++jj) {
+					if (GetBoneID(targVert, jj) == maxWeightedBoneID) {
+						itPos = jj;
+						break;
+					}
+				}
+				if (itPos != 0) {
 					// swap maxWeightedBoneID so it comes first in the boneIDs array
-					const size_t itPos = std::distance(targVert.boneIDs.begin(), it);
-					std::swap(targVert.boneIDs[0], targVert.boneIDs[itPos]);
+					std::swap(targVert.boneIDsLow[0], targVert.boneIDsLow[itPos]);
 					std::swap(targVert.boneWeights[0], targVert.boneWeights[itPos]);
+					std::swap(targVert.boneIDsHigh[0], targVert.boneIDsHigh[itPos]);
 				}
 				else {
 					// maxWeightedBoneID doesn't even exist in this targVert
 					// replace the bone with the least weight with maxWeightedBoneID and swap it be first
-					targVert.boneIDs[3] = maxWeightedBoneID;
+					targVert.boneIDsLow[3] = static_cast<uint8_t>((maxWeightedBoneID) & 0xFF);
 					targVert.boneWeights[3] = 0;
-					std::swap(targVert.boneIDs[0], targVert.boneIDs[3]);
+					targVert.boneIDsHigh[3] = static_cast<uint8_t>((maxWeightedBoneID >> 8) & 0xFF);
+					std::swap(targVert.boneIDsLow[0], targVert.boneIDsLow[3]);
 					std::swap(targVert.boneWeights[0], targVert.boneWeights[3]);
+					std::swap(targVert.boneIDsHigh[0], targVert.boneIDsHigh[3]);
 
 					// renormalize weights (optional but nice for debugging)
 					const float sumWeights = static_cast<float>(std::reduce(targVert.boneWeights.begin(), targVert.boneWeights.end())) / 255.0;

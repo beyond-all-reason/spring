@@ -184,6 +184,7 @@ local callInLists = {
   'Shutdown',
   'Update',
   'TextCommand',
+  'ActiveCommandChanged',
   'CommandNotify',
   'AddConsoleLine',
   'ViewResize',
@@ -1182,6 +1183,13 @@ function widgetHandler:ConfigureLayout(command)
 end
 
 
+function widgetHandler:ActiveCommandChanged(id, cmdType)
+  for _,w in ipairs(self.ActiveCommandChangedList) do
+    w:ActiveCommandChanged(id, cmdType)
+  end
+end
+
+
 function widgetHandler:CommandNotify(id, params, options)
   for _,w in ipairs(self.CommandNotifyList) do
     if (w:CommandNotify(id, params, options)) then
@@ -2174,7 +2182,7 @@ end
 --  Font call-ins
 --
 
-function widgetHandler:FontsChaged()
+function widgetHandler:FontsChanged()
   for _,w in ripairs(self.FontsChangedList) do
     w:FontsChanged()
   end

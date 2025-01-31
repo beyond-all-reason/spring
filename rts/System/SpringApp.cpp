@@ -241,7 +241,7 @@ bool SpringApp::Init()
 	Watchdog::RegisterThread(WDT_MAIN, true);
 
 	// Create Window
-	if (!InitWindow(("Spring " + SpringVersion::GetSync()).c_str())) {
+	if (!InitWindow(("Recoil " + SpringVersion::GetFull()).c_str())) {
 		SDL_Quit();
 		return false;
 	}

@@ -90,7 +90,7 @@ namespace SpringVersion
 	/**
 	 * The basic part of a spring version.
 	 * This may only be used for sync-checking if IsRelease() returns true.
-	 * @return "Major.PatchSet" or "Major.PatchSet.1"
+	 * @return "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum" otherwise
 	 * @see GetSync
 	 */
 	extern const std::string& Get();
@@ -100,13 +100,13 @@ namespace SpringVersion
 	 * This may be used for sync-checking through a simple string-equality test.
 	 * In essence this means, that only releases with the same Major release
 	 * number may be detected as syncing.
-	 * @return "Major" or "Major.PatchSet.1-Commits-gHash Branch"
+	 * @return "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise
 	 */
 	extern const std::string& GetSync();
 
 	/**
 	 * The verbose, human readable version.
-	 * @return "Major.Patchset[.1-Commits-gHash Branch] (Additional)"
+	 * @return "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise. Will also include (buildFlags), if there're any.
 	 * @see GetMajor
 	 * @see GetPatchSet
 	 * @see GetCommits

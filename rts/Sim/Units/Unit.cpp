@@ -423,6 +423,9 @@ void CUnit::FinishedBuilding(bool postInit)
 		soloBuilder = nullptr;
 	}
 
+	if (isDead) // Lua can kill a freshy spawned unit in UnitCreated
+		return;
+
 	ChangeLos(realLosRadius, realAirLosRadius);
 
 	if (unitDef->activateWhenBuilt)
@@ -483,9 +486,6 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 	// pre-destruction event; unit may be kept around for its death sequence
 	eventHandler.UnitDestroyed(this, attacker, weaponDefID);
 	eoh->UnitDestroyed(*this, attacker, weaponDefID);
-
-	// Will be called in the destructor again, but this can not hurt
-	SetGroup(nullptr);
 
 	if (unitDef->windGenerator > 0.0f)
 		envResHandler.DelGenerator(this);
@@ -3033,6 +3033,7 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(iconRadius),
 
 	CR_MEMBER(stunned),
+	CR_MEMBER_UN(noGroup),
 
 //	CR_MEMBER(expMultiplier),
 //	CR_MEMBER(expPowerScale),

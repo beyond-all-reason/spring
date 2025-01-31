@@ -57,6 +57,7 @@ class LuaUnsyncedRead {
 		static int GetUnitNoDraw(lua_State* L);
 		static int GetUnitEngineDrawMask(lua_State* L);
 		static int GetUnitNoMinimap(lua_State* L);
+		static int GetUnitNoGroup(lua_State* L);
 		static int GetUnitNoSelect(lua_State* L);
 		static int GetUnitAlwaysUpdateMatrix(lua_State* L);
 		static int GetUnitDrawFlag(lua_State* L);

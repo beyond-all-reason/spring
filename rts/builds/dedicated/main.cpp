@@ -114,8 +114,6 @@ int main(int argc, char* argv[])
 		// since we are not using SDL_GetTicks as our clock anymore)
 		spring_time::setstarttime(spring_time::gettime(true));
 
-		CLogOutput::LogSystemInfo();
-
 		std::string scriptName;
 		std::string scriptText;
 		std::string binaryName = argv[0];
@@ -124,6 +122,10 @@ int main(int argc, char* argv[])
 		gflags::SetVersionString(SpringVersion::GetFull());
 		gflags::ParseCommandLineFlags(&argc, &argv, true);
 		ParseCmdLine(argc, argv, scriptName);
+
+		CLogOutput::LogSectionInfo();
+		CLogOutput::LogConfigInfo();
+		CLogOutput::LogSystemInfo();
 
 		globalConfig.Init();
 		FileSystemInitializer::InitializeLogOutput();

@@ -602,7 +602,8 @@ auto GL::Shapes::CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersM
 	std::vector<uint32_t> indcs; indcs.reserve(numDivs * 2);
 
 	// front end-cap
-	for (unsigned int n = 0; n <= numDivs; n++) {
+	verts[0] = float3{ 0.0f, 0.0f, 0.0f };
+	for (unsigned int n = 0; n < numDivs; n++) {
 		const unsigned int i = 2 + (n + 0) % numDivs;
 		const unsigned int j = 2 + (n + 1) % numDivs;
 
@@ -621,7 +622,8 @@ auto GL::Shapes::CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersM
 	}
 
 	// back end-cap
-	for (unsigned int n = 0; n <= numDivs; n++) {
+	verts[1] = float3{ 0.0f, 0.0f, 1.0f };
+	for (unsigned int n = 0; n < numDivs; n++) {
 		const unsigned int i = 2 + (n + 0) % numDivs;
 		const unsigned int j = 2 + (n + 1) % numDivs;
 
@@ -638,7 +640,6 @@ auto GL::Shapes::CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersM
 		indcs.push_back(j + numDivs);
 		indcs.push_back(1);
 	}
-
 
 	// sides
 	for (unsigned int n = 0; n < numDivs; n++) {

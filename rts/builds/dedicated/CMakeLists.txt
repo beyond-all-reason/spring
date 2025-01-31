@@ -54,12 +54,6 @@ if    (UNIX AND NOT MINGW)
 	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 endif (UNIX AND NOT MINGW)
 
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIR})
-if("${SDL2_VERSION_STRING}" VERSION_LESS "2")
-	message(FATAL_ERROR "Found SDL v${SDL2_VERSION_STRING} while 2 is required!")
-endif()
-
 ### Assemble the incude dirs
 include_directories(${ENGINE_SRC_ROOT_DIR}/)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/lua/include)
@@ -127,8 +121,11 @@ set(system_files
 	${ENGINE_SRC_ROOT_DIR}/System/float4.cpp
 	)
 if    (WIN32)
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/Hardware.cpp)
 	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/WinVersion.cpp)
-endif (WIN32)
+else  ()
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Linux/Hardware.cpp)
+endif ()
 
 set(engineDedicatedSources
 	${system_files}

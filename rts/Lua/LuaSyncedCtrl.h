@@ -93,6 +93,7 @@ class LuaSyncedCtrl
 		static int SetUnitAlwaysVisible(lua_State* L);
 		static int SetUnitUseAirLos(lua_State* L);
 		static int SetUnitResourcing(lua_State* L);
+		static int SetUnitStorage(lua_State* L);
 		static int SetUnitMetalExtraction(lua_State* L);
 		static int SetUnitHarvestStorage(lua_State* L);
 		static int SetUnitBuildSpeed(lua_State* L);
@@ -178,6 +179,7 @@ class LuaSyncedCtrl
 		static int SetProjectileVelocity(lua_State* L);
 		static int SetProjectileCollision(lua_State* L);
 		static int SetProjectileTarget(lua_State* L);
+		static int SetProjectileTimeToLive(lua_State* L);
 		static int SetProjectileIsIntercepted(lua_State* L);
 		static int SetProjectileDamages(lua_State* L);
 		static int SetProjectileIgnoreTrackingError(lua_State* L);

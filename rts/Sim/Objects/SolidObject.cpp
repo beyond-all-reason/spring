@@ -376,7 +376,21 @@ void CSolidObject::SetDirVectorsEuler(const float3 angles)
 	UpdateMidAndAimPos();
 }
 
-void CSolidObject::SetHeadingFromDirection() { heading = GetHeadingFromVector(frontdir.x, frontdir.z); }
+void CSolidObject::SetHeadingFromDirection() {
+	// undo UpdateDirVectors transformation
+
+	// construct quaternion to describe rotation from uDir to UpVector
+	float4 quat{ -updir.z, 0.0f, updir.x, 1.0f + updir.y }; // same angle as in UpdateDirVectors, but inverted axis
+	float qN = quat.SqLength() + quat.w * quat.w;
+	quat *= math::isqrt(qN);
+
+	const float3 fDir =
+		2.0f * quat.dot(frontdir) * static_cast<float3>(quat) +
+		(quat.w * quat.w - quat.dot(quat)) * frontdir +
+		2.0f * quat.w * quat.cross(frontdir);
+
+	heading = GetHeadingFromVector(fDir.x, fDir.z);
+}
 void CSolidObject::SetFacingFromHeading() { buildFacing = GetFacingFromHeading(heading); }
 
 void CSolidObject::UpdateDirVectors(bool useGroundNormal, bool useObjectNormal, float dirSmoothing)
@@ -391,15 +405,30 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 	RECOIL_DETAILED_TRACY_ZONE;
 	// set initial rotation of the object around updir=UpVector first
 	const float3 fDir = GetVectorFromHeading(heading);
+	const float3 rDir = float3{ -fDir.z, 0.0f, fDir.x };
 
-	if likely(1.0f - math::fabs(uDir.y) >= 1e-6f) {
-		const float3 norm = float3{ uDir.z, 0.0f, -uDir.x }.Normalize(); //same as UpVector.cross(uDir) to obtain normal vector, which will serve as a rotation axis
-		frontdir = fDir.rotateByUpVector(uDir, norm); //doesn't change vector magnitude
-	}
-	else {
-		frontdir = fDir * Sign(uDir.y);
-	}
-	rightdir = (frontdir.cross(uDir)).Normalize();
+	// construct quaternion to describe rotation from UpVector to uDir
+
+	// https://raw.org/proof/quaternion-from-two-vectors/
+	// const float dp = UpVector.dot(uDir);
+	// const float3 axis = UpVector.cross(uDir);
+	// float4 quat { axis, 1.0f + dp };
+
+	// same as above, but simplified given UpVector is trivial
+	float4 quat{ uDir.z, 0.0f, -uDir.x, 1.0f + uDir.y };
+	float qN = quat.SqLength() + quat.w * quat.w;
+	quat *= math::isqrt(qN);
+
+	frontdir =
+		2.0f * quat.dot(fDir) * static_cast<float3>(quat) +
+		(quat.w * quat.w - quat.dot(quat)) * fDir +
+		2.0f * quat.w * quat.cross(fDir);
+
+	rightdir =
+		2.0f * quat.dot(rDir) * static_cast<float3>(quat) +
+		(quat.w * quat.w - quat.dot(quat)) * rDir +
+		2.0f * quat.w * quat.cross(rDir);
+
 	updir = uDir;
 }
 

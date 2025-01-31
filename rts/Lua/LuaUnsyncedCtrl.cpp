@@ -216,6 +216,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitEngineDrawMask);
 	REGISTER_LUA_CFUNC(SetUnitAlwaysUpdateMatrix);
 	REGISTER_LUA_CFUNC(SetUnitNoMinimap);
+	REGISTER_LUA_CFUNC(SetUnitNoGroup);
 	REGISTER_LUA_CFUNC(SetUnitNoSelect);
 	REGISTER_LUA_CFUNC(SetUnitLeaveTracks);
 	REGISTER_LUA_CFUNC(SetUnitSelectionVolumeData);
@@ -506,12 +507,13 @@ int LuaUnsyncedCtrl::Echo(lua_State* L)
  * @string section
  * @tparam ?number|string logLevel
  *   Possible values for logLevel are:
- *    "debug"   | LOG.DEBUG
- *    "info"    | LOG.INFO
- *    "notice"  | LOG.NOTICE (engine default)
- *    "warning" | LOG.WARNING
- *    "error"   | LOG.ERROR
- *    "fatal"   | LOG.FATAL
+ *    "debug"        | LOG.DEBUG
+ *    "info"         | LOG.INFO
+ *    "notice"       | LOG.NOTICE (engine default)
+ *    "deprecated"   | LOG.DEPRECATED
+ *    "warning"      | LOG.WARNING
+ *    "error"        | LOG.ERROR
+ *    "fatal"        | LOG.FATAL
  * @string logMessage1
  * @string[opt] logMessage2
  * @string[opt] logMessagen
@@ -2184,6 +2186,29 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 
 /***
  *
+ * @function Spring.SetUnitNoGroup
+ * @number unitID
+ * @bool unitNoGroup whether unit can be added to selection groups
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetUnitNoGroup(lua_State* L)
+{
+	CUnit* unit = ParseCtrlUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->noGroup = luaL_checkboolean(L, 2);
+
+	if (unit->noGroup) {
+		unit->SetGroup(nullptr);
+	}
+	return 0;
+}
+
+
+/***
+ *
  * @function Spring.SetUnitNoSelect
  * @number unitID
  * @bool unitNoSelect whether unit can be selected or not
@@ -2437,7 +2462,7 @@ int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
 {
 	static bool deprecatedMsgDone = false;
 	if (!deprecatedMsgDone) {
-		LOG_L(L_WARNING, "Spring.UnitIconSetDraw is deprecated. Please use Spring.SetUnitIconDraw instead.");
+		LOG_L(L_DEPRECATED, "Spring.UnitIconSetDraw is deprecated. Please use Spring.SetUnitIconDraw instead.");
 		deprecatedMsgDone = true;
 	}
 	return LuaUnsyncedCtrl::SetUnitIconDraw(L);
@@ -3710,7 +3735,7 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 		return 0;
 
 	const int args = lua_gettop(L); // number of arguments
-	if ((args < 2) || !lua_isnumber(L, 1) || !lua_isstring(L, 2) || ((args >= 3) && !lua_isnumber(L, 3)))
+	if ((args < 2) || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		luaL_error(L, "Incorrect arguments to ShareResources()");
 
 	const int teamID = lua_toint(L, 1);
@@ -3729,8 +3754,8 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 		return 0;
 	}
 
-	if (args < 3)
-		return 0;
+	if (!lua_isnumber(L, 3))
+		luaL_error(L, "Incorrect third argument to ShareResources() for the specified resource");
 
 	if (type[0] == 'm') {
 		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, teamID, 0, lua_tofloat(L, 3), 0.0f));

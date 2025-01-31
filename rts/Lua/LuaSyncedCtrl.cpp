@@ -164,6 +164,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetUnitCosts);
 	REGISTER_LUA_CFUNC(SetUnitResourcing);
+	REGISTER_LUA_CFUNC(SetUnitStorage);
 	REGISTER_LUA_CFUNC(SetUnitTooltip);
 	REGISTER_LUA_CFUNC(SetUnitHealth);
 	REGISTER_LUA_CFUNC(SetUnitMaxHealth);
@@ -1887,6 +1888,32 @@ static bool SetUnitResourceParam(CUnit* unit, const char* name, float value)
 }
 
 
+static bool SetUnitStorageParam(CUnit* unit, const char* name, float value)
+{
+	// [m|e]
+	//
+	// metal | energy
+
+	SResourcePack newStorage = unit->storage;
+
+	switch (name[0]) {
+		case 'm': {
+			newStorage.metal  = value;
+		} break;
+
+		case 'e': {
+			newStorage.energy = value;
+		} break;
+
+		default: {
+			return false;
+		}
+	}
+	unit->SetStorage(newStorage);
+	return true;
+}
+
+
 /***
  * Unit Resourcing
  * @section unitresourcing
@@ -1927,6 +1954,52 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
 	}
 	else {
 		luaL_error(L, "Incorrect arguments to SetUnitResourcing");
+	}
+
+	return 0;
+}
+
+
+/***
+ * Unit Storage
+ * @section unitstorage
+ */
+
+/***
+ * @function Spring.SetUnitStorage
+ * @number unitID
+ * @string res
+ * @number amount
+ * @treturn nil
+ */
+
+/***
+ * @function Spring.SetUnitStorage
+ * @number unitID
+ * @tparam {[string]=number,...} res keys are: "[m|e]" metal | energy. Values are amounts
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	if (lua_israwstring(L, 2)) {
+		SetUnitStorageParam(unit, lua_tostring(L, 2), luaL_checkfloat(L, 3));
+	} else if (lua_istable(L, 2)) {
+		constexpr int tableIdx = 2;
+
+		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
+			if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
+				continue;
+
+			SetUnitStorageParam(unit, lua_tostring(L, LUA_TABLE_KEY_INDEX), lua_tofloat(L, LUA_TABLE_VALUE_INDEX));
+		}
+	}
+	else {
+		luaL_error(L, "Incorrect arguments to SetUnitStorage");
 	}
 
 	return 0;
@@ -5017,6 +5090,28 @@ int LuaSyncedCtrl::SetProjectileTarget(lua_State* L)
 
 
 /***
+ * @function Spring.SetProjectileTimeToLive
+ * @number projectileID
+ * @number ttl remaining time to live in frames
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetProjectileTimeToLive(lua_State* L)
+{
+	CProjectile* proj = ParseProjectile(L, __func__, 1);
+
+	const int newTimeToLive = luaL_checkint(L, 2);
+
+	if (proj == nullptr || !proj->weapon)
+		return 0;
+
+	CWeaponProjectile* wproj = static_cast<CWeaponProjectile*>(proj);
+
+	wproj->SetTimeToLive(newTimeToLive);
+	return 0;
+}
+
+
+/***
  * @function Spring.SetProjectileIsIntercepted
  * @number projectileID
  * @treturn nil
@@ -5215,8 +5310,8 @@ int LuaSyncedCtrl::SetProjectileCEG(lua_State* L)
  * Used when assigning multiple commands at once
  *
  * @number cmdID
- * @tparam {number,...} params
- * @tparam cmdOpts options
+ * @tparam {number,...}|nil params
+ * @tparam cmdOpts|nil options
  */
 
 
@@ -5245,8 +5340,8 @@ int LuaSyncedCtrl::UnitFinishCommand(lua_State* L)
  * @function Spring.GiveOrderToUnit
  * @number unitID
  * @number cmdID
- * @tparam {number,...} params
- * @tparam cmdOpts options
+ * @tparam {number,...}|nil params
+ * @tparam cmdOpts|nil options
  * @treturn bool unitOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
@@ -5281,8 +5376,8 @@ int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
  * @function Spring.GiveOrderToUnitMap
  * @tparam {[number]=table,...} unitMap table with unitIDs as keys
  * @number cmdID
- * @tparam {number,...} params
- * @tparam cmdOpts options
+ * @tparam {number,...}|nil params
+ * @tparam cmdOpts|nil options
  * @treturn number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
@@ -5324,8 +5419,8 @@ int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
  * @function Spring.GiveOrderToUnitArray
  * @tparam {number,...} unitIDs
  * @number cmdID
- * @tparam {number,...} params
- * @tparam cmdOpts options
+ * @tparam {number,...}|nil params
+ * @tparam cmdOpts|nil options
  * @treturn number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)

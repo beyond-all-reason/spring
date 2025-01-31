@@ -84,7 +84,7 @@ enum CommandTopic {
 	COMMAND_UNIT_ATTACK                           = 45,
 	COMMAND_UNIT_ATTACK_AREA                      = 46,
 	COMMAND_UNIT_GUARD                            = 47,
-	COMMAND_UNIT_AI_SELECT                        = 48,
+	// 48 removed
 	COMMAND_UNIT_GROUP_ADD                        = 49,
 	COMMAND_UNIT_GROUP_CLEAR                      = 50,
 	COMMAND_UNIT_REPAIR                           = 51,
@@ -212,7 +212,6 @@ enum UnitCommandOptions {
 		+ sizeof(struct SAttackUnitCommand) \
 		+ sizeof(struct SAttackAreaUnitCommand) \
 		+ sizeof(struct SGuardUnitCommand) \
-		+ sizeof(struct SAiSelectUnitCommand) \
 		+ sizeof(struct SGroupAddUnitCommand) \
 		+ sizeof(struct SGroupClearUnitCommand) \
 		+ sizeof(struct SRepairUnitCommand) \
@@ -258,7 +257,12 @@ enum UnitCommandOptions {
 		+ sizeof(struct SSetSizeOverlayTextureDrawerDebugCommand) \
 		+ sizeof(struct SSetLabelOverlayTextureDrawerDebugCommand) \
 		+ sizeof(struct SFeatureTraceRayCommand) \
+		+ 16 \
 		)
+
+/* FIXME: the +16 is because stuff got removed,
+ * which this """versioning scheme""" doesn't support.
+ * Could rethink it at some point. */
 
 /**
  * Allows one to give an income (dis-)advantage to the team
@@ -863,22 +867,6 @@ struct SGuardUnitCommand {
 	int toGuardUnitId;
 }; //$ COMMAND_UNIT_GUARD Unit_guard REF:toGuardUnitId->Unit
 
-// TODO: docu (is it usefull at all?)
-struct SAiSelectUnitCommand {
-	int unitId;
-	int groupId;
-	/// see enum UnitCommandOptions
-	short options;
-	/**
-	 * At which frame the command will time-out and consequently be removed,
-	 * if execution of it has not yet begun.
-	 * Can only be set locally, is not sent over the network, and is used
-	 * for temporary orders.
-	 * default: MAX_INT (-> do not time-out)
-	 * example: currentFrame + 15
-	 */
-	int timeOut;
-}; //$ COMMAND_UNIT_AI_SELECT Unit_aiSelect
 
 //struct SGroupSelectUnitCommand {
 //	int unitId;

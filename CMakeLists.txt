@@ -291,7 +291,7 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 
 # Note the missing REQUIRED, as headless & dedi may not depend on those.
 #  So req. checks are done in the build target's CMakeLists.txt.
-find_package(SDL2)
+find_package(SDL2 MODULE)
 
 find_package_static(DevIL 1.8.0 REQUIRED)
 
@@ -403,15 +403,9 @@ if(NOT MSVC)
 endif(NOT MSVC)
 
 
-if(DEBUG_BUILD)
-        set(DEBUG_LUANAN_DEFAULT TRUE)
-else()
-        set(DEBUG_LUANAN_DEFAULT FALSE)
-endif()
-
-option(DEBUG_LUANAN "check for nans in lua" ${DEBUG_LUANAN_DEFAULT})
-if(DEBUG_LUANAN)
-        add_definitions(-DDEBUG_LUANAN)
+option(REPORT_LUANAN "report nans/infinities in lua" TRUE)
+if(REPORT_LUANAN)
+        add_definitions(-DREPORT_LUANAN)
 endif()
 
 
@@ -591,38 +585,18 @@ set_source_files_properties(
 # This is always executed (on every run of "make"),
 # but the actual version files are only written in case of a change
 # in the version info they use, or in the template file content.
-if (MSVC)
-	add_custom_command(
-		OUTPUT ${VERSION_GENERATE_SOURCES}
-		COMMAND "${CMAKE_COMMAND}"
-			"-DSOURCE_ROOT=${CMAKE_SOURCE_DIR}"
-			"-DCMAKE_MODULES_SPRING=${CMAKE_MODULES_SPRING}"
-			"-DGENERATE_DIR=${VERSION_GENERATE_DIR}"
-			"-DVERSION_ADDITIONAL=${VERSION_ADDITIONAL}"
-			-P "${CMAKE_MODULES_SPRING}/ConfigureVersion.cmake"
-			"${VERSION_GENERATE_DIR}"
-		COMMENT
-			"  Configuring Version files ..." VERBATIM
-		)
-	add_custom_target(generateVersionFiles DEPENDS ${VERSION_GENERATE_SOURCES})
-else (MSVC)
-	# This is always executed (on every run of "make"),
-	# but the actual version files are only written in case of a change
-	# in the version info they use, or in the template file content.
-	add_custom_target(generateVersionFiles)
-	add_custom_command(TARGET generateVersionFiles
-		COMMAND "${CMAKE_COMMAND}"
-			"-DSOURCE_ROOT=${CMAKE_SOURCE_DIR}"
-			"-DCMAKE_MODULES_SPRING=${CMAKE_MODULES_SPRING}"
-			"-DGENERATE_DIR=${VERSION_GENERATE_DIR}"
-			"-DVERSION_ADDITIONAL=${VERSION_ADDITIONAL}"
-			-P "${CMAKE_MODULES_SPRING}/ConfigureVersion.cmake"
-			"${VERSION_GENERATE_DIR}"
-		COMMENT
-			"  Configuring Version files ..." VERBATIM
-	)
-
-endif (MSVC)
+add_custom_target(generateVersionFiles)
+add_custom_command(TARGET generateVersionFiles
+	COMMAND "${CMAKE_COMMAND}"
+		"-DSOURCE_ROOT=${CMAKE_SOURCE_DIR}"
+		"-DCMAKE_MODULES_SPRING=${CMAKE_MODULES_SPRING}"
+		"-DGENERATE_DIR=${VERSION_GENERATE_DIR}"
+		"-DVERSION_ADDITIONAL=${VERSION_ADDITIONAL}"
+		-P "${CMAKE_MODULES_SPRING}/ConfigureVersion.cmake"
+		"${VERSION_GENERATE_DIR}"
+	COMMENT
+		"  Configuring Version files ..." VERBATIM
+)
 
 add_dependencies(generateSources generateVersionFiles)
 

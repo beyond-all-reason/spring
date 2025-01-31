@@ -628,11 +628,11 @@ CFontTexture::CFontTexture(const std::string& fontfile, int size, int _outlinesi
 	}
 	catch (content_error& ex) {
 		LOG_L(L_ERROR, "[%s] %s (s=%d): %s", __func__, fontfile.c_str(), fontSize, ex.what());
-		return;
+		throw;
 	}
 
 	if (shFace == nullptr)
-		return;
+		throw content_error("Failed to load font file: " + fontfile);
 
 	FT_Face face = *shFace;
 

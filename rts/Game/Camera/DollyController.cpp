@@ -124,7 +124,9 @@ void CDollyController::Update()
 		newRot.y += math::TWOPI * Sign(ydiff);
 	}
 	rot = newRot;
-	camHandler->CameraTransition(0.01f);
+	/* Note, even an epsilon value here will make the camera
+	 * fail to track when smoothness is set high enough */
+	camHandler->CameraTransition(0.0f);
 }
 
 void CDollyController::SwitchTo(const CCameraController* oldCam, const bool showText)
@@ -166,6 +168,9 @@ void CDollyController::GetState(StateMap& sm) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
+	sm["rx"]   = rot.x;
+	sm["ry"]   = rot.y;
+	sm["rz"]   = rot.z;
 }
 
 bool CDollyController::SetState(const StateMap& sm)

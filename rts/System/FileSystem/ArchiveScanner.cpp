@@ -25,12 +25,12 @@
 #include "System/Exceptions.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/FileSystem/RapidHandler.h"
+#include "System/FileSystem/Archives/PoolArchive.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedMap.hpp"
 
 #if !defined(DEDICATED) && !defined(UNITSYNC)
-	#include "System/Misc/UnfreezeSpring.h"
 	#include "System/TimeProfiler.h"
 	#include "System/Platform/Watchdog.h"
 #endif
@@ -54,7 +54,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
  * but mapping them all, every time to make the list is)
  */
 
-constexpr static int INTERNAL_VER = 17;
+constexpr static int INTERNAL_VER = 19;
 
 
 /*
@@ -389,19 +389,13 @@ static std::atomic<uint32_t> numScannedArchives{0};
 
 CArchiveScanner::CArchiveScanner()
 {
-	Clear();
-	// the "cache" dir is created in DataDirLocater
-	ReadCacheData(cachefile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua"));
-	ScanAllDirs();
+	ReadCache();
 }
 
 
 CArchiveScanner::~CArchiveScanner()
 {
-	if (!isDirty)
-		return;
-
-	WriteCacheData(GetFilepath());
+	WriteCache();
 }
 
 uint32_t CArchiveScanner::GetNumScannedArchives()
@@ -421,7 +415,7 @@ void CArchiveScanner::Clear()
 	brokenArchives.reserve(16);
 	brokenArchivesIndex.clear();
 	brokenArchivesIndex.reserve(16);
-	cachefile.clear();
+	cacheFile.clear();
 	numFilesHashed.store(0);
 }
 
@@ -431,13 +425,10 @@ void CArchiveScanner::Reload()
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 
 	// dtor
-	if (isDirty)
-		WriteCacheData(GetFilepath());
+	WriteCache();
 
 	// ctor
-	Clear();
-	ReadCacheData(cachefile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua"));
-	ScanAllDirs();
+	ReadCache();
 }
 
 void CArchiveScanner::ScanAllDirs()
@@ -616,6 +607,39 @@ std::string CArchiveScanner::SearchMapFile(const IArchive* ar, std::string& erro
 	return "";
 }
 
+
+void CArchiveScanner::ReadCache()
+{
+	Clear();
+
+    cacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua");
+
+	if (!FileSystem::FileExists(cacheFile)) {
+		// Try to save initial scanning of assets, but will have to redo hashing
+		// as the previous version had bugs in that area
+		// probe two previous versions
+		const auto vm1CacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 1, "ArchiveCache%i.lua");
+		const auto vm2CacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 2, "ArchiveCache%i.lua");
+		if (ReadCacheData(vm1CacheFile, true) || ReadCacheData(vm2CacheFile, true)) {
+			// nullify hashes
+			for (auto& ai : archiveInfos) {
+				memset(ai.checksum, 0, sizeof(ai.checksum));
+				isDirty = true;
+			}
+		}
+	}
+
+	ReadCacheData(GetFilepath());
+	ScanAllDirs();
+}
+
+void CArchiveScanner::WriteCache()
+{
+	if (!isDirty)
+		return;
+
+	WriteCacheData(GetFilepath());
+}
 
 CArchiveScanner::ArchiveInfo& CArchiveScanner::GetAddArchiveInfo(const std::string& lcfn)
 {
@@ -929,11 +953,40 @@ IFileFilter* CArchiveScanner::CreateIgnoreFilter(IArchive* ar)
 bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, ArchiveInfo& archiveInfo)
 {
 	// try to open an archive
-	bool isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
 	std::unique_ptr<IArchive> ar(archiveLoader.OpenArchive(archiveName));
 
 	if (ar == nullptr)
 		return false;
+
+#ifdef _WIN32
+	static constexpr int NUM_PARALLEL_FILE_READS_SD = 4;
+#else
+	// Linux FS even on spinning disk seems far more tollerant to parallel reads, use all threads
+	const int NUM_PARALLEL_FILE_READS_SD = ThreadPool::GetNumThreads();
+#endif // _WIN32
+
+	int numParallelFileReads;
+
+	switch (ar->GetType())
+	{
+	case ARCHIVE_TYPE_SDP: {
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveName));
+		// each file is one gzip instance, can MT
+		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+	} break;
+	case ARCHIVE_TYPE_SDD: {
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
+		// just a file, can MT
+		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+	} break;
+	case ARCHIVE_TYPE_SDZ: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	case ARCHIVE_TYPE_SD7: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	default: // just default to 1 thread
+		numParallelFileReads = 1;
+		break;
+	}
+
+	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
 
 	// load ignore list, and insert all files to check in lowercase format
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
@@ -948,27 +1001,20 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	fileNames.reserve(ar->NumFiles());
 	fileHashes.reserve(ar->NumFiles());
 
-	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
-		const std::pair<std::string, int>& info = ar->FileInfo(fid);
+	for (unsigned fid = 0; fid < ar->NumFiles(); ++fid) {
+		const auto& [filename, fileSize] = ar->FileInfo(fid);
 
-		if (ignore->Match(info.first))
+		if (ignore->Match(filename))
 			continue;
 
 		// create case-insensitive hashes
-		fileNames.push_back(StringToLower(info.first));
+		fileNames.push_back(StringToLower(filename));
 		fileHashes.emplace_back();
 	}
 
 	// sort by filename
 	std::stable_sort(fileNames.begin(), fileNames.end());
 
-
-#if !defined(DEDICATED) && !defined(UNITSYNC)
-	std::vector<std::shared_ptr<std::future<void>>> tasks;
-	tasks.reserve(fileNames.size());
-
-	// decrease spinning disk thrashing a little bit.
-	const auto numParallelFileReads = std::max(isOnSpinningDisk ? ThreadPool::GetNumThreads() >> 1 : ThreadPool::GetNumThreads(), 1);
 	std::counting_semaphore sem(numParallelFileReads);
 
 	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
@@ -978,14 +1024,14 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		fileBuffer.clear();
 
 		sem.acquire();
-		ar->GetFile(fileName, fileBuffer);
+		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffer)));
 		sem.release();
-
-		if (!fileBuffer.empty())
-			sha512::calc_digest(fileBuffer.data(), fileBuffer.size(), fileHash.data());
-
-		numFilesHashed.fetch_add(1);
 	};
+
+
+#if !defined(DEDICATED) && !defined(UNITSYNC)
+	std::vector<std::shared_future<void>> tasks;
+	tasks.reserve(fileNames.size());
 
 	for (size_t i = 0; i < fileNames.size(); ++i) {
 		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, i));
@@ -993,7 +1039,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	const auto erasePredicate = [](decltype(tasks)::value_type item) {
 		using namespace std::chrono_literals;
-		return item->wait_for(0us) == std::future_status::ready;
+		return item.wait_for(0us) == std::future_status::ready;
 	};
 
 	while (!tasks.empty()) {
@@ -1002,12 +1048,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	}
 #else
 	for_mt(0, fileNames.size(), [&](const int i) {
-		const auto& fileName = fileNames[i];
-		      auto& fileHash = fileHashes[i];
-		auto ComputeHashesTask = [&ar, &fileName, &fileHash]() -> void {
-			ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffers[ThreadPool::GetThreadNum()]);
-		};
-		ComputeHashesTask();
+		ComputeHashesTask(i);
 	});
 #endif
 
@@ -1016,14 +1057,16 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	// combine individual hashes, initialize to hash(name)
 	for (size_t i = 0; i < fileNames.size(); i++) {
-		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), archiveInfo.checksum);
+		sha512::raw_digest fileNameHash {0};
+		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), fileNameHash.data());
 
 		for (uint8_t j = 0; j < sha512::SHA_LEN; j++) {
+			archiveInfo.checksum[j] ^= fileNameHash[j];
 			archiveInfo.checksum[j] ^= fileHashes[i][j];
 		}
 
 		#if !defined(DEDICATED) && !defined(UNITSYNC)
-		Watchdog::ClearTimer();
+		Watchdog::ClearTimer(WDT_MAIN);
 		#endif
 	}
 
@@ -1031,18 +1074,18 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 }
 
 
-void CArchiveScanner::ReadCacheData(const std::string& filename)
+bool CArchiveScanner::ReadCacheData(const std::string& filename, bool loadOldVersion)
 {
 	std::lock_guard<decltype(scannerMutex)> lck(scannerMutex);
 	if (!FileSystem::FileExists(filename)) {
 		LOG_L(L_INFO, "[AS::%s] ArchiveCache %s doesn't exist", __func__, filename.c_str());
-		return;
+		return false;
 	}
 
 	LuaParser p(filename, SPRING_VFS_RAW, SPRING_VFS_BASE);
 	if (!p.Execute()) {
 		LOG_L(L_ERROR, "[AS::%s] failed to parse ArchiveCache: %s", __func__, p.GetErrorLog().c_str());
-		return;
+		return false;
 	}
 
 	const LuaTable& archiveCacheTbl = p.GetRoot();
@@ -1051,8 +1094,8 @@ void CArchiveScanner::ReadCacheData(const std::string& filename)
 
 	// Do not load old version caches
 	const int ver = archiveCacheTbl.GetInt("internalver", (INTERNAL_VER + 1));
-	if (ver != INTERNAL_VER)
-		return;
+	if (ver != INTERNAL_VER && !loadOldVersion)
+		return false;
 
 	for (int i = 1; archivesTbl.KeyExists(i); ++i) {
 		const LuaTable& curArchiveTbl = archivesTbl.SubTable(i);
@@ -1109,6 +1152,8 @@ void CArchiveScanner::ReadCacheData(const std::string& filename)
 	}
 
 	isDirty = false;
+
+	return true;
 }
 
 static inline void SafeStr(FILE* out, const char* prefix, const std::string& str)
@@ -1490,8 +1535,7 @@ sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::str
 
 sha512::raw_digest CArchiveScanner::GetArchiveCompleteChecksumBytes(const std::string& name)
 {
-	sha512::raw_digest checksum;
-	std::fill(checksum.begin(), checksum.end(), 0);
+	sha512::raw_digest checksum{0};
 
 	for (const std::string& depName: GetAllArchivesUsedBy(name)) {
 		const std::string& archiveName = ArchiveFromName(depName);

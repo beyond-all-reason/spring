@@ -13,6 +13,7 @@
 #include "LuaBitOps.h"
 #include "LuaMathExtra.h"
 #include "LuaTableExtra.h"
+#include "LuaTracyExtra.h"
 #include "LuaUtils.h"
 #include "LuaZip.h"
 #include "Game/Game.h"
@@ -149,6 +150,11 @@ CLuaHandle::CLuaHandle(const string& _name, int _order, bool _userMode, bool _sy
 
 	// register tracy functions in global scope
 	tracy::LuaRegister(L);
+	#ifdef TRACY_ENABLE
+		lua_getglobal(L, "tracy");
+		LuaTracyExtra::PushEntries(L);
+		lua_pop(L, 1);
+	#endif
 }
 
 
@@ -498,7 +504,7 @@ bool CLuaHandle::LoadCode(lua_State* L, std::string code, const string& debug)
 
 	const LuaUtils::ScopedDebugTraceBack traceBack(L);
 
-	tracy::LuaRemove(code.data());
+	LuaUtils::TracyRemoveAlsoExtras(code.data());
 	const int error = luaL_loadbuffer(L, code.c_str(), code.size(), debug.c_str());
 
 	if (error != 0) {
@@ -3335,6 +3341,32 @@ string CLuaHandle::GetTooltip(int x, int y)
  * @bool meta
  * @bool internal
  */
+
+/*** Called when a command is issued.
+ *
+ * @function ActiveCommandChanged
+ * @tparam nil|number cmdID
+ * @tparam nil|number cmdType
+ */
+void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 5, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	if (cmdDesc) {
+		lua_pushnumber(L, cmdDesc->id);
+		lua_pushnumber(L, cmdDesc->type);
+
+		// call the function
+		RunCallIn(L, cmdStr, 2, 0);
+	} else {
+		RunCallIn(L, cmdStr, 0, 0);
+	}
+}
 
 /*** Called when a command is issued.
  *
