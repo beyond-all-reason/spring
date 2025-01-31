@@ -5685,12 +5685,10 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
     GLuint objectID = (GLuint)luaL_checkinteger(L, 2);
     const char* label = luaL_checkstring(L, 3);
 	#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
-		if (GLEW_KHR_debug){
-			glObjectLabel(identifier, objectID, -1, label);
-		}
-		else {
-			luaL_error(L, "ObjectLabel requires GL_KHR_debug extension");
-		}
+		if (!GLEW_KHR_debug)
+			return 0;
+
+		glObjectLabel(identifier, objectID, -1, label);
 	#endif
     return 0;
 }
