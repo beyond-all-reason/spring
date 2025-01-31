@@ -54,7 +54,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ARCHIVESCANNER)
  * but mapping them all, every time to make the list is)
  */
 
-constexpr static int INTERNAL_VER = 18;
+constexpr static int INTERNAL_VER = 19;
 
 
 /*
@@ -612,13 +612,15 @@ void CArchiveScanner::ReadCache()
 {
 	Clear();
 
-	const auto oldCacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 1, "ArchiveCache%i.lua");
-	              cacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER    , "ArchiveCache%i.lua");
+    cacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER, "ArchiveCache%i.lua");
 
 	if (!FileSystem::FileExists(cacheFile)) {
 		// Try to save initial scanning of assets, but will have to redo hashing
 		// as the previous version had bugs in that area
-		if (ReadCacheData(oldCacheFile, true)) {
+		// probe two previous versions
+		const auto vm1CacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 1, "ArchiveCache%i.lua");
+		const auto vm2CacheFile = FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 2, "ArchiveCache%i.lua");
+		if (ReadCacheData(vm1CacheFile, true) || ReadCacheData(vm2CacheFile, true)) {
 			// nullify hashes
 			for (auto& ai : archiveInfos) {
 				memset(ai.checksum, 0, sizeof(ai.checksum));
@@ -1058,9 +1060,11 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	// combine individual hashes, initialize to hash(name)
 	for (size_t i = 0; i < fileNames.size(); i++) {
-		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), archiveInfo.checksum);
+		sha512::raw_digest fileNameHash {0};
+		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), fileNameHash.data());
 
 		for (uint8_t j = 0; j < sha512::SHA_LEN; j++) {
+			archiveInfo.checksum[j] ^= fileNameHash[j];
 			archiveInfo.checksum[j] ^= fileHashes[i][j];
 		}
 
@@ -1534,8 +1538,7 @@ sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::str
 
 sha512::raw_digest CArchiveScanner::GetArchiveCompleteChecksumBytes(const std::string& name)
 {
-	sha512::raw_digest checksum;
-	std::fill(checksum.begin(), checksum.end(), 0);
+	sha512::raw_digest checksum{0};
 
 	for (const std::string& depName: GetAllArchivesUsedBy(name)) {
 		const std::string& archiveName = ArchiveFromName(depName);
