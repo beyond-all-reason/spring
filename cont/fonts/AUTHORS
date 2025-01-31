@@ -4,7 +4,7 @@
 
 The FreeFont collection is being maintained by
 	Steve White <stevan.white AT googlemail.com>
-The folowing list cites the other contributors that contributed to
+The following list cites the other contributors that contributed to
 particular ISO 10646 blocks.
 
 * URW++ Design & Development GmbH <http://www.urwpp.de/>
@@ -40,7 +40,7 @@ particular ISO 10646 blocks.
 
 	Cyrillic				(U+0400-U+04FF)
 
-* Wadalab Kanji Comittee
+* Wadalab Kanji Committee
 
 	Hiragana				(U+3040-U+309F)
 	Katakana				(U+30A0-U+30FF)

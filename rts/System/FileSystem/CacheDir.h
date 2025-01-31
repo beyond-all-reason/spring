@@ -7,7 +7,7 @@
 
 /**
  * Utility class, which helps in tagging a directory as being cache only,
- * by saving a certain, well defiend file in this dir.
+ * by saving a certain, well defined file in this dir.
  * This tag can be used when creating backups for example,
  * where backups would exclude dirs tagged with this method.
  * The file used as a tag:

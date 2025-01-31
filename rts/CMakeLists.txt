@@ -37,7 +37,7 @@ endif()
 ### give error when not found
 find_package_static(DevIL REQUIRED)
 
-### Assemble common incude dirs
+### Assemble common include dirs
 include_directories(BEFORE lib)
 include_directories(BEFORE lib/lua/include)
 include_directories(${CMAKE_SOURCE_DIR}/include/AL)

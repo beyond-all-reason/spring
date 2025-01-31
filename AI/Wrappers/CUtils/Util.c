@@ -303,7 +303,7 @@ void util_strReplaceChar(char* toChange, char toFind, char replacer) {
 char* util_allocStrReplaceStr(const char* toChange, const char* toFind,
 		const char* replacer) {
 
-	// evaluate number of occurences of toFind in toChange
+	// evaluate number of occurrences of toFind in toChange
 	unsigned int numFinds = 0;
 	const char* found = NULL;
 	for (found = strstr(toChange, toFind); found != NULL; numFinds++) {

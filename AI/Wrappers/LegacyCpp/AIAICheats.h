@@ -73,7 +73,7 @@ private:
 
 	/**
 	 * Used to temporarily enable cheating for regular callbacks
-	 * that require (extra) priviledges.
+	 * that require (extra) privileges.
 	 */
 	void SetCheatsEnabled(bool enable);
 };

@@ -15,7 +15,7 @@
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 #function canDeleteDocumentation() {
 #	return 1;
 #}
@@ -154,7 +154,7 @@ function getFunctionComment_Common(container__doc, index__doc) {
 	}
 }
 
-# beginn of doc comment: /**
+# beginning of doc comment: /**
 /^[ \t]*\/\*\*/ {
 
 	isInsideDocComment__doc = 1;
@@ -174,7 +174,7 @@ function getFunctionComment_Common(container__doc, index__doc) {
 	}
 }
 
-# beginn of single line doc comment: ///
+# beginning of single line doc comment: ///
 /^[ \t]*\/\/\// {
 
 	isInsideDocComment__doc = 1;

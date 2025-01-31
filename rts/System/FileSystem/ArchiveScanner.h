@@ -22,7 +22,7 @@ class LuaTable;
  * for archive files.
  * When it finds one, it figures out what kind of archive it is (i.e. if it is a
  * map or a mod currently). This information is cached, so that only modified
- * archives are actually opened. The information can then be retreived by the
+ * archives are actually opened. The information can then be retrieved by the
  * mod and map selectors.
  *
  * The archive namespace is global, so it is not allowed to have an archive with

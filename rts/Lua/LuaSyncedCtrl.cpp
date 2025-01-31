@@ -585,7 +585,7 @@ static int SetSolidObjectBlocking(lua_State* L, CSolidObject* o)
 	}
 
 	// update blocking-bit of physical state (do this
-	// after changing the SO-bit so it is reversable)
+	// after changing the SO-bit so it is reversible)
 	if (lua_isboolean(L, 2)) {
 		if (lua_toboolean(L, 2)) {
 			o->Block();
@@ -1286,7 +1286,7 @@ int LuaSyncedCtrl::ShareTeamResource(lua_State* L)
  * @table losAccess
  * If one condition is fulfilled all beneath it are too (e.g. if an unit is in LOS it can read params with `inradar=true` even if the param has `inlos=false`)
  * All GameRulesParam are public, TeamRulesParams can just be `private`,`allied` and/or `public`
- * You can read RulesParams from any Lua enviroments! With those losAccess policies you can limit their access.
+ * You can read RulesParams from any Lua environments! With those losAccess policies you can limit their access.
  *
  * @bool[opt] private only readable by the ally (default)
  * @bool[opt] allied readable by ally + ingame allied
@@ -4469,7 +4469,7 @@ int LuaSyncedCtrl::SetFeatureResources(lua_State* L)
 /***
  * @function Spring.SetFeatureResurrect
  *
- * Second param can now be a number id instead of a string name, this also allows cancelling ressurection by passing -1.
+ * Second param can now be a number id instead of a string name, this also allows cancelling resurrection by passing -1.
  * The level of progress can now be set via the additional 4th param.
  * Possible values for facing are:
  * "south" | "s" | 0

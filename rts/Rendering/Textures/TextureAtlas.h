@@ -123,7 +123,7 @@ public:
 
 	/**
 	 * Creates the atlas containing all the specified textures.
-	 * @return true if suceeded, false if not all textures did fit
+	 * @return true if succeeded, false if not all textures did fit
 	 *         into the specified maxsize.
 	 */
 	bool Finalize();

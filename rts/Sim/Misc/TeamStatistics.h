@@ -40,7 +40,7 @@ struct TeamStatistics
 	/// Change structure from host endian to little endian or vice versa.
 	void swab();
 
-	/// In intervalls of this many seconds, statistics are updated
+	/// In intervals of this many seconds, statistics are updated
 	static constexpr int statsPeriod = 15;
 };
 

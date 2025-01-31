@@ -35,7 +35,7 @@ public:
 	 * @param	resource the resource to add
 	 * @return	the id of the resource just added
 	 *
-	 * Adds a CResource to the pool and retun its resourceId.
+	 * Adds a CResource to the pool and return its resourceId.
 	 */
 	int AddResource(const CResourceDescription& resource);
 	/**

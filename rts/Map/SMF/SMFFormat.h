@@ -4,7 +4,7 @@
 @brief Defines the Spring map format
 
 This file defines the Spring map format that is most common at the time of this
-writing, sometimes also refered to as SM2 (Spring Map format 2).
+writing, sometimes also referred to as SM2 (Spring Map format 2).
 
 This type of maps consists of a .smd (Spring Map Definition/Description) file,
 a .smf (Spring Map Format) file and a .smt (Spring Map Tiles) file. As you may
@@ -62,7 +62,7 @@ struct SMFHeader {
 	int heightmapPtr;    ///< File offset to elevation data (short int[(mapy+1)*(mapx+1)])
 	int typeMapPtr;      ///< File offset to typedata (unsigned char[mapy/2 * mapx/2])
 	int tilesPtr;        ///< File offset to tile data (see MapTileHeader)
-	int minimapPtr;      ///< File offset to minimap (always 1024*1024 dxt1 compresed data plus 8 mipmap sublevels)
+	int minimapPtr;      ///< File offset to minimap (always 1024*1024 dxt1 compressed data plus 8 mipmap sublevels)
 	int metalmapPtr;     ///< File offset to metalmap (unsigned char[mapx/2 * mapy/2])
 	int featurePtr;      ///< File offset to feature data (see MapFeatureHeader)
 
@@ -116,7 +116,7 @@ Each file defines as many tiles the int indicates with the following files
 starting where the last one ended so if there is 2 files with 100 tiles each
 the first defines 0-99 and the second 100-199.
 
-After this followes an int[mapx*texelPerSquare/tileSize * mapy*texelPerSquare/tileSize]
+After this follows an int[mapx*texelPerSquare/tileSize * mapy*texelPerSquare/tileSize]
 (this is int[mapx/4 * mapy/4] with currently hardcoded texelPerSquare=8 and tileSize=32)
 which are indices to the defined tiles.
 */

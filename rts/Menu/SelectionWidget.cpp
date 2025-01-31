@@ -226,7 +226,7 @@ void SelectionWidget::UpdateAvailableScripts()
 	// add sandbox script to list
 	availableScripts.push_back(SandboxAI);
 
-	// add native ai's to the list, too (but second, lua ai's are prefered)
+	// add native ai's to the list, too (but second, lua ai's are preferred)
 	for (const auto& pair: CAIScriptHandler::Instance().GetScriptMap()) {
 		availableScripts.push_back(pair.first);
 	}

@@ -193,7 +193,7 @@ void CStandardGroundFlash::InitCommon(const float3& _pos, const float3& _color)
 	color.g = _color.y * 255.0f;
 	color.b = _color.z * 255.0f;
 
-	// flashSize is just backward compability
+	// flashSize is just backward compatibility
 	size = flashSize;
 
 	const float3 normal = CalcNormal(_pos, camera->GetDir() * -1000.0f, flashSize);

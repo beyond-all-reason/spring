@@ -175,7 +175,7 @@ struct SUnitIdleEvent {
 
 /**
  * This AI event is sent when a unit received a move command and is not able to
- * fullfill it. Reasons for this are:
+ * fulfill it. Reasons for this are:
  * - The unit is not able to move
  * - The path to the target location is blocked
  * - The unit can not move on the terain of the target location (for example,
@@ -187,7 +187,7 @@ struct SUnitMoveFailedEvent {
 
 /**
  * This AI event is sent when a unit was damaged. It contains the attacked unit,
- * the attacking unit, the ammount of damage and the direction from where the
+ * the attacking unit, the amount of damage and the direction from where the
  * damage was inflickted. In case of a laser weapon, the direction will point
  * directly from the attacker to the attacked unit, while with artillery it will
  * rather be from somewhere up in the sky to the attacked unit.
@@ -276,7 +276,7 @@ struct SEnemyLeaveRadarEvent {
 
 /**
  * This AI event is sent when an enemy unit was damaged. It contains the
- * attacked unit, the attacking unit, the ammount of damage and the direction
+ * attacked unit, the attacking unit, the amount of damage and the direction
  * from where the damage was inflickted. In case of a laser weapon, the
  * direction will point directly from the attacker to the attacked unit, while
  * with artillery it will rather be from somewhere up in the sky to the attacked
@@ -313,7 +313,7 @@ struct SEnemyDestroyedEvent {
 /**
  * This AI event is sent when certain weapons are fired.
  * For performance reasons, it is not possible to send this event
- * for all weapons. Therefore, it is currently only sent for manuall-fire
+ * for all weapons. Therefore, it is currently only sent for manual-fire
  * weapons like for example the TA Commanders D-Gun or the Nuke.
  */
 struct SWeaponFiredEvent {

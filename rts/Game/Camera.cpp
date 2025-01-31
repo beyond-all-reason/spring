@@ -658,7 +658,7 @@ void CCamera::CalcFrustumLine(
 	// indicates line direction, ie. left-to-right (whenever <xdir.z> is negative) or right-to-left
 	// NOTE:
 	//   (b.x / b.z) is actually the reciprocal of the DC (ie. the number of steps along +x for
-	//   one step along +y); the world z-axis is inverted wrt. a regular Carthesian grid, so the
+	//   one step along +y); the world z-axis is inverted wrt. a regular Cartesian grid, so the
 	//   DC is also inverted
 	FrustumLine line;
 

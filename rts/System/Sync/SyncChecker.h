@@ -33,7 +33,7 @@ class CSyncChecker {
 		static void debugSyncCheckThreading();
 		static void Sync(const void* p, unsigned size) {
 #ifdef DEBUG_SYNC_MT_CHECK
-			// Sync calls should not be occuring in multi-threaded sections
+			// Sync calls should not be occurring in multi-threaded sections
 			debugSyncCheckThreading();
 #endif
 			// most common cases first, make it easy for compiler to optimize for it

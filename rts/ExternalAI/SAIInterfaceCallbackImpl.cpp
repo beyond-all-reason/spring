@@ -186,7 +186,7 @@ EXPORT(void) aiInterfaceCallback_Log_exception(int interfaceId, const char* cons
 		(die ? "AI Interface shutting down" : "AI Interface still running"), msg);
 
 	if (die) {
-		// TODO: FIXME: unload all skirmish AIs of this interface plus the interface itsself
+		// TODO: FIXME: unload all skirmish AIs of this interface plus the interface itself
 	}
 }
 

@@ -36,7 +36,7 @@ function trim(str__common) { return rtrim(ltrim(str__common)); }
 # http://www.gnu.org/manual/gawk/html_node/Escape-Sequences.html
 function noSpaces(str__common) { gsub(/[ \t\n\r]/, "", str__common); return str__common; }
 
-# returns a string containing only spaces with the same lenght as the input string
+# returns a string containing only spaces with the same length as the input string
 function lengtAsSpaces(str__common) { gsub(/./, " ", str__common); return str__common; }
 
 ### END: Trim functions
@@ -145,7 +145,7 @@ function regexEscape(str__common) {
 # Awaits this format:   "const std::map<int, std::string>* idNameMap"
 # Returns this format:  "idNameMap"
 # or
-# Awaits this format:   unsinged const char* varName[]
+# Awaits this format:   unsigned const char* varName[]
 # Returns this format:  varName
 function extractParamName(param__common) {
 

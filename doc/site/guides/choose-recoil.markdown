@@ -32,12 +32,12 @@ Meanwhile Recoil exposes interfaces for you to do everything you want.
  * well, perhaps you should! Recoil is oriented towards Total Annihilation style games, and SC2 is still a great platform for modding. **However:**
  * Recoil is **constantly being developed**.
 Improvements and features are being added over time.
-If your game finds a feature missing you can talk to engine developers who will be glad to try and accomodate your needs.
+If your game finds a feature missing you can talk to engine developers who will be glad to try and accommodate your needs.
  * Recoil doesn't interfere with your **ownership of content**.
 Code has to be open-sourced, but full ownership of content is still yours, not Blizzard's.
 
 ### Recoil is just a fork of Spring, why shouldn't I use the original?
- * **active and easy to reach maintainers** who are happy to accomodate your game's needs.
+ * **active and easy to reach maintainers** who are happy to accommodate your game's needs.
  * the API (incl. documentation), the feature set, and engine performance have **all improved and keep improving**, check out the changelog.
  * most **major Spring games made the move** and are happy with it.
  * if you still want to pick Spring, that's fine because **Recoil is very back-compatible so you can easily switch later**.

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Author: Tobi Vollebregt
 
-# Use to fix errors like these (occuring with gcc >= 4.1):
+# Use to fix errors like these (occurring with gcc >= 4.1):
 # error: extra qualification 'CSpotFinder::' on member 'GetBestCachePoint'
 # Pipe output of build process into it, ie.
 #	buildtool -k | ./ExtraQualFixer.sh

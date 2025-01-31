@@ -43,7 +43,7 @@
 
 namespace RmlGui
 {
-	/// The 'LuaTexture' element can render texures created/used in the Lua environment.
+	/// The 'LuaTexture' element can render textures created/used in the Lua environment.
 	///
 	/// The 'src' attribute is used to specify what texture to load
 	/// See LuaOpenGLUtils::ParseTextureImage on how to format this special string

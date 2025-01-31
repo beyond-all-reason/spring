@@ -72,7 +72,7 @@ then
 	wait $PID_CLIENT
 	EXITCHILD=$?
 
-	#reenable abbort on error
+	#reenable abort on error
 	set -e
 
 	# exit with exit code of server/client if failed

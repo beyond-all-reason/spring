@@ -316,7 +316,7 @@ struct creg_global_State {
 	creg_GCObject *grayagain;  /* list of objects to be traversed atomically */
 	creg_GCObject *weak;  /* list of weak tables (to be cleared) */
 	creg_GCObject *tmudata;  /* last element of list of userdata to be GC */
-	Mbuffer buff;  /* temporary buffer for string concatentation */
+	Mbuffer buff;  /* temporary buffer for string concatenation */
 	lu_mem GCthreshold;
 	lu_mem totalbytes;  /* number of bytes currently allocated */
 	lu_mem estimate;  /* an estimate of number of bytes actually in use */
