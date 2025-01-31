@@ -158,6 +158,8 @@ public:
 	void UpdateTeamUnitLimitsPreSpawn(int liveTeamNum);
 	void UpdateTeamUnitLimitsPreDeath(int deadTeamNum);
 
+	bool TransferUnitLimit(CTeam* fromTeam, CTeam* toTeam, int transferAmnt);
+
 private:
 
 	/**

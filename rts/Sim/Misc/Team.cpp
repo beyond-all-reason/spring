@@ -233,10 +233,21 @@ void CTeam::GiveEverythingTo(const unsigned toTeam)
 
 	const auto& teamUnits = unitHandler.GetUnitsByTeam(teamNum);
 
+	// Optimistically give *all* of team's unit limit to target
+	// If some transfers fail, need to partially revert this
+	// to ensure this.maxUnits == this.numUnits
+	target->maxUnits += maxUnits;
+	maxUnits = 0;
+
 	// NB: can not be a ranged loop since ChangeTeam removes [i] from teamUnits on success
 	for (size_t i = 0; i < teamUnits.size(); ) {
 		i += (!teamUnits[i]->ChangeTeam(toTeam, CUnit::ChangeGiven));
 	}
+	assert(numUnits == teamUnits.size());
+	// Some of the above transfers may have failed, so set maxUnits=numUnits and 
+	// reduce target->maxUnits by numUnits
+	maxUnits = numUnits;
+	target->maxUnits -= numUnits;
 }
 
 

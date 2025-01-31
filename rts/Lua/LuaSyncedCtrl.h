@@ -67,6 +67,7 @@ class LuaSyncedCtrl
 		static int CreateUnit(lua_State* L);
 		static int DestroyUnit(lua_State* L);
 		static int TransferUnit(lua_State* L);
+		static int TransferUnitLimit(lua_State* L);
 
 		static int CreateFeature(lua_State* L);
 		static int DestroyFeature(lua_State* L);
