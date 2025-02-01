@@ -24,13 +24,13 @@ jobs:
 
       - name: Install extractor tool
         run: |
-          npm install lua-doc-extractor
+          npm install -g lua-doc-extractor
 
       - name: Regenerate docs
         working-directory: ./recoil/rts/Lua/
         run: |
           rm -rf library/generated
-          npx lua-doc-extractor *.cpp --dest library/generated
+          lua-doc-extractor *.cpp --dest library/generated
 
       - name: Check out library repo
         uses: actions/checkout@v4
