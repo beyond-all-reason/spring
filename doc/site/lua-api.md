@@ -9,6 +9,11 @@ permalink: lua-api
 
 # Lua API
 
+{: .note }
+> We have recently moved to [Lua Language Server](https://luals.github.io/) for Lua support in IDE. This documentation is generated from its doc export function, which is quite limited. Currently all docs are inluded on a single page, and some information is missing.
+>
+> See the [Lua Language Server guide](guides/lua-language-server.markdown) for more information.
+
 {% comment %}
 ## Table of Contents
 
