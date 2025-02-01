@@ -92,8 +92,8 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 
 	unsigned int numClosedSquares = 0;
 
-	// areaUpdated is always 16x16. areaRelinkedInner could be bigger; this doesn't happen as often and once the nodes
-	// have divided they will never again grow larger than 16x16 in a match.
+	// areaUpdated is always 16x16 squares. areaRelinkedInner could be bigger; this doesn't happen as often and once the
+	// nodes have divided they will never again grow larger than 16x16 squares in a match.
 	const SRectangle& r = threadData.areaRelinkedInner;
 	const MoveDef* md = threadData.moveDef;
 
