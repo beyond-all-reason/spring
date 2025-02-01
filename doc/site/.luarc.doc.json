@@ -1,3 +1,9 @@
+// This file exists as a workaround for LuaLS/lua-language-server#2977. It
+// should be an exact copy of .luarc.json with the addition of the disabled
+// libraries in runtime.builtin.
+//
+// It is used to exclude builtin Lua libraries from out doc export in
+// .github/workflows/generate-lua-library.yml
 {
   "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
   "runtime.version": "Lua 5.1",
