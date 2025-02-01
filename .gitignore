@@ -170,3 +170,6 @@ build-*
 # Lua Language Server doc output
 /doc/site/_data/doc.json
 /doc/site/_data/doc.md
+
+# lua-doc-extractor generated library
+/rts/Lua/library/generated

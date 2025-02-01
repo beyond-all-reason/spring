@@ -33,6 +33,3 @@
 [submodule "rts/lib/lunasvg"]
 	path = rts/lib/lunasvg
 	url = https://github.com/sammycage/lunasvg.git
-[submodule "recoil-lua-library"]
-	path = recoil-lua-library
-	url = https://github.com/beyond-all-reason/recoil-lua-library.git

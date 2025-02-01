@@ -80,14 +80,12 @@ npm install -g lua-doc-extractor
 At root, run:
 
 ```bash
-# First delete the previously generated output.
-rm -rf recoil-lua-library/library/generated
+# First delete any previously generated output.
+rm -rf rts/Lua/library/generated
 
-# Now regenerate the library.
-lua-doc-extractor recoil/rts/Lua/*.cpp --dest recoil-lua-library/library/generated
+# Regenerate the library.
+lua-doc-extractor rts/Lua/*.cpp --dest rts/Lua/library/generated
 ```
-
-Do not commit any files generated in this way, they will be regenerated automatically when your PR is merged.
 
 ## Documenting the codebase
 
