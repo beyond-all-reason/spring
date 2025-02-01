@@ -12,6 +12,7 @@ public:
 	static void PreInitializeConfigHandler(const std::string& configSource = "", const std::string& configName = "", const bool safemode = false);
 	static void InitializeLogOutput(const std::string& filename = "");
 	static bool Initialize();
+	static void InitializeTry();
 	static void InitializeThr(bool* retPtr) { *retPtr = Initialize(); }
 	static void Cleanup(bool deallocConfigHandler = true);
 	static void Reload();
