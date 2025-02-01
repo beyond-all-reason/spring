@@ -166,3 +166,7 @@ Spring.VC.VC.opendb
 toolchain
 compile_commands.json
 build-*
+
+# Lua Language Server doc output
+/doc/site/_data/doc.json
+/doc/site/_data/doc.md
