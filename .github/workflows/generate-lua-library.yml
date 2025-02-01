@@ -24,7 +24,7 @@ jobs:
 
       - name: Install extractor tool
         run: |
-          npm install rhys-vdw/lua-doc-extractor
+          npm install lua-doc-extractor
 
       - name: Regenerate docs
         working-directory: ./recoil/rts/Lua/

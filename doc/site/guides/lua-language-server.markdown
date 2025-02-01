@@ -59,14 +59,17 @@ To test extracting library files from CPP, you can run [lua-doc-extractor](https
 First install `lua-doc-extractor`:
 
 ```bash
-npm install -g rhys-vdw/lua-doc-extractor
+npm install -g lua-doc-extractor
 ```
 
 At root, run:
 
 ```bash
+# First delete the previously generated output.
 rm -rf recoil-lua-library/library/generated
-npx lua-doc-extractor *.cpp --dest recoil-lua-library/library/generated
+
+# Now regenerate the library.
+lua-doc-extractor recoil/rts/Lua/*.cpp --dest recoil-lua-library/library/generated
 ```
 
 Do not commit any files generated in this way, they will be regenerated automatically when your PR is merged.
