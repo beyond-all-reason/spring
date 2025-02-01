@@ -40,6 +40,8 @@ jobs:
         run: |
           rm -rf library/library
           cp -r recoil/rts/Lua/library library
+          # Remove .luarc.json (this is only required for doc gen)
+          rm library/library/.luarc.json
 
       # Always try to update library repo (even if generation did not make changes).
       # Hand-written files may have changed without generated output changing,
