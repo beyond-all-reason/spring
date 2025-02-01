@@ -24,7 +24,7 @@ int LuaUnsyncedRead::GetFeaturesInScreenRectangle(lua_State* L)
 
 ## The library
 
-The Lua library is a collection of type definitions that can be included in other projects (e.g. BAR). It is extracted from this codebase and written into [recoil-lua-library](https://github.com/rhys-vdw/recoil-lua-library) repo.
+The Lua library is a collection of type definitions that can be included in other projects (e.g. BAR). It is extracted from this codebase and written into [recoil-lua-library](https://github.com/beyond-all-reason/recoil-lua-library) repo.
 
 This library is also included in this repo as a [submodule](/recoil-lua-library/).
 
@@ -32,7 +32,7 @@ You should not modify the submodule directly as it is auto-generated.
 
 ## Doc comments within CPP files
 
-Special comments blocks are parsed by [lua-doc-extractor]( https://github.com/rhys-vdw/lua-doc-extractor) and converted into [definition files](https://luals.github.io/wiki/definition-files/).
+Special comments blocks are parsed by [lua-doc-extractor](https://github.com/rhys-vdw/lua-doc-extractor) and converted into [definition files](https://luals.github.io/wiki/definition-files/).
 
 Comment blocks must start with `/**`, and by convention each line starts with `*`.
 
