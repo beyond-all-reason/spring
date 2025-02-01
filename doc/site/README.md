@@ -23,9 +23,10 @@ See the [Lua Language Server](doc/site/guides/lua-language-server.markdown) guid
 
 Have [Lua Language Server](https://luals.github.io/) installed and available at your `$PATH`.
 
-At root, run:
-
 ```bash
+# This step should be removed when https://github.com/LuaLS/lua-language-server/issues/2977 is resolved.
+cp doc/site/.luarc.doc.json recoil-lua-library/.luarc.json
+cd recoil-lua-library/
 lua-language-server --doc . --doc_out_path doc/site/_data
 ```
 
