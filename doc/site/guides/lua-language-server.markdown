@@ -27,6 +27,14 @@ int LuaUnsyncedRead::GetFeaturesInScreenRectangle(lua_State* L)
 }
 ```
 
+## IDE support
+
+The [recoil-lua-library](https://github.com/beyond-all-reason/recoil-lua-library) package provides type definitions for your editor.
+
+For working with Lua, we recommend using [Visual Studio Code](https://code.visualstudio.com/) with the [lua-language-server](https://marketplace.visualstudio.com/items?itemName=sumneko.lua) plugin.
+
+See the [Lua Language Server website](https://luals.github.io/#install) for other supported editors.
+
 ## Extracting the library
 
 ## The library
