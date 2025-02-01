@@ -35,7 +35,7 @@ jobs:
       - name: Check out library repo
         uses: actions/checkout@v4
         with:
-          repository: rhys-vdw/recoil-lua-library
+          repository: beyond-all-reason/recoil-lua-library
           ssh-key: ${{ secrets.RECOIL_LUA_LIBRARY_SSH_KEY }}
           path: library
 
