@@ -57,9 +57,9 @@ Markdown is supported in all text.
 
 ### Authored library files
 
-Hand-authored library files exist in `Lua/Library/`. These are appropriate to use when a Lua type is used in multiple CPP files.
+Hand-authored library files exist in `/rts/Lua/Library/`. These are appropriate to use when a Lua type is used in multiple CPP files.
 
-All files under `Lua/Library/` are directly copied into the library when the workflow runs.
+All files under `/rts/Lua/Library/` are directly copied into the library when the workflow runs.
 
 ### GitHub Workflow generation.
 
