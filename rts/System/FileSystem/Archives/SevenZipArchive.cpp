@@ -116,7 +116,7 @@ static inline const char* GetErrorStr(int err)
 	return "Unknown error";
 }
 
-static_assert(ThreadPool::MAX_THREADS == CSevenZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
+static_assert(ThreadPool::MAX_THREADS <= CSevenZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
 
 CSevenZipArchive::CSevenZipArchive(const std::string& name)
 	: CBufferedArchive(name)

@@ -16,7 +16,7 @@ IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const
 	return new CZipArchive(filePath);
 }
 
-static_assert(ThreadPool::MAX_THREADS == CZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
+static_assert(ThreadPool::MAX_THREADS <= CZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
 
 CZipArchive::CZipArchive(const std::string& archiveName)
 	: CBufferedArchive(archiveName)

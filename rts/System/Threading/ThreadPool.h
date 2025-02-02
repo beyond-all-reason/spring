@@ -64,7 +64,6 @@ static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
 
 #else
 
-#include "System/TimeProfiler.h"
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 
@@ -79,6 +78,8 @@ static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
 #ifdef UNITSYNC
 	#undef SCOPED_MT_TIMER
 	#define SCOPED_MT_TIMER(x)
+#else
+	#include "System/TimeProfiler.h"
 #endif
 
 class ITaskGroup;
