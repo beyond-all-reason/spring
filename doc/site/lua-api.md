@@ -12,6 +12,8 @@ permalink: lua-api
 {: .note }
 > We have recently moved to [Lua Language Server](https://luals.github.io/) for Lua support in IDE. This documentation is generated from its doc export function, which is quite limited. Currently all docs are inluded on a single page, and some information is missing.
 >
+> In cases where docs seem incomplete (e.g. `table` and `enum` definitions), try the "source" link to see if there is more information.
+>
 > See the [Lua Language Server guide](guides/lua-language-server.markdown) for more information.
 
 {% for row in site.data.doc %}
@@ -39,7 +41,8 @@ permalink: lua-api
   subsequent lines).
 {% endcomment %}
 
-## {{row["name"]}} <small>{{type}}</small>
+## {{row["name"]}}
+<small>{{type}}</small>
 {% if defines.type == 'doc.class' %}
   {% comment %} Do nothing, classes just have their name as the view. {% endcomment %}
 {% elsif row.type != 'variable' and defines.view %}
