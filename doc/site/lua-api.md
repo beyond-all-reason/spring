@@ -52,6 +52,10 @@ permalink: lua-api
 ```
 {% endif %}
 
+{% if defines.file != empty %}
+  \[[source](https://github.com/beyond-all-reason/recoil-lua-library/blob/main/library{{ defines.file }}#L{{ defines.start[0] | plus: 1 }}-L{{ defines.finish[0] | plus: 1 }})\]
+{% endif %}
+
 {% comment %}
   --- Description ---
 
