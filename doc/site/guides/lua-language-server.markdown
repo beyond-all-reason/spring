@@ -63,7 +63,7 @@ All files under `Lua/Library/` are directly copied into the library when the wor
 
 ### GitHub Workflow generation.
 
-Exporting the library is automated by the [Generate Lua library workflow](.github/workflows/generate-lua-library.yml). You can test it locally by following the same steps locally.
+Exporting the library is automated by the [Generate Lua library workflow](/.github/workflows/generate-lua-library.yml). You can test it locally by following the same steps locally.
 
 See doc [README](/doc/site/README.md) for info on doc generation.
 
