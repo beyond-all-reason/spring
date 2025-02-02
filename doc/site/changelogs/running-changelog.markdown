@@ -50,6 +50,7 @@ Expect a rescan of archives.
 * the default value for the `TooltipGeometry` springsetting has the Y coordinate moved from 0 to 0.125.
 * server no longer automatically forcestarts the game if there is nobody connected after 30s.
 * default tooltip now has income and harvest storage for each resource in its own line.
+* added Lua Language Server support: Files in `rts/Lua` are documented using LLS compatible annotations. Definitions are exported automatically to a Lua library repo for games that use the engine. Also updated Lua API doc generation to use LLS, with a regression in quality.
 
 ### Deprecation notice
 * renamed `Spring.UnitIconSetDraw` to `Spring.SetUnitIconDraw`. Old spelling will
