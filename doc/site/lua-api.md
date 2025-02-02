@@ -14,19 +14,6 @@ permalink: lua-api
 >
 > See the [Lua Language Server guide](guides/lua-language-server.markdown) for more information.
 
-{% comment %}
-## Table of Contents
-
-<ul>
-{% for row in site.data.doc %}
-<li>
-{{ row["name"] }} <br>
-<p>{{ row["defines"][0]["desc"] }}</p>
-</li>
-{% endfor %}
-</ul>
-{% endcomment %}
-
 {% for row in site.data.doc %}
 
 {% assign defines = row["defines"][0] %}
