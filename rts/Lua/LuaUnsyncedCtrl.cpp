@@ -2962,11 +2962,11 @@ int LuaUnsyncedCtrl::SetMouseCursor(lua_State* L)
 ******************************************************************************/
 
 /*** @function Spring.SetLosViewColors
- * @param always table {r,g,b}
- * @param LOS table = {r,g,b}
- * @param radar table = {r,g,b}
- * @param jam table = {r,g,b}
- * @param radar2 table = {r,g,b}
+ * @param always rgb
+ * @param LOS rgb
+ * @param radar rgb
+ * @param jam rgb
+ * @param radar2 rgb
  * @return nil
  */
 int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
