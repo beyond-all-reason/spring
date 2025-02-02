@@ -5787,8 +5787,8 @@ int LuaSyncedCtrl::AddHeightMap(lua_State* L)
  * @param x number
  * @param z number
  * @param height number
- * @param terraform number? (Default: 1) a scaling factor.
- * @return integer? absHeightDiff =0 nothing will be changed (the terraform starts) and if =1 the terraform will be finished.
+ * @param terraform number? (Default: 1) Scaling factor.
+ * @return integer? absHeightDiff If `0`, nothing will be changed (the terraform starts), if `1` the terraform will be finished.
  *
  */
 int LuaSyncedCtrl::SetHeightMap(lua_State* L)
