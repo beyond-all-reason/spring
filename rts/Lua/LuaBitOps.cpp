@@ -57,8 +57,6 @@ static inline unsigned int luaL_checkuint(lua_State* L, int index)
 /*** Returns the bitwise OR of all arguments. Only use up to 24 bit integers.
  *
  * @function math.bit_or
- * @param a1 integer
- * @param a2 integer
  * @param ... integer
  * @return integer result
  */
@@ -76,8 +74,6 @@ int LuaBitOps::bit_or(lua_State* L)
 /*** Returns the bitwise AND of all arguments. Only use up to 24 bit integers.
  *
  * @function math.bit_and
- * @param a1 integer
- * @param a2 integer
  * @param ... integer
  * @return integer result
  */
@@ -95,8 +91,6 @@ int LuaBitOps::bit_and(lua_State* L)
 /*** Returns the bitwise XOR of all arguments. Only use up to 24 bit integers.
  *
  * @function math.bit_xor
- * @param a1 integer
- * @param a2 integer
  * @param ... integer
  * @return integer result
  */
@@ -128,8 +122,6 @@ int LuaBitOps::bit_inv(lua_State* L)
 /*** Set each of the bits of a 24 bit integer. Returns result = result OR (1 << a1) OR (1 << a2) OR ...;)
  *
  * @function math.bit_bits
- * @param a1 integer
- * @param a2 integer
  * @param ... integer
  * @return integer result
  */
