@@ -97,7 +97,13 @@ permalink: lua-api
 
 
 {% for arg in extends.args %}
-1. <b>{{ arg.name }}</b> `{{ arg.view }}` {% if arg.desc %} — {{ arg.desc }} {% endif %}
+  {% comment %} Support varargs syntax, which has type "..." and no name {% endcomment %}
+  {% if arg.type == "..." %}
+    {% assign name = arg.type %}
+  {% else %}
+    {% assign name = arg.name %}
+  {% endif %}
+1. <b>{{ name }}</b> `{{ arg.view }}` {% if arg.desc %} — {{ arg.desc }} {% endif %}
 {% endfor %}
 
 {% endif %}
