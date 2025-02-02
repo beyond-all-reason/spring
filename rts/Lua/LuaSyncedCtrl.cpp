@@ -1303,11 +1303,6 @@ int LuaSyncedCtrl::ShareTeamResource(lua_State* L)
  * All GameRulesParam are public, TeamRulesParams can just be `private`,`allied` and/or `public`
  * You can read RulesParams from any Lua enviroments! With those losAccess policies you can limit their access.
  *
- * NOTE: Need to explicitly declare `public` scope here to prevent LLS from
- * detecting field names as access modifiers.
- *
- * See https://github.com/LuaLS/lua-language-server/issues/1814
- *
  * @class losAccess
  *
  * @field public private boolean? only readable by the ally (default)
@@ -1316,8 +1311,11 @@ int LuaSyncedCtrl::ShareTeamResource(lua_State* L)
  * @field public inradar boolean? readable if the unit is in AirLOS
  * @field public public boolean? readable by all
  */
-
-
+/* NOTE: Need to explicitly declare `public` scope here to prevent LLS from
+ * detecting field names `public`/`private` as an access modifier.
+ *
+ * See https://github.com/LuaLS/lua-language-server/issues/1814
+ */
 void SetRulesParam(lua_State* L, const char* caller, int offset,
 				LuaRulesParams::Params& params)
 {
