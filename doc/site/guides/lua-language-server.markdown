@@ -3,6 +3,7 @@ layout: default
 title: Lua Language Server
 parent: Guides
 permalink: guides/lua-language-server
+author: rhys-vdw
 ---
 
 # Lua Language Server
