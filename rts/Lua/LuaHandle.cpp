@@ -662,7 +662,7 @@ void CLuaHandle::GamePreload()
 /*** Called upon the start of the game.
  *
  * @function GameStart
- * 
+ *
  * Is not called when a saved game is loaded.
  */
 void CLuaHandle::GameStart()
@@ -1377,9 +1377,9 @@ void CLuaHandle::UnitStunned(
  * Called when a unit gains experience greater or equal to the minimum limit set by calling `Spring.SetExperienceGrade`.
  *
  * Should be called more reliably with small values of experience grade.
- * 
+ *
  * @function UnitExperience
- * 
+ *
  * @param unitID integer
  * @param unitDefID integer
  * @param unitTeam integer
@@ -1496,7 +1496,7 @@ void CLuaHandle::LosCallIn(const LuaHashString& hs,
  * Called when a unit enters radar of an allyteam.
  *
  * Also called when a unit enters LOS without any radar coverage.
- * 
+ *
  * @function UnitEnteredRadar
  * @param unitID integer
  * @param unitTeam integer
@@ -1515,7 +1515,7 @@ void CLuaHandle::UnitEnteredRadar(const CUnit* unit, int allyTeam)
  * Called when a unit enters LOS of an allyteam.
  *
  * Its called after the unit is in LOS, so you can query that unit.
- * 
+ *
  * @function UnitEnteredLos
  * @param unitID integer
  * @param unitTeam integer
@@ -1535,7 +1535,7 @@ void CLuaHandle::UnitEnteredLos(const CUnit* unit, int allyTeam)
  * Also called when a unit leaves LOS without any radar coverage.
  * For widgets, this is called just after a unit leaves radar coverage, so
  * widgets cannot get the position of units that left their radar.
- * 
+ *
  * @function UnitLeftRadar
  * @param unitID integer
  * @param unitTeam integer
@@ -1554,7 +1554,7 @@ void CLuaHandle::UnitLeftRadar(const CUnit* unit, int allyTeam)
  * Called when a unit leaves LOS of an allyteam.
  *
  * For widgets, this one is called just before the unit leaves los, so you can still get the position of a unit that left los.
- * 
+ *
  * @function UnitLeftLos
  * @param unitID integer
  * @param unitTeam integer
@@ -1764,7 +1764,7 @@ void CLuaHandle::UnitDecloaked(const CUnit* unit)
 /*** Called when two units collide.
  *
  * Both units must be registered with `Script.SetWatchUnit`.
- * 
+ *
  * @function UnitUnitCollision
  * @param colliderID number
  * @param collideeID number
@@ -3331,8 +3331,8 @@ string CLuaHandle::GetTooltip(int x, int y)
 /*** Called when a command is issued.
  *
  * @function ActiveCommandChanged
- * @param nil|number cmdID
- * @param nil|number cmdType
+ * @param cmdId integer?
+ * @param cmdType integer?
  */
 void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 {
