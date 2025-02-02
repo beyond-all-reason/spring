@@ -63,6 +63,7 @@ progress.make
 /rts/build/vstudio10/Release+MT with error catching
 /rts/build/vstudio10/Syncdebug
 /_ReSharper.Caches
+.idea/
 .vs/
 .vscode
 
