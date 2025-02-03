@@ -94,6 +94,16 @@ So far contains three vars:
 
 More will be added in the future as new features are added.
 
+### Lua language server support
+
+LDoc has been replaced by [Lua Language Server](https://luals.github.io/) compatible annotations. This allows for language server support when editing Lua code (namely autocompletion and type checking).
+
+* files in `rts/Lua` have been documented using LLS compatible annotations.
+* definitions can be found in the [Lua library repo](https://github.com/beyond-all-reason/recoil-lua-library). This is intended to be included as a submodule in projects that use the engine. A GitHub workflow has been added to update the docs every time `master` is updated.
+* updated [Lua API docs]({{ site.baseurl }}{% link lua-api.md %}) generation to use LLS. This has caused a regression in docs quality, but permits progressive enhancements in the future.
+
+Any new Lua APIs should be documented using the new style. For more information see the [Lua Language Server guide]({{ site.baseurl }}{% link guides/lua-language-server.markdown %}).
+
 ### Death events
 * `wupget:UnitDestroyed` will pass the builder as the killer if a unit gets reclaimed. Note that
 reclaim still does not generate `UnitDamaged` events.
