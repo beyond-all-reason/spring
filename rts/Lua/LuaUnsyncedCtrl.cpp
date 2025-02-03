@@ -623,7 +623,7 @@ int LuaUnsyncedCtrl::SendMessageToSpectators(lua_State* L)
 
 
 /*** @function Spring.SendMessageToPlayer
- * @param playerID number
+ * @param playerID integer
  * @param message string
  * @return nil
  */
@@ -637,7 +637,7 @@ int LuaUnsyncedCtrl::SendMessageToPlayer(lua_State* L)
 
 
 /*** @function Spring.SendMessageToTeam
- * @param teamID number
+ * @param teamID integer
  * @param message string
  * @return nil
  */
@@ -651,7 +651,7 @@ int LuaUnsyncedCtrl::SendMessageToTeam(lua_State* L)
 
 
 /*** @function Spring.SendMessageToAllyTeam
- * @param allyID number
+ * @param allyID integer
  * @param message string
  * @return nil
  */
@@ -967,7 +967,7 @@ int LuaUnsyncedCtrl::SetSoundEffectParams(lua_State* L)
 /***
  *
  * @function Spring.AddWorldIcon
- * @param cmdID number
+ * @param cmdID integer
  * @param posX number
  * @param posY number
  * @param posZ number
@@ -1007,11 +1007,11 @@ int LuaUnsyncedCtrl::AddWorldText(lua_State* L)
 /***
  *
  * @function Spring.AddWorldUnit
- * @param unitDefID number
+ * @param unitDefID integer
  * @param posX number
  * @param posY number
  * @param posZ number
- * @param teamID number
+ * @param teamID integer
  * @param facing number
  * @return nil
  */
@@ -1040,7 +1040,7 @@ int LuaUnsyncedCtrl::AddWorldUnit(lua_State* L)
 /***
  *
  * @function Spring.DrawUnitCommands
- * @param unitID number
+ * @param unitID integer
  * @return nil
  */
 
@@ -1453,7 +1453,7 @@ int LuaUnsyncedCtrl::SelectUnit(lua_State* L)
 /***
  *
  * @function Spring.DeselectUnit
- * @param unitID number
+ * @param unitID integer
  * @return nil
  */
 int LuaUnsyncedCtrl::DeselectUnit(lua_State* L)
@@ -1841,7 +1841,7 @@ static bool AddLightTrackingTarget(lua_State* L, GL::Light* light, bool trackEna
  * @function Spring.SetMapLightTrackingState
  *
  * @param lightHandle number
- * @param unitOrProjectileID number
+ * @param unitOrProjectileID integer
  * @param enableTracking boolean
  * @param unitOrProjectile boolean
  * @return boolean success
@@ -1877,7 +1877,7 @@ int LuaUnsyncedCtrl::SetMapLightTrackingState(lua_State* L)
  * @function Spring.SetModelLightTrackingState
  *
  * @param lightHandle number
- * @param unitOrProjectileID number
+ * @param unitOrProjectileID integer
  * @param enableTracking boolean
  * @param unitOrProjectile boolean
  * @return boolean success
@@ -1920,8 +1920,8 @@ int LuaUnsyncedCtrl::SetModelLightTrackingState(lua_State* L)
  * Passing in a value of 0 will cause the respective shader to revert back to its engine default.
  * Custom map shaders that declare a uniform ivec2 named "texSquare" can sample from the default diffuse texture(s), which are always bound to TU 0.
  *
- * @param standardShaderID number
- * @param deferredShaderID number
+ * @param standardShaderID integer
+ * @param deferredShaderID integer
  * @return nil
  */
 int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
@@ -2086,7 +2086,7 @@ int LuaUnsyncedCtrl::SetSkyBoxTexture(lua_State* L)
 /***
  *
  * @function Spring.SetUnitNoDraw
- * @param unitID number
+ * @param unitID integer
  * @param noDraw boolean
  * @return nil
  */
@@ -2105,7 +2105,7 @@ int LuaUnsyncedCtrl::SetUnitNoDraw(lua_State* L)
 /***
  *
  * @function Spring.SetUnitEngineDrawMask
- * @param unitID number
+ * @param unitID integer
  * @param drawMask number
  * @return nil
  */
@@ -2124,7 +2124,7 @@ int LuaUnsyncedCtrl::SetUnitEngineDrawMask(lua_State* L)
 /***
  *
  * @function Spring.SetUnitAlwaysUpdateMatrix
- * @param unitID number
+ * @param unitID integer
  * @param alwaysUpdateMatrix boolean
  * @return nil
  */
@@ -2143,7 +2143,7 @@ int LuaUnsyncedCtrl::SetUnitAlwaysUpdateMatrix(lua_State* L)
 /***
  *
  * @function Spring.SetUnitNoMinimap
- * @param unitID number
+ * @param unitID integer
  * @param unitNoMinimap boolean
  * @return nil
  */
@@ -2162,7 +2162,7 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 /***
  *
  * @function Spring.SetUnitNoGroup
- * @param unitID number
+ * @param unitID integer
  * @param unitNoGroup boolean Whether unit can be added to selection groups
  */
 int LuaUnsyncedCtrl::SetUnitNoGroup(lua_State* L)
@@ -2184,7 +2184,7 @@ int LuaUnsyncedCtrl::SetUnitNoGroup(lua_State* L)
 /***
  *
  * @function Spring.SetUnitNoSelect
- * @param unitID number
+ * @param unitID integer
  * @param unitNoSelect boolean whether unit can be selected or not
  * @return nil
  */
@@ -2212,7 +2212,7 @@ int LuaUnsyncedCtrl::SetUnitNoSelect(lua_State* L)
 /***
  *
  * @function Spring.SetUnitLeaveTracks
- * @param unitID number
+ * @param unitID integer
  * @param unitLeaveTracks boolean whether unit leaves tracks on movement
  * @return nil
  */
@@ -2231,8 +2231,8 @@ int LuaUnsyncedCtrl::SetUnitLeaveTracks(lua_State* L)
 /***
  *
  * @function Spring.SetUnitSelectionVolumeData
- * @param unitID number
- * @param featureID number
+ * @param unitID integer
+ * @param featureID integer
  * @param scaleX number
  * @param scaleY number
  * @param scaleZ number
@@ -2265,7 +2265,7 @@ int LuaUnsyncedCtrl::SetUnitSelectionVolumeData(lua_State* L)
  *
  * @function Spring.SetFeatureNoDraw
  *
- * @param featureID number
+ * @param featureID integer
  * @param noDraw boolean
  *
  * @return nil
@@ -2285,7 +2285,7 @@ int LuaUnsyncedCtrl::SetFeatureNoDraw(lua_State* L)
 /***
  *
  * @function Spring.SetFeatureEngineDrawMask
- * @param featureID number
+ * @param featureID integer
  * @param engineDrawMask number
  * @return nil
  */
@@ -2304,7 +2304,7 @@ int LuaUnsyncedCtrl::SetFeatureEngineDrawMask(lua_State* L)
 /***
  *
  * @function Spring.SetFeatureAlwaysUpdateMatrix
- * @param featureID number
+ * @param featureID integer
  * @param alwaysUpdateMat number
  * @return nil
  */
@@ -2324,7 +2324,7 @@ int LuaUnsyncedCtrl::SetFeatureAlwaysUpdateMatrix(lua_State* L)
  *
  * @function Spring.SetFeatureFade
  *
- * @param featureID number
+ * @param featureID integer
  * @param allow boolean
  *
  * @return nil
@@ -2345,7 +2345,7 @@ int LuaUnsyncedCtrl::SetFeatureFade(lua_State* L)
  *
  * @function Spring.SetFeatureSelectionVolumeData
  *
- * @param featureID number
+ * @param featureID integer
  * @param scaleX number
  * @param scaleY number
  * @param scaleZ number
@@ -2428,7 +2428,7 @@ int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
  * @function Spring.UnitIconSetDraw
  * Use Spring.SetUnitIconDraw instead.
  * @deprecated
- * @param unitID number
+ * @param unitID integer
  * @param drawIcon boolean
  * @return nil
  */
@@ -2446,7 +2446,7 @@ int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
 /***
  *
  * @function Spring.SetUnitIconDraw
- * @param unitID number
+ * @param unitID integer
  * @param drawIcon boolean
  * @return nil
  */
@@ -2466,7 +2466,7 @@ int LuaUnsyncedCtrl::SetUnitIconDraw(lua_State* L)
  *
  * @function Spring.SetUnitDefIcon
  *
- * @param unitDefID number
+ * @param unitDefID integer
  * @param iconName string
  *
  * @return nil
@@ -2506,7 +2506,7 @@ int LuaUnsyncedCtrl::SetUnitDefIcon(lua_State* L)
  *
  * @function Spring.SetUnitDefImage
  *
- * @param unitDefID number
+ * @param unitDefID integer
  * @param image string luaTexture|texFile
  *
  * @return nil
@@ -2805,7 +2805,7 @@ int LuaUnsyncedCtrl::SetBoxSelectionByEngine(lua_State* L)
 /***
  *
  * @function Spring.SetTeamColor
- * @param teamID number
+ * @param teamID integer
  * @param r number
  * @param g number
  * @param b number
@@ -2884,7 +2884,7 @@ int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
 /*** Register your custom cmd so it gets visible in the unit's cmd queue
  *
  * @function Spring.SetCustomCommandDrawData
- * @param cmdID number
+ * @param cmdID integer
  * @param (string|number)? cmdReference iconname | cmdID_cloneIcon
  * @return boolean? assigned
  */
@@ -3189,7 +3189,7 @@ int LuaUnsyncedCtrl::Quit(lua_State* L)
 /***
  *
  * @function Spring.SetUnitGroup
- * @param unitID number
+ * @param unitID integer
  * @param groupID number the group number to be assigned, or -1 for deassignment
  * @return nil
  */
@@ -3299,7 +3299,7 @@ static bool CanGiveOrders(const lua_State* L)
 /***
  *
  * @function Spring.GiveOrder
- * @param cmdID number
+ * @param cmdID integer
  * @param params table
  * @param options cmdOpts
  * @return nil|true
@@ -3319,8 +3319,8 @@ int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderToUnit
- * @param unitID number
- * @param cmdID number
+ * @param unitID integer
+ * @param cmdID integer
  * @param params table
  * @param options cmdOpts
  * @return nil|true
@@ -3352,7 +3352,7 @@ int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
  *
  * @function Spring.GiveOrderToUnitMap
  * @param unitMap table { [unitID] = arg1, ... }
- * @param cmdID number
+ * @param cmdID integer
  * @param params table
  * @param options cmdOpts
  * @return nil|true
@@ -3384,7 +3384,7 @@ int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
  *
  * @function Spring.GiveOrderToUnitArray
  * @param unitArray number[] array of unit ids
- * @param cmdID number
+ * @param cmdID integer
  * @param params table
  * @param options cmdOpts
  * @return nil|true
@@ -3414,7 +3414,7 @@ int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderArrayToUnit
- * @param unitID number
+ * @param unitID integer
  * @param cmdArray Command[]
  * @return boolean ordersGiven
  */
@@ -3677,7 +3677,7 @@ int LuaUnsyncedCtrl::SetShareLevel(lua_State* L)
  *
  * @function Spring.ShareResources
  *
- * @param teamID number
+ * @param teamID integer
  * @param units string
  * @return nil
  */
@@ -3686,7 +3686,7 @@ int LuaUnsyncedCtrl::SetShareLevel(lua_State* L)
  *
  * @function Spring.ShareResources
  *
- * @param teamID number
+ * @param teamID integer
  * @param resource string metal | energy
  * @param amount number
  * @return nil
@@ -4574,7 +4574,7 @@ int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
  * Allow the engine to load the unit's model (and texture) in a background thread.
  * Wreckages and buildOptions of a unit are automatically preloaded.
  *
- * @param unitDefID number
+ * @param unitDefID integer
  * @return nil
  */
 int LuaUnsyncedCtrl::PreloadUnitDefModel(lua_State* L) {
@@ -4590,7 +4590,7 @@ int LuaUnsyncedCtrl::PreloadUnitDefModel(lua_State* L) {
 
 /*** @function Spring.PreloadFeatureDefModel
  *
- * @param featureDefID number
+ * @param featureDefID integer
  * @return nil
  */
 int LuaUnsyncedCtrl::PreloadFeatureDefModel(lua_State* L) {
@@ -4675,7 +4675,7 @@ int LuaUnsyncedCtrl::CreateGroundDecal(lua_State* L)
 /***
  *
  * @function Spring.DestroyGroundDecal
- * @param decalID number
+ * @param decalID integer
  * @return boolean delSuccess
  */
 int LuaUnsyncedCtrl::DestroyGroundDecal(lua_State* L)
@@ -4688,7 +4688,7 @@ int LuaUnsyncedCtrl::DestroyGroundDecal(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalPosAndDims
- * @param decalID number
+ * @param decalID integer
  * @param midPosX number? (Default: currMidPosX)
  * @param midPosZ number? (Default: currMidPosZ)
  * @param sizeX number? (Default: currSizeX)
@@ -4773,7 +4773,7 @@ int LuaUnsyncedCtrl::SetGroundDecalQuadPosAndHeight(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalRotation
- * @param decalID number
+ * @param decalID integer
  * @param rot number? (Default: random) in radians
  * @return boolean decalSet
  */
@@ -4795,7 +4795,7 @@ int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalTexture
- * @param decalID number
+ * @param decalID integer
  * @param textureName string The texture has to be on the atlas which seems to mean it's defined as an explosion, unit tracks, or building plate decal on some unit already (no arbitrary textures)
  * @param isMainTex boolean? (Default: true) If false, it sets the normals/glow map
  * @return nil|boolean decalSet
@@ -4811,7 +4811,7 @@ int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalTextureParams
- * @param decalID number
+ * @param decalID integer
  * @param texWrapDistance number? (Default: currTexWrapDistance) if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
  * @param texTraveledDistance number? (Default: currTexTraveledDistance) shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
  * @return nil|boolean decalSet
@@ -4835,7 +4835,7 @@ int LuaUnsyncedCtrl::SetGroundDecalTextureParams(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalAlpha
- * @param decalID number
+ * @param decalID integer
  * @param alpha number? (Default: currAlpha) Between 0 and 1
  * @param alphaFalloff number? (Default: currAlphaFalloff) Between 0 and 1, per second
  * @return boolean decalSet
@@ -4860,7 +4860,7 @@ int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
  * @function Spring.SetGroundDecalNormal
  * Sets projection cube normal to orient in 3D space.
  * In case the normal (0,0,0) then normal is picked from the terrain
- * @param decalID number
+ * @param decalID integer
  * @param normalX number? (Default: 0)
  * @param normalY number? (Default: 0)
  * @param normalZ number? (Default: 0)
@@ -4892,7 +4892,7 @@ int LuaUnsyncedCtrl::SetGroundDecalNormal(lua_State* L)
  * @function Spring.SetGroundDecalTint
  * Sets the tint of the ground decal. Color = 2 * textureColor * tintColor
  * Respectively a color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
- * @param decalID number
+ * @param decalID integer
  * @param tintColR number? (Default: curTintColR)
  * @param tintColG number? (Default: curTintColG)
  * @param tintColB number? (Default: curTintColB)
@@ -4923,7 +4923,7 @@ int LuaUnsyncedCtrl::SetGroundDecalTint(lua_State* L)
  *
  * @function Spring.SetGroundDecalMisc
  * Sets varios secondary parameters of a decal
- * @param decalID number
+ * @param decalID integer
  * @param dotElimExp number? (Default: curValue) pow(max(dot(decalProjVector, SurfaceNormal), 0.0), dotElimExp), used to reduce decal artifacts on surfaces non-collinear with the projection vector
  * @param refHeight number? (Default: curValue)
  * @param minHeight number? (Default: curValue)
@@ -4955,7 +4955,7 @@ int LuaUnsyncedCtrl::SetGroundDecalMisc(lua_State* L)
  *
  * Use separate min and max for "gradient" style decals such as tank tracks
  *
- * @param decalID number
+ * @param decalID integer
  * @param creationFrameMin number? (Default: currCreationFrameMin)
  * @param creationFrameMax number? (Default: currCreationFrameMax)
  * @return boolean decalSet
