@@ -1247,7 +1247,7 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 /*** Runs Dolly Camera
  *
  * @function Spring.RunDollyCamera
- * @param runtime number in milliseconds
+ * @param runtime number Runtime in milliseconds.
  * @return nil
  */
 int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
@@ -1262,7 +1262,7 @@ int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
 /*** Pause Dolly Camera
  *
  * @function Spring.PauseDollyCamera
- * @param fraction number fraction of the total runtime to pause at, 0 to 1 inclusive. A null value pauses at current percent
+ * @param fraction number Fraction of the total runtime to pause at, 0 to 1 inclusive. A null value pauses at current percent
  * @return nil
  */
 int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
@@ -1309,7 +1309,7 @@ int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
  *
  * @function Spring.SetDollyCameraCurve
  * @param degree number
- * @param cpoints table NURBS control point positions {{x,y,z,weight}, ...}
+ * @param cpoints table NURBS control point positions `{{x,y,z,weight}, ...}`
  * @param knots table
  * @return nil
  */
@@ -1331,7 +1331,7 @@ int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
 /*** Sets Dolly Camera movement mode
  *
  * @function Spring.SetDollyCameraMode
- * @param mode number 1 static position, 2 nurbs curve
+ * @param mode 1|2 `1` static position, `2` nurbs curve
  * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
@@ -1346,7 +1346,7 @@ int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
 /*** Sets Dolly Camera movement curve to world relative or look target relative
  *
  * @function Spring.SetDollyCameraRelativeMode
- * @param relativeMode number 1 world, 2 look target
+ * @param relativeMode number `1` world, `2` look target
  * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
@@ -1363,7 +1363,7 @@ int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
  *
  * @function Spring.SetDollyCameraLookCurve
  * @param degree number
- * @param cpoints table NURBS control point positions {{x,y,z,weight}, ...}
+ * @param cpoints table NURBS control point positions `{{x,y,z,weight}, ...}`
  * @param knots table
  * @return nil
  */
@@ -1406,7 +1406,7 @@ int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
 /*** Sets target unit for Dolly Camera to look towards
  *
  * @function Spring.SetDollyCameraLookUnit
- * @param unitID number the unit to look at
+ * @param unitID integer The unit to look at.
  * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
@@ -1429,8 +1429,8 @@ int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
 /*** Selects a single unit
  *
  * @function Spring.SelectUnit
- * @param unitID number or nil
- * @param append boolean? (Default: false) append to current selection
+ * @param unitID integer?
+ * @param append boolean? (Default: false) Append to current selection.
  * @return nil
  */
 int LuaUnsyncedCtrl::SelectUnit(lua_State* L)
