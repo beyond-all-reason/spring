@@ -50,9 +50,8 @@ void HeightMapTexture::Init()
 	constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
 	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F,
-		xSize, ySize, 0,
-		GL_RED, GL_FLOAT, readMap->GetCornerHeightMapUnsynced());
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, xSize, ySize);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, xSize, ySize, GL_RED, GL_FLOAT, readMap->GetCornerHeightMapUnsynced());
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
