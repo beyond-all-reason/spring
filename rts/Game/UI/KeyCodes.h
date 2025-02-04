@@ -17,7 +17,10 @@ public:
 	std::string GetDefaultName(int code) const override;
 
 	static std::string GetCodeString(int code);
+	static unsigned char ToModifier(const int code);
 	static int GetNormalizedSymbol(int sym);
+
+	static const int NONE;
 };
 
 extern CKeyCodes keyCodes;

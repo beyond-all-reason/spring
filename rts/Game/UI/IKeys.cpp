@@ -12,7 +12,7 @@ int IKeys::GetCode(const std::string& name) const
 	const auto iter = std::lower_bound(nameToCode.begin(), nameToCode.end(), NameCodePair{name, 0}, namePred);
 
 	if (iter == nameToCode.end() || iter->first != name)
-		return -1;
+		return 0;
 
 	return iter->second;
 }
@@ -21,7 +21,7 @@ int IKeys::GetCode(const std::string& name) const
 bool IKeys::AddKeySymbol(const std::string& name, int code)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if ((code < 0) || !IsValidLabel(name))
+	if ((code <= 0) || !IsValidLabel(name))
 		return false;
 
 	const std::string keysym = StringToLower(name);
