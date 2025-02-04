@@ -3334,6 +3334,7 @@ int LuaSyncedCtrl::SetUnitMidAndAimPos(lua_State* L)
 
 	if (updateQuads) {
 		quadField.MovedUnit(unit);
+		unitHandler.MovedUnit(unit);
 	}
 
 	lua_pushboolean(L, true);
@@ -3369,6 +3370,7 @@ int LuaSyncedCtrl::SetUnitRadiusAndHeight(lua_State* L)
 
 	if (updateQuads) {
 		quadField.MovedUnit(unit);
+		unitHandler.MovedUnit(unit);
 	}
 
 	lua_pushboolean(L, true);
