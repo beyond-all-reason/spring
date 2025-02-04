@@ -41,10 +41,6 @@ struct UnitDef;
 struct UnitLoadParams;
 struct SLosInstance;
 
-namespace icon {
-	class CIconData;
-}
-
 // LOS state bits
 static constexpr uint8_t LOS_INLOS     = (1 << 0);  // the unit is currently in the los of the allyteam
 static constexpr uint8_t LOS_INRADAR   = (1 << 1);  // the unit is currently in radar from the allyteam
@@ -283,7 +279,8 @@ public:
 		// limExperience ranges from 0.0 to 0.9999...
 		return std::max(0.0f, 1.0f - (limExperience * experienceWeight));
 	}
-
+private:
+	void UpdateRenderParams();
 public:
 	const UnitDef* unitDef = nullptr;
 
@@ -560,7 +557,8 @@ public:
 
 	float iconRadius = 0.0f;
 
-	icon::CIconData* myIcon = nullptr;
+	mutable std::string definedIconName;
+	mutable size_t currentIconIndex = size_t(-1); // icon::INVALID_ICON_INDEX;
 
 	bool drawIcon = true;
 private:

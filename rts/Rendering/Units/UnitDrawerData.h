@@ -11,7 +11,7 @@ class CUnitDrawer;
 struct UnitDef;
 
 namespace icon {
-	class CIconData;
+	class IconData;
 }
 namespace GL {
 	struct GeometryBuffer;
@@ -45,8 +45,7 @@ public:
 			eventName == "RenderUnitPreCreated" ||
 			eventName == "RenderUnitCreated" || eventName == "RenderUnitDestroyed" ||
 			eventName == "UnitEnteredRadar"  || eventName == "UnitEnteredLos"      ||
-			eventName == "UnitLeftRadar"     || eventName == "UnitLeftLos"         ||
-			eventName == "PlayerChanged";
+			eventName == "UnitLeftRadar"     || eventName == "UnitLeftLos"         ;
 	}
 
 	void RenderUnitPreCreated(const CUnit* unit) override;
@@ -58,8 +57,6 @@ public:
 
 	void UnitEnteredLos(const CUnit* unit, int allyTeam) override;
 	void UnitLeftLos(const CUnit* unit, int allyTeam) override;
-
-	void PlayerChanged(int playerNum) override;
 public:
 	class TempDrawUnit {
 		CR_DECLARE_STRUCT(TempDrawUnit)
@@ -120,7 +117,7 @@ public:
 	void AddTempDrawUnit(const TempDrawUnit& tempDrawUnit);
 
 	void UpdateGhostedBuildings();
-	void UpdateUnitDefMiniMapIcons(const UnitDef* ud);
+	void UpdateUnitIconsByUnitDef(const UnitDef* ud);
 public:
 	const std::vector<UnitDefImage>& GetUnitDefImages() const { return unitDefImages; }
 	      std::vector<UnitDefImage>& GetUnitDefImages() { return unitDefImages; }
@@ -139,16 +136,13 @@ public:
 
 	auto*       GetSavedData()       { return &savedData; }
 	const auto* GetSavedData() const { return &savedData; }
-
-	const spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> >& GetUnitsByIcon() const { return unitsByIcon; }
 protected:
 	void UpdateObjectDrawFlags(CSolidObject* o) const override;
 private:
-	const icon::CIconData* GetUnitIcon(const CUnit* unit);
+	void UpdateCurrentUnitIcon(const CUnit* unit);
 
 	void UpdateTempDrawUnits(std::vector<TempDrawUnit>& tempDrawUnits);
 
-	void UpdateUnitIcon(const CUnit* unit, bool forced, bool killed);
 	void UpdateUnitIconState(CUnit* unit);
 	void UpdateUnitIconStateScreen(CUnit* unit);
 	static void UpdateDrawPos(CUnit* unit);
@@ -174,17 +168,11 @@ public:
 private:
 	SavedData savedData;
 
-	spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> > unitsByIcon;
-
 	std::vector<UnitDefImage> unitDefImages;
-
-
 
 	// icons
 	bool useDistToGroundForIcons;
 	float sqCamDistToGroundForIcons;
-
-
 
 	// IconsAsUI
 	static constexpr float iconSizeMult = 0.005f; // 1/200

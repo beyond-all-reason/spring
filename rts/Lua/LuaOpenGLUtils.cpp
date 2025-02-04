@@ -409,24 +409,6 @@ bool LuaOpenGLUtils::ParseTextureImage(lua_State* L, LuaMatTexture& texUnit, con
 			texUnit.data = reinterpret_cast<const void*>(ud);
 		} break;
 
-		case '^': {
-			// unit icon
-			char* endPtr;
-			const char* startPtr = image.c_str() + 1; // skip the '^'
-			const int unitDefID = (int)strtol(startPtr, &endPtr, 10);
-
-			if (endPtr == startPtr)
-				return false;
-
-			const UnitDef* ud = unitDefHandler->GetUnitDefByID(unitDefID);
-
-			if (ud == nullptr)
-				return false;
-
-			texUnit.type = LuaMatTexture::LUATEX_UNITRADARICON;
-			texUnit.data = reinterpret_cast<const void*>(ud);
-		} break;
-
 		case '$': {
 			switch ((texUnit.type = GetLuaMatTextureType(image))) {
 				case LuaMatTexture::LUATEX_NONE: {
@@ -538,10 +520,6 @@ GLuint LuaMatTexture::GetTextureID() const
 			if (unitDefHandler != nullptr)
 				texID = CUnitDrawer::GetUnitDefImage(reinterpret_cast<const UnitDef*>(data));
 		} break;
-		case LUATEX_UNITRADARICON: {
-			texID = (reinterpret_cast<const UnitDef*>(data))->iconType->GetTextureID();
-		} break;
-
 
 		// cubemap textures
 		case LUATEX_MAP_REFLECTION: {
@@ -694,8 +672,6 @@ GLuint LuaMatTexture::GetTextureTarget() const
 		case LUATEX_3DOTEXTURE:
 
 		case LUATEX_UNITBUILDPIC:
-		case LUATEX_UNITRADARICON:
-
 
 		case LUATEX_SHADOWMAP:
 		case LUATEX_SHADOWCOLOR:
@@ -884,12 +860,6 @@ std::tuple<int, int, int> LuaMatTexture::GetSize() const
 				return ReturnHelper(bp->imageSizeX, bp->imageSizeY);
 			}
 		} break;
-		case LUATEX_UNITRADARICON: {
-			const UnitDef* ud = reinterpret_cast<const UnitDef*>(data);
-			const icon::CIcon& it = ud->iconType;
-			return ReturnHelper(it->GetSizeX(), it->GetSizeY());
-		} break;
-
 
 		case LUATEX_MAP_REFLECTION: {
 			return ReturnHelper(cubeMapHandler.GetReflectionTextureSize());
@@ -1038,7 +1008,6 @@ void LuaMatTexture::Print(const string& indent) const
 		STRING_CASE(typeName, LUATEX_UNITTEXTURE2);
 		STRING_CASE(typeName, LUATEX_3DOTEXTURE);
 		STRING_CASE(typeName, LUATEX_UNITBUILDPIC);
-		STRING_CASE(typeName, LUATEX_UNITRADARICON);
 
 		STRING_CASE(typeName, LUATEX_MAP_REFLECTION);
 		STRING_CASE(typeName, LUATEX_SKY_REFLECTION);

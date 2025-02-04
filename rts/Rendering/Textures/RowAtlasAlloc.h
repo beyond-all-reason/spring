@@ -18,6 +18,7 @@ public:
 
 	bool Allocate() override;
 	int GetNumTexLevels() const override;
+	int GetReqNumTexLevels() const override;
 
 private:
 	struct Row {

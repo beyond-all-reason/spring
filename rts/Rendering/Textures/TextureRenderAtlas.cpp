@@ -105,7 +105,7 @@ CTextureRenderAtlas::~CTextureRenderAtlas()
 	if (shaderRef == 0)
 		shaderHandler->ReleaseProgramObjects("[TextureRenderAtlas]");
 
-	for (auto& [_, tID] : nameToTexID) {
+	for (auto& [_, tID] : filenameToTexID) {
 		if (tID) {
 			glDeleteTextures(1, &tID);
 			tID = 0;
@@ -121,71 +121,82 @@ CTextureRenderAtlas::~CTextureRenderAtlas()
 bool CTextureRenderAtlas::TextureExists(const std::string& texName)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return finalized && nameToTexID.contains(texName);
+	return finalized && nameToUniqueSubTexStr.contains(texName);
 }
 
 bool CTextureRenderAtlas::TextureExists(const std::string& texName, const std::string& texBackupName)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return finalized && (nameToTexID.contains(texName) || nameToTexID.contains(texBackupName));
+	return finalized && (nameToUniqueSubTexStr.contains(texName) || nameToUniqueSubTexStr.contains(texBackupName));
 }
 
-bool CTextureRenderAtlas::AddTexFromFile(const std::string& name, const std::string& file)
+bool CTextureRenderAtlas::AddTexFromFile(const std::string& name, const std::string& fileName, const float4& subTexCoords)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (finalized)
 		return false;
 
-	if (nameToTexID.contains(name))
-		return false;
-
-	if (!CFileHandler::FileExists(name, SPRING_VFS_ALL))
+	if (!filenameToTexID.contains(fileName) && !CFileHandler::FileExists(fileName, SPRING_VFS_ALL))
 		return false;
 
 	CBitmap bm;
-	if (!bm.Load(file))
+	if (!bm.Load(fileName))
 		return false;
 
-	return AddTexFromBitmapRaw(name, bm);
+	return AddTexFromBitmapRaw(name, fileName, bm, subTexCoords);
 }
 
-bool CTextureRenderAtlas::AddTexFromBitmap(const std::string& name, const CBitmap& bm)
+bool CTextureRenderAtlas::AddTexFromBitmap(const std::string& name, const std::string& refFileName, const CBitmap& bm, const float4& subTexCoords)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (finalized)
 		return false;
 
-	if (nameToTexID.contains(name))
-		return false;
-
-	return AddTexFromBitmapRaw(name, bm);
+	return AddTexFromBitmapRaw(name, refFileName, bm, subTexCoords);
 }
 
 
-bool CTextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBitmap& bm)
+bool CTextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const std::string& refFileName, const CBitmap& bm, const float4& subTexCoords)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	atlasAllocator->AddEntry(name, int2{ bm.xsize, bm.ysize });
-	nameToTexID[name] = bm.CreateMipMapTexture();
 
-	return true;
+	if (!filenameToTexID.contains(refFileName)) {
+		filenameToTexID.emplace(refFileName, bm.CreateMipMapTexture());
+	}
+
+	const auto uniqueSubTex = UniqueSubTexture(
+		filenameToTexID[refFileName],
+		subTexCoords
+	);
+	const auto uniqueSubTexStr = uniqueSubTex.GetName();
+
+	if (!atlasAllocator->contains(uniqueSubTexStr)) {
+		int2 subTexSize = {
+			static_cast<int>(bm.xsize * (subTexCoords.z - subTexCoords.x)),
+			static_cast<int>(bm.ysize * (subTexCoords.w - subTexCoords.y))
+		};
+		atlasAllocator->AddEntry(uniqueSubTexStr, subTexSize);
+		uniqueSubTextureMap[uniqueSubTexStr] = uniqueSubTex;
+	}
+
+	return nameToUniqueSubTexStr.emplace(name, uniqueSubTexStr).second;
 }
 
 
-bool CTextureRenderAtlas::AddTex(const std::string& name, int xsize, int ysize, const SColor& color)
+bool CTextureRenderAtlas::AddTex(const std::string& name, const std::string& refFileName, int xsize, int ysize, const SColor& color)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (finalized)
 		return false;
 
-	if (nameToTexID.contains(name))
+	if (nameToUniqueSubTexStr.contains(name))
 		return false;
 
 	CBitmap bm;
 	bm.AllocDummy(color);
 	bm = bm.CreateRescaled(xsize, ysize);
 
-	return AddTexFromBitmapRaw(name, bm);
+	return AddTexFromBitmapRaw(name, refFileName, bm, float4(0.0f, 0.0f, 1.0f, 1.0f));
 }
 
 AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName)
@@ -194,10 +205,11 @@ AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName)
 	if (!finalized)
 		return AtlasedTexture::DefaultAtlasTexture;
 
-	if (!nameToTexID.contains(texName))
+	auto it = nameToUniqueSubTexStr.find(texName);
+	if (it == nameToUniqueSubTexStr.end())
 		return AtlasedTexture::DefaultAtlasTexture;
 
-	return AtlasedTexture(atlasAllocator->GetTexCoords(texName));
+	return AtlasedTexture(atlasAllocator->GetTexCoords(it->second));
 }
 
 AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName, const std::string& texBackupName)
@@ -206,13 +218,25 @@ AtlasedTexture CTextureRenderAtlas::GetTexture(const std::string& texName, const
 	if (!finalized)
 		return AtlasedTexture::DefaultAtlasTexture;
 
-	if (nameToTexID.contains(texName))
-		return AtlasedTexture(atlasAllocator->GetTexCoords(texName));
+	auto it = nameToUniqueSubTexStr.find(texName);
+	if (it != nameToUniqueSubTexStr.end())
+		return AtlasedTexture(atlasAllocator->GetTexCoords(it->second));
 
 	if (texBackupName.empty())
 		return AtlasedTexture::DefaultAtlasTexture;
 
 	return GetTexture(texBackupName);
+}
+
+std::vector<std::string> CTextureRenderAtlas::GetAllFileNames() const
+{
+	std::vector<std::string> fileNames;
+	fileNames.reserve(filenameToTexID.size());
+	for (const auto& [name, _] : filenameToTexID) {
+		fileNames.emplace_back(name);
+	}
+
+	return fileNames;
 }
 
 uint32_t CTextureRenderAtlas::GetTexTarget() const
@@ -294,19 +318,19 @@ bool CTextureRenderAtlas::Finalize()
 			auto shEnToken = shader->EnableScoped();
 			shader->SetUniform("lod", static_cast<float>(level));
 			// draw
-			for (auto& [name, entry] : atlasAllocator->GetEntries()) {
-				const auto tc = atlasAllocator->GetTexCoords(name);
+			for (auto& [uniqTexName, entry] : atlasAllocator->GetEntries()) {
+				const auto atlasedTexCoords = atlasAllocator->GetTexCoords(uniqTexName);
+				const auto& [srcTexID, srcSubTC] = uniqueSubTextureMap[uniqTexName];
 
-				VA_TYPE_2DT posTL = { .x = Norm2SNorm(tc.x1), .y = Norm2SNorm(tc.y1), .s = 0.0f, .t = 0.0f };
-				VA_TYPE_2DT posTR = { .x = Norm2SNorm(tc.x2), .y = Norm2SNorm(tc.y1), .s = 1.0f, .t = 0.0f };
-				VA_TYPE_2DT posBL = { .x = Norm2SNorm(tc.x1), .y = Norm2SNorm(tc.y2), .s = 0.0f, .t = 1.0f };
-				VA_TYPE_2DT posBR = { .x = Norm2SNorm(tc.x2), .y = Norm2SNorm(tc.y2), .s = 1.0f, .t = 1.0f };
-
-				const auto texID = nameToTexID[name];
-				if (texID == 0)
+				if (srcTexID == 0)
 					continue;
 
-				auto texBind = GL::TexBind(GL_TEXTURE_2D, texID);
+				VA_TYPE_2DT posTL = { .x = Norm2SNorm(atlasedTexCoords.x1), .y = Norm2SNorm(atlasedTexCoords.y1), .s = srcSubTC.x, .t = srcSubTC.y };
+				VA_TYPE_2DT posTR = { .x = Norm2SNorm(atlasedTexCoords.x2), .y = Norm2SNorm(atlasedTexCoords.y1), .s = srcSubTC.z, .t = srcSubTC.y };
+				VA_TYPE_2DT posBL = { .x = Norm2SNorm(atlasedTexCoords.x1), .y = Norm2SNorm(atlasedTexCoords.y2), .s = srcSubTC.x, .t = srcSubTC.w };
+				VA_TYPE_2DT posBR = { .x = Norm2SNorm(atlasedTexCoords.x2), .y = Norm2SNorm(atlasedTexCoords.y2), .s = srcSubTC.z, .t = srcSubTC.w };
+
+				auto texBind = GL::TexBind(GL_TEXTURE_2D, srcTexID);
 
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
@@ -332,7 +356,7 @@ bool CTextureRenderAtlas::Finalize()
 	if (!finalized)
 		return false;
 
-	for (auto& [_, texID] : nameToTexID) {
+	for (auto& [_, texID] : filenameToTexID) {
 		if (texID) {
 			glDeleteTextures(1, &texID);
 			texID = 0;
@@ -360,4 +384,9 @@ bool CTextureRenderAtlas::DumpTexture() const
 	}
 
 	return true;
+}
+
+std::string CTextureRenderAtlas::UniqueSubTexture::GetName() const
+{
+	return fmt::format("{};{},{},{},{}", texID, subTexCoords.x1, subTexCoords.y1, subTexCoords.x2, subTexCoords.y2);
 }
