@@ -90,7 +90,16 @@ void CBeamLaserProjectile::Update()
 			edgeColEnd[i]   *= decay;
 		}
 
-		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f, flaresize, 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(
+			cegID,
+			startPos + ((targetPos - startPos) / ttl),
+			targetPos - startPos,
+			0.0f,
+			flaresize,
+			0.0f,
+			owner(),
+			ExplosionHitObject()
+		);
 	}
 
 	UpdateInterception();

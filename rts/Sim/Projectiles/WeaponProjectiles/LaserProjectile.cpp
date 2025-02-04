@@ -80,7 +80,16 @@ void CLaserProjectile::Update()
 void CLaserProjectile::UpdateIntensity() {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (ttl > 0) {
-		explGenHandler.GenExplosion(cegID, pos, speed, ttl, intensity, 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(
+			cegID,
+			pos,
+			speed,
+			ttl,
+			intensity,
+			0.0f,
+			owner(),
+			ExplosionHitObject()
+		);
 		return;
 	}
 
