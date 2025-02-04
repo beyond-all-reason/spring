@@ -400,37 +400,45 @@ void CSelectedUnitsHandler::AddUnit(CUnit* unit)
 	if (unit->noSelect)
 		return;
 
-	if (selectedUnits.insert(unit->id).second)
+	if (selectedUnits.insert(unit->id).second) {
 		AddDeathDependence(unit, DEPENDENCE_SELECTED);
 
-	selectionChanged = true;
-	possibleCommandsChanged = true;
+		selectionChanged = true;
+		possibleCommandsChanged = true;
 
-	const CGroup* g = unit->GetGroup();
+		const CGroup* g = unit->GetGroup();
 
-	if (g == nullptr || g->id != selectedGroup)
-		selectedGroup = -1;
+		if (g == nullptr || g->id != selectedGroup)
+			selectedGroup = -1;
 
-	unit->isSelected = true;
+		unit->isSelected = true;
+	}
 }
 
 
 void CSelectedUnitsHandler::RemoveUnit(CUnit* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (selectedUnits.erase(unit->id))
+	if (selectedUnits.erase(unit->id)) {
 		DeleteDeathDependence(unit, DEPENDENCE_SELECTED);
 
-	selectionChanged = true;
-	possibleCommandsChanged = true;
-	selectedGroup = -1;
-	unit->isSelected = false;
+		selectionChanged = true;
+		possibleCommandsChanged = true;
+		selectedGroup = -1;
+		unit->isSelected = false;
+	}
+	assert(!unit->isSelected);
 }
 
 
 void CSelectedUnitsHandler::ClearSelected()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	if (selectedUnits.empty()) {
+		return;
+	}
+
 	for (const int unitID: selectedUnits) {
 		CUnit* u = unitHandler.GetUnit(unitID);
 
@@ -482,8 +490,11 @@ void CSelectedUnitsHandler::SelectGroup(int num)
 		}
 	}
 
-	selectionChanged = true;
-	possibleCommandsChanged = true;
+	if (!selectedUnits.empty()) {
+		// if ClearSelected changed anything then it already set these.
+		selectionChanged = true;
+		possibleCommandsChanged = true;
+	}
 }
 
 
