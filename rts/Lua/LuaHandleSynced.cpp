@@ -1043,6 +1043,34 @@ bool CSyncedLuaHandle::AllowUnitKamikaze(const CUnit* unit, const CUnit* target,
 	return allow;
 }
 
+/***
+ *
+ * @function AllowUnitChase
+ * @number unitID
+ * @number targetID
+ * @treturn bool whether unit is allowed to default engine chase behavior
+ */
+bool CSyncedLuaHandle::AllowUnitChase(const CUnit* unit, const CUnit* target)
+{
+	LUA_CALL_IN_CHECK(L, true);
+	luaL_checkstack(L, 2 + 2, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+
+	if (!cmdStr.GetGlobalFunc(L))
+		return true;
+
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, target->id);
+
+	if (!RunCallIn(L, cmdStr, 2, 1))
+		return true;
+
+	const bool allow = luaL_optboolean(L, -1, true);
+	lua_pop(L, 1);
+	return allow;
+}
+
 
 /*** Called just before feature is created.
  *

@@ -153,6 +153,7 @@ class CEventHandler
 		bool AllowUnitCloak(const CUnit* unit, const CUnit* enemy);
 		bool AllowUnitDecloak(const CUnit* unit, const CSolidObject* object, const CWeapon* weapon);
 		bool AllowUnitKamikaze(const CUnit* unit, const CUnit* target, bool allowed);
+		bool AllowUnitChase(const CUnit* unit, const CUnit* target);
 		bool AllowFeatureCreation(const FeatureDef* featureDef, int allyTeamID, const float3& pos);
 		bool AllowFeatureBuildStep(const CUnit* builder, const CFeature* feature, float part);
 		bool AllowResourceLevel(int teamID, const string& type, float level);
