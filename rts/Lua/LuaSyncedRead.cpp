@@ -221,6 +221,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitStockpile);
 	REGISTER_LUA_CFUNC(GetUnitSensorRadius);
 	REGISTER_LUA_CFUNC(GetUnitPosErrorParams);
+	REGISTER_LUA_CFUNC(GetUnitPosErrorEnabled);
 	REGISTER_LUA_CFUNC(GetUnitHeight);
 	REGISTER_LUA_CFUNC(GetUnitRadius);
 	REGISTER_LUA_CFUNC(GetUnitBuildeeRadius);
@@ -3943,7 +3944,6 @@ int LuaSyncedRead::GetUnitSensorRadius(lua_State* L)
  *
  * @function Spring.GetUnitPosErrorParams
  * @number unitID
- * @number[opt] allyTeamID
  * @treturn nil|number posErrorVectorX
  * @treturn number posErrorVectorY
  * @treturn number posErrorVectorZ
@@ -3951,17 +3951,12 @@ int LuaSyncedRead::GetUnitSensorRadius(lua_State* L)
  * @treturn number posErrorDeltaY
  * @treturn number posErrorDeltaZ
  * @treturn number nextPosErrorUpdatebaseErrorMult
- * @treturn bool posErrorBit
  */
 int LuaSyncedRead::GetUnitPosErrorParams(lua_State* L)
 {
 	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
-
 	if (unit == nullptr)
 		return 0;
-
-	const int optAllyTeam = luaL_optinteger(L, 2, 0);
-	const int argAllyTeam = std::clamp(optAllyTeam, 0, teamHandler.ActiveAllyTeams());
 
 	lua_pushnumber(L, unit->posErrorVector.x);
 	lua_pushnumber(L, unit->posErrorVector.y);
@@ -3970,11 +3965,32 @@ int LuaSyncedRead::GetUnitPosErrorParams(lua_State* L)
 	lua_pushnumber(L, unit->posErrorDelta.y);
 	lua_pushnumber(L, unit->posErrorDelta.z);
 	lua_pushnumber(L, unit->nextPosErrorUpdate);
-	lua_pushboolean(L, unit->GetPosErrorBit(argAllyTeam));
 
-	return (3 + 3 + 1 + 1);
+	return (3 + 3 + 1);
 }
 
+/*** Check if a unit has radar wobble for given allyteam
+ *
+ * If true, the unit's radar dot will wobble for given allyteam.
+ *
+ * @function Spring.GetUnitPosErrorEnabled
+ * @number unitID
+ * @number allyTeamID
+ * @treturn bool posErrorEnabled
+ */
+int LuaSyncedRead::GetUnitPosErrorEnabled(lua_State* L)
+{
+	const auto* const unit = ParseAllyUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	const int allyTeamID = lua_tonumber(L, 2);
+	if (!teamHandler.IsValidAllyTeam(allyTeamID) || !LuaUtils::IsAlliedAllyTeam(L, allyTeamID))
+		return 0;
+
+	lua_pushboolean(L, unit->GetPosErrorBit(allyTeamID));
+	return 1;
+}
 
 /***
  *
