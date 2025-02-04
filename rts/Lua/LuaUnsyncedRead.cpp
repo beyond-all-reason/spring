@@ -4624,7 +4624,15 @@ int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
  */
 int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
 {
-	const auto& texName = groundDecals->GetDecalTexture(luaL_checkint(L, 1), luaL_optboolean(L, 2, true));
+	size_t atlasIndex = 0;
+	if (auto t = lua_type(L, 2); t == LUA_TBOOLEAN) {
+		atlasIndex = static_cast<size_t>(!lua_toboolean(L, 2));
+	}
+	else if (t == LUA_TNUMBER) {
+		atlasIndex = static_cast<size_t>(lua_tonumber(L, 2));
+	}
+
+	const auto& texName = groundDecals->GetDecalTexture(luaL_checkint(L, 1), atlasIndex);
 	lua_pushsstring(L, texName);
 
 	return 1;
@@ -4632,13 +4640,21 @@ int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
 
 /***
  *
- * @function Spring.GetDecalTextures
+ * @function Spring.GetGroundDecalTextures
  * @bool[opt=true] isMainTex If false, it gets the texture for normals/glow maps
  * @treturn {[string],...} textureNames All textures on the atlas and available for use in SetGroundDecalTexture
  */
 int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
 {
-	const auto& texNames = groundDecals->GetDecalTextures(luaL_optboolean(L, 2, true));
+	size_t atlasIndex = 0;
+	if (auto t = lua_type(L, 1); t == LUA_TBOOLEAN) {
+		atlasIndex = static_cast<size_t>(!lua_toboolean(L, 1));
+	}
+	else if (t == LUA_TNUMBER) {
+		atlasIndex = static_cast<size_t>(lua_tonumber(L, 1));
+	}
+
+	const auto texNames = groundDecals->GetDecalTextures(atlasIndex);
 	LuaUtils::PushStringVector(L, texNames);
 
 	return 1;

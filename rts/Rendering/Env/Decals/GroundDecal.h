@@ -20,6 +20,11 @@ public:
 		DECAL_TRACK     = 3,
 		DECAL_LUA       = 4
 	};
+	enum TexOffsetType : size_t {
+		TO_TYPE_MAIN  = 0,
+		TO_TYPE_NORM  = 1,
+		TO_TYPE_COUNT = 2
+	};
 	struct TypeID {
 		uint32_t type : 8;
 		uint32_t id : 24;
@@ -38,8 +43,7 @@ public:
 	float2 posBR;
 	float2 posBL;
 
-	AtlasedTexture texMainOffsets;
-	AtlasedTexture texNormOffsets;
+	std::array<AtlasedTexture, TexOffsetType::TO_TYPE_COUNT> texOffsets;
 
 	float alpha;
 	float alphaFalloff;
