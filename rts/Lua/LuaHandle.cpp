@@ -2271,6 +2271,12 @@ bool CLuaHandle::RecvLuaMsg(const string& msg, int playerID)
 	return retval;
 }
 
+bool CLuaHandle::ExecuteCode(std::string&& code)
+{
+	LuaUtils::ExecuteCodeAndPrint(L, std::move(code));
+	return false;
+}
+
 
 /******************************************************************************/
 
