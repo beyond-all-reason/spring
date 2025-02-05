@@ -8,22 +8,29 @@
 
 /******************************************************************************
  * Engine constants
- * @module Engine
  * @see rts/Lua/LuaConstEngine.cpp
 ******************************************************************************/
 
-/*** Engine specific information
+/***
+ * @class FeatureSupport
+ * @field NegativeGetUnitCurrentCommand boolean
+ * @field hasExitOnlyYardmaps boolean
+ * @field rmlUiApiVersion integer
+ */
+
+/***
+ * Engine specific information.
  *
  * @table Engine
- * @string version "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise
- * @string versionFull "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise. Will also include (buildFlags), if there're any.
- * @string versionMajor - Major part of the named release version
- * @string versionMinor - Minor part of the named release version
- * @string versionPatchSet - Build numbert of the named release version
- * @string commitsNumber - number of commits after the latest named release, non-zero indicates a "dev" build
- * @string buildFlags Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
- * @string FeatureSupport table containing various engine features as keys; use for cross-version compat
- * @number wordSize indicates the build type always 64 these days
+ * @field version string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise
+ * @field versionFull string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise. Will also include (buildFlags), if there're any.
+ * @field versionMajor string Major part of the named release version
+ * @field versionMinor string Minor part of the named release version
+ * @field versionPatchSet string Build numbert of the named release version
+ * @field commitsNumber string Number of commits after the latest named release, non-zero indicates a "dev" build
+ * @field buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
+ * @field featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
+ * @field wordSize number Indicates the build type always 64 these days
  */
 
 bool LuaConstEngine::PushEntries(lua_State* L)
@@ -54,4 +61,3 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 
 	return true;
 }
-

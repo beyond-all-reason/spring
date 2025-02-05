@@ -115,25 +115,8 @@
 /******************************************************************************
  * Callouts to set state
  *
- * @module UnsyncedCtrl
  * @see rts/Lua/LuaUnsyncedCtrl.cpp
 ******************************************************************************/
-
-
-/*** Color triple (RGB)
- * @table rgb
- * @number r
- * @number g
- * @number b
- */
-
-/*** Color quadruple (RGBA)
- * @table rgba
- * @number r
- * @number g
- * @number b
- * @number a
- */
 
 
 bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
@@ -469,9 +452,9 @@ static inline CUnit* ParseSelectUnit(lua_State* L, const char* caller, int index
  *
  * @function Spring.Ping
  *
- * @number pingTag
+ * @param pingTag number
  *
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::Ping(lua_State* L)
 {
@@ -486,39 +469,37 @@ int LuaUnsyncedCtrl::Ping(lua_State* L)
 
 /*** Useful for debugging.
  *
+ * Prints values in the spring chat console.
+ * Hint: the default print() writes to STDOUT.
+ *
  * @function Spring.Echo
+ * @param arg any
+ * @param ... any
  *
- * @param arg1
- * @param[opt] arg2
- * @param[opt] argn
- *
- *  Prints values in the spring chat console.
- *  Hint: the default print() writes to STDOUT.
- *
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::Echo(lua_State* L)
 {
 	return LuaUtils::Echo(L);
 }
 
+/***
+ * @alias LogLevel
+ * | integer
+ * | "debug"      # LOG.DEBUG
+ * | "info"       # LOG.INFO
+ * | "notice"     # LOG.NOTICE (engine default)
+ * | "warning"    # LOG.WARNING
+ * | "deprecated" # LOG.DEPRECATED
+ * | "error"      # LOG.ERROR
+ * | "fatal"      # LOG.FATAL
+ */
 
-/*** @function Spring.Log
- * @string section
- * @tparam ?number|string logLevel
- *   Possible values for logLevel are:
- *    "debug"        | LOG.DEBUG
- *    "info"         | LOG.INFO
- *    "notice"       | LOG.NOTICE (engine default)
- *    "deprecated"   | LOG.DEPRECATED
- *    "warning"      | LOG.WARNING
- *    "error"        | LOG.ERROR
- *    "fatal"        | LOG.FATAL
- * @string logMessage1
- * @string[opt] logMessage2
- * @string[opt] logMessagen
- *
- * @treturn nil
+/***
+ * @function Spring.Log
+ * @param section string
+ * @param logLevel LogLevel? (Default: "notice")
+ * @param ... string messages
  */
 int LuaUnsyncedCtrl::Log(lua_State* L)
 {
@@ -526,10 +507,16 @@ int LuaUnsyncedCtrl::Log(lua_State* L)
 }
 
 
-/*** @function Spring.SendCommands
- * @tparam ?string|table command1 | { command1, command 2, ...}
- * @string command2
- * @treturn nil
+/***
+ * @function Spring.SendCommands
+ * @param commands string[]
+ */
+
+/***
+ * @function Spring.SendCommands
+ * @param command string
+ * @param ... string additional commands
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendCommands(lua_State* L)
 {
@@ -612,8 +599,8 @@ static void PrintMessage(lua_State* L, const string& msg)
 
 
 /*** @function Spring.SendMessage
- * @string message
- * @treturn nil
+ * @param message string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendMessage(lua_State* L)
 {
@@ -623,8 +610,8 @@ int LuaUnsyncedCtrl::SendMessage(lua_State* L)
 
 
 /*** @function Spring.SendMessageToSpectators
- * @string message `<PLAYER#>` (with # being a playerid) inside the string will be replaced with the players name - i.e. : Spring.SendMessage ("`<PLAYER1>` did something") might display as "ProRusher did something"
- * @treturn nil
+ * @param message string `<PLAYER#>` (with # being a playerid) inside the string will be replaced with the players name - i.e. : Spring.SendMessage ("`<PLAYER1>` did something") might display as "ProRusher did something"
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendMessageToSpectators(lua_State* L)
 {
@@ -636,9 +623,9 @@ int LuaUnsyncedCtrl::SendMessageToSpectators(lua_State* L)
 
 
 /*** @function Spring.SendMessageToPlayer
- * @number playerID
- * @string message
- * @treturn nil
+ * @param playerID integer
+ * @param message string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendMessageToPlayer(lua_State* L)
 {
@@ -650,9 +637,9 @@ int LuaUnsyncedCtrl::SendMessageToPlayer(lua_State* L)
 
 
 /*** @function Spring.SendMessageToTeam
- * @number teamID
- * @string message
- * @treturn nil
+ * @param teamID integer
+ * @param message string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendMessageToTeam(lua_State* L)
 {
@@ -664,9 +651,9 @@ int LuaUnsyncedCtrl::SendMessageToTeam(lua_State* L)
 
 
 /*** @function Spring.SendMessageToAllyTeam
- * @number allyID
- * @string message
- * @treturn nil
+ * @param allyID integer
+ * @param message string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendMessageToAllyTeam(lua_State* L)
 {
@@ -686,8 +673,8 @@ int LuaUnsyncedCtrl::SendMessageToAllyTeam(lua_State* L)
 /*** Loads a SoundDefs file, the format is the same as in `gamedata/sounds.lua`.
  *
  * @function Spring.LoadSoundDef
- * @string soundfile
- * @treturn ?nil|bool success
+ * @param soundfile string
+ * @return boolean success
  */
 int LuaUnsyncedCtrl::LoadSoundDef(lua_State* L)
 {
@@ -700,24 +687,32 @@ int LuaUnsyncedCtrl::LoadSoundDef(lua_State* L)
 	return 1;
 }
 
+/***
+ * @alias SoundChannel
+ * | "general" # 0
+ * | "battle" # Same as `"sfx" | 1`
+ * | "sfx" # Same as `"battle" | 1`
+ * | "unitreply" # Same as `"voice" | 2`
+ * | "voice" # Same as `"unitreply" | 2`
+ * | "userinterface" # Same as "ui" | 3`
+ * | "ui" # Same as "userinterface" | 3`
+ * | 0 # General
+ * | 1 # SFX
+ * | 2 # Voice
+ * | 3 # User interface
+ */
 
 /*** @function Spring.PlaySoundFile
- * @string soundfile
- * @number[opt=1.0] volume
- * @number[opt] posx
- * @number[opt] posy
- * @number[opt] posz
- * @number[opt] speedx
- * @number[opt] speedy
- * @number[opt] speedz
- * @tparam[opt] ?number|string channel
- *    Possible arguments for channel argument:
- *    "general" || 0 || nil (default)
- *    "battle" || "sfx" | 1
- *    "unitreply" || "voice" || 2
- *    "userinterface" || "ui" || 3
- *
- * @treturn ?nil|bool playSound
+ * @param soundfile string
+ * @param volume number? (Default: 1.0)
+ * @param posx number?
+ * @param posy number?
+ * @param posz number?
+ * @param speedx number?
+ * @param speedy number?
+ * @param speedz number?
+ * @param channel SoundChannel? (Default: `0|"general"`)
+ * @return boolean playSound
  */
 int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 {
@@ -804,11 +799,11 @@ int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
  *
  * Multiple sound streams may be played at once.
  *
- * @string oggfile
- * @number[opt=1.0] volume
- * @bool[opt] enqueue
+ * @param oggfile string
+ * @param volume number? (Default: 1.0)
+ * @param enqueue boolean?
  *
- * @treturn ?nil|bool success
+ * @return boolean success
 */
 int LuaUnsyncedCtrl::PlaySoundStream(lua_State* L)
 {
@@ -825,7 +820,7 @@ int LuaUnsyncedCtrl::PlaySoundStream(lua_State* L)
 /*** Terminates any SoundStream currently running.
  *
  * @function Spring.StopSoundStream
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::StopSoundStream(lua_State*)
 {
@@ -837,7 +832,7 @@ int LuaUnsyncedCtrl::StopSoundStream(lua_State*)
 /*** Pause any SoundStream currently running.
  *
  * @function Spring.PauseSoundStream
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::PauseSoundStream(lua_State*)
 {
@@ -849,8 +844,8 @@ int LuaUnsyncedCtrl::PauseSoundStream(lua_State*)
 /*** Set volume for SoundStream
  *
  * @function Spring.SetSoundStreamVolume
- * @number volume
- * @treturn nil
+ * @param volume number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetSoundStreamVolume(lua_State* L)
 {
@@ -972,11 +967,11 @@ int LuaUnsyncedCtrl::SetSoundEffectParams(lua_State* L)
 /***
  *
  * @function Spring.AddWorldIcon
- * @number cmdID
- * @number posX
- * @number posY
- * @number posZ
- * @treturn nil
+ * @param cmdID integer
+ * @param posX number
+ * @param posY number
+ * @param posZ number
+ * @return nil
  */
 int LuaUnsyncedCtrl::AddWorldIcon(lua_State* L)
 {
@@ -992,11 +987,11 @@ int LuaUnsyncedCtrl::AddWorldIcon(lua_State* L)
 /***
  *
  * @function Spring.AddWorldText
- * @string text
- * @number posX
- * @number posY
- * @number posZ
- * @treturn nil
+ * @param text string
+ * @param posX number
+ * @param posY number
+ * @param posZ number
+ * @return nil
  */
 int LuaUnsyncedCtrl::AddWorldText(lua_State* L)
 {
@@ -1012,13 +1007,13 @@ int LuaUnsyncedCtrl::AddWorldText(lua_State* L)
 /***
  *
  * @function Spring.AddWorldUnit
- * @number unitDefID
- * @number posX
- * @number posY
- * @number posZ
- * @number teamID
- * @number facing
- * @treturn nil
+ * @param unitDefID integer
+ * @param posX number
+ * @param posY number
+ * @param posZ number
+ * @param teamID integer
+ * @param facing number
+ * @return nil
  */
 int LuaUnsyncedCtrl::AddWorldUnit(lua_State* L)
 {
@@ -1045,16 +1040,16 @@ int LuaUnsyncedCtrl::AddWorldUnit(lua_State* L)
 /***
  *
  * @function Spring.DrawUnitCommands
- * @number unitID
- * @treturn nil
+ * @param unitID integer
+ * @return nil
  */
 
 /***
  *
  * @function Spring.DrawUnitCommands
- * @tparam table units array of unit ids
- * @bool tableOrArray[opt=false] when true `units` is interpreted as a table in the format `{ [unitID] = arg1, ... }`
- * @treturn nil
+ * @param units table array of unit ids
+ * @param tableOrArray boolean? (Default: false] when true `units` is interpreted as a table in the format `{ [unitID) = arg1, ... }`
+ * @return nil
  */
 int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)
 {
@@ -1093,29 +1088,30 @@ int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)
  * @section camera
  *****************************************************************************/
 
-/*** Parameters for camera state
- *
- * @table camState
+/***
+ * Parameters for camera state
  *
  * Highly dependent on the type of the current camera controller
  *
- * @string name "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
- * @number mode the camera mode: 0 (fps), 1 (ta), 2 (spring), 3 (rot), 4 (free), 5 (ov), 6 (dummy)
- * @number fov
- * @number px Position X of the ground point in screen center
- * @number py Position Y of the ground point in screen center
- * @number pz Position Z of the ground point in screen center
- * @number dx Camera direction vector X
- * @number dy Camera direction vector Y
- * @number dz Camera direction vector Z
- * @number rx Camera rotation angle on X axis (spring)
- * @number ry Camera rotation angle on Y axis (spring)
- * @number rz Camera rotation angle on Z axis (spring)
- * @number angle Camera rotation angle on X axis (aka tilt/pitch) (ta)
- * @number flipped -1 for when south is down, 1 for when north is down (ta)
- * @number dist Camera distance from the ground (spring)
- * @number height Camera distance from the ground (ta)
- * @number oldHeight Camera distance from the ground, cannot be changed (rot)
+ * @class camState
+ *
+ * @field name "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
+ * @field mode number the camera mode: 0 (fps), 1 (ta), 2 (spring), 3 (rot), 4 (free), 5 (ov), 6 (dummy)
+ * @field fov number
+ * @field px number Position X of the ground point in screen center
+ * @field py number Position Y of the ground point in screen center
+ * @field pz number Position Z of the ground point in screen center
+ * @field dx number Camera direction vector X
+ * @field dy number Camera direction vector Y
+ * @field dz number Camera direction vector Z
+ * @field rx number Camera rotation angle on X axis (spring)
+ * @field ry number Camera rotation angle on Y axis (spring)
+ * @field rz number Camera rotation angle on Z axis (spring)
+ * @field angle number Camera rotation angle on X axis (aka tilt/pitch) (ta)
+ * @field flipped number -1 for when south is down, 1 for when north is down (ta)
+ * @field dist number Camera distance from the ground (spring)
+ * @field height number Camera distance from the ground (ta)
+ * @field oldHeight number Camera distance from the ground, cannot be changed (rot)
  */
 
 static CCameraController::StateMap ParseCamStateMap(lua_State* L, int tableIdx)
@@ -1144,11 +1140,11 @@ static CCameraController::StateMap ParseCamStateMap(lua_State* L, int tableIdx)
  *
  * @function Spring.SetCameraTarget
  *
- * @number x
- * @number y
- * @number z
- * @number[opt] transTime
- * @treturn nil
+ * @param x number
+ * @param y number
+ * @param z number
+ * @param transTime number?
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
 {
@@ -1182,13 +1178,13 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
  *
  * @function Spring.SetCameraOffset
  *
- * @number[opt=0] posX
- * @number[opt=0] posY
- * @number[opt=0] posZ
- * @number[opt=0] tiltX
- * @number[opt=0] tiltY
- * @number[opt=0] tiltZ
- * @treturn nil
+ * @param posX number? (Default: 0)
+ * @param posY number? (Default: 0)
+ * @param posZ number? (Default: 0)
+ * @param tiltX number? (Default: 0)
+ * @param tiltY number? (Default: 0)
+ * @param tiltZ number? (Default: 0)
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
 {
@@ -1209,22 +1205,22 @@ int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
  *
  * The fields in `camState` must be consistent with the name/mode and current/new camera mode
  *
- * @tparam camState camState
- * @number[opt=0] transitionTime in nanoseconds
+ * @param camState camState
+ * @param transitionTime number? (Default: 0) in nanoseconds
  *
- * @number[opt] transitionTimeFactor
+ * @param transitionTimeFactor number?
  * multiplicative factor applied to this and all subsequent transition times for
  * this camera mode.
  *
  * Defaults to "CamTimeFactor" springsetting unless set previously.
  *
- * @number[opt] transitionTimeExponent
+ * @param transitionTimeExponent number?
  * tween factor applied to this and all subsequent transitions for this camera
  * mode.
  *
  * Defaults to "CamTimeExponent" springsetting unless set previously.
  *
- * @treturn bool set
+ * @return boolean set
  */
 int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 {
@@ -1251,8 +1247,8 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 /*** Runs Dolly Camera
  *
  * @function Spring.RunDollyCamera
- * @number runtime in milliseconds
- * @treturn nil
+ * @param runtime number Runtime in milliseconds.
+ * @return nil
  */
 int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
 {
@@ -1266,8 +1262,8 @@ int LuaUnsyncedCtrl::RunDollyCamera(lua_State* L)
 /*** Pause Dolly Camera
  *
  * @function Spring.PauseDollyCamera
- * @number fraction fraction of the total runtime to pause at, 0 to 1 inclusive. A null value pauses at current percent
- * @treturn nil
+ * @param fraction number Fraction of the total runtime to pause at, 0 to 1 inclusive. A null value pauses at current percent
+ * @return nil
  */
 int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
 {
@@ -1281,7 +1277,7 @@ int LuaUnsyncedCtrl::PauseDollyCamera(lua_State* L)
 /*** Resume Dolly Camera
  *
  * @function Spring.ResumeDollyCamera
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::ResumeDollyCamera(lua_State* L)
 {
@@ -1293,10 +1289,10 @@ int LuaUnsyncedCtrl::ResumeDollyCamera(lua_State* L)
 /*** Sets Dolly Camera Position
  *
  * @function Spring.SetDollyCameraPosition
- * @number x
- * @number y
- * @number z
- * @treturn nil
+ * @param x number
+ * @param y number
+ * @param z number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
 {
@@ -1312,10 +1308,10 @@ int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
 /*** Sets Dolly Camera movement Curve
  *
  * @function Spring.SetDollyCameraCurve
- * @number degree
- * @tparam table cpoints NURBS control point positions {{x,y,z,weight}, ...}
- * @tparam table knots
- * @treturn nil
+ * @param degree number
+ * @param cpoints table NURBS control point positions `{{x,y,z,weight}, ...}`
+ * @param knots table
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
 {
@@ -1335,8 +1331,8 @@ int LuaUnsyncedCtrl::SetDollyCameraCurve(lua_State* L)
 /*** Sets Dolly Camera movement mode
  *
  * @function Spring.SetDollyCameraMode
- * @number mode 1 static position, 2 nurbs curve
- * @treturn nil
+ * @param mode 1|2 `1` static position, `2` nurbs curve
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
 {
@@ -1350,8 +1346,8 @@ int LuaUnsyncedCtrl::SetDollyCameraMode(lua_State* L)
 /*** Sets Dolly Camera movement curve to world relative or look target relative
  *
  * @function Spring.SetDollyCameraRelativeMode
- * @number relativeMode 1 world, 2 look target
- * @treturn nil
+ * @param relativeMode number `1` world, `2` look target
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
 {
@@ -1366,10 +1362,10 @@ int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
 /*** Sets Dolly Camera Look Curve
  *
  * @function Spring.SetDollyCameraLookCurve
- * @number degree
- * @tparam table cpoints NURBS control point positions {{x,y,z,weight}, ...}
- * @tparam table knots
- * @treturn nil
+ * @param degree number
+ * @param cpoints table NURBS control point positions `{{x,y,z,weight}, ...}`
+ * @param knots table
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
 {
@@ -1390,10 +1386,10 @@ int LuaUnsyncedCtrl::SetDollyCameraLookCurve(lua_State* L)
 /*** Sets Dolly Camera Look Position
  *
  * @function Spring.SetDollyCameraLookPosition
- * @number x
- * @number y
- * @number z
- * @treturn nil
+ * @param x number
+ * @param y number
+ * @param z number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
 {
@@ -1410,8 +1406,8 @@ int LuaUnsyncedCtrl::SetDollyCameraLookPosition(lua_State* L)
 /*** Sets target unit for Dolly Camera to look towards
  *
  * @function Spring.SetDollyCameraLookUnit
- * @number unitID the unit to look at
- * @treturn nil
+ * @param unitID integer The unit to look at.
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
 {
@@ -1433,9 +1429,9 @@ int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
 /*** Selects a single unit
  *
  * @function Spring.SelectUnit
- * @number unitID or nil
- * @bool[opt=false] append append to current selection
- * @treturn nil
+ * @param unitID integer?
+ * @param append boolean? (Default: false) Append to current selection.
+ * @return nil
  */
 int LuaUnsyncedCtrl::SelectUnit(lua_State* L)
 {
@@ -1457,8 +1453,8 @@ int LuaUnsyncedCtrl::SelectUnit(lua_State* L)
 /***
  *
  * @function Spring.DeselectUnit
- * @number unitID
- * @treturn nil
+ * @param unitID integer
+ * @return nil
  */
 int LuaUnsyncedCtrl::DeselectUnit(lua_State* L)
 {
@@ -1496,22 +1492,22 @@ static int TableSelectionCommonFunc(lua_State* L, int unitIndexInTable, bool isS
 	return 0;
 }
 
-/*** Deselects multiple units. Accepts a table with unitIDs as values
+/*** Deselects multiple units.
  *
  * @function Spring.DeselectUnitArray
- * @tparam {[any] = unitID, ...} unitIDs
- * @treturn nil
+ * @param unitIDs table<any, integer> Table with unit IDs as value.
+ * @return nil
  */
 int LuaUnsyncedCtrl::DeselectUnitArray(lua_State* L)
 {
 	return TableSelectionCommonFunc(L, -1, false, __func__);
 }
 
-/*** Deselects multiple units. Accepts a table with unitIDs as keys
+/*** Deselects multiple units.
  *
  * @function Spring.DeselectUnitMap
- * @tparam {[unitID] = any, ...} unitMap where keys are unitIDs
- * @treturn nil
+ * @param unitMap table<integer, any> Table with unit IDs as keys.
+ * @return nil
  */
 int LuaUnsyncedCtrl::DeselectUnitMap(lua_State* L)
 {
@@ -1521,9 +1517,9 @@ int LuaUnsyncedCtrl::DeselectUnitMap(lua_State* L)
 /*** Selects multiple units, or appends to selection. Accepts a table with unitIDs as values
  *
  * @function Spring.SelectUnitArray
- * @tparam {[any] = unitID, ...} unitIDs
- * @bool[opt=false] append append to current selection
- * @treturn nil
+ * @param unitMap table<any, integer> Table with unit IDs as values.
+ * @param append boolean? (Default: false) append to current selection
+ * @return nil
  */
 int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
 {
@@ -1533,9 +1529,9 @@ int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
 /*** Selects multiple units, or appends to selection. Accepts a table with unitIDs as keys
  *
  * @function Spring.SelectUnitMap
- * @tparam {[unitID] = any, ...} unitMap where keys are unitIDs
- * @bool[opt=false] append append to current selection
- * @treturn nil
+ * @param unitMap table<integer, any> Table with unit IDs as keys.
+ * @param append boolean? (Default: false) append to current selection
+ * @return nil
  */
 int LuaUnsyncedCtrl::SelectUnitMap(lua_State* L)
 {
@@ -1550,52 +1546,31 @@ int LuaUnsyncedCtrl::SelectUnitMap(lua_State* L)
 ******************************************************************************/
 
 /*** Parameters for lighting
- * @table lightParams
- * @tparam table position
- * @number position.px
- * @number position.py
- * @number position.pz
- * @tparam table direction
- * @number direction.dx
- * @number direction.dy
- * @number direction.dz
- * @tparam table ambientColor
- * @number ambientColor.red
- * @number ambientColor.green
- * @number ambientColor.blue
- * @tparam table diffuseColor
- * @number diffuseColor.red
- * @number diffuseColor.green
- * @number diffuseColor.blue
- * @tparam table specularColor
- * @number specularColor.red
- * @number specularColor.green
- * @number specularColor.blue
- * @tparam table intensityWeight
- * @number intensityWeight.ambientWeight
- * @number intensityWeight.diffuseWeight
- * @number intensityWeight.specularWeight
- * @tparam table ambientDecayRate per-frame decay of ambientColor (spread over TTL frames)
- * @number ambientDecayRate.ambientRedDecay
- * @number ambientDecayRate.ambientGreenDecay
- * @number ambientDecayRate.ambientBlueDecay
- * @tparam table diffuseDecayRate per-frame decay of diffuseColor (spread over TTL frames)
- * @number diffuseDecayRate.diffuseRedDecay
- * @number diffuseDecayRate.diffuseGreenDecay
- * @number diffuseDecayRate.diffuseBlueDecay
- * @tparam table specularDecayRate per-frame decay of specularColor (spread over TTL frames)
- * @number specularDecayRate.specularRedDecay
- * @number specularDecayRate.specularGreenDecay
- * @number specularDecayRate.specularBlueDecay
- * @tparam table decayFunctionType *DecayType = 0.0 -> interpret *DecayRate values as linear, else as exponential
- * @number decayFunctionType.ambientDecayType
- * @number decayFunctionType.diffuseDecayType
- * @number decayFunctionType.specularDecayType
- * @number radius
- * @number fov
- * @number ttl
- * @number priority
- * @bool   ignoreLOS
+ *
+ * @class LightParams
+ * @field position { px: number, py: number, pz: number }
+ * @field direction { dx: number, dy: number, dz: number }
+ * @field ambientColor { red: number, green: number, blue: number }
+ * @field diffuseColor { red: number, green: number, blue: number }
+ * @field specularColor { red: number, green: number, blue: number }
+ * @field intensityWeight { ambientWeight: number, diffuseWeight: number, specularWeight: number }
+ *
+ * @field ambientDecayRate { ambientRedDecay: number, ambientGreenDecay: number, ambientBlueDecay: number }
+ * Per-frame decay of `ambientColor` (spread over TTL frames)
+ *
+ * @field diffuseDecayRate { diffuseRedDecay: number, diffuseGreenDecay: number, diffuseBlueDecay: number }
+ * Per-frame decay of `diffuseColor` (spread over TTL frames)
+ *
+ * @field specularDecayRate { specularRedDecay: number, specularGreenDecay: number, specularBlueDecay: number }
+ * Per-frame decay of `specularColor` (spread over TTL frames)
+ * @field decayFunctionType { ambientDecayType: number, diffuseDecayType: number, specularDecayType: number }
+ * If value is `0.0` then the `*DecayRate` values will be interpreted as linear, otherwise exponential.
+ *
+ * @field radius number
+ * @field fov number
+ * @field ttl number
+ * @field priority number
+ * @field ignoreLOS boolean
  */
 
 static bool ParseLight(lua_State* L, GL::Light& light, const int tblIdx, const char* caller)
@@ -1713,8 +1688,8 @@ static bool ParseLight(lua_State* L, GL::Light& light, const int tblIdx, const c
  *
  * requires MaxDynamicMapLights > 0
  *
- * @tparam lightParams lightParams
- * @treturn number lightHandle
+ * @param lightParams LightParams
+ * @return integer lightHandle
  */
 int LuaUnsyncedCtrl::AddMapLight(lua_State* L)
 {
@@ -1739,8 +1714,8 @@ int LuaUnsyncedCtrl::AddMapLight(lua_State* L)
  *
  * requires MaxDynamicMapLights > 0
  *
- * @tparam lightParams lightParams
- * @treturn number lightHandle
+ * @param lightParams LightParams
+ * @return number lightHandle
  */
 int LuaUnsyncedCtrl::AddModelLight(lua_State* L)
 {
@@ -1763,9 +1738,9 @@ int LuaUnsyncedCtrl::AddModelLight(lua_State* L)
 /***
  * @function Spring.UpdateMapLight
  *
- * @number lightHandle
- * @tparam lightParams lightParams
- * @treturn bool success
+ * @param lightHandle number
+ * @param lightParams LightParams
+ * @return boolean success
  */
 int LuaUnsyncedCtrl::UpdateMapLight(lua_State* L)
 {
@@ -1785,9 +1760,9 @@ int LuaUnsyncedCtrl::UpdateMapLight(lua_State* L)
 /***
  * @function Spring.UpdateModelLight
  *
- * @number lightHandle
- * @tparam lightParams lightParams
- * @treturn bool success
+ * @param lightHandle number
+ * @param lightParams LightParams
+ * @return boolean success
  */
 int LuaUnsyncedCtrl::UpdateModelLight(lua_State* L)
 {
@@ -1865,11 +1840,11 @@ static bool AddLightTrackingTarget(lua_State* L, GL::Light* light, bool trackEna
  *
  * @function Spring.SetMapLightTrackingState
  *
- * @number lightHandle
- * @number unitOrProjectileID
- * @bool enableTracking
- * @bool unitOrProjectile
- * @treturn bool success
+ * @param lightHandle number
+ * @param unitOrProjectileID integer
+ * @param enableTracking boolean
+ * @param unitOrProjectile boolean
+ * @return boolean success
  */
 int LuaUnsyncedCtrl::SetMapLightTrackingState(lua_State* L)
 {
@@ -1901,11 +1876,11 @@ int LuaUnsyncedCtrl::SetMapLightTrackingState(lua_State* L)
  *
  * @function Spring.SetModelLightTrackingState
  *
- * @number lightHandle
- * @number unitOrProjectileID
- * @bool enableTracking
- * @bool unitOrProjectile
- * @treturn bool success
+ * @param lightHandle number
+ * @param unitOrProjectileID integer
+ * @param enableTracking boolean
+ * @param unitOrProjectile boolean
+ * @return boolean success
  */
 int LuaUnsyncedCtrl::SetModelLightTrackingState(lua_State* L)
 {
@@ -1945,9 +1920,9 @@ int LuaUnsyncedCtrl::SetModelLightTrackingState(lua_State* L)
  * Passing in a value of 0 will cause the respective shader to revert back to its engine default.
  * Custom map shaders that declare a uniform ivec2 named "texSquare" can sample from the default diffuse texture(s), which are always bound to TU 0.
  *
- * @number standardShaderID
- * @number deferredShaderID
- * @treturn nil
+ * @param standardShaderID integer
+ * @param deferredShaderID integer
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
 {
@@ -1969,10 +1944,10 @@ int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
 
 
 /*** @function Spring.SetMapSquareTexture
- * @number texSqrX
- * @number texSqrY
- * @string luaTexName
- * @treturn bool success
+ * @param texSqrX number
+ * @param texSqrY number
+ * @param luaTexName string
+ * @return boolean success
  */
 int LuaUnsyncedCtrl::SetMapSquareTexture(lua_State* L)
 {
@@ -2066,9 +2041,9 @@ static MapTextureData ParseLuaTextureData(lua_State* L, bool mapTex)
 
 
 /*** @function Spring.SetMapShadingTexture
- * @string texType
- * @string texName
- * @treturn bool success
+ * @param texType string
+ * @param texName string
+ * @return boolean success
  * @usage Spring.SetMapShadingTexture("$ssmf_specular", "name_of_my_shiny_texture")
  */
 int LuaUnsyncedCtrl::SetMapShadingTexture(lua_State* L)
@@ -2087,8 +2062,8 @@ int LuaUnsyncedCtrl::SetMapShadingTexture(lua_State* L)
 
 
 /*** @function Spring.SetSkyBoxTexture
- * @string texName
- * @treturn nil
+ * @param texName string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetSkyBoxTexture(lua_State* L)
 {
@@ -2111,9 +2086,9 @@ int LuaUnsyncedCtrl::SetSkyBoxTexture(lua_State* L)
 /***
  *
  * @function Spring.SetUnitNoDraw
- * @number unitID
- * @bool noDraw
- * @treturn nil
+ * @param unitID integer
+ * @param noDraw boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitNoDraw(lua_State* L)
 {
@@ -2130,9 +2105,9 @@ int LuaUnsyncedCtrl::SetUnitNoDraw(lua_State* L)
 /***
  *
  * @function Spring.SetUnitEngineDrawMask
- * @number unitID
- * @number drawMask
- * @treturn nil
+ * @param unitID integer
+ * @param drawMask number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitEngineDrawMask(lua_State* L)
 {
@@ -2149,9 +2124,9 @@ int LuaUnsyncedCtrl::SetUnitEngineDrawMask(lua_State* L)
 /***
  *
  * @function Spring.SetUnitAlwaysUpdateMatrix
- * @number unitID
- * @bool alwaysUpdateMatrix
- * @treturn nil
+ * @param unitID integer
+ * @param alwaysUpdateMatrix boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitAlwaysUpdateMatrix(lua_State* L)
 {
@@ -2168,9 +2143,9 @@ int LuaUnsyncedCtrl::SetUnitAlwaysUpdateMatrix(lua_State* L)
 /***
  *
  * @function Spring.SetUnitNoMinimap
- * @number unitID
- * @bool unitNoMinimap
- * @treturn nil
+ * @param unitID integer
+ * @param unitNoMinimap boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 {
@@ -2187,9 +2162,8 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 /***
  *
  * @function Spring.SetUnitNoGroup
- * @number unitID
- * @bool unitNoGroup whether unit can be added to selection groups
- * @treturn nil
+ * @param unitID integer
+ * @param unitNoGroup boolean Whether unit can be added to selection groups
  */
 int LuaUnsyncedCtrl::SetUnitNoGroup(lua_State* L)
 {
@@ -2210,9 +2184,9 @@ int LuaUnsyncedCtrl::SetUnitNoGroup(lua_State* L)
 /***
  *
  * @function Spring.SetUnitNoSelect
- * @number unitID
- * @bool unitNoSelect whether unit can be selected or not
- * @treturn nil
+ * @param unitID integer
+ * @param unitNoSelect boolean whether unit can be selected or not
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitNoSelect(lua_State* L)
 {
@@ -2238,9 +2212,9 @@ int LuaUnsyncedCtrl::SetUnitNoSelect(lua_State* L)
 /***
  *
  * @function Spring.SetUnitLeaveTracks
- * @number unitID
- * @bool unitLeaveTracks whether unit leaves tracks on movement
- * @treturn nil
+ * @param unitID integer
+ * @param unitLeaveTracks boolean whether unit leaves tracks on movement
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitLeaveTracks(lua_State* L)
 {
@@ -2257,18 +2231,18 @@ int LuaUnsyncedCtrl::SetUnitLeaveTracks(lua_State* L)
 /***
  *
  * @function Spring.SetUnitSelectionVolumeData
- * @number unitID
- * @number featureID
- * @number scaleX
- * @number scaleY
- * @number scaleZ
- * @number offsetX
- * @number offsetY
- * @number offsetZ
- * @number vType
- * @number tType
- * @number Axis
- * @treturn nil
+ * @param unitID integer
+ * @param featureID integer
+ * @param scaleX number
+ * @param scaleY number
+ * @param scaleZ number
+ * @param offsetX number
+ * @param offsetY number
+ * @param offsetZ number
+ * @param vType number
+ * @param tType number
+ * @param Axis number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitSelectionVolumeData(lua_State* L)
 {
@@ -2291,10 +2265,10 @@ int LuaUnsyncedCtrl::SetUnitSelectionVolumeData(lua_State* L)
  *
  * @function Spring.SetFeatureNoDraw
  *
- * @number featureID
- * @bool noDraw
+ * @param featureID integer
+ * @param noDraw boolean
  *
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetFeatureNoDraw(lua_State* L)
 {
@@ -2311,9 +2285,9 @@ int LuaUnsyncedCtrl::SetFeatureNoDraw(lua_State* L)
 /***
  *
  * @function Spring.SetFeatureEngineDrawMask
- * @number featureID
- * @number engineDrawMask
- * @treturn nil
+ * @param featureID integer
+ * @param engineDrawMask number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetFeatureEngineDrawMask(lua_State* L)
 {
@@ -2330,9 +2304,9 @@ int LuaUnsyncedCtrl::SetFeatureEngineDrawMask(lua_State* L)
 /***
  *
  * @function Spring.SetFeatureAlwaysUpdateMatrix
- * @number featureID
- * @number alwaysUpdateMat
- * @treturn nil
+ * @param featureID integer
+ * @param alwaysUpdateMat number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetFeatureAlwaysUpdateMatrix(lua_State* L)
 {
@@ -2350,10 +2324,10 @@ int LuaUnsyncedCtrl::SetFeatureAlwaysUpdateMatrix(lua_State* L)
  *
  * @function Spring.SetFeatureFade
  *
- * @number featureID
- * @bool allow
+ * @param featureID integer
+ * @param allow boolean
  *
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetFeatureFade(lua_State* L)
 {
@@ -2371,17 +2345,17 @@ int LuaUnsyncedCtrl::SetFeatureFade(lua_State* L)
  *
  * @function Spring.SetFeatureSelectionVolumeData
  *
- * @number featureID
- * @number scaleX
- * @number scaleY
- * @number scaleZ
- * @number offsetX
- * @number offsetY
- * @number offsetZ
- * @number vType
- * @number tType
- * @number Axis
- * @treturn nil
+ * @param featureID integer
+ * @param scaleX number
+ * @param scaleY number
+ * @param scaleZ number
+ * @param offsetX number
+ * @param offsetY number
+ * @param offsetZ number
+ * @param vType number
+ * @param tType number
+ * @param Axis number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetFeatureSelectionVolumeData(lua_State* L)
 {
@@ -2405,13 +2379,13 @@ int LuaUnsyncedCtrl::SetFeatureSelectionVolumeData(lua_State* L)
  *
  * @function Spring.AddUnitIcon
  *
- * @string iconName
- * @string texFile
- * @number[opt] size
- * @number[opt] dist
- * @number[opt] radAdjust
+ * @param iconName string
+ * @param texFile string
+ * @param size number?
+ * @param dist number?
+ * @param radAdjust number?
  *
- * @treturn ?nil|bool added
+ * @return boolean added
  */
 int LuaUnsyncedCtrl::AddUnitIcon(lua_State* L)
 {
@@ -2435,9 +2409,9 @@ int LuaUnsyncedCtrl::AddUnitIcon(lua_State* L)
  *
  * @function Spring.FreeUnitIcon
  *
- * @string iconName
+ * @param iconName string
  *
- * @treturn ?nil|bool freed
+ * @return boolean? freed
  */
 int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
 {
@@ -2452,11 +2426,11 @@ int LuaUnsyncedCtrl::FreeUnitIcon(lua_State* L)
 /***
  *
  * @function Spring.UnitIconSetDraw
- * Deprecated: use Spring.SetUnitIconDraw instead.
- * @see Spring.SetUnitIconDraw
- * @number unitID
- * @bool drawIcon
- * @treturn nil
+ * Use Spring.SetUnitIconDraw instead.
+ * @deprecated
+ * @param unitID integer
+ * @param drawIcon boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
 {
@@ -2472,9 +2446,9 @@ int LuaUnsyncedCtrl::UnitIconSetDraw(lua_State* L)
 /***
  *
  * @function Spring.SetUnitIconDraw
- * @number unitID
- * @bool drawIcon
- * @treturn nil
+ * @param unitID integer
+ * @param drawIcon boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitIconDraw(lua_State* L)
 {
@@ -2492,10 +2466,10 @@ int LuaUnsyncedCtrl::SetUnitIconDraw(lua_State* L)
  *
  * @function Spring.SetUnitDefIcon
  *
- * @number unitDefID
- * @string iconName
+ * @param unitDefID integer
+ * @param iconName string
  *
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitDefIcon(lua_State* L)
 {
@@ -2532,10 +2506,10 @@ int LuaUnsyncedCtrl::SetUnitDefIcon(lua_State* L)
  *
  * @function Spring.SetUnitDefImage
  *
- * @number unitDefID
- * @string image luaTexture|texFile
+ * @param unitDefID integer
+ * @param image string luaTexture|texFile
  *
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 {
@@ -2583,8 +2557,8 @@ int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 /***
  *
  * @function Spring.ExtractModArchiveFile
- * @string modfile
- * @treturn bool extracted
+ * @param modfile string
+ * @return boolean extracted
  */
 int LuaUnsyncedCtrl::ExtractModArchiveFile(lua_State* L)
 {
@@ -2647,8 +2621,8 @@ int LuaUnsyncedCtrl::ExtractModArchiveFile(lua_State* L)
 /***
  *
  * @function Spring.CreateDir
- * @string path
- * @treturn ?nil|bool dirCreated
+ * @param path string
+ * @return boolean? dirCreated
  */
 int LuaUnsyncedCtrl::CreateDir(lua_State* L)
 {
@@ -2722,22 +2696,23 @@ static int SetActiveCommandByAction(lua_State* L)
 }
 
 
-/*** @function Spring.SetActiveCommand
- * @string action
- * @string[opt] actionExtra
- * @treturn ?nil|bool commandSet
+/***
+ * @function Spring.SetActiveCommand
+ * @param action string
+ * @param actionExtra string?
+ * @return boolean? commandSet
  */
 
 /*** @function Spring.SetActiveCommand
- * @number cmdIndex
- * @number[opt=1] button
- * @bool[opt] leftClick
- * @tparam ?bool rightClick
- * @tparam ?bool alt
- * @tparam ?bool ctrl
- * @tparam ?bool meta
- * @tparam ?bool shift
- * @treturn ?nil|bool commandSet
+ * @param cmdIndex number
+ * @param button number? (Default: 1)
+ * @param leftClick boolean?
+ * @param rightClick boolean?
+ * @param alt boolean?
+ * @param ctrl boolean?
+ * @param meta boolean?
+ * @param shift boolean?
+ * @return boolean? commandSet
  */
 int LuaUnsyncedCtrl::SetActiveCommand(lua_State* L)
 {
@@ -2761,8 +2736,8 @@ int LuaUnsyncedCtrl::SetActiveCommand(lua_State* L)
 
 
 /*** @function Spring.LoadCmdColorsConfig
- * @string config
- * @treturn nil
+ * @param config string
+ * @return nil
  */
 int LuaUnsyncedCtrl::LoadCmdColorsConfig(lua_State* L)
 {
@@ -2772,8 +2747,8 @@ int LuaUnsyncedCtrl::LoadCmdColorsConfig(lua_State* L)
 
 
 /*** @function Spring.LoadCtrlPanelConfig
- * @string config
- * @treturn nil
+ * @param config string
+ * @return nil
  */
 int LuaUnsyncedCtrl::LoadCtrlPanelConfig(lua_State* L)
 {
@@ -2786,7 +2761,7 @@ int LuaUnsyncedCtrl::LoadCtrlPanelConfig(lua_State* L)
 
 
 /*** @function Spring.ForceLayoutUpdate
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::ForceLayoutUpdate(lua_State* L)
 {
@@ -2801,8 +2776,8 @@ int LuaUnsyncedCtrl::ForceLayoutUpdate(lua_State* L)
 /***  Disables the "Selected Units x" box in the GUI.
  *
  * @function Spring.SetDrawSelectionInfo
- * @bool enable
- * @treturn nil
+ * @param enable boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDrawSelectionInfo(lua_State* L)
 {
@@ -2816,8 +2791,8 @@ int LuaUnsyncedCtrl::SetDrawSelectionInfo(lua_State* L)
 /***
  *
  * @function Spring.SetBoxSelectionByEngine
- * @bool state
- * @treturn nil
+ * @param state boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetBoxSelectionByEngine(lua_State* L)
 {
@@ -2830,11 +2805,11 @@ int LuaUnsyncedCtrl::SetBoxSelectionByEngine(lua_State* L)
 /***
  *
  * @function Spring.SetTeamColor
- * @number teamID
- * @number r
- * @number g
- * @number b
- * @treturn nil
+ * @param teamID integer
+ * @param r number
+ * @param g number
+ * @param b number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetTeamColor(lua_State* L)
 {
@@ -2858,13 +2833,13 @@ int LuaUnsyncedCtrl::SetTeamColor(lua_State* L)
  *
  * @function Spring.AssignMouseCursor
  *
- * @string cmdName
- * @string iconFileName not the full filename, instead it is like this:
+ * @param cmdName string
+ * @param iconFileName string not the full filename, instead it is like this:
  *     Wanted filename: Anims/cursorattack_0.bmp
  *     => iconFileName: cursorattack
- * @bool[opt=true] overwrite
- * @bool[opt=false] hotSpotTopLeft
- * @treturn ?nil|bool assigned
+ * @param overwrite boolean? (Default: true)
+ * @param hotSpotTopLeft boolean? (Default: false)
+ * @return boolean? assigned
  */
 int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
 {
@@ -2884,10 +2859,10 @@ int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
 /*** Mass replace all occurrences of the cursor in all CursorCmds.
  *
  * @function Spring.ReplaceMouseCursor
- * @string oldFileName
- * @string newFileName
- * @bool[opt=false] hotSpotTopLeft
- * @treturn ?nil|bool assigned
+ * @param oldFileName string
+ * @param newFileName string
+ * @param hotSpotTopLeft boolean? (Default: false)
+ * @return boolean? assigned
  */
 int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
 {
@@ -2909,9 +2884,9 @@ int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
 /*** Register your custom cmd so it gets visible in the unit's cmd queue
  *
  * @function Spring.SetCustomCommandDrawData
- * @number cmdID
- * @tparam[opt] string|number cmdReference iconname | cmdID_cloneIcon
- * @treturn ?nil|bool assigned
+ * @param cmdID integer
+ * @param (string|number)? cmdReference iconname | cmdID_cloneIcon
+ * @return boolean? assigned
  */
 int LuaUnsyncedCtrl::SetCustomCommandDrawData(lua_State* L)
 {
@@ -2952,9 +2927,9 @@ int LuaUnsyncedCtrl::SetCustomCommandDrawData(lua_State* L)
 
 
 /*** @function Spring.WarpMouse
- * @number x
- * @number y
- * @treturn nil
+ * @param x number
+ * @param y number
+ * @return nil
  */
 int LuaUnsyncedCtrl::WarpMouse(lua_State* L)
 {
@@ -2966,9 +2941,9 @@ int LuaUnsyncedCtrl::WarpMouse(lua_State* L)
 
 
 /*** @function Spring.SetMouseCursor
- * @string cursorName
- * @number[opt=1.0] cursorScale
- * @treturn nil
+ * @param cursorName string
+ * @param cursorScale number? (Default: 1.0)
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetMouseCursor(lua_State* L)
 {
@@ -2987,12 +2962,12 @@ int LuaUnsyncedCtrl::SetMouseCursor(lua_State* L)
 ******************************************************************************/
 
 /*** @function Spring.SetLosViewColors
- * @tparam table always {r,g,b}
- * @tparam table LOS = {r,g,b}
- * @tparam table radar = {r,g,b}
- * @tparam table jam = {r,g,b}
- * @tparam table radar2 = {r,g,b}
- * @treturn nil
+ * @param always rgb
+ * @param LOS rgb
+ * @param radar rgb
+ * @param jam rgb
+ * @param radar2 rgb
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
 {
@@ -3035,13 +3010,13 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
 /***
  *
  * @function Spring.SetNanoProjectileParams
- * @number[opt=0] rotVal in degrees
- * @number[opt=0] rotVel in degrees
- * @number[opt=0] rotAcc in degrees
- * @number[opt=0] rotValRng in degrees
- * @number[opt=0] rotVelRng in degrees
- * @number[opt=0] rotAccRng in degrees
- * @treturn nil
+ * @param rotVal number? (Default: 0) in degrees
+ * @param rotVel number? (Default: 0) in degrees
+ * @param rotAcc number? (Default: 0) in degrees
+ * @param rotValRng number? (Default: 0) in degrees
+ * @param rotVelRng number? (Default: 0) in degrees
+ * @param rotAccRng number? (Default: 0) in degrees
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
 {
@@ -3069,10 +3044,10 @@ int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
 /***
  *
  * @function Spring.SetConfigInt
- * @string name
- * @number value
- * @bool[opt=false] useOverlay the value will only be set in memory, and not be restored for the next game.
- * @treturn nil
+ * @param name string
+ * @param value number
+ * @param useOverlay boolean? (Default: false) the value will only be set in memory, and not be restored for the next game.
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
 {
@@ -3097,10 +3072,10 @@ int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
 /***
  *
  * @function Spring.SetConfigFloat
- * @string name
- * @number value
- * @bool[opt=false] useOverla the value will only be set in memory, and not be restored for the next game.y
- * @treturn nil
+ * @param name string
+ * @param value number
+ * @param useOverla boolean? (Default: false) the value will only be set in memory, and not be restored for the next game.y
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigFloat(lua_State* L)
 {
@@ -3120,10 +3095,10 @@ int LuaUnsyncedCtrl::SetConfigFloat(lua_State* L)
 /***
  *
  * @function Spring.SetConfigString
- * @string name
- * @number value
- * @bool[opt=false] useOverlay the value will only be set in memory, and not be restored for the next game.
- * @treturn nil
+ * @param name string
+ * @param value number
+ * @param useOverlay boolean? (Default: false) the value will only be set in memory, and not be restored for the next game.
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigString(lua_State* L)
 {
@@ -3198,7 +3173,7 @@ static int ReloadOrRestart(const std::string& springArgs, const std::string& scr
 /*** Closes the application
  *
  * @function Spring.Quit
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::Quit(lua_State* L)
 {
@@ -3214,9 +3189,9 @@ int LuaUnsyncedCtrl::Quit(lua_State* L)
 /***
  *
  * @function Spring.SetUnitGroup
- * @number unitID
- * @number groupID the group number to be assigned, or -1 for deassignment
- * @treturn nil
+ * @param unitID integer
+ * @param groupID number the group number to be assigned, or -1 for deassignment
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitGroup(lua_State* L)
 {
@@ -3308,26 +3283,26 @@ static bool CanGiveOrders(const lua_State* L)
 
 /*** Command Options params
  *
- * @table cmdOpts
+ * @class cmdOpts
  *
  * Can be specified as a table, or as an array containing any of the keys
  * below.
  *
- * @tparam bool right Right mouse key pressed
- * @tparam bool alt Alt key pressed
- * @tparam bool ctrl Ctrl key pressed
- * @tparam bool shift Shift key pressed
- * @tparam bool meta Meta (windows/mac/mod4) key pressed
+ * @field right boolean Right mouse key pressed
+ * @field alt boolean Alt key pressed
+ * @field ctrl boolean Ctrl key pressed
+ * @field shift boolean Shift key pressed
+ * @field meta boolean Meta (windows/mac/mod4) key pressed
  */
 
 
 /***
  *
  * @function Spring.GiveOrder
- * @number cmdID
- * @tparam table params
- * @tparam cmdOpts options
- * @treturn nil|true
+ * @param cmdID integer
+ * @param params table
+ * @param options cmdOpts
+ * @return nil|true
  */
 int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
 {
@@ -3344,11 +3319,11 @@ int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderToUnit
- * @number unitID
- * @number cmdID
- * @tparam table params
- * @tparam cmdOpts options
- * @treturn nil|true
+ * @param unitID integer
+ * @param cmdID integer
+ * @param params table
+ * @param options cmdOpts
+ * @return nil|true
  */
 int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
 {
@@ -3376,11 +3351,11 @@ int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderToUnitMap
- * @tparam table unitMap { [unitID] = arg1, ... }
- * @number cmdID
- * @tparam table params
- * @tparam cmdOpts options
- * @treturn nil|true
+ * @param unitMap table { [unitID] = arg1, ... }
+ * @param cmdID integer
+ * @param params table
+ * @param options cmdOpts
+ * @return nil|true
  */
 int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
 {
@@ -3408,11 +3383,11 @@ int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderToUnitArray
- * @tparam {number,...} unitArray array of unit ids
- * @number cmdID
- * @tparam table params
- * @tparam cmdOpts options
- * @treturn nil|true
+ * @param unitArray number[] array of unit ids
+ * @param cmdID integer
+ * @param params table
+ * @param options cmdOpts
+ * @return nil|true
  */
 int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 {
@@ -3436,25 +3411,12 @@ int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 	return 1;
 }
 
-
-/*** Command spec
- *
- * @table cmdSpec
- *
- * Used when assigning multiple commands at once
- *
- * @number cmdID
- * @tparam table params
- * @tparam cmdOpts options
- */
-
-
 /***
  *
  * @function Spring.GiveOrderArrayToUnit
- * @number unitID
- * @tparam {cmdSpec,...} cmdArray
- * @treturn bool ordersGiven
+ * @param unitID integer
+ * @param cmdArray Command[]
+ * @return boolean ordersGiven
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
 {
@@ -3486,9 +3448,9 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderArrayToUnitMap
- * @tparam table unitMap { [unitID] = arg1, ... }
- * @tparam {cmdSpec,...} cmdArray
- * @treturn bool ordersGiven
+ * @param unitMap table { [unitID] = arg1, ... }
+ * @param cmdArray Command[]
+ * @return boolean ordersGiven
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
 {
@@ -3520,16 +3482,16 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderArrayToUnitArray
- * @tparam {number,...} unitArray array of unit ids
- * @tparam {cmdSpec,...} cmdArray
- * @tparam[opt=false] bool pairwise When false, assign all commands to each unit.
+ * @param unitArray number[] array of unit ids
+ * @param cmdArray Command[]
+ * @param pairwise boolean? (Default: `false`) When `false`, assign all commands to each unit.
  *
- * When true, assign commands according to index between units and cmds arrays.
+ * When `true`, assign commands according to index between units and cmds arrays.
  *
- * If len(unitArray) < len(cmdArray) only the first len(unitArray) commands
+ * If `len(unitArray) < len(cmdArray)` only the first `len(unitArray)` commands
  * will be assigned, and vice-versa.
  *
- * @treturn nil|bool
+ * @return nil|boolean
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 {
@@ -3563,8 +3525,8 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 /***
  *
  * @function Spring.SetBuildSpacing
- * @tparam number spacing
- * @treturn nil
+ * @param spacing number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetBuildSpacing(lua_State* L)
 {
@@ -3578,8 +3540,8 @@ int LuaUnsyncedCtrl::SetBuildSpacing(lua_State* L)
 /***
  *
  * @function Spring.SetBuildFacing
- * @tparam number facing
- * @treturn nil
+ * @param facing number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)
 {
@@ -3598,9 +3560,9 @@ int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)
 
 
 /*** @function Spring.SendLuaUIMsg
- * @string message
- * @string mode "s"/"specs" | "a"/"allies"
- * @treturn nil
+ * @param message string
+ * @param mode string "s"/"specs" | "a"/"allies"
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendLuaUIMsg(lua_State* L)
 {
@@ -3623,8 +3585,8 @@ int LuaUnsyncedCtrl::SendLuaUIMsg(lua_State* L)
 
 
 /*** @function Spring.SendLuaGaiaMsg
- * @string message
- * @treturn nil
+ * @param message string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendLuaGaiaMsg(lua_State* L)
 {
@@ -3642,8 +3604,8 @@ int LuaUnsyncedCtrl::SendLuaGaiaMsg(lua_State* L)
 
 
 /*** @function Spring.SendLuaRulesMsg
- * @string message
- * @treturn nil
+ * @param message string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SendLuaRulesMsg(lua_State* L)
 {
@@ -3663,7 +3625,7 @@ int LuaUnsyncedCtrl::SendLuaRulesMsg(lua_State* L)
  *
  * @function Spring.SendLuaMenuMsg
  *
- * @string msg
+ * @param msg string
  */
 int LuaUnsyncedCtrl::SendLuaMenuMsg(lua_State* L)
 {
@@ -3684,9 +3646,9 @@ int LuaUnsyncedCtrl::SendLuaMenuMsg(lua_State* L)
  *
  * @function Spring.SetShareLevel
  *
- * @string resource metal | energy
- * @number shareLevel
- * @treturn nil
+ * @param resource string metal | energy
+ * @param shareLevel number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetShareLevel(lua_State* L)
 {
@@ -3715,19 +3677,19 @@ int LuaUnsyncedCtrl::SetShareLevel(lua_State* L)
  *
  * @function Spring.ShareResources
  *
- * @number teamID
- * @string units
- * @treturn nil
+ * @param teamID integer
+ * @param units string
+ * @return nil
  */
 
 /***
  *
  * @function Spring.ShareResources
  *
- * @number teamID
- * @string resource metal | energy
- * @number amount
- * @treturn nil
+ * @param teamID integer
+ * @param resource string metal | energy
+ * @param amount number
+ * @return nil
  */
 int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 {
@@ -3777,10 +3739,10 @@ int LuaUnsyncedCtrl::ShareResources(lua_State* L)
 
 
 /*** @function Spring.SetLastMessagePosition
- * @number x
- * @number y
- * @number z
- * @treturn nil
+ * @param x number
+ * @param y number
+ * @param z number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
 {
@@ -3800,12 +3762,12 @@ int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
 
 
 /*** @function Spring.MarkerAddPoint
- * @number x
- * @number y
- * @number z
- * @string[opt=""] text
- * @bool[opt] localOnly
- * @treturn nil
+ * @param x number
+ * @param y number
+ * @param z number
+ * @param text string? (Default: "")
+ * @param localOnly boolean?
+ * @return nil
  */
 int LuaUnsyncedCtrl::MarkerAddPoint(lua_State* L)
 {
@@ -3829,15 +3791,15 @@ int LuaUnsyncedCtrl::MarkerAddPoint(lua_State* L)
 
 
 /*** @function Spring.MarkerAddLine
- * @number x1
- * @number y1
- * @number z1
- * @number x2
- * @number y2
- * @number z2
- * @bool[opt=false] localOnly
- * @number[opt] playerId
- * @treturn nil
+ * @param x1 number
+ * @param y1 number
+ * @param z1 number
+ * @param x2 number
+ * @param y2 number
+ * @param z2 number
+ * @param localOnly boolean? (Default: false)
+ * @param playerId number?
+ * @return nil
  */
 int LuaUnsyncedCtrl::MarkerAddLine(lua_State* L)
 {
@@ -3866,14 +3828,14 @@ int LuaUnsyncedCtrl::MarkerAddLine(lua_State* L)
  *
  * Issue an erase command for markers on the map.
  *
- * @number x
- * @number y
- * @number z
- * @param noop
- * @bool[opt=false] localOnly do not issue a network message, erase only for the current player
- * @number[opt] playerId when not specified it uses the issuer playerId
- * @bool[opt=false] alwaysErase erase any marker when `localOnly` and current player is spectating. Allows spectators to erase players markers locally
- * @treturn nil
+ * @param x number
+ * @param y number
+ * @param z number
+ * @param unused nil This argument is ignored.
+ * @param localOnly boolean? (Default: false) do not issue a network message, erase only for the current player
+ * @param playerId number? when not specified it uses the issuer playerId
+ * @param alwaysErase boolean? (Default: false) erase any marker when `localOnly` and current player is spectating. Allows spectators to erase players markers locally
+ * @return nil
  */
 int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
 {
@@ -3905,17 +3867,24 @@ int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
  * @section sun
 ******************************************************************************/
 
-/*** It can be used to modify the following atmosphere parameters
+/***
+ * @class AtmosphereParams
+ * @field fogStart number
+ * @field fogEnd number
+ * @field sunColor rgba
+ * @field skyColor rgba
+ * @field cloudColor rgba
+ */
+/***
+ * It can be used to modify the following atmosphere parameters
+ *
+ * Usage:
+ * ```lua
+ * Spring.SetAtmosphere({ fogStart = 0, fogEnd = 0.5, fogColor = { 0.7, 0.2, 0.2, 1 }})
+ * ```
  *
  * @function Spring.SetAtmosphere
- * @tparam table params
- * @number params.fogStart
- * @number params.fogEnd
- * @tparam rgb params.sunColor
- * @tparam rgb params.skyColor
- * @tparam rgb params.cloudColor
- * @usage Spring.SetAtmosphere({ fogStart = 0, fogEnd = 0.5, fogColor = { 0.7, 0.2, 0.2, 1 }})
- * @treturn nil
+ * @param params AtmosphereParams
  */
 int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 {
@@ -3981,11 +3950,11 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 /***
  *
  * @function Spring.SetSunDirection
- * @number dirX
- * @number dirY
- * @number dirZ
- * @number[opt=true] intensity
- * @treturn nil
+ * @param dirX number
+ * @param dirY number
+ * @param dirZ number
+ * @param intensity number? (Default: `1.0`)
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetSunDirection(lua_State* L)
 {
@@ -3996,14 +3965,15 @@ int LuaUnsyncedCtrl::SetSunDirection(lua_State* L)
 }
 
 
-/*** It can be used to modify the following sun lighting parameters
+/***
+ * Modify sun lighting parameters.
+ *
+ * ```lua
+ * Spring.SetSunLighting({groundAmbientColor = {1, 0.1, 1}, groundDiffuseColor = {1, 0.1, 1} })
+ * ```
  *
  * @function Spring.SetSunLighting
- * @tparam table params
- * @tparam rgb params.groundAmbientColor
- * @tparam rgb params.groundDiffuseColor
- * @usage Spring.SetSunLighting({groundAmbientColor = {1, 0.1, 1}, groundDiffuseColor = {1, 0.1, 1} })
- * @treturn nil
+ * @param params { groundAmbientColor: rgb, groundDiffuseColor: rgb }
  */
 int LuaUnsyncedCtrl::SetSunLighting(lua_State* L)
 {
@@ -4043,21 +4013,20 @@ int LuaUnsyncedCtrl::SetSunLighting(lua_State* L)
 
 /*** Map rendering params
  *
- * @table mapRenderingParams
- *
- * @tparam rgba splatTexMults
- * @tparam rgba splatTexScales
- * @bool voidWater
- * @bool voidGround
- * @bool splatDetailNormalDiffuseAlpha
+ * @class MapRenderingParams
+ * @field splatTexMults rgba
+ * @field splatTexScales rgba
+ * @field voidWater boolean
+ * @field voidGround boolean
+ * @field splatDetailNormalDiffuseAlpha boolean
  */
 
 
 /*** Allows to change map rendering params at runtime.
  *
  * @function Spring.SetMapRenderingParams
- * @tparam mapRenderingParams params
- * @treturn nil
+ * @param params MapRenderingParams
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetMapRenderingParams(lua_State* L)
 {
@@ -4122,9 +4091,9 @@ int LuaUnsyncedCtrl::SetMapRenderingParams(lua_State* L)
 /***
  *
  * @function Spring.ForceTesselationUpdate
- * @bool[opt=true] normal
- * @bool[opt=false] shadow
- * @treturn bool updated
+ * @param normal boolean? (Default: true)
+ * @param shadow boolean? (Default: false)
+ * @return boolean updated
  */
 int LuaUnsyncedCtrl::ForceTesselationUpdate(lua_State* L)
 {
@@ -4158,9 +4127,9 @@ int LuaUnsyncedCtrl::ForceTesselationUpdate(lua_State* L)
 
 
 /*** @function Spring.SendSkirmishAIMessage
- * @number aiTeam
- * @string message
- * @treturn ?nil|bool ai_processed
+ * @param aiTeam number
+ * @param message string
+ * @return boolean? ai_processed
  */
 int LuaUnsyncedCtrl::SendSkirmishAIMessage(lua_State* L) {
 	if (CLuaHandle::GetHandleSynced(L))
@@ -4192,9 +4161,9 @@ int LuaUnsyncedCtrl::SendSkirmishAIMessage(lua_State* L) {
 
 
 /*** @function Spring.SetLogSectionFilterLevel
- * @string sectionName
- * @tparam ?string|number logLevel
- * @treturn nil
+ * @param sectionName string
+ * @param logLevel ?string|number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetLogSectionFilterLevel(lua_State* L) {
 	const int loglevel = LuaUtils::ParseLogLevel(L, 2);
@@ -4208,15 +4177,15 @@ int LuaUnsyncedCtrl::SetLogSectionFilterLevel(lua_State* L) {
 
 /*** @function Spring.GarbageCollectCtrl
  *
- * @int[opt] itersPerBatch
- * @int[opt] numStepsPerIter
- * @int[opt] minStepsPerIter
- * @int[opt] maxStepsPerIter
- * @number[opt] minLoopRunTime
- * @number[opt] maxLoopRunTime
- * @number[opt] baseRunTimeMult
- * @number[opt] baseMemLoadMult
- * @treturn nil
+ * @param itersPerBatch integer?
+ * @param numStepsPerIter integer?
+ * @param minStepsPerIter integer?
+ * @param maxStepsPerIter integer?
+ * @param minLoopRunTime number?
+ * @param maxLoopRunTime number?
+ * @param baseRunTimeMult number?
+ * @param baseMemLoadMult number?
+ * @return nil
  */
 int LuaUnsyncedCtrl::GarbageCollectCtrl(lua_State* L) {
 	luaContextData* ctxData = GetLuaContextData(L);
@@ -4239,8 +4208,8 @@ int LuaUnsyncedCtrl::GarbageCollectCtrl(lua_State* L) {
 
 
 /*** @function Spring.SetDrawSky
- * @bool drawSky
- * @treturn nil
+ * @param drawSky boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDrawSky(lua_State* L)
 {
@@ -4250,8 +4219,8 @@ int LuaUnsyncedCtrl::SetDrawSky(lua_State* L)
 
 
 /*** @function Spring.SetDrawWater
- * @bool drawWater
- * @treturn nil
+ * @param drawWater boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDrawWater(lua_State* L)
 {
@@ -4261,8 +4230,8 @@ int LuaUnsyncedCtrl::SetDrawWater(lua_State* L)
 
 
 /*** @function Spring.SetDrawGround
- * @bool drawGround
- * @treturn nil
+ * @param drawGround boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDrawGround(lua_State* L)
 {
@@ -4272,9 +4241,9 @@ int LuaUnsyncedCtrl::SetDrawGround(lua_State* L)
 
 
 /*** @function Spring.SetDrawGroundDeferred
- * @bool drawGroundDeferred
- * @bool[opt] drawGroundForward allows disabling of the forward pass
- * treturn nil
+ * @param drawGroundDeferred boolean
+ * @param drawGroundForward boolean? allows disabling of the forward pass
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDrawGroundDeferred(lua_State* L)
 {
@@ -4289,11 +4258,11 @@ int LuaUnsyncedCtrl::SetDrawGroundDeferred(lua_State* L)
 }
 
 /*** @function Spring.SetDrawModelsDeferred
- * @bool drawUnitsDeferred
- * @bool drawFeaturesDeferred
- * @bool[opt] drawUnitsForward allows disabling of the respective forward passes
- * @bool[opt] drawFeaturesForward allows disabling of the respective forward passes
- * @treturn nil
+ * @param drawUnitsDeferred boolean
+ * @param drawFeaturesDeferred boolean
+ * @param drawUnitsForward boolean? allows disabling of the respective forward passes
+ * @param drawFeaturesForward boolean? allows disabling of the respective forward passes
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetDrawModelsDeferred(lua_State* L)
 {
@@ -4315,8 +4284,8 @@ int LuaUnsyncedCtrl::SetDrawModelsDeferred(lua_State* L)
 /*** This doesn't actually record the game in any way, it just regulates the framerate and interpolations.
  *
  * @function Spring.SetVideoCapturingMode
- * @bool allowCaptureMode
- * @treturn nil
+ * @param allowCaptureMode boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetVideoCapturingMode(lua_State* L)
 {
@@ -4326,8 +4295,8 @@ int LuaUnsyncedCtrl::SetVideoCapturingMode(lua_State* L)
 
 
 /*** @function Spring.SetVideoCapturingTimeOffset
- * @bool timeOffset
- * @treturn nil
+ * @param timeOffset boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetVideoCapturingTimeOffset(lua_State* L)
 {
@@ -4336,51 +4305,60 @@ int LuaUnsyncedCtrl::SetVideoCapturingTimeOffset(lua_State* L)
 }
 
 
-/*** Water params
+/***
+ * Water params
  *
- * @table waterParams
- *
- * @tparam rgb absorb
- * @tparam rgb baseColor
- * @tparam rgb minColor
- * @tparam rgb surfaceColor
- * @tparam rgb diffuseColor
- * @tparam rgb specularColor
- * @tparam rgb planeColor
- * @string texture file
- * @string foamTexture file
- * @string normalTexture file
- * @number damage
- * @number repeatX
- * @number repeatY
- * @number surfaceAlpha
- * @number ambientFactor
- * @number diffuseFactor
- * @number specularFactor
- * @number specularPower
- * @number fresnelMin
- * @number fresnelMax
- * @number fresnelPower
- * @number reflectionDistortion
- * @number blurBase
- * @number blurExponent
- * @number perlinStartFreq
- * @number perlinLacunarity
- * @number perlinAmplitude
- * @number numTiles
- * @bool shoreWaves
- * @bool forceRendering
- * @bool hasWaterPlane
+ * @class WaterParams
+ * @field absorb rgb
+ * @field baseColor rgb
+ * @field minColor rgb
+ * @field surfaceColor rgb
+ * @field diffuseColor rgb
+ * @field specularColor rgb
+ * @field planeColor rgb
+ * @field texture string file
+ * @field foamTexture string file
+ * @field normalTexture string file
+ * @field damage number
+ * @field repeatX number
+ * @field repeatY number
+ * @field surfaceAlpha number
+ * @field ambientFactor number
+ * @field diffuseFactor number
+ * @field specularFactor number
+ * @field specularPower number
+ * @field fresnelMin number
+ * @field fresnelMax number
+ * @field fresnelPower number
+ * @field reflectionDistortion number
+ * @field blurBase number
+ * @field blurExponent number
+ * @field perlinStartFreq number
+ * @field perlinLacunarity number
+ * @field perlinAmplitude number
+ * @field windSpeed number
+ * @field waveOffsetFactor number
+ * @field waveLength number
+ * @field waveFoamDistortion number
+ * @field waveFoamIntensity number
+ * @field causticsResolution number
+ * @field causticsStrength number
+ * @field numTiles integer
+ * @field shoreWaves boolean
+ * @field forceRendering boolean
+ * @field hasWaterPlane boolean
  */
 
-
-/*** @function Spring.SetWaterParams
+/***
+ * Does not need cheating enabled.
  *
- *  Does not need cheating enabled.
- *  Allows to change water params (mostly BumpWater ones) at runtime. You may want to set BumpWaterUseUniforms in your springrc to 1, then you don't even need to restart BumpWater via `/water 4`.
+ * Allows to change water params (mostly `BumpWater` ones) at runtime. You may
+ * want to set `BumpWaterUseUniforms` in your `springrc` to 1, then you don't even
+ * need to restart `BumpWater` via `/water 4`.
  *
- * @tparam waterParams waterParams
- * @treturn nil
+ * @function Spring.SetWaterParams
+ * @param waterParams WaterParams
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
 {
@@ -4596,8 +4574,8 @@ int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
  * Allow the engine to load the unit's model (and texture) in a background thread.
  * Wreckages and buildOptions of a unit are automatically preloaded.
  *
- * @number unitDefID
- * @treturn nil
+ * @param unitDefID integer
+ * @return nil
  */
 int LuaUnsyncedCtrl::PreloadUnitDefModel(lua_State* L) {
 	const UnitDef* ud = unitDefHandler->GetUnitDefByID(luaL_checkint(L, 1));
@@ -4612,8 +4590,8 @@ int LuaUnsyncedCtrl::PreloadUnitDefModel(lua_State* L) {
 
 /*** @function Spring.PreloadFeatureDefModel
  *
- * @number featureDefID
- * @treturn nil
+ * @param featureDefID integer
+ * @return nil
  */
 int LuaUnsyncedCtrl::PreloadFeatureDefModel(lua_State* L) {
 	const FeatureDef* fd = featureDefHandler->GetFeatureDefByID(luaL_checkint(L, 1));
@@ -4628,8 +4606,8 @@ int LuaUnsyncedCtrl::PreloadFeatureDefModel(lua_State* L) {
 
 /*** @function Spring.PreloadSoundItem
  *
- * @string name
- * @treturn nil
+ * @param name string
+ * @return nil
  */
 int LuaUnsyncedCtrl::PreloadSoundItem(lua_State* L)
 {
@@ -4644,8 +4622,8 @@ int LuaUnsyncedCtrl::PreloadSoundItem(lua_State* L)
 
 /*** @function Spring.LoadModelTextures
  *
- * @string modelName
- * @treturn ?nil|bool success
+ * @param modelName string
+ * @return boolean? success
  */
 int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 {
@@ -4681,7 +4659,7 @@ int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 /***
  *
  * @function Spring.CreateGroundDecal
- * @treturn nil|number decalID
+ * @return nil|number decalID
  */
 int LuaUnsyncedCtrl::CreateGroundDecal(lua_State* L)
 {
@@ -4697,8 +4675,8 @@ int LuaUnsyncedCtrl::CreateGroundDecal(lua_State* L)
 /***
  *
  * @function Spring.DestroyGroundDecal
- * @number decalID
- * @treturn bool delSuccess
+ * @param decalID integer
+ * @return boolean delSuccess
  */
 int LuaUnsyncedCtrl::DestroyGroundDecal(lua_State* L)
 {
@@ -4710,13 +4688,13 @@ int LuaUnsyncedCtrl::DestroyGroundDecal(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalPosAndDims
- * @number decalID
- * @number[opt=currMidPosX] midPosX
- * @number[opt=currMidPosZ] midPosZ
- * @number[opt=currSizeX] sizeX
- * @number[opt=currSizeZ] sizeZ
- * @number[opt=calculateProjCubeHeight] projCubeHeight
- * @treturn bool decalSet
+ * @param decalID integer
+ * @param midPosX number? (Default: currMidPosX)
+ * @param midPosZ number? (Default: currMidPosZ)
+ * @param sizeX number? (Default: currSizeX)
+ * @param sizeZ number? (Default: currSizeZ)
+ * @param projCubeHeight number? (Default: calculateProjCubeHeight)
+ * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalPosAndDims(lua_State* L)
 {
@@ -4752,22 +4730,23 @@ int LuaUnsyncedCtrl::SetGroundDecalPosAndDims(lua_State* L)
 }
 
 /***
+ * @class xz
+ * @field x number
+ * @field y number
+ */
+/***
  *
  * @function Spring.SetGroundDecalQuadPosAndHeight
  *
  * Use for non-rectangular decals
  *
- * @number decalID
- * @number[opt=currPosTL.x] posTL.x
- * @number[opt=currPosTL.z] posTL.z
- * @number[opt=currPosTR.x] posTR.x
- * @number[opt=currPosTR.z] posTR.z
- * @number[opt=currPosBR.x] posBR.x
- * @number[opt=currPosBR.z] posBR.z
- * @number[opt=currPosBL.x] posBL.x
- * @number[opt=currPosBL.z] posBL.z
- * @number[opt=calculateProjCubeHeight] projCubeHeight
- * @treturn bool decalSet
+ * @param decalID integer
+ * @param posTL xz? (Default: currPosTL)
+ * @param posTR xz? (Default: currPosTR)
+ * @param posBR xz? (Default: currPosBR)
+ * @param posBL xz? (Default: currPosBL)
+ * @param projCubeHeight number? (Default: calculateProjCubeHeight)
+ * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalQuadPosAndHeight(lua_State* L)
 {
@@ -4794,9 +4773,9 @@ int LuaUnsyncedCtrl::SetGroundDecalQuadPosAndHeight(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalRotation
- * @number decalID
- * @number[opt=random] rot in radians
- * @treturn bool decalSet
+ * @param decalID integer
+ * @param rot number? (Default: random) in radians
+ * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
 {
@@ -4816,10 +4795,10 @@ int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalTexture
- * @number decalID
- * @string textureName The texture has to be on the atlas which seems to mean it's defined as an explosion, unit tracks, or building plate decal on some unit already (no arbitrary textures)
- * @bool[opt=true] isMainTex If false, it sets the normals/glow map
- * @treturn nil|bool decalSet
+ * @param decalID integer
+ * @param textureName string The texture has to be on the atlas which seems to mean it's defined as an explosion, unit tracks, or building plate decal on some unit already (no arbitrary textures)
+ * @param isMainTex boolean? (Default: true) If false, it sets the normals/glow map
+ * @return nil|boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
 {
@@ -4832,10 +4811,10 @@ int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalTextureParams
- * @number decalID
- * @number texWrapDistance[opt=currTexWrapDistance] if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
- * @number texTraveledDistance[opt=currTexTraveledDistance] shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
- * @treturn nil|bool decalSet
+ * @param decalID integer
+ * @param texWrapDistance number? (Default: currTexWrapDistance) if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
+ * @param texTraveledDistance number? (Default: currTexTraveledDistance) shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
+ * @return nil|boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalTextureParams(lua_State* L)
 {
@@ -4856,10 +4835,10 @@ int LuaUnsyncedCtrl::SetGroundDecalTextureParams(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalAlpha
- * @number decalID
- * @number[opt=currAlpha] alpha Between 0 and 1
- * @number[opt=currAlphaFalloff] alphaFalloff Between 0 and 1, per second
- * @treturn bool decalSet
+ * @param decalID integer
+ * @param alpha number? (Default: currAlpha) Between 0 and 1
+ * @param alphaFalloff number? (Default: currAlphaFalloff) Between 0 and 1, per second
+ * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
 {
@@ -4881,11 +4860,11 @@ int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
  * @function Spring.SetGroundDecalNormal
  * Sets projection cube normal to orient in 3D space.
  * In case the normal (0,0,0) then normal is picked from the terrain
- * @number decalID
- * @number[opt=0] normalX
- * @number[opt=0] normalY
- * @number[opt=0] normalZ
- * @treturn bool decalSet
+ * @param decalID integer
+ * @param normalX number? (Default: 0)
+ * @param normalY number? (Default: 0)
+ * @param normalZ number? (Default: 0)
+ * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalNormal(lua_State* L)
 {
@@ -4913,12 +4892,12 @@ int LuaUnsyncedCtrl::SetGroundDecalNormal(lua_State* L)
  * @function Spring.SetGroundDecalTint
  * Sets the tint of the ground decal. Color = 2 * textureColor * tintColor
  * Respectively a color of (0.5, 0.5, 0.5, 0.5) is effectively no tint
- * @number decalID
- * @number[opt=curTintColR] tintColR
- * @number[opt=curTintColG] tintColG
- * @number[opt=curTintColB] tintColB
- * @number[opt=curTintColA] tintColA
- * @treturn bool decalSet
+ * @param decalID integer
+ * @param tintColR number? (Default: curTintColR)
+ * @param tintColG number? (Default: curTintColG)
+ * @param tintColB number? (Default: curTintColB)
+ * @param tintColA number? (Default: curTintColA)
+ * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalTint(lua_State* L)
 {
@@ -4944,13 +4923,13 @@ int LuaUnsyncedCtrl::SetGroundDecalTint(lua_State* L)
  *
  * @function Spring.SetGroundDecalMisc
  * Sets varios secondary parameters of a decal
- * @number decalID
- * @number[opt=curValue] dotElimExp pow(max(dot(decalProjVector, SurfaceNormal), 0.0), dotElimExp), used to reduce decal artifacts on surfaces non-collinear with the projection vector
- * @number[opt=curValue] refHeight
- * @number[opt=curValue] minHeight
- * @number[opt=curValue] maxHeight
- * @number[opt=curValue] forceHeightMode in case forceHeightMode==1.0 ==> force relative height: midPoint.y = refHeight + clamp(midPoint.y - refHeight, minHeight); forceHeightMode==2.0 ==> force absolute height: midPoint.y = midPoint.y, clamp(midPoint.y, minHeight, maxHeight); other forceHeightMode values do not enforce the height of the center position
- * @treturn bool decalSet
+ * @param decalID integer
+ * @param dotElimExp number? (Default: curValue) pow(max(dot(decalProjVector, SurfaceNormal), 0.0), dotElimExp), used to reduce decal artifacts on surfaces non-collinear with the projection vector
+ * @param refHeight number? (Default: curValue)
+ * @param minHeight number? (Default: curValue)
+ * @param maxHeight number? (Default: curValue)
+ * @param forceHeightMode number? (Default: curValue) in case forceHeightMode==1.0 ==> force relative height: midPoint.y = refHeight + clamp(midPoint.y - refHeight, minHeight); forceHeightMode==2.0 ==> force absolute height: midPoint.y = midPoint.y, clamp(midPoint.y, minHeight, maxHeight); other forceHeightMode values do not enforce the height of the center position
+ * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalMisc(lua_State* L)
 {
@@ -4976,10 +4955,10 @@ int LuaUnsyncedCtrl::SetGroundDecalMisc(lua_State* L)
  *
  * Use separate min and max for "gradient" style decals such as tank tracks
  *
- * @number decalID
- * @number[opt=currCreationFrameMin] creationFrameMin
- * @number[opt=currCreationFrameMax] creationFrameMax
- * @treturn bool decalSet
+ * @param decalID integer
+ * @param creationFrameMin number? (Default: currCreationFrameMin)
+ * @param creationFrameMax number? (Default: currCreationFrameMax)
+ * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalCreationFrame(lua_State* L)
 {
@@ -5006,11 +4985,11 @@ int LuaUnsyncedCtrl::SetGroundDecalCreationFrame(lua_State* L)
 /***
  *
  * @function Spring.SDLSetTextInputRect
- * @number x
- * @number y
- * @number width
- * @number height
- * @treturn nil
+ * @param x number
+ * @param y number
+ * @param width number
+ * @param height number
+ * @return nil
  */
 int LuaUnsyncedCtrl::SDLSetTextInputRect(lua_State* L)
 {
@@ -5026,7 +5005,7 @@ int LuaUnsyncedCtrl::SDLSetTextInputRect(lua_State* L)
 /***
  *
  * @function Spring.SDLStartTextInput
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::SDLStartTextInput(lua_State* L)
 {
@@ -5037,7 +5016,7 @@ int LuaUnsyncedCtrl::SDLStartTextInput(lua_State* L)
 /***
  *
  * @function Spring.SDLStopTextInput
- * @treturn nil
+ * @return nil
  */
 int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
 {
@@ -5054,14 +5033,14 @@ int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
 /***
  *
  * @function Spring.SetWindowGeometry
- * @number displayIndex
- * @number winRelPosX
- * @number winRelPosY
- * @number winSizeX
- * @number winSizeY
- * @bool fullScreen
- * @bool borderless
- * @treturn nil
+ * @param displayIndex number
+ * @param winRelPosX number
+ * @param winRelPosY number
+ * @param winSizeX number
+ * @param winSizeY number
+ * @param fullScreen boolean
+ * @param borderless boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 {
@@ -5084,7 +5063,7 @@ int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 /***
  *
  * @function Spring.SetWindowMinimized
- * @treturn bool minimized
+ * @return boolean minimized
  */
 int LuaUnsyncedCtrl::SetWindowMinimized(lua_State* L)
 {
@@ -5095,7 +5074,7 @@ int LuaUnsyncedCtrl::SetWindowMinimized(lua_State* L)
 /***
  *
  * @function Spring.SetWindowMaximized
- * @treturn bool maximized
+ * @return boolean maximized
  */
 int LuaUnsyncedCtrl::SetWindowMaximized(lua_State* L)
 {
@@ -5111,8 +5090,8 @@ int LuaUnsyncedCtrl::SetWindowMaximized(lua_State* L)
 
 
 /*** @function Spring.Reload
- * @string startScript the CONTENT of the script.txt spring should use to start.
- * @treturn nil
+ * @param startScript string the CONTENT of the script.txt spring should use to start.
+ * @return nil
  */
 int LuaUnsyncedCtrl::Reload(lua_State* L)
 {
@@ -5124,9 +5103,9 @@ int LuaUnsyncedCtrl::Reload(lua_State* L)
  *
  * If this call returns, something went wrong
  *
- * @string commandline_args commandline arguments passed to spring executable.
- * @string startScript
- * @treturn nil
+ * @param commandline_args string commandline arguments passed to spring executable.
+ * @param startScript string
+ * @return nil
  */
 int LuaUnsyncedCtrl::Restart(lua_State* L)
 {
@@ -5141,9 +5120,9 @@ int LuaUnsyncedCtrl::Restart(lua_State* L)
  *
  * If this call returns, something went wrong
  *
- * @string commandline_args commandline arguments passed to spring executable.
- * @string startScript the CONTENT of the script.txt spring should use to start (if empty, no start-script is added, you can still point spring to your custom script.txt when you add the file-path to commandline_args.
- * @treturn nil
+ * @param commandline_args string commandline arguments passed to spring executable.
+ * @param startScript string the CONTENT of the script.txt spring should use to start (if empty, no start-script is added, you can still point spring to your custom script.txt when you add the file-path to commandline_args.
+ * @return nil
  */
 int LuaUnsyncedCtrl::Start(lua_State* L)
 {
@@ -5165,8 +5144,8 @@ int LuaUnsyncedCtrl::Start(lua_State* L)
  * Note: *.bmp images have to be in BGR format (default for m$ ones).
  * Note: *.ico images are not supported.
  *
- * @string iconFileName
- * @treturn nil
+ * @param iconFileName string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetWMIcon(lua_State* L)
 {
@@ -5193,9 +5172,9 @@ int LuaUnsyncedCtrl::SetWMIcon(lua_State* L)
  *
  * NOTE: shortTitle is only ever possibly used under X11 (Linux & OS X), but not with QT (KDE) and never under Windows.
  *
- * @string title
- * @string[opt=title] titleShort
- * @treturn nil
+ * @param title string
+ * @param titleShort string? (Default: title)
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetWMCaption(lua_State* L)
 {
@@ -5205,8 +5184,8 @@ int LuaUnsyncedCtrl::SetWMCaption(lua_State* L)
 
 
 /*** @function Spring.ClearWatchDogTimer
- * @string[opt=main] threadName
- * @treturn nil
+ * @param threadName string? (Default: main)
+ * @return nil
  */
 int LuaUnsyncedCtrl::ClearWatchDogTimer(lua_State* L) {
 	if (lua_gettop(L) == 0) {
@@ -5226,8 +5205,8 @@ int LuaUnsyncedCtrl::ClearWatchDogTimer(lua_State* L) {
 
 
 /*** @function Spring.SetClipboard
- * @string text
- * @treturn nil
+ * @param text string
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetClipboard(lua_State* L)
 {
@@ -5249,7 +5228,7 @@ int LuaUnsyncedCtrl::SetClipboard(lua_State* L)
  *   wantYield = wantYield and Spring.Yield()
  * end
  *
- * @treturn bool when true caller should continue calling `Spring.Yield` during the widgets/gadgets load, when false it shouldn't call it any longer.
+ * @return boolean when true caller should continue calling `Spring.Yield` during the widgets/gadgets load, when false it shouldn't call it any longer.
  */
 int LuaUnsyncedCtrl::Yield(lua_State* L)
 {

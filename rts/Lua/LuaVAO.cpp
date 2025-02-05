@@ -7,7 +7,6 @@
 
 
 /******************************************************************************
- * @module LuaVAO
  *
  * @see rts/Lua/LuaVAO.cpp
 ******************************************************************************/
@@ -73,14 +72,15 @@ LuaVAOs::~LuaVAOs()
 	luaVAOs.clear();
 }
 
-
 /***
- *
- * @function gl.GetVAO
- * @treturn nil|VAO the VAO ref on success, else nil
- * @usage
+ * Example:
+ * ```
  * local myVAO = gl.GetVAO()
  * if myVAO == nil then Spring.Echo("Failed to get VAO") end
+ * ```
+ *
+ * @function gl.GetVAO
+ * @return VAO? vao The VAO ref on success, else `nil`
  */
 int LuaVAOs::GetVAO(lua_State* L)
 {
