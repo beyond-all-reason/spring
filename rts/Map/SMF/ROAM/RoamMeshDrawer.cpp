@@ -569,22 +569,6 @@ void CRoamMeshDrawer::Reset(bool shadowPass)
 	tesselationsSinceLastReset[shadowPass] = 0;
 }
 
-
-void CRoamMeshDrawer::Tessellate(std::vector<Patch>& patches, const CCamera* cam, int viewRadius, bool shadowPass) {
-	RECOIL_DETAILED_TRACY_ZONE;
-	bool forceTess = false;
-
-	for (Patch& p: patches) {
-		if (!p.IsVisible(cam))
-			continue;
-
-		forceTess = forceTess || (!p.Tessellate(cam->GetPos(), viewRadius, shadowPass));
-	}
-
-	forceNextTesselation[shadowPass] = forceTess;
-}
-
-
 void CRoamMeshDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
 	RECOIL_DETAILED_TRACY_ZONE;

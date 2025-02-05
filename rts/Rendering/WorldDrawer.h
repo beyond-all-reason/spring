@@ -1,7 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _WORLD_DRAWER_H
-#define _WORLD_DRAWER_H
+#pragma once
+
+#include "System/AABB.hpp"
 
 class CWorldDrawer
 {
@@ -10,12 +11,15 @@ public:
 	void InitPost() const;
 	void Kill();
 
+	void PreUpdate();
 	void Update(bool newSimFrame);
 	void Draw() const;
 
 	void GenerateIBLTextures() const;
 	void ResetMVPMatrices() const;
 
+	// In-map space + all units/feature only
+	const auto& GetWorldBounds() const { return worldBounds; }
 private:
 	void DrawOpaqueObjects() const;
 	void DrawAlphaObjects() const;
@@ -24,6 +28,5 @@ private:
 
 private:
 	unsigned int numUpdates = 0;
+	AABB worldBounds;
 };
-
-#endif // _WORLD_DRAWER_H

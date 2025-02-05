@@ -111,6 +111,9 @@ public:
 	static bool SetTeamColor(int team, const float alpha = 1.0f) { return modelDrawerState->SetTeamColor(team, alpha); }
 	static void SetNanoColor(const float4& color) { modelDrawerState->SetNanoColor(color); }
 	static const ScopedMatricesMemAlloc& GetMatricesMemAlloc(const ObjType* o) { return const_cast<const TDrawerData*>(modelDrawerData)->GetObjectMatricesMemAlloc(o); }
+
+	static const auto& GetObjectsBounds() { return modelDrawerData->GetObjectsBounds(); }
+	static void UpdateObjectsBounds() { modelDrawerData->UpdateObjectsBounds(); }
 public:
 	virtual void Update() const = 0;
 	// Draw*
@@ -415,9 +418,6 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 
 	if constexpr (legacy) {
 		glColor3f(1.0f, 1.0f, 1.0f);
-		glPolygonOffset(1.0f, 1.0f);
-		glEnable(GL_POLYGON_OFFSET_FILL);
-
 		glAlphaFunc(GL_GREATER, 0.5f);
 		glEnable(GL_ALPHA_TEST);
 	}
@@ -452,7 +452,6 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 
 	if constexpr (legacy) {
 		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
 	ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);

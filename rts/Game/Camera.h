@@ -76,10 +76,16 @@ public:
 		MOVE_STATE_RTT = 10,  // rotate
 	};
 
+	enum IntersectionTestResult {
+		OUTSIDE   = 0,
+		INSIDE    = 1,
+		INTERSECT = 2,
+	};
+
 	struct Frustum {
 	public:
-		bool IntersectSphere(float3 p, float radius, uint8_t testMask) const;
-		bool IntersectAABB(const AABB& b, uint8_t testMask = 0x3F) const;
+		IntersectionTestResult IntersectSphere(float3 p, float radius) const;
+		IntersectionTestResult IntersectAABB(const AABB& b) const;
 
 	public:
 		// corners
@@ -141,9 +147,9 @@ public:
 	float3 CalcPixelDir(int x, int y) const;
 	float3 CalcViewPortCoordinates(const float3& objPos) const;
 
-	bool InView(const float3& point, float radius = 0.0f) const;
-	bool InView(const float3& mins, const float3& maxs) const { return InView(AABB{mins, maxs}); }
-	bool InView(const AABB& aabb) const;
+	IntersectionTestResult InView(const float3& point, float radius = 0.0f) const;
+	IntersectionTestResult InView(const float3& mins, const float3& maxs) const { return InView(AABB{mins, maxs}); }
+	IntersectionTestResult InView(const AABB& aabb) const;
 
 	void CalcFrustumLines(float miny, float maxy, float scale, bool neg = false);
 	void CalcFrustumLine(
@@ -160,17 +166,7 @@ public:
 
 	void SetClipCtrlMatrix(const CMatrix44f& mat) { clipControlMatrix = mat; }
 	void SetProjMatrix(const CMatrix44f& mat) { projectionMatrix = mat; }
-	void SetViewMatrix(const CMatrix44f& mat) {
-		viewMatrix = mat;
-
-		// FIXME: roll-angle might not be 0
-		pos = viewMatrix.GetPos();
-		rot = GetRotFromDir(viewMatrix.GetZ());
-
-		forward = viewMatrix.GetZ();
-		right   = viewMatrix.GetX();
-		up      = viewMatrix.GetY();
-	}
+	void SetViewMatrix(const CMatrix44f& mat);
 
 	const CMatrix44f& GetViewMatrix() const { return viewMatrix; }
 	const CMatrix44f& GetViewMatrixInverse() const { return viewMatrixInverse; }
@@ -242,6 +238,7 @@ public:
 	void UpdateViewRange();
 	void UpdateFrustum();
 	void UpdateMatrices(uint32_t vsx, uint32_t vsy, float var);
+	void UpdateDerivedMatrices();
 	void UpdateViewPort(int px, int py, int sx, int sy);
 
 	void ConfigNotify(const std::string& key, const std::string& value);
@@ -306,8 +303,6 @@ private:
 	uint32_t camType = -1u;
 	// PROJTYPE_*
 	uint32_t projType = -1u;
-
-	uint8_t inViewPlanesMask;
 
 	bool movState[10]; // fwd, back, left, right, up, down, fast, slow, tilt, reset
 	bool rotState[4]; // unused

@@ -60,10 +60,14 @@ protected:
 protected:
 	void UpdateCommon(T* o);
 	virtual void UpdateObjectDrawFlags(CSolidObject* o) const = 0;
+	virtual void UpdateDrawPos(CSolidObject* o) const = 0;
 private:
 	void UpdateObjectSMMA(const T* o);
 	void UpdateObjectUniforms(const T* o);
 public:
+	void UpdateObjectsBounds();
+	const auto& GetObjectsBounds() const { return objectsBounds; }
+
 	const std::vector<T*>& GetUnsortedObjects() const { return unsortedObjects; }
 	const ModelRenderContainer<T>& GetModelRenderer(int modelType) const { return modelRenderers[modelType]; }
 
@@ -81,6 +85,8 @@ protected:
 
 	std::vector<T*> unsortedObjects;
 	std::unordered_map<T*, ScopedMatricesMemAlloc> matricesMemAllocs;
+
+	AABB objectsBounds;
 
 	bool& mtModelDrawer;
 };
@@ -195,6 +201,21 @@ inline void CModelDrawerDataBase<T>::UpdateObjectUniforms(const T* o)
 		uni.speed = o->speed;
 		uni.maxHealth = o->maxHealth;
 		uni.health = o->health;
+	}
+}
+
+template<typename T>
+inline void CModelDrawerDataBase<T>::UpdateObjectsBounds()
+{
+	objectsBounds.Reset();
+	if (unsortedObjects.empty())
+		objectsBounds.AddPoint(float3{});
+
+	for (auto* o : unsortedObjects) {
+		UpdateDrawPos(o);
+
+		objectsBounds.AddPoint(o->drawMidPos - o->GetDrawRadius());
+		objectsBounds.AddPoint(o->drawMidPos + o->GetDrawRadius());
 	}
 }
 

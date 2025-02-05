@@ -20,6 +20,11 @@ public:
 		return (n > 0);
 	}
 
+	void Combine(const AABB& other) {
+		mins = float3::min(mins, other.mins);
+		maxs = float3::max(maxs, other.maxs);
+	}
+
 	bool Intersects(const AABB& b) const {
 		uint8_t n = 0;
 
@@ -39,6 +44,8 @@ public:
 
 		return (n == 3);
 	};
+
+	float3 ClampInto(const float3& pnt) const;
 
 	void CalcCorners(std::array<float3, 8>& verts) const { CalcCorners(CMatrix44f::Identity(), verts); }
 	void CalcCorners(float3 verts[8]) const { CalcCorners(CMatrix44f::Identity(), verts); }
@@ -65,6 +72,33 @@ public:
 		verts[5] = mat * float3{ mins.x, maxs.y, maxs.z };
 		verts[6] = mat * float3{ maxs.x, maxs.y, mins.z };
 		verts[7] = mat * float3{ maxs.x, maxs.y, maxs.z };
+	}
+
+	std::array<float3, 8> GetCorners(const CMatrix44f& mat) const {
+		return std::array<float3, 8> {
+			mat * float3{ mins.x, mins.y, mins.z },
+			mat * float3{ mins.x, mins.y, maxs.z },
+			mat * float3{ maxs.x, mins.y, mins.z },
+			mat * float3{ maxs.x, mins.y, maxs.z },
+			// top
+			mat * float3{ mins.x, maxs.y, mins.z },
+			mat * float3{ mins.x, maxs.y, maxs.z },
+			mat * float3{ maxs.x, maxs.y, mins.z },
+			mat * float3{ maxs.x, maxs.y, maxs.z }
+		};
+	}
+	std::array<float3, 8> GetCorners() const {
+		return std::array<float3, 8> {
+			float3{ mins.x, mins.y, mins.z },
+			float3{ mins.x, mins.y, maxs.z },
+			float3{ maxs.x, mins.y, mins.z },
+			float3{ maxs.x, mins.y, maxs.z },
+			// top
+			float3{ mins.x, maxs.y, mins.z },
+			float3{ mins.x, maxs.y, maxs.z },
+			float3{ maxs.x, maxs.y, mins.z },
+			float3{ maxs.x, maxs.y, maxs.z }
+		};
 	}
 
 	float3 CalcCenter(const CMatrix44f& mat) const { return (mat * CalcCenter()); }

@@ -351,7 +351,7 @@ void CSMFGroundTextures::DrawUpdate()
 	const float vdiag = fastmath::apxsqrt(vsxSq + vsySq);
 
 	for (int y = 0; y < smfMap->numBigTexY; ++y) {
-		float dz = cam->GetPos().z - (y * smfMap->bigSquareSize * SQUARE_SIZE);
+		float dz = cam->GetPos().z - (y * CReadMap::PATCH_SIZE * SQUARE_SIZE);
 		dz -= (SQUARE_SIZE << 6);
 		dz = std::max(0.0f, float(math::fabs(dz) - (SQUARE_SIZE << 6)));
 
@@ -372,7 +372,7 @@ void CSMFGroundTextures::DrawUpdate()
 				continue;
 			}
 
-			float dx = cam->GetPos().x - (x * smfMap->bigSquareSize * SQUARE_SIZE);
+			float dx = cam->GetPos().x - (x * CReadMap::PATCH_SIZE * SQUARE_SIZE);
 			dx -= (SQUARE_SIZE << 6);
 			dx = std::max(0.0f, float(math::fabs(dx) - (SQUARE_SIZE << 6)));
 

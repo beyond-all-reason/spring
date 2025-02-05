@@ -20,6 +20,7 @@ make_global_var(sources_engine_System_common
 		"${CMAKE_CURRENT_SOURCE_DIR}/EventHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GlobalConfig.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Info.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Geometry/Polygon.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Input/InputHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Input/KeyInput.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Input/MouseInput.cpp"

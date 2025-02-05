@@ -213,8 +213,9 @@ void main(void)
 
 	uvCoord = uv;
 
-	shadowVertexPos = shadowView * worldPos;
-	shadowVertexPos.xy += vec2(0.5);  //no need for shadowParams anymore
+	shadowVertexPos = shadowViewProj * worldPos;
+	shadowVertexPos.xyz /= shadowVertexPos.w;
+	shadowVertexPos.xy = shadowVertexPos.xy * 0.5 + 0.5;
 
 	vec4 cameraPos = cameraViewInv * vec4(0, 0, 0, 1);
 	worldCameraDir = cameraPos.xyz - worldPos.xyz; //from fragment to camera, world space, not normalized(!)
