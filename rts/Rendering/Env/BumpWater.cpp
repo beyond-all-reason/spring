@@ -218,7 +218,7 @@ void CBumpWater::InitResources(bool loadShader)
 	dynWaves     = (configHandler->GetBool("BumpWaterDynamicWaves")) && (waterRendering->numTiles > 1);
 
 	shoreWaves = shoreWaves && (FBO::IsSupported());
-	dynWaves   = dynWaves && (FBO::IsSupported() && GLEW_ARB_imaging);
+	dynWaves   = dynWaves && (FBO::IsSupported() && GLAD_GL_ARB_imaging);
 
 	// LOAD TEXTURES
 	foamTexture   = LoadTexture(waterRendering->foamTexture);
@@ -338,13 +338,8 @@ void CBumpWater::InitResources(bool loadShader)
 		glBindTexture(GL_TEXTURE_2D, reflectTexture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		if (GLEW_EXT_texture_edge_clamp) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		}
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, reflTexSize, reflTexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	}
 

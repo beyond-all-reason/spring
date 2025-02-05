@@ -7,8 +7,8 @@ namespace spring {
 	class ScopedNullResource {
 	public:
 		template<typename C>
-		ScopedNullResource(C&& c, D&& d_)
-			: d{ std::move(d_) }
+		ScopedNullResource(C&& c, D d_)
+			:d{ std::move(d_) }
 		{
 			c();
 		}
@@ -16,7 +16,7 @@ namespace spring {
 			d();
 		}
 	private:
-		D&& d;
+		D d;
 	};
 
 	template<typename R, typename D>

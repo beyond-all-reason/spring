@@ -6,13 +6,10 @@
 #include <bit>
 
 #include <SDL.h>
-#if (!defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__))
-// need this for glXQueryCurrentRendererIntegerMESA (glxext)
-#include <GL/glxew.h>
-#endif
 
 #include "myGL.h"
 #include "VertexArray.h"
+#include "glxHandler.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
 #include "Rendering/Textures/Bitmap.h"
@@ -124,8 +121,8 @@ bool CheckAvailableVideoModes()
 static bool GetVideoMemInfoNV(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if (defined(GLEW_NVX_gpu_memory_info))
-	if (!GLEW_NVX_gpu_memory_info)
+	#if (defined(GL_NVX_gpu_memory_info))
+	if (!GLAD_GL_NVX_gpu_memory_info)
 		return false;
 
 	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &memInfo[0]);
@@ -139,8 +136,8 @@ static bool GetVideoMemInfoNV(GLint* memInfo)
 static bool GetVideoMemInfoATI(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if (defined(GLEW_ATI_meminfo))
-	if (!GLEW_ATI_meminfo)
+	#if (defined(GL_ATI_meminfo))
+	if (!GLAD_GL_ATI_meminfo)
 		return false;
 
 	// these are not disjoint, don't sum
@@ -162,27 +159,7 @@ static bool GetVideoMemInfoATI(GLint* memInfo)
 static bool GetVideoMemInfoMESA(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if (defined(GLX_MESA_query_renderer))
-	if (!GLXEW_MESA_query_renderer)
-		return false;
-
-	typedef PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC QCRIProc;
-
-	static const GLubyte* qcriProcName = (const GLubyte*) "glXQueryCurrentRendererIntegerMESA";
-	static const QCRIProc qcriProcAddr = (QCRIProc) glXGetProcAddress(qcriProcName);
-
-	if (qcriProcAddr == nullptr)
-		return false;
-
-	// note: unlike the others, this value is returned in megabytes
-	qcriProcAddr(GLX_RENDERER_VIDEO_MEMORY_MESA, reinterpret_cast<unsigned int*>(&memInfo[0]));
-
-	memInfo[0] *= 1024;
-	memInfo[1] = memInfo[0];
-	return true;
-	#else
-	return false;
-	#endif
+	return GLX::GetVideoMemInfoMESA(memInfo);
 }
 #endif
 
@@ -200,9 +177,12 @@ bool GetAvailableVideoRAM(GLint* memory, const char* glVendor)
 		case 'X': { if (!GetVideoMemInfoMESA(memInfo)) return false; } break; // "X.org"
 		case 'M': { if (!GetVideoMemInfoMESA(memInfo)) return false; } break; // "Mesa"
 		case 'V': { if (!GetVideoMemInfoMESA(memInfo)) return false; } break; // "VMware" (also ships a Mesa variant)
-		case 'I': {                                    return false; } break; // "Intel"
-		case 'T': {                                    return false; } break; // "Tungsten" (old, acquired by VMware)
-		default : {                                    return false; } break;
+		case 'I': {                                    return false; } [[fallthrough]]; // "Intel"
+		default: {
+			// try everything
+			if (!(GetVideoMemInfoNV(memInfo) || GetVideoMemInfoATI(memInfo) || GetVideoMemInfoMESA(memInfo)))
+				return false;
+		} break;
 	}
 
 	// callers assume [0]=total and [1]=free
@@ -350,7 +330,7 @@ void RecoilTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsiz
 	if (levels <= 0)
 		levels = std::bit_width(static_cast<uint32_t>(std::max({ width , height })));
 
-	if (GLEW_ARB_texture_storage) {
+	if (GLAD_GL_ARB_texture_storage) {
 		glTexStorage2D(target, levels, internalFormat, width, height);
 	} else {
 		auto format = GL::GetInternalFormatDataFormat(internalFormat);
@@ -369,7 +349,7 @@ void RecoilTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsiz
 	if (levels <= 0)
 		levels = std::bit_width(static_cast<uint32_t>(std::max({ width , height, depth })));
 
-	if (GLEW_ARB_texture_storage) {
+	if (GLAD_GL_ARB_texture_storage) {
 		glTexStorage3D(target, levels, internalFormat, width, height, depth);
 	} else {
 		auto format = GL::GetInternalFormatDataFormat(internalFormat);
@@ -436,7 +416,7 @@ bool glSpringBlitImages(
 	const bool sameIntFormat = (srcTexParams.intFmt == dstTexParams.intFmt);
 	const bool fineDims = (srcWidth <= dstTexParams.sizeX && srcHeight <= dstTexParams.sizeY);
 
-	if (GLEW_ARB_copy_image && fineDims && sameIntFormat) {
+	if (GLAD_GL_ARB_copy_image && fineDims && sameIntFormat) {
 		glCopyImageSubData(
 			srcName, srcTarget, srcLevel, srcX, srcY, srcZ,
 			dstName, dstTarget, dstLevel, dstX, dstY, dstZ,
@@ -448,7 +428,7 @@ bool glSpringBlitImages(
 	if (dstTexParams.isCompressed) //can't be rendered into
 		return false;
 
-	if (!GLEW_EXT_framebuffer_blit || !GLEW_EXT_texture_array)
+	if (!GLAD_GL_EXT_framebuffer_blit || !GLAD_GL_EXT_texture_array)
 		return false;
 
 	bool result = true;
@@ -670,9 +650,9 @@ static unsigned int LoadProgram(GLenum target, const char* filename, const char*
 	RECOIL_DETAILED_TRACY_ZONE;
 	GLuint ret = 0;
 
-	if (!GLEW_ARB_vertex_program)
+	if (!GLAD_GL_ARB_vertex_program)
 		return ret;
-	if (target == GL_FRAGMENT_PROGRAM_ARB && !GLEW_ARB_fragment_program)
+	if (target == GL_FRAGMENT_PROGRAM_ARB && !GLAD_GL_ARB_fragment_program)
 		return ret;
 
 	CFileHandler file(std::string("shaders/") + filename);
@@ -719,7 +699,7 @@ unsigned int LoadFragmentProgram(const char* filename)
 
 void glSafeDeleteProgram(GLuint program)
 {
-	if (!GLEW_ARB_vertex_program || (program == 0))
+	if (!GLAD_GL_ARB_vertex_program || (program == 0))
 		return;
 
 	glDeleteProgramsARB(1, &program);

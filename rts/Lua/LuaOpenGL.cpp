@@ -302,22 +302,22 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ColorMask);
 	REGISTER_LUA_CFUNC(DepthMask);
 	REGISTER_LUA_CFUNC(DepthTest);
-	if (GLEW_ARB_depth_clamp)
+	if (GLAD_GL_ARB_depth_clamp)
 		REGISTER_LUA_CFUNC(DepthClamp);
 
 	REGISTER_LUA_CFUNC(Culling);
 	REGISTER_LUA_CFUNC(LogicOp);
 	REGISTER_LUA_CFUNC(Fog);
 	REGISTER_LUA_CFUNC(AlphaTest);
-	if (GLEW_ARB_multisample)
+	if (GLAD_GL_ARB_multisample)
 		REGISTER_LUA_CFUNC(AlphaToCoverage);
 	REGISTER_LUA_CFUNC(LineStipple);
 	REGISTER_LUA_CFUNC(Blending);
 	REGISTER_LUA_CFUNC(BlendEquation);
 	REGISTER_LUA_CFUNC(BlendFunc);
-	if (GLEW_EXT_blend_equation_separate)
+	if (GLAD_GL_EXT_blend_equation_separate)
 		REGISTER_LUA_CFUNC(BlendEquationSeparate);
-	if (GLEW_EXT_blend_func_separate)
+	if (GLAD_GL_EXT_blend_func_separate)
 		REGISTER_LUA_CFUNC(BlendFuncSeparate);
 
 	REGISTER_LUA_CFUNC(Material);
@@ -330,7 +330,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(StencilMask);
 	REGISTER_LUA_CFUNC(StencilFunc);
 	REGISTER_LUA_CFUNC(StencilOp);
-	if (GLEW_EXT_stencil_two_side) {
+	if (GLAD_GL_EXT_stencil_two_side) {
 		REGISTER_LUA_CFUNC(StencilMaskSeparate);
 		REGISTER_LUA_CFUNC(StencilFuncSeparate);
 		REGISTER_LUA_CFUNC(StencilOpSeparate);
@@ -454,7 +454,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ReadPixels);
 	REGISTER_LUA_CFUNC(SaveImage);
 
-	if (GLEW_ARB_occlusion_query) {
+	if (GLAD_GL_ARB_occlusion_query) {
 		REGISTER_LUA_CFUNC(CreateQuery);
 		REGISTER_LUA_CFUNC(DeleteQuery);
 		REGISTER_LUA_CFUNC(RunQuery);
@@ -494,7 +494,7 @@ void LuaOpenGL::ResetGLState()
 	glDisable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_FALSE);
-	if (GLEW_ARB_depth_clamp)
+	if (GLAD_GL_ARB_depth_clamp)
 		glDisable(GL_DEPTH_CLAMP);
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -526,7 +526,7 @@ void LuaOpenGL::ResetGLState()
 
 	glDisable(GL_STENCIL_TEST);
 	glStencilMask(~0);
-	if (GLEW_EXT_stencil_two_side)
+	if (GLAD_GL_EXT_stencil_two_side)
 		glDisable(GL_STENCIL_TEST_TWO_SIDE_EXT);
 
 	// FIXME -- multitexturing
@@ -1143,7 +1143,7 @@ inline void LuaOpenGL::NotImplementedError(lua_State* L, const char* caller)
 
 int LuaOpenGL::HasExtension(lua_State* L)
 {
-	lua_pushboolean(L, glewIsSupported(luaL_checkstring(L, 1)));
+	lua_pushboolean(L, globalRendering->IsExtensionSupported(luaL_checkstring(L, 1)));
 	return 1;
 }
 
@@ -4846,7 +4846,7 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 
 			PushFixedState(GL_STENCIL_FUNC);
 
-			if (GLEW_EXT_stencil_two_side) {
+			if (GLAD_GL_EXT_stencil_two_side) {
 				GLint stencilBackWriteMask;
 				glGetIntegerv(GL_STENCIL_BACK_WRITEMASK, &stencilBackWriteMask);
 
