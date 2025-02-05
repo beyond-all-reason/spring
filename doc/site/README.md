@@ -17,16 +17,10 @@ Navigate to http://localhost:4000/spring
 
 ## Generating Lua API
 
-### First generate the Lua API
-
-See the [Lua Language Server](guides/lua-language-server.markdown) guide for info on manually regenerating the Lua library.
-
-### Export API data
-
-Have [Lua Language Server](https://luals.github.io/) installed and available at your `$PATH`.
+Have [Lua Language Server](https://luals.github.io/) and [lua-doc-extractor](https://github.com/rhys-vdw/lua-doc-extractor) installed and available in `$PATH`.
 
 ```bash
-lua-language-server --doc rts/Lua/library --doc_out_path doc/site/_data
+lua-doc-extractor rts/Lua/*.cpp --dest rts/Lua/library/generated && lua-language-server --doc rts/Lua/library --doc_out_path doc/site/_data
 ```
 
-Keep in mind to see changes on the site you might have to restart jekyll.
+See [Documenting Lua development guide](development/documenting-lua.markdown) for more info.
