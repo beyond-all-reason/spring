@@ -2772,7 +2772,7 @@ void CLuaHandle::DrawScreenPost()
 
 /***
  *
- * @function DrawInMinimap
+ * @function DrawInMiniMap
  * @param sx number relative to the minimap's position and scale.
  * @param sy number relative to the minimap's position and scale.
  */
