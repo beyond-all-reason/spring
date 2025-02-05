@@ -12,7 +12,7 @@
 #if defined(HEADLESS)
 	#undef WINGDIAPI
 	#define WINGDIAPI //working around https://github.com/beyond-all-reason/spring/issues/27
-	#include "lib/headlessStubs/glewstub.h"
+	#include "lib/headlessStubs/gladstub.h"
 	#undef WINGDIAPI
 #else
 	#include <glad/glad.h>

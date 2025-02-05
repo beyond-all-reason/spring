@@ -4,7 +4,7 @@
 #ifndef _WIN32
 //   #include "GL/glxew.h"
 #endif
-#include "glewstub.h"
+#include "gladstub.h"
 
 #ifdef __cplusplus
 extern "C" {
