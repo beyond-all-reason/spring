@@ -59,3 +59,15 @@ i.e. there have to be 4x more characters and each will correspond to a "regular"
  * `w`, `x`, `f`:  deprecated, same as `o`.
  * **whitespace is ignored**, which you can use to neatly **arrange the rectangle visually**.
  * anything else is ignored as well but may be used in the future.
+
+### Typemaps and speed mod classes
+
+One of the metadata associated with game squares is terrain type. A map can define (and a game can in theory later tweak) up to 256 types of terrain with their own traits. The first built-in terrain trait is hardness, which is a multiplier on weapon terrain deformation (cratering). The other is speed multipliers for unit movement classes. There are four movement classes: "kbot", "tank", "hover" and "ship". Here are their characteristics:
+
+* **hovercraft** can move on the ground and on water surface.
+* **tank** and **kbot** can move on the ground and optionally underwater, on the seafloor. The only difference between them is which typemap speed multiplier affects them. Keep in mind they are essentially just two arbitrary classes, so you could for example replicate SC2 style creep movement speed bonuses by having the creep as its own terrain type that applies a multiplier for "tanks", then set Zerg units to the "tank" movetype and everything else as "kbots".
+* **ships** can only move in water. Ships that can "walk onto land", like SupCom Cybran Siren or RA3 Soviet Stingray have to be set as hovercraft!
+* aircraft, and units of the above classes being moved manually via Lua, do not use any terrain-based speed multipliers.
+* the engine pathfinder knows about these speed multipliers (including x0 multiplier, which is not passable) and will take them into account as appropriate.
+
+Lua can read terrain type, so you could use it to apply metadata to terrain (think healing ground, territory ownership or triggers), but keep in mind that for applying any sort of gameplay mechanics it's usually more performant to just manually poll a rectangular zone or such. Also there don't seem to be any conventions as to what ID represents what terrain type, so games and maps would need to pay a lot of attention to stay self-consistent and not break compatibility. It's probably best to avoid doing anything beyond the built-in engine typemap behaviour.
