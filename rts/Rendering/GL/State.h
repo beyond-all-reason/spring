@@ -152,6 +152,10 @@ namespace State {
 
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (AlphaTest, GL_ALPHA_TEST);
 	ATTRIBUTE_TYPE_DEFS            (AlphaFunc, GL_ALPHA_TEST_FUNC, GL_ALPHA_TEST_REF);
+	ATTRIBUTE_TYPE_DEFS            (ShadeModel, GL_SHADE_MODEL);
+
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Lighting, GL_LIGHTING);
+	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Texture2D, GL_TEXTURE_2D);
 
 	CAPABILITY_ATTRIBUTE_TYPE_DEFS (Blending, GL_BLEND);
 	ATTRIBUTE_TYPE_DEFS            (BlendFunc, GL_BLEND_SRC, GL_BLEND_DST);
@@ -177,6 +181,7 @@ namespace State {
 
 	extern std::tuple<
 		ATTRIBUTE(PolygonMode),
+		ATTRIBUTE(PolygonOffset),
 		ATTRIBUTE(PolygonOffsetFill),
 		ATTRIBUTE(PolygonOffsetLine),
 		ATTRIBUTE(PolygonOffsetPoint),
@@ -207,6 +212,9 @@ namespace State {
 		ATTRIBUTE(ClearStencil),
 		ATTRIBUTE(AlphaTest),
 		ATTRIBUTE(AlphaFunc),
+		ATTRIBUTE(ShadeModel),
+		ATTRIBUTE(Lighting),
+		ATTRIBUTE(Texture2D),
 		ATTRIBUTE(Blending),
 		ATTRIBUTE(BlendFunc),
 		ATTRIBUTE(BlendEquation),

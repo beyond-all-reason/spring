@@ -295,7 +295,6 @@ void CProjectileDrawer::Init() {
 
 		fsShadowShader->SetUniform("atlasTex", 0);
 		fsShadowShader->SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f);
-		fsShadowShader->SetUniform("shadowColorMode", shadowHandler.shadowColorMode > 0 ? 1.0f : 0.0f);
 
 		fsShadowShader->Disable();
 		fsShadowShader->Validate();
@@ -426,9 +425,9 @@ void CProjectileDrawer::UpdateDrawFlags()
 							p->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
 					} break;
 					case CCamera::CAMTYPE_SHADOW: {
-						if (p->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
+						if unlikely(hasModel)
 							p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-						else if (p->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+						else
 							p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
 					} break;
 				}
@@ -937,7 +936,6 @@ void CProjectileDrawer::DrawShadowTransparent()
 	// 6) Render transparents in arbitrary order
 	textureAtlas->BindTexture();
 	fsShadowShader->Enable();
-	fsShadowShader->SetUniform("shadowColorMode", shadowHandler.shadowColorMode > 0 ? 1.0f : 0.0f);
 
 	rb.DrawElements(GL_TRIANGLES);
 

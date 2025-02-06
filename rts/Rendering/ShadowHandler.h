@@ -5,10 +5,12 @@
 
 #include <array>
 #include <limits>
+#include <tuple>
 
 #include "Rendering/GL/FBO.h"
 #include "System/float4.h"
 #include "System/Matrix44f.h"
+#include "System/AABB.hpp"
 
 namespace Shader {
 	struct IProgramObject;
@@ -19,7 +21,7 @@ class CShadowHandler
 {
 public:
 	CShadowHandler()
-		:smOpaqFBO(true)
+		:shadowsFBO(true)
 	{}
 
 	void Init();
@@ -42,11 +44,6 @@ public:
 		SHADOWGEN_BIT_PROJ  = 8,
 		SHADOWGEN_BIT_TREE  = 16,
 	};
-	enum ShadowProjectionMode {
-		SHADOWPROMODE_MAP_CENTER = 0, // use center of map-geometry as projection target (constant res.)
-		SHADOWPROMODE_CAM_CENTER = 1, // use center of camera-frustum as projection target (variable res.)
-		SHADOWPROMODE_MIX_CAMMAP = 2, // use whichever mode maximizes resolution this frame
-	};
 	enum ShadowMapSizes {
 		MIN_SHADOWMAP_SIZE =   512,
 		DEF_SHADOWMAP_SIZE =  2048,
@@ -61,22 +58,13 @@ public:
 		SHADOWGEN_PROGRAM_COUNT      = 4,
 	};
 
-	enum ShadowMatrixType {
-		SHADOWMAT_TYPE_CULLING = 0,
-		SHADOWMAT_TYPE_DRAWING = 1,
-	};
-
 	Shader::IProgramObject* GetShadowGenProg(ShadowGenProgram p) {
 		return shadowGenProgs[p];
 	}
 
-	const CMatrix44f& GetShadowMatrix   (unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  viewMatrix[idx];      }
-	const      float* GetShadowMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
-
-	const CMatrix44f& GetShadowViewMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  viewMatrix[idx]; }
-	const CMatrix44f& GetShadowProjMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  projMatrix[idx]; }
-	const      float* GetShadowViewMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
-	const      float* GetShadowProjMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &projMatrix[idx].m[0]; }
+	const CMatrix44f& GetShadowViewProjMatrix() const { return viewProjMatrix; }
+	const CMatrix44f& GetShadowViewMatrix() const { return  viewMatrix; }
+	const CMatrix44f& GetShadowProjMatrix() const { return  projMatrix; }
 
 	const float4& GetShadowParams() const { return shadowTexProjCenter; }
 
@@ -90,58 +78,59 @@ public:
 	bool InShadowPass() const { return inShadowPass; }
 
 	void SaveShadowMapTextures() const;
-	void DrawFrustumDebug() const;
+	void DrawFrustumDebugMiniMap() const;
+	void DrawFrustumDebugMap() const;
 
 	bool& DebugFrustumRef() { return debugFrustum; }
+	bool& FreezeFrustumRef() { return freezeFrustum; }
+
+	//void DumpFrustumData() const;
 private:
 	void FreeFBOAndTextures();
 	bool InitFBOAndTextures();
 
 	void DrawShadowPasses();
-	void LoadProjectionMatrix(const CCamera* shadowCam);
 	void LoadShadowGenShaders();
 
-	void SetShadowMatrix(CCamera* playerCam, CCamera* shadowCam);
+	void CalcShadowMatrices(CCamera* playerCam, CCamera* shadowCam);
 	void SetShadowCamera(CCamera* shadowCam);
-
-	float4 GetShadowProjectionScales(CCamera*, const CMatrix44f&);
-	float3 CalcShadowProjectionPos(CCamera*, float3*);
-
-	float GetOrthoProjectedMapRadius(const float3&, float3&);
-	float GetOrthoProjectedFrustumRadius(CCamera*, const CMatrix44f&, float3&);
-
 public:
 	int shadowConfig;
 	int shadowMapSize;
 	int shadowGenBits;
-	int shadowProMode;
-	int shadowColorMode;
 
+	float mapPolygonOffsetScale = 10.0f;
+	float mapPolygonOffsetUnits = 10000.0f;
+	float objPolygonOffsetScale = 5.0f;
+	float objPolygonOffsetUnits = 1000.0f;
 private:
 	bool shadowsLoaded = false;
 	bool inShadowPass = false;
+
 	bool debugFrustum = false;
+	bool freezeFrustum = false;
 
 	inline static bool firstInit = true;
 	inline static bool shadowsSupported = false;
+
+	std::vector<float3> clippedWorldCube;
+	std::vector<float3> clippedShadowCube;
+	std::array<float3, 8> playCamFrustum;
 
 	// these project geometry into light-space
 	// to write the (FBO) depth-buffer texture
 	std::array<Shader::IProgramObject*, SHADOWGEN_PROGRAM_COUNT> shadowGenProgs;
 
-	float3 projMidPos[2 + 1];
-	float3 sunProjDir;
+	AABB lightAABB;
 
-	float4 shadowProjScales;
-
-	// culling and drawing versions of both matrices
-	CMatrix44f projMatrix[2];
-	CMatrix44f viewMatrix[2];
+	CMatrix44f projMatrix;
+	CMatrix44f viewMatrix;
+	CMatrix44f viewProjMatrix;
 
 	uint32_t shadowDepthTexture;
 	uint32_t shadowColorTexture;
 
-	FBO smOpaqFBO;
+	FBO shadowsFBO;
 
 	/// xmid, ymid, p17, p18
 	static constexpr float4 shadowTexProjCenter = {

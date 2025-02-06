@@ -182,8 +182,8 @@ float BiasedZ(float z0, vec2 dZduv, vec2 offset) {
 vec3 GetShadowColor(vec3 worldPos, float NdotL) {
 #ifdef HAVE_SHADOWS
 	vec4 shadowPos = shadowMatrix * vec4(worldPos, 1.0);
-	shadowPos.xy += vec2(0.5);
 	shadowPos /= shadowPos.w;
+	shadowPos.xy = shadowPos.xy * 0.5 + 0.5;
 
 	vec3 shadowColor = texture(shadowColorTex, shadowPos.xy).rgb;
 	#ifndef HIGH_QUALITY

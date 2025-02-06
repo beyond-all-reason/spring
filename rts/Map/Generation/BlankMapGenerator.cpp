@@ -121,8 +121,8 @@ void CBlankMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 	smfHeader.mapid = 0; // just an arbitrary value, could be anything at this point
 
 	//Set settings
-	smfHeader.mapx = mapSize.x * CSMFReadMap::bigSquareSize;
-	smfHeader.mapy = mapSize.y * CSMFReadMap::bigSquareSize;
+	smfHeader.mapx = mapSize.x * CReadMap::PATCH_SIZE;
+	smfHeader.mapy = mapSize.y * CReadMap::PATCH_SIZE;
 	smfHeader.squareSize = 8;
 	smfHeader.texelPerSquare = 8;
 	smfHeader.tilesize = 32;

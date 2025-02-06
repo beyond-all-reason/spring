@@ -368,9 +368,10 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	unit->SetIsIcon(iconZoomDist / iconSizeMult > iconFadeStart && std::abs(pos.x - radiusPos.x) < limit * 0.9);
 }
 
-void CUnitDrawerData::UpdateDrawPos(CUnit* u)
+void CUnitDrawerData::UpdateDrawPos(CSolidObject* o) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	CUnit* u = static_cast<CUnit*>(o);
 	const CUnit* t = u->GetTransporter();
 
 	if (t != nullptr) {
@@ -442,10 +443,10 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 			} break;
 
 			case CCamera::CAMTYPE_SHADOW: {
-				if      (u->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
-					u->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-				else if (u->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+				if unlikely(IsAlpha(u))
 					u->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+				else
+					u->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
 			} break;
 
 			default: { assert(false); } break;

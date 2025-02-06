@@ -364,13 +364,32 @@ public:
 	bool Execute(const UnsyncedAction& action) const final {
 		auto args = CSimpleParser::Tokenize(action.GetArgs());
 
-		float& pofs = (readMap->GetGroundDrawer())->spPolygonOffsetScale;
-		float& pofu = (readMap->GetGroundDrawer())->spPolygonOffsetUnits;
+		float& pofs = shadowHandler.mapPolygonOffsetScale;
+		float& pofu = shadowHandler.mapPolygonOffsetUnits;
 
 		pofs = args.size() > 0 ? StringToInt<float>(args[0]) : 0.0;
 		pofu = args.size() > 1 ? StringToInt<float>(args[1]) : 0.0;
 
-		LOG("MapShadowPolygonOffset{Scale,Units}={%f,%f}", pofs, pofu);
+		LOG("Map ShadowPolygonOffset{Scale,Units}={%f,%f}", pofs, pofu);
+		return true;
+	}
+};
+
+class ObjShadowPolyOffsetActionExecutor : public IUnsyncedActionExecutor {
+public:
+	ObjShadowPolyOffsetActionExecutor() : IUnsyncedActionExecutor("ObjShadowPolyOffset", "") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
+
+		float& pofs = shadowHandler.objPolygonOffsetScale;
+		float& pofu = shadowHandler.objPolygonOffsetUnits;
+
+		pofs = args.size() > 0 ? StringToInt<float>(args[0]) : 0.0;
+		pofu = args.size() > 1 ? StringToInt<float>(args[1]) : 0.0;
+
+		LOG("Objects ShadowPolygonOffset{Scale,Units}={%f,%f}", pofs, pofu);
 		return true;
 	}
 };
@@ -3375,6 +3394,31 @@ public:
 	}
 };
 
+class FreezeShadowFrustum : public IUnsyncedActionExecutor {
+public:
+	FreezeShadowFrustum() : IUnsyncedActionExecutor("FreezeShadowFrustum", "Disable/Enable shadow frustum update") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		InverseOrSetBool(shadowHandler.FreezeFrustumRef(), action.GetArgs());
+		LogSystemStatus("shadow frustum freeze", shadowHandler.FreezeFrustumRef());
+		return true;
+	}
+};
+
+/*
+class DumpShadowFrustum : public IUnsyncedActionExecutor {
+public:
+	DumpShadowFrustum() : IUnsyncedActionExecutor("DumpShadowFrustum", "Output shadows frustum culling data") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		shadowHandler.DumpFrustumData();
+		return true;
+	}
+};
+*/
+
 class CrashActionExecutor : public IUnsyncedActionExecutor {
 public:
 	CrashActionExecutor() : IUnsyncedActionExecutor("Crash", "Invoke an artificial crash through a NULL-pointer dereference (SIGSEGV)", true) {
@@ -3914,6 +3958,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<ShadowsActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DumpShadowsActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MapShadowPolyOffsetActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<ObjShadowPolyOffsetActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MapMeshDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MapBorderActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<WaterActionExecutor>());
@@ -3988,6 +4033,8 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<DebugPathDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugTraceRayDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DebugShadowFrustum>());
+	AddActionExecutor(AllocActionExecutor<FreezeShadowFrustum>());
+	//AddActionExecutor(AllocActionExecutor<DumpShadowFrustum>());
 	AddActionExecutor(AllocActionExecutor<MuteActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SoundChannelEnableActionExecutor>());

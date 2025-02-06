@@ -8,6 +8,7 @@
 #include "System/Exceptions.h"
 #include "System/Sync/FPUCheck.h"
 #include "System/Log/ILog.h"
+#include "System/AABB.hpp"
 #include "Sim/Units/Scripts/CobInstance.h" // for TAANG2RAD (ugh)
 
 #undef far
@@ -250,6 +251,24 @@ bool RayHitsSphere(const float4 sphere, const float3 p0, const float3 ray)
 	return px.distance(sphere.xyz) <= sphere.w;
 }
 
+bool RayHitsAABB(const AABB& aabb, const float3& p0, const float3& ray, float3& hitPos)
+{
+	float3 t0s = (aabb.mins - p0) / ray;
+	float3 t1s = (aabb.maxs - p0) / ray;
+
+	float3 tMins = float3::min(t0s, t1s);
+	float3 tMaxs = float3::max(t0s, t1s);
+
+	float tMin = std::max({ tMins.x, tMins.y, tMins.z });
+	float tMax = std::min({ tMaxs.x, tMaxs.y, tMaxs.z });
+
+	if (tMin >= tMax)
+		return false;
+
+	hitPos = p0 + tMax * ray;
+	return true;
+}
+
 bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& plane, bool directional, float3& px)
 {
 	const float3 ray = p1 - p0;
@@ -262,7 +281,7 @@ bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& p
 		return false;
 
 	const float t = -(plane.dot(p0) + plane.w) / denom;
-	if (t < 0.0f || t > 1.0f)
+	if (t < 0.0f/* || t > 1.0f*/) // we only care abut the case when the intersection is behind p0
 		return false;
 
 	px = p0 + ray * t;

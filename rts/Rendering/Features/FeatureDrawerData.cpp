@@ -99,13 +99,11 @@ void CFeatureDrawerData::Update()
 	if (mtModelDrawer) {
 		for_mt_chunk(0, unsortedObjects.size(), [this](const int k) {
 			CFeature* f = unsortedObjects[k];
-			UpdateDrawPos(f);
 			UpdateCommon(f);
 		}, CModelDrawerDataConcept::MT_CHUNK_OR_MIN_CHUNK_SIZE_UPDT);
 	}
 	else {
 		for (CFeature* f : unsortedObjects) {
-			UpdateDrawPos(f);
 			UpdateCommon(f);
 		}
 	}
@@ -188,10 +186,10 @@ void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 			} break;
 
 			case CCamera::CAMTYPE_SHADOW: {
-				if      (f->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
-					f->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-				else if (f->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+				if unlikely(IsAlpha(f))
 					f->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+				else
+					f->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
 			} break;
 
 			default: { assert(false); } break;
@@ -203,9 +201,10 @@ void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 	}
 }
 
-void CFeatureDrawerData::UpdateDrawPos(CFeature* f)
+void CFeatureDrawerData::UpdateDrawPos(CSolidObject* o) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	CFeature* f = static_cast<CFeature*>(o);
 	f->drawPos    = f->GetDrawPos(globalRendering->timeOffset);
 	f->drawMidPos = f->GetMdlDrawMidPos();
 }

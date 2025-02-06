@@ -41,7 +41,6 @@ CONFIG(int, CamFrameTimeCorrection)
 CCamera::CCamera(uint32_t cameraType, uint32_t projectionType)
 	: camType(cameraType)
 	, projType(projectionType)
-	, inViewPlanesMask((camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F) // 0x3F - all planes, 0xF - all planes but NEAR/FAR
 {
 	assert(cameraType < CAMTYPE_COUNT);
 
@@ -60,8 +59,6 @@ void CCamera::SetCamType(uint32_t ct)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	camType = ct;
-	// 0x3F - all planes, 0xF - all planes but NEAR/FAR
-	inViewPlanesMask = (camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F;
 }
 
 void CCamera::InitConfigNotify(){
@@ -201,7 +198,7 @@ void CCamera::UpdateFrustum()
 	};
 
 	SetFrustumPlane(FRUSTUM_PLANE_LFT, FRUSTUM_POINT_NTL, FRUSTUM_POINT_NBL, FRUSTUM_POINT_FBL);
-	SetFrustumPlane(FRUSTUM_PLANE_RGT, FRUSTUM_POINT_NBR, FRUSTUM_POINT_NTR, FRUSTUM_POINT_FBR);
+	SetFrustumPlane(FRUSTUM_PLANE_RGT, FRUSTUM_POINT_NBR, FRUSTUM_POINT_NTR, FRUSTUM_POINT_FTR);
 	SetFrustumPlane(FRUSTUM_PLANE_BOT, FRUSTUM_POINT_NBL, FRUSTUM_POINT_NBR, FRUSTUM_POINT_FBR);
 	SetFrustumPlane(FRUSTUM_PLANE_TOP, FRUSTUM_POINT_NTR, FRUSTUM_POINT_NTL, FRUSTUM_POINT_FTL);
 	SetFrustumPlane(FRUSTUM_PLANE_NEA, FRUSTUM_POINT_NTL, FRUSTUM_POINT_NTR, FRUSTUM_POINT_NBR);
@@ -257,7 +254,11 @@ void CCamera::UpdateMatrices(uint32_t vsx, uint32_t vsy, float var)
 	// recalculate the view transform
 	viewMatrix = CMatrix44f::LookAtView(camPos, center, up);
 
+	UpdateDerivedMatrices();
+}
 
+void CCamera::UpdateDerivedMatrices()
+{
 	// create extra matrices (useful for shaders)
 	viewProjectionMatrix = projectionMatrix * viewMatrix;
 	viewMatrixInverse = viewMatrix.InvertAffine();
@@ -306,19 +307,26 @@ void CCamera::LoadViewport() const
 void CCamera::UpdateViewRange()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if 0
-	// horizon-probe direction
-	const float3 hpPixelDir = (forward * XZVector + UpVector * -0.01f).Normalize();
 
-	const float3 tlPixelDir = CalcPixelDir(                         0,                          0);
-	const float3 trPixelDir = CalcPixelDir(globalRendering->viewSizeX,                          0);
-	const float3 brPixelDir = CalcPixelDir(globalRendering->viewSizeX, globalRendering->viewSizeY);
-	const float3 blPixelDir = CalcPixelDir(                         0, globalRendering->viewSizeY);
-	#endif
+	/*
+	const auto& worldBounds = game->GetWorldBounds();
+	for (const auto& corner : worldBounds.GetCorners()) {
+		const float zValue = (viewMatrix * corner).z;
+		minMax.x = std::min(minMax.x, zValue);
+		minMax.y = std::max(minMax.y, zValue);
+	}
 
-	#if 0
-	constexpr float SQ_MAX_VIEW_RANGE = Square(CGlobalRendering::MAX_VIEW_RANGE);
-	#endif
+	// this is super precise but the view range is not enough to
+	// capture extended effects like endless ocean (which can be detected)
+	// or Lua map extension plates (which the engine has no idea about)
+	//
+	// glEnable(GL_DEPTH_CLAMP) is a nice solution, but makes distant areas
+	// flicker due to z-fighting
+
+	frustum.scales.w = std::min(-minMax.x, globalRendering->maxViewRange);
+	frustum.scales.z = std::max(-minMax.y, globalRendering->minViewRange);
+	*/
+
 	constexpr float ZFAR_ZNEAR_FACTOR = 0.001f;
 
 	const float maxEdgeDistX = std::max(pos.x, float3::maxxpos - pos.x);
@@ -328,12 +336,6 @@ void CCamera::UpdateViewRange()
 
 	float wantedViewRange = 0.0f;
 
-	#if 0
-	// only pick horizon probe-dir if between bottom and top planes
-	if (hpPixelDir.y >= (blPixelDir.y + brPixelDir.y) * 0.5f && hpPixelDir.y <= (tlPixelDir.y + trPixelDir.y) * 0.5f)
-		wantedViewRange = CGround::LinePlaneCol(pos, hpPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight);
-	#endif
-
 	// camera-height dependence (i.e. TAB-view)
 	wantedViewRange = std::max(wantedViewRange, (pos.y - std::max(0.0f, mapMinHeight)) * 2.0f);
 	// view-angle dependence (i.e. FPS-view)
@@ -341,28 +343,28 @@ void CCamera::UpdateViewRange()
 	// will be >= 1 and increase the effective maxEdgeDist
 	wantedViewRange = std::max(wantedViewRange, (1.0f - std::min(0.0f, forward.dot(UpVector))) * maxEdgeDist);
 
-	#if 0
-	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, tlPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, trPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, brPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, blPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
-	wantedViewRange = std::clamp(wantedViewRange, CGlobalRendering::MIN_ZNEAR_DIST, CGlobalRendering::MAX_VIEW_RANGE);
-	#endif
-
 	frustum.scales.z = std::max(wantedViewRange * ZFAR_ZNEAR_FACTOR, globalRendering->minViewRange);
 	frustum.scales.w = std::min(wantedViewRange                    , globalRendering->maxViewRange);
 }
 
-bool CCamera::InView(const float3& point, float radius) const
+CCamera::IntersectionTestResult CCamera::InView(const float3& point, float radius) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return frustum.IntersectSphere(point, radius, inViewPlanesMask);
+	return frustum.IntersectSphere(point, radius);
 }
 
-bool CCamera::InView(const AABB& aabb) const
+CCamera::IntersectionTestResult CCamera::InView(const AABB& aabb) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return InView(aabb.CalcCenter(), aabb.CalcRadius()) && frustum.IntersectAABB(aabb, inViewPlanesMask);
+#if 0
+	auto res = InView(aabb.CalcCenter(), aabb.CalcRadius());
+	if (res == CCamera::IntersectionTestResult::INTERSECT)
+		res = frustum.IntersectAABB(aabb);
+
+	return res;
+#else
+	return frustum.IntersectAABB(aabb);
+#endif
 }
 
 #if 0
@@ -708,6 +710,19 @@ void CCamera::ClipFrustumLines(const float zmin, const float zmax, bool neg)
 	}
 }
 
+void CCamera::SetViewMatrix(const CMatrix44f& mat)
+{
+	viewMatrix = mat;
+
+	auto viewMatrixInv = mat.InvertAffine();
+	pos = viewMatrixInv.GetPos();
+	forward = viewMatrixInv.GetZ();
+	right = viewMatrixInv.GetX();
+	up = viewMatrixInv.GetY();
+
+	// FIXME: roll-angle might not be 0
+	rot = GetRotFromDir(viewMatrixInv.GetZ()); //? viewMatrix or viewMatrixInv?
+}
 
 float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 {
@@ -774,98 +789,37 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 }
 
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-points-and-spheres/
-bool CCamera::Frustum::IntersectSphere(float3 p, float radius, uint8_t testMask) const
+CCamera::IntersectionTestResult CCamera::Frustum::IntersectSphere(float3 p, float radius) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
-		if ((testMask & (1 << i)) == 0)
-			continue;
 
+	auto res = IntersectionTestResult::INSIDE;
+
+	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
 		const auto& plane = planes[i];
 		const float dist = plane.dot(p) + plane.w;
 		if (dist < -radius)
-			return false; // outside
-		/*
+			return IntersectionTestResult::OUTSIDE;
 		else if (dist < radius)
-			return true;  // intersect
-		*/
+			res = IntersectionTestResult::INTERSECT;
 	}
 
-	return true; // inside or intersect
+	return res;
 }
-
-/*
-bool CCamera::Frustum::IntersectAABB(const AABB& b) const
-{
-	return true;
-
-	// edge axes and normals are identical for AABBs
-	constexpr float3 aabbPlanes[3] = {
-		RgtVector,
-		UpVector,
-		FwdVector
-	};
-
-	float3 aabbVerts[8];
-	float3 crossAxes[3 * 6];
-
-	b.CalcCorners(aabbVerts);
-
-	const auto IsSepAxis = [](const float3& axis, const float3* frustVerts, const float3* aabbVerts) {
-		float2 frustProjRange = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
-		float2  aabbProjRange = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
-
-		float frustProjDists[8];
-		float  aabbProjDists[8];
-
-		for (int i = 0; i < 8; i++) {
-			frustProjDists[i] = axis.dot(frustVerts[i]);
-
-			frustProjRange.x = std::min(frustProjRange.x, frustProjDists[i]);
-			frustProjRange.y = std::max(frustProjRange.y, frustProjDists[i]);
-
-			aabbProjDists[i] = axis.dot(aabbVerts[i]);
-
-			aabbProjRange.x = std::min(aabbProjRange.x, aabbProjDists[i]);
-			aabbProjRange.y = std::max(aabbProjRange.y, aabbProjDists[i]);
-		}
-
-		return (!AABB::RangeOverlap(frustProjRange, aabbProjRange));
-	};
-	const auto AxisTestPred = [&](const float3& testAxis) {
-		return (IsSepAxis(testAxis, &verts[0], aabbVerts));
-	};
-
-	if (std::find_if(&aabbPlanes[0], &aabbPlanes[0] + 3, AxisTestPred) != (&aabbPlanes[0] + 3))
-		return false;
-	if (std::find_if(&planes[0], &planes[0] + 6, AxisTestPred) != (&planes[0] + 6))
-		return false;
-
-	for (uint32_t i = 0; i < 3; i++) {
-		for (uint32_t j = 0; j < 6; j++) {
-			crossAxes[i * 6 + j] = (aabbPlanes[i].cross(edges[j])).SafeNormalize();
-		}
-	}
-
-	return (std::find_if(&crossAxes[0], &crossAxes[0] + 3 * 6, AxisTestPred) == (&crossAxes[0] + 3 * 6));
-}
-*/
 
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
-bool CCamera::Frustum::IntersectAABB(const AABB& b, uint8_t testMask) const
+CCamera::IntersectionTestResult CCamera::Frustum::IntersectAABB(const AABB& b) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
-		if ((testMask & (1 << i)) == 0)
-			continue;
 
+	auto res = IntersectionTestResult::INSIDE;
+
+	for (size_t i = 0; i < FRUSTUM_PLANE_CNT; ++i) {
 		const auto& plane = planes[i];
 		if (plane.dot(b.GetVertexP(plane)) + plane.w < 0)
-			return false; // outside
-		/*
+			return IntersectionTestResult::OUTSIDE;
 		else if (plane.dot(b.GetVertexN(plane)) + plane.w < 0)
-			return true;  // intersects
-		*/
+			res = IntersectionTestResult::INTERSECT;
 	}
-	return true; // inside or intersect
+	return res;
 }

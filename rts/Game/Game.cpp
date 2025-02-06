@@ -1415,6 +1415,8 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 
 	lastSimFrame = gs->frameNum;
 
+	worldDrawer.PreUpdate(); // shadowHandler.Update() and camHandler->UpdateController() need up-to-date worldBounds
+
 	// set camera
 	camHandler->UpdateController(playerHandler.Player(gu->myPlayerNum), gu->fpsMode);
 
@@ -1470,7 +1472,6 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		unitTracker.SetCam();
 
 	camera->Update();
-	shadowHandler.Update();
 	{
 		worldDrawer.Update(newSimFrame);
 		matrixUploader.Update();

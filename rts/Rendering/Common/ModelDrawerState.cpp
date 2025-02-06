@@ -151,7 +151,7 @@ CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 		modelShaders[n]->SetUniform3v("sunDiffuse", &sunLighting->modelDiffuseColor[0]);
 		modelShaders[n]->SetUniform3v("sunSpecular", &sunLighting->modelSpecularColor[0]);
 		modelShaders[n]->SetUniform("shadowDensity", sunLighting->modelShadowDensity);
-		modelShaders[n]->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
+		modelShaders[n]->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowViewProjMatrix().m);
 
 		modelShaders[n]->Disable();
 		modelShaders[n]->Validate();
@@ -206,7 +206,7 @@ void CModelDrawerStateGLSL::Enable(bool deferredPass, bool alphaPass) const
 	modelShader->SetUniform3v("sunDiffuse", &sunLighting->modelDiffuseColor[0]);
 	modelShader->SetUniform3v("sunSpecular", &sunLighting->modelSpecularColor[0]);
 	modelShader->SetUniform("shadowDensity", sunLighting->modelShadowDensity);
-	modelShader->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowMatrixRaw());
+	modelShader->SetUniformMatrix4x4("shadowMatrix", false, shadowHandler.GetShadowViewProjMatrix().m);
 
 	CModelDrawerConcept::GetLightHandler()->Update(modelShader);
 }

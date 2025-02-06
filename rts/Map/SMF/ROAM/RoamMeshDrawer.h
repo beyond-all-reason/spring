@@ -18,7 +18,7 @@ class CCamera;
 
 
 // Visualize visible patches in Minimap for debugging?
-// #define DRAW_DEBUG_IN_MINIMAP
+//#define DRAW_DEBUG_IN_MINIMAP
 
 
 /**
@@ -60,7 +60,6 @@ public:
 
 private:
 	void Reset(bool shadowPass);
-	void Tessellate(std::vector<Patch>& patches, const CCamera* cam, int viewRadius, bool shadowPass);
 
 private:
 	CSMFGroundDrawer* smfGroundDrawer;

@@ -4,7 +4,6 @@ uniform vec2 mapSizePO2;     // (1.0 / pwr2map{x,z} * SQUARE_SIZE)
 uniform vec2 mapSize;        // (1.0 /     map{x,z} * SQUARE_SIZE)
 
 uniform mat4 shadowMatrix;
-uniform vec4 shadowParams;
 
 uniform vec3 camPos;
 uniform vec3 camUp;
@@ -139,8 +138,9 @@ void main() {
 
 #if defined(HAVE_SHADOWS) || defined(SHADOW_GEN)
 	vec4 vertexShadowPos = shadowMatrix * worldPos;
+	vertexShadowPos /= vertexShadowPos.w;
+	vertexShadowPos.xy = vertexShadowPos.xy * 0.5 + 0.5;
 
-	vertexShadowPos.xy += shadowParams.xy;
 	shadowTexCoords = vertexShadowPos;
 #endif
 

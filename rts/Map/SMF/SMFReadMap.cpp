@@ -410,7 +410,7 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 			if (unsyncedHeightInfo[pz * numBigTexX + px].x != std::numeric_limits<float>::max())
 				continue;
 
-			for (uint32_t vz = 0; vz <= bigSquareSize; ++vz) {
+			for (uint32_t vz = 0; vz < bigSquareSize; ++vz) {
 				const size_t idx0 = (pz * bigSquareSize + vz) * mapDims.mapxp1 + px * bigSquareSize;
 				const size_t idx1 = idx0 + bigSquareSize + 1;
 
@@ -421,7 +421,7 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 					MinOp{}, MaxOp{}, PlusOp{}
 				);
 			}
-			unsyncedHeightInfo[pz * numBigTexX + px].z /= Square(bigSquareSize + 1);
+			unsyncedHeightInfo[pz * numBigTexX + px].z /= Square(bigSquareSize);
 		}
 	}
 }

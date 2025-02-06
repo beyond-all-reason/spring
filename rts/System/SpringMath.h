@@ -47,6 +47,7 @@ struct shortint2 {
 	short int x, y;
 };
 
+struct AABB;
 
 short int GetHeadingFromFacing(const int facing) _pure _warn_unused_result;
 int GetFacingFromHeading(const short int heading) _pure _warn_unused_result;
@@ -63,6 +64,7 @@ float LinePointDist(const float3 l1, const float3 l2, const float3 p) _pure _war
 float3 ClosestPointOnLine(const float3 l1, const float3 l2, const float3 p) _pure _warn_unused_result;
 bool ClosestPointOnRay(const float3 p0, const float3 ray, const float3 p, float3& px) _pure _warn_unused_result;
 bool RayHitsSphere(const float4 sphere, const float3 p0, const float3 ray) _pure _warn_unused_result;
+bool RayHitsAABB(const AABB& aabb, const float3& p0, const float3& ray, float3& hitPos) _pure _warn_unused_result;
 
 /**
  * @brief Returns the intersection points of a ray with a plane, defined by the canonical plane equation
