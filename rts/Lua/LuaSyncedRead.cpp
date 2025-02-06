@@ -1303,7 +1303,7 @@ static int PushAllOptions(lua_State* L, const auto &options)
  *
  * @param mapOption string
  *
- * @return string value of mapOption
+ * @return string value Value of `modOption`.
  * */
 int LuaSyncedRead::GetMapOption(lua_State* L)
 {
@@ -1313,7 +1313,7 @@ int LuaSyncedRead::GetMapOption(lua_State* L)
  *
  * @function Spring.GetMapOptions
  *
- * @return [string] = string[] options map with options names as keys and values as values
+ * @return table<string, string> mapOptions Table with options names as keys and values as values.
  */
 int LuaSyncedRead::GetMapOptions(lua_State* L)
 {
@@ -1327,7 +1327,7 @@ int LuaSyncedRead::GetMapOptions(lua_State* L)
  *
  * @param modOption string
  *
- * @return string value of modOption in option map
+ * @return string value Value of `modOption`.
  */
 int LuaSyncedRead::GetModOption(lua_State* L)
 {
@@ -1339,7 +1339,7 @@ int LuaSyncedRead::GetModOption(lua_State* L)
  *
  * @function Spring.GetModOptions
  *
- * @return [string] = string[] options map with options names as keys and values as values
+ * @return table<string, string> modOptions Table with options names as keys and values as values.
  */
 int LuaSyncedRead::GetModOptions(lua_State* L)
 {
