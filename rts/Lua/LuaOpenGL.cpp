@@ -470,6 +470,12 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetWaterRendering);
 	REGISTER_LUA_CFUNC(GetMapRendering);
 
+	if (GLAD_GL_KHR_debug) {
+		REGISTER_LUA_CFUNC(ObjectLabel);
+		REGISTER_LUA_CFUNC(PushDebugGroup);
+		REGISTER_LUA_CFUNC(PopDebugGroup);
+	}
+
 	if (canUseShaders)
 		LuaShaders::PushEntries(L);
 
@@ -5664,6 +5670,75 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
 	}
 
 	luaL_error(L, "[%s] unknown key %s", __func__, key);
+	return 0;
+}
+
+/**
+ * @function gl.ObjectLabel labels an object for use with debugging tools
+ * @param objectTypeIdentifier GLenum Specifies the type of object being labeled.
+ * @param objectID GLuint Specifies the name or ID of the object to label.
+ * @param label string A string containing the label to be assigned to the object.
+ * @treturn nil
+ */
+int LuaOpenGL::ObjectLabel(lua_State* L) {
+	const auto identifier = static_cast<GLenum>(luaL_checkinteger(L, 1));
+
+	switch (identifier) {
+	case GL_BUFFER: [[fallthrough]];
+	case GL_SHADER: [[fallthrough]];
+	case GL_PROGRAM: [[fallthrough]];
+	case GL_VERTEX_ARRAY: [[fallthrough]];
+	case GL_QUERY: [[fallthrough]];
+	case GL_PROGRAM_PIPELINE: [[fallthrough]];
+	case GL_TRANSFORM_FEEDBACK: [[fallthrough]];
+	case GL_TEXTURE: [[fallthrough]];
+	case GL_RENDERBUFFER: [[fallthrough]];
+	case GL_FRAMEBUFFER:
+		break;
+	default: {  // something else
+		LOG_L(L_ERROR, "gl.%s: invalid identifier (%u)", __func__, identifier);
+		return 0;
+	}
+	}
+
+	const auto objectID = static_cast<GLuint>(luaL_checkinteger(L, 2));
+	const auto* label = luaL_checkstring(L, 3);
+	glObjectLabel(identifier, objectID, -1, label);
+
+	return 0;
+}
+
+// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPushDebugGroup.xhtml
+/**
+ * @function gl.PushDebugGroup pushes a debug marker for nVidia nSight 2024.04, does not seem to work when FBO's are raw bound
+ * @param id GLuint A numeric identifier for the group.
+ * @param message string A human-readable string describing the debug group.
+ * @param source boolean true for GL_DEBUG_SOURCE_APPLICATION, false for GL_DEBUG_SOURCE_THIRD_PARTY. default false
+ * @treturn nil
+ */
+int LuaOpenGL::PushDebugGroup(lua_State* L) {
+	const auto id = static_cast<GLuint>(luaL_checkinteger(L, 1));
+	const auto* message = luaL_checkstring(L, 2);
+	const bool source = luaL_optboolean(L, 3, false);
+
+	GLint maxLength = 0;
+	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLength);
+
+	if (strlen(message) >= maxLength) {
+		LOG_L(L_ERROR, "gl.%s: Message length exceeds GL_MAX_DEBUG_MESSAGE_LENGTH (%u)", __func__, maxLength);
+		return 0;
+	}
+
+	glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION : GL_DEBUG_SOURCE_THIRD_PARTY), id, -1, message);
+	return 0;
+}
+
+/**
+ * @function gl.PopDebugGroup
+ * @treturn nil
+ */
+int LuaOpenGL::PopDebugGroup(lua_State* L) {
+	glPopDebugGroup();
 	return 0;
 }
 
