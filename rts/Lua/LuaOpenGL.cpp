@@ -471,10 +471,11 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetWaterRendering);
 	REGISTER_LUA_CFUNC(GetMapRendering);
 
-	
-	REGISTER_LUA_CFUNC(ObjectLabel);
-	REGISTER_LUA_CFUNC(PushDebugGroup);
-	REGISTER_LUA_CFUNC(PopDebugGroup);
+	if (GL_KHR_debug) {
+		REGISTER_LUA_CFUNC(ObjectLabel);
+		REGISTER_LUA_CFUNC(PushDebugGroup);
+		REGISTER_LUA_CFUNC(PopDebugGroup);
+	}
 
 	if (canUseShaders)
 		LuaShaders::PushEntries(L);
@@ -5671,25 +5672,33 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
  * @function gl.ObjectLabel labels an object for use with debugging tools
  * @param objectTypeIdentifier GLenum Specifies the type of object being labeled.
  * @param objectID GLuint Specifies the name or ID of the object to label.
- * @param label string A null-terminated string containing the label to be assigned to the object.
+ * @param label string A string containing the label to be assigned to the object.
  * @treturn nil
  */
 int LuaOpenGL::ObjectLabel(lua_State* L) {
 	GLenum identifier = (GLenum)luaL_checkinteger(L, 1);
-	if (identifier != GL_BUFFER && identifier != GL_SHADER && identifier != GL_PROGRAM &&
-		identifier != GL_VERTEX_ARRAY && identifier != GL_QUERY && identifier != GL_PROGRAM_PIPELINE &&
-		identifier != GL_TRANSFORM_FEEDBACK && identifier != GL_TEXTURE && identifier != GL_RENDERBUFFER &&
-		identifier != GL_FRAMEBUFFER) {
-		return 0;
+
+	switch (identifier) {
+		case GL_BUFFER: [[fallthrough]];
+		case GL_SHADER: [[fallthrough]];
+		case GL_PROGRAM: [[fallthrough]];
+		case GL_VERTEX_ARRAY: [[fallthrough]];
+		case GL_QUERY: [[fallthrough]];
+		case GL_PROGRAM_PIPELINE: [[fallthrough]];
+		case GL_TRANSFORM_FEEDBACK: [[fallthrough]];
+		case GL_TEXTURE: [[fallthrough]];
+		case GL_RENDERBUFFER: [[fallthrough]];
+		case GL_FRAMEBUFFER:
+			break;
+		default: {  // something else
+			LOG_L(L_ERROR, "gl.%s: invalid identifier (%u)", __func__, identifier);
+			return 0;
+		}
 	}
+
     GLuint objectID = (GLuint)luaL_checkinteger(L, 2);
     const char* label = luaL_checkstring(L, 3);
-	#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
-		if (!GLEW_KHR_debug)
-			return 0;
-
-		glObjectLabel(identifier, objectID, -1, label);
-	#endif
+	glObjectLabel(identifier, objectID, -1, label);
     return 0;
 }
 
@@ -5707,21 +5716,15 @@ int LuaOpenGL::PushDebugGroup(lua_State* L) {
 	const char* message = luaL_checkstring(L, 2);
 	bool source = luaL_optboolean(L, 3, false);
 
-	GLint maxLength;
+	GLint maxLength = 0;
 	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLength);
 
 	if (strlen(message) >= maxLength) {
-		luaL_error(L, "Message length exceeds GL_MAX_DEBUG_MESSAGE_LENGTH");
+		LOG_L(L_ERROR, "gl.%s: Message length exceeds GL_MAX_DEBUG_MESSAGE_LENGTH (%u)", __func__, maxLength);
 		return 0;
 	}
-	#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
-		if (GLEW_KHR_debug){
-			glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION: GL_DEBUG_SOURCE_THIRD_PARTY) , id, -1, message);
-		}
-		else {
-			luaL_error(L, "PushDebugGroup requires GL_KHR_debug extension");
-		}
-	#endif
+
+	glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION: GL_DEBUG_SOURCE_THIRD_PARTY) , id, -1, message);
 	return 0;
 }
 
