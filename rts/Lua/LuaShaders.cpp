@@ -781,7 +781,7 @@ int LuaShaders::CreateShader(lua_State* L)
 	// note: index, not raw ID
 	lua_pushnumber(L, shaders.AddProgram(p));
 	// also push the program ID
-	lua_pushnumber(L, (int)prog);
+	lua_pushnumber(L, prog);
 	return 2;
 }
 
