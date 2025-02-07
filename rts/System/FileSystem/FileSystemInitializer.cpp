@@ -62,7 +62,14 @@ bool FileSystemInitializer::Initialize()
 		return true;
 
 	SetupThreadReg();
+	InitializeTry();
+	ClearThreadReg();
 
+	return (initSuccess && !initFailure);
+}
+
+void FileSystemInitializer::InitializeTry()
+{
 	try {
 		Platform::SetOrigCWD();
 
@@ -86,11 +93,6 @@ bool FileSystemInitializer::Initialize()
 
 		ErrorMessageBox("", "Spring: caught generic exception", MBF_OK | MBF_EXCL);
 	}
-
-	// in case of an exception, ErrorMessageBox takes care of this
-	ClearThreadReg();
-
-	return (initSuccess && !initFailure);
 }
 
 void FileSystemInitializer::Cleanup(bool deallocConfigHandler)
