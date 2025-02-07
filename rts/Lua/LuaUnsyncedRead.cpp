@@ -68,6 +68,7 @@
 #include "System/Log/DefaultFilter.h"
 #include "System/Platform/SDL1_keysym.h"
 #include "System/Platform/Misc.h"
+#include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
 #include "System/StringUtil.h"
 #include "System/Misc/SpringTime.h"
@@ -220,6 +221,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(GetDrawSeconds);
 
+	REGISTER_LUA_CFUNC(GetSoundDevices);
 	REGISTER_LUA_CFUNC(GetSoundStreamTime);
 	REGISTER_LUA_CFUNC(GetSoundEffectParams);
 
@@ -3101,6 +3103,41 @@ int LuaUnsyncedRead::GetDrawSeconds(lua_State* L)
  * @section sound
 ******************************************************************************/
 
+/*** Sound device spec
+ *
+ * @table soundDeviceSpec
+ *
+ * Contains data about a sound device
+ *
+ * @string name
+ */
+
+
+/***
+ *
+ * @function Spring.GetSoundDevices
+ * @treturn {[soundDeviceSpec],...} devices Sound devices
+ */
+int LuaUnsyncedRead::GetSoundDevices(lua_State* L)
+{
+	std::vector<std::string> devices = sound->GetSoundDevices();
+
+	lua_createtable(L, 0, devices.size());
+
+	for (size_t i = 0; i < devices.size(); ++i) {
+		std::string &device = devices[i];
+
+                lua_createtable(L, 0, 1); {
+			lua_pushliteral(L, "name");
+	                lua_pushsstring(L, device);
+	                lua_rawset(L, -3);
+		}
+
+                lua_rawseti(L, -2, i + 1);
+	}
+
+	return 1;
+}
 
 /***
  *

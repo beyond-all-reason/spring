@@ -669,16 +669,11 @@ void CSound::InitThread(int cfgMaxSounds)
 			// LOG("  Implementation: %s", (const char*) alcGetString(curDevice, ALC_DEVICE_SPECIFIER));
 			LOG("  Devices:");
 
-			const bool hasAllEnumExt = alcIsExtensionPresent(nullptr, "ALC_ENUMERATE_ALL_EXT");
-			const bool hasDefEnumExt = alcIsExtensionPresent(nullptr, "ALC_ENUMERATION_EXT");
+			std::vector<std::string> devices = GetSoundDevices();
 
-			if (hasAllEnumExt || hasDefEnumExt) {
-				const char* deviceSpecStr = alcGetString(nullptr, hasAllEnumExt? ALC_ALL_DEVICES_SPECIFIER: ALC_DEVICE_SPECIFIER);
-
-				while (*deviceSpecStr != '\0') {
-					LOG("    [%s]", deviceSpecStr);
-					while (*deviceSpecStr++ != '\0');
-				}
+			if (devices.size()) {
+				for(const std::string& deviceName: devices)
+					LOG("    [%s]", deviceName.c_str());
 			} else {
 				LOG("    [N/A]");
 			}
@@ -1054,3 +1049,20 @@ void CSound::GenSources(int alMaxSounds)
 	}
 }
 
+std::vector<std::string> CSound::GetSoundDevices()
+{
+	std::vector<std::string> devices;
+	const bool hasAllEnumExt = alcIsExtensionPresent(nullptr, "ALC_ENUMERATE_ALL_EXT");
+	const bool hasDefEnumExt = alcIsExtensionPresent(nullptr, "ALC_ENUMERATION_EXT");
+
+	if (hasAllEnumExt || hasDefEnumExt) {
+		const char* deviceSpecStr = alcGetString(nullptr, hasAllEnumExt? ALC_ALL_DEVICES_SPECIFIER: ALC_DEVICE_SPECIFIER);
+
+		while (*deviceSpecStr != '\0') {
+			devices.emplace_back(deviceSpecStr);
+
+			while (*deviceSpecStr++ != '\0');
+		}
+	}
+	return devices;
+}

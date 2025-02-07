@@ -45,6 +45,8 @@ public:
 	bool LoadSoundDefsImpl(LuaParser* defsParser) { return false; }
 
 	const float3& GetListenerPos() const override { return ZeroVector; }
+
+	std::vector<std::string> GetSoundDevices() override { return std::vector<std::string>(); };
 };
 
 #endif // _NULL_SOUND_H_
