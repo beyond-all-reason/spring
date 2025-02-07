@@ -105,6 +105,7 @@ extern "C" {
 #define GLAD_GL_EXT_texture_array GL_FALSE
 #define GLAD_GL_ARB_draw_indirect GL_FALSE
 #define GLAD_GL_ARB_base_instance GL_FALSE
+#define GLAD_GL_ARB_sample_shading GL_FALSE
 
 #define GLXEW_SGI_video_sync GL_FALSE
 

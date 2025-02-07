@@ -529,28 +529,16 @@ void FBO::CreateRenderBufferMultisample(const GLenum attachment, const GLenum fo
 
 GLsizei FBO::GetMaxSamples()
 {
-	RECOIL_DETAILED_TRACY_ZONE;
 	if (maxSamples >= 0)
 		return maxSamples;
-
+#ifdef HEADLESS
+	maxSamples = 1;
+#else
 	// set maxSamples once
 	if (maxSamples == -1) {
-		bool multisampleExtensionFound = false;
-
-	#ifdef GLAD_GL_EXT_framebuffer_multisample
-		multisampleExtensionFound = multisampleExtensionFound || (GLAD_GL_EXT_framebuffer_multisample && GLAD_GL_EXT_framebuffer_blit);
-	#endif
-	#ifdef GLAD_GL_ARB_framebuffer_object
-		multisampleExtensionFound = multisampleExtensionFound || GLAD_GL_ARB_framebuffer_object;
-	#endif
-
-		if (multisampleExtensionFound) {
-			glGetIntegerv(GL_MAX_SAMPLES_EXT, &maxSamples);
-			maxSamples = std::max(0, maxSamples);
-		} else {
-			maxSamples = 0;
-		}
+		glGetIntegerv(GL_MAX_SAMPLES_EXT, &maxSamples);
+		maxSamples = std::max(0, maxSamples);
 	}
-
+#endif // HEADLESS
 	return maxSamples;
 }
