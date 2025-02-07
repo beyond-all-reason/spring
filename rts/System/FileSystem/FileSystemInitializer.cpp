@@ -62,10 +62,7 @@ bool FileSystemInitializer::Initialize()
 		return true;
 
 	SetupThreadReg();
-
 	InitializeTry();
-
-	// in case of an exception, ErrorMessageBox takes care of this
 	ClearThreadReg();
 
 	return (initSuccess && !initFailure);
