@@ -159,7 +159,6 @@ namespace QTPFS {
     struct UpdateThreadData {
         std::vector<std::uint8_t> maxBlockBits;
         std::vector<INode*> relinkNodeGrid;
-        SRectangle areaUpdated;
         SRectangle areaRelinkedInner;
         SRectangle areaRelinked;
         SRectangle areaMaxBlockBits;
@@ -171,7 +170,6 @@ namespace QTPFS {
             moveDef = &md;
             auto mapRect = MapToRectangle();
             
-            areaUpdated = area;
             areaRelinkedInner = SRectangle  ( topNode.xmin()
                                             , topNode.zmin()
                                             , topNode.xmax()
@@ -180,10 +178,10 @@ namespace QTPFS {
                                         , topNode.zmin() - 1
                                         , topNode.xmax() + 1
                                         , topNode.zmax() + 1);
-            areaMaxBlockBits = SRectangle   ( area.x1 - md.xsizeh
-                                            , area.z1 - md.zsizeh
-                                            , area.x2 + md.xsizeh
-                                            , area.z2 + md.zsizeh);
+            areaMaxBlockBits = SRectangle   ( topNode.xmin() - md.xsizeh
+                                            , topNode.zmin() - md.zsizeh
+                                            , topNode.xmax() + md.xsizeh
+                                            , topNode.zmax() + md.zsizeh);
             areaRelinked.ClampIn(mapRect);
             areaMaxBlockBits.ClampIn(mapRect);
 
@@ -212,10 +210,9 @@ namespace QTPFS {
         }
 
         void Reset() {
-            areaUpdated = SRectangle(0, 0, 0, 0);
-            areaRelinked = areaUpdated;
-            areaMaxBlockBits = areaUpdated;
-            areaRelinkedInner = areaUpdated;
+            areaRelinked = SRectangle(0, 0, 0, 0);
+            areaMaxBlockBits = areaRelinked;
+            areaRelinkedInner = areaRelinked;
             relinkNodeGrid.resize(0);
             relinkNodeGrid.shrink_to_fit();
             maxBlockBits.resize(0);
