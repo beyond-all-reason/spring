@@ -69,13 +69,6 @@ CR_REG_METADATA_SUB(CGroundDecalHandler, UnitMinMaxHeight,
 	CR_MEMBER(max)
 ))
 
-CR_BIND(CGroundDecalHandler::DecalUpdateList, )
-CR_REG_METADATA_SUB(CGroundDecalHandler, DecalUpdateList,
-(
-	CR_MEMBER(updateList),
-	CR_MEMBER(changed)
-))
-
 CR_BIND_DERIVED(CGroundDecalHandler, IGroundDecalDrawer, )
 CR_REG_METADATA(CGroundDecalHandler, (
 	CR_MEMBER_UN(maxUniqueScars),
@@ -1674,63 +1667,3 @@ void CGroundDecalHandler::UnitLoaded(const CUnit* unit, const CUnit* transport) 
 void CGroundDecalHandler::UnitUnloaded(const CUnit* unit, const CUnit* transport) { AddSolidObject(unit); }
 
 void CGroundDecalHandler::UnitMoved(const CUnit* unit) { AddTrack(unit, unit->pos); }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void CGroundDecalHandler::DecalUpdateList::SetNeedUpdateAll()
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	std::fill(updateList.begin(), updateList.end(), true);
-	changed = true;
-}
-
-void CGroundDecalHandler::DecalUpdateList::ResetNeedUpdateAll()
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	std::fill(updateList.begin(), updateList.end(), false);
-	changed = false;
-}
-
-void CGroundDecalHandler::DecalUpdateList::SetUpdate(const CGroundDecalHandler::DecalUpdateList::IteratorPair& it)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	std::fill(it.first, it.second, true);
-	changed = true;
-}
-
-void CGroundDecalHandler::DecalUpdateList::SetUpdate(size_t offset)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	assert(offset < updateList.size());
-	updateList[offset] = true;
-	changed = true;
-}
-
-void CGroundDecalHandler::DecalUpdateList::EmplaceBackUpdate()
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	updateList.emplace_back(true);
-	changed = true;
-}
-
-std::optional<CGroundDecalHandler::DecalUpdateList::IteratorPair> CGroundDecalHandler::DecalUpdateList::GetNext(const std::optional<CGroundDecalHandler::DecalUpdateList::IteratorPair>& prev)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	auto beg = prev.has_value() ? prev.value().second : updateList.begin();
-	     beg = std::find(beg, updateList.end(),  true);
-	auto end = std::find(beg, updateList.end(), false);
-
-	if (beg == end)
-		return std::nullopt;
-
-	return std::make_optional(std::make_pair(beg, end));
-}
-
-std::pair<size_t, size_t> CGroundDecalHandler::DecalUpdateList::GetOffsetAndSize(const CGroundDecalHandler::DecalUpdateList::IteratorPair& it)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	return std::make_pair(
-		std::distance(updateList.begin(), it.first ),
-		std::distance(it.first          , it.second)
-	);
-}
