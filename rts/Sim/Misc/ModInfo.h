@@ -117,6 +117,7 @@ public:
 	float unitExpPowerScale;
 	float unitExpHealthScale;
 	float unitExpReloadScale;
+	float unitExpGrade;
 
 
 	// Paralyze behaviour

@@ -16,6 +16,7 @@ namespace creg
 
 		/// Serialize a memory buffer
 		virtual void Serialize(void* data, int byteSize) = 0;
+		template <typename T> void Serialize(T& data) { Serialize(&data, sizeof(data)); }
 
 		/// Serialize integer value - char, short or int
 		virtual void SerializeInt(void* data, int byteSize) = 0;

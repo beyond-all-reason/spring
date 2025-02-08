@@ -73,6 +73,7 @@ void CModInfo::ResetState()
 		unitExpPowerScale  = 1.0f;
 		unitExpHealthScale = 0.7f;
 		unitExpReloadScale = 0.4f;
+		unitExpGrade       = 0.0f;
 	}
 	{
 		paralyzeDeclineRate = 40.0f;
@@ -289,10 +290,11 @@ void CModInfo::Init(const std::string& modFileName)
 		// experience
 		const LuaTable& experienceTbl = root.SubTable("experience");
 
-		unitExpMultiplier  = experienceTbl.GetFloat("experienceMult", unitExpMultiplier);
-		unitExpPowerScale  = experienceTbl.GetFloat(    "powerScale", unitExpPowerScale);
-		unitExpHealthScale = experienceTbl.GetFloat(   "healthScale", unitExpHealthScale);
-		unitExpReloadScale = experienceTbl.GetFloat(   "reloadScale", unitExpReloadScale);
+		unitExpMultiplier  = experienceTbl.GetFloat( "experienceMult", unitExpMultiplier);
+		unitExpPowerScale  = experienceTbl.GetFloat(     "powerScale", unitExpPowerScale);
+		unitExpHealthScale = experienceTbl.GetFloat(    "healthScale", unitExpHealthScale);
+		unitExpReloadScale = experienceTbl.GetFloat(    "reloadScale", unitExpReloadScale);
+		unitExpGrade       = experienceTbl.GetFloat("experienceGrade", unitExpGrade);
 	}
 
 	{
