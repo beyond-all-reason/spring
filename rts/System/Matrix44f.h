@@ -24,12 +24,16 @@ public:
 		const float  m8, const float  m9, const float m10, const float m11,
 		const float m12, const float m13, const float m14, const float m15) : m{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15} {};
 
-	CMatrix44f(const float3 pos, const float3 x, const float3 y, const float3 z);
-	CMatrix44f(const float rotX, const float rotY, const float rotZ);
-	explicit CMatrix44f(const float3 pos);
+	explicit CMatrix44f(const float3& pos, const float3& x, const float3& y, const float3& z);
+	explicit CMatrix44f(float rotX, float rotY, float rotZ);
+	explicit CMatrix44f(const float3& pos);
 
 	bool IsOrthoNormal() const;
 	bool IsIdentity() const;
+	bool IsRotMatrix()          const { return IsOrthoNormal() && math::fabs(1.0f - Det4()) <= float3::cmp_eps(); }
+	bool IsRotOrRotTranMatrix() const { return IsOrthoNormal() && math::fabs(1.0f - Det3()) <= float3::cmp_eps(); }
+	float Det3() const;
+	float Det4() const;
 
 	CMatrix44f& LoadIdentity() { return (*this = CMatrix44f()); }
 
@@ -37,20 +41,21 @@ public:
 	CMatrix44f& RotateX(float angle); // (pitch) angle in radians
 	CMatrix44f& RotateY(float angle); // (  yaw) angle in radians
 	CMatrix44f& RotateZ(float angle); // ( roll) angle in radians
-	CMatrix44f& Rotate(float angle, const float3 axis); // assumes axis is normalized
-	CMatrix44f& RotateEulerXYZ(const float3 angles); // executes Rotate{X,Y,Z}
-	CMatrix44f& RotateEulerYXZ(const float3 angles); // executes Rotate{Y,X,Z}
-	CMatrix44f& RotateEulerZXY(const float3 angles); // executes Rotate{Z,X,Y}
-	CMatrix44f& RotateEulerZYX(const float3 angles); // executes Rotate{Z,Y,X}
+	CMatrix44f& Rotate(float angle, const float3& axis); // assumes axis is normalized
+	CMatrix44f& RotateEulerXYZ(const float3& angles); // executes Rotate{X,Y,Z}
+	CMatrix44f& RotateEulerYXZ(const float3& angles); // executes Rotate{Y,X,Z}
+	CMatrix44f& RotateEulerZXY(const float3& angles); // executes Rotate{Z,X,Y}
+	CMatrix44f& RotateEulerZYX(const float3& angles); // executes Rotate{Z,Y,X}
 	CMatrix44f& Translate(const float x, const float y, const float z);
-	CMatrix44f& Translate(const float3 pos) { return Translate(pos.x, pos.y, pos.z); }
-	CMatrix44f& Scale(const float3 scales);
+	CMatrix44f& Translate(const float3& pos) { return Translate(pos.x, pos.y, pos.z); }
+	CMatrix44f& Scale(float s) { return Scale(s, s, s); }
+	CMatrix44f& Scale(const float3& scales);
 	CMatrix44f& Scale(float scaleX, float scaleY, float scaleZ) { return Scale(float3{ scaleX, scaleY, scaleZ }); }
 
-	void SetPos(const float3 pos) { m[12] = pos.x; m[13] = pos.y; m[14] = pos.z; }
-	void SetX  (const float3 dir) { m[ 0] = dir.x; m[ 1] = dir.y; m[ 2] = dir.z; }
-	void SetY  (const float3 dir) { m[ 4] = dir.x; m[ 5] = dir.y; m[ 6] = dir.z; }
-	void SetZ  (const float3 dir) { m[ 8] = dir.x; m[ 9] = dir.y; m[10] = dir.z; }
+	void SetPos(const float3& pos) { m[12] = pos.x; m[13] = pos.y; m[14] = pos.z; }
+	void SetX  (const float3& dir) { m[ 0] = dir.x; m[ 1] = dir.y; m[ 2] = dir.z; }
+	void SetY  (const float3& dir) { m[ 4] = dir.x; m[ 5] = dir.y; m[ 6] = dir.z; }
+	void SetZ  (const float3& dir) { m[ 8] = dir.x; m[ 9] = dir.y; m[10] = dir.z; }
 	void SetXYZ(const CMatrix44f& other) {
 		std::copy(&other.m[0], &other.m[0] + 3, &m[0]);
 		std::copy(&other.m[4], &other.m[4] + 3, &m[4]);
@@ -91,6 +96,9 @@ public:
 
 	float3 Mul(const float3 v) const { return ((*this) * v); }
 	float4 Mul(const float4 v) const { return ((*this) * v); }
+
+	/// approximately equal
+	bool equals(const CMatrix44f& rhs) const;
 
 	bool operator == (const CMatrix44f& rhs) const;
 	bool operator != (const CMatrix44f& rhs) const { return !(*this == rhs); }
