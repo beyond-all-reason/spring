@@ -4,7 +4,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/Unit.h"
 
-// not adding to members, should repopulate itself
+// not adding to creg, should repopulate itself
 spring::unordered_set<int> CBuilderCaches::reclaimers;
 spring::unordered_set<int> CBuilderCaches::featureReclaimers;
 spring::unordered_set<int> CBuilderCaches::resurrecters;
