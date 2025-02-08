@@ -3051,5 +3051,5 @@ CR_REG_METADATA(GlobalUnitParams, (
 	CR_MEMBER(expPowerScale	),
 	CR_MEMBER(expHealthScale),
 	CR_MEMBER(expReloadScale),
-	CR_MEMBER(expGrade		)
+	CR_MEMBER(expGrade      )
 ))
