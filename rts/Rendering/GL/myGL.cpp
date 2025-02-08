@@ -300,7 +300,7 @@ void RecoilGetTexParams(GLenum target, GLuint textureID, GLint level, TexturePar
 }
 
 
-void glSaveTexture(const GLuint textureID, const char* filename, int level)
+void RecoilSaveTexture(const GLuint textureID, const char* filename, int level)
 {
 	TextureParameters params;
 	RecoilGetTexParams(GL_TEXTURE_2D, textureID, 0, params);

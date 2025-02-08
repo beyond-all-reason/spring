@@ -356,7 +356,7 @@ bool CTextureRenderAtlas::DumpTexture() const
 	int levels = atlasAllocator->GetNumTexLevels();
 
 	for (uint32_t level = 0; level < levels; ++level) {
-		glSaveTexture(texID, fmt::format("{}_{}.png", atlasName, level).c_str(), level);
+		RecoilSaveTexture(texID, fmt::format("{}_{}.png", atlasName, level).c_str(), level);
 	}
 
 	return true;

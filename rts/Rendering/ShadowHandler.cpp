@@ -136,8 +136,8 @@ void CShadowHandler::Update()
 
 void CShadowHandler::SaveShadowMapTextures() const
 {
-	glSaveTexture(shadowDepthTexture, fmt::format("smDepth_{}.png", globalRendering->drawFrame).c_str());
-	glSaveTexture(shadowColorTexture, fmt::format("smColor_{}.png", globalRendering->drawFrame).c_str());
+	RecoilSaveTexture(shadowDepthTexture, fmt::format("smDepth_{}.png", globalRendering->drawFrame).c_str());
+	RecoilSaveTexture(shadowColorTexture, fmt::format("smColor_{}.png", globalRendering->drawFrame).c_str());
 }
 
 void CShadowHandler::DrawFrustumDebug() const

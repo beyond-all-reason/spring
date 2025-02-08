@@ -315,7 +315,7 @@ void CTextureAtlas::DumpTexture(const char* newFileName) const
 	std::string filename = newFileName ? newFileName : name.c_str();
 	filename += ".png";
 
-	glSaveTexture(atlasTexID, filename.c_str());
+	RecoilSaveTexture(atlasTexID, filename.c_str());
 }
 
 
