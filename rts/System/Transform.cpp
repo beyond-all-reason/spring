@@ -4,6 +4,8 @@
 
 #include "System/SpringMath.h"
 
+#define TRANSFORM_FROM_TO_MATRIX_DEBUG
+
 CR_BIND(Transform, )
 CR_REG_METADATA(Transform, (
 	CR_MEMBER(r),
@@ -47,7 +49,7 @@ Transform Transform::FromMatrix(const CMatrix44f& mat)
 	);
 	// non-uniform scaling is not supported
 	tra.s = scale.x;
-#ifdef _DEBUG
+#ifdef TRANSFORM_FROM_TO_MATRIX_DEBUG
 	const float3 v{ 100, 200, 300 };
 	auto vMat = mat * v;
 	auto vTra = tra * v;
@@ -75,6 +77,7 @@ CMatrix44f Transform::ToMatrix() const
 	m.Scale(s);
 	m.SetPos(t); // m.Translate() will be wrong here
 
+#ifdef TRANSFORM_FROM_TO_MATRIX_DEBUG
 	CMatrix44f ms; ms.Scale(s);
 	CMatrix44f mr = r.ToRotMatrix();
 	CMatrix44f mt; mt.Translate(t);
@@ -82,7 +85,6 @@ CMatrix44f Transform::ToMatrix() const
 	CMatrix44f m2 = mt * mr * ms;
 
 	//assert(m == m2);
-#ifdef _DEBUG
 	//auto [t_, r_, s_] = CQuaternion::DecomposeIntoTRS(m);
 
 	const float3 v{ 100, 200, 300 };
