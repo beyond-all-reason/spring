@@ -193,7 +193,7 @@ void CLuaUI::InitLuaSocket(lua_State* L) {
 	CFileHandler f(filename, SPRING_VFS_BASE);
 
 	if (!f.FileExists()) {
-		LOG_L(L_ERROR, "Error loading %s", filename.c_str());
+		LOG_L(L_ERROR, "Error loading %s (file does not exist)", filename.c_str());
 		return;
 	}
 
