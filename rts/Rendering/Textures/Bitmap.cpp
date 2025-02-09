@@ -424,10 +424,9 @@ protected:
 template<typename T, uint32_t ch>
 class TBitmapAction : public BitmapAction {
 public:
-	static constexpr size_t PixelTypeSize = sizeof(T) * ch;
-
 	using ChanType  = T;
-	using PixelType = T[ch];
+	using PixelType = std::array<T, ch>;
+	static constexpr size_t PixelTypeSize = sizeof(PixelType);
 
 	using AccumChanType = typename std::conditional<std::is_same_v<T, float>, float, uint32_t>::type;
 
@@ -701,6 +700,7 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 				int yBaseOffset = (y * src->xsize);
 				for (int x = 0; x < src->xsize; x++) {
 
+					// don't use AccumChanType for additional precision
 					std::array<float, ch> val{ 0.0f };
 					float wgt = 0.0f;
 
@@ -713,19 +713,21 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 						const auto w = BLUR_KERNEL[off + BLUR_KERNEL_HS];
 
 						wgt += w;
+						const auto& srcRef = srcAction->GetRef(yBaseOffset + xo);
 						for (int a = 0; a < ch; a++) {
-							val[a] += w * srcAction->GetRef(yBaseOffset + xo, a);
+							val[a] += w * srcRef[a];
 						}
 					}
+
+					auto& dstRef = dstAction->GetRef(x * src->ysize + y);
 					for (int a = 0; a < ch; a++) {
-						auto& dstRef = dstAction->GetRef(x * src->ysize + y, a);
 						const auto rawDstVal = val[a] / wgt;
 
 						if constexpr (std::is_same_v<ChanType, float>) {
-							dstRef = static_cast<ChanType>(std::max(rawDstVal, 0.0f));
+							dstRef[a] = static_cast<ChanType>(std::max(rawDstVal, 0.0f));
 						}
 						else {
-							dstRef = static_cast<ChanType>(std::clamp(rawDstVal + 0.5f, 0.0f, static_cast<float>(GetMaxNormValue())));
+							dstRef[a] = static_cast<ChanType>(std::clamp(rawDstVal + 0.5f, 0.0f, static_cast<float>(GetMaxNormValue())));
 						}
 					}
 				}
