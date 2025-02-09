@@ -259,7 +259,18 @@ CQuaternion& CQuaternion::Normalize()
 	if unlikely(sqn < float3::nrm_eps())
 		return *this;
 
-	*this *= InvSqrt(sqn);
+	*this /= math::sqrt(sqn);
+
+	return *this;
+}
+
+CQuaternion& CQuaternion::ANormalize()
+{
+	const float sqn = SqNorm();
+	if unlikely(sqn < float3::nrm_eps())
+		return *this;
+
+	*this *= math::isqrt(sqn);
 
 	return *this;
 }
@@ -379,6 +390,21 @@ CQuaternion CQuaternion::operator*(const CQuaternion& rhs) const
 
 CQuaternion& CQuaternion::operator*=(float f)
 {
+	x *= f;
+	y *= f;
+	z *= f;
+	r *= f;
+
+	return *this;
+}
+
+CQuaternion& CQuaternion::operator/=(float f)
+{
+	if unlikely(epscmp(f, 0.0f, float3::cmp_eps()))
+		return *this;
+
+	f = 1.0f / f;
+
 	x *= f;
 	y *= f;
 	z *= f;

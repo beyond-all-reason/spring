@@ -11,6 +11,7 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Game/GameHelper.h"
 #include "System/SpringMath.h"
+#include "System/Quaternion.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -380,14 +381,11 @@ void CSolidObject::SetHeadingFromDirection() {
 	// undo UpdateDirVectors transformation
 
 	// construct quaternion to describe rotation from uDir to UpVector
-	float4 quat{ -updir.z, 0.0f, updir.x, 1.0f + updir.y }; // same angle as in UpdateDirVectors, but inverted axis
-	float qN = quat.SqLength() + quat.w * quat.w;
-	quat *= math::isqrt(qN);
+	CQuaternion quat(-updir.z, 0.0f, updir.x, 1.0f + updir.y); // same angle as in UpdateDirVectors, but inverted axis
+	quat.ANormalize();
 
-	const float3 fDir =
-		2.0f * quat.dot(frontdir) * static_cast<float3>(quat) +
-		(quat.w * quat.w - quat.dot(quat)) * frontdir +
-		2.0f * quat.w * quat.cross(frontdir);
+	const float3 fDir = quat * frontdir;
+	assert(epscmp(fDir.y, 0.0f, float3::cmp_eps()));
 
 	heading = GetHeadingFromVector(fDir.x, fDir.z);
 }
@@ -408,27 +406,13 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 	const float3 rDir = float3{ -fDir.z, 0.0f, fDir.x };
 
 	// construct quaternion to describe rotation from UpVector to uDir
+	// can use CQuaternion::MakeFrom(const float3& v1, const float3& v2);
+	// but simplified given UpVector is trivial
+	CQuaternion quat(uDir.z, 0.0f, -uDir.x, 1.0f + uDir.y);
+	quat.ANormalize();
 
-	// https://raw.org/proof/quaternion-from-two-vectors/
-	// const float dp = UpVector.dot(uDir);
-	// const float3 axis = UpVector.cross(uDir);
-	// float4 quat { axis, 1.0f + dp };
-
-	// same as above, but simplified given UpVector is trivial
-	float4 quat{ uDir.z, 0.0f, -uDir.x, 1.0f + uDir.y };
-	float qN = quat.SqLength() + quat.w * quat.w;
-	quat *= math::isqrt(qN);
-
-	frontdir =
-		2.0f * quat.dot(fDir) * static_cast<float3>(quat) +
-		(quat.w * quat.w - quat.dot(quat)) * fDir +
-		2.0f * quat.w * quat.cross(fDir);
-
-	rightdir =
-		2.0f * quat.dot(rDir) * static_cast<float3>(quat) +
-		(quat.w * quat.w - quat.dot(quat)) * rDir +
-		2.0f * quat.w * quat.cross(rDir);
-
+	frontdir = quat * fDir;
+	rightdir = quat * rDir;
 	updir = uDir;
 }
 

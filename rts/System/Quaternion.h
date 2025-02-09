@@ -62,6 +62,7 @@ public:
 public:
 	bool Normalized() const;
 	CQuaternion& Normalize();
+	CQuaternion& ANormalize();
 	constexpr CQuaternion& Conjugate() { x = -x; y = -y; z = -z; return *this; }
 	CQuaternion  Inverse() const;
 	CQuaternion& InverseInPlace();
@@ -94,8 +95,16 @@ public:
 		return CQuaternion(x - rhs.x, y - rhs.y, z - rhs.z, r - rhs.r);
 	}
 
+	float3 operator*(const float3& arg) const {
+		return Rotate(arg);
+	}
+	float4 operator*(const float4& arg) const {
+		return Rotate(arg);
+	}
+
 	CQuaternion operator*(const CQuaternion& rhs) const;
 	CQuaternion& operator*=(float f);
+	CQuaternion& operator/=(float f);
 
 	bool operator==(const CQuaternion& rhs) const { return  equals(rhs); } //aproximate
 	bool operator!=(const CQuaternion& rhs) const { return !equals(rhs); } //aproximate
