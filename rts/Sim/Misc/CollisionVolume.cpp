@@ -262,7 +262,7 @@ float CollisionVolume::GetPointSurfaceDistance(
 		assert(this == lmp->GetCollisionVolume());
 
 		// transform into piece-space relative to pos
-		vm <<= lmp->GetModelSpaceTransform().ToMatrix();
+		vm <<= lmp->GetModelSpaceMatrix();
 	} else {
 		// SObj::GetTransformMatrix does not include this
 		// (its translation component is pos, not midPos)

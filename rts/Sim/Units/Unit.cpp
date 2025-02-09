@@ -723,7 +723,7 @@ void CUnit::UpdateTransportees()
 			// slave transportee orientation to piece
 			if (tu.piece >= 0) {
 				const CMatrix44f& transMat = GetTransformMatrix(true);
-				const auto pieceMat = script->GetPieceTransform(tu.piece).ToMatrix();
+				const auto pieceMat = script->GetPieceMatrix(tu.piece);
 
 				transportee->SetDirVectors(transMat * pieceMat);
 			}

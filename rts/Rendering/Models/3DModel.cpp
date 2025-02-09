@@ -640,16 +640,8 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 	modelSpaceTra = pieceSpaceTra;
 
 	if (parent != nullptr) {
-		// TODO remove the non-sense
-		const auto modelSpaceTraOrig = modelSpaceTra;
 		modelSpaceTra = parent->modelSpaceTra * modelSpaceTra;
-
-		CMatrix44f thisModelSpaceMat = modelSpaceTraOrig.ToMatrix();
-		const CMatrix44f prntModelSpaceMat = parent->modelSpaceTra.ToMatrix();
-		thisModelSpaceMat >>= prntModelSpaceMat;
-		auto modelSpaceTra2 = Transform::FromMatrix(thisModelSpaceMat);
-
-		assert(modelSpaceTra.equals(modelSpaceTra2));
+		modelSpaceMat = modelSpaceTra.ToMatrix();
 	}
 }
 
@@ -666,7 +658,7 @@ void LocalModelPiece::Draw() const
 	assert(original);
 
 	glPushMatrix();
-	glMultMatrixf(GetModelSpaceTransform().ToMatrix());
+	glMultMatrixf(GetModelSpaceMatrix());
 	S3DModelHelpers::BindLegacyAttrVBOs();
 	original->DrawElements();
 	S3DModelHelpers::UnbindLegacyAttrVBOs();
@@ -683,7 +675,7 @@ void LocalModelPiece::DrawLOD(uint32_t lod) const
 		return;
 
 	glPushMatrix();
-	glMultMatrixf(GetModelSpaceTransform().ToMatrix());
+	glMultMatrixf(GetModelSpaceMatrix());
 	if (const auto ldl = lodDispLists[lod]; ldl == 0) {
 		S3DModelHelpers::BindLegacyAttrVBOs();
 		original->DrawElements();

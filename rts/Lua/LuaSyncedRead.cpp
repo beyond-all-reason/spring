@@ -8421,7 +8421,7 @@ static int GetSolidObjectPieceMatrix(lua_State* L, const CSolidObject* o)
 	if (lmp == nullptr)
 		return 0;
 
-	const CMatrix44f& mat = lmp->GetModelSpaceTransform().ToMatrix();
+	const CMatrix44f& mat = lmp->GetModelSpaceMatrix();
 
 	for (float mi: mat.m) {
 		lua_pushnumber(L, mi);

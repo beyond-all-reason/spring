@@ -490,6 +490,7 @@ struct LocalModelPiece
 	const float3& GetDirection() const { return dir; }
 
 	Transform GetModelSpaceTransform() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceTra; }
+	CMatrix44f GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceMat; }
 
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
@@ -503,8 +504,9 @@ private:
 	float3 rotSpeed; // the rate of change of rot, used to smooth the animation across the synced frames
 	float3 dir;      // cached copy of original->GetEmitDir()
 
-	mutable Transform pieceSpaceTra; // transform relative to parent LMP (SYNCED), combines <pos> and <rot>
-	mutable Transform modelSpaceTra; // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+	mutable Transform pieceSpaceTra;  // transform relative to parent LMP (SYNCED), combines <pos> and <rot>
+	mutable Transform modelSpaceTra;  // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+	mutable CMatrix44f modelSpaceMat; // same as above, except matrix
 
 	CollisionVolume colvol;
 
