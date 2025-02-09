@@ -2230,7 +2230,7 @@ int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
 	}
 
 	// Even though we're in unsynced it's ok to use gs->tempNum since its exact value
-// doesn't matter
+	// doesn't matter
 	const int tempNum = gs->GetTempNum();
 	lua_createtable(L, unitQuadIter.GetObjectCount(), 0);
 
@@ -3103,20 +3103,19 @@ int LuaUnsyncedRead::GetDrawSeconds(lua_State* L)
  * @section sound
 ******************************************************************************/
 
-/*** Sound device spec
+/***
+ * @class SoundDeviceSpec
  *
- * @table soundDeviceSpec
+ * Contains data about a sound device.
  *
- * Contains data about a sound device
- *
- * @string name
+ * @field name string
  */
 
 
 /***
  *
  * @function Spring.GetSoundDevices
- * @return {[soundDeviceSpec],...} devices Sound devices
+ * @return SoundDeviceSpec[] devices Sound devices.
  */
 int LuaUnsyncedRead::GetSoundDevices(lua_State* L)
 {
