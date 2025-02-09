@@ -586,7 +586,9 @@ void SetMaximumThreadCount()
 
 void SetDefaultThreadCount()
 {
-	std::uint32_t systemCores  = springproc::CPUID::GetInstance().GetAvailableProceesorAffinityMask();
+	// The Hyper Threading pattern is to select only one hardware thread per core.
+	std::uint32_t systemCores  = springproc::CPUID::GetInstance().GetAvailableProceesorAffinityMask()
+								& ( Threading::HasHyperThreading() ? 0x55555555 : 0xffffffff );
 	std::uint32_t mainAffinity = systemCores;
 
 	#ifndef UNIT_TEST
@@ -619,7 +621,7 @@ void SetDefaultThreadCount()
 		};
 
 		const std::uint32_t poolCoreAffinity = parallel_reduce(AffinityFunc, ReduceFunc);
-		const std::uint32_t mainCoreAffinity = Threading::HasHyperThreading() ? ~poolCoreAffinity : ~0;
+		const std::uint32_t mainCoreAffinity = ~poolCoreAffinity & systemCores;
 
 		if (mainAffinity == 0)
 			mainAffinity = systemCores;
