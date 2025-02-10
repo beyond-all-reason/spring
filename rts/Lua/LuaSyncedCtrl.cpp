@@ -7036,19 +7036,18 @@ int LuaSyncedCtrl::SetExperienceGrade(lua_State* L)
 	if (!FullCtrl(L))
 		return 0;
 
-	CUnit::SetExpGrade(luaL_checkfloat(L, 1));
+	globalUnitParams.expGrade = luaL_checkfloat(L, 1);
 
 	// NOTE: for testing, should be using modrules.tdf
 	if (gs->cheatEnabled) {
 		if (lua_isnumber(L, 2))
-			CUnit::SetExpPowerScale(lua_tofloat(L, 2));
+			globalUnitParams.expPowerScale = lua_tofloat(L, 2);
 
 		if (lua_isnumber(L, 3))
-			CUnit::SetExpHealthScale(lua_tofloat(L, 3));
+			globalUnitParams.expHealthScale = lua_tofloat(L, 3);
 
 		if (lua_isnumber(L, 4))
-			CUnit::SetExpReloadScale(lua_tofloat(L, 4));
-
+			globalUnitParams.expReloadScale = lua_tofloat(L, 4);
 	}
 	return 0;
 }

@@ -30,6 +30,9 @@ void RenderBuffer::KillStatic()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (const auto& trb : typedRenderBuffers) {
+		if (!trb)
+			continue;
+
 		const auto Cx = trb->GetBuffersCapacity();
 		const auto C0 = trb->GetInitialCapacity();
 		const auto S  = trb->GetMaxSize();

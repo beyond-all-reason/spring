@@ -188,10 +188,10 @@ void CFeatureDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 			} break;
 
 			case CCamera::CAMTYPE_SHADOW: {
-				if      (f->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
-					f->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-				else if (f->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+				if unlikely(IsAlpha(f))
 					f->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+				else
+					f->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
 			} break;
 
 			default: { assert(false); } break;

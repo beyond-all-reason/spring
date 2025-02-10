@@ -86,8 +86,6 @@ CONFIG(bool, MiniMapCanFlip).defaultValue(false).description("Whether minimap in
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-#define USE_CLIP_PLANES 0
-
 CMiniMap* minimap = nullptr;
 
 CMiniMap::CMiniMap()
@@ -1066,16 +1064,16 @@ void CMiniMap::ResizeTextureCache()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	minimapTexSize = curDim;
-	multisampledFBO = (FBO::GetMaxSamples() > 1);
+	multisampledFBO = (globalRendering->msaaLevel > 1);
 
 	if (multisampledFBO) {
 		// multisampled FBO we are render to
-		fbo.Detach(GL_COLOR_ATTACHMENT0_EXT); // delete old RBO
-		fbo.CreateRenderBufferMultisample(GL_COLOR_ATTACHMENT0_EXT, GL_RGBA8, minimapTexSize.x, minimapTexSize.y, 4);
-		//fbo.CreateRenderBuffer(GL_DEPTH_ATTACHMENT_EXT, GL_DEPTH_COMPONENT16, minimapTexSize.x, minimapTexSize.y);
+		fbo.Detach(GL_COLOR_ATTACHMENT0); // will delete old RBO as well
+		fbo.CreateRenderBufferMultisample(GL_COLOR_ATTACHMENT0, GL_RGBA8, minimapTexSize.x, minimapTexSize.y, globalRendering->msaaLevel);
+		//fbo.CreateRenderBuffer(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT16, minimapTexSize.x, minimapTexSize.y);
 
 		if (!fbo.CheckStatus("MINIMAP")) {
-			fbo.Detach(GL_COLOR_ATTACHMENT0_EXT);
+			fbo.Detach(GL_COLOR_ATTACHMENT0);
 			multisampledFBO = false;
 		}
 	}
@@ -1086,8 +1084,10 @@ void CMiniMap::ResizeTextureCache()
 	glBindTexture(GL_TEXTURE_2D, minimapTex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // GL_LINEAR makes no sense for both below, because sampling is always pixel perfect and minimapTex is not exposed outside
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, minimapTexSize.x, minimapTexSize.y);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -1145,7 +1145,7 @@ void CMiniMap::UpdateTextureCache()
 	// resolve multisampled FBO if there is one
 	if (multisampledFBO) {
 		const std::array rect = { 0, 0, minimapTexSize.x, minimapTexSize.y };
-		FBO::Blit(fbo.fboId, fboResolve.fboId, rect, rect, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		FBO::Blit(fbo.fboId, fboResolve.fboId, rect, rect, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	}
 }
 
@@ -1295,24 +1295,10 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 
 	cursorIcons.Enable(false);
 
-#if USE_CLIP_PLANES
-	// clip everything outside of the minimap box
-	SetClipPlanes(false);
-	glEnable(GL_CLIP_PLANE0);
-	glEnable(GL_CLIP_PLANE1);
-	glEnable(GL_CLIP_PLANE2);
-	glEnable(GL_CLIP_PLANE3);
-#endif
 	DrawBackground();
 
 	// allow Lua scripts to overdraw the background image
-#if USE_CLIP_PLANES
-	SetClipPlanes(true);
-#endif
 	eventHandler.DrawInMiniMapBackground();
-#if USE_CLIP_PLANES
-	SetClipPlanes(false);
-#endif
 
 	DrawUnitIcons();
 	DrawWorldStuff();
@@ -1344,13 +1330,6 @@ void CMiniMap::DrawForReal(bool useNormalizedCoors, bool updateTex, bool luaCall
 	if (useNormalizedCoors && globalRendering->dualScreenMode)
 		globalRendering->LoadViewport();
 
-	// disable ClipPlanes
-#if USE_CLIP_PLANES
-	glDisable(GL_CLIP_PLANE0);
-	glDisable(GL_CLIP_PLANE1);
-	glDisable(GL_CLIP_PLANE2);
-	glDisable(GL_CLIP_PLANE3);
-#endif
 	cursorIcons.Enable(true);
 }
 
@@ -1380,32 +1359,8 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 
 	if (!minimap->maximized) {
 		// draw the camera frustum lines
-		// CCamera* cam = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
 		CCamera* cam = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
 
-		//this one is bugged, probably because CalcFrustumLines is bugged as well
-		// TODO: Investigate
-#if 0
-		cam->CalcFrustumLines(readMap->GetCurrAvgHeight(), readMap->GetCurrAvgHeight(), 1.0f, true);
-		cam->ClipFrustumLines(-100.0f, mapDims.mapy * SQUARE_SIZE + 100.0f, true);
-
-		const CCamera::FrustumLine* negLines = cam->GetNegFrustumLines();
-
-		CVertexArray* va = GetVertexArray();
-		va->Initialize();
-		va->EnlargeArrays(4 * 2, 0, VA_SIZE_2D0);
-
-
-		for (int idx = 0; idx < /*negLines[*/4/*].sign*/; idx++) {
-			const CCamera::FrustumLine& fl = negLines[idx];
-
-			if (fl.minz >= fl.maxz)
-				continue;
-
-			va->AddVertexQ2d0((fl.dir * fl.minz) + fl.base, fl.minz);
-			va->AddVertexQ2d0((fl.dir * fl.maxz) + fl.base, fl.maxz);
-		}
-#else
 		const auto& pos = cam->GetPos();
 		const auto& dir = cam->GetForward();
 
@@ -1473,7 +1428,6 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 		sh.Disable();
 
 		glLineWidth(1.0f);
-#endif
 	}
 
 
@@ -1493,6 +1447,7 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 			{newMapPos.x, newMapPos.z},
 			{oldMapPos.x, newMapPos.z}
 		});
+
 		sh.Enable();
 		sh.SetUniform("ucolor", cmdColors.mouseBox[0], cmdColors.mouseBox[1], cmdColors.mouseBox[2], cmdColors.mouseBox[3]);
 		rb.DrawArrays(GL_LINE_LOOP);
@@ -1503,15 +1458,6 @@ void CMiniMap::DrawCameraFrustumAndMouseSelection()
 	}
 
 	DrawNotes();
-
-
-	// disable ClipPlanes
-#if USE_CLIP_PLANES
-	glDisable(GL_CLIP_PLANE0);
-	glDisable(GL_CLIP_PLANE1);
-	glDisable(GL_CLIP_PLANE2);
-	glDisable(GL_CLIP_PLANE3);
-#endif
 
 	glPopMatrix();
 
@@ -1821,15 +1767,19 @@ void CMiniMap::DrawBackground() const
 	glLoadMatrixf(projMats[0]);
 
 	// draw the map
-	glDisable(GL_BLEND);
+	auto state = GL::SubState(
+		Blending(GL_FALSE),
+		SampleShading(GL_FALSE) // sample shading is detrimental for minimap background sharpness
+	);
+
+	if (globalRendering->minSampleShadingRate > 0)
+		glDisable(GL_SAMPLE_SHADING);
 
 	readMap->BindMiniMapTextures();
 	bgShader->Enable();
 	bgShader->SetUniform("infotexMul", static_cast<float>(infoTextureHandler->IsEnabled()));
 	rb.DrawElements(GL_TRIANGLES);
 	bgShader->Disable();
-
-	glEnable(GL_BLEND);
 
 	//glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -1841,10 +1791,7 @@ void CMiniMap::DrawBackground() const
 void CMiniMap::DrawUnitIcons() const
 {
 	ZoneScopedN("MiniMap::DrawUnitIcons");
-#if USE_CLIP_PLANES
-	for (int i = 0; i < 4; ++i)
-		glDisable(GL_CLIP_PLANE0 + i);
-#endif
+
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(curPos.x, curPos.y, curDim.x, curDim.y);
 
@@ -1860,11 +1807,6 @@ void CMiniMap::DrawUnitIcons() const
 	glPopMatrix();
 
 	glDisable(GL_SCISSOR_TEST);
-
-#if USE_CLIP_PLANES
-	for (int i = 0; i < 4; ++i)
-		glEnable(GL_CLIP_PLANE0 + i);
-#endif
 }
 
 
