@@ -529,6 +529,10 @@ CGroundMoveType::~CGroundMoveType()
 	if (pathID != 0) {
 		pathManager->DeletePath(pathID, true);
 	}
+
+	if (deletePathId != 0) {
+		pathManager->DeletePath(deletePathId);
+	}
 }
 
 void CGroundMoveType::PostLoad()
