@@ -5718,18 +5718,22 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
  */
 int LuaOpenGL::PushDebugGroup(lua_State* L) {
 	const auto id = static_cast<GLuint>(luaL_checkinteger(L, 1));
-	const auto* message = luaL_checkstring(L, 2);
+	std::string message = luaL_checkstring(L, 2);
 	const bool source = luaL_optboolean(L, 3, false);
 
 	GLint maxLength = 0;
 	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLength);
-
-	if (strlen(message) >= maxLength) {
-		LOG_L(L_ERROR, "gl.%s: Message length exceeds GL_MAX_DEBUG_MESSAGE_LENGTH (%u)", __func__, maxLength);
+	if (maxLength <= 0)
 		return 0;
+
+	if (message.length() >= maxLength) {
+		static constexpr std::string_view TRIM = "(...)";
+		message.resize(maxLength - TRIM.length() - 1);
+		message += TRIM;
+		assert(message.length() < maxLength);
 	}
 
-	glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION : GL_DEBUG_SOURCE_THIRD_PARTY), id, -1, message);
+	glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION : GL_DEBUG_SOURCE_THIRD_PARTY), id, -1, message.c_str());
 	return 0;
 }
 
