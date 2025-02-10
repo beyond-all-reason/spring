@@ -574,7 +574,15 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 	GLX::Load(sdlWindow);
 
 	if (!CheckGLContextVersion(minCtx)) {
-		handleerror(nullptr, "minimum required OpenGL version not supported, aborting", "ERROR", MBF_OK | MBF_EXCL);
+		int ctxProfile = 0;
+		SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, &ctxProfile);
+
+		const std::string errStr = fmt::format("current OpenGL version {}.{}(core={}) is less than required {}.{}(core={}), aborting",
+			globalRenderingInfo.glContextVersion.x, globalRenderingInfo.glContextVersion.y, globalRenderingInfo.glContextIsCore,
+			minCtx.x, minCtx.y, (ctxProfile == SDL_GL_CONTEXT_PROFILE_CORE)
+		);
+
+		handleerror(nullptr, errStr.c_str(), "ERROR", MBF_OK | MBF_EXCL);
 		return false;
 	}
 
