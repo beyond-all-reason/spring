@@ -21,6 +21,7 @@
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Units/CommandAI/BuilderCAI.h"
+#include "Sim/Units/CommandAI/BuilderCaches.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
@@ -388,7 +389,6 @@ bool CBuilder::UpdateReclaim(const Command& fCommand)
 bool CBuilder::UpdateResurrect(const Command& fCommand)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	CBuilderCAI* cai = static_cast<CBuilderCAI*>(commandAI);
 	CFeature* curResurrectee = curResurrect;
 
 	if (curResurrectee == nullptr || f3SqDist(curResurrectee->pos, pos) >= Square(buildDistance + curResurrectee->buildeeRadius) || !inBuildStance)
@@ -440,7 +440,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 		resurrectee->SetSoloBuilder(this, resurrecteeDef);
 		resurrectee->SetHeading(curResurrectee->heading, !resurrectee->upright && resurrectee->IsOnGround(), false, 0.0f);
 
-		for (const int resurrecterID: cai->resurrecters) {
+		for (const int resurrecterID: CBuilderCaches::resurrecters) {
 			CBuilder* resurrecter = static_cast<CBuilder*>(unitHandler.GetUnit(resurrecterID));
 			CCommandAI* resurrecterCAI = resurrecter->commandAI;
 
