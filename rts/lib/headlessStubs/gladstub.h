@@ -107,6 +107,8 @@ extern "C" {
 #define GLAD_GL_ARB_base_instance GL_FALSE
 #define GLAD_GL_ARB_sample_shading GL_FALSE
 
+#define GLAD_GL_KHR_debug GL_FALSE
+
 #define GLXEW_SGI_video_sync GL_FALSE
 
 int gladLoadGL(void);
