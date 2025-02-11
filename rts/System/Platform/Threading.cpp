@@ -202,7 +202,7 @@ namespace Threading {
 		pm.performanceCoreMask = 0xfffffff;
 		#endif
 
-		LOG("CPU Affinity Mask Deatils detected:");
+		LOG("CPU Affinity Mask Details detected:");
 		LOG("-- Performance Core Mask:      0x%08x", pm.performanceCoreMask);
 		LOG("-- Efficiency  Core Mask:      0x%08x", pm.efficiencyCoreMask);
 		LOG("-- Hyper Thread/SMT Low Mask:  0x%08x", pm.hyperThreadLowMask);
