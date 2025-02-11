@@ -124,6 +124,8 @@ namespace Threading {
 	int GetLogicalCpuCores();  /// physical + hyperthreading
 	bool HasHyperThreading();
 
+	uint32_t GetSystemAffinityMask();
+
 	/**
 	 * Inform the OS kernel that we are a cpu-intensive task
 	 */

@@ -105,7 +105,114 @@ namespace Threading {
 	}
 	#endif
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
+	struct ProcessorMasks {
+		uint32_t performanceCoreMask = 0;
+		uint32_t efficiencyCoreMask = 0;
+		uint32_t hyperThreadLowMask = 0;
+		uint32_t hyperThreadHighMask = 0;
+	};
+
+	#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+	// noop
+	#elif defined(_WIN32)
+	ProcessorMasks GetProcessorMasksWindows() {
+		PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX buffer = NULL;
+		PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX ptr = NULL;
+		DWORD returnLength = 0;
+		DWORD byteOffset = 0;
+		BOOL done = FALSE;
+		ProcessorMasks processorMasks;
+
+		while (!done)
+		{
+			DWORD rc = GetLogicalProcessorInformationEx(RelationProcessorCore, buffer, &returnLength);
+
+			if (FALSE == rc)
+			{
+				if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+				{
+					if (buffer)
+						free(buffer);
+
+					buffer = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)malloc(returnLength);
+
+					if (NULL == buffer)
+						return processorMasks;
+				}
+				else
+					return processorMasks;
+			}
+			else
+				done = TRUE;
+		}
+		ptr = buffer;
+
+		while (byteOffset < returnLength)
+		{
+			if (ptr->Relationship == RelationProcessorCore)
+			{
+				const uint32_t supportedMask = static_cast<uint32_t>(ptr->Processor.GroupMask[0].Mask);
+				if (supportedMask == 0) {
+					LOG("Info: Processor group %d has a thread mask outside of the supported range."
+						, int(ptr->Processor.GroupCount));
+					break;
+				}
+
+				const bool hyperThreading = !std::has_single_bit(supportedMask);
+				if (hyperThreading) {
+					processorMasks.hyperThreadLowMask |= ( 1 << std::countr_zero(supportedMask) );
+					processorMasks.hyperThreadHighMask |= ( 0x80000000 >> std::countl_zero(supportedMask) );
+				}
+
+				if (ptr->Processor.EfficiencyClass){
+					processorMasks.efficiencyCoreMask |= supportedMask;
+				} else {
+					processorMasks.performanceCoreMask |= supportedMask;
+				}
+
+				break;
+			}
+			byteOffset += ptr->Size;
+			ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)(((char*)buffer) + byteOffset);
+		}
+
+		if (buffer)
+			free(buffer);
+
+		return processorMasks;
+	}
+	#else
+	ProcessorMasks GetProcessorMasksWindows() {
+		ProcessorMasks processorMasks;
+		processorMasks.performanceCoreMask = 0xfffffff;
+		// fopen("/proc/cpuinfo");
+		return processorMasks;
+	}
+	#endif
+
+	uint32_t GetSystemAffinityMask() {
+		#if defined(_WIN32)
+		ProcessorMasks pm = GetProcessorMasksWindows();
+		// need an entry for linux.
+		#else
+		ProcessorMasks pm;
+		pm.performanceCoreMask = 0xfffffff;
+		#endif
+
+		LOG("CPU Affinity Mask Deatils detected:");
+		LOG("-- Performance Core Mask:      0x%08x", pm.performanceCoreMask);
+		LOG("-- Efficiency  Core Mask:      0x%08x", pm.efficiencyCoreMask);
+		LOG("-- Hyper Thread/SMT Low Mask:  0x%08x", pm.hyperThreadLowMask);
+		LOG("-- Hyper Thread/SMT High Mask: 0x%08x", pm.hyperThreadHighMask);
+
+		// Engine worker thread policy:
+		// 1. Only use general/performance cores. Do not use efficiency cores.
+		// 2. Do not use Hyper Threading or SMT. If present use only one of the HW threads per core.
+		return pm.performanceCoreMask & (~pm.hyperThreadHighMask);
+	}
 
 	std::uint32_t GetAffinity()
 	{
@@ -127,6 +234,7 @@ namespace Threading {
 	#endif
 	}
 
+#pragma GCC pop_options
 
 	std::uint32_t SetAffinity(std::uint32_t coreMask, bool hard)
 	{
