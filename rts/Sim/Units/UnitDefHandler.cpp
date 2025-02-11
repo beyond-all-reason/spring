@@ -79,8 +79,6 @@ int CUnitDefHandler::PushNewUnitDef(const std::string& unitName, const LuaTable&
 		// force-initialize the real* members
 		newDef.SetNoCost(true);
 		newDef.SetNoCost(noCost);
-
-		numPushResistantUnitDefs += int(newDef.pushResistant);
 	} catch (const content_error& err) {
 		LOG_L(L_ERROR, "%s", err.what());
 		return 0;

@@ -4,9 +4,11 @@
 #define UNIT_TRAP_CHECK_UTILS_H__
 
 struct CFeature;
+struct CUnit;
 
 namespace MoveTypes {
     void RegisterFeatureForUnitTrapCheck(CFeature* object);
+    void RegisterUnitForUnitTrapCheck(CUnit* object);
 }
 
 #endif
