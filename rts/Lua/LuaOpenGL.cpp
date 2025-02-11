@@ -5713,13 +5713,13 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
  * @function gl.PushDebugGroup pushes a debug marker for nVidia nSight 2024.04, does not seem to work when FBO's are raw bound
  * @param id GLuint A numeric identifier for the group.
  * @param message string A human-readable string describing the debug group.
- * @param source boolean true for GL_DEBUG_SOURCE_APPLICATION, false for GL_DEBUG_SOURCE_THIRD_PARTY. default false
+ * @param sourceIsThirdParty boolean Set the source tag, true for GL_DEBUG_SOURCE_THIRD_PARTY, false for GL_DEBUG_SOURCE_APPLICATION. default false
  * @treturn nil
  */
 int LuaOpenGL::PushDebugGroup(lua_State* L) {
 	const auto id = static_cast<GLuint>(luaL_checkinteger(L, 1));
 	std::string message = luaL_checkstring(L, 2);
-	const bool source = luaL_optboolean(L, 3, false);
+	const bool sourceIsThirdParty = luaL_optboolean(L, 3, false);
 
 	GLint maxLength = 0;
 	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLength);
@@ -5733,7 +5733,7 @@ int LuaOpenGL::PushDebugGroup(lua_State* L) {
 		assert(message.length() < maxLength);
 	}
 
-	glPushDebugGroup((source ? GL_DEBUG_SOURCE_APPLICATION : GL_DEBUG_SOURCE_THIRD_PARTY), id, -1, message.c_str());
+	glPushDebugGroup((sourceIsThirdParty ? GL_DEBUG_SOURCE_THIRD_PARTY : GL_DEBUG_SOURCE_APPLICATION), id, -1, message.c_str());
 	return 0;
 }
 
