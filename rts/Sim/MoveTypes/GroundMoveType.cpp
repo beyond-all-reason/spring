@@ -2775,7 +2775,6 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
-	auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
 	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
 
 	// Push resistent units when stopped impacting pathing and also cannot be pushed, so it is important that such
@@ -2993,7 +2992,6 @@ void CGroundMoveType::HandleFeatureCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
-	auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
 	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
 	MoveTypes::CheckCollisionQuery colliderInfo(collider);
 
