@@ -1398,7 +1398,7 @@ void CMobileCAI::ExecuteLoadUnits(Command& c)
 						// we do not want the forceHeading change at point of pickup because
 						// am->UpdateHeading() will suddenly notice a large deltaHeading and
 						// break the DOCKING_ANGLE constraint so call am->ForceHeading() next
-						short forceHeading = (owner->unitDef->alignFacingWithTransporteeOnLoad)
+						short forceHeading = (owner->unitDef->alignHeadingWithTransporteeOnLoad)
 								? owner->GetTransporteeWantedHeading(unit) : am->GetWantedHeading();
 						SetGoal(wantedPos, owner->pos, 1.0f);
 
@@ -1408,7 +1408,7 @@ void CMobileCAI::ExecuteLoadUnits(Command& c)
 
 						// FIXME: kill the hardcoded constants, use the command's radius
 						const bool isInRange = (owner->pos.SqDistance(wantedPos) < Square(AIRTRANSPORT_DOCKING_RADIUS));
-						const bool isAligned = (!owner->unitDef->alignFacingWithTransporteeOnLoad)
+						const bool isAligned = (!owner->unitDef->alignHeadingWithTransporteeOnLoad)
 											|| (std::abs(owner->heading - unit->heading) < AIRTRANSPORT_DOCKING_ANGLE);
 						const bool isUpright = (owner->updir.dot(UpVector) > 0.995f);
 
