@@ -104,7 +104,7 @@ bool CPathEstimator::SetStartBlock(
 	 * [ ][ ][ ][ ][ ]
 	 * 
 	 * If maxBlocksToCheck is changed, it will affect the number of nearest blocks checked before
-	 * giving up. Using more than 9 won't work because searchs are constrained (for performance
+	 * giving up. Using more than 9 won't work because searches are constrained (for performance
 	 * reasons) to just the starting and ending block areas.
 	 * 
 	 * Fewer can be used, but makes it more likely for a unit to get stuck.
@@ -347,7 +347,7 @@ IPath::SearchResult CPathEstimator::DoSearch(const MoveDef& moveDef, const CPath
 
 
 /**
- * Test the accessability of a block and its value,
+ * Test the accessibility of a block and its value,
  * possibly also add it to the open-blocks pqueue.
  */
 bool CPathEstimator::TestBlock(
@@ -543,7 +543,7 @@ bool CPathEstimator::TestBlock(
 
 
 /**
- * Test the accessability of a block and its value,
+ * Test the accessibility of a block and its value,
  * possibly also add it to the open-blocks pqueue.
  */
 bool CPathEstimator::TestBlockReachability(

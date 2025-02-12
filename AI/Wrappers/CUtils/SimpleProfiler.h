@@ -13,12 +13,12 @@ extern "C" {
 #endif // !defined PROFILING_ENABLED && defined DEBUG
 
 /**
- * Adds a specified ammount of time (in milli-seconds) to a certain part
+ * Adds a specified amount of time (in milli-seconds) to a certain part
  */
 void          simpleProfiler_addTime(const char* const part, unsigned time);
 
 /**
- * Returns the total ammount of time (in milli-seconds)
+ * Returns the total amount of time (in milli-seconds)
  * spent in a certain part so far
  */
 unsigned long simpleProfiler_getTime(const char* const part);

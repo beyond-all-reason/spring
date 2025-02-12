@@ -126,7 +126,7 @@ function AddonRevs.NewAddonRev2()
 	addonEnv.widget = addon
 	addonEnv.addon  = addon  --// makes `function Initizalize` & `function addon.Initialize` point to the same data
 
-	--// copy the engine enviroment to the addon
+	--// copy the engine environment to the addon
 		tcopy(addonEnv, handler.EG)
 
 	--// the shared table
@@ -174,7 +174,7 @@ function AddonRevs.NewAddonRev1()
 	addonEnv.addon  = addon
 	addonEnv.widget = addon
 
-	--// copy the engine enviroment to the addon
+	--// copy the engine environment to the addon
 	tcopy(addonEnv, handler.EG)
 
 	--// the shared table

@@ -72,7 +72,7 @@ else()
 	set(JAVA_COMPILE_FLAG_CONDITIONAL "-g:lines,source")
 endif()
 
-# By default, the libraries that don't explicily specify SHARED/STATIC are build statically.
+# By default, the libraries that don't explicitly specify SHARED/STATIC are build statically.
 # See https://cmake.org/cmake/help/latest/variable/BUILD_SHARED_LIBS.html
 option(BUILD_SHARED_LIBS "Build shared (dynamic) libraries" OFF)
 

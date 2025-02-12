@@ -34,7 +34,7 @@ public:
 	netcode::RawPacket* GetData(const float curTime);
 
 	/**
-	@brief Wether the demo has reached the end
+	@brief Whether the demo has reached the end
 	@return true when end reached, false when there is still stuff to read
 	*/
 	bool ReachedEnd();

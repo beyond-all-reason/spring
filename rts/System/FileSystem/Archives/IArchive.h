@@ -107,7 +107,7 @@ public:
 	/**
 	 * Returns true if the cost of reading the file is qualitatively relative
 	 * to its file-size.
-	 * This is mainly usefull in the case of solid archives,
+	 * This is mainly useful in the case of solid archives,
 	 * which may make the reading of a single small file over proportionally
 	 * expensive.
 	 * The returned value is usually relative to certain arbitrary chosen

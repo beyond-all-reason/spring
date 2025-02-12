@@ -23,7 +23,7 @@ RUN curl -L -O https://github.com/ccache/ccache/releases/download/v${CCACHE_VERS
  && mv ccache-${CCACHE_VERSION}-linux-x86_64/ccache /usr/bin \
  && rm -rf ccache-${CCACHE_VERSION}-linux-x86_64*
 
-# And need newer zstd :(, fortunatelly it's quick build
+# And need newer zstd :(, fortunately it's quick build
 RUN git clone --depth 1 --branch v1.5.6 https://github.com/facebook/zstd.git \
  && cd zstd \
  && CC=g++-13 make -j$(nproc) \

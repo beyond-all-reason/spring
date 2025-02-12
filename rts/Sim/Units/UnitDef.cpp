@@ -59,7 +59,7 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
 	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
 
-	// Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (deafult), 1 = don't fire, 2 = fire in current direction of weapon 
+	// Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (default), 1 = don't fire, 2 = fire in current direction of weapon 
 	burstControlWhenOutOfArc = weaponTable.GetInt("burstControlWhenOutOfArc", burstControlWhenOutOfArc);
 }
 

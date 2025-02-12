@@ -55,7 +55,7 @@ public:
 	std::string ConnectionStr() const;
 
 	/**
-	 * @brief Take a look at the messages in the recieve buffer (read-only)
+	 * @brief Take a look at the messages in the receive buffer (read-only)
 	 * @return A RawPacket holding the data, or 0 if no data
 	 * @param ahead How many packets to look ahead. A typical usage would be:
 	 * for (int ahead = 0; (packet = clientNet->Peek(ahead)) != NULL; ++ahead) {}
@@ -72,11 +72,11 @@ public:
 	float GetPacketTime(int frameNum) const;
 
 	/**
-	 * @brief Receive a single message (and remove it from the recieve buffer)
+	 * @brief Receive a single message (and remove it from the receive buffer)
 	 * @return The first data packet from the buffer, or 0 if there is no data
 	 *
 	 * Receives only one message at a time
-	 * (even if there are more in the recieve buffer),
+	 * (even if there are more in the receive buffer),
 	 * so call this until you get a 0 in return.
 	 * When a demo recorder is present it will be recorded.
 	 */
@@ -95,7 +95,7 @@ public:
 	 */
 	void UpdateLoop();
 
-	/// Must be called to send / recieve packets
+	/// Must be called to send / receive packets
 	void Update();
 
 	void Close(bool flush = false);

@@ -165,10 +165,10 @@ std::vector<std::string> DataDirsAccess::FindDirsInDirectSubDirs(
 
 	static const std::string pattern = "*";
 
-	// list of all occurences of the relative path in the data directories
+	// list of all occurrences of the relative path in the data directories
 	const std::vector<std::string>& rootDirs = LocateDirs(relPath);
 
-	// list of subdirs in all occurences of the relative path in the data directories
+	// list of subdirs in all occurrences of the relative path in the data directories
 	std::vector<std::string> mainDirs;
 
 	// find all subdirectories in the rootDirs

@@ -157,7 +157,7 @@ private:
 	bool DrawAsIconByDistance(const CUnit* unit, const float sqUnitCamDist) const;
 	//bool DrawAsIconScreen(CUnit* unit) const;
 public:
-	// lenghts & distances
+	// lengths & distances
 	float unitIconDist;
 	float iconLength;
 

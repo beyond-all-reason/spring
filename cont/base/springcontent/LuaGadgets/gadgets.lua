@@ -19,7 +19,7 @@
 
 local SAFEWRAP = 0
 -- 0: disabled
--- 1: enabled, but can be overriden by gadget.GetInfo().unsafe
+-- 1: enabled, but can be overridden by gadget.GetInfo().unsafe
 -- 2: always enabled
 
 

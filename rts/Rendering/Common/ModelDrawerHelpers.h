@@ -69,8 +69,8 @@ public:
 class CModelDrawerHelperS3O : public CModelDrawerHelper {
 public:
 	// Inherited via CModelDrawerHelper
-	void PushRenderState() const override {/* no need for primitve restart*/ };
-	void PopRenderState() const override {/* no need for primitve restart*/ };
+	void PushRenderState() const override {/* no need for primitive restart*/ };
+	void PopRenderState() const override {/* no need for primitive restart*/ };
 	void BindOpaqueTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;
 	void UnbindOpaqueTex() const override;
 	void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const override;

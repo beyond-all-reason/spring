@@ -10,7 +10,7 @@ class Action;
 
 // TODO convert existing CommandReceiver's to use IUnsyncedActionExecutor's instead
 /**
- * @brief this class can recieve commands (actions)
+ * @brief this class can receive commands (actions)
  * @deprecated Use IUnsyncedActionExecutor instead
  */
 class CommandReceiver

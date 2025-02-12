@@ -326,14 +326,14 @@ function saveMember(ind_mem_s, member_s) {
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 # see: commonDoc.awk
 function canDeleteDocumentation() {
 	return isInsideEvtStruct != 1;
 }
 
 ################################################################################
-### BEGINN: parsing and saving the event structs
+### BEGIN: parsing and saving the event structs
 
 # end of struct S*Event
 /^}; \/\/ EVENT_.*$/ {
@@ -363,7 +363,7 @@ function canDeleteDocumentation() {
 	}
 }
 
-# beginn of struct S*Event
+# beginning of struct S*Event
 /^struct S.*Event( \{)?/ {
 
 	isInsideEvtStruct = 1;

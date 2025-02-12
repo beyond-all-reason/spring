@@ -14,7 +14,7 @@ class IExplosionListener
 {
 public:
 	/**
-	 * Informs listeners about an explosion that has occured.
+	 * Informs listeners about an explosion that has occurred.
 	 * @see EventClient#Explosion
 	 */
 	virtual void ExplosionOccurred(const CExplosionParams& event) = 0;

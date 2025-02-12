@@ -1358,7 +1358,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 		// This mode tries to correct for the wrongly calculated timeOffset adaptively,
 		// while trying to maintain a smooth interpolation rate
 		// As frame rates dip below 45fps, this method is only marginally better than old method
-		// But that is heavily dependent on wether the load is sim or draw based.
+		// But that is heavily dependent on whether the load is sim or draw based.
 		// TODO: the camera smoothing still seems to take sim load into account heavily. So large sim loads jitter the camera quite a bit when moving
 		if (SmoothTimeOffset > 0){
 
@@ -1372,7 +1372,7 @@ bool CGame::UpdateUnsynced(const spring_time currentTime)
 				// What we want to know is when the last draw happened, and at what offset.
 				// There are two special cases here, if the last draw happened "on time", then we want to 'pull in' CTO to 0,
 				// irrespective of the time spent in sim.
-				// If the last draw frame didnt happend on time, and had a large CTO, then we need to 'carry over' some time offset
+				// If the last draw frame didnt happen on time, and had a large CTO, then we need to 'carry over' some time offset
 
 				if ((LTO + drawsimratio - 1.0 > (CTO)* strictness)) {
 					newCTO = std::fmin((LTO + drawsimratio - 1.0f) * strictness, 1.3f);

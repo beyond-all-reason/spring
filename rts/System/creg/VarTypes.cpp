@@ -1,8 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 /*
- * creg - Code compoment registration system
- * Classes for serialization of registrated class instances
+ * creg - Code component registration system
+ * Classes for serialization of registered class instances
  */
 
 #include "VarTypes.h"

@@ -10,7 +10,7 @@
 #include <array>
 
 
-// Get gl parameter values into a homogenous GL-typed variable (single or array)
+// Get gl parameter values into a homogeneous GL-typed variable (single or array)
 // Must pass expectedValuesN to convert from GLint to other integer types (GLenum, GLsizei and such)
 template<class GLType>
 inline void glGetAny(GLenum paramName, GLType* data, const int expectedValuesN = 1)

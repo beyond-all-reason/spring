@@ -25,7 +25,7 @@ public:
 TEST_CASE("EventClient")
 {
 	// Checks Pointer-to-Member-Functions (PMF)
-	// used by CEventClient to detect if a virtual function is overriden
+	// used by CEventClient to detect if a virtual function is overridden
 	// and so if the derived class wants the event
 
 	//CHECK(&A::Foo == &B::Foo); // undefined for virtual methods

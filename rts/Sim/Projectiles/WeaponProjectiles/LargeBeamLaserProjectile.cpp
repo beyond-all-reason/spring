@@ -164,7 +164,7 @@ void CLargeBeamLaserProjectile::Draw()
 				{ pos1 + (xdir * beamCoreSize), tex.xstart, tex.yend  , coreColStart }
 			);
 
-			// draw continous beam
+			// draw continuous beam
 			tex.xstart = WT1->xstart;
 
 			for (float i = beamTileMinDst; i < beamTileMaxDst; i += tilelength) {

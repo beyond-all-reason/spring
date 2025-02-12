@@ -12,7 +12,7 @@ namespace netcode
 {
 
 /**
- * @brief Base class for connecting to various recievers / senders
+ * @brief Base class for connecting to various receivers / senders
  */
 class CConnection
 {
@@ -37,7 +37,7 @@ public:
 	virtual std::shared_ptr<const RawPacket> Peek(unsigned ahead) const = 0;
 
 	/**
-	 * @brief use this to recieve ready data
+	 * @brief use this to receive ready data
 	 * @return a network message encapsulated in a RawPacket,
 	 *   or NULL if there are no more messages available.
 	 */

@@ -57,7 +57,7 @@ void sharedLib_createFullLibName(const char* libBaseName,
 
 /**
  * Loads a shared library from a file.
- * Use sharedLib_isLoaded() to check if loading was successfull.
+ * Use sharedLib_isLoaded() to check if loading was successful.
  */
 sharedLib_t sharedLib_load(const char* libFilePath);
 

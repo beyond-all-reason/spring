@@ -1623,7 +1623,7 @@ EXPORT(const char*) skirmishAiCallback_Game_getRulesParamString(int skirmishAIId
 }
 
 
-//########### BEGINN Mod
+//########### BEGIN Mod
 
 EXPORT(const char*) skirmishAiCallback_Mod_getFileName(int skirmishAIId) {
 	return modInfo.filename.c_str();
@@ -1760,7 +1760,7 @@ EXPORT(bool) skirmishAiCallback_Mod_getRequireSonarUnderWater(int skirmishAIId) 
 
 
 
-//########### BEGINN Map
+//########### BEGIN Map
 EXPORT(bool) skirmishAiCallback_Map_isPosInCamera(int skirmishAIId, float* pos_posF3, float radius) {
 	return GetCallBack(skirmishAIId)->PosInCamera(pos_posF3, radius);
 }
@@ -2177,7 +2177,7 @@ EXPORT(bool) skirmishAiCallback_File_getContent(int skirmishAIId, const char* fi
 
 
 
-// BEGINN OBJECT Resource
+// BEGIN OBJECT Resource
 EXPORT(int) skirmishAiCallback_getResources(int skirmishAIId) {
 	return resourceHandler->GetNumResources();
 }
@@ -2318,7 +2318,7 @@ EXPORT(const char*) skirmishAiCallback_Game_getSetupScript(int skirmishAIId) {
 
 
 
-//########### BEGINN UnitDef
+//########### BEGIN UnitDef
 EXPORT(int) skirmishAiCallback_getUnitDefs(
 	int skirmishAIId,
 	int* unitDefIds,
@@ -3302,7 +3302,7 @@ EXPORT(int) skirmishAiCallback_UnitDef_WeaponMount_getOnlyTargetCategory(int ski
 
 
 
-//########### BEGINN Unit
+//########### BEGIN Unit
 EXPORT(int) skirmishAiCallback_Unit_getLimit(int skirmishAIId) {
 	const int team = AI_TEAM_IDS[skirmishAIId];
 	const int limit = teamHandler.Team(team)->GetMaxUnits();
@@ -3858,7 +3858,7 @@ EXPORT(int) skirmishAiCallback_getTeamUnits(int skirmishAIId, int* unitIds, int 
 }
 
 
-//########### BEGINN Team
+//########### BEGIN Team
 EXPORT(bool) skirmishAiCallback_Team_hasAIController(int skirmishAIId, int teamId) {
 	// return (AI_TEAM_IDS[skirmishAIId] == teamId);
 	const auto pred = [&](const int aiTeamID) { return (teamId == aiTeamID); };
@@ -3932,7 +3932,7 @@ EXPORT(const char*) skirmishAiCallback_Team_getRulesParamString(int skirmishAIId
 //########### END Team
 
 
-//########### BEGINN FeatureDef
+//########### BEGIN FeatureDef
 EXPORT(int) skirmishAiCallback_getFeatureDefs(int skirmishAIId, int* featureDefIds, int featureDefIdsMaxSize) {
 	const auto& featureDefs = featureDefHandler->GetFeatureDefsVec();
 	const int featureDefIdsRealSize = featureDefs.size();
@@ -4211,7 +4211,7 @@ EXPORT(short) skirmishAiCallback_Feature_getBuildingFacing(int skirmishAIId, int
 }
 
 
-//########### BEGINN WeaponDef
+//########### BEGIN WeaponDef
 EXPORT(int) skirmishAiCallback_getWeaponDefs(int skirmishAIId) {
 	return (weaponDefHandler->NumWeaponDefs());
 }
@@ -4717,7 +4717,7 @@ EXPORT(int) skirmishAiCallback_WeaponDef_getCustomParams(
 //########### END WeaponDef
 
 
-//########### BEGINN Weapon
+//########### BEGIN Weapon
 EXPORT(int) skirmishAiCallback_Unit_Weapon_getDef(int skirmishAIId, int unitId, int weaponId) {
 	const CUnit* unit = getUnit(unitId);
 

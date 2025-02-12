@@ -458,7 +458,7 @@ public:
 		ASSERT_SYNCED((short)(gu->myPlayerNum * 123 + 123));
 		//ASSERT_SYNCED(float3(gu->myPlayerNum, gu->myPlayerNum, gu->myPlayerNum));
 
-		// Command comming from the server won't match any of the client IDs.
+		// Command coming from the server won't match any of the client IDs.
 		int actionPlayerID = (action.GetPlayerID()==SERVER_PLAYER) ? 0 : action.GetPlayerID();
 
 		for (int i = unitHandler.MaxUnits() - 1; i >= 0; --i) {

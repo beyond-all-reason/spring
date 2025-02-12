@@ -2,7 +2,7 @@
 # only one of the two targets needs this
 remove_definitions(-DNO_SOUND)
 
-# Dummy Sound implementaiton
+# Dummy Sound implementation
 set(noSoundSources
 		IAudioChannel.cpp
 		ISound.cpp
@@ -22,7 +22,7 @@ else  (NO_SOUND)
 endif (NO_SOUND)
 
 
-# Real Sound implementaiton
+# Real Sound implementation
 if    (NOT NO_SOUND)
 	set(soundSources
 			ISound.cpp

@@ -102,7 +102,7 @@ EndMacro (create_spring_version_string)
 
 
 # Sets res_var to TRUE if version is a Spring release version specifier,
-# as oposed to a non-release/development version.
+# as opposed to a non-release/development version.
 Macro    (check_spring_release_version res_var version)
 	Set(${res_var} FALSE)
 	If     ("${version}" MATCHES "^${VERSION_REGEX_RELEASE}$")

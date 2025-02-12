@@ -38,7 +38,7 @@ if    (AWK_FOUND)
 	# Common Implementations:
 	# * GAWK: linux (& windows) standard
 	# * MAWK: gentoo
-	# * BWK:  OS X & BSDs (announces itsself just as "awk version 20070501")
+	# * BWK:  OS X & BSDs (announces itself just as "awk version 20070501")
 	# more info: http://en.wikipedia.org/wiki/AWK#Versions_and_implementations
 	#
 	# a) awk -Wv        (the standard, not supported by BWK)

@@ -58,12 +58,12 @@ endmacro (get_first_sub_dir_name name_var dir)
 # and concatenates them in a Java Classpath compatible way into a single string.
 macro    (create_classpath classPath_var dir)
 	file(GLOB_RECURSE ${classPath_var} FOLLOW_SYMLINKS "${dir}/*.jar")
-	# Make sure we use the correct path delimitter for the compiling system
+	# Make sure we use the correct path delimiter for the compiling system
 	string(REPLACE ";" "${PATH_DELIM_H}" ${classPath_var} "${${classPath_var}}")
 endmacro (create_classpath classPath_var dir)
 
 
-# Concatenates an arbritrary number of Java ClassPaths (may be empty).
+# Concatenates an arbitrary number of Java ClassPaths (may be empty).
 function    (concat_classpaths resultingCP_var)
 	set(${resultingCP_var} "")
 	foreach    (cpPart ${ARGN})

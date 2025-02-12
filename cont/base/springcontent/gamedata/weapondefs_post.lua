@@ -72,7 +72,7 @@ end
 --------------------------------------------------------------------------------
 
 local function BackwardCompability(wdName, wd)
-  -- weapon reloadTime and stockpileTime were seperated in 77b1
+  -- weapon reloadTime and stockpileTime were separated in 77b1
   if (tobool(wd.stockpile) and (wd.stockpiletime==nil)) then
     wd.stockpiletime = wd.reloadtime
     wd.reloadtime    = 2             -- 2 seconds
@@ -227,7 +227,7 @@ end
 
 local function ProcessWeaponDef(wdName, wd)
 
-  -- backward compability
+  -- backward compatibility
   BackwardCompability(wdName, wd)
 end
 

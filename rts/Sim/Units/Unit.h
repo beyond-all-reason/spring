@@ -346,7 +346,7 @@ public:
 
 	int featureDefID = -1; // FeatureDef id of the wreck we spawn on death
 
-	// indicate the relative power of the unit, used for experience calulations etc
+	// indicate the relative power of the unit, used for experience calculations etc
 	float power = 100.0f;
 
 	// 0.0-1.0

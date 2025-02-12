@@ -56,7 +56,7 @@ by simply defining ALLEGRO_HAVE_SV_PROCFS. */
 
 /* _find_executable_file:
  *  Helper function: searches path and current directory for executable.
- *  Returns 1 on succes, 0 on failure.
+ *  Returns 1 on success, 0 on failure.
  */
 static int _find_executable_file(const char *filename, char *output, int size)
 {

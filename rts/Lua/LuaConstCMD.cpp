@@ -139,14 +139,14 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	PUSH_CMD(CLOAK);
 	PUSH_CMD(STOCKPILE);
 	PUSH_CMD(MANUALFIRE);
-	LuaInsertDualMapPair(L, "DGUN", CMD_MANUALFIRE); // backward compability (TODO: find a way to print a warning when used!)
+	LuaInsertDualMapPair(L, "DGUN", CMD_MANUALFIRE); // backward compatibility (TODO: find a way to print a warning when used!)
 	PUSH_CMD(RESTORE);
 	PUSH_CMD(REPEAT);
 	PUSH_CMD(TRAJECTORY);
 	PUSH_CMD(RESURRECT);
 	PUSH_CMD(CAPTURE);
 	PUSH_CMD(AUTOREPAIRLEVEL);
-	LuaInsertDualMapPair(L, "LOOPBACKATTACK", CMD_ATTACK); // backward compability (TODO: find a way to print a warning when used!)
+	LuaInsertDualMapPair(L, "LOOPBACKATTACK", CMD_ATTACK); // backward compatibility (TODO: find a way to print a warning when used!)
 	PUSH_CMD(IDLEMODE);
 
 	return true;
