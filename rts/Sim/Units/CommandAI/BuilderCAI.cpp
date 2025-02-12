@@ -629,7 +629,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	}
 
 	// guard against dangling non-build commands
-	if (inCommand != c.GetID())
+	if (inCommand >= CMD_STOP)
 		return;
 
 	assert(build.def != nullptr);
