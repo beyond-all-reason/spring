@@ -115,6 +115,7 @@ namespace Threading {
 	// The net result is that we have to use GetProcAddress() on the kernel32 ourselves and provide a modified set
 	// of data definitions with the information we need.
 	// We can do away with this if 1) mingw fix their bug or 2) the build system shifts over to using MSVC.
+	#if defined(_WIN32)
 	namespace spring_overrides {
 
 		typedef struct _GROUP_AFFINITY {
@@ -164,6 +165,7 @@ namespace Threading {
 		//WINBASEAPI WINBOOL WINAPI GetLogicalProcessorInformationEx (LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType, PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer, PDWORD ReturnedLength);
 		#endif
 	}
+	#endif
 
 	struct ProcessorMasks {
 		uint32_t performanceCoreMask = 0;
