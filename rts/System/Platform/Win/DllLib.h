@@ -42,8 +42,7 @@ public:
 	 * @param symbol function to locate
 	 * @return void pointer to the function if found, NULL otherwise
 	 */
-	virtual void* FindAddress(const char* symbol);
-
+	void* FindAddress(const char* symbol) override;
 private:
 	/**
 	 * @brief dll pointer
