@@ -593,7 +593,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	if (buildOptions.find(c.GetID()) == buildOptions.end())
 		return;
 
-	if (!inCommand) {
+	if (inCommand == CMD_STOP) {
 		BuildInfo bi;
 
 		// note:
@@ -625,8 +625,12 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 
 		// <build> is never parsed (except in PostLoad) so just copy it
 		build = bi;
-		inCommand = true;
+		inCommand = c.GetID();
 	}
+
+	// guard against dangling non-build commands
+	if (inCommand >= CMD_STOP)
+		return;
 
 	assert(build.def != nullptr);
 	assert(build.def->id == -c.GetID() && build.def->id != 0);
@@ -686,7 +690,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 		}
 
 		if (f != nullptr && (!build.def->isFeature || build.def->wreckName != f->def->name)) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			ReclaimFeature(f);
 			return;
 		}
@@ -795,7 +799,7 @@ void CBuilderCAI::ExecuteRepair(Command& c)
 
 		ownerBuilder->StopBuild();
 		if (FindRepairTargetAndRepair(pos, radius, c.GetOpts(), false, (c.GetOpts() & META_KEY))) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -851,7 +855,7 @@ void CBuilderCAI::ExecuteCapture(Command& c)
 		ownerBuilder->StopBuild();
 
 		if (FindCaptureTargetAndCapture(pos, radius, c.GetOpts(), (c.GetOpts() & META_KEY))) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -927,7 +931,7 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 			Command nc(CMD_REPAIR, c.GetOpts(), b->curBuild->id);
 
 			commandQue.push_front(nc);
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -944,7 +948,7 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 			StopSlowGuard();
 
 			commandQue.push_front(Command(CMD_REPAIR, c.GetOpts(), fac->curBuild->id));
-			inCommand = false;
+			inCommand = CMD_STOP;
 			// SlowUpdate();
 			return;
 		}
@@ -969,7 +973,7 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 			StopSlowGuard();
 
 			commandQue.push_front(Command(CMD_REPAIR, c.GetOpts(), guardee->id));
-			inCommand = false;
+			inCommand = CMD_STOP;
 			return;
 		}
 
@@ -1105,7 +1109,7 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 		if (recSpecial)   recopt |= REC_SPECIAL;
 
 		if (FindReclaimTargetAndReclaim(pos, radius, c.GetOpts(), recopt)) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -1163,7 +1167,7 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 					c = Command(CMD_REPAIR, c.GetOpts() | INTERNAL_ORDER, ownerBuilder->lastResurrected);
 
 					ownerBuilder->lastResurrected = 0;
-					inCommand = false;
+					inCommand = CMD_STOP;
 					SlowUpdate();
 					return;
 				}
@@ -1180,7 +1184,7 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 		const float radius = c.GetParam(3);
 
 		if (FindResurrectableFeatureAndResurrect(pos, radius, c.GetOpts(), (c.GetOpts() & META_KEY))) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -1223,7 +1227,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 
 	if (tempOrder) {
 		tempOrder = false;
-		inCommand = true;
+		inCommand = CMD_FIGHT;
 	}
 	if (c.GetNumParams() < 3) {
 		LOG_L(L_ERROR, "[BuilderCAI::%s][f=%d][id=%d][#c.params=%d min=3]", __func__, gs->frameNum, owner->id, c.GetNumParams());
@@ -1231,7 +1235,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	}
 
 	if (c.GetNumParams() >= 6) {
-		if (!inCommand)
+		if (inCommand == CMD_STOP)
 			commandPos1 = c.GetPos(3);
 
 	} else {
@@ -1245,8 +1249,8 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	}
 
 	float3 pos = c.GetPos(0);
-	if (!inCommand) {
-		inCommand = true;
+	if (inCommand == CMD_STOP) {
+		inCommand = CMD_FIGHT;
 		commandPos2 = pos;
 	}
 
@@ -1274,7 +1278,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	// Priority 1: Repair
 	if (!reclaimEnemyOnlyMode && (ownerDef->canRepair || ownerDef->canAssist) && FindRepairTargetAndRepair(curPosOnLine, searchRadius, c.GetOpts(), true, resurrectMode)){
 		tempOrder = true;
-		inCommand = false;
+		inCommand = CMD_STOP;
 
 		if (lastPC1 != gs->frameNum) {  //avoid infinite loops
 			lastPC1 = gs->frameNum;
@@ -1287,7 +1291,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	// Priority 2: Resurrect (optional)
 	if (!reclaimEnemyOnlyMode && resurrectMode && ownerDef->canResurrect && FindResurrectableFeatureAndResurrect(curPosOnLine, searchRadius, c.GetOpts(), false)) {
 		tempOrder = true;
-		inCommand = false;
+		inCommand = CMD_STOP;
 
 		if (lastPC2 != gs->frameNum) {  //avoid infinite loops
 			lastPC2 = gs->frameNum;
@@ -1300,7 +1304,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	// Priority 3: Reclaim / reclaim non resurrectable (optional) / reclaim enemy units (optional)
 	if (ownerDef->canReclaim && FindReclaimTargetAndReclaim(curPosOnLine, searchRadius, c.GetOpts(), recopt)) {
 		tempOrder = true;
-		inCommand = false;
+		inCommand = CMD_STOP;
 
 		if (lastPC3 != gs->frameNum) {  //avoid infinite loops
 			lastPC3 = gs->frameNum;
@@ -1329,7 +1333,7 @@ void CBuilderCAI::ExecuteRestore(Command& c)
 	if (!owner->unitDef->canRestore)
 		return;
 
-	if (inCommand) {
+	if (inCommand == CMD_RESTORE) {
 		if (!ownerBuilder->terraforming)
 			StopMoveAndFinishCommand();
 
@@ -1342,7 +1346,7 @@ void CBuilderCAI::ExecuteRestore(Command& c)
 
 		if (MoveInBuildRange(pos, radius * 0.7f)) {
 			ownerBuilder->StartRestore(pos, radius);
-			inCommand = true;
+			inCommand = CMD_RESTORE;
 		}
 	}
 }

@@ -440,8 +440,8 @@ void CMobileCAI::ExecuteLoadOnto(Command& c) {
 		return;
 	}
 
-	if (!inCommand) {
-		inCommand = true;
+	if (inCommand == CMD_STOP) {
+		inCommand = CMD_LOAD_UNITS;
 		// order transport to load <owner> before resuming its own queue
 		transport->commandAI->commandQue.push_front(Command(CMD_LOAD_UNITS, INTERNAL_ORDER | SHIFT_KEY, owner->id));
 	}
@@ -499,7 +499,9 @@ void CMobileCAI::ExecuteFight(Command& c)
 			if ((newTarget != nullptr) && w->Attack(SWeaponTarget(newTarget, false))) {
 				c.SetParam(0, newTarget->id);
 
-				inCommand = false;
+				inCommand = CMD_STOP;
+				if (gs->frameNum >= 74000 && owner->id == 25081)
+					LOG("CMobileCAI::ExecuteFight1()");
 			}
 		}
 
@@ -508,7 +510,7 @@ void CMobileCAI::ExecuteFight(Command& c)
 	}
 
 	if (tempOrder) {
-		inCommand = true;
+		inCommand = CMD_FIGHT;
 		tempOrder = false;
 	}
 	if (c.GetNumParams() < 3) {
@@ -516,7 +518,7 @@ void CMobileCAI::ExecuteFight(Command& c)
 		return;
 	}
 	if (c.GetNumParams() >= 6) {
-		if (!inCommand)
+		if (inCommand == CMD_STOP)
 			commandPos1 = c.GetPos(3);
 
 	} else {
@@ -533,8 +535,8 @@ void CMobileCAI::ExecuteFight(Command& c)
 
 	float3 cmdPos = c.GetPos(0);
 
-	if (!inCommand) {
-		inCommand = true;
+	if (inCommand == CMD_STOP) {
+		inCommand = CMD_FIGHT;
 		commandPos2 = cmdPos;
 		lastUserGoal = commandPos2;
 	}
@@ -556,8 +558,10 @@ void CMobileCAI::ExecuteFight(Command& c)
 			// NOTE: see AirCAI::ExecuteFight why we do not set INTERNAL_ORDER
 			commandQue.push_front(Command(CMD_ATTACK, c.GetOpts(), enemy->id));
 
-			inCommand = false;
+			inCommand = CMD_STOP;
 			tempOrder = true;
+			if (gs->frameNum >= 74000 && owner->id == 25081)
+				LOG("CMobileCAI::ExecuteFight2()");
 
 			if (lastCommandFrame == gs->frameNum)
 				return;
@@ -868,7 +872,7 @@ void CMobileCAI::ExecuteAttack(Command& c)
 		}
 	}
 
-	if (!inCommand) {
+	if (inCommand == CMD_STOP) {
 		switch (c.GetNumParams()) {
 			case 0: {
 			} break;
@@ -893,12 +897,15 @@ void CMobileCAI::ExecuteAttack(Command& c)
 				const float3 tgtErrPos = targetUnit->GetErrorPos(owner->allyteam, false);
 				const float3 tgtPosDir = (tgtErrPos - owner->pos).Normalize();
 
+				if (gs->frameNum == 74737 && owner->id == 25081)
+					LOG("CMobileCAI::ExecuteAttack1()");
+
 				// FIXME: don't call SetGoal() if target is already in range of some weapon?
 				SetGoal(tgtErrPos - tgtPosDir * CalcTargetRadius(targetUnit, targetUnit->radius, 1.0f), owner->pos);
 				SetOrderTarget(targetUnit);
 				owner->AttackUnit(targetUnit, !c.IsInternalOrder(), c.GetID() == CMD_MANUALFIRE);
 
-				inCommand = true;
+				inCommand = CMD_ATTACK;
 			} break;
 
 			case 2: {
@@ -908,7 +915,9 @@ void CMobileCAI::ExecuteAttack(Command& c)
 				// user gave force-fire attack command
 				SetGoal(c.GetPos(0), owner->pos);
 
-				inCommand = true;
+				inCommand = CMD_ATTACK;
+				if (gs->frameNum >= 74000 && owner->id == 25081)
+					LOG("CMobileCAI::ExecuteAttack2()");
 			} break;
 		}
 	}
@@ -1357,7 +1366,7 @@ void CMobileCAI::ExecuteLoadUnits(Command& c)
 				}
 			}
 
-			if (inCommand) {
+			if (inCommand == CMD_LOAD_UNITS) {
 				if (!owner->script->IsBusy())
 					StopMoveAndFinishCommand();
 
@@ -1424,7 +1433,7 @@ void CMobileCAI::ExecuteLoadUnits(Command& c)
 						if (!eventHandler.AllowUnitTransportLoad(owner, unit, wantedPos, true))
 							return;
 
-						inCommand = true;
+						inCommand = CMD_LOAD_UNITS;
 
 						StopMove();
 						owner->script->TransportPickup(unit);
@@ -1457,7 +1466,9 @@ void CMobileCAI::ExecuteLoadUnits(Command& c)
 
 			if (unit != nullptr && owner->CanTransport(unit)) {
 				commandQue.push_front(Command(CMD_LOAD_UNITS, c.GetOpts() | INTERNAL_ORDER, unit->id));
-				inCommand = false;
+				inCommand = CMD_STOP;
+				if (gs->frameNum >= 74000 && owner->id == 25081)
+					LOG("CMobileCAI::ExecuteLoadUnits()");
 
 				SlowUpdate();
 				return;
@@ -1507,7 +1518,7 @@ void CMobileCAI::ExecuteUnloadUnits(Command& c)
 void CMobileCAI::ExecuteUnloadUnit(Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (inCommand) {
+	if (inCommand == CMD_UNLOAD_UNIT) {
 		if (!owner->script->IsBusy())
 			StopMoveAndFinishCommand();
 
@@ -1930,7 +1941,7 @@ void CMobileCAI::UnloadLand(Command& c)
 		if (!eventHandler.AllowUnitTransportUnload(owner, transportee, wantedPos, true))
 			return;
 
-		inCommand = true;
+		inCommand = CMD_UNLOAD_UNIT;
 
 		StopMove();
 		owner->script->TransportDrop(transportee, wantedPos);
@@ -2011,7 +2022,7 @@ void CMobileCAI::UnloadDrop(Command& c)
 			FinishCommand();
 		}
 	} else {
-		inCommand = true;
+		inCommand = CMD_UNLOAD_UNIT;
 
 		StopMove();
 		owner->script->TransportDrop(transportee, pos);
@@ -2067,7 +2078,7 @@ void CMobileCAI::UnloadLandFlood(Command& c)
 			}
 		} else {
 			// land transports
-			inCommand = true;
+			inCommand = CMD_UNLOAD_UNIT;
 
 			StopMove();
 			owner->script->TransportDrop(transportee, wantedPos);

@@ -84,7 +84,7 @@ static const unsigned int FLOAT_MEMBER_HASHES[] = {
 
 static bool UnitIsBusy(const CCommandAI* cai) {
 	// queued move-commands (or active build/repair/etc-commands) mean unit has to stay airborne
-	return (cai->inCommand || cai->HasMoreMoveCommands(false));
+	return (cai->inCommand > CMD_STOP || cai->HasMoreMoveCommands(false));
 }
 
 static bool UnitHasLoadCmd(const CCommandAI* cai) {

@@ -73,9 +73,9 @@ CR_REG_METADATA(CCommandAI, (
 
 	CR_MEMBER(orderTarget),
 	CR_MEMBER(targetDied),
-	CR_MEMBER(inCommand),
 	CR_MEMBER(repeatOrders),
 	CR_MEMBER(lastSelectedCommandPage),
+	CR_MEMBER(inCommand),
 	CR_MEMBER(commandDeathDependences),
 	CR_MEMBER(targetLostTimer),
 
@@ -90,7 +90,7 @@ CCommandAI::CCommandAI():
 	owner(NULL),
 	orderTarget(0),
 	targetDied(false),
-	inCommand(false),
+	inCommand(CMD_STOP),
 	repeatOrders(false),
 	lastSelectedCommandPage(0),
 	targetLostTimer(TARGET_LOST_TIMER)
@@ -104,7 +104,7 @@ CCommandAI::CCommandAI(CUnit* owner):
 	owner(owner),
 	orderTarget(0),
 	targetDied(false),
-	inCommand(false),
+	inCommand(CMD_STOP),
 	repeatOrders(false),
 	lastSelectedCommandPage(0),
 	targetLostTimer(TARGET_LOST_TIMER)
@@ -1007,7 +1007,7 @@ void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 		commandQue.clear();
 		assert(commandQue.empty());
 
-		inCommand = false;
+		inCommand = CMD_STOP;
 	}
 
 	AddCommandDependency(c);
@@ -1095,8 +1095,10 @@ void CCommandAI::GiveWaitCommand(const Command& c)
 		owner->DropCurrentAttackTarget();
 		StopMove();
 
-		inCommand = false;
+		inCommand = CMD_STOP;
 		targetDied = false;
+		if (gs->frameNum >= 74000 && owner->id == 25081)
+			LOG("CCommandAI::GiveWaitCommand()");
 
 		commandQue.push_front(c);
 		return;
@@ -1194,8 +1196,10 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 
 	// shutdown the current order if the insertion is at the beginning
 	if (!queue->empty() && (insertIt == queue->begin())) {
-		inCommand = false;
+		inCommand = CMD_STOP;
 		targetDied = false;
+		if (gs->frameNum >= 74000 && owner->id == 25081)
+			LOG("CCommandAI::ExecuteInsert()");
 
 		SetOrderTarget(nullptr);
 		const Command& cmd = queue->front();
@@ -1491,7 +1495,7 @@ void CCommandAI::ExecuteAttack(Command& c)
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(owner->unitDef->canAttack);
 
-	if (inCommand) {
+	if (inCommand == CMD_ATTACK) {
 		if (targetDied || (c.GetNumParams() == 1 && UpdateTargetLostTimer(int(c.GetParam(0))) == 0)) {
 			FinishCommand();
 			return;
@@ -1519,10 +1523,14 @@ void CCommandAI::ExecuteAttack(Command& c)
 
 			SetOrderTarget(targetUnit);
 			owner->AttackUnit(targetUnit, !c.IsInternalOrder(), c.GetID() == CMD_MANUALFIRE);
-			inCommand = true;
+			inCommand = CMD_ATTACK;
+			if (gs->frameNum >= 74000 && owner->id == 25081)
+				LOG("CCommandAI::ExecuteAttack1()");
 		} else {
 			owner->AttackGround(c.GetPos(0), !c.IsInternalOrder(), c.GetID() == CMD_MANUALFIRE);
-			inCommand = true;
+			inCommand = CMD_ATTACK;
+			if (gs->frameNum >= 74000 && owner->id == 25081)
+				LOG("CCommandAI::ExecuteAttack2()");
 		}
 	}
 }
@@ -1672,8 +1680,10 @@ void CCommandAI::FinishCommand()
 
 	commandQue.pop_front();
 
-	inCommand = false;
+	inCommand = CMD_STOP;
 	targetDied = false;
+	if (gs->frameNum >= 74000 && owner->id == 25081)
+		LOG("CCommandAI::FinishCommand()");
 
 	SetOrderTarget(nullptr);
 	eoh->CommandFinished(*owner, cmd);
@@ -1743,7 +1753,7 @@ void CCommandAI::UpdateStockpileIcon()
 void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget, bool raiseEvent)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!inCommand || commandQue.empty())
+	if (inCommand != CMD_ATTACK || commandQue.empty())
 		return;
 
 	const Command& c = commandQue.front();
