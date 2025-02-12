@@ -500,8 +500,6 @@ void CMobileCAI::ExecuteFight(Command& c)
 				c.SetParam(0, newTarget->id);
 
 				inCommand = CMD_STOP;
-				if (gs->frameNum >= 74000 && owner->id == 25081)
-					LOG("CMobileCAI::ExecuteFight1()");
 			}
 		}
 
@@ -560,8 +558,6 @@ void CMobileCAI::ExecuteFight(Command& c)
 
 			inCommand = CMD_STOP;
 			tempOrder = true;
-			if (gs->frameNum >= 74000 && owner->id == 25081)
-				LOG("CMobileCAI::ExecuteFight2()");
 
 			if (lastCommandFrame == gs->frameNum)
 				return;
@@ -897,9 +893,6 @@ void CMobileCAI::ExecuteAttack(Command& c)
 				const float3 tgtErrPos = targetUnit->GetErrorPos(owner->allyteam, false);
 				const float3 tgtPosDir = (tgtErrPos - owner->pos).Normalize();
 
-				if (gs->frameNum == 74737 && owner->id == 25081)
-					LOG("CMobileCAI::ExecuteAttack1()");
-
 				// FIXME: don't call SetGoal() if target is already in range of some weapon?
 				SetGoal(tgtErrPos - tgtPosDir * CalcTargetRadius(targetUnit, targetUnit->radius, 1.0f), owner->pos);
 				SetOrderTarget(targetUnit);
@@ -916,8 +909,6 @@ void CMobileCAI::ExecuteAttack(Command& c)
 				SetGoal(c.GetPos(0), owner->pos);
 
 				inCommand = CMD_ATTACK;
-				if (gs->frameNum >= 74000 && owner->id == 25081)
-					LOG("CMobileCAI::ExecuteAttack2()");
 			} break;
 		}
 	}
@@ -1467,8 +1458,6 @@ void CMobileCAI::ExecuteLoadUnits(Command& c)
 			if (unit != nullptr && owner->CanTransport(unit)) {
 				commandQue.push_front(Command(CMD_LOAD_UNITS, c.GetOpts() | INTERNAL_ORDER, unit->id));
 				inCommand = CMD_STOP;
-				if (gs->frameNum >= 74000 && owner->id == 25081)
-					LOG("CMobileCAI::ExecuteLoadUnits()");
 
 				SlowUpdate();
 				return;

@@ -1097,8 +1097,6 @@ void CCommandAI::GiveWaitCommand(const Command& c)
 
 		inCommand = CMD_STOP;
 		targetDied = false;
-		if (gs->frameNum >= 74000 && owner->id == 25081)
-			LOG("CCommandAI::GiveWaitCommand()");
 
 		commandQue.push_front(c);
 		return;
@@ -1198,8 +1196,6 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 	if (!queue->empty() && (insertIt == queue->begin())) {
 		inCommand = CMD_STOP;
 		targetDied = false;
-		if (gs->frameNum >= 74000 && owner->id == 25081)
-			LOG("CCommandAI::ExecuteInsert()");
 
 		SetOrderTarget(nullptr);
 		const Command& cmd = queue->front();
@@ -1524,13 +1520,9 @@ void CCommandAI::ExecuteAttack(Command& c)
 			SetOrderTarget(targetUnit);
 			owner->AttackUnit(targetUnit, !c.IsInternalOrder(), c.GetID() == CMD_MANUALFIRE);
 			inCommand = CMD_ATTACK;
-			if (gs->frameNum >= 74000 && owner->id == 25081)
-				LOG("CCommandAI::ExecuteAttack1()");
 		} else {
 			owner->AttackGround(c.GetPos(0), !c.IsInternalOrder(), c.GetID() == CMD_MANUALFIRE);
 			inCommand = CMD_ATTACK;
-			if (gs->frameNum >= 74000 && owner->id == 25081)
-				LOG("CCommandAI::ExecuteAttack2()");
 		}
 	}
 }
@@ -1682,8 +1674,6 @@ void CCommandAI::FinishCommand()
 
 	inCommand = CMD_STOP;
 	targetDied = false;
-	if (gs->frameNum >= 74000 && owner->id == 25081)
-		LOG("CCommandAI::FinishCommand()");
 
 	SetOrderTarget(nullptr);
 	eoh->CommandFinished(*owner, cmd);
