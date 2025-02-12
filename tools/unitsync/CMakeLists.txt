@@ -90,12 +90,12 @@ set(main_files
 	"${ENGINE_SRC_ROOT}/System/TdfParser.cpp"
 	"${ENGINE_SRC_ROOT}/System/UriParser.cpp"
 	"${ENGINE_SRC_ROOT}/System/StringUtil.cpp"
-	"${ENGINE_SRC_ROOT}/System/Platform/SharedLib.cpp"
-	"${ENGINE_SRC_ROOT}/System/Platform/Win/DllLib.cpp"
 	)
 if (WIN32)
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/Hardware.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/WinVersion.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/SharedLib.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/DllLib.cpp")
 else (WIN32)
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/Hardware.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
