@@ -18,6 +18,7 @@
 
 class CUnit;
 class CFeature;
+class CWeapon;
 class CMatrix44f;
 struct AtlasedTexture;
 class CProjectileDrawer;
@@ -43,6 +44,7 @@ public:
 	virtual void Collision() { Delete(); }
 	virtual void Collision(CUnit* unit) { Collision(); }
 	virtual void Collision(CFeature* feature) { Collision(); }
+	virtual void Collision(CWeapon* weapon) { Collision(); }
 	//Not inheritable - used for removing a projectile from Lua.
 	void Delete();
 	virtual void Update();
