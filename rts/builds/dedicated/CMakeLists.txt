@@ -33,9 +33,6 @@ list(APPEND engineDedicatedLibraries ${LZMA_LIBRARY})
 ### base64 from pr-downloader
 list(APPEND engineDedicatedLibraries "prd::base64")
 
-### smmalloc
-list(APPEND engineDedicatedLibraries "smmalloc")
-
 if (WIN32)
 	list(APPEND engineDedicatedLibraries ${WINMM_LIBRARY})
 endif (WIN32)

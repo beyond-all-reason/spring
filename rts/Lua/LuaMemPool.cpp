@@ -121,7 +121,7 @@ void* LuaMemPool::Alloc(size_t size)
 	auto t0 = spring_now();
 	auto* ptr = luaMemPoolImpl->allocMem(size);
 	
-	if (size > NUM_BUCKETS * BUCKET_STEP) {
+	if (size > MAX_INTERNAL_ALLOC_SIZE) {
 		allocStats[STAT_NAE] += 1 * (size > 0);
 		allocStats[STAT_NBE] += size;
 		allocStats[STAT_NTE] += (spring_now() - t0).toMicroSecsi();
@@ -164,7 +164,7 @@ void* LuaMemPool::Realloc(void* ptr, size_t nsize, size_t osize)
 
 	auto t0 = spring_now();
 	auto* ret = luaMemPoolImpl->reAllocMem(ptr, nsize);
-	if (nsize > NUM_BUCKETS * BUCKET_STEP) {
+	if (nsize > MAX_INTERNAL_ALLOC_SIZE) {
 		allocStats[STAT_NAE] += 1 * (nsize > 0);
 		allocStats[STAT_NBE] += nsize;
 		allocStats[STAT_NTE] += (spring_now() - t0).toMicroSecsi();

@@ -1,10 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef MEMPOOL_TYPES_H
-#define MEMPOOL_TYPES_H
+#pragma once
 
 #include <cassert>
-#include <cstddef>
 #include <cstring> // memset
 #include <cmath>
 #include <array>
@@ -12,30 +10,52 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <tuple>
 
-#include "smmalloc/smmalloc.h"
+#include "buddy_alloc/buddy_alloc.h"
 
 #include "System/UnorderedMap.hpp"
 #include "System/ContainerUtil.h"
 #include "System/SafeUtil.h"
 #include "System/Platform/Threading.h"
+#include "System/Threading/SpringThreading.h"
+#include "System/Threading/WrappedSync.h"
 #include "System/Log/ILog.h"
+#include "System/SpringMath.h"
 
-template<uint32_t NumBuckets, size_t BucketSize> struct PassThroughPool {
+template<size_t ArenaSize, size_t MaxAllocationSize> struct PassThroughPool {
 public:
 	PassThroughPool() {
-		space = _sm_allocator_create(NumBuckets, BucketSize);
+		static_assert(std::has_single_bit(ArenaSize), "ArenaSize is not PO2");
+		/* You need space for the metadata and for the arena */
+		buddyMetadata.resize(buddy_sizeof(ArenaSize));
+		buddyArena.resize(ArenaSize);
+		buddy = buddy_init(buddyMetadata.data(), buddyArena.data(), ArenaSize);
+		assert(buddy);
 	}
 	~PassThroughPool() {
-		_sm_allocator_destroy(space); //checks space != nullptr internally
+		assert(buddy_is_empty(buddy));
+		buddy = nullptr;
+		buddyMetadata.clear();
+		buddyArena.clear();
 	}
 
 	template<typename T, typename... A> T* alloc(A&&... a) {
-		static_assert(BUCKET_STEP >= alignof(T), "Can't allocate memory with alignment greater than BUCKET_STEP");
 		return new (allocMem(sizeof(T))) T(std::forward<A>(a)...);
 	}
 	void* allocMem(size_t size) {
-		return _sm_malloc(space, size, BUCKET_STEP);
+		if (size > MaxAllocationSize)
+			return std::malloc(size);
+
+		void* ptr = nullptr;
+		{
+			auto lock = mutex.GetScopedLock();
+			ptr = buddy_malloc(buddy, size);
+		}
+		if (ptr)
+			return ptr;
+
+		return std::malloc(size);
 	}
 
 	template<typename T> void free(T*& p) {
@@ -45,30 +65,69 @@ public:
 		freeMem(m);
 	}
 	void freeMem(void* p) {
-		_sm_free(space, p);
+		if (!isAllocInternal(p)) {
+			std::free(p);
+			return;
+		}
+
+		auto lock = mutex.GetScopedLock();
+		buddy_free(buddy, p);
 	}
 
 	void* reAllocMem(void* p, size_t size) {
-		return _sm_realloc(space, p, size, BUCKET_STEP);
+		if(!isAllocInternal(p))
+			return std::realloc(p, size);
+
+		const auto FallBackAlloc = [this](void* p, size_t size) {
+			void* np = std::malloc(size);
+			auto pd = reinterpret_cast<std::uintptr_t>(p) - reinterpret_cast<std::uintptr_t>(buddyArena.data());
+			std::memcpy(np, p, std::min(size, buddyArena.size() - static_cast<size_t>(pd)));
+
+			auto lock = mutex.GetScopedLock();
+			buddy_free(buddy, p);
+
+			return np;
+		};
+
+		if (size > MaxAllocationSize) {
+			// previous allocation is from the pool, but the new one is too big
+			return FallBackAlloc(p, size);
+		}
+
+		{
+			auto lock = mutex.GetScopedLock();
+			if (void* ptr = buddy_realloc(buddy, p, size, false); ptr)
+				return ptr;
+		}
+		// realloc failed to re-allocate memory (buddy pool is full)
+		return FallBackAlloc(p, size);
 	}
 
 	bool isAllocInternal(void* p) const {
-		return (space->GetBucketIndex(p) != -1);
+		if (reinterpret_cast<uint8_t*>(p) < buddyArena.data())
+			return false;
+
+		auto pd = reinterpret_cast<std::uintptr_t>(p) - reinterpret_cast<std::uintptr_t>(buddyArena.data());
+		return pd < buddyArena.size();
 	}
+
+	void SetThreadSafety(bool b) { mutex.SetThreadSafety(b); }
+
 private:
-	static constexpr size_t BUCKET_STEP = 16;
-	static constexpr size_t INTERNAL_ALLOC_SIZE = BUCKET_STEP * NumBuckets;
-	sm_allocator space = nullptr;
+	spring::WrappedSyncSpinLock mutex;
+	std::vector<uint8_t> buddyArena;
+	std::vector<uint8_t> buddyMetadata;
+	buddy* buddy = nullptr;
 };
 
 // Helper to infer the memory alignment and size from a set of types.
 template <class ...T>
 #if 0 // doesn't compile on MSVC 19.37
 struct TypesMem {
-    alignas(alignof(T)...) uint8_t data[std::max({sizeof(T)...})];
+	alignas(alignof(T)...) uint8_t data[std::max({ sizeof(T)... })];
 };
 #else
-using TypesMem = std::aligned_storage_t< std::max({ sizeof(T)... }), std::max({ alignof(T)... }) >;
+using TypesMem = std::aligned_storage_t < std::max({ sizeof(T)... }), std::max({ alignof(T)... }) > ;
 #endif
 
 template<size_t S, size_t Alignment> struct DynMemPool {
@@ -83,7 +142,8 @@ public:
 			pages.emplace_back();
 
 			i = pages.size() - 1;
-		} else {
+		}
+		else {
 			// must pop before ctor runs; objects can be created recursively
 			i = spring::VectorBackPop(indcs);
 		}
@@ -106,7 +166,7 @@ public:
 		assert(mapped(m));
 
 		const auto iter = table.find(m);
-		const auto pair = std::pair<void*, size_t>{iter->first, iter->second};
+		const auto pair = std::pair<void*, size_t>{ iter->first, iter->second };
 
 		std::memset(pages[pair.second].data, 0, PAGE_SIZE());
 
@@ -247,7 +307,7 @@ public:
 
 	bool mapped(void* ptr) const { return ((page_mem_from_ptr(ptr)->index < (num_chunks * K)) && (page_mem(page_mem_from_ptr(ptr)->index)->data == ptr)); }
 	bool alloced(void* ptr) const { return ((page_index < (num_chunks * K)) && (page_mem(page_index)->data == ptr)); }
-	bool can_alloc() const { return num_chunks < N || !indcs.empty() ; }
+	bool can_alloc() const { return num_chunks < N || !indcs.empty(); }
 	bool can_free() const { return indcs.size() < (NUM_CHUNKS() * NUM_PAGES()); }
 
 private:
@@ -300,7 +360,8 @@ public:
 
 		if (free_page_count == 0) {
 			i = used_page_count++;
-		} else {
+		}
+		else {
 			i = indcs[--free_page_count];
 		}
 
@@ -401,10 +462,10 @@ public:
 	virtual void Free(size_t firstElem, size_t numElems, const T* T0 = nullptr);
 	const size_t GetSize() const { return data.size(); }
 	const std::vector<T>& GetData() const { return data; }
-	      std::vector<T>& GetData()       { return data; }
+	std::vector<T>& GetData() { return data; }
 
 	virtual const T& operator[](std::size_t idx) const { return data[idx]; }
-	virtual       T& operator[](std::size_t idx)       { return data[idx]; }
+	virtual       T& operator[](std::size_t idx) { return data[idx]; }
 
 	static constexpr std::size_t INVALID_INDEX = ~0u;
 private:
@@ -474,7 +535,7 @@ inline void StablePosAllocator<T>::CompactGaps()
 			else {
 				++it;
 			}
-	};
+		};
 
 	bool found;
 	std::size_t posStartFrom = 0u;
@@ -548,6 +609,3 @@ inline void StablePosAllocator<T>::Free(size_t firstElem, size_t numElems, const
 
 	myLog("StablePosAllocator<T>::Free(%u, %u)", uint32_t(firstElem), uint32_t(numElems));
 }
-
-#endif
-
