@@ -1293,6 +1293,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	// const float buildHeight = GetBuildHeight(testPos, buildInfo.def, synced);
 	// const float modelHeight = (model != nullptr) ? math::fabs(model->height) : 10.0f;
 
+	// FIXME remove this line to let Lua buildsquares specify arbitrary Y, if/when defaulting to ground height exists
 	sqrPos.y = GetBuildHeight(testPos, buildInfo.def, synced);
 
 	BuildSquareStatus testStatus = BUILDSQUARE_OPEN;
