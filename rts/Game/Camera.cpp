@@ -13,6 +13,8 @@
 #include "System/float3.h"
 #include "System/Matrix44f.h"
 #include "System/Config/ConfigHandler.h"
+#include "Sim/Features/FeatureHandler.h"
+#include "Sim/Units/UnitHandler.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -771,6 +773,62 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	v.y = (camDeltaTime * 0.001f * move.y);
 
 	return v;
+}
+
+std::optional<float3> CCamera::TracePointToMaxAltitude(const float3& point, const float rayLength, const float maxAltitude) const
+{
+	// ray from camera position to point, intersecting with the maxAltitude horizontal plane.
+	const float3 dir = (point-pos).Normalize();
+	const float dist = CGround::LinePlaneCol(pos, dir, rayLength, maxAltitude);
+	if (dist > 0.0) {
+		return pos + dir*dist;
+	}
+	return std::nullopt;
+}
+
+float3 CCamera::NearTheaterIntersection(const float3& dir, const float rayLength) const
+{
+	// intersect the frustum with max altitude to get the optimal ray start.
+
+	// max unit and feature altitudes are always at least map MaxHeight.
+	const float maxAltitude = std::max <float> (unitHandler.MaxUnitAltitude(), featureHandler.MaxFeatureAltitude());
+	if (pos.y < maxAltitude)
+		return pos;
+
+	const auto fbl = GetFrustumVert(CCamera::FRUSTUM_POINT_FBL);
+	const auto fbr = GetFrustumVert(CCamera::FRUSTUM_POINT_FBR);
+	const auto ftl = GetFrustumVert(CCamera::FRUSTUM_POINT_FTL);
+
+	// check the bottom frustum is parallel to ground and lower than the top frustum
+	if ((std::abs(fbl.y-fbr.y) > std::abs(fbl.y/100000.0)) || (fbl.y >= ftl.y))
+		return pos;
+
+	const auto fv1 = TracePointToMaxAltitude(fbl, rayLength, maxAltitude);
+	const auto fv2 = TracePointToMaxAltitude(fbr, rayLength, maxAltitude);
+	if (!fv1 || !fv2)
+		return pos;
+
+	float3 midFv = (fv1.value()+fv2.value())/2.0;
+	midFv.y = pos.y;
+
+	// vertical plane from frustum intersection to max height
+	const float3 p = fv1.value();
+	const float3 norm = midFv-pos;
+	const auto d = -norm.dot(p);
+	const float4 nearTheaterPlane = float4(norm.x, norm.y, norm.z, d);
+
+	// intersection
+	float3 rayIntersection;
+	float3 topFrustumIntersection;
+
+	// both the ray and cam to ftl need to intersect the plane to make sure we're not looking down, in that
+	// case results wouldn't be correct and also we wouldn't gain anything.
+	const bool rayRes = RayAndPlaneIntersection(pos, pos+dir*rayLength, nearTheaterPlane, false, rayIntersection);
+	const bool tfRes = RayAndPlaneIntersection(pos, ftl, nearTheaterPlane, false, topFrustumIntersection);
+	if (rayRes && tfRes) {
+		return rayIntersection;
+	}
+	return pos;
 }
 
 // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-points-and-spheres/

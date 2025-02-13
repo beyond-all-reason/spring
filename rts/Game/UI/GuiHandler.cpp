@@ -1157,8 +1157,9 @@ bool CGuiHandler::TryTarget(const SCommandDescription& cmdDesc) const
 	const CFeature* targetFeature = nullptr;
 
 	const float viewRange = camera->GetFarPlaneDist() * 1.4f;
-	const float dist = TraceRay::GuiTraceRay(camera->GetPos(), mouse->dir, viewRange, NULL, targetUnit, targetFeature, true);
-	const float3 groundPos = camera->GetPos() + mouse->dir * dist;
+	const float3 rayOrigin = camera->NearTheaterIntersection(mouse->dir, viewRange);
+	const float dist = TraceRay::GuiTraceRay(rayOrigin, mouse->dir, viewRange, nullptr, targetUnit, targetFeature, true);
+	const float3 groundPos = rayOrigin + mouse->dir * dist;
 
 	if (dist <= 0.0f)
 		return false;
@@ -1698,8 +1699,11 @@ int CGuiHandler::GetDefaultCommand(int x, int y, const float3& cameraPos, const 
 			unit = minimap->GetSelectUnit(minimap->GetMapPosition(x, y));
 		} else {
 			const float viewRange = camera->GetFarPlaneDist() * 1.4f;
-			const float dist = TraceRay::GuiTraceRay(cameraPos, mouseDir, viewRange, nullptr, unit, feature, true);
-			const float3 hit = cameraPos + mouseDir * dist;
+
+			const float3 rayOrigin = camera->NearTheaterIntersection(mouseDir, viewRange);
+			const float dist = TraceRay::GuiTraceRay(rayOrigin, mouseDir, viewRange, nullptr, unit, feature, true);
+
+			const float3 hit = rayOrigin + mouseDir * dist;
 
 			// make sure the ray hit in the map
 			if (unit == nullptr && feature == nullptr && !hit.IsInBounds())
@@ -2281,7 +2285,9 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 			const CUnit* unit = nullptr;
 			const CFeature* feature = nullptr;
 
-			TraceRay::GuiTraceRay(cameraPos, mouseDir, camera->GetFarPlaneDist() * 1.4f, nullptr, unit, feature, true);
+			const float viewRange = camera->GetFarPlaneDist() * 1.4f;
+			const float3 rayOrigin = camera->NearTheaterIntersection(mouseDir, viewRange);
+			TraceRay::GuiTraceRay(rayOrigin, mouseDir, viewRange, nullptr, unit, feature, true);
 
 			if (unit == nullptr)
 				return defaultRet;
@@ -2298,7 +2304,8 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 			const CFeature* feature = nullptr;
 
 			const float traceDist = camera->GetFarPlaneDist() * 1.4f;
-			const float isectDist = TraceRay::GuiTraceRay(cameraPos, mouseDir, traceDist, nullptr, unit, feature, true);
+			const float3 rayOrigin = camera->NearTheaterIntersection(mouseDir, traceDist);
+			const float isectDist = TraceRay::GuiTraceRay(rayOrigin, mouseDir, traceDist, nullptr, unit, feature, true);
 
 			if (isectDist > (traceDist - 300.0f))
 				return defaultRet;
@@ -2308,7 +2315,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 				c.PushParam(unit->id);
 			} else {
 				// clicked in map
-				c.PushPos(cameraPos + (mouseDir * isectDist));
+				c.PushPos(rayOrigin + (mouseDir * isectDist));
 			}
 			return CheckCommand(c);
 		}
@@ -2361,7 +2368,9 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 			if (mouse->buttons[button].movement <= mouse->dragCircleCommandThreshold) {
 				const CUnit* unit = nullptr;
 				const CFeature* feature = nullptr;
-				const float dist2 = TraceRay::GuiTraceRay(cameraPos, mouseDir, camera->GetFarPlaneDist() * 1.4f, NULL, unit, feature, true);
+				const float viewRange = camera->GetFarPlaneDist() * 1.4f;
+				const float3 rayOrigin = camera->NearTheaterIntersection(mouseDir, viewRange);
+				const float dist2 = TraceRay::GuiTraceRay(rayOrigin, mouseDir, viewRange, nullptr, unit, feature, true);
 
 				if (dist2 > (camera->GetFarPlaneDist() * 1.4f - 300) && (commands[tempInCommand].type != CMDTYPE_ICON_UNIT_FEATURE_OR_AREA))
 					return defaultRet;
@@ -2378,7 +2387,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 					if (explicitCommand < 0 || !ZeroRadiusAllowed(c))
 						return defaultRet;
 
-					c.PushPos(cameraPos + (mouseDir * dist2));
+					c.PushPos(rayOrigin + (mouseDir * dist2));
 					c.PushParam(0); // zero radius
 
 					if (c.GetID() == CMD_UNLOAD_UNITS)
@@ -2424,7 +2433,8 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 				const CFeature* feature = nullptr;
 
 				const float traceDist = camera->GetFarPlaneDist() * 1.4f;
-				const float outerDist = TraceRay::GuiTraceRay(cameraPos, mouseDir, traceDist, nullptr, unit, feature, true);
+				const float3 rayOrigin = camera->NearTheaterIntersection(mouseDir, traceDist);
+				const float outerDist = TraceRay::GuiTraceRay(rayOrigin, mouseDir, traceDist, nullptr, unit, feature, true);
 
 				if (outerDist > (traceDist - 300.0f))
 					return defaultRet;
@@ -2437,7 +2447,7 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 					if (explicitCommand < 0)
 						return defaultRet;
 
-					c.PushPos(cameraPos + (mouseDir * outerDist));
+					c.PushPos(rayOrigin + (mouseDir * outerDist));
 				}
 			} else {
 				// create rectangular area-command
@@ -2519,7 +2529,9 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 		const CUnit* unit = nullptr;
 		const CFeature* feature = nullptr;
 
-		TraceRay::GuiTraceRay(cameraPos, mouseDir, camera->GetFarPlaneDist() * 1.4f, nullptr, unit, feature, startInfo.def->floatOnWater);
+		const float viewRange = camera->GetFarPlaneDist() * 1.4f;
+		const float3 rayOrigin = camera->NearTheaterIntersection(mouseDir, viewRange);
+		TraceRay::GuiTraceRay(rayOrigin, mouseDir, viewRange, nullptr, unit, feature, startInfo.def->floatOnWater);
 
 		if (unit != nullptr) {
 			other.def = unit->unitDef;
@@ -3726,7 +3738,8 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 			unit = minimap->GetSelectUnit(tracePos);
 		} else {
 			// ignore the returned distance, we don't care about it here
-			TraceRay::GuiTraceRay(tracePos, traceDir, maxTraceDist, nullptr, unit, feature, false);
+			const float3 rayOrigin = camera->NearTheaterIntersection(traceDir, maxTraceDist);
+			TraceRay::GuiTraceRay(rayOrigin, traceDir, maxTraceDist, nullptr, unit, feature, false);
 		}
 
 		if (unit != nullptr && (gu->spectatingFullView || unit->IsInLosForAllyTeam(gu->myAllyTeam))) {
