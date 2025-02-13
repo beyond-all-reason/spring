@@ -35,7 +35,7 @@ public:
 
 	int GetType() const override { return ARCHIVE_TYPE_SDZ; }
 
-	bool IsOpen() override { return (zip != nullptr); }
+	bool IsOpen() override { return (zipPerThread[0] != nullptr); }
 
 	unsigned int NumFiles() const override { return (fileEntries.size()); }
 	void FileInfo(unsigned int fid, std::string& name, int& size) const override;
@@ -47,10 +47,11 @@ public:
 	}
 	#endif
 
+	static constexpr int MAX_THREADS = 32;
+protected:
+	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 private:
-	static inline spring::mutex archiveLock;
-
-	unzFile zip;
+	std::array<unzFile, MAX_THREADS> zipPerThread = {nullptr};
 
 	// actual data is in BufferedArchive
 	struct FileEntry {
@@ -62,7 +63,7 @@ private:
 
 	std::vector<FileEntry> fileEntries;
 
-	int GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
+	static inline spring::mutex archiveLock;
 };
 
 #endif // _ZIP_ARCHIVE_H

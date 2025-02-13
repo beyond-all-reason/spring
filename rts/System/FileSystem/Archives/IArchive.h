@@ -15,7 +15,7 @@
  * @brief Abstraction of different archive types
  *
  * Loosely resembles STL container:
- * for (unsigned int fid = 0; fid < NumFiles(); ++fid) {
+ * for (uint32_t fid = 0; fid < NumFiles(); ++fid) {
  * 	//stuff
  * }
  */
@@ -37,12 +37,12 @@ public:
 	 * @return The amount of files in the archive, does not change during
 	 * lifetime
 	 */
-	virtual unsigned int NumFiles() const = 0;
+	virtual uint32_t NumFiles() const = 0;
 	/**
 	 * Returns whether the supplied fileId is valid and available in this
 	 * archive.
 	 */
-	inline bool IsFileId(unsigned int fileId) const {
+	inline bool IsFileId(uint32_t fileId) const {
 		return (fileId < NumFiles());
 	}
 	/**
@@ -60,7 +60,7 @@ public:
 	 * @param filePath VFS path to the file, for example "maps/myMap.smf"
 	 * @return fileID of the file, NumFiles() if not found
 	 */
-	unsigned int FindFile(const std::string& filePath) const;
+	uint32_t FindFile(const std::string& filePath) const;
 	/**
 	 * Fetches the content of a file by its ID.
 	 * @param fid file ID in [0, NumFiles())
@@ -68,9 +68,9 @@ public:
 	 *   of the file
 	 * @return true if the file was found, and its contents have been
 	 *   successfully read into buffer
-	 * @see GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
+	 * @see GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	 */
-	virtual bool GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer) = 0;
+	virtual bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) = 0;
 	/**
 	 * Fetches the content of a file by its name.
 	 * @param name VFS path to the file, for example "maps/myMap.smf"
@@ -78,21 +78,21 @@ public:
 	 *   of the file
 	 * @return true if the file was found, and its contents have been
 	 *   successfully read into buffer
-	 * @see GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
+	 * @see GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	 */
 	bool GetFile(const std::string& name, std::vector<std::uint8_t>& buffer);
 
-	std::pair<std::string, int> FileInfo(unsigned int fid) const {
+	std::pair<std::string, int> FileInfo(uint32_t fid) const {
 		std::pair<std::string, int> info;
 		FileInfo(fid, info.first, info.second);
 		return info;
 	}
 
-	unsigned int ExtractedSize() const {
-		unsigned int size = 0;
+	uint32_t ExtractedSize() const {
+		uint32_t size = 0;
 
 		// no archive should be larger than 4GB when extracted
-		for (unsigned int fid = 0; fid < NumFiles(); fid++) {
+		for (uint32_t fid = 0; fid < NumFiles(); fid++) {
 			size += (FileInfo(fid).second);
 		}
 
@@ -102,7 +102,7 @@ public:
 	/**
 	 * Fetches the name and size in bytes of a file by its ID.
 	 */
-	virtual void FileInfo(unsigned int fid, std::string& name, int& size) const = 0;
+	virtual void FileInfo(uint32_t fid, std::string& name, int& size) const = 0;
 
 	/**
 	 * Returns true if the cost of reading the file is qualitatively relative
@@ -115,7 +115,7 @@ public:
 	 * Most implementations may always return true.
 	 * @return true if cost is ~ relative to its file-size
 	 */
-	virtual bool HasLowReadingCost(unsigned int fid) const { return true; }
+	virtual bool HasLowReadingCost(uint32_t fid) const { return true; }
 
 	/**
 	 * @return true if archive type can be packed solid (which is VERY slow when reading)
@@ -131,7 +131,7 @@ protected:
 	// Spring expects the contents of archives to be case-independent
 	// this map (which must be populated by subclass archives) is kept
 	// to allow converting back from lowercase to original case
-	spring::unordered_map<std::string, unsigned int> lcNameIndex;
+	spring::unordered_map<std::string, uint32_t> lcNameIndex;
 
 protected:
 	/// "ExampleArchive.sdd"

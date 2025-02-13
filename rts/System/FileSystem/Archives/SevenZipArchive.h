@@ -3,14 +3,16 @@
 #ifndef _7ZIP_ARCHIVE_H
 #define _7ZIP_ARCHIVE_H
 
+#include <vector>
+#include <array>
+#include <string>
+#include <optional>
+
 #include <7z.h>
 #include <7zFile.h>
 
 #include "IArchiveFactory.h"
 #include "BufferedArchive.h"
-#include <vector>
-#include <string>
-#include "IArchive.h"
 
 /**
  * Creates LZMA/7zip compressed, single-file archives.
@@ -38,14 +40,25 @@ public:
 
 	bool IsOpen() override { return isOpen; }
 
-	unsigned int NumFiles() const override { return (fileEntries.size()); }
-	int GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
-	void FileInfo(unsigned int fid, std::string& name, int& size) const override;
+	uint32_t NumFiles() const override { return (fileEntries.size()); }
+	void FileInfo(uint32_t fid, std::string& name, int& size) const override;
 
+	static constexpr int MAX_THREADS = 32;
+protected:
+	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 private:
-	static inline spring::mutex archiveLock;
+	struct PerThreadData {
+		CFileInStream archiveStream;
+		CSzArEx db;
+		CLookToRead2 lookStream;
+		Byte* outBuffer = nullptr;
+	};
 
-	// actual data is in BufferedArchive
+	void OpenArchive(int tnum);
+
+	static inline spring::mutex archiveLock;
+	static constexpr size_t INPUT_BUF_SIZE = (size_t)1 << 18;
+
 	struct FileEntry {
 		int fp;
 		/**
@@ -57,13 +70,8 @@ private:
 
 	std::vector<FileEntry> fileEntries;
 
-	UInt32 blockIndex = 0xFFFFFFFF;
-	size_t outBufferSize = 0;
-	Byte* outBuffer = nullptr;
+	std::array<std::optional<PerThreadData>, MAX_THREADS> perThreadData;
 
-	CFileInStream archiveStream;
-	CSzArEx db;
-	CLookToRead2 lookStream;
 	ISzAlloc allocImp;
 	ISzAlloc allocTempImp;
 
