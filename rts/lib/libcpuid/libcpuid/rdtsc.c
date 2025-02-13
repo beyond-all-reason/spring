@@ -30,6 +30,11 @@
 #include "asm-bits.h"
 #include "rdtsc.h"
 
+#ifdef __OpenBSD__
+	#include <sys/types.h>
+	#include <sys/sysctl.h>
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 void sys_precise_clock(uint64_t *result)
@@ -121,6 +126,15 @@ int cpu_clock_by_os(void)
 	if (sysctlbyname("hw.cpufrequency", &result, &size, NULL, 0))
 		return -1;
 	return (int) (result / (long long) 1000000);
+}
+#elif defined(__OpenBSD__)
+int cpu_clock_by_os(void)
+{
+    int result = -1;
+    size_t size = sizeof(result);
+    int mib[2] = { CTL_HW, HW_CPUSPEED };
+    sysctl(mib, 2, &result, &size, NULL, 0);
+    return result;
 }
 #else
 /* Assuming Linux with /proc/cpuinfo */
