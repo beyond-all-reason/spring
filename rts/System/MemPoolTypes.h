@@ -30,12 +30,12 @@ public:
 		/* You need space for the metadata and for the arena */
 		buddyMetadata.resize(buddy_sizeof(ArenaSize));
 		buddyArena.resize(ArenaSize);
-		buddy = buddy_init(buddyMetadata.data(), buddyArena.data(), ArenaSize);
-		assert(buddy);
+		buddyPtr = buddy_init(buddyMetadata.data(), buddyArena.data(), ArenaSize);
+		assert(buddyPtr);
 	}
 	~PassThroughPool() {
-		assert(buddy_is_empty(buddy));
-		buddy = nullptr;
+		assert(buddy_is_empty(buddyPtr));
+		buddyPtr = nullptr;
 		buddyMetadata.clear();
 		buddyArena.clear();
 	}
@@ -50,7 +50,7 @@ public:
 		void* ptr = nullptr;
 		{
 			auto lock = mutex.GetScopedLock();
-			ptr = buddy_malloc(buddy, size);
+			ptr = buddy_malloc(buddyPtr, size);
 		}
 		if (ptr)
 			return ptr;
@@ -71,7 +71,7 @@ public:
 		}
 
 		auto lock = mutex.GetScopedLock();
-		buddy_free(buddy, p);
+		buddy_free(buddyPtr, p);
 	}
 
 	void* reAllocMem(void* p, size_t size) {
@@ -84,7 +84,7 @@ public:
 			std::memcpy(np, p, std::min(size, buddyArena.size() - static_cast<size_t>(pd)));
 
 			auto lock = mutex.GetScopedLock();
-			buddy_free(buddy, p);
+			buddy_free(buddyPtr, p);
 
 			return np;
 		};
@@ -96,7 +96,7 @@ public:
 
 		{
 			auto lock = mutex.GetScopedLock();
-			if (void* ptr = buddy_realloc(buddy, p, size, false); ptr)
+			if (void* ptr = buddy_realloc(buddyPtr, p, size, false); ptr)
 				return ptr;
 		}
 		// realloc failed to re-allocate memory (buddy pool is full)
@@ -117,7 +117,7 @@ private:
 	spring::WrappedSyncSpinLock mutex;
 	std::vector<uint8_t> buddyArena;
 	std::vector<uint8_t> buddyMetadata;
-	buddy* buddy = nullptr;
+	buddy* buddyPtr = nullptr;
 };
 
 // Helper to infer the memory alignment and size from a set of types.
