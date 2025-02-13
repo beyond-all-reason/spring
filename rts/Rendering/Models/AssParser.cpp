@@ -142,20 +142,18 @@ struct SPseudoAssPiece {
 
 	S3DModelPiece* parent;
 
-	CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
-	CMatrix44f bakedMatrix;      /// baked local-space rotations
+	Transform bposeTransform;    /// bind-pose transform, including baked rots
+	Transform bakedTransform;    /// baked local-space rotations
 
-	float3 offset;               /// local (piece-space) offset wrt. parent piece
-	float3 goffset;              /// global (model-space) offset wrt. root piece
-	float3 scales = OnesVector;  /// baked uniform scaling factors (assimp-only)
+	float3 offset;     /// local (piece-space) offset wrt. parent piece
+	float3 goffset;    /// global (model-space) offset wrt. root piece
+	float scale{1.0f}; /// baked uniform scaling factor (assimp-only)
 
-	bool hasBakedMat;
+	bool hasBakedTra;
 
-	// copy of S3DModelPiece::SetBakedMatrix()
-	void SetBakedMatrix(const CMatrix44f& m) {
-		bakedMatrix = m;
-		hasBakedMat = !m.IsIdentity();
-		assert(m.IsOrthoNormal());
+	// copy of S3DModelPiece::SetBakedTransform()
+	void SetBakedTransform(const Transform& tra) {
+		hasBakedTra = !tra.IsIdentity();
 	}
 
 	// copy of S3DModelPiece::ComposeTransform()
@@ -168,8 +166,8 @@ struct SPseudoAssPiece {
 		//   m is identity so m.SetPos(t)==m.Translate(t) but with fewer instrs
 		m.SetPos(t);
 
-		if (hasBakedMat)
-			m *= bakedMatrix;
+		if (hasBakedTra)
+			m *= bakedTransform.ToMatrix();
 
 		// default Spring rotation-order [YPR=Y,X,Z]
 		m.RotateEulerYXZ(-r);
@@ -177,11 +175,9 @@ struct SPseudoAssPiece {
 		return m;
 	}
 
-	// copy of S3DModelPiece::SetPieceMatrix()
+	// copy of S3DModelPiece::SetPieceTransform()
 	// except there's no need to do it recursively
-	void SetPieceMatrix(const CMatrix44f& parentBPoseMat) {
-		bposeMatrix = parentBPoseMat * ComposeTransform(offset, ZeroVector, scales);
-	}
+	void SetPieceTransform(const Transform& tra);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -458,21 +454,25 @@ namespace {
 		// process transforms
 		pieceNode->mTransformation.Decompose(aiScaleVec, aiRotateQuat, aiTransVec);
 
+		// TODO remove bakedMatrix and do everything with basic transformations
 		const aiMatrix3x3t<float> aiBakedRotMatrix = aiRotateQuat.GetMatrix();
 		const aiMatrix4x4t<float> aiBakedMatrix = aiMatrix4x4t<float>(aiBakedRotMatrix);
 		CMatrix44f bakedMatrix = aiMatrixToMatrix(aiBakedMatrix);
 
 		// metadata-scaling
-		piece->scales = pieceTable.GetFloat3("scale", aiVectorToFloat3(aiScaleVec));
-		piece->scales.x = pieceTable.GetFloat("scalex", piece->scales.x);
-		piece->scales.y = pieceTable.GetFloat("scaley", piece->scales.y);
-		piece->scales.z = pieceTable.GetFloat("scalez", piece->scales.z);
+		float3 scales{ 1.0f, 1.0f, 1.0f };
+		scales = pieceTable.GetFloat3("scale", aiVectorToFloat3(aiScaleVec));
+		scales.x = pieceTable.GetFloat("scalex", scales.x);
+		scales.y = pieceTable.GetFloat("scaley", scales.y);
+		scales.z = pieceTable.GetFloat("scalez", scales.z);
 
-		if (piece->scales.x != piece->scales.y || piece->scales.y != piece->scales.z) {
-			// LOG_SL(LOG_SECTION_MODEL, L_WARNING, "Spring doesn't support non-uniform scaling");
-			piece->scales.y = piece->scales.x;
-			piece->scales.z = piece->scales.x;
+		if (!epscmp(scales.x, scales.y, std::max(scales.x, scales.y) * float3::cmp_eps()) ||
+			!epscmp(scales.y, scales.z, std::max(scales.y, scales.z) * float3::cmp_eps()) ||
+			!epscmp(scales.z, scales.x, std::max(scales.z, scales.x) * float3::cmp_eps()))
+		{
+			LOG_SL(LOG_SECTION_MODEL, L_WARNING, "Recoil doesn't support non-uniform scaling");
 		}
+		piece->scale = scales.x;
 
 		// metadata-translation
 		piece->offset = pieceTable.GetFloat3("offset", aiVectorToFloat3(aiTransVec));
@@ -502,11 +502,11 @@ namespace {
 			aiScaleVec.x, aiScaleVec.y, aiScaleVec.z
 		);
 		LOG_SL(LOG_SECTION_PIECE, L_INFO,
-			"(%d:%s) Relative offset (%f,%f,%f), rotate (%f,%f,%f), scale (%f,%f,%f)",
+			"(%d:%s) Relative offset (%f,%f,%f), rotate (%f,%f,%f), scale (%f)",
 			model->numPieces, piece->name.c_str(),
 			piece->offset.x, piece->offset.y, piece->offset.z,
 			bakedRotAngles.x, bakedRotAngles.y, bakedRotAngles.z,
-			piece->scales.x, piece->scales.y, piece->scales.z
+			piece->scale
 		);
 
 		// construct 'baked' piece-space transform
@@ -516,7 +516,14 @@ namespace {
 		// and <scales> so the baked part reduces to R
 		//
 		// note: for all non-AssImp models this is identity!
-		piece->SetBakedMatrix(bakedMatrix.RotateEulerYXZ(-bakedRotAngles));
+
+		Transform bakedTransform(CQuaternion::FromEulerYPRNeg(-bakedRotAngles) * CQuaternion(aiRotateQuat.x, aiRotateQuat.y, aiRotateQuat.z, aiRotateQuat.w), ZeroVector, 1.0f);
+		piece->SetBakedTransform(bakedTransform);
+#ifdef _DEBUG
+		Transform bakedTransform2 = Transform::FromMatrix(bakedMatrix);
+		assert(bakedTransform.equals(bakedTransform2));
+#endif // _DEBUG
+
 	}
 }
 
@@ -792,8 +799,8 @@ const std::vector<CMatrix44f> CAssParser::GetMeshBoneMatrices(const aiScene* sce
 	std::vector<CMatrix44f> meshBoneMatrices;
 
 	for (auto& meshPP : meshPPs) {
-		meshPP.SetPieceMatrix(meshPP.parent->bposeMatrix);
-		meshBoneMatrices.emplace_back(meshPP.bposeMatrix);
+		meshPP.SetPieceTransform(meshPP.parent->bposeTransform);
+		meshBoneMatrices.emplace_back(meshPP.bposeTransform.ToMatrix());
 	}
 
 	return meshBoneMatrices;
@@ -1057,7 +1064,7 @@ void CAssParser::ReparentMeshesTrianglesToBones(S3DModel* model, const std::vect
 		if (!piece->HasGeometryData())
 			continue;
 
-		const auto invMat = piece->bposeMatrix.InvertAffine();
+		const auto invMat = piece->bposeTransform.ToMatrix().InvertAffine();
 		for (auto& vert : piece->vertices) {
 			vert.pos      = (invMat * float4{ vert.pos     , 1.0f }).xyz;
 			vert.normal   = (invMat * float4{ vert.normal  , 0.0f }).xyz;
@@ -1146,7 +1153,7 @@ void CAssParser::ReparentCompleteMeshesToBones(S3DModel* model, const std::vecto
 		if (!piece->HasGeometryData())
 			continue;
 
-		const auto invMat = piece->bposeMatrix.InvertAffine();
+		const auto invMat = piece->bposeTransform.ToMatrix().InvertAffine();
 		for (auto& vert : piece->vertices) {
 			vert.pos      = (invMat * float4{ vert.pos     , 1.0f }).xyz;
 			vert.normal   = (invMat * float4{ vert.normal  , 0.0f }).xyz;
@@ -1312,7 +1319,8 @@ void CAssParser::BuildPieceHierarchy(S3DModel* model, ModelPieceMap& pieceMap, c
 // Iterate over the model and calculate its overall dimensions
 void CAssParser::CalculateModelDimensions(S3DModel* model, S3DModelPiece* piece)
 {
-	const CMatrix44f scaleRotMat = piece->ComposeTransform(ZeroVector, ZeroVector, piece->scales);
+	// TODO fix
+	const CMatrix44f scaleRotMat = piece->ComposeTransform(ZeroVector, ZeroVector, piece->scale).ToMatrix();
 
 	// cannot set this until parent relations are known, so either here or in BuildPieceHierarchy()
 	piece->goffset = scaleRotMat.Mul(piece->offset) + ((piece->parent != nullptr)? piece->parent->goffset: ZeroVector);
@@ -1429,3 +1437,11 @@ void CAssParser::FindTextures(
 	model->texs[1] = FindTexture(modelTable.GetString("tex2", ""), modelPath, model->texs[1]);
 }
 
+void SPseudoAssPiece::SetPieceTransform(const Transform& tra)
+{
+	bposeTransform = tra * Transform{
+		CQuaternion(),
+		offset,
+		scale
+	};
+}

@@ -83,6 +83,17 @@ layout(std140, binding = 1) uniform UniformParamsBuffer {
 	vec4 teamColor[255]; //all team colors
 };
 
+/*
+struct Transform {
+	vec4 quat;
+	vec4 trSc;
+};
+
+layout(std140, binding = 0) readonly buffer TransformBuffer {
+	Transform transforms[];
+};
+*/
+
 layout(std140, binding = 0) readonly buffer MatrixBuffer {
 	mat4 mat[];
 };
@@ -130,6 +141,37 @@ void TransformPlayerCamStaticMat(vec4 worldPos) {
 
 uint GetUnpackedValue(uint packedValue, uint byteNum) {
 	return (packedValue >> (8u * byteNum)) & 0xFFu;
+}
+
+vec4 MultiplyQuat(vec4 a, vec4 b)
+{
+    return vec4(a.w * b.w - dot(a.w, b.w), a.w * b.xyz + b.w * a.xyz + cross(a.xyz, b.xyz));
+}
+
+vec3 RotateByQuaternion(vec4 q, vec3 v) {
+	return 2.0f * dot(q.xyz, v) * q.xyz + (q.w * q.w - dot(q.xyz, q.xyz)) * v + 2.0 * q.w * cross(q.xyz, v);
+}
+
+vec4 RotateByQuaternion(vec4 q, vec4 v) {
+	return vec4(RotateByQuaternion(q, v.xyz), v.w);
+}
+
+vec3 ApplyTransform(Transform tra, vec3 v) {
+	return RotateByQuaternion(tra.quat, v * tra.trSc.w) + tra.trSc.xyz;
+}
+
+vec4 ApplyTransform(Transform tra, vec4 v) {
+	return vec4(ApplyTransform(tra, v.xyz), v.w);
+}
+
+Transform ApplyTransform(Transform parentTra, Transform childTra) {
+	return Transform(
+		MultiplyQuat(parentTra.quat, childTra.quat),
+		vec4(
+			parentTra.trSc.xyz + RotateByQuaternion(parentTra.quat, parentTra.trSc.w * childTra.trSc.xyz),
+			parentTra.trSc.w * childTra.trSc.w
+		)
+	);
 }
 
 void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
