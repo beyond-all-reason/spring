@@ -977,7 +977,7 @@ void CGrassDrawer::CreateFarTex()
 	glPopMatrix();
 
 	FBO::Unbind();
-	//glSaveTexture(farTex, "grassfar.png");
+	//RecoilSaveTexture(farTex, "grassfar.png");
 }
 
 
