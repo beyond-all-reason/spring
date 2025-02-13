@@ -33,9 +33,6 @@ list(APPEND engineDedicatedLibraries ${LZMA_LIBRARY})
 ### base64 from pr-downloader
 list(APPEND engineDedicatedLibraries "prd::base64")
 
-### smmalloc
-list(APPEND engineDedicatedLibraries "smmalloc")
-
 if (WIN32)
 	list(APPEND engineDedicatedLibraries ${WINMM_LIBRARY})
 endif (WIN32)
@@ -113,6 +110,7 @@ set(system_files
 	${ENGINE_SRC_ROOT_DIR}/System/GlobalConfig.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Info.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LogOutput.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/MemPoolTypes.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/TimeUtil.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c
 	${ENGINE_SRC_ROOT_DIR}/System/SafeVector.cpp

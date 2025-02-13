@@ -9,8 +9,6 @@
 #include "System/MemPoolTypes.h"
 #include "System/UnorderedMap.hpp"
 
-#define LMP_USE_CHUNK_TABLE 0
-
 class CLuaHandle;
 class LuaMemPool {
 public:
@@ -55,12 +53,15 @@ public:
 	size_t  GetSharedCount() const { return sharedCount; }
 	size_t& GetSharedCount()       { return sharedCount; }
 
+	void SetThreadSafety(bool b) { assert(luaMemPoolImpl); luaMemPoolImpl->SetThreadSafety(b); }
 public:
 	static bool enabled;
 private:
-	static constexpr uint32_t NUM_BUCKETS = 32;
-	static constexpr uint32_t BUCKET_STEP = 16;
-	using LuaMemPoolImpl = PassThroughPool<NUM_BUCKETS, 4 * (1024 * 1024)>;
+	static constexpr size_t LUA_MEM_POOL_SIZE_MB = 128;
+	static constexpr size_t MAX_INTERNAL_ALLOC_SIZE = 1 << 16;
+
+	using LuaMemPoolImpl = PassThroughPool<LUA_MEM_POOL_SIZE_MB* (1024 * 1024), MAX_INTERNAL_ALLOC_SIZE>;
+
 	std::unique_ptr<LuaMemPoolImpl> luaMemPoolImpl;
 
 	enum {

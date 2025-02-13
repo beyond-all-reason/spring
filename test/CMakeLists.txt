@@ -412,7 +412,6 @@ endif()
 		)
 	set(test_libs
 			streflop
-			smmalloc
 			lua
 			${WINMM_LIBRARY}
 			headlessStubs

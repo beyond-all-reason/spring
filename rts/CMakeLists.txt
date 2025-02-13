@@ -52,9 +52,6 @@ list(APPEND engineCommonLibraries "cpuid")
 ### base64 from pr-downloader
 list(APPEND engineCommonLibraries "prd::base64")
 
-### smmalloc
-list(APPEND engineCommonLibraries "smmalloc")
-
 ### Assemble common libraries
 add_subdirectory(System/Sound)
 if    (NO_SOUND)
