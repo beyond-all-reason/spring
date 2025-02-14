@@ -12,6 +12,7 @@ struct ProcessorMasks {
     uint32_t hyperThreadHighMask = 0;
 };
 
+// OS-specific implementation to get the processor masks.
 ProcessorMasks GetProcessorMasks();
 
 }

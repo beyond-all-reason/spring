@@ -14,7 +14,6 @@
 	#include "System/Config/ConfigHandler.h"
 #endif
 #include "System/Log/ILog.h"
-#include "System/Platform/CpuID.h"
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 

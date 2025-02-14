@@ -177,7 +177,7 @@ else  (UNIX AND NOT MINGW)
 	endif ()
 
 
-	add_definitions(-D_WIN32_WINNT=0x0601) ## Win7 is minimum due to cpuid processor group affinity
+	add_definitions(-D_WIN32_WINNT=0x0601) ## Win7 is minimum due to processor group affinity
 	add_definitions(-D__USE_MINGW_ANSI_STDIO=1) ## use __mingw_sprintf instead of __builtin_sprintf (it's used by lua in a synced way, and builtin doesn't sync)
 
 	if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")

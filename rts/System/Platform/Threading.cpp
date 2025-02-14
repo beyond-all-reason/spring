@@ -2,7 +2,6 @@
 
 #include "Threading.h"
 
-#include "CpuTopology.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/CpuID.h"
 
@@ -110,7 +109,7 @@ namespace Threading {
 
 
 	uint32_t GetSystemAffinityMask() {
-		cpu_topology::ProcessorMasks pm = cpu_topology::GetProcessorMasks();
+		cpu_topology::ProcessorMasks pm = springproc::CPUID::GetInstance().GetAvailableProceesorAffinityMask();
 
 		LOG("CPU Affinity Mask Details detected:");
 		LOG("-- Performance Core Mask:      0x%08x", pm.performanceCoreMask);

@@ -46,9 +46,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/cereal/include)
 
 
-### libcpuid
-list(APPEND engineCommonLibraries "cpuid")
-
 ### base64 from pr-downloader
 list(APPEND engineCommonLibraries "prd::base64")
 

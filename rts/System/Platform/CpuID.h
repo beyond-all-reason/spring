@@ -3,6 +3,8 @@
 #ifndef CPUID_H
 #define CPUID_H
 
+#include "CpuTopology.h"
+
 #if defined(__GNUC__)
 	#define _noinline __attribute__((__noinline__))
 #else
@@ -45,48 +47,17 @@ namespace springproc {
 		int GetNumPhysicalCores() const { return numPhysicalCores; }
 		int GetNumLogicalCores() const { return numLogicalCores; }
 
-		/** Total number of physical processor dies in the system. */
-		int GetTotalNumPackages() const { return totalNumPackages; }
-
-		uint64_t GetAvailableProceesorAffinityMask() const { return availableProceesorAffinityMask; };
-
-		uint64_t GetCoreAffinityMask(int x) const { return affinityMaskOfCores[x & (MAX_PROCESSORS - 1)]; }
-		uint64_t GetPackageAffinityMask(int x) { return affinityMaskOfPackages[x & (MAX_PROCESSORS - 1)]; }
+		cpu_topology::ProcessorMasks GetAvailableProceesorAffinityMask() const { return processorMasks; };
 
 	private:
 		CPUID();
 
-		void SetDefault();
 		void EnumerateCores();
 
 		int numLogicalCores;
 		int numPhysicalCores;
-		int totalNumPackages;
 
-		static constexpr int MAX_PROCESSORS = 64;
-
-		/** Array of the size coreTotalNumber, containing for each
-		    core the affinity mask. */
-		uint64_t affinityMaskOfCores[MAX_PROCESSORS];
-		uint64_t affinityMaskOfPackages[MAX_PROCESSORS];
-		uint64_t availableProceesorAffinityMask;
-
-		////////////////////////
-		// Intel specific fields
-
-		uint32_t processorApicIds[MAX_PROCESSORS];
-
-		uint32_t shiftCore;
-		uint32_t shiftPackage;
-
-		uint32_t maskVirtual;
-		uint32_t maskCore;
-		uint32_t maskPackage;
-
-		bool hasLeaf11;
-
-		////////////////////////
-		// AMD specific fields
+		cpu_topology::ProcessorMasks processorMasks;
 	};
 
 }
