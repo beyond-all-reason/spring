@@ -20,9 +20,28 @@ on:
   workflow_dispatch:
     inputs:
       recache:
-        description: "Recache ccache build objects"
+        description: 'Recache ccache build objects'
         type: boolean
         default: false
+      cmake-options:
+        description: 'Custom CMake options for build'
+        type: string
+      split-debug-info:
+        description: 'Split debug info'
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      cmake-options:
+        description: 'Custom CMake options for build'
+        type: string
+      split-debug-info:
+        description: 'Split debug info'
+        type: boolean
+        default: true
+      package-suffix:
+        description: 'Custom suffix for the package name'
+        type: string
   pull_request:
     paths-ignore:
       - 'doc/**'
@@ -142,18 +161,18 @@ jobs:
             bash <<EOF
           set -e
           cd /build/src/docker-build-v2/scripts
-          ./configure.sh
+          ./configure.sh ${{ inputs.cmake-options || '' }}
           ./compile.sh
-          ./split-debug-info.sh
-          ./package.sh
+          ${{ inputs.split-debug-info == false && 'echo "Not splitting debug info."' || './split-debug-info.sh' }}
+          ./package.sh ${{ inputs.package-suffix }}
 
           EOF
-      # TODO: Switch to publickly accessible storage
       - name: Save
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
+        id: save-artifact
         with:
-          name: artifacts-${{ matrix.system }}
+          name: engine-artifacts-${{ matrix.system }}-${{ inputs.package-suffix }}
           path: ./artifacts
           compression-level: 0  # already compressed
       - name: Unmount bazel remote overlay
