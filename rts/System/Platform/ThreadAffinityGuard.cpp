@@ -13,11 +13,10 @@
 ThreadAffinityGuard::ThreadAffinityGuard() : affinitySaved(false) {
 #ifdef _WIN32
     threadHandle = GetCurrentThread();  // Get the current thread handle
-    savedAffinity = 0;
-    if (GetThreadAffinityMask(threadHandle, &savedAffinity)) {
-        affinitySaved = true;
-    } else {
-        LOG_L(L_WARNING, "GetThreadAffinityMask failed with error code: %d", GetLastError());
+    savedAffinity = SetThreadAffinityMask(threadHandle, ~0);
+    affinitySaved = ( savedAffinity != 0 );
+    if (!affinitySaved) {
+        LOG_L(L_WARNING, "GetThreadAffinityMask failed with error code: %lu", GetLastError());
     }
 #else
     tid = syscall(SYS_gettid);  // Get thread ID
@@ -35,7 +34,7 @@ ThreadAffinityGuard::~ThreadAffinityGuard() {
     if (affinitySaved) {
 #ifdef _WIN32
         if (!SetThreadAffinityMask(threadHandle, savedAffinity)) {
-            LOG_L(L_WARNING, "SetThreadAffinityMask failed with error code: %d", GetLastError());
+            LOG_L(L_WARNING, "SetThreadAffinityMask failed with error code: %lu", GetLastError());
         }
 #else
         if (sched_setaffinity(tid, sizeof(cpu_set_t), &savedAffinity) != 0) {

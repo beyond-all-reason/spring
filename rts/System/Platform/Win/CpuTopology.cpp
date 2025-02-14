@@ -1,8 +1,11 @@
 #include "System/Platform/CpuTopology.h"
 
+#include "System/Log/ILog.h"
+
+#include <bit>
 #include <windows.h>
 
-using namespace cpu_topology {
+namespace cpu_topology {
 
 // Mingw v12 is the minimum version that gives us a GetLogicalProcessorInformationEx() with efficiency core
 // detection. Unfortunately mingw v12 also introduces a ticking time bomb change that can cause the toolchain to
