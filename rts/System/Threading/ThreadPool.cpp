@@ -586,7 +586,7 @@ void SetMaximumThreadCount()
 
 void SetDefaultThreadCount()
 {
-	std::uint32_t systemCores  = springproc::CPUID::GetInstance().GetAvailableProceesorAffinityMask();
+	std::uint32_t systemCores = Threading::GetSystemAffinityMask();
 	std::uint32_t mainAffinity = systemCores;
 
 	#ifndef UNIT_TEST
@@ -619,7 +619,7 @@ void SetDefaultThreadCount()
 		};
 
 		const std::uint32_t poolCoreAffinity = parallel_reduce(AffinityFunc, ReduceFunc);
-		const std::uint32_t mainCoreAffinity = Threading::HasHyperThreading() ? ~poolCoreAffinity : ~0;
+		const std::uint32_t mainCoreAffinity = ~poolCoreAffinity & systemCores;
 
 		if (mainAffinity == 0)
 			mainAffinity = systemCores;
