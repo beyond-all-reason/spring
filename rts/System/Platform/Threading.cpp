@@ -1,6 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Threading.h"
+
+#include "CpuTopology.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/CpuID.h"
 
@@ -105,169 +107,10 @@ namespace Threading {
 	}
 	#endif
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 
-	// Mingw v12 is the minimum version that gives us a GetLogicalProcessorInformationEx() with efficiency core
-	// detection. Unfortunately mingw v12 also introduces a ticking time bomb change that can cause the toolchain to
-	// produce a crashing exe because of a change in static initialized variable space.
-	// See bug report for more information: https://sourceforge.net/p/mingw-w64/bugs/992/
-	// The net result is that we have to use GetProcAddress() on the kernel32 ourselves and provide a modified set
-	// of data definitions with the information we need.
-	// We can do away with this if 1) mingw fix their bug or 2) the build system shifts over to using MSVC.
-	#if defined(_WIN32)
-	namespace spring_overrides {
-
-		typedef struct _GROUP_AFFINITY {
-			KAFFINITY Mask;
-			WORD      Group;
-			WORD      Reserved[3];
-		  } GROUP_AFFINITY, *PGROUP_AFFINITY;
-
-		typedef enum _LOGICAL_PROCESSOR_RELATIONSHIP {
-			RelationProcessorCore,
-			RelationNumaNode,
-			RelationCache,
-			RelationProcessorPackage,
-			RelationGroup,
-			RelationProcessorDie,
-			RelationNumaNodeEx,
-			RelationProcessorModule,
-			RelationAll = 0xffff
-		  } LOGICAL_PROCESSOR_RELATIONSHIP;
-
-		typedef struct _PROCESSOR_RELATIONSHIP {
-			BYTE Flags;
-			BYTE EfficiencyClass;
-			BYTE Reserved[20];
-			WORD GroupCount;
-			GROUP_AFFINITY GroupMask[ANYSIZE_ARRAY];
-		  } PROCESSOR_RELATIONSHIP,*PPROCESSOR_RELATIONSHIP;
-
-		struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX {
-			LOGICAL_PROCESSOR_RELATIONSHIP Relationship;
-			DWORD Size;
-			__C89_NAMELESS union {
-			  PROCESSOR_RELATIONSHIP Processor;
-			  //NUMA_NODE_RELATIONSHIP NumaNode;
-			  //CACHE_RELATIONSHIP Cache;
-			  //GROUP_RELATIONSHIP Group;
-			};
-		  };
-
-		  typedef struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, *PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
-	  
-		#if _WIN32_WINNT >= 0x0601
-		typedef BOOL (WINAPI *GetLogicalProcessorInformationExFunc)(
-			LOGICAL_PROCESSOR_RELATIONSHIP,
-			PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX,
-			PDWORD);
-		//WINBASEAPI WINBOOL WINAPI GetLogicalProcessorInformationEx (LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType, PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer, PDWORD ReturnedLength);
-		#endif
-	}
-	#endif
-
-	struct ProcessorMasks {
-		uint32_t performanceCoreMask = 0;
-		uint32_t efficiencyCoreMask = 0;
-		uint32_t hyperThreadLowMask = 0;
-		uint32_t hyperThreadHighMask = 0;
-	};
-
-	#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-	// noop
-	#elif defined(_WIN32)
-	ProcessorMasks GetProcessorMasksWindows() {
-		spring_overrides::GetLogicalProcessorInformationExFunc Local_GetLogicalProcessorInformationEx;
-		spring_overrides::PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX buffer = NULL;
-		spring_overrides::PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX ptr = NULL;
-		DWORD returnLength = 0;
-		DWORD byteOffset = 0;
-		BOOL done = FALSE;
-		ProcessorMasks processorMasks;
-
-		Local_GetLogicalProcessorInformationEx = (spring_overrides::GetLogicalProcessorInformationExFunc) GetProcAddress(
-			GetModuleHandle(TEXT("kernel32")),
-			"GetLogicalProcessorInformationEx");
-		if (NULL == Local_GetLogicalProcessorInformationEx)
-		{
-			LOG("GetLogicalProcessorInformation is not supported.\n");
-			return processorMasks;
-		}
-
-		while (!done)
-		{
-			DWORD rc = Local_GetLogicalProcessorInformationEx(spring_overrides::RelationProcessorCore, buffer, &returnLength);
-
-			if (FALSE == rc)
-			{
-				if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-				{
-					if (buffer)
-						free(buffer);
-
-					buffer = (spring_overrides::PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)malloc(returnLength);
-
-					if (NULL == buffer)
-						return processorMasks;
-				}
-				else
-					return processorMasks;
-			}
-			else
-				done = TRUE;
-		}
-		ptr = buffer;
-
-		while (byteOffset < returnLength)
-		{
-			if (ptr->Relationship == spring_overrides::RelationProcessorCore)
-			{
-				const uint32_t supportedMask = static_cast<uint32_t>(ptr->Processor.GroupMask[0].Mask);
-				if (supportedMask == 0) {
-					LOG("Info: Processor group %d has a thread mask outside of the supported range."
-						, int(ptr->Processor.GroupCount));
-					break;
-				}
-
-				const bool hyperThreading = !std::has_single_bit(supportedMask);
-				if (hyperThreading) {
-					processorMasks.hyperThreadLowMask |= ( 1 << std::countr_zero(supportedMask) );
-					processorMasks.hyperThreadHighMask |= ( 0x80000000 >> std::countl_zero(supportedMask) );
-				}
-
-				if (ptr->Processor.EfficiencyClass){
-					processorMasks.efficiencyCoreMask |= supportedMask;
-				} else {
-					processorMasks.performanceCoreMask |= supportedMask;
-				}
-			}
-			byteOffset += ptr->Size;
-			ptr = (spring_overrides::PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)(((char*)buffer) + byteOffset);
-		}
-
-		if (buffer)
-			free(buffer);
-
-		return processorMasks;
-	}
-	#else
-	ProcessorMasks GetProcessorMasksWindows() {
-		ProcessorMasks processorMasks;
-		processorMasks.performanceCoreMask = 0xfffffff;
-		// fopen("/proc/cpuinfo");
-		return processorMasks;
-	}
-	#endif
 
 	uint32_t GetSystemAffinityMask() {
-		#if defined(_WIN32)
-		ProcessorMasks pm = GetProcessorMasksWindows();
-		// need an entry for linux.
-		#else
-		ProcessorMasks pm;
-		pm.performanceCoreMask = 0xfffffff;
-		#endif
+		cpu_topology::ProcessorMasks pm = cpu_topology::GetProcessorMasks();
 
 		LOG("CPU Affinity Mask Details detected:");
 		LOG("-- Performance Core Mask:      0x%08x", pm.performanceCoreMask);
@@ -275,9 +118,17 @@ namespace Threading {
 		LOG("-- Hyper Thread/SMT Low Mask:  0x%08x", pm.hyperThreadLowMask);
 		LOG("-- Hyper Thread/SMT High Mask: 0x%08x", pm.hyperThreadHighMask);
 
+		// Engine worker thread pool are primarily for mutli-threading activies of simulation; though, they are
+		// available to be used by other system while simulation is not running. As such the policy for pinning worker
+		// threads are to maximise performance of the multi-threaded tasks of simulation, which are a poor fit for
+		// cpu hardware threads (SMT/Hyper-Threading) and low-power cores.
+		//
 		// Engine worker thread policy:
 		// 1. Only use general/performance cores. Do not use efficiency cores.
 		// 2. Do not use Hyper Threading or SMT. If present use only one of the HW threads per core.
+		//
+		// This doesn't preclude systems from using separate unpinned threads, which the OS should logically try to
+		// move to under used resources, such as low-power cores for example.
 		return pm.performanceCoreMask & (~pm.hyperThreadHighMask);
 	}
 
@@ -300,8 +151,6 @@ namespace Threading {
 		return (CalcCoreAffinityMask(&curAffinity));
 	#endif
 	}
-
-#pragma GCC pop_options
 
 	std::uint32_t SetAffinity(std::uint32_t coreMask, bool hard)
 	{
