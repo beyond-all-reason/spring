@@ -585,6 +585,9 @@ void SetMaximumThreadCount()
 
 void SetDefaultThreadCount()
 {
+	#if !defined(THREADPOOL)
+	return;
+	#endif
 	std::uint32_t systemCores = Threading::GetSystemAffinityMask();
 	std::uint32_t mainAffinity = systemCores;
 

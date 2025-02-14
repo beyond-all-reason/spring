@@ -128,7 +128,13 @@ namespace Threading {
 		//
 		// This doesn't preclude systems from using separate unpinned threads, which the OS should logically try to
 		// move to under used resources, such as low-power cores for example.
-		return pm.performanceCoreMask & (~pm.hyperThreadHighMask);
+		#if defined(THREADPOOL)
+		uint32_t policy = pm.performanceCoreMask & (~pm.hyperThreadHighMask);
+		#else
+		uint32_t policy = pm.performanceCoreMask | pm.efficiencyCoreMask;
+		#endif
+
+		return policy;
 	}
 
 	std::uint32_t GetAffinity()
