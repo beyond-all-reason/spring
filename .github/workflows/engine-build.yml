@@ -94,8 +94,8 @@ jobs:
           BAZEL_REMOTE_S3_SECRET_ACCESS_KEY: ${{ github.event_name == 'pull_request' && vars.R2_RO_ACCESS_KEY_SECRET || secrets.R2_ACCESS_KEY_SECRET }}
         with:
           run: |
-            if ! sha256sum --status -c <<< "8679a76074b1408a95d2b3ec0f5b1a6d0c20500cfc24c3a87ef08c1b60200f8c tools/bazel-remote"; then
-              curl -L https://github.com/buchgr/bazel-remote/releases/download/v2.4.4/bazel-remote-2.4.4-linux-x86_64 -o bazel-remote
+            if ! sha256sum --status -c <<< "0e3ccc67bced00bc783ee395160092c107a4699e06586a68dcd53fcfa7d8063e tools/bazel-remote"; then
+              curl -L https://github.com/buchgr/bazel-remote/releases/download/v2.5.0/bazel-remote-2.5.0-linux-x86_64 -o bazel-remote
               chmod +x bazel-remote
               mv bazel-remote tools/bazel-remote
             fi
@@ -121,6 +121,7 @@ jobs:
           # of health checking.
           wait-on: |
             http-get://127.0.0.1:8085/cas/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+          wait-for: 3m
       - name: Pull builder image
         run: docker pull ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest
       - name: Build
