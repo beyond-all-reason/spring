@@ -19,5 +19,10 @@ rm -f /build/artifacts/$bin_name /build/artifacts/$dbg_name
 
 # Trigger compression of main binaries and debug info concurrently
 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on /build/artifacts/$bin_name ./* -xr\!*.dbg &
-tar cvf - $(find ./ -name '*.dbg') | zstd -T0 > /build/artifacts/$dbg_name &
+
+DEBUG_SYMBOLS=$(find ./ -name '*.dbg')
+if [[ -n $DEBUG_SYMBOLS ]]; then
+    tar cvf - $DEBUG_SYMBOLS | zstd -T0 > /build/artifacts/$dbg_name &
+fi
+
 wait
