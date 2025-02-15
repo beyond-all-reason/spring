@@ -5,10 +5,9 @@ set -e -u -o pipefail
 cd /build/src
 
 package_suffix="${1-}"
-branch="$(git rev-parse --abbrev-ref HEAD)"
-tag_name="spring_bar_{$branch}$(git describe --abbrev=7)"
-bin_name="${tag_name}_${ENGINE_PLATFORM}${package_suffix}-minimal-portable.7z"
-dbg_name="${tag_name}_${ENGINE_PLATFORM}${package_suffix}-minimal-symbols.tar.zst"
+base_name="recoil_$(git describe --abbrev=7)_${ENGINE_PLATFORM}"
+bin_name="${base_name}${package_suffix}.7z"
+dbg_name="${base_name}-dbgsym${package_suffix}.tar.zst"
 
 cd /build/out/install
 

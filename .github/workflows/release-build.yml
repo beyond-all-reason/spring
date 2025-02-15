@@ -32,7 +32,7 @@ jobs:
           if git describe --exact-match HEAD >/dev/null 2>&1; then
             echo "tag_name=$(git describe --exact-match HEAD)" >> "$GITHUB_OUTPUT"
           else
-            echo "tag_name=spring_bar_{$(git rev-parse --abbrev-ref HEAD)}$(git describe --abbrev=7)" >> "$GITHUB_OUTPUT"
+            echo "tag_name=recoil{$(git rev-parse --abbrev-ref HEAD)}$(git describe --abbrev=7)" >> "$GITHUB_OUTPUT"
           fi
   build-engine:
     needs: get-tag
