@@ -39,10 +39,10 @@ int GLAD_GL_ARB_timer_query = 0;
 int GLAD_GL_ARB_texture_storage = 0;
 int GLAD_GL_ARB_texture_rectangle = 0;
 int GLAD_GL_ARB_texture_query_lod = 0;
-int GLAD_GL_ARB_texture_non_power_of_two = 0;
-int GLAD_GL_ARB_texture_float = 0;
-int GLAD_GL_ARB_texture_env_combine = 0;
-int GLAD_GL_ARB_texture_compression = 0;
+int GLAD_GL_ARB_texture_non_power_of_two = 1;
+int GLAD_GL_ARB_texture_float = 1;
+int GLAD_GL_ARB_texture_env_combine = 1;
+int GLAD_GL_ARB_texture_compression = 1;
 int GLAD_GL_ARB_sync = 0;
 int GLAD_GL_ARB_shading_language_420pack = 0;
 int GLAD_GL_ARB_shading_language_100 = 0;
@@ -50,13 +50,13 @@ int GLAD_GL_ARB_shader_storage_buffer_object = 0;
 int GLAD_GL_ARB_seamless_cube_map = 0;
 int GLAD_GL_ARB_occlusion_query = 0;
 int GLAD_GL_ARB_multi_draw_indirect = 0;
-int GLAD_GL_ARB_multitexture = 0;
+int GLAD_GL_ARB_multitexture = 1;
 int GLAD_GL_ARB_multisample = 0;
 int GLAD_GL_ARB_map_buffer_range = 0;
 int GLAD_GL_ARB_invalidate_subdata = 0;
 int GLAD_GL_ARB_instanced_arrays = 0;
 int GLAD_GL_ARB_imaging = 0;
-int GLAD_GL_ARB_framebuffer_object = 0;
+int GLAD_GL_ARB_framebuffer_object = 1;
 int GLAD_GL_ARB_fragment_shader = 0;
 int GLAD_GL_ARB_fragment_program = 0;
 int GLAD_GL_ARB_explicit_attrib_location = 0;
@@ -96,10 +96,10 @@ void APIENTRY impl_glBufferDataARB(GLenum target, GLsizeiptrARB size, const GLvo
 void APIENTRY impl_glGenFramebuffersEXT(GLsizei n, GLuint* framebuffers) {}
 void APIENTRY impl_glGenFramebuffers(GLsizei n, GLuint* framebuffers) {}
 GLenum APIENTRY impl_glCheckFramebufferStatusEXT(GLenum target) {
-    return 0;
+    return 0x8CD5;
 }
 GLenum APIENTRY impl_glCheckFramebufferStatus(GLenum target) {
-    return 0;
+    return 0x8CD5;
 }
 void APIENTRY impl_glBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {}
 void APIENTRY impl_glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {}
@@ -107,7 +107,6 @@ void APIENTRY impl_glDeleteQueries(GLsizei n, const GLuint* ids) {}
 
 void APIENTRY impl_glUseProgram(GLuint program) {}
 GLuint APIENTRY impl_glCreateProgram() { return 0; }
-//glCreateProgram = (PFNGLCREATEPROGRAMPROC) nullptr;
 void APIENTRY impl_glDeleteProgram(GLuint program) {}
 void APIENTRY impl_glProgramParameteri(GLuint program, GLenum pname, GLint value) {}
 void APIENTRY impl_glProgramParameteriEXT(GLuint program, GLenum pname, GLint value) {}

@@ -312,7 +312,9 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(int tar
 
 	modelDrawerState = IModelDrawerState::modelDrawerStates[targetImplementation];
 	assert(modelDrawerState);
+#ifndef HEADLESS
 	assert(modelDrawerState->CanEnable());
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
