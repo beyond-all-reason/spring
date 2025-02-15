@@ -855,19 +855,11 @@ void CGlobalRendering::SetGLSupportFlags()
 		compressTextures = configHandler->GetBool("CompressTextures");
 
 
-	#ifdef GLAD_GL_NV_primitive_restart
 	// not defined for headless builds
 	supportRestartPrimitive = GLAD_GL_NV_primitive_restart;
-	#endif
-	#ifdef GLAD_GL_ARB_clip_control
 	supportClipSpaceControl = GLAD_GL_ARB_clip_control;
-	#endif
-	#ifdef GLAD_GL_ARB_seamless_cube_map
 	supportSeamlessCubeMaps = GLAD_GL_ARB_seamless_cube_map;
-	#endif
-	#ifdef GLAD_GL_EXT_framebuffer_multisample
 	supportMSAAFrameBuffer = GLAD_GL_EXT_framebuffer_multisample;
-	#endif
 	// CC did not exist as an extension before GL4.5, too recent to enforce
 
 	//stick to the theory that reported = exist
@@ -875,9 +867,7 @@ void CGlobalRendering::SetGLSupportFlags()
 	supportClipSpaceControl &= (configHandler->GetInt("ForceDisableClipCtrl") == 0);
 
 	//supportFragDepthLayout = ((globalRenderingInfo.glContextVersion.x * 10 + globalRenderingInfo.glContextVersion.y) >= 42);
-	#ifdef GLAD_GL_ARB_conservative_depth
 	supportFragDepthLayout = GLAD_GL_ARB_conservative_depth; //stick to the theory that reported = exist
-	#endif
 
 	//stick to the theory that reported = exist
 	//supportMSAAFrameBuffer &= ((globalRenderingInfo.glContextVersion.x * 10 + globalRenderingInfo.glContextVersion.y) >= 32);
@@ -947,9 +937,9 @@ void CGlobalRendering::QueryVersionInfo(char (&sdlVersionStr)[64], char (&glVidM
 	SDL_GetVersion(&sdlVL);
 
 #ifndef HEADLESS
-	grInfo.glewVersion = "glad 0.1.36";
+	grInfo.gladVersion = "0.1.36";
 #else
-	grInfo.glewVersion = "headless stub glad";
+	grInfo.gladVersion = "headless stub";
 #endif // HEADLESS
 
 	if ((grInfo.glVersion   = (const char*) glGetString(GL_VERSION                 )) == nullptr) grInfo.glVersion   = "unknown";
@@ -990,7 +980,7 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tGL vendor   : %s", globalRenderingInfo.glVendor);
 	LOG("\tGL renderer : %s", globalRenderingInfo.glRenderer);
 	LOG("\tGLSL version: %s", globalRenderingInfo.glslVersion);
-	LOG("\tGLEW version: %s", globalRenderingInfo.glewVersion);
+	LOG("\tGLAD version: %s", globalRenderingInfo.gladVersion);
 	LOG("\tGPU memory  : %s", glVidMemStr);
 	LOG("\tSDL swap-int: %d", SDL_GL_GetSwapInterval());
 	LOG("\tSDL driver  : %s", globalRenderingInfo.sdlDriverName);
@@ -1687,16 +1677,12 @@ void CGlobalRendering::InitGLState()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
-	#ifdef GLAD_GL_ARB_clip_control
 	// avoid precision loss with default DR transform
 	if (supportClipSpaceControl)
 		glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
-	#endif
 
-	#ifdef GLAD_GL_ARB_seamless_cube_map
 	if (supportSeamlessCubeMaps)
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	#endif
 
 	// MSAA rasterization
 	msaaLevel *= CheckGLMultiSampling();

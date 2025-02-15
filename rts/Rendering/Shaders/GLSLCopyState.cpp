@@ -328,7 +328,6 @@ static void CopyShaderState_UniformBlocks(GLuint newProgID, GLuint oldProgID)
 static void CopyShaderState_ShaderStorage(GLuint newProgID, GLuint oldProgID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-#ifdef GL_ARB_program_interface_query
 	if (!GLAD_GL_ARB_program_interface_query)
 		return;
 
@@ -362,7 +361,6 @@ static void CopyShaderState_ShaderStorage(GLuint newProgID, GLuint oldProgID)
 			1, nullptr, &value);
 		glShaderStorageBlockBinding(newProgID, newLoc, value);
 	}
-#endif
 }
 
 
@@ -400,8 +398,7 @@ static void CopyShaderState_Attributes(GLuint newProgID, GLuint oldProgID)
 static void CopyShaderState_TransformFeedback(GLuint newProgID, GLuint oldProgID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-#ifdef GL_ARB_transform_feedback3
-	//FIXME find out what extensions are really needed
+
 	if (!GLAD_GL_ARB_transform_feedback3)
 		return;
 
@@ -431,7 +428,6 @@ static void CopyShaderState_TransformFeedback(GLuint newProgID, GLuint oldProgID
 	}
 
 	glTransformFeedbackVaryings(newProgID, numVaryings, (const GLchar**)&varyingsPtr[0], bufferMode);
-#endif
 }
 
 

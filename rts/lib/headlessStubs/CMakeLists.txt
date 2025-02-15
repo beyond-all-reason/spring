@@ -1,6 +1,5 @@
 SET(headlessStubsSources
 		"gladstub.c"
-		"glstub.c"
 		"sdlstub.c"
 	)
 

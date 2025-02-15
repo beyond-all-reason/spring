@@ -23,7 +23,7 @@
  * @field glVendor string
  * @field glRenderer string
  * @field glslVersion string Full version
- * @field glewVersion string
+ * @field gladVersion string
  * @field osName string full name of the OS
  * @field osFamily "Windows"|"Linux"|"MacOSX"|"FreeBSD"|"Unknown"
  * @field numDisplays number
@@ -56,7 +56,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "glVendor", globalRenderingInfo.glVendor);
 	LuaPushNamedString(L, "glRenderer", globalRenderingInfo.glRenderer);
 	LuaPushNamedString(L, "glslVersion", globalRenderingInfo.glslVersion);
-	LuaPushNamedString(L, "glewVersion", globalRenderingInfo.glewVersion);
+	LuaPushNamedString(L, "gladVersion", globalRenderingInfo.gladVersion);
 
 	LuaPushNamedNumber(L, "sdlVersionCompiledMajor", globalRenderingInfo.sdlVersionCompiled.major);
 	LuaPushNamedNumber(L, "sdlVersionCompiledMinor", globalRenderingInfo.sdlVersionCompiled.minor);
