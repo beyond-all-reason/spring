@@ -14,6 +14,7 @@
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #elif defined(_WIN32)
 	#include <windows.h>
+	#include "System/Platform/Win/DllLib.h"
 #else
 	#include <unistd.h>
 	#if defined(__USE_GNU)
@@ -351,38 +352,30 @@ namespace Threading {
 	bool IsWatchDogThread(NativeThreadId threadID) { return NativeThreadIdsEqual(threadID, nativeThreadIDs[THREAD_IDX_WDOG]); }
 	bool IsWatchDogThread(                       ) { return IsWatchDogThread(Threading::GetCurrentThreadId()); }
 
-
-
 	void SetThreadName(const std::string& newname)
 	{
 	#if defined(TRACY_ENABLE)
 		tracy::SetThreadName(newname.c_str());
 	#endif
-	#if defined(__USE_GNU) && !defined(_WIN32)
+	#ifndef _WIN32
 		//alternative: pthread_setname_np(pthread_self(), newname.c_str());
 		prctl(PR_SET_NAME, newname.c_str(), 0, 0, 0);
-	#elif _MSC_VER
-		const DWORD MS_VC_EXCEPTION = 0x406D1388;
+	#else
+		// adapted from SDL2 code
+		DllLib k32Lib("kernel32.dll");
+		DllLib kbaseLib("KernelBase.dll");
 
-		#pragma pack(push,8)
-		struct THREADNAME_INFO
-		{
-			DWORD dwType; // Must be 0x1000.
-			LPCSTR szName; // Pointer to name (in user addr space).
-			DWORD dwThreadID; // Thread ID (-1=caller thread).
-			DWORD dwFlags; // Reserved for future use, must be zero.
-		} info;
-		#pragma pack(pop)
+		using GetCurrentThreadFuncT = HANDLE WINAPI(VOID);
+		using SetThreadDescriptionFuncT = HRESULT WINAPI(HANDLE, PCWSTR);
 
-		info.dwType = 0x1000;
-		info.szName = newname.c_str();
-		info.dwThreadID = (DWORD)-1;
-		info.dwFlags = 0;
+		auto GetCurrentThreadFunc = k32Lib.FindAddressTyped<GetCurrentThreadFuncT*>("GetCurrentThread");
+		auto SetThreadDescriptionFunc = k32Lib.FindAddressTyped<SetThreadDescriptionFuncT*>("SetThreadDescription");
+		if (!SetThreadDescriptionFunc)
+			SetThreadDescriptionFunc = kbaseLib.FindAddressTyped<SetThreadDescriptionFuncT*>("SetThreadDescription");
 
-		__try {
-			RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*) &info);
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
+		if (GetCurrentThreadFunc && SetThreadDescriptionFunc) {
+			std::wstring newnameW(newname.begin(), newname.end());
+			SetThreadDescriptionFunc(GetCurrentThreadFunc(), newnameW.c_str());
 		}
 	#endif
 	}
