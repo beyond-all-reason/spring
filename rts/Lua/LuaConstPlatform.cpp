@@ -57,6 +57,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "glRenderer", globalRenderingInfo.glRenderer);
 	LuaPushNamedString(L, "glslVersion", globalRenderingInfo.glslVersion);
 	LuaPushNamedString(L, "gladVersion", globalRenderingInfo.gladVersion);
+	LuaPushNamedString(L, "glewVersion", globalRenderingInfo.gladVersion);
 
 	LuaPushNamedNumber(L, "sdlVersionCompiledMajor", globalRenderingInfo.sdlVersionCompiled.major);
 	LuaPushNamedNumber(L, "sdlVersionCompiledMinor", globalRenderingInfo.sdlVersionCompiled.minor);
