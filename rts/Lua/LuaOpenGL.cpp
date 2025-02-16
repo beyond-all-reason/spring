@@ -1287,7 +1287,7 @@ int LuaOpenGL::EndText(lua_State* L)
 	return 0;
 }
 
-/**
+/***
  * @table gl
  */
 

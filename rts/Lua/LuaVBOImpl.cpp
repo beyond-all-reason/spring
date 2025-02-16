@@ -456,7 +456,7 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
 	return true;
 }
 
-/**
+/***
  * @alias VBODataType
  * | GL.BYTE
  * | GL.UNSIGNED_BYTE
@@ -467,7 +467,7 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
  * | GL.FLOAT
  */
 
-/**
+/***
  * @class VBOAttributeDef
  * 
  * @field id integer
