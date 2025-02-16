@@ -788,7 +788,7 @@ namespace Impl {
  * @function gl.ClearAttachmentFBO
  * @param fbo Fbo|nil (nil for currently bound FBO)
  * @param target number? (GL.FRAMEBUFFER default)
- * @param attachment number|text
+ * @param attachment number|text (E.g. color0 or GL.COLOR_ATTACHMENT0)
  * @param clearValue0 number
  * @param clearValue1 number
  * @param clearValue2 number
