@@ -376,7 +376,7 @@ bool FBO::CheckStatus(const char* name)
 #ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
 #endif
-	const GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+	const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
 
 	switch (status) {
 		case GL_FRAMEBUFFER_COMPLETE_EXT:
@@ -420,7 +420,7 @@ GLenum FBO::GetStatus()
 #ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
 #endif
-	return glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+	return glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
 }
 
 
