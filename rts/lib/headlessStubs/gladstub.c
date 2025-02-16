@@ -106,7 +106,7 @@ void APIENTRY impl_glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLin
 void APIENTRY impl_glDeleteQueries(GLsizei n, const GLuint* ids) {}
 
 void APIENTRY impl_glUseProgram(GLuint program) {}
-GLuint APIENTRY impl_glCreateProgram() { return 0; }
+GLuint APIENTRY impl_glCreateProgram(void) { return 0; }
 void APIENTRY impl_glDeleteProgram(GLuint program) {}
 void APIENTRY impl_glProgramParameteri(GLuint program, GLenum pname, GLint value) {}
 void APIENTRY impl_glProgramParameteriEXT(GLuint program, GLenum pname, GLint value) {}
@@ -247,7 +247,7 @@ GLhandleARB APIENTRY impl_glCreateShaderObjectARB(GLenum shaderType) {
 // headless include/GL is behind mingwlibs, avoid signature conflict
 // void APIENTRY impl_glShaderSourceARB(GLhandleARB shaderObj, GLsizei count, const GLcharARB**string, const GLint *length) {}
 void APIENTRY impl_glCompileShaderARB(GLhandleARB shaderObj) {}
-GLhandleARB APIENTRY impl_glCreateProgramObjectARB() {
+GLhandleARB APIENTRY impl_glCreateProgramObjectARB(void) {
     return 0;
 }
 void APIENTRY impl_glAttachObjectARB(GLhandleARB containerObj, GLhandleARB obj) {}
@@ -438,8 +438,8 @@ void APIENTRY impl_glEvalMesh1(GLenum mode, GLint i1, GLint i2) {}
 void APIENTRY impl_glEvalMesh2(GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2) {}
 void APIENTRY impl_glEvalPoint1(GLint i) {}
 void APIENTRY impl_glEvalPoint2(GLint i, GLint j) {}
-void APIENTRY impl_glFinish() {}
-void APIENTRY impl_glFlush() {}
+void APIENTRY impl_glFinish(void) {}
+void APIENTRY impl_glFlush(void) {}
 void APIENTRY impl_glFrontFace(GLenum mode) {}
 
 void APIENTRY impl_glFrustum(GLdouble left, GLdouble right,
@@ -456,7 +456,7 @@ void APIENTRY impl_glGetTexImage(GLenum target, GLint level,
 
 void APIENTRY impl_glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, GLint* params) {}
 
-void APIENTRY impl_glInitNames() {}
+void APIENTRY impl_glInitNames(void) {}
 
 GLboolean APIENTRY impl_glIsTexture(GLuint texture) {
     return 0;
@@ -484,7 +484,7 @@ void APIENTRY impl_glNormal3fv(const GLfloat* v) {}
 
 void APIENTRY impl_glPixelStorei(GLenum pname, GLint param) {}
 void APIENTRY impl_glPushName(GLuint name) {}
-void APIENTRY impl_glPopName() {}
+void APIENTRY impl_glPopName(void) {}
 void APIENTRY impl_glReadBuffer(GLenum mode) {}
 
 void APIENTRY impl_glReadPixels(GLint x, GLint y,
@@ -555,13 +555,13 @@ void APIENTRY impl_glMaterialf(GLenum face, GLenum pname, GLfloat param) {}
 void APIENTRY impl_glPointSize(GLfloat size) {}
 void APIENTRY impl_glCullFace(GLenum mode) {}
 void APIENTRY impl_glLogicOp(GLenum opcode) {}
-void APIENTRY impl_glEndList() {}
+void APIENTRY impl_glEndList(void) {}
 GLuint APIENTRY impl_glGenLists(GLsizei range) {
     return 0;
 }
 
 void APIENTRY impl_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
-void APIENTRY impl_glLoadIdentity() {}
+void APIENTRY impl_glLoadIdentity(void) {}
 void APIENTRY impl_glOrtho(GLdouble left, GLdouble right,
     GLdouble bottom, GLdouble top,
     GLdouble near_val, GLdouble far_val) {}
@@ -593,7 +593,7 @@ void APIENTRY impl_glTexCoord2i(GLint s, GLint t) {}
 void APIENTRY impl_glVertex2f(GLfloat x, GLfloat y) {}
 void APIENTRY impl_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {}
 void APIENTRY impl_glBegin(GLenum mode) {}
-void APIENTRY impl_glEnd() {}
+void APIENTRY impl_glEnd(void) {}
 
 void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint* textures) {}
 
@@ -632,7 +632,7 @@ void APIENTRY impl_glBlendFunc(GLenum sfactor, GLenum dfactor) {}
 void APIENTRY impl_glTranslatef(GLfloat x, GLfloat y, GLfloat z) {}
 void APIENTRY impl_glColor4fv(const GLfloat* v) {}
 void APIENTRY impl_glLineStipple(GLint factor, GLushort pattern) {}
-void APIENTRY impl_glPopAttrib() {}
+void APIENTRY impl_glPopAttrib(void) {}
 void APIENTRY impl_glPushAttrib(GLbitfield mask) {}
 void APIENTRY impl_glDepthMask(GLboolean flag) {}
 void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref) {}
@@ -640,8 +640,8 @@ void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref) {}
 void APIENTRY impl_glFogfv(GLenum pname, const GLfloat* params) {}
 void APIENTRY impl_glFogf(GLenum pname, GLfloat param) {}
 void APIENTRY impl_glFogi(GLenum pname, GLint param) {}
-void APIENTRY impl_glPushMatrix() {}
-void APIENTRY impl_glPopMatrix() {}
+void APIENTRY impl_glPushMatrix(void) {}
+void APIENTRY impl_glPopMatrix(void) {}
 void APIENTRY impl_glCallList(GLuint list) {}
 
 void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level,
