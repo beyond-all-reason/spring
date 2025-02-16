@@ -902,20 +902,20 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 
 	switch (componentType)
 	{
-	case GL_INT:
-		Impl::ClearBuffer<GLint, &glClearBufferiv>(L, 4, bufferType, drawBuffer);
-		break;
-	case GL_UNSIGNED_INT:
-		Impl::ClearBuffer<GLuint, &glClearBufferuiv>(L, 4, bufferType, drawBuffer);
-		break;
-	case GL_SIGNED_NORMALIZED: [[fallthrough]];   // is this considered a fixed point value?
-	case GL_UNSIGNED_NORMALIZED: [[fallthrough]]; // is this considered a fixed point value?
-	case GL_FLOAT:
-		Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, 4, bufferType, drawBuffer);
-		break;
-	default:
-		lua_pushboolean(L, false);
-		return 1;
+		case GL_INT:
+			Impl::ClearBuffer<GLint, &glClearBufferiv>(L, 4, bufferType, drawBuffer);
+			break;
+		case GL_UNSIGNED_INT:
+			Impl::ClearBuffer<GLuint, &glClearBufferuiv>(L, 4, bufferType, drawBuffer);
+			break;
+		case GL_SIGNED_NORMALIZED: [[fallthrough]];   // is this considered a fixed point value?
+		case GL_UNSIGNED_NORMALIZED: [[fallthrough]]; // is this considered a fixed point value?
+		case GL_FLOAT:
+			Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, 4, bufferType, drawBuffer);
+			break;
+		default:
+			lua_pushboolean(L, false);
+			return 1;
 	}
 
 	lua_pushboolean(L, true);
