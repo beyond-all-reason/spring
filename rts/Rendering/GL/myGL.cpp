@@ -472,7 +472,7 @@ bool glSpringBlitImages(
 				break;
 			}
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
-			const auto fbStatus = glCheckFramebufferStatusEXT(GL_READ_FRAMEBUFFER_EXT);
+			const auto fbStatus = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER_EXT);
 			result &= (fbStatus == GL_FRAMEBUFFER_COMPLETE_EXT);
 		}
 
@@ -501,7 +501,7 @@ bool glSpringBlitImages(
 				break;
 			}
 			glDrawBuffer(GL_COLOR_ATTACHMENT0);
-			const auto fbStatus = glCheckFramebufferStatusEXT(GL_DRAW_FRAMEBUFFER);
+			const auto fbStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
 			result &= (fbStatus == GL_FRAMEBUFFER_COMPLETE_EXT);
 		}
 

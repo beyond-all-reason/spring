@@ -573,7 +573,7 @@ void CDynWater::DrawWaves()
 
 	glViewport(0, 0, 1024, 1024);
 
-	if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		LOG_L(L_WARNING, "[DynWater::%s][1] FBO not ready", __func__);
 
 	glActiveTextureARB(GL_TEXTURE0_ARB);
@@ -614,7 +614,7 @@ void CDynWater::DrawWaves()
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuffer);
 	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, waveTex2, 0);
 
-	if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		LOG_L(L_WARNING, "[DynWater::%s][2] FBO not ready", __func__);
 
 
@@ -668,7 +668,7 @@ void CDynWater::DrawWaves()
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuffer);
 	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, waveTex1, 0);
 
-	if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		LOG_L(L_WARNING, "[DynWater::%s][3] FBO not ready", __func__);
 
 	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, waveNormalFP);
@@ -727,7 +727,7 @@ void CDynWater::DrawHeightTex()
 
 	glViewport(0, 0, 256, 256);
 
-	if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		LOG_L(L_WARNING, "[DynWater::%s] FBO not ready", __func__);
 
 	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, waveCopyHeightFP);
@@ -969,7 +969,7 @@ void CDynWater::DrawDetailNormalTex()
 
 	glViewport(0, 0, 256, 256);
 
-	if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		LOG_L(L_WARNING, "[DynWater::%s] FBO not ready", __func__);
 
 	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, dwDetailNormalFP);
@@ -1035,7 +1035,7 @@ void CDynWater::AddShipWakes()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		LOG_L(L_WARNING, "[DynWater::%s] FBO not ready", __func__);
 
 	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, dwAddSplashFP);
@@ -1160,7 +1160,7 @@ void CDynWater::AddExplosions()
 	glActiveTextureARB(GL_TEXTURE0_ARB);
 	glBindTexture(GL_TEXTURE_2D, splashTex);
 
-	if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
 		LOG_L(L_WARNING, "[DynWater::%s][1] FBO not ready", __func__);
 
 	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, dwAddSplashFP);

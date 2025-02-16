@@ -556,7 +556,7 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 	glGetIntegerv(bindTarget, &currentFBO);
 
 	glBindFramebufferEXT(target, fbo->id);
-	const GLenum status = glCheckFramebufferStatusEXT(target);
+	const GLenum status = glCheckFramebufferStatus(target);
 	glBindFramebufferEXT(target, currentFBO);
 
 	lua_pushboolean(L, (status == GL_FRAMEBUFFER_COMPLETE_EXT));
