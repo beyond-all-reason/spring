@@ -5678,7 +5678,7 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
  * @param objectTypeIdentifier GLenum Specifies the type of object being labeled.
  * @param objectID GLuint Specifies the name or ID of the object to label.
  * @param label string A string containing the label to be assigned to the object.
- * @treturn nil
+ * @return nil
  */
 int LuaOpenGL::ObjectLabel(lua_State* L) {
 	const auto identifier = static_cast<GLenum>(luaL_checkinteger(L, 1));
@@ -5714,7 +5714,7 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
  * @param id GLuint A numeric identifier for the group.
  * @param message string A human-readable string describing the debug group.
  * @param sourceIsThirdParty boolean Set the source tag, true for GL_DEBUG_SOURCE_THIRD_PARTY, false for GL_DEBUG_SOURCE_APPLICATION. default false
- * @treturn nil
+ * @return nil
  */
 int LuaOpenGL::PushDebugGroup(lua_State* L) {
 	const auto id = static_cast<GLuint>(luaL_checkinteger(L, 1));
@@ -5739,7 +5739,7 @@ int LuaOpenGL::PushDebugGroup(lua_State* L) {
 
 /**
  * @function gl.PopDebugGroup
- * @treturn nil
+ * @return nil
  */
 int LuaOpenGL::PopDebugGroup(lua_State* L) {
 	glPopDebugGroup();
