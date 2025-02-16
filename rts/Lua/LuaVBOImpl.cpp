@@ -1486,6 +1486,17 @@ void LuaVBOImpl::DumpDefinition()
 	LOG("%s", ss.str().c_str());
 }
 
+/*** Gets the OpenGL Buffer ID
+ *
+ * @function VBO:GetID
+ * @return number bufferID
+ */
+uint32_t LuaVBOImpl::GetID() const
+{
+	VBOExistenceCheck(vbo, __func__);
+	return vbo->GetId();
+}
+
 void LuaVBOImpl::AllocGLBuffer(size_t byteSize)
 {
 	if (defTarget == GL_UNIFORM_BUFFER && bufferSizeInBytes > UBO_SAFE_SIZE_BYTES) {
