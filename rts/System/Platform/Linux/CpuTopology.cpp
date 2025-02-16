@@ -20,6 +20,8 @@ namespace cpu_topology {
 	
 enum Vendor { INTEL, AMD, UNKNOWN };
 
+enum CoreType { PERFORMANCE, EFFICIENCY, UNKNOWN }
+
 // Detect CPU vendor (Intel or AMD)
 Vendor detect_cpu_vendor() {
     unsigned int eax, ebx, ecx, edx;
@@ -47,13 +49,16 @@ void set_cpu_affinity(uint32_t cpu) {
 }
 
 // Detect Intel core type using CPUID 0x1A
-int get_intel_core_type(int cpu) {
+CoreType get_intel_core_type(int cpu) {
     set_cpu_affinity(cpu);
     unsigned int eax, ebx, ecx, edx;
     if (__get_cpuid(0x1A, &eax, &ebx, &ecx, &edx)) {
-        return eax & 0xFF;  // Extract core type (lower bits of EAX)
+        uint8_t coreType = ( eax & 0xFF000000 ) >> 24;  // Extract core type
+
+        if (coreType & 0x40) return PERFORMANCE;
+        if (coreType & 0x20) return EFFICIENCY;
     }
-    return -1;
+    return UNKNOWN;
 }
 
 // Detect if hyper-threading is enabled using sysfs
@@ -97,12 +102,12 @@ void collect_intel_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
             continue;
         }
 
-        int core_type = get_intel_core_type(cpu);
+        CoreType core_type = get_intel_core_type(cpu);
         // default to performance core.
-        if (core_type == -1) core_type = 0x40;
+        if (core_type == UNKNOWN) core_type = PERFORMANCE;
 
-        if (core_type == 0x20) eff_mask.set(cpu);   // Efficiency Core (E-core)
-        else if (core_type == 0x40) perf_mask.set(cpu);  // Performance Core (P-core)
+        if (core_type == EFFICIENCY) eff_mask.set(cpu);   // Efficiency Core (E-core)
+        else if (core_type == PERFORMANCE) perf_mask.set(cpu);  // Performance Core (P-core)
 
         if (smt_enabled) {
             std::vector<int> siblings = get_thread_siblings(cpu);
