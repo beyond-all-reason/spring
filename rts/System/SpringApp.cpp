@@ -145,6 +145,12 @@ DEFINE_string   (menu,                                     "",    "Specify a lua
 DEFINE_string   (name,                                     "",    "Set your player name");
 DEFINE_bool     (oldmenu,                                  false, "Start the old menu");
 
+/* Startscript sets the listening port number. Replays use the entire startscript, including the port number.
+ * So normally if two games were originally played on the same port number, you can't watch their replays in
+ * parallel because they both try to open the same port. This makes automated replay parsing difficult when
+ * the same port number is heavily reused across many replays. Forcing onlyLocal solves this. */
+DEFINE_bool_EX  (onlyLocal,              "only-local",     false, "Force OnlyLocal mode (no network listening sockets). Use for parallelized watching of multiplayer replays");
+
 
 
 int spring::exitCode = spring::EXIT_CODE_SUCCESS;
@@ -540,6 +546,8 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 	}
 
 	CTextureAtlas::SetDebug(FLAGS_textureatlas);
+
+	CGameSetup::forceOnlyLocal = FLAGS_onlyLocal;
 
 	// if this fails, configHandler remains null
 	// logOutput's init depends on configHandler

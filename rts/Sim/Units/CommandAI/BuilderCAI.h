@@ -27,7 +27,6 @@ public:
 	CBuilderCAI();
 	~CBuilderCAI();
 
-	static void InitStatic();
 	void PostLoad();
 
 	int GetDefaultCmd(const CUnit* unit, const CFeature* feature);
@@ -52,25 +51,12 @@ public:
 	bool ReclaimObject(CSolidObject* o);
 	bool ResurrectObject(CFeature* feature);
 
-	/**
-	 * Checks if a unit is being reclaimed by a friendly con.
-	 */
-	static bool IsUnitBeingReclaimed(const CUnit* unit, const CUnit* friendUnit = nullptr);
-	static bool IsFeatureBeingReclaimed(int featureId, const CUnit* friendUnit = nullptr);
-	static bool IsFeatureBeingResurrected(int featureId, const CUnit* friendUnit = nullptr);
-
 	bool IsInBuildRange(const CWorldObject* obj) const;
 	bool IsInBuildRange(const float3& pos, const float radius) const;
 	float GetBuildRange(const float targetRadius) const;
 
 public:
 	spring::unordered_set<int> buildOptions;
-
-	static spring::unordered_set<int> reclaimers;
-	static spring::unordered_set<int> featureReclaimers;
-	static spring::unordered_set<int> resurrecters;
-
-	static std::vector<int> removees;
 
 private:
 	enum ReclaimOptions {
@@ -123,18 +109,6 @@ private:
 	bool OutOfImmobileRange(const Command& cmd) const;
 	/// add a command to reclaim a feature that is blocking our build-site
 	void ReclaimFeature(CFeature* f);
-
-	/// fix for patrolling cons repairing/resurrecting stuff that's being reclaimed
-	static void AddUnitToReclaimers(CUnit*);
-	static void RemoveUnitFromReclaimers(CUnit*);
-
-	/// fix for cons wandering away from their target circle
-	static void AddUnitToFeatureReclaimers(CUnit*);
-	static void RemoveUnitFromFeatureReclaimers(CUnit*);
-
-	/// fix for patrolling cons reclaiming stuff that is being resurrected
-	static void AddUnitToResurrecters(CUnit*);
-	static void RemoveUnitFromResurrecters(CUnit*);
 
 	inline float f3Dist(const float3& a, const float3& b) const {
 		return range3D ? a.distance(b) : a.distance2D(b);

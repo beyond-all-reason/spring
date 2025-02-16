@@ -3699,7 +3699,7 @@ int LuaSyncedRead::ValidUnitID(lua_State* L)
  *
  * @function Spring.GetUnitStates
  * @param unitID integer
- * @return UnitState[]
+ * @return UnitState
  */
 int LuaSyncedRead::GetUnitStates(lua_State* L)
 {
