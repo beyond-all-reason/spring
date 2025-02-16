@@ -18,17 +18,17 @@ namespace cpu_topology {
 
 #define MAX_CPUS 32  // Maximum logical CPUs
 	
-enum Vendor { INTEL, AMD, UNKNOWN };
+enum Vendor { VENDOR_INTEL, VENDOR_AMD, VENDOR_UNKNOWN };
 
-enum CoreType { PERFORMANCE, EFFICIENCY, UNKNOWN }
+enum CoreType { CORE_PERFORMANCE, CORE_EFFICIENCY, CORE_UNKNOWN };
 
-// Detect CPU vendor (Intel or AMD)
+// Detect CPU vendor (Intel or VENDOR_AMD)
 Vendor detect_cpu_vendor() {
     unsigned int eax, ebx, ecx, edx;
     __get_cpuid(0, &eax, &ebx, &ecx, &edx);
-    if (ebx == 0x756E6547) return INTEL; // "GenuineIntel"
-    if (ebx == 0x68747541) return AMD;   // "AuthenticAMD"
-    return UNKNOWN;
+    if (ebx == 0x756E6547) return VENDOR_INTEL; // "GenuineIntel"
+    if (ebx == 0x68747541) return VENDOR_AMD;   // "AuthenticAMD"
+    return VENDOR_UNKNOWN;
 }
 
 // Get number of logical CPUs
@@ -55,10 +55,10 @@ CoreType get_intel_core_type(int cpu) {
     if (__get_cpuid(0x1A, &eax, &ebx, &ecx, &edx)) {
         uint8_t coreType = ( eax & 0xFF000000 ) >> 24;  // Extract core type
 
-        if (coreType & 0x40) return PERFORMANCE;
-        if (coreType & 0x20) return EFFICIENCY;
+        if (coreType & 0x40) return CORE_PERFORMANCE;
+        if (coreType & 0x20) return CORE_EFFICIENCY;
     }
-    return UNKNOWN;
+    return CORE_UNKNOWN;
 }
 
 // Get thread siblings for a CPU
@@ -92,10 +92,10 @@ void collect_intel_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
 
         CoreType core_type = get_intel_core_type(cpu);
         // default to performance core.
-        if (core_type == UNKNOWN) core_type = PERFORMANCE;
+        if (core_type == CORE_UNKNOWN) core_type = CORE_PERFORMANCE;
 
-        if (core_type == EFFICIENCY) eff_mask.set(cpu);   // Efficiency Core (E-core)
-        else if (core_type == PERFORMANCE) perf_mask.set(cpu);  // Performance Core (P-core)
+        if (core_type == CORE_EFFICIENCY) eff_mask.set(cpu);   // Efficiency Core (E-core)
+        else if (core_type == CORE_PERFORMANCE) perf_mask.set(cpu);  // Performance Core (P-core)
 
         std::vector<int> siblings = get_thread_siblings(cpu);
         bool smt_enabled = siblings.size() > 1;
@@ -143,10 +143,10 @@ ProcessorMasks GetProcessorMasks() {
     std::bitset<MAX_CPUS> eff_mask, perf_mask, low_ht_mask, high_ht_mask;
     Vendor cpu_vendor = detect_cpu_vendor();
 
-    if (cpu_vendor == INTEL) {
+    if (cpu_vendor == VENDOR_INTEL) {
         LOG("Detected Intel CPU.");
         collect_intel_affinity_masks(eff_mask, perf_mask, low_ht_mask, high_ht_mask);
-    } else if (cpu_vendor == AMD) {
+    } else if (cpu_vendor == VENDOR_AMD) {
         LOG("Detected AMD CPU.");
         collect_amd_affinity_masks(eff_mask, perf_mask, low_ht_mask, high_ht_mask);
     } else {
