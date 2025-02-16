@@ -1074,7 +1074,7 @@ CBitmap& CBitmap::operator=(CBitmap&& bmp) noexcept
 bool CBitmap::CanBeKilled()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return ITexMemPool::texMemPool->NoCurrentAllocations();
+	return !ITexMemPool::texMemPool || ITexMemPool::texMemPool->NoCurrentAllocations();
 }
 
 void CBitmap::InitPool(size_t size)

@@ -323,6 +323,8 @@ void CPreGame::StartServer(const std::string& setupscript)
 		sha512::dump_digest(mapChecksum, mapChecksumHex);
 		sha512::dump_digest(modChecksum, modChecksumHex);
 
+		archiveScanner->WriteCache(); // write the cache, useful in case the game loading crashes afterwards
+
 		LOG("[PreGame::%s]\n\tmod-checksum=%s\n\tmap-checksum=%s", __func__, modChecksumHex.data(), mapChecksumHex.data());
 		LOG("[PreGame::%s] Game/Map archives checksum acquisition took = %ld microseconds", __func__, (spring_gettime() - connectTimer).toMilliSecsi());
 

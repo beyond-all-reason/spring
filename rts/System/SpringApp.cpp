@@ -144,6 +144,7 @@ DEFINE_string   (map,                                      "",    "Specify the m
 DEFINE_string   (menu,                                     "",    "Specify a lua menu archive to be used by spring");
 DEFINE_string   (name,                                     "",    "Set your player name");
 DEFINE_bool     (oldmenu,                                  false, "Start the old menu");
+DEFINE_string_EX(calc_checksum,      "calc-checksum",      "",    "Calculate named archive checksum and write to cache, cant run in parallel");
 
 /* Startscript sets the listening port number. Replays use the entire startscript, including the port number.
  * So normally if two games were originally played on the same port number, you can't watch their replays in
@@ -543,6 +544,25 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 		ConsolePrintInitialize(FLAGS_config, FLAGS_safemode);
 		AILibraryManager::OutputSkirmishAIInfo();
 		exit(spring::EXIT_CODE_SUCCESS);
+	}
+	else if (!FLAGS_calc_checksum.empty()) {
+		ConsolePrintInitialize(FLAGS_config, FLAGS_safemode);
+		try {
+			FileSystemInitializer::InitializeTry();
+			archiveScanner->ResetNumFilesHashed();
+
+			const std::string archive = archiveScanner->ArchiveFromName(FLAGS_calc_checksum);
+			const auto cs = archiveScanner->GetArchiveCompleteChecksumBytes(archive);
+
+			sha512::hex_digest hexCs = { 0 };
+			sha512::dump_digest(cs, hexCs);
+
+			LOG("Archive \"%s\", checksum = \"%s\"", FLAGS_calc_checksum.c_str(), hexCs.data());
+			FileSystemInitializer::Cleanup();
+			exit(spring::EXIT_CODE_SUCCESS);
+		}
+		CATCH_SPRING_ERRORS
+		exit(spring::EXIT_CODE_CRASHED);
 	}
 
 	CTextureAtlas::SetDebug(FLAGS_textureatlas);
