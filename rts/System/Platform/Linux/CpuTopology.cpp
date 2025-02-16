@@ -68,10 +68,12 @@ std::vector<int> get_thread_siblings(int cpu) {
     if (file) {
         std::string line;
         std::getline(file, line);
-        std::stringstream ss(line);
-        std::string token;
-        while (std::getline(ss, token, ',')) {
-            siblings.push_back(std::stoi(token));
+        std::istringstream ss(line);
+        int sibling;
+        char sep;
+        while (ss >> sibling) {
+            siblings.push_back(sibling);
+            ss >> sep;  // Skip separator (comma or other)
         }
     }
     return siblings;
@@ -109,7 +111,7 @@ void collect_intel_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
     }
 }
 
-// Collect CPU affinity masks for AMD using CPUID 0x8000001E
+// Collect CPU affinity masks for AMD
 void collect_amd_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
                                 std::bitset<MAX_CPUS> &perf_mask,
                                 std::bitset<MAX_CPUS> &low_ht_mask,
