@@ -68,6 +68,7 @@ int GLAD_GL_ARB_copy_buffer = 0;
 int GLAD_GL_ARB_conservative_depth = 0;
 int GLAD_GL_ARB_clip_control = 0;
 int GLAD_GL_ARB_buffer_storage = 0;
+int GLAD_GL_KHR_debug = 0;
 
 void APIENTRY impl_glClientActiveTextureARB(GLenum texture) {}
 void APIENTRY impl_glClientActiveTexture(GLenum texture) {}
@@ -664,6 +665,9 @@ void APIENTRY impl_glEndConditionalRender(void) {}
 
 void APIENTRY impl_glInvalidateBufferData(GLuint buffer) {}
 void APIENTRY impl_glClipControl(GLenum origin, GLenum depth) {}
+void APIENTRY impl_glPushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar* message) {}
+void APIENTRY impl_glPopDebugGroup(void) {}
+void APIENTRY impl_glObjectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label) {}
 
 
 PFNGLACTIVETEXTUREPROC glad_glActiveTexture = NULL;
@@ -1075,6 +1079,9 @@ PFNGLFRAMEBUFFERTEXTUREEXTPROC glad_glFramebufferTextureEXT = NULL;
 PFNGLPRIMITIVERESTARTINDEXNVPROC glad_glPrimitiveRestartIndexNV = NULL;
 PFNGLINVALIDATEBUFFERDATAPROC glad_glInvalidateBufferData = NULL;
 PFNGLCLIPCONTROLPROC glad_glClipControl = NULL;
+PFNGLPUSHDEBUGGROUPPROC glad_glPushDebugGroup = NULL;
+PFNGLPOPDEBUGGROUPPROC glad_glPopDebugGroup = NULL;
+PFNGLOBJECTLABELPROC glad_glObjectLabel = NULL;
 
 int gladLoadGL(void) {
     glad_glActiveTexture = impl_glActiveTexture;
@@ -1486,6 +1493,9 @@ int gladLoadGL(void) {
     glad_glPrimitiveRestartIndexNV = impl_glPrimitiveRestartIndexNV;
     glad_glInvalidateBufferData = impl_glInvalidateBufferData;
     glad_glClipControl = impl_glClipControl;
+    glad_glPushDebugGroup = impl_glPushDebugGroup;
+    glad_glPopDebugGroup = impl_glPopDebugGroup;
+    glad_glObjectLabel = impl_glObjectLabel;
 
     return 0;
 }
