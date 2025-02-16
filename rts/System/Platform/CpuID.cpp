@@ -95,8 +95,6 @@ namespace springproc {
 	}
 
 	void CPUID::EnumerateCores() {
-		numLogicalCores = 0;
-		numPhysicalCores = 0;
 		processorMasks = cpu_topology::GetProcessorMasks();
 
 		const uint32_t logicalCountMask  = (processorMasks.efficiencyCoreMask | processorMasks.performanceCoreMask);
