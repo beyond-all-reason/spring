@@ -61,17 +61,6 @@ CoreType get_intel_core_type(int cpu) {
     return UNKNOWN;
 }
 
-// Detect if hyper-threading is enabled using sysfs
-bool is_smt_enabled() {
-    std::ifstream file("/sys/devices/system/cpu/smt/active");
-    if (file) {
-        int status;
-        file >> status;
-        return status == 1;
-    }
-    return false;
-}
-
 // Get thread siblings for a CPU
 std::vector<int> get_thread_siblings(int cpu) {
     std::ifstream file("/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/topology/thread_siblings_list");
@@ -94,7 +83,6 @@ void collect_intel_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
                                   std::bitset<MAX_CPUS> &low_ht_mask,
                                   std::bitset<MAX_CPUS> &high_ht_mask) {
     int num_cpus = get_cpu_count();
-    bool smt_enabled = is_smt_enabled();
 
     for (int cpu = 0; cpu < num_cpus; ++cpu) {
         if (cpu >= MAX_CPUS) {
@@ -109,8 +97,9 @@ void collect_intel_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
         if (core_type == EFFICIENCY) eff_mask.set(cpu);   // Efficiency Core (E-core)
         else if (core_type == PERFORMANCE) perf_mask.set(cpu);  // Performance Core (P-core)
 
+        std::vector<int> siblings = get_thread_siblings(cpu);
+        bool smt_enabled = siblings.size() > 1;
         if (smt_enabled) {
-            std::vector<int> siblings = get_thread_siblings(cpu);
             if (!siblings.empty() && cpu == *std::min_element(siblings.begin(), siblings.end())) {
                 low_ht_mask.set(cpu);
             } else {
@@ -126,7 +115,6 @@ void collect_amd_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
                                 std::bitset<MAX_CPUS> &low_ht_mask,
                                 std::bitset<MAX_CPUS> &high_ht_mask) {
     int num_cpus = get_cpu_count();
-    bool smt_enabled = is_smt_enabled();
 
     for (int cpu = 0; cpu < num_cpus; ++cpu) {
         if (cpu >= MAX_CPUS) {
@@ -136,8 +124,9 @@ void collect_amd_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
 
         perf_mask.set(cpu);
 
+        std::vector<int> siblings = get_thread_siblings(cpu);
+        bool smt_enabled = siblings.size() > 1;
         if (smt_enabled) {
-            std::vector<int> siblings = get_thread_siblings(cpu);
             if (!siblings.empty() && cpu == *std::min_element(siblings.begin(), siblings.end())) {
                 low_ht_mask.set(cpu);
             } else {
