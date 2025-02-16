@@ -111,7 +111,7 @@ static int GetDefaultNumWorkers() {
 	const int cfgNumWorkers = GetConfigNumWorkers();
 
 	if (cfgNumWorkers < 0) {
-		return Threading::GetPhysicalCpuCores();
+		return Threading::GetPerformanceCpuCores();
 	}
 
 	if (cfgNumWorkers > maxNumThreads) {

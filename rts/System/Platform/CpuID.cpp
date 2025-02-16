@@ -99,11 +99,15 @@ namespace springproc {
 		numPhysicalCores = 0;
 		processorMasks = cpu_topology::GetProcessorMasks();
 
-		const uint32_t logicalCountMask = (processorMasks.efficiencyCoreMask | processorMasks.performanceCoreMask);
-		const uint32_t coreCountMask = logicalCountMask & ~processorMasks.hyperThreadHighMask;
+		const uint32_t logicalCountMask  = (processorMasks.efficiencyCoreMask | processorMasks.performanceCoreMask);
+		const uint32_t perfCoreCountMask = processorMasks.performanceCoreMask & ~processorMasks.hyperThreadHighMask;
+		const uint32_t coreCountMask     = logicalCountMask & ~processorMasks.hyperThreadHighMask;
 	
-		numLogicalCores = std::bitset<32>(logicalCountMask).count();
-		numPhysicalCores = std::bitset<32>(coreCountMask).count();
+		numLogicalCores     = std::bitset<32>(logicalCountMask).count();
+		numPhysicalCores    = std::bitset<32>(coreCountMask).count();
+		numPerformanceCores = std::bitset<32>(perfCoreCountMask).count();
+
+		smtDetected = !!( processorMasks.hyperThreadLowMask | processorMasks.hyperThreadHighMask );
 	}
 
 }

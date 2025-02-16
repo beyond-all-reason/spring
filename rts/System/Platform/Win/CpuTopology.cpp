@@ -3,6 +3,7 @@
 #include "System/Log/ILog.h"
 
 #include <bit>
+#include <set>
 #include <windows.h>
 
 namespace cpu_topology {
@@ -72,6 +73,7 @@ ProcessorMasks GetProcessorMasks() {
     DWORD returnLength = 0;
     DWORD byteOffset = 0;
     BOOL done = FALSE;
+    BYTE performanceClass = 0;
     ProcessorMasks processorMasks;
 
     Local_GetLogicalProcessorInformationEx = (spring_overrides::GetLogicalProcessorInformationExFunc) GetProcAddress(
@@ -105,8 +107,24 @@ ProcessorMasks GetProcessorMasks() {
         else
             done = TRUE;
     }
-    ptr = buffer;
 
+    // The number of EfficiencyClass values depends on the processor.The highest numbered class is always the
+    // performance core.
+    ptr = buffer;
+    byteOffset = 0;
+    while (byteOffset < returnLength)
+    {
+        if (ptr->Relationship == spring_overrides::RelationProcessorCore)
+        {
+            BYTE ef = ptr->Processor.EfficiencyClass;
+            performanceClass = (ef > performanceClass) ? ef : performanceClass;
+        }
+        byteOffset += ptr->Size;
+        ptr = (spring_overrides::PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)(((char*)buffer) + byteOffset);
+    }
+
+    ptr = buffer;
+    byteOffset = 0;
     while (byteOffset < returnLength)
     {
         if (ptr->Relationship == spring_overrides::RelationProcessorCore)
@@ -124,7 +142,7 @@ ProcessorMasks GetProcessorMasks() {
                 processorMasks.hyperThreadHighMask |= ( 0x80000000 >> std::countl_zero(supportedMask) );
             }
 
-            if (ptr->Processor.EfficiencyClass){
+            if (ptr->Processor.EfficiencyClass != performanceClass){
                 processorMasks.efficiencyCoreMask |= supportedMask;
             } else {
                 processorMasks.performanceCoreMask |= supportedMask;

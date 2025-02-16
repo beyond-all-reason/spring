@@ -45,7 +45,10 @@ namespace springproc {
 		/** Total number of cores in the system. This excludes SMT/HT
 		    cores. */
 		int GetNumPhysicalCores() const { return numPhysicalCores; }
+		int GetNumPerformanceCores() const { return numPerformanceCores; }
 		int GetNumLogicalCores() const { return numLogicalCores; }
+
+		bool HasHyperTrheading() const { return smtDetected; };
 
 		cpu_topology::ProcessorMasks GetAvailableProceesorAffinityMask() const { return processorMasks; };
 
@@ -56,8 +59,11 @@ namespace springproc {
 
 		int numLogicalCores;
 		int numPhysicalCores;
+		int numPerformanceCores;
 
 		cpu_topology::ProcessorMasks processorMasks;
+
+		bool smtDetected;
 	};
 
 }

@@ -242,7 +242,13 @@ namespace Threading {
 		return springproc::CPUID::GetInstance().GetNumPhysicalCores();
 	}
 
-	bool HasHyperThreading() { return (GetLogicalCpuCores() > GetPhysicalCpuCores()); }
+	int GetPerformanceCpuCores() {
+		return springproc::CPUID::GetInstance().GetNumPerformanceCores();
+	}
+
+	bool HasHyperThreading() {
+		return springproc::CPUID::GetInstance().HasHyperTrheading();
+	}
 
 
 	void SetThreadScheduler()
