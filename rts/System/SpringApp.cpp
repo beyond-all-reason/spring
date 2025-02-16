@@ -547,17 +547,22 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 	}
 	else if (!FLAGS_calc_checksum.empty()) {
 		ConsolePrintInitialize(FLAGS_config, FLAGS_safemode);
-		FileSystemInitializer::InitializeTry();
-		archiveScanner->ResetNumFilesHashed();
-		const std::string archive = archiveScanner->ArchiveFromName(FLAGS_calc_checksum);
-		const auto cs = archiveScanner->GetArchiveCompleteChecksumBytes(archive);
+		try {
+			FileSystemInitializer::InitializeTry();
+			archiveScanner->ResetNumFilesHashed();
 
-		sha512::hex_digest hexCs = {0};
-		sha512::dump_digest(cs, hexCs);
+			const std::string archive = archiveScanner->ArchiveFromName(FLAGS_calc_checksum);
+			const auto cs = archiveScanner->GetArchiveCompleteChecksumBytes(archive);
 
-		LOG("Archive \"%s\", checksum = \"%s\"", FLAGS_calc_checksum.c_str(), hexCs.data());
-		FileSystemInitializer::Cleanup();
-		exit(spring::EXIT_CODE_SUCCESS);
+			sha512::hex_digest hexCs = { 0 };
+			sha512::dump_digest(cs, hexCs);
+
+			LOG("Archive \"%s\", checksum = \"%s\"", FLAGS_calc_checksum.c_str(), hexCs.data());
+			FileSystemInitializer::Cleanup();
+			exit(spring::EXIT_CODE_SUCCESS);
+		}
+		CATCH_SPRING_ERRORS
+		exit(spring::EXIT_CODE_CRASHED);
 	}
 
 	CTextureAtlas::SetDebug(FLAGS_textureatlas);
