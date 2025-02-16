@@ -2790,7 +2790,7 @@ int LuaUnsyncedRead::GetCameraFOV(lua_State* L)
 	return 2;
 }
 
-/**
+/***
  * @class CameraVectors
  * @field forward xyz
  * @field up xyz

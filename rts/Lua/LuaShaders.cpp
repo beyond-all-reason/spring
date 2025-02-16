@@ -549,7 +549,7 @@ GLint LuaShaders::GetUniformLocation(LuaShaders::Program* p, const char* name)
 	return iter->second.location;
 }
 
-/**
+/***
  * A table of uniform name to value.
  * 
  * The Uniforms are the values you send along with the shader-program. To use

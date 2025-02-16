@@ -147,7 +147,7 @@ int LuaRBOs::meta_newindex(lua_State* L)
  * @field samples integer will return globalRendering->msaaLevel for multisampled RBO or 0 otherwise
  */
 
-/**
+/***
  * @class CreateRBOData
  * @field target GL
  * @field format GL

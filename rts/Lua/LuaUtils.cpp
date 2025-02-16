@@ -1156,7 +1156,7 @@ void LuaUtils::ParseCommandArray(
 	}
 }
 
-/**
+/***
  * @alias Facing
  * | 0 # South
  * | 1 # East

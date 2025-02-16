@@ -962,7 +962,7 @@ int LuaSyncedRead::GetWind(lua_State* L)
  * The advantage of it is that it can be read from anywhere (even from LuaUI and AIs!)
 ******************************************************************************/
 
-/**
+/***
  * @class RulesParams : table<string, integer>
  */
 
@@ -4258,7 +4258,7 @@ int LuaSyncedRead::GetUnitCosts(lua_State* L)
 	return 3;
 }
 
-/**
+/***
  * @class ResourceCost
  * @field metal number
  * @field energy number
@@ -6160,7 +6160,7 @@ int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
  * @param count integer Number of commands to return, `-1` returns all commands, `0` returns command count.
  * @return Command[] commands
  */
-/**
+/***
  * Get the count of commands for a unit.
  *
  * @function Spring.GetUnitCommands
@@ -6387,7 +6387,7 @@ int LuaSyncedRead::GetFactoryCounts(lua_State* L)
  * @param count integer Number of commands to return, `-1` returns all commands, `0` returns command count.
  * @return Command[] commands
  */
-/**
+/***
  * Get the count of commands for a unit.
  *
  * @function Spring.GetCommandQueue

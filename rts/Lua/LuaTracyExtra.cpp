@@ -29,7 +29,7 @@ static const std::string& GetImmanentPlotName(const char *plotName)
 	return *tracyLuaPlots.emplace(plotName).first;
 }
 
-/**
+/***
  * Tracy extensions
  * @table tracy
  */
