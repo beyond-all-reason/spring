@@ -10,26 +10,26 @@
 class ThreadAffinityGuard {
 private:
 #ifdef _WIN32
-    DWORD_PTR savedAffinity;
-    HANDLE threadHandle;
+	DWORD_PTR savedAffinity;
+	HANDLE threadHandle;
 #else
-    cpu_set_t savedAffinity;
-    pid_t tid;
+	cpu_set_t savedAffinity;
+	pid_t tid;
 #endif
-    bool affinitySaved;
+	bool affinitySaved;
 
 public:
-    // Constructor: Saves the current thread's affinity
-    ThreadAffinityGuard();
+	// Constructor: Saves the current thread's affinity
+	ThreadAffinityGuard();
 
-    // Destructor: Restores the saved affinity if it was successfully stored
-    ~ThreadAffinityGuard();
+	// Destructor: Restores the saved affinity if it was successfully stored
+	~ThreadAffinityGuard();
 
-    // Delete copy constructor to prevent copying
-    ThreadAffinityGuard(const ThreadAffinityGuard&) = delete;
+	// Delete copy constructor to prevent copying
+	ThreadAffinityGuard(const ThreadAffinityGuard&) = delete;
 
-    // Delete copy assignment operator to prevent assignment
-    ThreadAffinityGuard& operator=(const ThreadAffinityGuard&) = delete;
+	// Delete copy assignment operator to prevent assignment
+	ThreadAffinityGuard& operator=(const ThreadAffinityGuard&) = delete;
 };
 
 #endif

@@ -132,6 +132,9 @@ namespace Threading {
 		#if defined(THREADPOOL)
 		uint32_t policy = pm.performanceCoreMask & (~pm.hyperThreadHighMask);
 		#else
+
+		/* Allow any core; keep it a "proper" mask though
+		 * since that has less risk of blowing up than 0 or 0xFF..FF */
 		uint32_t policy = pm.performanceCoreMask | pm.efficiencyCoreMask;
 		#endif
 

@@ -13,42 +13,42 @@ static int logicalCpuCount = 0;
 static int physicalCpuCount = 0;
 
 void SetCpuCounts(ProcessorMasks& masks) {
-    const uint32_t logicalCountMask = (masks.efficiencyCoreMask & masks.performanceCoreMask);
-    const uint32_t coreCountMask = logicalCountMask & ~masks.hyperThreadHighMask;
+	const uint32_t logicalCountMask = (masks.efficiencyCoreMask & masks.performanceCoreMask);
+	const uint32_t coreCountMask = logicalCountMask & ~masks.hyperThreadHighMask;
 
-    logicalCpuCount = std::bitset<32>(logicalCountMask).count();
-    physicalCpuCount = std::bitset<32>(coreCountMask).count();
+	logicalCpuCount = std::bitset<32>(logicalCountMask).count();
+	physicalCpuCount = std::bitset<32>(coreCountMask).count();
 }
 
 void InitTopologicalData() {
-    if (cacheActive)
-        return;
+	if (cacheActive)
+		return;
 
-    const std::lock_guard lock(cacheMutex);
-    if (cacheActive)
-        return;
+	const std::lock_guard lock(cacheMutex);
+	if (cacheActive)
+		return;
 
-    cachedProcessorMasks = GetProcessorMasks();
-    SetCpuCounts(cachedProcessorMasks);
-    cacheActive = true;
+	cachedProcessorMasks = GetProcessorMasks();
+	SetCpuCounts(cachedProcessorMasks);
+	cacheActive = true;
 }
 
 const ProcessorMasks& GetCachedProcessorMasks() {
-    InitTopologicalData();
+	InitTopologicalData();
 
-    return cachedProcessorMasks;
+	return cachedProcessorMasks;
 }
 
 int GetNumLogicalCpuCores() {
-    InitTopologicalData();
+	InitTopologicalData();
 
-    return logicalCpuCount;
+	return logicalCpuCount;
 }
 
 int GetNumPhysicalCpuCores() {
-    InitTopologicalData();
+	InitTopologicalData();
 
-    return physicalCpuCount;
+	return physicalCpuCount;
 }
 
 } //namespace cpu_topology
