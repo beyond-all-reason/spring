@@ -1,5 +1,4 @@
-#ifndef CPU_TOPOLOGY_H__
-#define CPU_TOPOLOGY_H__
+#pragma once
 
 #include <cstdint>
 
@@ -16,5 +15,3 @@ struct ProcessorMasks {
 ProcessorMasks GetProcessorMasks();
 
 }
-
-#endif
