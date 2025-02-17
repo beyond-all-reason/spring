@@ -24,7 +24,7 @@ namespace SpringVersion
 	/**
 	 * Major version number (e.g. "83")
 	 * The feature integration version part.
-	 * This should change roughtly every 1 till 6 months.
+	 * This should change roughly every 1 to 6 months.
 	 * This matches the regex "[0-9]+".
 	 */
 	extern const std::string& GetMajor();

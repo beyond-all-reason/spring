@@ -55,7 +55,7 @@ public:
 	static void UnescapeSpecial(std::string& buffer);
 
 	/**
-	 * Retreive a specific value from the file and returns it, returns the specified default value if not found.
+	 * Retrieve a specific value from the file and returns it, returns the specified default value if not found.
 	 * @param defaultValue
 	 * @param location location of value.
 	 * @return returns the value on success, default otherwise.
@@ -63,7 +63,7 @@ public:
 	std::string SGetValueDef(std::string const& defaultValue, std::string const& location) const;
 
 	/**
-	 * Retreive a specific value from the file and returns it.
+	 * Retrieve a specific value from the file and returns it.
 	 * @param value string to store value or error-message in.
 	 * @param location location of value in the form "section\\section\\ ... \\name".
 	 * @return returns true on success, false otherwise and error message in value.
@@ -102,8 +102,8 @@ public:
 	}
 
 	/**
-	 * Retreive a value into value, or use defvalue if it does not exist
-	 * (templeted defvalue version of GetDef)
+	 * Retrieve a value into value, or use defvalue if it does not exist
+	 * (templated defvalue version of GetDef)
 	 */
 	template<typename T>
 	void GetTDef(T& value, const T& defvalue, const std::string& key) const;

@@ -20,6 +20,7 @@
 #include "CommandAI/CommandAI.h"
 #include "CommandAI/FactoryCAI.h"
 #include "CommandAI/MobileCAI.h"
+#include "CommandAI/BuilderCaches.h"
 
 #include "ExternalAI/EngineOutHandler.h"
 #include "Game/GameHelper.h"
@@ -157,7 +158,7 @@ void CUnit::InitStatic()
 	globalUnitParams.expReloadScale = modInfo.unitExpReloadScale;
 	globalUnitParams.expGrade = modInfo.unitExpGrade;
 
-	CBuilderCAI::InitStatic();
+	CBuilderCaches::InitStatic();
 	unitToolTipMap.Clear();
 }
 
@@ -1023,13 +1024,15 @@ void CUnit::SlowUpdate()
 			if (health <= 0.0f || buildProgress <= 0.0f)
 				KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_CONSTRUCTION_DECAY);
 		}
+		moveType->SlowUpdate();
 
 		ScriptDecloak(nullptr, nullptr);
 		return;
 	}
 
-	// below is stuff that should not be run while being built
+	// should not be run while being built
 	commandAI->SlowUpdate();
+
 	moveType->SlowUpdate();
 
 

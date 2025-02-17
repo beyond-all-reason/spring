@@ -549,7 +549,7 @@ GLint LuaShaders::GetUniformLocation(LuaShaders::Program* p, const char* name)
 	return iter->second.location;
 }
 
-/**
+/***
  * A table of uniform name to value.
  * 
  * The Uniforms are the values you send along with the shader-program. To use
@@ -572,7 +572,7 @@ GLint LuaShaders::GetUniformLocation(LuaShaders::Program* p, const char* name)
  * 
  * @field vertex string?
  * 
- * The "Vetex" or vertex-shader is your GLSL-Code as string, its written in a
+ * The "Vertex" or vertex-shader is your GLSL-Code as string, its written in a
  * C-Dialect.  This shader is busy deforming the geometry of a unit but it can
  * not create new polygons. Use it for waves, wobbling surfaces etc.
  * 
@@ -601,7 +601,7 @@ GLint LuaShaders::GetUniformLocation(LuaShaders::Program* p, const char* name)
  * @field fragment string?
  * 
  * The "Fragment" or Fragment-shader (sometimes called pixel-Shader) is post
- * processing the allready rendered picture (for example drawing stars on the
+ * processing the already rendered picture (for example drawing stars on the
  * sky).
  * 
  * Remember textures are not always 2 dimensional pictures. They can contain
@@ -780,7 +780,9 @@ int LuaShaders::CreateShader(lua_State* L)
 
 	// note: index, not raw ID
 	lua_pushnumber(L, shaders.AddProgram(p));
-	return 1;
+	// also push the program ID
+	lua_pushnumber(L, prog);
+	return 2;
 }
 
 
@@ -801,7 +803,7 @@ int LuaShaders::DeleteShader(lua_State* L)
 }
 
 
-/*** Binds a shader program identified by shaderID. Pass 0 to disable the shader. Returns wether the shader was successfully bound.
+/*** Binds a shader program identified by shaderID. Pass 0 to disable the shader. Returns whether the shader was successfully bound.
  *
  * @function gl.UseShader
  * @param shaderID integer

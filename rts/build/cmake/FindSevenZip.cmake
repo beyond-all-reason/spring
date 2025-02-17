@@ -19,7 +19,7 @@ ENDIF (SEVENZIP_BIN)
 # 7zr(.exe) only supports 7z archives, while 7z(.exe) and 7za(.exe)
 # additionally support many other formats (eg zip)
 
-# cmake 3 doesn't allow () in var names, workarround it:
+# cmake 3 doesn't allow () in var names, workaround it:
 set(progfilesx86 "ProgramFiles(x86)")
 
 find_program(SEVENZIP_BIN

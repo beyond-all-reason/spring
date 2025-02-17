@@ -748,7 +748,7 @@ void UDPConnection::Flush(const bool forced)
 					outgoing.DataSent(numBytes, true);
 
 					if ((partialPacket = (numBytes != packet->length))) {
-						// partially transfered
+						// partially transferred
 						packet.reset(new RawPacket(packet->data + numBytes, packet->length - numBytes));
 					} else {
 						// full packet copied

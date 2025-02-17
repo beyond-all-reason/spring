@@ -247,7 +247,7 @@ WEAPONTAG(int, smokePeriod, visuals.smokePeriod).defaultValue(8).description("Sm
 WEAPONTAG(int, smokeTime, visuals.smokeTime).defaultValue(2 * GAME_SPEED).description("Smoke trail linger duration, in sim frames");
 WEAPONTAG(float, smokeSize, visuals.smokeSize).defaultValue(7.0f).description("Smoke trail size multiplier");
 WEAPONTAG(float, smokeColor, visuals.smokeColor).defaultValue(0.65f).description("Smoke trail brightness multiplier");
-WEAPONTAG(bool, castShadow, visuals.castShadow).defaultValue(true).description("Does the projectile itself cast shadow?"); //TODO move out of missle block?
+WEAPONTAG(bool, castShadow, visuals.castShadow).defaultValue(true).description("Does the projectile itself cast shadow?"); //TODO move out of missile block?
 
 // Cannon
 WEAPONTAG(float, sizeDecay, visuals.sizeDecay).defaultValue(0.0f).description("#Cannon only. See `stages`. Size reduction per stage, as a fraction of the first stage");

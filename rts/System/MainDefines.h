@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #endif /* !defined __cplusplus && !defined bool */
 
-/* define if we have a X11 enviroment (:= linux/freebsd) */
+/* define if we have a X11 environment (:= linux/freebsd) */
 #if !defined(__APPLE__) && !defined(_WIN32)
 	//FIXME move this check to cmake, which has FindX11.cmake?
 	#define _X11
@@ -45,7 +45,7 @@
 /*
   define a cross-platform/-compiler compatible "%z" format replacement for
   printf() style functions.
-  "%z" being the propper way for size_t typed values,
+  "%z" being the proper way for size_t typed values,
   but support for it has not yet spread wide enough.
 */
 #if defined __arch64__
@@ -148,7 +148,7 @@
 	#endif /* _WIN32 */
 #endif /* cPS */
 
-/* define a platform independent path delimitter C-string and char */
+/* define a platform independent path delimiter C-string and char */
 #ifndef sPD
 	#define sPD_WIN32 ";"
 	#define sPD_POSIX ":"

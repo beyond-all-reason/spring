@@ -123,7 +123,7 @@ struct SSkirmishAICallback {
 	int               (CALLING_CONV *getMaxSkirmishAIs)(int skirmishAIId);
 
 	/**
-	 * Returns the ID of the team controled by this Skirmish AI.
+	 * Returns the ID of the team controlled by this Skirmish AI.
 	 */
 	int               (CALLING_CONV *SkirmishAI_getTeamId)(int skirmishAIId);
 
@@ -185,7 +185,7 @@ struct SSkirmishAICallback {
 	void              (CALLING_CONV *Log_log)(int skirmishAIId, const char* const msg);
 
 	/**
-	 * Inform the engine of an error that happend in the interface.
+	 * Inform the engine of an error that happened in the interface.
 	 * @param   msg       error message
 	 * @param   severety  from 10 for minor to 0 for fatal
 	 * @param   die       if this is set to true, the engine assumes
@@ -233,7 +233,7 @@ struct SSkirmishAICallback {
 	 * @param   common     if true, the version independent data-dir is formed,
 	 *                     which uses "common" instead of the version, eg:
 	 *                     "/home/userX/.spring/AI/Skirmish/RAI/common/..."
-	 * @return  whether the locating process was successfull
+	 * @return  whether the locating process was successful
 	 *          -> the path exists and is stored in an absolute form in path
 	 */
 	bool              (CALLING_CONV *DataDirs_locatePath)(int skirmishAIId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir, bool common); //$ RET_STRING:path:path_sizeMax
@@ -264,12 +264,12 @@ struct SSkirmishAICallback {
 	 * @param   dir        if true, realPath specifies a dir, which means if
 	 *                     create is true, the whole path will be created,
 	 *                     including the last part
-	 * @return  whether the locating process was successfull
+	 * @return  whether the locating process was successful
 	 *          -> the path exists and is stored in an absolute form in path
 	 */
 	bool              (CALLING_CONV *DataDirs_Roots_locatePath)(int skirmishAIId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir); //$ RET_STRING:path:path_sizeMax
 
-// BEGINN misc callback functions
+// BEGIN misc callback functions
 	/**
 	 * Returns the current game time measured in frames (the
 	 * simulation runs at 30 frames per second at normal speed)
@@ -328,7 +328,7 @@ struct SSkirmishAICallback {
 
 	/**
 	 * Returns the current level of a resource of another team.
-	 * Allways works for allied teams.
+	 * Always works for allied teams.
 	 * Works for all teams when cheating is enabled.
 	 * @return current level of the requested resource of the other team, or -1.0 on an invalid request
 	 */
@@ -336,7 +336,7 @@ struct SSkirmishAICallback {
 
 	/**
 	 * Returns the current income of a resource of another team.
-	 * Allways works for allied teams.
+	 * Always works for allied teams.
 	 * Works for all teams when cheating is enabled.
 	 * @return current income of the requested resource of the other team, or -1.0 on an invalid request
 	 */
@@ -344,7 +344,7 @@ struct SSkirmishAICallback {
 
 	/**
 	 * Returns the current usage of a resource of another team.
-	 * Allways works for allied teams.
+	 * Always works for allied teams.
 	 * Works for all teams when cheating is enabled.
 	 * @return current usage of the requested resource of the other team, or -1.0 on an invalid request
 	 */
@@ -352,7 +352,7 @@ struct SSkirmishAICallback {
 
 	/**
 	 * Returns the storage capacity for a resource of another team.
-	 * Allways works for allied teams.
+	 * Always works for allied teams.
 	 * Works for all teams when cheating is enabled.
 	 * @return storage capacity for the requested resource of the other team, or -1.0 on an invalid request
 	 */
@@ -415,7 +415,7 @@ struct SSkirmishAICallback {
 // END misc callback functions
 
 
-// BEGINN OBJECT Cheats
+// BEGIN OBJECT Cheats
 	/**
 	 * Returns whether this AI may use active cheats.
 	 */
@@ -442,7 +442,7 @@ struct SSkirmishAICallback {
 // END OBJECT Cheats
 
 
-// BEGINN OBJECT Resource
+// BEGIN OBJECT Resource
 	int               (CALLING_CONV *getResources)(int skirmishAIId); //$ FETCHER:MULTI:NUM:Resource
 
 	int               (CALLING_CONV *getResourceByName)(int skirmishAIId, const char* resourceName); //$ REF:RETURN->Resource
@@ -472,7 +472,7 @@ struct SSkirmishAICallback {
 // END OBJECT Resource
 
 
-// BEGINN OBJECT File
+// BEGIN OBJECT File
 	/** Return -1 when the file does not exist */
 	int               (CALLING_CONV *File_getSize)(int skirmishAIId, const char* fileName);
 
@@ -486,7 +486,7 @@ struct SSkirmishAICallback {
 // END OBJECT File
 
 
-// BEGINN OBJECT UnitDef
+// BEGIN OBJECT UnitDef
 	/**
 	 * A UnitDef contains all properties of a unit that are specific to its type,
 	 * for example the number and type of weapons or max-speed.
@@ -751,7 +751,7 @@ struct SSkirmishAICallback {
 
 	int               (CALLING_CONV *UnitDef_getMoveState)(int skirmishAIId, int unitDefId);
 
-// beginn: aircraft stuff
+// begin: aircraft stuff
 	float             (CALLING_CONV *UnitDef_getWingDrag)(int skirmishAIId, int unitDefId);
 
 	float             (CALLING_CONV *UnitDef_getWingAngle)(int skirmishAIId, int unitDefId);
@@ -800,8 +800,8 @@ struct SSkirmishAICallback {
 	 * The yard map defines which parts of the square a unit occupies
 	 * can still be walked on by other units.
 	 * Example:
-	 * In the BA Arm T2 K-Bot lab, htere is a line in hte middle where units
-	 * walk, otherwise they would not be able ot exit the lab once they are
+	 * In the BA Arm T2 K-Bot lab, there is a line in the middle where units
+	 * walk, otherwise they would not be able to exit the lab once they are
 	 * built.
 	 * @return 0 if invalid facing or the unit has no yard-map defined,
 	 *         the size of the yard-map otherwise: getXSize() * getXSize()
@@ -813,7 +813,7 @@ struct SSkirmishAICallback {
 	int               (CALLING_CONV *UnitDef_getZSize)(int skirmishAIId, int unitDefId);
 
 
-// beginn: transports stuff
+// begin: transports stuff
 	float             (CALLING_CONV *UnitDef_getLoadingRadius)(int skirmishAIId, int unitDefId);
 
 	float             (CALLING_CONV *UnitDef_getUnloadSpread)(int skirmishAIId, int unitDefId);
@@ -1028,13 +1028,13 @@ struct SSkirmishAICallback {
 
 
 
-// BEGINN OBJECT Unit
+// BEGIN OBJECT Unit
 	/**
 	 * Returns the number of units a team can have, after which it can not build
 	 * any more. It is possible that a team has more units then this value at
 	 * some point in the game. This is possible for example with taking,
 	 * reclaiming or capturing units.
-	 * This value is usefull for controlling game performance, and will
+	 * This value is useful for controlling game performance, and will
 	 * therefore often be set on games with old hardware to prevent lagging
 	 * because of too many units.
 	 */
@@ -1200,7 +1200,7 @@ struct SSkirmishAICallback {
 
 	/**
 	 * Indicate the relative power of the unit,
-	 * used for experience calulations etc.
+	 * used for experience calculations etc.
 	 * This is sort of the measure of the units overall power.
 	 */
 	float             (CALLING_CONV *Unit_getPower)(int skirmishAIId, int unitId);
@@ -1238,7 +1238,7 @@ struct SSkirmishAICallback {
 // END OBJECT Unit
 
 
-// BEGINN OBJECT Team
+// BEGIN OBJECT Team
 	bool              (CALLING_CONV *Team_hasAIController)(int skirmishAIId, int teamId);
 
 	int               (CALLING_CONV *getEnemyTeams)(int skirmishAIId, int* teamIds, int teamIds_sizeMax); //$ FETCHER:MULTI:IDs:Team:teamIds
@@ -1258,7 +1258,7 @@ struct SSkirmishAICallback {
 // END OBJECT Team
 
 
-// BEGINN OBJECT Group
+// BEGIN OBJECT Group
 	int               (CALLING_CONV *getGroups)(int skirmishAIId, int* groupIds, int groupIds_sizeMax); //$ FETCHER:MULTI:IDs:Group:groupIds
 
 	int               (CALLING_CONV *Group_getSupportedCommands)(int skirmishAIId, int groupId); //$ FETCHER:MULTI:NUM:SupportedCommand-CommandDescription
@@ -1299,7 +1299,7 @@ struct SSkirmishAICallback {
 
 
 
-// BEGINN OBJECT Mod
+// BEGIN OBJECT Mod
 
 	/**
 	 * Returns the mod archive file name.
@@ -1466,7 +1466,7 @@ struct SSkirmishAICallback {
 	int               (CALLING_CONV *Mod_getFireAtKilled)(int skirmishAIId);
 
 	/**
-	 * 1 = units fire at crashing aircrafts, 0 = units ignore crashing aircrafts
+	 * 1 = units fire at crashing aircraft, 0 = units ignore crashing aircraft
 	 */
 	int               (CALLING_CONV *Mod_getFireAtCrashing)(int skirmishAIId);
 
@@ -1499,7 +1499,7 @@ struct SSkirmishAICallback {
 
 
 
-// BEGINN OBJECT Map
+// BEGIN OBJECT Map
 	int               (CALLING_CONV *Map_getChecksum)(int skirmishAIId);
 
 	void              (CALLING_CONV *Map_getStartPos)(int skirmishAIId, float* return_posF3_out);
@@ -1760,16 +1760,16 @@ struct SSkirmishAICallback {
 	 *                resolution, that the building must keep to other
 	 *                buildings; this makes it easier to keep free paths through
 	 *                a base
-	 * @return actual map position with x, y and z all beeing positive,
+	 * @return actual map position with x, y and z all being positive,
 	 *         or float[3]{-1, 0, 0} if no suitable position is found.
 	 */
 	void              (CALLING_CONV *Map_findClosestBuildSite)(int skirmishAIId, int unitDefId, float* pos_posF3, float searchRadius, int minDist, int facing, float* return_posF3_out); //$ REF:unitDefId->UnitDef
 
-// BEGINN OBJECT Map
+// BEGIN OBJECT Map
 
 
 
-// BEGINN OBJECT FeatureDef
+// BEGIN OBJECT FeatureDef
 	int               (CALLING_CONV *getFeatureDefs)(int skirmishAIId, int* featureDefIds, int featureDefIds_sizeMax); //$ FETCHER:MULTI:IDs:FeatureDef:featureDefIds
 
 
@@ -1839,7 +1839,7 @@ struct SSkirmishAICallback {
 // END OBJECT FeatureDef
 
 
-// BEGINN OBJECT Feature
+// BEGIN OBJECT Feature
 	/**
 	 * Returns all features currently in LOS, or all features on the map
 	 * if cheating is enabled.
@@ -1878,7 +1878,7 @@ struct SSkirmishAICallback {
 
 
 
-// BEGINN OBJECT WeaponDef
+// BEGIN OBJECT WeaponDef
 	int               (CALLING_CONV *getWeaponDefs)(int skirmishAIId); //$ FETCHER:MULTI:NUM:WeaponDef
 
 	int               (CALLING_CONV *getWeaponDefByName)(int skirmishAIId, const char* weaponDefName); //$ REF:RETURN->WeaponDef
@@ -2188,7 +2188,7 @@ struct SSkirmishAICallback {
 	bool              (CALLING_CONV *WeaponDef_isAvoidNeutral)(int skirmishAIId, int weaponDefId);
 
 	/**
-	 * If nonzero, targetting units will TryTarget at the edge of collision sphere
+	 * If nonzero, targeting units will TryTarget at the edge of collision sphere
 	 * (radius*tag value, [-1;1]) instead of its centre.
 	 */
 	float             (CALLING_CONV *WeaponDef_getTargetBorder)(int skirmishAIId, int weaponDefId);
@@ -2201,7 +2201,7 @@ struct SSkirmishAICallback {
 
 	/**
 	 * For beam-lasers only - always hit with some minimum intensity
-	 * (a damage coeffcient normally dependent on distance).
+	 * (a damage coefficient normally dependent on distance).
 	 * Do not confuse this with the intensity tag, it i completely unrelated.
 	 */
 	float             (CALLING_CONV *WeaponDef_getMinIntensity)(int skirmishAIId, int weaponDefId);
@@ -2237,7 +2237,7 @@ struct SSkirmishAICallback {
 // END OBJECT WeaponDef
 
 
-// BEGINN OBJECT Weapon
+// BEGIN OBJECT Weapon
 	int               (CALLING_CONV *Unit_Weapon_getDef)(int skirmishAIId, int unitId, int weaponId); //$ REF:RETURN->WeaponDef
 
 	/** Next tick the weapon can fire again. */

@@ -89,7 +89,7 @@ If    (GIT_FOUND)
 	#                                     -> 0.82.3               # exactly 0.82.3
 	# * ${prefix}_GIT_BRANCH            : `git rev-parse --abbrev-ref HEAD`
 	#                                     -> HEAD   # in case we are not on any branch (detached HEAD)
-	#                                     -> master # the current branchs name
+	#                                     -> master # the current branches name
 	# - ${prefix}_GIT_FILES_MODIFIED    : number of uncommitted modified files
 	# - ${prefix}_GIT_FILES_ADDED       : number of uncommitted added files
 	# - ${prefix}_GIT_FILES_DELETED     : number of uncommitted deleted files
@@ -148,7 +148,7 @@ If    (GIT_FOUND)
 					${prefix}_GIT_STATUS_OUT_LIST_NO_PATHS
 					"${${prefix}_GIT_STATUS_OUT}")
 
-			# count ammounts of all modification types in the list
+			# count amounts of all modification types in the list
 			Set(${prefix}_GIT_FILES_MODIFIED    0)
 			Set(${prefix}_GIT_FILES_ADDED       0)
 			Set(${prefix}_GIT_FILES_DELETED     0)

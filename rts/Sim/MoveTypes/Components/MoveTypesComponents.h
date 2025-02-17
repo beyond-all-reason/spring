@@ -40,11 +40,6 @@ void serializeComponents(Archive &archive, Snapshot &snapshot) {
         >(archive);
 }
 
-struct GroundMoveSystemComponent {
-	static constexpr std::size_t page_size = 1;
-    static constexpr std::size_t INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE = 64;
-};
-
 struct YardmapTrapCheckSystemComponent {
 	static constexpr std::size_t page_size = 1;
     static constexpr std::size_t INITIAL_TRAP_UNIT_LIST_ALLOC_SIZE = 8;

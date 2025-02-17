@@ -408,7 +408,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 /******************************************************************************/
 /******************************************************************************/
 
-/**
+/***
  * @table gl
  */
 
@@ -556,7 +556,7 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 	glGetIntegerv(bindTarget, &currentFBO);
 
 	glBindFramebufferEXT(target, fbo->id);
-	const GLenum status = glCheckFramebufferStatusEXT(target);
+	const GLenum status = glCheckFramebufferStatus(target);
 	glBindFramebufferEXT(target, currentFBO);
 
 	lua_pushboolean(L, (status == GL_FRAMEBUFFER_COMPLETE_EXT));
@@ -638,7 +638,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 }
 
 
-/**
+/***
  * Bind default or specified via rawFboId numeric id of FBO
  * 
  * @function gl.RawBindFBO
@@ -647,7 +647,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
  * @param rawFboId integer? (Default: 0)
  * @return nil
  */
-/**
+/***
  * @function gl.RawBindFBO
  * @param fbo Fbo
  * @param target GL? (Default: `fbo.target`)

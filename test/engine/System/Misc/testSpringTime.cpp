@@ -167,7 +167,7 @@ TEST_CASE("ClockQualityCheck")
 	for (int i = 0; i<12; ++i) {
 		const float f10ei = std::pow(10.0f, i);
 		if (i > 7) {
-			// everything above 10e7 seconds might be unprecise
+			// everything above 10e7 seconds might be imprecise
 			if (std::abs(spring_time::fromSecs(f10ei).toSecsf() - f10ei) >= 1.0f) {
 				//WARN("std::abs(spring_time::fromSecs(f10ei).toSecsf() - f10ei) >= 1.0f");
 			}

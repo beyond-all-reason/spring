@@ -13,7 +13,7 @@
 
 
 ################################################################################
-### BEGINN: MACROS_AND_FUNCTIONS
+### BEGIN: MACROS_AND_FUNCTIONS
 # Define macros and functions to be used in this file and by Java Skirmish AIs
 
 # includes rts/build/cmake/UtilJava.cmake
@@ -337,7 +337,7 @@ if    (BUILD_${myName}_AIINTERFACE)
 		"-f" "${commonAwkScriptsDir}/commonDoc.awk"
 		)
 
-	# A CMake Custom Target will allways be built.
+	# A CMake Custom Target will always be built.
 	# from CMake docu:
 	# "add_custom_target is ALWAYS CONSIDERED OUT OF DATE"
 
@@ -575,7 +575,7 @@ if    (BUILD_${myName}_AIINTERFACE)
 			"-C" "${myJavaBuildDir}" "${myPkgFirstPart}"
 		DEPENDS
 			${myJavaSources}
-			# Using the native target reduces paralellism slightly
+			# Using the native target reduces parallelism slightly
 			# (less then 1s per build => negliable), but prevetns multiple
 			# execution of the source generating custom-commands
 			# (which results in wrongly generated source files with "make -j <X>")
@@ -607,7 +607,7 @@ if    (BUILD_${myName}_AIINTERFACE)
 			"-C" "${myDir}"                    "VERSION"
 		DEPENDS
 			${myJavaSources}
-			# Using the native target reduces paralellism slightly
+			# Using the native target reduces parallelism slightly
 			# (less then 1s per build => negliable), but prevetns multiple
 			# execution of the source generating custom-commands
 			# (which results in wrongly generated source files with "make -j <X>")

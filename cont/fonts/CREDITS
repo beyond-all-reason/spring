@@ -62,14 +62,14 @@ the whole set of the abovementioned URW set of 35 PostScript core fonts,
 	Cyrillic				(U+0400-U+04FF)
 
 
-* Wadalab Kanji Comittee
+* Wadalab Kanji Committee
 
-Between April 1990 and March 1992, Wadalab Kanji Comittee put together
+Between April 1990 and March 1992, Wadalab Kanji Committee put together
 a series of scalable font files with Japanese scripts, in four forms:
 Sai Micho, Chu Mincho, Cho Kaku and Saimaru. The font files are
 written in custom file format, while tools for conversion into
 Metafont and PostScript Type 1 are also supplied. The Wadalab Kanji
-Comittee has later been dismissed, and the resulting files can be now
+Committee has later been dismissed, and the resulting files can be now
 found on the FTP server of the Depertment of Mathematical Engineering
 and Information Physics, Faculty of Engineering, University of Tokyo
 <ftp://ftp.ipl.t.u-tokyo.ac.jp/Font/>.
@@ -82,7 +82,7 @@ and Information Physics, Faculty of Engineering, University of Tokyo
 
 Young Ryu is the author of Txfonts, a set of mathematical symbols
 designed to accompany text typeset in Times or its variants. In the
-documentation, Young adresses the design of mathematical symbols: "The
+documentation, Young addresses the design of mathematical symbols: "The
 Adobe Times fonts are thicker than the CM fonts. Designing math fonts
 for Times based on the rule thickness of Times = , , + , / , < ,
 etc. would result in too thick math symbols, in my opinion. In the TX
@@ -353,7 +353,7 @@ please contact mssridhar AT vsnl.com.
 
 Noah Levitt found out that the Sinhalese fonts available on the site
 <http://www.metta.lk/fonts/> are released under GNU GPL, or,
-precisely, "Public Domain under GNU Licence Produced by DMS
+precisely, "Public Domain under GNU Licence Produced by DMS
 Electronics for The Sri Lanka Tipitaka Project" (taken from the font
 comment), and took the effort of recoding the font to Unicode.
 
@@ -452,7 +452,7 @@ http://www.gnowledge.org/Gnoware/localization/font.htm
 
 Dr. Kulbir Singh Thind designed a set of Gurmukhi Unicode fonts,
 AnmolUni and AnmolUni-Bold, which are available under the terms of GNU
-Generel Public Licens from the Punjabu Computing Resource Center,
+General Public License from the Punjabu Computing Resource Center,
 http://guca.sourceforge.net/typography/fonts/anmoluni/.
 
 
@@ -469,7 +469,7 @@ be reached at http://www.gia.ge/.
 * Primož Peterlin <primoz.peterlin AT biofiz.mf.uni-lj.si>
 
 Primož Peterlin filled in missing glyphs here and there (e.g. Latin
-Extended-B and IPA Extensions ranges in the FreeMono familiy), and
+Extended-B and IPA Extensions ranges in the FreeMono family), and
 created the following UCS blocks:
 
 	Latin Extended-B                        (U+0180-U+024F)

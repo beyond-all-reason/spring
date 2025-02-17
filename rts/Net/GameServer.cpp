@@ -588,7 +588,7 @@ void CGameServer::PrivateMessage(int playerNum, const std::string& message) {
 void CGameServer::CheckSync()
 {
 #ifdef SYNCCHECK
-	std::vector< std::pair<unsigned, unsigned> > checksums; // <response checkum, #clients matching checksum>
+	std::vector< std::pair<unsigned, unsigned> > checksums; // <response checksum, #clients matching checksum>
 	std::vector<int> noSyncResponsePlayers;
 
 	std::map<unsigned, std::vector<int> > desyncGroups; // <desync-checksum, [desynced players]>

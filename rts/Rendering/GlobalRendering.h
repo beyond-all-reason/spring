@@ -287,7 +287,7 @@ public:
 	 * @brief GPU driver's vendor
 	 *
 	 * These can be used to enable workarounds for bugs in their drivers.
-	 * Note, you should always give the user the possiblity to override such workarounds via config-tags.
+	 * Note, you should always give the user the possibility to override such workarounds via config-tags.
 	 */
 	bool haveAMD;
 	bool haveMesa;

@@ -346,7 +346,7 @@ void CSyncDebugger::ServerQueueBlockRequests()
 	if (!pendingBlocksToRequest.empty()) {
 		logger.AddLine("Server: blocks: %u equal, %u not equal", HISTORY_SIZE - pendingBlocksToRequest.size(), pendingBlocksToRequest.size());
 		requestedBlocks = pendingBlocksToRequest;
-		// we know the first FPU bug occured in block # ii, so we send out a block request for it.
+		// we know the first FPU bug occurred in block # ii, so we send out a block request for it.
 // 		serverNet->SendData<unsigned> (NETMSG_SD_BLKREQUEST, ii);
 	} else {
 		logger.AddLine("Server: huh, all blocks equal?!?");

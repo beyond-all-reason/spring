@@ -10,7 +10,7 @@ namespace netcode
 
 /**
  * @brief network_error
- * thrown when network error occured
+ * thrown when network error occurred
  */
 class network_error : public std::runtime_error
 {

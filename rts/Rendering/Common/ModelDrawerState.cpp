@@ -181,7 +181,9 @@ bool CModelDrawerStateGLSL::SetTeamColor(int team, float alpha) const
 		return false;
 
 	assert(modelShader != nullptr);
+#ifndef HEADLESS
 	assert(modelShader->IsBound());
+#endif
 
 	float4 teamColor = CModelDrawerHelper::GetTeamColor(team, alpha);
 	modelShader->SetUniform4v("teamColor", &teamColor.r);

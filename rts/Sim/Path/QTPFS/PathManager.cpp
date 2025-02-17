@@ -867,7 +867,7 @@ void QTPFS::PathManager::ReadyQueuedSearches() {
 		auto pathView = registry.view<PathSearch>();
 
 		// Any requests that cannot be processed should be removed. We can't do that with the r*
-		// iterators becasue that will break them.
+		// iterators because that will break them.
 		std::for_each(pathView.begin(), pathView.end(), [this](entt::entity entity){
 			if (!registry.all_of<ProcessPath>(entity))
 				registry.destroy(entity);

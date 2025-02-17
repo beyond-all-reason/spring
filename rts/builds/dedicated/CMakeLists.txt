@@ -54,7 +54,7 @@ if    (UNIX AND NOT MINGW)
 	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 endif (UNIX AND NOT MINGW)
 
-### Assemble the incude dirs
+### Assemble the include dirs
 include_directories(${ENGINE_SRC_ROOT_DIR}/)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/lua/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/7zip)
@@ -123,6 +123,8 @@ set(system_files
 if    (WIN32)
 	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/Hardware.cpp)
 	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/WinVersion.cpp)
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/SharedLib.cpp)
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/DllLib.cpp)
 else  ()
 	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Linux/Hardware.cpp)
 endif ()

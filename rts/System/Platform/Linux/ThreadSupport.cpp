@@ -15,7 +15,7 @@
 #define LOG_SECTION_CRASHHANDLER "CrashHandler"
 
 
-// already registerd in CrashHandler.cpp
+// already registered in CrashHandler.cpp
 //LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_CRASHHANDLER);
 
 // use the specific section for all LOG*() calls in this source file

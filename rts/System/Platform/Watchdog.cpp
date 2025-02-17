@@ -72,7 +72,7 @@ namespace Watchdog
 	};
 
 	// NOTE:
-	//   these arrrays include one extra element so threads
+	//   these arrays include one extra element so threads
 	//   point somewhere non-NULL after being deregistered
 	static WatchDogThreadInfo registeredThreadsData[WDT_COUNT + 1];
 	static WatchDogThreadInfo* registeredThreads[WDT_COUNT + 1] = {nullptr};

@@ -26,7 +26,7 @@
  * @field versionFull string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise. Will also include (buildFlags), if there're any.
  * @field versionMajor string Major part of the named release version
  * @field versionMinor string Minor part of the named release version
- * @field versionPatchSet string Build numbert of the named release version
+ * @field versionPatchSet string Build number of the named release version
  * @field commitsNumber string Number of commits after the latest named release, non-zero indicates a "dev" build
  * @field buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
  * @field featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
@@ -57,6 +57,7 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 		LuaPushNamedBool(L, "NegativeGetUnitCurrentCommand", true);
 		LuaPushNamedBool(L, "hasExitOnlyYardmaps", true);
 		LuaPushNamedNumber(L, "rmlUiApiVersion", 1);
+		LuaPushNamedBool(L, "noAutoShowMetal", false);
 		LuaPushNamedNumber(L, "maxPiecesPerModel", MAX_PIECES_PER_MODEL);
 	lua_rawset(L, -3);
 

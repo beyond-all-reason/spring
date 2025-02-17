@@ -48,7 +48,7 @@ Misc:
 Pathing:
  - HAPFS uses the raw move found in the ground movement code, rather than its on version, which addresses several
    issues. https://github.com/beyond-all-reason/spring/pull/1402
- - HAPFS uses more detailed checks on unit movement to better follow chnages in the submerged state to give paths
+ - HAPFS uses more detailed checks on unit movement to better follow changes in the submerged state to give paths
    that will avoid units getting stuck on underwater obstacles. https://github.com/beyond-all-reason/spring/pull/1402
  - `movement.allowDirectionalPathing` when enabled now allows HAPFS to use directionality in its pathing algorithm.
    https://github.com/beyond-all-reason/spring/pull/1402
@@ -64,7 +64,7 @@ Sim:
  - Terraform activities are now done at slow update rate, rather than every frame. This is back to original behaviour.
    An extra step is added at the end of the job to guarantee that the last of the terrain changes are processed and not
    missed. https://github.com/beyond-all-reason/spring/pull/1360/
- - `CGroundMoveType::ChangeHeading` now avoid updating the unit if no rotation is neccessary.
+ - `CGroundMoveType::ChangeHeading` now avoid updating the unit if no rotation is necessary.
    https://github.com/beyond-all-reason/spring/pull/1382
 
 UI:
@@ -205,7 +205,7 @@ Sim:
    they would request a new path upon touching blocking terrain or a building, which may not be
    necessary and caused a not insignificant impact on CPU usage.
  - Reduced the amount of corner-cutting units try to do when following a path. This should reduce
-   the difficulty some unit types experience when trying to move through narrow corridoors, or
+   the difficulty some unit types experience when trying to move through narrow corridors, or
    between buildings in bases.
  - Reduced the difficulty units face when trying to rejoin a path after being routed away due to a
    collision with a building.
@@ -246,8 +246,8 @@ Sim:
  - unit defs have a new parameter, buildeeBuildRadius, which overrides the engine default assumption
    about the radius of an unit to use for build commands.
  - Units and features now have a field, buildeeRadius, which defaults to the unit's model's radius,
-   (but for units can be overriden by their buildeeBuildRadius unitDef parameter.) This field is used
-   instead of radius for build, capture, repair, reclaim, guard and ressurect commands.
+   (but for units can be overridden by their buildeeBuildRadius unitDef parameter.) This field is used
+   instead of radius for build, capture, repair, reclaim, guard and resurrect commands.
  - New system added to allow units near to a recently created wreck (or feature) to immediately check
    for being stuck. The standard fall-back checks for catching stuck units take too long when units
    are getting stuck in wrecks in the thick of battle.
@@ -263,7 +263,7 @@ Sim:
  - Fix collision momentum was being maintained on a unit when it gets turned back into a nanoframe.
    https://github.com/beyond-all-reason/spring/issues/1413
  - Fix when mutltiple builders are tasked with building something floating on the surface of the water and get there at
-   different frames, it can trigger mutliple versions of the same unit are started on the same location.
+   different frames, it can trigger multiple versions of the same unit are started on the same location.
    https://github.com/beyond-all-reason/spring/pull/1441
  - Fixed the bugger-off checks may fail to get rid of units if they stand on the edge of an area of a new long building.
    https://github.com/beyond-all-reason/spring/issues/1428
@@ -281,7 +281,7 @@ Sim::QTPFS
  - Debug Drawer now draws into the minimap, showing the map damage updates waiting to be processed.
    The more intense the colour, the more layers (MoveTypes) that still need to process the change.
  - The update system now uses a dirty quad table, so multiple updates in the same area won't
-   trigger unneccesary path data updates.
+   trigger unnecessary path data updates.
  - The update system has been rebalanced to keep up with map updates while minimizing the cost of
    doing so. It scales up work if the number of updates starts to get larger.
  - The implementation is now hybrid Quad-Tree. Instead of one root-node, there are now multiple
@@ -292,7 +292,7 @@ Sim::QTPFS
  - The update system is now multi-threaded.
  - Pathing requests are now fully multi-threaded. Previously the requests were single threaded,
    but in a separate thread from the main one.
- - If a pathing request goal is an unaccesible quad, then the system will try to find the nearest
+ - If a pathing request goal is an unaccessible quad, then the system will try to find the nearest
    accessible node to search instead.
  - The node-related data structures have been reworked to require significantly less memory than
    before. Also, excess data links have been removed.
@@ -319,7 +319,7 @@ Sim::QTPFS
    has to be in order to be eligible for an automatic incomplete path repath.
  - New modrule. `system.qtMaxNodesSearched`, can be used to limit the number of nodes searched.
  - New modrule, `system.qtMaxNodesSearchedRelativeToMapOpenNodes`, can be used to limit the number
-   of nodes searche relative to the number of pathable quads on the map.
+   of nodes searched relative to the number of pathable quads on the map.
 
 System:
  - Simulation can be configured to use up to ~100% CPU time to catch up.
@@ -520,7 +520,7 @@ BREAKING CHANGES SINCE 105.0 & HOW TO GET BACK OLD BEHAVIOURS:
 
   ! the tables returned by Spring.GetSelectedUnitsSorted and
     Spring.GetSelectedUnitsCounts no longer have an additional `n` key with
-    corresponding value containining the number of unitdefs.
+    corresponding value containing the number of unitdefs.
 
     Instead use the second return value, e.g.:
 
@@ -617,7 +617,7 @@ Sim:
    default)
  - Record the previous draw flag of units/features to support incremental rendering queries
  - Multi-threaded GroundMoveType collision avoidance
- - Multi-threaded GroundMoveType heading and accelaration planning
+ - Multi-threaded GroundMoveType heading and acceleration planning
  - GroundMoveType checks whether waypoints have changed before updating synced waypoint vars.
    This avoids unnecessary expensive checksum updates.
  - Limited max push velocity from ground/sea unit collisions to avoid heavy slow units being pushed
@@ -669,7 +669,7 @@ Fixes:
  - Fix KeyChains not being respected for GuiHandler actions and allow games to
    handle them with new actions argument on KeyPress/KeyRelease
  - openAL-soft/SDL audio bugfix: finally making dynamic audio device changes,
-   i.e. unplug/replug USB headset or swtich between builtin soundcard to
+   i.e. unplug/replug USB headset or switch between builtin soundcard to
    monitor soundcard (HDMI), seamlessly possible without requiring a program restart
  - Fix keysets bound to duplicate actions when the action line contains
    discrepant comment sections
@@ -958,7 +958,7 @@ Misc:
  - disable hang-detection when showing a message box
  - defer loading *Def sounds until simulation asks for them
  - use pcall in LuaUtils::Echo
- - catch all exceptions in Game::Load and make it non-interruptable
+ - catch all exceptions in Game::Load and make it non-interruptible
  - turn LoadDefs content_error exceptions into clean exits
  - set modType to an integer (not string) value in base-content modinfo.lua's
  - do not auto-add springcontent dependency to non-game "mod" archives
@@ -1291,7 +1291,7 @@ Bugfixes:
 
 -- 103.0 --------------------------------------------------------
 General:
- - Fix & Improve performace
+ - Fix & Improve performance
  - Add 'allowTake' modoption (default: true) to enable/disable /take (by lamer)
  - Add onlyLocal boolean value to modinfo.lua (default false)
    If true, spring won't listen for incoming connections when running
@@ -1969,7 +1969,7 @@ StartScript:
  - support rapid tags
  - allow to disable demo file recording in script.txt via RecordDemo = 0
  - add DefaultStartScript config setting:
-   - if set, automaticly start it!
+   - if set, automatically start it!
    - add --oldmenu command line parameter to always get to the old menu
 
 AI: (all by rlcevg)
@@ -2037,7 +2037,7 @@ Pathing:
  - crashing aircraft doesn't spam PE updates anymore (#4500)
 
 CEG:
- ! fixed booleans in CEGs (sometimes they were randomly overriden with random data)
+ ! fixed booleans in CEGs (sometimes they were randomly overridden with random data)
 
 Weapons:
  - shields have a new weapondef tag armorType - specifies the armor category to which the shield belongs (you can input either an armorclass name, or a unitdef name to share that unit's armor category)
@@ -2052,7 +2052,7 @@ Sim:
  - reduce load in Collisions handling (by doing blocked ground squares scans only every 2nd frame)
 
 Misc:
- - AI is initializated earlier: no more hang on game start
+ - AI is initialized earlier: no more hang on game start
  - add /set GrassDetail to console
  - slightly speed up scanning for archives
  - add HostIPDefault, HostPortDefault to set default host ip/port
@@ -2140,7 +2140,7 @@ UnitDefs:
    NOTE: the unload command still needs to be implemented in lua (much less work than the reclaiming one)
 
 Lua:
- - LuaRules & LuaGaia are now splitted into their synced & unsynced parts, and each one got its own luaState
+ - LuaRules & LuaGaia are now split into their synced & unsynced parts, and each one got its own luaState
   ! this way unsynced parts of gadgets now get `synced` callins like 'UnitCreated' etc. w/o  SendToUnsynced from their synced part
   - LuaRules & LuaGaia are now ~equal (except a very minor subset of differences) and get the same callins esp. all AllowXYZ callins
   - LuaUI now has a GotChatMsg too (same as LuaRules always had), it's similar to the now deprecated LuaUI-only ConfigCommand callin, but is called more often
@@ -2218,7 +2218,7 @@ Misc:
  - more extensive logging during shutdown
  - fix a number of potential issues if a thread crashes on engine shutdown
  - increase precision of several timer variables to preserve intermediate results
- - Lua: track more memory-allocater statistics for display in debug-mode
+ - Lua: track more memory-allocator statistics for display in debug-mode
  - Lua: limit maximum amount of memory allocated globally and per handle
  - GameServer: always echo back client sync-responses every 60 frames (see #4140)
  - GameServer: removed code that blocks pause / speed change commands from players with high CPU-use in median speedctrl policy
@@ -2334,7 +2334,7 @@ Misc:
  - copied a lot config descriptions from wiki to the engine (thx for all the wiki'ers)
  - https://springrts.com/wiki/Springsettings.cfg is now automatically updated with each release
  ! disable build of spring-multithreaded (unmaintained / doesn't compile)
- ! disable luaThreadingModel > 2, can be overriden with EnableUnsafeAndBrokenMT=1
+ ! disable luaThreadingModel > 2, can be overridden with EnableUnsafeAndBrokenMT=1
 	fixes #3774, #2884, #2784, #3673, #3808
  - more verbosity for spring-dedicated on exit & demo-writing
  - add config "MenuArchive" to allow background image to be set which is read from the archive in the path bitmaps/ui/background/
@@ -2823,7 +2823,7 @@ Bugfixes:
  - fix possible bug in MoveCtrl.SetMoveDef
 
 Sound:
- - don't automaticly set "MaxSounds"
+ - don't automatically set "MaxSounds"
  - try to fix "[Sound] Error: CSoundSource::Play: Unknown Internal Error" on Mac
 
 AI:
@@ -3210,7 +3210,7 @@ Windows:
 
 Linux:
  - Linux's ctrl+c: `hardkill` after 10sec (and 5 seconds softkill)
- - workaorund issue in FOSS ati drivers with NPOT cursors
+ - workaround issue in FOSS ati drivers with NPOT cursors
 
 
 -- 91.0 ---------------------------------------------------------
@@ -3252,7 +3252,7 @@ Bugfixes:
  - fix dangling pointer/memory corruption in QuadField (3211)
  - fix 'Reclaiming units under construction results in no resources being returned' (3216)
  - fix some OpenGL usage errors found by [teh]decay
- - fix 'Gunships dont always aquire targets despite fireatwill+roam+fly' (3221)
+ - fix 'Gunships dont always acquire targets despite fireatwill+roam+fly' (3221)
  - fix 'TargetBorder=1 only works when a unit has a specific attack command' (2971)
  - fix CFeature::ForcedMove (3226)
  - fix Spring crashes when sending large messages (3228)
@@ -3345,7 +3345,7 @@ Bugfixes:
  - fix missing stack trace on abnormal termination (sigabrt)
  - fix resurrecting an individual wreck results in the resurrector not healing it
  - fix /godmode and /{luarules,luagaia} {reload,disable} not working in demos (2701)
- - fix targetting bug (weapons sometimes failing to fire at badTargetCategory units) as a result of AllowWeaponTarget misuse
+ - fix targeting bug (weapons sometimes failing to fire at badTargetCategory units) as a result of AllowWeaponTarget misuse
  - fix kamikaze units not self-d'ing when given an attack order while on hold-fire (2405)
  - fix 3105 (PlayerChanged callin not available in unsynced gadgets)
  - fix 2947 (size of unidentified radar blips can be determined with mouseover)
@@ -3634,7 +3634,7 @@ Bugfixes:
  - bug in TestTrajectoryCone for ballistic weapons
  - transported units being unhittable (2875, 2934)
  - SetUnitCrashing inconsistency, caused "Aircraft crashing while landed results in irregular behavior" (2924)
- - obscure targetting bug, caused "Gunship jams when on hold fire" (2406)
+ - obscure targeting bug, caused "Gunship jams when on hold fire" (2406)
  - deprecate / remove the 'toAirWeapon' WeaponDef tag
    (use "onlyTargetCategory = VTOL" for the same effect)
  - 'airmesh is 0 at x >= width or z >= height' (2938)
@@ -3737,7 +3737,7 @@ Lua:
  ! UnitDef[].isCommander returns now false
  - fixed Spring.GetTimer/DiffTimers
  - fixed Spring.SetMouseCursor when using hw cursor
- - handle Lua code crashes in some events correctly, so they don't crash the whole Lua enviroment (fixes: "LuaRules::CheckStack top = -1")
+ - handle Lua code crashes in some events correctly, so they don't crash the whole Lua environment (fixes: "LuaRules::CheckStack top = -1")
  ! call UnitMoveFailed event only for via Script.SetWatchUnit registered UnitDefs
  ! added new WeaponDefs[].craterAreaOfEffect
  - extend Spring.SetUnitBlocking with an optional 4th "crashable" bool argument
@@ -3750,7 +3750,7 @@ Buildbot:
  - create spring_${VERSION}_minimal-portable+dedicated.zip
 
 UnitSync:
- - if Init() is called, but we are already initialzied, do a re-initialization
+ - if Init() is called, but we are already initialized, do a re-initialization
 
 
 -- 84.0 ---------------------------------------------------------
@@ -3973,7 +3973,7 @@ Engine / Internal:
  - added LinkingTimeOptimization (currently fails with GCC4.5/6)
  - more/better error reporting
  - new logging system:
-     frontend is leightweight
+     frontend is lightweight
      frontend is C compatible
      is more modular
      supports log levels: DEBUG, INFO, WARNING, ERROR, FATAL
@@ -4054,7 +4054,7 @@ Engine / Dedicated-Server:
 
 Unitsync:
  - add new function GetSpringVersionPatchset() (return "1" for a spring version of "0.82.7.1"
- - remove accidentially added third paramter to Init()
+ - remove accidentally added third parameter to Init()
 
 Installer:
  - fix: do not check for running .exe in silent-mode
@@ -4095,7 +4095,7 @@ Engine / Logging:
  - unify stdout/infolog output
 
 Engine / Lua:
- - fix global enviroment pollution in luaui.lua
+ - fix global environment pollution in luaui.lua
  - allow Spring.AssignMouseCursor & Spring.ReplaceMouseCursor from LuaRules, too
  - Allow loading from subfolders for weapon-def files (tdf and lua)
  - implement Lua's GameFrame event via the EventHandler
@@ -4421,7 +4421,7 @@ Engine / Rendering:
  - increased global decoupling between simulation and rendering code
  - fixed model specular lighting (most visible on units)
  - S3O model normals are now auto-scaled to unit-length
- - maps with mis-specified skybox textures will now load (without crashing Spring)
+ - maps with misspecified skybox textures will now load (without crashing Spring)
 
 Sound:
  - use OpenAL Soft 1.11 under windows (was Creative)
@@ -4505,7 +4505,7 @@ Lua:
  - new synced Spring.ShareTeamResource(teamID_src, teamID_dst, type = ["metal"|"energy"], amount) -> nil
  - new Spring.GetTeamResourceStats(teamID, resourcetype = ["metal"|"energy"]) -> nil | used, produced, excess, recv, sent
  - added Spring.SetProjectileMoveControl(number pid, boolean b) --> nil callout; if (b), makes all piece/weapon projectile movement fully Lua-controllable
- - improved Spring.GetTeamStatsHistory. It retuns now also the most recent data, not just the data of the cached stats which get updated only all 16 seconds.
+ - improved Spring.GetTeamStatsHistory. It returns now also the most recent data, not just the data of the cached stats which get updated only all 16 seconds.
  - fixed incorrect scaling in Spring.SetUnitResourceParam
  - fixed Spring.GetAIInfo, it returned incorrectly the given teamID as first argument
  - fixed a bug in Script.RemoveSyncedActionFallback
@@ -4700,7 +4700,7 @@ Engine / Rendering, UI:
  - Lots of other drawing fixes
  - Far-textures fixed
  - Load-screens preserve aspect ratio
- - Added checks for insufficent gfx cards
+ - Added checks for insufficient gfx cards
  - Added new shadow rendering option ("/shadows 2"): it disables terrain rendering
    in the shadow pass, which gives a huge performance increase
  - Changed BumpWaterReflection values:
@@ -4754,7 +4754,7 @@ Changes:
 
 -- 0.80.5.1 --------------------------------------
 Bugfixes:
- - fix a bug where empty network packets were spammed (eating bandwith and demo space)
+ - fix a bug where empty network packets were spammed (eating bandwidth and demo space)
  - fix a possible desync in the pathfinder
  - fix mouse jumping in windowed mode (windows)
  - fixed crash in KAIK
@@ -4870,7 +4870,7 @@ Engine / Simulation:
  - LuaCOB: make it possible to make units with Lua instead of bos/cob
  - some fixes for sm3 map-format
  - pathfinding improvements for close groups of units
- - reclaim / ressurection now correctly exported to LuaAI
+ - reclaim / resurrection now correctly exported to LuaAI
  - make better use of SSE functions for speed improvements
  - now compatible with Boost 1.34 again (was 1.35 for spring 0.79)
 
@@ -4909,7 +4909,7 @@ Bugfixes:
  - various AI-related fixes
  - SetUnitShieldState fixed
  - fix an infinite memory allocation loop on startup
- - restore acceptable framerate on vey old cards
+ - restore acceptable framerate on very old cards
 
 -- 0.79 --------------------------------------
 Major stuff:
@@ -4972,7 +4972,7 @@ Installer:
 
 
 -- 0.78.1.1 --------------------------------------
- - fix Features (wrecks, rocks) not beeing drawn with reflective units
+ - fix Features (wrecks, rocks) not being drawn with reflective units
 
 -- 0.78.1 --------------------------------------
 (notice the new version number scheme, its MAJOR (0.78) - MINOR (1))
@@ -5005,7 +5005,7 @@ Engine:
 Spring start / script.txt changes:
  - added Game/MyPlayerName (MyPlayerNum is now deprecated and will be removed sometimes)
  - send the gamesetup to each client once they join the server
- - Player / Team / Mod - options are not needed anymore for clients, they are transfered from the server once ingame
+ - Player / Team / Mod - options are not needed anymore for clients, they are transferred from the server once ingame
 
 User Interface:
  - Argh's ground-decal shader shadow tweak
@@ -5074,7 +5074,7 @@ Crashes:
  - even more preventions of DIV0
 
 User Interface:
- - whe watching a demo with a setup locally, overwrite maxspeed with 10
+ - when watching a demo with a setup locally, overwrite maxspeed with 10
  - fix mousehover detection for radar icons
  - fixed performance of Lua fontHandler
  - make the orbit-controller actually do something on win32
@@ -5127,7 +5127,7 @@ User Interface:
  - Made gunships (and possibly other units too) point their noses at the midPos of their target instead of the pos, the old behaviour could cause trouble with units where midPos and pos differ much.
  - added crashDrag tag (float, default 0.005) to fighter/bomber planes, when the plane is crashing it uses this drag instead of the automatically calculated drag it uses when flying. The calculated drag is no longer used when crashing, even if no crashDrag tag is present in the unit fbi
  - fix (AirMoveType) aircraft refueling
- - fix gameend detected not propperly
+ - fix gameend detected not properly
  - gameslowdown triggers at higher CPU usage and is limited to half the userspeed
 
 0.77b3:
@@ -5255,14 +5255,14 @@ Units & Weapons:
    of seconds the shield won't charge after being hit (kinda like the idle autoheal
    for hitpoints)
  - Added 'sonarStealth' unitDef tag.
- - Added new stockpileTime weapondef tag. It allows seperate reload and stockpile
+ - Added new stockpileTime weapondef tag. It allows separate reload and stockpile
    times for stockpile weapons.
  - Allow for square metal extraction areas (use the new extractSquare unitdef tag).
  - Added moveState and fixed fireState unitdef tags.
  - Added strafeToAttack tag. Moving sideways when in range but not shooting optional
    behaviour, the behaviour fails if the unit just takes its time for aiming (or
    cannot shoot at all) or has any other reason not to shoot.
- - Added avoidNeutral (targetting) and collideNeutral (projectiles) weapon tags.
+ - Added avoidNeutral (targeting) and collideNeutral (projectiles) weapon tags.
  - Added verticalSpeed (float, default: 3.0) unitDef tag  for non-fighter/bomber
    planes to define the speed of takeoff and landing (or loading).
  - Made missiles obey burnblow=1 (existing tag), the missile will explode in midair
@@ -5540,7 +5540,7 @@ Bugfixes:
  - Fixed an infinite recursion in the LuaUI layout handler
  - Fixed the Lua SendToUnsynced() stack check bug
  - Fixed ScriptMoveType vs. unit pushing
- - Fixed "cloaked units were invisble underwater" with DynWater
+ - Fixed "cloaked units were invisible underwater" with DynWater
  - Blocked team changes for dead units
  - Fixed beamlaser damage vs shields
  - Fixed smoke textures loading from resource.tdf (resources/graphics/smoke/smoke00 .. smoke11).
@@ -5602,7 +5602,7 @@ Spring engine varying changes:
 - Added behavior to mobile units so that they will start chasing when the target
   is running away, but before the target exits weapons range, allowing the unit
   to fire continuously at the retreating unit, instead of the cycles of firing,
-  then running to catch up that existed prevously.
+  then running to catch up that existed previously.
 - Added client side network traffic tallying (per packet type).
 - Lasers no longer use their full texture on shots that hit before their full length.
 - Negative damage now allowed.
@@ -5879,7 +5879,7 @@ Weapon definition tags:
       Amount of vertical speed keeps and reverses.
     NumBounce: (default: -1)
       The number of bounces a weapon will make. -1 indicates no limit.
-- Added the ability to bounce for Torpedos, Missiles, Lasers, Cannons, and Emgs.
+- Added the ability to bounce for Torpedoes, Missiles, Lasers, Cannons, and Emgs.
 - Added bounceExplosionGenerator tag, which defines an explosion generator to
   run when a projectile bounces.
 - Added the tag "hardStop" (bool, default 0) which, if used, makes the laser not
@@ -6057,7 +6057,7 @@ Bugfixes:
 - Added serializing for InMapDraw.
 - Fixed bug with saving builders that terraform ground.
 - Fixed stunned units being unhittable if pushed.
-- Made a seperate update thread while the game loads to prevent network timeouts
+- Made a separate update thread while the game loads to prevent network timeouts
   on slow computers. (thread is joined when loading finished.)
 - CCobInstance::RealCall now checks if stack is big enough before getting
   arguments from stack.
@@ -6205,7 +6205,7 @@ Lua:
 - Added the Spring.SetUnitTarget(unitID, targetID | <x,y,z>, bool userTarget) call-out
 - Added the Spring.SetExperienceGrade(number) call-out (sets the experience
   steps that will trigger the UnitExperience() call-in, based on the
-  limExperience varible value  (exp / (exp + 1)))
+  limExperience variable value  (exp / (exp + 1)))
 - Added the UnitExperience() lua call-in
 - Added VFS.UseArchive(filename, function(...) ... end, ...)
  - allows for packaged widgets (source, textures, sounds, etc...)
@@ -6346,7 +6346,7 @@ AI:
 - Added AIVAL_STOCKPILED to query the amount of stockpiled ammo.
 - Added AIVAL_STOCKPILE_QUED to query the amount of queued stockpile ammo.
 
-Behavorial:
+Behavioral:
 - Allow up to 16 pads per air base.
 - Units can not build stuff on top of cloaked stuff anymore.
 - Units guarding other units now properly repair the other unit if it's damaged.
@@ -6361,7 +6361,7 @@ Behavorial:
 - Disabled the ground flattening when building mobile units.
 - Added paralyzed unit skipping for paralyzers.
   (use ALT to disable skipping, same modifier as for permanent area commands)
-- Made a unit's ablity to slow itself relative to the angle of the slope.
+- Made a unit's ability to slow itself relative to the angle of the slope.
 - Improved aiming of Cannon type weapons. They will no longer over/under shoot
   due to large height differences.
 - Weapons don't target dead and crashing units anymore.
@@ -6557,17 +6557,17 @@ Unit FBI tags:
 Weapon TDF tags:
 
 - Added weapon tdf command SweepFire, if 1 (default 0) it will make the weapon
-  continue firing while it aims for a new target. Only works on continous beam
+  continue firing while it aims for a new target. Only works on continuous beam
   lasers currently.
 - Added boolean weapon TDF tag CanAttackGround. (default: 1)
-- Added float weapon TDF tag float TargetBorder: if nonzero, targetting units
+- Added float weapon TDF tag float TargetBorder: if nonzero, targeting units
   will TryTarget at the edge of collision sphere (radius*tag_value, [-1;1])
   instead of its centre. Defaults to 1 for Melee type weapons, 0 otherwise.
 - Added float weapon TDF tag CylinderTargetting: if greater than 0, range will
   be checked in a cylinder (half height=unitradius*cylinderTargetting) instead
   of a sphere. Defaults to 1 for Melee type weapons, 0 otherwise.
 - Added float weapon TDF tag MinIntensity: for beamlasers - always hit with some
-  minimum intensity (a damage coeffcient normally dependent on distance).
+  minimum intensity (a damage coefficient normally dependent on distance).
 - Added float weapon TDF tag SizeDecay: how much a plasma particle is smaller
   than the previous within the same plasma shot. (default: 0)
 - Added float weapon TDF tag AlphaDecay: how much a plasma particle is more
@@ -6585,7 +6585,7 @@ Weapon TDF tags:
   - the alpha value fades after the hit
 - Added colormap for ballistic ('cannon' type) weapons.
 - Added boolean weapon TDF tag AvoidFeature, this makes the weapon avoid
-  features while targetting. (default: 1)
+  features while targeting. (default: 1)
 - Added float weapon TDF tag FallOffRate: rate at which the beamweapon fades out
   after it goes past its maximum range. 0 is never fade out, 1 is finish fading
   out exactly at max range, the default 0.5 is the previous behaviour.
@@ -6773,7 +6773,7 @@ Unitsync:
 
 - Improved clickability of unit icons.
 
-- Calling emit-sfx 2048 from a script will now allways fire the weapon. Emit-sfx 4096 will now take over the previous behavior of detonating the weapon at the piece position.
+- Calling emit-sfx 2048 from a script will now always fire the weapon. Emit-sfx 4096 will now take over the previous behavior of detonating the weapon at the piece position.
 
 - Added unit FBI tag UnitRestricted to limit the number of a unit type allowed in a game.
 
@@ -6787,10 +6787,10 @@ Unitsync:
 
 - Map packs (ie. multiple maps in one archive) are officially unsupported now because of technical reasons.
 
-- Added keyword "dir" to explosiongenerator, this is a vector and can be diferent depending on what created the explosion.
+- Added keyword "dir" to explosiongenerator, this is a vector and can be different depending on what created the explosion.
   If created at a weapon impac it is the direction of the impact.
 
-- Added the abillity to call explosiongenerators and weaponfire from within script via emit-sfx command.
+- Added the ability to call explosiongenerators and weaponfire from within script via emit-sfx command.
   Explosiongenerators to be called via script are defined in the unit TDF file in a section called SFXTypes, with tags explosiongenerator+n=some_explosion
   and then called via emit-sfx 1024+n.
   Weaponfire are called via emit-sfx 2048+weapon_to_fire.
@@ -6862,9 +6862,9 @@ Unitsync:
   (the optional number means off/on; without the number, it toggles)
 
 - Fix mouse-drag-move to make units spread across the front if it's big enough, also somewhat take into account unit sizes. Added CTRL-Move, CTRL-Mouse-Drag(front) move to make units move at the speed of slowest unit.
-- [bugfix] Resource expendature now shows correct pull when economy is stalling.
+- [bugfix] Resource expenditure now shows correct pull when economy is stalling.
 
-- - Added transparency suport from texture2 in s3o drawing, requires advanced shading.
+- - Added transparency support from texture2 in s3o drawing, requires advanced shading.
 - added DualScreenMode and DualScreenMiniMapOnLeft configuration flags.
     This causes the game view width to be one half of the screen width, so the minimap can take the other half.
     You will need to spread your spring window across the 2 screens.
@@ -6931,7 +6931,7 @@ Unitsync:
 
 - added game info panel (with "gameinfo" and "gameinfoclose" actions)  (i)
 
-- versionned the "archivecache.txt" filename (ex: "ArchiveCacheV4.txt")
+- versioned the "archivecache.txt" filename (ex: "ArchiveCacheV4.txt")
 
 - Quit and Share menus close when they receive ESC
 
@@ -7009,12 +7009,12 @@ Unitsync:
 - New weapon tdf tag LargeBeamLaser, if set to 1 a beamlaser uses an alternate graphics effect.
 	New tags usable for a LargeBeamLaser is:
 		tilelength: defines the length before the texture used is repeated (tiled).
-		scrollspeed: how fast the beam apears to be moving towards it target.
+		scrollspeed: how fast the beam appears to be moving towards it target.
 		pulseSpeed: how fast the pulsating effect at the beam start is.
 
 - Texture tag added to the explosiongenerator for HeatCloud and Dirt
 - New weapon FBI tags, texture1, texture2, texture3, texture4, the texture must be defined in resources.tdf in the projectile section.
-	MissileProjectile (standar rockets and guided missiles):
+	MissileProjectile (standard rockets and guided missiles):
 		texture1 = flare
 		texture2 = smoke
 	LaserProjectile:
@@ -7053,9 +7053,9 @@ Unitsync:
 - New weapon tdf tag AvoidFriendly, if set to 0 units will not try to avoid friendly units in their line of fire.
 - New weapon tdf tag CollideFriendly, if set to 0 this weapon will not hit friendly units.
 - New weapon tdf tag ExplosionSpeed
-- edgeEffectivness added for weapons
+- edgeEffectiveness added for weapons
 
-- Added limited fuel settings for units (only work for aircrafts so far, need a good mechanism for refueling other stuff)
+- Added limited fuel settings for units (only work for aircraft so far, need a good mechanism for refueling other stuff)
 -  New fbi tag MaxFuel, max fuel in seconds that the unit can carry, default 0 = unlimited
 -  New fbi tag RefuelTime, how long time it takes to fully refuel the unit, default 5
 -  New fbi tag MinAirBasePower, minimum build power an airbase unit must have for the aircraft to land on it, default 0
@@ -7079,7 +7079,7 @@ Unitsync:
 - Added weapontag "paralyzetime", controls how long a unit can maximaly be paralyzed after being hit by this weapon, default 10
 - Adds some new options in the settings program for scroll speeds
 - Added new fbi tag "levelground" set this to 0 to prevent a building from leveling ground beneth it. Make sure that the model continue some way below ground so that they dont look like they float in air.
-- Fixed torpedo aircrafts not being able to attack subs
+- Fixed torpedo aircraft not being able to attack subs
 - Added support for decals on ground below buildings
 -  New fbi tag UseBuildingGroundDecal, set to 1 to enable decals for building
 -  New fbi tag BuildingGroundDecalType, name of a bitmap in unittextures folder
@@ -7115,7 +7115,7 @@ Unitsync:
 - Missile weapons no longer tracks to exact position of non flying units (make missile units weaker against radar targets)
 - Stun damage units now receives 1/10 of normal experience and no experience for attacking already stunned units
 - Units no longer receive experience for "overkill" damage
-- Adds support for using arbitary team colors, teamcolor textures for 3do need to be slightly changed to accomendate this (see the base texture archive to see how its done)
+- Adds support for using arbitrary team colors, teamcolor textures for 3do need to be slightly changed to accomendate this (see the base texture archive to see how its done)
 - Increased max camera zoom out (zooming to far can cause slowdowns/graphical glitches)
 - Added Radar group AI from colorblind: It notifies the player of incoming enemy units.
 - Added custom explosion generator: It can be enabled using "explosiongenerator=custom:SomeExplosionGeneratorName" in the weapon TDF. See the wiki page https://springrts.com/wiki/CustomExplosionGenerators for more info.
@@ -7131,7 +7131,7 @@ Unitsync:
 - Added new water renderer
 - Fixed lasers firing two projectiles at once, efficiently doing double damage.
 - Fixed several exploits with FPS mode.
-- Added new fbi variable CanLoopbackAttack, only affects fighter aircrafts, if 1 this will enable the player to set the aircraft to do an immelman turn after firing instead of overflying the target.
+- Added new fbi variable CanLoopbackAttack, only affects fighter aircraft, if 1 this will enable the player to set the aircraft to do an immelman turn after firing instead of overflying the target.
 - Changed so units in maneuver mode will abort anything that moves them further than a certain distance from the patrol path
 - Added statistics to the end game dialog
 - Units with S3O models can explode into pieces.
@@ -7145,7 +7145,7 @@ Unitsync:
    script.txt: Put 'DisableMapDamage=1' in with the other properties.
 - VSync can be disabled with the settings application.
 - Several other smaller fixes and improvements.
-- Unit reply sounds are non-positional and have a seperate volume setting in the config application. Their volume is also affected by the global volume.
+- Unit reply sounds are non-positional and have a separate volume setting in the config application. Their volume is also affected by the global volume.
 
 -- 0.70b3 --------------------------------------
 
@@ -7232,7 +7232,7 @@ Unitsync:
 
 -Fixed transport units being able to load themself.
 -Fixed gunship like aircraft always having the same altitude
--Fixed torpedo aircrafts now being able to attack underwater targets
+-Fixed torpedo aircraft now being able to attack underwater targets
 -Support for upright, flammable and indestructible feature tags
 -Fixed division-by-zero bug in bomb-dropper.
 -Fixed access-violation bug in pathfinder.
@@ -7241,7 +7241,7 @@ Unitsync:
 
 
 -Added new tags to .fbi file
-	autoHeal	-	health per second that a unit allways will be autohealed for (default 0)
+	autoHeal	-	health per second that a unit always will be autohealed for (default 0)
 	idleAutoHeal	-	health per second that a unit will be autohealed for whenever its idling (default 10)
 	idleTime	-	time in ticks without any action before a unit is considered idling (default 600)
 -Added new tags to weaponfile file
@@ -7286,7 +7286,7 @@ Unitsync:
 
 -Added new FBI tag TransportMass, this is the maximum weight a tranporter can transport, default 100000
 -Added new FBI tag Mass, this is the weight of the unit, default is metalcost of unit
--Added new FBI tags to set the control variables for aircrafts
+-Added new FBI tags to set the control variables for aircraft
 -Added new FBI tag OnlyTargetCategory<weaponnum>, sort of like badtargetcategory but the weapon can only target units with these categories,toairweapon in weaponfile is the same as OnlyTargetCategory=VTOL; default is all categories
 -Added bindings for creating startscripts in lua. See testscript.lua for an example. Note that you can only have one script (must be called testscript.lua), and that it is possible that the interface will change.
 
@@ -7299,14 +7299,14 @@ Unitsync:
 -Fixed crash when calls such as get PIECE_XZ were used in the Create function of a unit
 
 -SetSfxOccupy now updates correctly when unit is being transported
--Added support for aircrafts auto landing to repair when health gets low
+-Added support for aircraft auto landing to repair when health gets low
 -Removed autorepair while unit is flying
 -When a unit has finished firing a burst the script function EndBurst<weaponnum> will now be called, use this instead of Fire<weaponnum> to switch pod/barrel etc to fire from to lessen friendly fire incidents
 -Removed warning message when using transports
 
 -New map smd tag map/voidwater, creates a void where there would normally be water, this is a purely graphical effect,default 0
 -New command .give, .give <num> <unitname> gives you num units of type unitname, requires cheats to be on, only use in singleplayer
--Added support for aircrafts auto landing to repair when health gets low
+-Added support for aircraft auto landing to repair when health gets low
 -Added command .kick <playername> that server can use to kick out players from game
 -Updated global AI interface with GetNumUnitDefs() and GetUnitDefList()
 
@@ -7329,10 +7329,10 @@ Unitsync:
 -Added tag "LIGHT\\SpecularSunColor" to smd file, modifies the color of the specular highlights on units, defaults to LIGHT\\UnitSunColor
 -Added tag "isAirBase" to unit FBI file, sets if the units that are being transported will be stunned or not, defaults to 0.
 -Spring can now use up to 16 weapons, use Weapon<1-16> and BadTargetCategory<1-16> in fbi file and QueryWeapon<1-16> AimWeapon<1-16> AimFromWeapon<1-16> FireWeapon<1-16> functions in scripts. Primary,secondary etc is aliased to weapon 1-3 but try not to mix old and new names in the same unit.
--Added new fbi tag WeaponSlaveTo<x>=y, this will force the weapon x to use the same target as weapon y (y must be a lower numbered weapon than x). Might be usefull for say a mech like unit with many different weapons that should target in the same direction.
+-Added new fbi tag WeaponSlaveTo<x>=y, this will force the weapon x to use the same target as weapon y (y must be a lower numbered weapon than x). Might be useful for say a mech like unit with many different weapons that should target in the same direction.
 -Added new fbi tags WeaponMainDir<1-16> and MaxAngleDif<1-16>. WeaponMainDir is a vector and defines the center direction of a cone in which the weapon can aim while MaxAngleDif defines how broad the cone is. Default WeaponMainDir = 0 0 1; (forward) and MaxAngleDif=360; (can fire everywhere)
 -Added support for loading TA:K COB files and implemented the TA:K-specific opcode play-sound.
--Added some simple formation handling to the standard groups, hold alt on move to make them form an aproximate square and drag mouse to make them form up behind a front
+-Added some simple formation handling to the standard groups, hold alt on move to make them form an approximate square and drag mouse to make them form up behind a front
 -Added missile tdf tag wobble, this is in the same as turnrate except that it will turn in random directions instead of toward the target,default 0
 -Added missile tdf tag trajectoryHeight, this sets in how high an arc the missile will move toward the target,0 = straight, 1=45 degree above, can be anything>=0, default 0
 -New start file tag LimitDgun, if 1 it restricts dgunning to a radius around your startpos, size depending on mapsize, default 0
@@ -7342,17 +7342,17 @@ Unitsync:
 
 -Fixed crash when units exploded
 
--Mines no longer block terrain and can be overun (and if you are crazy built on top of :) ), removed ability for mines to hold fire since they would be completly undetectable.
+-Mines no longer block terrain and can be overrun (and if you are crazy built on top of :) ), removed ability for mines to hold fire since they would be completely undetectable.
 -Heightmap view (F1) now updates correctly when terrain changes
 -Pathcost view (F2) now works in non cheating mode but will then only show terrain modifiers
--Fixed gunships being able to fly below ground when comming in on step slopes
+-Fixed gunships being able to fly below ground when coming in on step slopes
 -Auto sharing now starts at 99% instead of 100% at startup meaning that there is less chance of the team losing resources because someone forgets to set it
 
 -Installer associates .sdf files with spring.exe
 -Spring.exe now accepts a demo filename on the commandline and starts playing it directly
--Added tag "MAP\\DetailTex" to smd file to specifiy map specific detail texture, default is bitmap\detailtex2.bmp, map specific textures should be placed in maps directory.
+-Added tag "MAP\\DetailTex" to smd file to specify map specific detail texture, default is bitmap\detailtex2.bmp, map specific textures should be placed in maps directory.
 -Added possibility for surface of units to be shiny/reflective by using the alpha channel of the textures
--Addded command .take, will take the units from all teams allied with you that is missing a player (due to disconnect etc) and transfer them to your team
+-Added command .take, will take the units from all teams allied with you that is missing a player (due to disconnect etc) and transfer them to your team
 
 -- 0.61b2 --------------------------------------
 
@@ -7368,8 +7368,8 @@ Unitsync:
 -Fixed some other crashes
 -Fixes some memory errors
 
--Fixed aircrafts landing outside map
--Fixed infinitly rotating starburst missiles
+-Fixed aircraft landing outside map
+-Fixed infinitely rotating starburst missiles
 -Fixed different tracks getting superimposed on each other
 -Plasma cannons should now detect mountains in the fire path better
 -The generated path information for maps is now stored zipped in the subdirectory "paths"
@@ -7394,7 +7394,7 @@ Unitsync:
 
 -Slopes are now calculated differently
 -Random start order should now be more random
--Fixed commiting delayed animations before using getunitval
+-Fixed committing delayed animations before using getunitval
 -Radar now jams everyones radar including your own. We will see how this turns out.
 -New map format, adds ability to read texture from external (shared) files and a new terrain type overlay map
 -Made ballistic weapons range somewhat more dependent on relative height of weapon and target
@@ -7449,7 +7449,7 @@ Unitsync:
 
 -Units can no longer move over infinite sloops
 -Improved the pathfinder/movesystem
--Contruction units can no longer repair themselves
+-Construction units can no longer repair themselves
 -Repair/Build/Reclaim now turn of cloak
 -Unit paths are now only visible when cheats are enabled in debug mode
 -F2 now shows the map from a pathfinding perspective if cheats are enabled
@@ -7459,7 +7459,7 @@ Unitsync:
 -Added support for larger maps
 -Added some more range circles
 -Added keyboard bindings for mousewheel (pageup/down as default)
--Added guard order to aircrafts
+-Added guard order to aircraft
 -New .smd command MAP/WATER/WaterDamage. Indicates the amount of damage per second units take for being in "water". Make it >1000 to prevent ground units from entering water entirely, >10000 prevents hovers from moving over water.
 -New in game commands for host .setmaxspeed .setminspeed sets the maximum and minimum game speeds
 

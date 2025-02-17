@@ -456,7 +456,7 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
 	return true;
 }
 
-/**
+/***
  * @alias VBODataType
  * | GL.BYTE
  * | GL.UNSIGNED_BYTE
@@ -467,7 +467,7 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
  * | GL.FLOAT
  */
 
-/**
+/***
  * @class VBOAttributeDef
  * 
  * @field id integer
@@ -1484,6 +1484,17 @@ void LuaVBOImpl::DumpDefinition()
 	ss << fmt::format("Count of elements={}\nSize of one element={}\nTotal buffer size={}", elementsCount, elemSizeInBytes, vbo->GetSize());
 
 	LOG("%s", ss.str().c_str());
+}
+
+/*** Gets the OpenGL Buffer ID
+ *
+ * @function VBO:GetID
+ * @return number bufferID
+ */
+uint32_t LuaVBOImpl::GetID() const
+{
+	VBOExistenceCheck(vbo, __func__);
+	return vbo->GetId();
 }
 
 void LuaVBOImpl::AllocGLBuffer(size_t byteSize)

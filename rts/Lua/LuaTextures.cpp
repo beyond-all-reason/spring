@@ -132,7 +132,7 @@ std::string LuaTextures::Create(const Texture& tex)
 			LOG_L(L_ERROR, "[LuaTextures::%s] %s", __func__, e.what());
 		}
 
-		if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT || attachFailure) {
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT || attachFailure) {
 			glDeleteTextures(1, &texID);
 			glDeleteFramebuffersEXT(1, &fbo);
 			glDeleteRenderbuffersEXT(1, &fboDepth);

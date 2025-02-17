@@ -223,7 +223,7 @@ endmacro (get_version_plus_dep_file vers_var versDepFile_var)
 
 
 # Recursively lists all native source files in a given directory,
-# relative to _relDir, or absolut, If _relDir == "".
+# relative to _relDir, or absolute, If _relDir == "".
 macro    (get_native_sources_recursive _var _dir _relDir)
 	set(NATIVE_SOURCE_EXTENSIONS ".c;.cpp;.c++;.cxx")
 	foreach    (_ext ${NATIVE_SOURCE_EXTENSIONS})

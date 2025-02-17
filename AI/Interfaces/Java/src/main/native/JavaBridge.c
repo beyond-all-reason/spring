@@ -290,7 +290,7 @@ static size_t java_createAIClassPath(
 	// add to classpath ...
 
 	// {spring-data-dir}/Skirmish/MyJavaAI/0.1/SkirmishAI/
-	// this can be usefull for AI devs while testing,
+	// this can be useful for AI devs while testing,
 	// if they do not want to put everything into a jar all the time
 	jarDirs[jarDirs_size++] = util_allocStrCatFSPath(2, skirmDD, "SkirmishAI");
 

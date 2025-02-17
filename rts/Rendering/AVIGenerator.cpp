@@ -136,7 +136,7 @@ CAVIGenerator::~CAVIGenerator()
 	ReleaseAVICompressionEngine();
 	LOG("Finished writing avi file %s", fileName.c_str());
 
-	// Just checking that all allocated ressources have been released.
+	// Just checking that all allocated resources have been released.
 	assert(AVIThread == nullptr);
 	assert(m_pAVIFile == nullptr);
 	assert(m_pStream == nullptr);

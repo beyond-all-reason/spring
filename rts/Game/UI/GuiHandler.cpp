@@ -554,13 +554,6 @@ void CGuiHandler::RevertToCmdDesc(const SCommandDescription& cmdDesc,
 
 		newInCommand = a;
 
-		if (commands[a].type == CMDTYPE_ICON_BUILDING) {
-			const UnitDef* ud = unitDefHandler->GetUnitDefByID(-commands[a].id);
-			SetShowingMetal(ud->extractsMetal > 0);
-		} else {
-			SetShowingMetal(false);
-		}
-
 		if (!samePage)
 			continue;
 
@@ -1017,21 +1010,36 @@ void CGuiHandler::ConvertCommands(std::vector<SCommandDescription>& cmds)
 }
 
 
-void CGuiHandler::SetShowingMetal(bool show)
+void CGuiHandler::SetShowingMetal(const SCommandDescription* cmdDesc)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!show) {
-		if (showingMetal) {
-			infoTextureHandler->DisableCurrentMode();
-			showingMetal = false;
-		}
-	} else {
-		if (autoShowMetal) {
-			if (infoTextureHandler->GetMode() != "metal") {
-				infoTextureHandler->SetMode("metal");
-				showingMetal = true;
-			}
-		}
+	if (!autoShowMetal) {
+		return;
+	}
+
+	static bool deprecatedMsgDone = false;
+	if (!deprecatedMsgDone) {
+		LOG_L(L_DEPRECATED, "AutoShowMetal is deprecated. Please enable manually from lua instead (see https://github.com/beyond-all-reason/spring/issues/1092).");
+		deprecatedMsgDone = true;
+	}
+
+	bool show = false;
+	if (cmdDesc == nullptr)
+		show = false;
+	else if (cmdDesc->type == CMDTYPE_ICON_BUILDING) {
+		const UnitDef* ud = unitDefHandler->GetUnitDefByID(-cmdDesc->id);
+		show = ud && ud->extractsMetal > 0;
+	}
+
+	if (showingMetal && !show)
+	{
+		infoTextureHandler->DisableCurrentMode();
+		showingMetal = false;
+	}
+	else if (!showingMetal && infoTextureHandler->GetMode() != "metal")
+	{
+		infoTextureHandler->SetMode("metal");
+		showingMetal = true;
 	}
 }
 
@@ -1043,7 +1051,6 @@ void CGuiHandler::Update()
 
 	{
 		if (!invertQueueKey && (needShift && !KeyInput::GetKeyModState(KMOD_SHIFT))) {
-			SetShowingMetal(false);
 			SetActiveCommandIndex(-1);
 			needShift = false;
 		}
@@ -1052,7 +1059,7 @@ void CGuiHandler::Update()
 	GiveCommandsNow();
 
 	if (selectedUnitsHandler.CommandsChanged()) {
-		SetShowingMetal(false);
+		// should we set active command index here?
 		LayoutIcons(true);
 		return;
 	}
@@ -1227,7 +1234,6 @@ bool CGuiHandler::MousePress(int x, int y, int button)
 		if (inCommand >= 0) {
 			if (invertQueueKey && (button == SDL_BUTTON_RIGHT) &&
 				!mouse->buttons[SDL_BUTTON_LEFT].pressed) { // for rocker gestures
-					SetShowingMetal(false);
 					SetActiveCommandIndex(-1);
 					needShift = false;
 					return false;
@@ -1264,7 +1270,6 @@ void CGuiHandler::MouseRelease(int x, int y, int button, const float3& cameraPos
 	}
 
 	if (!invertQueueKey && needShift && !KeyInput::GetKeyModState(KMOD_SHIFT)) {
-		SetShowingMetal(false);
 		SetActiveCommandIndex(-1);
 		needShift = false;
 	}
@@ -1325,7 +1330,6 @@ bool CGuiHandler::SetActiveCommand(int cmdIndex, bool rightMouseButton)
 		defaultCmdMemory = -1;
 		needShift = false;
 		activeMousePress = false;
-		SetShowingMetal(false);
 		SetActiveCommandIndex(-1);
 		return true;
 	}
@@ -1373,14 +1377,11 @@ bool CGuiHandler::SetActiveCommand(int cmdIndex, bool rightMouseButton)
 		case CMDTYPE_ICON_UNIT_OR_RECTANGLE:
 		case CMDTYPE_ICON_UNIT_FEATURE_OR_AREA: {
 			SetActiveCommandIndex(cmdIndex);
-			SetShowingMetal(false);
 			activeMousePress = false;
 			break;
 		}
 		case CMDTYPE_ICON_BUILDING: {
-			const UnitDef* ud = unitDefHandler->GetUnitDefByID(-cd.id);
 			SetActiveCommandIndex(cmdIndex);
-			SetShowingMetal(ud->extractsMetal > 0);
 			activeMousePress = false;
 			break;
 		}
@@ -1454,10 +1455,13 @@ void CGuiHandler::SetActiveCommandIndex(int newIndex)
 {
 	if (inCommand != newIndex) {
 		inCommand = newIndex;
-		if (inCommand >= 0 && inCommand < commands.size())
+		if (inCommand < commands.size()) {
+			SetShowingMetal(&commands[inCommand]);
 			eventHandler.ActiveCommandChanged(&commands[inCommand]);
-		else
+		} else {
+			SetShowingMetal(nullptr);
 			eventHandler.ActiveCommandChanged(nullptr);
+		}
 
 	}
 }
@@ -1854,12 +1858,10 @@ bool CGuiHandler::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (keyCode == SDLK_ESCAPE && activeMousePress) {
 		activeMousePress = false;
-		SetShowingMetal(false);
 		SetActiveCommandIndex(-1);
 		return true;
 	}
 	if (keyCode == SDLK_ESCAPE && inCommand >= 0) {
-		SetShowingMetal(false);
 		SetActiveCommandIndex(-1);
 		return true;
 	}
@@ -2021,15 +2023,12 @@ bool CGuiHandler::SetActiveCommand(const Action& action,
 			case CMDTYPE_ICON_UNIT_OR_AREA:
 			case CMDTYPE_ICON_UNIT_OR_RECTANGLE:
 			case CMDTYPE_ICON_UNIT_FEATURE_OR_AREA: {
-				SetShowingMetal(false);
 				actionOffset = actionIndex;
 				lastKeySet = ks;
 				newInCommand = a;
 				break;
 			}
 			case CMDTYPE_ICON_BUILDING: {
-				const UnitDef* ud=unitDefHandler->GetUnitDefByID(-cmdDesc.id);
-				SetShowingMetal(ud->extractsMetal > 0);
 				actionOffset = actionIndex;
 				lastKeySet = ks;
 				newInCommand = a;
@@ -2055,7 +2054,6 @@ bool CGuiHandler::SetActiveCommand(const Action& action,
 			}
 			default:{
 				lastKeySet.Reset();
-				SetShowingMetal(false);
 				newInCommand = a;
 			}
 		}
@@ -2078,7 +2076,6 @@ void CGuiHandler::FinishCommand(int button)
 	if ((button == SDL_BUTTON_LEFT) && (KeyInput::GetKeyModState(KMOD_SHIFT) || invertQueueKey)) {
 		needShift = true;
 	} else {
-		SetShowingMetal(false);
 		SetActiveCommandIndex(-1);
 	}
 }
@@ -2898,7 +2895,7 @@ bool CGuiHandler::DrawTexture(const IconInfo& icon, const std::string& texName)
 	if (!BindTextureString(tex2))
 		return false;
 
-	assert(xscale<=0.5); //border >= 50% makes no sence
+	assert(xscale<=0.5); //border >= 50% makes no sense
 	assert(yscale<=0.5);
 
 	// calculate the scaled quad

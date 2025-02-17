@@ -1075,7 +1075,7 @@ bool LuaTable::PushValue(const std::string& mixedKey) const
 /******************************************************************************/
 /******************************************************************************/
 //
-//  Key existance testing
+//  Key existence testing
 //
 
 bool LuaTable::KeyExists(int key) const

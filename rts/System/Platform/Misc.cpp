@@ -70,7 +70,7 @@
 /**
  * Returns a handle to the currently loaded module.
  * Note: requires at least Windows 2000
- * @return handle to the currently loaded module, or NULL if an error occures
+ * @return handle to the currently loaded module, or NULL if an error occurs
  */
 static HMODULE GetCurrentModule()
 {

@@ -124,7 +124,7 @@ size_t CTextureAtlas::AddTexFromFile(std::string texName, const std::string& fil
 		LOG_L(L_WARNING, "[TexAtlas::%s] could not load texture from file \"%s\"", __func__, file.c_str());
 	}
 
-	// only suport RGBA for now
+	// only support RGBA for now
 	if (bitmap.channels != 4 || bitmap.compressed)
 		throw content_error("Unsupported bitmap format in file " + file);
 
