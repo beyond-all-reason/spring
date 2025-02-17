@@ -110,7 +110,7 @@ namespace Threading {
 
 
 	uint32_t GetSystemAffinityMask() {
-		cpu_topology::ProcessorMasks pm = springproc::CPUID::GetInstance().GetAvailableProceesorAffinityMask();
+		cpu_topology::ProcessorMasks pm = springproc::CPUID::GetInstance().GetAvailableProcessorAffinityMask();
 
 		LOG("CPU Affinity Mask Details detected:");
 		LOG("-- Performance Core Mask:      0x%08x", pm.performanceCoreMask);
@@ -251,7 +251,7 @@ namespace Threading {
 	}
 
 	bool HasHyperThreading() {
-		return springproc::CPUID::GetInstance().HasHyperTrheading();
+		return springproc::CPUID::GetInstance().HasHyperThreading();
 	}
 
 
