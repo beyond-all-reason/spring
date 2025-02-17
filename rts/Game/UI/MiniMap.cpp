@@ -36,6 +36,7 @@
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/SubState.h"
+#include "Rendering/GL/TexBind.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
@@ -138,21 +139,15 @@ CMiniMap::CMiniMap()
 		if ((bitmap.ysize == buttonSize) && (bitmap.xsize == (buttonSize * 4))) {
 			unfiltered = true;
 		}
-		glGenTextures(1, &buttonsTextureID);
+
+		TextureCreationParams tcp;
+		tcp.linearTextureFilter = !unfiltered;
+		buttonsTextureID = bitmap.CreateTexture(tcp);
+
+		auto bind = GL::TexBind(GL_TEXTURE_2D, buttonsTextureID);
 		glBindTexture(GL_TEXTURE_2D, buttonsTextureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-								 bitmap.xsize, bitmap.ysize, 0,
-								 GL_RGBA, GL_UNSIGNED_BYTE, bitmap.GetRawMem());
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		if (unfiltered) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		} else {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		}
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	const float xshift = unfiltered ? 0.0f : (0.5f / bitmap.xsize);
 	const float yshift = unfiltered ? 0.0f : (0.5f / bitmap.ysize);
@@ -1090,10 +1085,11 @@ void CMiniMap::ResizeTextureCache()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-	// GL_LINEAR makes no sense for both below, because sampling is always pixel perfect and minimapTex is not exposed outside
+  // GL_LINEAR makes no sense for both below, because sampling is always pixel perfect and minimapTex is not exposed outside
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, minimapTexSize.x, minimapTexSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, minimapTexSize.x, minimapTexSize.y);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	if (multisampledFBO) {
 		// resolve FBO with attached final texture target

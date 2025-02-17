@@ -366,7 +366,7 @@ void CSMFReadMap::CreateShadingTex()
 	if (texAnisotropyLevels[false] != 0.0f)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, texAnisotropyLevels[false]);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mapDims.pwr2mapx, mapDims.pwr2mapy, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, mapDims.pwr2mapx, mapDims.pwr2mapy);
 
 	shadingTexBuffer.clear();
 	shadingTexBuffer.resize(mapDims.mapx * mapDims.mapy * 4, 0);
@@ -379,13 +379,20 @@ void CSMFReadMap::CreateNormalTex()
 	normalsTex.SetRawSize(int2(mapDims.mapxp1, mapDims.mapyp1));
 
 	glGenTextures(1, normalsTex.GetIDPtr());
+
 	glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA16F_ARB, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_LUMINANCE_ALPHA, GL_FLOAT, nullptr);
+	constexpr GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_RED, GL_GREEN };
+	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RG16, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
@@ -690,7 +697,8 @@ void CSMFReadMap::UpdateNormalTexture(const SRectangle& update)
 	}
 
 	glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());
-	glTexSubImage2D(GL_TEXTURE_2D, 0, minx, minz, xsize, zsize, GL_LUMINANCE_ALPHA, GL_FLOAT, &normalPixels[0]);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, minx, minz, xsize, zsize, GL_RG, GL_FLOAT, &normalPixels[0]);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
@@ -735,6 +743,7 @@ void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
 		// redefine the texture subregion
 		glBindTexture(GL_TEXTURE_2D, shadingTex.GetID());
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x1, y1, xsize, ysize, GL_RGBA, GL_UNSIGNED_BYTE, &shadingPixels[0]);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }
 

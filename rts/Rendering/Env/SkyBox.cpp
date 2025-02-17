@@ -64,7 +64,7 @@ void CSkyBox::Init(uint32_t textureID, uint32_t xsize, uint32_t ysize, bool conv
 
 
 		for (GLenum glFace = GL_TEXTURE_CUBE_MAP_POSITIVE_X; glFace <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; ++glFace) {
-			glTexImage2D(glFace, 0, GL_RGBA8, ysize, ysize, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+			RecoilTexStorage2D(glFace, 0, GL_RGBA8, xsize, ysize);
 		}
 
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
@@ -98,7 +98,7 @@ void CSkyBox::Init(uint32_t textureID, uint32_t xsize, uint32_t ysize, bool conv
 		{
 			glPushAttrib(GL_ENABLE_BIT | GL_VIEWPORT_BIT);
 
-			glViewport(0, 0, ysize, ysize);
+			glViewport(0, 0, xsize, ysize);
 
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_BLEND);
@@ -160,7 +160,7 @@ void CSkyBox::Init(uint32_t textureID, uint32_t xsize, uint32_t ysize, bool conv
 
 			if (generateMipMaps) {
 				glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTexID);
-				glGenerateMipmapEXT(GL_TEXTURE_CUBE_MAP);
+				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 				glBindTexture(GL_TEXTURE_CUBE_MAP,         0);
 			}
 		}
@@ -170,7 +170,7 @@ void CSkyBox::Init(uint32_t textureID, uint32_t xsize, uint32_t ysize, bool conv
 		glDeleteTextures(1, &textureID); // release 2D texture
 
 		skyTex.SetRawTexID(cubeTexID.Release());
-		skyTex.SetRawSize(int2(ysize, ysize));
+		skyTex.SetRawSize(int2(xsize, ysize));
 	}
 	else {
 		valid = true;
@@ -178,13 +178,6 @@ void CSkyBox::Init(uint32_t textureID, uint32_t xsize, uint32_t ysize, bool conv
 		skyTex.SetRawTexID(textureID);
 		skyTex.SetRawSize(int2(xsize, ysize));
 	}
-
-	glEnable(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skyTex.GetID());
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-	glDisable(GL_TEXTURE_CUBE_MAP);
 
 	shader = shaderHandler->CreateProgramObject("[SkyBox]", "SkyBox");
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/CubeMapVS.glsl", "", GL_VERTEX_SHADER));

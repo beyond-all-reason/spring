@@ -300,7 +300,7 @@ void RecoilGetTexParams(GLenum target, GLuint textureID, GLint level, TexturePar
 }
 
 
-void glSaveTexture(const GLuint textureID, const char* filename, int level)
+void RecoilSaveTexture(const GLuint textureID, const char* filename, int level)
 {
 	TextureParameters params;
 	RecoilGetTexParams(GL_TEXTURE_2D, textureID, 0, params);
@@ -360,6 +360,28 @@ void RecoilTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsiz
 	}
 	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,          0);
 	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL , levels - 1);
+}
+
+void RecoilTexStorageCubeMap(GLint levels, GLint internalFormat, GLsizei width, GLsizei height)
+{
+	if (levels <= 0)
+		levels = std::bit_width(static_cast<uint32_t>(std::max(width , height)));
+
+	if (GLAD_GL_ARB_texture_storage) {
+		glTexStorage2D(GL_TEXTURE_CUBE_MAP, levels, internalFormat, width, height);
+	}
+	else {
+		auto format = GL::GetInternalFormatDataFormat(internalFormat);
+		auto type = GL::GetInternalFormatDataType(internalFormat);
+
+		for (auto cubeFace = GL_TEXTURE_CUBE_MAP_POSITIVE_X; cubeFace <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; ++cubeFace) {
+			for (int level = 0; level < levels; ++level)
+				glTexImage2D(cubeFace, level, internalFormat, std::max(width >> level, 1), std::max(height >> level, 1), 0, format, type, nullptr);
+		}
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL,          0);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL , levels - 1);
 }
 
 

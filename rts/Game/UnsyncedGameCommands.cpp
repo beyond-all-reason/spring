@@ -3666,8 +3666,8 @@ public:
 		};
 		auto threeDoFunc = []() {
 			LOG("Dumping 3do atlas textures");
-			glSaveTexture(textureHandler3DO.GetAtlasTex1ID(), "3doTex1.png");
-			glSaveTexture(textureHandler3DO.GetAtlasTex2ID(), "3doTex2.png");
+			RecoilSaveTexture(textureHandler3DO.GetAtlasTex1ID(), "3doTex1.png");
+			RecoilSaveTexture(textureHandler3DO.GetAtlasTex2ID(), "3doTex2.png");
 		};
 		auto decalsFunc = []() {
 			LOG("Dumping decal atlas textures");

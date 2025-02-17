@@ -96,11 +96,12 @@ static constexpr  glFrustumFuncPtr  glFrustumFuncs[2] = {__spring_glFrustum_noCC
 
 void WorkaroundATIPointSizeBug();
 
-void glSaveTexture(const GLuint textureID, const char* filename, int level = 0);
+void RecoilSaveTexture(const GLuint textureID, const char* filename, int level = 0);
 
 void RecoilGetTexParams(GLenum target, GLuint textureID, GLint level, TextureParameters& textureParameters);
 void RecoilTexStorage2D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height);
 void RecoilTexStorage3D(GLenum target, GLint levels, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth);
+void RecoilTexStorageCubeMap(GLint levels, GLint internalFormat, GLsizei width, GLsizei height);
 void RecoilBuildMipmaps(const GLenum target, GLint internalFormat, const GLsizei width, const GLsizei height, const GLenum format, const GLenum type, const void* data, int32_t numLevels = 0);
 bool glSpringBlitImages(
 	GLuint srcName, GLenum srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ,
