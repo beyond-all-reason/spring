@@ -784,7 +784,7 @@ namespace Impl {
 	}
 }
 
-/*** needs `Platform.glslVersionNum >= 300`
+/*** needs `Platform.glVersionNum >= 30`
  * Clears the "attachment" of the currently bound FBO type "target" with "clearValues"
  * 
  * @function gl.ClearAttachmentFBO
