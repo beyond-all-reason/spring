@@ -19,6 +19,7 @@
 
 #include "System/Misc/TracyDefs.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GlobalRendering.h"
 
 
 /******************************************************************************
@@ -784,10 +785,10 @@ namespace Impl {
 }
 
 /*** needs `GL_VERSION_3_0`
- *
+ * Clears the FBO attachment of the currently bound fbo
+ * 
  * @function gl.ClearAttachmentFBO
- * @param fbo Fbo|nil (nil for currently bound FBO)
- * @param target number? (GL.FRAMEBUFFER default)
+ * @param target number? (Default: GL.FRAMEBUFFER)
  * @param attachment number|text (E.g. color0 or GL.COLOR_ATTACHMENT0)
  * @param clearValue0 number
  * @param clearValue1 number
@@ -797,40 +798,47 @@ namespace Impl {
 
 int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 {
-	GLenum fboID = 0;
-	if (lua_isnil(L, 1))
-		fboID = FBO::GetCurrentBoundFBO();
-	else if (lua_isuserdata(L, 1)) {
-		const auto* fbo = static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
-		fboID = fbo->id;
-		if (fbo->luaRef == LUA_NOREF) {
-			lua_pushboolean(L, false);
-			return 1;
-		}
-	} 
-	else {
+	const auto ReportErrorAndReturn = [L](const char* errMsg = "", const char* func = __func__) {
+		LOG_L(L_ERROR, "[gl.%s] Error: %s", func, errMsg);
 		lua_pushboolean(L, false);
 		return 1;
-	}
+	};
 
-	GLenum target = luaL_optint(L, 2, GL_FRAMEBUFFER);
+#ifdef DEBUG
+	glClearErrors("gl", __func__, globalRendering->glDebugErrors);
+#endif
+
+	int nextArg = 1;
+
+	GLenum target = luaL_optint(L, nextArg++, GL_FRAMEBUFFER);
+	GLenum queryType = 0;
 	switch (target)
 	{
+		case GL_READ_FRAMEBUFFER:
+			queryType = GL_READ_FRAMEBUFFER_BINDING;
+			break;
 		case GL_DRAW_FRAMEBUFFER: [[fallthrough]];
-		case GL_READ_FRAMEBUFFER: [[fallthrough]];
-		case GL_FRAMEBUFFER: [[fallthrough]];
-		default: {
-			lua_pushboolean(L, false);
-			return 1;
-		}
+		case GL_FRAMEBUFFER:
+			queryType = GL_DRAW_FRAMEBUFFER_BINDING;
+			break;
+		default:
+			return ReportErrorAndReturn(fmt::format("invalid target type({}) Only GL.READ_FRAMEBUFFER|GL.DRAW_FRAMEBUFFER|GL.FRAMEBUFFER are accepted", target).c_str());
 	}
 
-	GLenum bufferType;
-	GLenum attachment;
-	GLenum drawBuffer;
+	GLint fboID = 0;
+	glGetIntegerv(queryType, &fboID);
 
-	if (lua_isstring(L, 3)) {
-		switch (hashString(luaL_checkstring(L, 3))) {
+	if (fboID == 0)
+		return ReportErrorAndReturn(fmt::format("no non-default fbo object is bound for target({})", target).c_str());
+
+
+	GLenum bufferType = 0;
+	GLenum attachment = 0;
+	GLenum drawBuffer = 0;
+
+	if (lua_isstring(L, nextArg)) {
+		const char* attachmentStr = luaL_checkstring(L, nextArg++);
+		switch (hashString(attachmentStr)) {
 			case hashString("color0"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT0;  drawBuffer = 0; } break;
 			case hashString("color1"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT1;  drawBuffer = 1; } break;
 			case hashString("color2"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT2;  drawBuffer = 2; } break;
@@ -849,14 +857,12 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 			case hashString("color15"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT15; drawBuffer = 15; } break;
 			case hashString("depth"): { bufferType = GL_DEPTH;   attachment = GL_DEPTH_ATTACHMENT;   drawBuffer = 0; } break;
 			case hashString("stencil"): { bufferType = GL_STENCIL; attachment = GL_STENCIL_ATTACHMENT; drawBuffer = 0; } break;
-			default: {
-				lua_pushboolean(L, false);
-				return 1;
-			} break;
+			default:
+				return ReportErrorAndReturn(fmt::format("invalid attachment string ({})", attachmentStr).c_str());
 		}
 	}
-	else if (lua_isnumber(L, 3)) {
-		switch (attachment = luaL_checkint(L, 3)) {
+	else if (lua_isnumber(L, nextArg)) {
+		switch (attachment = luaL_checkint(L, nextArg++)) {
 			case GL_COLOR_ATTACHMENT0: { bufferType = GL_COLOR; drawBuffer = 0; } break;
 			case GL_COLOR_ATTACHMENT1: { bufferType = GL_COLOR; drawBuffer = 1; } break;
 			case GL_COLOR_ATTACHMENT2: { bufferType = GL_COLOR; drawBuffer = 2; } break;
@@ -875,27 +881,21 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 			case GL_COLOR_ATTACHMENT15: { bufferType = GL_COLOR; drawBuffer = 15; } break;
 			case GL_DEPTH_ATTACHMENT: { bufferType = GL_DEPTH; drawBuffer = 0; } break;
 			case GL_STENCIL_ATTACHMENT: { bufferType = GL_STENCIL; drawBuffer = 0; } break;
-			default: {
-				lua_pushboolean(L, false);
-				return 1;
-			} break;
+			default:
+				return ReportErrorAndReturn(fmt::format("invalid attachment type ({})", attachment).c_str());
 		}
 	}
 
 	GLint attachmentType = GL_NONE;
 	glGetFramebufferAttachmentParameteriv(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &attachmentType);
 
-	if (attachmentType == GL_NONE || attachmentType == GL_FRAMEBUFFER_DEFAULT) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
+	if (attachmentType == GL_NONE || attachmentType == GL_FRAMEBUFFER_DEFAULT)
+		return ReportErrorAndReturn(fmt::format("invalid attachment object type ({})", attachmentType).c_str());
 
 	GLint objectId = 0;
 	glGetFramebufferAttachmentParameteriv(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &objectId);
-	if (objectId == 0) {
-		lua_pushboolean(L, false);
-		return 1;
-	}
+	if (objectId == 0)
+		return ReportErrorAndReturn(fmt::format("invalid attachment object id ({})", objectId).c_str());
 
 	GLint componentType = 0;
 	glGetFramebufferAttachmentParameteriv(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE, &componentType);
@@ -903,20 +903,21 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 	switch (componentType)
 	{
 		case GL_INT:
-			Impl::ClearBuffer<GLint, &glClearBufferiv>(L, 4, bufferType, drawBuffer);
+			Impl::ClearBuffer<GLint, &glClearBufferiv>(L, nextArg, bufferType, drawBuffer);
 			break;
 		case GL_UNSIGNED_INT:
-			Impl::ClearBuffer<GLuint, &glClearBufferuiv>(L, 4, bufferType, drawBuffer);
+			Impl::ClearBuffer<GLuint, &glClearBufferuiv>(L, nextArg, bufferType, drawBuffer);
 			break;
 		case GL_SIGNED_NORMALIZED: [[fallthrough]];   // is this considered a fixed point value?
 		case GL_UNSIGNED_NORMALIZED: [[fallthrough]]; // is this considered a fixed point value?
 		case GL_FLOAT:
-			Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, 4, bufferType, drawBuffer);
+			Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, nextArg, bufferType, drawBuffer);
 			break;
 		default:
-			lua_pushboolean(L, false);
-			return 1;
+			return ReportErrorAndReturn(fmt::format("invalid attachment component type ({}), means the attachment is invalid", componentType).c_str());
 	}
+
+	assert(glGetError() == GL_NO_ERROR);
 
 	lua_pushboolean(L, true);
 	return 1;
