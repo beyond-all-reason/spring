@@ -66,7 +66,7 @@ public:
 	void SetUpdateListReset() { updateList.ResetNeedUpdateAll(); }
 private:
 	StablePosAllocator<MyType> storage;
-	UpdateList updateList;
+	UpdateListMT updateList;
 private:
 	static constexpr int INIT_NUM_ELEMS = 1 << 16u;
 public:

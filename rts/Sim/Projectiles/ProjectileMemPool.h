@@ -9,7 +9,7 @@
 
 #include "Sim/Projectiles/WeaponProjectiles/StarburstProjectile.h"
 
-static constexpr size_t PMP_ALIGN = 8; // smallest that fits the needs of all the various projectile types
+static constexpr size_t PMP_ALIGN = 16; // smallest that fits the needs of all the various projectile types
 static constexpr size_t PMP_S = AlignUp(sizeof(CStarburstProjectile), PMP_ALIGN); //biggest in size
 
 #if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64))
