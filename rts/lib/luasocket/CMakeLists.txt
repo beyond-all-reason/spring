@@ -29,11 +29,4 @@ LIST(APPEND luaSocketSources
 )
 ENDIF ()
 
-
 ADD_LIBRARY(luasocket STATIC EXCLUDE_FROM_ALL ${luaSocketSources})
-
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/
-	DESTINATION ${DATADIR}
-	FILES_MATCHING PATTERN "*.lua"
-)
-
