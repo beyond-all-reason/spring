@@ -6,7 +6,7 @@
 namespace cpu_topology {
 
 static std::mutex cacheMutex;
-static volatile bool cacheActive = false;
+static std::atomic<bool> cacheActive = false;
 
 static ProcessorMasks cachedProcessorMasks;
 static int logicalCpuCount = 0;
@@ -16,8 +16,8 @@ void SetCpuCounts(ProcessorMasks& masks) {
 	const uint32_t logicalCountMask = (masks.efficiencyCoreMask & masks.performanceCoreMask);
 	const uint32_t coreCountMask = logicalCountMask & ~masks.hyperThreadHighMask;
 
-	logicalCpuCount = std::bitset<32>(logicalCountMask).count();
-	physicalCpuCount = std::bitset<32>(coreCountMask).count();
+	logicalCpuCount = std::popcount(logicalCountMask);
+	physicalCpuCount = std::popcount(coreCountMask);
 }
 
 void InitTopologicalData() {

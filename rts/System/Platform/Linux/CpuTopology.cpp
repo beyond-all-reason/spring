@@ -79,6 +79,20 @@ std::vector<int> get_thread_siblings(int cpu) {
 	return siblings;
 }
 
+void collect_smt_affinity_masks(int cpu,
+								std::bitset<MAX_CPUS> &low_smt_mask,
+								std::bitset<MAX_CPUS> &high_smt_mask) {
+	std::vector<int> siblings = get_thread_siblings(cpu);
+	bool smt_enabled = siblings.size() > 1;
+	if (smt_enabled) {
+		if (cpu == *std::min_element(siblings.begin(), siblings.end())) {
+			low_smt_mask.set(cpu);
+		} else {
+			high_smt_mask.set(cpu);
+		}
+	}
+}
+
 // Collect CPU affinity masks for Intel
 void collect_intel_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
 								  std::bitset<MAX_CPUS> &perf_mask,
@@ -99,23 +113,15 @@ void collect_intel_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
 		if (core_type == CORE_EFFICIENCY) eff_mask.set(cpu);   // Efficiency Core (E-core)
 		else if (core_type == CORE_PERFORMANCE) perf_mask.set(cpu);  // Performance Core (P-core)
 
-		std::vector<int> siblings = get_thread_siblings(cpu);
-		bool smt_enabled = siblings.size() > 1;
-		if (smt_enabled) {
-			if (cpu == *std::min_element(siblings.begin(), siblings.end())) {
-				low_ht_mask.set(cpu);
-			} else {
-				high_ht_mask.set(cpu);
-			}
-		}
+		collect_smt_affinity_masks(cpu, low_ht_mask, high_ht_mask);
 	}
 }
 
 // Collect CPU affinity masks for AMD
 void collect_amd_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
 								std::bitset<MAX_CPUS> &perf_mask,
-								std::bitset<MAX_CPUS> &low_ht_mask,
-								std::bitset<MAX_CPUS> &high_ht_mask) {
+								std::bitset<MAX_CPUS> &low_smt_mask,
+								std::bitset<MAX_CPUS> &high_smt_mask) {
 	int num_cpus = get_cpu_count();
 
 	for (int cpu = 0; cpu < num_cpus; ++cpu) {
@@ -126,15 +132,7 @@ void collect_amd_affinity_masks(std::bitset<MAX_CPUS> &eff_mask,
 
 		perf_mask.set(cpu);
 
-		std::vector<int> siblings = get_thread_siblings(cpu);
-		bool smt_enabled = siblings.size() > 1;
-		if (smt_enabled) {
-			if (cpu == *std::min_element(siblings.begin(), siblings.end())) {
-				low_ht_mask.set(cpu);
-			} else {
-				high_ht_mask.set(cpu);
-			}
-		}
+		collect_smt_affinity_masks(cpu, low_smt_mask, high_smt_mask);
 	}
 }
 

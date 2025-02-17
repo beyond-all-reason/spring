@@ -48,9 +48,9 @@ namespace springproc {
 		int GetNumPerformanceCores() const { return numPerformanceCores; }
 		int GetNumLogicalCores() const { return numLogicalCores; }
 
-		bool HasHyperTrheading() const { return smtDetected; };
+		bool HasHyperThreading() const { return smtDetected; };
 
-		cpu_topology::ProcessorMasks GetAvailableProceesorAffinityMask() const { return processorMasks; };
+		cpu_topology::ProcessorMasks GetAvailableProcessorAffinityMask() const { return processorMasks; };
 
 	private:
 		CPUID();

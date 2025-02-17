@@ -117,7 +117,7 @@ ProcessorMasks GetProcessorMasks() {
 		if (ptr->Relationship == spring_overrides::RelationProcessorCore)
 		{
 			BYTE ef = ptr->Processor.EfficiencyClass;
-			performanceClass = (ef > performanceClass) ? ef : performanceClass;
+			performanceClass = std::max(performanceClass, ef);
 		}
 		byteOffset += ptr->Size;
 		ptr = (spring_overrides::PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)(((char*)buffer) + byteOffset);
