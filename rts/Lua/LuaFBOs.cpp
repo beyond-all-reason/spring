@@ -785,7 +785,7 @@ namespace Impl {
 }
 
 /*** needs `GL_VERSION_3_0`
- * Clears the FBO attachment of the currently bound fbo
+ * Clears the "attachment" of the currently bound FBO type "target" with "clearValues"
  * 
  * @function gl.ClearAttachmentFBO
  * @param target number? (Default: GL.FRAMEBUFFER)
