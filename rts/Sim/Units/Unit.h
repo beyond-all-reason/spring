@@ -112,7 +112,7 @@ public:
 	void EnableScriptMoveType();
 	void DisableScriptMoveType();
 
-	CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const final;
+	CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const override final;
 
 	void DependentDied(CObject* o);
 

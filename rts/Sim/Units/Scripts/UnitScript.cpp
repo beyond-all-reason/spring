@@ -270,6 +270,52 @@ bool CUnitScript::TickAnimFinished(int deltaTime)
 	return (HaveAnimations());
 }
 
+bool CUnitScript::TickMoveAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai)
+{
+	float3 pos = lmp.GetPosition();
+
+	float3 posSpeed = lmp.GetPositionSpeed();
+	posSpeed[ai.axis] = ai.speed / tickRate;
+
+	const bool ret = MoveToward(pos[ai.axis], ai.dest, posSpeed[ai.axis]);
+
+	lmp.SetPosition(pos, posSpeed);
+
+	return ret;
+}
+
+bool CUnitScript::TickTurnAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai)
+{
+	float3 rot = lmp.GetRotation();
+
+	float3 rotSpeed = lmp.GetRotationSpeed();
+	rotSpeed[ai.axis] = ai.speed / tickRate;
+
+	rot[ai.axis] = ClampRad(rot[ai.axis]);
+
+	const bool ret = TurnToward(rot[ai.axis], ai.dest, rotSpeed[ai.axis]);
+
+	lmp.SetRotation(rot, rotSpeed);
+
+	return ret;
+}
+
+bool CUnitScript::TickSpinAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai)
+{
+	float3 rot = lmp.GetRotation();
+
+	rot[ai.axis] = ClampRad(rot[ai.axis]);
+	const bool ret = DoSpin(rot[ai.axis], ai.dest, ai.speed, ai.accel, tickRate);
+
+	// ai.speed is actually modified by DoSpin(), so do the assignment after the call
+	float3 rotSpeed = lmp.GetRotationSpeed();
+	rotSpeed[ai.axis] = ai.speed / tickRate;
+
+	lmp.SetRotation(rot, rotSpeed);
+
+	return ret;
+}
+
 CUnitScript::AnimContainerTypeIt CUnitScript::FindAnim(AnimType type, int piece, int axis)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
