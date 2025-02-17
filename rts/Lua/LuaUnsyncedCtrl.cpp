@@ -174,6 +174,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetCustomCommandDrawData);
 
+	REGISTER_LUA_CFUNC(SetAutoShowMetal);
 	REGISTER_LUA_CFUNC(SetDrawSky);
 	REGISTER_LUA_CFUNC(SetDrawWater);
 	REGISTER_LUA_CFUNC(SetDrawGround);
@@ -4203,6 +4204,17 @@ int LuaUnsyncedCtrl::GarbageCollectCtrl(lua_State* L) {
 	gcCtrl.baseRunTimeMult = std::max(0.0f, luaL_optfloat(L, 7, gcCtrl.baseRunTimeMult));
 	gcCtrl.baseMemLoadMult = std::max(0.0f, luaL_optfloat(L, 8, gcCtrl.baseMemLoadMult));
 
+	return 0;
+}
+
+
+/*** @function Spring.SetAutoShowMetal
+ * @bool autoShow
+ * @treturn nil
+ */
+int LuaUnsyncedCtrl::SetAutoShowMetal(lua_State* L)
+{
+	guihandler->autoShowMetal = luaL_checkboolean(L, 1);
 	return 0;
 }
 
