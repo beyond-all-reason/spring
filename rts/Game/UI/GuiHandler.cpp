@@ -1028,7 +1028,7 @@ void CGuiHandler::SetShowingMetal(const SCommandDescription* cmdDesc)
 		show = false;
 	else if (cmdDesc->type == CMDTYPE_ICON_BUILDING) {
 		const UnitDef* ud = unitDefHandler->GetUnitDefByID(-cmdDesc->id);
-		show = ud->extractsMetal > 0;
+		show = ud && ud->extractsMetal > 0;
 	}
 
 	if (showingMetal && !show)
