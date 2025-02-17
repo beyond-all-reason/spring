@@ -102,7 +102,7 @@ end
 First, the `lowerkeys` function.
 Maybe some def files defined "maxVelocity" with an uppercase 'V' and some "maxvelocity" with a lowercase 'v', maybe even some used "MAXVELOCITY".
 In Lua, these are all different keys.
-Calling lowerkeys **makes sure that handling those in post-processing does not become a hassle**.
+The engine doesn't mind either way and accepts any casing, but Lua does, so calling lowerkeys **makes sure that handling those in post-processing does not become a hassle**.
 Some games put the lowerkeys call inside the individual def files as a convention; you also **don't have to do this at all** if you pay attention and don't expect this to be a problem.
 
 Note that **there are checks** so that calculation only happens if the value is defined, **even for the standard ones** (i.e. `if unitDef.health and...`).

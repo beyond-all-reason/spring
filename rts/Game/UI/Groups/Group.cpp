@@ -35,7 +35,7 @@ void CGroup::PostLoad()
 bool CGroup::AddUnit(CUnit* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (unit->team != ghIndex)
+	if (unit->team != ghIndex || unit->noGroup)
 		return false;
 
 	units.insert(unit->id);

@@ -17,9 +17,7 @@
 
 using namespace MoveTypes;
 
-void GroundMoveSystem::Init() {
-    Sim::systemGlobals.CreateSystemComponent<GroundMoveSystemComponent>();
-}
+void GroundMoveSystem::Init() {}
 
 template<typename T, typename F>
 void issue_events(F func)
@@ -32,8 +30,6 @@ void issue_events(F func)
 }
 
 void GroundMoveSystem::Update() {
-    auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
-
     // TODO: GroundMove could become a component (or series of components) and then the extra indirection wouldn't be
     // needed. Though that will be a bigger change.
 	{

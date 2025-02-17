@@ -23,8 +23,8 @@ if (WIN32)
 	list(APPEND unitsync_libs ${WINMM_LIBRARY})
 endif (WIN32)
 
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIR})
+find_package(SDL2 MODULE REQUIRED)
+list(APPEND unitsync_libs SDL2::SDL2)
 
 if    (MINGW)
 	#list(APPEND unitsync_lib_flags -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread)
@@ -92,9 +92,13 @@ set(main_files
 	"${ENGINE_SRC_ROOT}/System/StringUtil.cpp"
 	)
 if (WIN32)
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/Hardware.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/WinVersion.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/SharedLib.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/DllLib.cpp")
 else (WIN32)
-        list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/Hardware.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
 endif (WIN32)
 
 set(unitsync_files

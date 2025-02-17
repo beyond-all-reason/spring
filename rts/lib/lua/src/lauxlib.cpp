@@ -24,6 +24,7 @@
 #include "lauxlib.h"
 
 #include "streflop_cond.h" // SPRING
+#include "System/BranchPrediction.h" // Recoil
 
 
 #define FREELIST_REF	0	/* free list of references */
@@ -179,15 +180,14 @@ LUALIB_API lua_Number luaL_checknumber (lua_State *L, int narg) {
   if (d == 0 && !lua_isnumber(L, narg))  /* avoid extra test when d is not 0 */
     tag_error(L, narg, LUA_TNUMBER);
 
-#if defined(DEBUG_LUANAN)
+#if defined(REPORT_LUANAN)
   // SPRING
   //   this is used by luaL_optnumber, luaL_optfloat (via luaL_optnumber),
   //   and luaL_checkfloat, so the asserts should cover 90% of all cases
   //   in which non-numbers can infect the engine -- lua_tofloat asserts
   //   take care of the rest
-  if (math::isinf(d) || math::isnan(d)) luaL_argerror(L, narg, "number expected, got NAN (check your code for div0)");
-  //assert(!math::isinf(d));
-  //assert(!math::isnan(d));
+  if unlikely(math::isinf(d)) luaL_argerror(L, narg, "number expected, got +-Inf (check your code for div0)");
+  if unlikely(math::isnan(d)) luaL_argerror(L, narg, "number expected, got +-NaN (check your code for div0)");
 #endif
 
   return d;

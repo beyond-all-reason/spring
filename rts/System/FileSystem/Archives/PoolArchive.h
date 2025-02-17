@@ -100,7 +100,7 @@ public:
 		memcpy(hash, fd.shasum.data(), sha512::SHA_LEN);
 		return (memcmp(fd.shasum.data(), dummyFileHash.data(), sizeof(fd.shasum)) != 0);
 	}
-
+	static std::string GetPoolRootDirectory(const std::string& sdpName);
 protected:
 	int GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
 

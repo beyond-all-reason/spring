@@ -1,0 +1,55 @@
+name: Generate Lua library
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'rts/Lua/**'
+jobs:
+  generate-library:
+    name: Regenerate library
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure git
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Checkout Lua CPP files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: rts/Lua
+          path: recoil
+
+      # NOTE: This step is duplicated in `publish-site.yml`
+      - name: Generate Lua library
+        working-directory: recoil/rts/Lua/
+        run: |
+          npm install -g lua-doc-extractor
+          lua-doc-extractor *.cpp --dest library/generated
+
+      - name: Check out library repo
+        uses: actions/checkout@v4
+        with:
+          repository: beyond-all-reason/recoil-lua-library
+          ssh-key: ${{ secrets.RECOIL_LUA_LIBRARY_SSH_KEY }}
+          path: library
+
+      - name: Copy changes into library repo
+        run: |
+          rm -rf library/library
+          cp -r recoil/rts/Lua/library library
+          # Remove .luarc.json (this is only required for doc gen)
+          rm library/library/.luarc.json
+
+      # Always try to update library repo (even if generation did not make changes).
+      # Hand-written files may have changed without generated output changing,
+      # and library may simply be out of date for whatever reason.
+      - name: Commit and push library repo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          repository: ./library
+          commit_message: |
+            Update library
+            Generated from https://github.com/${{ github.repository }}/commit/${{ github.sha }}

@@ -47,7 +47,9 @@ public:
 	}
 	#endif
 
-protected:
+private:
+	static inline spring::mutex archiveLock;
+
 	unzFile zip;
 
 	// actual data is in BufferedArchive

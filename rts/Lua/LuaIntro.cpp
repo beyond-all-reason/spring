@@ -325,9 +325,10 @@ string CLuaIntro::LoadFile(const string& filename) const
 /******************************************************************************/
 /******************************************************************************/
 
-/*** Draws custom load screens.
+/***
+ * Draws custom load screens.
  *
- * @function DrawLoadScreen()
+ * @function DrawLoadScreen
  */
 void CLuaIntro::DrawLoadScreen()
 {
@@ -352,7 +353,9 @@ void CLuaIntro::DrawLoadScreen()
 
 
 /***
- * @function LoadProgress(message, replaceLastLine)
+ * @function LoadProgress
+ * @param message string
+ * @param replaceLastLine boolean 
  */
 void CLuaIntro::LoadProgress(const std::string& msg, const bool replace_lastline)
 {

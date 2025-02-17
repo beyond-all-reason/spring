@@ -21,10 +21,12 @@ set(PLATFORM_SRCS "")
 set(PLATFORM_LIBS "")
 
 if     (WIN32)
+	list(APPEND PLATFORM_SRCS "${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/Hardware.cpp")
 	list(APPEND PLATFORM_SRCS "${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/WinVersion.cpp")
 
 	list(APPEND PLATFORM_LIBS "iphlpapi")
 elseif (UNIX)
+	list(APPEND PLATFORM_SRCS "${ENGINE_SRC_ROOT_DIR}/System/Platform/Linux/Hardware.cpp")
 	list(APPEND PLATFORM_LIBS "${CMAKE_DL_LIBS}")
 endif  (WIN32)
 

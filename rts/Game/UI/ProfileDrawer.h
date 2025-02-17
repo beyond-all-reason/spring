@@ -20,6 +20,7 @@ public:
 	virtual bool MousePress(int x, int y, int button) override;
 	virtual bool IsAbove(int x, int y) override;
 	virtual void DbgTimingInfo(DbgTimingInfoType type, const spring_time start, const spring_time end) override;
+	virtual void Update() override;
 
 private:
 	ProfileDrawer();

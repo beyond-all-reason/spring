@@ -246,7 +246,6 @@ public:
 	// start this unit in free fall from parent unit
 	void Drop(const float3& parentPos, const float3& parentDir, CUnit* parent);
 	void PostLoad();
-
 protected:
 	void ChangeTeamReset();
 	void UpdateResources();
@@ -266,20 +265,7 @@ public: // unsynced methods
 			DelDrawFlag(DrawFlags::SO_DRICON_FLAG);
 	}
 public:
-	static void  SetEmpDeclineRate(float value) { empDeclineRate = value; }
-	static void  SetExpMultiplier(float value) { expMultiplier = value; }
-	static void  SetExpPowerScale(float value) { expPowerScale = value; }
-	static void  SetExpHealthScale(float value) { expHealthScale = value; }
-	static void  SetExpReloadScale(float value) { expReloadScale = value; }
-	static void  SetExpGrade(float value) { expGrade = value; }
-
-	static float GetExpMultiplier() { return expMultiplier; }
-	static float GetExpPowerScale() { return expPowerScale; }
-	static float GetExpHealthScale() { return expHealthScale; }
-	static float GetExpReloadScale() { return expReloadScale; }
-	static float GetExpGrade() { return expGrade; }
-
-	static float ExperienceScale(const float limExperience, const float experienceWeight) {
+	static float ExperienceScale(float limExperience, float experienceWeight) {
 		// limExperience ranges from 0.0 to 0.9999...
 		return std::max(0.0f, 1.0f - (limExperience * experienceWeight));
 	}
@@ -555,6 +541,8 @@ public:
 	bool leaveTracks = false;
 
 	bool isSelected = false;
+	// if true, unit can not be added to groups by a player (UNSYNCED)
+	bool noGroup = false;
 
 	float iconRadius = 0.0f;
 
@@ -564,13 +552,19 @@ public:
 private:
 	// if we are stunned by a weapon or for other reason, access via IsStunned/SetStunned(bool)
 	bool stunned = false;
-
-	static float empDeclineRate;
-	static float expMultiplier;
-	static float expPowerScale;
-	static float expHealthScale;
-	static float expReloadScale;
-	static float expGrade;
 };
+
+struct GlobalUnitParams {
+	CR_DECLARE_STRUCT(GlobalUnitParams)
+
+	float empDeclineRate = 0.0f;
+	float expMultiplier  = 0.0f;
+	float expPowerScale  = 0.0f;
+	float expHealthScale = 0.0f;
+	float expReloadScale = 0.0f;
+	float expGrade       = 0.0f;
+};
+
+extern GlobalUnitParams globalUnitParams;
 
 #endif // UNIT_H

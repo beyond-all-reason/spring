@@ -189,7 +189,6 @@ else  (UNIX AND NOT MINGW)
 		add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 		add_definitions(-DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 		add_compile_options(/bigobj)
-		set(GLEW_STATIC ON)
 		#set(EXE_FLAGS WIN32)
 	endif()
 endif (UNIX AND NOT MINGW)
@@ -291,7 +290,7 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 
 # Note the missing REQUIRED, as headless & dedi may not depend on those.
 #  So req. checks are done in the build target's CMakeLists.txt.
-find_package(SDL2)
+find_package(SDL2 MODULE)
 
 find_package_static(DevIL 1.8.0 REQUIRED)
 
@@ -403,15 +402,9 @@ if(NOT MSVC)
 endif(NOT MSVC)
 
 
-if(DEBUG_BUILD)
-        set(DEBUG_LUANAN_DEFAULT TRUE)
-else()
-        set(DEBUG_LUANAN_DEFAULT FALSE)
-endif()
-
-option(DEBUG_LUANAN "check for nans in lua" ${DEBUG_LUANAN_DEFAULT})
-if(DEBUG_LUANAN)
-        add_definitions(-DDEBUG_LUANAN)
+option(REPORT_LUANAN "report nans/infinities in lua" TRUE)
+if(REPORT_LUANAN)
+        add_definitions(-DREPORT_LUANAN)
 endif()
 
 

@@ -22,7 +22,6 @@
 
 /******************************************************************************
  * FBO
- * @module FBO
  * @see rts/Lua/LuaFBOs.cpp
 ******************************************************************************/
 
@@ -49,7 +48,7 @@ bool LuaFBOs::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ActiveFBO);
 	REGISTER_LUA_CFUNC(RawBindFBO);
 
-	if (GLEW_EXT_framebuffer_blit)
+	if (GLAD_GL_EXT_framebuffer_blit)
 		REGISTER_LUA_CFUNC(BlitFBO);
 
 	return true;
@@ -337,7 +336,7 @@ void LuaFBOs::AttachObjectTexTarget(const char* funcName, GLenum fboTarget, GLen
 	case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
 	case GL_TEXTURE_CUBE_MAP: [[fallthrough]];
 	case GL_TEXTURE_3D: {
-		if (!GLEW_VERSION_3_2) {
+		if (!GLAD_GL_VERSION_3_2) {
 			throw opengl_error(fmt::format("[LuaFBO::{}] Using of the attachment target {} requires OpenGL >= 3.2", funcName, texTarget));
 		}
 
@@ -394,7 +393,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 		glDrawBuffer((GLenum)lua_toint(L, index));
 		return true;
 	}
-	if (lua_istable(L, index) && GLEW_ARB_draw_buffers) {
+	if (lua_istable(L, index) && GLAD_GL_ARB_draw_buffers) {
 		int buffers[32] = {GL_NONE};
 		const int count = LuaUtils::ParseIntArray(L, index, buffers, sizeof(buffers) / sizeof(buffers[0]));
 
@@ -410,35 +409,31 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 /******************************************************************************/
 
 /***
- * @table attachment
+ * @table gl
+ */
+
+/***
  * attachment ::= luaTex or `RBO.rbo` or nil or { luaTex [, num target [, num level ] ] }
+ * @class attachment
  */
 
 /***
  * User Data FBO
- * @table fbo
- * @tparam attachment depth
- * @tparam attachment stencil
- * @tparam attachment color0
- * @tparam attachment color1
- * @tparam attachment color2
- * @tparam attachment colorn
- * @tparam attachment color15
- * @tparam table drawbuffers `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
- * @tparam table readbuffer `GL_COLOR_ATTACHMENT0_EXT`
+ * @class Fbo
+ * @field depth attachment
+ * @field stencil attachment
+ * @field color0 attachment
+ * @field color1 attachment
+ * @field color2 attachment
+ * @field colorn attachment
+ * @field color15 attachment
+ * @field drawbuffers table `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
+ * @field readbuffer table `GL_COLOR_ATTACHMENT0_EXT`
  */
 
 /***
  * @function gl.CreateFBO
- * @param data
- * @tparam attachment data.depth
- * @tparam attachment data.stencil
- * @tparam attachment data.color0
- * @tparam attachment data.color1
- * @tparam attachment data.color2
- * @tparam attachment data.colorn
- * @tparam attachment data.color15
- * @tparam table data.drawbuffers `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
+ * @param fbo Fbo
  */
 int LuaFBOs::CreateFBO(lua_State* L)
 {
@@ -511,9 +506,10 @@ int LuaFBOs::CreateFBO(lua_State* L)
 
 
 /***
- * @function gl.DeleteFBO
  * This doesn't delete the attached objects!
- * @tparam fbo fbo
+ * 
+ * @function gl.DeleteFBO
+ * @param fbo Fbo
  */
 int LuaFBOs::DeleteFBO(lua_State* L)
 {
@@ -529,10 +525,10 @@ int LuaFBOs::DeleteFBO(lua_State* L)
 
 /***
  * @function gl.IsValidFBO
- * @tparam fbo fbo
- * @number[opt] target
- * @treturn bool valid
- * @treturn ?number status
+ * @param fbo Fbo
+ * @param target GL?
+ * @return boolean valid
+ * @return number? status
  */
 int LuaFBOs::IsValidFBO(lua_State* L)
 {
@@ -571,13 +567,13 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 
 /***
  * @function gl.ActiveFBO
- * @tparam fbo fbo
- * @number[opt] target
- * @bool[opt] identities
- * @func[opt] lua_function
- * @param[opt] arg1
- * @param[opt] arg2
- * @param[opt] argn
+ * @param fbo Fbo
+ * @param target GL?
+ * @param identities boolean?
+ * @param lua_function function?
+ * @param arg1 any?
+ * @param arg2 any?
+ * @param argn any?
  */
 int LuaFBOs::ActiveFBO(lua_State* L)
 {
@@ -642,11 +638,20 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 }
 
 
-/**
- *gl.RawBindFBO
- *
- * ( nil [, number target = GL_FRAMEBUFFER_EXT ] [, number rawFboId = 0] ) -> nil (Bind default or specified via rawFboId numeric id of FBO)
- * ( fbo [, number target = fbo.target ] ) -> number previouslyBoundRawFboId
+/***
+ * Bind default or specified via rawFboId numeric id of FBO
+ * 
+ * @function gl.RawBindFBO
+ * @param fbo nil
+ * @param target GL? (Default: `GL_FRAMEBUFFER_EXT`)
+ * @param rawFboId integer? (Default: 0)
+ * @return nil
+ */
+/***
+ * @function gl.RawBindFBO
+ * @param fbo Fbo
+ * @param target GL? (Default: `fbo.target`)
+ * @return number previouslyBoundRawFboId
  */
 int LuaFBOs::RawBindFBO(lua_State* L)
 {
@@ -675,35 +680,35 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 
 /******************************************************************************/
 
-/*** needs `GLEW_EXT_framebuffer_blit`
+/*** needs `GLAD_GL_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
- * @number x0Src
- * @number y0Src
- * @number x1Src
- * @number y1Src
- * @number x0Dst
- * @number y0Dst
- * @number x1Dst
- * @number y1Dst
- * @number[opt=GL_COLOR_BUFFER_BIT] mask
- * @number[opt=GL_NEAREST] filter
+ * @param x0Src number
+ * @param y0Src number
+ * @param x1Src number
+ * @param y1Src number
+ * @param x0Dst number
+ * @param y0Dst number
+ * @param x1Dst number
+ * @param y1Dst number
+ * @param mask number? (Default: GL_COLOR_BUFFER_BIT)
+ * @param filter number? (Default: GL_NEAREST)
  */
-/*** needs `GLEW_EXT_framebuffer_blit`
+/*** needs `GLAD_GL_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
- * @tparam fbo fboSrc
- * @number x0Src
- * @number y0Src
- * @number x1Src
- * @number y1Src
- * @tparam fbo fboDst
- * @number x0Dst
- * @number y0Dst
- * @number x1Dst
- * @number y1Dst
- * @number[opt=GL_COLOR_BUFFER_BIT] mask
- * @number[opt=GL_NEAREST] filter
+ * @param fboSrc Fbo
+ * @param x0Src number
+ * @param y0Src number
+ * @param x1Src number
+ * @param y1Src number
+ * @param fboDst Fbo
+ * @param x0Dst number
+ * @param y0Dst number
+ * @param x1Dst number
+ * @param y1Dst number
+ * @param mask number? (Default: GL_COLOR_BUFFER_BIT)
+ * @param filter number? (Default: GL_NEAREST)
  */
 int LuaFBOs::BlitFBO(lua_State* L)
 {

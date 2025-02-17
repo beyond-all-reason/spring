@@ -536,7 +536,8 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	assert(int(zmin()) >= r.z1);
 	assert(int(zmax()) <= r.z2);
 
-	const SpeedBinType refSpeedBin = curSpeedBins[zmin() * mapDims.mapx + xmin()];
+	const int rw = r.GetWidth();
+	const SpeedBinType refSpeedBin = curSpeedBins[(zmin() - r.z1) * rw + (xmin() - r.x1)];
 
 	// <this> can either just have been merged or added as
 	// new child of split parent; in the former case we can
@@ -549,7 +550,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 
 	for (unsigned int hmz = zmin(); hmz < zmax(); hmz++) {
 		for (unsigned int hmx = xmin(); hmx < xmax(); hmx++) {
-			const unsigned int sqrIdx = hmz * mapDims.mapx + hmx;
+			const unsigned int sqrIdx = (hmz - r.z1) * rw + (hmx - r.x1);
 
 			assert(sqrIdx >= 0);
 			assert(sqrIdx < curSpeedBins.size());

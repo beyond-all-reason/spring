@@ -8,44 +8,58 @@
 
 /******************************************************************************
  * Engine constants
- * @module Engine
  * @see rts/Lua/LuaConstEngine.cpp
 ******************************************************************************/
 
-/*** Engine specific information
+/***
+ * @class FeatureSupport
+ * @field NegativeGetUnitCurrentCommand boolean
+ * @field hasExitOnlyYardmaps boolean
+ * @field rmlUiApiVersion integer
+ */
+
+/***
+ * Engine specific information.
  *
  * @table Engine
- * @string version Returns the same as `spring  *sync-version`, e.g. "92"
- * @string versionFull 
- * @string versionPatchSet 
- * @string buildFlags (unsynced only) Gets additional engine buildflags, e.g. "OMP" or "MT-Sim DEBUG"
- * @string FeatureSupport table containing various engine features as keys; use for cross-version compat
- * @number wordSize indicates the build type and is either 32 or 64 (or 0 in synced code)
+ * @field version string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise
+ * @field versionFull string "Major.Minor.PatchSet" for releases, "Major.Minor.PatchSet-CommitNum-gHash branch" otherwise. Will also include (buildFlags), if there're any.
+ * @field versionMajor string Major part of the named release version
+ * @field versionMinor string Minor part of the named release version
+ * @field versionPatchSet string Build numbert of the named release version
+ * @field commitsNumber string Number of commits after the latest named release, non-zero indicates a "dev" build
+ * @field buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
+ * @field featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
+ * @field wordSize number Indicates the build type always 64 these days
  */
 
 bool LuaConstEngine::PushEntries(lua_State* L)
 {
-	LuaPushNamedString(L, "version"        ,                                    SpringVersion::GetSync()          );
-	LuaPushNamedString(L, "versionFull"    , (!CLuaHandle::GetHandleSynced(L))? SpringVersion::GetFull()      : "");
-	LuaPushNamedString(L, "versionPatchSet", (!CLuaHandle::GetHandleSynced(L))? SpringVersion::GetPatchSet()  : "");
-	LuaPushNamedString(L, "buildFlags"     , (!CLuaHandle::GetHandleSynced(L))? SpringVersion::GetAdditional(): "");
-
-	#if 0
-	LuaPushNamedNumber(L, "nativeWordSize", (!CLuaHandle::GetHandleSynced(L))? Platform::NativeWordSize() * 8: 0); // engine
-	LuaPushNamedNumber(L, "systemWordSize", (!CLuaHandle::GetHandleSynced(L))? Platform::SystemWordSize() * 8: 0); // op-sys
-	#else
+	LuaPushNamedString(L, "version"        , SpringVersion::GetSync()      );
+	LuaPushNamedString(L, "versionFull"    , SpringVersion::GetFull()      );
+	LuaPushNamedString(L, "versionMajor"   , SpringVersion::GetMajor()     );
+	LuaPushNamedString(L, "versionMinor"   , SpringVersion::GetMinor()     );
+	LuaPushNamedString(L, "versionPatchSet", SpringVersion::GetPatchSet()  );
+	LuaPushNamedString(L, "commitsNumber"  , SpringVersion::GetCommits()   );
+	LuaPushNamedString(L, "buildFlags"     , SpringVersion::GetAdditional());
 	LuaPushNamedNumber(L, "wordSize", (!CLuaHandle::GetHandleSynced(L))? Platform::NativeWordSize() * 8: 0);
-	#endif
 
 
+	/* If possible, entries should be bools that resolve to false in the "old" version
+	 * and to true in the "new" version; this is because any version beforehand has it
+	 * "set" to nil which is booleanly false as well. This way games doing the check:
+	 *
+	 *  if Engine.FeatureSupport.Foo then
+	 *
+	 * will be compatible even on engines that don't yet know about the entry at all. */
 	lua_pushliteral(L, "FeatureSupport");
 	lua_createtable(L, 0, 3);
 		LuaPushNamedBool(L, "NegativeGetUnitCurrentCommand", true);
 		LuaPushNamedBool(L, "hasExitOnlyYardmaps", true);
 		LuaPushNamedNumber(L, "rmlUiApiVersion", 1);
 		LuaPushNamedBool(L, "noAutoShowMetal", false);
+		LuaPushNamedNumber(L, "maxPiecesPerModel", MAX_PIECES_PER_MODEL);
 	lua_rawset(L, -3);
 
 	return true;
 }
-

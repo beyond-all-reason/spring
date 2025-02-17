@@ -10,11 +10,14 @@ This is the changelog **since version 2590**.
 
 # Caveats
 These are the entries which may require special attention when migrating:
+* versioning changed to a date-based scheme, see below.
 * missing models crash the game in order to avoid desyncs (for real this time).
 There's a pop-up, for external detection look for error messages in the infolog.
 * a bunch of changes in Lua events for damage and death, see below.
 * moved sky rendering right after the terrain rendering and before `DrawWorldPreUnit`.
 This will affect things drawn in the pre-unit layer by wupgets.
+* network protocol: scribbling-related (draw, point, erase) messages now send coordinates as `uint32` instead of `int16`.
+This may break replay parsing.
 * changing camera mode (TA, rotatable overhead etc) now tries to keep rotation/position
 instead of going back to the rotation/position it was last in when in that mode.
 * allow the attack command onto units out of map. Ground-targeted still not allowed.
@@ -36,6 +39,7 @@ units adjust if their movedef changes at runtime.
 * support for non-power-of-2 textures, float textures, and frame buffer objects
 is now mandatory. Apparently these were all common 15 years ago already so should
 be safe even for relative potatoes.
+* missiles now obey `myGravity` when expired.
 * removed `tdfID` from weapon defs, including the WeaponDefs table. Any remaining
 interfaces receive the weaponDefID instead.
 * files in an archive's root folder with a name starting with dot are now ignored
@@ -44,6 +48,7 @@ this cannot be overridden)
 * archive scanner version changed to 17, won't be able to reuse an old archive cache.
 Expect a rescan of archives.
 * the default value for the `TooltipGeometry` springsetting has the Y coordinate moved from 0 to 0.125.
+* server no longer automatically forcestarts the game if there is nobody connected after 30s.
 * default tooltip now has income and harvest storage for each resource in its own line.
 
 ### Deprecation notice
@@ -54,6 +59,12 @@ still work for a while but is deprecated.
 will still work for a while but are deprecated.
 
 # Features
+
+### Versioning
+* the engine now uses a date-based versioning scheme. This means we skip from 105 to 2025.
+* changed the display of "Spring" to "Recoil" in a few more places.
+* `Engine.versionFull`, `Engine.versionPatchSet`, and `Engine.buildFlags` now available in synced.
+* added `Engine.versionMajor`, `Engine.versionMinor` and `Engine.commitsNumber`.
 
 ### rmlUI
 RmlUI is here! It is a GUI framework that will let you create widgets using web technologies (html, css and all that nonsense).
@@ -83,6 +94,16 @@ So far contains three vars:
 
 More will be added in the future as new features are added.
 
+### Lua language server support
+
+LDoc has been replaced by [Lua Language Server](https://luals.github.io/) compatible annotations. This allows for language server support when editing Lua code (namely autocompletion and type checking).
+
+Type definitions can be found in the [Lua library repo](https://github.com/beyond-all-reason/recoil-lua-library). This is intended to be included as a submodule in projects that use the engine.
+
+[Lua API docs]({{ site.baseurl }}{% link lua-api.md %}) are now generated from LLS definitions instead of LDoc. This has caused a regression in docs quality, with all docs on a single page and some docs missing information. Improvements to the docs are being considered.
+
+For more information see the [Lua Language Server guide]({{ site.baseurl }}{% link guides/lua-language-server.markdown %}).
+
 ### Death events
 * `wupget:UnitDestroyed` will pass the builder as the killer if a unit gets reclaimed. Note that
 reclaim still does not generate `UnitDamaged` events.
@@ -96,6 +117,7 @@ dies for non-selfD reasons will now be attributed to the new `TransportKilled` d
 previously was `Killed`.
 * construction decay now produces an event: `wupget:UnitConstructionDecayed(unitID, unitDefID, unitTeam, timeSinceLastBuild, iterationPeriod, part)`.
 Time and iteration period are in seconds, part is a fraction.
+* units no longer removed from groups at the start of their death animation.
 
 ### Dolly camera
 Added a dolly camera that follows a predetermined path, activated via Lua.
@@ -136,10 +158,16 @@ can avoid calling `Script.LuaXYZ("Foo")` each time, but it can still be a good i
 These accept multiple full sets of arguments compared to the regular function so you can avoid extra function calls.
 
 ### Lua orders
+* add `wupget:ActiveCommandChanged(cmdID?, cmdType?) → nil`.
 * add `Spring.GetUnitCommandCount(unitID) → number commandCount`. Use in place of `Spring.GetUnitCommands(unitID, 0)`.
 * `Spring.GetUnitCurrentCommand(unitID, -n)` now grabs the Nth command from the last.
 * added `Engine.FeatureSupport.NegativeGetUnitCurrentCommand` bool for forward compatibility with the above.
-* add `/debugquadfield` command to debug GUI trace ray interaction with ground quads.
+* the `Spring.GiveOrder` family of functions now accept `nil` as params (same as `{}`) and options (same as `0`).
+
+### Unit groups
+* units no longer removed from groups at the start of their death animation.
+* added `Spring.SetUnitNoGroup(unitID, bool noGroup) → nil`, whether a unit can be added to groups.
+* added `Spring.GetUnitNoGroup(unitID) → bool noGroup`.
 
 ### Fonts
 * added `Spring.AddFallbackFont(string path) → bool ok`, lets you specify fallback fonts in case whatever font is being used does not have some glyphs.
@@ -202,30 +230,46 @@ lets you create a Tracy plot and configure its looks.
 * add `tracy.LuaTracyPlot(string plotName, number value) → nil`, lets you fill up values for the plot.
 * improved Tracy coverage and made zone coloring more coherent.
 
+### Logs
+* fixed the `SPRING_LOG_SECTIONS` environment var, it no longer requires a comma in front.
+* add a "deprecated" log level, numerical priority level 37. You can read the priority in `wupget:AddConsoleLine`.
+* a bunch of engine deprecation warnings now use that log level.
+
 ### Misc
 * add `construction.insertBuiltUnitMoveCommand` boolean modrule, defaults to true. If false, units won't receive a move order when exiting factory (make sure to use bugger off).
+* add `Spring.SetUnitStorage(unitID, "m"|"e", value) → nil`.
+* add `Spring.GetUnitStorage(unitID) → numbers metal, energy`.
+* added `Game.buildGridResolution`, number which is currently 2. This means that buildings created via native build orders
+are aligned to 2 squares.
 * add `Spring.ForceUnitCollisionUpdate(unitID) → nil`. Forces a unit to have correct collisions. Normally, collisions are updated according
 to the `unitQuadPositionUpdateRate` modrule, which may leave them unable to be hit by some weapons when moving. Call this for targets of important
 weapons (e.g. in `script.FireWeapon` if it's hitscan) if the modrule has a value greater than 1 to ensure reliable hit detection.
 * add `Spring.SetProjectileTimeToLive(projID, number framesTTL) → nil`, sets the remaining time in simframes.
+* missiles now obey `myGravity` when expired.
 * renamed `Spring.UnitIconSetDraw` to `Spring.SetUnitIconDraw`. Old spelling will still work for a while but is deprecated.
+* the `allowHoverUnitStrafing` modrule now defaults to `false`. Previously it defaulted to `false` for HAPFS and `true` for QTPFS.
 * built-in endgame graphs have a toggle for log scale instead of linear.
 * `gl.SaveImage` can now save in the `.hdr` format (apparently).
 * `pairs()` now looks at the `__pairs` metamethod in tables, same as in Lua 5.2.
 * the "scanning archives" screen at init reports more info.
+* bumpmapped water (aka `/water 4`) now has a different default texture.
 * the default value for the `TooltipGeometry` springsetting has the Y coordinate moved from 0 to 0.125.
 * default tooltip now has income and harvest storage for each resource in its own line.
+* server no longer automatically forcestarts the game if there is nobody connected after 30s.
+* add `/debugquadfield` command to debug GUI trace ray interaction with ground quads.
 
 ## Fixes
 * fix a possible pathing desync, especially on builds compiled for OpenBSD.
 * fix draw position for asymmetric models, they no longer disappear when not appropriate.
 * fix `Spring.GetUnitWeaponHaveFreeLineOfFire` not respecting source XYZ for Cannon type weapons.
 * fix streaming very small sound files.
+* fixed `Spring.ShareResources(teamID, "units", nil)` breaking due to the explicit nil.
 * fix `Spring.SetCameraTarget` reverting to the old position.
 * fix the `/iconsHideWithUI` command not saving the relevant springsetting properly.
 * fix `Spring.GetFeatureSelectionVolumeData` missing from the API since about 105-800ish.
 * fix `/groundDecals` not enabling decals if they were disabled at engine startup.
 * fix rightclicking and area-commands sometimes failing to include radar dots if they wobbled too far from real position.
+* fix scribblings and labels breaking on maps larger than 64xN.
 * fix a crash when loading unknown glyphs from a font.
 * fix runtime metalmap adjustments not being saved/loaded (would use map default).
 * fix metal extractors not being saved/loaded correctly (would allow duplicates).

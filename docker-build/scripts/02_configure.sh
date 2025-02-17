@@ -15,6 +15,9 @@ if [ "${PLATFORM}" == "linux-64" ]; then
         -DLIBDIR:PATH=./
         -DDATADIR:PATH=./
         -DDOCDIR:PATH=doc
+        -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=gold"
+        -DCMAKE_MODULE_LINKER_FLAGS_INIT="-fuse-ld=gold"
+        -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=gold"
     )
     export PKG_CONFIG_LIBDIR=${LIBS_DIR}/lib/pkgconfig
     export PKG_CONFIG="pkg-config --define-prefix --static"
