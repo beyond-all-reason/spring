@@ -99,6 +99,15 @@ CMatrix44f Transform::ToMatrix() const
 	return m;
 }
 
+Transform Transform::Lerp(const Transform& t0, const Transform& t1, float a)
+{
+	return Transform{
+		CQuaternion::SLerp(t0.r, t1.r, a),
+		mix(t0.t, t1.t, a),
+		mix(t0.s, t1.s, a)
+	};
+}
+
 Transform Transform::InvertAffine() const
 {
 	// TODO check correctness
