@@ -15,9 +15,6 @@ list(APPEND unitsync_libs 7zip prd::jsoncpp lua headlessStubs archives)
 list(APPEND unitsync_libs ZLIB::ZLIB)
 list(APPEND unitsync_libs ${SPRING_MINIZIP_LIBRARY})
 
-### smmalloc
-list(APPEND unitsync_libs "smmalloc")
-
 if (WIN32)
 	list(APPEND unitsync_libs ${IPHLPAPI_LIBRARY})
 	list(APPEND unitsync_libs ${WINMM_LIBRARY})
@@ -84,6 +81,7 @@ set(main_files
 	"${ENGINE_SRC_ROOT}/System/float4.cpp"
 	"${ENGINE_SRC_ROOT}/System/Info.cpp"
 	"${ENGINE_SRC_ROOT}/System/LogOutput.cpp"
+	"${ENGINE_SRC_ROOT}/System/MemPoolTypes.cpp"
 	"${ENGINE_SRC_ROOT}/System/Option.cpp"
 	"${ENGINE_SRC_ROOT}/System/SafeVector.cpp"
 	"${ENGINE_SRC_ROOT}/System/SafeCStrings.c"
