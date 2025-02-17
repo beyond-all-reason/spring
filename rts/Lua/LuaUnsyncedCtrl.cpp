@@ -166,6 +166,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(AddWorldUnit);
 
 	REGISTER_LUA_CFUNC(DrawUnitCommands);
+	REGISTER_LUA_CFUNC(AddUnitBuildSquare);
+	REGISTER_LUA_CFUNC(RemoveUnitBuildSquare);
 
 	REGISTER_LUA_CFUNC(SetTeamColor);
 
@@ -3549,6 +3551,117 @@ int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)
 	if (guihandler != nullptr)
 		guihandler->SetBuildFacing(luaL_checkint(L, 1));
 
+	return 0;
+}
+
+
+// FIXME: move to LuaUtils, but currently it produces error
+// "error: undefined reference to 'BuildInfo::BuildInfo(int, float3 const&, int)'"
+static BuildInfo ParseBuildInfo(
+	lua_State* L,
+	const char* caller,
+	int idx
+) {
+	int unitDefID = luaL_checkinteger(L, idx);
+	float3 pos = {
+		luaL_checkfloat(L, idx+1),
+		luaL_checkfloat(L, idx+2),
+		luaL_checkfloat(L, idx+3),
+	};
+	int facing = LuaUtils::ParseFacing(L, __func__, idx+4);
+
+	BuildInfo buildInfo = BuildInfo(unitDefID, pos, facing);
+	if (buildInfo.def == nullptr) {
+		luaL_error(L, "%s(): invalid unitDefID", caller);
+	}
+	return buildInfo;
+}
+
+
+/*** Build Square Options params
+ *
+ * @table buildSquareOptions
+ *
+ * @bool[opt] unbuildable Show the building as unbuildable
+ * @number[opt] cacheValidity How long to keep in cache after removal for faster reuse (in seconds)
+ */
+
+
+static LuaBuildSquareOptions ParseBuildSquareOptions(
+	lua_State* L,
+	const char* caller,
+	const int idx
+) {
+	LuaBuildSquareOptions opts;
+	if (lua_istable(L, idx)) {
+		for (lua_pushnil(L); lua_next(L, idx) != 0; lua_pop(L, 1)) {
+			if (lua_israwstring(L, -2)) {
+				switch (hashString(lua_tostring(L, -2))) {
+					case hashString("unbuildable"):
+						opts.unbuildable = luaL_checkboolean(L, -1);
+						break;
+					case hashString("cacheValidity"):
+						opts.cacheValidity = int(luaL_checkfloat(L, -1) * GAME_SPEED);
+						break;
+				}
+			}
+		}
+	} else if (!lua_isnone(L, idx) && !lua_isnil(L, idx)) {
+		luaL_error(L, "%s(): bad options-argument type", caller);
+	}
+	return opts;
+}
+
+
+/***
+ *
+ * @function Spring.AddUnitBuildSquare
+ * @number unitDefID
+ * @number x
+ * @number y
+ * @number z
+ * @number facing
+ * @tparam[opt] buildSquareOptions options
+ * @treturn nil
+ * 
+ * x and z are assumed to be valid building positions
+ * y is assumed to be Spring.GroundHeight(x, z)
+ * Unit build squares are cached using (unitDefID, x, z, facing) key
+ * Passing a different y will force to compute the squares again
+ * 
+ */
+int LuaUnsyncedCtrl::AddUnitBuildSquare(lua_State* L)
+{
+	BuildInfo buildInfo = ParseBuildInfo(L, __func__, 1);
+	if (buildInfo.def == nullptr) return 0;
+
+	LuaBuildSquareOptions opts = ParseBuildSquareOptions(L, __func__, 6);
+
+	unitDrawer->AddLuaBuildSquare(buildInfo, opts);
+	return 0;
+}
+
+
+/***
+ *
+ * @function Spring.RemoveUnitBuildSquare
+ * @number unitDefID
+ * @number x
+ * @number y
+ * @number z
+ * @number facing
+ * @treturn nil
+ * 
+ * Unit build squares are cached using (unitDefID, x, z, facing) key
+ * y is ignored when removing unit build squares
+ * 
+ */
+int LuaUnsyncedCtrl::RemoveUnitBuildSquare(lua_State* L)
+{
+	BuildInfo buildInfo = ParseBuildInfo(L, __func__, 1);
+	if (buildInfo.def == nullptr) return 0;
+
+	unitDrawer->RemoveLuaBuildSquare(buildInfo);
 	return 0;
 }
 
