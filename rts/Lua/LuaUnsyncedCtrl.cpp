@@ -4209,8 +4209,8 @@ int LuaUnsyncedCtrl::GarbageCollectCtrl(lua_State* L) {
 
 
 /*** @function Spring.SetAutoShowMetal
- * @bool autoShow
- * @treturn nil
+ * @param autoShow boolean
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetAutoShowMetal(lua_State* L)
 {
