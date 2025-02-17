@@ -362,6 +362,7 @@ void CBeamLaser::FireInternal(float3 curDir)
 
 			newDir = curDir - prjDir;
 			tryAgain = true;
+			hitShield = nullptr;
 		} else {
 			tryAgain = false;
 		}
@@ -408,8 +409,7 @@ void CBeamLaser::FireInternal(float3 curDir)
 			.damages              = da,
 			.weaponDef            = weaponDef,
 			.owner                = owner,
-			.hitUnit              = hitUnit,
-			.hitFeature           = hitFeature,
+			.hitObject            = ExplosionHitObject(hitUnit, hitFeature, hitShield),
 			.craterAreaOfEffect   = damages->craterAreaOfEffect,
 			.damageAreaOfEffect   = damages->damageAreaOfEffect,
 			.edgeEffectiveness    = damages->edgeEffectiveness,

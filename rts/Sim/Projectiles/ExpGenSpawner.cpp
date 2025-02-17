@@ -49,7 +49,16 @@ void CExpGenSpawner::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if ((deleteMe |= ((delay--) <= 0)))
-		explosionGenerator->Explosion(pos, dir,  damage, 0.0f, 0.0f,  owner(), nullptr, true);
+		explosionGenerator->Explosion(
+			pos,
+			dir,
+			damage,
+			0.0f,
+			0.0f,
+			owner(),
+			ExplosionHitObject(),
+			true
+		);
 }
 
 
