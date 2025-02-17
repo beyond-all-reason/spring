@@ -672,6 +672,9 @@ void CUnit::Update()
 		}
 
 		return;
+	} else {
+		// Not while being built or currently stunned.
+		commandAI->Update();
 	}
 
 	restTime += 1;
