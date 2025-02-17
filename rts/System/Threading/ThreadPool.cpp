@@ -14,7 +14,6 @@
 	#include "System/Config/ConfigHandler.h"
 #endif
 #include "System/Log/ILog.h"
-#include "System/Platform/CpuID.h"
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 
@@ -112,7 +111,7 @@ static int GetDefaultNumWorkers() {
 	const int cfgNumWorkers = GetConfigNumWorkers();
 
 	if (cfgNumWorkers < 0) {
-		return Threading::GetPhysicalCpuCores();
+		return Threading::GetPerformanceCpuCores();
 	}
 
 	if (cfgNumWorkers > maxNumThreads) {
@@ -586,7 +585,10 @@ void SetMaximumThreadCount()
 
 void SetDefaultThreadCount()
 {
-	std::uint32_t systemCores  = springproc::CPUID::GetInstance().GetAvailableProceesorAffinityMask();
+	#if !defined(THREADPOOL)
+	return;
+	#endif
+	std::uint32_t systemCores = Threading::GetSystemAffinityMask();
 	std::uint32_t mainAffinity = systemCores;
 
 	#ifndef UNIT_TEST
@@ -619,7 +621,7 @@ void SetDefaultThreadCount()
 		};
 
 		const std::uint32_t poolCoreAffinity = parallel_reduce(AffinityFunc, ReduceFunc);
-		const std::uint32_t mainCoreAffinity = Threading::HasHyperThreading() ? ~poolCoreAffinity : ~0;
+		const std::uint32_t mainCoreAffinity = ~poolCoreAffinity & systemCores;
 
 		if (mainAffinity == 0)
 			mainAffinity = systemCores;

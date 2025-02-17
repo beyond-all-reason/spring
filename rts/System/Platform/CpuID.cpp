@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "CpuID.h"
-#include "lib/libcpuid/libcpuid/libcpuid.h"
 #include "System/MainDefines.h"
 #include "System/Platform/Threading.h"
 #include "System/Log/ILog.h"
@@ -14,6 +13,7 @@
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedSet.hpp"
 
+#include <bitset>
 #include <cassert>
 #include <tuple>
 
@@ -88,109 +88,24 @@ namespace springproc {
 	}
 
 	CPUID::CPUID()
-		: shiftCore(0)
-		, shiftPackage(0)
-
-		, maskVirtual(0)
-		, maskCore(0)
-		, maskPackage(0)
-
-		, hasLeaf11(false)
 	{
 		uint32_t regs[REG_CNT] = {0, 0, 0, 0};
-
-		SetDefault();
-
-		// check for CPUID presence
-		if (!cpuid_present()) {
-			LOG_L(L_WARNING, "[CpuId] failed cpuid_present check");
-			return;
-		}
 
 		EnumerateCores();
 	}
 
 	void CPUID::EnumerateCores() {
-		const auto oldAffinity = Threading::GetAffinity();
+		processorMasks = cpu_topology::GetProcessorMasks();
 
-		LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
+		const uint32_t logicalCountMask  = (processorMasks.efficiencyCoreMask | processorMasks.performanceCoreMask);
+		const uint32_t perfCoreCountMask = processorMasks.performanceCoreMask & ~processorMasks.hyperThreadHighMask;
+		const uint32_t coreCountMask     = logicalCountMask & ~processorMasks.hyperThreadHighMask;
+	
+		numLogicalCores     = std::popcount(logicalCountMask);
+		numPhysicalCores    = std::popcount(coreCountMask);
+		numPerformanceCores = std::popcount(perfCoreCountMask);
 
-		availableProceesorAffinityMask = 0;
-		numLogicalCores = 0;
-		numPhysicalCores = 0;
-
-		auto cpuID = spring::ScopedResource(
-			[]() {
-				cpu_raw_data_array_t raw_array;
-				system_id_t system;
-
-				bool badResult = false;
-				if (cpuid_get_all_raw_data(&raw_array) < 0) //necessary to call as it calls raw_array constructor
-					badResult = true;
-
-				if (cpu_identify_all(&raw_array, &system) < 0) //necessary to call as it calls system constructor
-					badResult = true;
-
-				return std::make_tuple(raw_array, system, badResult);
-			}(),
-			[](auto&& item) {
-				cpuid_free_raw_data_array(&std::get<0>(item));
-				cpuid_free_system_id(&std::get<1>(item));
-			}
-		);
-
-		auto& [raw_array, system, badResult] = cpuID.Get();
-
-		Threading::SetAffinity(oldAffinity);
-		LOG("%s: thread affinity %x ...", __func__, Threading::GetAffinity());
-		if (badResult) {
-			LOG_L(L_WARNING, "[CpuId] error: %s", cpuid_error());
-			return;
-		}
-
-		for (int group = 0; group < system.num_cpu_types; ++group) {
-			cpu_id_t cpu_id = system.cpu_types[group];
-			switch(cpu_id.purpose) {
-			case PURPOSE_GENERAL:
-			case PURPOSE_PERFORMANCE:
-				availableProceesorAffinityMask |= *(uint64_t*)&cpu_id.affinity_mask;
-				numLogicalCores += cpu_id.num_logical_cpus;
-				numPhysicalCores += cpu_id.num_cores;
-				LOG("[CpuId] found %d cores and %d logical cpus (mask: 0x%x) of type %s"
-						, cpu_id.num_cores
-						, cpu_id.num_logical_cpus
-						, *(int*)&cpu_id.affinity_mask
-						, cpu_purpose_str(cpu_id.purpose));
-				LOG("[CpuId] setting logical cpu affinity mask to 0x%x", (int)availableProceesorAffinityMask);
-			// ignore case PURPOSE_EFFICIENCY:
-			}
-		}
-	}
-
-	void CPUID::SetDefault()
-	{
-		numLogicalCores = spring::thread::hardware_concurrency();
-		numPhysicalCores = numLogicalCores >> 1; //In 2022 HyperThreading is likely more common rather than not
-		availableProceesorAffinityMask = 1;
-		totalNumPackages = 1;
-
-		// affinity mask is a uint64_t, but spring uses uint32_t
-		assert(numLogicalCores <= MAX_PROCESSORS);
-
-		static_assert(sizeof(affinityMaskOfCores   ) == (MAX_PROCESSORS * sizeof(affinityMaskOfCores   [0])), "");
-		static_assert(sizeof(affinityMaskOfPackages) == (MAX_PROCESSORS * sizeof(affinityMaskOfPackages[0])), "");
-
-		memset(affinityMaskOfCores   , 0, sizeof(affinityMaskOfCores   ));
-		memset(affinityMaskOfPackages, 0, sizeof(affinityMaskOfPackages));
-		memset(processorApicIds      , 0, sizeof(processorApicIds      ));
-
-		for (int i = 0; i<numLogicalCores; ++i)
-			availableProceesorAffinityMask |= 1 << i;
-
-		// failed to determine CPU anatomy, just set affinity mask to (-1)
-		for (int i = 0; i < numLogicalCores; i++) {
-			affinityMaskOfCores[i] = affinityMaskOfPackages[i] = -1;
-		}
+		smtDetected = !!( processorMasks.hyperThreadLowMask | processorMasks.hyperThreadHighMask );
 	}
 
 }

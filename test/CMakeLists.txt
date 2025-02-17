@@ -51,7 +51,6 @@ set(test_Log_sources
 	)
 
 set(test_common_libraries
-	cpuid
 	Tracy::TracyClient
 )
 
@@ -338,11 +337,16 @@ endif()
 			"${ENGINE_SOURCE_DIR}/System/Threading/ThreadPool.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Misc/SpringTime.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Platform/CpuID.cpp"
+			"${ENGINE_SOURCE_DIR}/System/Platform/CpuTopologyCommon.cpp"
 			"${ENGINE_SOURCE_DIR}/System/Platform/Threading.cpp"
 			${sources_engine_System_Threading}
 			${test_Log_sources}
 		)
-
+	if (WIN32)
+		list(APPEND test_src "${ENGINE_SOURCE_DIR}/System/Platform/Win/CpuTopology.cpp")
+	else (WIN32)
+		list(APPEND test_src "${ENGINE_SOURCE_DIR}/System/Platform/Linux/CpuTopology.cpp")
+	endif (WIN32)
 	set(test_libs
 			${WINMM_LIBRARY}
 		)
