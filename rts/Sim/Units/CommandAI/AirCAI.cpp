@@ -252,7 +252,7 @@ bool CAirCAI::AirAutoGenerateTarget(AAirMoveType* myPlane) {
 		return false;
 
 	commandQue.push_front(Command(CMD_ATTACK, INTERNAL_ORDER, tgt->id));
-	inCommand = false;
+	inCommand = CMD_STOP;
 	return true;
 }
 
@@ -290,7 +290,7 @@ void CAirCAI::ExecuteFight(Command& c)
 
 	if (tempOrder) {
 		tempOrder = false;
-		inCommand = true;
+		inCommand = CMD_FIGHT;
 	}
 
 	if (c.GetNumParams() < 3) {
@@ -299,7 +299,7 @@ void CAirCAI::ExecuteFight(Command& c)
 	}
 
 	if (c.GetNumParams() >= 6) {
-		if (!inCommand)
+		if (inCommand == CMD_STOP)
 			commandPos1 = c.GetPos(3);
 	} else {
 		// HACK to make sure the line (commandPos1,commandPos2) is NOT
@@ -315,8 +315,8 @@ void CAirCAI::ExecuteFight(Command& c)
 
 	float3 goalPos = c.GetPos(0);
 
-	if (!inCommand) {
-		inCommand = true;
+	if (inCommand == CMD_STOP) {
+		inCommand = CMD_FIGHT;
 		commandPos2 = goalPos;
 	}
 	if (c.GetNumParams() >= 6)
@@ -345,7 +345,7 @@ void CAirCAI::ExecuteFight(Command& c)
 			commandQue.push_front(Command(CMD_ATTACK, c.GetOpts(), enemy->id));
 
 			tempOrder = true;
-			inCommand = false;
+			inCommand = CMD_STOP;
 
 			if (lastPC1 != gs->frameNum) { // avoid infinite loops
 				lastPC1 = gs->frameNum;
@@ -366,7 +366,7 @@ void CAirCAI::ExecuteFight(Command& c)
 				commandQue.push_front(Command(CMD_ATTACK, c.GetOpts(), enemy->id));
 
 				tempOrder = true;
-				inCommand = false;
+				inCommand = CMD_STOP;
 
 				// avoid infinite loops (?)
 				if (lastPC2 != gs->frameNum) {
@@ -396,7 +396,7 @@ void CAirCAI::ExecuteAttack(Command& c)
 		}
 	}
 
-	if (inCommand) {
+	if (inCommand == CMD_ATTACK) {
 		if (targetDied || (c.GetNumParams() == 1 && UpdateTargetLostTimer(int(c.GetParam(0))) == 0)) {
 			StopMoveAndFinishCommand();
 			return;
@@ -436,12 +436,12 @@ void CAirCAI::ExecuteAttack(Command& c)
 			SetOrderTarget(targetUnit);
 			owner->AttackUnit(targetUnit, !c.IsInternalOrder(), false);
 
-			inCommand = true;
+			inCommand = CMD_ATTACK;
 		} else {
 			SetGoal(c.GetPos(0), owner->pos, cancelDistance);
 			owner->AttackGround(c.GetPos(0), !c.IsInternalOrder(), false);
 
-			inCommand = true;
+			inCommand = CMD_ATTACK;
 		}
 	}
 }
@@ -456,15 +456,15 @@ void CAirCAI::ExecuteAreaAttack(Command& c)
 
 	if (targetDied) {
 		targetDied = false;
-		inCommand = false;
+		inCommand = CMD_STOP;
 	}
 
 	const float3& pos = c.GetPos(0);
 	const float radius = c.GetParam(3);
 
-	if (inCommand) {
+	if (inCommand == CMD_ATTACK) {
 		if (myPlane->aircraftState == AAirMoveType::AIRCRAFT_LANDED)
-			inCommand = false;
+			inCommand = CMD_STOP;
 
 		if (orderTarget && orderTarget->pos.SqDistance2D(pos) > Square(radius)) {
 			// target wandered out of the attack-area
@@ -473,7 +473,7 @@ void CAirCAI::ExecuteAreaAttack(Command& c)
 		}
 	} else {
 		if (myPlane->aircraftState != AAirMoveType::AIRCRAFT_LANDED) {
-			inCommand = true;
+			inCommand = CMD_ATTACK;
 
 			SelectNewAreaAttackTargetOrPos(c);
 		}
