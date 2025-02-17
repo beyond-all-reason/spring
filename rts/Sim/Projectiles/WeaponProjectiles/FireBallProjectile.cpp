@@ -59,7 +59,7 @@ void CFireBallProjectile::Draw()
 	unsigned char col[4] = {255, 150, 100, 1};
 
 	const float3 interPos = mix(pos, drawPos, checkCol);
-	const float size = radius * 1.3f;
+	const float size = drawRadius;
 
 	const unsigned int numFire = std::min(10u, numSparks);
 	const unsigned int maxCol = mix(numFire, 10u, checkCol);
