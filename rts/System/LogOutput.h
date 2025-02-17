@@ -53,7 +53,7 @@ public:
 
 
 	/**
-	 * Log()s system informations (CPU, 32/64bit, gcc/boost version, ...)
+	 * Log()s system information (CPU, 32/64bit, gcc/boost version, ...)
 	 */
 	static void LogSectionInfo();
 	static void LogSystemInfo();

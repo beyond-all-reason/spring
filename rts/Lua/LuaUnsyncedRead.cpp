@@ -2859,7 +2859,7 @@ int LuaUnsyncedRead::WorldToScreenCoords(lua_State* L)
  *
  * Intersection coordinates are returned in t[4],t[5],t[6] when the ray goes offmap and includeSky is true), or when no unit or feature is hit (or onlyCoords is true).
  *
- * This will only work for units & objects with the default collission sphere. Per Piece collission and custom collission objects are not supported.
+ * This will only work for units & objects with the default collision sphere. Per Piece collision and custom collision objects are not supported.
  *
  * The unit must be selectable, to appear to a screen trace ray.
  *

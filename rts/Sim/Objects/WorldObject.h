@@ -82,7 +82,7 @@ public:
 	float3 pos;                 ///< position of the very bottom of the object
 	float4 speed;               ///< current velocity vector (elmos/frame), .w = |velocity|
 
-	float buildeeRadius = 0.f;	///< used for build, repair, reclaim, capture, ressurect
+	float buildeeRadius = 0.f;	///< used for build, repair, reclaim, capture, resurrect
 	float radius = 0.0f;        ///< used for collisions
 	float height = 0.0f;        ///< The height of this object
 	float sqRadius = 0.0f;

@@ -3556,7 +3556,7 @@ int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)
 /******************************************************************************
  * UI
  * @section ui
- * Very important! (allows synced inter-lua-enviroment communications)
+ * Very important! (allows synced inter-lua-environment communications)
 ******************************************************************************/
 
 

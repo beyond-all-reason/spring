@@ -64,7 +64,7 @@ regardless of distance etc. Defaults to 0, which means units will not try to raw
 value to make them avoid pathable but very slow terrain (for example if you set it to 0.2 then they will not raw-move across terrain where they move at 20% speed or less, and will use
 normal pathing instead - which may still end up taking them through that path).
 * added modrule, `system.qtMaxNodesSearched`, can be used to limit the absolute number of nodes searched.
-* added modrule, `system.qtMaxNodesSearchedRelativeToMapOpenNodes`, can be used to limit the number of nodes searche relative to the number of pathable quads on the map.
+* added modrule, `system.qtMaxNodesSearchedRelativeToMapOpenNodes`, can be used to limit the number of nodes searched relative to the number of pathable quads on the map.
 The final limit will be the larger between the relative and the absolute limits.
 * added modrule, `system.pfHcostMult`, a float value between 0 and 2, defaults to 0.2. Controls how aggressively the pathing search prioritizes nodes going in the direction of the goal.
 Higher values mean pathing is cheaper, but can start producing degenerate paths where the unit goes straight at the goal and then has to hug a wall.

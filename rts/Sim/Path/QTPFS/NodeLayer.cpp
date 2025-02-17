@@ -330,7 +330,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 	const int zmin = areaToSearch.z1, zmax = areaToSearch.z2;
 
 	// The xmin (0), xmax (1), zmin (2), zmax (3) can be accessed by (index.)
-	// The these are the indicies needed to make the 4 corners of a quad.
+	// The these are the indices needed to make the 4 corners of a quad.
 	constexpr int2 cornerPoints[] =
 		{ {0, 2}, {1, 2}
 		, {0, 3}, {1, 3}

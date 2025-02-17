@@ -120,7 +120,7 @@ bool CIconHandler::AddIcon(
 			ysize = DEFAULT_TEX_SIZE_Y;
 		}
 	} catch (const content_error& ex) {
-		// bail on non-existant file
+		// bail on non-existent file
 		LOG_L(L_DEBUG, "[IconHandler::%s] exception \"%s\" adding icon \"%s\" with texture \"%s\"", __func__, ex.what(), iconName.c_str(), texName.c_str());
 		return false;
 	}

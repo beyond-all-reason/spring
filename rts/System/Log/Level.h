@@ -34,7 +34,7 @@
  * Minimal log level (compile-time).
  * This is the compile-time version of this setting;
  * there might be a more restrictive one at runtime.
- * Initialize to the default (may be overriden with -DLOG_LEVEL=X).
+ * Initialize to the default (may be overridden with -DLOG_LEVEL=X).
  */
 #ifndef _LOG_LEVEL_MIN
 	#ifdef DEBUG

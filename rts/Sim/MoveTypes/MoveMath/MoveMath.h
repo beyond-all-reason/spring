@@ -81,7 +81,7 @@ public:
 	}
 	static float GetPosSpeedMod(const MoveDef& moveDef, unsigned squareIndex);
 
-	// tells whether a position is blocked (inaccessable for a given object's MoveDef)
+	// tells whether a position is blocked (inaccessible for a given object's MoveDef)
 	static inline BlockType IsBlocked(const MoveDef& moveDef, const float3& pos, const CSolidObject* collider, int thread);
 	static inline BlockType IsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider, int thread);
 	static BlockType IsBlockedNoSpeedModCheck(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider, int thread);
@@ -97,7 +97,7 @@ public:
 	// check how this unit blocks its squares
 	static BlockType ObjectBlockType(const CSolidObject* collidee, const MoveTypes::CheckCollisionQuery* collider);
 
-	// checks if a single square is accessable for any object which uses the given MoveDef
+	// checks if a single square is accessible for any object which uses the given MoveDef
 	static BlockType SquareIsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, MoveTypes::CheckCollisionQuery* collider);
 	static BlockType SquareIsBlocked(const MoveDef& moveDef, const float3& pos, MoveTypes::CheckCollisionQuery* collider) {
 		return (SquareIsBlocked(moveDef, pos.x / SQUARE_SIZE, pos.z / SQUARE_SIZE, collider));
@@ -122,7 +122,7 @@ public:
 };
 
 
-/* Check if a given square-position is accessable by the MoveDef footprint. */
+/* Check if a given square-position is accessible by the MoveDef footprint. */
 inline CMoveMath::BlockType CMoveMath::IsBlocked(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider, int thread)
 {
 	if (GetPosSpeedMod(moveDef, xSquare, zSquare) == 0.0f)

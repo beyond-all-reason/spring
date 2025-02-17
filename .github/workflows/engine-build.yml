@@ -1,7 +1,7 @@
 # Engine CI workflow that compiles engine using build-docker-v2 scripts with
 # https://namespace.so/ GitHub Actions Runners.
 #
-# The worklow has multiple layers of caching for ccache compilation objects:
+# The workflow has multiple layers of caching for ccache compilation objects:
 #
 # - Local cache on runner's machine SSD disk, very efficient but prone to
 #   cache misses when workflow can't be scheduled next to the storage

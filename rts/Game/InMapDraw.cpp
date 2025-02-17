@@ -33,8 +33,8 @@ CONFIG(bool, MiniMapCanDraw).defaultValue(false).description("Enables drawing wi
 CInMapDraw* inMapDrawer = nullptr;
 
 /**
- * This simply makes a noice appear when a map point is placed.
- * We will only receive an even (and thus make a sound) when we are allwoed to
+ * This simply makes a notice appear when a map point is placed.
+ * We will only receive an even (and thus make a sound) when we are allowed to
  * know about it.
  */
 class CNotificationPeeper : public CEventClient
@@ -54,7 +54,7 @@ public:
 			const CPlayer* sender = playerHandler.Player(playerID);
 
 			// if we happen to be in drawAll mode, notify us now
-			// even if this message is not intented for our ears
+			// even if this message is not intended for our ears
 			LOG("%s added point: %s", sender->name.c_str(), label->c_str());
 			eventHandler.LastMessagePosition(*pos0);
 			Channels::UserInterface->PlaySample(blipSoundID, *pos0);

@@ -64,7 +64,7 @@ Additionally:
 * add `Platform.glHave{AMD,NVidia,Intel,GLSL,GL4}` bools
 * remove `Platform.glSupport24bitDepthBuffer` and add `Platform.glSupportDepthBufferBitDepth` instead
 * add the following constants to `GL`: `LINE_STRIP_ADJACENCY`, `LINES_ADJACENCY`, `TRIANGLE_STRIP_ADJACENCY`, `TRIANGLES_ADJACENCY`, `PATCHES`
-* add the following constants to `GL`: `[UNSINGED_]BYTE`, `[UNSINGED_]SHORT`, `[UNSINGED_]INT[_VEC4]`, `FLOAT[_VEC4]`, `FLOAT_MAT4`
+* add the following constants to `GL`: `[UNSIGNED_]BYTE`, `[UNSIGNED_]SHORT`, `[UNSIGNED_]INT[_VEC4]`, `FLOAT[_VEC4]`, `FLOAT_MAT4`
 * add the following constants to `GL`: `ELEMENT_ARRAY_BUFFER`, `ARRAY_BUFFER`, `UNIFORM_BUFFER`, `SHADER_STORAGE_BUFFER`
 * add the following constants to `GL`: `READ_ONLY`, `WRITE_ONLY`, `READ_WRITE`
 * add a ton of image type specifiers (`RGBA32` etc) to `GL`
@@ -93,7 +93,7 @@ Additionally:
 * weapon defs: add bool `castShadow`, for the projectile itself
 
 ### Camera tweaks
-* add integer springsetting `SmoothTimeOffset`. This attempts to smooth out the TimeOffset parameter that is used to calculated the tweened draw frames. Default 0, old behaviour. Recommended value of 2, this attempts to keep the actualy timeoffset within 90% of the true time. Best with vsync on.
+* add integer springsetting `SmoothTimeOffset`. This attempts to smooth out the TimeOffset parameter that is used to calculated the tweened draw frames. Default 0, old behaviour. Recommended value of 2, this attempts to keep the actual timeoffset within 90% of the true time. Best with vsync on.
 * add boolean springsetting `CamFrameTimeCorrection`. Default false is the current behaviour, use true to get better interpolation during high load.
 
 ### Builders

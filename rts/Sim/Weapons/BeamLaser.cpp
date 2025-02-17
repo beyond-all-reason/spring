@@ -306,7 +306,7 @@ void CBeamLaser::FireInternal(float3 curDir)
 			maxLength = math::sqrt(maxLengthModSq);
 		}
 
-		// adjust range if targetting edge of hitsphere
+		// adjust range if targeting edge of hitsphere
 		if (currentTarget.type == Target_Unit && weaponDef->targetBorder != 0.0f) {
 			maxLength += (currentTarget.unit->radius * weaponDef->targetBorder);
 		}

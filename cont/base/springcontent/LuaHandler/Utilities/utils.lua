@@ -73,7 +73,7 @@ function require(filename, _level)
 	end
 
 
-	--// get caller's enviroment
+	--// get caller's environment
 	_level = _level or 2
 	local success, _G
 	for i=_level,_level+10 do
@@ -87,7 +87,7 @@ function require(filename, _level)
 		return
 	end
 
-	--// copy to caller's enviroment
+	--// copy to caller's environment
 	--FIXME use recursive copy?
 	for i,v in pairs(utilEnv) do
 		_G[i] = v

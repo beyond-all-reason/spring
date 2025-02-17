@@ -20,7 +20,7 @@ class CSkirmishAILibrary;
  * Manages AI Interfaces and Skirmish AIs; their info and current status.
  * It loads info about AI Interfaces and Skirmish AIs from info files
  * in the data directories, from InterfaceInfo.lua and AIInfo.lua files.
- * In addition to that, it keeps track fo which Interfaces and AIs
+ * In addition to that, it keeps track of which Interfaces and AIs
  * are currently loaded, and unloads them when they are not needed anymore.
  */
 class AILibraryManager {
@@ -67,7 +67,7 @@ public:
 
 	/**
 	 * Returns a set of files which contain duplicate Skirmish AI infos.
-	 * This can be used for issueing warnings.
+	 * This can be used for issuing warnings.
 	 */
 	const T_dupSkirm& GetDuplicateSkirmishAIInfos() const { return duplicateSkirmishAIInfos; }
 

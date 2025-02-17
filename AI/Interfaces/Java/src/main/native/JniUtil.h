@@ -48,7 +48,7 @@ jobject jniUtil_makeGlobalRef(JNIEnv* env, jobject localObject, const char* objD
  * Deletes a global reference to an object.
  * As jclass inherits from jobject, this can be used for jclass too.
  *
- * @return  true on success, false if an error ocurred
+ * @return  true on success, false if an error occurred
  */
 bool jniUtil_deleteGlobalRef(JNIEnv* env, jobject globalObject, const char* objDesc);
 

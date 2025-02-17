@@ -55,7 +55,7 @@ TEST_CASE("TryBindSocket")
 		FIXME: for some reason this test works on windows (binds to ipv4 0.0.0.224) and fails on linux/osx
 
 		:8 is reserved. :96 was IPv4 compatible IPv6 addresses, so ::2 would be 0.0.0.2.
-		No implementation is required to support this sheme sheme any longer. That's why ::2 doesn't work
+		No implementation is required to support this scheme any longer. That's why ::2 doesn't work
 		::ffff:x:y/96 is new IPv4-Mapped IPv6 Address
 		http://tools.ietf.org/html/rfc4291 sections 2.5.5.1 and 2.5.5.2
 	*/
@@ -78,7 +78,7 @@ TEST_CASE("TryBindSocket")
 	// special ports (reserved for core services)
 /*
 	t.TestPort(0, false); //port 0 binds to a random port
-	t.TestPort(1, false); // <1024 usally requires root permissions
+	t.TestPort(1, false); // <1024 usually requires root permissions
 	t.TestPort(128, false);
 	t.TestPort(1023, false);
 */

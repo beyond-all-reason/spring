@@ -11,7 +11,7 @@
 
 namespace creg {
 
-	// IType implemention for std::list
+	// IType implementation for std::list
 	template<typename T>
 	struct ListType : public IType
 	{

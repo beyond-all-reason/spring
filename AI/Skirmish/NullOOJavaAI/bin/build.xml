@@ -63,7 +63,7 @@
 
 		<property file="bin/ant.${proj.dep.type}.properties"/>
 		<!--
-			The following values may be overriden in either
+			The following values may be overridden in either
 			"bin/ant.dependent.properties" or any other properties file
 			which may be specified to ant on the command line like this:
 			ant -propertyfile someFile.properties
@@ -129,7 +129,7 @@ wherever you got this AI from.
 
 		<property file="bin/ant.${proj.dep.type}.properties"/>
 		<!--
-			The following values may be overriden in either
+			The following values may be overridden in either
 			"bin/ant.independent.properties" or any other properties file
 			which may be specified to ant on the command line like this:
 			ant -propertyfile someFile.properties

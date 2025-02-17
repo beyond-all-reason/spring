@@ -8,7 +8,7 @@
 /**
  * @brief shared library loader base
  *
- * Base shared library loading class definitiion.
+ * Base shared library loading class definition.
  * This is the abstract shared library class used for
  * polymorphic loading. Platform-specifics should
  * derive from this.

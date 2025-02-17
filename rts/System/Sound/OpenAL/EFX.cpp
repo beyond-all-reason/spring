@@ -128,7 +128,7 @@ void CEFX::Init(ALCdevice* device) {
 	}
 
 
-	// create our global sfx enviroment
+	// create our global sfx environment
 	alGenAuxiliaryEffectSlots(1, &sfxSlot);
 
 	alGenEffects(1, &sfxReverb);

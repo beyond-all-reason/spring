@@ -43,7 +43,7 @@
 
 // calling convention declaration that will work across
 // different and compilers
-// for all 64bit platforms, we do not specify a calling convetion,
+// for all 64bit platforms, we do not specify a calling convention,
 // as they all support only a single one anyway
 // for windows 32bit, we use stdcall
 // for non-windows 32bit, we use cdecl

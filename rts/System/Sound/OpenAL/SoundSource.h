@@ -17,7 +17,7 @@ class SoundItem;
 class MusicStream;
 
 /**
- * @brief One soundsource wich can play some sounds
+ * @brief One soundsource which can play some sounds
  *
  * Construct some of them, and they can play SoundItems positioned anywhere in 3D-space for you.
  */

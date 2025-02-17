@@ -48,7 +48,7 @@ local Sounds = {
 			--- Clamped between 0.0 and 1.0. The result is in the range [(pitch * (1 + pitchMod)), (pitch * (1 - pitchMod))].
 			pitchmod = 0.0,
 
-			--- how unit / camera speed affects the sound, to exagerate it, use values > 1
+			--- how unit / camera speed affects the sound, to exaggerate it, use values > 1
 			--- dopplerscale = 0 completely disables the effect
 			dopplerscale = 1,
 
@@ -62,14 +62,14 @@ local Sounds = {
 			--- cutoff distance
 			maxdist = 20000,
 
-			--- how fast it becomes more quiet in the distance (0 means aleays the same loudness regardless of dist)
+			--- how fast it becomes more quiet in the distance (0 means always the same loudness regardless of dist)
 			rolloff = 1,
 
 			--- non-3d sounds do always came out of the front-speakers (or the center one)
 			--- 3d sounds are, well, in 3d
 			in3d = true,
 
-			--- you can loop it for X miliseconds
+			--- you can loop it for X milliseconds
 			looptime = 0,
 		},
 

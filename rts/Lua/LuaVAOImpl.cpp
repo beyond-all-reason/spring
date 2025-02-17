@@ -90,7 +90,7 @@ void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std
 }
 
 
-/*** Attachs a VBO to be used as a vertex buffer
+/*** Attaches a VBO to be used as a vertex buffer
  *
  * @function VAO:AttachVertexBuffer
  * @param vbo VBO
@@ -102,7 +102,7 @@ void LuaVAOImpl::AttachVertexBuffer(const LuaVBOImplSP& luaVBO)
 }
 
 
-/*** Attachs a VBO to be used as an instance buffer
+/*** Attaches a VBO to be used as an instance buffer
  *
  * @function VAO:AttachInstanceBuffer
  * @param vbo VBO
@@ -114,7 +114,7 @@ void LuaVAOImpl::AttachInstanceBuffer(const LuaVBOImplSP& luaVBO)
 }
 
 
-/*** Attachs a VBO to be used as an index buffer
+/*** Attaches a VBO to be used as an index buffer
  *
  * @function VAO:AttachIndexBuffer
  * @param vbo VBO

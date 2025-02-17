@@ -9,7 +9,7 @@ namespace GL
 {
 
 // A texture bind control object, that automatically unbinds texture and restores active tex unit upon destruction
-// When constucted without exact slot, will also restore the previously bound texture to the contemporary slot
+// When constructed without exact slot, will also restore the previously bound texture to the contemporary slot
 class TexBind {
 public:
 	inline TexBind(unsigned slot, GLenum target, GLuint textureID)

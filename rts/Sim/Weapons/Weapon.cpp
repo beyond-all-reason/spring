@@ -361,7 +361,7 @@ bool CWeapon::CheckAimingAngle() const
 	const float3 worldMainDir = owner->GetObjectSpaceVec(mainDir);
 
 	// weapon finished a previously started AimWeapon thread and wants to
-	// fire, but target is no longer within contraints --> wait for re-aim
+	// fire, but target is no longer within constraints --> wait for re-aim
 	return (CheckTargetAngleConstraint(worldTargetDir, worldMainDir));
 }
 

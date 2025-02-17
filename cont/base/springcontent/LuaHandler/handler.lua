@@ -19,7 +19,7 @@ require "keysym.lua"
 require "actions.lua"
 
 
---// make a copy of the engine exported enviroment (we use this later for the addons!)
+--// make a copy of the engine exported environment (we use this later for the addons!)
 local EG = {}
 for i,v in pairs(_G) do
 	EG[i] = v
@@ -116,11 +116,11 @@ handler = {
 
 handler.AddonName = handler.addonName:gsub("^%l", string.upper) --// widget -> Widget
 
---// Backwardcompability
+--// Backwardcompatibility
 handler[handler.addonName .. "s"] = handler.addons  --// handler.widgets == handler.addons
 
 
---// backward compability, so you can still call handler:UnitCreated() etc.
+--// backward compatibility, so you can still call handler:UnitCreated() etc.
 setmetatable(handler, {
 	__index = function(self, key)
 		if (key == "knownWidgets") or (key == "knownAddons") then
@@ -172,7 +172,7 @@ local engineCallIns = Script.GetCallInList() --// important!
 local knownCallIns = handler.knownCallIns
 for ciName,ciParams in pairs(engineCallIns) do
 	if (not ciParams.unsynced) and ciParams.controller and (not Script.GetSynced()) then
-		--// skip synced only events when we are in an unsynced enviroment
+		--// skip synced only events when we are in an unsynced environment
 	else
 		knownCallIns[ciName] = ciParams
 	end
@@ -608,7 +608,7 @@ function handler:Load(filepath, _VFSMODE)
 		__metatable = "protected"
 	}
 	addon._info = setmetatable({}, mt)
-	addon.whInfo = addon._info --//backward compability
+	addon.whInfo = addon._info --//backward compatibility
 
 	--// Verbose
 	local name = addon._info.name
