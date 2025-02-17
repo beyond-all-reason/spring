@@ -356,6 +356,23 @@ void CMobileCAI::SlowUpdate()
 	Execute();
 }
 
+void CMobileCAI::Update()
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (gs->paused) // Commands issued may invoke Update when paused
+		return;
+
+	if (commandQue.empty())
+		return;
+	
+	if (owner->unitDef->IsTransportUnit()) {
+		Command& c = commandQue.front();
+		switch (c.GetID()) {
+			case CMD_LOAD_UNITS: { if (c.GetNumParams() == 4) ExecuteLoadUnits(c);   return; }
+		}
+	}
+}
+
 /**
 * @brief Executes the first command in the commandQue
 */
