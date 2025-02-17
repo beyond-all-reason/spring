@@ -101,9 +101,9 @@ namespace springproc {
 		const uint32_t perfCoreCountMask = processorMasks.performanceCoreMask & ~processorMasks.hyperThreadHighMask;
 		const uint32_t coreCountMask     = logicalCountMask & ~processorMasks.hyperThreadHighMask;
 	
-		numLogicalCores     = std::bitset<32>(logicalCountMask).count();
-		numPhysicalCores    = std::bitset<32>(coreCountMask).count();
-		numPerformanceCores = std::bitset<32>(perfCoreCountMask).count();
+		numLogicalCores     = std::popcount(logicalCountMask);
+		numPhysicalCores    = std::popcount(coreCountMask);
+		numPerformanceCores = std::popcount(perfCoreCountMask);
 
 		smtDetected = !!( processorMasks.hyperThreadLowMask | processorMasks.hyperThreadHighMask );
 	}
