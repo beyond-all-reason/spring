@@ -18,6 +18,7 @@ CR_REG_METADATA(CWorldObject, (
 	CR_MEMBER(drawRadius),
 	CR_MEMBER(drawFlag),
 	CR_MEMBER(previousDrawFlag),
+	CR_MEMBER(preFrameTra),
 	// the projectile system needs to know that 'pos' and 'speed' are accessible by script
 	CR_MEMBER_BEGINFLAG(CM_Config),
 		CR_MEMBER(pos),

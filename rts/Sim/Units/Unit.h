@@ -76,7 +76,7 @@ public:
 	static void InitStatic();
 
 	void SanityCheck() const;
-	void PreUpdate() { preFramePos = pos; }
+	void PreUpdate() { preFrameTra = Transform{ CQuaternion::MakeFrom(GetTransformMatrix(true)), pos }; }
 
 	virtual void PreInit(const UnitLoadParams& params);
 	virtual void PostInit(const CUnit* builder);
@@ -153,8 +153,6 @@ public:
 
 	float3 GetLuaErrorVector(int allyteam, bool fullRead) const { return (fullRead? ZeroVector: GetErrorVector(allyteam)); }
 	float3 GetLuaErrorPos(int allyteam, bool fullRead) const { return (midPos + GetLuaErrorVector(allyteam, fullRead)); }
-
-	float3 GetDrawDeltaPos(float dt) const { return ((pos - preFramePos) * dt); }
 
 	void UpdatePosErrorParams(bool updateError, bool updateDelta);
 
@@ -328,12 +326,6 @@ public:
 	std::vector<TransportedUnit> transportedUnits;
 	// incoming projectiles for which flares can cause retargeting
 	std::array<CMissileProjectile*, /*MAX_INCOMING_MISSILES*/ 8> incomingMissiles{{nullptr}};
-
-
-	// position at start of current simframe; updated by ForcedMove
-	// used as interpolation reference for drawpos since a unit can
-	// move along vectors other than its velocity
-	float3 preFramePos;
 
 	float3 lastMuzzleFlameDir = UpVector;
 	// units take less damage when attacked from this dir (encourage flanking fire)

@@ -108,6 +108,8 @@ public:
 
 	bool operator==(const CQuaternion& rhs) const { return  equals(rhs); } //aproximate
 	bool operator!=(const CQuaternion& rhs) const { return !equals(rhs); } //aproximate
+
+	void AssertNaNs() const;
 private:
 	float SqNorm() const;
 	static float InvSqrt(float f);

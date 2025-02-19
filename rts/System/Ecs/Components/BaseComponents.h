@@ -14,7 +14,7 @@ struct BasicClassComponentType {
 
 template<class T>
 struct BasicComponentType {
-    T value = 0;
+    T value = {};
 };
 
 template<>
