@@ -32,369 +32,348 @@
 
 ////////////////////////////////////////////////////////////////////
 
-template<typename T, typename Derived>
-void TypedStorageBufferUploader<T, Derived>::InitImpl(uint32_t bindingIdx_, uint32_t elemCount0_, uint32_t elemCountIncr_, uint8_t type, bool coherent, uint32_t numBuffers)
-{
-	if (!globalRendering->haveGL4)
-		return;
+namespace Impl {
+	template<
+		typename SSBO,
+		typename Uploader,
+		typename MemStorage
+	>
+	void UpdateCommon(Uploader& uploader, std::unique_ptr<SSBO>& ssbo, MemStorage& memStorage, const char* className, const char* funcName)
+	{
+		//resize
+		const uint32_t elemCount = uploader.GetElemsCount();
+		const uint32_t storageElemCount = memStorage.GetSize();
+		if (storageElemCount > elemCount) {
+			ssbo->UnbindBufferRange(uploader.GetBindingIdx());
 
-	bindingIdx = bindingIdx_;
-	elemCount0 = elemCount0_;
-	elemCountIncr = elemCountIncr_;
+			const uint32_t newElemCount = AlignUp(storageElemCount, uploader.GetElemCountIncr());
+			LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u", className, funcName, "up", newElemCount, elemCount, storageElemCount);
+			ssbo->Resize(newElemCount);
+			// ssbo->Resize() doesn't copy the data, force the update
+			memStorage.SetUpdateListUpdateAll();
+		}
 
-	assert(bindingIdx < -1u);
+		const auto& ul = memStorage.GetUpdateList();
+		if (!ul.NeedUpdate())
+			return;
 
-	IStreamBufferConcept::StreamBufferCreationParams p;
-	p.target = GL_SHADER_STORAGE_BUFFER;
-	p.numElems = elemCount0;
-	p.name = std::string(className);
-	p.type = static_cast<IStreamBufferConcept::Types>(type);
-	p.resizeAble = true;
-	p.coherent = coherent;
-	p.numBuffers = numBuffers;
-	p.optimizeForStreaming = true;
+		// may have been already unbound above, not a big deal
+		ssbo->UnbindBufferRange(uploader.GetBindingIdx());
 
-	ssbo = IStreamBuffer<T>::CreateInstance(p);
-	ssbo->BindBufferRange(bindingIdx);
-}
+		// get the data
+		const auto* clientPtr = memStorage.GetData().data();
 
-template<typename T, typename Derived>
-void TypedStorageBufferUploader<T, Derived>::KillImpl()
-{
-	if (!globalRendering->haveGL4)
-		return;
+		// iterate over contiguous regions of values that need update on the GPU
+		for (auto itPair = ul.GetNext(); itPair.has_value(); itPair = ul.GetNext(itPair)) {
+			auto [idxOffset, idxSize] = ul.GetOffsetAndSize(itPair.value());
 
-	ssbo->UnbindBufferRange(bindingIdx);
-	ssbo = nullptr;
-}
+			auto* mappedPtr = ssbo->Map(clientPtr, idxOffset, idxSize);
 
-template<typename T, typename Derived>
-inline uint32_t TypedStorageBufferUploader<T, Derived>::GetElemsCount() const
-{
-	return ssbo->GetByteSize() / sizeof(T);
-}
+			if (!ssbo->HasClientPtr())
+				memcpy(mappedPtr, clientPtr, storageElemCount * sizeof(decltype(*clientPtr)));
 
-template<typename T, typename Derived>
-std::size_t TypedStorageBufferUploader<T, Derived>::GetUnitDefElemOffset(int32_t unitDefID) const
-{
-	return GetDefElemOffsetImpl(unitDefHandler->GetUnitDefByID(unitDefID));
-}
+			ssbo->Unmap();
+		}
 
-template<typename T, typename Derived>
-std::size_t TypedStorageBufferUploader<T, Derived>::GetFeatureDefElemOffset(int32_t featureDefID) const
-{
-	return GetDefElemOffsetImpl(featureDefHandler->GetFeatureDefByID(featureDefID));
-}
+		ssbo->BindBufferRange(uploader.GetBindingIdx());
+		ssbo->SwapBuffer();
 
-template<typename T, typename Derived>
-std::size_t TypedStorageBufferUploader<T, Derived>::GetUnitElemOffset(int32_t unitID) const
-{
-	return GetElemOffsetImpl(unitHandler.GetUnit(unitID));
-}
+		memStorage.SetUpdateListReset();
+	}
 
-template<typename T, typename Derived>
-std::size_t TypedStorageBufferUploader<T, Derived>::GetFeatureElemOffset(int32_t featureID) const
-{
-	return GetElemOffsetImpl(featureHandler.GetFeature(featureID));
-}
+	template<typename DataType, typename SSBO>
+	void InitCommon(std::unique_ptr<SSBO>& ssbo, uint32_t bindingIdx, uint32_t elemCount0, uint32_t elemCountIncr, IStreamBufferConcept::Types type, bool coherent, uint32_t numBuffers, const char* className)
+	{
+		if (!globalRendering->haveGL4)
+			return;
 
-template<typename T, typename Derived>
-std::size_t TypedStorageBufferUploader<T, Derived>::GetProjectileElemOffset(int32_t syncedProjectileID) const
-{
-	return GetElemOffsetImpl(projectileHandler.GetProjectileBySyncedID(syncedProjectileID));
-}
+		assert(bindingIdx < -1u);
 
-void MatrixUploader::InitDerived()
-{
-	if (!globalRendering->haveGL4)
-		return;
+		IStreamBufferConcept::StreamBufferCreationParams p;
+		p.target = GL_SHADER_STORAGE_BUFFER;
+		p.numElems = elemCount0;
+		p.name = std::string(className);
+		p.type = type;
+		p.resizeAble = true;
+		p.coherent = coherent;
+		p.numBuffers = numBuffers;
+		p.optimizeForStreaming = true;
 
-	const auto sbType = globalRendering->supportPersistentMapping
-		? IStreamBufferConcept::Types::SB_PERSISTENTMAP
-		: IStreamBufferConcept::Types::SB_BUFFERSUBDATA;
+		ssbo = std::move(IStreamBuffer<DataType>::CreateInstance(p));
+		ssbo->BindBufferRange(bindingIdx);
+	}
 
-	InitImpl(MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, sbType, true, MatricesMemStorage::BUFFERING);
-	if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && !ssbo->IsValid()) {
-		// some potato driver overestimated its support for SB_PERSISTENTMAP
-		// Redo with good old SB_BUFFERSUBDATA
-		LOG_L(L_ERROR, "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but initial mapping of buffer failed. Falling back.", __func__);
-		KillImpl();
-		InitImpl(MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, MatricesMemStorage::BUFFERING);
+	template<typename SSBO>
+	void KillCommon(std::unique_ptr<SSBO>& ssbo, uint32_t bindingIdx)
+	{
+		if (!globalRendering->haveGL4)
+			return;
+
+		ssbo->UnbindBufferRange(bindingIdx);
+		ssbo = nullptr;
 	}
 }
 
-void MatrixUploader::KillDerived()
-{
-	if (!globalRendering->haveGL4)
-		return;
+////////////////////////////////////////////////////////////////////
 
-	KillImpl();
+TransformsUploader transformsUploader;
+ModelUniformsUploader modelUniformsUploader;
+
+////////////////////////////////////////////////////////////////////
+
+void TransformsUploader::Init()
+{
+	Impl::InitCommon<MyDataType>(
+		ssbo,
+		MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI,
+		IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, 1,
+		className
+	);
 }
 
-void MatrixUploader::UpdateDerived()
+void TransformsUploader::Kill()
+{
+	Impl::KillCommon(ssbo, MATRIX_SSBO_BINDING_IDX);
+}
+
+void TransformsUploader::Update()
 {
 	if (!globalRendering->haveGL4)
 		return;
 
-	SCOPED_TIMER("MatrixUploader::Update");
-	ssbo->UnbindBufferRange(bindingIdx);
+	SCOPED_TIMER("TransformsUploader::Update");
 
+	// TODO why the lock?
 	auto lock = CModelsLock::GetScopedLock();
 
-	//resize
-	const uint32_t elemCount = GetElemsCount();
-	const uint32_t storageElemCount = matricesMemStorage.GetSize();
-	if (storageElemCount > elemCount) {
-		const uint32_t newElemCount = AlignUp(storageElemCount, elemCountIncr);
-		LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u", className, __func__, "up", newElemCount, elemCount, storageElemCount);
-		ssbo->Resize(newElemCount);
-
-		if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && !ssbo->IsValid()) {
-			LOG_L(L_ERROR, "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but mapping of buffer of %u size failed. Falling back.", __func__, uint32_t(newElemCount * sizeof(CMatrix44f)));
-			KillImpl();
-			InitImpl(MATRIX_SSBO_BINDING_IDX, newElemCount, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, MatricesMemStorage::BUFFERING);
-		}
-
-		matricesMemStorage.SetAllDirty(); //Resize doesn't copy the data
-	}
-
-	//update on the GPU
-	const CMatrix44f* clientPtr = matricesMemStorage.GetData().data();
-
-	constexpr bool ENABLE_UPLOAD_OPTIMIZATION = true;
-	if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && ENABLE_UPLOAD_OPTIMIZATION) {
-		const auto stt = matricesMemStorage.GetDirtyMap().begin();
-		const auto fin = matricesMemStorage.GetDirtyMap().end();
-
-		auto beg = matricesMemStorage.GetDirtyMap().begin();
-		auto end = matricesMemStorage.GetDirtyMap().begin();
-
-		static const auto dirtyPred = [](uint8_t m) -> bool { return m > 0u; };
-		while (beg != fin) {
-			beg = std::find_if    (beg, fin, dirtyPred);
-			end = std::find_if_not(beg, fin, dirtyPred);
-
-			if (beg != fin) {
-				const uint32_t offs = static_cast<uint32_t>(std::distance(stt, beg));
-				const uint32_t size = static_cast<uint32_t>(std::distance(beg, end));
-
-				CMatrix44f* mappedPtr = ssbo->Map(clientPtr, offs, size);
-				memcpy(mappedPtr, clientPtr + offs, size * sizeof(CMatrix44f));
-				ssbo->Unmap();
-
-				std::transform(beg, end, beg, [](uint8_t v) { return (v - 1); }); //make it less dirty
-			}
-
-			beg = end; //rewind
-		}
-	}
-	else {
-		const CMatrix44f* clientPtr = matricesMemStorage.GetData().data();
-		CMatrix44f* mappedPtr = ssbo->Map(clientPtr, 0, storageElemCount);
-
-		if (!ssbo->HasClientPtr())
-			memcpy(mappedPtr, clientPtr, storageElemCount * sizeof(CMatrix44f));
-
-		ssbo->Unmap();
-	}
-	ssbo->BindBufferRange(bindingIdx);
-	ssbo->SwapBuffer();
+	Impl::UpdateCommon(*this, ssbo, transformsMemStorage, className, __func__);
 }
 
-std::size_t MatrixUploader::GetDefElemOffsetImpl(const S3DModel* model) const
+size_t TransformsUploader::GetElemOffset(const UnitDef* def) const
+{
+	if (def == nullptr) {
+		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr UnitDef", className, __func__);
+		return TransformsMemStorage::INVALID_INDEX;
+	}
+
+	return GetElemOffset(def->LoadModel());
+}
+
+size_t TransformsUploader::GetElemOffset(const FeatureDef* def) const
+{
+	if (def == nullptr) {
+		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr FeatureDef", className, __func__);
+		return TransformsMemStorage::INVALID_INDEX;
+	}
+
+	return GetElemOffset(def->LoadModel());
+}
+
+size_t TransformsUploader::GetElemOffset(const S3DModel* model) const
 {
 	if (model == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr S3DModel", className, __func__);
-		return MatricesMemStorage::INVALID_INDEX;
+		return TransformsMemStorage::INVALID_INDEX;
 	}
 
 	return model->GetMatAlloc().GetOffset(false);
 }
 
-std::size_t MatrixUploader::GetDefElemOffsetImpl(const UnitDef* def) const
+size_t TransformsUploader::GetUnitDefElemOffset(int32_t unitDefID) const
 {
-	if (def == nullptr) {
-		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr UnitDef", className, __func__);
-		return MatricesMemStorage::INVALID_INDEX;
-	}
-
-	return GetDefElemOffsetImpl(def->LoadModel());
+	return GetElemOffset(unitDefHandler->GetUnitDefByID(unitDefID));
 }
 
-std::size_t MatrixUploader::GetDefElemOffsetImpl(const FeatureDef* def) const
+size_t TransformsUploader::GetFeatureDefElemOffset(int32_t featureDefID) const
 {
-	if (def == nullptr) {
-		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr FeatureDef", className, __func__);
-		return MatricesMemStorage::INVALID_INDEX;
-	}
-
-	return GetDefElemOffsetImpl(def->LoadModel());
+	return GetElemOffset(featureDefHandler->GetFeatureDefByID(featureDefID));
 }
 
-std::size_t MatrixUploader::GetElemOffsetImpl(const CUnit* unit) const
+size_t TransformsUploader::GetElemOffset(const CUnit* unit) const
 {
 	if (unit == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CUnit", className, __func__);
-		return MatricesMemStorage::INVALID_INDEX;
+		return TransformsMemStorage::INVALID_INDEX;
 	}
 
-	if (std::size_t offset = CUnitDrawer::GetMatricesMemAlloc(unit).GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
+	if (size_t offset = CUnitDrawer::GetTransformMemAlloc(unit).GetOffset(false); offset != TransformsMemStorage::INVALID_INDEX) {
 		return offset;
 	}
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CUnit (id:%d)", className, __func__, unit->id);
-	return MatricesMemStorage::INVALID_INDEX;
+	return TransformsMemStorage::INVALID_INDEX;
 }
 
-std::size_t MatrixUploader::GetElemOffsetImpl(const CFeature* feature) const
+size_t TransformsUploader::GetElemOffset(const CFeature* feature) const
 {
 	if (feature == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CFeature", className, __func__);
-		return MatricesMemStorage::INVALID_INDEX;
+		return TransformsMemStorage::INVALID_INDEX;
 	}
 
-	if (std::size_t offset = CFeatureDrawer::GetMatricesMemAlloc(feature).GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
+	if (size_t offset = CFeatureDrawer::GetTransformMemAlloc(feature).GetOffset(false); offset != TransformsMemStorage::INVALID_INDEX) {
 		return offset;
 	}
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CFeature (id:%d)", className, __func__, feature->id);
-	return MatricesMemStorage::INVALID_INDEX;
+	return TransformsMemStorage::INVALID_INDEX;
 }
 
-std::size_t MatrixUploader::GetElemOffsetImpl(const CProjectile* p) const
+size_t TransformsUploader::GetElemOffset(const CProjectile* p) const
 {
 	if (p == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CProjectile", className, __func__);
-		return MatricesMemStorage::INVALID_INDEX;
+		return TransformsMemStorage::INVALID_INDEX;
 	}
 
 	if (!p->synced) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied non-synced CProjectile (id:%d)", className, __func__, p->id);
-		return MatricesMemStorage::INVALID_INDEX;
+		return TransformsMemStorage::INVALID_INDEX;
 	}
 
 	if (!p->weapon || !p->piece) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied non-weapon or non-piece CProjectile (id:%d)", className, __func__, p->id);
-		return MatricesMemStorage::INVALID_INDEX;
+		return TransformsMemStorage::INVALID_INDEX;
 	}
 	/*
-	if (std::size_t offset = p->GetMatAlloc().GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
+	if (size_t offset = p->GetMatAlloc().GetOffset(false); offset != TransformsMemStorage::INVALID_INDEX) {
 		return offset;
 	}
 	*/
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CProjectile (id:%d)", className, __func__, p->id);
-	return MatricesMemStorage::INVALID_INDEX;
+	return TransformsMemStorage::INVALID_INDEX;
 }
 
-void ModelsUniformsUploader::InitDerived()
+size_t TransformsUploader::GetUnitElemOffset(int32_t unitID) const
+{
+	return GetElemOffset(unitHandler.GetUnit(unitID));
+}
+
+size_t TransformsUploader::GetFeatureElemOffset(int32_t featureID) const
+{
+	return GetElemOffset(featureHandler.GetFeature(featureID));
+}
+
+size_t TransformsUploader::GetProjectileElemOffset(int32_t syncedProjectileID) const
+{
+	return GetElemOffset(projectileHandler.GetProjectileBySyncedID(syncedProjectileID));
+}
+
+////////////////////////////////////////////////////////////////////
+
+void ModelUniformsUploader::Init()
 {
 	if (!globalRendering->haveGL4)
 		return;
 
-	InitImpl(MATUNI_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, 3);
+	Impl::InitCommon<MyDataType>(
+		ssbo,
+		MATUNI_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI,
+		IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, 1,
+		className
+	);
 }
 
-void ModelsUniformsUploader::KillDerived()
+void ModelUniformsUploader::Kill()
 {
-	if (!globalRendering->haveGL4)
-		return;
-
-	KillImpl();
+	Impl::KillCommon(ssbo, MATUNI_SSBO_BINDING_IDX);
 }
 
-void ModelsUniformsUploader::UpdateDerived()
+void ModelUniformsUploader::Update()
 {
-	if (!globalRendering->haveGL4)
-		return;
+	SCOPED_TIMER("ModelUniformsUploader::Update");
 
-	SCOPED_TIMER("ModelsUniformsUploader::Update");
-	ssbo->UnbindBufferRange(bindingIdx);
-
-	//resize
-	const uint32_t elemCount = GetElemsCount();
-	const uint32_t storageElemCount = modelsUniformsStorage.Size();
-	if (storageElemCount > elemCount) {
-		const uint32_t newElemCount = AlignUp(storageElemCount, elemCountIncr);
-		LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u", className, __func__, "up", newElemCount, elemCount, storageElemCount);
-		ssbo->Resize(newElemCount);
-	}
-
-	//update on the GPU
-	const ModelUniformData* clientPtr = modelsUniformsStorage.GetData().data();
-	ModelUniformData* mappedPtr = ssbo->Map(clientPtr, 0, storageElemCount);
-
-	if (!ssbo->HasClientPtr())
-		memcpy(mappedPtr, clientPtr, storageElemCount * sizeof(ModelUniformData));
-
-	ssbo->Unmap();
-	ssbo->BindBufferRange(bindingIdx);
-	ssbo->SwapBuffer();
+	Impl::UpdateCommon(*this, ssbo, modelUniformsStorage, className, __func__);
 }
 
-std::size_t ModelsUniformsUploader::GetDefElemOffsetImpl(const S3DModel* model) const
+size_t ModelUniformsUploader::GetElemOffset(const UnitDef* def) const
 {
 	assert(false);
 	LOG_L(L_ERROR, "[%s::%s] Invalid call", className, __func__);
-	return ModelsUniformsStorage::INVALID_INDEX;
+	return ModelUniformsStorage::INVALID_INDEX;
 }
 
-std::size_t ModelsUniformsUploader::GetDefElemOffsetImpl(const UnitDef* def) const
+size_t ModelUniformsUploader::GetElemOffset(const FeatureDef* def) const
 {
 	assert(false);
 	LOG_L(L_ERROR, "[%s::%s] Invalid call", className, __func__);
-	return ModelsUniformsStorage::INVALID_INDEX;
+	return ModelUniformsStorage::INVALID_INDEX;
 }
 
-std::size_t ModelsUniformsUploader::GetDefElemOffsetImpl(const FeatureDef* def) const
+size_t ModelUniformsUploader::GetElemOffset(const S3DModel* model) const
 {
 	assert(false);
 	LOG_L(L_ERROR, "[%s::%s] Invalid call", className, __func__);
-	return ModelsUniformsStorage::INVALID_INDEX;
+	return ModelUniformsStorage::INVALID_INDEX;
 }
 
+size_t ModelUniformsUploader::GetUnitDefElemOffset(int32_t unitDefID) const
+{
+	return GetElemOffset(unitDefHandler->GetUnitDefByID(unitDefID));
+}
 
-std::size_t ModelsUniformsUploader::GetElemOffsetImpl(const CUnit* unit) const
+size_t ModelUniformsUploader::GetFeatureDefElemOffset(int32_t featureDefID) const
+{
+	return GetElemOffset(featureDefHandler->GetFeatureDefByID(featureDefID));
+}
+
+size_t ModelUniformsUploader::GetElemOffset(const CUnit* unit) const
 {
 	if (unit == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CUnit", className, __func__);
-		return ModelsUniformsStorage::INVALID_INDEX;
+		return ModelUniformsStorage::INVALID_INDEX;
 	}
 
-	if (std::size_t offset = modelsUniformsStorage.GetObjOffset(unit); offset != std::size_t(-1)) {
+	if (size_t offset = modelUniformsStorage.GetObjOffset(unit); offset != size_t(-1)) {
 		return offset;
 	}
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CUnit (id:%d)", className, __func__, unit->id);
-	return ModelsUniformsStorage::INVALID_INDEX;
+	return ModelUniformsStorage::INVALID_INDEX;
 }
 
-std::size_t ModelsUniformsUploader::GetElemOffsetImpl(const CFeature* feature) const
+size_t ModelUniformsUploader::GetElemOffset(const CFeature* feature) const
 {
 	if (feature == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CFeature", className, __func__);
-		return ModelsUniformsStorage::INVALID_INDEX;
+		return ModelUniformsStorage::INVALID_INDEX;
 	}
 
-	if (std::size_t offset = modelsUniformsStorage.GetObjOffset(feature); offset != std::size_t(-1)) {
+	if (size_t offset = modelUniformsStorage.GetObjOffset(feature); offset != size_t(-1)) {
 		return offset;
 	}
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CFeature (id:%d)", className, __func__, feature->id);
-	return ModelsUniformsStorage::INVALID_INDEX;
+	return ModelUniformsStorage::INVALID_INDEX;
 }
 
-std::size_t ModelsUniformsUploader::GetElemOffsetImpl(const CProjectile* p) const
+size_t ModelUniformsUploader::GetElemOffset(const CProjectile* p) const
 {
 	if (p == nullptr) {
 		LOG_L(L_ERROR, "[%s::%s] Supplied nullptr CProjectile", className, __func__);
-		return ModelsUniformsStorage::INVALID_INDEX;
+		return ModelUniformsStorage::INVALID_INDEX;
 	}
 
-	if (std::size_t offset = modelsUniformsStorage.GetObjOffset(p); offset != std::size_t(-1)) {
+	if (size_t offset = modelUniformsStorage.GetObjOffset(p); offset != size_t(-1)) {
 		return offset;
 	}
 
 	LOG_L(L_ERROR, "[%s::%s] Supplied invalid CProjectile (id:%d)", className, __func__, p->id);
-	return ModelsUniformsStorage::INVALID_INDEX;
+	return ModelUniformsStorage::INVALID_INDEX;
+}
+
+size_t ModelUniformsUploader::GetUnitElemOffset(int32_t unitID) const
+{
+	return GetElemOffset(unitHandler.GetUnit(unitID));
+}
+
+size_t ModelUniformsUploader::GetFeatureElemOffset(int32_t featureID) const
+{
+	return GetElemOffset(featureHandler.GetFeature(featureID));
+}
+
+size_t ModelUniformsUploader::GetProjectileElemOffset(int32_t syncedProjectileID) const
+{
+	return GetElemOffset(projectileHandler.GetProjectileBySyncedID(syncedProjectileID));
 }

@@ -151,3 +151,10 @@ float4 Transform::operator*(const float4& v) const
 	// same as above
 	return r.Rotate(v * s) + t;
 }
+
+void Transform::AssertNaNs() const
+{
+	r.AssertNaNs();
+	t.AssertNaNs();
+	assert(!math::isnan(s) && !math::isinf(s));
+}

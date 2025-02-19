@@ -413,6 +413,14 @@ CQuaternion& CQuaternion::operator/=(float f)
 	return *this;
 }
 
+void CQuaternion::AssertNaNs() const
+{
+	assert(!math::isnan(x) && !math::isinf(x));
+	assert(!math::isnan(y) && !math::isinf(y));
+	assert(!math::isnan(z) && !math::isinf(z));
+	assert(!math::isnan(r) && !math::isinf(r));
+}
+
 float CQuaternion::SqNorm() const {
 	return (x * x + y * y + z * z + r * r);
 }
