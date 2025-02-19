@@ -33,6 +33,8 @@ struct Transform {
 
 	static const Transform& Zero();
 
+	static Transform Lerp(const Transform& t0, const Transform& t1, float a);
+
 	// can be used to enable/disable rendering
 	void SetScaleSign(float signSrc);
 

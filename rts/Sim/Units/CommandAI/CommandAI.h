@@ -130,10 +130,9 @@ public:
 	CUnit* orderTarget;
 
 	bool targetDied;
-	bool inCommand;
 	bool repeatOrders;
 	int lastSelectedCommandPage;
-
+	int inCommand;
 protected:
 	bool HandleBuildOptionInsertion(int cmdId);
 	bool HandleBuildOptionRemoval(int cmdId);

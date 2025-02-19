@@ -40,6 +40,7 @@
 #include "System/type2.h"
 #include "System/Sound/ISoundChannels.h"
 #include "System/SpringHash.h"
+#include "Utils/UnitTrapCheckUtils.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -2406,12 +2407,6 @@ void CGroundMoveType::StartEngine(bool callScript) {
 			// makes no sense to call this unless we have a new path
 			owner->script->StartMoving(reversing);
 		}
-
-		// Due to how push resistant units work, they can trap units when they stop moving.
-		// Have units check they are not trapped when beginning to move is any push resistant units
-		// are used by the game.
-		if (!forceStaticObjectCheck)
-			forceStaticObjectCheck = (unitDefHandler->NumPushResistantUnitDefs() > 0);
 	}
 }
 
@@ -3567,6 +3562,7 @@ bool CGroundMoveType::UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, flo
 		} else {
 			owner->Block();
 			pushResistanceBlockActive = true;
+			RegisterUnitForUnitTrapCheck(owner);
 		}
 
 		// this has to be done manually because units don't trigger it with block commands

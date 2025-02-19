@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Threading.h"
+
 #include "System/Log/ILog.h"
 #include "System/Platform/CpuID.h"
 
@@ -108,6 +109,38 @@ namespace Threading {
 
 
 
+	uint32_t GetSystemAffinityMask() {
+		cpu_topology::ProcessorMasks pm = springproc::CPUID::GetInstance().GetAvailableProcessorAffinityMask();
+
+		LOG("CPU Affinity Mask Details detected:");
+		LOG("-- Performance Core Mask:      0x%08x", pm.performanceCoreMask);
+		LOG("-- Efficiency  Core Mask:      0x%08x", pm.efficiencyCoreMask);
+		LOG("-- Hyper Thread/SMT Low Mask:  0x%08x", pm.hyperThreadLowMask);
+		LOG("-- Hyper Thread/SMT High Mask: 0x%08x", pm.hyperThreadHighMask);
+
+		// Engine worker thread pool are primarily for mutli-threading activies of simulation; though, they are
+		// available to be used by other system while simulation is not running. As such the policy for pinning worker
+		// threads are to maximise performance of the multi-threaded tasks of simulation, which are a poor fit for
+		// cpu hardware threads (SMT/Hyper-Threading) and low-power cores.
+		//
+		// Engine worker thread policy:
+		// 1. Only use general/performance cores. Do not use efficiency cores.
+		// 2. Do not use Hyper Threading or SMT. If present use only one of the HW threads per core.
+		//
+		// This doesn't preclude systems from using separate unpinned threads, which the OS should logically try to
+		// move to under used resources, such as low-power cores for example.
+		#if defined(THREADPOOL)
+		uint32_t policy = pm.performanceCoreMask & (~pm.hyperThreadHighMask);
+		#else
+
+		/* Allow any core; keep it a "proper" mask though
+		 * since that has less risk of blowing up than 0 or 0xFF..FF */
+		uint32_t policy = pm.performanceCoreMask | pm.efficiencyCoreMask;
+		#endif
+
+		return policy;
+	}
+
 	std::uint32_t GetAffinity()
 	{
 	#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
@@ -127,7 +160,6 @@ namespace Threading {
 		return (CalcCoreAffinityMask(&curAffinity));
 	#endif
 	}
-
 
 	std::uint32_t SetAffinity(std::uint32_t coreMask, bool hard)
 	{
@@ -214,7 +246,13 @@ namespace Threading {
 		return springproc::CPUID::GetInstance().GetNumPhysicalCores();
 	}
 
-	bool HasHyperThreading() { return (GetLogicalCpuCores() > GetPhysicalCpuCores()); }
+	int GetPerformanceCpuCores() {
+		return springproc::CPUID::GetInstance().GetNumPerformanceCores();
+	}
+
+	bool HasHyperThreading() {
+		return springproc::CPUID::GetInstance().HasHyperThreading();
+	}
 
 
 	void SetThreadScheduler()

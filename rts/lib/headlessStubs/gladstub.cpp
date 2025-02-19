@@ -512,6 +512,9 @@ decltype(glad_glClipControl) glad_glClipControl = nullptr;
 decltype(glad_glPushDebugGroup) glad_glPushDebugGroup = nullptr;
 decltype(glad_glPopDebugGroup) glad_glPopDebugGroup = nullptr;
 decltype(glad_glObjectLabel) glad_glObjectLabel = nullptr;
+decltype(glad_glClearBufferuiv) glad_glClearBufferuiv = nullptr;
+decltype(glad_glClearBufferiv) glad_glClearBufferiv = nullptr;
+decltype(glad_glClearBufferfv) glad_glClearBufferfv = nullptr;
 
 namespace Impl {
     template<typename R, typename... Args>
@@ -945,6 +948,9 @@ int gladLoadGL(void) {
     glad_glPushDebugGroup = MakeStubImpl(glad_glPushDebugGroup);
     glad_glPopDebugGroup = MakeStubImpl(glad_glPopDebugGroup);
     glad_glObjectLabel = MakeStubImpl(glad_glObjectLabel);
+    glad_glClearBufferuiv = MakeStubImpl(glad_glClearBufferuiv);
+    glad_glClearBufferiv = MakeStubImpl(glad_glClearBufferiv);
+    glad_glClearBufferfv = MakeStubImpl(glad_glClearBufferfv);
 
     return 0;
 }

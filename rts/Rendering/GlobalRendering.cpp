@@ -824,6 +824,9 @@ void CGlobalRendering::SetGLSupportFlags()
 			break;
 		}
 	}
+	if (int2 glVerNum = { 0, 0 }; sscanf(globalRenderingInfo.glVersionShort.data(), "%d.%d", &glVerNum.x, &glVerNum.y) == 2) {
+		globalRenderingInfo.glslVersionNum = glVerNum.x * 10 + glVerNum.y;
+	}
 
 	for (size_t n = 0; (n < sizeof(globalRenderingInfo.glslVersionShort) && globalRenderingInfo.glslVersion[n] != 0); n++) {
 		if ((globalRenderingInfo.glslVersionShort[n] = globalRenderingInfo.glslVersion[n]) == ' ') {
