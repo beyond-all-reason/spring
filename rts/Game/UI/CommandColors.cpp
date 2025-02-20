@@ -77,10 +77,17 @@ CCommandColors::CCommandColors()
 	SETUP_COLOR(rangeSelfDestruct,   0.8f, 0.1f, 0.1f, 0.7f);
 	SETUP_COLOR(rangeInterceptorOn,  1.0f, 1.0f, 1.0f, 0.7f);
 	SETUP_COLOR(rangeInterceptorOff, 0.0f, 0.0f, 0.0f, 0.7f);
+
 	SETUP_COLOR(unitBox,             0.0f, 1.0f, 0.0f, 0.9f);
 	SETUP_COLOR(buildBox,            0.0f, 1.0f, 0.0f, 0.9f);
 	SETUP_COLOR(allyBuildBox,        0.8f, 0.8f, 0.2f, 0.9f);
 	SETUP_COLOR(mouseBox,            1.0f, 1.0f, 1.0f, 0.9f);
+	SETUP_COLOR(buildableSquare,     0.0f, 0.9f, 0.0f, 0.7f);
+	SETUP_COLOR(unbuildableSquare,   0.9f, 0.8f, 0.0f, 0.7f);
+	SETUP_COLOR(featureSquare,       0.9f, 0.8f, 0.0f, 0.7f);
+	SETUP_COLOR(illegalSquare,       0.9f, 0.0f, 0.0f, 0.7f);
+	SETUP_COLOR(underwaterStart,     0.0f, 0.0f, 1.0f, 0.5f);
+	SETUP_COLOR(underwaterEnd,       0.0f, 0.5f, 1.0f, 1.0f);
 }
 
 

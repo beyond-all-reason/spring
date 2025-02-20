@@ -58,6 +58,8 @@ class LuaUnsyncedCtrl {
 		static int AddWorldUnit(lua_State* L);
 
 		static int DrawUnitCommands(lua_State* L);
+		static int AddUnitBuildSquare(lua_State* L);
+		static int RemoveUnitBuildSquare(lua_State* L);
 
 		static int SetTeamColor(lua_State* L);
 
