@@ -150,6 +150,18 @@ CQuaternion CQuaternion::MakeFrom(const float3& v1, const float3& v2)
 }
 
 /// <summary>
+/// Quaternion to rotate from the default FwdDir(0,0,1) to newFwdDir
+/// Expects newFwdDir to be already normalized
+/// </summary>
+CQuaternion CQuaternion::MakeFrom(const float3& newFwdDir)
+{
+	assert(newFwdDir.Normalized());
+
+	// same as CQuaternion::MakeFrom(const float3& v1, const float3& v2) for v1 = (0,0,1)
+	return CQuaternion{ -newFwdDir.y, newFwdDir.x, 0.0f, 1.0f + newFwdDir.z } * (math::HALFSQRT2 * math::isqrt(1.0f + newFwdDir.z));
+}
+
+/// <summary>
 ///  Quaternion from a rotation matrix
 ///  Should only be called on R or T * R matrices
 /// </summary>

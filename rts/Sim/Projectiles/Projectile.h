@@ -45,6 +45,7 @@ public:
 	virtual void Collision(CFeature* feature) { Collision(); }
 	//Not inheritable - used for removing a projectile from Lua.
 	void Delete();
+	virtual void PreUpdate();
 	virtual void Update();
 	virtual void Init(const CUnit* owner, const float3& offset) override;
 

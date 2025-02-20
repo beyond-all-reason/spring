@@ -88,6 +88,7 @@ CProjectile::CProjectile(
 	, myrange(/*params.weaponDef->range*/0.0f)
 	, mygravity((mapInfo != nullptr)? mapInfo->map.gravity: 0.0f)
 {
+	preFrameTra = Transform{ pos }; //rotation is not yet available here
 	SetRadiusAndHeight(1.7f, 0.0f);
 	Init(owner, ZeroVector);
 }
@@ -128,6 +129,8 @@ void CProjectile::Init(const CUnit* owner, const float3& offset)
 
 	if (synced && !weapon)
 		quadField.AddProjectile(this);
+
+	preFrameTra = Transform{ CQuaternion::MakeFrom(dir), pos };
 }
 
 
@@ -147,6 +150,11 @@ void CProjectile::Delete()
 	RECOIL_DETAILED_TRACY_ZONE;
 	deleteMe = true;
 	checkCol = false;
+}
+
+void CProjectile::PreUpdate()
+{
+	preFrameTra = Transform{ CQuaternion::MakeFrom(dir), pos };
 }
 
 

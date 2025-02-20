@@ -54,6 +54,7 @@ public:
 
 	static CQuaternion MakeFrom(float angle, const float3& axis);
 	static CQuaternion MakeFrom(const float3& v1, const float3& v2);
+	static CQuaternion MakeFrom(const float3& newFwdDir);
 	static CQuaternion MakeFrom(const CMatrix44f& mat);
 
 	static const CQuaternion& AssertNormalized(const CQuaternion& q);
