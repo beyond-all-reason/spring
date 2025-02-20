@@ -92,7 +92,7 @@ public:
 		return (p->PieceFunc());                                        \
 	}
 
-	SCRIPT_TO_LOCALPIECE_FUNC(    float3, GetPiecePos      , GetAbsolutePos        )
+	SCRIPT_TO_LOCALPIECE_FUNC(    float3, GetPiecePos      ,    GetAbsolutePos     )
 	SCRIPT_TO_LOCALPIECE_FUNC( Transform, GetPieceTransform, GetModelSpaceTransform)
 	SCRIPT_TO_LOCALPIECE_FUNC(CMatrix44f, GetPieceMatrix   , GetModelSpaceMatrix   )
 
@@ -117,9 +117,9 @@ public:
 	void TickAllAnims(int tickRate);
 	bool TickAnimFinished(int tickRate);
 	// note: must copy-and-set here (LMP dirty flag, etc)
-	bool TickMoveAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai);
-	bool TickTurnAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai);
-	bool TickSpinAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai);
+	bool TickMoveAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 pos = lmp.GetPosition(); const bool ret = MoveToward(pos[ai.axis], ai.dest, ai.speed / tickRate); lmp.SetPosition(pos); return ret; }
+	bool TickTurnAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret = TurnToward(rot[ai.axis], ai.dest, ai.speed / tickRate         ); lmp.SetRotation(rot); return ret; }
+	bool TickSpinAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret =     DoSpin(rot[ai.axis], ai.dest, ai.speed, ai.accel, tickRate); lmp.SetRotation(rot); return ret; }
 	void TickAnims(int tickRate, const TickAnimFunc& tickAnimFunc, AnimContainerType& liveAnims, AnimContainerType& doneAnims);
 
 	// animation, used by CCobThread

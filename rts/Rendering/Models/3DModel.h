@@ -463,9 +463,9 @@ struct LocalModelPiece
 
 	void SetDirty();
 	bool SetGetCustomDirty(bool cd) const;
-	void SetPosOrRot(const float3& src, float3& dst, const float3& srcSpeed, float3& dstSpeed); // anim-script only
-	void SetPosition(const float3& p, const float3& dp = float3{}) { SetPosOrRot(p, pos, dp, posSpeed); } // anim-script only
-	void SetRotation(const float3& r, const float3& dr = float3{}) { SetPosOrRot(r, rot, dr, rotSpeed); } // anim-script only
+	void SetPosOrRot(const float3& src, float3& dst); // anim-script only
+	void SetPosition(const float3& p) { SetPosOrRot(p, pos); } // anim-script only
+	void SetRotation(const float3& r) { SetPosOrRot(r, rot); } // anim-script only
 
 	bool SetPieceSpaceMatrix(const CMatrix44f& mat) {
 		if ((blockScriptAnims = (mat.GetX() != ZeroVector))) {
@@ -484,8 +484,6 @@ struct LocalModelPiece
 
 	const float3& GetPosition() const { return pos; }
 	const float3& GetRotation() const { return rot; }
-	const float3& GetPositionSpeed() const { return posSpeed; }
-	const float3& GetRotationSpeed() const { return rotSpeed; }
 
 	const float3& GetDirection() const { return dir; }
 
@@ -499,9 +497,7 @@ struct LocalModelPiece
 	void SetScriptVisible(bool b) { scriptSetVisible = b; SetGetCustomDirty(true); }
 private:
 	float3 pos;      // translation relative to parent LMP, *INITIALLY* equal to original->offset
-	float3 posSpeed; // the rate of change of pos, used to smooth the animation across the synced frames
 	float3 rot;      // orientation relative to parent LMP, in radians (updated by scripts)
-	float3 rotSpeed; // the rate of change of rot, used to smooth the animation across the synced frames
 	float3 dir;      // cached copy of original->GetEmitDir()
 
 	mutable Transform pieceSpaceTra;  // transform relative to parent LMP (SYNCED), combines <pos> and <rot>

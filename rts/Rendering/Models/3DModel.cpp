@@ -21,9 +21,7 @@
 CR_BIND(LocalModelPiece, (nullptr))
 CR_REG_METADATA(LocalModelPiece, (
 	CR_MEMBER(pos),
-	CR_MEMBER(posSpeed),
 	CR_MEMBER(rot),
-	CR_MEMBER(rotSpeed),
 	CR_MEMBER(dir),
 	CR_MEMBER(colvol),
 	CR_MEMBER(scriptSetVisible),
@@ -549,7 +547,7 @@ bool LocalModelPiece::SetGetCustomDirty(bool cd) const
 	return cd;
 }
 
-void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst, const float3& srcSpeed, float3& dstSpeed) {
+void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (blockScriptAnims)
 		return;
@@ -560,7 +558,6 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst, const float3& 
 	}
 
 	dst = src;
-	dstSpeed = srcSpeed;
 }
 
 
@@ -607,20 +604,12 @@ void LocalModelPiece::UpdateChildTransformRec(bool updateChildTransform) const
 	}
 
 	if (updateChildTransform) {
-		modelSpaceTra = pieceSpaceTra;
+		if (parent != nullptr)
+			modelSpaceTra = parent->modelSpaceTra * pieceSpaceTra;
+		else
+			modelSpaceTra = pieceSpaceTra;
 
-		if (parent != nullptr) {
-			// TODO remove the non-sense
-			const auto modelSpaceTraOrig = modelSpaceTra;
-			modelSpaceTra = parent->modelSpaceTra * modelSpaceTra;
-
-			CMatrix44f thisModelSpaceMat = modelSpaceTraOrig.ToMatrix();
-			const CMatrix44f prntModelSpaceMat = parent->modelSpaceTra.ToMatrix();
-			thisModelSpaceMat >>= prntModelSpaceMat;
-			auto modelSpaceTra2 = Transform::FromMatrix(thisModelSpaceMat);
-
-			assert(modelSpaceTra.equals(modelSpaceTra2));
-		}
+		modelSpaceMat = modelSpaceTra.ToMatrix();
 	}
 
 	for (auto& child : children) {
@@ -637,12 +626,13 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 	dirty = false;
 
 	pieceSpaceTra = CalcPieceSpaceTransform(pos, rot, original->scale);
-	modelSpaceTra = pieceSpaceTra;
 
-	if (parent != nullptr) {
-		modelSpaceTra = parent->modelSpaceTra * modelSpaceTra;
-		modelSpaceMat = modelSpaceTra.ToMatrix();
-	}
+	if (parent != nullptr)
+		modelSpaceTra = parent->modelSpaceTra * pieceSpaceTra;
+	else
+		modelSpaceTra = pieceSpaceTra;
+
+	modelSpaceMat = modelSpaceTra.ToMatrix();
 }
 
 
