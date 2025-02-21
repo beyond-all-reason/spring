@@ -200,6 +200,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitEngineDrawMask);
 	REGISTER_LUA_CFUNC(SetUnitAlwaysUpdateMatrix);
 	REGISTER_LUA_CFUNC(SetUnitNoMinimap);
+	REGISTER_LUA_CFUNC(SetMiniMapRotation);
 	REGISTER_LUA_CFUNC(SetUnitNoGroup);
 	REGISTER_LUA_CFUNC(SetUnitNoSelect);
 	REGISTER_LUA_CFUNC(SetUnitLeaveTracks);
@@ -2156,6 +2157,29 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 		return 0;
 
 	unit->noMinimap = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+/***
+ * @function Spring.SetMiniMapRotation
+ * @number rotation
+ * @treturn nil
+ * @usage Spring.SetMiniMapRotation(0/1/2/3)
+ */
+int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const int rotation = luaL_checkint(L, 1);
+
+	if (rotation < 0 || rotation > 3)
+		return 0;
+	
+
+	if (minimap != nullptr)
+		minimap->SetRotation(CMiniMap::ROTATION_OPTIONS(rotation));
+
 	return 0;
 }
 

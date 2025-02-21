@@ -984,7 +984,7 @@ int LuaUnsyncedRead::GetMiniMapGeometry(lua_State* L)
 /*** Get minimap rotation
  *
  * @function Spring.GetMiniMapRotation
- * @return number amount in radians
+ * @treturn number amount in iteration of 90 degrees (0, 1, 2, 3)
  */
 int LuaUnsyncedRead::GetMiniMapRotation(lua_State* L)
 {

@@ -59,8 +59,6 @@ public:
 	bool GetMinimized() const { return minimized; }
 	bool GetMaximized() const { return maximized; }
 
-	float GetRotation();
-
 	int GetPosX()  const { return curPos.x; }
 	int GetPosY()  const { return curPos.y; }
 	int GetSizeX() const { return curDim.x; }
@@ -68,7 +66,10 @@ public:
 	float GetUnitSizeX() const { return unitSizeX; }
 	float GetUnitSizeY() const { return unitSizeY; }
 
-	float GetFlipped() const { return flipped; }
+	enum ROTATION_OPTIONS { ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 }; // 90 and 270 are Landscape while 0 and 180 are Portrait
+
+	void SetRotation(ROTATION_OPTIONS state);
+	ROTATION_OPTIONS GetRotation() const { return rotation; }
 
 	void SetSlaveMode(bool value);
 	bool GetSlaveMode() const { return slaveDrawMode; }
@@ -153,7 +154,7 @@ protected:
 	bool mouseMove = false;
 	bool mouseResize = false;
 
-	bool flipped = false;
+	ROTATION_OPTIONS rotation = ROTATION_0;
 
 	bool slaveDrawMode = false;
 	bool simpleColors = false;
