@@ -113,7 +113,7 @@ public:
 	bool castShadow = false;
 	bool drawSorted = true;
 
-	float3 dir;                    // set via Init()
+	float3 dir = FwdVector;        // set via Init()
 	float3 drawPos;
 
 	float myrange = 0.0f;          // used by WeaponProjectile::TraveledRange
