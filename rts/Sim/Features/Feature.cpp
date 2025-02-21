@@ -262,7 +262,7 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 
 	if (amount > 0.0f) {
 		// 'Repairing' previously-sucked features prior to resurrection
-		// This is reclaim-option independant - repairing features should always
+		// This is reclaim-option independent - repairing features should always
 		// be like other repairing - gradual and multi-unit
 		// Lots of this code is stolen from unit->AddBuildPower
 		//

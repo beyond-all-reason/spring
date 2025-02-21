@@ -59,7 +59,7 @@ public class NullJavaAI extends AbstractAI implements AI {
 			sb.append(": ");
 
 			// Get the formatted message (includes localization
-			// and substitution of paramters) and add it to the buffer
+			// and substitution of parameters) and add it to the buffer
 			sb.append(formatMessage(record));
 			sb.append("\n");
 

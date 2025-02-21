@@ -20,6 +20,7 @@
 #include "CommandAI/CommandAI.h"
 #include "CommandAI/FactoryCAI.h"
 #include "CommandAI/MobileCAI.h"
+#include "CommandAI/BuilderCaches.h"
 
 #include "ExternalAI/EngineOutHandler.h"
 #include "Game/GameHelper.h"
@@ -71,19 +72,12 @@
 
 #include "System/Misc/TracyDefs.h"
 
+GlobalUnitParams globalUnitParams;
 
 // See end of source for member bindings
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
-
-float CUnit::empDeclineRate = 0.0f;
-float CUnit::expMultiplier  = 0.0f;
-float CUnit::expPowerScale  = 0.0f;
-float CUnit::expHealthScale = 0.0f;
-float CUnit::expReloadScale = 0.0f;
-float CUnit::expGrade       = 0.0f;
-
 
 CUnit::CUnit(): CSolidObject()
 {
@@ -157,14 +151,14 @@ CUnit::~CUnit()
 void CUnit::InitStatic()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	SetEmpDeclineRate(1.0f / modInfo.paralyzeDeclineRate);
-	SetExpMultiplier(modInfo.unitExpMultiplier);
-	SetExpPowerScale(modInfo.unitExpPowerScale);
-	SetExpHealthScale(modInfo.unitExpHealthScale);
-	SetExpReloadScale(modInfo.unitExpReloadScale);
-	SetExpGrade(0.0f);
+	globalUnitParams.empDeclineRate = 1.0f / modInfo.paralyzeDeclineRate;
+	globalUnitParams.expMultiplier = modInfo.unitExpMultiplier;
+	globalUnitParams.expPowerScale = modInfo.unitExpPowerScale;
+	globalUnitParams.expHealthScale = modInfo.unitExpHealthScale;
+	globalUnitParams.expReloadScale = modInfo.unitExpReloadScale;
+	globalUnitParams.expGrade = modInfo.unitExpGrade;
 
-	CBuilderCAI::InitStatic();
+	CBuilderCaches::InitStatic();
 	unitToolTipMap.Clear();
 }
 
@@ -403,7 +397,6 @@ void CUnit::PostLoad()
 	eventHandler.RenderUnitPreCreated(this);
 	eventHandler.RenderUnitCreated(this, isCloaked);
 }
-
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -976,7 +969,7 @@ void CUnit::SlowUpdate()
 		// DoDamage) we potentially start decaying from a lower damage
 		// level and would otherwise be de-paralyzed more quickly than
 		// specified by <paralyzeTime>
-		paralyzeDamage -= ((modInfo.paralyzeOnMaxHealth? maxHealth: health) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED) * CUnit::empDeclineRate);
+		paralyzeDamage -= ((modInfo.paralyzeOnMaxHealth? maxHealth: health) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED) * globalUnitParams.empDeclineRate);
 		paralyzeDamage = std::max(paralyzeDamage, 0.0f);
 	}
 
@@ -1031,13 +1024,15 @@ void CUnit::SlowUpdate()
 			if (health <= 0.0f || buildProgress <= 0.0f)
 				KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_CONSTRUCTION_DECAY);
 		}
+		moveType->SlowUpdate();
 
 		ScriptDecloak(nullptr, nullptr);
 		return;
 	}
 
-	// below is stuff that should not be run while being built
+	// should not be run while being built
 	commandAI->SlowUpdate();
+
 	moveType->SlowUpdate();
 
 
@@ -1253,7 +1248,7 @@ void CUnit::ApplyDamage(CUnit* attacker, const DamageArray& damages, float& base
 		// rate of paralysis-damage reduction is lower if the unit has less than
 		// maximum health to ensure stun-time is always equal to <paralyzeTime>
 		const float baseHealth = (modInfo.paralyzeOnMaxHealth? maxHealth: health);
-		const float paralysisDecayRate = baseHealth * CUnit::empDeclineRate;
+		const float paralysisDecayRate = baseHealth * globalUnitParams.empDeclineRate;
 		const float sumParalysisDamage = paralysisDecayRate * damages.paralyzeDamageTime;
 		const float maxParalysisDamage = std::max(baseHealth + sumParalysisDamage - paralyzeDamage, 0.0f);
 
@@ -1298,7 +1293,7 @@ void CUnit::DoDamage(
 		return;
 
 	float baseDamage = damages.Get(armorType);
-	float experienceMod = expMultiplier;
+	float experienceMod = globalUnitParams.expMultiplier;
 	float impulseMult = 1.0f;
 
 	const bool isCollision = (weaponDefID == -CSolidObject::DAMAGE_COLLISION_OBJECT || weaponDefID == -CSolidObject::DAMAGE_COLLISION_GROUND);
@@ -1421,22 +1416,22 @@ void CUnit::AddExperience(float exp)
 	experience += exp;
 	limExperience = experience / (experience + 1.0f);
 
-	if (expGrade != 0.0f) {
-		const int oldGrade = (int)(oldExperience / expGrade);
-		const int newGrade = (int)(   experience / expGrade);
+	if (globalUnitParams.expGrade != 0.0f) {
+		const int oldGrade = (int)(oldExperience / globalUnitParams.expGrade);
+		const int newGrade = (int)(   experience / globalUnitParams.expGrade);
 		if (oldGrade != newGrade) {
 			eventHandler.UnitExperience(this, oldExperience);
 		}
 	}
 
-	if (expPowerScale > 0.0f)
-		power = unitDef->power * (1.0f + (limExperience * expPowerScale));
+	if (globalUnitParams.expPowerScale > 0.0f)
+		power = unitDef->power * (1.0f + (limExperience * globalUnitParams.expPowerScale));
 
-	if (expReloadScale > 0.0f)
-		reloadSpeed = (1.0f + (limExperience * expReloadScale));
+	if (globalUnitParams.expReloadScale > 0.0f)
+		reloadSpeed = (1.0f + (limExperience * globalUnitParams.expReloadScale));
 
-	if (expHealthScale > 0.0f) {
-		maxHealth = std::max(0.1f, unitDef->health * (1.0f + (limExperience * expHealthScale)));
+	if (globalUnitParams.expHealthScale > 0.0f) {
+		maxHealth = std::max(0.1f, unitDef->health * (1.0f + (limExperience * globalUnitParams.expHealthScale)));
 		health *= (maxHealth / oldMaxHealth);
 	}
 }
@@ -2856,7 +2851,6 @@ short CUnit::GetTransporteeWantedHeading(const CUnit* unit) const {
 /******************************************************************************/
 /******************************************************************************/
 
-
 CR_BIND_DERIVED_POOL(CUnit, CSolidObject, , unitMemPool.allocMem, unitMemPool.freeMem)
 CR_REG_METADATA(CUnit, (
 	CR_MEMBER(unitDef),
@@ -3051,4 +3045,14 @@ CR_BIND(CUnit::TransportedUnit,)
 CR_REG_METADATA_SUB(CUnit, TransportedUnit, (
 	CR_MEMBER(unit),
 	CR_MEMBER(piece)
+))
+
+CR_BIND(GlobalUnitParams, )
+CR_REG_METADATA(GlobalUnitParams, (
+	CR_MEMBER(empDeclineRate),
+	CR_MEMBER(expMultiplier	),
+	CR_MEMBER(expPowerScale	),
+	CR_MEMBER(expHealthScale),
+	CR_MEMBER(expReloadScale),
+	CR_MEMBER(expGrade      )
 ))

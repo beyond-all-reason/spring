@@ -23,6 +23,7 @@
 #include "Sim/Units/UnitTypes/Builder.h"
 #include "Sim/Units/UnitTypes/Building.h"
 #include "Sim/Units/UnitTypes/Factory.h"
+#include "Sim/Units/CommandAI/BuilderCaches.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 #include "System/EventHandler.h"
@@ -54,14 +55,6 @@ CR_REG_METADATA(CBuilderCAI , (
 	CR_POSTLOAD(PostLoad),
 	CR_PREALLOC(GetPreallocContainer)
 ))
-
-// not adding to members, should repopulate itself
-spring::unordered_set<int> CBuilderCAI::reclaimers;
-spring::unordered_set<int> CBuilderCAI::featureReclaimers;
-spring::unordered_set<int> CBuilderCAI::resurrecters;
-
-std::vector<int> CBuilderCAI::removees;
-
 
 static std::string GetUnitDefBuildOptionToolTip(const UnitDef* ud, bool disabled) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -222,18 +215,10 @@ CBuilderCAI::CBuilderCAI(CUnit* owner):
 CBuilderCAI::~CBuilderCAI()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	RemoveUnitFromReclaimers(owner);
-	RemoveUnitFromFeatureReclaimers(owner);
-	RemoveUnitFromResurrecters(owner);
+	CBuilderCaches::RemoveUnitFromReclaimers(owner);
+	CBuilderCaches::RemoveUnitFromFeatureReclaimers(owner);
+	CBuilderCaches::RemoveUnitFromResurrecters(owner);
 	unitHandler.RemoveBuilderCAI(this);
-}
-
-void CBuilderCAI::InitStatic()
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	spring::clear_unordered_set(reclaimers);
-	spring::clear_unordered_set(featureReclaimers);
-	spring::clear_unordered_set(resurrecters);
 }
 
 void CBuilderCAI::PostLoad()
@@ -593,7 +578,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 	if (buildOptions.find(c.GetID()) == buildOptions.end())
 		return;
 
-	if (!inCommand) {
+	if (inCommand == CMD_STOP) {
 		BuildInfo bi;
 
 		// note:
@@ -625,8 +610,12 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 
 		// <build> is never parsed (except in PostLoad) so just copy it
 		build = bi;
-		inCommand = true;
+		inCommand = c.GetID();
 	}
+
+	// guard against dangling non-build commands
+	if (inCommand >= CMD_STOP)
+		return;
 
 	assert(build.def != nullptr);
 	assert(build.def->id == -c.GetID() && build.def->id != 0);
@@ -686,7 +675,7 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 		}
 
 		if (f != nullptr && (!build.def->isFeature || build.def->wreckName != f->def->name)) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			ReclaimFeature(f);
 			return;
 		}
@@ -779,7 +768,7 @@ void CBuilderCAI::ExecuteRepair(Command& c)
 		canRepairUnit &= ((unit->beingBuilt) || (unit->unitDef->repairable && (unit->health < unit->maxHealth)));
 		canRepairUnit &= ((unit != owner) || owner->unitDef->canSelfRepair);
 		canRepairUnit &= (!unit->soloBuilder || (unit->soloBuilder == owner));
-		canRepairUnit &= (!c.IsInternalOrder() || (c.GetOpts() & CONTROL_KEY) || !IsUnitBeingReclaimed(unit, owner));
+		canRepairUnit &= (!c.IsInternalOrder() || (c.GetOpts() & CONTROL_KEY) || !CBuilderCaches::IsUnitBeingReclaimed(unit, owner));
 		canRepairUnit &= (UpdateTargetLostTimer(unit->id) != 0);
 
 		if (canRepairUnit) {
@@ -795,7 +784,7 @@ void CBuilderCAI::ExecuteRepair(Command& c)
 
 		ownerBuilder->StopBuild();
 		if (FindRepairTargetAndRepair(pos, radius, c.GetOpts(), false, (c.GetOpts() & META_KEY))) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -851,7 +840,7 @@ void CBuilderCAI::ExecuteCapture(Command& c)
 		ownerBuilder->StopBuild();
 
 		if (FindCaptureTargetAndCapture(pos, radius, c.GetOpts(), (c.GetOpts() & META_KEY))) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -927,7 +916,7 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 			Command nc(CMD_REPAIR, c.GetOpts(), b->curBuild->id);
 
 			commandQue.push_front(nc);
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -944,13 +933,13 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 			StopSlowGuard();
 
 			commandQue.push_front(Command(CMD_REPAIR, c.GetOpts(), fac->curBuild->id));
-			inCommand = false;
+			inCommand = CMD_STOP;
 			// SlowUpdate();
 			return;
 		}
 	}
 
-	if (!(c.GetOpts() & CONTROL_KEY) && IsUnitBeingReclaimed(guardee, owner))
+	if (!(c.GetOpts() & CONTROL_KEY) && CBuilderCaches::IsUnitBeingReclaimed(guardee, owner))
 		return;
 
 	const float3 pos    = guardee->pos;
@@ -969,7 +958,7 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 			StopSlowGuard();
 
 			commandQue.push_front(Command(CMD_REPAIR, c.GetOpts(), guardee->id));
-			inCommand = false;
+			inCommand = CMD_STOP;
 			return;
 		}
 
@@ -1025,8 +1014,8 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 				const int rid = FindReclaimTarget(pos, radius, c.GetOpts(), recopt, curdist);
 				if ((rid > 0) && (rid != uid)) {
 					StopMoveAndFinishCommand();
-					RemoveUnitFromReclaimers(owner);
-					RemoveUnitFromFeatureReclaimers(owner);
+					CBuilderCaches::RemoveUnitFromReclaimers(owner);
+					CBuilderCaches::RemoveUnitFromFeatureReclaimers(owner);
 					return;
 				}
 			}
@@ -1036,21 +1025,21 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 			CFeature* feature = featureHandler.GetFeature(uid - unitHandler.MaxUnits());
 
 			if (feature != nullptr) {
-				bool featureBeingResurrected = IsFeatureBeingResurrected(feature->id, owner);
+				bool featureBeingResurrected = CBuilderCaches::IsFeatureBeingResurrected(feature->id, owner);
 				featureBeingResurrected &= c.IsInternalOrder();
 
 				if (featureBeingResurrected || !ReclaimObject(feature)) {
 					StopMoveAndFinishCommand();
-					RemoveUnitFromFeatureReclaimers(owner);
+					CBuilderCaches::RemoveUnitFromFeatureReclaimers(owner);
 				} else {
-					AddUnitToFeatureReclaimers(owner);
+					CBuilderCaches::AddUnitToFeatureReclaimers(owner);
 				}
 			} else {
 				StopMoveAndFinishCommand();
-				RemoveUnitFromFeatureReclaimers(owner);
+				CBuilderCaches::RemoveUnitFromFeatureReclaimers(owner);
 			}
 
-			RemoveUnitFromReclaimers(owner);
+			CBuilderCaches::RemoveUnitFromReclaimers(owner);
 		} else { // reclaim unit
 			CUnit* unit = unitHandler.GetUnit(uid);
 
@@ -1068,8 +1057,8 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 
 				if (outOfReclaimRange || busyAlliedBuilder) {
 					StopMoveAndFinishCommand();
-					RemoveUnitFromReclaimers(owner);
-					RemoveUnitFromFeatureReclaimers(owner);
+					CBuilderCaches::RemoveUnitFromReclaimers(owner);
+					CBuilderCaches::RemoveUnitFromFeatureReclaimers(owner);
 					return;
 				}
 			}
@@ -1078,14 +1067,14 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 				if (!ReclaimObject(unit)) {
 					StopMoveAndFinishCommand();
 				} else {
-					AddUnitToReclaimers(owner);
+					CBuilderCaches::AddUnitToReclaimers(owner);
 				}
 			} else {
-				RemoveUnitFromReclaimers(owner);
+				CBuilderCaches::RemoveUnitFromReclaimers(owner);
 				StopMoveAndFinishCommand();
 			}
 
-			RemoveUnitFromFeatureReclaimers(owner);
+			CBuilderCaches::RemoveUnitFromFeatureReclaimers(owner);
 		}
 	} else if (c.GetNumParams() == 4) {
 		// area reclaim
@@ -1095,8 +1084,8 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 		const bool recEnemyOnly = (c.GetOpts() & META_KEY) && (c.GetOpts() & CONTROL_KEY);
 		const bool recSpecial = !!(c.GetOpts() & CONTROL_KEY);
 
-		RemoveUnitFromReclaimers(owner);
-		RemoveUnitFromFeatureReclaimers(owner);
+		CBuilderCaches::RemoveUnitFromReclaimers(owner);
+		CBuilderCaches::RemoveUnitFromFeatureReclaimers(owner);
 		ownerBuilder->StopBuild();
 
 		ReclaimOption recopt = REC_NORESCHECK;
@@ -1105,7 +1094,7 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 		if (recSpecial)   recopt |= REC_SPECIAL;
 
 		if (FindReclaimTargetAndReclaim(pos, radius, c.GetOpts(), recopt)) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -1115,8 +1104,8 @@ void CBuilderCAI::ExecuteReclaim(Command& c)
 
 	} else {
 		// wrong number of parameters
-		RemoveUnitFromReclaimers(owner);
-		RemoveUnitFromFeatureReclaimers(owner);
+		CBuilderCaches::RemoveUnitFromReclaimers(owner);
+		CBuilderCaches::RemoveUnitFromFeatureReclaimers(owner);
 		StopMoveAndFinishCommand();
 	}
 }
@@ -1147,23 +1136,23 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 			CFeature* feature = featureHandler.GetFeature(id - unitHandler.MaxUnits());
 
 			if (feature && feature->udef != nullptr) {
-				if ((c.IsInternalOrder() && !(c.GetOpts() & CONTROL_KEY) && IsFeatureBeingReclaimed(feature->id, owner)) ||
+				if ((c.IsInternalOrder() && !(c.GetOpts() & CONTROL_KEY) && CBuilderCaches::IsFeatureBeingReclaimed(feature->id, owner)) ||
 					!ResurrectObject(feature)) {
-					RemoveUnitFromResurrecters(owner);
+					CBuilderCaches::RemoveUnitFromResurrecters(owner);
 					StopMoveAndFinishCommand();
 				}
 				else {
-					AddUnitToResurrecters(owner);
+					CBuilderCaches::AddUnitToResurrecters(owner);
 				}
 			} else {
-				RemoveUnitFromResurrecters(owner);
+				CBuilderCaches::RemoveUnitFromResurrecters(owner);
 
 				if (ownerBuilder->lastResurrected && unitHandler.GetUnitUnsafe(ownerBuilder->lastResurrected) != nullptr && owner->unitDef->canRepair) {
 					// resurrection finished, start repair (by overwriting the current order)
 					c = Command(CMD_REPAIR, c.GetOpts() | INTERNAL_ORDER, ownerBuilder->lastResurrected);
 
 					ownerBuilder->lastResurrected = 0;
-					inCommand = false;
+					inCommand = CMD_STOP;
 					SlowUpdate();
 					return;
 				}
@@ -1171,7 +1160,7 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 				StopMoveAndFinishCommand();
 			}
 		} else { // resurrect unit
-			RemoveUnitFromResurrecters(owner);
+			CBuilderCaches::RemoveUnitFromResurrecters(owner);
 			StopMoveAndFinishCommand();
 		}
 	} else if (c.GetNumParams() == 4) {
@@ -1180,7 +1169,7 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 		const float radius = c.GetParam(3);
 
 		if (FindResurrectableFeatureAndResurrect(pos, radius, c.GetOpts(), (c.GetOpts() & META_KEY))) {
-			inCommand = false;
+			inCommand = CMD_STOP;
 			SlowUpdate();
 			return;
 		}
@@ -1190,7 +1179,7 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 
 	} else {
 		// wrong number of parameters
-		RemoveUnitFromResurrecters(owner);
+		CBuilderCaches::RemoveUnitFromResurrecters(owner);
 		StopMoveAndFinishCommand();
 	}
 }
@@ -1223,7 +1212,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 
 	if (tempOrder) {
 		tempOrder = false;
-		inCommand = true;
+		inCommand = CMD_FIGHT;
 	}
 	if (c.GetNumParams() < 3) {
 		LOG_L(L_ERROR, "[BuilderCAI::%s][f=%d][id=%d][#c.params=%d min=3]", __func__, gs->frameNum, owner->id, c.GetNumParams());
@@ -1231,7 +1220,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	}
 
 	if (c.GetNumParams() >= 6) {
-		if (!inCommand)
+		if (inCommand == CMD_STOP)
 			commandPos1 = c.GetPos(3);
 
 	} else {
@@ -1245,8 +1234,8 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	}
 
 	float3 pos = c.GetPos(0);
-	if (!inCommand) {
-		inCommand = true;
+	if (inCommand == CMD_STOP) {
+		inCommand = CMD_FIGHT;
 		commandPos2 = pos;
 	}
 
@@ -1274,7 +1263,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	// Priority 1: Repair
 	if (!reclaimEnemyOnlyMode && (ownerDef->canRepair || ownerDef->canAssist) && FindRepairTargetAndRepair(curPosOnLine, searchRadius, c.GetOpts(), true, resurrectMode)){
 		tempOrder = true;
-		inCommand = false;
+		inCommand = CMD_STOP;
 
 		if (lastPC1 != gs->frameNum) {  //avoid infinite loops
 			lastPC1 = gs->frameNum;
@@ -1287,7 +1276,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	// Priority 2: Resurrect (optional)
 	if (!reclaimEnemyOnlyMode && resurrectMode && ownerDef->canResurrect && FindResurrectableFeatureAndResurrect(curPosOnLine, searchRadius, c.GetOpts(), false)) {
 		tempOrder = true;
-		inCommand = false;
+		inCommand = CMD_STOP;
 
 		if (lastPC2 != gs->frameNum) {  //avoid infinite loops
 			lastPC2 = gs->frameNum;
@@ -1300,7 +1289,7 @@ void CBuilderCAI::ExecuteFight(Command& c)
 	// Priority 3: Reclaim / reclaim non resurrectable (optional) / reclaim enemy units (optional)
 	if (ownerDef->canReclaim && FindReclaimTargetAndReclaim(curPosOnLine, searchRadius, c.GetOpts(), recopt)) {
 		tempOrder = true;
-		inCommand = false;
+		inCommand = CMD_STOP;
 
 		if (lastPC3 != gs->frameNum) {  //avoid infinite loops
 			lastPC3 = gs->frameNum;
@@ -1329,7 +1318,7 @@ void CBuilderCAI::ExecuteRestore(Command& c)
 	if (!owner->unitDef->canRestore)
 		return;
 
-	if (inCommand) {
+	if (inCommand == CMD_RESTORE) {
 		if (!ownerBuilder->terraforming)
 			StopMoveAndFinishCommand();
 
@@ -1342,7 +1331,7 @@ void CBuilderCAI::ExecuteRestore(Command& c)
 
 		if (MoveInBuildRange(pos, radius * 0.7f)) {
 			ownerBuilder->StartRestore(pos, radius);
-			inCommand = true;
+			inCommand = CMD_RESTORE;
 		}
 	}
 }
@@ -1383,134 +1372,6 @@ int CBuilderCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 	}
 
 	return CMD_MOVE;
-}
-
-
-void CBuilderCAI::AddUnitToReclaimers(CUnit* unit) { reclaimers.insert(unit->id); }
-void CBuilderCAI::RemoveUnitFromReclaimers(CUnit* unit) { reclaimers.erase(unit->id); }
-
-void CBuilderCAI::AddUnitToFeatureReclaimers(CUnit* unit) { featureReclaimers.insert(unit->id); }
-void CBuilderCAI::RemoveUnitFromFeatureReclaimers(CUnit* unit) { featureReclaimers.erase(unit->id); }
-
-void CBuilderCAI::AddUnitToResurrecters(CUnit* unit) { resurrecters.insert(unit->id); }
-void CBuilderCAI::RemoveUnitFromResurrecters(CUnit* unit) { resurrecters.erase(unit->id); }
-
-
-/**
- * Checks if a unit is being reclaimed by a friendly con.
- *
- * We assume that there will not be a lot of reclaimers, because performance
- * would suck if there were. Ideally, reclaimers should be assigned on a
- * per-unit basis, but this requires tracking of deaths, which albeit
- * already done, is not exactly simple to follow.
- *
- * TODO easy: store reclaiming units per allyteam
- * TODO harder: update reclaimers as they start/finish reclaims and/or die
- */
-bool CBuilderCAI::IsUnitBeingReclaimed(const CUnit* unit, const CUnit* friendUnit)
-{
-	bool retval = false;
-
-	removees.clear();
-	removees.reserve(reclaimers.size());
-
-	for (auto it = reclaimers.begin(); it != reclaimers.end(); ++it) {
-		const CUnit* u = unitHandler.GetUnit(*it);
-		const CCommandAI* cai = u->commandAI;
-		const CCommandQueue& cq = cai->commandQue;
-
-		if (cq.empty()) {
-			removees.push_back(u->id);
-			continue;
-		}
-		const Command& c = cq.front();
-		if (c.GetID() != CMD_RECLAIM || (c.GetNumParams() != 1 && c.GetNumParams() != 5)) {
-			removees.push_back(u->id);
-			continue;
-		}
-		const int cmdUnitId = (int)c.GetParam(0);
-		if (cmdUnitId == unit->id && (friendUnit == nullptr || teamHandler.Ally(friendUnit->allyteam, u->allyteam))) {
-			retval = true;
-			break;
-		}
-	}
-
-	for (auto it = removees.begin(); it != removees.end(); ++it)
-		RemoveUnitFromReclaimers(unitHandler.GetUnit(*it));
-
-	return retval;
-}
-
-
-bool CBuilderCAI::IsFeatureBeingReclaimed(int featureId, const CUnit* friendUnit)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	bool retval = false;
-
-	removees.clear();
-	removees.reserve(featureReclaimers.size());
-
-	for (auto it = featureReclaimers.begin(); it != featureReclaimers.end(); ++it) {
-		const CUnit* u = unitHandler.GetUnit(*it);
-		const CCommandAI* cai = u->commandAI;
-		const CCommandQueue& cq = cai->commandQue;
-
-		if (cq.empty()) {
-			removees.push_back(u->id);
-			continue;
-		}
-		const Command& c = cq.front();
-		if (c.GetID() != CMD_RECLAIM || (c.GetNumParams() != 1 && c.GetNumParams() != 5)) {
-			removees.push_back(u->id);
-			continue;
-		}
-		const int cmdFeatureId = (int)c.GetParam(0);
-		if ((cmdFeatureId - unitHandler.MaxUnits()) == featureId && (friendUnit == nullptr || teamHandler.Ally(friendUnit->allyteam, u->allyteam))) {
-			retval = true;
-			break;
-		}
-	}
-
-	for (auto it = removees.begin(); it != removees.end(); ++it)
-		RemoveUnitFromFeatureReclaimers(unitHandler.GetUnit(*it));
-
-	return retval;
-}
-
-
-bool CBuilderCAI::IsFeatureBeingResurrected(int featureId, const CUnit* friendUnit)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	bool retval = false;
-
-	removees.clear();
-	removees.reserve(resurrecters.size());
-
-	for (auto it = resurrecters.begin(); it != resurrecters.end(); ++it) {
-		const CUnit* u = unitHandler.GetUnit(*it);
-		const CCommandAI* cai = u->commandAI;
-		const CCommandQueue& cq = cai->commandQue;
-
-		if (cq.empty()) {
-			removees.push_back(u->id);
-			continue;
-		}
-		const Command& c = cq.front();
-		if (c.GetID() != CMD_RESURRECT || c.GetNumParams() != 1) {
-			removees.push_back(u->id);
-			continue;
-		}
-		const int cmdFeatureId = (int)c.GetParam(0);
-		if ((cmdFeatureId - unitHandler.MaxUnits()) == featureId && (friendUnit == nullptr || teamHandler.Ally(friendUnit->allyteam, u->allyteam))) {
-			retval = true;
-			break;
-		}
-	}
-
-	for (auto it = removees.begin(); it != removees.end(); ++it)
-		RemoveUnitFromResurrecters(unitHandler.GetUnit(*it));
-
-	return retval;
 }
 
 
@@ -1610,7 +1471,7 @@ int CBuilderCAI::FindReclaimTarget(const float3& pos, float radius, unsigned cha
 				if (!owner->unitDef->canmove && !IsInBuildRange(f))
 					continue;
 
-				if (IsFeatureBeingResurrected(f->id, owner))
+				if (CBuilderCaches::IsFeatureBeingResurrected(f->id, owner))
 					continue;
 
 				metal |= (recSpecial && !metal && f->defResources.metal > 0.0f);
@@ -1681,7 +1542,7 @@ bool CBuilderCAI::FindResurrectableFeatureAndResurrect(
 			if (owner->immobile && !IsInBuildRange(f))
 				continue;
 
-			if (!(options & CONTROL_KEY) && IsFeatureBeingReclaimed(f->id, owner))
+			if (!(options & CONTROL_KEY) && CBuilderCaches::IsFeatureBeingReclaimed(f->id, owner))
 				continue;
 
 			bestDist = dist;
@@ -1812,7 +1673,7 @@ bool CBuilderCAI::FindRepairTargetAndRepair(
 						continue;
 
 					// don't repair stuff that's being reclaimed
-					if (!(options & CONTROL_KEY) && IsUnitBeingReclaimed(unit, owner))
+					if (!(options & CONTROL_KEY) && CBuilderCaches::IsUnitBeingReclaimed(unit, owner))
 						continue;
 
 					stationary |= (!stationary && !unit->IsMoving());

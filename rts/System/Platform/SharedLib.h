@@ -8,7 +8,7 @@
 /**
  * @brief shared library loader base
  *
- * Base shared library loading class definitiion.
+ * Base shared library loading class definition.
  * This is the abstract shared library class used for
  * polymorphic loading. Platform-specifics should
  * derive from this.
@@ -55,6 +55,15 @@ public:
 	 * Abstract so it must be implemented specifically by all platforms.
 	 */
 	virtual void* FindAddress(const char* symbol) = 0;
+
+	/**
+	 * @brief Find Address
+	 * @param function signature type to cast the return value to
+	 * @param symbol function name (symbol) to locate
+	 *
+	 * Abstract so it must be implemented specifically by all platforms.
+	 */
+	template<typename FuncPtr> FuncPtr FindAddressTyped(const char* symbol) { return reinterpret_cast<FuncPtr>(FindAddress(symbol)); }
 
 	virtual ~SharedLib();
 

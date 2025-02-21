@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 class float3;
 class LuaParser;
@@ -70,6 +71,7 @@ public:
 
 	virtual const float3& GetListenerPos() const = 0;
 
+	virtual std::vector<std::string> GetSoundDevices() = 0;
 public:
 	unsigned numEmptyPlayRequests = 0;
 	unsigned numAbortedPlays = 0;

@@ -10,6 +10,7 @@
 #include "System/Matrix44f.h"
 #include "System/creg/creg_cond.h"
 #include "System/Misc/SpringTime.h"
+#include "System/UnorderedSet.hpp"
 #include "System/type2.h"
 
 struct SDL_version;
@@ -105,6 +106,8 @@ public:
 	int GetCurrentDisplayIndex() const;
 	void GetDisplayBounds(SDL_Rect& r, const int* di = nullptr) const;
 	void GetUsableDisplayBounds(SDL_Rect& r, const int* di = nullptr) const;
+
+	bool IsExtensionSupported(const char* ext) const;
 
 	bool CheckGLMultiSampling() const;
 	bool CheckGLContextVersion(const int2& minCtx) const;
@@ -284,7 +287,7 @@ public:
 	 * @brief GPU driver's vendor
 	 *
 	 * These can be used to enable workarounds for bugs in their drivers.
-	 * Note, you should always give the user the possiblity to override such workarounds via config-tags.
+	 * Note, you should always give the user the possibility to override such workarounds via config-tags.
 	 */
 	bool haveAMD;
 	bool haveMesa;
@@ -306,7 +309,7 @@ public:
 	*/
 	bool supportPersistentMapping;
 
-	// GLEW_ARB_explicit_attrib_location
+	// GLAD_GL_ARB_explicit_attrib_location
 	bool supportExplicitAttribLoc;
 
 	/**
@@ -398,6 +401,7 @@ private:
 	void SetMinSampleShadingRate();
 	bool SetWindowMinMaximized(bool maximize) const;
 private:
+	spring::unordered_set<std::string> glExtensions;
 	// double-buffered; results from frame N become available on frame N+1
 	std::array<uint32_t, NUM_OPENGL_TIMER_QUERIES * 2> glTimerQueries;
 private:

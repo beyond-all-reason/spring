@@ -29,7 +29,7 @@ GLsizei FBO::maxSamples = -1;
  */
 bool FBO::IsSupported()
 {
-	return (GLEW_EXT_framebuffer_object);
+	return (GLAD_GL_EXT_framebuffer_object);
 }
 
 
@@ -332,7 +332,7 @@ void FBO::Unbind()
 bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, const std::array<int, 4>& dstRect, uint32_t mask, uint32_t filter)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!GLEW_EXT_framebuffer_blit)
+	if (!GLAD_GL_EXT_framebuffer_blit)
 		return false;
 
 	if (srcRect[2] - srcRect[0] <= 0 || srcRect[3] - srcRect[1] <= 0)
@@ -373,8 +373,10 @@ bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, 
 bool FBO::CheckStatus(const char* name)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
-	const GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+#endif
+	const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
 
 	switch (status) {
 		case GL_FRAMEBUFFER_COMPLETE_EXT:
@@ -415,8 +417,10 @@ bool FBO::CheckStatus(const char* name)
 GLenum FBO::GetStatus()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
-	return glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+#endif
+	return glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
 }
 
 
@@ -426,13 +430,15 @@ GLenum FBO::GetStatus()
 void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum attachment, const int mipLevel, const int zSlice )
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
+#endif
 	if (texTarget == GL_TEXTURE_1D) {
 		glFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_1D, texId, mipLevel);
 	} else if (texTarget == GL_TEXTURE_3D) {
 		glFramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_3D, texId, mipLevel, zSlice);
 	} else if (texTarget == GL_TEXTURE_CUBE_MAP || texTarget == GL_TEXTURE_2D_ARRAY) {
-		if (GLEW_VERSION_3_2)
+		if (GLAD_GL_VERSION_3_2)
 			glFramebufferTexture(GL_FRAMEBUFFER_EXT, attachment, texId, mipLevel); //attach the whole texture
 	} else {
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, texTarget, texId, mipLevel);
@@ -446,7 +452,9 @@ void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum
 void FBO::AttachRenderBuffer(const GLuint rboId, const GLenum attachment)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
+#endif
 	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, attachment, GL_RENDERBUFFER_EXT, rboId);
 }
 
@@ -457,7 +465,9 @@ void FBO::AttachRenderBuffer(const GLuint rboId, const GLenum attachment)
 void FBO::Detach(const GLenum attachment)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
+#endif
 	GLuint target = 0;
 	glGetFramebufferAttachmentParameterivEXT(GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT, (GLint*) &target);
 
@@ -484,7 +494,9 @@ void FBO::Detach(const GLenum attachment)
 void FBO::DetachAll()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
+#endif
 	for (int i = 0; i < maxAttachments; ++i) {
 		Detach(GL_COLOR_ATTACHMENT0_EXT + i);
 	}
@@ -499,7 +511,9 @@ void FBO::DetachAll()
 void FBO::CreateRenderBuffer(const GLenum attachment, const GLenum format, const GLsizei width, const GLsizei height)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
+#endif
 	GLuint rbo;
 	glGenRenderbuffersEXT(1, &rbo);
 	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rbo);
@@ -515,7 +529,9 @@ void FBO::CreateRenderBuffer(const GLenum attachment, const GLenum format, const
 void FBO::CreateRenderBufferMultisample(const GLenum attachment, const GLenum format, const GLsizei width, const GLsizei height, GLsizei samples)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+#ifndef HEADLESS
 	assert(GetCurrentBoundFBO() == fboId);
+#endif
 	assert(maxSamples > 0);
 	samples = std::min(samples, maxSamples);
 
@@ -529,28 +545,16 @@ void FBO::CreateRenderBufferMultisample(const GLenum attachment, const GLenum fo
 
 GLsizei FBO::GetMaxSamples()
 {
-	RECOIL_DETAILED_TRACY_ZONE;
 	if (maxSamples >= 0)
 		return maxSamples;
-
+#ifdef HEADLESS
+	maxSamples = 1;
+#else
 	// set maxSamples once
 	if (maxSamples == -1) {
-		bool multisampleExtensionFound = false;
-
-	#ifdef GLEW_EXT_framebuffer_multisample
-		multisampleExtensionFound = multisampleExtensionFound || (GLEW_EXT_framebuffer_multisample && GLEW_EXT_framebuffer_blit);
-	#endif
-	#ifdef GLEW_ARB_framebuffer_object
-		multisampleExtensionFound = multisampleExtensionFound || GLEW_ARB_framebuffer_object;
-	#endif
-
-		if (multisampleExtensionFound) {
-			glGetIntegerv(GL_MAX_SAMPLES_EXT, &maxSamples);
-			maxSamples = std::max(0, maxSamples);
-		} else {
-			maxSamples = 0;
-		}
+		glGetIntegerv(GL_MAX_SAMPLES_EXT, &maxSamples);
+		maxSamples = std::max(0, maxSamples);
 	}
-
+#endif // HEADLESS
 	return maxSamples;
 }

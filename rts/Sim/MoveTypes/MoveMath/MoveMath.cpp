@@ -141,7 +141,7 @@ float CMoveMath::GetPosSpeedMod(const MoveDef& moveDef, unsigned xSquare, unsign
 	return 0.0f;
 }
 
-/* Check if a given square-position is accessable by the MoveDef footprint. */
+/* Check if a given square-position is accessible by the MoveDef footprint. */
 CMoveMath::BlockType CMoveMath::IsBlockedNoSpeedModCheck(const MoveDef& moveDef, int xSquare, int zSquare, const CSolidObject* collider, int thread)
 {
 	MoveTypes::CheckCollisionQuery collisionQuery = (collider != nullptr)

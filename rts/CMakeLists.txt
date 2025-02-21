@@ -37,7 +37,7 @@ endif()
 ### give error when not found
 find_package_static(DevIL REQUIRED)
 
-### Assemble common incude dirs
+### Assemble common include dirs
 include_directories(BEFORE lib)
 include_directories(BEFORE lib/lua/include)
 include_directories(${CMAKE_SOURCE_DIR}/include/AL)
@@ -45,9 +45,6 @@ include_directories(${SPRING_MINIZIP_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/cereal/include)
 
-
-### libcpuid
-list(APPEND engineCommonLibraries "cpuid")
 
 ### base64 from pr-downloader
 list(APPEND engineCommonLibraries "prd::base64")

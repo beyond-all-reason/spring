@@ -17,9 +17,7 @@
 
 using namespace MoveTypes;
 
-void GroundMoveSystem::Init() {
-    Sim::systemGlobals.CreateSystemComponent<GroundMoveSystemComponent>();
-}
+void GroundMoveSystem::Init() {}
 
 template<typename T, typename F>
 void issue_events(F func)
@@ -32,8 +30,6 @@ void issue_events(F func)
 }
 
 void GroundMoveSystem::Update() {
-    auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
-
     // TODO: GroundMove could become a component (or series of components) and then the extra indirection wouldn't be
     // needed. Though that will be a bigger change.
 	{
@@ -150,7 +146,7 @@ void GroundMoveSystem::Update() {
         });
 	}
 	{
-        // TODO: the vars are synced and that's what is stoping this being MT'ed.
+        // TODO: the vars are synced and that's what is stopping this being MT'ed.
         // Need an alternative method to support sync values that doesn't stop MT.
         // Same for change heading above as well.
         SCOPED_TIMER("Sim::Unit::MoveType::5::Update");

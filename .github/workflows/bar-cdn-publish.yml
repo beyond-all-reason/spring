@@ -1,4 +1,4 @@
-# Workflow for Beyond All Reaon, it only motifies BAR infra that a new engine
+# Workflow for Beyond All Reason, it only motifies BAR infra that a new engine
 # release was published.
 name: Publish Engine to BAR CDN
 on:
@@ -32,10 +32,10 @@ jobs:
             release_id: context.payload.release?.id ?? context.payload.inputs.releaseId
           });
           const engines = rel.data.assets
-            .filter((a) => a.name.endsWith('64-minimal-portable.7z'))
+            .filter((a) => /amd64-(linux|windows)\.7z$/.test(a.name))
             .map((a) => a.browser_download_url)
             .sort();
-          if (engines.length != 2 || !/linux/.test(engines[0]) || !/windows/.test(engines[1])) {
+          if (engines.length != 2) {
             throw new Error("Not found engine archives!");
           }
 

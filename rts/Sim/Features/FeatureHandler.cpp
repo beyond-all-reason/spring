@@ -9,7 +9,7 @@
 #include "Map/ReadMap.h"
 #include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/QuadField.h"
-#include "Sim/Units/CommandAI/BuilderCAI.h"
+#include "Sim/Units/CommandAI/BuilderCaches.h"
 #include "System/creg/STL_Set.h"
 #include "System/EventHandler.h"
 #include "System/TimeProfiler.h"
@@ -209,7 +209,7 @@ void CFeatureHandler::Update()
 bool CFeatureHandler::TryFreeFeatureID(int id)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (CBuilderCAI::IsFeatureBeingReclaimed(id)) {
+	if (CBuilderCaches::IsFeatureBeingReclaimed(id)) {
 		// postpone putting this ID back into the free pool
 		// (this gives area-reclaimers time to choose a new
 		// target with a different ID)

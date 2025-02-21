@@ -58,7 +58,7 @@ private:
 
 /**
  * @brief Server class for game handling
- * This class represents a gameserver. It is responsible for recieving,
+ * This class represents a gameserver. It is responsible for receiving,
  * checking and forwarding gamedata to the clients. It keeps track of the sync,
  * cpu and other stats and informs all clients about events.
  */
@@ -83,7 +83,7 @@ public:
 	void Initialize();
 	/**
 	 * @brief Set frame after loading
-	 * WARNING! No checks are done, so be carefull
+	 * WARNING! No checks are done, so be careful
 	 */
 	void PostLoad(int serverFrameNum);
 

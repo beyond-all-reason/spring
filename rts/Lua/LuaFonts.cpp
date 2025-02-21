@@ -221,8 +221,8 @@ int LuaFonts::DeleteFont(lua_State* L)
  * but later, on the Update cycle (before other Update and Draw callins).
  *
  * @function gl.AddFallbackFont
- * @string filePath VFS path to the file, for example "fonts/myfont.ttf". Uses VFS.RAW_FIRST access mode.
- * @treturn bool success
+ * @param filePath string VFS path to the file, for example "fonts/myfont.ttf". Uses VFS.RAW_FIRST access mode.
+ * @return bool success
  */
 int LuaFonts::AddFallbackFont(lua_State* L)
 {
@@ -241,7 +241,7 @@ int LuaFonts::AddFallbackFont(lua_State* L)
  * it also applies when calling this method.
  *
  * @function gl.ClearFallbackFonts
- * @treturn nil
+ * @return nil
  */
 int LuaFonts::ClearFallbackFonts(lua_State* L)
 {
@@ -502,4 +502,3 @@ int LuaFonts::BindTexture(lua_State* L)
 
 	return 0;
 }
-

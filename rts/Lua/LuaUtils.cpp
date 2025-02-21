@@ -397,7 +397,7 @@ static void LowerKeysReal(lua_State* L, spring::unsynced_set<const void*>& check
 		lua_pushvalue(L, -2); // the key
 		lua_pushnil(L);
 		lua_rawset(L, sourceTableIdx);
-		// does the lower case key alread exist in the table?
+		// does the lower case key already exist in the table?
 		lua_pushsstring(L, lowerKey);
 		lua_rawget(L, sourceTableIdx);
 
@@ -1156,6 +1156,21 @@ void LuaUtils::ParseCommandArray(
 	}
 }
 
+/***
+ * @alias Facing
+ * | 0 # South
+ * | 1 # East
+ * | 2 # North
+ * | 3 # West
+ * | "s" # South
+ * | "e" # East
+ * | "n" # North
+ * | "w" # West
+ * | "south" # South
+ * | "east" # East
+ * | "north" # North
+ * | "west" # West
+ */
 
 int LuaUtils::ParseFacing(lua_State* L, const char* caller, int index)
 {

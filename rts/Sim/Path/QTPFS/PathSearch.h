@@ -202,7 +202,7 @@ namespace QTPFS {
 		PathHashType pathSearchHash;
 
 		// Similar to hash, but the target quad and source quad numbers may not relate to actual
-		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
+		// leaf nodes in the quad tree. They represent the quad that would be there if the leaf node
 		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
 		// start and/or end in different, but close, quads. This is used to handle partially-
 		// shared path searches.

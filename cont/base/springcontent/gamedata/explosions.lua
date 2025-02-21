@@ -13,7 +13,7 @@
 
 local explosionDefs = {}
 
-local shared = {} -- shared amongst the lua explosiondef enviroments
+local shared = {} -- shared amongst the lua explosiondef environments
 
 local preProcFile  = 'gamedata/explosions_pre.lua'
 local postProcFile = 'gamedata/explosions_post.lua'

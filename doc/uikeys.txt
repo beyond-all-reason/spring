@@ -35,7 +35,7 @@
 //
 //    keysym <name> <keycode>
 //    -----------------------
-//    - add a custom key symbol  (the default key symbols can not be overriden)
+//    - add a custom key symbol  (the default key symbols can not be overridden)
 //    - name must start with a letter, and only contain letters, numbers, and '_'
 //    - the <keycode> can be a currently recognized keysym
 //      (ex:  "keysym menu 0x13F"  or  "keysym radar r")

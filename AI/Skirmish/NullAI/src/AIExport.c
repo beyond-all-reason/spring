@@ -64,7 +64,7 @@ cost, and granted, that is true; but this does not change the fact that we're
 checking for a special case that we know only happens once at the beginning of
 the game, before every single event.
 
-Of course, we still need an EVENT_INIT, since initialising the existance of a
+Of course, we still need an EVENT_INIT, since initialising the existence of a
 team member is not the same as initialising its state.
 
 You might also argue that we do this check in the handleEvent switch within each

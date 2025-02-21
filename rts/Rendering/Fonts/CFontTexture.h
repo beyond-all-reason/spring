@@ -97,7 +97,7 @@ struct GlyphInfo {
 class CglFontRenderer;
 
 /**
-This class just store glyphs and load new glyphs if requred
+This class just store glyphs and load new glyphs if required
 It works with image and don't care about rendering these glyphs
 It works only and only with UTF32 chars
 **/

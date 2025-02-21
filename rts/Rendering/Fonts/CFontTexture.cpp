@@ -874,25 +874,27 @@ void CFontTexture::Update() {
 	std::erase_if(allFonts, [](std::weak_ptr<CFontTexture> item) { return item.expired(); });
 
 	static std::vector<std::shared_ptr<CFontTexture>> fontsToUpdate;
-	fontsToUpdate.clear();
 
 	if (needsClearGlyphs)
 		ClearAllGlyphs();
 
 	for (const auto& font : allFonts) {
 		auto lf = font.lock();
-		if (lf->GlyphAtlasTextureNeedsUpdate() || lf->GlyphAtlasTextureNeedsUpload())
+		if (lf->GlyphAtlasTextureNeedsUpdate())
 			fontsToUpdate.emplace_back(std::move(lf));
 	}
 
-	for_mt_chunk(0, fontsToUpdate.size(), [](int i) {
+	// note causes nested for_mt in atlasUpdateShadow.Blur()
+	for_mt(0, fontsToUpdate.size(), [](int i) {
 		fontsToUpdate[i]->UpdateGlyphAtlasTexture();
 	});
-
-	for (const auto& font : fontsToUpdate)
-		font->UploadGlyphAtlasTexture();
-
 	fontsToUpdate.clear();
+
+	for (const auto& font : allFonts) {
+		auto lf = font.lock();
+		if (lf->GlyphAtlasTextureNeedsUpload())
+			lf->UploadGlyphAtlasTexture();
+	}
 }
 
 const GlyphInfo& CFontTexture::GetGlyph(char32_t ch)

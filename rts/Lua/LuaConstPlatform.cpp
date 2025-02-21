@@ -9,39 +9,38 @@
 
 /******************************************************************************
  * Platform constants
- * @module Platform
  * @see rts/Lua/LuaConstPlatform.cpp
 ******************************************************************************/
 
 /*** Platform specific information
  *
  * @table Platform
- * @string gpu full GPU device name
- * @string gpuVendor one of "Nvidia", "Intel", "ATI", "Mesa", "Unknown"
- * @string glVersionShort major.minor.buildNumber
- * @string glslVersionShort major.minor
- * @string glVersion full version
- * @string glVendor
- * @string glRenderer
- * @string glslVersion full version
- * @string glewVersion
- * @string osName full name of the OS
- * @string osFamily one of "Windows", "Linux", "MacOSX", "FreeBSD", "Unknown"
- * @number numDisplays
- * @number gpuMemorySize size of total GPU memory in MBs; only available for "Nvidia", (rest are 0)
- * @number sdlVersionCompiledMajor
- * @number sdlVersionCompiledMinor
- * @number sdlVersionCompiledPatch
- * @number sdlVersionLinkedMajor
- * @number sdlVersionLinkedMinor
- * @number sdlVersionLinkedPatch
- * @number totalRAM Total physical system RAM in MBs.
- * @bool glSupportNonPowerOfTwoTex
- * @bool glSupportTextureQueryLOD
- * @bool glSupport24bitDepthBuffer
- * @bool glSupportRestartPrimitive
- * @bool glSupportClipSpaceControl
- * @bool glSupportFragDepthLayout
+ * @field gpu string Full GPU device name
+ * @field gpuVendor "Nvidia"|"Intel"|"ATI"|"Mesa"|"Unknown"
+ * @field glVersionShort string `major.minor.buildNumber`
+ * @field glslVersionShort string `major.minor`
+ * @field glVersion string Full version
+ * @field glVendor string
+ * @field glRenderer string
+ * @field glslVersion string Full version
+ * @field gladVersion string
+ * @field osName string full name of the OS
+ * @field osFamily "Windows"|"Linux"|"MacOSX"|"FreeBSD"|"Unknown"
+ * @field numDisplays number
+ * @field gpuMemorySize number Size of total GPU memory in MBs; only available for "Nvidia", (rest are 0)
+ * @field sdlVersionCompiledMajor number
+ * @field sdlVersionCompiledMinor number
+ * @field sdlVersionCompiledPatch number
+ * @field sdlVersionLinkedMajor number
+ * @field sdlVersionLinkedMinor number
+ * @field sdlVersionLinkedPatch number
+ * @field totalRAM number Total physical system RAM in MBs.
+ * @field glSupportNonPowerOfTwoTex boolean
+ * @field glSupportTextureQueryLOD boolean
+ * @field glSupport24bitDepthBuffer boolean
+ * @field glSupportRestartPrimitive boolean
+ * @field glSupportClipSpaceControl boolean
+ * @field glSupportFragDepthLayout boolean
  */
 
 bool LuaConstPlatform::PushEntries(lua_State* L)
@@ -50,6 +49,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "gpuVendor", globalRenderingInfo.gpuVendor);
 	LuaPushNamedNumber(L, "gpuMemorySize", globalRenderingInfo.gpuMemorySize.x);
 	LuaPushNamedString(L, "glVersionShort", globalRenderingInfo.glVersionShort.data());
+	LuaPushNamedNumber(L, "glVersionNum", globalRenderingInfo.glVersionNum);
 	LuaPushNamedString(L, "glslVersionShort", globalRenderingInfo.glslVersionShort.data());
 	LuaPushNamedNumber(L, "glslVersionNum", globalRenderingInfo.glslVersionNum);
 
@@ -57,7 +57,8 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "glVendor", globalRenderingInfo.glVendor);
 	LuaPushNamedString(L, "glRenderer", globalRenderingInfo.glRenderer);
 	LuaPushNamedString(L, "glslVersion", globalRenderingInfo.glslVersion);
-	LuaPushNamedString(L, "glewVersion", globalRenderingInfo.glewVersion);
+	LuaPushNamedString(L, "gladVersion", globalRenderingInfo.gladVersion);
+	LuaPushNamedString(L, "glewVersion", globalRenderingInfo.gladVersion);
 
 	LuaPushNamedNumber(L, "sdlVersionCompiledMajor", globalRenderingInfo.sdlVersionCompiled.major);
 	LuaPushNamedNumber(L, "sdlVersionCompiledMinor", globalRenderingInfo.sdlVersionCompiled.minor);

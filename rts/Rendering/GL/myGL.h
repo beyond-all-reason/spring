@@ -3,22 +3,13 @@
 #ifndef _MY_GL_H
 #define _MY_GL_H
 
-#define GLEW_STATIC
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 
 #include <array>
 
-#if       defined(HEADLESS)
-	#undef WINGDIAPI
-	#define WINGDIAPI //working around https://github.com/beyond-all-reason/spring/issues/27
-	#include "lib/headlessStubs/glewstub.h"
-	#undef WINGDIAPI
-#else
-	#include <GL/glew.h>
-#endif // defined(HEADLESS)
-
+#include <glad/glad.h>
 
 #include "System/float3.h"
 #include "System/float4.h"

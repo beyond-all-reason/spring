@@ -66,6 +66,7 @@ class LuaUnsyncedCtrl {
 
 		static int SetCustomCommandDrawData(lua_State* L);
 
+		static int SetAutoShowMetal(lua_State* L);
 		static int SetDrawSky(lua_State* L);
 		static int SetDrawWater(lua_State* L);
 		static int SetDrawGround(lua_State* L);

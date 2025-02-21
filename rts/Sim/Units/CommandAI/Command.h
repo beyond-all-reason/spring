@@ -10,74 +10,72 @@
 #include "System/creg/creg_cond.h"
 #include "System/float3.h"
 
-
-
 // ID's lower than 0 are reserved for build options (cmd -x = unitdefs[x])
-#define CMD_STOP                   0
-#define CMD_INSERT                 1
-#define CMD_REMOVE                 2
-#define CMD_WAIT                   5
-#define CMD_TIMEWAIT               6
-#define CMD_DEATHWAIT              7
-#define CMD_SQUADWAIT              8
-#define CMD_GATHERWAIT             9
-#define CMD_MOVE                  10
-#define CMD_PATROL                15
-#define CMD_FIGHT                 16
-#define CMD_ATTACK                20
-#define CMD_AREA_ATTACK           21
-#define CMD_GUARD                 25
-#define CMD_GROUPSELECT           35
-#define CMD_GROUPADD              36
-#define CMD_GROUPCLEAR            37
-#define CMD_REPAIR                40
-#define CMD_FIRE_STATE            45
-#define CMD_MOVE_STATE            50
-#define CMD_SETBASE               55
-#define CMD_INTERNAL              60
-#define CMD_SELFD                 65
-#define CMD_LOAD_UNITS            75
-#define CMD_LOAD_ONTO             76
-#define CMD_UNLOAD_UNITS          80
-#define CMD_UNLOAD_UNIT           81
-#define CMD_ONOFF                 85
-#define CMD_RECLAIM               90
-#define CMD_CLOAK                 95
-#define CMD_STOCKPILE            100
-#define CMD_MANUALFIRE           105
-#define CMD_RESTORE              110
-#define CMD_REPEAT               115
-#define CMD_TRAJECTORY           120
-#define CMD_RESURRECT            125
-#define CMD_CAPTURE              130
-#define CMD_AUTOREPAIRLEVEL      135
-#define CMD_IDLEMODE             145
-#define CMD_FAILED               150
+static constexpr int CMD_STOP                =   0;
+static constexpr int CMD_INSERT              =   1;
+static constexpr int CMD_REMOVE              =   2;
+static constexpr int CMD_WAIT                =   5;
+static constexpr int CMD_TIMEWAIT            =   6;
+static constexpr int CMD_DEATHWAIT           =   7;
+static constexpr int CMD_SQUADWAIT           =   8;
+static constexpr int CMD_GATHERWAIT          =   9;
+static constexpr int CMD_MOVE                =  10;
+static constexpr int CMD_PATROL              =  15;
+static constexpr int CMD_FIGHT               =  16;
+static constexpr int CMD_ATTACK              =  20;
+static constexpr int CMD_AREA_ATTACK         =  21;
+static constexpr int CMD_GUARD               =  25;
+static constexpr int CMD_GROUPSELECT         =  35;
+static constexpr int CMD_GROUPADD            =  36;
+static constexpr int CMD_GROUPCLEAR          =  37;
+static constexpr int CMD_REPAIR              =  40;
+static constexpr int CMD_FIRE_STATE          =  45;
+static constexpr int CMD_MOVE_STATE          =  50;
+static constexpr int CMD_SETBASE             =  55;
+static constexpr int CMD_INTERNAL            =  60;
+static constexpr int CMD_SELFD               =  65;
+static constexpr int CMD_LOAD_UNITS          =  75;
+static constexpr int CMD_LOAD_ONTO           =  76;
+static constexpr int CMD_UNLOAD_UNITS        =  80;
+static constexpr int CMD_UNLOAD_UNIT         =  81;
+static constexpr int CMD_ONOFF               =  85;
+static constexpr int CMD_RECLAIM             =  90;
+static constexpr int CMD_CLOAK               =  95;
+static constexpr int CMD_STOCKPILE           = 100;
+static constexpr int CMD_MANUALFIRE          = 105;
+static constexpr int CMD_RESTORE             = 110;
+static constexpr int CMD_REPEAT              = 115;
+static constexpr int CMD_TRAJECTORY          = 120;
+static constexpr int CMD_RESURRECT           = 125;
+static constexpr int CMD_CAPTURE             = 130;
+static constexpr int CMD_AUTOREPAIRLEVEL     = 135;
+static constexpr int CMD_IDLEMODE            = 145;
+static constexpr int CMD_FAILED              = 150;
 
-#define CMDTYPE_ICON                        0  // expect 0 parameters in return
-#define CMDTYPE_ICON_MODE                   5  // expect 1 parameter in return (number selected mode)
-#define CMDTYPE_ICON_MAP                   10  // expect 3 parameters in return (mappos)
-#define CMDTYPE_ICON_AREA                  11  // expect 4 parameters in return (mappos+radius)
-#define CMDTYPE_ICON_UNIT                  12  // expect 1 parameters in return (unitid)
-#define CMDTYPE_ICON_UNIT_OR_MAP           13  // expect 1 parameters in return (unitid) or 3 parameters in return (mappos)
-#define CMDTYPE_ICON_FRONT                 14  // expect 3 or 6 parameters in return (middle of front and right side of front if a front was defined)
-#define CMDTYPE_ICON_UNIT_OR_AREA          16  // expect 1 parameter in return (unitid) or 4 parameters in return (mappos+radius)
-#define CMDTYPE_NEXT                       17  // used with CMD_INTERNAL
-#define CMDTYPE_PREV                       18  // used with CMD_INTERNAL
-#define CMDTYPE_ICON_UNIT_FEATURE_OR_AREA  19  // expect 1 parameter in return (unitid or featureid+unitHandler.MaxUnits() (id>unitHandler.MaxUnits()=feature)) or 4 parameters in return (mappos+radius)
-#define CMDTYPE_ICON_BUILDING              20  // expect 3 parameters in return (mappos)
-#define CMDTYPE_CUSTOM                     21  // used with CMD_INTERNAL
-#define CMDTYPE_ICON_UNIT_OR_RECTANGLE     22  // expect 1 parameter in return (unitid)
-                                               //     or 3 parameters in return (mappos)
-                                               //     or 6 parameters in return (startpos+endpos)
-#define CMDTYPE_NUMBER                     23  // expect 1 parameter in return (number)
+static constexpr int CMDTYPE_ICON                      =  0;  // expect 0 parameters in return
+static constexpr int CMDTYPE_ICON_MODE                 =  5;  // expect 1 parameter in return (number selected mode)
+static constexpr int CMDTYPE_ICON_MAP                  = 10;  // expect 3 parameters in return (mappos)
+static constexpr int CMDTYPE_ICON_AREA                 = 11;  // expect 4 parameters in return (mappos+radius)
+static constexpr int CMDTYPE_ICON_UNIT                 = 12;  // expect 1 parameters in return (unitid)
+static constexpr int CMDTYPE_ICON_UNIT_OR_MAP          = 13;  // expect 1 parameters in return (unitid) or 3 parameters in return (mappos)
+static constexpr int CMDTYPE_ICON_FRONT                = 14;  // expect 3 or 6 parameters in return (middle of front and right side of front if a front was defined)
+static constexpr int CMDTYPE_ICON_UNIT_OR_AREA         = 16;  // expect 1 parameter in return (unitid) or 4 parameters in return (mappos+radius)
+static constexpr int CMDTYPE_NEXT                      = 17;  // used with CMD_INTERNAL
+static constexpr int CMDTYPE_PREV                      = 18;  // used with CMD_INTERNAL
+static constexpr int CMDTYPE_ICON_UNIT_FEATURE_OR_AREA = 19;  // expect 1 parameter in return (unitid or featureid+unitHandler.MaxUnits() (id>unitHandler.MaxUnits()=feature)) or 4 parameters in return (mappos+radius)
+static constexpr int CMDTYPE_ICON_BUILDING             = 20;  // expect 3 parameters in return (mappos)
+static constexpr int CMDTYPE_CUSTOM                    = 21;  // used with CMD_INTERNAL
+static constexpr int CMDTYPE_ICON_UNIT_OR_RECTANGLE    = 22;  // expect 1 parameter in return (unitid)
+                                                              //     or 3 parameters in return (mappos)
+                                                              //     or 6 parameters in return (startpos+endpos)
+static constexpr int CMDTYPE_NUMBER                    = 23;  // expect 1 parameter in return (number)
 
 
 // wait codes
-#define CMD_WAITCODE_TIMEWAIT    1.0f
-#define CMD_WAITCODE_DEATHWAIT   2.0f
-#define CMD_WAITCODE_SQUADWAIT   3.0f
-#define CMD_WAITCODE_GATHERWAIT  4.0f
+static constexpr float CMD_WAITCODE_TIMEWAIT   = 1.0f;
+static constexpr float CMD_WAITCODE_DEATHWAIT  = 2.0f;
+static constexpr float CMD_WAITCODE_SQUADWAIT  = 3.0f;
+static constexpr float CMD_WAITCODE_GATHERWAIT = 4.0f;
 
 
 // bits for the option field of Command
@@ -88,15 +86,15 @@
 //   be QUEUED_ORDER), ALT_KEY in most contexts means
 //   OVERRIDE_QUEUED_ORDER, etc.
 //
-#define META_KEY        (1 << 2) //   4
-#define INTERNAL_ORDER  (1 << 3) //   8
-#define RIGHT_MOUSE_KEY (1 << 4) //  16
-#define SHIFT_KEY       (1 << 5) //  32
-#define CONTROL_KEY     (1 << 6) //  64
-#define ALT_KEY         (1 << 7) // 128
+static constexpr uint8_t META_KEY        = (1 << 2); //   4
+static constexpr uint8_t INTERNAL_ORDER  = (1 << 3); //   8
+static constexpr uint8_t RIGHT_MOUSE_KEY = (1 << 4); //  16
+static constexpr uint8_t SHIFT_KEY       = (1 << 5); //  32
+static constexpr uint8_t CONTROL_KEY     = (1 << 6); //  64
+static constexpr uint8_t ALT_KEY         = (1 << 7); // 128
 
 // maximum number of inline parameters for any (default and custom) command type
-#define MAX_COMMAND_PARAMS 8
+static constexpr uint32_t MAX_COMMAND_PARAMS = 8;
 
 
 #if defined(BUILDING_AI)

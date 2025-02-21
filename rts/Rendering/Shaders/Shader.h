@@ -96,7 +96,7 @@ namespace Shader {
 			std::string log;
 		};
 
-		/// @brief Returns a GLSL shader object in an unqiue pointer that auto deletes that instance.
+		/// @brief Returns a GLSL shader object in an unique pointer that auto deletes that instance.
 		///        Quote of GL docs: If a shader object is deleted while it is attached to a program object,
 		///        it will be flagged for deletion, and deletion will not occur until glDetachShader is called
 		///        to detach it from all program objects to which it is attached.

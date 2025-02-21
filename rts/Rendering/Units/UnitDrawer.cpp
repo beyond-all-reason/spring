@@ -1436,7 +1436,7 @@ void CUnitDrawerGL4::DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& 
 
 			prevModelType = model->type; prevTexType = model->textureType;
 			CModelDrawerHelper::PushModelRenderState(model->type);
-			CModelDrawerHelper::BindModelTypeTexture(model->type, model->textureType); //ineficient rendering, but w/e
+			CModelDrawerHelper::BindModelTypeTexture(model->type, model->textureType); //inefficient rendering, but w/e
 		}
 
 		smv.SubmitImmediately(model, buildIcon.team, DrawFlags::SO_ALPHAF_FLAG);
@@ -1606,7 +1606,7 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, bool d
 
 			if (prevModelType != modelType || prevTexType != dgb->GetModel()->textureType) {
 				prevModelType = modelType; prevTexType = dgb->GetModel()->textureType;
-				CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->GetModel()->textureType); //ineficient rendering, but w/e
+				CModelDrawerHelper::BindModelTypeTexture(modelType, dgb->GetModel()->textureType); //inefficient rendering, but w/e
 			}
 
 			modelDrawerState->SetStaticModelMatrix(staticWorldMat);
@@ -1660,7 +1660,7 @@ void CUnitDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, bool d
 
 			if (prevModelType != modelType || prevTexType != model->textureType) {
 				prevModelType = modelType; prevTexType = model->textureType;
-				CModelDrawerHelper::BindModelTypeTexture(modelType, model->textureType); //ineficient rendering, but w/e
+				CModelDrawerHelper::BindModelTypeTexture(modelType, model->textureType); //inefficient rendering, but w/e
 			}
 
 			modelDrawerState->SetStaticModelMatrix(staticWorldMat);

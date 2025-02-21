@@ -34,6 +34,7 @@ make_global_var(sources_engine_System_common
 		"${CMAKE_CURRENT_SOURCE_DIR}/Math/SpringDampers.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Math/NURBS.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Matrix44f.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/RectangleOverlapHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Misc/SpringTime.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Object.cpp"
@@ -66,6 +67,7 @@ make_global_var(sources_engine_System_common
 		"${CMAKE_CURRENT_SOURCE_DIR}/Threading/ThreadPool.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/TimeProfiler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/TimeUtil.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Transform.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/UriParser.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/StringUtil.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/type2.cpp"
@@ -125,6 +127,8 @@ make_global_var(sources_engine_System_Log_sinkFile
 make_global_var(sources_engine_System_Log_sinkOutputDebugString
 		"${CMAKE_CURRENT_SOURCE_DIR}/Log/OutputDebugStringSink.cpp"
 	)
+
+# Warning: sources_engine_System_Platform_* is not used by spring-dedicated
 set(sources_engine_System_Platform_Linux
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/CrashHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Hardware.cpp"
@@ -154,10 +158,12 @@ set(sources_engine_System_Threading_Mac
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Mac/Signal.cpp"
 	)
 set(sources_engine_System_Threading_Linux
+		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/CpuTopology.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Futex.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/ThreadSupport.cpp"
 	)
 set(sources_engine_System_Threading_Windows
+		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CpuTopology.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CriticalSection.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/Future.cpp"
 	)
@@ -178,6 +184,7 @@ endif()
 set(sources_engine_System_Threading
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/CpuID.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Threading.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/ThreadAffinityGuard.cpp"
 	)
 
 set(sources_engine_System

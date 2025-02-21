@@ -127,7 +127,7 @@ char32_t utf8::GetNextChar(const std::string& text, int& pos, bool advance)
 	// 2Bytes encoded char: 110xxxxxxx 10xxxxxx
 	// 3Bytes encoded char: 1110xxxxxx 10xxxxxx 10xxxxxx
 	// 4Bytes encoded char: 11110xxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-	// Originaly there were 5&6 byte versions too, but they were dropped in RFC 3629.
+	// Originally there were 5&6 byte versions too, but they were dropped in RFC 3629.
 	// So UTF8 maps to UTF16 range only.
 
 	static constexpr auto UTF8_CONT_MASK = 0xC0; // 11xxxxxx
