@@ -18,10 +18,22 @@ struct Transform {
 		, s{ 1.0f }
 	{}
 
-	constexpr Transform(const CQuaternion& r_, const float3& t_, float s_)
+	constexpr Transform(const CQuaternion& r_, const float3& t_, float s_ = 1.0f)
 		: r{ r_ }
 		, t{ t_ }
 		, s{ s_ }
+	{}
+
+	constexpr Transform(const float3& t_)
+		: r{ CQuaternion{} }
+		, t{ t_ }
+		, s{ 1.0f }
+	{}
+
+	constexpr Transform(const CQuaternion& r_)
+		: r{ r_ }
+		, t{ float3{} }
+		, s{ 1.0f }
 	{}
 
 	// similar to CMatrix44f::LoadIdentity()
@@ -53,4 +65,6 @@ struct Transform {
 	float4 operator*(const float4& v) const;
 
 	Transform& operator*=(const Transform& childTra) { *this = (*this) * childTra; return *this; }
+
+	void AssertNaNs() const;
 };

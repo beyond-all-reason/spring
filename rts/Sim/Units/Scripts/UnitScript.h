@@ -92,8 +92,9 @@ public:
 		return (p->PieceFunc());                                        \
 	}
 
-	SCRIPT_TO_LOCALPIECE_FUNC(    float3, GetPiecePos,    GetAbsolutePos     )
-	SCRIPT_TO_LOCALPIECE_FUNC(CMatrix44f, GetPieceMatrix, GetModelSpaceMatrix)
+	SCRIPT_TO_LOCALPIECE_FUNC(    float3, GetPiecePos      ,    GetAbsolutePos     )
+	SCRIPT_TO_LOCALPIECE_FUNC( Transform, GetPieceTransform, GetModelSpaceTransform)
+	SCRIPT_TO_LOCALPIECE_FUNC(CMatrix44f, GetPieceMatrix   , GetModelSpaceMatrix   )
 
 	bool GetEmitDirPos(int scriptPieceNum, float3& pos, float3& dir) const {
 		if (!PieceExists(scriptPieceNum))

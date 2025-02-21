@@ -37,8 +37,8 @@ CR_REG_METADATA(LocalModelPiece, (
 
 	CR_IGNORED(dirty),
 	CR_IGNORED(customDirty),
-	CR_IGNORED(modelSpaceMat),
-	CR_IGNORED(pieceSpaceMat),
+	CR_IGNORED(modelSpaceTra),
+	CR_IGNORED(pieceSpaceTra),
 
 	CR_IGNORED(lodDispLists) //FIXME GL idx!
 ))
@@ -79,7 +79,7 @@ void S3DModelPiece::DrawStaticLegacy(bool bind, bool bindPosMat) const
 
 	if (bindPosMat) {
 		glPushMatrix();
-		glMultMatrixf(bposeMatrix);
+		glMultMatrixf(bposeTransform.ToMatrix());
 		DrawElements();
 		glPopMatrix();
 	}
@@ -243,6 +243,78 @@ void S3DModelPiece::Shatter(float pieceChance, int modelType, int texType, int t
 	projectileHandler.AddFlyingPiece(modelType, this, m, pos, speed, pieceParams, renderParams);
 }
 
+void S3DModelPiece::SetPieceTransform(const Transform& parentTra)
+{
+	bposeTransform = parentTra * Transform{
+		CQuaternion(),
+		offset,
+		scale
+	};
+
+	bposeInvTransform = bposeTransform.InvertAffine();
+#ifdef _DEBUG
+	auto bposeMat = bposeTransform.ToMatrix();
+	auto bposeInvMat = bposeMat.Invert();
+	auto bposeInvTransform2 = Transform::FromMatrix(bposeInvMat);
+	assert(bposeInvTransform.equals(bposeInvTransform2));
+#endif // _DEBUG
+
+	for (S3DModelPiece* c : children) {
+		c->SetPieceTransform(bposeTransform);
+	}
+}
+
+Transform S3DModelPiece::ComposeTransform(const float3& t, const float3& r, float s) const
+{
+	// TODO: Remove ToMatrix() / FromMatrix() non-sense
+
+	// NOTE:
+	//   ORDER MATTERS (T(baked + script) * R(baked) * R(script) * S(baked))
+	//   translating + rotating + scaling is faster than matrix-multiplying
+	//   m is identity so m.SetPos(t)==m.Translate(t) but with fewer instrs
+	Transform tra;
+	tra.t = t;
+
+	if (hasBakedTra)
+		tra *= bakedTransform;
+
+	tra *= Transform(CQuaternion::FromEulerYPRNeg(-r), ZeroVector, s);
+#ifdef _DEBUG
+	/*
+	{
+		auto rngAngles = guRNG.NextVector(2.0f * math::PI);
+		auto delMe = CQuaternion::FromEulerPYRNeg(rngAngles);
+		CMatrix44f mdel; mdel.RotateEulerXYZ(rngAngles);
+		CQuaternion delMe2;
+		std::tie(std::ignore, delMe2, std::ignore) = CQuaternion::DecomposeIntoTRS(mdel);
+		assert(delMe.equals(delMe2));
+	}
+	{
+		auto rngAngles = guRNG.NextVector(2.0f * math::PI);
+		auto delMe = CQuaternion::FromEulerYPRNeg(rngAngles);
+		CMatrix44f mdel; mdel.RotateEulerYXZ(rngAngles);
+		CQuaternion delMe2;
+		std::tie(std::ignore, delMe2, std::ignore) = CQuaternion::DecomposeIntoTRS(mdel);
+		assert(delMe.equals(delMe2));
+	}
+	*/
+	CMatrix44f m;
+	m.SetPos(t);
+
+	if (hasBakedTra)
+		m *= bakedTransform.ToMatrix();
+
+	// default Spring rotation-order [YPR=Y,X,Z]
+	m.RotateEulerYXZ(-r);
+	m.Scale(s);
+
+	auto tra2 = Transform::FromMatrix(m);
+
+	assert(tra.equals(tra2));
+#endif
+	return tra;
+}
+
 
 void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 {
@@ -334,7 +406,7 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 			pieces[n].original = omp;
 		}
 
-		pieces[0].UpdateChildMatricesRec(true);
+		pieces[0].UpdateChildTransformRec(true);
 		UpdateBoundingVolume();
 		return;
 	}
@@ -349,7 +421,7 @@ void LocalModel::SetModel(const S3DModel* model, bool initialize)
 	// must recursively update matrices here too: for features
 	// LocalModel::Update is never called, but they might have
 	// baked piece rotations (in the case of .dae)
-	pieces[0].UpdateChildMatricesRec(false);
+	pieces[0].UpdateChildTransformRec(false);
 	UpdateBoundingVolume();
 
 	assert(pieces.size() == model->numPieces);
@@ -391,7 +463,7 @@ void LocalModel::UpdateBoundingVolume()
 	float3 bbMaxs = DEF_MAX_SIZE;
 
 	for (const auto& lmPiece: pieces) {
-		const CMatrix44f& matrix = lmPiece.GetModelSpaceMatrix();
+		const auto& tra = lmPiece.GetModelSpaceTransform();
 		const S3DModelPiece* piece = lmPiece.original;
 
 		// skip empty pieces or bounds will not be sensible
@@ -415,7 +487,7 @@ void LocalModel::UpdateBoundingVolume()
 		};
 
 		for (const float3& v: verts) {
-			const float3 vertex = matrix * v;
+			const float3 vertex = tra * v;
 
 			bbMins = float3::min(bbMins, vertex);
 			bbMaxs = float3::max(bbMaxs, vertex);
@@ -451,7 +523,7 @@ LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
 	pos = piece->offset;
 	dir = piece->GetEmitDir(); // warning investigated, seems fake
 
-	pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
+	pieceSpaceTra = CalcPieceSpaceTransform(pos, rot, original->scale);
 
 	children.reserve(piece->children.size());
 }
@@ -489,26 +561,59 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 }
 
 
-void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
+void LocalModelPiece::UpdateChildTransformRec(bool updateChildTransform) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	/*
+	{
+		const auto pt = guRNG.NextVector() * 1000.0f;
+		const auto pr = guRNG.NextVector() * 2.0f * math::PI;
+		const auto ps = (guRNG.NextFloat24() + 0.5f);
+
+		const auto pTra = Transform(CQuaternion::FromEulerYPRNeg(pr), pt, float3{ ps });
+
+		const auto ct = guRNG.NextVector() * 1000.0f;
+		const auto cr = guRNG.NextVector() * 2.0f * math::PI;
+		const auto cs = (guRNG.NextFloat24() + 0.5f);
+
+		const auto cTra = Transform(CQuaternion::FromEulerYPRNeg(cr), ct, float3{ cs });
+
+		const auto cTraUpd = pTra * cTra;
+
+		const auto pMat = pTra.ToMatrix();
+		const auto cMat = cTra.ToMatrix();
+		const auto cMatUpd = pMat * cMat;
+		const auto [_t, _r, _s] = CQuaternion::DecomposeIntoTRS(cMatUpd);
+
+		const auto cMatUpd2 = cTraUpd.ToMatrix();
+
+		auto cTraUpd2 = Transform::FromMatrix(cMatUpd);
+
+		//assert(cTraUpd.equals(cTraUpd2));
+
+		assert(cMatUpd == cMatUpd2);
+	}
+	*/
+
 	if (dirty) {
 		dirty = false;
-		updateChildMatrices = true;
+		updateChildTransform = true;
 
-		pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
+		pieceSpaceTra = CalcPieceSpaceTransform(pos, rot, original->scale);
 	}
 
-	if (updateChildMatrices) {
-		modelSpaceMat = pieceSpaceMat;
+	if (updateChildTransform) {
+		if (parent != nullptr)
+			modelSpaceTra = parent->modelSpaceTra * pieceSpaceTra;
+		else
+			modelSpaceTra = pieceSpaceTra;
 
-		if (parent != nullptr) {
-			modelSpaceMat >>= parent->modelSpaceMat;
-		}
+		modelSpaceMat = modelSpaceTra.ToMatrix();
 	}
 
 	for (auto& child : children) {
-		child->UpdateChildMatricesRec(updateChildMatrices);
+		child->UpdateChildTransformRec(updateChildTransform);
 	}
 }
 
@@ -520,11 +625,14 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 
 	dirty = false;
 
-	pieceSpaceMat = CalcPieceSpaceMatrix(pos, rot, original->scales);
-	modelSpaceMat = pieceSpaceMat;
+	pieceSpaceTra = CalcPieceSpaceTransform(pos, rot, original->scale);
 
 	if (parent != nullptr)
-		modelSpaceMat >>= parent->modelSpaceMat;
+		modelSpaceTra = parent->modelSpaceTra * pieceSpaceTra;
+	else
+		modelSpaceTra = pieceSpaceTra;
+
+	modelSpaceMat = modelSpaceTra.ToMatrix();
 }
 
 
@@ -589,8 +697,8 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 		return false;
 
 	// note: actually OBJECT_TO_WORLD but transform is the same
-	emitPos = GetModelSpaceMatrix() *        original->GetEmitPos()        * WORLD_TO_OBJECT_SPACE;
-	emitDir = GetModelSpaceMatrix() * float4(original->GetEmitDir(), 0.0f) * WORLD_TO_OBJECT_SPACE;
+	emitPos = GetModelSpaceTransform() *        original->GetEmitPos()        * WORLD_TO_OBJECT_SPACE;
+	emitDir = GetModelSpaceTransform() * float4(original->GetEmitDir(), 0.0f) * WORLD_TO_OBJECT_SPACE;
 	return true;
 }
 
@@ -632,4 +740,24 @@ size_t S3DModel::FindPieceOffset(const std::string& name) const
 		return size_t(-1);
 
 	return std::distance(pieceObjects.begin(), it);
+}
+
+void S3DModel::SetPieceMatrices()
+{
+	pieceObjects[0]->SetPieceTransform(Transform());
+
+	// use this occasion and copy bpose matrices
+	for (size_t i = 0; i < pieceObjects.size(); ++i) {
+		const auto* po = pieceObjects[i];
+		//traAlloc[0         + i] = po->bposeTransform.ToMatrix();
+		traAlloc.UpdateForced((0         + i), po->bposeTransform);
+	}
+
+	// use this occasion and copy inverse bpose matrices
+	// store them right after all bind pose matrices
+	for (size_t i = 0; i < pieceObjects.size(); ++i) {
+		const auto* po = pieceObjects[i];
+		//traAlloc[numPieces + i] = po->bposeInvTransform.ToMatrix();
+		traAlloc.UpdateForced((numPieces + i), po->bposeInvTransform);
+	}
 }
