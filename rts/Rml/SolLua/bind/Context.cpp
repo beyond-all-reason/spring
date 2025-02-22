@@ -114,7 +114,7 @@ void bindTable(SolLuaDataModel* data, sol::table& table)
 	}
 }
 
-sol::object getFromTable(sol::table t, std::vector<std::string> keychain, int depth) {
+sol::object getFromTable(const sol::table& t, const std::vector<std::string>& keychain, int depth) {
 	sol::table item = t;
 	for(int i = 0; i <= depth; i++) {
 		sol::object o = item.raw_get<sol::object>(keychain[i]);
@@ -128,15 +128,17 @@ sol::object getFromTable(sol::table t, std::vector<std::string> keychain, int de
 }
 
 std::function<void(sol::object, const std::string&, sol::object, sol::this_state)>
-createNewIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, std::vector<std::string> keychain, int depth)
+createNewIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, const std::vector<std::string>& keychain, int depth)
 {
 	return ([data, keychain, depth] (sol::table t, const std::string& key, sol::object value, sol::this_state s) {
 		auto prop = getFromTable(data->Table, keychain, depth-1);
 		auto type = prop.get_type();
 		if (type == sol::type::table) {
 			prop.as<sol::table>().raw_set(key,value);
-			std::string pointer_str = std::to_string(reinterpret_cast<intptr_t>(prop.pointer()));
-			data->ObjectMap.insert_or_assign(pointer_str + "_" + key, value);
+			std::ostringstream joined;
+			std::copy(keychain.begin(), keychain.end(), std::ostream_iterator<std::string>(joined, "_"));
+
+			data->ObjectMap.insert_or_assign(joined.str() + key, value);
 			data->Handle.DirtyVariable(keychain[0]);
 		}
 	});
@@ -144,14 +146,14 @@ createNewIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, std::
 
 
 std::function<sol::object(sol::object, const std::string&, sol::this_state)>
-createIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, std::vector<std::string> keychain, int depth)
+createIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, const std::vector<std::string>& keychain, int depth)
 {
 	return ([data, keychain, depth](sol::table t, const std::string& key, sol::this_state s) {
 		std::vector<std::string> kc{keychain};
 		kc.push_back(key);
 		auto prop = getFromTable(data->Table, kc, depth);
 		auto type = prop.get_type();
-		if (type == sol::type::table && depth < 20) {
+		if (type == sol::type::table) {
 			sol::state_view bindings{s};
 			sol::table obj_metatable = bindings.create_table();
 			obj_metatable[sol::meta_function::index] = createIndexFunction(data, kc, depth+1);
