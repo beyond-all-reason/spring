@@ -141,7 +141,6 @@ protected:
 	float unitSizeY = 0.0f;
 	float unitSelectRadius = 0.0f;
 
-	bool minimapCanFlip = false;
 	bool aspectRatio = false;
 	bool fullProxy = false;
 	bool proxyMode = false;
