@@ -74,7 +74,7 @@ If you're using VSCode as your IDE you can use [Remote Development Extension](ht
 
 #### Smaller QoL Tips - Windows
 - Symbolic Links can replace Remote Development, use them to make edits on your regular Windows OS with whatever IDE you like and sync up with WSL's folder
-- They are also useful for quick debugging, link up your `WSL/Ubuntu/{Spring-Repo-Folder}/build-windows/install` with your `{BAR-Game-Folder}/data/engine/{Local-Engine-Folder-Name}` this way you can quickly run `bash build windows` on WSL and it will appear magically and ready to use in your BAR Folder
+- They are also useful for quick debugging, link up your `WSL/Ubuntu/{Spring-Repo-Folder}/build-windows/install` with your `{BAR-Game-Folder}/data/engine/{Local-Engine-Folder-Name}` this way you can quickly run `bash build windows` on WSL and it will appear and ready to use in your BAR Folder
 - To use Symbolic Links, you can do so with `mklink` command in Terminal. However, it is highly recommended to use [Link Shell Extension (LSE)](https://schinagl.priv.at/nt/hardlinkshellext/linkshellextension.html) just make sure to make a [Restore Point](https://support.microsoft.com/en-us/windows/system-restore-a5ae3ed9-07c4-fd56-45ee-096777ecd14e#:~:text=Apply%20a%20restore%20point%20from,%E2%80%8B%E2%80%8B%E2%80%8B%E2%80%8B%E2%80%8B) just in case
 
 
@@ -104,3 +104,6 @@ To sum up, there is a separation:
   - `script/split-debug-info.sh`: Splits debug information from binaries
   - `script/package.sh`: Creates 2 archives, one with engine and one with
      debug symbols.
+
+
+For details on private testing, check the wiki [here](https://github.com/beyond-all-reason/spring/wiki/Pre-release-testing-Checklist,-and-release-engine-checklist#private-testing)
