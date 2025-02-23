@@ -1,6 +1,6 @@
 #include "CpuTopology.h"
 #include <atomic>
-#include <bitset>
+#include <bit>
 #include <mutex>
 
 namespace cpu_topology {
