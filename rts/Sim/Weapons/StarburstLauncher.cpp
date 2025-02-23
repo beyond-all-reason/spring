@@ -41,6 +41,7 @@ void CStarburstLauncher::FireImpl(const bool scriptCall)
 	params.error = aimError;
 	// Projectile TTL (params.ttl) is ignored by the Starburst Projectile and it only uses the weapondef.
 	// I tried overriding the projectile TTL to 1 and it caused the starburst rocket to fly off into space
+	params.ttl = (ttl > 0) ? ttl: weaponDef->flighttime;
 	params.tracking = tracking;
 	params.maxRange = (ttl > 0 || weaponDef->fixedLauncher)? MAX_PROJECTILE_RANGE: range;
 
