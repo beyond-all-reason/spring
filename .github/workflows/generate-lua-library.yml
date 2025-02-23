@@ -24,10 +24,12 @@ jobs:
 
       # NOTE: This step is duplicated in `publish-site.yml`
       - name: Generate Lua library
-        working-directory: recoil/rts/Lua/
+        working-directory: recoil
         run: |
-          npm install -g lua-doc-extractor
-          lua-doc-extractor *.cpp --dest library/generated
+          npm install -g lua-doc-extractor@1
+          lua-doc-extractor rts/Lua/*.cpp \
+            --dest rts/Lua/library/generated \
+            --repo https://github.com/${{ github.repository }}/blob/${{ github.sha }}
 
       - name: Check out library repo
         uses: actions/checkout@v4
