@@ -10,5 +10,5 @@ By default Windows builds are produced. To make a Linux build use `-p linux-64` 
 
 `-o` can be used to speed up compilation by disabling headless and dedicated builds.
 
-## Disclaimer
-this is out of date, consider using [Docker V2](https://github.com/beyond-all-reason/spring/tree/master/docker-build-v2)
+### Version 2 - WIP
+[Docker V2](https://github.com/beyond-all-reason/spring/tree/master/docker-build-v2)
