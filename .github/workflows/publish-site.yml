@@ -29,10 +29,9 @@ jobs:
           git add -f doc/site/_data
       # NOTE: This step is duplicated in `generate-lua-library.yml`
       - name: Generate Lua library
-        working-directory: rts/Lua/
         run: |
           npm install -g lua-doc-extractor
-          lua-doc-extractor *.cpp --dest library/generated
+          lua-doc-extractor rts/Lua/*.cpp --dest rts/Lua/library/generated
       # NOTE: Running LLS 3.13.4 from a subdirectory with a relative path seems
       # to cause duplicate class fields to be generated. Presumably a bug in
       # LLS.
