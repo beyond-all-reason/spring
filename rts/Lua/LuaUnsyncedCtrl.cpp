@@ -2161,10 +2161,17 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 }
 
 /***
+ * @alias MiniMapRotation
+ * | 0 # Unrotated.
+ * | 1 # 90 degrees clockwise.
+ * | 2 # 180 degrees.
+ * | 3 # 270 degrees clockwise.
+ */
+
+/***
  * @function Spring.SetMiniMapRotation
- * @number rotation
- * @treturn nil
- * @usage Spring.SetMiniMapRotation(0/1/2/3)
+ * @param rotation MiniMapRotation
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
 {
