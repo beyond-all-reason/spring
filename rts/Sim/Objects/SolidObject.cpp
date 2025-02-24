@@ -438,6 +438,20 @@ void CSolidObject::ForcedSpin(const float3& zdir)
 	UpdateMidAndAimPos();
 }
 
+void CSolidObject::ForcedSpin(const float3& newFrontDir, const float3& newRightDir)
+{
+	// new front & right directions should be normalized
+	assert(math::fabsf(newFrontDir.SqLength() - 1.0f) <= float3::cmp_eps());
+	assert(math::fabsf(newRightDir.SqLength() - 1.0f) <= float3::cmp_eps());
+
+	frontdir = newFrontDir;
+	rightdir = newRightDir;
+	   updir = (newRightDir.cross(newFrontDir)).Normalize();
+
+	SetHeadingFromDirection();
+	UpdateMidAndAimPos();
+}
+
 
 
 void CSolidObject::Kill(CUnit* killer, const float3& impulse, bool crushed)

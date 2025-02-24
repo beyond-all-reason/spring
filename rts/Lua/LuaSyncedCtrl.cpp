@@ -609,7 +609,12 @@ static int SetSolidObjectRotation(lua_State* L, CSolidObject* o, bool isFeature)
 	if (o == nullptr)
 		return 0;
 
-	o->SetDirVectorsEuler(float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4)));
+	float3 angles;
+	angles[CMatrix44f::ANGLE_P] = luaL_checkfloat(L, 2);
+	angles[CMatrix44f::ANGLE_Y] = luaL_checkfloat(L, 3);
+	angles[CMatrix44f::ANGLE_R] = luaL_checkfloat(L, 4);
+
+	o->SetDirVectorsEuler(angles);
 
 	// not a hack: ForcedSpin() and CalculateTransform() calculate a
 	// transform based only on frontdir and assume the helper y-axis
@@ -641,18 +646,46 @@ static int SetSolidObjectHeadingAndUpDir(lua_State* L, CSolidObject* o, bool isF
 	return 0;
 }
 
-static int SetSolidObjectDirection(lua_State* L, CSolidObject* o)
+static int SetSolidObjectDirection(lua_State* L, CSolidObject* o, const char* func)
 {
 	if (o == nullptr)
 		return 0;
 
-	const float3 newDir = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4)).SafeNormalize();
+	const char* modelName = o->model ? o->model->name.c_str() : "nullptr";
 
-	if (math::fabsf(newDir.SqLength() - 1.0f) > float3::cmp_eps()) {
-		luaL_error(L, "[%s] Invalid front-direction (%f, %f, %f), id = %d, model = %s, teamID = %d", __func__, newDir.x, newDir.y, newDir.z, o->id, o->model ? o->model->name.c_str() : "nullptr", o->team);
+	const float3 newFrontDir = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4)).SafeNormalize();
+
+	if (math::fabsf(newFrontDir.SqLength() - 1.0f) > float3::cmp_eps()) {
+		luaL_error(L, "[%s] Invalid front-direction (%f, %f, %f), id = %d, model = %s, teamID = %d",
+			func,
+			newFrontDir.x,
+			newFrontDir.y,
+			newFrontDir.z,
+			o->id,
+			modelName,
+			o->team
+		);
 	}
 
-	o->ForcedSpin(newDir);
+	if (lua_isnumber(L, 5) && lua_isnumber(L, 6) && lua_isnumber(L, 7)) {
+		const float3 newRightDir = float3(luaL_checkfloat(L, 5), luaL_checkfloat(L, 6), luaL_checkfloat(L, 7)).SafeNormalize();
+		if (math::fabsf(newRightDir.SqLength() - 1.0f) > float3::cmp_eps()) {
+			luaL_error(L, "[%s] Invalid optional right-direction (%f, %f, %f), id = %d, model = %s, teamID = %d",
+				func,
+				newRightDir.x,
+				newRightDir.y,
+				newRightDir.z,
+				o->id,
+				modelName,
+				o->team
+			);
+		}
+		o->ForcedSpin(newFrontDir, newRightDir);
+	}
+	else {
+		o->ForcedSpin(newFrontDir);
+	}
+
 	return 0;
 }
 
@@ -3831,10 +3864,11 @@ int LuaSyncedCtrl::SetUnitPosition(lua_State* L)
 
 /***
  * @function Spring.SetUnitRotation
+ * Note: PYR order
  * @param unitID integer
- * @param yaw number
- * @param pitch number
- * @param roll number
+ * @param pitch number Rotation in X axis
+ * @param yaw number Rotation in Y axis
+ * @param roll number Rotation in Z axis
  * @return nil
  */
 int LuaSyncedCtrl::SetUnitRotation(lua_State* L)
@@ -3845,15 +3879,21 @@ int LuaSyncedCtrl::SetUnitRotation(lua_State* L)
 
 /***
  * @function Spring.SetUnitDirection
+ * Use this call to set up unit front direction vector and optionally right direction
+ * while right direction is optional, it's strongly recommended as frontDir alone doesn't define object orientation
+ * both vectors will be normalized in the engine
  * @param unitID integer
- * @param x number
- * @param y number
- * @param z number
+ * @param frontx number
+ * @param fronty number
+ * @param frontz number
+ * @param rightx number (optional)
+ * @param righty number (optional)
+ * @param rightz number (optional)
  * @return nil
  */
 int LuaSyncedCtrl::SetUnitDirection(lua_State* L)
 {
-	return (SetSolidObjectDirection(L, ParseUnit(L, __func__, 1)));
+	return SetSolidObjectDirection(L, ParseUnit(L, __func__, 1), __func__);
 }
 
 /***
@@ -4642,10 +4682,11 @@ int LuaSyncedCtrl::SetFeaturePosition(lua_State* L)
 
 /***
  * @function Spring.SetFeatureRotation
+ * Note: PYR order
  * @param featureID integer
- * @param rotX number
- * @param rotY number
- * @param rotZ number
+ * @param pitch number Rotation in X axis
+ * @param yaw number Rotation in Y axis
+ * @param roll number Rotation in Z axis
  * @return nil
  */
 int LuaSyncedCtrl::SetFeatureRotation(lua_State* L)
@@ -4656,15 +4697,21 @@ int LuaSyncedCtrl::SetFeatureRotation(lua_State* L)
 
 /***
  * @function Spring.SetFeatureDirection
+ * Use this call to set up feature front direction vector and optionally right direction
+ * while right direction is optional, it's strongly recommended as frontDir alone doesn't define object orientation
+ * both vectors will be normalized in the engine
  * @param featureID integer
- * @param dirX number
- * @param dirY number
- * @param dirZ number
+ * @param frontx number
+ * @param fronty number
+ * @param frontz number
+ * @param rightx number (optional)
+ * @param righty number (optional)
+ * @param rightz number (optional)
  * @return nil
  */
 int LuaSyncedCtrl::SetFeatureDirection(lua_State* L)
 {
-	return (SetSolidObjectDirection(L, ParseFeature(L, __func__, 1)));
+	return SetSolidObjectDirection(L, ParseFeature(L, __func__, 1), __func__);
 }
 
 /***
