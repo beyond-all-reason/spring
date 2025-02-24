@@ -328,7 +328,7 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 	}
 }
 
-
+#ifndef UNIT_TEST
 // Test with wide ray that also extends width at the extremes.
 void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length, float width)
 {
@@ -418,7 +418,7 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 		}
 	}
 }
-
+#endif
 
 
 #ifndef UNIT_TEST

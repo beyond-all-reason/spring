@@ -8,8 +8,7 @@
 #include "System/Log/ILog.h"
 #include "System/Misc/SpringTime.h"
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 InitSpringTime ist;
 
@@ -47,11 +46,16 @@ static inline bool equals_distance(const float3& f1, const float3& f2)
 static inline bool equals_sse(const float3& f1, const float3& f2)
 {
 	// same as equals_new() just with SSE
-	__m128 eq;
+	union f4 {
+		__m128 sse;
+		float f[4];
+	};
+	static_assert(sizeof(__m128) == 4 * sizeof(float));
+	f4 eq;
 	__m128 m1 = _mm_set_ps(f1[0], f1[1], f1[2], 0.f);
 	__m128 m2 = _mm_set_ps(f2[0], f2[1], f2[2], 0.f);
-	eq = _mm_cmpeq_ps(m1, m2);
-	if ((eq[0] != 0) && (eq[1] != 0) && (eq[2] != 0))
+	eq.sse = _mm_cmpeq_ps(m1, m2);
+	if ((eq.f[0] != 0) && (eq.f[1] != 0) && (eq.f[2] != 0))
 		return true;
 
 	static const __m128 sign_mask = _mm_set1_ps(-0.f); // -0.f = 1 << 31
@@ -65,8 +69,8 @@ static inline bool equals_sse(const float3& f1, const float3& f2)
 	__m128 left = _mm_sub_ps(m1, m2);
 	left = _mm_andnot_ps(sign_mask, left);
 
-	eq = _mm_cmple_ps(left, right);
-	return ((eq[0] != 0) && (eq[1] != 0) && (eq[2] != 0));
+	eq.sse = _mm_cmple_ps(left, right);
+	return ((eq.f[0] != 0) && (eq.f[1] != 0) && (eq.f[2] != 0));
 }
 
 

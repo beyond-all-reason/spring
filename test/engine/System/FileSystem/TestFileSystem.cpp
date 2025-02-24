@@ -3,8 +3,7 @@
 #include <sys/stat.h>
 #include "System/Log/ILog.h"
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 // needs to be included after catch
 #include "System/FileSystem/FileSystem.h"

@@ -11,16 +11,20 @@
 
 
 #define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 InitSpringTime ist;
 
-static const int testRuns = 40000000;
+// inline
+#ifdef _MSC_VER
+#    define _noinline __declspec(noinline)
+#else
+#    define _noinline __attribute__((noinline))
+#endif
 
-#define _noinline __attribute__((__noinline__))
-typedef CMatrix44f m44 __attribute__((aligned(16)));
-typedef float4 f4 __attribute__((aligned(16)));
-static m44 m;
-static m44 m_;
+static CMatrix44f m, m_;
+using f4 = float4;
+
+static const int testRuns = 40000000;
 
 // MatrixMultiply1 -- a naive C++ matrix-vector multiplication function.
 // It's correct, but that's about the only thing impressive about it.
@@ -171,41 +175,41 @@ _noinline static void MatrixMultSoft(CMatrix44f* m1, const CMatrix44f& m2)
 _noinline static int TestMMSpring()
 {
 	ScopedOnceTimer timer("Matrix-Matrix-Mult: spring (m = m * m2)");
-	m44 m1(m_);
+	CMatrix44f m1(m_);
 	for (int i = 0; i < testRuns; ++i) {
 		m1 = m1 * m;
 	}
-	return spring::LiteHash(&m1, sizeof(m44), 0);
+	return spring::LiteHash(&m1, sizeof(CMatrix44f), 0);
 }
 
 _noinline static int TestMMFpu()
 {
 	ScopedOnceTimer timer("Matrix-Matrix-Mult: fpu (m <<= m2)");
-	m44 m1(m_);
+	CMatrix44f m1(m_);
 	for (int i = 0; i < testRuns; ++i) {
 		MatrixMultSoft(&m1, m);
 	}
-	return spring::LiteHash(&m1, sizeof(m44), 0);
+	return spring::LiteHash(&m1, sizeof(CMatrix44f), 0);
 }
 
 _noinline static int TestMMSpring2()
 {
 	ScopedOnceTimer timer("Matrix-Matrix-Mult: spring (m <<= m2)");
-	m44 m1(m_);
+	CMatrix44f m1(m_);
 	for (int i = 0; i < testRuns; ++i) {
 		m1 <<= m;
 	}
-	return spring::LiteHash(&m1, sizeof(m44), 0);
+	return spring::LiteHash(&m1, sizeof(CMatrix44f), 0);
 }
 
 _noinline static int TestMMSSE()
 {
 	ScopedOnceTimer timer("Matrix-Matrix-Mult: sse");
-	m44 m1(m_);
+	CMatrix44f m1(m_);
 	for (int i = 0; i < testRuns; ++i) {
 		MatrixMatrixMultiply(&m1, m);
 	}
-	return spring::LiteHash(&m1, sizeof(m44), 0);
+	return spring::LiteHash(&m1, sizeof(CMatrix44f), 0);
 }
 
 _noinline static int TestSpring()
@@ -283,4 +287,11 @@ TEST_CASE("Matrix44MatrixMultiply")
 			m[i] = 0.0f;
 		}
 	}
+}
+
+TEST_CASE("MatMult")
+{
+	BENCHMARK("MM")	{
+		return 0;
+	};
 }

@@ -3,9 +3,7 @@
 #include <iostream>
 #include <typeinfo>
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
-
+#include <catch_amalgamated.hpp>
 
 class A
 {
