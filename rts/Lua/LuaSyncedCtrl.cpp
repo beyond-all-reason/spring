@@ -2276,6 +2276,10 @@ static bool SetSingleUnitWeaponState(lua_State* L, CWeapon* weapon, int index)
 			weapon->collisionFlags = lua_toint(L, index + 1);
 		} break;
 
+		case hashString("ttl"): {
+			weapon->ttl = (int) (lua_toint(L, index + 1) * GAME_SPEED);
+		} break;
+
 		default: {
 			return false;
 		} break;
