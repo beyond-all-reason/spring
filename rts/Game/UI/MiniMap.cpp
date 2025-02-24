@@ -442,18 +442,6 @@ void CMiniMap::ConfigCommand(const std::string& line)
 			mouseEvents = (words.size() >= 2) ? !!atoi(words[1].c_str()) : !mouseEvents;
 		} break;
 
-		case hashString("rotation"):{
-			if (globalRendering->dualScreenMode)
-				return;
-
-			if (words.size() < 2)
-				return;
-
-			const int rot = atoi(words[1].c_str());
-			if (rot >= 0 && rot <= 3)
-				SetRotation((ROTATION_OPTIONS)rot);
-		} break;
-
 		default: {
 		} break;
 	}
