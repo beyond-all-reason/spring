@@ -2161,16 +2161,8 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 }
 
 /***
- * @alias MiniMapRotation
- * | 0 # Unrotated.
- * | 1 # 90 degrees clockwise.
- * | 2 # 180 degrees.
- * | 3 # 270 degrees clockwise.
- */
-
-/***
  * @function Spring.SetMiniMapRotation
- * @param rotation MiniMapRotation
+ * @param rotation radians
  * @return nil
  */
 int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
@@ -2178,11 +2170,12 @@ int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
-	const int rotation = luaL_checkint(L, 1);
+	const float radians = luaL_checkfloat(L, 1);
 
-	if (rotation < 0 || rotation > 3)
+	if (radians < 0 || radians > 270*(math::PI/180))
 		return 0;
-	
+
+	const int rotation = static_cast<int>(std::round((radians * 180.0f / math::PI) / 90.0f));
 
 	if (minimap != nullptr)
 		minimap->SetRotation(CMiniMap::ROTATION_OPTIONS(rotation));

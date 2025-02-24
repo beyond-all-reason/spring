@@ -364,7 +364,7 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 			float tempx = iconPos.x;
 			float tempy = iconPos.z;
 
-			switch (minimap->GetRotation()) {
+			switch (minimap->GetRotationOption()) {
 				case CMiniMap::ROTATION_90:
 					tempx = mapDims.mapx * SQUARE_SIZE - tempx;
 
