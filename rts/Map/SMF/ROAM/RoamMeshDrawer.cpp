@@ -479,6 +479,7 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 
 	{
 		SCOPED_TIMER("Draw::World::Terrain::ROAM::Draw");
+		SCOPED_GL_DEBUGGROUP("Draw::World::Terrain::ROAM::Draw");
 		for (Patch& p: patchMeshGrid[drawPass == DrawPass::Shadow]) {
 			if (!p.IsVisible(CCameraHandler::GetActiveCamera()))
 				continue;
@@ -492,6 +493,8 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 void CRoamMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	SCOPED_TIMER("Draw::World::Terrain::ROAM::DrawBorderMesh");
+	SCOPED_GL_DEBUGGROUP("Draw::World::Terrain::ROAM::DrawBorderMesh");
 	for (const Patch* p: borderPatches[drawPass == DrawPass::Shadow]) {
 		if (!p->IsVisible(CCameraHandler::GetActiveCamera()))
 			continue;

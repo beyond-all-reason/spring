@@ -140,6 +140,9 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 	{
 		drawReflection = true;
 
+		SCOPED_TIMER("Draw::Water::DrawReflections");
+		SCOPED_GL_DEBUGGROUP("Draw::Water::DrawReflections");
+
 		// opaque; do not clip skydome (is drawn in camera space)
 		if (drawSky) {
 			ISky::GetSky()->Draw();
@@ -179,6 +182,9 @@ void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool d
 
 	{
 		drawRefraction = true;
+
+		SCOPED_TIMER("Draw::Water::DrawRefractions");
+		SCOPED_GL_DEBUGGROUP("Draw::Water::DrawRefractions");
 
 		glEnable(GL_CLIP_PLANE2);
 		glClipPlane(GL_CLIP_PLANE2, &clipPlaneEqs[0]);

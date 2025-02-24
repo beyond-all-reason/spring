@@ -656,6 +656,7 @@ void CGlobalRendering::SwapBuffers(bool allowSwapBuffers, bool clearErrors)
 	spring_time pre;
 	{
 		SCOPED_TIMER("Misc::SwapBuffers");
+		SCOPED_GL_DEBUGGROUP("Misc::SwapBuffers");
 		assert(sdlWindow);
 
 		// silently or verbosely clear queue at the end of every frame
