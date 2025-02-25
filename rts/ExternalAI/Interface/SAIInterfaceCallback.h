@@ -23,7 +23,7 @@ struct SAIInterfaceCallback {
 	 * Returns the Application Binary Interface version, fail part.
 	 * If the engine and the AI INterface differ in this,
 	 * the AI Interface will not be used.
-	 * Changes here usually indicate that struct memebers were
+	 * Changes here usually indicate that struct members were
 	 * added or removed.
 	 */
 	int               (CALLING_CONV *Engine_AIInterface_ABIVersion_getFailPart)(int interfaceId);
@@ -150,7 +150,7 @@ struct SAIInterfaceCallback {
 	void              (CALLING_CONV *Log_logsl)(int interfaceId, const char* section, int loglevel, const char* const msg);
 
 	/**
-	 * Inform the engine of an error that happend in the interface.
+	 * Inform the engine of an error that happened in the interface.
 	 * @param   msg       error message
 	 * @param   severety  from 10 for minor to 0 for fatal
 	 * @param   die       if this is set to true, the engine assumes
@@ -198,7 +198,7 @@ struct SAIInterfaceCallback {
 	 * @param   common     if true, the version independent data-dir is formed,
 	 *                     which uses "common" instead of the version, eg:
 	 *                     "/home/userX/.spring/AI/Interfaces/C/common/..."
-	 * @return  whether the locating process was successfull
+	 * @return  whether the locating process was successful
 	 *          -> the path exists and is stored in an absolute form in path
 	 */
 	bool              (CALLING_CONV *DataDirs_locatePath)(int interfaceId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir, bool common);
@@ -229,7 +229,7 @@ struct SAIInterfaceCallback {
 	 * @param   dir        if true, realPath specifies a dir, which means if
 	 *                     create is true, the whole path will be created,
 	 *                     including the last part
-	 * @return  whether the locating process was successfull
+	 * @return  whether the locating process was successful
 	 *          -> the path exists and is stored in an absolute form in path
 	 */
 	bool              (CALLING_CONV *DataDirs_Roots_locatePath)(int interfaceId, char* path, int path_sizeMax, const char* const relPath, bool writeable, bool create, bool dir);

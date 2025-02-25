@@ -57,10 +57,10 @@ void IWater::SetWater(int rendererMode)
 	RECOIL_DETAILED_TRACY_ZONE;
 	static std::array<bool, NUM_WATER_RENDERERS> allowedModes = {
 		true,
-		GLEW_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/water.fp"),
-		GLEW_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/waterDyn.fp"),
-		GLEW_ARB_fragment_program && GLEW_ARB_texture_rectangle,
-		GLEW_ARB_shading_language_100 && GLEW_ARB_fragment_shader && GLEW_ARB_vertex_shader,
+		GLAD_GL_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/water.fp"),
+		GLAD_GL_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/waterDyn.fp"),
+		GLAD_GL_ARB_fragment_program && GLAD_GL_ARB_texture_rectangle,
+		GLAD_GL_ARB_shading_language_100 && GLAD_GL_ARB_fragment_shader && GLAD_GL_ARB_vertex_shader,
 	};
 
 	WATER_RENDERER selectedRendererID;
@@ -140,6 +140,9 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 	{
 		drawReflection = true;
 
+		SCOPED_TIMER("Draw::Water::DrawReflections");
+		SCOPED_GL_DEBUGGROUP("Draw::Water::DrawReflections");
+
 		// opaque; do not clip skydome (is drawn in camera space)
 		if (drawSky) {
 			ISky::GetSky()->Draw();
@@ -179,6 +182,9 @@ void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool d
 
 	{
 		drawRefraction = true;
+
+		SCOPED_TIMER("Draw::Water::DrawRefractions");
+		SCOPED_GL_DEBUGGROUP("Draw::Water::DrawRefractions");
 
 		glEnable(GL_CLIP_PLANE2);
 		glClipPlane(GL_CLIP_PLANE2, &clipPlaneEqs[0]);

@@ -108,7 +108,7 @@ CR_REG_METADATA(UniformParamsBuffer, (
 
 bool UniformConstants::Supported()
 {
-	static bool supported = VBO::IsSupported(GL_UNIFORM_BUFFER) && GLEW_ARB_shading_language_420pack; //UBO && UBO layout(binding=x)
+	static bool supported = VBO::IsSupported(GL_UNIFORM_BUFFER) && GLAD_GL_ARB_shading_language_420pack; //UBO && UBO layout(binding=x)
 	return supported;
 }
 
@@ -119,7 +119,7 @@ void UniformConstants::Init()
 
 	if (!Supported()) {
 	#ifndef HEADLESS
-		LOG_L(L_ERROR, "[UniformConstants::%s] Important OpenGL extensions are not supported by the system\n  GLEW_ARB_uniform_buffer_object = %d\n  GLEW_ARB_shading_language_420pack = %d", __func__, GLEW_ARB_uniform_buffer_object, GLEW_ARB_shading_language_420pack);
+		LOG_L(L_ERROR, "[UniformConstants::%s] Important OpenGL extensions are not supported by the system\n  GLAD_GL_ARB_uniform_buffer_object = %d\n  GLAD_GL_ARB_shading_language_420pack = %d", __func__, GLAD_GL_ARB_uniform_buffer_object, GLAD_GL_ARB_shading_language_420pack);
 	#endif
 		return;
 	}

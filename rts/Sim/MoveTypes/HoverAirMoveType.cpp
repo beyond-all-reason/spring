@@ -84,7 +84,7 @@ static const unsigned int FLOAT_MEMBER_HASHES[] = {
 
 static bool UnitIsBusy(const CCommandAI* cai) {
 	// queued move-commands (or active build/repair/etc-commands) mean unit has to stay airborne
-	return (cai->inCommand || cai->HasMoreMoveCommands(false));
+	return (cai->inCommand != CMD_STOP || cai->HasMoreMoveCommands(false));
 }
 
 static bool UnitHasLoadCmd(const CCommandAI* cai) {
@@ -773,9 +773,9 @@ void CHoverAirMoveType::UpdateVerticalSpeed(const float4& spd, float curRelHeigh
 		ws *= (1.0f - ((spd.y < -0.0001f) && (((wh - curRelHeight) / spd.y) * accRate * 0.7f) < -spd.y));
 	}
 
-	ws *= (1 - owner->beingBuilt);
 	// note: don't want this in case unit is built on some raised platform?
-	wh *= (1 - owner->beingBuilt);
+	ws *= (1 - owner->beingBuilt);
+	wh *= (1 - owner->IsStunned());
 
 	if (math::fabs(wh - curRelHeight) > 2.0f) {
 		if (spd.y > ws) {

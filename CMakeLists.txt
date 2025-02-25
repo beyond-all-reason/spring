@@ -72,7 +72,7 @@ else()
 	set(JAVA_COMPILE_FLAG_CONDITIONAL "-g:lines,source")
 endif()
 
-# By default, the libraries that don't explicily specify SHARED/STATIC are build statically.
+# By default, the libraries that don't explicitly specify SHARED/STATIC are build statically.
 # See https://cmake.org/cmake/help/latest/variable/BUILD_SHARED_LIBS.html
 option(BUILD_SHARED_LIBS "Build shared (dynamic) libraries" OFF)
 
@@ -177,7 +177,7 @@ else  (UNIX AND NOT MINGW)
 	endif ()
 
 
-	add_definitions(-D_WIN32_WINNT=0x0601) ## Win7 is minimum due to cpuid processor group affinity
+	add_definitions(-D_WIN32_WINNT=0x0601) ## Win7 is minimum due to processor group affinity
 	add_definitions(-D__USE_MINGW_ANSI_STDIO=1) ## use __mingw_sprintf instead of __builtin_sprintf (it's used by lua in a synced way, and builtin doesn't sync)
 
 	if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
@@ -189,7 +189,6 @@ else  (UNIX AND NOT MINGW)
 		add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 		add_definitions(-DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 		add_compile_options(/bigobj)
-		set(GLEW_STATIC ON)
 		#set(EXE_FLAGS WIN32)
 	endif()
 endif (UNIX AND NOT MINGW)
@@ -291,7 +290,7 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 
 # Note the missing REQUIRED, as headless & dedi may not depend on those.
 #  So req. checks are done in the build target's CMakeLists.txt.
-find_package(SDL2)
+find_package(SDL2 MODULE)
 
 find_package_static(DevIL 1.8.0 REQUIRED)
 
@@ -403,15 +402,9 @@ if(NOT MSVC)
 endif(NOT MSVC)
 
 
-if(DEBUG_BUILD)
-        set(DEBUG_LUANAN_DEFAULT TRUE)
-else()
-        set(DEBUG_LUANAN_DEFAULT FALSE)
-endif()
-
-option(DEBUG_LUANAN "check for nans in lua" ${DEBUG_LUANAN_DEFAULT})
-if(DEBUG_LUANAN)
-        add_definitions(-DDEBUG_LUANAN)
+option(REPORT_LUANAN "report nans/infinities in lua" TRUE)
+if(REPORT_LUANAN)
+        add_definitions(-DREPORT_LUANAN)
 endif()
 
 

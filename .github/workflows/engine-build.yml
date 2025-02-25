@@ -1,7 +1,7 @@
 # Engine CI workflow that compiles engine using build-docker-v2 scripts with
 # https://namespace.so/ GitHub Actions Runners.
 #
-# The worklow has multiple layers of caching for ccache compilation objects:
+# The workflow has multiple layers of caching for ccache compilation objects:
 #
 # - Local cache on runner's machine SSD disk, very efficient but prone to
 #   cache misses when workflow can't be scheduled next to the storage
@@ -20,9 +20,28 @@ on:
   workflow_dispatch:
     inputs:
       recache:
-        description: "Recache ccache build objects"
+        description: 'Recache ccache build objects'
         type: boolean
         default: false
+      cmake-options:
+        description: 'Custom CMake options for build'
+        type: string
+      split-debug-info:
+        description: 'Split debug info'
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      cmake-options:
+        description: 'Custom CMake options for build'
+        type: string
+      split-debug-info:
+        description: 'Split debug info'
+        type: boolean
+        default: true
+      package-suffix:
+        description: 'Custom suffix for the package name'
+        type: string
   pull_request:
     paths-ignore:
       - 'doc/**'
@@ -94,8 +113,8 @@ jobs:
           BAZEL_REMOTE_S3_SECRET_ACCESS_KEY: ${{ github.event_name == 'pull_request' && vars.R2_RO_ACCESS_KEY_SECRET || secrets.R2_ACCESS_KEY_SECRET }}
         with:
           run: |
-            if ! sha256sum --status -c <<< "8679a76074b1408a95d2b3ec0f5b1a6d0c20500cfc24c3a87ef08c1b60200f8c tools/bazel-remote"; then
-              curl -L https://github.com/buchgr/bazel-remote/releases/download/v2.4.4/bazel-remote-2.4.4-linux-x86_64 -o bazel-remote
+            if ! sha256sum --status -c <<< "0e3ccc67bced00bc783ee395160092c107a4699e06586a68dcd53fcfa7d8063e tools/bazel-remote"; then
+              curl -L https://github.com/buchgr/bazel-remote/releases/download/v2.5.0/bazel-remote-2.5.0-linux-x86_64 -o bazel-remote
               chmod +x bazel-remote
               mv bazel-remote tools/bazel-remote
             fi
@@ -121,6 +140,7 @@ jobs:
           # of health checking.
           wait-on: |
             http-get://127.0.0.1:8085/cas/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+          wait-for: 3m
       - name: Pull builder image
         run: docker pull ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}:latest
       - name: Build
@@ -141,18 +161,18 @@ jobs:
             bash <<EOF
           set -e
           cd /build/src/docker-build-v2/scripts
-          ./configure.sh
+          ./configure.sh ${{ inputs.cmake-options || '' }}
           ./compile.sh
-          ./split-debug-info.sh
-          ./package.sh
+          ${{ inputs.split-debug-info == false && 'echo "Not splitting debug info."' || './split-debug-info.sh' }}
+          ./package.sh ${{ inputs.package-suffix }}
 
           EOF
-      # TODO: Switch to publickly accessible storage
       - name: Save
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
+        id: save-artifact
         with:
-          name: artifacts-${{ matrix.system }}
+          name: engine-artifacts-${{ matrix.system }}-${{ inputs.package-suffix }}
           path: ./artifacts
           compression-level: 0  # already compressed
       - name: Unmount bazel remote overlay

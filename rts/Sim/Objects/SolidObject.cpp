@@ -11,6 +11,7 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Game/GameHelper.h"
 #include "System/SpringMath.h"
+#include "System/Quaternion.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -376,7 +377,18 @@ void CSolidObject::SetDirVectorsEuler(const float3 angles)
 	UpdateMidAndAimPos();
 }
 
-void CSolidObject::SetHeadingFromDirection() { heading = GetHeadingFromVector(frontdir.x, frontdir.z); }
+void CSolidObject::SetHeadingFromDirection() {
+	// undo UpdateDirVectors transformation
+
+	// construct quaternion to describe rotation from uDir to UpVector
+	CQuaternion quat(-updir.z, 0.0f, updir.x, 1.0f + updir.y); // same angle as in UpdateDirVectors, but inverted axis
+	quat.ANormalize();
+
+	const float3 fDir = quat * frontdir;
+	assert(epscmp(fDir.y, 0.0f, float3::cmp_eps()));
+
+	heading = GetHeadingFromVector(fDir.x, fDir.z);
+}
 void CSolidObject::SetFacingFromHeading() { buildFacing = GetFacingFromHeading(heading); }
 
 void CSolidObject::UpdateDirVectors(bool useGroundNormal, bool useObjectNormal, float dirSmoothing)
@@ -391,15 +403,16 @@ void CSolidObject::UpdateDirVectors(const float3& uDir)
 	RECOIL_DETAILED_TRACY_ZONE;
 	// set initial rotation of the object around updir=UpVector first
 	const float3 fDir = GetVectorFromHeading(heading);
+	const float3 rDir = float3{ -fDir.z, 0.0f, fDir.x };
 
-	if likely(1.0f - math::fabs(uDir.y) >= 1e-6f) {
-		const float3 norm = float3{ uDir.z, 0.0f, -uDir.x }.Normalize(); //same as UpVector.cross(uDir) to obtain normal vector, which will serve as a rotation axis
-		frontdir = fDir.rotateByUpVector(uDir, norm); //doesn't change vector magnitude
-	}
-	else {
-		frontdir = fDir * Sign(uDir.y);
-	}
-	rightdir = (frontdir.cross(uDir)).Normalize();
+	// construct quaternion to describe rotation from UpVector to uDir
+	// can use CQuaternion::MakeFrom(const float3& v1, const float3& v2);
+	// but simplified given UpVector is trivial
+	CQuaternion quat(uDir.z, 0.0f, -uDir.x, 1.0f + uDir.y);
+	quat.ANormalize();
+
+	frontdir = quat * fDir;
+	rightdir = quat * rDir;
 	updir = uDir;
 }
 
@@ -420,6 +433,20 @@ void CSolidObject::ForcedSpin(const float3& zdir)
 	frontdir = zdir;
 	rightdir = xdir;
 	   updir = ydir;
+
+	SetHeadingFromDirection();
+	UpdateMidAndAimPos();
+}
+
+void CSolidObject::ForcedSpin(const float3& newFrontDir, const float3& newRightDir)
+{
+	// new front & right directions should be normalized
+	assert(math::fabsf(newFrontDir.SqLength() - 1.0f) <= float3::cmp_eps());
+	assert(math::fabsf(newRightDir.SqLength() - 1.0f) <= float3::cmp_eps());
+
+	frontdir = newFrontDir;
+	rightdir = newRightDir;
+	   updir = (newRightDir.cross(newFrontDir)).Normalize();
 
 	SetHeadingFromDirection();
 	UpdateMidAndAimPos();

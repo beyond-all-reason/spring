@@ -8,7 +8,7 @@
 
 
 ################################################################################
-### BEGINN: MACROS_AND_FUNCTIONS
+### BEGIN: MACROS_AND_FUNCTIONS
 # Define macros and functions to be used in this file and by Skirmish AIs
 
 # Native Skirmish AI configuration macro

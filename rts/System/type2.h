@@ -11,9 +11,9 @@
 template<typename t> struct type2 {
 	CR_DECLARE_STRUCT(type2)
 
-	constexpr type2<t>(): x(t(0)), y(t(0)) {}
-	constexpr type2<t>(const t nx, const t ny) : x(nx), y(ny) {}
-	template<typename T2> constexpr type2<t>(const T2 v) : x(v.x), y(v.y) {}
+	constexpr type2(): x(t(0)), y(t(0)) {}
+	constexpr type2(const t nx, const t ny) : x(nx), y(ny) {}
+	template<typename T2> constexpr type2(const T2 v) : x(v.x), y(v.y) {}
 
 	bool operator == (const type2<t>& v) const { return (x == v.x) && (y == v.y); }
 	bool operator != (const type2<t>& v) const { return (x != v.x) || (y != v.y); }
@@ -84,9 +84,9 @@ template<typename t> struct type2 {
 template<typename t> struct itype2 : public type2<t> {
 	CR_DECLARE_STRUCT(itype2)
 
-	constexpr itype2<t>() {}
-	constexpr itype2<t>(const t nx, const t ny) : type2<t>(nx, ny) {}
-	constexpr itype2<t>(const type2<int>& v) : type2<t>(v.x, v.y) {}
+	constexpr itype2() {}
+	constexpr itype2(const t nx, const t ny) : type2<t>(nx, ny) {}
+	constexpr itype2(const type2<int>& v) : type2<t>(v.x, v.y) {}
 
 	bool operator == (const type2<int>& v) const { return (type2<t>::x == v.x) && (type2<t>::y == v.y); }
 	bool operator != (const type2<int>& v) const { return (type2<t>::x != v.x) || (type2<t>::y != v.y); }

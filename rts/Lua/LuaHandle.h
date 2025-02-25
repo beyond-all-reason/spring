@@ -210,6 +210,8 @@ class CLuaHandle : public CEventClient
 
 		bool DefaultCommand(const CUnit* unit, const CFeature* feature, int& cmd) override;
 
+		void ActiveCommandChanged(const SCommandDescription* cmdDesc) override;
+
 		bool CommandNotify(const Command& cmd) override;
 
 		bool AddConsoleLine(const std::string& msg, const std::string& section, int level) override;

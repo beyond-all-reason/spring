@@ -66,6 +66,7 @@ class LuaUnsyncedCtrl {
 
 		static int SetCustomCommandDrawData(lua_State* L);
 
+		static int SetAutoShowMetal(lua_State* L);
 		static int SetDrawSky(lua_State* L);
 		static int SetDrawWater(lua_State* L);
 		static int SetDrawGround(lua_State* L);
@@ -92,6 +93,7 @@ class LuaUnsyncedCtrl {
 		static int SetUnitEngineDrawMask(lua_State* L);
 		static int SetUnitAlwaysUpdateMatrix(lua_State* L);
 		static int SetUnitNoMinimap(lua_State* L);
+		static int SetUnitNoGroup(lua_State* L);
 		static int SetUnitNoSelect(lua_State* L);
 		static int SetUnitLeaveTracks(lua_State* L);
 		static int SetUnitSelectionVolumeData(lua_State* L);

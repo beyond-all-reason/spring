@@ -71,6 +71,7 @@ public:
 	ALCdevice* GetCurrentDevice() { return curDevice; }
 	int GetFrameSize() const { return frameSize; }
 
+	std::vector<std::string> GetSoundDevices() override;
 private:
 	typedef spring::unordered_map<std::string, std::string> SoundItemNameMap;
 	typedef spring::unordered_map<std::string, SoundItemNameMap> SoundItemDefsMap;

@@ -115,7 +115,7 @@ netcode::RawPacket* CDemoReader::GetData(const float readTime)
 		return nullptr;
 
 	// when paused, modGameTime does not increase (ie. we
-	// always pass the same readTime value) so no seperate
+	// always pass the same readTime value) so no separate
 	// check needed
 	if (readTime >= nextDemoReadTime) {
 		netcode::RawPacket* buf = new netcode::RawPacket(chunkHeader.length);

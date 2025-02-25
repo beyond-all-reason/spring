@@ -18,7 +18,7 @@ public:
 
 	void Clear() { fbos.clear(); }
 
-	struct FBO {
+	struct LuaFBO {
 		void Init(lua_State* L);
 		void Free(lua_State* L);
 
@@ -31,7 +31,7 @@ public:
 		GLsizei zsize;
 	};
 
-	const FBO* GetLuaFBO(lua_State* L, int index);
+	const LuaFBO* GetLuaFBO(lua_State* L, int index);
 
 public:
 	static bool PushEntries(lua_State* L);
@@ -45,19 +45,19 @@ public:
 		GLenum attachLevel
 	);
 private:
-	std::vector<FBO*> fbos;
+	std::vector<LuaFBO*> fbos;
 
 private: // helpers
 	static bool CreateMetatable(lua_State* L);
 	static bool AttachObject(
 		const char* funcName,
 		lua_State* L, int index,
-		FBO* fbo, GLenum attachID,
+		LuaFBO* fbo, GLenum attachID,
 		GLenum attachTarget = 0,
 		GLenum attachLevel  = 0
 	);
 	static bool ApplyAttachment(lua_State* L, int index,
-	                            FBO* fbo, GLenum attachID);
+	                            LuaFBO* fbo, GLenum attachID);
 	static bool ApplyDrawBuffers(lua_State* L, int index);
 
 private: // metatable methods
@@ -72,6 +72,7 @@ private: // call-outs
 	static int ActiveFBO(lua_State* L);
 	static int RawBindFBO(lua_State* L); // unsafe
 	static int BlitFBO(lua_State* L);
+	static int ClearAttachmentFBO(lua_State* L);
 };
 
 

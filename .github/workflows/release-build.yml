@@ -1,0 +1,66 @@
+name: Create Engine Release v2
+on:
+  workflow_dispatch:
+    inputs:
+      new-tag:
+        description: 'Set to create a new annotated release tag, e.g. 2025.01.10.'
+        type: string
+jobs:
+  get-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag_name: ${{ steps.release-tag.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
+      - name: Create new annotated tag
+        if: inputs.new-tag != ''
+        env:
+          NEW_TAG: ${{ inputs.new-tag }}
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          git tag -a -m "Version $NEW_TAG" "$NEW_TAG"
+          git push origin tag "$NEW_TAG"
+      - name: Get release tag
+        id: release-tag
+        run: |
+          if git describe --exact-match HEAD >/dev/null 2>&1; then
+            echo "tag_name=$(git describe --exact-match HEAD)" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag_name=recoil{$(git rev-parse --abbrev-ref HEAD)}$(git describe --abbrev=7)" >> "$GITHUB_OUTPUT"
+          fi
+  build-engine:
+    needs: get-tag
+    uses: ./.github/workflows/engine-build.yml
+    with:
+      cmake-options: '-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O3 -g -DNDEBUG" -DCMAKE_C_FLAGS_RELWITHDEBINFO="-O3 -g -DNDEBUG"'
+    secrets: inherit
+  build-engine-tracy:
+    needs: get-tag
+    uses: ./.github/workflows/engine-build.yml
+    with:
+      cmake-options: '-DTRACY_ENABLE=ON -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O3 -g1 -DNDEBUG -fno-omit-frame-pointer" -DCMAKE_C_FLAGS_RELWITHDEBINFO="-O3 -g1 -DNDEBUG -fno-omit-frame-pointer"'
+      package-suffix: '-tracy'
+      split-debug-info: false
+    secrets: inherit
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build-engine, build-engine-tracy, get-tag]
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: engine-artifacts-*
+          merge-multiple: true
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          draft: true
+          tag_name: ${{ needs.get-tag.outputs.tag_name }}

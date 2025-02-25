@@ -442,10 +442,10 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 			} break;
 
 			case CCamera::CAMTYPE_SHADOW: {
-				if      (u->HasDrawFlag(DrawFlags::SO_OPAQUE_FLAG))
-					u->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-				else if (u->HasDrawFlag(DrawFlags::SO_ALPHAF_FLAG))
+				if unlikely(IsAlpha(u))
 					u->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+				else
+					u->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
 			} break;
 
 			default: { assert(false); } break;
@@ -504,7 +504,15 @@ void CUnitDrawerData::SetUnitDefImage(const UnitDef* unitDef, const std::string&
 		}
 	}
 
-	unitImage->textureID = bitmap.CreateTexture();
+	unitImage->textureID = bitmap.CreateTexture(TextureCreationParams{
+		.aniso = 0.0f,
+		.lodBias = 0.0f,
+		.texID = 0,
+		.reqNumLevels = 1,
+		.linearMipMapFilter = false,
+		.linearTextureFilter = true
+	});
+
 	unitImage->imageSizeX = bitmap.xsize;
 	unitImage->imageSizeY = bitmap.ysize;
 }

@@ -143,6 +143,7 @@ list(APPEND FILES
 	LuaIntro/Addons/main.lua
 	LuaIntro/Addons/music.lua
 	LuaIntro/Addons/bg_texture.lua
+	LuaSocket/socket.lua
 )
 
 create_base_content_archive("base" "springcontent.sdz" "${FILES}")

@@ -203,7 +203,7 @@ function printNativeJNI() {
 					if (isRetString && c_paramNames[p] == retStringNames[2])
 						sub(" " jni_paramNames[p], " sizeof(" retStringNames[1] ")", paramListNoTypes);
 				} else if (match(pType_jni, /^j.+Array$/)) {
-					# primitive arrray
+					# primitive array
 					c_paramNames[p] = c_paramNames[p] "_native";
 					sub(" " jni_paramNames[p], " " c_paramNames[p], paramListNoTypes);
 
@@ -263,7 +263,7 @@ function printNativeJNI() {
 					if (!isRetString || c_paramNames[p] != retStringNames[1])
 						print("\t" "(*__env)->ReleaseStringUTFChars(__env, " jni_paramNames[p] ", " c_paramNames[p] ");") >> outFile_nc;
 				} else if (match(pType_jni, /^j.+Array$/)) {
-					# primitive arrray
+					# primitive array
 					capArrType = pType_jni;
 					sub(/^j/, "", capArrType);
 					sub(/Array$/, "", capArrType);
@@ -511,7 +511,7 @@ function wrappFunction(funcDef, commentEol) {
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 # see: commonDoc.awk
 function canDeleteDocumentation() {
 	return isMultiLineFunc != 1;

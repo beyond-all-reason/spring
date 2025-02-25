@@ -24,7 +24,7 @@ public:
 
 private:
 	float curTime;
-	/// precentage of lifetime when the projectile is active and can collide
+	/// percentage of lifetime when the projectile is active and can collide
 	float physLife;
 	float invttl;
 

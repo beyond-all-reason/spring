@@ -728,6 +728,7 @@ public:
 		y = 0.0f; return SafeANormalize();
 	}
 
+	/*
 	// Un must be Normalized()
 	float3& PickNonParallel(const float3 Un) {
 		float d2 = Un.SqLength2D();
@@ -748,7 +749,12 @@ public:
 		*this = float3(Un.z, Un.y, -Un.x); //y component of Un X (*this) is x1^2 + z1^2, which is non-zero
 		return (*this);
 	}
+	*/
 
+	// deterministically pick a non-parallel vector to the current one
+	float3 PickNonParallel() const;
+
+	bool Normalized() const { return math::fabs(1.0f - SqLength()) <= cmp_eps(); }
 	static bool CheckNaN(float c) { return (!math::isnan(c) && !math::isinf(c)); }
 
 	bool CheckNaNs() const { return (CheckNaN(x) && CheckNaN(y) && CheckNaN(z)); }

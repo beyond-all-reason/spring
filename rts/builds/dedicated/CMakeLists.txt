@@ -20,7 +20,6 @@ set(ENGINE_SRC_ROOT_DIR "${CMAKE_SOURCE_DIR}/rts")
 
 
 ### Assemble libraries
-list(APPEND engineDedicatedLibraries cpuid)
 list(APPEND engineDedicatedLibraries ${Boost_REGEX_LIBRARY})
 list(APPEND engineDedicatedLibraries lua archives 7zip prd::jsoncpp
 	${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB gflags_nothreads_static Tracy::TracyClient)
@@ -54,13 +53,7 @@ if    (UNIX AND NOT MINGW)
 	endif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 endif (UNIX AND NOT MINGW)
 
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIR})
-if("${SDL2_VERSION_STRING}" VERSION_LESS "2")
-	message(FATAL_ERROR "Found SDL v${SDL2_VERSION_STRING} while 2 is required!")
-endif()
-
-### Assemble the incude dirs
+### Assemble the include dirs
 include_directories(${ENGINE_SRC_ROOT_DIR}/)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/lua/include)
 include_directories(${ENGINE_SRC_ROOT_DIR}/lib/7zip)
@@ -127,8 +120,13 @@ set(system_files
 	${ENGINE_SRC_ROOT_DIR}/System/float4.cpp
 	)
 if    (WIN32)
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/Hardware.cpp)
 	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/WinVersion.cpp)
-endif (WIN32)
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/SharedLib.cpp)
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/DllLib.cpp)
+else  ()
+	list(APPEND system_files ${ENGINE_SRC_ROOT_DIR}/System/Platform/Linux/Hardware.cpp)
+endif ()
 
 set(engineDedicatedSources
 	${system_files}

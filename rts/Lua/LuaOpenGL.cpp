@@ -86,7 +86,6 @@ CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValu
 /******************************************************************************
  * Lua OpenGL API
  *
- * @module OpenGL
  *
  * @see rts/Lua/LuaOpenGL.cpp
 ******************************************************************************/
@@ -303,22 +302,22 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ColorMask);
 	REGISTER_LUA_CFUNC(DepthMask);
 	REGISTER_LUA_CFUNC(DepthTest);
-	if (GLEW_ARB_depth_clamp)
+	if (GLAD_GL_ARB_depth_clamp)
 		REGISTER_LUA_CFUNC(DepthClamp);
 
 	REGISTER_LUA_CFUNC(Culling);
 	REGISTER_LUA_CFUNC(LogicOp);
 	REGISTER_LUA_CFUNC(Fog);
 	REGISTER_LUA_CFUNC(AlphaTest);
-	if (GLEW_ARB_multisample)
+	if (GLAD_GL_ARB_multisample)
 		REGISTER_LUA_CFUNC(AlphaToCoverage);
 	REGISTER_LUA_CFUNC(LineStipple);
 	REGISTER_LUA_CFUNC(Blending);
 	REGISTER_LUA_CFUNC(BlendEquation);
 	REGISTER_LUA_CFUNC(BlendFunc);
-	if (GLEW_EXT_blend_equation_separate)
+	if (GLAD_GL_EXT_blend_equation_separate)
 		REGISTER_LUA_CFUNC(BlendEquationSeparate);
-	if (GLEW_EXT_blend_func_separate)
+	if (GLAD_GL_EXT_blend_func_separate)
 		REGISTER_LUA_CFUNC(BlendFuncSeparate);
 
 	REGISTER_LUA_CFUNC(Material);
@@ -331,7 +330,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(StencilMask);
 	REGISTER_LUA_CFUNC(StencilFunc);
 	REGISTER_LUA_CFUNC(StencilOp);
-	if (GLEW_EXT_stencil_two_side) {
+	if (GLAD_GL_EXT_stencil_two_side) {
 		REGISTER_LUA_CFUNC(StencilMaskSeparate);
 		REGISTER_LUA_CFUNC(StencilFuncSeparate);
 		REGISTER_LUA_CFUNC(StencilOpSeparate);
@@ -455,7 +454,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ReadPixels);
 	REGISTER_LUA_CFUNC(SaveImage);
 
-	if (GLEW_ARB_occlusion_query) {
+	if (GLAD_GL_ARB_occlusion_query) {
 		REGISTER_LUA_CFUNC(CreateQuery);
 		REGISTER_LUA_CFUNC(DeleteQuery);
 		REGISTER_LUA_CFUNC(RunQuery);
@@ -470,6 +469,12 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetSun);
 	REGISTER_LUA_CFUNC(GetWaterRendering);
 	REGISTER_LUA_CFUNC(GetMapRendering);
+
+	if (GLAD_GL_KHR_debug) {
+		REGISTER_LUA_CFUNC(ObjectLabel);
+		REGISTER_LUA_CFUNC(PushDebugGroup);
+		REGISTER_LUA_CFUNC(PopDebugGroup);
+	}
 
 	if (canUseShaders)
 		LuaShaders::PushEntries(L);
@@ -495,7 +500,7 @@ void LuaOpenGL::ResetGLState()
 	glDisable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_FALSE);
-	if (GLEW_ARB_depth_clamp)
+	if (GLAD_GL_ARB_depth_clamp)
 		glDisable(GL_DEPTH_CLAMP);
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -527,7 +532,7 @@ void LuaOpenGL::ResetGLState()
 
 	glDisable(GL_STENCIL_TEST);
 	glStencilMask(~0);
-	if (GLEW_EXT_stencil_two_side)
+	if (GLAD_GL_EXT_stencil_two_side)
 		glDisable(GL_STENCIL_TEST_TWO_SIDE_EXT);
 
 	// FIXME -- multitexturing
@@ -1144,7 +1149,7 @@ inline void LuaOpenGL::NotImplementedError(lua_State* L, const char* caller)
 
 int LuaOpenGL::HasExtension(lua_State* L)
 {
-	lua_pushboolean(L, glewIsSupported(luaL_checkstring(L, 1)));
+	lua_pushboolean(L, globalRendering->IsExtensionSupported(luaL_checkstring(L, 1)));
 	return 1;
 }
 
@@ -1288,15 +1293,17 @@ int LuaOpenGL::EndText(lua_State* L)
 	return 0;
 }
 
+/***
+ * @table gl
+ */
 
 /***
- *
  * @function gl.Text
- * @string text
- * @number x
- * @number y
- * @number size
- * @string[opt] options concatenated string of option characters.
+ * @param text string
+ * @param x number
+ * @param y number
+ * @param size number
+ * @param options string? concatenated string of option characters.
  *
  *   - horizontal alignment:
  *     - 'c' = center
@@ -1314,7 +1321,7 @@ int LuaOpenGL::EndText(lua_State* L)
  *     - 's' = shadow
  *   - other:
  *     - 'n' = don't round vertex coords to nearest integer (font may get blurry)
- * @treturn nil
+ * @return nil
  */
 int LuaOpenGL::Text(lua_State* L)
 {
@@ -2527,14 +2534,19 @@ int LuaOpenGL::MemoryBarrier(lua_State* L)
 ******************************************************************************/
 
 /***
- *
  * @function gl.Color
- * @tparam number|{number,number,number,number} r red when number, rgba
- * quadruple or rgb triple otherwise
- * @number[opt] g
- * @number[opt] b
- * @number[opt] a
- * @treturn nil
+ * @param r number Red
+ * @param g number Green
+ * @param b number Blue
+ * @param a number? Alpha (Default: 1.0f)
+ */
+/***
+ * @function gl.Color
+ * @param rgbs [number,number,number,number] Red, green, blue, alpha
+ */
+/***
+ * @function gl.Color
+ * @param rgb [number,number,number] Red, green, blue
  */
 int LuaOpenGL::Color(lua_State* L)
 {
@@ -4840,7 +4852,7 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 
 			PushFixedState(GL_STENCIL_FUNC);
 
-			if (GLEW_EXT_stencil_two_side) {
+			if (GLAD_GL_EXT_stencil_two_side) {
 				GLint stencilBackWriteMask;
 				glGetIntegerv(GL_STENCIL_BACK_WRITEMASK, &stencilBackWriteMask);
 
@@ -5658,6 +5670,79 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
 	}
 
 	luaL_error(L, "[%s] unknown key %s", __func__, key);
+	return 0;
+}
+
+/**
+ * @function gl.ObjectLabel labels an object for use with debugging tools
+ * @param objectTypeIdentifier GLenum Specifies the type of object being labeled.
+ * @param objectID GLuint Specifies the name or ID of the object to label.
+ * @param label string A string containing the label to be assigned to the object.
+ * @return nil
+ */
+int LuaOpenGL::ObjectLabel(lua_State* L) {
+	const auto identifier = static_cast<GLenum>(luaL_checkinteger(L, 1));
+
+	switch (identifier) {
+	case GL_BUFFER: [[fallthrough]];
+	case GL_SHADER: [[fallthrough]];
+	case GL_PROGRAM: [[fallthrough]];
+	case GL_VERTEX_ARRAY: [[fallthrough]];
+	case GL_QUERY: [[fallthrough]];
+	case GL_PROGRAM_PIPELINE: [[fallthrough]];
+	case GL_TRANSFORM_FEEDBACK: [[fallthrough]];
+	case GL_TEXTURE: [[fallthrough]];
+	case GL_RENDERBUFFER: [[fallthrough]];
+	case GL_FRAMEBUFFER:
+		break;
+	default: {  // something else
+		LOG_L(L_ERROR, "gl.%s: invalid identifier (%u)", __func__, identifier);
+		return 0;
+	}
+	}
+
+	const auto objectID = static_cast<GLuint>(luaL_checkinteger(L, 2));
+	const auto* label = luaL_checkstring(L, 3);
+	glObjectLabel(identifier, objectID, -1, label);
+
+	return 0;
+}
+
+// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPushDebugGroup.xhtml
+/**
+ * @function gl.PushDebugGroup pushes a debug marker for nVidia nSight 2024.04, does not seem to work when FBO's are raw bound
+ * @param id GLuint A numeric identifier for the group.
+ * @param message string A human-readable string describing the debug group.
+ * @param sourceIsThirdParty boolean Set the source tag, true for GL_DEBUG_SOURCE_THIRD_PARTY, false for GL_DEBUG_SOURCE_APPLICATION. default false
+ * @return nil
+ */
+int LuaOpenGL::PushDebugGroup(lua_State* L) {
+	const auto id = static_cast<GLuint>(luaL_checkinteger(L, 1));
+	std::string message = luaL_checkstring(L, 2);
+	const bool sourceIsThirdParty = luaL_optboolean(L, 3, false);
+
+	GLint maxLength = 0;
+	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLength);
+	if (maxLength <= 0)
+		return 0;
+
+	if (message.length() >= maxLength) {
+		static constexpr std::string_view TRIM = "(...)";
+		message.resize(maxLength - TRIM.length() - 1);
+		message += TRIM;
+		assert(message.length() < maxLength);
+	}
+
+	glPushDebugGroup((sourceIsThirdParty ? GL_DEBUG_SOURCE_THIRD_PARTY : GL_DEBUG_SOURCE_APPLICATION), id, -1, message.c_str());
+	return 0;
+}
+
+/**
+ * @function gl.PopDebugGroup
+ * @return nil
+ */
+int LuaOpenGL::PopDebugGroup(lua_State* L) {
+	glPopDebugGroup();
 	return 0;
 }
 

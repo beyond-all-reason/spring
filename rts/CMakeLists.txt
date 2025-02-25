@@ -37,7 +37,7 @@ endif()
 ### give error when not found
 find_package_static(DevIL REQUIRED)
 
-### Assemble common incude dirs
+### Assemble common include dirs
 include_directories(BEFORE lib)
 include_directories(BEFORE lib/lua/include)
 include_directories(${CMAKE_SOURCE_DIR}/include/AL)
@@ -45,9 +45,6 @@ include_directories(${SPRING_MINIZIP_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/cereal/include)
 
-
-### libcpuid
-list(APPEND engineCommonLibraries "cpuid")
 
 ### base64 from pr-downloader
 list(APPEND engineCommonLibraries "prd::base64")
@@ -86,7 +83,6 @@ endif (UNIX AND NOT MINGW)
 
 find_package_static(ZLIB 1.2.7 REQUIRED)
 list(APPEND engineCommonLibraries DevIL::IL)
-
 list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB Tracy::TracyClient)
 list(APPEND engineCommonLibraries lua luasocket archives assimp
 	gflags_nothreads_static)

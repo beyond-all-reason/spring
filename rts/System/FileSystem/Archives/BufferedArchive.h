@@ -43,12 +43,6 @@ protected:
 
 	// indexed by file-id
 	std::vector<FileBuffer> fileCache;
-	// neither 7zip (.sd7) nor minizip (.sdz) are thread-safe
-	// zlib (used to extract pool archive .gz entries) should
-	// not need this, but currently each buffered GetFileImpl
-	// call is protected
-	static spring::mutex archiveLock;
-
 private:
 	uint32_t cacheSize = 0;
 	uint32_t fileCount = 0;

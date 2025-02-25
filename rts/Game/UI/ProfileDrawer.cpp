@@ -30,7 +30,6 @@
 
 ProfileDrawer* ProfileDrawer::instance = nullptr;
 
-static constexpr float MAX_THREAD_HIST_TIME = 0.5f; // secs
 static constexpr float MAX_FRAMES_HIST_TIME = 0.5f; // secs
 
 static constexpr float  MIN_X_COOR = 0.6f;
@@ -139,17 +138,11 @@ static void DrawBufferStats(const float2 pos)
 
 static void DrawTimeSlices(
 	std::deque<TimeSlice>& frames,
-	const spring_time curTime,
 	const spring_time maxTime,
 	const float4& drawArea,
 	const float4& sliceColor
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// remove old entries
-	while (!frames.empty() && (curTime - frames.front().second) > maxTime) {
-		frames.pop_front();
-	}
-
 	const float y1 = drawArea.y;
 	const float y2 = drawArea.w;
 
@@ -220,9 +213,10 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		font->glFormat(drawArea[0], drawArea[3], 0.7f, FONT_TOP | DBG_FONT_FLAGS | FONT_BUFFERED, "ThreadPool (%.1f seconds :: %u threads)", MAX_THREAD_HIST_TIME, numThreads);
 	}
 	{
-		// need to lock; DrawTimeSlice pop_front()'s old entries from
-		// threadProf while ~ScopedMtTimer can modify it concurrently
+		// Need to lock; CleanupOldThreadProfiles pop_front()'s old entries
+		// from threadProf while ~ScopedMtTimer can modify it concurrently.
 		profiler.ToggleLock(true);
+		profiler.CleanupOldThreadProfiles();
 
 		// bars for each pool-thread profile
 		// Create a virtual row at the top to give some space to see the threads without the title getting in the way.
@@ -233,7 +227,7 @@ static void DrawThreadBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 			float drawArea2[4] = {drawArea[0], 0.0f, drawArea[2], 0.0f};
 			drawArea2[1] = drawArea[1] + ((drawArea[3] - drawArea[1]) / numRows) * i++;
 			drawArea2[3] = drawArea[1] + ((drawArea[3] - drawArea[1]) / numRows) * i - (4 * globalRendering->pixelY);
-			DrawTimeSlices(threadProf, curTime, maxTime, drawArea2, {1.0f, 0.0f, 0.0f, 0.6f});
+			DrawTimeSlices(threadProf, maxTime, drawArea2, {1.0f, 0.0f, 0.0f, 0.6f});
 		}
 
 		profiler.ToggleLock(false);
@@ -287,11 +281,11 @@ static void DrawFrameBarcode(TypedRenderBuffer<VA_TYPE_C   >& rb)
 		, MAX_FRAMES_HIST_TIME
 	);
 
-	DrawTimeSlices(lgcFrames, curTime, maxTime, drawArea, {1.0f, 0.5f, 1.0f, 0.55f}); // gc frames
-	DrawTimeSlices(uusFrames, curTime, maxTime, drawArea, {1.0f, 1.0f, 0.0f, 0.90f}); // unsynced-update frames
-	DrawTimeSlices(swpFrames, curTime, maxTime, drawArea, {0.0f, 0.0f, 1.0f, 0.55f}); // video swap frames
-	DrawTimeSlices(vidFrames, curTime, maxTime, drawArea, {0.0f, 1.0f, 0.0f, 0.55f}); // video frames
-	DrawTimeSlices(simFrames, curTime, maxTime, drawArea, {1.0f, 0.0f, 0.0f, 0.55f}); // sim frames
+	DrawTimeSlices(lgcFrames, maxTime, drawArea, {1.0f, 0.5f, 1.0f, 0.55f}); // gc frames
+	DrawTimeSlices(uusFrames, maxTime, drawArea, {1.0f, 1.0f, 0.0f, 0.90f}); // unsynced-update frames
+	DrawTimeSlices(swpFrames, maxTime, drawArea, {0.0f, 0.0f, 1.0f, 0.55f}); // video swap frames
+	DrawTimeSlices(vidFrames, maxTime, drawArea, {0.0f, 1.0f, 0.0f, 0.55f}); // video frames
+	DrawTimeSlices(simFrames, maxTime, drawArea, {1.0f, 0.0f, 0.0f, 0.55f}); // sim frames
 
 	{
 		// draw 'feeder' (indicates current time pos)
@@ -652,5 +646,33 @@ void ProfileDrawer::DbgTimingInfo(DbgTimingInfoType type, const spring_time star
 		default: {
 		} break;
 	}
+}
+
+static void DiscardOldTimeSlices(
+       std::deque<TimeSlice>& frames,
+       const spring_time curTime,
+       const spring_time maxTime
+) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	// remove old entries
+	while (!frames.empty() && (curTime - frames.front().second) > maxTime) {
+		frames.pop_front();
+	}
+}
+
+void ProfileDrawer::Update()
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const spring_time curTime = spring_now();
+	const spring_time maxTime = spring_secs(MAX_FRAMES_HIST_TIME);
+
+	// cleanup old frame records
+	DiscardOldTimeSlices(lgcFrames, curTime, maxTime);
+	DiscardOldTimeSlices(uusFrames, curTime, maxTime);
+	DiscardOldTimeSlices(swpFrames, curTime, maxTime);
+	DiscardOldTimeSlices(vidFrames, curTime, maxTime);
+	DiscardOldTimeSlices(simFrames, curTime, maxTime);
+
+	// old ThreadProfile records get cleaned up inside TimeProfiler and DrawThreadBarcode
 }
 

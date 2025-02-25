@@ -1,7 +1,7 @@
 #!/usr/bin/awk -f
 #
-# This awk script creates a C++ class hirarchy to wrapp the C AI Callback.
-# In other words, the output of this file wrapps:
+# This awk script creates a C++ class hierarchy to wrap the C AI Callback.
+# In other words, the output of this file wraps:
 # rts/ExternalAI/Interface/SSkirmishAICallback.h
 #
 # This script uses functions from the following files:
@@ -1434,7 +1434,7 @@ function wrappFunctionDef(funcDef, commentEolTot) {
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 # see: commonDoc.awk
 function canDeleteDocumentation() {
 	return isMultiLineFunc != 1;

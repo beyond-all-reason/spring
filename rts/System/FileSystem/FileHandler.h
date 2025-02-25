@@ -16,7 +16,7 @@
  * have a look at the FileSystem class.
  *
  * This class should be threadsafe (multiple threads can use multiple
- * CFileHandler pointing to the same file simulatneously) as long as there are
+ * CFileHandler pointing to the same file simultaneously) as long as there are
  * no new Archives added to the VFS (which should not happen after PreGame).
  */
 class CFileHandler

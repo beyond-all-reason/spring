@@ -33,8 +33,8 @@ CONFIG(bool, MiniMapCanDraw).defaultValue(false).description("Enables drawing wi
 CInMapDraw* inMapDrawer = nullptr;
 
 /**
- * This simply makes a noice appear when a map point is placed.
- * We will only receive an even (and thus make a sound) when we are allwoed to
+ * This simply makes a notice appear when a map point is placed.
+ * We will only receive an even (and thus make a sound) when we are allowed to
  * know about it.
  */
 class CNotificationPeeper : public CEventClient
@@ -54,7 +54,7 @@ public:
 			const CPlayer* sender = playerHandler.Player(playerID);
 
 			// if we happen to be in drawAll mode, notify us now
-			// even if this message is not intented for our ears
+			// even if this message is not intended for our ears
 			LOG("%s added point: %s", sender->name.c_str(), label->c_str());
 			eventHandler.LastMessagePosition(*pos0);
 			Channels::UserInterface->PlaySample(blipSoundID, *pos0);
@@ -169,7 +169,7 @@ int CInMapDraw::GotNetMsg(std::shared_ptr<const netcode::RawPacket>& packet)
 
 		switch (drawType) {
 			case MAPDRAW_POINT: {
-				short int x, z;
+				uint32_t x, z;
 				pckt >> x;
 				pckt >> z;
 				const float3 pos(x, 0, z);
@@ -182,7 +182,7 @@ int CInMapDraw::GotNetMsg(std::shared_ptr<const netcode::RawPacket>& packet)
 					inMapDrawerModel->AddPoint(pos, label, playerID);
 			} break;
 			case MAPDRAW_LINE: {
-				short int x1, z1, x2, z2;
+				uint32_t x1, z1, x2, z2;
 				pckt >> x1;
 				pckt >> z1;
 				pckt >> x2;
@@ -196,7 +196,7 @@ int CInMapDraw::GotNetMsg(std::shared_ptr<const netcode::RawPacket>& packet)
 					inMapDrawerModel->AddLine(pos1, pos2, playerID);
 			} break;
 			case MAPDRAW_ERASE: {
-				short int x, z;
+				uint32_t x, z;
 				pckt >> x;
 				pckt >> z;
 				float3 pos(x, 0, z);
@@ -230,7 +230,7 @@ void CInMapDraw::SendErase(const float3& pos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!gu->spectating || allowSpecMapDrawing)
-		clientNet->Send(CBaseNetProtocol::Get().SendMapErase(gu->myPlayerNum, (short)pos.x, (short)pos.z));
+		clientNet->Send(CBaseNetProtocol::Get().SendMapErase(gu->myPlayerNum, (uint32_t)pos.x, (uint32_t)pos.z));
 }
 
 
@@ -238,14 +238,14 @@ void CInMapDraw::SendPoint(const float3& pos, const std::string& label, bool fro
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!gu->spectating || allowSpecMapDrawing)
-		clientNet->Send(CBaseNetProtocol::Get().SendMapDrawPoint(gu->myPlayerNum, (short)pos.x, (short)pos.z, label, fromLua));
+		clientNet->Send(CBaseNetProtocol::Get().SendMapDrawPoint(gu->myPlayerNum, (uint32_t)pos.x, (uint32_t)pos.z, label, fromLua));
 }
 
 void CInMapDraw::SendLine(const float3& pos, const float3& pos2, bool fromLua)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!gu->spectating || allowSpecMapDrawing)
-		clientNet->Send(CBaseNetProtocol::Get().SendMapDrawLine(gu->myPlayerNum, (short)pos.x, (short)pos.z, (short)pos2.x, (short)pos2.z, fromLua));
+		clientNet->Send(CBaseNetProtocol::Get().SendMapDrawLine(gu->myPlayerNum, (uint32_t)pos.x, (uint32_t)pos.z, (uint32_t)pos2.x, (uint32_t)pos2.z, fromLua));
 }
 
 void CInMapDraw::SendWaitingInput(const std::string& label)

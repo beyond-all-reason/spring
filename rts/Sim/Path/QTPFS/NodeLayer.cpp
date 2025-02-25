@@ -72,8 +72,8 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 		std::reverse(nodeIndcs.begin(), nodeIndcs.end());
 	}
 
-	curSpeedMods.resize(xsize * zsize,  0);
-	curSpeedBins.resize(xsize * zsize, -1);
+	curSpeedMods.resize(QTPFS_MAX_NODE_SIZE*QTPFS_MAX_NODE_SIZE,  0);
+	curSpeedBins.resize(QTPFS_MAX_NODE_SIZE*QTPFS_MAX_NODE_SIZE, -1);
 
 	MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 	useShortestPath = md->preferShortestPath;
@@ -91,7 +91,10 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	// assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
 	unsigned int numClosedSquares = 0;
-	const SRectangle& r = threadData.areaUpdated;
+
+	// areaUpdated is always 16x16 squares. areaRelinkedInner could be bigger; this doesn't happen as often and once the
+	// nodes have divided they will never again grow larger than 16x16 squares in a match.
+	const SRectangle& r = threadData.areaRelinkedInner;
 	const MoveDef* md = threadData.moveDef;
 
 	auto &blockRect = threadData.areaMaxBlockBits;
@@ -148,9 +151,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 	// divide speed-modifiers into bins
 	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
 		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
-			// const unsigned int sqrIdx = hmz * xsize + hmx;
-			// const unsigned int recIdx = (hmz - r.z1) * r.GetWidth() + (hmx - r.x1);
-			const unsigned int recIdx = hmz * xsize + hmx;
+			const unsigned int recIdx = (hmz - r.z1) * r.GetWidth() + (hmx - r.x1);
 
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
 			const int chmx = std::clamp(int(hmx), md->xsizeh, mapDims.mapxm1 + (-md->xsizeh));
@@ -329,7 +330,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 	const int zmin = areaToSearch.z1, zmax = areaToSearch.z2;
 
 	// The xmin (0), xmax (1), zmin (2), zmax (3) can be accessed by (index.)
-	// The these are the indicies needed to make the 4 corners of a quad.
+	// The these are the indices needed to make the 4 corners of a quad.
 	constexpr int2 cornerPoints[] =
 		{ {0, 2}, {1, 2}
 		, {0, 3}, {1, 3}

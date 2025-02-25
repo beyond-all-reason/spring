@@ -3,7 +3,7 @@
 # This awk script creates C functions which call C function pointers in:
 # rts/ExternalAI/Interface/SSkirmishAICallback.h
 #
-# Right after running this script, you have to wrapp the native command structs
+# Right after running this script, you have to wrap the native command structs
 # into functions.
 #
 # This script uses functions from the following files:
@@ -230,7 +230,7 @@ function wrappFunction(funcDef, commentEolTot) {
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 # see: commonDoc.awk
 function canDeleteDocumentation() {
 	return isMultiLineFunc != 1;

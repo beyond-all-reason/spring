@@ -41,7 +41,7 @@ plot \
 	datafile using ($1/30/60):4 every 60 with lines  title "FPS (simulation)"
 
 
-# miliseconds per frame
+# milliseconds per frame
 set key opaque invert box top left reverse Left
 set yrange [0:*]
 set ylabel "FrameTime (in ms)"
@@ -57,7 +57,7 @@ plot sum = init(0), \
 	datafile using ($1/30/60):(33) with line notitle
 unset label
 
-# miliseconds per frame
+# milliseconds per frame
 set key opaque invert box top left reverse Left
 set yrange [0:*]
 set ylabel "FrameTime (in ms)"
@@ -82,7 +82,7 @@ unset label
 
 
 
-# miliseconds per frame
+# milliseconds per frame
 set key nobox
 set yrange [0:100]
 set ylabel "%"

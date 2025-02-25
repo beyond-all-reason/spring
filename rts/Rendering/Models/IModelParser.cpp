@@ -370,7 +370,7 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 
 	const auto erasePredicate = [](decltype(preloadFutures)::value_type item) {
 		using namespace std::chrono_literals;
-		return item->wait_for(0ms) == std::future_status::ready;
+		return item.wait_for(0ms) == std::future_status::ready;
 	};
 
 	// collect completed futures
@@ -416,9 +416,9 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 		}
 
 		parser->Load(model, path);
-		if (model.numPieces > 254) {
+		if (model.numPieces > MAX_PIECES_PER_MODEL) {
 			LoadDummyModel(model);
-			throw content_error("A model has too many pieces (>254)" + path);
+			throw content_error(fmt::sprintf("A model has too many pieces (>%u): %s", MAX_PIECES_PER_MODEL, path));
 		}
 
 	} catch (const content_error& ex) {

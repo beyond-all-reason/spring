@@ -40,6 +40,7 @@
 #include "System/type2.h"
 #include "System/Sound/ISoundChannels.h"
 #include "System/SpringHash.h"
+#include "Utils/UnitTrapCheckUtils.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -153,7 +154,6 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(atGoal),
 	CR_MEMBER(atEndOfPath),
 	CR_MEMBER(wantRepath),
-	CR_MEMBER(moveFailed),
 
 	CR_MEMBER(reversing),
 	CR_MEMBER(idling),
@@ -530,6 +530,10 @@ CGroundMoveType::~CGroundMoveType()
 	if (pathID != 0) {
 		pathManager->DeletePath(pathID, true);
 	}
+
+	if (deletePathId != 0) {
+		pathManager->DeletePath(deletePathId);
+	}
 }
 
 void CGroundMoveType::PostLoad()
@@ -823,8 +827,8 @@ void CGroundMoveType::SlowUpdate()
 					wantRepathFrame = gs->frameNum;
 				}
 
-				// lastWaypoint typically retries a repath and most likely won;t get closer, so
-				// in this case, don't wait around making the unit try to run inot an obstacle for
+				// lastWaypoint typically retries a repath and most likely won't get closer, so
+				// in this case, don't wait around making the unit try to run into an obstacle for
 				// longer than absolutely necessary.
 				bool timeForRepath = gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
 									&& (gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames || lastWaypoint);
@@ -891,8 +895,8 @@ void CGroundMoveType::StartMovingRaw(const float3 moveGoalPos, float moveGoalRad
 	MoveTypes::CheckCollisionQuery collisionQuery(owner->moveDef, moveGoalPos);
 	extraRadius = deltaRadius * (1 - owner->moveDef->TestMoveSquare(collisionQuery, moveGoalPos, ZeroVector, true, true));
 
-	currWayPoint = goalPos;
-	nextWayPoint = goalPos;
+	earlyCurrWayPoint = currWayPoint = goalPos;
+	earlyNextWayPoint = nextWayPoint = goalPos;
 
 	atGoal = (moveGoalPos.SqDistance2D(owner->pos) < Square(goalRadius + extraRadius));
 	atEndOfPath = false;
@@ -991,7 +995,7 @@ void CGroundMoveType::StopMoving(bool callScript, bool hardStop, bool cancelRaw)
 	LOG_L(L_DEBUG, "[%s] stopping engine for unit %i", __func__, owner->id);
 
 	if (!atGoal)
-		goalPos = (currWayPoint = Here());
+		earlyCurrWayPoint = (goalPos = (currWayPoint = Here()));
 
 	// this gets called under a variety of conditions (see MobileCAI)
 	// the most common case is a CMD_STOP being issued which means no
@@ -1017,7 +1021,7 @@ void CGroundMoveType::UpdateTraversalPlan() {
 	earlyCurrWayPoint = currWayPoint;
 	earlyNextWayPoint = nextWayPoint;
 
-	// Check wether the new path is ready.
+	// Check whether the new path is ready.
 	if (nextPathId != 0) {
 		float3 tempWaypoint = pathManager->NextWayPoint(owner, nextPathId, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 
@@ -1980,7 +1984,7 @@ float3 CGroundMoveType::GetObstacleAvoidanceDir(const float3& desiredDir) {
 
 
 #if 0
-// Calculates an aproximation of the physical 2D-distance between given two objects.
+// Calculates an approximation of the physical 2D-distance between given two objects.
 // Old, no longer used since all separation tests are based on FOOTPRINT_RADIUS now.
 float CGroundMoveType::Distance2D(CSolidObject* object1, CSolidObject* object2, float marginal)
 {
@@ -2062,13 +2066,12 @@ unsigned int CGroundMoveType::GetNewPath()
 		atEndOfPath = false;
 		lastWaypoint = false;
 
-		currWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
-		nextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+		earlyCurrWayPoint = currWayPoint = pathManager->NextWayPoint(owner, newPathID, 0,   owner->pos, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
+		earlyNextWayPoint = nextWayPoint = pathManager->NextWayPoint(owner, newPathID, 0, currWayPoint, std::max(WAYPOINT_RADIUS, currentSpeed * 1.05f), true);
 
 		pathController.SetRealGoalPosition(newPathID, goalPos);
 		pathController.SetTempGoalPosition(newPathID, currWayPoint);
 	} else {
-		// moveFailed = true;
 		Fail(false);
 	}
 
@@ -2404,12 +2407,6 @@ void CGroundMoveType::StartEngine(bool callScript) {
 			// makes no sense to call this unless we have a new path
 			owner->script->StartMoving(reversing);
 		}
-
-		// Due to how push resistant units work, they can trap units when they stop moving.
-		// Have units check they are not trapped when beginning to move is any push resistant units
-		// are used by the game.
-		if (!forceStaticObjectCheck)
-			forceStaticObjectCheck = (unitDefHandler->NumPushResistantUnitDefs() > 0);
 	}
 }
 
@@ -2773,10 +2770,9 @@ void CGroundMoveType::HandleUnitCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
-	auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
 	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
 
-	// Push resistent units when stopped impacting pathing and also cannot be pushed, so it is important that such
+	// Push resistant units when stopped impacting pathing and also cannot be pushed, so it is important that such
 	// units are not going to prevent other units from moving around them if they are near narrow pathways.
 	const float colliderSeparationDist = (pushResistant && pushResistanceBlockActive) ? 0.f : colliderUD->separationDistance;
 
@@ -2991,7 +2987,6 @@ void CGroundMoveType::HandleFeatureCollisions(
 	const bool allowSAT = modInfo.allowSepAxisCollisionTest;
 	const bool forceSAT = (colliderParams.z > 0.1f);
 
-	auto& comp = Sim::systemGlobals.GetSystemComponent<GroundMoveSystemComponent>();
 	const float3 crushImpulse = owner->speed * owner->mass * Sign(int(!reversing));
 	MoveTypes::CheckCollisionQuery colliderInfo(collider);
 
@@ -3287,7 +3282,7 @@ bool CGroundMoveType::UpdateDirectControl()
 	float turnSign = 0.0f;
 
 	currWayPoint = owner->frontdir * XZVector * mix(100.0f, -100.0f, wantReverse);
-	currWayPoint = (owner->pos + currWayPoint).cClampInBounds();
+	earlyCurrWayPoint = currWayPoint = (owner->pos + currWayPoint).cClampInBounds();
 
 	if (unitCon.forward || unitCon.back) {
 		ChangeSpeed((maxSpeed * unitCon.forward) + (maxReverseSpeed * unitCon.back), wantReverse, true);
@@ -3567,6 +3562,7 @@ bool CGroundMoveType::UpdateOwnerSpeed(float oldSpeedAbs, float newSpeedAbs, flo
 		} else {
 			owner->Block();
 			pushResistanceBlockActive = true;
+			RegisterUnitForUnitTrapCheck(owner);
 		}
 
 		// this has to be done manually because units don't trigger it with block commands

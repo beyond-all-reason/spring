@@ -9,7 +9,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 
 find_package_static(ZLIB 1.2.7 REQUIRED)
 
-list(APPEND unitsync_libs cpuid)
 list(APPEND unitsync_libs ${CMAKE_DL_LIBS})
 list(APPEND unitsync_libs 7zip prd::jsoncpp lua headlessStubs archives)
 list(APPEND unitsync_libs ZLIB::ZLIB)
@@ -23,8 +22,8 @@ if (WIN32)
 	list(APPEND unitsync_libs ${WINMM_LIBRARY})
 endif (WIN32)
 
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIR})
+find_package(SDL2 MODULE REQUIRED)
+list(APPEND unitsync_libs SDL2::SDL2)
 
 if    (MINGW)
 	#list(APPEND unitsync_lib_flags -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread)
@@ -75,6 +74,7 @@ set(main_files
 	"${ENGINE_SRC_ROOT}/System/Config/ConfigLocater.cpp"
 	"${ENGINE_SRC_ROOT}/System/Misc/SpringTime.cpp"
 	"${ENGINE_SRC_ROOT}/System/Platform/CpuID.cpp"
+	"${ENGINE_SRC_ROOT}/System/Platform/CpuTopologyCommon.cpp"
 	"${ENGINE_SRC_ROOT}/System/Platform/Misc.cpp"
 	"${ENGINE_SRC_ROOT}/System/Platform/ScopedFileLock.cpp"
 	"${ENGINE_SRC_ROOT}/System/Platform/Threading.cpp"
@@ -92,9 +92,15 @@ set(main_files
 	"${ENGINE_SRC_ROOT}/System/StringUtil.cpp"
 	)
 if (WIN32)
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/CpuTopology.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/Hardware.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/WinVersion.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/SharedLib.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/DllLib.cpp")
 else (WIN32)
-        list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/CpuTopology.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/Hardware.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
 endif (WIN32)
 
 set(unitsync_files

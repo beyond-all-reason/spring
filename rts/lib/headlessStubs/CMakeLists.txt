@@ -1,12 +1,10 @@
 SET(headlessStubsSources
-		"glewstub.c"
-		"glstub.c"
+		"gladstub.cpp"
 		"sdlstub.c"
 	)
 
-FIND_PACKAGE(SDL2 REQUIRED)
-INCLUDE_DIRECTORIES(${SDL2_INCLUDE_DIR})
+find_package(SDL2 MODULE REQUIRED)
 
 ADD_LIBRARY(headlessStubs STATIC EXCLUDE_FROM_ALL ${headlessStubsSources})
+target_link_libraries(headlessStubs PUBLIC $<COMPILE_ONLY:SDL2::SDL2>)
 SET_TARGET_PROPERTIES(headlessStubs PROPERTIES COMPILE_FLAGS "${PIC_FLAG}")
-

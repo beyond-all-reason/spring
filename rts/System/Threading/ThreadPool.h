@@ -85,7 +85,7 @@ class ITaskGroup;
 namespace ThreadPool {
 	template<class F, class... Args>
 	static auto Enqueue(F&& f, Args&&... args)
-	-> std::shared_ptr<std::future<std::invoke_result_t<F, Args...>>>;
+	-> std::shared_future<std::invoke_result_t<F, Args...>>;
 
 	void AddExtJob(spring::thread&& t);
 	void AddExtJob(std::future<void>&& f);
@@ -226,7 +226,7 @@ public:
 
 	AsyncTask(F f, Args... args) : selfDelete(true) {
 		task = std::make_shared<std::packaged_task<return_type()>>(std::bind(f, std::forward<Args>(args)...));
-		result = std::make_shared<std::future<return_type>>(task->get_future());
+		result = std::move(task->get_future());
 
 		remainingTasks += 1;
 	}
@@ -241,14 +241,14 @@ public:
 	}
 
 	// FIXME: rethrow exceptions some time
-	std::shared_ptr<std::future<return_type>> GetFuture() { assert(result->valid()); return std::move(result); }
+	std::shared_future<return_type> GetFuture() { assert(result.valid()); return std::move(result); }
 
 public:
 	// if true, we are not managed by a shared_ptr
 	std::atomic<bool> selfDelete;
 
 	std::shared_ptr<std::packaged_task<return_type()>> task;
-	std::shared_ptr<std::future<return_type>> result;
+	std::shared_future<return_type> result;
 };
 
 
@@ -267,7 +267,7 @@ public:
 	void Enqueue(F f, Args... args)
 	{
 		auto task = std::make_shared<std::packaged_task<return_type()>>(std::bind(f, std::forward<Args>(args)...));
-		results.emplace_back(task->get_future());
+		results.emplace_back(std::move(task->get_future()));
 		tasks.emplace_back(task);
 		remainingTasks.fetch_add(1, std::memory_order_release);
 	}
@@ -776,8 +776,7 @@ static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
 	SCOPED_MT_TIMER("ThreadPool::AddTask");
 
 	using RetType = std::invoke_result_t<F>;
-	// typedef  typename std::shared_ptr< AsyncTask<F> >  TaskType;
-	typedef           std::shared_ptr< std::future<RetType> >  FoldType;
+	using FoldType = std::shared_future<RetType>;
 
 	// std::array<TaskType, ThreadPool::MAX_THREADS> tasks;
 	std::array<AsyncTask<F>*, ThreadPool::MAX_THREADS> tasks;
@@ -817,14 +816,14 @@ static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
 namespace ThreadPool {
 	template<class F, class... Args>
 	static inline auto Enqueue(F&& f, Args&&... args)
-	-> std::shared_ptr<std::future<std::invoke_result_t<F, Args...>>>
+	-> std::shared_future<std::invoke_result_t<F, Args...>>
 	{
 		using return_type = std::invoke_result_t<F, Args...>;
 
 		if (!ThreadPool::HasThreads()) {
 			// directly process when there are no worker threads
 			auto task = std::make_shared< std::packaged_task<return_type()> >(std::bind(f, args ...));
-			auto fut = std::make_shared<std::future<return_type>>(task->get_future());
+			std::shared_future<return_type> fut = std::move(task->get_future());
 			(*task)();
 			return fut;
 		}

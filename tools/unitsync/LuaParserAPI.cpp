@@ -212,7 +212,7 @@ EXPORT(void) lpPopTable()
 
 /******************************************************************************/
 //
-//  Key existance
+//  Key existence
 //
 
 EXPORT(int) lpGetKeyExistsInt(int key)

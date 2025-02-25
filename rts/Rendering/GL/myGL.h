@@ -3,22 +3,13 @@
 #ifndef _MY_GL_H
 #define _MY_GL_H
 
-#define GLEW_STATIC
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 
 #include <array>
 
-#if       defined(HEADLESS)
-	#undef WINGDIAPI
-	#define WINGDIAPI //working around https://github.com/beyond-all-reason/spring/issues/27
-	#include "lib/headlessStubs/glewstub.h"
-	#undef WINGDIAPI
-#else
-	#include <GL/glew.h>
-#endif // defined(HEADLESS)
-
+#include <glad/glad.h>
 
 #include "System/float3.h"
 #include "System/float4.h"
@@ -26,6 +17,7 @@
 #include "System/UnorderedMap.hpp"
 
 #include "glStateDebug.h"
+#include "glDebugGroup.hpp"
 
 #if       defined(HEADLESS)
 	// All OpenGL functions should always exists on HEADLESS.
@@ -154,11 +146,13 @@ struct SDrawElementsIndirectCommand {
 
 struct SInstanceData {
 	SInstanceData() = default;
-	SInstanceData(uint32_t matOffset_, uint8_t teamIndex, uint8_t drawFlags, uint8_t numPieces, uint32_t uniOffset_, uint32_t bposeMatOffset_)
-		: matOffset{ matOffset_ }						// updated during the following draw frames
-		, uniOffset{ uniOffset_ }						// updated during the following draw frames
-		, info{ teamIndex, drawFlags, 0, numPieces }	// not updated during the following draw frames
-		, bposeMatOffset { bposeMatOffset_ }			// updated during the following draw frames
+	SInstanceData(uint32_t matOffset_, uint8_t teamIndex, uint8_t drawFlags, uint16_t numPieces, uint32_t uniOffset_, uint32_t bposeMatOffset_)
+		: matOffset{ matOffset_ }                         // updated during the following draw frames
+		, uniOffset{ uniOffset_ }                         // updated during the following draw frames
+		, info{ teamIndex, drawFlags                      // not updated during the following draw frames
+			, static_cast<uint8_t>((numPieces >> 8) & 0xFF)
+			, static_cast<uint8_t>((numPieces     ) & 0xFF) }
+		, bposeMatOffset { bposeMatOffset_ }              // updated during the following draw frames
 	{}
 
 	uint32_t matOffset;

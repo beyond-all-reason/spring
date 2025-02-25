@@ -203,18 +203,15 @@ bool IsUnitsync()
 const std::string& Get()
 {
 	static const std::string base = IsRelease()
-			? GetMajor() + "." + GetMinor()
-			: GetMajor() + "." + GetMinor() + "." + GetPatchSet();
+			? GetMajor() + "." + GetMinor() + "." + GetPatchSet()
+			: GetMajor() + "." + GetMinor() + "." + GetPatchSet() + "-" + GetCommits();
 
 	return base;
 }
 
 const std::string& GetSync()
 {
-	static const std::string sync = IsRelease()
-			? GetMajor() + "." + GetMinor()
-			: SPRING_VERSION_ENGINE;
-
+	static const std::string sync = SPRING_VERSION_ENGINE;
 	return sync;
 }
 

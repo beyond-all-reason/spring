@@ -234,7 +234,7 @@ local mapinfo = {
 	custom = {
 		fog = {
 			color    = {0.26, 0.30, 0.41},
-			height   = "80%", --// allows either absolue sizes or in percent of map's MaxHeight
+			height   = "80%", --// allows either absolute sizes or in percent of map's MaxHeight
 			fogatten = 0.003,
 		},
 		precipitation = {

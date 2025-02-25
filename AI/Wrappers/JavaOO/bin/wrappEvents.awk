@@ -1,10 +1,10 @@
 #!/usr/bin/awk -f
 #
-# This awk script creates a java class in OO style to wrapp the C style
+# This awk script creates a java class in OO style to wrap the C style
 # JNI based AI Events wrapper interface.
-# In other words, the output of this file wrapps:
+# In other words, the output of this file wraps:
 # com/springrts/ai/AI.java
-# which wrapps:
+# which wraps:
 # rts/ExternalAI/Interface/AISEvents.h
 #
 # This script uses functions from the following files:
@@ -562,16 +562,16 @@ function printOOEventInterface(int_name_ei) {
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 # see: commonDoc.awk
 function canDeleteDocumentation() {
 	return 1;
 }
 
 ################################################################################
-### BEGINN: parsing and saving the event methods
+### BEGIN: parsing and saving the event methods
 
-# beginn of struct S*Event
+# beginning of struct S*Event
 /^\tpublic .+\);/ {
 
 	_head   = $1;

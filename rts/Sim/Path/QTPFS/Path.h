@@ -347,13 +347,24 @@ namespace QTPFS {
 		PathHashType hash = BAD_HASH;
 
 		// Similar to hash, but the target quad and source quad numbers may not relate to actual
-		// leaf nodes in the quad tree. They repesent the quad that would be there if the leaf node
+		// leaf nodes in the quad tree. They represent the quad that would be there if the leaf node
 		// was exactly the size of QTPFS_PARTIAL_SHARE_PATH_MAX_SIZE. This allows searches that
 		// start and/or end in different, but close, quads. This is used to handle partially-
 		// shared path searches.
 		PathHashType virtualHash = BAD_HASH;
 		float radius = 0.f;
+
+		// Whether this AFFECTS synced state (like heatmaps and whatnot).
+		// It NEVER DEPENDS on unsynced state so even an "unsynced" call
+		// is safe to make from synced.
+		//
+		// Additionally, synced calls are batched and deferred.
+		//
+		// In practice, this means calls from actual unit movement usually
+		// set this to synced, and Lua calls (which need to know results
+		// immediately but don't yet involve any unit movement) unsynced.
 		bool synced = true;
+
 		bool haveFullPath = true;
 		bool havePartialPath = false;
 		bool boundingBoxOverride = false;

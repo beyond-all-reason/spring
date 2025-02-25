@@ -1084,7 +1084,7 @@ void CSMFReadMap::FreeInfoMap(const char* name, unsigned char* data)
 void CSMFReadMap::ConfigureTexAnisotropyLevels()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!GLEW_EXT_texture_filter_anisotropic) {
+	if (!GLAD_GL_EXT_texture_filter_anisotropic) {
 		texAnisotropyLevels[false] = 0.0f;
 		texAnisotropyLevels[ true] = 0.0f;
 		return;

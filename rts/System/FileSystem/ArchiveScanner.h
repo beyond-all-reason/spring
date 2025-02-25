@@ -22,7 +22,7 @@ class LuaTable;
  * for archive files.
  * When it finds one, it figures out what kind of archive it is (i.e. if it is a
  * map or a mod currently). This information is cached, so that only modified
- * archives are actually opened. The information can then be retreived by the
+ * archives are actually opened. The information can then be retrieved by the
  * mod and map selectors.
  *
  * The archive namespace is global, so it is not allowed to have an archive with
@@ -147,6 +147,8 @@ public:
 	void Clear();
 	void Reload();
 
+	void WriteCache();
+
 	std::string ArchiveFromName(const std::string& versionedName) const;
 	std::string NameFromArchive(const std::string& archiveName) const;
 	std::string GameHumanNameFromArchive(const std::string& archiveName) const;
@@ -189,7 +191,6 @@ private:
 
 private:
 	void ReadCache();
-	void WriteCache();
 
 	ArchiveInfo& GetAddArchiveInfo(const std::string& lcfn);
 	BrokenArchive& GetAddBrokenArchive(const std::string& lcfn);
@@ -207,7 +208,7 @@ private:
 	std::string SearchMapFile(const IArchive* ar, std::string& error);
 
 
-	bool ReadCacheData(const std::string& filename);
+	bool ReadCacheData(const std::string& filename, bool loadOldVersion = false);
 	void WriteCacheData(const std::string& filename);
 
 	IFileFilter* CreateIgnoreFilter(IArchive* ar);

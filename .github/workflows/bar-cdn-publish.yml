@@ -1,0 +1,57 @@
+# Workflow for Beyond All Reason, it only motifies BAR infra that a new engine
+# release was published.
+name: Publish Engine to BAR CDN
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      releaseId:
+        description: Release Id as returned from GitHub Releases API
+        required: true
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+    - uses: google-github-actions/auth@v2
+      id: auth
+      with:
+        project_id: 'bar-springfiles-syncer'
+        workload_identity_provider: 'projects/741013749543/locations/global/workloadIdentityPools/github-actions/providers/github'
+        create_credentials_file: false
+    - uses: actions/github-script@v7
+      env:
+        ACCESS_TOKEN: ${{ steps.auth.outputs.auth_token }}
+      with:
+        script: |
+          const rel = await github.rest.repos.getRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: context.payload.release?.id ?? context.payload.inputs.releaseId
+          });
+          const engines = rel.data.assets
+            .filter((a) => /amd64-(linux|windows)\.7z$/.test(a.name))
+            .map((a) => a.browser_download_url)
+            .sort();
+          if (engines.length != 2) {
+            throw new Error("Not found engine archives!");
+          }
+
+          const msg = JSON.stringify({
+            category: "engine",
+            linux64: { url: engines[0] },
+            windows64: { url: engines[1] },
+          });
+          const resp = await fetch("https://pubsub.googleapis.com/v1/projects/bar-springfiles-syncer/topics/cache-requests:publish", {
+              method: 'POST',
+              body: JSON.stringify({messages: [{ attributes: { "requestType": "SyncRequest"}, data: btoa(msg) }]}),
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${process.env.ACCESS_TOKEN}`
+              }
+          });
+          if (!resp.ok) {
+            throw new Error(`Failed to push message: ${resp.statusText}`);
+          }

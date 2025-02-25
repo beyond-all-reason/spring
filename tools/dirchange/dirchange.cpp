@@ -32,7 +32,7 @@
 
 // define a cross-platform/-compiler compatible "%z" format replacement for
 // printf() style functions.
-// "%z" being the propper way for size_t typed values,
+// "%z" being the proper way for size_t typed values,
 // but support for it has not yet spread wide enough.
 #if defined __arch64__
 #define __SIZE_T_PRINTF_FORMAT__ "%lu"

@@ -81,7 +81,7 @@ public:
 	static std::string GetFilename(const std::string& path);
 	/**
 	 * @brief Returns the basename part of a path
-	 * This is equvalent to the filename without extension.
+	 * This is equivalent to the filename without extension.
 	 * "/home/user/.spring/test.txt" -> "test"
 	 */
 	static std::string GetBasename(const std::string& path);
@@ -127,7 +127,6 @@ public:
 
 	static const std::string& GetCacheBaseDir();
 	static const std::string& GetCacheDir();
-	static const std::string& GetOldCacheDir();
 };
 
 #endif // !FILE_SYSTEM_H

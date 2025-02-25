@@ -668,6 +668,8 @@ bool CGameSetup::Init(const std::string& buf)
 	modName = archiveScanner->GameHumanNameFromArchive(modName);
 
 	file.GetDef(onlyLocal, (archiveScanner->GetArchiveData(modName).GetOnlyLocal() ? "1" : "0"), "GAME\\OnlyLocal");
+	onlyLocal |= forceOnlyLocal;
+
 	return true;
 }
 

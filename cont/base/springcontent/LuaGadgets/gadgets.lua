@@ -19,7 +19,7 @@
 
 local SAFEWRAP = 0
 -- 0: disabled
--- 1: enabled, but can be overriden by gadget.GetInfo().unsafe
+-- 1: enabled, but can be overridden by gadget.GetInfo().unsafe
 -- 2: always enabled
 
 
@@ -1841,6 +1841,12 @@ function gadgetHandler:DefaultCommand(type, id, cmd)
     if (id) then
       return id
     end
+  end
+end
+
+function gadgetHandler:ActiveCommandChanged(id, cmdType)
+  for _,g in r_ipairs(self.ActiveCommandChangedList) do
+    g:ActiveCommandChanged(id, cmdType)
   end
 end
 

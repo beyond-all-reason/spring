@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <functional>
 #include <tuple>
 #include <type_traits>
@@ -170,6 +171,7 @@ namespace spring {
 	template<typename ReturnType, typename... ArgTypes>
 	struct func_signature<ReturnType(ArgTypes...)> {
 		using type = std::tuple<ArgTypes...>;
+		using ret = ReturnType;
 	};
 
 	template<typename FuncType>

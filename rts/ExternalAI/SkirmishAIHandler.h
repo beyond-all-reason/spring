@@ -112,7 +112,7 @@ public:
 	 * Starts the initialization process of a locally running Skirmish AI,
 	 * which was defined in the start script.
 	 * Do NOT use for creating AIs not defined in the start script,
-	 * as it will cuase desyncs.
+	 * as it will cause desyncs.
 	 * Stores detailed info locally real creation happens right here.
 	 * @param skirmishAIId Skirmish AI index
 	 * @see EngineOutHandler::CreateSkirmishAI()

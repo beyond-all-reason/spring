@@ -139,6 +139,7 @@ public:
 
 	virtual void ForcedMove(const float3& newPos) {}
 	virtual void ForcedSpin(const float3& newDir);
+	virtual void ForcedSpin(const float3& newFrontDir, const float3& newRightDir);
 
 	virtual void UpdatePhysicalState(float eps);
 

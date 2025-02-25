@@ -36,15 +36,15 @@ bool VBO::IsSupported() const
  * Returns if the current gpu drivers support certain buffer type
  */
 bool VBO::IsSupported(GLenum target) {
-	static bool isRangeMappingSupported = GLEW_ARB_map_buffer_range;
+	static bool isRangeMappingSupported = GLAD_GL_ARB_map_buffer_range;
 	if (!isRangeMappingSupported) //TODO glBufferSubData() fallback ?
 		return false;
 
-	static bool isPBOSupported  = (GLEW_EXT_pixel_buffer_object);
-	static bool isVBOSupported  = (GLEW_ARB_vertex_buffer_object);
-	static bool isUBOSupported  = (GLEW_ARB_uniform_buffer_object);
-	static bool isSSBOSupported = (GLEW_ARB_shader_storage_buffer_object);
-	static bool isCopyBuffSupported = (GLEW_ARB_copy_buffer);
+	static bool isPBOSupported  = (GLAD_GL_EXT_pixel_buffer_object);
+	static bool isVBOSupported  = (GLAD_GL_ARB_vertex_buffer_object);
+	static bool isUBOSupported  = (GLAD_GL_ARB_uniform_buffer_object);
+	static bool isSSBOSupported = (GLAD_GL_ARB_shader_storage_buffer_object);
+	static bool isCopyBuffSupported = (GLAD_GL_ARB_copy_buffer);
 
 	switch (target) {
 	case GL_PIXEL_PACK_BUFFER:
@@ -77,15 +77,13 @@ VBO::VBO(GLenum _defTarget, const bool storage, bool readable)
 	immutableStorage = storage;
 	readableStorage = readable;
 
-#ifdef GLEW_ARB_buffer_storage
-	if (immutableStorage && !GLEW_ARB_buffer_storage) {
+	if (immutableStorage && !GLAD_GL_ARB_buffer_storage) {
 		//note: We can't fallback to traditional BufferObjects, cause then we would have to map/unmap on each change.
 		//      Only sysram/cpu VAs give an equivalent behaviour.
 		isSupported = false;
 		immutableStorage = false;
 		LOG_L(L_ERROR, "VBO: cannot create immutable storage, gpu drivers missing support for it!");
 	}
-#endif
 }
 
 
@@ -129,7 +127,7 @@ void VBO::Delete() {
 	}
 	bbrItems.clear();
 
-	if (GLEW_ARB_vertex_buffer_object)
+	if (GLAD_GL_ARB_vertex_buffer_object)
 		glDeleteBuffers(1, &vboId);
 
 	vboId = 0;
@@ -234,7 +232,7 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 		GLint wbglsize = 0;
 		glGetBufferParameteriv(curBoundTarget, GL_BUFFER_SIZE, &rbglsize);
 
-		if (GLEW_ARB_copy_buffer) {
+		if (GLAD_GL_ARB_copy_buffer) {
 			VBO vbo(GL_COPY_WRITE_BUFFER, immutableStorage);
 
 			vbo.Bind(GL_COPY_WRITE_BUFFER);
@@ -336,12 +334,9 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 	if (isSupported) {
 		glClearErrors("VBO", __func__, globalRendering->glDebugErrors);
 
-	#ifdef GLEW_ARB_buffer_storage
 		if (immutableStorage) {
 			glBufferStorage(curBoundTarget, newSize, newData, /*newUsage =*/(GL_MAP_READ_BIT * readableStorage) | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_DYNAMIC_STORAGE_BIT);
-		} else
-	#endif
-		{
+		} else {
 			glBufferData(curBoundTarget, newSize, newData, newUsage);
 		}
 
@@ -406,10 +401,8 @@ GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 			// Also, you can map a buffer and only overwrite part of it. Invalidation is negatively useful for that too.
 			const GLbitfield irBit = GL_MAP_INVALIDATE_RANGE_BIT * (offset == 0 && size == bufSize);
 			access = GL_MAP_WRITE_BIT | irBit | mapUnsyncedBit;
-			#ifdef GLEW_ARB_buffer_storage
-				if (immutableStorage)
-					access = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-			#endif
+			if (immutableStorage)
+				access = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 			} break;
 		case GL_READ_WRITE:
 			access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
@@ -466,13 +459,11 @@ void VBO::Invalidate() const
 	assert(!immutableStorage);
 	assert(!mapped);
 
-#ifdef GLEW_ARB_invalidate_subdata
 	// OpenGL4 way
-	if (isSupported && GLEW_ARB_invalidate_subdata) {
+	if (isSupported && GLAD_GL_ARB_invalidate_subdata) {
 		glInvalidateBufferData(GetId());
 		return;
 	}
-#endif
 
 	// note: allocating memory doesn't actually block the memory it just makes room in _virtual_ memory space
 	glBufferData(curBoundTarget, GetAlignedSize(bufSize), nullptr, usage);

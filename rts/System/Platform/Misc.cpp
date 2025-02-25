@@ -58,6 +58,7 @@
 #include "System/StringUtil.h"
 #include "System/Log/ILog.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/Platform/Hardware.h"
 #if defined(_WIN32)
 #include "System/Platform/Win/WinVersion.h"
 #endif
@@ -69,7 +70,7 @@
 /**
  * Returns a handle to the currently loaded module.
  * Note: requires at least Windows 2000
- * @return handle to the currently loaded module, or NULL if an error occures
+ * @return handle to the currently loaded module, or NULL if an error occurs
  */
 static HMODULE GetCurrentModule()
 {
@@ -410,7 +411,6 @@ namespace Platform
 		std::string ret;
 
 		FILE* cpuInfo = fopen("/proc/cpuinfo", "r");
-		FILE* memInfo = fopen("/proc/meminfo", "r");
 
 		char buf[1024];
 		char tmp[1024];
@@ -432,36 +432,13 @@ namespace Platform
 			fclose(cpuInfo);
 		}
 
-		if (memInfo != nullptr) {
-			while (fgets(buf, sizeof(buf), memInfo) != nullptr) {
-				if (strstr(buf, "MemTotal") != nullptr) {
-					const char* s = strstr(buf, ": ") + 2;
-					const char* e = s;
-
-					for (     ; !std::isdigit(*s); s++) {}
-					for (e = s;  std::isdigit(*e); e++) {}
-
-					memset(tmp, 0, sizeof(tmp));
-					memcpy(tmp, s, e - s);
-
-					// sufficient up to 4TB
-					uint32_t kb = 0;
-
-					sscanf(tmp, "%u", &kb);
-					sprintf(tmp, "%u", kb / 1024);
-
-					ret += (std::string(tmp) + "MB RAM");
-					break;
-				}
-			}
-
-			fclose(memInfo);
-		}
+		uint64_t totalRam = TotalRAM();
+		sprintf(tmp, "%lu", totalRam / (1024*1024));
+		ret += (std::string(tmp) + "MB RAM");
 
 		return ret;
 	}
 	#endif
-
 
 	std::string GetSysInfoHash() {
 		std::vector<uint8_t> sysInfo;

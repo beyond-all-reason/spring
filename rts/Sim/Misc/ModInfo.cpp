@@ -6,10 +6,13 @@
 #include "Lua/LuaParser.h"
 #include "Lua/LuaSyncedRead.h"
 #include "Lua/LuaAllocState.h"
+#include "Map/ReadMap.h"
 #include "System/Log/ILog.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
+
+#include "lib/fmt/format.h"
 
 #include <bit>
 
@@ -34,7 +37,7 @@ void CModInfo::ResetState()
 		allowUnitCollisionOverlap  = true;
 		allowSepAxisCollisionTest  = false;
 		allowGroundUnitGravity     = false;
-		allowHoverUnitStrafing     = true;
+		allowHoverUnitStrafing     = false;
 
 		maxCollisionPushMultiplier = std::numeric_limits<float>::infinity();
 		unitQuadPositionUpdateRate = 3;
@@ -70,6 +73,7 @@ void CModInfo::ResetState()
 		unitExpPowerScale  = 1.0f;
 		unitExpHealthScale = 0.7f;
 		unitExpReloadScale = 0.4f;
+		unitExpGrade       = 0.0f;
 	}
 	{
 		paralyzeDeclineRate = 40.0f;
@@ -164,22 +168,22 @@ void CModInfo::Init(const std::string& modFileName)
 		// system
 		const LuaTable& system = root.SubTable("system");
 
-		pathFinderSystem = std::clamp(system.GetInt("pathFinderSystem", pathFinderSystem), int(NOPFS_TYPE), int(PFS_TYPE_MAX));
+		pathFinderSystem = system.GetInt("pathFinderSystem", pathFinderSystem);
 		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
 		pfUpdateRateScale = system.GetFloat("pathFinderUpdateRateScale", pfUpdateRateScale);
-		pfRepathDelayInFrames = std::clamp(system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames), 0, 300);
-		pfRepathMaxRateInFrames = std::clamp(system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames), 0, 3600);
-		pfRawMoveSpeedThreshold = std::max(system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold), 0.f);
-		qtMaxNodesSearched = std::max(system.GetInt("qtMaxNodesSearched", qtMaxNodesSearched), 1024);
-		qtRefreshPathMinDist = std::max(system.GetFloat("qtRefreshPathMinDist", qtRefreshPathMinDist), 0.0f);
-		qtMaxNodesSearchedRelativeToMapOpenNodes = std::max(system.GetFloat("qtMaxNodesSearchedRelativeToMapOpenNodes", qtMaxNodesSearchedRelativeToMapOpenNodes), 0.0f);
+		pfRepathDelayInFrames = system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames);
+		pfRepathMaxRateInFrames = system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames);
+		pfRawMoveSpeedThreshold = system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold);
+		qtMaxNodesSearched = system.GetInt("qtMaxNodesSearched", qtMaxNodesSearched);
+		qtRefreshPathMinDist = system.GetFloat("qtRefreshPathMinDist", qtRefreshPathMinDist);
+		qtMaxNodesSearchedRelativeToMapOpenNodes = system.GetFloat("qtMaxNodesSearchedRelativeToMapOpenNodes", qtMaxNodesSearchedRelativeToMapOpenNodes);
 		qtLowerQualityPaths = system.GetBool("qtLowerQualityPaths", qtLowerQualityPaths);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
-		smoothMeshResDivider = std::max(system.GetInt("smoothMeshResDivider", smoothMeshResDivider), 1);
-		smoothMeshSmoothRadius = std::max(system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius), 1);
+		smoothMeshResDivider = system.GetInt("smoothMeshResDivider", smoothMeshResDivider);
+		smoothMeshSmoothRadius = system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius);
 
-		quadFieldQuadSizeInElmos = std::clamp(system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos), 8, 1024);
+		quadFieldQuadSizeInElmos = system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos);
 
 		// Specify in megabytes: 1 << 20 = (1024 * 1024)
 		SLuaAllocLimit::MAX_ALLOC_BYTES = static_cast<decltype(SLuaAllocLimit::MAX_ALLOC_BYTES)>(system.GetInt("LuaAllocLimit", SLuaAllocLimit::MAX_ALLOC_BYTES >> 20u)) << 20u;
@@ -200,10 +204,10 @@ void CModInfo::Init(const std::string& modFileName)
 		allowUnitCollisionOverlap = movementTbl.GetBool("allowUnitCollisionOverlap", allowUnitCollisionOverlap);
 		allowSepAxisCollisionTest = movementTbl.GetBool("allowSepAxisCollisionTest", allowSepAxisCollisionTest);
 		allowGroundUnitGravity = movementTbl.GetBool("allowGroundUnitGravity", allowGroundUnitGravity);
-		allowHoverUnitStrafing = movementTbl.GetBool("allowHoverUnitStrafing", (pathFinderSystem == QTPFS_TYPE));
+		allowHoverUnitStrafing = movementTbl.GetBool("allowHoverUnitStrafing", allowHoverUnitStrafing);
 		maxCollisionPushMultiplier = movementTbl.GetFloat("maxCollisionPushMultiplier", maxCollisionPushMultiplier);
-		unitQuadPositionUpdateRate = std::clamp(movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate), 1, 15);
-		groundUnitCollisionAvoidanceUpdateRate = std::clamp(movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate), 1, 15);
+		unitQuadPositionUpdateRate = movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate);
+		groundUnitCollisionAvoidanceUpdateRate = movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate);
 
 	}
 
@@ -213,7 +217,7 @@ void CModInfo::Init(const std::string& modFileName)
 
 		constructionDecay = constructionTbl.GetBool("constructionDecay", constructionDecay);
 		constructionDecayTime = (int)(constructionTbl.GetFloat("constructionDecayTime", (float)constructionDecayTime / GAME_SPEED) * GAME_SPEED);
-		constructionDecaySpeed = std::max(constructionTbl.GetFloat("constructionDecaySpeed", constructionDecaySpeed), 0.01f);
+		constructionDecaySpeed = constructionTbl.GetFloat("constructionDecaySpeed", constructionDecaySpeed);
 		insertBuiltUnitMoveCommand = constructionTbl.GetBool("insertBuiltUnitMoveCommand", insertBuiltUnitMoveCommand);
 	}
 
@@ -286,10 +290,11 @@ void CModInfo::Init(const std::string& modFileName)
 		// experience
 		const LuaTable& experienceTbl = root.SubTable("experience");
 
-		unitExpMultiplier  = experienceTbl.GetFloat("experienceMult", unitExpMultiplier);
-		unitExpPowerScale  = experienceTbl.GetFloat(    "powerScale", unitExpPowerScale);
-		unitExpHealthScale = experienceTbl.GetFloat(   "healthScale", unitExpHealthScale);
-		unitExpReloadScale = experienceTbl.GetFloat(   "reloadScale", unitExpReloadScale);
+		unitExpMultiplier  = experienceTbl.GetFloat( "experienceMult", unitExpMultiplier);
+		unitExpPowerScale  = experienceTbl.GetFloat(     "powerScale", unitExpPowerScale);
+		unitExpHealthScale = experienceTbl.GetFloat(    "healthScale", unitExpHealthScale);
+		unitExpReloadScale = experienceTbl.GetFloat(    "reloadScale", unitExpReloadScale);
+		unitExpGrade       = experienceTbl.GetFloat("experienceGrade", unitExpGrade);
 	}
 
 	{
@@ -305,7 +310,6 @@ void CModInfo::Init(const std::string& modFileName)
 		const LuaTable& featureLOS = root.SubTable("featureLOS");
 
 		featureVisibility = featureLOS.GetInt("featureVisibility", featureVisibility);
-		featureVisibility = std::clamp(featureVisibility, int(FEATURELOS_NONE), int(FEATURELOS_ALL));
 	}
 
 	{
@@ -318,22 +322,10 @@ void CModInfo::Init(const std::string& modFileName)
 		decloakRequiresLineOfSight = sensors.GetBool("decloakRequiresLineOfSight", decloakRequiresLineOfSight);
 		separateJammers = sensors.GetBool("separateJammers", separateJammers);
 
-		// losMipLevel is used as index to readMap->mipHeightmaps,
-		// so the maximum value is CReadMap::numHeightMipMaps - 1
 		losMipLevel = los.GetInt("losMipLevel", losMipLevel);
-		// airLosMipLevel doesn't have such restrictions, it's just
-		// used in various bitshifts with signed integers
 		airMipLevel = los.GetInt("airMipLevel", airMipLevel);
 		radarMipLevel = los.GetInt("radarMipLevel", radarMipLevel);
 
-		if ((losMipLevel < 0) || (losMipLevel > 6))
-			throw content_error("Sensors\\Los\\LosMipLevel out of bounds. The minimum value is 0. The maximum value is 6.");
-
-		if ((radarMipLevel < 0) || (radarMipLevel > 6))
-			throw content_error("Sensors\\Los\\RadarMipLevel out of bounds. The minimum value is 0. The maximum value is 6.");
-
-		if ((airMipLevel < 0) || (airMipLevel > 30))
-			throw content_error("Sensors\\Los\\AirLosMipLevel out of bounds. The minimum value is 0. The maximum value is 30.");
 	}
 	{
 		//misc
@@ -342,7 +334,37 @@ void CModInfo::Init(const std::string& modFileName)
 		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", static_cast<float>(windChangeReportPeriod) / GAME_SPEED) * GAME_SPEED));
 	}
 
+	// Hard checks
+	static constexpr int MAX_HEIGHT_BASED_MIP_LEVEL = CReadMap::numHeightMipMaps - 1;
+	if ((losMipLevel < 0) || (losMipLevel > MAX_HEIGHT_BASED_MIP_LEVEL))
+		throw content_error(fmt::format("Sensors\\Los\\LosMipLevel out of bounds (integer 0-{})", MAX_HEIGHT_BASED_MIP_LEVEL));
+
+	if ((radarMipLevel < 0) || (radarMipLevel > MAX_HEIGHT_BASED_MIP_LEVEL))
+		throw content_error(fmt::format("Sensors\\Los\\RadarMipLevel out of bounds (integer 0-{})", MAX_HEIGHT_BASED_MIP_LEVEL));
+
+	static constexpr int MAX_AIR_MIP_LEVEL = 30; // no logical limit, but it's used in various bit-shifts
+	if ((airMipLevel < 0) || (airMipLevel > MAX_AIR_MIP_LEVEL))
+		throw content_error(fmt::format("Sensors\\Los\\AirLosMipLevel out of bounds (integer 0-{})", MAX_AIR_MIP_LEVEL));
+
 	if (!std::has_single_bit <unsigned> (quadFieldQuadSizeInElmos))
 		throw content_error("quadFieldQuadSizeInElmos modrule has to be a power of 2");
+
+	// Soft constraints that should really be hard ones
+	pathFinderSystem = std::clamp(pathFinderSystem, int(NOPFS_TYPE), int(PFS_TYPE_MAX));
+	featureVisibility = std::clamp(featureVisibility, int(FEATURELOS_NONE), int(FEATURELOS_ALL));
+
+	// Soft constraints                                                                               min     max
+	constructionDecaySpeed                   = std::max  (constructionDecaySpeed                  ,    0.01f      );
+	groundUnitCollisionAvoidanceUpdateRate   = std::clamp(groundUnitCollisionAvoidanceUpdateRate  ,    1    ,   15);
+	pfRawMoveSpeedThreshold                  = std::max  (pfRawMoveSpeedThreshold                 ,    0.0f       );
+	pfRepathDelayInFrames                    = std::clamp(pfRepathDelayInFrames                   ,    0    ,  300);
+	pfRepathMaxRateInFrames                  = std::clamp(pfRepathMaxRateInFrames                 ,    0    , 3600);
+	qtMaxNodesSearched                       = std::max  (qtMaxNodesSearched                      , 1024          );
+	qtMaxNodesSearchedRelativeToMapOpenNodes = std::max  (qtMaxNodesSearchedRelativeToMapOpenNodes,    0.0f       );
+	qtRefreshPathMinDist                     = std::max  (qtRefreshPathMinDist                    ,    0.0f       );
+	quadFieldQuadSizeInElmos                 = std::clamp(quadFieldQuadSizeInElmos                ,    8    , 1024);
+	smoothMeshResDivider                     = std::max  (smoothMeshResDivider                    ,    1          );
+	smoothMeshSmoothRadius                   = std::max  (smoothMeshSmoothRadius                  ,    1          );
+	unitQuadPositionUpdateRate               = std::clamp(unitQuadPositionUpdateRate              ,    1    ,   15);
 }
 

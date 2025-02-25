@@ -1,0 +1,61 @@
+# Ubuntu 20.04 docker environment for building spring.
+# Not used for distribution atm, but can be used in case the 18.04 gives you problems
+# with newer distros or want to experiment.
+FROM docker.io/ubuntu:20.04
+ENV ENGINE_PLATFORM=amd64-linux
+
+RUN apt-get update \
+ && apt-get install --no-install-recommends --yes software-properties-common \
+ && add-apt-repository ppa:ubuntu-toolchain-r/test --yes \
+ && apt-get update \
+ && apt-get install --no-install-recommends --yes \
+    curl gcc-13 g++-13 git ninja-build curl p7zip-full python3-pip python3-setuptools \
+    libsdl2-dev libopenal-dev libfreetype6-dev libfontconfig1-dev xz-utils make uuid-dev \
+ && apt-get remove --purge --yes software-properties-common \
+ && apt-get autoremove --purge --yes \
+ && apt-get upgrade --yes \
+ && rm -rf /var/lib/apt/lists/*
+
+
+
+# We need a newer ccache for compression support
+ARG CCACHE_VERSION="4.10.2"
+RUN curl -L -O https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-x86_64.tar.xz \
+ && tar -xf ccache-${CCACHE_VERSION}-linux-x86_64.tar.xz \
+ && mv ccache-${CCACHE_VERSION}-linux-x86_64/ccache /usr/bin \
+ && rm -rf ccache-${CCACHE_VERSION}-linux-x86_64*
+
+# And need newer zstd :(, fortunatelly it's quick build
+RUN git clone --depth 1 --branch v1.5.6 https://github.com/facebook/zstd.git \
+ && cd zstd \
+ && CC=g++-13 make -j$(nproc) \
+ && mv programs/zstd /usr/local/bin \
+ && cd .. \
+ && rm -rf zstd
+
+RUN pip3 install --upgrade pip \
+ && pip3 install scikit-build \
+ && pip3 install cmake==3.27.*
+
+WORKDIR /build
+RUN mkdir src cache out artifacts && chmod a+rwx cache out artifacts
+
+# Fetch library dependencies and configure resolution
+RUN git clone --depth=1 https://github.com/beyond-all-reason/spring-static-libs.git -b 20.04 spring-static-libs
+ENV PKG_CONFIG_LIBDIR=/build/spring-static-libs/lib/pkgconfig
+ENV PKG_CONFIG="pkg-config --define-prefix --static"
+ENV CMAKE_PREFIX_PATH=/build/spring-static-libs/
+ENV PREFER_STATIC_LIBS=TRUE
+
+# Fontconfig cmake doesn't seem to be properly setup
+RUN sed -i 's/ IMPORTED_LOCATION "\${Fontconfig_LIBRARY}"/&\n   INTERFACE_LINK_LIBRARIES "\/usr\/lib\/x86_64-linux-gnu\/libuuid\.a"/' /usr/local/lib/python3.8/dist-packages/cmake/data/share/cmake-3.27/Modules/FindFontconfig.cmake
+
+# Set up default cmake toolchain
+COPY toolchain.cmake .
+ENV CMAKE_TOOLCHAIN_FILE=/build/toolchain.cmake
+
+# Configure ccache caching
+COPY ccache.conf .
+ENV CCACHE_CONFIGPATH=/build/ccache.conf
+ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
+ENV CMAKE_C_COMPILER_LAUNCHER=ccache

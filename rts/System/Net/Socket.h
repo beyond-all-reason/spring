@@ -14,8 +14,8 @@ namespace netcode
 extern asio::io_service netservice;
 
 /**
- * Check if a network error occured and eventually log it.
- * @returns true if a network error occured, false otherwise
+ * Check if a network error occurred and eventually log it.
+ * @returns true if a network error occurred, false otherwise
  */
 bool CheckErrorCode(asio::error_code& err);
 

@@ -117,6 +117,7 @@ public:
 	float unitExpPowerScale;
 	float unitExpHealthScale;
 	float unitExpReloadScale;
+	float unitExpGrade;
 
 
 	// Paralyze behaviour
@@ -151,7 +152,7 @@ public:
 	// maximum damage bonus granted by flanking bonus. Can use a number less than 1 to reduce damage.
 	float flankingBonusMaxDefault;
 
-	// mininum damage bonus granted by flnaking bonus. Can use a number less than 1 to reduce damage.
+	// minimum damage bonus granted by flnaking bonus. Can use a number less than 1 to reduce damage.
 	float flankingBonusMinDefault;
 
 	// Sensor behaviour
@@ -208,7 +209,7 @@ public:
 
 	/// Minimum size, in elmos, an incomplete path has to be to allow the path to be refreshed.
 	/// Once the path is smaller than this distance then the system assumes the path cannot be
-	/// improved further. A larger number reduces CPU usage, but also increses the chance that
+	/// improved further. A larger number reduces CPU usage, but also increases the chance that
 	/// a unit will become trapped in a complex terrain/base setup even if there's a route that
 	/// would bring the unit nearer to the goal.
 	float qtRefreshPathMinDist;
@@ -226,7 +227,7 @@ public:
 	int smoothMeshResDivider;
 
 	/// Radius in heightmap squares to use the smooth the mesh gradients. Increasing value
-	/// increases the area that a given point uses to find the local heighest point, and the
+	/// increases the area that a given point uses to find the local highest point, and the
 	/// distance of the slope. Default is 40.
 	int smoothMeshSmoothRadius;
 

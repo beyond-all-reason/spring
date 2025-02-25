@@ -31,7 +31,7 @@ local keyReleaseActions = {}
 --------------------------------------------------------------------------------
 -- Helpers
 
-local function MakeWords(line)
+local function splitBySpace(line)
 	local words = {}
 	for w in line:gmatch("[^%s]+") do
 		table.insert(words, w)
@@ -209,10 +209,11 @@ local function KeyAction(press, _, _, isRepeat, _, actions)
 	else
 		actionSet = keyReleaseActions
 	end
-	for _,bAction in ipairs(actions) do
-		local bCmd, bOpts = next(bAction, nil)
-		local words = MakeWords(bOpts)
-		if (TryAction(actionSet, bCmd, bOpts, words, isRepeat, not press, actions)) then
+	for _, action in ipairs(actions) do
+		local cmd = action["command"]
+		local extra = action["extra"]
+		local args = splitBySpace(extra)
+		if (TryAction(actionSet, cmd, extra, args, isRepeat, not press, actions)) then
 			return true
 		end
 	end

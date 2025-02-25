@@ -3,7 +3,7 @@
 # This awk script creates the C functions for wrapping the C command structs in:
 # rts/ExternalAI/Interface/AISCommands.h
 #
-# Before running this script, you have to wrapp the native callback struct
+# Before running this script, you have to wrap the native callback struct
 # into functions.
 #
 # This script uses functions from the following files:
@@ -302,14 +302,14 @@ function printNativeFP2F() {
 # can be deleted.
 # If there is no special condition you want to apply,
 # it should always return true (1),
-# cause there are additional mechanism to prevent accidential deleting.
+# cause there are additional mechanism to prevent accidental deleting.
 # see: commonDoc.awk
 function canDeleteDocumentation() {
 	return isInsideCmdStruct != 1;
 }
 
 ################################################################################
-### BEGINN: parsing and saving the command structs
+### BEGIN: parsing and saving the command structs
 
 # end of struct S*Command
 /^}; \/\/\$ COMMAND_.*$/ {
@@ -350,7 +350,7 @@ function canDeleteDocumentation() {
 	}
 }
 
-# beginn of struct S*Command
+# beginning of struct S*Command
 /^struct S.*Command( \{)?/ {
 
 	isInsideCmdStruct = 1;

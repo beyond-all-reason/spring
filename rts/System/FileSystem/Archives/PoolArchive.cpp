@@ -65,9 +65,7 @@ CPoolArchive::CPoolArchive(const std::string& name): CBufferedArchive(name)
 	stats.reserve(1024);
 
 	// get pool dir from .sdp absolute path
-	assert(FileSystem::IsAbsolutePath(name));
-	poolRootDir = FileSystem::GetParent(FileSystem::GetDirectory(name));
-	assert(!poolRootDir.empty());
+	poolRootDir = GetPoolRootDirectory(name);
 
 	while (gz_really_read(in, &length, 1)) {
 		if (!gz_really_read(in, &c_name, length)) break;
@@ -121,6 +119,16 @@ CPoolArchive::~CPoolArchive()
 
 		LOG_L(L_INFO, "\tfile=\"%s\" indx=%lu inflSize=%ukb readTime=%lums", f.name.c_str(), indx, f.size / 1024, time);
 	}
+}
+
+std::string CPoolArchive::GetPoolRootDirectory(const std::string& sdpName)
+{
+	// get pool dir from .sdp absolute path
+	assert(FileSystem::IsAbsolutePath(sdpName));
+	std::string poolRootDir = FileSystem::GetParent(FileSystem::GetDirectory(sdpName));
+	assert(!poolRootDir.empty());
+
+	return poolRootDir;
 }
 
 int CPoolArchive::GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer)

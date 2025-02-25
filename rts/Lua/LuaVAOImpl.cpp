@@ -15,14 +15,14 @@
 
 #include "LuaUtils.h"
 
-
-/******************************************************************************
+/***
  * Vertex Array Object
- * @classmod VAO
- *
+ * 
+ * @class VAO
+ * @table VAO
  * @see LuaVAO.GetVAO
  * @see rts/Lua/LuaVAOImpl.cpp
-******************************************************************************/
+ */
 
 
 LuaVAOImpl::LuaVAOImpl()
@@ -39,7 +39,7 @@ LuaVAOImpl::LuaVAOImpl()
 /***
  *
  * @function VAO:Delete
- * @treturn nil
+ * @return nil
  */
 void LuaVAOImpl::Delete()
 {
@@ -57,7 +57,7 @@ LuaVAOImpl::~LuaVAOImpl()
 
 bool LuaVAOImpl::Supported()
 {
-	static bool supported = VBO::IsSupported(GL_ARRAY_BUFFER) && VAO::IsSupported() && GLEW_ARB_instanced_arrays && GLEW_ARB_draw_elements_base_vertex && GLEW_ARB_multi_draw_indirect;
+	static bool supported = VBO::IsSupported(GL_ARRAY_BUFFER) && VAO::IsSupported() && GLAD_GL_ARB_instanced_arrays && GLAD_GL_ARB_draw_elements_base_vertex && GLAD_GL_ARB_multi_draw_indirect;
 	return supported;
 }
 
@@ -90,11 +90,11 @@ void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std
 }
 
 
-/*** Attachs a VBO to be used as a vertex buffer
+/*** Attaches a VBO to be used as a vertex buffer
  *
  * @function VAO:AttachVertexBuffer
- * @tparam VBO vbo
- * @treturn nil
+ * @param vbo VBO
+ * @return nil
  */
 void LuaVAOImpl::AttachVertexBuffer(const LuaVBOImplSP& luaVBO)
 {
@@ -102,11 +102,11 @@ void LuaVAOImpl::AttachVertexBuffer(const LuaVBOImplSP& luaVBO)
 }
 
 
-/*** Attachs a VBO to be used as an instance buffer
+/*** Attaches a VBO to be used as an instance buffer
  *
  * @function VAO:AttachInstanceBuffer
- * @tparam VBO vbo
- * @treturn nil
+ * @param vbo VBO
+ * @return nil
  */
 void LuaVAOImpl::AttachInstanceBuffer(const LuaVBOImplSP& luaVBO)
 {
@@ -114,11 +114,11 @@ void LuaVAOImpl::AttachInstanceBuffer(const LuaVBOImplSP& luaVBO)
 }
 
 
-/*** Attachs a VBO to be used as an index buffer
+/*** Attaches a VBO to be used as an index buffer
  *
  * @function VAO:AttachIndexBuffer
- * @tparam VBO vbo
- * @treturn nil
+ * @param vbo VBO
+ * @return nil
  */
 void LuaVAOImpl::AttachIndexBuffer(const LuaVBOImplSP& luaVBO)
 {
@@ -367,12 +367,12 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 /***
  *
  * @function VAO:DrawArrays
- * @number glEnum primitivesMode
- * @number[opt] vertexCount
- * @number[opt] vertexFirst
- * @number[opt] instanceCount
- * @number[opt] instanceFirst
- * @treturn nil
+ * @param glEnum number primitivesMode
+ * @param vertexCount number?
+ * @param vertexFirst number?
+ * @param instanceCount number?
+ * @param instanceFirst number?
+ * @return nil
  */
 void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<int> vertCountOpt, sol::optional<int> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt)
 {
@@ -404,13 +404,13 @@ void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<int> vertCountOpt, sol::o
 /***
  *
  * @function VAO:DrawElements
- * @number glEnum primitivesMode
- * @number[opt] drawCount
- * @number[opt] baseIndex
- * @number[opt] instanceCount
- * @number[opt] baseVertex
- * @number[opt] baseInstance
- * @treturn nil
+ * @param glEnum number primitivesMode
+ * @param drawCount number?
+ * @param baseIndex number?
+ * @param instanceCount number?
+ * @param baseVertex number?
+ * @param baseInstance number?
+ * @return nil
  */
 void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<int> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt)
 {
@@ -466,8 +466,8 @@ void LuaVAOImpl::ClearSubmission()
 /***
  *
  * @function VAO:AddUnitsToSubmission
- * @tparam number|{number,...} unitIDs
- * @treturn number submittedCount
+ * @param unitIDs number|number[]
+ * @return number submittedCount
  */
 int LuaVAOImpl::AddUnitsToSubmission(int id) { return AddObjectsToSubmissionImpl<CUnit>(id); }
 int LuaVAOImpl::AddUnitsToSubmission(const sol::stack_table& ids) { return  AddObjectsToSubmissionImpl<CUnit>(ids); }
@@ -476,8 +476,8 @@ int LuaVAOImpl::AddUnitsToSubmission(const sol::stack_table& ids) { return  AddO
 /***
  *
  * @function VAO:AddFeaturesToSubmission
- * @tparam number|{number,...} featureIDs
- * @treturn number submittedCount
+ * @param featureIDs number|number[]
+ * @return number submittedCount
  */
 int LuaVAOImpl::AddFeaturesToSubmission(int id) { return AddObjectsToSubmissionImpl<CFeature>(id); }
 int LuaVAOImpl::AddFeaturesToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<CFeature>(ids); }
@@ -486,8 +486,8 @@ int LuaVAOImpl::AddFeaturesToSubmission(const sol::stack_table& ids) { return Ad
 /***
  *
  * @function VAO:AddUnitDefsToSubmission
- * @tparam number|{number,...} unitDefIDs
- * @treturn number submittedCount
+ * @param unitDefIDs number|number[]
+ * @return number submittedCount
  */
 int LuaVAOImpl::AddUnitDefsToSubmission(int id) { return AddObjectsToSubmissionImpl<UnitDef>(id); }
 int LuaVAOImpl::AddUnitDefsToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<UnitDef>(ids); }
@@ -496,8 +496,8 @@ int LuaVAOImpl::AddUnitDefsToSubmission(const sol::stack_table& ids) { return Ad
 /***
  *
  * @function VAO:AddFeatureDefsToSubmission
- * @tparam number|{number,...} featureDefIDs
- * @treturn number submittedCount
+ * @param featureDefIDs number|number[]
+ * @return number submittedCount
  */
 int LuaVAOImpl::AddFeatureDefsToSubmission(int id) { return AddObjectsToSubmissionImpl<FeatureDef>(id); }
 int LuaVAOImpl::AddFeatureDefsToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<FeatureDef>(ids); }
@@ -506,8 +506,8 @@ int LuaVAOImpl::AddFeatureDefsToSubmission(const sol::stack_table& ids) { return
 /***
  *
  * @function VAO:RemoveFromSubmission
- * @tparam number index
- * @treturn nil
+ * @param index number
+ * @return nil
  */
 void LuaVAOImpl::RemoveFromSubmission(int idx)
 {
@@ -529,7 +529,7 @@ void LuaVAOImpl::RemoveFromSubmission(int idx)
 /***
  *
  * @function VAO:Submit
- * @treturn nil
+ * @return nil
  */
 void LuaVAOImpl::Submit()
 {

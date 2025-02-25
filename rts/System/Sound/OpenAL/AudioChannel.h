@@ -16,7 +16,7 @@ class CWorldObject;
 /**
  * @brief Channel for playing sounds
  *
- * Has its own volume "slider", and can be enabled / disabled seperately.
+ * Has its own volume "slider", and can be enabled / disabled separately.
  * Abstract base class.
  */
 class AudioChannel : public IAudioChannel {

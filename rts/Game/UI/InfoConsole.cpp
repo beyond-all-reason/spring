@@ -30,7 +30,6 @@ void CInfoConsole::InitStatic() {
 
 void CInfoConsole::KillStatic() {
 	RECOIL_DETAILED_TRACY_ZONE;
-	assert(infoConsole != nullptr);
 	spring::SafeDestruct(infoConsole);
 	std::fill(std::begin(infoConsoleMem), std::end(infoConsoleMem), std::byte{0});
 }
