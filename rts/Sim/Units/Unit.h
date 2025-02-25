@@ -190,6 +190,8 @@ public:
 	unsigned short CalcLosStatus(int allyTeam);
 	void UpdateLosStatus(int allyTeam);
 
+	void SetLeavesGhost(bool newLeavesGhost);
+
 	void UpdateWeapons();
 	void UpdateWeaponVectors();
 
@@ -534,7 +536,8 @@ public:
 	bool isCloaked = false;
 	// true if the unit currently wants to be cloaked
 	bool wantCloak = false;
-
+	// true if the unit leaves static ghosts
+	bool leavesGhost = false;
 
 	// unsynced vars
 	bool noMinimap = false;
