@@ -1959,6 +1959,10 @@ int LuaSyncedCtrl::SetUnitTooltip(lua_State* L)
 
 /***
  * @function Spring.SetUnitHealth
+ *
+ * Note, if your game's custom shading framework doesn't support reverting into nanoframes
+ * then reverting into nanoframes via the "build" tag will fail to render properly.
+ *
  * @number unitID
  * @tparam number|{[string]=number,...} health where keys can be one of health|capture|paralyze|build and values are amounts
  * @treturn nil
