@@ -69,7 +69,7 @@ public:
 	enum ROTATION_OPTIONS { ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 }; // 90 and 270 are Landscape while 0 and 180 are Portrait
 
 	void SetRotation(ROTATION_OPTIONS state);
-	float GetRotation() const { return (rotation*90) * math::PI/180; }
+	float GetRotation() const { return static_cast<int>(rotation) * math::HALFPI; }
 	ROTATION_OPTIONS GetRotationOption() const { return rotation; }
 
 	void SetSlaveMode(bool value);
