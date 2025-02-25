@@ -66,7 +66,7 @@ public:
 	float GetUnitSizeX() const { return unitSizeX; }
 	float GetUnitSizeY() const { return unitSizeY; }
 
-	enum ROTATION_OPTIONS { ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 }; // 90 and 270 are Landscape while 0 and 180 are Portrait
+	enum ROTATION_OPTIONS { ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 };
 
 	void SetRotation(ROTATION_OPTIONS state);
 	float GetRotation() const { return static_cast<int>(rotation) * math::HALFPI; }
