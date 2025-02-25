@@ -16,7 +16,7 @@ end
   -- Automatically generated local definitions
 
   local spSetMiniRot		= 	Spring.SetMiniMapRotation
-  local spGetCamRot     =   Spring.GetCameraRotation
+  local spGetCamRot     	=   Spring.GetCameraRotation
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -25,8 +25,7 @@ function widget:Update()
     local _, roty, _ = spGetCamRot()  -- Camera rotation in radians
     
     -- Snap to nearest 180 degree increment
-    local snapped = math.pi * math.floor((roty/math.pi) + 0.5)
-    local clampedRot = snapped % (2 * math.pi)  -- Keep within [0, 2π] for BAR Support
+    local newRot = math.pi * math.floor((roty/math.pi) + 0.5)
     
-    spSetMiniRot(clampedRot)
+    spSetMiniRot(newRot)
 end

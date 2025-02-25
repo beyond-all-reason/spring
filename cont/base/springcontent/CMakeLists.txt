@@ -144,7 +144,6 @@ list(APPEND FILES
 	LuaIntro/Addons/music.lua
 	LuaIntro/Addons/bg_texture.lua
 	LuaSocket/socket.lua
-	LuaUI/Widgets/minimap_follow_cam.lua
 )
 
 create_base_content_archive("base" "springcontent.sdz" "${FILES}")
