@@ -2078,9 +2078,13 @@ int LuaSyncedCtrl::SetUnitTooltip(lua_State* L)
 
 /***
  * @function Spring.SetUnitHealth
- * @param unitID integer
- * @param health number|table<string,number> where keys can be one of health|capture|paralyze|build and values are amounts
- * @return nil
+ *
+ * Note, if your game's custom shading framework doesn't support reverting into nanoframes
+ * then reverting into nanoframes via the "build" tag will fail to render properly.
+ *
+ * @number unitID
+ * @tparam number|{[string]=number,...} health where keys can be one of health|capture|paralyze|build and values are amounts
+ * @treturn nil
  */
 int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 {
@@ -2118,6 +2122,8 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 				case hashString("build"): {
 					if ((unit->buildProgress = lua_tofloat(L, LUA_TABLE_VALUE_INDEX)) >= 1.0f)
 						unit->FinishedBuilding(false);
+					else
+						unit->TurnIntoNanoframe();
 				} break;
 				default: {
 				} break;
