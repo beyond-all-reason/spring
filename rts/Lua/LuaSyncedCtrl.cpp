@@ -2118,6 +2118,8 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 				case hashString("build"): {
 					if ((unit->buildProgress = lua_tofloat(L, LUA_TABLE_VALUE_INDEX)) >= 1.0f)
 						unit->FinishedBuilding(false);
+					else
+						unit->TurnIntoNanoframe();
 				} break;
 				default: {
 				} break;
