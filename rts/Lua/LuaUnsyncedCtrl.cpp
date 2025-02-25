@@ -2172,12 +2172,11 @@ int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
 
 	const float radians = luaL_checkfloat(L, 1);
 
-	if (radians < -math::HALFPI || radians > 270*(math::PI/180))
-		return 0;
+	// Get the signed quadrant of the angle.
+	const float quad = radians / (math::PI / 2);
 
-	const float normalizedRad = (radians < 0) ? radians + 2*math::PI : radians;
-
-	const int rotation = static_cast<int>(std::round((normalizedRad * 180.0f / math::PI) / 90.0f));
+	// Wrap it into range [0, 3]
+	const int rotation = static_cast<int>(std::round((quad % 4 + 4) % 4));
 
 	if (minimap != nullptr)
 		minimap->SetRotation(CMiniMap::ROTATION_OPTIONS(rotation));
