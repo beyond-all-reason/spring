@@ -70,6 +70,7 @@ public:
 
 	void SetRotation(ROTATION_OPTIONS state);
 	float GetRotation() const { return static_cast<int>(rotation) * math::HALFPI; }
+	int minimapCanFlip = 0;
 	ROTATION_OPTIONS GetRotationOption() const { return rotation; }
 
 	void SetSlaveMode(bool value);

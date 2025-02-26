@@ -2167,6 +2167,12 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
 {
+	if (minimap == nullptr)
+		return 0;
+	
+	if (minimap->minimapCanFlip)
+		return 0;
+
 	const float radians = luaL_checkfloat(L, 1);
 
 	// Get the signed quadrant of the angle.
@@ -2177,8 +2183,7 @@ int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
 	// Wrap it into range [0, 3]
 	const int rotation = static_cast<int>(std::round(wrapped)) % 4;
 
-	if (minimap != nullptr)
-		minimap->SetRotation(CMiniMap::ROTATION_OPTIONS(rotation));
+	minimap->SetRotation(CMiniMap::ROTATION_OPTIONS(rotation));
 
 	return 0;
 }

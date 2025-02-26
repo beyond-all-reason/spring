@@ -78,6 +78,8 @@ CONFIG(int, MiniMapRefreshRate).defaultValue(0).minimumValue(0).description("The
 
 CONFIG(bool, DualScreenMiniMapAspectRatio).defaultValue(true).description("Whether minimap preserves aspect ratio on dual screen mode.");
 
+CONFIG(int, MiniMapCanFlip).defaultValue(0).minimumValue(0).maximumValue(1).description("Whether minimap inverts coordinates when camera Y rotation is between 90 and 270 degrees natively (1) or hands Lua control (0).");
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -105,7 +107,7 @@ CMiniMap::CMiniMap()
 
 	ConfigUpdate();
 
-	configHandler->NotifyOnChange(this, {"DualScreenMiniMapAspectRatio", "MiniMapDrawProjectiles", "MiniMapCursorScale", "MiniMapIcons", "MiniMapDrawCommands", "MiniMapButtonSize"});
+	configHandler->NotifyOnChange(this, {"DualScreenMiniMapAspectRatio", "MiniMapCanFlip", "MiniMapDrawProjectiles", "MiniMapCursorScale", "MiniMapIcons", "MiniMapDrawCommands", "MiniMapButtonSize"});
 
 	UpdateGeometry();
 
@@ -192,6 +194,8 @@ void CMiniMap::ConfigUpdate()
 	drawCommands = configHandler->GetInt("MiniMapDrawCommands");
 	cursorScale = configHandler->GetFloat("MiniMapCursorScale");
 	useIcons = configHandler->GetBool("MiniMapIcons");
+
+	minimapCanFlip = configHandler->GetInt("MiniMapCanFlip");
 }
 
 void CMiniMap::ConfigNotify(const std::string& key, const std::string& value)
@@ -1070,6 +1074,11 @@ void CMiniMap::Update()
 	/* Below the renderToTexture check above,
 	 * since that other rendering pipeline
 	 * does not support minimap flipping. */
+	if (minimapCanFlip){
+		const float rotY = fmod(abs(camHandler->GetCurrentController().GetRot().y), 2 * math::PI);
+		ROTATION_OPTIONS rotOpt = rotY > math::PI/2 && rotY <= 3 * math::PI/2 ? ROTATION_180 : ROTATION_0;
+		SetRotation(rotOpt);
+	}
 
 	float refreshRate = minimapRefreshRate;
 
