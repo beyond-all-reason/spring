@@ -2167,13 +2167,14 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
 {
+	
+	const float radians = luaL_checkfloat(L, 1);
+	
 	if (minimap == nullptr)
 		return 0;
 	
 	if (minimap->minimapCanFlip)
 		return 0;
-
-	const float radians = luaL_checkfloat(L, 1);
 
 	// Get the signed quadrant of the angle.
 	const float quad = radians / math::HALFPI;
