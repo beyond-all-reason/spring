@@ -2075,6 +2075,13 @@ int LuaSyncedCtrl::SetUnitTooltip(lua_State* L)
 	return 0;
 }
 
+/***
+ * @class SetUnitHealthAmounts
+ * @field health number? Set the unit's health.
+ * @field capture number? Set the unit's capture progress.
+ * @field paralyze number? Set the unit's paralyze damage.
+ * @field build number? Set the unit's build progress.
+ */
 
 /***
  * @function Spring.SetUnitHealth
@@ -2082,9 +2089,13 @@ int LuaSyncedCtrl::SetUnitTooltip(lua_State* L)
  * Note, if your game's custom shading framework doesn't support reverting into nanoframes
  * then reverting into nanoframes via the "build" tag will fail to render properly.
  *
- * @number unitID
- * @tparam number|{[string]=number,...} health where keys can be one of health|capture|paralyze|build and values are amounts
- * @treturn nil
+ * @param unitID integer
+ * @param health number|SetUnitHealthAmounts If a number, sets the units health
+ * to that value. Pass a table to update health, capture progress, paralyze
+ * damage, and build progress.
+ * @return nil
+ * 
+ * @see SetUnitHealthAmounts
  */
 int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 {
