@@ -17,7 +17,7 @@
 
 #include "System/Misc/TracyDefs.h"
 
-CONFIG(bool, AnimationMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded execution of animation ticks");
+CONFIG(bool, AnimationMT).deprecated(true);
 
 static CCobEngine gCobEngine;
 static CCobFileHandler gCobFileHandler;
@@ -129,35 +129,9 @@ void CUnitScriptEngine::Tick(int deltaTime)
 
 	cobEngine->Tick(deltaTime);
 
-	using ImplFunctionT = decltype(&CUnitScriptEngine::ImplTickST);
-	static constexpr ImplFunctionT ImplFunctions[] = { &CUnitScriptEngine::ImplTickST, &CUnitScriptEngine::ImplTickMT };
-	// TODO: remove the conditional once it's proven to be sync safe
-	(this->*ImplFunctions[configHandler->GetBool("AnimationMT")])(deltaTime);
-
-	currentScript = nullptr;
-}
-
-void CUnitScriptEngine::ImplTickST(int deltaTime)
-{
-	ZoneScopedN("CUnitScriptEngine::ImplTickST");
-	// tick all (COB or LUS) script instances that have registered themselves as animating
-	for (size_t i = 0; i < animating.size(); ) {
-		currentScript = animating[i];
-
-		if (!currentScript->Tick(deltaTime)) {
-			animating[i] = animating.back();
-			animating.pop_back();
-			continue;
-		}
-		i++;
-	}
-}
-void CUnitScriptEngine::ImplTickMT(int deltaTime)
-{
-	ZoneScopedN("CUnitScriptEngine::ImplTickMT");
 	// tick all (COB or LUS) script instances that have registered themselves as animating
 	{
-		ZoneScopedN("CUnitScriptEngine::ImplTickMT(MT)");
+		ZoneScopedN("CUnitScriptEngine::Tick(MT)");
 
 		// setting currentScript = animating[i]; is not required here, only in ST section below
 		for_mt(0, animating.size(), [&](const int i) {
@@ -165,7 +139,7 @@ void CUnitScriptEngine::ImplTickMT(int deltaTime)
 		});
 	}
 	{
-		ZoneScopedN("CUnitScriptEngine::ImplTickMT(ST)");
+		ZoneScopedN("CUnitScriptEngine::Tick(ST)");
 		for (size_t i = 0; i < animating.size(); ) {
 			currentScript = animating[i];
 
@@ -177,4 +151,6 @@ void CUnitScriptEngine::ImplTickMT(int deltaTime)
 			i++;
 		}
 	}
+
+	currentScript = nullptr;
 }

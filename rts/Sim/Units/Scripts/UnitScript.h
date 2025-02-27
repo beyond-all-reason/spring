@@ -42,14 +42,8 @@ protected:
 
 	typedef bool(CUnitScript::*TickAnimFunc)(int, LocalModelPiece&, AnimInfo&);
 
-	AnimContainerType anims[AMove + 1];
-
-	//This vector is used to finished animations can be removed in linear time. 
-	// A single static allocation of this in CUnitScript::Tick is enough when only doing single threaded animations, 
-	// however multi threaded animation calculation cannot share this static vector across multiple threads, 
-	// so we need to allocate one of these for each CUnitScript instance. 
-	AnimContainerType doneAnimsMT[AMove + 1];
-
+	std::array<AnimContainerType, AMove + 1> anims;
+	std::array<AnimContainerType, AMove + 1> doneAnims;
 
 	bool hasSetSFXOccupy;
 	bool hasRockUnit;
@@ -112,14 +106,12 @@ public:
 	      CUnit* GetUnit()       { return unit; }
 	const CUnit* GetUnit() const { return unit; }
 
-	bool Tick(int tickRate);
 	void TickAllAnims(int tickRate);
 	bool TickAnimFinished(int tickRate);
 	// note: must copy-and-set here (LMP dirty flag, etc)
 	bool TickMoveAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 pos = lmp.GetPosition(); const bool ret = MoveToward(pos[ai.axis], ai.dest, ai.speed / tickRate); lmp.SetPosition(pos); return ret; }
 	bool TickTurnAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret = TurnToward(rot[ai.axis], ai.dest, ai.speed / tickRate         ); lmp.SetRotation(rot); return ret; }
 	bool TickSpinAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret =     DoSpin(rot[ai.axis], ai.dest, ai.speed, ai.accel, tickRate); lmp.SetRotation(rot); return ret; }
-	void TickAnims(int tickRate, const TickAnimFunc& tickAnimFunc, AnimContainerType& liveAnims, AnimContainerType& doneAnims);
 
 	// animation, used by CCobThread
 	void Spin(int piece, int axis, float speed, float accel);
