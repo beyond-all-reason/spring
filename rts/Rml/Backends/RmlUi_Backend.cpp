@@ -43,6 +43,7 @@
 #include "Rml/Components/ElementLuaTexture.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
+#include "Rml/SVG/SVGPlugin.h"
 #include "RmlUi_Backend.h"
 
 #ifndef HEADLESS
@@ -112,7 +113,8 @@ public:
 	lua_State* ls = nullptr;
 	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
 
-    Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
+	Rml::SVG::SVGPlugin svgPlugin;
+	Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
 };
 
 static Rml::UniquePtr<BackendState> state;
@@ -153,19 +155,20 @@ bool RmlGui::Initialize()
 	state->element_lua_texture_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
 	Rml::Factory::RegisterElementInstancer("texture", state->element_lua_texture_instancer.get());
 
+	Rml::RegisterPlugin(&state->svgPlugin);
 	Rml::RegisterPlugin(state.get());
 
 	return true;
 }
 
 bool RmlGui::InitializeLua(lua_State* lua_state)
-{	
+{
 	if (!RmlInitialized()) {
 		RmlGui::Initialize();
 	} else if (state->ls != nullptr) {
 		return false;
 	}
-	
+
 	LOG_L(L_INFO, "[RmlGui::%s] Initializing RmlUi Lua Bindings", __func__);
 
 	sol::state_view lua(lua_state);
@@ -215,6 +218,7 @@ void RmlGui::Shutdown()
 
 	// note: during SpringApp shutdown, RmlGui::RemoveLua() was already called when LuaUI was shutdown
 	RemoveLua();
+	Rml::UnregisterPlugin(&state->svgPlugin);
 	Rml::UnregisterPlugin(state.get());
 
 	// removes all contexts, interfaces must be alive at this point
@@ -313,7 +317,7 @@ Rml::Context* RmlGui::GetOrCreateContext(const std::string& name)
 	if (!RmlInitialized()) {
 		return nullptr;
 	}
-	
+
 	Rml::Context* context = Rml::GetContext(name);
 	if (context == nullptr) {
 		context = Rml::CreateContext(name, {0, 0});
@@ -321,7 +325,7 @@ Rml::Context* RmlGui::GetOrCreateContext(const std::string& name)
 		// can happen if name reused on the same frame
 		state->contexts_to_remove.erase(context);
 	}
-	
+
 	return context;
 }
 
@@ -355,7 +359,7 @@ void RmlGui::Update()
 	for (const auto& context : state->contexts) {
 		context->Update();
 	}
-	
+
 	// move clicked context to top
 	if (state->clicked_context) {
 		// debug context is always to be at index 0 so it renders on top
