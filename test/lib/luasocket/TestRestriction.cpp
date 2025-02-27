@@ -3,8 +3,7 @@
 #include <string>
 #include <cstdio>
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 
 TEST_CASE("TestRestriction")
