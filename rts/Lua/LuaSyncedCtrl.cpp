@@ -3896,18 +3896,34 @@ int LuaSyncedCtrl::SetUnitRotation(lua_State* L)
 
 /***
  * @function Spring.SetUnitDirection
- * Use this call to set up unit front direction vector and optionally right direction
- * while right direction is optional, it's strongly recommended as frontDir alone doesn't define object orientation
- * both vectors will be normalized in the engine
+ * Set unit front direction vector. The vector is normalized in
+ * the engine.
+ *
+ * @deprecated It's strongly that you use the overload that accepts
+ * a right direction as `frontDir` alone doesn't define object orientation.
+ *
  * @param unitID integer
  * @param frontx number
  * @param fronty number
  * @param frontz number
- * @param rightx number (optional)
- * @param righty number (optional)
- * @param rightz number (optional)
  * @return nil
  */
+
+ /***
+  * @function Spring.SetUnitDirection
+  * Set unit front and right direction vectors.
+  *
+  * Both vectors will be normalized in the engine.
+  *
+  * @param unitID integer
+  * @param frontx number
+  * @param fronty number
+  * @param frontz number
+  * @param rightx number
+  * @param righty number
+  * @param rightz number
+  * @return nil
+  */
 int LuaSyncedCtrl::SetUnitDirection(lua_State* L)
 {
 	return SetSolidObjectDirection(L, ParseUnit(L, __func__, 1), __func__);
@@ -4714,18 +4730,34 @@ int LuaSyncedCtrl::SetFeatureRotation(lua_State* L)
 
 /***
  * @function Spring.SetFeatureDirection
- * Use this call to set up feature front direction vector and optionally right direction
- * while right direction is optional, it's strongly recommended as frontDir alone doesn't define object orientation
- * both vectors will be normalized in the engine
+ * Set feature front direction vector. The vector is normalized in
+ * the engine.
+ *
+ * @deprecated It's strongly that you use the overload that accepts
+ * a right direction as `frontDir` alone doesn't define object orientation.
+ *
  * @param featureID integer
  * @param frontx number
  * @param fronty number
  * @param frontz number
- * @param rightx number (optional)
- * @param righty number (optional)
- * @param rightz number (optional)
  * @return nil
  */
+
+ /***
+  * @function Spring.SetFeatureDirection
+  * Set feature front and right direction vectors.
+  *
+  * Both vectors will be normalized in the engine.
+  *
+  * @param featureID integer
+  * @param frontx number
+  * @param fronty number
+  * @param frontz number
+  * @param rightx number
+  * @param righty number
+  * @param rightz number
+  * @return nil
+  */
 int LuaSyncedCtrl::SetFeatureDirection(lua_State* L)
 {
 	return SetSolidObjectDirection(L, ParseFeature(L, __func__, 1), __func__);
