@@ -185,20 +185,20 @@ void CUnitScript::TickAllAnims(int deltaTime)
 	const int tickRate = 1000 / deltaTime;
 
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		auto& currAnim = anims[animType];
+		auto& currAnims = anims[animType];
 		const auto& currFunc = TICK_ANIM_FUNCS[animType];
 		auto& currDoneAnims = doneAnims[animType];
 
-		for (size_t i = 0; i < currAnim.size(); ) {
-			AnimInfo& ai = currAnim[i];
+		for (size_t i = 0; i < currAnims.size(); ) {
+			AnimInfo& ai = currAnims[i];
 			LocalModelPiece& lmp = *pieces[ai.piece];
 
 			if ((ai.done |= std::invoke(currFunc, this, tickRate, lmp, ai))) {
 				if (ai.hasWaiting)
 					currDoneAnims.emplace_back(ai);
 
-				ai = std::move(currAnim.back());
-				currAnim.pop_back();
+				ai = std::move(currAnims.back());
+				currAnims.pop_back();
 				continue;
 			}
 
