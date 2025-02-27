@@ -134,12 +134,15 @@ createNewIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, const
 		auto prop = getFromTable(data->Table, keychain, depth-1);
 		auto type = prop.get_type();
 		if (type == sol::type::table) {
-			prop.as<sol::table>().raw_set(key,value);
-			std::ostringstream joined;
-			std::copy(keychain.begin(), keychain.end(), std::ostream_iterator<std::string>(joined, "_"));
+			auto old = prop.as<sol::table>().raw_get<sol::object>(key);
+			if (old != value) {
+				prop.as<sol::table>().raw_set(key, value);
+				std::ostringstream joined;
+				std::copy(keychain.begin(), keychain.end(), std::ostream_iterator<std::string>(joined, "_"));
 
-			data->ObjectMap.insert_or_assign(joined.str() + key, value);
-			data->Handle.DirtyVariable(keychain[0]);
+				data->ObjectMap.insert_or_assign(joined.str() + key, value);
+				data->Handle.DirtyVariable(keychain[0]);
+			}
 		}
 	});
 }
@@ -211,6 +214,10 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 			if (iter->second == SolLuaDataModel::BindingType::Function)
 				luaL_error(s, "Changing the value of a key ('%s') bound to a Function in a DataModel is not allowed.", key.c_str());
 
+			auto old = data->Table.raw_get<sol::object>(key);
+			if (old == value && value.get_type() != sol::type::table) {
+				return;
+			}
 			data->Table.raw_set(key, value);
 			data->ObjectMap.insert_or_assign(key, value);
 			data->Handle.DirtyVariable(key);
