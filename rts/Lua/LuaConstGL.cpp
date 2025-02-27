@@ -9,10 +9,10 @@
 #include "Rendering/GL/myGL.h"
 
 
-/******************************************************************************
+/***
  * OpenGL Constants
- * @see rts/Lua/LuaConstGL.cpp
-******************************************************************************/
+ * @enum GL
+ */
 
 bool LuaConstGL::PushEntries(lua_State* L)
 {
@@ -22,10 +22,6 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/***
 	 * Drawing Primitives
 	 * @section primitives
-	 */
-
-	/***
-	 * @enum GL
 	 */
 
 	/*** @field GL.POINTS integer */
