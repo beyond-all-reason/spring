@@ -1085,6 +1085,16 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR),
 		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR),
 		EnumToString(GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR),
+		EnumToString(GL_PALETTE4_RGB8_OES),
+		EnumToString(GL_PALETTE4_RGBA8_OES),
+		EnumToString(GL_PALETTE4_R5_G6_B5_OES),
+		EnumToString(GL_PALETTE4_RGBA4_OES),
+		EnumToString(GL_PALETTE4_RGB5_A1_OES),
+		EnumToString(GL_PALETTE8_RGB8_OES),
+		EnumToString(GL_PALETTE8_RGBA8_OES),
+		EnumToString(GL_PALETTE8_R5_G6_B5_OES),
+		EnumToString(GL_PALETTE8_RGBA4_OES),
+		EnumToString(GL_PALETTE8_RGB5_A1_OES)
 	};
 	#undef EnumToString
 
