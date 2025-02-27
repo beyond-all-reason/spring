@@ -604,7 +604,8 @@ static int SetSolidObjectBlocking(lua_State* L, CSolidObject* o)
 	return 1;
 }
 
-static int SetSolidObjectRotation(lua_State* L, CSolidObject* o, bool isFeature)
+template<typename T>
+static int SetSolidObjectRotation(lua_State* L, T* o)
 {
 	if (o == nullptr)
 		return 0;
@@ -616,16 +617,14 @@ static int SetSolidObjectRotation(lua_State* L, CSolidObject* o, bool isFeature)
 
 	o->SetDirVectorsEuler(angles);
 
-	// not a hack: ForcedSpin() and CalculateTransform() calculate a
-	// transform based only on frontdir and assume the helper y-axis
-	// points up
-	if (isFeature)
-		static_cast<CFeature*>(o)->UpdateTransform(o->pos, true);
+	if constexpr(std::is_same_v<T, CFeature>)
+		o->UpdateTransform(o->pos, true);
 
 	return 0;
 }
 
-static int SetSolidObjectHeadingAndUpDir(lua_State* L, CSolidObject* o, bool isFeature)
+template<typename T>
+static int SetSolidObjectHeadingAndUpDir(lua_State* L, T* o)
 {
 	if (o == nullptr)
 		return 0;
@@ -640,8 +639,8 @@ static int SetSolidObjectHeadingAndUpDir(lua_State* L, CSolidObject* o, bool isF
 	o->SetFacingFromHeading();
 	o->UpdateMidAndAimPos();
 
-	if (isFeature)
-		static_cast<CFeature*>(o)->UpdateTransform(o->pos, true);
+	if constexpr (std::is_same_v<T, CFeature>)
+		o->UpdateTransform(o->pos, true);
 
 	return 0;
 }
@@ -666,6 +665,9 @@ static int SetSolidObjectDirection(lua_State* L, CSolidObject* o, const char* fu
 			o->team
 		);
 	}
+
+	// Note there's no need to call o->UpdateTransform(o->pos, true); because both variants of o->ForcedSpin
+	// defined in CFeature do it anyway
 
 	if (lua_isnumber(L, 5) && lua_isnumber(L, 6) && lua_isnumber(L, 7)) {
 		const float3 newRightDir = float3(luaL_checkfloat(L, 5), luaL_checkfloat(L, 6), luaL_checkfloat(L, 7)).SafeNormalize();
@@ -3890,7 +3892,7 @@ int LuaSyncedCtrl::SetUnitPosition(lua_State* L)
  */
 int LuaSyncedCtrl::SetUnitRotation(lua_State* L)
 {
-	return (SetSolidObjectRotation(L, ParseUnit(L, __func__, 1), false));
+	return (SetSolidObjectRotation(L, ParseUnit(L, __func__, 1)));
 }
 
 
@@ -3941,7 +3943,7 @@ int LuaSyncedCtrl::SetUnitDirection(lua_State* L)
  */
 int LuaSyncedCtrl::SetUnitHeadingAndUpDir(lua_State* L)
 {
-	return SetSolidObjectHeadingAndUpDir(L, ParseUnit(L, __func__, 1), false);
+	return SetSolidObjectHeadingAndUpDir(L, ParseUnit(L, __func__, 1));
 }
 
 /***
@@ -4724,7 +4726,7 @@ int LuaSyncedCtrl::SetFeaturePosition(lua_State* L)
  */
 int LuaSyncedCtrl::SetFeatureRotation(lua_State* L)
 {
-	return (SetSolidObjectRotation(L, ParseFeature(L, __func__, 1), true));
+	return (SetSolidObjectRotation(L, ParseFeature(L, __func__, 1)));
 }
 
 
@@ -4775,7 +4777,7 @@ int LuaSyncedCtrl::SetFeatureDirection(lua_State* L)
  */
 int LuaSyncedCtrl::SetFeatureHeadingAndUpDir(lua_State* L)
 {
-	return SetSolidObjectHeadingAndUpDir(L, ParseFeature(L, __func__, 1), true);
+	return SetSolidObjectHeadingAndUpDir(L, ParseFeature(L, __func__, 1));
 }
 
 /***
