@@ -2184,7 +2184,7 @@ int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
 	// Wrap it into range [0, 3]
 	const int rotation = static_cast<int>(std::round(wrapped)) % 4;
 
-	minimap->SetRotation(CMiniMap::ROTATION_OPTIONS(rotation));
+	minimap->SetRotation(CMiniMap::RotationOptions(rotation));
 
 	return 0;
 }

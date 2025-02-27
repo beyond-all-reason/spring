@@ -66,12 +66,12 @@ public:
 	float GetUnitSizeX() const { return unitSizeX; }
 	float GetUnitSizeY() const { return unitSizeY; }
 
-	enum ROTATION_OPTIONS { ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 };
+	enum RotationOptions { ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 };
 
-	void SetRotation(ROTATION_OPTIONS state);
+	void SetRotation(RotationOptions state);
 	float GetRotation() const { return static_cast<int>(rotation) * math::HALFPI; }
 	int minimapCanFlip = 0;
-	ROTATION_OPTIONS GetRotationOption() const { return rotation; }
+	RotationOptions GetRotationOption() const { return rotation; }
 
 	void SetSlaveMode(bool value);
 	bool GetSlaveMode() const { return slaveDrawMode; }
@@ -155,7 +155,7 @@ protected:
 	bool mouseMove = false;
 	bool mouseResize = false;
 
-	ROTATION_OPTIONS rotation = ROTATION_0;
+	RotationOptions rotation = ROTATION_0;
 
 	bool slaveDrawMode = false;
 	bool simpleColors = false;

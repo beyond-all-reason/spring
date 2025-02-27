@@ -256,7 +256,7 @@ void CMiniMap::ToggleMaximized(bool _maxspect)
 	UpdateGeometry();
 }
 
-void CMiniMap::SetRotation(ROTATION_OPTIONS state) // 0 1 2 3: 0 90 180 270
+void CMiniMap::SetRotation(RotationOptions state) // 0 1 2 3: 0 90 180 270
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
@@ -1076,7 +1076,7 @@ void CMiniMap::Update()
 	 * does not support minimap flipping. */
 	if (minimapCanFlip){
 		const float rotY = fmod(abs(camHandler->GetCurrentController().GetRot().y), 2 * math::PI);
-		ROTATION_OPTIONS rotOpt = rotY > math::PI/2 && rotY <= 3 * math::PI/2 ? ROTATION_180 : ROTATION_0;
+		RotationOptions rotOpt = rotY > math::PI/2 && rotY <= 3 * math::PI/2 ? ROTATION_180 : ROTATION_0;
 		SetRotation(rotOpt);
 	}
 
