@@ -175,7 +175,7 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 
 /*** Receives data sent via `SendToUnsynced` callout.
  *
- * @function UnsyncedCallins.RecvFromSynced
+ * @function UnsyncedCallins:RecvFromSynced
  * @param arg1 any
  * @param arg2 any
  * @param argn any
@@ -208,7 +208,7 @@ void CUnsyncedLuaHandle::RecvFromSynced(lua_State* srcState, int args)
 
 /*** For custom rendering of units
  *
- * @function UnsyncedCallins.DrawUnit
+ * @function UnsyncedCallins:DrawUnit
  * @param unitID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
@@ -244,7 +244,7 @@ bool CUnsyncedLuaHandle::DrawUnit(const CUnit* unit)
 
 /*** For custom rendering of features
  *
- * @function UnsyncedCallins.DrawFeature
+ * @function UnsyncedCallins:DrawFeature
  * @param featureID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
@@ -279,7 +279,7 @@ bool CUnsyncedLuaHandle::DrawFeature(const CFeature* feature)
 
 /*** For custom rendering of shields.
  *
- * @function UnsyncedCallins.DrawShield
+ * @function UnsyncedCallins:DrawShield
  * @param featureID integer
  * @param weaponID integer
  * @param drawMode number
@@ -317,7 +317,7 @@ bool CUnsyncedLuaHandle::DrawShield(const CUnit* unit, const CWeapon* weapon)
 
 /*** For custom rendering of weapon (& other) projectiles
  *
- * @function UnsyncedCallins.DrawProjectile
+ * @function UnsyncedCallins:DrawProjectile
  * @param projectileID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
@@ -354,7 +354,7 @@ bool CUnsyncedLuaHandle::DrawProjectile(const CProjectile* projectile)
 
 /***
  *
- * @function UnsyncedCallins.DrawMaterial
+ * @function UnsyncedCallins:DrawMaterial
  * @param uuid number
  * @param drawMode number
  * @return boolean suppressEngineDraw
@@ -567,7 +567,7 @@ bool CSyncedLuaHandle::SyncedActionFallback(const std::string& msg, int playerID
 
 /*** Called when the unit reaches an unknown command in its queue (i.e. one not handled by the engine).
  *
- * @function SyncedCallins.CommandFallback
+ * @function SyncedCallins:CommandFallback
  * @param unitID integer
  * @param unitDefID integer
  * @param unitTeam integer
@@ -600,7 +600,7 @@ bool CSyncedLuaHandle::CommandFallback(const CUnit* unit, const Command& cmd)
 
 /*** Called when the command is given, before the unit's queue is altered.
  *
- * @function SyncedCallins.AllowCommand
+ * @function SyncedCallins:AllowCommand
  *
  * The queue remains untouched when a command is blocked, whether it would be queued or replace the queue.
  *
@@ -644,7 +644,7 @@ bool CSyncedLuaHandle::AllowCommand(const CUnit* unit, const Command& cmd, int p
 
 /*** Called just before unit is created.
  *
- * @function SyncedCallins.AllowUnitCreation
+ * @function SyncedCallins:AllowUnitCreation
  * @param unitDefID integer
  * @param builderID integer
  * @param builderTeam integer
@@ -691,7 +691,7 @@ std::pair <bool, bool> CSyncedLuaHandle::AllowUnitCreation(
 
 /*** Called just before a unit is transferred to a different team.
  *
- * @function SyncedCallins.AllowUnitTransfer
+ * @function SyncedCallins:AllowUnitTransfer
  * @param unitID integer
  * @param unitDefID integer
  * @param oldTeam integer
@@ -728,7 +728,7 @@ bool CSyncedLuaHandle::AllowUnitTransfer(const CUnit* unit, int newTeam, bool ca
 
 /*** Called just before a unit progresses its build percentage.
  *
- * @function SyncedCallins.AllowUnitBuildStep
+ * @function SyncedCallins:AllowUnitBuildStep
  * @param builderID integer
  * @param builderTeam integer
  * @param unitID integer
@@ -765,7 +765,7 @@ bool CSyncedLuaHandle::AllowUnitBuildStep(const CUnit* builder, const CUnit* uni
 
 /***
  *
- * @function SyncedCallins.AllowUnitCaptureStep
+ * @function SyncedCallins:AllowUnitCaptureStep
  * @param builderID integer
  * @param builderTeam integer
  * @param unitID integer
@@ -802,7 +802,7 @@ bool CSyncedLuaHandle::AllowUnitCaptureStep(const CUnit* builder, const CUnit* u
 
 /***
  *
- * @function SyncedCallins.AllowUnitTransport
+ * @function SyncedCallins:AllowUnitTransport
  * @param transporterID integer
  * @param transporterUnitDefID integer
  * @param transporterTeam integer
@@ -840,7 +840,7 @@ bool CSyncedLuaHandle::AllowUnitTransport(const CUnit* transporter, const CUnit*
 
 /***
  *
- * @function SyncedCallins.AllowUnitTransportLoad
+ * @function SyncedCallins:AllowUnitTransportLoad
  * @param transporterID integer
  * @param transporterUnitDefID integer
  * @param transporterTeam integer
@@ -890,7 +890,7 @@ bool CSyncedLuaHandle::AllowUnitTransportLoad(
 
 /***
  *
- * @function SyncedCallins.AllowUnitTransportUnload
+ * @function SyncedCallins:AllowUnitTransportUnload
  * @param transporterID integer
  * @param transporterUnitDefID integer
  * @param transporterTeam integer
@@ -938,7 +938,7 @@ bool CSyncedLuaHandle::AllowUnitTransportUnload(
 
 /***
  *
- * @function SyncedCallins.AllowUnitCloak
+ * @function SyncedCallins:AllowUnitCloak
  * @param unitID integer
  * @param enemyID integer?
  * @return boolean whether unit is allowed to cloak
@@ -974,7 +974,7 @@ bool CSyncedLuaHandle::AllowUnitCloak(const CUnit* unit, const CUnit* enemy)
 
 /***
  *
- * @function SyncedCallins.AllowUnitCloak
+ * @function SyncedCallins:AllowUnitCloak
  * @param unitID integer
  * @param objectID integer?
  * @param weaponNum number?
@@ -1018,7 +1018,7 @@ bool CSyncedLuaHandle::AllowUnitDecloak(const CUnit* unit, const CSolidObject* o
 
 /***
  *
- * @function SyncedCallins.AllowUnitKamikaze
+ * @function SyncedCallins:AllowUnitKamikaze
  * @param unitID integer
  * @param targetID integer
  * @return boolean whether unit is allowed to selfd
@@ -1048,7 +1048,7 @@ bool CSyncedLuaHandle::AllowUnitKamikaze(const CUnit* unit, const CUnit* target,
 
 /*** Called just before feature is created.
  *
- * @function SyncedCallins.AllowFeatureCreation
+ * @function SyncedCallins:AllowFeatureCreation
  * @param featureDefID integer
  * @param teamID integer
  * @param x number
@@ -1085,7 +1085,7 @@ bool CSyncedLuaHandle::AllowFeatureCreation(const FeatureDef* featureDef, int te
 
 /*** Called just before a feature changes its build percentage.
  *
- * @function SyncedCallins.AllowFeatureBuildStep
+ * @function SyncedCallins:AllowFeatureBuildStep
  *
  * Note that this is also called for resurrecting features, and for refilling features with resources before resurrection.
  * On reclaim the part values are negative, and on refill and resurrect they are positive.
@@ -1130,7 +1130,7 @@ bool CSyncedLuaHandle::AllowFeatureBuildStep(const CUnit* builder, const CFeatur
 
 /*** Called when a team sets the sharing level of a resource.
  *
- * @function SyncedCallins.AllowResourceLevel
+ * @function SyncedCallins:AllowResourceLevel
  * @param teamID integer
  * @param res string
  * @param level number
@@ -1163,7 +1163,7 @@ bool CSyncedLuaHandle::AllowResourceLevel(int teamID, const std::string& type, f
 
 /*** Called just before resources are transferred between players.
  *
- * @function SyncedCallins.AllowResourceTransfer
+ * @function SyncedCallins:AllowResourceTransfer
  * @param oldTeamID integer
  * @param newTeamID integer
  * @param res string
@@ -1198,7 +1198,7 @@ bool CSyncedLuaHandle::AllowResourceTransfer(int oldTeam, int newTeam, const cha
 
 /*** Determines if this unit can be controlled directly in FPS view.
  *
- * @function SyncedCallins.AllowDirectUnitControl
+ * @function SyncedCallins:AllowDirectUnitControl
  * @param unitID integer
  * @param unitDefID integer
  * @param unitTeam integer
@@ -1233,7 +1233,7 @@ bool CSyncedLuaHandle::AllowDirectUnitControl(int playerID, const CUnit* unit)
 
 /*** Called when a construction unit wants to "use his nano beams".
  *
- * @function SyncedCallins.AllowBuilderHoldFire
+ * @function SyncedCallins:AllowBuilderHoldFire
  *
  * @param unitID integer
  * @param unitDefID integer
@@ -1275,7 +1275,7 @@ bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
 
 /*** Whether a start position should be allowed
  *
- * @function SyncedCallins.AllowStartPosition
+ * @function SyncedCallins:AllowStartPosition
  *
  * clamped{X,Y,Z} are the coordinates clamped into start-boxes, raw is where player tried to place their marker.
  *
@@ -1333,7 +1333,7 @@ bool CSyncedLuaHandle::AllowStartPosition(int playerID, int teamID, unsigned cha
 
 /*** Enable both Spring.MoveCtrl.SetCollideStop and Spring.MoveCtrl.SetTrackGround to enable this call-in.
  *
- * @function SyncedCallins.MoveCtrlNotify
+ * @function SyncedCallins:MoveCtrlNotify
  *
  * @param unitID integer
  * @param unitDefID integer
@@ -1371,7 +1371,7 @@ bool CSyncedLuaHandle::MoveCtrlNotify(const CUnit* unit, int data)
 
 /*** Called when pre-building terrain levelling terraforms are completed (c.f. levelGround)
  *
- * @function SyncedCallins.TerraformComplete
+ * @function SyncedCallins:TerraformComplete
  * @param unitID integer
  * @param unitDefID integer
  * @param unitTeam integer
@@ -1429,7 +1429,7 @@ bool CSyncedLuaHandle::TerraformComplete(const CUnit* unit, const CUnit* build)
 
 /*** Called before damage is applied to the unit, allows fine control over how much damage and impulse is applied.
  *
- * @function SyncedCallins.UnitPreDamaged
+ * @function SyncedCallins:UnitPreDamaged
  *
  * Called after every damage modification (even `HitByWeaponId`) but before the damage is applied
  *
@@ -1525,7 +1525,7 @@ bool CSyncedLuaHandle::UnitPreDamaged(
 
 /*** Called before damage is applied to the feature.
  *
- * @function SyncedCallins.FeaturePreDamaged
+ * @function SyncedCallins:FeaturePreDamaged
  *
  * Allows fine control over how much damage and impulse is applied.
  *
@@ -1608,7 +1608,7 @@ bool CSyncedLuaHandle::FeaturePreDamaged(
 
 /*** Called before any engine shield-vs-projectile logic executes.
  *
- * @function SyncedCallins.ShieldPreDamaged
+ * @function SyncedCallins:ShieldPreDamaged
  *
  * If the weapon is a hitscan type (BeamLaser or LightningCanon) then proID is nil and beamEmitterWeaponNum and beamEmitterUnitID are populated instead.
  *
@@ -1690,7 +1690,7 @@ bool CSyncedLuaHandle::ShieldPreDamaged(
 
 /*** Determines if this weapon can automatically generate targets itself. See also commandFire weaponDef tag.
  *
- * @function SyncedCallins.AllowWeaponTargetCheck
+ * @function SyncedCallins:AllowWeaponTargetCheck
  * @param attackerID integer
  * @param attackerWeaponNum integer
  * @param attackerWeaponDefID integer
@@ -1730,7 +1730,7 @@ int CSyncedLuaHandle::AllowWeaponTargetCheck(unsigned int attackerID, unsigned i
 
 /*** Controls blocking of a specific target from being considered during a weapon's periodic auto-targeting sweep.
  *
- * @function SyncedCallins.AllowWeaponTarget
+ * @function SyncedCallins:AllowWeaponTarget
  * @param attackerID integer
  * @param targetID integer
  * @param attackerWeaponNum integer
@@ -1793,7 +1793,7 @@ bool CSyncedLuaHandle::AllowWeaponTarget(
 
 /*** Controls blocking of a specific intercept target from being considered during an interceptor weapon's periodic auto-targeting sweep.
  *
- * @function SyncedCallins.AllowWeaponInterceptTarget
+ * @function SyncedCallins:AllowWeaponInterceptTarget
  *
  * Only called for weaponDefIDs registered via Script.SetWatchWeapon.
  *
