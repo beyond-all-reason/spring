@@ -162,11 +162,9 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 	return true;
 }
 
-
-/******************************************************************************
- * Callins, functions called by the Engine (Synced)
- *
- * @see rts/Lua/LuaHandleSynced.cpp
+/***
+ * @class UnsyncedCallins
+ * Functions called by the Engine (Unsynced).
  */
 
 /**********************
@@ -177,7 +175,7 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 
 /*** Receives data sent via `SendToUnsynced` callout.
  *
- * @function RecvFromSynced
+ * @function UnsyncedCallins.RecvFromSynced
  * @param arg1 any
  * @param arg2 any
  * @param argn any
@@ -210,7 +208,7 @@ void CUnsyncedLuaHandle::RecvFromSynced(lua_State* srcState, int args)
 
 /*** For custom rendering of units
  *
- * @function DrawUnit
+ * @function UnsyncedCallins.DrawUnit
  * @param unitID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
@@ -246,7 +244,7 @@ bool CUnsyncedLuaHandle::DrawUnit(const CUnit* unit)
 
 /*** For custom rendering of features
  *
- * @function DrawFeature
+ * @function UnsyncedCallins.DrawFeature
  * @param featureID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
@@ -281,7 +279,7 @@ bool CUnsyncedLuaHandle::DrawFeature(const CFeature* feature)
 
 /*** For custom rendering of shields.
  *
- * @function DrawShield
+ * @function UnsyncedCallins.DrawShield
  * @param featureID integer
  * @param weaponID integer
  * @param drawMode number
@@ -319,7 +317,7 @@ bool CUnsyncedLuaHandle::DrawShield(const CUnit* unit, const CWeapon* weapon)
 
 /*** For custom rendering of weapon (& other) projectiles
  *
- * @function DrawProjectile
+ * @function UnsyncedCallins.DrawProjectile
  * @param projectileID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
@@ -356,7 +354,7 @@ bool CUnsyncedLuaHandle::DrawProjectile(const CProjectile* projectile)
 
 /***
  *
- * @function DrawMaterial
+ * @function UnsyncedCallins.DrawMaterial
  * @param uuid number
  * @param drawMode number
  * @return boolean suppressEngineDraw
