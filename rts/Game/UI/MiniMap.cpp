@@ -1075,7 +1075,7 @@ void CMiniMap::Update()
 	 * since that other rendering pipeline
 	 * does not support minimap flipping. */
 	if (minimapCanFlip){
-		const float rotY = fmod(abs(camHandler->GetCurrentController().GetRot().y), 2 * math::PI);
+		const float rotY = ClampRad(camHandler->GetCurrentController().GetRot().y);
 		RotationOptions rotOpt = rotY > math::HALFPI && rotY <= 3 * math::HALFPI ? ROTATION_180 : ROTATION_0;
 		SetRotation(rotOpt);
 	}
