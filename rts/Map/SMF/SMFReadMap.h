@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef SMFREADMAP_H
-#define SMFREADMAP_H
+#pragma once
 
 #include <array>
+#include <memory>
 
 #include "SMFMapFile.h"
 #include "Map/ReadMap.h"
@@ -12,6 +12,10 @@
 
 
 class CSMFGroundDrawer;
+class FBO;
+namespace Shader {
+	struct IProgramObject;
+}
 
 class CSMFReadMap : public CReadMap, public CEventClient
 {
@@ -28,7 +32,7 @@ public:
 
 	CSMFReadMap(const std::string& mapName);
 	// note: textures are auto-deleted
-	~CSMFReadMap() { mapFile.Close(); }
+	~CSMFReadMap();
 
 	void ReloadTextures() override;
 
@@ -161,12 +165,14 @@ private:
 	void CreateDetailTex();
 	void CreateShadingTex();
 	void CreateNormalTex();
+	void CreateShadingGL();
 
 	void UpdateVertexNormalsUnsynced(const SRectangle& update);
 	void UpdateHeightBoundsUnsynced(const SRectangle& update);
 	void UpdateFaceNormalsUnsynced(const SRectangle& update);
 	void UpdateNormalTexture(const SRectangle& update);
-	void UpdateShadingTexture(const SRectangle& update);
+	void UpdateShadingTextureCPU(const SRectangle& update);
+	void UpdateShadingTextureGPU(const SRectangle& update);
 
 	inline void UpdateShadingTexPart(int idx1, int idx2, unsigned char* dst) const;
 	inline const float GetCenterHeightUnsynced(const int x, const int y) const;
@@ -207,11 +213,14 @@ private:
 	CSMFGroundDrawer* groundDrawer = nullptr;
 
 private:
+	std::unique_ptr<FBO> shadingFBO;
+	Shader::IProgramObject* shadingShader = nullptr;
+
 	MapTexture grassShadingTex;       // specifies grass-blade modulation color (defaults to minimapTex)
 	MapTexture detailTex;             // supplied by the map
 	MapTexture minimapTex;            // supplied by the map
 	MapTexture shadingTex;            // holds precomputed dot(lightDir, vertexNormal) values
-	MapTexture normalsTex;            // holds vertex normals in RGBA32F internal format (GL_RGBA + GL_FLOAT)
+	MapTexture normalsTex;            // holds vertex normals in RA32F internal format (GL_RA + GL_FLOAT)
 
 	MapTexture specularTex;           // supplied by the map, moderates specular contribution
 	MapTexture blendNormalsTex;       // tangent-space offset normals
@@ -239,5 +248,3 @@ private:
 
 	bool shadingTexUpdateNeeded = false;
 };
-
-#endif

@@ -25,6 +25,10 @@ public:
 
 	bool IsGlobalInstance() const;
 
+	bool IsUpdated() {
+		return std::exchange(updated, false);
+	}
+	void SetUpdated() { updated = true; }
 private:
 	float4* colors[6];
 
@@ -40,6 +44,8 @@ public:
 	float specularExponent;
 	float groundShadowDensity;
 	float modelShadowDensity;
+private:
+	bool updated = true;
 };
 
 extern CSunLighting sunLightingInst;

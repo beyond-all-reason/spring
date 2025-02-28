@@ -11,6 +11,7 @@
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/SunLighting.h"
+#include "Rendering/Env/WaterRendering.h"
 #include "Rendering/Env/MapRendering.h"
 #include "Rendering/Env/IWater.h"
 #include "Rendering/CommandDrawer.h"
@@ -266,17 +267,20 @@ void CWorldDrawer::GenerateIBLTextures() const
 	}
 
 	SCOPED_GL_DEBUGGROUP("Draw::World::UpdateMisc");
-	if (ISky::GetSky()->GetLight()->Update()) {
-		{
-			SCOPED_TIMER("Draw::World::UpdateSpecTex");
-			cubeMapHandler.UpdateSpecularTexture();
-		}
-		{
-			SCOPED_TIMER("Draw::World::UpdateSkyTex");
-			ISky::GetSky()->UpdateSkyTexture();
-		}
+	bool sunDirUpd = ISky::GetSky()->GetLight()->Update();
+	bool sunLightUpd = sunLighting->IsUpdated();
+	bool skyUpd = ISky::GetSky()->IsUpdated();
+	bool waterUpd = waterRendering->IsUpdated();
+
+	if (sunDirUpd) {
+		SCOPED_TIMER("Draw::World::UpdateSpecTex");
+		cubeMapHandler.UpdateSpecularTexture();
 	}
-	{
+	if (sunDirUpd || skyUpd) {
+		SCOPED_TIMER("Draw::World::UpdateSkyTex");
+		ISky::GetSky()->UpdateSkyTexture();
+	}
+	if (sunDirUpd || sunLightUpd || waterUpd) {
 		SCOPED_TIMER("Draw::World::UpdateShadingTex");
 		readMap->UpdateShadingTexture();
 	}

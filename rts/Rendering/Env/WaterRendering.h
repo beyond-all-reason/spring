@@ -12,7 +12,10 @@
 struct CWaterRendering {
 public:
 	void Init();
-	bool IsGlobalInstance() const;
+	bool IsUpdated() {
+		return std::exchange(updated, false);
+	}
+	void SetUpdated() { updated = true; }
 public:
 	float  repeatX;           ///< (calculated default is in IWater)
 	float  repeatY;           ///< (calculated default is in IWater)
@@ -52,6 +55,8 @@ public:
 	std::string foamTexture;
 	std::string normalTexture;
 	std::vector<std::string> causticTextures;
+private:
+	bool updated = true;
 };
 
 extern CWaterRendering waterRenderingInst;

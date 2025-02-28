@@ -3950,6 +3950,8 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 		}
 	}
 
+	sky->SetUpdated();
+
 	return 0;
 }
 
@@ -4014,6 +4016,7 @@ int LuaUnsyncedCtrl::SetSunLighting(lua_State* L)
 	}
 
 	*sunLighting = sl;
+	sunLighting->SetUpdated();
 	return 0;
 }
 
@@ -4576,6 +4579,7 @@ int LuaUnsyncedCtrl::SetWaterParams(lua_State* L)
 	auto waterID = static_cast<int>(IWater::GetWater()->GetID());
 	IWater::KillWater();
 	IWater::SetWater(waterID);
+	waterRendering->SetUpdated();
 
 	return 0;
 }

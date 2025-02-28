@@ -8,14 +8,21 @@
 #include "SMFGroundDrawer.h"
 #include "SMFFormat.h"
 #include "Map/MapInfo.h"
+#include "Map/Ground.h"
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/LoadScreen.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Env/ISky.h"
-#include "Rendering/Env/SunLighting.h"
 #include "Rendering/Env/WaterRendering.h"
+#include "Rendering/Env/SunLighting.h"
+#include "Rendering/Env/ISky.h"
+#include "Rendering/Env/SkyLight.h"
 #include "Rendering/GL/myGL.h"
+#include "Rendering/GL/FBO.h"
+#include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GL/SubState.h"
+#include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/Shaders/Shader.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "System/Config/ConfigHandler.h"
@@ -30,8 +37,6 @@
 #include "System/XSimdOps.hpp"
 
 #include "System/Misc/TracyDefs.h"
-
-#define SSMF_UNCOMPRESSED_NORMALS 0
 
 using std::max;
 
@@ -98,9 +103,17 @@ CSMFReadMap::CSMFReadMap(const std::string& mapName): CEventClient("[CSMFReadMap
 		CreateDetailTex();
 		CreateShadingTex();
 		CreateNormalTex();
+		CreateShadingGL();
 	}
 
 	mapFile.ReadFeatureInfo();
+}
+
+CSMFReadMap::~CSMFReadMap()
+{
+	shadingFBO = nullptr;
+	shaderHandler->ReleaseProgramObject("[CSMFReadMap]", "ShadingShader");
+	mapFile.Close();
 }
 
 
@@ -385,10 +398,45 @@ void CSMFReadMap::CreateNormalTex()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA16F_ARB, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_LUMINANCE_ALPHA, GL_FLOAT, nullptr);
+	constexpr GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_GREEN, GL_GREEN };
+	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_RG, GL_FLOAT, nullptr);
 }
 
+void CSMFReadMap::CreateShadingGL()
+{
+	shadingFBO = std::make_unique<FBO>(false);
 
+	shadingFBO->Bind();
+	shadingFBO->AttachTexture(shadingTex.GetID(), GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0, 0);
+	shadingFBO->CheckStatus("SMF-SHADING");
+	shadingFBO->Unbind();
+
+	shadingShader = shaderHandler->CreateProgramObject("[CSMFReadMap]", "ShadingShader");
+	shadingShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFShadingTextureVertProg.glsl", "", GL_VERTEX_SHADER));
+	shadingShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFShadingTextureFragProg.glsl", "", GL_FRAGMENT_SHADER));
+	shadingShader->BindAttribLocations<VA_TYPE_2D0>();
+	shadingShader->Link();
+
+	shadingShader->Enable();
+	shadingShader->SetUniform("mapSize",
+		static_cast<float>(mapDims.mapx), static_cast<float>(mapDims.mapy),
+		           1.0f / (mapDims.mapx),            1.0f / (mapDims.mapy)
+	);
+	shadingShader->SetUniform("normalsTex", 0);
+	shadingShader->SetUniform("heightMapTex", 1);
+	shadingShader->SetUniform4v("groundAmbientColor", &sunLighting->groundAmbientColor.x);
+	shadingShader->SetUniform4v("groundDiffuseColor", &sunLighting->groundDiffuseColor.x);
+	shadingShader->SetUniform("lightDir", 0.0f, 0.0f, 0.0f, 0.0f); // envParams.sun.dir is not yet available
+	shadingShader->SetUniform3v("waterBaseColor", &waterRendering->baseColor.x);
+	shadingShader->SetUniform3v("waterAbsorb", &waterRendering->absorb.x);
+	shadingShader->SetUniform3v("waterMinColor", &waterRendering->minColor.x);
+	shadingShader->SetUniform("waterLevel", CGround::GetWaterPlaneLevel());
+	shadingShader->Disable();
+
+	shadingShader->Validate();
+}
 
 void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
@@ -397,7 +445,10 @@ void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 	UpdateHeightBoundsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
 	UpdateNormalTexture(update);
-	UpdateShadingTexture(update);
+	if (shadingFBO->IsValid() && shadingShader->IsValid())
+		UpdateShadingTextureGPU(update);
+	else
+		UpdateShadingTextureCPU(update);
 }
 
 void CSMFReadMap::UpdateHeightMapUnsyncedPost()
@@ -690,11 +741,58 @@ void CSMFReadMap::UpdateNormalTexture(const SRectangle& update)
 	}
 
 	glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());
-	glTexSubImage2D(GL_TEXTURE_2D, 0, minx, minz, xsize, zsize, GL_LUMINANCE_ALPHA, GL_FLOAT, &normalPixels[0]);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, minx, minz, xsize, zsize, GL_RG, GL_FLOAT, &normalPixels[0]);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void CSMFReadMap::UpdateShadingTexture()
+{
+#if 0
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (shadingTexUpdateProgress < 0)
+		return;
 
-void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
+	const int xsize = mapDims.mapx;
+	const int ysize = mapDims.mapy;
+	const int pixels = xsize * ysize;
+
+	// shading texture no longer has much use (minimap etc), limit its updaterate
+	//FIXME make configurable or FPS-dependent?
+	static constexpr int update_rate = 64 * 64;
+
+	if (shadingTexUpdateProgress >= pixels) {
+		if (shadingTexUpdateNeeded) {
+			shadingTexUpdateProgress = 0;
+			shadingTexUpdateNeeded = false;
+		}
+		else {
+			shadingTexUpdateProgress = -1;
+		}
+
+		//FIXME use FBO and blend slowly new and old? (this way update rate could reduced even more -> saves CPU time)
+		glBindTexture(GL_TEXTURE_2D, shadingTex.GetID());
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, xsize, ysize, GL_RGBA, GL_UNSIGNED_BYTE, &shadingTexBuffer[0]);
+		return;
+	}
+
+	const int idx1 = shadingTexUpdateProgress;
+	const int idx2 = std::min(idx1 + update_rate, pixels - 1);
+
+	for_mt(idx1, idx2 + 1, 1025, [&](const int idx) {
+		const int idx3 = std::min(idx2, idx + 1024);
+		UpdateShadingTexPart(idx, idx3, &shadingTexBuffer[idx * 4]);
+	});
+
+	shadingTexUpdateProgress += update_rate;
+#endif
+	SRectangle update { 0, 0, mapDims.mapx, mapDims.mapy };
+	if (shadingFBO->IsValid() && shadingShader->IsValid())
+		UpdateShadingTextureGPU(update);
+	else
+		UpdateShadingTextureCPU(update);
+}
+
+void CSMFReadMap::UpdateShadingTextureCPU(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// update the shading texture (even if the map has specular
@@ -736,6 +834,96 @@ void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
 		glBindTexture(GL_TEXTURE_2D, shadingTex.GetID());
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x1, y1, xsize, ysize, GL_RGBA, GL_UNSIGNED_BYTE, &shadingPixels[0]);
 	}
+}
+
+void CSMFReadMap::UpdateShadingTextureGPU(const SRectangle& update)
+{
+	using namespace GL::State;
+	auto state = GL::SubState(
+		DepthTest(GL_FALSE),
+		Blending(GL_FALSE)
+	);
+
+	// enlarge rect by 1pixel in all directions (cause we use center normals and not corner ones)
+	const int x1 = std::max(update.x1 - 1,            0);
+	const int y1 = std::max(update.y1 - 1,            0);
+	const int x2 = std::min(update.x2 + 1, mapDims.mapx);
+	const int y2 = std::min(update.y2 + 1, mapDims.mapy);
+
+	uint32_t unsyncedHeightTexID = 0;
+	{
+		glGenTextures(1, &unsyncedHeightTexID);
+		glBindTexture(GL_TEXTURE_2D, unsyncedHeightTexID);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F,
+			mapDims.mapxp1, mapDims.mapyp1, 0,
+			GL_RED, GL_FLOAT, GetCornerHeightMapUnsynced()
+		);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	float h = GetCenterHeightUnsynced((x1 + x2) >> 1, (y1 + y2) >> 1);
+
+	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2D0>();
+	rb.AssertSubmission();
+
+#if 1
+	rb.AddQuadTriangles(
+		{ static_cast<float>(x1), static_cast<float>(y1) },
+		{ static_cast<float>(x2), static_cast<float>(y1) },
+		{ static_cast<float>(x2), static_cast<float>(y2) },
+		{ static_cast<float>(x1), static_cast<float>(y2) }
+	);
+#else
+	rb.AddQuadTriangles(
+		{ static_cast<float>(0), static_cast<float>(0) },
+		{ static_cast<float>(mapDims.mapx), static_cast<float>(0) },
+		{ static_cast<float>(mapDims.mapx), static_cast<float>(mapDims.mapy) },
+		{ static_cast<float>(0), static_cast<float>(mapDims.mapy) }
+	);
+#endif
+
+	shadingFBO->Bind();
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	glViewport(0, 0, mapDims.mapx, mapDims.mapy);
+
+	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());
+	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, unsyncedHeightTexID);
+
+	shadingShader->Enable();
+
+	shadingShader->SetUniform4v("groundAmbientColor", &sunLighting->groundAmbientColor.x);
+	shadingShader->SetUniform4v("groundDiffuseColor", &sunLighting->groundDiffuseColor.x);
+	shadingShader->SetUniform4v("lightDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
+	shadingShader->SetUniform3v("waterBaseColor", &waterRendering->baseColor.x);
+	shadingShader->SetUniform3v("waterAbsorb", &waterRendering->absorb.x);
+	shadingShader->SetUniform3v("waterMinColor", &waterRendering->minColor.x);
+	shadingShader->SetUniform("waterLevel", CGround::GetWaterPlaneLevel());
+
+	rb.DrawElements(GL_TRIANGLES);
+
+	shadingShader->Disable();
+
+	shadingFBO->Unbind();
+	globalRendering->LoadViewport();
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, 0);
+
+	glSaveTexture(shadingTex.GetID(), "shadingTex.png");
+
+	glDeleteTextures(1, &unsyncedHeightTexID);
 }
 
 const float CSMFReadMap::GetCenterHeightUnsynced(const int x, const int y) const
@@ -867,45 +1055,6 @@ void CSMFReadMap::ReloadTextures()
 
 		ReloadTextureFunc(mapInfo->smf.splatDetailNormalTexNames[i], splatNormalTextures[i], texAnisotropyLevels[true], 0.0f, true);
 	}
-}
-
-void CSMFReadMap::UpdateShadingTexture()
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (shadingTexUpdateProgress < 0)
-		return;
-
-	const int xsize = mapDims.mapx;
-	const int ysize = mapDims.mapy;
-	const int pixels = xsize * ysize;
-
-	// shading texture no longer has much use (minimap etc), limit its updaterate
-	//FIXME make configurable or FPS-dependent?
-	static constexpr int update_rate = 64*64;
-
-	if (shadingTexUpdateProgress >= pixels) {
-		if (shadingTexUpdateNeeded) {
-			shadingTexUpdateProgress = 0;
-			shadingTexUpdateNeeded   = false;
-		} else {
-			shadingTexUpdateProgress = -1;
-		}
-
-		//FIXME use FBO and blend slowly new and old? (this way update rate could reduced even more -> saves CPU time)
-		glBindTexture(GL_TEXTURE_2D, shadingTex.GetID());
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, xsize, ysize, GL_RGBA, GL_UNSIGNED_BYTE, &shadingTexBuffer[0]);
-		return;
-	}
-
-	const int idx1 = shadingTexUpdateProgress;
-	const int idx2 = std::min(idx1 + update_rate, pixels - 1);
-
-	for_mt(idx1, idx2+1, 1025, [&](const int idx){
-		const int idx3 = std::min(idx2, idx + 1024);
-		UpdateShadingTexPart(idx, idx3, &shadingTexBuffer[idx * 4]);
-	});
-
-	shadingTexUpdateProgress += update_rate;
 }
 
 int2 CSMFReadMap::GetPatch(int hmx, int hmz) const
