@@ -2162,7 +2162,7 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 
 /***
  * @function Spring.SetMiniMapRotation
- * @param rotation radians
+ * @param rotation number amount in radians
  * @return nil
  */
 int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)

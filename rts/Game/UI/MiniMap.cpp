@@ -1933,7 +1933,7 @@ void CMiniMap::DrawWorldStuff() const
 	// normalize coords
 	glRotatef(90.0f, +1.0f, 0.0f, 0.0f); // real 'world' coordinates
 	
-	switch (rotation) 
+	switch (rotation) // skip the y-coord (Lua's DrawScreen is perspective and so any z-coord in it influence the x&y, too)
 	{
 		case ROTATION_0:
 			glTranslatef(0.0f, 0.0f, -1.0f);
