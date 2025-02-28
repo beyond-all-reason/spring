@@ -31,10 +31,10 @@
 
 CLuaMenu* luaMenu = nullptr;
 
-/******************************************************************************
- * Lua Menu API
- * @see rts/Lua/LuaMenu.cpp
-******************************************************************************/
+/***
+ * @class Menu : Callins
+ * @see Callins
+ */
 
 static spring::mutex m_singleton;
 
@@ -371,7 +371,7 @@ bool CLuaMenu::Disable()
 
 /*** Called whenever LuaMenu is on with no game loaded.
  *
- * @function ActivateMenu
+ * @function Menu:ActivateMenu
  */
 void CLuaMenu::ActivateMenu(const std::string& msg)
 {
@@ -392,7 +392,7 @@ void CLuaMenu::ActivateMenu(const std::string& msg)
 
 /*** Called whenever LuaMenu is on with a game loaded.
  *
- * @function ActivateGame
+ * @function Menu:ActivateGame
  */
 void CLuaMenu::ActivateGame()
 {
@@ -410,9 +410,12 @@ void CLuaMenu::ActivateGame()
 }
 
 
-/*** Enables Draw{Genesis,Screen,ScreenPost} callins if true is returned, otherwise they are called once every 30 seconds. Only active when a game isn't running.
+/***
+ * Enables Draw{Genesis,Screen,ScreenPost} callins if true is returned,
+ * otherwise they are called once every 30 seconds. Only active when a game
+ * isn't running.
  *
- * @function AllowDraw
+ * @function Menu:AllowDraw
  * @return boolean allowDraw
  */
 bool CLuaMenu::AllowDraw()
