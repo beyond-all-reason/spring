@@ -158,7 +158,6 @@ private:
 	void ParseHeader();
 	void LoadHeightMap();
 	void LoadMinimap();
-	void InitializeWaterHeightColors();
 	void CreateSpecularTex();
 	void CreateSplatDetailTextures();
 	void CreateGrassTex();
@@ -171,14 +170,8 @@ private:
 	void UpdateHeightBoundsUnsynced(const SRectangle& update);
 	void UpdateFaceNormalsUnsynced(const SRectangle& update);
 	void UpdateNormalTexture(const SRectangle& update);
-	void UpdateShadingTextureCPU(const SRectangle& update);
-	void UpdateShadingTextureGPU(const SRectangle& update);
+	void UpdateShadingTexture(const SRectangle& update);
 
-	inline void UpdateShadingTexPart(int idx1, int idx2, unsigned char* dst) const;
-	inline const float GetCenterHeightUnsynced(const int x, const int y) const;
-
-	inline float DiffuseSunCoeff(const int x, const int y) const;
-	inline float3 GetLightValue(const int x, const int y) const;
 	void ParseSMD(std::string filename);
 
 public:
@@ -205,10 +198,6 @@ private:
 
 	static std::vector<float> cornerHeightMapSynced;
 	static std::vector<float> cornerHeightMapUnsynced;
-
-	static std::vector<unsigned char> shadingTexBuffer;
-	static std::vector<unsigned char> waterHeightColors;
-
 private:
 	CSMFGroundDrawer* groundDrawer = nullptr;
 
@@ -238,8 +227,6 @@ private:
 	MapTexture parallaxHeightTex;
 
 private:
-	int shadingTexUpdateProgress = -1;
-
 	float texAnisotropyLevels[2] = {0.0f, 0.0f};
 
 	bool haveSpecularTexture           = false;
