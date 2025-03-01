@@ -166,6 +166,7 @@ private:
 	void CreateNormalTex();
 	void CreateShadingGL();
 
+	void UpdateCornerHeightMapUnsynced(const SRectangle& update);
 	void UpdateVertexNormalsUnsynced(const SRectangle& update);
 	void UpdateHeightBoundsUnsynced(const SRectangle& update);
 	void UpdateFaceNormalsUnsynced(const SRectangle& update);

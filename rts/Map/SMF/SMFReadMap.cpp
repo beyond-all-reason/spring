@@ -413,6 +413,7 @@ void CSMFReadMap::CreateShadingGL()
 void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	UpdateCornerHeightMapUnsynced(update);
 	UpdateVertexNormalsUnsynced(update);
 	UpdateHeightBoundsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
@@ -451,20 +452,8 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//corner space, inclusive
-	for (int z = update.z1; z <= update.z2; z++) {
-		{
-			const int idx0 = (z * mapDims.mapxp1 + (update.x1    ));
-			const int idx1 = (z * mapDims.mapxp1 + (update.x2 + 1));
-			std::copy(
-				cornerHeightMapSynced.begin() + idx0,
-				cornerHeightMapSynced.begin() + idx1,
-				cornerHeightMapUnsynced.begin() + idx0
-			);
-		}
-	}
 
-	const auto& shm = cornerHeightMapSynced;
+	const auto& shm = cornerHeightMapUnsynced;
 	auto& vvn = visVertexNormals;
 
 	const int W = mapDims.mapxp1;
@@ -537,6 +526,23 @@ void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
 			vvn[vIdxTL] = vn.ANormalize();
 		}
 	});
+}
+
+void CSMFReadMap::UpdateCornerHeightMapUnsynced(const SRectangle& update)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	//corner space, inclusive
+	for (int z = update.z1; z <= update.z2; z++) {
+		{
+			const int idx0 = (z * mapDims.mapxp1 + (update.x1));
+			const int idx1 = (z * mapDims.mapxp1 + (update.x2 + 1));
+			std::copy(
+				cornerHeightMapSynced.begin() + idx0,
+				cornerHeightMapSynced.begin() + idx1,
+				cornerHeightMapUnsynced.begin() + idx0
+			);
+		}
+	}
 }
 
 
