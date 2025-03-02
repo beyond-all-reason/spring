@@ -30,36 +30,36 @@ vec3 GetVertex(ivec2 xy) {
 vec3 CalcFragmentNormal(vec2 uv) {
 	ivec2 xy = ivec2(uv * mapSizeP1.xy);
 
-	ivec2 tl = xy + ivec2(-1,  1);
-	ivec2 tm = xy + ivec2( 0,  1);
-	ivec2 tr = xy + ivec2( 1,  1);
-	ivec2 ml = xy + ivec2(-1,  0);
-	ivec2 mm = xy + ivec2( 0,  0);
-	ivec2 mr = xy + ivec2( 1,  0);
 	ivec2 bl = xy + ivec2(-1, -1);
 	ivec2 bm = xy + ivec2( 0, -1);
 	ivec2 br = xy + ivec2( 1, -1);
+	ivec2 ml = xy + ivec2(-1,  0);
+	ivec2 mm = xy + ivec2( 0,  0);
+	ivec2 mr = xy + ivec2( 1,  0);
+	ivec2 tl = xy + ivec2(-1,  1);
+	ivec2 tm = xy + ivec2( 0,  1);
+	ivec2 tr = xy + ivec2( 1,  1);
 
 	// get vertices
-	vec3 vtl = GetVertex(tl);
-	vec3 vtm = GetVertex(tm);
-	vec3 vtr = GetVertex(tr);
-	vec3 vml = GetVertex(ml);
-	vec3 vmm = GetVertex(mm);
-	vec3 vmr = GetVertex(mr);
 	vec3 vbl = GetVertex(bl);
 	vec3 vbm = GetVertex(bm);
 	vec3 vbr = GetVertex(br);
+	vec3 vml = GetVertex(ml);
+	vec3 vmm = GetVertex(mm);
+	vec3 vmr = GetVertex(mr);
+	vec3 vtl = GetVertex(tl);
+	vec3 vtm = GetVertex(tm);
+	vec3 vtr = GetVertex(tr);
 
 	// make them vectors
-	vtl -= vmm;
-	vtm -= vmm;
-	vtr -= vmm;
-	vml -= vmm;
-	vmr -= vmm;
 	vbl -= vmm;
 	vbm -= vmm;
 	vbr -= vmm;
+	vml -= vmm;
+	vmr -= vmm;
+	vtl -= vmm;
+	vtm -= vmm;
+	vtr -= vmm;
 
 	vec3 normal = vec3(0);
 
