@@ -1,4 +1,3 @@
 ---@meta
 
----@class Spring
 Spring = {}
