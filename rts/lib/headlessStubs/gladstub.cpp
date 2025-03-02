@@ -108,6 +108,7 @@ decltype(glad_glBegin) glad_glBegin = nullptr;
 decltype(glad_glBeginConditionalRender) glad_glBeginConditionalRender = nullptr;
 decltype(glad_glBeginQuery) glad_glBeginQuery = nullptr;
 decltype(glad_glBindAttribLocation) glad_glBindAttribLocation = nullptr;
+decltype(glad_glBindFragDataLocation) glad_glBindFragDataLocation = nullptr;
 decltype(glad_glBindBuffer) glad_glBindBuffer = nullptr;
 decltype(glad_glBindBufferBase) glad_glBindBufferBase = nullptr;
 decltype(glad_glBindBufferRange) glad_glBindBufferRange = nullptr;
@@ -545,6 +546,7 @@ int gladLoadGL(void) {
     glad_glBeginConditionalRender = MakeStubImpl(glad_glBeginConditionalRender);
     glad_glBeginQuery = MakeStubImpl(glad_glBeginQuery);
     glad_glBindAttribLocation = MakeStubImpl(glad_glBindAttribLocation);
+    glad_glBindFragDataLocation = MakeStubImpl(glad_glBindFragDataLocation);
     glad_glBindBuffer = MakeStubImpl(glad_glBindBuffer);
     glad_glBindBufferBase = MakeStubImpl(glad_glBindBufferBase);
     glad_glBindBufferRange = MakeStubImpl(glad_glBindBufferRange);
