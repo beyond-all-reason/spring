@@ -137,6 +137,7 @@ namespace Shader {
 		bool LoadFromLua(const std::string& filename);
 
 		virtual void BindAttribLocation(const std::string& name, uint32_t index) {}
+		virtual void BindOutputLocation(const std::string& name, uint32_t index) {}
 		template<typename VAT>
 		void BindAttribLocations();
 
@@ -320,6 +321,7 @@ namespace Shader {
 		UniformStates uniformStates;
 		spring::unsynced_map<int, LuaMatTexture> luaTextures;
 		spring::unsynced_map<std::string, int> attribLocations;
+		spring::unsynced_map<std::string, int> outputLocations;
 	};
 
 
@@ -418,6 +420,7 @@ namespace Shader {
 		~GLSLProgramObject() override { Release(); }
 
 		void BindAttribLocation(const std::string& name, uint32_t index) override;
+		void BindOutputLocation(const std::string& name, uint32_t index) override;
 
 		void Enable() override;
 		void Disable() override { DisableRaw(); }

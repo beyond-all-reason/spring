@@ -173,9 +173,6 @@ public:
 	      uint8_t* GetTypeMapSynced()       { return &typeMap[0]; }
 	const float3* GetCenterNormals2DSynced()  const { return &centerNormals2D[0]; }
 
-	/// unsynced only
-	const float3* GetVisVertexNormalsUnsynced() const { return &visVertexNormals[0]; }
-
 	/// synced versions
 	const float* GetCornerHeightMapSynced() const { return sharedCornerHeightMaps[true]; }
 	const float3* GetFaceNormalsSynced()    const { return sharedFaceNormals[true]; }
@@ -271,7 +268,6 @@ protected:
 	 */
 	std::array<float*, numHeightMipMaps> mipPointerHeightMaps;
 
-	static std::vector<float3> visVertexNormals;      //< size:  (mapx + 1) * (mapy + 1), contains one vertex normal per corner-heightmap pixel [UNSYNCED]
 	static std::vector<float3> faceNormalsSynced;     //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [SYNCED]
 	static std::vector<float3> faceNormalsUnsynced;   //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [UNSYNCED]
 	static std::vector<float3> centerNormalsSynced;   //< size:   mapx      *  mapy     , contains 1 interpolated normal per quad, same as (facenormal0+facenormal1).Normalize()) [SYNCED]

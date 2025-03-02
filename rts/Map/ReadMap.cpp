@@ -117,7 +117,6 @@ std::vector<float> CReadMap::centerHeightMap;
 std::vector<float> CReadMap::maxHeightMap;
 std::array<std::vector<float>, CReadMap::numHeightMipMaps - 1> CReadMap::mipCenterHeightMaps;
 
-std::vector<float3> CReadMap::visVertexNormals;
 std::vector<float3> CReadMap::faceNormalsSynced;
 std::vector<float3> CReadMap::faceNormalsUnsynced;
 std::vector<float3> CReadMap::centerNormalsSynced;
@@ -376,9 +375,6 @@ void CReadMap::Initialize()
 	// by default, all squares are set to terrain-type 0
 	typeMap.clear();
 	typeMap.resize(mapDims.hmapx * mapDims.hmapy, 0);
-
-	visVertexNormals.clear();
-	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
 
 	assert(heightMapSyncedPtr != nullptr);
 	assert(heightMapUnsyncedPtr != nullptr);

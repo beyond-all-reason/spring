@@ -129,7 +129,7 @@ void GetWaterHeight(out float waterdepth, out float invwaterdepth, out float out
 	coastdist = coast.rg;
 	invwaterdepth = coast.b;
 #else
-	invwaterdepth = texture2D(heightmap, texCoords[5].st).a; // heightmap in alpha channel
+	invwaterdepth = texture2D(heightmap, texCoords[0].st).a; // heightmap in alpha channel
 #endif
 
 #ifdef opt_endlessocean

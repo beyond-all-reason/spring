@@ -167,11 +167,9 @@ private:
 	void CreateShadingGL();
 
 	void UpdateCornerHeightMapUnsynced(const SRectangle& update);
-	void UpdateVertexNormalsUnsynced(const SRectangle& update);
 	void UpdateHeightBoundsUnsynced(const SRectangle& update);
 	void UpdateFaceNormalsUnsynced(const SRectangle& update);
-	void UpdateNormalTexture(const SRectangle& update);
-	void UpdateShadingTexture(const SRectangle& update);
+	void UpdateVisNormalsAndShadingTexture(const SRectangle& update);
 
 	void ParseSMD(std::string filename);
 

@@ -447,14 +447,17 @@ namespace Shader {
 	/*****************************************************************/
 
 	GLSLProgramObject::GLSLProgramObject(const std::string& poName): IProgramObject(poName), curSrcHash(0) {
-		RECOIL_DETAILED_TRACY_ZONE;
 		objID = glCreateProgram();
 	}
 
 	void GLSLProgramObject::BindAttribLocation(const std::string& name, uint32_t index)
 	{
-		RECOIL_DETAILED_TRACY_ZONE;
 		attribLocations[name] = index;
+	}
+
+	void GLSLProgramObject::BindOutputLocation(const std::string& name, uint32_t index)
+	{
+		outputLocations[name] = index;
 	}
 
 	void GLSLProgramObject::Enable() {
@@ -653,6 +656,10 @@ namespace Shader {
 
 			for (const auto& [name, index] : attribLocations) {
 				glBindAttribLocation(objID, index, name.c_str());
+			}
+
+			for (const auto& [name, index] : outputLocations) {
+				glBindFragDataLocation(objID, index, name.c_str());
 			}
 
 			glLinkProgram(objID);

@@ -383,7 +383,7 @@ void main() {
 		}
 		#else // SMF_ADV_SHADING
 		{
-			fragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * texture2D(shadingTex, infoTexCoords).rgb;
+			fragColor.rgb = (diffuseCol.rgb + detailCol.rgb) * texture2D(shadingTex, specularTexGen).rgb;
 			fragColor.a = diffuseCol.a;
 		}
 		#endif // SMF_ADV_SHADING

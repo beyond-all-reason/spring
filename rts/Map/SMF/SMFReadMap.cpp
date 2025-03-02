@@ -340,7 +340,8 @@ void CSMFReadMap::CreateDetailTex()
 void CSMFReadMap::CreateShadingTex()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	shadingTex.SetRawSize(int2(mapDims.pwr2mapx, mapDims.pwr2mapy));
+	// +1 to accomodate two FBO attachments of same size, not fully correct
+	shadingTex.SetRawSize(int2(mapDims.mapxp1, mapDims.mapyp1));
 
 	// the shading/normal texture buffers must have PO2 dimensions
 	// (excess elements that no vertices map into are left unused)
@@ -351,10 +352,13 @@ void CSMFReadMap::CreateShadingTex()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
 	if (texAnisotropyLevels[false] != 0.0f)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, texAnisotropyLevels[false]);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mapDims.pwr2mapx, mapDims.pwr2mapy, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, shadingTex.GetSize().x, shadingTex.GetSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 }
 
 
@@ -382,6 +386,9 @@ void CSMFReadMap::CreateShadingGL()
 
 	shadingFBO->Bind();
 	shadingFBO->AttachTexture(shadingTex.GetID(), GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0, 0);
+	shadingFBO->AttachTexture(normalsTex.GetID(), GL_TEXTURE_2D, GL_COLOR_ATTACHMENT1, 0);
+	constexpr GLenum DRAW_BUFFERS[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, DRAW_BUFFERS);
 	shadingFBO->CheckStatus("SMF-SHADING");
 	shadingFBO->Unbind();
 
@@ -389,15 +396,17 @@ void CSMFReadMap::CreateShadingGL()
 	shadingShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFShadingTextureVertProg.glsl", "", GL_VERTEX_SHADER));
 	shadingShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFShadingTextureFragProg.glsl", "", GL_FRAGMENT_SHADER));
 	shadingShader->BindAttribLocations<VA_TYPE_2D0>();
+	shadingShader->BindOutputLocation("shadingVal", 0);
+	shadingShader->BindOutputLocation("normalXZ", 1);
 	shadingShader->Link();
 
 	shadingShader->Enable();
-	shadingShader->SetUniform("mapSize",
-		static_cast<float>(mapDims.mapx), static_cast<float>(mapDims.mapy),
-		           1.0f / (mapDims.mapx),            1.0f / (mapDims.mapy)
+	shadingShader->SetUniform("mapSizeP1",
+		static_cast<float>(mapDims.mapxp1), static_cast<float>(mapDims.mapyp1),
+		           1.0f / (mapDims.mapxp1),            1.0f / (mapDims.mapyp1)
 	);
-	shadingShader->SetUniform("normalsTex", 0);
-	shadingShader->SetUniform("heightMapTex", 1);
+
+	shadingShader->SetUniform("heightMapTex", 0);
 	shadingShader->SetUniform4v("groundAmbientColor", &sunLighting->groundAmbientColor.x);
 	shadingShader->SetUniform4v("groundDiffuseColor", &sunLighting->groundDiffuseColor.x);
 	shadingShader->SetUniform("lightDir", 0.0f, 0.0f, 0.0f, 0.0f); // envParams.sun.dir is not yet available
@@ -414,12 +423,9 @@ void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateCornerHeightMapUnsynced(update);
-	UpdateVertexNormalsUnsynced(update);
 	UpdateHeightBoundsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
-	UpdateNormalTexture(update);
-	assert(shadingFBO->IsValid() && shadingShader->IsValid());
-	UpdateShadingTexture(update);
+	UpdateVisNormalsAndShadingTexture(update);
 }
 
 void CSMFReadMap::UpdateHeightMapUnsyncedPost()
@@ -446,86 +452,6 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 			unsyncedHeightInfo[pz * numBigTexX + px].z /= Square(bigSquareSize + 1);
 		}
 	}
-}
-
-
-void CSMFReadMap::UpdateVertexNormalsUnsynced(const SRectangle& update)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-
-	const auto& shm = cornerHeightMapUnsynced;
-	auto& vvn = visVertexNormals;
-
-	const int W = mapDims.mapxp1;
-	const int H = mapDims.mapyp1;
-
-	constexpr int SS = SQUARE_SIZE;
-
-	// a heightmap update over (x1, y1) - (x2, y2) implies the
-	// normals change over (x1 - 1, y1 - 1) - (x2 + 1, y2 + 1)
-
-	const int minx = std::max(update.x1 - 1,     0);
-	const int minz = std::max(update.y1 - 1,     0);
-	const int maxx = std::min(update.x2 + 1, W - 1);
-	const int maxz = std::min(update.y2 + 1, H - 1);
-
-	for_mt(minz, maxz + 1, [&](const int z) {
-		for (int x = minx; x <= maxx; x++) {
-			const int vIdxTL = (z    ) * W + x;
-
-			const int xOffL = (x >     0)? 1: 0;
-			const int xOffR = (x < W - 1)? 1: 0;
-			const int zOffT = (z >     0)? 1: 0;
-			const int zOffB = (z < H - 1)? 1: 0;
-
-			const float sxm1 = (x - 1) * SS;
-			const float sx   =       x * SS;
-			const float sxp1 = (x + 1) * SS;
-
-			const float szm1 = (z - 1) * SS;
-			const float sz   =       z * SS;
-			const float szp1 = (z + 1) * SS;
-
-			const int shxm1 = x - xOffL;
-			const int shx   = x;
-			const int shxp1 = x + xOffR;
-
-			const int shzm1 = (z - zOffT) * W;
-			const int shz   =           z * W;
-			const int shzp1 = (z + zOffB) * W;
-
-			// pretend there are 8 incident triangle faces per vertex
-			// for each these triangles, calculate the surface normal,
-			// then average the 8 normals (this stays closest to the
-			// heightmap data)
-			// if edge vertex, don't add virtual neighbor normals to vn
-			const float3 vmm = float3(sx  ,  shm[shz   + shx  ],  sz  );
-
-			const float3 vtl = float3(sxm1,  shm[shzm1 + shxm1],  szm1) - vmm;
-			const float3 vtm = float3(sx  ,  shm[shzm1 + shx  ],  szm1) - vmm;
-			const float3 vtr = float3(sxp1,  shm[shzm1 + shxp1],  szm1) - vmm;
-
-			const float3 vml = float3(sxm1,  shm[shz   + shxm1],  sz  ) - vmm;
-			const float3 vmr = float3(sxp1,  shm[shz   + shxp1],  sz  ) - vmm;
-
-			const float3 vbl = float3(sxm1,  shm[shzp1 + shxm1],  szp1) - vmm;
-			const float3 vbm = float3(sx  ,  shm[shzp1 + shx  ],  szp1) - vmm;
-			const float3 vbr = float3(sxp1,  shm[shzp1 + shxp1],  szp1) - vmm;
-
-			float3 vn(0.0f, 0.0f, 0.0f);
-			vn += vtm.cross(vtl) * (zOffT & xOffL); assert(vtm.cross(vtl).y >= 0.0f);
-			vn += vtr.cross(vtm) * (zOffT        ); assert(vtr.cross(vtm).y >= 0.0f);
-			vn += vmr.cross(vtr) * (zOffT & xOffR); assert(vmr.cross(vtr).y >= 0.0f);
-			vn += vbr.cross(vmr) * (        xOffR); assert(vbr.cross(vmr).y >= 0.0f);
-			vn += vtl.cross(vml) * (        xOffL); assert(vtl.cross(vml).y >= 0.0f);
-			vn += vbm.cross(vbr) * (zOffB & xOffR); assert(vbm.cross(vbr).y >= 0.0f);
-			vn += vbl.cross(vbm) * (zOffB        ); assert(vbl.cross(vbm).y >= 0.0f);
-			vn += vml.cross(vbl) * (zOffB & xOffL); assert(vml.cross(vbl).y >= 0.0f);
-
-			// update the visible vertex/face height/normal
-			vvn[vIdxTL] = vn.ANormalize();
-		}
-	});
 }
 
 void CSMFReadMap::UpdateCornerHeightMapUnsynced(const SRectangle& update)
@@ -681,54 +607,18 @@ void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 	}
 }
 
-
-void CSMFReadMap::UpdateNormalTexture(const SRectangle& update)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	// texture space is [0 .. mapDims.mapx] x [0 .. mapDims.mapy] (NPOT; vertex-aligned)
-	float3* vvn = &visVertexNormals[0];
-
-	// a heightmap update over (x1, y1) - (x2, y2) implies the
-	// normals change over (x1 - 1, y1 - 1) - (x2 + 1, y2 + 1)
-	const int minx = std::max(update.x1 - 1,            0);
-	const int minz = std::max(update.y1 - 1,            0);
-	const int maxx = std::min(update.x2 + 1, mapDims.mapx);
-	const int maxz = std::min(update.y2 + 1, mapDims.mapy);
-
-	const int xsize = (maxx - minx) + 1;
-	const int zsize = (maxz - minz) + 1;
-
-	// Note, it doesn't make sense to use a PBO here.
-	// Cause the upstreamed float32s need to be transformed to float16s, which seems to happen on the CPU!
-
-	normalPixels.clear();
-	normalPixels.resize(xsize * zsize * 2, 0.0f);
-
-	for (int z = minz; z <= maxz; z++) {
-		for (int x = minx; x <= maxx; x++) {
-			const float3& vertNormal = vvn[z * mapDims.mapxp1 + x];
-
-			// note: y-coord is regenerated in the shader via "sqrt(1 - x*x - z*z)",
-			//   this gives us 2 solutions but we know that the y-coord always points
-			//   upwards, so we can reconstruct it in the shader.
-			normalPixels[((z - minz) * xsize + (x - minx)) * 2 + 0] = vertNormal.x;
-			normalPixels[((z - minz) * xsize + (x - minx)) * 2 + 1] = vertNormal.z;
-		}
-	}
-
-	glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());
-	glTexSubImage2D(GL_TEXTURE_2D, 0, minx, minz, xsize, zsize, GL_RG, GL_FLOAT, &normalPixels[0]);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
 void CSMFReadMap::UpdateShadingTexture()
 {
 	SRectangle update { 0, 0, mapDims.mapx, mapDims.mapy };
-	assert(shadingFBO->IsValid() && shadingShader->IsValid());
+	UpdateVisNormalsAndShadingTexture(update);
 }
 
-void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
+void CSMFReadMap::UpdateVisNormalsAndShadingTexture(const SRectangle& update)
 {
+	RECOIL_DETAILED_TRACY_ZONE;
+
+	assert(shadingFBO->IsValid() && shadingShader->IsValid());
+
 	using namespace GL::State;
 	auto state = GL::SubState(
 		DepthTest(GL_FALSE),
@@ -736,10 +626,10 @@ void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
 	);
 
 	// enlarge rect by 1pixel in all directions (cause we use center normals and not corner ones)
-	const int x1 = std::max(update.x1 - 1,            0);
-	const int y1 = std::max(update.y1 - 1,            0);
-	const int x2 = std::min(update.x2 + 1, mapDims.mapx);
-	const int y2 = std::min(update.y2 + 1, mapDims.mapy);
+	const int x1 = std::max(update.x1 - 1,              0);
+	const int y1 = std::max(update.y1 - 1,              0);
+	const int x2 = std::min(update.x2 + 1, mapDims.mapxp1);
+	const int y2 = std::min(update.y2 + 1, mapDims.mapyp1);
 
 	uint32_t unsyncedHeightTexID = 0;
 	{
@@ -777,12 +667,9 @@ void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
 	);
 
 	shadingFBO->Bind();
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	glViewport(0, 0, mapDims.mapx, mapDims.mapy);
+	glViewport(0, 0, mapDims.mapxp1, mapDims.mapyp1);
 
-	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, normalsTex.GetID());
-	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, unsyncedHeightTexID);
+	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, unsyncedHeightTexID);
 
 	shadingShader->Enable();
 
@@ -802,7 +689,6 @@ void CSMFReadMap::UpdateShadingTexture(const SRectangle& update)
 	globalRendering->LoadViewport();
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, 0);
 
 	glDeleteTextures(1, &unsyncedHeightTexID);
 }
