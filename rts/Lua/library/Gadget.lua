@@ -9,7 +9,9 @@
 ---
 ---**Attention:** To prevent complaints from Lua Language Server, e.g.
 ---
----> `Duplicate field `CommandNotify` (duplicate-set-field)`
+---> ```md
+---> Duplicate field `CommandNotify` (duplicate-set-field)
+---> ```
 ---
 ---Add this line at the top of your gadget script:
 ---
