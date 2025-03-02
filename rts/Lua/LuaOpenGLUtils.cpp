@@ -909,8 +909,9 @@ std::tuple<int, int, int> LuaMatTexture::GetSize() const
 			return ReturnHelper(shadowHandler.shadowMapSize);
 		} break;
 		case LUATEX_HEIGHTMAP: {
-			if (const auto& hmTex = readMap->GetHeightMapTextureObj(); hmTex.GetID())
-				return ReturnHelper(hmTex.GetSize().x, hmTex.GetSize().y);
+			if (readMap != nullptr)
+				if (const auto& hmTex = readMap->GetHeightMapTextureObj(); hmTex.GetID())
+					return ReturnHelper(hmTex.GetSize().x, hmTex.GetSize().y);
 		} break;
 
 
