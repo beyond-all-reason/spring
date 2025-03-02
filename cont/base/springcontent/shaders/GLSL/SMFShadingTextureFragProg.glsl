@@ -92,7 +92,6 @@ void main() {
 
 	vec3 terrainNormal = CalcFragmentNormal(mapUV);
 	normalXZ = vec2(terrainNormal.x, terrainNormal.z);
-	//normalXZ = vec2(0,0);
 
 	float posNdotL = max(dot(terrainNormal, lightDir.xyz), 0.0);
 
@@ -115,6 +114,4 @@ void main() {
 	} else {
 		shadingVal = vec4(lightVal, 1.0);
 	}
-	//shadingVal = height > 250.0 ? vec4(0, 1, 0, 1) : vec4(1, 0, 0, 1);
-	//shadingVal = vec4(vec3(terrainNormal.y > 0.0), 1.0);
 }
