@@ -1615,7 +1615,7 @@ void CLuaHandle::UnitLoaded(const CUnit* unit, const CUnit* transport)
 }
 
 
-/***Called when a unit is unloaded by a transport.
+/*** Called when a unit is unloaded by a transport.
  *
  * @function Callins:UnitUnloaded
  * @param unitID integer
