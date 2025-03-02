@@ -73,31 +73,34 @@ bool CLuaHandle::devMode = false;
 /***
  * @class Callins
  * 
- * Functions called by the Engine
+ * Functions called by the Engine.
  *
- * This page is future looking to unified widget/gadget (aka "addon") handler,
- * which may yet be some way off, c.f. the changelog.
- *
- * For now, to use these addons in a widget, prepend `widget:` and, for a gadget,
- * prepend `gadget:`. For example,
+ * To use these callins in a widget, prepend `widget:` and, for a gadget,
+ * prepend `gadget:`. For example:
  *
  * ```lua
  * function widget:UnitCreated(unitID, unitDefID, unitTeam, builderID)
- *   ...
+ *   -- ...
  * end
  * ```
  *
- * Some functions may differ between (synced) gadget and widgets; those are in
- * the [Synced - Unsynced Shared](#Synced___Unsynced_Shared) section.
- * Essentially the reason is that all information should be available to synced
- * (game logic controlling) gadgets, but restricted to unsynced gadget/widget
- * (e.g. information about an enemy unit only detected via radar and not yet in
- * LOS). In such cases the full (synced) param list is documented.
- *
- * Attention: some callins will only work on the unsynced portion of the gadget.
+ * Some functions may differ between (synced) gadget and widgets. This is
+ * because all information should be available to synced (game logic
+ * controlling) gadgets, but restricted to unsynced gadget/widget. e.g.
+ * information about an enemy unit only detected via radar and not yet in LOS.
+ * 
+ * In such cases the full (synced) param list is documented.
+ * 
+ * **Attention:** Some callins will only work on the unsynced portion of the gadget.
  * Due to the type-unsafe nature of lua parsing, those callins not firing up
- * might be hard to trace. This document will be continuously updated to
- * properly alert about those situations.
+ * might be hard to trace.
+ * 
+ * @see Gadget
+ * @see Widget
+ * @see Menu
+ * @see Intro
+ * @see SyncedCallins
+ * @see UnsyncedCallins
  */
 
 void CLuaHandle::PushTracebackFuncToRegistry(lua_State* L)
