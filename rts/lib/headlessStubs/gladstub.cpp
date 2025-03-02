@@ -291,6 +291,7 @@ decltype(glad_glMaterialf) glad_glMaterialf = nullptr;
 decltype(glad_glMaterialfv) glad_glMaterialfv = nullptr;
 decltype(glad_glMatrixMode) glad_glMatrixMode = nullptr;
 decltype(glad_glMemoryBarrier) glad_glMemoryBarrier = nullptr;
+decltype(glad_glMinSampleShading) glad_glMinSampleShading = nullptr;
 decltype(glad_glMultMatrixd) glad_glMultMatrixd = nullptr;
 decltype(glad_glMultMatrixf) glad_glMultMatrixf = nullptr;
 decltype(glad_glMultiDrawElementsIndirect) glad_glMultiDrawElementsIndirect = nullptr;
@@ -727,6 +728,7 @@ int gladLoadGL(void) {
     glad_glMaterialfv = MakeStubImpl(glad_glMaterialfv);
     glad_glMatrixMode = MakeStubImpl(glad_glMatrixMode);
     glad_glMemoryBarrier = MakeStubImpl(glad_glMemoryBarrier);
+    glad_glMinSampleShading = MakeStubImpl(glad_glMinSampleShading);
     glad_glMultMatrixd = MakeStubImpl(glad_glMultMatrixd);
     glad_glMultMatrixf = MakeStubImpl(glad_glMultMatrixf);
     glad_glMultiDrawElementsIndirect = MakeStubImpl(glad_glMultiDrawElementsIndirect);
