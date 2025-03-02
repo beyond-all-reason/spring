@@ -2,7 +2,6 @@
 
 #include "Height.h"
 #include "Map/HeightLinePalette.h"
-#include "Map/HeightMapTexture.h"
 #include "Map/ReadMap.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Shaders/ShaderHandler.h"
@@ -146,7 +145,9 @@ void CHeightTexture::Update()
 	RECOIL_DETAILED_TRACY_ZONE;
 	needUpdate = false;
 
-	if (!fbo.IsValid() || !shader->IsValid() || (heightMapTexture->GetTextureID() == 0))
+	const auto hmTexID = readMap->GetHeightMapTexture();
+
+	if (!fbo.IsValid() || !shader->IsValid() || (hmTexID == 0))
 		return UpdateCPU();
 
 	fbo.Bind();
@@ -157,7 +158,7 @@ void CHeightTexture::Update()
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, paletteTex);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
+	glBindTexture(GL_TEXTURE_2D, hmTexID);
 	glBegin(GL_QUADS);
 		glVertex2f(0.f, 0.f);
 		glVertex2f(0.f, 1.f);

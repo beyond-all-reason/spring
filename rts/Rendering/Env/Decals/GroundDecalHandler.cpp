@@ -16,7 +16,6 @@
 #include "Map/ReadMap.h"
 #include "Map/SMF/SMFReadMap.h"
 #include "Map/SMF/SMFGroundDrawer.h"
-#include "Map/HeightMapTexture.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Units/UnitDrawer.h"
@@ -493,7 +492,7 @@ void CGroundDecalHandler::BindCommonTextures()
 	glBindTexture(GL_TEXTURE_2D, smfMap->GetMiniMapTexture());
 
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
+	glBindTexture(GL_TEXTURE_2D, smfMap->GetHeightMapTexture());
 
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GetDepthBufferTextureTarget(), depthBufferCopy->GetDepthBufferTexture(highQuality));

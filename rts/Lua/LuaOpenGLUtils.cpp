@@ -9,7 +9,6 @@
 #include "LuaAtlasTextures.h"
 #include "Game/Camera.h"
 #include "Map/BaseGroundDrawer.h"
-#include "Map/HeightMapTexture.h"
 #include "Map/ReadMap.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GlobalRendering.h"
@@ -450,7 +449,7 @@ bool LuaOpenGLUtils::ParseTextureImage(lua_State* L, LuaMatTexture& texUnit, con
 				} break;
 
 				case LuaMatTexture::LUATEX_HEIGHTMAP: {
-					if (heightMapTexture->GetTextureID() == 0) {
+					if (readMap->GetHeightMapTexture()) {
 						// optional, return false when not available
 						return false;
 					}
@@ -562,8 +561,8 @@ GLuint LuaMatTexture::GetTextureID() const
 			texID = shadowHandler.GetColorTextureID();
 		} break;
 		case LUATEX_HEIGHTMAP: {
-			if (heightMapTexture != nullptr)
-				texID = heightMapTexture->GetTextureID();
+			if (auto hmTexID = readMap->GetHeightMapTexture())
+				texID = hmTexID;
 		} break;
 
 
@@ -910,8 +909,8 @@ std::tuple<int, int, int> LuaMatTexture::GetSize() const
 			return ReturnHelper(shadowHandler.shadowMapSize);
 		} break;
 		case LUATEX_HEIGHTMAP: {
-			if (heightMapTexture != nullptr)
-				return ReturnHelper(heightMapTexture->GetSizeX(), heightMapTexture->GetSizeY());
+			if (const auto& hmTex = readMap->GetHeightMapTextureObj(); hmTex.GetID())
+				return ReturnHelper(hmTex.GetSize().x, hmTex.GetSize().y);
 		} break;
 
 

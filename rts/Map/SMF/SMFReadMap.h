@@ -43,8 +43,8 @@ public:
 	bool SetLuaTexture(const MapTextureData& td) override;
 
 public:
-	unsigned int GetTexture(unsigned int type, unsigned int num = 0) const override {
-		unsigned int texID = 0;
+	uint32_t GetTexture(uint32_t type, uint32_t num = 0) const override {
+		uint32_t texID = 0;
 
 		switch (type) {
 			case MAP_BASE_GRASS_TEX: { texID = GetGrassShadingTexture(); } break;
@@ -70,7 +70,7 @@ public:
 		return texID;
 	}
 
-	int2 GetTextureSize(unsigned int type, unsigned int num = 0) const override {
+	int2 GetTextureSize(uint32_t type, uint32_t num = 0) const override {
 		int2 size;
 
 		// TODO:
@@ -101,24 +101,25 @@ public:
 	}
 
 public:
-	unsigned int GetGrassShadingTexture() const override { return grassShadingTex.GetID(); }
-	unsigned int GetMiniMapTexture() const override { return minimapTex.GetID(); }
-	unsigned int GetDetailTexture() const { return detailTex.GetID(); }
-	unsigned int GetShadingTexture() const override { return shadingTex.GetID(); }
-	unsigned int GetNormalsTexture() const  { return normalsTex.GetID(); }
+	uint32_t GetGrassShadingTexture() const override { return grassShadingTex.GetID(); }
+	uint32_t GetMiniMapTexture() const override { return minimapTex.GetID(); }
+	uint32_t GetDetailTexture() const { return detailTex.GetID(); }
+	uint32_t GetShadingTexture() const override { return shadingTex.GetID(); }
+	uint32_t GetHeightMapTexture() const override { return heightMapTexture.GetID(); }
+	uint32_t GetNormalsTexture() const  { return normalsTex.GetID(); }
 
+	uint32_t GetSpecularTexture() const { return specularTex.GetID(); }
+	uint32_t GetBlendNormalsTexture() const { return blendNormalsTex.GetID(); }
 
-	unsigned int GetSpecularTexture() const { return specularTex.GetID(); }
-	unsigned int GetBlendNormalsTexture() const { return blendNormalsTex.GetID(); }
+	uint32_t GetSplatDistrTexture() const { return splatDistrTex.GetID(); }
+	uint32_t GetSplatDetailTexture() const { return splatDetailTex.GetID(); }
+	uint32_t GetSplatNormalTexture(int i) const { return splatNormalTextures[i].GetID(); }
 
-	unsigned int GetSplatDistrTexture() const { return splatDistrTex.GetID(); }
-	unsigned int GetSplatDetailTexture() const { return splatDetailTex.GetID(); }
-	unsigned int GetSplatNormalTexture(int i) const { return splatNormalTextures[i].GetID(); }
+	uint32_t GetSkyReflectModTexture() const { return skyReflectModTex.GetID(); }
+	uint32_t GetLightEmissionTexture() const { return lightEmissionTex.GetID(); }
+	uint32_t GetParallaxHeightTexture() const { return parallaxHeightTex.GetID(); }
 
-	unsigned int GetSkyReflectModTexture() const { return skyReflectModTex.GetID(); }
-	unsigned int GetLightEmissionTexture() const { return lightEmissionTex.GetID(); }
-	unsigned int GetParallaxHeightTexture() const { return parallaxHeightTex.GetID(); }
-
+	const MapTexture& GetHeightMapTextureObj() const override { return heightMapTexture; }
 public:
 	void BindMiniMapTextures() const override;
 	void GridVisibility(CCamera* cam, IQuadDrawer* cb, float maxDist, int quadSize, int extraSize = 0) override;

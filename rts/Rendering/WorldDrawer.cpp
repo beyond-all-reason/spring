@@ -36,7 +36,6 @@
 #include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Map/BaseGroundDrawer.h"
-#include "Map/HeightMapTexture.h"
 #include "Map/ReadMap.h"
 #include "Game/Camera.h"
 #include "Game/SelectedUnitsHandler.h"
@@ -128,9 +127,6 @@ void CWorldDrawer::InitPost() const
 		pathDrawer = IPathDrawer::GetInstance();
 	}
 	{
-		heightMapTexture = new HeightMapTexture();
-	}
-	{
 		DepthBufferCopy::Init();
 	}
 	{
@@ -191,8 +187,6 @@ void CWorldDrawer::Kill()
 
 	S3DModelVAO::Kill();
 	modelLoader.Kill();
-
-	spring::SafeDelete(heightMapTexture);
 
 	textureHandler3DO.Kill();
 	textureHandlerS3O.Kill();
