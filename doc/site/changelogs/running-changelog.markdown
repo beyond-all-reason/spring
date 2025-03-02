@@ -100,7 +100,7 @@ LDoc has been replaced by [Lua Language Server](https://luals.github.io/) compat
 
 Type definitions can be found in the [Lua library repo](https://github.com/beyond-all-reason/recoil-lua-library). This is intended to be included as a submodule in projects that use the engine.
 
-[Lua API docs]({{ site.baseurl }}{% link lua-api.md %}) are now generated from LLS definitions instead of LDoc. This has caused a regression in docs quality, with all docs on a single page and some docs missing information. Improvements to the docs are being considered.
+[Lua API docs]({{ site.baseurl }}{% link lua-api/docs/index.md %}) are now generated from LLS definitions instead of LDoc. This has caused a regression in docs quality, with all docs on a single page and some docs missing information. Improvements to the docs are being considered.
 
 For more information see the [Lua Language Server guide]({{ site.baseurl }}{% link guides/lua-language-server.markdown %}).
 
