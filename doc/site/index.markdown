@@ -85,5 +85,5 @@ owners of this repository before making a change.
 [105 tree]: https://github.com/spring/spring/releases/tag/105.0.1
 [Discord server]: https://discord.gg/GUpRg6Wz3e
 [Spring Wiki]: https://springrts.com/wiki/Main_Page
-[Recoil Lua API]: {{site.baseurl}}{% link lua-api.md %}
+[Recoil Lua API]: {{site.baseurl}}{% link lua-api/docs/index.md %}
 [Recoil Github Wiki]: {{site.gh_edit_repository}}/issues

@@ -414,10 +414,6 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 /******************************************************************************/
 
 /***
- * @table gl
- */
-
-/***
  * attachment ::= luaTex or `RBO.rbo` or nil or { luaTex [, num target [, num level ] ] }
  * @class attachment
  */

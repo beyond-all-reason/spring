@@ -65,6 +65,11 @@ DECL_FREE_HANDLER(CLuaUI, luaUI)
 
 /******************************************************************************/
 
+/***
+ * @class UI : Callins
+ * @see Callins
+ */
+
 CLuaUI::CLuaUI()
 : CLuaHandle("LuaUI", LUA_HANDLE_ORDER_UI, true, false)
 {
@@ -278,7 +283,7 @@ bool CLuaUI::LoadCFunctions(lua_State* L)
 /******************************************************************************/
 
 /***
- * @function ConfigureLayout
+ * @function UI:ConfigureLayout
  */
 bool CLuaUI::ConfigureLayout(const string& command)
 {

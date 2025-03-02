@@ -14,12 +14,6 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install --fix-missing -y jq p7zip-full libsdl2-2.0-0 libopenal1
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-      - name: Install Lua Language Server
-        run: |
-          brew install lua-language-server
       - name: Checkout Source Repository
         uses: actions/checkout@v2
       - name: Generate Dynamic Content
@@ -34,18 +28,21 @@ jobs:
           lua-doc-extractor rts/Lua/*.cpp \
             --dest rts/Lua/library/generated \
             --repo https://github.com/${{ github.repository }}/blob/${{ github.sha }}
-      # NOTE: Running LLS 3.13.4 from a subdirectory with a relative path seems
-      # to cause duplicate class fields to be generated. Presumably a bug in
-      # LLS.
-      - name: Export Lua data using Lua Language Server
+      - name: Install emmylua_doc_cli
         run: |
-          lua-language-server --doc rts/Lua/library --doc_out_path doc/site/_data
-          git add -f doc/site/_data
+          cargo install emmylua_doc_cli
+      - name: Generate docs using emmylua_doc_cli
+        run: |
+          emmylua_doc_cli \
+            -i rts/Lua/library \
+            -o doc/site/lua-api \
+            --override-template doc/emmlua-doc-cli-template
+          git add -f doc/site/lua-api
       - name: Commit changes
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          git commit -m "Update doc/site"
+          git commit -m "Update doc/site/lua-api"
       - name: Check if gh-pages exists
         id: check-ghpages
         run: |
