@@ -449,7 +449,7 @@ bool LuaOpenGLUtils::ParseTextureImage(lua_State* L, LuaMatTexture& texUnit, con
 				} break;
 
 				case LuaMatTexture::LUATEX_HEIGHTMAP: {
-					if (readMap->GetHeightMapTexture()) {
+					if (readMap->GetHeightMapTexture() == 0) {
 						// optional, return false when not available
 						return false;
 					}
