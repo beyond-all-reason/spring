@@ -9,8 +9,6 @@
 // https://github.com/g-truc/glm/blob/master/glm/ext/quaternion_common.inl
 // Also nice source https://www.shadertoy.com/view/fdtfWM
 
-#define QUATERNION_EULER_DEBUG
-
 CR_BIND(CQuaternion, )
 CR_REG_METADATA(CQuaternion, (
 	CR_MEMBER(x),
@@ -40,19 +38,7 @@ CQuaternion CQuaternion::FromEulerPYR(const float3& angles)
 		cp * cy * sr + cr * sp * sy,
 		cp * cr * cy - sp * sr * sy
 	};
-#ifdef QUATERNION_EULER_DEBUG
-	static constexpr auto pAxis = float3(1, 0, 0);
-	static constexpr auto yAxis = float3(0, 1, 0);
-	static constexpr auto rAxis = float3(0, 0, 1);
-	auto pyrQ2 = CQuaternion::MakeFrom(angles[CMatrix44f::ANGLE_P], pAxis) * CQuaternion::MakeFrom(angles[CMatrix44f::ANGLE_Y], yAxis) * CQuaternion::MakeFrom(angles[CMatrix44f::ANGLE_R], rAxis);
 
-	CMatrix44f m; m.RotateEulerXYZ(-angles);
-	CQuaternion pyrQ3;
-	std::tie(std::ignore, pyrQ3, std::ignore) = DecomposeIntoTRS(m);
-
-	assert(pyrQ.equals(pyrQ2));
-	assert(pyrQ.equals(pyrQ3));
-#endif
 	return AssertNormalized(pyrQ);
 }
 
@@ -72,25 +58,55 @@ CQuaternion CQuaternion::FromEulerYPR(const float3& angles)
 	const float cr = math::cos(angles[CMatrix44f::ANGLE_R] * 0.5f);
 
 	CQuaternion yprQ{
-		cr* cy* sp + cp * sr * sy,
-		cp* cr* sy - cy * sp * sr,
-		cp* cy* sr - cr * sp * sy,
-		cp* cr* cy + sp * sr * sy
+		cr * cy * sp + cp * sr * sy,
+		cp * cr * sy - cy * sp * sr,
+		cp * cy * sr - cr * sp * sy,
+		cp * cr * cy + sp * sr * sy
 	};
-#ifdef QUATERNION_EULER_DEBUG
-	static constexpr auto pAxis = float3(1, 0, 0);
-	static constexpr auto yAxis = float3(0, 1, 0);
-	static constexpr auto rAxis = float3(0, 0, 1);
-	auto yprQ2 = CQuaternion::MakeFrom(angles[CMatrix44f::ANGLE_Y], yAxis) * CQuaternion::MakeFrom(angles[CMatrix44f::ANGLE_P], pAxis) * CQuaternion::MakeFrom(angles[CMatrix44f::ANGLE_R], rAxis);
 
-	CMatrix44f m; m.RotateEulerYXZ(-angles);
-	CQuaternion yprQ3;
-	std::tie(std::ignore, yprQ3, std::ignore) = DecomposeIntoTRS(m);
-
-	assert(yprQ.equals(yprQ2));
-	assert(yprQ2.equals(yprQ3));
-#endif
 	return AssertNormalized(yprQ);
+}
+
+/// <summary>
+/// Return YPR Euler angles, so that
+/// CMatrix44f::RotateEulerYXZ(-ang) == CQuaternion::ToRotMatrix()
+/// Note that for m = CMatrix44f::RotateEulerYXZ(-in), out = m.CQuaternion::ToEulerYPR()
+/// `in` may not be equal to `out`, but they still produce the same matrix
+/// </summary>
+float3 CQuaternion::ToEulerYPR() const
+{
+	float r11 =  2.0f * (x * z + r * y);
+	float r12 =  r * r - x * x - y * y + z * z;
+	float r21 = -2.0f * (y * z - r * x);
+	float r31 =  2.0f * (x * y + r * z);
+	float r32 =  r * r - x * x + y * y - z * z;
+
+	return {
+		math::asin(std::clamp(r21, -1.0f, 1.0f)), // CMatrix44f::ANGLE_P
+		math::atan2(r11, r12),                    // CMatrix44f::ANGLE_Y
+		math::atan2(r31, r32)                     // CMatrix44f::ANGLE_R
+	};
+}
+
+/// <summary>
+/// Return PYR Euler angles, so that
+/// CMatrix44f::RotateEulerXYZ(-ang) == CQuaternion::ToRotMatrix()
+/// Note that for m = CMatrix44f::RotateEulerXYZ(-in), out = m.CQuaternion::ToEulerPYR()
+/// `in` may not be equal to `out`, but they still produce the same matrix
+/// </summary>
+float3 CQuaternion::ToEulerPYR() const
+{
+	float r11 = -2.0f * (y * z - r * x);
+	float r12 =  r * r - x * x - y * y + z * z;
+	float r21 =  2.0f * (x * z + r * y);
+	float r31 = -2.0f * (x * y - r * z);
+	float r32 =  r * r + x * x - y * y - z * z;
+
+	return {
+		math::atan2(r11, r12),                    // CMatrix44f::ANGLE_P
+		math::asin(std::clamp(r21, -1.0f, 1.0f)), // CMatrix44f::ANGLE_Y
+		math::atan2(r31, r32)                     // CMatrix44f::ANGLE_R
+	};
 }
 
 /// <summary>
@@ -144,9 +160,21 @@ CQuaternion CQuaternion::MakeFrom(const float3& v1, const float3& v2)
 	}
 	else {
 		const auto cp = v1.cross(v2);
-		return CQuaternion(cp, 1.0f + dp).Normalize();
+		return CQuaternion(cp, 1.0f + dp).ANormalize();
 	}
 #endif
+}
+
+/// <summary>
+/// Quaternion to rotate from the default FwdDir(0,0,1) to newFwdDir
+/// Expects newFwdDir to be already normalized
+/// </summary>
+CQuaternion CQuaternion::MakeFrom(const float3& newFwdDir)
+{
+	assert(newFwdDir.Normalized());
+
+	// same as CQuaternion::MakeFrom(const float3& v1, const float3& v2) for v1 = (0,0,1)
+	return CQuaternion{ -newFwdDir.y, newFwdDir.x, 0.0f, 1.0f + newFwdDir.z } * (math::HALFSQRT2 * math::isqrt(1.0f + newFwdDir.z));
 }
 
 /// <summary>
@@ -209,45 +237,6 @@ const CQuaternion& CQuaternion::AssertNormalized(const CQuaternion& q)
 	return q;
 }
 
-/// <summary>
-/// Decompose a transformation matrix into translate, rotation (Quaternion), scale components
-/// </summary>
-std::tuple<float3, CQuaternion, float3>  CQuaternion::DecomposeIntoTRS(const CMatrix44f& mat)
-{
-	CMatrix44f tmpMat = mat;
-	float4& t0 = tmpMat.col[0];
-	float4& t1 = tmpMat.col[1];
-	float4& t2 = tmpMat.col[2];
-
-	const float4& c0 = mat.col[0];
-	const float4& c1 = mat.col[1];
-	const float4& c2 = mat.col[2];
-
-	const float d = tmpMat.Det3();
-	const float s = Sign(d);
-
-	float3 scaling {s * c0.Length(), c1.Length(), c2.Length()};
-
-	assert(
-		!epscmp(scaling[0], 0.0f, float3::cmp_eps()) &&
-		!epscmp(scaling[1], 0.0f, float3::cmp_eps()) &&
-		!epscmp(scaling[2], 0.0f, float3::cmp_eps())
-	);
-
-	t0 /= scaling[0];
-	t1 /= scaling[1];
-	t2 /= scaling[2];
-
-	assert(tmpMat.IsRotOrRotTranMatrix());
-
-	return std::make_tuple(
-		float3(mat.col[3]),             //translate
-		CQuaternion::MakeFrom(tmpMat),  //rotate (quat)
-		scaling                         //scale
-	);
-}
-
-
 bool CQuaternion::Normalized() const
 {
 	return math::fabs(1.0f - (r * r + x * x + y * y + z * z)) <= float3::cmp_eps();
@@ -280,6 +269,7 @@ CQuaternion& CQuaternion::ANormalize()
 /// </summary>
 float4 CQuaternion::ToAxisAndAngle() const
 {
+	assert(Normalized());
 	return float4(
 		float3(x, y, z) * InvSqrt(std::max(0.0f, 1.0f - r * r)),
 		2.0f * math::acos(std::clamp(r, -1.0f, 1.0f))
@@ -301,21 +291,12 @@ CMatrix44f CQuaternion::ToRotMatrix() const
 	const float qry = r * y;
 	const float qrz = r * z;
 
-#if 0
-	return CMatrix44f(
-		1.0f - 2.0f * (qyy + qzz), 2.0f * (qxy - qrz)       , 2.0f * (qxz + qry)       , 0.0f,
-		2.0f * (qxy + qrz)       , 1.0f - 2.0f * (qxx + qzz), 2.0f * (qyz - qrx)       , 0.0f,
-		2.0f * (qxz - qry)       , 2.0f * (qyz + qrx)       , 1.0f - 2.0f * (qxx + qyy), 0.0f,
-		0.0f                     , 0.0f                     , 0.0f                     , 1.0f
-	);
-#else
 	return CMatrix44f(
 		1.0f - 2.0f * (qyy + qzz), 2.0f * (qxy + qrz)       , 2.0f * (qxz - qry)       , 0.0f,
 		2.0f * (qxy - qrz)       , 1.0f - 2.0f * (qxx + qzz), 2.0f * (qyz + qrx)       , 0.0f,
 		2.0f * (qxz + qry)       , 2.0f * (qyz - qrx)       , 1.0f - 2.0f * (qxx + qyy), 0.0f,
 		0.0f                     , 0.0f                     , 0.0f                     , 1.0f
 	);
-#endif
 }
 
 float3 CQuaternion::Rotate(const float3& v) const
@@ -334,7 +315,7 @@ float3 CQuaternion::Rotate(const float3& v) const
 
 float4 CQuaternion::Rotate(const float4& v) const
 {
-	return float4{ Rotate(static_cast<float3>(v)), v.w };
+	return float4{ Rotate(float3(v.xyz)), v.w };
 }
 
 bool CQuaternion::equals(const CQuaternion& rhs) const
@@ -368,7 +349,20 @@ CQuaternion& CQuaternion::InverseInPlace()
 
 	*this = Conjugate() / sqn; // aparently not math::sqrt(sqn)
 	return *this;
-};
+}
+
+CQuaternion CQuaternion::InverseNormalized() const
+{
+	CQuaternion inv = *this;
+	inv.InverseInPlaceNormalized();
+	return inv;
+}
+
+CQuaternion& CQuaternion::InverseInPlaceNormalized()
+{
+	assert(Normalized());
+	return Conjugate();
+}
 
 CQuaternion CQuaternion::operator*(const CQuaternion& rhs) const
 {
@@ -413,8 +407,12 @@ CQuaternion& CQuaternion::operator/=(float f)
 	return *this;
 }
 
-float CQuaternion::SqNorm() const {
-	return (x * x + y * y + z * z + r * r);
+void CQuaternion::AssertNaNs() const
+{
+	assert(!math::isnan(x) && !math::isinf(x));
+	assert(!math::isnan(y) && !math::isinf(y));
+	assert(!math::isnan(z) && !math::isinf(z));
+	assert(!math::isnan(r) && !math::isinf(r));
 }
 
 float CQuaternion::InvSqrt(float f)
@@ -429,41 +427,38 @@ float CQuaternion::InvSqrt(float f)
 CQuaternion CQuaternion::Lerp(const CQuaternion& q1, const CQuaternion& q2, const float a) {
 	assert(q1.Normalized());
 	assert(q2.Normalized());
-	return (q1 * (1.0f - a) + (q2 * a)).Normalize();
+	return (q1 * (1.0f - a) + (q2 * a)).ANormalize();
 }
 
-CQuaternion CQuaternion::SLerp(const CQuaternion& q1, const CQuaternion& q2_, const float a) {
-	assert( q1.Normalized());
-	assert(q2_.Normalized());
+CQuaternion CQuaternion::SLerp(const CQuaternion& qa, const CQuaternion& qb_, const float t) {
+	assert( qa.Normalized());
+	assert(qb_.Normalized());
 
-	if (a == 0.0f)
-		return q1;
-	else if (a == 1.0f)
-		return q2_;
+	// Calculate angle between them.
+	float cosHalfTheta = qa.x * qb_.x + qa.y * qb_.y + qa.z * qb_.z + qa.r * qb_.r;
 
-	// dot product
-	float cosTheta = (q1.x * q2_.x + q1.y * q2_.y + q1.z * q2_.z);
+	// Unfortunately every rotation can be represented by two quaternions: (++++) or (----)
+	// avoid taking the longer way: choose one representation
+	const float s = Sign(cosHalfTheta);
+	CQuaternion qb = qb_ * s;
+	cosHalfTheta *= s;
 
-	const float s = Sign(cosTheta);
+	// if qa = qb or qa = -qb then theta = 0 and we can return qa
+	if (math::fabs(cosHalfTheta) >= 1.0f) // greater-sign necessary for numerical stability
+		return qa;
 
-	CQuaternion q2 = q2_ * s;
-	cosTheta *= s;
+	// Calculate temporary values.
+	float halfTheta = math::acos(cosHalfTheta);
+	float sinHalfTheta = math::sqrt(1.0f - cosHalfTheta * cosHalfTheta); // NOTE: we checked above that |cosHalfTheta| < 1
 
-	if unlikely(cosTheta > 1.0f - float3::cmp_eps()) {
-		// Linear interpolation
-		return Lerp(q1, q2, a);
-	} else {
-		// Essential Mathematics, page 467
-		const float angle = math::acos(cosTheta);
-		const float s1 = math::sin((1.0f - a) * angle);
-		const float s2 = math::sin((       a) * angle);
+	// if theta = pi then result is not fully defined
+	// we could rotate around any axis normal to qa or qb
+	if unlikely(sinHalfTheta < 1e-3f)
+		return Lerp(qa, qb, 0.5f);
 
-		const float invsin = 1.0f / math::sin(angle);
-		return AssertNormalized(CQuaternion(
-			(s1 * q1.x + s2 * q2.x) * invsin,
-			(s1 * q1.y + s2 * q2.y) * invsin,
-			(s1 * q1.z + s2 * q2.z) * invsin,
-			(s1 * q1.r + s2 * q2.r) * invsin
-		));
-	}
+	// both should be divided by sinHalfTheta, but makes no sense to do it due to follow up normalization
+	const float ratioA = math::sin((1.0f - t) * halfTheta);
+	const float ratioB = math::sin((       t) * halfTheta);
+
+	return (qa * ratioA + qb * ratioB).ANormalize();
 }

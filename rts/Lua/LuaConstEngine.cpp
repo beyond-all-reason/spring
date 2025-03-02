@@ -59,6 +59,7 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "rmlUiApiVersion", 1);
 		LuaPushNamedBool(L, "noAutoShowMetal", false);
 		LuaPushNamedNumber(L, "maxPiecesPerModel", MAX_PIECES_PER_MODEL);
+		LuaPushNamedBool(L, "transformsInGL4", true);
 	lua_rawset(L, -3);
 
 	return true;
