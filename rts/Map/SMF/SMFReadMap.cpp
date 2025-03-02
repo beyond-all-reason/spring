@@ -19,6 +19,7 @@
 #include "Rendering/Env/SkyLight.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
+#include "Rendering/GL/PBO.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/SubState.h"
 #include "Rendering/Shaders/ShaderHandler.h"
@@ -96,6 +97,7 @@ CSMFReadMap::CSMFReadMap(const std::string& mapName): CEventClient("[CSMFReadMap
 		CreateDetailTex();
 		CreateShadingTex();
 		CreateNormalTex();
+		CreateHeightMapTex();
 		CreateShadingGL();
 	}
 
@@ -380,6 +382,31 @@ void CSMFReadMap::CreateNormalTex()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_RG, GL_FLOAT, nullptr);
 }
 
+void CSMFReadMap::CreateHeightMapTex()
+{
+	glGenTextures(1, heightMapTexture.GetIDPtr());
+	glBindTexture(GL_TEXTURE_2D, heightMapTexture.GetID());
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
+	constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F,
+		mapDims.mapxp1, mapDims.mapyp1, 0,
+		GL_RED, GL_FLOAT, nullptr
+	);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void CSMFReadMap::CreateShadingGL()
 {
 	shadingFBO = std::make_unique<FBO>(false);
@@ -423,6 +450,7 @@ void CSMFReadMap::UpdateHeightMapUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	UpdateCornerHeightMapUnsynced(update);
+	UpdateHeightMapTexture(update);
 	UpdateHeightBoundsUnsynced(update);
 	UpdateFaceNormalsUnsynced(update);
 	UpdateVisNormalsAndShadingTexture(update);
@@ -469,6 +497,49 @@ void CSMFReadMap::UpdateCornerHeightMapUnsynced(const SRectangle& update)
 			);
 		}
 	}
+}
+
+void CSMFReadMap::UpdateHeightMapTexture(const SRectangle& update)
+{
+	// consider full update if the area of update is >= 50% of full update
+	const auto refFullUpdateThreshold = (mapDims.mapx * mapDims.mapy) >> 1;
+	if (update.GetArea() >= refFullUpdateThreshold) {
+		glBindTexture(GL_TEXTURE_2D, heightMapTexture.GetID());
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mapDims.mapxp1, mapDims.mapyp1, GL_RED, GL_FLOAT, GetCornerHeightMapUnsynced());
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		return;
+	}
+
+	// partial update
+	const int sizeX = update.GetWidth() + 1;
+	const int sizeZ = update.GetHeight() + 1;
+
+	PBO pbo;
+	pbo.Bind();
+	pbo.New(sizeX * sizeZ * sizeof(float));
+
+	const float* heightMap = readMap->GetCornerHeightMapUnsynced();
+	float* heightBuf = reinterpret_cast<float*>(pbo.MapBuffer(0, pbo.GetSize(), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | pbo.mapUnsyncedBit));
+
+	if (heightBuf != nullptr) {
+		for (int z = 0; z < sizeZ; z++) {
+			const auto* src = heightMap + update.x1 + (z + update.z1) * mapDims.mapxp1;
+			      auto* dst = heightBuf +             (z            ) * sizeX;
+
+			std::copy(src, src + sizeX, dst);
+		}
+	}
+
+	pbo.UnmapBuffer();
+
+	glBindTexture(GL_TEXTURE_2D, heightMapTexture.GetID());
+	glTexSubImage2D(GL_TEXTURE_2D, 0, update.x1, update.z1, sizeX, sizeZ, GL_RED, GL_FLOAT, pbo.GetPtr());
+
+	pbo.Invalidate();
+	pbo.Unbind();
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
@@ -631,30 +702,6 @@ void CSMFReadMap::UpdateVisNormalsAndShadingTexture(const SRectangle& update)
 	const int x2 = std::min(update.x2 + 1, mapDims.mapxp1);
 	const int y2 = std::min(update.y2 + 1, mapDims.mapyp1);
 
-	uint32_t unsyncedHeightTexID = 0;
-	{
-		glGenTextures(1, &unsyncedHeightTexID);
-		glBindTexture(GL_TEXTURE_2D, unsyncedHeightTexID);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL , 0);
-
-		constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
-		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F,
-			mapDims.mapxp1, mapDims.mapyp1, 0,
-			GL_RED, GL_FLOAT, GetCornerHeightMapUnsynced()
-		);
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2D0>();
 	rb.AssertSubmission();
@@ -669,7 +716,7 @@ void CSMFReadMap::UpdateVisNormalsAndShadingTexture(const SRectangle& update)
 	shadingFBO->Bind();
 	glViewport(0, 0, mapDims.mapxp1, mapDims.mapyp1);
 
-	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, unsyncedHeightTexID);
+	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, heightMapTexture.GetID());
 
 	shadingShader->Enable();
 
@@ -689,8 +736,6 @@ void CSMFReadMap::UpdateVisNormalsAndShadingTexture(const SRectangle& update)
 	globalRendering->LoadViewport();
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	glDeleteTextures(1, &unsyncedHeightTexID);
 }
 
 void CSMFReadMap::SunChanged()

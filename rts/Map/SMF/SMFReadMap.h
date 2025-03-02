@@ -164,9 +164,11 @@ private:
 	void CreateDetailTex();
 	void CreateShadingTex();
 	void CreateNormalTex();
+	void CreateHeightMapTex();
 	void CreateShadingGL();
 
 	void UpdateCornerHeightMapUnsynced(const SRectangle& update);
+	void UpdateHeightMapTexture(const SRectangle& update);
 	void UpdateHeightBoundsUnsynced(const SRectangle& update);
 	void UpdateFaceNormalsUnsynced(const SRectangle& update);
 	void UpdateVisNormalsAndShadingTexture(const SRectangle& update);
@@ -225,6 +227,7 @@ private:
 	MapTexture lightEmissionTex;
 	MapTexture parallaxHeightTex;
 
+	MapTexture heightMapTexture;
 private:
 	float texAnisotropyLevels[2] = {0.0f, 0.0f};
 
