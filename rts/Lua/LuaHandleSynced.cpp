@@ -1237,15 +1237,16 @@ bool CSyncedLuaHandle::AllowDirectUnitControl(int playerID, const CUnit* unit)
  *
  * @param unitID integer
  * @param unitDefID integer
- * @param action number one of following:
- *
- *   -1 Build
- *   CMD.REPAIR Repair
- *   CMD.RECLAIM Reclaim
- *   CMD.RESTORE Restore
- *   CMD.RESURRECT Resurrect
- *   CMD.CAPTURE Capture
- *
+ * @param action -1|CMD
+ * 
+ * One of the following:
+ * 	- `-1` build,
+ * 	- `CMD.REPAIR` repair,
+ * 	- `CMD.RECLAIM` reclaim,
+ * 	- `CMD.RESTORE` restore,
+ * 	- `CMD.RESURRECT` resurrect, or
+ * 	- `CMD.CAPTURE` capture.
+ * 
  * @return boolean actionAllowed
  */
 bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
