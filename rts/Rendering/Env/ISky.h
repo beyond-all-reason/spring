@@ -44,6 +44,10 @@ public:
 	 */
 	void SetupFog();
 
+	bool IsUpdated() {
+		return std::exchange(updated, false);
+	}
+	void SetUpdated() { updated = true; }
 public:
 	static void SetSky();
 	static auto& GetSky() { return sky; }
@@ -64,6 +68,8 @@ protected:
 	ISkyLight* skyLight;
 
 	bool wireFrameMode;
+private:
+	bool updated;
 };
 
 #endif // I_SKY_H

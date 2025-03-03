@@ -39,7 +39,6 @@
 #include "Game/UI/CommandColors.h"
 #include "Game/UI/MiniMap.h"
 #include "Map/BaseGroundDrawer.h"
-#include "Map/HeightMapTexture.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
 #include "Rendering/Fonts/glFont.h"

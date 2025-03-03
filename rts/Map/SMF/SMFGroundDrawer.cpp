@@ -6,7 +6,6 @@
 #include "SMFRenderState.h"
 #include "Game/Camera.h"
 #include "Map/MapInfo.h"
-#include "Map/HeightMapTexture.h"
 #include "Map/ReadMap.h"
 #include "Map/SMF/Basic/BasicMeshDrawer.h"
 #include "Map/SMF/ROAM/RoamMeshDrawer.h"
@@ -355,7 +354,7 @@ void CSMFGroundDrawer::DrawBorder(const DrawPass::e drawPass)
 	glBindTexture(GL_TEXTURE_2D, smfMap->GetDetailTexture());
 
 	glActiveTexture(GL_TEXTURE1); glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
+	glBindTexture(GL_TEXTURE_2D, smfMap->GetHeightMapTexture());
 
 	//for CSMFGroundTextures::BindSquareTexture()
 	glActiveTexture(GL_TEXTURE0); glEnable(GL_TEXTURE_2D);
@@ -406,7 +405,7 @@ void CSMFGroundDrawer::DrawShadowPass()
 
 	glPolygonOffset(spPolygonOffsetScale, spPolygonOffsetUnits); // dz*s + r*u
 
-	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, heightMapTexture->GetTextureID());
+	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, smfMap->GetHeightMapTexture());
 	shadowShader->Enable();
 	shadowShader->SetUniform("borderMinHeight", std::min(readMap->GetInitMinHeight(), -500.0f));
 		meshDrawer->DrawMesh(DrawPass::Shadow);

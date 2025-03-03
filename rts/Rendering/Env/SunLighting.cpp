@@ -71,6 +71,8 @@ void CSunLighting::Init() {
 	specularExponent     = light.specularExponent;
 	groundShadowDensity  = light.groundShadowDensity;
 	modelShadowDensity   = light.modelShadowDensity;
+
+	updated = true;
 }
 
 void CSunLighting::Copy(const CSunLighting& sl) {

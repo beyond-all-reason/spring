@@ -43,7 +43,7 @@ void main() {
 
 	vec4 matColor = texture2D(bladeTex, bladeTexCoords);
 	matColor.rgb *= texture2D(grassShadingTex, shadingTexCoords.pq).rgb;
-	matColor.rgb *= texture2D(shadingTex, shadingTexCoords.st).rgb * 2.0;
+	matColor.rgb *= texture2D(shadingTex, shadingTexCoords.pq).rgb * 2.0;
 
 #if defined(FLAT_SHADING) || defined(DISTANCE_FAR)
 	vec3 specular = vec3(0.0);

@@ -6,7 +6,6 @@ set(sources_engine_Map
 		"${CMAKE_CURRENT_SOURCE_DIR}/BasicMapDamage.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ground.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/HeightLinePalette.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/HeightMapTexture.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MapDamage.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MapInfo.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/MapParser.cpp"

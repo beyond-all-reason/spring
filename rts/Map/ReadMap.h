@@ -118,16 +118,18 @@ public:
 	virtual CBaseGroundDrawer* GetGroundDrawer() { return 0; }
 
 
-	virtual unsigned int GetGrassShadingTexture() const { return 0; }
-	virtual unsigned int GetMiniMapTexture() const { return 0; }
+	virtual uint32_t GetGrassShadingTexture() const { return 0; }
+	virtual uint32_t GetMiniMapTexture() const { return 0; }
 	/**
 	 * a texture with RGB for shading and A for height
 	 * (0 := above water; 1-255 := under water = 255+height*10)
 	 */
-	virtual unsigned int GetShadingTexture() const = 0;
+	virtual uint32_t GetShadingTexture() const = 0;
+	virtual uint32_t GetHeightMapTexture() const = 0;
+	virtual const MapTexture& GetHeightMapTextureObj() const = 0;
 
-	virtual unsigned int GetTexture(unsigned int type, unsigned int num = 0) const { return 0; }
-	virtual int2 GetTextureSize(unsigned int type, unsigned int num = 0) const { return int2(0, 0); }
+	virtual uint32_t GetTexture(uint32_t type, uint32_t num = 0) const { return 0; }
+	virtual int2 GetTextureSize(uint32_t type, uint32_t num = 0) const { return int2(0, 0); }
 
 	virtual bool SetLuaTexture(const MapTextureData&) { return false; }
 
@@ -167,14 +169,11 @@ public:
 	const float* GetOriginalHeightMapSynced() const { return &originalHeightMap[0]; }
 	const float* GetCenterHeightMapSynced() const { return &centerHeightMap[0]; }
 	const float* GetMaxHeightMapSynced() const { return &maxHeightMap[0]; }
-	const float* GetMIPHeightMapSynced(unsigned int mip) const { return mipPointerHeightMaps[mip]; }
+	const float* GetMIPHeightMapSynced(uint32_t mip) const { return mipPointerHeightMaps[mip]; }
 	const float* GetSlopeMapSynced() const { return &slopeMap[0]; }
 	const uint8_t* GetTypeMapSynced() const { return &typeMap[0]; }
 	      uint8_t* GetTypeMapSynced()       { return &typeMap[0]; }
 	const float3* GetCenterNormals2DSynced()  const { return &centerNormals2D[0]; }
-
-	/// unsynced only
-	const float3* GetVisVertexNormalsUnsynced() const { return &visVertexNormals[0]; }
 
 	/// synced versions
 	const float* GetCornerHeightMapSynced() const { return sharedCornerHeightMaps[true]; }
@@ -218,9 +217,9 @@ public:
 	bool HasVisibleWater() const;
 	bool HasOnlyVoidWater() const;
 
-	unsigned int GetMapChecksum() const { return mapChecksum; }
-	unsigned int CalcHeightmapChecksum();
-	unsigned int CalcTypemapChecksum();
+	uint32_t GetMapChecksum() const { return mapChecksum; }
+	uint32_t CalcHeightmapChecksum();
+	uint32_t CalcTypemapChecksum();
 
 	void UpdateHeightBounds();
 
@@ -271,7 +270,6 @@ protected:
 	 */
 	std::array<float*, numHeightMipMaps> mipPointerHeightMaps;
 
-	static std::vector<float3> visVertexNormals;      //< size:  (mapx + 1) * (mapy + 1), contains one vertex normal per corner-heightmap pixel [UNSYNCED]
 	static std::vector<float3> faceNormalsSynced;     //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [SYNCED]
 	static std::vector<float3> faceNormalsUnsynced;   //< size: 2*mapx      *  mapy     , contains 2 normals per quad -> triangle strip [UNSYNCED]
 	static std::vector<float3> centerNormalsSynced;   //< size:   mapx      *  mapy     , contains 1 interpolated normal per quad, same as (facenormal0+facenormal1).Normalize()) [SYNCED]
@@ -301,7 +299,7 @@ private:
 	static std::vector<uint8_t>   syncedHeightMapDigests;
 	static std::vector<uint8_t> unsyncedHeightMapDigests;
 
-	unsigned int mapChecksum = 0;
+	uint32_t mapChecksum = 0;
 
 	bool processingHeightBounds = false;
 	bool hmUpdated = false;

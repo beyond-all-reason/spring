@@ -117,7 +117,6 @@ std::vector<float> CReadMap::centerHeightMap;
 std::vector<float> CReadMap::maxHeightMap;
 std::array<std::vector<float>, CReadMap::numHeightMipMaps - 1> CReadMap::mipCenterHeightMaps;
 
-std::vector<float3> CReadMap::visVertexNormals;
 std::vector<float3> CReadMap::faceNormalsSynced;
 std::vector<float3> CReadMap::faceNormalsUnsynced;
 std::vector<float3> CReadMap::centerNormalsSynced;
@@ -216,12 +215,12 @@ void CReadMap::SerializeMapChanges(creg::ISerializer* s, const float* refHeightM
 	int32_t height;
 
 	if (s->IsWriting()) {
-		for (unsigned int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); i++) {
+		for (uint32_t i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); i++) {
 			height = ichms[i] ^ iochms[i];
 			s->Serialize(&height, sizeof(int32_t));
 		}
 	} else {
-		for (unsigned int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); i++) {
+		for (uint32_t i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); i++) {
 			s->Serialize(&height, sizeof(int32_t));
 			ichms[i] = height ^ iochms[i];
 		}
@@ -246,12 +245,12 @@ void CReadMap::SerializeTypeMap(creg::ISerializer* s)
 	uint8_t type;
 
 	if (s->IsWriting()) {
-		for (unsigned int i = 0; i < (mapDims.hmapx * mapDims.hmapy); i++) {
+		for (uint32_t i = 0; i < (mapDims.hmapx * mapDims.hmapy); i++) {
 			type = itm[i] ^ iotm[i];
 			s->Serialize(&type, sizeof(uint8_t));
 		}
 	} else {
-		for (unsigned int i = 0; i < (mapDims.hmapx * mapDims.hmapy); i++) {
+		for (uint32_t i = 0; i < (mapDims.hmapx * mapDims.hmapy); i++) {
 			s->Serialize(&type, sizeof(uint8_t));
 			itm[i] = type ^ iotm[i];
 		}
@@ -317,7 +316,7 @@ void CReadMap::Initialize()
 	{
 		char loadMsg[512];
 		const char* fmtString = "Loading Map (%u MB)";
-		unsigned int reqMemFootPrintKB =
+		uint32_t reqMemFootPrintKB =
 			((( mapDims.mapxp1)   * mapDims.mapyp1  * 2     * sizeof(float))         / 1024) +   // cornerHeightMap{Synced, Unsynced}
 			((( mapDims.mapxp1)   * mapDims.mapyp1  *         sizeof(float))         / 1024) +   // originalHeightMap
 			((  mapDims.mapx      * mapDims.mapy    * 2 * 2 * sizeof(float3))        / 1024) +   // faceNormals{Synced, Unsynced}
@@ -376,9 +375,6 @@ void CReadMap::Initialize()
 	// by default, all squares are set to terrain-type 0
 	typeMap.clear();
 	typeMap.resize(mapDims.hmapx * mapDims.hmapy, 0);
-
-	visVertexNormals.clear();
-	visVertexNormals.resize(mapDims.mapxp1 * mapDims.mapyp1);
 
 	assert(heightMapSyncedPtr != nullptr);
 	assert(heightMapUnsyncedPtr != nullptr);
@@ -443,7 +439,7 @@ void CReadMap::LoadOriginalHeightMapAndChecksum()
 
 	tempHeightBounds = initHeightBounds;
 
-	unsigned int checksum = 0;
+	uint32_t checksum = 0;
 
 	for (int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); ++i) {
 		originalHeightMap[i] = heightmap[i];
@@ -464,12 +460,12 @@ void CReadMap::LoadOriginalHeightMapAndChecksum()
 
 
 
-unsigned int CReadMap::CalcHeightmapChecksum()
+uint32_t CReadMap::CalcHeightmapChecksum()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float* heightmap = GetCornerHeightMapSynced();
 
-	unsigned int checksum = 0;
+	uint32_t checksum = 0;
 
 	for (int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); ++i) {
 		checksum = spring::LiteHash(&heightmap[i], sizeof(heightmap[i]), checksum);
@@ -479,10 +475,10 @@ unsigned int CReadMap::CalcHeightmapChecksum()
 }
 
 
-unsigned int CReadMap::CalcTypemapChecksum()
+uint32_t CReadMap::CalcTypemapChecksum()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	unsigned int checksum = spring::LiteHash(&typeMap[0], typeMap.size() * sizeof(typeMap[0]), 0);
+	uint32_t checksum = spring::LiteHash(&typeMap[0], typeMap.size() * sizeof(typeMap[0]), 0);
 
 	for (const CMapInfo::TerrainType& tt : mapInfo->terrainTypes) {
 		checksum = spring::LiteHash(tt.name.c_str(), tt.name.size(), checksum);

@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef SMFREADMAP_H
-#define SMFREADMAP_H
+#pragma once
 
 #include <array>
+#include <memory>
 
 #include "SMFMapFile.h"
 #include "Map/ReadMap.h"
@@ -12,6 +12,10 @@
 
 
 class CSMFGroundDrawer;
+class FBO;
+namespace Shader {
+	struct IProgramObject;
+}
 
 class CSMFReadMap : public CReadMap, public CEventClient
 {
@@ -28,7 +32,7 @@ public:
 
 	CSMFReadMap(const std::string& mapName);
 	// note: textures are auto-deleted
-	~CSMFReadMap() { mapFile.Close(); }
+	~CSMFReadMap();
 
 	void ReloadTextures() override;
 
@@ -39,8 +43,8 @@ public:
 	bool SetLuaTexture(const MapTextureData& td) override;
 
 public:
-	unsigned int GetTexture(unsigned int type, unsigned int num = 0) const override {
-		unsigned int texID = 0;
+	uint32_t GetTexture(uint32_t type, uint32_t num = 0) const override {
+		uint32_t texID = 0;
 
 		switch (type) {
 			case MAP_BASE_GRASS_TEX: { texID = GetGrassShadingTexture(); } break;
@@ -66,7 +70,7 @@ public:
 		return texID;
 	}
 
-	int2 GetTextureSize(unsigned int type, unsigned int num = 0) const override {
+	int2 GetTextureSize(uint32_t type, uint32_t num = 0) const override {
 		int2 size;
 
 		// TODO:
@@ -97,24 +101,25 @@ public:
 	}
 
 public:
-	unsigned int GetGrassShadingTexture() const override { return grassShadingTex.GetID(); }
-	unsigned int GetMiniMapTexture() const override { return minimapTex.GetID(); }
-	unsigned int GetDetailTexture() const { return detailTex.GetID(); }
-	unsigned int GetShadingTexture() const override { return shadingTex.GetID(); }
-	unsigned int GetNormalsTexture() const  { return normalsTex.GetID(); }
+	uint32_t GetGrassShadingTexture() const override { return grassShadingTex.GetID(); }
+	uint32_t GetMiniMapTexture() const override { return minimapTex.GetID(); }
+	uint32_t GetDetailTexture() const { return detailTex.GetID(); }
+	uint32_t GetShadingTexture() const override { return shadingTex.GetID(); }
+	uint32_t GetHeightMapTexture() const override { return heightMapTexture.GetID(); }
+	uint32_t GetNormalsTexture() const  { return normalsTex.GetID(); }
 
+	uint32_t GetSpecularTexture() const { return specularTex.GetID(); }
+	uint32_t GetBlendNormalsTexture() const { return blendNormalsTex.GetID(); }
 
-	unsigned int GetSpecularTexture() const { return specularTex.GetID(); }
-	unsigned int GetBlendNormalsTexture() const { return blendNormalsTex.GetID(); }
+	uint32_t GetSplatDistrTexture() const { return splatDistrTex.GetID(); }
+	uint32_t GetSplatDetailTexture() const { return splatDetailTex.GetID(); }
+	uint32_t GetSplatNormalTexture(int i) const { return splatNormalTextures[i].GetID(); }
 
-	unsigned int GetSplatDistrTexture() const { return splatDistrTex.GetID(); }
-	unsigned int GetSplatDetailTexture() const { return splatDetailTex.GetID(); }
-	unsigned int GetSplatNormalTexture(int i) const { return splatNormalTextures[i].GetID(); }
+	uint32_t GetSkyReflectModTexture() const { return skyReflectModTex.GetID(); }
+	uint32_t GetLightEmissionTexture() const { return lightEmissionTex.GetID(); }
+	uint32_t GetParallaxHeightTexture() const { return parallaxHeightTex.GetID(); }
 
-	unsigned int GetSkyReflectModTexture() const { return skyReflectModTex.GetID(); }
-	unsigned int GetLightEmissionTexture() const { return lightEmissionTex.GetID(); }
-	unsigned int GetParallaxHeightTexture() const { return parallaxHeightTex.GetID(); }
-
+	const MapTexture& GetHeightMapTextureObj() const override { return heightMapTexture; }
 public:
 	void BindMiniMapTextures() const override;
 	void GridVisibility(CCamera* cam, IQuadDrawer* cb, float maxDist, int quadSize, int extraSize = 0) override;
@@ -154,25 +159,21 @@ private:
 	void ParseHeader();
 	void LoadHeightMap();
 	void LoadMinimap();
-	void InitializeWaterHeightColors();
 	void CreateSpecularTex();
 	void CreateSplatDetailTextures();
 	void CreateGrassTex();
 	void CreateDetailTex();
 	void CreateShadingTex();
 	void CreateNormalTex();
+	void CreateHeightMapTex();
+	void CreateShadingGL();
 
-	void UpdateVertexNormalsUnsynced(const SRectangle& update);
+	void UpdateCornerHeightMapUnsynced(const SRectangle& update);
+	void UpdateHeightMapTexture(const SRectangle& update);
 	void UpdateHeightBoundsUnsynced(const SRectangle& update);
 	void UpdateFaceNormalsUnsynced(const SRectangle& update);
-	void UpdateNormalTexture(const SRectangle& update);
-	void UpdateShadingTexture(const SRectangle& update);
+	void UpdateVisNormalsAndShadingTexture(const SRectangle& update);
 
-	inline void UpdateShadingTexPart(int idx1, int idx2, unsigned char* dst) const;
-	inline const float GetCenterHeightUnsynced(const int x, const int y) const;
-
-	inline float DiffuseSunCoeff(const int x, const int y) const;
-	inline float3 GetLightValue(const int x, const int y) const;
 	void ParseSMD(std::string filename);
 
 public:
@@ -199,19 +200,18 @@ private:
 
 	static std::vector<float> cornerHeightMapSynced;
 	static std::vector<float> cornerHeightMapUnsynced;
-
-	static std::vector<unsigned char> shadingTexBuffer;
-	static std::vector<unsigned char> waterHeightColors;
-
 private:
 	CSMFGroundDrawer* groundDrawer = nullptr;
 
 private:
+	std::unique_ptr<FBO> shadingFBO;
+	Shader::IProgramObject* shadingShader = nullptr;
+
 	MapTexture grassShadingTex;       // specifies grass-blade modulation color (defaults to minimapTex)
 	MapTexture detailTex;             // supplied by the map
 	MapTexture minimapTex;            // supplied by the map
 	MapTexture shadingTex;            // holds precomputed dot(lightDir, vertexNormal) values
-	MapTexture normalsTex;            // holds vertex normals in RGBA32F internal format (GL_RGBA + GL_FLOAT)
+	MapTexture normalsTex;            // holds vertex normals in RA32F internal format (GL_RA + GL_FLOAT)
 
 	MapTexture specularTex;           // supplied by the map, moderates specular contribution
 	MapTexture blendNormalsTex;       // tangent-space offset normals
@@ -228,9 +228,8 @@ private:
 	MapTexture lightEmissionTex;
 	MapTexture parallaxHeightTex;
 
+	MapTexture heightMapTexture;
 private:
-	int shadingTexUpdateProgress = -1;
-
 	float texAnisotropyLevels[2] = {0.0f, 0.0f};
 
 	bool haveSpecularTexture           = false;
@@ -239,5 +238,3 @@ private:
 
 	bool shadingTexUpdateNeeded = false;
 };
-
-#endif

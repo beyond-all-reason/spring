@@ -30,6 +30,7 @@ ISky::ISky()
 	, cloudDensity(mapInfo->atmosphere.cloudDensity)
 	, skyLight(nullptr)
 	, wireFrameMode(false)
+	, updated(true)
 {
 	skyLight = new ISkyLight();
 }
