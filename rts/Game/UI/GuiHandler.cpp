@@ -1031,15 +1031,14 @@ void CGuiHandler::SetShowingMetal(const SCommandDescription* cmdDesc)
 		show = ud && ud->extractsMetal > 0;
 	}
 
+	const bool showingMetal = infoTextureHandler->GetMode() == "metal";
 	if (showingMetal && !show)
 	{
 		infoTextureHandler->DisableCurrentMode();
-		showingMetal = false;
 	}
-	else if (!showingMetal && infoTextureHandler->GetMode() != "metal")
+	else if (!showingMetal && show)
 	{
 		infoTextureHandler->SetMode("metal");
-		showingMetal = true;
 	}
 }
 

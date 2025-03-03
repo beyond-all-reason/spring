@@ -218,7 +218,6 @@ private:
 	float textureAlpha = 0.8f;
 
 	bool needShift = false;
-	bool showingMetal = false;
 	bool invertQueueKey = false;
 	bool activeMousePress = false;
 	bool forceLayoutUpdate = false;
