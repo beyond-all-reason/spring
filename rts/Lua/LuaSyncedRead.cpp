@@ -264,6 +264,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitDefDimensions);
 	REGISTER_LUA_CFUNC(GetUnitCollisionVolumeData);
 	REGISTER_LUA_CFUNC(GetUnitPieceCollisionVolumeData);
+	REGISTER_LUA_CFUNC(GetUnitTrackDecals);
 
 	REGISTER_LUA_CFUNC(GetUnitBlocking);
 	REGISTER_LUA_CFUNC(GetUnitMoveTypeData);
@@ -5755,6 +5756,32 @@ int LuaSyncedRead::GetUnitCollisionVolumeData(lua_State* L)
 int LuaSyncedRead::GetUnitPieceCollisionVolumeData(lua_State* L)
 {
 	return (PushPieceCollisionVolumeData(L, ParseInLosUnit(L, __func__, 1)));
+}
+
+/***
+ *
+ * @function Spring.GetUnitTrackDecals
+ * 
+ * @number unitDefID
+ * 
+ * @treturn bool enabled
+ * @treturn number width
+ * @treturn number strength
+ * @treturn number offset
+ * @treturn number stretch
+ */
+int LuaSyncedRead::GetUnitTrackDecals(lua_State* L)
+{
+	const int unitDefID = luaL_checkint(L, 1);
+	SolidObjectDecalDef decalDef = unitDefHandler->GetUnitDefByID(unitDefID)->decalDef;
+
+	lua_pushboolean(L, decalDef.leaveTrackDecals);
+	lua_pushnumber(L, decalDef.trackDecalWidth);
+	lua_pushnumber(L, decalDef.trackDecalStrength);
+	lua_pushnumber(L, decalDef.trackDecalOffset);
+	lua_pushnumber(L, decalDef.trackDecalStretch);
+
+	return 5;
 }
 
 
