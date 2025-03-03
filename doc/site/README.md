@@ -17,10 +17,14 @@ Navigate to http://localhost:4000/spring
 
 ## Generating Lua API
 
-Have [Lua Language Server](https://luals.github.io/) and [lua-doc-extractor](https://github.com/rhys-vdw/lua-doc-extractor) installed and available in `$PATH`.
+Have [emmylua_doc_cli](https://github.com/CppCXY/emmylua-analyzer-rust/tree/main/crates/emmylua_doc_cli) and [lua-doc-extractor](https://github.com/rhys-vdw/lua-doc-extractor) installed and available in `$PATH`.
 
 ```bash
-lua-doc-extractor rts/Lua/*.cpp --dest rts/Lua/library/generated && lua-language-server --doc rts/Lua/library --doc_out_path doc/site/_data
+lua-doc-extractor rts/Lua/*.cpp --dest rts/Lua/library/generated &&
+  emmylua_doc_cli \
+    -i rts/Lua/library/ \
+    -o doc/site/lua-api \
+    --override-template doc/emmlua-doc-cli-template/
 ```
 
 See [Documenting Lua development guide](development/documenting-lua.markdown) for more info.

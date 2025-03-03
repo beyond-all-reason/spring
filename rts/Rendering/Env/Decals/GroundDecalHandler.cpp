@@ -802,6 +802,7 @@ void CGroundDecalHandler::Draw()
 
 	auto state = GL::SubState(
 		SampleShading(highQuality ? GL_TRUE : GL_FALSE),
+		MinSampleShading(1.0f),
 		Blending(GL_TRUE),
 		BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA),
 		DepthMask(GL_FALSE),

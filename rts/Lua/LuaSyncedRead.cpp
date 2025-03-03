@@ -4453,10 +4453,11 @@ int LuaSyncedRead::GetUnitVectors(lua_State* L)
 /***
  *
  * @function Spring.GetUnitRotation
+ * Note: PYR order
  * @param unitID integer
- * @return number? pitch Rotation in X axis
- * @return number? yaw Rotation in Y axis
- * @return number? roll Rotation in Z axis
+ * @return number pitch Rotation in X axis
+ * @return number yaw Rotation in Y axis
+ * @return number roll Rotation in Z axis
  */
 int LuaSyncedRead::GetUnitRotation(lua_State* L)
 {
@@ -4468,9 +4469,15 @@ int LuaSyncedRead::GetUnitRotation(lua_State* L)
  *
  * @function Spring.GetUnitDirection
  * @param unitID integer
- * @return number? dirX
- * @return number? dirY
- * @return number? dirZ
+ * @return number frontDirX
+ * @return number frontDirY
+ * @return number frontDirZ
+ * @return number rightDirX
+ * @return number rightDirY
+ * @return number rightDirZ
+ * @return number upDirX
+ * @return number upDirY
+ * @return number upDirZ
  */
 int LuaSyncedRead::GetUnitDirection(lua_State* L)
 {
@@ -4482,7 +4489,16 @@ int LuaSyncedRead::GetUnitDirection(lua_State* L)
 	lua_pushnumber(L, unit->frontdir.x);
 	lua_pushnumber(L, unit->frontdir.y);
 	lua_pushnumber(L, unit->frontdir.z);
-	return 3;
+
+	lua_pushnumber(L, unit->rightdir.x);
+	lua_pushnumber(L, unit->rightdir.y);
+	lua_pushnumber(L, unit->rightdir.z);
+
+	lua_pushnumber(L, unit->updir.x);
+	lua_pushnumber(L, unit->updir.y);
+	lua_pushnumber(L, unit->updir.z);
+
+	return 9;
 }
 
 
@@ -6778,10 +6794,11 @@ int LuaSyncedRead::GetFeatureSeparation(lua_State* L)
 /***
  *
  * @function Spring.GetFeatureRotation
+ * Note: PYR order
  * @param featureID integer
- * @return number? pitch Rotation in X axis
- * @return number? yaw Rotation in Y axis
- * @return number? roll Rotation in Z axis
+ * @return number pitch Rotation in X axis
+ * @return number yaw Rotation in Y axis
+ * @return number roll Rotation in Z axis
  */
 int LuaSyncedRead::GetFeatureRotation(lua_State* L)
 {
@@ -6796,9 +6813,15 @@ int LuaSyncedRead::GetFeatureRotation(lua_State* L)
  *
  * @function Spring.GetFeatureDirection
  * @param featureID integer
- * @return number? dirX
- * @return number? dirY
- * @return number? dirZ
+ * @return number frontDirX
+ * @return number frontDirY
+ * @return number frontDirZ
+ * @return number rightDirX
+ * @return number rightDirY
+ * @return number rightDirZ
+ * @return number upDirX
+ * @return number upDirY
+ * @return number upDirZ
  */
 int LuaSyncedRead::GetFeatureDirection(lua_State* L)
 {
@@ -6808,12 +6831,23 @@ int LuaSyncedRead::GetFeatureDirection(lua_State* L)
 		return 0;
 
 	const CMatrix44f& mat = feature->GetTransformMatrixRef(true);
-	const float3& dir = mat.GetZ();
+	const float3& xdir = mat.GetX();
+	const float3& ydir = mat.GetY();
+	const float3& zdir = mat.GetZ();
 
-	lua_pushnumber(L, dir.x);
-	lua_pushnumber(L, dir.y);
-	lua_pushnumber(L, dir.z);
-	return 3;
+	lua_pushnumber(L, zdir.x);
+	lua_pushnumber(L, zdir.y);
+	lua_pushnumber(L, zdir.z);
+
+	lua_pushnumber(L, xdir.x);
+	lua_pushnumber(L, xdir.y);
+	lua_pushnumber(L, xdir.z);
+
+	lua_pushnumber(L, ydir.x);
+	lua_pushnumber(L, ydir.y);
+	lua_pushnumber(L, ydir.z);
+
+	return 9;
 }
 
 /***

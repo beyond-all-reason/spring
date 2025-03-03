@@ -495,6 +495,14 @@ void CFeature::ForcedSpin(const float3& newDir)
 	UpdateTransform(pos, true);
 }
 
+void CFeature::ForcedSpin(const float3& newFrontDir, const float3& newRightDir)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	// update local direction-vectors
+	CSolidObject::ForcedSpin(newFrontDir, newRightDir);
+	UpdateTransform(pos, true);
+}
+
 
 void CFeature::UpdateTransformAndPhysState()
 {

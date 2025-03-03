@@ -17,6 +17,7 @@
 #include "System/UnorderedMap.hpp"
 
 #include "glStateDebug.h"
+#include "glDebugGroup.hpp"
 
 #if       defined(HEADLESS)
 	// All OpenGL functions should always exists on HEADLESS.

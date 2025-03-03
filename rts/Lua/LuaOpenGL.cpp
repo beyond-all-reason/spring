@@ -82,14 +82,10 @@
 CONFIG(bool, LuaShaders).defaultValue(true).headlessValue(false).safemodeValue(false);
 CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValue(0);
 
-
-/******************************************************************************
+/***
  * Lua OpenGL API
- *
- *
- * @see rts/Lua/LuaOpenGL.cpp
-******************************************************************************/
-
+ * @table gl
+ */
 
 void (*LuaOpenGL::resetMatrixFunc)() = nullptr;
 
@@ -1292,10 +1288,6 @@ int LuaOpenGL::EndText(lua_State* L)
 	font->End();
 	return 0;
 }
-
-/***
- * @table gl
- */
 
 /***
  * @function gl.Text

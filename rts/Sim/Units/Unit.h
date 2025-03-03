@@ -100,6 +100,9 @@ public:
 	int GetBlockingMapID() const { return id; }
 
 	void ChangeLos(int losRad, int airRad);
+
+	void TurnIntoNanoframe();
+
 	// negative amount=reclaim, return= true -> build power was successfully applied
 	bool AddBuildPower(CUnit* builder, float amount);
 

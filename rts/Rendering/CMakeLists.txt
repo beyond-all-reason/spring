@@ -55,6 +55,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/StreamBuffer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/GeometryBuffer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/glStateDebug.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/GL/glDebugGroup.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/glxHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/LightHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GL/VertexArray.cpp"

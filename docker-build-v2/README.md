@@ -3,7 +3,10 @@
 This directory contains work in progress next version of the Docker engine
 build scripts.
 
-## Local usage
+> [!WARNING]  
+> Currently the build script supports **only** Docker *Engine*! Docker Desktop, Podman etc. won't work correctly with the build script. Under Windows it requires usage of WSL, see [section below](#windows-instructions) for step-by-step Windows instructions. 
+
+## Local usage - Step 2 on Windows
 
 To execute build locally use `build.sh` script
 
@@ -61,6 +64,9 @@ docker build -t recoil-build-amd64-windows docker-build-v2/amd64-windows
 
 and `build.sh` will use it.
 
+For details on private testing, check the wiki [here](https://github.com/beyond-all-reason/spring/wiki/Pre-release-testing-Checklist,-and-release-engine-checklist#private-testing)
+
+
 ## Overview
 
 There are two separate build images, one for Windows, one for Linux. The Docker
@@ -87,3 +93,28 @@ To sum up, there is a separation:
   - `script/split-debug-info.sh`: Splits debug information from binaries
   - `script/package.sh`: Creates 2 archives, one with engine and one with
      debug symbols.
+
+
+
+## Windows Instructions
+`build.sh` depends on the Docker engine, not the Docker desktop. So, to get started, there are a few steps first.
+
+### Using WSL - Ubuntu
+1. Head to Microsoft Store and install Ubuntu
+2. Follow the [Docker Engine guide](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) to install it
+3. Now you can follow Local Usage to build as normal
+
+#### Smaller QoL Tips - Windows
+- If you're using VSCode as your IDE you can use [Remote Development Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)
+  
+- Symbolic Links can replace Remote Development, use them to make edits on your regular Windows OS with whatever IDE you like and sync up with WSL's folder
+  
+- They are also useful for quick debugging, link up your `WSL/Ubuntu/{Spring-Repo-Folder}/build-windows/install` with your `{BAR-Game-Folder}/data/engine/{Local-Engine-Folder-Name}` this way you can quickly run `docker-build-v2/build.sh windows` on WSL and it will appear and ready to use in your BAR Folder
+
+- To use Symbolic Links, you can do so with `mklink` command in Terminal, like so:
+
+  ```shell
+  mklink /d path-to-sym-link-folder path-to-origin-folder
+  ```
+
+- Third-Party app for Symbolic Links: [Link Shell Extension (LSE)](https://schinagl.priv.at/nt/hardlinkshellext/linkshellextension.html) just make sure to make a [Restore Point](https://support.microsoft.com/en-us/windows/system-restore-a5ae3ed9-07c4-fd56-45ee-096777ecd14e#:~:text=Apply%20a%20restore%20point%20from,%E2%80%8B%E2%80%8B%E2%80%8B%E2%80%8B%E2%80%8B) just in case

@@ -604,23 +604,27 @@ static int SetSolidObjectBlocking(lua_State* L, CSolidObject* o)
 	return 1;
 }
 
-static int SetSolidObjectRotation(lua_State* L, CSolidObject* o, bool isFeature)
+template<typename T>
+static int SetSolidObjectRotation(lua_State* L, T* o)
 {
 	if (o == nullptr)
 		return 0;
 
-	o->SetDirVectorsEuler(float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4)));
+	float3 angles;
+	angles[CMatrix44f::ANGLE_P] = luaL_checkfloat(L, 2);
+	angles[CMatrix44f::ANGLE_Y] = luaL_checkfloat(L, 3);
+	angles[CMatrix44f::ANGLE_R] = luaL_checkfloat(L, 4);
 
-	// not a hack: ForcedSpin() and CalculateTransform() calculate a
-	// transform based only on frontdir and assume the helper y-axis
-	// points up
-	if (isFeature)
-		static_cast<CFeature*>(o)->UpdateTransform(o->pos, true);
+	o->SetDirVectorsEuler(angles);
+
+	if constexpr(std::is_same_v<T, CFeature>)
+		o->UpdateTransform(o->pos, true);
 
 	return 0;
 }
 
-static int SetSolidObjectHeadingAndUpDir(lua_State* L, CSolidObject* o, bool isFeature)
+template<typename T>
+static int SetSolidObjectHeadingAndUpDir(lua_State* L, T* o)
 {
 	if (o == nullptr)
 		return 0;
@@ -635,24 +639,55 @@ static int SetSolidObjectHeadingAndUpDir(lua_State* L, CSolidObject* o, bool isF
 	o->SetFacingFromHeading();
 	o->UpdateMidAndAimPos();
 
-	if (isFeature)
-		static_cast<CFeature*>(o)->UpdateTransform(o->pos, true);
+	if constexpr (std::is_same_v<T, CFeature>)
+		o->UpdateTransform(o->pos, true);
 
 	return 0;
 }
 
-static int SetSolidObjectDirection(lua_State* L, CSolidObject* o)
+static int SetSolidObjectDirection(lua_State* L, CSolidObject* o, const char* func)
 {
 	if (o == nullptr)
 		return 0;
 
-	const float3 newDir = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4)).SafeNormalize();
+	const char* modelName = o->model ? o->model->name.c_str() : "nullptr";
 
-	if (math::fabsf(newDir.SqLength() - 1.0f) > float3::cmp_eps()) {
-		luaL_error(L, "[%s] Invalid front-direction (%f, %f, %f), id = %d, model = %s, teamID = %d", __func__, newDir.x, newDir.y, newDir.z, o->id, o->model ? o->model->name.c_str() : "nullptr", o->team);
+	const float3 newFrontDir = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4)).SafeNormalize();
+
+	if (math::fabsf(newFrontDir.SqLength() - 1.0f) > float3::cmp_eps()) {
+		luaL_error(L, "[%s] Invalid front-direction (%f, %f, %f), id = %d, model = %s, teamID = %d",
+			func,
+			newFrontDir.x,
+			newFrontDir.y,
+			newFrontDir.z,
+			o->id,
+			modelName,
+			o->team
+		);
 	}
 
-	o->ForcedSpin(newDir);
+	// Note there's no need to call o->UpdateTransform(o->pos, true); because both variants of o->ForcedSpin
+	// defined in CFeature do it anyway
+
+	if (lua_isnumber(L, 5) && lua_isnumber(L, 6) && lua_isnumber(L, 7)) {
+		const float3 newRightDir = float3(luaL_checkfloat(L, 5), luaL_checkfloat(L, 6), luaL_checkfloat(L, 7)).SafeNormalize();
+		if (math::fabsf(newRightDir.SqLength() - 1.0f) > float3::cmp_eps()) {
+			luaL_error(L, "[%s] Invalid optional right-direction (%f, %f, %f), id = %d, model = %s, teamID = %d",
+				func,
+				newRightDir.x,
+				newRightDir.y,
+				newRightDir.z,
+				o->id,
+				modelName,
+				o->team
+			);
+		}
+		o->ForcedSpin(newFrontDir, newRightDir);
+	}
+	else {
+		o->ForcedSpin(newFrontDir);
+	}
+
 	return 0;
 }
 
@@ -2042,12 +2077,27 @@ int LuaSyncedCtrl::SetUnitTooltip(lua_State* L)
 	return 0;
 }
 
+/***
+ * @class SetUnitHealthAmounts
+ * @field health number? Set the unit's health.
+ * @field capture number? Set the unit's capture progress.
+ * @field paralyze number? Set the unit's paralyze damage.
+ * @field build number? Set the unit's build progress.
+ */
 
 /***
  * @function Spring.SetUnitHealth
+ *
+ * Note, if your game's custom shading framework doesn't support reverting into nanoframes
+ * then reverting into nanoframes via the "build" tag will fail to render properly.
+ *
  * @param unitID integer
- * @param health number|table<string,number> where keys can be one of health|capture|paralyze|build and values are amounts
+ * @param health number|SetUnitHealthAmounts If a number, sets the units health
+ * to that value. Pass a table to update health, capture progress, paralyze
+ * damage, and build progress.
  * @return nil
+ * 
+ * @see SetUnitHealthAmounts
  */
 int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 {
@@ -2085,6 +2135,8 @@ int LuaSyncedCtrl::SetUnitHealth(lua_State* L)
 				case hashString("build"): {
 					if ((unit->buildProgress = lua_tofloat(L, LUA_TABLE_VALUE_INDEX)) >= 1.0f)
 						unit->FinishedBuilding(false);
+					else
+						unit->TurnIntoNanoframe();
 				} break;
 				default: {
 				} break;
@@ -3831,29 +3883,52 @@ int LuaSyncedCtrl::SetUnitPosition(lua_State* L)
 
 /***
  * @function Spring.SetUnitRotation
+ * Note: PYR order
  * @param unitID integer
- * @param yaw number
- * @param pitch number
- * @param roll number
+ * @param pitch number Rotation in X axis
+ * @param yaw number Rotation in Y axis
+ * @param roll number Rotation in Z axis
  * @return nil
  */
 int LuaSyncedCtrl::SetUnitRotation(lua_State* L)
 {
-	return (SetSolidObjectRotation(L, ParseUnit(L, __func__, 1), false));
+	return (SetSolidObjectRotation(L, ParseUnit(L, __func__, 1)));
 }
 
 
 /***
  * @function Spring.SetUnitDirection
+ * Set unit front direction vector. The vector is normalized in
+ * the engine.
+ *
+ * @deprecated It's strongly that you use the overload that accepts
+ * a right direction as `frontDir` alone doesn't define object orientation.
+ *
  * @param unitID integer
- * @param x number
- * @param y number
- * @param z number
+ * @param frontx number
+ * @param fronty number
+ * @param frontz number
  * @return nil
  */
+
+ /***
+  * @function Spring.SetUnitDirection
+  * Set unit front and right direction vectors.
+  *
+  * Both vectors will be normalized in the engine.
+  *
+  * @param unitID integer
+  * @param frontx number
+  * @param fronty number
+  * @param frontz number
+  * @param rightx number
+  * @param righty number
+  * @param rightz number
+  * @return nil
+  */
 int LuaSyncedCtrl::SetUnitDirection(lua_State* L)
 {
-	return (SetSolidObjectDirection(L, ParseUnit(L, __func__, 1)));
+	return SetSolidObjectDirection(L, ParseUnit(L, __func__, 1), __func__);
 }
 
 /***
@@ -3868,7 +3943,7 @@ int LuaSyncedCtrl::SetUnitDirection(lua_State* L)
  */
 int LuaSyncedCtrl::SetUnitHeadingAndUpDir(lua_State* L)
 {
-	return SetSolidObjectHeadingAndUpDir(L, ParseUnit(L, __func__, 1), false);
+	return SetSolidObjectHeadingAndUpDir(L, ParseUnit(L, __func__, 1));
 }
 
 /***
@@ -4642,29 +4717,52 @@ int LuaSyncedCtrl::SetFeaturePosition(lua_State* L)
 
 /***
  * @function Spring.SetFeatureRotation
+ * Note: PYR order
  * @param featureID integer
- * @param rotX number
- * @param rotY number
- * @param rotZ number
+ * @param pitch number Rotation in X axis
+ * @param yaw number Rotation in Y axis
+ * @param roll number Rotation in Z axis
  * @return nil
  */
 int LuaSyncedCtrl::SetFeatureRotation(lua_State* L)
 {
-	return (SetSolidObjectRotation(L, ParseFeature(L, __func__, 1), true));
+	return (SetSolidObjectRotation(L, ParseFeature(L, __func__, 1)));
 }
 
 
 /***
  * @function Spring.SetFeatureDirection
+ * Set feature front direction vector. The vector is normalized in
+ * the engine.
+ *
+ * @deprecated It's strongly that you use the overload that accepts
+ * a right direction as `frontDir` alone doesn't define object orientation.
+ *
  * @param featureID integer
- * @param dirX number
- * @param dirY number
- * @param dirZ number
+ * @param frontx number
+ * @param fronty number
+ * @param frontz number
  * @return nil
  */
+
+ /***
+  * @function Spring.SetFeatureDirection
+  * Set feature front and right direction vectors.
+  *
+  * Both vectors will be normalized in the engine.
+  *
+  * @param featureID integer
+  * @param frontx number
+  * @param fronty number
+  * @param frontz number
+  * @param rightx number
+  * @param righty number
+  * @param rightz number
+  * @return nil
+  */
 int LuaSyncedCtrl::SetFeatureDirection(lua_State* L)
 {
-	return (SetSolidObjectDirection(L, ParseFeature(L, __func__, 1)));
+	return SetSolidObjectDirection(L, ParseFeature(L, __func__, 1), __func__);
 }
 
 /***
@@ -4679,7 +4777,7 @@ int LuaSyncedCtrl::SetFeatureDirection(lua_State* L)
  */
 int LuaSyncedCtrl::SetFeatureHeadingAndUpDir(lua_State* L)
 {
-	return SetSolidObjectHeadingAndUpDir(L, ParseFeature(L, __func__, 1), true);
+	return SetSolidObjectHeadingAndUpDir(L, ParseFeature(L, __func__, 1));
 }
 
 /***

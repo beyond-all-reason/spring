@@ -612,7 +612,13 @@ int LuaUnsyncedCtrl::SendMessage(lua_State* L)
 
 
 /*** @function Spring.SendMessageToSpectators
- * @param message string `<PLAYER#>` (with # being a playerid) inside the string will be replaced with the players name - i.e. : Spring.SendMessage ("`<PLAYER1>` did something") might display as "ProRusher did something"
+ * @param message string ``"`<PLAYER#>`"`` where `#` is a player ID.
+ * 
+ * This will be replaced with the player's name. e.g.
+ * ```lua
+ * Spring.SendMessage("`<PLAYER1>` did something") -- "ProRusher did something"
+ * ```
+ * 
  * @return nil
  */
 int LuaUnsyncedCtrl::SendMessageToSpectators(lua_State* L)
@@ -1307,11 +1313,22 @@ int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
 	return 0;
 }
 
+/***
+ * @class ControlPoint
+ * 
+ * NURBS control point.
+ * 
+ * @field [1] number x
+ * @field [2] number y
+ * @field [3] number z
+ * @field [4] number weight
+ */
+
 /*** Sets Dolly Camera movement Curve
  *
  * @function Spring.SetDollyCameraCurve
  * @param degree number
- * @param cpoints table NURBS control point positions `{{x,y,z,weight}, ...}`
+ * @param cpoints ControlPoint[] NURBS control point positions.
  * @param knots table
  * @return nil
  */
@@ -1365,7 +1382,7 @@ int LuaUnsyncedCtrl::SetDollyCameraRelativeMode(lua_State* L)
  *
  * @function Spring.SetDollyCameraLookCurve
  * @param degree number
- * @param cpoints table NURBS control point positions `{{x,y,z,weight}, ...}`
+ * @param cpoints ControlPoint[] NURBS control point positions.
  * @param knots table
  * @return nil
  */

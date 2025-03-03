@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 [[nodiscard]] constexpr uint32_t hashString(const char* str, uint32_t length = -1u, uint32_t hash = 5381u)
 {
