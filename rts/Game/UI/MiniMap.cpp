@@ -258,19 +258,20 @@ void CMiniMap::ToggleMaximized(bool _maxspect)
 
 void CMiniMap::SetRotation(RotationOptions state) // 0 1 2 3: 0 90 180 270
 {
-	RECOIL_DETAILED_TRACY_ZONE;
+    RECOIL_DETAILED_TRACY_ZONE;
 
-	if (state == rotation) {
-		return;
-	// rotate minimap Dimensions if needed
-	} else if ((curDim.x <= curDim.y) && (state == ROTATION_90 || state == ROTATION_270)) {
-		std::swap(curDim.x, curDim.y);
-	} else if ((curDim.x > curDim.y) && (state == ROTATION_0 || state == ROTATION_180)) {
-		std::swap(curDim.x, curDim.y);
-	}
-	
-	rotation = state;
-	UpdateGeometry();
+    if (state == rotation)
+        return;
+
+    const bool wasVerticalRotation = (rotation == ROTATION_90 || rotation == ROTATION_270);
+    const bool isVerticalRotation = (state == ROTATION_90 || state == ROTATION_270);
+    
+    if (wasVerticalRotation != isVerticalRotation) {
+        std::swap(curDim.x, curDim.y);
+    }
+
+    rotation = state;
+    UpdateGeometry();
 }
 
 void CMiniMap::SetAspectRatioGeometry(const float& viewSizeX, const float& viewSizeY,
