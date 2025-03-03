@@ -9,6 +9,7 @@ uniform vec3 skyColor;
 uniform vec3 fogColor;
 uniform vec4 planeColor; // .w signals if enabled
 uniform vec3 sunDir;
+uniform vec4 sunColor;
 
 const float cirrus1  = 0.9;
 const float cumulus1 = 1.8;
@@ -80,12 +81,11 @@ void main()
 	float cirrus  = cloudInfo.w * cirrus1;
 	float cumulus = cloudInfo.w * cumulus1;
 
-	const vec3 sunColor = vec3(0.992, 0.985, 0.827);
 	float sunContrib = pow(max(0.0, dot(pos, normalize(sunDir))), 64.0);
 
 	float wpContrib = (1.0 - smoothstep(-0.5, -0.2, pos.y)) * planeColor.w;
 	fragColor.rgb = mix(skyColor, planeColor.rgb, wpContrib);
-	fragColor.rgb = mix(fragColor.rgb, sunColor * 1.3, sunContrib);
+	fragColor.rgb = mix(fragColor.rgb, sunColor.rgb * sunColor.w * 1.3, sunContrib);
 
     vec3 day_extinction = vec3(1.0);
     vec3 night_extinction = vec3(1.0 - exp(sunDir.y)) * 0.2;
@@ -112,7 +112,6 @@ void main()
 		fragColor.rgb = mix(fragColor.rgb, cloudInfo.rgb * extinction * density * 5.0, min(density, 1.0) * (max(pos.y, 0.0)));
 	}
 	#endif
-
 
 	fragColor.a = (0.5 - csstep(-0.8, -0.0, -0.5, 0.3, pos.y));
 }
