@@ -263,10 +263,11 @@ void CMiniMap::SetRotation(RotationOptions state) // 0 1 2 3: 0 90 180 270
     if (state == rotation)
         return;
 
-    const bool wasVerticalRotation = (rotation == ROTATION_90 || rotation == ROTATION_270);
-    const bool isVerticalRotation = (state == ROTATION_90 || state == ROTATION_270);
-    
-    if (wasVerticalRotation != isVerticalRotation) {
+    const float mapAspect = static_cast<float>(mapDims.mapx) / mapDims.mapy;
+
+    const bool shouldBeWider = ((mapAspect > 1.0f) != (state == ROTATION_90 || state == ROTATION_270));
+	
+    if (shouldBeWider != (curDim.x > curDim.y)) {
         std::swap(curDim.x, curDim.y);
     }
 
