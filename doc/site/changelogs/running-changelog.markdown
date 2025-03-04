@@ -64,6 +64,11 @@ Attachment can be either string ("color0" .. "color15", "depth", or "stencil") o
 * added 3D noise to basecontent bitmaps archive, under `bitmaps/noise/recoil_noise_2025_p5_p3_w6_w4_64x64x64_RGBA.dds` and `bitmaps/noise/recoil_noise_2025_p5_p3_w6_w4_128x128x128_RGBA.dds`.
 This allows for reliable generation of cheaper 3D noise in shaders.
 
+### Praise the sun!
+* the shadow texture (used by minimap, water, and grass) now tracks sun position changes immediately.
+* the "modern" sky renderer now uses the actual sun color instead of hardcoded RGB 253/251/211.
+* features far enough to fade out no longer keep drawing shadows.
+
 ### Debugging for rendering
 * added `VBO:GetID() → number`, gets the internal OpenGL ID for use in debugging.
 * added a second return value to `gl.CreateShader`, now also returns the internal ID for use in debugging.
