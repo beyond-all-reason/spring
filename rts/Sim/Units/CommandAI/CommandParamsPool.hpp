@@ -9,6 +9,17 @@
 
 #include "System/creg/creg_cond.h"
 
+/* Commands can normally have up to N parameters inline (where N is something low), for performance reasons.
+ * However advanced commands can have an arbitrary number of parameters and sometimes the command needs to
+ * be atomic (i.e. can't split into multiple commands with N params each since it would change the meaning).
+ *
+ * Some examples would be:
+ *  -  terraform area defined by lasso-selection at coordinates X1, Z1, X2, Z2, ..., X328, Z328.
+ *  -  cast soul link (think wc3 tauren spiritwalker) on units A, B, ..., Z.
+ *  -  set targeting priority to unit types A, B, ..., Z in this particular order.
+ *
+ * The command parameters pool reconciles the need to keep the average command data structure small while
+ * still allowing arbitrarily large commands in semi-rare cases. */
 template<typename T, size_t N, size_t S> struct TCommandParamsPool {
 public:
 	const T* GetPtr(unsigned int i, unsigned int j     ) const { assert(i < pages.size()); return (pages[i].data( ) + j); }
