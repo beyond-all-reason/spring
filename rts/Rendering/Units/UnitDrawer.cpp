@@ -361,20 +361,39 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 
 			const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
 			const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
+			float tempx = iconPos.x;
+			float tempy = iconPos.z;
 
-			float x0 = iconPos.x - iconSizeX;
-			float x1 = iconPos.x + iconSizeX;
-			float y0 = iconPos.z - iconSizeY;
-			float y1 = iconPos.z + iconSizeY;
+			switch (minimap->GetRotationOption()) {
+				case CMiniMap::ROTATION_90:
+					tempx = mapDims.mapx * SQUARE_SIZE - tempx;
 
-			if (minimap->GetFlipped()) {
-				x0 = mapDims.mapx * SQUARE_SIZE - x0;
-				x1 = mapDims.mapx * SQUARE_SIZE - x1;
-				y0 = mapDims.mapy * SQUARE_SIZE - y0;
-				y1 = mapDims.mapy * SQUARE_SIZE - y1;
-				std::swap(x0, x1);
-				std::swap(y0, y1);
+					// Normalize the coordinates to the minimap
+					tempx = tempx / mapDims.mapx * mapDims.mapy;
+					tempy = tempy / mapDims.mapy * mapDims.mapx;
+
+					std::swap(tempx, tempy);
+					break;
+				case CMiniMap::ROTATION_180:
+					tempx = mapDims.mapx * SQUARE_SIZE - tempx;
+					tempy = mapDims.mapy * SQUARE_SIZE - tempy;
+					break;
+				case CMiniMap::ROTATION_270:
+					tempy = mapDims.mapy * SQUARE_SIZE - tempy;
+
+					// Normalize the coordinates to the minimap
+					tempx = tempx / mapDims.mapx * mapDims.mapy;
+					tempy = tempy / mapDims.mapy * mapDims.mapx;
+
+					std::swap(tempx, tempy);
+					break;
+
 			}
+			
+			float x0 = tempx - iconSizeX;
+			float x1 = tempx + iconSizeX;
+			float y0 = tempy - iconSizeY;
+			float y1 = tempy + iconSizeY;
 
 			rb.AddQuadTriangles(
 				{ x0, y0, 0.0f, 0.0f, color },
