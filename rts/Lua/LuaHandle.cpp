@@ -2812,7 +2812,7 @@ void CLuaHandle::DrawInMiniMap()
 
 /***
  *
- * @function Callins:DrawInMinimapBackground
+ * @function Callins:DrawInMiniMapBackground
  * @param sx number relative to the minimap's position and scale.
  * @param sy number relative to the minimap's position and scale.
  */
