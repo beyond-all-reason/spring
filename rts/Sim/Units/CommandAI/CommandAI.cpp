@@ -506,9 +506,9 @@ bool CCommandAI::HandleBuildOptionInsertion(int cmdId)
 		return false;
 
 	if (auto* bcai = dynamic_cast<CBuilderCAI*>(this); bcai != nullptr)
-		bcai->buildOptions.insert(cmdId);
+		bcai->buildOptions.emplace(cmdId);
 	else if (auto* fcai = dynamic_cast<CFactoryCAI*>(this); fcai != nullptr)
-		fcai->buildOptions.insert(cmdId, 0);
+		fcai->buildOptions.emplace(cmdId, 0);
 
 	return true;
 }

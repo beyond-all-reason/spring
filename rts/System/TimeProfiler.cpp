@@ -154,7 +154,7 @@ bool CTimeProfiler::RegisterTimer(const char* timerName)
 	const auto iter = hashToName.find(nameHash);
 
 	if (iter == hashToName.end()) {
-		hashToName.insert(nameHash, timerName);
+		hashToName.emplace(nameHash, timerName);
 		return true;
 	}
 	if (iter->second == timerName)
@@ -292,7 +292,7 @@ void CTimeProfiler::ResortProfilesRaw()
 				if (iter == hashToName.end()) {
 					LOG_L(L_ERROR, "[%s] timer with hash %u wasn't registered", __func__, profile.first);
 					assert(false);
-					hashToName.insert(profile.first, "???");
+					hashToName.emplace(profile.first, "???");
 					continue;
 				}
 

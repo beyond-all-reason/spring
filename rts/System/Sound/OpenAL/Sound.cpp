@@ -206,7 +206,7 @@ size_t CSound::GetSoundId(const std::string& name)
 	if (LoadSoundBuffer(name) > 0) {
 		SoundItemNameMap itemMap = defaultItemNameMap;
 		itemMap.erase("file");
-		itemMap.insert("file", name);
+		itemMap.emplace("file", name);
 		return (preloadSet.erase(name), MakeItemFromDef(itemMap));
 	}
 

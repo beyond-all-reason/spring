@@ -332,8 +332,8 @@ IExplosionGenerator* CExplosionGeneratorHandler::LoadGenerator(const char* tag, 
 	if (sep != nullptr) {
 		// standard EG's have no postfix (nor always a prefix)
 		// custom EG's always have CEG_PREFIX_STRING in front
-		expGenHashIdentMap.insert(hash, explGen->GetGeneratorID());
-		expGenIdentNameMap.insert(explGen->GetGeneratorID(), key);
+		expGenHashIdentMap.emplace(hash, explGen->GetGeneratorID());
+		expGenIdentNameMap.emplace(explGen->GetGeneratorID(), key);
 
 		explGen->Load(this, sep + 1);
 	}

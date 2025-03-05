@@ -189,7 +189,7 @@ public:
 	{
 		reserve(l.size());
 		for (const auto& pair: l) {
-			insert(pair.first, pair.second);
+			emplace(pair.first, pair.second);
 		}
 	}
 
@@ -348,7 +348,7 @@ public:
 	// Returns a pair consisting of an iterator to the inserted element
 	// (or to the element that prevented the insertion)
 	// and a bool denoting whether the insertion took place.
-	std::pair<iterator, bool> insert(const KeyT& key, const ValueT& value)
+	std::pair<iterator, bool> emplace(const KeyT& key, const ValueT& value)
 	{
 		check_expand_need();
 
@@ -363,19 +363,16 @@ public:
 			return { iterator(this, bucket), true };
 		}
 	}
-	std::pair<iterator, bool> emplace(const KeyT& key, const ValueT& value) {
-		return (insert(key, value)); // [SPRING] just here for compatibility with std::unordered_map
-	}
 
 	std::pair<iterator, bool> insert(const std::pair<KeyT, ValueT>& p)
 	{
-		return insert(p.first, p.second);
+		return emplace(p.first, p.second);
 	}
 
 	void insert(const_iterator begin, const_iterator end)
 	{
 		for (; begin != end; ++begin) {
-			insert(begin->first, begin->second);
+			emplace(begin->first, begin->second);
 		}
 	}
 

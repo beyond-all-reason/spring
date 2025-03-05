@@ -65,7 +65,7 @@ void CLuaUnitScriptNames::InitScriptNames()
 	scriptMap.reserve(scriptNames.size());
 
 	for (size_t i = 0; i < scriptNames.size(); ++i) {
-		scriptMap.insert(scriptNames[i], i);
+		scriptMap.emplace(scriptNames[i], i);
 	}
 }
 

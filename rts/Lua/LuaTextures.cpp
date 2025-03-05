@@ -151,7 +151,7 @@ std::string LuaTextures::Create(const Texture& tex)
 	newTex.fboDepth = fboDepth;
 
 	if (freeIndices.empty()) {
-		textureMap.insert(str, textureVec.size());
+		textureMap.emplace(str, textureVec.size());
 		textureVec.emplace_back(newTex);
 		return str;
 	}

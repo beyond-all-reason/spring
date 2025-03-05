@@ -71,7 +71,7 @@ public:
 		if (g == nullptr)
 			return false;
 
-		unitGroups.insert(unitID, g->id);
+		unitGroups.emplace(unitID, g->id);
 		return true;
 	}
 

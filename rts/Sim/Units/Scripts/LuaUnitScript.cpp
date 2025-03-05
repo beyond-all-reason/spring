@@ -255,7 +255,7 @@ CLuaUnitScript::CLuaUnitScript(lua_State* L, CUnit* unit)
 		const std::string& fname = lua_tostring(L, -2);
 		const int r = luaL_ref(L, LUA_REGISTRYINDEX);
 
-		scriptNames.insert(fname, r);
+		scriptNames.emplace(fname, r);
 		UpdateCallIn(fname, r);
 	}
 	for (auto& p: unit->localModel.pieces) {
@@ -333,7 +333,7 @@ int CLuaUnitScript::UpdateCallIn()
 	else {
 		// adding new callIn
 		r = luaL_ref(L, LUA_REGISTRYINDEX);
-		scriptNames.insert(fname, r);
+		scriptNames.emplace(fname, r);
 	}
 
 	UpdateCallIn(fname, r);

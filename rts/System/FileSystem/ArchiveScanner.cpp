@@ -647,7 +647,7 @@ CArchiveScanner::ArchiveInfo& CArchiveScanner::GetAddArchiveInfo(const std::stri
 	auto aiPair = std::make_pair(aiIter, false);
 
 	if (aiIter == archiveInfosIndex.end()) {
-		aiPair = archiveInfosIndex.insert(lcfn, archiveInfos.size());
+		aiPair = archiveInfosIndex.emplace(lcfn, archiveInfos.size());
 		aiIter = aiPair.first;
 		archiveInfos.emplace_back();
 	}
@@ -661,7 +661,7 @@ CArchiveScanner::BrokenArchive& CArchiveScanner::GetAddBrokenArchive(const std::
 	auto baPair = std::make_pair(baIter, false);
 
 	if (baIter == brokenArchivesIndex.end()) {
-		baPair = brokenArchivesIndex.insert(lcfn, brokenArchives.size());
+		baPair = brokenArchivesIndex.emplace(lcfn, brokenArchives.size());
 		baIter = baPair.first;
 		brokenArchives.emplace_back();
 	}
@@ -797,7 +797,7 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 	ai.updated = true;
 	ai.hashed = doChecksum && GetArchiveChecksum(fullName, ai);
 
-	archiveInfosIndex.insert(lcfn, archiveInfos.size());
+	archiveInfosIndex.emplace(lcfn, archiveInfos.size());
 	archiveInfos.emplace_back(std::move(ai));
 
 	numScannedArchives += 1;
@@ -1202,10 +1202,10 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 
 		// rebuild index-maps
 		for (const ArchiveInfo& ai: archiveInfos) {
-			archiveInfosIndex.insert(StringToLower(ai.origName), &ai - &archiveInfos[0]);
+			archiveInfosIndex.emplace(StringToLower(ai.origName), &ai - &archiveInfos[0]);
 		}
 		for (const BrokenArchive& bi: brokenArchives) {
-			brokenArchivesIndex.insert(bi.name, &bi - &brokenArchives[0]);
+			brokenArchivesIndex.emplace(bi.name, &bi - &brokenArchives[0]);
 		}
 	}
 
