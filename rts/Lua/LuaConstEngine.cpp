@@ -5,7 +5,7 @@
 #include "LuaUtils.h"
 #include "Game/GameVersion.h"
 #include "System/Platform/Misc.h"
-
+#include "Rendering/Fonts/glFont.h"
 /******************************************************************************
  * Engine constants
  * @see rts/Lua/LuaConstEngine.cpp
@@ -31,6 +31,8 @@
  * @field buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
  * @field featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
  * @field wordSize number Indicates the build type always 64 these days
+ * @field gameSpeed number Number of FPS, constant 30
+ * @field textColorCodes table Constains three fields (Color, ColorAndOutline, Reset) with constant chars representing coresponding operation during font rendering
  */
 
 bool LuaConstEngine::PushEntries(lua_State* L)
@@ -43,6 +45,7 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "commitsNumber"  , SpringVersion::GetCommits()   );
 	LuaPushNamedString(L, "buildFlags"     , SpringVersion::GetAdditional());
 	LuaPushNamedNumber(L, "wordSize", (!CLuaHandle::GetHandleSynced(L))? Platform::NativeWordSize() * 8: 0);
+
 
 
 	/* If possible, entries should be bools that resolve to false in the "old" version
@@ -61,5 +64,14 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "maxPiecesPerModel", MAX_PIECES_PER_MODEL);
 	lua_rawset(L, -3);
 
+	// Fixes issue #1731.
+	LuaPushNamedNumber(L, "gameSpeed"      , GAME_SPEED);
+
+	lua_pushliteral(L, "textColorCodes");
+	lua_createtable(L, 0, 3);
+		LuaPushNamedChar(L, "Color"          , CglFont::ColorCodeIndicator  );
+		LuaPushNamedChar(L, "ColorAndOutline", CglFont::ColorCodeIndicatorEx);
+		LuaPushNamedChar(L, "Reset"          , CglFont::ColorResetIndicator );
+	lua_rawset(L, -3);
 	return true;
 }
