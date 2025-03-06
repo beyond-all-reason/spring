@@ -275,6 +275,20 @@ void CBeamLaser::FireInternal(float3 curDir)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	float actualRange = range;
+
+	/* FPS mode targeting essentially behaves as if with targetBorder=1,
+	 * even for units without this property. The practical effect is that
+	 * you can FPS a beamlaser turret and shoot units (esp. enemy turrets
+ 	 * of the same type) that normal target acquisition would refuse to.
+	 *
+	 * This arbitrary -5% range penalty aims to mitigate this. It relies
+	 * on the relative sizes of hitvolumes being circa about that big in
+	 * relation to unit ranges, which happens to be valid in games that
+	 * keep FPS mode available.
+  	 *
+ 	 * Long-term it would be good to do something definitive about FPS
+    	 * mode (embrace or deprecate) but for now it doesn't hurt too much
+       	 * to keep this. */
 	float rangeMod = 1.0f - (0.05f * owner->UnderFirstPersonControl());
 
 	bool tryAgain = true;
