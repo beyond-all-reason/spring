@@ -124,7 +124,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 	, allocImp({SzAlloc, SzFree})
 	, allocTempImp({SzAllocTemp, SzFreeTemp})
 {
-	std::scoped_lock lck(archiveLock);
+	std::scoped_lock lck(archiveLock); //not needed?
 
 	CRC::InitTable();
 
@@ -155,12 +155,20 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 		lcNameIndex.emplace(StringToLower(fd.origName), fileEntries.size());
 		fileEntries.emplace_back(std::move(fd));
 	}
+
+	// for truly solid archive, one call to SzArEx_Extract() extract all files in one huge buffer,
+	// makes no sense to MT access as calls to SzArEx_Extract() are really expensive in terms of RAM and CPU
+	// for truly non-solid archive each call to SzArEx_Extract() extracts one file,
+	// can MT as calls to SzArEx_Extract() are relatively inexpensive
+	// Now there is a grey area 7z approach with blocks of certain fixed size.
+	// It's not clear how to get the block size information, so we will use another heuristic to consider the archive solid
+	considerSolid = (db.db.NumFolders == 1) || (fileEntries.size() > db.db.NumFolders && db.db.NumFolders < ThreadPool::GetNumThreads());
 }
 
 
 CSevenZipArchive::~CSevenZipArchive()
 {
-	std::scoped_lock lck(archiveLock);
+	std::scoped_lock lck(archiveLock); //not needed?
 
 	if (isOpen) {
 		for (auto& data : perThreadData) {
@@ -186,7 +194,12 @@ int CSevenZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffe
 {
 	assert(IsFileId(fid));
 
-	auto tnum = ThreadPool::GetThreadNum();
+	// operate with one thread only in case of solid archives
+	auto tnum = !considerSolid ? ThreadPool::GetThreadNum() : 0;
+
+	std::unique_lock uniqueLock(archiveLock, std::defer_lock);
+	if (considerSolid)
+		uniqueLock.lock();
 
 	if (!perThreadData[tnum])
 		OpenArchive(tnum);

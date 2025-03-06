@@ -43,6 +43,8 @@ public:
 	uint32_t NumFiles() const override { return (fileEntries.size()); }
 	SFileInfo FileInfo(uint32_t fid) const override;
 
+	bool CheckForSolid() const override { return considerSolid; }
+
 	static constexpr int MAX_THREADS = 32;
 protected:
 	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
@@ -77,6 +79,7 @@ private:
 	ISzAlloc allocTempImp;
 
 	bool isOpen = false;
+	bool considerSolid = false;
 };
 
 #endif // _7ZIP_ARCHIVE_H

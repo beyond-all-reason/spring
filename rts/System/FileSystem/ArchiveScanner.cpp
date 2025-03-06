@@ -969,23 +969,25 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	switch (ar->GetType())
 	{
-	case ARCHIVE_TYPE_SDP: {
-		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveName));
-		// each file is one gzip instance, can MT
-		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
-	} break;
-	case ARCHIVE_TYPE_SDD: {
-		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
-		// just a file, can MT
-		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
-	} break;
-	case ARCHIVE_TYPE_SDZ: [[fallthrough]];
-	case ARCHIVE_TYPE_SD7:
-		numParallelFileReads = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no longer mutex locked
-		break;
-	default: // just default to 1 thread
-		numParallelFileReads = 1;
-		break;
+		case ARCHIVE_TYPE_SDP: {
+			auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveName));
+			// each file is one gzip instance, can MT
+			numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+		} break;
+		case ARCHIVE_TYPE_SDD: {
+			auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
+			// just a file, can MT
+			numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+		} break;
+		case ARCHIVE_TYPE_SDZ: {
+			numParallelFileReads = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no longer needs to be mutex locked
+		} break;
+		case ARCHIVE_TYPE_SD7: {
+			numParallelFileReads = !ar->CheckForSolid() ? ThreadPool::GetNumThreads() : 1; // allow parallel access, but only for non-solid archives
+		} break;
+		default: { // just default to 1 thread
+			numParallelFileReads = 1;
+		} break;
 	}
 
 	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
@@ -995,7 +997,8 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	std::vector<std::string> fileNames;
 	std::vector<sha512::raw_digest> fileHashes;
 	static std::array<std::vector<std::uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
-	for (auto& fileBuffer : fileBuffers) {
+	for (size_t i = 0; i < ThreadPool::GetNumThreads(); ++i) {
+		auto& fileBuffer = fileBuffers[i];
 		fileBuffer.reserve(1 << 20);
 		fileBuffer.clear();
 	}

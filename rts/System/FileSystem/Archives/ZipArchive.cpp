@@ -22,7 +22,7 @@ static_assert(ThreadPool::MAX_THREADS <= CZipArchive::MAX_THREADS, "MAX_THREADS 
 CZipArchive::CZipArchive(const std::string& archiveName)
 	: CBufferedArchive(archiveName)
 {
-	std::scoped_lock lck(archiveLock);
+	std::scoped_lock lck(archiveLock); //not needed?
 
 	unzFile zip = nullptr;
 
@@ -71,7 +71,7 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 
 CZipArchive::~CZipArchive()
 {
-	std::scoped_lock lck(archiveLock);
+	std::scoped_lock lck(archiveLock); //not needed?
 
 	for (auto& zip : zipPerThread) {
 		if (zip) {
@@ -107,7 +107,6 @@ int CZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	if (thisThreadZip == nullptr)
 		return -4;
 
-	// assert(archiveLock.locked());
 	assert(IsFileId(fid));
 
 	unzGoToFilePos(thisThreadZip, &fileEntries[fid].fp);
