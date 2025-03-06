@@ -54,16 +54,18 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 		if ((fName[fNameLen - 1] == '/') || (fName[fNameLen - 1] == '\\'))
 			continue;
 
-		FileEntry fd;
-		unzGetFilePos(zip, &fd.fp);
+		unz_file_pos fp{};
+		unzGetFilePos(zip, &fp);
 
-		fd.size = info.uncompressed_size;
-		fd.origName = fName;
-		fd.crc = info.crc;
-		fd.modTime = static_cast<uint32_t>(CTimeUtil::DosTimeToTime64(info.dosDate));
+		const auto& fd = fileEntries.emplace_back(
+			std::move(fp), //fp
+			info.uncompressed_size, //size
+			fName, //origName
+			info.crc, //crc
+			static_cast<uint32_t>(CTimeUtil::DosTimeToTime64(info.dosDate)) //modTime
+		);
 
-		lcNameIndex.emplace(StringToLower(fd.origName), fileEntries.size());
-		fileEntries.emplace_back(std::move(fd));
+		lcNameIndex.emplace(StringToLower(fd.origName), fileEntries.size() - 1);
 	}
 
 	zipPerThread[0] = zip;
