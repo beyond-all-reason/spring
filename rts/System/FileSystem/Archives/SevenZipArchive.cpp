@@ -210,11 +210,15 @@ int CSevenZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffe
 	return 1;
 }
 
-void CSevenZipArchive::FileInfo(uint32_t fid, std::string& name, int& size) const
+IArchive::SFileInfo CSevenZipArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
-	name = fileEntries[fid].origName;
-	size = fileEntries[fid].size;
+
+	return IArchive::SFileInfo{
+		.fileName = fileEntries[fid].origName,
+		.size = fileEntries[fid].size,
+		.modTime = 0
+	};
 }
 
 void CSevenZipArchive::OpenArchive(int tnum)

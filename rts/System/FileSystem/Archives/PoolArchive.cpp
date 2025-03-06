@@ -1,3 +1,4 @@
+#include "PoolArchive.h"
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "PoolArchive.h"
@@ -119,6 +120,16 @@ CPoolArchive::~CPoolArchive()
 
 		LOG_L(L_INFO, "\tfile=\"%s\" indx=%lu inflSize=%ukb readTime=%lums", f.name.c_str(), indx, f.size / 1024, time);
 	}
+}
+
+IArchive::SFileInfo CPoolArchive::FileInfo(unsigned int fid) const
+{
+	assert(IsFileId(fid));
+	return IArchive::SFileInfo{
+		.fileName = files[fid].name,
+		.size = static_cast<int32_t>(files[fid].size),
+		.modTime = 0
+	};
 }
 
 std::string CPoolArchive::GetPoolRootDirectory(const std::string& sdpName)

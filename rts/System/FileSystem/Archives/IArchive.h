@@ -21,6 +21,12 @@
  */
 class IArchive
 {
+public:
+	struct SFileInfo {
+		std::string fileName;
+		int32_t size;
+		uint32_t modTime;
+	};
 protected:
 	IArchive(const std::string& archiveFile): archiveFile(archiveFile) {
 	}
@@ -82,18 +88,13 @@ public:
 	 */
 	bool GetFile(const std::string& name, std::vector<std::uint8_t>& buffer);
 
-	std::pair<std::string, int> FileInfo(uint32_t fid) const {
-		std::pair<std::string, int> info;
-		FileInfo(fid, info.first, info.second);
-		return info;
-	}
-
 	uint32_t ExtractedSize() const {
 		uint32_t size = 0;
 
 		// no archive should be larger than 4GB when extracted
 		for (uint32_t fid = 0; fid < NumFiles(); fid++) {
-			size += (FileInfo(fid).second);
+			auto fi = FileInfo(fid);
+			size += (fi.size);
 		}
 
 		return size;
@@ -102,7 +103,7 @@ public:
 	/**
 	 * Fetches the name and size in bytes of a file by its ID.
 	 */
-	virtual void FileInfo(uint32_t fid, std::string& name, int& size) const = 0;
+	virtual SFileInfo FileInfo(unsigned int fid) const = 0;
 
 	/**
 	 * Returns true if the cost of reading the file is qualitatively relative

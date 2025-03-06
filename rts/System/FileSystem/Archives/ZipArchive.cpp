@@ -80,12 +80,15 @@ CZipArchive::~CZipArchive()
 }
 
 
-void CZipArchive::FileInfo(unsigned int fid, std::string& name, int& size) const
+IArchive::SFileInfo CZipArchive::FileInfo(unsigned int fid) const
 {
 	assert(IsFileId(fid));
 
-	name = fileEntries[fid].origName;
-	size = fileEntries[fid].size;
+	return IArchive::SFileInfo {
+		.fileName = fileEntries[fid].origName,
+		.size = fileEntries[fid].size,
+		.modTime = 0
+	};
 }
 
 // To simplify things, files are always read completely into memory from

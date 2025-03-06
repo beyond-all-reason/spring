@@ -84,11 +84,7 @@ public:
 	bool IsOpen() override { return isOpen; }
 
 	unsigned NumFiles() const override { return (files.size()); }
-	void FileInfo(uint32_t fid, std::string& name, int& size) const override {
-		assert(IsFileId(fid));
-		name = files[fid].name;
-		size = files[fid].size;
-	}
+	SFileInfo FileInfo(uint32_t fid) const override;
 	bool CalcHash(uint32_t fid, uint8_t hash[sha512::SHA_LEN], std::vector<std::uint8_t>& fb) override {
 		assert(IsFileId(fid));
 

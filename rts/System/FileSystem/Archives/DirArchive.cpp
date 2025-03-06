@@ -5,6 +5,7 @@
 
 #include <assert.h>
 #include <fstream>
+#include <filesystem>
 
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
@@ -63,18 +64,16 @@ bool CDirArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
 	return true;
 }
 
-void CDirArchive::FileInfo(unsigned int fid, std::string& name, int& size) const
+IArchive::SFileInfo CDirArchive::FileInfo(unsigned int fid) const
 {
 	assert(IsFileId(fid));
+	IArchive::SFileInfo fi;
+	fi.fileName = searchFiles[fid];
+	const std::string rawPath = dataDirsAccess.LocateFile(dirName + fi.fileName);
+	std::error_code ec;
+	fi.size = static_cast<int32_t>(std::filesystem::file_size(rawPath, ec));
+	if (ec)
+		fi.size = 0;
 
-	name = searchFiles[fid];
-	const std::string rawPath = dataDirsAccess.LocateFile(dirName + name);
-	std::ifstream ifs(rawPath.c_str(), std::ios::in | std::ios::binary);
-
-	if (!ifs.bad() && ifs.is_open()) {
-		ifs.seekg(0, std::ios_base::end);
-		size = ifs.tellg();
-	} else {
-		size = 0;
-	}
+	return fi;
 }

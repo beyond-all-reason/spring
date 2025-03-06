@@ -41,7 +41,7 @@ public:
 	bool IsOpen() override { return isOpen; }
 
 	uint32_t NumFiles() const override { return (fileEntries.size()); }
-	void FileInfo(uint32_t fid, std::string& name, int& size) const override;
+	SFileInfo FileInfo(uint32_t fid) const override;
 
 	static constexpr int MAX_THREADS = 32;
 protected:
