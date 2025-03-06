@@ -9,7 +9,9 @@ set(archives_sources
 	VirtualArchive.cpp
 	ZipArchive.cpp
 	${sources_engine_System_Log}
-	${sources_engine_System_Log_sinkConsole})
+	${sources_engine_System_Log_sinkConsole}
+	${SOURCE_ROOT}/System/TimeUtil.cpp
+)
 
 # Can't remove definitions per target
 remove_definitions(-DTHREADPOOL)
