@@ -7,6 +7,7 @@
 #include <array>
 #include <string>
 #include <optional>
+#include <bitset>
 
 #include <7z.h>
 #include <7zFile.h>
@@ -38,7 +39,7 @@ public:
 
 	int GetType() const override { return ARCHIVE_TYPE_SD7; }
 
-	bool IsOpen() override { return isOpen; }
+	bool IsOpen() override { return isOpen.any(); }
 
 	uint32_t NumFiles() const override { return (fileEntries.size()); }
 	SFileInfo FileInfo(uint32_t fid) const override;
@@ -78,7 +79,7 @@ private:
 	ISzAlloc allocImp;
 	ISzAlloc allocTempImp;
 
-	bool isOpen = false;
+	std::bitset<MAX_THREADS> isOpen = { false };
 	bool considerSolid = false;
 };
 

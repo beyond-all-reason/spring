@@ -170,14 +170,16 @@ CSevenZipArchive::~CSevenZipArchive()
 {
 	std::scoped_lock lck(archiveLock); //not needed?
 
-	if (isOpen) {
-		for (auto& data : perThreadData) {
-			if (!data)
-				continue;
+	for (size_t i = 0; i < ThreadPool::GetNumThreads(); ++i) {
+		if (!perThreadData[i])
+			continue;
 
-			File_Close(&data->archiveStream.file);
-		}
+		if (!isOpen[i])
+			continue;
+
+		File_Close(&perThreadData[i]->archiveStream.file);
 	}
+
 	for (auto& data : perThreadData) {
 		if (!data)
 			continue;
@@ -263,7 +265,7 @@ void CSevenZipArchive::OpenArchive(int tnum)
 
 	const SRes res = SzArEx_Open(&db, &lookStream.vt, &allocImp, &allocTempImp);
 	if (res == SZ_OK) {
-		isOpen = true;
+		isOpen[tnum] = true;
 	}
 	else {
 		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s", __func__, archiveFile.c_str(), GetErrorStr(res));
