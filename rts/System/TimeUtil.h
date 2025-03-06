@@ -5,6 +5,7 @@
 
 #include <string>
 #include <ctime>
+#include <cstdint>
 
 #ifdef __GNUC__
 #define __time64_t time_t
