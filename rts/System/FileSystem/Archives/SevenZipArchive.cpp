@@ -15,6 +15,7 @@
 #include "System/Platform/Misc.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/Log/ILog.h"
+#include "System/TimeUtil.h"
 
 static Byte kUtf8Limits[5] = {0xC0, 0xE0, 0xF0, 0xF8, 0xFC};
 
@@ -149,6 +150,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 		fd.origName = std::move(fileName.value());
 		fd.fp = i;
 		fd.size = SzArEx_GetFileSize(&db, i);
+		fd.modTime = static_cast<uint32_t>(CTimeUtil::NTFSTimeToTime64(db.MTime.Vals[i].Low, db.MTime.Vals[i].High));
 
 		lcNameIndex.emplace(StringToLower(fd.origName), fileEntries.size());
 		fileEntries.emplace_back(std::move(fd));
@@ -213,11 +215,11 @@ int CSevenZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffe
 IArchive::SFileInfo CSevenZipArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
-
+	const auto& fe = fileEntries[fid];
 	return IArchive::SFileInfo{
-		.fileName = fileEntries[fid].origName,
-		.size = fileEntries[fid].size,
-		.modTime = 0
+		.fileName = fe.origName,
+		.size = fe.size,
+		.modTime = fe.modTime
 	};
 }
 

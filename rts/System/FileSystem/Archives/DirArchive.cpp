@@ -5,7 +5,6 @@
 
 #include <assert.h>
 #include <fstream>
-#include <filesystem>
 
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
@@ -70,10 +69,8 @@ IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 	IArchive::SFileInfo fi;
 	fi.fileName = searchFiles[fid];
 	const std::string rawPath = dataDirsAccess.LocateFile(dirName + fi.fileName);
-	std::error_code ec;
-	fi.size = static_cast<int32_t>(std::filesystem::file_size(rawPath, ec));
-	if (ec)
-		fi.size = 0;
+	fi.size = FileSystem::GetFileSize(rawPath);
+	fi.modTime = FileSystemAbstraction::GetFileModificationTime(rawPath);
 
 	return fi;
 }

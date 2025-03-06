@@ -65,6 +65,7 @@ private:
 		 * Real/unpacked size of the file in bytes.
 		 */
 		int size;
+		uint32_t modTime;
 		std::string origName;
 	};
 

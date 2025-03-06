@@ -10,6 +10,7 @@
 #include "System/StringUtil.h"
 #include "System/Log/ILog.h"
 #include "System/Threading/ThreadPool.h"
+#include "System/TimeUtil.h"
 
 IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const
 {
@@ -59,6 +60,7 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 		fd.size = info.uncompressed_size;
 		fd.origName = fName;
 		fd.crc = info.crc;
+		fd.modTime = static_cast<uint32_t>(CTimeUtil::DosTimeToTime64(info.dosDate));
 
 		lcNameIndex.emplace(StringToLower(fd.origName), fileEntries.size());
 		fileEntries.emplace_back(std::move(fd));
@@ -83,11 +85,11 @@ CZipArchive::~CZipArchive()
 IArchive::SFileInfo CZipArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
-
+	const auto& fe = fileEntries[fid];
 	return IArchive::SFileInfo {
-		.fileName = fileEntries[fid].origName,
-		.size = fileEntries[fid].size,
-		.modTime = 0
+		.fileName = fe.origName,
+		.size = fe.size,
+		.modTime = fe.modTime
 	};
 }
 

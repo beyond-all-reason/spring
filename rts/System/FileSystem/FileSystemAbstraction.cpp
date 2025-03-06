@@ -6,6 +6,8 @@
 
 #include "FileSystemAbstraction.h"
 
+#include <filesystem>
+
 #include "FileQueryFlags.h"
 
 #include "System/StringUtil.h"
@@ -157,12 +159,12 @@ std::string FileSystemAbstraction::GetParent(const std::string& path)
 
 size_t FileSystemAbstraction::GetFileSize(const std::string& file)
 {
-	struct stat info;
+	std::error_code ec;
+	auto size = static_cast<int32_t>(std::filesystem::file_size(file, ec));
+	if (ec)
+		return 0;
 
-	if ((stat(file.c_str(), &info) == 0) && (!S_ISDIR(info.st_mode)))
-		return info.st_size;
-
-	return -1;
+	return size;
 }
 
 bool FileSystemAbstraction::IsReadableFile(const std::string& file)
@@ -187,6 +189,7 @@ unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& f
 		return 0;
 	}
 	if (FILETIME ft; GetFileTime(h, nullptr, nullptr, &ft)) {
+		// Could be replaced by CTimeUtil::NTFSTimeToTime64
 		SYSTEMTIME stUTC;
 		FileTimeToSystemTime(&ft, &stUTC);
 

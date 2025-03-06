@@ -84,10 +84,10 @@ bool CVirtualArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 IArchive::SFileInfo CVirtualArchive::FileInfo(uint32_t fid) const
 {
 	assert(fid < files.size());
-
+	const auto& fe = files[fid];
 	return IArchive::SFileInfo{
-		.fileName = files[fid].name,
-		.size = static_cast<int32_t>(files[fid].buffer.size()),
+		.fileName = fe.name,
+		.size = static_cast<int32_t>(fe.buffer.size()),
 		.modTime = 0
 	};
 }

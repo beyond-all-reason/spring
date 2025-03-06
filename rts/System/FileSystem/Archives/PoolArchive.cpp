@@ -84,8 +84,11 @@ CPoolArchive::CPoolArchive(const std::string& name)
 		std::memcpy(&f.md5sum, &c_md5sum, sizeof(f.md5sum));
 		std::memset(&f.shasum, 0, sizeof(f.shasum));
 
+		const auto poolFn = GetPoolFileName(poolRootDir, f.md5sum);
+
 		f.crc32 = parse_uint32(c_crc32);
 		f.size = parse_uint32(c_size);
+		f.modTime = FileSystemAbstraction::GetFileModificationTime(poolFn);
 
 		s.fileIndx = files.size() - 1;
 		s.readTime = 0;
@@ -125,10 +128,11 @@ CPoolArchive::~CPoolArchive()
 IArchive::SFileInfo CPoolArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
+	const auto& file = files[fid];
 	return IArchive::SFileInfo{
-		.fileName = files[fid].name,
-		.size = static_cast<int32_t>(files[fid].size),
-		.modTime = 0
+		.fileName = file.name,
+		.size = static_cast<int32_t>(file.size),
+		.modTime = file.modTime
 	};
 }
 
@@ -142,6 +146,23 @@ std::string CPoolArchive::GetPoolRootDirectory(const std::string& sdpName)
 	return poolRootDir;
 }
 
+std::string CPoolArchive::GetPoolFileName(const std::string& poolRootDir, const std::array<uint8_t, 16>& md5Sum)
+{
+	static constexpr const char table[] = "0123456789abcdef";
+	char c_hex[32];
+
+	for (int i = 0; i < 16; ++i) {
+		c_hex[2 * i    ] = table[(md5Sum[i] >> 4) & 0xF];
+		c_hex[2 * i + 1] = table[(md5Sum[i]     ) & 0xF];
+	}
+
+	const std::string prefix(c_hex    ,  2);
+	const std::string pstfix(c_hex + 2, 30);
+
+	std::string rpath = poolRootDir + "/pool/" + prefix + "/" + pstfix + ".gz";
+	return FileSystem::FixSlashes(rpath);
+}
+
 int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
@@ -149,19 +170,7 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	auto& f = files[fid];
 	auto& s = stats[fid];
 
-	constexpr const char table[] = "0123456789abcdef";
-	char c_hex[32];
-
-	for (int i = 0; i < 16; ++i) {
-		c_hex[2 * i    ] = table[(f.md5sum[i] >> 4) & 0xf];
-		c_hex[2 * i + 1] = table[ f.md5sum[i]       & 0xf];
-	}
-
-	const std::string prefix(c_hex,      2);
-	const std::string pstfix(c_hex + 2, 30);
-
-	      std::string rpath = poolRootDir + "/pool/" + prefix + "/" + pstfix + ".gz";
-	const std::string  path = FileSystem::FixSlashes(rpath);
+	const auto path = GetPoolFileName(poolRootDir, f.md5sum);
 
 	const spring_time startTime = spring_now();
 

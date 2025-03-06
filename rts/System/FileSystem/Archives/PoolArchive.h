@@ -98,6 +98,7 @@ public:
 		return (memcmp(fd.shasum.data(), dummyFileHash.data(), sizeof(fd.shasum)) != 0);
 	}
 	static std::string GetPoolRootDirectory(const std::string& sdpName);
+	static std::string GetPoolFileName(const std::string& poolRootDir, const std::array<uint8_t, 16>& md5Sum);
 protected:
 	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 private:
@@ -119,6 +120,7 @@ private:
 
 		uint32_t crc32;
 		uint32_t size;
+		uint32_t modTime;
 	};
 	struct FileStat {
 		// inverted cmp for descending order
@@ -132,7 +134,6 @@ private:
 	bool isOpen = false;
 
 	std::string poolRootDir;
-
 	std::vector<FileData> files;
 	std::vector<FileStat> stats;
 

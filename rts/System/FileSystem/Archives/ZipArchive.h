@@ -59,6 +59,7 @@ private:
 		int size;
 		std::string origName;
 		uint32_t crc;
+		uint32_t modTime;
 	};
 
 	std::vector<FileEntry> fileEntries;
