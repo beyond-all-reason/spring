@@ -9,11 +9,24 @@
 
 CBufferedArchive::~CBufferedArchive()
 {
-	// filter archives for which only {map,mod}info.lua was accessed
-	if (cacheSize <= 1 || fileCount <= 1)
-		return;
+	uint32_t   cachedSize = 0;
+	uint32_t uncachedSize = 0;
+	uint32_t fileCount = 0;
 
-	LOG_L(L_INFO, "[%s][name=%s] %u bytes cached in %u files", __func__, archiveFile.c_str(), cacheSize, fileCount);
+	for (const auto& [numAccessed, gotBuffered, fileData] : fileCache) {
+		if (gotBuffered) {
+			cachedSize += fileData.size();
+			fileCount++;
+		} else {
+			uncachedSize += fileData.size();
+		}
+	}
+
+	LOG_L(L_INFO, "[%s][name=%s] %u bytes cached in %u files, %u bytes cached in %u files",
+		__func__, archiveFile.c_str(),
+		  cachedSize, fileCount,
+		uncachedSize, static_cast<uint32_t>(fileCache.size() - fileCount)
+	);
 }
 
 bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
@@ -24,41 +37,36 @@ bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buff
 
 	if (!globalConfig.vfsCacheArchiveFiles || noCache) {
 		if ((ret = GetFileImpl(fid, buffer)) != 1)
-			LOG_L(L_WARNING, "[BufferedArchive::%s(fid=%u)][noCache=%d,vfsCache=%d] name=%s ret=%d size=" _STPF_, __func__, fid, static_cast<int>(noCache), static_cast<int>(globalConfig.vfsCacheArchiveFiles), archiveFile.c_str(), ret, buffer.size());
+			LOG_L(L_ERROR, "[BufferedArchive::%s(fid=%u)][noCache=%d,vfsCache=%d] name=%s ret=%d size=" _STPF_, __func__, fid, static_cast<int>(noCache), static_cast<int>(globalConfig.vfsCacheArchiveFiles), archiveFile.c_str(), ret, buffer.size());
 
 		return (ret == 1);
 	}
 
 	// NumFiles is virtual, can't do this in ctor
-	if (fileCache.empty())
-		fileCache.resize(NumFiles());
-
-	FileBuffer& fb = fileCache.at(fid);
-
-	fb.numAccessed++;
-	if (!fb.populated) {
-		if (fb.numAccessed > 1) {
-			fb.exists = ((ret = GetFileImpl(fid, fb.data)) == 1);
-			fb.populated = true;
-
-			cacheSize += fb.data.size();
-			fileCount += fb.exists;
-		}
-		else { // most files are only accessed once, don't bother with those
-			ret = GetFileImpl(fid, buffer);
-			return (ret == 1);
-		}
+	{
+		std::scoped_lock lck(mutex);
+		if (fileCache.empty())
+			fileCache.resize(NumFiles());
 	}
 
-	if (!fb.exists) {
-		LOG_L(L_WARNING, "[BufferedArchive::%s(fid=%u)][!fb.exists] name=%s ret=%d size=" _STPF_, __func__, fid, archiveFile.c_str(), ret, fb.data.size());
-		return false;
+	// numAccessed/gotBuffered are not atomic, and simultaneous access to the same fid will cause issues
+	// however, the access pattern is such that each thread accesses a different fid, so this should be fine
+	auto& [numAccessed, gotBuffered, fileData] = fileCache[fid];
+
+	numAccessed++;
+
+	if (gotBuffered) {
+		buffer.assign(fileData.begin(), fileData.end());
+		return true;
 	}
 
-	if (buffer.size() != fb.data.size())
-		buffer.resize(fb.data.size());
+	if ((ret = GetFileImpl(fid, buffer)) != 1)
+		LOG_L(L_ERROR, "[BufferedArchive::%s(fid=%u)][noCache=%d,vfsCache=%d] name=%s ret=%d size=" _STPF_, __func__, fid, static_cast<int>(noCache), static_cast<int>(globalConfig.vfsCacheArchiveFiles), archiveFile.c_str(), ret, buffer.size());
 
-	// TODO: zero-copy access
-	std::copy(fb.data.begin(), fb.data.end(), buffer.begin());
-	return true;
+	if (numAccessed == 2 && (ret == 1)) {
+		fileData.assign(buffer.begin(), buffer.end());
+		gotBuffered = true;
+	}
+	
+	return (ret == 1);
 }

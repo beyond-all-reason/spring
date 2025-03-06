@@ -35,10 +35,10 @@ public:
 
 	bool IsOpen() override { return true; }
 
-	unsigned int NumFiles() const override { return (searchFiles.size()); }
-	bool GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
-	void FileInfo(unsigned int fid, std::string& name, int& size) const override;
-	const std::string& GetOrigFileName(unsigned int fid) const { return searchFiles[fid]; }
+	uint32_t NumFiles() const override { return (searchFiles.size()); }
+	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
+	SFileInfo FileInfo(uint32_t fid) const override;
+	const std::string& GetOrigFileName(uint32_t fid) const { return searchFiles[fid]; }
 
 private:
 	/// "ExampleArchive.sdd/"

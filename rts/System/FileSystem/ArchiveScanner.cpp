@@ -570,16 +570,16 @@ bool CArchiveScanner::CheckCompression(const IArchive* ar, const std::string& fu
 		if (ar->HasLowReadingCost(fid))
 			continue;
 
-		const std::pair<std::string, int>& info = ar->FileInfo(fid);
+		auto fi = ar->FileInfo(fid);
 
-		switch (GetMetaFileClass(StringToLower(info.first))) {
+		switch (GetMetaFileClass(StringToLower(fi.fileName))) {
 			case 1: {
-				error += "reading primary meta-file " + info.first + " too expensive; ";
+				error += "reading primary meta-file " + fi.fileName + " too expensive; ";
 				error += "please repack this archive with non-solid compression";
 				return false;
 			} break;
 			case 2: {
-				LOG_SL(LOG_SECTION_ARCHIVESCANNER, L_WARNING, "Archive %s: reading secondary meta-file %s too expensive", fullName.c_str(), info.first.c_str());
+				LOG_SL(LOG_SECTION_ARCHIVESCANNER, L_WARNING, "Archive %s: reading secondary meta-file %s too expensive", fullName.c_str(), fi.fileName.c_str());
 			} break;
 			case 0:
 			default: {
@@ -597,11 +597,11 @@ std::string CArchiveScanner::SearchMapFile(const IArchive* ar, std::string& erro
 
 	// check for smf and if the uncompression of important files is too costy
 	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
-		const std::pair<std::string, int>& info = ar->FileInfo(fid);
-		const std::string& ext = FileSystem::GetExtension(StringToLower(info.first));
+		auto fi = ar->FileInfo(fid);
+		const std::string& ext = FileSystem::GetExtension(StringToLower(fi.fileName));
 
 		if (ext == "smf")
-			return info.first;
+			return fi.fileName;
 	}
 
 	return "";
@@ -979,8 +979,10 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		// just a file, can MT
 		numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
 	} break;
-	case ARCHIVE_TYPE_SDZ: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
-	case ARCHIVE_TYPE_SD7: [[fallthrough]]; // mutex locked, not thread safe, makes no sense to throw more threads on it
+	case ARCHIVE_TYPE_SDZ: [[fallthrough]];
+	case ARCHIVE_TYPE_SD7:
+		numParallelFileReads = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no longer mutex locked
+		break;
 	default: // just default to 1 thread
 		numParallelFileReads = 1;
 		break;
@@ -1002,13 +1004,13 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	fileHashes.reserve(ar->NumFiles());
 
 	for (unsigned fid = 0; fid < ar->NumFiles(); ++fid) {
-		const auto& [filename, fileSize] = ar->FileInfo(fid);
+		auto fi = ar->FileInfo(fid);
 
-		if (ignore->Match(filename))
+		if (ignore->Match(fi.fileName))
 			continue;
 
 		// create case-insensitive hashes
-		fileNames.push_back(StringToLower(filename));
+		fileNames.push_back(StringToLower(fi.fileName));
 		fileHashes.emplace_back();
 	}
 
@@ -1037,7 +1039,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		tasks.emplace_back(ThreadPool::Enqueue(ComputeHashesTask, i));
 	}
 
-	const auto erasePredicate = [](decltype(tasks)::value_type item) {
+	const auto erasePredicate = [](decltype(tasks)::value_type& item) {
 		using namespace std::chrono_literals;
 		return item.wait_for(0us) == std::future_status::ready;
 	};

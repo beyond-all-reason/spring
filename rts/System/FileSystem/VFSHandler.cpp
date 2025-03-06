@@ -176,8 +176,8 @@ bool CVFSHandler::AddArchive(const std::string& archiveName, bool overwrite)
 	files[Section::Temp].reserve(ar->NumFiles());
 
 	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
-		std::pair<std::string, int> fi = ar->FileInfo(fid);
-		std::string name = StringToLower(fi.first);
+		auto fi = ar->FileInfo(fid);
+		std::string name = StringToLower(fi.fileName);
 
 		if (!overwrite) {
 			const auto pred = [](const FileEntry& a, const FileEntry& b) { return (a.first < b.first); };
@@ -195,7 +195,7 @@ bool CVFSHandler::AddArchive(const std::string& archiveName, bool overwrite)
 
 		// can not add directly to files[section], would break lower_bound
 		// note: this means an archive can *internally* contain duplicates
-		files[Section::Temp].emplace_back(name, FileData{ar, fi.second});
+		files[Section::Temp].emplace_back(name, FileData{ar, fi.size});
 	}
 
 	for (FileEntry& fileEntry: files[Section::Temp]) {

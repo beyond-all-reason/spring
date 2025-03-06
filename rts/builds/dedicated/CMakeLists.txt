@@ -21,7 +21,7 @@ set(ENGINE_SRC_ROOT_DIR "${CMAKE_SOURCE_DIR}/rts")
 
 ### Assemble libraries
 list(APPEND engineDedicatedLibraries ${Boost_REGEX_LIBRARY})
-list(APPEND engineDedicatedLibraries lua archives 7zip prd::jsoncpp
+list(APPEND engineDedicatedLibraries lua archives_nothreadpool 7zip prd::jsoncpp
 	${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB gflags_nothreads_static Tracy::TracyClient)
 list(APPEND engineDedicatedLibraries headlessStubs engineSystemNet)
 if(UNIX AND NOT (CMAKE_SYSTEM_NAME MATCHES "OpenBSD"))

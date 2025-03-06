@@ -5,6 +5,7 @@
 
 #include <zlib.h>
 #include <cstring>
+#include <cassert>
 
 #include "IArchiveFactory.h"
 #include "BufferedArchive.h"
@@ -83,11 +84,7 @@ public:
 	bool IsOpen() override { return isOpen; }
 
 	unsigned NumFiles() const override { return (files.size()); }
-	void FileInfo(unsigned int fid, std::string& name, int& size) const override {
-		assert(IsFileId(fid));
-		name = files[fid].name;
-		size = files[fid].size;
-	}
+	SFileInfo FileInfo(uint32_t fid) const override;
 	bool CalcHash(uint32_t fid, uint8_t hash[sha512::SHA_LEN], std::vector<std::uint8_t>& fb) override {
 		assert(IsFileId(fid));
 
@@ -102,8 +99,8 @@ public:
 	}
 	static std::string GetPoolRootDirectory(const std::string& sdpName);
 protected:
-	int GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
-
+	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
+private:
 	std::pair<uint64_t, uint64_t> GetSums() const {
 		std::pair<uint64_t, uint64_t> p;
 
@@ -135,10 +132,11 @@ private:
 	bool isOpen = false;
 
 	std::string poolRootDir;
-	std::array<uint8_t, sha512::SHA_LEN> dummyFileHash;
 
 	std::vector<FileData> files;
 	std::vector<FileStat> stats;
+
+	static constexpr std::array<uint8_t, sha512::SHA_LEN> dummyFileHash = { 0 };
 };
 
 #endif // _POOL_ARCHIVE_H
