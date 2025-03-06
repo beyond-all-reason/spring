@@ -122,7 +122,7 @@ CPoolArchive::~CPoolArchive()
 	}
 }
 
-IArchive::SFileInfo CPoolArchive::FileInfo(unsigned int fid) const
+IArchive::SFileInfo CPoolArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
 	return IArchive::SFileInfo{

@@ -43,7 +43,7 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 }
 
 
-bool CDirArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
+bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 
@@ -64,7 +64,7 @@ bool CDirArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
 	return true;
 }
 
-IArchive::SFileInfo CDirArchive::FileInfo(unsigned int fid) const
+IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
 	IArchive::SFileInfo fi;

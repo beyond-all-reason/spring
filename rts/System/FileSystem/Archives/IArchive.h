@@ -103,7 +103,7 @@ public:
 	/**
 	 * Fetches the name and size in bytes of a file by its ID.
 	 */
-	virtual SFileInfo FileInfo(unsigned int fid) const = 0;
+	virtual SFileInfo FileInfo(uint32_t fid) const = 0;
 
 	/**
 	 * Returns true if the cost of reading the file is qualitatively relative

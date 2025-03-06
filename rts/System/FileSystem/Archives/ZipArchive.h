@@ -37,11 +37,11 @@ public:
 
 	bool IsOpen() override { return (zipPerThread[0] != nullptr); }
 
-	unsigned int NumFiles() const override { return (fileEntries.size()); }
-	SFileInfo FileInfo(unsigned int fid) const override;
+	uint32_t NumFiles() const override { return (fileEntries.size()); }
+	SFileInfo FileInfo(uint32_t fid) const override;
 
 	#if 0
-	unsigned int GetCrc32(unsigned int fid) {
+	uint32_t GetCrc32(uint32_t fid) {
 		assert(IsFileId(fid));
 		return fileEntries[fid].crc;
 	}
@@ -58,7 +58,7 @@ private:
 		unz_file_pos fp;
 		int size;
 		std::string origName;
-		unsigned int crc;
+		uint32_t crc;
 	};
 
 	std::vector<FileEntry> fileEntries;

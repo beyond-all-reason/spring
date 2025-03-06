@@ -80,7 +80,7 @@ CZipArchive::~CZipArchive()
 }
 
 
-IArchive::SFileInfo CZipArchive::FileInfo(unsigned int fid) const
+IArchive::SFileInfo CZipArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
 
