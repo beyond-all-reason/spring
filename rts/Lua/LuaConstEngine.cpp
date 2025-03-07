@@ -54,7 +54,7 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "buildFlags"     , SpringVersion::GetAdditional());
 	LuaPushNamedNumber(L, "wordSize", (!CLuaHandle::GetHandleSynced(L))? Platform::NativeWordSize() * 8: 0);
 
-
+	LuaPushNamedNumber(L, "gameSpeed", GAME_SPEED);
 
 	/* If possible, entries should be bools that resolve to false in the "old" version
 	 * and to true in the "new" version; this is because any version beforehand has it
@@ -72,13 +72,12 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "maxPiecesPerModel", MAX_PIECES_PER_MODEL);
 	lua_rawset(L, -3);
 
-	LuaPushNamedNumber(L, "gameSpeed"      , GAME_SPEED);
-
 	lua_pushliteral(L, "textColorCodes");
 	lua_createtable(L, 0, 3);
-		LuaPushNamedChar(L, "Color"          , static_cast<char>(CglFont::ColorCodeIndicator)  );
+		LuaPushNamedChar(L, "Color"          , static_cast<char>(CglFont::ColorCodeIndicator  ));
 		LuaPushNamedChar(L, "ColorAndOutline", static_cast<char>(CglFont::ColorCodeIndicatorEx));
-		LuaPushNamedChar(L, "Reset"          , static_cast<char>(CglFont::ColorResetIndicator) );
+		LuaPushNamedChar(L, "Reset"          , static_cast<char>(CglFont::ColorResetIndicator ));
 	lua_rawset(L, -3);
+
 	return true;
 }
