@@ -39,7 +39,7 @@
  * @field buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
  * @field featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
  * @field wordSize number Indicates the build type always 64 these days
- * @field gameSpeed number Number of FPS
+ * @field gameSpeed number Number of simulation gameframes per second
  * @field textColorCodes TextColorCodes Table containing keys that represent the color code operations during font rendering
  */
 
