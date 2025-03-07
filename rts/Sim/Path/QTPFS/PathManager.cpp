@@ -314,8 +314,8 @@ void QTPFS::PathManager::Load() {
 	// numPrevExecutedSearches.resize(teamHandler.ActiveTeams() + 1, 0);
 
 	{
-		const sha512::raw_digest& mapCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->mapName);
-		const sha512::raw_digest& modCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->modName);
+		const sha512::raw_digest mapCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->mapName);
+		const sha512::raw_digest modCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->modName);
 
 		sha512::hex_digest mapCheckSumHex;
 		sha512::hex_digest modCheckSumHex;

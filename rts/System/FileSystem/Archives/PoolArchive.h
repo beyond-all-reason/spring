@@ -85,17 +85,17 @@ public:
 
 	unsigned NumFiles() const override { return (files.size()); }
 	SFileInfo FileInfo(uint32_t fid) const override;
-	bool CalcHash(uint32_t fid, uint8_t hash[sha512::SHA_LEN], std::vector<std::uint8_t>& fb) override {
+	bool CalcHash(uint32_t fid, sha512::raw_digest& hash, std::vector<std::uint8_t>& fb) override {
 		assert(IsFileId(fid));
 
 		const FileData& fd = files[fid];
 
 		// pool-entry hashes are not calculated until GetFileImpl, must check JIT
-		if (memcmp(fd.shasum.data(), dummyFileHash.data(), sizeof(fd.shasum)) == 0)
+		if (fd.shasum == sha512::NULL_RAW_DIGEST)
 			GetFileImpl(fid, fb);
 
-		memcpy(hash, fd.shasum.data(), sha512::SHA_LEN);
-		return (memcmp(fd.shasum.data(), dummyFileHash.data(), sizeof(fd.shasum)) != 0);
+		hash = fd.shasum;
+		return (fd.shasum != sha512::NULL_RAW_DIGEST);
 	}
 	static std::string GetPoolRootDirectory(const std::string& sdpName);
 	static std::string GetPoolFileName(const std::string& poolRootDir, const std::array<uint8_t, 16>& md5Sum);
@@ -136,8 +136,6 @@ private:
 	std::string poolRootDir;
 	std::vector<FileData> files;
 	std::vector<FileStat> stats;
-
-	static constexpr std::array<uint8_t, sha512::SHA_LEN> dummyFileHash = { 0 };
 };
 
 #endif // _POOL_ARCHIVE_H

@@ -992,47 +992,55 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
 
-	// load ignore list, and insert all files to check in lowercase format
-	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
+	// store relevant lowercased filenames from the archive
 	std::vector<std::string> fileNames;
-	std::vector<sha512::raw_digest> fileHashes;
-	static std::array<std::vector<std::uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
-	for (size_t i = 0; i < ThreadPool::GetNumThreads(); ++i) {
-		auto& fileBuffer = fileBuffers[i];
-		fileBuffer.reserve(1 << 20);
-		fileBuffer.clear();
-	}
 
 	fileNames.reserve(ar->NumFiles());
-	fileHashes.reserve(ar->NumFiles());
+	archiveInfo.perFileData.reserve(ar->NumFiles());
 
-	for (unsigned fid = 0; fid < ar->NumFiles(); ++fid) {
+	// load ignore list, and insert all files to check in lowercase format
+	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
+	for (size_t fid = 0; fid < ar->NumFiles(); ++fid) {
 		auto fi = ar->FileInfo(fid);
 
 		if (ignore->Match(fi.fileName))
 			continue;
 
 		// create case-insensitive hashes
-		fileNames.push_back(StringToLower(fi.fileName));
-		fileHashes.emplace_back();
+		auto lcFn = StringToLower(fi.fileName);
+		fileNames.emplace_back(lcFn);
+
+		auto it = archiveInfo.perFileData.find(lcFn);
+		if (it == archiveInfo.perFileData.end()) {
+			archiveInfo.perFileData.emplace(std::move(lcFn), {});
+		}
+		else if (fi.modTime != it->second.modTime || fi.size != it->second.size || it->second.checksum == sha512::NULL_RAW_DIGEST) {
+			it->second.modTime = fi.modTime;
+			it->second.size = fi.size;
+			it->second.checksum = sha512::NULL_RAW_DIGEST;
+		}
 	}
 
-	// sort by filename
-	std::stable_sort(fileNames.begin(), fileNames.end());
-
+	// limit number of simultaneous IO operations
 	std::counting_semaphore sem(numParallelFileReads);
 
-	auto ComputeHashesTask = [&ar, &fileNames, &fileHashes, &sem, this](size_t fidx) -> void {
-		const auto& fileName = fileNames[fidx];
-		auto& fileHash = fileHashes[fidx];
+	std::array<std::vector<uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
+
+	auto ComputeHashesTask = [&ar, &fileNames = std::as_const(fileNames), &fileBuffers, &perFileData = archiveInfo.perFileData, &sem, this](size_t i) -> void {
+		const auto& fileName = fileNames[i]; // note generally (i != fid) due to sorting and filtering
+
+		const auto it = perFileData.find(fileName);
+		assert(it != perFileData.end());
+		if (it->second.checksum != sha512::NULL_RAW_DIGEST)
+			return;
+
 		auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
 		fileBuffer.clear();
 
 		sem.acquire();
-		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(ar->FindFile(fileName), fileHash.data(), fileBuffer)));
+		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(ar->FindFile(fileName), it->second.checksum, fileBuffer)));
 		sem.release();
 	};
-
 
 #if !defined(DEDICATED) && !defined(UNITSYNC)
 	std::vector<std::shared_future<void>> tasks;
@@ -1057,17 +1065,20 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	});
 #endif
 
-	for (auto& fileBuffer : fileBuffers) //clean static buffers
-		fileBuffer.clear();
+	// sort by filename
+	std::stable_sort(fileNames.begin(), fileNames.end());
 
 	// combine individual hashes, initialize to hash(name)
 	for (size_t i = 0; i < fileNames.size(); i++) {
+		const auto& fileName = fileNames[i];
+		const auto& fileHash = archiveInfo.perFileData[fileName].checksum;
+
 		sha512::raw_digest fileNameHash {0};
-		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNames[i].c_str()), fileNames[i].size(), fileNameHash.data());
+		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileName.c_str()), fileName.size(), fileNameHash.data());
 
 		for (uint8_t j = 0; j < sha512::SHA_LEN; j++) {
 			archiveInfo.checksum[j] ^= fileNameHash[j];
-			archiveInfo.checksum[j] ^= fileHashes[i][j];
+			archiveInfo.checksum[j] ^= fileHash[j];
 		}
 
 		#if !defined(DEDICATED) && !defined(UNITSYNC)

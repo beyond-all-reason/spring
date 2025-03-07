@@ -831,7 +831,7 @@ std::uint32_t PathingState::CalcChecksum() const
 
 	sha512::hex_digest hexChars;
 	sha512::raw_digest shaBytes;
-	sha512::msg_vector rawBytes;
+	std::vector<uint8_t> rawBytes;
 	#endif
 
 	#if (ENABLE_NETLOG_CHECKSUM == 1)
