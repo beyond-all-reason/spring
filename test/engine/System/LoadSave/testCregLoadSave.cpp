@@ -8,9 +8,7 @@
 #include <vector>
 #include <stdio.h>
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
-
+#include <catch_amalgamated.hpp>
 
 
 struct EmbeddedObj {

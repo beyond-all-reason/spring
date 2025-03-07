@@ -20,8 +20,7 @@ namespace us {
 	#include "../tools/unitsync/unitsync_api.h"
 };
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 
 
