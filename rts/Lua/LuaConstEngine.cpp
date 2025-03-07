@@ -6,6 +6,7 @@
 #include "Game/GameVersion.h"
 #include "System/Platform/Misc.h"
 #include "Rendering/Fonts/glFont.h"
+
 /******************************************************************************
  * Engine constants
  * @see rts/Lua/LuaConstEngine.cpp
@@ -16,6 +17,13 @@
  * @field NegativeGetUnitCurrentCommand boolean
  * @field hasExitOnlyYardmaps boolean
  * @field rmlUiApiVersion integer
+ */
+
+/***
+ * @class TextColorCodes
+ * @field Color string Indicates that the following bytes contain color code information
+ * @field ColorAndOutline string Indicates that the following bytes contain color code and outline information
+ * @field Reset string Indicates reset of the current color
  */
 
 /***
@@ -31,8 +39,8 @@
  * @field buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
  * @field featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
  * @field wordSize number Indicates the build type always 64 these days
- * @field gameSpeed number Number of FPS, constant 30
- * @field textColorCodes table Constains three fields (Color, ColorAndOutline, Reset) with constant chars representing coresponding operation during font rendering
+ * @field gameSpeed number Number of FPS
+ * @field textColorCodes TextColorCodes Table containing keys that represent the color code operations during font rendering
  */
 
 bool LuaConstEngine::PushEntries(lua_State* L)
@@ -64,7 +72,6 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "maxPiecesPerModel", MAX_PIECES_PER_MODEL);
 	lua_rawset(L, -3);
 
-	// Fixes issue #1731.
 	LuaPushNamedNumber(L, "gameSpeed"      , GAME_SPEED);
 
 	lua_pushliteral(L, "textColorCodes");
