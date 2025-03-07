@@ -4,14 +4,16 @@
 #define _THREADPOOL_H
 
 #ifndef THREADPOOL
-#include  <functional>
+#include <functional>
+#include <future>
 #include "System/Threading/SpringThreading.h"
 
 namespace ThreadPool {
 	template<class F, class... Args>
-	static inline void Enqueue(F&& f, Args&&... args)
+	static auto Enqueue(F&& f, Args&&... args)
+	-> std::shared_future<std::invoke_result_t<F, Args...>>
 	{
-		f(args ...);
+		return std::shared_future(std::async(std::launch::deferred, std::forward<F>(f), std::forward<Args>(args)...));
 	}
 
 	static inline void AddExtJob(spring::thread&& t) { t.join(); }

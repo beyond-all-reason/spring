@@ -1000,7 +1000,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	// load ignore list, and insert all files to check in lowercase format
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
-	for (size_t fid = 0; fid < ar->NumFiles(); ++fid) {
+	for (uint32_t fid = 0; fid < ar->NumFiles(); ++fid) {
 		auto fi = ar->FileInfo(fid);
 
 		if (ignore->Match(fi.fileName))
@@ -1042,7 +1042,6 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		sem.release();
 	};
 
-#if !defined(DEDICATED) && !defined(UNITSYNC)
 	std::vector<std::shared_future<void>> tasks;
 	tasks.reserve(fileNames.size());
 
@@ -1052,18 +1051,20 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	const auto erasePredicate = [](decltype(tasks)::value_type& item) {
 		using namespace std::chrono_literals;
-		return item.wait_for(0us) == std::future_status::ready;
+		const auto taskStatus = item.wait_for(0us);
+		if (taskStatus == std::future_status::deferred) {
+			item.get();
+			return true;
+		}
+		else {
+			return (taskStatus == std::future_status::ready);
+		}
 	};
 
 	while (!tasks.empty()) {
 		std::erase_if(tasks, erasePredicate);
 		spring_sleep(spring_msecs(1));
 	}
-#else
-	for_mt(0, fileNames.size(), [&](const int i) {
-		ComputeHashesTask(i);
-	});
-#endif
 
 	// sort by filename
 	std::stable_sort(fileNames.begin(), fileNames.end());
