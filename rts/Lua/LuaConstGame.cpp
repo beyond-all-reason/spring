@@ -28,13 +28,6 @@
  * @see rts/Lua/LuaConstGame.cpp
 ******************************************************************************/
 
-/***
- * @class TextColorCodes
- * @field Color string Indicates that the following bytes contain color code information
- * @field ColorAndOutline string Indicates that the following bytes contain color code and outline information
- * @field Reset string Indicates reset of the current color
- */
-
 /*** Game specific information
  *
  * @table Game

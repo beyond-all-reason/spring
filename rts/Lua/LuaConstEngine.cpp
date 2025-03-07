@@ -20,13 +20,6 @@
  */
 
 /***
- * @class TextColorCodes
- * @field Color string Indicates that the following bytes contain color code information
- * @field ColorAndOutline string Indicates that the following bytes contain color code and outline information
- * @field Reset string Indicates reset of the current color
- */
-
-/***
  * Engine specific information.
  *
  * @table Engine
