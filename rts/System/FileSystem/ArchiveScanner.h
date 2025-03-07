@@ -162,8 +162,14 @@ public:
 	void ResetNumFilesHashed() { numFilesHashed.store(0); }
 private:
 	struct ArchiveInfo {
+		struct PerFileData {
+			int32_t size = -1;
+			uint32_t modTime = 0;
+			sha512::raw_digest checksum {0};
+		};
+
 		ArchiveInfo() {
-			memset(checksum, 0, sizeof(checksum));
+			checksum = { 0 };
 		}
 
 		std::string path;             // FileSystem::GetDirectory(origName)
@@ -171,11 +177,13 @@ private:
 		std::string replaced;         // if not empty, use this archive instead
 		std::string archiveDataPath;  // path to {mod,map}info.lua for .sdd's
 
+		spring::unordered_map<std::string, PerFileData> perFileData;
+
 		ArchiveData archiveData;
 
 		uint32_t modified = 0;
 		uint32_t modifiedArchiveData = 0;
-		uint8_t checksum[sha512::SHA_LEN];
+		sha512::raw_digest checksum;
 
 		bool updated = false;
 		bool hashed = false;

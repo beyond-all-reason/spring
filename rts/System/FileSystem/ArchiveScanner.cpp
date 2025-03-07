@@ -623,7 +623,7 @@ void CArchiveScanner::ReadCache()
 		if (ReadCacheData(vm1CacheFile, true) || ReadCacheData(vm2CacheFile, true)) {
 			// nullify hashes
 			for (auto& ai : archiveInfos) {
-				memset(ai.checksum, 0, sizeof(ai.checksum));
+				ai.checksum = { 0 };
 				isDirty = true;
 			}
 		}
@@ -1129,11 +1129,11 @@ bool CArchiveScanner::ReadCacheData(const std::string& filename, bool loadOldVer
 			sha512::raw_digest rawDigest;
 			std::copy(hexDigestStr.begin(), hexDigestStr.end(), hexDigest.data());
 			sha512::read_digest(hexDigest, rawDigest);
-			std::memcpy(ai.checksum, rawDigest.data(), sha512::SHA_LEN);
+			ai.checksum = rawDigest;
 		}
 
 		ai.updated = false;
-		ai.hashed = (memcmp(ai.checksum, tmp.checksum, sha512::SHA_LEN) != 0);
+		ai.hashed = (ai.checksum == tmp.checksum);
 
 
 		ai.archiveData = CArchiveScanner::ArchiveData(archivedTbl, true);
@@ -1223,7 +1223,7 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 		sha512::raw_digest rawDigest;
 		sha512::hex_digest hexDigest;
 
-		std::memcpy(rawDigest.data(), arcInfo.checksum, sha512::SHA_LEN);
+		rawDigest = arcInfo.checksum;
 		sha512::dump_digest(rawDigest, hexDigest);
 
 		fprintf(out, "\t\t{\n");
@@ -1525,15 +1525,14 @@ sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::str
 	const std::string lcName = StringToLower(FileSystem::GetFilename(filePath));
 	const auto aiIter = archiveInfosIndex.find(lcName);
 
-	sha512::raw_digest checksum;
-	std::fill(checksum.begin(), checksum.end(), 0);
+	sha512::raw_digest checksum = { 0 };
 
 	if (aiIter == archiveInfosIndex.end()) {
 		DumpArchiveChecksum(lcName, checksum); //cs is 0
 		return checksum;
 	}
 
-	std::memcpy(checksum.data(), archiveInfos[aiIter->second].checksum, sha512::SHA_LEN);
+	checksum = archiveInfos[aiIter->second].checksum;
 	DumpArchiveChecksum(lcName, checksum);
 	return checksum;
 }
