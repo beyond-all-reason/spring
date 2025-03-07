@@ -28,6 +28,13 @@
  * @see rts/Lua/LuaConstGame.cpp
 ******************************************************************************/
 
+/***
+ * @class TextColorCodes
+ * @field Color string Indicates that the following bytes contain color code information
+ * @field ColorAndOutline string Indicates that the following bytes contain color code and outline information
+ * @field Reset string Indicates reset of the current color
+ */
+
 /*** Game specific information
  *
  * @table Game
@@ -36,7 +43,7 @@
  * @field maxPlayers number
  * @field squareSize number Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates. The resolution of height, yard and type maps.
  * @field metalMapSquareSize number The resolution of metalmap (for use in API such as Spring.GetMetalAmount etc.)
- * @field gameSpeed number
+ * @field gameSpeed number Number of FPS
  * @field startPosType number
  * @field ghostedBuildings boolean
  * @field mapChecksum string
@@ -112,6 +119,7 @@
  *       ["crawlingbombs"]= 10, ...
  *     }
  * ```
+ * @field textColorCodes TextColorCodes Table containing keys that represent the color code operations during font rendering
  */
 
 bool LuaConstGame::PushEntries(lua_State* L)
