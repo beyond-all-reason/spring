@@ -263,16 +263,7 @@ void CMiniMap::SetRotation(RotationOptions state) // 0 1 2 3: 0 90 180 270
     if (state == rotation)
         return;
 
-    const float mapAspect = static_cast<float>(mapDims.mapx) / mapDims.mapy;
-
-    const bool shouldBeWider = ((mapAspect > 1.0f) != (state == ROTATION_90 || state == ROTATION_270));
-	
-    if (shouldBeWider != (curDim.x > curDim.y)) {
-        std::swap(curDim.x, curDim.y);
-    }
-
     rotation = state;
-    UpdateGeometry();
 }
 
 void CMiniMap::SetAspectRatioGeometry(const float& viewSizeX, const float& viewSizeY,
@@ -1078,8 +1069,7 @@ void CMiniMap::Update()
 	 * does not support minimap flipping. */
 	if (minimapCanFlip){
 		const float rotY = ClampRad(camHandler->GetCurrentController().GetRot().y);
-		RotationOptions rotOpt = rotY > math::HALFPI && rotY <= 3 * math::HALFPI ? ROTATION_180 : ROTATION_0;
-		SetRotation(rotOpt);
+		rotation = rotY > math::HALFPI && rotY <= 3 * math::HALFPI ? ROTATION_180 : ROTATION_0;
 	}
 
 	float refreshRate = minimapRefreshRate;
