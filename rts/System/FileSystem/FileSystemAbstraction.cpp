@@ -6,22 +6,23 @@
 
 #include "FileSystemAbstraction.h"
 
-#include <filesystem>
-
-#include "FileQueryFlags.h"
-
-#include "System/StringUtil.h"
-#include "System/Log/ILog.h"
-#include "System/Exceptions.h"
-
 #include <cassert>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <cerrno>
 #include <cstring>
+#include <filesystem>
+
 #include <fmt/printf.h>
 #include <fmt/format.h>
+
+#include "FileQueryFlags.h"
+#include "System/StringUtil.h"
+#include "System/Log/ILog.h"
+#include "System/Exceptions.h"
+
 #include "System/SpringRegex.h"
+#include "System/TimeUtil.h"
 #include "System/Platform/Misc.h"
 
 #ifndef _WIN32
@@ -180,7 +181,7 @@ bool FileSystemAbstraction::IsReadableFile(const std::string& file)
 #endif
 }
 
-unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& file)
+uint32_t FileSystemAbstraction::GetFileModificationTime(const std::string& file)
 {
 #ifdef _WIN32
 	auto h = CreateFileA(file.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
@@ -189,23 +190,8 @@ unsigned int FileSystemAbstraction::GetFileModificationTime(const std::string& f
 		return 0;
 	}
 	if (FILETIME ft; GetFileTime(h, nullptr, nullptr, &ft)) {
-		// Could be replaced by CTimeUtil::NTFSTimeToTime64
-		SYSTEMTIME stUTC;
-		FileTimeToSystemTime(&ft, &stUTC);
-
-		struct tm tm;
-		memset(&tm, 0, sizeof(tm)); // Initialize to zero
-
-		tm.tm_year = stUTC.wYear - 1900;
-		tm.tm_mon = stUTC.wMonth - 1;
-		tm.tm_mday = stUTC.wDay;
-		tm.tm_hour = stUTC.wHour;
-		tm.tm_min = stUTC.wMinute;
-		tm.tm_sec = stUTC.wSecond;
-		tm.tm_isdst = 0;
-
 		CloseHandle(h);
-		return static_cast<unsigned int>(std::mktime(&tm));
+		return static_cast<uint32_t>(CTimeUtil::NTFSTimeToTime64(ft.dwLowDateTime, ft.dwHighDateTime));
 	}
 	else {
 		LOG_L(L_WARNING, "[FSA::%s] error '%s' getting last modification time of file '%s'", __func__, Platform::GetLastErrorAsString().c_str(), file.c_str());

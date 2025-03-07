@@ -68,7 +68,10 @@ IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 	assert(IsFileId(fid));
 	IArchive::SFileInfo fi;
 	fi.fileName = searchFiles[fid];
-	const std::string rawPath = dataDirsAccess.LocateFile(dirName + fi.fileName);
+
+	std::string rawPath = dataDirsAccess.LocateFile(dirName + fi.fileName);
+	FileSystem::FixSlashes(rawPath);
+
 	fi.size = FileSystem::GetFileSize(rawPath);
 	fi.modTime = FileSystemAbstraction::GetFileModificationTime(rawPath);
 

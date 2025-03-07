@@ -46,8 +46,6 @@ static bool gz_really_read(gzFile file, voidp buf, uint32_t len)
 	return (gzread(file, reinterpret_cast<char*>(buf), len) == len);
 }
 
-
-
 CPoolArchive::CPoolArchive(const std::string& name)
 	: CBufferedArchive(name)
 {
@@ -84,11 +82,9 @@ CPoolArchive::CPoolArchive(const std::string& name)
 		std::memcpy(&f.md5sum, &c_md5sum, sizeof(f.md5sum));
 		std::memset(&f.shasum, 0, sizeof(f.shasum));
 
-		const auto poolFn = GetPoolFileName(poolRootDir, f.md5sum);
-
 		f.crc32 = parse_uint32(c_crc32);
 		f.size = parse_uint32(c_size);
-		f.modTime = FileSystemAbstraction::GetFileModificationTime(poolFn);
+		f.modTime = 0; // it's expensive and wasteful to set it here, set in FileInfo() instead
 
 		s.fileIndx = files.size() - 1;
 		s.readTime = 0;
@@ -128,7 +124,13 @@ CPoolArchive::~CPoolArchive()
 IArchive::SFileInfo CPoolArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
-	const auto& file = files[fid];
+	auto& file = files[fid];
+
+	if (file.modTime == 0) {
+		const auto poolFn = GetPoolFileName(poolRootDir, file.md5sum);
+		file.modTime = FileSystemAbstraction::GetFileModificationTime(poolFn); // file.modTime is mutable
+	}
+
 	return IArchive::SFileInfo{
 		.fileName = file.name,
 		.size = static_cast<int32_t>(file.size),

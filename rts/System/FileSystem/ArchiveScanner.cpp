@@ -5,9 +5,12 @@
 #include <cstdio>
 #include <memory>
 #include <semaphore>
+#include <limits>
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include <fmt/format.h>
 
 #include "ArchiveNameResolver.h"
 #include "ArchiveScanner.h"
@@ -413,6 +416,8 @@ void CArchiveScanner::Clear()
 	archiveInfosIndex.reserve(256);
 	brokenArchives.clear();
 	brokenArchives.reserve(16);
+	poolFilesInfo.clear();
+	poolFilesInfo.reserve(32768); //be generous
 	brokenArchivesIndex.clear();
 	brokenArchivesIndex.reserve(16);
 	cacheFile.clear();
@@ -566,7 +571,7 @@ bool CArchiveScanner::CheckCompression(const IArchive* ar, const std::string& fu
 	if (!ar->CheckForSolid())
 		return true;
 
-	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
+	for (uint32_t fid = 0; fid != ar->NumFiles(); ++fid) {
 		if (ar->HasLowReadingCost(fid))
 			continue;
 
@@ -596,7 +601,7 @@ std::string CArchiveScanner::SearchMapFile(const IArchive* ar, std::string& erro
 	assert(ar != nullptr);
 
 	// check for smf and if the uncompression of important files is too costy
-	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
+	for (uint32_t fid = 0; fid != ar->NumFiles(); ++fid) {
 		auto fi = ar->FileInfo(fid);
 		const std::string& ext = FileSystem::GetExtension(StringToLower(fi.fileName));
 
@@ -672,7 +677,7 @@ CArchiveScanner::BrokenArchive& CArchiveScanner::GetAddBrokenArchive(const std::
 
 void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 {
-	unsigned modifiedTime = 0;
+	uint32_t modifiedTime = 0;
 
 	assert(!isInScan);
 
@@ -804,7 +809,7 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 }
 
 
-bool CArchiveScanner::CheckCachedData(const std::string& fullName, unsigned& modified, bool doChecksum)
+bool CArchiveScanner::CheckCachedData(const std::string& fullName, uint32_t& modified, bool doChecksum)
 {
 	// virtual archives do not exist on disk, and thus do not have a modification time
 	// they should still be scanned as normal archives so we only skip the cache-check
@@ -992,11 +997,13 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
 
+	bool sdpArchive = (ar->GetType() == ARCHIVE_TYPE_SDP);
+
 	// store relevant lowercased filenames from the archive
 	std::vector<std::string> fileNames;
 
 	fileNames.reserve(ar->NumFiles());
-	archiveInfo.perFileData.reserve(ar->NumFiles());
+	archiveInfo.filesInfo.reserve(ar->NumFiles());
 
 	// load ignore list, and insert all files to check in lowercase format
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
@@ -1010,11 +1017,19 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		auto lcFn = StringToLower(fi.fileName);
 		fileNames.emplace_back(lcFn);
 
-		auto it = archiveInfo.perFileData.find(lcFn);
-		if (it == archiveInfo.perFileData.end()) {
-			archiveInfo.perFileData.emplace(std::move(lcFn), {});
+		// special treatment of SDP archives: insert information from poolFilesInfo
+		if (sdpArchive) {
+			auto it = poolFilesInfo.find(lcFn);
+			if (it != poolFilesInfo.end()) {
+				archiveInfo.filesInfo[it->first] = it->second;
+			}
 		}
-		else if (fi.modTime != it->second.modTime || fi.size != it->second.size || it->second.checksum == sha512::NULL_RAW_DIGEST) {
+
+		auto it = archiveInfo.filesInfo.find(lcFn);
+		if (it == archiveInfo.filesInfo.end())
+			it = archiveInfo.filesInfo.emplace(std::move(lcFn), {}).first;
+
+		if (fi.modTime != it->second.modTime || fi.size != it->second.size) {
 			it->second.modTime = fi.modTime;
 			it->second.size = fi.size;
 			it->second.checksum = sha512::NULL_RAW_DIGEST;
@@ -1026,11 +1041,11 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	std::array<std::vector<uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
 
-	auto ComputeHashesTask = [&ar, &fileNames = std::as_const(fileNames), &fileBuffers, &perFileData = archiveInfo.perFileData, &sem, this](size_t i) -> void {
+	auto ComputeHashesTask = [&ar, &fileNames = std::as_const(fileNames), &fileBuffers, &filesInfo = archiveInfo.filesInfo, &sem, this](size_t i) -> void {
 		const auto& fileName = fileNames[i]; // note generally (i != fid) due to sorting and filtering
 
-		const auto it = perFileData.find(fileName);
-		assert(it != perFileData.end());
+		const auto it = filesInfo.find(fileName);
+		assert(it != filesInfo.end());
 		if (it->second.checksum != sha512::NULL_RAW_DIGEST)
 			return;
 
@@ -1072,7 +1087,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	// combine individual hashes, initialize to hash(name)
 	for (size_t i = 0; i < fileNames.size(); i++) {
 		const auto& fileName = fileNames[i];
-		const auto& fileHash = archiveInfo.perFileData[fileName].checksum;
+		const auto& fileHash = archiveInfo.filesInfo[fileName].checksum;
 
 		sha512::raw_digest fileNameHash {0};
 		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileName.c_str()), fileName.size(), fileNameHash.data());
@@ -1085,6 +1100,15 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		#if !defined(DEDICATED) && !defined(UNITSYNC)
 		Watchdog::ClearTimer(WDT_MAIN);
 		#endif
+	}
+
+	if (sdpArchive) {
+		// makes no sense to store archiveInfo.filesInfo in the SDP index
+		// copy to poolFilesInfo and empty archiveInfo.filesInfo
+		for (const auto& [fn, fi] : archiveInfo.filesInfo) {
+			poolFilesInfo[fn] = fi;
+		}
+		archiveInfo.filesInfo = {};
 	}
 
 	return true;
@@ -1105,48 +1129,57 @@ bool CArchiveScanner::ReadCacheData(const std::string& filename, bool loadOldVer
 		return false;
 	}
 
-	const LuaTable& archiveCacheTbl = p.GetRoot();
-	const LuaTable& archivesTbl = archiveCacheTbl.SubTable("archives");
-	const LuaTable& brokenArchivesTbl = archiveCacheTbl.SubTable("brokenArchives");
+	const LuaTable archiveCacheTbl = p.GetRoot();
 
 	// Do not load old version caches
 	const int ver = archiveCacheTbl.GetInt("internalver", (INTERNAL_VER + 1));
 	if (ver != INTERNAL_VER && !loadOldVersion)
 		return false;
 
-	for (int i = 1; archivesTbl.KeyExists(i); ++i) {
-		const LuaTable& curArchiveTbl = archivesTbl.SubTable(i);
-		const LuaTable& archivedTbl = curArchiveTbl.SubTable("archivedata");
+	static const auto ReadFileInfoMap = [](const LuaTable& filesInfoTbl, spring::unordered_map<std::string, FileInfo>& filesInfoMap) {
+		for (int j = 1; filesInfoTbl.KeyExists(j); ++j) {
+			const LuaTable fileInfoTbl = filesInfoTbl.SubTable(j);
+			const auto fn = fileInfoTbl.GetString("fileName", "");
+			if (fn.empty())
+				continue;
 
-		const std::string& curArchiveName = curArchiveTbl.GetString("name", "");
-		const std::string& curArchiveNameLC = StringToLower(curArchiveName);
-		const std::string& hexDigestStr = curArchiveTbl.GetString("checksum", "");
+			assert(!filesInfoMap.contains(fn));
+			auto& val = filesInfoMap[fn];
+
+			val.size = static_cast<decltype(val.size)>(std::stoll(fileInfoTbl.GetString("size", "-1")));
+			val.modTime = static_cast<decltype(val.size)>(std::stoll(fileInfoTbl.GetString("modTime", "0")));
+			val.checksum = sha512::read_digest(fileInfoTbl.GetString("checksum", ""));
+		}
+	};
+
+	const LuaTable archivesTbl = archiveCacheTbl.SubTable("archives");
+	for (int i = 1; archivesTbl.KeyExists(i); ++i) {
+		const LuaTable curArchiveTbl = archivesTbl.SubTable(i);
+		const LuaTable archivedTbl = curArchiveTbl.SubTable("archivedata");
+
+		const std::string curArchiveName = curArchiveTbl.GetString("name", "");
+		const std::string curArchiveNameLC = StringToLower(curArchiveName);
+		const std::string hexDigestStr = curArchiveTbl.GetString("checksum", "");
 
 		ArchiveInfo& ai = GetAddArchiveInfo(curArchiveNameLC);
-		ArchiveInfo tmp; // used to compare against all-zero hash
 
 		ai.origName 	   = curArchiveName;
 		ai.path     	   = curArchiveTbl.GetString("path", "");
 		ai.archiveDataPath = curArchiveTbl.GetString("archiveDataPath", "");
 
-		// do not use LuaTable.GetInt() for 32-bit integers: the Spring lua
+		// do not use LuaTable.GetInt() for integers: the engine's lua
 		// library uses 32-bit floats to represent numbers, which can only
 		// represent 2^24 consecutive integers
-		ai.modified = strtoul(curArchiveTbl.GetString("modified", "0").c_str(), nullptr, 10);
-		ai.modifiedArchiveData = strtoul(curArchiveTbl.GetString("modifiedArchiveData", "0").c_str(), nullptr, 10);
+		ai.modified = static_cast<decltype(ai.modified)>(std::stoll(curArchiveTbl.GetString("modified", "0")));
+		ai.modifiedArchiveData = static_cast<decltype(ai.modified)>(std::stoll(curArchiveTbl.GetString("modifiedArchiveData", "0")));
 
-		// convert digest-string back to raw checksum
-		if (hexDigestStr.size() == (sha512::SHA_LEN * 2)) {
-			sha512::hex_digest hexDigest;
-			sha512::raw_digest rawDigest;
-			std::copy(hexDigestStr.begin(), hexDigestStr.end(), hexDigest.data());
-			sha512::read_digest(hexDigest, rawDigest);
-			ai.checksum = rawDigest;
-		}
+		const LuaTable filesInfoTbl = curArchiveTbl.SubTable("filesInfo");
+		ReadFileInfoMap(filesInfoTbl, ai.filesInfo);
+
+		ai.checksum = sha512::read_digest(hexDigestStr);
 
 		ai.updated = false;
-		ai.hashed = (ai.checksum == tmp.checksum);
-
+		ai.hashed = (ai.checksum != sha512::NULL_RAW_DIGEST);
 
 		ai.archiveData = CArchiveScanner::ArchiveData(archivedTbl, true);
 		if (ai.archiveData.IsMap()) {
@@ -1156,17 +1189,21 @@ bool CArchiveScanner::ReadCacheData(const std::string& filename, bool loadOldVer
 		}
 	}
 
+	const LuaTable brokenArchivesTbl = archiveCacheTbl.SubTable("brokenArchives");
 	for (int i = 1; brokenArchivesTbl.KeyExists(i); ++i) {
-		const LuaTable& curArchive = brokenArchivesTbl.SubTable(i);
+		const LuaTable curArchive = brokenArchivesTbl.SubTable(i);
 		const std::string& name = StringToLower(curArchive.GetString("name", ""));
 
 		BrokenArchive& ba = GetAddBrokenArchive(name);
 		ba.name = name;
 		ba.path = curArchive.GetString("path", "");
-		ba.modified = strtoul(curArchive.GetString("modified", "0").c_str(), nullptr, 10);
+		ba.modified = static_cast<decltype(ba.modified)>(std::stoll(curArchive.GetString("modified", "0")));
 		ba.updated = false;
 		ba.problem = curArchive.GetString("problem", "unknown");
 	}
+
+	const LuaTable poolFilesTbl = archiveCacheTbl.SubTable("poolFiles");
+	ReadFileInfoMap(poolFilesTbl, poolFilesInfo);
 
 	isDirty = false;
 
@@ -1208,11 +1245,8 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 		std::stable_sort(archiveInfos.begin(), archiveInfos.end(), [](const ArchiveInfo& a, const ArchiveInfo& b) { return (a.origName < b.origName); });
 		std::stable_sort(brokenArchives.begin(), brokenArchives.end(), [](const BrokenArchive& a, const BrokenArchive& b) { return (a.name < b.name); });
 
-		const auto it = std::remove_if(archiveInfos.begin(), archiveInfos.end(), [](const ArchiveInfo& i) { return (!i.updated); });
-		const auto jt = std::remove_if(brokenArchives.begin(), brokenArchives.end(), [](const BrokenArchive& i) { return (!i.updated); });
-
-		archiveInfos.erase(it, archiveInfos.end());
-		brokenArchives.erase(jt, brokenArchives.end());
+		std::erase_if(archiveInfos, [](const ArchiveInfo& i) { return (!i.updated); });
+		std::erase_if(brokenArchives, [](const BrokenArchive& i) { return (!i.updated); });
 
 		archiveInfosIndex.clear();
 		brokenArchivesIndex.clear();
@@ -1226,10 +1260,18 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 		}
 	}
 
+	auto WriteFileInfoMapBody = [out](const spring::unordered_map<std::string, FileInfo>& filesInfoMap, size_t numTabs) {
+		const auto tabs = std::string(numTabs, '\t');
+		for (const auto& [fn, fi] : filesInfoMap) {
+			std::string tbl = fmt::format("{}{{ fileName = \"{}\", size = \"{}\", modTime = \"{}\", checksum = \"{}\" }},\n", tabs, fn, fi.size, fi.modTime, sha512::dump_digest(fi.checksum));
+			fprintf(out, tbl.c_str());
+		}
+	};
+
 
 	fprintf(out, "local archiveCache = {\n\n");
 	fprintf(out, "\tinternalver = %i,\n\n", INTERNAL_VER);
-	fprintf(out, "\tarchives = {  -- count = %u\n", unsigned(archiveInfos.size()));
+	fprintf(out, "\tarchives = {  -- count = %u\n", uint32_t(archiveInfos.size()));
 
 	for (const ArchiveInfo& arcInfo: archiveInfos) {
 		sha512::raw_digest rawDigest;
@@ -1248,6 +1290,12 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 		if (!arcInfo.archiveDataPath.empty()) {
 			SafeStr(out, "\t\t\tarchiveDataPath = ",              arcInfo.archiveDataPath);
 			fprintf(out, "\t\t\tmodifiedArchiveData = \"%u\",\n", arcInfo.modifiedArchiveData);
+		}
+
+		if (!arcInfo.filesInfo.empty()) {
+			fprintf(out, "\t\t\tfilesInfo = {\n");
+			WriteFileInfoMapBody(arcInfo.filesInfo, 4);
+			fprintf(out, "\t\t\t},\n");
 		}
 
 		// mod info?
@@ -1284,7 +1332,7 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 	}
 
 	fprintf(out, "\t},\n\n"); // close 'archives'
-	fprintf(out, "\tbrokenArchives = {  -- count = %u\n", unsigned(brokenArchives.size()));
+	fprintf(out, "\tbrokenArchives = {  -- count = %u\n", uint32_t(brokenArchives.size()));
 
 	for (const BrokenArchive& ba: brokenArchives) {
 		fprintf(out, "\t\t{\n");
@@ -1296,6 +1344,14 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 	}
 
 	fprintf(out, "\t},\n"); // close 'brokenArchives'
+
+	// Information about files in the pool
+	if (!poolFilesInfo.empty()) {
+		fprintf(out, "\tpoolFiles = {  -- count = %u\n", uint32_t(poolFilesInfo.size()));
+		WriteFileInfoMapBody(poolFilesInfo, 2);
+		fprintf(out, "\t},\n"); // close 'poolFiles'
+	}
+
 	fprintf(out, "}\n\n"); // close 'archiveCache'
 	fprintf(out, "return archiveCache\n");
 

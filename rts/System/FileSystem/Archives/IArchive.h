@@ -24,8 +24,8 @@ class IArchive
 public:
 	struct SFileInfo {
 		std::string fileName;
-		int32_t size;
-		uint32_t modTime;
+		int32_t size = -1;
+		uint32_t modTime = 0;
 	};
 protected:
 	IArchive(const std::string& archiveFile): archiveFile(archiveFile) {

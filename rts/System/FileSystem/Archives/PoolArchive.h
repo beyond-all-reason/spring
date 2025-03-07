@@ -120,7 +120,7 @@ private:
 
 		uint32_t crc32;
 		uint32_t size;
-		uint32_t modTime;
+		mutable uint32_t modTime;
 	};
 	struct FileStat {
 		// inverted cmp for descending order
