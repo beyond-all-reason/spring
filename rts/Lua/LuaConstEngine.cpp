@@ -76,8 +76,8 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 
 	lua_pushliteral(L, "textColorCodes");
 	lua_createtable(L, 0, 3);
-		LuaPushNamedChar(L, "Color"          , CglFont::ColorCodeIndicator  );
-		LuaPushNamedChar(L, "ColorAndOutline", CglFont::ColorCodeIndicatorEx);
+		LuaPushNamedChar(L, "Color"          , static_cast<char>(CglFont::ColorCodeIndicator)  );
+		LuaPushNamedChar(L, "ColorAndOutline", static_cast<char>(CglFont::ColorCodeIndicatorEx));
 		LuaPushNamedChar(L, "Reset"          , CglFont::ColorResetIndicator );
 	lua_rawset(L, -3);
 	return true;
