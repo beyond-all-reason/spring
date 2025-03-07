@@ -112,7 +112,7 @@
  *       ["crawlingbombs"]= 10, ...
  *     }
  * ```
- * @field textColorCodes TextColorCodes Table containing keys that represent the color code operations during font rendering
+ * @field textColorCodes TextColorCode Table containing keys that represent the color code operations during font rendering
  */
 
 bool LuaConstGame::PushEntries(lua_State* L)
