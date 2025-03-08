@@ -381,16 +381,21 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 	}
 }
 
-bool VBO::ReallocToFit(GLsizeiptr newSize, size_t sizeUpMult, size_t sizeDownMult, const void* newData)
+bool VBO::ReallocToFit(GLsizeiptr newSize, uint32_t sizeUpMult, uint32_t sizeDownMult, const void* newData)
 {
 	assert(bound);
-	if (newSize > GetSize() || GetSize() >= newSize * sizeDownMult) {
-		New(newSize, usage, newData);
-		return true;
-	} else if (newData) {
+
+	if (newSize > GetSize()) // increase buffer size
+		New(newSize * sizeUpMult, usage, nullptr);
+	else if (GetSize() >= newSize * sizeDownMult) // decrease buffer size
+		New(newSize             , usage, nullptr);
+	else
+		return false;
+
+	if (newData)
 		SetBufferSubData(0, newSize, newData);
-	}
-	return false;
+
+	return true;
 }
 
 

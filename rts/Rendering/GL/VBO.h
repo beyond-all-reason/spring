@@ -3,6 +3,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <limits>
 
 #include "Rendering/GL/myGL.h"
 #include "System/ScopedResource.h"
@@ -91,12 +92,12 @@ public:
 	void New(const std::vector<TData>& data, GLenum newUsage = GL_STREAM_DRAW) { New(sizeof(TData) * data.size(), newUsage, data.data()); };
 	void New(GLsizeiptr newSize, GLenum newUsage = GL_STREAM_DRAW, const void* newData = nullptr);
 
-	// Reallocates the VBO if it's too small or too big, copies newData if not nullptr, returns true if the VBo was reallocated
-	bool ReallocToFit(GLsizeiptr newSize, size_t sizeUpMult = 2, size_t sizeDownMult = 8, const void* newData = nullptr);
+	// Reallocates the VBO if it's too small or too big, copies newData if not nullptr, returns true if the VBO was reallocated
+	bool ReallocToFit(GLsizeiptr newSize, uint32_t sizeUpMult = 1, uint32_t sizeDownMult = std::numeric_limits<uint32_t>::max(), const void* newData = nullptr);
 
-	// Reallocates the VBO if it's too small or too big, returns true if the VBo was reallocated
+	// Reallocates the VBO if it's too small or too big, returns true if the VBO was reallocated
 	template<typename TData>
-	bool ReallocToFit(const std::vector<TData>& vec, size_t sizeUpMult = 2, size_t sizeDownMult = 8) {
+	bool ReallocToFit(const std::vector<TData>& vec, uint32_t sizeUpMult = 1, uint32_t sizeDownMult = 8) {
 		const auto reqSz = vec.size() * sizeof(TData);
 		return ReallocToFit(reqSz, sizeUpMult, sizeDownMult, vec.data());
 	}
