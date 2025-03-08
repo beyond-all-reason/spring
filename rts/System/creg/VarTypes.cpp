@@ -27,9 +27,11 @@ std::string BasicType::GetName() const
 	switch(id) {
 #if defined(SYNCDEBUG) || defined(SYNCCHECK)
 		case crSyncedInt:   return "synced int";
+		case crSyncedUInt:   return "synced uint";
 		case crSyncedFloat: return "synced float";
 #endif
 		case crInt:   return "int";
+		case crUInt:   return "uint";
 		case crFloat: return "float";
 	};
 	return std::string();
