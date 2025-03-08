@@ -420,7 +420,7 @@ public:
 	/**
 	 * @brief Forces Window's desktop compositing before each glSwapWindow
 	 */
-	bool forceDWMFlush;
+	int forceDWMFlush;
 
 	#ifdef _WIN32
 		DwmApiLoader& dwmLoader  = DwmApiLoader::getInstance();
