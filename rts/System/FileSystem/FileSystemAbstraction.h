@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
 
 #if defined(CreateDirectory)
 	#undef CreateDirectory

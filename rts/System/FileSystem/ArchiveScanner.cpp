@@ -1264,7 +1264,7 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 		const auto tabs = std::string(numTabs, '\t');
 		for (const auto& [fn, fi] : filesInfoMap) {
 			std::string tbl = fmt::format("{}{{ fileName = \"{}\", size = \"{}\", modTime = \"{}\", checksum = \"{}\" }},\n", tabs, fn, fi.size, fi.modTime, sha512::dump_digest(fi.checksum));
-			fprintf(out, tbl.c_str());
+			fputs(tbl.c_str(), out);
 		}
 	};
 
