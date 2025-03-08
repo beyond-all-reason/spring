@@ -115,6 +115,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_MEMBER(glDebug),
 	CR_MEMBER(glDebugErrors),
 
+	CR_IGNORED(sdlInitVideo),
 	CR_MEMBER(timeOffset),
 	CR_MEMBER(lastTimeOffset),
 	CR_MEMBER(lastFrameTime),
@@ -224,7 +225,8 @@ void CGlobalRendering::InitStatic() { globalRendering = new (globalRenderingMem)
 void CGlobalRendering::KillStatic() { globalRendering->PreKill();  spring::SafeDestruct(globalRendering); }
 
 CGlobalRendering::CGlobalRendering()
-	: timeOffset(0.0f)
+	: sdlInitVideo(false)
+	, timeOffset(0.0f)
 	, lastTimeOffset(0.0f)
 	, lastFrameTime(0.0f)
 	, lastFrameStart(spring_notime)
@@ -515,6 +517,9 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		LOG_L(L_FATAL, "[GR::%s] error \"%s\" initializing SDL", __func__, SDL_GetError());
 		return false;
 	}
+
+	// double-check and store
+	sdlInitVideo = (SDL_WasInit(SDL_INIT_VIDEO) > 0);
 
 	if (!CheckAvailableVideoModes()) {
 		handleerror(nullptr, "desktop color-depth should be at least 24 bits per pixel, aborting", "ERROR", MBF_OK | MBF_EXCL);

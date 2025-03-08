@@ -120,6 +120,8 @@ public:
 	//helper function
 	static int DepthBitsToFormat(int bits);
 public:
+	// set to true when the video subsystem of SDL got initialized
+	bool sdlInitVideo;
 	/**
 	 * @brief time offset
 	 *
