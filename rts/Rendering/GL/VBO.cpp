@@ -73,15 +73,13 @@ VBO::VBO(GLenum _defTarget, const bool storage, bool readable)
 	immutableStorage = storage;
 	readableStorage = readable;
 
-#ifdef GLEW_ARB_buffer_storage
-	if (immutableStorage && !GLEW_ARB_buffer_storage) {
+	if (immutableStorage && !GLAD_GL_ARB_buffer_storage) {
 		//note: We can't fallback to traditional BufferObjects, cause then we would have to map/unmap on each change.
 		//      Only sysram/cpu VAs give an equivalent behaviour.
 		isSupported = false;
 		immutableStorage = false;
 		LOG_L(L_ERROR, "VBO: cannot create immutable storage, gpu drivers missing support for it!");
 	}
-#endif
 }
 
 
