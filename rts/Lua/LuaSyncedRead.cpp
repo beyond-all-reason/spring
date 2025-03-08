@@ -78,6 +78,7 @@
 #include "System/StringUtil.h"
 
 #include <cctype>
+#include <numbers>
 #include <type_traits>
 
 
@@ -192,6 +193,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetFeaturesInSphere);
 	REGISTER_LUA_CFUNC(GetFeaturesInCylinder);
 	REGISTER_LUA_CFUNC(GetProjectilesInRectangle);
+	REGISTER_LUA_CFUNC(GetProjectilesInSphere);
 
 	REGISTER_LUA_CFUNC(GetUnitNearestAlly);
 	REGISTER_LUA_CFUNC(GetUnitNearestEnemy);
@@ -3584,6 +3586,55 @@ int LuaSyncedRead::GetFeaturesInCylinder(lua_State* L)
 	return 1;
 }
 
+static void GetProjectilesLuaTable(lua_State* L, QuadFieldQuery &qfQuery,
+                                      bool excludeWeaponProjectiles, bool excludePieceProjectiles)
+{
+	const size_t rectProjectileCount = qfQuery.projectiles->size();
+	unsigned int arrayIndex = 1;
+
+	lua_createtable(L, static_cast<int>(rectProjectileCount), 0);
+
+	if (CLuaHandle::GetHandleReadAllyTeam(L) < 0) {
+		if (CLuaHandle::GetHandleFullRead(L)) {
+			for (unsigned int i = 0; i < rectProjectileCount; i++) {
+				const CProjectile* pro = (*qfQuery.projectiles)[i];
+
+				// filter out unsynced projectiles, the SyncedRead
+				// projecile Get* functions accept only synced ID's
+				// (specifically they interpret all ID's as synced)
+				if (!pro->synced)
+					continue;
+
+				if (pro->weapon && excludeWeaponProjectiles)
+					continue;
+				if (pro->piece && excludePieceProjectiles)
+					continue;
+
+				lua_pushnumber(L, static_cast<lua_Number>(pro->id));
+				lua_rawseti(L, -2, static_cast<int>(arrayIndex++));
+			}
+		}
+	} else {
+		for (unsigned int i = 0; i < rectProjectileCount; i++) {
+			const CProjectile* pro = (*qfQuery.projectiles)[i];
+
+			// see above
+			if (!pro->synced)
+				continue;
+
+			if (pro->weapon && excludeWeaponProjectiles)
+				continue;
+			if (pro->piece && excludePieceProjectiles)
+				continue;
+
+			if (!LuaUtils::IsProjectileVisible(L, pro))
+				continue;
+
+			lua_pushnumber(L, static_cast<lua_Number>(pro->id));
+			lua_rawseti(L, -2, static_cast<int>(arrayIndex++));
+		}
+	}
+}
 
 /***
  *
@@ -3611,55 +3662,43 @@ int LuaSyncedRead::GetProjectilesInRectangle(lua_State* L)
 
 	QuadFieldQuery qfQuery;
 	quadField.GetProjectilesExact(qfQuery, mins, maxs);
-	const unsigned int rectProjectileCount = qfQuery.projectiles->size();
-	unsigned int arrayIndex = 1;
-
-	lua_createtable(L, rectProjectileCount, 0);
-
-	if (CLuaHandle::GetHandleReadAllyTeam(L) < 0) {
-		if (CLuaHandle::GetHandleFullRead(L)) {
-			for (unsigned int i = 0; i < rectProjectileCount; i++) {
-				const CProjectile* pro = (*qfQuery.projectiles)[i];
-
-				// filter out unsynced projectiles, the SyncedRead
-				// projecile Get* functions accept only synced ID's
-				// (specifically they interpret all ID's as synced)
-				if (!pro->synced)
-					continue;
-
-				if (pro->weapon && excludeWeaponProjectiles)
-					continue;
-				if (pro->piece && excludePieceProjectiles)
-					continue;
-
-				lua_pushnumber(L, pro->id);
-				lua_rawseti(L, -2, arrayIndex++);
-			}
-		}
-	} else {
-		for (unsigned int i = 0; i < rectProjectileCount; i++) {
-			const CProjectile* pro = (*qfQuery.projectiles)[i];
-
-			// see above
-			if (!pro->synced)
-				continue;
-
-			if (pro->weapon && excludeWeaponProjectiles)
-				continue;
-			if (pro->piece && excludePieceProjectiles)
-				continue;
-
-			if (!LuaUtils::IsProjectileVisible(L, pro))
-				continue;
-
-			lua_pushnumber(L, pro->id);
-			lua_rawseti(L, -2, arrayIndex++);
-		}
-	}
-
+	GetProjectilesLuaTable(L, qfQuery, excludeWeaponProjectiles, excludePieceProjectiles);
 	return 1;
 }
 
+/***
+ *
+ * @function Spring.GetProjectilesInSphere
+ * @param x number
+ * @param y number
+ * @param z number
+ * @param radius number
+ * @param excludeWeaponProjectiles boolean? (Default: false)
+ * @param excludePieceProjectiles boolean? (Default: false)
+ * @return number[] projectileIDs
+ */
+int LuaSyncedRead::GetProjectilesInSphere(lua_State* L)
+{
+	const float x = luaL_checkfloat(L, 1);
+	// needed for consistency with the rest of the spherical API
+	[[maybe_unused]] const float y = luaL_checkfloat(L, 2);
+	const float z = luaL_checkfloat(L, 3);
+	const float circleRadius = luaL_checkfloat(L, 4);
+
+	const bool excludeWeaponProjectiles = luaL_optboolean(L, 5, false);
+	const bool excludePieceProjectiles = luaL_optboolean(L, 6, false);
+
+	constexpr auto hexagonApothem = static_cast<float>(std::numbers::sqrt3 / 2);
+	const float scaledRadius = circleRadius * hexagonApothem;
+
+	float3 mins(x - scaledRadius, 0.0f, z - scaledRadius);
+	float3 maxs(x + scaledRadius, 0.0f, z + scaledRadius);
+
+	QuadFieldQuery qfQuery;
+	quadField.GetProjectilesExact(qfQuery, mins, maxs);
+	GetProjectilesLuaTable(L, qfQuery, excludeWeaponProjectiles, excludePieceProjectiles);
+	return 1;
+}
 
 /******************************************************************************
  * Unit state
