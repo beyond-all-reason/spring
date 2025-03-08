@@ -32,6 +32,13 @@
 ---@field b number
 ---@field a number
 
+---Indicator bytes representing color code operations during font rendering
+---
+---@class TextColorCode
+---@field Color string Indicates that the following bytes contain color code information
+---@field ColorAndOutline string Indicates that the following bytes contain color code and outline information
+---@field Reset string Indicates reset of the current color
+
 --------------------------------------------------------------------------------
 -- Camera
 --------------------------------------------------------------------------------

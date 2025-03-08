@@ -36,7 +36,7 @@
  * @field maxPlayers number
  * @field squareSize number Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates. The resolution of height, yard and type maps.
  * @field metalMapSquareSize number The resolution of metalmap (for use in API such as Spring.GetMetalAmount etc.)
- * @field gameSpeed number
+ * @field gameSpeed number Number of simulation gameframes per second
  * @field startPosType number
  * @field ghostedBuildings boolean
  * @field mapChecksum string
@@ -112,6 +112,7 @@
  *       ["crawlingbombs"]= 10, ...
  *     }
  * ```
+ * @field textColorCodes TextColorCode Table containing keys that represent the color code operations during font rendering
  */
 
 bool LuaConstGame::PushEntries(lua_State* L)
@@ -326,9 +327,9 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		// inline color-codes for text fonts
 		lua_pushliteral(L, "textColorCodes");
 		lua_createtable(L, 0, 3);
-			LuaPushNamedChar(L, "Color"          , CglFont::ColorCodeIndicator  );
-			LuaPushNamedChar(L, "ColorAndOutline", CglFont::ColorCodeIndicatorEx);
-			LuaPushNamedChar(L, "Reset"          , CglFont::ColorResetIndicator );
+			LuaPushNamedChar(L, "Color"          , static_cast<char>(CglFont::ColorCodeIndicator)  );
+			LuaPushNamedChar(L, "ColorAndOutline", static_cast<char>(CglFont::ColorCodeIndicatorEx));
+			LuaPushNamedChar(L, "Reset"          , static_cast<char>(CglFont::ColorResetIndicator) );
 		lua_rawset(L, -3);
 	}
 
