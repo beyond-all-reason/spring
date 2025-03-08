@@ -16,6 +16,7 @@
 #include "System/Config/ConfigHandler.h"
 
 #include <algorithm>
+#include <array>
 #ifdef DEBUG
 	#include <cstring> // strncmp
 #endif
@@ -121,11 +122,24 @@ namespace Shader {
 
 	std::string IShaderObject::GetShaderSource(const std::string& fileName)
 	{
-		if (fileName.find("void main()") != std::string::npos)
-			return fileName;
+		// get rid of '\r\n's so the output looks nicer in the infolog
+		static const auto ReplaceCRLF = [](std::string& src) {
+			std::string::size_type pos = 0;
+			while ((pos = src.find("\r\n", pos)) != std::string::npos) {
+				src.replace(pos, 2, "\n");
+				++pos;
+			}
+		};
+
+		std::string soSource;
+
+		if (fileName.find("void main()") != std::string::npos) {
+			soSource = fileName; // fileName content is actually the source code
+			ReplaceCRLF(soSource);
+			return soSource;
+		}
 
 		std::string soPath = "shaders/" + fileName;
-		std::string soSource = "";
 
 		CFileHandler soFile(soPath);
 
@@ -138,6 +152,7 @@ namespace Shader {
 			LOG_L(L_ERROR, "[%s] file not found \"%s\"", __FUNCTION__, soPath.c_str());
 		}
 
+		ReplaceCRLF(soSource);
 		return soSource;
 	}
 
@@ -187,19 +202,18 @@ namespace Shader {
 		if (!versionStr.empty()) EnsureEndsWith(&versionStr, "\n");
 		if (!defFlags.empty())   EnsureEndsWith(&defFlags,   "\n");
 
-		std::vector<const GLchar*> sources = {
+		std::array sources = {
 			"// SHADER VERSION\n",
 			versionStr.c_str(),
 			"// SHADER FLAGS\n",
 			defFlags.c_str(),
 			"// SHADER SOURCE\n",
-			"#line 1\n",
 			sourceStr.c_str()
 		};
 
 		res->id = glCreateShader(type);
 
-		glShaderSource(res->id, sources.size(), &sources[0], NULL);
+		glShaderSource(res->id, sources.size(), &sources[0], nullptr);
 		glCompileShader(res->id);
 
 		res->valid = glslIsValid(res->id);
@@ -208,7 +222,7 @@ namespace Shader {
 		if (!res->valid && logReporting) {
 			const std::string& name = srcFile.find("void main()") != std::string::npos ? "unknown" : srcFile;
 			LOG_L(L_WARNING, "[GLSL-SO::%s] shader-object name: %s, compile-log:\n%s\n", __FUNCTION__, name.c_str(), res->log.c_str());
-			LOG_L(L_WARNING, "\n%s%s%s%s%s%s%s", sources[0], sources[1], sources[2], sources[3], sources[4], sources[5], sources[6]);
+			LOG_L(L_WARNING, "\n%s%s%s%s%s%s", sources[0], sources[1], sources[2], sources[3], sources[4], sources[5]);
 		}
 
 		return res;
@@ -447,16 +461,19 @@ namespace Shader {
 	/*****************************************************************/
 
 	GLSLProgramObject::GLSLProgramObject(const std::string& poName): IProgramObject(poName), curSrcHash(0) {
+		RECOIL_DETAILED_TRACY_ZONE;
 		objID = glCreateProgram();
 	}
 
 	void GLSLProgramObject::BindAttribLocation(const std::string& name, uint32_t index)
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 		attribLocations[name] = index;
 	}
 
 	void GLSLProgramObject::BindOutputLocation(const std::string& name, uint32_t index)
 	{
+		RECOIL_DETAILED_TRACY_ZONE;
 		outputLocations[name] = index;
 	}
 
@@ -617,8 +634,12 @@ namespace Shader {
 		}
 
 		// early-exit: empty program (TODO: delete it?)
-		if (shaderObjs.empty())
+		if (shaderObjs.empty()) {
+			if (logReporting) {
+				LOG_L(L_WARNING, "[GLSL-PO::%s] program-object name: %s, shader objects list is empty\n", __func__, name.c_str());
+			}
 			return;
+		}
 
 		bool deleteOldShader = true;
 
