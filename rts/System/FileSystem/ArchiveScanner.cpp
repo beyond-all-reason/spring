@@ -628,7 +628,7 @@ void CArchiveScanner::ReadCache()
 		if (ReadCacheData(vm1CacheFile, true) || ReadCacheData(vm2CacheFile, true)) {
 			// nullify hashes
 			for (auto& ai : archiveInfos) {
-				ai.checksum = { 0 };
+				ai.checksum = sha512::NULL_RAW_DIGEST;
 				isDirty = true;
 			}
 		}
@@ -1593,7 +1593,7 @@ sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::str
 	const std::string lcName = StringToLower(FileSystem::GetFilename(filePath));
 	const auto aiIter = archiveInfosIndex.find(lcName);
 
-	sha512::raw_digest checksum = { 0 };
+	sha512::raw_digest checksum = sha512::NULL_RAW_DIGEST;
 
 	if (aiIter == archiveInfosIndex.end()) {
 		DumpArchiveChecksum(lcName, checksum); //cs is 0
