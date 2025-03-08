@@ -11,6 +11,8 @@
 
 #include "VBO.h"
 
+#include <SDL.h>
+
 #include "Rendering/GlobalRendering.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
@@ -29,6 +31,7 @@ CONFIG(bool, UsePBO).deprecated(true);
 bool VBO::IsSupported() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	assert(SDL_WasInit(SDL_INIT_VIDEO) > 0); // called before SDL2 was initialized, probably in static member constructor
 	return VBO::IsSupported(curBoundTarget);
 }
 
@@ -45,6 +48,7 @@ bool VBO::IsSupported(GLenum target) {
 	static bool isUBOSupported  = (GLAD_GL_ARB_uniform_buffer_object);
 	static bool isSSBOSupported = (GLAD_GL_ARB_shader_storage_buffer_object);
 	static bool isCopyBuffSupported = (GLAD_GL_ARB_copy_buffer);
+	static bool isDispIndirSupported = (GLAD_GL_ARB_compute_shader);
 
 	switch (target) {
 	case GL_PIXEL_PACK_BUFFER:
@@ -60,6 +64,8 @@ bool VBO::IsSupported(GLenum target) {
 	case GL_COPY_WRITE_BUFFER:
 	case GL_COPY_READ_BUFFER:
 		return isCopyBuffSupported;
+	case GL_DISPATCH_INDIRECT_BUFFER:
+		return isDispIndirSupported;
 	default: {
 		LOG_L(L_ERROR, "[VBO:%s]: wrong target [%u] is specified", __func__, target);
 		return false;
@@ -77,13 +83,15 @@ VBO::VBO(GLenum _defTarget, const bool storage, bool readable)
 	immutableStorage = storage;
 	readableStorage = readable;
 
-	if (immutableStorage && !GLAD_GL_ARB_buffer_storage) {
+#ifdef GLEW_ARB_buffer_storage
+	if (immutableStorage && !GLEW_ARB_buffer_storage) {
 		//note: We can't fallback to traditional BufferObjects, cause then we would have to map/unmap on each change.
 		//      Only sysram/cpu VAs give an equivalent behaviour.
 		isSupported = false;
 		immutableStorage = false;
 		LOG_L(L_ERROR, "VBO: cannot create immutable storage, gpu drivers missing support for it!");
 	}
+#endif
 }
 
 
@@ -385,6 +393,18 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 	}
 }
 
+bool VBO::ReallocToFit(GLsizeiptr newSize, size_t sizeUpMult, size_t sizeDownMult, const void* newData)
+{
+	assert(bound);
+	if (newSize > GetSize() || GetSize() >= newSize * sizeDownMult) {
+		New(newSize, usage, newData);
+		return true;
+	} else if (newData) {
+		SetBufferSubData(0, newSize, newData);
+	}
+	return false;
+}
+
 
 GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 {
@@ -517,6 +537,8 @@ size_t VBO::GetOffsetAlignment(GLenum target) {
 		return offsetAlignmentUBO;
 	case GL_SHADER_STORAGE_BUFFER:
 		return offsetAlignmentSSBO;
+	case GL_DISPATCH_INDIRECT_BUFFER:
+		return 4;
 	case GL_PIXEL_PACK_BUFFER:
 	case GL_PIXEL_UNPACK_BUFFER:
 	case GL_ARRAY_BUFFER:
