@@ -5,7 +5,6 @@
 #include <cstdio>
 #include <memory>
 #include <semaphore>
-#include <limits>
 
 #include <sys/types.h>
 #include <sys/stat.h>

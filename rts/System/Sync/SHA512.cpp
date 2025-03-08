@@ -59,7 +59,7 @@ void sha512::dump_digest(const raw_digest& sha_bytes, hex_digest& hex_chars) {
 
 std::string sha512::dump_digest(const raw_digest& sha_bytes)
 {
-	hex_digest hex_chars = {0};
+	hex_digest hex_chars;
 	dump_digest(sha_bytes, hex_chars);
 	return std::string(hex_chars.data(), hex_chars.size() - 1);
 }
