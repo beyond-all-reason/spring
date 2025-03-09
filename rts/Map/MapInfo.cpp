@@ -142,7 +142,7 @@ void CMapInfo::ReadAtmosphere()
 	atmo.skyColor     = atmoTable.GetFloat3("skyColor", float3(0.1f, 0.15f, 0.7f));
 
 	if (atmoTable.KeyExists("skyDir")) {
-		LOG_L(L_DEPRECATED, "[%s] atmosphere.skyDir in mapinfo.lua was never used and now deprecated, use atmosphere.skyAxisAngle instead", __func__);
+		LOG_L(L_DEPRECATED, "[CMapInfo::%s] atmosphere.skyDir in mapinfo.lua was never used and now deprecated, use atmosphere.skyAxisAngle instead", __func__);
 	}
 	atmo.skyAxisAngle = atmoTable.GetFloat4("skyAxisAngle", float4{ FwdVector, 0.0f });
 	const auto skyAxis = float3{ atmo.skyAxisAngle.x, atmo.skyAxisAngle.y, atmo.skyAxisAngle.z }.ANormalize();
