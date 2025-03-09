@@ -121,22 +121,17 @@ bool CheckAvailableVideoModes()
 static bool GetVideoMemInfoNV(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if (defined(GL_NVX_gpu_memory_info))
 	if (!GLAD_GL_NVX_gpu_memory_info)
 		return false;
 
 	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &memInfo[0]);
 	glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &memInfo[1]);
 	return true;
-	#else
-	return false;
-	#endif
 }
 
 static bool GetVideoMemInfoATI(GLint* memInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if (defined(GL_ATI_meminfo))
 	if (!GLAD_GL_ATI_meminfo)
 		return false;
 
@@ -151,9 +146,6 @@ static bool GetVideoMemInfoATI(GLint* memInfo)
 	memInfo[0] = memInfo[4]; // return the VBO/RBO/TEX free sum
 	memInfo[1] = memInfo[4]; // sic, just assume total >= free
 	return true;
-	#else
-	return false;
-	#endif
 }
 
 static bool GetVideoMemInfoMESA(GLint* memInfo)

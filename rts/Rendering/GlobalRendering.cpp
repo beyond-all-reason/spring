@@ -1875,59 +1875,6 @@ bool CGlobalRendering::CheckGLContextVersion(const int2& minCtx) const
 	#endif
 }
 
-
-
-#if defined(_WIN32) && !defined(HEADLESS)
-	#if defined(_MSC_VER) && _MSC_VER >= 1600
-		#define _GL_APIENTRY __stdcall
-	#else
-		#include <windef.h>
-		#define _GL_APIENTRY APIENTRY
-	#endif
-#else
-	#define _GL_APIENTRY
-#endif
-
-
-#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
-
-#ifndef GL_DEBUG_SOURCE_API
-#define GL_DEBUG_SOURCE_API                GL_DEBUG_SOURCE_API_ARB
-#define GL_DEBUG_SOURCE_WINDOW_SYSTEM      GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB
-#define GL_DEBUG_SOURCE_SHADER_COMPILER    GL_DEBUG_SOURCE_SHADER_COMPILER_ARB
-#define GL_DEBUG_SOURCE_THIRD_PARTY        GL_DEBUG_SOURCE_THIRD_PARTY_ARB
-#define GL_DEBUG_SOURCE_APPLICATION        GL_DEBUG_SOURCE_APPLICATION_ARB
-#define GL_DEBUG_SOURCE_OTHER              GL_DEBUG_SOURCE_OTHER_ARB
-
-#define GL_DEBUG_TYPE_ERROR                GL_DEBUG_TYPE_ERROR_ARB
-#define GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR  GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB
-#define GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR   GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB
-#define GL_DEBUG_TYPE_PORTABILITY          GL_DEBUG_TYPE_PORTABILITY_ARB
-#define GL_DEBUG_TYPE_PERFORMANCE          GL_DEBUG_TYPE_PERFORMANCE_ARB
-#if (defined(GL_DEBUG_TYPE_MARKER_ARB) && defined(GL_DEBUG_TYPE_PUSH_GROUP_ARB) && defined(GL_DEBUG_TYPE_POP_GROUP_ARB))
-#define GL_DEBUG_TYPE_MARKER               GL_DEBUG_TYPE_MARKER_ARB
-#define GL_DEBUG_TYPE_PUSH_GROUP           GL_DEBUG_TYPE_PUSH_GROUP_ARB
-#define GL_DEBUG_TYPE_POP_GROUP            GL_DEBUG_TYPE_POP_GROUP_ARB
-#else
-#define GL_DEBUG_TYPE_MARKER               -1u
-#define GL_DEBUG_TYPE_PUSH_GROUP           -2u
-#define GL_DEBUG_TYPE_POP_GROUP            -3u
-#endif
-#define GL_DEBUG_TYPE_OTHER                GL_DEBUG_TYPE_OTHER_ARB
-
-#define GL_DEBUG_SEVERITY_HIGH             GL_DEBUG_SEVERITY_HIGH_ARB
-#define GL_DEBUG_SEVERITY_MEDIUM           GL_DEBUG_SEVERITY_MEDIUM_ARB
-#define GL_DEBUG_SEVERITY_LOW              GL_DEBUG_SEVERITY_LOW_ARB
-
-#define GL_DEBUG_OUTPUT_SYNCHRONOUS        GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB
-#define GLDEBUGPROC                        GLDEBUGPROCARB
-#endif
-
-#ifndef glDebugMessageCallback
-#define glDebugMessageCallback  glDebugMessageCallbackARB
-#define glDebugMessageControl   glDebugMessageControlARB
-#endif
-
 constexpr static std::array<GLenum,  7> msgSrceEnums = {GL_DONT_CARE, GL_DEBUG_SOURCE_API, GL_DEBUG_SOURCE_WINDOW_SYSTEM, GL_DEBUG_SOURCE_SHADER_COMPILER, GL_DEBUG_SOURCE_THIRD_PARTY, GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_SOURCE_OTHER};
 constexpr static std::array<GLenum, 10> msgTypeEnums = {GL_DONT_CARE, GL_DEBUG_TYPE_ERROR, GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR, GL_DEBUG_TYPE_PORTABILITY, GL_DEBUG_TYPE_PERFORMANCE, GL_DEBUG_TYPE_MARKER, GL_DEBUG_TYPE_PUSH_GROUP, GL_DEBUG_TYPE_POP_GROUP, GL_DEBUG_TYPE_OTHER};
 constexpr static std::array<GLenum,  4> msgSevrEnums = {GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, GL_DEBUG_SEVERITY_MEDIUM, GL_DEBUG_SEVERITY_HIGH};
@@ -1977,7 +1924,8 @@ static inline const char* glDebugMessageSeverityName(GLenum msgSevr) {
 	return "UNKNOWN";
 }
 
-static void _GL_APIENTRY glDebugMessageCallbackFunc(
+#ifndef HEADLESS
+static void APIENTRY glDebugMessageCallbackFunc(
 	GLenum msgSrce,
 	GLenum msgType,
 	GLuint msgID,
@@ -2007,10 +1955,9 @@ static void _GL_APIENTRY glDebugMessageCallbackFunc(
 }
 #endif
 
-
 bool CGlobalRendering::ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int msgTypeIdx, unsigned int msgSevrIdx) const
 {
-#if (defined(GL_ARB_debug_output) && !defined(HEADLESS))
+#ifndef HEADLESS
 	if (!(GLAD_GL_ARB_debug_output || GLAD_GL_KHR_debug))
 		return false;
 
