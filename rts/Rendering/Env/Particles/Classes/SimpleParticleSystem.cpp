@@ -201,7 +201,7 @@ void CSimpleParticleSystem::Init(const CUnit* owner, const float3& offset)
 
 	// FIXME: should catch these earlier and for more projectile-types
 	if (colorMap == nullptr) {
-		colorMap = CColorMap::LoadFromFloatVector(std::vector<float>(8, 1.0f));
+		colorMap = CColorMap::LoadDummy(SColor(1.0f, 1.0f, 1.0f, 1.0f));
 		LOG_L(L_WARNING, "[CSimpleParticleSystem::%s] no color-map specified", __func__);
 	}
 	if (texture == nullptr) {
