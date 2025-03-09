@@ -3586,19 +3586,17 @@ int LuaSyncedRead::GetFeaturesInCylinder(lua_State* L)
 	return 1;
 }
 
-static void GetProjectilesLuaTable(lua_State* L, QuadFieldQuery &qfQuery,
+static void GetProjectilesLuaTable(lua_State* L, std::vector<CProjectile*>& projectiles,
                                       bool excludeWeaponProjectiles, bool excludePieceProjectiles)
 {
-	const size_t rectProjectileCount = qfQuery.projectiles->size();
 	unsigned int arrayIndex = 1;
 
-	lua_createtable(L, static_cast<int>(rectProjectileCount), 0);
+	lua_createtable(L, static_cast<int>(projectiles.size()), 0);
 
 	if (CLuaHandle::GetHandleReadAllyTeam(L) < 0) {
 		if (CLuaHandle::GetHandleFullRead(L)) {
-			for (unsigned int i = 0; i < rectProjectileCount; i++) {
-				const CProjectile* pro = (*qfQuery.projectiles)[i];
-
+			for (unsigned int i = 0; i < projectiles.size(); i++) {
+				const CProjectile* pro = projectiles[i];
 				// filter out unsynced projectiles, the SyncedRead
 				// projecile Get* functions accept only synced ID's
 				// (specifically they interpret all ID's as synced)
@@ -3615,9 +3613,8 @@ static void GetProjectilesLuaTable(lua_State* L, QuadFieldQuery &qfQuery,
 			}
 		}
 	} else {
-		for (unsigned int i = 0; i < rectProjectileCount; i++) {
-			const CProjectile* pro = (*qfQuery.projectiles)[i];
-
+		for (unsigned int i = 0; i < projectiles.size(); i++) {
+			const CProjectile* pro = projectiles[i];
 			// see above
 			if (!pro->synced)
 				continue;
@@ -3662,7 +3659,7 @@ int LuaSyncedRead::GetProjectilesInRectangle(lua_State* L)
 
 	QuadFieldQuery qfQuery;
 	quadField.GetProjectilesExact(qfQuery, mins, maxs);
-	GetProjectilesLuaTable(L, qfQuery, excludeWeaponProjectiles, excludePieceProjectiles);
+	GetProjectilesLuaTable(L, *qfQuery.projectiles, excludeWeaponProjectiles, excludePieceProjectiles);
 	return 1;
 }
 
@@ -3695,14 +3692,15 @@ int LuaSyncedRead::GetProjectilesInSphere(lua_State* L)
 	quadField.GetProjectilesExact(qfQuery, mins, maxs);
 
 	float3 sphereCenter(x, y, z);
+	std::vector<CProjectile *> inSphereProjectiles;
 	for (unsigned int i = 0; i < qfQuery.projectiles->size(); i++) {
-		const CProjectile* projectile = (*qfQuery.projectiles)[i];
+		CProjectile* projectile = (*qfQuery.projectiles)[i];
 		const float3 projectilePos(projectile->pos.x, projectile->pos.y, projectile->pos.z);
 		if (projectilePos.SqDistance(sphereCenter) <= radSqr) {
-			continue;
+			inSphereProjectiles.push_back(projectile);
 		}
 	}
-	GetProjectilesLuaTable(L, qfQuery, excludeWeaponProjectiles, excludePieceProjectiles);
+	GetProjectilesLuaTable(L, inSphereProjectiles, excludeWeaponProjectiles, excludePieceProjectiles);
 	return 1;
 }
 
