@@ -688,7 +688,9 @@ void CSMFReadMap::UpdateVisNormalsAndShadingTexture(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
+#ifndef HEADLESS
 	assert(shadingFBO->IsValid() && shadingShader->IsValid());
+#endif // !HEADLESS
 
 	using namespace GL::State;
 	auto state = GL::SubState(
