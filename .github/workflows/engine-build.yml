@@ -163,7 +163,7 @@ jobs:
           cd /build/src/docker-build-v2/scripts
           ./configure.sh ${{ inputs.cmake-options || '' }}
           ./compile.sh
-          ${{ inputs.split-debug-info == false && 'echo "Not splitting debug info."' || './split-debug-info.sh' }}
+          ${{ ((github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.split-debug-info == false) && 'echo "Not splitting debug info."' || './split-debug-info.sh' }}
           ./package.sh ${{ inputs.package-suffix }}
 
           EOF
