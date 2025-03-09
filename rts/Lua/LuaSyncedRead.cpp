@@ -1276,7 +1276,7 @@ static int PushSingleOption(lua_State* L, const auto &options)
 {
 	const std::string& key = luaL_checkstring(L, 1);
 
-	const std::string* value = options.try_get(key);
+	const std::string* value = Recoil::map_try_get(options, key);
 	if (value == nullptr)
 		return 0;
 

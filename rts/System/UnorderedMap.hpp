@@ -30,6 +30,8 @@
 
 	#endif
 #else
+	#include <type_traits>
+
 	#include "SpringHashMap.hpp"
 	#include "SpringHash.h"
 
@@ -40,6 +42,18 @@
 		template<typename K, typename V, typename H = std::hash<K>, typename C = emilib::HashMapEqualTo<K>>
 		using unsynced_map = emilib::HashMap<K, V, H, C>;
 	};
+
+	namespace Recoil {
+		template<typename Map, typename MapPureT = std::remove_cvref_t<Map>>
+		auto map_try_get(Map&& map, const typename MapPureT::key_type& key) {
+			constexpr bool mapIsConst = std::is_const_v<typename std::remove_reference<Map>::type>;
+			using ReturnType = std::conditional_t<mapIsConst, const typename MapPureT::mapped_type, typename MapPureT::mapped_type>;
+			if (auto it = map.find(key); it == map.end())
+				return static_cast<ReturnType*>(nullptr);
+			else
+				return static_cast<ReturnType*>(&it->second);
+		}
+	}
 #endif
 
 
