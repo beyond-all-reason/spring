@@ -3,6 +3,8 @@
 #ifndef _BUFFERED_ARCHIVE_H
 #define _BUFFERED_ARCHIVE_H
 
+#include <tuple>
+
 #include "IArchive.h"
 #include "System/Threading/SpringThreading.h"
 
@@ -17,36 +19,19 @@ public:
 		noCache = !cached;
 	}
 
-	virtual ~CBufferedArchive();
+	~CBufferedArchive() override;
 
-	virtual int GetType() const override { return ARCHIVE_TYPE_BUF; }
+	int GetType() const override { return ARCHIVE_TYPE_BUF; }
 
-	bool GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
+	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 
 protected:
-	virtual int GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer) = 0;
-
-	struct FileBuffer {
-		FileBuffer() = default;
-		FileBuffer(const FileBuffer& fb) = delete;
-		FileBuffer(FileBuffer&& fb) { *this = std::move(fb); }
-
-		FileBuffer& operator = (const FileBuffer& fb) = delete;
-		FileBuffer& operator = (FileBuffer&& fb) = default;
-
-		uint32_t numAccessed = 0;
-		bool populated = false; // files may be empty (0 bytes)
-		bool exists = false;
-
-		std::vector<std::uint8_t> data;
-	};
+	virtual int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) = 0;
 
 	// indexed by file-id
-	std::vector<FileBuffer> fileCache;
+	std::vector<std::tuple<uint32_t, bool, std::vector<uint8_t>>> fileCache = {};
 private:
-	uint32_t cacheSize = 0;
-	uint32_t fileCount = 0;
-
+	spring::spinlock mutex;
 	bool noCache = false;
 };
 

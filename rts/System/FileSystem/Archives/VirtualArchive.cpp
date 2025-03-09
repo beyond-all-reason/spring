@@ -49,19 +49,19 @@ CVirtualArchiveOpen::CVirtualArchiveOpen(CVirtualArchive* archive, const std::st
 }
 
 
-unsigned int CVirtualArchiveOpen::NumFiles() const
+uint32_t CVirtualArchiveOpen::NumFiles() const
 {
 	return archive->NumFiles();
 }
 
-bool CVirtualArchiveOpen::GetFile( unsigned int fid, std::vector<std::uint8_t>& buffer )
+bool CVirtualArchiveOpen::GetFile( uint32_t fid, std::vector<std::uint8_t>& buffer )
 {
 	return archive->GetFile(fid, buffer);
 }
 
-void CVirtualArchiveOpen::FileInfo( unsigned int fid, std::string& name, int& size ) const
+IArchive::SFileInfo CVirtualArchiveOpen::FileInfo(uint32_t fid) const
 {
-	return archive->FileInfo(fid, name, size);
+	return archive->FileInfo(fid);
 }
 
 
@@ -72,7 +72,7 @@ CVirtualArchiveOpen* CVirtualArchive::Open()
 }
 
 
-bool CVirtualArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
+bool CVirtualArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	if (fid >= files.size())
 		return false;
@@ -81,15 +81,18 @@ bool CVirtualArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffe
 	return true;
 }
 
-void CVirtualArchive::FileInfo(unsigned int fid, std::string& name, int& size) const
+IArchive::SFileInfo CVirtualArchive::FileInfo(uint32_t fid) const
 {
 	assert(fid < files.size());
-
-	name = files[fid].name;
-	size = files[fid].buffer.size();
+	const auto& fe = files[fid];
+	return IArchive::SFileInfo{
+		.fileName = fe.name,
+		.size = static_cast<int32_t>(fe.buffer.size()),
+		.modTime = 0
+	};
 }
 
-unsigned int CVirtualArchive::AddFile(const std::string& name)
+uint32_t CVirtualArchive::AddFile(const std::string& name)
 {
 	lcNameIndex[name] = files.size();
 	files.emplace_back(files.size(), name);

@@ -42,7 +42,7 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 }
 
 
-bool CDirArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
+bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 
@@ -63,18 +63,17 @@ bool CDirArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
 	return true;
 }
 
-void CDirArchive::FileInfo(unsigned int fid, std::string& name, int& size) const
+IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
+	IArchive::SFileInfo fi;
+	fi.fileName = searchFiles[fid];
 
-	name = searchFiles[fid];
-	const std::string rawPath = dataDirsAccess.LocateFile(dirName + name);
-	std::ifstream ifs(rawPath.c_str(), std::ios::in | std::ios::binary);
+	std::string rawPath = dataDirsAccess.LocateFile(dirName + fi.fileName);
+	FileSystem::FixSlashes(rawPath);
 
-	if (!ifs.bad() && ifs.is_open()) {
-		ifs.seekg(0, std::ios_base::end);
-		size = ifs.tellg();
-	} else {
-		size = 0;
-	}
+	fi.size = FileSystem::GetFileSize(rawPath);
+	fi.modTime = FileSystemAbstraction::GetFileModificationTime(rawPath);
+
+	return fi;
 }

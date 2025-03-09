@@ -118,7 +118,7 @@ bool FileSystem::FileExists(std::string file)
 	return FileSystemAbstraction::FileExists(FileSystem::GetNormalizedPath(file));
 }
 
-size_t FileSystem::GetFileSize(std::string file)
+size_t FileSystem::GetFileSize(const std::string& file)
 {
 	if (!CheckFile(file))
 		return 0;

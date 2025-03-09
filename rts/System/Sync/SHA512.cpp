@@ -21,6 +21,26 @@ static uint64_t rotr64(uint64_t x, uint64_t i) {
 }
 
 
+void sha512::read_digest(const std::string& hex, raw_digest& sha_bytes)
+{
+	if (hex.size() != (sha512::SHA_LEN * 2)) {
+		sha_bytes = NULL_RAW_DIGEST;
+		return;
+	}
+	for (uint8_t i = 0; i < SHA_LEN; i++) {
+		const uint8_t c0 = hex2dec(hex[i * 2 + 0]);
+		const uint8_t c1 = hex2dec(hex[i * 2 + 1]);
+		sha_bytes[i] = (c0 << 4) | c1;
+	}
+}
+
+sha512::raw_digest sha512::read_digest(const std::string& hex)
+{
+	raw_digest raw;
+	read_digest(hex, raw);
+	return raw;
+}
+
 void sha512::read_digest(const hex_digest& hex_chars, raw_digest& sha_bytes) {
 	for (uint8_t i = 0; i < SHA_LEN; i++) {
 		const uint8_t c0 = hex2dec(hex_chars[i * 2 + 0]);
@@ -37,8 +57,14 @@ void sha512::dump_digest(const raw_digest& sha_bytes, hex_digest& hex_chars) {
 	hex_chars[hex_chars.size() - 1] = 0;
 }
 
+std::string sha512::dump_digest(const raw_digest& sha_bytes)
+{
+	hex_digest hex_chars;
+	dump_digest(sha_bytes, hex_chars);
+	return std::string(hex_chars.data(), hex_chars.size() - 1);
+}
 
-void sha512::calc_digest(const msg_vector& msg_bytes, raw_digest& sha_bytes) {
+void sha512::calc_digest(const std::vector<uint8_t>& msg_bytes, raw_digest& sha_bytes) {
 	calc_digest(msg_bytes.data(), msg_bytes.size(), sha_bytes.data());
 }
 
@@ -146,7 +172,7 @@ void sha512::dm_compress(uint64_t state[NUM_STATE_CONSTS], const uint8_t blocks[
 
 
 bool sha512::unit_test(const char* msg_str, const char* sha_str) {
-	msg_vector msg_bytes = {};
+	std::vector<uint8_t> msg_bytes = {};
 	raw_digest sha_bytes = {0};
 
 	if (msg_str[0] != 0) {

@@ -3,14 +3,17 @@
 #ifndef _7ZIP_ARCHIVE_H
 #define _7ZIP_ARCHIVE_H
 
+#include <vector>
+#include <array>
+#include <string>
+#include <optional>
+#include <bitset>
+
 #include <7z.h>
 #include <7zFile.h>
 
 #include "IArchiveFactory.h"
 #include "BufferedArchive.h"
-#include <vector>
-#include <string>
-#include "IArchive.h"
 
 /**
  * Creates LZMA/7zip compressed, single-file archives.
@@ -36,38 +39,48 @@ public:
 
 	int GetType() const override { return ARCHIVE_TYPE_SD7; }
 
-	bool IsOpen() override { return isOpen; }
+	bool IsOpen() override { return isOpen.any(); }
 
-	unsigned int NumFiles() const override { return (fileEntries.size()); }
-	int GetFileImpl(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
-	void FileInfo(unsigned int fid, std::string& name, int& size) const override;
+	uint32_t NumFiles() const override { return (fileEntries.size()); }
+	SFileInfo FileInfo(uint32_t fid) const override;
 
+	bool CheckForSolid() const override { return considerSolid; }
+
+	static constexpr int MAX_THREADS = 32;
+protected:
+	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 private:
-	static inline spring::mutex archiveLock;
+	struct PerThreadData {
+		CFileInStream archiveStream;
+		CSzArEx db;
+		CLookToRead2 lookStream;
+		Byte* outBuffer = nullptr;
+	};
 
-	// actual data is in BufferedArchive
+	void OpenArchive(int tnum);
+
+	static inline spring::mutex archiveLock;
+	static constexpr size_t INPUT_BUF_SIZE = (size_t)1 << 18;
+
 	struct FileEntry {
 		int fp;
 		/**
 		 * Real/unpacked size of the file in bytes.
 		 */
 		int size;
+		uint32_t modTime;
 		std::string origName;
 	};
 
 	std::vector<FileEntry> fileEntries;
 
-	UInt32 blockIndex = 0xFFFFFFFF;
-	size_t outBufferSize = 0;
-	Byte* outBuffer = nullptr;
+	std::array<std::optional<PerThreadData>, MAX_THREADS> perThreadData;
 
-	CFileInStream archiveStream;
-	CSzArEx db;
-	CLookToRead2 lookStream;
 	ISzAlloc allocImp;
 	ISzAlloc allocTempImp;
 
-	bool isOpen = false;
+	std::bitset<MAX_THREADS> isOpen = { false };
+	bool considerSolid = false;
 };
 
 #endif // _7ZIP_ARCHIVE_H

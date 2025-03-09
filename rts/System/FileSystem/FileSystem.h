@@ -47,7 +47,7 @@ public:
 	 *
 	 * @return the filesize or 0 if the file doesn't exist.
 	 */
-	static size_t GetFileSize(std::string path);
+	static size_t GetFileSize(const std::string& path);
 	///@}
 
 	/// @name directory

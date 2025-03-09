@@ -68,9 +68,9 @@ public:
 
 	// virtual archives are stored in memory and as such always open
 	bool IsOpen() override { return true; }
-	unsigned int NumFiles() const override;
-	bool GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer) override;
-	void FileInfo(unsigned int fid, std::string& name, int& size) const override;
+	uint32_t NumFiles() const override;
+	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
+	SFileInfo FileInfo(uint32_t fid) const override;
 
 private:
 	CVirtualArchive* archive;
@@ -86,16 +86,16 @@ public:
 	CVirtualArchive(const std::string& _fileName): fileName(_fileName) {}
 
 	CVirtualArchiveOpen* Open();
-	CVirtualFile* GetFilePtr(unsigned int fid) { return &files[fid]; }
+	CVirtualFile* GetFilePtr(uint32_t fid) { return &files[fid]; }
 
-	unsigned int AddFile(const std::string& file);
-	unsigned int NumFiles() const { return (files.size()); }
+	uint32_t AddFile(const std::string& file);
+	uint32_t NumFiles() const { return (files.size()); }
 
-	bool GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer);
-	void FileInfo(unsigned int fid, std::string& name, int& size) const;
+	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer);
+	IArchive::SFileInfo FileInfo(uint32_t fid) const;
 
 	const std::string& GetFileName() const { return fileName; }
-	const spring::unordered_map<std::string, unsigned int>& GetNameIndex() const { return lcNameIndex; }
+	const spring::unordered_map<std::string, uint32_t>& GetNameIndex() const { return lcNameIndex; }
 
 	void WriteToFile();
 
@@ -104,7 +104,7 @@ private:
 
 	std::string fileName;
 	std::vector<CVirtualFile> files;
-	spring::unordered_map<std::string, unsigned int> lcNameIndex;
+	spring::unordered_map<std::string, uint32_t> lcNameIndex;
 };
 
 #endif // _VIRTUAL_ARCHIVE_H

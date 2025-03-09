@@ -8,6 +8,7 @@
 
 #include <array>
 #include <vector>
+#include <string>
 
 
 namespace sha512 {
@@ -50,17 +51,24 @@ namespace sha512 {
 	};
 
 
-	typedef std::array<uint8_t, SHA_LEN        > raw_digest;
-	typedef std::array<   char, SHA_LEN * 2 + 1> hex_digest; // null-terminated
-	typedef std::vector<uint8_t                > msg_vector;
+	using raw_digest = std::array<uint8_t, SHA_LEN        >;
+	using hex_digest = std::array<   char, SHA_LEN * 2 + 1>; // null-terminated
 
+	void read_digest(const std::string& hex, raw_digest& sha_bytes); // hex to raw
+	raw_digest read_digest(const std::string& hex); // hex to raw
 	void read_digest(const hex_digest& hex_chars, raw_digest& sha_bytes); // hex to raw
 	void dump_digest(const raw_digest& sha_bytes, hex_digest& hex_chars); // raw to hex
-	void calc_digest(const msg_vector& msg_bytes, raw_digest& sha_bytes);
+	std::string dump_digest(const raw_digest& sha_bytes); // raw to hex
+	void calc_digest(const std::vector<uint8_t>& msg_bytes, raw_digest& sha_bytes);
 	void calc_digest(const uint8_t msg_bytes[], size_t len, uint8_t sha_bytes[SHA_LEN]);
 	void dm_compress(uint64_t state[NUM_STATE_CONSTS], const uint8_t blocks[], size_t len);
 
 	bool unit_test(const char* msg_str = TEST_STR_PAIR[0], const char* sha_str = TEST_STR_PAIR[1]);
+
+	static constexpr raw_digest NULL_RAW_DIGEST = { 0 };
+	static constexpr hex_digest NULL_HEX_DIGEST = {
+		'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0', 0
+	};
 };
 
 #endif

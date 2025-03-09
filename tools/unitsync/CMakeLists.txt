@@ -10,7 +10,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 find_package_static(ZLIB 1.2.7 REQUIRED)
 
 list(APPEND unitsync_libs ${CMAKE_DL_LIBS})
-list(APPEND unitsync_libs 7zip prd::jsoncpp lua headlessStubs archives)
+list(APPEND unitsync_libs 7zip prd::jsoncpp lua headlessStubs archives_nothreadpool)
 list(APPEND unitsync_libs ZLIB::ZLIB)
 list(APPEND unitsync_libs ${SPRING_MINIZIP_LIBRARY})
 

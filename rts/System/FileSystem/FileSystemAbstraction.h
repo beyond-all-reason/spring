@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
 
 #if defined(CreateDirectory)
 	#undef CreateDirectory
@@ -109,7 +110,7 @@ public:
 	// custom functions
 	static bool IsReadableFile(const std::string& file);
 
-	static unsigned int GetFileModificationTime(const std::string& file);
+	static uint32_t GetFileModificationTime(const std::string& file);
 	/**
 	 * Returns the last file modification time formatted in a sort friendly
 	 * way, with second resolution.
