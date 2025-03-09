@@ -3922,6 +3922,7 @@ int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
  * @field sunColor rgba
  * @field skyColor rgba
  * @field cloudColor rgba
+ * @field skyAxisAngle xyzw rotation axis and angle in radians of skybox orientation
  */
 /***
  * It can be used to modify the following atmosphere parameters
@@ -3947,24 +3948,24 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 		const char* key = lua_tostring(L, -2);
 
 		if (lua_istable(L, -1)) {
-			float4 color;
-			LuaUtils::ParseFloatArray(L, -1, &color[0], 4);
+			float4 values;
+			LuaUtils::ParseFloatArray(L, -1, &values[0], 4);
 
 			switch (hashString(key)) {
 				case hashString("fogColor"): {
-					sky->fogColor = color;
+					sky->fogColor = values;
 				} break;
 				case hashString("skyColor"): {
-					sky->skyColor = color;
-				} break;
-				case hashString("skyDir"): {
-					// sky->skyDir = color;
+					sky->skyColor = values;
 				} break;
 				case hashString("sunColor"): {
-					sky->sunColor = color;
+					sky->sunColor = values;
 				} break;
 				case hashString("cloudColor"): {
-					sky->cloudColor = color;
+					sky->cloudColor = values;
+				} break;
+				case hashString("skyAxisAngle"): {
+					sky->SetSkyAxisAngle(values);
 				} break;
 				default: {
 					luaL_error(L, "[%s] unknown array key %s", __func__, key);

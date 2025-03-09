@@ -25,6 +25,7 @@ ISky::ISky()
 	, sunColor(mapInfo->atmosphere.sunColor)
 	, cloudColor(mapInfo->atmosphere.cloudColor)
 	, fogColor(mapInfo->atmosphere.fogColor)
+	, skyAxisAngle(mapInfo->atmosphere.skyAxisAngle)
 	, fogStart(mapInfo->atmosphere.fogStart)
 	, fogEnd(mapInfo->atmosphere.fogEnd)
 	, cloudDensity(mapInfo->atmosphere.cloudDensity)
@@ -84,6 +85,18 @@ void ISky::SetSky()
 		LOG_L(L_ERROR, "[ISky::%s] error creating %s (falling back to NullSky)", __func__, sky->GetName().c_str());
 		sky = std::make_unique<CNullSky>();
 	}
+}
+
+void ISky::SetSkyAxisAngle(const float4& skyAxisAngleRaw)
+{
+	auto axis = float3{ skyAxisAngleRaw.x, skyAxisAngleRaw.y, skyAxisAngleRaw.z };
+	const float axisNorm = axis.Length();
+	if (axisNorm < float3::nrm_eps())
+		axis = FwdVector;
+	else
+		axis /= axisNorm;
+
+	skyAxisAngle = float4{ axis, ClampRad(skyAxisAngleRaw.w) };
 }
 
 bool ISky::SunVisible(const float3 pos) const {

@@ -13,6 +13,16 @@
 
 ---@alias float3 xyz
 
+---Cartesian quadruple (XYZW)
+---
+---@class xyzw
+---@field x number
+---@field y number
+---@field z number
+---@field w number
+
+---@alias float4 xyzw
+
 --------------------------------------------------------------------------------
 -- Color
 --------------------------------------------------------------------------------

@@ -79,16 +79,12 @@ void CModernSky::Draw()
 	const float4& sunDir = skyLight->GetLightDir();
 	skyShader->SetUniform("sunDir", sunDir.x, sunDir.y, sunDir.z);
 
-	const float3& sunColor = mapInfo->atmosphere.sunColor;
 	skyShader->SetUniform("sunColor", sunColor.x, sunColor.y, sunColor.z, sunDir.w); // sunDir.w -- intensity
 
-	const float3& cloudColor = mapInfo->atmosphere.cloudColor;
 	skyShader->SetUniform("cloudInfo", cloudColor.x, cloudColor.y, cloudColor.z, mapInfo->atmosphere.cloudDensity);
 
-	const float3& skyColor = mapInfo->atmosphere.skyColor;
 	skyShader->SetUniform("skyColor", skyColor.x, skyColor.y, skyColor.z);
 
-	const float3& fogColor = mapInfo->atmosphere.fogColor;
 	skyShader->SetUniform("fogColor", fogColor.x, fogColor.y, fogColor.z);
 
 	skyShader->SetUniform("planeColor",
