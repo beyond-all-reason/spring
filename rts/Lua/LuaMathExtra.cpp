@@ -87,6 +87,11 @@ int LuaMathExtra::clamp(lua_State* L) {
 	const lua_Number lbound = luaL_checknumber_noassert(L, 2);
 	const lua_Number ubound = luaL_checknumber_noassert(L, 3);
 
+	if (lbound > ubound) {
+		luaL_error(L, "Invalid math.%s parameters, lower bound(%f) is greater than upper bound(%f)", __func__, lbound, ubound);
+		return 0;
+	}
+
 	lua_pushnumber(L, std::clamp(luaL_checknumber_noassert(L, 1), lbound, ubound));
 	return 1;
 }
