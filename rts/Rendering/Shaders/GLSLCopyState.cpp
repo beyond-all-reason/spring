@@ -458,7 +458,6 @@ static bool CopyShaderState_ContainsGeometryShader(GLuint oldProgID)
 static void CopyShaderState_Geometry(GLuint newProgID, GLuint oldProgID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-#if defined(GL_ARB_geometry_shader4) && defined(GL_ARB_get_program_binary)
 	if (!GLAD_GL_ARB_geometry_shader4)
 		return;
 	// "GL_INVALID_OPERATION is generated if pname is GL_GEOMETRY_VERTICES_OUT,
@@ -476,7 +475,6 @@ static void CopyShaderState_Geometry(GLuint newProgID, GLuint oldProgID)
 	if (inputType != 0)   glProgramParameteri(newProgID, GL_GEOMETRY_INPUT_TYPE, inputType);
 	if (outputType != 0)  glProgramParameteri(newProgID, GL_GEOMETRY_OUTPUT_TYPE, outputType);
 	if (verticesOut != 0) glProgramParameteri(newProgID, GL_GEOMETRY_VERTICES_OUT, verticesOut);
-#endif
 }
 #endif
 

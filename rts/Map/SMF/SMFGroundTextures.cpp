@@ -180,7 +180,7 @@ void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
 	}
 
 
-#if !defined(HEADLESS) && defined(GL_ARB_ES3_compatibility)
+#ifndef HEADLESS
 	if (RecompressTilesIfNeeded()) {
 		// Not all FOSS drivers support S3TC, use ETC1 for those if possible
 		// ETC2 is backward compatible with ETC1! GLEW doesn't have the ETC1 extension :<
@@ -285,7 +285,7 @@ void CSMFGroundTextures::ConvolveHeightMap(const int mapWidth, const int mipLeve
 	}
 }
 
-#if !defined(HEADLESS) && defined(GL_ARB_ES3_compatibility)
+#ifndef HEADLESS
 // Not all FOSS drivers support S3TC, use ETC1 for those if possible
 bool CSMFGroundTextures::RecompressTilesIfNeeded()
 {
