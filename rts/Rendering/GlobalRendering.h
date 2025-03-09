@@ -348,7 +348,7 @@ public:
 	int glslMaxStorageBufferBindings;
 	int glslMaxStorageBufferSize; ///< in bytes
 
-	std::array<int, 3> csMaxInvocations;
+	std::array<int, 3> csMaxInvocations; // XYZ dimensions
 	int csWarpSize;
 	std::array<int, 3> csMaxWorkGroupSize;
 	int csMaxTotalWorkGroupSize;
