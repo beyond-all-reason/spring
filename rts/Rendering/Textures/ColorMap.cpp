@@ -8,43 +8,59 @@
 #include "System/Log/ILog.h"
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
-#include "System/UnorderedMap.hpp"
+#include "System/SpringMath.h"
 #include "System/creg/STL_Map.h"
 
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND(CColorMap, )
 CR_REG_METADATA(CColorMap, (
-	CR_MEMBER(xsize),
-	CR_IGNORED(nxsize),
-	CR_MEMBER(ysize),
-	CR_IGNORED(map),
-
-	CR_SERIALIZER(Serialize),
-	CR_POSTLOAD(PostLoad)
+	CR_MEMBER(offt),
+	CR_MEMBER(size)
 ))
 
+template
+CColorMap* CColorMap::LoadFromArray<float>(const float* fp, uint32_t num);
 
-static std::array<CColorMap, 2048 + 2> colorMapsCache;
-static spring::unordered_map<std::string, CColorMap*> namedColorMaps;
-
-static size_t numColorMaps = 0;
-
+template
+CColorMap* CColorMap::LoadFromArray<uint8_t>(const uint8_t* fp, uint32_t num);
 
 void CColorMap::InitStatic()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	allColorMaps.reserve(512);
+	allColorMapValues.reserve(allColorMaps.capacity() * 4);
+
+	vbo = std::make_unique<VBO>(GL_SHADER_STORAGE_BUFFER, false, false);
+}
+
+void CColorMap::KillStatic()
+{
+	allColorMaps.clear();
+	allColorMapValues.clear();
 	namedColorMaps.clear();
-	namedColorMaps.reserve(colorMapsCache.size() - 2);
 
-	// reuse inner ColorMap vectors when reloading
-	// colorMapsCache.fill({});
+	vbo = nullptr;
+}
 
-	for (CColorMap& cm: colorMapsCache) {
-		cm.Clear();
+VBO& CColorMap::GetSSBO()
+{
+	if (vbo->GetIdRaw() != 0 && vbo->GetSize() == allColorMapValues.size() * sizeof(float4))
+		return *vbo;
+
+	auto token = vbo->BindScoped();
+	vbo->Resize(allColorMapValues.size() * sizeof(float4), GL_STATIC_READ);
+
+	auto* ptr = vbo->MapBuffer(GL_WRITE_ONLY);
+	for (const auto& c : allColorMapValues) {
+		const auto f = static_cast<float4>(c);
+		std::memcpy(ptr, &f, sizeof(float4));
+		ptr += sizeof(float4);
 	}
+	vbo->UnmapBuffer();
 
-	numColorMaps = 0;
+	return *vbo;
 }
 
 CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)
@@ -54,74 +70,8 @@ CColorMap* CColorMap::LoadFromBitmapFile(const std::string& fileName)
 	const auto it = namedColorMaps.find(fn);
 
 	if (it != namedColorMaps.end())
-		return it->second;
+		return &allColorMaps[it->second];
 
-	// hand out a dummy if cache is full
-	if (numColorMaps >= (colorMapsCache.size() - 2))
-		return &colorMapsCache[colorMapsCache.size() - 2];
-
-	colorMapsCache[numColorMaps] = {fileName};
-	namedColorMaps[fn] = &colorMapsCache[numColorMaps];
-
-	return &colorMapsCache[numColorMaps++];
-}
-
-CColorMap* CColorMap::LoadFromRawVector(const float* data, size_t size)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	CColorMap& cm = colorMapsCache[colorMapsCache.size() - 1];
-
-	cm.Clear();
-	cm.Load(data, size);
-
-	// slowish, but gets invoked by /reloadcegs via LoadFromDefString callback
-	// need to do a cache lookup or numColorMaps quickly spirals out of control
-	for (size_t i = 0; i < numColorMaps; i++) {
-		if (colorMapsCache[i].map.size() != cm.map.size())
-			continue;
-
-		if (memcmp(colorMapsCache[i].map.data(), cm.map.data(), cm.map.size() * sizeof(SColor)) == 0)
-			return &colorMapsCache[i];
-	}
-
-	// ditto
-	if (numColorMaps >= (colorMapsCache.size() - 2))
-		return &colorMapsCache[colorMapsCache.size() - 2];
-
-	colorMapsCache[numColorMaps].Clear();
-	colorMapsCache[numColorMaps].Load(data, size);
-
-	return &colorMapsCache[numColorMaps++];
-}
-
-
-CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	std::array<float, 4096> vec;
-
-	size_t idx = 0;
-
-	char* pos = const_cast<char*>(defString.c_str());
-	char* end = nullptr;
-
-	vec.fill(0.0f);
-
-	for (float val; (val = std::strtof(pos, &end), pos != end && idx < vec.size()); pos = end) {
-		vec[idx++] = val;
-	}
-
-	if (idx == 0)
-		return (CColorMap::LoadFromBitmapFile("bitmaps\\" + defString));
-
-	return (CColorMap::LoadFromRawVector(vec.data(), idx));
-}
-
-
-
-CColorMap::CColorMap(const std::string& fileName)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
 	CBitmap bitmap;
 
 	if (!bitmap.Load(fileName)) {
@@ -132,117 +82,149 @@ CColorMap::CColorMap(const std::string& fileName)
 	if (bitmap.compressed || (bitmap.channels != 4) || (bitmap.xsize < 2))
 		throw content_error("[ColorMap] unsupported bitmap format in file " + fileName);
 
-	xsize  = bitmap.xsize;
-	ysize  = bitmap.ysize;
-	nxsize = xsize - 1;
-
-	LoadMap(bitmap.GetRawMem(), xsize * ysize);
+	return LoadFromArray(bitmap.GetRawMem(), bitmap.GetMemSize());
 }
 
+template<typename T>
+CColorMap* CColorMap::LoadFromArray(const T* vals, uint32_t num)
+{
+	std::array<SColor, 1024> tmpColors;
 
-void CColorMap::Load(const float* data, size_t size)
+	//if (num % 4 != 0)
+	//	throw content_error("[ColorMap] invalid number of color components (not multiple of 4)");
+
+	if (num > tmpColors.size() * 4) {
+		LOG_L(L_WARNING, "[ColorMap] colormap float array is too big %u, truncating to %u", static_cast<uint32_t>(num), static_cast<uint32_t>(4 * tmpColors.size()));
+		num = tmpColors.size() * 4;
+	}
+
+	num /= 4;
+
+	for (uint32_t i = 0; i < num; ++i) {
+		tmpColors[i] = SColor(vals[4 * i + 0], vals[4 * i + 1], vals[4 * i + 2], vals[4 * i + 3]);
+	}
+
+#if 0
+	const auto valueIt = std::search(allColorMapValues.begin(), allColorMapValues.end(), tmpColors.begin(), tmpColors.begin() + num);
+	if (valueIt != allColorMapValues.end()) {
+		CColorMap cm{ static_cast<uint32_t>(std::distance(allColorMapValues.begin(), valueIt)), num };
+		const auto cmIt = std::find(allColorMaps.begin(), allColorMaps.end(), cm);
+		if (cmIt != allColorMaps.end())
+			return &(*cmIt);
+
+		return &allColorMaps.emplace_back(std::move(cm));
+	}
+#else
+	const auto searchPred = [num](const auto& cm) {
+		return num == cm.size;
+	};
+
+	for (auto cmIt = std::find_if(allColorMaps.begin(), allColorMaps.end(), searchPred); cmIt != allColorMaps.end(); cmIt = std::find_if(cmIt + 1, allColorMaps.end(), searchPred)) {
+		const auto stValIt = allColorMapValues.begin() + cmIt->GetOffset();
+		const auto fiValIt = stValIt + cmIt->GetSize();
+		if (std::equal(stValIt, fiValIt, tmpColors.begin()))
+			return &(*cmIt);
+	}
+#endif
+
+	uint32_t offset = allColorMapValues.size();
+	allColorMapValues.insert(allColorMapValues.end(), tmpColors.begin(), tmpColors.begin() + num);
+	return &allColorMaps.emplace_back(offset, num);
+}
+
+CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (size < 8)
+	std::array<float, 4096> tmpFloats;
+
+	uint32_t idx = 0;
+
+	char* pos = const_cast<char*>(defString.c_str());
+	char* end = nullptr;
+
+	for (float val; (val = std::strtof(pos, &end), pos != end && idx < tmpFloats.size()); pos = end) {
+		tmpFloats[idx++] = val;
+	}
+
+	if (idx == 0)
+		return (CColorMap::LoadFromBitmapFile("bitmaps\\" + defString));
+
+	if (idx < 8)
 		throw content_error("[ColorMap] less than two RGBA colors specified");
 
-	xsize  = (size - (size % 4)) / 4;
-	ysize  = 1;
-	nxsize = xsize - 1;
-
-	static std::array<SColor, 4096> cmap; //to move it off the stack
-
-	for (size_t i = 0, n = std::min(size_t(xsize), cmap.size()); i < n; ++i) {
-		cmap[i] = SColor(&data[i * 4]);
-	}
-
-	LoadMap(&cmap[0].r, xsize);
+	return LoadFromArray(tmpFloats.data(), idx);
 }
 
-void CColorMap::LoadMap(const unsigned char* buf, int num)
+CColorMap* CColorMap::LoadDummy(const SColor& col)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
-	map.clear();
-	map.resize(num);
-
-	std::memcpy(&map[0], buf, num * 4);
+	std::array<SColor, 2> cols = {col};
+	return LoadFromArray(reinterpret_cast<uint8_t*>(cols.data()), cols.size() * sizeof(SColor));
 }
 
-void CColorMap::GetColor(unsigned char* color, float pos)
+
+std::tuple<SColor, SColor, float, float> CColorMap::GetColorsPair(float pos) const
 {
-	RECOIL_DETAILED_TRACY_ZONE;
-	auto indices = GetIndices(pos);
-	if (indices.first == size_t(-1)) {
-		// dummy map, just return grey
-		color[0] = 128;
-		color[1] = 128;
-		color[2] = 128;
-		color[3] = 255;
-		return;
-	}
-
-	const float fposn = pos * nxsize;
-	const float fracn = fposn - indices.first;
-	const auto aa = (int) (fracn * 256);
-	const auto ia = 256 - aa;
-
-	const auto* col1 = static_cast<uint8_t*>(map[indices.first ]);
-	const auto* col2 = static_cast<uint8_t*>(map[indices.second]);
-
-	color[0] = ((col1[0] * ia) + (col2[0] * aa)) >> 8;
-	color[1] = ((col1[1] * ia) + (col2[1] * aa)) >> 8;
-	color[2] = ((col1[2] * ia) + (col2[2] * aa)) >> 8;
-	color[3] = ((col1[3] * ia) + (col2[3] * aa)) >> 8;
+	auto [i0, i1] = GetIndices(pos);
+	auto& color0 = GetColorAt(i0);
+	auto& color1 = GetColorAt(i1);
+	auto colEdge0 = GetColorPos(i0);
+	auto colEdge1 = GetColorPos(i1);
+	return std::make_tuple(color0, color1, colEdge0, colEdge1);
 }
 
-std::pair<size_t, size_t> CColorMap::GetIndices(float pos) const
+void CColorMap::GetColor(unsigned char* color, float pos) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (map.empty())
-		return std::make_pair(size_t(-1), size_t(-1));
+	SColor col = GetColor(pos);
+	std::copy(std::begin(col.rgba), std::end(col.rgba), color);
+}
 
-	if (pos >= 1.0f)
-		return std::make_pair(map.size() - 1, map.size() - 1);
+SColor CColorMap::GetColor(float pos) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	auto [i0, i1] = GetIndices(pos);
+	const auto fpos = pos * (size - 1);
+	const auto ipos = static_cast<uint32_t>(fpos);
+	pos = (fpos - ipos);
 
-	pos = std::max(pos, 0.0f);
+	return mix(allColorMapValues[i0], allColorMapValues[i1], pos);
+}
 
-	const float fposn = pos * nxsize;
-	const size_t p = static_cast<size_t>(fposn);
+const SColor& CColorMap::GetColorAt(uint32_t idx) const
+{
+	idx = std::clamp(idx, offt, offt + size);
+	return allColorMapValues[idx];
+}
 
-	return std::make_pair(p, std::min(p + 1, map.size() - 1));
+float CColorMap::GetColorPos(uint32_t idx) const
+{
+	idx = std::clamp(idx, offt, offt + size);
+	return static_cast<float>(idx - offt) / (size - 1);
+}
+
+std::pair<uint32_t, uint32_t> CColorMap::GetIndices(float pos) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	pos = std::clamp(pos, 0.0f, 0.999f);
+
+	const uint32_t basePos = offt + static_cast<uint32_t>(pos * (size - 1));
+	return std::make_pair(
+		basePos + 0,
+		basePos + 1
+	);
 }
 
 #ifdef USING_CREG
 void CColorMap::SerializeColorMaps(creg::ISerializer* s)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!s->IsWriting()) {
-		for (CColorMap& cm: colorMapsCache) {
-			cm.Clear();
-		}
-	}
-
-	s->SerializeInt(&numColorMaps, sizeof(numColorMaps));
-	for (size_t i = 0; i < numColorMaps; ++i) {
-		s->SerializeObjectInstance(&colorMapsCache[i], CColorMap::StaticClass());
-	}
-
-	std::unique_ptr<creg::IType> mapType = creg::DeduceType<decltype(namedColorMaps)>::Get();
-	mapType->Serialize(s, &namedColorMaps);
-}
-
-void CColorMap::PostLoad()
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	nxsize = xsize - 1;
-}
-
-void CColorMap::Serialize(creg::ISerializer* s)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (!s->IsWriting())
-		map.resize(xsize * ysize);
-
-	s->Serialize(&map[0].r, xsize * ysize * 4);
+	
+	const auto Serializer = [s](auto& staticVar) {
+		std::unique_ptr<creg::IType> t = creg::DeduceType<std::remove_cvref_t<decltype(staticVar)>>::Get();
+		t->Serialize(s, &staticVar);
+	};
+	Serializer(allColorMaps);
+	Serializer(allColorMapValues);
+	Serializer(namedColorMaps);
 }
 #endif
