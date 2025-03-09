@@ -1928,6 +1928,28 @@ public:
 	}
 };
 
+class RotateSkyActionExecutor : public IUnsyncedActionExecutor {
+public:
+	RotateSkyActionExecutor() : IUnsyncedActionExecutor("RotateSky",
+		"Rotates the sky around axis by angle") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		auto args = CSimpleParser::Tokenize(action.GetArgs());
+		if (args.size() != 4)
+			return false;
+
+		const auto axisAngle = float4{
+			StringToInt<float>(args[0]),
+			StringToInt<float>(args[1]),
+			StringToInt<float>(args[2]),
+			StringToInt<float>(args[3])
+		};
+
+		ISky::GetSky()->SetSkyAxisAngle(axisAngle);
+		return true;
+	}
+};
 
 class FeatureFadeDistActionExecutor : public IUnsyncedActionExecutor {
 public:
@@ -4007,6 +4029,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<GroundDetailActionExecutor>());
 	// [devel] AddActionExecutor(AllocActionExecutor<MoreGrassActionExecutor>());
 	// [devel] AddActionExecutor(AllocActionExecutor<LessGrassActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<RotateSkyActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<FeatureFadeDistActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<FeatureDrawDistActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SpeedUpActionExecutor>());

@@ -53,15 +53,19 @@ public:
 	static auto& GetSky() { return sky; }
 	static void KillSky() { sky = nullptr; }
 public:
+	void SetSkyAxisAngle(const float4& skyAxisAngleRaw);
+	const float4& GetSkyAxisAngle() const { return skyAxisAngle; }
+public:
 	float3 skyColor;
 	float3 sunColor;
 	float3 cloudColor;
 	float4 fogColor;
-	float4 skyAxisAngle;
 
 	float fogStart;
 	float fogEnd;
 	float cloudDensity;
+protected:
+	float4 skyAxisAngle;
 protected:
 	static inline std::unique_ptr<ISky> sky = nullptr;
 

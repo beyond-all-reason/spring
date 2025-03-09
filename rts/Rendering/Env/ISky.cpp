@@ -87,6 +87,18 @@ void ISky::SetSky()
 	}
 }
 
+void ISky::SetSkyAxisAngle(const float4& skyAxisAngleRaw)
+{
+	auto axis = float3{ skyAxisAngleRaw.x, skyAxisAngleRaw.y, skyAxisAngleRaw.z };
+	const float axisNorm = axis.Length();
+	if (axisNorm < float3::nrm_eps())
+		axis = FwdVector;
+	else
+		axis /= axisNorm;
+
+	skyAxisAngle = float4{ axis, ClampRad(skyAxisAngleRaw.w) };
+}
+
 bool ISky::SunVisible(const float3 pos) const {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const CUnit* hitUnit = nullptr;

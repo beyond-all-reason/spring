@@ -3935,8 +3935,7 @@ int LuaUnsyncedCtrl::SetAtmosphere(lua_State* L)
 					sky->cloudColor = values;
 				} break;
 				case hashString("skyAxisAngle"): {
-					const auto val3 = float3{ values.x, values.y, values.z }.ANormalize();
-					sky->skyAxisAngle = float4{ val3.x, val3.y, val3.z, ClampRad(values.w) };
+					sky->SetSkyAxisAngle(values);
 				} break;
 				default: {
 					luaL_error(L, "[%s] unknown array key %s", __func__, key);

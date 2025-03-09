@@ -5368,7 +5368,7 @@ int LuaOpenGL::GetAtmosphere(lua_State* L)
 			data = &sky->cloudColor.x;
 		} break;
 		case hashString("skyAxisAngle"): {
-			data = &sky->skyAxisAngle.x;
+			data = &sky->GetSkyAxisAngle().x;
 		}
 		default: {} break;
 	}

@@ -242,10 +242,9 @@ void CSkyBox::Draw()
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	CMatrix44f view = camera->GetViewMatrix();
-	view.SetPos(float3());
-	view.Rotate(skyAxisAngle.w, float3{ skyAxisAngle.x, skyAxisAngle.y, skyAxisAngle.z });
-	glLoadMatrixf(view);
+	CMatrix44f model; model.Rotate(skyAxisAngle.w, float3{ skyAxisAngle.x, skyAxisAngle.y, skyAxisAngle.z });
+	CMatrix44f view = camera->GetViewMatrix(); view.SetPos(float3());
+	glLoadMatrixf(view * model);
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
