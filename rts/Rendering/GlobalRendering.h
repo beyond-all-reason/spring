@@ -233,6 +233,7 @@ public:
 	 * maximum 2D texture size
 	 */
 	int maxTextureSize;
+	int maxTexSlots;
 	int maxFragShSlots;
 	int maxCombShSlots;
 

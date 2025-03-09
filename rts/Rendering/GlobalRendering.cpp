@@ -166,6 +166,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(msaaLevel),
 	CR_IGNORED(minSampleShadingRate),
 	CR_IGNORED(maxTextureSize),
+	CR_IGNORED(maxTexSlots),
 	CR_IGNORED(maxFragShSlots),
 	CR_IGNORED(maxCombShSlots),
 	CR_IGNORED(maxTexAnisoLvl),
@@ -280,6 +281,7 @@ CGlobalRendering::CGlobalRendering()
 	, msaaLevel(configHandler->GetInt("MSAALevel"))
 	, minSampleShadingRate(configHandler->GetFloat("MinSampleShadingRate"))
 	, maxTextureSize(2048)
+	, maxTexSlots(2)
 	, maxFragShSlots(8)
 	, maxCombShSlots(8)
 	, maxTexAnisoLvl(0.0f)
@@ -902,7 +904,7 @@ void CGlobalRendering::QueryGLMaxVals()
 {
 	// maximum 2D texture size
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-
+	glGetIntegerv(GL_MAX_TEXTURE_COORDS, &maxTexSlots);
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxFragShSlots);
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxCombShSlots);
 
@@ -1014,6 +1016,7 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 
 	LOG("\t");
 	LOG("\tmax. FBO samples              : %i", FBO::GetMaxSamples());
+	LOG("\tmax. texture slots            : %i", maxTexSlots);
 	LOG("\tmax. FS/program texture slots : %i/%i", maxFragShSlots, maxCombShSlots);
 	LOG("\tmax. texture size             : %i", maxTextureSize);
 	LOG("\tmax. texture anisotropy level : %f", maxTexAnisoLvl);
