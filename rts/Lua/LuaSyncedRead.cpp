@@ -78,7 +78,6 @@
 #include "System/StringUtil.h"
 
 #include <cctype>
-#include <numbers>
 #include <type_traits>
 
 
