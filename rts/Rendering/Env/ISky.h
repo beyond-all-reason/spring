@@ -57,11 +57,11 @@ public:
 	float3 sunColor;
 	float3 cloudColor;
 	float4 fogColor;
+	float4 skyAxisAngle;
 
 	float fogStart;
 	float fogEnd;
 	float cloudDensity;
-
 protected:
 	static inline std::unique_ptr<ISky> sky = nullptr;
 

@@ -5361,15 +5361,15 @@ int LuaOpenGL::GetAtmosphere(lua_State* L)
 		case hashString("skyColor"): {
 			data = &sky->skyColor.x;
 		} break;
-		case hashString("skyDir"): {
-			// data = &sky->sunColor.x;
-		} break;
 		case hashString("sunColor"): {
 			data = &sky->sunColor.x;
 		} break;
 		case hashString("cloudColor"): {
 			data = &sky->cloudColor.x;
 		} break;
+		case hashString("skyAxisAngle"): {
+			data = &sky->skyAxisAngle.x;
+		}
 		default: {} break;
 	}
 

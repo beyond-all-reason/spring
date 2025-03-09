@@ -87,9 +87,9 @@ public:
 		float  cloudDensity;
 		float  fogStart;
 		float  fogEnd;
+		float4 skyAxisAngle;
 		float4 fogColor;
 		float3 skyColor;
-		float3 skyDir;
 		float3 sunColor;
 		float3 cloudColor;
 		float  minWind;
