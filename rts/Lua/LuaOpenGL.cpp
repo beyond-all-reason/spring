@@ -5340,7 +5340,7 @@ int LuaOpenGL::GetAtmosphere(lua_State* L)
 	}
 
 	const char* param = luaL_checkstring(L, 1);
-	std::variant<float, float3, float4> data;
+	std::variant<std::monostate, float, float3, float4> data;
 
 	switch (hashString(param)) {
 		case hashString("fogStart"): {
