@@ -5,7 +5,9 @@
 
 #include "System/Object.h"
 #include "System/float4.h"
+#include "System/Transform.hpp"
 #include "System/Threading/ThreadPool.h"
+#include "System/SpringMath.h"
 
 struct S3DModel;
 
@@ -62,8 +64,8 @@ public:
 	void SetRadiusAndHeight(const S3DModel* model);
 
 	// extrapolated base-positions; used in unsynced code
-	float3 GetDrawPos(                float t) const { return (speed.w != 0.0f) ? (pos + speed * t) : pos; }
-	float3 GetDrawPos(const float3 v, float t) const { return (pos +     v * t); }
+	float3 GetDrawPos(float t) const { return mix(preFrameTra.t, pos, t); }
+	float3 GetDrawPosOther(const float3& prevFramePos, const float3& currFramePos, float t) const { return preFrameTra.t + (currFramePos - prevFramePos) * t; }
 
 	void ResetDrawFlag() { drawFlag = DrawFlags::SO_NODRAW_FLAG; }
 	void SetDrawFlag(DrawFlags f) { drawFlag  =  f; }
@@ -78,6 +80,8 @@ public:
 public:
 	int id = -1;
 	int tempNum = 0;            ///< used to check if object has already been processed (in QuadField queries, etc)
+
+	Transform preFrameTra;      ///< used for interpolation
 
 	float3 pos;                 ///< position of the very bottom of the object
 	float4 speed;               ///< current velocity vector (elmos/frame), .w = |velocity|

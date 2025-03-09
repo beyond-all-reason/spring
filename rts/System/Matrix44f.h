@@ -1,14 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef MATRIX44F_H
-#define MATRIX44F_H
+#pragma once
 
 #include <cmath>
 #include <array>
+#include <tuple>
 
 #include "System/float3.h"
 #include "System/float4.h"
 
+class CQuaternion;
 class CMatrix44f
 {
 public:
@@ -89,6 +90,8 @@ public:
 	/// affine matrix inversion
 	CMatrix44f& InvertAffineInPlace();
 	CMatrix44f  InvertAffine() const;
+
+	std::tuple<float3, CQuaternion, float3> DecomposeIntoTRS() const;
 
 	/// point/vector multiply
 	float3 operator* (const float3 v) const { return ((*this) * float4(v.x, v.y, v.z, 1.0f)); }
@@ -214,5 +217,3 @@ void delmat3(T*** mat) {
 	delete [] *mat;
 	delete [] mat;
 }
-
-#endif /* MATRIX44F_H */
