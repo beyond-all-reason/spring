@@ -4,10 +4,6 @@
 
 #include <string>
 
-#if __cplusplus < 202002L
-	using char8_t = unsigned char;
-#endif
-
 namespace spring {
 	class u8string : public std::string {
 	public:
