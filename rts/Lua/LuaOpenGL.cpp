@@ -13,6 +13,8 @@
 #include <vector>
 #include <algorithm>
 #include <optional>
+#include <variant>
+#include <span>
 
 #include "lib/fmt/format.h"
 
@@ -5338,49 +5340,45 @@ int LuaOpenGL::GetAtmosphere(lua_State* L)
 	}
 
 	const char* param = luaL_checkstring(L, 1);
-	const float* data = nullptr;
+	std::variant<float, float3, float4> data;
 
 	switch (hashString(param)) {
-		// float
 		case hashString("fogStart"): {
-			lua_pushnumber(L, sky->fogStart);
-			return 1;
+			data = sky->fogStart;
 		} break;
 		case hashString("fogEnd"): {
-			lua_pushnumber(L, sky->fogEnd);
-			return 1;
+			data = sky->fogEnd;
 		} break;
-
-		// float3
 		case hashString("pos"): {
-			data = &sky->GetLight()->GetLightDir().x;
+			data = sky->GetLight()->GetLightDir();
 		} break;
 		case hashString("fogColor"): {
-			data = &sky->fogColor.x;
+			data = sky->fogColor;
 		} break;
 		case hashString("skyColor"): {
-			data = &sky->skyColor.x;
+			data = sky->skyColor;
 		} break;
 		case hashString("sunColor"): {
-			data = &sky->sunColor.x;
+			data = sky->sunColor;
 		} break;
 		case hashString("cloudColor"): {
-			data = &sky->cloudColor.x;
+			data = sky->cloudColor;
 		} break;
 		case hashString("skyAxisAngle"): {
-			data = &sky->GetSkyAxisAngle().x;
-		}
+			data = sky->GetSkyAxisAngle();
+		} break;
 		default: {} break;
 	}
 
-	if (data != nullptr) {
-		lua_pushnumber(L, data[0]);
-		lua_pushnumber(L, data[1]);
-		lua_pushnumber(L, data[2]);
-		return 3;
-	}
+	return std::visit([L](auto&& val) {
+		const size_t numFloats = sizeof(val) / sizeof(float);
+		auto spn = std::span(reinterpret_cast<const float*>(&val), numFloats);
 
-	return 0;
+		for (const auto& fl : spn) {
+			lua_pushnumber(L, fl);
+		}
+		return numFloats;
+	}, data);
 }
 
 int LuaOpenGL::GetSun(lua_State* L)
