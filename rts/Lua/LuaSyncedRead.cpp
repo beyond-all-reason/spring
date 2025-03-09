@@ -3680,22 +3680,28 @@ int LuaSyncedRead::GetProjectilesInRectangle(lua_State* L)
 int LuaSyncedRead::GetProjectilesInSphere(lua_State* L)
 {
 	const float x = luaL_checkfloat(L, 1);
-	// needed for consistency with the rest of the spherical API
-	[[maybe_unused]] const float y = luaL_checkfloat(L, 2);
+	const float y = luaL_checkfloat(L, 2);
 	const float z = luaL_checkfloat(L, 3);
-	const float circleRadius = luaL_checkfloat(L, 4);
+	const float radius = luaL_checkfloat(L, 4);
+	const float radSqr = radius * radius;
 
 	const bool excludeWeaponProjectiles = luaL_optboolean(L, 5, false);
 	const bool excludePieceProjectiles = luaL_optboolean(L, 6, false);
 
-	constexpr auto hexagonApothem = static_cast<float>(std::numbers::sqrt3 / 2);
-	const float scaledRadius = circleRadius * hexagonApothem;
-
-	float3 mins(x - scaledRadius, 0.0f, z - scaledRadius);
-	float3 maxs(x + scaledRadius, 0.0f, z + scaledRadius);
+	float3 mins(x - radius, 0.0f, z - radius);
+	float3 maxs(x + radius, 0.0f, z + radius);
 
 	QuadFieldQuery qfQuery;
 	quadField.GetProjectilesExact(qfQuery, mins, maxs);
+
+	float3 sphereCenter(x, y, z);
+	for (unsigned int i = 0; i < qfQuery.projectiles->size(); i++) {
+		const CProjectile* projectile = (*qfQuery.projectiles)[i];
+		const float3 projectilePos(projectile->pos.x, projectile->pos.y, projectile->pos.z);
+		if (projectilePos.SqDistance(sphereCenter) <= radSqr) {
+			continue;
+		}
+	}
 	GetProjectilesLuaTable(L, qfQuery, excludeWeaponProjectiles, excludePieceProjectiles);
 	return 1;
 }
