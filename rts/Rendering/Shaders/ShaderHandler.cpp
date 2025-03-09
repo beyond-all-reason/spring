@@ -97,13 +97,12 @@ void CShaderHandler::ReleaseProgramObjectsMap(ProgramObjMap& poMap) {
 
 Shader::IProgramObject* CShaderHandler::GetProgramObject(const std::string& poClass, const std::string& poName) {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (programObjects.find(poClass) == programObjects.end())
-		return nullptr;
 
-	if (programObjects[poClass].find(poName) == programObjects[poClass].end())
-		return nullptr;
+	if (const auto pocIt = programObjects.find(poClass); pocIt != programObjects.end())
+		if (auto ponIt = pocIt->second.find(poName); ponIt != pocIt->second.end())
+			return ponIt->second;
 
-	return (programObjects[poClass][poName]);
+	return nullptr;
 }
 
 
