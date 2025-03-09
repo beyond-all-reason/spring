@@ -15,8 +15,14 @@ This may break replay parsing.
 * uniform location 5 in vertex shaders for models extended from uvec2 (boneID, boneWeight) to uvec3 (boneID low byte, boneWeight, boneID high byte).
 Existing shaders should generally keep working.
 * missiles now obey `myGravity` when expired.
+* `math.clamp` now errors if the lower bound is higher than the upper bound.
+* added minimap rotation API which can screw up the minimap (see below), set it to nil at LuaUI entry point if you don't want to handle it.
 * server no longer automatically forcestarts the game if there is nobody connected after 30s.
 * fixed the `SPRING_LOG_SECTIONS` environment var, it no longer requires a comma in front.
+* `gl.GetAtmosphere("skyDir")` now returns nil. The skyDir was never actually used for anything.
+* updated Tracy to v0.11.1, see the changelog at https://github.com/wolfpld/tracy/releases
+* archive cache was reworked. Should be much faster to process, but will take up more disk space and it's not yet known how stable it is.
+
 
 ### Deprecation notice
 * the metal view automatically toggling when building a metal extractor is now deprecated.
@@ -56,6 +62,13 @@ engine will keep automatically enabling the metal view but also spam deprecation
 * added `Engine.FeatureSupport.noAutoShowMetal`, false. At some point in the future this will change to `true` at which point the engine
 will stop automatically enabling the metal view for mexes (and remove `Spring.SetAutoShowMetal`).
 
+### Minimap 90°/270° rotations
+* minimap can now be rotated to 90° and 270°, and can be rotated manually.
+* added `Spring.SetMiniMapRotation(number angle) → nil`, sets the minimap angle (in radians). Snaps to cardinal directions.
+Only works if the springsetting `MiniMapCanFlip` is set to 0 (if it's 1, engine automatically flips vertically as previously).
+Geometry is kept, so it may end up stretched - readjust it manually via `gl.ConfigMiniMap`.
+* `Spring.GetMiniMapRotation() → number angle` handles the new rotations (i.e. can return `π/2` and `3π/2`).
+
 ### Misc rendering
 * add `Platform.glVersionNum`, 1/10th the version of glsl (e.g. GL 3.0 → 30).
 * added `gl.ClearAttachmentFBO(number? target = GL.FRAMEBUFFER, string|number attachment, clearValue0, cv1, cv2, cv3) → bool ok`. Clears the "attachment" of the currently bound FBO type "target" with "clearValues".
@@ -67,6 +80,14 @@ This allows for reliable generation of cheaper 3D noise in shaders.
 ### Praise the sun!
 * the shading texture (used by minimap, water, and grass) now tracks sun position changes immediately.
 * the "modern" sky renderer now uses the actual sun color instead of hardcoded RGB 253/251/211.
+
+### Spinning skybox
+* added new tag to `Spring.SetAtmosphere`, `skyAxisAngle`, array of 4 numbers: X, Y, Z (defining an axis) and rotation around that axis.
+Lets the skybox be drawn at an angle and possibly spin. Complex rotations involve doing math yourself.
+* added `skyAxisAngle` to `gl.GetAtmosphere`, same format.
+* added `atmosphere.skyAxisAngle` to mapinfo, same format.
+* removed `atmosphere.skyDir` from mapinfo, it didn't actually affect anything.
+* `gl.GetAtmosphere("skyDir")` now returns nil.
 
 ### Debugging for rendering
 * added `VBO:GetID() → number`, gets the internal OpenGL ID for use in debugging.
@@ -95,6 +116,14 @@ the "right" dir it is unambiguous; and if you have front+up dirs you can unambig
 + Spring.SetUnitDirection(unitID, frontX, frontY, frontZ, rightX, rightY, rightZ) -- new
 ```
 
+### Engine feature support tags
+Added a bunch of feature support entries to the `Engine.FeatureSupport` tags. These are for the future.
+Most likely you don't need to worry about those since games will receive patches if there is a change.
+* number `gunshipCruiseAltitudeMultiplier`, currently `1.5`. Right now gunship cruise altitude is multiplied by this.
+* bool `noRefundForConstructionDecay`, currently `false`. At some point refunds for construction decay will be handed over to Lua.
+* bool `noRefundForFactoryCancel`, currently `false`. At some point refunds for factory cancel will be handed over to Lua.
+* bool `noOffsetForFeatureID`, currently `false`. At some point featureIDs in mixed contexts (e.g. target ID for reclaim) won't require to be offset.
+
 ### Misc
 * add `Spring.GetSoundDevices() → { { name = "...", }, { name = "...", }, ... }`.
 May be extended with more info than just name in the future.
@@ -105,6 +134,8 @@ May be extended with more info than just name in the future.
 * added `Game.buildGridResolution`, number which is currently 2. This means that buildings created via native build orders
 are aligned to 2 squares.
 * add `Platform.totalRAM`, in megabytes.
+* added `Engine.gameSpeed` and `Engine.textColorCodes`, same as the existing entries in `Game.`.
+The practical effect is that the Engine table is available in some LuaParser environments that Game isn't.
 * missiles now obey `myGravity` when expired.
 * NaN and infinity coming from Lua is now sometimes rejected. Coverage isn't yet comprehensive.
 * `socket.lua` moved from being a loosely distributed file under `./socket.lua` to basecontent `./LuaSocket/socket.lua`.
@@ -122,6 +153,7 @@ hyperthreads on the same physical core, performance cores on a dedicated server)
 * fix height of buildings under construction not updating properly.
 * fix landed aircraft starting to levitate when EMPed.
 * fix units being stuck if an overlapping push-resistant unit stops.
+* fix the "modern" sky renderer not adjusting to changes via `Spring.SetAtmosphere`.
 
 ### GL object type constants
 For use with the new `gl.ObjectLabel` (see above):
