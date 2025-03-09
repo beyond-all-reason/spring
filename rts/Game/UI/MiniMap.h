@@ -59,8 +59,6 @@ public:
 	bool GetMinimized() const { return minimized; }
 	bool GetMaximized() const { return maximized; }
 
-	float GetRotation();
-
 	int GetPosX()  const { return curPos.x; }
 	int GetPosY()  const { return curPos.y; }
 	int GetSizeX() const { return curDim.x; }
@@ -68,7 +66,12 @@ public:
 	float GetUnitSizeX() const { return unitSizeX; }
 	float GetUnitSizeY() const { return unitSizeY; }
 
-	float GetFlipped() const { return flipped; }
+	enum RotationOptions { ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 };
+
+	void SetRotation(RotationOptions state);
+	float GetRotation() const { return static_cast<int>(rotation) * math::HALFPI; }
+	int minimapCanFlip = 0;
+	RotationOptions GetRotationOption() const { return rotation; }
 
 	void SetSlaveMode(bool value);
 	bool GetSlaveMode() const { return slaveDrawMode; }
@@ -140,7 +143,6 @@ protected:
 	float unitSizeY = 0.0f;
 	float unitSelectRadius = 0.0f;
 
-	bool minimapCanFlip = false;
 	bool aspectRatio = false;
 	bool fullProxy = false;
 	bool proxyMode = false;
@@ -153,7 +155,7 @@ protected:
 	bool mouseMove = false;
 	bool mouseResize = false;
 
-	bool flipped = false;
+	RotationOptions rotation = ROTATION_0;
 
 	bool slaveDrawMode = false;
 	bool simpleColors = false;

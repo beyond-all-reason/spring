@@ -325,7 +325,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetWindowGeometry);
 	REGISTER_LUA_CFUNC(SetWindowMinimized);
 	REGISTER_LUA_CFUNC(SetWindowMaximized);
-
+	REGISTER_LUA_CFUNC(SetMiniMapRotation);
+	
 	REGISTER_LUA_CFUNC(Yield);
 
 	return true;
@@ -2173,6 +2174,35 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
 		return 0;
 
 	unit->noMinimap = luaL_checkboolean(L, 2);
+	return 0;
+}
+
+/***
+ * @function Spring.SetMiniMapRotation
+ * @param rotation number amount in radians
+ * @return nil
+ */
+int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
+{
+	
+	const float radians = luaL_checkfloat(L, 1);
+	
+	if (minimap == nullptr)
+		return 0;
+	
+	if (minimap->minimapCanFlip)
+		return 0;
+
+	// Get the signed quadrant of the angle.
+	const float quad = radians / math::HALFPI;
+
+	const float wrapped = std::fmod(std::fmod(quad, 4.0f) + 4.0f, 4.0f);
+
+	// Wrap it into range [0, 3]
+	const int rotation = static_cast<int>(std::round(wrapped)) % 4;
+
+	minimap->SetRotation(CMiniMap::RotationOptions(rotation));
+
 	return 0;
 }
 
