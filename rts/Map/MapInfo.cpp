@@ -144,9 +144,20 @@ void CMapInfo::ReadAtmosphere()
 	if (atmoTable.KeyExists("skyDir")) {
 		LOG_L(L_DEPRECATED, "[CMapInfo::%s] atmosphere.skyDir in mapinfo.lua was never used and now deprecated, use atmosphere.skyAxisAngle instead", __func__);
 	}
-	atmo.skyAxisAngle = atmoTable.GetFloat4("skyAxisAngle", float4{ FwdVector, 0.0f });
-	const auto skyAxis = float3{ atmo.skyAxisAngle.x, atmo.skyAxisAngle.y, atmo.skyAxisAngle.z }.ANormalize();
-	atmo.skyAxisAngle = float4{ skyAxis.x, skyAxis.y, skyAxis.z, atmo.skyAxisAngle.w };
+
+	{
+		atmo.skyAxisAngle = atmoTable.GetFloat4("skyAxisAngle", float4{ FwdVector, 0.0f });
+
+		auto axis = float3{ atmo.skyAxisAngle.x, atmo.skyAxisAngle.y, atmo.skyAxisAngle.z };
+
+		const float axisNorm = axis.Length();
+		if (axisNorm < float3::nrm_eps())
+			axis = FwdVector;
+		else
+			axis /= axisNorm;
+
+		atmo.skyAxisAngle = float4{ axis, ClampRad(atmo.skyAxisAngle.w) };
+	}
 
 	atmo.sunColor     = atmoTable.GetFloat3("sunColor", float3(1.0f, 1.0f, 1.0f));
 	atmo.cloudColor   = atmoTable.GetFloat3("cloudColor", float3(1.0f, 1.0f, 1.0f));
