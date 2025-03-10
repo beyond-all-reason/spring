@@ -682,6 +682,24 @@ static int SetSolidObjectDirection(lua_State* L, CSolidObject* o, const char* fu
 				o->team
 			);
 		}
+
+		const float dp = newFrontDir.dot(newRightDir);
+		if (math::fabsf(dp) > float3::cmp_eps()) {
+			luaL_error(L, "[%s] front(%f, %f, %f) and right(%f, %f, %f) vectors are not orthogonal(dp=%f), id = %d, model = %s, teamID = %d",
+				func,
+				newFrontDir.x,
+				newFrontDir.y,
+				newFrontDir.z,
+				newRightDir.x,
+				newRightDir.y,
+				newRightDir.z,
+				dp,
+				o->id,
+				modelName,
+				o->team
+			);
+		}
+
 		o->ForcedSpin(newFrontDir, newRightDir);
 	}
 	else {
