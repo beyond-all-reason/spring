@@ -34,9 +34,8 @@
 #include "System/Misc/TracyDefs.h"
 
 #include "System/Config/ConfigHandler.h"
-CONFIG(bool, UpdateWeaponVectorsMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded update of weapon vectors");
-CONFIG(bool, UpdateBoundingVolumeMT).defaultValue(true).safemodeValue(false).minimumValue(false).description("Enable multithreaded update of unit bounding volumes");
-
+CONFIG(bool, UpdateWeaponVectorsMT).deprecated(true);
+CONFIG(bool, UpdateBoundingVolumeMT).deprecated(true);
 
 
 CR_BIND(CUnitHandler, )
@@ -386,16 +385,9 @@ void CUnitHandler::SlowUpdateUnits()
 	// They dont have much of an effect if updated late-ish.
 	{
 		ZoneScopedN("Sim::Unit::SlowUpdateMT");
-		if (configHandler->GetBool("UpdateBoundingVolumeMT")) {
-			for_mt(0, updateBoundingVolumeList.size(), [](int i) {
-				updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
-			});
-		}
-		else {
-			for(size_t i = 0; i < updateBoundingVolumeList.size(); ++i) {
-				updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
-			}
-		}
+		for_mt(0, updateBoundingVolumeList.size(), [](int i) {
+			updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
+		});
 	}
 }
 
@@ -423,18 +415,10 @@ void CUnitHandler::UpdateUnitWeapons()
 	{
 		SCOPED_TIMER("Sim::Unit::UpdateWeaponVectors");
 
-		if (configHandler->GetBool("UpdateWeaponVectorsMT")) {
-			for_mt_chunk(0, activeUnits.size(), [&](const int idx) {
-				auto unit = activeUnits[idx];
-				unit->UpdateWeaponVectors();
-			});
-		}
-		else {
-			for (size_t idx = 0; idx < activeUnits.size(); ++idx) {
-				auto unit = activeUnits[idx];
-				unit->UpdateWeaponVectors();
-			}
-		}
+		for_mt_chunk(0, activeUnits.size(), [&](const int idx) {
+			auto unit = activeUnits[idx];
+			unit->UpdateWeaponVectors();
+		});
 	}
 	{
 		SCOPED_TIMER("Sim::Unit::Weapon");

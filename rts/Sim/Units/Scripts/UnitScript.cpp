@@ -56,7 +56,7 @@ CR_REG_METADATA(CUnitScript, (
 	CR_MEMBER(unit),
 	CR_MEMBER(busy),
 	CR_MEMBER(anims),
-	CR_MEMBER(doneAnimsMT),
+	CR_MEMBER(doneAnims),
 
 	//Populated by children
 	CR_IGNORED(pieces),
@@ -171,59 +171,6 @@ bool CUnitScript::DoSpin(float& cur, float dest, float& speed, float accel, int 
 	return false;
 }
 
-
-
-void CUnitScript::TickAnims(int tickRate, const TickAnimFunc& tickAnimFunc, AnimContainerType& liveAnims, AnimContainerType& doneAnims) {
-	RECOIL_DETAILED_TRACY_ZONE;
-	for (size_t i = 0; i < liveAnims.size(); ) {
-		AnimInfo& ai = liveAnims[i];
-		LocalModelPiece& lmp = *pieces[ai.piece];
-
-		if ((ai.done |= (this->*tickAnimFunc)(tickRate, lmp, ai))) {
-			if (ai.hasWaiting)
-				doneAnims.push_back(ai);
-
-			ai = liveAnims.back();
-			liveAnims.pop_back();
-			continue;
-		}
-
-		++i;
-	}
-}
-
-/**
- * @brief Called by the engine when we are registered as animating.
-          If we return false there are no active animations left.
- * @param deltaTime int delta time to update
- * @return true if there are still active animations
- */
-bool CUnitScript::Tick(int deltaTime)
-{
-	ZoneScoped;
-	// vector of indexes of finished animations,
-	// so we can get rid of them in constant time
-	static AnimContainerType doneAnims[AMove + 1];
-
-	// tick-functions; these never change address
-	static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
-
-	for (int animType = ATurn; animType <= AMove; animType++) {
-		TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnims[animType]);
-	}
-
-	// Tell listeners to unblock, and remove finished animations from the unit/script.
-	for (int animType = ATurn; animType <= AMove; animType++) {
-		for (AnimInfo& ai: doneAnims[animType]) {
-			AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
-		}
-
-		doneAnims[animType].clear();
-	}
-
-	return (HaveAnimations());
-}
-
 /**
  * @brief The multithreaded first half of the original CUnitScript::Tick function first does the heavy lifting of calculating all
 			  new piece positions according to the animations
@@ -231,15 +178,32 @@ bool CUnitScript::Tick(int deltaTime)
 void CUnitScript::TickAllAnims(int deltaTime)
 {
 	ZoneScoped;
-	// vector of indexes of finished animations,
-	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
-	// AnimContainerType doneAnimsMT[AMove + 1];
 
 	// tick-functions; these never change address
-	static constexpr TickAnimFunc tickAnimFuncs[AMove + 1] = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
+	static constexpr std::array<TickAnimFunc, AMove + 1> TICK_ANIM_FUNCS = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
+
+	const int tickRate = 1000 / deltaTime;
 
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		TickAnims(1000 / deltaTime, tickAnimFuncs[animType], anims[animType], doneAnimsMT[animType]);
+		auto& currAnims = anims[animType];
+		const auto& currFunc = TICK_ANIM_FUNCS[animType];
+		auto& currDoneAnims = doneAnims[animType];
+
+		for (size_t i = 0; i < currAnims.size(); ) {
+			AnimInfo& ai = currAnims[i];
+			LocalModelPiece& lmp = *pieces[ai.piece];
+
+			if ((ai.done |= std::invoke(currFunc, this, tickRate, lmp, ai))) {
+				if (ai.hasWaiting)
+					currDoneAnims.emplace_back(ai);
+
+				ai = std::move(currAnims.back());
+				currAnims.pop_back();
+				continue;
+			}
+
+			++i;
+		}
 	}
 }
 
@@ -255,18 +219,16 @@ void CUnitScript::TickAllAnims(int deltaTime)
 bool CUnitScript::TickAnimFinished(int deltaTime)
 {
 	ZoneScoped;
-	// vector of indexes of finished animations,
-	// so we can get rid of them in constant time is stored in each units CUnitScript class at doneAnimsMT
-	// AnimContainerType doneAnimsMT[AMove + 1];
 
 	// Tell listeners to unblock, and remove finished animations from the unit/script.
 	for (int animType = ATurn; animType <= AMove; animType++) {
-		for (AnimInfo& ai : doneAnimsMT[animType]) {
+		auto& currDoneAnims = doneAnims[animType];
+		for (const auto& ai : currDoneAnims)
 			AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
-		}
 
-		doneAnimsMT[animType].clear();
+		currDoneAnims.clear();
 	}
+
 	return (HaveAnimations());
 }
 
