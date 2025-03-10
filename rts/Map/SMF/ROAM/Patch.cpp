@@ -196,41 +196,35 @@ void Patch::UploadVertices()
 
 namespace {
 	template<typename T>
-	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, size_t sizeUpMult, size_t sizeDownMult)
+	bool UploadStreamDrawData(VBO& vbo, GLenum target, const std::vector<T>& vec, uint32_t sizeUpMult, uint32_t sizeDownMult)
 	{
 		if (vec.empty())
 			return false;
 
 		static constexpr auto usage = GL_STREAM_DRAW;
-		bool vboUpdated = false;
 
+		uint32_t vboId = vbo.GetIdRaw();
+		vbo.SetUsage(usage);
 		vbo.Bind();
-		if (const size_t sz = vec.size() * sizeof(T); (sz > vbo.GetSize() || vbo.GetSize() >= sz * sizeDownMult)) {
-			// resize/remake the buffer without copying the old buffer content
-			vbo.Unbind();
-			vbo = VBO{ target, false, false };
-			vbo.Bind();
-			vbo.New(sz * sizeUpMult, usage, nullptr);
-			vboUpdated = true;
-		}
+		vbo.ReallocToFit(vec.size() * sizeof(T), sizeUpMult, sizeDownMult);
 		vbo.SetBufferSubData(vec);
 		vbo.Unbind();
 
-		return vboUpdated;
+		return vbo.GetIdRaw() != vboId;
 	}
 }
 
 void Patch::UploadIndices()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 2, 8))
+	if (UploadStreamDrawData(indxVBO, GL_ELEMENT_ARRAY_BUFFER, indices, 4, 32))
 		InitMainVAO();
 }
 
 void Patch::UploadBorderVertices()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 2, 8))
+	if (UploadStreamDrawData(borderVBO, GL_ARRAY_BUFFER, borderVertices, 4, 32))
 		InitBorderVAO();
 }
 
@@ -242,17 +236,14 @@ void Patch::InitMainVAO() const
 	indxVBO.Bind();
 	vertVBO.Bind();
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribDivisor(0, 0);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
+	VA_TYPE_0::BindVertexAtrribs();
 
 	mainVAO.Unbind();
 
 	indxVBO.Unbind();
 	vertVBO.Unbind();
 
-	glDisableVertexAttribArray(0);
+	VA_TYPE_0::UnbindVertexAtrribs();
 }
 
 void Patch::InitBorderVAO() const
@@ -261,19 +252,12 @@ void Patch::InitBorderVAO() const
 	borderVAO.Bind();
 	borderVBO.Bind();
 
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribDivisor(0, 0);
-	glVertexAttribDivisor(1, 0);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, pos));
-	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, true, sizeof(VA_TYPE_C), VA_TYPE_OFFSET(VA_TYPE_C, c));
+	VA_TYPE_C::BindVertexAtrribs();
 
 	borderVAO.Unbind();
 	borderVBO.Unbind();
 
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(0);
+	VA_TYPE_C::UnbindVertexAtrribs();
 }
 
 // -------------------------------------------------------------------------------------------------

@@ -120,6 +120,8 @@ public:
 	//helper function
 	static int DepthBitsToFormat(int bits);
 public:
+	// set to true when the video subsystem of SDL got initialized
+	bool sdlInitVideo;
 	/**
 	 * @brief time offset
 	 *
@@ -347,6 +349,10 @@ public:
 	int glslMaxStorageBufferBindings;
 	int glslMaxStorageBufferSize; ///< in bytes
 
+	std::array<int, 3> csMaxInvocations; // XYZ dimensions
+	int csWarpSize;
+	std::array<int, 3> csMaxWorkGroupSize;
+	int csMaxTotalWorkGroupSize;
 	/**
 	 * @brief dual screen mode
 	 * In dual screen mode, the screen is split up between a game screen and a minimap screen.

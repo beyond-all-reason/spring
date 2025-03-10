@@ -38,9 +38,11 @@ namespace creg {
 	enum BasicTypeID
 	{
 		crInt,
+		crUInt,
 		crFloat,
 #if defined(SYNCDEBUG) || defined(SYNCCHECK)
 		crSyncedInt,
+		crSyncedUInt,
 		crSyncedFloat
 #endif
 	};
