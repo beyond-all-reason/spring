@@ -3689,7 +3689,7 @@ int LuaSyncedRead::GetProjectilesInSphere(lua_State* L)
 	quadField.GetProjectilesExact(qfQuery, mins, maxs);
 
 	std::vector<CProjectile *> inSphereProjectiles;
-	inSphereProjectiles.reserve(inSphereProjectiles.size());
+	inSphereProjectiles.reserve(qfQuery.projectiles->size());
 	for (unsigned int i = 0; i < qfQuery.projectiles->size(); i++) {
 		const auto projectile = (*qfQuery.projectiles)[i];
 		const float3 projectilePos(projectile->pos.x, projectile->pos.y, projectile->pos.z);
