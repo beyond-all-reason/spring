@@ -77,18 +77,6 @@ if    (WIN32)
 	set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 1)
 endif (WIN32)
 
-
-# XCode
-if    (APPLE)
-	option(MACOSX_BUNDLE "Compile spring to work as a Bundle.app" TRUE)
-	add_definitions(${PIC_FLAG})
-	if    (MACOSX_BUNDLE)
-		add_definitions(-DMACOSX_BUNDLE)
-	endif (MACOSX_BUNDLE)
-else  (APPLE)
-	set(MACOSX_BUNDLE FALSE)
-endif (APPLE)
-
 ### Compiler flags and defines based on build type
 include(TestCXXFlags)
 
