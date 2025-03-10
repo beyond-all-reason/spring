@@ -30,16 +30,6 @@ endif()
 include(Util)
 include(PreferStaticLibs)
 
-# check for minimal gcc version
-set(MIN_GCC_VER "7.0")
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "${MIN_GCC_VER}")
-		message(FATAL_ERROR "gcc >=${MIN_GCC_VER} required")
-	else()
-		message(STATUS "gcc ${CMAKE_CXX_COMPILER_VERSION} detected")
-	endif()
-endif()
-
 # set some internal vars
 
 if (NOT "${CMAKE_C_FLAGS}" STREQUAL "")
