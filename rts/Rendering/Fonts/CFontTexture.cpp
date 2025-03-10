@@ -1014,7 +1014,7 @@ void CFontTexture::LoadWantedGlyphs(const std::vector<char32_t>& wanted)
 				++idx;
 			}
 		}
-		f = GetFontForCharacters(map, *f, fontSize, alreadyCheckedFonts);
+		f = GetFontForCharacters(map, *shFace, fontSize, alreadyCheckedFonts);
 	} while (!map.empty() && f);
 
 	// handle glyphs that didn't reach maxFontTries number of attempts, but nonetheless failed
