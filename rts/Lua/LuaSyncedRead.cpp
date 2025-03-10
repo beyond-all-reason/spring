@@ -3677,27 +3677,13 @@ int LuaSyncedRead::GetProjectilesInSphere(lua_State* L)
 {
 	const float3 sphereCenter(luaL_checkfloat(L, 1), luaL_checkfloat(L, 2), luaL_checkfloat(L, 3));
 	const float radius = luaL_checkfloat(L, 4);
-	const float radSqr = radius * radius;
 
 	const bool excludeWeaponProjectiles = luaL_optboolean(L, 5, false);
 	const bool excludePieceProjectiles = luaL_optboolean(L, 6, false);
 
-	const float3 mins(sphereCenter.x - radius, 0.0f, sphereCenter.z - radius);
-	const float3 maxs(sphereCenter.x + radius, 0.0f, sphereCenter.z + radius);
-
 	QuadFieldQuery qfQuery;
-	quadField.GetProjectilesExact(qfQuery, mins, maxs);
-
-	std::vector<CProjectile *> inSphereProjectiles;
-	inSphereProjectiles.reserve(qfQuery.projectiles->size());
-	for (unsigned int i = 0; i < qfQuery.projectiles->size(); i++) {
-		const auto projectile = (*qfQuery.projectiles)[i];
-		const float3 projectilePos(projectile->pos.x, projectile->pos.y, projectile->pos.z);
-		if (projectilePos.SqDistance(sphereCenter) <= radSqr) {
-			inSphereProjectiles.push_back(projectile);
-		}
-	}
-	GetProjectilesLuaTable(L, inSphereProjectiles, excludeWeaponProjectiles, excludePieceProjectiles);
+	quadField.GetProjectilesExact(qfQuery, sphereCenter, radius);
+	GetProjectilesLuaTable(L, *qfQuery.projectiles, excludeWeaponProjectiles, excludePieceProjectiles);
 	return 1;
 }
 
