@@ -36,11 +36,6 @@ if    (UNIX)
 	list(APPEND engineLibraries ${X11_Xcursor_LIB} ${X11_X11_LIB})
 endif (UNIX)
 
-if (APPLE)
-	find_library(COREFOUNDATION_LIBRARY Foundation)
-	list(APPEND engineLibraries ${COREFOUNDATION_LIBRARY})
-endif (APPLE)
-
 list(APPEND engineLibraries squish rgetc1)
 list(APPEND engineLibraries ${sound-impl})
 list(APPEND engineLibraries engineSystemNet)
