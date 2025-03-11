@@ -5,15 +5,15 @@ endif (MINGW)
 # defines spring_test_compile_fail macro
 include(${CMAKE_CURRENT_SOURCE_DIR}/tools/CompileFailTest/CompileFailTest.cmake)
 
-if    (UNIX AND (NOT APPLE) AND (NOT MINGW))
+if    (UNIX AND (NOT MINGW))
 	find_library(REALTIME_LIBRARY rt)
 
 	if    (PREFER_STATIC_LIBS AND NOT EXISTS "${REALTIME_LIBRARY}")
 		message(FATAL_ERROR "librt.[so|a] not found! Needed by std::chrono when statically linked!")
 	endif (PREFER_STATIC_LIBS AND NOT EXISTS "${REALTIME_LIBRARY}")
-else  (UNIX AND (NOT APPLE) AND (NOT MINGW))
+else  (UNIX AND (NOT MINGW))
 	set(REALTIME_LIBRARY "")
-endif (UNIX AND (NOT APPLE) AND (NOT MINGW))
+endif (UNIX AND (NOT MINGW))
 
 include_directories(${CMAKE_BINARY_DIR}/src-generated/engine)
 

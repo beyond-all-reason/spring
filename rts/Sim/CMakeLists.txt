@@ -160,11 +160,7 @@ target_link_libraries(engineSim SDL2::SDL2 Tracy::TracyClient)
 if( CMAKE_COMPILER_IS_GNUCXX)
 	# FIXME: hack to avoid linkers to remove not referenced symbols. required because of
 	# https://springrts.com/mantis/view.php?id=4511
-	if(APPLE)
-		make_global_var(SPRING_SIM_LIBRARIES "-Wl,-force_load" engineSim)
-	else()
-		make_global_var(SPRING_SIM_LIBRARIES "-Wl,-whole-archive" engineSim "-Wl,-no-whole-archive")
-	endif()
+	make_global_var(SPRING_SIM_LIBRARIES "-Wl,-whole-archive" engineSim "-Wl,-no-whole-archive")
 else()
 	make_global_var(SPRING_SIM_LIBRARIES engineSim)
 endif()

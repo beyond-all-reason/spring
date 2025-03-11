@@ -198,14 +198,7 @@ set(sources_engine_System
 
 
 ### only use the target platform related directory
-if     (APPLE)
-	make_global_var(sources_engine_System_Threading ${sources_engine_System_Threading} ${sources_engine_System_Threading_Mac})
-	make_global_var(sources_engine_System
-			${sources_engine_System}
-			${sources_engine_System_Platform_Mac}
-			${sources_engine_System_Threading}
-		)
-elseif (UNIX)
+if (UNIX)
 	make_global_var(sources_engine_System_Threading ${sources_engine_System_Threading} ${sources_engine_System_Threading_Linux})
 	make_global_var(sources_engine_System
 			${sources_engine_System}
