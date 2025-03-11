@@ -74,11 +74,39 @@
 typedef unsigned char FT_Byte;
 #endif
 
+constexpr int MAX_TEMPORAL_FONTS = 10;
+static spring::unordered_map<std::string, std::pair<std::shared_ptr<FontFace>, float>> temporalFontCache;
 
 static spring::unordered_map<std::string, std::weak_ptr<FontFace>> fontFaceCache;
 static spring::unordered_map<std::string, std::weak_ptr<FontFileBytes>> fontMemCache;
 static spring::unordered_set<std::pair<std::string, int>, spring::synced_hash<std::pair<std::string, int>>> invalidFonts;
 static auto cacheMutexes = spring::WrappedSyncRecursiveMutex{};
+
+static void RememberFont(std::shared_ptr<FontFace> face, const std::string &filename, const int size) {
+	const auto fontKey = filename + IntToString(size);
+
+	float time = spring_gettime().toMilliSecsf();
+
+	auto cached = temporalFontCache.find(fontKey);
+
+	if (cached != temporalFontCache.end()) {
+		cached->second.second = time;
+	} else {
+		temporalFontCache[fontKey] = std::pair<std::shared_ptr<FontFace>, float>(face, time);
+
+		if (temporalFontCache.size() > MAX_TEMPORAL_FONTS) {
+			std::string *oldest;
+			float oldestTime = time;
+			for(auto &it: temporalFontCache) {
+				if (it.second.second < oldestTime) {
+					oldest = &it.first;
+					oldestTime = it.second.second;
+				}
+			}
+			temporalFontCache.erase(*oldest);
+		}
+	}
+}
 
 #include "NonPrintableSymbols.inl"
 
@@ -560,6 +588,8 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 			if (blackList.find(GetFaceKey(*face)) != blackList.cend())
 				continue;
+
+			RememberFont(face, filename, origSize);
 
 			#ifdef _DEBUG
 			{
