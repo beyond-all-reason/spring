@@ -111,15 +111,15 @@ LuaParser::~LuaParser()
 }
 
 
-void LuaParser::SetupLua(bool isSyncedCtxt, bool isDefsParser)
+void LuaParser::SetupLua(bool isSyncedCtxt, bool isDefsParser, bool baseOnly)
 {
 	if ((L = LUA_OPEN(&D)) == nullptr)
 		return;
 
-	SetupEnv(isSyncedCtxt, isDefsParser);
+	SetupEnv(isSyncedCtxt, isDefsParser, baseOnly);
 }
 
-void LuaParser::SetupEnv(bool isSyncedCtxt, bool isDefsParser)
+void LuaParser::SetupEnv(bool isSyncedCtxt, bool isDefsParser, bool baseOnly)
 {
 	LUA_OPEN_LIB(L, luaopen_base);
 	LUA_OPEN_LIB(L, luaopen_math);
@@ -150,6 +150,9 @@ void LuaParser::SetupEnv(bool isSyncedCtxt, bool isDefsParser)
 		}
 		lua_pop(L, 1); // pop "math"
 	}
+
+	if (baseOnly)
+		return;
 
 	AddFunc("DontMessWithMyCase", DontMessWithMyCase);
 

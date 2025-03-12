@@ -52,6 +52,20 @@ struct SColor
 	{
 		static_assert(N == 4);
 	}
+	SColor(const float3& f, uint8_t alpha = 255u)
+		: r(static_cast<uint8_t>(f[0] * 255.0f))
+		, g(static_cast<uint8_t>(f[1] * 255.0f))
+		, b(static_cast<uint8_t>(f[2] * 255.0f))
+		, a(alpha)
+	{}
+	SColor(const float4& f)
+		: r(static_cast<uint8_t>(f[0] * 255.0f))
+		, g(static_cast<uint8_t>(f[1] * 255.0f))
+		, b(static_cast<uint8_t>(f[2] * 255.0f))
+		, a(static_cast<uint8_t>(f[3] * 255.0f))
+	{}
+
+	constexpr bool operator==(const SColor& o) const { return i == o.i; }
 
 	constexpr SColor operator+ (const SColor& o) const {
 		return {
