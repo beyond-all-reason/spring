@@ -1,3 +1,5 @@
+#include "DirArchive.h"
+#include "DirArchive.h"
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
@@ -32,12 +34,14 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 	for (const std::string& f: found) {
 		// strip our own name off.. & convert to forward slashes
 		std::string origName(f, dirName.length());
-
 		FileSystem::ForwardSlashes(origName);
-		// convert to lowercase and store
-		searchFiles.push_back(origName);
 
-		lcNameIndex[StringToLower(origName)] = searchFiles.size() - 1;
+		std::string rawFileName = dataDirsAccess.LocateFile(dirName + origName);
+		FileSystem::FixSlashes(rawFileName);
+		files.emplace_back(origName, std::move(rawFileName), -1, 0);
+
+		// convert to lowercase and store
+		lcNameIndex[StringToLower(origName)] = files.size() - 1;
 	}
 }
 
@@ -46,8 +50,7 @@ bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 
-	const std::string rawpath = dataDirsAccess.LocateFile(dirName + searchFiles[fid]);
-	std::ifstream ifs(rawpath.c_str(), std::ios::in | std::ios::binary);
+	std::ifstream ifs(files[fid].rawFileName.c_str(), std::ios::in | std::ios::binary);
 
 	if (ifs.bad() || !ifs.is_open())
 		return false;
@@ -63,17 +66,47 @@ bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	return true;
 }
 
+const std::string& CDirArchive::FileName(uint32_t fid) const
+{
+	return files[fid].fileName;
+}
+
+int32_t CDirArchive::FileSize(uint32_t fid) const
+{
+	assert(IsFileId(fid));
+	auto& file = files[fid];
+
+	// check if already cached
+	if (file.size > -1) {
+		return file.size;
+	}
+
+	file.size = FileSystem::GetFileSize(files[fid].rawFileName);
+
+	return file.size;
+}
+
 IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
 	IArchive::SFileInfo fi;
-	fi.fileName = searchFiles[fid];
+	auto& file = files[fid];
+	fi.fileName = file.fileName;
 
-	std::string rawPath = dataDirsAccess.LocateFile(dirName + fi.fileName);
-	FileSystem::FixSlashes(rawPath);
+	// check if already cached
+	if (file.modTime > 0 && file.size > -1) {
+		fi.size = file.size;
+		fi.modTime = file.modTime;
+		return fi;
+	}
 
-	fi.size = FileSystem::GetFileSize(rawPath);
-	fi.modTime = FileSystemAbstraction::GetFileModificationTime(rawPath);
+	// file.size and file.modTime are mutable
+	file.size = FileSystem::GetFileSize(file.rawFileName);
+	file.modTime = FileSystemAbstraction::GetFileModificationTime(file.rawFileName);
+
+	fi.specialFileName = file.rawFileName;
+	fi.size = file.size;
+	fi.modTime = file.modTime;
 
 	return fi;
 }
