@@ -1,6 +1,3 @@
-[submodule "AI/Interfaces/Python"]
-	path = AI/Interfaces/Python
-	url = https://github.com/spring/Python.git
 [submodule "tools/unitsync/python"]
 	path = tools/unitsync/python
 	url = https://github.com/spring/pyunitsync.git
