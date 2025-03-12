@@ -73,12 +73,10 @@ int32_t CDirArchive::FileSize(uint32_t fid) const
 	assert(IsFileId(fid));
 	auto& file = files[fid];
 
-	// check if already cached
-	if (file.size > -1) {
-		return file.size;
-	}
-
-	file.size = FileSystem::GetFileSize(files[fid].rawFileName);
+	// check if not cached
+	if (file.size == -1) {
+		file.size = FileSystem::GetFileSize(files[fid].rawFileName);
+	}	
 
 	return file.size;
 }
@@ -90,16 +88,12 @@ IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 	auto& file = files[fid];
 	fi.fileName = file.fileName;
 
-	// check if already cached
-	if (file.modTime > 0 && file.size > -1) {
-		fi.size = file.size;
-		fi.modTime = file.modTime;
-		return fi;
-	}
+	// check if not cached, file.size and file.modTime are mutable
+	if (file.size == -1)
+		file.size = FileSystem::GetFileSize(file.rawFileName);
 
-	// file.size and file.modTime are mutable
-	file.size = FileSystem::GetFileSize(file.rawFileName);
-	file.modTime = FileSystemAbstraction::GetFileModificationTime(file.rawFileName);
+	if (file.modTime == 0)
+		file.modTime = FileSystemAbstraction::GetFileModificationTime(file.rawFileName);
 
 	fi.specialFileName = file.rawFileName;
 	fi.size = file.size;
