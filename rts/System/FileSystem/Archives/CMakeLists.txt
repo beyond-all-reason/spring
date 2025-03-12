@@ -13,6 +13,8 @@ set(archives_sources
 	${SOURCE_ROOT}/System/TimeUtil.cpp
 )
 
+include_directories(${SOURCE_ROOT}/rts/lib)
+
 # Can't remove definitions per target
 remove_definitions(-DTHREADPOOL)
 
