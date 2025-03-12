@@ -633,17 +633,16 @@ void CArchiveScanner::ReadCache()
 			if (!ReadCacheData(prevCacheFile, true))
 				continue;
 
-			// nullify hashes, modified times && filesInfo
+			// nullify hashes, filesInfo
 			for (auto& ai : archiveInfos) {
 				ai.checksum = sha512::NULL_RAW_DIGEST;
-				ai.modifiedArchiveData = 0;
-				ai.modified = 0;
+				ai.hashed = false;
 				ai.filesInfo.clear();
-				isDirty = true;
 			}
 
 			// Also nullify pool info
 			poolFilesInfo.clear();
+			isDirty = true;
 
 			break; // on first success
 		}
@@ -664,7 +663,7 @@ void CArchiveScanner::WriteCache()
 CArchiveScanner::ArchiveInfo& CArchiveScanner::GetAddArchiveInfo(const std::string& lcfn)
 {
 	auto aiIter = archiveInfosIndex.find(lcfn);
-	auto aiPair = std::make_pair(aiIter, false);
+	auto aiPair = std::make_pair(aiIter, 0);
 
 	if (aiIter == archiveInfosIndex.end()) {
 		aiPair = archiveInfosIndex.emplace(lcfn, archiveInfos.size());
@@ -878,8 +877,10 @@ bool CArchiveScanner::CheckCachedData(const std::string& fullName, uint32_t& mod
 		// e.g. after redownload
 		ai.updated = true;
 
-		if (doChecksum && !ai.hashed)
+		if (doChecksum && !ai.hashed) {
 			isDirty |= (ai.hashed = GetArchiveChecksum(fullName, ai));
+		}
+		assert(!doChecksum || ai.checksum != sha512::NULL_RAW_DIGEST);
 
 		return true;
 	}
