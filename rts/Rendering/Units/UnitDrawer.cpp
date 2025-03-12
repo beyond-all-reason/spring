@@ -298,6 +298,52 @@ void CUnitDrawerGLSL::DrawUnitTrans(const CUnit* unit, uint32_t preList, uint32_
 	glPopMatrix();
 }
 
+void CUnitDrawerGLSL::DrawUnitMiniMapIcon(TypedRenderBuffer<VA_TYPE_2DTC>& rb, const float iconScale, const float3& pos, const uint8_t* color) const
+{
+	const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
+	const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
+	float tempx = pos.x;
+	float tempy = pos.z;
+
+	switch (minimap->GetRotationOption()) {
+		case CMiniMap::ROTATION_90:
+			tempx = mapDims.mapx * SQUARE_SIZE - tempx;
+
+			// Normalize the coordinates to the minimap
+			tempx = tempx / mapDims.mapx * mapDims.mapy;
+			tempy = tempy / mapDims.mapy * mapDims.mapx;
+
+			std::swap(tempx, tempy);
+			break;
+		case CMiniMap::ROTATION_180:
+			tempx = mapDims.mapx * SQUARE_SIZE - tempx;
+			tempy = mapDims.mapy * SQUARE_SIZE - tempy;
+			break;
+		case CMiniMap::ROTATION_270:
+			tempy = mapDims.mapy * SQUARE_SIZE - tempy;
+
+			// Normalize the coordinates to the minimap
+			tempx = tempx / mapDims.mapx * mapDims.mapy;
+			tempy = tempy / mapDims.mapy * mapDims.mapx;
+
+			std::swap(tempx, tempy);
+			break;
+
+	}
+	
+	float x0 = tempx - iconSizeX;
+	float x1 = tempx + iconSizeX;
+	float y0 = tempy - iconSizeY;
+	float y1 = tempy + iconSizeY;
+
+	rb.AddQuadTriangles(
+		{ x0, y0, 0.0f, 0.0f, color },
+		{ x1, y0, 1.0f, 0.0f, color },
+		{ x1, y1, 1.0f, 1.0f, color },
+		{ x0, y1, 0.0f, 1.0f, color }
+	);
+}
+
 void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -358,52 +404,11 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 			}
 
 			const float iconScale = CUnitDrawerHelper::GetUnitIconScale(unit);
-			const float3& iconPos = (!gu->spectatingFullView) ?
+			const float3& pos = (!gu->spectatingFullView) ?
 				unit->GetObjDrawErrorPos(gu->myAllyTeam) :
 				unit->GetObjDrawMidPos();
 
-			const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
-			const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
-			float tempx = iconPos.x;
-			float tempy = iconPos.z;
-
-			switch (minimap->GetRotationOption()) {
-				case CMiniMap::ROTATION_90:
-					tempx = mapDims.mapx * SQUARE_SIZE - tempx;
-
-					// Normalize the coordinates to the minimap
-					tempx = tempx / mapDims.mapx * mapDims.mapy;
-					tempy = tempy / mapDims.mapy * mapDims.mapx;
-
-					std::swap(tempx, tempy);
-					break;
-				case CMiniMap::ROTATION_180:
-					tempx = mapDims.mapx * SQUARE_SIZE - tempx;
-					tempy = mapDims.mapy * SQUARE_SIZE - tempy;
-					break;
-				case CMiniMap::ROTATION_270:
-					tempy = mapDims.mapy * SQUARE_SIZE - tempy;
-
-					// Normalize the coordinates to the minimap
-					tempx = tempx / mapDims.mapx * mapDims.mapy;
-					tempy = tempy / mapDims.mapy * mapDims.mapx;
-
-					std::swap(tempx, tempy);
-					break;
-
-			}
-			
-			float x0 = tempx - iconSizeX;
-			float x1 = tempx + iconSizeX;
-			float y0 = tempy - iconSizeY;
-			float y1 = tempy + iconSizeY;
-
-			rb.AddQuadTriangles(
-				{ x0, y0, 0.0f, 0.0f, color },
-				{ x1, y0, 1.0f, 0.0f, color },
-				{ x1, y1, 1.0f, 1.0f, color },
-				{ x0, y1, 0.0f, 1.0f, color }
-			);
+			DrawUnitMiniMapIcon(rb, iconScale, pos, color);
 		}
 
 		for (const auto& ghost : ghosts) {
@@ -415,31 +420,9 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 				color = teamHandler.Team(ghost->team)->color;
 
 			const float iconScale = ghost->myIcon->GetSize();
-			const float3& iconPos = ghost->midPos;
+			const float3& pos = ghost->midPos;
 
-			const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
-			const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
-
-			float x0 = iconPos.x - iconSizeX;
-			float x1 = iconPos.x + iconSizeX;
-			float y0 = iconPos.z - iconSizeY;
-			float y1 = iconPos.z + iconSizeY;
-
-			if (minimap->GetFlipped()) {
-				x0 = mapDims.mapx * SQUARE_SIZE - x0;
-				x1 = mapDims.mapx * SQUARE_SIZE - x1;
-				y0 = mapDims.mapy * SQUARE_SIZE - y0;
-				y1 = mapDims.mapy * SQUARE_SIZE - y1;
-				std::swap(x0, x1);
-				std::swap(y0, y1);
-			}
-
-			rb.AddQuadTriangles(
-				{ x0, y0, 0.0f, 0.0f, color },
-				{ x1, y0, 1.0f, 0.0f, color },
-				{ x1, y1, 1.0f, 1.0f, color },
-				{ x0, y1, 0.0f, 1.0f, color }
-			);
+			DrawUnitMiniMapIcon(rb, iconScale, pos, color);
 		}
 
 		rb.Submit(GL_TRIANGLES);
@@ -448,6 +431,44 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 	sh.SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f);
 	sh.Disable();
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void CUnitDrawerGLSL::DrawUnitIcon(TypedRenderBuffer<VA_TYPE_TC>& rb, const icon::CIconData* icon, const float iconRadius, float3 pos, const uint8_t* color, const float unitRadius) const
+{
+	// make sure icon is above ground (needed before we calculate scale below)
+	const float h = CGround::GetHeightReal(pos.x, pos.z, false);
+
+	pos.y = std::max(pos.y, h);
+
+	// Calculate the icon size. It scales with:
+	//  * The square root of the camera distance.
+	//  * The mod defined 'iconSize' (which acts a multiplier).
+	//  * The unit radius, depending on whether the mod defined 'radiusadjust' is true or false.
+	const float dist = std::min(8000.0f, fastmath::sqrt_builtin(camera->GetPos().SqDistance(pos)));
+	const float iconScaleDist = 0.4f * fastmath::sqrt_builtin(dist); // makes far icons bigger
+	float scale = icon->GetSize() * iconScaleDist;
+
+	if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
+		scale *= (unitRadius / icon->GetRadiusScale());
+
+	// make sure icon is not partly under ground
+	pos.y = std::max(pos.y, h + scale); // TODO: unit->iconRadius = scale
+
+	const float3 dy = camera->GetUp() * scale;
+	const float3 dx = camera->GetRight() * scale;
+	const float3 vn = pos - dx;
+	const float3 vp = pos + dx;
+	const float3 bl = vn - dy; // bottom-left
+	const float3 br = vp - dy; // bottom-right
+	const float3 tl = vn + dy; // top-left
+	const float3 tr = vp + dy; // top-right
+
+	rb.AddQuadTriangles(
+		{ tl, 0.0f, 0.0f, color },
+		{ tr, 1.0f, 0.0f, color },
+		{ br, 1.0f, 1.0f, color },
+		{ bl, 0.0f, 1.0f, color }
+	);
 }
 
 void CUnitDrawerGLSL::DrawUnitIcons() const
@@ -500,78 +521,18 @@ void CUnitDrawerGLSL::DrawUnitIcons() const
 				unit->GetObjDrawErrorPos(gu->myAllyTeam) :
 				unit->GetObjDrawMidPos();
 
-			// make sure icon is above ground (needed before we calculate scale below)
-			const float h = CGround::GetHeightReal(pos.x, pos.z, false);
-
-			pos.y = std::max(pos.y, h);
-
-			// Calculate the icon size. It scales with:
-			//  * The square root of the camera distance.
-			//  * The mod defined 'iconSize' (which acts a multiplier).
-			//  * The unit radius, depending on whether the mod defined 'radiusadjust' is true or false.
-			const float dist = std::min(8000.0f, fastmath::sqrt_builtin(camera->GetPos().SqDistance(pos)));
-			const float iconScaleDist = 0.4f * fastmath::sqrt_builtin(dist); // makes far icons bigger
-			float scale = icon->GetSize() * iconScaleDist;
-
-			if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
-				scale *= (unit->radius / icon->GetRadiusScale());
-
-			// make sure icon is not partly under ground
-			pos.y = std::max(pos.y, h + (unit->iconRadius = scale));
-
 			// use white for selected units
 			const uint8_t* colors[] = { teamHandler.Team(unit->team)->color, color4::white };
 			const uint8_t* color = colors[unit->isSelected];
 
-			const float3 dy = camera->GetUp() * unit->iconRadius;
-			const float3 dx = camera->GetRight() * unit->iconRadius;
-			const float3 vn = pos - dx;
-			const float3 vp = pos + dx;
-			const float3 bl = vn - dy; // bottom-left
-			const float3 br = vp - dy; // bottom-right
-			const float3 tl = vn + dy; // top-left
-			const float3 tr = vp + dy; // top-right
-
-			rb.AddQuadTriangles(
-				{ tl, 0.0f, 0.0f, color },
-				{ tr, 1.0f, 0.0f, color },
-				{ br, 1.0f, 1.0f, color },
-				{ bl, 0.0f, 1.0f, color }
-			);
+			DrawUnitIcon(rb, icon, unit->iconRadius, pos, color, unit->radius);
 		}
 		for (const auto& ghost : ghosts) {
 			float3 pos = ghost->midPos;
 
-			const float h = CGround::GetHeightReal(pos.x, pos.z, false);
-
-			pos.y = std::max(pos.y, h);
-
-			const float dist = std::min(8000.0f, fastmath::sqrt_builtin(camera->GetPos().SqDistance(pos)));
-			const float iconScaleDist = 0.4f * fastmath::sqrt_builtin(dist);
-			float scale = icon->GetSize() * iconScaleDist;
-
-			if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
-				scale *= (ghost->radius / icon->GetRadiusScale());
-
-			pos.y = std::max(pos.y, h + scale);
-
 			const uint8_t* color = teamHandler.Team(ghost->team)->color;
 
-			const float3 dy = camera->GetUp() * scale;
-			const float3 dx = camera->GetRight() * scale;
-			const float3 vn = pos - dx;
-			const float3 vp = pos + dx;
-			const float3 bl = vn - dy;
-			const float3 br = vp - dy;
-			const float3 tl = vn + dy;
-			const float3 tr = vp + dy;
-
-			rb.AddQuadTriangles(
-				{ tl, 0.0f, 0.0f, color },
-				{ tr, 1.0f, 0.0f, color },
-				{ br, 1.0f, 1.0f, color },
-				{ bl, 0.0f, 1.0f, color }
-			);
+			DrawUnitIcon(rb, icon, ghost->iconRadius, pos, color, ghost->radius);
 		}
 
 		rb.Submit(GL_TRIANGLES);
@@ -581,6 +542,41 @@ void CUnitDrawerGLSL::DrawUnitIcons() const
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glPopAttrib();
+}
+
+void CUnitDrawerGLSL::DrawUnitIconScreen(TypedRenderBuffer<VA_TYPE_2DTC>& rb, const icon::CIconData* icon, const float3 pos, SColor& color, const float unitRadius, bool isIcon) const
+{
+	float unitRadiusMult = icon->GetSize();
+	if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
+		unitRadiusMult *= (unitRadius / icon->GetRadiusScale());
+	unitRadiusMult = (unitRadiusMult - 1) * 0.75 + 1;
+
+	// fade icons away in high zoom in levels
+	if (!isIcon) {
+		if (modelDrawerData->iconZoomDist / unitRadiusMult < modelDrawerData->iconFadeVanish)
+			return;
+		else if (modelDrawerData->iconFadeVanish < modelDrawerData->iconFadeStart && modelDrawerData->iconZoomDist / unitRadiusMult < modelDrawerData->iconFadeStart)
+			// alpha range [64, 255], since icons is unrecognisable with alpha < 64
+			color.a = 64 + 191.0f * (modelDrawerData->iconZoomDist / unitRadiusMult - modelDrawerData->iconFadeVanish) / (modelDrawerData->iconFadeStart - modelDrawerData->iconFadeVanish);
+	}
+
+	// calculate the vertices
+	const float offset = modelDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
+
+	const float x0 = (pos.x - offset) / globalRendering->viewSizeX;
+	const float y0 = (pos.y + offset) / globalRendering->viewSizeY;
+	const float x1 = (pos.x + offset) / globalRendering->viewSizeX;
+	const float y1 = (pos.y - offset) / globalRendering->viewSizeY;
+
+	if (x1 < 0 && x0 > 1 && y0 < 0 && y1 > 1)
+		return; // don't try to draw when totally outside the screen
+
+	rb.AddQuadTriangles(
+		{ x0, y0, 0.0f, 0.0f, color },
+		{ x1, y0, 1.0f, 0.0f, color },
+		{ x1, y1, 1.0f, 1.0f, color },
+		{ x0, y1, 0.0f, 1.0f, color }
+	);
 }
 
 void CUnitDrawerGLSL::DrawUnitIconsScreen() const
@@ -642,37 +638,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			// use white for selected units
 			SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
 
-			float unitRadiusMult = icon->GetSize();
-			if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
-				unitRadiusMult *= (unit->radius / icon->GetRadiusScale());
-			unitRadiusMult = (unitRadiusMult - 1) * 0.75 + 1;
-
-			// fade icons away in high zoom in levels
-			if (!unit->GetIsIcon()) {
-				if (modelDrawerData->iconZoomDist / unitRadiusMult < modelDrawerData->iconFadeVanish)
-					continue;
-				else if (modelDrawerData->iconFadeVanish < modelDrawerData->iconFadeStart && modelDrawerData->iconZoomDist / unitRadiusMult < modelDrawerData->iconFadeStart)
-					// alpha range [64, 255], since icons is unrecognisable with alpha < 64
-					color.a = 64 + 191.0f * (modelDrawerData->iconZoomDist / unitRadiusMult - modelDrawerData->iconFadeVanish) / (modelDrawerData->iconFadeStart - modelDrawerData->iconFadeVanish);
-			}
-
-			// calculate the vertices
-			const float offset = modelDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
-
-			const float x0 = (pos.x - offset) / globalRendering->viewSizeX;
-			const float y0 = (pos.y + offset) / globalRendering->viewSizeY;
-			const float x1 = (pos.x + offset) / globalRendering->viewSizeX;
-			const float y1 = (pos.y - offset) / globalRendering->viewSizeY;
-
-			if (x1 < 0 && x0 > 1 && y0 < 0 && y1 > 1)
-				continue; // don't try to draw when totally outside the screen
-
-			rb.AddQuadTriangles(
-				{ x0, y0, 0.0f, 0.0f, color },
-				{ x1, y0, 1.0f, 0.0f, color },
-				{ x1, y1, 1.0f, 1.0f, color },
-				{ x0, y1, 0.0f, 1.0f, color }
-			);
+			DrawUnitIconScreen(rb, icon, pos, color, unit->radius, unit->GetIsIcon());
 		}
 		for (const auto& ghost : ghosts) {
 			float3 pos = ghost->midPos;
@@ -683,35 +649,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 
 			SColor color = SColor{ teamHandler.Team(ghost->team)->color };
 
-			float unitRadiusMult = icon->GetSize();
-			if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
-				unitRadiusMult *= (ghost->radius / icon->GetRadiusScale());
-			unitRadiusMult = (unitRadiusMult - 1) * 0.75 + 1;
-
-			// fade icons away in high zoom in levels
-			if (modelDrawerData->iconZoomDist / unitRadiusMult < modelDrawerData->iconFadeVanish)
-				continue;
-			else if (modelDrawerData->iconFadeVanish < modelDrawerData->iconFadeStart && modelDrawerData->iconZoomDist / unitRadiusMult < modelDrawerData->iconFadeStart)
-				color.a = 64 + 191.0f * (modelDrawerData->iconZoomDist / unitRadiusMult - modelDrawerData->iconFadeVanish) / (modelDrawerData->iconFadeStart - modelDrawerData->iconFadeVanish);
-
-			// calculate the vertices
-			const float offset = modelDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
-
-			const float x0 = (pos.x - offset) / globalRendering->viewSizeX;
-			const float y0 = (pos.y + offset) / globalRendering->viewSizeY;
-			const float x1 = (pos.x + offset) / globalRendering->viewSizeX;
-			const float y1 = (pos.y - offset) / globalRendering->viewSizeY;
-
-			if (x1 < 0 && x0 > 1 && y0 < 0 && y1 > 1)
-				continue; // don't try to draw when totally outside the screen
-
-			rb.AddQuadTriangles(
-				{ x0, y0, 0.0f, 0.0f, color },
-				{ x1, y0, 1.0f, 0.0f, color },
-				{ x1, y1, 1.0f, 1.0f, color },
-				{ x0, y1, 0.0f, 1.0f, color }
-			);
-
+			DrawUnitIconScreen(rb, icon, pos, color, ghost->radius, false);
 		}
 
 		rb.Submit(GL_TRIANGLES);
