@@ -623,7 +623,7 @@ void CArchiveScanner::ReadCache()
 		// Try to save initial scanning of assets, but will have to redo hashing
 		// as the previous version had bugs in that area
 		// probe two previous versions
-		std::array prevCacheFiles{
+		std::array prevCacheFiles {
 			FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 1, "ArchiveCache%i.lua"),
 			FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 2, "ArchiveCache%i.lua"),
 			FileSystem::EnsurePathSepAtEnd(FileSystem::GetCacheDir()) + IntToString(INTERNAL_VER - 3, "ArchiveCache%i.lua")
@@ -633,9 +633,11 @@ void CArchiveScanner::ReadCache()
 			if (!ReadCacheData(prevCacheFile, true))
 				continue;
 
-			// nullify hashes && filesInfo
+			// nullify hashes, modified times && filesInfo
 			for (auto& ai : archiveInfos) {
 				ai.checksum = sha512::NULL_RAW_DIGEST;
+				ai.modifiedArchiveData = 0;
+				ai.modified = 0;
 				ai.filesInfo.clear();
 				isDirty = true;
 			}
@@ -1016,10 +1018,10 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	// limit the number of simultaneous IO operations
 	std::counting_semaphore sem(numParallelFileReads);
 
-	// load ignore list, and insert all files to check in lowercase format
+	// load ignore list
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
 
-	// warm up and actually force retrieval of some archive data with ar->FileInfo(fid)
+	// warm up. For some archive types ar->FileInfo(fid) is a mutable operation loading important IArchive::SFileInfo fields
 	std::atomic_uint32_t numFiles = {0};
 	for_mt(0, ar->NumFiles(), [&sem, &numFiles, &ar = std::as_const(ar), &ignore = std::as_const(ignore)](int fid) {
 		const auto fn = ar->FileName(fid);
@@ -1047,7 +1049,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 		// special treatment of SDP archives: insert information from poolFilesInfo
 		if (sdpArchive) {
-			auto it = poolFilesInfo.find(fi.specialFileName); // fi.specialFileName contains pool file path
+			auto it = poolFilesInfo.find(fi.specialFileName); // fi.specialFileName contains pool file name (prefix/suffix.gz)
 			if (it != poolFilesInfo.end()) {
 				archiveInfo.filesInfo[fi.fileName] = it->second;
 			}
@@ -1087,22 +1089,27 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	// stable sort by filename
 	std::stable_sort(fileNames.begin(), fileNames.end(), [](const auto& lhs, const auto& rhs) {
-		const auto lcLhs = StringToLower(lhs);
-		const auto lcRhs = StringToLower(rhs);
-		return lcLhs < lcRhs;
+		return std::lexicographical_compare(
+			lhs.begin(), lhs.end(),
+			rhs.begin(), rhs.end(),
+			[](char c1, char c2) {
+				return std::tolower(static_cast<unsigned char>(c1)) < std::tolower(static_cast<unsigned char>(c2));
+			}
+		);
 	});
 
 	// combine individual hashes, initialize to hash(name)
 	for (size_t i = 0; i < fileNames.size(); i++) {
-		const auto& fileNameOC = fileNames[i];
-		// we want the filename based hashing below to be case-independent
-		const auto  fileNameLC = StringToLower(fileNameOC);
-		// but we still index on the original filename
-		const auto  filesInfoIt = archiveInfo.filesInfo.find(fileNameOC);
+		auto fileName = fileNames[i];
+		const auto filesInfoIt = archiveInfo.filesInfo.find(fileName);
 		assert(filesInfoIt != archiveInfo.filesInfo.end());
 
 		sha512::raw_digest fileNameHash{ 0 };
-		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileNameLC.c_str()), fileNameLC.size(), fileNameHash.data());
+		{
+			// we want the filename based hashing below to be case-independent
+			StringToLowerInPlace(fileName);
+			sha512::calc_digest(reinterpret_cast<const uint8_t*>(fileName.c_str()), fileName.size(), fileNameHash.data());
+		}
 
 		for (uint8_t j = 0; j < sha512::SHA_LEN; j++) {
 			archiveInfo.checksum[j] ^= fileNameHash[j];
@@ -1115,7 +1122,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	}
 
 	if (sdpArchive) {
-		// makes no sense to store archiveInfo.filesInfo in the SDP index
+		// makes no sense to store archiveInfo.filesInfo in the SDP entry
 		// so copy to poolFilesInfo and empty archiveInfo.filesInfo
 		for (uint32_t fid = 0; fid < ar->NumFiles(); ++fid) {
 			const auto fi = ar->FileInfo(fid);
@@ -1129,7 +1136,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	}
 	else if (compressedArchive) {
 		// makes no sense to to store archiveInfo.filesInfo for 7z/zip based archives
-		// as these archives are likely immutable, so per file info is useless
+		// as these archives are likely immutable, the per file info is useless
 		// in rare case of updating/overwriting the archive we will do full checksumming
 		archiveInfo.filesInfo.clear();
 	}
@@ -1144,6 +1151,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 			else if (const auto fi = ar->FileInfo(fid); fi.size == -1 || fi.modTime == 0) {
 				it = archiveInfo.filesInfo.erase(it);
 				assert(false);
+				return false;
 			}
 			else {
 				++it;
