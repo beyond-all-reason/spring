@@ -552,9 +552,8 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 		FcCharSet *patternCharSet;
 		r = FcPatternGetCharSet(font, FC_CHARSET, 0, &patternCharSet);
-		if (r != FcResultMatch || FcCharSetIntersectCount(cset, patternCharSet) == 0) {
+		if (r != FcResultMatch || FcCharSetIntersectCount(cset, patternCharSet) == 0)
 			continue;
-		}
 
 		const std::string filename = std::string{ reinterpret_cast<char*>(cFilename) };
 
