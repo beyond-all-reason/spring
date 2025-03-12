@@ -75,7 +75,7 @@ typedef unsigned char FT_Byte;
 #endif
 
 constexpr int MAX_RECENT_FONTS = 10;
-static spring::unordered_map<std::string, std::pair<std::shared_ptr<FontFace>, float>> recentFontCache;
+static spring::unordered_map<std::pair<std::string, int>, std::pair<std::shared_ptr<FontFace>, float>> recentFontCache;
 
 static spring::unordered_map<std::string, std::weak_ptr<FontFace>> fontFaceCache;
 static spring::unordered_map<std::string, std::weak_ptr<FontFileBytes>> fontMemCache;
@@ -83,7 +83,7 @@ static spring::unordered_set<std::pair<std::string, int>, spring::synced_hash<st
 static auto cacheMutexes = spring::WrappedSyncRecursiveMutex{};
 
 static void RememberFont(std::shared_ptr<FontFace> &face, const std::string &filename, const int size) {
-	const auto fontKey = filename + IntToString(size);
+	const auto fontKey = std::make_pair(filename, size);
 
 	float time = spring_gettime().toMilliSecsf();
 
@@ -95,7 +95,7 @@ static void RememberFont(std::shared_ptr<FontFace> &face, const std::string &fil
 		recentFontCache[fontKey] = std::pair<std::shared_ptr<FontFace>, float>(face, time);
 
 		if (recentFontCache.size() > MAX_RECENT_FONTS) {
-			std::string *oldest;
+			std::pair<string, int>* oldest;
 			float oldestTime = time;
 			for(auto &it: recentFontCache) {
 				if (it.second.second < oldestTime) {
