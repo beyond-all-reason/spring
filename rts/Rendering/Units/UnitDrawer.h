@@ -189,7 +189,7 @@ protected:
 	void PopIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const;
 
 	void DrawUnitMiniMapIcon(TypedRenderBuffer<VA_TYPE_2DTC>& rb, const float iconScale, const float3& pos, const uint8_t* color) const;
-	void DrawUnitIcon(TypedRenderBuffer<VA_TYPE_TC>& rb, const icon::CIconData* icon, const float iconRadius, float3 pos, const uint8_t* color, const float unitRadius) const;
+	float DrawUnitIcon(TypedRenderBuffer<VA_TYPE_TC>& rb, const icon::CIconData* icon, const float iconRadius, float3 pos, const uint8_t* color, const float unitRadius) const;
 	void DrawUnitIconScreen(TypedRenderBuffer<VA_TYPE_2DTC>& rb, const icon::CIconData* icon, const float3 pos, SColor& color, const float unitRadius, bool isIcon) const;
 };
 

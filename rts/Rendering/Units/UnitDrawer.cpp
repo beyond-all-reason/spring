@@ -433,7 +433,7 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void CUnitDrawerGLSL::DrawUnitIcon(TypedRenderBuffer<VA_TYPE_TC>& rb, const icon::CIconData* icon, const float iconRadius, float3 pos, const uint8_t* color, const float unitRadius) const
+float CUnitDrawerGLSL::DrawUnitIcon(TypedRenderBuffer<VA_TYPE_TC>& rb, const icon::CIconData* icon, const float iconRadius, float3 pos, const uint8_t* color, const float unitRadius) const
 {
 	// make sure icon is above ground (needed before we calculate scale below)
 	const float h = CGround::GetHeightReal(pos.x, pos.z, false);
@@ -452,7 +452,7 @@ void CUnitDrawerGLSL::DrawUnitIcon(TypedRenderBuffer<VA_TYPE_TC>& rb, const icon
 		scale *= (unitRadius / icon->GetRadiusScale());
 
 	// make sure icon is not partly under ground
-	pos.y = std::max(pos.y, h + scale); // TODO: unit->iconRadius = scale
+	pos.y = std::max(pos.y, h + scale);
 
 	const float3 dy = camera->GetUp() * scale;
 	const float3 dx = camera->GetRight() * scale;
@@ -469,6 +469,7 @@ void CUnitDrawerGLSL::DrawUnitIcon(TypedRenderBuffer<VA_TYPE_TC>& rb, const icon
 		{ br, 1.0f, 1.0f, color },
 		{ bl, 0.0f, 1.0f, color }
 	);
+	return scale;
 }
 
 void CUnitDrawerGLSL::DrawUnitIcons() const
@@ -525,7 +526,7 @@ void CUnitDrawerGLSL::DrawUnitIcons() const
 			const uint8_t* colors[] = { teamHandler.Team(unit->team)->color, color4::white };
 			const uint8_t* color = colors[unit->isSelected];
 
-			DrawUnitIcon(rb, icon, unit->iconRadius, pos, color, unit->radius);
+			unit->iconRadius = DrawUnitIcon(rb, icon, unit->iconRadius, pos, color, unit->radius);
 		}
 		for (const auto& ghost : ghosts) {
 			float3 pos = ghost->midPos;
