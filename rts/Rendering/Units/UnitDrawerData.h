@@ -28,11 +28,15 @@ public:
 	std::string modelName;
 
 	float3 pos;
+	float3 midPos;
 	float3 dir;
+	float radius;
+	float iconRadius;
 
 	int facing; //FIXME replaced with dir-vector just legacy decal drawer uses this
 	uint8_t team;
 	int refCount;
+	icon::CIconData* myIcon;
 private:
 	mutable const S3DModel* model;
 };
@@ -141,6 +145,7 @@ public:
 	const auto* GetSavedData() const { return &savedData; }
 
 	const spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> >& GetUnitsByIcon() const { return unitsByIcon; }
+	const spring::unsynced_map<icon::CIconData*, std::vector<const GhostSolidObject*> >& GetGhostsByIcon() const { return ghostsByIcon; }
 protected:
 	void UpdateObjectDrawFlags(CSolidObject* o) const override;
 private:
@@ -175,6 +180,7 @@ private:
 	SavedData savedData;
 
 	spring::unsynced_map<icon::CIconData*, std::vector<const CUnit*> > unitsByIcon;
+	spring::unsynced_map<icon::CIconData*, std::vector<const GhostSolidObject*> > ghostsByIcon;
 
 	std::vector<UnitDefImage> unitDefImages;
 

@@ -161,6 +161,7 @@ CUnitDrawerData::~CUnitDrawerData()
 	}
 
 	unitsByIcon.clear();
+	ghostsByIcon.clear();
 }
 
 void CUnitDrawerData::Update()
@@ -232,6 +233,7 @@ void CUnitDrawerData::UpdateGhostedBuildings()
 
 				// obtained LOS on the ghost of a dead building
 				if (!gso->DecRef()) {
+					spring::VectorErase(ghostsByIcon[gso->myIcon], const_cast<const GhostSolidObject*>(gso));
 					groundDecals->GhostDestroyed(gso);
 					ghostMemPool.free(gso);
 				}
@@ -609,20 +611,30 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 				gso = ghostMemPool.alloc<GhostSolidObject>();
 
 				gso->pos = u->pos;
+				gso->midPos = u->midPos;
 				gso->modelName = gsoModel->name;
 				gso->facing = u->buildFacing;
 				gso->dir = u->frontdir;
 				gso->team = u->team;
+				gso->radius = u->radius;
 				gso->refCount = 0;
 				gso->GetModel();
 
+				gso->myIcon = u->myIcon;
+				gso->iconRadius = u->iconRadius;
+
 				groundDecals->GhostCreated(u, gso);
+
 			}
 
 			// <gso> can be inserted for multiple allyteams
 			// (the ref-counter saves us come deletion time)
 			savedData.deadGhostBuildings[allyTeam][gsoModel->type].push_back(gso);
 			gso->IncRef();
+
+			if (allyTeam == gu->myAllyTeam) {
+				ghostsByIcon[u->myIcon].push_back(gso);
+			}
 		}
 
 		spring::VectorErase(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(u)], u);
@@ -685,4 +697,15 @@ void CUnitDrawerData::PlayerChanged(int playerNum)
 		// force an erase (no-op) followed by an insert
 		UpdateUnitIcon(unit, true, false);
 	}
+
+	for (auto& [icon, ghosts] : ghostsByIcon) {
+		ghosts.clear();
+	}
+
+	for (auto& ghosts : savedData.deadGhostBuildings[gu->myAllyTeam]) {
+		for (auto ghost : ghosts) {
+			ghostsByIcon[ghost->myIcon].push_back(ghost);
+		}
+	}
+
 }

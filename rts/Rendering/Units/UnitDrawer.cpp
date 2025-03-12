@@ -314,6 +314,7 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 	if (!minimap->UseUnitIcons())
 		icon::iconHandler.GetDefaultIconData()->BindTexture();
 
+	const auto& ghostsByIcon = modelDrawerData->GetGhostsByIcon();
 	for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon()) {
 
 		if (icon == nullptr)
@@ -403,6 +404,46 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 			);
 		}
 
+		auto ghostsIt = ghostsByIcon.find(icon);
+		if (ghostsIt != ghostsByIcon.end())
+		{
+			for (const auto& ghost : ghostsIt->second) {
+				const uint8_t* color;
+
+				if (minimap->UseSimpleColors())
+					color = minimap->GetEnemyTeamIconColor();
+				else
+					color = teamHandler.Team(ghost->team)->color;
+
+				const float iconScale = ghost->myIcon->GetSize();
+				const float3& iconPos = ghost->midPos;
+
+				const float iconSizeX = (iconScale * minimap->GetUnitSizeX());
+				const float iconSizeY = (iconScale * minimap->GetUnitSizeY());
+
+				float x0 = iconPos.x - iconSizeX;
+				float x1 = iconPos.x + iconSizeX;
+				float y0 = iconPos.z - iconSizeY;
+				float y1 = iconPos.z + iconSizeY;
+
+				if (minimap->GetFlipped()) {
+					x0 = mapDims.mapx * SQUARE_SIZE - x0;
+					x1 = mapDims.mapx * SQUARE_SIZE - x1;
+					y0 = mapDims.mapy * SQUARE_SIZE - y0;
+					y1 = mapDims.mapy * SQUARE_SIZE - y1;
+					std::swap(x0, x1);
+					std::swap(y0, y1);
+				}
+
+				rb.AddQuadTriangles(
+					{ x0, y0, 0.0f, 0.0f, color },
+					{ x1, y0, 1.0f, 0.0f, color },
+					{ x1, y1, 1.0f, 1.0f, color },
+					{ x0, y1, 0.0f, 1.0f, color }
+				);
+			}
+		}
+
 		rb.Submit(GL_TRIANGLES);
 	}
 
@@ -435,6 +476,7 @@ void CUnitDrawerGLSL::DrawUnitIcons() const
 	sh.Enable();
 	sh.SetUniform("alphaCtrl", 0.05f, 1.0f, 0.0f, 0.0f); // GL_GREATER > 0.05
 
+	const auto& ghostsByIcon = modelDrawerData->GetGhostsByIcon();
 	for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon())
 	{
 		if (icon == nullptr)
@@ -497,6 +539,45 @@ void CUnitDrawerGLSL::DrawUnitIcons() const
 				{ bl, 0.0f, 1.0f, color }
 			);
 		}
+		auto ghostsIt = ghostsByIcon.find(icon);
+		if (ghostsIt != ghostsByIcon.end())
+		{
+			for (const auto& ghost : ghostsIt->second) {
+				float3 pos = ghost->midPos;
+
+				const float h = CGround::GetHeightReal(pos.x, pos.z, false);
+
+				pos.y = std::max(pos.y, h);
+
+				const float dist = std::min(8000.0f, fastmath::sqrt_builtin(camera->GetPos().SqDistance(pos)));
+				const float iconScaleDist = 0.4f * fastmath::sqrt_builtin(dist);
+				float scale = icon->GetSize() * iconScaleDist;
+
+				if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
+					scale *= (ghost->radius / icon->GetRadiusScale());
+
+				pos.y = std::max(pos.y, h + scale);
+
+				const uint8_t* color = teamHandler.Team(ghost->team)->color;
+
+				const float3 dy = camera->GetUp() * scale;
+				const float3 dx = camera->GetRight() * scale;
+				const float3 vn = pos - dx;
+				const float3 vp = pos + dx;
+				const float3 bl = vn - dy;
+				const float3 br = vp - dy;
+				const float3 tl = vn + dy;
+				const float3 tr = vp + dy;
+
+				rb.AddQuadTriangles(
+					{ tl, 0.0f, 0.0f, color },
+					{ tr, 1.0f, 0.0f, color },
+					{ br, 1.0f, 1.0f, color },
+					{ bl, 0.0f, 1.0f, color }
+				);
+			}
+		}
+
 		rb.Submit(GL_TRIANGLES);
 	}
 	sh.SetUniform("alphaCtrl", 0.0f, 0.0f, 0.0f, 1.0f);
@@ -528,6 +609,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 
 	const auto allyTeam = gu->myAllyTeam;
 
+	const auto& ghostsByIcon = modelDrawerData->GetGhostsByIcon();
 	for (const auto& [icon, units] : modelDrawerData->GetUnitsByIcon())
 	{
 		if (icon == nullptr)
@@ -593,6 +675,49 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 				{ x1, y1, 1.0f, 1.0f, color },
 				{ x0, y1, 0.0f, 1.0f, color }
 			);
+		}
+		auto ghostsIt = ghostsByIcon.find(icon);
+		if (ghostsIt != ghostsByIcon.end())
+		{
+			for (const auto& ghost : ghostsIt->second) {
+				float3 pos = ghost->midPos;
+
+				pos = camera->CalcViewPortCoordinates(pos);
+				if (pos.z > 1.0f || pos.z < 0.0f)
+					continue;
+
+				SColor color = SColor{ teamHandler.Team(ghost->team)->color };
+
+				float unitRadiusMult = icon->GetSize();
+				if (icon->GetRadiusAdjust() && icon != icon::iconHandler.GetDefaultIconData())
+					unitRadiusMult *= (ghost->radius / icon->GetRadiusScale());
+				unitRadiusMult = (unitRadiusMult - 1) * 0.75 + 1;
+
+				// fade icons away in high zoom in levels
+				if (modelDrawerData->iconZoomDist / unitRadiusMult < modelDrawerData->iconFadeVanish)
+					continue;
+				else if (modelDrawerData->iconFadeVanish < modelDrawerData->iconFadeStart && modelDrawerData->iconZoomDist / unitRadiusMult < modelDrawerData->iconFadeStart)
+					color.a = 64 + 191.0f * (modelDrawerData->iconZoomDist / unitRadiusMult - modelDrawerData->iconFadeVanish) / (modelDrawerData->iconFadeStart - modelDrawerData->iconFadeVanish);
+
+				// calculate the vertices
+				const float offset = modelDrawerData->iconSizeBase / 2.0f * unitRadiusMult;
+
+				const float x0 = (pos.x - offset) / globalRendering->viewSizeX;
+				const float y0 = (pos.y + offset) / globalRendering->viewSizeY;
+				const float x1 = (pos.x + offset) / globalRendering->viewSizeX;
+				const float y1 = (pos.y - offset) / globalRendering->viewSizeY;
+
+				if (x1 < 0 && x0 > 1 && y0 < 0 && y1 > 1)
+					continue; // don't try to draw when totally outside the screen
+
+				rb.AddQuadTriangles(
+					{ x0, y0, 0.0f, 0.0f, color },
+					{ x1, y0, 1.0f, 0.0f, color },
+					{ x1, y1, 1.0f, 1.0f, color },
+					{ x0, y1, 0.0f, 1.0f, color }
+				);
+
+			}
 		}
 
 		rb.Submit(GL_TRIANGLES);
