@@ -161,7 +161,6 @@ CUnitDrawerData::~CUnitDrawerData()
 	}
 
 	unitsByIcon.clear();
-	ghostsByIcon.clear();
 }
 
 void CUnitDrawerData::Update()
@@ -233,7 +232,7 @@ void CUnitDrawerData::UpdateGhostedBuildings()
 
 				// obtained LOS on the ghost of a dead building
 				if (!gso->DecRef()) {
-					spring::VectorErase(ghostsByIcon[gso->myIcon], const_cast<const GhostSolidObject*>(gso));
+					spring::VectorErase(unitsByIcon[gso->myIcon].second, const_cast<const GhostSolidObject*>(gso));
 					groundDecals->GhostDestroyed(gso);
 					ghostMemPool.free(gso);
 				}
@@ -291,15 +290,15 @@ void CUnitDrawerData::UpdateUnitIcon(const CUnit* unit, bool forced, bool killed
 
 	if (!killed) {
 		if ((oldIcon != newIcon) || forced) {
-			spring::VectorErase(unitsByIcon[oldIcon], unit);
-			unitsByIcon[newIcon].push_back(unit);
+			spring::VectorErase(unitsByIcon[oldIcon].first, unit);
+			unitsByIcon[newIcon].first.push_back(unit);
 		}
 
 		u->myIcon = newIcon;
 		return;
 	}
 
-	spring::VectorErase(unitsByIcon[oldIcon], unit);
+	spring::VectorErase(unitsByIcon[oldIcon].first, unit);
 }
 
 void CUnitDrawerData::UpdateUnitIconState(CUnit* unit)
@@ -633,7 +632,7 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 			gso->IncRef();
 
 			if (allyTeam == gu->myAllyTeam) {
-				ghostsByIcon[u->myIcon].push_back(gso);
+				unitsByIcon[u->myIcon].second.push_back(gso);
 			}
 		}
 
@@ -689,8 +688,9 @@ void CUnitDrawerData::PlayerChanged(int playerNum)
 	if (playerNum != gu->myPlayerNum)
 		return;
 
-	for (auto& [icon, units] : unitsByIcon) {
-		units.clear();
+	for (auto& [icon, data] : unitsByIcon) {
+		data.first.clear();
+		data.second.clear();
 	}
 
 	for (CUnit* unit : unsortedObjects) {
@@ -698,13 +698,9 @@ void CUnitDrawerData::PlayerChanged(int playerNum)
 		UpdateUnitIcon(unit, true, false);
 	}
 
-	for (auto& [icon, ghosts] : ghostsByIcon) {
-		ghosts.clear();
-	}
-
 	for (auto& ghosts : savedData.deadGhostBuildings[gu->myAllyTeam]) {
 		for (auto ghost : ghosts) {
-			ghostsByIcon[ghost->myIcon].push_back(ghost);
+			unitsByIcon[ghost->myIcon].second.push_back(ghost);
 		}
 	}
 
