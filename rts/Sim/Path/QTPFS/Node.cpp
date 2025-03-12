@@ -609,14 +609,10 @@ bool QTPFS::QTNode::UpdateMoveCost(
 		nl.IncreaseOpenNodeCounter();
 	}
 
-	// Impassable squares don't impact search performance, but the larger they are the bigger the
-	// impact on updating. For example, sea units will often have large impassable areas for the
-	// land and we'll be recalculating across these larger areas every time those areas are damaged
-	// despite it not changing the impassability as far as ships are concerned. So make these areas
-	// as small as possible (i.e. same size as the damage quads) to minimize update performance
-	// impact.
-	// This issue also applies to open nodes, which aren't damaged enough to cause a subdivision:
-	// for example, tough metal map and several commanders explode.
+	// For performance reasons, the maximum node size should match the damage size because mutliple damaged regions
+	// that doesn't result in a subdivision will cause the entire node to be re-evaluated over several frames. The
+	// larger the node, the larger the performance impact. This often occurs for impassable terrain or hard terrain
+	// such as metal.
 	needSplit |= (xsize() > QTPFS_MAP_DAMAGE_SIZE);
 
 	wantSplit &= (xsize() > 16); // try not to split below 16 if possible.
