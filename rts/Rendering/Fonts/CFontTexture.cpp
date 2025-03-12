@@ -92,19 +92,18 @@ static void RememberFont(std::shared_ptr<FontFace>& face, const std::string& fil
 	if (cached != recentFontCache.end()) {
 		cached->second.second = time;
 	} else {
-		recentFontCache[fontKey] = std::pair<std::shared_ptr<FontFace>, float>(face, time);
-
-		if (recentFontCache.size() > MAX_RECENT_FONTS) {
+		if (recentFontCache.size() >= MAX_RECENT_FONTS) {
 			std::pair<string, int>* oldest;
 			float oldestTime = time;
 			for(auto &it: recentFontCache) {
-				if (it.second.second < oldestTime) {
+				if (it.second.second <= oldestTime) {
 					oldest = &it.first;
 					oldestTime = it.second.second;
 				}
 			}
 			recentFontCache.erase(*oldest);
 		}
+		recentFontCache[fontKey] = std::pair<std::shared_ptr<FontFace>, float>(face, time);
 	}
 }
 
