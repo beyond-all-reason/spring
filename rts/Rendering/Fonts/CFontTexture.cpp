@@ -82,7 +82,7 @@ static spring::unordered_map<std::string, std::weak_ptr<FontFileBytes>> fontMemC
 static spring::unordered_set<std::pair<std::string, int>, spring::synced_hash<std::pair<std::string, int>>> invalidFonts;
 static auto cacheMutexes = spring::WrappedSyncRecursiveMutex{};
 
-static void RememberFont(std::shared_ptr<FontFace> &face, const std::string &filename, const int size) {
+static void RememberFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size) {
 	const auto fontKey = std::make_pair(filename, size);
 
 	float time = spring_gettime().toMilliSecsf();
