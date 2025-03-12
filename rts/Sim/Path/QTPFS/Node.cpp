@@ -615,7 +615,9 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	// despite it not changing the impassability as far as ships are concerned. So make these areas
 	// as small as possible (i.e. same size as the damage quads) to minimize update performance
 	// impact.
-	needSplit |= (AllSquaresImpassable() && xsize() > 16); // TODO: magic number for size of damage quads
+	// This issue also applies to open nodes, which aren't damaged enough to cause a subdivision:
+	// for example, tough metal map and several commanders explode.
+	needSplit |= (xsize() > QTPFS_MAP_DAMAGE_SIZE);
 
 	wantSplit &= (xsize() > 16); // try not to split below 16 if possible.
 	wantSplit &= !(nl.UseShortestPath());
