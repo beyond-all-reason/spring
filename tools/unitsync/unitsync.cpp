@@ -2164,11 +2164,12 @@ EXPORT(int) FindFilesArchive(int archive, int file, char* nameBuf, int* size)
 
 		if (file < arch->NumFiles()) {
 			const int nameBufSize = *size;
-			const auto fi = arch->FileInfo(file);
-			*size = fi.size;
+			const auto& fn = arch->FileName(file);
+			const auto  fs = arch->FileSize(file);
+			*size = fs;
 
-			if (nameBufSize > fi.fileName.length()) {
-				STRCPY(nameBuf, fi.fileName.c_str());
+			if (nameBufSize > fn.length()) {
+				STRCPY(nameBuf, fn.c_str());
 				return ++file;
 			}
 
@@ -2232,8 +2233,8 @@ EXPORT(int) SizeArchiveFile(int archive, int file)
 		CheckArchiveHandle(archive);
 
 		IArchive* a = openArchives[archive];
-		const auto fi = a->FileInfo(file);
-		return fi.size;
+		const auto fs = a->FileSize(file);
+		return fs;
 	}
 	UNITSYNC_CATCH_BLOCKS;
 	return -1;
