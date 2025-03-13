@@ -15,7 +15,7 @@ class alignas(16) CQuaternion
 public:
 	CR_DECLARE_STRUCT(CQuaternion)
 public:
-	constexpr CQuaternion()
+	explicit constexpr CQuaternion()
 		: x(0.0f)
 		, y(0.0f)
 		, z(0.0f)
@@ -52,13 +52,18 @@ public:
 	// Euler angles, also known as RotateEulerYXZ
 	static CQuaternion FromEulerYPR(const float3& angles);
 
+	// To Euler angles, YPR/YXZ order
+	float3 ToEulerYPR() const;
+
+	// To Euler angles, PYR/XYZ order
+	float3 ToEulerPYR() const;
+
 	static CQuaternion MakeFrom(float angle, const float3& axis);
 	static CQuaternion MakeFrom(const float3& v1, const float3& v2);
+	static CQuaternion MakeFrom(const float3& newFwdDir);
 	static CQuaternion MakeFrom(const CMatrix44f& mat);
 
 	static const CQuaternion& AssertNormalized(const CQuaternion& q);
-
-	static std::tuple<float3, CQuaternion, float3> DecomposeIntoTRS(const CMatrix44f& mat);
 public:
 	bool Normalized() const;
 	CQuaternion& Normalize();
@@ -66,6 +71,8 @@ public:
 	constexpr CQuaternion& Conjugate() { x = -x; y = -y; z = -z; return *this; }
 	CQuaternion  Inverse() const;
 	CQuaternion& InverseInPlace();
+	CQuaternion  InverseNormalized() const;
+	CQuaternion& InverseInPlaceNormalized();
 
 	float4 ToAxisAndAngle() const;
 	CMatrix44f ToRotMatrix() const;
@@ -108,8 +115,10 @@ public:
 
 	bool operator==(const CQuaternion& rhs) const { return  equals(rhs); } //aproximate
 	bool operator!=(const CQuaternion& rhs) const { return !equals(rhs); } //aproximate
+
+	void AssertNaNs() const;
 private:
-	float SqNorm() const;
+	constexpr float SqNorm() const { return (x * x + y * y + z * z + r * r); }
 	static float InvSqrt(float f);
 public:
 	static CQuaternion Lerp (const CQuaternion& q1, const CQuaternion& q2, const float a);

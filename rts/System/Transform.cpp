@@ -4,8 +4,6 @@
 
 #include "System/SpringMath.h"
 
-#define TRANSFORM_FROM_TO_MATRIX_DEBUG
-
 CR_BIND(Transform, )
 CR_REG_METADATA(Transform, (
 	CR_MEMBER(r),
@@ -41,7 +39,7 @@ Transform Transform::FromMatrix(const CMatrix44f& mat)
 {
 	Transform tra;
 	float3 scale;
-	std::tie(tra.t, tra.r, scale) = CQuaternion::DecomposeIntoTRS(mat);
+	std::tie(tra.t, tra.r, scale) = mat.DecomposeIntoTRS();
 	assert(
 		epscmp(scale.x, scale.y, std::max(scale.x, scale.y) * float3::cmp_eps()) &&
 		epscmp(scale.y, scale.z, std::max(scale.y, scale.z) * float3::cmp_eps()) &&
@@ -49,16 +47,7 @@ Transform Transform::FromMatrix(const CMatrix44f& mat)
 	);
 	// non-uniform scaling is not supported
 	tra.s = scale.x;
-#ifdef TRANSFORM_FROM_TO_MATRIX_DEBUG
-	const float3 v{ 100, 200, 300 };
-	auto vMat = mat * v;
-	auto vTra = tra * v;
 
-	auto vMatN = vMat; vMatN.Normalize();
-	auto vTraN = vTra; vTraN.Normalize();
-
-	assert(math::fabs(1.0f - vMatN.dot(vTraN)) < 0.05f);
-#endif
 	return tra;
 }
 
@@ -77,25 +66,6 @@ CMatrix44f Transform::ToMatrix() const
 	m.Scale(s);
 	m.SetPos(t); // m.Translate() will be wrong here
 
-#ifdef TRANSFORM_FROM_TO_MATRIX_DEBUG
-	CMatrix44f ms; ms.Scale(s);
-	CMatrix44f mr = r.ToRotMatrix();
-	CMatrix44f mt; mt.Translate(t);
-
-	CMatrix44f m2 = mt * mr * ms;
-
-	//assert(m == m2);
-	//auto [t_, r_, s_] = CQuaternion::DecomposeIntoTRS(m);
-
-	const float3 v{ 100, 200, 300 };
-	auto vMat = m * v;
-	auto vTra = (*this) * v;
-
-	auto vMatN = vMat; vMatN.Normalize();
-	auto vTraN = vTra; vTraN.Normalize();
-
-	assert(math::fabs(1.0f - vMatN.dot(vTraN)) < 0.05f);
-#endif
 	return m;
 }
 
@@ -110,8 +80,25 @@ Transform Transform::Lerp(const Transform& t0, const Transform& t1, float a)
 
 Transform Transform::InvertAffine() const
 {
+	if (s <= float3::cmp_eps())
+		return *this;
+
 	// TODO check correctness
 	const auto invR = r.Inverse();
+	const auto invS = 1.0f / s;
+	return Transform{
+		invR,
+		invR.Rotate(-t * invS),
+		invS,
+	};
+}
+
+Transform Transform::InvertAffineNormalized() const
+{
+	if (s <= float3::cmp_eps())
+		return *this;
+
+	const auto invR = r.InverseNormalized();
 	const auto invS = 1.0f / s;
 	return Transform{
 		invR,
@@ -130,8 +117,6 @@ bool Transform::equals(const Transform& tra) const
 
 Transform Transform::operator*(const Transform& childTra) const
 {
-	// TODO check correctness
-
 	return Transform{
 		r * childTra.r,
 		t + r.Rotate(s * childTra.t),
@@ -149,5 +134,12 @@ float3 Transform::operator*(const float3& v) const
 float4 Transform::operator*(const float4& v) const
 {
 	// same as above
-	return r.Rotate(v * s) + t;
+	return r.Rotate(v * s) + t * v.w;
+}
+
+void Transform::AssertNaNs() const
+{
+	r.AssertNaNs();
+	t.AssertNaNs();
+	assert(!math::isnan(s) && !math::isinf(s));
 }
