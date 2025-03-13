@@ -74,13 +74,15 @@
 typedef unsigned char FT_Byte;
 #endif
 
-constexpr int MAX_RECENT_FONTS = 10;
-static spring::unordered_map<std::pair<std::string, int>, std::pair<std::shared_ptr<FontFace>, float>> pinnedRecentFonts;
-
 static spring::unordered_map<std::string, std::weak_ptr<FontFace>> fontFaceCache;
 static spring::unordered_map<std::string, std::weak_ptr<FontFileBytes>> fontMemCache;
 static spring::unordered_set<std::pair<std::string, int>, spring::synced_hash<std::pair<std::string, int>>> invalidFonts;
 static auto cacheMutexes = spring::WrappedSyncRecursiveMutex{};
+
+constexpr int MAX_RECENT_FONTS = 10;
+/* pinnedRecentFonts maintains shared_ptrs to the weak_ptrs from fontFaceCache. This prevents the weak_ptr from expiring
+ * when no other part of the code holds a shared_ptr, as is the case when searching game and system fallback fonts. */
+static spring::unordered_map<std::pair<std::string, int>, std::pair<std::shared_ptr<FontFace>, float>> pinnedRecentFonts;
 
 static void RememberFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size) {
 	const auto fontKey = std::make_pair(filename, size);
