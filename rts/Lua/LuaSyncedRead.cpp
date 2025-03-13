@@ -80,6 +80,8 @@
 #include <cctype>
 #include <type_traits>
 
+#include <iostream>
+
 
 using std::min;
 using std::max;
@@ -5207,7 +5209,7 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 		} break;
 		case hashString("ttl"): {
 			lua_pushnumber(L, weapon->ttl);
-		}
+		} break;
 
 		default: {
 			return 0;
