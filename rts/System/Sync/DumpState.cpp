@@ -287,12 +287,16 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 				file << "\t\t\tname: " << p->name << "\n";
 				file << "\t\t\tchildrenNum: " << p->children.size() << "\n";
 				file << "\t\t\tparentName: " << (p->parent ? p->parent->name : "(NULL)") << "\n";
-				file << "\t\t\thasBakedMat: " << p->HasBackedMat() << "\n";
-				file << "\t\t\tbposeMatrix: " << TapFloats(p->bposeMatrix);
-				file << "\t\t\tbakedMatrix: " << TapFloats(p->bakedMatrix);
+				file << "\t\t\thasBakedMat: " << p->HasBackedTra() << "\n";
+				file << "\t\t\tbposeTransform(t): " << TapFloats(p->bposeTransform.t);
+				file << "\t\t\tbposeTransform(r): " << TapFloats(float4{ p->bposeTransform.r.x, p->bposeTransform.r.y, p->bposeTransform.r.z, p->bposeTransform.r.r });
+				file << "\t\t\tbposeTransform(s): " << TapFloats(p->bposeTransform.s);
+				file << "\t\t\tbakedTransform(t): " << TapFloats(p->bakedTransform.t);
+				file << "\t\t\tbakedTransform(r): " << TapFloats(float4{ p->bakedTransform.r.x, p->bakedTransform.r.y, p->bakedTransform.r.z, p->bakedTransform.r.r });
+				file << "\t\t\tbakedTransform(s): " << TapFloats(p->bakedTransform.s);
 				file << "\t\t\toffset: " << TapFloats(p->offset);
 				file << "\t\t\tgoffset: " << TapFloats(p->goffset);
-				file << "\t\t\tscales: " << TapFloats(p->scales);
+				file << "\t\t\tscales: " << TapFloats(p->scale);
 				file << "\t\t\tscales: " << TapFloats(p->mins);
 				file << "\t\t\tscales: " << TapFloats(p->maxs);
 

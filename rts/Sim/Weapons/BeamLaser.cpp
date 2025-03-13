@@ -120,7 +120,7 @@ void CBeamLaser::UpdatePosAndMuzzlePos()
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (sweepFireState.IsSweepFiring()) {
 		const int weaponPiece = owner->script->QueryWeapon(weaponNum);
-		const CMatrix44f weaponMat = owner->script->GetPieceMatrix(weaponPiece);
+		const auto weaponMat = owner->script->GetPieceMatrix(weaponPiece);
 
 		const float3 relWeaponPos = weaponMat.GetPos();
 		const float3 newWeaponDir = owner->GetObjectSpaceVec(float3(weaponMat[2], weaponMat[6], weaponMat[10]));

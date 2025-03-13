@@ -198,7 +198,7 @@ void CProjectileHandler::UpdateProjectilesImpl()
 			assert(p != nullptr);
 
 			MAPPOS_SANITY_CHECK(p->pos);
-
+			p->PreUpdate();
 			p->Update();
 			quadField.MovedProjectile(p);
 
@@ -212,6 +212,7 @@ void CProjectileHandler::UpdateProjectilesImpl()
 			assert(p != nullptr);
 
 			MAPPOS_SANITY_CHECK(p->pos);
+			p->PreUpdate();
 			p->Update();
 			MAPPOS_SANITY_CHECK(p->pos);
 		});
@@ -297,6 +298,8 @@ void CProjectileHandler::DestroyProjectile(CProjectile* p)
 	eventHandler.RenderProjectileDestroyed(p);
 
 	if (p->synced) {
+		//modelUniformsStorage.DelObject(p);
+
 		eventHandler.ProjectileDestroyed(p, p->GetAllyteamID());
 
 		projectiles[true].Del(p->id);

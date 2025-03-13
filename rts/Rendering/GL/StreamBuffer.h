@@ -456,15 +456,16 @@ public:
 	}
 
 	void Unmap() override {
-		if (!coherent) {
-			this->Bind(); //needed for glFlushMappedBufferRange()
-			glFlushMappedBufferRange(
-				this->target,
-				(this->allocIdx * this->byteSize) + this->mapElemOffet * sizeof(T),
-				this->mapElemCount * sizeof(T)
-			);
-			this->Unbind(); //needed for glFlushMappedBufferRange()
-		}
+		if (coherent)
+			return;
+
+		this->Bind(); //needed for glFlushMappedBufferRange()
+		glFlushMappedBufferRange(
+			this->target,
+			(this->allocIdx * this->byteSize) + this->mapElemOffet * sizeof(T),
+			this->mapElemCount * sizeof(T)
+		);
+		this->Unbind(); //needed for glFlushMappedBufferRange()
 	}
 
 	uint32_t BufferElemOffset() const override {

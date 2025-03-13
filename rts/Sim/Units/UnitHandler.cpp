@@ -28,7 +28,6 @@
 #include "System/TimeProfiler.h"
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Set.h"
-#include "System/Threading/ThreadPool.h"
 #include "Sim/Path/HAPFS/PathGlobal.h"
 
 #include "System/Misc/TracyDefs.h"
@@ -444,7 +443,14 @@ void CUnitHandler::Update()
 	inUpdateCall = false;
 }
 
+void CUnitHandler::UpdatePostAnimation()
+{
+	SCOPED_TIMER("Sim::Unit::UpdatePostAnimation");
 
+	for (auto* unit : activeUnits) {
+		unit->UpdateTransportees();
+	}
+}
 
 void CUnitHandler::AddBuilderCAI(CBuilderCAI* b)
 {

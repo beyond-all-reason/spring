@@ -382,13 +382,12 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 void CUnitDrawerData::UpdateDrawPos(CUnit* u)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const CUnit* t = u->GetTransporter();
 
-	if (t != nullptr) {
-		u->drawPos = u->preFramePos + t->GetDrawDeltaPos(globalRendering->timeOffset);
+	if (const CUnit* t = u->GetTransporter(); t != nullptr) {
+		u->drawPos = u->GetDrawPosOther(t->preFrameTra.t, t->pos, globalRendering->timeOffset);
 	}
 	else {
-		u->drawPos = u->preFramePos + u->GetDrawDeltaPos(globalRendering->timeOffset);
+		u->drawPos = u->GetDrawPos(globalRendering->timeOffset);
 	}
 
 	u->drawMidPos = u->GetMdlDrawMidPos();

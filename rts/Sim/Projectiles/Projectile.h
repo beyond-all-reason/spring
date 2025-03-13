@@ -45,6 +45,7 @@ public:
 	virtual void Collision(CFeature* feature) { Collision(); }
 	//Not inheritable - used for removing a projectile from Lua.
 	void Delete();
+	virtual void PreUpdate();
 	virtual void Update();
 	virtual void Init(const CUnit* owner, const float3& offset) override;
 
@@ -112,7 +113,7 @@ public:
 	bool castShadow = false;
 	bool drawSorted = true;
 
-	float3 dir;                    // set via Init()
+	float3 dir = FwdVector;        // set via Init()
 	float3 drawPos;
 
 	float myrange = 0.0f;          // used by WeaponProjectile::TraveledRange
