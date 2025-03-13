@@ -19,7 +19,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "")
 set(CMAKE_EXE_LINKER_FLAGS "")
 # This block is needed only because we need to clean global compile flags above
 # for pr-downloader as we don't want to inherit everything that engine uses.
-if(PREFER_STATIC_LIBS)
+if(PREFER_STATIC_LIBS OR MINGW)
 	check_cxx_accepts_flag("-static-libgcc" HAVE_STATIC_LIBGCC_FLAG)
 	if(HAVE_STATIC_LIBGCC_FLAG)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
