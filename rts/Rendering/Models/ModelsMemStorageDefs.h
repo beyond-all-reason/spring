@@ -3,7 +3,7 @@
 #include "System/float4.h"
 #include "Sim/Misc/GlobalConstants.h"
 
-class alignas(4) ModelUniformData {
+class alignas(16) ModelUniformData {
 public:
 	CR_DECLARE_STRUCT(ModelUniformData)
 	static constexpr int MAX_MODEL_UD_UNIFORMS = 16;
@@ -39,5 +39,5 @@ private:
 };
 
 static_assert(sizeof(ModelUniformData) == 128, "");
-static_assert(alignof(ModelUniformData) == 4, "");
+static_assert(alignof(ModelUniformData) == 16, "");
 static_assert(sizeof(ModelUniformData::userDefined) % 4 == 0, ""); //due to GLSL std140 userDefined must be a multiple of 4

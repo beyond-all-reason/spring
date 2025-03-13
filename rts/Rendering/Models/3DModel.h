@@ -14,6 +14,7 @@
 #include "Rendering/GL/VBO.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/Matrix44f.h"
+#include "System/Transform.hpp"
 #include "System/type2.h"
 #include "System/float4.h"
 #include "System/SafeUtil.h"
@@ -159,13 +160,12 @@ struct S3DModelPiece {
 		parent = nullptr;
 		colvol = {};
 
-		bposeMatrix.LoadIdentity();
-		bposeInvMatrix.LoadIdentity();
-		bakedMatrix.LoadIdentity();
+		bposeTransform.LoadIdentity();
+		bakedTransform.LoadIdentity();
 
 		offset = ZeroVector;
 		goffset = ZeroVector;
-		scales = OnesVector;
+		scale = 1.0f;
 
 		mins = DEF_MIN_SIZE;
 		maxs = DEF_MAX_SIZE;
@@ -174,7 +174,7 @@ struct S3DModelPiece {
 		indxStart = ~0u;
 		indxCount = ~0u;
 
-		hasBakedMat = false;
+		hasBakedTra = false;
 	}
 
 	virtual float3 GetEmitPos() const;
@@ -190,7 +190,7 @@ struct S3DModelPiece {
 	void DrawElements(GLuint prim = GL_TRIANGLES) const;
 	static void DrawShatterElements(uint32_t vboIndxStart, uint32_t vboIndxCount, GLuint prim = GL_TRIANGLES);
 
-	bool HasBackedMat() const { return hasBakedMat; }
+	bool HasBackedTra() const { return hasBakedTra; }
 public:
 	void DrawStaticLegacy(bool bind, bool bindPosMat) const;
 	void DrawStaticLegacyRec() const;
@@ -198,37 +198,13 @@ public:
 	void CreateShatterPieces();
 	void Shatter(float, int, int, int, const float3, const float3, const CMatrix44f&) const;
 
-	void SetPieceMatrix(const CMatrix44f& m) {
-		bposeMatrix = m * ComposeTransform(offset, ZeroVector, scales);
-		bposeInvMatrix = bposeMatrix.InvertAffine();
-
-		for (S3DModelPiece* c: children) {
-			c->SetPieceMatrix(bposeMatrix);
-		}
-	}
-	void SetBakedMatrix(const CMatrix44f& m) {
-		bakedMatrix = m;
-		hasBakedMat = !m.IsIdentity();
-		assert(m.IsOrthoNormal());
+	void SetPieceTransform(const Transform& parentTra);
+	void SetBakedTransform(const Transform& tra) {
+		bakedTransform = tra;
+		hasBakedTra = !tra.IsIdentity();
 	}
 
-	CMatrix44f ComposeTransform(const float3& t, const float3& r, const float3& s) const {
-		CMatrix44f m;
-
-		// NOTE:
-		//   ORDER MATTERS (T(baked + script) * R(baked) * R(script) * S(baked))
-		//   translating + rotating + scaling is faster than matrix-multiplying
-		//   m is identity so m.SetPos(t)==m.Translate(t) but with fewer instrs
-		m.SetPos(t);
-
-		if (hasBakedMat)
-			m *= bakedMatrix;
-
-		// default Spring rotation-order [YPR=Y,X,Z]
-		m.RotateEulerYXZ(-r);
-		m.Scale(s);
-		return m;
-	}
+	Transform ComposeTransform(const float3& t, const float3& r, float s) const;
 
 	void SetCollisionVolume(const CollisionVolume& cv) { colvol = cv; }
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
@@ -253,13 +229,12 @@ public:
 	S3DModelPiece* parent = nullptr;
 	CollisionVolume colvol;
 
-	CMatrix44f bposeMatrix;      /// bind-pose transform, including baked rots
-	CMatrix44f bposeInvMatrix;   /// Inverse of bind-pose transform, including baked rots
-	CMatrix44f bakedMatrix;      /// baked local-space rotations
+	Transform bposeTransform;    /// bind-pose transform, including baked rots
+	Transform bakedTransform;    /// baked local-space rotations
 
-	float3 offset;               /// local (piece-space) offset wrt. parent piece
-	float3 goffset;              /// global (model-space) offset wrt. root piece
-	float3 scales = OnesVector;  /// baked uniform scaling factors (assimp-only)
+	float3 offset;      /// local (piece-space) offset wrt. parent piece
+	float3 goffset;     /// global (model-space) offset wrt. root piece
+	float scale{1.0f};  /// baked uniform scaling factor (assimp-only)
 
 	float3 mins = DEF_MIN_SIZE;
 	float3 maxs = DEF_MAX_SIZE;
@@ -274,7 +249,7 @@ protected:
 
 	S3DModel* model;
 
-	bool hasBakedMat;
+	bool hasBakedTra;
 public:
 	friend class CAssParser;
 };
@@ -307,7 +282,7 @@ struct S3DModel
 		, loadStatus(NOTLOADED)
 		, uploaded(false)
 
-		, matAlloc(ScopedMatricesMemAlloc())
+		, traAlloc(ScopedTransformMemAlloc())
 	{}
 
 	S3DModel(const S3DModel& m) = delete;
@@ -343,7 +318,7 @@ struct S3DModel
 		loadStatus = m.loadStatus;
 		uploaded = m.uploaded;
 
-		std::swap(matAlloc, m.matAlloc);
+		std::swap(traAlloc, m.traAlloc);
 
 		return *this;
 	}
@@ -368,22 +343,7 @@ struct S3DModel
 		S3DModelHelpers::UnbindLegacyAttrVBOs();
 	}
 
-	void SetPieceMatrices() {
-		pieceObjects[0]->SetPieceMatrix(CMatrix44f());
-
-		// use this occasion and copy bpose matrices
-		for (size_t i = 0; i < pieceObjects.size(); ++i) {
-			const auto* po = pieceObjects[i];
-			matAlloc[0         + i] = po->bposeMatrix;
-		}
-
-		// use this occasion and copy inverse bpose matrices
-		// store them right after all bind pose matrices
-		for (size_t i = 0; i < pieceObjects.size(); ++i) {
-			const auto* po = pieceObjects[i];
-			matAlloc[numPieces + i] = po->bposeInvMatrix;
-		}
-	}
+	void SetPieceMatrices();
 
 	void FlattenPieceTree(S3DModelPiece* root) {
 		assert(root != nullptr);
@@ -393,7 +353,7 @@ struct S3DModel
 
 		// force mutex just in case this is called from modelLoader.ProcessVertices()
 		// TODO: pass to S3DModel if it is created from LoadModel(ST) or from ProcessVertices(MT)
-		matAlloc = ScopedMatricesMemAlloc(2 * numPieces);
+		traAlloc = ScopedTransformMemAlloc(numPieces);
 
 		std::vector<S3DModelPiece*> stack = { root };
 
@@ -419,7 +379,7 @@ struct S3DModel
 	float3 CalcDrawMidPos() const { return ((maxs + mins) * 0.5f); }
 	float3 GetDrawMidPos() const { return relMidPos; }
 
-	const ScopedMatricesMemAlloc& GetMatAlloc() const { return matAlloc; }
+	const ScopedTransformMemAlloc& GetMatAlloc() const { return traAlloc; }
 public:
 	std::string name;
 	std::array<std::string, NUM_MODEL_TEXTURES> texs;
@@ -446,7 +406,7 @@ public:
 	LoadStatus loadStatus;
 	bool uploaded;
 private:
-	ScopedMatricesMemAlloc matAlloc;
+	ScopedTransformMemAlloc traAlloc;
 };
 
 
@@ -462,7 +422,6 @@ struct LocalModelPiece
 
 	LocalModelPiece()
 		: dirty(true)
-		, customDirty(true)
 	{}
 	LocalModelPiece(const S3DModelPiece* piece);
 
@@ -482,31 +441,31 @@ struct LocalModelPiece
 
 
 	// on-demand functions
-	void UpdateChildMatricesRec(bool updateChildMatrices) const;
+	void UpdateChildTransformRec(bool updateChildMatrices) const;
 	void UpdateParentMatricesRec() const;
 
-	CMatrix44f CalcPieceSpaceMatrixRaw(const float3& p, const float3& r, const float3& s) const { return (original->ComposeTransform(p, r, s)); }
-	CMatrix44f CalcPieceSpaceMatrix(const float3& p, const float3& r, const float3& s) const {
+	auto CalcPieceSpaceTransformOrig(const float3& p, const float3& r, float s) const { return original->ComposeTransform(p, r, s); }
+	auto CalcPieceSpaceTransform(const float3& p, const float3& r, float s) const {
 		if (blockScriptAnims)
-			return pieceSpaceMat;
-		return (CalcPieceSpaceMatrixRaw(p, r, s));
+			return pieceSpaceTra;
+
+		return CalcPieceSpaceTransformOrig(p, r, s);
 	}
 
 	// note: actually OBJECT_TO_WORLD but transform is the same
-	float3 GetAbsolutePos() const { return (GetModelSpaceMatrix().GetPos() * WORLD_TO_OBJECT_SPACE); }
+	float3 GetAbsolutePos() const { return (GetModelSpaceTransform().t * WORLD_TO_OBJECT_SPACE); }
 
 	bool GetEmitDirPos(float3& emitPos, float3& emitDir) const;
 
 
 	void SetDirty();
-	bool SetGetCustomDirty(bool cd) const;
 	void SetPosOrRot(const float3& src, float3& dst); // anim-script only
 	void SetPosition(const float3& p) { SetPosOrRot(p, pos); } // anim-script only
 	void SetRotation(const float3& r) { SetPosOrRot(r, rot); } // anim-script only
 
 	bool SetPieceSpaceMatrix(const CMatrix44f& mat) {
 		if ((blockScriptAnims = (mat.GetX() != ZeroVector))) {
-			pieceSpaceMat = mat;
+			pieceSpaceTra = Transform::FromMatrix(mat);
 
 			// neither of these are used outside of animation scripts, and
 			// GetEulerAngles wants a matrix created by PYR rotation while
@@ -521,29 +480,34 @@ struct LocalModelPiece
 
 	const float3& GetPosition() const { return pos; }
 	const float3& GetRotation() const { return rot; }
+
 	const float3& GetDirection() const { return dir; }
 
-	const CMatrix44f& GetPieceSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return pieceSpaceMat; }
-	const CMatrix44f& GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceMat; }
+	Transform GetModelSpaceTransform() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceTra; }
+	CMatrix44f GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceMat; }
 
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
 
 	bool GetScriptVisible() const { return scriptSetVisible; }
-	void SetScriptVisible(bool b) { scriptSetVisible = b; SetGetCustomDirty(true); }
-private:
-	float3 pos; // translation relative to parent LMP, *INITIALLY* equal to original->offset
-	float3 rot; // orientation relative to parent LMP, in radians (updated by scripts)
-	float3 dir; // cached copy of original->GetEmitDir()
+	void SetScriptVisible(bool b) { scriptSetVisible = b; }
 
-	mutable CMatrix44f pieceSpaceMat; // transform relative to parent LMP (SYNCED), combines <pos> and <rot>
-	mutable CMatrix44f modelSpaceMat; // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+	void SavePrevModelSpaceTransform() { prevModelSpaceTra = GetModelSpaceTransform(); }
+	const auto& GetPrevModelSpaceTransform() const { return prevModelSpaceTra; }
+private:
+	Transform prevModelSpaceTra;
+
+	float3 pos;      // translation relative to parent LMP, *INITIALLY* equal to original->offset
+	float3 rot;      // orientation relative to parent LMP, in radians (updated by scripts)
+	float3 dir;      // cached copy of original->GetEmitDir()
+
+	mutable Transform pieceSpaceTra;  // transform relative to parent LMP (SYNCED), combines <pos> and <rot>
+	mutable Transform modelSpaceTra;  // transform relative to root LMP (SYNCED), chained pieceSpaceMat's
+	mutable CMatrix44f modelSpaceMat; // same as above, except matrix
 
 	CollisionVolume colvol;
 
 	mutable bool dirty;
-	mutable bool customDirty;
-
 	bool scriptSetVisible; // TODO: add (visibility) maxradius!
 public:
 	bool blockScriptAnims; // if true, Set{Position,Rotation} are ignored for this piece
@@ -584,7 +548,6 @@ struct LocalModel
 
 	// raw forms, the piece-index must be valid
 	const float3 GetRawPiecePos(int pieceIdx) const { return pieces[pieceIdx].GetAbsolutePos(); }
-	const CMatrix44f& GetRawPieceMatrix(int pieceIdx) const { return pieces[pieceIdx].GetModelSpaceMatrix(); }
 
 	// used by all SolidObject's; accounts for piece movement
 	float GetDrawRadius() const { return (boundingVolume.GetBoundingRadius()); }
