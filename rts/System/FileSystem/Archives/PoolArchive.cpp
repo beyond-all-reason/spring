@@ -10,6 +10,8 @@
 #include <cstring>
 #include <iostream>
 
+#include <fmt/format.h>
+
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Threading/SpringThreading.h"
@@ -71,10 +73,8 @@ CPoolArchive::CPoolArchive(const std::string& name)
 		if (!gz_really_read(in, &c_crc32, 4)) break;
 		if (!gz_really_read(in, &c_size, 4)) break;
 
-		files.emplace_back();
-		stats.emplace_back();
-		FileData& f = files.back();
-		FileStat& s = stats.back();
+		FileData& f = files.emplace_back();
+		FileStat& s = stats.emplace_back();
 
 		f.name = std::string(c_name, length);
 
@@ -120,21 +120,46 @@ CPoolArchive::~CPoolArchive()
 	}
 }
 
+const std::string& CPoolArchive::FileName(uint32_t fid) const
+{
+	assert(IsFileId(fid));
+	return files[fid].name;
+}
+
+int32_t CPoolArchive::FileSize(uint32_t fid) const
+{
+	assert(IsFileId(fid));
+	return files[fid].size;
+}
+
 IArchive::SFileInfo CPoolArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
 	auto& file = files[fid];
 
-	if (file.modTime == 0) {
-		const auto poolFn = GetPoolFileName(poolRootDir, file.md5sum);
-		file.modTime = FileSystemAbstraction::GetFileModificationTime(poolFn); // file.modTime is mutable
-	}
+	if (file.modTime == 0)
+		file.modTime = FileSystemAbstraction::GetFileModificationTime(GetPoolFilePath(poolRootDir, file.md5sum)); // file.modTime is mutable
 
 	return IArchive::SFileInfo{
 		.fileName = file.name,
+		.specialFileName = GetPoolFileName(file.md5sum),
 		.size = static_cast<int32_t>(file.size),
 		.modTime = file.modTime
 	};
+}
+
+bool CPoolArchive::CalcHash(uint32_t fid, sha512::raw_digest& hash, std::vector<std::uint8_t>& fb)
+{
+	assert(IsFileId(fid));
+
+	const FileData& fd = files[fid];
+
+	// pool-entry hashes are not calculated until GetFileImpl, must check JIT
+	if (fd.shasum == sha512::NULL_RAW_DIGEST)
+		GetFileImpl(fid, fb);
+
+	hash = fd.shasum;
+	return (fd.shasum != sha512::NULL_RAW_DIGEST);
 }
 
 std::string CPoolArchive::GetPoolRootDirectory(const std::string& sdpName)
@@ -147,7 +172,7 @@ std::string CPoolArchive::GetPoolRootDirectory(const std::string& sdpName)
 	return poolRootDir;
 }
 
-std::string CPoolArchive::GetPoolFileName(const std::string& poolRootDir, const std::array<uint8_t, 16>& md5Sum)
+std::string CPoolArchive::GetPoolFileName(const std::array<uint8_t, 16>& md5Sum)
 {
 	static constexpr const char table[] = "0123456789abcdef";
 	char c_hex[32];
@@ -159,9 +184,18 @@ std::string CPoolArchive::GetPoolFileName(const std::string& poolRootDir, const 
 
 	const std::string prefix(c_hex    ,  2);
 	const std::string pstfix(c_hex + 2, 30);
+	return fmt::format("{}/{}.gz", prefix, pstfix);
+}
 
-	std::string rpath = poolRootDir + "/pool/" + prefix + "/" + pstfix + ".gz";
+std::string CPoolArchive::GetPoolFilePath(const std::string& poolRootDir, const std::string& poolFile)
+{
+	std::string rpath = fmt::format("{}/pool/{}", poolRootDir, poolFile);
 	return FileSystem::FixSlashes(rpath);
+}
+
+std::string CPoolArchive::GetPoolFilePath(const std::string& poolRootDir, const std::array<uint8_t, 16>& md5Sum)
+{
+	return GetPoolFilePath(poolRootDir, GetPoolFileName(md5Sum));
 }
 
 int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
@@ -171,7 +205,7 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	auto& f = files[fid];
 	auto& s = stats[fid];
 
-	const auto path = GetPoolFileName(poolRootDir, f.md5sum);
+	const auto path = GetPoolFilePath(poolRootDir, f.md5sum);
 
 	const spring_time startTime = spring_now();
 

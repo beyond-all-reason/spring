@@ -20,6 +20,7 @@ void ErrorMessageBox(const char*, const char*, unsigned int) { throw; } // pass 
 static void SetupThreadReg() {
 	Threading::SetFileSysThread();
 	Watchdog::RegisterThread(WDT_VFSI);
+	Threading::SetThreadName("vfsi");
 }
 static void ClearThreadReg() {
 	Watchdog::DeregisterThread(WDT_VFSI);

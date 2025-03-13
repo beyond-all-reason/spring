@@ -70,6 +70,8 @@ public:
 	bool IsOpen() override { return true; }
 	uint32_t NumFiles() const override;
 	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
+	const std::string& FileName(uint32_t fid) const override;
+	int32_t FileSize(uint32_t fid) const override;
 	SFileInfo FileInfo(uint32_t fid) const override;
 
 private:
@@ -92,6 +94,8 @@ public:
 	uint32_t NumFiles() const { return (files.size()); }
 
 	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer);
+	const std::string& FileName(uint32_t fid) const;
+	int32_t FileSize(uint32_t fid) const;
 	IArchive::SFileInfo FileInfo(uint32_t fid) const;
 
 	const std::string& GetFileName() const { return fileName; }

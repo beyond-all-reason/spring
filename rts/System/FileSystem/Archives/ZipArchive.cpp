@@ -1,6 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-
 #include "ZipArchive.h"
 
 #include <algorithm>
@@ -84,12 +83,25 @@ CZipArchive::~CZipArchive()
 }
 
 
+const std::string& CZipArchive::FileName(uint32_t fid) const
+{
+	assert(IsFileId(fid));
+	return fileEntries[fid].origName;
+}
+
+int32_t CZipArchive::FileSize(uint32_t fid) const
+{
+	assert(IsFileId(fid));
+	return fileEntries[fid].size;
+}
+
 IArchive::SFileInfo CZipArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
 	const auto& fe = fileEntries[fid];
 	return IArchive::SFileInfo {
 		.fileName = fe.origName,
+		.specialFileName = "",
 		.size = fe.size,
 		.modTime = fe.modTime
 	};

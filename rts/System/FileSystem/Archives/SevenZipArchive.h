@@ -42,6 +42,8 @@ public:
 	bool IsOpen() override { return isOpen.any(); }
 
 	uint32_t NumFiles() const override { return (fileEntries.size()); }
+	const std::string& FileName(uint32_t fid) const override;
+	int32_t FileSize(uint32_t fid) const override;
 	SFileInfo FileInfo(uint32_t fid) const override;
 
 	bool CheckForSolid() const override { return considerSolid; }

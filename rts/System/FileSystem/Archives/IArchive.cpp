@@ -4,7 +4,7 @@
 
 #include "System/StringUtil.h"
 
-unsigned int IArchive::FindFile(const std::string& filePath) const
+uint32_t IArchive::FindFile(const std::string& filePath) const
 {
 	const std::string& normalizedFilePath = StringToLower(filePath);
 	const auto it = lcNameIndex.find(normalizedFilePath);
@@ -17,7 +17,7 @@ unsigned int IArchive::FindFile(const std::string& filePath) const
 
 bool IArchive::GetFile(const std::string& name, std::vector<std::uint8_t>& buffer)
 {
-	const unsigned int fid = FindFile(name);
+	const uint32_t fid = FindFile(name);
 
 	if (!IsFileId(fid))
 		return false;

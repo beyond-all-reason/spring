@@ -253,6 +253,8 @@ bool SpringApp::Init()
 		return false;
 	}
 
+	Threading::SetThreadName("recoil-main"); // set default threadname for pstree
+
 	// Init OpenGL
 	globalRendering->PostInit();
 	globalRendering->UpdateGLConfigs();
@@ -270,8 +272,7 @@ bool SpringApp::Init()
 	if (!InitFileSystem())
 		return false;
 
-	// Multithreading & Affinity
-	Threading::SetThreadName("spring-main"); // set default threadname for pstree
+	// Affinity
 	Threading::SetThreadScheduler();
 
 	CInfoConsole::InitStatic();
