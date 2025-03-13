@@ -864,7 +864,6 @@ bool CFontTexture::ClearGlyphs() {
 
 		// clear all glyps
 		glyphs.clear();
-		fallbackFonts.clear();
 
 		// clear atlases
 		ClearAtlases(32, 32);
@@ -1168,15 +1167,6 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	if (slot->bitmap.pitch != width) {
 		LOG_L(L_ERROR, "invalid pitch");
 		return;
-	}
-
-	if (shFace->face != f->face) {
-		auto it = std::find_if(fallbackFonts.begin(), fallbackFonts.end(), [&](std::shared_ptr<FontFace> const& p) {
-			return p->face == f->face;
-		});
-		if (it == fallbackFonts.end()) {
-			fallbackFonts.emplace_back(f);
-		}
 	}
 
 	// store glyph bitmap (index) in allocator until the next LoadWantedGlyphs call

@@ -200,7 +200,6 @@ private:
 	CBitmap atlasUpdateShadow;
 
 	static std::vector<char32_t> nonPrintableRanges;
-	std::vector<std::shared_ptr<FontFace>> fallbackFonts;
 public:
 	auto GetGlyphs() const -> const decltype(glyphs) { return glyphs; }
 	auto GetGlyphs()       ->       decltype(glyphs) { return glyphs; }
