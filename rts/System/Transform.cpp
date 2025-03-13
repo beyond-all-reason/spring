@@ -127,14 +127,17 @@ Transform Transform::operator*(const Transform& childTra) const
 float3 Transform::operator*(const float3& v) const
 {
 	// Scale, Rotate, Translate
-	// same order as CMatrix44f's vTra = T * R * S * v;
+	// the same order as CMatrix44f's vTra = T * R * S * v;
 	return r.Rotate(v * s) + t;
 }
 
 float4 Transform::operator*(const float4& v) const
 {
-	// same as above
-	return r.Rotate(v * s) + t * v.w;
+	// roughly the same as above
+	// CMatrix44f's vTRA = T * R * S * v in case of float4 follows the following structure:
+	// vTra = { tx, ty, tz, 1 } * Rmat * { s, s, s, 1 } * {x, y, z, w} = { s * Rx + tx * w, s * Ry + ty * w, s * Rz + tz * w, w }
+	// so do the same here
+	return float4{ r.Rotate(float3{ v.xyz } * s) + t * v.w, v.w };
 }
 
 void Transform::AssertNaNs() const
