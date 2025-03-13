@@ -177,6 +177,7 @@ CALLIN_LIST = {
 
 	"DefaultCommand",
 	"ActiveCommandChanged",
+	"CameraRotationChanged",
 	"CommandNotify",
 
 	"ViewResize", -- FIXME ?

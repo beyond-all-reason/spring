@@ -46,6 +46,8 @@
 #include "System/Log/ILog.h"
 #include "System/Input/KeyInput.h"
 #include "System/Platform/SDL1_keysym.h"
+#include "Camera.h"
+
 
 #include "LuaInclude.h"
 
@@ -3364,6 +3366,30 @@ void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 	} else {
 		RunCallIn(L, cmdStr, 0, 0);
 	}
+}
+
+/*** Called whenever the camera rotation changes
+ *
+ * @function Callins:CameraRotationChanged
+ * @param rotation {x: number, y: number, z: number} in radians
+ */
+void CLuaHandle::CameraRotationChanged(const float3& rot)
+{
+    RECOIL_DETAILED_TRACY_ZONE;
+    LUA_CALL_IN_CHECK(L, false);
+    luaL_checkstack(L, 5, __func__);
+
+    LOG_L(L_DEBUG, "[CameraRotationChanged]: Reached LuaHandle");
+
+    static const LuaHashString cmdStr(__func__);
+    if (!cmdStr.GetGlobalFunc(L))
+        return;
+    lua_createtable(L, 0, 3);
+    LuaPushNamedNumber(L, "x", rot.x);
+    LuaPushNamedNumber(L, "y", rot.y);
+    LuaPushNamedNumber(L, "z", rot.z);
+
+    RunCallIn(L, cmdStr, 1, 0);
 }
 
 /*** Called when a command is issued.

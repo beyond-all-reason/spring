@@ -1850,6 +1850,12 @@ function gadgetHandler:ActiveCommandChanged(id, cmdType)
   end
 end
 
+function gadgetHandler:CameraRotationChanged(rot)
+  for _,g in r_ipairs(self.CameraRotationChangedList) do
+    g:CameraRotationChanged(rot)
+  end
+end
+
 function gadgetHandler:CommandNotify(id, params, options)
   for _,g in r_ipairs(self.CommandNotifyList) do
     if (g:CommandNotify(id, params, options)) then
