@@ -33,6 +33,7 @@
 #include "Map/ReadMap.h"
 
 #include "Rendering/GroundFlash.h"
+#include "Rendering/Units/UnitDrawer.h"
 
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
@@ -538,9 +539,13 @@ void CUnit::ForcedMove(const float3& newPos)
 }
 
 
-void CUnit::SetLeavesGhost(bool newLeavesGhost)
+void CUnit::SetLeavesGhost(bool newLeavesGhost, bool leaveDeadGhost)
 {
+	bool prevValue = leavesGhost;
 	leavesGhost = newLeavesGhost;
+
+	if (prevValue != newLeavesGhost)
+		unitDrawer->UnitLeavesGhostChanged(this, leaveDeadGhost);
 }
 
 
