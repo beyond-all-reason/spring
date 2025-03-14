@@ -74,11 +74,40 @@
 typedef unsigned char FT_Byte;
 #endif
 
-
 static spring::unordered_map<std::string, std::weak_ptr<FontFace>> fontFaceCache;
 static spring::unordered_map<std::string, std::weak_ptr<FontFileBytes>> fontMemCache;
 static spring::unordered_set<std::pair<std::string, int>, spring::synced_hash<std::pair<std::string, int>>> invalidFonts;
 static auto cacheMutexes = spring::WrappedSyncRecursiveMutex{};
+
+constexpr int MAX_RECENT_FONTS = 10;
+/* pinnedRecentFonts maintains shared_ptrs to the weak_ptrs from fontFaceCache. This prevents the weak_ptr from expiring
+ * when no other part of the code holds a shared_ptr, as is the case when searching game and system fallback fonts. */
+static spring::unordered_map<std::pair<std::string, int>, std::pair<std::shared_ptr<FontFace>, float>> pinnedRecentFonts;
+
+static void RememberFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size) {
+	const auto fontKey = std::make_pair(filename, size);
+
+	float time = spring_gettime().toMilliSecsf();
+
+	auto cached = pinnedRecentFonts.find(fontKey);
+
+	if (cached != pinnedRecentFonts.end()) {
+		cached->second.second = time;
+	} else {
+		if (pinnedRecentFonts.size() >= MAX_RECENT_FONTS) {
+			std::pair<string, int>* oldest;
+			float oldestTime = time;
+			for(auto &[key, timestamp]: pinnedRecentFonts) {
+				if (timestamp.second <= oldestTime) {
+					oldest = &key;
+					oldestTime = timestamp.second;
+				}
+			}
+			pinnedRecentFonts.erase(*oldest);
+		}
+		pinnedRecentFonts[fontKey] = std::pair<std::shared_ptr<FontFace>, float>(face, time);
+	}
+}
 
 #include "NonPrintableSymbols.inl"
 
@@ -565,6 +594,8 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 			if (blackList.find(GetFaceKey(*face)) != blackList.cend())
 				continue;
+
+			RememberFont(face, filename, origSize);
 
 			#ifdef _DEBUG
 			{
