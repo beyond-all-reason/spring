@@ -185,6 +185,7 @@ local callInLists = {
   'Update',
   'TextCommand',
   'ActiveCommandChanged',
+  "CameraRotationChanged",
   'CommandNotify',
   'AddConsoleLine',
   'ViewResize',
@@ -1189,6 +1190,11 @@ function widgetHandler:ActiveCommandChanged(id, cmdType)
   end
 end
 
+function widgetHandler:CameraRotationChanged(rot)
+  for _,w in ipairs(self.CameraRotationChangedList) do
+    w:CameraRotationChanged(rot)
+  end
+end
 
 function widgetHandler:CommandNotify(id, params, options)
   for _,w in ipairs(self.CommandNotifyList) do

@@ -768,6 +768,12 @@ void CEventHandler::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 	ITERATE_EVENTCLIENTLIST(ActiveCommandChanged, cmdDesc);
 }
 
+void CEventHandler::CameraRotationChanged(const float3& rot)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(CameraRotationChanged, rot);
+}
+
 bool CEventHandler::CommandNotify(const Command& cmd)
 {
 	ZoneScoped;

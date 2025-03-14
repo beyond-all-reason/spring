@@ -142,6 +142,8 @@ private:
 	bool LoadViewData(const ViewData& vd);
 
 private:
+  	float3 lastCamRot;
+
 	unsigned int currCamCtrlNum = CAMERA_MODE_DUMMY;
 	unsigned int currCamTransitionNum = CAMERA_TRANSITION_MODE_EXP_DECAY;
 

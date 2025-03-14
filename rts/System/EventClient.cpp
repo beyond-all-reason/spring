@@ -81,6 +81,7 @@ bool CEventClient::IsAbove(int x, int y) { return false; }
 std::string CEventClient::GetTooltip(int x, int y) { return ""; }
 
 void CEventClient::ActiveCommandChanged(const SCommandDescription* cmdDesc) {}
+void CEventClient::CameraRotationChanged(const float3& rot) {}
 bool CEventClient::CommandNotify(const Command& cmd) { return false; }
 
 bool CEventClient::AddConsoleLine(const std::string& msg, const std::string& section, int level) { return false; }

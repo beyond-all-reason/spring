@@ -101,6 +101,10 @@ function ActiveCommandChanged(id, cmdType)
   return widgetHandler:ActiveCommandChanged(id, cmdType)
 end
 
+function CameraRotationChanged(rot)
+  return widgetHandler:CameraRotationChanged(rot)
+end
+
 function CommandNotify(id, params, options)
   return widgetHandler:CommandNotify(id, params, options)
 end
