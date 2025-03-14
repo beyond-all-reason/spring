@@ -3376,9 +3376,7 @@ void CLuaHandle::CameraRotationChanged(const float3& rot)
 {
     RECOIL_DETAILED_TRACY_ZONE;
     LUA_CALL_IN_CHECK(L, false);
-    luaL_checkstack(L, 6, __func__);
-
-    LOG_L(L_DEBUG, "[CameraRotationChanged]: Reached LuaHandle");
+    luaL_checkstack(L, 4, __func__);
 
     static const LuaHashString cmdStr(__func__);
     if (!cmdStr.GetGlobalFunc(L))
