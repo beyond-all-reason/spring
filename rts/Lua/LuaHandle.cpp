@@ -46,7 +46,6 @@
 #include "System/Log/ILog.h"
 #include "System/Input/KeyInput.h"
 #include "System/Platform/SDL1_keysym.h"
-#include "Camera.h"
 
 
 #include "LuaInclude.h"
