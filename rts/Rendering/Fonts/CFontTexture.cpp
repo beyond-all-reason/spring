@@ -97,10 +97,10 @@ static void RememberFont(std::shared_ptr<FontFace>& face, const std::string& fil
 		if (pinnedRecentFonts.size() >= MAX_RECENT_FONTS) {
 			std::pair<string, int>* oldest;
 			float oldestTime = time;
-			for(auto &it: pinnedRecentFonts) {
-				if (it.second.second <= oldestTime) {
-					oldest = &it.first;
-					oldestTime = it.second.second;
+			for(auto &[key, timestamp]: pinnedRecentFonts) {
+				if (timestamp.second <= oldestTime) {
+					oldest = &key;
+					oldestTime = timestamp.second;
 				}
 			}
 			pinnedRecentFonts.erase(*oldest);
