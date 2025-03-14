@@ -52,9 +52,7 @@ endif (WIN32)
 
 
 # define the fPic compiler flag
-if     (APPLE)
-	set(PIC_FLAG "-fPIC")
-elseif (MINGW)
+if (MINGW)
 	set(PIC_FLAG "")
 else   ()
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8) # add fpic flag on 64 bit platforms
@@ -66,6 +64,7 @@ else   ()
 endif  ()
 
 
+# TODO: Remove it. Can't be removed now because it's present in submodules.
 # This is needed because CMake, or at least some versions of it (eg. 2.8),
 # falsely use the ".so" suffix under Mac OS X for MODULE's
 macro    (fix_lib_name targetName)

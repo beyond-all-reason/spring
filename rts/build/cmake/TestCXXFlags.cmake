@@ -32,9 +32,9 @@ endmacro (CHECK_AND_ADD_FLAGS)
 
 if    (NOT DEFINED VISIBILITY_HIDDEN)
 	set(VISIBILITY_HIDDEN "")
-	if    (NOT WIN32 AND NOT APPLE)
+	if    (NOT WIN32)
 		check_and_add_flags(VISIBILITY_HIDDEN -fvisibility=hidden)
-	endif (NOT WIN32 AND NOT APPLE)
+	endif (NOT WIN32)
 endif (NOT DEFINED VISIBILITY_HIDDEN)
 
 
