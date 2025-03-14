@@ -73,7 +73,7 @@
 		return *(float*)&l;
 	}
 
-#elif defined(__APPLE__) && defined(_BIG_ENDIAN)
+#elif defined(_BIG_ENDIAN)
 
 	#include <CoreFoundation/CFByteOrder.h>
 

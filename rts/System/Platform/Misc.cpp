@@ -22,12 +22,6 @@
 		#define SHGFP_TYPE_CURRENT 0
 	#endif
 
-#elif defined(__APPLE__)
-	#include <cstdlib>
-	#include <climits> // for PATH_MAX
-
-	#include <mach-o/dyld.h>
-
 #elif defined( __FreeBSD__)
 	#include <sys/sysctl.h>
 
@@ -201,15 +195,6 @@ namespace Platform
 			error = "[win32] unknown";
 		}
 
-
-		#elif defined(__APPLE__)
-		uint32_t pathlen = PATH_MAX;
-		char path[PATH_MAX];
-
-		if (_NSGetExecutablePath(path, &pathlen) == 0)
-			procExeFilePath = path;
-
-
 		#elif defined(__FreeBSD__)
 		const int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
 		const long maxpath = pathconf("/", _PC_PATH_MAX);
@@ -228,11 +213,7 @@ namespace Platform
 		if (procExeFilePath[0] == 0)
 			LOG_L(L_WARNING, "[%s] could not get process executable file path, reason: %s", __func__, error);
 
-		#if defined(__APPLE__)
-		return GetRealPath(procExeFilePath);
-		#else
 		return procExeFilePath;
-		#endif
 	}
 
 	std::string GetProcessExecutablePath()
@@ -248,12 +229,8 @@ namespace Platform
 		// this will only be used if moduleFilePath stays empty
 		const char* error = nullptr;
 
-	#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-		#ifdef __APPLE__
-		#define SHARED_LIBRARY_EXTENSION "dylib"
-		#else
+	#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 		#define SHARED_LIBRARY_EXTENSION "so"
-		#endif
 
 		void* moduleAddress = nullptr;
 
@@ -384,8 +361,6 @@ namespace Platform
 		return "FreeBSD";
 		#elif defined(__OpenBSD__)
 		return "OpenBSD";
-		#elif defined(__APPLE__)
-		return "MacOS";
 		#else
 		return "Unknown";
 		#endif
@@ -746,13 +721,6 @@ namespace Platform
 			return macAddr;
 
 		return (GetMacType(macAddr, 0), macAddr);
-	}
-
-	#elif defined(__APPLE__)
-
-	std::array<uint8_t, 6> GetRawMacAddr() {
-		// TODO: http://lists.freebsd.org/pipermail/freebsd-hackers/2004-June/007415.html
-		return {{0, 0, 0, 0, 0, 0}};
 	}
 
 	#else

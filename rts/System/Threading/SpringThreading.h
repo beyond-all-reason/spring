@@ -14,14 +14,12 @@
 
 #if   defined(_WIN32)
 	#include "System/Platform/Win/CriticalSection.h"
-#elif defined(__APPLE__) || !defined(USE_FUTEX)
-	#include "System/Platform/Mac/Signal.h"
-#elif !defined(__APPLE__) && defined(USE_FUTEX)
+#elif defined(USE_FUTEX)
 	#include "System/Platform/Linux/Futex.h"
 #endif
 
 
-#if defined(__MINGW32__) && !defined(_GLIBCXX_HAS_GTHREADS)
+#if   defined(__MINGW32__) && !defined(_GLIBCXX_HAS_GTHREADS)
 	#include "System/Platform/Win/Future.h"
 #else
 	#include <future>
@@ -34,12 +32,7 @@ namespace spring {
 	typedef CriticalSection recursive_mutex;
 	typedef win_signal signal;
 	typedef std::condition_variable_any condition_variable;
-#elif defined(__APPLE__) || !defined(USE_FUTEX)
-	typedef std::mutex mutex;
-	typedef std::recursive_mutex recursive_mutex;
-	typedef mac_signal signal;
-	typedef std::condition_variable condition_variable;
-#elif !defined(__APPLE__) && defined(USE_FUTEX)
+#elif defined(USE_FUTEX)
 	typedef spring_futex mutex;
 	//typedef recursive_futex recursive_mutex;
 	typedef std::recursive_mutex recursive_mutex;
