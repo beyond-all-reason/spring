@@ -31,6 +31,8 @@ CONFIG(int, Water)
 .maximumValue(IWater::NUM_WATER_RENDERERS - 1)
 .description("Defines the type of water rendering. Can be set in game. Options are: 0 = Basic water, 1 = Reflective water, 2 = Reflective and Refractive water, 3 = Dynamic water, 4 = Bumpmapped water");
 
+static std::unique_ptr<IWater> water = nullptr;
+
 IWater::IWater()
 	: drawReflection(false)
 	, drawRefraction(false)
@@ -130,6 +132,16 @@ void IWater::SetWater(int rendererMode)
 
 	if (water == nullptr)
 		water = std::make_unique<CBasicWater>();
+}
+
+std::unique_ptr<IWater>& IWater::GetWater()
+{
+	return water;
+}
+
+void IWater::KillWater()
+{
+	water = nullptr;
 }
 
 
