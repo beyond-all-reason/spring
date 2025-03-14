@@ -6,8 +6,7 @@
 #include "System/Matrix44f.h"
 #include "System/Log/ILog.h"
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 namespace std {
 	ostream& operator<<(ostream& s, float3 const& f) {
