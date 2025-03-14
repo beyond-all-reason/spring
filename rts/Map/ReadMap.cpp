@@ -403,7 +403,7 @@ void CReadMap::Initialize()
 	syncedHeightMapDigests.clear();
 	unsyncedHeightMapDigests.clear();
 
-	unsyncedHeightMapUpdates = std::make_unique<CRectangleOverlapHandler>(mapDims.mapxp1, mapDims.mapyp1, 25);
+	unsyncedHeightMapUpdates = std::make_unique<CRectangleOverlapHandler>(mapDims.mapxp1, mapDims.mapyp1);
 
 	// not callable here because losHandler is still uninitialized, deferred to Game::PostLoadSim
 	// InitHeightMapDigestVectors();
@@ -500,6 +500,23 @@ void CReadMap::UpdateDraw(bool firstCall)
 	if (unsyncedHeightMapUpdates->empty())
 		return;
 
+	size_t prefRectArea;
+	size_t prefNumUnocc;
+	float prefUnoccPerc;
+
+	if unlikely(firstCall) {
+		prefRectArea = mapDims.mapx * mapDims.mapy;
+		prefNumUnocc = 0;
+		prefUnoccPerc = 0.0f;
+	}
+	else {
+		prefRectArea = 36 * 36;
+		prefNumUnocc = 100;
+		prefUnoccPerc = 0.25f;
+	}
+
+	unsyncedHeightMapUpdates->Process(prefRectArea, prefNumUnocc, prefUnoccPerc);
+
 	const int N = static_cast<int>(std::min(MAX_UHM_RECTS_PER_FRAME, unsyncedHeightMapUpdates->size()));
 
 	for (int i = 0; i < N; i++) {
@@ -537,7 +554,7 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool firstCal
 
 	// push the unsynced update; initial one without LOS check
 	if (firstCall) {
-		unsyncedHeightMapUpdates->push_back(cornerRect, firstCall);
+		unsyncedHeightMapUpdates->push_back(cornerRect);
 	} else {
 		#ifdef USE_HEIGHTMAP_DIGESTS
 		// convert heightmap rectangle to LOS-map space

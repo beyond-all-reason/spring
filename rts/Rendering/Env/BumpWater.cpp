@@ -189,7 +189,7 @@ CBumpWater::CBumpWater()
 	, normalTexture2(0)
 	, coastTexture(0)
 	, coastUpdateTexture(0)
-	, heightmapUpdates(std::make_unique<CRectangleOverlapHandler>(mapDims.mapxp1, mapDims.mapyp1, 25))
+	, heightmapUpdates(std::make_unique<CRectangleOverlapHandler>(mapDims.mapxp1, mapDims.mapyp1))
 {
 	eventHandler.AddClient(this);
 }
@@ -605,13 +605,30 @@ void CBumpWater::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall)
 	if (!shoreWaves || !readMap->HasVisibleWater())
 		return;
 
-	heightmapUpdates->push_back(rect, firstCall);
+	heightmapUpdates->push_back(rect);
 }
 
 
 void CBumpWater::UploadCoastline(const bool forceFull)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+
+	size_t prefRectArea;
+	size_t prefNumUnocc;
+	float prefUnoccPerc;
+
+	if unlikely(forceFull) {
+		prefRectArea = mapDims.mapx * mapDims.mapy;
+		prefNumUnocc = 0;
+		prefUnoccPerc = 0.0f;
+	}
+	else {
+		prefRectArea = 25 * 25;
+		prefNumUnocc = 25;
+		prefUnoccPerc = 0.1f;
+	}
+
+	heightmapUpdates->Process(prefRectArea, prefNumUnocc, prefUnoccPerc);
 
 	// limit the to be updated areas
 	unsigned int currentPixels = 0;
