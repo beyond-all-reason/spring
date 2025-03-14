@@ -4,6 +4,7 @@
 #define I_WATER_H
 
 #include <array>
+#include <memory>
 
 #include "System/float3.h"
 #include "Sim/Projectiles/ExplosionListener.h"
@@ -44,16 +45,14 @@ public:
 	static void SetModelClippingPlane(const double* planeEq);
 
 	static void SetWater(int rendererMode); // not enum on purpose, -1 means cycling 
-	static auto& GetWater() { return water; }
-	static void KillWater() { water = nullptr; }
+	static std::unique_ptr<IWater>& GetWater();
+	static void KillWater();
 	static const char* GetWaterName(WATER_RENDERER wr) { return WaterNames[wr]; }
 protected:
 	void DrawReflections(const double* clipPlaneEqs, bool drawGround, bool drawSky);
 	void DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool drawSky);
 
 protected:
-	static inline std::unique_ptr<IWater> water = nullptr;
-
 	bool drawReflection;
 	bool drawRefraction;
 	bool wireFrameMode;
