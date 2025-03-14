@@ -225,7 +225,7 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius,
 	}
 }
 
-void CBasicMapDamage::RecalcArea(int x1, int x2, int y1, int y2)
+void CBasicMapDamage::RecalcArea(int x1, int x2, int y1, int y2, bool firstCall)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!readMap->GetHeightMapUpdated())
@@ -239,7 +239,7 @@ void CBasicMapDamage::RecalcArea(int x1, int x2, int y1, int y2)
 	if (updRect.GetArea() <= 0)
 		return;
 
-	readMap->UpdateHeightMapSynced(updRect);
+	readMap->UpdateHeightMapSynced(updRect, firstCall);
 	featureHandler.TerrainChanged(x1, y1, x2, y2);
 	smoothGround.MapChanged(x1, y1, x2, y2);
 	{
@@ -292,7 +292,7 @@ void CBasicMapDamage::Update()
 		if (e.ttl != 0)
 			continue;
 
-		RecalcArea(e.x1 - 1, e.x2 + 1, e.y1 - 1, e.y2 + 1);
+		RecalcArea(e.x1 - 1, e.x2 + 1, e.y1 - 1, e.y2 + 1, false);
 	}
 
 

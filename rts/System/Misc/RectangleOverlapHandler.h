@@ -1,10 +1,11 @@
-/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+/* This file is part of the Recoil engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef RECTANGLE_OVERLAP_HANDLER_H
-#define RECTANGLE_OVERLAP_HANDLER_H
+#pragma once
 
+#include <cstdint>
 #include <vector>
-#include <bitset>
+#include <tuple>
+#include <iterator>
 
 #include "System/Rectangle.h"
 #include "System/creg/creg_cond.h"
@@ -20,109 +21,73 @@ class CRectangleOverlapHandler
 	CR_DECLARE_STRUCT(CRectangleOverlapHandler)
 
 public:
-	CRectangleOverlapHandler() { clear(); }
-	~CRectangleOverlapHandler();
-
-	void Process(bool noSplit);
-
-	size_t GetTotalArea() const;
-
+	CRectangleOverlapHandler()
+		: sizeX{ 0 }
+		, sizeY{ 0 }
+		, maxSideSize{ 0 }
+		, updateCounter{ 0 }
+	{}
+	CRectangleOverlapHandler(size_t sizeX_, size_t sizeY_, int maxSideSize_)
+		: sizeX{ sizeX_ }
+		, sizeY{ sizeY_ }
+		, maxSideSize{ maxSideSize_ }
+		, updateCounter{ 0 }
+		, updateContainer(sizeX * sizeY, EMPTY)
+	{}
 public:
-	typedef std::vector<SRectangle> container;
-	typedef container::iterator iterator;
-	typedef container::const_iterator const_iterator;
+	using RectanglesVecType = std::vector<std::pair<uint64_t, SRectangle>>;
+	class const_iterator {
+	public:
+		// Iterator traits required by C++ standard
+		using iterator_category = std::random_access_iterator_tag;
+		using value_type = SRectangle;
+		using difference_type = std::ptrdiff_t;
+		using pointer = const SRectangle*;
+		using reference = const SRectangle&;
 
-	bool empty() const { return (frontIdx >= rectangles.size()); }
-	size_t size() const { return (rectangles.size() - frontIdx); }
+		explicit const_iterator(RectanglesVecType::const_iterator it)
+			: m_it(it)
+		{}
 
-	SRectangle& front() { return rectangles.at(frontIdx); }
-	SRectangle& back() { return rectangles.back(); }
+		// Dereference operator returns reference to SRectangle
+		reference operator*() const { return m_it->second; }
+		pointer operator->() const { return &m_it->second; }
 
-	void pop_front() {
-		if (!empty()) {
-			// leave a null-rectangle so RemoveEmptyRects will clean it up
-			rectangles[frontIdx++] = {};
-			return;
-		}
+		// Arithmetic operators
+		const_iterator& operator++() { ++m_it; return *this; }
+		const_iterator operator++(int) { auto tmp = *this; ++m_it; return tmp; }
+		const_iterator& operator--() { --m_it; return *this; }
+		const_iterator operator--(int) { auto tmp = *this; --m_it; return tmp; }
+		const_iterator operator+(difference_type n) const { return const_iterator(m_it + n); }
 
-		clear();
-	}
-	void push_back(const SRectangle& rect) {
-		// skip zero- or negative-area rectangles
-		// assert(rect.GetArea() > 0);
-		if (rect.GetArea() <= 0)
-			return;
-		needsUpdate = true;
-		rectangles.push_back(rect);
-	}
+		// Comparison operators
+		bool operator==(const const_iterator& other) const { return m_it == other.m_it; }
+		bool operator!=(const const_iterator& other) const { return m_it != other.m_it; }
 
-	void swap(CRectangleOverlapHandler& other) {
-		std::swap(rectangles, other.rectangles);
-		std::swap(frontIdx, other.frontIdx);
-		std::swap(needsUpdate, other.needsUpdate);
-	}
+	private:
+		std::vector<std::pair<uint64_t, SRectangle>>::const_iterator m_it;
+	};
+public:
+	void push_back(const SRectangle& rect, bool noSplit = false);
+	void pop_front_n(size_t n);
 
-	void append(CRectangleOverlapHandler& other) {
-		needsUpdate = (other.needsUpdate || !empty());
+	auto empty() const { return rectanglesVec.empty(); }
+	auto size()  const { return rectanglesVec.size();  }
 
-		for (const SRectangle& r: other.rectangles) {
-			rectangles.push_back(r);
-		}
+	decltype(auto) front() const { return rectanglesVec.begin()->second; }
 
-		other.clear();
-	}
-
-	void clear() {
-		frontIdx = 0;
-		needsUpdate = false;
-
-		rectangles.clear();
-		rectangles.reserve(512);
-	}
-
-	const_iterator cbegin() { return (rectangles.cbegin() + frontIdx); }
-	const_iterator cend() { return (rectangles.cend()); }
-
-	iterator begin() { return (rectangles.begin() + frontIdx); }
-	iterator end() { return (rectangles.end()); }
-
+	auto begin() const { return const_iterator(rectanglesVec.begin()); }
+    auto end()   const { return const_iterator(rectanglesVec.end());   }
 private:
-	void StageDedup();
-	void StageMerge();
-	void StageOverlap();
-	void StageSplitTooLarge();
-	void RemoveEmptyRects() {
-		size_t j = (frontIdx = 0);
+	size_t sizeX;
+	size_t sizeY;
 
-		for (size_t i = j, n = rectangles.size(); i < n; i++) {
-			if (rectangles[i].GetArea() <= 0)
-				continue;
+	int maxSideSize;
 
-			rectangles[j++] = rectangles[i];
-		}
+	uint64_t updateCounter;
 
-		// shrink without reallocating
-		rectangles.resize(j);
-	}
+	std::vector<uint64_t> updateContainer;
+	RectanglesVecType rectanglesVec;
 
-	bool HandleMerge(SRectangle& rect1, SRectangle& rect2);
-	int HandleOverlapping(SRectangle* rect1, SRectangle* rect2);
-	static std::bitset<4> GetEdgesInRect(const SRectangle& rect1, const SRectangle& rect2);
-	static std::bitset<4> GetSharedEdges(const SRectangle& rect1, const SRectangle& rect2);
-	static bool AreMergable(const SRectangle& rect1, const SRectangle& rect2);
-
-private:
-	container rectangles;
-
-	constexpr static int maxAreaPerRect = 500 * 500;
-
-	static size_t statsTotalSize;
-	static size_t statsOptimSize;
-
-	size_t frontIdx = 0;
-
-	bool needsUpdate = false;
+	static constexpr uint64_t EMPTY = uint64_t(~0);
 };
-
-#endif
-

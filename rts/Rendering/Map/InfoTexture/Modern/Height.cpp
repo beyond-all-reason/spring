@@ -176,7 +176,7 @@ void CHeightTexture::Update()
 }
 
 
-void CHeightTexture::UnsyncedHeightMapUpdate(const SRectangle& rect)
+void CHeightTexture::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	needUpdate = true;

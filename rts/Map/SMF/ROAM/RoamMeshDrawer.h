@@ -35,7 +35,7 @@ public:
 	bool GetFullRead() const { return true; }
 	int  GetReadAllyTeam() const { return AllAccessTeam; }
 
-	void UnsyncedHeightMapUpdate(const SRectangle& rect);
+	void UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall);
 	void DrawInMiniMap();
 
 public:

@@ -193,7 +193,7 @@ class CLuaHandle : public CEventClient
 
 		void Save(zipFile archive) override;
 
-		void UnsyncedHeightMapUpdate(const SRectangle& rect) override;
+		void UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall) override;
 		void Update() override;
 
 		bool KeyMapChanged() override;

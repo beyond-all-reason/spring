@@ -5,6 +5,7 @@
 
 #include <array>
 #include <vector>
+#include <memory>
 
 #include "MapTexture.h"
 #include "MapDimensions.h"
@@ -12,8 +13,8 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "System/float3.h"
 #include "System/type2.h"
-#include "System/creg/creg_cond.h"
 #include "System/Misc/RectangleOverlapHandler.h"
+#include "System/creg/creg_cond.h"
 
 #define USE_HEIGHTMAP_DIGESTS
 
@@ -21,7 +22,6 @@ class CCamera;
 class CUnit;
 class CSolidObject;
 class CBaseGroundDrawer;
-
 
 struct MapFeatureInfo
 {
@@ -101,7 +101,7 @@ public:
 	 * calculates derived heightmap information
 	 * such as normals, centerheightmap and slopemap
 	 */
-	void UpdateHeightMapSynced(const SRectangle& hgtMapRect);
+	void UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool firstCall);
 	void UpdateLOS(const SRectangle& hgtMapRect);
 	void BecomeSpectator();
 	void UpdateDraw(bool firstCall);
@@ -280,7 +280,7 @@ protected:
 	static std::vector<float3> centerNormals2D;
 
 
-	CRectangleOverlapHandler unsyncedHeightMapUpdates;
+	std::unique_ptr<CRectangleOverlapHandler> unsyncedHeightMapUpdates;
 
 	std::vector<float3> unsyncedHeightInfo; // per 128x128 HM patch
 private:

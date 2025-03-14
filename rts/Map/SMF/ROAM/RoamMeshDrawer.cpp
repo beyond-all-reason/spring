@@ -588,7 +588,7 @@ void CRoamMeshDrawer::Tessellate(std::vector<Patch>& patches, const CCamera* cam
 }
 
 
-void CRoamMeshDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
+void CRoamMeshDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr int BORDER_MARGIN = 2;

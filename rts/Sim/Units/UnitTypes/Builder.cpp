@@ -560,7 +560,7 @@ void CBuilder::SlowUpdate()
   RECOIL_DETAILED_TRACY_ZONE;
 	if (terraforming) {
 		constexpr int tsr = TERRA_SMOOTHING_RADIUS;
-		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
+		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr, false);
 	}
 
 	CUnit::SlowUpdate();
@@ -707,7 +707,7 @@ void CBuilder::StopBuild(bool callScript)
 
 	if (terraforming) {
 		constexpr int tsr = TERRA_SMOOTHING_RADIUS;
-		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
+		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr, false);
 	}
 
 	terraforming = false;

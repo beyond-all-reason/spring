@@ -47,7 +47,7 @@ bool CEventClient::WantsEvent(const std::string& eventName)
 void CEventClient::Save(zipFile archive) {}
 
 void CEventClient::Update() {}
-void CEventClient::UnsyncedHeightMapUpdate(const SRectangle& rect) {}
+void CEventClient::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall) {}
 
 void CEventClient::SunChanged() {}
 

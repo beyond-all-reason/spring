@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+#pragma once
 
-#ifndef BUMP_WATER_H
-#define BUMP_WATER_H
+#include <memory>
 
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/myGL.h"
@@ -56,7 +56,7 @@ private:
 	};
 
 	std::vector<CoastAtlasRect> coastmapAtlasRects;
-	CRectangleOverlapHandler heightmapUpdates;
+	std::unique_ptr<CRectangleOverlapHandler> heightmapUpdates;
 
 	void UploadCoastline(const bool forceFull = false);
 	void UpdateCoastmap(const bool initialize = false);
@@ -64,7 +64,7 @@ private:
 
 	int atlasX,atlasY;
 
-	void UnsyncedHeightMapUpdate(const SRectangle& rect);
+	void UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall);
 
 private:
 	//! user options
@@ -108,6 +108,3 @@ private:
 	Shader::IProgramObject* waterShader;
 	Shader::IProgramObject* blurShader;
 };
-
-#endif // BUMP_WATER_H
-

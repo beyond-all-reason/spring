@@ -378,7 +378,7 @@ void CUnitLoader::FlattenGround(const CUnit* unit)
 		}
 	}
 
-	mapDamage->RecalcArea(tx1, tx2, tz1, tz2);
+	mapDamage->RecalcArea(tx1, tx2, tz1, tz2, false);
 }
 
 void CUnitLoader::RestoreGround(const CUnit* unit)
@@ -434,6 +434,6 @@ void CUnitLoader::RestoreGround(const CUnit* unit)
 		}
 	}
 
-	mapDamage->RecalcArea(tx1, tx2, tz1, tz2);
+	mapDamage->RecalcArea(tx1, tx2, tz1, tz2, false);
 }
 
