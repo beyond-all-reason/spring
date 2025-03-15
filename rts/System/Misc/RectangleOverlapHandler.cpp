@@ -6,6 +6,7 @@
 #include "Rendering/Textures/Bitmap.h"
 
 #include <cassert>
+#include <numeric>
 #include <fmt/format.h>
 
 CR_BIND(CRectangleOverlapHandler, )
@@ -24,14 +25,7 @@ void CRectangleOverlapHandler::push_back(const SRectangle& rect)
 	if (rect.GetArea() <= 0)
 		return;
 
-	for (int y = rect.y1; y <= rect.y2; ++y) {
-		auto off = updateContainer.begin() + y * sizeX;
-		auto beg = off + rect.x1 + 0;
-		auto end = off + rect.x2 + 1;
-		std::fill(beg, end, BUSY);
-	}
-
-	isEmpty = false;
+	rectanglesVec.emplace_back(rect);
 }
 
 void CRectangleOverlapHandler::pop_front_n(size_t n)
@@ -42,138 +36,100 @@ void CRectangleOverlapHandler::pop_front_n(size_t n)
 	decltype(rectanglesVec) tmpMap;
 	tmpMap.assign(rectanglesVec.begin() + n, rectanglesVec.end());
 	rectanglesVec = std::move(tmpMap);
-
-	isEmpty = rectanglesVec.empty();
 }
 
-void CRectangleOverlapHandler::Process(size_t maxArea)
+void CRectangleOverlapHandler::Process(size_t areaLimit)
 {
-	if ((sizeX - 1) * (sizeY - 1) == maxArea) {
+	if ((sizeX - 1) * (sizeY - 1) == areaLimit) {
+		rectanglesVec.clear();
 		rectanglesVec.emplace_back(0, 0, sizeX - 1, sizeY - 1);
-		std::fill(updateContainer.begin(), updateContainer.end(), FREE);
-		// isEmpty will be set in pop_front_n
+		std::fill(updateContainer.begin(), updateContainer.end(), DataType::FREE);
 		return;
 	}
 
-#if 1
+	for (const auto& rect : rectanglesVec) {
+		for (int y = rect.y1; y <= rect.y2; ++y) {
+			auto off = updateContainer.begin() + y * sizeX;
+			auto beg = off + rect.x1 + 0;
+			auto end = off + rect.x2 + 1;
+			std::fill(beg, end, DataType::BUSY);
+		}
+	}
+	rectanglesVec.clear();
+
+#if 0
 	size_t step = 0;
 	CBitmap bitmap(nullptr, sizeX, sizeY, 1);
 	auto* mem = bitmap.GetRawMem();
 	for (auto value : updateContainer) {
-		*mem = static_cast<uint8_t>(value == BUSY) * 0xFF;
+		*mem = static_cast<uint8_t>(value == DataType::BUSY) * 0xFF;
 		++mem;
 	}
-    bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.bmp", step++), true);
+    bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.png", step++), true);
 #endif
 
-	SRectangle minMax {
-		std::numeric_limits<int>::max(),
-		std::numeric_limits<int>::max(),
-		std::numeric_limits<int>::min(),
-		std::numeric_limits<int>::min(),
-	};
+	std::vector<int> heights(sizeX + 1, 0); // Include extra element for easier calculation
+	std::vector<uint32_t> stack;
+	stack.reserve(sizeX);
+	size_t maxArea;
 
-	for (int y = 0; y < sizeY; ++y) {
-		for (int x = 0; x < sizeX; ++x) {
-			size_t idx = y * sizeX + x;
-			if (updateContainer[idx] == BUSY) {
-				minMax.x1 = std::min(minMax.x1, x);
-				minMax.y1 = std::min(minMax.y1, y);
-				minMax.x2 = std::max(minMax.x2, x);
-				minMax.y2 = std::max(minMax.y2, y);
+	do {
+		SRectangle rect {
+			std::numeric_limits<int16_t>::max(),
+			std::numeric_limits<int16_t>::max(),
+			std::numeric_limits<int16_t>::min(),
+			std::numeric_limits<int16_t>::min()
+		};
+
+		maxArea = 0;
+		std::fill(heights.begin(), heights.end(), 0);
+		stack.clear();
+
+		for (uint32_t y = 0; y < sizeY; y++) {
+			for (uint32_t x = 0; x < sizeX; x++) {
+				auto itVal = updateContainer.begin() + y * sizeX + x;
+				heights[x] = (*itVal == DataType::BUSY) ? heights[x] + 1 : 0;
+			}
+
+			// Calculate max area using stack-based method
+			for (uint32_t x = 0; x <= sizeX; x++) {
+				while (!stack.empty() && heights[x] < heights[stack.back()]) {
+					const uint32_t h = heights[stack.back()];
+					stack.pop_back();
+					const uint32_t w = stack.empty() ? x : x - stack.back() - 1;
+					const size_t area = h * w;
+					if (area > maxArea) {
+						maxArea = area;
+						rect.x1 = stack.empty() ? 0 : stack.back() + 1;
+						rect.x2 = x - 1;
+						rect.y2 = y;
+						rect.y1 = y - h + 1;
+					}
+				}
+				stack.push_back(x);
 			}
 		}
-	}
 
-	// x2, y2 are non-inclusive
-	++minMax.x2;
-	++minMax.y2;
+		// make non-inclusive
+		++rect.x2;
+		++rect.y2;
 
-	assert(minMax.GetArea() > 0);
+		// cleanup the area occupied by the rect
+		for (int y = rect.y1; y < rect.y2; ++y) {
+			auto off = updateContainer.begin() + y * sizeX;
+			auto beg = off + rect.x1;
+			auto end = off + rect.x2;
+			std::fill(beg, end, DataType::FREE);
+		}
 
-	// in all rectangles here x2, y2 are non-inclusive
-	std::vector<SRectangle> tmp;
-
-	tmp.emplace_back(std::move(minMax));
-
-	while (!tmp.empty()) {
-		const SRectangle rect = tmp.back(); tmp.pop_back();
-
-		const auto W = rect.GetWidth();
-		const auto H = rect.GetHeight();
-
-		if (W * H <= maxArea) {
-			bool allBusy = true;
-			bool allFree = true;
-			for (int y = rect.y1; y < rect.y2; ++y) {
-				auto off = updateContainer.begin() + y * sizeX;
-				auto beg = off + rect.x1;
-				auto end = off + rect.x2;
-				for (auto it = beg; it != end; ++it) {
-					allBusy &= ~(*it == FREE);
-					allFree &= ~(*it == BUSY);
-
-					if (!allBusy && !allFree)
-						break;
-				}
-
-				if (!allBusy && !allFree)
-					break;
-			}
-
-			if (allFree) {
-				// useless rectangle, just skip
-				continue; // the while() loop
-			}
-			
-			if (allBusy) {
-				// useful rectangle, will add to rectanglesVec
-
-				// cleanup the area occupied by the rect
-				for (int y = rect.y1; y < rect.y2; ++y) {
-					auto off = updateContainer.begin() + y * sizeX;
-					auto beg = off + rect.x1;
-					auto end = off + rect.x2;
-					std::fill(beg, end, FREE); 
-				}
-
-#if 1
-				CBitmap bitmap(nullptr, sizeX, sizeY, 1);
-				auto* mem = bitmap.GetRawMem();
-				for (auto value : updateContainer) {
-					*mem = static_cast<uint8_t>(value == BUSY) * 0xFF;
-					++mem;
-				}
-				bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.bmp", step++), true);
+#if 0
+		mem = bitmap.GetRawMem();
+		for (auto value : updateContainer) {
+			*mem = static_cast<uint8_t>(value == DataType::BUSY) * 0xFF;
+			++mem;
+		}
+		bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.png", step++), true);
 #endif
+	} while (maxArea > 0);
 
-				// inclusive x2 and y2
-				rectanglesVec.emplace_back(rect.x1, rect.y1, rect.x2 - 1, rect.y2 - 1);
-
-				continue; // the while() loop
-			}
-		}
-
-		SRectangle subRectA;
-		SRectangle subRectB;
-
-		if (W >= H) {
-			int mid = rect.x1 + W / 2;
-			subRectA = SRectangle(rect.x1, rect.y1, mid    , rect.y2);
-			subRectB = SRectangle(mid    , rect.y1, rect.x2, rect.y2);
-		}
-		else {
-			int mid = rect.y1 + H / 2;
-			subRectA = SRectangle(rect.x1, rect.y1, rect.x2, mid    );
-			subRectB = SRectangle(rect.x1, mid    , rect.x2, rect.y2);
-		}
-
-		assert(W * H == subRectA.GetArea() + subRectB.GetArea());
-		tmp.emplace_back(std::move(subRectA));
-		tmp.emplace_back(std::move(subRectB));
-	}
-
-	std::sort(rectanglesVec.begin(), rectanglesVec.end(), [](const auto& lhs, const auto& rhs) {
-		return lhs.GetArea() > rhs.GetArea();
-	});
 }

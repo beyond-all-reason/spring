@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <vector>
-#include <limits>
 
 #include "System/Rectangle.h"
 #include "System/creg/creg_cond.h"
@@ -19,20 +18,19 @@ class CRectangleOverlapHandler
 {
 	CR_DECLARE_STRUCT(CRectangleOverlapHandler)
 private:
-	using ContDataType = uint8_t;
-	static constexpr ContDataType FREE = std::numeric_limits<ContDataType>::min();
-	static constexpr ContDataType BUSY = std::numeric_limits<ContDataType>::max();
+	enum DataType : uint8_t {
+		FREE = 0,
+		BUSY = 1
+	};
 public:
 	CRectangleOverlapHandler()
 		: sizeX{ 0 }
 		, sizeY{ 0 }
-		, isEmpty { true }
 	{}
 	CRectangleOverlapHandler(size_t sizeX_, size_t sizeY_)
 		: sizeX{ sizeX_ }
 		, sizeY{ sizeY_ }
-		, isEmpty{ true }
-		, updateContainer(sizeX * sizeY, FREE)
+		, updateContainer(sizeX * sizeY, DataType::FREE)
 	{}
 public:
 	void push_back(const SRectangle& rect);
@@ -40,7 +38,7 @@ public:
 
 	void Process(size_t maxArea);
 
-	auto empty() const { return isEmpty; } //note can't be rectanglesVec.empty()
+	auto empty() const { return rectanglesVec.empty(); }
 	auto size()  const { return rectanglesVec.size();  }
 
 	auto front() const { return rectanglesVec.front(); }
@@ -51,8 +49,6 @@ private:
 	size_t sizeX;
 	size_t sizeY;
 
-	bool isEmpty;
-
-	std::vector<ContDataType> updateContainer;
+	std::vector<DataType> updateContainer;
 	std::vector<SRectangle> rectanglesVec;
 };
