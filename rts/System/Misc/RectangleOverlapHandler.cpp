@@ -12,7 +12,6 @@ CR_BIND(CRectangleOverlapHandler, )
 CR_REG_METADATA(CRectangleOverlapHandler, (
 	CR_MEMBER(sizeX),
 	CR_MEMBER(sizeY),
-	CR_MEMBER(updateCounter),
 	CR_MEMBER(updateContainer),
 	CR_MEMBER(rectanglesVec)
 ))
@@ -25,18 +24,13 @@ void CRectangleOverlapHandler::push_back(const SRectangle& rect)
 	if (rect.GetArea() <= 0)
 		return;
 
-	bool updated = false;
 	for (int y = rect.y1; y <= rect.y2; ++y) {
-		for (int x = rect.x1; x <= rect.x2; ++x) {
-			size_t idx = y * sizeX + x;
-			auto& currValue = updateContainer[idx];
-			updated |= (currValue > updateCounter);
-			assert(currValue != updateCounter);
-			currValue = std::min(currValue, updateCounter);
-		}
+		auto off = updateContainer.begin() + y * sizeX;
+		auto beg = off + rect.x1 + 0;
+		auto end = off + rect.x2 + 1;
+		std::fill(beg, end, BUSY);
 	}
 
-	updateCounter += static_cast<uint64_t>(updated);
 	isEmpty = false;
 }
 
@@ -50,125 +44,136 @@ void CRectangleOverlapHandler::pop_front_n(size_t n)
 	rectanglesVec = std::move(tmpMap);
 
 	isEmpty = rectanglesVec.empty();
-	if (isEmpty) {
-		assert(*std::min_element(updateContainer.begin(), updateContainer.end()) == EMPTY);
-		updateCounter = 0; // safe to do
-	}
 }
 
-void CRectangleOverlapHandler::Process(size_t maxArea, size_t maxUnoccupied, float maxUnoccupiedPerc)
+void CRectangleOverlapHandler::Process(size_t maxArea)
 {
 	if ((sizeX - 1) * (sizeY - 1) == maxArea) {
 		rectanglesVec.emplace_back(0, 0, sizeX - 1, sizeY - 1);
-		std::fill(updateContainer.begin(), updateContainer.end(), EMPTY);
+		std::fill(updateContainer.begin(), updateContainer.end(), FREE);
 		// isEmpty will be set in pop_front_n
 		return;
 	}
 
-	int step = 0;
-	while(true) {
 #if 1
-		CBitmap bitmap(nullptr, sizeX, sizeY, 1);
-		auto* mem = bitmap.GetRawMem();
-		for (auto value : updateContainer) {
-			*mem = (value != EMPTY) * 0xFF;
-			++mem;
-		}
-		bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.bmp", step), true);
+	size_t step = 0;
+	CBitmap bitmap(nullptr, sizeX, sizeY, 1);
+	auto* mem = bitmap.GetRawMem();
+	for (auto value : updateContainer) {
+		*mem = static_cast<uint8_t>(value == BUSY) * 0xFF;
+		++mem;
+	}
+    bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.bmp", step++), true);
 #endif
 
-		size_t x1, y1;
-		{
-			auto it = std::min_element(updateContainer.begin(), updateContainer.end());
-			if (*it == EMPTY)
-				return;
+	SRectangle minMax {
+		std::numeric_limits<int>::max(),
+		std::numeric_limits<int>::max(),
+		std::numeric_limits<int>::min(),
+		std::numeric_limits<int>::min(),
+	};
 
-			size_t idx = std::distance(updateContainer.begin(), it);
-			y1 = idx / sizeX;
-			x1 = idx % sizeX;
-		}
-
-		size_t x2 = x1;
-		size_t y2 = y1;
-		size_t numUnoccupied = 0;
-
-		for (bool failedOnDirX = false, failedOnDirY = false; !failedOnDirX && !failedOnDirY; /*NOOP*/) {
-			size_t currW = x2 - x1;
-			size_t currH = y2 - y1;
-			size_t currArea = currW * currH;
-
-			size_t numAddUnoccupied = 0;
-
-			if (currW >= currH && !failedOnDirX) {
-				const size_t tmpCurrArea = currArea + currW;
-				if (currArea + currW > maxArea || y2 >= sizeY) {
-					failedOnDirX = true;
-					continue;
-				}
-				for (size_t x = x1; x <= x2; ++x) {
-					size_t idx = (y2 + 1) * sizeX + (x);
-					numAddUnoccupied += (updateContainer[idx] == EMPTY);
-				}
-
-				// don't allow full row of empties
-				if (numAddUnoccupied > 0 && numAddUnoccupied == currW + 1) {
-					failedOnDirX = true;
-					continue;
-				}
-
-				const size_t tmpNumOccupied = numUnoccupied + numAddUnoccupied;
-				const float unoccupiedPerc = static_cast<float>(tmpNumOccupied) / std::max(tmpCurrArea, size_t(1));
-				if (tmpNumOccupied > maxUnoccupied && unoccupiedPerc > maxUnoccupiedPerc) {
-					failedOnDirX = true;
-					continue;
-				}
-
-				numUnoccupied = tmpNumOccupied;
-				++y2;
-			}
-			else if (!failedOnDirY) {
-				const size_t tmpCurrArea = currArea + currH;
-				if (tmpCurrArea > maxArea || x2 >= sizeX) {
-					failedOnDirY = true;
-					continue;
-				}
-				for (size_t y = y1; y <= y2; ++y) {
-					size_t idx = (y)*sizeX + (x2 + 1);
-					numAddUnoccupied += (updateContainer[idx] == EMPTY);
-				}
-
-				// don't allow full collumn of empties
-				if (numAddUnoccupied > 0 && numAddUnoccupied == currH + 1) {
-					failedOnDirY = true;
-					continue;
-				}
-
-				const size_t tmpNumOccupied = numUnoccupied + numAddUnoccupied;
-				const float unoccupiedPerc = static_cast<float>(tmpNumOccupied) / tmpCurrArea;
-				if (tmpNumOccupied > maxUnoccupied && unoccupiedPerc > maxUnoccupiedPerc) {
-					failedOnDirY = true;
-					continue;
-				}
-
-				numUnoccupied = tmpNumOccupied;
-				++x2;
+	for (int y = 0; y < sizeY; ++y) {
+		for (int x = 0; x < sizeX; ++x) {
+			size_t idx = y * sizeX + x;
+			if (updateContainer[idx] == BUSY) {
+				minMax.x1 = std::min(minMax.x1, x);
+				minMax.y1 = std::min(minMax.y1, y);
+				minMax.x2 = std::max(minMax.x2, x);
+				minMax.y2 = std::max(minMax.y2, y);
 			}
 		}
-
-		for (size_t y = y1; y <= y2; ++y) {
-			auto off = updateContainer.begin() + y * sizeX;
-			auto beg = off + x1    ;
-			auto end = off + x2 + 1;
-			std::fill(beg, end, EMPTY);
-		}
-
-		rectanglesVec.emplace_back(
-			static_cast<int>(x1),
-			static_cast<int>(y1),
-			static_cast<int>(x2),
-			static_cast<int>(y2)
-		);
-
-		step++;
 	}
+
+	// x2, y2 are non-inclusive
+	++minMax.x2;
+	++minMax.y2;
+
+	assert(minMax.GetArea() > 0);
+
+	// in all rectangles here x2, y2 are non-inclusive
+	std::vector<SRectangle> tmp;
+
+	tmp.emplace_back(std::move(minMax));
+
+	while (!tmp.empty()) {
+		const SRectangle rect = tmp.back(); tmp.pop_back();
+
+		const auto W = rect.GetWidth();
+		const auto H = rect.GetHeight();
+
+		if (W * H <= maxArea) {
+			bool allBusy = true;
+			bool allFree = true;
+			for (int y = rect.y1; y < rect.y2; ++y) {
+				auto off = updateContainer.begin() + y * sizeX;
+				auto beg = off + rect.x1;
+				auto end = off + rect.x2;
+				for (auto it = beg; it != end; ++it) {
+					allBusy &= ~(*it == FREE);
+					allFree &= ~(*it == BUSY);
+
+					if (!allBusy && !allFree)
+						break;
+				}
+
+				if (!allBusy && !allFree)
+					break;
+			}
+
+			if (allFree) {
+				// useless rectangle, just skip
+				continue; // the while() loop
+			}
+			
+			if (allBusy) {
+				// useful rectangle, will add to rectanglesVec
+
+				// cleanup the area occupied by the rect
+				for (int y = rect.y1; y < rect.y2; ++y) {
+					auto off = updateContainer.begin() + y * sizeX;
+					auto beg = off + rect.x1;
+					auto end = off + rect.x2;
+					std::fill(beg, end, FREE); 
+				}
+
+#if 1
+				CBitmap bitmap(nullptr, sizeX, sizeY, 1);
+				auto* mem = bitmap.GetRawMem();
+				for (auto value : updateContainer) {
+					*mem = static_cast<uint8_t>(value == BUSY) * 0xFF;
+					++mem;
+				}
+				bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.bmp", step++), true);
+#endif
+
+				// inclusive x2 and y2
+				rectanglesVec.emplace_back(rect.x1, rect.y1, rect.x2 - 1, rect.y2 - 1);
+
+				continue; // the while() loop
+			}
+		}
+
+		SRectangle subRectA;
+		SRectangle subRectB;
+
+		if (W >= H) {
+			int mid = rect.x1 + W / 2;
+			subRectA = SRectangle(rect.x1, rect.y1, mid    , rect.y2);
+			subRectB = SRectangle(mid    , rect.y1, rect.x2, rect.y2);
+		}
+		else {
+			int mid = rect.y1 + H / 2;
+			subRectA = SRectangle(rect.x1, rect.y1, rect.x2, mid    );
+			subRectB = SRectangle(rect.x1, mid    , rect.x2, rect.y2);
+		}
+
+		assert(W * H == subRectA.GetArea() + subRectB.GetArea());
+		tmp.emplace_back(std::move(subRectA));
+		tmp.emplace_back(std::move(subRectB));
+	}
+
+	std::sort(rectanglesVec.begin(), rectanglesVec.end(), [](const auto& lhs, const auto& rhs) {
+		return lhs.GetArea() > rhs.GetArea();
+	});
 }

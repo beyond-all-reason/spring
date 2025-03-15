@@ -614,21 +614,15 @@ void CBumpWater::UploadCoastline(const bool forceFull)
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	size_t prefRectArea;
-	size_t prefNumUnocc;
-	float prefUnoccPerc;
 
 	if unlikely(forceFull) {
 		prefRectArea = mapDims.mapx * mapDims.mapy;
-		prefNumUnocc = 0;
-		prefUnoccPerc = 0.0f;
 	}
 	else {
-		prefRectArea = 25 * 25;
-		prefNumUnocc = 25;
-		prefUnoccPerc = 0.1f;
+		prefRectArea = 36 * 36;
 	}
 
-	heightmapUpdates->Process(prefRectArea, prefNumUnocc, prefUnoccPerc);
+	heightmapUpdates->Process(prefRectArea);
 
 	// limit the to be updated areas
 	unsigned int currentPixels = 0;
