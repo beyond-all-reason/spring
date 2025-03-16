@@ -2484,11 +2484,11 @@ void CLuaHandle::SunChanged()
 	RunCallIn(L, cmdStr, 0, 0);
 }
 
-/*** Used to set the default command when a unit is selected. First parameter is the type of the object pointed at (either "unit or "feature") and the second is its unitID or featureID respectively.
- *
+/*** Used to set the default command when a unit is selected.
+ * 
  * @function Callins:DefaultCommand
- * @param type string "unit" | "feature"
- * @param id integer unitID | featureID
+ * @param type "unit"|"feature" The type of the object pointed at.
+ * @param id integer The `unitID` or `featureID`.
  */
 bool CLuaHandle::DefaultCommand(const CUnit* unit,
                                 const CFeature* feature, int& cmd)
