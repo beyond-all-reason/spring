@@ -2256,11 +2256,11 @@ int LuaSyncedRead::GetPlayerControlledUnit(lua_State* L)
  *
  * @function Spring.GetAIInfo
  * @param teamID integer
- * @return number skirmishAIID
+ * @return integer skirmishAIID
  * @return string name
- * @return number hostingPlayerID
- * @return string shortName when synced "SYNCED_NOSHORTNAME", otherwise the AI shortname or "UNKNOWN"
- * @return string version when synced "SYNCED_NOVERSION", otherwise the AI version or "UNKNOWN"
+ * @return integer hostingPlayerID
+ * @return string shortName When synced `"SYNCED_NOSHORTNAME"`, otherwise the AI shortname or `"UNKNOWN"`.
+ * @return string version When synced `"SYNCED_NOVERSION"`, otherwise the AI version or `"UNKNOWN"`.
  * @return table<string,string> options
  */
 int LuaSyncedRead::GetAIInfo(lua_State* L)
