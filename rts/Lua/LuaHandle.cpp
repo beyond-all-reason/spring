@@ -3370,7 +3370,7 @@ void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 /*** Called whenever the camera rotation changes
  *
  * @function Callins:CameraRotationChanged
- * @param rotation {x: number, y: number, z: number} in radians
+ * @param rotation xyz Camera rotation around the x, y and z axes in radians. 
  */
 void CLuaHandle::CameraRotationChanged(const float3& rot)
 {
