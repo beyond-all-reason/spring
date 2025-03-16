@@ -7,7 +7,6 @@ permalink: lua-api/globals/{{ global_name }}
 
 # global {{ global_name }}
 
----
 {% if display %}
 {{ display }}
 {% endif %}

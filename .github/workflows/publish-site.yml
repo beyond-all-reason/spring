@@ -24,10 +24,16 @@ jobs:
       # NOTE: This step is duplicated in `generate-lua-library.yml`
       - name: Generate Lua library
         run: |
-          npm install -g lua-doc-extractor@1
+          npm install -g lua-doc-extractor@3
           lua-doc-extractor rts/Lua/*.cpp \
             --dest rts/Lua/library/generated \
             --repo https://github.com/${{ github.repository }}/blob/${{ github.sha }}
+      # Upload the Lua library artifact for debugging.
+      - name: Upload Lua Library artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.run_id}}-library
+          path: rts/Lua/library/
       - name: Install emmylua_doc_cli
         run: |
           cargo install emmylua_doc_cli
