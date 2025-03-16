@@ -998,9 +998,8 @@ int LuaUnsyncedRead::GetMiniMapRotation(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetMiniMapDualScreen
- * @return string|false position "left"|"right" when dual screen is enabled, false when not
+ * @return "left"|"right"|false position `"left"` or `"right"` when dual screen is enabled, otherwise `false`.
  */
 int LuaUnsyncedRead::GetMiniMapDualScreen(lua_State* L)
 {
