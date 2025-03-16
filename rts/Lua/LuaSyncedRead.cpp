@@ -1612,7 +1612,7 @@ int LuaSyncedRead::GetMapStartPositions(lua_State* L)
 /***
  *
  * @function Spring.GetAllyTeamList
- * @return number[] list of allyTeamIDs
+ * @return integer[] allyTeamIDs
  */
 int LuaSyncedRead::GetAllyTeamList(lua_State* L)
 {
