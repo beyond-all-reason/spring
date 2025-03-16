@@ -142,7 +142,7 @@ private:
 	bool LoadViewData(const ViewData& vd);
 
 private:
-  	float3 lastCamRot;
+	float3 lastCamRot;
 	float3 lastCamPos;
 	float3 lastCamDir;
 

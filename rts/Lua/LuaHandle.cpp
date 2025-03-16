@@ -3370,29 +3370,32 @@ void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 /*** Called whenever the camera rotation changes
  *
  * @function Callins:CameraRotationChanged
- * @param rotation xyz Camera rotation around the x, y and z axes in radians. 
+ * @param rotX number Camera rotation around the x axis in radians.
+ * @param rotY number Camera rotation around the y axis in radians.
+ * @param rotZ number Camera rotation around the z axis in radians.
  */
 void CLuaHandle::CameraRotationChanged(const float3& rot)
 {
-    RECOIL_DETAILED_TRACY_ZONE;
-    LUA_CALL_IN_CHECK(L, false);
-    luaL_checkstack(L, 6, __func__);
-
-    static const LuaHashString cmdStr(__func__);
-    if (!cmdStr.GetGlobalFunc(L))
-        return;
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 6, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
 
 	lua_pushnumber(L, rot.x);
-    lua_pushnumber(L, rot.y);
-    lua_pushnumber(L, rot.z);
+	lua_pushnumber(L, rot.y);
+	lua_pushnumber(L, rot.z);
 
-    RunCallIn(L, cmdStr, 3, 0);
+	RunCallIn(L, cmdStr, 3, 0);
 }
 
 /*** Called whenever the camera position changes
  *
  * @function Callins:CameraPositionChanged
- * @param position xyz Camera position in world coordinates
+ * @param posX number Camera position x in world coordinates
+ * @param posY number Camera position y in world coordinates
+ * @param posZ number Camera position z in world coordinates
  */
 void CLuaHandle::CameraPositionChanged(const float3& pos)
 {
@@ -3405,8 +3408,8 @@ void CLuaHandle::CameraPositionChanged(const float3& pos)
 		return;
 
 	lua_pushnumber(L, pos.x);
-    lua_pushnumber(L, pos.y);
-    lua_pushnumber(L, pos.z);
+	lua_pushnumber(L, pos.y);
+	lua_pushnumber(L, pos.z);
 
 	RunCallIn(L, cmdStr, 3, 0);
 }
@@ -3414,7 +3417,9 @@ void CLuaHandle::CameraPositionChanged(const float3& pos)
 /*** Called whenever the camera direction changes
  *
  * @function Callins:CameraDirectionChanged
- * @param direction xyz Camera direction in world coordinates
+ * @param dirX number Camera direction x in world coordinates
+ * @param dirY number Camera direction y in world coordinates
+ * @param dirZ number Camera direction z in world coordinates
  */
 void CLuaHandle::CameraDirectionChanged(const float3& dir)
 {
@@ -3425,7 +3430,7 @@ void CLuaHandle::CameraDirectionChanged(const float3& dir)
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
-		
+
 	lua_pushnumber(L, dir.x);
 	lua_pushnumber(L, dir.y);
 	lua_pushnumber(L, dir.z);

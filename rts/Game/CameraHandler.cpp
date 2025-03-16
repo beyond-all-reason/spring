@@ -283,11 +283,11 @@ void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode)
 
 	UpdateTransition();
 
-    const float3& newRot = camera->GetRot();
-    if (!newRot.equals(lastCamRot, 0.001f)) { // 0.001 rad tolerance ~0.057°
-        eventHandler.CameraRotationChanged(newRot);
-        lastCamRot = newRot;
-    }
+	const float3& newRot = camera->GetRot();
+	if (!newRot.equals(lastCamRot, 0.001f)) { // 0.001 rad tolerance ~0.057°
+		eventHandler.CameraRotationChanged(newRot);
+		lastCamRot = newRot;
+	}
 
 	const float3& newPos = camera->GetPos();
 	if (!newPos.equals(lastCamPos, 0.01f)) {
