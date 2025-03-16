@@ -17,13 +17,13 @@ permalink: lua-api/types/{{ type_name }}
 {% if description %}
 {{ description }}
 {% endif %}
----
+
 {% if methods %}
 ## methods
----
+
 {% for method in methods %}
 ### {{ method.name }}
----
+
 {{ method.display }}
 
 {% if method.description %}
@@ -34,10 +34,10 @@ permalink: lua-api/types/{{ type_name }}
 
 {% if fields %}
 ## fields
----
+
 {% for field in fields %}
 ### {{ field.name }}
----
+
 {{ field.display }}
 
 {% if field.description %}
