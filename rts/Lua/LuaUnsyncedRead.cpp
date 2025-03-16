@@ -2643,7 +2643,7 @@ int LuaUnsyncedRead::GetNanoProjectileParams(lua_State* L)
  * Get available cameras.
  *
  * @function Spring.GetCameraNames
- * @return table<string, number> Table where where keys are names and values are indices.
+ * @return table<string, integer> indexByName Table where where keys are names and values are indices.
  */
 int LuaUnsyncedRead::GetCameraNames(lua_State* L)
 {
