@@ -305,6 +305,7 @@ class CEventClient
 		virtual void ActiveCommandChanged(const SCommandDescription* cmdDesc);
 		virtual void CameraRotationChanged(const float3& rot);
 		virtual void CameraPositionChanged(const float3& pos);
+		virtual void CameraDirectionChanged(const float3& dir);
 		virtual bool CommandNotify(const Command& cmd);
 
 		virtual bool AddConsoleLine(const std::string& msg, const std::string& section, int level);

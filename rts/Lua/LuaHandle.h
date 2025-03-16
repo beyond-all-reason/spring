@@ -213,6 +213,7 @@ class CLuaHandle : public CEventClient
 		void ActiveCommandChanged(const SCommandDescription* cmdDesc) override;
 		void CameraRotationChanged(const float3& rot) override;
 		void CameraPositionChanged(const float3& pos) override;
+		void CameraDirectionChanged(const float3& dir) override;
 
 		bool CommandNotify(const Command& cmd) override;
 

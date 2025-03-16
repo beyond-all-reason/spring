@@ -22,8 +22,8 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-  function widget:CameraRotationChanged(rot)
-	  local snappedRot = math.pi/2 * (math.floor((rot.y/(math.pi/2)) + 0.5) % 4)
+  function widget:CameraRotationChanged(_, roty)
+	  local snappedRot = math.pi/2 * (math.floor((roty/(math.pi/2)) + 0.5) % 4)
 
 	  if snappedRot == prevSnappedRot then return end
 	  prevSnappedRot = snappedRot
@@ -35,7 +35,7 @@ end
 			gl.ConfigMiniMap(px, py, sy, sx)
 	  end
 
-	  spSetMiniRot(snappedRot) --rot.y also works here
+	  spSetMiniRot(snappedRot) --roty also works here
   end
   
   function widget:Initialize()

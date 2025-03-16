@@ -101,12 +101,16 @@ function ActiveCommandChanged(id, cmdType)
   return widgetHandler:ActiveCommandChanged(id, cmdType)
 end
 
-function CameraRotationChanged(rot)
-  return widgetHandler:CameraRotationChanged(rot)
+function CameraRotationChanged(rotx, roty, rotz)
+  return widgetHandler:CameraRotationChanged(rotx, roty, rotz)
 end
 
-function CameraPositionChanged(pos)
-  return widgetHandler:CameraPositionChanged(pos)
+function CameraPositionChanged(posx, posy, posz)
+  return widgetHandler:CameraPositionChanged(posx, posy, posz)
+end
+
+function CameraDirectionChanged(dirx, diry, dirz)
+  return widgetHandler:CameraDirectionChanged(dirx, diry, dirz)
 end
 
 function CommandNotify(id, params, options)

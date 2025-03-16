@@ -3376,17 +3376,17 @@ void CLuaHandle::CameraRotationChanged(const float3& rot)
 {
     RECOIL_DETAILED_TRACY_ZONE;
     LUA_CALL_IN_CHECK(L, false);
-    luaL_checkstack(L, 4, __func__);
+    luaL_checkstack(L, 6, __func__);
 
     static const LuaHashString cmdStr(__func__);
     if (!cmdStr.GetGlobalFunc(L))
         return;
-    lua_createtable(L, 0, 3);
-    LuaPushNamedNumber(L, "x", rot.x);
-    LuaPushNamedNumber(L, "y", rot.y);
-    LuaPushNamedNumber(L, "z", rot.z);
 
-    RunCallIn(L, cmdStr, 1, 0);
+	lua_pushnumber(L, rot.x);
+    lua_pushnumber(L, rot.y);
+    lua_pushnumber(L, rot.z);
+
+    RunCallIn(L, cmdStr, 3, 0);
 }
 
 /*** Called whenever the camera position changes
@@ -3398,17 +3398,39 @@ void CLuaHandle::CameraPositionChanged(const float3& pos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 4, __func__);
+	luaL_checkstack(L, 6, __func__);
 
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
-	lua_createtable(L, 0, 3);
-	LuaPushNamedNumber(L, "x", pos.x);
-	LuaPushNamedNumber(L, "y", pos.y);
-	LuaPushNamedNumber(L, "z", pos.z);
 
-	RunCallIn(L, cmdStr, 1, 0);
+	lua_pushnumber(L, pos.x);
+    lua_pushnumber(L, pos.y);
+    lua_pushnumber(L, pos.z);
+
+	RunCallIn(L, cmdStr, 3, 0);
+}
+
+/*** Called whenever the camera direction changes
+ *
+ * @function Callins:CameraDirectionChanged
+ * @param direction xyz Camera direction in world coordinates
+ */
+void CLuaHandle::CameraDirectionChanged(const float3& dir)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 6, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+		
+	lua_pushnumber(L, dir.x);
+	lua_pushnumber(L, dir.y);
+	lua_pushnumber(L, dir.z);
+
+	RunCallIn(L, cmdStr, 3, 0);
 }
 
 /*** Called when a command is issued.
