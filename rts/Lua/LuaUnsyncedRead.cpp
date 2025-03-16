@@ -2764,11 +2764,12 @@ int LuaUnsyncedRead::GetCameraDirection(lua_State* L)
 	return 3;
 }
 
-/***
+/*** Get camera rotation in radians.
+ * 
  * @function Spring.GetCameraRotation
- * @return number rotX in radians
- * @return number rotY in radians
- * @return number rotZ in radians
+ * @return number rotX Rotation around X axis in radians.
+ * @return number rotY Rotation around Y axis in radians.
+ * @return number rotZ Rotation around Z axis in radians.
  */
 int LuaUnsyncedRead::GetCameraRotation(lua_State* L)
 {
