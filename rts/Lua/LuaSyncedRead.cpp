@@ -1394,7 +1394,7 @@ int LuaSyncedRead::GetVectorFromHeading(lua_State* L)
 /***
  * @function Spring.GetFacingFromHeading
  * @param heading number
- * @return number facing
+ * @return FacingInteger facing
  */
 int LuaSyncedRead::GetFacingFromHeading(lua_State* L)
 {
@@ -1404,7 +1404,7 @@ int LuaSyncedRead::GetFacingFromHeading(lua_State* L)
 
 /***
  * @function Spring.GetHeadingFromFacing
- * @param facing number
+ * @param facing FacingInteger
  * @return number heading
  */
 int LuaSyncedRead::GetHeadingFromFacing(lua_State* L)

@@ -1020,7 +1020,7 @@ int LuaUnsyncedCtrl::AddWorldText(lua_State* L)
  * @param posY number
  * @param posZ number
  * @param teamID integer
- * @param facing number
+ * @param facing FacingInteger
  * @return nil
  */
 int LuaUnsyncedCtrl::AddWorldUnit(lua_State* L)
@@ -3590,7 +3590,7 @@ int LuaUnsyncedCtrl::SetBuildSpacing(lua_State* L)
 /***
  *
  * @function Spring.SetBuildFacing
- * @param facing number
+ * @param facing FacingInteger
  * @return nil
  */
 int LuaUnsyncedCtrl::SetBuildFacing(lua_State* L)

@@ -1157,6 +1157,10 @@ void LuaUtils::ParseCommandArray(
 }
 
 /***
+ * Facing direction represented by a string or number.
+ * 
+ * @see FacingInteger
+ * 
  * @alias Facing
  * | 0 # South
  * | 1 # East
@@ -1181,11 +1185,10 @@ int LuaUtils::ParseFacing(lua_State* L, const char* caller, int index)
 		const char* dir = lua_tostring(L, index);
 
 		switch (dir[0]) {
-			case 'S': case 's': { return 0; } break;
-			case 'E': case 'e': { return 1; } break;
-			case 'N': case 'n': { return 2; } break;
-			case 'W': case 'w': { return 3; } break;
-			default           : {           } break;
+			case 'S': case 's': return FACING_SOUTH;
+			case 'E': case 'e': return FACING_EAST;
+			case 'N': case 'n': return FACING_NORTH;
+			case 'W': case 'w': return FACING_WEST;
 		}
 
 		luaL_error(L, "%s(): bad facing string \"%s\"", caller, dir);
