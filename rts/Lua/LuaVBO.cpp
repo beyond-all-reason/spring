@@ -144,7 +144,7 @@ LuaVBOs::~LuaVBOs()
  * Use `GL.ARRAY_BUFFER` for vertex data and
  * `GL.ELEMENT_ARRAY_BUFFER` for vertex indices.
  * 
- * @param freqUpdated boolean? (Default: true)
+ * @param freqUpdated boolean? (Default: `true`)
  * 
  * `true` to updated frequently, `false` to update only once.
  * 

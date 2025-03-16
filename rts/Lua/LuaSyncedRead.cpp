@@ -1632,7 +1632,7 @@ int LuaSyncedRead::GetAllyTeamList(lua_State* L)
 /***
  *
  * @function Spring.GetTeamList
- * @param allyTeamID integer? (Default: -1) to filter teams belonging to when >= 0
+ * @param allyTeamID integer? (Default: `-1`) to filter teams belonging to when >= 0
  * @return number[]? list of teamIDs
  */
 int LuaSyncedRead::GetTeamList(lua_State* L)
@@ -1673,8 +1673,8 @@ int LuaSyncedRead::GetTeamList(lua_State* L)
 /***
  *
  * @function Spring.GetPlayerList
- * @param teamID integer? (Default: -1) to filter by when >= 0
- * @param active boolean? (Default: false) whether to filter only active teams
+ * @param teamID integer? (Default: `-1`) to filter by when >= 0
+ * @param active boolean? (Default: `false`) whether to filter only active teams
  * @return number[]? list of playerIDs
  */
 int LuaSyncedRead::GetPlayerList(lua_State* L)
@@ -1728,7 +1728,7 @@ int LuaSyncedRead::GetPlayerList(lua_State* L)
  *
  * @function Spring.GetTeamInfo
  * @param teamID integer
- * @param getTeamKeys boolean? (Default: true) whether to return the customTeamKeys table
+ * @param getTeamKeys boolean? (Default: `true`) whether to return the customTeamKeys table
  * @return number? teamID
  * @return number leader
  * @return number isDead
@@ -2155,7 +2155,7 @@ int LuaSyncedRead::GetTeamMaxUnits(lua_State* L)
  *
  * @function Spring.GetPlayerInfo
  * @param playerID integer
- * @param getPlayerOpts boolean? (Default: true) whether to return custom player options
+ * @param getPlayerOpts boolean? (Default: `true`) whether to return custom player options
  * @return string name
  * @return boolean active
  * @return boolean spectator
@@ -3444,7 +3444,7 @@ int LuaSyncedRead::GetUnitNearestAlly(lua_State* L)
  * @function Spring.GetUnitNearestEnemy
  * @param unitID integer
  * @param range number? (Default: 1.0e9f)
- * @param useLOS boolean? (Default: true)
+ * @param useLOS boolean? (Default: `true`)
  * @return number? unitID
  */
 int LuaSyncedRead::GetUnitNearestEnemy(lua_State* L)
@@ -3592,8 +3592,8 @@ int LuaSyncedRead::GetFeaturesInCylinder(lua_State* L)
  * @param zmin number
  * @param xmax number
  * @param zmax number
- * @param excludeWeaponProjectiles boolean? (Default: false)
- * @param excludePieceProjectiles boolean? (Default: false)
+ * @param excludeWeaponProjectiles boolean? (Default: `false`)
+ * @param excludePieceProjectiles boolean? (Default: `false`)
  * @return number[] projectileIDs
  */
 int LuaSyncedRead::GetProjectilesInRectangle(lua_State* L)
@@ -4391,8 +4391,8 @@ int LuaSyncedRead::GetUnitMass(lua_State* L)
  *
  * @function Spring.GetUnitPosition
  * @param unitID integer
- * @param midPos boolean? (Default: false) return midpoint as well
- * @param aimPos boolean? (Default: false) return aimpoint as well
+ * @param midPos boolean? (Default: `false`) return midpoint as well
+ * @param aimPos boolean? (Default: `false`) return aimpoint as well
  * @return number? basePointX
  * @return number basePointY
  * @return number basePointZ
@@ -4506,7 +4506,7 @@ int LuaSyncedRead::GetUnitDirection(lua_State* L)
  *
  * @function Spring.GetUnitHeading
  * @param unitID integer
- * @param convertToRadians boolean? (Default: false)
+ * @param convertToRadians boolean? (Default: `false`)
  * @return number heading
  */
 int LuaSyncedRead::GetUnitHeading(lua_State* L)
@@ -5763,8 +5763,8 @@ int LuaSyncedRead::GetUnitPieceCollisionVolumeData(lua_State* L)
  * @function Spring.GetUnitSeparation
  * @param unitID1 number
  * @param unitID2 number
- * @param direction boolean? (Default: false) to subtract from, default unitID1 - unitID2
- * @param subtractRadii boolean? (Default: false) whether units radii should be subtracted from the total
+ * @param direction boolean? (Default: `false`) to subtract from, default unitID1 - unitID2
+ * @param subtractRadii boolean? (Default: `false`) whether units radii should be subtracted from the total
  * @return number?
  */
 int LuaSyncedRead::GetUnitSeparation(lua_State* L)
@@ -6362,8 +6362,8 @@ static void PackFactoryCounts(lua_State* L,
  *
  * @function Spring.GetFactoryCounts
  * @param unitID integer
- * @param count integer? (Default: -1) Number of commands to retrieve, `-1` for all.
- * @param addCmds boolean? (Default: false) Retrieve commands other than buildunit
+ * @param count integer? (Default: `-1`) Number of commands to retrieve, `-1` for all.
+ * @param addCmds boolean? (Default: `false`) Retrieve commands other than buildunit
  *
  * @return table<number,number>? counts Build queue count by `unitDefID` or `-cmdID`, or `nil` if unit is not found.
  */
@@ -6766,7 +6766,7 @@ int LuaSyncedRead::GetFeaturePosition(lua_State* L)
  * @function Spring.GetFeatureSeparation
  * @param featureID1 number
  * @param featureID2 number
- * @param direction boolean? (Default: false) to subtract from, default featureID1 - featureID2
+ * @param direction boolean? (Default: `false`) to subtract from, default featureID1 - featureID2
  * @return number?
  */
 int LuaSyncedRead::GetFeatureSeparation(lua_State* L)
@@ -7482,7 +7482,7 @@ int LuaSyncedRead::GetGroundOrigHeight(lua_State* L)
  * @function Spring.GetGroundNormal
  * @param x number
  * @param z number
- * @param smoothed boolean? (Default: false) raw or smoothed center normal
+ * @param smoothed boolean? (Default: `false`) raw or smoothed center normal
  * @return number normalX
  * @return number normalY
  * @return number normalZ
@@ -7711,9 +7711,9 @@ int LuaSyncedRead::GetSmoothMeshHeight(lua_State* L)
  * @param unitDefID integer
  * @param pos float3
  * @param dir float3? (Default: `{ x: 0, y: 0, z: 0 }`)
- * @param testTerrain boolean? (Default: true)
- * @param testObjects boolean? (Default: true)
- * @param centerOnly boolean? (Default: false)
+ * @param testTerrain boolean? (Default: `true`)
+ * @param testObjects boolean? (Default: `true`)
+ * @param centerOnly boolean? (Default: `false`)
  * @return boolean
  */
 int LuaSyncedRead::TestMoveOrder(lua_State* L)
@@ -7823,7 +7823,7 @@ int LuaSyncedRead::TestBuildOrder(lua_State* L)
  * @param posX number
  * @param posY number
  * @param posZ number
- * @param buildFacing number? (Default: 0) one of SOUTH = 0, EAST = 1, NORTH = 2, WEST  = 3
+ * @param buildFacing number? (Default: `0`) one of SOUTH = 0, EAST = 1, NORTH = 2, WEST  = 3
  * @return number buildPosX
  * @return number buildPosY
  * @return number buildPosZ
