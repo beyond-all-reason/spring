@@ -651,7 +651,7 @@ bool CSyncedLuaHandle::AllowCommand(const CUnit* unit, const Command& cmd, int p
  * @param x number
  * @param y number
  * @param z number
- * @param facing number
+ * @param facing FacingInteger
  * @return boolean allow, boolean dropOrder
  */
 std::pair <bool, bool> CSyncedLuaHandle::AllowUnitCreation(

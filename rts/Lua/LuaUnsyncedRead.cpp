@@ -3431,7 +3431,11 @@ int LuaUnsyncedRead::GetCmdDescIndex(lua_State* L)
 /******************************************************************************/
 
 /***
- * @alias Facing
+ * Facing direction represented as an integer only.
+ * 
+ * @see Facing
+ * 
+ * @alias FacingInteger
  * | 0 # South
  * | 1 # East
  * | 2 # North
@@ -3441,7 +3445,7 @@ int LuaUnsyncedRead::GetCmdDescIndex(lua_State* L)
 /***
  *
  * @function Spring.GetBuildFacing
- * @return Facing buildFacing
+ * @return FacingInteger buildFacing
  */
 int LuaUnsyncedRead::GetBuildFacing(lua_State* L)
 {
