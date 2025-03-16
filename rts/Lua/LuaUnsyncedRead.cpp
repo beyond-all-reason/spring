@@ -3090,7 +3090,7 @@ int LuaUnsyncedRead::GetTeamOrigColor(lua_State* L)
 /***
  *
  * @function Spring.GetDrawSeconds
- * @return integer Time in seconds
+ * @return integer time Time in seconds.
  */
 int LuaUnsyncedRead::GetDrawSeconds(lua_State* L)
 {
