@@ -774,6 +774,12 @@ void CEventHandler::CameraRotationChanged(const float3& rot)
 	ITERATE_EVENTCLIENTLIST(CameraRotationChanged, rot);
 }
 
+void CEventHandler::CameraPositionChanged(const float3& pos)
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST(CameraPositionChanged, pos);
+}
+
 bool CEventHandler::CommandNotify(const Command& cmd)
 {
 	ZoneScoped;

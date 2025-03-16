@@ -3389,6 +3389,28 @@ void CLuaHandle::CameraRotationChanged(const float3& rot)
     RunCallIn(L, cmdStr, 1, 0);
 }
 
+/*** Called whenever the camera position changes
+ *
+ * @function Callins:CameraPositionChanged
+ * @param position xyz Camera position in world coordinates
+ */
+void CLuaHandle::CameraPositionChanged(const float3& pos)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 4, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+	lua_createtable(L, 0, 3);
+	LuaPushNamedNumber(L, "x", pos.x);
+	LuaPushNamedNumber(L, "y", pos.y);
+	LuaPushNamedNumber(L, "z", pos.z);
+
+	RunCallIn(L, cmdStr, 1, 0);
+}
+
 /*** Called when a command is issued.
  *
  * @function Callins:CommandNotify

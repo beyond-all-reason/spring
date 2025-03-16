@@ -1856,6 +1856,12 @@ function gadgetHandler:CameraRotationChanged(rot)
   end
 end
 
+function gadgetHandler:CameraPositionChanged(pos)
+  for _,g in r_ipairs(self.CameraPositionChangedList) do
+    g:CameraPositionChanged(pos)
+  end
+end
+
 function gadgetHandler:CommandNotify(id, params, options)
   for _,g in r_ipairs(self.CommandNotifyList) do
     if (g:CommandNotify(id, params, options)) then

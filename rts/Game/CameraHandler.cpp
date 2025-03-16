@@ -288,6 +288,12 @@ void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode)
         eventHandler.CameraRotationChanged(newRot);
         lastCamRot = newRot;
     }
+
+	const float3& newPos = camera->GetPos();
+	if (!newPos.equals(lastCamPos, 0.01f)) {
+		eventHandler.CameraPositionChanged(newPos);
+		lastCamPos = newPos;
+	}
 }
 
 void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, bool wheelMove, bool edgeMove)

@@ -236,6 +236,7 @@ class CEventHandler
 
 		void ActiveCommandChanged(const SCommandDescription *cmdDesc);
 		void CameraRotationChanged(const float3& rot);
+		void CameraPositionChanged(const float3& pos);
 		bool CommandNotify(const Command& cmd);
 
 		bool AddConsoleLine(const std::string& msg, const std::string& section, int level);

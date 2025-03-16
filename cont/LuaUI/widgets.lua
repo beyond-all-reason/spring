@@ -185,7 +185,8 @@ local callInLists = {
   'Update',
   'TextCommand',
   'ActiveCommandChanged',
-  "CameraRotationChanged",
+  'CameraRotationChanged',
+  'CameraPositionChanged',
   'CommandNotify',
   'AddConsoleLine',
   'ViewResize',
@@ -1193,6 +1194,12 @@ end
 function widgetHandler:CameraRotationChanged(rot)
   for _,w in ipairs(self.CameraRotationChangedList) do
     w:CameraRotationChanged(rot)
+  end
+end
+
+function widgetHandler:CameraPositionChanged(pos)
+  for _,w in ipairs(self.CameraPositionChangedList) do
+    w:CameraPositionChanged(pos)
   end
 end
 

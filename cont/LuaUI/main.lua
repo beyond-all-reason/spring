@@ -105,6 +105,10 @@ function CameraRotationChanged(rot)
   return widgetHandler:CameraRotationChanged(rot)
 end
 
+function CameraPositionChanged(pos)
+  return widgetHandler:CameraPositionChanged(pos)
+end
+
 function CommandNotify(id, params, options)
   return widgetHandler:CommandNotify(id, params, options)
 end
