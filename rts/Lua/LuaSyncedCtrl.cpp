@@ -6384,7 +6384,7 @@ int LuaSyncedCtrl::RevertSmoothMesh(lua_State* L)
  * @param x number
  * @param z number
  * @param height number
- * @return number? The new height, or `nil` if coordinates are invalid.
+ * @return number? height The new height, or `nil` if coordinates are invalid.
  */
 int LuaSyncedCtrl::AddSmoothMesh(lua_State* L)
 {
