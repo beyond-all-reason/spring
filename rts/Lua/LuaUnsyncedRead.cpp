@@ -3324,10 +3324,10 @@ int LuaUnsyncedRead::GetActiveCommand(lua_State* L)
 /***
  *
  * @function Spring.GetDefaultCommand
- * @return number? cmdIndex
- * @return number? cmdID
- * @return number? cmdType
- * @return nil|string cmdName
+ * @return integer? cmdIndex
+ * @return integer? cmdID
+ * @return integer? cmdType
+ * @return string? cmdName
  */
 int LuaUnsyncedRead::GetDefaultCommand(lua_State* L)
 {
