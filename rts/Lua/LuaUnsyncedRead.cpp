@@ -1301,10 +1301,11 @@ int LuaUnsyncedRead::GetUnitNoMinimap(lua_State* L)
 }
 
 /***
+ * Check if a unit is not allowed to be added to a group by a player.
  *
  * @function Spring.GetUnitNoGroup
  * @param unitID integer
- * @return nil|bool noGroup `nil` when `unitID` cannot be parsed.
+ * @return boolean? noGroup `true` if the unit is not allowed to be added to a group, `false` if it is allowed to be added to a group, or `nil` when `unitID` is not valid.
  */
 int LuaUnsyncedRead::GetUnitNoGroup(lua_State* L)
 {
