@@ -500,7 +500,7 @@ int LuaUnsyncedCtrl::Echo(lua_State* L)
 /***
  * @function Spring.Log
  * @param section string
- * @param logLevel LogLevel? (Default: "notice")
+ * @param logLevel LogLevel? (Default: `"notice"`)
  * @param ... string messages
  */
 int LuaUnsyncedCtrl::Log(lua_State* L)
@@ -1186,12 +1186,12 @@ int LuaUnsyncedCtrl::SetCameraTarget(lua_State* L)
  *
  * @function Spring.SetCameraOffset
  *
- * @param posX number? (Default: 0)
- * @param posY number? (Default: 0)
- * @param posZ number? (Default: 0)
- * @param tiltX number? (Default: 0)
- * @param tiltY number? (Default: 0)
- * @param tiltZ number? (Default: 0)
+ * @param posX number? (Default: `0`)
+ * @param posY number? (Default: `0`)
+ * @param posZ number? (Default: `0`)
+ * @param tiltX number? (Default: `0`)
+ * @param tiltY number? (Default: `0`)
+ * @param tiltZ number? (Default: `0`)
  * @return nil
  */
 int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
@@ -1214,7 +1214,7 @@ int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
  * The fields in `camState` must be consistent with the name/mode and current/new camera mode
  *
  * @param camState camState
- * @param transitionTime number? (Default: 0) in nanoseconds
+ * @param transitionTime number? (Default: `0`) in nanoseconds
  *
  * @param transitionTimeFactor number?
  * multiplicative factor applied to this and all subsequent transition times for
@@ -1449,7 +1449,7 @@ int LuaUnsyncedCtrl::SetDollyCameraLookUnit(lua_State* L)
  *
  * @function Spring.SelectUnit
  * @param unitID integer?
- * @param append boolean? (Default: false) Append to current selection.
+ * @param append boolean? (Default: `false`) Append to current selection.
  * @return nil
  */
 int LuaUnsyncedCtrl::SelectUnit(lua_State* L)
@@ -1537,7 +1537,7 @@ int LuaUnsyncedCtrl::DeselectUnitMap(lua_State* L)
  *
  * @function Spring.SelectUnitArray
  * @param unitMap table<any, integer> Table with unit IDs as values.
- * @param append boolean? (Default: false) append to current selection
+ * @param append boolean? (Default: `false`) append to current selection
  * @return nil
  */
 int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
@@ -1549,7 +1549,7 @@ int LuaUnsyncedCtrl::SelectUnitArray(lua_State* L)
  *
  * @function Spring.SelectUnitMap
  * @param unitMap table<integer, any> Table with unit IDs as keys.
- * @param append boolean? (Default: false) append to current selection
+ * @param append boolean? (Default: `false`) append to current selection
  * @return nil
  */
 int LuaUnsyncedCtrl::SelectUnitMap(lua_State* L)
@@ -2753,7 +2753,7 @@ static int SetActiveCommandByAction(lua_State* L)
 
 /*** @function Spring.SetActiveCommand
  * @param cmdIndex number
- * @param button number? (Default: 1)
+ * @param button number? (Default: `1`)
  * @param leftClick boolean?
  * @param rightClick boolean?
  * @param alt boolean?
@@ -2885,8 +2885,8 @@ int LuaUnsyncedCtrl::SetTeamColor(lua_State* L)
  * @param iconFileName string not the full filename, instead it is like this:
  *     Wanted filename: Anims/cursorattack_0.bmp
  *     => iconFileName: cursorattack
- * @param overwrite boolean? (Default: true)
- * @param hotSpotTopLeft boolean? (Default: false)
+ * @param overwrite boolean? (Default: `true`)
+ * @param hotSpotTopLeft boolean? (Default: `false`)
  * @return boolean? assigned
  */
 int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
@@ -2909,7 +2909,7 @@ int LuaUnsyncedCtrl::AssignMouseCursor(lua_State* L)
  * @function Spring.ReplaceMouseCursor
  * @param oldFileName string
  * @param newFileName string
- * @param hotSpotTopLeft boolean? (Default: false)
+ * @param hotSpotTopLeft boolean? (Default: `false`)
  * @return boolean? assigned
  */
 int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
@@ -2933,8 +2933,10 @@ int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
  *
  * @function Spring.SetCustomCommandDrawData
  * @param cmdID integer
- * @param (string|number)? cmdReference iconname | cmdID_cloneIcon
- * @return boolean? assigned
+ * @param cmdReference string|integer|nil The name or ID of an icon for command. Pass `nil` to clear draw data for command.
+ * @param color rgba? (Default: white)
+ * @param showArea boolean? (Default: `false`)
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetCustomCommandDrawData(lua_State* L)
 {
@@ -3058,12 +3060,12 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
 /***
  *
  * @function Spring.SetNanoProjectileParams
- * @param rotVal number? (Default: 0) in degrees
- * @param rotVel number? (Default: 0) in degrees
- * @param rotAcc number? (Default: 0) in degrees
- * @param rotValRng number? (Default: 0) in degrees
- * @param rotVelRng number? (Default: 0) in degrees
- * @param rotAccRng number? (Default: 0) in degrees
+ * @param rotVal number? (Default: `0`) in degrees
+ * @param rotVel number? (Default: `0`) in degrees
+ * @param rotAcc number? (Default: `0`) in degrees
+ * @param rotValRng number? (Default: `0`) in degrees
+ * @param rotVelRng number? (Default: `0`) in degrees
+ * @param rotAccRng number? (Default: `0`) in degrees
  * @return nil
  */
 int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
@@ -3094,7 +3096,7 @@ int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
  * @function Spring.SetConfigInt
  * @param name string
  * @param value number
- * @param useOverlay boolean? (Default: false) the value will only be set in memory, and not be restored for the next game.
+ * @param useOverlay boolean? (Default: `false`) the value will only be set in memory, and not be restored for the next game.
  * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
@@ -3122,7 +3124,7 @@ int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
  * @function Spring.SetConfigFloat
  * @param name string
  * @param value number
- * @param useOverla boolean? (Default: false) the value will only be set in memory, and not be restored for the next game.y
+ * @param useOverla boolean? (Default: `false`) the value will only be set in memory, and not be restored for the next game.y
  * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigFloat(lua_State* L)
@@ -3145,7 +3147,7 @@ int LuaUnsyncedCtrl::SetConfigFloat(lua_State* L)
  * @function Spring.SetConfigString
  * @param name string
  * @param value number
- * @param useOverlay boolean? (Default: false) the value will only be set in memory, and not be restored for the next game.
+ * @param useOverlay boolean? (Default: `false`) the value will only be set in memory, and not be restored for the next game.
  * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigString(lua_State* L)
@@ -3813,7 +3815,7 @@ int LuaUnsyncedCtrl::SetLastMessagePosition(lua_State* L)
  * @param x number
  * @param y number
  * @param z number
- * @param text string? (Default: "")
+ * @param text string? (Default: `""`)
  * @param localOnly boolean?
  * @return nil
  */
@@ -3845,7 +3847,7 @@ int LuaUnsyncedCtrl::MarkerAddPoint(lua_State* L)
  * @param x2 number
  * @param y2 number
  * @param z2 number
- * @param localOnly boolean? (Default: false)
+ * @param localOnly boolean? (Default: `false`)
  * @param playerId number?
  * @return nil
  */
@@ -3880,9 +3882,9 @@ int LuaUnsyncedCtrl::MarkerAddLine(lua_State* L)
  * @param y number
  * @param z number
  * @param unused nil This argument is ignored.
- * @param localOnly boolean? (Default: false) do not issue a network message, erase only for the current player
+ * @param localOnly boolean? (Default: `false`) do not issue a network message, erase only for the current player
  * @param playerId number? when not specified it uses the issuer playerId
- * @param alwaysErase boolean? (Default: false) erase any marker when `localOnly` and current player is spectating. Allows spectators to erase players markers locally
+ * @param alwaysErase boolean? (Default: `false`) erase any marker when `localOnly` and current player is spectating. Allows spectators to erase players markers locally
  * @return nil
  */
 int LuaUnsyncedCtrl::MarkerErasePosition(lua_State* L)
@@ -4143,8 +4145,8 @@ int LuaUnsyncedCtrl::SetMapRenderingParams(lua_State* L)
 /***
  *
  * @function Spring.ForceTesselationUpdate
- * @param normal boolean? (Default: true)
- * @param shadow boolean? (Default: false)
+ * @param normal boolean? (Default: `true`)
+ * @param shadow boolean? (Default: `false`)
  * @return boolean updated
  */
 int LuaUnsyncedCtrl::ForceTesselationUpdate(lua_State* L)
@@ -4861,7 +4863,7 @@ int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
  * @function Spring.SetGroundDecalTexture
  * @param decalID integer
  * @param textureName string The texture has to be on the atlas which seems to mean it's defined as an explosion, unit tracks, or building plate decal on some unit already (no arbitrary textures)
- * @param isMainTex boolean? (Default: true) If false, it sets the normals/glow map
+ * @param isMainTex boolean? (Default: `true`) If false, it sets the normals/glow map
  * @return nil|boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
@@ -4925,9 +4927,9 @@ int LuaUnsyncedCtrl::SetGroundDecalAlpha(lua_State* L)
  * Sets projection cube normal to orient in 3D space.
  * In case the normal (0,0,0) then normal is picked from the terrain
  * @param decalID integer
- * @param normalX number? (Default: 0)
- * @param normalY number? (Default: 0)
- * @param normalZ number? (Default: 0)
+ * @param normalX number? (Default: `0`)
+ * @param normalY number? (Default: `0`)
+ * @param normalZ number? (Default: `0`)
  * @return boolean decalSet
  */
 int LuaUnsyncedCtrl::SetGroundDecalNormal(lua_State* L)

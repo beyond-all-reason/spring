@@ -616,7 +616,7 @@ std::tuple<uint32_t, uint32_t, uint32_t> LuaVBOImpl::GetBufferSize()
  * 
  * @function VBO:Upload
  * @param vboData number[] a lua array of values to upload into the VBO
- * @param attributeIndex integer? (Default: -1)
+ * @param attributeIndex integer? (Default: `-1`)
  * 
  * If supplied with non-default value then the data from vboData will only be
  * used to upload the data to this particular attribute.
@@ -625,8 +625,8 @@ std::tuple<uint32_t, uint32_t, uint32_t> LuaVBOImpl::GetBufferSize()
  * 
  * Otherwise all attributes get updated sequentially across attributes and elements.
  *
- * @param elemOffset integer? (Default: 0) Which VBO element to start uploading data from Lua array into.
- * @param luaStartIndex integer? (Default: 1) Start uploading from that element in supplied Lua array.
+ * @param elemOffset integer? (Default: `0`) Which VBO element to start uploading data from Lua array into.
+ * @param luaStartIndex integer? (Default: `1`) Start uploading from that element in supplied Lua array.
  * @param luaFinishIndex integer? Consider this element the last element in Lua array.
  * @return number[] indexData
  * @return integer elemOffset
@@ -678,12 +678,12 @@ size_t LuaVBOImpl::Upload(const sol::stack_table& luaTblData, sol::optional<int>
 /***
  *
  * @function VBO:Download
- * @param attributeIndex integer? (Default: -1) when supplied with non-default value: only data
+ * @param attributeIndex integer? (Default: `-1`) when supplied with non-default value: only data
  * from specified attribute will be downloaded - otherwise all attributes are
  * downloaded
- * @param elementOffset integer? (Default: 0) download data starting from this element
+ * @param elementOffset integer? (Default: `0`) download data starting from this element
  * @param elementCount number? number of elements to download
- * @param forceGPURead boolean? (Default: false) force downloading the data from GPU buffer as opposed
+ * @param forceGPURead boolean? (Default: `false`) force downloading the data from GPU buffer as opposed
  * to using shadow RAM buffer
  * @return [number, ...][] vboData
  */

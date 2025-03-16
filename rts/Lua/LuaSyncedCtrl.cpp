@@ -1678,8 +1678,8 @@ int LuaSyncedCtrl::GetCOBScriptID(lua_State* L)
  * @param z number
  * @param facing Facing
  * @param teamID integer
- * @param build boolean? (Default: false) the unit is created in "being built" state with buildProgress = 0
- * @param flattenGround boolean? (Default: true) the unit flattens ground, if it normally does so
+ * @param build boolean? (Default: `false`) the unit is created in "being built" state with buildProgress = 0
+ * @param flattenGround boolean? (Default: `true`) the unit flattens ground, if it normally does so
  * @param unitID integer? requests specific unitID
  * @param builderID integer?
  * @return number|nil unitID meaning unit was created
@@ -1772,10 +1772,10 @@ int LuaSyncedCtrl::CreateUnit(lua_State* L)
  * @function Spring.DestroyUnit
  * @see Spring.CreateUnit
  * @param unitID integer
- * @param selfd boolean? (Default: false) makes the unit act like it self-destructed.
- * @param reclaimed boolean? (Default: false) don't show any DeathSequences, don't leave a wreckage. This does not give back the resources to the team!
+ * @param selfd boolean? (Default: `false`) makes the unit act like it self-destructed.
+ * @param reclaimed boolean? (Default: `false`) don't show any DeathSequences, don't leave a wreckage. This does not give back the resources to the team!
  * @param attackerID integer?
- * @param cleanupImmediately boolean? (Default: false) stronger version of reclaimed, removes the unit unconditionally and makes its ID available for immediate reuse (otherwise it takes a few frames)
+ * @param cleanupImmediately boolean? (Default: `false`) stronger version of reclaimed, removes the unit unconditionally and makes its ID available for immediate reuse (otherwise it takes a few frames)
  * @return nil
  */
 int LuaSyncedCtrl::DestroyUnit(lua_State* L)
@@ -1817,7 +1817,7 @@ int LuaSyncedCtrl::DestroyUnit(lua_State* L)
  * @function Spring.TransferUnit
  * @param unitID integer
  * @param newTeamID integer
- * @param given boolean? (Default: true) if false, the unit is captured.
+ * @param given boolean? (Default: `true`) if false, the unit is captured.
  * @return nil
  */
 int LuaSyncedCtrl::TransferUnit(lua_State* L)
@@ -3119,7 +3119,7 @@ int LuaSyncedCtrl::SetUnitCrashing(lua_State* L) {
 /***
  * @function Spring.SetUnitShieldState
  * @param unitID integer
- * @param weaponID integer? (Default: -1)
+ * @param weaponID integer? (Default: `-1`)
  * @param enabled boolean?
  * @param power number?
  * @return nil
@@ -3305,9 +3305,9 @@ int LuaSyncedCtrl::SetUnitNeutral(lua_State* L)
  * @function Spring.SetUnitTarget
  * @param unitID integer
  * @param enemyUnitID integer? when nil drops the units current target.
- * @param dgun boolean? (Default: false)
- * @param userTarget boolean? (Default: false)
- * @param weaponNum number? (Default: -1)
+ * @param dgun boolean? (Default: `false`)
+ * @param userTarget boolean? (Default: `false`)
+ * @param weaponNum number? (Default: `-1`)
  * @return boolean success
  */
 
@@ -3317,9 +3317,9 @@ int LuaSyncedCtrl::SetUnitNeutral(lua_State* L)
  * @param x number? when nil or not passed it will drop target and ignore other parameters
  * @param y number?
  * @param z number?
- * @param dgun boolean? (Default: false)
- * @param userTarget boolean? (Default: false)
- * @param weaponNum number? (Default: -1)
+ * @param dgun boolean? (Default: `false`)
+ * @param userTarget boolean? (Default: `false`)
+ * @param weaponNum number? (Default: `-1`)
  * @return boolean success
  */
 int LuaSyncedCtrl::SetUnitTarget(lua_State* L)
@@ -3389,7 +3389,7 @@ int LuaSyncedCtrl::SetUnitTarget(lua_State* L)
  * @param apX number new positionX that enemies aim at on this unit
  * @param apY number new positionY that enemies aim at on this unit
  * @param apZ number new positionZ that enemies aim at on this unit
- * @param relative boolean? (Default: false) are the new coordinates relative to world (false) or unit (true) coordinates? Also, note that apy is inverted!
+ * @param relative boolean? (Default: `false`) are the new coordinates relative to world (false) or unit (true) coordinates? Also, note that apy is inverted!
  * @return boolean success
  */
 int LuaSyncedCtrl::SetUnitMidAndAimPos(lua_State* L)
@@ -3852,7 +3852,7 @@ int LuaSyncedCtrl::SetUnitMass(lua_State* L)
  * @param unitID integer
  * @param x number
  * @param z number
- * @param floating boolean? (Default: false) If true, over water the position is on surface. If false, on seafloor.
+ * @param floating boolean? (Default: `false`) If true, over water the position is on surface. If false, on seafloor.
  * @return nil
  */
 
@@ -4020,8 +4020,8 @@ int LuaSyncedCtrl::SetFactoryBuggerOff(lua_State* L)
  * @param z number? uses ground height when unspecified
  * @param radius number
  * @param teamID integer
- * @param spherical boolean? (Default: true)
- * @param forced boolean? (Default: true)
+ * @param spherical boolean? (Default: `true`)
+ * @param forced boolean? (Default: `true`)
  * @param excludeUnitID integer?
  * @param excludeUnitDefIDs number[]?
  * @return nil
@@ -4059,9 +4059,9 @@ int LuaSyncedCtrl::BuggerOff(lua_State* L)
  *
  * @param unitID integer
  * @param damage number
- * @param paralyze number? (Default: 0) equals to the paralyzetime in the WeaponDef.
- * @param attackerID integer? (Default: -1)
- * @param weaponID integer? (Default: -1)
+ * @param paralyze number? (Default: `0`) equals to the paralyzetime in the WeaponDef.
+ * @param attackerID integer? (Default: `-1`)
+ * @param weaponID integer? (Default: `-1`)
  * @param impulseX number?
  * @param impulseY number?
  * @param impulseZ number?
@@ -5062,9 +5062,9 @@ int LuaSyncedCtrl::SetProjectileMoveControl(lua_State* L)
 /***
  * @function Spring.SetProjectilePosition
  * @param projectileID integer
- * @param posX number? (Default: 0)
- * @param posY number? (Default: 0)
- * @param posZ number? (Default: 0)
+ * @param posX number? (Default: `0`)
+ * @param posY number? (Default: `0`)
+ * @param posZ number? (Default: `0`)
  * @return nil
  */
 int LuaSyncedCtrl::SetProjectilePosition(lua_State* L)
@@ -5084,9 +5084,9 @@ int LuaSyncedCtrl::SetProjectilePosition(lua_State* L)
 /***
  * @function Spring.SetProjectileVelocity
  * @param projectileID integer
- * @param velX number? (Default: 0)
- * @param velY number? (Default: 0)
- * @param velZ number? (Default: 0)
+ * @param velX number? (Default: `0`)
+ * @param velY number? (Default: `0`)
+ * @param velZ number? (Default: `0`)
  * @return nil
  *
  */
@@ -5125,9 +5125,9 @@ int LuaSyncedCtrl::SetProjectileCollision(lua_State* L)
  *     string.byte('p') := PROJECTILE
  *
  * @param projectileID integer
- * @param arg1 number? (Default: 0) targetID or posX
- * @param arg2 number? (Default: 0) targetType or posY
- * @param posZ number? (Default: 0)
+ * @param arg1 number? (Default: `0`) targetID or posX
+ * @param arg2 number? (Default: `0`) targetType or posY
+ * @param posZ number? (Default: `0`)
  * @return boolean? validTarget
  */
 int LuaSyncedCtrl::SetProjectileTarget(lua_State* L)
@@ -5312,7 +5312,7 @@ int LuaSyncedCtrl::SetProjectileIgnoreTrackingError(lua_State* L)
 /***
  * @function Spring.SetProjectileGravity
  * @param projectileID integer
- * @param grav number? (Default: 0)
+ * @param grav number? (Default: `0`)
  * @return nil
  */
 int LuaSyncedCtrl::SetProjectileGravity(lua_State* L)
@@ -5901,7 +5901,7 @@ int LuaSyncedCtrl::AddHeightMap(lua_State* L)
  * @param x number
  * @param z number
  * @param height number
- * @param terraform number? (Default: 1) Scaling factor.
+ * @param terraform number? (Default: `1`) Scaling factor.
  * @return integer? absHeightDiff If `0`, nothing will be changed (the terraform starts), if `1` the terraform will be finished.
  *
  */
@@ -6384,7 +6384,7 @@ int LuaSyncedCtrl::RevertSmoothMesh(lua_State* L)
  * @param x number
  * @param z number
  * @param height number
- * @return number? The new height, or `nil` if coordinates are invalid.
+ * @return number? height The new height, or `nil` if coordinates are invalid.
  */
 int LuaSyncedCtrl::AddSmoothMesh(lua_State* L)
 {
@@ -6422,7 +6422,7 @@ int LuaSyncedCtrl::AddSmoothMesh(lua_State* L)
  * @param x number
  * @param z number
  * @param height number
- * @param terraform number? (Default: 1)
+ * @param terraform number? (Default: `1`)
  * @return number? The absolute height difference, or `nil` if coordinates are invalid.
  */
 int LuaSyncedCtrl::SetSmoothMesh(lua_State* L)
@@ -6978,12 +6978,12 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 
 /***
  * @function Spring.SpawnExplosion
- * @param posX number? (Default: 0)
- * @param posY number? (Default: 0)
- * @param posZ number? (Default: 0)
- * @param dirX number? (Default: 0)
- * @param dirY number? (Default: 0)
- * @param dirZ number? (Default: 0)
+ * @param posX number? (Default: `0`)
+ * @param posY number? (Default: `0`)
+ * @param posZ number? (Default: `0`)
+ * @param dirX number? (Default: `0`)
+ * @param dirY number? (Default: `0`)
+ * @param dirZ number? (Default: `0`)
  * @param explosionParams ExplosionParams
  * @return nil
  */
@@ -7051,14 +7051,14 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 /***
  * @function Spring.SpawnCEG
  * @param cegname string
- * @param posX number? (Default: 0)
- * @param posY number? (Default: 0)
- * @param posZ number? (Default: 0)
- * @param dirX number? (Default: 0)
- * @param dirY number? (Default: 0)
- * @param dirZ number? (Default: 0)
- * @param radius number? (Default: 0)
- * @param damage number? (Default: 0)
+ * @param posX number? (Default: `0`)
+ * @param posY number? (Default: `0`)
+ * @param posZ number? (Default: `0`)
+ * @param dirX number? (Default: `0`)
+ * @param dirY number? (Default: `0`)
+ * @param dirZ number? (Default: `0`)
+ * @param radius number? (Default: `0`)
+ * @param damage number? (Default: `0`)
  * @return boolean? success
  * @return number cegID
  */
@@ -7083,16 +7083,16 @@ int LuaSyncedCtrl::SpawnCEG(lua_State* L)
 /*** Equal to the UnitScript versions of EmitSFX, but takes position and direction arguments (in either unit- or piece-space) instead of a piece index.
  *
  * @function Spring.SpawnSFX
- * @param unitID integer? (Default: 0)
- * @param sfxID integer? (Default: 0)
- * @param posX number? (Default: 0)
- * @param posY number? (Default: 0)
- * @param posZ number? (Default: 0)
- * @param dirX number? (Default: 0)
- * @param dirY number? (Default: 0)
- * @param dirZ number? (Default: 0)
- * @param radius number? (Default: 0)
- * @param damage number? (Default: 0)
+ * @param unitID integer? (Default: `0`)
+ * @param sfxID integer? (Default: `0`)
+ * @param posX number? (Default: `0`)
+ * @param posY number? (Default: `0`)
+ * @param posZ number? (Default: `0`)
+ * @param dirX number? (Default: `0`)
+ * @param dirY number? (Default: `0`)
+ * @param dirZ number? (Default: `0`)
+ * @param radius number? (Default: `0`)
+ * @param damage number? (Default: `0`)
  * @param absolute boolean?
  * @return boolean? success
  */

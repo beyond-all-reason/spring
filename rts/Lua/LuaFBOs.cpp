@@ -645,7 +645,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
  * @function gl.RawBindFBO
  * @param fbo nil
  * @param target GL? (Default: `GL_FRAMEBUFFER_EXT`)
- * @param rawFboId integer? (Default: 0)
+ * @param rawFboId integer? (Default: `0`)
  * @return nil
  */
 /***
