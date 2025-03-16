@@ -2933,8 +2933,10 @@ int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
  *
  * @function Spring.SetCustomCommandDrawData
  * @param cmdID integer
- * @param (string|number)? cmdReference iconname | cmdID_cloneIcon
- * @return boolean? assigned
+ * @param cmdReference string|integer|nil The name or ID of an icon for command. Pass `nil` to clear draw data for command.
+ * @param color rgba? (Default: white)
+ * @param showArea boolean? (Default: `false`)
+ * @return nil
  */
 int LuaUnsyncedCtrl::SetCustomCommandDrawData(lua_State* L)
 {
