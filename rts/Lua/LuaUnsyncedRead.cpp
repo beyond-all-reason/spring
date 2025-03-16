@@ -4573,7 +4573,7 @@ int LuaUnsyncedRead::GetGroundDecalSizeAndHeight(lua_State* L)
  *
  * @function Spring.GetGroundDecalRotation
  * @param decalID integer
- * @return number? rotation in radians
+ * @return number? rotation Rotation in radians.
  */
 int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
 {
@@ -4592,7 +4592,7 @@ int LuaUnsyncedRead::GetGroundDecalRotation(lua_State* L)
  *
  * @function Spring.GetGroundDecalTexture
  * @param decalID integer
- * @param isMainTex boolean? (Default: true) If false, it gets the normals/glow map
+ * @param isMainTex boolean? (Default: `true`) If `false`, return the normal/glow map.
  * @return nil|string texture
  */
 int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
@@ -4606,8 +4606,9 @@ int LuaUnsyncedRead::GetGroundDecalTexture(lua_State* L)
 /***
  *
  * @function Spring.GetDecalTextures
- * @param isMainTex boolean? (Default: true) If false, it gets the texture for normals/glow maps
- * @return string[] textureNames All textures on the atlas and available for use in SetGroundDecalTexture
+ * @param isMainTex boolean? (Default: `true`) If `false`, return the texture for normal/glow maps.
+ * @return string[] textureNames All textures on the atlas and available for use in `SetGroundDecalTexture`.
+ * @see Spring.GetGroundDecalTexture
  */
 int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
 {
@@ -4622,8 +4623,8 @@ int LuaUnsyncedRead::GetGroundDecalTextures(lua_State* L)
  *
  * @function Spring.SetGroundDecalTextureParams
  * @param decalID integer
- * @return number? texWrapDistance if non-zero sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos
- * @return number texTraveledDistance shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
+ * @return number? texWrapDistance If non-zero, sets the mode to repeat the texture along the left-right direction of the decal every texWrapFactor elmos.
+ * @return number texTraveledDistance Shifts the texture repetition defined by texWrapFactor so the texture of a next line in the continuous multiline can start where the previous finished. For that it should collect all elmo lengths of the previously set multiline segments.
  */
 int LuaUnsyncedRead::GetGroundDecalTextureParams(lua_State* L)
 {
