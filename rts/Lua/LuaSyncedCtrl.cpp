@@ -5762,7 +5762,7 @@ int LuaSyncedCtrl::LevelHeightMap(lua_State* L)
 		}
 	}
 
-	mapDamage->RecalcArea(x1, x2, z1, z2, false);
+	mapDamage->RecalcArea(x1, x2, z1, z2, gs->frameNum < 0);
 	return 0;
 }
 
@@ -5794,7 +5794,7 @@ int LuaSyncedCtrl::AdjustHeightMap(lua_State* L)
 		}
 	}
 
-	mapDamage->RecalcArea(x1, x2, z1, z2, false);
+	mapDamage->RecalcArea(x1, x2, z1, z2, gs->frameNum < 0);
 	return 0;
 }
 
@@ -5842,7 +5842,7 @@ int LuaSyncedCtrl::RevertHeightMap(lua_State* L)
 		}
 	}
 
-	mapDamage->RecalcArea(x1, x2, z1, z2, false);
+	mapDamage->RecalcArea(x1, x2, z1, z2, gs->frameNum < 0);
 	return 0;
 }
 
@@ -6003,7 +6003,7 @@ int LuaSyncedCtrl::SetHeightMapFunc(lua_State* L)
 	}
 
 	if (heightMapx2 > -1) {
-		mapDamage->RecalcArea(heightMapx1, heightMapx2, heightMapz1, heightMapz2, false);
+		mapDamage->RecalcArea(heightMapx1, heightMapx2, heightMapz1, heightMapz2, gs->frameNum < 0);
 	}
 
 	lua_pushnumber(L, heightMapAmountChanged);

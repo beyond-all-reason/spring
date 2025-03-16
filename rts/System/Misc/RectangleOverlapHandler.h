@@ -45,6 +45,8 @@ public:
 
 	auto begin() const { return rectanglesVec.begin(); }
     auto end()   const { return rectanglesVec.end();   }
+
+	const auto& operator[](size_t idx) const { return rectanglesVec[idx]; }
 private:
 	size_t sizeX;
 	size_t sizeY;

@@ -403,7 +403,7 @@ void CReadMap::Initialize()
 	syncedHeightMapDigests.clear();
 	unsyncedHeightMapDigests.clear();
 
-	unsyncedHeightMapUpdates = std::make_unique<CRectangleOverlapHandler>(mapDims.mapxp1, mapDims.mapyp1);
+	unsyncedHeightMapUpdates = CRectangleOverlapHandler(mapDims.mapxp1, mapDims.mapyp1);
 
 	// not callable here because losHandler is still uninitialized, deferred to Game::PostLoadSim
 	// InitHeightMapDigestVectors();
@@ -497,7 +497,7 @@ void CReadMap::UpdateDraw(bool firstCall)
 {
 	SCOPED_TIMER("Update::ReadMap::UHM");
 
-	if (unsyncedHeightMapUpdates->empty())
+	if (unsyncedHeightMapUpdates.empty())
 		return;
 
 	size_t prefRectArea;
@@ -509,20 +509,20 @@ void CReadMap::UpdateDraw(bool firstCall)
 		prefRectArea = 128 * 128;
 	}
 
-	unsyncedHeightMapUpdates->Process(prefRectArea);
+	unsyncedHeightMapUpdates.Process(prefRectArea);
 
-	const int N = static_cast<int>(std::min(MAX_UHM_RECTS_PER_FRAME, unsyncedHeightMapUpdates->size()));
+	const int N = static_cast<int>(std::min(MAX_UHM_RECTS_PER_FRAME, unsyncedHeightMapUpdates.size()));
 
 	for (int i = 0; i < N; i++) {
-		UpdateHeightMapUnsynced(*(unsyncedHeightMapUpdates->begin() + i));
+		UpdateHeightMapUnsynced(unsyncedHeightMapUpdates[i]);
 	};
 	UpdateHeightMapUnsyncedPost();
 
 	for (int i = 0; i < N; i++) {
-		eventHandler.UnsyncedHeightMapUpdate(*(unsyncedHeightMapUpdates->begin() + i), firstCall);
+		eventHandler.UnsyncedHeightMapUpdate(unsyncedHeightMapUpdates[i], firstCall);
 	}
 
-	unsyncedHeightMapUpdates->pop_front_n(N);
+	unsyncedHeightMapUpdates.pop_front_n(N);
 }
 
 
@@ -548,7 +548,7 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool firstCal
 
 	// push the unsynced update; initial one without LOS check
 	if (firstCall) {
-		unsyncedHeightMapUpdates->push_back(cornerRect);
+		unsyncedHeightMapUpdates.push_back(cornerRect);
 	} else {
 		#ifdef USE_HEIGHTMAP_DIGESTS
 		// convert heightmap rectangle to LOS-map space
@@ -803,7 +803,7 @@ void CReadMap::HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect)
 	const auto PushRect = [&](SRectangle& subRect, int hmx, int hmz) {
 		if (subRect.GetArea() > 0) {
 			subRect.ClampIn(hgtMapRect);
-			unsyncedHeightMapUpdates->push_back(subRect);
+			unsyncedHeightMapUpdates.push_back(subRect);
 
 			subRect = {hmx + losSqrSize, hmz,  hmx + losSqrSize, hmz + losSqrSize};
 		} else {

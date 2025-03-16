@@ -5,7 +5,6 @@
 
 #include <array>
 #include <vector>
-#include <memory>
 
 #include "MapTexture.h"
 #include "MapDimensions.h"
@@ -280,7 +279,7 @@ protected:
 	static std::vector<float3> centerNormals2D;
 
 
-	std::unique_ptr<CRectangleOverlapHandler> unsyncedHeightMapUpdates;
+	CRectangleOverlapHandler unsyncedHeightMapUpdates;
 
 	std::vector<float3> unsyncedHeightInfo; // per 128x128 HM patch
 private:
