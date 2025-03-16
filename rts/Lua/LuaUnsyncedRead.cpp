@@ -2428,11 +2428,11 @@ int LuaUnsyncedRead::GetSelectedUnitsCount(lua_State* L)
 	return 1;
 }
 
-/*** Get if selection box is handled by engine
+/*** Get if selection box is handled by engine.
  *
  * @function Spring.GetBoxSelectionByEngine
  *
- * @return boolean when true engine won't select units inside selection box when released
+ * @return boolean isHandledByEngine `true` if the engine will select units inside selection box on release, otherwise `false`.
  *
  * @see Spring.GetSelectionBox
  * @see Spring.SetBoxSelectionByEngine
