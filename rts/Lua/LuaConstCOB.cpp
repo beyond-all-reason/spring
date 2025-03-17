@@ -17,8 +17,9 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 	 * COB constants
 	 * @enum COB
 	 */
-
+	/*** @field COB.ACTIVATION integer */
 	PUSH_COB(ACTIVATION);
+	/*** @field COB.STANDINGMOVEORDERS integer */
 	PUSH_COB(STANDINGMOVEORDERS);
 	/*** @field COB.STANDINGFIREORDERS integer */
 	PUSH_COB(STANDINGFIREORDERS);
