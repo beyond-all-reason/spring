@@ -500,16 +500,8 @@ void CReadMap::UpdateDraw(bool firstCall)
 	if (unsyncedHeightMapUpdates.empty())
 		return;
 
-	size_t prefRectArea;
-
-	if unlikely(firstCall) {
-		prefRectArea = mapDims.mapx * mapDims.mapy;
-	}
-	else {
-		prefRectArea = 128 * 128;
-	}
-
-	unsyncedHeightMapUpdates.Process(prefRectArea);
+	if likely(!firstCall)
+		unsyncedHeightMapUpdates.Process();
 
 	const int N = static_cast<int>(std::min(MAX_UHM_RECTS_PER_FRAME, unsyncedHeightMapUpdates.size()));
 

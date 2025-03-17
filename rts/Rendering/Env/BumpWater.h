@@ -1,8 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #pragma once
 
-#include <memory>
-
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/RenderBuffers.h"
@@ -56,7 +54,7 @@ private:
 	};
 
 	std::vector<CoastAtlasRect> coastmapAtlasRects;
-	std::unique_ptr<CRectangleOverlapHandler> heightmapUpdates;
+	CRectangleOverlapHandler heightmapUpdates;
 
 	void UploadCoastline(const bool forceFull = false);
 	void UpdateCoastmap(const bool initialize = false);

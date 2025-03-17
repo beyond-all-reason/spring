@@ -699,7 +699,7 @@ static inline void for_mt(int start, int end, int step, F&& f)
 		ThreadPool::PushTaskGroup(taskGroup);
 		#else
 		// store the group in all worker queues s.t. each executes a slice
-		for (size_t i = 1; i < ThreadPool::GetNumThreads(); ++i) {
+		for (int i = 1; i < ThreadPool::GetNumThreads(); ++i) {
 			taskGroup->wantedThread.store(i);
 			ThreadPool::PushTaskGroup(taskGroup);
 		}
