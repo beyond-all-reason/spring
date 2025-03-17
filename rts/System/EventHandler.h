@@ -216,7 +216,7 @@ class CEventHandler
 		 */
 		void Save(zipFile archive);
 
-		void UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall);
+		void UnsyncedHeightMapUpdate(const SRectangle& rect);
 		void Update();
 
 		bool KeyMapChanged();
@@ -692,9 +692,9 @@ inline void CEventHandler::ProjectileDestroyed(const CProjectile* proj, int ally
 }
 
 
-inline void CEventHandler::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall)
+inline void CEventHandler::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
-	ITERATE_EVENTCLIENTLIST(UnsyncedHeightMapUpdate, rect, firstCall)
+	ITERATE_EVENTCLIENTLIST(UnsyncedHeightMapUpdate, rect)
 }
 
 

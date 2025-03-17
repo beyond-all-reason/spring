@@ -37,7 +37,7 @@ public:
 
 public:
 	// EventClient
-	void UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall);
+	void UnsyncedHeightMapUpdate(const SRectangle& rect);
 	void Update();
 
 public:

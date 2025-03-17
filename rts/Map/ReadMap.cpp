@@ -511,7 +511,7 @@ void CReadMap::UpdateDraw(bool firstCall)
 	UpdateHeightMapUnsyncedPost();
 
 	for (int i = 0; i < N; i++) {
-		eventHandler.UnsyncedHeightMapUpdate(unsyncedHeightMapUpdates[i], firstCall);
+		eventHandler.UnsyncedHeightMapUpdate(unsyncedHeightMapUpdates[i]);
 	}
 
 	unsyncedHeightMapUpdates.pop_front_n(N);
@@ -915,7 +915,7 @@ void CReadMap::CopySyncedToUnsynced()
 	CopySyncedToUnsyncedImpl(*heightMapSyncedPtr, *heightMapUnsyncedPtr);
 	CopySyncedToUnsyncedImpl(faceNormalsSynced, faceNormalsUnsynced);
 	CopySyncedToUnsyncedImpl(centerNormalsSynced, centerNormalsUnsynced);
-	eventHandler.UnsyncedHeightMapUpdate(SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy }, true);
+	eventHandler.UnsyncedHeightMapUpdate(SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
 }
 
 bool CReadMap::HasVisibleWater()  const { return (!mapRendering->voidWater && !IsAboveWater()); }

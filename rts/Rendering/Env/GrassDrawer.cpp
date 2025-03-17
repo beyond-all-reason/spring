@@ -1053,7 +1053,7 @@ unsigned char CGrassDrawer::GetGrass(const float3& pos)
 }
 
 
-void CGrassDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall)
+void CGrassDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (int z = rect.z1; z <= rect.z2; ++z) {

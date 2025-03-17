@@ -2370,7 +2370,7 @@ void CLuaHandle::Save(zipFile archive)
  * @return number x2
  * @return number z2
  */
-void CLuaHandle::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall)
+void CLuaHandle::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L);
@@ -2384,10 +2384,8 @@ void CLuaHandle::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall)
 	lua_pushnumber(L, rect.x2);
 	lua_pushnumber(L, rect.z2);
 
-	lua_pushboolean(L, firstCall);
-
 	// call the routine
-	RunCallIn(L, cmdStr, 5, 0);
+	RunCallIn(L, cmdStr, 4, 0);
 }
 
 

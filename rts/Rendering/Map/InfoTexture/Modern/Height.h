@@ -28,7 +28,7 @@ public:
 	bool GetFullRead() const override { return false; }
 	int  GetReadAllyTeam() const override { return NoAccessTeam; }
 
-	void UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall) override;
+	void UnsyncedHeightMapUpdate(const SRectangle& rect) override;
 
 public:
 	// IInfoTexture interface

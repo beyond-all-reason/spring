@@ -279,7 +279,7 @@ class CEventClient
 		virtual void Save(zipFile archive);
 
 		virtual void Update();
-		virtual void UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall);
+		virtual void UnsyncedHeightMapUpdate(const SRectangle& rect);
 
 		virtual bool KeyMapChanged();
 		virtual bool KeyPress(int keyCode, int scanCode, bool isRepeat);
