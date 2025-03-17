@@ -64,7 +64,7 @@ public:
 	auto front() const { return rectanglesVec.front(); }
 
 	auto begin() const { return rectanglesVec.begin(); }
-    auto end()   const { return rectanglesVec.end();   }
+	auto end()   const { return rectanglesVec.end();   }
 
 	const auto& operator[](size_t idx) const { return rectanglesVec[idx]; }
 private:
