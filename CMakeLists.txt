@@ -30,16 +30,6 @@ endif()
 include(Util)
 include(PreferStaticLibs)
 
-# check for minimal gcc version
-set(MIN_GCC_VER "7.0")
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "${MIN_GCC_VER}")
-		message(FATAL_ERROR "gcc >=${MIN_GCC_VER} required")
-	else()
-		message(STATUS "gcc ${CMAKE_CXX_COMPILER_VERSION} detected")
-	endif()
-endif()
-
 # set some internal vars
 
 if (NOT "${CMAKE_C_FLAGS}" STREQUAL "")
@@ -86,18 +76,6 @@ if    (WIN32)
 	set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS 1)
 	set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 1)
 endif (WIN32)
-
-
-# XCode
-if    (APPLE)
-	option(MACOSX_BUNDLE "Compile spring to work as a Bundle.app" TRUE)
-	add_definitions(${PIC_FLAG})
-	if    (MACOSX_BUNDLE)
-		add_definitions(-DMACOSX_BUNDLE)
-	endif (MACOSX_BUNDLE)
-else  (APPLE)
-	set(MACOSX_BUNDLE FALSE)
-endif (APPLE)
 
 ### Compiler flags and defines based on build type
 include(TestCXXFlags)

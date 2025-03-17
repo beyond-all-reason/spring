@@ -136,14 +136,6 @@ set(sources_engine_System_Platform_Linux
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/MessageBox.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/WindowManagerHelper.cpp"
 	)
-set(sources_engine_System_Platform_Mac
-		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Hardware.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/SoLib.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Mac/MessageBox.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Mac/CrashHandler.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Mac/WindowManagerHelper.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/ThreadSupport.cpp"
-	)
 set(sources_engine_System_Platform_Windows
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CrashHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/DllLib.cpp"
@@ -198,14 +190,7 @@ set(sources_engine_System
 
 
 ### only use the target platform related directory
-if     (APPLE)
-	make_global_var(sources_engine_System_Threading ${sources_engine_System_Threading} ${sources_engine_System_Threading_Mac})
-	make_global_var(sources_engine_System
-			${sources_engine_System}
-			${sources_engine_System_Platform_Mac}
-			${sources_engine_System_Threading}
-		)
-elseif (UNIX)
+if (UNIX)
 	make_global_var(sources_engine_System_Threading ${sources_engine_System_Threading} ${sources_engine_System_Threading_Linux})
 	make_global_var(sources_engine_System
 			${sources_engine_System}
