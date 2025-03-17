@@ -55,8 +55,6 @@ static inline std::string GetUnitsyncLibName()
 {
 #if   defined(_WIN32)
 	return "unitsync.dll";
-#elif defined(__APPLE__)
-	return "libunitsync.dylib";
 #else
 	return "libunitsync.so";
 #endif
@@ -356,26 +354,6 @@ void DataDirLocater::AddShareDirs()
 	// always true under Windows and true for `multi-engine` setups under *nix
 	if (IsInstallDirDataDir())
 		AddDirs(GetBinaryLocation());
-
-#if defined(__APPLE__)
-	// Mac OS X Application Bundle (*.app) - single file install
-
-	// directory structure (Apple standard):
-	// Spring.app/Contents/MacOS/springlobby
-	// Spring.app/Contents/Resources/bin/spring
-	// Spring.app/Contents/Resources/lib/unitsync.dylib
-	// Spring.app/Contents/Resources/share/games/spring/base/
-
-	const std::string dd_curWorkDir = GetBinaryLocation();
-
-	// This corresponds to Spring.app/Contents/Resources/
-	const std::string bundleResourceDir = FileSystem::GetParent(dd_curWorkDir);
-
-	// This has to correspond with the value in the build-script
-	const std::string dd_curWorkDirData = bundleResourceDir + "/share/games/spring";
-
-	AddDirs(dd_curWorkDirData);             // "Spring.app/Contents/Resources/share/games/spring"
-#endif
 
 #ifdef SPRING_DATADIR
 	// CompilerInfo: using the defineflag SPRING_DATADIR & "SPRING_DATADIR" as string works fine, the preprocessor won't touch the 2nd

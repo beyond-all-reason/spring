@@ -9,9 +9,6 @@
 #include "System/Platform/Linux/ThreadSupport.h"
 #include <semaphore.h>
 #endif
-#ifdef __APPLE__
-#include <libkern/OSAtomic.h> // OSAtomicIncrement64
-#endif
 
 #include "System/Platform/Win/win32.h"
 #include "System/Threading/SpringThreading.h"
@@ -206,7 +203,7 @@ namespace Threading {
 namespace Threading {
 	bool NativeThreadIdsEqual(const NativeThreadId thID1, const NativeThreadId thID2)
 	{
-	#if defined(__APPLE__) || defined(__OpenBSD__)
+	#if defined(__OpenBSD__)
 		// quote from the pthread_equal manpage:
 		// Implementations may choose to define a thread ID as a structure.
 		// This allows additional flexibility and robustness over using an int.
