@@ -13,8 +13,8 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-local spSetMiniRot        = Spring.SetMiniMapRotation
-local spGetMiniMapGeo    	= Spring.GetMiniMapGeometry
+local spSetMiniMapRot     = Spring.SetMiniMapRotation
+local spGetMiniMapGeo     = Spring.GetMiniMapGeometry
 
 local mapAspect
 local prevSnappedRot = -1
@@ -35,7 +35,7 @@ function widget:CameraRotationChanged(_, roty)
 		gl.ConfigMiniMap(px, py, sy, sx)
 	end
 
-	spSetMiniRot(snappedRot) --roty also works here
+	spSetMiniMapRot(snappedRot) --roty also works here
 end
 
 function widget:Initialize()

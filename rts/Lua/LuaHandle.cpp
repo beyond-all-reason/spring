@@ -3417,9 +3417,9 @@ void CLuaHandle::CameraPositionChanged(const float3& pos)
 /*** Called whenever the camera direction changes
  *
  * @function Callins:CameraDirectionChanged
- * @param dirX number Camera direction x in world coordinates
- * @param dirY number Camera direction y in world coordinates
- * @param dirZ number Camera direction z in world coordinates
+ * @param dirX number Camera direction x
+ * @param dirY number Camera direction y
+ * @param dirZ number Camera direction z
  */
 void CLuaHandle::CameraDirectionChanged(const float3& dir)
 {
