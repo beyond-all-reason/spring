@@ -252,7 +252,7 @@ SRectangle CRectangleOverlapHandler::GetMaximalRectangle(const SRectangle& bRect
 {
 	ZoneScoped;
 
-	std::shared_lock lock(*mutex); //shared for read;
+	//std::shared_lock lock(*mutex); //shared for read;
 
 	std::vector<int> heights(sizeX + 1, 0); // Include extra element for easier calculation
 	std::vector<int> stack;
@@ -309,7 +309,7 @@ SRectangle CRectangleOverlapHandler::GetGreedyRectangle(const SRectangle& bRect)
 {
 	ZoneScoped;
 
-	std::shared_lock lock(*mutex); //shared for read;
+	//std::shared_lock lock(*mutex); //shared for read;
 
 	SRectangle rect {
 		std::numeric_limits<int16_t>::max(),
@@ -369,7 +369,7 @@ SRectangle CRectangleOverlapHandler::GetLineRectangle(const SRectangle& bRect)
 {
 	ZoneScoped;
 
-	std::shared_lock lock(*mutex); //shared for read;
+	//std::shared_lock lock(*mutex); //shared for read;
 
 	SRectangle rect {
 		std::numeric_limits<int16_t>::max(),
@@ -435,7 +435,7 @@ SRectangle CRectangleOverlapHandler::GetLineRectangle(const SRectangle& bRect)
 
 void CRectangleOverlapHandler::ClearUpdateContainer(const SRectangle& rect)
 {
-	std::scoped_lock lock(*mutex); // exclusive lock for writing
+	//std::scoped_lock lock(*mutex); // exclusive lock for writing
 
 	// cleanup the area occupied by the rect
 	for (int y = rect.y1; y < rect.y2; ++y) {
