@@ -13,20 +13,20 @@
 	url = https://github.com/rlcevg/CircuitAI.git
 	branch = zk
 [submodule "rts/lib/tracy"]
-	path = rts/lib/tracy
+	path = deps/tracy
 	url = https://github.com/wolfpld/tracy.git
 [submodule "rts/lib/gflags"]
-	path = rts/lib/gflags
+	path = deps/gflags
 	url = https://github.com/gflags/gflags
 [submodule "rts/lib/entt"]
-	path = rts/lib/entt
+	path = deps/entt
 	url = https://github.com/skypjack/entt
 [submodule "rts/lib/cereal"]
-	path = rts/lib/cereal
+	path = deps/cereal
 	url = https://github.com/USCiLab/cereal.git
 [submodule "rts/lib/RmlUi"]
-	path = rts/lib/RmlUi
+	path = deps/RmlUi
 	url = https://github.com/mikke89/RmlUi.git
 [submodule "rts/lib/lunasvg"]
-	path = rts/lib/lunasvg
+	path = deps/lunasvg
 	url = https://github.com/sammycage/lunasvg.git
