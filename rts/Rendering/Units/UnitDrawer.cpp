@@ -528,13 +528,6 @@ void CUnitDrawerGLSL::DrawUnitIcons() const
 
 			unit->iconRadius = DrawUnitIcon(rb, icon, unit->iconRadius, pos, color, unit->radius);
 		}
-		for (const auto& ghost : ghosts) {
-			float3 pos = ghost->midPos;
-
-			const uint8_t* color = teamHandler.Team(ghost->team)->color;
-
-			DrawUnitIcon(rb, icon, ghost->iconRadius, pos, color, ghost->radius);
-		}
 
 		rb.Submit(GL_TRIANGLES);
 	}
