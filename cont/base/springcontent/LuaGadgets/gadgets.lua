@@ -1862,12 +1862,6 @@ function gadgetHandler:CameraPositionChanged(posx, posy, posz)
   end
 end
 
-function gadgetHandler:CameraDirectionChanged(dirx, diry, dirz)
-  for _,g in r_ipairs(self.CameraDirectionChangedList) do
-    g:CameraDirectionChanged(dirx, diry, dirz)
-  end
-end
-
 function gadgetHandler:CommandNotify(id, params, options)
   for _,g in r_ipairs(self.CommandNotifyList) do
     if (g:CommandNotify(id, params, options)) then

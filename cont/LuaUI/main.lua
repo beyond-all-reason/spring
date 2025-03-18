@@ -109,10 +109,6 @@ function CameraPositionChanged(posx, posy, posz)
   return widgetHandler:CameraPositionChanged(posx, posy, posz)
 end
 
-function CameraDirectionChanged(dirx, diry, dirz)
-  return widgetHandler:CameraDirectionChanged(dirx, diry, dirz)
-end
-
 function CommandNotify(id, params, options)
   return widgetHandler:CommandNotify(id, params, options)
 end

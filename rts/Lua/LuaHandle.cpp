@@ -3414,30 +3414,6 @@ void CLuaHandle::CameraPositionChanged(const float3& pos)
 	RunCallIn(L, cmdStr, 3, 0);
 }
 
-/*** Called whenever the camera direction changes
- *
- * @function Callins:CameraDirectionChanged
- * @param dirX number Camera direction x
- * @param dirY number Camera direction y
- * @param dirZ number Camera direction z
- */
-void CLuaHandle::CameraDirectionChanged(const float3& dir)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 6, __func__);
-
-	static const LuaHashString cmdStr(__func__);
-	if (!cmdStr.GetGlobalFunc(L))
-		return;
-
-	lua_pushnumber(L, dir.x);
-	lua_pushnumber(L, dir.y);
-	lua_pushnumber(L, dir.z);
-
-	RunCallIn(L, cmdStr, 3, 0);
-}
-
 /*** Called when a command is issued.
  *
  * @function Callins:CommandNotify

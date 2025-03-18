@@ -187,7 +187,6 @@ local callInLists = {
   'ActiveCommandChanged',
   'CameraRotationChanged',
   'CameraPositionChanged',
-  'CameraDirectionChanged',
   'CommandNotify',
   'AddConsoleLine',
   'ViewResize',
@@ -1201,12 +1200,6 @@ end
 function widgetHandler:CameraPositionChanged(posx, posy, posz)
   for _,w in ipairs(self.CameraPositionChangedList) do
     w:CameraPositionChanged(posx, posy, posz)
-  end
-end
-
-function widgetHandler:CameraDirectionChanged(dirx, diry, dirz)
-  for _,w in ipairs(self.CameraDirectionChangedList) do
-    w:CameraDirectionChanged(dirx, diry, dirz)
   end
 end
 
