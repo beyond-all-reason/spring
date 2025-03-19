@@ -321,14 +321,9 @@ void CUnit::PostInit(const CUnit* builder)
 	// does nothing for LUS, calls Create+SetMaxReloadTime for COB
 	script->Create();
 
-	// all units are blocking (ie. register on the blocking-map
-	// when not flying) except mines, since their position would
-	// be given away otherwise by the PF, etc.
-	// NOTE: this does mean that mines can be stacked indefinitely
-	// (an extra yardmap character would be needed to prevent this)
 	immobile = unitDef->IsImmobileUnit();
 
-	UpdateCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS, unitDef->collidable && (!immobile || !unitDef->canKamikaze));
+	UpdateCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS, unitDef->collidable);
 	Block();
 
 	// done once again in UnitFinished() too
