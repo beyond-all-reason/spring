@@ -334,6 +334,7 @@ public:
 	int transportSize;
 	int minTransportSize;
 	bool isFirePlatform;							///< should the carried units still be able to shoot?
+	bool alignHeadingWithTransporteeOnLoad;
 	float transportMass;
 	float minTransportMass;
 	bool holdSteady;
