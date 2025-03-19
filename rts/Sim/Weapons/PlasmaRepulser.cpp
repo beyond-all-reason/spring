@@ -256,7 +256,7 @@ bool CPlasmaRepulser::IncomingProjectile(CWeaponProjectile* p, const float3& hit
 			curPower = std::min(weaponDef->shieldPower, curPower); // damage can be negative
 		}
 
-		p->Collision();
+		p->Collision(this);
 
 		if (defHitFrames > 0)
 			hitFrameCount = defHitFrames;

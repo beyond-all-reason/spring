@@ -148,7 +148,16 @@ void CStarburstProjectile::Update()
 	}
 
 	if (ttl > 0)
-		explGenHandler.GenExplosion(cegID, pos, dir, ttl, damages->damageAreaOfEffect, 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(
+			cegID,
+			pos,
+			dir,
+			ttl,
+			damages->damageAreaOfEffect,
+			0.0f,
+			owner(),
+			ExplosionHitObject()
+		);
 
 	UpdateTracerPart();
 	UpdateSmokeTrail();

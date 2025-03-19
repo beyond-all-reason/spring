@@ -6909,10 +6909,14 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
 		} break;
 
 		case hashString("hitUnit"): {
-			params.hitUnit = ParseUnit(L, __func__, index + 1);
+			params.hitObject = ParseUnit(L, __func__, index + 1);
 		} break;
 		case hashString("hitFeature"): {
-			params.hitFeature = ParseFeature(L, __func__, index + 1);
+			params.hitObject = ParseFeature(L, __func__, index + 1);
+		} break;
+		case hashString("hitWeapon"): {
+			LOG_L(L_ERROR, "SetExplosionParam(\"hitWeapon\") not implemented");
+			//params.hitObject = nullptr;
 		} break;
 
 		case hashString("craterAreaOfEffect"): {
@@ -7000,8 +7004,7 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 			.damages              = damages,
 			.weaponDef            = nullptr,
 			.owner                = nullptr,
-			.hitUnit              = nullptr,
-			.hitFeature           = nullptr,
+			.hitObject            = ExplosionHitObject(),
 			.craterAreaOfEffect   = 0.0f,
 			.damageAreaOfEffect   = 0.0f,
 			.edgeEffectiveness    = 0.0f,
@@ -7026,8 +7029,9 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 		// parse remaining arguments in order of expected usage frequency
 		params.weaponDef  = weaponDefHandler->GetWeaponDefByID(luaL_optint(L, 16, -1));
 		params.owner      = ParseUnit   (L, __func__, 18);
-		params.hitUnit    = ParseUnit   (L, __func__, 19);
-		params.hitFeature = ParseFeature(L, __func__, 20);
+		params.hitObject  = ParseUnit   (L, __func__, 19);
+		params.hitObject  = ParseFeature(L, __func__, 20);
+		//params.hitWeapon = nullptr; // not implemented
 
 		params.craterAreaOfEffect = luaL_optfloat(L,  8, 0.0f);
 		params.damageAreaOfEffect = luaL_optfloat(L,  9, 0.0f);
@@ -7075,7 +7079,16 @@ int LuaSyncedCtrl::SpawnCEG(lua_State* L)
 	// (Spawn*C*EG implies only custom generators can fire)
 	const unsigned int cegID = lua_isstring(L, 1)? explGenHandler.LoadCustomGeneratorID(lua_tostring(L, 1)): luaL_checkint(L, 1);
 
-	lua_pushboolean(L, explGenHandler.GenExplosion(cegID, pos, dir, damage, radius, dmgMod, nullptr, nullptr));
+	lua_pushboolean(L, explGenHandler.GenExplosion(
+		cegID,
+		pos,
+		dir,
+		damage,
+		radius,
+		dmgMod,
+		nullptr,
+		ExplosionHitObject()
+	));
 	lua_pushnumber(L, cegID);
 	return 2;
 }

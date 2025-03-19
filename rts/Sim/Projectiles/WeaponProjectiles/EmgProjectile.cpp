@@ -55,7 +55,16 @@ void CEmgProjectile::Update()
 		intensity -= 0.1f;
 		intensity = std::max(intensity, 0.0f);
 	} else {
-		explGenHandler.GenExplosion(cegID, pos, speed, ttl, intensity, 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(
+			cegID,
+			pos,
+			speed,
+			ttl,
+			intensity,
+			0.0f,
+			owner(),
+			ExplosionHitObject()
+		);
 	}
 
 	UpdateGroundBounce();
