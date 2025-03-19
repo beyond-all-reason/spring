@@ -8,8 +8,6 @@ set(archives_sources
 	SevenZipArchive.cpp
 	VirtualArchive.cpp
 	ZipArchive.cpp
-	${sources_engine_System_Log}
-	${sources_engine_System_Log_sinkConsole}
 	${SOURCE_ROOT}/System/TimeUtil.cpp
 )
 
@@ -33,6 +31,7 @@ remove_definitions(-DTHREADPOOL)
 #   targets it will be linked against to export compatible symbols.
 
 add_library(archives STATIC ${archives_sources})
+target_link_libraries(archives PRIVATE system-log system-log-sinkconsole)
 if (THREADPOOL)
 	target_compile_definitions(archives PRIVATE -DTHREADPOOL)
 endif()

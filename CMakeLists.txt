@@ -21,11 +21,6 @@ option(INSTALL_PORTABLE "Make a portable installation (instead of regular system
 # Allow to set PREFER_STATIC_LIBS from env, defaults to false
 option(PREFER_STATIC_LIBS "Prefer static libraries when linking deps" $ENV{PREFER_STATIC_LIBS})
 
-# dummy so that qtcreator shows all files (even those of windows)
-if(CMAKE_VERSION VERSION_GREATER 3.1.2)
-	add_library(platform_sources EXCLUDE_FROM_ALL "")
-endif()
-
 # includes rts/build/cmake/Util.cmake & rts/build/cmake/PreferStaticLibs.cmake
 include(Util)
 include(PreferStaticLibs)
@@ -607,6 +602,7 @@ if    (NOT "${AI_TYPES}" STREQUAL "NONE")
 endif (NOT "${AI_TYPES}" STREQUAL "NONE")
 
 # As tools/unitsync/ depends on sources from here, we add this one first
+add_library(system INTERFACE)
 add_subdirectory(rts/System)
 
 # additional tools
