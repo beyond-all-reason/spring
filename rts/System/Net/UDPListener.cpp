@@ -12,13 +12,11 @@
 #include <cinttypes>
 #include <queue>
 
-
 #include "ProtocolDef.h"
 #include "UDPConnection.h"
 #include "Socket.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/errorhandler.h"
-#include "System/StringUtil.h" // for IntToString (header only)
 
 
 namespace netcode
@@ -54,7 +52,7 @@ std::string UDPListener::TryBindSocket(int port, std::shared_ptr<asio::ip::udp::
 		asio::error_code err;
 
 		if ((port < 0) || (port > 65535))
-			throw std::range_error("Port is out of range [0, 65535]: " + IntToString(port));
+			throw std::range_error("Port is out of range [0, 65535]: " + std::to_string(port));
 
 		sock.reset(new ip::udp::socket(netservice));
 		sock->open(ip::udp::v6(), err); // test IP v6 support
