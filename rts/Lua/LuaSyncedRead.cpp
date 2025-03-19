@@ -80,6 +80,8 @@
 #include <cctype>
 #include <type_traits>
 
+#include <iostream>
+
 
 using std::min;
 using std::max;
@@ -5097,6 +5099,7 @@ int LuaSyncedRead::GetUnitMaxRange(lua_State* L)
  *   "targetMoveError" (extra inaccuracy against moving targets, after XP bonus)
  *   "avoidFlags" (bitmask for targeting avoidance),
  *   "collisionFlags" (bitmask for collisions).
+ * 	 "ttl" (number of frames a projectile should live)
  *
  * The state "salvoError" is an exception and returns a table: {x, y, z},
  * which represents the inaccuracy error of the ongoing burst.
@@ -5203,6 +5206,9 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 		} break;
 		case hashString("collisionFlags"): {
 			lua_pushnumber(L, weapon->collisionFlags);
+		} break;
+		case hashString("ttl"): {
+			lua_pushnumber(L, weapon->ttl);
 		} break;
 
 		default: {
