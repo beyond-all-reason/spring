@@ -13,7 +13,6 @@
 #include "Rendering/Env/SkyLight.h"
 #include "Rendering/GL/GeometryBuffer.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/Common/ModelDrawer.h"
 #include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
@@ -102,10 +101,10 @@ void IModelDrawerState::ResetAlphaDrawing(bool deferredPass) const
 CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// if (!CanEnable())
-	// 	return;
+	if (!CanEnable())
+		return;
 
-	#define sh shaderHandler
+	auto* sh = shaderHandler;
 
 	const GL::LightHandler* lightHandler = CModelDrawerConcept::GetLightHandler();
 	static const std::string shaderNames[MODEL_SHADER_COUNT] = {
@@ -159,8 +158,6 @@ CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 
 	// make the active shader non-NULL
 	SetActiveShader(shadowHandler.ShadowsLoaded(), false);
-
-	#undef sh
 }
 
 CModelDrawerStateGLSL::~CModelDrawerStateGLSL()
@@ -171,7 +168,7 @@ CModelDrawerStateGLSL::~CModelDrawerStateGLSL()
 	shaderHandler->ReleaseProgramObjects(PO_CLASS);
 }
 
-bool CModelDrawerStateGLSL::CanEnable() const { return CModelDrawerConcept::UseAdvShading(); }
+bool CModelDrawerStateGLSL::CanEnable() const { return true; }
 bool CModelDrawerStateGLSL::CanDrawDeferred() const { return CModelDrawerConcept::DeferredAllowed(); }
 
 bool CModelDrawerStateGLSL::SetTeamColor(int team, float alpha) const
@@ -241,9 +238,9 @@ CModelDrawerStateGL4::CModelDrawerStateGL4()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!CanEnable())
-	return;
+		return;
 
-	#define sh shaderHandler
+	auto* sh = shaderHandler;
 
 	static const std::string shaderNames[MODEL_SHADER_COUNT] = {
 		"ModelShaderGL4-NoShadowStandard",
@@ -286,7 +283,7 @@ CModelDrawerStateGL4::~CModelDrawerStateGL4()
 	shaderHandler->ReleaseProgramObjects(PO_CLASS);
 }
 
-bool CModelDrawerStateGL4::CanEnable() const { return globalRendering->haveGL4 && CModelDrawerConcept::UseAdvShading(); }
+bool CModelDrawerStateGL4::CanEnable() const { return globalRendering->haveGL4; }
 bool CModelDrawerStateGL4::CanDrawDeferred() const { return CModelDrawerConcept::DeferredAllowed(); }
 
 bool CModelDrawerStateGL4::SetTeamColor(int team, float alpha) const
