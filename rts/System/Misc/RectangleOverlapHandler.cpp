@@ -6,14 +6,16 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
-//#define ROH_MAKE_BITMAP_SNAPSHOTS
+#define ROH_MAKE_BITMAP_SNAPSHOTS
 #ifdef ROH_MAKE_BITMAP_SNAPSHOTS
+#define ROH_LOAD_BITMAP_SNAPSHOT
 #include "Rendering/Textures/Bitmap.h"
 #include <fmt/format.h>
 #endif
 
 #include <cassert>
 #include <array>
+#include <queue>
 #include <cmath>
 #include <list>
 
@@ -81,22 +83,58 @@ void CRectangleOverlapHandler::Process()
 	rectanglesVec.clear();
 
 
-#ifdef ROH_MAKE_BITMAP_SNAPSHOTS
-	size_t step = 0;
-	CBitmap bitmap(nullptr, sizeX, sizeY, 1);
-	auto* mem = bitmap.GetRawMem();
-	for (auto value : updateContainer) {
-		*mem = static_cast<uint8_t>(value == DataType::BUSY) * 0xFF;
-		++mem;
+	std::fill(updateContainer.begin(), updateContainer.end(), DataType::FREE);
+
+#ifdef ROH_LOAD_BITMAP_SNAPSHOT
+	{
+		CBitmap load(nullptr, sizeX, sizeY, 1);
+		load.LoadGrayscale("CRectangleOverlapHandler-0-load.png");
+		auto* mem = load.GetRawMem();
+		for (auto& value : updateContainer) {
+			value = static_cast<DataType>(*mem);
+			++mem;
+		}
 	}
-	bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.png", step++), true);
 #endif
 
 	std::array<decltype(rectanglesVec), ThreadPool::MAX_THREADS> perThreadRectangles;
 
 	auto boundingRectsData = GetBoundingRectsData();
+	int totalSum = 0;
+	for (const auto& brd : boundingRectsData)
+		totalSum += brd.second;
 
-	const auto MainLoopBody = [&boundingRectsData, &perThreadRectangles, this](int bri) {
+	int bri = 0;
+	LOG("totalSum %d", totalSum);
+	for (const auto& brd : boundingRectsData) {
+		LOG("\tBounding rect[%d]: %d-%d, %d-%d, occArea %d", bri++, brd.first.x1, brd.first.x2, brd.first.y1, brd.first.y2, brd.second);
+	}
+
+#ifdef ROH_MAKE_BITMAP_SNAPSHOTS
+	size_t step = 0;
+	{
+		CBitmap bitmap(nullptr, sizeX, sizeY, 1);
+		auto* mem = bitmap.GetRawMem();
+		for (auto value : updateContainer) {
+			*mem = static_cast<uint8_t>(value);
+			++mem;
+		}
+
+		auto begMem = bitmap.GetRawMem();
+		for (const auto& brd : boundingRectsData) {
+			for (auto mem = begMem + (brd.first.y1 - 1) * sizeX + brd.first.x1 - 1; mem != begMem + (brd.first.y1 - 1) * sizeX + brd.first.x2 + 1; ++mem) {
+				*mem = static_cast<uint8_t>(DataType::BBOX);
+			}
+			for (auto mem = begMem + (brd.first.y2) * sizeX + brd.first.x1 - 1; mem != begMem + (brd.first.y2) * sizeX + brd.first.x2 + 1; ++mem) {
+				*mem = static_cast<uint8_t>(DataType::BBOX);
+			}
+		}
+
+		bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.png", step++), true);
+	}
+#endif
+
+	const auto MainLoopBody = [&, this](int bri) {
 		auto& [bRect, occArea] = boundingRectsData[bri];
 		const auto bRectArea = bRect.GetArea();
 
@@ -105,10 +143,10 @@ void CRectangleOverlapHandler::Process()
 			GREEDY,
 			LINE
 		};
-		RectDecompositionAlgo algo = MAXIMAL;
+		RectDecompositionAlgo algo = GREEDY;
 
 		static constexpr auto MAXIMAL_ALGO_AREA_THRESHOLD = 0.25f;
-		static constexpr auto GREEDY_ALGO_SPARSITY_THRESHOLD = 0.05f;
+		static constexpr auto GREEDY_ALGO_SPARSITY_THRESHOLD = 0.025f;
 
 		while (true) {
 			SRectangle rect;
@@ -116,13 +154,13 @@ void CRectangleOverlapHandler::Process()
 			switch (algo)
 			{
 			case MAXIMAL:
-				rect = GetMaximalRectangle(bRect);
+				rect = GetMaximalRectangle(bRect, bri);
 				break;
 			case GREEDY:
-				rect = GetGreedyRectangle(bRect);
+				rect = GetGreedyRectangle(bRect, bri);
 				break;
 			case LINE:
-				rect = GetLineRectangle(bRect);
+				rect = GetLineRectangle(bRect, bri);
 				break;
 			default:
 				assert(false);
@@ -133,16 +171,20 @@ void CRectangleOverlapHandler::Process()
 			if (area <= 0)
 				break;
 
+			LOG("\tRect[%d]: %d-%d, %d-%d, area %d", bri, rect.x1, rect.x2, rect.y1, rect.y2, area);
+
 			assert(bRect.Inside(rect));
 
 			occArea -= area;
+			LOG("\tOccArea %d", occArea);
+			assert(occArea >= 0);
 
-			if (algo == RectDecompositionAlgo::MAXIMAL && static_cast<float>(area) / bRectArea < MAXIMAL_ALGO_AREA_THRESHOLD) {
-				algo = RectDecompositionAlgo::GREEDY;
-			}
-			else if (algo == RectDecompositionAlgo::GREEDY && static_cast<float>(occArea) / bRectArea < GREEDY_ALGO_SPARSITY_THRESHOLD) {
-				algo = RectDecompositionAlgo::LINE;
-			}
+			//if (algo == RectDecompositionAlgo::MAXIMAL && static_cast<float>(area) / bRectArea < MAXIMAL_ALGO_AREA_THRESHOLD) {
+			//	algo = RectDecompositionAlgo::GREEDY;
+			//}
+			//else if (algo == RectDecompositionAlgo::GREEDY && static_cast<float>(occArea) / bRectArea < GREEDY_ALGO_SPARSITY_THRESHOLD) {
+			//	algo = RectDecompositionAlgo::LINE;
+			//}
 
 			ClearUpdateContainer(rect);
 
@@ -150,12 +192,15 @@ void CRectangleOverlapHandler::Process()
 			//rectanglesVec.emplace_back(rect.x1, rect.y1, rect.x2 - 1, rect.y2 - 1);
 			perThreadRectangles[ThreadPool::GetThreadNum()].emplace_back(rect.x1, rect.y1, rect.x2 - 1, rect.y2 - 1);
 #ifdef ROH_MAKE_BITMAP_SNAPSHOTS
-			mem = bitmap.GetRawMem();
-			for (auto value : updateContainer) {
-				*mem = static_cast<uint8_t>(value == DataType::BUSY) * 0xFF;
-				++mem;
+			{
+				CBitmap bitmap(nullptr, sizeX, sizeY, 1);
+				auto mem = bitmap.GetRawMem();
+				for (auto value : updateContainer) {
+					*mem = static_cast<uint8_t>(value);
+					++mem;
+				}
+				bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.png", step++), true);
 			}
-			bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.png", step++), true);
 #endif
 		}
 	};
@@ -167,7 +212,12 @@ void CRectangleOverlapHandler::Process()
 		MainLoopBody(bri);
 #endif
 
+	assert(*std::max_element(updateContainer.begin(), updateContainer.end()) != DataType::BUSY);
+	std::fill(updateContainer.begin(), updateContainer.end(), DataType::FREE);
+
 	assert(rectanglesVec.empty());
+
+	std::fill(rectOwnersContainer.begin(), rectOwnersContainer.end(), -1);
 
 	for (const auto& thisThreadRectangles : perThreadRectangles) {
 		for (const auto& rect : thisThreadRectangles) {
@@ -179,76 +229,66 @@ void CRectangleOverlapHandler::Process()
 	statsOutputRects += rectanglesVec.size();
 }
 
-std::vector<std::pair<SRectangle, int>> CRectangleOverlapHandler::GetBoundingRectsData() const
+std::vector<std::pair<SRectangle, int>> CRectangleOverlapHandler::GetBoundingRectsData()
 {
 	ZoneScoped;
 
 	std::vector<std::pair<SRectangle, int>> boundingRectsData;
 
-	struct Line {
-		int y;
-		int x1;
-		int x2;
+	static const std::array directions = {
+		std::make_pair<int, int>(-1,  0),
+		std::make_pair<int, int>( 1,  0),
+		std::make_pair<int, int>( 0, -1),
+		std::make_pair<int, int>( 0,  1)
 	};
 
-	std::list<Line> lines;
+	decltype(updateContainer) updateContainerCopy = updateContainer;
 
-	for (uint32_t y = 0; y < sizeY; y++) {
-		const auto stt = updateContainer.begin() + y * sizeX;
-		const auto fin = stt + sizeX;
-		auto beg = stt;
-		auto end = fin;
-		while (beg != fin) {
-			beg = std::find_if    (beg, fin, BusyPred);
-			end = std::find_if_not(beg, fin, BusyPred);
-			if (beg != end)
-				lines.emplace_back(y, static_cast<int>(std::distance(stt, beg)), static_cast<int>(std::distance(stt, end)));
+	for (int y = 0; y < sizeY; ++y) {
+		int baseIdx = y * sizeX;
+		for (int x = 0; x < sizeX; ++x) {		
+			int idx = baseIdx + x;
+			if (updateContainerCopy[idx] == DataType::BUSY) {
+				std::queue<std::pair<int, int>> q;
+				q.push({ x, y });
+				updateContainerCopy[idx] = DataType::FREE;
 
-			beg = end; //rewind
-		}
-	}
+				const int bRectNum = static_cast<int>(boundingRectsData.size());
+				SRectangle bRect = { x, y, x, y }; // degenerate rectangle, will get fixed in the loop below
+				int occArea = 0;
 
-	while (!lines.empty()) {
-		auto beg = lines.begin();
+				while (!q.empty()) {
+					auto [cx, cy] = q.front();
+					q.pop();
 
-		int busyArea = 0;
-		SRectangle bRect {
-			beg->x1,
-			beg->y,
-			beg->x2,
-			beg->y + 1
-		};
-		busyArea += beg->x2 - beg->x1;
+					bRect.x1 = std::min(bRect.x1, cx    );
+					bRect.x2 = std::max(bRect.x2, cx + 1);
+					bRect.y1 = std::min(bRect.y1, cy    );
+					bRect.y2 = std::max(bRect.y2, cy + 1);
+					rectOwnersContainer[cy * sizeX + cx] = bRectNum;
+					++occArea;
 
-		// pop the previous item
-		beg = lines.erase(beg);
-
-		for (auto it = beg; it != lines.end(); /*NOOP*/) {
-			if (std::abs(it->y - bRect.y2) > 1) {
-				break;
+					for (auto [dx, dy] : directions) {
+						const int nx = cx + dx;
+						const int ny = cy + dy;
+						if (nx >= 0 && nx < sizeX && ny >= 0 && ny < sizeY) {
+							int nidx = ny * sizeX + nx;
+							if (updateContainerCopy[nidx] == DataType::BUSY) {
+								q.push({ nx, ny });
+								updateContainerCopy[nidx] = DataType::FREE;
+							}
+						}
+					}
+				}
+				boundingRectsData.emplace_back(bRect, occArea);
 			}
-			busyArea += it->x2 - it->x1;
-
-			const bool misalignedByX = (it->x2 < bRect.x1 || it->x1 > bRect.x2);
-			if (misalignedByX) {
-				++it;
-				continue;
-			}
-
-			bRect.y2 = it->y + 1;
-			bRect.x1 = std::min(bRect.x1, it->x1);
-			bRect.x2 = std::max(bRect.x2, it->x2);
-
-			it = lines.erase(it); // advances it
 		}
-
-		boundingRectsData.emplace_back(bRect, busyArea);
 	}
 
 	return boundingRectsData;
 }
 
-SRectangle CRectangleOverlapHandler::GetMaximalRectangle(const SRectangle& bRect)
+SRectangle CRectangleOverlapHandler::GetMaximalRectangle(const SRectangle& bRect, int bRectNum) const
 {
 	ZoneScoped;
 
@@ -268,9 +308,10 @@ SRectangle CRectangleOverlapHandler::GetMaximalRectangle(const SRectangle& bRect
 	int maxArea = 0;
 
 	for (int y = bRect.y1; y < bRect.y2; y++) {
+		int baseIdx = y * sizeX;
 		for (int x = bRect.x1; x < bRect.x2; x++) {
-			auto itVal = updateContainer.begin() + y * sizeX + x;
-			heights[x] = (*itVal == DataType::BUSY) ? heights[x] + 1 : 0;
+			int idx = baseIdx + x;
+			heights[x] = (updateContainer[idx] == DataType::BUSY && rectOwnersContainer[idx] == bRectNum) ? heights[x] + 1 : 0;
 		}
 
 		stack.push_back(std::max(bRect.x1 - 1, 0));
@@ -305,7 +346,7 @@ SRectangle CRectangleOverlapHandler::GetMaximalRectangle(const SRectangle& bRect
 	return rect;
 }
 
-SRectangle CRectangleOverlapHandler::GetGreedyRectangle(const SRectangle& bRect)
+SRectangle CRectangleOverlapHandler::GetGreedyRectangle(const SRectangle& bRect, int bRectNum) const
 {
 	ZoneScoped;
 
@@ -318,25 +359,44 @@ SRectangle CRectangleOverlapHandler::GetGreedyRectangle(const SRectangle& bRect)
 		std::numeric_limits<int16_t>::min()
 	};
 
-	// find the first row
-	for (int y = bRect.y1; y < bRect.y2; y++) {
-		const auto off = updateContainer.begin() + y * sizeX;
-		const auto stt = off + bRect.x1;
-		const auto fin = off + bRect.x2;
-		auto beg = stt;
-		auto end = fin;
+	const auto ValidOwnerPred = [bRectNum](const auto val) { return bRectNum == val; };
 
-		beg = std::find_if    (beg, end, BusyPred);
-		if (beg == fin)
+	for (int y = bRect.y1; y < bRect.y2; y++) {
+		int baseIdx = y * sizeX;
+		int x1 = -1;
+		int x2 = -1;
+
+		// Find first busy column
+		for (int x = bRect.x1; x < bRect.x2; x++) {
+			int idx = baseIdx + x;
+
+			if (!ValidOwnerPred(rectOwnersContainer[idx]))
+				continue;
+
+			if (BusyPred(updateContainer[idx])) {
+				x1 = x;
+				break;
+			}
+		}
+
+		if (x1 == -1)
 			continue;
 
-		end = std::find_if_not(beg, end, BusyPred);
+		// Find first non-busy column after start
+		x2 = bRect.x2;
+		for (int x = x1 + 1; x < bRect.x2; x++) {
+			int idx = baseIdx + x;
 
-		rect.x1 = static_cast<int>(std::distance(off, beg));
-		rect.x2 = static_cast<int>(std::distance(off, end));
+			if (!BusyPred(updateContainer[idx])) {
+				x2 = x;
+				break;
+			}
+		}
+
+		rect.x1 = x1;
+		rect.x2 = x2;
 		rect.y1 = y;
 		rect.y2 = y + 1;
-
 		break;
 	}
 
@@ -344,91 +404,70 @@ SRectangle CRectangleOverlapHandler::GetGreedyRectangle(const SRectangle& bRect)
 		return rect;
 
 	for (int y = rect.y2; y < bRect.y2; y++) {
-		const auto off = updateContainer.begin() + y * sizeX;
-		const auto stt = off + rect.x1;
-		const auto fin = off + rect.x2;
-		auto beg = stt;
-		auto end = fin;
+		int baseIdx = y * sizeX;
 
-		beg = std::find_if    (beg, end, BusyPred);
-		end = std::find_if_not(beg, end, BusyPred);
+		bool validRange =
+			std::all_of(rectOwnersContainer.begin() + baseIdx + rect.x1, rectOwnersContainer.begin() + baseIdx + rect.x2, ValidOwnerPred) &&
+			std::all_of(updateContainer.begin()     + baseIdx + rect.x1, updateContainer.begin()     + baseIdx + rect.x2, BusyPred);
 
-		int x1 = static_cast<int>(std::distance(off, beg));
-		int x2 = static_cast<int>(std::distance(off, end));
-
-		if (x1 > rect.x1 || x2 < rect.x2)
-			return rect;
-
-		rect.y2 = y + 1;
+		if (validRange)
+			rect.y2 = y + 1;
+		else
+			break;
 	}
 
 	return rect;
 }
 
-SRectangle CRectangleOverlapHandler::GetLineRectangle(const SRectangle& bRect)
+SRectangle CRectangleOverlapHandler::GetLineRectangle(const SRectangle& bRect, int bRectNum) const
 {
 	ZoneScoped;
 
-	//std::shared_lock lock(*mutex); //shared for read;
-
-	SRectangle rect {
+	SRectangle rect{
 		std::numeric_limits<int16_t>::max(),
 		std::numeric_limits<int16_t>::max(),
 		std::numeric_limits<int16_t>::min(),
 		std::numeric_limits<int16_t>::min()
 	};
 
-#if 1
-	// find the topmost row, leftmost contiguous column
 	for (int y = bRect.y1; y < bRect.y2; y++) {
-		const auto off = updateContainer.begin() + y * sizeX;
-		const auto stt = off + bRect.x1;
-		const auto fin = off + bRect.x2;
-		auto beg = stt;
-		auto end = fin;
+		int baseIdx = y * sizeX;
+		int x1 = -1;
+		int x2 = -1;
 
-		beg = std::find_if(beg, end, BusyPred);
-		if (beg == fin)
-			continue;
-
-		end = std::find_if_not(beg, end, BusyPred);
-
-		rect.x1 = static_cast<int>(std::distance(off, beg));
-		rect.x2 = static_cast<int>(std::distance(off, end));
-		rect.y1 = y;
-		rect.y2 = y + 1;
-
-		break;
-	}
-#else
-	// find the first busy point
-	for (int y = bRect.y1; y < bRect.y2; y++) {
+		// Find first busy column
 		for (int x = bRect.x1; x < bRect.x2; x++) {
-			size_t idx = y * sizeX + x;
+			int idx = baseIdx + x;
+
+			if (rectOwnersContainer[idx] != bRectNum)
+				continue;
+
 			if (BusyPred(updateContainer[idx])) {
-				rect.x1 = x;
-				rect.x2 = x + 1;
-				rect.y1 = y;
-				rect.y2 = y + 1;
+				x1 = x;
 				break;
 			}
 		}
-		if (rect.y2 >= 0)
-			break;
-	}
 
-	if (rect.y2 < 0)
-		return rect; //return invalid rect as is, the bRect is all free
+		if (x1 == -1)
+			continue;
 
-	// here we deliberately go in horizontal direction first because the GetGreedyRectangle was good to cut vertical blocks
-	// this is a bad memory access patern though
-	for (int y = rect.y2; y < bRect.y2; y++) {
-		rect.y2 = y;
-		size_t idx = y * sizeX + rect.x1;
-		if (!BusyPred(updateContainer[idx]))
-			break;
+		// Find first non-busy column after start
+		x2 = bRect.x2;
+		for (int x = x1 + 1; x < bRect.x2; x++) {
+			int idx = baseIdx + x;
+
+			if (!BusyPred(updateContainer[idx])) {
+				x2 = x;
+				break;
+			}
+		}
+
+		rect.x1 = x1;
+		rect.x2 = x2;
+		rect.y1 = y;
+		rect.y2 = y + 1;
+		break;
 	}
-#endif
 
 	return rect;
 }
@@ -442,6 +481,10 @@ void CRectangleOverlapHandler::ClearUpdateContainer(const SRectangle& rect)
 		auto off = updateContainer.begin() + y * sizeX;
 		auto beg = off + rect.x1;
 		auto end = off + rect.x2;
+#ifdef ROH_MAKE_BITMAP_SNAPSHOTS
+		std::fill(beg, end, DataType::MARK);
+#else
 		std::fill(beg, end, DataType::FREE);
+#endif
 	}
 }

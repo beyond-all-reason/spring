@@ -22,8 +22,10 @@ class CRectangleOverlapHandler
 	CR_DECLARE_STRUCT(CRectangleOverlapHandler)
 private:
 	enum DataType : uint8_t {
-		FREE = 0,
-		BUSY = 1
+		FREE = 0x00,
+		MARK = 0x7F,
+		BBOX = 0x40,
+		BUSY = 0xFF
 	};
 public:
 	CRectangleOverlapHandler()
@@ -35,7 +37,7 @@ public:
 		, statsOutputArea{ 0 }
 		, mutex{ nullptr }
 	{}
-	CRectangleOverlapHandler(size_t sizeX_, size_t sizeY_)
+	CRectangleOverlapHandler(int sizeX_, int sizeY_)
 		: sizeX{ sizeX_ }
 		, sizeY{ sizeY_ }
 		, statsInputRects{ 0 }
@@ -43,6 +45,7 @@ public:
 		, statsInputArea{ 0 }
 		, statsOutputArea{ 0 }
 		, updateContainer(sizeX * sizeY, DataType::FREE)
+		, rectOwnersContainer(sizeX * sizeY, -1)
 		, mutex{ std::make_unique<std::shared_mutex>() }
 	{}
 	~CRectangleOverlapHandler();
@@ -70,14 +73,14 @@ public:
 private:
 	static inline const auto BusyPred = [](auto val) { return (val == DataType::BUSY); };
 
-	std::vector<std::pair<SRectangle, int>> GetBoundingRectsData() const;
-	SRectangle GetMaximalRectangle(const SRectangle& bRect);
-	SRectangle GetGreedyRectangle(const SRectangle& bRect);
-	SRectangle GetLineRectangle(const SRectangle& bRect);
+	std::vector<std::pair<SRectangle, int>> GetBoundingRectsData();
+	SRectangle GetMaximalRectangle(const SRectangle& bRect, int bRectNum) const;
+	SRectangle GetGreedyRectangle(const SRectangle& bRect, int bRectNum) const;
+	SRectangle GetLineRectangle(const SRectangle& bRect, int bRectNum) const;
 	void ClearUpdateContainer(const SRectangle& rect);
 private:
-	size_t sizeX;
-	size_t sizeY;
+	int sizeX;
+	int sizeY;
 
 	size_t statsInputRects;
 	size_t statsOutputRects;
@@ -85,6 +88,7 @@ private:
 	size_t statsOutputArea;
 
 	std::vector<DataType> updateContainer;
+	std::vector<int> rectOwnersContainer;
 	std::vector<SRectangle> rectanglesVec;
 
 	std::unique_ptr<std::shared_mutex> mutex;
