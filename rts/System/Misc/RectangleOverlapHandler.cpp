@@ -6,13 +6,6 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
-//#define ROH_MAKE_BITMAP_SNAPSHOTS
-#ifdef ROH_MAKE_BITMAP_SNAPSHOTS
-//#define ROH_LOAD_BITMAP_SNAPSHOT
-#include "Rendering/Textures/Bitmap.h"
-#include <fmt/format.h>
-#endif
-
 #include <cassert>
 #include <array>
 #include <queue>
@@ -28,6 +21,7 @@ CR_REG_METADATA(CRectangleOverlapHandler, (
 	CR_MEMBER(statsInputArea),
 	CR_MEMBER(statsOutputArea),
 	CR_MEMBER(updateContainer),
+	CR_IGNORED(rectOwnersContainer),
 	CR_MEMBER(rectanglesVec)
 ))
 
@@ -82,58 +76,12 @@ void CRectangleOverlapHandler::Process()
 	statsInputRects += rectanglesVec.size();
 	rectanglesVec.clear();
 
-#ifdef ROH_LOAD_BITMAP_SNAPSHOT
-	{
-		std::fill(updateContainer.begin(), updateContainer.end(), DataType::FREE);
-
-		CBitmap load(nullptr, sizeX, sizeY, 1);
-		load.LoadGrayscale("CRectangleOverlapHandler-0-load.png");
-		auto* mem = load.GetRawMem();
-		for (auto& value : updateContainer) {
-			value = static_cast<DataType>(*mem);
-			++mem;
-		}
-	}
-#endif
-
 	std::array<decltype(rectanglesVec), ThreadPool::MAX_THREADS> perThreadRectangles;
 
 	auto boundingRectsData = GetBoundingRectsData();
 	int totalSum = 0;
 	for (const auto& brd : boundingRectsData)
 		totalSum += brd.second;
-
-	/*
-	int bri = 0;
-	LOG("totalSum %d", totalSum);
-	for (const auto& brd : boundingRectsData) {
-		LOG("\tBounding rect[%d]: %d-%d, %d-%d, occArea %d", bri++, brd.first.x1, brd.first.x2, brd.first.y1, brd.first.y2, brd.second);
-	}
-	*/
-
-#ifdef ROH_MAKE_BITMAP_SNAPSHOTS
-	size_t step = 0;
-	{
-		CBitmap bitmap(nullptr, sizeX, sizeY, 1);
-		auto* mem = bitmap.GetRawMem();
-		for (auto value : updateContainer) {
-			*mem = static_cast<uint8_t>(value);
-			++mem;
-		}
-
-		auto begMem = bitmap.GetRawMem();
-		for (const auto& brd : boundingRectsData) {
-			for (auto mem = begMem + (brd.first.y1 - 1) * sizeX + brd.first.x1 - 1; mem != begMem + (brd.first.y1 - 1) * sizeX + brd.first.x2 + 1; ++mem) {
-				*mem = static_cast<uint8_t>(DataType::BBOX);
-			}
-			for (auto mem = begMem + (brd.first.y2) * sizeX + brd.first.x1 - 1; mem != begMem + (brd.first.y2) * sizeX + brd.first.x2 + 1; ++mem) {
-				*mem = static_cast<uint8_t>(DataType::BBOX);
-			}
-		}
-
-		bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.png", step++), true);
-	}
-#endif
 
 	const auto MainLoopBody = [&, this](int bri) {
 		auto& [bRect, occArea] = boundingRectsData[bri];
@@ -172,12 +120,8 @@ void CRectangleOverlapHandler::Process()
 			if (area <= 0)
 				break;
 
-			//LOG("\tRect[%d]: %d-%d, %d-%d, area %d", bri, rect.x1, rect.x2, rect.y1, rect.y2, area);
-
 			assert(bRect.Inside(rect));
-
 			occArea -= area;
-			//LOG("\tOccArea %d", occArea);
 			assert(occArea >= 0);
 
 			if (algo == RectDecompositionAlgo::MAXIMAL && static_cast<float>(area) / bRectArea < MAXIMAL_ALGO_AREA_THRESHOLD) {
@@ -189,35 +133,18 @@ void CRectangleOverlapHandler::Process()
 
 			ClearUpdateContainer(rect);
 
-			// make inclusive
-			//rectanglesVec.emplace_back(rect.x1, rect.y1, rect.x2 - 1, rect.y2 - 1);
 			perThreadRectangles[ThreadPool::GetThreadNum()].emplace_back(rect.x1, rect.y1, rect.x2 - 1, rect.y2 - 1);
-#ifdef ROH_MAKE_BITMAP_SNAPSHOTS
-			{
-				CBitmap bitmap(nullptr, sizeX, sizeY, 1);
-				auto mem = bitmap.GetRawMem();
-				for (auto value : updateContainer) {
-					*mem = static_cast<uint8_t>(value);
-					++mem;
-				}
-				bitmap.Save(fmt::format("CRectangleOverlapHandler-{}.png", step++), true);
-			}
-#endif
 		}
 	};
 
-#ifndef ROH_MAKE_BITMAP_SNAPSHOTS
 	for_mt(0, static_cast<int>(boundingRectsData.size()), MainLoopBody);
-#else
-	for (int bri = 0; bri < static_cast<int>(boundingRectsData.size()); ++bri)
-		MainLoopBody(bri);
-#endif
+
+	// sanity checks
 	assert(std::all_of(boundingRectsData.begin(), boundingRectsData.end(), [](const auto& item) { return item.second == 0; }));
 	assert(*std::max_element(updateContainer.begin(), updateContainer.end()) != DataType::BUSY);
-	std::fill(updateContainer.begin(), updateContainer.end(), DataType::FREE);
-
 	assert(rectanglesVec.empty());
 
+	// cleanup
 	std::fill(rectOwnersContainer.begin(), rectOwnersContainer.end(), -1);
 
 	for (const auto& thisThreadRectangles : perThreadRectangles) {
@@ -478,10 +405,6 @@ void CRectangleOverlapHandler::ClearUpdateContainer(const SRectangle& rect)
 		auto off = updateContainer.begin() + y * sizeX;
 		auto beg = off + rect.x1;
 		auto end = off + rect.x2;
-#ifdef ROH_MAKE_BITMAP_SNAPSHOTS
-		std::fill(beg, end, DataType::MARK);
-#else
 		std::fill(beg, end, DataType::FREE);
-#endif
 	}
 }
