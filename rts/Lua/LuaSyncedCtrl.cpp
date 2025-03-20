@@ -222,6 +222,8 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitDirection);
 	REGISTER_LUA_CFUNC(SetUnitHeadingAndUpDir);
 
+	REGISTER_LUA_CFUNC(SetUnitTrackDecals);
+
 	REGISTER_LUA_CFUNC(SetFactoryBuggerOff);
 	REGISTER_LUA_CFUNC(BuggerOff);
 
@@ -3975,6 +3977,38 @@ int LuaSyncedCtrl::SetUnitHeadingAndUpDir(lua_State* L)
 int LuaSyncedCtrl::SetUnitVelocity(lua_State* L)
 {
 	return (SetWorldObjectVelocity(L, ParseUnit(L, __func__, 1)));
+}
+
+/***
+ * @function Spring.SetUnitTrackDecals
+ * 
+ * @number unitDefID
+ * 
+ * @bool[opt] enabled
+ * @number[opt] width
+ * @number[opt] strength
+ * @number[opt] offset
+ * @number[opt] stretch
+ * 
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitTrackDecals(lua_State* L)
+{
+	const int unitDefID = luaL_checkint(L, 1);
+	UnitDef* unitDef = const_cast<UnitDef*>(unitDefHandler->GetUnitDefByID(unitDefID));
+	if (unitDef == nullptr) {
+		luaL_error(L, "%s(): Bad unitDefID: %d", __func__, unitDefID);
+		return 0;
+	}
+
+	SolidObjectDecalDef decalDef = unitDef->decalDef;
+	decalDef.leaveTrackDecals = luaL_optboolean(L, 2, decalDef.leaveTrackDecals);
+	decalDef.trackDecalWidth = luaL_optfloat(L, 3, decalDef.trackDecalWidth);
+	decalDef.trackDecalStrength = luaL_optfloat(L, 4, decalDef.trackDecalStrength);
+	decalDef.trackDecalOffset = luaL_optfloat(L, 5, decalDef.trackDecalOffset);
+	decalDef.trackDecalStretch = luaL_optfloat(L, 6, decalDef.trackDecalStretch);
+
+	return 0;
 }
 
 

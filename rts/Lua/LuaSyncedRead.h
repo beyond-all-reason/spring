@@ -166,6 +166,7 @@ class LuaSyncedRead {
 		static int GetUnitLastAttackedPiece(lua_State* L);
 		static int GetUnitCollisionVolumeData(lua_State* L);
 		static int GetUnitPieceCollisionVolumeData(lua_State* L);
+		static int GetUnitTrackDecals(lua_State* L);
 
 		static int GetUnitBlocking(lua_State* L);
 		static int GetUnitMoveTypeData(lua_State* L);
