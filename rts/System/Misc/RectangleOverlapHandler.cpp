@@ -6,9 +6,9 @@
 #include "System/TimeProfiler.h"
 #include "System/Threading/ThreadPool.h"
 
-#define ROH_MAKE_BITMAP_SNAPSHOTS
+//#define ROH_MAKE_BITMAP_SNAPSHOTS
 #ifdef ROH_MAKE_BITMAP_SNAPSHOTS
-#define ROH_LOAD_BITMAP_SNAPSHOT
+//#define ROH_LOAD_BITMAP_SNAPSHOT
 #include "Rendering/Textures/Bitmap.h"
 #include <fmt/format.h>
 #endif
@@ -82,11 +82,10 @@ void CRectangleOverlapHandler::Process()
 	statsInputRects += rectanglesVec.size();
 	rectanglesVec.clear();
 
-
-	std::fill(updateContainer.begin(), updateContainer.end(), DataType::FREE);
-
 #ifdef ROH_LOAD_BITMAP_SNAPSHOT
 	{
+		std::fill(updateContainer.begin(), updateContainer.end(), DataType::FREE);
+
 		CBitmap load(nullptr, sizeX, sizeY, 1);
 		load.LoadGrayscale("CRectangleOverlapHandler-0-load.png");
 		auto* mem = load.GetRawMem();
@@ -104,11 +103,13 @@ void CRectangleOverlapHandler::Process()
 	for (const auto& brd : boundingRectsData)
 		totalSum += brd.second;
 
+	/*
 	int bri = 0;
 	LOG("totalSum %d", totalSum);
 	for (const auto& brd : boundingRectsData) {
 		LOG("\tBounding rect[%d]: %d-%d, %d-%d, occArea %d", bri++, brd.first.x1, brd.first.x2, brd.first.y1, brd.first.y2, brd.second);
 	}
+	*/
 
 #ifdef ROH_MAKE_BITMAP_SNAPSHOTS
 	size_t step = 0;
@@ -143,10 +144,10 @@ void CRectangleOverlapHandler::Process()
 			GREEDY,
 			LINE
 		};
-		RectDecompositionAlgo algo = GREEDY;
+		RectDecompositionAlgo algo = MAXIMAL;
 
 		static constexpr auto MAXIMAL_ALGO_AREA_THRESHOLD = 0.25f;
-		static constexpr auto GREEDY_ALGO_SPARSITY_THRESHOLD = 0.025f;
+		static constexpr auto GREEDY_ALGO_SPARSITY_THRESHOLD = 0.02f;
 
 		while (true) {
 			SRectangle rect;
@@ -171,20 +172,20 @@ void CRectangleOverlapHandler::Process()
 			if (area <= 0)
 				break;
 
-			LOG("\tRect[%d]: %d-%d, %d-%d, area %d", bri, rect.x1, rect.x2, rect.y1, rect.y2, area);
+			//LOG("\tRect[%d]: %d-%d, %d-%d, area %d", bri, rect.x1, rect.x2, rect.y1, rect.y2, area);
 
 			assert(bRect.Inside(rect));
 
 			occArea -= area;
-			LOG("\tOccArea %d", occArea);
+			//LOG("\tOccArea %d", occArea);
 			assert(occArea >= 0);
 
-			//if (algo == RectDecompositionAlgo::MAXIMAL && static_cast<float>(area) / bRectArea < MAXIMAL_ALGO_AREA_THRESHOLD) {
-			//	algo = RectDecompositionAlgo::GREEDY;
-			//}
-			//else if (algo == RectDecompositionAlgo::GREEDY && static_cast<float>(occArea) / bRectArea < GREEDY_ALGO_SPARSITY_THRESHOLD) {
-			//	algo = RectDecompositionAlgo::LINE;
-			//}
+			if (algo == RectDecompositionAlgo::MAXIMAL && static_cast<float>(area) / bRectArea < MAXIMAL_ALGO_AREA_THRESHOLD) {
+				algo = RectDecompositionAlgo::GREEDY;
+			}
+			else if (algo == RectDecompositionAlgo::GREEDY && static_cast<float>(occArea) / bRectArea < GREEDY_ALGO_SPARSITY_THRESHOLD) {
+				algo = RectDecompositionAlgo::LINE;
+			}
 
 			ClearUpdateContainer(rect);
 
@@ -211,7 +212,7 @@ void CRectangleOverlapHandler::Process()
 	for (int bri = 0; bri < static_cast<int>(boundingRectsData.size()); ++bri)
 		MainLoopBody(bri);
 #endif
-
+	assert(std::all_of(boundingRectsData.begin(), boundingRectsData.end(), [](const auto& item) { return item.second == 0; }));
 	assert(*std::max_element(updateContainer.begin(), updateContainer.end()) != DataType::BUSY);
 	std::fill(updateContainer.begin(), updateContainer.end(), DataType::FREE);
 
@@ -292,8 +293,6 @@ SRectangle CRectangleOverlapHandler::GetMaximalRectangle(const SRectangle& bRect
 {
 	ZoneScoped;
 
-	//std::shared_lock lock(*mutex); //shared for read;
-
 	std::vector<int> heights(sizeX + 1, 0); // Include extra element for easier calculation
 	std::vector<int> stack;
 	stack.reserve(sizeX);
@@ -349,8 +348,6 @@ SRectangle CRectangleOverlapHandler::GetMaximalRectangle(const SRectangle& bRect
 SRectangle CRectangleOverlapHandler::GetGreedyRectangle(const SRectangle& bRect, int bRectNum) const
 {
 	ZoneScoped;
-
-	//std::shared_lock lock(*mutex); //shared for read;
 
 	SRectangle rect {
 		std::numeric_limits<int16_t>::max(),
@@ -430,6 +427,8 @@ SRectangle CRectangleOverlapHandler::GetLineRectangle(const SRectangle& bRect, i
 		std::numeric_limits<int16_t>::min()
 	};
 
+	const auto ValidOwnerPred = [bRectNum](const auto val) { return bRectNum == val; };
+
 	for (int y = bRect.y1; y < bRect.y2; y++) {
 		int baseIdx = y * sizeX;
 		int x1 = -1;
@@ -439,7 +438,7 @@ SRectangle CRectangleOverlapHandler::GetLineRectangle(const SRectangle& bRect, i
 		for (int x = bRect.x1; x < bRect.x2; x++) {
 			int idx = baseIdx + x;
 
-			if (rectOwnersContainer[idx] != bRectNum)
+			if (!ValidOwnerPred(rectOwnersContainer[idx]))
 				continue;
 
 			if (BusyPred(updateContainer[idx])) {
@@ -474,8 +473,6 @@ SRectangle CRectangleOverlapHandler::GetLineRectangle(const SRectangle& bRect, i
 
 void CRectangleOverlapHandler::ClearUpdateContainer(const SRectangle& rect)
 {
-	//std::scoped_lock lock(*mutex); // exclusive lock for writing
-
 	// cleanup the area occupied by the rect
 	for (int y = rect.y1; y < rect.y2; ++y) {
 		auto off = updateContainer.begin() + y * sizeX;

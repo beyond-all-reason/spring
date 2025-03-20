@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <vector>
 #include <tuple>
-#include <memory>
-#include <shared_mutex>
 
 #include "System/Rectangle.h"
 #include "System/creg/creg_cond.h"
@@ -35,7 +33,6 @@ public:
 		, statsOutputRects{ 0 }
 		, statsInputArea{ 0 }
 		, statsOutputArea{ 0 }
-		, mutex{ nullptr }
 	{}
 	CRectangleOverlapHandler(int sizeX_, int sizeY_)
 		: sizeX{ sizeX_ }
@@ -46,7 +43,6 @@ public:
 		, statsOutputArea{ 0 }
 		, updateContainer(sizeX * sizeY, DataType::FREE)
 		, rectOwnersContainer(sizeX * sizeY, -1)
-		, mutex{ std::make_unique<std::shared_mutex>() }
 	{}
 	~CRectangleOverlapHandler();
 
@@ -90,6 +86,4 @@ private:
 	std::vector<DataType> updateContainer;
 	std::vector<int> rectOwnersContainer;
 	std::vector<SRectangle> rectanglesVec;
-
-	std::unique_ptr<std::shared_mutex> mutex;
 };
