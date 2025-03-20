@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "Rendering/GroundFlashInfo.h"
 #include "System/UnorderedMap.hpp"
 #include "System/Threading/SpringThreading.h"
 
@@ -19,22 +18,6 @@ class CUnit;
 class IExplosionGenerator;
 
 struct SExpGenSpawnableMemberInfo;
-
-// Finds C++ classes with class aliases
-class ClassAliasList
-{
-public:
-	void Load(const LuaTable&);
-	void Clear() { aliases.clear(); }
-
-	std::string ResolveAlias(const std::string& alias) const;
-	std::string FindAlias(const std::string& className) const;
-
-private:
-	spring::unordered_map<std::string, std::string> aliases;
-};
-
-
 
 // loads and stores a list of explosion generators
 class CExplosionGeneratorHandler
@@ -71,13 +54,8 @@ public:
 	);
 
 	const LuaTable* GetExplosionTableRoot() const { return explTblRoot; }
-	const ClassAliasList& GetProjectileClasses() const { return projectileClasses; }
-
 protected:
-	ClassAliasList projectileClasses;
-
 	LuaParser* exploParser = nullptr;
-	LuaParser* aliasParser = nullptr;
 	LuaTable*  explTblRoot = nullptr;
 
 	std::vector<IExplosionGenerator*> explosionGenerators;
@@ -156,9 +134,6 @@ protected:
 
 	struct ExpGenParams {
 		std::vector<ProjectileSpawnInfo> projectiles;
-
-		GroundFlashInfo groundFlash;
-
 		bool useDefaultExplosions;
 	};
 
@@ -215,7 +190,8 @@ public:
 		OP_POW      = 17, // Power with code as exponent
 		OP_POWBUFF  = 18, // Power with buffer as exponent
 	};
-
+public:
+	static const spring::unordered_map<std::string, std::string> classNameAliases;
 private:
 	void ParseExplosionCode(ProjectileSpawnInfo* psi, const std::string& script, SExpGenSpawnableMemberInfo& memberInfo, std::string& code);
 	void ExecuteExplosionCode(const char* code, float damage, char* instance, int spawnIndex, const float3& dir);
