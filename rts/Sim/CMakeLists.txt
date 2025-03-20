@@ -1,7 +1,4 @@
-
-# This list was created using this *nix shell command:
-# > find . -name "*.cpp"" | sort
-add_library(engineSim STATIC
+target_sources(Sim PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Helper.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/Registry.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Ecs/SaveLoadUtils.cpp"
@@ -155,16 +152,4 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Weapons/WeaponTarget.cpp"
 	)
 
-target_link_libraries(engineSim SDL2::SDL2 Tracy::TracyClient)
-
-if( CMAKE_COMPILER_IS_GNUCXX)
-	# FIXME: hack to avoid linkers to remove not referenced symbols. required because of
-	# https://springrts.com/mantis/view.php?id=4511
-	if(APPLE)
-		make_global_var(SPRING_SIM_LIBRARIES "-Wl,-force_load" engineSim)
-	else()
-		make_global_var(SPRING_SIM_LIBRARIES "-Wl,-whole-archive" engineSim "-Wl,-no-whole-archive")
-	endif()
-else()
-	make_global_var(SPRING_SIM_LIBRARIES engineSim)
-endif()
+target_link_libraries(Sim SDL2::SDL2 Tracy::TracyClient)

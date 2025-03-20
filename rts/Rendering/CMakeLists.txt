@@ -1,7 +1,4 @@
-
-# This list was created using this *nix shell command:
-# > find . -name "*.cpp"" | sort
-set(sources_engine_Rendering
+target_sources(Rendering PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/AVIGenerator.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/DebugColVolDrawer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/DebugVisibilityDrawer.cpp"
@@ -137,5 +134,4 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Fonts/glFont.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Fonts/glFontRenderer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Fonts/TextWrap.cpp"
-		PARENT_SCOPE
 	)

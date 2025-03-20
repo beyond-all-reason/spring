@@ -1,4 +1,4 @@
-set(sources_engine_aGui
+target_sources(aGui PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Button.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Gui.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/GuiElement.cpp"
@@ -9,5 +9,4 @@ set(sources_engine_aGui
 		"${CMAKE_CURRENT_SOURCE_DIR}/TextElement.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/VerticalLayout.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Window.cpp"
-		PARENT_SCOPE
 )

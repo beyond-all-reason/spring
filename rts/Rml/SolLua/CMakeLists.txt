@@ -1,4 +1,4 @@
-﻿set(sources_RmlSolLua
+﻿target_sources(SolLua PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/bind/bind.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Colour.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Context.cpp"
@@ -17,5 +17,4 @@
 	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaInstancer.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaPlugin.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/RmlSolLua.cpp"
-	PARENT_SCOPE
 )

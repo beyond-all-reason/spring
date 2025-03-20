@@ -1,7 +1,4 @@
-
-# This list was created using this *nix shell command:
-# > find . -name "*.cpp" | sort
-make_global_var(sources_engine_Game
+target_sources(Game PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Action.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/AviVideoCapturing.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp"
