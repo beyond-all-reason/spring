@@ -3,6 +3,7 @@
 #include <cctype>
 #include <SDL_keycode.h>
 
+#include "Game/UI/KeyBindings.h"
 #include "KeyCodes.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/SDL1_keysym.h"
@@ -12,6 +13,7 @@
 
 CKeyCodes keyCodes;
 
+const int CKeyCodes::NONE = -1;
 
 int CKeyCodes::GetNormalizedSymbol(int sym)
 {
@@ -31,20 +33,59 @@ int CKeyCodes::GetNormalizedSymbol(int sym)
 }
 
 
+unsigned char CKeyCodes::ToModifier(const int code)
+{
+	switch (code) {
+		case SDLK_LALT:
+		case SDLK_RALT:
+			return CKeySet::KS_ALT;
+		case SDLK_LCTRL:
+		case SDLK_RCTRL:
+			return CKeySet::KS_CTRL;
+		case SDLK_LSHIFT:
+		case SDLK_RSHIFT:
+			return CKeySet::KS_SHIFT;
+		case SDLK_LGUI:
+		case SDLK_RGUI:
+			if (keyBindings.GetFakeMetaKey() <= 0) {
+				return CKeySet::KS_META;
+			}
+	}
+
+	const int fakeMeta = keyBindings.GetFakeMetaKey();
+
+	if (fakeMeta > 0 && fakeMeta == code) {
+		return CKeySet::KS_META;
+	}
+
+	return 0;
+}
+
+
 bool CKeyCodes::IsModifier(int code) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (code) {
 		case SDLK_LALT:
 		case SDLK_LCTRL:
-		case SDLK_LGUI:
 		case SDLK_LSHIFT:
 		case SDLK_RALT:
 		case SDLK_RCTRL:
-		case SDLK_RGUI:
 		case SDLK_RSHIFT:
 			return true;
+		case SDLK_RGUI:
+		case SDLK_LGUI:
+			if (keyBindings.GetFakeMetaKey() <= 0) {
+				return true;
+			}
 	}
+
+	const int fakeMeta = keyBindings.GetFakeMetaKey();
+
+	if (fakeMeta > 0 && fakeMeta == code) {
+		return true;
+	}
+
 	return false;
 }
 
@@ -59,6 +100,18 @@ void CKeyCodes::Reset()
 
 	printableCodes.clear();
 	printableCodes.reserve(64);
+
+	// None is a special case we reserve for pure modifier keysets,
+	// e.g. Alt+Ctrl+none
+	//
+	// Reason is that pure modifier keysets make it simpler to disambiguate all
+	// combinations of modifiers+keys, i.e. all these should be equal internally:
+	//
+	// Alt+ctrl == Ctrl+alt == Alt+Ctrl+none == Ctrl+Alt+none
+	//
+	// Users can still define their keysets without none, we perform the
+	// sanitization internally
+	AddPair("none",      NONE);
 
 	AddPair("backspace", SDLK_BACKSPACE);
 	AddPair("tab",       SDLK_TAB);
