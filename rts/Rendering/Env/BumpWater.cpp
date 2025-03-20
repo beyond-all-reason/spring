@@ -189,6 +189,7 @@ CBumpWater::CBumpWater()
 	, normalTexture2(0)
 	, coastTexture(0)
 	, coastUpdateTexture(0)
+	, heightmapUpdates(mapDims.mapxp1, mapDims.mapyp1)
 {
 	eventHandler.AddClient(this);
 }
@@ -307,7 +308,7 @@ void CBumpWater::InitResources(bool loadShader)
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			// fill with current heightmap/coastmap
-			UnsyncedHeightMapUpdate(SRectangle(0, 0, mapDims.mapx, mapDims.mapy));
+			UnsyncedHeightMapUpdate(SRectangle(0, 0, mapDims.mapx, mapDims.mapy), true);
 			UploadCoastline(true);
 			UpdateCoastmap(true);
 
@@ -598,7 +599,7 @@ CBumpWater::CoastAtlasRect::CoastAtlasRect(const SRectangle& rect)
 	isCoastline = true;
 }
 
-void CBumpWater::UnsyncedHeightMapUpdate(const SRectangle& rect)
+void CBumpWater::UnsyncedHeightMapUpdate(const SRectangle& rect, bool firstCall)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!shoreWaves || !readMap->HasVisibleWater())
@@ -611,8 +612,9 @@ void CBumpWater::UnsyncedHeightMapUpdate(const SRectangle& rect)
 void CBumpWater::UploadCoastline(const bool forceFull)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// optimize update area (merge overlapping areas etc.)
-	heightmapUpdates.Process(forceFull);
+
+	if likely(!forceFull)
+		heightmapUpdates.Process();
 
 	// limit the to be updated areas
 	unsigned int currentPixels = 0;
@@ -625,7 +627,7 @@ void CBumpWater::UploadCoastline(const bool forceFull)
 		if ((currentPixels + cuRect1.GetArea() <= 512 * 512) || forceFull) {
 			currentPixels += cuRect1.GetArea();
 			coastmapAtlasRects.emplace_back(cuRect1);
-			heightmapUpdates.pop_front();
+			heightmapUpdates.pop_front_n(1);
 			continue;
 		}
 

@@ -240,7 +240,7 @@ void CLuaLoadSaveHandler::LoadHeightmap()
 			const float newHeight = *(const float*) (const char*) &newHeightBits;
 			readMap->SetHeight(i, newHeight);
 		}
-		mapDamage->RecalcArea(0, mapDims.mapx, 0, mapDims.mapy);
+		mapDamage->RecalcArea(0, mapDims.mapx, 0, mapDims.mapy, true);
 	} else {
 		LOG_L(L_ERROR, "Unable to load heightmap from save file \"%s\"", filename.c_str());
 	}

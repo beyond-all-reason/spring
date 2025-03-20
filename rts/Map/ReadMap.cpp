@@ -19,6 +19,7 @@
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/Misc/RectangleOverlapHandler.h"
 #include "System/Log/ILog.h"
 #include "System/SpringHash.h"
 #include "System/SafeUtil.h"
@@ -290,7 +291,7 @@ void CReadMap::PostLoad()
 
 	hmUpdated = true;
 
-	mapDamage->RecalcArea(0, mapDims.mapx, 0, mapDims.mapy);
+	mapDamage->RecalcArea(0, mapDims.mapx, 0, mapDims.mapy, true);
 }
 #endif //USING_CREG
 
@@ -402,9 +403,12 @@ void CReadMap::Initialize()
 	syncedHeightMapDigests.clear();
 	unsyncedHeightMapDigests.clear();
 
+	unsyncedHeightMapUpdates = CRectangleOverlapHandler(mapDims.mapxp1, mapDims.mapyp1);
+
 	// not callable here because losHandler is still uninitialized, deferred to Game::PostLoadSim
 	// InitHeightMapDigestVectors();
-	UpdateHeightMapSynced({0, 0, mapDims.mapx, mapDims.mapy});
+
+	UpdateHeightMapSynced({0, 0, mapDims.mapx, mapDims.mapy}, true);
 
 	unsyncedHeightInfo.resize(
 		(mapDims.mapx / PATCH_SIZE) * (mapDims.mapy / PATCH_SIZE),
@@ -496,30 +500,27 @@ void CReadMap::UpdateDraw(bool firstCall)
 	if (unsyncedHeightMapUpdates.empty())
 		return;
 
-	//optimize layout
-	unsyncedHeightMapUpdates.Process(firstCall);
+	if likely(!firstCall)
+		unsyncedHeightMapUpdates.Process();
 
 	const int N = static_cast<int>(std::min(MAX_UHM_RECTS_PER_FRAME, unsyncedHeightMapUpdates.size()));
 
 	for (int i = 0; i < N; i++) {
-		UpdateHeightMapUnsynced(*(unsyncedHeightMapUpdates.begin() + i));
+		UpdateHeightMapUnsynced(unsyncedHeightMapUpdates[i]);
 	};
 	UpdateHeightMapUnsyncedPost();
 
 	for (int i = 0; i < N; i++) {
-		eventHandler.UnsyncedHeightMapUpdate(*(unsyncedHeightMapUpdates.begin() + i));
+		eventHandler.UnsyncedHeightMapUpdate(unsyncedHeightMapUpdates[i]);
 	}
 
-	for (int i = 0; i < N; i++) {
-		unsyncedHeightMapUpdates.pop_front();
-	}
+	unsyncedHeightMapUpdates.pop_front_n(N);
 }
 
 
-void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
+void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool firstCall)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const bool initialize = (hgtMapRect == SRectangle{ 0, 0, mapDims.mapx, mapDims.mapy });
 
 	const int2 mins = {hgtMapRect.x1 - 1, hgtMapRect.z1 - 1};
 	const int2 maxs = {hgtMapRect.x2 + 1, hgtMapRect.z2 + 1};
@@ -532,13 +533,13 @@ void CReadMap::UpdateHeightMapSynced(const SRectangle& hgtMapRect)
 	const SRectangle centerRect = {std::max(mins.x, 0), std::max(mins.y, 0),  std::min(maxs.x, mapDims.mapxm1),  std::min(maxs.y, mapDims.mapym1)};
 	const SRectangle cornerRect = {std::max(mins.x, 0), std::max(mins.y, 0),  std::min(maxs.x, mapDims.mapx  ),  std::min(maxs.y, mapDims.mapy  )};
 
-	UpdateCenterHeightmap(centerRect, initialize);
-	UpdateMipHeightmaps(centerRect, initialize);
-	UpdateFaceNormals(centerRect, initialize);
-	UpdateSlopemap(centerRect, initialize); // must happen after UpdateFaceNormals()!
+	UpdateCenterHeightmap(centerRect, firstCall);
+	UpdateMipHeightmaps(centerRect, firstCall);
+	UpdateFaceNormals(centerRect, firstCall);
+	UpdateSlopemap(centerRect, firstCall); // must happen after UpdateFaceNormals()!
 
 	// push the unsynced update; initial one without LOS check
-	if (initialize) {
+	if (firstCall) {
 		unsyncedHeightMapUpdates.push_back(cornerRect);
 	} else {
 		#ifdef USE_HEIGHTMAP_DIGESTS

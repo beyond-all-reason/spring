@@ -1,10 +1,10 @@
-/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+/* This file is part of the Recoil engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef RECTANGLE_OVERLAP_HANDLER_H
-#define RECTANGLE_OVERLAP_HANDLER_H
+#pragma once
 
+#include <cstdint>
 #include <vector>
-#include <bitset>
+#include <tuple>
 
 #include "System/Rectangle.h"
 #include "System/creg/creg_cond.h"
@@ -18,111 +18,72 @@
 class CRectangleOverlapHandler
 {
 	CR_DECLARE_STRUCT(CRectangleOverlapHandler)
-
+private:
+	enum DataType : uint8_t {
+		FREE = 0x00,
+		MARK = 0x7F,
+		BBOX = 0x40,
+		BUSY = 0xFF
+	};
 public:
-	CRectangleOverlapHandler() { clear(); }
+	CRectangleOverlapHandler()
+		: sizeX{ 0 }
+		, sizeY{ 0 }
+		, statsInputRects{ 0 }
+		, statsOutputRects{ 0 }
+		, statsInputArea{ 0 }
+		, statsOutputArea{ 0 }
+	{}
+	CRectangleOverlapHandler(int sizeX_, int sizeY_)
+		: sizeX{ sizeX_ }
+		, sizeY{ sizeY_ }
+		, statsInputRects{ 0 }
+		, statsOutputRects{ 0 }
+		, statsInputArea{ 0 }
+		, statsOutputArea{ 0 }
+		, updateContainer(sizeX * sizeY, DataType::FREE)
+		, rectOwnersContainer(sizeX * sizeY, -1)
+	{}
 	~CRectangleOverlapHandler();
 
-	void Process(bool noSplit);
+	CRectangleOverlapHandler(const CRectangleOverlapHandler&) = delete;
+	CRectangleOverlapHandler(CRectangleOverlapHandler&&) noexcept = default;
 
-	size_t GetTotalArea() const;
-
+	CRectangleOverlapHandler& operator=(const CRectangleOverlapHandler&) = delete;
+	CRectangleOverlapHandler& operator=(CRectangleOverlapHandler&&) noexcept = default;
 public:
-	typedef std::vector<SRectangle> container;
-	typedef container::iterator iterator;
-	typedef container::const_iterator const_iterator;
+	void push_back(const SRectangle& rect);
+	void pop_front_n(size_t n);
 
-	bool empty() const { return (frontIdx >= rectangles.size()); }
-	size_t size() const { return (rectangles.size() - frontIdx); }
+	void Process();
 
-	SRectangle& front() { return rectangles.at(frontIdx); }
-	SRectangle& back() { return rectangles.back(); }
+	auto empty() const { return rectanglesVec.empty(); }
+	auto size()  const { return rectanglesVec.size();  }
 
-	void pop_front() {
-		if (!empty()) {
-			// leave a null-rectangle so RemoveEmptyRects will clean it up
-			rectangles[frontIdx++] = {};
-			return;
-		}
+	auto front() const { return rectanglesVec.front(); }
 
-		clear();
-	}
-	void push_back(const SRectangle& rect) {
-		// skip zero- or negative-area rectangles
-		// assert(rect.GetArea() > 0);
-		if (rect.GetArea() <= 0)
-			return;
-		needsUpdate = true;
-		rectangles.push_back(rect);
-	}
+	auto begin() const { return rectanglesVec.begin(); }
+	auto end()   const { return rectanglesVec.end();   }
 
-	void swap(CRectangleOverlapHandler& other) {
-		std::swap(rectangles, other.rectangles);
-		std::swap(frontIdx, other.frontIdx);
-		std::swap(needsUpdate, other.needsUpdate);
-	}
-
-	void append(CRectangleOverlapHandler& other) {
-		needsUpdate = (other.needsUpdate || !empty());
-
-		for (const SRectangle& r: other.rectangles) {
-			rectangles.push_back(r);
-		}
-
-		other.clear();
-	}
-
-	void clear() {
-		frontIdx = 0;
-		needsUpdate = false;
-
-		rectangles.clear();
-		rectangles.reserve(512);
-	}
-
-	const_iterator cbegin() { return (rectangles.cbegin() + frontIdx); }
-	const_iterator cend() { return (rectangles.cend()); }
-
-	iterator begin() { return (rectangles.begin() + frontIdx); }
-	iterator end() { return (rectangles.end()); }
-
+	const auto& operator[](size_t idx) const { return rectanglesVec[idx]; }
 private:
-	void StageDedup();
-	void StageMerge();
-	void StageOverlap();
-	void StageSplitTooLarge();
-	void RemoveEmptyRects() {
-		size_t j = (frontIdx = 0);
+	static inline const auto BusyPred = [](auto val) { return (val == DataType::BUSY); };
 
-		for (size_t i = j, n = rectangles.size(); i < n; i++) {
-			if (rectangles[i].GetArea() <= 0)
-				continue;
-
-			rectangles[j++] = rectangles[i];
-		}
-
-		// shrink without reallocating
-		rectangles.resize(j);
-	}
-
-	bool HandleMerge(SRectangle& rect1, SRectangle& rect2);
-	int HandleOverlapping(SRectangle* rect1, SRectangle* rect2);
-	static std::bitset<4> GetEdgesInRect(const SRectangle& rect1, const SRectangle& rect2);
-	static std::bitset<4> GetSharedEdges(const SRectangle& rect1, const SRectangle& rect2);
-	static bool AreMergable(const SRectangle& rect1, const SRectangle& rect2);
-
+	std::vector<std::pair<SRectangle, int>> GetBoundingRectsData();
+	SRectangle GetMaximalRectangle(const SRectangle& bRect, int bRectNum) const;
+	SRectangle GetGreedyRectangle(const SRectangle& bRect, int bRectNum) const;
+	SRectangle GetLineRectangle(const SRectangle& bRect, int bRectNum) const;
+	void ClearUpdateContainer(const SRectangle& rect);
 private:
-	container rectangles;
+	int sizeX;
+	int sizeY;
 
-	constexpr static int maxAreaPerRect = 500 * 500;
+	size_t statsInputRects;
+	size_t statsOutputRects;
+	size_t statsInputArea;
+	size_t statsOutputArea;
 
-	static size_t statsTotalSize;
-	static size_t statsOptimSize;
-
-	size_t frontIdx = 0;
-
-	bool needsUpdate = false;
+	std::vector<DataType> updateContainer;
+	std::vector<int> rectOwnersContainer;
+	std::vector<SRectangle> rectanglesVec;
 };
-
-#endif
-

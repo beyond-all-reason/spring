@@ -12,8 +12,8 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "System/float3.h"
 #include "System/type2.h"
-#include "System/creg/creg_cond.h"
 #include "System/Misc/RectangleOverlapHandler.h"
+#include "System/creg/creg_cond.h"
 
 #define USE_HEIGHTMAP_DIGESTS
 
@@ -21,7 +21,6 @@ class CCamera;
 class CUnit;
 class CSolidObject;
 class CBaseGroundDrawer;
-
 
 struct MapFeatureInfo
 {
@@ -101,7 +100,7 @@ public:
 	 * calculates derived heightmap information
 	 * such as normals, centerheightmap and slopemap
 	 */
-	void UpdateHeightMapSynced(const SRectangle& hgtMapRect);
+	void UpdateHeightMapSynced(const SRectangle& hgtMapRect, bool firstCall);
 	void UpdateLOS(const SRectangle& hgtMapRect);
 	void BecomeSpectator();
 	void UpdateDraw(bool firstCall);
