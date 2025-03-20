@@ -183,9 +183,9 @@ void CRectangleOverlapHandler::Process()
 			if (algo == RectDecompositionAlgo::MAXIMAL && static_cast<float>(area) / bRectArea < MAXIMAL_ALGO_AREA_THRESHOLD) {
 				algo = RectDecompositionAlgo::GREEDY;
 			}
-			else if (algo == RectDecompositionAlgo::GREEDY && static_cast<float>(occArea) / bRectArea < GREEDY_ALGO_SPARSITY_THRESHOLD) {
-				algo = RectDecompositionAlgo::LINE;
-			}
+			//else if (algo == RectDecompositionAlgo::GREEDY && static_cast<float>(occArea) / bRectArea < GREEDY_ALGO_SPARSITY_THRESHOLD) {
+			//	algo = RectDecompositionAlgo::LINE;
+			//}
 
 			ClearUpdateContainer(rect);
 
