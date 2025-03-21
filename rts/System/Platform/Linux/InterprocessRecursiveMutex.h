@@ -4,6 +4,7 @@
 
 #include <string>
 #include <cstdint>
+#include <atomic>
 #include <pthread.h>
 
 class InterprocessRecursiveMutex
@@ -27,6 +28,7 @@ private:
 protected:
 	struct shared_data {
 		pthread_mutex_t mtx;
+		std::atomic_uint32_t refCount;
 	};
 	const std::string name;
 	int shmFd;
