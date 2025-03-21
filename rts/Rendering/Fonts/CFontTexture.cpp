@@ -86,7 +86,7 @@ struct TimestampedFont { std::shared_ptr<FontFace> fontFace; float timestamp; };
  * when no other part of the code holds a shared_ptr, as is the case when searching game and system fallback fonts. */
 static spring::unordered_map<std::pair<std::string, int>, TimestampedFont> pinnedRecentFonts;
 
-static void RememberFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size) {
+static void PinFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size) {
 	const auto fontKey = std::make_pair(filename, size);
 
 	float time = spring_gettime().toMilliSecsf();
@@ -593,7 +593,7 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 			if (blackList.find(GetFaceKey(*face)) != blackList.cend())
 				continue;
 
-			RememberFont(face, filename, origSize);
+			PinFont(face, filename, origSize);
 
 			#ifdef _DEBUG
 			{
