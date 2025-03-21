@@ -226,7 +226,7 @@ else (WIN32)
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/WinVersion.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/WindowManagerHelper.cpp"
 	)
-	
+	target_link_libraries(SystemPlatformWindows PRIVATE SDL2::SDL2)
 	target_link_libraries(System INTERFACE SystemPlatformWindows SystemLogSinkOutputDebugString)
 endif ()
 
