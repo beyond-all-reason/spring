@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <system_error>
 
 #include "System/Platform/Misc.h"
@@ -94,6 +95,8 @@ bool InterprocessRecursiveMutex::TryLockImpl(uint32_t timeoutMs) noexcept
 		}
 		spring_msecs(100).sleep(true);
 	} while (static_cast<uint32_t>((spring_now() - start).toMilliSecsi()) < timeoutMs);
+
+	return false;
 }
 
 

@@ -84,4 +84,6 @@ bool InterprocessRecursiveMutex::TryLockImpl(uint32_t timeoutMs) noexcept
 		}
 		spring_msecs(100).sleep(true);
 	} while (static_cast<uint32_t>((spring_now() - start).toMilliSecsi()) < timeoutMs);
+
+	return false;
 }

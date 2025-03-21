@@ -24,6 +24,7 @@ add_definitions(-DUSE_FONTCONFIG)
 if (NOT WIN32)
 	find_package_static(EXPAT 2.2.5 REQUIRED)
 	list(APPEND engineLibraries EXPAT::EXPAT)
+	list(APPEND engineLibraries rt)
 endif()
 
 # !!! If you change freetype resolution here, change it also in rts/lib
