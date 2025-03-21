@@ -14,7 +14,7 @@ void CModelDrawerConcept::InitStatic()
 	if (initialized)
 		return;
 
-	advShading = configHandler->GetBool("AdvUnitShading") && cubeMapHandler.Init();
+	cubeMapHandler.Init();
 	wireFrameMode = false;
 
 	lightHandler.Init(2U, configHandler->GetInt("MaxDynamicModelLights"));
