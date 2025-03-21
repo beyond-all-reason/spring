@@ -80,9 +80,11 @@ static spring::unordered_set<std::pair<std::string, int>, spring::synced_hash<st
 static auto cacheMutexes = spring::WrappedSyncRecursiveMutex{};
 
 constexpr int MAX_RECENT_FONTS = 10;
+struct TimestampedFont { std::shared_ptr<FontFace> fontFace; float timestamp; };
+
 /* pinnedRecentFonts maintains shared_ptrs to the weak_ptrs from fontFaceCache. This prevents the weak_ptr from expiring
  * when no other part of the code holds a shared_ptr, as is the case when searching game and system fallback fonts. */
-static spring::unordered_map<std::pair<std::string, int>, std::pair<std::shared_ptr<FontFace>, float>> pinnedRecentFonts;
+static spring::unordered_map<std::pair<std::string, int>, TimestampedFont> pinnedRecentFonts;
 
 static void RememberFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size) {
 	const auto fontKey = std::make_pair(filename, size);
@@ -92,20 +94,20 @@ static void RememberFont(std::shared_ptr<FontFace>& face, const std::string& fil
 	auto cached = pinnedRecentFonts.find(fontKey);
 
 	if (cached != pinnedRecentFonts.end()) {
-		cached->second.second = time;
+		cached->second.timestamp = time;
 	} else {
 		if (pinnedRecentFonts.size() >= MAX_RECENT_FONTS) {
 			std::pair<string, int>* oldest;
 			float oldestTime = time;
-			for(auto &[key, timestamp]: pinnedRecentFonts) {
-				if (timestamp.second <= oldestTime) {
+			for(auto &[key, timestampedFont]: pinnedRecentFonts) {
+				if (timestampedFont.timestamp <= oldestTime) {
 					oldest = &key;
-					oldestTime = timestamp.second;
+					oldestTime = timestampedFont.timestamp;
 				}
 			}
 			pinnedRecentFonts.erase(*oldest);
 		}
-		pinnedRecentFonts[fontKey] = std::pair<std::shared_ptr<FontFace>, float>(face, time);
+		pinnedRecentFonts[fontKey] = { face, time };
 	}
 }
 
