@@ -1145,6 +1145,7 @@ public:
 		"SpecFullView",
 		"Sets or toggles LOS settings for current spectator. Fullview: See everything, otherwise visibility is determined by the current team. Fullselect: Whether all units can be selected",
 		false, {
+			{"", "Toggles both Fullview and Fullselect from current values"},
 			{"0", "Not Fullview, Not Fullselect (default)"},
 			{"1", "Fullview, Not Fullselect"},
 			{"2", "Not Fullview, Fullselect"},
