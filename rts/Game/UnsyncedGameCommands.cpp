@@ -1143,8 +1143,13 @@ class SpecFullViewActionExecutor : public IUnsyncedActionExecutor {
 public:
 	SpecFullViewActionExecutor() : IUnsyncedActionExecutor(
 		"SpecFullView",
-		"Sets or toggles between full LOS or ally-team LOS if the local user is a spectator"
-	) {
+		"Sets or toggles LOS settings for current spectator. Fullview: See everything, otherwise visibility is determined by the current team. Fullselect: Whether all units can be selected",
+		false, {
+			{"0", "Not Fullview, Not Fullselect (default)"},
+			{"1", "Fullview, Not Fullselect"},
+			{"2", "Not Fullview, Fullselect"},
+			{"3", "Fullview, Fullselect"},
+	}) {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {
