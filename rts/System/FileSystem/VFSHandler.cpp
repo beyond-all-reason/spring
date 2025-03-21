@@ -176,8 +176,8 @@ bool CVFSHandler::AddArchive(const std::string& archiveName, bool overwrite)
 	files[Section::Temp].reserve(ar->NumFiles());
 
 	for (unsigned fid = 0; fid != ar->NumFiles(); ++fid) {
-		auto fi = ar->FileInfo(fid);
-		std::string name = StringToLower(fi.fileName);
+		std::string name = StringToLower(ar->FileName(fid));
+		const auto size = ar->FileSize(fid);
 
 		if (!overwrite) {
 			const auto pred = [](const FileEntry& a, const FileEntry& b) { return (a.first < b.first); };
@@ -195,7 +195,7 @@ bool CVFSHandler::AddArchive(const std::string& archiveName, bool overwrite)
 
 		// can not add directly to files[section], would break lower_bound
 		// note: this means an archive can *internally* contain duplicates
-		files[Section::Temp].emplace_back(name, FileData{ar, fi.size});
+		files[Section::Temp].emplace_back(name, FileData{ ar, size });
 	}
 
 	for (FileEntry& fileEntry: files[Section::Temp]) {
@@ -479,13 +479,13 @@ std::string CVFSHandler::GetFileAbsolutePath(const std::string& filePath, Sectio
 	const std::string& normalizedPath = GetNormalizedPath(filePath);
 	const FileData& fileData = GetFileData(normalizedPath, section);
 
-	// Only directory archives have an absolute path on disk
-	const auto dirArchive = dynamic_cast<const CDirArchive*>(fileData.ar);
-
-	if (dirArchive == nullptr)
+	if (fileData.ar->GetType() != ARCHIVE_TYPE_SDD)
 		return "";
 
-	const std::string& origFilePath = dirArchive->GetOrigFileName(dirArchive->FindFile(filePath));
+	// Only directory archives have an absolute path on disk
+	const auto* dirArchive = static_cast<const CDirArchive*>(fileData.ar);
+
+	const std::string& origFilePath = dirArchive->FileName(dirArchive->FindFile(filePath));
 	return (fileData.ar->GetArchiveFile() + "/" + origFilePath);
 }
 

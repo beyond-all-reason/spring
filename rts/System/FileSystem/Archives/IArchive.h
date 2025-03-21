@@ -24,6 +24,7 @@ class IArchive
 public:
 	struct SFileInfo {
 		std::string fileName;
+		std::string specialFileName; // overloaded meaning
 		int32_t size = -1;
 		uint32_t modTime = 0;
 	};
@@ -93,15 +94,25 @@ public:
 
 		// no archive should be larger than 4GB when extracted
 		for (uint32_t fid = 0; fid < NumFiles(); fid++) {
-			auto fi = FileInfo(fid);
-			size += (fi.size);
+			auto fs = FileSize(fid);
+			size += fs;
 		}
 
 		return size;
 	}
 
 	/**
-	 * Fetches the name and size in bytes of a file by its ID.
+	 * Fetches the name of a file by its ID.
+	 */
+	virtual const std::string& FileName(uint32_t fid) const = 0;
+
+	/**
+	 * Fetches the size of a file by its ID.
+	 */
+	virtual int32_t FileSize(uint32_t fid) const = 0;
+
+	/**
+	 * Fetches the name, size and modTime of a file by its ID.
 	 */
 	virtual SFileInfo FileInfo(uint32_t fid) const = 0;
 
