@@ -7,6 +7,14 @@
 #include "System/Platform/Misc.h"
 #include "System/Misc/SpringTime.h"
 
+namespace Impl {
+	static const auto throw_lasterror = []() {
+		DWORD dwErrVal = GetLastError();
+		std::error_code ec(dwErrVal, std::system_category());
+		throw std::system_error(ec, Platform::GetLastErrorAsString(dwErrVal));
+	};
+}
+
 InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name) noexcept(false)
 	: mtx(nullptr)
 {
@@ -18,9 +26,7 @@ InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name) noexcep
 	mtx = CreateMutexW(nullptr, TRUE, extNameW.c_str());
 
 	if (mtx == nullptr) {
-		DWORD dwErrVal = GetLastError();
-		std::error_code ec(dwErrVal, std::system_category());
-		throw std::system_error(ec, Platform::GetLastErrorAsString(dwErrVal));
+		Impl::throw_lasterror();
 	}
 
 	SetLastError(ERROR_SUCCESS); // clear in case the mutex was already created
@@ -29,18 +35,14 @@ InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name) noexcep
 InterprocessRecursiveMutex::~InterprocessRecursiveMutex() noexcept(false)
 {
 	if (!CloseHandle(mtx)) {
-		DWORD dwErrVal = GetLastError();
-		std::error_code ec(dwErrVal, std::system_category());
-		throw std::system_error(ec, Platform::GetLastErrorAsString(dwErrVal));
+		Impl::throw_lasterror();
 	}
 }
 
 void InterprocessRecursiveMutex::lock()
 {
 	if (!TryLockImpl(INFINITE)) {
-		DWORD dwErrVal = GetLastError();
-		std::error_code ec(dwErrVal, std::system_category());
-		throw std::system_error(ec, Platform::GetLastErrorAsString(dwErrVal));
+		Impl::throw_lasterror();
 	}
 }
 
@@ -52,9 +54,7 @@ bool InterprocessRecursiveMutex::try_lock() noexcept
 void InterprocessRecursiveMutex::unlock()
 {
 	if (!ReleaseMutex(mtx)) {
-		DWORD dwErrVal = GetLastError();
-		std::error_code ec(dwErrVal, std::system_category());
-		throw std::system_error(ec, Platform::GetLastErrorAsString(dwErrVal));
+		Impl::throw_lasterror();
 	}
 }
 
