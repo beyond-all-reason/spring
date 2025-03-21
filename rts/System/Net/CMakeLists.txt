@@ -1,5 +1,5 @@
-add_library(engineSystemNet STATIC)
-target_sources(engineSystemNet PRIVATE
+add_library(SystemNet STATIC)
+target_sources(SystemNet PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/LocalConnection.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/LoopbackConnection.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/PackPacket.cpp"
@@ -10,7 +10,7 @@ target_sources(engineSystemNet PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/UDPListener.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/UnpackPacket.cpp"
 )
-target_include_directories(engineSystemNet PRIVATE
+target_include_directories(SystemNet PRIVATE
 	"${Spring_SOURCE_DIR}/rts/lib/asio/include"
 	"${Spring_SOURCE_DIR}/rts"
 )

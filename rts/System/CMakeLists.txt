@@ -3,8 +3,8 @@ if (TRACY_PROFILE_MEMORY)
 	set(memoryProfileSource "${CMAKE_CURRENT_SOURCE_DIR}/TraceMemory.cpp")
 endif()
 
-add_library(system-common STATIC)
-target_sources(system-common PRIVATE
+add_library(SystemCommon STATIC)
+target_sources(SystemCommon PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/AABB.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/AIScriptHandler.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Color.cpp"
@@ -75,9 +75,9 @@ target_sources(system-common PRIVATE
 	"${memoryProfileSource}"
 )
 
-add_library(system-creg STATIC)
+add_library(SystemCreg STATIC)
 if (NOT(NO_CREG))
-	target_sources(system-creg PRIVATE
+	target_sources(SystemCreg PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/creg/SerializeLuaState.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/creg/Serializer.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/creg/VarTypes.cpp"
@@ -86,8 +86,8 @@ if (NOT(NO_CREG))
 	)
 endif ()
 
-add_library(system-filesystem STATIC)
-target_sources(system-filesystem PRIVATE
+add_library(SystemFilesystem STATIC)
+target_sources(SystemFilesystem PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ArchiveNameResolver.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ArchiveLoader.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ArchiveScanner.cpp"
@@ -106,8 +106,8 @@ target_sources(system-filesystem PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/VFSHandler.cpp"
 )
 
-add_library(system-log STATIC)
-target_sources(system-log PRIVATE
+add_library(SystemLog STATIC)
+target_sources(SystemLog PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/Backend.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/DefaultFilter.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/DefaultFormatter.cpp"
@@ -117,71 +117,71 @@ target_sources(system-log PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/TracySink.cpp"
 )
 
-add_library(system-log-skinkstream STATIC)
-target_sources(system-log-skinkstream PRIVATE 
+add_library(SystemLogSinkStream STATIC)
+target_sources(SystemLogSinkStream PRIVATE 
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/StreamSink.cpp"
 )
 
-add_library(system-log-sinkconsole STATIC)
-target_sources(system-log-sinkconsole PRIVATE
+add_library(SystemLogSinkConsole STATIC)
+target_sources(SystemLogSinkConsole PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/ConsoleSink.cpp"
 )
 
-add_library(system-log-sinkfile STATIC)
-target_sources(system-log-sinkfile PRIVATE
+add_library(SystemLogSinkFile STATIC)
+target_sources(SystemLogSinkFile PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/FileSink.cpp"
 )
 
-add_library(system-log-skinkoutputdebugstring STATIC)
-target_sources(system-log-skinkoutputdebugstring PRIVATE
+add_library(SystemLogSinkOutputDebugString STATIC)
+target_sources(SystemLogSinkOutputDebugString PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/OutputDebugStringSink.cpp"
 )
 
-add_library(system-threading STATIC)
-target_sources(system-threading PRIVATE
+add_library(SystemThreading STATIC)
+target_sources(SystemThreading PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/CpuID.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Threading.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/ThreadAffinityGuard.cpp"
 )
 
-target_link_libraries(system INTERFACE
-	system-common
-	system-creg
-	system-filesystem
-	system-log
-	system-log-sinkconsole
-	system-log-sinkfile
+target_link_libraries(System INTERFACE
+	SystemCommon
+	System-Creg
+	SystemFilesystem
+	SystemLog
+	SystemLogSinkConsole
+	SystemLogSinkFile
 )
 
 if (UNIX)
-	add_library(system-threading-linux STATIC)
-	target_sources(system-threading-linux PRIVATE
+	add_library(SystemThreadingLinux STATIC)
+	target_sources(SystemThreadingLinux PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/CpuTopology.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Futex.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/ThreadSupport.cpp"
 	)
-	target_link_libraries(system-threading PRIVATE system-threading-linux)
+	target_link_libraries(SystemThreading PRIVATE SystemThreadingLinux)
 
-	add_library(system-platform-linux STATIC)
-	target_sources(system-platform-linux PRIVATE
+	add_library(SystemPlatformLinux STATIC)
+	target_sources(SystemPlatformLinux PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/CrashHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Hardware.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/SoLib.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/MessageBox.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/WindowManagerHelper.cpp"
 	)
-	target_link_libraries(system INTERFACE system-platform-linux)
+	target_link_libraries(System INTERFACE SystemPlatformLinux)
 else (WIN32)
-	add_library(system-threading-windows STATIC)
-	target_sources(system-threading-windows PRIVATE
+	add_library(SystemThreadingWindows STATIC)
+	target_sources(SystemThreadingWindows PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CpuTopology.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CriticalSection.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/Future.cpp"
 	)
-	target_link_libraries(system-threading PRIVATE system-threading-windows)
+	target_link_libraries(SystemThreading PRIVATE SystemThreadingWindows)
 
-	add_library(system-platform-windows STATIC)
-	target_sources(system-platform-windows PRIVATE
+	add_library(SystemPlatformWindows STATIC)
+	target_sources(SystemPlatformWindows PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CrashHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/DllLib.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/Hardware.cpp"
@@ -191,10 +191,10 @@ else (WIN32)
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/WindowManagerHelper.cpp"
 	)
 	
-	target_link_libraries(system INTERFACE system-platform-windows system-log-skinkoutputdebugstring)
+	target_link_libraries(System INTERFACE SystemPlatformWindows SystemLogSinkOutputDebugString)
 endif ()
 
-target_link_libraries(system INTERFACE system-threading)
+target_link_libraries(System INTERFACE SystemThreading)
 
 add_subdirectory(FileSystem)
 add_subdirectory(Net)

@@ -602,7 +602,7 @@ if    (NOT "${AI_TYPES}" STREQUAL "NONE")
 endif (NOT "${AI_TYPES}" STREQUAL "NONE")
 
 # As tools/unitsync/ depends on sources from here, we add this one first
-add_library(system INTERFACE)
+add_library(System INTERFACE)
 add_subdirectory(rts/System)
 
 # additional tools

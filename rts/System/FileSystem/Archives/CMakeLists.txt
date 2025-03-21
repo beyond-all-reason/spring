@@ -31,7 +31,7 @@ remove_definitions(-DTHREADPOOL)
 #   targets it will be linked against to export compatible symbols.
 
 add_library(archives STATIC ${archives_sources})
-target_link_libraries(archives PRIVATE system-log system-log-sinkconsole)
+target_link_libraries(archives PRIVATE SystemLog SystemLogSinkConsole)
 if (THREADPOOL)
 	target_compile_definitions(archives PRIVATE -DTHREADPOOL)
 endif()

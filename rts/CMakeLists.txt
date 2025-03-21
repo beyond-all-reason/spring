@@ -166,7 +166,7 @@ target_link_libraries(EngineSources INTERFACE
 	Rml
 	SolLua
 	Menu
-	system
+	System
 	ExternalAI
 )
 
