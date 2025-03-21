@@ -14,10 +14,16 @@ InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name_) noexce
 	, shmFd(-1)
 	, shData(nullptr)
 {
-	shmFd = shm_open(name.c_str(), O_CREAT | O_RDWR, 0660);
+	bool first = false;
+
+	shmFd = shm_open(name.c_str(), O_RDWR, 0660);
 	if (shmFd == -1) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		shmFd = shm_open(name.c_str(), O_CREAT | O_RDWR, 0660);
+		if (shmFd == -1) {
+			const auto errNum = errno;
+			throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		}
+		first = true;
 	}
 
 	if (ftruncate(shmFd, sizeof(shared_data)) == -1) {
@@ -31,6 +37,13 @@ InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name_) noexce
 		const auto errNum = errno;
 		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
 	}
+
+	if (!first) {
+		++shData->refCount;
+		return;
+	}
+
+	shData->refCount = { 0 };
 
 	pthread_mutexattr_t mutex_attr;
 	if (pthread_mutexattr_init(&mutex_attr) != 0) {
@@ -68,9 +81,13 @@ InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name_) noexce
 
 InterprocessRecursiveMutex::~InterprocessRecursiveMutex() noexcept(false)
 {
+	--shData->refCount;
+	auto refCount = shData->refCount.load();
 	munmap(shData, sizeof(shared_data));
 	close(shmFd);
-	shm_unlink(name.c_str());
+
+	if (refCount == 0)
+		shm_unlink(name.c_str());
 }
 
 bool InterprocessRecursiveMutex::TryLockImpl(uint32_t timeoutMs) noexcept
