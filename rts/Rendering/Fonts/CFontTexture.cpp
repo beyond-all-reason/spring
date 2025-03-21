@@ -138,6 +138,7 @@ public:
 	}
 
 	~FtLibraryHandler() {
+		pinnedRecentFonts.clear();
 		FT_Done_FreeType(lib);
 
 		#ifdef USE_FONTCONFIG
