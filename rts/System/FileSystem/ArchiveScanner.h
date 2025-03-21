@@ -13,6 +13,12 @@
 #include "System/Sync/SHA512.hpp"
 #include "System/UnorderedMap.hpp"
 
+#ifndef _WIN32
+#include "System/Platform/Linux/InterprocessRecursiveMutex.h"
+#else
+#include "System/Platform/Win/InterprocessRecursiveMutex.h"
+#endif
+
 class IArchive;
 class IFileFilter;
 class LuaTable;
@@ -147,8 +153,6 @@ public:
 	void Clear();
 	void Reload();
 
-	void WriteCache();
-
 	std::string ArchiveFromName(const std::string& versionedName) const;
 	std::string NameFromArchive(const std::string& archiveName) const;
 	std::string GameHumanNameFromArchive(const std::string& archiveName) const;
@@ -158,8 +162,8 @@ public:
 	ArchiveData GetArchiveData(const std::string& versionedName) const;
 	ArchiveData GetArchiveDataByArchive(const std::string& archive) const;
 public:
-	uint32_t GetNumFilesHashed() const { return numFilesHashed.load(); }
-	void ResetNumFilesHashed() { numFilesHashed.store(0); }
+	uint32_t GetNumFilesHashed() const;
+	void ResetNumFilesHashed();
 private:
 	struct FileInfo {
 		int32_t size = -1;
@@ -198,6 +202,7 @@ private:
 
 private:
 	void ReadCache();
+	void WriteCache();
 
 	ArchiveInfo& GetAddArchiveInfo(const std::string& lcfn);
 	BrokenArchive& GetAddBrokenArchive(const std::string& lcfn);
@@ -250,7 +255,7 @@ private:
 	static bool CheckCompression(const IArchive* ar, const std::string& fullName, std::string& error);
 
 private:
-	std::atomic<uint32_t> numFilesHashed{0};
+	std::unique_ptr<InterprocessRecursiveMutex> ipScannerMutex;
 
 	spring::unordered_map<std::string, size_t> archiveInfosIndex;
 	spring::unordered_map<std::string, size_t> brokenArchivesIndex;
@@ -263,6 +268,8 @@ private:
 
 	bool isDirty = false;
 	bool isInScan = false;
+private:
+	static constexpr uint32_t MAX_INTERPROCESS_WAIT_TIME_MS = 10 * 60 * 1000; // 10 minutes in ms
 };
 
 extern CArchiveScanner* archiveScanner;
