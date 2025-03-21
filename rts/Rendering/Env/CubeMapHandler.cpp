@@ -135,8 +135,6 @@ void CubeMapHandler::Free() {
 void CubeMapHandler::UpdateReflectionTexture()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!unitDrawer->UseAdvShading() && !readMap->GetGroundDrawer()->UseAdvShading())
-		return;
 
 	// NOTE:
 	//   we unbind later in WorldDrawer::GenerateIBLTextures() to save render
@@ -250,8 +248,6 @@ void CubeMapHandler::CreateReflectionFace(unsigned int glFace, bool skyOnly)
 void CubeMapHandler::UpdateSpecularTexture()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!unitDrawer->UseAdvShading())
-		return;
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, specularTexID);
 

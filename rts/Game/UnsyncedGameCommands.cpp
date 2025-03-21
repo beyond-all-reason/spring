@@ -403,31 +403,6 @@ public:
 	}
 };
 
-
-
-class AdvModelShadingActionExecutor : public IUnsyncedActionExecutor {
-public:
-	AdvModelShadingActionExecutor() : IUnsyncedActionExecutor("AdvModelShading",
-			"Control advanced model shading mode",
-			false, {
-			{"", "Toggles advanced model shading mode"},
-			{"<on|off>", "Set advanced model shading mode <on|off>"},
-			}) {}
-
-	bool Execute(const UnsyncedAction& action) const {
-		static bool canUseShaders = unitDrawer->UseAdvShading();
-
-		if (!canUseShaders)
-			return false;
-
-		InverseOrSetBool(unitDrawer->UseAdvShadingRef(), action.GetArgs());
-		LogSystemStatus("model shaders", unitDrawer->UseAdvShading());
-		return true;
-	}
-};
-
-
-
 class AdvMapShadingActionExecutor : public IUnsyncedActionExecutor {
 public:
 	AdvMapShadingActionExecutor() : IUnsyncedActionExecutor("AdvMapShading",
@@ -3939,7 +3914,6 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<MapMeshDrawerActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<MapBorderActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<WaterActionExecutor>());
-	AddActionExecutor(AllocActionExecutor<AdvModelShadingActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<AdvMapShadingActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<UnitDrawerTypeActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<FeatureDrawerTypeActionExecutor>()); // [maint]

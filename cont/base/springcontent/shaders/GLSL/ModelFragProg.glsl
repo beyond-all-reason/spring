@@ -26,10 +26,6 @@
 	varying vec4 vertexWorldPos;
 	varying vec3 cameraDir;
 	varying float fogFactor;
-#ifdef use_normalmapping
-	uniform sampler2D normalMap;
-	varying mat3 tbnMatrix;
-#else
 	varying vec3 normalv;
 #endif
 
@@ -74,8 +70,8 @@ vec3 DynamicLighting(vec3 normal, vec3 diffuse, vec3 specular) {
 
 		lightScale *= float(vectorDot >= cutoffDot);
 
-		rgb += (lightScale *                                  gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].ambient.rgb);
-		rgb += (lightScale * lightAttenuation * (diffuse.rgb * gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].diffuse.rgb * lightCosAngDiff));
+		rgb += (lightScale *                                    gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].ambient.rgb);
+		rgb += (lightScale * lightAttenuation * (diffuse.rgb  * gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].diffuse.rgb * lightCosAngDiff));
 		rgb += (lightScale * lightAttenuation * (specular.rgb * gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].specular.rgb * pow(lightCosAngSpec, 4.0)));
 	}
 
