@@ -9,6 +9,13 @@
 #include "System/Platform/Misc.h"
 #include "System/Misc/SpringTime.h"
 
+namespace Impl {
+	static const auto throw_errno = []() {
+		const auto errNum = errno;
+		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+	};
+}
+
 InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name_) noexcept(false)
 	: name(name_)
 	, shmFd(-1)
@@ -20,22 +27,19 @@ InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name_) noexce
 	if (shmFd == -1) {
 		shmFd = shm_open(name.c_str(), O_CREAT | O_RDWR, 0660);
 		if (shmFd == -1) {
-			const auto errNum = errno;
-			throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+			Impl::throw_errno();
 		}
 		first = true;
 	}
 
 	if (ftruncate(shmFd, sizeof(shared_data)) == -1) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 
 	// Map the shared memory segment
 	shData = reinterpret_cast<shared_data*>(mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED, shmFd, 0));
 	if (shData == MAP_FAILED) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 
 	if (!first) {
@@ -47,32 +51,27 @@ InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name_) noexce
 
 	pthread_mutexattr_t mutex_attr;
 	if (pthread_mutexattr_init(&mutex_attr) != 0) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 
 	// Set the mutex as recursive
 	if (pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE) != 0) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 
 	// Set the mutex as process-shared
 	if (pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED) != 0) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 
 	// Set the mutex as robust
 	if (pthread_mutexattr_setrobust(&mutex_attr, PTHREAD_MUTEX_ROBUST) != 0) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 
 	// Initialize the mutex
 	if (pthread_mutex_init(&shData->mtx, &mutex_attr) != 0) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 
 	// Destroy the mutex attributes
@@ -120,8 +119,7 @@ bool InterprocessRecursiveMutex::TryLockImpl(uint32_t timeoutMs) noexcept
 void InterprocessRecursiveMutex::lock()
 {
 	if (!TryLockImpl(0xFFFFFFFF)) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 }
 
@@ -133,7 +131,6 @@ bool InterprocessRecursiveMutex::try_lock() noexcept
 void InterprocessRecursiveMutex::unlock()
 {
 	if (pthread_mutex_unlock(&shData->mtx) != 0) {
-		const auto errNum = errno;
-		throw std::system_error(errNum, std::generic_category(), Platform::GetLastErrorAsString(errNum));
+		Impl::throw_errno();
 	}
 }
