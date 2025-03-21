@@ -1,9 +1,17 @@
-
 if (TRACY_PROFILE_MEMORY)
 	set(memoryProfileSource "${CMAKE_CURRENT_SOURCE_DIR}/TraceMemory.cpp")
 endif()
 
 add_library(SystemCommon STATIC)
+target_include_directories(SystemCommon PRIVATE 
+	"${CMAKE_SOURCE_DIR}/rts"
+	#TODO(asio): Should be imported by find_package. To fix.
+	"${CMAKE_SOURCE_DIR}/rts/lib/asio/include"
+	#TODO(smalloc): MemPoolTypes.h requires smmalloc/smmalloc.h. To remove when feasible.
+	"${CMAKE_SOURCE_DIR}/rts/lib"
+	#TODO(7z): CRC.cpp requires 7zCrc.h. To remove when feasible. 
+	"${CMAKE_SOURCE_DIR}/tools/pr-downloader/src/lib/7z"
+)
 target_sources(SystemCommon PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/AABB.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/AIScriptHandler.cpp"
@@ -74,8 +82,14 @@ target_sources(SystemCommon PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/SpringMem.cpp"
 	"${memoryProfileSource}"
 )
+target_link_libraries(SystemCommon PRIVATE SDL2::SDL2 Tracy::TracyClient prd::base64 lua gflags_nothreads_static)
 
 add_library(SystemCreg STATIC)
+target_include_directories(SystemCreg PRIVATE 
+	"${CMAKE_SOURCE_DIR}/rts"
+	#TODO(smalloc): MemPoolTypes.h requires smmalloc/smmalloc.h. To remove when feasible.
+	"${CMAKE_SOURCE_DIR}/rts/lib"
+)
 if (NOT(NO_CREG))
 	target_sources(SystemCreg PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/creg/SerializeLuaState.cpp"
@@ -85,8 +99,16 @@ if (NOT(NO_CREG))
 		"${CMAKE_CURRENT_SOURCE_DIR}/creg/creg_runtime_tests.cpp"
 	)
 endif ()
+target_link_libraries(SystemCreg PRIVATE lua Tracy::TracyClient lua)
 
 add_library(SystemFilesystem STATIC)
+target_include_directories(SystemFilesystem PRIVATE 
+	"${CMAKE_SOURCE_DIR}/rts"
+	#TODO(7z): Archives/SevenZipArchive.cpp requires 7z.h. To remove when feasible. 
+	"${CMAKE_SOURCE_DIR}/tools/pr-downloader/src/lib/7z"
+	#TODO(smalloc): MemPoolTypes.h requires smmalloc/smmalloc.h. To remove when feasible.
+	"${CMAKE_SOURCE_DIR}/rts/lib"
+)
 target_sources(SystemFilesystem PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ArchiveNameResolver.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/ArchiveLoader.cpp"
@@ -105,8 +127,10 @@ target_sources(SystemFilesystem PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/SimpleParser.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/VFSHandler.cpp"
 )
+target_link_libraries(SystemFilesystem PRIVATE Tracy::TracyClient)
 
 add_library(SystemLog STATIC)
+target_include_directories(SystemLog PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 target_sources(SystemLog PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/Backend.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/DefaultFilter.cpp"
@@ -118,43 +142,51 @@ target_sources(SystemLog PRIVATE
 )
 
 add_library(SystemLogSinkStream STATIC)
+target_include_directories(SystemLogSinkStream PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 target_sources(SystemLogSinkStream PRIVATE 
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/StreamSink.cpp"
 )
 
 add_library(SystemLogSinkConsole STATIC)
+target_include_directories(SystemLogSinkConsole PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 target_sources(SystemLogSinkConsole PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/ConsoleSink.cpp"
 )
 
 add_library(SystemLogSinkFile STATIC)
+target_include_directories(SystemLogSinkFile PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 target_sources(SystemLogSinkFile PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/FileSink.cpp"
 )
 
 add_library(SystemLogSinkOutputDebugString STATIC)
+target_include_directories(SystemLogSinkOutputDebugString PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 target_sources(SystemLogSinkOutputDebugString PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/OutputDebugStringSink.cpp"
 )
 
 add_library(SystemThreading STATIC)
+target_include_directories(SystemThreading PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 target_sources(SystemThreading PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/CpuID.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Threading.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Platform/ThreadAffinityGuard.cpp"
 )
+target_link_libraries(SystemThreading PRIVATE Tracy::TracyClient)
 
 target_link_libraries(System INTERFACE
 	SystemCommon
-	System-Creg
+	SystemCreg
 	SystemFilesystem
 	SystemLog
 	SystemLogSinkConsole
 	SystemLogSinkFile
 )
+target_include_directories(System INTERFACE "${CMAKE_SOURCE_DIR}/rts")
 
 if (UNIX)
 	add_library(SystemThreadingLinux STATIC)
+	target_include_directories(SystemThreadingLinux PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 	target_sources(SystemThreadingLinux PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/CpuTopology.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Futex.cpp"
@@ -163,6 +195,7 @@ if (UNIX)
 	target_link_libraries(SystemThreading PRIVATE SystemThreadingLinux)
 
 	add_library(SystemPlatformLinux STATIC)
+	target_include_directories(SystemPlatformLinux PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 	target_sources(SystemPlatformLinux PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/CrashHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/Hardware.cpp"
@@ -170,9 +203,11 @@ if (UNIX)
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/MessageBox.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/WindowManagerHelper.cpp"
 	)
+	target_link_libraries(SystemPlatformLinux PRIVATE SDL2::SDL2)
 	target_link_libraries(System INTERFACE SystemPlatformLinux)
 else (WIN32)
 	add_library(SystemThreadingWindows STATIC)
+	target_include_directories(SystemThreadingWindows PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 	target_sources(SystemThreadingWindows PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CpuTopology.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CriticalSection.cpp"
@@ -181,6 +216,7 @@ else (WIN32)
 	target_link_libraries(SystemThreading PRIVATE SystemThreadingWindows)
 
 	add_library(SystemPlatformWindows STATIC)
+	target_include_directories(SystemPlatformWindows PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 	target_sources(SystemPlatformWindows PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/CrashHandler.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Win/DllLib.cpp"

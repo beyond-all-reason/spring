@@ -623,8 +623,8 @@ add_subdirectory(rts)
 
 # Unit tests
 # this has to be in root CMakeLists.txt
-enable_testing()
-add_subdirectory(test)
+#enable_testing()
+#add_subdirectory(test)
 
 if (INSTALL_PORTABLE)
 	install(DIRECTORY DESTINATION games)

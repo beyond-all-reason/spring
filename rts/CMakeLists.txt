@@ -123,52 +123,56 @@ endif()
 ### Assemble engine sources
 add_library(Game STATIC)
 add_subdirectory(Game)
+find_package(OpenAL REQUIRED)
+target_link_libraries(Game PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL)
+add_dependencies(Game generateVersionFiles)
+target_include_directories(Game PRIVATE "${CMAKE_BINARY_DIR}/src-generated/engine")
 
-add_library(Lua STATIC)
-add_subdirectory(Lua)
+#add_library(Lua STATIC)
+#add_subdirectory(Lua)
 
-add_library(ExternalAI STATIC)
-add_subdirectory(ExternalAI)
+#add_library(ExternalAI STATIC)
+#add_subdirectory(ExternalAI)
 
-add_library(Rendering STATIC)
-add_subdirectory(Rendering)
+#add_library(Rendering STATIC)
+#add_subdirectory(Rendering)
 
-add_library(aGui STATIC)
-add_subdirectory(aGui)
+#add_library(aGui STATIC)
+#add_subdirectory(aGui)
 
-add_library(Rml STATIC)
-add_library(SolLua STATIC)
-add_subdirectory(Rml)
+#add_library(Rml STATIC)
+#add_library(SolLua STATIC)
+#add_subdirectory(Rml)
 
-add_library(Menu STATIC)
-add_subdirectory(Menu)
+#add_library(Menu STATIC)
+#add_subdirectory(Menu)
 
-add_library(Map STATIC)
-add_subdirectory(Map)
+#add_library(Map STATIC)
+#add_subdirectory(Map)
 
-add_library(NetServer STATIC)
-add_library(NetClient STATIC)
-add_subdirectory(Net)
-add_library(Net INTERFACE)
-target_link_libraries(Net INTERFACE NetServer NetClient)
+#add_library(NetServer STATIC)
+#add_library(NetClient STATIC)
+#add_subdirectory(Net)
+#add_library(Net INTERFACE)
+#target_link_libraries(Net INTERFACE NetServer NetClient)
 
-add_library(Sim STATIC)
-add_subdirectory(Sim)
+#add_library(Sim STATIC)
+#add_subdirectory(Sim)
 
-add_library(EngineSources INTERFACE)
-target_link_libraries(EngineSources INTERFACE
-	Game
-	Net
-	Lua
-	Map
-	Rendering
-	aGui
-	Rml
-	SolLua
-	Menu
-	System
-	ExternalAI
-)
+#add_library(EngineSources INTERFACE)
+#target_link_libraries(EngineSources INTERFACE
+#	Game
+#	Net
+#	Lua
+#	Map
+#	Rendering
+#	aGui
+#	Rml
+#	SolLua
+#	Menu
+#	System
+#	ExternalAI
+#)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/include) #FIXME: hack for rts/Rendering/Models/IModelParser.cpp
 
