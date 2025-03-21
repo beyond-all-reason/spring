@@ -82,7 +82,7 @@ target_sources(SystemCommon PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/SpringMem.cpp"
 	"${memoryProfileSource}"
 )
-target_link_libraries(SystemCommon PRIVATE SDL2::SDL2 Tracy::TracyClient prd::base64 lua gflags_nothreads_static)
+target_link_libraries(SystemCommon PRIVATE SDL2::SDL2 Tracy::TracyClient prd::base64 lua gflags_nothreads_static prd::jsoncpp)
 
 add_library(SystemCreg STATIC)
 target_include_directories(SystemCreg PRIVATE 

@@ -124,14 +124,14 @@ endif()
 add_library(Game STATIC)
 add_subdirectory(Game)
 find_package(OpenAL REQUIRED)
-find_package(jsoncpp REQUIRED)
-target_link_libraries(Game PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL JsonCpp::JsonCpp)
+#TODO(jsoncpp): find_package(jsoncpp REQUIRED) and link with JsonCpp::JsonCpp. Remove prd::jsoncpp.
+target_link_libraries(Game PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp)
 add_dependencies(Game generateVersionFiles)
 target_include_directories(Game PRIVATE "${CMAKE_BINARY_DIR}/src-generated/engine")
 
 add_library(Lua STATIC)
 add_subdirectory(Lua)
-target_link_libraries(Lua PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL JsonCpp::JsonCpp)
+target_link_libraries(Lua PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp)
 
 add_library(ExternalAI STATIC)
 add_subdirectory(ExternalAI)
