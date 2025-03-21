@@ -79,7 +79,7 @@ static spring::unordered_map<std::string, std::weak_ptr<FontFileBytes>> fontMemC
 static spring::unordered_set<std::pair<std::string, int>, spring::synced_hash<std::pair<std::string, int>>> invalidFonts;
 static auto cacheMutexes = spring::WrappedSyncRecursiveMutex{};
 
-constexpr int MAX_RECENT_FONTS = 10;
+constexpr int MAX_PINNED_FONTS = 10;
 struct TimestampedFont { std::shared_ptr<FontFace> fontFace; float timestamp; };
 
 /* pinnedRecentFonts maintains shared_ptrs to the weak_ptrs from fontFaceCache. This prevents the weak_ptr from expiring
@@ -96,7 +96,7 @@ static void PinFont(std::shared_ptr<FontFace>& face, const std::string& filename
 	if (cached != pinnedRecentFonts.end()) {
 		cached->second.timestamp = time;
 	} else {
-		if (pinnedRecentFonts.size() >= MAX_RECENT_FONTS) {
+		if (pinnedRecentFonts.size() >= MAX_PINNED_FONTS) {
 			std::pair<string, int>* oldest;
 			float oldestTime = time;
 			for(auto &[key, timestampedFont]: pinnedRecentFonts) {
