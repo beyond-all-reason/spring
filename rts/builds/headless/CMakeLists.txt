@@ -15,6 +15,10 @@ set(OpenGL_GL_PREFERENCE LEGACY)
 
 find_package(OpenGL 3.0 REQUIRED)
 
+if (NOT WIN32)
+	list(APPEND engineHeadlessLibraries rt)
+endif()
+
 # headlessstubs are our stubs that replace libGL, libGLU, libGLEW, libSDL (yes really!)
 list(APPEND engineHeadlessLibraries headlessStubs)
 list(APPEND engineHeadlessLibraries ${SPRING_SIM_LIBRARIES})
