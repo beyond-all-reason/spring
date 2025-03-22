@@ -30,7 +30,7 @@
 #include "System/Math/expDecay.h"
 
 #include "System/Misc/TracyDefs.h"
-
+#include "System/EventHandler.h"
 
 static std::string strformat(const char* fmt, ...)
 {
@@ -282,6 +282,18 @@ void CCameraHandler::UpdateController(CPlayer* player, bool fpsMode)
 	camCon.Update();
 
 	UpdateTransition();
+
+	const float3& newRot = camera->GetRot();
+	if (!newRot.equals(lastCamRot, 0.001f)) { // 0.001 rad tolerance ~0.057°
+		eventHandler.CameraRotationChanged(newRot);
+		lastCamRot = newRot;
+	}
+
+	const float3& newPos = camera->GetPos();
+	if (!newPos.equals(lastCamPos, 0.01f)) {
+		eventHandler.CameraPositionChanged(newPos);
+		lastCamPos = newPos;
+	}
 }
 
 void CCameraHandler::UpdateController(CCameraController& camCon, bool keyMove, bool wheelMove, bool edgeMove)

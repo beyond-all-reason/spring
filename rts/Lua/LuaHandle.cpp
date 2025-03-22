@@ -47,6 +47,7 @@
 #include "System/Input/KeyInput.h"
 #include "System/Platform/SDL1_keysym.h"
 
+
 #include "LuaInclude.h"
 
 #include <SDL_keyboard.h>
@@ -3364,6 +3365,53 @@ void CLuaHandle::ActiveCommandChanged(const SCommandDescription* cmdDesc)
 	} else {
 		RunCallIn(L, cmdStr, 0, 0);
 	}
+}
+
+/*** Called whenever the camera rotation changes
+ *
+ * @function Callins:CameraRotationChanged
+ * @param rotX number Camera rotation around the x axis in radians.
+ * @param rotY number Camera rotation around the y axis in radians.
+ * @param rotZ number Camera rotation around the z axis in radians.
+ */
+void CLuaHandle::CameraRotationChanged(const float3& rot)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 6, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, rot.x);
+	lua_pushnumber(L, rot.y);
+	lua_pushnumber(L, rot.z);
+
+	RunCallIn(L, cmdStr, 3, 0);
+}
+
+/*** Called whenever the camera position changes
+ *
+ * @function Callins:CameraPositionChanged
+ * @param posX number Camera position x in world coordinates
+ * @param posY number Camera position y in world coordinates
+ * @param posZ number Camera position z in world coordinates
+ */
+void CLuaHandle::CameraPositionChanged(const float3& pos)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 6, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, pos.x);
+	lua_pushnumber(L, pos.y);
+	lua_pushnumber(L, pos.z);
+
+	RunCallIn(L, cmdStr, 3, 0);
 }
 
 /*** Called when a command is issued.
