@@ -5,6 +5,7 @@ cmake_policy(SET CMP0065 OLD) #we need binaries compiled with -rdynamic for BARb
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_MODULES_SPRING "${CMAKE_CURRENT_SOURCE_DIR}/rts/build/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_MODULES_SPRING}")
@@ -363,13 +364,8 @@ endif (LDGOLD_FOUND)
 
 add_definitions(-D_GLIBCXX_USE_NANOSLEEP) # issue in std::chrono with gentoo and few other distros
 
-
 ### our custom OpenMP replacement
 option(THREADPOOL "Enable ThreadPools" TRUE)
-if (THREADPOOL)
-	add_definitions(-DTHREADPOOL)
-endif(THREADPOOL)
-
 
 ### warnings
 if(NOT MSVC)

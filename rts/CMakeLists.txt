@@ -127,7 +127,9 @@ find_package(OpenAL REQUIRED)
 #TODO(jsoncpp): find_package(jsoncpp REQUIRED) and link with JsonCpp::JsonCpp. Remove prd::jsoncpp.
 target_link_libraries(Game PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp)
 add_dependencies(Game generateVersionFiles)
-target_include_directories(Game PRIVATE "${CMAKE_BINARY_DIR}/src-generated/engine")
+target_include_directories(Game PRIVATE 
+	"${CMAKE_BINARY_DIR}/src-generated/engine"
+)
 
 add_library(Lua STATIC)
 add_subdirectory(Lua)
@@ -136,6 +138,13 @@ target_link_libraries(Lua PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi Ope
 add_library(ExternalAI STATIC)
 add_subdirectory(ExternalAI)
 target_link_libraries(ExternalAI PRIVATE Tracy::TracyClient)
+
+if (THREADPOOL)
+	message(STATUS "Threadpools enabled")
+	target_compile_definitions(Game PRIVATE THREADPOOL)
+	target_compile_definitions(Lua PRIVATE THREADPOOL)
+	target_compile_definitions(ExternalAI PRIVATE THREADPOOL)
+endif()
 
 #add_library(Rendering STATIC)
 #add_subdirectory(Rendering)

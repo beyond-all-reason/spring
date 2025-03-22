@@ -2,6 +2,28 @@ if (TRACY_PROFILE_MEMORY)
 	set(memoryProfileSource "${CMAKE_CURRENT_SOURCE_DIR}/TraceMemory.cpp")
 endif()
 
+function(create_unitsync_target targetName)
+	get_target_property(targetIncludes ${targetName} INCLUDE_DIRECTORIES)
+	get_target_property(targetSources ${targetName} SOURCES)
+	get_target_property(targetLinks ${targetName} LINK_LIBRARIES)
+
+	set(newTargetName "${targetName}Unitsync")
+	add_library(${newTargetName} STATIC)
+	if (targetIncludes)
+		target_include_directories(${newTargetName} PRIVATE ${targetIncludes})
+	endif()
+	target_sources(${newTargetName} PRIVATE ${targetSources})
+	if (targetLinks)
+		target_link_libraries(${newTargetName} PRIVATE ${targetLinks})
+	endif()
+	target_compile_definitions(${newTargetName} PRIVATE
+		UNITSYNC
+		NOT_USING_CREG
+		NO_SOUND
+		HEADLESS
+	)
+endfunction()
+
 add_library(SystemCommon STATIC)
 target_include_directories(SystemCommon PRIVATE 
 	"${CMAKE_SOURCE_DIR}/rts"
@@ -83,6 +105,10 @@ target_sources(SystemCommon PRIVATE
 	"${memoryProfileSource}"
 )
 target_link_libraries(SystemCommon PRIVATE SDL2::SDL2 Tracy::TracyClient prd::base64 lua gflags_nothreads_static prd::jsoncpp)
+if (THREADPOOL)
+	message(STATUS "Threadpools enabled")
+	target_compile_definitions(SystemCommon PRIVATE THREADPOOL)
+endif()
 
 add_library(SystemCreg STATIC)
 target_include_directories(SystemCreg PRIVATE 
@@ -128,6 +154,7 @@ target_sources(SystemFilesystem PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/FileSystem/VFSHandler.cpp"
 )
 target_link_libraries(SystemFilesystem PRIVATE Tracy::TracyClient)
+create_unitsync_target(SystemFilesystem)
 
 add_library(SystemLog STATIC)
 target_include_directories(SystemLog PRIVATE "${CMAKE_SOURCE_DIR}/rts")
@@ -140,6 +167,7 @@ target_sources(SystemLog PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/LogUtil.c"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/TracySink.cpp"
 )
+create_unitsync_target(SystemLog)
 
 add_library(SystemLogSinkStream STATIC)
 target_include_directories(SystemLogSinkStream PRIVATE "${CMAKE_SOURCE_DIR}/rts")
@@ -158,12 +186,14 @@ target_include_directories(SystemLogSinkFile PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 target_sources(SystemLogSinkFile PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/FileSink.cpp"
 )
+create_unitsync_target(SystemLogSinkFile)
 
 add_library(SystemLogSinkOutputDebugString STATIC)
 target_include_directories(SystemLogSinkOutputDebugString PRIVATE "${CMAKE_SOURCE_DIR}/rts")
 target_sources(SystemLogSinkOutputDebugString PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Log/OutputDebugStringSink.cpp"
 )
+create_unitsync_target(SystemLogSinkOutputDebugString)
 
 add_library(SystemThreading STATIC)
 target_include_directories(SystemThreading PRIVATE "${CMAKE_SOURCE_DIR}/rts")
@@ -230,7 +260,7 @@ else (WIN32)
 	target_link_libraries(SystemPlatformWindows PRIVATE SDL2::SDL2)
 	target_link_libraries(System INTERFACE SystemPlatformWindows SystemLogSinkOutputDebugString)
 endif ()
-
+create_unitsync_target(SystemThreading)
 target_link_libraries(System INTERFACE SystemThreading)
 
 add_subdirectory(FileSystem)
