@@ -382,7 +382,7 @@ bool CArchiveScanner::ArchiveData::GetInfoValueBool(const std::string& key) cons
 
 static std::atomic<uint32_t> numScannedArchives{ 0 };
 static std::atomic<uint32_t> numFilesHashed{ 0 };
-static spring::mutex mtx;
+static spring::recursive_mutex mtx;
 
 /*
  * CArchiveScanner
