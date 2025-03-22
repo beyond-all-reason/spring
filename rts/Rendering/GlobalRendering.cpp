@@ -43,6 +43,7 @@
 
 CONFIG(bool, DebugGL).defaultValue(false).description("Enables GL debug-context and output. (see GL_ARB_debug_output)");
 CONFIG(bool, DebugGLStacktraces).defaultValue(false).description("Create a stacktrace when an OpenGL error occurs");
+CONFIG(bool, DebugGLReportGroups).defaultValue(false).description("Show OpenGL PUSH/POP groups in the GL debug");
 
 CONFIG(int, GLContextMajorVersion).defaultValue(3).minimumValue(3).maximumValue(4);
 CONFIG(int, GLContextMinorVersion).defaultValue(0).minimumValue(0).maximumValue(5);
@@ -1925,6 +1926,12 @@ static inline const char* glDebugMessageSeverityName(GLenum msgSevr) {
 }
 
 #ifndef HEADLESS
+
+struct GLDebugOptions {
+	bool dbgTraces;
+	bool dbgGroups;
+};
+
 static void APIENTRY glDebugMessageCallbackFunc(
 	GLenum msgSrce,
 	GLenum msgType,
@@ -1940,13 +1947,18 @@ static void APIENTRY glDebugMessageCallbackFunc(
 		default: {} break;
 	}
 
+	const auto* glDebugOptions = reinterpret_cast<const GLDebugOptions*>(userParam);
+
+	if ((glDebugOptions == nullptr) || !glDebugOptions->dbgGroups && (msgType == GL_DEBUG_TYPE_PUSH_GROUP || msgType == GL_DEBUG_TYPE_POP_GROUP))
+		return;
+
 	const char* msgSrceStr = glDebugMessageSourceName(msgSrce);
 	const char* msgTypeStr = glDebugMessageTypeName(msgType);
 	const char* msgSevrStr = glDebugMessageSeverityName(msgSevr);
 
 	LOG_L(L_WARNING, "[OPENGL_DEBUG] id=%u source=%s type=%s severity=%s msg=\"%s\"", msgID, msgSrceStr, msgTypeStr, msgSevrStr, dbgMessage);
 
-	if ((userParam == nullptr) || !(*reinterpret_cast<const bool*>(userParam)))
+	if ((glDebugOptions == nullptr) || !glDebugOptions->dbgTraces)
 		return;
 
 	CrashHandler::PrepareStacktrace();
@@ -1966,14 +1978,13 @@ bool CGlobalRendering::ToggleGLDebugOutput(unsigned int msgSrceIdx, unsigned int
 		const char* msgTypeStr = glDebugMessageTypeName(msgTypeEnums[msgTypeIdx %= msgTypeEnums.size()]);
 		const char* msgSevrStr = glDebugMessageSeverityName(msgSevrEnums[msgSevrIdx %= msgSevrEnums.size()]);
 
-		const static bool dbgTraces = configHandler->GetBool("DebugGLStacktraces");
-		// install OpenGL debug message callback; typecast is a workaround
-		// for #4510 (change in callback function signature with GLEW 1.11)
-		// use SYNCHRONOUS output, we want our callback to run in the same
-		// thread as the bugged GL call (for proper stacktraces)
-		// CB userParam is const, but has to be specified sans qualifiers
+		static GLDebugOptions glDebugOptions;
+
+		glDebugOptions.dbgTraces = configHandler->GetBool("DebugGLStacktraces");
+		glDebugOptions.dbgGroups = configHandler->GetBool("DebugGLReportGroups");
+
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback((GLDEBUGPROC)&glDebugMessageCallbackFunc, (void*)&dbgTraces);
+		glDebugMessageCallback((GLDEBUGPROC)&glDebugMessageCallbackFunc, (const void*)&glDebugOptions);
 		glDebugMessageControl(msgSrceEnums[msgSrceIdx], msgTypeEnums[msgTypeIdx], msgSevrEnums[msgSevrIdx], 0, nullptr, GL_TRUE);
 
 		LOG("[GR::%s] OpenGL debug-message callback enabled (source=%s type=%s severity=%s)", __func__, msgSrceStr, msgTypeStr, msgSevrStr);
