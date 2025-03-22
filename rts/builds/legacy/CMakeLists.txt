@@ -44,9 +44,9 @@ endif (APPLE)
 list(APPEND engineLibraries squish rgetc1)
 list(APPEND engineLibraries ${sound-impl})
 list(APPEND engineLibraries engineSystemNet)
-list(APPEND engineLibraries ${engineCommonLibraries})
+#list(APPEND engineLibraries ${engineCommonLibraries})
 #list(APPEND engineLibraries engineaGui)
-list(APPEND engineLibraries ${SPRING_SIM_LIBRARIES})
+#list(APPEND engineLibraries ${SPRING_SIM_LIBRARIES})
 list(APPEND engineLibraries engineSim)
 list(APPEND engineLibraries pr-downloader)
 list(APPEND engineLibraries RmlUi::Core)
@@ -62,8 +62,8 @@ list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/cereal/include)
 include_directories(${engineIncludes})
 
 ### Build the executable
-add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${ENGINE_ICON} ${engineHeaders})
-target_link_libraries(engine-legacy ${engineLibraries})
+add_executable(engine-legacy ${EXE_FLAGS} ${ENGINE_ICON} ${engineHeaders})
+target_link_libraries(engine-legacy EngineSources ${engineLibraries})
 
 
 ### Install the executable

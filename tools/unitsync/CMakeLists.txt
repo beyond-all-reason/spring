@@ -31,10 +31,10 @@ if    (MINGW)
 endif (MINGW)
 
 add_definitions(-DUNITSYNC)
-if (NOT WIN32)
-	add_definitions(-fPIC)
-	add_definitions(${PIC_FLAG})
-endif()
+#if (NOT WIN32)
+#	add_definitions(-fPIC)
+#	add_definitions(${PIC_FLAG})
+#endif()
 add_definitions(-DNOT_USING_CREG)
 add_definitions(-DHEADLESS)
 add_definitions(-DNO_SOUND)
@@ -104,11 +104,6 @@ else (WIN32)
 endif (WIN32)
 
 set(unitsync_files
-	${sources_engine_System_FileSystem}
-	${sources_engine_System_Threading}
-	${sources_engine_System_Log}
-	${sources_engine_System_Log_sinkFile}
-	${sources_engine_System_Log_sinkOutputDebugString}
 	${main_files}
 	${CMAKE_CURRENT_SOURCE_DIR}/unitsync.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/LuaParserAPI.cpp
@@ -124,7 +119,14 @@ endif ()
 #   to be able to link to it
 add_library(unitsync SHARED ${unitsync_files})
 add_dependencies(unitsync generateVersionFiles)
-target_link_libraries(unitsync ${unitsync_libs} ${unitsync_lib_flags})
+target_link_libraries(unitsync 
+	SystemFilesystemUnitsync 
+	SystemLogUnitsync 
+	SystemLogSinkFileUnitsync
+	SystemThreadingUnitsync
+	${unitsync_libs}
+	${unitsync_lib_flags}
+)
 if (MINGW)
 	set_target_properties(unitsync PROPERTIES LINK_FLAGS -Wl,--add-stdcall-alias)
 endif (MINGW)

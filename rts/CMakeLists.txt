@@ -120,34 +120,72 @@ if(UNIX AND NOT (CMAKE_SYSTEM_NAME MATCHES "OpenBSD"))
 	list(APPEND engineCommonLibraries libunwind::libunwind ${LZMA_LIBRARY})
 endif()
 
-
-
 ### Assemble engine sources
+add_library(Game STATIC)
 add_subdirectory(Game)
-add_subdirectory(Lua)
-add_subdirectory(ExternalAI)
-add_subdirectory(Rendering)
-add_subdirectory(aGui)
-add_subdirectory(Rml)
-add_subdirectory(Menu)
-add_subdirectory(Map)
-add_subdirectory(Net)
-add_subdirectory(Sim)
-#add_subdirectory(System) # this is already added in ../
+find_package(OpenAL REQUIRED)
+#TODO(jsoncpp): find_package(jsoncpp REQUIRED) and link with JsonCpp::JsonCpp. Remove prd::jsoncpp.
+target_link_libraries(Game PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp)
+add_dependencies(Game generateVersionFiles)
+target_include_directories(Game PRIVATE 
+	"${CMAKE_BINARY_DIR}/src-generated/engine"
+)
 
-make_global_var(engineSources
-		${sources_engine_Game}
-		${sources_engine_Net}
-		${sources_engine_Lua}
-		${sources_engine_Map}
-		${sources_engine_Rendering}
-		${sources_engine_aGui}
-		${sources_engine_Rml}
-		${sources_engine_RmlSolLua}
-		${sources_engine_Menu}
-		${sources_engine_System}
-		${sources_engine_ExternalAI}
-	)
+add_library(Lua STATIC)
+add_subdirectory(Lua)
+target_link_libraries(Lua PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp)
+
+add_library(ExternalAI STATIC)
+add_subdirectory(ExternalAI)
+target_link_libraries(ExternalAI PRIVATE Tracy::TracyClient)
+
+if (THREADPOOL)
+	message(STATUS "Threadpools enabled")
+	target_compile_definitions(Game PRIVATE THREADPOOL)
+	target_compile_definitions(Lua PRIVATE THREADPOOL)
+	target_compile_definitions(ExternalAI PRIVATE THREADPOOL)
+endif()
+
+#add_library(Rendering STATIC)
+#add_subdirectory(Rendering)
+
+#add_library(aGui STATIC)
+#add_subdirectory(aGui)
+
+#add_library(Rml STATIC)
+#add_library(SolLua STATIC)
+#add_subdirectory(Rml)
+
+#add_library(Menu STATIC)
+#add_subdirectory(Menu)
+
+#add_library(Map STATIC)
+#add_subdirectory(Map)
+
+#add_library(NetServer STATIC)
+#add_library(NetClient STATIC)
+#add_subdirectory(Net)
+#add_library(Net INTERFACE)
+#target_link_libraries(Net INTERFACE NetServer NetClient)
+
+#add_library(Sim STATIC)
+#add_subdirectory(Sim)
+
+#add_library(EngineSources INTERFACE)
+#target_link_libraries(EngineSources INTERFACE
+#	Game
+#	Net
+#	Lua
+#	Map
+#	Rendering
+#	aGui
+#	Rml
+#	SolLua
+#	Menu
+#	System
+#	ExternalAI
+#)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/include) #FIXME: hack for rts/Rendering/Models/IModelParser.cpp
 
 ### Add headers for generated project files (e.g. Code::Blocks)

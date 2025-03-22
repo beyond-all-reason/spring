@@ -94,6 +94,6 @@ if    (WIN32)
 endif (WIN32)
 
 # the build targets
-add_engine_build(legacy)
-add_engine_build(dedicated)
-add_engine_build(headless)
+#add_engine_build(legacy)
+#add_engine_build(dedicated)
+#add_engine_build(headless)

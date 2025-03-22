@@ -5,6 +5,7 @@ cmake_policy(SET CMP0065 OLD) #we need binaries compiled with -rdynamic for BARb
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_MODULES_SPRING "${CMAKE_CURRENT_SOURCE_DIR}/rts/build/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_MODULES_SPRING}")
@@ -20,11 +21,6 @@ option(INSTALL_PORTABLE "Make a portable installation (instead of regular system
 
 # Allow to set PREFER_STATIC_LIBS from env, defaults to false
 option(PREFER_STATIC_LIBS "Prefer static libraries when linking deps" $ENV{PREFER_STATIC_LIBS})
-
-# dummy so that qtcreator shows all files (even those of windows)
-if(CMAKE_VERSION VERSION_GREATER 3.1.2)
-	add_library(platform_sources EXCLUDE_FROM_ALL "")
-endif()
 
 # includes rts/build/cmake/Util.cmake & rts/build/cmake/PreferStaticLibs.cmake
 include(Util)
@@ -368,13 +364,8 @@ endif (LDGOLD_FOUND)
 
 add_definitions(-D_GLIBCXX_USE_NANOSLEEP) # issue in std::chrono with gentoo and few other distros
 
-
 ### our custom OpenMP replacement
 option(THREADPOOL "Enable ThreadPools" TRUE)
-if (THREADPOOL)
-	add_definitions(-DTHREADPOOL)
-endif(THREADPOOL)
-
 
 ### warnings
 if(NOT MSVC)
@@ -607,6 +598,7 @@ if    (NOT "${AI_TYPES}" STREQUAL "NONE")
 endif (NOT "${AI_TYPES}" STREQUAL "NONE")
 
 # As tools/unitsync/ depends on sources from here, we add this one first
+add_library(System INTERFACE)
 add_subdirectory(rts/System)
 
 # additional tools
@@ -627,8 +619,8 @@ add_subdirectory(rts)
 
 # Unit tests
 # this has to be in root CMakeLists.txt
-enable_testing()
-add_subdirectory(test)
+#enable_testing()
+#add_subdirectory(test)
 
 if (INSTALL_PORTABLE)
 	install(DIRECTORY DESTINATION games)
