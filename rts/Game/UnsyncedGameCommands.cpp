@@ -1554,15 +1554,25 @@ public:
 	DebugGLActionExecutor() : IUnsyncedActionExecutor("DebugGL", "Enable/Disable OpenGL debug-context output") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		bool enabled = !globalRendering->glDebug;
+		bool debugEnabled = !globalRendering->glDebug;
+
 		uint32_t msgSrceIdx = 0;
 		uint32_t msgTypeIdx = 0;
 		uint32_t msgSevrIdx = 0;
 
 		auto args = CSimpleParser::Tokenize(action.GetArgs());
 
-		if (args.size() > 0)
-			enabled = StringToBool(args[0]);
+		if (args.size() > 0) {
+			int options = StringToInt(args[0]);
+			if (options > 1) {
+				debugEnabled = !!(options & (1 << 1));
+				configHandler->Set("DebugGLReportGroups", !!(options & (1 << 2)), true);
+				configHandler->Set("DebugGLStacktraces",  !!(options & (1 << 3)), true);
+			}
+			else {
+				debugEnabled = !!(options & 1);
+			}
+		}
 
 		if (args.size() > 1)
 			msgSrceIdx = StringToInt(args[1]);
@@ -1571,7 +1581,7 @@ public:
 		if (args.size() > 3)
 			msgSevrIdx = StringToInt(args[3]);
 
-		globalRendering->glDebug = enabled;
+		globalRendering->glDebug = debugEnabled;
 		globalRendering->ToggleGLDebugOutput(msgSrceIdx, msgTypeIdx, msgSevrIdx);
 
 		return true;
