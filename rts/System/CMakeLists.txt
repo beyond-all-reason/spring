@@ -203,7 +203,8 @@ if (UNIX)
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/MessageBox.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/WindowManagerHelper.cpp"
 	)
-	target_link_libraries(SystemPlatformLinux PRIVATE SDL2::SDL2)
+	find_package(Libunwind REQUIRED)
+	target_link_libraries(SystemPlatformLinux PRIVATE SDL2::SDL2 libunwind::libunwind)
 	target_link_libraries(System INTERFACE SystemPlatformLinux)
 else (WIN32)
 	add_library(SystemThreadingWindows STATIC)
