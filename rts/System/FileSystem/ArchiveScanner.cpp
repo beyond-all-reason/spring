@@ -505,7 +505,7 @@ void CArchiveScanner::ScanDirs(const std::vector<std::string>& scanDirs)
 		const std::string& archive = foundArchives[fai];
 		ScanArchive(archive, false);
 #if !defined(DEDICATED) && !defined(UNITSYNC)
-		Watchdog::ClearTimer();
+		Watchdog::ClearTimer(WDT_VFSI);
 #endif
 	});
 	scanArchiveMutex.SetThreadSafety(false);
