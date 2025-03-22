@@ -205,6 +205,7 @@ private:
 
 	void ScanDirs(const std::vector<std::string>& dirs);
 	void ScanDir(const std::string& curPath, std::deque<std::string>& foundArchives);
+	void ScanArchives(const std::string& curPath, const std::deque<std::string>& foundArchives);
 
 	/// scan mapinfo / modinfo lua files
 	bool ScanArchiveLua(IArchive* ar, const std::string& fileName, ArchiveInfo& ai, std::string& err);

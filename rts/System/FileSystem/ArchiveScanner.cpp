@@ -474,6 +474,7 @@ void CArchiveScanner::ScanDirs(const std::vector<std::string>& scanDirs)
 
 	isDirty = true;
 
+	scanArchiveMutex.SetThreadSafety(true);
 	// scan for all archives
 	for (const std::string& dir: scanDirs) {
 		if (!FileSystem::DirExists(dir))
@@ -481,33 +482,9 @@ void CArchiveScanner::ScanDirs(const std::vector<std::string>& scanDirs)
 
 		LOG("Scanning: %s", dir.c_str());
 		ScanDir(dir, foundArchives);
+		ScanArchives(dir, foundArchives);
+		foundArchives.clear();
 	}
-
-	// check for duplicates reached by links
-	//XXX too slow also ScanArchive() skips duplicates itself, too
-	/*for (auto it = foundArchives.begin(); it != foundArchives.end(); ++it) {
-		auto jt = it;
-		++jt;
-		while (jt != foundArchives.end()) {
-			std::string f1 = StringToLower(FileSystem::GetFilename(*it));
-			std::string f2 = StringToLower(FileSystem::GetFilename(*jt));
-			if ((f1 == f2) || FileSystem::ComparePaths(*it, *jt)) {
-				jt = foundArchives.erase(jt);
-			} else {
-				++jt;
-			}
-		}
-	}*/
-
-	// Create archiveInfos etc. if not in cache already
-	scanArchiveMutex.SetThreadSafety(true);
-	for_mt(0, foundArchives.size(), [&foundArchives = std::as_const(foundArchives), this](int fai) {
-		const std::string& archive = foundArchives[fai];
-		ScanArchive(archive, false);
-#if !defined(DEDICATED) && !defined(UNITSYNC)
-		Watchdog::ClearTimer(WDT_VFSI);
-#endif
-	});
 	scanArchiveMutex.SetThreadSafety(false);
 
 	// Now we'll have to parse the replaces-stuff found in the mods
@@ -563,6 +540,36 @@ void CArchiveScanner::ScanDir(const std::string& curPath, std::deque<std::string
 			}
 		}
 	}
+}
+
+void CArchiveScanner::ScanArchives(const std::string& curPath, const std::deque<std::string>& foundArchives)
+{
+#ifdef _WIN32
+	static constexpr int NUM_PARALLEL_FILE_READS_SD = 4;
+#else
+	// Linux FS even on spinning disk seems far more tolerant to parallel reads, use all threads
+	const int NUM_PARALLEL_FILE_READS_SD = ThreadPool::GetNumThreads();
+#endif // _WIN32
+
+	const auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(curPath);
+	int numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
+
+	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
+	// limit the number of simultaneous IO operations
+	std::counting_semaphore sem(numParallelFileReads);
+
+	// Create archiveInfos etc. if not in cache already
+	for_mt(0, foundArchives.size(), [&foundArchives, &sem, this](int fai) {
+		const std::string& archive = foundArchives[fai];
+
+		sem.acquire();
+		ScanArchive(archive, false);
+		sem.release();
+
+#if !defined(DEDICATED) && !defined(UNITSYNC)
+		Watchdog::ClearTimer(WDT_VFSI);
+#endif
+	});
 }
 
 static void AddDependency(std::vector<std::string>& deps, const std::string& dependency)
