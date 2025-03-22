@@ -3,10 +3,8 @@
 #include "System/Log/FileSink.h"
 #include "System/Log/StreamSink.h"
 #include "System/Log/LogUtil.h"
-#include "System/StringUtil.h" // IntToString() -> header only
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 #include <cstdarg>
 #include <sstream>

@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 
 static inline float3 randfloat3()

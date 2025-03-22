@@ -3,8 +3,7 @@
 #include "System/creg/Serializer.h"
 #include "System/creg/SerializeLuaState.h"
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 
 static int handlepanic(lua_State* L)

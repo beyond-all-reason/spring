@@ -3,8 +3,7 @@
 #endif
 #include "System/Sync/SyncedPrimitive.h"
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 
 TEST_CASE("ImplicitConversions")
