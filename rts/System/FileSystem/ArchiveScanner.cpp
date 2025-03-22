@@ -392,6 +392,7 @@ static std::atomic<uint32_t> numScannedArchives{0};
 
 CArchiveScanner::CArchiveScanner()
 {
+	scanArchiveMutex.SetThreadSafety(false);
 	ReadCache();
 }
 
@@ -499,12 +500,15 @@ void CArchiveScanner::ScanDirs(const std::vector<std::string>& scanDirs)
 	}*/
 
 	// Create archiveInfos etc. if not in cache already
-	for (const std::string& archive: foundArchives) {
+	scanArchiveMutex.SetThreadSafety(true);
+	for_mt(0, foundArchives.size(), [&foundArchives = std::as_const(foundArchives), this](int fai) {
+		const std::string& archive = foundArchives[fai];
 		ScanArchive(archive, false);
-	#if !defined(DEDICATED) && !defined(UNITSYNC)
+#if !defined(DEDICATED) && !defined(UNITSYNC)
 		Watchdog::ClearTimer();
-	#endif
-	}
+#endif
+	});
+	scanArchiveMutex.SetThreadSafety(false);
 
 	// Now we'll have to parse the replaces-stuff found in the mods
 	for (const auto& archiveInfo: archiveInfos) {
@@ -693,22 +697,10 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 {
 	uint32_t modifiedTime = 0;
 
-	assert(!isInScan);
-
 	if (CheckCachedData(fullName, modifiedTime, doChecksum))
 		return;
 
 	isDirty = true;
-	isInScan = true;
-
-	struct ScanScope {
-		 ScanScope(bool* b) { p = b; *p =  true; }
-		~ScanScope(       ) {        *p = false; }
-
-		bool* p = nullptr;
-	};
-
-	const ScanScope scanScope(&isInScan);
 
 	const std::string& fname = FileSystem::GetFilename(fullName);
 	const std::string& fpath = FileSystem::GetDirectory(fullName);
@@ -717,6 +709,8 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 	std::unique_ptr<IArchive> ar(archiveLoader.OpenArchive(fullName));
 
 	if (ar == nullptr || !ar->IsOpen()) {
+		auto lck = scanArchiveMutex.GetScopedLock();
+
 		LOG_L(L_WARNING, "[AS::%s] unable to open archive \"%s\"", __func__, fullName.c_str());
 
 		// record it as broken, so we don't need to look inside everytime
@@ -761,6 +755,8 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 	}
 
 	if (!CheckCompression(ar.get(), fullName, error)) {
+		auto lck = scanArchiveMutex.GetScopedLock();
+
 		LOG_L(L_WARNING, "[AS::%s] failed to scan \"%s\" (%s)", __func__, fullName.c_str(), error.c_str());
 
 		// mark archive as broken, so we don't need to look inside everytime
@@ -777,6 +773,7 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 	}
 
 	if (hasMapInfo || !arMapFile.empty()) {
+		auto lck = scanArchiveMutex.GetScopedLock();
 		// map archive
 		// FIXME: name will never be empty if version is set (see HACK in ArchiveData)
 		if ((ad.GetName()).empty()) {
@@ -792,6 +789,7 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 
 		LOG_S(LOG_SECTION_ARCHIVESCANNER, "Found new map: %s", ad.GetNameVersioned().c_str());
 	} else if (hasModInfo) {
+		auto lck = scanArchiveMutex.GetScopedLock();
 		// game or base-type (cursors, bitmaps, ...) archive
 		// babysitting like this is really no longer required
 		if (ad.IsGame() || ad.IsMenu())
@@ -816,8 +814,11 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 	ai.updated = true;
 	ai.hashed = doChecksum && GetArchiveChecksum(fullName, ai);
 
-	archiveInfosIndex.emplace(lcfn, archiveInfos.size());
-	archiveInfos.emplace_back(std::move(ai));
+	{
+		auto lck = scanArchiveMutex.GetScopedLock();
+		archiveInfosIndex.emplace(lcfn, archiveInfos.size());
+		archiveInfos.emplace_back(std::move(ai));
+	}
 
 	numScannedArchives += 1;
 }
@@ -836,8 +837,8 @@ bool CArchiveScanner::CheckCachedData(const std::string& fullName, uint32_t& mod
 	if ((modified = FileSystemAbstraction::GetFileModificationTime(fullName)) == 0)
 		return false;
 
-	const std::string& fileName      = FileSystem::GetFilename(fullName);
-	const std::string& filePath      = FileSystem::GetDirectory(fullName);
+	const std::string& fileName = FileSystem::GetFilename(fullName);
+	const std::string& filePath = FileSystem::GetDirectory(fullName);
 	const std::string& fileNameLower = StringToLower(fileName);
 
 
@@ -859,7 +860,7 @@ bool CArchiveScanner::CheckCachedData(const std::string& fullName, uint32_t& mod
 
 	const size_t archiveIndex = aiIter->second;
 
-	ArchiveInfo&  ai = archiveInfos[archiveIndex           ];
+	ArchiveInfo& ai = archiveInfos[archiveIndex];
 	ArchiveInfo& rai = archiveInfos[archiveInfos.size() - 1];
 
 	// this archive may have been obsoleted, do not process it if so
@@ -898,20 +899,24 @@ bool CArchiveScanner::CheckCachedData(const std::string& fullName, uint32_t& mod
 		);
 	}
 
-	// if we are here, we could have invalid info in the cache
-	// force a reread if it is a directory archive (.sdd), as
-	// st_mtime only reflects changes to the directory itself
-	// (not the contents)
-	//
-	// remap replacement archive
-	if (archiveIndex != (archiveInfos.size() - 1)) {
-		archiveInfosIndex[StringToLower(rai.origName)] = archiveIndex;
-		archiveInfos[archiveIndex] = std::move(rai);
-	}
+	{
+		auto lck = scanArchiveMutex.GetScopedLock();
 
-	archiveInfosIndex.erase(fileNameLower);
-	archiveInfos.pop_back();
-	return false;
+		// if we are here, we could have invalid info in the cache
+		// force a reread if it is a directory archive (.sdd), as
+		// st_mtime only reflects changes to the directory itself
+		// (not the contents)
+		//
+		// remap replacement archive
+		if (archiveIndex != (archiveInfos.size() - 1)) {
+			archiveInfosIndex[StringToLower(rai.origName)] = archiveIndex;
+			archiveInfos[archiveIndex] = std::move(rai);
+		}
+
+		archiveInfosIndex.erase(fileNameLower);
+		archiveInfos.pop_back();
+		return false;
+	}
 }
 
 

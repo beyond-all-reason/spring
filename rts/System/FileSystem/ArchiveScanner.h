@@ -10,6 +10,7 @@
 #include <atomic>
 
 #include "System/Info.h"
+#include "System/Threading/WrappedSync.h"
 #include "System/Sync/SHA512.hpp"
 #include "System/UnorderedMap.hpp"
 
@@ -252,6 +253,8 @@ private:
 private:
 	std::atomic<uint32_t> numFilesHashed{0};
 
+	spring::WrappedSyncSpinLock scanArchiveMutex;
+
 	spring::unordered_map<std::string, size_t> archiveInfosIndex;
 	spring::unordered_map<std::string, size_t> brokenArchivesIndex;
 
@@ -262,7 +265,6 @@ private:
 	std::string cacheFile;
 
 	bool isDirty = false;
-	bool isInScan = false;
 };
 
 extern CArchiveScanner* archiveScanner;

@@ -380,6 +380,7 @@ bool SpringApp::InitFileSystem()
 	// ArchiveScanner uses for_mt, so must set a thread-count
 	// (employ all available threads, then switch to default)
 	ThreadPool::SetMaximumThreadCount();
+	ThreadPool::SetDefaultThreadCount();
 
 	// threaded initialization s.t. the window gets CPU time
 	// FileSystem is mostly self-contained, don't need locks
@@ -399,7 +400,6 @@ bool SpringApp::InitFileSystem()
 
 	fsInitThread.join();
 
-	ThreadPool::SetDefaultThreadCount();
 	// see InputHandler::PushEvents
 	streflop::streflop_init<streflop::Simple>();
 	return ret;
