@@ -16,19 +16,17 @@
 	uniform float shadowDensity;
 #endif
 
-	// in opaque passes tc.a is always 1.0 [all objects], and alphaPass is 0.0
-	// in alpha passes tc.a is either one of alphaValues.xyzw [for units] *or*
-	// contains a distance fading factor [for features], and alphaPass is 1.0
-	// texture alpha-masking is done in both passes
-	uniform vec4 teamColor;
-	uniform vec4 nanoColor;
+// in opaque passes tc.a is always 1.0 [all objects], and alphaPass is 0.0
+// in alpha passes tc.a is either one of alphaValues.xyzw [for units] *or*
+// contains a distance fading factor [for features], and alphaPass is 1.0
+// texture alpha-masking is done in both passes
+uniform vec4 teamColor;
+uniform vec4 nanoColor;
 
-	varying vec4 vertexWorldPos;
-	varying vec3 cameraDir;
-	varying float fogFactor;
-	varying vec3 normalv;
-#endif
-
+varying vec4 vertexWorldPos;
+varying vec3 cameraDir;
+varying float fogFactor;
+varying vec3 normalv;
 
 vec3 GetShadowMult(float NdotL) {
 	#if (USE_SHADOWS == 1)
