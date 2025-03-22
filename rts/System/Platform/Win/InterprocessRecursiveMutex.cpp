@@ -18,12 +18,12 @@ namespace Impl {
 InterprocessRecursiveMutex::InterprocessRecursiveMutex(const char* name) noexcept(false)
 	: mtx(nullptr)
 {
-	const std::string extName = fmt::format("Global\\{}", name);
+	const std::string extName = fmt::format("Local\\{}", name);
 	const std::wstring extNameW(extName.begin(), extName.end());
 
 	// in case the mutex has already been created in the other process
 	// CreateMutexW will signal the error, but will still create the handle
-	mtx = CreateMutexW(nullptr, TRUE, extNameW.c_str());
+	mtx = CreateMutexW(nullptr, FALSE, extNameW.c_str());
 
 	if (mtx == nullptr) {
 		Impl::throw_lasterror();

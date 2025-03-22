@@ -382,14 +382,26 @@ bool CArchiveScanner::ArchiveData::GetInfoValueBool(const std::string& key) cons
 
 static std::atomic<uint32_t> numScannedArchives{ 0 };
 static std::atomic<uint32_t> numFilesHashed{ 0 };
+static spring::mutex mtx;
 
 /*
  * CArchiveScanner
  */
 
 CArchiveScanner::CArchiveScanner()
-	: ipScannerMutex(std::make_unique<InterprocessRecursiveMutex>("CArchiveScanner"))
 {
+	{
+		auto fullCachePathLC = FileSystem::GetNormalizedPath(fmt::format("{}/{}/ArchiveCache{}.lua", FileSystem::GetCwd(), FileSystem::GetCacheBaseDir(), INTERNAL_VER));
+		FileSystem::FixSlashes(fullCachePathLC);
+		StringToLowerInPlace(fullCachePathLC);
+		sha512::raw_digest rd = sha512::NULL_RAW_DIGEST;
+		sha512::hex_digest hd = sha512::NULL_HEX_DIGEST;
+		sha512::calc_digest(reinterpret_cast<const uint8_t*>(fullCachePathLC.c_str()), fullCachePathLC.size(), rd.data());
+		sha512::dump_digest(rd, hd);
+
+		ipScannerMutex = std::make_unique<InterprocessRecursiveMutex>(hd.data());
+	}
+
 	std::scoped_lock lck(*ipScannerMutex);
 	//std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::hours(std::numeric_limits<int>::max()));
 
@@ -426,7 +438,7 @@ void CArchiveScanner::Clear()
 void CArchiveScanner::Reload()
 {
 	// {Read,Write,Scan}* all grab this too but we need the entire reloading-sequence to appear atomic
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	// dtor
 	WriteCache();
@@ -437,7 +449,7 @@ void CArchiveScanner::Reload()
 
 void CArchiveScanner::ScanAllDirs()
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	const std::vector<std::string>& dataDirPaths = dataDirLocater.GetDataDirPaths();
 	const std::vector<std::string>& dataDirRoots = dataDirLocater.GetDataDirRoots();
@@ -1442,7 +1454,7 @@ static void sortByName(std::vector<CArchiveScanner::ArchiveData>& data)
 
 std::vector<CArchiveScanner::ArchiveData> CArchiveScanner::GetPrimaryMods() const
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	std::vector<ArchiveData> ret;
 	ret.reserve(archiveInfos.size());
@@ -1465,7 +1477,7 @@ std::vector<CArchiveScanner::ArchiveData> CArchiveScanner::GetPrimaryMods() cons
 
 std::vector<CArchiveScanner::ArchiveData> CArchiveScanner::GetAllMods() const
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	std::vector<ArchiveData> ret;
 	ret.reserve(archiveInfos.size());
@@ -1488,7 +1500,7 @@ std::vector<CArchiveScanner::ArchiveData> CArchiveScanner::GetAllMods() const
 
 std::vector<CArchiveScanner::ArchiveData> CArchiveScanner::GetAllArchives() const
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	std::vector<ArchiveData> ret;
 	ret.reserve(archiveInfos.size());
@@ -1516,7 +1528,7 @@ std::vector<std::string> CArchiveScanner::GetAllArchivesUsedBy(const std::string
 	const auto& NameCmp = [](const std::pair<std::string, size_t>& a, const std::pair<std::string, size_t>& b) { return (a.first  < b.first ); };
 	const auto& IndxCmp = [](const std::pair<std::string, size_t>& a, const std::pair<std::string, size_t>& b) { return (a.second < b.second); };
 
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	std::vector<          std::string         > retArchives;
 	std::vector<std::pair<std::string, size_t>> tmpArchives[2];
@@ -1654,7 +1666,7 @@ void DumpArchiveChecksum(const std::string& lcName, const sha512::raw_digest& cs
 
 sha512::raw_digest CArchiveScanner::GetArchiveSingleChecksumBytes(const std::string& filePath)
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	// compute checksum for archive only when it is actually loaded by e.g. PreGame or LuaVFS
 	// (this updates its ArchiveInfo iff !CheckCachedData and marks the scanner as dirty s.t.
@@ -1727,7 +1739,7 @@ void CArchiveScanner::CheckArchive(
 
 std::string CArchiveScanner::GetArchivePath(const std::string& archiveName) const
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	const auto aii = archiveInfosIndex.find(StringToLower(FileSystem::GetFilename(archiveName)));
 
@@ -1739,7 +1751,7 @@ std::string CArchiveScanner::GetArchivePath(const std::string& archiveName) cons
 
 std::string CArchiveScanner::NameFromArchive(const std::string& archiveName) const
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	const auto aii = archiveInfosIndex.find(StringToLower(archiveName));
 
@@ -1763,7 +1775,7 @@ std::string CArchiveScanner::MapHumanNameFromArchive(const std::string& archiveN
 
 std::string CArchiveScanner::ArchiveFromName(const std::string& versionedName) const
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	const auto pred = [&](const decltype(archiveInfos)::value_type& p) { return (p.archiveData.GetNameVersioned() == versionedName); };
 	const auto iter = std::find_if(archiveInfos.cbegin(), archiveInfos.cend(), pred);
@@ -1776,7 +1788,7 @@ std::string CArchiveScanner::ArchiveFromName(const std::string& versionedName) c
 
 CArchiveScanner::ArchiveData CArchiveScanner::GetArchiveData(const std::string& versionedName) const
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	const auto pred = [&](const decltype(archiveInfos)::value_type& p) { return (p.archiveData.GetNameVersioned() == versionedName); };
 	const auto iter = std::find_if(archiveInfos.cbegin(), archiveInfos.cend(), pred);
@@ -1790,7 +1802,7 @@ CArchiveScanner::ArchiveData CArchiveScanner::GetArchiveData(const std::string& 
 
 CArchiveScanner::ArchiveData CArchiveScanner::GetArchiveDataByArchive(const std::string& archive) const
 {
-	std::scoped_lock lck(*ipScannerMutex);
+	std::scoped_lock lck(mtx);
 
 	const auto aii = archiveInfosIndex.find(StringToLower(archive));
 
