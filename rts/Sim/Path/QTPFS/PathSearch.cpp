@@ -1254,6 +1254,37 @@ void QTPFS::PathSearch::ResetState(SearchNode* node, struct DirectionalSearchDat
 	(*searchData.openNodes).emplace(node->GetIndex(), 0.f);
 }
 
+namespace QTPFS {
+void LocalUpdateNode(SearchNode* nextNode, SearchNode* prevNode, float gCost, float hCost, const float2& netPoint) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	// NOTE:
+	//   the heuristic must never over-estimate the distance,
+	//   but this is *impossible* to achieve on a non-regular
+	//   grid on which any node only has an average move-cost
+	//   associated with it --> paths will be "nearly optimal"
+	nextNode->SetPrevNode(prevNode);
+	nextNode->SetPathCosts(gCost, hCost);
+	nextNode->SetNeighborEdgeTransitionPoint(netPoint);
+
+	#ifndef NDEBUG
+	if (prevNode != nullptr) {
+		auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
+		auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
+
+		if (fwd.srcSearchNode != nextNode && bwd.srcSearchNode != nextNode) {
+
+			float3 tmpPoint = float3(netPoint.x, 0.f, netPoint.y);
+			AssertPointIsOnNodeEdge(tmpPoint, prevNode);
+
+			if (nextNode->xmax > 0) {
+				AssertPointIsOnNodeEdge(tmpPoint, nextNode);
+			}
+		}
+	}
+	#endif
+}
+}
+
 void QTPFS::PathSearch::UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE:
@@ -1378,8 +1409,8 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 	DirectionalSearchData& searchData = directionalSearchData[searchDir];
 
 	const float2& curPoint2 = curSearchNode->GetNeighborEdgeTransitionPoint();
-	const float3  curPoint  = {curPoint2.x, 0.0f, curPoint2.y};
 
+	// TODO: get rid of the need for this!!
 	// Allow units to escape if starting in a closed node - a cost of infinity would prevent them escaping.
 	const float curNodeSanitizedCost = curNode->AllSquaresImpassable() ? QTPFS_CLOSED_NODE_COST : curNode->GetMoveCost();
 
@@ -1443,8 +1474,6 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 			assert(nxtNode->GetNeighborRelation(curNode) != 0);
 		}
 
-		unsigned int netPointIdx = 0;
-
 		// #if (QTPFS_MAX_NETPOINTS_PER_NODE_EDGE == 1)
 		// /*if (!IntersectEdge(curNode, nxtNode, tgtPoint - curPoint))*/ {
 		// 	// if only one transition-point is allowed per edge,
@@ -1452,17 +1481,19 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 		// 	// to be fancy (note that this is not always the best
 		// 	// option, it causes local and global sub-optimalities
 		// 	// which SmoothPath can only partially address)
-		// 	netPoints[0] = curNode->GetNeighborEdgeTransitionPoint(1 + i);
+		const float2& netPoint = nxtNodes[i].netpoints[0];
 
-		// 	// cannot use squared-distances because that will bias paths
-		// 	// towards smaller nodes (eg. 1^2 + 1^2 + 1^2 + 1^2 != 4^2)
-		// 	gDists[0] = curPoint.distance({netPoints[0].x, 0.0f, netPoints[0].y});
-		// 	hDists[0] = tgtPoint.distance({netPoints[0].x, 0.0f, netPoints[0].y});
-		// 	gCosts[0] =
-		// 		curNode->GetPathCost(NODE_PATH_COST_G) +
-		// 		curNode->GetMoveCost() * gDists[0] +
-		// 		nxtNode->GetMoveCost() * hDists[0] * int(isTarget);
-		// 	hCosts[0] = hDists[0] * hCostMult * int(!isTarget);
+		const float gDist = curPoint2.Distance(netPoint);
+		const float hDist = searchData.tgtPoint.distance2D(netPoint);
+		float gCost =
+			curSearchNode->GetPathCost(NODE_PATH_COST_G) +
+			curNodeSanitizedCost * gDist;
+		const float hCost = hDist * hCostMult * float(!isTarget);
+
+		if (isTarget) {
+			gCost += nxtNode->GetMoveCost() * hDist;
+		}
+
 		// }
 		// #else
 		// examine a number of possible transition-points
@@ -1471,25 +1502,27 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 		// this fixes a few cases that path-smoothing can
 		// not handle; more points means a greater degree
 		// of non-cardinality (but gets expensive quickly)
-		for (unsigned int j = 0; j < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; j++) {
-			netPoints[j] = nxtNodes[i].netpoints[j];
+		// unsigned int netPointIdx = 0;
 
-			gDists[j] = curPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
-			hDists[j] = searchData.tgtPoint.distance({netPoints[j].x, 0.0f, netPoints[j].y});
+		// for (unsigned int j = 0; j < QTPFS_MAX_NETPOINTS_PER_NODE_EDGE; j++) {
+		// 	netPoints[j] = nxtNodes[i].netpoints[j];
 
-			gCosts[j] =
-				curSearchNode->GetPathCost(NODE_PATH_COST_G) +
-				curNodeSanitizedCost * gDists[j];
-			hCosts[j] = hDists[j] * hCostMult * int(!isTarget);
+		// 	gDists[j] = curPoint.distance2D({netPoints[j].x, 0.0f, netPoints[j].y});
+		// 	hDists[j] = searchData.tgtPoint.distance2D({netPoints[j].x, 0.0f, netPoints[j].y});
 
-			if (isTarget) {
-				gCosts[j] += nxtNode->GetMoveCost() * hDists[j];
-			}
+		// 	gCosts[j] =
+		// 		curSearchNode->GetPathCost(NODE_PATH_COST_G) +
+		// 		curNodeSanitizedCost * gDists[j];
+		// 	hCosts[j] = hDists[j] * hCostMult * float(!isTarget);
 
-			// if ((gCosts[j] + hCosts[j]) < (gCosts[netPointIdx] + hCosts[netPointIdx])) {
-			// 	netPointIdx = j;
-			// }
-		}
+		// 	if (isTarget) {
+		// 		gCosts[j] += nxtNode->GetMoveCost() * hDists[j];
+		// 	}
+
+		// 	if ((gCosts[j] + hCosts[j]) < (gCosts[netPointIdx] + hCosts[netPointIdx])) {
+		// 		netPointIdx = j;
+		// 	}
+		// }
 		// LOG("%s: [%d] nxtNode=%d gd=%f, hd=%f, gc=%f, hc=%f, fc=%f", __func__, searchDir, nxtNodesId
 		// 		, gDists[netPointIdx], hDists[netPointIdx], gCosts[netPointIdx], hCosts[netPointIdx]
 		// 		, gCosts[netPointIdx] + hCosts[netPointIdx]);
@@ -1507,7 +1540,10 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 
 		// 	continue;
 		// }
-		if (gCosts[netPointIdx] >= nextSearchNode->GetPathCost(NODE_PATH_COST_G))
+		// if (gCosts[netPointIdx] >= nextSearchNode->GetPathCost(NODE_PATH_COST_G))
+		// 	continue;
+
+		if (gCost >= nextSearchNode->GetPathCost(NODE_PATH_COST_G))
 			continue;
 
 		// LOG("%s: [%d] nxtNode=%d updating gc from %f -> %f", __func__, searchDir, nxtNodesId
@@ -1524,7 +1560,8 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 
 		// 	}
 
-		UpdateNode(nextSearchNode, curSearchNode, netPointIdx);
+		// UpdateNode(nextSearchNode, curSearchNode, netPointIdx);
+		LocalUpdateNode(nextSearchNode, curSearchNode, gCost, hCost, netPoint);
 		(*searchData.openNodes).emplace(nextSearchNode->GetIndex(), nextSearchNode->GetHeapPriority());
 	}
 }

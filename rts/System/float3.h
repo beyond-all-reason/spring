@@ -12,6 +12,7 @@
 #include "lib/streflop/streflop_cond.h"
 #include "System/creg/creg_cond.h"
 #include "System/FastMath.h"
+#include "System/type2.h"
 #ifdef _MSC_VER
 #include "System/Platform/Win/win32.h"
 #endif
@@ -502,6 +503,23 @@ public:
 	float distance2D(const float3& f) const {
 		const float dx = x - f.x;
 		const float dz = z - f.z;
+		return math::sqrt(dx*dx + dz*dz);
+	}
+
+	/**
+	 * @brief distance2D between float3 and float2 (only x and z)
+	 * @param f float2 to compare against
+	 * @return 2D distance between float3s
+	 *
+	 * Calculates the distance between this float3
+	 * and another float2 2-dimensionally (that is,
+	 * only using the x and z components).  Sums the
+	 * differences in the x and z components, square
+	 * root for pythagorean theorem
+	 */
+	float distance2D(const float2& f) const {
+		const float dx = x - f.x;
+		const float dz = z - f.y;
 		return math::sqrt(dx*dx + dz*dz);
 	}
 
