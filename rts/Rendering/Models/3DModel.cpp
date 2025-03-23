@@ -469,6 +469,7 @@ void LocalModel::UpdateBoundingVolume()
 LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
 	: colvol(piece->GetCollisionVolume())
 	, dirty(true)
+	, wasUpdated(true)
 
 	, scriptSetVisible(true)
 	, blockScriptAnims(false)
@@ -514,6 +515,11 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 	dst = src;
 }
 
+void LocalModelPiece::SetScriptVisible(bool b)
+{
+	scriptSetVisible = b;
+	wasUpdated = true;
+}
 
 void LocalModelPiece::UpdateChildTransformRec(bool updateChildTransform) const
 {
@@ -521,6 +527,7 @@ void LocalModelPiece::UpdateChildTransformRec(bool updateChildTransform) const
 
 	if (dirty) {
 		dirty = false;
+		wasUpdated = true;
 		updateChildTransform = true;
 
 		pieceSpaceTra = CalcPieceSpaceTransform(pos, rot, original->scale);
@@ -547,6 +554,7 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 		parent->UpdateParentMatricesRec();
 
 	dirty = false;
+	wasUpdated = true;
 
 	pieceSpaceTra = CalcPieceSpaceTransform(pos, rot, original->scale);
 

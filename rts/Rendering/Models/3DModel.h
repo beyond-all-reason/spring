@@ -422,6 +422,7 @@ struct LocalModelPiece
 
 	LocalModelPiece()
 		: dirty(true)
+		, wasUpdated(true)
 	{}
 	LocalModelPiece(const S3DModelPiece* piece);
 
@@ -463,6 +464,9 @@ struct LocalModelPiece
 	void SetPosition(const float3& p) { SetPosOrRot(p, pos); } // anim-script only
 	void SetRotation(const float3& r) { SetPosOrRot(r, rot); } // anim-script only
 
+	auto GetWasUpdated() const { return wasUpdated; }
+	void SetWasUpdated(bool b) const/*fake*/ { wasUpdated = b; }
+
 	bool SetPieceSpaceMatrix(const CMatrix44f& mat) {
 		if ((blockScriptAnims = (mat.GetX() != ZeroVector))) {
 			pieceSpaceTra = Transform::FromMatrix(mat);
@@ -490,7 +494,7 @@ struct LocalModelPiece
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
 
 	bool GetScriptVisible() const { return scriptSetVisible; }
-	void SetScriptVisible(bool b) { scriptSetVisible = b; }
+	void SetScriptVisible(bool b);
 
 	void SavePrevModelSpaceTransform() { prevModelSpaceTra = GetModelSpaceTransform(); }
 	const auto& GetPrevModelSpaceTransform() const { return prevModelSpaceTra; }
@@ -507,6 +511,7 @@ private:
 
 	CollisionVolume colvol;
 
+	mutable bool wasUpdated;
 	mutable bool dirty;
 	bool scriptSetVisible; // TODO: add (visibility) maxradius!
 public:
