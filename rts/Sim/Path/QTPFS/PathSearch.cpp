@@ -1254,8 +1254,7 @@ void QTPFS::PathSearch::ResetState(SearchNode* node, struct DirectionalSearchDat
 	(*searchData.openNodes).emplace(node->GetIndex(), 0.f);
 }
 
-namespace QTPFS {
-void LocalUpdateNode(SearchNode* nextNode, SearchNode* prevNode, float gCost, float hCost, const float2& netPoint) {
+void QTPFS::PathSearch::LocalUpdateNode(SearchNode* nextNode, SearchNode* prevNode, float gCost, float hCost, const float2& netPoint) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE:
 	//   the heuristic must never over-estimate the distance,
@@ -1282,7 +1281,6 @@ void LocalUpdateNode(SearchNode* nextNode, SearchNode* prevNode, float gCost, fl
 		}
 	}
 	#endif
-}
 }
 
 void QTPFS::PathSearch::UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx) {

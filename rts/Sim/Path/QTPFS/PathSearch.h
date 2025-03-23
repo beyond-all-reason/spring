@@ -153,6 +153,7 @@ namespace QTPFS {
 
 		void ResetState(SearchNode* node, struct DirectionalSearchData& searchData, const float3& srcPoint);
 		void UpdateNode(SearchNode* nextNode, SearchNode* prevNode, unsigned int netPointIdx);
+		void LocalUpdateNode(SearchNode* nextNode, SearchNode* prevNode, float gCost, float hCost, const float2& netPoint);
 
 		void InitSearchNodeData(QTPFS::SearchNode *curSearchNode, QTPFS::INode *curNode) const {
 			curSearchNode->xmin = curNode->xmin();
