@@ -142,10 +142,18 @@ target_link_libraries(ExternalAI PRIVATE Tracy::TracyClient)
 add_library(Rendering STATIC)
 add_subdirectory(Rendering)
 find_package(Freetype REQUIRED)
-find_package(Fontconfig REQUIRED)
 #TODO(USE_FONTCONFIG): Not an option. Headers using it explicitly. Doesn't compile without it.  
 target_compile_definitions(Rendering PRIVATE USE_FONTCONFIG)
-target_link_libraries(Rendering PRIVATE Tracy::TracyClient SDL2::SDL2 Freetype::Freetype Fontconfig::Fontconfig)
+target_link_libraries(Rendering PRIVATE Tracy::TracyClient SDL2::SDL2 Freetype::Freetype)
+#TODO(Fontconfig): On cross-compile CI we have only fontconfig headers, without lib. To fix.
+if (MINGW)
+       find_path(FONTCONFIG_INCLUDE_DIRS "fontconfig.h" PATH_SUFFIXES fontconfig REQUIRED)
+       target_include_directories(Rendering PRIVATE ${FONTCONFIG_INCLUDE_DIRS})
+else ()
+       find_package(Fontconfig REQUIRED)
+       target_link_libraries(Rendering PRIVATE Fontconfig::Fontconfig)
+endif ()
+
 
 if (THREADPOOL)
 	message(STATUS "Threadpools enabled")
