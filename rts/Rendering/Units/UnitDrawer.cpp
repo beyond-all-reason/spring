@@ -66,7 +66,7 @@ CONFIG(int, MaxDynamicModelLights)
 	.defaultValue(1)
 	.minimumValue(0);
 
-CONFIG(bool, AdvUnitShading).defaultValue(true).headlessValue(false).safemodeValue(false).description("Determines whether specular highlights and other lighting effects are rendered for units.");
+CONFIG(bool, AdvUnitShading).deprecated(true);
 
 /***********************************************************************/
 
@@ -527,13 +527,6 @@ void CUnitDrawerGLSL::DrawUnitIcons() const
 			const uint8_t* color = colors[unit->isSelected];
 
 			unit->iconRadius = DrawUnitIcon(rb, icon, unit->iconRadius, pos, color, unit->radius);
-		}
-		for (const auto& ghost : ghosts) {
-			float3 pos = ghost->midPos;
-
-			const uint8_t* color = teamHandler.Team(ghost->team)->color;
-
-			DrawUnitIcon(rb, icon, ghost->iconRadius, pos, color, ghost->radius);
 		}
 
 		rb.Submit(GL_TRIANGLES);

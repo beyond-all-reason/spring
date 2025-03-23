@@ -3,6 +3,7 @@
 #include <memory>
 #include <cstdint>
 #include "System/StringHash.h"
+#include "System/StringUtil.h"
 
 namespace GL {
 	class DebugGroup {
@@ -21,4 +22,4 @@ namespace GL {
 	};
 }
 
-#define SCOPED_GL_DEBUGGROUP(name) const auto __scopedGLDebugGroup = GL::DebugGroup::GetScoped(hashString(name) ,name)
+#define SCOPED_GL_DEBUGGROUP(name) const auto _UTIL_CONCAT(__scopedGLDebugGroup, __LINE__) = GL::DebugGroup::GetScoped(0x824A/*GL_DEBUG_SOURCE_APPLICATION*/ ,name)

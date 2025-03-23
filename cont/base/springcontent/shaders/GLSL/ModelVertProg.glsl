@@ -6,7 +6,6 @@
 varying vec4 vertexWorldPos;
 varying vec3 cameraDir;
 varying float fogFactor;
-
 varying vec3 normalv;
 
 #if (USE_SHADOWS == 1)

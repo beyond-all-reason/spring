@@ -11,8 +11,7 @@
 #include <atomic>
 #include <future>
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 
 // Catch is not threadsafe
@@ -120,7 +119,7 @@ TEST_CASE("test_parallel_reduce")
 {
 	LOG("[%s::test_parallel_reduce]", __func__);
 
-	const auto ReduceFunc = [](int a, std::shared_ptr< std::future<int> >& b) -> int { return (a + (b.get())->get()); };
+	const auto ReduceFunc = [](int a, std::shared_future<int>& b) -> int { return (a + b.get()); };
 	const auto TestFunc = []() -> int {
 		const int threadnum = ThreadPool::GetThreadNum();
 		SAFE_CHECK(threadnum >= 0);

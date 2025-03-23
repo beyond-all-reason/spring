@@ -16,23 +16,17 @@
 	uniform float shadowDensity;
 #endif
 
-	// in opaque passes tc.a is always 1.0 [all objects], and alphaPass is 0.0
-	// in alpha passes tc.a is either one of alphaValues.xyzw [for units] *or*
-	// contains a distance fading factor [for features], and alphaPass is 1.0
-	// texture alpha-masking is done in both passes
-	uniform vec4 teamColor;
-	uniform vec4 nanoColor;
+// in opaque passes tc.a is always 1.0 [all objects], and alphaPass is 0.0
+// in alpha passes tc.a is either one of alphaValues.xyzw [for units] *or*
+// contains a distance fading factor [for features], and alphaPass is 1.0
+// texture alpha-masking is done in both passes
+uniform vec4 teamColor;
+uniform vec4 nanoColor;
 
-	varying vec4 vertexWorldPos;
-	varying vec3 cameraDir;
-	varying float fogFactor;
-#ifdef use_normalmapping
-	uniform sampler2D normalMap;
-	varying mat3 tbnMatrix;
-#else
-	varying vec3 normalv;
-#endif
-
+varying vec4 vertexWorldPos;
+varying vec3 cameraDir;
+varying float fogFactor;
+varying vec3 normalv;
 
 vec3 GetShadowMult(float NdotL) {
 	#if (USE_SHADOWS == 1)
@@ -74,8 +68,8 @@ vec3 DynamicLighting(vec3 normal, vec3 diffuse, vec3 specular) {
 
 		lightScale *= float(vectorDot >= cutoffDot);
 
-		rgb += (lightScale *                                  gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].ambient.rgb);
-		rgb += (lightScale * lightAttenuation * (diffuse.rgb * gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].diffuse.rgb * lightCosAngDiff));
+		rgb += (lightScale *                                    gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].ambient.rgb);
+		rgb += (lightScale * lightAttenuation * (diffuse.rgb  * gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].diffuse.rgb * lightCosAngDiff));
 		rgb += (lightScale * lightAttenuation * (specular.rgb * gl_LightSource[BASE_DYNAMIC_MODEL_LIGHT + i].specular.rgb * pow(lightCosAngSpec, 4.0)));
 	}
 

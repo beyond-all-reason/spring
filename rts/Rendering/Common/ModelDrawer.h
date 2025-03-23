@@ -37,7 +37,6 @@ public:
 	static void InitStatic();
 	static void KillStatic(bool reload);
 public:
-	static bool  UseAdvShading() { return advShading; }
 	static bool  DeferredAllowed() { return deferredAllowed; }
 	static bool& WireFrameModeRef() { return wireFrameMode; }
 public:
@@ -48,10 +47,7 @@ public:
 	static GL::GeometryBuffer* GetGeometryBuffer() { return geomBuffer; }
 protected:
 	inline static bool initialized = false;
-
-	inline static bool advShading = false;
 	inline static bool wireFrameMode = false;
-
 	inline static bool deferredAllowed = false;
 protected:
 	inline static GL::LightHandler lightHandler;
@@ -86,7 +82,6 @@ public:
 	}
 public:
 	// Set/Get state from outside
-	static bool& UseAdvShadingRef() { reselectionRequested = true; return advShading; }
 	static bool& WireFrameModeRef() { return wireFrameMode; }
 
 	static int  PreferedDrawerType() { return preferedDrawerType; }
@@ -250,11 +245,6 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool fo
 {
 	if (!forceReselection)
 		return;
-
-	if (!advShading) {
-		SelectImplementation(ModelDrawerTypes::MODEL_DRAWER_GLSL);
-		return;
-	}
 
 	const auto qualifyDrawerFunc = [legacy, modern](const TDrawer* d, const IModelDrawerState* s) -> bool {
 		if (d == nullptr || s == nullptr)

@@ -38,6 +38,8 @@ public:
 	bool IsOpen() override { return (zipPerThread[0] != nullptr); }
 
 	uint32_t NumFiles() const override { return (fileEntries.size()); }
+	const std::string& FileName(uint32_t fid) const override;
+	int32_t FileSize(uint32_t fid) const override;
 	SFileInfo FileInfo(uint32_t fid) const override;
 
 	#if 0

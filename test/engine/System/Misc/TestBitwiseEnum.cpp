@@ -4,8 +4,7 @@
 
 #include <stdlib.h>
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 using namespace Bitwise;
 

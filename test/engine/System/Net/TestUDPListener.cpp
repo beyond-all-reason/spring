@@ -2,9 +2,13 @@
 #include "System/Net/UDPListener.h"
 #include "System/Log/ILog.h"
 
+#include <catch_amalgamated.hpp>
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+namespace streflop {
+	template<typename T> inline void streflop_init() {
+		// Do nothing by default, or for unknown types
+	}
+}
 
 class SocketTest {
 public:
