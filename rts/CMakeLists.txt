@@ -139,18 +139,25 @@ add_library(ExternalAI STATIC)
 add_subdirectory(ExternalAI)
 target_link_libraries(ExternalAI PRIVATE Tracy::TracyClient)
 
+add_library(Rendering STATIC)
+add_subdirectory(Rendering)
+find_package(Freetype REQUIRED)
+find_package(Fontconfig REQUIRED)
+#TODO(USE_FONTCONFIG): Not an option. Headers using it explicitly. Doesn't compile without it.  
+target_compile_definitions(Rendering PRIVATE USE_FONTCONFIG)
+target_link_libraries(Rendering PRIVATE Tracy::TracyClient SDL2::SDL2 Freetype::Freetype Fontconfig::Fontconfig)
+
 if (THREADPOOL)
 	message(STATUS "Threadpools enabled")
 	target_compile_definitions(Game PRIVATE THREADPOOL)
 	target_compile_definitions(Lua PRIVATE THREADPOOL)
 	target_compile_definitions(ExternalAI PRIVATE THREADPOOL)
+	target_compile_definitions(Rendering PRIVATE THREADPOOL)
 endif()
 
-#add_library(Rendering STATIC)
-#add_subdirectory(Rendering)
-
-#add_library(aGui STATIC)
-#add_subdirectory(aGui)
+add_library(aGui STATIC)
+add_subdirectory(aGui)
+target_link_libraries(aGui SDL2::SDL2)
 
 #add_library(Rml STATIC)
 #add_library(SolLua STATIC)
