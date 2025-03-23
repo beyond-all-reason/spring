@@ -130,7 +130,7 @@ void CCannon::FireImpl(const bool scriptCall)
 	params.pos = weaponMuzzlePos;
 	params.end = currentTargetPos;
 	params.speed = launchDir * projectileSpeed;
-	params.ttl = thisTtl;
+	params.ttl = myTtl;
 	params.gravity = gravity;
 
 	WeaponProjectileFactory::LoadProjectile(params);
