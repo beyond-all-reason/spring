@@ -5208,7 +5208,7 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 			lua_pushnumber(L, weapon->collisionFlags);
 		} break;
 		case hashString("ttl"): {
-			lua_pushnumber(L, weapon->ttl);
+			lua_pushnumber(L, weapon->ttl * INV_GAME_SPEED);
 		} break;
 
 		default: {
