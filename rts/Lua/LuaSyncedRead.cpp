@@ -9,6 +9,7 @@
 #include "LuaHashString.h"
 #include "LuaMetalMap.h"
 #include "LuaPathFinder.h"
+#include "LuaReadCommon.h"
 #include "LuaRules.h"
 #include "LuaRulesParams.h"
 #include "LuaUtils.h"
@@ -2900,47 +2901,6 @@ void ApplyPlanarTeamError(lua_State* L, int allegiance, float3& mins, float3& ma
 		mins -= allyTeamError3;
 		maxs += allyTeamError3;
 	}
-}
-
-/**
- * @brief Gets a lambda which checks if a unit is disqualified from being
- * returned by a spatial query.
- *
- * In particular, the lambda checks if the unit has the desired allegiance and
- * if it is visible.
- */
-static std::function<bool(const CUnit *)> getIsUnitDisqualifiedTest(lua_State *L, int allegiance,
-                                                                    int readTeam, int readAllyTeam) {
-    switch(allegiance) {
-    case LuaUtils::AllUnits:
-        return [L](const CUnit *unit) -> bool {
-            return !LuaUtils::IsUnitVisible(L, unit);
-        };
-    case LuaUtils::MyUnits:
-        return [readTeam](const CUnit *unit) -> bool {
-            return unit->team != readTeam;
-        };
-    case LuaUtils::AllyUnits:
-        return [readAllyTeam](const CUnit *unit) -> bool {
-            return unit->allyteam != readAllyTeam;
-        };
-    case LuaUtils::EnemyUnits:
-        return [L, readAllyTeam](const CUnit *unit) -> bool {
-            return unit->allyteam == readAllyTeam || !LuaUtils::IsUnitVisible(L, unit);
-        };
-    default: {
-        if(LuaUtils::IsAlliedTeam(L, allegiance)) {
-            // Allied units are always visible so we don't need to check for visibility
-            return [allegiance](const CUnit *unit) -> bool {
-                return unit->team != allegiance;
-            };
-        } else {
-            return [allegiance, L](const CUnit *unit) -> bool {
-                return unit->team != allegiance || !LuaUtils::IsUnitVisible(L, unit);
-            };
-        }
-    }
-    }
 }
 
 /**
