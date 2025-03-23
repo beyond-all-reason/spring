@@ -20,8 +20,7 @@ static inline float srandf()
 	return 2.0f * (randf() - 0.5f);
 }
 
-#define CATCH_CONFIG_MAIN
-#include "lib/catch.hpp"
+#include <catch_amalgamated.hpp>
 
 namespace std {
 	ostream& operator<<(ostream& s, float3 const& f) {
