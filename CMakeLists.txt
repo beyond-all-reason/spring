@@ -365,6 +365,7 @@ endif (LDGOLD_FOUND)
 add_definitions(-D_GLIBCXX_USE_NANOSLEEP) # issue in std::chrono with gentoo and few other distros
 
 ### our custom OpenMP replacement
+#TODO(THREADPOOL): This is not optional. If it's false then the project doesn't compile.
 option(THREADPOOL "Enable ThreadPools" TRUE)
 
 ### warnings

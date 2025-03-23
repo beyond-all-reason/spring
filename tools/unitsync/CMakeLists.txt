@@ -120,9 +120,9 @@ endif ()
 add_library(unitsync SHARED ${unitsync_files})
 add_dependencies(unitsync generateVersionFiles)
 target_link_libraries(unitsync 
-	SystemFilesystemUnitsync 
-	SystemLogUnitsync 
+	SystemFilesystemUnitsync
 	SystemLogSinkFileUnitsync
+	SystemLogUnitsync
 	SystemThreadingUnitsync
 	${unitsync_libs}
 	${unitsync_lib_flags}
