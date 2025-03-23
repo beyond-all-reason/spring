@@ -2920,7 +2920,7 @@ static void GetFilteredUnits(lua_State *L, int allegiance, const std::vector<CUn
     const int readTeam = CLuaHandle::GetHandleReadTeam(L);
     const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
 
-    auto isDisqualified = getIsUnitDisqualifiedTest(L, allegiance, readTeam, readAllyTeam);
+    auto isDisqualified = GetIsUnitDisqualifiedTest(L, allegiance, readTeam, readAllyTeam);
 
     for(const CUnit *unit: units) {
         if(isDisqualified(unit))

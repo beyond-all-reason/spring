@@ -2196,7 +2196,7 @@ int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
-    auto disqualifierFunc = getIsUnitDisqualifiedTest(L, allegiance, readTeam, readATeam);
+    auto disqualifierFunc = GetIsUnitDisqualifiedTest(L, allegiance, readTeam, readATeam);
 
 	// Even though we're in unsynced it's ok to use gs->tempNum since its exact value
 	// doesn't matter
