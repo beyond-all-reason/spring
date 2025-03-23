@@ -12,35 +12,35 @@
  * if it is visible.
  */
 std::function<bool(const CUnit *)> GetIsUnitDisqualifiedTest(lua_State *L, int allegiance,
-                                                                    int readTeam, int readAllyTeam) {
-    switch(allegiance) {
-    case LuaUtils::AllUnits:
-        return [L](const CUnit *unit) -> bool {
-            return !LuaUtils::IsUnitVisible(L, unit);
-        };
-    case LuaUtils::MyUnits:
-        return [readTeam](const CUnit *unit) -> bool {
-            return unit->team != readTeam;
-        };
-    case LuaUtils::AllyUnits:
-        return [readAllyTeam](const CUnit *unit) -> bool {
-            return unit->allyteam != readAllyTeam;
-        };
-    case LuaUtils::EnemyUnits:
-        return [L, readAllyTeam](const CUnit *unit) -> bool {
-            return unit->allyteam == readAllyTeam || !LuaUtils::IsUnitVisible(L, unit);
-        };
-    default: {
-        if(LuaUtils::IsAlliedTeam(L, allegiance)) {
-            // Allied units are always visible so we don't need to check for visibility
-            return [allegiance](const CUnit *unit) -> bool {
-                return unit->team != allegiance;
-            };
-        } else {
-            return [allegiance, L](const CUnit *unit) -> bool {
-                return unit->team != allegiance || !LuaUtils::IsUnitVisible(L, unit);
-            };
-        }
-    }
-    }
+                                                             int readTeam, int readAllyTeam) {
+	switch(allegiance) {
+	case LuaUtils::AllUnits:
+		return [L](const CUnit *unit) -> bool {
+			return !LuaUtils::IsUnitVisible(L, unit);
+		};
+	case LuaUtils::MyUnits:
+		return [readTeam](const CUnit *unit) -> bool {
+			return unit->team != readTeam;
+		};
+	case LuaUtils::AllyUnits:
+		return [readAllyTeam](const CUnit *unit) -> bool {
+			return unit->allyteam != readAllyTeam;
+		};
+	case LuaUtils::EnemyUnits:
+		return [L, readAllyTeam](const CUnit *unit) -> bool {
+			return unit->allyteam == readAllyTeam || !LuaUtils::IsUnitVisible(L, unit);
+		};
+	default: {
+		if(LuaUtils::IsAlliedTeam(L, allegiance)) {
+			// Allied units are always visible so we don't need to check for visibility
+			return [allegiance](const CUnit *unit) -> bool {
+				return unit->team != allegiance;
+			};
+		} else {
+			return [allegiance, L](const CUnit *unit) -> bool {
+				return unit->team != allegiance || !LuaUtils::IsUnitVisible(L, unit);
+			};
+		}
+	}
+	}
 }

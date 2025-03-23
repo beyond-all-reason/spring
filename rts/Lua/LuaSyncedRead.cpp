@@ -2915,25 +2915,25 @@ void ApplyPlanarTeamError(lua_State* L, int allegiance, float3& mins, float3& ma
  */
 template<typename InRegion>
 static void GetFilteredUnits(lua_State *L, int allegiance, const std::vector<CUnit *> &units, InRegion inRegion, bool fullRead) {
-    unsigned int count = 0;
+	unsigned int count = 0;
 
-    const int readTeam = CLuaHandle::GetHandleReadTeam(L);
-    const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const int readTeam = CLuaHandle::GetHandleReadTeam(L);
+	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
 
-    auto isDisqualified = GetIsUnitDisqualifiedTest(L, allegiance, readTeam, readAllyTeam);
+	auto isDisqualified = GetIsUnitDisqualifiedTest(L, allegiance, readTeam, readAllyTeam);
 
-    for(const CUnit *unit: units) {
-        if(isDisqualified(unit))
-            continue;
+	for(const CUnit *unit: units) {
+		if(isDisqualified(unit))
+			continue;
 
-        // The unit error will be zero if the unit is on an allied team
-        float3 pos = unit->midPos + unit->GetLuaErrorVector(readAllyTeam, fullRead);
-        if(!inRegion(pos))
-            continue;
+		// The unit error will be zero if the unit is on an allied team
+		float3 pos = unit->midPos + unit->GetLuaErrorVector(readAllyTeam, fullRead);
+		if(!inRegion(pos))
+			continue;
 
-        lua_pushnumber(L, unit->id);
-        lua_rawseti(L, -2, ++count);
-    }
+		lua_pushnumber(L, unit->id);
+		lua_rawseti(L, -2, ++count);
+	}
 }
 
 /***
@@ -2958,25 +2958,25 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
-    const auto rectangeCheck = [&](const float3 &pos) {
-        if((pos.x < xmin) || (pos.x > xmax))
-            return false;
-        if((pos.z < zmin) || (pos.z > zmax))
-            return false;
-        return true;
-    };
+	const auto rectangeCheck = [&](const float3 &pos) {
+		if((pos.x < xmin) || (pos.x > xmax))
+			return false;
+		if((pos.z < zmin) || (pos.z > zmax))
+			return false;
+		return true;
+	};
 
-    const bool fullRead = CLuaHandle::GetHandleFullRead(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 	if (!fullRead)
 		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
-    QuadFieldQuery qfQuery;
-    quadField.GetUnitsExact(qfQuery, mins, maxs);
-    const auto &units = (*qfQuery.units);
+	QuadFieldQuery qfQuery;
+	quadField.GetUnitsExact(qfQuery, mins, maxs);
+	const auto &units = (*qfQuery.units);
 
-    lua_createtable(L, units.size(), 0);
+	lua_createtable(L, units.size(), 0);
 
-    GetFilteredUnits(L, allegiance, units, rectangeCheck, fullRead);
+	GetFilteredUnits(L, allegiance, units, rectangeCheck, fullRead);
 
 	return 1;
 }
@@ -3008,22 +3008,22 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 7);
 
-    const auto boxCheck = std::bind_front(&AABB::Contains,
-                                          AABB(float3(xmin, ymin, zmin), float3(xmax, ymax, zmax)));
+	const auto boxCheck = std::bind_front(&AABB::Contains,
+	                                      AABB(float3(xmin, ymin, zmin), float3(xmax, ymax, zmax)));
 
-    const bool fullRead = CLuaHandle::GetHandleFullRead(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 	if (!fullRead)
 		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
-    QuadFieldQuery qfQuery;
-    quadField.GetUnitsExact(qfQuery, mins, maxs);
-    const auto &units = (*qfQuery.units);
+	QuadFieldQuery qfQuery;
+	quadField.GetUnitsExact(qfQuery, mins, maxs);
+	const auto &units = (*qfQuery.units);
 
-    lua_createtable(L, units.size(), 0);
+	lua_createtable(L, units.size(), 0);
 
-    GetFilteredUnits(L, allegiance, units, boxCheck, fullRead);
+	GetFilteredUnits(L, allegiance, units, boxCheck, fullRead);
 
-    return 1;
+	return 1;
 }
 
 /***
@@ -3050,15 +3050,15 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 		return p.SqDistance2D(float3{x, 0.0, z}) <= radSqr;
 	};
 
-    const bool fullRead = CLuaHandle::GetHandleFullRead(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 	if (!fullRead)
 		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
-    QuadFieldQuery qfQuery;
-    quadField.GetUnitsExact(qfQuery, mins, maxs);
-    const auto &units = (*qfQuery.units);
+	QuadFieldQuery qfQuery;
+	quadField.GetUnitsExact(qfQuery, mins, maxs);
+	const auto &units = (*qfQuery.units);
 
-    lua_createtable(L, units.size(), 0);
+	lua_createtable(L, units.size(), 0);
 
 	GetFilteredUnits(L, allegiance, units, cylinderCheck, fullRead);
 
@@ -3092,15 +3092,15 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 		return p.SqDistance(float3(x, y, z)) <= radSqr;
 	};
 
-    const bool fullRead = CLuaHandle::GetHandleFullRead(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 	if (!fullRead)
 		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
-    QuadFieldQuery qfQuery;
-    quadField.GetUnitsExact(qfQuery, mins, maxs);
-    const auto &units = (*qfQuery.units);
+	QuadFieldQuery qfQuery;
+	quadField.GetUnitsExact(qfQuery, mins, maxs);
+	const auto &units = (*qfQuery.units);
 
-    lua_createtable(L, units.size(), 0);
+	lua_createtable(L, units.size(), 0);
 
 	GetFilteredUnits(L, allegiance, units, sphereCheck, fullRead);
 
@@ -3149,54 +3149,54 @@ static inline bool UnitInPlanes(const float3& pos, const float radius, const vec
  * @return integer[] unitIDs
  */
 int LuaSyncedRead::GetUnitsInPlanes(lua_State *L) {
-    if(!lua_istable(L, 1)) {
-        luaL_error(L, "Incorrect arguments to GetUnitsInPlanes()");
-    }
+	if(!lua_istable(L, 1)) {
+		luaL_error(L, "Incorrect arguments to GetUnitsInPlanes()");
+	}
 
-    // parse the planes
-    vector<Plane> planes;
-    const int table = lua_gettop(L);
-    for(lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
-        if(lua_istable(L, -1)) {
-            float values[4];
-            const int v = LuaUtils::ParseFloatArray(L, -1, values, 4);
-            if(v == 4) {
-                Plane plane = {values[0], values[1], values[2], values[3]};
-                planes.push_back(plane);
-            }
-        }
-    }
+	// parse the planes
+	vector<Plane> planes;
+	const int table = lua_gettop(L);
+	for(lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
+		if(lua_istable(L, -1)) {
+			float values[4];
+			const int v = LuaUtils::ParseFloatArray(L, -1, values, 4);
+			if(v == 4) {
+				Plane plane = {values[0], values[1], values[2], values[3]};
+				planes.push_back(plane);
+			}
+		}
+	}
 
-    int startTeam, endTeam;
+	int startTeam, endTeam;
 
-    const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 2);
-    if(allegiance >= 0) {
-        startTeam = allegiance;
-        endTeam = allegiance;
-    } else if(allegiance == LuaUtils::MyUnits) {
-        const int readTeam = CLuaHandle::GetHandleReadTeam(L);
-        startTeam = readTeam;
-        endTeam = readTeam;
-    } else {
-        startTeam = 0;
-        endTeam = teamHandler.ActiveTeams() - 1;
-    }
+	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 2);
+	if(allegiance >= 0) {
+		startTeam = allegiance;
+		endTeam = allegiance;
+	} else if(allegiance == LuaUtils::MyUnits) {
+		const int readTeam = CLuaHandle::GetHandleReadTeam(L);
+		startTeam = readTeam;
+		endTeam = readTeam;
+	} else {
+		startTeam = 0;
+		endTeam = teamHandler.ActiveTeams() - 1;
+	}
 
-    const auto planesTest = [&](const float3 &pos) {
-        return UnitInPlanes(pos, 0.0f, planes);
-    };
+	const auto planesTest = [&](const float3 &pos) {
+		return UnitInPlanes(pos, 0.0f, planes);
+	};
 
-    const bool fullRead = CLuaHandle::GetHandleFullRead(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
-    lua_newtable(L);
+	lua_newtable(L);
 
-    for(int team = startTeam; team <= endTeam; team++) {
-        const std::vector<CUnit *> &units = unitHandler.GetUnitsByTeam(team);
+	for(int team = startTeam; team <= endTeam; team++) {
+		const std::vector<CUnit *> &units = unitHandler.GetUnitsByTeam(team);
 
-        GetFilteredUnits(L, allegiance, units, planesTest, fullRead);
-    }
+		GetFilteredUnits(L, allegiance, units, planesTest, fullRead);
+	}
 
-    return 1;
+	return 1;
 }
 
 static int GetUnitTableCentroid(lua_State *const L, const int indexWithinTable, const char *const caller)
