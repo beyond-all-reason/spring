@@ -1,4 +1,4 @@
-/* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+/* This file is part of the Recoil engine (GPL v2 or later), see LICENSE.html */
 
 #include "LuaReadCommon.h"
 #include "Lua/LuaUtils.h"
@@ -11,7 +11,7 @@
  * In particular, the lambda checks if the unit has the desired allegiance and
  * if it is visible.
  */
-std::function<bool(const CUnit *)> getIsUnitDisqualifiedTest(lua_State *L, int allegiance,
+std::function<bool(const CUnit *)> GetIsUnitDisqualifiedTest(lua_State *L, int allegiance,
                                                                     int readTeam, int readAllyTeam) {
     switch(allegiance) {
     case LuaUtils::AllUnits:
