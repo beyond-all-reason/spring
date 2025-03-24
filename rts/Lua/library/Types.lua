@@ -16,10 +16,10 @@
 ---Cartesian quadruple (XYZW)
 ---
 ---@class xyzw
----@field x number
----@field y number
----@field z number
----@field w number
+---@field [1] number x
+---@field [2] number y
+---@field [3] number z
+---@field [4] number w
 
 ---@alias float4 xyzw
 
