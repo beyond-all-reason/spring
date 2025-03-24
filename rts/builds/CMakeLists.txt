@@ -94,6 +94,8 @@ if    (WIN32)
 endif (WIN32)
 
 # the build targets
+add_executable(engine-legacy "${CMAKE_SOURCE_DIR}/rts/System/Main.cpp")
+target_link_libraries(engine-legacy PRIVATE EngineSources glad)
 #add_engine_build(legacy)
 #add_engine_build(dedicated)
 #add_engine_build(headless)

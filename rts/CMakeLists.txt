@@ -125,7 +125,7 @@ add_library(Game STATIC)
 add_subdirectory(Game)
 find_package(OpenAL REQUIRED)
 #TODO(jsoncpp): find_package(jsoncpp REQUIRED) and link with JsonCpp::JsonCpp. Remove prd::jsoncpp.
-target_link_libraries(Game PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp)
+target_link_libraries(Game PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp ${sound-impl} luasocket SystemNet)
 add_dependencies(Game generateVersionFiles)
 target_include_directories(Game PRIVATE 
 	"${CMAKE_BINARY_DIR}/src-generated/engine"
@@ -133,7 +133,7 @@ target_include_directories(Game PRIVATE
 
 add_library(Lua STATIC)
 add_subdirectory(Lua)
-target_link_libraries(Lua PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp)
+target_link_libraries(Lua PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp pr-downloader)
 
 add_library(ExternalAI STATIC)
 add_subdirectory(ExternalAI)
@@ -144,7 +144,7 @@ add_subdirectory(Rendering)
 find_package(Freetype REQUIRED)
 #TODO(USE_FONTCONFIG): Not an option. Headers using it explicitly. Doesn't compile without it.  
 target_compile_definitions(Rendering PRIVATE USE_FONTCONFIG)
-target_link_libraries(Rendering PRIVATE Tracy::TracyClient SDL2::SDL2 Freetype::Freetype)
+target_link_libraries(Rendering PRIVATE Tracy::TracyClient SDL2::SDL2 Freetype::Freetype assimp DevIL::IL)
 #TODO(Fontconfig): On cross-compile CI we have only fontconfig headers, without lib. To fix.
 if (MINGW)
        find_path(FONTCONFIG_INCLUDE_DIRS "fontconfig.h" PATH_SUFFIXES fontconfig REQUIRED)
@@ -172,7 +172,7 @@ target_link_libraries(Menu PRIVATE Tracy::TracyClient SDL2::SDL2)
 
 add_library(Map STATIC)
 add_subdirectory(Map)
-target_link_libraries(Map PRIVATE Tracy::TracyClient SDL2::SDL2 OpenAL::OpenAL)
+target_link_libraries(Map PRIVATE Tracy::TracyClient SDL2::SDL2 OpenAL::OpenAL squish rgetc1)
 
 add_library(NetServer STATIC)
 target_include_directories(NetServer PRIVATE "${CMAKE_SOURCE_DIR}/rts/lib/asio/include")
@@ -186,7 +186,7 @@ target_link_libraries(Net INTERFACE NetServer NetClient)
 
 add_library(Sim STATIC)
 add_subdirectory(Sim)
-target_link_libraries(Sim PRIVATE SDL2::SDL2 Tracy::TracyClient)
+target_link_libraries(Sim PRIVATE SDL2::SDL2 Tracy::TracyClient ${sound-impl})
 
 if (SYNCHECK)
 	target_compile_definitions(Sim PRIVATE SYNCCHECK)
@@ -199,20 +199,22 @@ if (THREADPOOL)
 	target_compile_definitions(Rendering PRIVATE THREADPOOL)
 	target_compile_definitions(Sim PRIVATE THREADPOOL)
 endif()
-#add_library(EngineSources INTERFACE)
-#target_link_libraries(EngineSources INTERFACE
-#	Game
-#	Net
-#	Lua
-#	Map
-#	Rendering
-#	aGui
-#	Rml
-#	SolLua
-#	Menu
-#	System
-#	ExternalAI
-#)
+add_library(EngineSources INTERFACE)
+target_link_libraries(EngineSources INTERFACE
+	archives
+	Game
+	Net
+	Lua
+	Map
+	Rendering
+	aGui
+	Rml
+	SolLua
+	Menu
+	System
+	ExternalAI
+	Sim
+)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/include) #FIXME: hack for rts/Rendering/Models/IModelParser.cpp
 

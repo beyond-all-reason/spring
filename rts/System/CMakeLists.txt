@@ -29,7 +29,6 @@ target_include_directories(SystemCommon PRIVATE
 	"${CMAKE_SOURCE_DIR}/rts"
 	#TODO(asio): Should be imported by find_package. To fix.
 	"${CMAKE_SOURCE_DIR}/rts/lib/asio/include"
-	#TODO(smalloc): MemPoolTypes.h requires smmalloc/smmalloc.h. To remove when feasible.
 	"${CMAKE_SOURCE_DIR}/rts/lib"
 	#TODO(7z): CRC.cpp requires 7zCrc.h. To remove when feasible. 
 	"${CMAKE_SOURCE_DIR}/tools/pr-downloader/src/lib/7z"
@@ -57,7 +56,6 @@ target_sources(SystemCommon PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/LoadSave/LoadSaveHandler.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/LoadSave/LuaLoadSaveHandler.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/LogOutput.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Math/SpringDampers.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Math/NURBS.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Matrix44f.cpp"
@@ -104,7 +102,7 @@ target_sources(SystemCommon PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/SpringMem.cpp"
 	"${memoryProfileSource}"
 )
-target_link_libraries(SystemCommon PRIVATE SDL2::SDL2 Tracy::TracyClient prd::base64 lua gflags_nothreads_static prd::jsoncpp)
+target_link_libraries(SystemCommon PRIVATE SDL2::SDL2 Tracy::TracyClient prd::base64 lua gflags_nothreads_static prd::jsoncpp smmalloc)
 if (THREADPOOL)
 	message(STATUS "Threadpools enabled")
 	target_compile_definitions(SystemCommon PRIVATE THREADPOOL)
@@ -234,7 +232,8 @@ if (UNIX)
 		"${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/WindowManagerHelper.cpp"
 	)
 	find_package(Libunwind REQUIRED)
-	target_link_libraries(SystemPlatformLinux PRIVATE SDL2::SDL2 libunwind::libunwind)
+	find_package(X11 REQUIRED)
+	target_link_libraries(SystemPlatformLinux PRIVATE SDL2::SDL2 libunwind::libunwind X11::Xcursor)
 	target_link_libraries(System INTERFACE SystemPlatformLinux)
 else (WIN32)
 	add_library(SystemThreadingWindows STATIC)
