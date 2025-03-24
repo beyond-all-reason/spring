@@ -169,7 +169,7 @@ int LuaArchive::GetArchivePath(lua_State* L)
 /***
  * @function VFS.GetArchiveInfo
  * @param archiveName string
- * @returns ArchiveInfo? archiveInfo
+ * @return ArchiveInfo? archiveInfo
  */
 int LuaArchive::GetArchiveInfo(lua_State* L)
 {
@@ -214,7 +214,7 @@ int LuaArchive::GetArchiveInfo(lua_State* L)
 /***
  * @function VFS.GetArchiveDependencies
  * @param archiveName string
- * @returns string[] archiveNames
+ * @return string[] archiveNames
  */
 int LuaArchive::GetArchiveDependencies(lua_State* L)
 {
@@ -232,7 +232,7 @@ int LuaArchive::GetArchiveDependencies(lua_State* L)
 /***
  * @function VFS.GetArchiveReplaces
  * @param archiveName string
- * @returns string[] archiveNames
+ * @return string[] archiveNames
  */
 int LuaArchive::GetArchiveReplaces(lua_State* L)
 {
@@ -254,8 +254,8 @@ int LuaArchive::GetArchiveReplaces(lua_State* L)
 /***
  * @function VFS.GetArchiveChecksum
  * @param archiveName string
- * @returns string singleArchiveChecksum
- * @returns string completeArchiveChecksum
+ * @return string singleArchiveChecksum
+ * @return string completeArchiveChecksum
  */
 int LuaArchive::GetArchiveChecksum(lua_State* L)
 {
@@ -279,7 +279,7 @@ int LuaArchive::GetArchiveChecksum(lua_State* L)
 /***
  * @function VFS.GetNameFromRapidTag
  * @param rapidTag string
- * @returns string archiveName
+ * @return string archiveName
  */
 int LuaArchive::GetNameFromRapidTag(lua_State* L)
 {
@@ -309,7 +309,7 @@ int LuaArchive::GetNameFromRapidTag(lua_State* L)
  * @function VFS.GetAvailableAIs
  * @param gameArchiveName string?
  * @param mapArichiveName string?
- * @returns AIInfo[] ais
+ * @return AIInfo[] ais
  */
 int LuaArchive::GetAvailableAIs(lua_State* L)
 {
