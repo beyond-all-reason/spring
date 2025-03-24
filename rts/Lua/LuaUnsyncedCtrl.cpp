@@ -1096,32 +1096,6 @@ int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)
  * @section camera
  *****************************************************************************/
 
-/***
- * Parameters for camera state
- *
- * Highly dependent on the type of the current camera controller
- *
- * @class camState
- *
- * @field name "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
- * @field mode number the camera mode: 0 (fps), 1 (ta), 2 (spring), 3 (rot), 4 (free), 5 (ov), 6 (dummy)
- * @field fov number
- * @field px number Position X of the ground point in screen center
- * @field py number Position Y of the ground point in screen center
- * @field pz number Position Z of the ground point in screen center
- * @field dx number Camera direction vector X
- * @field dy number Camera direction vector Y
- * @field dz number Camera direction vector Z
- * @field rx number Camera rotation angle on X axis (spring)
- * @field ry number Camera rotation angle on Y axis (spring)
- * @field rz number Camera rotation angle on Z axis (spring)
- * @field angle number Camera rotation angle on X axis (aka tilt/pitch) (ta)
- * @field flipped number -1 for when south is down, 1 for when north is down (ta)
- * @field dist number Camera distance from the ground (spring)
- * @field height number Camera distance from the ground (ta)
- * @field oldHeight number Camera distance from the ground, cannot be changed (rot)
- */
-
 static CCameraController::StateMap ParseCamStateMap(lua_State* L, int tableIdx)
 {
 	CCameraController::StateMap camState;
@@ -1207,28 +1181,27 @@ int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
 }
 
 
-/*** Sets camera state
+/*** Set camera state.
  *
  * @function Spring.SetCameraState
  *
- * The fields in `camState` must be consistent with the name/mode and current/new camera mode
- *
- * @param camState camState
+ * @param CameraState cameraState The fields must be consistent with the name/mode and current/new camera mode.
+ * 
  * @param transitionTime number? (Default: `0`) in nanoseconds
  *
  * @param transitionTimeFactor number?
- * multiplicative factor applied to this and all subsequent transition times for
+ * Multiplicative factor applied to this and all subsequent transition times for
  * this camera mode.
  *
  * Defaults to "CamTimeFactor" springsetting unless set previously.
  *
  * @param transitionTimeExponent number?
- * tween factor applied to this and all subsequent transitions for this camera
+ * Tween factor applied to this and all subsequent transitions for this camera
  * mode.
  *
  * Defaults to "CamTimeExponent" springsetting unless set previously.
  *
- * @return boolean set
+ * @return boolean set `true` when applied without errors, otherwise `false`.
  */
 int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 {
