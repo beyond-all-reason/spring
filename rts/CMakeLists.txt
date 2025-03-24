@@ -53,6 +53,7 @@ list(APPEND engineCommonLibraries "prd::base64")
 list(APPEND engineCommonLibraries "smmalloc")
 
 ### Assemble common libraries
+find_package_static(OpenAL 1.18.2 REQUIRED)
 add_subdirectory(System/Sound)
 if    (NO_SOUND)
 	add_definitions(-DNO_SOUND)
@@ -123,7 +124,6 @@ endif()
 ### Assemble engine sources
 add_library(Game STATIC)
 add_subdirectory(Game)
-find_package(OpenAL REQUIRED)
 #TODO(jsoncpp): find_package(jsoncpp REQUIRED) and link with JsonCpp::JsonCpp. Remove prd::jsoncpp.
 target_link_libraries(Game PRIVATE Tracy::TracyClient SDL2::SDL2 RmlUi::RmlUi OpenAL::OpenAL prd::jsoncpp ${sound-impl} luasocket SystemNet)
 add_dependencies(Game generateVersionFiles)

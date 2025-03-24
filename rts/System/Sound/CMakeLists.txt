@@ -44,7 +44,6 @@ if    (NOT NO_SOUND)
 			OpenAL/VorbisShared.cpp
 		)
 
-	find_package_static(OpenAL 1.18.2 REQUIRED)
 	find_package_static(OggVorbis 1.3.4 REQUIRED)
 
 	find_package(SDL2 MODULE REQUIRED)
