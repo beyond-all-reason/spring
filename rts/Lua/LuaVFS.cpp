@@ -770,6 +770,14 @@ int LuaVFS::UnmapArchive(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * @function VFS.CompressFolder
+ * @param folderPath string
+ * @param archiveType string? (Default: `"zip"`)
+ * @param compressedFilePath string? (Default: `folderPath .. ".sdz"`)
+ * @param includeFolder boolean? (Default: `false`)
+ * @param mode string?
+ */
 int LuaVFS::CompressFolder(lua_State* L)
 {
 	const std::string& folderPath = luaL_checkstring(L, 1);
