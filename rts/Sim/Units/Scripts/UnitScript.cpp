@@ -180,11 +180,11 @@ void CUnitScript::TickAllAnims(int deltaTime)
 	ZoneScoped;
 
 	// tick-functions; these never change address
-	static constexpr std::array<TickAnimFunc, AMove + 1> TICK_ANIM_FUNCS = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
+	static constexpr std::array<TickAnimFunc, ACount> TICK_ANIM_FUNCS = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
 
 	const int tickRate = 1000 / deltaTime;
 
-	for (int animType = ATurn; animType <= AMove; animType++) {
+	for (int animType = ATurn; animType < ACount; animType++) {
 		auto& currAnims = anims[animType];
 		const auto& currFunc = TICK_ANIM_FUNCS[animType];
 		auto& currDoneAnims = doneAnims[animType];
