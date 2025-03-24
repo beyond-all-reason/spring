@@ -62,13 +62,22 @@
 ---| 5 # ov
 ---| 6 # dummy
 
+---@alias CameraName
+---| "ta"
+---| "spring"
+---| "rot"
+---| "ov"
+---| "free"
+---| "fps"
+---| "dummy"
+
 ---Parameters for camera state.
 ---
 ---@class CameraState
 ---
 ---Highly dependent on the type of the current camera controller.
 ---
----@field name "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
+---@field name CameraName The camera name
 ---@field mode CameraMode The camera mode
 ---@field fov number?
 ---@field px number? Position X of the ground point in screen center
