@@ -739,13 +739,103 @@ int PackType(lua_State* L)
 }
 
 
-int LuaVFS::PackU8 (lua_State* L) { return PackType<std::uint8_t >(L); }
+/***
+ * Convert unsigned 8-bit integer(s) to binary string.
+ * @function VFS.PackU8 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert unsigned 8-bit integer(s) to binary string.
+ * @function VFS.PackU8 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackU8(lua_State* L) { return PackType<std::uint8_t >(L); }
+
+/***
+ * Convert unsigned 16-bit integer(s) to binary string.
+ * @function VFS.PackU16 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert unsigned 16-bit integer(s) to binary string.
+ * @function VFS.PackU16 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
 int LuaVFS::PackU16(lua_State* L) { return PackType<std::uint16_t>(L); }
+
+/***
+ * Convert unsigned 32-bit integer(s) to binary string.
+ * @function VFS.PackU32 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert unsigned 32-bit integer(s) to binary string.
+ * @function VFS.PackU32 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
 int LuaVFS::PackU32(lua_State* L) { return PackType<std::uint32_t>(L); }
-int LuaVFS::PackS8 (lua_State* L) { return PackType<std::int8_t  >(L); }
-int LuaVFS::PackS16(lua_State* L) { return PackType<std::int16_t >(L); }
-int LuaVFS::PackS32(lua_State* L) { return PackType<std::int32_t >(L); }
-int LuaVFS::PackF32(lua_State* L) { return PackType<     float   >(L); }
+
+/***
+ * Convert signed 8-bit integer(s) to binary string.
+ * @function VFS.PackS8 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert signed 8-bit integer(s) to binary string.
+ * @function VFS.PackS8 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackS8(lua_State* L) { return PackType<std::int8_t>(L); }
+
+/***
+ * Convert signed 16-bit integer(s) to binary string.
+ * @function VFS.PackS16 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert signed 16-bit integer(s) to binary string.
+ * @function VFS.PackS16 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackS16(lua_State* L) { return PackType<std::int16_t>(L); }
+
+/***
+ * Convert signed 32-bit integer(s) to binary string.
+ * @function VFS.PackS32 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert signed 32-bit integer(s) to binary string.
+ * @function VFS.PackS32 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackS32(lua_State* L) { return PackType<std::int32_t>(L); }
+
+/***
+ * Convert signed 32-bit float(s) to binary string.
+ * @function VFS.PackS32 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert signed 32-bit float(s) to binary string.
+ * @function VFS.PackS32 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackF32(lua_State* L) { return PackType<float>(L); }
 
 
 /******************************************************************************/
@@ -792,15 +882,69 @@ int UnpackType(lua_State* L)
 }
 
 
-int LuaVFS::UnpackU8(lua_State*  L) { return UnpackType<std::uint8_t>(L);  }
+/***
+ * Convert an unsigned 8-bit integer from a binary string.
+ * @function VFS.UnpackU8
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackU8(lua_State* L) { return UnpackType<std::uint8_t>(L); }
+
+/***
+ * Convert an unsigned 16-bit integer from a binary string.
+ * @function VFS.UnpackU16
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
 int LuaVFS::UnpackU16(lua_State* L) { return UnpackType<std::uint16_t>(L); }
+
+/***
+ * Convert an unsigned 32-bit integer from a binary string.
+ * @function VFS.UnpackU32
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
 int LuaVFS::UnpackU32(lua_State* L) { return UnpackType<std::uint32_t>(L); }
-int LuaVFS::UnpackS8(lua_State*  L) { return UnpackType<std::int8_t>(L);   }
-int LuaVFS::UnpackS16(lua_State* L) { return UnpackType<std::int16_t>(L);  }
-int LuaVFS::UnpackS32(lua_State* L) { return UnpackType<std::int32_t>(L);  }
-int LuaVFS::UnpackF32(lua_State* L) { return UnpackType<float>(L);         }
+
+/***
+ * Convert an signed 8-bit integer from a binary string.
+ * @function VFS.UnpackS8
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackS8(lua_State* L) { return UnpackType<std::int8_t>(L); }
+
+/***
+ * Convert an signed 16-bit integer from a binary string.
+ * @function VFS.UnpackS16
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackS16(lua_State* L) { return UnpackType<std::int16_t>(L); }
+
+/***
+ * Convert an signed 32-bit integer from a binary string.
+ * @function VFS.UnpackS32
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackS32(lua_State* L) { return UnpackType<std::int32_t>(L); }
+
+/***
+ * Convert an signed 32-bit float from a binary string.
+ * @function VFS.UnpackF32
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackF32(lua_State* L) { return UnpackType<float>(L); }
 
 
 /******************************************************************************/
 /******************************************************************************/
-
