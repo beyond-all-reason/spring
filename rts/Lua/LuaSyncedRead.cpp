@@ -2972,7 +2972,7 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
-	const auto &units = (*qfQuery.units);
+	const auto& units = (*qfQuery.units);
 
 	lua_createtable(L, units.size(), 0);
 
@@ -3017,7 +3017,7 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
-	const auto &units = (*qfQuery.units);
+	const auto& units = (*qfQuery.units);
 
 	lua_createtable(L, units.size(), 0);
 
@@ -3056,7 +3056,7 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
-	const auto &units = (*qfQuery.units);
+	const auto& units = (*qfQuery.units);
 
 	lua_createtable(L, units.size(), 0);
 
@@ -3098,7 +3098,7 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, mins, maxs);
-	const auto &units = (*qfQuery.units);
+	const auto& units = (*qfQuery.units);
 
 	lua_createtable(L, units.size(), 0);
 
@@ -3148,20 +3148,21 @@ static inline bool UnitInPlanes(const float3& pos, const float radius, const vec
  * @param allegiance integer?
  * @return integer[] unitIDs
  */
-int LuaSyncedRead::GetUnitsInPlanes(lua_State *L) {
-	if(!lua_istable(L, 1)) {
+int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
+{
+	if (!lua_istable(L, 1)) {
 		luaL_error(L, "Incorrect arguments to GetUnitsInPlanes()");
 	}
 
 	// parse the planes
 	vector<Plane> planes;
 	const int table = lua_gettop(L);
-	for(lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
-		if(lua_istable(L, -1)) {
+	for (lua_pushnil(L); lua_next(L, table) != 0; lua_pop(L, 1)) {
+		if (lua_istable(L, -1)) {
 			float values[4];
 			const int v = LuaUtils::ParseFloatArray(L, -1, values, 4);
-			if(v == 4) {
-				Plane plane = {values[0], values[1], values[2], values[3]};
+			if (v == 4) {
+				Plane plane = { values[0], values[1], values[2], values[3] };
 				planes.push_back(plane);
 			}
 		}
@@ -3170,14 +3171,16 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State *L) {
 	int startTeam, endTeam;
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 2);
-	if(allegiance >= 0) {
+	if (allegiance >= 0) {
 		startTeam = allegiance;
 		endTeam = allegiance;
-	} else if(allegiance == LuaUtils::MyUnits) {
+	}
+	else if (allegiance == LuaUtils::MyUnits) {
 		const int readTeam = CLuaHandle::GetHandleReadTeam(L);
 		startTeam = readTeam;
 		endTeam = readTeam;
-	} else {
+	}
+	else {
 		startTeam = 0;
 		endTeam = teamHandler.ActiveTeams() - 1;
 	}
@@ -3190,14 +3193,15 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State *L) {
 
 	lua_newtable(L);
 
-	for(int team = startTeam; team <= endTeam; team++) {
-		const std::vector<CUnit *> &units = unitHandler.GetUnitsByTeam(team);
+	for (int team = startTeam; team <= endTeam; team++) {
+		const std::vector<CUnit*>& units = unitHandler.GetUnitsByTeam(team);
 
 		GetFilteredUnits(L, allegiance, units, planesTest, fullRead);
 	}
 
 	return 1;
 }
+
 
 static int GetUnitTableCentroid(lua_State *const L, const int indexWithinTable, const char *const caller)
 {
