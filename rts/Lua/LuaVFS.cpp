@@ -629,6 +629,22 @@ int LuaVFS::GetFileAbsolutePath(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function VFS.GetArchiveContainingFile
+ *
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ *
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return string? archiveName
+ */
 int LuaVFS::GetArchiveContainingFile(lua_State* L)
 {
 	const std::string filename = luaL_checkstring(L, 1);
