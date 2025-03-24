@@ -1185,24 +1185,23 @@ int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
  *
  * @function Spring.SetCameraState
  *
- * The fields in `camState` must be consistent with the name/mode and current/new camera mode.
- *
- * @param CameraState cameraState
+ * @param CameraState cameraState The fields must be consistent with the name/mode and current/new camera mode.
+ * 
  * @param transitionTime number? (Default: `0`) in nanoseconds
  *
  * @param transitionTimeFactor number?
- * multiplicative factor applied to this and all subsequent transition times for
+ * Multiplicative factor applied to this and all subsequent transition times for
  * this camera mode.
  *
  * Defaults to "CamTimeFactor" springsetting unless set previously.
  *
  * @param transitionTimeExponent number?
- * tween factor applied to this and all subsequent transitions for this camera
+ * Tween factor applied to this and all subsequent transitions for this camera
  * mode.
  *
  * Defaults to "CamTimeExponent" springsetting unless set previously.
  *
- * @return boolean set
+ * @return boolean set `true` when applied without errors, otherwise `false`.
  */
 int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 {
