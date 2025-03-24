@@ -24,12 +24,114 @@
 #include "System/Misc/TracyDefs.h"
 #include <tracy/TracyLua.hpp>
 
-/******************************************************************************
- * Virtual File System
+/***
+ * The Virtual File System is an unified layer to access (read-only) the
+ * different archives used at runtime. So you can access map, game & config
+ * files via the same interface.
+ * 
+ * ## Overview
+ * 
+ * Although Spring can access the filesystem directly (via os module) it is
+ * more common that you would want to access files included with your game or
+ * Spring. Trouble is, most of these files are compressed into archives
+ * (`.sdz`/`.sd7`) so random access would generally be a difficult procedure.
+ * Fortunately, the Spring Lua system automatically provides access to mod and
+ * base files via the VFS module.
  *
- * @see rts/Lua/LuaVFS.cpp
-******************************************************************************/
-
+ * The VFS module doesn't simply open archives though. What it does is map
+ * your game files, game dependencies and Spring content onto a virtual file
+ * tree. All archives start from the 'roots' of the tree and share the same
+ * virtual space, meaning that if two or more archives contain the same
+ * resource file name the resources overlap and only one of the files will be
+ * retrieved. Overlapping directories on the other hand are merged so the
+ * resulting virtual directory contains the contents of both. Here is an
+ * example of how this works:
+ *
+ * **Archive 1** (`games/mygame.sd7`)
+ *
+ * ```
+ * textures
+ * └── texture1.png
+ * models
+ * └── model1.mdl
+ * ```
+ *
+ * **Archive 2** (`base/springcontent.sdz`)
+ * 
+ * ```
+ * textures
+ * ├── texture1.png
+ * ├── texture2.png
+ * └── texture3.png
+ * ```
+ *
+ * **VFS**
+ * 
+ * ```
+ * textures
+ * ├── texture1.png
+ * ├── texture2.png
+ * └── texture3.png
+ * models
+ * └── model1.mdl
+ * ```
+ *
+ * This raises the question: If both archives have a `texture1.png` then which
+ * `texture1.png` is retreived via the VFS? The answer depends on the order the
+ * archives are loaded and the VFS mode (more on modes below). Generally
+ * however, each archive loaded overrides any archives loaded before it. The
+ * standard order of loading (from first to last) is:
+ * 
+ *  1. The main `Spring/` game directory.
+ *  2. The automatic dependencies `springcontent.sdz` and `maphelper.sdz`.
+ *  3. Dependencies listed in your `modinfo.lua` (or `modinfo.tdf`), in the order listed.
+ *  4. Your mod archive.
+ * 
+ * ## Paths
+ * 
+ * Spring's VFS is **lowercase only**. Also it is **strongly** recommended to
+ * use linux style path separators, e.g. `"foo/bar.txt"` and not `"foo\bar.txt"`.
+ * 
+ * ## Engine read files
+ * 
+ * The engine access a few files directly, most of them are lua files which
+ * access other files themselves. Here the list of files that must exist in the
+ * VFS (some of them don't have to be in the game/map archive cause there are
+ * fallback solutions in `springcontent.sdz` & `maphelper.sdz`):
+ * 
+ * - `./`
+ *   - anims/
+ *     - `cursornormal.bmp/png`
+ *   - gamedata/
+ *     - `defs.lua`
+ *     - `explosions.lua`
+ *     - `explosion_alias.lua`
+ *     - `icontypes.lua`
+ *     - `messages.lua`
+ *     - `modrules.lua`
+ *     - `resources.lua`
+ *     - `resources_map.lua`
+ *     - `sidedata.lua`
+ *     - `sounds.lua`
+ *   - `luagaia/`
+ *     - `main.lua`
+ *     - `draw.lua`
+ *   - `luarules/`
+ *     - `main.lua`
+ *     - `draw.lua`
+ *   - `luaui/`
+ *     - `main.lua`
+ *   - `shaders/`
+ *     - `?`
+ *   - `luaai.lua`
+ *   - `mapinfo.lua`
+ *   - `mapoptions.lua`
+ *   - `modinfo.lua`
+ *   - `modoptions.lua`
+ *   - `validmaps.lua`
+ *
+ * @table VFS
+ */
 
 bool LuaVFS::PushCommon(lua_State* L)
 {
