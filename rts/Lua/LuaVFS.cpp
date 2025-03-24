@@ -532,6 +532,37 @@ int LuaVFS::UnsyncDirList(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * List sub-directories in a directory.
+ * 
+ * @function VFS.SubDirs
+ * 
+ * Example usage:
+ * 
+ * ```lua
+ * local files = VFS.SubDirs('sounds/voice/' .. language, '*')
+ * for _, file in ipairs(files) do
+ * 	# ...
+ * end
+ * ```
+ * 
+ * @param directory string
+ * 
+ * Path to directory, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar/"`.
+ *
+ * @param pattern string? (Default: `"*"`)
+ * 
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @param boolean? recursive (Default: `false`)
+ * 
+ * @return string[] dirnames
+ */
 int LuaVFS::SubDirs(lua_State* L, bool synced)
 {
 	const std::string& dir = luaL_checkstring(L, 1);
