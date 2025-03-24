@@ -151,5 +151,3 @@ target_sources(Sim PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/Weapons/WeaponLoader.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Weapons/WeaponTarget.cpp"
 	)
-
-target_link_libraries(Sim SDL2::SDL2 Tracy::TracyClient)
