@@ -717,6 +717,21 @@ int LuaVFS::UseArchive(lua_State* L)
 	return (lua_gettop(L) - funcIndex + 1);
 }
 
+/** -- Not exported.
+ * 
+ * Permanently loads an archive into the VFS (to load zipped music collections
+ * etc.).
+ * 
+ * Does nothing if the archive is already loaded in the VFS (won't reload even
+ * if there are changes made to the archive). If checksum is given it checks if
+ * the to be loaded file is correct, if not then it won't load it and return
+ * false.
+ * 
+ * @function VFS.MapArchive
+ * @param archiveName string
+ * @param checksum string?
+ * @return boolean
+ */
 int LuaVFS::MapArchive(lua_State* L)
 {
 	// only from unsynced
@@ -750,6 +765,14 @@ int LuaVFS::MapArchive(lua_State* L)
 	return 1;
 }
 
+/** -- Not exported.
+ * 
+ * Removes an already loaded archive (see `VFS.MapArchive`).
+ * 
+ * @function VFS.UnmapArchive
+ * @param archiveName string
+ * @return boolean
+ */
 int LuaVFS::UnmapArchive(lua_State* L)
 {
 	// only from unsynced
