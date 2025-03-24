@@ -427,6 +427,33 @@ int LuaVFS::UnsyncLoadFile(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * Check if file exists in VFS.
+ * 
+ * 
+ * @function VFS.FileExists
+ * 
+ * Example usage:
+ * 
+ * ```lua
+ * if VFS.FileExists("maps/Castles.sdz") then
+ *   # ...
+ * end
+ * ```
+ * 
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ *
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return boolean exists `true` if the file exists, otherwise `false`.
+ */
 int LuaVFS::FileExists(lua_State* L, bool synced)
 {
 	const std::string& filename = luaL_checkstring(L, 1);
