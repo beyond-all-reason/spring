@@ -270,6 +270,7 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
  * ```
  * 
  * @param filename string
+ * 
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  * 
@@ -375,6 +376,27 @@ int LuaVFS::UnsyncInclude(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * Load raw text data from the VFS.
+ * 
+ * @function VFS.LoadFile
+ * 
+ * Returns file contents as a string. Unlike `VFS.Include` the file will not be
+ * executed.
+ *
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ *
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return data string The contents of the file.
+ */
 int LuaVFS::LoadFile(lua_State* L, bool synced)
 {
 	const string filename = luaL_checkstring(L, 1);
