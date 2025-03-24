@@ -20,7 +20,13 @@ class CUnitScript
 	CR_DECLARE(CUnitScript)
 	CR_DECLARE_SUB(AnimInfo)
 public:
-	enum AnimType {ANone = -1, ATurn = 0, ASpin = 1, AMove = 2};
+	enum AnimType {
+		ANone = -1,
+		ATurn = 0,
+		ASpin = 1,
+		AMove = 2,
+		ACount = 3
+	};
 
 protected:
 	CUnit* unit;
@@ -42,8 +48,8 @@ protected:
 
 	typedef bool(CUnitScript::*TickAnimFunc)(int, LocalModelPiece&, AnimInfo&);
 
-	std::array<AnimContainerType, AMove + 1> anims;
-	std::array<AnimContainerType, AMove + 1> doneAnims;
+	std::array<AnimContainerType, ACount> anims;
+	std::array<AnimContainerType, ACount> doneAnims;
 
 	bool hasSetSFXOccupy;
 	bool hasRockUnit;
