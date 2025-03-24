@@ -811,6 +811,7 @@ bool CFontTexture::AddFallbackFont(const std::string& fontfile)
  */
 void CFontTexture::ClearFallbackFonts()
 {
+	pinnedRecentFonts.clear();
 #if defined(USE_FONTCONFIG) && !defined(HEADLESS)
 	if (!FtLibraryHandler::CanUseFontConfig())
 		return;
