@@ -291,7 +291,7 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
  * doing specifies an order of preference for the mode (i.e. location) from
  * which to include files.
  * 
- * @return module any The return value of the included file.
+ * @return any module The return value of the included file.
  */
 int LuaVFS::Include(lua_State* L, bool synced)
 {
@@ -395,7 +395,7 @@ int LuaVFS::UnsyncInclude(lua_State* L)
  * doing specifies an order of preference for the mode (i.e. location) from
  * which to include files.
  * 
- * @return data string The contents of the file.
+ * @return string? data The contents of the file.
  */
 int LuaVFS::LoadFile(lua_State* L, bool synced)
 {
@@ -604,9 +604,8 @@ int LuaVFS::UnsyncSubDirs(lua_State* L)
  * doing specifies an order of preference for the mode (i.e. location) from
  * which to include files.
  * 
- * @return string absolutePath
+ * @return string? absolutePath
  */
-
 int LuaVFS::GetFileAbsolutePath(lua_State* L)
 {
 	const std::string filename = luaL_checkstring(L, 1);
