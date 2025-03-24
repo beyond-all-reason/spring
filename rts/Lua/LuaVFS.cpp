@@ -430,7 +430,6 @@ int LuaVFS::UnsyncLoadFile(lua_State* L)
 /***
  * Check if file exists in VFS.
  * 
- * 
  * @function VFS.FileExists
  * 
  * Example usage:
@@ -474,6 +473,34 @@ int LuaVFS::UnsyncFileExists(lua_State* L) { return FileExists(L, false); }
 
 /******************************************************************************/
 
+/***
+ * List files in a directory.
+ * 
+ * @function VFS.DirList
+ * 
+ * Example usage:
+ * 
+ * ```lua
+ * local luaFiles = VFS.DirList('units/', '*.lua', nil, true)
+ * ```
+ * 
+ * @param directory string
+ * 
+ * Path to directory, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar/"`.
+ *
+ * @param pattern string? (Default: `"*"`)
+ * 
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @param boolean? recursive (Default: `false`)
+ * 
+ * @return string[] filenames
+ */
 int LuaVFS::DirList(lua_State* L, bool synced)
 {
 	const std::string& dir = luaL_checkstring(L, 1);
