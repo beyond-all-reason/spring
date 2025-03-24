@@ -257,6 +257,41 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
 /******************************************************************************/
 /******************************************************************************/
 
+
+/***
+ * Loads and compiles lua code from a file in the VFS.
+ * 
+ * @function VFS.Include
+ * 
+ * The path is relative to the main Spring directory, e.g.
+ * 
+ * ```lua
+ * VFS.Include('LuaUI/includes/filename.lua', nil, vfsmode)
+ * ```
+ * 
+ * @param filename string
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ * 
+ * @param environment table? (Default: `_G`)
+ * 
+ * The environment arg sets the global environment (see generic lua refs). In
+ * almost all cases, this should be left `nil` to preserve Spring default.
+ *  
+ * If the provided, any non-local variables and functions defined in
+ * `filename.lua` are then accessable via env or _G. Vise-versa, any variables
+ * defined in env prior to passing to VFS.Include are available to code in the
+ * included file. Code running in `filename.lua` will see the contents of env in
+ * place of the normal `_G` environment.
+ * 
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return module any The return value of the included file.
+ */
 int LuaVFS::Include(lua_State* L, bool synced)
 {
 	const std::string fileName = luaL_checkstring(L, 1);
