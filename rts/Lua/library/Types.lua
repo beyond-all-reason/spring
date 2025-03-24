@@ -32,7 +32,7 @@
 ---@alias float4 xyzw
 
 
----A string containing there space-separated floating point numbers.
+---A string containing three space-separated floating point numbers.
 ---
 ---e.g.
 ---```lua
