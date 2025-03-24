@@ -2926,9 +2926,8 @@ static void GetFilteredUnits(lua_State *L, int allegiance, const std::vector<CUn
 		if(isDisqualified(unit))
 			continue;
 
-		// The unit error will be zero if the unit is on an allied team
 		float3 pos = unit->midPos + unit->GetLuaErrorVector(readAllyTeam, fullRead);
-		if(!inRegion(pos))
+		if(!inRegion(unit, pos))
 			continue;
 
 		lua_pushnumber(L, unit->id);
@@ -2958,7 +2957,7 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
-	const auto rectangeCheck = [&](const float3 &pos) {
+	const auto rectangleCheck = [&](const CUnit *unit, const float3 &pos) {
 		if((pos.x < xmin) || (pos.x > xmax))
 			return false;
 		if((pos.z < zmin) || (pos.z > zmax))
@@ -2976,7 +2975,7 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, allegiance, units, rectangeCheck, fullRead);
+	GetFilteredUnits(L, allegiance, units, rectangleCheck, fullRead);
 
 	return 1;
 }
@@ -3008,10 +3007,11 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 7);
 
-	const auto boxCheck = std::bind_front(&AABB::Contains,
-	                                      AABB(float3(xmin, ymin, zmin), float3(xmax, ymax, zmax)));
+    const auto boxCheck = [&](const CUnit *unit, float3 pos) {
+        return AABB(float3(xmin, ymin, zmin), float3(xmax, ymax, zmax)).Contains(pos);
+    };
 
-	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
+    const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 	if (!fullRead)
 		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
@@ -3046,11 +3046,11 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 4);
 
-	const auto cylinderCheck = [&](const float3 &p) {
-		return p.SqDistance2D(float3{x, 0.0, z}) <= radSqr;
-	};
+    const auto cylinderCheck = [&](const CUnit *unit, const float3 &p) {
+        return p.SqDistance2D(float3{x, 0.0, z}) <= radSqr;
+    };
 
-	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
+    const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 	if (!fullRead)
 		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
@@ -3088,11 +3088,11 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
-	const auto sphereCheck = [&](const float3 &p) {
-		return p.SqDistance(float3(x, y, z)) <= radSqr;
-	};
+    const auto sphereCheck = [&](const CUnit *unit, const float3 &p) {
+        return p.SqDistance(float3(x, y, z)) <= radSqr;
+    };
 
-	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
+    const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 	if (!fullRead)
 		ApplyPlanarTeamError(L, allegiance, mins, maxs);
 
@@ -3185,8 +3185,8 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 		endTeam = teamHandler.ActiveTeams() - 1;
 	}
 
-	const auto planesTest = [&](const float3 &pos) {
-		return UnitInPlanes(pos, 0.0f, planes);
+	const auto planesTest = [&](const CUnit *unit, const float3 &pos) {
+		return UnitInPlanes(pos, unit->radius, planes);
 	};
 
 	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
