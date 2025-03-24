@@ -62,11 +62,12 @@
 ---| 5 # ov
 ---| 6 # dummy
 
----Parameters for camera state
+---Parameters for camera state.
 ---
 ---@class CameraState
 ---
----Highly dependent on the type of the current camera controller
+---Highly dependent on the type of the current camera controller.
+---
 ---@field name "ta"|"spring"|"rot"|"ov"|"free"|"fps"|"dummy"
 ---@field mode CameraMode The camera mode
 ---@field fov number?
