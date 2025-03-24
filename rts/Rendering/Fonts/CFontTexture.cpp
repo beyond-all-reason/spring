@@ -182,6 +182,10 @@ public:
 			ScopedOnceTimer timer(msg);
 			ZoneScopedNC("FtLibraryHandler::FontConfigInit", tracy::Color::Purple);
 
+			searchSystemFonts = configHandler->GetBool("UseFontConfigSystemFonts");
+			searchFontAttributes = configHandler->GetBool("FontConfigSearchAttributes");
+			searchApplySubstitutions = configHandler->GetBool("FontConfigApplySubstitutions");
+
 			FcBool res;
 			std::string errprefix = fmt::sprintf("[%s] Fontconfig(version %d.%d.%d) failed to initialize", __func__, FC_MAJOR, FC_MINOR, FC_REVISION);
 
@@ -318,6 +322,15 @@ public:
 		FcPatternDestroy(singleton->basePattern);
 		singleton->basePattern = FcPatternCreate();
 	}
+	static bool GetSearchSystemFonts() {
+		return singleton->searchSystemFonts;
+	}
+	static bool GetSearchFontAttributes() {
+		return singleton->searchFontAttributes;
+	}
+	static bool GetSearchApplySubstitutions() {
+		return singleton->searchApplySubstitutions;
+	}
 	#endif
 private:
 	FcConfig* config;
@@ -326,6 +339,9 @@ private:
 	FcFontSet *gameFontSet;
 	FcPattern *basePattern;
 	#endif
+	bool searchSystemFonts;
+	bool searchFontAttributes;
+	bool searchApplySubstitutions;
 
 	static inline std::unique_ptr<FtLibraryHandler> singleton = nullptr;
 };
@@ -517,19 +533,20 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 			[](FcBlanks* b) { if (b) FcBlanksDestroy(b); }
 		);
 
-		auto origPattern = spring::ScopedResource(
-			FcFreeTypeQueryFace(origFace, ftname, 0, blanks),
-			[](FcPattern* p) { if (p) FcPatternDestroy(p); }
-		);
+		if (FtLibraryHandler::GetSearchFontAttributes()) {
+			auto origPattern = spring::ScopedResource(
+				FcFreeTypeQueryFace(origFace, ftname, 0, blanks),
+				[](FcPattern* p) { if (p) FcPatternDestroy(p); }
+			);
 
-		if (origPattern != nullptr) {
-			FcPatternGetInteger(origPattern, FC_WEIGHT    , 0, &weight );
-			FcPatternGetInteger(origPattern, FC_SLANT     , 0, &slant  );
-			FcPatternGetBool(   origPattern, FC_OUTLINE   , 0, &outline);
-			FcPatternGetDouble( origPattern, FC_PIXEL_SIZE, 0, &pixelSize);
+			if (origPattern != nullptr) {
+				FcPatternGetInteger(origPattern, FC_WEIGHT    , 0, &weight );
+				FcPatternGetInteger(origPattern, FC_SLANT     , 0, &slant  );
+				FcPatternGetBool(   origPattern, FC_OUTLINE   , 0, &outline);
+				FcPatternGetDouble( origPattern, FC_PIXEL_SIZE, 0, &pixelSize);
 
-			FcPatternGetString( origPattern, FC_FAMILY , 0, &family );
-
+				FcPatternGetString( origPattern, FC_FAMILY , 0, &family );
+			}
 		}
 
 		FcPatternAddInteger(pattern, FC_WEIGHT, weight);
@@ -544,7 +561,7 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 	}
 
 	FcDefaultSubstitute(pattern);
-	if (!FcConfigSubstitute(FtLibraryHandler::GetFCConfig(), pattern, FcMatchPattern))
+	if (FtLibraryHandler::GetSearchApplySubstitutions() && !FcConfigSubstitute(FtLibraryHandler::GetFCConfig(), pattern, FcMatchPattern))
 	{
 		return nullptr;
 	}
@@ -553,7 +570,7 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 	typedef std::unique_ptr<FcFontSet, decltype(&FcFontSetDestroy)> ScopedFcFontSet;
 
 	int nFonts = 0;
-	bool loadMore = true;
+	bool loadMore = FtLibraryHandler::GetSearchSystemFonts();
 	FcResult res;
 
 	// first search game fonts
