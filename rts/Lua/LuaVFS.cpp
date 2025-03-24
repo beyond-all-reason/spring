@@ -670,9 +670,13 @@ int LuaVFS::GetArchiveContainingFile(lua_State* L)
 /******************************************************************************/
 
 /***
+ * Temporarily load an archive from the VFS and run the given function,
+ * which can make usage of the files in the archive.
+ * 
  * @function VFS.UseArchive
  * @param archiveName string
- * @param fun() func
+ * @param fun(...: any) func
+ * @return any ... Results of of the given function
  */
 int LuaVFS::UseArchive(lua_State* L)
 {
@@ -771,11 +775,14 @@ int LuaVFS::UnmapArchive(lua_State* L)
 /******************************************************************************/
 
 /***
+ * Compresses the specified folder.
  * @function VFS.CompressFolder
  * @param folderPath string
- * @param archiveType string? (Default: `"zip"`)
+ * @param archiveType string? (Default: `"zip"`)The compression type (can
+ * currently be only `"zip"`).
  * @param compressedFilePath string? (Default: `folderPath .. ".sdz"`)
- * @param includeFolder boolean? (Default: `false`)
+ * @param includeFolder boolean? (Default: `false`) Whether the archive should
+ * have the specified folder as root.
  * @param mode string?
  */
 int LuaVFS::CompressFolder(lua_State* L)
@@ -854,6 +861,20 @@ int LuaVFS::ZlibDecompress(lua_State* L)
 }
 
 
+/**
+ * @alias HashType
+ * | 0 # MD5
+ * | 1 # SHA512
+ */
+
+/***
+ * Calculates hash (in base64 form) of a given string.
+ * 
+ * @function VFS.CalculateHash
+ * @param input string
+ * @param hashType HashType Hash type.
+ * @return string? hash
+ */
 int LuaVFS::CalculateHash(lua_State* L)
 {
 	size_t slen = 0;
