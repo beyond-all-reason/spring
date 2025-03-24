@@ -135,16 +135,34 @@
 
 bool LuaVFS::PushCommon(lua_State* L)
 {
+
+	/*** @field VFS.RAW "r" Only select uncompressed files. */
 	HSTR_PUSH_CSTRING(L, "RAW",       SPRING_VFS_RAW);
+	/*** @field VFS.RAW "M" */
 	HSTR_PUSH_CSTRING(L, "MOD",       SPRING_VFS_MOD);
+	/*** @field VFS.GAME "M" */
 	HSTR_PUSH_CSTRING(L, "GAME",      SPRING_VFS_MOD); // synonym to MOD
+	/*** @field VFS.MAP "m" */
 	HSTR_PUSH_CSTRING(L, "MAP",       SPRING_VFS_MAP);
+	/*** @field VFS.BASE "b" */
 	HSTR_PUSH_CSTRING(L, "BASE",      SPRING_VFS_BASE);
+	/*** @field VFS.MENU "e" */
 	HSTR_PUSH_CSTRING(L, "MENU",      SPRING_VFS_MENU);
+	/*** @field VFS.ZIP "Mmeb" Only select compressed files (`.sdz`, `.sd7`). */
 	HSTR_PUSH_CSTRING(L, "ZIP",       SPRING_VFS_ZIP);
+	/*** @field VFS.RAW_FIRST "rMmeb" Try uncompressed files first, then compressed. */
 	HSTR_PUSH_CSTRING(L, "RAW_FIRST", SPRING_VFS_RAW_FIRST);
+	/*** @field VFS.RAW_FIRST "Mmebr" Try compressed files first, then uncompressed. */
 	HSTR_PUSH_CSTRING(L, "ZIP_FIRST", SPRING_VFS_ZIP_FIRST);
+	/***
+	 * @deprecated
+	 * @field VFS.RAW_ONLY "r"
+	 */
 	HSTR_PUSH_CSTRING(L, "RAW_ONLY",  SPRING_VFS_RAW); // backwards compatibility
+	/***
+	 * @deprecated
+	 * @field VFS.ZIP_ONLY "Mmeb"
+	 */
 	HSTR_PUSH_CSTRING(L, "ZIP_ONLY",  SPRING_VFS_ZIP); // backwards compatibility
 
 	HSTR_PUSH_CFUNC(L, "PackU8",    PackU8);
