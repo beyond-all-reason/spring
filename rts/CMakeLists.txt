@@ -173,11 +173,13 @@ add_subdirectory(Rml)
 target_link_libraries(Rml PRIVATE RmlUi::RmlUi SDL2::SDL2 Tracy::TracyClient)
 target_link_libraries(SolLua PRIVATE RmlUi::RmlUi SDL2::SDL2)
 
-#add_library(Menu STATIC)
-#add_subdirectory(Menu)
+add_library(Menu STATIC)
+add_subdirectory(Menu)
+target_link_libraries(Menu PRIVATE Tracy::TracyClient SDL2::SDL2)
 
-#add_library(Map STATIC)
-#add_subdirectory(Map)
+add_library(Map STATIC)
+add_subdirectory(Map)
+target_link_libraries(Map PRIVATE Tracy::TracyClient SDL2::SDL2 OpenAL::OpenAL)
 
 #add_library(NetServer STATIC)
 #add_library(NetClient STATIC)
