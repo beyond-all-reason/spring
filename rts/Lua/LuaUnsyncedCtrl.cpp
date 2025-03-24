@@ -3027,11 +3027,13 @@ int LuaUnsyncedCtrl::SetLosViewColors(lua_State* L)
 	float jamColor[3];
 	float radarColor2[3];
 
-	if ((LuaUtils::ParseFloatArray(L, 1, alwaysColor, 3) != 3) ||
-	    (LuaUtils::ParseFloatArray(L, 2, losColor, 3) != 3) ||
-	    (LuaUtils::ParseFloatArray(L, 3, radarColor, 3) != 3) ||
+	if (
+		(LuaUtils::ParseFloatArray(L, 1, alwaysColor, 3) != 3) ||
+		(LuaUtils::ParseFloatArray(L, 2, losColor, 3) != 3) ||
+		(LuaUtils::ParseFloatArray(L, 3, radarColor, 3) != 3) ||
 		(LuaUtils::ParseFloatArray(L, 4, jamColor, 3) != 3) ||
-		(LuaUtils::ParseFloatArray(L, 5, radarColor2, 3) != 3)) {
+		(LuaUtils::ParseFloatArray(L, 5, radarColor2, 3) != 3)
+	) {
 		luaL_error(L, "Incorrect arguments to SetLosViewColors()");
 	}
 	const int scale = CBaseGroundDrawer::losColorScale;

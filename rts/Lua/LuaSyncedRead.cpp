@@ -7710,7 +7710,7 @@ int LuaSyncedRead::GetSmoothMeshHeight(lua_State* L)
  * @function Spring.TestMoveOrder
  * @param unitDefID integer
  * @param pos float3
- * @param dir float3? (Default: `{ x: 0, y: 0, z: 0 }`)
+ * @param dir float3? (Default: `{ 0, 0, 0 }`)
  * @param testTerrain boolean? (Default: `true`)
  * @param testObjects boolean? (Default: `true`)
  * @param centerOnly boolean? (Default: `false`)
