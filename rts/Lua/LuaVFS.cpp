@@ -24,25 +24,145 @@
 #include "System/Misc/TracyDefs.h"
 #include <tracy/TracyLua.hpp>
 
-/******************************************************************************
- * Virtual File System
+/***
+ * The Virtual File System is an unified layer to access (read-only) the
+ * different archives used at runtime. So you can access map, game & config
+ * files via the same interface.
+ * 
+ * ## Overview
+ * 
+ * Although Spring can access the filesystem directly (via os module) it is
+ * more common that you would want to access files included with your game or
+ * Spring. Trouble is, most of these files are compressed into archives
+ * (`.sdz`/`.sd7`) so random access would generally be a difficult procedure.
+ * Fortunately, the Spring Lua system automatically provides access to mod and
+ * base files via the VFS module.
  *
- * @see rts/Lua/LuaVFS.cpp
-******************************************************************************/
-
+ * The VFS module doesn't simply open archives though. What it does is map
+ * your game files, game dependencies and Spring content onto a virtual file
+ * tree. All archives start from the 'roots' of the tree and share the same
+ * virtual space, meaning that if two or more archives contain the same
+ * resource file name the resources overlap and only one of the files will be
+ * retrieved. Overlapping directories on the other hand are merged so the
+ * resulting virtual directory contains the contents of both. Here is an
+ * example of how this works:
+ *
+ * **Archive 1** (`games/mygame.sd7`)
+ *
+ * ```
+ * textures
+ * └── texture1.png
+ * models
+ * └── model1.mdl
+ * ```
+ *
+ * **Archive 2** (`base/springcontent.sdz`)
+ * 
+ * ```
+ * textures
+ * ├── texture1.png
+ * ├── texture2.png
+ * └── texture3.png
+ * ```
+ *
+ * **VFS**
+ * 
+ * ```
+ * textures
+ * ├── texture1.png
+ * ├── texture2.png
+ * └── texture3.png
+ * models
+ * └── model1.mdl
+ * ```
+ *
+ * This raises the question: If both archives have a `texture1.png` then which
+ * `texture1.png` is retreived via the VFS? The answer depends on the order the
+ * archives are loaded and the VFS mode (more on modes below). Generally
+ * however, each archive loaded overrides any archives loaded before it. The
+ * standard order of loading (from first to last) is:
+ * 
+ *  1. The main `Spring/` game directory.
+ *  2. The automatic dependencies `springcontent.sdz` and `maphelper.sdz`.
+ *  3. Dependencies listed in your `modinfo.lua` (or `modinfo.tdf`), in the order listed.
+ *  4. Your mod archive.
+ * 
+ * ## Paths
+ * 
+ * Spring's VFS is **lowercase only**. Also it is **strongly** recommended to
+ * use linux style path separators, e.g. `"foo/bar.txt"` and not `"foo\bar.txt"`.
+ * 
+ * ## Engine read files
+ * 
+ * The engine access a few files directly, most of them are lua files which
+ * access other files themselves. Here the list of files that must exist in the
+ * VFS (some of them don't have to be in the game/map archive cause there are
+ * fallback solutions in `springcontent.sdz` & `maphelper.sdz`):
+ * 
+ * - `./`
+ *   - anims/
+ *     - `cursornormal.bmp/png`
+ *   - gamedata/
+ *     - `defs.lua`
+ *     - `explosions.lua`
+ *     - `explosion_alias.lua`
+ *     - `icontypes.lua`
+ *     - `messages.lua`
+ *     - `modrules.lua`
+ *     - `resources.lua`
+ *     - `resources_map.lua`
+ *     - `sidedata.lua`
+ *     - `sounds.lua`
+ *   - `luagaia/`
+ *     - `main.lua`
+ *     - `draw.lua`
+ *   - `luarules/`
+ *     - `main.lua`
+ *     - `draw.lua`
+ *   - `luaui/`
+ *     - `main.lua`
+ *   - `shaders/`
+ *     - `?`
+ *   - `luaai.lua`
+ *   - `mapinfo.lua`
+ *   - `mapoptions.lua`
+ *   - `modinfo.lua`
+ *   - `modoptions.lua`
+ *   - `validmaps.lua`
+ *
+ * @table VFS
+ */
 
 bool LuaVFS::PushCommon(lua_State* L)
 {
+
+	/*** @field VFS.RAW "r" Only select uncompressed files. */
 	HSTR_PUSH_CSTRING(L, "RAW",       SPRING_VFS_RAW);
+	/*** @field VFS.RAW "M" */
 	HSTR_PUSH_CSTRING(L, "MOD",       SPRING_VFS_MOD);
+	/*** @field VFS.GAME "M" */
 	HSTR_PUSH_CSTRING(L, "GAME",      SPRING_VFS_MOD); // synonym to MOD
+	/*** @field VFS.MAP "m" */
 	HSTR_PUSH_CSTRING(L, "MAP",       SPRING_VFS_MAP);
+	/*** @field VFS.BASE "b" */
 	HSTR_PUSH_CSTRING(L, "BASE",      SPRING_VFS_BASE);
+	/*** @field VFS.MENU "e" */
 	HSTR_PUSH_CSTRING(L, "MENU",      SPRING_VFS_MENU);
+	/*** @field VFS.ZIP "Mmeb" Only select compressed files (`.sdz`, `.sd7`). */
 	HSTR_PUSH_CSTRING(L, "ZIP",       SPRING_VFS_ZIP);
+	/*** @field VFS.RAW_FIRST "rMmeb" Try uncompressed files first, then compressed. */
 	HSTR_PUSH_CSTRING(L, "RAW_FIRST", SPRING_VFS_RAW_FIRST);
+	/*** @field VFS.RAW_FIRST "Mmebr" Try compressed files first, then uncompressed. */
 	HSTR_PUSH_CSTRING(L, "ZIP_FIRST", SPRING_VFS_ZIP_FIRST);
+	/***
+	 * @deprecated
+	 * @field VFS.RAW_ONLY "r"
+	 */
 	HSTR_PUSH_CSTRING(L, "RAW_ONLY",  SPRING_VFS_RAW); // backwards compatibility
+	/***
+	 * @deprecated
+	 * @field VFS.ZIP_ONLY "Mmeb"
+	 */
 	HSTR_PUSH_CSTRING(L, "ZIP_ONLY",  SPRING_VFS_ZIP); // backwards compatibility
 
 	HSTR_PUSH_CFUNC(L, "PackU8",    PackU8);
@@ -137,6 +257,42 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
 /******************************************************************************/
 /******************************************************************************/
 
+
+/***
+ * Loads and compiles lua code from a file in the VFS.
+ * 
+ * @function VFS.Include
+ * 
+ * The path is relative to the main Spring directory, e.g.
+ * 
+ * ```lua
+ * VFS.Include('LuaUI/includes/filename.lua', nil, vfsmode)
+ * ```
+ * 
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ * 
+ * @param environment table? (Default: `_G`)
+ * 
+ * The environment arg sets the global environment (see generic lua refs). In
+ * almost all cases, this should be left `nil` to preserve Spring default.
+ *  
+ * If the provided, any non-local variables and functions defined in
+ * `filename.lua` are then accessable via env or `_G`. Vise-versa, any variables
+ * defined in env prior to passing to `VFS.Include` are available to code in the
+ * included file. Code running in `filename.lua` will see the contents of env in
+ * place of the normal `_G` environment.
+ * 
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return any module The return value of the included file.
+ */
 int LuaVFS::Include(lua_State* L, bool synced)
 {
 	const std::string fileName = luaL_checkstring(L, 1);
@@ -220,6 +376,27 @@ int LuaVFS::UnsyncInclude(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * Load raw text data from the VFS.
+ * 
+ * @function VFS.LoadFile
+ * 
+ * Returns file contents as a string. Unlike `VFS.Include` the file will not be
+ * executed.
+ *
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ *
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return string? data The contents of the file.
+ */
 int LuaVFS::LoadFile(lua_State* L, bool synced)
 {
 	const string filename = luaL_checkstring(L, 1);
@@ -250,6 +427,32 @@ int LuaVFS::UnsyncLoadFile(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * Check if file exists in VFS.
+ * 
+ * @function VFS.FileExists
+ * 
+ * Example usage:
+ * 
+ * ```lua
+ * if VFS.FileExists("maps/Castles.sdz") then
+ *   # ...
+ * end
+ * ```
+ * 
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ *
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return boolean exists `true` if the file exists, otherwise `false`.
+ */
 int LuaVFS::FileExists(lua_State* L, bool synced)
 {
 	const std::string& filename = luaL_checkstring(L, 1);
@@ -270,6 +473,34 @@ int LuaVFS::UnsyncFileExists(lua_State* L) { return FileExists(L, false); }
 
 /******************************************************************************/
 
+/***
+ * List files in a directory.
+ * 
+ * @function VFS.DirList
+ * 
+ * Example usage:
+ * 
+ * ```lua
+ * local luaFiles = VFS.DirList('units/', '*.lua', nil, true)
+ * ```
+ * 
+ * @param directory string
+ * 
+ * Path to directory, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar/"`.
+ *
+ * @param pattern string? (Default: `"*"`)
+ * 
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @param boolean? recursive (Default: `false`)
+ * 
+ * @return string[] filenames
+ */
 int LuaVFS::DirList(lua_State* L, bool synced)
 {
 	const std::string& dir = luaL_checkstring(L, 1);
@@ -301,6 +532,37 @@ int LuaVFS::UnsyncDirList(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * List sub-directories in a directory.
+ * 
+ * @function VFS.SubDirs
+ * 
+ * Example usage:
+ * 
+ * ```lua
+ * local files = VFS.SubDirs('sounds/voice/' .. language, '*')
+ * for _, file in ipairs(files) do
+ * 	# ...
+ * end
+ * ```
+ * 
+ * @param directory string
+ * 
+ * Path to directory, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar/"`.
+ *
+ * @param pattern string? (Default: `"*"`)
+ * 
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @param boolean? recursive (Default: `false`)
+ * 
+ * @return string[] dirnames
+ */
 int LuaVFS::SubDirs(lua_State* L, bool synced)
 {
 	const std::string& dir = luaL_checkstring(L, 1);
@@ -328,7 +590,22 @@ int LuaVFS::UnsyncSubDirs(lua_State* L)
 	return SubDirs(L, false);
 }
 
-
+/***
+ * @function VFS.GetFileAbsolutePath
+ *
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ *
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return string? absolutePath
+ */
 int LuaVFS::GetFileAbsolutePath(lua_State* L)
 {
 	const std::string filename = luaL_checkstring(L, 1);
@@ -352,6 +629,22 @@ int LuaVFS::GetFileAbsolutePath(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function VFS.GetArchiveContainingFile
+ *
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ *
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return string? archiveName
+ */
 int LuaVFS::GetArchiveContainingFile(lua_State* L)
 {
 	const std::string filename = luaL_checkstring(L, 1);
@@ -376,6 +669,15 @@ int LuaVFS::GetArchiveContainingFile(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * Temporarily load an archive from the VFS and run the given function,
+ * which can make usage of the files in the archive.
+ * 
+ * @function VFS.UseArchive
+ * @param archiveName string
+ * @param fun(...: any) func
+ * @return any ... Results of of the given function
+ */
 int LuaVFS::UseArchive(lua_State* L)
 {
 	// only from unsynced
@@ -415,6 +717,21 @@ int LuaVFS::UseArchive(lua_State* L)
 	return (lua_gettop(L) - funcIndex + 1);
 }
 
+/** -- Not exported.
+ * 
+ * Permanently loads an archive into the VFS (to load zipped music collections
+ * etc.).
+ * 
+ * Does nothing if the archive is already loaded in the VFS (won't reload even
+ * if there are changes made to the archive). If checksum is given it checks if
+ * the to be loaded file is correct, if not then it won't load it and return
+ * false.
+ * 
+ * @function VFS.MapArchive
+ * @param archiveName string
+ * @param checksum string?
+ * @return boolean
+ */
 int LuaVFS::MapArchive(lua_State* L)
 {
 	// only from unsynced
@@ -448,6 +765,14 @@ int LuaVFS::MapArchive(lua_State* L)
 	return 1;
 }
 
+/** -- Not exported.
+ * 
+ * Removes an already loaded archive (see `VFS.MapArchive`).
+ * 
+ * @function VFS.UnmapArchive
+ * @param archiveName string
+ * @return boolean
+ */
 int LuaVFS::UnmapArchive(lua_State* L)
 {
 	// only from unsynced
@@ -472,6 +797,17 @@ int LuaVFS::UnmapArchive(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * Compresses the specified folder.
+ * @function VFS.CompressFolder
+ * @param folderPath string
+ * @param archiveType string? (Default: `"zip"`)The compression type (can
+ * currently be only `"zip"`).
+ * @param compressedFilePath string? (Default: `folderPath .. ".sdz"`)
+ * @param includeFolder boolean? (Default: `false`) Whether the archive should
+ * have the specified folder as root.
+ * @param mode string?
+ */
 int LuaVFS::CompressFolder(lua_State* L)
 {
 	const std::string& folderPath = luaL_checkstring(L, 1);
@@ -507,6 +843,11 @@ int LuaVFS::SevenZipFolder(lua_State* L, const string& folderPath, const string&
 }
 
 
+/***
+ * @function VFS.ZlibCompress
+ * @param uncompressed string Data to compress.
+ * @return string? compressed Compressed data, or `nil` on error.
+ */
 int LuaVFS::ZlibCompress(lua_State* L)
 {
 	size_t inSize = 0;
@@ -522,6 +863,11 @@ int LuaVFS::ZlibCompress(lua_State* L)
 	return luaL_error(L, "Error while compressing");
 }
 
+/***
+ * @function VFS.ZlibDecompress
+ * @param compressed string Data to decompress.
+ * @return string? uncompressed Uncompressed data, or `nil` on error.
+ */
 int LuaVFS::ZlibDecompress(lua_State* L)
 {
 	size_t inSize = 0;
@@ -538,6 +884,20 @@ int LuaVFS::ZlibDecompress(lua_State* L)
 }
 
 
+/**
+ * @alias HashType
+ * | 0 # MD5
+ * | 1 # SHA512
+ */
+
+/***
+ * Calculates hash (in base64 form) of a given string.
+ * 
+ * @function VFS.CalculateHash
+ * @param input string
+ * @param hashType HashType Hash type.
+ * @return string? hash
+ */
 int LuaVFS::CalculateHash(lua_State* L)
 {
 	size_t slen = 0;
@@ -619,13 +979,103 @@ int PackType(lua_State* L)
 }
 
 
-int LuaVFS::PackU8 (lua_State* L) { return PackType<std::uint8_t >(L); }
+/***
+ * Convert unsigned 8-bit integer(s) to binary string.
+ * @function VFS.PackU8 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert unsigned 8-bit integer(s) to binary string.
+ * @function VFS.PackU8 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackU8(lua_State* L) { return PackType<std::uint8_t >(L); }
+
+/***
+ * Convert unsigned 16-bit integer(s) to binary string.
+ * @function VFS.PackU16 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert unsigned 16-bit integer(s) to binary string.
+ * @function VFS.PackU16 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
 int LuaVFS::PackU16(lua_State* L) { return PackType<std::uint16_t>(L); }
+
+/***
+ * Convert unsigned 32-bit integer(s) to binary string.
+ * @function VFS.PackU32 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert unsigned 32-bit integer(s) to binary string.
+ * @function VFS.PackU32 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
 int LuaVFS::PackU32(lua_State* L) { return PackType<std::uint32_t>(L); }
-int LuaVFS::PackS8 (lua_State* L) { return PackType<std::int8_t  >(L); }
-int LuaVFS::PackS16(lua_State* L) { return PackType<std::int16_t >(L); }
-int LuaVFS::PackS32(lua_State* L) { return PackType<std::int32_t >(L); }
-int LuaVFS::PackF32(lua_State* L) { return PackType<     float   >(L); }
+
+/***
+ * Convert signed 8-bit integer(s) to binary string.
+ * @function VFS.PackS8 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert signed 8-bit integer(s) to binary string.
+ * @function VFS.PackS8 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackS8(lua_State* L) { return PackType<std::int8_t>(L); }
+
+/***
+ * Convert signed 16-bit integer(s) to binary string.
+ * @function VFS.PackS16 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert signed 16-bit integer(s) to binary string.
+ * @function VFS.PackS16 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackS16(lua_State* L) { return PackType<std::int16_t>(L); }
+
+/***
+ * Convert signed 32-bit integer(s) to binary string.
+ * @function VFS.PackS32 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert signed 32-bit integer(s) to binary string.
+ * @function VFS.PackS32 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackS32(lua_State* L) { return PackType<std::int32_t>(L); }
+
+/***
+ * Convert signed 32-bit float(s) to binary string.
+ * @function VFS.PackS32 
+ * @param ... integer Numbers to pack.
+ * @return string
+ */
+/***
+ * Convert signed 32-bit float(s) to binary string.
+ * @function VFS.PackS32 
+ * @param numbers integer[] Numbers to pack.
+ * @return string
+ */
+int LuaVFS::PackF32(lua_State* L) { return PackType<float>(L); }
 
 
 /******************************************************************************/
@@ -672,15 +1122,69 @@ int UnpackType(lua_State* L)
 }
 
 
-int LuaVFS::UnpackU8(lua_State*  L) { return UnpackType<std::uint8_t>(L);  }
+/***
+ * Convert an unsigned 8-bit integer from a binary string.
+ * @function VFS.UnpackU8
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackU8(lua_State* L) { return UnpackType<std::uint8_t>(L); }
+
+/***
+ * Convert an unsigned 16-bit integer from a binary string.
+ * @function VFS.UnpackU16
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
 int LuaVFS::UnpackU16(lua_State* L) { return UnpackType<std::uint16_t>(L); }
+
+/***
+ * Convert an unsigned 32-bit integer from a binary string.
+ * @function VFS.UnpackU32
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
 int LuaVFS::UnpackU32(lua_State* L) { return UnpackType<std::uint32_t>(L); }
-int LuaVFS::UnpackS8(lua_State*  L) { return UnpackType<std::int8_t>(L);   }
-int LuaVFS::UnpackS16(lua_State* L) { return UnpackType<std::int16_t>(L);  }
-int LuaVFS::UnpackS32(lua_State* L) { return UnpackType<std::int32_t>(L);  }
-int LuaVFS::UnpackF32(lua_State* L) { return UnpackType<float>(L);         }
+
+/***
+ * Convert an signed 8-bit integer from a binary string.
+ * @function VFS.UnpackS8
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackS8(lua_State* L) { return UnpackType<std::int8_t>(L); }
+
+/***
+ * Convert an signed 16-bit integer from a binary string.
+ * @function VFS.UnpackS16
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackS16(lua_State* L) { return UnpackType<std::int16_t>(L); }
+
+/***
+ * Convert an signed 32-bit integer from a binary string.
+ * @function VFS.UnpackS32
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackS32(lua_State* L) { return UnpackType<std::int32_t>(L); }
+
+/***
+ * Convert an signed 32-bit float from a binary string.
+ * @function VFS.UnpackF32
+ * @param str string Binary string.
+ * @param pos integer? Byte offset.
+ * @return integer
+ */
+int LuaVFS::UnpackF32(lua_State* L) { return UnpackType<float>(L); }
 
 
 /******************************************************************************/
 /******************************************************************************/
-

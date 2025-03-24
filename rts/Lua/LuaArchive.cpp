@@ -49,6 +49,10 @@ bool LuaArchive::PushEntries(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function VFS.GetMaps
+ * @return string[] mapNames
+ */
 int LuaArchive::GetMaps(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -56,7 +60,10 @@ int LuaArchive::GetMaps(lua_State* L)
 	return 1;
 }
 
-
+/***
+ * @function VFS.GetGames
+ * @return string[] gameNames
+ */
 int LuaArchive::GetGames(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -72,6 +79,10 @@ int LuaArchive::GetGames(lua_State* L)
 	return 1;
 }
 
+/***
+ * @function VFS.GetAllArchives
+ * @return string[] archiveNames
+ */
 int LuaArchive::GetAllArchives(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -87,7 +98,10 @@ int LuaArchive::GetAllArchives(lua_State* L)
 	return 1;
 }
 
-
+/***
+ * @function VFS.HasArchive
+ * @return boolean hasArchive
+ */
 int LuaArchive::HasArchive(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -98,7 +112,10 @@ int LuaArchive::HasArchive(lua_State* L)
 	return 1;
 }
 
-
+/***
+ * @function VFS.GetLoadedArchives
+ * @return string[] archiveNames
+ */
 int LuaArchive::GetLoadedArchives(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -109,6 +126,11 @@ int LuaArchive::GetLoadedArchives(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function VFS.GetArchivePath
+ * @param string archiveName
+ * @return string? archivePath
+ */
 int LuaArchive::GetArchivePath(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -123,6 +145,32 @@ int LuaArchive::GetArchivePath(lua_State* L)
 }
 
 
+/***
+ * @alias ModType
+ * | 0 # Hidden
+ * | 1 # Primary
+ * | 3 # Map
+ * | 4 # Base
+ */
+
+/***
+ * @class ArchiveInfo
+ * @field name string
+ * @field shortname string
+ * @field version string
+ * @field mutator string
+ * @field game string
+ * @field shortgame string
+ * @field description string
+ * @field mapfile string
+ * @field modtype ModType
+ */
+
+/***
+ * @function VFS.GetArchiveInfo
+ * @param archiveName string
+ * @return ArchiveInfo? archiveInfo
+ */
 int LuaArchive::GetArchiveInfo(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -163,6 +211,11 @@ int LuaArchive::GetArchiveInfo(lua_State* L)
 }
 
 
+/***
+ * @function VFS.GetArchiveDependencies
+ * @param archiveName string
+ * @return string[] archiveNames
+ */
 int LuaArchive::GetArchiveDependencies(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -176,7 +229,11 @@ int LuaArchive::GetArchiveDependencies(lua_State* L)
 	return 1;
 }
 
-
+/***
+ * @function VFS.GetArchiveReplaces
+ * @param archiveName string
+ * @return string[] archiveNames
+ */
 int LuaArchive::GetArchiveReplaces(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -194,6 +251,12 @@ int LuaArchive::GetArchiveReplaces(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function VFS.GetArchiveChecksum
+ * @param archiveName string
+ * @return string singleArchiveChecksum
+ * @return string completeArchiveChecksum
+ */
 int LuaArchive::GetArchiveChecksum(lua_State* L)
 {
 	const std::string archiveName = luaL_checksstring(L, 1);
@@ -213,6 +276,11 @@ int LuaArchive::GetArchiveChecksum(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function VFS.GetNameFromRapidTag
+ * @param rapidTag string
+ * @return string archiveName
+ */
 int LuaArchive::GetNameFromRapidTag(lua_State* L)
 {
 	const std::string rapidName = luaL_checksstring(L, 1);
@@ -228,6 +296,21 @@ int LuaArchive::GetNameFromRapidTag(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @class AIInfo
+ * @field shortName string
+ * @field version string
+ */
+
+/***
+ * Gets a list of all Spring AIs. The optional gameName and mapName parameters
+ * can be used to include game/map specific LuaAIs in the list.
+ * 
+ * @function VFS.GetAvailableAIs
+ * @param gameArchiveName string?
+ * @param mapArichiveName string?
+ * @return AIInfo[] ais
+ */
 int LuaArchive::GetAvailableAIs(lua_State* L)
 {
 	const std::string gameArchiveName = luaL_optsstring(L, 1, "");
