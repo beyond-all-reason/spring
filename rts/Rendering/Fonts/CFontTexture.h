@@ -116,6 +116,8 @@ public:
 	static void ClearFallbackFonts();
 	static void ClearAllGlyphs();
 
+	static void PinFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size);
+
 	inline static spring::WrappedSyncRecursiveMutex sync = {};
 protected:
 	CFontTexture(const std::string& fontfile, int size, int outlinesize, float  outlineweight);
@@ -185,6 +187,7 @@ private:
 	int lastTextureUpdate = 0;
 	bool needsTextureUpload = true;
 	inline static int maxFontTries = 0;
+	inline static float maxPinnedFonts = 0;
 #endif
 	std::shared_ptr<FontFace> shFace;
 

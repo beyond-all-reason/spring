@@ -79,37 +79,11 @@ static spring::unordered_map<std::string, std::weak_ptr<FontFileBytes>> fontMemC
 static spring::unordered_set<std::pair<std::string, int>, spring::synced_hash<std::pair<std::string, int>>> invalidFonts;
 static auto cacheMutexes = spring::WrappedSyncRecursiveMutex{};
 
-constexpr int MAX_PINNED_FONTS = 10;
 struct TimestampedFont { std::shared_ptr<FontFace> fontFace; float timestamp; };
 
 /* pinnedRecentFonts maintains shared_ptrs to the weak_ptrs from fontFaceCache. This prevents the weak_ptr from expiring
  * when no other part of the code holds a shared_ptr, as is the case when searching game and system fallback fonts. */
 static spring::unordered_map<std::pair<std::string, int>, TimestampedFont> pinnedRecentFonts;
-
-static void PinFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size) {
-	const auto fontKey = std::make_pair(filename, size);
-
-	float time = spring_gettime().toMilliSecsf();
-
-	auto cached = pinnedRecentFonts.find(fontKey);
-
-	if (cached != pinnedRecentFonts.end()) {
-		cached->second.timestamp = time;
-	} else {
-		if (pinnedRecentFonts.size() >= MAX_PINNED_FONTS) {
-			std::pair<string, int>* oldest;
-			float oldestTime = time;
-			for(auto &[key, timestampedFont]: pinnedRecentFonts) {
-				if (timestampedFont.timestamp <= oldestTime) {
-					oldest = &key;
-					oldestTime = timestampedFont.timestamp;
-				}
-			}
-			pinnedRecentFonts.erase(*oldest);
-		}
-		pinnedRecentFonts[fontKey] = { face, time };
-	}
-}
 
 #include "NonPrintableSymbols.inl"
 
@@ -615,7 +589,7 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 			if (blackList.find(GetFaceKey(*face)) != blackList.cend())
 				continue;
 
-			PinFont(face, filename, origSize);
+			CFontTexture::PinFont(face, filename, origSize);
 
 			#ifdef _DEBUG
 			{
@@ -904,11 +878,41 @@ bool CFontTexture::ClearGlyphs() {
 	return changed;
 }
 
+void CFontTexture::PinFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size)
+{
+#ifndef HEADLESS
+	const auto fontKey = std::make_pair(filename, size);
+
+	float time = spring_gettime().toMilliSecsf();
+
+	auto cached = pinnedRecentFonts.find(fontKey);
+
+	if (cached != pinnedRecentFonts.end()) {
+		cached->second.timestamp = time;
+	} else {
+		if (pinnedRecentFonts.size() >= maxPinnedFonts) {
+			std::pair<string, int>* oldest;
+			float oldestTime = time;
+			for(auto &[key, timestampedFont]: pinnedRecentFonts) {
+				if (timestampedFont.timestamp <= oldestTime) {
+					oldest = &key;
+					oldestTime = timestampedFont.timestamp;
+				}
+			}
+			pinnedRecentFonts.erase(*oldest);
+		}
+		pinnedRecentFonts[fontKey] = { face, time };
+	}
+#endif
+}
+
+
 void CFontTexture::InitFonts()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
 	maxFontTries = configHandler ? configHandler->GetInt("MaxFontTries") : 5;
+	maxPinnedFonts = configHandler ? configHandler->GetInt("MaxPinnedFonts") : 10;
 #endif
 }
 
