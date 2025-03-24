@@ -280,8 +280,8 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
  * almost all cases, this should be left `nil` to preserve Spring default.
  *  
  * If the provided, any non-local variables and functions defined in
- * `filename.lua` are then accessable via env or _G. Vise-versa, any variables
- * defined in env prior to passing to VFS.Include are available to code in the
+ * `filename.lua` are then accessable via env or `_G`. Vise-versa, any variables
+ * defined in env prior to passing to `VFS.Include` are available to code in the
  * included file. Code running in `filename.lua` will see the contents of env in
  * place of the normal `_G` environment.
  * 
