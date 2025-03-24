@@ -669,6 +669,11 @@ int LuaVFS::GetArchiveContainingFile(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function VFS.UseArchive
+ * @param archiveName string
+ * @param fun() func
+ */
 int LuaVFS::UseArchive(lua_State* L)
 {
 	// only from unsynced
