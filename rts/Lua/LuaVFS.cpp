@@ -627,6 +627,11 @@ int LuaVFS::SevenZipFolder(lua_State* L, const string& folderPath, const string&
 }
 
 
+/***
+ * @function VFS.ZlibCompress
+ * @param uncompressed string Data to compress.
+ * @return string? compressed Compressed data, or `nil` on error.
+ */
 int LuaVFS::ZlibCompress(lua_State* L)
 {
 	size_t inSize = 0;
@@ -642,6 +647,11 @@ int LuaVFS::ZlibCompress(lua_State* L)
 	return luaL_error(L, "Error while compressing");
 }
 
+/***
+ * @function VFS.ZlibDecompress
+ * @param compressed string Data to decompress.
+ * @return string? uncompressed Uncompressed data, or `nil` on error.
+ */
 int LuaVFS::ZlibDecompress(lua_State* L)
 {
 	size_t inSize = 0;
