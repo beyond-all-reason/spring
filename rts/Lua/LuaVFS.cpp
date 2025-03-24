@@ -590,6 +590,22 @@ int LuaVFS::UnsyncSubDirs(lua_State* L)
 	return SubDirs(L, false);
 }
 
+/***
+ * @function VFS.GetFileAbsolutePath
+ *
+ * @param filename string
+ * 
+ * Path to file, lowercase only. Use linux style path separators, e.g.
+ * `"foo/bar.txt"`.
+ *
+ * @param mode string
+ * 
+ * VFS modes are single char strings and can be concatenated;
+ * doing specifies an order of preference for the mode (i.e. location) from
+ * which to include files.
+ * 
+ * @return string absolutePath
+ */
 
 int LuaVFS::GetFileAbsolutePath(lua_State* L)
 {
