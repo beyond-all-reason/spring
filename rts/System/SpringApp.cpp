@@ -111,6 +111,7 @@ CONFIG(bool, UseFontConfigSystemFonts).defaultValue(true).description("Whether t
 CONFIG(bool, FontConfigSearchAttributes).defaultValue(true).description("Whether the font characteristics will used to refine the search by fontconfig. Results in better glyph matches in some cases, but has a nontrivial performance cost.");
 CONFIG(bool, FontConfigApplySubstitutions).defaultValue(true).description("[EXPERIMENTAL] In case it's disabled FcConfigSubstitute is not getting called, this might break non-ASCII font rendering.");
 CONFIG(int, MaxFontTries).defaultValue(5).description("Represents the maximum number of attempts to search for a glyph replacement using the FontConfig library (lower = foreign glyphs may fail to render, higher = searching for foreign glyphs can lag the game).");
+CONFIG(int, MaxPinnedFonts).defaultValue(10).description("Maximum number of fonts to pin to cache. Increasing this will eventually use more memory, but can alleviate processing spikes when rendering new glyphs.");
 
 CONFIG(std::string, name).defaultValue(UnnamedPlayerName).description("Sets your name in the game. Since this is overridden by lobbies with your lobby username when playing, it usually only comes up when viewing replays or starting the engine directly for testing purposes.");
 CONFIG(std::string, DefaultStartScript).defaultValue("").description("filename of script.txt to use when no command line parameters are specified.");
