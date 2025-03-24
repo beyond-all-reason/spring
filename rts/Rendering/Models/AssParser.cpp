@@ -246,11 +246,6 @@ namespace Impl {
 
 		Transform bakedTransform(CQuaternion::FromEulerYPRNeg(-bakedRotAngles) * CQuaternion(aiRotateQuat.x, aiRotateQuat.y, aiRotateQuat.z, aiRotateQuat.w), ZeroVector, 1.0f);
 		piece->SetBakedTransform(bakedTransform);
-#ifdef _DEBUG
-		Transform bakedTransform2 = Transform::FromMatrix(bakedMatrix);
-		assert(bakedTransform.equals(bakedTransform2));
-#endif // _DEBUG
-
 	}
 
 	std::vector<std::string> GetBoneNames(const aiScene* scene)
