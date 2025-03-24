@@ -30,17 +30,17 @@
 ---Color triple (RGB)
 ---
 ---@class rgb
----@field r number
----@field g number
----@field b number
+---@field [1] number Red value.
+---@field [2] number Green value.
+---@field [3] number Blue value.
 
 ---Color quadruple (RGBA)
 ---
 ---@class rgba
----@field r number
----@field g number
----@field b number
----@field a number
+---@field [1] number Red value.
+---@field [2] number Green value.
+---@field [3] number Blue value.
+---@field [4] number Alpha value.
 
 ---Indicator bytes representing color code operations during font rendering
 ---
