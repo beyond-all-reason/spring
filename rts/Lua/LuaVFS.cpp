@@ -884,7 +884,7 @@ int LuaVFS::ZlibDecompress(lua_State* L)
 }
 
 
-/**
+/***
  * @alias HashType
  * | 0 # MD5
  * | 1 # SHA512
