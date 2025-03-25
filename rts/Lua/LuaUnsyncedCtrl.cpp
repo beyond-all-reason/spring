@@ -469,40 +469,13 @@ int LuaUnsyncedCtrl::Ping(lua_State* L)
 }
 
 
-/*** Useful for debugging.
- *
- * Prints values in the spring chat console.
- * Hint: the default print() writes to STDOUT.
- *
- * @function Spring.Echo
- * @param arg any
- * @param ... any
- *
- * @return nil
- */
+/* Documented at LuaUtils::Echo */
 int LuaUnsyncedCtrl::Echo(lua_State* L)
 {
 	return LuaUtils::Echo(L);
 }
 
-/***
- * @alias LogLevel
- * | integer
- * | "debug"      # LOG.DEBUG
- * | "info"       # LOG.INFO
- * | "notice"     # LOG.NOTICE (engine default)
- * | "warning"    # LOG.WARNING
- * | "deprecated" # LOG.DEPRECATED
- * | "error"      # LOG.ERROR
- * | "fatal"      # LOG.FATAL
- */
-
-/***
- * @function Spring.Log
- * @param section string
- * @param logLevel LogLevel? (Default: `"notice"`)
- * @param ... string messages
- */
+/* Documented at LuaUtils::Log */
 int LuaUnsyncedCtrl::Log(lua_State* L)
 {
 	return LuaUtils::Log(L);
