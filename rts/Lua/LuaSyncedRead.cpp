@@ -3594,8 +3594,7 @@ static void GetProjectilesLuaTable(lua_State* L, const std::vector<CProjectile*>
 
 	if (CLuaHandle::GetHandleReadAllyTeam(L) < 0) {
 		if (CLuaHandle::GetHandleFullRead(L)) {
-			for (unsigned int i = 0; i < projectiles.size(); i++) {
-				const CProjectile* pro = projectiles[i];
+			for (auto* pro : projectiles) {
 				// filter out unsynced projectiles, the SyncedRead
 				// projecile Get* functions accept only synced ID's
 				// (specifically they interpret all ID's as synced)
@@ -3607,13 +3606,12 @@ static void GetProjectilesLuaTable(lua_State* L, const std::vector<CProjectile*>
 				if (pro->piece && excludePieceProjectiles)
 					continue;
 
-				lua_pushnumber(L, static_cast<lua_Number>(pro->id));
+				lua_pushinteger(L, static_cast<lua_Number>(pro->id));
 				lua_rawseti(L, -2, static_cast<int>(arrayIndex++));
 			}
 		}
 	} else {
-		for (unsigned int i = 0; i < projectiles.size(); i++) {
-			const CProjectile* pro = projectiles[i];
+		for (auto* pro : projectiles) {
 			// see above
 			if (!pro->synced)
 				continue;
@@ -3626,7 +3624,7 @@ static void GetProjectilesLuaTable(lua_State* L, const std::vector<CProjectile*>
 			if (!LuaUtils::IsProjectileVisible(L, pro))
 				continue;
 
-			lua_pushnumber(L, static_cast<lua_Number>(pro->id));
+			lua_pushinteger(L, static_cast<lua_Number>(pro->id));
 			lua_rawseti(L, -2, static_cast<int>(arrayIndex++));
 		}
 	}
