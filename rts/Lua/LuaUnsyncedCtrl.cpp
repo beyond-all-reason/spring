@@ -1019,17 +1019,18 @@ int LuaUnsyncedCtrl::AddWorldUnit(lua_State* L)
 
 
 /***
- *
  * @function Spring.DrawUnitCommands
  * @param unitID integer
- * @return nil
  */
-
 /***
- *
  * @function Spring.DrawUnitCommands
- * @param units table array of unit ids
- * @param tableOrArray boolean? (Default: false] when true `units` is interpreted as a table in the format `{ [unitID) = arg1, ... }`
+ * @param unitIDs integer[] Unit ids.
+ * @param tableOrArray false|nil Set to `true` if the unit IDs should be read from the keys of `unitIDs`.
+ */
+/***
+ * @function Spring.DrawUnitCommands
+ * @param unitIDs table<integer, any> Table with unit IDs as keys.
+ * @param tableOrArray true Set to `false` if the unit IDs should be read from the values of `unitIDs`.
  * @return nil
  */
 int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)

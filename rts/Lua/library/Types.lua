@@ -4,6 +4,14 @@
 -- Vectors
 --------------------------------------------------------------------------------
 
+---Cartesian double (XY)
+---
+---@class xy
+---@field [1] number x
+---@field [2] number y
+
+---@alias float2 xy
+
 ---Cartesian triple (XYZ)
 ---
 ---@class xyz

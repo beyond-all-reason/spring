@@ -3418,7 +3418,7 @@ int LuaSyncedRead::GetUnitMapCentroid(lua_State* L)
  *
  * @function Spring.GetUnitNearestAlly
  * @param unitID integer
- * @param range number? (Default: 1.0e9f)
+ * @param range number? (Default: `1.0e9`)
  * @return number? unitID
  */
 int LuaSyncedRead::GetUnitNearestAlly(lua_State* L)
@@ -3443,7 +3443,7 @@ int LuaSyncedRead::GetUnitNearestAlly(lua_State* L)
  *
  * @function Spring.GetUnitNearestEnemy
  * @param unitID integer
- * @param range number? (Default: 1.0e9f)
+ * @param range number? (Default: `1.0e9`)
  * @param useLOS boolean? (Default: `true`)
  * @return number? unitID
  */
