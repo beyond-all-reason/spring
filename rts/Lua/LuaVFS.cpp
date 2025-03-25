@@ -285,7 +285,7 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
  * included file. Code running in `filename.lua` will see the contents of env in
  * place of the normal `_G` environment.
  * 
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -389,7 +389,7 @@ int LuaVFS::UnsyncInclude(lua_State* L)
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  *
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -445,7 +445,7 @@ int LuaVFS::UnsyncLoadFile(lua_State* L)
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  *
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -491,7 +491,7 @@ int LuaVFS::UnsyncFileExists(lua_State* L) { return FileExists(L, false); }
  *
  * @param pattern string? (Default: `"*"`)
  * 
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -553,7 +553,7 @@ int LuaVFS::UnsyncDirList(lua_State* L)
  *
  * @param pattern string? (Default: `"*"`)
  * 
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -598,7 +598,7 @@ int LuaVFS::UnsyncSubDirs(lua_State* L)
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  *
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -637,7 +637,7 @@ int LuaVFS::GetFileAbsolutePath(lua_State* L)
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  *
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -1123,7 +1123,7 @@ int UnpackType(lua_State* L)
 
 
 /***
- * Convert an unsigned 8-bit integer from a binary string.
+ * Convert a binary string to an unsigned 8-bit integer.
  * @function VFS.UnpackU8
  * @param str string Binary string.
  * @param pos integer? Byte offset.
@@ -1132,7 +1132,7 @@ int UnpackType(lua_State* L)
 int LuaVFS::UnpackU8(lua_State* L) { return UnpackType<std::uint8_t>(L); }
 
 /***
- * Convert an unsigned 16-bit integer from a binary string.
+ * Convert a binary string to an unsigned 16-bit integer.
  * @function VFS.UnpackU16
  * @param str string Binary string.
  * @param pos integer? Byte offset.
@@ -1141,7 +1141,7 @@ int LuaVFS::UnpackU8(lua_State* L) { return UnpackType<std::uint8_t>(L); }
 int LuaVFS::UnpackU16(lua_State* L) { return UnpackType<std::uint16_t>(L); }
 
 /***
- * Convert an unsigned 32-bit integer from a binary string.
+ * Convert a binary string to an unsigned 32-bit integer.
  * @function VFS.UnpackU32
  * @param str string Binary string.
  * @param pos integer? Byte offset.
@@ -1150,7 +1150,7 @@ int LuaVFS::UnpackU16(lua_State* L) { return UnpackType<std::uint16_t>(L); }
 int LuaVFS::UnpackU32(lua_State* L) { return UnpackType<std::uint32_t>(L); }
 
 /***
- * Convert an signed 8-bit integer from a binary string.
+ * Convert a binary string to a signed 8-bit integer.
  * @function VFS.UnpackS8
  * @param str string Binary string.
  * @param pos integer? Byte offset.
@@ -1159,7 +1159,7 @@ int LuaVFS::UnpackU32(lua_State* L) { return UnpackType<std::uint32_t>(L); }
 int LuaVFS::UnpackS8(lua_State* L) { return UnpackType<std::int8_t>(L); }
 
 /***
- * Convert an signed 16-bit integer from a binary string.
+ * Convert a binary string to a signed 16-bit integer.
  * @function VFS.UnpackS16
  * @param str string Binary string.
  * @param pos integer? Byte offset.
@@ -1168,7 +1168,7 @@ int LuaVFS::UnpackS8(lua_State* L) { return UnpackType<std::int8_t>(L); }
 int LuaVFS::UnpackS16(lua_State* L) { return UnpackType<std::int16_t>(L); }
 
 /***
- * Convert an signed 32-bit integer from a binary string.
+ * Convert a binary string to a signed 32-bit integer.
  * @function VFS.UnpackS32
  * @param str string Binary string.
  * @param pos integer? Byte offset.
@@ -1177,7 +1177,7 @@ int LuaVFS::UnpackS16(lua_State* L) { return UnpackType<std::int16_t>(L); }
 int LuaVFS::UnpackS32(lua_State* L) { return UnpackType<std::int32_t>(L); }
 
 /***
- * Convert an signed 32-bit float from a binary string.
+ * Convert a binary string to a signed 32-bit float.
  * @function VFS.UnpackF32
  * @param str string Binary string.
  * @param pos integer? Byte offset.
