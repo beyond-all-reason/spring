@@ -73,6 +73,8 @@ public:
 	int minimapCanFlip = 0;
 	RotationOptions GetRotationOption() const { return rotation; }
 
+	void SetMinimized(bool state);
+
 	void SetSlaveMode(bool value);
 	bool GetSlaveMode() const { return slaveDrawMode; }
 

@@ -263,7 +263,22 @@ void CMiniMap::SetRotation(RotationOptions state) // 0 1 2 3: 0 90 180 270
     if (state == rotation)
         return;
 
+	const float oldRotation = static_cast<int>(rotation) * math::HALFPI;
     rotation = state;
+	// eventHandler.MiniMapRotationChanged(static_cast<int>(rotation) * math::HALFPI, oldRotation);
+	LOG("MiniMap rotation changed from %s to %s", oldRotation, static_cast<int>(rotation) * math::HALFPI);
+}
+
+void CMiniMap::SetMinimized(bool state)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	
+	if (minimized == state)
+		return;
+
+	minimized = state;
+	// eventHandler.MiniMapMinimizationChanged(minimized);
+	LOG("MiniMap minimization changed to %s", minimized);
 }
 
 void CMiniMap::SetAspectRatioGeometry(const float& viewSizeX, const float& viewSizeY,
@@ -419,7 +434,8 @@ void CMiniMap::ConfigCommand(const std::string& line)
 			if (globalRendering->dualScreenMode)
 				return;
 
-			minimized = (words.size() >= 2) ? !!atoi(words[1].c_str()) : !minimized;
+			const bool newMinimized = (words.size() >= 2) ? !!atoi(words[1].c_str()) : !minimized;
+			SetMinimized(newMinimized);
 		} break;
 
 		case hashString("max"):
@@ -662,7 +678,7 @@ bool CMiniMap::MousePress(int x, int y, int button)
 
 	if (minimized) {
 		if ((x < buttonSize) && (y < buttonSize)) {
-			minimized = false;
+			SetMinimized(false);
 			return true;
 		}
 
@@ -818,7 +834,7 @@ void CMiniMap::MouseRelease(int x, int y, int button)
 		}
 
 		if (showButtons && minimizeBox.Inside(x, y)) {
-			minimized = true;
+			SetMinimized(true);
 			return;
 		}
 	}
@@ -1069,7 +1085,8 @@ void CMiniMap::Update()
 	 * does not support minimap flipping. */
 	if (minimapCanFlip){
 		const float rotY = ClampRad(camHandler->GetCurrentController().GetRot().y);
-		rotation = rotY > math::HALFPI && rotY <= 3 * math::HALFPI ? ROTATION_180 : ROTATION_0;
+		const newRot = rotY > math::HALFPI && rotY <= 3 * math::HALFPI ? ROTATION_180 : ROTATION_0;
+		SetRotation(newRot);
 	}
 
 	float refreshRate = minimapRefreshRate;
