@@ -497,7 +497,7 @@ int LuaVFS::UnsyncFileExists(lua_State* L) { return FileExists(L, false); }
  * doing specifies an order of preference for the mode (i.e. location) from
  * which to include files.
  * 
- * @param boolean? recursive (Default: `false`)
+ * @param recursive boolean? (Default: `false`)
  * 
  * @return string[] filenames
  */
@@ -559,7 +559,7 @@ int LuaVFS::UnsyncDirList(lua_State* L)
  * doing specifies an order of preference for the mode (i.e. location) from
  * which to include files.
  * 
- * @param boolean? recursive (Default: `false`)
+ * @param recursive boolean? (Default: `false`)
  * 
  * @return string[] dirnames
  */
@@ -675,7 +675,7 @@ int LuaVFS::GetArchiveContainingFile(lua_State* L)
  * 
  * @function VFS.UseArchive
  * @param archiveName string
- * @param fun(...: any) func
+ * @param fun(...) func
  * @return any ... Results of of the given function
  */
 int LuaVFS::UseArchive(lua_State* L)
@@ -884,7 +884,7 @@ int LuaVFS::ZlibDecompress(lua_State* L)
 }
 
 
-/**
+/***
  * @alias HashType
  * | 0 # MD5
  * | 1 # SHA512
