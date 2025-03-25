@@ -13,8 +13,6 @@ set(archives_sources
 	${SOURCE_ROOT}/System/TimeUtil.cpp
 )
 
-include_directories(${Spring_SOURCE_DIR}/rts/lib)
-
 # Can't remove definitions per target
 remove_definitions(-DTHREADPOOL)
 
