@@ -1329,9 +1329,12 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 		std::advance(st, startOffset);
 		auto it = st;
 
+		// we only want to check if the file still exists, we don't check for size / modDate
+		// this is checked in the checksum code anyway.
 		const auto ExistenceTest = [&allPoolRootDirs = std::as_const(allPoolRootDirs)](const auto& it) {
 			for (const auto& poolRootDir : allPoolRootDirs) {
-				if (FileSystem::FileExists(CPoolArchive::GetPoolFilePath(poolRootDir, it->first))) {
+				const auto fileName = CPoolArchive::GetPoolFilePath(poolRootDir, it->first);
+				if (FileSystem::FileExists(fileName)) {
 					return true;
 				}
 			}
@@ -1352,7 +1355,8 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 
 			if (it == poolFilesInfo.end())
 				it = poolFilesInfo.begin(); //rewind to the very start
-			else if (it == st)
+
+			if (it == st)
 				break; // everything got checked and we're back to the starting iterator
 		}
 	}
