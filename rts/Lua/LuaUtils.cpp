@@ -1329,6 +1329,17 @@ int LuaUtils::Echo(lua_State* L)
 	return 0;
 }
 
+/***
+ * @enum LOG
+ * @see Spring.Log
+ * @field DEBUG 20
+ * @field INFO 30
+ * @field NOTICE 35 Engine default.
+ * @field DEPRECATED 37
+ * @field WARNING 40
+ * @field ERROR 50
+ * @field FATAL 60
+ */
 
 bool LuaUtils::PushLogEntries(lua_State* L)
 {
@@ -1386,7 +1397,7 @@ int LuaUtils::ParseLogLevel(lua_State* L, int index)
  * 
  * @function Spring.Log
  * @param section string
- * @param logLevel LogLevel? (Default: `"notice"`)
+ * @param logLevel (LogLevel|LOG)? (Default: `"notice"`)
  * @param ... string messages
  */
 int LuaUtils::Log(lua_State* L)
