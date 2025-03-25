@@ -1312,12 +1312,34 @@ static void LogMsg(lua_State* L, const char* logSection, int logLevel, int argIn
 }
 
 
+/***
+ * Prints values in the spring chat console. Useful for debugging.
+ * 
+ * Hint: the default print() writes to STDOUT.
+ *
+ * @function Spring.Echo
+ * @param arg any
+ * @param ... any
+ *
+ * @return nil
+ */
 int LuaUtils::Echo(lua_State* L)
 {
 	LogMsg(L, nullptr, -1, 1);
 	return 0;
 }
 
+/***
+ * @enum LOG
+ * @see Spring.Log
+ * @field DEBUG 20
+ * @field INFO 30
+ * @field NOTICE 35 Engine default.
+ * @field DEPRECATED 37
+ * @field WARNING 40
+ * @field ERROR 50
+ * @field FATAL 60
+ */
 
 bool LuaUtils::PushLogEntries(lua_State* L)
 {
@@ -1331,6 +1353,18 @@ bool LuaUtils::PushLogEntries(lua_State* L)
 	PUSH_LOG_LEVEL(FATAL);
 	return true;
 }
+
+/***
+ * @alias LogLevel
+ * | integer
+ * | "debug"      # LOG.DEBUG
+ * | "info"       # LOG.INFO
+ * | "notice"     # LOG.NOTICE (engine default)
+ * | "warning"    # LOG.WARNING
+ * | "deprecated" # LOG.DEPRECATED
+ * | "error"      # LOG.ERROR
+ * | "fatal"      # LOG.FATAL
+ */
 
 int LuaUtils::ParseLogLevel(lua_State* L, int index)
 {
@@ -1358,13 +1392,14 @@ int LuaUtils::ParseLogLevel(lua_State* L, int index)
 	return -1;
 }
 
-/*-
-	Logs a msg to the logfile / console
-	@param loglevel loglevel that will be used for the message
-	@param msg string to be logged
-	@fn Spring.Log(string logsection, int loglevel, ...)
-	@fn Spring.Log(string logsection, string loglevel, ...)
-*/
+/***
+ * Logs a message to the logfile/console.
+ * 
+ * @function Spring.Log
+ * @param section string
+ * @param logLevel (LogLevel|LOG)? (Default: `"notice"`)
+ * @param ... string messages
+ */
 int LuaUtils::Log(lua_State* L)
 {
 	const int args = lua_gettop(L); // number of arguments
