@@ -17,6 +17,7 @@ target_link_libraries(Game PRIVATE
 	 RmlUi::RmlUi
 	 ${sound-impl}
 	 prd::jsoncpp
+	 streflop
 )
 
 ### Assemble libraries
