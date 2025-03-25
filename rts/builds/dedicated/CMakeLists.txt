@@ -35,6 +35,10 @@ list(APPEND engineDedicatedLibraries "prd::base64")
 ### smmalloc
 list(APPEND engineDedicatedLibraries "smmalloc")
 
+if (NOT WIN32)
+	list(APPEND engineDedicatedLibraries rt)
+endif()
+
 if (WIN32)
 	list(APPEND engineDedicatedLibraries ${WINMM_LIBRARY})
 endif (WIN32)
@@ -69,11 +73,13 @@ if	(APPLE)
 		${ENGINE_SRC_ROOT_DIR}/System/Platform/Mac/CrashHandler.cpp)
 elseif	(WIN32)
 	set(sources_engine_Platform_CrashHandler
+		${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/InterprocessRecursiveMutex.cpp
 		${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/seh.cpp
 		${ENGINE_SRC_ROOT_DIR}/System/Platform/Win/CrashHandler.cpp)
 else	()
 	set(sources_engine_Platform_CrashHandler
 		${ENGINE_SRC_ROOT_DIR}/System/Platform/CpuID.cpp
+		${ENGINE_SRC_ROOT_DIR}/System/Platform/Linux/InterprocessRecursiveMutex.cpp
 		${ENGINE_SRC_ROOT_DIR}/System/Platform/Threading.cpp
 		${ENGINE_SRC_ROOT_DIR}/System/Platform/Linux/CrashHandler.cpp
 		${ENGINE_SRC_ROOT_DIR}/System/Platform/Linux/ThreadSupport.cpp)
