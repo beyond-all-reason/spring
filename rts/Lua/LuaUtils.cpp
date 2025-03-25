@@ -524,6 +524,13 @@ void* LuaUtils::GetUserData(lua_State* L, int index, const string& type)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function Script.IsEngineMinVersion
+ * @param minMajorVer integer
+ * @param minMinorVer integer? (Default: `0`)
+ * @param minCommits integer? (Default: `0`)
+ * @return boolean satisfiesMin `true` if the engine version is greater or equal to the specified version, otherwise `false`.
+ */
 int LuaUtils::IsEngineMinVersion(lua_State* L)
 {
 	const int minMajorVer = luaL_checkint(L, 1);
