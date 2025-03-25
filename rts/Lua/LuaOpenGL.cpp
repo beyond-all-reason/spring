@@ -5662,7 +5662,7 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
 	return 0;
 }
 
-/**
+/***
  * @function gl.ObjectLabel labels an object for use with debugging tools
  * @param objectTypeIdentifier GLenum Specifies the type of object being labeled.
  * @param objectID GLuint Specifies the name or ID of the object to label.
@@ -5698,7 +5698,7 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
 }
 
 // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPushDebugGroup.xhtml
-/**
+/***
  * @function gl.PushDebugGroup pushes a debug marker for nVidia nSight 2024.04, does not seem to work when FBO's are raw bound
  * @param id GLuint A numeric identifier for the group.
  * @param message string A human-readable string describing the debug group.
@@ -5726,7 +5726,7 @@ int LuaOpenGL::PushDebugGroup(lua_State* L) {
 	return 0;
 }
 
-/**
+/***
  * @function gl.PopDebugGroup
  * @return nil
  */
