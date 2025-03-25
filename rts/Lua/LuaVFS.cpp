@@ -285,7 +285,7 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
  * included file. Code running in `filename.lua` will see the contents of env in
  * place of the normal `_G` environment.
  * 
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -389,7 +389,7 @@ int LuaVFS::UnsyncInclude(lua_State* L)
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  *
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -445,7 +445,7 @@ int LuaVFS::UnsyncLoadFile(lua_State* L)
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  *
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -491,7 +491,7 @@ int LuaVFS::UnsyncFileExists(lua_State* L) { return FileExists(L, false); }
  *
  * @param pattern string? (Default: `"*"`)
  * 
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -553,7 +553,7 @@ int LuaVFS::UnsyncDirList(lua_State* L)
  *
  * @param pattern string? (Default: `"*"`)
  * 
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -598,7 +598,7 @@ int LuaVFS::UnsyncSubDirs(lua_State* L)
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  *
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
@@ -637,7 +637,7 @@ int LuaVFS::GetFileAbsolutePath(lua_State* L)
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  *
- * @param mode string
+ * @param mode string?
  * 
  * VFS modes are single char strings and can be concatenated;
  * doing specifies an order of preference for the mode (i.e. location) from
