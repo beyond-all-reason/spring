@@ -211,6 +211,10 @@ void CLuaHandle::KillLua(bool inFreeHandler)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function Script.Kill
+ * @param killMessage string? Kill message.
+ */
 int CLuaHandle::KillActiveHandle(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -634,6 +638,10 @@ bool CLuaHandle::HasCallIn(lua_State* L, const string& name) const
 }
 
 
+/***
+ * @function Script.UpdateCallin
+ * @param name string
+ */
 bool CLuaHandle::UpdateCallIn(lua_State* L, const string& name)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -3936,7 +3944,10 @@ bool CLuaHandle::AddBasicCalls(lua_State* L)
 		HSTR_PUSH_CFUNC(L, "DelayByFrames",   CallOutDelayByFrames);
 		HSTR_PUSH_CFUNC(L, "IsEngineMinVersion", CallOutIsEngineMinVersion);
 		// special team constants
+
+		/*** @field Script.NO_ACCESS_TEAM -1 */
 		HSTR_PUSH_NUMBER(L, "NO_ACCESS_TEAM",  CEventClient::NoAccessTeam);
+		/*** @field Script.ALL_ACCESS_TEAM -2 */
 		HSTR_PUSH_NUMBER(L, "ALL_ACCESS_TEAM", CEventClient::AllAccessTeam);
 	}
 	lua_rawset(L, -3);
@@ -3955,6 +3966,10 @@ bool CLuaHandle::AddBasicCalls(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetName
+ * @return string name
+ */
 int CLuaHandle::CallOutGetName(lua_State* L)
 {
 	lua_pushsstring(L, GetHandle(L)->GetName());
@@ -3962,6 +3977,10 @@ int CLuaHandle::CallOutGetName(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetSynced
+ * @return boolean synced
+ */
 int CLuaHandle::CallOutGetSynced(lua_State* L)
 {
 	lua_pushboolean(L, GetHandleSynced(L));
@@ -3969,6 +3988,10 @@ int CLuaHandle::CallOutGetSynced(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetFullCtrl
+ * @return boolean fullCtrl
+ */
 int CLuaHandle::CallOutGetFullCtrl(lua_State* L)
 {
 	lua_pushboolean(L, GetHandleFullCtrl(L));
@@ -3976,6 +3999,10 @@ int CLuaHandle::CallOutGetFullCtrl(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetFullRead
+ * @return boolean fullRead
+ */
 int CLuaHandle::CallOutGetFullRead(lua_State* L)
 {
 	lua_pushboolean(L, GetHandleFullRead(L));
@@ -3983,6 +4010,10 @@ int CLuaHandle::CallOutGetFullRead(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetCtrlTeam
+ * @return integer teamID
+ */
 int CLuaHandle::CallOutGetCtrlTeam(lua_State* L)
 {
 	lua_pushnumber(L, GetHandleCtrlTeam(L));
@@ -3990,6 +4021,10 @@ int CLuaHandle::CallOutGetCtrlTeam(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetReadTeam
+ * @return integer teamID
+ */
 int CLuaHandle::CallOutGetReadTeam(lua_State* L)
 {
 	lua_pushnumber(L, GetHandleReadTeam(L));
@@ -3997,6 +4032,10 @@ int CLuaHandle::CallOutGetReadTeam(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetReadAllyTeam
+ * @return integer allyTeamID
+ */
 int CLuaHandle::CallOutGetReadAllyTeam(lua_State* L)
 {
 	lua_pushnumber(L, GetHandleReadAllyTeam(L));
@@ -4004,6 +4043,10 @@ int CLuaHandle::CallOutGetReadAllyTeam(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetSelectTeam
+ * @return integer teamID
+ */
 int CLuaHandle::CallOutGetSelectTeam(lua_State* L)
 {
 	lua_pushnumber(L, GetHandleSelectTeam(L));
@@ -4011,6 +4054,10 @@ int CLuaHandle::CallOutGetSelectTeam(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetGlobal
+ * @return integer? global
+ */
 int CLuaHandle::CallOutGetGlobal(lua_State* L)
 {
 	if (devMode) {
@@ -4021,6 +4068,10 @@ int CLuaHandle::CallOutGetGlobal(lua_State* L)
 }
 
 
+/***
+ * @function Script.GetRegistry
+ * @return integer? registry
+ */
 int CLuaHandle::CallOutGetRegistry(lua_State* L)
 {
 	if (devMode) {
@@ -4031,11 +4082,17 @@ int CLuaHandle::CallOutGetRegistry(lua_State* L)
 }
 
 
+/** Documented at LuaUtils::IsEngineMinVersion */
 int CLuaHandle::CallOutIsEngineMinVersion(lua_State* L)
 {
 	return (LuaUtils::IsEngineMinVersion(L));
 }
 
+/***
+ * @function Script.DelayByFrames
+ * @param frameDelay integer
+ * @param fun(...) func
+ */
 int CLuaHandle::CallOutDelayByFrames(lua_State* L)
 {
 	int argCount = lua_gettop(L);
