@@ -1,0 +1,50 @@
+BasedOnStyle: llvm
+---
+AccessModifierOffset: -4
+AlignAfterOpenBracket: DontAlign
+AlignArrayOfStructures: Left
+AlignEscapedNewlines: LeftWithLastLine
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: true
+BinPackParameters: false
+BreakTemplateDeclarations: MultiLine
+BreakBeforeBraces: Stroustrup
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: false
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: 120
+DerivePointerAlignment: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '<[[:alnum:]_]+>'
+    Priority: 3
+  - Regex: '<[[:alnum:]_./]+>'
+    Priority: 4
+  - Regex: '"[[:alnum:]]*.h"'
+    Priority: 1
+  - Regex: '.*/.*'
+    Priority: 2
+IndentPPDirectives: None
+IndentWidth: 4
+KeepEmptyLinesAtTheStartOfBlocks: false
+Language: Cpp
+LambdaBodyIndentation: OuterScope
+MaxEmptyLinesToKeep: 2
+PointerAlignment: Left
+SeparateDefinitionBlocks: Always
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: false
+SpaceAroundPointerQualifiers: After
+SpaceBeforeCaseColon: false
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: false
+Standard: Latest
+TabWidth: 4
+UseTab: ForIndentation
