@@ -2914,10 +2914,8 @@ void ApplyPlanarTeamError(lua_State* L, int allegiance, float3& mins, float3& ma
  * @param inRegion A lambda checking if the unit position is in the region
  */
 template<typename InRegion>
-static void GetFilteredUnits(lua_State *L, const std::vector<CUnit *> &units, InRegion inRegion) {
+static void GetFilteredUnits(lua_State *L, int allegiance, const std::vector<CUnit *> &units, InRegion inRegion) {
 	unsigned int count = 0;
-
-	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
 	const int readTeam = CLuaHandle::GetHandleReadTeam(L);
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
@@ -2978,7 +2976,7 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, units, rectangleCheck);
+	GetFilteredUnits(L, allegiance, units, rectangleCheck);
 
 	return 1;
 }
@@ -3024,7 +3022,7 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, units, boxCheck);
+	GetFilteredUnits(L, allegiance, units, boxCheck);
 
 	return 1;
 }
@@ -3063,7 +3061,7 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, units, cylinderCheck);
+	GetFilteredUnits(L, allegiance, units, cylinderCheck);
 
 	return 1;
 }
@@ -3105,7 +3103,7 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, units, sphereCheck);
+	GetFilteredUnits(L, allegiance, units, sphereCheck);
 
 	return 1;
 }
@@ -3197,7 +3195,7 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 	for (int team = startTeam; team <= endTeam; team++) {
 		const std::vector<CUnit*>& units = unitHandler.GetUnitsByTeam(team);
 
-		GetFilteredUnits(L, units, planesTest);
+		GetFilteredUnits(L, allegiance, units, planesTest);
 	}
 
 	return 1;
