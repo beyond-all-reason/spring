@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <memory>
 #include <semaphore>
+#include <random>
+#include <chrono>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1302,7 +1304,10 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 			brokenArchivesIndex.emplace(bi.name, &bi - &brokenArchives[0]);
 		}
 	}
+
 	// see if the cache contains pool files that don't exist anymore
+	static constexpr size_t NUMFILES_VERIFICATION_THRESHOLD = 10000; // arbitrary number
+	if (poolFilesInfo.size() >= NUMFILES_VERIFICATION_THRESHOLD)
 	{
 		// we go the complicated way, because we don't want to store pool root path in poolFilesInfo key
 		// (to not blow up the size of the cache file)
@@ -1315,20 +1320,40 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 			allPoolRootDirs.emplace(CPoolArchive::GetPoolRootDirectory(ai.path + ai.origName));
 		}
 
-		for (auto it = poolFilesInfo.begin(); it != poolFilesInfo.end(); /*NOOP*/) {
-			// cleanup files that got deleted in the meantime
-			bool found = false;
+		const uint32_t seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::mt19937 generator(seed);
+		std::uniform_int_distribution<size_t> distribution(0, poolFilesInfo.size() - 1);
+		auto startOffset = distribution(generator);
+
+		auto st = poolFilesInfo.begin();
+		std::advance(st, startOffset);
+		auto it = st;
+
+		const auto ExistenceTest = [&allPoolRootDirs = std::as_const(allPoolRootDirs)](const auto& it) {
 			for (const auto& poolRootDir : allPoolRootDirs) {
 				if (FileSystem::FileExists(CPoolArchive::GetPoolFilePath(poolRootDir, it->first))) {
-					found = true;
-					break;
+					return true;
 				}
 			}
+			return false;
+		};
 
-			if (!found)
-				it = poolFilesInfo.erase(it);
-			else
+		// can't spend too much time in this code, thus set the deadline and rely on
+		// random luck and sheer amount of invocations to eventually remove most if not all
+		// stale items from the pool cache
+		static constexpr int64_t MAX_POOL_VERIFICATION_TIME = 5 * 1000;
+		for (auto t0 = spring_now(), t1 = t0; (t1 - t0).toMilliSecsi() < MAX_POOL_VERIFICATION_TIME; t1 = spring_now()) {
+			// cleanup files that got deleted in the meantime
+
+			if (ExistenceTest(it))
 				++it;
+			else
+				it = poolFilesInfo.erase(it);
+
+			if (it == poolFilesInfo.end())
+				it = poolFilesInfo.begin(); //rewind to the very start
+			else if (it == st)
+				break; // everything got checked and we're back to the starting iterator
 		}
 	}
 
