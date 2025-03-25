@@ -131,6 +131,21 @@ LuaMatTexture::Type LuaOpenGLUtils::GetLuaMatTextureType(const std::string& name
 	return LuaMatTexture::LUATEX_NONE;
 }
 
+/***
+ * @alias MatrixName
+ * | "view"
+ * | "projection"
+ * | "viewprojection"
+ * | "viewinverse"
+ * | "projectioninverse"
+ * | "viewprojectioninverse"
+ * | "billboard"
+ * | "shadow"
+ * | "camera" # Deprecated
+ * | "camprj" # Deprecated
+ * | "caminv" # Deprecated
+ * | "camprjinv" # Deprecated
+ */
 LuaMatrixType LuaOpenGLUtils::GetLuaMatrixType(const char* name)
 {
 	switch (hashString(name)) {
