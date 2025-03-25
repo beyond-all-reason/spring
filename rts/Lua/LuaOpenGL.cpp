@@ -2948,7 +2948,7 @@ int LuaOpenGL::MemoryBarrier(lua_State* L)
  * @param r number Red.
  * @param g number Green.
  * @param b number Blue.
- * @param a number? (Default: 1.0f) Alpha.
+ * @param a number? (Default: `1.0`) Alpha.
  */
 /***
  * @function gl.Color

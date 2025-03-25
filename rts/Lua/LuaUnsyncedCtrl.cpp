@@ -1029,7 +1029,7 @@ int LuaUnsyncedCtrl::AddWorldUnit(lua_State* L)
  *
  * @function Spring.DrawUnitCommands
  * @param units table array of unit ids
- * @param tableOrArray boolean? (Default: false] when true `units` is interpreted as a table in the format `{ [unitID) = arg1, ... }`
+ * @param tableOrArray boolean? (Default: `false`] when true `units` is interpreted as a table in the format `{ [unitID) = arg1, ... }`
  * @return nil
  */
 int LuaUnsyncedCtrl::DrawUnitCommands(lua_State* L)
