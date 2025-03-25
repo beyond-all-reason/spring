@@ -7,6 +7,16 @@
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 
+add_library(Game STATIC)
+target_sources(Game PRIVATE ${sources_engine_Game})
+add_dependencies(Game generateVersionFiles)
+target_include_directories(Game PRIVATE "${CMAKE_BINARY_DIR}/src-generated/engine")
+target_link_libraries(Game PRIVATE
+	 Tracy::TracyClient
+	 SDL2::SDL2
+	 RmlUi::RmlUi
+	 ${sound-impl}
+)
 
 ### Assemble libraries
 find_package(SDL2 MODULE REQUIRED)
@@ -33,6 +43,7 @@ list(APPEND engineLibraries Freetype::Freetype)
 
 if    (UNIX)
 	find_package(X11 REQUIRED)
+	target_link_libraries(Game PRIVATE X11::Xcursor)
 	list(APPEND engineLibraries ${X11_Xcursor_LIB} ${X11_X11_LIB})
 endif (UNIX)
 
@@ -63,7 +74,7 @@ include_directories(${engineIncludes})
 
 ### Build the executable
 add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${ENGINE_ICON} ${engineHeaders})
-target_link_libraries(engine-legacy ${engineLibraries})
+target_link_libraries(engine-legacy ${engineLibraries} Game)
 
 
 ### Install the executable
