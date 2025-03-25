@@ -1,5 +1,7 @@
 # Recoil is an open source real time strategy game engine
 
+Visit the [Official Website](https://github.com/beyond-all-reason/spring)
+
 ### Get the engine sources
 
     git clone https://github.com/beyond-all-reason/spring --recursive
