@@ -57,6 +57,7 @@ target_link_libraries(GameHeadless PRIVATE
 	Tracy::TracyClient
 	SDL2::SDL2
 	RmlUi::RmlUi
+	prd::jsoncpp
 )
 ### Build the executable
 add_executable(engine-headless ${engineSources} ${ENGINE_ICON})
