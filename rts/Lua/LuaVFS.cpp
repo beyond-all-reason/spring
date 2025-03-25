@@ -497,7 +497,7 @@ int LuaVFS::UnsyncFileExists(lua_State* L) { return FileExists(L, false); }
  * doing specifies an order of preference for the mode (i.e. location) from
  * which to include files.
  * 
- * @param boolean? recursive (Default: `false`)
+ * @param recursive boolean? (Default: `false`)
  * 
  * @return string[] filenames
  */
@@ -559,7 +559,7 @@ int LuaVFS::UnsyncDirList(lua_State* L)
  * doing specifies an order of preference for the mode (i.e. location) from
  * which to include files.
  * 
- * @param boolean? recursive (Default: `false`)
+ * @param recursive boolean? (Default: `false`)
  * 
  * @return string[] dirnames
  */
