@@ -2914,11 +2914,14 @@ void ApplyPlanarTeamError(lua_State* L, int allegiance, float3& mins, float3& ma
  * @param inRegion A lambda checking if the unit position is in the region
  */
 template<typename InRegion>
-static void GetFilteredUnits(lua_State *L, int allegiance, const std::vector<CUnit *> &units, InRegion inRegion, bool fullRead) {
+static void GetFilteredUnits(lua_State *L, const std::vector<CUnit *> &units, InRegion inRegion) {
 	unsigned int count = 0;
+
+	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
 	const int readTeam = CLuaHandle::GetHandleReadTeam(L);
 	const int readAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
+	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
 
 	auto isDisqualified = GetIsUnitDisqualifiedTest(L, allegiance, readTeam, readAllyTeam);
 
@@ -2975,7 +2978,7 @@ int LuaSyncedRead::GetUnitsInRectangle(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, allegiance, units, rectangleCheck, fullRead);
+	GetFilteredUnits(L, units, rectangleCheck);
 
 	return 1;
 }
@@ -3021,7 +3024,7 @@ int LuaSyncedRead::GetUnitsInBox(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, allegiance, units, boxCheck, fullRead);
+	GetFilteredUnits(L, units, boxCheck);
 
 	return 1;
 }
@@ -3060,7 +3063,7 @@ int LuaSyncedRead::GetUnitsInCylinder(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, allegiance, units, cylinderCheck, fullRead);
+	GetFilteredUnits(L, units, cylinderCheck);
 
 	return 1;
 }
@@ -3102,7 +3105,7 @@ int LuaSyncedRead::GetUnitsInSphere(lua_State* L)
 
 	lua_createtable(L, units.size(), 0);
 
-	GetFilteredUnits(L, allegiance, units, sphereCheck, fullRead);
+	GetFilteredUnits(L, units, sphereCheck);
 
 	return 1;
 }
@@ -3189,14 +3192,12 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 		return UnitInPlanes(pos, unit->radius, planes);
 	};
 
-	const bool fullRead = CLuaHandle::GetHandleFullRead(L);
-
 	lua_newtable(L);
 
 	for (int team = startTeam; team <= endTeam; team++) {
 		const std::vector<CUnit*>& units = unitHandler.GetUnitsByTeam(team);
 
-		GetFilteredUnits(L, allegiance, units, planesTest, fullRead);
+		GetFilteredUnits(L, units, planesTest);
 	}
 
 	return 1;
