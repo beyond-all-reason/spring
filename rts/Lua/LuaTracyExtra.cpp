@@ -29,11 +29,6 @@ static const std::string& GetImmanentPlotName(const char *plotName)
 	return *tracyLuaPlots.emplace(plotName).first;
 }
 
-/***
- * Tracy extensions
- * @table tracy
- */
-
 /*** Configure custom appearance for a Tracy plot for use in debugging or profiling
  *
  * @function tracy.LuaTracyPlotConfig
