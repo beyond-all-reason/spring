@@ -1159,7 +1159,7 @@ int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
  *
  * @function Spring.SetCameraState
  *
- * @param CameraState cameraState The fields must be consistent with the name/mode and current/new camera mode.
+ * @param cameraState CameraState The fields must be consistent with the name/mode and current/new camera mode.
  * 
  * @param transitionTime number? (Default: `0`) in nanoseconds
  *
@@ -3280,27 +3280,15 @@ static bool CanGiveOrders(const lua_State* L)
 }
 
 
-/*** Command Options params
- *
- * @class cmdOpts
- *
- * Can be specified as a table, or as an array containing any of the keys
- * below.
- *
- * @field right boolean Right mouse key pressed
- * @field alt boolean Alt key pressed
- * @field ctrl boolean Ctrl key pressed
- * @field shift boolean Shift key pressed
- * @field meta boolean Meta (windows/mac/mod4) key pressed
- */
-
 
 /***
+ * Give order to selected units.
  *
  * @function Spring.GiveOrder
- * @param cmdID integer
- * @param params table
- * @param options cmdOpts
+ * @param cmdID CMD|integer The command ID.
+ * @param params CreateCommandParams Parameters for the given command.
+ * @param options CreateCommandOptions?
+ * @param timeout integer?
  * @return nil|true
  */
 int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
@@ -3316,12 +3304,14 @@ int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
 
 
 /***
+ * Give order to specific unit.
  *
  * @function Spring.GiveOrderToUnit
  * @param unitID integer
- * @param cmdID integer
- * @param params table
- * @param options cmdOpts
+ * @param cmdID CMD|integer The command ID.
+ * @param params CreateCommandParams? Parameters for the given command.
+ * @param options CreateCommandOptions?
+ * @param timeout integer?
  * @return nil|true
  */
 int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
@@ -3348,12 +3338,14 @@ int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
 
 
 /***
+ * Give order to multiple units, specified by table keys.
  *
  * @function Spring.GiveOrderToUnitMap
- * @param unitMap table { [unitID] = arg1, ... }
- * @param cmdID integer
- * @param params table
- * @param options cmdOpts
+ * @param unitMap table<integer, any> A table with unit IDs as keys.
+ * @param cmdID CMD|integer The command ID.
+ * @param params CreateCommandParams? Parameters for the given command.
+ * @param options CreateCommandOptions?
+ * @param timeout integer?
  * @return nil|true
  */
 int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
@@ -3380,12 +3372,14 @@ int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
 
 
 /***
+ * Give order to an array of units.
  *
  * @function Spring.GiveOrderToUnitArray
- * @param unitArray number[] array of unit ids
- * @param cmdID integer
- * @param params table
- * @param options cmdOpts
+ * @param unitIDs integer[] Array of unit IDs.
+ * @param cmdID CMD|integer The command ID.
+ * @param params CreateCommandParams? Parameters for the given command.
+ * @param options CreateCommandOptions?
+ * @param timeout integer?
  * @return nil|true
  */
 int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
@@ -3413,8 +3407,8 @@ int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderArrayToUnit
- * @param unitID integer
- * @param cmdArray Command[]
+ * @param unitID integer Unit ID.
+ * @param commands CreateCommand[]
  * @return boolean ordersGiven
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
@@ -3447,8 +3441,8 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderArrayToUnitMap
- * @param unitMap table { [unitID] = arg1, ... }
- * @param cmdArray Command[]
+ * @param unitMap table<integer, any> A table with unit IDs as keys.
+ * @param commands CreateCommand[]
  * @return boolean ordersGiven
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
@@ -3482,7 +3476,7 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
  *
  * @function Spring.GiveOrderArrayToUnitArray
  * @param unitArray number[] array of unit ids
- * @param cmdArray Command[]
+ * @param commands CreateCommand[]
  * @param pairwise boolean? (Default: `false`) When `false`, assign all commands to each unit.
  *
  * When `true`, assign commands according to index between units and cmds arrays.
