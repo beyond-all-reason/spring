@@ -7356,10 +7356,19 @@ int LuaSyncedCtrl::EditUnitCmdDesc(lua_State* L)
 
 
 /***
+ * Insert a command description at a specific index.
+ * 
  * @function Spring.InsertUnitCmdDesc
  * @param unitID integer
- * @param cmdDescID integer?
- * @param cmdArray CommandDescription
+ * @param index integer
+ * @param cmdDesc CommandDescription
+ */
+/***
+ * Insert a command description at the last position.
+ * 
+ * @function Spring.InsertUnitCmdDesc
+ * @param unitID integer
+ * @param cmdDesc CommandDescription
  */
 int LuaSyncedCtrl::InsertUnitCmdDesc(lua_State* L)
 {
