@@ -6628,8 +6628,8 @@ int LuaSyncedRead::ValidFeatureID(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetAllFeatures
+ * @return integer[] featureIDs
  */
 int LuaSyncedRead::GetAllFeatures(lua_State* L)
 {
