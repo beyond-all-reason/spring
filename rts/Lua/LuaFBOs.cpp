@@ -565,16 +565,18 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 	return 2;
 }
 
-
+/***
+ * @function gl.ActiveFBO
+ * @param fbo Fbo
+ * @param func fun(...)
+ * @param ... any args
+ */
 /***
  * @function gl.ActiveFBO
  * @param fbo Fbo
  * @param target GL?
- * @param identities boolean?
- * @param lua_function function?
- * @param arg1 any?
- * @param arg2 any?
- * @param argn any?
+ * @param func fun(...)
+ * @param ... any args
  */
 int LuaFBOs::ActiveFBO(lua_State* L)
 {
