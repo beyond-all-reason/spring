@@ -176,9 +176,7 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 /*** Receives data sent via `SendToUnsynced` callout.
  *
  * @function UnsyncedCallins:RecvFromSynced
- * @param arg1 any
- * @param arg2 any
- * @param argn any
+ * @param ... any
  */
 void CUnsyncedLuaHandle::RecvFromSynced(lua_State* srcState, int args)
 {
@@ -1959,6 +1957,13 @@ int CSyncedLuaHandle::SyncedPairs(lua_State* L)
 }
 
 
+/***
+ * Invoke `UnsyncedCallins:RecvFromSynced` callin with the given arguments.
+ * 
+ * @function SendToUnsynced
+ * @param ... nil|boolean|number|string Arguments. Typically the first argument is the name of a function to call.
+ * @see UnsyncedCallins:RecvFromSynced
+ */
 int CSyncedLuaHandle::SendToUnsynced(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
