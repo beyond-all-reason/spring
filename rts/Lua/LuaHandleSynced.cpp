@@ -2317,7 +2317,27 @@ int CSplitLuaHandle::LoadStringData(lua_State* L)
 	return 1;
 }
 
+/***
+ * @class CallAsTeamOptions
+ * @field ctrl integer Ctrl team ID.
+ * @field read integer Read team ID.
+ * @field select integer Read team ID.
+ */
 
+/***
+ * @function CallAsTeam
+ * @param teamID integer Team ID.
+ * @param func fun(...) The function to call.
+ * @param ... any Arguments to pass to the function.
+ * @return any ... The return values of the function.
+ */
+/***
+ * @function CallAsTeam
+ * @param options CallAsTeamOptions Options.
+ * @param func fun(...) The function to call.
+ * @param ... any Arguments to pass to the function.
+ * @return any ... The return values of the function.
+ */
 int CSplitLuaHandle::CallAsTeam(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
