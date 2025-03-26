@@ -5834,11 +5834,26 @@ int LuaSyncedRead::GetUnitFeatureSeparation(lua_State* L)
 	return 1;
 }
 
+/***
+ * @class UnitDefDimensions
+ * @field height number
+ * @field radius number
+ * @field midx number
+ * @field minx number
+ * @field maxx number
+ * @field midy number
+ * @field miny number
+ * @field maxy number
+ * @field midz number
+ * @field minz number
+ * @field maxz number
+ */
 
 /***
  *
  * @function Spring.GetUnitDefDimensions
  * @param unitDefID integer
+ * @return UnitDefDimensions? dimensions
  */
 int LuaSyncedRead::GetUnitDefDimensions(lua_State* L)
 {
