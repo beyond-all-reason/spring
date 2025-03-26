@@ -3588,7 +3588,7 @@ int LuaSyncedRead::GetFeaturesInCylinder(lua_State* L)
 static void GetProjectilesLuaTable(lua_State* L, const std::vector<CProjectile*>& projectiles,
                                       bool excludeWeaponProjectiles, bool excludePieceProjectiles)
 {
-	unsigned int arrayIndex = 1;
+	int arrayIndex = 1;
 
 	lua_createtable(L, static_cast<int>(projectiles.size()), 0);
 
@@ -3606,8 +3606,8 @@ static void GetProjectilesLuaTable(lua_State* L, const std::vector<CProjectile*>
 				if (pro->piece && excludePieceProjectiles)
 					continue;
 
-				lua_pushinteger(L, static_cast<lua_Number>(pro->id));
-				lua_rawseti(L, -2, static_cast<int>(arrayIndex++));
+				lua_pushinteger(L, pro->id);
+				lua_rawseti(L, -2, arrayIndex++);
 			}
 		}
 	} else {
@@ -3624,8 +3624,8 @@ static void GetProjectilesLuaTable(lua_State* L, const std::vector<CProjectile*>
 			if (!LuaUtils::IsProjectileVisible(L, pro))
 				continue;
 
-			lua_pushinteger(L, static_cast<lua_Number>(pro->id));
-			lua_rawseti(L, -2, static_cast<int>(arrayIndex++));
+			lua_pushinteger(L, pro->id);
+			lua_rawseti(L, -2, arrayIndex++);
 		}
 	}
 }
