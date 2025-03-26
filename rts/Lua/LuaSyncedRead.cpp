@@ -6130,6 +6130,10 @@ static void PackCommandQueue(lua_State* L, const CCommandQueue& commands, size_t
  * @param unitID integer Unit id.
  * @param cmdIndex integer Command index to get. If negative will count from the end of the queue,
  * for example -1 will be the last command.
+ * @return CMD cmdID
+ * @return integer|CommandOptionBit options
+ * @return integer tag
+ * @return number ... Command parameters.
  */
 int LuaSyncedRead::GetUnitCurrentCommand(lua_State* L)
 {

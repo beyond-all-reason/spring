@@ -5425,9 +5425,11 @@ int LuaSyncedCtrl::UnitFinishCommand(lua_State* L)
 /***
  * @function Spring.GiveOrderToUnit
  * @param unitID integer
- * @param cmdID integer
- * @param params number[]?
- * @param options CommandOptions?
+ * @param cmdID CMD|integer The command ID.
+ * @param params CreateCommandParams? Parameters for the given command.
+ * @param options CreateCommandOptions?
+ * @param timeout integer?
+
  * @return boolean unitOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
@@ -5459,11 +5461,14 @@ int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
 
 
 /***
+ * Give order to multiple units, specified by table keys.
+ * 
  * @function Spring.GiveOrderToUnitMap
- * @param unitMap table<number,table> table with unitIDs as keys
- * @param cmdID integer
- * @param params number[]?
- * @param options CommandOptions?
+ * @param unitMap table<number,table> A table with unit IDs as keys.
+ * @param cmdID CMD|integer The command ID.
+ * @param params CreateCommandParams? Parameters for the given command.
+ * @param options CreateCommandOptions?
+ * @param timeout integer?
  * @return number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
@@ -5504,9 +5509,10 @@ int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
  *
  * @function Spring.GiveOrderToUnitArray
  * @param unitIDs number[]
- * @param cmdID integer
- * @param params number[]?
- * @param options CommandOptions?
+ * @param cmdID CMD|integer The command ID.
+ * @param params CreateCommandParams? Parameters for the given command.
+ * @param options CreateCommandOptions?
+ * @param timeout integer?
  * @return number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)
@@ -5549,7 +5555,7 @@ int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)
  *
  * @function Spring.GiveOrderArrayToUnit
  * @param unitID integer
- * @param cmdArray Command[]
+ * @param commands CreateCommand[]
  * @return boolean ordersGiven
  */
 int LuaSyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
@@ -5588,8 +5594,8 @@ int LuaSyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
 
 /***
  * @function Spring.GiveOrderArrayToUnitMap
- * @param unitMap {[number]: any} table with unitIDs as keys
- * @param commands Command[]
+ * @param unitMap table<integer, any> A table with unit IDs as keys.
+ * @param commands CreateCommand[]
  * @return number unitsOrdered
  */
 int LuaSyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)

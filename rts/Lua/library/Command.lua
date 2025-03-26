@@ -1,0 +1,45 @@
+---@alias CommandOptionBit
+---| 4 # Meta (windows/mac/mod4) key.
+---| 8 # Internal order.
+---| 16 # Right mouse key.
+---| 32 # Shift key.
+---| 64 # Control key.
+---| 128 # Alt key.
+
+---Full command options object for reading from a `Command`.
+---
+---Note that this has extra fields `internal` and `coded` that are not supported
+---when creating a command from Lua.
+---
+---@class CommandOptions
+---@field coded CommandOptionBit|integer Bitmask of command options.
+---@field alt boolean Alt key pressed.
+---@field ctrl boolean Ctrl key pressed.
+---@field shift boolean Shift key pressed.
+---@field right boolean Right mouse key pressed.
+---@field meta boolean Meta key (space) pressed.
+---@field internal boolean
+
+---@class Command
+---@field id integer
+---@field params number[]?
+---@field options CommandOptions?
+
+---Command Description
+---
+---Contains data about a command.
+---
+---@class CommandDescription
+---@field id integer?
+---@field type integer?
+---@field name string?
+---@field action string?
+---@field tooltip string?
+---@field texture string?
+---@field cursor string?
+---@field queueing boolean?
+---@field hidden boolean?
+---@field disabled boolean?
+---@field showUnique boolean?
+---@field onlyTexture boolean?
+---@field params table<string, string>?

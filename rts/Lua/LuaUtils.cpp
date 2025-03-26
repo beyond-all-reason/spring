@@ -961,6 +961,22 @@ int LuaUtils::PushUnitAndCommand(lua_State* L, const CUnit* unit, const Command&
 	return 7;
 }
 
+/***
+ * @alias CommandOptionName
+ * | "right" # Right mouse key.
+ * | "alt" # Alt key.
+ * | "ctrl" # Control key.
+ * | "shift" # Shift key.
+ * | "meta" # Meta key (space).
+ */
+
+/***
+ * @alias CreateCommandOptions
+ * | CommandOptionName[] # An array of option names.
+ * | table<CommandOptionName, boolean> # A map of command names to booleans, considered held when `true`.
+ * | CommandOptionBit # A specific integer value for a command option.
+ * | integer # A bit mask combination of `CommandOptionBit` values. Pass `0` for no options.
+ */
 
 static bool ParseCommandOptions(
 	lua_State* L,
@@ -1053,6 +1069,21 @@ static bool ParseCommandTimeOut(
 	return true;
 }
 
+/***
+ * @alias CreateCommandParams
+ * | number[] # An array of parameters.
+ * | number # A single parameter.
+ */
+
+/** - not documented.
+ * 
+ * Supports the following params, starting from `idx`.
+ * 
+ * @param cmdID CMD|integer The command ID.
+ * @param params CreateCommandParams? Parameters for the given command.
+ * @param options CreateCommandOptions?
+ * @param timeout integer?
+ */
 Command LuaUtils::ParseCommand(lua_State* L, const char* caller, int idIndex)
 {
 	// cmdID
@@ -1091,6 +1122,15 @@ Command LuaUtils::ParseCommand(lua_State* L, const char* caller, int idIndex)
 	return cmd;
 }
 
+/***
+ * Used when assigning multiple commands at once.
+ * 
+ * @class CreateCommand
+ * @field [1] CMD|integer Command ID.
+ * @field [2] CreateCommandParams? Parameters for the given command.
+ * @field [3] CreateCommandOptions? Command options.
+ * @field [4] integer? Timeout.
+ */
 
 Command LuaUtils::ParseCommandTable(lua_State* L, const char* caller, int tableIdx)
 {
