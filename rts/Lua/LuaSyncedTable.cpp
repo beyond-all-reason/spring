@@ -70,6 +70,9 @@ static int SyncTableMetatable(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @table SYNCED
+ */
 bool LuaSyncedTable::PushEntries(lua_State* L)
 {
 	HSTR_PUSH(L, "SYNCED");
