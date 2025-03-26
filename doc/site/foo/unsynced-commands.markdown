@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Unsynced Commands
-parent: Guides
-permalink: /guides/unsynced-commands/
+parent: Foo
+permalink: /foo/unsynced-commands/
 ---
 
 # Unsynced Commands

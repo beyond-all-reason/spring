@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Synced Commands
-parent: Guides
-permalink: /guides/synced-commands/
+parent: Foo
+permalink: /foo/synced-commands/
 ---
 
 # Synced Commands
