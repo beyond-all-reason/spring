@@ -420,7 +420,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 
 /***
  * User Data FBO
- * @class Fbo
+ * @class FBO
  * @field depth attachment
  * @field stencil attachment
  * @field color0 attachment
@@ -434,7 +434,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 
 /***
  * @function gl.CreateFBO
- * @param fbo Fbo
+ * @param fbo FBO
  */
 int LuaFBOs::CreateFBO(lua_State* L)
 {
@@ -510,7 +510,7 @@ int LuaFBOs::CreateFBO(lua_State* L)
  * This doesn't delete the attached objects!
  * 
  * @function gl.DeleteFBO
- * @param fbo Fbo
+ * @param fbo FBO
  */
 int LuaFBOs::DeleteFBO(lua_State* L)
 {
@@ -526,7 +526,7 @@ int LuaFBOs::DeleteFBO(lua_State* L)
 
 /***
  * @function gl.IsValidFBO
- * @param fbo Fbo
+ * @param fbo FBO
  * @param target GL?
  * @return boolean valid
  * @return number? status
@@ -567,13 +567,13 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 
 /***
  * @function gl.ActiveFBO
- * @param fbo Fbo
+ * @param fbo FBO
  * @param func fun(...)
  * @param ... any args
  */
 /***
  * @function gl.ActiveFBO
- * @param fbo Fbo
+ * @param fbo FBO
  * @param target GL?
  * @param func fun(...)
  * @param ... any args
@@ -652,7 +652,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
  */
 /***
  * @function gl.RawBindFBO
- * @param fbo Fbo
+ * @param fbo FBO
  * @param target GL? (Default: `fbo.target`)
  * @return number previouslyBoundRawFboId
  */
@@ -700,12 +700,12 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 /*** needs `GLAD_GL_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
- * @param fboSrc Fbo
+ * @param fboSrc FBO
  * @param x0Src number
  * @param y0Src number
  * @param x1Src number
  * @param y1Src number
- * @param fboDst Fbo
+ * @param fboDst FBO
  * @param x0Dst number
  * @param y0Dst number
  * @param x1Dst number
