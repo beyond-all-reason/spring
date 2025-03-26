@@ -6087,6 +6087,12 @@ int LuaSyncedRead::GetUnitMoveTypeData(lua_State* L)
 
 /******************************************************************************/
 
+/***
+ * @class Command
+ * @field id integer
+ * @field params number[]?
+ * @field options CommandOptions?
+ */
 static void PackCommand(lua_State* L, const Command& cmd)
 {
 	lua_createtable(L, 0, 4);
