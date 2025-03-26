@@ -575,8 +575,8 @@ static int SetSolidObjectBlocking(lua_State* L, CSolidObject* o)
 		return 0;
 
 	// update SO-bit of collidable state
-	if (lua_isboolean(L, 3)) {
-		if (lua_toboolean(L, 3)) {
+	if (lua_isboolean(L, 2)) {
+		if (lua_toboolean(L, 2)) {
 			o->SetCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS);
 		} else {
 			o->ClearCollidableStateBit(CSolidObject::CSTATE_BIT_SOLIDOBJECTS);
@@ -612,7 +612,7 @@ static int SetSolidObjectRotation(lua_State* L, T* o)
 
 	float3 angles;
 	angles[CMatrix44f::ANGLE_P] = luaL_checkfloat(L, 2);
-	angles[CMatrix44f::ANGLE_Y] = luaL_checkfloat(L, 3);
+	angles[CMatrix44f::ANGLE_Y] = luaL_checkfloat(L, 2);
 	angles[CMatrix44f::ANGLE_R] = luaL_checkfloat(L, 4);
 
 	o->SetDirVectorsEuler(angles);
@@ -630,7 +630,7 @@ static int SetSolidObjectHeadingAndUpDir(lua_State* L, T* o)
 		return 0;
 
 	const auto heading = spring::SafeCast<short>(luaL_optint(L, 2, o->heading));
-	const float3 newUpDir = float3(luaL_checkfloat(L, 3), luaL_checkfloat(L, 4), luaL_checkfloat(L, 5)).SafeNormalize();
+	const float3 newUpDir = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 4), luaL_checkfloat(L, 5)).SafeNormalize();
 	if (math::fabsf(newUpDir.SqLength() - 1.0f) > float3::cmp_eps())
 		luaL_error(L, "[%s] Invalid upward-direction (%f, %f, %f), id = %d, model = %s, teamID = %d", __func__, newUpDir.x, newUpDir.y, newUpDir.z, o->id, o->model ? o->model->name.c_str() : "nullptr", o->team);
 
@@ -652,7 +652,7 @@ static int SetSolidObjectDirection(lua_State* L, CSolidObject* o, const char* fu
 
 	const char* modelName = o->model ? o->model->name.c_str() : "nullptr";
 
-	const float3 newFrontDir = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4)).SafeNormalize();
+	const float3 newFrontDir = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 2), luaL_checkfloat(L, 4)).SafeNormalize();
 
 	if (math::fabsf(newFrontDir.SqLength() - 1.0f) > float3::cmp_eps()) {
 		luaL_error(L, "[%s] Invalid front-direction (%f, %f, %f), id = %d, model = %s, teamID = %d",
@@ -716,7 +716,7 @@ static int SetWorldObjectVelocity(lua_State* L, CWorldObject* o)
 
 	float3 speed;
 	speed.x = std::clamp(luaL_checkfloat(L, 2), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
-	speed.y = std::clamp(luaL_checkfloat(L, 3), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
+	speed.y = std::clamp(luaL_checkfloat(L, 2), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
 	speed.z = std::clamp(luaL_checkfloat(L, 4), -MAX_UNIT_SPEED, MAX_UNIT_SPEED);
 
 	o->SetVelocityAndSpeed(speed);
@@ -744,7 +744,7 @@ static int SetSolidObjectPhysicalState(lua_State* L, CSolidObject* o)
 	float3& drag = o->dragScales;
 
 	pos.x = luaL_checknumber(L, 2);
-	pos.y = luaL_checknumber(L, 3);
+	pos.y = luaL_checknumber(L, 2);
 	pos.z = luaL_checknumber(L, 4);
 
 	speed.x = luaL_checknumber(L, 5);
@@ -787,7 +787,7 @@ static int SetSolidObjectPieceCollisionVolumeData(lua_State* L, CSolidObject* ob
 
 	// piece volumes are not allowed to use discrete hit-testing
 	vol->InitShape(scales, offset, vType, CollisionVolume::COLVOL_HITTEST_CONT, pAxis);
-	vol->SetIgnoreHits(!luaL_checkboolean(L, 3));
+	vol->SetIgnoreHits(!luaL_checkboolean(L, 2));
 	return 0;
 }
 
@@ -800,7 +800,7 @@ static int SetSolidObjectPieceVisible(lua_State* L, CSolidObject* obj)
 	if (lmp == nullptr)
 		luaL_argerror(L, 2, "invalid piece");
 
-	lmp->SetScriptVisible(luaL_checkboolean(L, 3));
+	lmp->SetScriptVisible(luaL_checkboolean(L, 2));
 	return 0;
 }
 
@@ -856,7 +856,7 @@ int LuaSyncedCtrl::SetAlly(lua_State* L)
 	if (!teamHandler.IsValidAllyTeam(secondAllyTeamID))
 		return 0;
 
-	teamHandler.SetAlly(firstAllyTeamID, secondAllyTeamID, luaL_checkboolean(L, 3));
+	teamHandler.SetAlly(firstAllyTeamID, secondAllyTeamID, luaL_checkboolean(L, 2));
 	return 0;
 }
 
@@ -875,7 +875,7 @@ int LuaSyncedCtrl::SetAllyTeamStartBox(lua_State* L)
 {
 	const unsigned int allyTeamID = luaL_checkint(L, 1);
 	const float xMin = luaL_checkfloat(L, 2);
-	const float zMin = luaL_checkfloat(L, 3);
+	const float zMin = luaL_checkfloat(L, 2);
 	const float xMax = luaL_checkfloat(L, 4);
 	const float zMax = luaL_checkfloat(L, 5);
 
@@ -1074,7 +1074,7 @@ int LuaSyncedCtrl::AddTeamResource(lua_State* L)
 
 	const char* type = luaL_checkstring(L, 2);
 
-	const float value = max(0.0f, luaL_checkfloat(L, 3));
+	const float value = max(0.0f, luaL_checkfloat(L, 2));
 
 	switch (type[0]) {
 		case 'm': { team->AddMetal (value); } break;
@@ -1122,7 +1122,7 @@ int LuaSyncedCtrl::UseTeamResource(lua_State* L)
 	if (lua_isstring(L, 2)) {
 		const char* type = lua_tostring(L, 2);
 
-		const float value = std::max(0.0f, luaL_checkfloat(L, 3));
+		const float value = std::max(0.0f, luaL_checkfloat(L, 2));
 
 		switch (type[0]) {
 			case 'm': {
@@ -1203,7 +1203,7 @@ int LuaSyncedCtrl::SetTeamResource(lua_State* L)
 	if (team == nullptr)
 		return 0;
 
-	const float value = std::max(0.0f, luaL_checkfloat(L, 3));
+	const float value = std::max(0.0f, luaL_checkfloat(L, 2));
 
 	switch (hashString(luaL_checkstring(L, 2))) {
 		case hashString("m"):
@@ -1256,7 +1256,7 @@ int LuaSyncedCtrl::SetTeamShareLevel(lua_State* L)
 
 	const char* type = luaL_checkstring(L, 2);
 
-	const float value = luaL_checkfloat(L, 3);
+	const float value = luaL_checkfloat(L, 2);
 
 	switch (type[0]) {
 		case 'm': { team->resShare.metal  = std::clamp(value, 0.0f, 1.0f); } break;
@@ -1302,7 +1302,7 @@ int LuaSyncedCtrl::ShareTeamResource(lua_State* L)
 	if (team2 == nullptr)
 		return 0;
 
-	const char* type = luaL_checkstring(L, 3);
+	const char* type = luaL_checkstring(L, 2);
 	float amount = luaL_checkfloat(L, 4);
 
 	switch (type[0]) {
@@ -1588,7 +1588,7 @@ int LuaSyncedCtrl::CallCOBScript(lua_State* L)
 	if (!lua_isnumber(L, 1))
 		luaL_error(L, "[%s] unitID not a number", __func__);
 	// number of returned parameters
-	if (!lua_isnumber(L, 3))
+	if (!lua_isnumber(L, 2))
 		luaL_error(L, "[%s] retval-count not a number", __func__);
 
 	CUnit* unit = ParseUnit(L, __func__, 1);
@@ -1607,7 +1607,7 @@ int LuaSyncedCtrl::CallCOBScript(lua_State* L)
 	std::array<int, 1 + MAX_COB_ARGS> cobArgs;
 	ParseCobArgs(L, 4, numArgs, cobArgs);
 
-	const int numRetVals = std::min(lua_toint(L, 3), std::min(MAX_LUA_COB_ARGS, cobArgs[0]));
+	const int numRetVals = std::min(lua_toint(L, 2), std::min(MAX_LUA_COB_ARGS, cobArgs[0]));
 	int retCode = 0;
 
 	if (lua_israwnumber(L, 2)) {
@@ -1717,7 +1717,7 @@ int LuaSyncedCtrl::CreateUnit(lua_State* L)
 	// TODO: also allow off-map unit creation?
 	const float3 pos(
 		luaL_checkfloat(L, 2),
-		luaL_checkfloat(L, 3),
+		luaL_checkfloat(L, 2),
 		luaL_checkfloat(L, 4)
 	);
 	const int facing = LuaUtils::ParseFacing(L, __func__, 5);
@@ -1789,7 +1789,7 @@ int LuaSyncedCtrl::DestroyUnit(lua_State* L)
 	const int args = lua_gettop(L); // number of arguments
 
 	const bool selfDestr = luaL_optboolean(L, 2, false);
-	const bool reclaimed = luaL_optboolean(L, 3, false);
+	const bool reclaimed = luaL_optboolean(L, 2, false);
 	const bool recycleID = luaL_optboolean(L, 5, false);
 
 	CUnit* attacker = nullptr;
@@ -1837,8 +1837,8 @@ int LuaSyncedCtrl::TransferUnit(lua_State* L)
 		return 0;
 
 	bool given = true;
-	if (FullCtrl(L) && lua_isboolean(L, 3))
-		given = lua_toboolean(L, 3);
+	if (FullCtrl(L) && lua_isboolean(L, 2))
+		given = lua_toboolean(L, 2);
 
 	if (inTransferUnit >= MAX_CMD_RECURSION_DEPTH)
 		luaL_error(L, "TransferUnit() recursion is not permitted, max depth: %d", MAX_CMD_RECURSION_DEPTH);
@@ -2009,7 +2009,7 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
 		return 0;
 
 	if (lua_israwstring(L, 2)) {
-		SetUnitResourceParam(unit, lua_tostring(L, 2), luaL_checkfloat(L, 3));
+		SetUnitResourceParam(unit, lua_tostring(L, 2), luaL_checkfloat(L, 2));
 	} else if (lua_istable(L, 2)) {
 		constexpr int tableIdx = 2;
 
@@ -2053,7 +2053,7 @@ int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
 		return 0;
 
 	if (lua_israwstring(L, 2)) {
-		SetUnitStorageParam(unit, lua_tostring(L, 2), luaL_checkfloat(L, 3));
+		SetUnitStorageParam(unit, lua_tostring(L, 2), luaL_checkfloat(L, 2));
 	} else if (lua_istable(L, 2)) {
 		constexpr int tableIdx = 2;
 
@@ -2211,8 +2211,8 @@ int LuaSyncedCtrl::SetUnitStockpile(lua_State* L)
 		unit->commandAI->UpdateStockpileIcon();
 	}
 
-	if (lua_isnumber(L, 3))
-		unit->stockpileWeapon->buildPercent = std::clamp(lua_tofloat(L, 3), 0.0f, 1.0f);
+	if (lua_isnumber(L, 2))
+		unit->stockpileWeapon->buildPercent = std::clamp(lua_tofloat(L, 2), 0.0f, 1.0f);
 
 	return 0;
 }
@@ -2338,7 +2338,7 @@ int LuaSyncedCtrl::SetUnitUseWeapons(lua_State* L)
 		return 0;
 
 	unit->forceUseWeapons = luaL_optboolean(L, 2, unit->forceUseWeapons);
-	unit->allowUseWeapons = luaL_optboolean(L, 3, unit->allowUseWeapons);
+	unit->allowUseWeapons = luaL_optboolean(L, 2, unit->allowUseWeapons);
 	return 0;
 }
 
@@ -2372,16 +2372,16 @@ int LuaSyncedCtrl::SetUnitWeaponState(lua_State* L)
 
 	CWeapon* weapon = unit->weapons[weaponNum];
 
-	if (lua_istable(L, 3)) {
+	if (lua_istable(L, 2)) {
 		// {key1 = value1, ...}
-		for (lua_pushnil(L); lua_next(L, 3) != 0; lua_pop(L, 1)) {
+		for (lua_pushnil(L); lua_next(L, 2) != 0; lua_pop(L, 1)) {
 			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
 				SetSingleUnitWeaponState(L, weapon, LUA_TABLE_KEY_INDEX);
 			}
 		}
 	} else {
 		// key, value
-		if (lua_israwstring(L, 3) && lua_isnumber(L, 4)) {
+		if (lua_israwstring(L, 2) && lua_isnumber(L, 4)) {
 			SetSingleUnitWeaponState(L, weapon, 3);
 		}
 	}
@@ -2519,16 +2519,16 @@ int LuaSyncedCtrl::SetUnitWeaponDamages(lua_State* L)
 	}
 
 
-	if (lua_istable(L, 3)) {
+	if (lua_istable(L, 2)) {
 		// {key1 = value1, ...}
-		for (lua_pushnil(L); lua_next(L, 3) != 0; lua_pop(L, 1)) {
+		for (lua_pushnil(L); lua_next(L, 2) != 0; lua_pop(L, 1)) {
 			if ((lua_isnumber(L, LUA_TABLE_KEY_INDEX) || lua_israwstring(L, LUA_TABLE_KEY_INDEX)) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
 				SetSingleDynDamagesKey(L, damages, LUA_TABLE_KEY_INDEX);
 			}
 		}
 	} else {
 		// key, value
-		if ((lua_isnumber(L, 3) || lua_israwstring(L, 3)) && lua_isnumber(L, 4)) {
+		if ((lua_isnumber(L, 2) || lua_israwstring(L, 2)) && lua_isnumber(L, 4)) {
 			SetSingleDynDamagesKey(L, damages, 3);
 		}
 	}
@@ -2612,7 +2612,7 @@ int LuaSyncedCtrl::SetUnitArmored(lua_State* L)
 	if (lua_isboolean(L, 2))
 		unit->armoredState = lua_toboolean(L, 2);
 
-	unit->armoredMultiple = luaL_optfloat(L, 3, unit->armoredMultiple);
+	unit->armoredMultiple = luaL_optfloat(L, 2, unit->armoredMultiple);
 
 	if (lua_toboolean(L, 2)) {
 		unit->curArmorMultiple = unit->armoredMultiple;
@@ -2707,7 +2707,7 @@ int LuaSyncedCtrl::SetUnitLosMask(lua_State* L)
 
 	const unsigned char losStatus = unit->losStatus[allyTeam];
 	const unsigned char  oldMask = losStatus >> LOS_MASK_SHIFT;
-	const unsigned char  newMask = ParseLosBits(L, 3, oldMask);
+	const unsigned char  newMask = ParseLosBits(L, 2, oldMask);
 	const unsigned char state = (newMask << LOS_MASK_SHIFT) | (losStatus & 0x0F);
 
 	unit->losStatus[allyTeam] = state;
@@ -2738,7 +2738,7 @@ int LuaSyncedCtrl::SetUnitLosState(lua_State* L)
 
 	const unsigned char losStatus = unit->losStatus[allyTeam];
 	const unsigned char  oldState = losStatus & 0x0F;
-	const unsigned char  newState = ParseLosBits(L, 3, oldState);
+	const unsigned char  newState = ParseLosBits(L, 2, oldState);
 
 	unit->SetLosStatus(allyTeam, (losStatus & 0xF0) | newState);
 	return 0;
@@ -2777,13 +2777,13 @@ int LuaSyncedCtrl::SetUnitCloak(lua_State* L)
 	if (lua_isnumber(L, 2))
 		unit->wantCloak = (lua_tonumber(L, 2) != 0);
 
-	if (lua_israwnumber(L, 3)) {
-		unit->decloakDistance = lua_tofloat(L, 3);
+	if (lua_israwnumber(L, 2)) {
+		unit->decloakDistance = lua_tofloat(L, 2);
 		return 0;
 	}
 
-	if (lua_isboolean(L, 3)) {
-		if (lua_toboolean(L, 3)) {
+	if (lua_isboolean(L, 2)) {
+		if (lua_toboolean(L, 2)) {
 			unit->decloakDistance = math::fabsf(unit->unitDef->decloakDistance);
 		} else {
 			unit->decloakDistance = unit->unitDef->decloakDistance;
@@ -2890,7 +2890,7 @@ int LuaSyncedCtrl::SetUnitMetalExtraction(lua_State* L)
 		return 0;
 
 	const float depth = luaL_checkfloat(L, 2);
-	const float range = luaL_optfloat(L, 3, mex->GetExtractionRange());
+	const float range = luaL_optfloat(L, 2, mex->GetExtractionRange());
 	mex->ResetExtraction();
 	mex->SetExtractionRangeAndDepth(range, depth);
 	return 0;
@@ -2941,10 +2941,10 @@ int LuaSyncedCtrl::SetUnitBuildParams(lua_State* L)
 	switch (hashString(luaL_checkstring(L, 2))) {
 		case hashString("buildRange"):
 		case hashString("buildDistance"): {
-			builder->buildDistance = luaL_optfloat(L, 3, builder->buildDistance);
+			builder->buildDistance = luaL_optfloat(L, 2, builder->buildDistance);
 		} break;
 		case hashString("buildRange3D"): {
-			builder->range3D = luaL_optboolean(L, 3, builder->range3D);
+			builder->range3D = luaL_optboolean(L, 2, builder->range3D);
 		} break;
 		default: {} break;
 	};
@@ -2984,8 +2984,8 @@ int LuaSyncedCtrl::SetUnitBuildSpeed(lua_State* L)
 		return 0;
 
 	builder->buildSpeed = buildSpeed;
-	if (lua_isnumber(L, 3)) {
-		builder->repairSpeed    = INV_GAME_SPEED * max(0.0f, lua_tofloat(L, 3));
+	if (lua_isnumber(L, 2)) {
+		builder->repairSpeed    = INV_GAME_SPEED * max(0.0f, lua_tofloat(L, 2));
 	}
 	if (lua_isnumber(L, 4)) {
 		builder->reclaimSpeed   = INV_GAME_SPEED * max(0.0f, lua_tofloat(L, 4));
@@ -3176,8 +3176,8 @@ int LuaSyncedCtrl::SetUnitShieldRechargeDelay(lua_State* L)
 	if (shield == nullptr)
 		return 0;
 
-	if (lua_isnumber(L, 3)) {
-		const auto seconds = lua_tofloat(L, 3);
+	if (lua_isnumber(L, 2)) {
+		const auto seconds = lua_tofloat(L, 2);
 		const auto frames = static_cast <int> (seconds * GAME_SPEED);
 		shield->SetRechargeDelay(frames, true);
 	} else {
@@ -3210,26 +3210,26 @@ int LuaSyncedCtrl::SetUnitFlanking(lua_State* L)
 	const string key = luaL_checkstring(L, 2);
 
 	if (key == "mode") {
-		unit->flankingBonusMode = luaL_checkint(L, 3);
+		unit->flankingBonusMode = luaL_checkint(L, 2);
 	}
 	else if (key == "dir") {
-		float3 dir(luaL_checkfloat(L, 3),
+		float3 dir(luaL_checkfloat(L, 2),
 		           luaL_checkfloat(L, 4),
 		           luaL_checkfloat(L, 5));
 		unit->flankingBonusDir = dir.Normalize();
 	}
 	else if (key == "moveFactor") {
-		unit->flankingBonusMobilityAdd = luaL_checkfloat(L, 3);
+		unit->flankingBonusMobilityAdd = luaL_checkfloat(L, 2);
 	}
 	else if (key == "minDamage") {
-		const float minDamage = luaL_checkfloat(L, 3);
+		const float minDamage = luaL_checkfloat(L, 2);
 		const float maxDamage = unit->flankingBonusAvgDamage +
 		                        unit->flankingBonusDifDamage;
 		unit->flankingBonusAvgDamage = (maxDamage + minDamage) * 0.5f;
 		unit->flankingBonusDifDamage = (maxDamage - minDamage) * 0.5f;
 	}
 	else if (key == "maxDamage") {
-		const float maxDamage = luaL_checkfloat(L, 3);
+		const float maxDamage = luaL_checkfloat(L, 2);
 		const float minDamage = unit->flankingBonusAvgDamage -
 		                        unit->flankingBonusDifDamage;
 		unit->flankingBonusAvgDamage = (maxDamage + minDamage) * 0.5f;
@@ -3335,9 +3335,9 @@ int LuaSyncedCtrl::SetUnitTarget(lua_State* L)
 		lua_pushboolean(L, true);
 		return 1;
 	}
-	if (args >= 4 && !lua_isboolean(L, 3)) {
+	if (args >= 4 && !lua_isboolean(L, 2)) {
 		const float3 pos(luaL_checkfloat(L, 2),
-		                 luaL_checkfloat(L, 3),
+		                 luaL_checkfloat(L, 2),
 		                 luaL_checkfloat(L, 4));
 		const bool manualFire = luaL_optboolean(L, 5, false);
 		const bool userTarget = luaL_optboolean(L, 6, false);
@@ -3361,7 +3361,7 @@ int LuaSyncedCtrl::SetUnitTarget(lua_State* L)
 			return 0;
 		}
 
-		const bool manualFire = luaL_optboolean(L, 3, false);
+		const bool manualFire = luaL_optboolean(L, 2, false);
 		const bool userTarget = luaL_optboolean(L, 4, false);
 		const int weaponNum = luaL_optint(L, 5, -1) - LUA_WEAPON_BASE_INDEX;
 		bool ret = false;
@@ -3445,7 +3445,7 @@ int LuaSyncedCtrl::SetUnitRadiusAndHeight(lua_State* L)
 	}
 
 	const float newRadius = std::max(1.0f, luaL_optfloat(L, 2, unit->radius));
-	const float newHeight = std::max(1.0f, luaL_optfloat(L, 3, unit->height));
+	const float newHeight = std::max(1.0f, luaL_optfloat(L, 2, unit->height));
 	const bool updateQuads = (newRadius != unit->radius);
 
 	if (updateQuads) {
@@ -3550,7 +3550,7 @@ int LuaSyncedCtrl::SetUnitPieceMatrix(lua_State* L)
 
 	CMatrix44f mat;
 
-	if (LuaUtils::ParseFloatArray(L, 3, &mat.m[0], 16) == -1)
+	if (LuaUtils::ParseFloatArray(L, 2, &mat.m[0], 16) == -1)
 		return 0;
 
 	if (lmp->SetPieceSpaceMatrix(mat))
@@ -3650,7 +3650,7 @@ int LuaSyncedCtrl::SetUnitSensorRadius(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	const int radius = std::clamp(luaL_checkint(L, 3), 0, MAX_UNIT_SENSOR_RADIUS);
+	const int radius = std::clamp(luaL_checkint(L, 2), 0, MAX_UNIT_SENSOR_RADIUS);
 
 	switch (hashString(luaL_checkstring(L, 2))) {
 		case hashString("los"): {
@@ -3711,7 +3711,7 @@ int LuaSyncedCtrl::SetUnitPosErrorParams(lua_State* L)
 		return 0;
 
 	unit->posErrorVector.x = luaL_optfloat(L, 2, unit->posErrorVector.x);
-	unit->posErrorVector.y = luaL_optfloat(L, 3, unit->posErrorVector.y);
+	unit->posErrorVector.y = luaL_optfloat(L, 2, unit->posErrorVector.y);
 	unit->posErrorVector.z = luaL_optfloat(L, 4, unit->posErrorVector.z);
 	unit->posErrorDelta.x = luaL_optfloat(L, 5, unit->posErrorDelta.x);
 	unit->posErrorDelta.y = luaL_optfloat(L, 6, unit->posErrorDelta.y);
@@ -3748,7 +3748,7 @@ int LuaSyncedCtrl::SetUnitMoveGoal(lua_State* L)
 
 	assert(unit->moveType != nullptr);
 
-	const float3 pos(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
+	const float3 pos(luaL_checkfloat(L, 2), luaL_checkfloat(L, 2), luaL_checkfloat(L, 4));
 
 	const float radius = luaL_optfloat(L, 5, 0.0f);
 	const float speed  = luaL_optfloat(L, 6, unit->moveType->GetMaxSpeed());
@@ -3785,7 +3785,7 @@ int LuaSyncedCtrl::SetUnitLandGoal(lua_State* L)
 	if (amt == nullptr)
 		luaL_error(L, "Not a flying unit (id = %d, dead = %d, name = %s)", unit->id, static_cast<int>(unit->isDead), unit->unitDef ? unit->unitDef->name.c_str() : "<null>");
 
-	const float3 landPos(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
+	const float3 landPos(luaL_checkfloat(L, 2), luaL_checkfloat(L, 2), luaL_checkfloat(L, 4));
 	const float radiusSq = lua_isnumber(L, 5)? Square(lua_tonumber(L, 5)): -1.0f;
 
 	amt->LandAt(landPos, radiusSq);
@@ -3880,12 +3880,12 @@ int LuaSyncedCtrl::SetUnitPosition(lua_State* L)
 	if (lua_isnumber(L, 4)) {
 		// 2=x, 3=y, 4=z
 		pos.x = luaL_checkfloat(L, 2);
-		pos.y = luaL_checkfloat(L, 3);
+		pos.y = luaL_checkfloat(L, 2);
 		pos.z = luaL_checkfloat(L, 4);
 	} else {
 		// 2=x, 3=z, 4=bool
 		pos.x = luaL_checkfloat(L, 2);
-		pos.z = luaL_checkfloat(L, 3);
+		pos.z = luaL_checkfloat(L, 2);
 
 		if (luaL_optboolean(L, 4, false)) {
 			pos.y = CGround::GetHeightAboveWater(pos.x, pos.z);
@@ -4001,7 +4001,7 @@ int LuaSyncedCtrl::SetFactoryBuggerOff(lua_State* L)
 		return 0;
 
 	f->boPerform     = luaL_optboolean(L, 2, f->boPerform    );
-	f->boOffset      = luaL_optfloat(  L, 3, f->boOffset     );
+	f->boOffset      = luaL_optfloat(  L, 2, f->boOffset     );
 	f->boRadius      = luaL_optfloat(  L, 4, f->boRadius     );
 	f->boRelHeading  = luaL_optint(    L, 5, f->boRelHeading );
 	f->boSherical    = luaL_optboolean(L, 6, f->boSherical   );
@@ -4030,7 +4030,7 @@ int LuaSyncedCtrl::BuggerOff(lua_State* L)
 {
 	float3 pos;
 	pos.x = luaL_checkfloat(L, 1);
-	pos.z = luaL_checkfloat(L, 3);
+	pos.z = luaL_checkfloat(L, 2);
 	pos.y = !lua_isnil(L, 2) ? luaL_checkfloat(L, 2) : CGround::GetHeightReal(pos.x, pos.z);
 
 	const float radius = luaL_checkfloat(L, 4);
@@ -4075,7 +4075,7 @@ int LuaSyncedCtrl::AddUnitDamage(lua_State* L)
 		return 0;
 
 	const float damage    = luaL_checkfloat(L, 2);
-	const int paralyze    = luaL_optint(L, 3, 0);
+	const int paralyze    = luaL_optint(L, 2, 0);
 	const int attackerID  = luaL_optint(L, 4, -1);
 	const int weaponDefID = luaL_optint(L, 5, -1);
 	const float3 impulse  = float3(std::clamp(luaL_optfloat(L, 6, 0.0f), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
@@ -4123,7 +4123,7 @@ int LuaSyncedCtrl::AddUnitImpulse(lua_State* L)
 		return 0;
 
 	const float3 impulse(std::clamp(luaL_checkfloat(L, 2), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
-	                     std::clamp(luaL_checkfloat(L, 3), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
+	                     std::clamp(luaL_checkfloat(L, 2), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE),
 	                     std::clamp(luaL_checkfloat(L, 4), -MAX_EXPLOSION_IMPULSE, MAX_EXPLOSION_IMPULSE));
 
 	unit->ApplyImpulse(impulse);
@@ -4171,8 +4171,8 @@ int LuaSyncedCtrl::AddUnitResource(lua_State* L)
 		return 0;
 
 	switch (type[0]) {
-		case 'm': { unit->AddMetal (std::max(0.0f, luaL_checkfloat(L, 3))); } break;
-		case 'e': { unit->AddEnergy(std::max(0.0f, luaL_checkfloat(L, 3))); } break;
+		case 'm': { unit->AddMetal (std::max(0.0f, luaL_checkfloat(L, 2))); } break;
+		case 'e': { unit->AddEnergy(std::max(0.0f, luaL_checkfloat(L, 2))); } break;
 		default: {} break;
 	}
 
@@ -4206,8 +4206,8 @@ int LuaSyncedCtrl::UseUnitResource(lua_State* L)
 		const char* type = lua_tostring(L, 2);
 
 		switch (type[0]) {
-			case 'm': { lua_pushboolean(L, unit->UseMetal (std::max(0.0f, lua_tofloat(L, 3)))); return 1; } break;
-			case 'e': { lua_pushboolean(L, unit->UseEnergy(std::max(0.0f, lua_tofloat(L, 3)))); return 1; } break;
+			case 'm': { lua_pushboolean(L, unit->UseMetal (std::max(0.0f, lua_tofloat(L, 2)))); return 1; } break;
+			case 'e': { lua_pushboolean(L, unit->UseEnergy(std::max(0.0f, lua_tofloat(L, 2)))); return 1; } break;
 			default : {                                                                                   } break;
 		}
 
@@ -4309,7 +4309,7 @@ int LuaSyncedCtrl::RemoveObjectDecal(lua_State* L)
 int LuaSyncedCtrl::AddGrass(lua_State* L)
 {
 	const float3 pos(luaL_checkfloat(L, 1), 0.0f, luaL_checkfloat(L, 2));
-	const uint8_t grassValue = static_cast<uint8_t>(luaL_optint(L, 3, 1));
+	const uint8_t grassValue = static_cast<uint8_t>(luaL_optint(L, 2, 1));
 
 	grassDrawer->AddGrass(pos.cClampInBounds(), grassValue);
 	return 0;
@@ -4363,7 +4363,7 @@ int LuaSyncedCtrl::CreateFeature(lua_State* L)
 		return 0; // do not error (featureDefs are dynamic)
 
 	const float3 pos(luaL_checkfloat(L, 2),
-	                 luaL_checkfloat(L, 3),
+	                 luaL_checkfloat(L, 2),
 	                 luaL_checkfloat(L, 4));
 
 	short int heading = 0;
@@ -4571,7 +4571,7 @@ int LuaSyncedCtrl::SetFeatureResources(lua_State* L)
 	feature->defResources.energy = std::max(0.0f, luaL_optfloat(L, 7, feature->defResources.energy));
 
 	feature->resources.metal  = std::clamp(luaL_checknumber(L, 2), 0.0f, feature->defResources.metal );
-	feature->resources.energy = std::clamp(luaL_checknumber(L, 3), 0.0f, feature->defResources.energy);
+	feature->resources.energy = std::clamp(luaL_checknumber(L, 2), 0.0f, feature->defResources.energy);
 
 	feature->reclaimTime = std::clamp(luaL_optnumber(L, 4, feature->reclaimTime), 1.0f, 1000000.0f);
 	feature->reclaimLeft = std::clamp(luaL_optnumber(L, 5, feature->reclaimLeft), 0.0f,       1.0f);
@@ -4607,7 +4607,7 @@ int LuaSyncedCtrl::SetFeatureResurrect(lua_State* L)
 		feature->udef = ud;
 	}
 
-	if (!lua_isnoneornil(L, 3))
+	if (!lua_isnoneornil(L, 2))
 		feature->buildFacing = LuaUtils::ParseFacing(L, __func__, 3);
 
 	feature->resurrectProgress = std::clamp(luaL_optnumber(L, 4, feature->resurrectProgress), 0.0f, 1.0f);
@@ -4656,13 +4656,13 @@ int LuaSyncedCtrl::SetFeatureMoveCtrl(lua_State* L)
 
 		// set vectors
 		for (int i = 0; i < 3; i++) {
-			moveCtrl.velVector[i] = luaL_optfloat(L, 3 + i, moveCtrl.velVector[i]);
+			moveCtrl.velVector[i] = luaL_optfloat(L, 2 + i, moveCtrl.velVector[i]);
 			moveCtrl.accVector[i] = luaL_optfloat(L, 6 + i, moveCtrl.accVector[i]);
 		}
 	} else {
 		// set masks
 		for (int i = 0; i < 3; i++) {
-			moveCtrl.velocityMask[i] = (luaL_optfloat(L, 3 + i, moveCtrl.velocityMask[i]) != 0.0f);
+			moveCtrl.velocityMask[i] = (luaL_optfloat(L, 2 + i, moveCtrl.velocityMask[i]) != 0.0f);
 			moveCtrl. impulseMask[i] = (luaL_optfloat(L, 6 + i, moveCtrl. impulseMask[i]) != 0.0f);
 			moveCtrl.movementMask[i] = (luaL_optfloat(L, 9 + i, moveCtrl.movementMask[i]) != 0.0f);
 		}
@@ -4725,7 +4725,7 @@ int LuaSyncedCtrl::SetFeaturePosition(lua_State* L)
 
 	float3 pos;
 	pos.x = luaL_checkfloat(L, 2);
-	pos.y = luaL_checkfloat(L, 3);
+	pos.y = luaL_checkfloat(L, 2);
 	pos.z = luaL_checkfloat(L, 4);
 
 	feature->ForcedMove(pos);
@@ -4916,7 +4916,7 @@ int LuaSyncedCtrl::SetFeatureRadiusAndHeight(lua_State* L)
 	}
 
 	const float newRadius = std::max(1.0f, luaL_optfloat(L, 2, feature->radius));
-	const float newHeight = std::max(1.0f, luaL_optfloat(L, 3, feature->height));
+	const float newHeight = std::max(1.0f, luaL_optfloat(L, 2, feature->height));
 	const bool updateQuads = (newRadius != feature->radius);
 
 	if (updateQuads) {
@@ -5075,7 +5075,7 @@ int LuaSyncedCtrl::SetProjectilePosition(lua_State* L)
 		return 0;
 
 	proj->pos.x = luaL_optfloat(L, 2, 0.0f);
-	proj->pos.y = luaL_optfloat(L, 3, 0.0f);
+	proj->pos.y = luaL_optfloat(L, 2, 0.0f);
 	proj->pos.z = luaL_optfloat(L, 4, 0.0f);
 
 	return 0;
@@ -5153,7 +5153,7 @@ int LuaSyncedCtrl::SetProjectileTarget(lua_State* L)
 	switch (lua_gettop(L)) {
 		case 3: {
 			const int id = luaL_checkint(L, 2);
-			const int type = luaL_checkint(L, 3);
+			const int type = luaL_checkint(L, 2);
 
 			CWorldObject* oldTargetObject = wpro->GetTargetObject();
 			CWorldObject* newTargetObject = nullptr;
@@ -5189,7 +5189,7 @@ int LuaSyncedCtrl::SetProjectileTarget(lua_State* L)
 			}
 
 			wpro->SetTargetObject(nullptr);
-			wpro->SetTargetPos(float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4)));
+			wpro->SetTargetPos(float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 2), luaL_checkfloat(L, 4)));
 
 			lua_pushboolean(L, wpro->GetTargetObject() == nullptr);
 			return 1;
@@ -5261,16 +5261,16 @@ int LuaSyncedCtrl::SetProjectileDamages(lua_State* L)
 	DynDamageArray* damages = DynDamageArray::GetMutable(wpro->damages);
 
 
-	if (lua_istable(L, 3)) {
+	if (lua_istable(L, 2)) {
 		// {key1 = value1, ...}
-		for (lua_pushnil(L); lua_next(L, 3) != 0; lua_pop(L, 1)) {
+		for (lua_pushnil(L); lua_next(L, 2) != 0; lua_pop(L, 1)) {
 			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
 				SetSingleDynDamagesKey(L, damages, LUA_TABLE_KEY_INDEX);
 			}
 		}
 	} else {
 		// key, value
-		if (lua_israwstring(L, 3) && lua_isnumber(L, 4)) {
+		if (lua_israwstring(L, 2) && lua_isnumber(L, 4)) {
 			SetSingleDynDamagesKey(L, damages, 3);
 		}
 	}
@@ -5353,7 +5353,7 @@ int LuaSyncedCtrl::SetPieceProjectileParams(lua_State* L)
 	CPieceProjectile* pproj = static_cast<CPieceProjectile*>(proj);
 
 	pproj->explFlags = luaL_optint(L, 2, pproj->explFlags);
-	pproj->spinAngle = luaL_optfloat(L, 3, pproj->spinAngle);
+	pproj->spinAngle = luaL_optfloat(L, 2, pproj->spinAngle);
 	pproj->spinSpeed = luaL_optfloat(L, 4, pproj->spinSpeed);
 	pproj->spinVec.x = luaL_optfloat(L, 5, pproj->spinVec.x);
 	pproj->spinVec.y = luaL_optfloat(L, 6, pproj->spinVec.y);
@@ -5663,7 +5663,7 @@ int LuaSyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 
 	int count = 0;
 
-	if (luaL_optboolean(L, 3, false)) {
+	if (luaL_optboolean(L, 2, false)) {
 		// pairwise
 		for (size_t i = 0, n = std::min(units.size(), commands.size()); i < n; ++i) {
 			CUnit* unit = units[i];
@@ -5704,12 +5704,12 @@ static void ParseParams(lua_State* L, const char* caller, float& factor,
 	if (args == 3) {
 		fx1 = fx2 = luaL_checkfloat(L, 1);
 		fz1 = fz2 = luaL_checkfloat(L, 2);
-		factor    = luaL_checkfloat(L, 3);
+		factor    = luaL_checkfloat(L, 2);
 	}
 	else if (args == 5) {
 		fx1    = luaL_checkfloat(L, 1);
 		fz1    = luaL_checkfloat(L, 2);
-		fx2    = luaL_checkfloat(L, 3);
+		fx2    = luaL_checkfloat(L, 2);
 		fz2    = luaL_checkfloat(L, 4);
 		factor = luaL_checkfloat(L, 5);
 		if (fx1 > fx2) {
@@ -5869,7 +5869,7 @@ int LuaSyncedCtrl::AddHeightMap(lua_State* L)
 
 	const float xl = luaL_checkfloat(L, 1);
 	const float zl = luaL_checkfloat(L, 2);
-	const float h  = luaL_checkfloat(L, 3);
+	const float h  = luaL_checkfloat(L, 2);
 
 	// quantize
 	const int x = (int)(xl / SQUARE_SIZE);
@@ -5919,7 +5919,7 @@ int LuaSyncedCtrl::SetHeightMap(lua_State* L)
 
 	const float xl = luaL_checkfloat(L, 1);
 	const float zl = luaL_checkfloat(L, 2);
-	const float h  = luaL_checkfloat(L, 3);
+	const float h  = luaL_checkfloat(L, 2);
 
 	// quantize
 	const int x = (int)(xl / SQUARE_SIZE);
@@ -6148,7 +6148,7 @@ int LuaSyncedCtrl::AddOriginalHeightMap(lua_State* L)
 
 	const float xl = luaL_checkfloat(L, 1);
 	const float zl = luaL_checkfloat(L, 2);
-	const float h  = luaL_checkfloat(L, 3);
+	const float h  = luaL_checkfloat(L, 2);
 
 	// quantize
 	const int x = (int)(xl / SQUARE_SIZE);
@@ -6191,7 +6191,7 @@ int LuaSyncedCtrl::SetOriginalHeightMap(lua_State* L)
 
 	const float xl = luaL_checkfloat(L, 1);
 	const float zl = luaL_checkfloat(L, 2);
-	const float h  = luaL_checkfloat(L, 3);
+	const float h  = luaL_checkfloat(L, 2);
 
 	// quantize
 	const int x = (int)(xl / SQUARE_SIZE);
@@ -6400,7 +6400,7 @@ int LuaSyncedCtrl::AddSmoothMesh(lua_State* L)
 
 	const float xl = luaL_checkfloat(L, 1);
 	const float zl = luaL_checkfloat(L, 2);
-	const float h  = luaL_checkfloat(L, 3);
+	const float h  = luaL_checkfloat(L, 2);
 
 	// quantize
 	const int x = (int)(xl / smoothGround.GetResolution());
@@ -6439,7 +6439,7 @@ int LuaSyncedCtrl::SetSmoothMesh(lua_State* L)
 
 	const float xl = luaL_checkfloat(L, 1);
 	const float zl = luaL_checkfloat(L, 2);
-	const float h  = luaL_checkfloat(L, 3);
+	const float h  = luaL_checkfloat(L, 2);
 
 	// quantize
 	const int x = (int)(xl / smoothGround.GetResolution());
@@ -6532,7 +6532,7 @@ int LuaSyncedCtrl::SetMapSquareTerrainType(lua_State* L)
 	const int tz = hz >> 1;
 
 	const int ott = readMap->GetTypeMapSynced()[tz * mapDims.hmapx + tx];
-	const int ntt = luaL_checkint(L, 3);
+	const int ntt = luaL_checkint(L, 2);
 
 	readMap->GetTypeMapSynced()[tz * mapDims.hmapx + tx] = std::max(0, std::min(ntt, (CMapInfo::NUM_TERRAIN_TYPES - 1)));
 	pathManager->TerrainChange(hx, hz,  hx + 1, hz + 1,  TERRAINCHANGE_SQUARE_TYPEMAP_INDEX);
@@ -6567,7 +6567,7 @@ int LuaSyncedCtrl::SetTerrainTypeData(lua_State* L)
 	bool ttHardnessChanged = false;
 
 	if (args >= 2 && lua_isnumber(L, 2)) ttSpeedModChanged |= (ctt. tankSpeed != (tt-> tankSpeed = lua_tofloat(L, 2)));
-	if (args >= 3 && lua_isnumber(L, 3)) ttSpeedModChanged |= (ctt. kbotSpeed != (tt-> kbotSpeed = lua_tofloat(L, 3)));
+	if (args >= 3 && lua_isnumber(L, 2)) ttSpeedModChanged |= (ctt. kbotSpeed != (tt-> kbotSpeed = lua_tofloat(L, 2)));
 	if (args >= 4 && lua_isnumber(L, 4)) ttSpeedModChanged |= (ctt.hoverSpeed != (tt->hoverSpeed = lua_tofloat(L, 4)));
 	if (args >= 5 && lua_isnumber(L, 5)) ttSpeedModChanged |= (ctt. shipSpeed != (tt-> shipSpeed = lua_tofloat(L, 5)));
 	if (args >= 6 && lua_isnumber(L, 6)) ttHardnessChanged |= (ctt.  hardness != (tt->  hardness = lua_tofloat(L, 6)));
@@ -6601,7 +6601,7 @@ int LuaSyncedCtrl::SetSquareBuildingMask(lua_State* L)
 {
 	const int x = luaL_checkint(L, 1);
 	const int z = luaL_checkint(L, 2);
-	const int mask = luaL_checkint(L, 3);
+	const int mask = luaL_checkint(L, 2);
 
 	if (mask < 0 || mask > USHRT_MAX) {
 		luaL_error(L, "Incorrect value of mask: %s(%d, %d, %d)", __func__, x, z, mask);
@@ -6714,7 +6714,7 @@ int LuaSyncedCtrl::UnitAttach(lua_State* L)
 	if (transporter == transportee)
 		return 0;
 
-	int piece = luaL_checkint(L, 3) - 1;
+	int piece = luaL_checkint(L, 2) - 1;
 	const auto& pieces = transporter->localModel.pieces;
 
 	if (piece >= (int) pieces.size()) {
@@ -6772,7 +6772,7 @@ int LuaSyncedCtrl::UnitDetachFromAir(lua_State* L)
 	const int args = lua_gettop(L);
 	float3 pos;
 	if (args >= 4) {
-		pos = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
+		pos = float3(luaL_checkfloat(L, 2), luaL_checkfloat(L, 2), luaL_checkfloat(L, 4));
 	} else {
 		pos = transportee->pos;
 		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z);
@@ -6995,7 +6995,7 @@ static int SetExplosionParam(lua_State* L, CExplosionParams& params, DamageArray
  */
 int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
 {
-	const float3 pos = {luaL_checkfloat(L, 1      ), luaL_checkfloat(L, 2      ), luaL_checkfloat(L, 3      )};
+	const float3 pos = {luaL_checkfloat(L, 1      ), luaL_checkfloat(L, 2      ), luaL_checkfloat(L, 2      )};
 	const float3 dir = {luaL_optfloat  (L, 4, 0.0f), luaL_optfloat  (L, 5, 0.0f), luaL_optfloat  (L, 6, 0.0f)};
 
 	if (lua_istable(L, 7)) {
@@ -7070,7 +7070,7 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
  */
 int LuaSyncedCtrl::SpawnCEG(lua_State* L)
 {
-	const float3 pos = {luaL_optfloat(L, 2, 0.0f), luaL_optfloat(L, 3, 0.0f), luaL_optfloat(L, 4, 0.0f)};
+	const float3 pos = {luaL_optfloat(L, 2, 0.0f), luaL_optfloat(L, 2, 0.0f), luaL_optfloat(L, 4, 0.0f)};
 	const float3 dir = {luaL_optfloat(L, 5, 0.0f), luaL_optfloat(L, 6, 0.0f), luaL_optfloat(L, 7, 0.0f)};
 
 	const float radius = luaL_optfloat(L,  8, 0.0f);
@@ -7109,7 +7109,7 @@ int LuaSyncedCtrl::SpawnSFX(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
-	const float3 pos = {luaL_checkfloat(L, 3), luaL_checkfloat(L, 4), luaL_checkfloat(L, 5)};
+	const float3 pos = {luaL_checkfloat(L, 2), luaL_checkfloat(L, 4), luaL_checkfloat(L, 5)};
 	const float3 dir = {luaL_checkfloat(L, 6), luaL_checkfloat(L, 7), luaL_checkfloat(L, 8)};
 
 	if (luaL_optboolean(L, 9, true)) {
@@ -7165,8 +7165,8 @@ int LuaSyncedCtrl::SetExperienceGrade(lua_State* L)
 		if (lua_isnumber(L, 2))
 			globalUnitParams.expPowerScale = lua_tofloat(L, 2);
 
-		if (lua_isnumber(L, 3))
-			globalUnitParams.expHealthScale = lua_tofloat(L, 3);
+		if (lua_isnumber(L, 2))
+			globalUnitParams.expHealthScale = lua_tofloat(L, 2);
 
 		if (lua_isnumber(L, 4))
 			globalUnitParams.expReloadScale = lua_tofloat(L, 4);
@@ -7192,7 +7192,7 @@ int LuaSyncedCtrl::SetRadarErrorParams(lua_State* L)
 		return 0;
 
 	losHandler->SetAllyTeamRadarErrorSize(allyTeamID, luaL_checknumber(L, 2));
-	losHandler->SetBaseRadarErrorSize(luaL_optnumber(L, 3, losHandler->GetBaseRadarErrorSize()));
+	losHandler->SetBaseRadarErrorSize(luaL_optnumber(L, 2, losHandler->GetBaseRadarErrorSize()));
 	losHandler->SetBaseRadarErrorMult(luaL_optnumber(L, 4, losHandler->GetBaseRadarErrorMult()));
 	return 0;
 }
@@ -7336,7 +7336,7 @@ int LuaSyncedCtrl::EditUnitCmdDesc(lua_State* L)
 	// note: must be a copy
 	SCommandDescription cmdDesc = *cmdDescs[cmdDescIdx];
 
-	ParseCommandDescription(L, 3, cmdDesc);
+	ParseCommandDescription(L, 2, cmdDesc);
 	unit->commandAI->UpdateCommandDescription(cmdDescIdx, std::move(cmdDesc));
 	return 0;
 }
@@ -7358,7 +7358,7 @@ int LuaSyncedCtrl::InsertUnitCmdDesc(lua_State* L)
 	if ((args == 2) && !lua_istable(L, 2))
 		luaL_error(L, "Incorrect arguments to InsertUnitCmdDesc/2");
 
-	if ((args >= 3) && (!lua_isnumber(L, 2) || !lua_istable(L, 3)))
+	if ((args >= 3) && (!lua_isnumber(L, 2) || !lua_istable(L, 2)))
 		luaL_error(L, "Incorrect arguments to InsertUnitCmdDesc/3");
 
 	CUnit* unit = ParseUnit(L, __func__, 1);
