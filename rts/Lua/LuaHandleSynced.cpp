@@ -112,6 +112,7 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 
 	LuaPushNamedCFunc(L, "loadstring", CSplitLuaHandle::LoadStringData);
 	LuaPushNamedCFunc(L, "CallAsTeam", CSplitLuaHandle::CallAsTeam);
+	/*** @global COBSCALE integer */ 
 	LuaPushNamedNumber(L, "COBSCALE",  COBSCALE);
 
 	// load our libraries
@@ -176,9 +177,7 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 /*** Receives data sent via `SendToUnsynced` callout.
  *
  * @function UnsyncedCallins:RecvFromSynced
- * @param arg1 any
- * @param arg2 any
- * @param argn any
+ * @param ... any
  */
 void CUnsyncedLuaHandle::RecvFromSynced(lua_State* srcState, int args)
 {
@@ -1959,6 +1958,13 @@ int CSyncedLuaHandle::SyncedPairs(lua_State* L)
 }
 
 
+/***
+ * Invoke `UnsyncedCallins:RecvFromSynced` callin with the given arguments.
+ * 
+ * @function SendToUnsynced
+ * @param ... nil|boolean|number|string Arguments. Typically the first argument is the name of a function to call.
+ * @see UnsyncedCallins:RecvFromSynced
+ */
 int CSyncedLuaHandle::SendToUnsynced(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -2312,7 +2318,27 @@ int CSplitLuaHandle::LoadStringData(lua_State* L)
 	return 1;
 }
 
+/***
+ * @class CallAsTeamOptions
+ * @field ctrl integer Ctrl team ID.
+ * @field read integer Read team ID.
+ * @field select integer Read team ID.
+ */
 
+/***
+ * @function CallAsTeam
+ * @param teamID integer Team ID.
+ * @param func fun(...) The function to call.
+ * @param ... any Arguments to pass to the function.
+ * @return any ... The return values of the function.
+ */
+/***
+ * @function CallAsTeam
+ * @param options CallAsTeamOptions Options.
+ * @param func fun(...) The function to call.
+ * @param ... any Arguments to pass to the function.
+ * @return any ... The return values of the function.
+ */
 int CSplitLuaHandle::CallAsTeam(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
