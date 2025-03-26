@@ -55,7 +55,7 @@ public:
 	bool  ProxyMode()   const { return proxyMode; }
 	float CursorScale() const { return cursorScale; }
 
-	void SetMinimized(bool state) { minimized = state; }
+	void SetMinimized(bool state);
 	bool GetMinimized() const { return minimized; }
 	bool GetMaximized() const { return maximized; }
 
@@ -72,8 +72,6 @@ public:
 	float GetRotation() const { return static_cast<int>(rotation) * math::HALFPI; }
 	int minimapCanFlip = 0;
 	RotationOptions GetRotationOption() const { return rotation; }
-
-	void SetMinimized(bool state);
 
 	void SetSlaveMode(bool value);
 	bool GetSlaveMode() const { return slaveDrawMode; }
@@ -135,6 +133,8 @@ protected:
 	int2 tmpPos;
 	int2 oldPos;
 	int2 oldDim;
+	int2 lastPos;
+	int2 lastDim;
 
 	float minimapRefreshRate = 0.0f;
 
