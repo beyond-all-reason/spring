@@ -128,7 +128,7 @@ int LuaArchive::GetLoadedArchives(lua_State* L)
 
 /***
  * @function VFS.GetArchivePath
- * @param string archiveName
+ * @param archiveName string
  * @return string? archivePath
  */
 int LuaArchive::GetArchivePath(lua_State* L)
