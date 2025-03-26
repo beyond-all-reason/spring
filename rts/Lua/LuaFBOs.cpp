@@ -101,6 +101,28 @@ static GLenum GetBindingEnum(GLenum target)
 	return 0;
 }
 
+/***
+ * @alias Attachment
+ * | "depth"
+ * | "stencil"
+ * | "color0" 
+ * | "color1" 
+ * | "color2" 
+ * | "color3" 
+ * | "color4" 
+ * | "color5" 
+ * | "color6" 
+ * | "color7" 
+ * | "color8" 
+ * | "color9" 
+ * | "color10"
+ * | "color11"
+ * | "color12"
+ * | "color13"
+ * | "color14"
+ * | "color15"
+ */
+ 
 static GLenum ParseAttachment(const std::string& name)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -414,27 +436,38 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 /******************************************************************************/
 
 /***
- * attachment ::= luaTex or `RBO.rbo` or nil or { luaTex [, num target [, num level ] ] }
- * @class attachment
+ * User Data FBO
+ * @class FBO
  */
 
 /***
- * User Data FBO
- * @class FBO
- * @field depth attachment
- * @field stencil attachment
- * @field color0 attachment
- * @field color1 attachment
- * @field color2 attachment
- * @field colorn attachment
- * @field color15 attachment
- * @field drawbuffers table `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
- * @field readbuffer table `GL_COLOR_ATTACHMENT0_EXT`
+ * @class CreateFBOOptions
+ * @field depth string?
+ * @field stencil string?
+ * @field color0 string?
+ * @field color1 string?
+ * @field color2 string?
+ * @field color3 string?
+ * @field color4 string?
+ * @field color5 string?
+ * @field color6 string?
+ * @field color7 string?
+ * @field color8 string?
+ * @field color9 string?
+ * @field color10 string?
+ * @field color11 string?
+ * @field color12 string?
+ * @field color13 string?
+ * @field color14 string?
+ * @field color15 string
+ * @field drawbuffers (integer|GL)[] e.g. `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
+ * @field readbuffer integer|GL e.g. `GL_COLOR_ATTACHMENT0_EXT`
  */
 
 /***
  * @function gl.CreateFBO
- * @param fbo FBO
+ * @param options CreateFBOOptions
+ * @return FBO fbo
  */
 int LuaFBOs::CreateFBO(lua_State* L)
 {
@@ -787,11 +820,12 @@ namespace Impl {
  * 
  * @function gl.ClearAttachmentFBO
  * @param target number? (Default: `GL.FRAMEBUFFER`)
- * @param attachment GL|string (e.g. `"color0"` or `GL.COLOR_ATTACHMENT0`)
+ * @param attachment GL|Attachment (e.g. `"color0"` or `GL.COLOR_ATTACHMENT0`)
  * @param clearValue0 number? (Default: `0`)
  * @param clearValue1 number? (Default: `0`)
  * @param clearValue2 number? (Default: `0`)
  * @param clearValue3 number? (Default: `0`)
+ * @return boolean success
  */
 
 int LuaFBOs::ClearAttachmentFBO(lua_State* L)
