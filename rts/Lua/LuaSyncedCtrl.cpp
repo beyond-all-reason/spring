@@ -5261,17 +5261,17 @@ int LuaSyncedCtrl::SetProjectileDamages(lua_State* L)
 	DynDamageArray* damages = DynDamageArray::GetMutable(wpro->damages);
 
 
-	if (lua_istable(L, 3)) {
+	if (lua_istable(L, 2)) {
 		// {key1 = value1, ...}
-		for (lua_pushnil(L); lua_next(L, 3) != 0; lua_pop(L, 1)) {
+		for (lua_pushnil(L); lua_next(L, 2) != 0; lua_pop(L, 1)) {
 			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
 				SetSingleDynDamagesKey(L, damages, LUA_TABLE_KEY_INDEX);
 			}
 		}
 	} else {
 		// key, value
-		if (lua_israwstring(L, 3) && lua_isnumber(L, 4)) {
-			SetSingleDynDamagesKey(L, damages, 3);
+		if (lua_israwstring(L, 2) && lua_isnumber(L, 3)) {
+			SetSingleDynDamagesKey(L, damages, 2);
 		}
 	}
 
