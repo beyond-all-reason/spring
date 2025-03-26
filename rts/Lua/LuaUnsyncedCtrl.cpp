@@ -2939,7 +2939,7 @@ int LuaUnsyncedCtrl::WarpMouse(lua_State* L)
 
 /*** @function Spring.SetMouseCursor
  * @param cursorName string
- * @param cursorScale number? (Default: 1.0)
+ * @param cursorScale number? (Default: `1.0`)
  * @return nil
  */
 int LuaUnsyncedCtrl::SetMouseCursor(lua_State* L)
@@ -3044,8 +3044,8 @@ int LuaUnsyncedCtrl::SetNanoProjectileParams(lua_State* L)
  *
  * @function Spring.SetConfigInt
  * @param name string
- * @param value number
- * @param useOverlay boolean? (Default: `false`) the value will only be set in memory, and not be restored for the next game.
+ * @param value integer
+ * @param useOverlay boolean? (Default: `false`) If `true`, the value will only be set in memory, and not be restored for the next game.
  * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
@@ -3073,7 +3073,7 @@ int LuaUnsyncedCtrl::SetConfigInt(lua_State* L)
  * @function Spring.SetConfigFloat
  * @param name string
  * @param value number
- * @param useOverla boolean? (Default: `false`) the value will only be set in memory, and not be restored for the next game.y
+ * @param useOverla boolean? (Default: `false`) If `true`, the value will only be set in memory, and not be restored for the next game.y
  * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigFloat(lua_State* L)
@@ -3095,8 +3095,8 @@ int LuaUnsyncedCtrl::SetConfigFloat(lua_State* L)
  *
  * @function Spring.SetConfigString
  * @param name string
- * @param value number
- * @param useOverlay boolean? (Default: `false`) the value will only be set in memory, and not be restored for the next game.
+ * @param value string
+ * @param useOverlay boolean? (Default: `false`) If `true`, the value will only be set in memory, and not be restored for the next game.
  * @return nil
  */
 int LuaUnsyncedCtrl::SetConfigString(lua_State* L)

@@ -1520,6 +1520,16 @@ static bool GLObjectDrawWithLuaMat(lua_State* L, CSolidObject* obj, LuaObjType o
 }
 
 
+/** - Not exported.
+ * 
+ * Pushes or pops the model render state for the given object.
+ * 
+ * Parses params, starting at param 2:
+ * @param teamID integer
+ * @param rawState boolean? (Default: `true`)
+ * @param toScreen boolean? (Default: `false`)
+ * @param opaque boolean? (Default: `true`) If `true`, draw opaque; if `false`, draw alpha.
+ */
 static void GLObjectShape(lua_State* L, const SolidObjectDef* def)
 {
 	if (def == nullptr)
@@ -1541,6 +1551,13 @@ static void GLObjectShape(lua_State* L, const SolidObjectDef* def)
 }
 
 
+/** - Not exported.
+ * 
+ * Pushes or pops the model render state for the given object.
+ * 
+ * Parses params, starting at param 2:
+ * @param push boolean If `true`, push the render state; if `false`, pop it.
+ */
 static void GLObjectTextures(lua_State* L, const CSolidObject* obj)
 {
 	if (obj == nullptr)
@@ -1555,6 +1572,13 @@ static void GLObjectTextures(lua_State* L, const CSolidObject* obj)
 	}
 }
 
+/** - Not exported.
+ * 
+ * Pushes or pops the model render state for the given object definition.
+ * 
+ * Parses params, starting at param 2:
+ * @param push boolean If `true`, push the render state; if `false`, pop it.
+ */
 static void GLObjectShapeTextures(lua_State* L, const SolidObjectDef* def)
 {
 	if (def == nullptr)
@@ -1661,6 +1685,7 @@ int LuaOpenGL::UnitGL4(lua_State* L)
 /***
  * @function gl.UnitTextures
  * @param unitID integer
+ * @param push boolean If `true`, push the render state; if `false`, pop it.
  */
 int LuaOpenGL::UnitTextures(lua_State* L)
 {
@@ -1672,6 +1697,10 @@ int LuaOpenGL::UnitTextures(lua_State* L)
 /***
  * @function gl.UnitShape
  * @param unitDefID integer
+ * @param teamID integer
+ * @param rawState boolean? (Default: `true`)
+ * @param toScreen boolean? (Default: `false`)
+ * @param opaque boolean? (Default: `true`) If `true`, draw opaque; if `false`, draw alpha.
  */
 int LuaOpenGL::UnitShape(lua_State* L)
 {
@@ -1692,6 +1721,7 @@ int LuaOpenGL::UnitShapeGL4(lua_State* L)
 /***
  * @function gl.UnitShapeTextures
  * @param unitDefID integer
+ * @param push boolean If `true`, push the render state; if `false`, pop it.
  */
 int LuaOpenGL::UnitShapeTextures(lua_State* L)
 {
@@ -1839,6 +1869,7 @@ int LuaOpenGL::FeatureGL4(lua_State* L)
 /***
  * @function gl.FeatureTextures
  * @param featureID integer
+ * @param push boolean If `true`, push the render state; if `false`, pop it.
  */
 int LuaOpenGL::FeatureTextures(lua_State* L)
 {
@@ -1850,6 +1881,10 @@ int LuaOpenGL::FeatureTextures(lua_State* L)
 /***
  * @function gl.FeatureShape
  * @param featureDefID integer
+ * @param teamID integer
+ * @param rawState boolean? (Default: `true`)
+ * @param toScreen boolean? (Default: `false`)
+ * @param opaque boolean? (Default: `true`) If `true`, draw opaque; if `false`, draw alpha.
  */
 int LuaOpenGL::FeatureShape(lua_State* L)
 {
@@ -1870,6 +1905,7 @@ int LuaOpenGL::FeatureShapeGL4(lua_State* L)
 /***
  * @function gl.FeatureShapeTextures
  * @param featureDefID integer
+ * @param push boolean If `true`, push the render state; if `false`, pop it.
  */
 int LuaOpenGL::FeatureShapeTextures(lua_State* L)
 {

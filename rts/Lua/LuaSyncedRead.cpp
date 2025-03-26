@@ -5834,11 +5834,26 @@ int LuaSyncedRead::GetUnitFeatureSeparation(lua_State* L)
 	return 1;
 }
 
+/***
+ * @class UnitDefDimensions
+ * @field height number
+ * @field radius number
+ * @field midx number
+ * @field minx number
+ * @field maxx number
+ * @field midy number
+ * @field miny number
+ * @field maxy number
+ * @field midz number
+ * @field minz number
+ * @field maxz number
+ */
 
 /***
  *
  * @function Spring.GetUnitDefDimensions
  * @param unitDefID integer
+ * @return UnitDefDimensions? dimensions
  */
 int LuaSyncedRead::GetUnitDefDimensions(lua_State* L)
 {
@@ -6613,8 +6628,8 @@ int LuaSyncedRead::ValidFeatureID(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetAllFeatures
+ * @return integer[] featureIDs
  */
 int LuaSyncedRead::GetAllFeatures(lua_State* L)
 {
@@ -7719,8 +7734,12 @@ int LuaSyncedRead::GetSmoothMeshHeight(lua_State* L)
  *
  * @function Spring.TestMoveOrder
  * @param unitDefID integer
- * @param pos float3
- * @param dir float3? (Default: `{ 0, 0, 0 }`)
+ * @param posX number
+ * @param posY number
+ * @param posZ number
+ * @param dirX number? (Default: `0.0`)
+ * @param dirY number? (Default: `0.0`)
+ * @param dirZ number? (Default: `0.0`)
  * @param testTerrain boolean? (Default: `true`)
  * @param testObjects boolean? (Default: `true`)
  * @param centerOnly boolean? (Default: `false`)

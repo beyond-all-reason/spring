@@ -420,7 +420,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 
 /***
  * User Data FBO
- * @class Fbo
+ * @class FBO
  * @field depth attachment
  * @field stencil attachment
  * @field color0 attachment
@@ -434,7 +434,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 
 /***
  * @function gl.CreateFBO
- * @param fbo Fbo
+ * @param fbo FBO
  */
 int LuaFBOs::CreateFBO(lua_State* L)
 {
@@ -510,7 +510,7 @@ int LuaFBOs::CreateFBO(lua_State* L)
  * This doesn't delete the attached objects!
  * 
  * @function gl.DeleteFBO
- * @param fbo Fbo
+ * @param fbo FBO
  */
 int LuaFBOs::DeleteFBO(lua_State* L)
 {
@@ -526,7 +526,7 @@ int LuaFBOs::DeleteFBO(lua_State* L)
 
 /***
  * @function gl.IsValidFBO
- * @param fbo Fbo
+ * @param fbo FBO
  * @param target GL?
  * @return boolean valid
  * @return number? status
@@ -565,16 +565,18 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 	return 2;
 }
 
-
 /***
  * @function gl.ActiveFBO
- * @param fbo Fbo
+ * @param fbo FBO
+ * @param func fun(...)
+ * @param ... any args
+ */
+/***
+ * @function gl.ActiveFBO
+ * @param fbo FBO
  * @param target GL?
- * @param identities boolean?
- * @param lua_function function?
- * @param arg1 any?
- * @param arg2 any?
- * @param argn any?
+ * @param func fun(...)
+ * @param ... any args
  */
 int LuaFBOs::ActiveFBO(lua_State* L)
 {
@@ -650,7 +652,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
  */
 /***
  * @function gl.RawBindFBO
- * @param fbo Fbo
+ * @param fbo FBO
  * @param target GL? (Default: `fbo.target`)
  * @return number previouslyBoundRawFboId
  */
@@ -698,12 +700,12 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 /*** needs `GLAD_GL_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
- * @param fboSrc Fbo
+ * @param fboSrc FBO
  * @param x0Src number
  * @param y0Src number
  * @param x1Src number
  * @param y1Src number
- * @param fboDst Fbo
+ * @param fboDst FBO
  * @param x0Dst number
  * @param y0Dst number
  * @param x1Dst number
@@ -784,12 +786,12 @@ namespace Impl {
  * Clears the "attachment" of the currently bound FBO type "target" with "clearValues"
  * 
  * @function gl.ClearAttachmentFBO
- * @param target number? (Default: GL.FRAMEBUFFER)
+ * @param target number? (Default: `GL.FRAMEBUFFER`)
  * @param attachment GL|string (e.g. `"color0"` or `GL.COLOR_ATTACHMENT0`)
- * @param clearValue0 number
- * @param clearValue1 number
- * @param clearValue2 number
- * @param clearValue3 number
+ * @param clearValue0 number? (Default: `0`)
+ * @param clearValue1 number? (Default: `0`)
+ * @param clearValue2 number? (Default: `0`)
+ * @param clearValue3 number? (Default: `0`)
  */
 
 int LuaFBOs::ClearAttachmentFBO(lua_State* L)

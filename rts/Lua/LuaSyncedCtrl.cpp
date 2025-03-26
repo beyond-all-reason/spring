@@ -569,6 +569,19 @@ static int SetSolidObjectCollisionVolumeData(lua_State* L, CSolidObject* o)
 	return LuaUtils::ParseColVolData(L, 2, &o->collisionVolume);
 }
 
+/** - Not exported
+ * 
+ * Parses the following params, starting from the 2nd index:
+ * 
+ * @param isBlocking boolean? If `true` add this object to the `GroundBlockingMap`, but only if it collides with solid objects (or is being set to collide with the `isSolidObjectCollidable` argument). If `false`, remove this object from the `GroundBlockingMap`. No change if `nil`.
+ * @param isSolidObjectCollidable boolean? Enable or disable collision with solid objects, or no change if `nil`.
+ * @param isProjectileCollidable boolean? Enable or disable collision with projectiles, or no change if `nil`.
+ * @param isRaySegmentCollidable boolean? Enable or disable collision with ray segments, or no change if `nil`.
+ * @param crushable boolean? Enable or disable crushable, or no change if `nil`.
+ * @param blockEnemyPushing boolean? Enable or disable blocking enemy pushing, or no change if `nil`.
+ * @param blockHeightChanges boolean? Enable or disable blocking height changes, or no change if `nil`.
+ * @return boolean isBlocking
+ */
 static int SetSolidObjectBlocking(lua_State* L, CSolidObject* o)
 {
 	if (o == nullptr)
@@ -3066,14 +3079,14 @@ int LuaSyncedCtrl::SetUnitNanoPieces(lua_State* L)
 /***
  * @function Spring.SetUnitBlocking
  * @param unitID integer
- * @param isblocking boolean
- * @param isSolidObjectCollidable boolean
- * @param isProjectileCollidable boolean
- * @param isRaySegmentCollidable boolean
- * @param crushable boolean
- * @param blockEnemyPushing boolean
- * @param blockHeightChanges boolean
- * @return nil
+ * @param isBlocking boolean? If `true` add this unit to the `GroundBlockingMap`, but only if it collides with solid objects (or is being set to collide with the `isSolidObjectCollidable` argument). If `false`, remove this unit from the `GroundBlockingMap`. No change if `nil`.
+ * @param isSolidObjectCollidable boolean? Enable or disable collision with solid objects, or no change if `nil`.
+ * @param isProjectileCollidable boolean? Enable or disable collision with projectiles, or no change if `nil`.
+ * @param isRaySegmentCollidable boolean? Enable or disable collision with ray segments, or no change if `nil`.
+ * @param crushable boolean? Enable or disable crushable, or no change if `nil`.
+ * @param blockEnemyPushing boolean? Enable or disable blocking enemy pushing, or no change if `nil`.
+ * @param blockHeightChanges boolean? Enable or disable blocking height changes, or no change if `nil`.
+ * @return boolean isBlocking
  */
 int LuaSyncedCtrl::SetUnitBlocking(lua_State* L)
 {
@@ -4815,14 +4828,14 @@ int LuaSyncedCtrl::SetFeatureVelocity(lua_State* L)
 /***
  * @function Spring.SetFeatureBlocking
  * @param featureID integer
- * @param isBlocking boolean
- * @param isSolidObjectCollidable boolean
- * @param isProjectileCollidable boolean
- * @param isRaySegmentCollidable boolean
- * @param crushable boolean
- * @param blockEnemyPushing boolean
- * @param blockHeightChanges boolean
- * @return nil
+ * @param isBlocking boolean? If `true` add this feature to the `GroundBlockingMap`, but only if it collides with solid objects (or is being set to collide with the `isSolidObjectCollidable` argument). If `false`, remove this feature from the `GroundBlockingMap`. No change if `nil`.
+ * @param isSolidObjectCollidable boolean? Enable or disable collision with solid objects, or no change if `nil`.
+ * @param isProjectileCollidable boolean? Enable or disable collision with projectiles, or no change if `nil`.
+ * @param isRaySegmentCollidable boolean? Enable or disable collision with ray segments, or no change if `nil`.
+ * @param crushable boolean? Enable or disable crushable, or no change if `nil`.
+ * @param blockEnemyPushing boolean? Enable or disable blocking enemy pushing, or no change if `nil`.
+ * @param blockHeightChanges boolean? Enable or disable blocking height changes, or no change if `nil`.
+ * @return boolean isBlocking
  */
 int LuaSyncedCtrl::SetFeatureBlocking(lua_State* L)
 {
@@ -7343,10 +7356,19 @@ int LuaSyncedCtrl::EditUnitCmdDesc(lua_State* L)
 
 
 /***
+ * Insert a command description at a specific index.
+ * 
  * @function Spring.InsertUnitCmdDesc
  * @param unitID integer
- * @param cmdDescID integer?
- * @param cmdArray CommandDescription
+ * @param index integer
+ * @param cmdDesc CommandDescription
+ */
+/***
+ * Insert a command description at the last position.
+ * 
+ * @function Spring.InsertUnitCmdDesc
+ * @param unitID integer
+ * @param cmdDesc CommandDescription
  */
 int LuaSyncedCtrl::InsertUnitCmdDesc(lua_State* L)
 {
