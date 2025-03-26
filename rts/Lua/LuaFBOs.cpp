@@ -441,7 +441,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
  */
 
 /***
- * @class CreateFBOOptions
+ * @class FBODescription
  * @field depth string?
  * @field stencil string?
  * @field color0 string?
@@ -459,14 +459,14 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
  * @field color12 string?
  * @field color13 string?
  * @field color14 string?
- * @field color15 string
- * @field drawbuffers (integer|GL)[] e.g. `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
- * @field readbuffer integer|GL e.g. `GL_COLOR_ATTACHMENT0_EXT`
+ * @field color15 string?
+ * @field drawbuffers (integer|GL)[]? e.g. `{ GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT3_EXT, ..}`
+ * @field readbuffer (integer|GL)? e.g. `GL_COLOR_ATTACHMENT0_EXT`
  */
 
 /***
  * @function gl.CreateFBO
- * @param options CreateFBOOptions
+ * @param fboDesc FBODescription
  * @return FBO fbo
  */
 int LuaFBOs::CreateFBO(lua_State* L)
