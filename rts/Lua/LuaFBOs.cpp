@@ -786,12 +786,12 @@ namespace Impl {
  * Clears the "attachment" of the currently bound FBO type "target" with "clearValues"
  * 
  * @function gl.ClearAttachmentFBO
- * @param target number? (Default: GL.FRAMEBUFFER)
+ * @param target number? (Default: `GL.FRAMEBUFFER`)
  * @param attachment GL|string (e.g. `"color0"` or `GL.COLOR_ATTACHMENT0`)
- * @param clearValue0 number
- * @param clearValue1 number
- * @param clearValue2 number
- * @param clearValue3 number
+ * @param clearValue0 number? (Default: `0`)
+ * @param clearValue1 number? (Default: `0`)
+ * @param clearValue2 number? (Default: `0`)
+ * @param clearValue3 number? (Default: `0`)
  */
 
 int LuaFBOs::ClearAttachmentFBO(lua_State* L)
