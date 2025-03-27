@@ -26,6 +26,7 @@ public:
 
 	void DeleteScripts();
 
+	void UpdatePreframe();
 	void Update();
 	void UpdatePostAnimation();
 	bool AddUnit(CUnit* unit);

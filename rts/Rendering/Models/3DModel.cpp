@@ -515,10 +515,31 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 	dst = src;
 }
 
+const Transform& LocalModelPiece::GetModelSpaceTransform() const
+{
+	if (dirty)
+		UpdateParentMatricesRec();
+
+	return modelSpaceTra;
+}
+
+const CMatrix44f& LocalModelPiece::GetModelSpaceMatrix() const
+{
+	if (dirty)
+		UpdateParentMatricesRec();
+
+	return modelSpaceMat;
+}
+
 void LocalModelPiece::SetScriptVisible(bool b)
 {
 	scriptSetVisible = b;
 	wasUpdated = true;
+}
+
+void LocalModelPiece::SavePrevModelSpaceTransform()
+{
+	prevModelSpaceTra = GetModelSpaceTransform();
 }
 
 void LocalModelPiece::UpdateChildTransformRec(bool updateChildTransform) const
