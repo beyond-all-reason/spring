@@ -38,8 +38,6 @@ void GeneralMoveSystem::Update() {
             unit->SanityCheck();
             #endif
 
-			unit->PreUpdate();
-
             if (moveType->Update())
                 eventHandler.UnitMoved(unit);
 
