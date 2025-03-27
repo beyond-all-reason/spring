@@ -186,14 +186,14 @@ inline void CModelDrawerDataBase<T>::UpdateObjectTrasform(const T* o)
 		if unlikely(!lmp.GetScriptVisible()) {
 			stma.UpdateForced(2 * (1 + i) + 0, Transform::Zero());
 			stma.UpdateForced(2 * (1 + i) + 1, Transform::Zero());
-			lmp.SetWasUpdated(false);
+			lmp.ResetWasUpdated();
 			continue;
 		}
 
 		stma.UpdateForced(2 * (1 + i) + 0, lmp.GetPrevModelSpaceTransform());
 		stma.UpdateForced(2 * (1 + i) + 1, lmpTransform);
 
-		lmp.SetWasUpdated(false);
+		lmp.ResetWasUpdated();
 	}
 
 	lastUploadFrameIt->second = gs->frameNum;

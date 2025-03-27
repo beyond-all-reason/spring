@@ -37,6 +37,7 @@ CR_REG_METADATA(LocalModelPiece, (
 	CR_IGNORED(original),
 
 	CR_IGNORED(dirty),
+	CR_IGNORED(wasUpdated),
 	CR_IGNORED(modelSpaceTra),
 	CR_IGNORED(pieceSpaceTra),
 
@@ -515,6 +516,11 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 	dst = src;
 }
 
+void LocalModelPiece::ResetWasUpdated() const
+{
+	wasUpdated[1] = std::exchange(wasUpdated[0], false);
+}
+
 const Transform& LocalModelPiece::GetModelSpaceTransform() const
 {
 	if (dirty)
@@ -534,7 +540,7 @@ const CMatrix44f& LocalModelPiece::GetModelSpaceMatrix() const
 void LocalModelPiece::SetScriptVisible(bool b)
 {
 	scriptSetVisible = b;
-	wasUpdated = true;
+	wasUpdated[0] = true; //update for current frame
 }
 
 void LocalModelPiece::SavePrevModelSpaceTransform()
@@ -548,7 +554,7 @@ void LocalModelPiece::UpdateChildTransformRec(bool updateChildTransform) const
 
 	if (dirty) {
 		dirty = false;
-		wasUpdated = true;
+		wasUpdated[0] = true;  //update for current frame
 		updateChildTransform = true;
 
 		pieceSpaceTra = CalcPieceSpaceTransform(pos, rot, original->scale);
@@ -575,7 +581,7 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 		parent->UpdateParentMatricesRec();
 
 	dirty = false;
-	wasUpdated = true;
+	wasUpdated[0] = true;  //update for current frame
 
 	pieceSpaceTra = CalcPieceSpaceTransform(pos, rot, original->scale);
 
