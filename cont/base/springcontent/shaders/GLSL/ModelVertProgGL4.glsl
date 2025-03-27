@@ -185,12 +185,10 @@ Transform InvertTransformAffine(Transform tra) {
 }
 
 vec4 SLerp(vec4 qa, vec4 qb, float t) {
-	const float eps = 1e-3;
-
 	// Calculate angle between them.
 	float cosHalfTheta = dot(qa, qb);
 
-	// Unfortunately every rotation can be represented by two quaternions: (++++) or (----)
+	// Every rotation can be represented by two quaternions: (++++) or (----)
 	// avoid taking the longer way: choose one representation
 	float s = sign(cosHalfTheta);
 	qb *= s;
@@ -198,11 +196,17 @@ vec4 SLerp(vec4 qa, vec4 qb, float t) {
 	// now cosHalfTheta is >= 0.0
 
 	// if qa and qb (or -qb originally) represent ~ the same rotation
-	if (cosHalfTheta >= (1.0 - eps))
+	if (cosHalfTheta >= (1.0 - 0.005))
 		return normalize(mix(qa, qb, t));
 
-	// N2S: interpolation of orthogonal rotations (i.e. cosHalfTheta ~ 0)
-	// does not require special handling
+	// Interpolation of orthogonal rotations (i.e. cosHalfTheta ~ 0)
+	// does not require special handling, however this usually represents
+	// "physically impossible" 180 degree turns with infinite speed so perhaps
+	// it can be handled in the following (cuurently disabled) special way
+	#if 0
+	if (cosHalfTheta <= 0.005)
+		return mix(qa, qb, step(0.5, t));
+	#endif
 
 	float halfTheta = acos(cosHalfTheta);
 
@@ -215,7 +219,9 @@ vec4 SLerp(vec4 qa, vec4 qb, float t) {
 }
 
 Transform Lerp(Transform t0, Transform t1, float a) {
-	a = clamp(a, 0.0, 1.0); // generally good idea
+	// generally good idea, otherwise extrapolation artifacts
+	// will be nasty in some cases (e.g. fast rotation)
+	a = clamp(a, 0.0, 1.0);
 	return Transform(
 		SLerp(t0.quat, t1.quat, a),
 		mix(t0.trSc, t1.trSc, a)
