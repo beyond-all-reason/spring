@@ -430,9 +430,13 @@ void CUnitHandler::UpdateUnitWeapons()
 void CUnitHandler::UpdatePreframe()
 {
 	SCOPED_TIMER("Sim::Unit::UpdatePreframe");
+	inUpdateCall = true;
+
 	for (CUnit* unit : activeUnits) {
 		unit->PreUpdate();
 	}
+
+	inUpdateCall = false;
 }
 
 
@@ -454,10 +458,13 @@ void CUnitHandler::Update()
 void CUnitHandler::UpdatePostAnimation()
 {
 	SCOPED_TIMER("Sim::Unit::UpdatePostAnimation");
+	inUpdateCall = true;
 
 	for (auto* unit : activeUnits) {
 		unit->UpdateTransportees();
 	}
+
+	inUpdateCall = false;
 }
 
 void CUnitHandler::AddBuilderCAI(CBuilderCAI* b)
