@@ -1808,6 +1808,10 @@ void CGame::SimFrame() {
 	{
 		SCOPED_SPECIAL_TIMER("Sim");
 
+		// Lua unit scripts change piece positions and orientations in eventHandler.GameFrame(gs->frameNum);
+		// so we need to save the previous unit state before it happened
+		unitHandler.UpdatePreframe();
+
 		{
 			SCOPED_TIMER("Sim::GameFrame");
 

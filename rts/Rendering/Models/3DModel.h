@@ -487,8 +487,8 @@ struct LocalModelPiece
 
 	const float3& GetDirection() const { return dir; }
 
-	Transform GetModelSpaceTransform() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceTra; }
-	CMatrix44f GetModelSpaceMatrix() const { if (dirty) UpdateParentMatricesRec(); return modelSpaceMat; }
+	const Transform&  GetModelSpaceTransform() const;
+	const CMatrix44f& GetModelSpaceMatrix()    const;
 
 	const CollisionVolume* GetCollisionVolume() const { return &colvol; }
 	      CollisionVolume* GetCollisionVolume()       { return &colvol; }
@@ -496,7 +496,7 @@ struct LocalModelPiece
 	bool GetScriptVisible() const { return scriptSetVisible; }
 	void SetScriptVisible(bool b);
 
-	void SavePrevModelSpaceTransform() { prevModelSpaceTra = GetModelSpaceTransform(); }
+	void SavePrevModelSpaceTransform();
 	const auto& GetPrevModelSpaceTransform() const { return prevModelSpaceTra; }
 private:
 	Transform prevModelSpaceTra;

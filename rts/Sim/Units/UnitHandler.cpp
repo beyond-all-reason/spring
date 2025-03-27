@@ -427,6 +427,14 @@ void CUnitHandler::UpdateUnitWeapons()
 	}
 }
 
+void CUnitHandler::UpdatePreframe()
+{
+	SCOPED_TIMER("Sim::Unit::UpdatePreframe");
+	for (CUnit* unit : activeUnits) {
+		unit->PreUpdate();
+	}
+}
+
 
 void CUnitHandler::Update()
 {

@@ -185,6 +185,8 @@ Transform InvertTransformAffine(Transform tra) {
 }
 
 vec4 SLerp(vec4 qa, vec4 qb, float t) {
+	const float eps = 1e-3;
+
 	// Calculate angle between them.
 	float cosHalfTheta = dot(qa, qb);
 
@@ -193,28 +195,27 @@ vec4 SLerp(vec4 qa, vec4 qb, float t) {
 	float s = sign(cosHalfTheta);
 	qb *= s;
 	cosHalfTheta *= s;
+	// now cosHalfTheta is >= 0.0
 
-	// if qa = qb or qa = -qb then theta = 0 and we can return qa
-	if (abs(cosHalfTheta) >= 1.0) // greater-sign necessary for numerical stability
-		return qa;
+	// if qa and qb (or -qb originally) represent ~ the same rotation
+	if (cosHalfTheta >= (1.0 - eps))
+		return normalize(mix(qa, qb, t));
 
-	// Calculate temporary values.
+	// N2S: interpolation of orthogonal rotations (i.e. cosHalfTheta ~ 0)
+	// does not require special handling
+
 	float halfTheta = acos(cosHalfTheta);
-	float sinHalfTheta = sqrt(1.0 - cosHalfTheta * cosHalfTheta); // NOTE: we checked above that |cosHalfTheta| < 1
 
-	// if theta = pi then result is not fully defined
-	// we could rotate around any axis normal to qa or qb
-	if (sinHalfTheta < 1e-3)
-		return normalize(mix(qa, qb, 0.5));
-
-	// both should be divided by sinHalfTheta, but makes no sense to do it due to follow up normalization
+	// both should be divided by sinHalfTheta (calculation skipped),
+	// but it makes no sense to do it due to follow up normalization
 	float ratioA = sin((1.0 - t) * halfTheta);
 	float ratioB = sin((      t) * halfTheta);
 
-	return normalize(qa * ratioA + qb * ratioB);
+	return qa * ratioA + qb * ratioB; // already normalized
 }
 
 Transform Lerp(Transform t0, Transform t1, float a) {
+	a = clamp(a, 0.0, 1.0); // generally good idea
 	return Transform(
 		SLerp(t0.quat, t1.quat, a),
 		mix(t0.trSc, t1.trSc, a)
