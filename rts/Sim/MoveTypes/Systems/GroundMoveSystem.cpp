@@ -46,8 +46,7 @@ void GroundMoveSystem::Update() {
             #ifndef NDEBUG
 			unit->SanityCheck();
             #endif
-    
-			unit->PreUpdate();
+
 			moveType->UpdateTraversalPlan();
 		});
 	}

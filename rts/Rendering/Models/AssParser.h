@@ -96,22 +96,6 @@ private:
 		const aiScene* scene
 	);
 
-	static const std::vector<std::string> GetBoneNames(const aiScene* scene);
-	static const std::vector<std::string> GetMeshNames(const aiScene* scene);
-	static aiNode* FindNode(const aiScene* scene, aiNode* node, const std::string& name);
-	static aiNode* FindFallbackNode(const aiScene* scene);
-	static const std::vector<CMatrix44f> GetMeshBoneMatrices(
-		const aiScene* scene,
-		const S3DModel* model,
-		std::vector<SPseudoAssPiece>& meshPPs
-	);
-
-	static const std::vector<MeshData> GetModelSpaceMeshes(
-		const aiScene* scene,
-		const S3DModel* model,
-		const std::vector<CMatrix44f>& meshBoneMatrices
-	);
-
 	static void ReparentMeshesTrianglesToBones(
 		S3DModel* model,
 		const std::vector<MeshData>& meshes
