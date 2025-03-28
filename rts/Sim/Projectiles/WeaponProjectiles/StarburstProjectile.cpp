@@ -74,13 +74,13 @@ CStarburstProjectile::CStarburstProjectile(const ProjectileParams& params): CWea
 
 	if (weaponDef != nullptr) {
 		maxSpeed = weaponDef->projectilespeed;
-		ttl = weaponDef->flighttime;
+		ttl = params.ttl;
 
-		// Default uptime is -1. Positive values override the weapondef.
+		// Default uptime is -1. Positive values override the projectile params.
 		if (uptime < 0)
 			uptime = weaponDef->uptime * GAME_SPEED;
 
-		if (weaponDef->flighttime == 0)
+		if (ttl == 0)
 			ttl = std::min(3000.0f, uptime + myrange / maxSpeed + 100);
 	}
 

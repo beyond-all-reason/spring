@@ -132,7 +132,7 @@ void CBombDropper::FireImpl(const bool scriptCall)
 		params.pos = weaponMuzzlePos;
 		params.end = currentTargetPos;
 		params.speed = launchSpeed;
-		params.ttl = (weaponDef->flighttime == 0)? ((range / projectileSpeed) + 15 + predict): weaponDef->flighttime;
+		params.ttl = (ttl == 0) ? ((range / projectileSpeed) + 15 + predict) : ttl;
 		params.tracking = tracking;
 
 		assert(weaponDef->projectileType == WEAPON_TORPEDO_PROJECTILE);
