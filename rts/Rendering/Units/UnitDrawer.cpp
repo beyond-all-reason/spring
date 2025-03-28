@@ -61,6 +61,7 @@ CONFIG(float, UnitIconFadeVanish).defaultValue(1000.0f).minimumValue(1.0f).maxim
 CONFIG(float, UnitTransparency).defaultValue(0.7f);
 CONFIG(bool, UnitIconsAsUI).defaultValue(false).description("Draw unit icons like it is an UI element and not like unit's LOD.");
 CONFIG(bool, UnitIconsHideWithUI).defaultValue(false).description("Hide unit icons when UI is hidden.");
+CONFIG(float, UnitGhostIconsDimming).defaultValue(0.5).minimumValue(0.0f).maximumValue(1.0f).description("Dimming multiplier for out of radar ghost icons.");
 
 CONFIG(int, MaxDynamicModelLights)
 	.defaultValue(1)
@@ -356,6 +357,7 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 	sh.SetUniform("alphaCtrl", 0.0f, 1.0f, 0.0f, 0.0f); // GL_GREATER > 0.0
 
 	static constexpr uint8_t defaultColor[4] = { 255, 255, 255, 255 };
+	const float ghostIconDimming = modelDrawerData->ghostIconDimming;
 
 	if (!minimap->UseUnitIcons())
 		icon::iconHandler.GetDefaultIconData()->BindTexture();
@@ -404,7 +406,7 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 				}
 			}
 			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
-				useColor = SColor{uint8_t(color[0]*0.5), uint8_t(color[1]*0.5), uint8_t(color[2]*0.5), color[3]};
+				useColor = SColor{uint8_t(color[0]*ghostIconDimming), uint8_t(color[1]*ghostIconDimming), uint8_t(color[2]*ghostIconDimming), color[3]};
 				color = useColor;
 			}
 
@@ -423,7 +425,7 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 				color = minimap->GetEnemyTeamIconColor();
 			else
 				color = teamHandler.Team(ghost->team)->color;
-			color = SColor{uint8_t(color[0]*0.5), uint8_t(color[1]*0.5), uint8_t(color[2]*0.5), color[3]};
+			color = SColor{uint8_t(color[0]*ghostIconDimming), uint8_t(color[1]*ghostIconDimming), uint8_t(color[2]*ghostIconDimming), color[3]};
 
 			const float iconScale = ghost->myIcon->GetSize();
 			const float3& pos = ghost->midPos;
@@ -603,6 +605,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 	sh.SetUniform("alphaCtrl", 0.05f, 1.0f, 0.0f, 0.0f); // GL_GREATER > 0.05
 
 	const auto allyTeam = gu->myAllyTeam;
+	const float ghostIconDimming = modelDrawerData->ghostIconDimming;
 
 	for (const auto& [icon, objects] : modelDrawerData->GetUnitsByIcon()) {
 		if (icon == nullptr)
@@ -641,9 +644,9 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			// use white for selected units
 			SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
 			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
-				color.r = color.r*0.5;
-				color.g = color.g*0.5;
-				color.b = color.b*0.5;
+				color.r = color.r*ghostIconDimming;
+				color.g = color.g*ghostIconDimming;
+				color.b = color.b*ghostIconDimming;
 			}
 
 			DrawUnitIconScreen(rb, icon, pos, color, unit->radius, unit->GetIsIcon());
@@ -659,9 +662,9 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 				continue;
 
 			SColor color = SColor{ teamHandler.Team(ghost->team)->color };
-			color.r = color.r*0.5;
-			color.g = color.g*0.5;
-			color.b = color.b*0.5;
+			color.r = color.r*ghostIconDimming;
+			color.g = color.g*ghostIconDimming;
+			color.b = color.b*ghostIconDimming;
 
 			DrawUnitIconScreen(rb, icon, pos, color, ghost->radius, false);
 		}
