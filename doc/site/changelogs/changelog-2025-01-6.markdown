@@ -1,12 +1,12 @@
 ---
 layout: post
-title: Release 2025.01.6
+title: Release 2025.01
 parent: Changelogs
 permalink: changelogs/changelog-2025-01-6
 author: sprunk
 ---
 
-This is the changelog since version 105-2590 until **version 2025.01.6**, which happened on 2025-01-08.
+This is the changelog since version 105-2590 until **version 2025.01**, which was released on 2025-01-08.
 
 # Caveats
 These are the entries which may require special attention when migrating:
