@@ -167,6 +167,7 @@ public:
 
 	//icons
 	bool iconHideWithUI = true;
+	float ghostIconDimming = 0.5f;
 
 	// IconsAsUI
 	bool useScreenIcons = false;
