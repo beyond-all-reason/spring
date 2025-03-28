@@ -61,7 +61,7 @@ CONFIG(float, UnitIconFadeVanish).defaultValue(1000.0f).minimumValue(1.0f).maxim
 CONFIG(float, UnitTransparency).defaultValue(0.7f);
 CONFIG(bool, UnitIconsAsUI).defaultValue(false).description("Draw unit icons like it is an UI element and not like unit's LOD.");
 CONFIG(bool, UnitIconsHideWithUI).defaultValue(false).description("Hide unit icons when UI is hidden.");
-CONFIG(float, UnitGhostIconsDimming).defaultValue(0.5).minimumValue(0.0f).maximumValue(1.0f).description("Dimming multiplier for out of radar ghost icons.");
+CONFIG(float, UnitGhostIconsDimming).defaultValue(0.5).minimumValue(0.0f).maximumValue(1.0f).description("Dimming multiplier for out of radar ghost icons. Setting to 0 disables them.");
 
 CONFIG(int, MaxDynamicModelLights)
 	.defaultValue(1)
@@ -406,6 +406,8 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 				}
 			}
 			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
+				if (!ghostIconDimming)
+					continue;
 				useColor = SColor{uint8_t(color[0]*ghostIconDimming), uint8_t(color[1]*ghostIconDimming), uint8_t(color[2]*ghostIconDimming), color[3]};
 				color = useColor;
 			}
@@ -418,22 +420,21 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 			DrawUnitMiniMapIcon(rb, iconScale, pos, color);
 		}
 
-		for (const auto& ghost : ghosts) {
-			const uint8_t* color;
+		if (!gu->spectatingFullView && ghostIconDimming) {
+			for (const auto& ghost : ghosts) {
+				const uint8_t* color;
 
-			if (minimap->UseSimpleColors())
-				color = minimap->GetEnemyTeamIconColor();
-			else
-				color = teamHandler.Team(ghost->team)->color;
-			color = SColor{uint8_t(color[0]*ghostIconDimming), uint8_t(color[1]*ghostIconDimming), uint8_t(color[2]*ghostIconDimming), color[3]};
+				if (minimap->UseSimpleColors())
+					color = minimap->GetEnemyTeamIconColor();
+				else
+					color = teamHandler.Team(ghost->team)->color;
+				color = SColor{uint8_t(color[0]*ghostIconDimming), uint8_t(color[1]*ghostIconDimming), uint8_t(color[2]*ghostIconDimming), color[3]};
 
-			const float iconScale = ghost->myIcon->GetSize();
-			const float3& pos = ghost->midPos;
+				const float iconScale = ghost->myIcon->GetSize();
+				const float3& pos = ghost->midPos;
 
-			if (gu->spectatingFullView)
-				continue;
-
-			DrawUnitMiniMapIcon(rb, iconScale, pos, color);
+				DrawUnitMiniMapIcon(rb, iconScale, pos, color);
+			}
 		}
 
 		rb.Submit(GL_TRIANGLES);
@@ -644,6 +645,8 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			// use white for selected units
 			SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
 			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
+				if (!ghostIconDimming)
+					continue;
 				color.r = color.r*ghostIconDimming;
 				color.g = color.g*ghostIconDimming;
 				color.b = color.b*ghostIconDimming;
@@ -651,22 +654,25 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 
 			DrawUnitIconScreen(rb, icon, pos, color, unit->radius, unit->GetIsIcon());
 		}
-		for (const auto& ghost : ghosts) {
-			float3 pos = ghost->midPos;
 
-			if (gu->spectatingFullView)
-				continue;
+		if (!gu->spectatingFullView && ghostIconDimming) {
+			for (const auto& ghost : ghosts) {
+				float3 pos = ghost->midPos;
 
-			pos = camera->CalcViewPortCoordinates(pos);
-			if (pos.z > 1.0f || pos.z < 0.0f)
-				continue;
+				if (gu->spectatingFullView)
+					continue;
 
-			SColor color = SColor{ teamHandler.Team(ghost->team)->color };
-			color.r = color.r*ghostIconDimming;
-			color.g = color.g*ghostIconDimming;
-			color.b = color.b*ghostIconDimming;
+				pos = camera->CalcViewPortCoordinates(pos);
+				if (pos.z > 1.0f || pos.z < 0.0f)
+					continue;
 
-			DrawUnitIconScreen(rb, icon, pos, color, ghost->radius, false);
+				SColor color = SColor{ teamHandler.Team(ghost->team)->color };
+				color.r = color.r*ghostIconDimming;
+				color.g = color.g*ghostIconDimming;
+				color.b = color.b*ghostIconDimming;
+
+				DrawUnitIconScreen(rb, icon, pos, color, ghost->radius, false);
+			}
 		}
 
 		rb.Submit(GL_TRIANGLES);
