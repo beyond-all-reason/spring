@@ -2240,6 +2240,7 @@ int LuaSyncedCtrl::SetUnitStockpile(lua_State* L)
  * @field forceAim integer?
  * @field avoidFlags integer?
  * @field collisionFlags integer?
+ * @field ttl number? How many seconds the projectile should live 
  */
 
 static bool SetSingleUnitWeaponState(lua_State* L, CWeapon* weapon, int index)
@@ -2311,6 +2312,10 @@ static bool SetSingleUnitWeaponState(lua_State* L, CWeapon* weapon, int index)
 		} break;
 		case hashString("collisionFlags"): {
 			weapon->collisionFlags = lua_toint(L, index + 1);
+		} break;
+
+		case hashString("ttl"): {
+			weapon->ttl = (int) (lua_tonumber(L, index + 1) * GAME_SPEED);
 		} break;
 
 		default: {

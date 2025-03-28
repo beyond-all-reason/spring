@@ -110,27 +110,27 @@ void CCannon::FireImpl(const bool scriptCall)
 	launchDir += (gsRNG.NextVector() * SprayAngleExperience() + SalvoErrorExperience());
 	launchDir.SafeNormalize();
 
-	int ttl = 0;
+	int myTtl = 0;
 	const float sqSpeed2D = launchDir.SqLength2D() * projectileSpeed * projectileSpeed;
 	const int predict = math::ceil((sqSpeed2D == 0.0f) ?
 		(-2.0f * projectileSpeed * launchDir.y / gravity):
 		math::sqrt(targetVec.SqLength2D() / sqSpeed2D));
 
-	if (weaponDef->flighttime > 0) {
-		ttl = weaponDef->flighttime;
+	if (ttl > 0) {
+		myTtl = ttl;
 	} else if (weaponDef->selfExplode) {
-		ttl = (predict + gsRNG.NextFloat() * 2.5f - 0.5f);
+		myTtl = (predict + gsRNG.NextFloat() * 2.5f - 0.5f);
 	} else if ((weaponDef->groundBounce || weaponDef->waterBounce) && weaponDef->numBounce > 0) {
-		ttl = (predict * (1 + weaponDef->numBounce * weaponDef->bounceRebound));
+		myTtl = (predict * (1 + weaponDef->numBounce * weaponDef->bounceRebound));
 	} else {
-		ttl = predict * 2;
+		myTtl = predict * 2;
 	}
 
 	ProjectileParams params = GetProjectileParams();
 	params.pos = weaponMuzzlePos;
 	params.end = currentTargetPos;
 	params.speed = launchDir * projectileSpeed;
-	params.ttl = ttl;
+	params.ttl = myTtl;
 	params.gravity = gravity;
 
 	WeaponProjectileFactory::LoadProjectile(params);

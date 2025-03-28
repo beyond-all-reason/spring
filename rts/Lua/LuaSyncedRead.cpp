@@ -5120,6 +5120,7 @@ int LuaSyncedRead::GetUnitMaxRange(lua_State* L)
  *   "sprayAngle" (spray angle after XP bonus),
  *   "targetMoveError" (extra inaccuracy against moving targets, after XP bonus)
  *   "avoidFlags" (bitmask for targeting avoidance),
+ *   "ttl" (number of seconds a projectile should live)
  *   "collisionFlags" (bitmask for collisions).
  *
  * The state "salvoError" is an exception and returns a table: {x, y, z},
@@ -5227,6 +5228,9 @@ int LuaSyncedRead::GetUnitWeaponState(lua_State* L)
 		} break;
 		case hashString("collisionFlags"): {
 			lua_pushnumber(L, weapon->collisionFlags);
+		} break;
+		case hashString("ttl"): {
+			lua_pushnumber(L, weapon->ttl * INV_GAME_SPEED);
 		} break;
 
 		default: {

@@ -62,7 +62,7 @@ void CMissileLauncher::FireImpl(const bool scriptCall)
 	params.pos = weaponMuzzlePos;
 	params.end = currentTargetPos;
 	params.speed = startSpeed;
-	params.ttl = weaponDef->flighttime == 0? math::ceil(std::max(targetDist, range) / projectileSpeed + 25 * weaponDef->selfExplode): weaponDef->flighttime;
+	params.ttl = (ttl == 0) ? math::ceil(std::max(targetDist, range) / projectileSpeed + 25 * weaponDef->selfExplode) : ttl;
 	params.gravity = -weaponDef->myGravity;
 
 	WeaponProjectileFactory::LoadProjectile(params);
