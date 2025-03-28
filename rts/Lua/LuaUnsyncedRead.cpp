@@ -6,6 +6,7 @@
 #include "LuaInclude.h"
 #include "LuaHandle.h"
 #include "LuaHashString.h"
+#include "LuaReadCommon.h"
 #include "LuaUtils.h"
 #include "LuaRules.h"
 #include "Game/Camera.h"
@@ -2195,39 +2196,7 @@ int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
 
 	const int allegiance = LuaUtils::ParseAllegiance(L, __func__, 5);
 
-	std::function<bool(const CUnit*)> disqualifierFunc;
-
-	switch (allegiance)
-	{
-	case LuaUtils::AllUnits:
-		disqualifierFunc = [L](const CUnit* unit) -> bool { return !LuaUtils::IsUnitVisible(L, unit); };
-		break;
-	case LuaUtils::MyUnits:
-		disqualifierFunc = [readTeam](const CUnit* unit) -> bool { return unit->team != readTeam; };
-		break;
-	case LuaUtils::AllyUnits:
-		disqualifierFunc = [readATeam](const CUnit* unit) -> bool { return unit->allyteam != readATeam; };
-		break;
-	case LuaUtils::EnemyUnits:
-		disqualifierFunc = [readATeam](const CUnit* unit) -> bool { return unit->allyteam == readATeam; };
-		break;
-	default: {
-		if (LuaUtils::IsAlliedTeam(L, allegiance)) {
-			disqualifierFunc = [allegiance](const CUnit* unit) -> bool { return unit->team != allegiance; };
-		}
-		else {
-			disqualifierFunc = [allegiance, L](const CUnit* unit) -> bool {
-				if (unit->team != allegiance)
-					return true;
-
-				if (!LuaUtils::IsUnitVisible(L, unit))
-					return true;
-
-				return false;
-			};
-		}
-	} break;
-	}
+	auto disqualifierFunc = GetIsUnitDisqualifiedTest(L, allegiance, readTeam, readATeam);
 
 	// Even though we're in unsynced it's ok to use gs->tempNum since its exact value
 	// doesn't matter
