@@ -385,6 +385,7 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 				continue;
 
 			const uint8_t* color = &defaultColor[0];
+			SColor useColor;
 
 			if (!unit->isSelected) {
 				if (minimap->UseSimpleColors()) {
@@ -402,6 +403,10 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 					color = teamHandler.Team(unit->team)->color;
 				}
 			}
+			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
+				useColor = SColor{uint8_t(color[0]*0.5), uint8_t(color[1]*0.5), uint8_t(color[2]*0.5), color[3]};
+				color = useColor;
+			}
 
 			const float iconScale = CUnitDrawerHelper::GetUnitIconScale(unit);
 			const float3& pos = (!gu->spectatingFullView) ?
@@ -418,9 +423,13 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 				color = minimap->GetEnemyTeamIconColor();
 			else
 				color = teamHandler.Team(ghost->team)->color;
+			color = SColor{uint8_t(color[0]*0.5), uint8_t(color[1]*0.5), uint8_t(color[2]*0.5), color[3]};
 
 			const float iconScale = ghost->myIcon->GetSize();
 			const float3& pos = ghost->midPos;
+
+			if (gu->spectatingFullView)
+				continue;
 
 			DrawUnitMiniMapIcon(rb, iconScale, pos, color);
 		}
@@ -631,17 +640,28 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 
 			// use white for selected units
 			SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
+			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
+				color.r = color.r*0.5;
+				color.g = color.g*0.5;
+				color.b = color.b*0.5;
+			}
 
 			DrawUnitIconScreen(rb, icon, pos, color, unit->radius, unit->GetIsIcon());
 		}
 		for (const auto& ghost : ghosts) {
 			float3 pos = ghost->midPos;
 
+			if (gu->spectatingFullView)
+				continue;
+
 			pos = camera->CalcViewPortCoordinates(pos);
 			if (pos.z > 1.0f || pos.z < 0.0f)
 				continue;
 
 			SColor color = SColor{ teamHandler.Team(ghost->team)->color };
+			color.r = color.r*0.5;
+			color.g = color.g*0.5;
+			color.b = color.b*0.5;
 
 			DrawUnitIconScreen(rb, icon, pos, color, ghost->radius, false);
 		}
