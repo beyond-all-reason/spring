@@ -7017,6 +7017,8 @@ int LuaOpenGL::GetMapRendering(lua_State* L)
 
 /***
  * Labels an object for use with debugging tools.
+ * May be unavailable and `nil` if the platform doesn't support the feature.
+ *
  * @function gl.ObjectLabel 
  * @param objectTypeIdentifier GL Specifies the type of object being labeled.
  * @param objectID integer Specifies the name or ID of the object to label.
@@ -7050,14 +7052,20 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
 	return 0;
 }
 
-// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPushDebugGroup.xhtml
 /***
- * Pushes a debug marker for nVidia nSight 2024.04, does not seem to work when
- * FBO's are raw bound.
- * 
+ * Pushes a debug marker for debugging tools such as `nVidia nSight 2024.04`,
+ * see https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPushDebugGroup.xhtml .
+ *
+ * May be unavailable and `nil` if the platform doesn't support the feature.
+ *
+ * Groups are basically named scopes similar to tracy's, and are pushed/popped independently
+ * from GL attribute/matrix push/pop (though of course makes sense to put them together).
+ *
+ * Tools are known to struggle to see the annotation for FBOs if they are raw bound.
+ *
  * @function gl.PushDebugGroup 
- * @param id integer A numeric identifier for the group.
- * @param message string A human-readable string describing the debug group.
+ * @param id integer A numeric identifier for the group, can be any unique number.
+ * @param message string A human-readable string describing the debug group. Will be truncated if longer than driver-specific limit
  * @param sourceIsThirdParty boolean Set the source tag, true for GL_DEBUG_SOURCE_THIRD_PARTY, false for GL_DEBUG_SOURCE_APPLICATION. default false
  * @return nil
  */
@@ -7083,6 +7091,10 @@ int LuaOpenGL::PushDebugGroup(lua_State* L) {
 }
 
 /***
+ *
+ * Pops the most recent GL debug group from the stack (does NOT take the numerical ID from push).
+ * May be unavailable and `nil` if the platform doesn't support the feature.
+ *
  * @function gl.PopDebugGroup
  * @return nil
  */
