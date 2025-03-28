@@ -274,6 +274,24 @@ static int luaB_ipairs (lua_State *L) {
   return 3;
 }
 
+static int ripairsaux (lua_State *L) {
+  int i = luaL_checkint(L, 2);
+  luaL_checktype(L, 1, LUA_TTABLE);
+  i--;  /* prev value */
+  if (i <= 0)
+    return 0;
+  lua_pushinteger(L, i);
+  lua_rawgeti(L, 1, i);
+  return 2;
+}
+
+static int luaB_ripairs (lua_State *L) {
+  luaL_checktype(L, 1, LUA_TTABLE);
+  lua_pushvalue(L, lua_upvalueindex(1));  /* return generator, */
+  lua_pushvalue(L, 1);  /* state, */
+  lua_pushinteger(L, lua_objlen(L, 1) + 1);  /* and initial value */
+  return 3;
+}
 
 static int load_aux (lua_State *L, int status) {
   if (status == 0)  /* OK? */
@@ -657,6 +675,7 @@ static void base_open (lua_State *L) {
   lua_setglobal(L, "_VERSION");  /* set global _VERSION */
   /* `ipairs' and `pairs' need auxiliary functions as upvalues */
   auxopen(L, "ipairs", luaB_ipairs, ipairsaux);
+  auxopen(L, "ripairs", luaB_ripairs, ripairsaux);
   auxopen(L, "pairs", luaB_pairs, luaB_next);
   /* `newproxy' needs a weaktable as upvalue */
   lua_createtable(L, 0, 1);  /* new table `w' */
