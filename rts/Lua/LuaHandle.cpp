@@ -3422,6 +3422,83 @@ void CLuaHandle::CameraPositionChanged(const float3& pos)
 	RunCallIn(L, cmdStr, 3, 0);
 }
 
+/*** Called when the MiniMap rotation changes
+ * 
+ * @function Callins:MiniMapRotationChanged
+ * @param newRot number MiniMap rotation in radians
+ * @param oldRot number MiniMap old rotation in radians
+ */
+void CLuaHandle::MiniMapRotationChanged(const float newRot, const float oldRot)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 5, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, newRot);
+	lua_pushnumber(L, oldRot);
+
+	RunCallIn(L, cmdStr, 2, 0);
+}
+
+/*** Called when the MiniMap minimization changes
+ * 
+ * @function Callins:MiniMapMinimizationChanged
+ * @param isMinimized boolean
+ */
+void CLuaHandle::MiniMapMinimizationChanged(const bool isMinimized)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 4, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushboolean(L, isMinimized);
+
+	RunCallIn(L, cmdStr, 1, 0);
+}
+
+/*** Called when the MiniMap Geometry changes
+ * 
+ * @function Callins:MiniMapGeometryChanged
+ * @param newPosX number
+ * @param newPosY number
+ * @param newDimX number
+ * @param newDimY number
+ * @param oldPosX number
+ * @param oldPosY number
+ * @param oldDimX number
+ * @param oldDimY number
+ */
+void CLuaHandle::MiniMapGeometryChanged(const int2 newPos, const int2 newDim, const int2 oldPos, const int2 oldDim)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 11, __func__); // 3 + 8 args
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, newPos.x);
+	lua_pushnumber(L, newPos.y);
+	lua_pushnumber(L, newDim.x);
+	lua_pushnumber(L, newDim.y);
+	
+	lua_pushnumber(L, oldPos.x);
+	lua_pushnumber(L, oldPos.y);
+	lua_pushnumber(L, oldDim.x);
+	lua_pushnumber(L, oldDim.y);
+
+	RunCallIn(L, cmdStr, 8, 0);
+}
+
 /*** Called when a command is issued.
  *
  * @function Callins:CommandNotify

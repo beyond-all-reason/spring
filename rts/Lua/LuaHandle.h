@@ -214,6 +214,10 @@ class CLuaHandle : public CEventClient
 		void CameraRotationChanged(const float3& rot) override;
 		void CameraPositionChanged(const float3& pos) override;
 
+		void MiniMapRotationChanged(const float newRot, const float oldRot) override;
+		void MiniMapMinimizationChanged(const bool isMinimized) override;
+		void MiniMapGeometryChanged(const int2 newPos, const int2 newDim, const int2 oldPos, const int2 oldDim) override;
+
 		bool CommandNotify(const Command& cmd) override;
 
 		bool AddConsoleLine(const std::string& msg, const std::string& section, int level) override;

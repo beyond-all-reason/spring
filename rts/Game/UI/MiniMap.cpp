@@ -265,8 +265,7 @@ void CMiniMap::SetRotation(RotationOptions state) // 0 1 2 3: 0 90 180 270
 
 	const float oldRotation = static_cast<int>(rotation) * math::HALFPI;
     rotation = state;
-	// eventHandler.MiniMapRotationChanged(static_cast<int>(rotation) * math::HALFPI, oldRotation);
-	LOG("MiniMap rotation changed from %f to %f", oldRotation, static_cast<int>(rotation) * math::HALFPI);
+	eventHandler.MiniMapRotationChanged(static_cast<int>(rotation) * math::HALFPI, oldRotation);
 }
 
 void CMiniMap::SetMinimized(bool state)
@@ -277,8 +276,7 @@ void CMiniMap::SetMinimized(bool state)
 		return;
 
 	minimized = state;
-	// eventHandler.MiniMapMinimizationChanged(minimized);
-	LOG("MiniMap minimization changed to %s", minimized ? "true" : "false");
+	eventHandler.MiniMapMinimizationChanged(minimized);
 }
 
 void CMiniMap::SetAspectRatioGeometry(const float& viewSizeX, const float& viewSizeY,
@@ -1106,8 +1104,7 @@ void CMiniMap::Update()
 	UpdateTextureCache();
 
 	if (curPos != lastPos || curDim != lastDim) { // probably can be moved to SetGeometry
-		// eventHandler.MiniMapGeometryChanged(curPos, curDim, lastPos, lastDim);
-		LOG("Minimap Geometry Changed from %d %d %d %d to %d %d %d %d\n", lastPos.x, lastPos.y, lastDim.x, lastDim.y, curPos.x, curPos.y, curDim.x, curDim.y);
+		eventHandler.MiniMapGeometryChanged(curPos, curDim, lastPos, lastDim);
 		lastPos = curPos;
 		lastDim = curDim;
 	}

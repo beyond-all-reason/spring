@@ -179,6 +179,9 @@ CALLIN_LIST = {
 	"ActiveCommandChanged",
 	"CameraRotationChanged",
 	"CameraPositionChanged",
+	"MiniMapRotationChanged",
+	"MiniMapMinimizationChanged",
+	"MiniMapGeometryChanged",
 	"CommandNotify",
 
 	"ViewResize", -- FIXME ?

@@ -187,6 +187,9 @@ local callInLists = {
   'ActiveCommandChanged',
   'CameraRotationChanged',
   'CameraPositionChanged',
+  'MiniMapRotationChanged',
+	'MiniMapMinimizationChanged',
+	'MiniMapGeometryChanged',
   'CommandNotify',
   'AddConsoleLine',
   'ViewResize',
@@ -1200,6 +1203,24 @@ end
 function widgetHandler:CameraPositionChanged(posx, posy, posz)
   for _,w in ipairs(self.CameraPositionChangedList) do
     w:CameraPositionChanged(posx, posy, posz)
+  end
+end
+
+function widgetHandler:MiniMapRotationChanged(newRot, oldRot)
+  for _,w in ipairs(self.MiniMapRotationChangedList) do
+    w:MiniMapRotationChanged(newRot, oldRot)
+  end
+end
+
+function widgetHandler:MiniMapMinimizationChanged(isMinimized)
+  for _,w in ipairs(self.MiniMapMinimizationChangedList) do
+    w:MiniMapMinimizationChanged(isMinimized)
+  end
+end
+
+function widgetHandler:MiniMapGeometryChanged(newPosX, newPosY, newDimX, newDimY, oldPosX, oldPosY, oldDimX, oldDimY)
+  for _,w in ipairs(self.MiniMapGeometryChangedList) do
+    w:MiniMapGeometryChanged(newPosX, newPosY, newDimX, newDimY, oldPosX, oldPosY, oldDimX, oldDimY)
   end
 end
 
