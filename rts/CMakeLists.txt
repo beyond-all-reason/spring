@@ -136,7 +136,6 @@ add_subdirectory(Sim)
 #add_subdirectory(System) # this is already added in ../
 
 make_global_var(engineSources
-		${sources_engine_Game}
 		${sources_engine_Net}
 		${sources_engine_Lua}
 		${sources_engine_Map}
