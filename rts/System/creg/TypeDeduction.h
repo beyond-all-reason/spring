@@ -9,13 +9,14 @@
 #define _TYPE_DEDUCTION_H
 
 #include <memory>
+#include <concepts>
 #include "creg_cond.h"
 
 namespace creg {
 
 // Default
 // If none specialization was found assume it's a class.
-template<typename T, typename Enable = void>
+template<typename T>
 struct DeduceType {
 	static_assert(std::is_same<typename std::remove_const<T>::type, typename std::remove_const<typename T::MyType>::type>::value, "class isn't creged");
 	static std::unique_ptr<IType> Get() { return IType::CreateObjInstanceType(T::StaticClass(), sizeof(T)); }
@@ -30,33 +31,75 @@ struct DeduceType<T, typename std::enable_if<std::is_class<T>::value>::type> {
 	static std::unique_ptr<IType> Get() { return std::unique_ptr<IType>(IType::CreateObjInstanceType(T::StaticClass(), sizeof(T))); }
 };*/
 
-// Enum
 template<typename T>
-struct DeduceType<T, typename std::enable_if<std::is_enum<T>::value>::type> {
+concept IntegralType = std::integral<T>;
+
+template<typename T>
+concept UnsignedType = std::is_unsigned_v<T>;
+
+template<typename T>
+concept FloatType = std::is_floating_point_v<T>;
+
+template<typename T>
+concept EnumType = std::is_enum_v<T>;
+
+template<typename T>
+concept PointerType = std::is_pointer_v<T>;
+
+template<typename T>
+concept ReferenceType = std::is_reference_v<T>;
+
+template<typename T>
+concept SignedEnum = EnumType<T> && !UnsignedType<std::underlying_type_t<T>>;
+
+template<typename T>
+concept UnsignedEnum = EnumType<T> && UnsignedType<std::underlying_type_t<T>>;
+
+template<typename T>
+concept SignedInteger = IntegralType<T> && !UnsignedType<T>;
+
+template<typename T>
+concept UnsignedInteger = IntegralType<T> && UnsignedType<T>;
+
+// Enum
+template<SignedEnum T>
+struct DeduceType<T> {
 	static std::unique_ptr<IType> Get() { return IType::CreateBasicType(crInt, sizeof(T)); }
+};
+template<UnsignedEnum T>
+struct DeduceType<T> {
+	static std::unique_ptr<IType> Get() { return IType::CreateBasicType(crUInt, sizeof(T)); }
 };
 
 // Integer+Boolean (of any size)
-template<typename T>
-struct DeduceType<T, typename std::enable_if<std::is_integral<T>::value>::type> {
+template<SignedInteger T>
+struct DeduceType<T> {
 	static std::unique_ptr<IType> Get() { return IType::CreateBasicType(crInt, sizeof(T)); }
+};
+template<UnsignedInteger T>
+struct DeduceType<T> {
+	static std::unique_ptr<IType> Get() { return IType::CreateBasicType(crUInt, sizeof(T)); }
 };
 
 // Floating-Point (of any size)
-template<typename T>
-struct DeduceType<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
+template<FloatType T>
+struct DeduceType<T> {
 	static std::unique_ptr<IType> Get() { return IType::CreateBasicType(crFloat, sizeof(T)); }
 };
 
 // Synced Integer + Float
 #if defined(SYNCDEBUG) || defined(SYNCCHECK)
-template<typename T>
-struct DeduceType<SyncedPrimitive<T>, typename std::enable_if<std::is_integral<T>::value>::type> {
+template<SignedInteger T>
+struct DeduceType<SyncedPrimitive<T>> {
 	static std::unique_ptr<IType> Get() { return IType::CreateBasicType(crInt /*crSyncedInt*/, sizeof(T)); }
 };
+template<UnsignedInteger T>
+struct DeduceType<SyncedPrimitive<T>> {
+	static std::unique_ptr<IType> Get() { return IType::CreateBasicType(crUInt /*crSyncedInt*/, sizeof(T)); }
+};
 
-template<typename T>
-struct DeduceType<SyncedPrimitive<T>, typename std::enable_if<std::is_floating_point<T>::value>::type> {
+template<FloatType T>
+struct DeduceType<SyncedPrimitive<T>> {
 	static std::unique_ptr<IType> Get() { return IType::CreateBasicType(crFloat /*crSyncedFloat*/, sizeof(T)); }
 };
 #endif
@@ -79,14 +122,14 @@ public:
 };
 
 // Pointer type
-template<typename T>
-struct DeduceType<T, typename std::enable_if<std::is_pointer<T>::value>::type> {
+template<PointerType T>
+struct DeduceType<T> {
 	static std::unique_ptr<IType> Get() { return std::unique_ptr<IType>(new ObjectPointerType<typename std::remove_pointer<T>::type>()); }
 };
 
 // Reference type, handled as a pointer
-template<typename T>
-struct DeduceType<T, typename std::enable_if<std::is_reference<T>::value>::type> {
+template<ReferenceType T>
+struct DeduceType<T> {
 	static std::unique_ptr<IType> Get() { return std::unique_ptr<IType>(new ObjectPointerType<typename std::remove_reference<T>::type>()); }
 };
 
