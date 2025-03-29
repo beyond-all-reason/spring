@@ -237,6 +237,9 @@ class CEventHandler
 		void ActiveCommandChanged(const SCommandDescription *cmdDesc);
 		void CameraRotationChanged(const float3& rot);
 		void CameraPositionChanged(const float3& pos);
+		void MiniMapRotationChanged(const float newRot, const float oldRot);
+		void MiniMapMinimizationChanged(const bool isMinimized);
+		void MiniMapGeometryChanged(const int2 newPos, const int2 newDim, const int2 oldPos, const int2 oldDim);
 		bool CommandNotify(const Command& cmd);
 
 		bool AddConsoleLine(const std::string& msg, const std::string& section, int level);

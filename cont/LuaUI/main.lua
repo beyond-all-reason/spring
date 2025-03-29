@@ -109,6 +109,18 @@ function CameraPositionChanged(posx, posy, posz)
   return widgetHandler:CameraPositionChanged(posx, posy, posz)
 end
 
+function MiniMapRotationChanged(newRot, oldRot)
+  return widgetHandler:MiniMapRotationChanged(newRot, oldRot)
+end
+
+function MiniMapMinimizationChanged(isMinimized)
+  return widgetHandler:MiniMapMinimizationChanged(isMinimized)
+end
+
+function MiniMapGeometryChanged(newPosX, newPosY, newDimX, newDimY, oldPosX, oldPosY, oldDimX, oldDimY)
+  return widgetHandler:MiniMapGeometryChanged(newPosX, newPosY, newDimX, newDimY, oldPosX, oldPosY, oldDimX, oldDimY)
+end
+
 function CommandNotify(id, params, options)
   return widgetHandler:CommandNotify(id, params, options)
 end
