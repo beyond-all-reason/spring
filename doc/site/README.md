@@ -20,12 +20,12 @@ Navigate to http://localhost:4000/spring
 Have [emmylua_doc_cli](https://github.com/CppCXY/emmylua-analyzer-rust/tree/main/crates/emmylua_doc_cli) and [lua-doc-extractor](https://github.com/rhys-vdw/lua-doc-extractor) installed and available in `$PATH`.
 
 ```bash
-rm -rf rts/Lua/library/generated &&
-lua-doc-extractor rts/Lua/*.cpp --dest rts/Lua/library/generated &&
-  emmylua_doc_cli \
-    -i rts/Lua/library/ \
-    -o doc/site/lua-api \
-    --override-template doc/emmlua-doc-cli-template/
+rm -rf rts/Lua/library/generated
+lua-doc-extractor rts/Lua/*.cpp --dest rts/Lua/library/generated
+emmylua_doc_cli \
+  -i rts/Lua/library/ \
+  -o doc/site/lua-api \
+  --override-template doc/emmlua-doc-cli-template/
 ```
 
 See [Documenting Lua development guide](development/documenting-lua.markdown) for more info.
