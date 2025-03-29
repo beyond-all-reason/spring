@@ -676,6 +676,11 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 	};
 	static constexpr int BLUR_KERNEL_HS = BLUR_KERNEL.size() >> 1;
 
+	// make a hard copy
+	CBitmap orig = *bmp;
+	auto origAction = BitmapAction::GetBitmapAction(&orig); // lifetime thing, not used furher
+	auto* origTypedAction = static_cast<TBitmapAction<T, ch>*>(origAction.get());
+
 	// note ysize and xsize are swapped
 	CBitmap tmp(nullptr, bmp->ysize, bmp->xsize, ch, bmp->dataType);
 	auto tempAction = BitmapAction::GetBitmapAction(&tmp); // lifetime thing, not used furher
@@ -688,7 +693,7 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 		std::tuple(&tmp, tempTypedAction, currTypedAction)  // vertical   pass
 	};
 
-	#define MT_EXECUTION 1
+	#define MT_EXECUTION 0
 
 	for (int iter = 0; iter < iterations; ++iter) {
 		for (auto [src, srcAction, dstAction] : blurPassTuples) {
@@ -702,7 +707,6 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 
 					// don't use AccumChanType for additional precision
 					std::array<float, ch> val{ 0.0f };
-					float wgt = 0.0f;
 
 					for (int off = -BLUR_KERNEL_HS; off <= BLUR_KERNEL_HS; ++off) {
 						const int xo = x + off;
@@ -712,7 +716,6 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 
 						const auto w = BLUR_KERNEL[off + BLUR_KERNEL_HS];
 
-						wgt += w;
 						const auto& srcRef = srcAction->GetRef(yBaseOffset + xo);
 						for (int a = 0; a < ch; a++) {
 							val[a] += w * srcRef[a];
@@ -721,7 +724,7 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 
 					auto& dstRef = dstAction->GetRef(x * src->ysize + y);
 					for (int a = 0; a < ch; a++) {
-						const auto rawDstVal = val[a] / wgt;
+						const auto rawDstVal = val[a];
 
 						if constexpr (std::is_same_v<ChanType, float>) {
 							dstRef[a] = static_cast<ChanType>(std::max(rawDstVal, 0.0f));
@@ -737,26 +740,35 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 			}
 		#endif
 		}
+
+		if (weight <= 1.0f)
+			continue;
+
+		assert(orig.xsize == bmp->xsize && orig.ysize == bmp->ysize);
+
+		const auto w = BLUR_KERNEL[BLUR_KERNEL_HS] * BLUR_KERNEL[BLUR_KERNEL_HS] * (weight - 1.0f);
+		for (int y = 0; y < bmp->ysize; y++) {
+			int yBaseOffset = (y * bmp->xsize);
+			for (int x = 0; x < bmp->xsize; x++) {
+				// origTypedAction == srcAction
+				// currTypedAction == dstAction
+				const auto& srcRef = origTypedAction->GetRef(yBaseOffset + x);
+				      auto& dstRef = currTypedAction->GetRef(yBaseOffset + x);
+
+				for (int a = 0; a < ch; a++) {
+					const float newDstVal = dstRef[a] + w * srcRef[a];
+					if constexpr (std::is_same_v<ChanType, float>) {
+						dstRef[a] = static_cast<ChanType>(std::max(newDstVal, 0.0f));
+					}
+					else {
+						dstRef[a] = static_cast<ChanType>(std::clamp(newDstVal + 0.5f, 0.0f, static_cast<float>(GetMaxNormValue())));
+					}
+				}
+			}
+		}
 	}
 
 	#undef MT_EXECUTION
-
-	if (weight == 1.0f)
-		return;
-
-	// apply weight
-	auto* chanRefBeg = reinterpret_cast<ChanType*>(bmp->GetRawMem());
-	auto* chanRefEnd = reinterpret_cast<ChanType*>(chanRefBeg + bmp->xsize * bmp->ysize);
-	for (auto* chanRef = chanRefBeg; chanRef != chanRefEnd; ++chanRef) {
-		const auto rawDstVal = static_cast<float>(*chanRef) * weight;
-
-		if constexpr (std::is_same_v<ChanType, float>) {
-			*chanRef = static_cast<ChanType>(std::max(rawDstVal, 0.0f));
-		}
-		else {
-			*chanRef = static_cast<ChanType>(std::clamp(rawDstVal + 0.5f, 0.0f, static_cast<float>(GetMaxNormValue())));
-		}
-	}
 }
 
 template<typename T, uint32_t ch>
