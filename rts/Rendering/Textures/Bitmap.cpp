@@ -9,7 +9,6 @@
 
 #include <IL/il.h>
 #include <SDL_video.h>
-#include <fmt/format.h>
 
 #include "Rendering/GL/myGL.h"
 #ifndef HEADLESS
@@ -679,8 +678,6 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 	};
 	static constexpr int BLUR_KERNEL_HS = BLUR_KERNEL.size() >> 1;
 
-	bmp->Save("iter.bmp", true);
-
 	// note ysize and xsize are swapped
 	CBitmap tmp(nullptr, bmp->ysize, bmp->xsize, ch, bmp->dataType);
 	auto tempAction = BitmapAction::GetBitmapAction(&tmp); // lifetime thing, not used furher
@@ -694,9 +691,8 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 	};
 
 	const auto w0 = BLUR_KERNEL[BLUR_KERNEL_HS] * BLUR_KERNEL[BLUR_KERNEL_HS] * (weight - 1.0f);
-	//const auto w0 = 0.0f;
 
-	#define MT_EXECUTION 0
+	#define MT_EXECUTION 1
 
 	for (int iter = 0; iter < iterations; ++iter) {
 		for (size_t bpi = 0; bpi < blurPassTuples.size(); ++bpi) {
@@ -749,7 +745,6 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 		#else
 			}
 		#endif
-			dstAction->GetBitmap()->Save(fmt::format("iter{}_pass{}.bmp", iter, bpi), true);
 		}
 	}
 
