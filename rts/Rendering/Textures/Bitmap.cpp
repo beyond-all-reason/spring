@@ -679,7 +679,7 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 	};
 	static constexpr int BLUR_KERNEL_HS = BLUR_KERNEL.size() >> 1;
 
-	bmp->Save("iter", true);
+	bmp->Save("iter.bmp", true);
 
 	// note ysize and xsize are swapped
 	CBitmap tmp(nullptr, bmp->ysize, bmp->xsize, ch, bmp->dataType);
@@ -693,8 +693,8 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 		std::tuple(&tmp, tempTypedAction, currTypedAction)  // vertical   pass
 	};
 
-	//const auto w0 = BLUR_KERNEL[BLUR_KERNEL_HS] * BLUR_KERNEL[BLUR_KERNEL_HS] * (weight - 1.0f);
-	const auto w0 = 0.0f;
+	const auto w0 = BLUR_KERNEL[BLUR_KERNEL_HS] * BLUR_KERNEL[BLUR_KERNEL_HS] * (weight - 1.0f);
+	//const auto w0 = 0.0f;
 
 	#define MT_EXECUTION 0
 
@@ -740,7 +740,7 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 							dstRef[a] = static_cast<ChanType>(std::max(rawDstVal, 0.0f));
 						}
 						else {
-							dstRef[a] = static_cast<ChanType>(std::clamp(rawDstVal + 0.5f, 0.0f, static_cast<float>(GetMaxNormValue())));
+							dstRef[a] = static_cast<ChanType>(std::clamp(rawDstVal, 0.0f, static_cast<float>(GetMaxNormValue())));
 						}
 					}
 				}
