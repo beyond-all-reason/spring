@@ -2,9 +2,10 @@
 
 set -e -u -o pipefail
 
-USAGE="Usage: $0 [--help] [--configure|--compile] {windows|linux} [cmake_flag...]"
+USAGE="Usage: $0 [--help] [--configure|--compile] [-j|--jobs {number_of_jobs}] {windows|linux} [cmake_flag...]"
 export CONFIGURE=true
 export COMPILE=true
+export CMAKE_BUILD_PARALLEL_LEVEL=
 OS=
 for arg in "$@"; do
   case $arg in
@@ -24,7 +25,18 @@ for arg in "$@"; do
       echo "  --help       print this help message"
       echo "  --configure  only configure, don't compile"
       echo "  --compile    only compile, don't configure"
+      echo "  -j, --jobs   number of concurrent processes to use when building"
       exit 0
+      ;;
+    -j|--jobs)
+      shift
+      # Match numeric, starting with non-zero digit
+      if ! [[ "${1-}" =~ ^[1-9]+[0-9]*$ ]]; then
+        echo $USAGE
+        exit 1
+      fi
+      CMAKE_BUILD_PARALLEL_LEVEL="$1"
+      shift
       ;;
     windows|linux)
       OS="$arg"
@@ -58,6 +70,7 @@ docker run -it --rm \
     -v $(pwd)/build-$OS:/build/out:rw \
     -e CONFIGURE \
     -e COMPILE \
+    -e CMAKE_BUILD_PARALLEL_LEVEL \
     $image \
     bash -c '
 set -e
