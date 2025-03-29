@@ -9,6 +9,7 @@
 
 #include <IL/il.h>
 #include <SDL_video.h>
+#include <fmt/format.h>
 
 #include "Rendering/GL/myGL.h"
 #ifndef HEADLESS
@@ -401,6 +402,8 @@ public:
 	BitmapAction& operator=(const BitmapAction& ba) = delete;
 	BitmapAction& operator=(BitmapAction&& ba) noexcept = delete;
 
+	const CBitmap* GetBitmap() const { return bmp; }
+
 	virtual void CreateAlpha(uint8_t red, uint8_t green, uint8_t blue) = 0;
 	virtual void ReplaceAlpha(float a) = 0;
 	virtual void SetTransparent(const SColor& c, const SColor trans = SColor(0, 0, 0, 0)) = 0;
@@ -676,6 +679,8 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 	};
 	static constexpr int BLUR_KERNEL_HS = BLUR_KERNEL.size() >> 1;
 
+	bmp->Save("iter", true);
+
 	// note ysize and xsize are swapped
 	CBitmap tmp(nullptr, bmp->ysize, bmp->xsize, ch, bmp->dataType);
 	auto tempAction = BitmapAction::GetBitmapAction(&tmp); // lifetime thing, not used furher
@@ -688,9 +693,10 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 		std::tuple(&tmp, tempTypedAction, currTypedAction)  // vertical   pass
 	};
 
-	const auto w0 = BLUR_KERNEL[BLUR_KERNEL_HS] * BLUR_KERNEL[BLUR_KERNEL_HS] * (weight - 1.0f);
+	//const auto w0 = BLUR_KERNEL[BLUR_KERNEL_HS] * BLUR_KERNEL[BLUR_KERNEL_HS] * (weight - 1.0f);
+	const auto w0 = 0.0f;
 
-	#define MT_EXECUTION 1
+	#define MT_EXECUTION 0
 
 	for (int iter = 0; iter < iterations; ++iter) {
 		for (size_t bpi = 0; bpi < blurPassTuples.size(); ++bpi) {
@@ -743,6 +749,7 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 		#else
 			}
 		#endif
+			dstAction->GetBitmap()->Save(fmt::format("iter{}_pass{}.bmp", iter, bpi), true);
 		}
 	}
 
