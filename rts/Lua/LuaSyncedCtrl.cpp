@@ -355,6 +355,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetRadarErrorParams);
 
+	/*** @field Spring.MoveCtrl MoveCtrl */
 	if (!LuaSyncedMoveCtrl::PushMoveCtrl(L))
 		return false;
 
@@ -3968,10 +3969,33 @@ int LuaSyncedCtrl::SetUnitDirection(lua_State* L)
 }
 
 /***
+ * Integer in range `[-32768, 32767]` that represents a 2D (xz plane) unit
+ * orientation. 
+ * 
+ * ```
+ *                   F(N=2) = H(-32768 / 32767)
+ * 
+ *                          ^
+ *                          |
+ *                          |
+ *  F(W=3) = H(-16384)  <---o--->  F(E=1) = H(16384)
+ *                          |
+ *                          |
+ *                          v
+ * 
+ *                   F(S=0) = H(0)
+ * ```
+ * @alias Heading integer
+ */
+
+/***
  * @function Spring.SetUnitHeadingAndUpDir
- * Use this call to set up unit direction in a robust way. Heading (-32768 to 32767) represents a 2D (xz plane) unit orientation if unit was completely upright, new {upx,upy,upz} direction will be used as new "up" vector, the rotation set by "heading" will remain preserved.
+ * Use this call to set up unit direction in a robust way. If unit was
+ * completely upright, new `{upx, upy, upz}` direction will be used as new "up"
+ * vector, the rotation set by "heading" will remain preserved.
+ * 
  * @param unitID integer
- * @param heading number
+ * @param heading Heading
  * @param upx number
  * @param upy number
  * @param upz number
@@ -4003,7 +4027,7 @@ int LuaSyncedCtrl::SetUnitVelocity(lua_State* L)
  * @param buggerOff boolean?
  * @param offset number?
  * @param radius number?
- * @param relHeading number?
+ * @param relHeading Heading?
  * @param spherical boolean?
  * @param forced boolean?
  * @return nil|number buggerOff
@@ -4356,14 +4380,14 @@ int LuaSyncedCtrl::RemoveGrass(lua_State* L)
 
 /***
  * @function Spring.CreateFeature
- * @param featureDef string|number name or id
+ * @param featureDef string|integer name or id
  * @param x number
  * @param y number
  * @param z number
- * @param heading number?
+ * @param heading Heading?
  * @param AllyTeamID integer?
  * @param featureID integer?
- * @return number featureID
+ * @return integer featureID
  */
 int LuaSyncedCtrl::CreateFeature(lua_State* L)
 {
@@ -4803,9 +4827,12 @@ int LuaSyncedCtrl::SetFeatureDirection(lua_State* L)
 
 /***
  * @function Spring.SetFeatureHeadingAndUpDir
- * Use this call to set up feature direction in a robust way. Heading (-32768 to 32767) represents a 2D (xz plane) feature orientation if feature was completely upright, new {upx,upy,upz} direction will be used as new "up" vector, the rotation set by "heading" will remain preserved.
+ * Use this call to set up feature direction in a robust way. If feature was
+ * completely upright, new `{upx, upy, upz}` direction will be used as new "up"
+ * vector, the rotation set by "heading" will remain preserved.
+ * 
  * @param featureID integer
- * @param heading number
+ * @param heading Heading
  * @param upx number
  * @param upy number
  * @param upz number
