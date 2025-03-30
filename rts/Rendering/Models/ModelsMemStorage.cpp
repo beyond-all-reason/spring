@@ -74,10 +74,28 @@ size_t ModelUniformsStorage::GetObjOffset(const CWorldObject* o)
 	return idx;
 }
 
+size_t ModelUniformsStorage::GetObjOffset(const CWorldObject* o) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const auto it = objectsMap.find(const_cast<CWorldObject*>(o));
+	if (it != objectsMap.end())
+		return it->second;
+
+	return INVALID_INDEX;
+}
+
+const ModelUniformsStorage::MyType& ModelUniformsStorage::GetObjUniformsArray(const CWorldObject* o) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	size_t offset = GetObjOffset(o);
+	return storage[offset];
+}
+
 ModelUniformsStorage::MyType& ModelUniformsStorage::GetObjUniformsArray(const CWorldObject* o)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	size_t offset = GetObjOffset(o);
+	updateList.SetUpdate(offset);
 	return storage[offset];
 }
 

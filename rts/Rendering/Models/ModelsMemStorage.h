@@ -162,16 +162,20 @@ public:
 public:
 	size_t AddObject(const CWorldObject* o);
 	size_t GetObjOffset(const CWorldObject* o);
+	size_t GetObjOffset(const CWorldObject* o) const;
+	const MyType& GetObjUniformsArray(const CWorldObject* o) const;
 	MyType& GetObjUniformsArray(const CWorldObject* o);
 	void   DelObject(const CWorldObject* o);
 
 	size_t AddObject(const SolidObjectDef* o) { return INVALID_INDEX; }
 	size_t GetObjOffset(const SolidObjectDef* o) { return INVALID_INDEX; }
+	const MyType& GetObjUniformsArray(const SolidObjectDef* o) const { return dummy; }
 	MyType& GetObjUniformsArray(const SolidObjectDef* o) { return dummy; }
 	void   DelObject(const SolidObjectDef* o) {}
 
 	size_t AddObject(const S3DModel* o) { return INVALID_INDEX; }
 	size_t GetObjOffset(const S3DModel* o) { return INVALID_INDEX; }
+	const MyType& GetObjUniformsArray(const S3DModel* o) const { return dummy; }
 	MyType& GetObjUniformsArray(const S3DModel* o) { return dummy; }
 	void   DelObject(const S3DModel* o) {}
 
