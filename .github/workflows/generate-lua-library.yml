@@ -8,6 +8,7 @@ on:
       - 'rts/Lua/**'
 jobs:
   generate-library:
+    if: github.repository == 'beyond-all-reason/spring' || github.event_name == 'workflow_dispatch'
     name: Regenerate library
     runs-on: ubuntu-latest
     steps:
