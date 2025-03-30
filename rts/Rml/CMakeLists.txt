@@ -4,8 +4,6 @@ set(sources_engine_Rml
 		"${CMAKE_CURRENT_SOURCE_DIR}/Backends/RmlUi_Renderer_GL3_Recoil.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Backends/RmlUi_VFSFileInterface.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Components/ElementLuaTexture.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/SVG/SVGPlugin.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/SVG/ElementSVG.cpp"
 		PARENT_SCOPE
 )
 

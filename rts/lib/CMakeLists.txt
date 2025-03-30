@@ -85,7 +85,7 @@ if (TRACY_ENABLE)
 	option(RMLUI_TRACY_PROFILING "Enable RmlUi profiling with Tracy." ON)
 	# We have our own memory profiling, never enable RmlUi one.
 	set(RMLUI_TRACY_MEMORY_PROFILING OFF CACHE BOOL "Enable RmlUi tracy profiling")
-
+	
 	# Disable the additional RmlUI multiconfig configuration as it only applies to RmlUI
 	set(RMLUI_TRACY_CONFIGURATION OFF CACHE BOOL "" FORCE)
 endif()
@@ -103,4 +103,5 @@ set(CMAKE_CXX_FLAGS ${NEW_CMAKE_FLAGS})
 add_subdirectory(lunasvg)
 set(CMAKE_CXX_FLAGS ${SAVED_CMAKE_FLAGS})
 
+option(RMLUI_SVG_PLUGIN "RmlUi with SVG support" ON)
 add_subdirectory(RmlUi)
