@@ -114,6 +114,62 @@ void bindTable(SolLuaDataModel* data, sol::table& table)
 	}
 }
 
+sol::object getFromTable(const sol::table& t, const std::vector<std::string>& keychain, int depth) {
+	sol::table item = t;
+	for(int i = 0; i <= depth; i++) {
+		sol::object o = item.raw_get<sol::object>(keychain[i]);
+		if (o.get_type() == sol::type::table) {
+			item = o.as<sol::table>();
+		} else {
+			return o;
+		}
+	}
+	return item;
+}
+
+std::function<void(sol::object, const std::string&, sol::object, sol::this_state)>
+createNewIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, const std::vector<std::string>& keychain, int depth)
+{
+	return ([data, keychain, depth] (sol::table t, const std::string& key, sol::object value, sol::this_state s) {
+		auto prop = getFromTable(data->Table, keychain, depth-1);
+		auto type = prop.get_type();
+		if (type == sol::type::table) {
+			auto old = prop.as<sol::table>().raw_get<sol::object>(key);
+			if (old != value) {
+				prop.as<sol::table>().raw_set(key, value);
+				std::ostringstream joined;
+				std::copy(keychain.begin(), keychain.end(), std::ostream_iterator<std::string>(joined, "_"));
+
+				data->ObjectMap.insert_or_assign(joined.str() + key, value);
+				data->Handle.DirtyVariable(keychain[0]);
+			}
+		}
+	});
+}
+
+
+std::function<sol::object(sol::object, const std::string&, sol::this_state)>
+createIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, const std::vector<std::string>& keychain, int depth)
+{
+	return ([data, keychain, depth](sol::table t, const std::string& key, sol::this_state s) {
+		std::vector<std::string> kc{keychain};
+		kc.push_back(key);
+		auto prop = getFromTable(data->Table, kc, depth);
+		auto type = prop.get_type();
+		if (type == sol::type::table) {
+			sol::state_view bindings{s};
+			sol::table obj_metatable = bindings.create_table();
+			obj_metatable[sol::meta_function::index] = createIndexFunction(data, kc, depth+1);
+			obj_metatable[sol::meta_function::new_index] = createNewIndexFunction(data, kc, depth+1);
+
+			sol::table obj_table = bindings.create_table();
+			obj_table[sol::metatable_key] = obj_metatable;
+			return sol::make_object(s, obj_table);
+		}
+		return prop;
+	});
+};
+
 /// <summary>
 /// Opens a Lua data model.
 /// </summary>
@@ -126,6 +182,11 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
                          sol::this_state s)
 {
 	sol::state_view bindings{s};
+
+	// Only bind table.
+	if (model.get_type() != sol::type::table) {
+		return sol::lua_nil;
+	}
 
 	// Create data model.
 	auto constructor = self.CreateDataModel(name);
@@ -141,47 +202,55 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 	data->Constructor = constructor;
 	data->Handle = constructor.GetModelHandle();
 	data->ObjectDef = std::make_unique<SolLuaObjectDef>(data.get());
+	data->Table = model.as<sol::table>();
+	datamodel::bindTable(data.get(), data->Table);
 
-	// Only bind table.
-	if (model.get_type() == sol::type::table) {
-		data->Table = model.as<sol::table>();
-		datamodel::bindTable(data.get(), data->Table);
-	}
-
-	auto obj_table = bindings.create_table();
-	auto new_index_func =  //
+	auto new_index_func =
 		([data](sol::object t, const std::string& key, sol::object value, sol::this_state s) {
 			auto iter = data->BindingMap.find(key);
 			if (iter == data->BindingMap.end())
-				luaL_error(s, "Assigning a new key ('%s') in a DataModel is not allowed.",
-			               key.c_str());
+				luaL_error(s, "Assigning a new key ('%s') to the DataModel root is not allowed.", key.c_str());
 
 			if (iter->second == SolLuaDataModel::BindingType::Function)
-				luaL_error(
-					s,
-					"Changing the value of a key ('%s') bound to a Function in a DataModel is not "
-					"allowed.",
-					key.c_str());
+				luaL_error(s, "Changing the value of a key ('%s') bound to a Function in a DataModel is not allowed.", key.c_str());
 
+			auto old = data->Table.raw_get<sol::object>(key);
+			if (old == value && value.get_type() != sol::type::table) {
+				return;
+			}
 			data->Table.raw_set(key, value);
 			data->ObjectMap.insert_or_assign(key, value);
 			data->Handle.DirtyVariable(key);
 		});
 
-	sol::table obj_metatable = bindings.create_table();
-	obj_metatable[sol::meta_function::new_index] = new_index_func;
-
-	obj_metatable[sol::meta_function::index] =
+	auto index_function =
 		([data](sol::object t, const std::string& key, sol::this_state s) {
-			return data->Table.get<sol::object>(key);
+			auto item = data->Table.raw_get<sol::object>(key);
+			auto type = item.get_type();
+			if (type == sol::type::table) {
+				sol::state_view bindings{s};
+				std::vector keychain{key};
+
+				sol::table obj_metatable = bindings.create_table();
+				obj_metatable[sol::meta_function::new_index] = createNewIndexFunction(data, keychain, 1);
+				obj_metatable[sol::meta_function::index] = createIndexFunction(data, keychain, 1);
+
+				sol::table obj_table = bindings.create_table();
+				obj_table[sol::metatable_key] = obj_metatable;
+				return sol::make_object(s, obj_table);
+			}
+			return item;
 		});
 
-	obj_table[sol::metatable_key] = obj_metatable;
+	sol::table obj_metatable = bindings.create_table();
+	obj_metatable[sol::meta_function::new_index] = new_index_func;
+	obj_metatable[sol::meta_function::index] = index_function;
 
-	// absolutely no assigning of keys to the top level table allowed
-	sol::table internal_data_metatable = bindings.create_table();
-	internal_data_metatable[sol::meta_function::new_index] = new_index_func;
-	data->Table[sol::metatable_key] = internal_data_metatable;
+	sol::table obj_table = bindings.create_table();
+	obj_table["__SetDirty"] = ([data](sol::object t, const std::string& key) {
+			data->Handle.DirtyVariable(key);
+		});
+	obj_table[sol::metatable_key] = obj_metatable;
 
 	return obj_table;
 }
