@@ -1344,7 +1344,7 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 		// can't spend too much time in this code, thus set the deadline and rely on
 		// random luck and sheer amount of invocations to eventually remove most if not all
 		// stale items from the pool cache
-		static constexpr int64_t MAX_POOL_VERIFICATION_TIME = 5 * 1000;
+		static constexpr int64_t MAX_POOL_VERIFICATION_TIME = 1 * 1000;
 		for (auto t0 = spring_now(), t1 = t0; (t1 - t0).toMilliSecsi() < MAX_POOL_VERIFICATION_TIME; t1 = spring_now()) {
 			// cleanup files that got deleted in the meantime
 
