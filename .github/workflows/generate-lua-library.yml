@@ -21,6 +21,13 @@ jobs:
         with:
           sparse-checkout: rts/Lua
           path: recoil
+      
+      - name: Get commit message
+        id: commit
+        working-directory: recoil
+        run: |
+          message=$(git log --format=%B -n 1 ${{ github.sha }})
+          echo "message=$message" >> $GITHUB_OUTPUT
 
       # NOTE: This step is duplicated in `publish-site.yml`
       - name: Generate Lua library
@@ -34,7 +41,7 @@ jobs:
       - name: Check out library repo
         uses: actions/checkout@v4
         with:
-          repository: beyond-all-reason/recoil-lua-library
+          repository: ${{ vars.RECOIL_LUA_LIBRARY_RESPOSITORY }}
           ssh-key: ${{ secrets.RECOIL_LUA_LIBRARY_SSH_KEY }}
           path: library
 
@@ -42,8 +49,6 @@ jobs:
         run: |
           rm -rf library/library
           cp -r recoil/rts/Lua/library library
-          # Remove .luarc.json (this is only required for doc gen)
-          rm library/library/.luarc.json
 
       # Always try to update library repo (even if generation did not make changes).
       # Hand-written files may have changed without generated output changing,
@@ -54,4 +59,5 @@ jobs:
           repository: ./library
           commit_message: |
             Update library
-            Generated from https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+            Generated from https://github.com/${{ github.repository }}/commit/${{ github.sha }}:
+            ${{ steps.commit.outputs.message }}
