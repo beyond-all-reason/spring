@@ -3,13 +3,11 @@
 
 #include "LuaInterCall.h"
 
-#include "LuaInclude.h"
-
-#include "LuaHandle.h"
 #include "LuaGaia.h"
+#include "LuaHandle.h"
+#include "LuaInclude.h"
 #include "LuaRules.h"
 #include "LuaUI.h"
-
 
 enum {
 	LUA_UI,
@@ -17,10 +15,9 @@ enum {
 	LUA_GAIA
 };
 
-
 static CLuaHandle* GetLuaHandle(lua_State* L, int index)
 {
-	const int* addr = (const int*) lua_touserdata(L, index);
+	const int* addr = (const int*)lua_touserdata(L, index);
 
 	if (addr == nullptr) {
 		luaL_error(L, "[LuaInterCall::%s] nil XCall target", __func__);
@@ -28,28 +25,27 @@ static CLuaHandle* GetLuaHandle(lua_State* L, int index)
 	}
 
 	switch (*addr) {
-		case LUA_UI:
-			return luaUI;
-		case LUA_RULES:
-			// handle is not currently active
-			if (luaRules == nullptr)
-				return nullptr;
+	case LUA_UI: return luaUI;
+	case LUA_RULES:
+		// handle is not currently active
+		if (luaRules == nullptr)
+			return nullptr;
 
-			return (CLuaHandle::GetHandleSynced(L)) ? static_cast<CLuaHandle*>(&luaRules->syncedLuaHandle) : static_cast<CLuaHandle*>(&luaRules->unsyncedLuaHandle);
-		case LUA_GAIA:
-			// handle is not currently active
-			if (luaGaia == nullptr)
-				return nullptr;
+		return (CLuaHandle::GetHandleSynced(L)) ? static_cast<CLuaHandle*>(&luaRules->syncedLuaHandle) :
+		                                          static_cast<CLuaHandle*>(&luaRules->unsyncedLuaHandle);
+	case LUA_GAIA:
+		// handle is not currently active
+		if (luaGaia == nullptr)
+			return nullptr;
 
-			return (CLuaHandle::GetHandleSynced(L)) ? static_cast<CLuaHandle*>(&luaGaia->syncedLuaHandle) : static_cast<CLuaHandle*>(&luaGaia->unsyncedLuaHandle);
+		return (CLuaHandle::GetHandleSynced(L)) ? static_cast<CLuaHandle*>(&luaGaia->syncedLuaHandle) :
+		                                          static_cast<CLuaHandle*>(&luaGaia->unsyncedLuaHandle);
 
-		default:
-			luaL_error(L, "[LuaInterCall::%s] bad XCall target %d", __func__, *addr);
+	default: luaL_error(L, "[LuaInterCall::%s] bad XCall target %d", __func__, *addr);
 	};
 
 	return nullptr;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -69,7 +65,6 @@ static int HandleXCall(lua_State* L)
 	return lh->XCall(L, funcName);
 }
 
-
 static int IndexHook(lua_State* L)
 {
 	if (!lua_israwstring(L, -1))
@@ -80,7 +75,6 @@ static int IndexHook(lua_State* L)
 	lua_pushcclosure(L, HandleXCall, 2);
 	return 1;
 }
-
 
 static int CallHook(lua_State* L)
 {
@@ -93,7 +87,8 @@ static int CallHook(lua_State* L)
 	if (lua_gettop(L) <= 1) {
 		// see if the handle currently active (arg 1 is the table)
 		lua_pushboolean(L, (lh != nullptr));
-	} else {
+	}
+	else {
 		// see if the specified function exists
 		lua_pushboolean(L, lh->HasXCall(luaL_checksstring(L, 2)));
 	}
@@ -101,20 +96,20 @@ static int CallHook(lua_State* L)
 	return 1;
 }
 
-
 static int PushCallHandler(lua_State* L, int luaInstance, const string& name)
 {
 	lua_pushsstring(L, name);
-	int* ptr = (int*) lua_newuserdata(L, sizeof(int));
+	int* ptr = (int*)lua_newuserdata(L, sizeof(int));
 	*ptr = luaInstance;
 	{ // create metatable of the userdata
-		lua_createtable(L, 0, 3); {
+		lua_createtable(L, 0, 3);
+		{
 			lua_pushliteral(L, "__index");
-			lua_pushvalue(L, -3); //userdata
-			lua_pushcclosure(L,  IndexHook, 1);
+			lua_pushvalue(L, -3); // userdata
+			lua_pushcclosure(L, IndexHook, 1);
 			lua_rawset(L, -3);
 			lua_pushliteral(L, "__call");
-			lua_pushvalue(L, -3); //userdata
+			lua_pushvalue(L, -3); // userdata
 			lua_pushcclosure(L, CallHook, 1);
 			lua_rawset(L, -3);
 			lua_pushliteral(L, "__metatable");
@@ -127,26 +122,24 @@ static int PushCallHandler(lua_State* L, int luaInstance, const string& name)
 	return 0;
 }
 
-
 bool LuaInterCall::PushEntriesSynced(lua_State* L)
 {
-	PushCallHandler(L, LUA_GAIA,  "LuaGaia");
+	PushCallHandler(L, LUA_GAIA, "LuaGaia");
 	PushCallHandler(L, LUA_RULES, "LuaRules");
 	return true;
 }
 
-
 bool LuaInterCall::PushEntriesUnsynced(lua_State* L)
 {
-	PushCallHandler(L, LUA_GAIA,  "LuaGaia");
+	PushCallHandler(L, LUA_GAIA, "LuaGaia");
 	PushCallHandler(L, LUA_RULES, "LuaRules");
-	PushCallHandler(L, LUA_UI,    "LuaUI");
+	PushCallHandler(L, LUA_UI, "LuaUI");
 	return true;
 }
 
 bool LuaInterCall::PushEntriesLuaUI(lua_State* L)
 {
-	PushCallHandler(L, LUA_UI,    "LuaUI");
+	PushCallHandler(L, LUA_UI, "LuaUI");
 	return true;
 }
 

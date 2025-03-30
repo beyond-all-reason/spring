@@ -5,5 +5,5 @@
 struct lua_State;
 
 namespace LuaTableExtra {
-	bool PushEntries(lua_State* L);
+bool PushEntries(lua_State* L);
 };

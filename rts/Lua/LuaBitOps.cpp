@@ -4,7 +4,6 @@
 #include "LuaBitOps.h"
 
 #include "LuaInclude.h"
-
 #include "LuaUtils.h"
 
 
@@ -12,7 +11,6 @@
 // integer values up to 1<<24 exactly
 const int mask = 0x00FFFFFF; // 2^24
                              //
-
 
 /******************************************************************************
  * math bit extensions
@@ -32,27 +30,22 @@ const int mask = 0x00FFFFFF; // 2^24
  *     end
  *
  * @see rts/Lua/LuaBitOps.cpp
-******************************************************************************/
+ ******************************************************************************/
 
 bool LuaBitOps::PushEntries(lua_State* L)
 {
-	LuaPushNamedCFunc(L, "bit_or",   bit_or);
-	LuaPushNamedCFunc(L, "bit_and",  bit_and);
-	LuaPushNamedCFunc(L, "bit_xor",  bit_xor);
-	LuaPushNamedCFunc(L, "bit_inv",  bit_inv);
+	LuaPushNamedCFunc(L, "bit_or", bit_or);
+	LuaPushNamedCFunc(L, "bit_and", bit_and);
+	LuaPushNamedCFunc(L, "bit_xor", bit_xor);
+	LuaPushNamedCFunc(L, "bit_inv", bit_inv);
 	LuaPushNamedCFunc(L, "bit_bits", bit_bits);
 	return true;
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
-static inline unsigned int luaL_checkuint(lua_State* L, int index)
-{
-	return (unsigned int)luaL_checkint(L, index);
-}
-
+static inline unsigned int luaL_checkuint(lua_State* L, int index) { return (unsigned int)luaL_checkint(L, index); }
 
 /*** Returns the bitwise OR of all arguments. Only use up to 24 bit integers.
  *
@@ -70,7 +63,6 @@ int LuaBitOps::bit_or(lua_State* L)
 	return 1;
 }
 
-
 /*** Returns the bitwise AND of all arguments. Only use up to 24 bit integers.
  *
  * @function math.bit_and
@@ -86,7 +78,6 @@ int LuaBitOps::bit_and(lua_State* L)
 	lua_pushnumber(L, result & mask);
 	return 1;
 }
-
 
 /*** Returns the bitwise XOR of all arguments. Only use up to 24 bit integers.
  *
@@ -104,7 +95,6 @@ int LuaBitOps::bit_xor(lua_State* L)
 	return 1;
 }
 
-
 /*** Returns the bitwise NOT of the 24 bit integer argument.
  *
  * @function math.bit_inv
@@ -117,7 +107,6 @@ int LuaBitOps::bit_inv(lua_State* L)
 	lua_pushnumber(L, result & mask);
 	return 1;
 }
-
 
 /*** Set each of the bits of a 24 bit integer. Returns result = result OR (1 << a1) OR (1 << a2) OR ...;)
  *
@@ -135,7 +124,6 @@ int LuaBitOps::bit_bits(lua_State* L)
 	lua_pushnumber(L, result & mask);
 	return 1;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/

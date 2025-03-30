@@ -1,16 +1,18 @@
 /* This file is part of the Spring System (GPL v2 or later), see LICENSE.html */
 
 #include "LuaConstPlatform.h"
+
 #include "LuaUtils.h"
-#include "System/Platform/Hardware.h"
-#include "System/Platform/Misc.h"
+
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
+#include "System/Platform/Hardware.h"
+#include "System/Platform/Misc.h"
 
 /******************************************************************************
  * Platform constants
  * @see rts/Lua/LuaConstPlatform.cpp
-******************************************************************************/
+ ******************************************************************************/
 
 /*** Platform specific information
  *
@@ -89,8 +91,8 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedNumber(L, "numDisplays", globalRendering->numDisplays);
 
 	LuaPushNamedBool(L, "glSupportNonPowerOfTwoTex", true);
-	LuaPushNamedBool(L, "glSupportTextureQueryLOD" , globalRendering->supportTextureQueryLOD);
-	LuaPushNamedBool(L, "glSupportMSAAFrameBuffer" , globalRendering->supportMSAAFrameBuffer);
+	LuaPushNamedBool(L, "glSupportTextureQueryLOD", globalRendering->supportTextureQueryLOD);
+	LuaPushNamedBool(L, "glSupportMSAAFrameBuffer", globalRendering->supportMSAAFrameBuffer);
 
 	LuaPushNamedBool(L, "glHaveAMD", globalRendering->haveAMD);
 	LuaPushNamedBool(L, "glHaveNVidia", globalRendering->haveNvidia);
@@ -103,7 +105,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 
 	LuaPushNamedBool(L, "glSupportRestartPrimitive", globalRendering->supportRestartPrimitive);
 	LuaPushNamedBool(L, "glSupportClipSpaceControl", globalRendering->supportClipSpaceControl);
-	LuaPushNamedBool(L, "glSupportFragDepthLayout" , globalRendering->supportFragDepthLayout);
+	LuaPushNamedBool(L, "glSupportFragDepthLayout", globalRendering->supportFragDepthLayout);
 	LuaPushNamedBool(L, "glSupportSeamlessCubeMaps", globalRendering->supportSeamlessCubeMaps);
 
 	LuaPushNamedString(L, "osName", Platform::GetOSNameStr());
@@ -112,7 +114,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "hwConfig", Platform::GetHardwareStr());
 	LuaPushNamedNumber(L, "cpuLogicalCores", Threading::GetLogicalCpuCores());
 	LuaPushNamedNumber(L, "cpuPhysicalCores", Threading::GetPhysicalCpuCores());
-	LuaPushNamedNumber(L, "totalRAM", Platform::TotalRAM()/1e6);
+	LuaPushNamedNumber(L, "totalRAM", Platform::TotalRAM() / 1e6);
 
 	LuaPushNamedString(L, "sysInfoHash", Platform::GetSysInfoHash());
 	LuaPushNamedString(L, "macAddrHash", Platform::GetMacAddrHash());

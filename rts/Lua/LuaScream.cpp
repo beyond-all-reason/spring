@@ -5,6 +5,7 @@
 
 #include "LuaInclude.h"
 #include "LuaUtils.h"
+
 #include "System/Log/ILog.h"
 
 bool LuaScream::PushEntries(lua_State* L)
@@ -15,20 +16,18 @@ bool LuaScream::PushEntries(lua_State* L)
 	return true;
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
 bool LuaScream::CreateMetatable(lua_State* L)
 {
 	luaL_newmetatable(L, "Scream");
-	HSTR_PUSH_CFUNC(L, "__gc",        meta_gc);
-	HSTR_PUSH_CFUNC(L, "__index",     meta_index);
-	HSTR_PUSH_CFUNC(L, "__newindex",  meta_newindex);
+	HSTR_PUSH_CFUNC(L, "__gc", meta_gc);
+	HSTR_PUSH_CFUNC(L, "__index", meta_index);
+	HSTR_PUSH_CFUNC(L, "__newindex", meta_newindex);
 	lua_pop(L, 1);
 	return true;
 }
-
 
 int LuaScream::meta_gc(lua_State* L)
 {
@@ -37,8 +36,7 @@ int LuaScream::meta_gc(lua_State* L)
 	if (lua_isfunction(L, -1)) {
 		const int error = lua_pcall(L, 0, 0, 0);
 		if (error != 0) {
-			LOG_L(L_ERROR, "Scream: error(%i) = %s",
-					error, lua_tostring(L, -1));
+			LOG_L(L_ERROR, "Scream: error(%i) = %s", error, lua_tostring(L, -1));
 			lua_pop(L, 1);
 		}
 	}
@@ -48,7 +46,6 @@ int LuaScream::meta_gc(lua_State* L)
 	luaL_unref(L, LUA_REGISTRYINDEX, *refPtr);
 	return 0;
 }
-
 
 int LuaScream::meta_index(lua_State* L)
 {
@@ -61,7 +58,6 @@ int LuaScream::meta_index(lua_State* L)
 	return 0;
 }
 
-
 int LuaScream::meta_newindex(lua_State* L)
 {
 	int* refPtr = (int*)luaL_checkudata(L, 1, "Scream");
@@ -72,7 +68,6 @@ int LuaScream::meta_newindex(lua_State* L)
 	}
 	return 0;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -88,7 +83,6 @@ int LuaScream::CreateScream(lua_State* L)
 
 	return 1;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/

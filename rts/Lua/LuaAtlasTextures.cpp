@@ -1,12 +1,13 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
-#include <algorithm>
-
-#include "LuaTextures.h"
-#include "Rendering/GlobalRendering.h"
-#include "System/Log/ILog.h"
 #include "LuaAtlasTextures.h"
 
+#include "LuaTextures.h"
+
+#include "Rendering/GlobalRendering.h"
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
+
+#include <algorithm>
 
 void LuaAtlasTextures::Clear()
 {
