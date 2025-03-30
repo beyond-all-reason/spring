@@ -33,21 +33,16 @@ public:
 	    , luamutex(nullptr)
 	    , memPool(LuaMemPool::AcquirePtr(sharedPool, stateOwned))
 	    , parser(nullptr)
-
 	    , synced(false)
 	    , allowChanges(false)
 	    , drawingEnabled(false)
-
 	    , running(0)
-
 	    , fullCtrl(false)
 	    , fullRead(false)
-
 	    , ctrlTeam(CEventClient::NoAccessTeam)
 	    , readTeam(0)
 	    , readAllyTeam(0)
 	    , selectTeam(CEventClient::NoAccessTeam)
-
 	    , allocState{{0}, {0}, {0}, {0}}
 	{
 	}

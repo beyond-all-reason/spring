@@ -456,28 +456,19 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 	origNextRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	// delete/replace some dangerous functions
-	lua_pushnil(L);
-	lua_setglobal(L, "dofile");
-	lua_pushnil(L);
-	lua_setglobal(L, "loadfile");
-	lua_pushnil(L);
-	lua_setglobal(L, "loadlib");
-	lua_pushnil(L);
-	lua_setglobal(L, "require");
-	lua_pushnil(L);
-	lua_setglobal(L, "rawequal"); // FIXME not unsafe anymore since split?
-	lua_pushnil(L);
-	lua_setglobal(L, "rawget"); // FIXME not unsafe anymore since split?
-	lua_pushnil(L);
-	lua_setglobal(L, "rawset"); // FIXME not unsafe anymore since split?
+	// clang-format off
+	lua_pushnil(L); lua_setglobal(L, "dofile");
+	lua_pushnil(L); lua_setglobal(L, "loadfile");
+	lua_pushnil(L); lua_setglobal(L, "loadlib");
+	lua_pushnil(L); lua_setglobal(L, "require");
+	lua_pushnil(L); lua_setglobal(L, "rawequal"); //FIXME not unsafe anymore since split?
+	lua_pushnil(L); lua_setglobal(L, "rawget"); //FIXME not unsafe anymore since split?
+	lua_pushnil(L); lua_setglobal(L, "rawset"); //FIXME not unsafe anymore since split?
 	//	lua_pushnil(L); lua_setglobal(L, "getfenv");
 	//	lua_pushnil(L); lua_setglobal(L, "setfenv");
-	lua_pushnil(L);
-	lua_setglobal(L, "newproxy"); // sync unsafe cause of __gc
-	lua_pushnil(L);
-	lua_setglobal(L, "gcinfo");
-	lua_pushnil(L);
-	lua_setglobal(L, "collectgarbage");
+	lua_pushnil(L); lua_setglobal(L, "newproxy"); // sync unsafe cause of __gc
+	lua_pushnil(L); lua_setglobal(L, "gcinfo");
+	lua_pushnil(L); lua_setglobal(L, "collectgarbage");
 
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
 	LuaPushNamedCFunc(L, "loadstring", CSplitLuaHandle::LoadStringData);
@@ -519,35 +510,27 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 
 	// load our libraries  (LuaSyncedCtrl overrides some LuaUnsyncedCtrl entries)
 	{
-#define KILL          \
-	{                 \
-		KillLua();    \
-		return false; \
-	}
-		if (!AddEntriesToTable(L, "VFS", LuaVFS::PushSynced))
-			KILL if (!AddEntriesToTable(L, "VFS", LuaZipFileReader::PushSynced))
-			    KILL if (!AddEntriesToTable(L, "VFS", LuaZipFileWriter::PushSynced))
-			        KILL if (!AddEntriesToTable(
-			                     L, "UnitDefs", LuaUnitDefs::PushEntries)) KILL if (!AddEntriesToTable(L, "WeaponDefs",
-			                                                                            LuaWeaponDefs::PushEntries))
-			            KILL if (!AddEntriesToTable(L, "FeatureDefs", LuaFeatureDefs::PushEntries))
-			                KILL if (!AddEntriesToTable(L, "Script", LuaInterCall::PushEntriesSynced))
-			                    KILL if (!AddEntriesToTable(L, "Spring", LuaUnsyncedCtrl::PushEntries))
-			                        KILL if (!AddEntriesToTable(L, "Spring", LuaSyncedCtrl::PushEntries))
-			                            KILL if (!AddEntriesToTable(L, "Spring", LuaSyncedRead::PushEntries))
-			                                KILL if (!AddEntriesToTable(L, "Spring", LuaUICommand::PushEntries))
-			                                    KILL if (!AddEntriesToTable(L, "Engine", LuaConstEngine::PushEntries))
-			                                        KILL if (!AddEntriesToTable(L, "Game", LuaConstGame::PushEntries))
-			                                            KILL if (!AddEntriesToTable(L, "CMD", LuaConstCMD::PushEntries))
-			                                                KILL if (!AddEntriesToTable(
-			                                                             L, "CMDTYPE", LuaConstCMDTYPE::PushEntries))
-			                                                    KILL if (!AddEntriesToTable(
-			                                                                 L, "COB", LuaConstCOB::PushEntries))
-			                                                        KILL if (!AddEntriesToTable(
-			                                                                     L, "SFX", LuaConstSFX::PushEntries))
-			                                                            KILL if (!AddEntriesToTable(L, "LOG",
-			                                                                         LuaUtils::PushLogEntries)) KILL
+		#define KILL { KillLua(); return false; }
+		if (!AddEntriesToTable(L, "VFS", LuaVFS::PushSynced)) KILL
+		if (!AddEntriesToTable(L, "VFS", LuaZipFileReader::PushSynced)) KILL
+		if (!AddEntriesToTable(L, "VFS", LuaZipFileWriter::PushSynced)) KILL
+		if (!AddEntriesToTable(L, "UnitDefs", LuaUnitDefs::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "WeaponDefs", LuaWeaponDefs::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "FeatureDefs", LuaFeatureDefs::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Script", LuaInterCall::PushEntriesSynced)) KILL
+		if (!AddEntriesToTable(L, "Spring", LuaUnsyncedCtrl::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Spring", LuaSyncedCtrl::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Spring", LuaSyncedRead::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Spring", LuaUICommand::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Engine", LuaConstEngine::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Game", LuaConstGame::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "CMD", LuaConstCMD::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "CMDTYPE", LuaConstCMDTYPE::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "COB", LuaConstCOB::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "SFX", LuaConstSFX::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "LOG", LuaUtils::PushLogEntries)) KILL
 #undef KILL
+		// clang-format on
 	}
 
 	// add code from the sub-class
@@ -1291,8 +1274,9 @@ bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
  *     0 - player picked a position,
  *     1 - player clicked ready,
  *     2 - player pressed ready OR the game was force-started (player did not click ready, but is now forcibly readied)
- * or 3 - the player failed to load. The default 'failed to choose' start-position is the north-west point of their
- * startbox, or (0,0,0) if they do not have a startbox.
+ *     3 - the player failed to load.
+ * The default 'failed to choose' start-position is the north-west point of their startbox, or (0,0,0) if they do not
+ * have a startbox.
  *
  * @param playerID integer
  * @param teamID integer
@@ -2123,9 +2107,19 @@ int CSyncedLuaHandle::GetWatchWeaponDef(lua_State* L)
 	return 1;
 }
 
-GetWatchDef(Unit) GetWatchDef(Feature) GetWatchDef(Explosion) GetWatchDef(Projectile) GetWatchDef(AllowTarget)
+// clang-format off
+GetWatchDef(Unit)
+GetWatchDef(Feature)
+GetWatchDef(Explosion)
+GetWatchDef(Projectile)
+GetWatchDef(AllowTarget)
 
-    SetWatchDef(Unit) SetWatchDef(Feature) SetWatchDef(Explosion) SetWatchDef(Projectile) SetWatchDef(AllowTarget)
+SetWatchDef(Unit)
+SetWatchDef(Feature)
+SetWatchDef(Explosion)
+SetWatchDef(Projectile)
+SetWatchDef(AllowTarget)
+// clang-format on
 
 #undef GetWatchDef
 #undef SetWatchDef

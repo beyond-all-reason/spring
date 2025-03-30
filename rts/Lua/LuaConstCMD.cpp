@@ -15,6 +15,7 @@
 
 bool LuaConstCMD::PushEntries(lua_State* L)
 {
+	// clang-format off
 	/*** @field CMD.OPT_ALT 128 */
 	LuaPushNamedNumber(L, "OPT_ALT", ALT_KEY);
 	/*** @field CMD.OPT_CTRL 64 */
@@ -56,6 +57,7 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	LuaPushNamedNumber(L, "WAITCODE_SQUAD", CMD_WAITCODE_SQUADWAIT);
 	/*** @field CMD.WAITCODE_GATHER 4 */
 	LuaPushNamedNumber(L, "WAITCODE_GATHER", CMD_WAITCODE_GATHERWAIT);
+	// clang-format on
 
 #define PUSH_CMD(cmd) LuaInsertDualMapPair(L, #cmd, CMD_##cmd);
 

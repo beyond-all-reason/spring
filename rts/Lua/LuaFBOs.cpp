@@ -666,12 +666,10 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 	glPushAttrib(GL_VIEWPORT_BIT);
 	glViewport(0, 0, fbo->xsize, fbo->ysize);
 	if (identities) {
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
+		// clang-format off
+		glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
+		glMatrixMode(GL_MODELVIEW);  glPushMatrix(); glLoadIdentity();
+		// clang-format on
 	}
 
 	GLint currentFBO = 0;
@@ -682,10 +680,10 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 
 	glBindFramebufferEXT(target, currentFBO);
 	if (identities) {
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
+		// clang-format off
+		glMatrixMode(GL_PROJECTION); glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);  glPopMatrix();
+		// clang-format on
 	}
 	glPopAttrib();
 
@@ -887,179 +885,57 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 	GLenum attachment = 0;
 	GLenum drawBuffer = 0;
 
+	// clang-format off
 	if (lua_isstring(L, nextArg)) {
 		const char* attachmentStr = luaL_checkstring(L, nextArg++);
 		switch (hashString(attachmentStr)) {
-		case hashString("color0"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT0;
-			drawBuffer = 0;
-		} break;
-		case hashString("color1"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT1;
-			drawBuffer = 1;
-		} break;
-		case hashString("color2"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT2;
-			drawBuffer = 2;
-		} break;
-		case hashString("color3"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT3;
-			drawBuffer = 3;
-		} break;
-		case hashString("color4"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT4;
-			drawBuffer = 4;
-		} break;
-		case hashString("color5"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT5;
-			drawBuffer = 5;
-		} break;
-		case hashString("color6"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT6;
-			drawBuffer = 6;
-		} break;
-		case hashString("color7"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT7;
-			drawBuffer = 7;
-		} break;
-		case hashString("color8"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT8;
-			drawBuffer = 8;
-		} break;
-		case hashString("color9"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT9;
-			drawBuffer = 9;
-		} break;
-		case hashString("color10"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT10;
-			drawBuffer = 10;
-		} break;
-		case hashString("color11"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT11;
-			drawBuffer = 11;
-		} break;
-		case hashString("color12"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT12;
-			drawBuffer = 12;
-		} break;
-		case hashString("color13"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT13;
-			drawBuffer = 13;
-		} break;
-		case hashString("color14"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT14;
-			drawBuffer = 14;
-		} break;
-		case hashString("color15"): {
-			bufferType = GL_COLOR;
-			attachment = GL_COLOR_ATTACHMENT15;
-			drawBuffer = 15;
-		} break;
-		case hashString("depth"): {
-			bufferType = GL_DEPTH;
-			attachment = GL_DEPTH_ATTACHMENT;
-			drawBuffer = 0;
-		} break;
-		case hashString("stencil"): {
-			bufferType = GL_STENCIL;
-			attachment = GL_STENCIL_ATTACHMENT;
-			drawBuffer = 0;
-		} break;
-		default: return ReportErrorAndReturn(fmt::format("invalid attachment string ({})", attachmentStr).c_str());
+			case hashString("color0"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT0;  drawBuffer = 0; } break;
+			case hashString("color1"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT1;  drawBuffer = 1; } break;
+			case hashString("color2"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT2;  drawBuffer = 2; } break;
+			case hashString("color3"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT3;  drawBuffer = 3; } break;
+			case hashString("color4"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT4;  drawBuffer = 4; } break;
+			case hashString("color5"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT5;  drawBuffer = 5; } break;
+			case hashString("color6"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT6;  drawBuffer = 6; } break;
+			case hashString("color7"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT7;  drawBuffer = 7; } break;
+			case hashString("color8"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT8;  drawBuffer = 8; } break;
+			case hashString("color9"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT9;  drawBuffer = 9; } break;
+			case hashString("color10"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT10; drawBuffer = 10; } break;
+			case hashString("color11"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT11; drawBuffer = 11; } break;
+			case hashString("color12"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT12; drawBuffer = 12; } break;
+			case hashString("color13"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT13; drawBuffer = 13; } break;
+			case hashString("color14"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT14; drawBuffer = 14; } break;
+			case hashString("color15"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT15; drawBuffer = 15; } break;
+			case hashString("depth"): { bufferType = GL_DEPTH;   attachment = GL_DEPTH_ATTACHMENT;   drawBuffer = 0; } break;
+			case hashString("stencil"): { bufferType = GL_STENCIL; attachment = GL_STENCIL_ATTACHMENT; drawBuffer = 0; } break;
+		default:
+			return ReportErrorAndReturn(fmt::format("invalid attachment string ({})", attachmentStr).c_str());
 		}
 	}
 	else if (lua_isnumber(L, nextArg)) {
 		switch (attachment = luaL_checkint(L, nextArg++)) {
-		case GL_COLOR_ATTACHMENT0: {
-			bufferType = GL_COLOR;
-			drawBuffer = 0;
-		} break;
-		case GL_COLOR_ATTACHMENT1: {
-			bufferType = GL_COLOR;
-			drawBuffer = 1;
-		} break;
-		case GL_COLOR_ATTACHMENT2: {
-			bufferType = GL_COLOR;
-			drawBuffer = 2;
-		} break;
-		case GL_COLOR_ATTACHMENT3: {
-			bufferType = GL_COLOR;
-			drawBuffer = 3;
-		} break;
-		case GL_COLOR_ATTACHMENT4: {
-			bufferType = GL_COLOR;
-			drawBuffer = 4;
-		} break;
-		case GL_COLOR_ATTACHMENT5: {
-			bufferType = GL_COLOR;
-			drawBuffer = 5;
-		} break;
-		case GL_COLOR_ATTACHMENT6: {
-			bufferType = GL_COLOR;
-			drawBuffer = 6;
-		} break;
-		case GL_COLOR_ATTACHMENT7: {
-			bufferType = GL_COLOR;
-			drawBuffer = 7;
-		} break;
-		case GL_COLOR_ATTACHMENT8: {
-			bufferType = GL_COLOR;
-			drawBuffer = 8;
-		} break;
-		case GL_COLOR_ATTACHMENT9: {
-			bufferType = GL_COLOR;
-			drawBuffer = 9;
-		} break;
-		case GL_COLOR_ATTACHMENT10: {
-			bufferType = GL_COLOR;
-			drawBuffer = 10;
-		} break;
-		case GL_COLOR_ATTACHMENT11: {
-			bufferType = GL_COLOR;
-			drawBuffer = 11;
-		} break;
-		case GL_COLOR_ATTACHMENT12: {
-			bufferType = GL_COLOR;
-			drawBuffer = 12;
-		} break;
-		case GL_COLOR_ATTACHMENT13: {
-			bufferType = GL_COLOR;
-			drawBuffer = 13;
-		} break;
-		case GL_COLOR_ATTACHMENT14: {
-			bufferType = GL_COLOR;
-			drawBuffer = 14;
-		} break;
-		case GL_COLOR_ATTACHMENT15: {
-			bufferType = GL_COLOR;
-			drawBuffer = 15;
-		} break;
-		case GL_DEPTH_ATTACHMENT: {
-			bufferType = GL_DEPTH;
-			drawBuffer = 0;
-		} break;
-		case GL_STENCIL_ATTACHMENT: {
-			bufferType = GL_STENCIL;
-			drawBuffer = 0;
-		} break;
-		default: return ReportErrorAndReturn(fmt::format("invalid attachment type ({})", attachment).c_str());
+			case GL_COLOR_ATTACHMENT0: { bufferType = GL_COLOR; drawBuffer = 0; } break;
+			case GL_COLOR_ATTACHMENT1: { bufferType = GL_COLOR; drawBuffer = 1; } break;
+			case GL_COLOR_ATTACHMENT2: { bufferType = GL_COLOR; drawBuffer = 2; } break;
+			case GL_COLOR_ATTACHMENT3: { bufferType = GL_COLOR; drawBuffer = 3; } break;
+			case GL_COLOR_ATTACHMENT4: { bufferType = GL_COLOR; drawBuffer = 4; } break;
+			case GL_COLOR_ATTACHMENT5: { bufferType = GL_COLOR; drawBuffer = 5; } break;
+			case GL_COLOR_ATTACHMENT6: { bufferType = GL_COLOR; drawBuffer = 6; } break;
+			case GL_COLOR_ATTACHMENT7: { bufferType = GL_COLOR; drawBuffer = 7; } break;
+			case GL_COLOR_ATTACHMENT8: { bufferType = GL_COLOR; drawBuffer = 8; } break;
+			case GL_COLOR_ATTACHMENT9: { bufferType = GL_COLOR; drawBuffer = 9; } break;
+			case GL_COLOR_ATTACHMENT10: { bufferType = GL_COLOR; drawBuffer = 10; } break;
+			case GL_COLOR_ATTACHMENT11: { bufferType = GL_COLOR; drawBuffer = 11; } break;
+			case GL_COLOR_ATTACHMENT12: { bufferType = GL_COLOR; drawBuffer = 12; } break;
+			case GL_COLOR_ATTACHMENT13: { bufferType = GL_COLOR; drawBuffer = 13; } break;
+			case GL_COLOR_ATTACHMENT14: { bufferType = GL_COLOR; drawBuffer = 14; } break;
+			case GL_COLOR_ATTACHMENT15: { bufferType = GL_COLOR; drawBuffer = 15; } break;
+			case GL_DEPTH_ATTACHMENT: { bufferType = GL_DEPTH; drawBuffer = 0; } break;
+			case GL_STENCIL_ATTACHMENT: { bufferType = GL_STENCIL; drawBuffer = 0; } break;
+		default:
+			return ReportErrorAndReturn(fmt::format("invalid attachment type ({})", attachment).c_str());
 		}
 	}
+	// clang-format on
 
 	GLint attachmentType = GL_NONE;
 	glGetFramebufferAttachmentParameteriv(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &attachmentType);

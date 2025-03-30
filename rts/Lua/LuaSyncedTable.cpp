@@ -37,11 +37,12 @@ static int SyncTableIndex(lua_State* dstL)
 	const int valueCopied = LuaUtils::CopyData(dstL, srcL, 1);
 	if (lua_istable(dstL, -1)) {
 		// disallow writing in SYNCED[...]
-		lua_createtable(dstL, 0, 2);
-		{
-			LuaPushNamedCFunc(dstL, "__newindex", SyncTableNewIndex);
+		// clang-format off
+		lua_createtable(dstL, 0, 2); {
+			LuaPushNamedCFunc(dstL, "__newindex",  SyncTableNewIndex);
 			LuaPushNamedCFunc(dstL, "__metatable", SyncTableMetatable);
 		}
+		// clang-format on
 		lua_setmetatable(dstL, -2);
 	}
 

@@ -722,17 +722,10 @@ int LuaUnsyncedCtrl::PlaySoundFile(lua_State* L)
 		}
 		else if (lua_isnumber(L, index)) {
 			switch (lua_toint(L, index)) {
-			case 1: {
-				channel = Channels::Battle;
-			} break;
-			case 2: {
-				channel = Channels::UnitReply;
-			} break;
-			case 3: {
-				channel = Channels::UserInterface;
-			} break;
-			default: {
-			} break;
+			case 1: channel = Channels::Battle; break;
+			case 2: channel = Channels::UnitReply; break;
+			case 3: channel = Channels::UserInterface; break;
+			default: break;
 			}
 		}
 	}

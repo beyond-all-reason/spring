@@ -71,24 +71,13 @@ static const char* GetMatTypeName(LuaMatType type)
 	const char* typeName = "Unknown";
 
 	switch (type) {
-	case LUAMAT_ALPHA: {
-		typeName = "LUAMAT_ALPHA";
-	} break;
-	case LUAMAT_OPAQUE: {
-		typeName = "LUAMAT_OPAQUE";
-	} break;
-	case LUAMAT_ALPHA_REFLECT: {
-		typeName = "LUAMAT_ALPHA_REFLECT";
-	} break;
-	case LUAMAT_OPAQUE_REFLECT: {
-		typeName = "LUAMAT_OPAQUE_REFLECT";
-	} break;
-	case LUAMAT_SHADOW: {
-		typeName = "LUAMAT_SHADOW";
-	} break;
+	case LUAMAT_ALPHA: typeName = "LUAMAT_ALPHA"; break;
+	case LUAMAT_OPAQUE: typeName = "LUAMAT_OPAQUE"; break;
+	case LUAMAT_ALPHA_REFLECT: typeName = "LUAMAT_ALPHA_REFLECT"; break;
+	case LUAMAT_OPAQUE_REFLECT: typeName = "LUAMAT_OPAQUE_REFLECT"; break;
+	case LUAMAT_SHADOW: typeName = "LUAMAT_SHADOW"; break;
 
-	case LUAMAT_TYPE_COUNT: {
-	} break;
+	case LUAMAT_TYPE_COUNT: break;
 	}
 
 	return typeName;
@@ -144,40 +133,33 @@ void LuaMatShader::Execute(const LuaMatShader& prev, bool deferredPass) const
 
 	if (type != prev.type) {
 		switch (prev.type) {
-		case LUASHADER_GL: {
-			glUseProgram(0);
-		} break;
+		case LUASHADER_GL: glUseProgram(0); break;
 		case LUASHADER_3DO:
 		case LUASHADER_S3O:
-		case LUASHADER_ASS: {
+		case LUASHADER_ASS:
 			if (luaMatHandler.resetDrawStateFuncs[prev.type]) {
 				luaMatHandler.resetDrawStateFuncs[prev.type](prev.type, deferredPass);
 			}
-		} break;
-		case LUASHADER_NONE: {
-		} break;
-		default: {
-			assert(false);
-		} break;
+			break;
+
+		case LUASHADER_NONE: break;
+		default: assert(false); break;
 		}
 
 		switch (type) {
-		case LUASHADER_GL: {
+		case LUASHADER_GL:
 			// custom shader
 			glUseProgram(openglID);
-		} break;
+			break;
 		case LUASHADER_3DO:
 		case LUASHADER_S3O:
-		case LUASHADER_ASS: {
+		case LUASHADER_ASS:
 			if (luaMatHandler.setupDrawStateFuncs[type]) {
 				luaMatHandler.setupDrawStateFuncs[type](type, deferredPass);
 			}
-		} break;
-		case LUASHADER_NONE: {
-		} break;
-		default: {
-			assert(false);
-		} break;
+			break;
+		case LUASHADER_NONE: break;
+		default: assert(false); break;
 		}
 	}
 	else if (type == LUASHADER_GL) {
@@ -193,24 +175,12 @@ void LuaMatShader::Print(const string& indent, bool isDeferred) const
 	const char* typeName = "Unknown";
 
 	switch (type) {
-	case LUASHADER_NONE: {
-		typeName = "LUASHADER_NONE";
-	} break;
-	case LUASHADER_GL: {
-		typeName = "LUASHADER_GL";
-	} break;
-	case LUASHADER_3DO: {
-		typeName = "LUASHADER_3DO";
-	} break;
-	case LUASHADER_S3O: {
-		typeName = "LUASHADER_S3O";
-	} break;
-	case LUASHADER_ASS: {
-		typeName = "LUASHADER_ASS";
-	} break;
-	default: {
-		assert(false);
-	} break;
+	case LUASHADER_NONE: typeName = "LUASHADER_NONE"; break;
+	case LUASHADER_GL: typeName = "LUASHADER_GL"; break;
+	case LUASHADER_3DO: typeName = "LUASHADER_3DO"; break;
+	case LUASHADER_S3O: typeName = "LUASHADER_S3O"; break;
+	case LUASHADER_ASS: typeName = "LUASHADER_ASS"; break;
+	default: assert(false); break;
 	}
 
 	LOG("%s[shader][%s]", indent.c_str(), (isDeferred ? "deferred" : "standard"));
@@ -421,9 +391,7 @@ void LuaMaterial::ExecuteInstanceUniforms(int objId, int objType, bool deferredP
 	// can stop at first empty slot, Clear ensures contiguity
 	for (const LuaMatUniform& u: objUniformsIt->second) {
 		switch (u.loc) {
-		case -3: {
-			return;
-		} break;
+		case -3: return; break;
 		case -2: {
 			if ((u.loc = glGetUniformLocation(matShader.openglID, u.name)) == -1) {
 				LOG_L(L_WARNING,
@@ -434,48 +402,24 @@ void LuaMaterial::ExecuteInstanceUniforms(int objId, int objType, bool deferredP
 				continue;
 			}
 		} break;
-		case -1: {
-			continue;
-		} break;
-		default: {
-		} break;
+		case -1: continue;
+		default: break;
 		}
 
 		switch (u.type) {
-		case GL_INT: {
-			glUniform1iv(u.loc, u.size, u.data.i);
-		} break;
-		case GL_INT_VEC2: {
-			glUniform2iv(u.loc, u.size, u.data.i);
-		} break;
-		case GL_INT_VEC3: {
-			glUniform3iv(u.loc, u.size, u.data.i);
-		} break;
-		case GL_INT_VEC4: {
-			glUniform4iv(u.loc, u.size, u.data.i);
-		} break;
+		case GL_INT: glUniform1iv(u.loc, u.size, u.data.i); break;
+		case GL_INT_VEC2: glUniform2iv(u.loc, u.size, u.data.i); break;
+		case GL_INT_VEC3: glUniform3iv(u.loc, u.size, u.data.i); break;
+		case GL_INT_VEC4: glUniform4iv(u.loc, u.size, u.data.i); break;
 
-		case GL_FLOAT: {
-			glUniform1fv(u.loc, u.size, u.data.f);
-		} break;
-		case GL_FLOAT_VEC2: {
-			glUniform2fv(u.loc, u.size, u.data.f);
-		} break;
-		case GL_FLOAT_VEC3: {
-			glUniform3fv(u.loc, u.size, u.data.f);
-		} break;
-		case GL_FLOAT_VEC4: {
-			glUniform4fv(u.loc, u.size, u.data.f);
-		} break;
+		case GL_FLOAT: glUniform1fv(u.loc, u.size, u.data.f); break;
+		case GL_FLOAT_VEC2: glUniform2fv(u.loc, u.size, u.data.f); break;
+		case GL_FLOAT_VEC3: glUniform3fv(u.loc, u.size, u.data.f); break;
+		case GL_FLOAT_VEC4: glUniform4fv(u.loc, u.size, u.data.f); break;
 
-		case GL_FLOAT_MAT3: {
-			glUniformMatrix3fv(u.loc, u.size, false, u.data.f);
-		} break;
-		case GL_FLOAT_MAT4: {
-			glUniformMatrix4fv(u.loc, u.size, false, u.data.f);
-		} break;
-		default: {
-		} break;
+		case GL_FLOAT_MAT3: glUniformMatrix3fv(u.loc, u.size, false, u.data.f); break;
+		case GL_FLOAT_MAT4: glUniformMatrix4fv(u.loc, u.size, false, u.data.f); break;
+		default: break;
 		}
 	}
 }
@@ -1006,15 +950,9 @@ void LuaMatHandler::ClearBins(LuaObjType objType, LuaMatType matType)
 
 	for (LuaMatBin* bin: binTypes[matType]) {
 		switch (objType) {
-		case LUAOBJ_UNIT: {
-			bin->ClearUnits();
-		} break;
-		case LUAOBJ_FEATURE: {
-			bin->ClearFeatures();
-		} break;
-		default: {
-			assert(false);
-		} break;
+		case LUAOBJ_UNIT: bin->ClearUnits(); break;
+		case LUAOBJ_FEATURE: bin->ClearFeatures(); break;
+		default: assert(false); break;
 		}
 	}
 }

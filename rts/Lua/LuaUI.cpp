@@ -113,6 +113,7 @@ CLuaUI::CLuaUI()
 	if (luaSocketEnabled)
 		InitLuaSocket(L);
 
+	// clang-format off
 	// setup the lua IO access check functions
 	lua_set_fopen(L, LuaIO::fopen);
 	lua_set_popen(L, LuaIO::popen, LuaIO::pclose);
@@ -147,6 +148,7 @@ CLuaUI::CLuaUI()
 	lua_pop(L, 1); // os
 
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
+	// clang-format on
 
 	AddBasicCalls(L); // into Global
 
@@ -230,26 +232,13 @@ string CLuaUI::LoadFile(const string& name, const std::string& mode) const
 static bool IsDisallowedCallIn(const string& name)
 {
 	switch (hashString(name.c_str())) {
-	case hashString("Explosion"): {
-		return true;
-	} break;
-	case hashString("DrawUnit"): {
-		return true;
-	} break;
-	case hashString("DrawFeature"): {
-		return true;
-	} break;
-	case hashString("DrawShield"): {
-		return true;
-	} break;
-	case hashString("DrawProjectile"): {
-		return true;
-	} break;
-	case hashString("DrawMaterial"): {
-		return true;
-	} break;
-	default: {
-	} break;
+	case hashString("Explosion"): return true;
+	case hashString("DrawUnit"): return true;
+	case hashString("DrawFeature"): return true;
+	case hashString("DrawShield"): return true;
+	case hashString("DrawProjectile"): return true;
+	case hashString("DrawMaterial"): return true;
+	default: break;
 	}
 
 	return false;

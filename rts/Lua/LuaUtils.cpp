@@ -772,15 +772,9 @@ int LuaUtils::PushModelRadius(lua_State* L, const SolidObjectDef* def, bool isUn
 int LuaUtils::PushFeatureModelDrawType(lua_State* L, const FeatureDef* def)
 {
 	switch (def->drawType) {
-	case DRAWTYPE_NONE: {
-		HSTR_PUSH(L, "none");
-	} break;
-	case DRAWTYPE_MODEL: {
-		HSTR_PUSH(L, "model");
-	} break;
-	default: {
-		HSTR_PUSH(L, "tree");
-	} break;
+	case DRAWTYPE_NONE: HSTR_PUSH(L, "none"); break;
+	case DRAWTYPE_MODEL: HSTR_PUSH(L, "model"); break;
+	default: HSTR_PUSH(L, "tree"); break;
 	}
 
 	return 1;
@@ -1462,27 +1456,16 @@ int LuaUtils::ParseLogLevel(lua_State* L, int index)
 				return LOG_LEVEL_DEBUG;
 		} break;
 		case 'I':
-		case 'i': {
-			return LOG_LEVEL_INFO;
-		} break;
+		case 'i': return LOG_LEVEL_INFO; break;
 		case 'N':
-		case 'n': {
-			return LOG_LEVEL_NOTICE;
-		} break;
+		case 'n': return LOG_LEVEL_NOTICE; break;
 		case 'W':
-		case 'w': {
-			return LOG_LEVEL_WARNING;
-		} break;
+		case 'w': return LOG_LEVEL_WARNING; break;
 		case 'E':
-		case 'e': {
-			return LOG_LEVEL_ERROR;
-		} break;
+		case 'e': return LOG_LEVEL_ERROR; break;
 		case 'F':
-		case 'f': {
-			return LOG_LEVEL_FATAL;
-		} break;
-		default: {
-		} break;
+		case 'f': return LOG_LEVEL_FATAL; break;
+		default: break;
 		}
 	}
 

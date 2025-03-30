@@ -265,53 +265,25 @@ int LuaFonts::Print(lua_State* L)
 		const char* c = lua_tostring(L, 6);
 		while (*c != 0) {
 			switch (*(c++)) {
-			case 'c': {
-				options |= FONT_CENTER;
-			} break;
-			case 'r': {
-				options |= FONT_RIGHT;
-			} break;
+			case 'c': options |= FONT_CENTER; break;
+			case 'r': options |= FONT_RIGHT; break;
 
-			case 'a': {
-				options |= FONT_ASCENDER;
-			} break;
-			case 't': {
-				options |= FONT_TOP;
-			} break;
-			case 'v': {
-				options |= FONT_VCENTER;
-			} break;
-			case 'x': {
-				options |= FONT_BASELINE;
-			} break;
-			case 'b': {
-				options |= FONT_BOTTOM;
-			} break;
-			case 'd': {
-				options |= FONT_DESCENDER;
-			} break;
+			case 'a': options |= FONT_ASCENDER; break;
+			case 't': options |= FONT_TOP; break;
+			case 'v': options |= FONT_VCENTER; break;
+			case 'x': options |= FONT_BASELINE; break;
+			case 'b': options |= FONT_BOTTOM; break;
+			case 'd': options |= FONT_DESCENDER; break;
 
-			case 's': {
-				options |= FONT_SHADOW;
-			} break;
+			case 's': options |= FONT_SHADOW; break;
 			case 'o':
-			case 'O': {
-				options |= FONT_OUTLINE;
-			} break;
+			case 'O': options |= FONT_OUTLINE; break;
 
-			case 'n': {
-				options ^= FONT_NEAREST;
-			} break;
-			case 'B': {
-				options |= FONT_BUFFERED;
-			} break; // for DrawBuffered
+			case 'n': options ^= FONT_NEAREST; break;
+			case 'B': options |= FONT_BUFFERED; break; // for DrawBuffered
 
-			case 'N': {
-				options |= FONT_NORM;
-			} break;
-			case 'S': {
-				options |= FONT_SCALE;
-			} break;
+			case 'N': options |= FONT_NORM; break;
+			case 'S': options |= FONT_SCALE; break;
 			default: break;
 			}
 		}
@@ -340,53 +312,25 @@ int LuaFonts::PrintWorld(lua_State* L)
 		const char* c = lua_tostring(L, 7);
 		while (*c != 0) {
 			switch (*(c++)) {
-			case 'c': {
-				options |= FONT_CENTER;
-			} break;
-			case 'r': {
-				options |= FONT_RIGHT;
-			} break;
+			case 'c': options |= FONT_CENTER; break;
+			case 'r': options |= FONT_RIGHT; break;
 
-			case 'a': {
-				options |= FONT_ASCENDER;
-			} break;
-			case 't': {
-				options |= FONT_TOP;
-			} break;
-			case 'v': {
-				options |= FONT_VCENTER;
-			} break;
-			case 'x': {
-				options |= FONT_BASELINE;
-			} break;
-			case 'b': {
-				options |= FONT_BOTTOM;
-			} break;
-			case 'd': {
-				options |= FONT_DESCENDER;
-			} break;
+			case 'a': options |= FONT_ASCENDER; break;
+			case 't': options |= FONT_TOP; break;
+			case 'v': options |= FONT_VCENTER; break;
+			case 'x': options |= FONT_BASELINE; break;
+			case 'b': options |= FONT_BOTTOM; break;
+			case 'd': options |= FONT_DESCENDER; break;
 
-			case 's': {
-				options |= FONT_SHADOW;
-			} break;
+			case 's': options |= FONT_SHADOW; break;
 			case 'o':
-			case 'O': {
-				options |= FONT_OUTLINE;
-			} break;
+			case 'O': options |= FONT_OUTLINE; break;
 
-			case 'n': {
-				options ^= FONT_NEAREST;
-			} break;
-			case 'B': {
-				options |= FONT_BUFFERED;
-			} break; // for DrawBuffered
+			case 'n': options ^= FONT_NEAREST; break;
+			case 'B': options |= FONT_BUFFERED; break; // for DrawBuffered
 
-			case 'N': {
-				options |= FONT_NORM;
-			} break;
-			case 'S': {
-				options |= FONT_SCALE;
-			} break;
+			case 'N': options |= FONT_NORM; break;
+			case 'S': options |= FONT_SCALE; break;
 			default: break;
 			}
 		}
