@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef RMLUI_SVG_ELEMENT_SVG_H
-#define RMLUI_SVG_ELEMENT_SVG_H
+#ifndef RMLGUI_SVG_ELEMENT_SVG_H
+#define RMLGUI_SVG_ELEMENT_SVG_H
 
 
 #include "RmlUi/Core/CallbackTexture.h"
@@ -38,17 +38,17 @@ namespace lunasvg {
 class Document;
 }
 
-namespace Rml {
+namespace RmlGui {
 
-class ElementSVG : public Element {
+class ElementSVG : public Rml::Element {
 public:
 	RMLUI_RTTI_DefineWithParent(ElementSVG, Element)
 
-	ElementSVG(const String& tag);
+	ElementSVG(const Rml::String& tag);
 	virtual ~ElementSVG();
 
 	/// Returns the element's inherent size.
-	bool GetIntrinsicDimensions(Vector2f& dimensions, float& ratio) override;
+	bool GetIntrinsicDimensions(Rml::Vector2f& dimensions, float& ratio) override;
 
 protected:
 	/// Renders the image.
@@ -59,11 +59,11 @@ protected:
 
 	/// Checks for changes to the image's source or dimensions.
 	/// @param[in] changed_attributes A list of attributes changed on the element.
-	void OnAttributeChange(const ElementAttributes& changed_attributes) override;
+	void OnAttributeChange(const Rml::ElementAttributes& changed_attributes) override;
 
 	/// Called when properties on the element are changed.
 	/// @param[in] changed_properties The properties changed on the element.
-	void OnPropertyChange(const PropertyIdSet& changed_properties) override;
+	void OnPropertyChange(const Rml::PropertyIdSet& changed_properties) override;
 
 private:
 	// Generates the element's geometry.
@@ -78,19 +78,19 @@ private:
 	bool texture_dirty = false;
 
 	// The texture this element is rendering from.
-	CallbackTexture texture;
+	Rml::CallbackTexture texture;
 
 	// The image's intrinsic dimensions.
-	Vector2f intrinsic_dimensions;
+	Rml::Vector2f intrinsic_dimensions;
 	// The element's size for rendering.
-	Vector2i render_dimensions;
+	Rml::Vector2i render_dimensions;
 
 	// The geometry used to render this element.
-	Geometry geometry;
+	Rml::Geometry geometry;
 
-	UniquePtr<lunasvg::Document> svg_document;
+	Rml::UniquePtr<lunasvg::Document> svg_document;
 };
 
-} // namespace Rml
+}
 
 #endif

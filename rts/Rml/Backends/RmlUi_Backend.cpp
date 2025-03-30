@@ -43,8 +43,8 @@
 #include "Rml/Components/ElementLuaTexture.h"
 #include "Rml/RmlInputReceiver.h"
 #include "Rml/SolLua/RmlSolLua.h"
-#include "Rml/SVG/SVGPlugin.h"
 #include "RmlUi_Backend.h"
+#include "Rml/SVG/SVGPlugin.h"
 
 #ifndef HEADLESS
 #include "RmlUi_Renderer_GL3_Recoil.h"
@@ -113,7 +113,7 @@ public:
 	lua_State* ls = nullptr;
 	Rml::SolLua::SolLuaPlugin* luaPlugin = nullptr;
 
-	Rml::SVG::SVGPlugin svgPlugin;
+	RmlGui::SVG::DynamicSVGPlugin* svgPlugin;
 	Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
 };
 
@@ -155,7 +155,8 @@ bool RmlGui::Initialize()
 	state->element_lua_texture_instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementLuaTexture>>();
 	Rml::Factory::RegisterElementInstancer("texture", state->element_lua_texture_instancer.get());
 
-	Rml::RegisterPlugin(&state->svgPlugin);
+	state->svgPlugin = RmlGui::SVG::Initialise();
+	Rml::RegisterPlugin(state->svgPlugin);
 	Rml::RegisterPlugin(state.get());
 
 	return true;
@@ -218,7 +219,7 @@ void RmlGui::Shutdown()
 
 	// note: during SpringApp shutdown, RmlGui::RemoveLua() was already called when LuaUI was shutdown
 	RemoveLua();
-	Rml::UnregisterPlugin(&state->svgPlugin);
+	Rml::UnregisterPlugin(state->svgPlugin);
 	Rml::UnregisterPlugin(state.get());
 
 	// removes all contexts, interfaces must be alive at this point

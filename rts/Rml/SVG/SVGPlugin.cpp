@@ -27,10 +27,15 @@
  */
 
 #include <RmlUi/Core.h>
-#include "./ElementSVG.h"
+#include "./SVGPlugin.h"
 
-namespace Rml {
+namespace RmlGui {
 namespace SVG {
-
+	DynamicSVGPlugin* Initialise()
+	{
+		DynamicSVGPlugin* svgPlugin = new DynamicSVGPlugin{};
+		Rml::RegisterPlugin(svgPlugin);
+		return svgPlugin;
+	}
 } // namespace SVG
 } // namespace Rml
