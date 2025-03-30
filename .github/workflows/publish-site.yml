@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   publish:
+    if: github.repository == 'beyond-all-reason/spring' || github.event_name == 'workflow_dispatch'
     name: Publish Site
     runs-on: ubuntu-latest
     permissions:
