@@ -214,8 +214,8 @@ void LuaVAOImpl::CondInitVAO()
 	vao->Bind();
 
 	if (vertLuaVBO) {
-		vertLuaVBO->vbo->Bind(GL_ARRAY_BUFFER
-		); // type is needed cause same buffer could have been rebounded as something else using LuaVBOs functions
+		vertLuaVBO->vbo->Bind(GL_ARRAY_BUFFER); // type is needed cause same buffer could have been rebounded as
+		                                        // something else using LuaVBOs functions
 		oldVertVBOId = vertLuaVBO->GetId();
 	}
 
@@ -293,8 +293,8 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 	LuaVAOImpl::DrawCheckResult result{};
 
 	if (vertLuaVBO)
-		vertLuaVBO->UpdateModelsVBOElementCount(
-		); // need to update elements count because underlyiing VBO could have been updated
+		vertLuaVBO->UpdateModelsVBOElementCount(); // need to update elements count because underlyiing VBO could have
+		                                           // been updated
 
 	if (indexed) {
 		if (!indxLuaVBO)
@@ -303,8 +303,8 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 			    __func__
 			);
 
-		indxLuaVBO->UpdateModelsVBOElementCount(
-		); // need to update elements count because underlyiing VBO could have been updated
+		indxLuaVBO->UpdateModelsVBOElementCount(); // need to update elements count because underlyiing VBO could have
+		                                           // been updated
 
 		result.baseIndex = std::max(inputs.baseIndex.value_or(0), 0);
 		result.baseVertex = std::max(inputs.baseVertex.value_or(0), 0); // can't be checked easily
@@ -328,8 +328,8 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 		if (!vertLuaVBO) {
 			if (!inputs.drawCount.has_value())
 				LuaUtils::SolLuaError(
-				    "[LuaVAOImpl::%s]: In case vertex buffer is not attached, the drawCount param should be set "
-				    "explicitly",
+				    "[LuaVAOImpl::%s]: In case vertex buffer is not attached, the drawCount param "
+				    "should be set explicitly",
 				    __func__
 				);
 

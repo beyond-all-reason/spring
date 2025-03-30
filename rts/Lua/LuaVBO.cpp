@@ -26,51 +26,35 @@ bool LuaVBOs::PushEntries(lua_State* L)
 	sol::state_view lua(L);
 	auto gl = sol::stack::get<sol::table>(L, -1);
 
-	gl.new_usertype<LuaVBOImpl>(
-	    "VBO", sol::constructors<LuaVBOImpl(const sol::optional<GLenum>, const sol::optional<bool>)>(), "Delete",
-	    &LuaVBOImpl::Delete,
+	// clang-format off
+	gl.new_usertype<LuaVBOImpl>("VBO",
+		sol::constructors<LuaVBOImpl(const sol::optional<GLenum>, const sol::optional<bool>)>(),
+		"Delete", &LuaVBOImpl::Delete,
 
 	    "Define", &LuaVBOImpl::Define, "Upload", &LuaVBOImpl::Upload, "Download", &LuaVBOImpl::Download, "Clear",
 	    &LuaVBOImpl::Clear,
 
 	    "ModelsVBO", &LuaVBOImpl::ModelsVBO,
 
-	    "InstanceDataFromUnitDefIDs",
-	    sol::overload(
-	        sol::resolve<size_t(int, int, sol::optional<int>, sol::optional<int>)>(
-	            &LuaVBOImpl::InstanceDataFromUnitDefIDs
-	        ),
-	        sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>, sol::optional<int>)>(
-	            &LuaVBOImpl::InstanceDataFromUnitDefIDs
-	        )
+		"InstanceDataFromUnitDefIDs", sol::overload(
+			sol::resolve<size_t(int, int, sol::optional<int>, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefIDs),
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitDefIDs)
 	    ),
-	    "InstanceDataFromFeatureDefIDs",
-	    sol::overload(
-	        sol::resolve<size_t(int, int, sol::optional<int>, sol::optional<int>)>(
-	            &LuaVBOImpl::InstanceDataFromFeatureDefIDs
-	        ),
-	        sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>, sol::optional<int>)>(
-	            &LuaVBOImpl::InstanceDataFromFeatureDefIDs
-	        )
+		"InstanceDataFromFeatureDefIDs", sol::overload(
+			sol::resolve<size_t(int, int, sol::optional<int>, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefIDs),
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureDefIDs)
 	    ),
-	    "InstanceDataFromUnitIDs",
-	    sol::overload(
+		"InstanceDataFromUnitIDs", sol::overload(
 	        sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitIDs),
 	        sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromUnitIDs)
 	    ),
-	    "InstanceDataFromFeatureIDs",
-	    sol::overload(
+		"InstanceDataFromFeatureIDs", sol::overload(
 	        sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureIDs),
-	        sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(
-	            &LuaVBOImpl::InstanceDataFromFeatureIDs
-	        )
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::InstanceDataFromFeatureIDs)
 	    ),
-	    "MatrixDataFromProjectileIDs",
-	    sol::overload(
+		"MatrixDataFromProjectileIDs", sol::overload(
 	        sol::resolve<size_t(int, int, sol::optional<int>)>(&LuaVBOImpl::MatrixDataFromProjectileIDs),
-	        sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(
-	            &LuaVBOImpl::MatrixDataFromProjectileIDs
-	        )
+			sol::resolve<size_t(const sol::stack_table&, int, sol::optional<int>)>(&LuaVBOImpl::MatrixDataFromProjectileIDs)
 	    ),
 
 	    "BindBufferRange", &LuaVBOImpl::BindBufferRange, "UnbindBufferRange", &LuaVBOImpl::UnbindBufferRange,
@@ -78,6 +62,7 @@ bool LuaVBOs::PushEntries(lua_State* L)
 	    "DumpDefinition", &LuaVBOImpl::DumpDefinition, "GetBufferSize", &LuaVBOImpl::GetBufferSize, "GetID",
 	    &LuaVBOImpl::GetID
 	);
+	// clang-format on
 
 	gl.set("VBO", sol::lua_nil); // don't want this to be accessible directly without gl.GetVBO
 #if defined(__GNUG__) && defined(_DEBUG)

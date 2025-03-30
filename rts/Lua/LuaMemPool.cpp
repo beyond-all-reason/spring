@@ -219,9 +219,9 @@ void LuaMemPool::LogStats(const char* handle, const char* lctype)
 	const float avgAllocTimeE =
 	    static_cast<float>(allocStats[STAT_NTE]) / static_cast<float>(std::max(allocStats[STAT_NAE], one));
 	std::string msg = fmt::sprintf(
-	    "[LuaMemPool::%s][handle=%s (%s)] index=%u numAllocs{int+, int-, ext, int_p}={%u, %u, %u, %.1f} "
-	    "allocedSize{int+, int-, ext}={%u, %u, %u}, avgAllocTime{int+, int-, ext}={%.4f, %.4f, %.4f}, "
-	    "cumAllocTime={int+, int-, ext}={%u, %u, %u}",
+	    "[LuaMemPool::%s][handle=%s (%s)] index=%u numAllocs{int+, int-, ext, int_p}={%u, "
+	    "%u, %u, %.1f} allocedSize{int+, int-, ext}={%u, %u, %u}, avgAllocTime{int+, int-, "
+	    "ext}={%.4f, %.4f, %.4f}, cumAllocTime={int+, int-, ext}={%u, %u, %u}",
 	    __func__, handle, lctype, globalIndex, allocStats[STAT_NAI], allocStats[STAT_NAF], allocStats[STAT_NAE],
 	    intPerc, allocStats[STAT_NBI], allocStats[STAT_NBF], allocStats[STAT_NBE], avgAllocTimeI, avgAllocTimeF,
 	    avgAllocTimeE, allocStats[STAT_NTI], allocStats[STAT_NTF], allocStats[STAT_NTE]

@@ -82,6 +82,7 @@ CLuaIntro::CLuaIntro()
 	lua_set_rename(L, LuaIO::rename);
 
 	// remove a few dangerous calls
+	// clang-format off
 	lua_getglobal(L, "io");
 	lua_pushstring(L, "popen");
 	lua_pushnil(L);
@@ -105,6 +106,7 @@ CLuaIntro::CLuaIntro()
 		lua_rawset(L, -3);
 		// lua_pushliteral(L, "setlocale"); lua_pushnil(L); lua_rawset(L, -3);
 	}
+	// clang-format on
 	lua_pop(L, 1); // os
 
 	lua_pushvalue(L, LUA_GLOBALSINDEX);

@@ -120,6 +120,7 @@
 
 bool LuaConstGame::PushEntries(lua_State* L)
 {
+	// clang-format off
 	{
 		// game, should perhaps be moved over to ConstEngine
 		LuaPushNamedNumber(L, "maxTeams", MAX_TEAMS);
@@ -322,19 +323,20 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		lua_pushliteral(L, "scriptNotifyTypes");
 		lua_createtable(L, 0, 3);
 		LuaPushNamedNumber(L, "HitNothing", CScriptMoveType::HitNothing);
-		LuaPushNamedNumber(L, "HitGround", CScriptMoveType::HitGround);
-		LuaPushNamedNumber(L, "HitLimit", CScriptMoveType::HitLimit);
+			LuaPushNamedNumber(L, "HitGround" , CScriptMoveType::HitGround );
+			LuaPushNamedNumber(L, "HitLimit"  , CScriptMoveType::HitLimit  );
 		lua_rawset(L, -3);
 	}
 	{
 		// inline color-codes for text fonts
 		lua_pushliteral(L, "textColorCodes");
 		lua_createtable(L, 0, 3);
-		LuaPushNamedChar(L, "Color", static_cast<char>(CglFont::ColorCodeIndicator));
+			LuaPushNamedChar(L, "Color"          , static_cast<char>(CglFont::ColorCodeIndicator)  );
 		LuaPushNamedChar(L, "ColorAndOutline", static_cast<char>(CglFont::ColorCodeIndicatorEx));
-		LuaPushNamedChar(L, "Reset", static_cast<char>(CglFont::ColorResetIndicator));
+			LuaPushNamedChar(L, "Reset"          , static_cast<char>(CglFont::ColorResetIndicator) );
 		lua_rawset(L, -3);
 	}
 
 	return true;
+	// clang-format on
 }

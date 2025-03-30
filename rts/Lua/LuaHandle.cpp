@@ -875,11 +875,12 @@ void CLuaHandle::GameID(const unsigned char* gameID, unsigned int numBytes)
 
 	char buf[33];
 
-	SNPRINTF(
-	    buf, sizeof(buf), "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", gameID[0], gameID[1],
-	    gameID[2], gameID[3], gameID[4], gameID[5], gameID[6], gameID[7], gameID[8], gameID[9], gameID[10], gameID[11],
-	    gameID[12], gameID[13], gameID[14], gameID[15]
-	);
+	// clang-format off
+	SNPRINTF(buf, sizeof(buf),
+			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+			gameID[ 0], gameID[ 1], gameID[ 2], gameID[ 3], gameID[ 4], gameID[ 5], gameID[ 6], gameID[ 7],
+			gameID[ 8], gameID[ 9], gameID[10], gameID[11], gameID[12], gameID[13], gameID[14], gameID[15]);
+	// clang-format on
 	lua_pushstring(L, buf);
 
 	RunCallInTraceback(L, cmdStr, 1, 0, traceBack.GetErrFuncIdx(), false);

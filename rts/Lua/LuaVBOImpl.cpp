@@ -1000,8 +1000,8 @@ size_t LuaVBOImpl::MatrixDataFromProjectileIDsImpl(
 
 			if (attrN.type != GL_FLOAT)
 				LuaUtils::SolLuaError(
-				    "[LuaVBOImpl::%s] Buffer attribute %d is of GL_FLOAT type, but attribute %d is not, got %u type "
-				    "instead",
+				    "[LuaVBOImpl::%s] Buffer attribute %d is of GL_FLOAT type, but attribute %d is "
+				    "not, got %u type instead",
 				    func, attrID, attrID + i, attrN.type
 				);
 
@@ -1599,8 +1599,8 @@ void LuaVBOImpl::AllocGLBuffer(size_t byteSize)
 		);
 	}
 
-	bufferSizeInBytes = static_cast<uint32_t>(byteSize
-	); // be strict here and don't account for possible increase of size on GPU due to alignment requirements
+	bufferSizeInBytes = static_cast<uint32_t>(byteSize); // be strict here and don't account for possible increase of
+	                                                     // size on GPU due to alignment requirements
 
 	vbo = new VBO(defTarget, false);
 	vbo->Bind();

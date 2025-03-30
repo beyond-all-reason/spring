@@ -79,7 +79,8 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 	LuaPushNamedBool(L, "noAutoShowMetal", false);
 	LuaPushNamedNumber(L, "maxPiecesPerModel", MAX_PIECES_PER_MODEL);
 	LuaPushNamedNumber(
-	    L, "gunshipCruiseAltitudeMultiplier", 1.5f
+	    L, "gunshipCruiseAltitudeMultiplier",
+	    1.5f
 	); // see https://github.com/beyond-all-reason/spring/issues/1028
 	LuaPushNamedBool(L, "noRefundForConstructionDecay", false);
 	LuaPushNamedBool(L, "noRefundForFactoryCancel", false);

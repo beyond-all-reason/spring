@@ -34,8 +34,8 @@ static bool IsSafePath(const std::string& path)
 		return false;
 	}
 	if ((path.find("..") != std::string::npos) ||
-	    (path.find("springsettings.cfg") != std::string::npos) || // don't allow to change config file
-	    (path.find(".springrc") != std::string::npos) || (path.find("springrc") != std::string::npos)) {
+	    (path.find("springsettings.cfg") != std::string::npos) // don't allow to change config file
+	    || (path.find(".springrc") != std::string::npos) || (path.find("springrc") != std::string::npos)) {
 		return false;
 	}
 

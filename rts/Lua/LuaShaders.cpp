@@ -223,25 +223,11 @@ static void ParseUniformType(lua_State* L, int loc, int type)
 			    LuaUtils::ParseFloatArray(L, -1, fltUniformArrayBuf, sizeof(fltUniformArrayBuf) / sizeof(float));
 
 			switch (count) {
-			case 1: {
-				glUniform1f(loc, array[0]);
-				break;
-			}
-			case 2: {
-				glUniform2f(loc, array[0], array[1]);
-				break;
-			}
-			case 3: {
-				glUniform3f(loc, array[0], array[1], array[2]);
-				break;
-			}
-			case 4: {
-				glUniform4f(loc, array[0], array[1], array[2], array[3]);
-				break;
-			}
-			default: {
-				glUniform1fv(loc, count, &array[0]);
-			} break;
+			case 1: glUniform1f(loc, array[0]); break;
+			case 2: glUniform2f(loc, array[0], array[1]); break;
+			case 3: glUniform3f(loc, array[0], array[1], array[2]); break;
+			case 4: glUniform4f(loc, array[0], array[1], array[2], array[3]); break;
+			default: glUniform1fv(loc, count, &array[0]); break;
 			}
 
 			return;
@@ -259,25 +245,11 @@ static void ParseUniformType(lua_State* L, int loc, int type)
 			    LuaUtils::ParseIntArray(L, -1, intUniformArrayBuf, sizeof(intUniformArrayBuf) / sizeof(int));
 
 			switch (count) {
-			case 1: {
-				glUniform1i(loc, array[0]);
-				break;
-			}
-			case 2: {
-				glUniform2i(loc, array[0], array[1]);
-				break;
-			}
-			case 3: {
-				glUniform3i(loc, array[0], array[1], array[2]);
-				break;
-			}
-			case 4: {
-				glUniform4i(loc, array[0], array[1], array[2], array[3]);
-				break;
-			}
-			default: {
-				glUniform1iv(loc, count, &array[0]);
-			} break;
+			case 1: glUniform1i(loc, array[0]); break;
+			case 2: glUniform2i(loc, array[0], array[1]); break;
+			case 3: glUniform3i(loc, array[0], array[1], array[2]); break;
+			case 4: glUniform4i(loc, array[0], array[1], array[2], array[3]); break;
+			default: glUniform1iv(loc, count, &array[0]); break;
 			}
 
 			return;
@@ -290,18 +262,9 @@ static void ParseUniformType(lua_State* L, int loc, int type)
 			const int count = LuaUtils::ParseFloatArray(L, -1, array, 16);
 
 			switch (count) {
-			case (2 * 2): {
-				glUniformMatrix2fv(loc, 1, GL_FALSE, array);
-				break;
-			}
-			case (3 * 3): {
-				glUniformMatrix3fv(loc, 1, GL_FALSE, array);
-				break;
-			}
-			case (4 * 4): {
-				glUniformMatrix4fv(loc, 1, GL_FALSE, array);
-				break;
-			}
+			case (2 * 2): glUniformMatrix2fv(loc, 1, GL_FALSE, array); break;
+			case (3 * 3): glUniformMatrix3fv(loc, 1, GL_FALSE, array); break;
+			case (4 * 4): glUniformMatrix4fv(loc, 1, GL_FALSE, array); break;
 			}
 
 			return;
@@ -338,76 +301,32 @@ static bool ParseUniformsTable(lua_State* L, int index, int type, const LuaShade
 
 			// should only need to auto-correct if type == UNIFORM_TYPE_MIXED, but GL debug-errors say otherwise
 			switch (iter->second.type) {
-			case GL_SAMPLER_1D: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_SAMPLER_2D: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_SAMPLER_3D: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_SAMPLER_1D_SHADOW: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_SAMPLER_2D_SHADOW: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_SAMPLER_CUBE: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_SAMPLER_2D_MULTISAMPLE: {
-				type = UNIFORM_TYPE_INT;
-			} break;
+			case GL_SAMPLER_1D: type = UNIFORM_TYPE_INT; break;
+			case GL_SAMPLER_2D: type = UNIFORM_TYPE_INT; break;
+			case GL_SAMPLER_3D: type = UNIFORM_TYPE_INT; break;
+			case GL_SAMPLER_1D_SHADOW: type = UNIFORM_TYPE_INT; break;
+			case GL_SAMPLER_2D_SHADOW: type = UNIFORM_TYPE_INT; break;
+			case GL_SAMPLER_CUBE: type = UNIFORM_TYPE_INT; break;
+			case GL_SAMPLER_2D_MULTISAMPLE: type = UNIFORM_TYPE_INT; break;
 
-			case GL_INT: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_INT_VEC2: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_INT_VEC3: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_INT_VEC4: {
-				type = UNIFORM_TYPE_INT;
-			} break;
+			case GL_INT: type = UNIFORM_TYPE_INT; break;
+			case GL_INT_VEC2: type = UNIFORM_TYPE_INT; break;
+			case GL_INT_VEC3: type = UNIFORM_TYPE_INT; break;
+			case GL_INT_VEC4: type = UNIFORM_TYPE_INT; break;
 
-			case GL_UNSIGNED_INT: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_UNSIGNED_INT_VEC2: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_UNSIGNED_INT_VEC3: {
-				type = UNIFORM_TYPE_INT;
-			} break;
-			case GL_UNSIGNED_INT_VEC4: {
-				type = UNIFORM_TYPE_INT;
-			} break;
+			case GL_UNSIGNED_INT: type = UNIFORM_TYPE_INT; break;
+			case GL_UNSIGNED_INT_VEC2: type = UNIFORM_TYPE_INT; break;
+			case GL_UNSIGNED_INT_VEC3: type = UNIFORM_TYPE_INT; break;
+			case GL_UNSIGNED_INT_VEC4: type = UNIFORM_TYPE_INT; break;
 
-			case GL_FLOAT: {
-				type = UNIFORM_TYPE_FLOAT;
-			} break;
-			case GL_FLOAT_VEC2: {
-				type = UNIFORM_TYPE_FLOAT;
-			} break;
-			case GL_FLOAT_VEC3: {
-				type = UNIFORM_TYPE_FLOAT;
-			} break;
-			case GL_FLOAT_VEC4: {
-				type = UNIFORM_TYPE_FLOAT;
-			} break;
+			case GL_FLOAT: type = UNIFORM_TYPE_FLOAT; break;
+			case GL_FLOAT_VEC2: type = UNIFORM_TYPE_FLOAT; break;
+			case GL_FLOAT_VEC3: type = UNIFORM_TYPE_FLOAT; break;
+			case GL_FLOAT_VEC4: type = UNIFORM_TYPE_FLOAT; break;
 
-			case GL_FLOAT_MAT2: {
-				type = UNIFORM_TYPE_FLOAT_MATRIX;
-			} break;
-			case GL_FLOAT_MAT3: {
-				type = UNIFORM_TYPE_FLOAT_MATRIX;
-			} break;
-			case GL_FLOAT_MAT4: {
-				type = UNIFORM_TYPE_FLOAT_MATRIX;
-			} break;
+			case GL_FLOAT_MAT2: type = UNIFORM_TYPE_FLOAT_MATRIX; break;
+			case GL_FLOAT_MAT3: type = UNIFORM_TYPE_FLOAT_MATRIX; break;
+			case GL_FLOAT_MAT4: type = UNIFORM_TYPE_FLOAT_MATRIX; break;
 
 			default: {
 				LOG_L(
