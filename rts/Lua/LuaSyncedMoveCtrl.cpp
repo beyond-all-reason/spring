@@ -32,7 +32,12 @@
 
 bool LuaSyncedMoveCtrl::PushMoveCtrl(lua_State* L)
 {
-	/*** @table Spring.MoveCtrl */
+	/***
+	 * Accessed via `Spring.MoveCtrl`.
+	 * 
+	 * @see Spring.MoveCtrl
+	 * @class MoveCtrl
+	 */
 	lua_pushliteral(L, "MoveCtrl");
 	lua_createtable(L, 0, 32);
 
@@ -133,7 +138,7 @@ static inline DerivedMoveType* ParseDerivedMoveType(lua_State* L, const char* ca
 /******************************************************************************/
 
 /***
- * @function Spring.MoveCtrl.IsEnabled
+ * @function MoveCtrl.IsEnabled
  * @param unitID integer
  * @return boolean? isEnabled
  */
@@ -150,7 +155,7 @@ int LuaSyncedMoveCtrl::IsEnabled(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.Enable
+ * @function MoveCtrl.Enable
  * @param unitID integer
  */
 int LuaSyncedMoveCtrl::Enable(lua_State* L)
@@ -166,7 +171,7 @@ int LuaSyncedMoveCtrl::Enable(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.Disable
+ * @function MoveCtrl.Disable
  * @param unitID integer
  */
 int LuaSyncedMoveCtrl::Disable(lua_State* L)
@@ -184,7 +189,7 @@ int LuaSyncedMoveCtrl::Disable(lua_State* L)
 /******************************************************************************/
 
 /***
- * @function Spring.MoveCtrl.SetTag
+ * @function MoveCtrl.SetTag
  * @param unitID integer
  * @param tag integer
  */
@@ -201,7 +206,7 @@ int LuaSyncedMoveCtrl::SetTag(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.GetTag
+ * @function MoveCtrl.GetTag
  * @param tag integer?
  */
 int LuaSyncedMoveCtrl::GetTag(lua_State* L)
@@ -221,7 +226,7 @@ int LuaSyncedMoveCtrl::GetTag(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetProgressState
+ * @function MoveCtrl.SetProgressState
  * @param unitID integer
  * @param state
  * | 0 # Done
@@ -271,7 +276,7 @@ int LuaSyncedMoveCtrl::SetProgressState(lua_State* L)
 /******************************************************************************/
 
 /***
- * @function Spring.MoveCtrl.SetExtrapolate
+ * @function MoveCtrl.SetExtrapolate
  * @param unitID integer
  * @param extrapolate boolean
  */
@@ -290,7 +295,7 @@ int LuaSyncedMoveCtrl::SetExtrapolate(lua_State* L)
 /******************************************************************************/
 
 /***
- * @function Spring.MoveCtrl.SetPhysics
+ * @function MoveCtrl.SetPhysics
  * @param unitID integer
  * @param posX number Position X component.
  * @param posY number Position Y component.
@@ -321,7 +326,7 @@ int LuaSyncedMoveCtrl::SetPhysics(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetPosition
+ * @function MoveCtrl.SetPosition
  * @param unitID integer
  * @param posX number Position X component.
  * @param posY number Position Y component.
@@ -344,7 +349,7 @@ int LuaSyncedMoveCtrl::SetPosition(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetVelocity
+ * @function MoveCtrl.SetVelocity
  * @param unitID integer
  * @param velX number Velocity X component.
  * @param velY number Velocity Y component.
@@ -367,7 +372,7 @@ int LuaSyncedMoveCtrl::SetVelocity(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetRelativeVelocity
+ * @function MoveCtrl.SetRelativeVelocity
  * @param unitID integer
  * @param relVelX number Relative velocity X component.
  * @param relVelY number Relative velocity Y component.
@@ -390,7 +395,7 @@ int LuaSyncedMoveCtrl::SetRelativeVelocity(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetRotation
+ * @function MoveCtrl.SetRotation
  * @param unitID integer
  * @param rotX number Rotation X component.
  * @param rotY number Rotation Y component.
@@ -413,7 +418,7 @@ int LuaSyncedMoveCtrl::SetRotation(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetRotationOffset
+ * @function MoveCtrl.SetRotationOffset
  * @deprecated
  */
 int LuaSyncedMoveCtrl::SetRotationOffset(lua_State* L)
@@ -424,7 +429,7 @@ int LuaSyncedMoveCtrl::SetRotationOffset(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetRotationVelocity
+ * @function MoveCtrl.SetRotationVelocity
  * @param unitID integer
  * @param rotVelX number Rotation velocity X component.
  * @param rotVelY number Rotation velocity Y component.
@@ -446,7 +451,7 @@ int LuaSyncedMoveCtrl::SetRotationVelocity(lua_State* L)
 }
 
 /***
- * @function Spring.MoveCtrl.SetHeading
+ * @function MoveCtrl.SetHeading
  * @param unitID integer
  * @param heading Heading
  */
@@ -467,7 +472,7 @@ int LuaSyncedMoveCtrl::SetHeading(lua_State* L)
 /******************************************************************************/
 
 /***
- * @function Spring.MoveCtrl.SetTrackSlope
+ * @function MoveCtrl.SetTrackSlope
  * @param unitID integer
  * @param trackSlope boolean
  */
@@ -484,7 +489,7 @@ int LuaSyncedMoveCtrl::SetTrackSlope(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetTrackGround
+ * @function MoveCtrl.SetTrackGround
  * @param unitID integer
  * @param trackGround boolean
  */
@@ -501,7 +506,7 @@ int LuaSyncedMoveCtrl::SetTrackGround(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetTrackLimits
+ * @function MoveCtrl.SetTrackLimits
  * @param unitID integer
  * @param trackLimits boolean
  */
@@ -518,7 +523,7 @@ int LuaSyncedMoveCtrl::SetTrackLimits(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetGroundOffset
+ * @function MoveCtrl.SetGroundOffset
  * @param unitID integer
  * @param groundOffset number
  */
@@ -535,7 +540,7 @@ int LuaSyncedMoveCtrl::SetGroundOffset(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetGravity
+ * @function MoveCtrl.SetGravity
  * @param unitID integer
  * @param gravityFactor number
  */
@@ -552,7 +557,7 @@ int LuaSyncedMoveCtrl::SetGravity(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetDrag
+ * @function MoveCtrl.SetDrag
  * @param unitID integer
  * @param drag number
  */
@@ -569,7 +574,7 @@ int LuaSyncedMoveCtrl::SetDrag(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetWindFactor
+ * @function MoveCtrl.SetWindFactor
  * @param unitID integer
  * @param windFactor number
  */
@@ -586,7 +591,7 @@ int LuaSyncedMoveCtrl::SetWindFactor(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetLimits
+ * @function MoveCtrl.SetLimits
  * @param unitID integer
  * @param minX number Minimum position X component.
  * @param minY number Minimum position Y component.
@@ -611,7 +616,7 @@ int LuaSyncedMoveCtrl::SetLimits(lua_State* L)
 /******************************************************************************/
 
 /***
- * @function Spring.MoveCtrl.SetNoBlocking
+ * @function MoveCtrl.SetNoBlocking
  * @param unitID integer
  * @param noBlocking boolean
  */
@@ -634,7 +639,7 @@ int LuaSyncedMoveCtrl::SetSlopeStop(lua_State* L) { return 0; }
 
 
 /***
- * @function Spring.MoveCtrl.SetCollideStop
+ * @function MoveCtrl.SetCollideStop
  * @param unitID integer
  * @param collideStop boolean
  */
@@ -651,7 +656,7 @@ int LuaSyncedMoveCtrl::SetCollideStop(lua_State* L)
 
 
 /***
- * @function Spring.MoveCtrl.SetLimitsStop
+ * @function MoveCtrl.SetLimitsStop
  * @param unitID integer
  * @param limitsStop boolean
  */
@@ -788,13 +793,13 @@ static int SetMoveTypeData(lua_State* L, AMoveType* moveType, const char* caller
  */
 
 /***
- * @function Spring.MoveCtrl.SetGunshipMoveTypeData
+ * @function MoveCtrl.SetGunshipMoveTypeData
  * @param unitID integer
  * @param moveType HoverAirMoveType
  * @return number numAssignedValues
  */
 /***
- * @function Spring.MoveCtrl.SetGunshipMoveTypeData
+ * @function MoveCtrl.SetGunshipMoveTypeData
  * @param unitID integer
  * @param key
  * | GenericMoveTypeBooleanKey
@@ -807,7 +812,7 @@ static int SetMoveTypeData(lua_State* L, AMoveType* moveType, const char* caller
  * @return number numAssignedValues
  */
 /***
- * @function Spring.MoveCtrl.SetGunshipMoveTypeData
+ * @function MoveCtrl.SetGunshipMoveTypeData
  * @param unitID integer
  * @param key
  * | GenericMoveTypeNumberKey
@@ -849,13 +854,13 @@ int LuaSyncedMoveCtrl::SetGunshipMoveTypeData(lua_State* L)
  */
 
 /***
- * @function Spring.MoveCtrl.SetAirMoveTypeData
+ * @function MoveCtrl.SetAirMoveTypeData
  * @param unitID integer
  * @param moveType StrafeAirMoveType
  * @return number numAssignedValues
  */
 /***
- * @function Spring.MoveCtrl.SetAirMoveTypeData
+ * @function MoveCtrl.SetAirMoveTypeData
  * @param unitID integer
  * @param key
  * | GenericMoveTypeBooleanKey
@@ -866,7 +871,7 @@ int LuaSyncedMoveCtrl::SetGunshipMoveTypeData(lua_State* L)
  * @return number numAssignedValues
  */
 /***
- * @function Spring.MoveCtrl.SetAirMoveTypeData
+ * @function MoveCtrl.SetAirMoveTypeData
  * @param unitID integer
  * @param key
  * | GenericMoveTypeNumberKey
@@ -887,7 +892,7 @@ int LuaSyncedMoveCtrl::SetGunshipMoveTypeData(lua_State* L)
  * @return number numAssignedValues
  */
 /***
- * @function Spring.MoveCtrl.SetAirMoveTypeData
+ * @function MoveCtrl.SetAirMoveTypeData
  * @param unitID integer
  * @param key
  * | "maneuverBlockTime"
@@ -917,13 +922,13 @@ int LuaSyncedMoveCtrl::SetAirMoveTypeData(lua_State* L)
  */
 
 /***
- * @function Spring.MoveCtrl.SetGroundMoveTypeData
+ * @function MoveCtrl.SetGroundMoveTypeData
  * @param unitID integer
  * @param moveType GroundMoveType
  * @return number numAssignedValues
  */
 /***
- * @function Spring.MoveCtrl.SetGroundMoveTypeData
+ * @function MoveCtrl.SetGroundMoveTypeData
  * @param unitID integer
  * @param key
  * | GenericMoveTypeBooleanKey
@@ -934,7 +939,7 @@ int LuaSyncedMoveCtrl::SetAirMoveTypeData(lua_State* L)
  * @return number numAssignedValues
  */
 /***
- * @function Spring.MoveCtrl.SetGroundMoveTypeData
+ * @function MoveCtrl.SetGroundMoveTypeData
  * @param unitID integer
  * @param key
  * | GenericMoveTypeNumberKey
@@ -951,7 +956,7 @@ int LuaSyncedMoveCtrl::SetAirMoveTypeData(lua_State* L)
  * @return number numAssignedValues
  */
 /***
- * @function Spring.MoveCtrl.SetGroundMoveTypeData
+ * @function MoveCtrl.SetGroundMoveTypeData
  * @param unitID integer
  * @param key
  * | "minScriptChangeHeading"
@@ -969,7 +974,7 @@ int LuaSyncedMoveCtrl::SetGroundMoveTypeData(lua_State* L)
 /******************************************************************************/
 
 /***
- * @function Spring.MoveCtrl.SetMoveDef
+ * @function MoveCtrl.SetMoveDef
  * @param unitID integer
  * @param moveDef integer|string Name or path type of the MoveDef.
  * @return boolean success `true` if the `MoveDef` was set, `false` if `unitID` or `moveDef` were invalid, or if the unit does not support a `MoveDef`.
