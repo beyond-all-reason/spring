@@ -401,6 +401,8 @@ public:
 	BitmapAction& operator=(const BitmapAction& ba) = delete;
 	BitmapAction& operator=(BitmapAction&& ba) noexcept = delete;
 
+	const CBitmap* GetBitmap() const { return bmp; }
+
 	virtual void CreateAlpha(uint8_t red, uint8_t green, uint8_t blue) = 0;
 	virtual void ReplaceAlpha(float a) = 0;
 	virtual void SetTransparent(const SColor& c, const SColor trans = SColor(0, 0, 0, 0)) = 0;
@@ -688,12 +690,16 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 		std::tuple(&tmp, tempTypedAction, currTypedAction)  // vertical   pass
 	};
 
+	const auto w0 = BLUR_KERNEL[BLUR_KERNEL_HS] * BLUR_KERNEL[BLUR_KERNEL_HS] * (weight - 1.0f);
+
 	#define MT_EXECUTION 1
 
 	for (int iter = 0; iter < iterations; ++iter) {
-		for (auto [src, srcAction, dstAction] : blurPassTuples) {
+		for (size_t bpi = 0; bpi < blurPassTuples.size(); ++bpi) {
+			// everything is a pointer here, can assign with just auto
+			auto [src, srcAction, dstAction] = blurPassTuples[bpi];
 		#if MT_EXECUTION == 1
-			for_mt_chunk(0, src->ysize, [this, src, srcAction, dstAction](int y) {
+			for_mt_chunk(0, src->ysize, [this, src, srcAction, dstAction, bpi, w0](int y) {
 		#else
 			for (int y = 0; y < src->ysize; y++) {
 		#endif
@@ -702,7 +708,7 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 
 					// don't use AccumChanType for additional precision
 					std::array<float, ch> val{ 0.0f };
-					float wgt = 0.0f;
+					float wSum = 0.0f;
 
 					for (int off = -BLUR_KERNEL_HS; off <= BLUR_KERNEL_HS; ++off) {
 						const int xo = x + off;
@@ -710,9 +716,9 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 						if ((xo < 0) || (xo > src->xsize - 1))
 							continue;
 
-						const auto w = BLUR_KERNEL[off + BLUR_KERNEL_HS];
+						const auto& w = BLUR_KERNEL[off + BLUR_KERNEL_HS];
+						wSum += w;
 
-						wgt += w;
 						const auto& srcRef = srcAction->GetRef(yBaseOffset + xo);
 						for (int a = 0; a < ch; a++) {
 							val[a] += w * srcRef[a];
@@ -721,13 +727,16 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 
 					auto& dstRef = dstAction->GetRef(x * src->ysize + y);
 					for (int a = 0; a < ch; a++) {
-						const auto rawDstVal = val[a] / wgt;
+						auto rawDstVal = val[a] / wSum;
+
+						// apply extra (> 1.0f) weight
+						rawDstVal += w0 * dstRef[a] * (bpi == 1 && w0 > 0.0f);
 
 						if constexpr (std::is_same_v<ChanType, float>) {
 							dstRef[a] = static_cast<ChanType>(std::max(rawDstVal, 0.0f));
 						}
 						else {
-							dstRef[a] = static_cast<ChanType>(std::clamp(rawDstVal + 0.5f, 0.0f, static_cast<float>(GetMaxNormValue())));
+							dstRef[a] = static_cast<ChanType>(std::clamp(rawDstVal, 0.0f, static_cast<float>(GetMaxNormValue())));
 						}
 					}
 				}
@@ -740,23 +749,6 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight)
 	}
 
 	#undef MT_EXECUTION
-
-	if (weight == 1.0f)
-		return;
-
-	// apply weight
-	auto* chanRefBeg = reinterpret_cast<ChanType*>(bmp->GetRawMem());
-	auto* chanRefEnd = reinterpret_cast<ChanType*>(chanRefBeg + bmp->xsize * bmp->ysize);
-	for (auto* chanRef = chanRefBeg; chanRef != chanRefEnd; ++chanRef) {
-		const auto rawDstVal = static_cast<float>(*chanRef) * weight;
-
-		if constexpr (std::is_same_v<ChanType, float>) {
-			*chanRef = static_cast<ChanType>(std::max(rawDstVal, 0.0f));
-		}
-		else {
-			*chanRef = static_cast<ChanType>(std::clamp(rawDstVal + 0.5f, 0.0f, static_cast<float>(GetMaxNormValue())));
-		}
-	}
 }
 
 template<typename T, uint32_t ch>
