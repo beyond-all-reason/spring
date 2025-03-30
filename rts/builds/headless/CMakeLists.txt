@@ -16,7 +16,8 @@ set(OpenGL_GL_PREFERENCE LEGACY)
 find_package(OpenGL 3.0 REQUIRED)
 
 # NOTE(create_headless_target): We don't need to copy COMPILE_DEFINTIONS till the add_definitions are used.
-# The targets automatically acquire correct defintions if they are specified in directory with add_definitions chain.
+# We don't need to copy COMPILE_DEFINTIONS because the headless defines are defined at the folder level
+# and we don't want to inherit original ones
 function(create_headless_target_from targetName)
 	get_target_property(targetIncludes ${targetName} INCLUDE_DIRECTORIES)
 	get_target_property(targetSources ${targetName} SOURCES)
@@ -27,9 +28,6 @@ function(create_headless_target_from targetName)
 		target_include_directories(${newTargetName} PRIVATE ${targetIncludes})
 	endif()
 	target_sources(${newTargetName} PRIVATE ${targetSources})
-	if (targetLinks)
-		target_link_libraries(${newTargetName} PRIVATE ${targetLinks})
-  endif()
 endfunction()
 
 
@@ -55,8 +53,8 @@ include_directories(${ENGINE_SRC_ROOT_DIR}/lib/cereal/include)
 create_headless_target_from(Game)
 target_link_libraries(GameHeadless PRIVATE
 	Tracy::TracyClient
-	SDL2::SDL2
-	RmlUi::RmlUi
+	headlessStubs
+	RmlUi::Core
 	prd::jsoncpp
 	streflop
 )
