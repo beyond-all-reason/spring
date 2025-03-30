@@ -3,13 +3,12 @@
 #ifndef LUA_ATLAS_TEXTURES_H
 #define LUA_ATLAS_TEXTURES_H
 
-#include <string>
-// #include <unordered_map>
-
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "System/SafeUtil.h"
 #include "System/UnorderedMap.hpp"
+
+#include <string>
 
 struct AtlasedTexture;
 

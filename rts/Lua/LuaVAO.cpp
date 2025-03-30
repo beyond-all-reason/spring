@@ -21,26 +21,27 @@ bool LuaVAOs::PushEntries(lua_State* L)
 	sol::state_view lua(L);
 	auto gl = sol::stack::get<sol::table>(L, -1);
 
-	gl.new_usertype<LuaVAOImpl>("VAO", sol::constructors<LuaVAOImpl()>(), "Delete", &LuaVAOImpl::Delete,
-
-	    "AttachVertexBuffer", &LuaVAOImpl::AttachVertexBuffer, "AttachInstanceBuffer",
-	    &LuaVAOImpl::AttachInstanceBuffer, "AttachIndexBuffer", &LuaVAOImpl::AttachIndexBuffer,
-
-	    "DrawArrays", &LuaVAOImpl::DrawArrays, "DrawElements", &LuaVAOImpl::DrawElements,
-
-	    "ClearSubmission", &LuaVAOImpl::ClearSubmission, "AddUnitsToSubmission",
-	    sol::overload(sol::resolve<int(int)>(&LuaVAOImpl::AddUnitsToSubmission),
-	        sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddUnitsToSubmission)),
-	    "AddFeaturesToSubmission",
-	    sol::overload(sol::resolve<int(int)>(&LuaVAOImpl::AddFeaturesToSubmission),
-	        sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddFeaturesToSubmission)),
-	    "AddUnitDefsToSubmission",
-	    sol::overload(sol::resolve<int(int)>(&LuaVAOImpl::AddUnitDefsToSubmission),
-	        sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddUnitDefsToSubmission)),
-	    "AddFeatureDefsToSubmission",
-	    sol::overload(sol::resolve<int(int)>(&LuaVAOImpl::AddFeatureDefsToSubmission),
-	        sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddFeatureDefsToSubmission)),
-	    "RemoveFromSubmission", &LuaVAOImpl::RemoveFromSubmission, "Submit", &LuaVAOImpl::Submit);
+	gl.new_usertype<LuaVAOImpl>("VAO", sol::constructors<LuaVAOImpl()>())
+	    .set("Delete", &LuaVAOImpl::Delete)
+	    .set("AttachVertexBuffer", &LuaVAOImpl::AttachVertexBuffer)
+	    .set("AttachInstanceBuffer", &LuaVAOImpl::AttachInstanceBuffer)
+	    .set("AttachIndexBuffer", &LuaVAOImpl::AttachIndexBuffer)
+	    .set("DrawArrays", &LuaVAOImpl::DrawArrays)
+	    .set("DrawElements", &LuaVAOImpl::DrawElements)
+	    .set("ClearSubmission", &LuaVAOImpl::ClearSubmission)
+	    .set("AddUnitsToSubmission", sol::overload(sol::resolve<int(int)>(&LuaVAOImpl::AddUnitsToSubmission),
+	                                     sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddUnitsToSubmission)))
+	    .set("AddFeaturesToSubmission",
+	        sol::overload(sol::resolve<int(int)>(&LuaVAOImpl::AddFeaturesToSubmission),
+	            sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddFeaturesToSubmission)))
+	    .set("AddUnitDefsToSubmission",
+	        sol::overload(sol::resolve<int(int)>(&LuaVAOImpl::AddUnitDefsToSubmission),
+	            sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddUnitDefsToSubmission)))
+	    .set("AddFeatureDefsToSubmission",
+	        sol::overload(sol::resolve<int(int)>(&LuaVAOImpl::AddFeatureDefsToSubmission),
+	            sol::resolve<int(const sol::stack_table&)>(&LuaVAOImpl::AddFeatureDefsToSubmission)))
+	    .set("RemoveFromSubmission", &LuaVAOImpl::RemoveFromSubmission)
+	    .set("Submit", &LuaVAOImpl::Submit);
 
 	gl.set("VAO", sol::lua_nil); // don't want this to be accessible directly without gl.GetVAO
 #if defined(__GNUG__) && defined(_DEBUG)

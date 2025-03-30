@@ -305,21 +305,11 @@ static inline const char* LuaErrorString(int error)
 	const char* ret = "";
 
 	switch (error) {
-	case LUA_ERRMEM: {
-		ret = "LUA_ERRMEM";
-	} break;
-	case LUA_ERRRUN: {
-		ret = "LUA_ERRRUN";
-	} break;
-	case LUA_ERRERR: {
-		ret = "LUA_ERRERR";
-	} break;
-	case LUA_ERRSYNTAX: {
-		ret = "LUA_ERRSYNTAX";
-	} break;
-	default: {
-		ret = "LUA_ERRNOIDEA";
-	} break;
+	case LUA_ERRMEM: ret = "LUA_ERRMEM"; break;
+	case LUA_ERRRUN: ret = "LUA_ERRRUN"; break;
+	case LUA_ERRERR: ret = "LUA_ERRERR"; break;
+	case LUA_ERRSYNTAX: ret = "LUA_ERRSYNTAX"; break;
+	default: ret = "LUA_ERRNOIDEA"; break;
 	}
 
 	return ret;

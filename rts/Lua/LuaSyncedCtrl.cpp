@@ -437,21 +437,11 @@ static bool ParseProjectileParams(lua_State* L, ProjectileParams& params, const 
 
 			if (LuaUtils::ParseFloatArray(L, -1, array, 3) == 3) {
 				switch (hashString(key)) {
-				case hashString("pos"): {
-					params.pos = array;
-				} break;
-				case hashString("end"): {
-					params.end = array;
-				} break;
-				case hashString("speed"): {
-					params.speed = array;
-				} break;
-				case hashString("spread"): {
-					params.spread = array;
-				} break;
-				case hashString("error"): {
-					params.error = array;
-				} break;
+				case hashString("pos"): params.pos = array; break;
+				case hashString("end"): params.end = array; break;
+				case hashString("speed"): params.speed = array; break;
+				case hashString("spread"): params.spread = array; break;
+				case hashString("error"): params.error = array; break;
 				}
 			}
 
@@ -460,40 +450,22 @@ static bool ParseProjectileParams(lua_State* L, ProjectileParams& params, const 
 
 		if (lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
 			switch (hashString(key)) {
-			case hashString("owner"): {
-				params.ownerID = lua_toint(L, LUA_TABLE_VALUE_INDEX);
-			} break;
-			case hashString("weapon"): {
+			case hashString("owner"): params.ownerID = lua_toint(L, LUA_TABLE_VALUE_INDEX); break;
+			case hashString("weapon"):
 				params.weaponNum = lua_toint(L, LUA_TABLE_VALUE_INDEX) - LUA_WEAPON_BASE_INDEX;
-			} break;
-			case hashString("team"): {
-				params.teamID = lua_toint(L, LUA_TABLE_VALUE_INDEX);
-			} break;
+				break;
+			case hashString("team"): params.teamID = lua_toint(L, LUA_TABLE_VALUE_INDEX); break;
 
-			case hashString("ttl"): {
-				params.ttl = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
-			} break;
+			case hashString("ttl"): params.ttl = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); break;
 
-			case hashString("gravity"): {
-				params.gravity = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
-			} break;
-			case hashString("tracking"): {
-				params.tracking = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
-			} break;
+			case hashString("gravity"): params.gravity = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); break;
+			case hashString("tracking"): params.tracking = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); break;
 
-			case hashString("maxRange"): {
-				params.maxRange = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
-			} break;
-			case hashString("upTime"): {
-				params.upTime = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
-			} break;
+			case hashString("maxRange"): params.maxRange = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); break;
+			case hashString("upTime"): params.upTime = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); break;
 
-			case hashString("startAlpha"): {
-				params.startAlpha = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
-			} break;
-			case hashString("endAlpha"): {
-				params.endAlpha = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
-			} break;
+			case hashString("startAlpha"): params.startAlpha = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); break;
+			case hashString("endAlpha"): params.endAlpha = lua_tofloat(L, LUA_TABLE_VALUE_INDEX); break;
 			}
 
 			continue;
@@ -1087,14 +1059,9 @@ int LuaSyncedCtrl::AddTeamResource(lua_State* L)
 	const float value = max(0.0f, luaL_checkfloat(L, 3));
 
 	switch (type[0]) {
-	case 'm': {
-		team->AddMetal(value);
-	} break;
-	case 'e': {
-		team->AddEnergy(value);
-	} break;
-	default: {
-	} break;
+	case 'm': team->AddMetal(value); break;
+	case 'e': team->AddEnergy(value); break;
+	default: break;
 	}
 
 	return 0;
@@ -1171,14 +1138,9 @@ int LuaSyncedCtrl::UseTeamResource(lua_State* L)
 			const float value = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
 
 			switch (key[0]) {
-			case 'm': {
-				metal = std::max(0.0f, value);
-			} break;
-			case 'e': {
-				energy = std::max(0.0f, value);
-			} break;
-			default: {
-			} break;
+			case 'm': metal = std::max(0.0f, value); break;
+			case 'e': energy = std::max(0.0f, value); break;
+			default: break;
 			}
 		}
 
@@ -1279,14 +1241,9 @@ int LuaSyncedCtrl::SetTeamShareLevel(lua_State* L)
 	const float value = luaL_checkfloat(L, 3);
 
 	switch (type[0]) {
-	case 'm': {
-		team->resShare.metal = std::clamp(value, 0.0f, 1.0f);
-	} break;
-	case 'e': {
-		team->resShare.energy = std::clamp(value, 0.0f, 1.0f);
-	} break;
-	default: {
-	} break;
+	case 'm': team->resShare.metal = std::clamp(value, 0.0f, 1.0f); break;
+	case 'e': team->resShare.energy = std::clamp(value, 0.0f, 1.0f); break;
+	default: break;
 	}
 
 	return 0;
@@ -1435,24 +1392,13 @@ void SetRulesParam(lua_State* L, const char* caller, int offset, LuaRulesParams:
 				continue;
 
 			switch (hashString(lua_tostring(L, LUA_TABLE_KEY_INDEX))) {
-			case hashString("public"): {
-				losMask |= LuaRulesParams::RULESPARAMLOS_PUBLIC;
-			} break;
-			case hashString("inlos"): {
-				losMask |= LuaRulesParams::RULESPARAMLOS_INLOS;
-			} break;
-			case hashString("typed"): {
-				losMask |= LuaRulesParams::RULESPARAMLOS_TYPED;
-			} break;
-			case hashString("inradar"): {
-				losMask |= LuaRulesParams::RULESPARAMLOS_INRADAR;
-			} break;
-			case hashString("allied"): {
-				losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED;
-			} break;
+			case hashString("public"): losMask |= LuaRulesParams::RULESPARAMLOS_PUBLIC; break;
+			case hashString("inlos"): losMask |= LuaRulesParams::RULESPARAMLOS_INLOS; break;
+			case hashString("typed"): losMask |= LuaRulesParams::RULESPARAMLOS_TYPED; break;
+			case hashString("inradar"): losMask |= LuaRulesParams::RULESPARAMLOS_INRADAR; break;
+			case hashString("allied"): losMask |= LuaRulesParams::RULESPARAMLOS_ALLIED; break;
 			// case hashString("private"): { losMask |= LuaRulesParams::RULESPARAMLOS_PRIVATE; } break;
-			default: {
-			} break;
+			default: break;
 			}
 		}
 
@@ -4238,14 +4184,9 @@ int LuaSyncedCtrl::AddUnitResource(lua_State* L)
 		return 0;
 
 	switch (type[0]) {
-	case 'm': {
-		unit->AddMetal(std::max(0.0f, luaL_checkfloat(L, 3)));
-	} break;
-	case 'e': {
-		unit->AddEnergy(std::max(0.0f, luaL_checkfloat(L, 3)));
-	} break;
-	default: {
-	} break;
+	case 'm': unit->AddMetal(std::max(0.0f, luaL_checkfloat(L, 3))); break;
+	case 'e': unit->AddEnergy(std::max(0.0f, luaL_checkfloat(L, 3))); break;
+	default: break;
 	}
 
 	return 0;
@@ -4278,19 +4219,10 @@ int LuaSyncedCtrl::UseUnitResource(lua_State* L)
 		const char* type = lua_tostring(L, 2);
 
 		switch (type[0]) {
-		case 'm': {
-			lua_pushboolean(L, unit->UseMetal(std::max(0.0f, lua_tofloat(L, 3))));
-			return 1;
-		} break;
-		case 'e': {
-			lua_pushboolean(L, unit->UseEnergy(std::max(0.0f, lua_tofloat(L, 3))));
-			return 1;
-		} break;
-		default: {
-		} break;
+		case 'm': lua_pushboolean(L, unit->UseMetal(std::max(0.0f, lua_tofloat(L, 3)))); return 1;
+		case 'e': lua_pushboolean(L, unit->UseEnergy(std::max(0.0f, lua_tofloat(L, 3)))); return 1;
+		default: return 0;
 		}
-
-		return 0;
 	}
 
 	if (lua_istable(L, 2)) {
@@ -4305,14 +4237,9 @@ int LuaSyncedCtrl::UseUnitResource(lua_State* L)
 				const float val = std::max(0.0f, lua_tofloat(L, -1));
 
 				switch (key[0]) {
-				case 'm': {
-					metal = val;
-				} break;
-				case 'e': {
-					energy = val;
-				} break;
-				default: {
-				} break;
+				case 'm': metal = val; break;
+				case 'e': energy = val; break;
+				default: break;
 				}
 			}
 		}
@@ -5252,19 +5179,12 @@ int LuaSyncedCtrl::SetProjectileTarget(lua_State* L)
 		CWorldObject* newTargetObject = nullptr;
 
 		switch (type) {
-		case 'u': {
-			newTargetObject = ParseUnit(L, __func__, 2);
-		} break;
-		case 'f': {
-			newTargetObject = ParseFeature(L, __func__, 2);
-		} break;
-		case 'p': {
-			newTargetObject = ParseProjectile(L, __func__, 2);
-		} break;
-		case 'g': { /* fall-through, needs four arguments (todo: or a table?) */
-		}
-		default: { /* if invalid type-argument, current target will be cleared */
-		} break;
+		case 'u': newTargetObject = ParseUnit(L, __func__, 2); break;
+		case 'f': newTargetObject = ParseFeature(L, __func__, 2); break;
+		case 'p': newTargetObject = ParseProjectile(L, __func__, 2); break;
+		case 'g': /* fall-through, needs four arguments (todo: or a table?) */
+
+		default: /* if invalid type-argument, current target will be cleared */ break;
 		}
 
 		const DependenceType oldDepType = ProjectileTarget::GetObjectDepType(oldTargetObject);

@@ -1380,44 +1380,17 @@ int LuaOpenGL::Text(lua_State* L)
 		const char* c = lua_tostring(L, 5);
 		while (*c != 0) {
 			switch (*c) {
-			case 'c': {
-				options |= FONT_CENTER;
-				break;
-			}
-			case 'r': {
-				options |= FONT_RIGHT;
-				break;
-			}
+			case 'c': options |= FONT_CENTER; break;
+			case 'r': options |= FONT_RIGHT; break;
 
-			case 'a': {
-				options |= FONT_ASCENDER;
-				break;
-			}
-			case 't': {
-				options |= FONT_TOP;
-				break;
-			}
-			case 'v': {
-				options |= FONT_VCENTER;
-				break;
-			}
-			case 'x': {
-				options |= FONT_BASELINE;
-				break;
-			}
-			case 'b': {
-				options |= FONT_BOTTOM;
-				break;
-			}
-			case 'd': {
-				options |= FONT_DESCENDER;
-				break;
-			}
+			case 'a': options |= FONT_ASCENDER; break;
+			case 't': options |= FONT_TOP; break;
+			case 'v': options |= FONT_VCENTER; break;
+			case 'x': options |= FONT_BASELINE; break;
+			case 'b': options |= FONT_BOTTOM; break;
+			case 'd': options |= FONT_DESCENDER; break;
 
-			case 's': {
-				options |= FONT_SHADOW;
-				break;
-			}
+			case 's': options |= FONT_SHADOW; break;
 			case 'o': {
 				options |= FONT_OUTLINE;
 				outline = true;
@@ -1431,10 +1404,7 @@ int LuaOpenGL::Text(lua_State* L)
 				break;
 			}
 
-			case 'n': {
-				options ^= FONT_NEAREST;
-				break;
-			}
+			case 'n': options ^= FONT_NEAREST; break;
 			default: break;
 			}
 			c++;
@@ -2875,17 +2845,14 @@ int LuaOpenGL::TexRect(lua_State* L)
 			t1 = 0.0f;
 			t2 = 1.0f;
 		}
-		glBegin(GL_QUADS);
-		{
-			glTexCoord2f(s1, t1);
-			glVertex2f(x1, y1);
-			glTexCoord2f(s2, t1);
-			glVertex2f(x2, y1);
-			glTexCoord2f(s2, t2);
-			glVertex2f(x2, y2);
-			glTexCoord2f(s1, t2);
-			glVertex2f(x1, y2);
+		// clang-format off
+		glBegin(GL_QUADS); {
+			glTexCoord2f(s1, t1); glVertex2f(x1, y1);
+			glTexCoord2f(s2, t1); glVertex2f(x2, y1);
+			glTexCoord2f(s2, t2); glVertex2f(x2, y2);
+			glTexCoord2f(s1, t2); glVertex2f(x1, y2);
 		}
+		// clang-format on
 		glEnd();
 		return 0;
 	}
@@ -2894,17 +2861,14 @@ int LuaOpenGL::TexRect(lua_State* L)
 	const float t1 = luaL_checkfloat(L, 6);
 	const float s2 = luaL_checkfloat(L, 7);
 	const float t2 = luaL_checkfloat(L, 8);
-	glBegin(GL_QUADS);
-	{
-		glTexCoord2f(s1, t1);
-		glVertex2f(x1, y1);
-		glTexCoord2f(s2, t1);
-		glVertex2f(x2, y1);
-		glTexCoord2f(s2, t2);
-		glVertex2f(x2, y2);
-		glTexCoord2f(s1, t2);
-		glVertex2f(x1, y2);
+	// clang-format off
+	glBegin(GL_QUADS); {
+		glTexCoord2f(s1, t1); glVertex2f(x1, y1);
+		glTexCoord2f(s2, t1); glVertex2f(x2, y1);
+		glTexCoord2f(s2, t2); glVertex2f(x2, y2);
+		glTexCoord2f(s1, t2); glVertex2f(x1, y2);
 	}
+	// clang-format on
 	glEnd();
 
 	return 0;
@@ -4126,38 +4090,17 @@ namespace Impl {
 static void ParseCommonLuaTexParams(lua_State* L, LuaTextures::Texture* tex, uint32_t strHash)
 {
 	switch (strHash) {
-	case hashString("target"): {
-		tex->target = (GLenum)lua_tonumber(L, -1);
-	} break;
-	case hashString("format"): {
-		tex->format = (GLint)lua_tonumber(L, -1);
-	} break;
-	case hashString("min_filter"): {
-		tex->min_filter = (GLenum)lua_tonumber(L, -1);
-	} break;
-	case hashString("mag_filter"): {
-		tex->mag_filter = (GLenum)lua_tonumber(L, -1);
-	} break;
-	case hashString("wrap_s"): {
-		tex->wrap_s = (GLenum)lua_tonumber(L, -1);
-	} break;
-	case hashString("wrap_t"): {
-		tex->wrap_t = (GLenum)lua_tonumber(L, -1);
-	} break;
-	case hashString("wrap_r"): {
-		tex->wrap_r = (GLenum)lua_tonumber(L, -1);
-	} break;
-	case hashString("compareFunc"): {
-		tex->cmpFunc = lua_tonumber(L, -1);
-	} break;
-	case hashString("lodBias"): {
-		tex->lodBias = lua_tonumber(L, -1);
-	} break;
-	case hashString("aniso"): {
-		tex->aniso = (GLfloat)lua_tonumber(L, -1);
-	} break;
-	default: {
-	} break;
+	case hashString("target"): tex->target = (GLenum)lua_tonumber(L, -1); break;
+	case hashString("format"): tex->format = (GLint)lua_tonumber(L, -1); break;
+	case hashString("min_filter"): tex->min_filter = (GLenum)lua_tonumber(L, -1); break;
+	case hashString("mag_filter"): tex->mag_filter = (GLenum)lua_tonumber(L, -1); break;
+	case hashString("wrap_s"): tex->wrap_s = (GLenum)lua_tonumber(L, -1); break;
+	case hashString("wrap_t"): tex->wrap_t = (GLenum)lua_tonumber(L, -1); break;
+	case hashString("wrap_r"): tex->wrap_r = (GLenum)lua_tonumber(L, -1); break;
+	case hashString("compareFunc"): tex->cmpFunc = lua_tonumber(L, -1); break;
+	case hashString("lodBias"): tex->lodBias = lua_tonumber(L, -1); break;
+	case hashString("aniso"): tex->aniso = (GLfloat)lua_tonumber(L, -1); break;
+	default: break;
 	}
 }
 } // namespace Impl
@@ -5129,12 +5072,8 @@ int LuaOpenGL::Clear(lua_State* L)
 			luaL_error(L, "Incorrect arguments to gl.Clear(bits, val)");
 
 		switch (bits) {
-		case GL_DEPTH_BUFFER_BIT: {
-			glClearDepth((GLfloat)lua_tonumber(L, 2));
-		} break;
-		case GL_STENCIL_BUFFER_BIT: {
-			glClearStencil((GLint)lua_tonumber(L, 2));
-		} break;
+		case GL_DEPTH_BUFFER_BIT: glClearDepth((GLfloat)lua_tonumber(L, 2)); break;
+		case GL_STENCIL_BUFFER_BIT: glClearStencil((GLint)lua_tonumber(L, 2)); break;
 		default: {
 		} break;
 		}
@@ -5721,21 +5660,12 @@ int LuaOpenGL::GetMatrixData(lua_State* L)
 		const GLenum type = (GLenum)lua_tonumber(L, 1);
 		GLenum pname = 0;
 		switch (type) {
-		case GL_PROJECTION: {
-			pname = GL_PROJECTION_MATRIX;
-			break;
-		}
-		case GL_MODELVIEW: {
-			pname = GL_MODELVIEW_MATRIX;
-			break;
-		}
-		case GL_TEXTURE: {
-			pname = GL_TEXTURE_MATRIX;
-			break;
-		}
-		default: {
-			luaL_error(L, "Incorrect arguments to gl.GetMatrixData(id)");
-		}
+		case GL_PROJECTION: pname = GL_PROJECTION_MATRIX; break;
+
+		case GL_MODELVIEW: pname = GL_MODELVIEW_MATRIX; break;
+
+		case GL_TEXTURE: pname = GL_TEXTURE_MATRIX; break;
+		default: luaL_error(L, "Incorrect arguments to gl.GetMatrixData(id)");
 		}
 		GLfloat matrix[16];
 		glGetFloatv(pname, matrix);

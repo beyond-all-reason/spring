@@ -52,190 +52,79 @@ LuaMatTexture::Type LuaOpenGLUtils::GetLuaMatTextureType(const std::string& name
 {
 	switch (hashString(name.c_str())) {
 	// atlases
-	case hashString("$units"): {
-		return LuaMatTexture::LUATEX_3DOTEXTURE;
-	} break;
-	case hashString("$units1"): {
-		return LuaMatTexture::LUATEX_3DOTEXTURE;
-	} break;
-	case hashString("$units2"): {
-		return LuaMatTexture::LUATEX_3DOTEXTURE;
-	} break;
+	case hashString("$units"): return LuaMatTexture::LUATEX_3DOTEXTURE;
+	case hashString("$units1"): return LuaMatTexture::LUATEX_3DOTEXTURE;
+	case hashString("$units2"): return LuaMatTexture::LUATEX_3DOTEXTURE;
 
 	// cubemaps
-	case hashString("$specular"): {
-		return LuaMatTexture::LUATEX_SPECULAR;
-	} break;
-	case hashString("$reflection"): {
-		return LuaMatTexture::LUATEX_MAP_REFLECTION;
-	} break;
-	case hashString("$map_reflection"): {
-		return LuaMatTexture::LUATEX_MAP_REFLECTION;
-	} break;
-	case hashString("$sky_reflection"): {
-		return LuaMatTexture::LUATEX_SKY_REFLECTION;
-	} break;
+	case hashString("$specular"): return LuaMatTexture::LUATEX_SPECULAR;
+	case hashString("$reflection"): return LuaMatTexture::LUATEX_MAP_REFLECTION;
+	case hashString("$map_reflection"): return LuaMatTexture::LUATEX_MAP_REFLECTION;
+	case hashString("$sky_reflection"): return LuaMatTexture::LUATEX_SKY_REFLECTION;
 
 	// specials
-	case hashString("$shadow"): {
-		return LuaMatTexture::LUATEX_SHADOWMAP;
-	} break;
-	case hashString("$shadow_color"): {
-		return LuaMatTexture::LUATEX_SHADOWCOLOR;
-	} break;
-	case hashString("$heightmap"): {
-		return LuaMatTexture::LUATEX_HEIGHTMAP;
-	} break;
+	case hashString("$shadow"): return LuaMatTexture::LUATEX_SHADOWMAP;
+	case hashString("$shadow_color"): return LuaMatTexture::LUATEX_SHADOWCOLOR;
+	case hashString("$heightmap"): return LuaMatTexture::LUATEX_HEIGHTMAP;
 
 	// SMF-maps
-	case hashString("$grass"): {
-		return LuaMatTexture::LUATEX_SMF_GRASS;
-	} break;
-	case hashString("$detail"): {
-		return LuaMatTexture::LUATEX_SMF_DETAIL;
-	} break;
-	case hashString("$minimap"): {
-		return LuaMatTexture::LUATEX_SMF_MINIMAP;
-	} break;
-	case hashString("$shading"): {
-		return LuaMatTexture::LUATEX_SMF_SHADING;
-	} break;
-	case hashString("$normals"): {
-		return LuaMatTexture::LUATEX_SMF_NORMALS;
-	} break;
+	case hashString("$grass"): return LuaMatTexture::LUATEX_SMF_GRASS;
+	case hashString("$detail"): return LuaMatTexture::LUATEX_SMF_DETAIL;
+	case hashString("$minimap"): return LuaMatTexture::LUATEX_SMF_MINIMAP;
+	case hashString("$shading"): return LuaMatTexture::LUATEX_SMF_SHADING;
+	case hashString("$normals"): return LuaMatTexture::LUATEX_SMF_NORMALS;
 	// SSMF-maps
-	case hashString("$ssmf_normals"): {
-		return LuaMatTexture::LUATEX_SSMF_NORMALS;
-	} break;
-	case hashString("$ssmf_specular"): {
-		return LuaMatTexture::LUATEX_SSMF_SPECULAR;
-	} break;
-	case hashString("$ssmf_splat_distr"): {
-		return LuaMatTexture::LUATEX_SSMF_SDISTRIB;
-	} break;
-	case hashString("$ssmf_splat_detail"): {
-		return LuaMatTexture::LUATEX_SSMF_SDETAIL;
-	} break;
-	case hashString("$ssmf_splat_normals"): {
-		return LuaMatTexture::LUATEX_SSMF_SNORMALS;
-	} break;
-	case hashString("$ssmf_sky_refl"): {
-		return LuaMatTexture::LUATEX_SSMF_SKYREFL;
-	} break;
-	case hashString("$ssmf_emission"): {
-		return LuaMatTexture::LUATEX_SSMF_EMISSION;
-	} break;
-	case hashString("$ssmf_parallax"): {
-		return LuaMatTexture::LUATEX_SSMF_PARALLAX;
-	} break;
+	case hashString("$ssmf_normals"): return LuaMatTexture::LUATEX_SSMF_NORMALS;
+	case hashString("$ssmf_specular"): return LuaMatTexture::LUATEX_SSMF_SPECULAR;
+	case hashString("$ssmf_splat_distr"): return LuaMatTexture::LUATEX_SSMF_SDISTRIB;
+	case hashString("$ssmf_splat_detail"): return LuaMatTexture::LUATEX_SSMF_SDETAIL;
+	case hashString("$ssmf_splat_normals"): return LuaMatTexture::LUATEX_SSMF_SNORMALS;
+	case hashString("$ssmf_sky_refl"): return LuaMatTexture::LUATEX_SSMF_SKYREFL;
+	case hashString("$ssmf_emission"): return LuaMatTexture::LUATEX_SSMF_EMISSION;
+	case hashString("$ssmf_parallax"): return LuaMatTexture::LUATEX_SSMF_PARALLAX;
 
 
-	case hashString("$info"): {
-		return LuaMatTexture::LUATEX_INFOTEX_ACTIVE;
-	} break;
-	case hashString("$extra"): {
-		return LuaMatTexture::LUATEX_INFOTEX_ACTIVE;
-	} break;
+	case hashString("$info"): return LuaMatTexture::LUATEX_INFOTEX_ACTIVE;
+	case hashString("$extra"): return LuaMatTexture::LUATEX_INFOTEX_ACTIVE;
 
-	case hashString("$map_gb_nt"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_NORM;
-	} break;
-	case hashString("$map_gb_dt"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_DIFF;
-	} break;
-	case hashString("$map_gb_st"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_SPEC;
-	} break;
-	case hashString("$map_gb_et"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_EMIT;
-	} break;
-	case hashString("$map_gb_mt"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_MISC;
-	} break;
-	case hashString("$map_gb_zt"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_ZVAL;
-	} break;
+	case hashString("$map_gb_nt"): return LuaMatTexture::LUATEX_MAP_GBUFFER_NORM;
+	case hashString("$map_gb_dt"): return LuaMatTexture::LUATEX_MAP_GBUFFER_DIFF;
+	case hashString("$map_gb_st"): return LuaMatTexture::LUATEX_MAP_GBUFFER_SPEC;
+	case hashString("$map_gb_et"): return LuaMatTexture::LUATEX_MAP_GBUFFER_EMIT;
+	case hashString("$map_gb_mt"): return LuaMatTexture::LUATEX_MAP_GBUFFER_MISC;
+	case hashString("$map_gb_zt"): return LuaMatTexture::LUATEX_MAP_GBUFFER_ZVAL;
 
-	case hashString("$map_gbuffer_normtex"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_NORM;
-	} break;
-	case hashString("$map_gbuffer_difftex"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_DIFF;
-	} break;
-	case hashString("$map_gbuffer_spectex"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_SPEC;
-	} break;
-	case hashString("$map_gbuffer_emittex"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_EMIT;
-	} break;
-	case hashString("$map_gbuffer_misctex"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_MISC;
-	} break;
-	case hashString("$map_gbuffer_zvaltex"): {
-		return LuaMatTexture::LUATEX_MAP_GBUFFER_ZVAL;
-	} break;
+	case hashString("$map_gbuffer_normtex"): return LuaMatTexture::LUATEX_MAP_GBUFFER_NORM;
+	case hashString("$map_gbuffer_difftex"): return LuaMatTexture::LUATEX_MAP_GBUFFER_DIFF;
+	case hashString("$map_gbuffer_spectex"): return LuaMatTexture::LUATEX_MAP_GBUFFER_SPEC;
+	case hashString("$map_gbuffer_emittex"): return LuaMatTexture::LUATEX_MAP_GBUFFER_EMIT;
+	case hashString("$map_gbuffer_misctex"): return LuaMatTexture::LUATEX_MAP_GBUFFER_MISC;
+	case hashString("$map_gbuffer_zvaltex"): return LuaMatTexture::LUATEX_MAP_GBUFFER_ZVAL;
 
-	case hashString("$mdl_gb_nt"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_NORM;
-	} break;
-	case hashString("$mdl_gb_dt"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_DIFF;
-	} break;
-	case hashString("$mdl_gb_st"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_SPEC;
-	} break;
-	case hashString("$mdl_gb_et"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_EMIT;
-	} break;
-	case hashString("$mdl_gb_mt"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_MISC;
-	} break;
-	case hashString("$mdl_gb_zt"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_ZVAL;
-	} break;
+	case hashString("$mdl_gb_nt"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_NORM;
+	case hashString("$mdl_gb_dt"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_DIFF;
+	case hashString("$mdl_gb_st"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_SPEC;
+	case hashString("$mdl_gb_et"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_EMIT;
+	case hashString("$mdl_gb_mt"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_MISC;
+	case hashString("$mdl_gb_zt"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_ZVAL;
 
-	case hashString("$model_gbuffer_normtex"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_NORM;
-	} break;
-	case hashString("$model_gbuffer_difftex"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_DIFF;
-	} break;
-	case hashString("$model_gbuffer_spectex"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_SPEC;
-	} break;
-	case hashString("$model_gbuffer_emittex"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_EMIT;
-	} break;
-	case hashString("$model_gbuffer_misctex"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_MISC;
-	} break;
-	case hashString("$model_gbuffer_zvaltex"): {
-		return LuaMatTexture::LUATEX_MODEL_GBUFFER_ZVAL;
-	} break;
+	case hashString("$model_gbuffer_normtex"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_NORM;
+	case hashString("$model_gbuffer_difftex"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_DIFF;
+	case hashString("$model_gbuffer_spectex"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_SPEC;
+	case hashString("$model_gbuffer_emittex"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_EMIT;
+	case hashString("$model_gbuffer_misctex"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_MISC;
+	case hashString("$model_gbuffer_zvaltex"): return LuaMatTexture::LUATEX_MODEL_GBUFFER_ZVAL;
 
-	case hashString("$font"): {
-		return LuaMatTexture::LUATEX_FONT;
-	} break;
-	case hashString("$smallfont"): {
-		return LuaMatTexture::LUATEX_FONTSMALL;
-	} break;
-	case hashString("$fontsmall"): {
-		return LuaMatTexture::LUATEX_FONTSMALL;
-	} break;
+	case hashString("$font"): return LuaMatTexture::LUATEX_FONT;
+	case hashString("$smallfont"): return LuaMatTexture::LUATEX_FONTSMALL;
+	case hashString("$fontsmall"): return LuaMatTexture::LUATEX_FONTSMALL;
 
-	case hashString("$explosions"): {
-		return LuaMatTexture::LUATEX_EXPLOSIONS_ATLAS;
-	} break;
-	case hashString("$groundfx"): {
-		return LuaMatTexture::LUATEX_GROUNDFX_ATLAS;
-	} break;
+	case hashString("$explosions"): return LuaMatTexture::LUATEX_EXPLOSIONS_ATLAS;
+	case hashString("$groundfx"): return LuaMatTexture::LUATEX_GROUNDFX_ATLAS;
 
 
-	default: {
-	} break;
+	default: return LuaMatTexture::LUATEX_NONE;
 	}
-
-	return LuaMatTexture::LUATEX_NONE;
 }
 
 /***
@@ -256,59 +145,32 @@ LuaMatTexture::Type LuaOpenGLUtils::GetLuaMatTextureType(const std::string& name
 LuaMatrixType LuaOpenGLUtils::GetLuaMatrixType(const char* name)
 {
 	switch (hashString(name)) {
-	case hashString("view"): {
-		return LUAMATRICES_VIEW;
-	} break;
-	case hashString("projection"): {
-		return LUAMATRICES_PROJECTION;
-	} break;
-	case hashString("viewprojection"): {
-		return LUAMATRICES_VIEWPROJECTION;
-	} break;
-	case hashString("viewinverse"): {
-		return LUAMATRICES_VIEWINVERSE;
-	} break;
-	case hashString("projectioninverse"): {
-		return LUAMATRICES_PROJECTIONINVERSE;
-	} break;
-	case hashString("viewprojectioninverse"): {
-		return LUAMATRICES_VIEWPROJECTIONINVERSE;
-	} break;
-	case hashString("billboard"): {
-		return LUAMATRICES_BILLBOARD;
-	} break;
-	case hashString("shadow"): {
-		return LUAMATRICES_SHADOW;
-	} break;
+	case hashString("view"): return LUAMATRICES_VIEW;
+	case hashString("projection"): return LUAMATRICES_PROJECTION;
+	case hashString("viewprojection"): return LUAMATRICES_VIEWPROJECTION;
+	case hashString("viewinverse"): return LUAMATRICES_VIEWINVERSE;
+	case hashString("projectioninverse"): return LUAMATRICES_PROJECTIONINVERSE;
+	case hashString("viewprojectioninverse"): return LUAMATRICES_VIEWPROJECTIONINVERSE;
+	case hashString("billboard"): return LUAMATRICES_BILLBOARD;
+	case hashString("shadow"): return LUAMATRICES_SHADOW;
 
 #if 0
-		case hashString(  "mmview"   ): { return LUAMATRICES_MINIMAP_DRAWVIEW     ; } break;
-		case hashString(  "mmproj"   ): { return LUAMATRICES_MINIMAP_DRAWPROJ     ; } break;
-		case hashString("dimmview"   ): { return LUAMATRICES_MINIMAP_DIMMVIEW     ; } break;
-		case hashString("dimmproj"   ): { return LUAMATRICES_MINIMAP_DIMMPROJ     ; } break;
-		case hashString("dimmviewlua"): { return LUAMATRICES_MINIMAP_DIMMVIEW_LUA ; } break;
-		case hashString("dimmprojlua"): { return LUAMATRICES_MINIMAP_DIMMPROJ_LUA ; } break;
+	case hashString("mmview"): return LUAMATRICES_MINIMAP_DRAWVIEW;
+	case hashString("mmproj"): return LUAMATRICES_MINIMAP_DRAWPROJ;
+	case hashString("dimmview"): return LUAMATRICES_MINIMAP_DIMMVIEW;
+	case hashString("dimmproj"): return LUAMATRICES_MINIMAP_DIMMPROJ;
+	case hashString("dimmviewlua"): return LUAMATRICES_MINIMAP_DIMMVIEW_LUA;
+	case hashString("dimmprojlua"): return LUAMATRICES_MINIMAP_DIMMPROJ_LUA;
 #endif
 
 	// backward compatibility
-	case hashString("camera"): {
-		return LUAMATRICES_VIEW;
-	} break;
-	case hashString("camprj"): {
-		return LUAMATRICES_PROJECTION;
-	} break;
-	case hashString("caminv"): {
-		return LUAMATRICES_VIEWINVERSE;
-	} break;
-	case hashString("camprjinv"): {
-		return LUAMATRICES_PROJECTIONINVERSE;
-	} break;
+	case hashString("camera"): return LUAMATRICES_VIEW;
+	case hashString("camprj"): return LUAMATRICES_PROJECTION;
+	case hashString("caminv"): return LUAMATRICES_VIEWINVERSE;
+	case hashString("camprjinv"): return LUAMATRICES_PROJECTIONINVERSE;
 
-	default: {
-	} break;
+	default: return LUAMATRICES_NONE;
 	}
-
-	return LUAMATRICES_NONE;
 }
 
 const CMatrix44f* LuaOpenGLUtils::GetNamedMatrix(const char* name)
@@ -577,15 +439,9 @@ bool LuaOpenGLUtils::ParseTextureImage(lua_State* L, LuaMatTexture& texUnit, con
 			else {
 				// "$units1" or "$units2"
 				switch (image[6]) {
-				case '1': {
-					texUnit.data = reinterpret_cast<const void*>(int(1));
-				} break;
-				case '2': {
-					texUnit.data = reinterpret_cast<const void*>(int(2));
-				} break;
-				default: {
-					return false;
-				} break;
+				case '1': texUnit.data = reinterpret_cast<const void*>(int(1)); break;
+				case '2': texUnit.data = reinterpret_cast<const void*>(int(2)); break;
+				default: return false;
 				}
 			}
 		} break;
@@ -754,43 +610,19 @@ GLuint LuaMatTexture::GetTextureID() const
 
 
 	// g-buffer textures
-	case LUATEX_MAP_GBUFFER_NORM: {
-		texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_NORMTEX);
-	} break;
-	case LUATEX_MAP_GBUFFER_DIFF: {
-		texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_DIFFTEX);
-	} break;
-	case LUATEX_MAP_GBUFFER_SPEC: {
-		texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_SPECTEX);
-	} break;
-	case LUATEX_MAP_GBUFFER_EMIT: {
-		texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_EMITTEX);
-	} break;
-	case LUATEX_MAP_GBUFFER_MISC: {
-		texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_MISCTEX);
-	} break;
-	case LUATEX_MAP_GBUFFER_ZVAL: {
-		texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
-	} break;
+	case LUATEX_MAP_GBUFFER_NORM: texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_NORMTEX); break;
+	case LUATEX_MAP_GBUFFER_DIFF: texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_DIFFTEX); break;
+	case LUATEX_MAP_GBUFFER_SPEC: texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_SPECTEX); break;
+	case LUATEX_MAP_GBUFFER_EMIT: texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_EMITTEX); break;
+	case LUATEX_MAP_GBUFFER_MISC: texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_MISCTEX); break;
+	case LUATEX_MAP_GBUFFER_ZVAL: texID = gdGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_ZVALTEX); break;
 
-	case LUATEX_MODEL_GBUFFER_NORM: {
-		texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_NORMTEX);
-	} break;
-	case LUATEX_MODEL_GBUFFER_DIFF: {
-		texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_DIFFTEX);
-	} break;
-	case LUATEX_MODEL_GBUFFER_SPEC: {
-		texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_SPECTEX);
-	} break;
-	case LUATEX_MODEL_GBUFFER_EMIT: {
-		texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_EMITTEX);
-	} break;
-	case LUATEX_MODEL_GBUFFER_MISC: {
-		texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_MISCTEX);
-	} break;
-	case LUATEX_MODEL_GBUFFER_ZVAL: {
-		texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
-	} break;
+	case LUATEX_MODEL_GBUFFER_NORM: texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_NORMTEX); break;
+	case LUATEX_MODEL_GBUFFER_DIFF: texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_DIFFTEX); break;
+	case LUATEX_MODEL_GBUFFER_SPEC: texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_SPECTEX); break;
+	case LUATEX_MODEL_GBUFFER_EMIT: texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_EMITTEX); break;
+	case LUATEX_MODEL_GBUFFER_MISC: texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_MISCTEX); break;
+	case LUATEX_MODEL_GBUFFER_ZVAL: texID = udGeomBuff->GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_ZVALTEX); break;
 
 
 	// font textures
@@ -801,12 +633,8 @@ GLuint LuaMatTexture::GetTextureID() const
 		texID = smallFont->GetTexture();
 	} break;
 
-	case LUATEX_EXPLOSIONS_ATLAS: {
-		texID = projectileDrawer->textureAtlas->GetTexID();
-	} break;
-	case LUATEX_GROUNDFX_ATLAS: {
-		texID = projectileDrawer->groundFXAtlas->GetTexID();
-	} break;
+	case LUATEX_EXPLOSIONS_ATLAS: texID = projectileDrawer->textureAtlas->GetTexID(); break;
+	case LUATEX_GROUNDFX_ATLAS: texID = projectileDrawer->groundFXAtlas->GetTexID(); break;
 
 	default: {
 		assert(false);
@@ -831,18 +659,10 @@ GLuint LuaMatTexture::GetTextureTarget() const
 	switch (type) {
 	case LUATEX_NAMED: {
 		switch (this->texType) {
-		case GL_TEXTURE_3D: {
-			texType = GL_TEXTURE_3D;
-		} break;
-		case GL_TEXTURE_2D_ARRAY: {
-			texType = GL_TEXTURE_2D_ARRAY;
-		} break;
-		case GL_TEXTURE_CUBE_MAP: {
-			texType = GL_TEXTURE_CUBE_MAP;
-		} break;
-		default: {
-			texType = GL_TEXTURE_2D;
-		} break;
+		case GL_TEXTURE_3D: texType = GL_TEXTURE_3D; break;
+		case GL_TEXTURE_2D_ARRAY: texType = GL_TEXTURE_2D_ARRAY; break;
+		case GL_TEXTURE_CUBE_MAP: texType = GL_TEXTURE_CUBE_MAP; break;
+		default: texType = GL_TEXTURE_2D; break;
 		}
 	} break;
 	case LUATEX_LUATEXTURE: {
@@ -959,34 +779,22 @@ void LuaMatTexture::Bind() const
 		//    and shaders don't care about Enable/Disable
 		if (enable) {
 			switch (texType) {
-			case GL_TEXTURE_2D: {
-				glEnable(texType);
-			} break;
-			case GL_TEXTURE_2D_ARRAY: { /*glEnable(texType);*/
-			} break;
-			case GL_TEXTURE_3D: { /*glEnable(texType);*/
-			} break;
-			case GL_TEXTURE_CUBE_MAP: { /*glEnable(texType);*/
-			} break;
-			default: {
-			} break;
+			case GL_TEXTURE_2D: glEnable(texType); break;
+			case GL_TEXTURE_2D_ARRAY: /*glEnable(texType);*/ break;
+			case GL_TEXTURE_3D: /*glEnable(texType);*/ break;
+			case GL_TEXTURE_CUBE_MAP: /*glEnable(texType);*/ break;
+			default: break;
 			}
 		}
 	}
 
 	else if (!enable) {
 		switch (texType) {
-		case GL_TEXTURE_2D: {
-			glDisable(texType);
-		} break;
-		case GL_TEXTURE_2D_ARRAY: { /*glDisable(texType);*/
-		} break;
-		case GL_TEXTURE_3D: { /*glDisable(texType);*/
-		} break;
-		case GL_TEXTURE_CUBE_MAP: { /*glDisable(texType);*/
-		} break;
-		default: {
-		} break;
+		case GL_TEXTURE_2D: glDisable(texType); break;
+		case GL_TEXTURE_2D_ARRAY: /*glDisable(texType);*/ break;
+		case GL_TEXTURE_3D: /*glDisable(texType);*/ break;
+		case GL_TEXTURE_CUBE_MAP: /*glDisable(texType);*/ break;
+		default: break;
 		}
 	}
 
@@ -1006,20 +814,11 @@ void LuaMatTexture::Unbind() const
 		return;
 
 	switch (GetTextureTarget()) {
-	case GL_TEXTURE_2D: {
-		glDisable(GL_TEXTURE_2D);
-	} break;
-	case GL_TEXTURE_2D_ARRAY: {
-		glDisable(GL_TEXTURE_2D_ARRAY);
-	} break;
-	case GL_TEXTURE_3D: {
-		glDisable(GL_TEXTURE_3D);
-	} break;
-	case GL_TEXTURE_CUBE_MAP: {
-		glDisable(GL_TEXTURE_CUBE_MAP);
-	} break;
-	default: {
-	} break;
+	case GL_TEXTURE_2D: glDisable(GL_TEXTURE_2D); break;
+	case GL_TEXTURE_2D_ARRAY: glDisable(GL_TEXTURE_2D_ARRAY); break;
+	case GL_TEXTURE_3D: glDisable(GL_TEXTURE_3D); break;
+	case GL_TEXTURE_CUBE_MAP: glDisable(GL_TEXTURE_CUBE_MAP); break;
+	default: break;
 	}
 }
 

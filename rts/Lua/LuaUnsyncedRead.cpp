@@ -2535,14 +2535,13 @@ int LuaUnsyncedRead::GetMapSquareTexture(lua_State* L)
  */
 int LuaUnsyncedRead::GetLosViewColors(lua_State* L)
 {
-#define PACK_COLOR_VECTOR(color)         \
-	lua_createtable(L, 3, 0);            \
-	lua_pushnumber(L, color[0] / scale); \
-	lua_rawseti(L, -2, 1);               \
-	lua_pushnumber(L, color[1] / scale); \
-	lua_rawseti(L, -2, 2);               \
-	lua_pushnumber(L, color[2] / scale); \
-	lua_rawseti(L, -2, 3);
+	// clang-format off
+#define PACK_COLOR_VECTOR(color)                                \
+	lua_createtable(L, 3, 0);                                   \
+	lua_pushnumber(L, color[0] / scale); lua_rawseti(L, -2, 1); \
+	lua_pushnumber(L, color[1] / scale); lua_rawseti(L, -2, 2); \
+	lua_pushnumber(L, color[2] / scale); lua_rawseti(L, -2, 3);
+	// clang-format on
 
 	const float scale = (float)CBaseGroundDrawer::losColorScale;
 	CBaseGroundDrawer* gd = readMap->GetGroundDrawer();
@@ -2745,16 +2744,15 @@ int LuaUnsyncedRead::GetCameraFOV(lua_State* L)
  */
 int LuaUnsyncedRead::GetCameraVectors(lua_State* L)
 {
-#define PACK_CAMERA_VECTOR(s, n)    \
-	HSTR_PUSH(L, #s);               \
-	lua_createtable(L, 3, 0);       \
-	lua_pushnumber(L, camera->n.x); \
-	lua_rawseti(L, -2, 1);          \
-	lua_pushnumber(L, camera->n.y); \
-	lua_rawseti(L, -2, 2);          \
-	lua_pushnumber(L, camera->n.z); \
-	lua_rawseti(L, -2, 3);          \
+	// clang-format off
+#define PACK_CAMERA_VECTOR(s,n)                              \
+	HSTR_PUSH(L, #s);                                        \
+	lua_createtable(L, 3, 0);                                \
+	lua_pushnumber(L, camera-> n .x); lua_rawseti(L, -2, 1); \
+	lua_pushnumber(L, camera-> n .y); lua_rawseti(L, -2, 2); \
+	lua_pushnumber(L, camera-> n .z); lua_rawseti(L, -2, 3); \
 	lua_rawset(L, -3)
+	// clang-format on
 
 	lua_createtable(L, 0, 7);
 	PACK_CAMERA_VECTOR(forward, GetDir());
@@ -2854,13 +2852,12 @@ int LuaUnsyncedRead::TraceScreenRay(lua_State* L)
 			}
 
 			lua_pushliteral(L, "ground");
+			// clang-format off
 			lua_createtable(L, 3, 0);
-			lua_pushnumber(L, pos.x);
-			lua_rawseti(L, -2, 1);
-			lua_pushnumber(L, CGround::GetHeightReal(pos.x, pos.z, false));
-			lua_rawseti(L, -2, 2);
-			lua_pushnumber(L, pos.z);
-			lua_rawseti(L, -2, 3);
+			lua_pushnumber(L,                                      pos.x ); lua_rawseti(L, -2, 1);
+			lua_pushnumber(L, CGround::GetHeightReal(pos.x, pos.z, false)); lua_rawseti(L, -2, 2);
+			lua_pushnumber(L,                                      pos.z ); lua_rawseti(L, -2, 3);
+			// clang-format on
 			return 2;
 		}
 	}
@@ -2912,19 +2909,15 @@ int LuaUnsyncedRead::TraceScreenRay(lua_State* L)
 		lua_pushliteral(L, "ground");
 	}
 
+	// clang-format off
 	lua_createtable(L, 6, 0);
-	lua_pushnumber(L, tracePos.x);
-	lua_rawseti(L, -2, 1);
-	lua_pushnumber(L, tracePos.y);
-	lua_rawseti(L, -2, 2);
-	lua_pushnumber(L, tracePos.z);
-	lua_rawseti(L, -2, 3);
-	lua_pushnumber(L, planePos.x);
-	lua_rawseti(L, -2, 4);
-	lua_pushnumber(L, planePos.y);
-	lua_rawseti(L, -2, 5);
-	lua_pushnumber(L, planePos.z);
-	lua_rawseti(L, -2, 6);
+	lua_pushnumber(L, tracePos.x); lua_rawseti(L, -2, 1);
+	lua_pushnumber(L, tracePos.y); lua_rawseti(L, -2, 2);
+	lua_pushnumber(L, tracePos.z); lua_rawseti(L, -2, 3);
+	lua_pushnumber(L, planePos.x); lua_rawseti(L, -2, 4);
+	lua_pushnumber(L, planePos.y); lua_rawseti(L, -2, 5);
+	lua_pushnumber(L, planePos.z); lua_rawseti(L, -2, 6);
+	// clang-format on
 
 	return 2;
 }
@@ -3570,8 +3563,8 @@ int LuaUnsyncedRead::GetLastMessagePositions(lua_State* L)
 	lua_createtable(L, infoConsole->GetMsgPosCount(), 0);
 
 	for (unsigned int i = 1; i <= infoConsole->GetMsgPosCount(); i++) {
-		lua_createtable(L, 3, 0);
-		{
+		// clang-format off
+		lua_createtable(L, 3, 0); {
 			const float3 msgpos = infoConsole->GetMsgPos();
 			lua_pushnumber(L, msgpos.x);
 			lua_rawseti(L, -2, 1);
@@ -3581,6 +3574,7 @@ int LuaUnsyncedRead::GetLastMessagePositions(lua_State* L)
 			lua_rawseti(L, -2, 3);
 		}
 		lua_rawseti(L, -2, i);
+		// clang-format on
 	}
 
 	return 1;
@@ -3607,8 +3601,8 @@ int LuaUnsyncedRead::GetConsoleBuffer(lua_State* L)
 
 	for (size_t i = startLine, n = 0; i < lineCount; i++) {
 		lua_pushnumber(L, ++n);
-		lua_createtable(L, 0, 2);
-		{
+		// clang-format off
+		lua_createtable(L, 0, 2); {
 			lua_pushliteral(L, "text");
 			lua_pushsstring(L, lines[i].text);
 			lua_rawset(L, -3);
@@ -3617,6 +3611,7 @@ int LuaUnsyncedRead::GetConsoleBuffer(lua_State* L)
 			lua_rawset(L, -3);
 		}
 		lua_rawset(L, -3);
+		// clang-format on
 	}
 
 	return 1;
