@@ -501,7 +501,7 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
  * Specify the kind of VBO you will be using.
  *
  * ```lua
- * @usage terrainVertexVBO:Define(numPoints, {{ id = 0, name = "pos", size = 2 }})
+ * terrainVertexVBO:Define(numPoints, {{ id = 0, name = "pos", size = 2 }})
  * ```
  * 
  * It is usually an array of vertex/color/uv data, but can also be an array of
