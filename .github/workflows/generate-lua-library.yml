@@ -21,13 +21,6 @@ jobs:
         with:
           sparse-checkout: rts/Lua
           path: recoil
-      
-      - name: Get commit message
-        id: commit
-        working-directory: recoil
-        run: |
-          message=$(git log --format=%B -n 1 ${{ github.sha }})
-          echo "message=$message" >> $GITHUB_OUTPUT
 
       # NOTE: This step is duplicated in `publish-site.yml`
       - name: Generate Lua library
@@ -53,11 +46,14 @@ jobs:
       # Always try to update library repo (even if generation did not make changes).
       # Hand-written files may have changed without generated output changing,
       # and library may simply be out of date for whatever reason.
+      #
+      # NOTE: The commit message will only be present on a push event.
       - name: Commit and push library repo
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           repository: ./library
           commit_message: |
             Update library
-            Generated from https://github.com/${{ github.repository }}/commit/${{ github.sha }}:
-            ${{ steps.commit.outputs.message }}
+            Generated from https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+
+            ${{ github.event.head_commit.message }}
