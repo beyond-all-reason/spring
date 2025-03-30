@@ -2,22 +2,24 @@
 
 #pragma once
 
-#include <cstddef>
-#include <vector>
-#include <memory>
-
 #include "System/MemPoolTypes.h"
 #include "System/UnorderedMap.hpp"
+
+#include <cstddef>
+#include <memory>
+#include <vector>
 
 #define LMP_USE_CHUNK_TABLE 0
 
 class CLuaHandle;
+
 class LuaMemPool {
 public:
 	explicit LuaMemPool(bool isEnabled);
 	explicit LuaMemPool(size_t lmpIndex);
 
-	~LuaMemPool() {
+	~LuaMemPool()
+	{
 		Clear();
 
 		if (!LuaMemPool::enabled)
@@ -29,8 +31,8 @@ public:
 	LuaMemPool(const LuaMemPool& p) = delete;
 	LuaMemPool(LuaMemPool&& p) = delete;
 
-	LuaMemPool& operator = (const LuaMemPool& p) = delete;
-	LuaMemPool& operator = (LuaMemPool&& p) = delete;
+	LuaMemPool& operator=(const LuaMemPool& p) = delete;
+	LuaMemPool& operator=(LuaMemPool&& p) = delete;
 
 public:
 	static size_t GetPoolCount();
@@ -51,12 +53,15 @@ public:
 
 	void LogStats(const char* handle, const char* lctype);
 
-	size_t  GetGlobalIndex() const { return globalIndex; }
-	size_t  GetSharedCount() const { return sharedCount; }
-	size_t& GetSharedCount()       { return sharedCount; }
+	size_t GetGlobalIndex() const { return globalIndex; }
+
+	size_t GetSharedCount() const { return sharedCount; }
+
+	size_t& GetSharedCount() { return sharedCount; }
 
 public:
 	static bool enabled;
+
 private:
 	static constexpr uint32_t NUM_BUCKETS = 32;
 	static constexpr uint32_t BUCKET_STEP = 16;
@@ -75,7 +80,7 @@ private:
 		STAT_NTE = 8, // cumulative time spent on external allocs
 	};
 
-	std::array<uint64_t, 9> allocStats = { 0, 0, 0, 0, 0 };
+	std::array<uint64_t, 9> allocStats = {0, 0, 0, 0, 0};
 
 	size_t globalIndex = 0;
 	size_t sharedCount = 0;

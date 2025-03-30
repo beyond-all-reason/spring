@@ -2,10 +2,9 @@
 
 #include "LuaSyncedTable.h"
 
-#include "LuaInclude.h"
-
 #include "LuaHandleSynced.h"
 #include "LuaHashString.h"
+#include "LuaInclude.h"
 #include "LuaUtils.h"
 
 
@@ -38,8 +37,9 @@ static int SyncTableIndex(lua_State* dstL)
 	const int valueCopied = LuaUtils::CopyData(dstL, srcL, 1);
 	if (lua_istable(dstL, -1)) {
 		// disallow writing in SYNCED[...]
-		lua_createtable(dstL, 0, 2); {
-			LuaPushNamedCFunc(dstL, "__newindex",  SyncTableNewIndex);
+		lua_createtable(dstL, 0, 2);
+		{
+			LuaPushNamedCFunc(dstL, "__newindex", SyncTableNewIndex);
 			LuaPushNamedCFunc(dstL, "__metatable", SyncTableMetatable);
 		}
 		lua_setmetatable(dstL, -2);
@@ -52,13 +52,11 @@ static int SyncTableIndex(lua_State* dstL)
 	return valueCopied;
 }
 
-
 static int SyncTableNewIndex(lua_State* L)
 {
 	luaL_error(L, "Attempt to write to SYNCED table");
 	return 0;
 }
-
 
 static int SyncTableMetatable(lua_State* L)
 {
@@ -66,37 +64,38 @@ static int SyncTableMetatable(lua_State* L)
 	return 0;
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
 /***
  * Proxy table for reading synced global state in unsynced code.
- * 
+ *
  * **Generally not recommended.** Instead, listen to the same events as synced
  * and build the table in parallel
- * 
+ *
  * Unsynced code can read from the synced global table (`_G`) using the `SYNCED`
  * proxy table. e.g. `_G.foo` can be access from unsynced via `SYNCED.foo`.
- * 
+ *
  * This table makes *a copy* of the object on the other side, and only copies
  * numbers, strings, bools and tables (recursively but with the type
  * restriction), in particular this does not allow access to functions.
- * 
+ *
  * Note that this makes a copy on each access, so is very slow and will not
  * reflect changes. Cache it, but remember to refresh.
- * 
- * 
+ *
+ *
  * @global SYNCED table<string, any>
  */
 bool LuaSyncedTable::PushEntries(lua_State* L)
 {
 	HSTR_PUSH(L, "SYNCED");
-	lua_newtable(L); { // the proxy table
+	lua_newtable(L);
+	{ // the proxy table
 
-		lua_createtable(L, 0, 3); { // the metatable
-			LuaPushNamedCFunc(L, "__index",     SyncTableIndex);
-			LuaPushNamedCFunc(L, "__newindex",  SyncTableNewIndex);
+		lua_createtable(L, 0, 3);
+		{ // the metatable
+			LuaPushNamedCFunc(L, "__index", SyncTableIndex);
+			LuaPushNamedCFunc(L, "__newindex", SyncTableNewIndex);
 			LuaPushNamedCFunc(L, "__metatable", SyncTableMetatable);
 		}
 
@@ -106,7 +105,6 @@ bool LuaSyncedTable::PushEntries(lua_State* L)
 
 	return true;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/

@@ -5,15 +5,15 @@
 
 #include "LuaInclude.h"
 #include "LuaUtils.h"
+
 #include "Map/MetalMap.h"
 #include "Map/ReadMap.h"
-
 #include "System/Misc/TracyDefs.h"
 
 /******************************************************************************
  * Metal Map Lua API
  * @see rts/Lua/LuaMetalMap.cpp
-******************************************************************************/
+ ******************************************************************************/
 
 bool LuaMetalMap::PushReadEntries(lua_State* L)
 {
@@ -95,9 +95,6 @@ int LuaMetalMap::GetMetalExtraction(lua_State* L)
 	lua_pushnumber(L, metalMap.GetMetalExtraction(x, z));
 	return 1;
 }
-
-
-
 
 /******************************************************************************/
 /******************************************************************************/

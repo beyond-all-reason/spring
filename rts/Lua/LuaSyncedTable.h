@@ -8,8 +8,8 @@
 struct lua_State;
 
 class LuaSyncedTable {
-	public:
-		static bool PushEntries(lua_State* L);
+public:
+	static bool PushEntries(lua_State* L);
 };
 
 #endif /* LUA_SYNCED_TABLE_H */

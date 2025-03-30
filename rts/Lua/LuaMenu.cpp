@@ -2,32 +2,31 @@
 
 #include "LuaMenu.h"
 
-#include "LuaInclude.h"
 #include "LuaArchive.h"
 #include "LuaCallInCheck.h"
 #include "LuaConstEngine.h"
 #include "LuaConstGL.h"
 #include "LuaConstPlatform.h"
 #include "LuaIO.h"
+#include "LuaInclude.h"
 #include "LuaOpenGL.h"
 #include "LuaScream.h"
-#include "LuaUtils.h"
+#include "LuaUI.h"
 #include "LuaUnitDefs.h"
 #include "LuaUnsyncedCtrl.h"
 #include "LuaUnsyncedRead.h"
+#include "LuaUtils.h"
 #include "LuaVFS.h"
 #include "LuaVFSDownload.h"
 #include "LuaZip.h"
 
-#include "System/EventHandler.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/EventHandler.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/Threading/SpringThreading.h"
 #include "lib/luasocket/src/luasocket.h"
-#include "LuaUI.h"
-
-#include "System/Misc/TracyDefs.h"
 
 CLuaMenu* luaMenu = nullptr;
 
@@ -41,12 +40,11 @@ static spring::mutex m_singleton;
 DECL_LOAD_HANDLER(CLuaMenu, luaMenu)
 DECL_FREE_HANDLER(CLuaMenu, luaMenu)
 
-
 /******************************************************************************/
 /******************************************************************************/
 
 CLuaMenu::CLuaMenu()
-: CLuaHandle("LuaMenu", LUA_HANDLE_ORDER_MENU, true, false)
+    : CLuaHandle("LuaMenu", LUA_HANDLE_ORDER_MENU, true, false)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	luaMenu = this;
@@ -61,7 +59,7 @@ CLuaMenu::CLuaMenu()
 	std::string code = LoadFile(file);
 
 	LOG("LuaMenu Entry Point: \"%s\"", file.c_str());
-	//LOG("LuaSocket Enabled: %s", (luaSocketEnabled ? "yes": "no" ));
+	// LOG("LuaSocket Enabled: %s", (luaSocketEnabled ? "yes": "no" ));
 
 	if (code.empty()) {
 		KillLua();
@@ -77,7 +75,7 @@ CLuaMenu::CLuaMenu()
 	LUA_OPEN_LIB(L, luaopen_string);
 	LUA_OPEN_LIB(L, luaopen_debug);
 
-	//initialize luasocket
+	// initialize luasocket
 	if (luaSocketEnabled)
 		InitLuaSocket(L);
 
@@ -90,16 +88,27 @@ CLuaMenu::CLuaMenu()
 
 	// remove a few dangerous calls
 	lua_getglobal(L, "io");
-	lua_pushstring(L, "popen"); lua_pushnil(L); lua_rawset(L, -3);
+	lua_pushstring(L, "popen");
+	lua_pushnil(L);
+	lua_rawset(L, -3);
 	lua_pop(L, 1);
-	lua_getglobal(L, "os"); {
-		lua_pushliteral(L, "exit");      lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "execute");   lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "remove");    lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "rename");    lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "tmpname");   lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "getenv");    lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "setlocale"); lua_pushnil(L); lua_rawset(L, -3);
+	lua_getglobal(L, "os");
+	{
+		lua_pushliteral(L, "exit");
+		lua_pushnil(L);
+		lua_rawset(L, -3);
+		lua_pushliteral(L, "execute");
+		lua_pushnil(L);
+		lua_rawset(L, -3);
+		// lua_pushliteral(L, "remove");    lua_pushnil(L); lua_rawset(L, -3);
+		// lua_pushliteral(L, "rename");    lua_pushnil(L); lua_rawset(L, -3);
+		lua_pushliteral(L, "tmpname");
+		lua_pushnil(L);
+		lua_rawset(L, -3);
+		lua_pushliteral(L, "getenv");
+		lua_pushnil(L);
+		lua_rawset(L, -3);
+		// lua_pushliteral(L, "setlocale"); lua_pushnil(L); lua_rawset(L, -3);
 	}
 	lua_pop(L, 1); // os
 
@@ -108,22 +117,18 @@ CLuaMenu::CLuaMenu()
 	AddBasicCalls(L); // into Global
 
 	// load the spring libraries
-	if (
-		!AddEntriesToTable(L, "Spring",    LoadUnsyncedCtrlFunctions)      ||
-		!AddEntriesToTable(L, "Spring",    LoadUnsyncedReadFunctions)      ||
-		!AddEntriesToTable(L, "Spring",    LoadLuaMenuFunctions)           ||
-		!AddEntriesToTable(L, "Engine",    LuaConstEngine::PushEntries)    ||
-		!AddEntriesToTable(L, "Platform",  LuaConstPlatform::PushEntries)  ||
-		!AddEntriesToTable(L, "Script",    LuaScream::PushEntries)         ||
-		!AddEntriesToTable(L, "VFS",       LuaVFS::PushUnsynced)           ||
-		!AddEntriesToTable(L, "VFS",       LuaZipFileReader::PushUnsynced) ||
-		!AddEntriesToTable(L, "VFS",       LuaZipFileWriter::PushUnsynced) ||
-		!AddEntriesToTable(L, "VFS",       LuaArchive::PushEntries)        ||
-		!AddEntriesToTable(L, "gl",        LuaOpenGL::PushEntries)         ||
-		!AddEntriesToTable(L, "GL",        LuaConstGL::PushEntries)        ||
-		!AddEntriesToTable(L, "LOG",       LuaUtils::PushLogEntries)       ||
-		!AddEntriesToTable(L, "VFS",       LuaVFSDownload::PushEntries)
-	) {
+	if (!AddEntriesToTable(L, "Spring", LoadUnsyncedCtrlFunctions) ||
+	    !AddEntriesToTable(L, "Spring", LoadUnsyncedReadFunctions) ||
+	    !AddEntriesToTable(L, "Spring", LoadLuaMenuFunctions) ||
+	    !AddEntriesToTable(L, "Engine", LuaConstEngine::PushEntries) ||
+	    !AddEntriesToTable(L, "Platform", LuaConstPlatform::PushEntries) ||
+	    !AddEntriesToTable(L, "Script", LuaScream::PushEntries) || !AddEntriesToTable(L, "VFS", LuaVFS::PushUnsynced) ||
+	    !AddEntriesToTable(L, "VFS", LuaZipFileReader::PushUnsynced) ||
+	    !AddEntriesToTable(L, "VFS", LuaZipFileWriter::PushUnsynced) ||
+	    !AddEntriesToTable(L, "VFS", LuaArchive::PushEntries) || !AddEntriesToTable(L, "gl", LuaOpenGL::PushEntries) ||
+	    !AddEntriesToTable(L, "GL", LuaConstGL::PushEntries) ||
+	    !AddEntriesToTable(L, "LOG", LuaUtils::PushLogEntries) ||
+	    !AddEntriesToTable(L, "VFS", LuaVFSDownload::PushEntries)) {
 		KillLua();
 		return;
 	}
@@ -149,7 +154,6 @@ CLuaMenu::~CLuaMenu()
 	luaMenu = nullptr;
 }
 
-
 string CLuaMenu::LoadFile(const string& name) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -162,8 +166,8 @@ string CLuaMenu::LoadFile(const string& name) const
 	return code;
 }
 
-
-void CLuaMenu::InitLuaSocket(lua_State* L) {
+void CLuaMenu::InitLuaSocket(lua_State* L)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	std::string code;
 	std::string filename = "socket.lua";
@@ -173,22 +177,26 @@ void CLuaMenu::InitLuaSocket(lua_State* L) {
 
 	if (f.LoadStringData(code)) {
 		LoadCode(L, std::move(code), filename);
-	} else {
+	}
+	else {
 		LOG_L(L_ERROR, "Error loading %s", filename.c_str());
 	}
 }
 
-
 bool CLuaMenu::RemoveSomeOpenGLFunctions(lua_State* L)
 {
 	// remove some spring opengl functions that don't work preloading
-	lua_getglobal(L, "gl"); {
-		#define PUSHNIL(x) lua_pushliteral(L, #x); lua_pushnil(L); lua_rawset(L, -3)
+	lua_getglobal(L, "gl");
+	{
+#define PUSHNIL(x)          \
+	lua_pushliteral(L, #x); \
+	lua_pushnil(L);         \
+	lua_rawset(L, -3)
 		PUSHNIL(DrawMiniMap);
 		PUSHNIL(SlaveMiniMap);
 		PUSHNIL(ConfigMiniMap);
 
-		//FIXME create a way to render model files
+		// FIXME create a way to render model files
 		PUSHNIL(Unit);
 		PUSHNIL(UnitRaw);
 		PUSHNIL(UnitShape);
@@ -211,7 +219,6 @@ bool CLuaMenu::RemoveSomeOpenGLFunctions(lua_State* L)
 	return true;
 }
 
-
 bool CLuaMenu::LoadUnsyncedCtrlFunctions(lua_State* L)
 {
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, Echo);
@@ -225,7 +232,7 @@ bool CLuaMenu::LoadUnsyncedCtrlFunctions(lua_State* L)
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetSoundStreamVolume);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetSoundEffectParams);
 
-	//REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetTeamColor);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetTeamColor);
 
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, ExtractModArchiveFile);
@@ -259,7 +266,6 @@ bool CLuaMenu::LoadUnsyncedCtrlFunctions(lua_State* L)
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SDLStopTextInput);
 	return true;
 }
-
 
 bool CLuaMenu::LoadLuaMenuFunctions(lua_State* L)
 {
@@ -389,7 +395,6 @@ void CLuaMenu::ActivateMenu(const std::string& msg)
 	RunCallIn(L, cmdStr, 1, 0);
 }
 
-
 /*** Called whenever LuaMenu is on with a game loaded.
  *
  * @function Menu:ActivateGame
@@ -408,7 +413,6 @@ void CLuaMenu::ActivateGame()
 	// call the routine
 	RunCallIn(L, cmdStr, 0, 0);
 }
-
 
 /***
  * Enables Draw{Genesis,Screen,ScreenPost} callins if true is returned,
@@ -439,7 +443,6 @@ bool CLuaMenu::AllowDraw()
 
 	return retval;
 }
-
 
 int CLuaMenu::SendLuaUIMsg(lua_State* L)
 {
