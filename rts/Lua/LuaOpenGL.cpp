@@ -389,11 +389,9 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetTextHeight);
 
 	REGISTER_LUA_CFUNC(Unit);
-	REGISTER_LUA_CFUNC(UnitGL4);
 	REGISTER_LUA_CFUNC(UnitRaw);
 	REGISTER_LUA_CFUNC(UnitTextures);
 	REGISTER_LUA_CFUNC(UnitShape);
-	REGISTER_LUA_CFUNC(UnitShapeGL4);
 	REGISTER_LUA_CFUNC(UnitShapeTextures);
 	REGISTER_LUA_CFUNC(UnitMultMatrix);
 	REGISTER_LUA_CFUNC(UnitPiece);
@@ -401,11 +399,9 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(UnitPieceMultMatrix);
 
 	REGISTER_LUA_CFUNC(Feature);
-	REGISTER_LUA_CFUNC(FeatureGL4);
 	REGISTER_LUA_CFUNC(FeatureRaw);
 	REGISTER_LUA_CFUNC(FeatureTextures);
 	REGISTER_LUA_CFUNC(FeatureShape);
-	REGISTER_LUA_CFUNC(FeatureShapeGL4);
 	REGISTER_LUA_CFUNC(FeatureShapeTextures);
 	REGISTER_LUA_CFUNC(FeatureMultMatrix);
 	REGISTER_LUA_CFUNC(FeaturePiece);
@@ -1674,15 +1670,6 @@ int LuaOpenGL::Unit(lua_State* L) { return (UnitCommon(L, true, true)); }
 int LuaOpenGL::UnitRaw(lua_State* L) { return (UnitCommon(L, false, false)); }
 
 /***
- * @function gl.UnitGL4
- * @deprecated
- */
-int LuaOpenGL::UnitGL4(lua_State* L)
-{
-	return 0;
-}
-
-/***
  * @function gl.UnitTextures
  * @param unitID integer
  * @param push boolean If `true`, push the render state; if `false`, pop it.
@@ -1706,15 +1693,6 @@ int LuaOpenGL::UnitShape(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
 	GLObjectShape(L, unitDefHandler->GetUnitDefByID(luaL_checkint(L, 1)));
-	return 0;
-}
-
-/***
- * @function gl.UnitShapeGL4
- * @deprecated
- */
-int LuaOpenGL::UnitShapeGL4(lua_State* L)
-{
 	return 0;
 }
 
@@ -1858,15 +1836,6 @@ int LuaOpenGL::Feature(lua_State* L) { return (FeatureCommon(L, true, true)); }
 int LuaOpenGL::FeatureRaw(lua_State* L) { return (FeatureCommon(L, false, false)); }
 
 /***
- * @function gl.FeatureGL4
- * @deprecated
- */
-int LuaOpenGL::FeatureGL4(lua_State* L)
-{
-	return 0;
-}
-
-/***
  * @function gl.FeatureTextures
  * @param featureID integer
  * @param push boolean If `true`, push the render state; if `false`, pop it.
@@ -1890,15 +1859,6 @@ int LuaOpenGL::FeatureShape(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
 	GLObjectShape(L, featureDefHandler->GetFeatureDefByID(luaL_checkint(L, 1)));
-	return 0;
-}
-
-/***
- * @function gl.FeatureShapeGL4
- * @deprecated
- */
-int LuaOpenGL::FeatureShapeGL4(lua_State* L)
-{
 	return 0;
 }
 
