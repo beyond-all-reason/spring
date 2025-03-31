@@ -176,6 +176,8 @@ public:
 	float iconScale = 1.0f;
 	float iconFadeStart = 3000.0f;
 	float iconFadeVanish = 1000.0f;
+
+	void ConfigNotify(const std::string& key, const std::string& value);
 private:
 	SavedData savedData;
 
