@@ -4,6 +4,8 @@ title: {{ type_name }}
 parent: Lua API
 permalink: lua-api/types/{{ type_name }}
 ---
+{# Use `render_with_liquid: false` when we upgrade to Jekyl >=4.0 #}
+{{ "{% raw %}" }}
 
 # class {{ type_name }}
 
@@ -45,3 +47,5 @@ permalink: lua-api/types/{{ type_name }}
 {% endif %}
 {% endfor %}
 {% endif %}
+
+{{ "{% endraw %}" }}
