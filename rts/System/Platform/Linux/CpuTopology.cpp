@@ -174,9 +174,8 @@ uint32_t get_thread_cache(int cpu) {
 }
 
 ProcessorGroupCaches& get_group_cache(ProcessorCaches& processorCaches, uint32_t cacheSize) {
-	auto foundCache = std::find_if
-		( processorCaches.groupCaches.begin()
-		, processorCaches.groupCaches.end()
+	auto foundCache = std::ranges::find_if
+		( processorCaches.groupCaches
 		, [cacheSize](const auto& gc) -> bool { return (gc.cacheSizes[2] == cacheSize); });
 
 	if (foundCache == processorCaches.groupCaches.end()) {
