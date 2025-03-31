@@ -4,6 +4,8 @@ title: {{ module_name }}
 parent: Lua API
 permalink: lua-api/modules/{{ module_name }}
 ---
+{# Use `render_with_liquid: false` when we upgrade to Jekyl >=4.0 #}
+{{ "{% raw %}" }}
 
 # {{ module_name }}
 
@@ -38,3 +40,5 @@ permalink: lua-api/modules/{{ module_name }}
 {% endif %}
 {% endfor %}
 {% endif %}
+
+{{ "{% endraw %}" }}
