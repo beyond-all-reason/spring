@@ -153,7 +153,7 @@ namespace Threading {
 		const uint32_t affinityMask = GetSystemAffinityMask();
 
 		// The cache groups from GetProcessorCaches() are sorted in order of largest first. Find the first group that
-		// has a logicial processor that will be used to pin the main/worker threads.
+		// has a logical processor that will be used to pin the main/worker threads.
 		auto preferredCache = std::ranges::find_if(pc.groupCaches
 			, [affinityMask](const auto& gc) -> bool { return !!(affinityMask & gc.groupMask); });
 		
@@ -173,7 +173,7 @@ namespace Threading {
 		const uint32_t policy = pm.performanceCoreMask | pm.efficiencyCoreMask;
 		#endif
 
-		// Choose last logicial processor in the list.
+		// Choose last logical processor in the list.
 		return ( 0x80000000 >> std::countl_zero(policy) );
 	}
 
