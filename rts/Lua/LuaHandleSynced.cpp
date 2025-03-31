@@ -211,6 +211,7 @@ void CUnsyncedLuaHandle::RecvFromSynced(lua_State* srcState, int args)
  * @param unitID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
+ * @deprecated
  */
 bool CUnsyncedLuaHandle::DrawUnit(const CUnit* unit)
 {
@@ -247,6 +248,7 @@ bool CUnsyncedLuaHandle::DrawUnit(const CUnit* unit)
  * @param featureID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
+ * @deprecated
  */
 bool CUnsyncedLuaHandle::DrawFeature(const CFeature* feature)
 {
@@ -283,6 +285,7 @@ bool CUnsyncedLuaHandle::DrawFeature(const CFeature* feature)
  * @param weaponID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
+ * @deprecated
  */
 bool CUnsyncedLuaHandle::DrawShield(const CUnit* unit, const CWeapon* weapon)
 {
@@ -320,6 +323,7 @@ bool CUnsyncedLuaHandle::DrawShield(const CUnit* unit, const CWeapon* weapon)
  * @param projectileID integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
+ * @deprecated
  */
 bool CUnsyncedLuaHandle::DrawProjectile(const CProjectile* projectile)
 {
@@ -357,6 +361,7 @@ bool CUnsyncedLuaHandle::DrawProjectile(const CProjectile* projectile)
  * @param uuid number
  * @param drawMode number
  * @return boolean suppressEngineDraw
+ * @deprecated
  */
 bool CUnsyncedLuaHandle::DrawMaterial(const LuaMaterial* material)
 {
