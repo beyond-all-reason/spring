@@ -2,7 +2,6 @@
 
 #include "System/Log/ILog.h"
 
-#include <algorithm>
 #include <bit>
 #include <set>
 #include <windows.h>
@@ -224,17 +223,6 @@ ProcessorCaches GetProcessorCache() {
 
 	if (buffer)
 		free(buffer);
-
-	std::stable_sort
-		( processorCaches.groupCaches.begin()
-		, processorCaches.groupCaches.end()
-		// sort larger to the bottom.
-		, [](const auto &lh, const auto &rh) -> bool { return lh.cacheSizes[2] > rh.cacheSizes[2]; });
-
-	std::for_each
-		( processorCaches.groupCaches.begin()
-		, processorCaches.groupCaches.end()
-		, [](const auto& cache) -> void { LOG("Found logical processors (mask 0x%08x) using L3 cache (sized %dKB) ", cache.groupMask, cache.cacheSizes[2] / 1024); });
 
 	return processorCaches;
 }

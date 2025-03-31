@@ -209,18 +209,6 @@ ProcessorCaches GetProcessorCache() {
 		groupCache.groupMask |= (0x1 << cpu);
 	}
 
-	std::stable_sort
-		( processorCaches.groupCaches.begin()
-		, processorCaches.groupCaches.end()
-		// sort larger to the bottom.
-		, [](const auto &lh, const auto &rh) -> bool { return lh.cacheSizes[2] > rh.cacheSizes[2]; });
-
-	std::for_each
-		( processorCaches.groupCaches.begin()
-		, processorCaches.groupCaches.end()
-		, [](const auto& cache) -> void { LOG("Found logical processors (mask 0x%08x) using L3 cache (sized %dKB) ", cache.groupMask, cache.cacheSizes[2] / 1024); });
-
-
 	return processorCaches;
 }
 

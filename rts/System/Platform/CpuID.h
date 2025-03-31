@@ -51,6 +51,9 @@ namespace springproc {
 		bool HasHyperThreading() const { return smtDetected; };
 
 		cpu_topology::ProcessorMasks GetAvailableProcessorAffinityMask() const { return processorMasks; };
+
+		// Logical processor masks and the L3 cache they have access to. The list is sorted groups with largest cache
+		// first.
 		cpu_topology::ProcessorCaches GetProcessorCaches() const { return processorCaches; }
 
 	private:

@@ -13,6 +13,7 @@
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedSet.hpp"
 
+#include <algorithm>
 #include <bitset>
 #include <cassert>
 #include <tuple>
@@ -97,6 +98,17 @@ namespace springproc {
 	void CPUID::EnumerateCores() {
 		processorMasks = cpu_topology::GetProcessorMasks();
 		processorCaches = cpu_topology::GetProcessorCache();
+
+		// Sort the logicial processor groups to move the groups with the largest cache to the front. This will make it
+		// easier for policies to make decisions on logicial processor groups based on cache size.
+		std::ranges::stable_sort
+			( processorCaches.groupCaches
+			// sort larger to the bottom.
+			, [](const auto &lh, const auto &rh) -> bool { return lh.cacheSizes[2] > rh.cacheSizes[2]; });
+
+		std::ranges::for_each
+			( processorCaches.groupCaches
+			, [](const auto& cache) -> void { LOG("Found logical processors (mask 0x%08x) using L3 cache (sized %dKB) ", cache.groupMask, cache.cacheSizes[2] / 1024); });
 
 		const uint32_t logicalCountMask  = (processorMasks.efficiencyCoreMask | processorMasks.performanceCoreMask);
 		const uint32_t perfCoreCountMask = processorMasks.performanceCoreMask & ~processorMasks.hyperThreadHighMask;
