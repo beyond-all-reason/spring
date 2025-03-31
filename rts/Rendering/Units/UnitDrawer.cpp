@@ -403,14 +403,15 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 				else {
 					currentColor = teamHandler.Team(unit->team)->color;
 				}
-			}
-			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
-				if (ghostIconDimming == 0.0f)
-					continue;
 
-				currentColor.r *= ghostIconDimming;
-				currentColor.g *= ghostIconDimming;
-				currentColor.b *= ghostIconDimming;
+				if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
+					if (ghostIconDimming == 0.0f)
+						continue;
+
+					currentColor.r *= ghostIconDimming;
+					currentColor.g *= ghostIconDimming;
+					currentColor.b *= ghostIconDimming;
+				}
 			}
 
 			const float iconScale = CUnitDrawerHelper::GetUnitIconScale(unit);
@@ -649,9 +650,11 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
 				if (!ghostIconDimming)
 					continue;
-				color.r *= ghostIconDimming;
-				color.g *= ghostIconDimming;
-				color.b *= ghostIconDimming;
+				if (!unit->isSelected) {
+					color.r *= ghostIconDimming;
+					color.g *= ghostIconDimming;
+					color.b *= ghostIconDimming;
+				}
 			}
 
 			DrawUnitIconScreen(rb, icon, pos, color, unit->radius, unit->GetIsIcon());
