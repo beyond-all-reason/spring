@@ -661,9 +661,6 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			for (const auto& ghost : ghosts) {
 				float3 pos = ghost->midPos;
 
-				if (gu->spectatingFullView)
-					continue;
-
 				pos = camera->CalcViewPortCoordinates(pos);
 				if (pos.z > 1.0f || pos.z < 0.0f)
 					continue;
