@@ -99,8 +99,8 @@ namespace springproc {
 		processorMasks = cpu_topology::GetProcessorMasks();
 		processorCaches = cpu_topology::GetProcessorCache();
 
-		// Sort the logicial processor groups to move the groups with the largest cache to the front. This will make it
-		// easier for policies to make decisions on logicial processor groups based on cache size.
+		// Sort the logical processor groups to move the groups with the largest cache to the front. This will make it
+		// easier for policies to make decisions on logical processor groups based on cache size.
 		std::ranges::stable_sort
 			( processorCaches.groupCaches
 			// sort larger to the bottom.
