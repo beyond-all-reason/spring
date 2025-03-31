@@ -108,15 +108,18 @@ namespace Threading {
 	#endif
 
 
+	std::once_flag affinityMaskDetailsLogFlag;
 
 	uint32_t GetSystemAffinityMask() {
 		cpu_topology::ProcessorMasks pm = springproc::CPUID::GetInstance().GetAvailableProcessorAffinityMask();
 
-		LOG("CPU Affinity Mask Details detected:");
-		LOG("-- Performance Core Mask:      0x%08x", pm.performanceCoreMask);
-		LOG("-- Efficiency  Core Mask:      0x%08x", pm.efficiencyCoreMask);
-		LOG("-- Hyper Thread/SMT Low Mask:  0x%08x", pm.hyperThreadLowMask);
-		LOG("-- Hyper Thread/SMT High Mask: 0x%08x", pm.hyperThreadHighMask);
+		std::call_once(affinityMaskDetailsLogFlag, [&](){
+			LOG("CPU Affinity Mask Details detected:");
+			LOG("-- Performance Core Mask:      0x%08x", pm.performanceCoreMask);
+			LOG("-- Efficiency  Core Mask:      0x%08x", pm.efficiencyCoreMask);
+			LOG("-- Hyper Thread/SMT Low Mask:  0x%08x", pm.hyperThreadLowMask);
+			LOG("-- Hyper Thread/SMT High Mask: 0x%08x", pm.hyperThreadHighMask);
+		});
 
 		// Engine worker thread pool are primarily for mutli-threading activies of simulation; though, they are
 		// available to be used by other system while simulation is not running. As such the policy for pinning worker
@@ -130,15 +133,48 @@ namespace Threading {
 		// This doesn't preclude systems from using separate unpinned threads, which the OS should logically try to
 		// move to under used resources, such as low-power cores for example.
 		#if defined(THREADPOOL)
-		uint32_t policy = pm.performanceCoreMask & (~pm.hyperThreadHighMask);
+		const uint32_t policy = pm.performanceCoreMask & (~pm.hyperThreadHighMask);
 		#else
 
 		/* Allow any core; keep it a "proper" mask though
 		 * since that has less risk of blowing up than 0 or 0xFF..FF */
-		uint32_t policy = pm.performanceCoreMask | pm.efficiencyCoreMask;
+		const uint32_t policy = pm.performanceCoreMask | pm.efficiencyCoreMask;
 		#endif
 
 		return policy;
+	}
+
+	std::once_flag preferredMaskDetailsLogFlag;
+
+	uint32_t GetPreferredMainThreadMask() {
+		cpu_topology::ProcessorCaches pc = springproc::CPUID::GetInstance().GetProcessorCaches();
+
+	#if defined(THREADPOOL)
+		const uint32_t affinityMask = GetSystemAffinityMask();
+
+		// The cache groups from GetProcessorCaches() are sorted in order of largest first. Find the first group that
+		// has a logical processor that will be used to pin the main/worker threads.
+		auto preferredCache = std::ranges::find_if(pc.groupCaches
+			, [affinityMask](const auto& gc) -> bool { return !!(affinityMask & gc.groupMask); });
+		
+		std::call_once(preferredMaskDetailsLogFlag, [&](){
+			if (preferredCache != pc.groupCaches.end())
+				LOG("[Threading] Preferred performance cache mask is: 0x%08x (L3 sized: %dKB)", preferredCache->groupMask, preferredCache->cacheSizes[2]/1024);
+			else
+				LOG_L(L_WARNING, "[Threading] Failed to find a preferred performance cache mask");
+		});
+
+		const uint32_t policy = affinityMask
+			& ( (preferredCache != pc.groupCaches.end()) ? preferredCache->groupMask : 0xffffffff );
+	#else
+		/* Allow any core; keep it a "proper" mask though
+		 * since that has less risk of blowing up than 0 or 0xFF..FF */
+		cpu_topology::ProcessorMasks pm = springproc::CPUID::GetInstance().GetAvailableProcessorAffinityMask();
+		const uint32_t policy = pm.performanceCoreMask | pm.efficiencyCoreMask;
+	#endif
+
+		// Choose last logical processor in the list.
+		return ( 0x80000000 >> std::countl_zero(policy) );
 	}
 
 	std::uint32_t GetAffinity()
