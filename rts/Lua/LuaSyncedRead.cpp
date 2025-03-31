@@ -1631,10 +1631,19 @@ int LuaSyncedRead::GetAllyTeamList(lua_State* L)
 
 
 /***
- *
+ * Get all team IDs.
+ * 
  * @function Spring.GetTeamList
- * @param allyTeamID integer? (Default: `-1`) to filter teams belonging to when >= 0
- * @return number[]? list of teamIDs
+ * @param allyTeamID -1|nil (Default: `-1`) 
+ * @return number[] teamIDs List of team IDs.
+ */
+
+/***
+ * Get team IDs in a specific ally team.
+ * 
+ * @function Spring.GetTeamList
+ * @param allyTeamID integer The ally team ID to filter teams by. A value less than 0 will return all teams.
+ * @return number[]? teamIDs List of team IDs or `nil` if `allyTeamID` is invalid.
  */
 int LuaSyncedRead::GetTeamList(lua_State* L)
 {
