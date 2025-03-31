@@ -601,33 +601,22 @@ std::tuple<uint32_t, uint32_t, uint32_t> LuaVBOImpl::GetBufferSize()
 
 
 /***
- * Uploads the data (array of floats) into the VBO
+ * Uploads data into the VBO.
  *
- * ```lua
- * vbo:Upload(posArray, 0, 1)
- * -- 0 is offset into vbo (on GPU) in this case no offset
- * -- 1 is lua index index into the Lua table, in this case it's same as default
- * -- Upload will upload from luaOffset to end of lua array
- * ```
- * 
- * ```lua
- * @usage rectInstanceVBO:Upload({1},0)
- * ```
- * 
  * @function VBO:Upload
- * @param vboData number[] a lua array of values to upload into the VBO
+ * @param vboData number[] Array of values to upload into the VBO.
  * @param attributeIndex integer? (Default: `-1`)
  * 
- * If supplied with non-default value then the data from vboData will only be
+ * If supplied with non-default value then the data from `vboData` will only be
  * used to upload the data to this particular attribute.
  * 
- * The whole vboData is expected to contain only attributeIndex data.
+ * The whole `vboData` is expected to contain only attributeIndex data.
  * 
  * Otherwise all attributes get updated sequentially across attributes and elements.
  *
- * @param elemOffset integer? (Default: `0`) Which VBO element to start uploading data from Lua array into.
- * @param luaStartIndex integer? (Default: `1`) Start uploading from that element in supplied Lua array.
- * @param luaFinishIndex integer? Consider this element the last element in Lua array.
+ * @param elemOffset integer? (Default: `0`) The index in destination VBO (on GPU) at which storing begins.
+ * @param luaStartIndex integer? (Default: `1`) The index of `vboData` at which copying begins.
+ * @param luaFinishIndex integer? (Default: `#vboData`) The index of `vboData` at which copying ends.
  * @return number[] indexData
  * @return integer elemOffset
  * @return integer|[integer,integer,integer,integer] attrID
