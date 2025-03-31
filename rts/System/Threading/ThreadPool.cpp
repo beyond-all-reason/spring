@@ -592,7 +592,9 @@ void SetDefaultThreadCount()
 	std::uint32_t mainAffinity = systemCores;
 
 	#ifndef UNIT_TEST
-	mainAffinity &= configHandler->GetUnsigned("SetCoreAffinity");
+	std::uint32_t configAffinity = configHandler->GetUnsigned("SetCoreAffinity");
+	mainAffinity &= (configAffinity != 0) ? configAffinity : Threading::GetPreferredMainThreadMask();
+	LOG("[ThreadPool] Main thread affinity requested as 0x%08x", mainAffinity);
 	#endif
 
 	std::uint32_t workerAvailCores = systemCores & ~mainAffinity;

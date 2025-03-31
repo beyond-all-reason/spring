@@ -96,6 +96,7 @@ namespace springproc {
 
 	void CPUID::EnumerateCores() {
 		processorMasks = cpu_topology::GetProcessorMasks();
+		processorCaches = cpu_topology::GetProcessorCache();
 
 		const uint32_t logicalCountMask  = (processorMasks.efficiencyCoreMask | processorMasks.performanceCoreMask);
 		const uint32_t perfCoreCountMask = processorMasks.performanceCoreMask & ~processorMasks.hyperThreadHighMask;

@@ -51,6 +51,7 @@ namespace springproc {
 		bool HasHyperThreading() const { return smtDetected; };
 
 		cpu_topology::ProcessorMasks GetAvailableProcessorAffinityMask() const { return processorMasks; };
+		cpu_topology::ProcessorCaches GetProcessorCaches() const { return processorCaches; }
 
 	private:
 		CPUID();
@@ -62,6 +63,7 @@ namespace springproc {
 		int numPerformanceCores;
 
 		cpu_topology::ProcessorMasks processorMasks;
+		cpu_topology::ProcessorCaches processorCaches;
 
 		bool smtDetected;
 	};
