@@ -126,6 +126,7 @@ namespace Threading {
 	bool HasHyperThreading();
 
 	uint32_t GetSystemAffinityMask();
+	uint32_t GetPreferredMainThreadMask();
 
 	/**
 	 * Inform the OS kernel that we are a cpu-intensive task
