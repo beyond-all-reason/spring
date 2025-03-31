@@ -649,9 +649,9 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
 				if (!ghostIconDimming)
 					continue;
-				color.r = color.r*ghostIconDimming;
-				color.g = color.g*ghostIconDimming;
-				color.b = color.b*ghostIconDimming;
+				color.r *= ghostIconDimming;
+				color.g *= ghostIconDimming;
+				color.b *= ghostIconDimming;
 			}
 
 			DrawUnitIconScreen(rb, icon, pos, color, unit->radius, unit->GetIsIcon());
@@ -669,9 +669,9 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 					continue;
 
 				SColor color = SColor{ teamHandler.Team(ghost->team)->color };
-				color.r = color.r*ghostIconDimming;
-				color.g = color.g*ghostIconDimming;
-				color.b = color.b*ghostIconDimming;
+				color.r *= ghostIconDimming;
+				color.g *= ghostIconDimming;
+				color.b *= ghostIconDimming;
 
 				DrawUnitIconScreen(rb, icon, pos, color, ghost->radius, false);
 			}
