@@ -161,4 +161,67 @@ ProcessorMasks GetProcessorMasks() {
 	return processorMasks;
 }
 
+uint32_t get_thread_cache(int cpu) {
+	std::ifstream file("/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cache/index3/size");
+	uint32_t sizeInBytes = 0;
+	if (file) {
+		std::string line;
+		std::getline(file, line);
+		std::istringstream ss(line);
+		ss >> sizeInBytes;
+	}
+	return sizeInBytes;
+}
+
+ProcessorGroupCaches& get_group_cache(ProcessorCaches& processorCaches, uint32_t cacheSize) {
+	auto foundCache = std::find_if
+		( processorCaches.groupCaches.begin()
+		, processorCaches.groupCaches.end()
+		, [cacheSize](const auto& gc) -> bool { return (gc.cacheSizes[2] == cacheSize); });
+
+	if (foundCache == processorCaches.groupCaches.end()) {
+		processorCaches.groupCaches.push_back({});
+		auto& newCacheGroup = processorCaches.groupCaches[processorCaches.groupCaches.size()-1];
+		newCacheGroup.cacheSizes[2] = cacheSize;
+		return newCacheGroup;
+	}
+
+	return (*foundCache);
+}
+
+// Notes.
+// Here we are grouping by the cache size, which isn't the same a groups and their cache sizes.
+// This is fine what our needs at the moment. We're currently only looking a performance core
+// with the most cache for the main thread.
+// We are also only looking at L3 caches at the moment.
+ProcessorCaches GetProcessorCache() {
+	ProcessorCaches processorCaches;
+	int num_cpus = get_cpu_count();
+
+	for (int cpu = 0; cpu < num_cpus; ++cpu) {
+		if (cpu >= MAX_CPUS) {
+			LOG_L(L_WARNING, "CPU index %d exceeds bitset limit.", cpu);
+			continue;
+		}
+		uint32_t cacheSize = get_thread_cache(cpu);
+		ProcessorGroupCaches& groupCache = get_group_cache(processorCaches, cacheSize);
+
+		groupCache.groupMask |= (0x1 << cpu);
+	}
+
+	std::stable_sort
+		( processorCaches.groupCaches.begin()
+		, processorCaches.groupCaches.end()
+		// sort larger to the bottom.
+		, [](const auto &lh, const auto &rh) -> bool { return lh.cacheSizes[2] > rh.cacheSizes[2]; });
+
+	std::for_each
+		( processorCaches.groupCaches.begin()
+		, processorCaches.groupCaches.end()
+		, [](const auto& cache) -> void { LOG("Found logical processors (mask 0x%08x) using L3 cache (sized %dKB) ", cache.groupMask, cache.cacheSizes[2] / 1024); });
+
+
+	return processorCaches;
+}
+
 } //namespace cpu_topology
