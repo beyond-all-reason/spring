@@ -28,6 +28,7 @@
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Models/IModelParser.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
@@ -181,6 +182,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitStealth);
 	REGISTER_LUA_CFUNC(SetUnitSonarStealth);
 	REGISTER_LUA_CFUNC(SetUnitSeismicSignature);
+	REGISTER_LUA_CFUNC(SetUnitLeavesGhost);
 	REGISTER_LUA_CFUNC(SetUnitAlwaysVisible);
 	REGISTER_LUA_CFUNC(SetUnitUseAirLos);
 	REGISTER_LUA_CFUNC(SetUnitMetalExtraction);
@@ -2861,6 +2863,32 @@ int LuaSyncedCtrl::SetUnitSeismicSignature(lua_State* L)
 		return 0;
 
 	unit->seismicSignature = luaL_checkfloat(L, 2);
+	return 0;
+}
+
+/***
+ * @function Spring.SetUnitLeavesGhost
+ *
+ * Change the unit leavesGhost attribute.
+ *
+ * Controls unit having static radar ghosts.
+ *
+ * @number unitID
+ * @bool leavesGhost
+ * @bool[opt] leaveDeadGhost leave a dead ghost behind if disabling and the unit had a live static ghost.
+ * @treturn nil
+ */
+int LuaSyncedCtrl::SetUnitLeavesGhost(lua_State* L)
+{
+	if (!gameSetup->ghostedBuildings)
+		return 0;
+
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	unit->SetLeavesGhost(luaL_checkboolean(L, 2), luaL_optboolean(L, 3, false));
 	return 0;
 }
 

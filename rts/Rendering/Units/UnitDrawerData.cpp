@@ -256,7 +256,7 @@ const icon::CIconData* CUnitDrawerData::GetUnitIcon(const CUnit* unit)
 	// use the unit's custom icon if we can currently see it,
 	// or have seen it before and did not lose contact since
 	bool unitVisible = ((losStatus & (LOS_INLOS | LOS_INRADAR)) && ((losStatus & prevMask) == prevMask));
-	unitVisible |= gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit() && (losStatus & LOS_PREVLOS);
+	unitVisible |= unit->leavesGhost && (losStatus & LOS_PREVLOS);
 	const bool customIcon = (unitVisible || gu->spectatingFullView);
 
 	if (customIcon)
@@ -586,15 +586,16 @@ void CUnitDrawerData::RenderUnitCreated(const CUnit* unit, int cloaked)
 	UpdateUnitIcon(unit, false, false);
 }
 
-void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
+bool CUnitDrawerData::UpdateUnitGhosts(const CUnit* unit, const bool addNewGhost)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
+	if (!gameSetup->ghostedBuildings)
+		return false;
+
+	bool addedOwnAllyTeam = false;
 	CUnit* u = const_cast<CUnit*>(unit);
 
 	const UnitDef* unitDef = unit->unitDef;
 	const UnitDef* decoyDef = unitDef->decoyDef;
-
-	const bool addNewGhost = unitDef->IsBuildingUnit() && gameSetup->ghostedBuildings;
 
 	// TODO - make ghosted buildings per allyTeam - so they are correctly dealt with
 	// when spectating
@@ -634,10 +635,23 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 			if (allyTeam == gu->myAllyTeam) {
 				unitsByIcon[u->myIcon].second.push_back(gso);
 			}
+			u->losStatus[allyTeam] &= ~LOS_PREVLOS;
+			if (allyTeam == gu->myAllyTeam)
+				addedOwnAllyTeam = true;
+
 		}
 
 		spring::VectorErase(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(u)], u);
 	}
+	return addedOwnAllyTeam;
+}
+
+void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	CUnit* u = const_cast<CUnit*>(unit);
+
+	UpdateUnitGhosts(unit, unit->leavesGhost);
 
 	DelObject(unit, true);
 	UpdateUnitIcon(unit, false, true);
@@ -659,7 +673,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
-	if (gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit())
+	if (unit->leavesGhost)
 		spring::VectorErase(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u);
 
 	if (allyTeam != gu->myAllyTeam)
@@ -673,13 +687,22 @@ void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = const_cast<CUnit*>(unit); //cleanup
 
-	if (gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit())
+	if (unit->leavesGhost)
 		spring::VectorInsertUnique(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u, true);
 
 	if (allyTeam != gu->myAllyTeam)
 		return;
 
 	UpdateUnitIcon(unit, false, false);
+}
+
+void CUnitDrawerData::UnitLeavesGhostChanged(const CUnit* unit, const bool leaveDeadGhost)
+{
+	if (unit->leavesGhost)
+		return;
+
+	if (UpdateUnitGhosts(unit, leaveDeadGhost))
+		UpdateUnitIcon(unit, false, true);
 }
 
 void CUnitDrawerData::PlayerChanged(int playerNum)

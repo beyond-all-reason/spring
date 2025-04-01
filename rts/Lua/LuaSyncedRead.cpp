@@ -217,6 +217,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitArmored);
 	REGISTER_LUA_CFUNC(GetUnitIsActive);
 	REGISTER_LUA_CFUNC(GetUnitIsCloaked);
+	REGISTER_LUA_CFUNC(GetUnitLeavesGhost);
 	REGISTER_LUA_CFUNC(GetUnitSelfDTime);
 	REGISTER_LUA_CFUNC(GetUnitStockpile);
 	REGISTER_LUA_CFUNC(GetUnitSensorRadius);
@@ -3878,6 +3879,22 @@ int LuaSyncedRead::GetUnitSeismicSignature(lua_State* L)
 		return 0;
 
 	lua_pushnumber(L, unit->seismicSignature);
+	return 1;
+}
+
+/***
+ *
+ * @function Spring.GetUnitLeavesGhost
+ * @number unitID
+ * @treturn nil|number
+ */
+int LuaSyncedRead::GetUnitLeavesGhost(lua_State* L)
+{
+	const CUnit* const unit = ParseAllyUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+
+	lua_pushboolean(L, unit->leavesGhost);
 	return 1;
 }
 
