@@ -670,7 +670,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 				if (pos.z > 1.0f || pos.z < 0.0f)
 					continue;
 
-				currentColor = SColor{ teamHandler.Team(ghost->team)->color };
+				currentColor = teamHandler.Team(ghost->team)->color;
 				currentColor.r *= ghostIconDimming;
 				currentColor.g *= ghostIconDimming;
 				currentColor.b *= ghostIconDimming;
