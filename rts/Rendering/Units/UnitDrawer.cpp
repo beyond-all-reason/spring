@@ -615,8 +615,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 		if (icon == nullptr)
 			continue;
 
-		const auto& units = objects.first;
-		const auto& ghosts = objects.second;
+		const auto& [units, ghosts] = objects;
 
 		if (units.empty() && ghosts.empty())
 			continue;
@@ -648,7 +647,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			// use white for selected units
 			SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
 			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
-				if (!ghostIconDimming)
+				if (ghostIconDimming == 0.0f)
 					continue;
 				if (!unit->isSelected) {
 					color.r *= ghostIconDimming;
@@ -660,7 +659,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			DrawUnitIconScreen(rb, icon, pos, color, unit->radius, unit->GetIsIcon());
 		}
 
-		if (!gu->spectatingFullView && ghostIconDimming) {
+		if (!gu->spectatingFullView && ghostIconDimming > 0.0f) {
 			for (const auto& ghost : ghosts) {
 				float3 pos = ghost->midPos;
 
