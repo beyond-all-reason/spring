@@ -169,6 +169,33 @@ Transform InvertTransformAffine(Transform tra) {
 	);
 }
 
+mat4 TransformToMatrix(Transform tra) {
+	float qxx = tra.quat.x * tra.quat.x;
+	float qyy = tra.quat.y * tra.quat.y;
+	float qzz = tra.quat.z * tra.quat.z;
+	float qxz = tra.quat.x * tra.quat.z;
+	float qxy = tra.quat.x * tra.quat.y;
+	float qyz = tra.quat.y * tra.quat.z;
+	float qrx = tra.quat.w * tra.quat.x;
+	float qry = tra.quat.w * tra.quat.y;
+	float qrz = tra.quat.w * tra.quat.z;
+
+	mat3 rot = mat3(
+		vec3(1.0 - 2.0 * (qyy + qzz), 2.0 * (qxy + qrz)      , 2.0 * (qxz - qry)      ),
+		vec3(2.0 * (qxy - qrz)      , 1.0 - 2.0 * (qxx + qzz), 2.0 * (qyz + qrx)      ),
+		vec3(2.0 * (qxz + qry)      , 2.0 * (qyz - qrx)      , 1.0 - 2.0 * (qxx + qyy))
+	);
+
+	rot *= tra.trSc.w;
+
+	return mat4(
+		vec4(rot[0]      , 0.0),
+		vec4(rot[1]      , 0.0),
+		vec4(rot[2]      , 0.0),
+		vec4(tra.trSc.xyz, 1.0)
+	);
+}
+
 vec4 SLerp(vec4 qa, vec4 qb, float t) {
 	// Calculate angle between them.
 	float cosHalfTheta = dot(qa, qb);
