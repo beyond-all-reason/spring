@@ -386,7 +386,7 @@ void CUnitDrawerGLSL::DrawUnitMiniMapIcons() const
 				continue;
 
 			if (unit->isSelected) {
-				currentColor = SColor{ 255, 255, 255, 255 }; // selected color
+				currentColor = color4::white; // selected color
 			}
 			else {
 				if (minimap->UseSimpleColors()) {
@@ -609,6 +609,7 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 	sh.SetUniform("alphaCtrl", 0.05f, 1.0f, 0.0f, 0.0f); // GL_GREATER > 0.05
 
 	const auto allyTeam = gu->myAllyTeam;
+	SColor currentColor;
 	const float ghostIconDimming = modelDrawerData->ghostIconDimming;
 
 	for (const auto& [icon, objects] : modelDrawerData->GetUnitsByIcon()) {
@@ -644,19 +645,20 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 			if (pos.z > 1.0f || pos.z < 0.0f)
 				continue;
 
-			// use white for selected units
-			SColor color = unit->isSelected ? color4::white : SColor{ teamHandler.Team(unit->team)->color };
-			if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
-				if (ghostIconDimming == 0.0f)
-					continue;
-				if (!unit->isSelected) {
-					color.r *= ghostIconDimming;
-					color.g *= ghostIconDimming;
-					color.b *= ghostIconDimming;
+			if (unit->isSelected) {
+				currentColor = color4::white; // selected color
+			} else {
+				currentColor = teamHandler.Team(unit->team)->color;
+				if (!gu->spectatingFullView && !(unit->losStatus[gu->myAllyTeam] & LOS_INRADAR)) {
+					if (ghostIconDimming == 0.0f)
+						continue;
+					currentColor.r *= ghostIconDimming;
+					currentColor.g *= ghostIconDimming;
+					currentColor.b *= ghostIconDimming;
 				}
 			}
 
-			DrawUnitIconScreen(rb, icon, pos, color, unit->radius, unit->GetIsIcon());
+			DrawUnitIconScreen(rb, icon, pos, currentColor, unit->radius, unit->GetIsIcon());
 		}
 
 		if (!gu->spectatingFullView && ghostIconDimming > 0.0f) {
@@ -667,12 +669,12 @@ void CUnitDrawerGLSL::DrawUnitIconsScreen() const
 				if (pos.z > 1.0f || pos.z < 0.0f)
 					continue;
 
-				SColor color = SColor{ teamHandler.Team(ghost->team)->color };
-				color.r *= ghostIconDimming;
-				color.g *= ghostIconDimming;
-				color.b *= ghostIconDimming;
+				currentColor = SColor{ teamHandler.Team(ghost->team)->color };
+				currentColor.r *= ghostIconDimming;
+				currentColor.g *= ghostIconDimming;
+				currentColor.b *= ghostIconDimming;
 
-				DrawUnitIconScreen(rb, icon, pos, color, ghost->radius, false);
+				DrawUnitIconScreen(rb, icon, pos, currentColor, ghost->radius, false);
 			}
 		}
 
