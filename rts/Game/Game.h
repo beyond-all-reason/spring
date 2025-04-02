@@ -123,6 +123,10 @@ private:
 	int KeyReleased(int keyCode, int scanCode) override;
 	/// Called when the key is pressed by the user (can be called several times due to key repeat)
 	int KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
+
+	bool MousePress(int x, int y, int button) override;
+	bool MouseRelease(int x, int y, int button) override;
+
 	/// Called when the keymap changes (language or keyboard switch)
 	int KeyMapChanged() override;
 	///

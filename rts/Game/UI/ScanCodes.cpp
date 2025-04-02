@@ -4,6 +4,7 @@
 #include <SDL_scancode.h>
 
 #include "ScanCodes.h"
+#include "Game/UI/MouseHandler.h"
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
 
@@ -213,6 +214,10 @@ void CScanCodes::Reset()
 	AddPair("sc_alt",   SDL_SCANCODE_LALT);
 	AddPair("sc_meta",  SDL_SCANCODE_LGUI);
 
+	for (int i = ACTION_BUTTON_MIN; i <= NUM_BUTTONS; i++) {
+		AddPair("sc_mouse" + IntToString(i), CScanCodes::GetMouseButtonSymbol(i));
+	}
+
 	// Miscellaneous function keys
 	AddPair("sc_help", SDL_SCANCODE_HELP);
 	AddPair("sc_printscreen", SDL_SCANCODE_PRINTSCREEN);
@@ -240,6 +245,10 @@ void CScanCodes::Reset()
 	std::copy(codeToName.begin(), codeToName.end(), defaultCodeToName.begin());
 }
 
+int CScanCodes::GetMouseButtonSymbol(int button)
+{
+	return 512+button;
+}
 
 std::string CScanCodes::GetCodeString(int code)
 {
