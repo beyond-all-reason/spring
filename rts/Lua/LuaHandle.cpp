@@ -3467,14 +3467,14 @@ void CLuaHandle::MiniMapMinimizationChanged(const bool isMinimized)
 /*** Called when the MiniMap Geometry changes
  * 
  * @function Callins:MiniMapGeometryChanged
- * @param newPosX number
- * @param newPosY number
- * @param newDimX number
- * @param newDimY number
- * @param oldPosX number
- * @param oldPosY number
- * @param oldDimX number
- * @param oldDimY number
+ * @param newPosX number in pixels
+ * @param newPosY number in pixels
+ * @param newDimX number in pixels
+ * @param newDimY number in pixels
+ * @param oldPosX number in pixels
+ * @param oldPosY number in pixels
+ * @param oldDimX number in pixels
+ * @param oldDimY number in pixels
  */
 void CLuaHandle::MiniMapGeometryChanged(const int2 newPos, const int2 newDim, const int2 oldPos, const int2 oldDim)
 {

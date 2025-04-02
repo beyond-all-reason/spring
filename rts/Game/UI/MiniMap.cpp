@@ -258,13 +258,13 @@ void CMiniMap::ToggleMaximized(bool _maxspect)
 
 void CMiniMap::SetRotation(RotationOptions state) // 0 1 2 3: 0 90 180 270
 {
-    RECOIL_DETAILED_TRACY_ZONE;
+	RECOIL_DETAILED_TRACY_ZONE;
 
-    if (state == rotation)
-        return;
+	if (state == rotation)
+		return;
 
 	const float oldRotation = static_cast<int>(rotation) * math::HALFPI;
-    rotation = state;
+	rotation = state;
 	eventHandler.MiniMapRotationChanged(static_cast<int>(rotation) * math::HALFPI, oldRotation);
 }
 
