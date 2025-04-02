@@ -32,7 +32,8 @@ local isMobileUnit = {}
 local isBuilder = {}
 
 for unitDefID, udef in pairs(UnitDefs) do
-	if not (udef.isBuilding or udef.speed == 0) then
+	if not udef.isImmobile then
+
 		isMobileUnit[unitDefID] = true
 	end
 	if udef.isBuilder and (udef.buildSpeed and udef.buildSpeed > 0) and (udef.buildDistance and udef.buildDistance > 0) then
