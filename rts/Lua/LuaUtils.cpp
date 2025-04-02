@@ -1529,7 +1529,7 @@ LuaUtils::ScopedStackChecker::~ScopedStackChecker()
 /******************************************************************************/
 
 #define DEBUG_TABLE "debug"
-#define DEBUG_FUNC  "traceback"
+#define DEBUG_FUNC "traceback"
 
 /// this function always leaves one item on the stack
 /// and returns its index if valid and zero otherwise

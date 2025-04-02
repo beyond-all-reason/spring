@@ -3434,7 +3434,7 @@ int LuaSyncedCtrl::SetUnitMidAndAimPos(lua_State* L)
 		return 1;
 	}
 
-#define FLOAT(i)        luaL_checkfloat(L, i)
+#define FLOAT(i) luaL_checkfloat(L, i)
 #define FLOAT3(i, j, k) float3(FLOAT(i), FLOAT(j), FLOAT(k))
 
 	const int argc = lua_gettop(L);
@@ -4890,7 +4890,7 @@ int LuaSyncedCtrl::SetFeatureMidAndAimPos(lua_State* L)
 		return 1;
 	}
 
-#define FLOAT(i)        luaL_checkfloat(L, i)
+#define FLOAT(i) luaL_checkfloat(L, i)
 #define FLOAT3(i, j, k) float3(FLOAT(i), FLOAT(j), FLOAT(k))
 
 	const int argc = lua_gettop(L);

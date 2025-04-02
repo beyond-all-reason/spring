@@ -488,8 +488,8 @@ GLuint LuaMatTexture::GetTextureID() const
 	GLuint texID = 0;
 
 #define groundDrawer (readMap->GetGroundDrawer())
-#define gdGeomBuff   (groundDrawer->GetGeometryBuffer())
-#define udGeomBuff   (unitDrawer->GetGeometryBuffer())
+#define gdGeomBuff (groundDrawer->GetGeometryBuffer())
+#define udGeomBuff (unitDrawer->GetGeometryBuffer())
 
 	switch (type) {
 	case LUATEX_NONE: {
@@ -653,8 +653,8 @@ GLuint LuaMatTexture::GetTextureTarget() const
 	GLuint texType = GL_TEXTURE_2D;
 
 #define groundDrawer (readMap->GetGroundDrawer())
-#define gdGeomBuff   (groundDrawer->GetGeometryBuffer())
-#define udGeomBuff   (unitDrawer->GetGeometryBuffer())
+#define gdGeomBuff (groundDrawer->GetGeometryBuffer())
+#define udGeomBuff (unitDrawer->GetGeometryBuffer())
 
 	switch (type) {
 	case LUATEX_NAMED: {
@@ -825,8 +825,8 @@ void LuaMatTexture::Unbind() const
 std::tuple<int, int, int> LuaMatTexture::GetSize() const
 {
 #define groundDrawer (readMap->GetGroundDrawer())
-#define gdGeomBuff   (groundDrawer->GetGeometryBuffer())
-#define udGeomBuff   (unitDrawer->GetGeometryBuffer())
+#define gdGeomBuff (groundDrawer->GetGeometryBuffer())
+#define udGeomBuff (unitDrawer->GetGeometryBuffer())
 
 	auto ReturnHelper = [](int x, int y = 0, int z = 0) {
 		if (y == 0)

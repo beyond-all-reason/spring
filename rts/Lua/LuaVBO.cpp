@@ -74,7 +74,7 @@ bool LuaVBOs::PushEntries(lua_State* L)
 
 bool LuaVBOs::CheckAndReportSupported(lua_State* L, const unsigned int target)
 {
-#define ValStr(arg)         {arg, #arg}
+#define ValStr(arg) {arg, #arg}
 #define ValStr2(arg1, arg2) {arg1, #arg2}
 
 	static std::unordered_map<GLenum, std::string> bufferEnumToStr = {

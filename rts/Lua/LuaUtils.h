@@ -288,8 +288,8 @@ static inline void LuaPushRawNamedCFunc(lua_State* L, const char* key, lua_CFunc
 	lua_rawset(L, -3);
 }
 
-#define REGISTER_LUA_CFUNC(func)               LuaPushRawNamedCFunc(L, #func, func)
-#define REGISTER_NAMED_LUA_CFUNC(name, func)   LuaPushRawNamedCFunc(L, name, func)
+#define REGISTER_LUA_CFUNC(func) LuaPushRawNamedCFunc(L, #func, func)
+#define REGISTER_NAMED_LUA_CFUNC(name, func) LuaPushRawNamedCFunc(L, name, func)
 #define REGISTER_SCOPED_LUA_CFUNC(scope, func) LuaPushRawNamedCFunc(L, #func, scope::func)
 
 static inline void LuaInsertDualMapPair(lua_State* L, const string& name, int number)
