@@ -18,6 +18,7 @@ public:
 
 	static std::string GetCodeString(int code);
 	static int GetNormalizedSymbol(int sym);
+	static int GetMouseButtonSymbol(int button);
 };
 
 extern CKeyCodes keyCodes;

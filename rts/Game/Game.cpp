@@ -26,8 +26,11 @@
 #include "UnsyncedGameCommands.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
+#include "Game/UI/KeyCodes.h"
+#include "Game/UI/KeySet.h"
 #include "Game/UI/PlayerRoster.h"
 #include "Game/UI/PlayerRosterDrawer.h"
+#include "Game/UI/ScanCodes.h"
 #include "Game/UI/UnitTracker.h"
 #include "ExternalAI/AILibraryManager.h"
 #include "ExternalAI/EngineOutHandler.h"
@@ -131,6 +134,7 @@
 #include "System/Sync/DumpState.h"
 #include "System/TimeProfiler.h"
 #include "System/LoadLock.h"
+
 
 #include "System/Misc/TracyDefs.h"
 
@@ -1186,6 +1190,47 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 	}
 
 	return 0;
+}
+
+bool CGame::MousePress(int x, int y, int button)
+{
+	int keyCode = CKeyCodes::GetMouseButtonSymbol(button);
+	int scanCode = CScanCodes::GetMouseButtonSymbol(button);
+
+	const CKeySet kc(keyCode, CKeySet::KSKeyCode);
+	const CKeySet ks(scanCode, CKeySet::KSScanCode);
+	bool isRepeat = false;
+
+	curKeyCodeChain.push_back(kc, spring_gettime(), isRepeat);
+	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
+
+	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+
+	// try our list of actions
+	for (const Action& action: lastActionList) {
+		if (ActionPressed(keyCode, scanCode, action, isRepeat)) {
+			return true;
+		}
+	}
+
+
+	return false;
+}
+
+bool CGame::MouseRelease(int x, int y, int button)
+{
+	int keyCode = CKeyCodes::GetMouseButtonSymbol(button);
+	int scanCode = CScanCodes::GetMouseButtonSymbol(button);
+
+	// update actionlist for lua consumer
+	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+
+	for (const Action& action: lastActionList) {
+		if (ActionReleased(action))
+			return true;
+	}
+
+	return false;
 }
 
 int CGame::KeyMapChanged()
