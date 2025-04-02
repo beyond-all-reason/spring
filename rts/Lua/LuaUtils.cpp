@@ -29,9 +29,9 @@
 #include <json/writer.h>
 
 #if !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
-#	include "System/TimeProfiler.h"
+#include "System/TimeProfiler.h"
 #else
-#	define SCOPED_TIMER(x)
+#define SCOPED_TIMER(x)
 #endif
 
 #include <tracy/TracyLua.hpp>
@@ -187,7 +187,7 @@ int LuaUtils::CopyData(lua_State* dst, lua_State* src, int count)
 	}
 
 	// clear map
-	for (auto& pair : alreadyCopied) {
+	for (auto& pair: alreadyCopied) {
 		luaL_unref(dst, LUA_REGISTRYINDEX, pair.second);
 	}
 

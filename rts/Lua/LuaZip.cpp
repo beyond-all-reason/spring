@@ -462,7 +462,7 @@ void RecurseZipFolder(
 )
 {
 	// recurse through all the subdirs
-	for (const std::string& childFolderPath : CFileHandler::SubDirs(folderPath, "*", modes, false)) {
+	for (const std::string& childFolderPath: CFileHandler::SubDirs(folderPath, "*", modes, false)) {
 		const std::string childFolderName =
 		    FileSystem::GetFilename(childFolderPath.substr(0, childFolderPath.length() - 1));
 		const std::string childZipFolderPath = zipFolderPath + childFolderName + "/";
@@ -481,7 +481,7 @@ void RecurseZipFolder(
 	}
 
 	// iterate through all the files and write them
-	for (const std::string& filePath : CFileHandler::DirList(folderPath, "*", modes, false)) {
+	for (const std::string& filePath: CFileHandler::DirList(folderPath, "*", modes, false)) {
 		const std::string& fileName = FileSystem::GetFilename(filePath);
 		const std::string zipFilePath = zipFolderPath + fileName;
 

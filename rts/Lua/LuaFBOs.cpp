@@ -26,7 +26,7 @@
 LuaFBOs::~LuaFBOs()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (const auto* fbo : fbos) {
+	for (const auto* fbo: fbos) {
 		glDeleteFramebuffersEXT(1, &fbo->id);
 	}
 }

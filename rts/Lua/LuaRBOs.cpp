@@ -17,7 +17,7 @@
 
 LuaRBOs::~LuaRBOs()
 {
-	for (const RBO* rbo : rbos) {
+	for (const RBO* rbo: rbos) {
 		glDeleteRenderbuffersEXT(1, &rbo->id);
 	}
 }

@@ -84,7 +84,7 @@ void LuaMemPool::InitStatic(bool enable)
 void LuaMemPool::KillStatic()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (LuaMemPool*& p : gPools) {
+	for (LuaMemPool*& p: gPools) {
 		spring::SafeDelete(p);
 	}
 

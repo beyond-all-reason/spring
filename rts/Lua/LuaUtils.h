@@ -30,7 +30,7 @@
 
 // is defined as macro on FreeBSD (wtf)
 #ifdef isnumber
-#	undef isnumber
+#undef isnumber
 #endif
 
 struct SolidObjectDef;

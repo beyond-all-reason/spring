@@ -78,7 +78,7 @@ bool LuaWeaponDefs::PushEntries(lua_State* L)
 	    {Pairs, Next}
 	};
 
-	for (const auto& weaponDef : defsVec) {
+	for (const auto& weaponDef: defsVec) {
 		// The first weaponDef is invalid (dummy), so we skip it
 		const auto def = weaponDefHandler->GetWeaponDefByID(weaponDef.id);
 
@@ -377,7 +377,7 @@ static int CustomParamsTable(lua_State* L, const void* data)
 	    *((const spring::unordered_map<std::string, std::string>*)data);
 	lua_createtable(L, 0, params.size());
 
-	for (const auto& param : params) {
+	for (const auto& param: params) {
 		lua_pushsstring(L, param.first);
 		lua_pushsstring(L, param.second);
 		lua_rawset(L, -3);

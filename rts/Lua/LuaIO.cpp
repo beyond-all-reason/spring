@@ -5,7 +5,7 @@
 #include <cstdio>
 
 #ifndef _MSC_VER // this header file does not exist for the microsoft compiler
-#	include <unistd.h>
+#include <unistd.h>
 #endif
 
 #include "LuaIO.h"
@@ -14,7 +14,7 @@
 #include <string>
 
 #if !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
-#	include "LuaHandle.h"
+#include "LuaHandle.h"
 #endif // !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
 #include "LuaInclude.h"
 

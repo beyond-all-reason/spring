@@ -81,8 +81,8 @@ void LuaVAOImpl::AttachBufferImpl(
 	thisLuaVBO = luaVBO;
 
 	if (vertLuaVBO && instLuaVBO) {
-		for (const auto& v : vertLuaVBO->bufferAttribDefs) {
-			for (const auto& i : instLuaVBO->bufferAttribDefs) {
+		for (const auto& v: vertLuaVBO->bufferAttribDefs) {
+			for (const auto& i: instLuaVBO->bufferAttribDefs) {
 				if (v.first == i.first) {
 					LuaUtils::SolLuaError(
 					    "[LuaVAOImpl::%s] Vertex and Instance LuaVBO have defined a duplicate attribute [%d]", __func__,
@@ -238,7 +238,7 @@ void LuaVAOImpl::CondInitVAO()
 	};
 
 	if (vertLuaVBO)
-		for (const auto& va : vertLuaVBO->bufferAttribDefsVec) {
+		for (const auto& va: vertLuaVBO->bufferAttribDefsVec) {
 			const auto& attr = va.second;
 			glEnableVertexAttribArray(va.first);
 			glVertexAttribPointerFunc(
@@ -256,7 +256,7 @@ void LuaVAOImpl::CondInitVAO()
 		instLuaVBO->vbo->Bind(GL_ARRAY_BUFFER);
 		oldInstVBOId = instLuaVBO->GetId();
 
-		for (const auto& va : instLuaVBO->bufferAttribDefsVec) {
+		for (const auto& va: instLuaVBO->bufferAttribDefsVec) {
 			const auto& attr = va.second;
 			glEnableVertexAttribArray(va.first);
 			glVertexAttribPointerFunc(

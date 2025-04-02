@@ -5506,7 +5506,7 @@ int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
 
 	inGiveOrder++;
 	int count = 0;
-	for (CUnit* unit : units) {
+	for (CUnit* unit: units) {
 		if (CanControlUnit(L, unit)) {
 			unit->commandAI->GiveCommand(cmd, -1, true, true);
 			count++;
@@ -5550,7 +5550,7 @@ int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 	inGiveOrder++;
 
 	int count = 0;
-	for (CUnit* unit : units) {
+	for (CUnit* unit: units) {
 		if (CanControlUnit(L, unit)) {
 			unit->commandAI->GiveCommand(cmd, -1, true, true);
 			count++;
@@ -5594,7 +5594,7 @@ int LuaSyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
 
 	inGiveOrder++;
 
-	for (const Command& c : commands) unit->commandAI->GiveCommand(c, -1, true, true);
+	for (const Command& c: commands) unit->commandAI->GiveCommand(c, -1, true, true);
 
 	inGiveOrder--;
 
@@ -5629,9 +5629,9 @@ int LuaSyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
 	inGiveOrder++;
 
 	int count = 0;
-	for (CUnit* unit : units) {
+	for (CUnit* unit: units) {
 		if (CanControlUnit(L, unit)) {
-			for (const Command& c : commands) {
+			for (const Command& c: commands) {
 				unit->commandAI->GiveCommand(c, -1, true, true);
 			}
 			count++;
@@ -5683,9 +5683,9 @@ int LuaSyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 		}
 	}
 	else {
-		for (CUnit* unit : units) {
+		for (CUnit* unit: units) {
 			if (CanControlUnit(L, unit)) {
-				for (const Command& c : commands) {
+				for (const Command& c: commands) {
 					unit->commandAI->GiveCommand(c, -1, true, true);
 				}
 				count++;

@@ -76,8 +76,8 @@
 #include "System/TimeProfiler.h"
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)
-#	include "System/Sound/OpenAL/EFX.h"
-#	include "System/Sound/OpenAL/EFXPresets.h"
+#include "System/Sound/OpenAL/EFX.h"
+#include "System/Sound/OpenAL/EFXPresets.h"
 #endif
 
 #include <algorithm>
@@ -397,7 +397,7 @@ static int GetSolidObjectSelectionVolume(lua_State* L, const CSolidObject* obj)
 template<typename T> static void PushNumberContainerAsArray(lua_State* const L, const T& v)
 {
 	lua_createtable(L, v.size(), 0);
-	for (size_t i = 0; const auto& x : v) {
+	for (size_t i = 0; const auto& x: v) {
 		lua_pushnumber(L, x);
 		lua_rawseti(L, -2, ++i);
 	}
@@ -410,11 +410,11 @@ template<typename T> static size_t PushUnitListSortedByDef(lua_State* const L, c
 
 	std::map<unitDefID_t, std::vector<unitID_t>> unitsByDef;
 
-	for (const auto unitID : units) unitsByDef[unitHandler.GetUnit(unitID)->unitDef->id].push_back(unitID);
+	for (const auto unitID: units) unitsByDef[unitHandler.GetUnit(unitID)->unitDef->id].push_back(unitID);
 
 	lua_createtable(L, 0, unitsByDef.size());
 
-	for (const auto& [unitDefID, unitIDs] : unitsByDef) {
+	for (const auto& [unitDefID, unitIDs]: unitsByDef) {
 		assert(!unitIDs.empty());
 
 		PushNumberContainerAsArray(L, unitIDs);
@@ -428,7 +428,7 @@ template<typename T> static size_t PushSparseUnitTallyByDef(lua_State* const L, 
 {
 	std::vector<size_t> counts(unitDefHandler->NumUnitDefs() + 1, 0);
 	size_t numDefKeys = 0;
-	for (const int unitID : v)
+	for (const int unitID: v)
 		if (!counts[unitHandler.GetUnit(unitID)->unitDef->id]++)
 			numDefKeys++;
 
@@ -601,11 +601,11 @@ int LuaUnsyncedRead::GetLuaMemUsage(lua_State* L)
 	extern const spring::unsynced_set<const luaContextData*>* LUAHANDLE_CONTEXTS[2];
 
 	// sum up the individual (unsynced and synced) state footprints
-	for (bool synced : {false, true}) {
+	for (bool synced: {false, true}) {
 		lgs.allocedBytes = {0};
 		lgs.numLuaAllocs = {0};
 
-		for (const luaContextData* lcd : *LUAHANDLE_CONTEXTS[synced]) {
+		for (const luaContextData* lcd: *LUAHANDLE_CONTEXTS[synced]) {
 			lhs = &lcd->allocState;
 
 			lgs.allocedBytes += lhs->allocedBytes;
@@ -1781,8 +1781,8 @@ int LuaUnsyncedRead::GetVisibleUnits(lua_State* L)
 	lua_createtable(L, unitQuadIter.GetObjectCount(), 0);
 
 	unsigned int count = 0;
-	for (auto visUnitList : unitQuadIter.GetObjectLists()) {
-		for (CUnit* u : *visUnitList) {
+	for (auto visUnitList: unitQuadIter.GetObjectLists()) {
+		for (CUnit* u: *visUnitList) {
 			if (u->tempNum == tempNum)
 				continue;
 
@@ -1869,8 +1869,8 @@ int LuaUnsyncedRead::GetVisibleFeatures(lua_State* L)
 	lua_createtable(L, featureQuadIter.GetObjectCount(), 0);
 
 	unsigned int count = 0;
-	for (auto visFeatureList : featureQuadIter.GetObjectLists()) {
-		for (CFeature* f : *visFeatureList) {
+	for (auto visFeatureList: featureQuadIter.GetObjectLists()) {
+		for (CFeature* f: *visFeatureList) {
 			if (f->tempNum == tempNum)
 				continue;
 
@@ -1942,8 +1942,8 @@ int LuaUnsyncedRead::GetVisibleProjectiles(lua_State* L)
 	lua_createtable(L, projQuadIter.GetObjectCount(), 0);
 
 	unsigned int count = 0;
-	for (auto visProjectileList : projQuadIter.GetObjectLists()) {
-		for (CProjectile* p : *visProjectileList) {
+	for (auto visProjectileList: projQuadIter.GetObjectLists()) {
+		for (CProjectile* p: *visProjectileList) {
 			if (p->tempNum == tempNum)
 				continue;
 
@@ -1987,7 +1987,7 @@ template<typename V> static int GetRenderObjects(lua_State* L, const V& renderOb
 
 	lua_createtable(L, renderObjects.size(), 0);
 	uint32_t count = 0;
-	for (const auto renderObject : renderObjects) {
+	for (const auto renderObject: renderObjects) {
 		if ((renderObject->drawFlag & drawMask) == 0)
 			continue;
 
@@ -2000,7 +2000,7 @@ template<typename V> static int GetRenderObjects(lua_State* L, const V& renderOb
 
 	lua_createtable(L, count, 0);
 	count = 0;
-	for (const auto renderObject : renderObjects) {
+	for (const auto renderObject: renderObjects) {
 		if ((renderObject->drawFlag & drawMask) == 0)
 			continue;
 
@@ -2021,7 +2021,7 @@ template<typename V> static int GetRenderObjectsDrawFlagChanged(lua_State* L, co
 	std::vector<uint8_t> changedDrawFlags;
 	changedDrawFlags.reserve(renderObjects.size());
 
-	for (const auto renderObject : renderObjects) {
+	for (const auto renderObject: renderObjects) {
 		if (renderObject->previousDrawFlag == renderObject->drawFlag)
 			continue;
 		changedIds.push_back(renderObject->id);
@@ -2030,7 +2030,7 @@ template<typename V> static int GetRenderObjectsDrawFlagChanged(lua_State* L, co
 
 	lua_createtable(L, changedIds.size(), 0);
 	uint32_t count = 0;
-	for (const auto id : changedIds) {
+	for (const auto id: changedIds) {
 		lua_pushnumber(L, id);
 		lua_rawseti(L, -2, ++count);
 	}
@@ -2040,7 +2040,7 @@ template<typename V> static int GetRenderObjectsDrawFlagChanged(lua_State* L, co
 
 	lua_createtable(L, changedDrawFlags.size(), 0);
 	count = 0;
-	for (const auto drawFlag : changedDrawFlags) {
+	for (const auto drawFlag: changedDrawFlags) {
 		lua_pushnumber(L, drawFlag);
 		lua_rawseti(L, -2, ++count);
 	}
@@ -2179,8 +2179,8 @@ int LuaUnsyncedRead::GetUnitsInScreenRectangle(lua_State* L)
 	lua_createtable(L, unitQuadIter.GetObjectCount(), 0);
 
 	uint32_t count = 0;
-	for (auto visUnitList : unitQuadIter.GetObjectLists()) {
-		for (CUnit* unit : *visUnitList) {
+	for (auto visUnitList: unitQuadIter.GetObjectLists()) {
+		for (CUnit* unit: *visUnitList) {
 			if (disqualifierFunc(unit))
 				continue;
 
@@ -2238,8 +2238,8 @@ int LuaUnsyncedRead::GetFeaturesInScreenRectangle(lua_State* L)
 	lua_createtable(L, featureQuadIter.GetObjectCount(), 0);
 
 	uint32_t count = 0;
-	for (auto visFeatureList : featureQuadIter.GetObjectLists()) {
-		for (CFeature* feature : *visFeatureList) {
+	for (auto visFeatureList: featureQuadIter.GetObjectLists()) {
+		for (CFeature* feature: *visFeatureList) {
 			if (feature->tempNum == tempNum)
 				continue;
 
@@ -2660,7 +2660,7 @@ int LuaUnsyncedRead::GetCameraState(lua_State* L)
 	lua_pushsstring(L, (camHandler->GetCurrentController()).GetName());
 	lua_rawset(L, -3);
 
-	for (const auto& s : camState) {
+	for (const auto& s: camState) {
 		lua_pushsstring(L, s.first);
 		lua_pushnumber(L, s.second);
 		lua_rawset(L, -3);
@@ -3105,7 +3105,7 @@ int LuaUnsyncedRead::GetSoundEffectParams(lua_State* L)
 	lua_createtable(L, 0, n);
 	lua_rawset(L, -3);
 
-	for (const auto& filterProp : efxprops.filter_props_f) {
+	for (const auto& filterProp: efxprops.filter_props_f) {
 		const ALuint param = filterProp.first;
 		const auto fit = alFilterParamToName.find(param);
 
@@ -3123,7 +3123,7 @@ int LuaUnsyncedRead::GetSoundEffectParams(lua_State* L)
 	lua_createtable(L, 0, n);
 	lua_rawset(L, -3);
 
-	for (const auto& reverbProp : efxprops.reverb_props_f) {
+	for (const auto& reverbProp: efxprops.reverb_props_f) {
 		const ALuint param = reverbProp.first;
 		const auto fit = alParamToName.find(param);
 
@@ -3133,7 +3133,7 @@ int LuaUnsyncedRead::GetSoundEffectParams(lua_State* L)
 			lua_rawset(L, -3);
 		}
 	}
-	for (const auto& reverbProp : efxprops.reverb_props_v) {
+	for (const auto& reverbProp: efxprops.reverb_props_v) {
 		const ALuint param = reverbProp.first;
 		const auto fit = alParamToName.find(param);
 
@@ -3151,7 +3151,7 @@ int LuaUnsyncedRead::GetSoundEffectParams(lua_State* L)
 			lua_rawset(L, -3);
 		}
 	}
-	for (const auto& reverbProp : efxprops.reverb_props_i) {
+	for (const auto& reverbProp: efxprops.reverb_props_i) {
 		const ALuint param = reverbProp.first;
 		const auto fit = alParamToName.find(param);
 
@@ -3706,7 +3706,7 @@ int LuaUnsyncedRead::GetPressedKeys(lua_State* L)
 
 	lua_createtable(L, keys.size(), 0);
 
-	for (auto key : keys) {
+	for (auto key: keys) {
 		if (!key.second)
 			continue;
 
@@ -3736,7 +3736,7 @@ int LuaUnsyncedRead::GetPressedScans(lua_State* L)
 
 	lua_createtable(L, scans.size(), 0);
 
-	for (auto scan : scans) {
+	for (auto scan: scans) {
 		if (!scan.second)
 			continue;
 
@@ -3864,7 +3864,7 @@ int LuaUnsyncedRead::GetKeyBindings(lua_State* L)
 
 	int i = 1;
 	lua_createtable(L, actions.size(), 0);
-	for (const Action& action : actions) {
+	for (const Action& action: actions) {
 		lua_createtable(L, 0, 4);
 		lua_pushsstring(L, action.command);
 		lua_pushsstring(L, action.extra);
@@ -3889,7 +3889,7 @@ int LuaUnsyncedRead::GetActionHotKeys(lua_State* L)
 
 	lua_createtable(L, 0, hotkeys.size());
 	int i = 1;
-	for (const std::string& hotkey : hotkeys) {
+	for (const std::string& hotkey: hotkeys) {
 		lua_pushsstring(L, hotkey);
 		lua_rawseti(L, -2, i++);
 	}
@@ -3916,7 +3916,7 @@ int LuaUnsyncedRead::GetGroupList(lua_State* L)
 	// not an array-table
 	lua_createtable(L, 0, groups.size());
 
-	for (const CGroup& group : groups) {
+	for (const CGroup& group: groups) {
 		if (group.units.empty())
 			continue;
 
@@ -4370,7 +4370,7 @@ int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 	const auto& decals = groundDecals->GetAllDecals();
 
 	int numValid = 0;
-	for (const auto& d : decals) {
+	for (const auto& d: decals) {
 		numValid += d.IsValid();
 	}
 
@@ -4381,7 +4381,7 @@ int LuaUnsyncedRead::GetAllGroundDecals(lua_State* L)
 
 	int i = 1;
 	lua_createtable(L, numValid, 0);
-	for (const auto& d : decals) {
+	for (const auto& d: decals) {
 		if (!d.IsValid())
 			continue;
 
@@ -4759,7 +4759,7 @@ int LuaUnsyncedRead::SolveNURBSCurve(lua_State* L)
 	const auto result = NURBS::SolveNURBSCurve(degree, cpoints, knots, segments);
 
 	lua_createtable(L, result.size(), 0);
-	for (size_t i = 0; const auto& x : result) {
+	for (size_t i = 0; const auto& x: result) {
 		lua_pushnumber(L, x.x);
 		lua_rawseti(L, -2, ++i);
 		lua_pushnumber(L, x.y);

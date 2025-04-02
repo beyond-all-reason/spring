@@ -783,13 +783,13 @@ void CLuaHandle::RunDelayedFunctions(int frameNum)
 		return;
 
 	const auto& functions = currentFrameIterator->second;
-	for (const auto& [function, args] : functions) {
+	for (const auto& [function, args]: functions) {
 		const LuaUtils::ScopedDebugTraceBack traceBack(L);
 		luaL_checkstack(L, args.size() + 3, __func__); // the +3 is cargo-cult, most other callins do it like that
 
 		lua_rawgeti(L, LUA_REGISTRYINDEX, function);
 		luaL_unref(L, LUA_REGISTRYINDEX, function);
-		for (const auto arg : args) {
+		for (const auto arg: args) {
 			lua_rawgeti(L, LUA_REGISTRYINDEX, arg);
 			luaL_unref(L, LUA_REGISTRYINDEX, arg);
 		}
@@ -2848,7 +2848,7 @@ void CLuaHandle::DrawObjectsLua(std::initializer_list<bool> bools, const char* f
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
 
-	for (auto b : bools) {
+	for (auto b: bools) {
 		lua_pushboolean(L, b);
 	}
 
@@ -3018,7 +3018,7 @@ bool CLuaHandle::KeyPress(int keyCode, int scanCode, bool isRepeat)
 	if (isGame) {
 		int i = 1;
 		lua_createtable(L, 0, game->lastActionList.size());
-		for (const Action& action : game->lastActionList) {
+		for (const Action& action: game->lastActionList) {
 			lua_createtable(L, 0, 3);
 			{
 				LuaPushNamedString(L, "command", action.command);
@@ -3079,7 +3079,7 @@ bool CLuaHandle::KeyRelease(int keyCode, int scanCode)
 	if (isGame) {
 		int i = 1;
 		lua_createtable(L, 0, game->lastActionList.size());
-		for (const Action& action : game->lastActionList) {
+		for (const Action& action: game->lastActionList) {
 			lua_createtable(L, 0, 3);
 			{
 				LuaPushNamedString(L, "command", action.command);
@@ -3631,7 +3631,7 @@ bool CLuaHandle::GameSetup(
 
 	lua_createtable(L, playerStates.size(), 0);
 
-	for (const auto& playerState : playerStates) {
+	for (const auto& playerState: playerStates) {
 		lua_pushsstring(L, playerState.second);
 		lua_rawseti(L, -2, playerState.first);
 	}
@@ -4088,7 +4088,7 @@ int CLuaHandle::CallOutGetCallInList(lua_State* L)
 	std::vector<std::string> eventList;
 	eventHandler.GetEventList(eventList);
 	lua_createtable(L, 0, eventList.size());
-	for (const auto& event : eventList) {
+	for (const auto& event: eventList) {
 		lua_pushsstring(L, event);
 		lua_createtable(L, 0, 2);
 		{

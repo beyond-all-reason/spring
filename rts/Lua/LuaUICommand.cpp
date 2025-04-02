@@ -34,7 +34,7 @@ int LuaUICommand::GetUICommands(lua_State* L)
 
 	int count = 0;
 	lua_createtable(L, syncedExecutors.size() + unsyncedExecutors.size(), 0);
-	for (const auto& pair : syncedExecutors) {
+	for (const auto& pair: syncedExecutors) {
 		const ISyncedActionExecutor* exec = pair.second;
 
 		lua_createtable(L, 0, 4);
@@ -44,7 +44,7 @@ int LuaUICommand::GetUICommands(lua_State* L)
 		HSTR_PUSH_BOOL(L, "cheat", exec->IsCheatRequired());
 		lua_rawseti(L, -2, count++);
 	}
-	for (const auto& pair : unsyncedExecutors) {
+	for (const auto& pair: unsyncedExecutors) {
 		const IUnsyncedActionExecutor* exec = pair.second;
 
 		lua_createtable(L, 0, 4);

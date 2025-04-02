@@ -68,7 +68,7 @@ int LuaArchive::GetGames(lua_State* L)
 
 	lua_createtable(L, archives.size(), 0);
 
-	for (const auto& archiveData : archives) {
+	for (const auto& archiveData: archives) {
 		lua_pushsstring(L, archiveData.GetNameVersioned());
 		lua_rawseti(L, -2, 1 + (&archiveData - &archives[0]));
 	}
@@ -87,7 +87,7 @@ int LuaArchive::GetAllArchives(lua_State* L)
 
 	lua_createtable(L, archives.size(), 0);
 
-	for (const auto& archiveData : archives) {
+	for (const auto& archiveData: archives) {
 		lua_pushsstring(L, archiveData.GetNameVersioned());
 		lua_rawseti(L, -2, 1 + (&archiveData - &archives[0]));
 	}
@@ -178,7 +178,7 @@ int LuaArchive::GetArchiveInfo(lua_State* L)
 
 	lua_createtable(L, 0, archiveData.GetInfo().size());
 
-	for (const auto& pair : archiveData.GetInfo()) {
+	for (const auto& pair: archiveData.GetInfo()) {
 		const std::string& itemName = pair.first;
 		const InfoItem& itemData = pair.second;
 
@@ -340,10 +340,10 @@ int LuaArchive::GetAvailableAIs(lua_State* L)
 
 		unsigned int count = 0;
 
-		for (const auto& luaAIInfo : luaAIInfoItems) {
+		for (const auto& luaAIInfo: luaAIInfoItems) {
 			lua_createtable(L, 0, luaAIInfo.size());
 			{
-				for (const auto& luaAIInfoItem : luaAIInfo) {
+				for (const auto& luaAIInfoItem: luaAIInfo) {
 					if (luaAIInfoItem.key == SKIRMISH_AI_PROPERTY_SHORT_NAME) {
 						HSTR_PUSH_STRING(L, "shortName", luaAIInfoItem.GetValueAsString());
 					}
@@ -355,7 +355,7 @@ int LuaArchive::GetAvailableAIs(lua_State* L)
 			lua_rawseti(L, -2, ++count);
 		}
 
-		for (const auto& aiKey : skirmishAIKeys) {
+		for (const auto& aiKey: skirmishAIKeys) {
 			lua_createtable(L, 0, 2);
 			{
 				HSTR_PUSH_STRING(L, "shortName", aiKey.GetShortName());

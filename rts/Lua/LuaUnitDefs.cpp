@@ -75,7 +75,7 @@ bool LuaUnitDefs::PushEntries(lua_State* L)
 	    {Pairs, Next}
 	};
 
-	for (const auto& unitDef : defsVec) {
+	for (const auto& unitDef: defsVec) {
 		// The first unitDef is invalid (dummy), so we skip it
 		const auto def = unitDefHandler->GetUnitDefByID(unitDef.id);
 
@@ -278,7 +278,7 @@ static int CustomParamsTable(lua_State* L, const void* data)
 	    *((const spring::unordered_map<std::string, std::string>*)data);
 	lua_createtable(L, 0, params.size());
 
-	for (const auto& param : params) {
+	for (const auto& param: params) {
 		lua_pushsstring(L, param.first);
 		lua_pushsstring(L, param.second);
 		lua_rawset(L, -3);
@@ -295,7 +295,7 @@ static int BuildOptions(lua_State* L, const void* data)
 	lua_createtable(L, buildOptions.size(), 0);
 	int count = 0;
 
-	for (const auto& buildOption : buildOptions) {
+	for (const auto& buildOption: buildOptions) {
 		const auto fit = unitDefIDsMap.find(buildOption.second);
 
 		if (fit != unitDefIDsMap.end()) {

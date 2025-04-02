@@ -251,7 +251,7 @@ void LuaOpenGL::Free()
 {
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
-	for (const OcclusionQuery* q : occlusionQueries) {
+	for (const OcclusionQuery* q: occlusionQueries) {
 		glDeleteQueries(1, &q->id);
 	}
 
@@ -4998,7 +4998,7 @@ int LuaOpenGL::GetEngineAtlasTextures(lua_State* L)
 	const auto pushFunc = [L](const auto& textures) -> int {
 		lua_createtable(L, 0, textures.size());
 
-		for (const auto& texture : textures) {
+		for (const auto& texture: textures) {
 			lua_pushstring(L, texture.first.c_str()); // name
 			lua_createtable(L, 0, 4);
 
@@ -6671,7 +6671,7 @@ int LuaOpenGL::GetAtmosphere(lua_State* L)
 		const size_t numFloats = sizeof(val) / sizeof(float);
 		auto spn = std::span(reinterpret_cast<const float*>(&val), numFloats);
 
-		for (const auto& fl : spn) {
+		for (const auto& fl: spn) {
 			lua_pushnumber(L, fl);
 		}
 		return numFloats;

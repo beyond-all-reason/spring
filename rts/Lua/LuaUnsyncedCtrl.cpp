@@ -92,8 +92,8 @@
 
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)
-#	include "System/Sound/OpenAL/EFX.h"
-#	include "System/Sound/OpenAL/EFXPresets.h"
+#include "System/Sound/OpenAL/EFX.h"
+#include "System/Sound/OpenAL/EFXPresets.h"
 #endif
 
 #include <cctype>
@@ -2408,7 +2408,7 @@ int LuaUnsyncedCtrl::SetUnitDefIcon(lua_State* L)
 	if (decoyMapIt != decoyMap.end()) {
 		const auto& decoySet = decoyMapIt->second;
 
-		for (const int decoyDefID : decoySet) {
+		for (const int decoyDefID: decoySet) {
 			const UnitDef* decoyDef = unitDefHandler->GetUnitDefByID(decoyDefID);
 			decoyDef->iconType = ud->iconType;
 		}
@@ -4506,7 +4506,7 @@ int LuaUnsyncedCtrl::LoadModelTextures(lua_State* L)
 		return 1;
 	}
 
-	for (S3DModel& model : modelLoader.GetModelsVec()) {
+	for (S3DModel& model: modelLoader.GetModelsVec()) {
 		if (model.name == modelName) {
 			if (model.type == MODELTYPE_3DO) {
 				lua_pushboolean(L, false);

@@ -74,7 +74,7 @@ LuaShaders::LuaShaders() { programs.emplace_back(0); }
 
 LuaShaders::~LuaShaders()
 {
-	for (auto& program : programs) {
+	for (auto& program: programs) {
 		DeleteProgram(program);
 	}
 
@@ -938,7 +938,7 @@ int LuaShaders::GetActiveUniforms(lua_State* L)
 	lua_createtable(L, prog->activeUniforms.size(), 0);
 
 	GLint i = 0;
-	for (const auto& [name, au] : prog->activeUniforms) {
+	for (const auto& [name, au]: prog->activeUniforms) {
 		lua_createtable(L, 0, 5);
 		{
 			HSTR_PUSH_STRING(L, "name", name);

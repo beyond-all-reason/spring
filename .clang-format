@@ -30,7 +30,7 @@ IncludeCategories:
     Priority: 1
   - Regex: '.*/.*'
     Priority: 2
-IndentPPDirectives: AfterHash
+IndentPPDirectives: None
 IndentWidth: 4
 KeepEmptyLinesAtTheStartOfBlocks: false
 Language: Cpp
@@ -45,7 +45,7 @@ SpaceBeforeCaseColon: false
 SpaceBeforeCtorInitializerColon: false
 SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: ControlStatements
-SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeRangeBasedForLoopColon: false
 Standard: Latest
 TabWidth: 4
 UseTab: ForIndentation

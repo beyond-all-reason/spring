@@ -224,7 +224,7 @@ bool LuaTextures::FreeFBO(const std::string& name)
 
 void LuaTextures::FreeAll()
 {
-	for (const auto& item : textureMap) {
+	for (const auto& item: textureMap) {
 		const Texture& tex = textureVec[item.second];
 		glDeleteTextures(1, &tex.id);
 

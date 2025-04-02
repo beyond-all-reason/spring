@@ -111,7 +111,7 @@ LuaParser::~LuaParser()
 		LUA_CLOSE(&L);
 
 	// invalidate leftover tables if parser is destroyed first
-	for (LuaTable* table : tables) {
+	for (LuaTable* table: tables) {
 		table->parser = nullptr;
 		table->L = nullptr;
 		table->isValid = false;

@@ -8,11 +8,11 @@
 #include "System/TimeProfiler.h"
 
 #if DEBUG_LUA
-#	define LUA_CALL_IN_CHECK_NAMED(L, name, ...)  \
-		SCOPED_SPECIAL_TIMER_NOREG(name);          \
-		LuaUtils::ScopedStackChecker ciCheck((L));
+#define LUA_CALL_IN_CHECK_NAMED(L, name, ...)  \
+	SCOPED_SPECIAL_TIMER_NOREG(name);          \
+	LuaUtils::ScopedStackChecker ciCheck((L));
 #else
-#	define LUA_CALL_IN_CHECK_NAMED(L, name, ...) SCOPED_SPECIAL_TIMER_NOREG(name);
+#define LUA_CALL_IN_CHECK_NAMED(L, name, ...) SCOPED_SPECIAL_TIMER_NOREG(name);
 #endif
 
 #define LUA_CALL_IN_CHECK(L, ...)                                                                          \

@@ -299,7 +299,7 @@ bool LuaVBOImpl::FillAttribsTableImpl(const sol::table& attrDefTable)
 		sizeMax = 1 << 12;
 	};
 
-	for (const auto& kv : attrDefTable) {
+	for (const auto& kv: attrDefTable) {
 		const sol::object& key = kv.first;
 		const sol::object& value = kv.second;
 
@@ -355,7 +355,7 @@ bool LuaVBOImpl::FillAttribsTableImpl(const sol::table& attrDefTable)
 	uint32_t thisPointer;
 	GLsizei fieldAlignment, fieldSizeInBytes;
 
-	for (auto& kv : bufferAttribDefs) { // guaranteed increasing order of key
+	for (auto& kv: bufferAttribDefs) { // guaranteed increasing order of key
 		auto& baDef = kv.second;
 
 		GetTypePtr(baDef.type, baDef.size, thisPointer, nextPointer, fieldAlignment, fieldSizeInBytes);
@@ -759,7 +759,7 @@ sol::as_table_t<std::vector<lua_Number>> LuaVBOImpl::Download(
 	int bytesRead = 0;
 
 	for (int e = 0; e < elemCount; ++e) {
-		for (const auto& va : bufferAttribDefsVec) {
+		for (const auto& va: bufferAttribDefsVec) {
 			const int attrID = va.first;
 			const auto& attrDef = va.second;
 
@@ -1035,7 +1035,7 @@ size_t LuaVBOImpl::MatrixDataFromProjectileIDsImpl(
 	matDataVec.resize(16 * idsSize); // 16 floats (matrix) per projectile id
 
 	size_t idx = 0;
-	for (const auto id : ids) {
+	for (const auto id: ids) {
 		const CProjectile* p = LuaUtils::SolIdToObject<CProjectile>(id, __func__);
 		const CWeaponProjectile* wp = p->weapon ? static_cast<const CWeaponProjectile*>(p) : nullptr;
 		const bool doOffset = wp && wp->GetProjectileType() == WEAPON_MISSILE_PROJECTILE;
@@ -1171,7 +1171,7 @@ size_t LuaVBOImpl::UploadImpl(const std::vector<TIn>& dataVec, uint32_t elemOffs
 	int bytesWritten = 0;
 
 	for (auto bdvIter = dataVec.cbegin(); bdvIter < dataVec.cend();) {
-		for (const auto& va : bufferAttribDefsVec) {
+		for (const auto& va: bufferAttribDefsVec) {
 			const int attrID = va.first;
 			const auto& attrDef = va.second;
 
@@ -1555,7 +1555,7 @@ void LuaVBOImpl::DumpDefinition()
 
 	std::ostringstream ss;
 	ss << fmt::format("Definition information on LuaVBOs. OpenGL Buffer ID={}:\n", vbo->GetId());
-	for (const auto& kv : bufferAttribDefs) { // guaranteed increasing order of key
+	for (const auto& kv: bufferAttribDefs) { // guaranteed increasing order of key
 		const int attrID = kv.first;
 		const auto& baDef = kv.second;
 		ss << fmt::format(
@@ -1618,7 +1618,7 @@ void LuaVBOImpl::AllocGLBuffer(size_t byteSize)
 void LuaVBOImpl::CopyAttrMapToVec()
 {
 	bufferAttribDefsVec.reserve(bufferAttribDefs.size());
-	for (const auto& va : bufferAttribDefs) bufferAttribDefsVec.push_back(va);
+	for (const auto& va: bufferAttribDefs) bufferAttribDefsVec.push_back(va);
 }
 
 bool LuaVBOImpl::Supported(GLenum target) { return VBO::IsSupported(target); }

@@ -8,14 +8,14 @@
 #include "Lua/LuaAllocState.h"
 #include "Lua/LuaGarbageCollectCtrl.h"
 #if (!defined(UNITSYNC) && !defined(DEDICATED))
-#	include "LuaAtlasTextures.h"
-#	include "LuaDisplayLists.h"
-#	include "LuaFBOs.h"
-#	include "LuaRBOs.h"
-#	include "LuaShaders.h"
-#	include "LuaTextures.h"
-#	include "LuaVAO.h"
-#	include "LuaVBO.h"
+#include "LuaAtlasTextures.h"
+#include "LuaDisplayLists.h"
+#include "LuaFBOs.h"
+#include "LuaRBOs.h"
+#include "LuaShaders.h"
+#include "LuaTextures.h"
+#include "LuaVAO.h"
+#include "LuaVBO.h"
 #endif
 
 #include "System/EventClient.h"

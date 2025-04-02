@@ -321,7 +321,7 @@ void LuaMaterial::Parse(
 void LuaMaterial::Finalize()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (int i : {LuaMatShader::LUASHADER_PASS_FWD, LuaMatShader::LUASHADER_PASS_DFR}) {
+	for (int i: {LuaMatShader::LUASHADER_PASS_FWD, LuaMatShader::LUASHADER_PASS_DFR}) {
 		shaders[i].Finalize();
 		uniforms[i].AutoLink(&shaders[i]);
 		uniforms[i].Validate(&shaders[i]);
@@ -391,7 +391,7 @@ void LuaMaterial::ExecuteInstanceUniforms(int objId, int objType, bool deferredP
 
 	// apply custom per-object LuaMaterial uniforms (if any)
 	// can stop at first empty slot, Clear ensures contiguity
-	for (const LuaMatUniform& u : objUniformsIt->second) {
+	for (const LuaMatUniform& u: objUniformsIt->second) {
 		switch (u.loc) {
 		case -3: return; break;
 		case -2: {
@@ -624,7 +624,7 @@ void LuaMatUniforms::AutoLink(LuaMatShader* shader)
 	if (!shader->IsCustomType())
 		return;
 
-	for (const auto& p : GetEngineNameUniformPairs()) {
+	for (const auto& p: GetEngineNameUniformPairs()) {
 		IUniform* u = p.second;
 		ActiveUniform au;
 
@@ -664,7 +664,7 @@ void LuaMatUniforms::Validate(LuaMatShader* s)
 
 	if (!s->IsCustomType()) {
 		// print warning when uniforms are given for engine shaders
-		for (const auto& p : GetEngineUniformNamePairs()) {
+		for (const auto& p: GetEngineUniformNamePairs()) {
 			if (!p.first->IsValid())
 				continue;
 
@@ -720,7 +720,7 @@ void LuaMatUniforms::Parse(lua_State* L, const int tableIdx)
 	RECOIL_DETAILED_TRACY_ZONE;
 	decltype(GetEngineNameUniformPairs()) lcNameUniformPairs;
 
-	for (const auto& p : GetEngineNameUniformPairs()) {
+	for (const auto& p: GetEngineNameUniformPairs()) {
 		lcNameUniformPairs[StringToLower(p.first)] = p.second;
 	}
 
@@ -910,7 +910,7 @@ LuaMatHandler::~LuaMatHandler()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (int m = 0; m < LUAMAT_TYPE_COUNT; m++) {
-		for (LuaMatBin* bin : binTypes[LuaMatType(m)]) {
+		for (LuaMatBin* bin: binTypes[LuaMatType(m)]) {
 			delete bin;
 		}
 	}
@@ -958,7 +958,7 @@ void LuaMatHandler::ClearBins(LuaObjType objType, LuaMatType matType)
 	if ((matType < 0) || (matType >= LUAMAT_TYPE_COUNT))
 		return;
 
-	for (LuaMatBin* bin : binTypes[matType]) {
+	for (LuaMatBin* bin: binTypes[matType]) {
 		switch (objType) {
 		case LUAOBJ_UNIT: bin->ClearUnits(); break;
 		case LUAOBJ_FEATURE: bin->ClearFeatures(); break;
@@ -1007,7 +1007,7 @@ void LuaMatHandler::PrintBins(const string& indent, LuaMatType type) const
 
 	int num = 0;
 	LOG("%sBINCOUNT = " _STPF_, indent.c_str(), binTypes[type].size());
-	for (LuaMatBin* bin : binTypes[type]) {
+	for (LuaMatBin* bin: binTypes[type]) {
 		LOG("%sBIN %i:", indent.c_str(), num);
 		bin->Print(indent + "    ");
 		num++;
