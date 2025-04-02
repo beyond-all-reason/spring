@@ -874,10 +874,6 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 		StopMoveAndFinishCommand();
 		return;
 	}
-	if (guardee->outOfMapTime > (GAME_SPEED * 5)) {
-		StopMoveAndFinishCommand();
-		return;
-	}
 
 
 	if (CBuilder* b = dynamic_cast<CBuilder*>(guardee)) {
