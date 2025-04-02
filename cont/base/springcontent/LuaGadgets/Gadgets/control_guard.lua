@@ -45,9 +45,6 @@ local allMobileUnits = {}
 local guardingUnits = {}
 
 function gadget:Initialize()
-	gadgetHandler:RegisterAllowCommand(CMD_STOP)
-	gadgetHandler:RegisterAllowCommand(CMD_GUARD)
-	gadgetHandler:RegisterAllowCommand(CMD_INSERT)
 	for _, unitID in pairs(Spring.GetAllUnits()) do
 		gadget:UnitCreated(unitID, Spring.GetUnitDefID(unitID))
 	end
