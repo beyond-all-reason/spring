@@ -51,53 +51,6 @@ CR_REG_METADATA_SUB(CQuadField, Quad, (
 CQuadField quadField;
 
 
-#ifndef UNIT_TEST
-/*
-void CQuadField::Resize(int quad_size)
-{
-	CQuadField* oldQuadField = &quadField;
-	CQuadField newQuadField;
-
-	newQuadField.Init(int2(mapDims.mapx, mapDims.mapy), quad_size);
-
-	for (int zq = 0; zq < oldQuadField->GetNumQuadsZ(); zq++) {
-		for (int xq = 0; xq < oldQuadField->GetNumQuadsX(); xq++) {
-			const CQuadField::Quad& quad = oldQuadField->GetQuadAt(xq, zq);
-
-			// COPY the object lists because the Remove* functions modify them
-			// NOTE:
-			//   teamUnits is updated internally by RemoveUnit and MovedUnit
-			//
-			//   if a unit exists in multiple quads in the old field, it will
-			//   be removed from all of them and there is no danger of double
-			//   re-insertion (important if new grid has higher resolution)
-			const std::vector<CUnit*      > units       = quad.units;
-			const std::vector<CFeature*   > features    = quad.features;
-			const std::vector<CProjectile*> projectiles = quad.projectiles;
-
-			for (auto it = units.cbegin(); it != units.cend(); ++it) {
-				oldQuadField->RemoveUnit(*it);
-				newQuadField->MovedUnit(*it); // handles addition
-			}
-
-			for (auto it = features.cbegin(); it != features.cend(); ++it) {
-				oldQuadField->RemoveFeature(*it);
-				newQuadField->AddFeature(*it);
-			}
-
-			for (auto it = projectiles.cbegin(); it != projectiles.cend(); ++it) {
-				oldQuadField->RemoveProjectile(*it);
-				newQuadField->AddProjectile(*it);
-			}
-		}
-	}
-
-	quadField = std::move(newQuadField);
-}
-*/
-#endif
-
-
 void CQuadField::Quad::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
