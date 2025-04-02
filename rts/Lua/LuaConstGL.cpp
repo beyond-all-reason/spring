@@ -186,20 +186,6 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	PUSH_GL(FILL);
 
 	/***
-	 * Clear Bits
-	 * @section clearbits
-	 */
-
-	/*** @field GL.DEPTH_BUFFER_BIT integer */
-	PUSH_GL(DEPTH_BUFFER_BIT);
-	/*** @field GL.ACCUM_BUFFER_BIT integer */
-	PUSH_GL(ACCUM_BUFFER_BIT);
-	/*** @field GL.STENCIL_BUFFER_BIT integer */
-	PUSH_GL(STENCIL_BUFFER_BIT);
-	/*** @field GL.COLOR_BUFFER_BIT integer */
-	PUSH_GL(COLOR_BUFFER_BIT);
-
-	/***
 	 * ShadeModel
 	 * @section shademodel
 	 */
