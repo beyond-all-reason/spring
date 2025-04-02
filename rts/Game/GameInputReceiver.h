@@ -4,15 +4,22 @@
 #define GAME_INPUT_RECEIVER
 
 #include "Game/UI/InputReceiver.h"
-
+#include "Game/UI/KeySet.h"
 
 class CGameInputReceiver : public CInputReceiver
 {
-	public:
-		CGameInputReceiver();
-		~CGameInputReceiver();
+public:
+	CGameInputReceiver();
+	~CGameInputReceiver();
 
-		void MouseRelease(int x, int y, int button);
+	bool KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
+	bool KeyReleased(int keyCode, int scanCode) override;
+
+	bool MousePress(int x, int y, int button) override;
+	void MouseRelease(int x, int y, int button) override;
+private:
+	CTimedKeyChain curKeyCodeChain;
+	CTimedKeyChain curScanCodeChain;
 };
 
 #endif /* GAME_INPUT_RECEIVER */
