@@ -1100,6 +1100,17 @@ void CGame::ResizeEvent()
 	}
 }
 
+int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
+{
+	gameInputReceiver.KeyPressed(keyCode, scanCode, isRepeat);
+	return 0;
+}
+
+int CGame::KeyReleased(int keyCode, int scanCode)
+{
+	gameInputReceiver.KeyReleased(keyCode, scanCode);
+	return 0;
+}
 
 CInputReceiver* CGame::GetInputReceiver()
 {
