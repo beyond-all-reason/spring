@@ -10,7 +10,6 @@
 #include "GameController.h"
 #include "GameJobDispatcher.h"
 #include "GameInputReceiver.h"
-#include "Game/Action.h"
 #include "Rendering/WorldDrawer.h"
 #include "System/UnorderedMap.hpp"
 #include "System/creg/creg_cond.h"
@@ -108,6 +107,8 @@ public:
 
 	bool ActionPressed(const Action& action, bool isRepeat);
 	bool ActionReleased(const Action& action);
+
+	const ActionList& GetLastActionList();
 private:
 	bool Draw() override;
 	bool Update() override;
@@ -163,8 +164,6 @@ public:
 	spring_time lastSimFrameNetPacketTime;
 	spring_time lastUnsyncedUpdateTime;
 	spring_time skipLastDrawTime;
-
-	ActionList lastActionList;
 
 	float updateDeltaSeconds = 0.0f;
 	/// Time in seconds, stops at game end
