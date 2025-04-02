@@ -2,7 +2,18 @@
 
 
 #include "GameInputReceiver.h"
-#include "Game.h"
+
+#include "Game/Game.h"
+#include "Game/GlobalUnsynced.h"
+#include "Game/Players/PlayerHandler.h"
+#include "Game/UI/KeyBindings.h"
+#include "Game/UI/KeyCodes.h"
+#include "Game/UI/KeySet.h"
+#include "Game/UI/ScanCodes.h"
+#include "Lua/LuaInputReceiver.h"
+#include "Lua/LuaMenu.h"
+#include "Lua/LuaUI.h"
+#include <Rml/Backends/RmlUi_Backend.h>
 
 
 CGameInputReceiver::CGameInputReceiver()
@@ -13,9 +24,142 @@ CGameInputReceiver::CGameInputReceiver()
 
 CGameInputReceiver::~CGameInputReceiver() = default;
 
+bool CGameInputReceiver::KeyPressed(int keyCode, int scanCode, bool isRepeat)
+{
+	if (!game->IsGameOver() && !isRepeat)
+		playerHandler.Player(gu->myPlayerNum)->currentStats.keyPresses++;
+
+	const CKeySet kc(keyCode, CKeySet::KSKeyCode);
+	const CKeySet ks(scanCode, CKeySet::KSScanCode);
+
+	curKeyCodeChain.push_back(kc, spring_gettime(), isRepeat);
+	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
+
+	game->lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+
+	if (RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat))
+		return false;
+
+	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, game->lastActionList))
+		return false;
+
+	if (luaInputReceiver->KeyPressed(keyCode, scanCode, isRepeat))
+		return false;
+
+
+	// try the input receivers
+	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
+		if (recv != nullptr && recv->KeyPressed(keyCode, scanCode, isRepeat))
+			return false;
+	}
+
+	// try our list of actions
+	for (const Action& action: game->lastActionList) {
+		if (game->ActionPressed(action, isRepeat)) {
+			return false;
+		}
+	}
+
+	// maybe a widget is interested?
+	if (luaUI != nullptr) {
+		for (const Action& action: game->lastActionList) {
+			luaUI->GotChatMsg(action.rawline, false);
+		}
+	}
+
+	if (luaMenu != nullptr) {
+		for (const Action& action: game->lastActionList) {
+			luaMenu->GotChatMsg(action.rawline, false);
+		}
+	}
+
+	return false;
+}
+
+bool CGameInputReceiver::KeyReleased(int keyCode, int scanCode)
+{
+	if (RmlGui::ProcessKeyReleased(keyCode, scanCode))
+		return false;
+
+	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
+		return false;
+
+	// update actionlist for lua consumer
+	game->lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+
+	if (luaInputReceiver->KeyReleased(keyCode, scanCode))
+		return false;
+
+	// try the input receivers
+	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
+		if (recv != nullptr && recv->KeyReleased(keyCode, scanCode)) {
+			return false;
+		}
+	}
+
+	for (const Action& action: game->lastActionList) {
+		if (game->ActionReleased(action))
+			return false;
+	}
+
+	return false;
+}
+
+
+bool CGameInputReceiver::MousePress(int x, int y, int button)
+{
+	int keyCode = CKeyCodes::GetMouseButtonSymbol(button);
+	int scanCode = CScanCodes::GetMouseButtonSymbol(button);
+
+	const CKeySet kc(keyCode, CKeySet::KSKeyCode);
+	const CKeySet ks(scanCode, CKeySet::KSScanCode);
+	bool isRepeat = false;
+
+	const auto now = spring_gettime();
+	curKeyCodeChain.push_back(kc, now, isRepeat);
+	curScanCodeChain.push_back(ks, now, isRepeat);
+
+	game->lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+
+	// try our list of actions
+	for (const Action& action: game->lastActionList) {
+		if (game->ActionPressed(action, isRepeat)) {
+			return true;
+		}
+	}
+
+	// maybe a widget is interested?
+	// allowing all listeners to process for backwards compatibility.
+	bool handled = false;
+
+	if (luaUI != nullptr) {
+		for (const Action& action: lastActionList) {
+			handled |= luaUI->GotChatMsg(action.rawline, false);
+		}
+	}
+
+	if (luaMenu != nullptr) {
+		for (const Action& action: lastActionList) {
+			handled |= luaMenu->GotChatMsg(action.rawline, false);
+		}
+	}
+
+	return handled;
+}
 
 void CGameInputReceiver::MouseRelease(int x, int y, int button)
 {
-	activeController->MouseRelease(x, y, button);
+	int keyCode = CKeyCodes::GetMouseButtonSymbol(button);
+	int scanCode = CScanCodes::GetMouseButtonSymbol(button);
+
+	// update actionlist for lua consumer
+	game->lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+
+	for (const Action& action: game->lastActionList) {
+		if (game->ActionReleased(action))
+			return;
+	}
+
+	return;
 }
 
