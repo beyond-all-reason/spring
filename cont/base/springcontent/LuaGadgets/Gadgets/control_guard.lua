@@ -36,7 +36,7 @@ for unitDefID, udef in pairs(UnitDefs) do
 
 		isMobileUnit[unitDefID] = true
 	end
-	if udef.isBuilder and (udef.buildSpeed and udef.buildSpeed > 0) and (udef.buildDistance and udef.buildDistance > 0) then
+	if udef.isBuilder then
 		isBuilder[unitDefID] = true
 	end
 end
