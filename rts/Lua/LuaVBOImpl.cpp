@@ -457,26 +457,16 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
 }
 
 /***
- * @alias VBODataType
- * | GL.BYTE
- * | GL.UNSIGNED_BYTE
- * | GL.SHORT
- * | GL.UNSIGNED_SHORT
- * | GL.INT
- * | GL.UNSIGNED_INT
- * | GL.FLOAT
- */
-
-/***
  * @class VBOAttributeDef
  * 
- * @field id integer
+ * @field id integer?
+ * 
  * The location in the vertex shader layout e.g.: layout (location = 0) in vec2
  * aPos. optional attrib, specifies location in the vertex shader. If not
  * specified the implementation will increment the counter starting from 0.
  * There can be maximum 16 attributes (so id of 15 is max).
  * 
- * @field name string
+ * @field name string? (Default: `attr#` where `#` is `id`)
  * 
  * The name for this VBO, only used for debugging.
  * 
@@ -486,16 +476,22 @@ bool LuaVBOImpl::DefineElementArray(const sol::optional<sol::object> attribDefAr
  * this buffer. e.g. for the previous layout (location = 0) in vec2 aPos, it
  * would be size = 2.
  * 
- * @field type VBODataType (Default: `GL.FLOAT`)
- * 
- * The datatype of this element.
+ * @field type GL? (Default: `GL.FLOAT`) The datatype of this element.
+ *
+ * Accepts the following:
+ * - `GL.BYTE`
+ * - `GL.UNSIGNED_BYTE`
+ * - `GL.SHORT`
+ * - `GL.UNSIGNED_SHORT`
+ * - `GL.INT`
+ * - `GL.UNSIGNED_INT`
+ * - `GL.FLOAT`
  * 
  * @field normalized boolean? (Defaults: `false`)
  * 
- * It's possible to submit say normal without normalizing them first, normalized
+ * It's possible to submit normals without normalizing them first, normalized
  * will make sure data is normalized.
  */
- 
 
 /***
  * Specify the kind of VBO you will be using.
