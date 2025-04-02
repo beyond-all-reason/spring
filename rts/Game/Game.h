@@ -122,6 +122,11 @@ private:
 	/// Format and display a chat message received over network
 	void HandleChatMsg(const ChatMessage& msg);
 
+	/// Called when a key is released by the user
+	int KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
+	/// Called when the key is pressed by the user (can be called several times due to key repeat)
+	int KeyReleased(int keyCode, int scanCode) override;
+
 	CInputReceiver* GetInputReceiver() override;
 
 	/// Called when the keymap changes (language or keyboard switch)
