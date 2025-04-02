@@ -986,7 +986,7 @@ int LuaSyncedRead::GetGameRulesParams(lua_State* L)
  *
  * @param teamID integer
  *
- * @return RulesParams rulesParams map with rules names as key and values as values
+ * @return NOT_REAL_THING rulesParams map with rules names as key and values as values
  */
 int LuaSyncedRead::GetTeamRulesParams(lua_State* L)
 {
