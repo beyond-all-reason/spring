@@ -170,8 +170,6 @@ CR_REG_METADATA(CGame, (
 	CR_IGNORED(lastUnsyncedUpdateTime),
 	CR_IGNORED(skipLastDrawTime),
 
-	CR_IGNORED(lastActionList), //IGNORED?
-
 	CR_IGNORED(updateDeltaSeconds),
 	CR_MEMBER(totalGameTime),
 
@@ -2168,4 +2166,9 @@ bool CGame::ActionPressed(int keyCode, int scanCode, const Action& action, bool 
 	}
 
 	return (gameCommandConsole.ExecuteAction(action));
+}
+
+const ActionList& CGame::GetLastActionList()
+{
+	return gameInputReceiver.lastActionList;
 }

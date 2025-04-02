@@ -362,7 +362,7 @@ void CMouseHandler::MousePress(int x, int y, int button)
 
 	auto activeControllerReceiver = (activeController == nullptr) ? nullptr : activeController->GetInputReceiver();
 	if (button >= ACTION_BUTTON_MIN && activeControllerReceiver && activeControllerReceiver->MousePress(x, y, button)) {
-		activeReceiver = activeControllerReceiver
+		activeReceiver = activeControllerReceiver;
 		return;
 	}
 
