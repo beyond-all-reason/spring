@@ -10,8 +10,8 @@ on:
     paths:
       - 'rts/Lua/**'
 jobs:
-  generate-library:
-    name: Regenerate library
+  cehck-library:
+    name: Check library
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Lua CPP files
@@ -27,14 +27,19 @@ jobs:
             --repo https://github.com/${{ github.repository }}/blob/${{ github.sha }} \
             --error
 
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+      - name: Install dra
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/devmatteini/dra/refs/heads/main/install.sh | bash -s -- --to ./dra
 
       - name: Install Lua Language Server
         run: |
-          brew install lua-language-server
+          ./dra download \
+            --select "lua-language-server-{tag}-linux-x64.tar.gz" \
+            LuaLS/lua-language-server \
+            --output lls.tar.gz
+          mkdir lls
+          tar -xvzf lls.tar.gz -C lls
 
       - name: Check 
         run: |
-          lua-language-server --check rts/Lua/library
+          ./lls/bin/lua-language-server --check rts/Lua/library
