@@ -5,6 +5,7 @@
 
 #include "Game/UI/InputReceiver.h"
 #include "Game/UI/KeySet.h"
+#include "Game/Action.h"
 
 class CGameInputReceiver : public CInputReceiver
 {
@@ -17,6 +18,8 @@ public:
 
 	bool MousePress(int x, int y, int button) override;
 	void MouseRelease(int x, int y, int button) override;
+
+	ActionList lastActionList;
 private:
 	CTimedKeyChain curKeyCodeChain;
 	CTimedKeyChain curScanCodeChain;
