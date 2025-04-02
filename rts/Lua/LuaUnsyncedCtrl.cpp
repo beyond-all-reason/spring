@@ -1461,7 +1461,7 @@ static int TableSelectionCommonFunc(lua_State* L, int unitIndexInTable, bool isS
 /*** Deselects multiple units.
  *
  * @function Spring.DeselectUnitArray
- * @param unitIDs table<any, integer> Table with unit IDs as value.
+ * @param unitIDs integer[] Table with unit IDs as values.
  * @return nil
  */
 int LuaUnsyncedCtrl::DeselectUnitArray(lua_State* L)
@@ -1483,7 +1483,7 @@ int LuaUnsyncedCtrl::DeselectUnitMap(lua_State* L)
 /*** Selects multiple units, or appends to selection. Accepts a table with unitIDs as values
  *
  * @function Spring.SelectUnitArray
- * @param unitMap table<any, integer> Table with unit IDs as values.
+ * @param unitIDs integer[] Table with unit IDs as values.
  * @param append boolean? (Default: `false`) append to current selection
  * @return nil
  */
