@@ -1149,10 +1149,14 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 
 				if (ownerBuilder->lastResurrected && unitHandler.GetUnitUnsafe(ownerBuilder->lastResurrected) != nullptr && owner->unitDef->canRepair) {
 					// resurrection finished, start repair (by overwriting the current order)
-					float3 pos = c.GetPos(1);
-					float radius = c.GetParam(4);
-					c = Command(CMD_REPAIR, c.GetOpts() | INTERNAL_ORDER, ownerBuilder->lastResurrected, pos);
-					c.PushParam(radius);
+					if (c.GetNumParams() == 5) {
+						float3 pos = c.GetPos(1);
+						float radius = c.GetParam(4);
+						c = Command(CMD_REPAIR, c.GetOpts() | INTERNAL_ORDER, ownerBuilder->lastResurrected, pos);
+						c.PushParam(radius);
+					} else {
+						c = Command(CMD_REPAIR, c.GetOpts() | INTERNAL_ORDER, ownerBuilder->lastResurrected);
+					}
 					ownerBuilder->lastResurrected = 0;
 					inCommand = CMD_STOP;
 					SlowUpdate();
