@@ -103,7 +103,7 @@ function gadget:AllowCommand(unitID, unitDefID, teamID, cmdID, cmdParams, cmdOpt
 		return true
 	end
 	if cmdID == CMD_GUARD or cmdID == CMD_INSERT then
-		local guardeeID = cmdParams[1]
+		local guardeeID
 		if cmdID == CMD_INSERT then
 			cmdID = cmdParams[2]
 			if not cmdID == CMD_GUARD then return true end
