@@ -184,8 +184,9 @@ void CKeyCodes::Reset()
 
 int CKeyCodes::GetMouseButtonSymbol(int button)
 {
-	// magic number here chosen so it won't conflict with SDL reserved values.
-	return 1024+button;
+	// magic number here chosen so it won't conflict with SDL or unicode reserved values.
+	// choosing a private part of unicode range.
+	return 0xE000+button;
 }
 
 

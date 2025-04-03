@@ -248,7 +248,8 @@ void CScanCodes::Reset()
 int CScanCodes::GetMouseButtonSymbol(int button)
 {
 	// magic number here chosen so it won't conflict with SDL reserved values.
-	return 512+button;
+	// just in case taking a value from private unicode area.
+	return 0x100000+button;
 }
 
 std::string CScanCodes::GetCodeString(int code)
