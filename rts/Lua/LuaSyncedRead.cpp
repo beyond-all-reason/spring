@@ -217,6 +217,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitArmored);
 	REGISTER_LUA_CFUNC(GetUnitIsActive);
 	REGISTER_LUA_CFUNC(GetUnitIsCloaked);
+	REGISTER_LUA_CFUNC(GetUnitSeismicSignature);
 	REGISTER_LUA_CFUNC(GetUnitSelfDTime);
 	REGISTER_LUA_CFUNC(GetUnitStockpile);
 	REGISTER_LUA_CFUNC(GetUnitSensorRadius);

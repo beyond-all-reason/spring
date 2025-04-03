@@ -270,6 +270,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetProjectileVelocity);
 	REGISTER_LUA_CFUNC(SetProjectileCollision);
 	REGISTER_LUA_CFUNC(SetProjectileTarget);
+	REGISTER_LUA_CFUNC(SetProjectileTimeToLive);
 	REGISTER_LUA_CFUNC(SetProjectileIsIntercepted);
 	REGISTER_LUA_CFUNC(SetProjectileDamages);
 	REGISTER_LUA_CFUNC(SetProjectileIgnoreTrackingError);
