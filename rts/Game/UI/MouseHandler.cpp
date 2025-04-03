@@ -377,7 +377,7 @@ void CMouseHandler::MousePress(int x, int y, int button)
 
 	}
 
-	if (button >= ACTION_BUTTON_MIN && activeController->MousePress(x, y, button)) {
+	if (button >= ACTION_BUTTON_MIN && activeController != nullptr && activeController->MousePress(x, y, button)) {
 		return;
 	}
 
@@ -524,7 +524,7 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 		return;
 	}
 
-	if (button >= ACTION_BUTTON_MIN && activeController->MouseRelease(x, y, button)) {
+	if (button >= ACTION_BUTTON_MIN && activeController != nullptr && activeController->MouseRelease(x, y, button)) {
 		return;
 	}
 
