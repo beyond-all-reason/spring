@@ -4767,10 +4767,10 @@ int LuaUnsyncedRead::GetGroundDecalCreationFrame(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetGroundDecalOwner
  * @param decalID integer
- * @return integer? unitID|number featureID(+MAX_UNITS)
+ * @return integer? value If owner is a unit, then this is `unitID`, if owner is
+ * a feature it is `featureID + MAX_UNITS`. If there is no owner, then `nil`.
  */
 int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 {
