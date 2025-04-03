@@ -449,7 +449,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 
 			Command& c = resurrecterCAI->commandQue.front();
 
-			if (c.GetID() != CMD_RESURRECT || c.GetNumParams() != 1)
+			if (c.GetID() != CMD_RESURRECT || (c.GetNumParams() != 1 && c.GetNumParams() != 5))
 				continue;
 
 			if ((c.GetParam(0) - unitHandler.MaxUnits()) != curResurrectee->id)
