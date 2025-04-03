@@ -4652,33 +4652,50 @@ int LuaSyncedCtrl::SetFeatureResurrect(lua_State* L)
 	return 0;
 }
 
+/***
+ * Enable feature movement control.
+ * 
+ * @function Spring.SetFeatureMoveCtrl
+ * @param featureID integer
+ * @param enabled true Enable feature movement.
+ * @param initialVelocityX number? Initial velocity on X axis, or `nil` for no change.
+ * @param initialVelocityY number? Initial velocity on Y axis, or `nil` for no change.
+ * @param initialVelocityZ number? Initial velocity on Z axis, or `nil` for no change.
+ * @param accelerationX number? Acceleration per frame on X axis, or `nil` for no change.
+ * @param accelerationY number? Acceleration per frame on Y axis, or `nil` for no change.
+ * @param accelerationZ number? Acceleration per frame on Z axis, or `nil` for no change.
+ */
 
 /***
+ * Disable feature movement control.
+ * 
+ * Optional parameter allow physics vectors to build when not using `MoveCtrl`.
+ * 
+ * It is necessary to unlock feature movement on x, z axis before changing
+ * feature physics.
+ *
+ * For example:
+ * 
+ * ```lua
+ * -- Unlock all movement before setting velocity.
+ * Spring.SetFeatureMoveCtrl(featureID,false,1,1,1,1,1,1,1,1,1)
+ * 
+ * -- Set velocity.
+ * Spring.SetFeatureVelocity(featureID,10,0,10)
+ * ```
+ * 
  * @function Spring.SetFeatureMoveCtrl
- *
- * Use this callout to control feature movement. The arg* arguments are parsed as follows and all optional:
- *
- * If enable is true:
- * [, velVector(x,y,z)  * initial velocity for feature
- * [, accVector(x,y,z)  * acceleration added every frame]]
- *
- * If enable is false:
- * [, velocityMask(x,y,z)  * dimensions in which velocity is allowed to build when not using MoveCtrl
- * [, impulseMask(x,y,z)  * dimensions in which impulse is allowed to apply when not using MoveCtrl
- * [, movementMask(x,y,z)  * dimensions in which feature is allowed to move when not using MoveCtrl]]]
- *
- * It is necessary to unlock feature movement on x,z axis before changing feature physics.
- *
- * For example use `Spring.SetFeatureMoveCtrl(featureID,false,1,1,1,1,1,1,1,1,1)` to unlock all movement prior to making `Spring.SetFeatureVelocity` calls.
- *
  * @param featureID integer
- * @param enable boolean?
- * @param arg1 number?
- * @param arg2 number?
- * @param argn number?
- *
- * @return nil
- *
+ * @param enabled false Disable feature movement.
+ * @param velocityMaskX number? Lock velocity change in X dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param velocityMaskY number? Lock velocity change in Y dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param velocityMaskZ number? Lock velocity change in Z dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param impulseMaskX number? Lock impulse in X dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param impulseMaskY number? Lock impulse in Y dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param impulseMaskZ number? Lock impulse in Z dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param movementMaskX number? Lock move in X dimension when not using `MoveCtrl`. `0` to lock the axis, non-zero to allow, or `nil` for no change.
+ * @param movementMaskY number? Lock move in Y dimension when not using `MoveCtrl`. `0` to lock the axis, non-zero to allow, or `nil` for no change.
+ * @param movementMaskZ number? Lock move in Z dimension when not using `MoveCtrl`. `0` to lock the axis, non-zero to allow, or `nil` for no change.
  */
 int LuaSyncedCtrl::SetFeatureMoveCtrl(lua_State* L)
 {
