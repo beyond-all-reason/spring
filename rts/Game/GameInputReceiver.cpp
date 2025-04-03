@@ -53,27 +53,7 @@ bool CGameInputReceiver::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 			return false;
 	}
 
-	// try our list of actions
-	for (const Action& action: lastActionList) {
-		if (game->ActionPressed(action, isRepeat)) {
-			return false;
-		}
-	}
-
-	// maybe a widget is interested?
-	if (luaUI != nullptr) {
-		for (const Action& action: lastActionList) {
-			luaUI->GotChatMsg(action.rawline, false);
-		}
-	}
-
-	if (luaMenu != nullptr) {
-		for (const Action& action: lastActionList) {
-			luaMenu->GotChatMsg(action.rawline, false);
-		}
-	}
-
-	return false;
+	return TryOnPressActions(isRepeat);
 }
 
 bool CGameInputReceiver::KeyReleased(int keyCode, int scanCode)
@@ -121,6 +101,27 @@ bool CGameInputReceiver::MousePress(int x, int y, int button)
 
 	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
 
+	return TryOnPressActions(isRepeat);
+}
+
+void CGameInputReceiver::MouseRelease(int x, int y, int button)
+{
+	int keyCode = CKeyCodes::GetMouseButtonSymbol(button);
+	int scanCode = CScanCodes::GetMouseButtonSymbol(button);
+
+	// update actionlist for lua consumer
+	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+
+	for (const Action& action: lastActionList) {
+		if (game->ActionReleased(action))
+			return;
+	}
+
+	return;
+}
+
+bool CGameInputReceiver::TryOnPressActions(bool isRepeat)
+{
 	// try our list of actions
 	for (const Action& action: lastActionList) {
 		if (game->ActionPressed(action, isRepeat)) {
@@ -146,20 +147,3 @@ bool CGameInputReceiver::MousePress(int x, int y, int button)
 
 	return handled;
 }
-
-void CGameInputReceiver::MouseRelease(int x, int y, int button)
-{
-	int keyCode = CKeyCodes::GetMouseButtonSymbol(button);
-	int scanCode = CScanCodes::GetMouseButtonSymbol(button);
-
-	// update actionlist for lua consumer
-	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
-
-	for (const Action& action: lastActionList) {
-		if (game->ActionReleased(action))
-			return;
-	}
-
-	return;
-}
-
