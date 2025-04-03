@@ -3501,15 +3501,30 @@ bool CLuaHandle::GroupChanged(int groupID)
 	return RunCallIn(L, cmdStr, 1, 0);
 }
 
-
-
 /***
  * @function Callins:WorldTooltip
- * @param ttType string "unit" | "feature" | "ground" | "selection"
- * @param data1 number unitID | featureID | posX
- * @param data2 number? posY
- * @param data3 number? posZ
- * @return string newTooltip
+ * @param type "unit"
+ * @param unitId integer
+ * @return string tooltip
+ */
+/***
+ * @function Callins:WorldTooltip
+ * @param type "feature"
+ * @param featureId integer
+ * @return string tooltip
+ */
+/***
+ * @function Callins:WorldTooltip
+ * @param type "ground"
+ * @param posX number
+ * @param posY number
+ * @param posZ number
+ * @return string tooltip
+ */
+/***
+ * @function Callins:WorldTooltip
+ * @param type "selection"
+ * @return string tooltip
  */
 string CLuaHandle::WorldTooltip(const CUnit* unit,
                                 const CFeature* feature,
