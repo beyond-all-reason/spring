@@ -1684,17 +1684,17 @@ int LuaSyncedCtrl::GetCOBScriptID(lua_State* L)
  *
  * Offmap positions are clamped! Use MoveCtrl to move to such positions.
  *
- * @param unitDefName string|number or unitDefID
- * @param x number
- * @param y number
- * @param z number
+ * @param unitDef string|integer UnitDef name or ID.
+ * @param posX number
+ * @param posY number
+ * @param posZ number
  * @param facing Facing
  * @param teamID integer
- * @param build boolean? (Default: `false`) the unit is created in "being built" state with buildProgress = 0
- * @param flattenGround boolean? (Default: `true`) the unit flattens ground, if it normally does so
- * @param unitID integer? requests specific unitID
+ * @param build boolean? (Default: `false`) The unit is created in "being built" state with zero `buildProgress`.
+ * @param flattenGround boolean? (Default: `true`) The unit flattens ground, if it normally does so.
+ * @param unitID integer? Request a specific unitID.
  * @param builderID integer?
- * @return integer|nil unitID meaning unit was created
+ * @return integer? unitID The ID of the created unit, or `nil` if the unit could not be created.
  */
 int LuaSyncedCtrl::CreateUnit(lua_State* L)
 {
