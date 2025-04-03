@@ -21,6 +21,8 @@ public:
 
 	ActionList lastActionList;
 private:
+	bool TryOnPressActions(int keyCode, int scanCode, bool isRepeat);
+
 	CTimedKeyChain curKeyCodeChain;
 	CTimedKeyChain curScanCodeChain;
 };
