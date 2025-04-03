@@ -2045,14 +2045,14 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
 
 /***
  * @function Spring.SetUnitStorage
- * @param unitID number
+ * @param unitID integer
  * @param res string
  * @param amount number
  */
 
 /***
  * @function Spring.SetUnitStorage
- * @param unitID number
+ * @param unitID integer
  * @param res ResourceUsage keys are: "[m|e]" metal | energy. Values are amounts
  */
 int LuaSyncedCtrl::SetUnitStorage(lua_State* L)

@@ -358,7 +358,7 @@ bool CUnsyncedLuaHandle::DrawProjectile(const CProjectile* projectile)
 /***
  *
  * @function UnsyncedCallins:DrawMaterial
- * @param uuid number
+ * @param uuid integer
  * @param drawMode number
  * @return boolean suppressEngineDraw
  * @deprecated
