@@ -1474,7 +1474,7 @@ void LuaVBOImpl::DumpDefinition()
 /*** Gets the OpenGL Buffer ID
  *
  * @function VBO:GetID
- * @return number bufferID
+ * @return integer bufferID
  */
 uint32_t LuaVBOImpl::GetID() const
 {

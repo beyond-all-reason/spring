@@ -1692,7 +1692,7 @@ int LuaSyncedCtrl::GetCOBScriptID(lua_State* L)
  * @param flattenGround boolean? (Default: `true`) the unit flattens ground, if it normally does so
  * @param unitID integer? requests specific unitID
  * @param builderID integer?
- * @return number|nil unitID meaning unit was created
+ * @return integer|nil unitID meaning unit was created
  */
 int LuaSyncedCtrl::CreateUnit(lua_State* L)
 {
@@ -7124,7 +7124,7 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
  * @param radius number? (Default: `0`)
  * @param damage number? (Default: `0`)
  * @return boolean? success
- * @return number cegID
+ * @return integer cegID
  */
 int LuaSyncedCtrl::SpawnCEG(lua_State* L)
 {
