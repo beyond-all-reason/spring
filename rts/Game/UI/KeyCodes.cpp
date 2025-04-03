@@ -182,6 +182,7 @@ void CKeyCodes::Reset()
 	std::copy(codeToName.begin(), codeToName.end(), defaultCodeToName.begin());
 }
 
+
 int CKeyCodes::GetMouseButtonSymbol(int button)
 {
 	// magic number here chosen so it won't conflict with SDL or unicode reserved values.

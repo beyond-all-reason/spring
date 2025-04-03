@@ -135,7 +135,6 @@
 #include "System/TimeProfiler.h"
 #include "System/LoadLock.h"
 
-
 #include "System/Misc/TracyDefs.h"
 
 
@@ -1213,7 +1212,6 @@ bool CGame::MousePress(int x, int y, int button)
 			return true;
 		}
 	}
-
 
 	return false;
 }
