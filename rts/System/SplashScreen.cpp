@@ -105,6 +105,7 @@ void ShowSplashScreen(
 		font->End();
 
 		globalRendering->SwapBuffers(true, true);
+		spring_sleep(spring_msecs(10)); // 100 fps
 
 		// prevent WM's from assuming the window is unresponsive and
 		// generating a kill-request
