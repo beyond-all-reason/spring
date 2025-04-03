@@ -990,16 +990,12 @@ int LuaSyncedCtrl::KillTeam(lua_State* L)
 }
 
 
-/*** Will declare game over.
- *
+/*** 
+ * Declare game over.
+ * 
  * @function Spring.GameOver
- *
- * A list of winning allyteams can be passed, if undecided (like when dropped from the host) it should be empty (no winner), in the case of a draw with multiple winners, all should be listed.
- *
- * @param allyTeamID1 number?
- * @param allyTeamID2 number?
- * @param allyTeamIDn number?
- * @return nil
+ * @param ... integer A list of winning ally team IDs. Pass no
+ * arguments if undecided. Multiple winners will declare a draw.
  */
 int LuaSyncedCtrl::GameOver(lua_State* L)
 {
