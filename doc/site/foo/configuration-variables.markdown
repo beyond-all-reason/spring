@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Configuration Variables
-parent: Guides
-permalink: /guides/configuration-variables/
+parent: Foo
+permalink: /foo/configuration-variables/
 ---
 
 # Configuration Variables

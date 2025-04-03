@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Weapon Defs
-parent: Guides
-permalink: /guides/weapon-defs/
+parent: Foo
+permalink: /foo/weapon-defs/
 ---
 
 # Weapon Defs
