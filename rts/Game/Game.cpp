@@ -1219,13 +1219,13 @@ bool CGame::MousePress(int x, int y, int button)
 
 	if (luaUI != nullptr) {
 		for (const Action& action: lastActionList) {
-			handled = luaUI->GotChatMsg(action.rawline, false);
+			handled |= luaUI->GotChatMsg(action.rawline, false);
 		}
 	}
 
 	if (luaMenu != nullptr) {
 		for (const Action& action: lastActionList) {
-			handled = luaMenu->GotChatMsg(action.rawline, false);
+			handled |= luaMenu->GotChatMsg(action.rawline, false);
 		}
 	}
 
