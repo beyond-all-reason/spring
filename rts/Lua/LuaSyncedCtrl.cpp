@@ -994,8 +994,10 @@ int LuaSyncedCtrl::KillTeam(lua_State* L)
  * Declare game over.
  * 
  * @function Spring.GameOver
- * @param ... integer A list of winning ally team IDs. Pass no
- * arguments if undecided. Multiple winners will declare a draw.
+ * @param winningAllyTeamIDs integer[] A list of winning ally team IDs. Pass
+ * multiple winners to declare a draw. Pass no arguments if undecided (e.g.
+ * when dropped from the host).
+ * @returns integer Number of accepted (valid) ally teams.
  */
 int LuaSyncedCtrl::GameOver(lua_State* L)
 {
