@@ -1224,7 +1224,7 @@ int LuaShaders::UniformArray(lua_State* L)
  * numbers for the matrix.
  *
  * @function gl.UniformMatrix
- * @param locationID number|string uniformName
+ * @param locationID integer|string uniformName
  * @param matrix number[] A 2x2, 3x3 or 4x4 matrix.
  */
 int LuaShaders::UniformMatrix(lua_State* L)

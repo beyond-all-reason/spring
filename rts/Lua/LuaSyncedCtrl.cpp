@@ -990,16 +990,14 @@ int LuaSyncedCtrl::KillTeam(lua_State* L)
 }
 
 
-/*** Will declare game over.
- *
+/*** 
+ * Declare game over.
+ * 
  * @function Spring.GameOver
- *
- * A list of winning allyteams can be passed, if undecided (like when dropped from the host) it should be empty (no winner), in the case of a draw with multiple winners, all should be listed.
- *
- * @param allyTeamID1 number?
- * @param allyTeamID2 number?
- * @param allyTeamIDn number?
- * @return nil
+ * @param winningAllyTeamIDs integer[] A list of winning ally team IDs. Pass
+ * multiple winners to declare a draw. Pass no arguments if undecided (e.g.
+ * when dropped from the host).
+ * @returns integer Number of accepted (valid) ally teams.
  */
 int LuaSyncedCtrl::GameOver(lua_State* L)
 {
@@ -1686,17 +1684,17 @@ int LuaSyncedCtrl::GetCOBScriptID(lua_State* L)
  *
  * Offmap positions are clamped! Use MoveCtrl to move to such positions.
  *
- * @param unitDefName string|number or unitDefID
- * @param x number
- * @param y number
- * @param z number
+ * @param unitDef string|integer UnitDef name or ID.
+ * @param posX number
+ * @param posY number
+ * @param posZ number
  * @param facing Facing
  * @param teamID integer
- * @param build boolean? (Default: `false`) the unit is created in "being built" state with buildProgress = 0
- * @param flattenGround boolean? (Default: `true`) the unit flattens ground, if it normally does so
- * @param unitID integer? requests specific unitID
+ * @param build boolean? (Default: `false`) The unit is created in "being built" state with zero `buildProgress`.
+ * @param flattenGround boolean? (Default: `true`) The unit flattens ground, if it normally does so.
+ * @param unitID integer? Request a specific unitID.
  * @param builderID integer?
- * @return number|nil unitID meaning unit was created
+ * @return integer? unitID The ID of the created unit, or `nil` if the unit could not be created.
  */
 int LuaSyncedCtrl::CreateUnit(lua_State* L)
 {
@@ -2049,14 +2047,14 @@ int LuaSyncedCtrl::SetUnitResourcing(lua_State* L)
 
 /***
  * @function Spring.SetUnitStorage
- * @param unitID number
+ * @param unitID integer
  * @param res string
  * @param amount number
  */
 
 /***
  * @function Spring.SetUnitStorage
- * @param unitID number
+ * @param unitID integer
  * @param res ResourceUsage keys are: "[m|e]" metal | energy. Values are amounts
  */
 int LuaSyncedCtrl::SetUnitStorage(lua_State* L)
@@ -4656,33 +4654,50 @@ int LuaSyncedCtrl::SetFeatureResurrect(lua_State* L)
 	return 0;
 }
 
+/***
+ * Enable feature movement control.
+ * 
+ * @function Spring.SetFeatureMoveCtrl
+ * @param featureID integer
+ * @param enabled true Enable feature movement.
+ * @param initialVelocityX number? Initial velocity on X axis, or `nil` for no change.
+ * @param initialVelocityY number? Initial velocity on Y axis, or `nil` for no change.
+ * @param initialVelocityZ number? Initial velocity on Z axis, or `nil` for no change.
+ * @param accelerationX number? Acceleration per frame on X axis, or `nil` for no change.
+ * @param accelerationY number? Acceleration per frame on Y axis, or `nil` for no change.
+ * @param accelerationZ number? Acceleration per frame on Z axis, or `nil` for no change.
+ */
 
 /***
+ * Disable feature movement control.
+ * 
+ * Optional parameter allow physics vectors to build when not using `MoveCtrl`.
+ * 
+ * It is necessary to unlock feature movement on x, z axis before changing
+ * feature physics.
+ *
+ * For example:
+ * 
+ * ```lua
+ * -- Unlock all movement before setting velocity.
+ * Spring.SetFeatureMoveCtrl(featureID,false,1,1,1,1,1,1,1,1,1)
+ * 
+ * -- Set velocity.
+ * Spring.SetFeatureVelocity(featureID,10,0,10)
+ * ```
+ * 
  * @function Spring.SetFeatureMoveCtrl
- *
- * Use this callout to control feature movement. The arg* arguments are parsed as follows and all optional:
- *
- * If enable is true:
- * [, velVector(x,y,z)  * initial velocity for feature
- * [, accVector(x,y,z)  * acceleration added every frame]]
- *
- * If enable is false:
- * [, velocityMask(x,y,z)  * dimensions in which velocity is allowed to build when not using MoveCtrl
- * [, impulseMask(x,y,z)  * dimensions in which impulse is allowed to apply when not using MoveCtrl
- * [, movementMask(x,y,z)  * dimensions in which feature is allowed to move when not using MoveCtrl]]]
- *
- * It is necessary to unlock feature movement on x,z axis before changing feature physics.
- *
- * For example use `Spring.SetFeatureMoveCtrl(featureID,false,1,1,1,1,1,1,1,1,1)` to unlock all movement prior to making `Spring.SetFeatureVelocity` calls.
- *
  * @param featureID integer
- * @param enable boolean?
- * @param arg1 number?
- * @param arg2 number?
- * @param argn number?
- *
- * @return nil
- *
+ * @param enabled false Disable feature movement.
+ * @param velocityMaskX number? Lock velocity change in X dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param velocityMaskY number? Lock velocity change in Y dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param velocityMaskZ number? Lock velocity change in Z dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param impulseMaskX number? Lock impulse in X dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param impulseMaskY number? Lock impulse in Y dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param impulseMaskZ number? Lock impulse in Z dimension when not using `MoveCtrl`. `0` to lock, non-zero to allow, or `nil` to for no change.
+ * @param movementMaskX number? Lock move in X dimension when not using `MoveCtrl`. `0` to lock the axis, non-zero to allow, or `nil` for no change.
+ * @param movementMaskY number? Lock move in Y dimension when not using `MoveCtrl`. `0` to lock the axis, non-zero to allow, or `nil` for no change.
+ * @param movementMaskZ number? Lock move in Z dimension when not using `MoveCtrl`. `0` to lock the axis, non-zero to allow, or `nil` for no change.
  */
 int LuaSyncedCtrl::SetFeatureMoveCtrl(lua_State* L)
 {
@@ -7111,7 +7126,7 @@ int LuaSyncedCtrl::SpawnExplosion(lua_State* L)
  * @param radius number? (Default: `0`)
  * @param damage number? (Default: `0`)
  * @return boolean? success
- * @return number cegID
+ * @return integer cegID
  */
 int LuaSyncedCtrl::SpawnCEG(lua_State* L)
 {

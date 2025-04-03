@@ -3189,7 +3189,7 @@ int LuaUnsyncedCtrl::Quit(lua_State* L)
  *
  * @function Spring.SetUnitGroup
  * @param unitID integer
- * @param groupID number the group number to be assigned, or -1 for deassignment
+ * @param groupID integer the group number to be assigned, or -1 for deassignment
  * @return nil
  */
 int LuaUnsyncedCtrl::SetUnitGroup(lua_State* L)

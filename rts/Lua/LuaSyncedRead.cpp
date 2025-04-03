@@ -1512,7 +1512,7 @@ int LuaSyncedRead::GetSideData(lua_State* L)
  *
  * @function Spring.GetGaiaTeamID
  *
- * @return number teamID
+ * @return integer teamID
  */
 int LuaSyncedRead::GetGaiaTeamID(lua_State* L)
 {
@@ -1739,7 +1739,7 @@ int LuaSyncedRead::GetPlayerList(lua_State* L)
  * @function Spring.GetTeamInfo
  * @param teamID integer
  * @param getTeamKeys boolean? (Default: `true`) whether to return the customTeamKeys table
- * @return number? teamID
+ * @return integer? teamID
  * @return number leader
  * @return number isDead
  * @return number hasAI
@@ -2169,8 +2169,8 @@ int LuaSyncedRead::GetTeamMaxUnits(lua_State* L)
  * @return string name
  * @return boolean active
  * @return boolean spectator
- * @return number teamID
- * @return number allyTeamID
+ * @return integer teamID
+ * @return integer allyTeamID
  * @return number pingTime
  * @return number cpuUsage
  * @return string country
@@ -3429,7 +3429,7 @@ int LuaSyncedRead::GetUnitMapCentroid(lua_State* L)
  * @function Spring.GetUnitNearestAlly
  * @param unitID integer
  * @param range number? (Default: `1.0e9`)
- * @return number? unitID
+ * @return integer? unitID
  */
 int LuaSyncedRead::GetUnitNearestAlly(lua_State* L)
 {
@@ -3455,7 +3455,7 @@ int LuaSyncedRead::GetUnitNearestAlly(lua_State* L)
  * @param unitID integer
  * @param range number? (Default: `1.0e9`)
  * @param useLOS boolean? (Default: `true`)
- * @return number? unitID
+ * @return integer? unitID
  */
 int LuaSyncedRead::GetUnitNearestEnemy(lua_State* L)
 {
@@ -4592,7 +4592,7 @@ int LuaSyncedRead::GetUnitBuildFacing(lua_State* L)
  * Works for both mobile builders and factories.
  *
  * @param unitID integer
- * @return number buildeeUnitID or nil
+ * @return integer buildeeUnitID or nil
  */
 int LuaSyncedRead::GetUnitIsBuilding(lua_State* L)
 {
@@ -4689,8 +4689,8 @@ static int GetFactoryWorkerTask(lua_State* L, const CFactory *factory)
  * and build commands (negative buildee unitDefID).
  *
  * @param unitID integer
- * @return number cmdID of the relevant command
- * @return number targetID if applicable (all except RESTORE)
+ * @return integer cmdID of the relevant command
+ * @return integer targetID if applicable (all except RESTORE)
  */
 int LuaSyncedRead::GetUnitWorkerTask(lua_State* L)
 {
@@ -4943,7 +4943,7 @@ int LuaSyncedRead::GetUnitNanoPieces(lua_State* L)
  * Returns nil if the unit is not being transported.
  *
  * @param unitID integer
- * @return number|nil transportUnitID
+ * @return integer|nil transportUnitID
  */
 int LuaSyncedRead::GetUnitTransporter(lua_State* L)
 {

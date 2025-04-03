@@ -2323,7 +2323,7 @@ int LuaUnsyncedRead::GetFeaturesInScreenRectangle(lua_State* L)
 /***
  *
  * @function Spring.GetLocalPlayerID
- * @return number playerID
+ * @return integer playerID
  */
 int LuaUnsyncedRead::GetLocalPlayerID(lua_State* L)
 {
@@ -2335,7 +2335,7 @@ int LuaUnsyncedRead::GetLocalPlayerID(lua_State* L)
 /***
  *
  * @function Spring.GetLocalTeamID
- * @return number teamID
+ * @return integer teamID
  */
 int LuaUnsyncedRead::GetLocalTeamID(lua_State* L)
 {
@@ -2347,7 +2347,7 @@ int LuaUnsyncedRead::GetLocalTeamID(lua_State* L)
 /***
  *
  * @function Spring.GetLocalAllyTeamID
- * @return number allyTeamID
+ * @return integer allyTeamID
  */
 int LuaUnsyncedRead::GetLocalAllyTeamID(lua_State* L)
 {
@@ -2488,7 +2488,7 @@ int LuaUnsyncedRead::HaveAdvShading(lua_State* L)
 /***
  *
  * @function Spring.GetWaterMode
- * @return number waterRendererID
+ * @return integer waterRendererID
  * @return string waterRendererName
  * @see rts/Rendering/Env/IWater.h
  */
@@ -3297,7 +3297,7 @@ int LuaUnsyncedRead::GetGameState(lua_State* L)
  *
  * @function Spring.GetActiveCommand
  * @return number? cmdIndex
- * @return number? cmdID
+ * @return integer? cmdID
  * @return number? cmdType
  * @return nil|string cmdName
  */
@@ -4019,7 +4019,7 @@ int LuaUnsyncedRead::GetGroupList(lua_State* L)
 /***
  *
  * @function Spring.GetSelectedGroup
- * @return number groupID -1 when no group selected
+ * @return integer groupID -1 when no group selected
  */
 int LuaUnsyncedRead::GetSelectedGroup(lua_State* L)
 {
@@ -4032,7 +4032,7 @@ int LuaUnsyncedRead::GetSelectedGroup(lua_State* L)
  *
  * @function Spring.GetUnitGroup
  * @param unitID integer
- * @return number? groupID
+ * @return integer? groupID
  */
 int LuaUnsyncedRead::GetUnitGroup(lua_State* L)
 {
@@ -4767,10 +4767,10 @@ int LuaUnsyncedRead::GetGroundDecalCreationFrame(lua_State* L)
 
 
 /***
- *
  * @function Spring.GetGroundDecalOwner
  * @param decalID integer
- * @return number? unitID|number featureID(+MAX_UNITS)
+ * @return integer? value If owner is a unit, then this is `unitID`, if owner is
+ * a feature it is `featureID + MAX_UNITS`. If there is no owner, then `nil`.
  */
 int LuaUnsyncedRead::GetGroundDecalOwner(lua_State* L)
 {
