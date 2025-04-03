@@ -1,7 +1,7 @@
 BasedOnStyle: llvm
 ---
 AccessModifierOffset: -4
-AlignAfterOpenBracket: BlockIndent
+AlignAfterOpenBracket: DontAlign
 AlignArrayOfStructures: Left
 AlignEscapedNewlines: LeftWithLastLine
 AllowAllParametersOfDeclarationOnNextLine: false

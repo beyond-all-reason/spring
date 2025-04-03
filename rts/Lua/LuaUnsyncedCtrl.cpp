@@ -1144,15 +1144,11 @@ int LuaUnsyncedCtrl::SetCameraState(lua_State* L)
 	const bool hasState = lua_istable(L, 1);
 
 	if (!(hasState || lua_isnil(L, 1)))
-		luaL_error(
-		    L, "[%s([ stateTable[, camTransTime[, transTimeFactor[, transTimeExpon] ] ] ])] incorrect arguments",
-		    __func__
-		);
+		luaL_error(L, "[%s([ stateTable[, camTransTime[, transTimeFactor[, transTimeExpon] ] ] ])] incorrect arguments",
+		    __func__);
 
-	camHandler->SetTransitionParams(
-	    luaL_optfloat(L, 3, camHandler->GetTransitionTimeFactor()),
-	    luaL_optfloat(L, 4, camHandler->GetTransitionTimeExponent())
-	);
+	camHandler->SetTransitionParams(luaL_optfloat(L, 3, camHandler->GetTransitionTimeFactor()),
+	    luaL_optfloat(L, 4, camHandler->GetTransitionTimeExponent()));
 
 	const bool retval = camHandler->SetState(hasState ? ParseCamStateMap(L, 1) : camHandler->GetState());
 	camHandler->CameraTransition(luaL_optfloat(L, 2, 0.0f));
@@ -3223,10 +3219,8 @@ int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
 
 	const Command cmd = LuaUtils::ParseCommand(L, __func__, 2);
 
-	clientNet->Send(CBaseNetProtocol::Get().SendAICommand(
-	    gu->myPlayerNum, MAX_AIS, MAX_TEAMS, unit->id, cmd.GetID(false), cmd.GetID(true), cmd.GetTimeOut(),
-	    cmd.GetOpts(), cmd.GetNumParams(), cmd.GetParams()
-	));
+	clientNet->Send(CBaseNetProtocol::Get().SendAICommand(gu->myPlayerNum, MAX_AIS, MAX_TEAMS, unit->id,
+	    cmd.GetID(false), cmd.GetID(true), cmd.GetTimeOut(), cmd.GetOpts(), cmd.GetNumParams(), cmd.GetParams()));
 
 	lua_pushboolean(L, true);
 	return 1;
@@ -3542,14 +3536,12 @@ int LuaUnsyncedCtrl::SetShareLevel(lua_State* L)
 
 	if (shareType[0] == 'm') {
 		clientNet->Send(CBaseNetProtocol::Get().SendSetShare(
-		    gu->myPlayerNum, gu->myTeam, shareLevel, teamHandler.Team(gu->myTeam)->resShare.energy
-		));
+		    gu->myPlayerNum, gu->myTeam, shareLevel, teamHandler.Team(gu->myTeam)->resShare.energy));
 		return 0;
 	}
 	if (shareType[0] == 'e') {
 		clientNet->Send(CBaseNetProtocol::Get().SendSetShare(
-		    gu->myPlayerNum, gu->myTeam, teamHandler.Team(gu->myTeam)->resShare.metal, shareLevel
-		));
+		    gu->myPlayerNum, gu->myTeam, teamHandler.Team(gu->myTeam)->resShare.metal, shareLevel));
 		return 0;
 	}
 
@@ -4672,8 +4664,7 @@ int LuaUnsyncedCtrl::SetGroundDecalRotation(lua_State* L)
 int LuaUnsyncedCtrl::SetGroundDecalTexture(lua_State* L)
 {
 	lua_pushboolean(
-	    L, groundDecals->SetDecalTexture(luaL_checkint(L, 1), luaL_checksstring(L, 2), luaL_optboolean(L, 3, false))
-	);
+	    L, groundDecals->SetDecalTexture(luaL_checkint(L, 1), luaL_checksstring(L, 2), luaL_optboolean(L, 3, false)));
 	return 1;
 }
 
@@ -4922,8 +4913,7 @@ int LuaUnsyncedCtrl::SetWindowGeometry(lua_State* L)
 	const bool borderless = luaL_checkboolean(L, 7);
 
 	const bool r = globalRendering->SetWindowPosHelper(
-	    displayIndex, winRelPosX, winRelPosY, winSizeX, winSizeY, fullScreen, borderless
-	);
+	    displayIndex, winRelPosX, winRelPosY, winSizeX, winSizeY, fullScreen, borderless);
 
 	if (!r)
 		luaL_error(L, "[%s] Invalid function parameters\n", __func__);

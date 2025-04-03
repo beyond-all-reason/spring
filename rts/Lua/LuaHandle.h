@@ -153,14 +153,12 @@ public: // call-ins
 	void UnitIdle(const CUnit* unit) override;
 	void UnitCommand(const CUnit* unit, const Command& command, int playerNum, bool fromSynced, bool fromLua) override;
 	void UnitCmdDone(const CUnit* unit, const Command& command) override;
-	void UnitDamaged(
-	    const CUnit* unit,
+	void UnitDamaged(const CUnit* unit,
 	    const CUnit* attacker,
 	    float damage,
 	    int weaponDefID,
 	    int projectileID,
-	    bool paralyzer
-	) override;
+	    bool paralyzer) override;
 	void UnitStunned(const CUnit* unit, bool stunned) override;
 	void UnitExperience(const CUnit* unit, float oldExperience) override;
 	void UnitHarvestStorageFull(const CUnit* unit) override;
@@ -193,8 +191,11 @@ public: // call-ins
 
 	void FeatureCreated(const CFeature* feature) override;
 	void FeatureDestroyed(const CFeature* feature) override;
-	void FeatureDamaged(const CFeature* feature, const CUnit* attacker, float damage, int weaponDefID, int projectileID)
-	    override;
+	void FeatureDamaged(const CFeature* feature,
+	    const CUnit* attacker,
+	    float damage,
+	    int weaponDefID,
+	    int projectileID) override;
 
 	void ProjectileCreated(const CProjectile* p) override;
 	void ProjectileDestroyed(const CProjectile* p) override;
@@ -232,8 +233,9 @@ public: // call-ins
 
 	bool GroupChanged(int groupID) override;
 
-	bool GameSetup(const std::string& state, bool& ready, const std::vector<std::pair<int, std::string>>& playerStates)
-	    override;
+	bool GameSetup(const std::string& state,
+	    bool& ready,
+	    const std::vector<std::pair<int, std::string>>& playerStates) override;
 
 	const char* RecvSkirmishAIMessage(int aiID, const char* data, int inSize, size_t* outSize);
 
@@ -315,24 +317,20 @@ protected:
 	static bool AddEntriesToTable(lua_State* L, const char* name, bool (*entriesFunc)(lua_State*));
 
 	/// returns error code and sets traceback on error
-	int RunCallInTraceback(
-	    lua_State* L,
+	int RunCallInTraceback(lua_State* L,
 	    const LuaHashString* hs,
 	    std::string* ts,
 	    int inArgs,
 	    int outArgs,
 	    int errFuncIndex,
-	    bool popErrFunc
-	);
+	    bool popErrFunc);
 	/// returns false and prints message to log on error
-	bool RunCallInTraceback(
-	    lua_State* L,
+	bool RunCallInTraceback(lua_State* L,
 	    const LuaHashString& hs,
 	    int inArgs,
 	    int outArgs,
 	    int errFuncIndex,
-	    bool popErrFunc = true
-	);
+	    bool popErrFunc = true);
 	/// returns false and and sets errormessage on error
 	bool RunCallInLUS(lua_State* L, std::string* ts, int inArgs, int outArgs);
 	/// returns false and prints message to log on error

@@ -57,11 +57,14 @@ public: // call-ins
 	bool AllowUnitBuildStep(const CUnit* builder, const CUnit* unit, float part) override;
 	bool AllowUnitCaptureStep(const CUnit* builder, const CUnit* unit, float part) override;
 	bool AllowUnitTransport(const CUnit* transporter, const CUnit* transportee) override;
-	bool AllowUnitTransportLoad(const CUnit* transporter, const CUnit* transportee, const float3& loadPos, bool allowed)
-	    override;
-	bool
-	AllowUnitTransportUnload(const CUnit* transporter, const CUnit* transportee, const float3& unloadPos, bool allowed)
-	    override;
+	bool AllowUnitTransportLoad(const CUnit* transporter,
+	    const CUnit* transportee,
+	    const float3& loadPos,
+	    bool allowed) override;
+	bool AllowUnitTransportUnload(const CUnit* transporter,
+	    const CUnit* transportee,
+	    const float3& unloadPos,
+	    bool allowed) override;
 	bool AllowUnitCloak(const CUnit* unit, const CUnit* enemy) override;
 	bool AllowUnitDecloak(const CUnit* unit, const CSolidObject* object, const CWeapon* weapon) override;
 	bool AllowUnitKamikaze(const CUnit* unit, const CUnit* target, bool allowed) override;
@@ -71,64 +74,52 @@ public: // call-ins
 	bool AllowResourceTransfer(int oldTeam, int newTeam, const char* type, float amount) override;
 	bool AllowDirectUnitControl(int playerID, const CUnit* unit) override;
 	bool AllowBuilderHoldFire(const CUnit* unit, int action) override;
-	bool AllowStartPosition(
-	    int playerID,
+	bool AllowStartPosition(int playerID,
 	    int teamID,
 	    unsigned char readyState,
 	    const float3& clampedPos,
-	    const float3& rawPickPos
-	) override;
+	    const float3& rawPickPos) override;
 
 	bool TerraformComplete(const CUnit* unit, const CUnit* build) override;
 	bool MoveCtrlNotify(const CUnit* unit, int data) override;
 
-	int
-	AllowWeaponTargetCheck(unsigned int attackerID, unsigned int attackerWeaponNum, unsigned int attackerWeaponDefID)
-	    override;
-	bool AllowWeaponTarget(
-	    unsigned int attackerID,
+	int AllowWeaponTargetCheck(unsigned int attackerID,
+	    unsigned int attackerWeaponNum,
+	    unsigned int attackerWeaponDefID) override;
+	bool AllowWeaponTarget(unsigned int attackerID,
 	    unsigned int targetID,
 	    unsigned int attackerWeaponNum,
 	    unsigned int attackerWeaponDefID,
-	    float* targetPriority
-	) override;
-	bool AllowWeaponInterceptTarget(
-	    const CUnit* interceptorUnit,
+	    float* targetPriority) override;
+	bool AllowWeaponInterceptTarget(const CUnit* interceptorUnit,
 	    const CWeapon* interceptorWeapon,
-	    const CProjectile* interceptorTarget
-	) override;
+	    const CProjectile* interceptorTarget) override;
 
-	bool UnitPreDamaged(
-	    const CUnit* unit,
+	bool UnitPreDamaged(const CUnit* unit,
 	    const CUnit* attacker,
 	    float damage,
 	    int weaponDefID,
 	    int projectileID,
 	    bool paralyzer,
 	    float* newDamage,
-	    float* impulseMult
-	) override;
+	    float* impulseMult) override;
 
-	bool FeaturePreDamaged(
-	    const CFeature* feature,
+	bool FeaturePreDamaged(const CFeature* feature,
 	    const CUnit* attacker,
 	    float damage,
 	    int weaponDefID,
 	    int projectileID,
 	    float* newDamage,
-	    float* impulseMult
-	) override;
+	    float* impulseMult) override;
 
-	bool ShieldPreDamaged(
-	    const CProjectile* projectile,
+	bool ShieldPreDamaged(const CProjectile* projectile,
 	    const CWeapon* shieldEmitter,
 	    const CUnit* shieldCarrier,
 	    bool bounceProjectile,
 	    const CWeapon* beamEmitter,
 	    const CUnit* beamCarrier,
 	    const float3& startPos,
-	    const float3& hitPos
-	) override;
+	    const float3& hitPos) override;
 
 	bool SyncedActionFallback(const std::string& line, int playerID) override;
 

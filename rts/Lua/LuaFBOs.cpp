@@ -72,12 +72,10 @@ inline void CheckDrawingEnabled(lua_State* L, const char* caller)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!LuaOpenGL::IsDrawingEnabled(L)) {
-		luaL_error(
-		    L,
+		luaL_error(L,
 		    "%s(): OpenGL calls can only be used in Draw() "
 		    "call-ins, or while creating display lists",
-		    caller
-		);
+		    caller);
 	}
 }
 
@@ -319,15 +317,13 @@ int LuaFBOs::meta_newindex(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
-bool LuaFBOs::AttachObject(
-    const char* funcName,
+bool LuaFBOs::AttachObject(const char* funcName,
     lua_State* L,
     int index,
     LuaFBO* fbo,
     GLenum attachID,
     GLenum attachTarget,
-    GLenum attachLevel
-)
+    GLenum attachLevel)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (lua_isnil(L, index)) {
@@ -378,14 +374,12 @@ bool LuaFBOs::AttachObject(
 	return true;
 }
 
-void LuaFBOs::AttachObjectTexTarget(
-    const char* funcName,
+void LuaFBOs::AttachObjectTexTarget(const char* funcName,
     GLenum fboTarget,
     GLenum texTarget,
     GLuint texId,
     GLenum attachID,
-    GLenum attachLevel
-)
+    GLenum attachLevel)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	//  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, tex.target, texID, 0);
@@ -398,8 +392,7 @@ void LuaFBOs::AttachObjectTexTarget(
 	case GL_TEXTURE_3D: {
 		if (!GLAD_GL_VERSION_3_2) {
 			throw opengl_error(fmt::format(
-			    "[LuaFBO::{}] Using of the attachment target {} requires OpenGL >= 3.2", funcName, texTarget
-			));
+			    "[LuaFBO::{}] Using of the attachment target {} requires OpenGL >= 3.2", funcName, texTarget));
 		}
 
 		glFramebufferTexture(fboTarget, attachID, texId, attachLevel); // attach the whole texture
@@ -876,13 +869,9 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 	case GL_DRAW_FRAMEBUFFER: [[fallthrough]];
 	case GL_FRAMEBUFFER: queryType = GL_DRAW_FRAMEBUFFER_BINDING; break;
 	default:
-		return ReportErrorAndReturn(
-		    fmt::format(
-		        "invalid target type({}) Only GL.READ_FRAMEBUFFER|GL.DRAW_FRAMEBUFFER|GL.FRAMEBUFFER are accepted",
-		        target
-		    )
-		        .c_str()
-		);
+		return ReportErrorAndReturn(fmt::format(
+		    "invalid target type({}) Only GL.READ_FRAMEBUFFER|GL.DRAW_FRAMEBUFFER|GL.FRAMEBUFFER are accepted", target)
+		        .c_str());
 	}
 
 	GLint fboID = 0;
@@ -971,8 +960,7 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 	default:
 		return ReportErrorAndReturn(
 		    fmt::format("invalid attachment component type ({}), means the attachment is invalid", componentType)
-		        .c_str()
-		);
+		        .c_str());
 	}
 
 	assert(glGetError() == GL_NO_ERROR);

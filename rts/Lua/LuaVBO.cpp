@@ -75,7 +75,10 @@ bool LuaVBOs::PushEntries(lua_State* L)
 bool LuaVBOs::CheckAndReportSupported(lua_State* L, const unsigned int target)
 {
 #define ValStr(arg) {arg, #arg}
-#define ValStr2(arg1, arg2) {arg1, #arg2}
+#define ValStr2(arg1, arg2) \
+	{                       \
+		arg1, #arg2         \
+	}
 
 	static std::unordered_map<GLenum, std::string> bufferEnumToStr = {
 	    ValStr(GL_ARRAY_BUFFER),
@@ -97,10 +100,8 @@ bool LuaVBOs::CheckAndReportSupported(lua_State* L, const unsigned int target)
 	}
 
 	if (!LuaVBOImpl::Supported(target)) {
-		LOG_L(
-		    L_ERROR, "[LuaVBOs:%s]: important OpenGL extension %s is not supported for buffer type %s", __func__,
-		    bufferEnumToExtStr[target].c_str(), bufferEnumToStr[target].c_str()
-		);
+		LOG_L(L_ERROR, "[LuaVBOs:%s]: important OpenGL extension %s is not supported for buffer type %s", __func__,
+		    bufferEnumToExtStr[target].c_str(), bufferEnumToStr[target].c_str());
 		return false;
 	}
 
@@ -162,10 +163,8 @@ int LuaVBOs::GetVBO(lua_State* L)
 		return 0;
 
 	return sol::stack::call_lua(
-	    L, 1,
-	    [L](const sol::optional<GLenum> defTargetOpt, const sol::optional<bool> freqUpdatedOpt) {
+	    L, 1, [L](const sol::optional<GLenum> defTargetOpt, const sol::optional<bool> freqUpdatedOpt) {
 		auto& activeVBOs = CLuaHandle::GetActiveVBOs(L);
 		return activeVBOs.luaVBOs.emplace_back(std::make_shared<LuaVBOImpl>(defTargetOpt, freqUpdatedOpt)).lock();
-	}
-	);
+	});
 }
