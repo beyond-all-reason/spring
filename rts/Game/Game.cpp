@@ -1213,7 +1213,23 @@ bool CGame::MousePress(int x, int y, int button)
 		}
 	}
 
-	return false;
+	// maybe a widget is interested?
+	// allowing all listeners to process for backwards compatibility.
+	bool handled = false;
+
+	if (luaUI != nullptr) {
+		for (const Action& action: lastActionList) {
+			handled = luaUI->GotChatMsg(action.rawline, false);
+		}
+	}
+
+	if (luaMenu != nullptr) {
+		for (const Action& action: lastActionList) {
+			handled = luaMenu->GotChatMsg(action.rawline, false);
+		}
+	}
+
+	return handled;
 }
 
 bool CGame::MouseRelease(int x, int y, int button)
