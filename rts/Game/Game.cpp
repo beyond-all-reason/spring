@@ -1201,8 +1201,9 @@ bool CGame::MousePress(int x, int y, int button)
 	const CKeySet ks(scanCode, CKeySet::KSScanCode);
 	bool isRepeat = false;
 
-	curKeyCodeChain.push_back(kc, spring_gettime(), isRepeat);
-	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
+	const auto now = spring_gettime();
+	curKeyCodeChain.push_back(kc, now, isRepeat);
+	curScanCodeChain.push_back(ks, now, isRepeat);
 
 	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
 
