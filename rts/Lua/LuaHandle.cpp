@@ -3569,18 +3569,34 @@ string CLuaHandle::WorldTooltip(const CUnit* unit,
 	return retval;
 }
 
-
 /***
- *
  * @function Callins:MapDrawCmd
- * @param playerID number
- * @param type string "point" | "line" | "erase"
+ * @param playerID integer
+ * @param type "point"
  * @param posX number
  * @param posY number
  * @param posZ number
- * @param data4 string|number point: label, erase: radius, line: pos2X
- * @param pos2Y number? when type is line
- * @param pos2Z number? when type is line
+ * @param label string
+ */
+/***
+ * @function Callins:MapDrawCmd
+ * @param playerID integer
+ * @param type "line"
+ * @param pos1X number
+ * @param pos1Y number
+ * @param pos1Z number
+ * @param pos2X number
+ * @param pos2Y number
+ * @param pos2Z number
+ */
+/***
+ * @function Callins:MapDrawCmd
+ * @param playerID integer
+ * @param type "erase"
+ * @param posX number
+ * @param posY number
+ * @param posZ number
+ * @param radius number
  */
 bool CLuaHandle::MapDrawCmd(int playerID, int type,
                             const float3* pos0,
