@@ -1,0 +1,40 @@
+name: Check Lua library
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'rts/Lua/**'
+  push:
+    branches:
+      - master
+    paths:
+      - 'rts/Lua/**'
+jobs:
+  generate-library:
+    name: Regenerate library
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Lua CPP files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: rts/Lua
+
+      - name: Generate Lua library
+        run: |
+          npm install -g lua-doc-extractor@3.1
+          lua-doc-extractor rts/Lua/*.cpp \
+            --dest rts/Lua/library/generated \
+            --repo https://github.com/${{ github.repository }}/blob/${{ github.sha }} \
+            --error
+
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Install Lua Language Server
+        run: |
+          brew install lua-language-server
+
+      - name: Check 
+        run: |
+          lua-language-server --check rts/Lua/library
